@@ -40,7 +40,7 @@ class OvertimeRequest(Document):
 		exists_overtime_request = frappe.db.exists("Overtime Request", filters)
 		if exists_overtime_request:
 			frappe.throw(
-				_("Already exists a Overtime Request {0} for employee {1} on {2}!".format(
+				_("Already exists an Overtime Request {0} for employee {1} on {2}!".format(
 					exists_overtime_request, self.employee, self.date
 				))
 			)
