@@ -95,7 +95,7 @@
    "fieldname": "marital_status",
    "fieldtype": "Select",
    "label": "Marital Status",
-   "options": "Married\nSingle\nDivorced\nWidow"
+   "options": "\nUnmarried\nMarried\nDivorce\nWidow\nUnknown"
   },
   {
    "default": "Monthly",
@@ -498,7 +498,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-15 07:27:21.125399",
+ "modified": "2026-05-24 15:00:59.588306",
  "modified_by": "Administrator",
  "module": "Visa Management",
  "name": "Visa Request",
