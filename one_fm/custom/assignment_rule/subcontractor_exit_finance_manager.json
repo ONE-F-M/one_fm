@@ -7,7 +7,7 @@
 	"is_assignment_rule_with_workflow": 1,
 	"assign_condition": "workflow_state == \"Pending Finance Manager\"",
 	"unassign_condition": "workflow_state != \"Pending Finance Manager\"",
-	"close_condition": "workflow_state in [\"Completed\", \"Canceled\"]",
+	"close_condition": "workflow_state in [\"Completed\", \"Canceled\", \"Cancelled\"]",
 	"rule": "Based on Process Task",
 	"doctype": "Assignment Rule",
 	"assignment_days": [
