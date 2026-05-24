@@ -1,0 +1,86 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-05-22 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "task_details_section",
+  "sequence_no",
+  "task_description",
+  "column_break_mjnz",
+  "is_required",
+  "reference_image",
+  "maintenance_frequency",
+  "frequency_days",
+  "is_completed"
+ ],
+ "fields": [
+  {
+   "fieldname": "task_details_section",
+   "fieldtype": "Section Break",
+   "label": "Task Details"
+  },
+  {
+   "fieldname": "sequence_no",
+   "fieldtype": "Int",
+   "label": "Sequence No"
+  },
+  {
+   "fieldname": "task_description",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Task Description",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_mjnz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_required",
+   "fieldtype": "Check",
+   "label": "Is Required"
+  },
+  {
+   "fieldname": "reference_image",
+   "fieldtype": "Attach Image",
+   "label": "Reference Image"
+  },
+  {
+   "fieldname": "maintenance_frequency",
+   "fieldtype": "Link",
+   "label": "Maintenance Frequency",
+   "options": "Maintenance Frequency",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "maintenance_frequency.frequency_days",
+   "fieldname": "frequency_days",
+   "fieldtype": "Data",
+   "label": "Frequency (Days)"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_completed",
+   "fieldtype": "Check",
+   "label": "Is Completed"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-22 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Maintenance Work Order Checklist",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0
+}
