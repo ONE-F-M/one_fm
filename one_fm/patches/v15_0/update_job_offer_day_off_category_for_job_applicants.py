@@ -3,7 +3,7 @@ import frappe
 def execute():
 	"""
 	Update the day_off_category to 'Monthly' for Job Offers linked to specific Job Applicants.
-	Uses direct SQL update to skip validation and ORM controls.
+	Uses Query Builder to update records. Checks if data exists first.
 	"""
 	
 	job_applicants = [
@@ -15,11 +15,22 @@ def execute():
 		'HR-APP-2026-01814'
 	]
 	
-	# Update day_off_category to 'Monthly' for Job Offers linked to the specified job applicants
-	frappe.db.sql("""
-		UPDATE `tabJob Offer`
-		SET day_off_category = %s
-		WHERE job_applicant IN ({})
-	""".format(','.join(['%s'] * len(job_applicants))), ['Monthly'] + job_applicants)
+	# Check if Job Offers exist for the specified job applicants
+	JobOffer = frappe.qb.DocType("Job Offer")
+	job_offers = (
+		frappe.qb.from_(JobOffer)
+		.select(JobOffer.name)
+		.where(JobOffer.job_applicant.isin(job_applicants))
+	).run()
+
+	if not job_offers:
+		return
+
+	# Update day_off_category to 'Monthly' for all matching Job Offers
+	(
+		frappe.qb.update(JobOffer)
+		.set(JobOffer.day_off_category, "Monthly")
+		.where(JobOffer.job_applicant.isin(job_applicants))
+	).run()
 	
 	frappe.db.commit()
