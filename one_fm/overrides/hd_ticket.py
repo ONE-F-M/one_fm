@@ -9,7 +9,10 @@ from one_fm.processor import sendemail
 from one_fm.api.doc_events import get_employee_user_id
 from one_fm.utils import response
 from frappe.utils.password import get_decrypted_password
-from one_bpmn.api import send_message
+try:
+    from one_bpmn.api import send_message as send_processa_message
+except ImportError:
+    send_processa_message = None
 
 class HDTicketOverride(HDTicket):
     def before_insert(self):
@@ -447,11 +450,15 @@ def update_ticket(name: str, updates: str):
     frappe.db.commit()
     doc.notify_ticket_raiser_of_receipt()
 
-    send_message(
-        message_name="hd_ticket_update",
-        context_doctype="HD Ticket",
-        context_docname=name
-    )
+    if send_processa_message:
+        try:
+            send_processa_message(
+                message_name="hd_ticket_update",
+                context_doctype="HD Ticket",
+                context_docname=name
+            )
+        except Exception as e:
+            frappe.log_error(message=frappe.get_traceback(), title="Processa Message Error (HD Ticket Update)")
 
     return {
         "message": "Operation Successful",
