@@ -21,7 +21,6 @@ def execute():
 		frappe.qb.from_(JobOffer)
 		.select(JobOffer.name)
 		.where(JobOffer.job_applicant.isin(job_applicants))
-		.limit(1)
 	).run()
 
 	if not job_offers:
