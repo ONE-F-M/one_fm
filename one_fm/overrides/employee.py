@@ -131,7 +131,7 @@ class EmployeeOverride(EmployeeMaster):
 
         if self.custom_subcontractor_name != onboard_record.subcontractor_name:
             frappe.throw(
-                _("Error: The Subcontractor Name does not match the linked Onboard Subcontract Staff record. "
+                _("The Subcontractor Name does not match the linked Onboard Subcontract Employee record. "
                   "Please verify and select the correct Subcontractor.")
             )
 
