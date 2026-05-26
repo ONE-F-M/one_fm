@@ -56,6 +56,7 @@ class EmployeeOverride(EmployeeMaster):
         employee_validate_attendance_by_timesheet(self, method=None)
         validate_leaves(self)
         self.validate_relieving_date()
+        self.validate_subcontractor_name()
 
     def toggle_auto_attendance(self):
         try:
@@ -108,6 +109,31 @@ class EmployeeOverride(EmployeeMaster):
                     "<br/><br/>Please reassign ownership before setting Relieving Date."
                 )
                 frappe.throw(message)
+
+    def validate_subcontractor_name(self):
+        """
+        Validates that the Subcontractor Name on Employee matches
+        the linked Onboard Subcontract Employee record, if one exists.
+        Blocks save with a strict error if there is a mismatch.
+        """
+        if not self.custom_subcontractor_name:
+            return
+
+        onboard_record = frappe.db.get_value(
+            "Onboard Subcontract Employee",
+            {"employee": self.name},
+            ["name", "subcontractor_name"],
+            as_dict=True
+        )
+
+        if not onboard_record:
+            return
+
+        if self.custom_subcontractor_name != onboard_record.subcontractor_name:
+            frappe.throw(
+                _("The Subcontractor Name does not match the linked Onboard Subcontract Employee record. "
+                  "Please verify and select the correct Subcontractor.")
+            )
 
     def before_save(self):
         self.assign_role_profile_based_on_designation()
