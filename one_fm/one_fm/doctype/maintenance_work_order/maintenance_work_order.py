@@ -350,13 +350,14 @@ class MaintenanceWorkOrder(Document):
 			from datetime import time as dt_time, timedelta
 
 			def _to_time(val):
-				"""Convert a Time field value (timedelta or string) to datetime.time."""
-				if not val:
+				"""Convert a Time field value (timedelta, datetime.time, or string) to datetime.time."""
+				if val is None or val == "":
 					return None
+				if isinstance(val, dt_time):
+					return val
 				if isinstance(val, timedelta):
 					return (dt_datetime.min + val).time()
 				return get_datetime(val).time()
-
 			start_time = _to_time(working_day.start_time) or dt_time(0, 0)
 			end_time = _to_time(working_day.end_time) or dt_time(23, 59, 59)
 
