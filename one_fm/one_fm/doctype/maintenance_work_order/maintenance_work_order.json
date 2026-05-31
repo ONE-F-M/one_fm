@@ -258,7 +258,6 @@
   {
    "fieldname": "sla_master",
    "fieldtype": "Link",
-   "hidden": 1,
    "label": "Linked SLA Master",
    "options": "Maintenance Service Level Agreement",
    "read_only": 1
@@ -266,7 +265,6 @@
   {
    "fieldname": "sla_shift_type",
    "fieldtype": "Select",
-   "hidden": 1,
    "label": "SLA Shift Type",
    "options": "\nWorking Hours\nAfter Working Hours\nWeekly Off\nPublic Holiday",
    "read_only": 1
@@ -274,14 +272,12 @@
   {
    "fieldname": "target_response_minutes",
    "fieldtype": "Float",
-   "hidden": 1,
    "label": "Target Response Minutes",
    "read_only": 1
   },
   {
    "fieldname": "target_resolution_minutes",
    "fieldtype": "Float",
-   "hidden": 1,
    "label": "Target Resolution Minutes",
    "read_only": 1
   },
@@ -299,14 +295,12 @@
   {
    "fieldname": "actual_response_minutes",
    "fieldtype": "Float",
-   "hidden": 1,
    "label": "Actual Response Minutes",
    "read_only": 1
   },
   {
    "fieldname": "net_resolution_minutes",
    "fieldtype": "Float",
-   "hidden": 1,
    "label": "Net Resolution Minutes",
    "read_only": 1
   },
