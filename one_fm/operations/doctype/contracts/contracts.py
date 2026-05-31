@@ -1412,12 +1412,13 @@ def get_due_contracts():
     pass
 
 @frappe.whitelist()
-def send_contract_reminders(is_scheduled_event=True):
-    """
-    Generate Reminders for Contract Termination Decision Period and Contract End Internal Notification periods.
+def send_contract_reminders(is_scheduled_event: bool = True):
+   """
+    Generate Reminders for Contract Termination Decision Period...
 
     Args:
-        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
+        is_scheduled_event (bool): Default True. If triggered from outside
+        the scheduled event, pass False to skip email trigger check.
     """
     try:
         contracts_due_internal_notification = frappe.get_all("Contracts",{'contract_end_internal_notification_date':getdate(), 'workflow_state': 'Active'},['contract_end_internal_notification',\
