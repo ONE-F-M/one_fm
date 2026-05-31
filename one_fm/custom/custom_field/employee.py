@@ -83,7 +83,7 @@ def get_employee_custom_fields():
 				"insert_after": "bank_name",
 			},
 			{
-				"fieldname": "iban",
+				"fieldname": "custom_iban",
 				"fieldtype": "Data",
 				"insert_after": "one_fm_basic_salary",
 				"label": "IBAN",
