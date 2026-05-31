@@ -248,36 +248,28 @@ frappe.ui.form.on("Employee Resignation", {
 			return;
 		}
 
-		frappe.db.get_value('Employee', first_emp, 'shift_working')
-		.then(r => {
-			let is_shift_worker = r.message ? cint(r.message.shift_working) : 0;
-			
-			// Dynamically sync frm.doc.shift_working in-memory to prevent desync
-			if (cint(frm.doc.shift_working) !== is_shift_worker) {
-				frm.set_value('shift_working', is_shift_worker);
-			}
+		let is_shift_worker = cint(frm.doc.shift_working);
 
-			let is_draft = frm.doc.__islocal || frm.doc.workflow_state === 'Draft';
-			let is_restricted_stage = is_draft || frm.doc.workflow_state === 'Pending Relieving Date Correction';
+		let is_draft = frm.doc.__islocal || frm.doc.workflow_state === 'Draft';
+		let is_restricted_stage = is_draft || frm.doc.workflow_state === 'Pending Relieving Date Correction';
 
-			let show_ops_impact = !is_restricted_stage;
-			frm.toggle_display("operational_impact_section", show_ops_impact);
+		let show_ops_impact = !is_restricted_stage;
+		frm.toggle_display("operational_impact_section", show_ops_impact);
 
-			if (is_restricted_stage) {
-				frm.set_df_property('operations_manager', 'hidden', 1);
-				frm.set_df_property('offboarding_officer', 'hidden', 1);
-				frm.set_df_property('operations_manager', 'reqd', 0);
-				frm.set_df_property('offboarding_officer', 'reqd', 0);
-			} else {
-				frm.set_df_property('operations_manager', 'hidden', 0);
-				frm.set_df_property('operations_manager', 'read_only', !is_shift_worker ? 1 : 0);
-				frm.set_df_property('offboarding_officer', 'hidden', 0);
+		if (is_restricted_stage) {
+			frm.set_df_property('operations_manager', 'hidden', 1);
+			frm.set_df_property('offboarding_officer', 'hidden', 1);
+			frm.set_df_property('operations_manager', 'reqd', 0);
+			frm.set_df_property('offboarding_officer', 'reqd', 0);
+		} else {
+			frm.set_df_property('operations_manager', 'hidden', 0);
+			frm.set_df_property('operations_manager', 'read_only', !is_shift_worker ? 1 : 0);
+			frm.set_df_property('offboarding_officer', 'hidden', 0);
 
-				// Mandatory for all non-restricted stages (Pending Supervisor, Pending Operations Manager, Approved)
-				frm.set_df_property('operations_manager', 'reqd', is_shift_worker ? 1 : 0);
-				frm.set_df_property('offboarding_officer', 'reqd', 1);
-			}
-		});
+			// Mandatory for all non-restricted stages (Pending Supervisor, Pending Operations Manager, Approved)
+			frm.set_df_property('operations_manager', 'reqd', is_shift_worker ? 1 : 0);
+			frm.set_df_property('offboarding_officer', 'reqd', 1);
+		}
 	}
 });
 
