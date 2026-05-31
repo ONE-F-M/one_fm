@@ -10,11 +10,39 @@ from one_fm.setup.assignment_rule import create_assignment_rules, delete_assignm
 
 
 def after_install():
+	resolve_conflicting_custom_fields()
 	create_custom_fields(get_custom_fields())
 	add_property_setter(get_field_properties())
 	create_workflows()
 	create_assignment_rules()
 	frappe.db.commit()
+
+
+def resolve_conflicting_custom_fields():
+	"""Delete HRMS-created custom fields whose fieldtype one_fm needs to change.
+
+	HRMS creates `health_insurance_provider` on Employee as a Link field
+	(→ Employee Health Insurance). one_fm redefines it as a Table field
+	(→ Health Insurance Provider Detail) to support multiple providers.
+	Frappe blocks fieldtype changes (Link→Table), so we must remove the
+	HRMS version first.
+
+	Called from both after_install and before_migrate (via hooks.py).
+	"""
+	conflicting = [
+		{"dt": "Employee", "fieldname": "health_insurance_provider"},
+	]
+	for cf in conflicting:
+		if frappe.db.exists("Custom Field", {"dt": cf["dt"], "fieldname": cf["fieldname"]}):
+			existing_fieldtype = frappe.db.get_value(
+				"Custom Field",
+				{"dt": cf["dt"], "fieldname": cf["fieldname"]},
+				"fieldtype",
+			)
+			# Only delete if it's the wrong type (HRMS's Link, not our Table)
+			if existing_fieldtype == "Link":
+				frappe.db.delete("Custom Field", {"dt": cf["dt"], "fieldname": cf["fieldname"]})
+				frappe.clear_cache(doctype=cf["dt"])
 
 def before_uninstall():
 	delete_custom_fields(get_custom_fields())

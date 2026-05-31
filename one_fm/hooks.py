@@ -924,7 +924,8 @@ after_migrate = [
 before_migrate = [
     "one_fm.after_migrate.execute.before_migrate",
     "one_fm.after_migrate.execute.set_files_directories",
-    "one_fm.after_migrate.execute.replace_job_opening"
+    "one_fm.after_migrate.execute.replace_job_opening",
+    "one_fm.setup.setup.resolve_conflicting_custom_fields",
 ]
 
 # add more info to session on boot
