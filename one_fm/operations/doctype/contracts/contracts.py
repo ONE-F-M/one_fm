@@ -1433,10 +1433,9 @@ def send_contract_reminders(is_scheduled_event=True):
                 get_date_str(i.contract_termination_decision_period_date) if i.contract_termination_decision_period_date else None,i.name,get_date_str(i.start_date),get_date_str(i.contract_end_internal_notification_date) if i.contract_end_internal_notification_date else None,\
                 get_date_str(i.end_date),i.duration,i.client,i.contract] for i in contracts_due_internal_notification]
 
-            # Build a list of all contract contexts to render in a single grouped email
-            contracts_list = []
+            # Send a separate email for each contract to the same set of users
             for each in contracts_due_internal_notification_list:
-                contracts_list.append({
+                contract_data = {
                     "project": each[8],
                     "contract_end_internal_notif_period": get_field_with_label("Contracts", "contract_end_internal_notification", each[1]),
                     "start_date": each[4],
@@ -1448,18 +1447,18 @@ def send_contract_reminders(is_scheduled_event=True):
                     "document_id": each[3],
                     "link": frappe.utils.get_url_to_form("Contracts", each[3]),
                     "attachment": frappe.utils.get_url(each[9]) if each[9] else None
-                })
+                }
 
-            # Render all expiring contracts into a single email and send once to all recipients
-            context = {"contracts_list": contracts_list}
-            msg = frappe.render_template('one_fm/templates/emails/contracts_reminder.html', context=context)
-            sendemail(
-                recipients=[users[0]],
-                cc=users[1:] if len(users) > 1 else None,
-                subject="Contract Internal Notification Period for Expiring Contracts",
-                content=msg, is_scheduler_email=is_scheduled_event,
-                expose_recipients="header"
-            )
+                # Render email for individual contract
+                context = {"contracts_list": [contract_data]}
+                msg = frappe.render_template('one_fm/templates/emails/contracts_reminder.html', context=context)
+                sendemail(
+                    recipients=[users[0]],
+                    cc=users[1:] if len(users) > 1 else None,
+                    subject=f"Contract Internal Notification Period for Expiring Contract: {each[8]}",
+                    content=msg, is_scheduler_email=is_scheduled_event,
+                    expose_recipients="header"
+                )
     except Exception as e:
         frappe.log_error(message=str(e), title="Contract Reminder Error")
 
