@@ -22,29 +22,63 @@ jobs:
   typecheck:
     name: Type Check with basedmypy
     runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    services:
+      mariadb:
+        image: mariadb:10.6
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+      redis-cache:
+        image: redis:7-alpine
+        ports:
+          - 13000:6379
+      redis-queue:
+        image: redis:7-alpine
+        ports:
+          - 11000:6379
+      redis-socketio:
+        image: redis:7-alpine
+        ports:
+          - 12000:6379
 
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-
-      - name: Install dependencies
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install system dependencies
         run: |
-          pip install basedmypy~=2.0.0
-          pip install frappe-bench
-
+          sudo apt-get update
+          sudo apt-get install -y redis-server mariadb-client xvfb libfontconfig wkhtmltopdf
+      - name: Install bench and type checker
+        run: |
+          pip install frappe-bench basedmypy~=2.0.0
       - name: Setup bench
         run: |
-          bench init --skip-assets --python $(which python) --frappe-branch version-15 ~/frappe-bench
+          bench init --skip-redis-config-generation --frappe-branch version-15 --python "$(which python)" ~/frappe-bench
           cd ~/frappe-bench
-
-      - name: Install frappe and app
-        run: |
-          cd ~/frappe-bench
-          bench get-app frappe https://github.com/frappe/frappe --branch version-15
-          bench get-app one_fm $GITHUB_WORKSPACE
+          bench set-mariadb-host 127.0.0.1
+          bench set-redis-cache-host 127.0.0.1:13000
+          bench set-redis-queue-host 127.0.0.1:11000
+          bench set-redis-socketio-host 127.0.0.1:12000
+          bench get-app erpnext --branch version-15
+          bench get-app hrms --branch version-15
+          bench get-app helpdesk --branch main
+          bench get-app telephony --branch develop
+          bench get-app one_fm "$GITHUB_WORKSPACE"
+          bench new-site --db-root-password root --admin-password admin --mariadb-root-password root test_site
+          bench --site test_site set-config allow_tests true
+          bench --site test_site install-app erpnext
+          bench --site test_site install-app hrms
+          bench --site test_site install-app helpdesk
+          bench --site test_site install-app telephony
+          bench --site test_site install-app one_fm
 
       - name: Run mypy
         run: |
