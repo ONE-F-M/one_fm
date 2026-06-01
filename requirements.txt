@@ -1,20 +1,19 @@
-bleach==6.0.0
-bleach-allowlist==1.0.3
+# bleach and bleach-allowlist are managed by frappe — do NOT pin here
 gspread
 mindee==4.28.2
-twilio==9.0.5
-pandas>=2.2.2
+twilio>=8.5.0,<10
+pandas>=3.0.0,<4
 deep-translator==1.11.4
 firebase-admin==6.5.0
-google-cloud-core==2.3.3
+google-cloud-core>=2.3.3,<3
 google-cloud-firestore==2.13.0
-google-auth==2.34.0
-google-cloud-storage==2.11.0
+google-auth>=2.34.0
+google-cloud-storage>=2.11.0,<3
 google-cloud-vision==3.4.5
 datefinder==0.7.3
 html2text==2020.1.16
 qrcode==7.4.2
 paramiko==3.4.0
 llama_index==0.10.45
-openai==1.45.0
+openai>=1.45.0,<3
 parsedmarc
