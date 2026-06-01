@@ -1413,7 +1413,7 @@ def get_due_contracts():
 
 @frappe.whitelist()
 def send_contract_reminders(is_scheduled_event: bool = True):
-   """
+    """
     Generate Reminders for Contract Termination Decision Period...
 
     Args:
