@@ -138,7 +138,6 @@ class OvertimeRequest(Document):
 		- Pending Acceptance by Employee: notify the employee
 		- Pending Line Manager: notify the line manager
 		- Pending Payroll Officer: handled by assignment rule
-		- Pending Finance Manager: handled by assignment rule
 		- Completed: notify the requester
 		- Rejected: notify the requester
 		"""
