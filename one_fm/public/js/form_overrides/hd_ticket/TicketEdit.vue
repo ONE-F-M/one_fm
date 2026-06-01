@@ -200,6 +200,22 @@ async function fetchTicketDetails() {
 
 
 async function handleSubmit() {
+  const fields = visibleFields.value?.filter((f) => f.required) || [];
+  const toVerify = [...fields, "subject", "description"];
+  const params = {
+    ...templateFields,
+    subject: subject.value,
+    description: description.value,
+  };
+  for (const field of toVerify) {
+    if (!params[field.fieldname || field]) {
+      $dialog({
+        title: `${field.label || field}`,
+        message: `${field.label || field} is required`,
+      });
+      return;
+    }
+  }
   loading.value = true;
   try {
     await call("one_fm.overrides.hd_ticket.update_ticket", {
