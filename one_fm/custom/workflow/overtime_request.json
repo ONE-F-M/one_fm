@@ -211,7 +211,7 @@
       "state": "Pending Payroll Officer",
       "action": "Complete Processing",
       "next_state": "Completed",
-      "allowed": "Finance Manager",
+      "allowed": "Payroll Operator",
       "allow_self_approval": 1,
       "send_email_to_creator": 0,
       "skip_multiple_action": 0,
