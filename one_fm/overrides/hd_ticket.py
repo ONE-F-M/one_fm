@@ -415,8 +415,9 @@ def cleanhtml(raw_html):
 @frappe.whitelist()
 def get_ticket_details(name: str):
     # Fetch the full document to get all custom fields
-    ticket_doc = frappe.get_doc('HD Ticket', name)
-    if not ticket_doc:
+    try:
+        ticket_doc = frappe.get_doc('HD Ticket', name)
+    except frappe.DoesNotExistError:
         frappe.throw(_("Ticket not found"), frappe.DoesNotExistError)
     return {
         "message": "Operation Successful",

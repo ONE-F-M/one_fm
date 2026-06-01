@@ -79,7 +79,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from "vue";
 import { useRoute, useRouter, RouterLink } from "vue-router";
-import { call, Button, FormControl, createResource } from "frappe-ui";
+import { call, Button, FormControl } from "frappe-ui";
 import { usePageMeta } from "frappe-ui";
 import { globalStore } from "@/stores/globalStore";
 import { LayoutHeader, UniInput } from "@/components";
@@ -156,15 +156,6 @@ function handleOnFieldChange(e, fieldname, fieldtype) {
   templateFields[fieldname] = e.value;
 }
 
-// Create a resource to fetch the template using the Frappe API
-const templateResource = createResource({
-  url: "helpdesk.helpdesk.doctype.hd_ticket_template.api.get_one",
-  makeParams: () => ({
-    name: "Default", // We'll update this after fetching the ticket's template
-  }),
-  auto: false,
-});
-
 async function fetchTicketDetails() {
   if (!ticketName) return;
 
@@ -177,11 +168,8 @@ async function fetchTicketDetails() {
     subject.value = data.subject || "";
     description.value = data.description || "";
 
-    // Fetch template using the template name from ticket
-    const templateName = "Default";
-    
     const templateRes = await call("helpdesk.helpdesk.doctype.hd_ticket_template.api.get_one", {
-      name: templateName,
+      name: "Default",
     });
     
     if (templateRes && templateRes.fields && templateRes.fields.length) {
@@ -193,7 +181,7 @@ async function fetchTicketDetails() {
       const key = field.fieldname;
       // Try to get custom field value from ticket document
       const customKey = key.startsWith("custom_") ? key : `custom_${key}`;
-      const value = data[customKey] || data[key] || "";
+      const value = (data?.[customKey] ?? data?.[key] ?? "");
       templateFields[key] = value;
     }
 
