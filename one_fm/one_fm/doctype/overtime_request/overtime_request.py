@@ -80,16 +80,7 @@ class OvertimeRequest(Document):
 					leave[0].leave_type
 				))
 			)
-		else:
-			employee_name = frappe.db.get_value("Employee", self.employee, "employee_name") or self.employee
-			frappe.msgprint(
-				_("{0} has an approved {1} on the date selected ({2}).".format(
-					employee_name, leave[0].leave_type,
-					frappe.format(overtime_date, {"fieldtype": "Date"})
-				)),
-				title=_("Leave Overlap Warning"),
-				indicator="orange"
-			)
+		
 
 	def calculate_overtime_hours(self):
 		"""Calculate overtime hours from start_time and end_time.
