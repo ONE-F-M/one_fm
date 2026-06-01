@@ -191,16 +191,10 @@ async function fetchTicketDetails() {
 
     for (const field of templateData.value.fields) {
       const key = field.fieldname;
-      if (key === "priority") {
-        templateFields.priority = data.priority;
-      } else if (key === "process" || key === "custom_process") {
-        templateFields.process = data.custom_process || data.process;
-      } else {
-        // Try to get custom field value from ticket document
-        const customKey = key.startsWith("custom_") ? key : `custom_${key}`;
-        const value = data[customKey] || data[key] || "";
-        templateFields[key] = value;
-      }
+      // Try to get custom field value from ticket document
+      const customKey = key.startsWith("custom_") ? key : `custom_${key}`;
+      const value = data[customKey] || data[key] || "";
+      templateFields[key] = value;
     }
 
     setupCustomizations(templateData, {
@@ -218,21 +212,6 @@ async function fetchTicketDetails() {
 
 
 async function handleSubmit() {
-  if (!templateFields.priority) {
-    $dialog({
-      title: "Missing Priority",
-      message: "Priority is required.",
-    });
-    return;
-  }
-  if (!templateFields.process) {
-    $dialog({
-      title: "Missing Process",
-      message: "Process is required.",
-    });
-    return;
-  }
-
   loading.value = true;
   try {
     await call("one_fm.overrides.hd_ticket.update_ticket", {
@@ -240,8 +219,7 @@ async function handleSubmit() {
       updates: JSON.stringify({
         subject: subject.value,
         description: description.value,
-        ...templateFields,
-        custom_process: templateFields.process,
+        ...templateFields
       }),
     });
     router.push("/");
