@@ -29,7 +29,8 @@
   {
    "fieldname": "api_key",
    "fieldtype": "Password",
-   "label": "API Key"
+   "label": "API Key",
+   "length": 200
   },
   {
    "fieldname": "api_secret",
@@ -73,8 +74,9 @@
    "fieldtype": "Section Break"
   }
  ],
+ "grid_page_length": 50,
  "links": [],
- "modified": "2022-12-29 15:08:28.321454",
+ "modified": "2026-06-01 12:49:01.997511",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "API Integration",
@@ -94,6 +96,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []
