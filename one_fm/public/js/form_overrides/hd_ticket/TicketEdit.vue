@@ -130,9 +130,7 @@ const visibleFields = computed(() =>
 );
 
 const filteredFields = computed(() =>
-  visibleFields.value.filter((f) =>
-    ["priority", "process"].includes(f.fieldname)
-  )
+  visibleFields.value
 );
 
 function applyFilters(fieldname, filters = null) {
@@ -170,24 +168,21 @@ async function fetchTicketDetails() {
     subject.value = data.subject || "";
     description.value = data.description || "";
 
-    if (data.fields && data.fields.length) {
-      templateData.value.fields = data.fields;
-    } else {
-      injectFallbackFields();
+    const templateRes = await call("helpdesk.helpdesk.doctype.hd_ticket_template.api.get_one", {
+      name: "Default",
+    });
+    
+    if (templateRes && templateRes.fields && templateRes.fields.length) {
+      templateData.value.fields = templateRes.fields;
+      oldFields = JSON.parse(JSON.stringify(templateRes.fields));
     }
 
-    oldFields = JSON.parse(JSON.stringify(templateData.value.fields));
-
-    // Assign values only for fields that exist
     for (const field of templateData.value.fields) {
       const key = field.fieldname;
-      if (key === "priority") {
-        templateFields.priority = data.priority;
-      } else if (key === "process") {
-        templateFields.process = data.custom_process || data.process;
-      } else if (data.custom_fields?.hasOwnProperty(key)) {
-        templateFields[key] = data.custom_fields[key];
-      }
+      // Try to get custom field value from ticket document
+      const customKey = key.startsWith("custom_") ? key : `custom_${key}`;
+      const value = (data?.[customKey] ?? data?.[key] ?? "");
+      templateFields[key] = value;
     }
 
     setupCustomizations(templateData, {
@@ -205,21 +200,22 @@ async function fetchTicketDetails() {
 
 
 async function handleSubmit() {
-  if (!templateFields.priority) {
-    $dialog({
-      title: "Missing Priority",
-      message: "Priority is required.",
-    });
-    return;
+  const fields = visibleFields.value?.filter((f) => f.required) || [];
+  const toVerify = [...fields, "subject", "description"];
+  const params = {
+    ...templateFields,
+    subject: subject.value,
+    description: description.value,
+  };
+  for (const field of toVerify) {
+    if (!params[field.fieldname || field]) {
+      $dialog({
+        title: `${field.label || field}`,
+        message: `${field.label || field} is required`,
+      });
+      return;
+    }
   }
-  if (!templateFields.process) {
-    $dialog({
-      title: "Missing Process",
-      message: "Process is required.",
-    });
-    return;
-  }
-
   loading.value = true;
   try {
     await call("one_fm.overrides.hd_ticket.update_ticket", {
@@ -227,8 +223,7 @@ async function handleSubmit() {
       updates: JSON.stringify({
         subject: subject.value,
         description: description.value,
-        ...templateFields,
-        custom_process: templateFields.process,
+        ...templateFields
       }),
     });
     router.push("/");
@@ -268,7 +263,10 @@ onMounted(async () => {
 
   await fetchTicketDetails();
 
-  injectFallbackFields();
+  // Only inject fallback fields if no fields were loaded from the template
+  if (!templateData.value.fields || templateData.value.fields.length === 0) {
+    injectFallbackFields();
+  }
   // applyFilters("priority");
   // applyFilters("process");
 });

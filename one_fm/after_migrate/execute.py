@@ -509,27 +509,6 @@ def deploy_ticket_views():
     shutil.copy2(ticket_edit_source, ticket_edit_target)
     print(f"[✅] TicketEdit.vue deployed to: {ticket_edit_target}")
 
-    ticket_customer_source = os.path.join(bench_path, "apps", "one_fm", "one_fm", "public", "js", "form_overrides", "hd_ticket", "TicketCustomer.vue")
-    ticket_customer_target = os.path.join(ticket_target_folder, "TicketCustomer.vue")
-
-    if not os.path.exists(ticket_customer_source):
-        print(f"[❌] Source TicketCustomer.vue not found: {ticket_customer_source}")
-        return False
-
-    shutil.copy2(ticket_customer_source, ticket_customer_target)
-    print(f"[✅] TicketCustomer.vue deployed to: {ticket_customer_target}")
-
-    ticket_new_source = os.path.join(bench_path, "apps", "one_fm", "one_fm", "public", "js", "form_overrides", "hd_ticket", "TicketNew.vue")
-    ticket_new_target = os.path.join(ticket_target_folder, "TicketNew.vue")
-
-    if not os.path.exists(ticket_new_source):
-        print(f"[❌] Source TicketNew.vue not found: {ticket_new_source}")
-        return False
-
-    shutil.copy2(ticket_new_source, ticket_new_target)
-    print(f"[✅] TicketNew.vue deployed to: {ticket_new_target}")
-
-
     router_file = os.path.join(bench_path, "apps", "helpdesk", "desk", "src", "router", "index.ts")
 
     if not os.path.exists(router_file):

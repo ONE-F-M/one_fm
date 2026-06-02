@@ -418,14 +418,15 @@ def cleanhtml(raw_html):
 
 @frappe.whitelist()
 def get_ticket_details(name: str):
-    fields = ['subject', 'description', "priority", "custom_process"]
-    hd_ticket = frappe.db.get_value('HD Ticket',{"name": name}, fields, as_dict=True)
-    if not hd_ticket:
+    # Fetch the full document to get all custom fields
+    try:
+        ticket_doc = frappe.get_doc('HD Ticket', name)
+    except frappe.DoesNotExistError:
         frappe.throw(_("Ticket not found"), frappe.DoesNotExistError)
     return {
         "message": "Operation Successful",
         "status_code": 200,
-        "data": hd_ticket,
+        "data": ticket_doc.as_dict(),  # Include full document to access all custom fields
     }
 
 @frappe.whitelist()
