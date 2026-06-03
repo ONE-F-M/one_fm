@@ -19,7 +19,7 @@ frappe.ui.form.on('Project Manpower Request', {
 		}
 
 		// Dynamically populate options for gender Select field from universal Gender table
-		frappe.db.get_list('Gender', {fields: ['name']}).then(records => {
+		frappe.db.get_list('Gender', {fields: ['name'], limit_page_length: 0}).then(records => {
 			let options = ['Any', 'Male', 'Female'];
 			records.forEach(r => {
 				if (r.name && !options.includes(r.name)) {
@@ -30,7 +30,7 @@ frappe.ui.form.on('Project Manpower Request', {
 		});
 
 		// Dynamically populate options for nationality Select field from universal Nationality table
-		frappe.db.get_list('Nationality', {fields: ['name']}).then(records => {
+		frappe.db.get_list('Nationality', {fields: ['name'], limit_page_length: 0}).then(records => {
 			let options = ['Any', 'African', 'Asian'];
 			records.forEach(r => {
 				if (r.name && !options.includes(r.name)) {

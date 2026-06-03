@@ -295,6 +295,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "Any",
    "fieldname": "gender",
    "fieldtype": "Select",
    "label": "Gender",
@@ -306,6 +307,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "Any",
    "fieldname": "nationality",
    "fieldtype": "Select",
    "label": "Nationality",
