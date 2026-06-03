@@ -65,13 +65,19 @@ frappe.ui.form.on('Project Manpower Request', {
 			};
 		});
 
-		// Restrict closed-by employee selection to active employees with matching designation
+		// Restrict closed-by employee selection to active employees with matching ERF and designation
 		frm.set_query('employee', 'fulfilled_by_employees', function() {
+			let filters = {
+				status: 'Active'
+			};
+			if (frm.doc.erf) {
+				filters.one_fm_erf = frm.doc.erf;
+			}
+			if (frm.doc.designation) {
+				filters.designation = frm.doc.designation;
+			}
 			return {
-				filters: {
-					designation: frm.doc.designation,
-					status: 'Active'
-				}
+				filters: filters
 			};
 		});
 		
