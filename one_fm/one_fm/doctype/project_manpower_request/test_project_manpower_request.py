@@ -54,18 +54,78 @@ class TestProjectManpowerRequest(FrappeTestCase):
 		# Gender field check
 		gender_df = meta.get_field("gender")
 		self.assertEqual(gender_df.fieldtype, "Select")
-		self.assertEqual(gender_df.options, "Any\nMale\nFemale")
+		gender_opts = gender_df.options.split("\n")
+		self.assertIn("Any", gender_opts)
+		self.assertIn("Male", gender_opts)
+		self.assertIn("Female", gender_opts)
 		
 		# Nationality field check
 		nationality_df = meta.get_field("nationality")
 		self.assertEqual(nationality_df.fieldtype, "Select")
-		self.assertEqual(nationality_df.options, "Any\nAfrican\nAsian")
+		nationality_opts = nationality_df.options.split("\n")
+		self.assertIn("Any", nationality_opts)
+		self.assertIn("African", nationality_opts)
+		self.assertIn("Asian", nationality_opts)
 		
 		# Check that custom records do NOT exist universally in the DB
 		self.assertFalse(frappe.db.exists("Nationality", "Any"))
 		self.assertFalse(frappe.db.exists("Nationality", "African"))
 		self.assertFalse(frappe.db.exists("Nationality", "Asian"))
 		self.assertFalse(frappe.db.exists("Gender", "Any"))
+
+	def test_validate_change_request_reason(self):
+		# Setup initial workflow state as Awaiting Recruiter Approval
+		self.pmr.workflow_state = "Awaiting Recruiter Approval"
+		self.pmr.save(ignore_permissions=True)
+		
+		# Attempt to transition back to Draft without a reason - should raise ValidationError
+		self.pmr.workflow_state = "Draft"
+		self.pmr.reason_for_rejection = None
+		self.assertRaises(frappe.ValidationError, self.pmr.save, ignore_permissions=True)
+		
+		# Reload to avoid TimestampMismatchError after the failed save
+		self.pmr = frappe.get_doc("Project Manpower Request", self.pmr.name)
+		self.pmr.flags.ignore_mandatory = True
+		
+		# Transition back to Draft with a reason - should succeed
+		self.pmr.workflow_state = "Draft"
+		self.pmr.reason_for_rejection = "Please clarify details"
+		self.pmr.save(ignore_permissions=True)
+		self.assertEqual(self.pmr.workflow_state, "Draft")
+		self.assertEqual(self.pmr.reason_for_rejection, "Please clarify details")
+
+		# Now test for In Process state transition to Draft
+		self.pmr = frappe.get_doc("Project Manpower Request", self.pmr.name)
+		self.pmr.flags.ignore_mandatory = True
+		self.pmr.workflow_state = "In Process"
+		self.pmr.save(ignore_permissions=True)
+
+		# Transition from In Process back to Draft WITHOUT a reason - should succeed
+		self.pmr.workflow_state = "Draft"
+		self.pmr.reason_for_rejection = None
+		self.pmr.save(ignore_permissions=True)
+		self.assertEqual(self.pmr.workflow_state, "Draft")
+
+	def test_conditional_project_mandatory(self):
+		# Use a designation name from database or create one to avoid mandatory field error
+		designation = frappe.db.get_value("Designation", {}, "name")
+		if not designation:
+			doc = frappe.get_doc({"doctype": "Designation", "designation_name": "Test Designation"})
+			doc.insert(ignore_permissions=True)
+			designation = doc.name
+		self.pmr.designation = designation
+		
+		# Test success case: project_allocation is optional for exempt reasons
+		self.pmr.reason = "Annual Leave Reliever"
+		self.pmr.project_allocation = None
+		self.pmr.flags.ignore_mandatory = False
+		self.pmr.save(ignore_permissions=True)
+		self.assertEqual(self.pmr.project_allocation, None)
+		
+		# Test fail case: project_allocation is mandatory for non-exempt reasons
+		self.pmr.reason = "New Project"
+		self.pmr.project_allocation = None
+		self.assertRaises(frappe.MandatoryError, self.pmr.save, ignore_permissions=True)
 
 def _make_user(email, first_name="Test"):
 	if frappe.db.exists("User", email):

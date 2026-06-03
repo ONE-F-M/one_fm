@@ -1,5 +1,31 @@
 frappe.ui.form.on('Project Manpower Request', {
 	onload: function(frm) {
+		// Inject style for dialog input fields to avoid whitemisted appearance
+		frappe.dom.set_style(`
+			.modal-body textarea.form-control, 
+			.modal-body input.form-control {
+				border: 1px solid #8e9aa8 !important;
+				border-radius: 6px !important;
+				background-color: #ffffff !important;
+				box-shadow: none !important;
+				padding: 10px 12px !important;
+				color: #1f2937 !important;
+				font-size: 14px !important;
+			}
+			.modal-body textarea.form-control:focus, 
+			.modal-body input.form-control:focus {
+				border-color: var(--primary-color, #1a73e8) !important;
+				box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2) !important;
+				outline: none !important;
+			}
+			.modal-body label, .modal-body .control-label {
+				color: #1f2937 !important;
+				font-weight: 600 !important;
+				font-size: 13px !important;
+				margin-bottom: 6px !important;
+			}
+		`);
+
 		// Catch bundled multiple resignations from list view
 		let bundled = localStorage.getItem('__bundled_resignations');
 		if (frm.is_new() && bundled) {
@@ -43,6 +69,12 @@ frappe.ui.form.on('Project Manpower Request', {
 	
 	refresh: function(frm) {
 		setup_status_indicator(frm);
+
+		if (frm.doc.workflow_state === 'Draft' && frm.doc.reason_for_rejection) {
+			frm.set_intro('<span class="text-danger"><b>Reason for Change Request</b></span><br>' + frm.doc.reason_for_rejection, 'yellow');
+		} else {
+			frm.set_intro('');
+		}
 		
 		// Hide the individual backend quantity fields to keep the form clean
 		frm.toggle_display([
@@ -101,6 +133,40 @@ frappe.ui.form.on('Project Manpower Request', {
 		}
 	},
 
+	before_workflow_action: function(frm) {
+		return new Promise((resolve, reject) => {
+			if (frm.selected_workflow_action === "Request Change") {
+				frappe.dom.unfreeze(); // Unfreeze to prevent the page loading overlay from greyin-out/blurring the prompt modal
+				frappe.prompt({
+					label: __('Reason for Requesting Change'),
+					fieldname: 'reason_for_rejection',
+					fieldtype: 'Small Text',
+					reqd: 1
+				}, (values) => {
+					frappe.call({
+						method: 'one_fm.one_fm.doctype.project_manpower_request.project_manpower_request.set_edit_reason',
+						args: {
+							name: frm.doc.name,
+							reason: values.reason_for_rejection
+						},
+						callback: function(r) {
+							frm.set_value('reason_for_rejection', values.reason_for_rejection);
+							resolve();
+						},
+						error: function(err) {
+							reject(err);
+						}
+					});
+				}, __('Change Request Reason'), __('Submit'));
+			} else {
+				if (frm.selected_workflow_action === "Submit to Recruiter" || frm.selected_workflow_action === "Request Edit") {
+					frm.set_value('reason_for_rejection', '');
+				}
+				resolve();
+			}
+		});
+	},
+
 	workflow_state: function(frm) {
 		if (frm.doc.workflow_state === 'Completed') {
 			let hired_count = frm.doc.fulfilled_by_employees ? frm.doc.fulfilled_by_employees.length : 0;
@@ -131,6 +197,17 @@ frappe.ui.form.on('Project Manpower Request', {
 		    if (!frm.doc.count && (!frm.doc.resignation_links || frm.doc.resignation_links.length === 0)) {
 			    frm.set_value('count', 1);
 			}
+		}
+	},
+
+	deployment_date: function(frm) {
+		if (frm.doc.deployment_date && frappe.datetime.get_diff(frm.doc.deployment_date, frappe.datetime.get_today()) < 0) {
+			frappe.msgprint({
+				title: __('Invalid Deployment Date'),
+				indicator: 'red',
+				message: __('Deployment Date cannot be before today.')
+			});
+			frm.set_value('deployment_date', '');
 		}
 	},
 

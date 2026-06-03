@@ -95,7 +95,7 @@ class EmployeeResignationWithdrawal(Document):
 							# Recalculate remaining quantities automatically
 							if hasattr(pmr, 'calculate_remaining_qty'):
 								pmr.calculate_remaining_qty()
-								pmr.save()
+								pmr.save(ignore_permissions=True)
 								
 								# Auto-close/set status if entirely withdrawn
 								if (pmr.remaining_qty or 0) == 0:

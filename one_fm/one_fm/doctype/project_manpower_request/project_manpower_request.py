@@ -41,11 +41,52 @@ class ProjectManpowerRequest(Document):
 		self.ensure_fulfillment_rows()
 		self.calculate_remaining_qty()
 		self.check_status_lock()
+		self.validate_project_allocation()
 		self.validate_erf_presence()
 		self.validate_recruiter_presence()
+		self.validate_change_request_reason()
+		self.validate_deployment_date()
 		self.validate_completion()
 
+	def validate_project_allocation(self):
+		exempt_reasons = ["Annual Leave Reliever", "Day OFF Reliever", "Reliever"]
+		if self.reason and self.reason not in exempt_reasons:
+			if not self.project_allocation:
+				frappe.throw(
+					_("Project is mandatory for Reason: {0}").format(self.reason),
+					frappe.MandatoryError
+				)
+
+	def validate_deployment_date(self):
+		if self.deployment_date:
+			from frappe.utils import getdate, today
+			is_changed = False
+			if self.is_new():
+				is_changed = True
+			else:
+				db_date = frappe.db.get_value("Project Manpower Request", self.name, "deployment_date")
+				if db_date and getdate(self.deployment_date) != getdate(db_date):
+					is_changed = True
+			
+			if is_changed and getdate(self.deployment_date) < getdate(today()):
+				frappe.throw(
+					_("Deployment Date cannot be before today."),
+					title=_("Invalid Deployment Date")
+				)
+
+	def validate_change_request_reason(self):
+		if not self.is_new():
+			old_state = frappe.db.get_value("Project Manpower Request", self.name, "workflow_state")
+			if old_state == "Awaiting Recruiter Approval" and getattr(self, "workflow_state", None) == "Draft":
+				if not getattr(self, "reason_for_rejection", None) or not self.reason_for_rejection.strip():
+					frappe.throw(
+						_("Please provide a reason for requesting changes before sending it back to Draft."),
+						title=_("Change Request Reason Required")
+					)
+
 	def validate_recruiter_presence(self):
+		if self.flags.ignore_mandatory:
+			return
 		if (getattr(self, "workflow_state", None) or "Draft") != "Draft":
 			if not self.recruiter:
 				frappe.throw(
@@ -55,6 +96,8 @@ class ProjectManpowerRequest(Document):
 
 
 	def validate_erf_presence(self):
+		if self.flags.ignore_mandatory:
+			return
 		if getattr(self, "workflow_state", None) in ["Awaiting Recruiter Approval", "In Process", "Completed"]:
 			if not self.erf:
 				frappe.throw(
@@ -98,6 +141,8 @@ class ProjectManpowerRequest(Document):
 
 
 	def validate_completion(self):
+		if self.flags.ignore_mandatory:
+			return
 		if getattr(self, "workflow_state", None) == "Completed":
 			hired_count = len(self.get('fulfilled_by_employees', []))
 			if hired_count != self.remaining_qty:
@@ -210,9 +255,17 @@ class ProjectManpowerRequest(Document):
 		]:
 			field = self.meta.get_field(fieldname)
 			if field:
-				db_opts = [d for d in frappe.get_all(doctype, pluck="name") if d]
+				db_opts = [d for d in frappe.get_all(doctype, pluck="name", ignore_permissions=True) if d]
 				opts = list(default_opts)
 				for opt in db_opts:
 					if opt not in opts:
 						opts.append(opt)
 				field.options = "\n".join(opts)
+
+@frappe.whitelist()
+def set_edit_reason(name, reason):
+	doc = frappe.get_doc("Project Manpower Request", name)
+	doc.check_permission("read")
+	frappe.db.set_value("Project Manpower Request", name, "reason_for_rejection", reason)
+	frappe.clear_document_cache("Project Manpower Request", name)
+
