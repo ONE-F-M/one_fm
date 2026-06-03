@@ -101,7 +101,8 @@ def designation_query(doctype, txt, searchfield, start, page_len, filters):
     return frappe.db.sql("""
         SELECT name
         FROM `tabDesignation`
-        WHERE name LIKE %(txt)s
+        WHERE disabled = 0
+        AND name LIKE %(txt)s
         ORDER BY name
         LIMIT %(start)s, %(page_len)s
     """, {

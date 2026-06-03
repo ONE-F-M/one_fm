@@ -275,7 +275,7 @@ class EmployeeResignation(Document):
 				new_row.update(row_dict)
 				
 			pmr.workflow_state = "Draft"
-			pmr.insert(ignore_permissions=True)
+			pmr.insert()
 			frappe.db.set_value("Project Manpower Request", pmr.name, "workflow_state", "Draft")
 
 	def on_trash(self):
