@@ -17,6 +17,28 @@ frappe.ui.form.on('Project Manpower Request', {
 			    frm.set_df_property('count', 'read_only', true);
 			}, 500);
 		}
+
+		// Dynamically populate options for gender Select field from universal Gender table
+		frappe.db.get_list('Gender', {fields: ['name']}).then(records => {
+			let options = ['Any', 'Male', 'Female'];
+			records.forEach(r => {
+				if (r.name && !options.includes(r.name)) {
+					options.push(r.name);
+				}
+			});
+			frm.set_df_property('gender', 'options', options);
+		});
+
+		// Dynamically populate options for nationality Select field from universal Nationality table
+		frappe.db.get_list('Nationality', {fields: ['name']}).then(records => {
+			let options = ['Any', 'African', 'Asian'];
+			records.forEach(r => {
+				if (r.name && !options.includes(r.name)) {
+					options.push(r.name);
+				}
+			});
+			frm.set_df_property('nationality', 'options', options);
+		});
 	},
 	
 	refresh: function(frm) {

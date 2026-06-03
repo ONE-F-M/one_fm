@@ -13,7 +13,7 @@ class TestProjectManpowerRequest(FrappeTestCase):
 		self.pmr = frappe.get_doc({
 			"doctype": "Project Manpower Request",
 			"title": "Test PMR Recruitment",
-			"reason": "New Position",
+			"reason": "New Project",
 			"count": 1,
 			"recruiter": self.recruiter
 		})
@@ -47,6 +47,25 @@ class TestProjectManpowerRequest(FrappeTestCase):
 		})
 		
 		self.assertEqual(len(todos_after), 1)
+
+	def test_gender_and_nationality_select_fields(self):
+		meta = frappe.get_meta("Project Manpower Request")
+		
+		# Gender field check
+		gender_df = meta.get_field("gender")
+		self.assertEqual(gender_df.fieldtype, "Select")
+		self.assertEqual(gender_df.options, "Any\nMale\nFemale")
+		
+		# Nationality field check
+		nationality_df = meta.get_field("nationality")
+		self.assertEqual(nationality_df.fieldtype, "Select")
+		self.assertEqual(nationality_df.options, "Any\nAfrican\nAsian")
+		
+		# Check that custom records do NOT exist universally in the DB
+		self.assertFalse(frappe.db.exists("Nationality", "Any"))
+		self.assertFalse(frappe.db.exists("Nationality", "African"))
+		self.assertFalse(frappe.db.exists("Nationality", "Asian"))
+		self.assertFalse(frappe.db.exists("Gender", "Any"))
 
 def _make_user(email, first_name="Test"):
 	if frappe.db.exists("User", email):

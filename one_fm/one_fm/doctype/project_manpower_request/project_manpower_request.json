@@ -296,9 +296,9 @@
   },
   {
    "fieldname": "gender",
-   "fieldtype": "Link",
+   "fieldtype": "Select",
    "label": "Gender",
-   "options": "Gender",
+   "options": "Any\nMale\nFemale",
    "search_index": 1
   },
   {
@@ -307,9 +307,9 @@
   },
   {
    "fieldname": "nationality",
-   "fieldtype": "Link",
+   "fieldtype": "Select",
    "label": "Nationality",
-   "options": "Nationality",
+   "options": "Any\nAfrican\nAsian",
    "search_index": 1
   },
   {
