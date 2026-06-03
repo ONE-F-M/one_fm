@@ -135,11 +135,11 @@ class JobOfferOverride(JobOffer):
         self.validate_job_offer_mandatory_fields()
         
         # Ensure offer accepted date is definitively populated before tracking cascade triggers
-        if self.workflow_state == 'Submit to Onboarding Officer' and not self.one_fm_offer_accepted_date:
+        if self.get('workflow_state') == 'Submit to Onboarding Officer' and not self.one_fm_offer_accepted_date:
             self.one_fm_offer_accepted_date = frappe.utils.nowdate()
             self.db_set('one_fm_offer_accepted_date', self.one_fm_offer_accepted_date)
             
-        if self.workflow_state == 'Submit to Onboarding Officer':
+        if self.get('workflow_state') == 'Submit to Onboarding Officer':
             msg = "Please select {0} to Accept the Offer and Process Onboard"
             if not self.estimated_date_of_joining and not self.onboarding_officer:
                 frappe.throw(_(msg.format("<b>Estimated Date of Joining</b> and <b>Onboarding Officer</b>")))
@@ -150,12 +150,12 @@ class JobOfferOverride(JobOffer):
             assign_to_onboarding_officer(self)
             self.create_candidate_country_process()
 
-        if self.workflow_state == 'Accepted':
+        if self.get('workflow_state') == 'Accepted':
             if self.get_onload('onboard_employee'):
                 close_all_assignments(self.doctype, self.name)
 
     def validate_job_offer_mandatory_fields(self):
-        if self.workflow_state == 'Submit for Candidate Response':
+        if self.get('workflow_state') == 'Submit for Candidate Response':
             applicant_details = frappe.db.get_value('Job Applicant', self.job_applicant, ['one_fm_hiring_method'], as_dict=1)
             mandatory_field_required = False
             fields = ['Base', 'Salary Structure']
@@ -183,7 +183,7 @@ class JobOfferOverride(JobOffer):
         self.auto_email_job_offer()
 
     def submit_job_offer_to_candidate(self):
-        if self.workflow_state == 'Open':
+        if self.get('workflow_state') == 'Open':
             applicant_details = frappe.db.get_value(
                 'Job Applicant',
                 self.job_applicant,
@@ -206,9 +206,9 @@ class JobOfferOverride(JobOffer):
                 None
         """
         auto_email_settings = get_job_offer_auto_email_settings()
-        if not auto_email_settings.auto_email_job_offer:
+        if not auto_email_settings or not cint(auto_email_settings.get("auto_email_job_offer")):
             return
-        if self.workflow_state != auto_email_settings.job_offer_workflow_state:
+        if self.get('workflow_state') != auto_email_settings.job_offer_workflow_state:
             return
         hiring_method = frappe.db.get_value('Job Applicant', self.job_applicant, 'one_fm_hiring_method')
         if auto_email_settings.auto_email_hiring_method not in [hiring_method, 'All Recruitment']:
@@ -308,6 +308,9 @@ class JobOfferOverride(JobOffer):
             d.responsible = row.responsible
             d.duration_in_days = row.duration_in_days
             d.parallel_group = frappe.utils.cint(row.get("parallel_group") or 0)
+            d.sequence_type = row.sequence_type
+            d.before_task = row.before_task
+            d.after_task = row.after_task
             d.attachment_required = row.attachment_required
             d.notes_required = row.notes_required
             d.reference_type = row.reference_type

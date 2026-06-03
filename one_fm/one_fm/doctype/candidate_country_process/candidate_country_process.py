@@ -350,20 +350,73 @@ def update_candidate_country_process():
             delay = (today - ccp.planned_date).days
 
         if ccp.reference_type and ccp.ccp_name:
-            process_doc = frappe.get_doc(ccp.reference_type, {'candidate_country_process': ccp.ccp_name})
+            process_doc = None
+            if ccp.reference_name:
+                try:
+                    process_doc = frappe.get_doc(ccp.reference_type, ccp.reference_name)
+                except frappe.DoesNotExistError:
+                    pass
+            
+            if not process_doc:
+                meta = frappe.get_meta(ccp.reference_type)
+                if meta.has_field("candidate_country_process"):
+                    try:
+                        process_doc = frappe.get_doc(ccp.reference_type, {'candidate_country_process': ccp.ccp_name})
+                    except Exception:
+                        pass
+                elif ccp.reference_type == "Visa Request":
+                    job_offer = frappe.db.get_value("Candidate Country Process", ccp.ccp_name, "job_offer")
+                    if job_offer:
+                        try:
+                            process_doc = frappe.get_doc("Visa Request", {"job_offer": job_offer})
+                        except Exception:
+                            pass
+
             if process_doc:
                 if not ccp.reference_name:
                     frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'reference_name', process_doc.name)
 
-                if process_doc.get(ccp.reference_complete_status_field) == ccp.reference_complete_status_value:
-                    frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'status', 'Approved')
-                    frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'actual_date', today)
+                if ccp.reference_type == "Visa Request":
+                    wf_state = process_doc.get(ccp.reference_complete_status_field or "workflow_state")
+                    frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'status', wf_state)
+                    if wf_state == ccp.reference_complete_status_value:
+                        frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'actual_date', today)
+                else:
+                    if process_doc.get(ccp.reference_complete_status_field) == ccp.reference_complete_status_value:
+                        frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'status', 'Approved')
+                        frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'actual_date', today)
 
+                is_completed = False
+                if ccp.reference_type == "Visa Request":
+                    is_completed = (process_doc.get(ccp.reference_complete_status_field or "workflow_state") == ccp.reference_complete_status_value)
+                else:
+                    is_completed = (process_doc.get(ccp.reference_complete_status_field) == ccp.reference_complete_status_value)
+
+                if is_completed:
                     ccp_doc = frappe.get_doc('Candidate Country Process', ccp.ccp_name)
-
                     if len(ccp_doc.agency_process_details) > ccp.idx:
                         for process_list in ccp_doc.agency_process_details:
                             if process_list.idx > ccp.idx and process_list.reference_type:
                                 ccp_doc.db_set('current_process_id', process_list.name)
                                 break
                     ccp_doc.save(ignore_permissions=True)
+
+
+def recalculate_ccp_live_eta(ccp_name: str):
+    """Recalculate live ETA by loading and saving the CCP document.
+    This triggers validate() which cascades all planned_date and live_plan_date calculations
+    correctly via the dependency graph.
+    """
+    if not ccp_name:
+        return
+    if getattr(frappe.local, "in_ccp_recalculation", False):
+        return
+    frappe.local.in_ccp_recalculation = True
+    try:
+        doc = frappe.get_doc("Candidate Country Process", ccp_name)
+        doc.save(ignore_permissions=True)
+    except Exception as e:
+        frappe.log_error(f"Failed to recalculate CCP live ETA for {ccp_name}: {e}", "CCP Recalculate Error")
+    finally:
+        frappe.local.in_ccp_recalculation = False
+
