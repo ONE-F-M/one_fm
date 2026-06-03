@@ -28,6 +28,7 @@ class ProjectManpowerRequest(Document):
 		self.project_request_code = self.name
 
 	def validate(self):
+		self.update_select_field_options()
 		if self.reason == "Exit":
 			if self.get("resignation_links"):
 				self.count = len(self.resignation_links)
@@ -201,3 +202,17 @@ class ProjectManpowerRequest(Document):
 		if self.erf and self.qty_added_to_erf:
 			current_erf_req = frappe.db.get_value("ERF", self.erf, "number_of_candidates_required") or 0
 			frappe.db.set_value("ERF", self.erf, "number_of_candidates_required", current_erf_req - self.qty_added_to_erf)
+
+	def update_select_field_options(self):
+		for fieldname, default_opts, doctype in [
+			("gender", ["Any", "Male", "Female"], "Gender"),
+			("nationality", ["Any", "African", "Asian"], "Nationality")
+		]:
+			field = self.meta.get_field(fieldname)
+			if field:
+				db_opts = [d for d in frappe.get_all(doctype, pluck="name") if d]
+				opts = list(default_opts)
+				for opt in db_opts:
+					if opt not in opts:
+						opts.append(opt)
+				field.options = "\n".join(opts)
