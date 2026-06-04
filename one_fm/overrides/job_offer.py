@@ -293,6 +293,7 @@ class JobOfferOverride(JobOffer):
 
         ccp = frappe.new_doc('Candidate Country Process')
         ccp.job_offer = self.name
+        ccp.job_opening = job_applicant.job_title
         ccp.job_applicant = self.job_applicant
         ccp.agency = agency
         ccp.agency_country_process = agency_country_process

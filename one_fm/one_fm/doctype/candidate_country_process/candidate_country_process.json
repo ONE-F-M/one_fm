@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "job_offer",
+  "job_opening",
   "job_applicant",
   "candidate_name",
   "passport_number",
@@ -92,6 +93,13 @@
    "in_list_view": 1,
    "label": "Job Offer",
    "options": "Job Offer"
+  },
+  {
+   "fieldname": "job_opening",
+   "fieldtype": "Link",
+   "label": "Job Opening",
+   "options": "Job Opening",
+   "read_only": 1
   },
   {
    "fetch_from": "job_offer.job_applicant",
