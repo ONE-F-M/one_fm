@@ -1,31 +1,5 @@
 frappe.ui.form.on('Project Manpower Request', {
 	onload: function(frm) {
-		// Inject style for dialog input fields to avoid whitemisted appearance
-		frappe.dom.set_style(`
-			.modal-body textarea.form-control, 
-			.modal-body input.form-control {
-				border: 1px solid #8e9aa8 !important;
-				border-radius: 6px !important;
-				background-color: #ffffff !important;
-				box-shadow: none !important;
-				padding: 10px 12px !important;
-				color: #1f2937 !important;
-				font-size: 14px !important;
-			}
-			.modal-body textarea.form-control:focus, 
-			.modal-body input.form-control:focus {
-				border-color: var(--primary-color, #1a73e8) !important;
-				box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2) !important;
-				outline: none !important;
-			}
-			.modal-body label, .modal-body .control-label {
-				color: #1f2937 !important;
-				font-weight: 600 !important;
-				font-size: 13px !important;
-				margin-bottom: 6px !important;
-			}
-		`);
-
 		// Catch bundled multiple resignations from list view
 		let bundled = localStorage.getItem('__bundled_resignations');
 		if (frm.is_new() && bundled) {

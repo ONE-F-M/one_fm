@@ -10,12 +10,23 @@ class TestProjectManpowerRequest(FrappeTestCase):
 		self.test_email = f"test_recruiter_{frappe.generate_hash(length=8)}@example.com"
 		self.recruiter = _make_user(self.test_email, "Recruiter")
 		
+		# Ensure a project exists to satisfy mandatory validation on New Project reason
+		project = frappe.db.get_value("Project", {}, "name")
+		if not project:
+			project_doc = frappe.get_doc({
+				"doctype": "Project",
+				"project_name": "Test Project"
+			})
+			project_doc.insert(ignore_permissions=True)
+			project = project_doc.name
+
 		self.pmr = frappe.get_doc({
 			"doctype": "Project Manpower Request",
 			"title": "Test PMR Recruitment",
 			"reason": "New Project",
 			"count": 1,
-			"recruiter": self.recruiter
+			"recruiter": self.recruiter,
+			"project_allocation": project
 		})
 		self.pmr.flags.ignore_mandatory = True
 		self.pmr.insert(ignore_permissions=True)
@@ -97,8 +108,8 @@ class TestProjectManpowerRequest(FrappeTestCase):
 		# Now test for In Process state transition to Draft
 		self.pmr = frappe.get_doc("Project Manpower Request", self.pmr.name)
 		self.pmr.flags.ignore_mandatory = True
-		self.pmr.workflow_state = "In Process"
-		self.pmr.save(ignore_permissions=True)
+		frappe.db.set_value("Project Manpower Request", self.pmr.name, "workflow_state", "In Process")
+		self.pmr.reload()
 
 		# Transition from In Process back to Draft WITHOUT a reason - should succeed
 		self.pmr.workflow_state = "Draft"
