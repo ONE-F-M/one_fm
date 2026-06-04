@@ -123,7 +123,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Pending\nSkipped\nOffer Accepted\nIn Process\nIn Progress\nStamped\nApplied\nIssued\nRejected\nFit\nUnfit\nPassed\nFailed\nSubmitted\nApproved\nArriving\nCompleted\nDraft\nPending Initial Review\nPending GRD Manager Approval\nPending By PAM\nPending By MOI\nPending Visa\nRejected By Operator\nRejected By PAM\nRejected By MOI\nAwaiting Quota Availability\nGRD Finalization\nPending Recruiter Confirmation\nCancelled\nCanceled\nRejected for Re Issue\nPending Visa Cancel\nPending Visa Request Cancel\nPending Cancel Work Permit"
+   "options": "Pending\nSkipped\nOffer Accepted\nAwaiting Response\nAccepted\nYet to apply\nIn process\nIn Process\nIn Progress\nStamped\nApplied\nIssued\nRejected\nFit\nUnfit\nPassed\nFailed\nSubmitted\nApproved\nArriving\nJoined\nCompleted\nDeployed\nDid Not Arrive\nDraft\nPending Initial Review\nPending GRD Manager Approval\nPending By PAM\nPending By MOI\nPending Visa\nRejected By Operator\nRejected By PAM\nRejected By MOI\nAwaiting Quota Availability\nGRD Finalization\nPending Recruiter Confirmation\nCancelled\nCanceled\nRejected for Re Issue\nPending Visa Cancel\nPending Visa Request Cancel\nPending Cancel Work Permit\nMedical failed and Proceeded to Remedical"
   },
   {
    "columns": 2,

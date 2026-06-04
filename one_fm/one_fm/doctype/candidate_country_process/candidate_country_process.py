@@ -449,30 +449,29 @@ def update_candidate_country_process():
                 if not ccp.reference_name:
                     frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'reference_name', process_doc.name)
 
-                if ccp.reference_type == "Visa Request":
-                    wf_state = process_doc.get(ccp.reference_complete_status_field or "workflow_state")
-                    frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'status', wf_state)
-                    if wf_state == ccp.reference_complete_status_value or wf_state in ["Rejected", "Rejected By Operator", "Rejected By PAM", "Rejected By MOI", "Rejected for Re Issue", "Canceled"]:
-                        frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'actual_date', today)
-                else:
-                    if process_doc.get(ccp.reference_complete_status_field) == ccp.reference_complete_status_value:
-                        frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'status', 'Approved')
+                ref_status_field = ccp.reference_complete_status_field or ("workflow_state" if ccp.reference_type == "Visa Request" else "status")
+                ref_status = process_doc.get(ref_status_field)
+                if ref_status:
+                    frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'status', ref_status)
+                    
+                    is_completed = (ref_status == ccp.reference_complete_status_value)
+                    is_rejected = ref_status in [
+                        "Rejected", "Rejected By Operator", "Rejected By PAM", "Rejected By MOI",
+                        "Rejected for Re Issue", "Canceled", "Cancelled", "Unfit", "Failed",
+                        "Medical failed and Proceeded to Remedical", "Did Not Arrive"
+                    ]
+                    
+                    if is_completed or is_rejected:
                         frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'actual_date', today)
 
-                is_completed = False
-                if ccp.reference_type == "Visa Request":
-                    is_completed = (process_doc.get(ccp.reference_complete_status_field or "workflow_state") == ccp.reference_complete_status_value)
-                else:
-                    is_completed = (process_doc.get(ccp.reference_complete_status_field) == ccp.reference_complete_status_value)
-
-                if is_completed:
-                    ccp_doc = frappe.get_doc('Candidate Country Process', ccp.ccp_name)
-                    if len(ccp_doc.agency_process_details) > ccp.idx:
-                        for process_list in ccp_doc.agency_process_details:
-                            if process_list.idx > ccp.idx and process_list.reference_type:
-                                ccp_doc.db_set('current_process_id', process_list.name)
-                                break
-                    ccp_doc.save(ignore_permissions=True)
+                    if is_completed:
+                        ccp_doc = frappe.get_doc('Candidate Country Process', ccp.ccp_name)
+                        if len(ccp_doc.agency_process_details) > ccp.idx:
+                            for process_list in ccp_doc.agency_process_details:
+                                if process_list.idx > ccp.idx and process_list.reference_type:
+                                    ccp_doc.db_set('current_process_id', process_list.name)
+                                    break
+                        ccp_doc.save(ignore_permissions=True)
 
 
 def recalculate_ccp_live_eta(ccp_name: str):
