@@ -821,11 +821,8 @@ var fetch_erf_items = function(frm){
 
 var set_item_field_property = function(frm) {
 	var fields_dict = [];
-	frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).read_only = true;
-	frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).depends_on = 'eval:doc.docstatus==1';
 	if((frm.doc.docstatus == 1 && (frappe.session.user == frm.doc.request_for_material_accepter || frm.doc.workflow_state == 'Approved')) || frm.doc.type == 'Stock'){
 		frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).read_only = false;
-		frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).depends_on = '';
 	}
 	if(frm.doc.type == 'Stock'){
 		if(frm.is_new()){
