@@ -231,22 +231,10 @@ class MaintenanceWorkOrder(Document):
 		self.sla_trigger_time = now_datetime()
 
 		# Determine the SLA Shift Type based on the trigger time
-		try:
-			self._determine_sla_shift_type(sla)
-		except Exception:
-			frappe.log_error(
-				title=_("SLA Shift Type Determination Failed"),
-				message=frappe.get_traceback(),
-			)
+		self._determine_sla_shift_type(sla)
 
 		# Fetch target response and resolution minutes from the priority matrix
-		try:
-			self._fetch_sla_targets(sla)
-		except Exception:
-			frappe.log_error(
-				title=_("SLA Target Fetch Failed"),
-				message=frappe.get_traceback(),
-			)
+		self._fetch_sla_targets(sla)
 
 	def _find_matching_sla(self):
 		"""Query the Maintenance Service Level Agreement master to find the
@@ -346,20 +334,10 @@ class MaintenanceWorkOrder(Document):
 				break
 
 		if working_day:
-			from datetime import datetime as dt_datetime
-			from datetime import time as dt_time, timedelta
+			from datetime import time as dt_time
 
-			def _to_time(val):
-				"""Convert a Time field value (timedelta, datetime.time, or string) to datetime.time."""
-				if val is None or val == "":
-					return None
-				if isinstance(val, dt_time):
-					return val
-				if isinstance(val, timedelta):
-					return (dt_datetime.min + val).time()
-				return get_datetime(val).time()
-			start_time = _to_time(working_day.start_time) or dt_time(0, 0)
-			end_time = _to_time(working_day.end_time) or dt_time(23, 59, 59)
+			start_time = get_datetime(working_day.start_time).time() if working_day.start_time else dt_time(0, 0)
+			end_time = get_datetime(working_day.end_time).time() if working_day.end_time else dt_time(23, 59, 59)
 
 			if start_time <= trigger_time <= end_time:
 				self.sla_shift_type = "Working Hours"
