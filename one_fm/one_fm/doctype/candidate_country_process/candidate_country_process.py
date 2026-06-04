@@ -449,8 +449,8 @@ def update_candidate_country_process():
                 if not ccp.reference_name:
                     frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'reference_name', process_doc.name)
 
-                if ccp.reference_type in ["Visa Request", "Visa Stamping"]:
-                    ref_status_field = ccp.reference_complete_status_field or ("workflow_state" if ccp.reference_type == "Visa Request" else "status")
+                if ccp.reference_type == "Visa Request":
+                    ref_status_field = ccp.reference_complete_status_field or "workflow_state"
                     ref_status = process_doc.get(ref_status_field)
                     if ref_status:
                         frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'status', ref_status)
