@@ -334,6 +334,75 @@ class CandidateCountryProcess(Document):
                         workflow_list.append({"new_doc": True, "doctype": workflow.reference_type})
         return workflow_list
 
+    @frappe.whitelist()
+    def sync_with_template(self):
+        """
+        Synchronize the child table rows with the current Agency Country Process template.
+        - Adds missing steps.
+        - Updates duration_in_days, sequence_type, before_task, after_task, responsible,
+          attachment_required, notes_required, reference_type, and status options.
+        - Preserves existing reference_name, actual_date, and completion status.
+        - Recalculates dates and saves.
+        """
+        if not self.agency_country_process:
+            frappe.throw(frappe._("Please select an Agency Country Process template first."))
+
+        acp_doc = frappe.get_doc('Agency Country Process', self.agency_country_process)
+        existing_rows = {row.process_name: row for row in self.agency_process_details}
+
+        # List to hold the synchronized rows in correct template order
+        new_details = []
+
+        for template_row in acp_doc.agency_process_details:
+            if template_row.process_name in existing_rows:
+                # Update existing row settings from template
+                row = existing_rows[template_row.process_name]
+                row.responsible = template_row.responsible
+                row.duration_in_days = template_row.duration_in_days
+                row.parallel_group = frappe.utils.cint(template_row.get("parallel_group") or 0)
+                row.sequence_type = template_row.sequence_type or "Sequential"
+                row.before_task = template_row.before_task or ""
+                row.after_task = template_row.after_task or ""
+                row.attachment_required = template_row.attachment_required
+                row.notes_required = template_row.notes_required
+                row.reference_type = template_row.reference_type
+                row.reference_complete_status_field = template_row.reference_complete_status_field
+                row.reference_complete_status_value = template_row.reference_complete_status_value
+                new_details.append(row)
+            else:
+                # Add new row from template
+                row = self.append("agency_process_details", {})
+                row.process_name = template_row.process_name
+                row.responsible = template_row.responsible
+                row.duration_in_days = template_row.duration_in_days
+                row.parallel_group = frappe.utils.cint(template_row.get("parallel_group") or 0)
+                row.sequence_type = template_row.sequence_type or "Sequential"
+                row.before_task = template_row.before_task or ""
+                row.after_task = template_row.after_task or ""
+                row.attachment_required = template_row.attachment_required
+                row.notes_required = template_row.notes_required
+                row.reference_type = template_row.reference_type
+                row.reference_complete_status_field = template_row.reference_complete_status_field
+                row.reference_complete_status_value = template_row.reference_complete_status_value
+                row.status = "Pending"
+                new_details.append(row)
+
+        # Retain any rows that are NOT in the template but have progress/records linked (to protect data)
+        for name, row in existing_rows.items():
+            if name not in [t.process_name for t in acp_doc.agency_process_details]:
+                if row.reference_name or row.status != "Pending":
+                    new_details.append(row)
+
+        # Re-assign child table in correct order and save
+        self.agency_process_details = new_details
+        self.flags.ignore_mandatory = True
+        self.save(ignore_permissions=True)
+        frappe.msgprint(
+            frappe._("Successfully synchronized tracker steps with the latest template changes!"),
+            indicator="green",
+            alert=True,
+        )
+
 
 def update_candidate_country_process():
     query = """

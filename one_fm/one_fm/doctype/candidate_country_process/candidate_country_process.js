@@ -31,6 +31,19 @@ frappe.ui.form.on('Candidate Country Process', {
 
       // ── "Open Record" link on each child row that has reference_name ──
       setup_open_record_links(frm);
+
+      // ── "Sync Template" button: pull latest updates from template ──
+      frm.add_custom_button(__('Sync Template'), function() {
+        frappe.confirm(__('Are you sure you want to sync this tracker with the latest template changes? This will add new steps and update durations/dependencies while preserving existing progress.'), function() {
+          frm.call({
+            doc: frm.doc,
+            method: 'sync_with_template',
+            callback: function() {
+              frm.reload_doc();
+            }
+          });
+        });
+      });
     }
   }
 });
