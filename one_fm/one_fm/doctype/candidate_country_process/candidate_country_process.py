@@ -452,7 +452,7 @@ def update_candidate_country_process():
                 if ccp.reference_type == "Visa Request":
                     wf_state = process_doc.get(ccp.reference_complete_status_field or "workflow_state")
                     frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'status', wf_state)
-                    if wf_state == ccp.reference_complete_status_value:
+                    if wf_state == ccp.reference_complete_status_value or wf_state in ["Rejected", "Rejected By Operator", "Rejected By PAM", "Rejected By MOI", "Rejected for Re Issue", "Canceled"]:
                         frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'actual_date', today)
                 else:
                     if process_doc.get(ccp.reference_complete_status_field) == ccp.reference_complete_status_value:

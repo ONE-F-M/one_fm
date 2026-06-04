@@ -4,7 +4,14 @@
 // ── Status options per process name ──────────────────────────────────────────
 var STATUS_MAP = {
   "Job Offer Issuance": ["Pending", "Offer Accepted", "Rejected"],
-  "Visa Processing": ["Pending", "Applied", "Issued", "Rejected"],
+  "Visa Processing": [
+    "Pending", "Draft", "Pending Initial Review", "Pending GRD Manager Approval",
+    "Pending By PAM", "Pending By MOI", "Pending Visa", "Completed",
+    "Pending Recruiter Confirmation", "Rejected", "Awaiting Quota Availability",
+    "Pending Visa Cancel", "Pending Visa Request Cancel", "Pending Cancel Work Permit",
+    "Rejected By Operator", "Rejected By PAM", "Rejected By MOI",
+    "Rejected for Re Issue", "Canceled"
+  ],
   "Medical Test": ["Pending", "In Process", "Fit", "Unfit", "Passed", "Failed"],
   "Remedical Test": ["Pending", "Skipped", "In Process", "Fit", "Unfit", "Passed", "Failed"],
   "PCC Clearance": ["Pending", "Applied", "Issued", "Rejected"],
