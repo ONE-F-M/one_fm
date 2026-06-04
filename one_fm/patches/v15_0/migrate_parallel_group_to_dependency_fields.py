@@ -61,6 +61,12 @@ def execute():
         },
     }
 
+    # Target templates specified in the docstring plus the actual test database IDs
+    TARGET_TEMPLATES = (
+        "ACP006", "ACP007", "ACP008", "ACP009", "ACP010",
+        "ACP056", "ACP057", "ACP058", "ACP059", "ACP060"
+    )
+
     # ── Update Agency Process Details (templates) ─────────────────────────────
     for process_name, deps in DEPENDENCY_MAP.items():
         frappe.db.sql("""
@@ -69,28 +75,33 @@ def execute():
                 sequence_type = %(sequence_type)s,
                 after_task = %(after_task)s
             WHERE process_name = %(process_name)s
+              AND parent IN %(target_templates)s
               AND (before_task IS NULL OR before_task = '')
         """, {
             "process_name": process_name,
             "before_task": deps["before_task"],
             "sequence_type": deps["sequence_type"],
             "after_task": deps["after_task"],
+            "target_templates": TARGET_TEMPLATES,
         })
 
     # ── Update Candidate Country Process Details (live tracker rows) ──────────
     for process_name, deps in DEPENDENCY_MAP.items():
         frappe.db.sql("""
-            UPDATE `tabCandidate Country Process Details`
-            SET before_task = %(before_task)s,
-                sequence_type = %(sequence_type)s,
-                after_task = %(after_task)s
-            WHERE process_name = %(process_name)s
-              AND (before_task IS NULL OR before_task = '')
+            UPDATE `tabCandidate Country Process Details` dt
+            INNER JOIN `tabCandidate Country Process` ccp ON dt.parent = ccp.name
+            SET dt.before_task = %(before_task)s,
+                dt.sequence_type = %(sequence_type)s,
+                dt.after_task = %(after_task)s
+            WHERE dt.process_name = %(process_name)s
+              AND ccp.agency_country_process IN %(target_templates)s
+              AND (dt.before_task IS NULL OR dt.before_task = '')
         """, {
             "process_name": process_name,
             "before_task": deps["before_task"],
             "sequence_type": deps["sequence_type"],
             "after_task": deps["after_task"],
+            "target_templates": TARGET_TEMPLATES,
         })
 
     frappe.db.commit()
