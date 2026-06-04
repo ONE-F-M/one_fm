@@ -164,6 +164,11 @@
   },
   {
    "group": "Clearance",
+   "link_doctype": "PAM Visa",
+   "link_fieldname": "candidate_country_process"
+  },
+  {
+   "group": "Clearance",
    "link_doctype": "PCC Clearance",
    "link_fieldname": "candidate_country_process"
   },

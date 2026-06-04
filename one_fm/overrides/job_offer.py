@@ -327,6 +327,7 @@ class JobOfferOverride(JobOffer):
             else:
                 pass
 
+        ccp.flags.ignore_mandatory = True
         ccp.save(ignore_permissions=True)
 
 def assign_to_onboarding_officer(self):
