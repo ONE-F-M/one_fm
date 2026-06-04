@@ -266,6 +266,6 @@ class ProjectManpowerRequest(Document):
 def set_edit_reason(name, reason):
 	doc = frappe.get_doc("Project Manpower Request", name)
 	doc.check_permission("read")
-	frappe.db.set_value("Project Manpower Request", name, "reason_for_rejection", reason, update_modified=False)
+	frappe.db.set_value("Project Manpower Request", name, "reason_for_rejection", reason)
 	frappe.clear_document_cache("Project Manpower Request", name)
 
