@@ -449,22 +449,35 @@ def update_candidate_country_process():
                 if not ccp.reference_name:
                     frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'reference_name', process_doc.name)
 
-                ref_status_field = ccp.reference_complete_status_field or ("workflow_state" if ccp.reference_type == "Visa Request" else "status")
-                ref_status = process_doc.get(ref_status_field)
-                if ref_status:
-                    frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'status', ref_status)
-                    
-                    is_completed = (ref_status == ccp.reference_complete_status_value)
-                    is_rejected = ref_status in [
-                        "Rejected", "Rejected By Operator", "Rejected By PAM", "Rejected By MOI",
-                        "Rejected for Re Issue", "Canceled", "Cancelled", "Unfit", "Failed",
-                        "Medical failed and Proceeded to Remedical", "Did Not Arrive"
-                    ]
-                    
-                    if is_completed or is_rejected:
+                if ccp.reference_type in ["Visa Request", "Visa Stamping"]:
+                    ref_status_field = ccp.reference_complete_status_field or ("workflow_state" if ccp.reference_type == "Visa Request" else "status")
+                    ref_status = process_doc.get(ref_status_field)
+                    if ref_status:
+                        frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'status', ref_status)
+                        
+                        is_completed = (ref_status == ccp.reference_complete_status_value)
+                        is_rejected = ref_status in [
+                            "Rejected", "Rejected By Operator", "Rejected By PAM", "Rejected By MOI",
+                            "Rejected for Re Issue", "Canceled", "Cancelled"
+                        ]
+                        
+                        if is_completed or is_rejected:
+                            frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'actual_date', today)
+
+                        if is_completed:
+                            ccp_doc = frappe.get_doc('Candidate Country Process', ccp.ccp_name)
+                            if len(ccp_doc.agency_process_details) > ccp.idx:
+                                for process_list in ccp_doc.agency_process_details:
+                                    if process_list.idx > ccp.idx and process_list.reference_type:
+                                        ccp_doc.db_set('current_process_id', process_list.name)
+                                        break
+                            ccp_doc.save(ignore_permissions=True)
+                else:
+                    is_completed = (process_doc.get(ccp.reference_complete_status_field) == ccp.reference_complete_status_value)
+                    if is_completed:
+                        frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'status', 'Approved')
                         frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'actual_date', today)
 
-                    if is_completed:
                         ccp_doc = frappe.get_doc('Candidate Country Process', ccp.ccp_name)
                         if len(ccp_doc.agency_process_details) > ccp.idx:
                             for process_list in ccp_doc.agency_process_details:

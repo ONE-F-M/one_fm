@@ -3,7 +3,7 @@
 
 // ── Status options per process name ──────────────────────────────────────────
 var STATUS_MAP = {
-  "Job Offer Issuance": ["Pending", "Awaiting Response", "Accepted", "Offer Accepted", "Rejected"],
+  "Job Offer Issuance": ["Pending", "Offer Accepted", "Rejected"],
   "Visa Processing": [
     "Pending", "Draft", "Pending Initial Review", "Pending GRD Manager Approval",
     "Pending By PAM", "Pending By MOI", "Pending Visa", "Completed",
@@ -12,11 +12,11 @@ var STATUS_MAP = {
     "Rejected By Operator", "Rejected By PAM", "Rejected By MOI",
     "Rejected for Re Issue", "Canceled"
   ],
-  "Medical Test": ["Pending", "Yet to apply", "In process", "In Process", "Fit", "Unfit", "Passed", "Failed", "Medical failed and Proceeded to Remedical"],
-  "Remedical Test": ["Pending", "Skipped", "Yet to apply", "In process", "In Process", "Fit", "Unfit", "Passed", "Failed"],
+  "Medical Test": ["Pending", "In Process", "Fit", "Unfit", "Passed", "Failed"],
+  "Remedical Test": ["Pending", "Skipped", "In Process", "Fit", "Unfit", "Passed", "Failed"],
   "PCC Clearance": ["Pending", "Applied", "Issued", "Rejected"],
   "Visa Stamping": ["Pending", "In Progress", "Stamped", "Rejected"],
-  "Arrival & Deployment": ["Pending", "Arriving", "Joined", "Completed", "Deployed", "Did Not Arrive"]
+  "Arrival & Deployment": ["Pending", "Arriving", "Completed"]
 };
 
 frappe.ui.form.on('Candidate Country Process', {
