@@ -46,6 +46,7 @@ def execute():
     for ccp_name in ccps:
         try:
             doc = frappe.get_doc("Candidate Country Process", ccp_name)
+            doc.flags._in_auto_create = True
             doc.save(ignore_permissions=True)
         except Exception as e:
             frappe.log_error(f"Failed to re-save CCP {ccp_name}: {e}")

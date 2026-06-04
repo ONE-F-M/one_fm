@@ -7,6 +7,8 @@ def execute():
     for all Candidate Country Process Details rows created before the field rename.
     """
     frappe.reload_doctype("Candidate Country Process Details")
+    if not frappe.db.has_column("Candidate Country Process Details", "expected_date"):
+        return
     frappe.db.sql("""
         UPDATE `tabCandidate Country Process Details`
         SET

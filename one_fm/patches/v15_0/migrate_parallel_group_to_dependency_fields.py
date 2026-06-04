@@ -69,6 +69,7 @@ def execute():
                 sequence_type = %(sequence_type)s,
                 after_task = %(after_task)s
             WHERE process_name = %(process_name)s
+              AND (before_task IS NULL OR before_task = '')
         """, {
             "process_name": process_name,
             "before_task": deps["before_task"],
@@ -84,6 +85,7 @@ def execute():
                 sequence_type = %(sequence_type)s,
                 after_task = %(after_task)s
             WHERE process_name = %(process_name)s
+              AND (before_task IS NULL OR before_task = '')
         """, {
             "process_name": process_name,
             "before_task": deps["before_task"],

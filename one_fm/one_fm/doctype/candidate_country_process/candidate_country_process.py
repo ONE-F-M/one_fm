@@ -40,9 +40,11 @@ class CandidateCountryProcess(Document):
                 else:
                     row.eta_status = "Completed on time"
 
-        # ── 4. Mirror Live Plan ETA to header field ───────────────────────────
+        # ── 4. Mirror ETAs to header fields ────────────────────────────────────
         if rows:
             last = rows[-1]
+            if last.get("planned_date"):
+                self.planned_eta = last.planned_date
             if last.get("live_plan_date"):
                 self.live_plan_eta = last.live_plan_date
             elif last.get("planned_date"):
@@ -202,7 +204,7 @@ class CandidateCountryProcess(Document):
 
     def _auto_create_next_records(self):
         """
-        Data-driven trigger logic using before_task / after_task dependencies.
+        Data-driven trigger logic using before_task dependencies.
 
         When a task's status matches its reference_complete_status_value,
         find all tasks whose before_task includes this task and auto-create
@@ -222,11 +224,13 @@ class CandidateCountryProcess(Document):
             if row.status != row.reference_complete_status_value:
                 continue
 
-            # This task is complete — find tasks that depend on it (after_task)
-            after_tasks = self._parse_task_list(row.get("after_task"))
-            for target_name in after_tasks:
-                target_row = row_map.get(target_name)
-                if not target_row or not target_row.reference_type:
+            # This task is complete — find tasks that depend on it (by before_task)
+            dependent_rows = [
+                r for r in rows
+                if row.process_name in self._parse_task_list(r.get("before_task"))
+            ]
+            for target_row in dependent_rows:
+                if not target_row.reference_type:
                     continue
 
                 # Skip if record already exists
@@ -255,7 +259,7 @@ class CandidateCountryProcess(Document):
         for dep_name in before_tasks:
             dep_row = row_map.get(dep_name)
             if not dep_row:
-                continue  # Missing dependency row — skip
+                return False  # Missing dependency row — treat as not met
 
             # Skipped counts as met
             if dep_row.get("status") == "Skipped":

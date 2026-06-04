@@ -8,7 +8,7 @@ var STATUS_MAP = {
   "Medical Test": ["Pending", "In Process", "Fit", "Unfit", "Passed", "Failed"],
   "Remedical Test": ["Pending", "Skipped", "In Process", "Fit", "Unfit", "Passed", "Failed"],
   "PCC Clearance": ["Pending", "Applied", "Issued", "Rejected"],
-  "Visa Stamping": ["Pending", "Applied", "Issued", "Approved", "Rejected"],
+  "Visa Stamping": ["Pending", "In Progress", "Stamped", "Rejected"],
   "Arrival & Deployment": ["Pending", "Arriving", "Completed"]
 };
 

@@ -300,17 +300,15 @@ class JobOfferOverride(JobOffer):
 
         acp_doc = frappe.get_doc('Agency Country Process', agency_country_process)
 
-        cumulative_days = 0
-        start = frappe.utils.getdate(ccp.start_date)
         for row in acp_doc.agency_process_details:
             d = ccp.append("agency_process_details", {})
             d.process_name = row.process_name
             d.responsible = row.responsible
             d.duration_in_days = row.duration_in_days
             d.parallel_group = frappe.utils.cint(row.get("parallel_group") or 0)
-            d.sequence_type = row.sequence_type
-            d.before_task = row.before_task
-            d.after_task = row.after_task
+            d.sequence_type = row.sequence_type or "Sequential"
+            d.before_task = row.before_task or ""
+            d.after_task = row.after_task or ""
             d.attachment_required = row.attachment_required
             d.notes_required = row.notes_required
             d.reference_type = row.reference_type
@@ -326,14 +324,7 @@ class JobOfferOverride(JobOffer):
                 d.actual_date = ccp.start_date
                 d.reference_name = self.name
             else:
-                cumulative_days += row.duration_in_days
-                d.planned_date = frappe.utils.add_days(start, cumulative_days)
-                d.live_plan_date = d.planned_date
-
-        if ccp.agency_process_details:
-            last_step = ccp.agency_process_details[-1]
-            ccp.planned_eta = last_step.planned_date
-            ccp.live_plan_eta = last_step.planned_date
+                pass
 
         ccp.save(ignore_permissions=True)
 
