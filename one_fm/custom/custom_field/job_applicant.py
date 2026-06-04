@@ -965,7 +965,7 @@ def get_job_applicant_custom_fields():
                 "fieldtype": "Select",
                 "insert_after": "one_fm_place_of_birth",
                 "label": "Marital Status",
-                "options": "\nUnmarried\nMarried\nDivorce\nWidow\nUnknown",
+                "options": "\nSingle\nMarried\nDivorced\nWidowed",
                 "translatable": 1
             },
             {

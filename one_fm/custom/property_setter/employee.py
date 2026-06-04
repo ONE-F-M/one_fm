@@ -48,15 +48,6 @@ def get_employee_properties():
 		{
 			"doc_type": "Employee",
 			"doctype_or_field": "DocField",
-			"field_name": "marital_status",
-			"property": "options",
-			"value": "Unmarried\nMarried\nWidow\nDivorce\nUnknown",
-			"property_type": "select",
-			"default_value": None
-		},
-		{
-			"doc_type": "Employee",
-			"doctype_or_field": "DocField",
 			"field_name": "middle_name",
 			"property": "label",
 			"value": "Second Name",

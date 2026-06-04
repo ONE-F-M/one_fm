@@ -406,11 +406,10 @@ export default {
                                           <label class="form-label text-danger" for="one_fm_marital_status">Marital Status *</label>
                                           <select class="form-control input" id="one_fm_marital_status" aria-placeholder="Marital Status" required=1  name="one_fm_marital_status" v-model="job_applicant.one_fm_marital_status" :onchange="putField">
                                               <option value="select" selected disabled></option>
-                                              <option value="Unmarried">Unmarried</option>
+                                              <option value="Single">Single</option>
                                               <option value="Married">Married</option>
-                                              <option value="Widow">Widow</option>
-                                              <option value="Divorce">Divorce</option>
-                                              <option value="Unknown">Unknown</option>
+                                              <option value="Widowed">Widowed</option>
+                                              <option value="Divorced">Divorced</option>
                                           </select>
                                       </div>
                                       <div class="form-group">
