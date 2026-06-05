@@ -396,7 +396,7 @@ class CandidateCountryProcess(Document):
         # Re-assign child table in correct order and save
         self.agency_process_details = new_details
         self.flags.ignore_mandatory = True
-        self.save(ignore_permissions=True)
+        self.save()
         frappe.msgprint(
             frappe._("Successfully synchronized tracker steps with the latest template changes!"),
             indicator="green",
@@ -405,16 +405,24 @@ class CandidateCountryProcess(Document):
 
 
 def update_candidate_country_process():
-    query = """
-        select
-            dt.name as dt_name, ccp.name as ccp_name, dt.process_name, dt.reference_type, dt.reference_name,
-            dt.reference_complete_status_value, dt.reference_complete_status_field, dt.idx, dt.planned_date
-        from
-            `tabCandidate Country Process` ccp, `tabCandidate Country Process Details` dt
-        where
-            ccp.current_process_id=dt.name
-    """
-    ccp_list = frappe.db.sql(query, as_dict=True)
+    ccp = frappe.qb.DocType("Candidate Country Process")
+    ccpd = frappe.qb.DocType("Candidate Country Process Details")
+    ccp_list = (
+        frappe.qb.from_(ccp)
+        .join(ccpd)
+        .on(ccp.current_process_id == ccpd.name)
+        .select(
+            ccpd.name.as_("dt_name"),
+            ccp.name.as_("ccp_name"),
+            ccpd.process_name,
+            ccpd.reference_type,
+            ccpd.reference_name,
+            ccpd.reference_complete_status_value,
+            ccpd.reference_complete_status_field,
+            ccpd.idx,
+            ccpd.planned_date
+        )
+    ).run(as_dict=True)
     today = frappe.utils.getdate()
 
     for ccp in ccp_list:
@@ -434,7 +442,7 @@ def update_candidate_country_process():
                 meta = frappe.get_meta(ccp.reference_type)
                 if meta.has_field("candidate_country_process"):
                     try:
-                        process_doc = frappe.get_doc(ccp.reference_type, {'candidate_country_process': ccp.ccp_name})
+                        process_doc = frappe.get_doc(ccp.reference_type, {"candidate_country_process": ccp.ccp_name})
                     except Exception:
                         pass
                 elif ccp.reference_type == "Visa Request":
@@ -447,13 +455,13 @@ def update_candidate_country_process():
 
             if process_doc:
                 if not ccp.reference_name:
-                    frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'reference_name', process_doc.name)
+                    frappe.db.set_value("Candidate Country Process Details", ccp.dt_name, "reference_name", process_doc.name)
 
                 if ccp.reference_type == "Visa Request":
                     ref_status_field = ccp.reference_complete_status_field or "workflow_state"
                     ref_status = process_doc.get(ref_status_field)
                     if ref_status:
-                        frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'status', ref_status)
+                        frappe.db.set_value("Candidate Country Process Details", ccp.dt_name, "status", ref_status)
                         
                         is_completed = (ref_status == ccp.reference_complete_status_value)
                         is_rejected = ref_status in [
@@ -462,27 +470,27 @@ def update_candidate_country_process():
                         ]
                         
                         if is_completed or is_rejected:
-                            frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'actual_date', today)
+                            frappe.db.set_value("Candidate Country Process Details", ccp.dt_name, "actual_date", today)
 
                         if is_completed:
-                            ccp_doc = frappe.get_doc('Candidate Country Process', ccp.ccp_name)
+                            ccp_doc = frappe.get_doc("Candidate Country Process", ccp.ccp_name)
                             if len(ccp_doc.agency_process_details) > ccp.idx:
                                 for process_list in ccp_doc.agency_process_details:
                                     if process_list.idx > ccp.idx and process_list.reference_type:
-                                        ccp_doc.db_set('current_process_id', process_list.name)
+                                        ccp_doc.db_set("current_process_id", process_list.name)
                                         break
                             ccp_doc.save(ignore_permissions=True)
                 else:
                     is_completed = (process_doc.get(ccp.reference_complete_status_field) == ccp.reference_complete_status_value)
                     if is_completed:
-                        frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'status', 'Approved')
-                        frappe.db.set_value('Candidate Country Process Details', ccp.dt_name, 'actual_date', today)
+                        frappe.db.set_value("Candidate Country Process Details", ccp.dt_name, "status", "Approved")
+                        frappe.db.set_value("Candidate Country Process Details", ccp.dt_name, "actual_date", today)
 
-                        ccp_doc = frappe.get_doc('Candidate Country Process', ccp.ccp_name)
+                        ccp_doc = frappe.get_doc("Candidate Country Process", ccp.ccp_name)
                         if len(ccp_doc.agency_process_details) > ccp.idx:
                             for process_list in ccp_doc.agency_process_details:
                                 if process_list.idx > ccp.idx and process_list.reference_type:
-                                    ccp_doc.db_set('current_process_id', process_list.name)
+                                    ccp_doc.db_set("current_process_id", process_list.name)
                                     break
                         ccp_doc.save(ignore_permissions=True)
 
