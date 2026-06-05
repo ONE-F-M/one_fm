@@ -698,3 +698,17 @@ def update_ticket_status():
         frappe.log_error(title="ONEFM TicketStatus.ts Override Failed", message=frappe.get_traceback())
 
     return False
+
+
+def sync_pmr_workflow():
+	"""
+	Ensure the Project Manpower Request workflow is always loaded and active.
+	"""
+	try:
+		from one_fm.custom.workflow.workflow import get_workflow_json_file, create_workflow
+		print("Syncing Project Manpower Request workflow...")
+		workflow_data = get_workflow_json_file("project_manpower_request.json")
+		create_workflow(workflow_data)
+		print("Project Manpower Request workflow synced successfully.")
+	except Exception as e:
+		print(f"Error syncing PMR workflow: {e}")

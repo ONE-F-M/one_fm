@@ -87,7 +87,7 @@ class ProjectManpowerRequest(Document):
 	def validate_recruiter_presence(self):
 		if self.flags.ignore_mandatory:
 			return
-		if (getattr(self, "workflow_state", None) or "Draft") != "Draft":
+		if (getattr(self, "workflow_state", None) or "Draft") != "Draft" or self.docstatus == 1:
 			if not self.recruiter:
 				frappe.throw(
 					_("Please assign a <b>Recruiter</b> before moving this Project Manpower Request past Draft."),
@@ -98,7 +98,7 @@ class ProjectManpowerRequest(Document):
 	def validate_erf_presence(self):
 		if self.flags.ignore_mandatory:
 			return
-		if getattr(self, "workflow_state", None) in ["Awaiting Recruiter Approval", "In Process", "Completed"]:
+		if getattr(self, "workflow_state", None) in ["Awaiting Recruiter Approval", "In Process", "Completed"] or self.docstatus == 1:
 			if not self.erf:
 				frappe.throw(
 					_("Please select an ERF before sending this Project Manpower Request for Recruitment.")
@@ -106,7 +106,7 @@ class ProjectManpowerRequest(Document):
 			erf_designation = frappe.db.get_value("ERF", self.erf, "designation")
 			if erf_designation != self.designation:
 				frappe.throw(
-					_("The selected ERF ({0}) has designation '{1}' which does not match this PMR's designation '{2}'.").format(
+					_("The selected ERF ({0}) has designation \"{1}\" which does not match this PMR's designation \"{2}\".").format(
 						self.erf, erf_designation, self.designation
 					)
 				)
