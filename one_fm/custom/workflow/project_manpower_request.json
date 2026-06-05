@@ -1,0 +1,397 @@
+{
+    "workflow_name": "Project Manpower Request",
+    "document_type": "Project Manpower Request",
+    "is_active": 1,
+    "override_status": 0,
+    "send_email_alert": 0,
+    "workflow_state_field": "workflow_state",
+    "doctype": "Workflow",
+    "states": [
+        {
+            "state": "Draft",
+            "doc_status": "0",
+            "style": "Primary",
+            "is_optional_state": 0,
+            "avoid_status_override": 0,
+            "allow_edit": "Employee",
+            "send_email": 0,
+            "doctype": "Workflow Document State"
+        },
+        {
+            "state": "Draft",
+            "doc_status": "0",
+            "style": "Primary",
+            "is_optional_state": 0,
+            "avoid_status_override": 0,
+            "allow_edit": "Recruiter",
+            "send_email": 0,
+            "doctype": "Workflow Document State"
+        },
+        {
+            "state": "Draft",
+            "doc_status": "0",
+            "style": "Primary",
+            "is_optional_state": 0,
+            "avoid_status_override": 0,
+            "allow_edit": "Recruitment Team Leader",
+            "send_email": 0,
+            "doctype": "Workflow Document State"
+        },
+        {
+            "state": "Draft",
+            "doc_status": "0",
+            "style": "Primary",
+            "is_optional_state": 0,
+            "avoid_status_override": 0,
+            "allow_edit": "HR Manager",
+            "send_email": 0,
+            "doctype": "Workflow Document State"
+        },
+        {
+            "state": "Draft",
+            "doc_status": "0",
+            "style": "Primary",
+            "is_optional_state": 0,
+            "avoid_status_override": 0,
+            "allow_edit": "Recruitment Coordinator",
+            "send_email": 0,
+            "doctype": "Workflow Document State"
+        },
+        {
+            "state": "Draft",
+            "doc_status": "0",
+            "style": "Primary",
+            "is_optional_state": 0,
+            "avoid_status_override": 0,
+            "allow_edit": "Operations Manager",
+            "send_email": 0,
+            "doctype": "Workflow Document State"
+        },
+        {
+            "state": "Draft",
+            "doc_status": "0",
+            "style": "Primary",
+            "is_optional_state": 0,
+            "avoid_status_override": 0,
+            "allow_edit": "System Manager",
+            "send_email": 0,
+            "doctype": "Workflow Document State"
+        },
+        {
+            "state": "Draft",
+            "doc_status": "0",
+            "style": "Primary",
+            "is_optional_state": 0,
+            "avoid_status_override": 0,
+            "allow_edit": "Operation Admin",
+            "send_email": 0,
+            "doctype": "Workflow Document State"
+        },
+        {
+            "state": "Awaiting Recruiter Approval",
+            "doc_status": "0",
+            "style": "Warning",
+            "is_optional_state": 0,
+            "avoid_status_override": 0,
+            "allow_edit": "Recruiter",
+            "send_email": 0,
+            "doctype": "Workflow Document State"
+        },
+        {
+            "state": "In Process",
+            "doc_status": "0",
+            "style": "Success",
+            "is_optional_state": 0,
+            "avoid_status_override": 0,
+            "allow_edit": "Recruiter",
+            "send_email": 0,
+            "doctype": "Workflow Document State"
+        },
+        {
+            "state": "Completed",
+            "doc_status": "1",
+            "style": "Success",
+            "is_optional_state": 0,
+            "avoid_status_override": 0,
+            "allow_edit": "System Manager",
+            "send_email": 0,
+            "doctype": "Workflow Document State"
+        },
+        {
+            "state": "Cancelled",
+            "doc_status": "0",
+            "style": "Inverse",
+            "is_optional_state": 0,
+            "avoid_status_override": 0,
+            "allow_edit": "System Manager",
+            "send_email": 0,
+            "doctype": "Workflow Document State"
+        }
+    ],
+    "transitions": [
+        {
+            "state": "Draft",
+            "action": "Submit to Recruiter",
+            "next_state": "Awaiting Recruiter Approval",
+            "allowed": "Employee",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Draft",
+            "action": "Submit to Recruiter",
+            "next_state": "Awaiting Recruiter Approval",
+            "allowed": "Projects Manager",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Draft",
+            "action": "Submit to Recruiter",
+            "next_state": "Awaiting Recruiter Approval",
+            "allowed": "Operations Manager",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Draft",
+            "action": "Submit to Recruiter",
+            "next_state": "Awaiting Recruiter Approval",
+            "allowed": "System Manager",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Draft",
+            "action": "Submit to Recruiter",
+            "next_state": "Awaiting Recruiter Approval",
+            "allowed": "Recruiter",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Draft",
+            "action": "Submit to Recruiter",
+            "next_state": "Awaiting Recruiter Approval",
+            "allowed": "Recruitment Team Leader",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Draft",
+            "action": "Submit to Recruiter",
+            "next_state": "Awaiting Recruiter Approval",
+            "allowed": "HR Manager",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Draft",
+            "action": "Submit to Recruiter",
+            "next_state": "Awaiting Recruiter Approval",
+            "allowed": "Recruitment Coordinator",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Draft",
+            "action": "Submit to Recruiter",
+            "next_state": "Awaiting Recruiter Approval",
+            "allowed": "Operation Admin",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Awaiting Recruiter Approval",
+            "action": "Approve",
+            "next_state": "In Process",
+            "allowed": "Recruiter",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Awaiting Recruiter Approval",
+            "action": "Approve",
+            "next_state": "In Process",
+            "allowed": "Senior Recruiter",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Awaiting Recruiter Approval",
+            "action": "Approve",
+            "next_state": "In Process",
+            "allowed": "System Manager",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Awaiting Recruiter Approval",
+            "action": "Request Change",
+            "next_state": "Draft",
+            "allowed": "Recruiter",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Awaiting Recruiter Approval",
+            "action": "Request Change",
+            "next_state": "Draft",
+            "allowed": "Senior Recruiter",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Awaiting Recruiter Approval",
+            "action": "Request Change",
+            "next_state": "Draft",
+            "allowed": "System Manager",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "In Process",
+            "action": "Complete",
+            "next_state": "Completed",
+            "allowed": "Recruiter",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "In Process",
+            "action": "Complete",
+            "next_state": "Completed",
+            "allowed": "Senior Recruiter",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "In Process",
+            "action": "Complete",
+            "next_state": "Completed",
+            "allowed": "System Manager",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "In Process",
+            "action": "Complete",
+            "next_state": "Completed",
+            "allowed": "HR Manager",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Draft",
+            "action": "Cancel",
+            "next_state": "Cancelled",
+            "allowed": "Employee",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Draft",
+            "action": "Cancel",
+            "next_state": "Cancelled",
+            "allowed": "Projects Manager",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Draft",
+            "action": "Cancel",
+            "next_state": "Cancelled",
+            "allowed": "Operations Manager",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Draft",
+            "action": "Cancel",
+            "next_state": "Cancelled",
+            "allowed": "System Manager",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Awaiting Recruiter Approval",
+            "action": "Cancel",
+            "next_state": "Cancelled",
+            "allowed": "Employee",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Awaiting Recruiter Approval",
+            "action": "Cancel",
+            "next_state": "Cancelled",
+            "allowed": "Projects Manager",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Awaiting Recruiter Approval",
+            "action": "Cancel",
+            "next_state": "Cancelled",
+            "allowed": "Operations Manager",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Awaiting Recruiter Approval",
+            "action": "Cancel",
+            "next_state": "Cancelled",
+            "allowed": "System Manager",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "In Process",
+            "action": "Cancel",
+            "next_state": "Cancelled",
+            "allowed": "Employee",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "In Process",
+            "action": "Cancel",
+            "next_state": "Cancelled",
+            "allowed": "Projects Manager",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "In Process",
+            "action": "Cancel",
+            "next_state": "Cancelled",
+            "allowed": "Operations Manager",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "In Process",
+            "action": "Cancel",
+            "next_state": "Cancelled",
+            "allowed": "System Manager",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "In Process",
+            "action": "Request Edit",
+            "next_state": "Draft",
+            "allowed": "Operation Admin",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "In Process",
+            "action": "Request Edit",
+            "next_state": "Draft",
+            "allowed": "Operations Manager",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        }
+    ]
+}

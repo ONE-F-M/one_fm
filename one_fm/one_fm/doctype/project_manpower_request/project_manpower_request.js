@@ -17,10 +17,38 @@ frappe.ui.form.on('Project Manpower Request', {
 			    frm.set_df_property('count', 'read_only', true);
 			}, 500);
 		}
+
+		// Dynamically populate options for gender Select field from universal Gender table
+		frappe.db.get_list('Gender', {fields: ['name'], limit_page_length: 0}).then(records => {
+			let options = ['Any', 'Male', 'Female'];
+			records.forEach(r => {
+				if (r.name && !options.includes(r.name)) {
+					options.push(r.name);
+				}
+			});
+			frm.set_df_property('gender', 'options', options);
+		});
+
+		// Dynamically populate options for nationality Select field from universal Nationality table
+		frappe.db.get_list('Nationality', {fields: ['name'], limit_page_length: 0}).then(records => {
+			let options = ['Any', 'African', 'Asian'];
+			records.forEach(r => {
+				if (r.name && !options.includes(r.name)) {
+					options.push(r.name);
+				}
+			});
+			frm.set_df_property('nationality', 'options', options);
+		});
 	},
 	
 	refresh: function(frm) {
 		setup_status_indicator(frm);
+
+		if (frm.doc.workflow_state === 'Draft' && frm.doc.reason_for_rejection) {
+			frm.set_intro('<span class="text-danger"><b>Reason for Change Request</b></span><br>' + frm.doc.reason_for_rejection, 'yellow');
+		} else {
+			frm.set_intro('');
+		}
 		
 		// Hide the individual backend quantity fields to keep the form clean
 		frm.toggle_display([
@@ -43,13 +71,19 @@ frappe.ui.form.on('Project Manpower Request', {
 			};
 		});
 
-		// Restrict closed-by employee selection to active employees with matching designation
+		// Restrict closed-by employee selection to active employees with matching ERF and designation
 		frm.set_query('employee', 'fulfilled_by_employees', function() {
+			let filters = {
+				status: 'Active'
+			};
+			if (frm.doc.erf) {
+				filters.one_fm_erf = frm.doc.erf;
+			}
+			if (frm.doc.designation) {
+				filters.designation = frm.doc.designation;
+			}
 			return {
-				filters: {
-					designation: frm.doc.designation,
-					status: 'Active'
-				}
+				filters: filters
 			};
 		});
 		
@@ -71,6 +105,40 @@ frappe.ui.form.on('Project Manpower Request', {
 		        });
 		    });
 		}
+	},
+
+	before_workflow_action: function(frm) {
+		return new Promise((resolve, reject) => {
+			if (frm.selected_workflow_action === "Request Change") {
+				frappe.dom.unfreeze(); // Unfreeze to prevent the page loading overlay from greyin-out/blurring the prompt modal
+				frappe.prompt({
+					label: __('Reason for Requesting Change'),
+					fieldname: 'reason_for_rejection',
+					fieldtype: 'Small Text',
+					reqd: 1
+				}, (values) => {
+					frappe.call({
+						method: 'one_fm.one_fm.doctype.project_manpower_request.project_manpower_request.set_edit_reason',
+						args: {
+							name: frm.doc.name,
+							reason: values.reason_for_rejection
+						},
+						callback: function(r) {
+							frm.set_value('reason_for_rejection', values.reason_for_rejection);
+							resolve();
+						},
+						error: function(err) {
+							reject(err);
+						}
+					});
+				}, __('Change Request Reason'), __('Submit'));
+			} else {
+				if (frm.selected_workflow_action === "Submit to Recruiter" || frm.selected_workflow_action === "Request Edit") {
+					frm.set_value('reason_for_rejection', '');
+				}
+				resolve();
+			}
+		});
 	},
 
 	workflow_state: function(frm) {
@@ -103,6 +171,17 @@ frappe.ui.form.on('Project Manpower Request', {
 		    if (!frm.doc.count && (!frm.doc.resignation_links || frm.doc.resignation_links.length === 0)) {
 			    frm.set_value('count', 1);
 			}
+		}
+	},
+
+	deployment_date: function(frm) {
+		if (frm.doc.deployment_date && frappe.datetime.get_diff(frm.doc.deployment_date, frappe.datetime.get_today()) < 0) {
+			frappe.msgprint({
+				title: __('Invalid Deployment Date'),
+				indicator: 'red',
+				message: __('Deployment Date cannot be before today.')
+			});
+			frm.set_value('deployment_date', '');
 		}
 	},
 
