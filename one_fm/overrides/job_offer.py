@@ -119,16 +119,27 @@ class JobOfferOverride(JobOffer):
                 'company': self.company
             })
 
+    def on_submit(self):
+        self.evaluate_tracker_pipeline()
+        
     def on_update_after_submit(self):
         # update terms if applicant name changes
         if self.has_value_changed("applicant_name"):
             self.update_terms_and_conditions()
             self.db_set("terms", self.terms)
 
+        self.evaluate_tracker_pipeline()
+        
+    def evaluate_tracker_pipeline(self):
         self.onload()
         self.validate_job_offer_mandatory_fields()
         
-        if self.workflow_state == 'Submit to Onboarding Officer':
+        # Ensure offer accepted date is definitively populated before tracking cascade triggers
+        if self.workflow_state == "Submit to Onboarding Officer" and not self.one_fm_offer_accepted_date:
+            self.one_fm_offer_accepted_date = frappe.utils.nowdate()
+            self.db_set("one_fm_offer_accepted_date", self.one_fm_offer_accepted_date)
+            
+        if self.workflow_state == "Submit to Onboarding Officer":
             msg = "Please select {0} to Accept the Offer and Process Onboard"
             if not self.estimated_date_of_joining and not self.onboarding_officer:
                 frappe.throw(_(msg.format("<b>Estimated Date of Joining</b> and <b>Onboarding Officer</b>")))
@@ -137,66 +148,15 @@ class JobOfferOverride(JobOffer):
             elif not self.onboarding_officer:
                 frappe.throw(_(msg.format("<b>Onboarding Officer</b>")))
             assign_to_onboarding_officer(self)
-        if self.workflow_state == 'Accepted' and self.get_onload('onboard_employee'):
-            close_all_assignments(self.doctype, self.name)
-
-        # Set offer accepted date
-        if self.workflow_state == 'Submit to Onboarding Officer' and not self.one_fm_offer_accepted_date:
-            self.db_set('one_fm_offer_accepted_date', nowdate())
-            
-        # Auto-create Candidate Country Process if applicable
-        if self.workflow_state in ['Submit to Onboarding Officer', 'Accepted']:
             self.create_candidate_country_process()
 
-    def create_candidate_country_process(self):
-        if not getattr(self, "agency_country_process", None):
-            return
-
-        # Check if already exists
-        if frappe.db.exists("Candidate Country Process", {"job_offer": self.name}):
-            return
-
-        try:
-            # Create Candidate Country Process
-            ccp = frappe.new_doc("Candidate Country Process")
-            ccp.job_offer = self.name
-            ccp.job_applicant = self.job_applicant
-            ccp.agency_country_process = self.agency_country_process
-            ccp.start_date = self.one_fm_offer_accepted_date or nowdate()
-
-            # Get Agency template to pull steps
-            acp = frappe.get_doc("Agency Country Process", self.agency_country_process)
-
-            # Copy tracking rows
-            if hasattr(acp, "agency_process_details"):
-                for row in acp.agency_process_details:
-                    d = ccp.append("agency_process_details", {})
-                    d.process_name = row.process_name
-                    d.responsible = row.responsible
-                    d.duration_in_days = row.duration_in_days
-                    d.attachment_required = row.attachment_required
-                    d.notes_required = row.notes_required
-                    d.reference_type = row.reference_type
-                    d.reference_complete_status_field = row.reference_complete_status_field
-                    d.reference_complete_status_value = row.reference_complete_status_value
-                    if ccp.start_date and row.duration_in_days:
-                        d.expected_date = frappe.utils.add_days(ccp.start_date, row.duration_in_days)
-
-            if ccp.start_date and getattr(acp, "total_duration", 0):
-                ccp.planned_eta = frappe.utils.add_days(ccp.start_date, acp.total_duration)
-                ccp.live_plan_eta = ccp.planned_eta
-
-            ccp.insert(ignore_permissions=True)
-            frappe.msgprint(_("Candidate Country Process Tracker ({0}) automatically generated.").format(
-                get_link_to_form("Candidate Country Process", ccp.name)
-            ), alert=True)
-        except Exception as e:
-            frappe.log_error(title="Failed to Auto-Generate CCP", message=frappe.get_traceback())
-            frappe.msgprint(_("Warning: Could not automatically generate the Candidate Country Process tracker. Please create it manually. Check the Error Log for details."), alert=True, indicator='orange')
+        if self.workflow_state == "Accepted":
+            if self.get_onload("onboard_employee"):
+                close_all_assignments(self.doctype, self.name)
 
     def validate_job_offer_mandatory_fields(self):
-        if self.workflow_state == 'Submit for Candidate Response':
-            applicant_details = frappe.db.get_value('Job Applicant', self.job_applicant, ['one_fm_hiring_method'], as_dict=1)
+        if self.workflow_state == "Submit for Candidate Response":
+            applicant_details = frappe.db.get_value("Job Applicant", self.job_applicant, ["one_fm_hiring_method"], as_dict=1)
             mandatory_field_required = False
             fields = ['Base', 'Salary Structure']
             if not self.shift_working and not self.reports_to:
@@ -223,17 +183,17 @@ class JobOfferOverride(JobOffer):
         self.auto_email_job_offer()
 
     def submit_job_offer_to_candidate(self):
-        if self.workflow_state == 'Open':
+        if self.workflow_state == "Open":
             applicant_details = frappe.db.get_value(
-                'Job Applicant',
+                "Job Applicant",
                 self.job_applicant,
-                ['one_fm_hiring_method', 'one_fm_applicant_status', 'mark_as_shortlisted_first'],
+                ["one_fm_hiring_method", "one_fm_applicant_status", "mark_as_shortlisted_first"],
                 as_dict=1
             )
-            if applicant_details.one_fm_hiring_method == 'Bulk Recruitment' and applicant_details.one_fm_applicant_status == 'Selected' and not applicant_details.mark_as_shortlisted_first:
-                if frappe.session.user == 'Guest':
-                    frappe.set_user('Administrator')
-                apply_workflow(self, 'Submit for Candidate Response')
+            if applicant_details.one_fm_hiring_method == "Bulk Recruitment" and applicant_details.one_fm_applicant_status == "Selected" and not applicant_details.mark_as_shortlisted_first:
+                if frappe.session.user == "Guest":
+                    frappe.set_user("Administrator")
+                apply_workflow(self, "Submit for Candidate Response")
 
     def auto_email_job_offer(self):
         """
@@ -246,7 +206,7 @@ class JobOfferOverride(JobOffer):
                 None
         """
         auto_email_settings = get_job_offer_auto_email_settings()
-        if not auto_email_settings.auto_email_job_offer:
+        if not auto_email_settings or not cint(auto_email_settings.get("auto_email_job_offer")):
             return
         if self.workflow_state != auto_email_settings.job_offer_workflow_state:
             return
@@ -314,7 +274,60 @@ class JobOfferOverride(JobOffer):
         if self.amended_from and self.status == "Rejected":
             self.status = "Awaiting Response"
 
+    def create_candidate_country_process(self):
+        if frappe.db.exists("Candidate Country Process", {"job_offer": self.name}):
+            return
 
+        job_applicant = frappe.get_doc("Job Applicant", self.job_applicant)
+        if not job_applicant.job_title:
+            return
+
+        # Fetch Agency from Job Opening
+        agency = frappe.db.get_value("Job Opening", job_applicant.job_title, "agency")
+        if not agency:
+            return
+
+        agency_country_process = frappe.db.get_value("Agency Country Process", {"agency": agency}, "name")
+        if not agency_country_process:
+            return
+
+        ccp = frappe.new_doc("Candidate Country Process")
+        ccp.job_offer = self.name
+        ccp.job_opening = job_applicant.job_title
+        ccp.job_applicant = self.job_applicant
+        ccp.agency = agency
+        ccp.agency_country_process = agency_country_process
+        ccp.start_date = self.one_fm_offer_accepted_date or frappe.utils.nowdate()
+
+        acp_doc = frappe.get_doc("Agency Country Process", agency_country_process)
+
+        for row in acp_doc.agency_process_details:
+            d = ccp.append("agency_process_details", {})
+            d.process_name = row.process_name
+            d.responsible = row.responsible
+            d.duration_in_days = row.duration_in_days
+            d.parallel_group = frappe.utils.cint(row.get("parallel_group") or 0)
+            d.sequence_type = row.sequence_type or "Sequential"
+            d.before_task = row.before_task or ""
+            d.after_task = row.after_task or ""
+            d.attachment_required = row.attachment_required
+            d.notes_required = row.notes_required
+            d.reference_type = row.reference_type
+            d.reference_complete_status_field = row.reference_complete_status_field
+            d.reference_complete_status_value = row.reference_complete_status_value
+
+            if row.process_name == "Job Offer Issuance":
+                # Retroactive evaluation: Job Offer is already created and accepted
+                created_date = frappe.utils.getdate(self.creation)
+                d.planned_date = frappe.utils.add_days(created_date, row.duration_in_days)
+                d.live_plan_date = d.planned_date
+                d.status = "Offer Accepted"
+                d.actual_date = ccp.start_date
+                d.reference_name = self.name
+            else:
+                pass
+
+        ccp.save()
 
 def assign_to_onboarding_officer(self):
 	try:

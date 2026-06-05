@@ -380,6 +380,10 @@ one_fm.patches.v15_0.add_assignment_rule_subcontract_project_manager #2026-04-27
 one_fm.patches.v15_0.add_assignment_rule_subcontract_finance_manager #2026-04-12
 one_fm.patches.v15_0.add_assignment_rule_subcontract_subcontractor #2026-04-12
 one_fm.patches.v15_0.add_subcontractor_contracts_workflow #2026-04-12
+one_fm.patches.v15_0.backfill_candidate_process_planned_dates #2026-04-15
+one_fm.patches.v15_0.backfill_candidate_process_parallel_groups #2026-04-15
+one_fm.patches.v15_0.update_medical_reference_types
+one_fm.patches.v15_0.migrate_parallel_group_to_dependency_fields
 one_fm.patches.v15_0.add_workflow_visa_request #1
 one_fm.patches.v15_0.create_attendance_query_process_task
 one_fm.patches.v15_0.add_formal_hearing_workflow #2026-04-19
