@@ -135,11 +135,11 @@ class JobOfferOverride(JobOffer):
         self.validate_job_offer_mandatory_fields()
         
         # Ensure offer accepted date is definitively populated before tracking cascade triggers
-        if self.get('workflow_state') == 'Submit to Onboarding Officer' and not self.one_fm_offer_accepted_date:
+        if self.get("workflow_state") == "Submit to Onboarding Officer" and not self.one_fm_offer_accepted_date:
             self.one_fm_offer_accepted_date = frappe.utils.nowdate()
-            self.db_set('one_fm_offer_accepted_date', self.one_fm_offer_accepted_date)
+            self.db_set("one_fm_offer_accepted_date", self.one_fm_offer_accepted_date)
             
-        if self.get('workflow_state') == 'Submit to Onboarding Officer':
+        if self.get("workflow_state") == "Submit to Onboarding Officer":
             msg = "Please select {0} to Accept the Offer and Process Onboard"
             if not self.estimated_date_of_joining and not self.onboarding_officer:
                 frappe.throw(_(msg.format("<b>Estimated Date of Joining</b> and <b>Onboarding Officer</b>")))
@@ -150,8 +150,8 @@ class JobOfferOverride(JobOffer):
             assign_to_onboarding_officer(self)
             self.create_candidate_country_process()
 
-        if self.get('workflow_state') == 'Accepted':
-            if self.get_onload('onboard_employee'):
+        if self.get("workflow_state") == "Accepted":
+            if self.get_onload("onboard_employee"):
                 close_all_assignments(self.doctype, self.name)
 
     def validate_job_offer_mandatory_fields(self):
@@ -275,23 +275,23 @@ class JobOfferOverride(JobOffer):
             self.status = "Awaiting Response"
 
     def create_candidate_country_process(self):
-        if frappe.db.exists('Candidate Country Process', {'job_offer': self.name}):
+        if frappe.db.exists("Candidate Country Process", {"job_offer": self.name}):
             return
 
-        job_applicant = frappe.get_doc('Job Applicant', self.job_applicant)
+        job_applicant = frappe.get_doc("Job Applicant", self.job_applicant)
         if not job_applicant.job_title:
             return
 
         # Fetch Agency from Job Opening
-        agency = frappe.db.get_value('Job Opening', job_applicant.job_title, 'agency')
+        agency = frappe.db.get_value("Job Opening", job_applicant.job_title, "agency")
         if not agency:
             return
 
-        agency_country_process = frappe.db.get_value('Agency Country Process', {'agency': agency}, 'name')
+        agency_country_process = frappe.db.get_value("Agency Country Process", {"agency": agency}, "name")
         if not agency_country_process:
             return
 
-        ccp = frappe.new_doc('Candidate Country Process')
+        ccp = frappe.new_doc("Candidate Country Process")
         ccp.job_offer = self.name
         ccp.job_opening = job_applicant.job_title
         ccp.job_applicant = self.job_applicant
@@ -299,7 +299,7 @@ class JobOfferOverride(JobOffer):
         ccp.agency_country_process = agency_country_process
         ccp.start_date = self.one_fm_offer_accepted_date or frappe.utils.nowdate()
 
-        acp_doc = frappe.get_doc('Agency Country Process', agency_country_process)
+        acp_doc = frappe.get_doc("Agency Country Process", agency_country_process)
 
         for row in acp_doc.agency_process_details:
             d = ccp.append("agency_process_details", {})
@@ -321,13 +321,12 @@ class JobOfferOverride(JobOffer):
                 created_date = frappe.utils.getdate(self.creation)
                 d.planned_date = frappe.utils.add_days(created_date, row.duration_in_days)
                 d.live_plan_date = d.planned_date
-                d.status = 'Offer Accepted'
+                d.status = "Offer Accepted"
                 d.actual_date = ccp.start_date
                 d.reference_name = self.name
             else:
                 pass
 
-        ccp.flags.ignore_mandatory = True
         ccp.save(ignore_permissions=True)
 
 def assign_to_onboarding_officer(self):
