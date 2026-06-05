@@ -68,40 +68,43 @@ def execute():
     )
 
     # ── Update Agency Process Details (templates) ─────────────────────────────
+    apd = frappe.qb.DocType("Agency Process Details")
     for process_name, deps in DEPENDENCY_MAP.items():
-        frappe.db.sql("""
-            UPDATE `tabAgency Process Details`
-            SET before_task = %(before_task)s,
-                sequence_type = %(sequence_type)s,
-                after_task = %(after_task)s
-            WHERE process_name = %(process_name)s
-              AND parent IN %(target_templates)s
-              AND (before_task IS NULL OR before_task = '')
-        """, {
-            "process_name": process_name,
-            "before_task": deps["before_task"],
-            "sequence_type": deps["sequence_type"],
-            "after_task": deps["after_task"],
-            "target_templates": TARGET_TEMPLATES,
-        })
+        frappe.qb.update(apd).set(
+            apd.before_task, deps["before_task"]
+        ).set(
+            apd.sequence_type, deps["sequence_type"]
+        ).set(
+            apd.after_task, deps["after_task"]
+        ).where(
+            apd.process_name == process_name
+        ).where(
+            apd.parent.isin(TARGET_TEMPLATES)
+        ).where(
+            (apd.before_task.isnull()) | (apd.before_task == "")
+        ).run()
 
     # ── Update Candidate Country Process Details (live tracker rows) ──────────
+    ccp = frappe.qb.DocType("Candidate Country Process")
+    ccpd = frappe.qb.DocType("Candidate Country Process Details")
+
+    subquery = frappe.qb.from_(ccp).select(ccp.name).where(
+        ccp.agency_country_process.isin(TARGET_TEMPLATES)
+    )
+
     for process_name, deps in DEPENDENCY_MAP.items():
-        frappe.db.sql("""
-            UPDATE `tabCandidate Country Process Details` dt
-            INNER JOIN `tabCandidate Country Process` ccp ON dt.parent = ccp.name
-            SET dt.before_task = %(before_task)s,
-                dt.sequence_type = %(sequence_type)s,
-                dt.after_task = %(after_task)s
-            WHERE dt.process_name = %(process_name)s
-              AND ccp.agency_country_process IN %(target_templates)s
-              AND (dt.before_task IS NULL OR dt.before_task = '')
-        """, {
-            "process_name": process_name,
-            "before_task": deps["before_task"],
-            "sequence_type": deps["sequence_type"],
-            "after_task": deps["after_task"],
-            "target_templates": TARGET_TEMPLATES,
-        })
+        frappe.qb.update(ccpd).set(
+            ccpd.before_task, deps["before_task"]
+        ).set(
+            ccpd.sequence_type, deps["sequence_type"]
+        ).set(
+            ccpd.after_task, deps["after_task"]
+        ).where(
+            ccpd.process_name == process_name
+        ).where(
+            ccpd.parent.isin(subquery)
+        ).where(
+            (ccpd.before_task.isnull()) | (ccpd.before_task == "")
+        ).run()
 
     frappe.db.commit()
