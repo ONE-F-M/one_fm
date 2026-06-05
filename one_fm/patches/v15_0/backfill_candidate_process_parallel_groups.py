@@ -24,9 +24,9 @@ def execute():
         return
 
     # 1. Stamp correct parallel_group on every existing detail row
-    rows = frappe.db.sql(
-        "SELECT name, process_name, parallel_group FROM `tabCandidate Country Process Details`",
-        as_dict=True,
+    rows = frappe.get_all(
+        "Candidate Country Process Details",
+        fields=["name", "process_name", "parallel_group"]
     )
     for row in rows:
         pg = PARALLEL_MAP.get(row.process_name, 0)
