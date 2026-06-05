@@ -40,11 +40,11 @@ frappe.ui.form.on('Candidate Country Process', {
       setup_open_record_links(frm);
 
       // ── "Sync Template" button: pull latest updates from template ──
-      frm.add_custom_button(__('Sync Template'), function() {
-        frappe.confirm(__('Are you sure you want to sync this tracker with the latest template changes? This will add new steps and update durations/dependencies while preserving existing progress.'), function() {
+      frm.add_custom_button(__("Sync Template"), function() {
+        frappe.confirm(__("Are you sure you want to sync this tracker with the latest template changes? This will add new steps and update durations/dependencies while preserving existing progress."), function() {
           frm.call({
             doc: frm.doc,
-            method: 'sync_with_template',
+            method: "sync_with_template",
             callback: function() {
               frm.reload_doc();
             }
@@ -91,19 +91,19 @@ var setup_inline_status_filter = function(frm) {
   var grid = frm.fields_dict.agency_process_details;
   if (!grid || !grid.grid || !grid.grid.wrapper) return;
 
-  grid.grid.wrapper.off('click.status_filter').on('click.status_filter',
+  grid.grid.wrapper.off("click.status_filter").on("click.status_filter",
     '.frappe-control[data-fieldname="status"]', function() {
       var $cell = $(this);
-      var $row = $cell.closest('.rows .frappe-control').length
-        ? $cell.closest('[data-name]')
-        : $cell.closest('.grid-row');
+      var $row = $cell.closest(".rows .frappe-control").length
+        ? $cell.closest("[data-name]")
+        : $cell.closest(".grid-row");
       if (!$row.length) {
-        $row = $cell.closest('[data-name]');
+        $row = $cell.closest("[data-name]");
       }
-      var docname = $row.attr('data-name');
+      var docname = $row.attr("data-name");
       if (!docname) return;
 
-      var row_data = locals['Candidate Country Process Details'][docname];
+      var row_data = locals["Candidate Country Process Details"][docname];
       if (!row_data) return;
 
       var allowed = STATUS_MAP[row_data.process_name]
@@ -140,9 +140,9 @@ var set_country_process_details = function(frm) {
         d.process_name = row.process_name;
         d.responsible = row.responsible;
         d.duration_in_days = row.duration_in_days;
-        d.before_task = row.before_task || '';
-        d.sequence_type = row.sequence_type || 'Sequential';
-        d.after_task = row.after_task || '';
+        d.before_task = row.before_task || "";
+        d.sequence_type = row.sequence_type || "Sequential";
+        d.after_task = row.after_task || "";
         d.attachment_required = row.attachment_required;
         d.notes_required = row.notes_required;
         d.reference_type = row.reference_type;
@@ -197,9 +197,9 @@ var add_apply_visa_button = function(frm) {
   // Only show button if no PAM Visa is linked yet
   if (visa_row.reference_name) {
     // Already linked — show "Open PAM Visa" instead
-    frm.add_custom_button(__('Open PAM Visa'), function() {
-      frappe.set_route('Form', 'PAM Visa', visa_row.reference_name);
-    }, __('Visa'));
+    frm.add_custom_button(__("Open PAM Visa"), function() {
+      frappe.set_route("Form", "PAM Visa", visa_row.reference_name);
+    }, __("Visa"));
   } else {
     // Check if Job Offer is accepted (prerequisite)
     var jo_row = (frm.doc.agency_process_details || []).find(function(r) {
@@ -208,44 +208,44 @@ var add_apply_visa_button = function(frm) {
     var jo_done = jo_row && jo_row.status === "Offer Accepted";
 
     if (jo_done) {
-      frm.add_custom_button(__('Apply Visa'), function() {
+      frm.add_custom_button(__("Apply Visa"), function() {
         frappe.confirm(
-          __('Create a new PAM Visa application for <b>{0}</b>?', [frm.doc.candidate_name]),
+          __("Create a new PAM Visa application for <b>{0}</b>?", [frm.doc.candidate_name]),
           function() {
             frappe.call({
-              method: 'frappe.client.save',
+              method: "frappe.client.save",
               args: {
                 doc: {
-                  doctype: 'PAM Visa',
+                  doctype: "PAM Visa",
                   candidate_country_process: frm.doc.name
                 }
               },
               freeze: true,
-              freeze_message: __('Creating PAM Visa...'),
+              freeze_message: __("Creating PAM Visa..."),
               callback: function(r) {
                 if (r.message) {
                   // Update the tracker row with the reference
                   frappe.model.set_value(
                     visa_row.doctype, visa_row.name,
-                    'reference_name', r.message.name
+                    "reference_name", r.message.name
                   );
                   frm.dirty();
                   frm.save().then(function() {
                     frappe.show_alert({
-                      message: __('PAM Visa {0} created', [r.message.name]),
-                      indicator: 'green'
+                      message: __("PAM Visa {0} created", [r.message.name]),
+                      indicator: "green"
                     });
-                    frappe.set_route('Form', 'PAM Visa', r.message.name);
+                    frappe.set_route("Form", "PAM Visa", r.message.name);
                   });
                 }
               }
             });
           }
         );
-      }, __('Visa'));
+      }, __("Visa"));
 
       // Highlight the button in primary color
-      frm.change_custom_button_type(__('Apply Visa'), __('Visa'), 'primary');
+      frm.change_custom_button_type(__("Apply Visa"), __("Visa"), "primary");
     }
   }
 };
@@ -256,19 +256,19 @@ var setup_open_record_links = function(frm) {
   if (!grid || !grid.grid || !grid.grid.wrapper) return;
 
   // Use event delegation — intercept clicks on the reference_name column
-  grid.grid.wrapper.off('click.open_record').on('click.open_record',
+  grid.grid.wrapper.off("click.open_record").on("click.open_record",
     '.frappe-control[data-fieldname="reference_name"]', function(e) {
       var $cell = $(this);
-      var $row = $cell.closest('[data-name]');
-      var docname = $row.attr('data-name');
+      var $row = $cell.closest("[data-name]");
+      var docname = $row.attr("data-name");
       if (!docname) return;
 
-      var row_data = locals['Candidate Country Process Details'][docname];
+      var row_data = locals["Candidate Country Process Details"][docname];
       if (!row_data || !row_data.reference_type || !row_data.reference_name) return;
 
       e.stopPropagation();
       e.preventDefault();
-      frappe.set_route('Form', row_data.reference_type, row_data.reference_name);
+      frappe.set_route("Form", row_data.reference_type, row_data.reference_name);
     }
   );
 
@@ -278,12 +278,12 @@ var setup_open_record_links = function(frm) {
       if (row.reference_name && row.reference_type) {
         var $row_el = grid.grid.wrapper.find('[data-name="' + row.name + '"]');
         var $ref_cell = $row_el.find('.frappe-control[data-fieldname="reference_name"] .static-area');
-        if ($ref_cell.length && !$ref_cell.hasClass('linked')) {
+        if ($ref_cell.length && !$ref_cell.hasClass("linked")) {
           $ref_cell.css({
-            'color': 'var(--primary-color, #2490EF)',
-            'cursor': 'pointer',
-            'text-decoration': 'underline'
-          }).addClass('linked');
+            "color": "var(--primary-color, #2490EF)",
+            "cursor": "pointer",
+            "text-decoration": "underline"
+          }).addClass("linked");
         }
       }
     });
