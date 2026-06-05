@@ -34,7 +34,12 @@ class VisaRequest(Document):
 			if not row.reference_name:
 				update_fields["reference_name"] = self.name
 
-			if self.workflow_state == "Completed":
+			is_completed = (self.workflow_state == "Completed")
+			is_rejected = self.workflow_state in [
+				"Rejected", "Rejected By Operator", "Rejected By PAM", "Rejected By MOI",
+				"Rejected for Re Issue", "Canceled", "Cancelled"
+			]
+			if is_completed or is_rejected:
 				update_fields["actual_date"] = frappe.utils.nowdate()
 			else:
 				update_fields["actual_date"] = None
