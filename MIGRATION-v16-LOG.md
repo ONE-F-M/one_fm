@@ -119,10 +119,55 @@ This is harmless in Python 3 but adds noise.
 |------|--------|
 | `pyproject.toml` | Bumped `requires-python` to `>=3.10,<3.15` and `frappe-dependencies` to `>=16.0.0,<17.0.0` |
 | `pyproject.toml` | Updated Google Cloud pins for Python 3.14 compatibility: `firebase-admin>=7.4.0`, `google-cloud-firestore>=2.27.0`, `google-cloud-vision>=3.14.0`, `google-cloud-storage>=3.4.1`, `google-cloud-core>=2.6.0`, `google-auth>=2.53.0` |
+| `pyproject.toml` | Bumped `mindee>=4.36.0,<5` (Python 3.14 compatibility) |
 | `one_fm/api/api.py` | Removed imports from removed `frappe.desk.page.user_profile` and `frappe.social.doctype.energy_point_log` |
 | `one_fm/permissions.py` | Added `frappe.db.exists("DocType", "Energy Point Log")` guard in `get_point_logs()` |
 | `one_fm/__init__.py` | Bumped `__version__` to `16.0.0`, removed `from __future__` import |
 | `one_fm/api/api.py` | Replaced `get_user_rank()` and `get_user_energy_and_review_points()` calls with fallback `"0"` values |
+| `one_fm/developer/doctype/file_transfer_wizard/file_transfer_wizard.py` | Replaced removed `offsite_backup_utils.get_latest_backup_file()` with direct `BackupGenerator` usage |
+| `one_fm/one_fm/utils.py` | Removed unused imports from removed `frappe.integrations.offsite_backup_utils` |
+
+## Issues Found During Site Installation
+
+### Issue #7 — `mindee==4.28.2` PDF compressor fails on Python 3.14
+
+**Error:** `ImportError: cannot import name 'POINTER' from '_ctypes'`
+
+**Root cause:** `mindee` v4.28.2 uses an internal PDF compression library that imports from `_ctypes.POINTER`, which was removed/restructured in Python 3.14.
+
+**Fix:** Bump mindee to `>=4.36.0,<5` — the newer version handles this differently.
+
+### Issue #8 — `frappe.integrations.offsite_backup_utils` removed in v16
+
+**Error:** `ModuleNotFoundError: No module named 'frappe.integrations.offsite_backup_utils'`
+
+**Root cause:** The entire module was removed from Frappe v16. Two files imported from it:
+- `one_fm/utils.py` — imported but **no functions were actually used**
+- `file_transfer_wizard.py` — imported `get_latest_backup_file()` which was used in `get_last_backups()`
+
+**Fix:** 
+- Removed unused import from `utils.py`
+- Replaced `get_latest_backup_file()` in `file_transfer_wizard.py` with direct `BackupGenerator.get_recent_backup()` call
+
+### Issue #9 — `iban` custom field conflicts with standard ERPNext v16 field
+
+**Error:** `ValidationError: A field with the name iban already exists in Employee`
+
+**Root cause:** `one_fm` tries to create `iban` as a custom field on Employee, but in ERPNext v16, `iban` is now a standard field added by the Employee doctype schema.
+
+**Fix (temporary):** Delete the `tabCustom Field` entry for Employee/iban before installing. Long-term: Remove the iban field definition from `one_fm/custom/custom_field/employee.py` since it's now standard.
+
+### Issue #10 — Redis not running for new bench
+
+**Error:** `redis.exceptions.ConnectionError: Error 111 connecting to 127.0.0.1:11004`
+
+**Root cause:** Each bench has its own Redis port (cache/queue). The new bench expects 13004/11004 but no Redis server was started on those ports.
+
+**Fix:** Start Redis from the bench config:
+```bash
+redis-server config/redis_cache.conf --daemonize yes
+redis-server config/redis_queue.conf --daemonize yes
+```
 
 ## Summary of Breaking Changes (Frappe v15 → v16)
 
@@ -131,7 +176,10 @@ This is harmless in Python 3 but adds noise.
 | `frappe.desk.page.user_profile` | Exists | **Removed** | Direct import in `api.py` |
 | `frappe.social.doctype.energy_point_log` | Exists | **Removed** | Direct import in `api.py` |
 | `Energy Point Log` doctype | Exists | **Removed** | Query in `permissions.py` |
+| `frappe.integrations.offsite_backup_utils` | Exists | **Removed** | Imports in 2 files |
+| `mindee` PDF compressor | Works | **Broken** on Python 3.14 | Requires mindee >=4.36 |
 | `google-protobuf` metaclass API | v4.x works | v4.x **broken** on Python 3.14 | Requires protobuf >=5.x and matching google cloud libs |
+| `iban` on Employee | Custom field | **Standard field** in ERPNext v16 | Custom field creation conflicts |
 | `from __future__` imports | Works | Works (no-op) | Cleanup only (623 files) |
 | Python version | 3.10-3.13 | 3.10+ | Constraint in pyproject.toml |
 
@@ -143,7 +191,10 @@ This is harmless in Python 3 but adds noise.
 2. **Update `pyproject.toml`**: Bump `frappe-dependencies` and Python version constraints
 3. **Fix removed module imports**: `frappe.desk.page.user_profile` and `frappe.social` were removed in v16
 4. **Guard removed doctype queries**: Use `frappe.db.exists()` before querying removed DocTypes
-5. **Update Google Cloud dependencies**: Python 3.14 requires protobuf >=5.x, which requires upgraded google-cloud-* libraries
-6. **Remove `from __future__`**: Cosmetic cleanup (623 occurrences)
-7. **Bump version**: Update `__version__` in `__init__.py`
-8. **Test**: Create a site, install apps, run patches, verify core flows
+5. **Replace removed utility modules**: `offsite_backup_utils` → `frappe.utils.backups.BackupGenerator`
+6. **Update Google Cloud dependencies**: Python 3.14 requires protobuf >=5.x, which requires upgraded google-cloud-* libraries
+7. **Update mindee dependency**: Must be >=4.36.0 for Python 3.14
+8. **Handle now-standard fields**: Remove custom field definitions for fields that became standard in v16 (e.g. `iban` on Employee)
+9. **Remove `from __future__`**: Cosmetic cleanup (623 occurrences)
+10. **Bump version**: Update `__version__` in `__init__.py`
+11. **Test**: Create a site, install apps, run patches, verify core flows
