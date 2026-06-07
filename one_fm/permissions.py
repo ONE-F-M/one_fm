@@ -367,6 +367,9 @@ def get_comments(
 
 
 def get_point_logs(doctype, docname):
+	# Frappe v16 removed the Energy Point Log doctype; return empty gracefully.
+	if not frappe.db.exists("DocType", "Energy Point Log"):
+		return []
 	return frappe.get_all(
 		"Energy Point Log",
 		filters={"reference_doctype": doctype, "reference_name": docname, "type": ["!=", "Review"]},

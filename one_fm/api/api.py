@@ -4,8 +4,6 @@ import pandas as pd
 from frappe.utils import cstr, cint
 from frappe.model.rename_doc import rename_doc
 from firebase_admin import messaging, credentials
-from frappe.desk.page.user_profile.user_profile import get_energy_points_heatmap_data, get_user_rank
-from frappe.social.doctype.energy_point_log.energy_point_log import get_energy_points, get_user_energy_and_review_points
 import one_fm.api.v1 as v1_api
 
 
@@ -62,9 +60,6 @@ def get_user_details():
         user= frappe.get_value("User",user_id,"*")
         employee_ID = frappe.get_value("Employee", {"user_id": user_id}, ["name","designation","employee_name_in_arabic"])
         
-        Rank = get_user_rank(user_id)
-        energy_Review_Point = get_user_energy_and_review_points(user_id)
-
         user_details={}
         user_details["Name"]=user.full_name
         user_details["Name_ar"] = employee_ID[2]
@@ -73,10 +68,11 @@ def get_user_details():
         user_details["Designation"]= employee_ID[1]
         user_details["EMP_ID"]= employee_ID[0]
         user_details["User_Image"] = user.user_image
-        user_details["Monthly_Rank"] = str(Rank["monthly_rank"]).strip('[]') if len(Rank["monthly_rank"])!=0 else "0"
-        user_details["Rank"] = str(Rank["all_time_rank"]).strip('[]') if len(Rank["all_time_rank"])!=0 else "0"
-        user_details["Energy_Point"] = str(int(energy_Review_Point[user_id]["energy_points"])) if len(energy_Review_Point)!=0 else "0"
-        user_details["Review_Point"] = str(int(energy_Review_Point[user_id]["review_points"])) if len(energy_Review_Point)!=0 else "0"
+        # Frappe v16 removed Energy Points system (user_profile page + energy_point_log doctype)
+        user_details["Monthly_Rank"] = "0"
+        user_details["Rank"] = "0"
+        user_details["Energy_Point"] = "0"
+        user_details["Review_Point"] = "0"
         return user_details
     except Exception as e:
         print(frappe.get_traceback())

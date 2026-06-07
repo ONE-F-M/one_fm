@@ -4,7 +4,7 @@ authors = [
     { name = "ONE FM", email = "dev@one-fm.com"}
 ]
 description = "One Facility Management is a leader in the fields of commercial automation and integrated security management systems providing the latest in products and services in these fields"
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.10,<3.15"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
@@ -14,12 +14,12 @@ dependencies = [
     "twilio>=8.5.0,<10",
     "pandas>=3.0.0,<4",
     "deep-translator==1.11.4",
-    "firebase-admin==6.5.0",
-    "google-cloud-core>=2.3.3,<3",
-    "google-cloud-firestore==2.13.0",
-    "google-auth>=2.34.0",
-    "google-cloud-storage>=2.11.0,<3",
-    "google-cloud-vision==3.4.5",
+    "firebase-admin>=7.4.0",
+    "google-cloud-core>=2.6.0",
+    "google-cloud-firestore>=2.27.0",
+    "google-auth>=2.53.0",
+    "google-cloud-storage>=3.4.1",
+    "google-cloud-vision>=3.14.0",
     "datefinder==0.7.3",
     "html2text==2020.1.16",
     "qrcode==7.4.2",
@@ -80,7 +80,7 @@ indent-style = "tab"
 docstring-code-format = true
 
 [tool.bench.frappe-dependencies]
-one_fm = ">=15.0.0,<16.0.0"
+one_fm = ">=16.0.0,<17.0.0"
 
 [tool.mypy]
 strict = false

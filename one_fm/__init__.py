@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 import frappe
 
 
@@ -56,7 +55,7 @@ from one_fm.overrides.workflow import confirm_action as custom_confirm_action
 from one_fm.overrides.purchase_order import calculate_margin
 
 
-__version__ = '15.6.0'
+__version__ = '16.0.0'
 
 wa.confirm_action = custom_confirm_action
 user_permission.get_user_permissions = get_custom_user_permissions
