@@ -82,13 +82,8 @@ def get_employee_custom_fields():
 				"fieldtype": "Column Break",
 				"insert_after": "bank_name",
 			},
-			{
-				"fieldname": "iban",
-				"fieldtype": "Data",
-				"insert_after": "one_fm_basic_salary",
-				"label": "IBAN",
-				"translatable": 1,
-			},
+			# NOTE(v16): 'iban' was a custom field in v15 but is now a standard field
+		# in ERPNext v16's Employee DocType. Removed to prevent ValidationError on install.
 			{
 				"fieldname": "custom_employee_image",
 				"fieldtype": "Image",
