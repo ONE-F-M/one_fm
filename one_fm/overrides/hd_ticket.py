@@ -102,7 +102,9 @@ class HDTicketOverride(HDTicket):
 
     def handle_process_based_on_doctype(self):
         """Handle process field based on doctype selection"""
-        if self.custom_is_doctype_related == "Yes" and self.custom_reference_doctype:
+        # NOTE(v16): use getattr to guard against AttributeError during helpdesk install,
+        # when one_fm custom fields may not yet exist on the HD Ticket document.
+        if getattr(self, "custom_is_doctype_related", None) == "Yes" and getattr(self, "custom_reference_doctype", None):
             # Get filtered processes for the selected doctype
             filtered_processes = get_filtered_processes(self.custom_reference_doctype, "Yes")
             
