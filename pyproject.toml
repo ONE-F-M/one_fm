@@ -10,7 +10,7 @@ dynamic = ["version"]
 dependencies = [
     # bleach and bleach-allowlist are managed by frappe — do NOT pin here
     "gspread",
-    "mindee==4.28.2",
+    "mindee>=4.36.0,<5",
     "twilio>=8.5.0,<10",
     "pandas>=3.0.0,<4",
     "deep-translator==1.11.4",

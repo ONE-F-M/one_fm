@@ -3,7 +3,7 @@
 
 import frappe,socket,paramiko
 from frappe.model.document import Document
-from frappe.integrations.offsite_backup_utils import get_latest_backup_file
+from frappe.utils.backups import BackupGenerator
 
 
 class FileTransferWizard(Document):
@@ -86,10 +86,19 @@ class FileTransferWizard(Document):
     
     def get_last_backups(self):
         db_filename, site_config, files_filename, private_files = None,None,None,None
+        odb = BackupGenerator(
+            frappe.conf.db_name,
+            frappe.conf.db_name,
+            frappe.conf.db_password,
+            db_socket=frappe.conf.db_socket,
+            db_host=frappe.conf.db_host,
+            db_port=frappe.conf.db_port,
+            db_type=frappe.conf.db_type,
+        )
         if self.transfer_public_and_private_files:
-            db_filename, site_config, files_filename, private_files = get_latest_backup_file(with_files=1)
+            db_filename, site_config, files_filename, private_files = odb.get_recent_backup(older_than=24 * 30)
         else:
-            db_filename, site_config = get_latest_backup_file()
+            db_filename, site_config = odb.get_recent_backup(older_than=24 * 30)[:2]
             
         return {'db':db_filename,'site_config':site_config,'files_filename':files_filename,'private_files':private_files}
     
