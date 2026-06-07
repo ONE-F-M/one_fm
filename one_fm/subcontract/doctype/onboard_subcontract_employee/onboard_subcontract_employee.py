@@ -54,7 +54,8 @@ class OnboardSubcontractEmployee(Document):
 					"site_allocation": "site",
 					"project_allocation": "project",
 					"provide_accommodation_by_company": "one_fm_provide_accommodation_by_company",
-					"basic_salary": "one_fm_basic_salary"
+					"basic_salary": "one_fm_basic_salary",
+					"subcontractor_name": "custom_subcontractor_name"
 	            }
 	        }
 	    }, None, set_missing_values)
