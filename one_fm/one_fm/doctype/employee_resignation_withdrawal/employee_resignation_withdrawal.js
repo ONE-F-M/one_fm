@@ -115,20 +115,11 @@ frappe.ui.form.on("Employee Resignation Withdrawal", {
 		}
 
 		if (frm.doc.employee_resignation) {
-			frappe.db.get_value('Employee Resignation', frm.doc.employee_resignation, ['project_allocation', 'site_allocation', 'department'])
+			frappe.db.get_value('Employee Resignation', frm.doc.employee_resignation, 'shift_working')
 			.then(r => {
-				if (r && r.message) {
-					let project = r.message.project_allocation || "";
-					let site = r.message.site_allocation || "";
-					let dept = r.message.department || "";
-					let is_corporate = (project.includes("Head Office") || site.includes("Head Office") || dept.includes("Head Office"));
-					
-					// Set dynamic property for Frappe's native Depends On engine
-					frm.doc.is_corporate = is_corporate ? 1 : 0;
-					
-					// Force native re-evaluation
-                    frm.refresh_fields();
-				}
+				let is_shift_worker = r.message ? cint(r.message.shift_working) : 0;
+				frm.set_value('is_corporate', is_shift_worker ? 0 : 1);
+				frm.refresh_fields();
 			});
 		}
 	},

@@ -9,6 +9,10 @@ from one_fm.processor import sendemail
 from one_fm.api.doc_events import get_employee_user_id
 from one_fm.utils import response
 from frappe.utils.password import get_decrypted_password
+try:
+    from one_bpmn.api import send_message as send_processa_message
+except ImportError:
+    send_processa_message = None
 
 class HDTicketOverride(HDTicket):
     def before_insert(self):
@@ -414,14 +418,15 @@ def cleanhtml(raw_html):
 
 @frappe.whitelist()
 def get_ticket_details(name: str):
-    fields = ['subject', 'description', "priority", "custom_process"]
-    hd_ticket = frappe.db.get_value('HD Ticket',{"name": name}, fields, as_dict=True)
-    if not hd_ticket:
+    # Fetch the full document to get all custom fields
+    try:
+        ticket_doc = frappe.get_doc('HD Ticket', name)
+    except frappe.DoesNotExistError:
         frappe.throw(_("Ticket not found"), frappe.DoesNotExistError)
     return {
         "message": "Operation Successful",
         "status_code": 200,
-        "data": hd_ticket,
+        "data": ticket_doc.as_dict(),  # Include full document to access all custom fields
     }
 
 @frappe.whitelist()
@@ -445,6 +450,16 @@ def update_ticket(name: str, updates: str):
     doc.save(ignore_permissions=True)
     frappe.db.commit()
     doc.notify_ticket_raiser_of_receipt()
+
+    if send_processa_message:
+        try:
+            send_processa_message(
+                message_name="hd_ticket_update",
+                context_doctype="HD Ticket",
+                context_docname=name
+            )
+        except Exception as e:
+            frappe.log_error(message=frappe.get_traceback(), title="Processa Message Error (HD Ticket Update)")
 
     return {
         "message": "Operation Successful",

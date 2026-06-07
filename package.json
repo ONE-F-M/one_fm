@@ -1,0 +1,8 @@
+{
+  "name": "one_fm",
+  "private": true,
+  "devDependencies": {
+    "@commitlint/cli": "^20.1.0",
+    "conventional-changelog-conventionalcommits": "^9.1.0"
+  }
+}

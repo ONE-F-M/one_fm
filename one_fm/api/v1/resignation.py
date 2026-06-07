@@ -84,9 +84,11 @@ def create_resignation(
 ):
     try:
         p = get_all_params(
-            "resignation_initiation_date", "relieving_date", "attachment",
             employee_id=employee_id,
             supervisor=supervisor,
+            resignation_initiation_date=resignation_initiation_date,
+            relieving_date=relieving_date,
+            attachment=attachment,
         )
         input_id   = p["employee_id"]
         supervisor = p["supervisor"]
