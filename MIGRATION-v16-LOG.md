@@ -126,6 +126,7 @@ This is harmless in Python 3 but adds noise.
 | `one_fm/api/api.py` | Replaced `get_user_rank()` and `get_user_energy_and_review_points()` calls with fallback `"0"` values |
 | `one_fm/developer/doctype/file_transfer_wizard/file_transfer_wizard.py` | Replaced removed `offsite_backup_utils.get_latest_backup_file()` with direct `BackupGenerator` usage |
 | `one_fm/one_fm/utils.py` | Removed unused imports from removed `frappe.integrations.offsite_backup_utils` |
+| `one_fm/one_fm/depreciation_custom.py` | Adapted from removed `get_depreciable_asset_depr_schedules_data` to use v16's `get_depreciable_assets_data` + `make_depreciation_entry` |
 
 ## Issues Found During Site Installation
 
@@ -157,7 +158,23 @@ This is harmless in Python 3 but adds noise.
 
 **Fix (temporary):** Delete the `tabCustom Field` entry for Employee/iban before installing. Long-term: Remove the iban field definition from `one_fm/custom/custom_field/employee.py` since it's now standard.
 
-### Issue #10 — Redis not running for new bench
+### Issue #10 — `get_depreciable_asset_depr_schedules_data` renamed in ERPNext v16
+
+**Error:** `ImportError: cannot import name 'get_depreciable_asset_depr_schedules_data'`
+
+**Root cause:** `one_fm/one_fm/depreciation_custom.py` imported `get_depreciable_asset_depr_schedules_data` from `erpnext.assets.doctype.asset.depreciation`. In ERPNext v16, the depreciation system was restructured:
+- Old function renamed to `get_depreciable_assets_data`
+- Return format changed from schedule data directly to `(depr_schedule_name, asset_name, start_idx, end_idx)` tuples
+- Schedules moved from direct Asset child table to separate `Asset Depreciation Schedule` doctype
+- Journal entry creation moved to `make_depreciation_entry(depr_schedule_name, date)`
+
+**Fix:** Rewrote `depreciation_custom.py`:
+- Uses `get_depreciable_assets_data` from v16
+- Delegates JE creation to v16's `make_depreciation_entry`
+- Preserves one_fm's project-based account selection (`direct_depreciation_expense_account` vs `indirect_depreciation_expense_account`) via `_set_project_based_accounts` helper
+- `make_depreciation(asset_name)` single-asset trigger adapted to query `Asset Depreciation Schedule` directly
+
+### Issue #11 — Redis not running for new bench
 
 **Error:** `redis.exceptions.ConnectionError: Error 111 connecting to 127.0.0.1:11004`
 
@@ -178,6 +195,7 @@ redis-server config/redis_queue.conf --daemonize yes
 | `Energy Point Log` doctype | Exists | **Removed** | Query in `permissions.py` |
 | `frappe.integrations.offsite_backup_utils` | Exists | **Removed** | Imports in 2 files |
 | `mindee` PDF compressor | Works | **Broken** on Python 3.14 | Requires mindee >=4.36 |
+| `get_depreciable_asset_depr_schedules_data` | Exists | **Renamed** to `get_depreciable_assets_data` | Full rewrite of `depreciation_custom.py` |
 | `google-protobuf` metaclass API | v4.x works | v4.x **broken** on Python 3.14 | Requires protobuf >=5.x and matching google cloud libs |
 | `iban` on Employee | Custom field | **Standard field** in ERPNext v16 | Custom field creation conflicts |
 | `from __future__` imports | Works | Works (no-op) | Cleanup only (623 files) |
@@ -195,6 +213,7 @@ redis-server config/redis_queue.conf --daemonize yes
 6. **Update Google Cloud dependencies**: Python 3.14 requires protobuf >=5.x, which requires upgraded google-cloud-* libraries
 7. **Update mindee dependency**: Must be >=4.36.0 for Python 3.14
 8. **Handle now-standard fields**: Remove custom field definitions for fields that became standard in v16 (e.g. `iban` on Employee)
-9. **Remove `from __future__`**: Cosmetic cleanup (623 occurrences)
-10. **Bump version**: Update `__version__` in `__init__.py`
-11. **Test**: Create a site, install apps, run patches, verify core flows
+9. **Adapt depreciation module**: `get_depreciable_asset_depr_schedules_data` → `get_depreciable_assets_data`; schedules moved to separate `Asset Depreciation Schedule` doctype
+10. **Remove `from __future__`**: Cosmetic cleanup (623 occurrences)
+11. **Bump version**: Update `__version__` in `__init__.py`
+12. **Test**: Create a site, install apps, run patches, verify core flows
