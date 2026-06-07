@@ -3,6 +3,7 @@ name: Linters
 
 on:
   pull_request:
+    branches: [staging, test-production, version-15]
   workflow_dispatch:
 
 permissions:
@@ -51,6 +52,23 @@ jobs:
         run: |
           pip install semgrep
           semgrep ci --config ./frappe-semgrep-rules/rules --config r/python.lang.correctness
+
+  pre-commit:
+    name: 'Linters'
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 200
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.14'
+          cache: pip
+
+      - name: Run pre-commit
+        uses: pre-commit/action@v3.0.1
 
   deps-vulnerable-check:
     name: 'Vulnerable Dependency Check'
