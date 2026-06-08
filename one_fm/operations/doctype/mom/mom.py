@@ -404,12 +404,8 @@ def update_task_from_mom(task_name: str, subject: str = None, description: str =
 			task.append("custom_assigned_to", {"user": user})
 
 	task.flags.ignore_links = True
-	old_get_workflow = task.meta.get_workflow
-	task.meta.get_workflow = lambda: None
-	try:
-		task.save(ignore_permissions=True)
-	finally:
-		task.meta.get_workflow = old_get_workflow
+	task.flags.ignore_workflow = True
+	task.save(ignore_permissions=True)
 	return {"success": True, "task": task_name}
 
 @frappe.whitelist()
