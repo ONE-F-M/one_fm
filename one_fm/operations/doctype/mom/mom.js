@@ -56,7 +56,7 @@ frappe.ui.form.on('MOM', {
 					}
 				})
 			}
-			if (frm.doc.project_type == "Internal") {
+			else if (frm.doc.project_type == "Internal") {
 				frappe.call({
 					method: 'one_fm.operations.doctype.mom.mom.review_last_internal_mom',
 					args: {
