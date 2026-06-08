@@ -16,7 +16,6 @@ from frappe.core.doctype.doctype.doctype import (
 )
 from frappe.permissions import (
 	add_permission,
-	get_linked_doctypes,
 	reset_perms,
 	setup_custom_perms,
 	update_permission_property,
