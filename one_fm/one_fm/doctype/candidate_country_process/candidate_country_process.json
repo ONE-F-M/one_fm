@@ -1,12 +1,13 @@
 {
  "actions": [],
  "autoname": "CCP.###",
- "creation": "2020-06-05 01:26:03.735490",
+ "creation": "2026-04-12 22:09:12.534708",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "job_offer",
+  "job_opening",
   "job_applicant",
   "candidate_name",
   "passport_number",
@@ -20,15 +21,12 @@
   "current_process_id",
   "section_break_3",
   "agency_process_details",
-  "section_break_eta",
+  "amended_from",
   "planned_eta",
-  "column_break_eta",
-  "live_plan_eta",
-  "amended_from"
+  "live_plan_eta"
  ],
  "fields": [
   {
-   "fetch_from": "job_offer.agency",
    "fieldname": "agency",
    "fieldtype": "Link",
    "label": "Agency",
@@ -54,13 +52,12 @@
    "read_only": 1
   },
   {
-   "default": "Pending",
+   "default": "In Process",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Pending\nIn Process\nApproved\nRejected\nFailed\nJoined\nDid Not Arrive",
-   "read_only": 1
+   "options": "In Process\nArriving\nJoined\nMedically unfit\nTasreeh Cancelled\nPCC Failed\nVisa Issuance Blocker\nCandidate Dropped Offer\nCountry Ban\non Hold"
   },
   {
    "fetch_from": "agency.agency",
@@ -96,6 +93,13 @@
    "in_list_view": 1,
    "label": "Job Offer",
    "options": "Job Offer"
+  },
+  {
+   "fieldname": "job_opening",
+   "fieldtype": "Link",
+   "label": "Job Opening",
+   "options": "Job Opening",
+   "read_only": 1
   },
   {
    "fetch_from": "job_offer.job_applicant",
@@ -137,35 +141,99 @@
    "label": "Current Process ID"
   },
   {
-   "fieldname": "section_break_eta",
-   "fieldtype": "Section Break",
-   "label": "ETA Tracking"
-  },
-  {
    "fieldname": "planned_eta",
    "fieldtype": "Date",
-   "label": "Planned ETA",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_eta",
-   "fieldtype": "Column Break"
+   "label": "Planned ETA"
   },
   {
    "fieldname": "live_plan_eta",
    "fieldtype": "Date",
-   "label": "Live Plan ETA",
-   "read_only": 1
+   "label": "Live Plan ETA"
   }
  ],
- "is_submittable": 1,
- "links": [],
- "modified": "2020-08-23 13:05:46.850075",
+ "links": [
+  {
+   "group": "Medical",
+   "link_doctype": "Overseas Medical Appointment WAFID",
+   "link_fieldname": "candidate_country_process"
+  },
+  {
+   "group": "Medical",
+   "link_doctype": "Overseas Remedical",
+   "link_fieldname": "candidate_country_process"
+  },
+  {
+   "group": "Clearance",
+   "link_doctype": "PAM Visa",
+   "link_fieldname": "candidate_country_process"
+  },
+  {
+   "group": "Clearance",
+   "link_doctype": "PCC Clearance",
+   "link_fieldname": "candidate_country_process"
+  },
+  {
+   "group": "Clearance",
+   "link_doctype": "Visa Stamping",
+   "link_fieldname": "candidate_country_process"
+  },
+  {
+   "group": "Deployment",
+   "link_doctype": "Arrival and Deployment",
+   "link_fieldname": "candidate_country_process"
+  }
+ ],
+ "modified": "2026-04-15 13:26:49.188583",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Candidate Country Process",
  "owner": "Administrator",
  "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
   {
    "create": 1,
    "delete": 1,
@@ -174,12 +242,46 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "System Manager",
+   "role": "Recruitment Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Recruiter",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Interviewer",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Agency"
   }
  ],
+ "row_format": "Dynamic",
+ "search_fields": "candidate_name,passport_number",
+ "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
+ "title_field": "candidate_name",
  "track_changes": 1
 }
