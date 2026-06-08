@@ -9,7 +9,6 @@ to the frappe Version doctype for audit trail purposes.
 """
 
 import frappe
-import frappe.defaults
 from frappe import _
 from frappe.core.doctype.doctype.doctype import (
 	clear_permissions_cache,
