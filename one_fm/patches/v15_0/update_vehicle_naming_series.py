@@ -14,26 +14,21 @@ def execute():
 		validate_fields_for_doctype=False,
 	)
 
-	# Step 2: Sync the naming series counter so it continues from the highest existing name
-	max_name = frappe.db.sql("""
-		SELECT name FROM `tabVehicle`
-		WHERE name LIKE 'VHL-%%'
-		ORDER BY LENGTH(name) DESC, name DESC
-		LIMIT 1
+	# Step 2: Sync the naming series counter so it continues from the highest existing name.
+	# Filter to names with purely numeric suffixes to avoid irregular names (e.g. VHL-TEST)
+	# resetting the counter and causing collisions.
+	max_counter = frappe.db.sql("""
+		SELECT MAX(CAST(SUBSTRING(name, 5) AS UNSIGNED))
+		FROM `tabVehicle`
+		WHERE name REGEXP '^VHL-[0-9]+$'
 	""")
 
-	if max_name:
-		# Extract the numeric part (e.g., "VHL-0042" → 42)
-		current = max_name[0][0]
-		try:
-			num = int(current.split("-", 1)[1])
-		except (IndexError, ValueError):
-			num = 0
+	num = max_counter[0][0] if max_counter and max_counter[0][0] else 0
 
-		# Update or insert the Series record so getseries() continues from here
-		if frappe.db.exists("Series", "VHL-"):
-			frappe.db.sql("UPDATE `tabSeries` SET current = %s WHERE name = %s", (num, "VHL-"))
-		else:
-			frappe.db.sql("INSERT INTO `tabSeries` (name, current) VALUES (%s, %s)", ("VHL-", num))
+	# Update or insert the Series record so getseries() continues from here
+	if frappe.db.exists("Series", "VHL-"):
+		frappe.db.sql("UPDATE `tabSeries` SET current = %s WHERE name = %s", (num, "VHL-"))
+	else:
+		frappe.db.sql("INSERT INTO `tabSeries` (name, current) VALUES (%s, %s)", ("VHL-", num))
 
 	frappe.db.commit()
