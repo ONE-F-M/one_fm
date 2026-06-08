@@ -148,7 +148,7 @@ class MOM(Document):
 			task.priority = row.priority or "Medium"
 			task.status = row.status or "Open"
 			task.exp_end_date = row.due_date
-			task.custom_mom = self.last_mom_name if is_last_action else self.name
+			task.custom_mom = (self.last_mom_name or self.name) if is_last_action else self.name
 			
 			if row.user:
 				task.append("custom_assigned_to", {"user": row.user})
