@@ -3,10 +3,7 @@
 
 frappe.ui.form.on("Overtime Request", {
 	setup: function(frm) {
-		// Story 1: Default requested_by to the current logged-in user
-		if (frm.is_new()) {
-			frm.set_value("requested_by", frappe.session.user);
-		}
+		// requested_by is auto-set via default:"__user" in DocType JSON
 	},
 
 	refresh: function(frm) {

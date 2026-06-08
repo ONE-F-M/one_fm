@@ -200,7 +200,6 @@ class MOM(Document):
 				changed = True
 				
 			if changed:
-			if changed:
 				task.flags.ignore_links = True
 				task.flags.ignore_workflow = True
 				task.save(ignore_permissions=True)

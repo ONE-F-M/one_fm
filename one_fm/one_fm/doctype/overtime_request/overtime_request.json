@@ -96,10 +96,13 @@
    "options": "Department"
   },
   {
+   "default": "__user",
    "fieldname": "requested_by",
    "fieldtype": "Link",
    "label": "Requested By",
-   "options": "User"
+   "options": "User",
+   "read_only": 1,
+   "set_only_once": 1
   },
   {
    "fetch_from": "employee.reports_to",
