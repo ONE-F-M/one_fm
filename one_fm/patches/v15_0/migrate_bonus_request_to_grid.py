@@ -92,7 +92,7 @@ def execute():
 			child = frappe.get_doc({
 				"doctype": "Bonus Request Items",
 				"parent": br.name,
-				"parentfield": "items",
+				"parentfield": "bonus_request_employees",
 				"parenttype": "Bonus Request",
 				"idx": 1,
 				"employee": br.employee,

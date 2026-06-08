@@ -23,19 +23,16 @@ class BonusRequest(Document):
 			self.effective_year = getdate(nowdate()).year
 
 		if not self.requested_by:
-			emp = frappe.db.get_value(
-				"Employee",
-				{"user_id": frappe.session.user, "status": "Active"},
-				"name"
-			)
-			if emp:
-				self.requested_by = emp
+			self.requested_by = frappe.session.user
 
 	def validate(self):
 		self.validate_self_request()
 		self.validate_effective_month()
 		self.validate_items()
 		self.calculate_total_bonus_amount()
+		self.validate_recurring_dates()
+		self.validate_recurring_start_date()
+		self.validate_row_level_approvals()
 
 	def validate_self_request(self):
 		"""Prevent users from adding themselves to the bonus request."""
@@ -51,7 +48,7 @@ class BonusRequest(Document):
 		if not current_employee:
 			return
 
-		for row in self.items:
+		for row in self.bonus_request_employees:
 			if row.employee == current_employee:
 				frappe.throw(
 					_("Compliance Error: You cannot include yourself in a bonus request. "
@@ -64,8 +61,9 @@ class BonusRequest(Document):
 
 	def validate_items(self):
 		"""Validate each child row: justification 'Other' requires description,
-		and clear description when justification is not 'Other'."""
-		for row in self.items:
+		clear description when justification is not 'Other',
+		and enforce mutual exclusivity of approve/reject."""
+		for row in self.bonus_request_employees:
 			if row.justification == "Other" and not row.description:
 				frappe.throw(
 					_("Row {0}: Description is mandatory when Justification is 'Other'.").format(row.idx),
@@ -73,6 +71,48 @@ class BonusRequest(Document):
 				)
 			if row.justification != "Other":
 				row.description = ""
+
+			# Mutual exclusivity: cannot mark both Approved and Rejected
+			if cint(row.approve) and cint(row.reject):
+				frappe.throw(
+					_("Row {0}: Cannot mark both Approved and Rejected "
+					  "for Employee {1}.").format(
+						row.idx, frappe.bold(row.employee_name or row.employee)
+					),
+					title=_("Invalid Approval State")
+				)
+
+	def validate_row_level_approvals(self):
+		"""Block workflow transitions out of approval states unless every
+		child row is explicitly marked as either Approved or Rejected."""
+		approval_states = ["Pending HR Manager", "Pending Finance Manager"]
+
+		previous_doc = self.get_doc_before_save()
+		if not previous_doc:
+			return
+
+		# Only enforce when transitioning OUT of an approval state
+		if previous_doc.workflow_state not in approval_states:
+			return
+
+		# If the state hasn't changed, this is just an edit — no gate needed
+		if previous_doc.workflow_state == self.workflow_state:
+			return
+
+		undecided_rows = []
+		for row in self.bonus_request_employees:
+			if not cint(row.approve) and not cint(row.reject):
+				undecided_rows.append(str(row.idx))
+
+		if undecided_rows:
+			frappe.throw(
+				_("Cannot proceed: You must explicitly mark every single row "
+				  "as either Approved or Rejected before advancing to the "
+				  "next transition. Undecided rows: {0}").format(
+					", ".join(undecided_rows)
+				),
+				title=_("Row-Level Approval Required")
+			)
 
 	def validate_effective_month(self):
 		"""Ensure effective month is strictly in the future (current month is blocked)."""
@@ -101,8 +141,42 @@ class BonusRequest(Document):
 	def calculate_total_bonus_amount(self):
 		"""Sum bonus_amount across all child table rows."""
 		self.total_bonus_amount = sum(
-			flt(row.bonus_amount) for row in self.items
+			flt(row.bonus_amount) for row in self.bonus_request_employees
 		)
+
+	def validate_recurring_dates(self):
+		"""AC: End Date ≤ Start Date → block save."""
+		if not cint(self.is_recurring_monthly):
+			return
+
+		if not self.start_date or not self.end_date:
+			return
+
+		if getdate(self.end_date) <= getdate(self.start_date):
+			frappe.throw(
+				_("Invalid Timeline: End Date must be later than the Start Date."),
+				title=_("Invalid Recurring Dates")
+			)
+
+	def validate_recurring_start_date(self):
+		"""AC: Start Date in current/past month → block save."""
+		if not cint(self.is_recurring_monthly):
+			return
+
+		if not self.start_date:
+			return
+
+		today = getdate(nowdate())
+		start = getdate(self.start_date)
+
+		if (start.year < today.year) or (
+			start.year == today.year and start.month <= today.month
+		):
+			frappe.throw(
+				_("Timing Conflict: The recurring series must be scheduled to begin "
+				  "in a future calendar month to ensure payroll accuracy."),
+				title=_("Invalid Start Date")
+			)
 
 
 @frappe.whitelist()
@@ -188,7 +262,7 @@ def create_consolidated_bonus_request(
 		"posting_date": nowdate(),
 		"effective_month": effective_month,
 		"effective_year": effective_year,
-		"items": items,
+		"bonus_request_employees": items,
 	})
 	bonus_request.insert()
 
