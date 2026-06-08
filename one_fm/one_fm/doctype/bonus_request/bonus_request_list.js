@@ -133,7 +133,7 @@ function show_bulk_bonus_request_dialog(listview) {
 				label: __("Employees")
 			}
 		],
-		primary_action_label: __("Generate Draft Records"),
+		primary_action_label: __("Create Bonus Request"),
 		primary_action(values) {
 			let employees = get_selected_employees(dialog, values);
 			if (!employees || employees.length === 0) {

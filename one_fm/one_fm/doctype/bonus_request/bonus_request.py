@@ -34,6 +34,7 @@ class BonusRequest(Document):
 	def validate(self):
 		self.validate_self_request()
 		self.validate_effective_month()
+		self.validate_items()
 		self.calculate_total_bonus_amount()
 
 	def validate_self_request(self):
@@ -60,6 +61,18 @@ class BonusRequest(Document):
 					),
 					title=_("Self-Request Not Allowed")
 				)
+
+	def validate_items(self):
+		"""Validate each child row: justification 'Other' requires description,
+		and clear description when justification is not 'Other'."""
+		for row in self.items:
+			if row.justification == "Other" and not row.description:
+				frappe.throw(
+					_("Row {0}: Description is mandatory when Justification is 'Other'.").format(row.idx),
+					title=_("Missing Description")
+				)
+			if row.justification != "Other":
+				row.description = ""
 
 	def validate_effective_month(self):
 		"""Ensure effective month is strictly in the future (current month is blocked)."""

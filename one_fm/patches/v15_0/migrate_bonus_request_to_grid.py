@@ -20,8 +20,8 @@ def execute():
 	multi-employee child table model.
 
 	Steps:
-	1. Delete the custom:1 'Bonus Request Items' DocType so the app-managed
-	   version (custom:0) takes over on the next bench migrate.
+	1. Flip the custom:1 flag on 'Bonus Request Items' to custom:0 so the
+	   app-managed version takes over on the next bench migrate.
 	2. For each existing Bonus Request that has an 'employee' field value,
 	   create a child table row with the employee data.
 	3. Set requested_by from the document owner's employee record.
@@ -103,11 +103,18 @@ def execute():
 			child.db_insert()
 
 			# Set requested_by from the document owner's employee record
+			# Try active first, fall back to any status for historical records
 			requester = frappe.db.get_value(
 				"Employee",
 				{"user_id": br.owner, "status": "Active"},
 				"name"
 			)
+			if not requester:
+				requester = frappe.db.get_value(
+					"Employee",
+					{"user_id": br.owner},
+					"name"
+				)
 
 			update_values = {
 				"total_bonus_amount": flt(br.bonus_amount),

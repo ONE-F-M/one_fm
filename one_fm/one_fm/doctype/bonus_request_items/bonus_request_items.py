@@ -19,6 +19,7 @@ class BonusRequestItems(Document):
 		description: DF.SmallText | None
 		designation: DF.Link | None
 		employee: DF.Link
+		employee_id: DF.Data | None
 		employee_name: DF.Data | None
 		justification: DF.Literal[
 			"",

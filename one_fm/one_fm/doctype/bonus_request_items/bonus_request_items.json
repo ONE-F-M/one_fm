@@ -8,6 +8,7 @@
  "field_order": [
   "employee",
   "employee_name",
+  "employee_id",
   "column_break_orez",
   "designation",
   "department",
@@ -40,6 +41,13 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "label": "Employee ID",
    "read_only": 1
   },
   {
