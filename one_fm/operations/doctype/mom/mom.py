@@ -154,12 +154,8 @@ class MOM(Document):
 				task.append("custom_assigned_to", {"user": row.user})
 			
 			task.flags.ignore_links = True
-			old_get_workflow = task.meta.get_workflow
-			task.meta.get_workflow = lambda: None
-			try:
-				task.save(ignore_permissions=True)
-			finally:
-				task.meta.get_workflow = old_get_workflow
+			task.flags.ignore_workflow = True
+			task.save(ignore_permissions=True)
 			row.task = task.name
 		else:
 			# Update existing Task if any field changed
