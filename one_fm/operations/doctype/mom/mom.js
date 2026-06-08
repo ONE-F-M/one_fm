@@ -51,11 +51,10 @@ frappe.ui.form.on('MOM', {
 					callback: function(r) {
 						frm.set_value("last_mom_name", r.message.name);
 						set_last_attendees_table(frm, r.message.attendees);
-						set_last_action_table(frm, r.message.action);
-
+						// Fetch live Task data for the last action table
+						fetch_and_set_last_actions(frm);
 					}
 				})
-			}
 			}
 			if (frm.doc.project_type == "Internal") {
 				frappe.call({
@@ -67,15 +66,19 @@ frappe.ui.form.on('MOM', {
 					callback: function(r) {
 						frm.set_value("last_mom_name", r.message.name);
 						set_last_general_attendees_table(frm, r.message.general_attendance);
-						set_last_action_table(frm, r.message.action);
-
+						// Fetch live Task data for the last action table
+						fetch_and_set_last_actions(frm);
 					}
 				})
-				
 			}
 			else{
 				frm.clear_table("last_action")
 			}
+		}
+		else {
+			frm.clear_table("last_action");
+			frm.refresh_fields("last_action");
+		}
 	},
 	review_pending_actions: function(frm) {
 		if(frm.doc.review_pending_actions == 1){
@@ -89,7 +92,9 @@ frappe.ui.form.on('MOM', {
 				}
 			})
 		} else {
-			frm.clear_table("pending_actions")
+			frm.clear_table("pending_actions");
+			frm.refresh_fields("pending_actions");
+			add_mark_done_button(frm);
 		}
 	},
 	refresh: function(frm){
@@ -97,6 +102,7 @@ frappe.ui.form.on('MOM', {
 			set_project_query_for_non_project_manager(frm);
 		}
 		lock_poc_attendance_table(frm);
+		add_mark_done_button(frm);
 	},
 	validate: function (frm){
 		if (frm.is_new()){
@@ -292,28 +298,152 @@ function set_last_general_attendees_table(frm, poc_list){
 	frm.refresh_fields("last_general_attendees");
 }
 
+function fetch_and_set_last_actions(frm) {
+	if (!frm.doc.last_mom_name) {
+		frm.clear_table("last_action");
+		frm.refresh_fields("last_action");
+		return;
+	}
+	frappe.call({
+		method: "one_fm.operations.doctype.mom.mom.review_last_actions",
+		args: {
+			last_mom_name: frm.doc.last_mom_name,
+			project: frm.doc.project
+		},
+		callback: function(r) {
+			if (r.message) {
+				set_last_action_table(frm, r.message);
+			} else {
+				frm.clear_table("last_action");
+				frm.refresh_fields("last_action");
+			}
+		}
+	});
+}
+
 function set_last_action_table(frm, action_list){
-	frm.doc.last_action = []
+	frm.clear_table("last_action");
 	action_list.forEach((mom_action) => {
 		let child_row = frappe.model.add_child(frm.doc, "last_action");
-		child_row.user = mom_action.user;
-		child_row.due_date = mom_action.due_date;
+		child_row.task = mom_action.task;
 		child_row.subject = mom_action.subject;
+		child_row.status = mom_action.status;
 		child_row.priority = mom_action.priority;
 		child_row.description = mom_action.description;
+		child_row.user = mom_action.user;
+		child_row.due_date = mom_action.due_date;
 	});
 	frm.refresh_fields("last_action");
 }
 
 function set_pending_actions_table(frm, action_list){
-
+	frm.clear_table("pending_actions");
 	action_list.forEach((mom_action) => {
 		let child_row = frappe.model.add_child(frm.doc, "pending_actions");
+		child_row.task = mom_action.task;
 		child_row.subject = mom_action.subject;
+		child_row.status = mom_action.status;
 		child_row.priority = mom_action.priority;
 		child_row.description = mom_action.description;
 		child_row.user = mom_action.user;
 		child_row.due_date = mom_action.due_date;
 	});
 	frm.refresh_fields("pending_actions");
+	add_mark_done_button(frm);
+}
+
+function add_mark_done_button(frm) {
+	const grid = frm.fields_dict["pending_actions"] && frm.fields_dict["pending_actions"].grid;
+	if (!grid) return;
+
+	const has_items = frm.doc.pending_actions && frm.doc.pending_actions.length > 0;
+	const is_checked = frm.doc.review_pending_actions == 1;
+
+	if (!is_checked || !has_items) {
+		if (grid.custom_buttons && grid.custom_buttons[__("Mark Done")]) {
+			grid.custom_buttons[__("Mark Done")].addClass("hidden");
+		}
+		return;
+	}
+
+	// Add a custom button to the grid
+	grid.add_custom_button(__("Mark Done"), function() {
+		const selected = grid.get_selected_children();
+		if (!selected || selected.length === 0) {
+			frappe.msgprint(__("Please select at least one row to mark as done."));
+			return;
+		}
+
+		const tasks_to_complete = selected
+			.filter(row => row.task)
+			.map(row => row.task);
+
+		if (tasks_to_complete.length === 0) {
+			frappe.msgprint(__("No linked tasks found in the selected rows."));
+			return;
+		}
+
+		// Remove duplicates (same task could appear for multiple assignees)
+		const unique_tasks = [...new Set(tasks_to_complete)];
+
+		frappe.confirm(
+			__("Mark {0} task(s) as Completed?", [unique_tasks.length]),
+			function() {
+				let completed = 0;
+				unique_tasks.forEach(function(task_name) {
+					frappe.call({
+						method: "one_fm.operations.doctype.mom.mom.mark_task_as_done",
+						args: { task_name: task_name },
+						async: false,
+						callback: function(r) {
+							if (r.message && r.message.success) {
+								completed++;
+							}
+						}
+					});
+				});
+
+				frappe.show_alert({
+					message: __("{0} task(s) marked as Completed", [completed]),
+					indicator: "green"
+				});
+
+				// Refresh the pending actions table
+				frm.clear_table("pending_actions");
+				frm.refresh_fields("pending_actions");
+				frm.trigger("review_pending_actions");
+			}
+		);
+	});
+}
+
+// Sync edits in last_action / pending_actions child tables back to the actual Task
+frappe.ui.form.on("MOM Pending Action", {
+	subject: function(frm, cdt, cdn) { sync_task_field(cdn, "subject"); },
+	description: function(frm, cdt, cdn) { sync_task_field(cdn, "description"); },
+	priority: function(frm, cdt, cdn) { sync_task_field(cdn, "priority"); },
+	status: function(frm, cdt, cdn) { sync_task_field(cdn, "status"); },
+	user: function(frm, cdt, cdn) { sync_task_field(cdn, "user"); },
+	due_date: function(frm, cdt, cdn) { sync_task_field(cdn, "due_date"); },
+});
+
+function sync_task_field(cdn, fieldname) {
+	const row = frappe.get_doc("MOM Pending Action", cdn);
+	if (!row || !row.task) return;
+
+	let args = { task_name: row.task };
+	args[fieldname] = row[fieldname];
+
+	frappe.call({
+		method: "one_fm.operations.doctype.mom.mom.update_task_from_mom",
+		args: args,
+		callback: function(r) {
+			if (r.message && r.message.success) {
+				frappe.show_alert({
+					message: __("Task {0} updated", [row.task]),
+					indicator: "green"
+				});
+			}
+		}
+	});
 }
