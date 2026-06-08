@@ -62,7 +62,7 @@
       "fieldtype": "Check",
       "label": "Is Default",
       "default": "0",
-      "description": "If checked, this plan auto-loads when the Route Planner page opens"
+      "description": "If checked, this plan auto-loads when the Transportation Schedule page opens"
     },
     {
       "fieldname": "section_break_assignments",
