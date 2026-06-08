@@ -85,7 +85,6 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 // ── Drag tooltip (5-min snap) ──
                 dragTooltip: null,          // { x, y, timeLabel } — floating HH:MM tooltip during block drag
-                dragSnappedTime: null,      // Date — current 5-min-snapped start time during drag
 
                 // ── Plan management ──
                 currentPlan: null,        // { name, title, status, effective_from, effective_until }
@@ -1205,7 +1204,6 @@ function mountRoutePlannerApp(wrapper, data) {
                         y: me.clientY,
                         timeLabel: this.fmtTime(snappedStart)
                     };
-                    this.dragSnappedTime = snappedStart;
 
                     // Vertical: detect target lane
                     const el = document.elementFromPoint(me.clientX, me.clientY);
@@ -1231,7 +1229,6 @@ function mountRoutePlannerApp(wrapper, data) {
                     document.removeEventListener('mouseup', onUp);
                     clearHighlight();
                     this.dragTooltip = null;
-                    this.dragSnappedTime = null;
                     setTimeout(() => { this.isDraggingBlock = false; }, 60);
                     if (moved) {
                         // If dropped on a different lane, validate seat capacity first
@@ -1309,7 +1306,6 @@ function mountRoutePlannerApp(wrapper, data) {
                         y: t.clientY,
                         timeLabel: this.fmtTime(snappedStart)
                     };
-                    this.dragSnappedTime = snappedStart;
                 };
 
                 const onTouchEnd = () => {
@@ -1317,7 +1313,6 @@ function mountRoutePlannerApp(wrapper, data) {
                     document.removeEventListener('touchend', onTouchEnd);
                     document.removeEventListener('touchcancel', onTouchCancel);
                     this.dragTooltip = null;
-                    this.dragSnappedTime = null;
                     setTimeout(() => { this.isDraggingBlock = false; }, 60);
                     if (moved) {
                         this.checkConflicts();
@@ -1334,7 +1329,6 @@ function mountRoutePlannerApp(wrapper, data) {
                     item.start = new Date(origStart);
                     item.end = new Date(origEnd);
                     this.dragTooltip = null;
-                    this.dragSnappedTime = null;
                     setTimeout(() => { this.isDraggingBlock = false; }, 60);
                 };
 
