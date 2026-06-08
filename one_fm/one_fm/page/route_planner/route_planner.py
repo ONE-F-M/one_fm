@@ -1149,7 +1149,7 @@ def get_route_plans():
     if not _route_plan_exists():
         return []
     plans = frappe.get_list("Route Plan",
-        fields=["name", "title", "status", "effective_from", "effective_until"],
+        fields=["name", "title", "status", "effective_from", "effective_until", "is_default"],
         order_by="creation desc"
     )
     return plans
@@ -1206,7 +1206,10 @@ def load_assignments(plan_name: str = ""):
         return {"status": "empty", "message": _("Route Plan DocType not migrated yet.")}
 
     if not plan_name:
-        plan_name = frappe.db.get_value("Route Plan", {"status": "Active"}, "name")
+        # Prioritize the plan marked as default; fall back to Active if no default
+        plan_name = frappe.db.get_value("Route Plan", {"is_default": 1}, "name")
+        if not plan_name:
+            plan_name = frappe.db.get_value("Route Plan", {"status": "Active"}, "name")
 
     if not plan_name:
         return {"status": "empty"}
@@ -1255,6 +1258,7 @@ def load_assignments(plan_name: str = ""):
         "plan_status": doc.status,
         "effective_from": str(doc.effective_from) if doc.effective_from else None,
         "effective_until": str(doc.effective_until) if doc.effective_until else None,
+        "is_default": doc.is_default,
         "swim_items": swim_items,
         "assigned_cards": list(assigned_card_ids),
         "saved_by": doc.last_modified_by_user,
@@ -1263,7 +1267,7 @@ def load_assignments(plan_name: str = ""):
 
 
 @frappe.whitelist()
-def create_route_plan(title: str, effective_from: str, effective_until: str = ""):
+def create_route_plan(title: str, effective_from: str, effective_until: str = "", is_default: int = 0):
     """Create a new Route Plan and return its name."""
     if not _route_plan_exists():
         frappe.throw(_("Route Plan DocType not found. Please run 'bench migrate' on this site first."))
@@ -1272,6 +1276,7 @@ def create_route_plan(title: str, effective_from: str, effective_until: str = ""
     doc.title = title
     doc.effective_from = effective_from
     doc.effective_until = effective_until or None
+    doc.is_default = is_default
     doc.status = "Draft"
     doc.insert()
     return {

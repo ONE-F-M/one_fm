@@ -10,6 +10,7 @@ class RoutePlan(Document):
 	def validate(self):
 		self._validate_dates()
 		self._validate_single_active()
+		self._validate_single_default()
 
 	def _validate_dates(self):
 		"""Ensure effective_until >= effective_from when set."""
@@ -28,6 +29,19 @@ class RoutePlan(Document):
 			if existing:
 				frappe.throw(
 					_("Route Plan {0} is already Active. Deactivate it first or set it to Expired.").format(existing)
+				)
+
+	def _validate_single_default(self):
+		"""Only one Route Plan can be marked as Default."""
+		if self.is_default:
+			existing = frappe.db.get_value(
+				"Route Plan",
+				{"is_default": 1, "name": ["!=", self.name]},
+				"name"
+			)
+			if existing:
+				frappe.throw(
+					_("A default Route Plan already exists ({0}). Only one plan can be set as default at a time.").format(existing)
 				)
 
 	def before_save(self):
