@@ -174,12 +174,14 @@ def _create_version(docname, data, perm_doctype=None, perm_role=None, perm_level
 	version.ref_doctype = "Custom DocPerm"
 	version.docname = docname
 	version.data = frappe.as_json(data, indent=None, separators=(",", ":"))
-	if perm_doctype:
+
+	meta = version.meta
+	if perm_doctype is not None and meta.has_field("perm_doctype"):
 		version.perm_doctype = perm_doctype
-	if perm_role:
+	if perm_role is not None and meta.has_field("perm_role"):
 		version.perm_role = perm_role
-	if perm_level is not None:
+	if perm_level is not None and meta.has_field("perm_level"):
 		version.perm_level = perm_level
-	if perm_if_owner is not None:
+	if perm_if_owner is not None and meta.has_field("perm_if_owner"):
 		version.perm_if_owner = perm_if_owner
 	version.insert(ignore_permissions=True)
