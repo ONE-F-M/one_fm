@@ -106,12 +106,8 @@ class MOM(Document):
 						"user": issue.user
 					})
 				op_task.flags.ignore_links = True
-				old_get_workflow = op_task.meta.get_workflow
-				op_task.meta.get_workflow = lambda: None
-				try:
-					op_task.save(ignore_permissions=True)
-				finally:
-					op_task.meta.get_workflow = old_get_workflow
+				op_task.flags.ignore_workflow = True
+				op_task.save(ignore_permissions=True)
 
 				if issue.user:
 					add_assignment({
