@@ -177,6 +177,13 @@ class MOM(Document):
 				if row.status == "Completed":
 					task.completed_by = frappe.session.user
 					task.completed_on = today()
+					todos = frappe.get_all(
+						"ToDo",
+						filters={"reference_type": "Task", "reference_name": row.task, "status": "Open"},
+						pluck="name",
+					)
+					if todos:
+						frappe.db.set_value("ToDo", {"name": ["in", todos]}, "status", "Closed")
 				changed = True
 			if task.exp_end_date != row.due_date:
 				task.exp_end_date = row.due_date
