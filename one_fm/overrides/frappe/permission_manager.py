@@ -70,19 +70,28 @@ def update(doctype, role, permlevel, ptype, value=None, if_owner=0):
 
 	out = update_permission_property(doctype, role, permlevel, ptype, value, if_owner=if_owner)
 
+	# Re-fetch name in case update_permission_property() promoted a standard DocPerm
+	# to a Custom DocPerm (name would have been None before the update)
+	if not name:
+		name = frappe.db.get_value(
+			"Custom DocPerm",
+			dict(parent=doctype, role=role, permlevel=permlevel, if_owner=if_owner),
+		)
+
 	if ptype == "if_owner" and value == "1":
 		update_permission_property(doctype, role, permlevel, "report", "0", if_owner=value)
 
 	frappe.db.after_commit.add(clear_cache)
 
-	# Log to Version
+	# Log to Version — use the resolved if_owner value when ptype is "if_owner"
+	effective_if_owner = value if ptype == "if_owner" else if_owner
 	if name and old_value != value:
 		_create_version(
 			docname=name,
 			perm_doctype=doctype,
 			perm_role=role,
 			perm_level=permlevel,
-			perm_if_owner=if_owner,
+			perm_if_owner=effective_if_owner,
 			data={
 				"changed": [[ptype, old_value, value]],
 				"added": [],
@@ -107,31 +116,32 @@ def remove(doctype, role, permlevel, if_owner=0):
 		"Custom DocPerm",
 		{"parent": doctype, "role": role, "permlevel": permlevel, "if_owner": if_owner},
 	)
-	if name:
-		doc = frappe.get_doc("Custom DocPerm", name)
-		# Version must be created before the row is deleted
-		_create_version(
-			docname=name,
-			perm_doctype=doc.parent,
-			perm_role=doc.role,
-			perm_level=doc.permlevel,
-			perm_if_owner=doc.if_owner,
-			data={
-				"changed": [],
-				"added": [],
-				"removed": [[name, doc.as_dict()]],
-				"row_changed": [],
-				"updater_reference": {
-					"doctype": "Permission Manager",
-					"label": "Removed via Role Permissions Manager",
-				},
-			},
-		)
 
-	frappe.db.delete(
-		"Custom DocPerm",
-		{"parent": doctype, "role": role, "permlevel": permlevel, "if_owner": if_owner},
+	if not name:
+		# No matching Custom DocPerm found — nothing to version or delete
+		return
+
+	doc = frappe.get_doc("Custom DocPerm", name)
+	# Version must be created before the row is deleted
+	_create_version(
+		docname=name,
+		perm_doctype=doc.parent,
+		perm_role=doc.role,
+		perm_level=doc.permlevel,
+		perm_if_owner=doc.if_owner,
+		data={
+			"changed": [],
+			"added": [],
+			"removed": [[name, doc.as_dict()]],
+			"row_changed": [],
+			"updater_reference": {
+				"doctype": "Permission Manager",
+				"label": "Removed via Role Permissions Manager",
+			},
+		},
 	)
+	# Delete by the resolved name to keep deletion and Version entry consistent
+	frappe.db.delete("Custom DocPerm", {"name": name})
 
 	if not frappe.get_all("Custom DocPerm", {"parent": doctype}):
 		frappe.throw(_("There must be atleast one permission rule."), title=_("Cannot Remove"))
