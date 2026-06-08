@@ -83,6 +83,10 @@ function mountRoutePlannerApp(wrapper, data) {
                 stopDragSourceIndex: null,  // drag-reorder: source stop index
                 stopDragOverIndex: null,    // drag-reorder: hovered stop index
 
+                // ── Drag tooltip (5-min snap) ──
+                dragTooltip: null,          // { x, y, timeLabel } — floating HH:MM tooltip during block drag
+                dragSnappedTime: null,      // Date — current 5-min-snapped start time during drag
+
                 // ── Plan management ──
                 currentPlan: null,        // { name, title, status, effective_from, effective_until }
                 planList: [],           // all available plans
@@ -440,6 +444,13 @@ function mountRoutePlannerApp(wrapper, data) {
                 return new Date(t).toLocaleTimeString('en-GB', {
                     hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kuwait'
                 });
+            },
+
+            /** Round a Date to the nearest 5-minute boundary. */
+            snapTo5Min(d) {
+                const ms = new Date(d).getTime();
+                const FIVE_MIN = 5 * 60 * 1000;
+                return new Date(Math.round(ms / FIVE_MIN) * FIVE_MIN);
             },
 
             fmtISO(iso) {
@@ -1180,10 +1191,21 @@ function mountRoutePlannerApp(wrapper, data) {
                     if (!moved) return;
                     this.isDraggingBlock = true;
 
-                    // Horizontal: shift time
+                    // Horizontal: shift time (snapped to 5-min intervals)
                     const deltaMs = (dx / this.svgWidth) * this.windowDurationMs;
-                    item.start = new Date(origStart + deltaMs);
-                    item.end = new Date(origEnd + deltaMs);
+                    const rawStart = new Date(origStart + deltaMs);
+                    const snappedStart = this.snapTo5Min(rawStart);
+                    const snapDelta = snappedStart.getTime() - origStart;
+                    item.start = snappedStart;
+                    item.end = new Date(origEnd + snapDelta);
+
+                    // Update floating tooltip
+                    this.dragTooltip = {
+                        x: me.clientX,
+                        y: me.clientY,
+                        timeLabel: this.fmtTime(snappedStart)
+                    };
+                    this.dragSnappedTime = snappedStart;
 
                     // Vertical: detect target lane
                     const el = document.elementFromPoint(me.clientX, me.clientY);
@@ -1208,6 +1230,8 @@ function mountRoutePlannerApp(wrapper, data) {
                     document.removeEventListener('mousemove', onMove);
                     document.removeEventListener('mouseup', onUp);
                     clearHighlight();
+                    this.dragTooltip = null;
+                    this.dragSnappedTime = null;
                     setTimeout(() => { this.isDraggingBlock = false; }, 60);
                     if (moved) {
                         // If dropped on a different lane, validate seat capacity first
@@ -1273,14 +1297,27 @@ function mountRoutePlannerApp(wrapper, data) {
                     if (!moved) return;
                     this.isDraggingBlock = true;
                     const deltaMs = (dx / this.svgWidth) * this.windowDurationMs;
-                    item.start = new Date(origStart + deltaMs);
-                    item.end = new Date(origEnd + deltaMs);
+                    const rawStart = new Date(origStart + deltaMs);
+                    const snappedStart = this.snapTo5Min(rawStart);
+                    const snapDelta = snappedStart.getTime() - origStart;
+                    item.start = snappedStart;
+                    item.end = new Date(origEnd + snapDelta);
+
+                    // Update floating tooltip
+                    this.dragTooltip = {
+                        x: t.clientX,
+                        y: t.clientY,
+                        timeLabel: this.fmtTime(snappedStart)
+                    };
+                    this.dragSnappedTime = snappedStart;
                 };
 
                 const onTouchEnd = () => {
                     document.removeEventListener('touchmove', onTouchMove);
                     document.removeEventListener('touchend', onTouchEnd);
                     document.removeEventListener('touchcancel', onTouchCancel);
+                    this.dragTooltip = null;
+                    this.dragSnappedTime = null;
                     setTimeout(() => { this.isDraggingBlock = false; }, 60);
                     if (moved) {
                         this.checkConflicts();
@@ -1296,6 +1333,8 @@ function mountRoutePlannerApp(wrapper, data) {
                     // Revert position on cancel
                     item.start = new Date(origStart);
                     item.end = new Date(origEnd);
+                    this.dragTooltip = null;
+                    this.dragSnappedTime = null;
                     setTimeout(() => { this.isDraggingBlock = false; }, 60);
                 };
 
@@ -2265,6 +2304,16 @@ function injectRPVueTemplate() {
     s.id = 'rp-vue-template';
     s.textContent = `
 <div id="rp-shell">
+
+  <!-- ── Drag time tooltip (5-min snap) ── -->
+  <div v-if="dragTooltip"
+       class="rp-drag-tooltip"
+       :style="{
+           left: dragTooltip.x + 'px',
+           top: (dragTooltip.y - 44) + 'px'
+       }">
+    {{ dragTooltip.timeLabel }}
+  </div>
 
   <!-- ══ Header ══ -->
   <div id="rp-header">
@@ -3256,6 +3305,30 @@ function injectRPStyles() {
         .rp-block-grab     { cursor: grab; }
         .rp-block-grabbing { cursor: grabbing; }
         .rp-empty-state    { padding: 48px; text-align: center; font-size: 14px; color: var(--md-sys-color-outline); }
+
+        /* ── Drag time tooltip (5-min snap) ── */
+        .rp-drag-tooltip {
+            position: fixed;
+            z-index: 9999;
+            pointer-events: none;
+            background: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            font-family: 'Google Sans', Roboto, monospace;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            padding: 6px 14px;
+            border-radius: 8px;
+            white-space: nowrap;
+            transform: translateX(-50%);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+            animation: rp-tooltip-in 0.1s ease-out;
+        }
+        @keyframes rp-tooltip-in {
+            from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+            to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
 
         /* ── Detail Panel ── */
         #rp-detail-panel {
