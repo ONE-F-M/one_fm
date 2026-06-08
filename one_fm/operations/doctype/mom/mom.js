@@ -390,19 +390,32 @@ function add_mark_done_button(frm) {
 			__("Mark {0} task(s) as Completed?", [unique_tasks.length]),
 			function() {
 				let completed = 0;
-				unique_tasks.forEach(function(task_name) {
-					frappe.call({
-						method: "one_fm.operations.doctype.mom.mom.mark_task_as_done",
-						args: { task_name: task_name },
-						async: false,
-						callback: function(r) {
-							if (r.message && r.message.success) {
-								completed++;
-							}
-						}
-					});
-				});
+				frappe.dom.freeze(__("Marking tasks as Completed..."));
 
+				Promise.all(
+					unique_tasks.map((task_name) =>
+						frappe.call({
+							method: "one_fm.operations.doctype.mom.mom.mark_task_as_done",
+							args: { task_name },
+						})
+					)
+				)
+					.then((results) => {
+						completed = results.filter((res) => res && res.message && res.message.success).length;
+
+						frappe.show_alert({
+							message: __("{0} task(s) marked as Completed", [completed]),
+							indicator: "green",
+						});
+
+						// Refresh the pending actions table
+						frm.clear_table("pending_actions");
+						frm.refresh_fields("pending_actions");
+						frm.trigger("review_pending_actions");
+					})
+					.finally(() => {
+						frappe.dom.unfreeze();
+					});
 				frappe.show_alert({
 					message: __("{0} task(s) marked as Completed", [completed]),
 					indicator: "green"
