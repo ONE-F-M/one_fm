@@ -1,6 +1,6 @@
 {
  "actions": [],
- "creation": "2020-06-05 01:46:54.301541",
+ "creation": "2026-04-12 22:09:08.381357",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -8,12 +8,17 @@
   "process_name",
   "responsible",
   "duration_in_days",
+  "before_task",
+  "sequence_type",
+  "after_task",
   "column_break_4",
-  "expected_date",
+  "planned_date",
+  "live_plan_date",
   "actual_date",
   "reference_complete_status_field",
   "reference_complete_status_value",
   "status",
+  "eta_status",
   "section_break_7",
   "item",
   "amount",
@@ -29,6 +34,7 @@
  ],
  "fields": [
   {
+   "columns": 2,
    "fieldname": "process_name",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -38,41 +44,99 @@
   {
    "fieldname": "responsible",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "label": "Responsible",
-   "options": "Agency\nRecruiter\nHR\nGeneral Services\nGRD",
+   "options": "Agency\nGRD",
    "read_only": 1
   },
   {
-   "depends_on": "notes_required",
-   "fieldname": "notes",
-   "fieldtype": "Text Editor",
-   "label": "Notes"
+   "fieldname": "duration_in_days",
+   "fieldtype": "Int",
+   "label": "Duration in Days",
+   "read_only": 1
   },
   {
+   "columns": 2,
+   "fieldname": "before_task",
+   "fieldtype": "Data",
+   "label": "Before Task",
+   "read_only": 1,
+   "description": "The task that must complete before this one can start."
+  },
+  {
+   "columns": 1,
+   "default": "Sequential",
+   "fieldname": "sequence_type",
+   "fieldtype": "Select",
+   "label": "Seq Type",
+   "options": "Sequential\nParallel",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "after_task",
+   "fieldtype": "Data",
+   "label": "After Task",
+   "read_only": 1,
+   "description": "The task that starts after this one completes."
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "columns": 1,
+   "fieldname": "planned_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Planned Date",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "live_plan_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Live Plan Date",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
    "fieldname": "actual_date",
    "fieldtype": "Date",
    "in_list_view": 1,
    "label": "Actual Date"
   },
   {
-   "fieldname": "expected_date",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Expected Date",
-   "read_only": 1
+   "fieldname": "reference_complete_status_field",
+   "fieldtype": "Data",
+   "label": "Reference Complete Status Field"
   },
   {
+   "fieldname": "reference_complete_status_value",
+   "fieldtype": "Data",
+   "label": "Reference Complete Status Value"
+  },
+  {
+   "columns": 2,
    "default": "Pending",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "\nPending\nApproved\nRejected\nFailed\nNot Booked\nAccepted\nRemedical Test Done\nFirst Medical Failed\nStamped\nArriving\nMedical Test Done\nIssued\nFit\nBooked\nYet to apply\nIn process\nUnfit\nCancelled\nSkipped\nMedical failed and Proceeded to Remedical\nCompleted\nDid Not Arrive\nJoined"
+   "options": "Pending\nSkipped\nOffer Accepted\nAwaiting Response\nAccepted\nYet to apply\nIn process\nIn Process\nIn Progress\nStamped\nApplied\nIssued\nRejected\nFit\nUnfit\nPassed\nFailed\nSubmitted\nApproved\nArriving\nJoined\nCompleted\nDeployed\nDid Not Arrive\nDraft\nPending Initial Review\nPending GRD Manager Approval\nPending By PAM\nPending By MOI\nPending Visa\nRejected By Operator\nRejected By PAM\nRejected By MOI\nAwaiting Quota Availability\nGRD Finalization\nPending Recruiter Confirmation\nCancelled\nCanceled\nRejected for Re Issue\nPending Visa Cancel\nPending Visa Request Cancel\nPending Cancel Work Permit\nMedical failed and Proceeded to Remedical"
   },
   {
-   "fieldname": "column_break_4",
-   "fieldtype": "Column Break"
+   "columns": 2,
+   "fieldname": "eta_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "ETA Status",
+   "options": "\nStill Within Time frame\nLate\nCompleted Early\nCompleted on time",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_7",
+   "fieldtype": "Section Break"
   },
   {
    "fieldname": "item",
@@ -85,10 +149,6 @@
    "label": "Amount"
   },
   {
-   "fieldname": "section_break_7",
-   "fieldtype": "Section Break"
-  },
-  {
    "depends_on": "eval: doc.amount > 0",
    "fieldname": "proof_of_payment",
    "fieldtype": "Data",
@@ -99,12 +159,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "duration_in_days",
-   "fieldtype": "Int",
-   "label": "Duration in Days",
-   "read_only": 1
-  },
-  {
    "fieldname": "reference_type",
    "fieldtype": "Link",
    "label": "Reference Type",
@@ -113,8 +167,9 @@
   },
   {
    "fieldname": "reference_name",
-   "fieldtype": "Data",
+   "fieldtype": "Dynamic Link",
    "label": "Reference Name",
+   "options": "reference_type",
    "read_only": 1
   },
   {
@@ -142,26 +197,24 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "reference_complete_status_field",
-   "fieldtype": "Data",
-   "label": "Reference Complete Status Field"
-  },
-  {
-   "fieldname": "reference_complete_status_value",
-   "fieldtype": "Data",
-   "label": "Reference Complete Status Value"
+   "depends_on": "notes_required",
+   "fieldname": "notes",
+   "fieldtype": "Text Editor",
+   "label": "Notes"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-08-23 00:11:43.450855",
+ "modified": "2026-04-15 07:00:00.000000",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Candidate Country Process Details",
  "owner": "Administrator",
  "permissions": [],
  "quick_entry": 1,
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

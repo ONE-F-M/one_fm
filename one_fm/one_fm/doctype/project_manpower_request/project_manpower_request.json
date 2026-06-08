@@ -10,6 +10,7 @@
   "section_break_xfjj",
   "project_request_code",
   "workflow_state",
+  "reason_for_rejection",
   "reason",
   "employee_resignation",
   "priority",
@@ -81,6 +82,12 @@
    "fieldtype": "Link",
    "label": "Workflow State",
    "options": "Workflow State",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reason_for_rejection",
+   "fieldtype": "Small Text",
+   "label": "Reason for Rejection / Change Request",
    "read_only": 1
   },
   {
@@ -254,8 +261,8 @@
    "fieldname": "project_allocation",
    "fieldtype": "Link",
    "label": "Project",
+   "mandatory_depends_on": "eval: doc.reason && !in_list(['Annual Leave Reliever', 'Day OFF Reliever', 'Reliever', 'Annual leave', 'day off reliever', 'reliever'], doc.reason)",
    "options": "Project",
-   "reqd": 1,
    "search_index": 1
   },
   {
@@ -295,10 +302,11 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "Any",
    "fieldname": "gender",
-   "fieldtype": "Link",
+   "fieldtype": "Select",
    "label": "Gender",
-   "options": "Gender",
+   "options": "Any\nMale\nFemale",
    "search_index": 1
   },
   {
@@ -306,10 +314,11 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "Any",
    "fieldname": "nationality",
-   "fieldtype": "Link",
+   "fieldtype": "Select",
    "label": "Nationality",
-   "options": "Nationality",
+   "options": "Any\nAfrican\nAsian",
    "search_index": 1
   },
   {
@@ -540,6 +549,51 @@
    "read": 1,
    "report": 1,
    "role": "Recruitment Team Leader",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Operations Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Operation Admin",
    "share": 1,
    "submit": 1,
    "write": 1
