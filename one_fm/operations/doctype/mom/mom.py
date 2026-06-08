@@ -390,7 +390,13 @@ def update_task_from_mom(task_name: str, subject: str = None, description: str =
 		if status == "Completed":
 			task.completed_by = frappe.session.user
 			task.completed_on = today()
-	if due_date is not None:
+			todos = frappe.get_all(
+				"ToDo",
+				filters={"reference_type": "Task", "reference_name": task_name, "status": "Open"},
+				pluck="name",
+			)
+			if todos:
+				frappe.db.set_value("ToDo", {"name": ["in", todos]}, "status", "Closed")
 		task.exp_end_date = due_date
 	if user is not None:
 		task.custom_assigned_to = []
