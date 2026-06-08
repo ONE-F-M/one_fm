@@ -129,14 +129,14 @@
    "fieldname": "last_action",
    "fieldtype": "Table",
    "label": "Last Action",
-   "options": "MOM Action"
+   "options": "MOM Pending Action"
   },
   {
    "depends_on": "eval:doc.review_pending_actions == '1'",
    "fieldname": "pending_actions",
    "fieldtype": "Table",
    "label": "Pending Actions",
-   "options": "MOM Action"
+   "options": "MOM Pending Action"
   },
   {
    "default": "0",

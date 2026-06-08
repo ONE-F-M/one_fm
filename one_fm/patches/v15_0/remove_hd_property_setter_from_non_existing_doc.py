@@ -55,6 +55,7 @@ def execute():
             "order": 3,
         }
     ]
-    for status in statuses:
-        if not frappe.db.exists("HD Ticket Status", status["label_agent"]):
-            frappe.get_doc({"doctype": "HD Ticket Status", **status}).insert()
+    if frappe.db.exists("DocType", "HD Ticket Status"):
+        for status in statuses:
+            if not frappe.db.exists("HD Ticket Status", status["label_agent"]):
+                frappe.get_doc({"doctype": "HD Ticket Status", **status}).insert()
