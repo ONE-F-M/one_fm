@@ -873,6 +873,11 @@ override_whitelisted_methods = {
     "erpnext.buying.doctype.purchase_order.purchase_order.make_purchase_invoice":"one_fm.overrides.purchase_order.make_purchase_invoice",
     "frappe.desk.form.utils.get_next": "one_fm.utils.get_next",
 	"frappe.desk.query_report.get_script": "one_fm.overrides.reports.stock_balance_override.custom_get_script",
+	# Role Permissions Manager — route changes to Version doctype
+	"frappe.core.page.permission_manager.permission_manager.add": "one_fm.overrides.frappe.permission_manager.add",
+	"frappe.core.page.permission_manager.permission_manager.update": "one_fm.overrides.frappe.permission_manager.update",
+	"frappe.core.page.permission_manager.permission_manager.remove": "one_fm.overrides.frappe.permission_manager.remove",
+	"frappe.core.page.permission_manager.permission_manager.reset": "one_fm.overrides.frappe.permission_manager.reset",
 }
 
 
