@@ -1,6 +1,7 @@
 import frappe
 import requests
 from frappe import _
+from frappe.utils import cint
 
 PICKUP_BUFFER = 10             # minutes
 MAX_TRANSIT = 60               # minutes
@@ -1276,7 +1277,7 @@ def create_route_plan(title: str, effective_from: str, effective_until: str = ""
     doc.title = title
     doc.effective_from = effective_from
     doc.effective_until = effective_until or None
-    doc.is_default = is_default
+    doc.is_default = cint(is_default)
     doc.status = "Draft"
     doc.insert()
     return {

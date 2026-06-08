@@ -1718,7 +1718,7 @@ function mountRoutePlannerApp(wrapper, data) {
                     status: msg.plan_status,
                     effective_from: msg.effective_from,
                     effective_until: msg.effective_until,
-                    is_default: msg.is_default || 0
+                    is_default: Number(msg.is_default) || 0
                 };
 
                 // Restore swim items — convert ISO strings to Date,
@@ -1788,7 +1788,7 @@ function mountRoutePlannerApp(wrapper, data) {
                                     status: plan.status,
                                     effective_from: plan.effective_from,
                                     effective_until: plan.effective_until,
-                                    is_default: plan.is_default || 0
+                                    is_default: Number(plan.is_default) || 0
                                 };
                             }
                         }
@@ -2284,7 +2284,7 @@ function injectRPVueTemplate() {
                 style="width:auto;min-width:160px">
           <option value="" disabled>Select a plan…</option>
           <option v-for="p in planList" :key="p.name" :value="p.name">
-            {{ p.is_default ? '\u2605 ' : '' }}{{ p.title }} ({{ p.status }})
+            {{ Number(p.is_default) ? '\u2605 ' : '' }}{{ p.title }} ({{ p.status }})
           </option>
         </select>
         <button class="rp-btn rp-btn-default"
@@ -2293,7 +2293,7 @@ function injectRPVueTemplate() {
               :class="currentPlan.status === 'Active' ? 'green' : currentPlan.status === 'Draft' ? 'orange' : 'gray'">
           {{ currentPlan.status }}
         </span>
-        <span v-if="currentPlan && currentPlan.is_default" class="indicator-pill blue">
+        <span v-if="currentPlan && Number(currentPlan.is_default)" class="indicator-pill blue">
           \u2605 Default
         </span>
         <button v-if="currentPlan && currentPlan.status === 'Draft'"

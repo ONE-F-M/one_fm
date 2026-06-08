@@ -3,6 +3,7 @@
 
 import frappe
 from frappe import _
+from frappe.utils import cint
 from frappe.model.document import Document
 
 
@@ -33,7 +34,7 @@ class RoutePlan(Document):
 
 	def _validate_single_default(self):
 		"""Only one Route Plan can be marked as Default."""
-		if self.is_default:
+		if cint(self.is_default):
 			existing = frappe.db.get_value(
 				"Route Plan",
 				{"is_default": 1, "name": ["!=", self.name]},
