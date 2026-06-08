@@ -200,13 +200,10 @@ class MOM(Document):
 				changed = True
 				
 			if changed:
+			if changed:
 				task.flags.ignore_links = True
-				old_get_workflow = task.meta.get_workflow
-				task.meta.get_workflow = lambda: None
-				try:
-					task.save(ignore_permissions=True)
-				finally:
-					task.meta.get_workflow = old_get_workflow
+				task.flags.ignore_workflow = True
+				task.save(ignore_permissions=True)
    
 @frappe.whitelist()
 def review_last_internal_mom(mom,project):
