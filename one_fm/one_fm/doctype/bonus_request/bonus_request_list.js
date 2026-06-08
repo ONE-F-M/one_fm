@@ -17,7 +17,7 @@ function show_bulk_bonus_request_dialog(listview) {
 		title: __("Bulk Bonus Request"),
 		size: "large",
 		fields: [
-			// ---- Filters Section ----
+			// ---- Filters & Bonus Details Section ----
 			{
 				fieldtype: "Section Break",
 				label: __("Filters & Bonus Details")
@@ -33,21 +33,7 @@ function show_bulk_bonus_request_dialog(listview) {
 					let applicable_for_all = dialog.get_value("applicable_for_all");
 					if (dept) {
 						if (applicable_for_all) {
-							// Fetch employees silently and store count for the confirm dialog
-							frappe.call({
-								method: "one_fm.one_fm.doctype.bonus_request.bonus_request.get_employees_for_bulk",
-								args: { department: dept },
-								callback: function (r) {
-									let count = (r.message || []).length;
-									dialog._all_employees = (r.message || []).map(e => e.employee);
-									dialog.fields_dict.employee_selection_html.$wrapper.html(
-										`<div class="text-muted small p-3">
-											<i class="fa fa-info-circle"></i>
-											${__("{0} active employee(s) in this department will be included.", [count])}
-										</div>`
-									);
-								}
-							});
+							fetch_employee_count(dialog, dept);
 						} else {
 							fetch_and_render_employees(dialog, dept);
 						}
@@ -61,7 +47,8 @@ function show_bulk_bonus_request_dialog(listview) {
 				fieldname: "bonus_amount",
 				fieldtype: "Currency",
 				label: __("Bonus Amount"),
-				reqd: 1
+				reqd: 1,
+				description: __("This amount will be applied to each selected employee.")
 			},
 			{
 				fieldtype: "Column Break"
@@ -81,56 +68,30 @@ function show_bulk_bonus_request_dialog(listview) {
 				reqd: 1
 			},
 
-			// ---- Performance Criteria Section ----
+			// ---- Justification Section ----
 			{
 				fieldtype: "Section Break",
-				label: __("Performance Criteria")
+				label: __("Justification")
 			},
 			{
-				fieldname: "increased_productivity",
-				fieldtype: "Check",
-				label: __("Increased Productivity"),
-				description: __("Contribution to increased organizational productivity.")
-			},
-			{
-				fieldname: "improved_work_processes",
-				fieldtype: "Check",
-				label: __("Improved Work Processes"),
-				description: __("Development and/or implementation of improved work processes.")
-			},
-			{
-				fieldname: "significant_effort",
-				fieldtype: "Check",
-				label: __("Significant Effort"),
-				description: __("Significant effort well beyond a position's defined scope or working hours.")
-			},
-			{
-				fieldtype: "Column Break"
-			},
-			{
-				fieldname: "star_performer",
-				fieldtype: "Check",
-				label: __("Star Performer"),
-				description: __("The employee must be a star performer or extraordinary in nature.")
-			},
-			{
-				fieldname: "others",
-				fieldtype: "Check",
-				label: __("Others"),
-				description: __("Extra explanation required"),
+				fieldname: "justification",
+				fieldtype: "Select",
+				label: __("Justification"),
+				options: "\nExcellent Performance\nGrooming reward\nPerfect Attendance\nClient Appreciation\nLong Service\nSeasonal Bonus\nSpecial Recognition\nOther",
+				reqd: 1,
 				change() {
-					let is_others = dialog.get_value("others");
-					dialog.set_df_property("justification", "hidden", !is_others);
-					dialog.set_df_property("justification", "reqd", is_others);
-					if (!is_others) {
-						dialog.set_value("justification", "");
+					let is_other = dialog.get_value("justification") === "Other";
+					dialog.set_df_property("description", "hidden", !is_other);
+					dialog.set_df_property("description", "reqd", is_other);
+					if (!is_other) {
+						dialog.set_value("description", "");
 					}
 				}
 			},
 			{
-				fieldname: "justification",
+				fieldname: "description",
 				fieldtype: "Small Text",
-				label: __("Justification"),
+				label: __("Description"),
 				hidden: 1
 			},
 
@@ -148,21 +109,7 @@ function show_bulk_bonus_request_dialog(listview) {
 					let applicable_for_all = dialog.get_value("applicable_for_all");
 					let dept = dialog.get_value("department");
 					if (applicable_for_all && dept) {
-						// Fetch count and store employees
-						frappe.call({
-							method: "one_fm.one_fm.doctype.bonus_request.bonus_request.get_employees_for_bulk",
-							args: { department: dept },
-							callback: function (r) {
-								let count = (r.message || []).length;
-								dialog._all_employees = (r.message || []).map(e => e.employee);
-								dialog.fields_dict.employee_selection_html.$wrapper.html(
-									`<div class="text-muted small p-3">
-										<i class="fa fa-info-circle"></i>
-										${__("{0} active employee(s) in this department will be included.", [count])}
-									</div>`
-								);
-							}
-						});
+						fetch_employee_count(dialog, dept);
 					} else if (applicable_for_all && !dept) {
 						dialog._all_employees = [];
 						dialog.fields_dict.employee_selection_html.$wrapper.html(
@@ -194,44 +141,49 @@ function show_bulk_bonus_request_dialog(listview) {
 				return;
 			}
 
-			// Validate at least one performance criteria
-			if (!values.increased_productivity && !values.improved_work_processes &&
-				!values.significant_effort && !values.star_performer && !values.others) {
-				frappe.msgprint(__("Please select at least one Performance Criteria."));
-				return;
-			}
-
-			frappe.confirm(
-				__("This will create {0} individual Bonus Request record(s) in Draft state. Continue?", [employees.length]),
-				function () {
-					frappe.call({
-						method: "one_fm.one_fm.doctype.bonus_request.bonus_request.create_bulk_bonus_requests",
-						args: {
-							employees: JSON.stringify(employees),
-							bonus_amount: values.bonus_amount,
-							effective_month: values.effective_month,
-							effective_year: values.effective_year,
-							posting_date: frappe.datetime.nowdate(),
-							increased_productivity: values.increased_productivity || 0,
-							improved_work_processes: values.improved_work_processes || 0,
-							significant_effort: values.significant_effort || 0,
-							star_performer: values.star_performer || 0,
-							others: values.others || 0,
-							justification: values.justification || ""
-						},
-						freeze: true,
-						freeze_message: __("Queuing Bonus Request generation..."),
-						callback: function () {
-							dialog.hide();
-							listview.refresh();
-						}
-					});
+			frappe.call({
+				method: "one_fm.one_fm.doctype.bonus_request.bonus_request.create_consolidated_bonus_request",
+				args: {
+					employees: JSON.stringify(employees),
+					bonus_amount: values.bonus_amount,
+					effective_month: values.effective_month,
+					effective_year: values.effective_year,
+					justification: values.justification,
+					description: values.description || ""
+				},
+				freeze: true,
+				freeze_message: __("Creating Bonus Request..."),
+				callback: function (r) {
+					dialog.hide();
+					if (r.message) {
+						frappe.set_route("Form", "Bonus Request", r.message);
+					} else {
+						listview.refresh();
+					}
 				}
-			);
+			});
 		}
 	});
 
 	dialog.show();
+}
+
+
+function fetch_employee_count(dialog, department) {
+	frappe.call({
+		method: "one_fm.one_fm.doctype.bonus_request.bonus_request.get_employees_for_bulk",
+		args: { department: department },
+		callback: function (r) {
+			let count = (r.message || []).length;
+			dialog._all_employees = (r.message || []).map(e => e.employee);
+			dialog.fields_dict.employee_selection_html.$wrapper.html(
+				`<div class="text-muted small p-3">
+					<i class="fa fa-info-circle"></i>
+					${__("{0} active employee(s) in this department will be included.", [count])}
+				</div>`
+			);
+		}
+	});
 }
 
 

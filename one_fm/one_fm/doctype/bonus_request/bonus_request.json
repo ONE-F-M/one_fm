@@ -12,26 +12,16 @@
   "section_break_clag",
   "posting_date",
   "column_break_ujeg",
-  "employee_information_section",
-  "employee",
-  "employee_name",
-  "employee_id",
-  "column_break_jcxh",
-  "designation",
-  "department",
-  "performance_criteria_section",
-  "increased_productivity",
-  "improved_work_processes",
-  "significant_effort",
-  "star_performer",
-  "others",
-  "column_break_sfsx",
-  "justification",
-  "bonus_details_section",
-  "bonus_amount",
-  "column_break_hxcn",
   "effective_month",
-  "effective_year"
+  "effective_year",
+  "requester_information_section",
+  "requested_by",
+  "column_break_reqby",
+  "requested_by_name",
+  "employee_details_section",
+  "items",
+  "summary_section",
+  "total_bonus_amount"
  ],
  "fields": [
   {
@@ -70,123 +60,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "employee_information_section",
-   "fieldtype": "Section Break",
-   "label": "Employee Information"
-  },
-  {
-   "fieldname": "employee",
-   "fieldtype": "Link",
-   "ignore_user_permissions": 1,
-   "in_list_view": 1,
-   "label": "Employee",
-   "options": "Employee",
-   "reqd": 1
-  },
-  {
-   "fetch_from": "employee.employee_name",
-   "fieldname": "employee_name",
-   "fieldtype": "Data",
-   "label": "Employee Name",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "employee.employee_id",
-   "fieldname": "employee_id",
-   "fieldtype": "Data",
-   "label": "Employee ID",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_jcxh",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fetch_from": "employee.designation",
-   "fieldname": "designation",
-   "fieldtype": "Link",
-   "label": "Designation",
-   "options": "Designation",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "employee.department",
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "label": "Department",
-   "options": "Department",
-   "read_only": 1
-  },
-  {
-   "description": "A bonus may be awarded upon completion of special assignments an/or projects or when an employee assuming the role for someone at a higher level.",
-   "fieldname": "performance_criteria_section",
-   "fieldtype": "Section Break",
-   "label": "Performance Criteria",
-   "mandatory_depends_on": "eval:!doc.increased_productivity && !doc.improved_work_processes && !doc.significant_effort && !doc.star_performer && !doc.others"
-  },
-  {
-   "default": "0",
-   "description": "Contribution to increased organizational productivity.",
-   "fieldname": "increased_productivity",
-   "fieldtype": "Check",
-   "label": "Increased Productivity"
-  },
-  {
-   "default": "0",
-   "description": "Development and/or implementation of improved work processes.",
-   "fieldname": "improved_work_processes",
-   "fieldtype": "Check",
-   "label": "Improved Work Processes"
-  },
-  {
-   "default": "0",
-   "description": "Significant effort well beyond a position's defined scope or working hours.",
-   "fieldname": "significant_effort",
-   "fieldtype": "Check",
-   "label": "Significant Effort"
-  },
-  {
-   "default": "0",
-   "description": "The employee must be a star performer or extraordinary in nature.",
-   "fieldname": "star_performer",
-   "fieldtype": "Check",
-   "label": "Star Performer"
-  },
-  {
-   "default": "0",
-   "description": "Extra explanation required",
-   "fieldname": "others",
-   "fieldtype": "Check",
-   "label": "Others"
-  },
-  {
-   "fieldname": "column_break_sfsx",
-   "fieldtype": "Column Break"
-  },
-  {
-   "depends_on": "eval:doc.others == 1",
-   "fieldname": "justification",
-   "fieldtype": "Long Text",
-   "label": "Justification",
-   "mandatory_depends_on": "eval:doc.others == 1"
-  },
-  {
-   "fieldname": "bonus_details_section",
-   "fieldtype": "Section Break",
-   "label": "Bonus Details"
-  },
-  {
-   "fieldname": "bonus_amount",
-   "fieldtype": "Currency",
-   "in_list_view": 1,
-   "label": "Bonus Amount",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_hxcn",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "effective_month",
    "fieldtype": "Select",
    "label": "Effective Month",
@@ -198,13 +71,61 @@
    "fieldtype": "Int",
    "label": "Effective Year",
    "reqd": 1
+  },
+  {
+   "fieldname": "requester_information_section",
+   "fieldtype": "Section Break",
+   "label": "Requester Information"
+  },
+  {
+   "fieldname": "requested_by",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Requested By",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_reqby",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "requested_by.employee_name",
+   "fieldname": "requested_by_name",
+   "fieldtype": "Data",
+   "label": "Requested By Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "employee_details_section",
+   "fieldtype": "Section Break",
+   "label": "Employee Details"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Bonus Request Items",
+   "options": "Bonus Request Items",
+   "reqd": 1
+  },
+  {
+   "fieldname": "summary_section",
+   "fieldtype": "Section Break",
+   "label": "Summary"
+  },
+  {
+   "fieldname": "total_bonus_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Total Bonus Amount",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-02 19:20:18.411688",
+ "modified": "2026-06-09 00:30:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Bonus Request",
@@ -235,20 +156,6 @@
    "role": "HR Manager",
    "select": 1,
    "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "General Manager",
-   "select": 1,
-   "share": 1,
-   "submit": 1,
    "write": 1
   },
   {

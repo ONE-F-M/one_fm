@@ -7,35 +7,54 @@ frappe.ui.form.on("Bonus Request", {
 		if (frm.is_new() && !frm.doc.effective_year) {
 			frm.set_value("effective_year", new Date().getFullYear());
 		}
+
+		// Auto-fetch requested_by from current user's employee record
+		if (frm.is_new() && !frm.doc.requested_by) {
+			frappe.db.get_value(
+				"Employee",
+				{ user_id: frappe.session.user, status: "Active" },
+				"name",
+				(r) => {
+					if (r && r.name) {
+						frm.set_value("requested_by", r.name);
+					}
+				}
+			);
+		}
 	},
 
 	refresh(frm) {
 		// Hide standard print icon — custom print buttons are used instead
 		frm.page.hide_icon_group();
 
-		// Toggle justification visibility based on others checkbox
-		toggle_justification(frm);
-
 		// Control Print button visibility based on workflow state
 		toggle_print_visibility(frm);
-	},
-
-	others(frm) {
-		toggle_justification(frm);
 	}
 });
 
 
+// ---- Child Table: Bonus Request Items ----
+frappe.ui.form.on("Bonus Request Items", {
+	bonus_amount(frm, cdt, cdn) {
+		calculate_total_bonus_amount(frm);
+	},
 
-function toggle_justification(frm) {
-	let is_others = frm.doc.others;
-	frm.toggle_display("justification", is_others);
-	frm.toggle_reqd("justification", is_others);
+	items_remove(frm) {
+		calculate_total_bonus_amount(frm);
+	},
 
-	// Clear justification when Others is unchecked
-	if (!is_others && frm.doc.justification) {
-		frm.set_value("justification", "");
+	items_add(frm) {
+		calculate_total_bonus_amount(frm);
 	}
+});
+
+
+function calculate_total_bonus_amount(frm) {
+	let total = 0;
+	(frm.doc.items || []).forEach((row) => {
+		total += flt(row.bonus_amount);
+	});
+	frm.set_value("total_bonus_amount", total);
 }
 
 
@@ -54,16 +73,5 @@ function toggle_print_visibility(frm) {
 			);
 			window.open(url, "_blank");
 		});
-
-		frm.add_custom_button(__("Print Bonus Request Letter"), () => {
-			// Open printview directly with the correct format parameter
-			let url = frappe.urllib.get_full_url(
-				"/printview?doctype=" + encodeURIComponent(frm.doctype)
-				+ "&name=" + encodeURIComponent(frm.doc.name)
-				+ "&format=" + encodeURIComponent("Bonus Request Form")
-			);
-			window.open(url, "_blank");
-		});
 	}
 }
-
