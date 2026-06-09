@@ -259,8 +259,8 @@
     {
       "state": "Inactive",
       "action": "Set as Active",
-      "next_state": "Active",
-      "allowed": "Finance Manager",
+      "next_state": "Draft",
+      "allowed": "Sales Manager",
       "allow_self_approval": 1,
       "send_email_to_creator": 0,
       "skip_multiple_action": 0,

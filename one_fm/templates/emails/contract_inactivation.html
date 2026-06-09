@@ -1,0 +1,64 @@
+<style>
+    .inactivation-table {
+      font-family: Arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    .inactivation-table th,
+    .inactivation-table td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      vertical-align: top;
+    }
+
+    .inactivation-table th {
+      background-color: #f2f2f2;
+      color: #333;
+      text-align: left;
+      font-weight: bold;
+      width: 40%;
+    }
+
+    .inactivation-table td {
+      font-weight: normal;
+    }
+
+    .inactivation-table td a {
+      color: #0066cc;
+      text-decoration: none;
+    }
+
+    .inactivation-table td a:hover {
+      text-decoration: underline;
+    }
+
+    .inactivation-container {
+      margin-bottom: 20px;
+    }
+
+    .inactivation-container p {
+      margin-bottom: 10px;
+    }
+</style>
+
+<div class="inactivation-container">
+  <p>Please be informed that the following contract has been <strong>set to Inactive</strong>.</p>
+</div>
+
+<table class="inactivation-table">
+  <tbody>
+    <tr>
+      <th>Contract ID</th>
+      <td><a href="{{ link }}">{{ contract_id }}</a></td>
+    </tr>
+    <tr>
+      <th>Client Name</th>
+      <td>{{ client_name }}</td>
+    </tr>
+    <tr>
+      <th>Contract End Date</th>
+      <td>{{ end_date }}</td>
+    </tr>
+  </tbody>
+</table>
