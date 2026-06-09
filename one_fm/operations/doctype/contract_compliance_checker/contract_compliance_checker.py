@@ -569,7 +569,7 @@ def _determine_issue_type(comment: str) -> str:
 	comment_lower = comment.lower()
 	if "no operations roles created" in comment_lower:
 		return "operations_role"
-	if "operations post created" in comment_lower:
+	if "operations posts created" in comment_lower or "operations post created" in comment_lower:
 		return "operations_post"
 	if "employee schedules" in comment_lower:
 		return "employee_schedule"
@@ -608,15 +608,17 @@ def get_take_action_data(
 			},
 		}
 
-	# Look up active Operations Roles for this project + sale item
-	operations_roles = frappe.get_list(
+	# Look up the first active Operations Role deterministically
+	role = frappe.db.get_value(
 		"Operations Role",
 		filters={"project": project, "sale_item": item, "status": "Active"},
-		fields=["name", "shift", "site"],
+		fieldname=["name", "shift", "site"],
+		order_by="name asc",
+		as_dict=True,
 	)
 
 	# Fallback to Operations Role list if no roles found
-	if not operations_roles:
+	if not role:
 		return {
 			"path": "/app/operations-role",
 			"params": {
@@ -624,8 +626,6 @@ def get_take_action_data(
 				"sale_item": item,
 			},
 		}
-
-	role = operations_roles[0]
 
 	# Operations Post issue: redirect to Operations Post list view
 	if issue_type == "operations_post":
@@ -639,9 +639,15 @@ def get_take_action_data(
 		}
 
 	# Derive year and month from from_date for the Roster calendar
-	date_obj = getdate(from_date)
-	year = str(date_obj.year)
-	month = str(date_obj.month)
+	try:
+		date_obj = getdate(from_date)
+		year = str(date_obj.year)
+		month = str(date_obj.month)
+	except Exception:
+		from frappe.utils import today
+		date_obj = getdate(today())
+		year = str(date_obj.year)
+		month = str(date_obj.month)
 
 	# Employee Schedule issue: redirect to Roster Staff View
 	if issue_type == "employee_schedule":

@@ -9,11 +9,9 @@ frappe.ui.form.on("Contract Compliance Checker", {
 		frm.trigger("render_take_action_buttons");
 	},
 	render_take_action_buttons: function(frm) {
-		frappe.after_ajax(function() {
-			setTimeout(function() {
-				_inject_take_action_buttons(frm);
-			}, 500);
-		});
+		setTimeout(function() {
+			_inject_take_action_buttons(frm);
+		}, 0);
 	}
 });
 
@@ -70,7 +68,7 @@ function _inject_take_action_buttons(frm) {
 		if (!row_doc || !row_doc.comment) return;
 
 		let $btn = $(
-			'<button class="btn btn-xs btn-primary take-action-btn">'
+			'<button type="button" class="btn btn-xs btn-primary take-action-btn">'
 			+ __("Take Action") + "</button>"
 		);
 
