@@ -3,7 +3,7 @@ frappe.pages['route-planner'].on_page_load = function (wrapper) {
     $(wrapper).html(`
         <div id="rp-loading">
             <div id="rp-loading-spinner"></div>
-            <div id="rp-loading-text">Loading Route Planner...</div>
+            <div id="rp-loading-text">Loading Transportation Schedule...</div>
             <div id="rp-loading-sub">Fetching vehicles, shifts and employee data</div>
         </div>
     `);
@@ -1816,7 +1816,7 @@ function mountRoutePlannerApp(wrapper, data) {
                         {
                             fieldname: "is_default", label: "Is Default", fieldtype: "Check",
                             default: 0,
-                            description: "Auto-load this plan when opening Route Planner"
+                            description: "Auto-load this plan when opening Transportation Schedule"
                         },
                     ],
                     primary_action_label: __("Create"),
@@ -2276,7 +2276,7 @@ function injectRPVueTemplate() {
   <!-- ══ Header ══ -->
   <div id="rp-header">
     <div id="rp-header-left">
-      <div id="rp-title">Route Planner</div>
+      <div id="rp-title">Transportation Schedule</div>
     <div id="rp-plan-selector" style="display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap">
         <select :value="currentPlan ? currentPlan.name : ''"
                 @change="switchPlan($event.target.value)"
