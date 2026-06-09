@@ -43,8 +43,50 @@ class Contracts(Document):
         ):
             self.submit_to_operations_admin()
 
+        if (
+            self.has_value_changed("workflow_state")
+            and self.workflow_state == "Inactive"
+        ):
+            self.send_inactivation_email()
 
         sync_contract_item_prices(self.name)
+
+    def send_inactivation_email(self):
+        """Send email notification when a contract is set to Inactive."""
+        recipients = [
+            d.user for d in self.notification_members
+            if d.user and d.user != "Administrator"
+        ]
+
+        if not recipients:
+            frappe.log_error(
+                message=_("No notification members configured for contract {0}. "
+                          "Inactivation email was not sent.").format(self.name),
+                title=_("Contract Inactivation Email Skipped")
+            )
+            return
+
+        client_name = frappe.db.get_value("Customer", self.client, "customer_name") or self.client
+
+        context = {
+            "contract_id": self.name,
+            "client_name": client_name,
+            "end_date": frappe.utils.formatdate(self.end_date),
+            "link": frappe.utils.get_url_to_form("Contracts", self.name),
+        }
+
+        msg = frappe.render_template(
+            "one_fm/templates/emails/contract_inactivation.html",
+            context=context
+        )
+
+        sendemail(
+            recipients=recipients,
+            subject=_("Contract Inactivation Notification — {0}").format(self.name),
+            content=msg,
+            reference_doctype="Contracts",
+            reference_name=self.name,
+        )
 
     def sync_item_prices(self):
         """
@@ -1872,3 +1914,128 @@ def sync_contract_item_prices(contract_name):
 		frappe.db.commit()
 	except Exception as e:
 		frappe.log_error("Item Price Sync Error", f"Error in sync_contract_item_prices for {contract_name}: {str(e)}")
+
+
+@frappe.whitelist()
+def set_contract_inactive(contract_name: str, contract_end_date: str):
+	"""Set a contract's end date and transition to Inactive.
+
+	If contract_end_date is in the future, the contract stays Active
+	and the daily scheduler (auto_deactivate_contracts) will transition
+	it to Inactive once the date passes.  If the date is today or in
+	the past, the transition happens immediately.
+
+	Args:
+		contract_name: Name of the Contracts document.
+		contract_end_date: The new Contract End Date (YYYY-MM-DD).
+	"""
+	frappe.only_for("Finance Manager")
+
+	doc = frappe.get_doc("Contracts", contract_name)
+
+	if doc.workflow_state != "Active":
+		frappe.throw(_("Only Active contracts can be set to Inactive."))
+
+	end_date = getdate(contract_end_date)
+
+	# Update end date and uncheck auto renewal
+	doc.end_date = end_date
+	doc.is_auto_renewal = 0
+
+	if end_date <= getdate(today()):
+		# Immediate transition — end date is today or in the past
+		doc.workflow_state = "Inactive"
+		doc.flags.ignore_validate = True
+		doc.save(ignore_permissions=True)
+		frappe.db.commit()
+		frappe.msgprint(
+			_("Contract {0} has been set to Inactive.").format(contract_name),
+			alert=True,
+			indicator="green",
+		)
+	else:
+		# Deferred transition — keep Active, scheduler will handle it
+		doc.flags.ignore_workflow = True
+		doc.flags.ignore_validate = True
+		doc.save(ignore_permissions=True)
+		frappe.db.commit()
+		frappe.msgprint(
+			_("Contract End Date updated to {0}. The contract will remain Active until that date.").format(
+				frappe.format(end_date, {"fieldtype": "Date"})
+			),
+			alert=True,
+			indicator="blue",
+		)
+
+	return {"success": True}
+
+
+@frappe.whitelist()
+def set_contract_active(contract_name: str, new_start_date: str, new_end_date: str):
+	"""Re-activate an Inactive contract by setting new start/end dates.
+
+	Transitions the contract from Inactive back to Draft so the Sales
+	Manager can follow the normal approval workflow to re-activate it.
+
+	Args:
+		contract_name: Name of the Contracts document.
+		new_start_date: The new Contract Start Date (YYYY-MM-DD).
+		new_end_date: The new Contract End Date (YYYY-MM-DD).
+	"""
+	frappe.only_for("Sales Manager")
+
+	doc = frappe.get_doc("Contracts", contract_name)
+
+	if doc.workflow_state != "Inactive":
+		frappe.throw(_("Only Inactive contracts can be set as Active."))
+
+	start = getdate(new_start_date)
+	end = getdate(new_end_date)
+
+	if end <= start:
+		frappe.throw(_("New End Date must be after the New Start Date."))
+
+	doc.start_date = start
+	doc.end_date = end
+	doc.workflow_state = "Draft"
+	doc.flags.ignore_validate = True
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()
+
+	frappe.msgprint(
+		_("Contract {0} has been set to Draft with new dates.").format(contract_name),
+		alert=True,
+		indicator="green",
+	)
+
+	return {"success": True}
+
+
+def auto_deactivate_contracts():
+	"""Scheduled task: transition Active contracts past their end date to Inactive.
+
+	Runs daily. Finds all Contracts with workflow_state='Active' whose
+	end_date is strictly before today and sets them to Inactive.
+	"""
+	contracts = frappe.get_all(
+		"Contracts",
+		filters={
+			"workflow_state": "Active",
+			"end_date": ["<", today()],
+		},
+		pluck="name",
+	)
+
+	for contract_name in contracts:
+		try:
+			doc = frappe.get_doc("Contracts", contract_name)
+			doc.workflow_state = "Inactive"
+			doc.flags.ignore_workflow = True
+			doc.flags.ignore_validate = True
+			doc.save(ignore_permissions=True)
+			frappe.db.commit()
+		except Exception:
+			frappe.log_error(
+				title=_("Auto Deactivate Contract Error: {0}").format(contract_name),
+			)
+			frappe.db.rollback()

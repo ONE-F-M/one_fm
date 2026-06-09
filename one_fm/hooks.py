@@ -603,6 +603,7 @@ scheduler_events = {
   		"one_fm.api.v2.zenquotes.set_cached_quote",
 		"one_fm.operations.doctype.contracts.contracts.send_contract_reminders",
 		"one_fm.operations.doctype.contracts.contracts.renew_contracts_by_termination_date",
+		"one_fm.operations.doctype.contracts.contracts.auto_deactivate_contracts",
         "one_fm.developer.doctype.bug_buster.bug_buster.roster_bug_buster",
         'one_fm.utils.set_employee_status',
         'one_fm.utils.queue_set_out_of_office_for_leaves',
