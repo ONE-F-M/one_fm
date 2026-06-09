@@ -47,7 +47,12 @@ class Contracts(Document):
             self.has_value_changed("workflow_state")
             and self.workflow_state == "Inactive"
         ):
-            self.send_inactivation_email()
+            try:
+                self.send_inactivation_email()
+            except Exception:
+                frappe.log_error(
+                    title=_("Contract Inactivation Email Error: {0}").format(self.name)
+                )
 
         sync_contract_item_prices(self.name)
 
@@ -1947,6 +1952,7 @@ def set_contract_inactive(contract_name: str, contract_end_date: str):
 		doc.workflow_state = "Inactive"
 		doc.flags.ignore_validate = True
 		doc.save(ignore_permissions=True)
+		doc.add_comment("Workflow", _("Inactive"))
 		frappe.db.commit()
 		frappe.msgprint(
 			_("Contract {0} has been set to Inactive.").format(contract_name),
@@ -2000,6 +2006,7 @@ def set_contract_active(contract_name: str, new_start_date: str, new_end_date: s
 	doc.workflow_state = "Draft"
 	doc.flags.ignore_validate = True
 	doc.save(ignore_permissions=True)
+	doc.add_comment("Workflow", _("Draft"))
 	frappe.db.commit()
 
 	frappe.msgprint(
@@ -2033,6 +2040,7 @@ def auto_deactivate_contracts():
 			doc.flags.ignore_workflow = True
 			doc.flags.ignore_validate = True
 			doc.save(ignore_permissions=True)
+			doc.add_comment("Workflow", _("Inactive"))
 			frappe.db.commit()
 		except Exception:
 			frappe.log_error(
