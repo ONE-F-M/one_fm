@@ -16,4 +16,4 @@ package-lock.json
 package.json
 .vscode
 build/lib/*
-.agents/*
+.agents/*one_fm/public/node_modules
