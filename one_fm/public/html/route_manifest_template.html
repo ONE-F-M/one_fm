@@ -1174,6 +1174,12 @@
             return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kuwait" });
         }
 
+        /** HTML-escape a string to prevent XSS when interpolating into innerHTML. */
+        function escHtml(s) {
+            if (!s) return "";
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+
         /** Show a toast notification (standalone — no Frappe dependency). */
         function showToast(msg) {
             const toast = document.createElement('div');
@@ -1411,7 +1417,7 @@
                 const dur = m.totalDuration ? fmtDuration(m.totalDuration) : "";
                 btn.innerHTML = `
       <span class="vehicle-btn-label">${pr.label}</span>
-      ${meta.license_plate ? `<span class="vehicle-btn-meta" style="font-size:11px;color:var(--text-muted)">${meta.license_plate}</span>` : ""}
+      ${meta.license_plate ? `<span class="vehicle-btn-meta" style="font-size:11px;color:var(--text-muted)">${escHtml(meta.license_plate)}</span>` : ""}
       <span class="vehicle-btn-meta">${fmtTime(pr.route.vehicleStartTime)} → ${fmtTime(pr.route.vehicleEndTime)}</span>
       <span class="vehicle-btn-stops">
         <span>${stopCount} stops</span>
@@ -1525,7 +1531,7 @@
   <div class="vehicle-header">
     <div>
       <div class="vehicle-title">${pr.label}</div>
-      ${meta.license_plate ? `<div style="font-size:13px;color:var(--text-muted);font-weight:500;margin-top:2px">${meta.license_plate}</div>` : ""}
+      ${meta.license_plate ? `<div style="font-size:13px;color:var(--text-muted);font-weight:500;margin-top:2px">${escHtml(meta.license_plate)}</div>` : ""}
       <div class="vehicle-subtitle">${fmtTime(pr.route.vehicleStartTime)} → ${fmtTime(pr.route.vehicleEndTime)} · ${allTrips.length} trip${allTrips.length !== 1 ? 's' : ''}</div>
     </div>
       <div class="vehicle-stats">

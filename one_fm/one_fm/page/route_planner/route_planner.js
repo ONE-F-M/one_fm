@@ -2184,7 +2184,7 @@ function mountRoutePlannerApp(wrapper, data) {
                     vehiclesList.push({ label: v.label, startLocation: null });
                     vMeta[v.label] = {
                         accommodation: v.accommodation, driver: v.driver,
-                        seats: v.seats, location: v.accommodation,
+                        seats: v.seats, location: v.location,
                         license_plate: v.license_plate
                     };
 
