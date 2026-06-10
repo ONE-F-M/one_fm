@@ -812,8 +812,9 @@ function mountRoutePlannerApp(wrapper, data) {
                         {
                             fieldtype: 'Data', fieldname: 'trip_name',
                             label: 'Trip Name', reqd: 1,
-                            description: 'Name this trip (e.g. "Morning Run 2", "Evening Pickup B")',
-                            placeholder: 'e.g. Morning Run 2'
+                            description: 'Auto-generated sequential trip name.',
+                            default: self.generateTripName(vehicleId),
+                            read_only: 1
                         },
                         { fieldtype: 'Section Break' },
                         {
@@ -1032,9 +1033,10 @@ function mountRoutePlannerApp(wrapper, data) {
                         },
                         {
                             fieldtype: 'Data', fieldname: 'trip_name',
-                            label: 'Trip Name',
-                            description: 'Give this trip a name (e.g. "Morning Shift A")',
-                            placeholder: 'e.g. Morning Shift A'
+                            label: 'Trip Name', reqd: 1,
+                            description: 'Auto-generated sequential trip name.',
+                            default: self.generateTripName(vehicleId),
+                            read_only: 1
                         },
                         { fieldtype: 'Section Break' },
                         {
@@ -1713,6 +1715,48 @@ function mountRoutePlannerApp(wrapper, data) {
             vehicleLabelForItem(item) {
                 const v = this.planData.vehicles.find(v => v.id === item.vehicleId);
                 return v ? v.label : item.vehicleId;
+            },
+
+            /**
+             * Auto-generate sequential trip name for a vehicle.
+             * Format: {vehicleNumber}{2-digit-sequence}
+             * Leased vehicles: S-{vehicleNumber}{2-digit-sequence}
+             *
+             * vehicleNumber is derived from VHL-#### name (e.g., VHL-0015 → 15)
+             * sequence is 01-based count of existing trips on that vehicle + 1
+             */
+            generateTripName(vehicleId) {
+                const vehicle = this.planData.vehicles.find(v => v.id === vehicleId);
+                if (!vehicle) return '';
+
+                // Extract integer from VHL-#### pattern; fallback to 1-based vehicle index
+                const match = vehicleId.match(/VHL-(\d+)/i);
+                let vehicleNumber = match ? parseInt(match[1], 10) : 0;
+                if (!vehicleNumber) {
+                    // Fallback: use 1-based position in vehicles list
+                    const idx = this.planData.vehicles.findIndex(v => v.id === vehicleId);
+                    vehicleNumber = idx >= 0 ? idx + 1 : 1;
+                }
+
+                // Count existing unique trips on this vehicle
+                const existingTripIds = new Set();
+                this.swimItems.forEach(item => {
+                    if (item.vehicleId !== vehicleId) return;
+                    if (item.tripId) {
+                        existingTripIds.add(item.tripId);
+                    } else {
+                        existingTripIds.add(item.id);
+                    }
+                });
+                const nextSeq = existingTripIds.size + 1;
+
+                // Format: vehicleNumber + 2-digit sequence (e.g., 15 + 01 = "1501")
+                const seqStr = String(nextSeq).padStart(2, '0');
+                const tripName = `${vehicleNumber}${seqStr}`;
+
+                // Leased vehicles get "S-" prefix
+                const prefix = vehicle.is_leased ? 'S-' : '';
+                return `${prefix}${tripName}`;
             },
 
             // ─ Persistence (save/load to Route Plan DocType) ──────────────
