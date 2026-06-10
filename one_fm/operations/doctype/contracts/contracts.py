@@ -806,6 +806,76 @@ class Contracts(Document):
 
 
 @frappe.whitelist()
+def post_return_comment(contract_name: str, target_role: str, comment: str):
+    """Post a rejection comment on a contract, tagging the employee assigned to the target role.
+
+    Queries the Process Task (process_name="Others") for the task "Assigning {target_role}"
+    to identify the responsible employee, then creates a comment with an @mention so the
+    employee receives a Frappe notification.
+
+    Args:
+        contract_name: Name of the Contracts document.
+        target_role: The role being returned to (e.g. "Sales Manager", "Legal Manager").
+        comment: The rejection reason text from the reviewer.
+
+    Returns:
+        dict: employee_name and employee_user of the tagged employee.
+    """
+    if not comment or not comment.strip():
+        frappe.throw(_("A rejection comment is required."))
+
+    if not target_role or not target_role.strip():
+        frappe.throw(_("Target role is required."))
+
+    # Validate the contract exists
+    if not frappe.db.exists("Contracts", contract_name):
+        frappe.throw(_("Contract {0} not found.").format(contract_name))
+
+    doc = frappe.get_doc("Contracts", contract_name)
+    doc.check_permission("write")
+
+    # Map the target_role to the Process Task naming convention
+    task_name = "Assigning {0}".format(target_role.strip())
+
+    # Query the Process Task to find the assigned employee
+    process_task = frappe.db.get_value(
+        "Process Task",
+        {"task": task_name, "process_name": "Others"},
+        ["employee_name", "employee_user"],
+        as_dict=True
+    )
+
+    if not process_task or not process_task.employee_user:
+        frappe.throw(
+            _("No employee found for Process Task '{0}' in process 'Others'. "
+              "Please configure the Process Task before returning.").format(task_name)
+        )
+
+    employee_name = process_task.employee_name
+    employee_user = process_task.employee_user
+
+    # Build the comment with Frappe's @mention HTML format
+    mention_html = (
+        '<span class="mention" data-id="{user}" data-value="{name}" '
+        'data-denotation-char="@" data-is-group="false">'
+        '<span><span class="ql-mention-denotation-char">@</span>{name}</span>'
+        '</span>'
+    ).format(user=employee_user, name=employee_name)
+
+    formatted_comment = "{mention}, {comment}".format(
+        mention=mention_html,
+        comment=comment.strip()
+    )
+
+    doc.add_comment("Comment", formatted_comment)
+
+    return {
+        "employee_name": employee_name,
+        "employee_user": employee_user
+    }
+
+
+@frappe.whitelist()
 def get_si_contracts_items(doctype, txt, searchfield, start, page_len, filters):
     result_set = frappe.db.sql("Select distinct item_code from `tabContract Item` where parent = '{}' ".format(filters.get('contracts')))
     return result_set

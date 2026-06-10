@@ -434,3 +434,4 @@ one_fm.patches.v15_0.migrate_bonus_request_to_grid
 one_fm.patches.v15_0.add_recurring_bonus_process_task
 one_fm.patches.v15_0.fix_parentfield_bonus_items
 
+one_fm.patches.v15_0.add_contracts_workflow_return_to_role_transitions
