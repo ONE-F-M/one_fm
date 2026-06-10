@@ -41,7 +41,7 @@ def get_route_planner_data():
         # ── 1. Vehicles (batch queries) ──
         transport_vehicles = frappe.get_all("Vehicle",
             filters={"transport_stop_vehicle": 1},
-            fields=["name", "location", "seats", "one_fm_vehicle_type", "make", "employee"],
+            fields=["name", "license_plate", "location", "seats", "one_fm_vehicle_type", "make", "employee"],
             order_by="name asc"
         )
 
@@ -81,6 +81,7 @@ def get_route_planner_data():
             vehicles.append({
                 "id":            v.name,
                 "label":         v.name,
+                "license_plate": v.license_plate or "",
                 "driver":        driver_name,
                 "seats":         v.seats or 0,
                 "type":          v.one_fm_vehicle_type or "—",

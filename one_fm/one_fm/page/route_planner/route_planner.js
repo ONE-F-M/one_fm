@@ -2184,7 +2184,8 @@ function mountRoutePlannerApp(wrapper, data) {
                     vehiclesList.push({ label: v.label, startLocation: null });
                     vMeta[v.label] = {
                         accommodation: v.accommodation, driver: v.driver,
-                        seats: v.seats, location: v.accommodation
+                        seats: v.seats, location: v.location,
+                        license_plate: v.license_plate
                     };
 
                     // Sort vehicle items: trip stops by stopIndex, solo items by start time
@@ -2510,6 +2511,7 @@ function injectRPVueTemplate() {
             <!-- Vehicle label column -->
             <div class="rp-lane-label">
               <div class="rp-gv-plate">{{ vehicle.label }}</div>
+              <div v-if="vehicle.license_plate" class="rp-gv-lp">{{ vehicle.license_plate }}</div>
               <div class="rp-gv-meta">{{ vehicle.driver }} &middot; {{ vehicle.seats }} seats</div>
               <div class="rp-gv-acc">{{ vehicle.accommodation }}</div>
             </div>
@@ -3303,6 +3305,7 @@ function injectRPStyles() {
         .rp-lane-svg       { display: block; }
 
         .rp-gv-plate { font-size: 14px; font-weight: 700; color: var(--md-sys-color-on-surface); }
+        .rp-gv-lp    { font-size: 11px; font-weight: 500; color: var(--md-sys-color-outline); margin-top: 1px; }
         .rp-gv-meta  { font-size: 12px; color: var(--md-sys-color-on-surface-variant); margin-top: 1px; }
         .rp-gv-acc   { font-size: 11px; color: var(--md-sys-color-outline); margin-top: 1px; }
 
@@ -3474,6 +3477,7 @@ function injectRPStyles() {
             .rp-lane-label { width: 100px; min-width: 100px; padding: 4px 8px; }
             .rp-label-stub { min-height: 36px; }
             .rp-gv-plate { font-size: 11px; }
+            .rp-gv-lp    { font-size: 9px; }
             .rp-gv-meta  { font-size: 9px; }
             .rp-gv-acc   { display: none; } /* Hide accommodation on label */
 
@@ -3512,6 +3516,7 @@ function injectRPStyles() {
             /* Lane labels: even narrower */
             .rp-lane-label { width: 75px; min-width: 75px; padding: 3px 6px; }
             .rp-gv-plate { font-size: 10px; }
+            .rp-gv-lp    { display: none; }
             .rp-gv-meta  { display: none; }
 
             /* Zoom buttons */
@@ -3634,6 +3639,7 @@ function injectRPStyles() {
         #rp-shell.rp-dark .rp-lane-alt { background: rgba(255,255,255,0.02); }
         #rp-shell.rp-dark .rp-lane-label { border-color: var(--md-sys-color-outline-variant); }
         #rp-shell.rp-dark .rp-gv-plate { color: var(--md-sys-color-on-surface); }
+        #rp-shell.rp-dark .rp-gv-lp    { color: var(--md-sys-color-outline); }
         #rp-shell.rp-dark .rp-gv-meta { color: var(--md-sys-color-outline); }
         #rp-shell.rp-dark .rp-gv-acc { color: var(--md-sys-color-outline); }
 
