@@ -26,9 +26,9 @@ class VehicleLeasingContract(Document):
 
 def vehicle_autoname(doc, method):
 	if doc.one_fm_vehicle_category == "Leased":
-		doc.name = make_autoname("VHL-S-.####", "", doc)
+		doc.name = make_autoname("VHL-S-.####")
 	else:
-		doc.name = make_autoname("VHL-.####", "", doc)
+		doc.name = make_autoname("VHL-.####")
 
 def after_insert_vehicle(doc, method):
 	if doc.vehicle_leasing_contract and doc.vehicle_leasing_details:

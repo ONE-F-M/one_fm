@@ -1,4 +1,4 @@
-frappe.pages['route-planner'].on_page_load = function (wrapper) {
+frappe.pages['transportation-schedule'].on_page_load = function (wrapper) {
     injectRPLoadingStyles();
     $(wrapper).html(`
         <div id="rp-loading">
@@ -29,7 +29,7 @@ frappe.pages['route-planner'].on_page_load = function (wrapper) {
 
 function fetchRPData(wrapper) {
     frappe.call({
-        method: 'one_fm.one_fm.page.route_planner.route_planner.get_route_planner_data',
+        method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.get_route_planner_data',
         callback: function (r) {
             if (!r.message || r.message.status === 'error') {
                 frappe.msgprint(r.message ? r.message.message : 'Failed to load data');
@@ -92,7 +92,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 planLoading: false,
 
                 // ── Theme ──
-                isDark: localStorage.getItem('route-planner-theme') === 'dark',
+                isDark: localStorage.getItem('transportation-schedule-theme') === 'dark',
             };
         },
 
@@ -1721,13 +1721,13 @@ function mountRoutePlannerApp(wrapper, data) {
                 this.planLoading = true;
                 // First fetch available plans, then load active
                 frappe.call({
-                    method: 'one_fm.one_fm.page.route_planner.route_planner.get_route_plans',
+                    method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.get_route_plans',
                     async: true,
                     callback: (r) => {
                         this.planList = r.message || [];
                         // Now load the active plan
                         frappe.call({
-                            method: 'one_fm.one_fm.page.route_planner.route_planner.load_assignments',
+                            method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.load_assignments',
                             args: { plan_name: '' }, // empty = load active
                             async: true,
                             callback: (r2) => {
@@ -1801,7 +1801,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 if (!planName) return;
                 this.planLoading = true;
                 frappe.call({
-                    method: 'one_fm.one_fm.page.route_planner.route_planner.load_assignments',
+                    method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.load_assignments',
                     args: { plan_name: planName },
                     async: true,
                     callback: (r) => {
@@ -1855,7 +1855,7 @@ function mountRoutePlannerApp(wrapper, data) {
                     primary_action_label: __("Create"),
                     primary_action(values) {
                         frappe.call({
-                            method: 'one_fm.one_fm.page.route_planner.route_planner.create_route_plan',
+                            method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.create_route_plan',
                             args: values,
                             callback: (r) => {
                                 if (r.message && r.message.status === 'ok') {
@@ -1883,7 +1883,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 const doUpdate = () => {
                     frappe.call({
-                        method: 'one_fm.one_fm.page.route_planner.route_planner.update_route_plan_status',
+                        method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.update_route_plan_status',
                         args: { plan_name: planName, new_status: newStatus },
                         callback: (r) => {
                             if (r.message && r.message.status === 'ok') {
@@ -1919,7 +1919,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
             refreshPlanList(callback) {
                 frappe.call({
-                    method: 'one_fm.one_fm.page.route_planner.route_planner.get_route_plans',
+                    method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.get_route_plans',
                     async: true,
                     callback: (r) => {
                         this.planList = r.message || [];
@@ -1951,7 +1951,7 @@ function mountRoutePlannerApp(wrapper, data) {
                     const cards = [...this.assignedCards];
 
                     frappe.call({
-                        method: 'one_fm.one_fm.page.route_planner.route_planner.save_assignments',
+                        method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.save_assignments',
                         args: {
                             plan_name: this.currentPlan.name,
                             swim_items: JSON.stringify(items),
@@ -2073,7 +2073,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
             toggleTheme() {
                 this.isDark = !this.isDark;
-                localStorage.setItem('route-planner-theme', this.isDark ? 'dark' : 'light');
+                localStorage.setItem('transportation-schedule-theme', this.isDark ? 'dark' : 'light');
                 this.applyTheme();
             },
 
