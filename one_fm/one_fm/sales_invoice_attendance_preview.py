@@ -41,16 +41,37 @@ def get_attendance_preview_for_invoice(invoice_name: str) -> dict:
 	if not si.contracts:
 		frappe.throw(_("No Contract linked to this Sales Invoice."))
 
-	if not si.from_date or not si.to_date:
-		frappe.throw(_("Billing period (From Date / To Date) is not set on the Sales Invoice."))
+	# ------------------------------------------------------------------
+	# Determine billing period from new custom fields (preferred) or
+	# fall back to from_date / to_date for backwards compatibility.
+	# ------------------------------------------------------------------
+	billing_month_name = getattr(si, "custom_billing_month", None) or ""
+	billing_year_str = getattr(si, "custom_billing_year", None) or ""
 
-	from_date = getdate(si.from_date)
-	to_date = getdate(si.to_date)
-	month_num = from_date.month
-	year = from_date.year
-	month_name = MONTH_NAMES.get(month_num, "")
+	if billing_month_name and billing_year_str:
+		month_num = MONTH_MAP.get(billing_month_name)
+		if not month_num:
+			frappe.throw(_("Invalid Billing Month: {0}").format(billing_month_name))
+		year = int(billing_year_str)
+		month_name = billing_month_name
+		_, last_day_num = monthrange(year, month_num)
+		from_date = getdate(f"{year}-{month_num:02d}-01")
+		to_date = getdate(f"{year}-{month_num:02d}-{last_day_num:02d}")
+	else:
+		# Fallback to standard Sales Invoice date fields
+		if not si.from_date or not si.to_date:
+			frappe.throw(_("Billing period is not set. Please fill Billing Month/Year or From Date/To Date on the Sales Invoice."))
+		from_date = getdate(si.from_date)
+		to_date = getdate(si.to_date)
+		month_num = from_date.month
+		year = from_date.year
+		month_name = MONTH_NAMES.get(month_num, "")
+
 	project = si.project
 	site = getattr(si, "custom_site", None) or ""
+
+	# Read attendance mode from the new custom field (fall back to Attendance Status)
+	attendance_based_on = getattr(si, "custom_attendance_record_based_on", None) or "Attendance Status"
 
 	# ------------------------------------------------------------------
 	# Try to find an Attendance Amendment for this period
@@ -72,7 +93,6 @@ def get_attendance_preview_for_invoice(invoice_name: str) -> dict:
 
 	items = []
 	ot_items = []
-	attendance_based_on = "Attendance Status"
 
 	if amendment_name:
 		# ---- Path A: Data from Attendance Amendment ----
@@ -80,7 +100,7 @@ def get_attendance_preview_for_invoice(invoice_name: str) -> dict:
 	else:
 		# ---- Path B: Live attendance from Attendance doctype ----
 		items, ot_items, attendance_based_on = _get_live_attendance_data(
-			project, site, month_num, year, month_name
+			project, site, month_num, year, month_name, attendance_based_on
 		)
 
 	# Build item_type_map for role names
@@ -163,7 +183,7 @@ def _child_rows_to_dicts(rows, total_days: int, attendance_based_on: str) -> lis
 # Path B: Fetch live attendance from the Attendance doctype
 # ==================================================================
 
-def _get_live_attendance_data(project: str, site: str, month_num: int, year: int, month_name: str):
+def _get_live_attendance_data(project: str, site: str, month_num: int, year: int, month_name: str, attendance_based_on: str = "Attendance Status"):
 	"""Fetch attendance directly using the same pipeline as Attendance Amendment."""
 	from one_fm.one_fm.doctype.attendance_amendment.attendance_amendment import (
 		get_employee_details,
@@ -173,9 +193,6 @@ def _get_live_attendance_data(project: str, site: str, month_num: int, year: int
 		get_ot_attendance_map,
 		get_ot_rows,
 	)
-
-	# Default to Attendance Status when fetching live data
-	attendance_based_on = "Attendance Status"
 
 	filters = frappe._dict({
 		"month": month_num,
