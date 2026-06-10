@@ -5,6 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
+from frappe.model.naming import make_autoname
 
 class VehicleLeasingContract(Document):
 	def create_vehicle(self, args):
@@ -23,11 +24,11 @@ class VehicleLeasingContract(Document):
 		vehicle.save(ignore_permissions=True)
 		update_leasing_cotract_with_vehicle_list(vehicle, self)
 
-def validate_vehicle_naming_series(doc, method):
+def vehicle_autoname(doc, method):
 	if doc.one_fm_vehicle_category == "Leased":
-		doc.custom_naming_series = "VHL-S-.####"
+		doc.name = make_autoname("VHL-S-.####", "", doc)
 	else:
-		doc.custom_naming_series = "VHL-.####"
+		doc.name = make_autoname("VHL-.####", "", doc)
 
 def after_insert_vehicle(doc, method):
 	if doc.vehicle_leasing_contract and doc.vehicle_leasing_details:
