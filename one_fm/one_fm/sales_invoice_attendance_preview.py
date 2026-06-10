@@ -9,7 +9,7 @@ doctype using the same pipeline as `attendance_amendment.py`.
 import re
 import frappe
 from frappe import _
-from frappe.utils import getdate, get_last_day, flt
+from frappe.utils import getdate, flt
 from calendar import monthrange
 
 
