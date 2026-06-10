@@ -1213,9 +1213,8 @@ function si_build_group_table(
 
         table_html += `<tr>`;
         table_html += `<td style="text-align: left; font-size: 10px;">${frappe.utils.escape_html(item_type)}</td>`;
-        table_html += `<td>${row.employee_id || ''}</td>`;
-        table_html += `<td style="text-align: left;">${row.employee_name || ''}</td>`;
-
+        table_html += `<td>${frappe.utils.escape_html(row.employee_id || "")}</td>`;
+        table_html += `<td style="text-align: left;">${frappe.utils.escape_html(row.employee_name || "")}</td>`;
         let working_total = 0;
         let days_off = 0;
         let hours_total = 0;
