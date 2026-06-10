@@ -1033,7 +1033,7 @@ function mountRoutePlannerApp(wrapper, data) {
                         },
                         {
                             fieldtype: 'Data', fieldname: 'trip_name',
-                            label: 'Trip Name',
+                            label: 'Trip Name', reqd: 1,
                             description: 'Auto-generated sequential trip name.',
                             default: self.generateTripName(vehicleId),
                             read_only: 1
@@ -1729,20 +1729,23 @@ function mountRoutePlannerApp(wrapper, data) {
                 const vehicle = this.planData.vehicles.find(v => v.id === vehicleId);
                 if (!vehicle) return '';
 
-                // Extract integer from VHL-#### pattern
+                // Extract integer from VHL-#### pattern; fallback to 1-based vehicle index
                 const match = vehicleId.match(/VHL-(\d+)/i);
-                const vehicleNumber = match ? parseInt(match[1], 10) : 0;
-                if (!vehicleNumber) return '';
+                let vehicleNumber = match ? parseInt(match[1], 10) : 0;
+                if (!vehicleNumber) {
+                    // Fallback: use 1-based position in vehicles list
+                    const idx = this.planData.vehicles.findIndex(v => v.id === vehicleId);
+                    vehicleNumber = idx >= 0 ? idx + 1 : 1;
+                }
 
                 // Count existing unique trips on this vehicle
                 const existingTripIds = new Set();
                 this.swimItems.forEach(item => {
                     if (item.vehicleId !== vehicleId) return;
-                    // Each unique tripId = 1 trip. Items without tripId = standalone trip each.
                     if (item.tripId) {
                         existingTripIds.add(item.tripId);
                     } else {
-                        existingTripIds.add(item.id); // each solo item is its own trip
+                        existingTripIds.add(item.id);
                     }
                 });
                 const nextSeq = existingTripIds.size + 1;
