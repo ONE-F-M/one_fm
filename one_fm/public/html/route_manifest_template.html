@@ -2205,7 +2205,7 @@
             }
 
             const baseUrl = typeof SITE_URL !== 'undefined' ? SITE_URL : '';
-            fetch(baseUrl + '/api/method/one_fm.one_fm.page.route_planner.route_planner.get_available_rambo_relievers', {
+            fetch(baseUrl + '/api/method/one_fm.one_fm.page.transportation_schedule.transportation_schedule.get_available_rambo_relievers', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': (typeof FRAPPE_CSRF_TOKEN !== 'undefined' ? FRAPPE_CSRF_TOKEN : '') },
                 body: JSON.stringify({ shift_name: shiftInfo.shift, date: date })
@@ -2255,7 +2255,7 @@
             
             // Call backend to send email
             const baseUrl = typeof SITE_URL !== 'undefined' ? SITE_URL : '';
-            fetch(baseUrl + '/api/method/one_fm.one_fm.page.route_planner.route_planner.process_rambo_replacement', {
+            fetch(baseUrl + '/api/method/one_fm.one_fm.page.transportation_schedule.transportation_schedule.process_rambo_replacement', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': (typeof FRAPPE_CSRF_TOKEN !== 'undefined' ? FRAPPE_CSRF_TOKEN : '') },
                 body: JSON.stringify({

@@ -102,7 +102,7 @@
    "is_query_report": 0,
    "label": "Transportation Schedule",
    "link_count": 0,
-   "link_to": "route_planner",
+   "link_to": "transportation_schedule",
    "link_type": "Page",
    "onboard": 0,
    "type": "Link"
@@ -112,7 +112,7 @@
    "is_query_report": 0,
    "label": "Manifest View",
    "link_count": 0,
-   "link_to": "route_planner",
+   "link_to": "transportation_schedule",
    "link_type": "Page",
    "onboard": 0,
    "type": "Link"
@@ -132,7 +132,7 @@
   {
    "color": "Blue",
    "label": "Transportation Schedule",
-   "link_to": "route_planner",
+   "link_to": "transportation_schedule",
    "type": "Page"
   }
  ],

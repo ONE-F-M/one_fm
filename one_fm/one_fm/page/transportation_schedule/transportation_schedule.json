@@ -1,8 +1,8 @@
 {
     "doctype": "Page",
     "module": "One FM",
-    "name": "route-planner",
-    "page_name": "route-planner",
+    "name": "transportation-schedule",
+    "page_name": "transportation-schedule",
     "standard": "Yes",
     "title": "Transportation Schedule",
     "roles": [
