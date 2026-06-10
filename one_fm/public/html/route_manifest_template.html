@@ -575,9 +575,14 @@
 
         .transit-info {
             font-family: var(--font-mono);
-            font-size: 10px;
-            color: var(--text-dim);
+            font-size: 13px;
+            color: var(--text);
             white-space: nowrap;
+            font-weight: 600;
+            background: rgba(245, 158, 11, 0.10);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            padding: 3px 10px;
+            border-radius: 100px;
         }
 
         /* ── SKIPPED PANEL ── */
@@ -1266,8 +1271,10 @@
 
         function fmtDuration(secStr) {
             if (!secStr) return "";
-            const s = parseInt(secStr.replace("s", ""), 10);
+            let s = parseInt(secStr.replace("s", ""), 10);
             if (isNaN(s) || s === 0) return "";
+            // Cap at 24 hours — a single daily manifest cannot exceed this
+            if (s > 86400) s = 86400;
             if (s < 60) return `${s}s`;
             if (s < 3600) return `${Math.round(s / 60)}m`;
             const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60);
@@ -1394,14 +1401,11 @@
                 ? "KD " + Number(cost).toLocaleString("en-KW", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                 : "—";
 
-            // Detect run date from first visit
-            const firstTime = routes[0]?.vehicleStartTime ?? req.model.globalStartTime;
-            if (firstTime) {
-                const d = new Date(firstTime);
-                document.getElementById("run-meta").textContent =
-                    d.toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Kuwait" })
-                    + " · Kuwait Time";
-            }
+            // Always show the actual current date in Kuwait timezone
+            const now = new Date();
+            document.getElementById("run-meta").textContent =
+                now.toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Kuwait" })
+                + " · Kuwait Time";
 
             // Sidebar
             const sidebar = document.getElementById("sidebar-routes");
@@ -1549,7 +1553,7 @@
         </div>
         <div class="stat-box">
           <div class="stat-val">${trav}</div>
-          <div class="stat-lbl">Drive Time</div>
+          <div class="stat-lbl">Trip Time</div>
         </div>
         ${metaStats}
       </div>
@@ -1871,9 +1875,9 @@
             const w = fmtDuration(t.waitDuration);
             const km = t.travelDistanceMeters ? fmtKm(t.travelDistanceMeters) : "";
             const parts = [];
-            if (d) parts.push(`<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">directions_bus</span> ${d}`);
+            if (d) parts.push(`<span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle">directions_bus</span> ${d}`);
             if (km) parts.push(km);
-            if (w && w !== "0s") parts.push(`<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">hourglass_top</span> wait ${w}`);
+            if (w && w !== "0s") parts.push(`<span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle">hourglass_top</span> wait ${w}`);
             return `
         <div class="transit-row">
           <div class="transit-line"></div>
