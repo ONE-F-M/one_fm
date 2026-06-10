@@ -1043,10 +1043,11 @@ function si_render_attendance_modal(data, frm) {
         return;
     }
 
-    let from_date = new Date(data.from_date);
-    let to_date = new Date(data.to_date);
+    let [fy, fm, fd] = (data.from_date || "").split("-").map(Number);
+    let [ty, tm, td] = (data.to_date || "").split("-").map(Number);
+    let from_date = new Date(fy, (fm || 1) - 1, fd || 1);
+    let to_date = new Date(ty, (tm || 1) - 1, td || 1);
     let year = from_date.getFullYear();
-    let month_idx = from_date.getMonth();
     let days_in_month = new Date(year, month_idx + 1, 0).getDate();
 
     let attendance_based_on = data.attendance_based_on || "Attendance Status";
