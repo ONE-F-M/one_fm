@@ -151,5 +151,32 @@ def get_sales_invoice_properties():
             "property": "collapsible",
             "property_type": "Check",
             "value": "1"
+        },
+        {
+            "doctype": "Property Setter",
+            "doc_type": "Sales Invoice",
+            "doctype_or_field": "DocField",
+            "field_name": "customer",
+            "property": "reqd",
+            "property_type": "Check",
+            "value": "1"
+        },
+        {
+            "doctype": "Property Setter",
+            "doc_type": "Sales Invoice",
+            "doctype_or_field": "DocField",
+            "field_name": "loan",
+            "property": "hidden",
+            "property_type": "Check",
+            "value": "1"
+        },
+        {
+            "doctype": "Property Setter",
+            "doc_type": "Sales Invoice",
+            "doctype_or_field": "DocField",
+            "field_name": "selling_price_list",
+            "property": "default",
+            "property_type": "Data",
+            "value": "Standard Selling"
         }
     ]
