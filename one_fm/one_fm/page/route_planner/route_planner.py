@@ -41,7 +41,7 @@ def get_route_planner_data():
         # ── 1. Vehicles (batch queries) ──
         transport_vehicles = frappe.get_all("Vehicle",
             filters={"transport_stop_vehicle": 1},
-            fields=["name", "license_plate", "location", "seats", "one_fm_vehicle_type", "make", "employee"],
+            fields=["name", "license_plate", "location", "seats", "one_fm_vehicle_type", "make", "employee", "one_fm_vehicle_category"],
             order_by="name asc"
         )
 
@@ -88,7 +88,8 @@ def get_route_planner_data():
                 "make":          v.make or "—",
                 "accommodation": acc_name,
                 "location":      v.location,
-                "coords":        {"lat": coords[0], "lng": coords[1]}
+                "coords":        {"lat": coords[0], "lng": coords[1]},
+                "is_leased":     v.one_fm_vehicle_category == "Leased"
             })
 
         # ── 2. Shipment cards ────────────────────────────────────────────
