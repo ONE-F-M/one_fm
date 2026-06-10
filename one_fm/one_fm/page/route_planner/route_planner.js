@@ -2244,14 +2244,24 @@ function mountRoutePlannerApp(wrapper, data) {
                     const rE = new Date(vItems[vItems.length - 1].end).toISOString();
                     const totMs = new Date(rE) - new Date(rS);
 
+                    // Trip Time = sum of only actual trip item durations (excludes idle gaps between trips)
+                    const tripTimeMs = vItems.reduce((sum, item) => {
+                        return sum + (new Date(item.end) - new Date(item.start));
+                    }, 0);
+
+                    // Cap both at 24 hours (86400s) for a single daily manifest
+                    const MAX_DAY_SEC = 86400;
+                    const totalSec = Math.min(Math.round(totMs / 1000), MAX_DAY_SEC);
+                    const tripSec = Math.min(Math.round(tripTimeMs / 1000), MAX_DAY_SEC);
+
                     routes.push({
                         vehicleIndex: vi, vehicleLabel: v.label,
                         vehicleStartTime: rS, vehicleEndTime: rE,
                         visits, transitions: trans,
                         metrics: {
                             travelDistanceMeters: 0,
-                            totalDuration: `${Math.round(totMs / 1000)}s`,
-                            travelDuration: `${Math.round(totMs / 1000)}s`
+                            totalDuration: `${totalSec}s`,
+                            travelDuration: `${tripSec}s`
                         }
                     });
                 });

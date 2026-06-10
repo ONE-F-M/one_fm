@@ -1320,53 +1320,105 @@ def update_route_plan_status(plan_name: str, new_status: str):
         "new_status": new_status
     }
 @frappe.whitelist()
-def get_available_rambo_relievers(shift_name: str, date: str):
+def get_available_rambo_relievers(shift_name: str = None, date: str = None):
     """
-    Fetch available Rambo relievers for a specific date and shift.
-    - custom_is_rambo_reliever = 1
-    - status = 'Active'
-    - No active shift assignment for the given date.
+    Fetch available Rambo relievers for a specific date.
+    Returns employees with custom_is_rambo_reliever = 1 and status = 'Active',
+    enriched with their current day's Operations Shift details (if scheduled).
+
+    Dropdown display format: [Name] - [Shift] - [Start] to [End]
+    Falls back to [Name] ([Designation]) if no shift is assigned.
     """
-    
-    # Get all active rambo relievers
-    rambos = frappe.get_all("Employee",
-        filters={
-            "custom_is_rambo_reliever": 1,
-            "status": "Active"
-        },
-        fields=["name", "employee_name", "designation", "cell_number"]
-    )
-    
+    if not date:
+        date = frappe.utils.today()
+
+    from frappe.query_builder import DocType
+
+    Employee = DocType("Employee")
+    rambos = (
+        frappe.qb.from_(Employee)
+        .select(
+            Employee.name,
+            Employee.employee_name,
+            Employee.designation,
+            Employee.cell_number,
+            Employee.shift,
+        )
+        .where(Employee.status == "Active")
+        .where(Employee.custom_is_rambo_reliever == 1)
+        .orderby(Employee.employee_name)
+    ).run(as_dict=True)
+
     if not rambos:
         return []
-        
+
     rambo_ids = [r.name for r in rambos]
-    
-    # Check shift assignments for conflicts on the same date
-    conflicts = frappe.get_all("Shift Assignment",
-        filters={
-            "employee": ["in", rambo_ids],
-            "start_date": ["<=", date],
-            "end_date": [">=", date],
-            "docstatus": 1,
-            "status": "Active"
-        },
-        fields=["employee"]
-    )
-    
-    conflict_ids = set([c.employee for c in conflicts])
-    
-    available = []
+
+    # Fetch Employee Schedule for these employees on the given date.
+    # Filter to roster_type='Basic' to avoid ambiguity with Over-Time entries
+    # (consistent with one_fm/api/tasks.py and default_shift_checker.py).
+    EmployeeSchedule = DocType("Employee Schedule")
+    schedules = (
+        frappe.qb.from_(EmployeeSchedule)
+        .select(
+            EmployeeSchedule.employee,
+            EmployeeSchedule.shift,
+        )
+        .where(EmployeeSchedule.employee.isin(rambo_ids))
+        .where(EmployeeSchedule.date == date)
+        .where(EmployeeSchedule.employee_availability == "Working")
+        .where(EmployeeSchedule.roster_type == "Basic")
+    ).run(as_dict=True)
+
+    # Map employee → today's scheduled shift
+    emp_schedule_map = {}
+    for s in schedules:
+        if s.employee not in emp_schedule_map:
+            emp_schedule_map[s.employee] = s.shift
+
+    # Collect all shift names we need details for (from schedule + fallback default)
+    all_shift_names = set()
     for r in rambos:
-        if r.name not in conflict_ids:
-            available.append({
-                "name": r.name,
-                "employee_name": r.employee_name,
-                "designation": r.designation or "—",
-                "mobile": r.cell_number or ""
-            })
-            
-    return available
+        scheduled_shift = emp_schedule_map.get(r.name)
+        if scheduled_shift:
+            all_shift_names.add(scheduled_shift)
+        elif r.shift:
+            all_shift_names.add(r.shift)
+
+    # Batch-fetch Operations Shift details
+    shift_detail_map = {}
+    if all_shift_names:
+        OperationsShift = DocType("Operations Shift")
+        shift_details = (
+            frappe.qb.from_(OperationsShift)
+            .select(
+                OperationsShift.name,
+                OperationsShift.start_time,
+                OperationsShift.end_time,
+            )
+            .where(OperationsShift.name.isin(list(all_shift_names)))
+        ).run(as_dict=True)
+        shift_detail_map = {s.name: s for s in shift_details}
+
+    # Build response
+    result = []
+    for r in rambos:
+        # Determine which shift to display: Employee Schedule (today) → fallback to default
+        effective_shift = emp_schedule_map.get(r.name) or r.shift
+        shift_doc = shift_detail_map.get(effective_shift) if effective_shift else None
+
+        result.append({
+            "name": r.name,
+            "employee_name": r.employee_name,
+            "designation": r.designation or "",
+            "mobile": r.cell_number or "",
+            "shift_name": effective_shift if shift_doc else None,
+            "shift_start_time": frappe.utils.get_time(shift_doc.start_time).strftime("%H:%M") if shift_doc else None,
+            "shift_end_time": frappe.utils.get_time(shift_doc.end_time).strftime("%H:%M") if shift_doc else None,
+        })
+
+    return result
+
 
 @frappe.whitelist()
 def process_rambo_replacement(original_employee: str, replacement_employee: str, shift_name: str, site: str):

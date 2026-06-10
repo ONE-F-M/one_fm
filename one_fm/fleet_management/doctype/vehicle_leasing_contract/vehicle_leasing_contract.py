@@ -23,6 +23,12 @@ class VehicleLeasingContract(Document):
 		vehicle.save(ignore_permissions=True)
 		update_leasing_cotract_with_vehicle_list(vehicle, self)
 
+def validate_vehicle_naming_series(doc, method):
+	if doc.one_fm_vehicle_category == "Leased":
+		doc.custom_naming_series = "VHL-S-.####"
+	else:
+		doc.custom_naming_series = "VHL-.####"
+
 def after_insert_vehicle(doc, method):
 	if doc.vehicle_leasing_contract and doc.vehicle_leasing_details:
 		lc = frappe.get_doc('Vehicle Leasing Contract', doc.vehicle_leasing_contract)

@@ -296,6 +296,7 @@ doc_events = {
 		"validate": "one_fm.utils.validate_warehouse"
 	},
 	"Vehicle": {
+		"validate": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.validate_vehicle_naming_series",
 		"after_insert": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.after_insert_vehicle"
 	},
 	"Item Group": {
