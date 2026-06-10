@@ -70,7 +70,7 @@ frappe.ui.form.on('Sales Invoice', {
         }
 
         // Preview Attendance button — visible when Contracts field has data
-        if (frm.doc.contracts) {
+        if (!frm.is_new() && frm.doc.contracts) {
             frm.add_custom_button(__("Preview Attendance"), function() {
                 si_show_attendance_preview(frm);
             });
