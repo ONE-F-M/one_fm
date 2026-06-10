@@ -1971,6 +1971,27 @@
         </div>
     </div>
 
+    <!-- RAMBO PROMPT MODAL -->
+    <div class="modal-overlay" id="ramboPromptModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="ramboPromptTitle">Replacement Needed?</span>
+                <button class="modal-close" onclick="closeRamboPrompt()"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <div style="margin-bottom:16px; font-size:13px; color:var(--text-muted)">
+                <strong id="ramboPromptEmpName" style="color:var(--text)"></strong>
+                <span id="ramboPromptReason"></span>
+            </div>
+            <div style="font-size:14px; font-weight:500; color:var(--text); margin-bottom:20px;">
+                Do you want to look for Rambo Relievers?
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button class="btn-primary" style="flex:1; background:#e5e5e5; color:#333;" onclick="declineRamboPrompt()">No</button>
+                <button class="btn-primary" style="flex:1;" onclick="acceptRamboPrompt()">Yes</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         window.checkerState = window.checkerState || {};
         let currentCheckInEmpId = null;
@@ -2035,11 +2056,17 @@
                 init(); // Fallback
             }
             
-            if (tempAttendance === 'Absent' || tempQoa === 'Fail') {
-                // Delay slightly to let them see the button turn red
+            if (tempAttendance === 'Absent') {
+                // Absent → ask "Do you want to look for Rambo Relievers?"
                 setTimeout(() => {
                     closeCheckInModal();
-                    openReplacementModal(currentCheckInEmpId, currentCheckInEmpName);
+                    openRamboPrompt(currentCheckInEmpId, currentCheckInEmpName, 'absent');
+                }, 150);
+            } else if (tempAttendance === 'Present' && tempQoa === 'Fail') {
+                // Present + QOA Fail → ask "Do you want to look for Rambo Relievers?"
+                setTimeout(() => {
+                    closeCheckInModal();
+                    openRamboPrompt(currentCheckInEmpId, currentCheckInEmpName, 'qoa_fail');
                 }, 150);
             } else if (tempAttendance === 'Present' && tempQoa === 'Pass') {
                 // Perfect check-in, auto close!
@@ -2050,9 +2077,61 @@
             // If they only clicked Present, stay open for QoA
         }
 
+        // --- RAMBO PROMPT MODAL LOGIC ---
+
+        let ramboPromptEmpId = null;
+        let ramboPromptEmpName = null;
+
+        function openRamboPrompt(empId, empName, reason) {
+            ramboPromptEmpId = empId;
+            ramboPromptEmpName = empName;
+            document.getElementById('ramboPromptEmpName').textContent = empName;
+            if (reason === 'qoa_fail') {
+                document.getElementById('ramboPromptTitle').textContent = 'Quality of Appearance Failed';
+                document.getElementById('ramboPromptReason').textContent = ' failed the Quality of Appearance check.';
+            } else {
+                document.getElementById('ramboPromptTitle').textContent = 'Employee Absent';
+                document.getElementById('ramboPromptReason').textContent = ' is marked as Absent.';
+            }
+            document.getElementById('ramboPromptModal').classList.add('active');
+        }
+
+        function closeRamboPrompt() {
+            document.getElementById('ramboPromptModal').classList.remove('active');
+        }
+
+        function acceptRamboPrompt() {
+            closeRamboPrompt();
+            openReplacementModal(ramboPromptEmpId, ramboPromptEmpName);
+        }
+
+        function declineRamboPrompt() {
+            closeRamboPrompt();
+            // Employee stays with their current visual flag (amber for QOA fail, red for absent)
+            if (activeView) {
+                renderRoute(activeView);
+            } else {
+                init();
+            }
+        }
+
         // --- REPLACEMENT MODAL LOGIC ---
         
         let availableRelievers = [];
+
+        /** Format a reliever option for the dropdown.
+         *  Shows: [Name] - [Shift] - [Start] to [End]
+         *  Falls back to [Name] ([Designation]) if no shift assigned. */
+        function formatRelieverOption(r) {
+            if (r.shift_name && r.shift_start_time && r.shift_end_time) {
+                return r.employee_name + ' - ' + r.shift_name + ' - ' + r.shift_start_time + ' to ' + r.shift_end_time;
+            }
+            // Fallback: show designation if no shift scheduled today
+            if (r.designation) {
+                return r.employee_name + ' (' + r.designation + ')';
+            }
+            return r.employee_name;
+        }
 
         function findShiftForEmp(empId) {
             // Find the shift info from the window.manifestData
@@ -2098,7 +2177,7 @@
                 } else {
                     sel.disabled = false;
                     sel.innerHTML = '<option value="">-- Select Reliever --</option>' + 
-                        availableRelievers.map(r => `<option value="${r.name}">${r.employee_name} (${r.designation})</option>`).join("");
+                        availableRelievers.map(r => `<option value="${r.name}">${formatRelieverOption(r)}</option>`).join("");
                     document.getElementById('btn-confirm-replace').disabled = false;
                 }
             })
