@@ -190,7 +190,6 @@ def _get_live_attendance_data(project: str, site: str, month_num: int, year: int
 		get_employee_details,
 		get_attendance_map,
 		get_rows,
-		get_day_off_attendance_map,
 		get_ot_attendance_map,
 		get_ot_rows,
 	)
