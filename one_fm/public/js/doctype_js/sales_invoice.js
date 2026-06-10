@@ -1170,7 +1170,7 @@ function si_build_group_table(
 
     // Header Row 1: Day names
     table_html += `<thead><tr style="background: ${header_bg};">`;
-    table_html += `<th rowspan="2" style="vertical-align: middle; min-width: 110px; text-align: left;">${__("Item Type")}</th>`;
+    table_html += `<th rowspan="2" style="vertical-align: middle; min-width: 110px; text-align: left;">${__("Role Name")}</th>`;
     table_html += `<th rowspan="2" style="vertical-align: middle; min-width: 70px;">${__("Employee ID")}</th>`;
     table_html += `<th rowspan="2" style="vertical-align: middle; min-width: 130px; text-align: left;">${__("Employee Name")}</th>`;
 
