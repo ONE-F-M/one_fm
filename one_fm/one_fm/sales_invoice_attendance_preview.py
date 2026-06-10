@@ -84,6 +84,7 @@ def get_attendance_preview_for_invoice(invoice_name: str) -> dict:
 			"month": month_name,
 			"year": str(year),
 			"project": project,
+			"attendance_based_on": attendance_based_on,
 			"workflow_state": "Approved",
 		}
 		if site:
