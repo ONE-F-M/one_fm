@@ -27,7 +27,18 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 	def fetch_shift(self):
 		pass
 
+	def validate_not_returned_from_leave(self):
+		"""Block checkin for employees with 'Not Returned From Leave' status."""
+		employee_status = frappe.get_cached_value("Employee", self.employee, "status")
+		if employee_status == "Not Returned From Leave":
+			frappe.throw(
+				_("Access Denied: Please contact your Site Supervisor to complete "
+				  "your Duty Resumption process before logging checkin."),
+				title=_("Checkin Blocked")
+			)
+
 	def validate(self):
+		self.validate_not_returned_from_leave()
 		try:
 			validate_active_employee(self.employee)
 			self.validate_duplicate_log()
