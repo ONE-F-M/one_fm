@@ -1265,8 +1265,7 @@ function si_build_group_table(
                 let h = Number(hour_val) || 0;
                 day_col_totals[i] += h;
             }
-            table_html += `<td style="background-color: ${bg}">${val_short}</td>`;
-        }
+            table_html += `<td style="background-color: ${bg}">${frappe.utils.escape_html(val_short)}</td>`;
 
         group_total_working += working_total;
         group_total_off += days_off;
