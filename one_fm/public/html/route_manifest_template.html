@@ -2050,9 +2050,16 @@
         }
 
         function autoSaveCheckIn() {
-            window.checkerState[currentCheckInEmpId] = window.checkerState[currentCheckInEmpId] || {};
-            window.checkerState[currentCheckInEmpId].attendance = tempAttendance;
-            window.checkerState[currentCheckInEmpId].qoa = tempQoa;
+            // Capture in locals before async timeout to prevent race condition
+            // if the user opens another employee's check-in within the 150ms delay.
+            const empId = currentCheckInEmpId;
+            const empName = currentCheckInEmpName;
+            const att = tempAttendance;
+            const qoa = tempQoa;
+
+            window.checkerState[empId] = window.checkerState[empId] || {};
+            window.checkerState[empId].attendance = att;
+            window.checkerState[empId].qoa = qoa;
             
             if (activeView) {
                 renderRoute(activeView);
@@ -2060,19 +2067,19 @@
                 init(); // Fallback
             }
             
-            if (tempAttendance === 'Absent') {
+            if (att === 'Absent') {
                 // Absent → ask "Do you want to look for Rambo Relievers?"
                 setTimeout(() => {
                     closeCheckInModal();
-                    openRamboPrompt(currentCheckInEmpId, currentCheckInEmpName, 'absent');
+                    openRamboPrompt(empId, empName, 'absent');
                 }, 150);
-            } else if (tempAttendance === 'Present' && tempQoa === 'Fail') {
+            } else if (att === 'Present' && qoa === 'Fail') {
                 // Present + QOA Fail → ask "Do you want to look for Rambo Relievers?"
                 setTimeout(() => {
                     closeCheckInModal();
-                    openRamboPrompt(currentCheckInEmpId, currentCheckInEmpName, 'qoa_fail');
+                    openRamboPrompt(empId, empName, 'qoa_fail');
                 }, 150);
-            } else if (tempAttendance === 'Present' && tempQoa === 'Pass') {
+            } else if (att === 'Present' && qoa === 'Pass') {
                 // Perfect check-in, auto close!
                 setTimeout(() => {
                     closeCheckInModal();
@@ -2123,7 +2130,7 @@
         
         let availableRelievers = [];
 
-        /** Format a reliever option for the dropdown.
+        /** Format a reliever option label (plain text, safe for textContent).
          *  Shows: [Name] - [Shift] - [Start] to [End]
          *  Falls back to [Name] ([Designation]) if no shift assigned. */
         function formatRelieverOption(r) {
@@ -2137,13 +2144,40 @@
             return r.employee_name;
         }
 
+        /** Build <select> options safely via DOM API (textContent) to prevent XSS. */
+        function populateRelieverSelect(relievers) {
+            const sel = document.getElementById('relieverSelect');
+            sel.innerHTML = '';
+
+            if (relievers.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = 'No available Rambo Relievers found for this time slot.';
+                sel.appendChild(opt);
+                sel.disabled = true;
+                document.getElementById('btn-confirm-replace').disabled = true;
+                return;
+            }
+
+            sel.disabled = false;
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = '-- Select Reliever --';
+            sel.appendChild(placeholder);
+
+            for (const r of relievers) {
+                const opt = document.createElement('option');
+                opt.value = r.name;
+                opt.textContent = formatRelieverOption(r);
+                sel.appendChild(opt);
+            }
+            document.getElementById('btn-confirm-replace').disabled = false;
+        }
+
         function findShiftForEmp(empId) {
             // Find the shift info from the window.manifestData
             if (!window.manifestData || !window.manifestData.swim_items) return null;
             for (let item of window.manifestData.swim_items) {
-                // To be precise we would need to know the employee is in this item's _card
-                // But simpler: just find the shift of the first loaded shipment since usually 1 site/shift per manifest.
-                // Or look in window.manifestData.swim_items
                 if (item._shift) return { shift: item._shift, site: item._site };
             }
             return null;
@@ -2151,7 +2185,12 @@
 
         function openReplacementModal(empId, empName) {
             document.getElementById('replaceOrigName').textContent = empName;
-            document.getElementById('relieverSelect').innerHTML = '<option value="">Loading available relievers...</option>';
+            const sel = document.getElementById('relieverSelect');
+            sel.innerHTML = '';
+            const loadingOpt = document.createElement('option');
+            loadingOpt.value = '';
+            loadingOpt.textContent = 'Loading available relievers...';
+            sel.appendChild(loadingOpt);
             document.getElementById('btn-confirm-replace').disabled = true;
             document.getElementById('replacementModal').classList.add('active');
             
@@ -2174,20 +2213,16 @@
             .then(r => r.json())
             .then(res => {
                 availableRelievers = res.message || [];
-                const sel = document.getElementById('relieverSelect');
-                if (availableRelievers.length === 0) {
-                    sel.innerHTML = '<option value="">No available Rambo Relievers found for this time slot.</option>';
-                    sel.disabled = true;
-                } else {
-                    sel.disabled = false;
-                    sel.innerHTML = '<option value="">-- Select Reliever --</option>' + 
-                        availableRelievers.map(r => `<option value="${r.name}">${formatRelieverOption(r)}</option>`).join("");
-                    document.getElementById('btn-confirm-replace').disabled = false;
-                }
+                populateRelieverSelect(availableRelievers);
             })
             .catch(err => {
                 console.error(err);
-                document.getElementById('relieverSelect').innerHTML = '<option value="">Error loading relievers.</option>';
+                const errSel = document.getElementById('relieverSelect');
+                errSel.innerHTML = '';
+                const errOpt = document.createElement('option');
+                errOpt.value = '';
+                errOpt.textContent = 'Error loading relievers.';
+                errSel.appendChild(errOpt);
             });
         }
 

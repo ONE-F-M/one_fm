@@ -1354,7 +1354,9 @@ def get_available_rambo_relievers(shift_name: str = None, date: str = None):
 
     rambo_ids = [r.name for r in rambos]
 
-    # Fetch Employee Schedule for these employees on the given date
+    # Fetch Employee Schedule for these employees on the given date.
+    # Filter to roster_type='Basic' to avoid ambiguity with Over-Time entries
+    # (consistent with one_fm/api/tasks.py and default_shift_checker.py).
     EmployeeSchedule = DocType("Employee Schedule")
     schedules = (
         frappe.qb.from_(EmployeeSchedule)
@@ -1365,6 +1367,7 @@ def get_available_rambo_relievers(shift_name: str = None, date: str = None):
         .where(EmployeeSchedule.employee.isin(rambo_ids))
         .where(EmployeeSchedule.date == date)
         .where(EmployeeSchedule.employee_availability == "Working")
+        .where(EmployeeSchedule.roster_type == "Basic")
     ).run(as_dict=True)
 
     # Map employee → today's scheduled shift
@@ -1410,8 +1413,8 @@ def get_available_rambo_relievers(shift_name: str = None, date: str = None):
             "designation": r.designation or "",
             "mobile": r.cell_number or "",
             "shift_name": effective_shift if shift_doc else None,
-            "shift_start_time": str(shift_doc.start_time)[:5] if shift_doc else None,
-            "shift_end_time": str(shift_doc.end_time)[:5] if shift_doc else None,
+            "shift_start_time": frappe.utils.get_time(shift_doc.start_time).strftime("%H:%M") if shift_doc else None,
+            "shift_end_time": frappe.utils.get_time(shift_doc.end_time).strftime("%H:%M") if shift_doc else None,
         })
 
     return result
