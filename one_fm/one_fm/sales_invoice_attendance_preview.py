@@ -265,9 +265,7 @@ def _raw_rows_to_dicts(rows, total_days: int, attendance_based_on: str) -> list:
 # ==================================================================
 
 def _build_pdf_metadata(si, month_name: str, year: int) -> dict:
-	"""Build the header metadata dict for the PDF export."""
-	company_name = frappe.defaults.get_user_default("Company") or ""
-	logo_url = ""
+	company_name = getattr(si, "company", None) or frappe.defaults.get_user_default("Company") or ""
 	client_name = ""
 
 	# Get Letter Head logo
