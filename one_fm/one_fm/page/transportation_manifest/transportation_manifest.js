@@ -570,7 +570,7 @@ function renderManifest($container, data) {
 				<div class="mfst-trip-group ${dirClass}">
 					<div class="mfst-trip-header">
 						<span class="material-symbols-outlined mfst-trip-header-icon">${dirIcon}</span>
-						<span class="mfst-trip-header-title">${trip.label}</span>
+						<span class="mfst-trip-header-title">${escHtml(trip.label)}</span>
 						<span class="mfst-trip-header-meta">${siteOrder.length} site${siteOrder.length !== 1 ? "s" : ""} · ${fmtTime(firstTimeISO)} → ${fmtTime(lastTimeISO)}</span>
 					</div>
 					<div class="mfst-trip-body">
@@ -614,7 +614,6 @@ function renderManifest($container, data) {
 					const actionWord = isDropoff ? "Dropping off" : "Picking up";
 					const actionColor = isDropoff ? "var(--mfst-accent)" : "var(--mfst-green)";
 					const actionIcon = isDropoff ? "south" : "north";
-					const chipStyle = isDropoff ? "" : "";
 					empHtml = `<div class="mfst-stop-emp-section">
 						<div class="mfst-stop-emp-label" style="color:${actionColor}">
 							<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">${actionIcon}</span>
@@ -636,8 +635,8 @@ function renderManifest($container, data) {
 								${fmtTime(stop.time)}
 							</div>
 						</div>
-						<div class="mfst-stop-card-title">${site}</div>
-						${shift ? `<div class="mfst-stop-card-shift">${shift}</div>` : ""}
+						<div class="mfst-stop-card-title">${escHtml(site)}</div>
+						${shift ? `<div class="mfst-stop-card-shift">${escHtml(shift)}</div>` : ""}
 						${empHtml}
 					</div>
 				`;
@@ -801,10 +800,10 @@ function renderManifest($container, data) {
 	function renderSkipped(skipped) {
 		let html = `<div style="padding:20px 0"><div class="mfst-vehicle-card" style="border-color:var(--mfst-red);background:var(--mfst-red-dim)"><div class="mfst-vehicle-name" style="color:var(--mfst-red)"><span class="material-symbols-outlined" style="font-size:28px;vertical-align:middle;margin-right:8px">warning</span>Skipped Shipments (${skipped.length})</div></div>`;
 		skipped.forEach(s => {
-			const reasons = (s.reasons ?? []).map(r => r.code ?? r.exampleVehicleIndex ?? JSON.stringify(r)).join(", ");
+			const reasons = escHtml((s.reasons ?? []).map(r => r.code ?? r.exampleVehicleIndex ?? JSON.stringify(r)).join(", "));
 			html += `
 				<div class="mfst-stop-card" style="border-left-color:var(--mfst-red)">
-					<div class="mfst-stop-card-title">${s.label ?? "Unlabelled shipment"}</div>
+					<div class="mfst-stop-card-title">${escHtml(s.label ?? "Unlabelled shipment")}</div>
 					<div class="mfst-stop-card-shift">${reasons || "No reason provided"}</div>
 				</div>
 			`;
@@ -979,6 +978,23 @@ function renderManifest($container, data) {
 		$container.find("#mfst-btn-confirm-replace").prop("disabled", false);
 	}
 
+	function findShiftForEmp(empId) {
+		// Walk all shipment labels to find which shift/site this employee belongs to
+		for (const [label, emps] of Object.entries(shipmentEmployees)) {
+			const found = (emps || []).some(e => {
+				const eid = (typeof e === "object" && e !== null) ? (e.id || e.name || "") : (e || "");
+				return eid === empId;
+			});
+			if (found) {
+				return {
+					shift: shipmentShiftNames[label] || "",
+					site: shipmentSiteLocations[label] || ""
+				};
+			}
+		}
+		return { shift: "", site: "" };
+	}
+
 	function openReplacementModal(empId, empName) {
 		$container.find("#mfst-replaceOrigName").text(empName);
 		const sel = $container.find("#mfst-relieverSelect")[0];
@@ -990,6 +1006,12 @@ function renderManifest($container, data) {
 		$container.find("#mfst-btn-confirm-replace").prop("disabled", true).text("Confirm Replacement");
 		$container.find("#mfst-replacementModal").addClass("active");
 
+		// Resolve shift/site for this employee
+		const empShiftInfo = findShiftForEmp(empId);
+		// Store for use in confirm handler
+		window._mfst_currentReplacementShift = empShiftInfo.shift;
+		window._mfst_currentReplacementSite = empShiftInfo.site;
+
 		const routes = ROUTE_DATA.response?.routes || [];
 		const firstTime = routes[0]?.vehicleStartTime;
 		let date = new Date().toISOString().split("T")[0];
@@ -999,7 +1021,7 @@ function renderManifest($container, data) {
 
 		frappe.call({
 			method: "one_fm.one_fm.page.transportation_schedule.transportation_schedule.get_available_rambo_relievers",
-			args: { shift_name: "", date: date },
+			args: { shift_name: empShiftInfo.shift, date: date },
 			async: true,
 			callback: function(r) {
 				availableRelievers = r.message || [];
@@ -1044,18 +1066,19 @@ function renderManifest($container, data) {
 			args: {
 				original_employee: currentCheckInEmpId,
 				replacement_employee: reliever.name,
-				shift_name: "",
-				site: ""
+				shift_name: window._mfst_currentReplacementShift || "",
+				site: window._mfst_currentReplacementSite || ""
 			},
 			async: true,
-			callback: function() {
+			callback: function(r) {
 				$container.find("#mfst-btn-confirm-replace").text("Confirm Replacement");
-				showToast("Replacement confirmed and supervisor notified.");
+				const msg = (r.message && r.message.message) ? r.message.message : "Replacement processed.";
+				showToast(msg);
 				closeReplacementModal();
 			},
 			error: function() {
 				$container.find("#mfst-btn-confirm-replace").text("Confirm Replacement");
-				showToast("Replacement saved, but failed to notify supervisor.");
+				showToast("Replacement saved, but server request failed.");
 				closeReplacementModal();
 			}
 		});

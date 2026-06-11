@@ -1287,16 +1287,11 @@ def get_manifest_data_for_plan(plan_name: str):
 	if not doc.assignments:
 		return {"status": "empty", "message": _("This plan has no assignments.")}
 
-	import json as json_mod
-
 	slug = lambda s: (s or "").replace(" ", "-").replace("_", "-")
 
 	# ── Collect unique references from assignments ──
 	vehicle_ids = list({row.vehicle for row in doc.assignments if row.vehicle})
 	shift_names = list({row.shift for row in doc.assignments if row.shift})
-	acc_names = list({row.accommodation for row in doc.assignments if row.accommodation})
-	stop_locations = list({row.stop_location for row in doc.assignments if row.stop_location})
-	card_ids = list({row.card_id for row in doc.assignments if row.card_id})
 
 	# ── Batch-fetch vehicle metadata ──
 	vehicle_map = {}
@@ -1754,10 +1749,21 @@ def process_rambo_replacement(original_employee: str, replacement_employee: str,
                 message=message,
                 now=True
             )
+            return {
+                "status": "success",
+                "notified": True,
+                "message": "Replacement processed and supervisor notified."
+            }
         except Exception as e:
             frappe.log_error(f"Error sending Rambo Reliever notification: {str(e)}", "Rambo Reliever Notification")
-        
+            return {
+                "status": "success",
+                "notified": False,
+                "message": "Replacement processed, but notification email failed."
+            }
+
     return {
         "status": "success",
-        "message": "Replacement processed and notification sent."
+        "notified": False,
+        "message": "Replacement processed. No supervisor found for this shift to notify."
     }

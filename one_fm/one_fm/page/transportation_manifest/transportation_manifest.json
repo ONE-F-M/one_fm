@@ -7,10 +7,7 @@
     "title": "Transportation Manifest",
     "roles": [
         {
-            "role": "System Manager"
-        },
-        {
-            "role": "Operations Manager"
+            "role": "All"
         }
     ]
 }
