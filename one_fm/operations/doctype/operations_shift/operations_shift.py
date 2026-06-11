@@ -103,8 +103,25 @@ class OperationsShift(Document):
 			return
 		
 		if self.has_value_changed('shift_type'):
-			start_time = get_time(self.start_time)
-			end_time = get_time(self.end_time)
+			start_time = self.start_time
+			end_time = self.end_time
+
+			# Fetch from linked Shift Type if not set on the document
+			if not start_time or not end_time:
+				if self.shift_type:
+					shift_type_doc = frappe.db.get_value(
+						"Shift Type", self.shift_type,
+						["start_time", "end_time"], as_dict=True
+					)
+					if shift_type_doc:
+						start_time = start_time or shift_type_doc.start_time
+						end_time = end_time or shift_type_doc.end_time
+
+			if not start_time or not end_time:
+				return
+
+			start_time = get_time(start_time)
+			end_time = get_time(end_time)
 
 			frappe.enqueue(update_employee_schedule_shift_type, is_async=True, queue='long', operations_shift=self.name, new_shift_type=self.shift_type, new_start_time=start_time, new_end_time=end_time)
 			frappe.enqueue(update_shift_assignment_shift_type, is_async=True, queue='long', operations_shift=self.name, new_shift_type=self.shift_type, new_start_time=start_time, new_end_time=end_time)

@@ -88,7 +88,7 @@ class RosterPost(object):
 				posts_filled_count = 0
 				posts_not_filled_count = 0
 
-				operations_roles = frappe.db.get_list("Post Schedule", ["distinct operations_role", "post_abbrv"])
+				operations_roles = frappe.db.get_list("Post Schedule", fields=["operations_role", "post_abbrv"], group_by="operations_role")
 				for operations_role in operations_roles:
 					# For each post type, get all post schedules and employee schedules assigned to the post type
 					posts_count = len(frappe.db.get_list("Post Schedule", {'operations_role': operations_role.operations_role, 'date': date, 'post_status': 'Planned'}))

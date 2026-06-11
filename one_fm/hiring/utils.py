@@ -265,15 +265,18 @@ def create_wp_for_transferable_employee(doc):
 	"""
 	This method create work permit record for transferable employee after employee got created in the onboarding process in transfer paper. then, notify operator
 	"""
-	tp_list = frappe.db.get_list('Transfer Paper',{'workflow_state':'Under Process','civil_id':doc.one_fm_civil_id},['name','civil_id'])
-	if tp_list and len(tp_list)>0:
-		for tp in tp_list:
-			if not frappe.db.exists("Work Permit", {"transfer_paper":tp.name}):#employee is created work permit not yet created
-				employee = frappe.db.get_value("Employee", {"one_fm_civil_id":tp.civil_id})
-				if employee:
-					from one_fm.grd.doctype.work_permit import work_permit
-					work_permit.create_work_permit_transfer(tp.name,employee)#create wp for local transfer
-					notify_grd_operator_for_transfer_wp_record(tp)
+	try:
+		tp_list = frappe.get_all('Transfer Paper',{'workflow_state':'Under Process','civil_id':doc.one_fm_civil_id},['name','civil_id'])
+		if tp_list and len(tp_list)>0:
+			for tp in tp_list:
+				if not frappe.db.exists("Work Permit", {"transfer_paper":tp.name}):#employee is created work permit not yet created
+					employee = frappe.db.get_value("Employee", {"one_fm_civil_id":tp.civil_id})
+					if employee:
+						from one_fm.grd.doctype.work_permit import work_permit
+						work_permit.create_work_permit_transfer(tp.name,employee)#create wp for local transfer
+						notify_grd_operator_for_transfer_wp_record(tp)
+	except Exception:
+		frappe.log_error(title="Transfer Paper WP Creation", message=frappe.get_traceback())
 
 def notify_grd_operator_for_transfer_wp_record(tp):
 	operator = frappe.db.get_single_value("HR Settings", "default_grd_operator_transfer")
@@ -587,7 +590,7 @@ def set_employee_name(doc, method):
 	method: validate
 	This method for getting the arabic full name and fetching children details from job applicant to employee record
 	"""
-	doc.employee_name_in_arabic = ' '.join(filter(lambda x: x, [doc.one_fm_first_name_in_arabic, doc.one_fm_second_name_in_arabic,doc.one_fm_third_name_in_arabic,doc.one_fm_fourth_name_in_arabic,doc.one_fm_last_name_in_arabic]))
+	doc.employee_name_in_arabic = ' '.join(filter(lambda x: x, [doc.one_fm_first_name_in_arabic, doc.one_fm_second_name_in_arabic,doc.one_fm_third_name_in_arabic,doc.one_fm_forth_name_in_arabic,doc.one_fm_last_name_in_arabic]))
 	if doc.employment_type == "Full-time":
 		doc.is_in_kuwait = 1
 	if doc.job_applicant:

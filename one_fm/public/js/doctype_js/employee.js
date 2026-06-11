@@ -291,6 +291,9 @@ var set_shift_working_btn = function(frm) {
 };
 
 var yes_no_html_buttons = function(frm, val, html_field, field_name, label) {
+	if (!frm.fields_dict[html_field] || !frm.fields_dict[html_field].$wrapper) {
+		return;
+	}
 	var $wrapper = frm.fields_dict[html_field].$wrapper;
 	var selected = 'btn-primary';
 	var field_btn_html = field_name+'_btn_html';

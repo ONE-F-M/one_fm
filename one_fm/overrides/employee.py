@@ -554,15 +554,15 @@ def validate_leaves(self):
 @frappe.whitelist()
 def is_employee_master(user:str) -> int:
     #Return 1 if the employee has the required roles to modify the employee form.
-    can_edit = 0
     employee_master_role = frappe.get_all("ONEFM Document Access Roles Detail",{'parent':"ONEFM General Setting",'parentfield':"employee_master_role"},['role'])
-    if employee_master_role:
-        master_roles = [i.role for i in employee_master_role]
-        user_roles = frappe.get_roles(user)
-        role_intersect = [i for i in master_roles if i in user_roles]
-        if role_intersect:
-            return 1
-    return can_edit
+    if not employee_master_role:
+        # No roles configured — allow access by default
+        return 1
+    master_roles = [i.role for i in employee_master_role]
+    user_roles = frappe.get_roles(user)
+    if any(role in master_roles for role in user_roles):
+        return 1
+    return 0
 
 
 def get_hr_generalists():

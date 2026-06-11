@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
 import frappe
-from frappe.model.document import Document
+from erpnext.assets.doctype.asset_movement.asset_movement import AssetMovement as _AssetMovement
 
-class AssetMovement(Document):
+class AssetMovement(_AssetMovement):
     def on_submit(self):
         self.update_request_for_material()
 

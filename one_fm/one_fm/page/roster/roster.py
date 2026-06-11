@@ -212,12 +212,15 @@ def get_employees_for_roster_view(start_date, end_date, employee_search_id=None,
 @frappe.whitelist()
 def get_event_locations():
 	"""Fetch distinct event_location values from Client Event for the filter dropdown."""
-	return frappe.get_all(
-		"Client Event",
-		filters={"event_location": ["is", "set"]},
-		fields=["distinct event_location as event_location"],
-		order_by="event_location asc"
-	)
+	ClientEvent = DocType("Client Event")
+	return (
+		frappe.qb.from_(ClientEvent)
+		.select(ClientEvent.event_location)
+		.where(ClientEvent.event_location.isnotnull())
+		.where(ClientEvent.event_location != "")
+		.distinct()
+		.orderby(ClientEvent.event_location)
+	).run(as_dict=True)
 
 
 @frappe.whitelist()
@@ -245,7 +248,7 @@ def get_roster_view(start_date, end_date, employee_search_id=None, employee_sear
 			master_data["operations_roles_data"] = []
 		else:
 			post_schedule_filters = get_post_schedule_filters(start_date, end_date, project, site, shift, operations_role)
-			operations_roles = frappe.get_all("Post Schedule", post_schedule_filters, ["distinct operations_role", "post_abbrv"])
+			operations_roles = frappe.get_all("Post Schedule", post_schedule_filters, ["operations_role", "post_abbrv"], group_by="operations_role")
 			post_map_filters = {}
 			if project:
 				post_map_filters["project"] = project
@@ -615,7 +618,7 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 					"to_date": to_date,
 					"status": "Draft"
 				}
-				link = "/app/shift-request/new?" + urllib.parse.urlencode(query_params)
+				link = "/desk/shift-request/new?" + urllib.parse.urlencode(query_params)
 				shift_req_link = f"<a href='{link}' target='_blank' style='text-decoration: underline; font-weight: bold;'>Shift Request</a>"
 				
 				validation_logs.append(f"<li><b>{obj}</b>'s Day Off Preference has been set as 'Day Off'. Please assign other employee or create {shift_req_link} for Day Off OT.</li>")
@@ -1935,7 +1938,7 @@ def check_day_off_preference_validation(employees, date_list, attempt_type="Day 
 								"to_date": to_date,
 								"status": "Draft"
 							}
-							link = "/app/shift-request/new?" + urllib.parse.urlencode(query_params)
+							link = "/desk/shift-request/new?" + urllib.parse.urlencode(query_params)
 							shift_req_link = f"<a href='{link}' target='_blank' style='text-decoration: underline; font-weight: bold;'>Shift Request</a>"
 							
 							errors.append(f"<li><b>{emp}</b>'s Day Off Preference has been set as 'Day Off OT'. Please create {shift_req_link} for Day Off.</li>")
