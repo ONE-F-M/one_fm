@@ -2131,9 +2131,15 @@ function mountRoutePlannerApp(wrapper, data) {
             // ─ Manifest generation (ported verbatim from vis version) ───────
 
             async openManifest() {
-                const routeData = this.buildManifestData();
+                if (!this.currentPlan || !this.currentPlan.name) {
+                    frappe.show_alert({
+                        message: 'No plan is loaded. Save a plan first before opening the manifest.',
+                        indicator: 'orange'
+                    });
+                    return;
+                }
 
-                if (!routeData.response.routes.length) {
+                if (this.swimItems.length === 0) {
                     frappe.show_alert({
                         message: 'No assigned shipments to generate a manifest from.',
                         indicator: 'orange'
@@ -2141,43 +2147,13 @@ function mountRoutePlannerApp(wrapper, data) {
                     return;
                 }
 
-                const btn = document.querySelector('.rp-btn-manifest');
-                const orig = btn ? btn.innerHTML : '';
-                if (btn) {
-                    btn.disabled = true;
-                    btn.innerHTML = '<span class="rp-icon">sync</span> Generating...';
-                }
+                // Navigate to the persistent manifest page
+                const planName = this.currentPlan.name;
+                const manifestUrl = `/app/transportation-manifest/${planName}`;
+                window.open(manifestUrl, '_blank');
 
-                let tpl;
-                try {
-                    const res = await fetch('/assets/one_fm/html/route_manifest_template.html?v=' + Date.now());
-                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                    tpl = await res.text();
-                } catch (err) {
-                    frappe.show_alert({ message: `Template load failed: ${err.message}`, indicator: 'red' }, 8);
-                    if (btn) {
-                        btn.disabled = false;
-                        btn.innerHTML = orig;
-                    }
-                    return;
-                }
-
-                const safeJson = JSON.stringify(routeData).replace(/<\//g, '<\\/');
-                // Inject ROUTE_DATA inside the template's existing <body><script>
-                const dataLine = 'const ROUTE_DATA = ' + safeJson + ';\nconst FRAPPE_CSRF_TOKEN = "' + frappe.csrf_token + '";\nconst SITE_URL = window.location.origin;\n';
-                // Use regex to insert after first <script> in <body>
-                const finalHtml = tpl.replace(/(<body>[\s\S]*?<script>)/, '$1\n' + dataLine);
-                const blob = new Blob([finalHtml], { type: 'text/html' });
-                const url = URL.createObjectURL(blob);
-                window.open(url, '_blank');
-                setTimeout(() => URL.revokeObjectURL(url), 60000);
-
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = orig;
-                }
                 frappe.show_alert({
-                    message: `Manifest opened — ${routeData.response.routes.length} vehicles`,
+                    message: `Manifest opened for plan "${this.currentPlan.title || planName}"`,
                     indicator: 'green'
                 }, 4);
             },
