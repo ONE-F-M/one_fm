@@ -1270,6 +1270,294 @@ def load_assignments(plan_name: str = ""):
 
 
 @frappe.whitelist()
+def get_manifest_data_for_plan(plan_name: str):
+	"""Build manifest ROUTE_DATA from a saved Route Plan.
+
+	This is the server-side equivalent of the client-side buildManifestData().
+	It reconstructs the manifest JSON from the plan's saved assignments and
+	live employee/vehicle/shift data so that the Transportation Manifest page
+	can render without depending on in-memory state.
+	"""
+	if not _route_plan_exists():
+		frappe.throw(_("Route Plan DocType not found. Please run 'bench migrate' on this site first."))
+
+	doc = frappe.get_doc("Route Plan", plan_name)
+	doc.check_permission("read")
+
+	if not doc.assignments:
+		return {"status": "empty", "message": _("This plan has no assignments.")}
+
+	slug = lambda s: (s or "").replace(" ", "-").replace("_", "-")
+
+	# ── Collect unique references from assignments ──
+	vehicle_ids = list({row.vehicle for row in doc.assignments if row.vehicle})
+	shift_names = list({row.shift for row in doc.assignments if row.shift})
+
+	# ── Batch-fetch vehicle metadata ──
+	vehicle_map = {}
+	if vehicle_ids:
+		for v in frappe.get_all("Vehicle",
+			filters={"name": ["in", vehicle_ids]},
+			fields=["name", "license_plate", "location", "seats",
+					"one_fm_vehicle_type", "make", "employee"]
+		):
+			vehicle_map[v.name] = v
+
+	# Batch-fetch driver names
+	emp_ids_for_drivers = [v.employee for v in vehicle_map.values() if v.employee]
+	driver_map = {}
+	if emp_ids_for_drivers:
+		for row in frappe.get_all("Employee",
+			filters={"name": ["in", emp_ids_for_drivers]},
+			fields=["name", "employee_name"]
+		):
+			driver_map[row.name] = row.employee_name
+
+	# Batch-fetch accommodation labels for vehicle locations
+	veh_locations = list({v.location for v in vehicle_map.values() if v.location})
+	veh_acc_map = {}
+	if veh_locations:
+		for row in frappe.get_all("Accommodation",
+			filters={"transport_stop_location": ["in", veh_locations]},
+			fields=["transport_stop_location", "accommodation"]
+		):
+			veh_acc_map[row.transport_stop_location] = row.accommodation
+
+	MAHBOULA_LABELS = {"Mahboula 3", "Mahboula 12", "Mahboula 13", "Mahboula 15"}
+
+	# ── Batch-fetch shift docs ──
+	shift_doc_map = {}
+	if shift_names:
+		for s in frappe.get_all("Operations Shift",
+			filters={"name": ["in", shift_names]},
+			fields=["name", "site", "start_time", "end_time"]
+		):
+			shift_doc_map[s.name] = s
+
+	# ── Batch-fetch site locations ──
+	all_sites = list({s.site for s in shift_doc_map.values() if s.site})
+	site_location_map = {}
+	if all_sites:
+		for row in frappe.get_all("Operations Site",
+			filters={"name": ["in", all_sites]},
+			fields=["name", "site_location"]
+		):
+			site_location_map[row.name] = row.site_location or row.name
+
+	# ── Fetch shipment cards for employee data ──
+	# We need the live employee lists from get_route_planner_data.
+	# Build a card_id -> employee list map from shipment cards.
+	try:
+		planner_data = get_route_planner_data()
+		if planner_data.get("status") != "ok":
+			planner_data = {"shipment_cards": [], "vehicles": []}
+	except Exception:
+		planner_data = {"shipment_cards": [], "vehicles": []}
+
+	card_emp_map = {}
+	card_return_emp_map = {}
+	card_headcount_map = {}
+	for card in planner_data.get("shipment_cards", []):
+		card_emp_map[card["id"]] = card.get("employees", [])
+		card_return_emp_map[card["id"]] = card.get("return_employees", [])
+		card_headcount_map[card["id"]] = card.get("headcount", 0)
+
+	# ── Build manifest data structure ──
+	shipments = []
+	vehicles_list = []
+	routes = []
+	ship_emp = {}
+	ship_return_emp = {}
+	ship_site = {}
+	ship_shift = {}
+	v_meta = {}
+	c_map = {}  # dirKey -> { lbl, idx }
+	si = 0
+
+	# Process assignments to build shipments
+	for row in doc.assignments:
+		dir_key = f"{row.card_id}_{row.direction}"
+		if dir_key in c_map:
+			continue  # Already created shipment for this card+direction
+
+		lbl = f"{slug(row.accommodation)}_{si}_{slug(row.stop_location)}_{row.direction}"
+		idx = si
+		si += 1
+
+		shipments.append({"label": lbl, "pickups": [{}], "deliveries": [{}]})
+
+		# Map employees
+		if row.direction == "RETURN":
+			ret_emps = card_return_emp_map.get(row.card_id, [])
+			ship_emp[lbl] = ret_emps if ret_emps else []
+		else:
+			ship_emp[lbl] = card_emp_map.get(row.card_id, [])
+
+		ship_return_emp[lbl] = card_return_emp_map.get(row.card_id, [])
+
+		# Site location
+		if row.shift and row.shift in shift_doc_map:
+			shift_site = shift_doc_map[row.shift].site
+			ship_site[lbl] = site_location_map.get(shift_site, row.stop_location or "")
+		else:
+			ship_site[lbl] = row.stop_location or ""
+
+		ship_shift[lbl] = row.shift or ""
+		c_map[dir_key] = {"lbl": lbl, "idx": idx}
+
+	# ── Build vehicles and routes ──
+	# Group assignments by vehicle, preserving trip order
+	vehicle_order = []
+	vehicle_items = {}  # vehicle_id -> [rows]
+	for row in doc.assignments:
+		if row.vehicle not in vehicle_items:
+			vehicle_items[row.vehicle] = []
+			vehicle_order.append(row.vehicle)
+		vehicle_items[row.vehicle].append(row)
+
+	for vi, vid in enumerate(vehicle_order):
+		v_doc = vehicle_map.get(vid, {})
+		v_label = vid
+		driver_name = driver_map.get(v_doc.get("employee"), "\u2014") if v_doc.get("employee") else "\u2014"
+		acc_label = veh_acc_map.get(v_doc.get("location"), v_doc.get("location", ""))
+		if acc_label in MAHBOULA_LABELS:
+			acc_label = "Mahboula Camp"
+
+		vehicles_list.append({"label": v_label, "startLocation": None})
+		v_meta[v_label] = {
+			"accommodation": acc_label,
+			"driver": driver_name,
+			"seats": v_doc.get("seats") or 0,
+			"location": v_doc.get("location", ""),
+			"license_plate": v_doc.get("license_plate", ""),
+			"make": v_doc.get("make", ""),
+			"type": v_doc.get("one_fm_vehicle_type", ""),
+		}
+
+		# Sort items: trip stops by stopIndex, solo by start_time
+		v_rows = vehicle_items[vid]
+		v_rows.sort(key=lambda r: (
+			r.trip_group or "",
+			r.stop_index or 0,
+			r.start_time or ""
+		))
+
+		visits = []
+		trans = [{"travelDuration": "0s", "waitDuration": "0s", "travelDistanceMeters": 0}]
+
+		for idx_r, row in enumerate(v_rows):
+			dir_key = f"{row.card_id}_{row.direction}"
+			info = c_map.get(dir_key)
+			if not info:
+				continue
+
+			s_idx = info["idx"]
+			hc = row.headcount or 0
+			i_s = row.start_time or ""
+			i_e = row.end_time or ""
+
+			# Calculate duration in seconds
+			try:
+				from datetime import datetime as dt_cls
+				dt_start = dt_cls.fromisoformat(i_s.replace("Z", "+00:00")).replace(tzinfo=None)
+				dt_end = dt_cls.fromisoformat(i_e.replace("Z", "+00:00")).replace(tzinfo=None)
+				d_sec = max(0, int((dt_end - dt_start).total_seconds()))
+			except Exception:
+				d_sec = 0
+
+			visits.append({
+				"shipmentIndex": s_idx, "isPickup": True, "startTime": i_s,
+				"loadDemands": {"seats": {"amount": str(hc)}},
+				"tripId": row.trip_group or None,
+				"tripName": row.trip_name or None,
+				"stopIndex": row.stop_index or 0
+			})
+			trans.append({
+				"travelDuration": f"{d_sec}s", "waitDuration": "0s",
+				"travelDistanceMeters": d_sec * 10
+			})
+			visits.append({
+				"shipmentIndex": s_idx, "isPickup": False, "startTime": i_e,
+				"loadDemands": {"seats": {"amount": str(-hc)}},
+				"tripId": row.trip_group or None,
+				"tripName": row.trip_name or None,
+				"stopIndex": row.stop_index or 0
+			})
+
+			# Gap to next item
+			if idx_r < len(v_rows) - 1:
+				nxt = v_rows[idx_r + 1]
+				try:
+					nxt_start = dt_cls.fromisoformat((nxt.start_time or "").replace("Z", "+00:00")).replace(tzinfo=None)
+					gap = max(0, int((nxt_start - dt_end).total_seconds()))
+				except Exception:
+					gap = 0
+			else:
+				gap = 0
+			trans.append({
+				"travelDuration": f"{gap}s", "waitDuration": "0s",
+				"travelDistanceMeters": gap * 8
+			})
+
+		if not visits:
+			continue
+
+		# Route start/end times
+		r_s = v_rows[0].start_time or ""
+		r_e = v_rows[-1].end_time or ""
+		try:
+			tot_ms = (dt_cls.fromisoformat(r_e.replace("Z", "+00:00")).replace(tzinfo=None)
+					  - dt_cls.fromisoformat(r_s.replace("Z", "+00:00")).replace(tzinfo=None)).total_seconds()
+			trip_ms = sum(
+				max(0, (dt_cls.fromisoformat((r.end_time or "").replace("Z", "+00:00")).replace(tzinfo=None)
+						- dt_cls.fromisoformat((r.start_time or "").replace("Z", "+00:00")).replace(tzinfo=None)).total_seconds())
+				for r in v_rows
+			)
+		except Exception:
+			tot_ms = 0
+			trip_ms = 0
+
+		MAX_DAY_SEC = 86400
+		total_sec = min(int(tot_ms), MAX_DAY_SEC)
+		trip_sec = min(int(trip_ms), MAX_DAY_SEC)
+
+		routes.append({
+			"vehicleIndex": vi, "vehicleLabel": v_label,
+			"vehicleStartTime": r_s, "vehicleEndTime": r_e,
+			"visits": visits, "transitions": trans,
+			"metrics": {
+				"travelDistanceMeters": 0,
+				"totalDuration": f"{total_sec}s",
+				"travelDuration": f"{trip_sec}s"
+			}
+		})
+
+	return {
+		"status": "ok",
+		"plan_name": doc.name,
+		"plan_title": doc.title,
+		"route_data": {
+			"request": {
+				"model": {
+					"shipments": shipments,
+					"vehicles": vehicles_list,
+				}
+			},
+			"response": {
+				"routes": routes,
+				"skippedShipments": [],
+				"metrics": {"totalCost": 0}
+			},
+			"shipmentEmployees": ship_emp,
+			"shipmentReturnEmployees": ship_return_emp,
+			"shipmentSiteLocations": ship_site,
+			"shipmentShiftNames": ship_shift,
+			"vehicleMeta": v_meta
+		}
+	}
+
+
+@frappe.whitelist()
 def create_route_plan(title: str, effective_from: str, effective_until: str = "", is_default: int = 0):
     """Create a new Route Plan and return its name."""
     if not _route_plan_exists():
@@ -1461,10 +1749,21 @@ def process_rambo_replacement(original_employee: str, replacement_employee: str,
                 message=message,
                 now=True
             )
+            return {
+                "status": "success",
+                "notified": True,
+                "message": "Replacement processed and supervisor notified."
+            }
         except Exception as e:
             frappe.log_error(f"Error sending Rambo Reliever notification: {str(e)}", "Rambo Reliever Notification")
-        
+            return {
+                "status": "success",
+                "notified": False,
+                "message": "Replacement processed, but notification email failed."
+            }
+
     return {
         "status": "success",
-        "message": "Replacement processed and notification sent."
+        "notified": False,
+        "message": "Replacement processed. No supervisor found for this shift to notify."
     }
