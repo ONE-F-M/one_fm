@@ -1,0 +1,92 @@
+{
+ "app": "one_fm",
+ "doctype": "Workspace Sidebar",
+ "header_icon": "shirt",
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "home",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Home",
+   "link_to": "Uniform Management",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "shirt",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Employee Uniform",
+   "link_to": "Employee Uniform",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "badge-check",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Designation Profile",
+   "link_to": "Designation Profile",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "sheet",
+   "indent": 1,
+   "keep_closed": 1,
+   "label": "Reports",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Section Break"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Uniform Expiry Report",
+   "link_to": "Uniform Expiry Report",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Uniform Issued Report",
+   "link_to": "Uniform Issued Report",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Uniform Details",
+   "link_to": "Uniform Details",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
+  }
+ ],
+ "module": "Uniform Management",
+ "name": "Uniform Management",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "Uniform Management"
+}

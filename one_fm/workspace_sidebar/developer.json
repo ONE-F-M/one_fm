@@ -1,0 +1,72 @@
+{
+ "app": "one_fm",
+ "doctype": "Workspace Sidebar",
+ "header_icon": "code",
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "bug",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Bug Buster",
+   "link_to": "Bug Buster",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "scroll-text",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Release Notes",
+   "link_to": "Application Release Notes",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "activity",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Admin Activity Log",
+   "link_to": "Administrator Activity Log",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "file-up",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "File Transfer Wizard",
+   "link_to": "File Transfer Wizard",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "mail",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "DMARC Report",
+   "link_to": "DMARC Report",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  }
+ ],
+ "module": "Developer",
+ "name": "Developer",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "Developer"
+}

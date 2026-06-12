@@ -1,0 +1,72 @@
+{
+ "app": "one_fm",
+ "doctype": "Workspace Sidebar",
+ "header_icon": "compass",
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "home",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Home",
+   "link_to": "Pathfinder",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "scroll-text",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Pathfinder Log",
+   "link_to": "Pathfinder Log",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "git-branch",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Process Roadmap",
+   "link_to": "Process Roadmap",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "clipboard-list",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Process Artefact Checklist",
+   "link_to": "Process Artefact Checklist",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "refresh-cw",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Process Change Request",
+   "link_to": "Process Change Request",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  }
+ ],
+ "module": "One Fm",
+ "name": "Pathfinder",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "Pathfinder"
+}

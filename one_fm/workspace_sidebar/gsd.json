@@ -1,0 +1,72 @@
+{
+ "app": "one_fm",
+ "doctype": "Workspace Sidebar",
+ "header_icon": "headset",
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "home",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Home",
+   "link_to": "GSD",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "file-text",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Request for Material",
+   "link_to": "Request for Material",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "file-check",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Request for Purchase",
+   "link_to": "Request for Purchase",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "bed",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Accommodation Checkin/Checkout",
+   "link_to": "Accommodation Checkin Checkout",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "shirt",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Employee Uniform",
+   "link_to": "Employee Uniform",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  }
+ ],
+ "module": "GSD",
+ "name": "GSD",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "GSD"
+}

@@ -1,0 +1,140 @@
+{
+ "app": "one_fm",
+ "doctype": "Workspace Sidebar",
+ "header_icon": "gavel",
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "alert-circle",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Penalty Issuance",
+   "link_to": "Penalty Issuance",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "search",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Legal Investigation",
+   "link_to": "Legal Investigation",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "scale",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Formal Hearing",
+   "link_to": "Formal Hearing",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "file-x",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Absence Case",
+   "link_to": "Absence Case",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "credit-card",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Penalty Deduction",
+   "link_to": "Penalty Deduction",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "id-card",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Employee ID",
+   "link_to": "Employee ID",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "database",
+   "indent": 1,
+   "keep_closed": 1,
+   "label": "Setup",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Section Break"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Penalty Type",
+   "link_to": "Penalty Type",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Penalty Code",
+   "link_to": "Penalty Code",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Penalty List",
+   "link_to": "Penalty List",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "settings",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Settings",
+   "link_to": "Legal Settings",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  }
+ ],
+ "module": "Legal",
+ "name": "Legal",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "Legal"
+}
