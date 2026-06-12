@@ -54,6 +54,18 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "plane",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Recruitment Trip Request",
+   "link_to": "Recruitment Trip Request",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
    "icon": "getting-started",
    "indent": 1,
    "keep_closed": 1,
@@ -69,6 +81,17 @@
    "keep_closed": 0,
    "label": "Onboard Employee",
    "link_to": "Onboard Employee",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Onboard Employee Template",
+   "link_to": "Onboard Employee Template",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
@@ -102,6 +125,72 @@
    "keep_closed": 0,
    "label": "Work Contract",
    "link_to": "Work Contract",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Transfer Paper",
+   "link_to": "Transfer Paper",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Electronic Signature Declaration",
+   "link_to": "Electronic Signature Declaration",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "hard-hat",
+   "indent": 1,
+   "keep_closed": 1,
+   "label": "Subcontract",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Section Break"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Subcontract Staff Request",
+   "link_to": "Subcontract Staff Request",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Subcontract Staff Shortlist",
+   "link_to": "Subcontract Staff Shortlist",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Onboard Subcontract Employee",
+   "link_to": "Onboard Subcontract Employee",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
@@ -147,6 +236,61 @@
    "label": "Applicant Lead Report",
    "link_to": "Applicant Lead Report",
    "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Job Applicant Report",
+   "link_to": "Job Applicant Report",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "database",
+   "indent": 1,
+   "keep_closed": 1,
+   "label": "Setup",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Section Break"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Check List Template",
+   "link_to": "Check List Template",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Job Offer Templates",
+   "link_to": "Job Offer Templates",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Offer Value",
+   "link_to": "Offer Value",
+   "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
   },

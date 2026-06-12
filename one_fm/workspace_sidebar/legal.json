@@ -30,6 +30,18 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "calendar",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Investigation Session",
+   "link_to": "Legal Investigation Session",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
    "icon": "scale",
    "indent": 0,
    "keep_closed": 0,
@@ -66,11 +78,35 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "calendar-clock",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Penalty Deduction Schedules",
+   "link_to": "Penalty Deduction Schedules",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
    "icon": "id-card",
    "indent": 0,
    "keep_closed": 0,
    "label": "Employee ID",
    "link_to": "Employee ID",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "file-text",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Penalty And Investigation",
+   "link_to": "Penalty And Investigation",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
@@ -115,6 +151,17 @@
    "keep_closed": 0,
    "label": "Penalty List",
    "link_to": "Penalty List",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Penalty",
+   "link_to": "Penalty",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
