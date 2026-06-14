@@ -263,9 +263,11 @@ class ProjectManpowerRequest(Document):
 				field.options = "\n".join(opts)
 
 @frappe.whitelist()
-def set_edit_reason(name, reason):
+def set_edit_reason(name: str, reason: str) -> str:
 	doc = frappe.get_doc("Project Manpower Request", name)
 	doc.check_permission("read")
 	frappe.db.set_value("Project Manpower Request", name, "reason_for_rejection", reason)
 	frappe.clear_document_cache("Project Manpower Request", name)
+	return frappe.db.get_value("Project Manpower Request", name, "modified")
+
 
