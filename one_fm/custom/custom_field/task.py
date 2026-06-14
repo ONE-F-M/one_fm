@@ -82,6 +82,13 @@ def get_task_custom_fields():
                 "options": "User",
                 "mandatory_depends_on": "custom_assigned_to",
                 "default": "__user"
+            },
+            {
+                "fieldname": "custom_mom",
+                "fieldtype": "Link",
+                "insert_after": "custom_reviewer",
+                "label": "MOM",
+                "options": "MOM"
             }
         ]
     }

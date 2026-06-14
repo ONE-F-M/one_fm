@@ -270,6 +270,7 @@ one_fm.patches.v15_0.add_day_off_preference #2
 one_fm.patches.v15_0.update_job_offer_for_ERF_2026_00004
 one_fm.patches.v15_0.add_index_to_leave_application_in_attendance
 one_fm.patches.v15_0.update_attendance_request_assignment_rule
+one_fm.patches.v15_0.remove_hd_property_setter_from_non_existing_doc #3
 
 one_fm.patches.v15_0.add_assignment_rule_submit_timesheet_employee
 one_fm.patches.v15_0.add_assignment_rule_approve_timesheet_approver
@@ -295,6 +296,7 @@ one_fm.patches.v15_0.add_workflow_penalty_and_investigation
 one_fm.patches.v15_0.update_penalty_and_investigation_workflow
 one_fm.patches.v15_0.update_day_off_category_erf_2025_00030
 one_fm.patches.v15_0.add_rambo_reliever_custom_field #2026-05-14
+one_fm.patches.v15_0.update_vehicle_naming_series
 one_fm.patches.v15_0.update_purchase_receipt_prc_2026_000101_posting_date
 
 [post_model_sync]
@@ -379,6 +381,10 @@ one_fm.patches.v15_0.add_assignment_rule_subcontract_project_manager #2026-04-27
 one_fm.patches.v15_0.add_assignment_rule_subcontract_finance_manager #2026-04-12
 one_fm.patches.v15_0.add_assignment_rule_subcontract_subcontractor #2026-04-12
 one_fm.patches.v15_0.add_subcontractor_contracts_workflow #2026-04-12
+one_fm.patches.v15_0.backfill_candidate_process_planned_dates #2026-04-15
+one_fm.patches.v15_0.backfill_candidate_process_parallel_groups #2026-04-15
+one_fm.patches.v15_0.update_medical_reference_types
+one_fm.patches.v15_0.migrate_parallel_group_to_dependency_fields
 one_fm.patches.v15_0.add_workflow_visa_request #1
 one_fm.patches.v15_0.create_attendance_query_process_task
 one_fm.patches.v15_0.add_formal_hearing_workflow #2026-04-19
@@ -407,3 +413,24 @@ one_fm.patches.v15_0.backfill_governorate_in_site_to_location_mapping
 one_fm.patches.v15_0.add_courier_tracking_custom_fields
 one_fm.patches.v15_0.update_client_interview_shortlist_workflow #2026-05-13
 one_fm.patches.v15_0.add_resignation_fields_to_employee
+one_fm.patches.v15_0.update_overtime_request_workflow #4
+one_fm.patches.v15_0.add_assignment_rule_overtime_request_employee_acceptance #1
+one_fm.patches.v15_0.add_assignment_rule_overtime_request_line_manager_approval #1
+one_fm.patches.v15_0.add_assignment_rule_overtime_request_payroll_officer #1
+one_fm.patches.v15_0.add_assignment_rule_overtime_request_finance_manager #1
+one_fm.patches.v15_0.add_subcontractor_exit_workflow
+one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_project_manager
+one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_operations_manager
+one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_gsd_supervisor
+one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_offboarding_officer
+one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_finance_manager
+one_fm.patches.v15_0.add_version_custom_docperm_fields
+one_fm.patches.v15_0.add_workflow_project_manpower_request
+one_fm.patches.v15_0.update_workflow_project_manpower_request_roles
+one_fm.patches.v15_0.add_operation_admin_to_pmr_workflow
+one_fm.patches.v15_0.update_workflow_project_manpower_request_ops_edit
+one_fm.patches.v15_0.add_custom_field_mom_in_task
+one_fm.patches.v15_0.update_contracts_workflow_inactive_to_draft
+one_fm.patches.v15_0.migrate_bonus_request_to_grid
+one_fm.patches.v15_0.add_recurring_bonus_process_task
+one_fm.patches.v15_0.fix_parentfield_bonus_items

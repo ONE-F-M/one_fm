@@ -198,7 +198,7 @@ def _save_applicant_photo(applicant: str, photo_data: str):
 
 def _update_applicant_status(applicant: str, status: str, height: str | None):
     doc = frappe.get_doc("Job Applicant", applicant)
-    has_workflow = frappe.get_list("Workflow", filters={"document_type": "Job Applicant", "is_active": 1}, limit=1)
+    has_workflow = frappe.db.get_value("Workflow", {"document_type": "Job Applicant", "is_active": 1})
 
     if status == "Shortlisted":
         doc.one_fm_applicant_status = "Shortlisted"
