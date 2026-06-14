@@ -27,6 +27,109 @@ frappe.ui.form.on('Contracts', {
 			},
 		};
 	},
+	before_workflow_action(frm) {
+		// --- "Set Inactive" interceptor ---
+		if (frm.selected_workflow_action === 'Set Inactive') {
+			return new Promise((resolve, reject) => {
+				frappe.dom.unfreeze();
+				let submitted = false;
+				let d = new frappe.ui.Dialog({
+					title: __('Set Inactive'),
+					fields: [
+						{
+							label: __('Contract End Date'),
+							fieldname: 'contract_end_date',
+							fieldtype: 'Date',
+							reqd: 1,
+							description: __('Enter the final working date for the contract. Both past and future dates are accepted.')
+						}
+					],
+					primary_action_label: __('Submit'),
+					primary_action(values) {
+						submitted = true;
+						d.hide();
+						frappe.call({
+							method: 'one_fm.operations.doctype.contracts.contracts.set_contract_inactive',
+							args: {
+								contract_name: frm.doc.name,
+								contract_end_date: values.contract_end_date
+							},
+							freeze: true,
+							freeze_message: __('Processing...'),
+							callback: function(r) {
+								if (!r.exc) {
+									frm.reload_doc();
+								}
+								reject();
+							},
+							error: function() {
+								reject();
+							}
+						});
+					}
+				});
+				d.onhide = () => {
+					if (!submitted) reject();
+				};
+				d.show();
+			});
+		}
+
+		// --- "Set as Active" interceptor ---
+		if (frm.selected_workflow_action === 'Set as Active') {
+			return new Promise((resolve, reject) => {
+				frappe.dom.unfreeze();
+				let submitted = false;
+				let d = new frappe.ui.Dialog({
+					title: __('Set as Active'),
+					fields: [
+						{
+							label: __('New Start Date'),
+							fieldname: 'new_start_date',
+							fieldtype: 'Date',
+							reqd: 1,
+							description: __('Enter the new contract start date.')
+						},
+						{
+							label: __('New End Date'),
+							fieldname: 'new_end_date',
+							fieldtype: 'Date',
+							reqd: 1,
+							description: __('Enter the new contract end date.')
+						}
+					],
+					primary_action_label: __('Submit'),
+					primary_action(values) {
+						submitted = true;
+						d.hide();
+						frappe.call({
+							method: 'one_fm.operations.doctype.contracts.contracts.set_contract_active',
+							args: {
+								contract_name: frm.doc.name,
+								new_start_date: values.new_start_date,
+								new_end_date: values.new_end_date
+							},
+							freeze: true,
+							freeze_message: __('Processing...'),
+							callback: function(r) {
+								if (!r.exc) {
+									frm.reload_doc();
+								}
+								reject();
+							},
+							error: function() {
+								reject();
+							}
+						});
+					}
+				});
+				d.onhide = () => {
+					if (!submitted) reject();
+				};
+				d.show();
+			});
+		}
+	},
 	use_portal_for_invoice:function(frm){
 		if(frm.doc.use_portal_for_invoice){
 			if(!frm.doc.password_management){
@@ -420,7 +523,9 @@ frappe.ui.form.on('Contracts', {
 			}
 			// --- end Legal Manager override ---
 
-			
+		
+
+		
 				const ops_grid = frm.get_field('contract_items_operation');
 				if (ops_grid && ops_grid.grid) {
 					ops_grid.grid.cannot_add_rows = true;

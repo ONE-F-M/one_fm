@@ -10,12 +10,19 @@
   "request_type",
   "employee",
   "full_name",
-  "start_time",
-  "end_time",
+  "employee_user",
+  "department",
+  "requested_by",
+  "reports_to",
+  "reports_to_user",
   "column_break_2",
   "status",
   "date",
+  "overtime_type",
+  "start_time",
+  "end_time",
   "overtime_hours",
+  "yearly_overtime_hours",
   "shift_details_section",
   "shift",
   "column_break_12",
@@ -116,6 +123,58 @@
    "fieldname": "full_name",
    "fieldtype": "Data",
    "label": "Full Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.department",
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department"
+  },
+  {
+   "default": "__user",
+   "fieldname": "requested_by",
+   "fieldtype": "Link",
+   "label": "Requested By",
+   "options": "User",
+   "read_only": 1,
+   "set_only_once": 1
+  },
+  {
+   "fetch_from": "employee.reports_to",
+   "fieldname": "reports_to",
+   "fieldtype": "Link",
+   "label": "Reports To",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "reports_to.user_id",
+   "fieldname": "reports_to_user",
+   "fieldtype": "Link",
+   "label": "Reports To User",
+   "options": "User"
+  },
+  {
+   "fetch_from": "employee.user_id",
+   "fieldname": "employee_user",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Employee User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "overtime_type",
+   "fieldtype": "Select",
+   "label": "Overtime Type",
+   "options": "\nOvertime after Working Hours\nOvertime on Day Off\nOvertime on Public Holiday",
+   "reqd": 1
+  },
+  {
+   "fieldname": "yearly_overtime_hours",
+   "fieldtype": "Float",
+   "label": "Yearly Overtime Hours",
    "read_only": 1
   },
   {

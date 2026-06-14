@@ -51,6 +51,8 @@
   "use_portal_for_invoice",
   "operational_requirements_section",
   "contract_items_operation",
+  "notification_members_section",
+  "notification_members",
   "section_break_55",
   "password_management"
  ],
@@ -310,6 +312,18 @@
   },
   {
    "collapsible": 1,
+   "fieldname": "notification_members_section",
+   "fieldtype": "Section Break",
+   "label": "Notification Members"
+  },
+  {
+   "fieldname": "notification_members",
+   "fieldtype": "Table",
+   "label": "Notification Members",
+   "options": "Contract Notification Member"
+  },
+  {
+   "collapsible": 1,
    "fieldname": "section_break_55",
    "fieldtype": "Section Break",
    "label": "More Information"
@@ -331,7 +345,7 @@
   }
  ],
  "links": [],
- "modified": "2026-04-25 10:03:35.969070",
+ "modified": "2026-06-09 02:48:00.000000",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",

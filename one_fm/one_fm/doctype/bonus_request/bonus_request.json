@@ -11,32 +11,31 @@
   "amended_from",
   "section_break_clag",
   "posting_date",
+  "requested_by",
   "column_break_ujeg",
-  "employee_information_section",
-  "employee",
-  "employee_name",
-  "employee_id",
-  "column_break_jcxh",
-  "designation",
-  "department",
-  "performance_criteria_section",
-  "increased_productivity",
-  "improved_work_processes",
-  "significant_effort",
-  "star_performer",
-  "others",
-  "column_break_sfsx",
-  "justification",
+  "funding_category",
+  "is_recurring_monthly",
+  "auto_generation_day",
+  "start_date",
+  "end_date",
   "bonus_details_section",
-  "bonus_amount",
-  "column_break_hxcn",
+  "bonus_request_employees",
+  "total_bonus_amount",
   "effective_month",
-  "effective_year"
+  "effective_year",
+  "recurring_parent"
  ],
  "fields": [
   {
    "fieldname": "section_break_gmvn",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "BR-.YYYY.-.####"
   },
   {
    "fieldname": "amended_from",
@@ -49,13 +48,6 @@
    "search_index": 1
   },
   {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "hidden": 1,
-   "label": "Naming Series",
-   "options": "BR-.YYYY.-.####"
-  },
-  {
    "fieldname": "section_break_clag",
    "fieldtype": "Section Break"
   },
@@ -66,109 +58,52 @@
    "reqd": 1
   },
   {
+   "fieldname": "requested_by",
+   "fieldtype": "Link",
+   "label": "Requested By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
    "fieldname": "column_break_ujeg",
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "employee_information_section",
-   "fieldtype": "Section Break",
-   "label": "Employee Information"
-  },
-  {
-   "fieldname": "employee",
-   "fieldtype": "Link",
-   "ignore_user_permissions": 1,
-   "in_list_view": 1,
-   "label": "Employee",
-   "options": "Employee",
+   "default": "OneFM Funded",
+   "fieldname": "funding_category",
+   "fieldtype": "Select",
+   "label": "Funding Category",
+   "options": "\nOneFM Funded\nClient Funded",
    "reqd": 1
   },
   {
-   "fetch_from": "employee.employee_name",
-   "fieldname": "employee_name",
-   "fieldtype": "Data",
-   "label": "Employee Name",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "employee.employee_id",
-   "fieldname": "employee_id",
-   "fieldtype": "Data",
-   "label": "Employee ID",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_jcxh",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fetch_from": "employee.designation",
-   "fieldname": "designation",
-   "fieldtype": "Link",
-   "label": "Designation",
-   "options": "Designation",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "employee.department",
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "label": "Department",
-   "options": "Department",
-   "read_only": 1
-  },
-  {
-   "description": "A bonus may be awarded upon completion of special assignments an/or projects or when an employee assuming the role for someone at a higher level.",
-   "fieldname": "performance_criteria_section",
-   "fieldtype": "Section Break",
-   "label": "Performance Criteria",
-   "mandatory_depends_on": "eval:!doc.increased_productivity && !doc.improved_work_processes && !doc.significant_effort && !doc.star_performer && !doc.others"
-  },
-  {
    "default": "0",
-   "description": "Contribution to increased organizational productivity.",
-   "fieldname": "increased_productivity",
+   "fieldname": "is_recurring_monthly",
    "fieldtype": "Check",
-   "label": "Increased Productivity"
+   "label": "Is Recurring Monthly"
   },
   {
-   "default": "0",
-   "description": "Development and/or implementation of improved work processes.",
-   "fieldname": "improved_work_processes",
-   "fieldtype": "Check",
-   "label": "Improved Work Processes"
+   "depends_on": "eval:doc.is_recurring_monthly == 1",
+   "fieldname": "auto_generation_day",
+   "fieldtype": "Select",
+   "label": "Auto Generation Day",
+   "mandatory_depends_on": "eval:doc.is_recurring_monthly == 1",
+   "options": "\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31"
   },
   {
-   "default": "0",
-   "description": "Significant effort well beyond a position's defined scope or working hours.",
-   "fieldname": "significant_effort",
-   "fieldtype": "Check",
-   "label": "Significant Effort"
+   "depends_on": "eval:doc.is_recurring_monthly == 1",
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Start Date",
+   "mandatory_depends_on": "eval:doc.is_recurring_monthly == 1"
   },
   {
-   "default": "0",
-   "description": "The employee must be a star performer or extraordinary in nature.",
-   "fieldname": "star_performer",
-   "fieldtype": "Check",
-   "label": "Star Performer"
-  },
-  {
-   "default": "0",
-   "description": "Extra explanation required",
-   "fieldname": "others",
-   "fieldtype": "Check",
-   "label": "Others"
-  },
-  {
-   "fieldname": "column_break_sfsx",
-   "fieldtype": "Column Break"
-  },
-  {
-   "depends_on": "eval:doc.others == 1",
-   "fieldname": "justification",
-   "fieldtype": "Long Text",
-   "label": "Justification",
-   "mandatory_depends_on": "eval:doc.others == 1"
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.is_recurring_monthly == 1",
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End Date",
+   "mandatory_depends_on": "eval:doc.is_recurring_monthly == 1"
   },
   {
    "fieldname": "bonus_details_section",
@@ -176,15 +111,18 @@
    "label": "Bonus Details"
   },
   {
-   "fieldname": "bonus_amount",
-   "fieldtype": "Currency",
-   "in_list_view": 1,
-   "label": "Bonus Amount",
+   "fieldname": "bonus_request_employees",
+   "fieldtype": "Table",
+   "label": "Bonus Request Employees",
+   "options": "Bonus Request Items",
    "reqd": 1
   },
   {
-   "fieldname": "column_break_hxcn",
-   "fieldtype": "Column Break"
+   "fieldname": "total_bonus_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Total Bonus Amount",
+   "read_only": 1
   },
   {
    "fieldname": "effective_month",
@@ -198,13 +136,22 @@
    "fieldtype": "Int",
    "label": "Effective Year",
    "reqd": 1
+  },
+  {
+   "fieldname": "recurring_parent",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Recurring Parent",
+   "no_copy": 1,
+   "options": "Bonus Request",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-02 19:20:18.411688",
+ "modified": "2026-06-09 01:38:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Bonus Request",
