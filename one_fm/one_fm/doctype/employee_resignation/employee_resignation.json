@@ -208,7 +208,7 @@
             "hidden": 1
         },
         {
-            "depends_on": "eval: !doc.__islocal",
+            "depends_on": "eval:!doc.__islocal && ['Pending Operations Manager', 'Approved', 'Withdrawn'].includes(doc.workflow_state)",
             "fieldname": "operational_impact_section",
             "fieldtype": "Section Break",
             "label": "Operational Impact"
@@ -243,17 +243,15 @@
         {
             "depends_on": "eval: doc.replacement_required == \"Yes\"",
             "fieldname": "replacement_nationality",
-            "fieldtype": "Link",
+            "fieldtype": "Autocomplete",
             "label": "Replacement Nationality",
-            "options": "Nationality",
             "ignore_user_permissions": 1
         },
         {
             "depends_on": "eval: doc.replacement_required == \"Yes\"",
             "fieldname": "replacement_gender",
-            "fieldtype": "Link",
+            "fieldtype": "Autocomplete",
             "label": "Replacement Gender",
-            "options": "Gender",
             "ignore_user_permissions": 1
         },
         {

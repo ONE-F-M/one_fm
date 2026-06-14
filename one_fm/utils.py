@@ -4555,6 +4555,11 @@ def get_field_with_label(doctype, field_name, value):
     }
 
 def create_process_task(process_name, erp_document, task_description, process_description=None, employee=None, process_owner=None, business_analyst=None, task_type="Repetitive", is_routine_task=0, frequency="", cron_format="", is_automated=0, method=""):
+    try:
+        import importlib
+        importlib.import_module("one_fm.operations.doctype.process.process")
+    except (ImportError, ModuleNotFoundError):
+        return None
     create_process_if_not_exists(process_name, description=process_description, process_owner=process_owner, business_analyst=business_analyst)
     create_method_if_not_exists(method, erp_document, description=process_description)
     task_type = get_task_type(task_type, is_routine_task)
@@ -4599,6 +4604,11 @@ def create_process_task(process_name, erp_document, task_description, process_de
     }).insert(ignore_permissions=True)
 
 def create_process_if_not_exists(process_name, description=None, process_owner="Administrator", business_analyst="Administrator"):
+    try:
+        import importlib
+        importlib.import_module("one_fm.operations.doctype.process.process")
+    except (ImportError, ModuleNotFoundError):
+        return
     if not frappe.db.exists("Process", process_name):
         process_owner = process_owner or "Administrator"
         business_analyst = business_analyst or "Administrator"

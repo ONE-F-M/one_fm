@@ -4,6 +4,34 @@
 frappe.ui.form.on("Employee Resignation", {
 	onload: function(frm) {
 		frm.trigger('update_ops_manager_mandatory');
+
+		// Dynamically populate options for replacement_gender and replacement_nationality Autocomplete fields
+		frappe.call({
+			method: 'one_fm.one_fm.doctype.employee_resignation.employee_resignation.get_autocomplete_options',
+			callback: function(r) {
+				if (r.message) {
+					let genders = ['Any', 'Male', 'Female'];
+					if (r.message.genders) {
+						r.message.genders.forEach(g => {
+							if (g && !genders.includes(g)) {
+								genders.push(g);
+							}
+						});
+					}
+					frm.set_df_property('replacement_gender', 'options', genders);
+
+					let nationalities = ['Any', 'African', 'Asian'];
+					if (r.message.nationalities) {
+						r.message.nationalities.forEach(n => {
+							if (n && !nationalities.includes(n)) {
+								nationalities.push(n);
+							}
+						});
+					}
+					frm.set_df_property('replacement_nationality', 'options', nationalities);
+				}
+			}
+		});
 	},
 
 	refresh: function (frm) {
@@ -166,7 +194,7 @@ frappe.ui.form.on("Employee Resignation", {
 			});
 		}
 
-		if (frm.selected_workflow_action === "Approve") {
+		if (frm.selected_workflow_action === "Approve" && frm.doc.workflow_state === "Pending Operations Manager") {
 			if (!frm.doc.replacement_required) {
 				frappe.msgprint({
 					title: __('Missing Replacement Decision'),
@@ -250,10 +278,7 @@ frappe.ui.form.on("Employee Resignation", {
 
 		let is_shift_worker = cint(frm.doc.shift_working);
 
-		let is_draft = frm.doc.__islocal || frm.doc.workflow_state === 'Draft';
-		let is_restricted_stage = is_draft || frm.doc.workflow_state === 'Pending Relieving Date Correction';
-
-		let show_ops_impact = !is_restricted_stage;
+		let show_ops_impact = ['Pending Operations Manager', 'Approved', 'Withdrawn'].includes(frm.doc.workflow_state);
 		frm.toggle_display("operational_impact_section", show_ops_impact);
 
 		if (is_restricted_stage) {

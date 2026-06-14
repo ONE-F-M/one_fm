@@ -35,7 +35,9 @@ class EmployeeResignation(Document):
 
 		# Enforce replacement_required explicitly for Operations Manager / Approved
 		if self.get("workflow_state") == "Approved":
-			if not self.replacement_required:
+			if not self.shift_working:
+				self.replacement_required = "No"
+			elif not self.replacement_required:
 				frappe.throw(
 					_("You must explicitly select Yes or No for 'Is a Replacement Required?' before you can approve and spawn a PMR."),
 					title=_("Replacement Required")
@@ -327,3 +329,16 @@ def get_employee_resignation_details(employee):
 				result["site_supervisor_id"] = frappe.db.get_value("Employee", site_data.get("site_supervisor"), "user_id")
 
 	return result
+
+
+@frappe.whitelist()
+def get_autocomplete_options() -> dict:
+	"""Secure fetch of all genders and nationalities for Autocomplete fields, bypassing lookup restrictions for non-admin roles."""
+	if frappe.session.user == "Guest":
+		frappe.throw(_("Not allowed"), frappe.PermissionError)
+
+	genders = [g.name for g in frappe.get_all("Gender", fields=["name"], order_by="name")]
+	nationalities = [n.name for n in frappe.get_all("Nationality", fields=["name"], order_by="name")]
+
+	return {"genders": genders, "nationalities": nationalities}
+
