@@ -7,8 +7,6 @@
  "engine": "InnoDB",
  "field_order": [
   "section_break_myjw",
-  "is_extension_request",
-  "original_client_event",
   "event_name",
   "start_date",
   "end_date",
@@ -145,20 +143,6 @@
    "fieldname": "poc_name_that_informed",
    "fieldtype": "Data",
    "label": "POC Name that informed"
-  },
-  {
-   "default": "0",
-   "fieldname": "is_extension_request",
-   "fieldtype": "Check",
-   "label": "Is Extension Request"
-  },
-  {
-   "depends_on": "eval:doc.is_extension_request",
-   "fieldname": "original_client_event",
-   "fieldtype": "Link",
-   "label": "Original Client Event",
-   "mandatory_depends_on": "eval:doc.is_extension_request",
-   "options": "Client Event"
   }
  ],
  "grid_page_length": 50,
@@ -178,7 +162,7 @@
    "link_fieldname": "client_event"
   }
  ],
- "modified": "2026-05-16 08:31:37.561450",
+ "modified": "2026-01-27 18:35:34.388248",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Client Event",

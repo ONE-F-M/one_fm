@@ -316,7 +316,7 @@ def get_site_location(employee_id: str = None, shift: str = None,latitude: float
                     return response("Resource Not Found", 404, None,
                                     "You are 4 or more hours late, you cannot checkin at this time.")
 
-            location = get_shift_site_location(shift, date, log_type, latitude, longitude)
+            location = get_shift_site_location(shift, date, log_type)
             site = frappe.get_value("Operations Shift", shift.shift, "site")
 
             if location:
@@ -394,7 +394,7 @@ def is_attendance_request_exists(employee, date):
     )
 
 
-def get_shift_site_location(shift, date, log_type, latitude=None, longitude=None):
+def get_shift_site_location(shift, date, log_type):
     """
         Method to retrieves the site location details (latitude, longitude, and optionally geofence radius)
         for a given shift on a specific date, considering both shift and shift request information.
@@ -403,8 +403,6 @@ def get_shift_site_location(shift, date, log_type, latitude=None, longitude=None
             shift (object): A object of Shift Assignment
             date (str): The date (YYYY-MM-DD format) for which to retrieve the location.
             log_type (str): "IN" or "OUT".
-            latitude (float, optional): The user's current latitude for multi-location matching.
-            longitude (float, optional): The user's current longitude for multi-location matching.
 
         Return:
             dict (or None): If a valid location is found, a dictionary containing the following keys is returned:
@@ -425,55 +423,17 @@ def get_shift_site_location(shift, date, log_type, latitude=None, longitude=None
         elif shift.shift:
             # Fetch the site from Operations Shift to get the location of the Site
             site = frappe.get_value("Operations Shift", shift.shift, "site")
-
-            # Check for multi-location support
-            multi_locations = frappe.get_all(
-                "Operations Site Location Items",
-                filters={"parent": site, "parenttype": "Operations Site"},
-                fields=["site_location", "disabled"]
-            )
-
-            if multi_locations:
-                if latitude is None or longitude is None:
-                    # Cannot determine proximity without user coordinates;
-                    # return the first enabled location as fallback
-                    for loc_row in multi_locations:
-                        if not loc_row.disabled and loc_row.site_location:
-                            return frappe.db.get_value(
-                                "Location", loc_row.site_location,
-                                ["latitude", "longitude", "geofence_radius"], as_dict=True
-                            )
-                    return None
-
-                # Multi-location mode: find the first enabled location
-                # that contains the user's current position
-                for loc_row in multi_locations:
-                    if not loc_row.site_location:
-                        continue
-                    if loc_row.disabled:
-                        continue
-                    loc_data = frappe.db.get_value(
-                        "Location", loc_row.site_location,
-                        ["latitude", "longitude", "geofence_radius"], as_dict=True
+            result = frappe.db.sql("""
+                SELECT
+                    loc.latitude, loc.longitude, loc.geofence_radius
+                FROM
+                    `tabLocation` as loc
+                WHERE
+                    loc.name IN (
+                        SELECT site_location FROM `tabOperations Site` where name="{site}"
                     )
-                    if not loc_data:
-                        continue
-                    dist = float(haversine(loc_data.latitude, loc_data.longitude, latitude, longitude))
-                    if dist <= float(loc_data.geofence_radius):
-                        return loc_data
-
-                # No enabled location matched the user's position
-                return None
-            else:
-                # Single location fallback (legacy): use the site_location field
-                # on the Operations Site record directly
-                site_location = frappe.db.get_value("Operations Site", site, "site_location")
-                if site_location:
-                    return frappe.db.get_value(
-                        "Location", site_location,
-                        ["latitude", "longitude", "geofence_radius"], as_dict=True
-                    )
-                return None
+            """.format(site=site), as_dict=1)
+            return result[0] if result else None
     return location
 
 

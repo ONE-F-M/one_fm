@@ -17,22 +17,6 @@ class OperationsSite(Document):
 		if len(self.poc) == 0:
 			frappe.throw("POC list is mandatory.")
 		self.validate_project_status()
-		self.validate_location_configuration()
-
-	def validate_location_configuration(self):
-		"""Enforce mutual exclusivity between single site_location and multi-location child table."""
-		has_multi_locations = self.operations_site_location and len(self.operations_site_location) > 0
-
-		if has_multi_locations:
-			# Clear single location when multi-location is used
-			if self.site_location:
-				self.site_location = None
-		else:
-			# If no multi-location rows and no single location, throw error
-			if not self.site_location:
-				frappe.throw(
-					_("Please set a Site Location or add at least one entry in the Multiple Location Details table.")
-				)
 
 	def validate_project_status(self):
 		# validate active employees

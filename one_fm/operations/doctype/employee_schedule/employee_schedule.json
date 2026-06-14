@@ -74,7 +74,7 @@
    "reqd": 1
   },
   {
-   "depends_on": "eval:['Working', 'On-the-job Training', 'Client Event', 'Day Off', 'Client Day Off'].includes(doc.employee_availability)",
+   "depends_on": "eval:['Working', 'On-the-job Training', 'Client Event'].includes(doc.employee_availability)",
    "fieldname": "section_break_2",
    "fieldtype": "Section Break"
   },

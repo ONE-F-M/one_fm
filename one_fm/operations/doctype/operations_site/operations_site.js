@@ -12,9 +12,6 @@ frappe.ui.form.on('Operations Site', {
 			}
 		});
 
-		// Toggle site_location editability based on multi-location child table
-		toggle_location_fields(frm);
-
 		// Remove and change it
 		let {changes_log} = frm.doc;
 		let changes = ``;
@@ -367,20 +364,3 @@ function set_contact(doc){
 	
 	$('div[data-fieldname="contact_html"]').empty().append(`<div class="address-box">${contact_details}</div>`);
 }
-
-function toggle_location_fields(frm) {
-	let has_multi_locations = (frm.doc.operations_site_location || []).length > 0;
-	frm.set_df_property("site_location", "read_only", has_multi_locations ? 1 : 0);
-	if (has_multi_locations && frm.doc.site_location) {
-		frm.set_value("site_location", "");
-	}
-}
-
-frappe.ui.form.on("Operations Site Location Items", {
-	operations_site_location_add(frm) {
-		toggle_location_fields(frm);
-	},
-	operations_site_location_remove(frm) {
-		toggle_location_fields(frm);
-	}
-});
