@@ -263,9 +263,27 @@ class ProjectManpowerRequest(Document):
 				field.options = "\n".join(opts)
 
 @frappe.whitelist()
-def set_edit_reason(name, reason):
+def set_edit_reason(name: str, reason: str):
 	doc = frappe.get_doc("Project Manpower Request", name)
 	doc.check_permission("read")
 	frappe.db.set_value("Project Manpower Request", name, "reason_for_rejection", reason)
 	frappe.clear_document_cache("Project Manpower Request", name)
+
+
+@frappe.whitelist()
+def get_autocomplete_options() -> dict:
+	"""Fetch all Nationality and Gender options for PMR Autocomplete fields."""
+	# Ensure the caller has permission to read PMR
+	if not frappe.has_permission("Project Manpower Request", "read"):
+		frappe.throw(_("Not permitted to access manpower request details."), frappe.PermissionError)
+
+	nationalities = frappe.get_all("Nationality", fields=["name"], order_by="name asc", ignore_permissions=True)
+	genders = frappe.get_all("Gender", fields=["name"], order_by="name asc", ignore_permissions=True)
+
+	return {
+		"nationalities": [n.name for n in nationalities if n.name],
+		"genders": [g.name for g in genders if g.name]
+	}
+
+
 
