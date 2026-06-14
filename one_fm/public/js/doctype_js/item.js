@@ -6,39 +6,39 @@ frappe.ui.form.on('Item', {
 		set_field_access_for_unauthorized_users(frm);
 		frm.set_query("subitem_group", function() {
 			return {
-				filters: [
-					['Item Group', 'parent_item_group', '=', cur_frm.doc.parent_item_group]
-				]
+				filters: {
+					"parent_item_group": cur_frm.doc.parent_item_group
+				}
 			};
 		});
 		frm.set_query("item_group", function() {
 			return {
-				filters: [
-					['Item Group', 'parent_item_group', '=', cur_frm.doc.subitem_group]
-				]
+				filters: {
+					"parent_item_group": cur_frm.doc.subitem_group
+				}
 			};
 		});
 		frm.set_query("item_type", function() {
 			return {
-				filters: [
-					['Item Type', 'item_group', '=', cur_frm.doc.item_group]
-				]
+				filters: {
+					"item_group": cur_frm.doc.item_group
+				}
 			};
 		});
 		frm.set_query("item_model", function() {
 			return {
-				filters: [
-					['Item Model', 'item_brand', '=', cur_frm.doc.brand]
-				]
+				filters: {
+					"item_brand": cur_frm.doc.brand
+				}
 			};
 		});
 		var fields = ["linked_items"];
 		for ( var i=0; i< fields.length; i++ ){
 			frm.set_query(fields[i], function(){
-				return{
-					filters: [
-						['Item', 'subitem_group', '=', cur_frm.doc.subitem_group]
-					]
+				return {
+					filters: {
+						"subitem_group": cur_frm.doc.subitem_group
+					}
 				}
 			});
 		}
