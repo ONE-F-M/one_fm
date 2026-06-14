@@ -282,8 +282,13 @@ class JobOfferOverride(JobOffer):
         if not job_applicant.job_title:
             return
 
-        # Fetch Agency from Job Opening
-        agency = frappe.db.get_value("Job Opening", job_applicant.job_title, "agency")
+        # Agencies are stored in the Job Opening child table (one_fm_active_willing_agency),
+        # not as a single field on Job Opening. Use the first willing agency.
+        job_opening = frappe.get_doc("Job Opening", job_applicant.job_title)
+        if not job_opening.one_fm_active_willing_agency:
+            return
+
+        agency = job_opening.one_fm_active_willing_agency[0].agency
         if not agency:
             return
 
