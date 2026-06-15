@@ -28,6 +28,9 @@ class ProjectManpowerRequest(Document):
 		self.project_request_code = self.name
 
 	def validate(self):
+		if getattr(self, "_reason_for_rejection", None):
+			self.reason_for_rejection = self._reason_for_rejection
+
 		self.update_select_field_options()
 		if self.reason == "Exit":
 			if self.get("resignation_links"):

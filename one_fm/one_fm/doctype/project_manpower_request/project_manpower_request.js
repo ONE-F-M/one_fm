@@ -102,19 +102,8 @@ frappe.ui.form.on('Project Manpower Request', {
 					fieldtype: 'Small Text',
 					reqd: 1
 				}, (values) => {
-					frappe.call({
-						method: "one_fm.one_fm.doctype.project_manpower_request.project_manpower_request.set_edit_reason",
-						args: {
-							name: frm.doc.name,
-							reason: values.reason_for_rejection
-						},
-						callback: function(r) {
-							resolve();
-						},
-						error: function(err) {
-							reject(err);
-						}
-					});
+					frm.doc._reason_for_rejection = values.reason_for_rejection;
+					resolve();
 				}, __('Change Request Reason'), __('Submit'));
 			} else {
 				if (frm.selected_workflow_action === "Submit to Recruiter" || frm.selected_workflow_action === "Request Edit") {
