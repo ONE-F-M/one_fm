@@ -21,7 +21,7 @@ frappe.ui.form.on('Item', {
 		frm.set_query("item_type", function() {
 			return {
 				filters: {
-					"item_group": cur_frm.doc.item_group
+					"item_group": frm.doc.item_group
 				}
 			};
 		});
