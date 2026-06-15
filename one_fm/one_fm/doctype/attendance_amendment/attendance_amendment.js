@@ -12,6 +12,11 @@ frappe.ui.form.on("Attendance Amendment", {
             frm.add_custom_button(__("Preview Attendance"), function() {
                 show_attendance_preview_modal(frm);
             });
+
+            // Version Changes button
+            frm.add_custom_button(__("Version Changes"), function() {
+                show_version_changes(frm);
+            });
         }
 
         if (!frm.is_new() && frm.doc.workflow_state === "Approved") {
@@ -679,4 +684,192 @@ function export_preview_as_pdf(html_content, frm) {
             window.open(url, '_blank');
         }
     });
+}
+
+// ============================================================
+// Version Changes Dialog
+// Shows document change history with who, when, and what changed
+// ============================================================
+
+function show_version_changes(frm) {
+    frappe.call({
+        method: "one_fm.one_fm.doctype.attendance_amendment.attendance_amendment.get_version_changes",
+        args: { amendment_name: frm.doc.name },
+        freeze: true,
+        freeze_message: __("Loading version history..."),
+        callback: function(r) {
+            if (!r.message || r.message.length === 0) {
+                frappe.msgprint(__("No version changes found for this document."));
+                return;
+            }
+            render_version_changes_dialog(frm, r.message);
+        }
+    });
+}
+
+function render_version_changes_dialog(frm, versions) {
+    let html = "";
+
+    // Helper to format field names to human-readable labels
+    const format_field_label = (fieldname) => {
+        return fieldname
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, c => c.toUpperCase());
+    };
+
+    // Helper to truncate long values
+    const truncate = (val, max_len) => {
+        if (!val) return '<span class="text-muted">-</span>';
+        let s = String(val);
+        if (s.length > (max_len || 80)) {
+            return frappe.utils.escape_html(s.substring(0, max_len || 80)) + "…";
+        }
+        return frappe.utils.escape_html(s);
+    };
+
+    for (let i = 0; i < versions.length; i++) {
+        let v = versions[i];
+        let datetime_str = frappe.datetime.str_to_user(v.modified_on);
+        let user_avatar = frappe.avatar(v.modified_by, "avatar-small");
+
+        html += `<div class="version-entry mb-4 pb-3" style="border-bottom: 1px solid var(--border-color);">`;
+
+        // Header: avatar, name, datetime
+        html += `<div class="d-flex align-items-center mb-2">
+            ${user_avatar}
+            <div class="ml-2">
+                <span class="font-weight-bold">${frappe.utils.escape_html(v.full_name)}</span>
+                <br>
+                <span class="text-muted small">${datetime_str}</span>
+            </div>
+        </div>`;
+
+        // Field-level changes
+        if (v.changes && v.changes.length > 0) {
+            html += `<div class="mb-2">
+                <div class="text-muted small font-weight-bold mb-1">${__("Field Changes")}</div>
+                <table class="table table-sm table-borderless" style="font-size: 12px;">
+                    <thead>
+                        <tr class="text-muted">
+                            <th style="width: 30%;">${__("Field")}</th>
+                            <th style="width: 35%;">${__("Previous Value")}</th>
+                            <th style="width: 35%;">${__("Current Value")}</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            for (let c of v.changes) {
+                html += `<tr>
+                    <td class="font-weight-bold">${format_field_label(c.field)}</td>
+                    <td style="color: var(--red-500);">${truncate(c.old_value, 120)}</td>
+                    <td style="color: var(--green-600);">${truncate(c.new_value, 120)}</td>
+                </tr>`;
+            }
+
+            html += `</tbody></table></div>`;
+        }
+
+        // Child table row changes
+        if (v.row_changes && v.row_changes.length > 0) {
+            html += `<div class="mb-2">
+                <div class="text-muted small font-weight-bold mb-1">${__("Row Changes")}</div>`;
+
+            for (let rc of v.row_changes) {
+                let table_label = format_field_label(rc.table);
+                html += `<div class="ml-2 mb-2">
+                    <span class="small"><strong>${table_label}</strong> — ${__("Row")} ${rc.row_index + 1}</span>
+                    <table class="table table-sm table-borderless ml-2" style="font-size: 12px;">
+                        <thead>
+                            <tr class="text-muted">
+                                <th style="width: 30%;">${__("Field")}</th>
+                                <th style="width: 35%;">${__("Previous Value")}</th>
+                                <th style="width: 35%;">${__("Current Value")}</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+                for (let fc of rc.changes) {
+                    html += `<tr>
+                        <td class="font-weight-bold">${format_field_label(fc.field)}</td>
+                        <td style="color: var(--red-500);">${truncate(fc.old_value, 80)}</td>
+                        <td style="color: var(--green-600);">${truncate(fc.new_value, 80)}</td>
+                    </tr>`;
+                }
+
+                html += `</tbody></table></div>`;
+            }
+            html += `</div>`;
+        }
+
+        // Added rows
+        if (v.added_rows && v.added_rows.length > 0) {
+            html += `<div class="mb-2">
+                <div class="text-muted small font-weight-bold mb-1">
+                    <span style="color: var(--green-600);">+ ${v.added_rows.length} ${__("row(s) added")}</span>
+                </div>`;
+
+            for (let ar of v.added_rows) {
+                let table_label = format_field_label(ar.table);
+                let summary_parts = [];
+                if (ar.row_data.employee_name) {
+                    summary_parts.push(ar.row_data.employee_name);
+                }
+                if (ar.row_data.employee_id) {
+                    summary_parts.push(ar.row_data.employee_id);
+                }
+                let summary = summary_parts.length > 0
+                    ? summary_parts.join(" — ")
+                    : __("New row");
+                html += `<div class="ml-2 small">
+                    <strong>${table_label}</strong>: ${frappe.utils.escape_html(summary)}
+                </div>`;
+            }
+            html += `</div>`;
+        }
+
+        // Removed rows
+        if (v.removed_rows && v.removed_rows.length > 0) {
+            html += `<div class="mb-2">
+                <div class="text-muted small font-weight-bold mb-1">
+                    <span style="color: var(--red-500);">− ${v.removed_rows.length} ${__("row(s) removed")}</span>
+                </div>`;
+
+            for (let rr of v.removed_rows) {
+                let table_label = format_field_label(rr.table);
+                let summary_parts = [];
+                if (rr.row_data.employee_name) {
+                    summary_parts.push(rr.row_data.employee_name);
+                }
+                if (rr.row_data.employee_id) {
+                    summary_parts.push(rr.row_data.employee_id);
+                }
+                let summary = summary_parts.length > 0
+                    ? summary_parts.join(" — ")
+                    : __("Removed row");
+                html += `<div class="ml-2 small">
+                    <strong>${table_label}</strong>: ${frappe.utils.escape_html(summary)}
+                </div>`;
+            }
+            html += `</div>`;
+        }
+
+        html += `</div>`;  // close version-entry
+    }
+
+    let dialog = new frappe.ui.Dialog({
+        title: __("Version Changes") + " — " + frm.doc.name,
+        size: "large",
+        fields: [
+            {
+                fieldname: "version_html",
+                fieldtype: "HTML"
+            }
+        ]
+    });
+
+    dialog.fields_dict.version_html.$wrapper.html(
+        `<div style="max-height: 500px; overflow-y: auto; padding: 8px;">${html}</div>`
+    );
+
+    dialog.show();
 }
