@@ -119,9 +119,8 @@ class TestClientInterviewShortlist(FrappeTestCase):
 		# Check that attendance was removed
 		self.assertFalse(frappe.db.exists("Attendance", attendance.name))
 
-		# Check that shift assignment was cancelled
-		cancelled_sa = frappe.get_doc("Shift Assignment", shift_assignment.name)
-		self.assertEqual(cancelled_sa.docstatus, 2)
+		# Check that shift assignment was cancelled and deleted
+		self.assertFalse(frappe.db.exists("Shift Assignment", shift_assignment.name))
 
 	def test_prevent_shift_assignment_cancel_with_non_absent_attendance(self):
 		"""Story 5: When shift assignment has non-'Absent' attendance, prevent cancellation."""
