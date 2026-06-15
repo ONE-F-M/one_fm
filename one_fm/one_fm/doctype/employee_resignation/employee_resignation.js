@@ -116,6 +116,27 @@ frappe.ui.form.on("Employee Resignation", {
 				});
 			}
 		}
+
+		if (frm.doc.workflow_state === 'Pending Operations Manager' && frappe.user_roles.includes('Operation Admin')) {
+			// Disable editing of all fields except replacement details
+			frm.set_df_property('employees', 'read_only', 1);
+			frm.set_df_property('resignation_initiation_date', 'read_only', 1);
+			frm.set_df_property('relieving_date', 'read_only', 1);
+			frm.set_df_property('reason', 'read_only', 1);
+			frm.set_df_property('supervisor', 'read_only', 1);
+			frm.set_df_property('operations_manager', 'read_only', 1);
+			frm.set_df_property('offboarding_officer', 'read_only', 1);
+			
+			// Explicitly allow editing of replacement fields
+			frm.set_df_property('replacement_required', 'read_only', 0);
+			frm.set_df_property('replacement_nationality', 'read_only', 0);
+			frm.set_df_property('replacement_gender', 'read_only', 0);
+
+			// Disable buttons inside the child table grid if open
+			if (frm.fields_dict.employees && frm.fields_dict.employees.grid) {
+				frm.fields_dict.employees.grid.disable_and_hide_buttons();
+			}
+		}
 	},
 	
 	before_save: function(frm) {
@@ -168,7 +189,7 @@ frappe.ui.form.on("Employee Resignation", {
 			});
 		}
 
-		if (frm.selected_workflow_action === "Approve") {
+		if (frm.selected_workflow_action === "Approve" && frm.doc.workflow_state === "Pending Operations Manager") {
 			if (!frm.doc.replacement_required) {
 				frappe.msgprint({
 					title: __('Missing Replacement Decision'),
@@ -252,11 +273,11 @@ frappe.ui.form.on("Employee Resignation", {
 
 		let is_shift_worker = cint(frm.doc.shift_working);
 
+		let show_ops_impact = ['Pending Operations Manager', 'Approved', 'Withdrawn'].includes(frm.doc.workflow_state);
+		frm.toggle_display("operational_impact_section", show_ops_impact);
+
 		let is_draft = frm.doc.__islocal || frm.doc.workflow_state === 'Draft';
 		let is_restricted_stage = is_draft || frm.doc.workflow_state === 'Pending Relieving Date Correction';
-
-		let show_ops_impact = !is_restricted_stage;
-		frm.toggle_display("operational_impact_section", show_ops_impact);
 
 		if (is_restricted_stage) {
 			frm.set_df_property('operations_manager', 'hidden', 1);

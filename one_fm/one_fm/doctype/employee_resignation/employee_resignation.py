@@ -35,7 +35,9 @@ class EmployeeResignation(Document):
 
 		# Enforce replacement_required explicitly for Operations Manager / Approved
 		if self.get("workflow_state") == "Approved":
-			if not self.replacement_required:
+			if not self.shift_working:
+				self.replacement_required = "No"
+			elif not self.replacement_required:
 				frappe.throw(
 					_("You must explicitly select Yes or No for 'Is a Replacement Required?' before you can approve and spawn a PMR."),
 					title=_("Replacement Required")

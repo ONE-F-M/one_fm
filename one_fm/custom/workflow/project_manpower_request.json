@@ -108,6 +108,16 @@
             "doctype": "Workflow Document State"
         },
         {
+            "state": "In Process",
+            "doc_status": "0",
+            "style": "Success",
+            "is_optional_state": 0,
+            "avoid_status_override": 0,
+            "allow_edit": "Operation Admin",
+            "send_email": 0,
+            "doctype": "Workflow Document State"
+        },
+        {
             "state": "Completed",
             "doc_status": "1",
             "style": "Success",
