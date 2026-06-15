@@ -83,21 +83,3 @@ class WorkflowActionOverride extends frappe.ui.form.States{
 }
 
 frappe.ui.form.States=WorkflowActionOverride
-
-// Override frappe.workflow.is_read_only to allow Operation Admin to edit specific states
-const original_is_read_only = frappe.workflow.is_read_only;
-frappe.workflow.is_read_only = function(doctype, name) {
-	if (doctype === "Project Manpower Request") {
-		let doc = locals[doctype][name];
-		if (doc && doc.workflow_state === "In Process" && frappe.user_roles.includes("Operation Admin")) {
-			return false;
-		}
-	}
-	if (doctype === "Employee Resignation") {
-		let doc = locals[doctype][name];
-		if (doc && doc.workflow_state === "Pending Operations Manager" && frappe.user_roles.includes("Operation Admin")) {
-			return false;
-		}
-	}
-	return original_is_read_only(doctype, name);
-};
