@@ -739,6 +739,8 @@ function render_version_changes_dialog(frm, versions) {
         // Field-level changes
         if (v.changes && v.changes.length > 0) {
             for (let c of v.changes) {
+                // Skip if old and new values are the same
+                if (String(c.old_value || "") === String(c.new_value || "")) continue;
                 rows.push({
                     user_display: user_display,
                     timestamp: datetime_str,
@@ -756,6 +758,8 @@ function render_version_changes_dialog(frm, versions) {
                 let table_label = format_field_label(rc.table);
                 let row_label = `${__("Row")} ${rc.row_index + 1}`;
                 for (let fc of rc.changes) {
+                    // Skip if old and new values are the same
+                    if (String(fc.old_value || "") === String(fc.new_value || "")) continue;
                     rows.push({
                         user_display: user_display,
                         timestamp: datetime_str,
