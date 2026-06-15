@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Fleet Management</span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Route Plan\",\"col\":3}},{\"type\":\"card\",\"data\":{\"card_name\":\"Fleet\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Transport\",\"col\":4}}]",
+ "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Fleet Management</span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transportation Schedule\",\"col\":3}},{\"type\":\"card\",\"data\":{\"card_name\":\"Fleet\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Transport\",\"col\":4}}]",
  "creation": "2022-10-31 21:02:45.195181",
  "docstatus": 0,
  "doctype": "Workspace",
@@ -50,7 +50,7 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Route Plan",
+   "label": "Transportation Schedule",
    "link_count": 0,
    "link_to": "route_planner",
    "link_type": "Page",
@@ -101,7 +101,7 @@
  "shortcuts": [
   {
    "color": "Blue",
-   "label": "Route Plan",
+   "label": "Transportation Schedule",
    "link_to": "route_planner",
    "type": "Page"
   }

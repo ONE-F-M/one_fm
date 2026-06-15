@@ -1,10 +1,12 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
 
+import json
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import nowdate, getdate, cint
+from frappe.utils import nowdate, getdate, cint, flt
 
 
 MONTH_MAP = {
@@ -16,30 +18,104 @@ MONTH_MAP = {
 
 class BonusRequest(Document):
 	def before_insert(self):
-		"""Set default effective_year to current year if not provided."""
+		"""Set defaults for new Bonus Request documents."""
 		if not self.effective_year:
 			self.effective_year = getdate(nowdate()).year
+
+		if not self.requested_by:
+			self.requested_by = frappe.session.user
 
 	def validate(self):
 		self.validate_self_request()
 		self.validate_effective_month()
-		self.validate_justification()
+		self.validate_items()
+		self.calculate_total_bonus_amount()
+		self.validate_recurring_dates()
+		self.validate_recurring_start_date()
+		self.validate_row_level_approvals()
 
 	def validate_self_request(self):
-		"""Prevent users from creating a bonus request for themselves."""
+		"""Prevent users from adding themselves to the bonus request."""
 		current_user = frappe.session.user
 		if current_user == "Administrator":
 			return
 
-		employee_user_id = frappe.db.get_value("Employee", self.employee, "user_id")
-		if employee_user_id and employee_user_id == current_user:
+		current_employee = frappe.db.get_value(
+			"Employee",
+			{"user_id": current_user, "status": "Active"},
+			"name"
+		)
+		if not current_employee:
+			return
+
+		for row in self.bonus_request_employees:
+			if row.employee == current_employee:
+				frappe.throw(
+					_("Compliance Error: You cannot include yourself in a bonus request. "
+					  "Please remove Employee {0} from Row {1}.").format(
+						frappe.bold(row.employee_name or row.employee),
+						row.idx
+					),
+					title=_("Self-Request Not Allowed")
+				)
+
+	def validate_items(self):
+		"""Validate each child row: justification 'Other' requires description,
+		clear description when justification is not 'Other',
+		and enforce mutual exclusivity of approve/reject."""
+		for row in self.bonus_request_employees:
+			if row.justification == "Other" and not row.description:
+				frappe.throw(
+					_("Row {0}: Description is mandatory when Justification is 'Other'.").format(row.idx),
+					title=_("Missing Description")
+				)
+			if row.justification != "Other":
+				row.description = ""
+
+			# Mutual exclusivity: cannot mark both Approved and Rejected
+			if cint(row.approve) and cint(row.reject):
+				frappe.throw(
+					_("Row {0}: Cannot mark both Approved and Rejected "
+					  "for Employee {1}.").format(
+						row.idx, frappe.bold(row.employee_name or row.employee)
+					),
+					title=_("Invalid Approval State")
+				)
+
+	def validate_row_level_approvals(self):
+		"""Block workflow transitions out of approval states unless every
+		child row is explicitly marked as either Approved or Rejected."""
+		approval_states = ["Pending HR Manager", "Pending Finance Manager"]
+
+		previous_doc = self.get_doc_before_save()
+		if not previous_doc:
+			return
+
+		# Only enforce when transitioning OUT of an approval state
+		if previous_doc.workflow_state not in approval_states:
+			return
+
+		# If the state hasn't changed, this is just an edit — no gate needed
+		if previous_doc.workflow_state == self.workflow_state:
+			return
+
+		undecided_rows = []
+		for row in self.bonus_request_employees:
+			if not cint(row.approve) and not cint(row.reject):
+				undecided_rows.append(str(row.idx))
+
+		if undecided_rows:
 			frappe.throw(
-				_("Compliance Error: You cannot initiate a bonus request for yourself."),
-				title=_("Self-Request Not Allowed")
+				_("Cannot proceed: You must explicitly mark every single row "
+				  "as either Approved or Rejected before advancing to the "
+				  "next transition. Undecided rows: {0}").format(
+					", ".join(undecided_rows)
+				),
+				title=_("Row-Level Approval Required")
 			)
 
 	def validate_effective_month(self):
-		"""Ensure effective month is not in the past."""
+		"""Ensure effective month is strictly in the future (current month is blocked)."""
 		if not self.effective_month or not self.effective_year:
 			return
 
@@ -53,18 +129,53 @@ class BonusRequest(Document):
 		if not selected_month:
 			return
 
-		if selected_year < current_year or (selected_year == current_year and selected_month < current_month):
+		# Block current month AND past months — only future months allowed
+		if selected_year < current_year or (
+			selected_year == current_year and selected_month <= current_month
+		):
 			frappe.throw(
-				_("Validation Error: Effective Month cannot be in the past."),
+				_("Bonus requests can only take effect in future months."),
 				title=_("Invalid Effective Month")
 			)
 
-	def validate_justification(self):
-		"""Ensure justification is provided when Others is checked."""
-		if self.others and not self.justification:
+	def calculate_total_bonus_amount(self):
+		"""Sum bonus_amount across all child table rows."""
+		self.total_bonus_amount = sum(
+			flt(row.bonus_amount) for row in self.bonus_request_employees
+		)
+
+	def validate_recurring_dates(self):
+		"""AC: End Date ≤ Start Date → block save."""
+		if not cint(self.is_recurring_monthly):
+			return
+
+		if not self.start_date or not self.end_date:
+			return
+
+		if getdate(self.end_date) <= getdate(self.start_date):
 			frappe.throw(
-				_("Justification is mandatory when 'Others' performance criteria is checked."),
-				title=_("Missing Justification")
+				_("Invalid Timeline: End Date must be later than the Start Date."),
+				title=_("Invalid Recurring Dates")
+			)
+
+	def validate_recurring_start_date(self):
+		"""AC: Start Date in current/past month → block save."""
+		if not cint(self.is_recurring_monthly):
+			return
+
+		if not self.start_date:
+			return
+
+		today = getdate(nowdate())
+		start = getdate(self.start_date)
+
+		if (start.year < today.year) or (
+			start.year == today.year and start.month <= today.month
+		):
+			frappe.throw(
+				_("Timing Conflict: The recurring series must be scheduled to begin "
+				  "in a future calendar month to ensure payroll accuracy."),
+				title=_("Invalid Start Date")
 			)
 
 
@@ -83,120 +194,85 @@ def get_employees_for_bulk(department: str):
 
 
 @frappe.whitelist()
-def create_bulk_bonus_requests(
+def create_consolidated_bonus_request(
 	employees: str,
 	bonus_amount: float,
 	effective_month: str,
 	effective_year: int,
-	posting_date: str,
-	increased_productivity: int = 0,
-	improved_work_processes: int = 0,
-	significant_effort: int = 0,
-	star_performer: int = 0,
-	others: int = 0,
-	justification: str = ""
-):
-	"""Create individual Bonus Request records in Draft state for selected employees."""
-	import json
+	justification: str,
+	description: str = ""
+) -> str:
+	"""Create a single Bonus Request with all employees as child table rows.
 
+	Args:
+		employees: JSON array of employee IDs.
+		bonus_amount: Bonus amount applied to each employee row.
+		effective_month: The month the bonus takes effect.
+		effective_year: The year the bonus takes effect.
+		justification: Justification from the dropdown (applied to all rows).
+		description: Description text (required when justification is "Other").
+
+	Returns:
+		Name of the created Bonus Request document.
+	"""
 	employees = json.loads(employees) if isinstance(employees, str) else employees
 
 	if not employees:
 		frappe.throw(_("No employees selected."))
 
 	effective_year = cint(effective_year)
-	bonus_amount = float(bonus_amount)
+	bonus_amount = flt(bonus_amount)
 
-	# Validate effective month is not in the past
+	if bonus_amount <= 0:
+		frappe.throw(_("Bonus Amount must be greater than zero."))
+
+	if not justification:
+		frappe.throw(_("Please select a Justification."))
+
+	if justification == "Other" and not description:
+		frappe.throw(_("Description is mandatory when Justification is 'Other'."))
+
+	# Validate effective month is strictly in the future
 	today = getdate(nowdate())
 	selected_month = MONTH_MAP.get(effective_month)
 	if not selected_month:
 		frappe.throw(_("Invalid Effective Month."))
 
-	if effective_year < today.year or (effective_year == today.year and selected_month < today.month):
+	if effective_year < today.year or (
+		effective_year == today.year and selected_month <= today.month
+	):
 		frappe.throw(
-			_("Validation Error: Effective Month cannot be in the past."),
+			_("Bonus requests can only take effect in future months."),
 			title=_("Invalid Effective Month")
 		)
 
-	# Validate at least one performance criteria
-	if not any([cint(increased_productivity), cint(improved_work_processes),
-				cint(significant_effort), cint(star_performer), cint(others)]):
-		frappe.throw(_("Please select at least one Performance Criteria."))
+	# Build child table rows
+	items = []
+	for emp in employees:
+		items.append({
+			"employee": emp,
+			"bonus_amount": bonus_amount,
+			"justification": justification,
+			"description": description if justification == "Other" else "",
+		})
 
-	if cint(others) and not justification:
-		frappe.throw(_("Justification is mandatory when 'Others' is checked."))
-
-	# Enqueue to background job
-	frappe.enqueue(
-		method="one_fm.one_fm.doctype.bonus_request.bonus_request._create_bulk_bonus_requests_bg",
-		queue="long",
-		timeout=1500,
-		employees=employees,
-		bonus_amount=bonus_amount,
-		effective_month=effective_month,
-		effective_year=effective_year,
-		posting_date=posting_date,
-		increased_productivity=cint(increased_productivity),
-		improved_work_processes=cint(improved_work_processes),
-		significant_effort=cint(significant_effort),
-		star_performer=cint(star_performer),
-		others=cint(others),
-		justification=justification,
-		user=frappe.session.user
-	)
+	# Create the consolidated Bonus Request document
+	bonus_request = frappe.get_doc({
+		"doctype": "Bonus Request",
+		"posting_date": nowdate(),
+		"effective_month": effective_month,
+		"effective_year": effective_year,
+		"bonus_request_employees": items,
+	})
+	bonus_request.insert()
 
 	frappe.msgprint(
-		_("Bonus Request generation has been queued for {0} employee(s). You will be notified once completed.").format(len(employees)),
-		title=_("Generation Started"),
-		indicator="blue"
+		_("Bonus Request {0} created with {1} employee(s).").format(
+			frappe.bold(bonus_request.name),
+			len(employees)
+		),
+		title=_("Bonus Request Created"),
+		indicator="green"
 	)
 
-
-def _create_bulk_bonus_requests_bg(
-	employees, bonus_amount, effective_month, effective_year,
-	posting_date, increased_productivity, improved_work_processes,
-	significant_effort, star_performer, others, justification, user
-):
-	"""Background job to create individual Bonus Request records."""
-	created_count = 0
-	failed_count = 0
-
-	for emp in employees:
-		try:
-			bonus_request = frappe.get_doc({
-				"doctype": "Bonus Request",
-				"posting_date": posting_date or nowdate(),
-				"employee": emp,
-				"bonus_amount": bonus_amount,
-				"effective_month": effective_month,
-				"effective_year": effective_year,
-				"increased_productivity": increased_productivity,
-				"improved_work_processes": improved_work_processes,
-				"significant_effort": significant_effort,
-				"star_performer": star_performer,
-				"others": others,
-				"justification": justification if others else ""
-			})
-			bonus_request.insert(ignore_permissions=True)
-			created_count += 1
-		except Exception:
-			failed_count += 1
-			frappe.log_error(
-				title=_("Bulk Bonus Request - Failed to create for {0}").format(emp),
-				message=frappe.get_traceback()
-			)
-
-	frappe.db.commit()
-
-	frappe.publish_realtime(
-		"msgprint",
-		{
-			"message": _("Bulk Bonus Request completed: {0} created, {1} failed.").format(
-				created_count, failed_count
-			),
-			"title": _("Bulk Bonus Request Complete"),
-			"indicator": "green" if failed_count == 0 else "orange"
-		},
-		user=user
-	)
+	return bonus_request.name

@@ -1,7 +1,10 @@
 // Copyright (c) 2021, ONE FM and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Overtime Request', {
+frappe.ui.form.on("Overtime Request", {
+	setup: function(frm) {
+		// requested_by is auto-set via default:"__user" in DocType JSON
+	},
 	refresh: (frm)=>{
 		// disable Request Type
 		frm.toggle_enable('request_type', 0);

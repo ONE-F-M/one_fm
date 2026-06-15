@@ -304,7 +304,7 @@
   {
    "default": "Any",
    "fieldname": "gender",
-   "fieldtype": "Select",
+   "fieldtype": "Autocomplete",
    "label": "Gender",
    "options": "Any\nMale\nFemale",
    "search_index": 1
@@ -316,7 +316,7 @@
   {
    "default": "Any",
    "fieldname": "nationality",
-   "fieldtype": "Select",
+   "fieldtype": "Autocomplete",
    "label": "Nationality",
    "options": "Any\nAfrican\nAsian",
    "search_index": 1
