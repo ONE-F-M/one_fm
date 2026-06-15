@@ -51,7 +51,10 @@ class MOM(Document):
 				})
 
 			for attendees in self.general_attendance:
-				parts = attendees.attendee_name.split()
+				attendee_name = (attendees.attendee_name or "").strip()
+				if not attendee_name:
+					continue
+				parts = attendee_name.split()
 				first_name = parts[0]
 				last_name = " ".join(parts[1:]) if len(parts) > 1 else ""
 				poc_check.append("general_attendees", {
