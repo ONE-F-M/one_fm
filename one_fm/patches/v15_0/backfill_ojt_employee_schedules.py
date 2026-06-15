@@ -9,7 +9,6 @@ def execute():
     Employee Schedules were ever created for it. create_or_update_employee_schedules()
     is idempotent (get_or_create), so this is a no-op if schedules already exist.
     """
-    # ojt_name = "OJT-06-2026-0041"
     ojt_name = "OJT-06-2026-0036"
 
     if not frappe.db.exists("On the Job Training", ojt_name):
