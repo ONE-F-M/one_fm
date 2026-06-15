@@ -245,6 +245,7 @@
             "fieldname": "replacement_nationality",
             "fieldtype": "Autocomplete",
             "label": "Replacement Nationality",
+            "options": "Any\nAfrican\nAsian",
             "ignore_user_permissions": 1
         },
         {
@@ -252,6 +253,7 @@
             "fieldname": "replacement_gender",
             "fieldtype": "Autocomplete",
             "label": "Replacement Gender",
+            "options": "Any\nMale\nFemale",
             "ignore_user_permissions": 1
         },
         {

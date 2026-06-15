@@ -334,8 +334,14 @@ def get_employee_resignation_details(employee):
 @frappe.whitelist()
 def get_autocomplete_options() -> dict:
 	"""Secure fetch of all genders and nationalities for Autocomplete fields, bypassing lookup restrictions for non-admin roles."""
-	genders = [g.name for g in frappe.get_all("Gender", fields=["name"], order_by="name")]
-	nationalities = [n.name for n in frappe.get_all("Nationality", fields=["name"], order_by="name")]
+	if not frappe.has_permission("Employee Resignation", "read"):
+		frappe.throw(_("Not permitted to access resignation details."), frappe.PermissionError)
 
-	return {"genders": genders, "nationalities": nationalities}
+	genders = frappe.get_all("Gender", fields=["name"], order_by="name asc", ignore_permissions=True)
+	nationalities = frappe.get_all("Nationality", fields=["name"], order_by="name asc", ignore_permissions=True)
+
+	return {
+		"nationalities": [n.name for n in nationalities if n.name],
+		"genders": [g.name for g in genders if g.name]
+	}
 

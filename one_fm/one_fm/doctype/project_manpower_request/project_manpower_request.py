@@ -270,6 +270,8 @@ def set_edit_reason(name: str, reason: str):
 	frappe.clear_document_cache("Project Manpower Request", name)
 
 
+
+
 @frappe.whitelist()
 def get_autocomplete_options() -> dict:
 	"""Fetch all Nationality and Gender options for PMR Autocomplete fields."""

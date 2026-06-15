@@ -103,13 +103,12 @@ frappe.ui.form.on('Project Manpower Request', {
 					reqd: 1
 				}, (values) => {
 					frappe.call({
-						method: 'one_fm.one_fm.doctype.project_manpower_request.project_manpower_request.set_edit_reason',
+						method: "one_fm.one_fm.doctype.project_manpower_request.project_manpower_request.set_edit_reason",
 						args: {
 							name: frm.doc.name,
 							reason: values.reason_for_rejection
 						},
 						callback: function(r) {
-							frm.set_value('reason_for_rejection', values.reason_for_rejection);
 							resolve();
 						},
 						error: function(err) {
