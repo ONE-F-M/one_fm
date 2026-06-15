@@ -95,11 +95,26 @@ class Contracts(Document):
 
     def sync_item_prices(self):
         """
-        Creates or updates Item Price records for each Contract Item row.
-        Deduplicates processing by Item/Gender/Shift/DaysOff combination to prevent duplicate errors.
+        Keep each Contract Item's linked Item Price in sync with the rate on the row.
+
+        The Contract Item row's `rate` is the source of truth:
+          1. If the row is already linked to an Item Price, update that exact record's
+             price_list_rate. We use db.set_value (not doc.save) on purpose: we are only
+             changing the price of an existing record, so the duplicate-key guard in
+             one_fm/api/doc_methods/item_price.py:check_duplicates is irrelevant and would
+             otherwise block the save when legacy duplicate Item Prices exist.
+          2. If the row has no link yet, find a matching Item Price using the same
+             uniqueness key as check_duplicates; update it if found, otherwise create one.
+             Records resolved during this save are reused so two rows sharing a key do not
+             create duplicates.
         """
-        # 1. Gather unique combinations to process
-        sync_groups = {}
+        price_list = "Standard Selling"
+        customer = self.client
+        currency = self.currency_ or "KWD"
+
+        # Item Prices resolved during THIS save, keyed by uniqueness tuple
+        resolved = {}
+
         for row in self.items:
             if not row.item_code:
                 continue
@@ -107,78 +122,58 @@ class Contracts(Document):
             attrs = get_item_variant_attributes(row.item_code)
             gender = attrs.get("gender")
             shift_hours = attrs.get("working_hours") or 0
-            days_off = row.get("days_off") or 0
-            
             uom = row.uom or frappe.db.get_value("Item", row.item_code, "stock_uom")
-            currency = self.currency_ or "KWD"
+            rate = flt(row.rate)
 
-            # Unique key for Item Price (matching the custom logic in one_fm/api/doc_methods/item_price.py)
-            group_key = (row.item_code, uom, currency, gender, shift_hours, days_off)
-            
-            if group_key not in sync_groups:
-                sync_groups[group_key] = {"rate": row.rate, "rows": []}
-            
-            # Prefer the latest rate if duplicates exist in contract rows
-            sync_groups[group_key]["rate"] = row.rate
-            sync_groups[group_key]["rows"].append(row)
+            # 1. Row already points at an Item Price -> update that exact record.
+            if row.item_price and frappe.db.exists("Item Price", row.item_price):
+                if flt(frappe.db.get_value("Item Price", row.item_price, "price_list_rate")) != rate:
+                    frappe.db.set_value("Item Price", row.item_price, "price_list_rate", rate)
+                continue
 
-        price_list = "Standard Selling"
-        customer = self.client
+            # 2. No link yet -> find or create a matching Item Price.
+            key = (row.item_code, uom, currency, gender, shift_hours)
+            item_price_name = resolved.get(key)
 
-        # 2. Process each unique combination
-        for key, data in sync_groups.items():
-            item_code, uom, currency, gender, shift_hours, days_off = key
-            rate = data["rate"]
-
-            # Standard filters matching the custom check_duplicates logic
-            filters = {
-                "item_code": item_code,
-                "price_list": price_list,
-                "customer": customer,
-                "uom": uom,
-                "currency": currency,
-            }
-            if gender:
-                filters["gender"] = gender
-            if shift_hours:
-                filters["shift_hours"] = shift_hours
-            if days_off and str(days_off) != "0":
-                filters["days_off"] = days_off
-
-            # Search for existing record using standard get_value
-            # Note: We use name to get the doc later if update is needed
-            existing_item_price = frappe.db.get_value("Item Price", {k: v for k, v in filters.items() if v is not None and v != ""}, "name")
-
-            if existing_item_price:
-                ip_doc = frappe.get_doc("Item Price", existing_item_price)
-                if flt(ip_doc.price_list_rate) != flt(rate):
-                    ip_doc.price_list_rate = rate
-                    ip_doc.save(ignore_permissions=True)
-                item_price_name = ip_doc.name
-            else:
-                # Double check without attribute filters if it's a standard item? 
-                # No, we rely on the attribute filters for uniqueness.
-                new_ip = frappe.get_doc({
-                    "doctype": "Item Price",
-                    "item_code": item_code,
+            if not item_price_name:
+                filters = {
+                    "item_code": row.item_code,
                     "price_list": price_list,
                     "customer": customer,
                     "uom": uom,
                     "currency": currency,
-                    "price_list_rate": rate,
-                    "gender": gender,
-                    "shift_hours": shift_hours,
-                    "days_off": days_off,
-                    "valid_from": today(),
-                    "selling": 1
-                })
-                new_ip.insert(ignore_permissions=True)
-                item_price_name = new_ip.name
+                }
+                if gender:
+                    filters["gender"] = gender
+                if shift_hours:
+                    filters["shift_hours"] = shift_hours
 
-            # 3. Update all rows in this group with the Item Price reference
-            for row in data["rows"]:
-                if row.item_price != item_price_name:
-                    frappe.db.set_value("Contract Item", row.name, "item_price", item_price_name)
+                item_price_name = frappe.db.get_value("Item Price", filters, "name")
+
+                if item_price_name:
+                    if flt(frappe.db.get_value("Item Price", item_price_name, "price_list_rate")) != rate:
+                        frappe.db.set_value("Item Price", item_price_name, "price_list_rate", rate)
+                else:
+                    new_ip = frappe.get_doc({
+                        "doctype": "Item Price",
+                        "item_code": row.item_code,
+                        "price_list": price_list,
+                        "customer": customer,
+                        "uom": uom,
+                        "currency": currency,
+                        "price_list_rate": rate,
+                        "gender": gender,
+                        "shift_hours": shift_hours,
+                        "valid_from": today(),
+                        "selling": 1,
+                    })
+                    new_ip.insert(ignore_permissions=True)
+                    item_price_name = new_ip.name
+
+                resolved[key] = item_price_name
+
+            if row.item_price != item_price_name:
+                frappe.db.set_value("Contract Item", row.name, "item_price", item_price_name)
 
     
     def update_project_start_end_date(self):
