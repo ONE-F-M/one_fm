@@ -28,7 +28,7 @@ frappe.ui.form.on('Item', {
 		frm.set_query("item_model", function() {
 			return {
 				filters: {
-					"item_brand": cur_frm.doc.brand
+					"item_brand": frm.doc.brand
 				}
 			};
 		});
