@@ -4,9 +4,11 @@
 frappe.ui.form.on("Employee Resignation", {
 	onload: function(frm) {
 		frm.trigger('update_ops_manager_mandatory');
+		load_resignation_autocomplete_options(frm);
 	},
 
 	refresh: function (frm) {
+		load_resignation_autocomplete_options(frm);
 		frm.trigger('update_ops_manager_mandatory');
 
 		let is_draft = frm.doc.__islocal || frm.doc.workflow_state === 'Draft';
@@ -356,3 +358,56 @@ frappe.ui.form.on('Employee Resignation Item', {
         }
     }
 });
+
+// ─── Nationality / Gender Autocomplete helpers ────────────────────────────────
+function _populate_autocomplete(frm, fieldname, options) {
+	// Ensure no get_query is overriding the local filter path
+	let field = frm.fields_dict[fieldname];
+	if (!field) return;
+	if (field.get_query) delete field.get_query;
+
+	// Push data into awesomplete after the current call stack clears
+	setTimeout(() => {
+		let f = frm.fields_dict[fieldname];
+		if (f && typeof f.set_data === "function") {
+			f.set_data(options);
+		}
+	}, 0);
+}
+
+function load_resignation_autocomplete_options(frm) {
+	const NATIONALITY_KEY = "__resignation_nationality_options";
+	const GENDER_KEY = "__resignation_gender_options";
+
+	if (frappe[NATIONALITY_KEY] && frappe[GENDER_KEY]) {
+		_populate_autocomplete(frm, "replacement_nationality", frappe[NATIONALITY_KEY]);
+		_populate_autocomplete(frm, "replacement_gender", frappe[GENDER_KEY]);
+		return;
+	}
+
+	frappe.call({
+		method: "one_fm.one_fm.doctype.employee_resignation.employee_resignation.get_autocomplete_options",
+		callback: function(r) {
+			if (r.message) {
+				let nationalities = ["Any", "African", "Asian"];
+				(r.message.nationalities || []).forEach(n => {
+					if (!nationalities.includes(n)) {
+						nationalities.push(n);
+					}
+				});
+				frappe[NATIONALITY_KEY] = nationalities;
+				_populate_autocomplete(frm, "replacement_nationality", nationalities);
+
+				let genders = ["Any", "Male", "Female"];
+				(r.message.genders || []).forEach(g => {
+					if (!genders.includes(g)) {
+						genders.push(g);
+					}
+				});
+				frappe[GENDER_KEY] = genders;
+				_populate_autocomplete(frm, "replacement_gender", genders);
+			}
+		}
+	});
+}
+

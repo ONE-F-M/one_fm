@@ -243,17 +243,17 @@
         {
             "depends_on": "eval: doc.replacement_required == \"Yes\"",
             "fieldname": "replacement_nationality",
-            "fieldtype": "Link",
+            "fieldtype": "Autocomplete",
             "label": "Replacement Nationality",
-            "options": "Nationality",
+            "options": "Any\nAfrican\nAsian",
             "ignore_user_permissions": 1
         },
         {
             "depends_on": "eval: doc.replacement_required == \"Yes\"",
             "fieldname": "replacement_gender",
-            "fieldtype": "Link",
+            "fieldtype": "Autocomplete",
             "label": "Replacement Gender",
-            "options": "Gender",
+            "options": "Any\nMale\nFemale",
             "ignore_user_permissions": 1
         },
         {
