@@ -14,7 +14,7 @@ frappe.ui.form.on('Item', {
 		frm.set_query("item_group", function() {
 			return {
 				filters: {
-					"parent_item_group": cur_frm.doc.subitem_group
+					"parent_item_group": frm.doc.subitem_group
 				}
 			};
 		});
