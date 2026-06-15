@@ -51,7 +51,7 @@ frappe.ui.form.on('Project Manpower Request', {
 				filters: {
 					designation: frm.doc.designation,
 					docstatus: 1,
-					status: ['not in', ['Cancelled', 'Closed']]
+					status: 'Accepted'
 				}
 			};
 		});
@@ -290,7 +290,8 @@ frappe.ui.form.on("Project Manpower Request", {
 		frm.set_query("erf", function() {
 			return {
 				filters: {
-					docstatus: 1
+					docstatus: 1,
+					status: "Accepted"
 				}
 			};
 		});
