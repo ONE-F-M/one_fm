@@ -109,9 +109,6 @@ frappe.ui.form.on('Project Manpower Request', {
 							reason: values.reason_for_rejection
 						},
 						callback: function(r) {
-							if (r.message) {
-								frm.doc.modified = r.message;
-							}
 							resolve();
 						},
 						error: function(err) {
