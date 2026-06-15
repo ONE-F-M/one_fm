@@ -111,7 +111,6 @@ class LeaveApplicationOverride(LeaveApplication):
             if leave_todo:
                 for each in leave_todo:
                     frappe.db.set_value("ToDo",each.get("name"),'status','Closed')
-                frappe.db.commit()
         except:
             frappe.log_error(message=frappe.get_traceback(), title="Error Closing ToDos")
 
@@ -189,7 +188,6 @@ class LeaveApplicationOverride(LeaveApplication):
         attcheck_exists = frappe.db.exists("Attendance Check",  {"shift_assignment": shift})
         if attcheck_exists:
             frappe.db.set_value("Attendance Check", attcheck_exists, {'shift_assignment': "",'has_shift_assignment': 0})
-        frappe.db.commit()
 
     def custom_notify_employee(self):
         try:
@@ -469,7 +467,6 @@ class LeaveApplicationOverride(LeaveApplication):
         if self.status == "Cancelled"  and self.leave_type == 'Annual Leave' and getdate(self.from_date) <= getdate() <= getdate(self.to_date):
             emp.status = "Active"
             emp.save()
-            frappe.db.commit()
         if self.custom_reliever_ and frappe.db.exists("Reliever Assignment", {"name": self.name}):frappe.enqueue(reassign_responsibilities, leave_application=self.name)
         self.create_leave_ledger_entry(submit=False)
         # notify leave applier about cancellation
@@ -507,8 +504,6 @@ class LeaveApplicationOverride(LeaveApplication):
                             'roster_type':'Basic',
                             'status':'Absent'
                         }).submit()
-
-                    frappe.db.commit()
         if self.status == "Approved":
             today = getdate()
 
@@ -549,7 +544,6 @@ class LeaveApplicationOverride(LeaveApplication):
                         doc = frappe.get_doc("Attendance Check",each.name)
                         frappe.db.set_value("Attendance Check", doc.name, 'attendance_status', 'On Leave')
                         apply_workflow(doc, "Approve")
-            frappe.db.commit()
         except Exception as e:
             frappe.log_error(title = "Error Updating Attendance Check", message=frappe.get_traceback())
             frappe.throw("An Error Occured while updating Attendance Checks. Please review the error logs")
@@ -634,7 +628,6 @@ def update_attendance_recods(self):
                 attendance.flags.ignore_permissions = True
                 if attendance.docstatus == 1:
                     attendance.db_set('status','Holiday')
-                    frappe.db.commit()
             else:
                 self.create_or_update_attendance(attendance_name, date, 'Holiday')
         else:

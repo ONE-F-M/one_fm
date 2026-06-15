@@ -83,7 +83,6 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 
 	def after_insert(self):
 		try:
-			frappe.db.commit()
 			self.reload()
 			# if not (self.shift_assignment and self.shift_type and self.operations_shift and self.shift_actual_start and self.shift_actual_end):
 			frappe.enqueue(after_insert_background, employee_checkin=self.name, current_shift=self.shift_assignment)

@@ -240,7 +240,6 @@ class JobApplicantOverride(JobApplicant):
 					linked_doc.flags.ignore_validate_update_after_submit = True
 					linked_doc.flags.ignore_mandatory = True
 					linked_doc.save(ignore_permissions=True)
-					frappe.db.commit()
 
 			except Exception as e:
 				frappe.log_error(
@@ -269,7 +268,6 @@ class JobApplicantOverride(JobApplicant):
 					onboard_emp.flags.ignore_validate_update_after_submit = True
 					onboard_emp.flags.ignore_mandatory = True
 					onboard_emp.save(ignore_permissions=True)
-					frappe.db.commit()
 
 			except Exception as e:
 				frappe.log_error(

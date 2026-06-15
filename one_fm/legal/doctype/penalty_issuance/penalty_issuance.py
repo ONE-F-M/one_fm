@@ -59,7 +59,6 @@ class PenaltyIssuance(Document):
 		legal_inv.save(ignore_permissions=True)
 
 		# self.db_set("legal_investigation_code", legal_inv.name)		
-		frappe.db.commit()
 
 	def issue_penalty(self):
 		for employee in self.employees:
@@ -155,7 +154,6 @@ class PenaltyIssuance(Document):
 			# 	"name": penalty.name,
 			# 	"description": "Penalty Issued by {employee_id}:{issuer}.".format(employee_id=self.issuing_employee, issuer=self.employee_name)
 			# })
-		frappe.db.commit()
 
 	def get_occurences(self, employee_id, penalty_type):
 		penalties = frappe.db.sql("""

@@ -340,8 +340,6 @@ class PurchaseOrderOverride(PurchaseOrder):
                 }
             )
 
-        frappe.db.commit()  
-
 
 
 def update_purchased_qty(new_qty, parent, item_code, doctype, qty_field):

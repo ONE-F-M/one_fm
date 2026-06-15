@@ -192,7 +192,6 @@ def create_retroactive_day_off_penalty(doc):
         if applied_penalty_code:
             penalty.applied_penalty_code = applied_penalty_code
         penalty.save(ignore_permissions=True)
-        frappe.db.commit()
     except Exception:
         frappe.log_error(
             title=_("Retroactive Day Off Penalty Creation Error"),
@@ -671,7 +670,6 @@ def create_shift_assignment_from_request(shift_request, submit=True,day_off_ot =
     assignment_doc.insert()
     if submit:
         assignment_doc.submit()
-    frappe.db.commit()
     return assignment_doc
 
 
@@ -735,7 +733,6 @@ def assign_day_off(shift_request):
             schedule.save(ignore_permissions=True)
             start_date += delta
     frappe.set_user(current_user)
-    frappe.db.commit()
 
 def assign_client_day_off(shift_request):
     shift_assignment = frappe.get_list('Shift Assignment',{'employee': shift_request.employee, 'start_date': shift_request.from_date},['name', "start_date"])
@@ -772,7 +769,6 @@ def assign_client_day_off(shift_request):
                 schedule.project = employee_project
             schedule.save(ignore_permissions=True)
             start_date += delta
-    frappe.db.commit()
 
 
 def cancel_shift_assignment_of_request(shift_request):

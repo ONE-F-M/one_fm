@@ -63,7 +63,6 @@ class Penalty(Document):
 			"deduction": 1
 		})
 		penalty.save(ignore_permissions=True)
-		frappe.db.commit()
 
 	def create_legal_investigation(self):
 		if frappe.db.exists("Legal Investigation",{"reference_doctype": self.doctype, "reference_docname": self.name}):
@@ -88,7 +87,6 @@ class Penalty(Document):
 		})
 		legal_inv.start_date = add_to_date(getdate(), days=2)
 		legal_inv.save(ignore_permissions=True)
-		frappe.db.commit()
 		return legal_inv
 
 def get_legal_manager():
@@ -244,7 +242,7 @@ def has_permission():
 	if frappe.session.user == "Administrator" or "Legal Manager" in user_roles or "Penalty Recipient" in user_roles or "Penalty Issuer" in user_roles:
 		# dont allow non Administrator user to view / edit Administrator user
 		return True
-
+	return False
 
 def notify_employee_autoreject(doc):
 	link = get_link_to_form(doc.doctype, doc.name)

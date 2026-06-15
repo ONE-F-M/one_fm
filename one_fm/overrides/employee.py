@@ -593,14 +593,12 @@ def update_user_doc(doc):
                 user_doc.flags.ignore_permissions = 1
                 user_doc.save()
                 frappe.msgprint(f"User {doc.user_id} disabled",alert=1)
-                frappe.db.commit()
         elif doc.status == "Active" and doc.status not in [old_self] and doc.user_id:
             user_doc = frappe.get_doc('User',doc.user_id)
             if user_doc.enabled == 0:
                 user_doc.enabled = 1
                 user_doc.save(ignore_permissions=1)
                 frappe.msgprint(f"User {doc.user_id} enabled",alert=1)
-                frappe.db.commit()
 
 
 def update_employee_phone_number(doc):
@@ -612,7 +610,6 @@ def update_employee_phone_number(doc):
             user_doc.mobile_no = doc.cell_number
             user_doc.save(ignore_permissions=True)
             frappe.msgprint(f"User {doc.user_id} phone number updated to {doc.cell_number}", alert=True)
-            frappe.db.commit()
 
 
 class NotifyAttendanceManagerOnStatusChange:

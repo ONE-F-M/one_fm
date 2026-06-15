@@ -33,10 +33,10 @@ class PathfinderLog(Document):
 				  ).format(self.process_name)
 			)
 
-		if not self.epic:
-			errors.append(_(
-				"The <b>Epic</b> must be set before marking this log as Active."
-			))
+		# if not self.epic:
+		# 	errors.append(_(
+		# 		"The <b>Epic</b> must be set before marking this log as Active."
+		# 	))
 
 		if not self.process_folder_link:
 			errors.append(_(

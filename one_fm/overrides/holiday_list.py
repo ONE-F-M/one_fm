@@ -88,7 +88,6 @@ class HolidayListOverride(HolidayList):
 					doc.db_set("status",'Holiday')
 					doc.db_set('leave_type','')
 					doc.db_set('leave_application','')
-		frappe.db.commit()	
 
 	def get_weekly_off_date_list(self, start_date, end_date):
 		start_date, end_date = getdate(start_date), getdate(end_date)

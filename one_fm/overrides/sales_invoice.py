@@ -105,8 +105,6 @@ class SalesInvoiceOverride(SalesInvoice):
                 self.name,
                 update_modified=False
             )
-            
-            frappe.db.commit()
 
     def clear_purchase_invoice_link(self):
         purchase_invoices = set()
@@ -139,8 +137,6 @@ class SalesInvoiceOverride(SalesInvoice):
                     new_link,
                     update_modified=False
                 )
-                
-                frappe.db.commit()
     
     def validate_contract_item_categories(self):
         for item in self.items:

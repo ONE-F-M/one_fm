@@ -99,7 +99,6 @@ def validate_serial_batch_no(row):
                     row.manufacturing_date = batch_details[0].get('manufacturing_date')
                     row.expiry_date = batch_details[0].get('expiry_date')
                     row.supplier_batch_id = batch_details[0].get('supplier_batch_id')
-                frappe.db.commit()
 
 
 def validate_item_batch(doc, method):
