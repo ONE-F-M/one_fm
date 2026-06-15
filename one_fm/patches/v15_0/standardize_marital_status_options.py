@@ -8,9 +8,7 @@ Maps old values to new standardized values:
 - Unknown -> Single
 """
 import frappe
-from frappe.desk.reportview import get_count
-from frappe.query_builder import DocType, Field
-from frappe.query_builder.functions import Count
+from frappe.query_builder import DocType
 
 
 def execute():
@@ -28,8 +26,6 @@ def execute():
         "Widow": "Widowed",
         "Unknown": "Single",
     }
-    
-    old_values = list(marital_status_mapping.keys())
     
     # Update Job Applicant marital status field using Query Builder
     JobApplicant = DocType("Job Applicant")
