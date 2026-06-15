@@ -85,8 +85,8 @@ def is_project_manager(project):
     return False
 
 def sync_assign_to_field(doc):
-    existing_doc_assignments = set([assignment.owner for assignment in get_assignments({'doctype': doc.doctype,'name': doc.name})])
-    current_field_assignments = set([assignment.user for assignment in doc.custom_assigned_to])
+    existing_doc_assignments = set([assignment.owner for assignment in get_assignments({'doctype': doc.doctype,'name': doc.name}) if assignment.owner])
+    current_field_assignments = set([assignment.user for assignment in doc.custom_assigned_to if assignment.user])
 
     assignments_to_be_removed = list(existing_doc_assignments - current_field_assignments)
     assignments_to_be_added = list(current_field_assignments - existing_doc_assignments)

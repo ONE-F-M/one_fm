@@ -296,6 +296,7 @@ one_fm.patches.v15_0.add_workflow_penalty_and_investigation
 one_fm.patches.v15_0.update_penalty_and_investigation_workflow
 one_fm.patches.v15_0.update_day_off_category_erf_2025_00030
 one_fm.patches.v15_0.add_rambo_reliever_custom_field #2026-05-14
+one_fm.patches.v15_0.update_vehicle_naming_series
 one_fm.patches.v15_0.update_purchase_receipt_prc_2026_000101_posting_date
 one_fm.patches.v15_0.update_job_offer_day_off_category_for_job_applicants
 
@@ -413,7 +414,13 @@ one_fm.patches.v15_0.backfill_governorate_in_site_to_location_mapping
 one_fm.patches.v15_0.add_courier_tracking_custom_fields
 one_fm.patches.v15_0.update_client_interview_shortlist_workflow #2026-05-13
 one_fm.patches.v15_0.add_resignation_fields_to_employee
+one_fm.patches.v15_0.add_version_custom_docperm_fields
 one_fm.patches.v15_0.add_workflow_project_manpower_request
 one_fm.patches.v15_0.update_workflow_project_manpower_request_roles
 one_fm.patches.v15_0.add_operation_admin_to_pmr_workflow
 one_fm.patches.v15_0.update_workflow_project_manpower_request_ops_edit
+one_fm.patches.v15_0.add_custom_field_mom_in_task
+one_fm.patches.v15_0.update_contracts_workflow_inactive_to_draft
+one_fm.patches.v15_0.migrate_bonus_request_to_grid
+one_fm.patches.v15_0.add_recurring_bonus_process_task
+one_fm.patches.v15_0.fix_parentfield_bonus_items
