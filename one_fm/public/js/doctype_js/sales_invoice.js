@@ -1048,6 +1048,7 @@ function si_render_attendance_modal(data, frm) {
     let from_date = new Date(fy, (fm || 1) - 1, fd || 1);
     let to_date = new Date(ty, (tm || 1) - 1, td || 1);
     let year = from_date.getFullYear();
+    let month_idx = from_date.getMonth();
     let days_in_month = new Date(year, month_idx + 1, 0).getDate();
 
     let attendance_based_on = data.attendance_based_on || "Attendance Status";
@@ -1265,6 +1266,7 @@ function si_build_group_table(
                 day_col_totals[i] += h;
             }
             table_html += `<td style="background-color: ${bg}">${frappe.utils.escape_html(val_short)}</td>`;
+        }
 
         group_total_working += working_total;
         group_total_off += days_off;
