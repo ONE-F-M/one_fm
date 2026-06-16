@@ -3,13 +3,6 @@ def get_vehicle_properties():
         {
             "doc_type": "Vehicle",
             "doctype_or_field": "DocType",
-            "property": "autoname",
-            "property_type": "Data",
-            "value": "VHL-.####"
-        },
-        {
-            "doc_type": "Vehicle",
-            "doctype_or_field": "DocType",
             "property": "image_field",
             "property_type": "Data",
             "value": "image"

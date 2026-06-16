@@ -1,0 +1,35 @@
+{
+ "charts": [],
+ "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Rambo</span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Rambo Employee List\",\"col\":3}}]",
+ "creation": "2026-06-10 20:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "users",
+ "idx": 0,
+ "is_standard": 1,
+ "label": "Rambo",
+ "links": [],
+ "modified": "2026-06-10 23:35:00.000000",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Rambo",
+ "owner": "Administrator",
+ "parent_page": "GSD",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 12.0,
+ "shortcuts": [
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "label": "Rambo Employee List",
+   "link_to": "Employee",
+   "stats_filter": "{\"custom_is_rambo_reliever\":[\"=\",1]}",
+   "type": "DocType"
+  }
+ ],
+ "title": "Rambo"
+}

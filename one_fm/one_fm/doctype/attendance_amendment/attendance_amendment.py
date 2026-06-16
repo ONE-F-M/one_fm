@@ -506,3 +506,100 @@ def get_pdf_header_metadata(amendment_name: str) -> dict:
 		"client_name": client_name,
 		"project_name": doc.project or ""
 	}
+
+
+@frappe.whitelist()
+def get_version_changes(amendment_name: str) -> list:
+	"""Return a list of version change entries for an Attendance Amendment document.
+
+	Each entry contains:
+	  - modified_by: user who made the change
+	  - full_name: full name of the user
+	  - modified_on: datetime of the change
+	  - changes: list of {field, old_value, new_value}
+	  - row_changes: list of {table, row_index, row_name, changes: [{field, old_value, new_value}]}
+	  - added_rows: list of {table, row_data}
+	  - removed_rows: list of {table, row_data}
+	"""
+	import json
+
+	doc = frappe.get_doc("Attendance Amendment", amendment_name)
+	doc.check_permission("read")
+
+	Version = frappe.qb.DocType("Version")
+	versions = (
+		frappe.qb.from_(Version)
+		.select(Version.name, Version.owner, Version.creation, Version.data)
+		.where(Version.ref_doctype == "Attendance Amendment")
+		.where(Version.docname == amendment_name)
+		.orderby(Version.creation, order=frappe.qb.desc)
+	).run(as_dict=True)
+
+	results = []
+	for v in versions:
+		if not v.data:
+			continue
+
+		try:
+			data = json.loads(v.data)
+		except (json.JSONDecodeError, TypeError):
+			continue
+
+		entry = {
+			"modified_by": v.owner,
+			"full_name": frappe.db.get_value("User", v.owner, "full_name") or v.owner,
+			"modified_on": cstr(v.creation),
+			"changes": [],
+			"row_changes": [],
+			"added_rows": [],
+			"removed_rows": [],
+		}
+
+		# Field-level changes: [[fieldname, old, new], ...]
+		for change in data.get("changed", []):
+			if len(change) >= 3:
+				entry["changes"].append({
+					"field": cstr(change[0]),
+					"old_value": cstr(change[1]) if change[1] is not None else "",
+					"new_value": cstr(change[2]) if change[2] is not None else "",
+				})
+
+		# Child table row changes: [[table_fieldname, row_index, row_name, [[field, old, new], ...]], ...]
+		for row_change in data.get("row_changed", []):
+			if len(row_change) >= 4:
+				rc_entry = {
+					"table": cstr(row_change[0]),
+					"row_index": row_change[1],
+					"row_name": cstr(row_change[2]),
+					"changes": [],
+				}
+				for field_change in row_change[3]:
+					if len(field_change) >= 3:
+						rc_entry["changes"].append({
+							"field": cstr(field_change[0]),
+							"old_value": cstr(field_change[1]) if field_change[1] is not None else "",
+							"new_value": cstr(field_change[2]) if field_change[2] is not None else "",
+						})
+				entry["row_changes"].append(rc_entry)
+
+		# Added rows: [[table_fieldname, {row_dict}], ...]
+		for added in data.get("added", []):
+			if len(added) >= 2:
+				entry["added_rows"].append({
+					"table": cstr(added[0]),
+					"row_data": added[1] if isinstance(added[1], dict) else {},
+				})
+
+		# Removed rows: [[table_fieldname, {row_dict}], ...]
+		for removed in data.get("removed", []):
+			if len(removed) >= 2:
+				entry["removed_rows"].append({
+					"table": cstr(removed[0]),
+					"row_data": removed[1] if isinstance(removed[1], dict) else {},
+				})
+
+		# Only include entries with actual changes
+		if entry["changes"] or entry["row_changes"] or entry["added_rows"] or entry["removed_rows"]:
+			results.append(entry)
+
+	return results

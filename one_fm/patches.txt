@@ -222,7 +222,7 @@ one_fm.patches.v15_0.add_workflow_on_the_job_training #2
 one_fm.patches.v15_0.reprocess_preparation_submit
 one_fm.patches.v15_0.add_banner_message_field_to_workflow_document_state
 one_fm.patches.v15_0.add_stock_settings_custom_fields
-one_fm.patches.v15_0.update_contracts_workflow #rerun-2026-05-04-workflow-confirm
+one_fm.patches.v15_0.update_contracts_workflow #rerun-2026-06-15-workflow-confirm
 one_fm.patches.v15_0.add_workflow_shift_permission
 one_fm.patches.v15_0.update_attendance_is_unscheduled
 one_fm.patches.v15_0.update_employee_status_options
@@ -295,6 +295,9 @@ one_fm.patches.v15_0.add_workflow_penalty_and_investigation
 one_fm.patches.v15_0.update_penalty_and_investigation_workflow
 one_fm.patches.v15_0.add_rambo_reliever_custom_field #2026-05-14
 one_fm.patches.v15_0.update_vehicle_naming_series
+one_fm.patches.v15_0.remove_vehicle_autoname_property_setter
+one_fm.patches.v15_0.rename_fleet_workspace_to_transportation #2026-06-10 #2
+one_fm.patches.v15_0.rename_route_planner_page_to_transportation_schedule
 [post_model_sync]
 one_fm.patches.v15_0.process_task_for_wiki_employee_task
 one_fm.patches.v15_0.add_assignment_rule_returning_to_operations_supervisor_of_client_event #2

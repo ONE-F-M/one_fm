@@ -1,4 +1,4 @@
-frappe.pages['route-planner'].on_page_load = function (wrapper) {
+frappe.pages['transportation-schedule'].on_page_load = function (wrapper) {
     injectRPLoadingStyles();
     $(wrapper).html(`
         <div id="rp-loading">
@@ -29,7 +29,7 @@ frappe.pages['route-planner'].on_page_load = function (wrapper) {
 
 function fetchRPData(wrapper) {
     frappe.call({
-        method: 'one_fm.one_fm.page.route_planner.route_planner.get_route_planner_data',
+        method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.get_route_planner_data',
         callback: function (r) {
             if (!r.message || r.message.status === 'error') {
                 frappe.msgprint(r.message ? r.message.message : 'Failed to load data');
@@ -92,7 +92,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 planLoading: false,
 
                 // ── Theme ──
-                isDark: localStorage.getItem('route-planner-theme') === 'dark',
+                isDark: localStorage.getItem('transportation-schedule-theme') === 'dark',
             };
         },
 
@@ -812,8 +812,9 @@ function mountRoutePlannerApp(wrapper, data) {
                         {
                             fieldtype: 'Data', fieldname: 'trip_name',
                             label: 'Trip Name', reqd: 1,
-                            description: 'Name this trip (e.g. "Morning Run 2", "Evening Pickup B")',
-                            placeholder: 'e.g. Morning Run 2'
+                            description: 'Auto-generated sequential trip name.',
+                            default: self.generateTripName(vehicleId),
+                            read_only: 1
                         },
                         { fieldtype: 'Section Break' },
                         {
@@ -1032,9 +1033,10 @@ function mountRoutePlannerApp(wrapper, data) {
                         },
                         {
                             fieldtype: 'Data', fieldname: 'trip_name',
-                            label: 'Trip Name',
-                            description: 'Give this trip a name (e.g. "Morning Shift A")',
-                            placeholder: 'e.g. Morning Shift A'
+                            label: 'Trip Name', reqd: 1,
+                            description: 'Auto-generated sequential trip name.',
+                            default: self.generateTripName(vehicleId),
+                            read_only: 1
                         },
                         { fieldtype: 'Section Break' },
                         {
@@ -1715,19 +1717,61 @@ function mountRoutePlannerApp(wrapper, data) {
                 return v ? v.label : item.vehicleId;
             },
 
+            /**
+             * Auto-generate sequential trip name for a vehicle.
+             * Format: {vehicleNumber}{2-digit-sequence}
+             * Leased vehicles: S-{vehicleNumber}{2-digit-sequence}
+             *
+             * vehicleNumber is derived from VHL-#### name (e.g., VHL-0015 → 15)
+             * sequence is 01-based count of existing trips on that vehicle + 1
+             */
+            generateTripName(vehicleId) {
+                const vehicle = this.planData.vehicles.find(v => v.id === vehicleId);
+                if (!vehicle) return '';
+
+                // Extract integer from VHL-#### pattern; fallback to 1-based vehicle index
+                const match = vehicleId.match(/VHL-(\d+)/i);
+                let vehicleNumber = match ? parseInt(match[1], 10) : 0;
+                if (!vehicleNumber) {
+                    // Fallback: use 1-based position in vehicles list
+                    const idx = this.planData.vehicles.findIndex(v => v.id === vehicleId);
+                    vehicleNumber = idx >= 0 ? idx + 1 : 1;
+                }
+
+                // Count existing unique trips on this vehicle
+                const existingTripIds = new Set();
+                this.swimItems.forEach(item => {
+                    if (item.vehicleId !== vehicleId) return;
+                    if (item.tripId) {
+                        existingTripIds.add(item.tripId);
+                    } else {
+                        existingTripIds.add(item.id);
+                    }
+                });
+                const nextSeq = existingTripIds.size + 1;
+
+                // Format: vehicleNumber + 2-digit sequence (e.g., 15 + 01 = "1501")
+                const seqStr = String(nextSeq).padStart(2, '0');
+                const tripName = `${vehicleNumber}${seqStr}`;
+
+                // Leased vehicles get "S-" prefix
+                const prefix = vehicle.is_leased ? 'S-' : '';
+                return `${prefix}${tripName}`;
+            },
+
             // ─ Persistence (save/load to Route Plan DocType) ──────────────
 
             loadSavedAssignments() {
                 this.planLoading = true;
                 // First fetch available plans, then load active
                 frappe.call({
-                    method: 'one_fm.one_fm.page.route_planner.route_planner.get_route_plans',
+                    method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.get_route_plans',
                     async: true,
                     callback: (r) => {
                         this.planList = r.message || [];
                         // Now load the active plan
                         frappe.call({
-                            method: 'one_fm.one_fm.page.route_planner.route_planner.load_assignments',
+                            method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.load_assignments',
                             args: { plan_name: '' }, // empty = load active
                             async: true,
                             callback: (r2) => {
@@ -1801,7 +1845,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 if (!planName) return;
                 this.planLoading = true;
                 frappe.call({
-                    method: 'one_fm.one_fm.page.route_planner.route_planner.load_assignments',
+                    method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.load_assignments',
                     args: { plan_name: planName },
                     async: true,
                     callback: (r) => {
@@ -1855,7 +1899,7 @@ function mountRoutePlannerApp(wrapper, data) {
                     primary_action_label: __("Create"),
                     primary_action(values) {
                         frappe.call({
-                            method: 'one_fm.one_fm.page.route_planner.route_planner.create_route_plan',
+                            method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.create_route_plan',
                             args: values,
                             callback: (r) => {
                                 if (r.message && r.message.status === 'ok') {
@@ -1883,7 +1927,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 const doUpdate = () => {
                     frappe.call({
-                        method: 'one_fm.one_fm.page.route_planner.route_planner.update_route_plan_status',
+                        method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.update_route_plan_status',
                         args: { plan_name: planName, new_status: newStatus },
                         callback: (r) => {
                             if (r.message && r.message.status === 'ok') {
@@ -1919,7 +1963,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
             refreshPlanList(callback) {
                 frappe.call({
-                    method: 'one_fm.one_fm.page.route_planner.route_planner.get_route_plans',
+                    method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.get_route_plans',
                     async: true,
                     callback: (r) => {
                         this.planList = r.message || [];
@@ -1951,7 +1995,7 @@ function mountRoutePlannerApp(wrapper, data) {
                     const cards = [...this.assignedCards];
 
                     frappe.call({
-                        method: 'one_fm.one_fm.page.route_planner.route_planner.save_assignments',
+                        method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.save_assignments',
                         args: {
                             plan_name: this.currentPlan.name,
                             swim_items: JSON.stringify(items),
@@ -2073,7 +2117,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
             toggleTheme() {
                 this.isDark = !this.isDark;
-                localStorage.setItem('route-planner-theme', this.isDark ? 'dark' : 'light');
+                localStorage.setItem('transportation-schedule-theme', this.isDark ? 'dark' : 'light');
                 this.applyTheme();
             },
 
@@ -2087,9 +2131,15 @@ function mountRoutePlannerApp(wrapper, data) {
             // ─ Manifest generation (ported verbatim from vis version) ───────
 
             async openManifest() {
-                const routeData = this.buildManifestData();
+                if (!this.currentPlan || !this.currentPlan.name) {
+                    frappe.show_alert({
+                        message: 'No plan is loaded. Save a plan first before opening the manifest.',
+                        indicator: 'orange'
+                    });
+                    return;
+                }
 
-                if (!routeData.response.routes.length) {
+                if (this.swimItems.length === 0) {
                     frappe.show_alert({
                         message: 'No assigned shipments to generate a manifest from.',
                         indicator: 'orange'
@@ -2097,43 +2147,13 @@ function mountRoutePlannerApp(wrapper, data) {
                     return;
                 }
 
-                const btn = document.querySelector('.rp-btn-manifest');
-                const orig = btn ? btn.innerHTML : '';
-                if (btn) {
-                    btn.disabled = true;
-                    btn.innerHTML = '<span class="rp-icon">sync</span> Generating...';
-                }
+                // Navigate to the persistent manifest page
+                const planName = this.currentPlan.name;
+                const manifestUrl = `/app/transportation-manifest/${planName}`;
+                window.open(manifestUrl, '_blank');
 
-                let tpl;
-                try {
-                    const res = await fetch('/assets/one_fm/html/route_manifest_template.html?v=' + Date.now());
-                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                    tpl = await res.text();
-                } catch (err) {
-                    frappe.show_alert({ message: `Template load failed: ${err.message}`, indicator: 'red' }, 8);
-                    if (btn) {
-                        btn.disabled = false;
-                        btn.innerHTML = orig;
-                    }
-                    return;
-                }
-
-                const safeJson = JSON.stringify(routeData).replace(/<\//g, '<\\/');
-                // Inject ROUTE_DATA inside the template's existing <body><script>
-                const dataLine = 'const ROUTE_DATA = ' + safeJson + ';\nconst FRAPPE_CSRF_TOKEN = "' + frappe.csrf_token + '";\nconst SITE_URL = window.location.origin;\n';
-                // Use regex to insert after first <script> in <body>
-                const finalHtml = tpl.replace(/(<body>[\s\S]*?<script>)/, '$1\n' + dataLine);
-                const blob = new Blob([finalHtml], { type: 'text/html' });
-                const url = URL.createObjectURL(blob);
-                window.open(url, '_blank');
-                setTimeout(() => URL.revokeObjectURL(url), 60000);
-
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = orig;
-                }
                 frappe.show_alert({
-                    message: `Manifest opened — ${routeData.response.routes.length} vehicles`,
+                    message: `Manifest opened for plan "${this.currentPlan.title || planName}"`,
                     indicator: 'green'
                 }, 4);
             },
@@ -2244,14 +2264,24 @@ function mountRoutePlannerApp(wrapper, data) {
                     const rE = new Date(vItems[vItems.length - 1].end).toISOString();
                     const totMs = new Date(rE) - new Date(rS);
 
+                    // Trip Time = sum of only actual trip item durations (excludes idle gaps between trips)
+                    const tripTimeMs = vItems.reduce((sum, item) => {
+                        return sum + (new Date(item.end) - new Date(item.start));
+                    }, 0);
+
+                    // Cap both at 24 hours (86400s) for a single daily manifest
+                    const MAX_DAY_SEC = 86400;
+                    const totalSec = Math.min(Math.round(totMs / 1000), MAX_DAY_SEC);
+                    const tripSec = Math.min(Math.round(tripTimeMs / 1000), MAX_DAY_SEC);
+
                     routes.push({
                         vehicleIndex: vi, vehicleLabel: v.label,
                         vehicleStartTime: rS, vehicleEndTime: rE,
                         visits, transitions: trans,
                         metrics: {
                             travelDistanceMeters: 0,
-                            totalDuration: `${Math.round(totMs / 1000)}s`,
-                            travelDuration: `${Math.round(totMs / 1000)}s`
+                            totalDuration: `${totalSec}s`,
+                            travelDuration: `${tripSec}s`
                         }
                     });
                 });
