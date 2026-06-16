@@ -9,7 +9,7 @@ doctype using the same pipeline as `attendance_amendment.py`.
 import re
 import frappe
 from frappe import _
-from frappe.utils import getdate, get_last_day, flt
+from frappe.utils import getdate, flt
 from calendar import monthrange
 
 
@@ -84,6 +84,7 @@ def get_attendance_preview_for_invoice(invoice_name: str) -> dict:
 			"month": month_name,
 			"year": str(year),
 			"project": project,
+			"attendance_based_on": attendance_based_on,
 			"workflow_state": "Approved",
 		}
 		if site:
@@ -189,7 +190,6 @@ def _get_live_attendance_data(project: str, site: str, month_num: int, year: int
 		get_employee_details,
 		get_attendance_map,
 		get_rows,
-		get_day_off_attendance_map,
 		get_ot_attendance_map,
 		get_ot_rows,
 	)
@@ -265,9 +265,7 @@ def _raw_rows_to_dicts(rows, total_days: int, attendance_based_on: str) -> list:
 # ==================================================================
 
 def _build_pdf_metadata(si, month_name: str, year: int) -> dict:
-	"""Build the header metadata dict for the PDF export."""
-	company_name = frappe.defaults.get_user_default("Company") or ""
-	logo_url = ""
+	company_name = getattr(si, "company", None) or frappe.defaults.get_user_default("Company") or ""
 	client_name = ""
 
 	# Get Letter Head logo

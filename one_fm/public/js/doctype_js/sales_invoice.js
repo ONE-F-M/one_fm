@@ -70,7 +70,7 @@ frappe.ui.form.on('Sales Invoice', {
         }
 
         // Preview Attendance button — visible when Contracts field has data
-        if (frm.doc.contracts) {
+        if (!frm.is_new() && frm.doc.contracts) {
             frm.add_custom_button(__("Preview Attendance"), function() {
                 si_show_attendance_preview(frm);
             });
@@ -1043,10 +1043,11 @@ function si_render_attendance_modal(data, frm) {
         return;
     }
 
-    let from_date = new Date(data.from_date);
-    let to_date = new Date(data.to_date);
+    let [fy, fm, fd] = (data.from_date || "").split("-").map(Number);
+    let [ty, tm, td] = (data.to_date || "").split("-").map(Number);
+    let from_date = new Date(fy, (fm || 1) - 1, fd || 1);
+    let to_date = new Date(ty, (tm || 1) - 1, td || 1);
     let year = from_date.getFullYear();
-    let month_idx = from_date.getMonth();
     let days_in_month = new Date(year, month_idx + 1, 0).getDate();
 
     let attendance_based_on = data.attendance_based_on || "Attendance Status";
@@ -1212,9 +1213,8 @@ function si_build_group_table(
 
         table_html += `<tr>`;
         table_html += `<td style="text-align: left; font-size: 10px;">${frappe.utils.escape_html(item_type)}</td>`;
-        table_html += `<td>${row.employee_id || ''}</td>`;
-        table_html += `<td style="text-align: left;">${row.employee_name || ''}</td>`;
-
+        table_html += `<td>${frappe.utils.escape_html(row.employee_id || "")}</td>`;
+        table_html += `<td style="text-align: left;">${frappe.utils.escape_html(row.employee_name || "")}</td>`;
         let working_total = 0;
         let days_off = 0;
         let hours_total = 0;
@@ -1264,8 +1264,7 @@ function si_build_group_table(
                 let h = Number(hour_val) || 0;
                 day_col_totals[i] += h;
             }
-            table_html += `<td style="background-color: ${bg}">${val_short}</td>`;
-        }
+            table_html += `<td style="background-color: ${bg}">${frappe.utils.escape_html(val_short)}</td>`;
 
         group_total_working += working_total;
         group_total_off += days_off;
