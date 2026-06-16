@@ -69,6 +69,13 @@ frappe.ui.form.on('Sales Invoice', {
             frm.set_df_property("currency", "read_only", 1);
         }
 
+        // Preview Attendance button — visible when Contracts field has data
+        if (!frm.is_new() && frm.doc.contracts) {
+            frm.add_custom_button(__("Preview Attendance"), function() {
+                si_show_attendance_preview(frm);
+            });
+        }
+
     },
     onload: function(frm){
         toggle_items_add_row(frm);
@@ -1009,3 +1016,361 @@ function fetch_items_from_contract(frm, contract, month, year, attendance_based_
     });
 }
 
+// ============================================================
+// Preview Attendance Modal from Sales Invoice
+// ============================================================
+
+function si_show_attendance_preview(frm) {
+    frappe.call({
+        method: "one_fm.one_fm.sales_invoice_attendance_preview.get_attendance_preview_for_invoice",
+        args: { invoice_name: frm.doc.name },
+        freeze: true,
+        freeze_message: __("Loading Attendance Preview..."),
+        callback: function(r) {
+            if (r.message) {
+                si_render_attendance_modal(r.message, frm);
+            }
+        }
+    });
+}
+
+function si_render_attendance_modal(data, frm) {
+    let items = data.items || [];
+    let ot_items = data.ot_items || [];
+
+    if (!items.length && !ot_items.length) {
+        frappe.msgprint(__("No attendance details to preview."));
+        return;
+    }
+
+    let [fy, fm, fd] = (data.from_date || "").split("-").map(Number);
+    let [ty, tm, td] = (data.to_date || "").split("-").map(Number);
+    let from_date = new Date(fy, (fm || 1) - 1, fd || 1);
+    let to_date = new Date(ty, (tm || 1) - 1, td || 1);
+    let year = from_date.getFullYear();
+    let days_in_month = new Date(year, month_idx + 1, 0).getDate();
+
+    let attendance_based_on = data.attendance_based_on || "Attendance Status";
+    let item_type_map = data.item_type_map || {};
+    let meta = data.meta || {};
+
+    let is_hours_mode = ["Shift Hours", "Working Hours"].includes(attendance_based_on);
+
+    const status_map = {
+        "Present": "P", "Absent": "A", "On Leave": "L", "Half Day": "HD",
+        "Work From Home": "WFH", "Day Off": "DO", "Client Day Off": "CDO",
+        "Fingerprint Appointment": "FA", "Medical Appointment": "MA",
+        "Holiday": "H", "On Hold": "OH"
+    };
+
+    const format_num = (v, decimals) => {
+        let n = Number(v);
+        if (isNaN(n)) return String(v || 0);
+        return decimals !== undefined ? n.toFixed(decimals) : String(n);
+    };
+
+    // ---- Group rows by sale_item ----
+    let groups = {};
+    let group_order = [];
+
+    for (let row of items) {
+        let key = row.sale_item || __("(No Sale Item)");
+        if (!groups[key]) {
+            groups[key] = [];
+            group_order.push(key);
+        }
+        groups[key].push(row);
+    }
+
+    // ---- Build HTML ----
+    let full_html = "";
+
+    // Legend
+    full_html += `<div style="margin-bottom: 12px; padding: 8px 12px; background: #f8f9fa; border-radius: 6px; font-size: 11px; border: 1px solid #e2e8f0;">
+        <strong>${__("Legend")}:</strong>
+        P = ${__("Present")}, A = ${__("Absent")}, L = ${__("On Leave")}, HD = ${__("Half Day")},
+        WFH = ${__("Work From Home")}, DO = ${__("Day Off")}, CDO = ${__("Client Day Off")},
+        FA = ${__("Fingerprint Appt")}, MA = ${__("Medical Appt")}, H = ${__("Holiday")}, OH = ${__("On Hold")}
+    </div>`;
+
+    // Build each group table
+    for (let sale_item of group_order) {
+        full_html += si_build_group_table(
+            sale_item, groups[sale_item], year, month_idx, days_in_month,
+            is_hours_mode, status_map, format_num, item_type_map, "#edf2f7", "#e2e8f0", "#f1f5f9"
+        );
+    }
+
+    // Overtime section
+    if (ot_items && ot_items.length > 0) {
+        full_html += `<div style="margin-top: 28px; margin-bottom: 12px; padding: 8px 14px; background: #EBEBEB; color: #333; border-radius: 6px; font-size: 15px; font-weight: bold;">
+            <i class="fa fa-clock-o" style="margin-right: 6px;"></i>${__("Overtime Details")}
+        </div>`;
+
+        let ot_groups = {};
+        let ot_group_order = [];
+        for (let row of ot_items) {
+            let key = row.sale_item || __("(No Sale Item)");
+            if (!ot_groups[key]) {
+                ot_groups[key] = [];
+                ot_group_order.push(key);
+            }
+            ot_groups[key].push(row);
+        }
+
+        for (let sale_item of ot_group_order) {
+            full_html += si_build_group_table(
+                sale_item, ot_groups[sale_item], year, month_idx, days_in_month,
+                is_hours_mode, status_map, format_num, item_type_map, "#fff5f5", "#feebc8", "#fffaf0"
+            );
+        }
+    }
+
+    // ---- Create dialog ----
+    let dialog = new frappe.ui.Dialog({
+        title: __("Attendance Preview"),
+        size: "extra-large",
+        fields: [
+            {
+                fieldname: "preview_html",
+                fieldtype: "HTML"
+            }
+        ]
+    });
+
+    dialog.fields_dict.preview_html.$wrapper.html(full_html);
+
+    // 95% modal width
+    dialog.$wrapper.find('.modal-dialog').css('max-width', '95%');
+
+    // PDF Export button
+    let $pdf_btn = $(`<button class="btn btn-xs btn-default" title="${__("Export as PDF")}" style="margin-left: 8px;">
+        <i class="fa fa-file-pdf-o"></i> ${__("PDF")}
+    </button>`);
+
+    $pdf_btn.on('click', function() {
+        si_export_preview_as_pdf(full_html, meta);
+    });
+
+    dialog.$wrapper.find('.modal-header .modal-title').after($pdf_btn);
+
+    dialog.show();
+}
+
+function si_build_group_table(
+    sale_item, group_rows, year, month_idx, days_in_month,
+    is_hours_mode, status_map, format_num, item_type_map,
+    header_bg, friday_header_bg, friday_cell_bg
+) {
+    let table_html = `<div style="overflow-x: auto; margin-bottom: 16px;">
+    <div class="group-header-bar" style="margin-top: 16px; margin-bottom: 8px; padding: 6px 12px; background: #EBEBEB; color: #333; border-radius: 6px; font-size: 13px; display: table; width: 100%;">
+        <strong>${__("Sale Item")}:</strong> ${frappe.utils.escape_html(sale_item)}
+        <span style="float: right; opacity: 0.85;">${group_rows.length} ${__("employee(s)")}</span>
+    </div>
+    <table class="table table-bordered table-sm" style="font-size: 11px; text-align: center; border-collapse: collapse; white-space: nowrap; width: 100%;">`;
+
+    // Header Row 1: Day names
+    table_html += `<thead><tr style="background: ${header_bg};">`;
+    table_html += `<th rowspan="2" style="vertical-align: middle; min-width: 110px; text-align: left;">${__("Role Name")}</th>`;
+    table_html += `<th rowspan="2" style="vertical-align: middle; min-width: 70px;">${__("Employee ID")}</th>`;
+    table_html += `<th rowspan="2" style="vertical-align: middle; min-width: 130px; text-align: left;">${__("Employee Name")}</th>`;
+
+    for (let i = 1; i <= days_in_month; i++) {
+        let d = new Date(year, month_idx, i);
+        let day_name = d.toLocaleDateString('en-US', { weekday: 'short' });
+        let is_friday = d.getDay() === 5;
+        let bg = is_friday ? friday_header_bg : '';
+        table_html += `<th style="background-color: ${bg}; min-width: 32px;">${day_name}</th>`;
+    }
+
+    table_html += `<th rowspan="2" style="vertical-align: middle; min-width: 70px;">${__("Working Days")}</th>`;
+    table_html += `<th rowspan="2" style="vertical-align: middle; min-width: 60px;">${__("Days Off")}</th>`;
+    if (is_hours_mode) {
+        table_html += `<th rowspan="2" style="vertical-align: middle; min-width: 70px;">${__("Total Hours")}</th>`;
+    }
+    table_html += `</tr>`;
+
+    // Header Row 2: Dates (D/M)
+    table_html += `<tr style="background: ${header_bg};">`;
+    let m_display = month_idx + 1;
+    for (let i = 1; i <= days_in_month; i++) {
+        let d = new Date(year, month_idx, i);
+        let is_friday = d.getDay() === 5;
+        let bg = is_friday ? friday_header_bg : '';
+        table_html += `<th style="background-color: ${bg}">${i}/${m_display}</th>`;
+    }
+    table_html += `</tr></thead><tbody>`;
+
+    // Totals
+    let group_total_working = 0;
+    let group_total_off = 0;
+    let group_total_hours = 0;
+    let day_col_totals = new Array(days_in_month + 1).fill(0);
+
+    // Data rows
+    for (let row of group_rows) {
+        let item_type = item_type_map[row.sale_item] || "";
+
+        table_html += `<tr>`;
+        table_html += `<td style="text-align: left; font-size: 10px;">${frappe.utils.escape_html(item_type)}</td>`;
+        table_html += `<td>${frappe.utils.escape_html(row.employee_id || "")}</td>`;
+        table_html += `<td style="text-align: left;">${frappe.utils.escape_html(row.employee_name || "")}</td>`;
+        let working_total = 0;
+        let days_off = 0;
+        let hours_total = 0;
+
+        for (let i = 1; i <= days_in_month; i++) {
+            let d = new Date(year, month_idx, i);
+            let is_friday = d.getDay() === 5;
+            let bg = is_friday ? friday_cell_bg : '';
+            let status_val = row['day_' + i] || '';
+            let hour_val = row['day_' + i + '_hour'];
+            let val_short = '';
+
+            if (is_hours_mode) {
+                let eff_status = status_val || '';
+                let has_numeric_hour = (hour_val !== undefined && hour_val !== null && hour_val !== '' && !isNaN(Number(hour_val)));
+                let is_hour_a_status = (hour_val && isNaN(Number(hour_val)) && String(hour_val) !== 'N/A');
+                if (!eff_status && is_hour_a_status) eff_status = String(hour_val);
+
+                if (has_numeric_hour) {
+                    val_short = format_num(hour_val, 2);
+                    let h = Number(hour_val) || 0;
+                    hours_total += h;
+                    if (h > 0) working_total++;
+                } else if (eff_status === "Day Off" || eff_status === "Client Day Off") {
+                    val_short = status_map[eff_status] || eff_status;
+                    days_off++;
+                } else if (status_map[eff_status] && eff_status !== "Present") {
+                    val_short = status_map[eff_status];
+                    if (eff_status === "Half Day") working_total += 0.5;
+                    else if (eff_status === "Working" || eff_status === "Work From Home") working_total++;
+                } else if (eff_status && eff_status !== "Present") {
+                    val_short = eff_status;
+                }
+            } else {
+                val_short = status_map[status_val] || status_val;
+
+                if (status_val === "Present" || status_val === "Working" || status_val === "Work From Home") {
+                    working_total++;
+                } else if (status_val === "Half Day") {
+                    working_total += 0.5;
+                } else if (status_val === "Day Off" || status_val === "Client Day Off") {
+                    days_off++;
+                }
+            }
+
+            if (is_hours_mode) {
+                let h = Number(hour_val) || 0;
+                day_col_totals[i] += h;
+            }
+            table_html += `<td style="background-color: ${bg}">${frappe.utils.escape_html(val_short)}</td>`;
+
+        group_total_working += working_total;
+        group_total_off += days_off;
+        group_total_hours += hours_total;
+
+        table_html += `<td><strong>${is_hours_mode ? format_num(working_total, 2) : format_num(working_total)}</strong></td>`;
+        table_html += `<td><strong>${days_off}</strong></td>`;
+        if (is_hours_mode) {
+            table_html += `<td><strong>${format_num(hours_total, 2)}</strong></td>`;
+        }
+        table_html += `</tr>`;
+    }
+
+    // Summary Total row
+    table_html += `<tr style="background: #EBEBEB; font-weight: bold; border-top: 2px solid #999;">`;
+    table_html += `<td colspan="3" style="text-align: right; padding-right: 8px;">
+        ${__("Total")}: ${group_rows.length} ${__("employee(s)")}
+    </td>`;
+    for (let i = 1; i <= days_in_month; i++) {
+        if (is_hours_mode && day_col_totals[i] > 0) {
+            table_html += `<td>${format_num(day_col_totals[i], 2)}</td>`;
+        } else {
+            table_html += `<td></td>`;
+        }
+    }
+    table_html += `<td>${is_hours_mode ? format_num(group_total_working, 2) : format_num(group_total_working)}</td>`;
+    table_html += `<td>${group_total_off}</td>`;
+    if (is_hours_mode) {
+        table_html += `<td>${format_num(group_total_hours, 2)}</td>`;
+    }
+    table_html += `</tr>`;
+
+    table_html += `</tbody></table></div>`;
+    return table_html;
+}
+
+function si_export_preview_as_pdf(html_content, meta) {
+    let title = `${__("Attendance Preview")} - ${meta.project_name || ''} - ${meta.period_str || ''}`;
+
+    let logo_url = meta.logo_url || "";
+    if (logo_url && !logo_url.startsWith("http")) {
+        logo_url = window.location.origin + (logo_url.startsWith("/") ? "" : "/") + logo_url;
+    }
+    let company_name = meta.company_name || "";
+    let client_name = meta.client_name || "";
+    let project_name = meta.project_name || "";
+    let period_str = meta.period_str || "";
+
+    let header_html = `<div style="margin-bottom: 12px; padding: 10px 14px; background: #EBEBEB; border-radius: 6px; font-size: 11px; display: flex; align-items: flex-start; gap: 40px;">`;
+    if (logo_url) {
+        header_html += `<img src="${logo_url}" style="max-height: 50px; max-width: 120px;" />`;
+    }
+    header_html += `<div>
+        <table style="border: none; font-size: 11px; border-collapse: collapse; text-align: left;">
+            <tr><td style="border: none; padding: 1px 12px 1px 0; font-weight: bold; text-align: left; white-space: nowrap;">${__("Project")}:</td><td style="border: none; padding: 1px 0; text-align: left;">${frappe.utils.escape_html(project_name)}</td></tr>
+            <tr><td style="border: none; padding: 1px 12px 1px 0; font-weight: bold; text-align: left; white-space: nowrap;">${__("Company")}:</td><td style="border: none; padding: 1px 0; text-align: left;">${frappe.utils.escape_html(company_name)}</td></tr>
+            <tr><td style="border: none; padding: 1px 12px 1px 0; font-weight: bold; text-align: left; white-space: nowrap;">${__("Client")}:</td><td style="border: none; padding: 1px 0; text-align: left;">${frappe.utils.escape_html(client_name)}</td></tr>
+            <tr><td style="border: none; padding: 1px 12px 1px 0; font-weight: bold; text-align: left; white-space: nowrap;">${__("Report Period")}:</td><td style="border: none; padding: 1px 0; text-align: left;">${frappe.utils.escape_html(period_str)}</td></tr>
+        </table>
+    </div></div>`;
+
+    let print_html = `<!DOCTYPE html>
+<html>
+<head>
+    <title>${title}</title>
+    <style>
+        @page { size: landscape; margin: 5mm; }
+        * { box-sizing: border-box; }
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 9px; margin: 0; padding: 5px; }
+        table { border-collapse: collapse; margin-bottom: 8px; page-break-inside: auto; width: 100%; }
+        thead { display: table-header-group; }
+        tr { page-break-inside: avoid; }
+        th, td { border: 1px solid #bbb; padding: 2px 3px; text-align: center; font-size: 8px; white-space: nowrap; }
+        th { background: #EBEBEB; font-weight: bold; }
+        strong { font-weight: bold; }
+        div[style*="overflow-x"] { overflow: visible !important; }
+        .group-header-bar { display: table; width: 100%; page-break-after: avoid; }
+        .group-section { page-break-inside: auto; }
+        @media print { button { display: none !important; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+    </style>
+</head>
+<body>
+    <div id="content-wrapper">
+        ${header_html}
+        ${html_content}
+    </div>
+    <script>
+        window.onload = function() {
+            var wrapper = document.getElementById('content-wrapper');
+            var pageWidth = 1085;
+            var tables = document.querySelectorAll('table');
+            var maxWidth = wrapper.scrollWidth;
+            for (var i = 0; i < tables.length; i++) {
+                if (tables[i].scrollWidth > maxWidth) maxWidth = tables[i].scrollWidth;
+            }
+            if (maxWidth > pageWidth) {
+                var scale = pageWidth / maxWidth;
+                document.body.style.zoom = scale;
+            }
+            setTimeout(function() { window.print(); }, 300);
+        };
+    </script>
+</body>
+</html>`;
+
+    let blob = new Blob([print_html], { type: 'text/html' });
+    let url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+}
