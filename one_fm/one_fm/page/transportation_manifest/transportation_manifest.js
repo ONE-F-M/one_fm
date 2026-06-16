@@ -469,6 +469,11 @@ function renderManifest($container, data) {
 		const accommodation = meta.accommodation || meta.location || "Depot";
 		const allTrips = buildTrips(pr);
 
+		// ─ Compute Total Time & Trip Time ─
+		const m = pr.route.metrics ?? {};
+		const totalTimeStr = m.totalDuration ? fmtDuration(m.totalDuration) : "—";
+		const tripTimeStr = m.travelDuration ? fmtDuration(m.travelDuration) : "—";
+
 		// ─ Vehicle Info Card ─
 		const infoParts = [];
 		if (meta.driver && meta.driver !== "—") infoParts.push(`<span class="material-symbols-outlined mfst-info-icon">person</span> ${escHtml(meta.driver)}`);
@@ -492,6 +497,16 @@ function renderManifest($container, data) {
 							${fmtTime(pr.route.vehicleStartTime)} → ${fmtTime(pr.route.vehicleEndTime)}
 						</div>
 						<div class="mfst-vehicle-trips">${allTrips.length} trip${allTrips.length !== 1 ? "s" : ""}</div>
+					</div>
+				</div>
+				<div class="mfst-vehicle-stats">
+					<div class="mfst-stat-box">
+						<div class="mfst-stat-val">${totalTimeStr}</div>
+						<div class="mfst-stat-lbl">Total Time</div>
+					</div>
+					<div class="mfst-stat-box">
+						<div class="mfst-stat-val">${tripTimeStr}</div>
+						<div class="mfst-stat-lbl">Trip Time</div>
 					</div>
 				</div>
 				${infoParts.length > 0 ? `<div class="mfst-vehicle-card-details">${infoParts.join(" · ")}</div>` : ""}
@@ -1346,6 +1361,10 @@ function getManifestCSS() {
 		.mfst-vehicle-card-right { text-align: right; }
 		.mfst-vehicle-time-badge { font-size: 15px; font-weight: 700; color: var(--mfst-text); display: flex; align-items: center; gap: 6px; }
 		.mfst-vehicle-trips { font-size: 13px; color: var(--mfst-text-muted); margin-top: 4px; }
+		.mfst-vehicle-stats { display: flex; gap: 16px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--mfst-border); }
+		.mfst-stat-box { text-align: center; min-width: 80px; }
+		.mfst-stat-val { font-size: 18px; font-weight: 700; color: var(--mfst-text); }
+		.mfst-stat-lbl { font-size: 11px; font-weight: 600; color: var(--mfst-text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
 		.mfst-vehicle-card-details { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--mfst-border); font-size: 14px; color: var(--mfst-text-muted); display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 		.mfst-info-icon { font-size: 16px; vertical-align: middle; }
 
@@ -1414,7 +1433,7 @@ function getManifestCSS() {
 		.mfst-transit { display: flex; align-items: center; gap: 8px; padding: 6px 0; color: var(--mfst-text-dim); }
 		.mfst-transit-line { flex: 1; height: 1px; background: var(--mfst-border); }
 		.mfst-transit-icon { font-size: 16px; }
-		.mfst-transit-label { font-size: 13px; font-weight: 600; white-space: nowrap; }
+		.mfst-transit-label { font-size: 16px; font-weight: 700; white-space: nowrap; background: rgba(245,158,11,0.10); border: 1px solid rgba(245,158,11,0.25); padding: 3px 12px; border-radius: 100px; color: var(--mfst-text); }
 
 		/* ── MODALS ── */
 		.mfst-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
