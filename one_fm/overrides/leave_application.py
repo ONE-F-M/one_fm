@@ -593,7 +593,14 @@ class LeaveApplicationOverride(LeaveApplication):
     @frappe.whitelist()
     def get_leave_extension_request(self):
         leave_extension_requests = frappe.get_all("Leave Extension Request", filters={"leave_application": self.name}, fields=["*"])
-        return leave_extension_requests[0] if leave_extension_requests else None
+        # Read the single value server-side so employees without read access to
+        # "HR and Payroll Additional Settings" don't hit a PermissionError on the
+        # client-side frappe.client.get_single_value endpoint.
+        threshold_days = cint(frappe.db.get_single_value("HR and Payroll Additional Settings", "leave_extension_request_allowance"))
+        return {
+            "request": leave_extension_requests[0] if leave_extension_requests else None,
+            "threshold_days": threshold_days,
+        }
 
     @frappe.whitelist()
     def create_leave_extension_request(self, new_resumption_date):
