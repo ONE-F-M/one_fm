@@ -142,13 +142,25 @@ frappe.ui.form.on("Leave Application", {
 				});
 			}, __('Create'));
 
-			if (frm.doc.custom_in_accommodation) {
-				frm.add_custom_button(__('Accommodation Leave Movement'), function() {
-					frappe.new_doc('Accommodation Leave Movement', {
+			if (frm.doc.custom_in_accommodation && frm.doc.leave_type !== "Sick Leave") {
+				// Check if a submitted OUT movement already exists for this Leave Application
+				frappe.xcall("frappe.client.get_count", {
+					doctype: "Accommodation Leave Movement",
+					filters: {
 						leave_application: frm.doc.name,
-						employee: frm.doc.employee
-					});
-				}, __('Create'));
+						type: "OUT",
+						docstatus: 1
+					}
+				}).then(count => {
+					if (!count) {
+						frm.add_custom_button(__('Accommodation Leave Movement'), function() {
+							frappe.new_doc('Accommodation Leave Movement', {
+								leave_application: frm.doc.name,
+								employee: frm.doc.employee
+							});
+						}, __('Create'));
+					}
+				});
 			}
 		}
     },
