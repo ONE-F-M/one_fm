@@ -397,10 +397,9 @@ function manage_leave_extension(frm) {
         frappe.call({
             doc: frm.doc,
             method: 'get_leave_extension_request',
-            callback: async function(res) {
-                const leaveExtensionRequest = res.message
-                
-                const thresholdDays = await frappe.db.get_single_value("HR and Payroll Additional Settings", "leave_extension_request_allowance") || 0;
+            callback: function(res) {
+                const leaveExtensionRequest = res.message ? res.message.request : null
+                const thresholdDays = (res.message && res.message.threshold_days) || 0;
 
                 const today = frappe.datetime.get_today()
                 const leavePostingDate = frm.doc.posting_date
