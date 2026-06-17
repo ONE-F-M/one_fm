@@ -46,10 +46,40 @@ def get_last_active_checkin(employee: str):
 	return checkins[0] if checkins else None
 
 @frappe.whitelist()
+def has_linked_checkin(checkout_name: str) -> bool:
+	"""
+	Returns True if a non-cancelled IN record already exists that is linked to
+	the given OUT document via the checkin_reference field.
+
+	Used by the client script to decide whether to render the "Create > Check In"
+	button.  The check covers Draft (docstatus=0) and Submitted (docstatus=1)
+	records so that the button is hidden as soon as the IN record is created,
+	not only after it is submitted.
+	"""
+	if not checkout_name:
+		return False
+
+	AlmDoctype = frappe.qb.DocType("Accommodation Leave Movement")
+	result = (
+		frappe.qb.from_(AlmDoctype)
+		.select(AlmDoctype.name)
+		.where(AlmDoctype.checkin_reference == checkout_name)
+		.where(AlmDoctype.type == "IN")
+		.where(AlmDoctype.docstatus != 2)  # exclude cancelled records
+		.limit(1)
+	).run(as_dict=True)
+
+	return bool(result)
+
+
+@frappe.whitelist()
 def make_checkin_from_checkout(source_name: str):
 	"""
 	Maps fields from an 'OUT' Accommodation Leave Movement to a new 'IN' one.
 	"""
+	if has_linked_checkin(source_name):
+		frappe.throw(frappe._("A linked check-in already exists for this check-out."))
+
 	target_doc = get_mapped_doc(
 		"Accommodation Leave Movement",
 		source_name,
