@@ -852,24 +852,24 @@ function renderManifest($container, data) {
 		$container.find("#mfst-checkinModal").addClass("active");
 	};
 
-	function closeCheckInModal(force) {
-		// If QOA = Fail and no reason selected, block dismiss unless forced
-		if (!force && tempAttendance === "Present" && tempQoa === "Fail" && !tempQoaFailReason) {
-			$container.find("#mfst-qoaReasonError").show();
-			$container.find("#mfst-qoaReasonSection").css("animation", "none");
-			requestAnimationFrame(() => {
-				$container.find("#mfst-qoaReasonSection").css("animation", "mfst-shake 0.35s ease");
-			});
-			return;
-		}
-		// Reset transient state
+	function closeCheckInModal() {
+		// Reset transient state and close
 		tempQoaFailReason = null;
 		$container.find("#mfst-qoaFailReasonSelect").val("");
 		$container.find("#mfst-qoaReasonError").hide();
 		$container.find("#mfst-checkinModal").removeClass("active");
 	}
 
-	$container.on("click", "#mfst-btn-close-checkin", function() { closeCheckInModal(); });
+	// × close button: when QOA=Fail, route through the save path so state is
+	// persisted (if a reason is already selected) or validation fires (if not).
+	// For all other states, close immediately.
+	$container.on("click", "#mfst-btn-close-checkin", function() {
+		if (tempAttendance === "Present" && tempQoa === "Fail") {
+			autoSaveCheckIn(true);
+		} else {
+			closeCheckInModal();
+		}
+	});
 
 	$container.on("click", "#mfst-btn-present", function() {
 		tempAttendance = "Present";
@@ -903,9 +903,9 @@ function renderManifest($container, data) {
 		}
 	});
 
-	// Save & Continue button inside the QOA reason section
+	// Save & Continue — explicit action, always show validation UI if guard fires
 	$container.on("click", "#mfst-btn-qoa-save", function() {
-		autoSaveCheckIn();
+		autoSaveCheckIn(true);
 	});
 
 	function updateCheckInUI() {
@@ -932,20 +932,26 @@ function renderManifest($container, data) {
 		}
 	}
 
-	function autoSaveCheckIn() {
+	// showValidationUI — only show error banner + shake when called from an
+	// explicit user action (Save & Continue, × in Fail state). Toggle handlers
+	// pass false (default) so the guard silently blocks persistence without
+	// startling the dispatcher before they've had a chance to select a reason.
+	function autoSaveCheckIn(showValidationUI) {
 		const empId = currentCheckInEmpId;
 		const empName = currentCheckInEmpName;
 		const att = tempAttendance;
 		const qoa = tempQoa;
 
-		// If QOA = Fail, the dispatcher MUST select a reason before proceeding
+		// Guard: QOA=Fail requires a reason before state can be persisted
 		if (att === "Present" && qoa === "Fail" && !tempQoaFailReason) {
-			$container.find("#mfst-qoaReasonError").show();
-			$container.find("#mfst-qoaReasonSection").css("animation", "none");
-			requestAnimationFrame(() => {
-				$container.find("#mfst-qoaReasonSection").css("animation", "mfst-shake 0.35s ease");
-			});
-			return;
+			if (showValidationUI) {
+				$container.find("#mfst-qoaReasonError").show();
+				$container.find("#mfst-qoaReasonSection").css("animation", "none");
+				requestAnimationFrame(() => {
+					$container.find("#mfst-qoaReasonSection").css("animation", "mfst-shake 0.35s ease");
+				});
+			}
+			return; // Always block persistence — UI feedback is optional
 		}
 
 		window.checkerState[empId] = window.checkerState[empId] || {};
@@ -959,16 +965,16 @@ function renderManifest($container, data) {
 
 		if (att === "Absent") {
 			setTimeout(() => {
-				closeCheckInModal(true);
+				closeCheckInModal();
 			}, 150);
 		} else if (att === "Present" && qoa === "Fail") {
 			setTimeout(() => {
-				closeCheckInModal(true);
+				closeCheckInModal();
 				openRamboPrompt(empId, empName, "qoa_fail");
 			}, 150);
 		} else if (att === "Present" && qoa === "Pass") {
 			setTimeout(() => {
-				closeCheckInModal(true);
+				closeCheckInModal();
 			}, 150);
 		}
 	}
