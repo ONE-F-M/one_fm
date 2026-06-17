@@ -77,6 +77,9 @@ def make_checkin_from_checkout(source_name: str):
 	"""
 	Maps fields from an 'OUT' Accommodation Leave Movement to a new 'IN' one.
 	"""
+	if has_linked_checkin(source_name):
+		frappe.throw(frappe._("A linked check-in already exists for this check-out."))
+
 	target_doc = get_mapped_doc(
 		"Accommodation Leave Movement",
 		source_name,
