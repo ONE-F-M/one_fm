@@ -832,6 +832,7 @@ function renderManifest($container, data) {
 	let currentCheckInEmpName = null;
 	let tempAttendance = null;
 	let tempQoa = null;
+	let tempQoaFailReason = null;
 
 	window._mfst_openCheckInModal = function(empId, empName) {
 		currentCheckInEmpId = empId;
@@ -840,6 +841,11 @@ function renderManifest($container, data) {
 		const state = window.checkerState[empId] || {};
 		tempAttendance = state.attendance || null;
 		tempQoa = state.qoa || null;
+		tempQoaFailReason = state.qoa_fail_reason || null;
+
+		// Pre-fill the reason dropdown with any previously saved value
+		$container.find("#mfst-qoaFailReasonSelect").val(tempQoaFailReason || "");
+		$container.find("#mfst-qoaReasonError").hide();
 
 		$container.find("#mfst-checkinEmpName").text(empName);
 		updateCheckInUI();
@@ -847,10 +853,23 @@ function renderManifest($container, data) {
 	};
 
 	function closeCheckInModal() {
+		// Reset transient state and close
+		tempQoaFailReason = null;
+		$container.find("#mfst-qoaFailReasonSelect").val("");
+		$container.find("#mfst-qoaReasonError").hide();
 		$container.find("#mfst-checkinModal").removeClass("active");
 	}
 
-	$container.on("click", "#mfst-btn-close-checkin", closeCheckInModal);
+	// × close button: when QOA=Fail, route through the save path so state is
+	// persisted (if a reason is already selected) or validation fires (if not).
+	// For all other states, close immediately.
+	$container.on("click", "#mfst-btn-close-checkin", function() {
+		if (tempAttendance === "Present" && tempQoa === "Fail") {
+			autoSaveCheckIn(true);
+		} else {
+			closeCheckInModal();
+		}
+	});
 
 	$container.on("click", "#mfst-btn-present", function() {
 		tempAttendance = "Present";
@@ -876,6 +895,19 @@ function renderManifest($container, data) {
 		autoSaveCheckIn();
 	});
 
+	// Live update of QOA failure reason
+	$container.on("change", "#mfst-qoaFailReasonSelect", function() {
+		tempQoaFailReason = $(this).val() || null;
+		if (tempQoaFailReason) {
+			$container.find("#mfst-qoaReasonError").hide();
+		}
+	});
+
+	// Save & Continue — explicit action, always show validation UI if guard fires
+	$container.on("click", "#mfst-btn-qoa-save", function() {
+		autoSaveCheckIn(true);
+	});
+
 	function updateCheckInUI() {
 		$container.find("#mfst-btn-present").attr("class", "mfst-toggle-btn" + (tempAttendance === "Present" ? " active-present" : ""));
 		$container.find("#mfst-btn-absent").attr("class", "mfst-toggle-btn" + (tempAttendance === "Absent" ? " active-absent" : ""));
@@ -884,17 +916,48 @@ function renderManifest($container, data) {
 		$container.find("#mfst-btn-fail").attr("class", "mfst-toggle-btn" + (tempQoa === "Fail" ? " active-fail" : ""));
 		$container.find("#mfst-btn-pass").css("opacity", qoaDisabled ? "0.4" : "1");
 		$container.find("#mfst-btn-fail").css("opacity", qoaDisabled ? "0.4" : "1");
+
+		// Show/hide the QOA Failure Reason section
+		const showReason = (tempAttendance === "Present" && tempQoa === "Fail");
+		if (showReason) {
+			$container.find("#mfst-qoaReasonSection").show();
+		} else {
+			$container.find("#mfst-qoaReasonSection").hide();
+			$container.find("#mfst-qoaReasonError").hide();
+			// Clear reason when hidden so stale value can't carry over
+			if (!showReason) {
+				tempQoaFailReason = null;
+				$container.find("#mfst-qoaFailReasonSelect").val("");
+			}
+		}
 	}
 
-	function autoSaveCheckIn() {
+	// showValidationUI — only show error banner + shake when called from an
+	// explicit user action (Save & Continue, × in Fail state). Toggle handlers
+	// pass false (default) so the guard silently blocks persistence without
+	// startling the dispatcher before they've had a chance to select a reason.
+	function autoSaveCheckIn(showValidationUI) {
 		const empId = currentCheckInEmpId;
 		const empName = currentCheckInEmpName;
 		const att = tempAttendance;
 		const qoa = tempQoa;
 
+		// Guard: QOA=Fail requires a reason before state can be persisted
+		if (att === "Present" && qoa === "Fail" && !tempQoaFailReason) {
+			if (showValidationUI) {
+				$container.find("#mfst-qoaReasonError").show();
+				$container.find("#mfst-qoaReasonSection").css("animation", "none");
+				requestAnimationFrame(() => {
+					$container.find("#mfst-qoaReasonSection").css("animation", "mfst-shake 0.35s ease");
+				});
+			}
+			return; // Always block persistence — UI feedback is optional
+		}
+
 		window.checkerState[empId] = window.checkerState[empId] || {};
 		window.checkerState[empId].attendance = att;
 		window.checkerState[empId].qoa = qoa;
+		window.checkerState[empId].qoa_fail_reason = (att === "Present" && qoa === "Fail") ? tempQoaFailReason : null;
 
 		if (activeView) {
 			renderRoute(activeView);
@@ -1213,6 +1276,27 @@ function getManifestHTML() {
 							</button>
 						</div>
 					</div>
+
+					<!-- QOA FAILURE REASON — Step 3, only visible when QOA = Fail -->
+					<div class="mfst-checker-section mfst-qoa-reason-section" id="mfst-qoaReasonSection" style="display:none;">
+						<div class="mfst-checker-label">
+							<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;margin-right:4px;color:#dc2626">report_problem</span>
+							Step 3: Select the reason for failure
+						</div>
+						<select id="mfst-qoaFailReasonSelect" class="mfst-reliever-select mfst-qoa-reason-select">
+							<option value="">-- Select Reason --</option>
+							<option value="Grooming">Grooming</option>
+							<option value="Uniform">Uniform</option>
+						</select>
+						<div class="mfst-qoa-reason-error" id="mfst-qoaReasonError" style="display:none;">
+							<span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle;margin-right:4px">error</span>
+							Please select a QOA Failure Reason before continuing.
+						</div>
+						<button class="mfst-qoa-save-btn" id="mfst-btn-qoa-save">
+							<span class="material-symbols-outlined" style="font-size:18px">check_circle</span>
+							Save &amp; Continue
+						</button>
+					</div>
 				</div>
 			</div>
 
@@ -1452,6 +1536,16 @@ function getManifestCSS() {
 		.mfst-toggle-btn:active { transform: scale(0.97); }
 		.mfst-toggle-btn.active-present, .mfst-toggle-btn.active-pass { background: var(--mfst-green); border-color: var(--mfst-green); color: #fff; }
 		.mfst-toggle-btn.active-absent, .mfst-toggle-btn.active-fail { background: var(--mfst-red); border-color: var(--mfst-red); color: #fff; }
+
+		/* ── QOA FAILURE REASON ── */
+		.mfst-qoa-reason-section { border-top: 1px solid var(--mfst-border); padding-top: 16px; margin-top: 4px; }
+		.mfst-qoa-reason-select { border-color: #dc2626 !important; }
+		.mfst-qoa-reason-select:focus { border-color: #dc2626 !important; box-shadow: 0 0 0 3px rgba(220,38,38,0.15) !important; }
+		.mfst-qoa-reason-error { margin-top: 8px; font-size: 13px; font-weight: 600; color: #dc2626; display: flex; align-items: center; background: rgba(220,38,38,0.07); border: 1px solid rgba(220,38,38,0.25); border-radius: 8px; padding: 8px 12px; }
+		.mfst-qoa-save-btn { margin-top: 14px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 15px 20px; border: none; border-radius: 14px; background: var(--mfst-accent); color: #fff; font-family: var(--mfst-font-body); font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; min-height: 52px; }
+		.mfst-qoa-save-btn:hover { background: #ea580c; }
+		.mfst-qoa-save-btn:active { transform: scale(0.97); }
+		@keyframes mfst-shake { 0%,100% { transform: translateX(0); } 20%,60% { transform: translateX(-5px); } 40%,80% { transform: translateX(5px); } }
 
 		/* ── RAMBO BUTTONS ── */
 		.mfst-rambo-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; padding: 14px 20px; border-radius: 14px; font-family: var(--mfst-font-body); font-size: 16px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; gap: 8px; min-height: 52px; }
