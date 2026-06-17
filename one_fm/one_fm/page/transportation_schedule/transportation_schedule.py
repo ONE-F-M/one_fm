@@ -1723,11 +1723,13 @@ def process_rambo_replacement(original_employee: str, replacement_employee: str,
     
     # Find operations supervisor for the shift/site
     if shift_name:
-        supervisor = frappe.db.get_value("Operations Shift", shift_name, "operations_supervisor")
+        supervisor = frappe.db.get_value("Operations Shift", shift_name, "supervisor")
         if supervisor:
-            user_email = frappe.db.get_value("User", supervisor, "email")
-            if user_email:
-                recipients.append(user_email)
+            user_id = frappe.db.get_value("Employee", supervisor, "user_id")
+            if user_id:
+                user_email = frappe.db.get_value("User", user_id, "email")
+                if user_email:
+                    recipients.append(user_email)
     
     if recipients:
         subject = f"Rambo Reliever Swap: {orig_emp} replaced by {new_emp}"

@@ -25,7 +25,10 @@ class VehicleLeasingContract(Document):
 		update_leasing_cotract_with_vehicle_list(vehicle, self)
 
 def vehicle_autoname(doc, method):
-	if doc.one_fm_vehicle_category == "Leased":
+	category = doc.one_fm_vehicle_category
+	if category == "Leased":
+		doc.name = make_autoname("VHL-L-.####")
+	elif category == "Subcontractor":
 		doc.name = make_autoname("VHL-S-.####")
 	else:
 		doc.name = make_autoname("VHL-.####")

@@ -903,6 +903,7 @@ function renderManifest($container, data) {
 		if (att === "Absent") {
 			setTimeout(() => {
 				closeCheckInModal();
+				openRamboPrompt(empId, empName, "absent");
 			}, 150);
 		} else if (att === "Present" && qoa === "Fail") {
 			setTimeout(() => {
