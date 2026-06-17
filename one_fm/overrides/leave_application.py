@@ -267,6 +267,43 @@ class LeaveApplicationOverride(LeaveApplication):
         self.reset_status_on_amend()
         self.validate_loan_repayment()
 
+    def validate_balance_leaves(self):
+        precision = cint(frappe.db.get_single_value("System Settings", "float_precision")) or 2
+
+        if self.from_date and self.to_date:
+            self.total_leave_days = get_number_of_leave_days(
+                self.employee,
+                self.leave_type,
+                self.from_date,
+                self.to_date,
+                self.half_day,
+                self.half_day_date,
+            )
+
+            if self.total_leave_days <= 0:
+                frappe.throw(
+                    _(
+                        "The day(s) on which you are applying for leave are holidays. You need not apply for leave."
+                    )
+                )
+
+            if not is_lwp(self.leave_type):
+                leave_balance = get_leave_balance_on(
+                    self.employee,
+                    self.leave_type,
+                    self.from_date,
+                    self.to_date,
+                    consider_all_leaves_in_the_allocation_period=True,
+                    for_consumption=True,
+                )
+                leave_balance_for_consumption = flt(
+                    leave_balance.get("leave_balance_for_consumption"), precision
+                )
+                if self.status != "Rejected" and (
+                    leave_balance_for_consumption < self.total_leave_days or not leave_balance_for_consumption
+                ):
+                    self.show_insufficient_balance_message(leave_balance_for_consumption)
+
     def validate_loan_repayment(self):
         if self.leave_type != "Annual Leave":
             return
