@@ -47,9 +47,10 @@ def get_todo_custom_fields():
             },
             {
                 "fieldname": "type",
-                "fieldtype": "Data",
+                "fieldtype": "Select",
                 "label": "Type",
                 "insert_after": "reference_name",
+                "options": "Action\nProcess\nProject",
                 "read_only": 1,
                 "translatable": 1
             }
