@@ -31,9 +31,12 @@ class AccommodationLeaveMovement(Document):
 
 		if self.type == "OUT":
 			self.handle_checkout_notification()
-			
+
 		if self.type == "OUT" and self.leave_application:
 			self.reapply_leave_application_assignment_rules()
+
+		if self.type == "IN":
+			self.handle_checkin_notification()
 
 	def on_cancel(self):
 		if self.type == "IN" and self.checkin_reference:
@@ -92,6 +95,38 @@ class AccommodationLeaveMovement(Document):
 		else:
 			# Leave hasn't started yet — flag for daily scheduler
 			self.db_set("custom_notify_on_leave_start", 1)
+
+	def handle_checkin_notification(self):
+		"""
+		On submission of an IN record:
+		- Get the leave_application from the linked OUT (checkin_reference).
+		- Check the leave's resumption_date against today.
+		- If resumption_date <= today: send notification immediately.
+		- If resumption_date > today (early check-in): flag for deferred notification.
+		"""
+		if not self.checkin_reference:
+			return
+
+		leave_application = frappe.db.get_value(
+			"Accommodation Leave Movement", self.checkin_reference, "leave_application"
+		)
+
+		if not leave_application:
+			return
+
+		resumption_date = frappe.db.get_value(
+			"Leave Application", leave_application, "resumption_date"
+		)
+
+		if not resumption_date:
+			return
+
+		if getdate(resumption_date) <= getdate(today()):
+			# Leave has ended (resumption date reached) — send notification immediately
+			send_alm_checkin_notification(self.name)
+		else:
+			# Early check-in — defer notification to scheduler
+			self.db_set("custom_notify_on_leave_end", 1)
 
 
 def get_alm_notification_recipients():
@@ -161,6 +196,71 @@ def send_alm_checkout_notification(alm_name):
 	except Exception:
 		frappe.log_error(
 			title=_("ALM Checkout Notification Error"),
+			message=frappe.get_traceback()
+		)
+
+
+def send_alm_checkin_notification(alm_name):
+	"""
+	Sends an email notification when an ALM (IN) triggers an employee
+	status change to Active (via the daily scheduler).
+
+	The email is sent to users listed in the HR Settings >
+	Employee Status Update Notification Email table.
+	"""
+	try:
+		alm = frappe.get_doc("Accommodation Leave Movement", alm_name)
+		employee = frappe.get_doc("Employee", alm.employee)
+
+		recipients = get_alm_notification_recipients()
+		if not recipients:
+			frappe.log_error(
+				title=_("ALM Check-In Notification - No Recipients"),
+				message=_("No notification members found in HR Settings > Employee Status Update "
+					"Notification Email. Please add users to the Notification Members table.")
+			)
+			return
+
+		# Get the leave application from the linked OUT record
+		leave_application = ""
+		if alm.checkin_reference:
+			leave_application = frappe.db.get_value(
+				"Accommodation Leave Movement", alm.checkin_reference, "leave_application"
+			) or ""
+
+		employee_url = get_url_to_form("Employee", employee.name)
+
+		context = {
+			"employee_id": employee.name,
+			"employee_name": employee.employee_name,
+			"status": employee.status,
+			"department": employee.department,
+			"designation": employee.designation,
+			"leave_application": leave_application,
+			"checkin_date_time": alm.checkin_checkout_date_time,
+			"employee_url": employee_url,
+		}
+
+		message = frappe.render_template(
+			"one_fm/templates/emails/accommodation_leave_movement_checkin.html",
+			context
+		)
+
+		subject = _("Employee Status Update: {0} - {1} is now {2}").format(
+			employee.name, employee.employee_name, employee.status
+		)
+
+		from one_fm.processor import sendemail
+		sendemail(
+			recipients=recipients,
+			subject=subject,
+			header=[_("Employee Status Update")],
+			message=message,
+		)
+
+	except Exception:
+		frappe.log_error(
+			title=_("ALM Check-In Notification Error"),
 			message=frappe.get_traceback()
 		)
 
