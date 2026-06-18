@@ -4,25 +4,12 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import get_first_day, get_last_day, getdate, add_months, nowdate, add_days
-from datetime import date
+from frappe.utils import getdate, nowdate, add_days
+from datetime import date, timedelta
 from one_fm.operations.doctype.operations_shift.operations_shift import get_shift_supervisor
 
 
-monthname_dict = {
-	"01": "January",
-	"02": "February",
-	"03": "March",
-	"04": "April",
-	"05": "May",
-	"06": "June",
-	"07": "July",
-	"08": "August",
-	"09": "September",
-	"10": "October",
-	"11": "November",
-	"12": "December",
-}
+
 
 
 class RosterClientDayOffChecker(Document):
@@ -63,25 +50,63 @@ def get_employee_cdo_count(employee, start_date, end_date):
 	return cdo_count
 
 
-def format_reporting_month(month_date):
+def get_week_start(ref_date):
 	"""
-	Format a date as '[Month Name] [YYYY]' for reporting month field.
-	
+	Return the Sunday that starts the week containing ref_date.
+
+	Weeks run Sunday (0) to Saturday (6).
+
 	Args:
-		month_date (date): Any date within the month
-	
+		ref_date (date): Reference date
+
 	Returns:
-		str: Formatted month string (e.g., "February 2026")
+		date: The Sunday at or before ref_date
 	"""
-	month_str = month_date.strftime("%m")
-	year_str = month_date.strftime("%Y")
-	return f"{monthname_dict[month_str]} {year_str}"
+	ref_date = getdate(ref_date)
+	# isoweekday(): Monday=1 … Sunday=7
+	days_since_sunday = ref_date.isoweekday() % 7  # Sunday→0, Mon→1 … Sat→6
+	return ref_date - timedelta(days=days_since_sunday)
 
 
-def create_or_update_cdo_checker(employee, month_start, month_end, cdo_count, today):
+def get_week_end(ref_date):
+	"""
+	Return the Saturday that ends the week containing ref_date.
+
+	Args:
+		ref_date (date): Reference date
+
+	Returns:
+		date: The Saturday at or after ref_date
+	"""
+	return get_week_start(ref_date) + timedelta(days=6)
+
+
+def format_reporting_week(period_start, period_end):
+	"""
+	Format the two-week evaluation window as 'Week <current>-<next> <YYYY>'.
+
+	Uses the ISO week of the window start date and adds 1 for the next week,
+	since the window always spans exactly two consecutive weeks.
+
+	Args:
+		period_start (date): Start of the window (current week Sunday)
+		period_end (date): End of the window (next week Saturday)
+
+	Returns:
+		str: Formatted week string (e.g., "Week 24-25 2026")
+	"""
+	period_start = getdate(period_start)
+	# Shift to Monday (+1 day) since ISO weeks run Mon–Sun,
+	# and our window starts on Sunday (which belongs to the prior ISO week)
+	monday = period_start + timedelta(days=1)
+	iso_year, iso_week, _ = monday.isocalendar()
+	return f"Week {iso_week}-{iso_week + 1} {iso_year}"
+
+
+def create_or_update_cdo_checker(employee, period_start, period_end, cdo_count, today):
 	"""
 	Create or update a Client Day Off Checker record for an employee.
-	
+
 	Logic:
 	- If no record exists: Create new with repeat_count = 1
 	- If record exists with status = "Pending":
@@ -89,22 +114,22 @@ def create_or_update_cdo_checker(employee, month_start, month_end, cdo_count, to
 		- If CDO <= 3: Skip (issue resolved but not marked Complete)
 	- If record exists with status = "Completed":
 		- If CDO > 3 again: Create new record with repeat_count = 1 (new issue)
-	
+
 	Args:
 		employee (frappe.Document): Employee document
-		month_start (date): First day of the month
-		month_end (date): Last day of the month
-		cdo_count (int): Current CDO count for the month
+		period_start (date): Start of the evaluation window (current week Sunday)
+		period_end (date): End of the evaluation window (next week Saturday)
+		cdo_count (int): Current CDO count within the two-week window
 		today (date): Current date
 	"""
-	reporting_month = format_reporting_month(month_start)
+	reporting_week = format_reporting_week(period_start, period_end)
 	
 	# Check for existing record
 	existing_records = frappe.get_all(
 		"Roster Client Day Off Checker",
 		filters={
 			"employee": employee.name,
-			"monthweek": reporting_month  # Field name is 'monthweek' in DocType
+			"monthweek": reporting_week
 		},
 		fields=["name", "status", "repeat_count"],
 		order_by="creation desc",
@@ -121,7 +146,7 @@ def create_or_update_cdo_checker(employee, month_start, month_end, cdo_count, to
 		# No existing record - create new one
 		_create_new_cdo_checker(
 			employee=employee,
-			reporting_month=reporting_month,
+			reporting_week=reporting_week,
 			cdo_count=cdo_count,
 			repeat_count=1,
 			shift_supervisor=shift_supervisor,
@@ -140,7 +165,7 @@ def create_or_update_cdo_checker(employee, month_start, month_end, cdo_count, to
 					"Roster Client Day Off Checker",
 					{
 						"employee": employee.name,
-						"monthweek": reporting_month,  # Field name is 'monthweek'
+						"monthweek": reporting_week,
 						"date": add_days(today, -1)
 					},
 					"repeat_count"
@@ -153,7 +178,7 @@ def create_or_update_cdo_checker(employee, month_start, month_end, cdo_count, to
 				new_repeat_count = (yesterday_repeat_count or existing_record["repeat_count"]) + 1
 				_create_new_cdo_checker(
 					employee=employee,
-					reporting_month=reporting_month,
+					reporting_week=reporting_week,
 					cdo_count=cdo_count,
 					repeat_count=new_repeat_count,
 					shift_supervisor=shift_supervisor,
@@ -170,7 +195,7 @@ def create_or_update_cdo_checker(employee, month_start, month_end, cdo_count, to
 				# Autoname format now supports multiple records per month
 				_create_new_cdo_checker(
 					employee=employee,
-					reporting_month=reporting_month,
+					reporting_week=reporting_week,
 					cdo_count=cdo_count,
 					repeat_count=1,
 					shift_supervisor=shift_supervisor,
@@ -180,13 +205,13 @@ def create_or_update_cdo_checker(employee, month_start, month_end, cdo_count, to
 				)
 
 
-def _create_new_cdo_checker(employee, reporting_month, cdo_count, repeat_count, shift_supervisor, site_supervisor, project_manager, today):
+def _create_new_cdo_checker(employee, reporting_week, cdo_count, repeat_count, shift_supervisor, site_supervisor, project_manager, today):
 	"""
 	Internal function to create a new Roster Client Day Off Checker record.
-	
+
 	Args:
 		employee (frappe.Document): Employee document
-		reporting_month (str): Formatted reporting month
+		reporting_week (str): Formatted reporting week label (e.g., "Week 25 2026")
 		cdo_count (int): CDO count
 		repeat_count (int): Repeat count
 		shift_supervisor (str): Shift supervisor employee ID
@@ -196,12 +221,15 @@ def _create_new_cdo_checker(employee, reporting_month, cdo_count, repeat_count, 
 	"""
 	cdo_checker = frappe.new_doc("Roster Client Day Off Checker")
 	cdo_checker.date = today
-	cdo_checker.monthweek = reporting_month  # Field name is 'monthweek' in DocType
+	cdo_checker.monthweek = reporting_week
 	cdo_checker.status = "Pending"
 	cdo_checker.repeat_count = repeat_count
 	cdo_checker.employee = employee.name
-	cdo_checker.assigned_client_day_off_count = cdo_count  # Field name is 'assigned_client_day_off_count'
-	cdo_checker.client_day_off_explanation = "The employee has been scheduled for more than 3 Client Day Off in a month."
+	cdo_checker.assigned_client_day_off_count = cdo_count
+	cdo_checker.client_day_off_explanation = (
+		"The employee has been scheduled for more than 3 Client Day Off "
+		"within the current and next week window."
+	)
 	cdo_checker.shift_supervisor = shift_supervisor
 	cdo_checker.site_supervisor = site_supervisor
 	cdo_checker.project_manager = project_manager
@@ -213,15 +241,20 @@ def _create_new_cdo_checker(employee, reporting_month, cdo_count, repeat_count, 
 def check_roster_client_day_off():
 	"""
 	Main scheduled function to check for excessive Client Day Off assignments.
-	
+
 	Runs daily at 4:30 AM to:
-	1. Query all active employees
-	2. Check current month and next month for each employee
-	3. Create/update checker records for employees with > 3 CDOs per month
+	1. Query all active, shift-working employees
+	2. Count CDO records in a combined two-week window (current week + next week,
+	   Sunday-Saturday)
+	3. Create/update checker records for employees with > 3 CDOs in the window
 	"""
 	try:
 		today = getdate(nowdate())
-		
+
+		# Compute the two-week window: current week (Sun–Sat) + next week (Sun–Sat)
+		current_week_start = get_week_start(today)
+		next_week_end = get_week_end(current_week_start + timedelta(days=7))
+
 		# Get all active employees
 		Employee = frappe.qb.DocType("Employee")
 		employees = frappe.db.sql(
@@ -234,27 +267,22 @@ def check_roster_client_day_off():
 			),
 			as_dict=1
 		)
-		
+
 		for employee in employees:
-			# Check current month
-			current_month_start = get_first_day(today)
-			current_month_end = get_last_day(today)
-			current_cdo_count = get_employee_cdo_count(employee.name, current_month_start, current_month_end)
-			
-			if current_cdo_count > 3:
-				create_or_update_cdo_checker(employee, current_month_start, current_month_end, current_cdo_count, today)
-			
-			# Check next month
-			next_month = add_months(today, 1)
-			next_month_start = get_first_day(next_month)
-			next_month_end = get_last_day(next_month)
-			next_cdo_count = get_employee_cdo_count(employee.name, next_month_start, next_month_end)
-			
-			if next_cdo_count > 3:
-				create_or_update_cdo_checker(employee, next_month_start, next_month_end, next_cdo_count, today)
-		
+			# Count CDOs across the full two-week window
+			cdo_count = get_employee_cdo_count(
+				employee.name, current_week_start, next_week_end
+			)
+
+			if cdo_count > 3:
+				# Use current week start as the reference for the reporting label
+				create_or_update_cdo_checker(
+					employee, current_week_start, next_week_end,
+					cdo_count, today
+				)
+
 		frappe.db.commit()
-	
+
 	except Exception:
 		frappe.log_error(
 			title="Error creating Client Day Off checkers",

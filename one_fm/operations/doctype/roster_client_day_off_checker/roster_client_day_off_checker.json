@@ -71,7 +71,7 @@
             "fieldname": "monthweek",
             "fieldtype": "Data",
             "in_list_view": 1,
-            "label": "Reporting Month",
+            "label": "Reporting Week",
             "read_only": 1
         },
         {
