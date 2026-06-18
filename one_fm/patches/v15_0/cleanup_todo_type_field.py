@@ -11,9 +11,11 @@ def execute():
 	from one_fm.custom.custom_field.todo import get_todo_custom_fields
 	create_custom_fields(get_todo_custom_fields(), ignore_validate=True)
 	# Step 2: Update all existing ToDos where type is not "Action" to "Action"
-	frappe.db.set_value(
-		"ToDo",
-		{"type": ["not in", ["Action"]]},
-		"type",
-		"Action",
+	frappe.db.sql(
+		"""
+		UPDATE `tabToDo`
+		SET `type` = %s
+		WHERE IFNULL(`type`, '') != %s
+		""",
+		("Action", "Action"),
 	)
