@@ -19,9 +19,43 @@ class AccommodationLeaveMovement(Document):
 		if self.type == "IN" and self.checkin_reference:
 			frappe.db.set_value("Accommodation Leave Movement", self.checkin_reference, "checked_out", 1)
 
+		if self.type == "OUT" and self.leave_application:
+			self.reapply_leave_application_assignment_rules()
+
 	def on_cancel(self):
 		if self.type == "IN" and self.checkin_reference:
 			frappe.db.set_value("Accommodation Leave Movement", self.checkin_reference, "checked_out", 0)
+
+		if self.type == "OUT" and self.leave_application:
+			self.reapply_leave_application_assignment_rules()
+
+	def reapply_leave_application_assignment_rules(self):
+		"""Set accommodation checkout flag and re-evaluate assignment rules.
+
+		Assignment rules only fire on the target document's own save/update events.
+		When an Accommodation Leave Movement is submitted or cancelled, the Leave
+		Application is not saved, so its unassign_condition is never checked.
+
+		This method:
+		1. Sets/clears the custom_accommodation_checked_out flag on the Leave Application
+		2. Explicitly calls the assignment rule engine to evaluate unassign/assign conditions
+		"""
+		from frappe.automation.doctype.assignment_rule.assignment_rule import apply
+
+		try:
+			checked_out = 1 if self.docstatus == 1 else 0
+			frappe.db.set_value(
+				"Leave Application",
+				self.leave_application,
+				"custom_accommodation_checked_out",
+				checked_out,
+			)
+			apply(doctype="Leave Application", name=self.leave_application)
+		except Exception:
+			frappe.log_error(
+				message=frappe.get_traceback(),
+				title="Error Reapplying Assignment Rules for Leave Application",
+			)
 
 @frappe.whitelist()
 def get_last_active_checkin(employee: str):

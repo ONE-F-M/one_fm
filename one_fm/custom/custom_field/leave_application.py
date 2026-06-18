@@ -158,6 +158,16 @@ def get_leave_application_custom_fields():
                 "fetch_from": "employee.one_fm_provide_accommodation_by_company"
             },
             {
+                "fieldname": "custom_accommodation_checked_out",
+                "fieldtype": "Check",
+                "insert_after": "custom_in_accommodation",
+                "label": "Accommodation Checked Out",
+                "read_only": 1,
+                "hidden": 1,
+                "allow_on_submit": 1,
+                "description": "Set automatically when an OUT Accommodation Leave Movement is submitted"
+            },
+            {
                 "fieldname": "custom_project_allocation",
                 "fieldtype": "Link",
                 "insert_after": "department",
