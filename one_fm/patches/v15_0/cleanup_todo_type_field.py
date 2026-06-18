@@ -8,8 +8,8 @@ def execute():
 	"""Update ToDo type field to Select with options and set non-Action records to Action."""
 
 	# Step 1: Update the custom field from Data to Select with options
-	create_custom_fields(get_custom_fields(), ignore_validate=True)
-
+	from one_fm.custom.custom_field.todo import get_todo_custom_fields
+	create_custom_fields(get_todo_custom_fields(), ignore_validate=True)
 	# Step 2: Update all existing ToDos where type is not "Action" to "Action"
 	frappe.db.set_value(
 		"ToDo",
