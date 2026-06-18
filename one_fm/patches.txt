@@ -427,7 +427,7 @@ one_fm.patches.v15_0.add_recurring_bonus_process_task
 one_fm.patches.v15_0.fix_parentfield_bonus_items
 one_fm.patches.v15_0.add_nationality_read_permission
 one_fm.patches.v15_0.update_workflows_for_ops_admin_edit
-one_fm.patches.v15_0.backfill_ojt_employee_schedules
+one_fm.patches.v15_0.backfill_ojt_employee_schedules #2026-06-18
 one_fm.patches.v15_0.delete_medical_appointment_todos #2026-06-15
 one_fm.patches.v15_0.sync_erf_workflow_state_with_closed_status #2026-06-15
 one_fm.patches.v15_0.close_job_openings_for_closed_erf #2026-06-15
