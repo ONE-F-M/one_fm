@@ -3923,7 +3923,7 @@ def send_pending_alm_checkin_notifications():
 
     for alm in pending_alms:
         if not alm.checkin_reference:
-            # No checkout reference linked — clear the flag and skip
+            # No check-out reference linked — clear the flag and skip
             frappe.db.set_value(
                 "Accommodation Leave Movement", alm.name,
                 "custom_notify_on_leave_end", 0
