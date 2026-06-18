@@ -1,0 +1,72 @@
+<style>
+    .alm-notification-table {
+        font-family: Arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+    .alm-notification-table th,
+    .alm-notification-table td {
+        border: 1px solid #ddd;
+        padding: 10px;
+    }
+    .alm-notification-table th {
+        background-color: #f2f2f2;
+        color: #333;
+        width: 35%;
+        text-align: left;
+        font-weight: bold;
+    }
+    .alm-notification-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+</style>
+
+<p>Dear Team,</p>
+
+<p>Please be advised that the system has automatically updated the employment status for <strong>{{ employee_name }}</strong>.</p>
+
+<p>The employee's status has been changed to <strong>{{ status }}</strong> following a recent Accommodation Leave Movement (Check-In).</p>
+
+<p>As per the automated process, no manual action is required from HR to update this employee's profile.</p>
+
+<h4>Employee Details:</h4>
+
+<table class="alm-notification-table">
+    <tbody>
+        <tr>
+            <th>Employee ID</th>
+            <td>{{ employee_id }}</td>
+        </tr>
+        <tr>
+            <th>Employee Name</th>
+            <td>{{ employee_name }}</td>
+        </tr>
+        <tr>
+            <th>Current Status</th>
+            <td>{{ status }}</td>
+        </tr>
+        <tr>
+            <th>Department</th>
+            <td>{{ department or "" }}</td>
+        </tr>
+        <tr>
+            <th>Designation</th>
+            <td>{{ designation or "" }}</td>
+        </tr>
+        <tr>
+            <th>Leave Application</th>
+            <td>{{ leave_application or "" }}</td>
+        </tr>
+        <tr>
+            <th>Check-In Date/Time</th>
+            <td>{{ checkin_date_time }}</td>
+        </tr>
+        <tr>
+            <th>Employee Record</th>
+            <td><a href="{{ employee_url }}">View Employee Profile</a></td>
+        </tr>
+    </tbody>
+</table>
+
+<br>
+<p>Please review the profile if any subsequent tasks are required.</p>
