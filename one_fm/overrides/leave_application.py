@@ -104,15 +104,25 @@ class LeaveApplicationOverride(LeaveApplication):
         self.set_onload("attendance_not_created", attendance_not_created)
 
     def close_todo(self):
-        """Close the Todo document linked with a leave application
+        """Close the Todo document linked with a leave application.
+        Excludes ToDos created by the 'Leave Application - Approved'
+        assignment rule so the GS employee accommodation task stays open.
         """
         try:
-            leave_todo = frappe.get_all("ToDo",{'reference_name':self.name},['name'])
+            leave_todo = frappe.get_all(
+                "ToDo",
+                filters={
+                    "reference_name": self.name,
+                    "reference_type": "Leave Application",
+                    "assignment_rule": ["not in", ["Leave Application - Approved"]],
+                },
+                fields=["name"],
+            )
             if leave_todo:
                 for each in leave_todo:
-                    frappe.db.set_value("ToDo",each.get("name"),'status','Closed')
+                    frappe.db.set_value("ToDo", each.get("name"), "status", "Closed")
                 frappe.db.commit()
-        except:
+        except Exception:
             frappe.log_error(message=frappe.get_traceback(), title="Error Closing ToDos")
 
     def on_submit(self):
