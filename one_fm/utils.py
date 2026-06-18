@@ -3857,6 +3857,49 @@ def set_employee_status():
         frappe.log_error(message=frappe.get_traceback(), title="Error occurred while trying to reassign duties")
 
 
+def send_pending_alm_checkout_notifications():
+    """
+    Daily scheduler job: checks for submitted ALM (OUT) records flagged with
+    custom_notify_on_leave_start=1 whose linked Leave Application has now started
+    (from_date <= today). Sends the checkout notification email and clears the flag.
+    """
+    from one_fm.accommodation.doctype.accommodation_leave_movement.accommodation_leave_movement import (
+        send_alm_checkout_notification,
+    )
+
+    pending_alms = frappe.get_all(
+        "Accommodation Leave Movement",
+        filters={
+            "type": "OUT",
+            "docstatus": 1,
+            "custom_notify_on_leave_start": 1,
+        },
+        fields=["name", "leave_application"],
+    )
+
+    for alm in pending_alms:
+        if not alm.leave_application:
+            # No leave application linked — clear the flag and skip
+            frappe.db.set_value(
+                "Accommodation Leave Movement", alm.name,
+                "custom_notify_on_leave_start", 0
+            )
+            continue
+
+        leave_from_date = frappe.db.get_value(
+            "Leave Application", alm.leave_application, "from_date"
+        )
+
+        if leave_from_date and getdate(leave_from_date) <= getdate(today()):
+            send_alm_checkout_notification(alm.name)
+            frappe.db.set_value(
+                "Accommodation Leave Movement", alm.name,
+                "custom_notify_on_leave_start", 0
+            )
+
+    frappe.db.commit()
+
+
 
 
 def is_holiday(employee, date=None, raise_exception=True,include_weekly_off = False):
