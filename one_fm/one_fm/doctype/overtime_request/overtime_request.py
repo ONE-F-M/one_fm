@@ -5,7 +5,7 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils import (
 	time_diff_in_hours, getdate, get_first_day, get_last_day,
-	flt, rounded
+	flt, rounded, now_datetime, get_datetime
 )
 from frappe import _
 from frappe.query_builder.functions import Sum
@@ -24,6 +24,8 @@ class OvertimeRequest(Document):
 		self.calculate_overtime_hours()
 		self.calculate_yearly_overtime_hours()
 		self.validate_yearly_overtime_limit()
+		self.validate_attendance_verification_timing()
+		self.validate_attendance_marked()
 
 	def on_update(self):
 		self.workflow_notification()
@@ -130,6 +132,33 @@ class OvertimeRequest(Document):
 			frappe.throw(
 				_("This request cannot be submitted. Adding these overtime hours "
 				  "will exceed the maximum allowable limit of 180 overtime hours per year.")
+			)
+
+	def validate_attendance_verification_timing(self):
+		"""Block transition to 'Pending Payroll Officer' before overtime end time."""
+		if self.workflow_state != "Pending Payroll Officer":
+			return
+		if not self.date or not self.end_time:
+			return
+
+		overtime_end = get_datetime(f"{self.date} {self.end_time}")
+		if self.start_time:
+			overtime_start = get_datetime(f"{self.date} {self.start_time}")
+			if overtime_end <= overtime_start:
+				overtime_end = frappe.utils.add_days(overtime_end, 1)
+		if now_datetime() < overtime_end:
+			frappe.throw(
+				_("You cannot verify attendance until the scheduled overtime end time has passed.")
+			)
+
+	def validate_attendance_marked(self):
+		"""Require Present or Absent to be checked before transitioning to 'Pending Payroll Officer'."""
+		if self.workflow_state != "Pending Payroll Officer":
+			return
+
+		if not self.present and not self.absent:
+			frappe.throw(
+				_("Please mark the employee as Present or Absent before verifying attendance.")
 			)
 
 	def workflow_notification(self):
