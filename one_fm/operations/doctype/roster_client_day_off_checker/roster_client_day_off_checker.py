@@ -96,11 +96,16 @@ def format_reporting_week(period_start, period_end):
 		str: Formatted week string (e.g., "Week 24-25 2026")
 	"""
 	period_start = getdate(period_start)
-	# Shift to Monday (+1 day) since ISO weeks run Mon–Sun,
-	# and our window starts on Sunday (which belongs to the prior ISO week)
-	monday = period_start + timedelta(days=1)
-	iso_year, iso_week, _ = monday.isocalendar()
-	return f"Week {iso_week}-{iso_week + 1} {iso_year}"
+	period_end = getdate(period_end)
+	# Shift to Monday (+1 day) since ISO weeks run Mon–Sun, and our window starts on Sunday.
+	current_monday = period_start + timedelta(days=1)
+	# period_end is the next week's Saturday, so Monday of that week is 5 days earlier.
+	next_monday = period_end - timedelta(days=5)
+	current_year, current_week, _ = current_monday.isocalendar()
+	next_year, next_week, _ = next_monday.isocalendar()
+	if current_year == next_year:
+		return f"Week {current_week}-{next_week} {current_year}"
+	return f"Week {current_week}-{next_week} {current_year}/{next_year}"
 
 
 def create_or_update_cdo_checker(employee, period_start, period_end, cdo_count, today):
