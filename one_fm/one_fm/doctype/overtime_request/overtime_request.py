@@ -141,7 +141,11 @@ class OvertimeRequest(Document):
 		if not self.date or not self.end_time:
 			return
 
-		overtime_end = get_datetime("{0} {1}".format(self.date, self.end_time))
+		overtime_end = get_datetime(f"{self.date} {self.end_time}")
+		if self.start_time:
+			overtime_start = get_datetime(f"{self.date} {self.start_time}")
+			if overtime_end <= overtime_start:
+				overtime_end = frappe.utils.add_days(overtime_end, 1)
 		if now_datetime() < overtime_end:
 			frappe.throw(
 				_("You cannot verify attendance until the scheduled overtime end time has passed.")
