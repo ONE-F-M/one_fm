@@ -73,12 +73,12 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "OT-HO-.{employee}.-",
+   "default": "OT-.MM.-.YYYY.-.####",
    "fieldname": "naming_series",
    "fieldtype": "Select",
    "hidden": 1,
    "label": "Series",
-   "options": "OT-HO-.{employee}.-",
+   "options": "OT-.MM.-.YYYY.-.####",
    "reqd": 1
   },
   {
