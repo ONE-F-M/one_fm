@@ -72,8 +72,12 @@ frappe.ui.form.on("Overtime Request", {
 	before_workflow_action: function(frm) {
 		if (frm.selected_workflow_action === "Verify Attendance") {
 			// Block if overtime end time has not passed
+			let overtime_start = frappe.datetime.str_to_obj(frm.doc.date + " " + frm.doc.start_time);
 			let overtime_end = frappe.datetime.str_to_obj(frm.doc.date + " " + frm.doc.end_time);
-			let now = frappe.datetime.now_datetime(true);
+			if (overtime_start && overtime_end && overtime_end <= overtime_start) {
+				overtime_end = moment(overtime_end).add(1, "day").toDate();
+			}
+			let now = frappe.datetime.str_to_obj(frappe.datetime.now_datetime());
 
 			if (now < overtime_end) {
 				frappe.dom.unfreeze();
