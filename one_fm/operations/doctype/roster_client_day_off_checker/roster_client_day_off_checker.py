@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import getdate, nowdate, add_days
-from datetime import date, timedelta
+from datetime import timedelta
 from one_fm.operations.doctype.operations_shift.operations_shift import get_shift_supervisor
 
 
