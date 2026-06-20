@@ -98,6 +98,8 @@ class Contracts(Document):
         Creates or updates Item Price records for each Contract Item row.
         Deduplicates processing by Item/Gender/Shift/DaysOff combination to prevent duplicate errors.
         """
+        from one_fm.api.doc_methods.item_price import ItemPriceDuplicateItem
+
         # 1. Gather unique combinations to process
         sync_groups = {}
         for row in self.items:
@@ -108,16 +110,16 @@ class Contracts(Document):
             gender = attrs.get("gender")
             shift_hours = attrs.get("working_hours") or 0
             days_off = row.get("days_off") or 0
-            
+
             uom = row.uom or frappe.db.get_value("Item", row.item_code, "stock_uom")
             currency = self.currency_ or "KWD"
 
             # Unique key for Item Price (matching the custom logic in one_fm/api/doc_methods/item_price.py)
             group_key = (row.item_code, uom, currency, gender, shift_hours, days_off)
-            
+
             if group_key not in sync_groups:
                 sync_groups[group_key] = {"rate": row.rate, "rows": []}
-            
+
             # Prefer the latest rate if duplicates exist in contract rows
             sync_groups[group_key]["rate"] = row.rate
             sync_groups[group_key]["rows"].append(row)
@@ -146,18 +148,38 @@ class Contracts(Document):
                 filters["days_off"] = days_off
 
             # Search for existing record using standard get_value
-            # Note: We use name to get the doc later if update is needed
-            existing_item_price = frappe.db.get_value("Item Price", {k: v for k, v in filters.items() if v is not None and v != ""}, "name")
+            existing_item_price = frappe.db.get_value(
+                "Item Price",
+                {k: v for k, v in filters.items() if v is not None and v != ""},
+                "name"
+            )
 
             if existing_item_price:
                 ip_doc = frappe.get_doc("Item Price", existing_item_price)
                 if flt(ip_doc.price_list_rate) != flt(rate):
                     ip_doc.price_list_rate = rate
-                    ip_doc.save(ignore_permissions=True)
+                    # Mute messages during save to prevent duplicate warnings
+                    # from surfacing to the user during background sync.
+                    _prev_mute = frappe.flags.mute_messages
+                    frappe.flags.mute_messages = True
+                    try:
+                        ip_doc.save(ignore_permissions=True)
+                    except ItemPriceDuplicateItem:
+                        # Duplicate detected on save — the existing record is
+                        # itself a duplicate. Log and continue; rate stays as-is.
+                        frappe.log_error(
+                            title=_("Item Price Sync: Duplicate on update"),
+                            message=_(
+                                "Could not update Item Price {0} for item {1}. "
+                                "A duplicate Item Price already exists."
+                            ).format(ip_doc.name, item_code)
+                        )
+                    finally:
+                        frappe.flags.mute_messages = _prev_mute
+                        # Clear any queued messages from the caught exception
+                        frappe.local.message_log = []
                 item_price_name = ip_doc.name
             else:
-                # Double check without attribute filters if it's a standard item? 
-                # No, we rely on the attribute filters for uniqueness.
                 new_ip = frappe.get_doc({
                     "doctype": "Item Price",
                     "item_code": item_code,
@@ -172,8 +194,45 @@ class Contracts(Document):
                     "valid_from": today(),
                     "selling": 1
                 })
-                new_ip.insert(ignore_permissions=True)
-                item_price_name = new_ip.name
+                # Mute messages during insert to prevent duplicate warnings
+                # from surfacing to the user during background sync.
+                _prev_mute = frappe.flags.mute_messages
+                frappe.flags.mute_messages = True
+                try:
+                    new_ip.insert(ignore_permissions=True)
+                    item_price_name = new_ip.name
+                except ItemPriceDuplicateItem:
+                    # A duplicate already exists that our filter lookup missed
+                    # (e.g. due to null-handling differences). Find it and reuse.
+                    frappe.log_error(
+                        title=_("Item Price Sync: Duplicate on insert"),
+                        message=_(
+                            "Could not create Item Price for item {0}. "
+                            "A duplicate Item Price already exists. "
+                            "Attempting to locate and reuse."
+                        ).format(item_code)
+                    )
+                    # Fallback: broader search without custom attribute filters
+                    fallback_filters = {
+                        "item_code": item_code,
+                        "price_list": price_list,
+                        "customer": customer,
+                    }
+                    if uom:
+                        fallback_filters["uom"] = uom
+                    if currency:
+                        fallback_filters["currency"] = currency
+
+                    fallback_name = frappe.db.get_value("Item Price", fallback_filters, "name")
+                    if fallback_name:
+                        item_price_name = fallback_name
+                    else:
+                        # Cannot resolve — skip this group
+                        continue
+                finally:
+                    frappe.flags.mute_messages = _prev_mute
+                    # Clear any queued messages from the caught exception
+                    frappe.local.message_log = []
 
             # 3. Update all rows in this group with the Item Price reference
             for row in data["rows"]:
@@ -1979,16 +2038,20 @@ def cancel_unselected_day_schedules(contract_doc):
 
 @frappe.whitelist()
 def sync_contract_item_prices(contract_name):
-	"""Background task to sync item prices for a contract."""
+	"""Sync item prices for a contract, suppressing user-facing messages."""
 	if not contract_name:
 		return
-	
+
 	try:
 		doc = frappe.get_doc("Contracts", contract_name)
 		doc.sync_item_prices()
 		frappe.db.commit()
 	except Exception as e:
 		frappe.log_error("Item Price Sync Error", f"Error in sync_contract_item_prices for {contract_name}: {str(e)}")
+	finally:
+		# Always clear message log so no Item Price warnings leak to the user
+		# when saving the Contract document.
+		frappe.local.message_log = []
 
 
 @frappe.whitelist()
