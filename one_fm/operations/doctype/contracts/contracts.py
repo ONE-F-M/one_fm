@@ -243,9 +243,15 @@ class Contracts(Document):
         Allow Legal Manager / Legal User to save changes to the two legal
         notification fields while the contract is Active, without triggering
         any workflow transition. All other roles follow the normal path.
+        System Managers can always save — bypass workflow validation entirely.
         """
-        legal_roles = {"Legal Manager", "Legal User"}
+        # System Manager can always save — bypass workflow validation
         user_roles = set(frappe.get_roles(frappe.session.user))
+        if "System Manager" in user_roles and not self.is_new():
+            self.flags.ignore_workflow = True
+            return
+
+        legal_roles = {"Legal Manager", "Legal User"}
 
         if not (user_roles & legal_roles):
             return  # not a legal role — normal save path
@@ -873,6 +879,58 @@ def post_return_comment(contract_name: str, target_role: str, comment: str):
         "employee_name": employee_name,
         "employee_user": employee_user
     }
+
+
+def contracts_has_permission(doc, ptype, user):
+    """Restrict write access to Contracts to users listed in Process Tasks.
+
+    System Managers are always allowed. For write/create/delete operations,
+    only users whose email matches a Process Task (erp_document='Contracts',
+    process_name='Others') employee_user are permitted. Read access is not
+    restricted by this hook.
+    """
+    if ptype == "read":
+        return None  # Don't interfere with read permissions
+
+    if "System Manager" in frappe.get_roles(user):
+        return None  # System Manager always allowed — defer to default logic
+
+    # Get all designated users from Contracts Process Tasks
+    designated_users = frappe.get_all(
+        "Process Task",
+        filters={
+            "erp_document": "Contracts",
+            "process_name": "Others",
+        },
+        pluck="employee_user"
+    )
+
+    if user not in designated_users:
+        return False  # Block write for non-designated users
+
+    return None  # Allow Frappe's default permission logic for designated users
+
+
+@frappe.whitelist()
+def is_contracts_process_task_user() -> bool:
+    """Check if the current user is a designated Contracts Process Task user.
+
+    Returns True if the user is a System Manager or if their email matches
+    an employee_user in a Process Task for Contracts.
+    """
+    if "System Manager" in frappe.get_roles():
+        return True
+
+    designated_users = frappe.get_all(
+        "Process Task",
+        filters={
+            "erp_document": "Contracts",
+            "process_name": "Others",
+        },
+        pluck="employee_user"
+    )
+
+    return frappe.session.user in designated_users
 
 
 @frappe.whitelist()

@@ -217,7 +217,8 @@ has_permission = {
  	"Penalty": "one_fm.legal.doctype.penalty.penalty.has_permission",
  	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.has_permission",
 	"Issue": "one_fm.utils.has_permission_to_issue",
-	"Notification Settings":'one_fm.overrides.notification_settings.has_permission_'
+	"Notification Settings":'one_fm.overrides.notification_settings.has_permission_',
+	"Contracts": "one_fm.operations.doctype.contracts.contracts.contracts_has_permission"
 }
 
 standard_queries = {
