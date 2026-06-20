@@ -28,6 +28,41 @@ def get_asset_custom_fields():
                 "fieldtype": "Check",
                 "label": "Is Refundable",
                 "insert_after": "is_composite_asset"
-            }
+            },
+            {
+                "fieldname": "custom_serial_and_warranty_details",
+                "fieldtype": "Section Break",
+                "label": "Serial and Warranty Details",
+                "insert_after": "total_asset_cost",
+            },
+            {
+                "fieldname": "custom_serial_no",
+                "fieldtype": "Data",
+                "label": "Serial No",
+                "insert_after": "custom_serial_and_warranty_details",
+                "translatable": 1,
+            },
+            {
+                "fieldname": "custom_column_break_ffjzp",
+                "fieldtype": "Column Break",
+                "insert_after": "custom_serial_no",
+            },
+            {
+                "fieldname": "custom_warranty_start_date",
+                "fieldtype": "Date",
+                "label": "Warranty Start Date",
+                "insert_after": "custom_column_break_ffjzp",
+            },
+            {
+                "fieldname": "custom_column_break_7darf",
+                "fieldtype": "Column Break",
+                "insert_after": "custom_warranty_start_date",
+            },
+            {
+                "fieldname": "custom_warranty_end_date",
+                "fieldtype": "Date",
+                "label": "Warranty End Date",
+                "insert_after": "custom_column_break_7darf",
+            },
         ]
     }

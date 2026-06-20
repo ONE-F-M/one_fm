@@ -2,6 +2,7 @@
 from one_fm.custom.custom_field.additional_salary import get_additional_salary_custom_fields
 from one_fm.custom.custom_field.asset import get_asset_custom_fields
 from one_fm.custom.custom_field.asset_category_account import get_asset_category_account_custom_fields
+from one_fm.custom.custom_field.asset_repair import get_asset_repair_custom_fields
 from one_fm.custom.custom_field.asset_movement import get_asset_movement_custom_fields
 from one_fm.custom.custom_field.assignment_rule import get_assignment_rule_custom_fields
 from one_fm.custom.custom_field.attendance import get_attendance_custom_fields
@@ -116,6 +117,7 @@ def get_custom_fields():
 	custom_fields.update(get_task_custom_fields())
 	custom_fields.update(get_asset_category_account_custom_fields())
 	custom_fields.update(get_asset_custom_fields())
+	custom_fields.update(get_asset_repair_custom_fields())
 	custom_fields.update(get_asset_movement_custom_fields())
 	custom_fields.update(get_attendance_request_custom_fields())
 	custom_fields.update(get_attendance_custom_fields())

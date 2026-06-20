@@ -1,0 +1,23 @@
+{
+  "name": "Assign Warehouse Supervisor-Asset Repair",
+  "document_type": "Asset Repair",
+  "priority": 0,
+  "disabled": 0,
+  "description": "",
+  "is_assignment_rule_with_workflow": 1,
+  "assign_condition": "workflow_state == 'Pending Warehouse Supervisor'",
+  "unassign_condition": "workflow_state != 'Pending Warehouse Supervisor'",
+  "close_condition": "",
+  "rule": "Based on Process Task",
+  "doctype": "Assignment Rule",
+  "users": [],
+  "assignment_days": [
+    { "day": "Monday", "doctype": "Assignment Rule Day" },
+    { "day": "Tuesday", "doctype": "Assignment Rule Day" },
+    { "day": "Wednesday", "doctype": "Assignment Rule Day" },
+    { "day": "Thursday", "doctype": "Assignment Rule Day" },
+    { "day": "Friday", "doctype": "Assignment Rule Day" },
+    { "day": "Saturday", "doctype": "Assignment Rule Day" },
+    { "day": "Sunday", "doctype": "Assignment Rule Day" }
+  ]
+}
