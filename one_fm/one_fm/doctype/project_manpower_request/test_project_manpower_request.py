@@ -147,6 +147,21 @@ class TestProjectManpowerRequest(FrappeTestCase):
 		self.pmr.project_allocation = None
 		self.assertRaises(frappe.MandatoryError, self.pmr.save, ignore_permissions=True)
 
+	def test_actual_deployment_date_calculation(self):
+		# Case 1: reason is not Exit, both deployment_date and ojt_days are set
+		self.pmr.reason = "Annual Leave Reliever"
+		self.pmr.deployment_date = "2026-07-01"
+		self.pmr.ojt_days = 5
+		self.pmr.save(ignore_permissions=True)
+		self.assertEqual(str(self.pmr.actual_deployment_date), "2026-06-26")
+
+		# Case 2: reason is Exit
+		self.pmr.reason = "Exit"
+		self.pmr.deployment_date = "2026-07-01"
+		self.pmr.ojt_days = 5
+		self.pmr.save(ignore_permissions=True)
+		self.assertIsNone(self.pmr.actual_deployment_date)
+
 def _make_user(email, first_name="Test"):
 	if frappe.db.exists("User", email):
 		return email

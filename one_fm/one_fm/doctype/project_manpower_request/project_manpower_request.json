@@ -23,6 +23,7 @@
   "erf",
   "ojt_days",
   "deployment_date",
+  "actual_deployment_date",
   "column_break_status",
   "cancelled_qty",
   "managed_by_ot_qty",
@@ -177,6 +178,13 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Deployment Date"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "actual_deployment_date",
+   "fieldtype": "Date",
+   "label": "Actual Deployment Date",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_status",
