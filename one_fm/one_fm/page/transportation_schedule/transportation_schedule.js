@@ -2149,7 +2149,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 // Navigate to the persistent manifest page
                 const planName = this.currentPlan.name;
-                const manifestUrl = `/app/transportation-manifest/${planName}`;
+                const manifestUrl = `/app/transportation-manifest-page/${planName}`;
                 window.open(manifestUrl, '_blank');
 
                 frappe.show_alert({
