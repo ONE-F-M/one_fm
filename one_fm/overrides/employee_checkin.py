@@ -9,7 +9,7 @@ from one_fm.utils import get_current_shift
 from one_fm.api.tasks import send_notification, issue_penalty
 from one_fm.operations.doctype.operations_site.operations_site import create_notification_log
 from one_fm.api.doc_events import (
-	get_notification_user, validate_location, get_employee_user_id
+	get_notification_user, validate_location, get_employee_user_id,
 )
 from one_fm.api.api import push_notification_rest_api_for_checkin
 from one_fm.processor import sendemail
@@ -72,7 +72,6 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 							self.shift_permission = existing_perm[0]["name"]
 		except Exception as e:
 			frappe.throw(frappe.get_traceback())
-
 
 	def validate_duplicate_log(self):
 		doc = frappe.db.sql(f""" select name from `tabEmployee Checkin` where employee = '{self.employee}' and shift_assignment ='{self.shift_assignment}' and time = '{self.time}' and (NOT name = '{self.name}')""", as_dict=1)
