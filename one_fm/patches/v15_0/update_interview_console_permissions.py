@@ -15,8 +15,8 @@ def setup_permissions(doctype, role, perms):
 			custom_perm.parentfield = "permissions"
 			custom_perm.insert(ignore_permissions=True)
 
-	# 2. Check if a Custom DocPerm already exists for this doctype and role
-	custom_perm_name = frappe.db.get_value("Custom DocPerm", {"parent": doctype, "role": role})
+	# 2. Check if a Custom DocPerm already exists for this doctype and role at permlevel 0
+	custom_perm_name = frappe.db.get_value("Custom DocPerm", {"parent": doctype, "role": role, "permlevel": 0})
 
 	if custom_perm_name:
 		custom_perm = frappe.get_doc("Custom DocPerm", custom_perm_name)
@@ -28,9 +28,13 @@ def setup_permissions(doctype, role, perms):
 		custom_perm.role = role
 		custom_perm.permlevel = 0
 
-	# 3. Update permissions dictionary
-	for k, v in perms.items():
-		custom_perm.set(k, v)
+	# 3. Update permissions dictionary explicitly using standard permission fields (least privilege)
+	permission_keys = [
+		"select", "read", "write", "create", "delete", "submit", "cancel",
+		"amend", "report", "export", "import", "share", "print", "email"
+	]
+	for k in permission_keys:
+		custom_perm.set(k, perms.get(k, 0))
 
 	custom_perm.save(ignore_permissions=True)
 
@@ -53,24 +57,14 @@ def execute():
 		"submit": 1,
 		"cancel": 1,
 		"amend": 1,
-		"select": 1,
-		"export": 1,
-		"share": 1,
-		"email": 1,
-		"print": 1,
-		"report": 1
+		"select": 1
 	}
 
 	round_perms = {
 		"read": 1,
 		"write": 1,
 		"create": 1,
-		"select": 1,
-		"export": 1,
-		"share": 1,
-		"email": 1,
-		"print": 1,
-		"report": 1
+		"select": 1
 	}
 
 	for role in target_roles:
