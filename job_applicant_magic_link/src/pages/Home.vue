@@ -32,7 +32,7 @@ export default {
   },
   methods:{
     loadContent(){
-      let magicLink = this.$route.query.magic_link;
+      let magicLink = new URLSearchParams(window.location.search).get('magic_link');
       if (!magicLink){
         Swal.fire(
           'Error',
