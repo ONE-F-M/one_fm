@@ -168,9 +168,10 @@ def after_insert_background(employee_checkin,current_shift):
 				current_shift = shift_details.get('data').get('name')
 
 		# update shift if not exists
-		if current_shift and frappe.db.exists("Shift Assignment", current_shift):
+		if current_shift and frappe.db.exists("Shift Assignment", current_shift) \
+			and frappe.db.exists("Shift Type", frappe.db.get_value("Shift Assignment", current_shift, "shift_type")):
 			curr_shift = frappe.get_doc("Shift Assignment", current_shift)
-			shift_type = frappe.db.sql(f"""SELECT * FROM `tabShift Type` WHERE name='{curr_shift.shift_type}' """, as_dict=1)[0]
+			shift_type = frappe.get_cached_doc("Shift Type", curr_shift.shift_type)
 			# calculate entry
 			early_exit = 0
 			late_entry = 0
