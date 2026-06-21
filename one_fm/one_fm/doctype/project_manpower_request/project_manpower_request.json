@@ -453,7 +453,7 @@
  "links": [
   {
    "link_doctype": "Employee Resignation",
-   "link_fieldname": "employee_resignation"
+   "link_fieldname": "project_manpower_request"
   }
  ],
  "modified": "2026-06-21 10:03:46.000000",
