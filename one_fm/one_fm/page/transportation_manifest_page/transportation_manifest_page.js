@@ -1,14 +1,14 @@
 /**
  * Transportation Manifest — Persistent Frappe Page
  *
- * URL: /app/transportation-manifest/<Route_Plan_Name>
+ * URL: /app/transportation-manifest-page/<Route_Plan_Name>
  *
  * Fetches manifest data from the server using the plan name in the URL,
  * then renders the same manifest UI previously served via a blob: URL.
  * Redesigned for DRIVERS — large text, big tap targets, mobile-first.
  */
 
-frappe.pages["transportation-manifest"].on_page_load = function (wrapper) {
+frappe.pages["transportation-manifest-page"].on_page_load = function (wrapper) {
 	const page = frappe.ui.make_app_page({
 		parent: wrapper,
 		title: __("Transportation Manifest"),
@@ -21,7 +21,7 @@ frappe.pages["transportation-manifest"].on_page_load = function (wrapper) {
 	const $container = $(wrapper).find(".layout-main-section");
 	$container.empty();
 
-	// Extract plan name from URL: /app/transportation-manifest/<plan_name>
+	// Extract plan name from URL: /app/transportation-manifest-page/<plan_name>
 	const route = frappe.get_route();
 	const planName = route.length > 1 ? route.slice(1).join("/") : "";
 
@@ -44,22 +44,33 @@ frappe.pages["transportation-manifest"].on_page_load = function (wrapper) {
 	`;
 
 	if (!planName) {
-		$container.html(`
-			${STATE_STYLES}
-			<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-			<div class="mfst-state-screen">
-				<span class="material-symbols-outlined mfst-state-icon">directions_bus</span>
-				<h2>No Transportation Plan Selected</h2>
-				<p>
-					To view a manifest, open the <strong>Transportation Schedule</strong> page,
-					select a plan, and tap the <strong>Manifest</strong> button.
-				</p>
-				<a href="/app/transportation-schedule" class="mfst-state-btn mfst-state-btn-primary">
-					<span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
-					Go to Transportation Schedule
-				</a>
-			</div>
-		`);
+		// Fetch the latest Route Plan and redirect to it
+		frappe.db.get_list("Route Plan", {
+			fields: ["name"],
+			order_by: "creation desc",
+			limit: 1
+		}).then(records => {
+			if (records && records.length > 0) {
+				frappe.set_route("transportation-manifest-page", records[0].name);
+			} else {
+				$container.html(`
+					${STATE_STYLES}
+					<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+					<div class="mfst-state-screen">
+						<span class="material-symbols-outlined mfst-state-icon">directions_bus</span>
+						<h2>No Transportation Plan Selected</h2>
+						<p>
+							To view a manifest, open the <strong>Transportation Schedule</strong> page,
+							select a plan, and tap the <strong>Manifest</strong> button.
+						</p>
+						<a href="/app/transportation-schedule" class="mfst-state-btn mfst-state-btn-primary">
+							<span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
+							Go to Transportation Schedule
+						</a>
+					</div>
+				`);
+			}
+		});
 		return;
 	}
 
@@ -223,10 +234,11 @@ function renderManifest($container, data) {
 		interactive = interactive || false;
 		const id = (typeof e === "object" && e !== null) ? (e.id || e.name || "—") : (e || "—");
 		const name = (typeof e === "object" && e !== null) ? (e.name || "—") : (e || "—");
+		const rowId = (typeof e === "object" && e !== null) ? (e.row_id || id) : id;
 		const rawMobile = (typeof e === "object" && e !== null) ? (e.mobile || "") : "";
 		const mobile = rawMobile.replace(/[^\d+\-() ]/g, "");
 
-		const state = window.checkerState[id] || {};
+		const state = window.checkerState[rowId] || {};
 
 		let classes = "mfst-emp-chip";
 		let displayName = name;
@@ -267,7 +279,7 @@ function renderManifest($container, data) {
 			phoneIcon = `<span class="mfst-emp-call-btn mfst-emp-call-disabled" title="No mobile number" onclick="event.stopPropagation();window._mfst_showNoNumber('${safeName}')"><span class="material-symbols-outlined">call</span></span>`;
 		}
 
-		const onclickAttr = interactive ? ` onclick="window._mfst_openCheckInModal('${esc(id)}', '${safeName}')"` : "";
+		const onclickAttr = interactive ? ` onclick="window._mfst_openCheckInModal('${esc(rowId)}', '${safeName}')"` : "";
 		return `<span class="${classes}"${onclickAttr}><span class="mfst-chip-name">${safeName}</span>${statusIcon}${phoneIcon}</span>`;
 	}
 
@@ -373,6 +385,36 @@ function renderManifest($container, data) {
 	shipmentReturnEmployees = ROUTE_DATA.shipmentReturnEmployees ?? {};
 	shipmentSiteLocations = ROUTE_DATA.shipmentSiteLocations ?? {};
 	shipmentShiftNames = ROUTE_DATA.shipmentShiftNames ?? {};
+
+	// Pre-populate checkerState from server manifest details
+	if (shipmentEmployees) {
+		Object.values(shipmentEmployees).forEach(emps => {
+			(emps || []).forEach(emp => {
+				if (emp && emp.row_id) {
+					window.checkerState[emp.row_id] = {
+						attendance: emp.attendance_status,
+						qoa: emp.qoa_status,
+						qoa_fail_reason: emp.qoa_reason,
+						replacement: emp.replacement || null
+					};
+				}
+			});
+		});
+	}
+	if (shipmentReturnEmployees) {
+		Object.values(shipmentReturnEmployees).forEach(emps => {
+			(emps || []).forEach(emp => {
+				if (emp && emp.row_id) {
+					window.checkerState[emp.row_id] = {
+						attendance: emp.attendance_status,
+						qoa: emp.qoa_status,
+						qoa_fail_reason: emp.qoa_reason,
+						replacement: emp.replacement || null
+					};
+				}
+			});
+		});
+	}
 
 	const parsed = routes.map(r => buildRoute(r, shipments, vehicles));
 
@@ -834,11 +876,11 @@ function renderManifest($container, data) {
 	let tempQoa = null;
 	let tempQoaFailReason = null;
 
-	window._mfst_openCheckInModal = function(empId, empName) {
-		currentCheckInEmpId = empId;
+	window._mfst_openCheckInModal = function(rowId, empName) {
+		currentCheckInEmpId = rowId;
 		currentCheckInEmpName = empName;
 
-		const state = window.checkerState[empId] || {};
+		const state = window.checkerState[rowId] || {};
 		tempAttendance = state.attendance || null;
 		tempQoa = state.qoa || null;
 		tempQoaFailReason = state.qoa_fail_reason || null;
@@ -937,7 +979,7 @@ function renderManifest($container, data) {
 	// pass false (default) so the guard silently blocks persistence without
 	// startling the dispatcher before they've had a chance to select a reason.
 	function autoSaveCheckIn(showValidationUI) {
-		const empId = currentCheckInEmpId;
+		const rowId = currentCheckInEmpId;
 		const empName = currentCheckInEmpName;
 		const att = tempAttendance;
 		const qoa = tempQoa;
@@ -951,33 +993,55 @@ function renderManifest($container, data) {
 					$container.find("#mfst-qoaReasonSection").css("animation", "mfst-shake 0.35s ease");
 				});
 			}
-			return; // Always block persistence — UI feedback is optional
+			return; // Always block persistence
 		}
 
-		window.checkerState[empId] = window.checkerState[empId] || {};
-		window.checkerState[empId].attendance = att;
-		window.checkerState[empId].qoa = qoa;
-		window.checkerState[empId].qoa_fail_reason = (att === "Present" && qoa === "Fail") ? tempQoaFailReason : null;
+		frappe.call({
+			method: "one_fm.one_fm.api.doc_methods.transportation_manifest.update_manifest_row_checkin",
+			args: {
+				row_name: rowId,
+				attendance_status: att,
+				qoa_status: qoa,
+				qoa_reason: (att === "Present" && qoa === "Fail") ? tempQoaFailReason : null
+			},
+			callback: function(r) {
+				if (r.message && r.message.status === "success") {
+					const row_data = r.message.row;
+					window.checkerState[rowId] = window.checkerState[rowId] || {};
+					window.checkerState[rowId].attendance = row_data.attendance_status;
+					window.checkerState[rowId].qoa = row_data.qoa_status;
+					window.checkerState[rowId].qoa_fail_reason = row_data.qoa_reason;
 
-		if (activeView) {
-			renderRoute(activeView);
-		}
+					if (activeView) {
+						renderRoute(activeView);
+					}
 
-		if (att === "Absent") {
-			setTimeout(() => {
-				closeCheckInModal();
-				openRamboPrompt(empId, empName, "absent");
-			}, 150);
-		} else if (att === "Present" && qoa === "Fail") {
-			setTimeout(() => {
-				closeCheckInModal();
-				openRamboPrompt(empId, empName, "qoa_fail");
-			}, 150);
-		} else if (att === "Present" && qoa === "Pass") {
-			setTimeout(() => {
-				closeCheckInModal();
-			}, 150);
-		}
+					if (att === "Absent") {
+						setTimeout(() => {
+							closeCheckInModal();
+							openRamboPrompt(rowId, empName, "absent");
+						}, 150);
+					} else if (att === "Present" && qoa === "Fail") {
+						setTimeout(() => {
+							closeCheckInModal();
+							openRamboPrompt(rowId, empName, "qoa_fail");
+						}, 150);
+					} else if (att === "Present" && qoa === "Pass") {
+						setTimeout(() => {
+							closeCheckInModal();
+						}, 150);
+					}
+				}
+			},
+			error: function() {
+				// Revert UI to saved values on error/validation fail
+				const state = window.checkerState[rowId] || {};
+				tempAttendance = state.attendance || null;
+				tempQoa = state.qoa || null;
+				tempQoaFailReason = state.qoa_fail_reason || null;
+				updateCheckInUI();
+			}
+		});
 	}
 
 	// ── RAMBO PROMPT MODAL LOGIC ──
@@ -1056,12 +1120,24 @@ function renderManifest($container, data) {
 		$container.find("#mfst-btn-confirm-replace").prop("disabled", false);
 	}
 
-	function findShiftForEmp(empId) {
+	function getEmpIdFromRowId(rowId) {
+		for (const emps of Object.values(shipmentEmployees)) {
+			const found = (emps || []).find(e => e.row_id === rowId);
+			if (found) return found.id;
+		}
+		for (const emps of Object.values(shipmentReturnEmployees)) {
+			const found = (emps || []).find(e => e.row_id === rowId);
+			if (found) return found.id;
+		}
+		return null;
+	}
+
+	function findShiftForEmp(rowId) {
 		// Walk all shipment labels to find which shift/site this employee belongs to
 		for (const [label, emps] of Object.entries(shipmentEmployees)) {
 			const found = (emps || []).some(e => {
-				const eid = (typeof e === "object" && e !== null) ? (e.id || e.name || "") : (e || "");
-				return eid === empId;
+				const erowid = (typeof e === "object" && e !== null) ? (e.row_id || e.id || e.name || "") : "";
+				return erowid === rowId;
 			});
 			if (found) {
 				return {
@@ -1073,7 +1149,7 @@ function renderManifest($container, data) {
 		return { shift: "", site: "" };
 	}
 
-	function openReplacementModal(empId, empName) {
+	function openReplacementModal(rowId, empName) {
 		$container.find("#mfst-replaceOrigName").text(empName);
 		const sel = $container.find("#mfst-relieverSelect")[0];
 		sel.innerHTML = "";
@@ -1085,7 +1161,7 @@ function renderManifest($container, data) {
 		$container.find("#mfst-replacementModal").addClass("active");
 
 		// Resolve shift/site for this employee
-		const empShiftInfo = findShiftForEmp(empId);
+		const empShiftInfo = findShiftForEmp(rowId);
 		// Store for use in confirm handler
 		window._mfst_currentReplacementShift = empShiftInfo.shift;
 		window._mfst_currentReplacementSite = empShiftInfo.site;
@@ -1130,34 +1206,64 @@ function renderManifest($container, data) {
 		const reliever = availableRelievers.find(r => r.name === selVal);
 		if (!reliever) return;
 
-		window.checkerState[currentCheckInEmpId] = window.checkerState[currentCheckInEmpId] || {};
-		window.checkerState[currentCheckInEmpId].replacement = {
-			id: reliever.name,
-			name: reliever.employee_name,
-			mobile: reliever.mobile
-		};
+		const rowId = currentCheckInEmpId;
+		const empId = getEmpIdFromRowId(rowId) || rowId;
 
 		$container.find("#mfst-btn-confirm-replace").text("Processing...").prop("disabled", true);
 
+		// 1. Immediately write to database row (update_manifest_row_checkin)
 		frappe.call({
-			method: "one_fm.one_fm.page.transportation_schedule.transportation_schedule.process_rambo_replacement",
+			method: "one_fm.one_fm.api.doc_methods.transportation_manifest.update_manifest_row_checkin",
 			args: {
-				original_employee: currentCheckInEmpId,
-				replacement_employee: reliever.name,
-				shift_name: window._mfst_currentReplacementShift || "",
-				site: window._mfst_currentReplacementSite || ""
+				row_name: rowId,
+				attendance_status: "Absent",
+				reliever_employee: reliever.name
 			},
-			async: true,
 			callback: function(r) {
-				$container.find("#mfst-btn-confirm-replace").text("Confirm Replacement");
-				const msg = (r.message && r.message.message) ? r.message.message : "Replacement processed.";
-				showToast(msg);
-				closeReplacementModal();
+				if (r.message && r.message.status === "success") {
+					// 2. Call email notification since DB write succeeded
+					frappe.call({
+						method: "one_fm.one_fm.page.transportation_schedule.transportation_schedule.process_rambo_replacement",
+						args: {
+							original_employee: empId,
+							replacement_employee: reliever.name,
+							shift_name: window._mfst_currentReplacementShift || "",
+							site: window._mfst_currentReplacementSite || ""
+						},
+						callback: function(res) {
+							$container.find("#mfst-btn-confirm-replace").text("Confirm Replacement").prop("disabled", false);
+							
+							// Update local checkerState
+							window.checkerState[rowId] = window.checkerState[rowId] || {};
+							window.checkerState[rowId].replacement = {
+								id: reliever.name,
+								name: reliever.employee_name,
+								mobile: reliever.mobile
+							};
+							
+							const msg = (res.message && res.message.message) ? res.message.message : "Replacement processed.";
+							showToast(msg);
+							closeReplacementModal();
+						},
+						error: function() {
+							$container.find("#mfst-btn-confirm-replace").text("Confirm Replacement").prop("disabled", false);
+							// Still complete since DB saved
+							window.checkerState[rowId] = window.checkerState[rowId] || {};
+							window.checkerState[rowId].replacement = {
+								id: reliever.name,
+								name: reliever.employee_name,
+								mobile: reliever.mobile
+							};
+							showToast("Replacement saved, but notification email failed.");
+							closeReplacementModal();
+						}
+					});
+				} else {
+					$container.find("#mfst-btn-confirm-replace").text("Confirm Replacement").prop("disabled", false);
+				}
 			},
 			error: function() {
-				$container.find("#mfst-btn-confirm-replace").text("Confirm Replacement");
-				showToast("Replacement saved, but server request failed.");
-				closeReplacementModal();
+				$container.find("#mfst-btn-confirm-replace").text("Confirm Replacement").prop("disabled", false);
 			}
 		});
 	});

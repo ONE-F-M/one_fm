@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Transportation</span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transportation Schedule\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transportation Manifest\",\"col\":3}},{\"type\":\"spacer\",\"data\":{\"col\":12}},{\"type\":\"card\",\"data\":{\"card_name\":\"Vehicles & Masters\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Scheduling & Dispatch\",\"col\":4}}]",
+ "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Transportation</span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transportation Schedule\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transportation Manifest Page\",\"col\":3}},{\"type\":\"spacer\",\"data\":{\"col\":12}},{\"type\":\"card\",\"data\":{\"card_name\":\"Vehicles & Masters\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Scheduling & Dispatch\",\"col\":4}}]",
  "creation": "2026-06-10 20:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace",
@@ -83,7 +83,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Scheduling & Dispatch",
-   "link_count": 3,
+   "link_count": 4,
    "onboard": 0,
    "type": "Card Break"
   },
@@ -112,13 +112,23 @@
    "is_query_report": 0,
    "label": "Transportation Manifest",
    "link_count": 0,
-   "link_to": "transportation-manifest",
+   "link_to": "Transportation Manifest",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Transportation Manifest Page",
+   "link_count": 0,
+   "link_to": "transportation-manifest-page",
    "link_type": "Page",
    "onboard": 0,
    "type": "Link"
   }
  ],
- "modified": "2026-06-10 20:00:00.000000",
+ "modified": "2026-06-21 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Transportation",
@@ -137,8 +147,8 @@
   },
   {
    "color": "Green",
-   "label": "Transportation Manifest",
-   "link_to": "transportation-manifest",
+   "label": "Transportation Manifest Page",
+   "link_to": "transportation-manifest-page",
    "type": "Page"
   }
  ],
