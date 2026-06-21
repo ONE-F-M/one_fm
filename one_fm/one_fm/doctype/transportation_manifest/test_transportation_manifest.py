@@ -222,107 +222,119 @@ class TestTransportationManifest(FrappeTestCase):
 		self.assertRaises(frappe.ValidationError, doc2.save)
 
 	def test_sync_appends_new_rows(self):
-		"""Sync should append new employee rows without duplicating existing ones."""
+		"""sync_manifest_details should append new employee rows without duplicating existing ones."""
+		from types import SimpleNamespace
+		from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
+
 		doc = frappe.new_doc("Transportation Manifest")
 		doc.vehicle_no = self.vehicle1
 		doc.schedule_date = today()
-		doc.append("transportation_manifest_details", {
-			"stop_name": "Stop A",
-			"employee": self.employee1,
-			"trip_id": "TRIP_1",
-			"stop_id": "Stop A|OUTBOUND",
-			"stop_type": "Pick Up",
-			"employee_action": "Boarding",
-			"scheduled_time": "06:00:00",
-			"row_status": "Active",
-		})
-		doc.save()
+
+		# First sync — 1 employee at 1 stop
+		assignments = [SimpleNamespace(
+			direction="OUTBOUND", card_id="C1", stop_location="Stop A",
+			trip_group="TRIP_1", trip_name="Morning Run", start_time="06:00:00", end_time=None
+		)]
+		emp_map = {"C1": [{"id": self.employee1, "name": "Emp 1"}]}
+
+		changed = sync_manifest_details(doc, assignments, emp_map, {})
+		self.assertTrue(changed)
 		self.assertEqual(len(doc.transportation_manifest_details), 1)
 
-		# Simulate adding a second employee to the same trip
-		doc.append("transportation_manifest_details", {
-			"stop_name": "Stop A",
-			"employee": self.employee2,
-			"trip_id": "TRIP_1",
-			"stop_id": "Stop A|OUTBOUND",
-			"stop_type": "Pick Up",
-			"employee_action": "Boarding",
-			"scheduled_time": "06:00:00",
-			"row_status": "Active",
-		})
-		doc.save()
+		# Second sync — add employee2 to same stop
+		emp_map = {"C1": [{"id": self.employee1, "name": "Emp 1"}, {"id": self.employee2, "name": "Emp 2"}]}
+		changed = sync_manifest_details(doc, assignments, emp_map, {})
+		self.assertTrue(changed)
 		self.assertEqual(len(doc.transportation_manifest_details), 2)
 
-		# Verify both employees are present
+		# Third sync — same data, no changes
+		changed = sync_manifest_details(doc, assignments, emp_map, {})
+		self.assertFalse(changed)
+		self.assertEqual(len(doc.transportation_manifest_details), 2)
+
 		employees = {row.employee for row in doc.transportation_manifest_details}
 		self.assertIn(self.employee1, employees)
 		self.assertIn(self.employee2, employees)
 
 	def test_sync_preserves_attendance_state(self):
-		"""When a row is updated via sync, manual attendance fields must be preserved."""
+		"""sync_manifest_details must not overwrite manual attendance/QOA fields."""
+		from types import SimpleNamespace
+		from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
+
 		doc = frappe.new_doc("Transportation Manifest")
 		doc.vehicle_no = self.vehicle1
 		doc.schedule_date = today()
+
+		assignments = [SimpleNamespace(
+			direction="OUTBOUND", card_id="C1", stop_location="Stop A",
+			trip_group="TRIP_1", trip_name="Morning", start_time="06:00:00", end_time=None
+		)]
+		emp_map = {"C1": [{"id": self.employee1, "name": "Emp 1"}]}
+
+		# Initial sync
+		sync_manifest_details(doc, assignments, emp_map, {})
+		doc.save()
+
+		# Simulate dispatcher marking attendance
+		doc.transportation_manifest_details[0].attendance_status = "Present"
+		doc.transportation_manifest_details[0].qoa_status = "Pass"
+		doc.save()
+
+		# Re-sync with updated schedule time — manual fields must survive
+		assignments[0].start_time = "06:30:00"
+		changed = sync_manifest_details(doc, assignments, emp_map, {})
+
+		# Must report a change so callers know to save
+		self.assertTrue(changed)
+
+		# Save and reload to verify persistence
+		doc.save()
+		doc.reload()
+
+		row = doc.transportation_manifest_details[0]
+		self.assertEqual(str(row.scheduled_time), "06:30:00")
+		self.assertEqual(row.attendance_status, "Present")
+		self.assertEqual(row.qoa_status, "Pass")
+
+
+
+	def test_sync_backfills_stop_id_for_legacy_rows(self):
+		"""Pre-existing rows without stop_id should be matched via derived key, not duplicated."""
+		from types import SimpleNamespace
+		from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
+
+		doc = frappe.new_doc("Transportation Manifest")
+		doc.vehicle_no = self.vehicle1
+		doc.schedule_date = today()
+
+		# Simulate a legacy row (created before stop_id field existed)
 		doc.append("transportation_manifest_details", {
 			"stop_name": "Stop A",
 			"employee": self.employee1,
 			"trip_id": "TRIP_1",
-			"stop_id": "Stop A|OUTBOUND",
+			"stop_id": "",  # Legacy — no stop_id
 			"stop_type": "Pick Up",
 			"employee_action": "Boarding",
 			"scheduled_time": "06:00:00",
 			"attendance_status": "Present",
 			"qoa_status": "Pass",
-			"row_status": "Active",
 		})
 		doc.save()
 
-		# Reload and verify manual state persists
-		doc.reload()
+		# Sync with same data — should match the legacy row, NOT create a duplicate
+		assignments = [SimpleNamespace(
+			direction="OUTBOUND", card_id="C1", stop_location="Stop A",
+			trip_group="TRIP_1", trip_name="Morning", start_time="06:00:00", end_time=None
+		)]
+		emp_map = {"C1": [{"id": self.employee1, "name": "Emp 1"}]}
+
+		changed = sync_manifest_details(doc, assignments, emp_map, {})
+
+		# Should have backfilled stop_id, not duplicated
+		self.assertEqual(len(doc.transportation_manifest_details), 1)
 		row = doc.transportation_manifest_details[0]
+		self.assertEqual(row.stop_id, "Stop A|OUTBOUND")
+		# Attendance preserved
 		self.assertEqual(row.attendance_status, "Present")
 		self.assertEqual(row.qoa_status, "Pass")
 
-		# Simulate sync updating system fields while preserving manual fields
-		row.stop_name = "Stop A Renamed"
-		row.scheduled_time = "06:30:00"
-		# Manual fields untouched
-		doc.save()
-
-		doc.reload()
-		row = doc.transportation_manifest_details[0]
-		self.assertEqual(row.stop_name, "Stop A Renamed")
-		self.assertEqual(row.scheduled_time.strftime("%H:%M:%S") if hasattr(row.scheduled_time, "strftime") else str(row.scheduled_time), "06:30:00")
-		self.assertEqual(row.attendance_status, "Present")
-		self.assertEqual(row.qoa_status, "Pass")
-
-	def test_removed_rows_flagged(self):
-		"""Rows removed from the plan should be flagged as 'Removed', not deleted."""
-		doc = frappe.new_doc("Transportation Manifest")
-		doc.vehicle_no = self.vehicle1
-		doc.schedule_date = today()
-		doc.append("transportation_manifest_details", {
-			"stop_name": "Stop A",
-			"employee": self.employee1,
-			"trip_id": "TRIP_1",
-			"stop_id": "Stop A|OUTBOUND",
-			"stop_type": "Pick Up",
-			"employee_action": "Boarding",
-			"scheduled_time": "06:00:00",
-			"attendance_status": "Present",
-			"qoa_status": "Pass",
-			"row_status": "Active",
-		})
-		doc.save()
-
-		# Flag the row as Removed (simulating sync when employee removed from plan)
-		doc.transportation_manifest_details[0].row_status = "Removed"
-		doc.save()
-
-		doc.reload()
-		row = doc.transportation_manifest_details[0]
-		self.assertEqual(row.row_status, "Removed")
-		# Verify the row still exists and attendance data is preserved
-		self.assertEqual(row.employee, self.employee1)
-		self.assertEqual(row.attendance_status, "Present")
-		self.assertEqual(row.qoa_status, "Pass")

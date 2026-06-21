@@ -2,6 +2,7 @@ import frappe
 import requests
 from frappe import _
 from frappe.utils import cint
+from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
 
 PICKUP_BUFFER = 10             # minutes
 MAX_TRANSIT = 60               # minutes
@@ -1374,79 +1375,11 @@ def get_manifest_data_for_plan(plan_name: str):
 	c_map = {}  # dirKey -> { lbl, idx }
 	si = 0
 
-	def _sync_manifest_details(manifest_doc, assignment_rows, emp_map, return_emp_map):
-		"""Upsert child rows using compound key: (employee, trip_id, stop_id, employee_action).
-
-		New employees/stops are appended. Existing rows have system fields refreshed
-		while manual dispatcher fields (attendance, QOA, reliever) are preserved.
-		Rows no longer present in the plan are flagged as 'Removed' but kept.
-		"""
-		# Build lookup index of existing rows by compound key
-		existing_index = {}
-		for row in manifest_doc.transportation_manifest_details:
-			key = (row.employee or "", row.trip_id or "", row.stop_id or "", row.employee_action or "")
-			existing_index[key] = row
-
-		seen_keys = set()
-
-		for a_row in assignment_rows:
-			direction = a_row.direction
-			emps = (return_emp_map if direction == "RETURN" else emp_map).get(a_row.card_id, [])
-			action = "Dropping Off" if direction == "RETURN" else "Boarding"
-			stop_id_val = f"{a_row.stop_location or ''}|{direction}"
-
-			for emp in emps:
-				emp_id = emp.get("id")
-				if not emp_id:
-					continue
-
-				# Parse scheduled time from ISO timestamp
-				time_str = a_row.end_time if direction == "RETURN" else a_row.start_time
-				if time_str and "T" in time_str:
-					time_str = time_str.split("T")[1][:8]
-
-				key = (emp_id, a_row.trip_group or "", stop_id_val, action)
-				seen_keys.add(key)
-
-				if key in existing_index:
-					# UPDATE: refresh system fields, preserve manual fields
-					row = existing_index[key]
-					row.stop_name = a_row.stop_location or ""
-					row.stop_type = "Return" if direction == "RETURN" else "Pick Up"
-					row.scheduled_time = time_str
-					row.stop_id = stop_id_val
-					row.trip_name = a_row.trip_name or ""
-					row.employee_name = emp.get("name", "")
-					row.row_status = "Active"
-					# DO NOT touch: attendance_status, qoa_status, qoa_reason,
-					#               requires_reliever, reliever_employee
-				else:
-					# INSERT: new child row
-					manifest_doc.append("transportation_manifest_details", {
-						"stop_name": a_row.stop_location or "",
-						"employee": emp_id,
-						"employee_name": emp.get("name", ""),
-						"trip_id": a_row.trip_group or "",
-						"trip_name": a_row.trip_name or "",
-						"stop_id": stop_id_val,
-						"stop_type": "Return" if direction == "RETURN" else "Pick Up",
-						"employee_action": action,
-						"scheduled_time": time_str,
-						"requires_reliever": 0,
-						"row_status": "Active",
-					})
-
-		# Flag rows no longer in the plan as "Removed" (preserves data)
-		for key, row in existing_index.items():
-			if key not in seen_keys and (row.row_status or "Active") != "Removed":
-				row.row_status = "Removed"
-
 	# Lazily sync Transportation Manifest documents for each vehicle on today's date
 	schedule_date_str = frappe.utils.today()
 	assigned_vehicles = list({row.vehicle for row in doc.assignments if row.vehicle})
 	
 	manifests = {}
-	has_create_permission = frappe.has_permission("Transportation Manifest", "create")
 
 	for v_id in assigned_vehicles:
 		manifest_name = frappe.db.get_value(
@@ -1457,7 +1390,7 @@ def get_manifest_data_for_plan(plan_name: str):
 		if manifest_name:
 			manifest_doc = frappe.get_doc("Transportation Manifest", manifest_name)
 		else:
-			if not has_create_permission:
+			if not frappe.has_permission("Transportation Manifest", "create"):
 				continue
 			manifest_doc = frappe.new_doc("Transportation Manifest")
 			manifest_doc.vehicle_no = v_id
@@ -1465,12 +1398,13 @@ def get_manifest_data_for_plan(plan_name: str):
 
 		# Always sync rows — handles both new and existing manifests
 		v_rows = [row for row in doc.assignments if row.vehicle == v_id]
-		_sync_manifest_details(manifest_doc, v_rows, card_emp_map, card_return_emp_map)
+		rows_changed = sync_manifest_details(manifest_doc, v_rows, card_emp_map, card_return_emp_map)
 
 		if manifest_doc.is_new():
-			manifest_doc.insert(ignore_permissions=True)
-		elif manifest_doc.has_value_changed("transportation_manifest_details"):
-			manifest_doc.save(ignore_permissions=True)
+			manifest_doc.insert()
+		elif rows_changed:
+			manifest_doc.check_permission("write")
+			manifest_doc.save()
 
 		manifests[v_id] = manifest_doc
 

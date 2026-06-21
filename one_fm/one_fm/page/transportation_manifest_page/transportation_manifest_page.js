@@ -244,9 +244,11 @@ function renderManifest($container, data) {
 		let displayName = name;
 		let statusIcon = "";
 
+		let replacementHtml = "";
+
 		if (state.replacement) {
 			classes += " mfst-state-replacement";
-			displayName = state.replacement.name;
+			// Keep displayName as original employee — show reliever separately
 			statusIcon = `<span class="material-symbols-outlined mfst-chip-status-icon">swap_horiz</span>`;
 		} else if (state.attendance === "Absent") {
 			classes += " mfst-state-error";
@@ -267,8 +269,14 @@ function renderManifest($container, data) {
 		const safeName = esc(displayName);
 		const safeMobile = esc(mobile);
 		let phoneIcon;
-		if (mobile || (state.replacement && state.replacement.mobile)) {
-			const mobToUse = (state.replacement && state.replacement.mobile) ? state.replacement.mobile.replace(/[^\d+\-() ]/g, "") : safeMobile;
+
+		// For replacement chips, phone icon targets the reliever's number
+		const effectiveMobile = (state.replacement && state.replacement.mobile)
+			? state.replacement.mobile.replace(/[^\d+\-() ]/g, "")
+			: safeMobile;
+
+		if (effectiveMobile || mobile) {
+			const mobToUse = effectiveMobile || safeMobile;
 			const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry/i.test(navigator.userAgent);
 			if (isMobile) {
 				phoneIcon = `<a href="tel:${mobToUse}" class="mfst-emp-call-btn" title="Call ${mobToUse}" onclick="event.stopPropagation()"><span class="material-symbols-outlined">call</span></a>`;
@@ -279,8 +287,20 @@ function renderManifest($container, data) {
 			phoneIcon = `<span class="mfst-emp-call-btn mfst-emp-call-disabled" title="No mobile number" onclick="event.stopPropagation();window._mfst_showNoNumber('${safeName}')"><span class="material-symbols-outlined">call</span></span>`;
 		}
 
+		// Build replacement sub-line showing reliever name beneath the original
+		if (state.replacement) {
+			const safeRelieverName = esc(state.replacement.name || "—");
+			replacementHtml = `<span class="mfst-chip-reliever"><span class="material-symbols-outlined" style="font-size:13px">person_add</span> ${safeRelieverName}</span>`;
+		}
+
 		const onclickAttr = interactive ? ` onclick="window._mfst_openCheckInModal('${esc(rowId)}', '${safeName}')"` : "";
-		return `<span class="${classes}"${onclickAttr}><span class="mfst-chip-name">${safeName}</span>${statusIcon}${phoneIcon}</span>`;
+
+		// Two-line chip layout for replacements: original name (struck) + reliever name below
+		const nameBlock = state.replacement
+			? `<span class="mfst-chip-names"><span class="mfst-chip-original">${safeName}</span>${replacementHtml}</span>`
+			: `<span class="mfst-chip-name">${safeName}</span>`;
+
+		return `<span class="${classes}"${onclickAttr}>${nameBlock}${statusIcon}${phoneIcon}</span>`;
 	}
 
 	function fmtDuration(secStr) {
@@ -1619,6 +1639,9 @@ function getManifestCSS() {
 		.mfst-emp-chip.mfst-state-error .mfst-chip-status-icon { color: var(--mfst-red); }
 		.mfst-emp-chip.mfst-state-replacement { background: var(--mfst-blue-dim); border-color: var(--mfst-blue); }
 		.mfst-emp-chip.mfst-state-replacement .mfst-chip-status-icon { color: var(--mfst-blue); }
+		.mfst-chip-names { display: flex; flex-direction: column; flex: 1; gap: 2px; line-height: 1.3; }
+		.mfst-chip-original { font-size: 12px; color: var(--mfst-text-dim); text-decoration: line-through; opacity: 0.7; }
+		.mfst-chip-reliever { font-size: 13px; font-weight: 600; color: var(--mfst-blue); display: flex; align-items: center; gap: 4px; }
 
 		/* ── TRANSIT ── */
 		.mfst-transit { display: flex; align-items: center; gap: 8px; padding: 6px 0; color: var(--mfst-text-dim); }
