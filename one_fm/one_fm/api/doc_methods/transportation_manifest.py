@@ -1,11 +1,17 @@
 import frappe
 from frappe import _
 
-@frappe.whitelist()
-def update_manifest_row_checkin(row_name, attendance_status=None, qoa_status=None, qoa_reason=None, reliever_employee=None):
+@frappe.whitelist(methods=["POST"])
+def update_manifest_row_checkin(
+	row_name: str,
+	attendance_status: str = None,
+	qoa_status: str = None,
+	qoa_reason: str = None,
+	reliever_employee: str = None
+):
 	"""
 	Updates a specific child row in Transportation Manifest Details and saves the parent manifest.
-	Triggers validation and immediate persistence.
+	Triggers validation and immediate persistence. Only updates fields explicitly passed in request.
 	"""
 	parent_manifest = frappe.db.get_value("Transportation Manifest Details", row_name, "parent")
 	if not parent_manifest:
@@ -17,14 +23,39 @@ def update_manifest_row_checkin(row_name, attendance_status=None, qoa_status=Non
 	found = False
 	for row in doc.transportation_manifest_details:
 		if row.name == row_name:
-			row.attendance_status = attendance_status or None
-			row.qoa_status = qoa_status or None
-			row.qoa_reason = qoa_reason or None
-			row.reliever_employee = reliever_employee or None
-			if reliever_employee:
-				row.requires_reliever = 1
-			else:
-				row.requires_reliever = 0
+			# Check which fields were explicitly sent in the form request
+			# This preserves fields (e.g. reliever) when saving other fields (e.g. attendance/QOA)
+			if "attendance_status" in frappe.form_dict:
+				row.attendance_status = attendance_status or None
+				
+			if "qoa_status" in frappe.form_dict:
+				row.qoa_status = qoa_status or None
+				
+			if "qoa_reason" in frappe.form_dict:
+				row.qoa_reason = qoa_reason or None
+			
+			if "reliever_employee" in frappe.form_dict:
+				reliever = reliever_employee or None
+				row.reliever_employee = reliever
+				if reliever:
+					# Validate that the selected reliever is Active
+					status = frappe.db.get_value("Employee", reliever, "status")
+					if status != "Active":
+						frappe.throw(
+							_("Employee {emp} cannot be selected as a reliever because they are not active").format(
+								emp=reliever
+							)
+						)
+					
+					# Validate that reliever can only be set when attendance is Absent
+					if row.attendance_status != "Absent":
+						frappe.throw(
+							_("A reliever employee can only be assigned if Attendance Status is set to Absent")
+						)
+					
+					row.requires_reliever = 1
+				else:
+					row.requires_reliever = 0
 			found = True
 			break
 			

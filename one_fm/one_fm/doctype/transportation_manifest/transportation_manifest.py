@@ -18,6 +18,8 @@ class TransportationManifest(Document):
 				row.qoa_status = None
 				row.qoa_reason = None
 			elif row.attendance_status == "Present":
+				row.reliever_employee = None
+				row.requires_reliever = 0
 				if row.qoa_status == "Fail" and not row.qoa_reason:
 					frappe.throw(
 						_("Row #{idx}: QOA Reason is mandatory when QOA Status is Fail for employee {emp}").format(
@@ -41,12 +43,48 @@ class TransportationManifest(Document):
 		current_start = min(current_times)
 		current_end = max(current_times)
 
+		# Build sets of passengers and assigned relievers in the current manifest
+		manifest_employees = {row.employee for row in self.transportation_manifest_details if row.employee}
+		assigned_relievers = {}
+
 		for row in self.transportation_manifest_details:
 			if row.reliever_employee:
 				# Ensure requires_reliever is checked
 				row.requires_reliever = 1
 				
 				reliever = row.reliever_employee
+				
+				# 0. Check same-manifest double booking
+				if reliever in manifest_employees:
+					frappe.throw(
+						_("Employee {emp} cannot be selected as a reliever because they are already a passenger in this manifest").format(
+							emp=reliever
+						)
+					)
+				
+				if reliever in assigned_relievers:
+					frappe.throw(
+						_("Employee {emp} is already assigned as a reliever to another row in this manifest (row #{prev_idx})").format(
+							emp=reliever, prev_idx=assigned_relievers[reliever]
+						)
+					)
+				assigned_relievers[reliever] = row.idx
+
+				# 0.5 Check active status and attendance constraints
+				if row.attendance_status != "Absent":
+					frappe.throw(
+						_("Employee {emp} cannot be set as a reliever because Attendance Status must be set to Absent").format(
+							emp=reliever
+						)
+					)
+
+				status = frappe.db.get_value("Employee", reliever, "status")
+				if status != "Active":
+					frappe.throw(
+						_("Employee {emp} cannot be selected as a reliever because they are not active").format(
+							emp=reliever
+						)
+					)
 				
 				# 1. Check if the reliever employee's profile is "already flagged as replaced" (on leave or absent)
 				# 1a. Check active Reliever Assignment

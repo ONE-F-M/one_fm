@@ -1,7 +1,7 @@
 /**
  * Transportation Manifest — Persistent Frappe Page
  *
- * URL: /app/transportation-manifest/<Route_Plan_Name>
+ * URL: /app/transportation-manifest-page/<Route_Plan_Name>
  *
  * Fetches manifest data from the server using the plan name in the URL,
  * then renders the same manifest UI previously served via a blob: URL.
@@ -21,7 +21,7 @@ frappe.pages["transportation-manifest-page"].on_page_load = function (wrapper) {
 	const $container = $(wrapper).find(".layout-main-section");
 	$container.empty();
 
-	// Extract plan name from URL: /app/transportation-manifest/<plan_name>
+	// Extract plan name from URL: /app/transportation-manifest-page/<plan_name>
 	const route = frappe.get_route();
 	const planName = route.length > 1 ? route.slice(1).join("/") : "";
 
@@ -44,22 +44,33 @@ frappe.pages["transportation-manifest-page"].on_page_load = function (wrapper) {
 	`;
 
 	if (!planName) {
-		$container.html(`
-			${STATE_STYLES}
-			<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-			<div class="mfst-state-screen">
-				<span class="material-symbols-outlined mfst-state-icon">directions_bus</span>
-				<h2>No Transportation Plan Selected</h2>
-				<p>
-					To view a manifest, open the <strong>Transportation Schedule</strong> page,
-					select a plan, and tap the <strong>Manifest</strong> button.
-				</p>
-				<a href="/app/transportation-schedule" class="mfst-state-btn mfst-state-btn-primary">
-					<span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
-					Go to Transportation Schedule
-				</a>
-			</div>
-		`);
+		// Fetch the latest Route Plan and redirect to it
+		frappe.db.get_list("Route Plan", {
+			fields: ["name"],
+			order_by: "creation desc",
+			limit: 1
+		}).then(records => {
+			if (records && records.length > 0) {
+				frappe.set_route("transportation-manifest-page", records[0].name);
+			} else {
+				$container.html(`
+					${STATE_STYLES}
+					<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+					<div class="mfst-state-screen">
+						<span class="material-symbols-outlined mfst-state-icon">directions_bus</span>
+						<h2>No Transportation Plan Selected</h2>
+						<p>
+							To view a manifest, open the <strong>Transportation Schedule</strong> page,
+							select a plan, and tap the <strong>Manifest</strong> button.
+						</p>
+						<a href="/app/transportation-schedule" class="mfst-state-btn mfst-state-btn-primary">
+							<span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
+							Go to Transportation Schedule
+						</a>
+					</div>
+				`);
+			}
+		});
 		return;
 	}
 

@@ -1379,6 +1379,8 @@ def get_manifest_data_for_plan(plan_name: str):
 	assigned_vehicles = list({row.vehicle for row in doc.assignments if row.vehicle})
 	
 	manifests = {}
+	has_create_permission = frappe.has_permission("Transportation Manifest", "create")
+
 	for v_id in assigned_vehicles:
 		manifest_name = frappe.db.get_value(
 			"Transportation Manifest",
@@ -1388,6 +1390,8 @@ def get_manifest_data_for_plan(plan_name: str):
 		if manifest_name:
 			manifest_doc = frappe.get_doc("Transportation Manifest", manifest_name)
 		else:
+			if not has_create_permission:
+				continue
 			manifest_doc = frappe.new_doc("Transportation Manifest")
 			manifest_doc.vehicle_no = v_id
 			manifest_doc.schedule_date = schedule_date_str
@@ -1432,13 +1436,14 @@ def get_manifest_data_for_plan(plan_name: str):
 			
 		enriched = []
 		action = "Dropping Off" if is_return else "Boarding"
+		stop_location_normalized = stop_location or ""
 		
 		for emp in emp_list:
 			emp_id = emp.get("id")
 			matching_row = None
 			for row in manifest_doc.transportation_manifest_details:
 				if (row.employee == emp_id and 
-					row.stop_name == stop_location and 
+					(row.stop_name or "") == stop_location_normalized and 
 					(row.trip_id or "") == (trip_id or "") and 
 					row.employee_action == action):
 					matching_row = row
@@ -1488,13 +1493,13 @@ def get_manifest_data_for_plan(plan_name: str):
 		# Map employees
 		if row.direction == "RETURN":
 			ret_emps = card_return_emp_map.get(row.card_id, [])
-			ship_emp[lbl] = enrich_employees(ret_emps, row.vehicle, row.stop_location, row.trip_group, True) if ret_emps else []
+			ship_emp[lbl] = enrich_employees(ret_emps, row.vehicle, row.stop_location or "", row.trip_group, True) if ret_emps else []
 		else:
 			emps = card_emp_map.get(row.card_id, [])
-			ship_emp[lbl] = enrich_employees(emps, row.vehicle, row.stop_location, row.trip_group, False) if emps else []
+			ship_emp[lbl] = enrich_employees(emps, row.vehicle, row.stop_location or "", row.trip_group, False) if emps else []
 
 		ret_emps = card_return_emp_map.get(row.card_id, [])
-		ship_return_emp[lbl] = enrich_employees(ret_emps, row.vehicle, row.stop_location, row.trip_group, True) if ret_emps else []
+		ship_return_emp[lbl] = enrich_employees(ret_emps, row.vehicle, row.stop_location or "", row.trip_group, True) if ret_emps else []
 
 		# Site location
 		if row.shift and row.shift in shift_doc_map:
