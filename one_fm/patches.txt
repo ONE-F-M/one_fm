@@ -299,6 +299,9 @@ one_fm.patches.v15_0.remove_vehicle_autoname_property_setter
 one_fm.patches.v15_0.update_vehicle_category_naming #2026-06-17
 one_fm.patches.v15_0.rename_fleet_workspace_to_transportation #2026-06-10 #2
 one_fm.patches.v15_0.rename_route_planner_page_to_transportation_schedule
+one_fm.patches.v15_0.cleanup_todo_type_field
+
+
 [post_model_sync]
 one_fm.patches.v15_0.process_task_for_wiki_employee_task
 one_fm.patches.v15_0.add_assignment_rule_returning_to_operations_supervisor_of_client_event #2
