@@ -431,3 +431,4 @@ one_fm.patches.v15_0.backfill_ojt_employee_schedules
 one_fm.patches.v15_0.delete_medical_appointment_todos #2026-06-15
 one_fm.patches.v15_0.sync_erf_workflow_state_with_closed_status #2026-06-15
 one_fm.patches.v15_0.close_job_openings_for_closed_erf #2026-06-15
+one_fm.patches.v15_0.update_interview_console_permissions
