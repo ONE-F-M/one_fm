@@ -8,6 +8,7 @@ frappe.ui.form.on("Employee Resignation", {
 	},
 
 	refresh: function (frm) {
+		let show_header = !frm.doc.__islocal && frm.doc.workflow_state && (!["Draft", ""].includes(frm.doc.workflow_state));
 		load_resignation_autocomplete_options(frm);
 		frm.trigger('update_ops_manager_mandatory');
 
@@ -67,6 +68,26 @@ frappe.ui.form.on("Employee Resignation", {
 					}, __("Actions"));
 				}
 			});
+		}
+
+		// Force-fetch dashboard connection counts so the badge numbers display reliably.
+		// Frappe's IntersectionObserver may not fire if the Connections panel is already
+		// in the viewport when the form renders. Resetting the flag and calling
+		// set_open_count periodically ensures the counts are always fetched.
+		if (!frm.doc.__islocal && frm.dashboard) {
+			console.log("[Employee Resignation] Initializing connection counts force-fetch");
+			let attempts = 0;
+			let interval = setInterval(() => {
+				attempts++;
+				if (frm.dashboard && !frm.doc.__islocal) {
+					console.log(`[Employee Resignation] Force-fetching dashboard counts (Attempt ${attempts}/3)`);
+					frm.dashboard._fetched_counts = false;
+					frm.dashboard.set_open_count();
+				}
+				if (attempts >= 3) {
+					clearInterval(interval);
+				}
+			}, 600);
 		}
 
 		if (!frm.doc.__islocal && frm.doc.employees && frm.doc.employees.length > 0) {
