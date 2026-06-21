@@ -10,6 +10,7 @@
   "column_break_yocn",
   "from_date",
   "to_date",
+  "take_action",
   "section_break_fwjq",
   "comment"
  ],
@@ -40,6 +41,13 @@
    "in_list_view": 1,
    "label": "From Date",
    "read_only": 1
+  },
+  {
+   "bold": 1,
+   "fieldname": "take_action",
+   "fieldtype": "Button",
+   "in_list_view": 1,
+   "label": "Take Action"
   },
   {
    "fieldname": "section_break_fwjq",

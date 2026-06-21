@@ -11,7 +11,9 @@ from one_fm.utils import (
     workflow_approve_reject, get_approver
 )
 from one_fm.api.notification import get_employee_user_id
-from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisor_operations_shifts
+from one_fm.operations.doctype.operations_shift.operations_shift import (
+    get_supervisor_operations_shifts, get_shift_supervisor
+)
 
 
 class OverlappingShiftError(frappe.ValidationError):
@@ -124,8 +126,118 @@ def on_update(doc, event):
     if doc.workflow_state in ['Approved', 'Rejected']:
         workflow_approve_reject(doc, [get_employee_user_id(doc.employee)])
 
+    previous_doc = doc.get_doc_before_save()
+    transitioned_to_approved = (
+        doc.workflow_state == 'Approved'
+        and (not previous_doc or previous_doc.workflow_state != 'Approved')
+    )
+
+    if transitioned_to_approved:
+        create_retroactive_day_off_penalty(doc)
+
     if doc.workflow_state == 'Draft':
         validate_shift_overlap(doc)
+
+
+def create_retroactive_day_off_penalty(doc):
+    """Create a Penalty and Investigation record when a retroactive
+    Day Off or Client Day Off Shift Request is approved.
+
+    A request is retroactive when its from_date is strictly before
+    the creation date (i.e. the day-off was logged after the fact).
+    """
+    # Only trigger for day off purposes
+    if doc.purpose not in ("Assign Day Off", "Assign Client Day Off"):
+        return
+
+    # Check if the request is retroactive
+    if not (getdate(doc.from_date) < getdate(doc.creation)):
+        return
+
+    # Prevent duplicate penalties for the same Shift Request
+    if frappe.db.exists(
+        "Penalty And Investigation",
+        {"shift_request": doc.name, "docstatus": ["!=", 2]}
+    ):
+        return
+
+    # Resolve offender: employee's site supervisor, fallback to shift supervisor
+    offender = _resolve_offender_supervisor(doc)
+    if not offender:
+        frappe.log_error(
+            title=_("Retroactive Day Off Penalty - Offender Not Found"),
+            message=_("Could not find a Site Supervisor or Shift Supervisor for employee {0} on {1}").format(
+                doc.employee, doc.name
+            )
+        )
+        return
+
+    # Resolve issuer: offender's reports_to, fallback to approving user
+    issuer = _resolve_issuer_employee(doc, offender)
+
+    # Resolve penalty code: use "18" if it exists, otherwise leave blank
+    applied_penalty_code = "18" if frappe.db.exists("Penalty Code", "18") else None
+
+    try:
+        penalty = frappe.new_doc("Penalty And Investigation")
+        penalty.employee = offender
+        penalty.issuer = issuer
+        penalty.location = doc.site
+        penalty.issuance_date = today()
+        penalty.incident_date = getdate(doc.from_date)
+        penalty.supervisor_remarks = _(
+            "Automated penalty issued due to retroactive Day Off request for {0}."
+        ).format(doc.name)
+        penalty.shift_request = doc.name
+        if applied_penalty_code:
+            penalty.applied_penalty_code = applied_penalty_code
+        penalty.save(ignore_permissions=True)
+        frappe.db.commit()
+    except Exception:
+        frappe.log_error(
+            title=_("Retroactive Day Off Penalty Creation Error"),
+            message=frappe.get_traceback()
+        )
+
+
+def _resolve_offender_supervisor(doc):
+    """Return the Employee ID of the site supervisor for the employee's site.
+    Falls back to the on-duty shift supervisor for the incident date."""
+    # Get employee's site and shift
+    emp_site, emp_shift = frappe.db.get_value(
+        "Employee", doc.employee, ["site", "shift"]
+    ) or (None, None)
+
+    # Try site supervisor first
+    if emp_site:
+        site_supervisor = frappe.db.get_value(
+            "Operations Site", emp_site, "site_supervisor"
+        )
+        if site_supervisor:
+            return site_supervisor
+
+    # Fallback to the on-duty shift supervisor for the incident date
+    if emp_shift:
+        shift_supervisor = get_shift_supervisor(emp_shift, getdate(doc.from_date))
+        if shift_supervisor:
+            return shift_supervisor
+
+    return None
+
+
+def _resolve_issuer_employee(doc, offender):
+    """Return the Employee ID of the offender's reports_to.
+    Falls back to the user who approved the Shift Request."""
+    # Try offender's reports_to first
+    if offender:
+        reports_to = frappe.db.get_value("Employee", offender, "reports_to")
+        if reports_to:
+            return reports_to
+
+    # Fallback to the approving user
+    approving_user = frappe.session.user
+    issuer = frappe.db.get_value("Employee", {"user_id": approving_user}, "name")
+    return issuer
 
 
 def validate_shift_overlap(doc):
@@ -593,6 +705,9 @@ def assign_day_off(shift_request):
             if s.start_date >= getdate():
                 frappe.db.sql(f"""DELETE from `tabShift Assignment` WHERE name='{s.name}'""")
 
+    # Fetch employee's project allocation
+    employee_project = frappe.db.get_value("Employee", shift_request.employee, "project")
+
     employee_schedule = frappe.get_list('Employee Schedule', {'employee': shift_request.employee, 'roster_type': "Basic",'date': ["between", (
     shift_request.from_date, shift_request.to_date)]}, ['name'])
     if employee_schedule:
@@ -601,6 +716,8 @@ def assign_day_off(shift_request):
             schedule.reference_doctype = "Shift Request"
             schedule.reference_docname = shift_request.name
             schedule.employee_availability = 'Day Off'
+            if employee_project:
+                schedule.project = employee_project
             schedule.save(ignore_permissions=True)
     else:
         start_date = getdate(shift_request.from_date)
@@ -613,6 +730,8 @@ def assign_day_off(shift_request):
             schedule.reference_doctype = "Shift Request"
             schedule.reference_docname = shift_request.name
             schedule.employee_availability = 'Day Off'
+            if employee_project:
+                schedule.project = employee_project
             schedule.save(ignore_permissions=True)
             start_date += delta
     frappe.set_user(current_user)
@@ -626,12 +745,17 @@ def assign_client_day_off(shift_request):
             if s.start_date >= getdate():
                 frappe.db.sql("""DELETE from `tabShift Assignment` WHERE name=%s""", (s.name,))
 
+    # Fetch employee's project allocation
+    employee_project = frappe.db.get_value("Employee", shift_request.employee, "project")
+
     employee_schedule = frappe.get_list('Employee Schedule', {'employee': shift_request.employee,'date': ["between", (shift_request.from_date, shift_request.to_date)]}, ['name', 'roster_type'])
     if employee_schedule:
         for es in employee_schedule:
             if es.roster_type == "Basic":
                 schedule = frappe.get_doc("Employee Schedule", es.name)
                 schedule.employee_availability = 'Client Day Off'
+                if employee_project:
+                    schedule.project = employee_project
                 schedule.save(ignore_permissions=True)
             else:
                 frappe.delete_doc("Employee Schedule", es.name)
@@ -644,6 +768,8 @@ def assign_client_day_off(shift_request):
             schedule.employee = shift_request.employee
             schedule.date = start_date
             schedule.employee_availability = 'Client Day Off'
+            if employee_project:
+                schedule.project = employee_project
             schedule.save(ignore_permissions=True)
             start_date += delta
     frappe.db.commit()

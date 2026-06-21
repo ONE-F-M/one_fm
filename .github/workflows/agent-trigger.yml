@@ -66,7 +66,6 @@ jobs:
           ISSUE_NUM: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.issue_number || github.event.issue.number }}
           ACTOR: ${{ github.actor }}
           GCP_ID_TOKEN: ${{ steps.auth.outputs.id_token }}
-          REPOSITORY: ${{ github.repository }}
         run: |
           if ! [[ "$ISSUE_NUM" =~ ^[0-9]+$ ]]; then
             echo "Error: Issue number '$ISSUE_NUM' is not a valid number."
@@ -83,7 +82,6 @@ jobs:
           fi
 
           echo "Connecting to: $CLOUD_RUN_URL"
-          echo "Repository: $REPOSITORY"
           echo "Requesting fix for Issue #$ISSUE_NUM (base: $BASE_BRANCH)"
           echo ""
           echo "💡 NOTE: The AI agent can take 2-15 minutes to complete its reasoning loop."
@@ -94,13 +92,13 @@ jobs:
 
           PAYLOAD=$(jq -n \
             --arg input "Solve GitHub issue #$ISSUE_NUM" \
-            --argjson issue_number "$ISSUE_NUM" \
             --arg requester "$ACTOR" \
             --arg base_branch "$BASE_BRANCH" \
-            --arg repository "$REPOSITORY" \
-            '{input: $input, issue_number: $issue_number, requester: $requester, base_branch: $base_branch, repository: $repository}')
+            '{input: $input, requester: $requester, base_branch: $base_branch}')
 
           # Retry loop — handles 503 "Container busy" responses.
+          # When the container lock blocks a request, we wait and retry so
+          # Cloud Run has time to spin up a fresh container for this issue.
           MAX_ATTEMPTS=8
           ATTEMPT=0
           WAIT=15
@@ -117,7 +115,7 @@ jobs:
 
             echo "HTTP $HTTP_CODE — Response: $(cat /tmp/agent_response.json)"
 
-            if [ "$HTTP_CODE" -eq 200 ] || [ "$HTTP_CODE" -eq 202 ]; then
+            if [ "$HTTP_CODE" -eq 202 ]; then
               echo "✅ Agent accepted the request. Pipeline started for issue #$ISSUE_NUM."
               break
             elif [ "$HTTP_CODE" -eq 503 ]; then

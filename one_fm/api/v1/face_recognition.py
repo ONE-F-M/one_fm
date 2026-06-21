@@ -255,10 +255,16 @@ def get_site_location(employee_id: str = None, shift: str = None,latitude: float
         if not isinstance(employee_id, str):
             return response("Bad Request", 400, None, "Invalid Employee ID format. Please enter a valid value.")
 
-        employee = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["name", "holiday_list", "employee_name", "shift_working"], as_dict=1)
+        employee = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["name", "holiday_list", "employee_name", "shift_working", "status"], as_dict=1)
         if not employee:
             return response("Resource Not Found", 404, None,
                             "No employee record found with {employee_id}".format(employee_id=employee_id))
+
+        # Block employees who have not returned from leave
+        if employee.status == "Not Returned From Leave":
+            return response("Access Denied", 403, None,
+                            "Access Denied: Please contact your Site Supervisor to complete "
+                            "your Duty Resumption process before logging checkin.")
         
         today = getdate()
         

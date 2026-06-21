@@ -102,11 +102,10 @@
    "fieldtype": "Column Break"
   },
   {
-   "fetch_from": "client_event.start_date",
+   "allow_on_submit": 1,
    "fieldname": "start_date",
    "fieldtype": "Date",
    "label": "Start Date",
-   "read_only": 1,
    "reqd": 1
   },
   {
@@ -116,11 +115,10 @@
    "label": "End Date"
   },
   {
-   "fetch_from": "client_event.event_start_datetime",
+   "allow_on_submit": 1,
    "fieldname": "start_datetime",
    "fieldtype": "Datetime",
-   "label": "Start Datetime",
-   "read_only": 1
+   "label": "Start Datetime"
   },
   {
    "allow_on_submit": 1,

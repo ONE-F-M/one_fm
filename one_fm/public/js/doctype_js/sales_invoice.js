@@ -103,7 +103,7 @@ frappe.ui.form.on('Sales Invoice', {
             });
         }
         else{
-            frm.set_value("selling_price_list",null);
+            frm.set_value("selling_price_list", "Standard Selling");
             frm.refresh_field("selling_price_list");
         }
         // filter contracts

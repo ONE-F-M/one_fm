@@ -17,3 +17,4 @@ package.json
 .vscode
 build/lib/*
 .agents/*
+one_fm/public/node_modules
