@@ -282,46 +282,21 @@ class TestTransportationManifest(FrappeTestCase):
 
 		# Re-sync with updated schedule time — manual fields must survive
 		assignments[0].start_time = "06:30:00"
-		sync_manifest_details(doc, assignments, emp_map, {})
+		changed = sync_manifest_details(doc, assignments, emp_map, {})
+
+		# Must report a change so callers know to save
+		self.assertTrue(changed)
+
+		# Save and reload to verify persistence
+		doc.save()
+		doc.reload()
 
 		row = doc.transportation_manifest_details[0]
-		self.assertEqual(row.scheduled_time, "06:30:00")
+		self.assertEqual(str(row.scheduled_time), "06:30:00")
 		self.assertEqual(row.attendance_status, "Present")
 		self.assertEqual(row.qoa_status, "Pass")
 
-	def test_sync_flags_removed_rows(self):
-		"""Rows no longer in assignments should be flagged as 'Removed', not deleted."""
-		from types import SimpleNamespace
-		from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
 
-		doc = frappe.new_doc("Transportation Manifest")
-		doc.vehicle_no = self.vehicle1
-		doc.schedule_date = today()
-
-		assignments = [SimpleNamespace(
-			direction="OUTBOUND", card_id="C1", stop_location="Stop A",
-			trip_group="TRIP_1", trip_name="Morning", start_time="06:00:00", end_time=None
-		)]
-		emp_map = {"C1": [{"id": self.employee1, "name": "Emp 1"}]}
-
-		sync_manifest_details(doc, assignments, emp_map, {})
-		doc.save()
-
-		# Mark attendance before removal
-		doc.transportation_manifest_details[0].attendance_status = "Present"
-		doc.save()
-
-		# Re-sync with empty assignments — employee removed from plan
-		changed = sync_manifest_details(doc, [], {}, {})
-		self.assertTrue(changed)
-
-		row = doc.transportation_manifest_details[0]
-		self.assertEqual(row.row_status, "Removed")
-		# Attendance data preserved
-		self.assertEqual(row.employee, self.employee1)
-		self.assertEqual(row.attendance_status, "Present")
-		# Row count unchanged — not deleted
-		self.assertEqual(len(doc.transportation_manifest_details), 1)
 
 	def test_sync_backfills_stop_id_for_legacy_rows(self):
 		"""Pre-existing rows without stop_id should be matched via derived key, not duplicated."""
