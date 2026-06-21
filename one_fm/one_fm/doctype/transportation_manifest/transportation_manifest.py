@@ -36,7 +36,12 @@ class TransportationManifest(Document):
 		schedule_date = getdate(self.schedule_date)
 		
 		# Compute the current manifest's route time window (from min to max scheduled_time)
-		current_times = [row.scheduled_time for row in self.transportation_manifest_details if row.scheduled_time]
+		# Normalize to timedelta — new rows may have str values, DB rows have timedelta
+		current_times = [
+			frappe.utils.to_timedelta(row.scheduled_time)
+			for row in self.transportation_manifest_details
+			if row.scheduled_time
+		]
 		if not current_times:
 			return
 		
