@@ -1374,6 +1374,73 @@ def get_manifest_data_for_plan(plan_name: str):
 	c_map = {}  # dirKey -> { lbl, idx }
 	si = 0
 
+	def _sync_manifest_details(manifest_doc, assignment_rows, emp_map, return_emp_map):
+		"""Upsert child rows using compound key: (employee, trip_id, stop_id, employee_action).
+
+		New employees/stops are appended. Existing rows have system fields refreshed
+		while manual dispatcher fields (attendance, QOA, reliever) are preserved.
+		Rows no longer present in the plan are flagged as 'Removed' but kept.
+		"""
+		# Build lookup index of existing rows by compound key
+		existing_index = {}
+		for row in manifest_doc.transportation_manifest_details:
+			key = (row.employee or "", row.trip_id or "", row.stop_id or "", row.employee_action or "")
+			existing_index[key] = row
+
+		seen_keys = set()
+
+		for a_row in assignment_rows:
+			direction = a_row.direction
+			emps = (return_emp_map if direction == "RETURN" else emp_map).get(a_row.card_id, [])
+			action = "Dropping Off" if direction == "RETURN" else "Boarding"
+			stop_id_val = f"{a_row.stop_location or ''}|{direction}"
+
+			for emp in emps:
+				emp_id = emp.get("id")
+				if not emp_id:
+					continue
+
+				# Parse scheduled time from ISO timestamp
+				time_str = a_row.end_time if direction == "RETURN" else a_row.start_time
+				if time_str and "T" in time_str:
+					time_str = time_str.split("T")[1][:8]
+
+				key = (emp_id, a_row.trip_group or "", stop_id_val, action)
+				seen_keys.add(key)
+
+				if key in existing_index:
+					# UPDATE: refresh system fields, preserve manual fields
+					row = existing_index[key]
+					row.stop_name = a_row.stop_location or ""
+					row.stop_type = "Return" if direction == "RETURN" else "Pick Up"
+					row.scheduled_time = time_str
+					row.stop_id = stop_id_val
+					row.trip_name = a_row.trip_name or ""
+					row.employee_name = emp.get("name", "")
+					row.row_status = "Active"
+					# DO NOT touch: attendance_status, qoa_status, qoa_reason,
+					#               requires_reliever, reliever_employee
+				else:
+					# INSERT: new child row
+					manifest_doc.append("transportation_manifest_details", {
+						"stop_name": a_row.stop_location or "",
+						"employee": emp_id,
+						"employee_name": emp.get("name", ""),
+						"trip_id": a_row.trip_group or "",
+						"trip_name": a_row.trip_name or "",
+						"stop_id": stop_id_val,
+						"stop_type": "Return" if direction == "RETURN" else "Pick Up",
+						"employee_action": action,
+						"scheduled_time": time_str,
+						"requires_reliever": 0,
+						"row_status": "Active",
+					})
+
+		# Flag rows no longer in the plan as "Removed" (preserves data)
+		for key, row in existing_index.items():
+			if key not in seen_keys and (row.row_status or "Active") != "Removed":
+				row.row_status = "Removed"
+
 	# Lazily sync Transportation Manifest documents for each vehicle on today's date
 	schedule_date_str = frappe.utils.today()
 	assigned_vehicles = list({row.vehicle for row in doc.assignments if row.vehicle})
@@ -1395,38 +1462,16 @@ def get_manifest_data_for_plan(plan_name: str):
 			manifest_doc = frappe.new_doc("Transportation Manifest")
 			manifest_doc.vehicle_no = v_id
 			manifest_doc.schedule_date = schedule_date_str
-			
-			v_rows = [row for row in doc.assignments if row.vehicle == v_id]
-			for row in v_rows:
-				if row.direction == "RETURN":
-					emps = card_return_emp_map.get(row.card_id, [])
-				else:
-					emps = card_emp_map.get(row.card_id, [])
-					
-				for emp in emps:
-					emp_id = emp.get("id")
-					if not emp_id:
-						continue
-					
-					time_str = None
-					if row.direction == "RETURN":
-						time_str = row.end_time
-					else:
-						time_str = row.start_time
-						
-					if time_str and "T" in time_str:
-						time_str = time_str.split("T")[1][:8]
-						
-					manifest_doc.append("transportation_manifest_details", {
-						"stop_name": row.stop_location or "",
-						"employee": emp_id,
-						"trip_id": row.trip_group or "",
-						"stop_type": "Return" if row.direction == "RETURN" else "Pick Up",
-						"employee_action": "Dropping Off" if row.direction == "RETURN" else "Boarding",
-						"scheduled_time": time_str,
-						"requires_reliever": 0,
-					})
+
+		# Always sync rows — handles both new and existing manifests
+		v_rows = [row for row in doc.assignments if row.vehicle == v_id]
+		_sync_manifest_details(manifest_doc, v_rows, card_emp_map, card_return_emp_map)
+
+		if manifest_doc.is_new():
 			manifest_doc.insert(ignore_permissions=True)
+		elif manifest_doc.has_value_changed("transportation_manifest_details"):
+			manifest_doc.save(ignore_permissions=True)
+
 		manifests[v_id] = manifest_doc
 
 	def enrich_employees(emp_list, vehicle_id, stop_location, trip_id, is_return):
@@ -1437,17 +1482,29 @@ def get_manifest_data_for_plan(plan_name: str):
 		enriched = []
 		action = "Dropping Off" if is_return else "Boarding"
 		stop_location_normalized = stop_location or ""
+		direction = "RETURN" if is_return else "OUTBOUND"
+		stop_id_val = f"{stop_location_normalized}|{direction}"
 		
 		for emp in emp_list:
 			emp_id = emp.get("id")
 			matching_row = None
+			# Primary match: compound key using stop_id
 			for row in manifest_doc.transportation_manifest_details:
 				if (row.employee == emp_id and 
-					(row.stop_name or "") == stop_location_normalized and 
+					(row.stop_id or "") == stop_id_val and 
 					(row.trip_id or "") == (trip_id or "") and 
 					row.employee_action == action):
 					matching_row = row
 					break
+			# Fallback: match by stop_name for rows created before stop_id was added
+			if not matching_row:
+				for row in manifest_doc.transportation_manifest_details:
+					if (row.employee == emp_id and 
+						(row.stop_name or "") == stop_location_normalized and 
+						(row.trip_id or "") == (trip_id or "") and 
+						row.employee_action == action):
+						matching_row = row
+						break
 			
 			if not matching_row:
 				for row in manifest_doc.transportation_manifest_details:

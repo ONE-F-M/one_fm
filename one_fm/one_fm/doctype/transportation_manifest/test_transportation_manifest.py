@@ -220,3 +220,109 @@ class TestTransportationManifest(FrappeTestCase):
 			"scheduled_time": "09:00:00"
 		})
 		self.assertRaises(frappe.ValidationError, doc2.save)
+
+	def test_sync_appends_new_rows(self):
+		"""Sync should append new employee rows without duplicating existing ones."""
+		doc = frappe.new_doc("Transportation Manifest")
+		doc.vehicle_no = self.vehicle1
+		doc.schedule_date = today()
+		doc.append("transportation_manifest_details", {
+			"stop_name": "Stop A",
+			"employee": self.employee1,
+			"trip_id": "TRIP_1",
+			"stop_id": "Stop A|OUTBOUND",
+			"stop_type": "Pick Up",
+			"employee_action": "Boarding",
+			"scheduled_time": "06:00:00",
+			"row_status": "Active",
+		})
+		doc.save()
+		self.assertEqual(len(doc.transportation_manifest_details), 1)
+
+		# Simulate adding a second employee to the same trip
+		doc.append("transportation_manifest_details", {
+			"stop_name": "Stop A",
+			"employee": self.employee2,
+			"trip_id": "TRIP_1",
+			"stop_id": "Stop A|OUTBOUND",
+			"stop_type": "Pick Up",
+			"employee_action": "Boarding",
+			"scheduled_time": "06:00:00",
+			"row_status": "Active",
+		})
+		doc.save()
+		self.assertEqual(len(doc.transportation_manifest_details), 2)
+
+		# Verify both employees are present
+		employees = {row.employee for row in doc.transportation_manifest_details}
+		self.assertIn(self.employee1, employees)
+		self.assertIn(self.employee2, employees)
+
+	def test_sync_preserves_attendance_state(self):
+		"""When a row is updated via sync, manual attendance fields must be preserved."""
+		doc = frappe.new_doc("Transportation Manifest")
+		doc.vehicle_no = self.vehicle1
+		doc.schedule_date = today()
+		doc.append("transportation_manifest_details", {
+			"stop_name": "Stop A",
+			"employee": self.employee1,
+			"trip_id": "TRIP_1",
+			"stop_id": "Stop A|OUTBOUND",
+			"stop_type": "Pick Up",
+			"employee_action": "Boarding",
+			"scheduled_time": "06:00:00",
+			"attendance_status": "Present",
+			"qoa_status": "Pass",
+			"row_status": "Active",
+		})
+		doc.save()
+
+		# Reload and verify manual state persists
+		doc.reload()
+		row = doc.transportation_manifest_details[0]
+		self.assertEqual(row.attendance_status, "Present")
+		self.assertEqual(row.qoa_status, "Pass")
+
+		# Simulate sync updating system fields while preserving manual fields
+		row.stop_name = "Stop A Renamed"
+		row.scheduled_time = "06:30:00"
+		# Manual fields untouched
+		doc.save()
+
+		doc.reload()
+		row = doc.transportation_manifest_details[0]
+		self.assertEqual(row.stop_name, "Stop A Renamed")
+		self.assertEqual(row.scheduled_time.strftime("%H:%M:%S") if hasattr(row.scheduled_time, "strftime") else str(row.scheduled_time), "06:30:00")
+		self.assertEqual(row.attendance_status, "Present")
+		self.assertEqual(row.qoa_status, "Pass")
+
+	def test_removed_rows_flagged(self):
+		"""Rows removed from the plan should be flagged as 'Removed', not deleted."""
+		doc = frappe.new_doc("Transportation Manifest")
+		doc.vehicle_no = self.vehicle1
+		doc.schedule_date = today()
+		doc.append("transportation_manifest_details", {
+			"stop_name": "Stop A",
+			"employee": self.employee1,
+			"trip_id": "TRIP_1",
+			"stop_id": "Stop A|OUTBOUND",
+			"stop_type": "Pick Up",
+			"employee_action": "Boarding",
+			"scheduled_time": "06:00:00",
+			"attendance_status": "Present",
+			"qoa_status": "Pass",
+			"row_status": "Active",
+		})
+		doc.save()
+
+		# Flag the row as Removed (simulating sync when employee removed from plan)
+		doc.transportation_manifest_details[0].row_status = "Removed"
+		doc.save()
+
+		doc.reload()
+		row = doc.transportation_manifest_details[0]
+		self.assertEqual(row.row_status, "Removed")
+		# Verify the row still exists and attendance data is preserved
+		self.assertEqual(row.employee, self.employee1)
+		self.assertEqual(row.attendance_status, "Present")
+		self.assertEqual(row.qoa_status, "Pass")
