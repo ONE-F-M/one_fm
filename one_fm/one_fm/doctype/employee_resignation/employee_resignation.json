@@ -43,6 +43,7 @@
         "skill_requirements",
         "certification_requirements",
         "more_information_section",
+        "project_manpower_request",
         "status",
         "column_break_jkbg",
         "naming_series",
@@ -301,6 +302,15 @@
             "fieldname": "more_information_section",
             "fieldtype": "Section Break",
             "label": "More Information"
+        },
+        {
+            "allow_on_submit": 1,
+            "fieldname": "project_manpower_request",
+            "fieldtype": "Link",
+            "hidden": 1,
+            "label": "Project Manpower Request",
+            "options": "Project Manpower Request",
+            "read_only": 1
         },
         {
             "fieldname": "status",

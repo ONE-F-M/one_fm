@@ -145,6 +145,7 @@ frappe.ui.form.on('Project Manpower Request', {
 			    frm.set_value('count', 1);
 			}
 		}
+		calculate_actual_deployment_date(frm);
 	},
 
 	deployment_date: function(frm) {
@@ -156,6 +157,11 @@ frappe.ui.form.on('Project Manpower Request', {
 			});
 			frm.set_value('deployment_date', '');
 		}
+		calculate_actual_deployment_date(frm);
+	},
+
+	ojt_days: function(frm) {
+		calculate_actual_deployment_date(frm);
 	},
 
 
@@ -256,6 +262,20 @@ function calculate_hired_dynamically(frm) {
 	let historically_joined = frm.doc.historically_joined_qty || 0;
 	let expected_to_hire = Math.max(0, (frm.doc.remaining_qty || 0) - hired_count - historically_joined);
 	frm.set_value('number_to_hire', expected_to_hire);
+}
+
+function calculate_actual_deployment_date(frm) {
+	if (frm.doc.reason !== 'Exit') {
+		if (frm.doc.deployment_date) {
+			let ojt = frm.doc.ojt_days || 0;
+			let actual = frappe.datetime.add_days(frm.doc.deployment_date, -ojt);
+			frm.set_value('actual_recruiters_deployment_date', actual);
+		} else {
+			frm.set_value('actual_recruiters_deployment_date', '');
+		}
+	} else {
+		frm.set_value('actual_recruiters_deployment_date', '');
+	}
 }
 
 function setup_status_indicator(frm) {

@@ -292,6 +292,14 @@
             "doctype": "Workflow Transition"
         },
         {
+            "state": "In Process",
+            "action": "Complete",
+            "next_state": "Completed",
+            "allowed": "Operation Admin",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
             "state": "Draft",
             "action": "Cancel",
             "next_state": "Cancelled",
