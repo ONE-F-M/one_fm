@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Transportation</span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transportation Schedule\",\"col\":3}},{\"type\":\"card\",\"data\":{\"card_name\":\"Vehicles & Masters\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Scheduling & Dispatch\",\"col\":4}}]",
+ "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Transportation</span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transportation Schedule\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transportation Manifest\",\"col\":3}},{\"type\":\"card\",\"data\":{\"card_name\":\"Vehicles & Masters\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Scheduling & Dispatch\",\"col\":4}}]",
  "creation": "2026-06-10 20:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace",
@@ -102,7 +102,7 @@
    "is_query_report": 0,
    "label": "Transportation Schedule",
    "link_count": 0,
-   "link_to": "transportation_schedule",
+   "link_to": "transportation-schedule",
    "link_type": "Page",
    "onboard": 0,
    "type": "Link"
@@ -110,9 +110,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Manifest View",
+   "label": "Transportation Manifest",
    "link_count": 0,
-   "link_to": "transportation_schedule",
+   "link_to": "transportation-manifest",
    "link_type": "Page",
    "onboard": 0,
    "type": "Link"
@@ -132,7 +132,13 @@
   {
    "color": "Blue",
    "label": "Transportation Schedule",
-   "link_to": "transportation_schedule",
+   "link_to": "transportation-schedule",
+   "type": "Page"
+  },
+  {
+   "color": "Green",
+   "label": "Transportation Manifest",
+   "link_to": "transportation-manifest",
    "type": "Page"
   }
  ],
