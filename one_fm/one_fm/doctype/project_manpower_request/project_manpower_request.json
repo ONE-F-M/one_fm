@@ -450,7 +450,12 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
- "links": [],
+ "links": [
+  {
+   "link_doctype": "Employee Resignation",
+   "link_fieldname": "employee_resignation"
+  }
+ ],
  "modified": "2026-06-21 10:03:46.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
