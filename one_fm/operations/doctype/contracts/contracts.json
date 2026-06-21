@@ -312,6 +312,7 @@
   },
   {
    "collapsible": 1,
+   "depends_on": "eval:frappe.user_roles.includes('System Manager')",
    "fieldname": "notification_members_section",
    "fieldtype": "Section Break",
    "label": "Notification Members"

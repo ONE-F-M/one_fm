@@ -558,3 +558,127 @@ def generate_contract_compliance_checker():
 	except Exception as e:
 		frappe.log_error(title="Contract Compliance Checker Generation Failed", message=frappe.get_traceback())
 		pass
+
+
+def _determine_issue_type(comment: str) -> str:
+	"""Determine the compliance issue type from the comment text.
+
+	Returns one of: operations_role, operations_post, employee_schedule, post_schedule, or empty string.
+	Priority order ensures the most fundamental issue is identified first.
+	"""
+	comment_lower = comment.lower()
+	if "no operations roles created" in comment_lower:
+		return "operations_role"
+	if "operations posts created" in comment_lower or "operations post created" in comment_lower:
+		return "operations_post"
+	if "employee schedules" in comment_lower:
+		return "employee_schedule"
+	if "post schedules" in comment_lower or "post schedule" in comment_lower:
+		return "post_schedule"
+	return ""
+
+
+@frappe.whitelist()
+def get_take_action_data(
+	project: str,
+	item: str,
+	comment: str,
+	from_date: str,
+	to_date: str,
+) -> dict:
+	"""Return redirect path and filter params for the Take Action button.
+
+	Determines the issue type from the comment, resolves the operations context
+	(role, shift, site) from the database, and returns the appropriate URL data.
+	"""
+	if not comment:
+		return {}
+
+	issue_type = _determine_issue_type(comment)
+	if not issue_type:
+		return {}
+
+	# Operations Role issue: redirect to Operations Role list view
+	if issue_type == "operations_role":
+		return {
+			"path": "/app/operations-role",
+			"params": {
+				"project": project,
+				"sale_item": item,
+			},
+		}
+
+	# Look up the first active Operations Role deterministically
+	role = frappe.db.get_value(
+		"Operations Role",
+		filters={"project": project, "sale_item": item, "status": "Active"},
+		fieldname=["name", "shift", "site"],
+		order_by="name asc",
+		as_dict=True,
+	)
+
+	# Fallback to Operations Role list if no roles found
+	if not role:
+		return {
+			"path": "/app/operations-role",
+			"params": {
+				"project": project,
+				"sale_item": item,
+			},
+		}
+
+	# Operations Post issue: redirect to Operations Post list view
+	if issue_type == "operations_post":
+		return {
+			"path": "/app/operations-post",
+			"params": {
+				"project": project,
+				"site_shift": role.shift,
+				"post_template": role.name,
+			},
+		}
+
+	# Derive year and month from from_date for the Roster calendar
+	try:
+		date_obj = getdate(from_date)
+		year = str(date_obj.year)
+		month = str(date_obj.month)
+	except Exception:
+		from frappe.utils import today
+		date_obj = getdate(today())
+		year = str(date_obj.year)
+		month = str(date_obj.month)
+
+	# Employee Schedule issue: redirect to Roster Staff View
+	if issue_type == "employee_schedule":
+		return {
+			"path": "/app/roster",
+			"params": {
+				"main_view": "roster",
+				"sub_view": "roster",
+				"project": project,
+				"site": role.site,
+				"shift": role.shift,
+				"operations_role": role.name,
+				"year": year,
+				"month": month,
+			},
+		}
+
+	# Post Schedule issue: redirect to Roster Post View
+	if issue_type == "post_schedule":
+		return {
+			"path": "/app/roster",
+			"params": {
+				"main_view": "roster",
+				"sub_view": "post",
+				"project": project,
+				"site": role.site,
+				"shift": role.shift,
+				"operations_role": role.name,
+				"year": year,
+				"month": month,
+			},
+		}
+
+	return {}

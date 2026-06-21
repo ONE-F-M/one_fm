@@ -222,7 +222,7 @@ one_fm.patches.v15_0.add_workflow_on_the_job_training #2
 one_fm.patches.v15_0.reprocess_preparation_submit
 one_fm.patches.v15_0.add_banner_message_field_to_workflow_document_state
 one_fm.patches.v15_0.add_stock_settings_custom_fields
-one_fm.patches.v15_0.update_contracts_workflow #rerun-2026-05-04-workflow-confirm
+one_fm.patches.v15_0.update_contracts_workflow #rerun-2026-06-15-workflow-confirm
 one_fm.patches.v15_0.add_workflow_shift_permission
 one_fm.patches.v15_0.update_attendance_is_unscheduled
 one_fm.patches.v15_0.update_employee_status_options
@@ -297,6 +297,9 @@ one_fm.patches.v15_0.update_penalty_and_investigation_workflow
 one_fm.patches.v15_0.update_day_off_category_erf_2025_00030
 one_fm.patches.v15_0.add_rambo_reliever_custom_field #2026-05-14
 one_fm.patches.v15_0.update_vehicle_naming_series
+one_fm.patches.v15_0.remove_vehicle_autoname_property_setter
+one_fm.patches.v15_0.rename_fleet_workspace_to_transportation #2026-06-10 #2
+one_fm.patches.v15_0.rename_route_planner_page_to_transportation_schedule
 one_fm.patches.v15_0.update_purchase_receipt_prc_2026_000101_posting_date
 one_fm.patches.v15_0.update_job_offer_day_off_category_for_job_applicants
 one_fm.patches.v15_0.add_phone_option_to_job_applicant_contact_number
@@ -425,6 +428,13 @@ one_fm.patches.v15_0.update_contracts_workflow_inactive_to_draft
 one_fm.patches.v15_0.migrate_bonus_request_to_grid
 one_fm.patches.v15_0.add_recurring_bonus_process_task
 one_fm.patches.v15_0.fix_parentfield_bonus_items
+one_fm.patches.v15_0.update_sales_invoice_property_setter
+one_fm.patches.v15_0.add_subcontractor_exit_workflow
+one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_project_manager
+one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_operations_manager
+one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_gsd_supervisor
+one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_offboarding_officer
+one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_finance_manager
 one_fm.patches.v15_0.add_nationality_read_permission
 one_fm.patches.v15_0.update_workflows_for_ops_admin_edit
 one_fm.patches.v15_0.backfill_ojt_employee_schedules

@@ -10,6 +10,7 @@ class ClientEvent(Document):
 	def validate(self):
 		self.validate_date_time()
 		self.validate_workflow_transition()
+		self.validate_extension_request()
 
 	def validate_date_time(self):
 		if not self.is_new() and self.workflow_state not in ("Pending Operations Manager", None):
@@ -35,6 +36,47 @@ class ClientEvent(Document):
 			frappe.throw("The scheduled end date/time must be later than Start Date or Start Datetime. Please adjust the event details.")
 		if self.event_start_datetime and self.event_end_datetime and get_datetime(self.event_end_datetime) < get_datetime(self.event_start_datetime):
 			frappe.throw("The scheduled end date/time must be later than Start Date or Start Datetime. Please adjust the event details.")
+
+	def validate_extension_request(self):
+		"""Validate extension request: extension dates must not be earlier than original event's end dates."""
+		if not self.is_extension_request or not self.original_client_event:
+			return
+
+		# Prevent duplicate extensions for the same original Client Event
+		existing_extension = frappe.db.exists(
+			"Client Event",
+			{
+				"original_client_event": self.original_client_event,
+				"name": ["!=", self.name],
+				"docstatus": ["<", 2]
+			}
+		)
+		if existing_extension:
+			frappe.throw(
+				f"An extension request already exists for the original Client Event {self.original_client_event}."
+			)
+
+		# Validate dates: extension start must not be before original end
+		original = frappe.db.get_value(
+			"Client Event",
+			self.original_client_event,
+			["end_date", "event_end_datetime"],
+			as_dict=True
+		)
+		if not original:
+			return
+
+		if self.event_start_datetime and original.event_end_datetime:
+			if get_datetime(self.event_start_datetime) < get_datetime(original.event_end_datetime):
+				frappe.throw(
+					"The extension's Start Date and Time cannot be earlier than the Original Client Event's End Date and Time."
+				)
+				
+		if self.start_date and original.end_date:
+			if getdate(self.start_date) < getdate(original.end_date):
+				frappe.throw(
+					"The extension's Start Date and Time cannot be earlier than the Original Client Event's End Date and Time."
+				)
 
 	def validate_workflow_transition(self):
 		if self.is_new():
@@ -193,3 +235,84 @@ def cancel_event_staff_background(client_event):
 			
 	# Commit after cancellation block to save progress
 	frappe.db.commit()
+
+
+@frappe.whitelist()
+def create_client_event_extension(source_name: str):
+	"""Create a new Client Event as an extension of the source event.
+	Copies all fields except date/datetime fields which must be set by the user.
+	"""
+	source_doc = frappe.get_doc("Client Event", source_name)
+
+	# Ensure only Approved events can be extended
+	if source_doc.workflow_state != "Approved":
+		frappe.throw("Only Approved Client Events can be extended.")
+
+	# Prevent duplicate extensions
+	existing_extension = frappe.db.exists(
+		"Client Event",
+		{
+			"original_client_event": source_name,
+			"docstatus": ["<", 2]
+		}
+	)
+	if existing_extension:
+		frappe.throw(
+			f"An extension request already exists for this Client Event: {existing_extension}"
+		)
+
+	# Fields to exclude from copying (date/datetime fields + system fields)
+	exclude_fields = {
+		"start_date", "end_date", "event_start_datetime", "event_end_datetime",
+		"name", "creation", "modified", "modified_by", "owner",
+		"docstatus", "amended_from", "workflow_state",
+		"is_extension_request", "original_client_event"
+	}
+
+	new_doc = frappe.new_doc("Client Event")
+
+	# Copy all fields from source except excluded ones
+	for field in source_doc.meta.fields:
+		if field.fieldname not in exclude_fields and field.fieldtype not in ("Section Break", "Column Break"):
+			value = source_doc.get(field.fieldname)
+			if value is not None:
+				new_doc.set(field.fieldname, value)
+
+	# Copy child table rows (staffing_requirements)
+	if source_doc.staffing_requirements:
+		new_doc.staffing_requirements = []
+		for row in source_doc.staffing_requirements:
+			new_row = new_doc.append("staffing_requirements", {})
+			for field in row.meta.fields:
+				if field.fieldname not in {"name", "creation", "modified", "modified_by", "owner", "parent", "parentfield", "parenttype", "idx"}:
+					new_row.set(field.fieldname, row.get(field.fieldname))
+
+	# Set extension fields
+	new_doc.is_extension_request = 1
+	new_doc.original_client_event = source_name
+
+	return new_doc
+
+
+@frappe.whitelist()
+def get_extensible_client_events(doctype, txt, searchfield, start, page_len, filters):
+	"""Return Approved Client Events that don't already have an extension."""
+	return frappe.db.sql(
+		"""
+		SELECT ce.name, ce.event_name
+		FROM `tabClient Event` ce
+		WHERE ce.workflow_state = 'Approved'
+		AND ce.docstatus = 1
+		AND ce.name NOT IN (
+			SELECT original_client_event
+			FROM `tabClient Event`
+			WHERE original_client_event IS NOT NULL
+			AND original_client_event != ''
+			AND docstatus < 2
+		)
+		AND (ce.name LIKE %(txt)s OR ce.event_name LIKE %(txt)s)
+		ORDER BY ce.modified DESC
+		LIMIT %(start)s, %(page_len)s
+		""",
+		{"txt": f"%{txt}%", "start": start, "page_len": page_len}
+	)
