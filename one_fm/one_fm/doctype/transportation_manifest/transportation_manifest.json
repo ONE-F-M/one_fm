@@ -329,11 +329,11 @@
  "is_virtual": 0,
  "max_attachments": 0,
  "modified": "2026-06-18 18:37:00.124341",
- "modified_by": "h.imran@one-fm.com",
+ "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Transportation Manifest",
  "naming_rule": "By \"Naming Series\" field",
- "owner": "h.imran@one-fm.com",
+ "owner": "Administrator",
  "permissions": [
   {
    "amend": 0,
@@ -348,7 +348,7 @@
    "if_owner": 0,
    "import": 0,
    "name": "g02ge1kt73",
-   "owner": "h.imran@one-fm.com",
+   "owner": "Administrator",
    "parent": "Transportation Manifest",
    "parentfield": "permissions",
    "parenttype": "DocType",
