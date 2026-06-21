@@ -23,6 +23,7 @@
   "erf",
   "ojt_days",
   "deployment_date",
+  "actual_recruiters_deployment_date",
   "column_break_status",
   "cancelled_qty",
   "managed_by_ot_qty",
@@ -177,6 +178,14 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Deployment Date"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: doc.reason != 'Exit'",
+   "fieldname": "actual_recruiters_deployment_date",
+   "fieldtype": "Date",
+   "label": "Actual Recruiters Deployment Date",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_status",
@@ -442,7 +451,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-12 19:11:57.496495",
+ "modified": "2026-06-21 10:03:46.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Project Manpower Request",
