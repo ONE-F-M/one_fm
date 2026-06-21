@@ -452,15 +452,16 @@ doc_events = {
 	"Communication": {
 		"after_insert": "one_fm.one_fm.task_assignment_from_email.assign_task_to_user_from_communication_content"
 	},
-	"ToDo": {
-		"validate": "one_fm.overrides.todo.validate_todo",
-        "before_save":"one_fm.overrides.todo.before_save",
-        "after_insert":[
-            "one_fm.overrides.todo.create_google_task_on_todo_creation",
-            "one_fm.overrides.todo.send_email_on_todo_created"
-        ],
-        "on_update": "one_fm.overrides.todo.update_google_task_on_todo_status_change"
-	},
+	# COMMENTED OUT: ToDo hooks now handled by SpiffWorkflow/BPMN server scripts
+	# "ToDo": {
+	# 	"validate": "one_fm.overrides.todo.validate_todo",
+	# 	"before_save":"one_fm.overrides.todo.before_save",
+	# 	"after_insert":[
+	# 		"one_fm.overrides.todo.create_google_task_on_todo_creation",
+	# 		"one_fm.overrides.todo.send_email_on_todo_created"
+	# 	],
+	# 	"on_update": "one_fm.overrides.todo.update_google_task_on_todo_status_change"
+	# },
 	"OAuth Bearer Token": {
 		"after_insert": "one_fm.api.doc_methods.oauth_bearer_token.revoke_and_delete_existing_tokens",
 	}
@@ -557,7 +558,8 @@ override_doctype_class = {
     "Interview": "one_fm.overrides.interview.InterviewOverride",
     "Purchase Order": "one_fm.overrides.purchase_order.PurchaseOrderOverride",
     "HD Ticket": "one_fm.overrides.hd_ticket.HDTicketOverride",
-    "ToDo": "one_fm.overrides.todo.ToDo",
+    # COMMENTED OUT: ToDo override now handled by SpiffWorkflow/BPMN server scripts
+    # "ToDo": "one_fm.overrides.todo.ToDo",
     "Task": "one_fm.overrides.task.TaskOverride",
     "Loan Application": "one_fm.overrides.loan_application.LoanApplicationOverride",
     "Loan": "one_fm.overrides.loan.LoanOverride",
