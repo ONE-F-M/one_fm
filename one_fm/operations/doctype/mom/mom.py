@@ -429,7 +429,9 @@ def fetch_designation_of_users(list_of_users: list = []):
 
 
 @frappe.whitelist()
-def get_project_users(project):
+def get_project_users(project: str | None = None):
+	if not project:
+		return []
 	doc = frappe.get_doc("Project", project)
 	users = []
 	users.append(doc.project_manager_name) if all((doc.project_manager_name, doc.project_manager, doc.project_type == "Internal")) else None
