@@ -564,7 +564,7 @@
    "fieldname": "marital_status",
    "fieldtype": "Select",
    "label": "Marital Status",
-   "options": "\nUnmarried\nMarried\nDivorce\nWidow\nUnknown",
+   "options": "\nSingle\nMarried\nDivorced\nWidowed",
    "read_only": 1
   },
   {
@@ -605,7 +605,7 @@
   }
  ],
  "links": [],
- "modified": "2024-04-24 12:12:06.605384",
+ "modified": "2026-06-04 07:30:21.125399",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "PAM Visa",
