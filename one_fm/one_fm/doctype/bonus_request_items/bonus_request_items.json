@@ -134,6 +134,7 @@
    "default": "0",
    "fieldname": "approve",
    "fieldtype": "Check",
+   "in_list_view": 1,
    "label": "Approve"
   },
   {
@@ -144,6 +145,7 @@
    "default": "0",
    "fieldname": "reject",
    "fieldtype": "Check",
+   "in_list_view": 1,
    "label": "Reject"
   }
  ],

@@ -296,6 +296,7 @@ doc_events = {
 		"validate": "one_fm.utils.validate_warehouse"
 	},
 	"Vehicle": {
+		"autoname": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.vehicle_autoname",
 		"after_insert": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.after_insert_vehicle"
 	},
 	"Item Group": {
@@ -863,6 +864,7 @@ override_whitelisted_methods = {
     "hrms.hr.doctype.leave_application.leave_application.get_number_of_leave_days": "one_fm.api.doc_methods.leave_application_calculation.custom_get_number_of_leave_days",
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.overrides.leave_application.get_leave_approver",
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_details" : "one_fm.overrides.leave_application.get_leave_details",
+	"hrms.hr.doctype.leave_application.leave_application.get_leave_balance_on" : "one_fm.overrides.leave_application.get_leave_balance_on",
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
 	"hrms.hr.doctype.goal.goal.get_children":"one_fm.overrides.goal.get_childrens",

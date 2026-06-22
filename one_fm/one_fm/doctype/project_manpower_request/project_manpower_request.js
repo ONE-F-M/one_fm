@@ -51,7 +51,7 @@ frappe.ui.form.on('Project Manpower Request', {
 				filters: {
 					designation: frm.doc.designation,
 					docstatus: 1,
-					status: ['not in', ['Cancelled', 'Closed']]
+					status: 'Accepted'
 				}
 			};
 		});
@@ -102,19 +102,8 @@ frappe.ui.form.on('Project Manpower Request', {
 					fieldtype: 'Small Text',
 					reqd: 1
 				}, (values) => {
-					frappe.call({
-						method: "one_fm.one_fm.doctype.project_manpower_request.project_manpower_request.set_edit_reason",
-						args: {
-							name: frm.doc.name,
-							reason: values.reason_for_rejection
-						},
-						callback: function(r) {
-							resolve();
-						},
-						error: function(err) {
-							reject(err);
-						}
-					});
+					frm.doc._reason_for_rejection = values.reason_for_rejection;
+					resolve();
 				}, __('Change Request Reason'), __('Submit'));
 			} else {
 				if (frm.selected_workflow_action === "Submit to Recruiter" || frm.selected_workflow_action === "Request Edit") {
@@ -156,6 +145,7 @@ frappe.ui.form.on('Project Manpower Request', {
 			    frm.set_value('count', 1);
 			}
 		}
+		calculate_actual_deployment_date(frm);
 	},
 
 	deployment_date: function(frm) {
@@ -167,6 +157,11 @@ frappe.ui.form.on('Project Manpower Request', {
 			});
 			frm.set_value('deployment_date', '');
 		}
+		calculate_actual_deployment_date(frm);
+	},
+
+	ojt_days: function(frm) {
+		calculate_actual_deployment_date(frm);
 	},
 
 
@@ -269,6 +264,20 @@ function calculate_hired_dynamically(frm) {
 	frm.set_value('number_to_hire', expected_to_hire);
 }
 
+function calculate_actual_deployment_date(frm) {
+	if (frm.doc.reason !== 'Exit') {
+		if (frm.doc.deployment_date) {
+			let ojt = frm.doc.ojt_days || 0;
+			let actual = frappe.datetime.add_days(frm.doc.deployment_date, -ojt);
+			frm.set_value('actual_recruiters_deployment_date', actual);
+		} else {
+			frm.set_value('actual_recruiters_deployment_date', '');
+		}
+	} else {
+		frm.set_value('actual_recruiters_deployment_date', '');
+	}
+}
+
 function setup_status_indicator(frm) {
 	const status_colors = {
 		"Draft": "red",
@@ -290,7 +299,8 @@ frappe.ui.form.on("Project Manpower Request", {
 		frm.set_query("erf", function() {
 			return {
 				filters: {
-					docstatus: 1
+					docstatus: 1,
+					status: "Accepted"
 				}
 			};
 		});

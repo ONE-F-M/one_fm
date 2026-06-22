@@ -129,6 +129,62 @@ frappe.ui.form.on('Contracts', {
 				d.show();
 			});
 		}
+
+		// --- "Return to [Role]" interceptor ---
+		if (frm.selected_workflow_action && frm.selected_workflow_action.startsWith("Return to")) {
+			// Extract the target role from the action, e.g. "Return to Sales Manager" → "Sales Manager"
+			let target_role = frm.selected_workflow_action.replace("Return to ", "");
+
+			return new Promise((resolve, reject) => {
+				frappe.dom.unfreeze();
+				let submitted = false;
+				let d = new frappe.ui.Dialog({
+					title: __(frm.selected_workflow_action),
+					fields: [
+						{
+							label: __("Rejection Reason"),
+							fieldname: "comment",
+							fieldtype: "Small Text",
+							reqd: 1,
+							description: __("This comment will be posted in the Activity section and the responsible employee will be tagged.")
+						}
+					],
+					primary_action_label: __("Submit"),
+					primary_action(values) {
+						submitted = true;
+						d.hide();
+						frappe.call({
+							method: "one_fm.operations.doctype.contracts.contracts.post_return_comment",
+							args: {
+								contract_name: frm.doc.name,
+								target_role: target_role,
+								comment: values.comment
+							},
+							freeze: true,
+							freeze_message: __("Posting comment and returning contract..."),
+							callback: function(r) {
+								if (!r.exc) {
+									frappe.show_alert({
+										message: __("Contract returned to {0}. Comment posted.", [target_role]),
+										indicator: "green"
+									}, 5);
+									resolve();
+								} else {
+									reject();
+								}
+							},
+							error: function() {
+								reject();
+							}
+						});
+					}
+				});
+				d.onhide = () => {
+					if (!submitted) reject();
+				};
+				d.show();
+			});
+		}
 	},
 	use_portal_for_invoice:function(frm){
 		if(frm.doc.use_portal_for_invoice){

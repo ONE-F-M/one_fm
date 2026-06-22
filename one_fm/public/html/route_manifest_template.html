@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>One-FM Route Manifest</title>
+    <title>One-FM Transportation Manifest</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
@@ -575,9 +575,14 @@
 
         .transit-info {
             font-family: var(--font-mono);
-            font-size: 10px;
-            color: var(--text-dim);
+            font-size: 13px;
+            color: var(--text);
             white-space: nowrap;
+            font-weight: 600;
+            background: rgba(245, 158, 11, 0.10);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            padding: 3px 10px;
+            border-radius: 100px;
         }
 
         /* ── SKIPPED PANEL ── */
@@ -1174,6 +1179,12 @@
             return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kuwait" });
         }
 
+        /** HTML-escape a string to prevent XSS when interpolating into innerHTML. */
+        function escHtml(s) {
+            if (!s) return "";
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+
         /** Show a toast notification (standalone — no Frappe dependency). */
         function showToast(msg) {
             const toast = document.createElement('div');
@@ -1260,8 +1271,10 @@
 
         function fmtDuration(secStr) {
             if (!secStr) return "";
-            const s = parseInt(secStr.replace("s", ""), 10);
+            let s = parseInt(secStr.replace("s", ""), 10);
             if (isNaN(s) || s === 0) return "";
+            // Cap at 24 hours — a single daily manifest cannot exceed this
+            if (s > 86400) s = 86400;
             if (s < 60) return `${s}s`;
             if (s < 3600) return `${Math.round(s / 60)}m`;
             const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60);
@@ -1388,14 +1401,11 @@
                 ? "KD " + Number(cost).toLocaleString("en-KW", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                 : "—";
 
-            // Detect run date from first visit
-            const firstTime = routes[0]?.vehicleStartTime ?? req.model.globalStartTime;
-            if (firstTime) {
-                const d = new Date(firstTime);
-                document.getElementById("run-meta").textContent =
-                    d.toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Kuwait" })
-                    + " · Kuwait Time";
-            }
+            // Always show the actual current date in Kuwait timezone
+            const now = new Date();
+            document.getElementById("run-meta").textContent =
+                now.toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Kuwait" })
+                + " · Kuwait Time";
 
             // Sidebar
             const sidebar = document.getElementById("sidebar-routes");
@@ -1411,6 +1421,7 @@
                 const dur = m.totalDuration ? fmtDuration(m.totalDuration) : "";
                 btn.innerHTML = `
       <span class="vehicle-btn-label">${pr.label}</span>
+      ${meta.license_plate ? `<span class="vehicle-btn-meta" style="font-size:11px;color:var(--text-muted)">${escHtml(meta.license_plate)}</span>` : ""}
       <span class="vehicle-btn-meta">${fmtTime(pr.route.vehicleStartTime)} → ${fmtTime(pr.route.vehicleEndTime)}</span>
       <span class="vehicle-btn-stops">
         <span>${stopCount} stops</span>
@@ -1524,6 +1535,7 @@
   <div class="vehicle-header">
     <div>
       <div class="vehicle-title">${pr.label}</div>
+      ${meta.license_plate ? `<div style="font-size:13px;color:var(--text-muted);font-weight:500;margin-top:2px">${escHtml(meta.license_plate)}</div>` : ""}
       <div class="vehicle-subtitle">${fmtTime(pr.route.vehicleStartTime)} → ${fmtTime(pr.route.vehicleEndTime)} · ${allTrips.length} trip${allTrips.length !== 1 ? 's' : ''}</div>
     </div>
       <div class="vehicle-stats">
@@ -1541,7 +1553,7 @@
         </div>
         <div class="stat-box">
           <div class="stat-val">${trav}</div>
-          <div class="stat-lbl">Drive Time</div>
+          <div class="stat-lbl">Trip Time</div>
         </div>
         ${metaStats}
       </div>
@@ -1863,9 +1875,9 @@
             const w = fmtDuration(t.waitDuration);
             const km = t.travelDistanceMeters ? fmtKm(t.travelDistanceMeters) : "";
             const parts = [];
-            if (d) parts.push(`<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">directions_bus</span> ${d}`);
+            if (d) parts.push(`<span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle">directions_bus</span> ${d}`);
             if (km) parts.push(km);
-            if (w && w !== "0s") parts.push(`<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">hourglass_top</span> wait ${w}`);
+            if (w && w !== "0s") parts.push(`<span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle">hourglass_top</span> wait ${w}`);
             return `
         <div class="transit-row">
           <div class="transit-line"></div>
@@ -1901,7 +1913,7 @@
     <!-- ──────────────────────────── HTML ──────────────────────────── -->
     <div class="header">
         <div class="header-left">
-            <div class="logo">ONE-FM <span>/ Route Manifest</span></div>
+            <div class="logo">ONE-FM <span>/ Transportation Manifest</span></div>
             <div class="run-meta" id="run-meta">—</div>
         </div>
         <div class="summary-pills">
@@ -1963,6 +1975,27 @@
         </div>
     </div>
 
+    <!-- RAMBO PROMPT MODAL -->
+    <div class="modal-overlay" id="ramboPromptModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="ramboPromptTitle">Replacement Needed?</span>
+                <button class="modal-close" onclick="closeRamboPrompt()"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <div style="margin-bottom:16px; font-size:13px; color:var(--text-muted)">
+                <strong id="ramboPromptEmpName" style="color:var(--text)"></strong>
+                <span id="ramboPromptReason"></span>
+            </div>
+            <div style="font-size:14px; font-weight:500; color:var(--text); margin-bottom:20px;">
+                Do you want to look for Rambo Relievers?
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button class="btn-primary" style="flex:1; background:#e5e5e5; color:#333;" onclick="declineRamboPrompt()">No</button>
+                <button class="btn-primary" style="flex:1;" onclick="acceptRamboPrompt()">Yes</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         window.checkerState = window.checkerState || {};
         let currentCheckInEmpId = null;
@@ -2017,9 +2050,16 @@
         }
 
         function autoSaveCheckIn() {
-            window.checkerState[currentCheckInEmpId] = window.checkerState[currentCheckInEmpId] || {};
-            window.checkerState[currentCheckInEmpId].attendance = tempAttendance;
-            window.checkerState[currentCheckInEmpId].qoa = tempQoa;
+            // Capture in locals before async timeout to prevent race condition
+            // if the user opens another employee's check-in within the 150ms delay.
+            const empId = currentCheckInEmpId;
+            const empName = currentCheckInEmpName;
+            const att = tempAttendance;
+            const qoa = tempQoa;
+
+            window.checkerState[empId] = window.checkerState[empId] || {};
+            window.checkerState[empId].attendance = att;
+            window.checkerState[empId].qoa = qoa;
             
             if (activeView) {
                 renderRoute(activeView);
@@ -2027,13 +2067,19 @@
                 init(); // Fallback
             }
             
-            if (tempAttendance === 'Absent' || tempQoa === 'Fail') {
-                // Delay slightly to let them see the button turn red
+            if (att === 'Absent') {
+                // Absent → ask "Do you want to look for Rambo Relievers?"
                 setTimeout(() => {
                     closeCheckInModal();
-                    openReplacementModal(currentCheckInEmpId, currentCheckInEmpName);
+                    openRamboPrompt(empId, empName, 'absent');
                 }, 150);
-            } else if (tempAttendance === 'Present' && tempQoa === 'Pass') {
+            } else if (att === 'Present' && qoa === 'Fail') {
+                // Present + QOA Fail → ask "Do you want to look for Rambo Relievers?"
+                setTimeout(() => {
+                    closeCheckInModal();
+                    openRamboPrompt(empId, empName, 'qoa_fail');
+                }, 150);
+            } else if (att === 'Present' && qoa === 'Pass') {
                 // Perfect check-in, auto close!
                 setTimeout(() => {
                     closeCheckInModal();
@@ -2042,17 +2088,96 @@
             // If they only clicked Present, stay open for QoA
         }
 
+        // --- RAMBO PROMPT MODAL LOGIC ---
+
+        let ramboPromptEmpId = null;
+        let ramboPromptEmpName = null;
+
+        function openRamboPrompt(empId, empName, reason) {
+            ramboPromptEmpId = empId;
+            ramboPromptEmpName = empName;
+            document.getElementById('ramboPromptEmpName').textContent = empName;
+            if (reason === 'qoa_fail') {
+                document.getElementById('ramboPromptTitle').textContent = 'Quality of Appearance Failed';
+                document.getElementById('ramboPromptReason').textContent = ' failed the Quality of Appearance check.';
+            } else {
+                document.getElementById('ramboPromptTitle').textContent = 'Employee Absent';
+                document.getElementById('ramboPromptReason').textContent = ' is marked as Absent.';
+            }
+            document.getElementById('ramboPromptModal').classList.add('active');
+        }
+
+        function closeRamboPrompt() {
+            document.getElementById('ramboPromptModal').classList.remove('active');
+        }
+
+        function acceptRamboPrompt() {
+            closeRamboPrompt();
+            openReplacementModal(ramboPromptEmpId, ramboPromptEmpName);
+        }
+
+        function declineRamboPrompt() {
+            closeRamboPrompt();
+            // Employee stays with their current visual flag (amber for QOA fail, red for absent)
+            if (activeView) {
+                renderRoute(activeView);
+            } else {
+                init();
+            }
+        }
+
         // --- REPLACEMENT MODAL LOGIC ---
         
         let availableRelievers = [];
+
+        /** Format a reliever option label (plain text, safe for textContent).
+         *  Shows: [Name] - [Shift] - [Start] to [End]
+         *  Falls back to [Name] ([Designation]) if no shift assigned. */
+        function formatRelieverOption(r) {
+            if (r.shift_name && r.shift_start_time && r.shift_end_time) {
+                return r.employee_name + ' - ' + r.shift_name + ' - ' + r.shift_start_time + ' to ' + r.shift_end_time;
+            }
+            // Fallback: show designation if no shift scheduled today
+            if (r.designation) {
+                return r.employee_name + ' (' + r.designation + ')';
+            }
+            return r.employee_name;
+        }
+
+        /** Build <select> options safely via DOM API (textContent) to prevent XSS. */
+        function populateRelieverSelect(relievers) {
+            const sel = document.getElementById('relieverSelect');
+            sel.innerHTML = '';
+
+            if (relievers.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = 'No available Rambo Relievers found for this time slot.';
+                sel.appendChild(opt);
+                sel.disabled = true;
+                document.getElementById('btn-confirm-replace').disabled = true;
+                return;
+            }
+
+            sel.disabled = false;
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = '-- Select Reliever --';
+            sel.appendChild(placeholder);
+
+            for (const r of relievers) {
+                const opt = document.createElement('option');
+                opt.value = r.name;
+                opt.textContent = formatRelieverOption(r);
+                sel.appendChild(opt);
+            }
+            document.getElementById('btn-confirm-replace').disabled = false;
+        }
 
         function findShiftForEmp(empId) {
             // Find the shift info from the window.manifestData
             if (!window.manifestData || !window.manifestData.swim_items) return null;
             for (let item of window.manifestData.swim_items) {
-                // To be precise we would need to know the employee is in this item's _card
-                // But simpler: just find the shift of the first loaded shipment since usually 1 site/shift per manifest.
-                // Or look in window.manifestData.swim_items
                 if (item._shift) return { shift: item._shift, site: item._site };
             }
             return null;
@@ -2060,7 +2185,12 @@
 
         function openReplacementModal(empId, empName) {
             document.getElementById('replaceOrigName').textContent = empName;
-            document.getElementById('relieverSelect').innerHTML = '<option value="">Loading available relievers...</option>';
+            const sel = document.getElementById('relieverSelect');
+            sel.innerHTML = '';
+            const loadingOpt = document.createElement('option');
+            loadingOpt.value = '';
+            loadingOpt.textContent = 'Loading available relievers...';
+            sel.appendChild(loadingOpt);
             document.getElementById('btn-confirm-replace').disabled = true;
             document.getElementById('replacementModal').classList.add('active');
             
@@ -2075,7 +2205,7 @@
             }
 
             const baseUrl = typeof SITE_URL !== 'undefined' ? SITE_URL : '';
-            fetch(baseUrl + '/api/method/one_fm.one_fm.page.route_planner.route_planner.get_available_rambo_relievers', {
+            fetch(baseUrl + '/api/method/one_fm.one_fm.page.transportation_schedule.transportation_schedule.get_available_rambo_relievers', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': (typeof FRAPPE_CSRF_TOKEN !== 'undefined' ? FRAPPE_CSRF_TOKEN : '') },
                 body: JSON.stringify({ shift_name: shiftInfo.shift, date: date })
@@ -2083,20 +2213,16 @@
             .then(r => r.json())
             .then(res => {
                 availableRelievers = res.message || [];
-                const sel = document.getElementById('relieverSelect');
-                if (availableRelievers.length === 0) {
-                    sel.innerHTML = '<option value="">No available Rambo Relievers found for this time slot.</option>';
-                    sel.disabled = true;
-                } else {
-                    sel.disabled = false;
-                    sel.innerHTML = '<option value="">-- Select Reliever --</option>' + 
-                        availableRelievers.map(r => `<option value="${r.name}">${r.employee_name} (${r.designation})</option>`).join("");
-                    document.getElementById('btn-confirm-replace').disabled = false;
-                }
+                populateRelieverSelect(availableRelievers);
             })
             .catch(err => {
                 console.error(err);
-                document.getElementById('relieverSelect').innerHTML = '<option value="">Error loading relievers.</option>';
+                const errSel = document.getElementById('relieverSelect');
+                errSel.innerHTML = '';
+                const errOpt = document.createElement('option');
+                errOpt.value = '';
+                errOpt.textContent = 'Error loading relievers.';
+                errSel.appendChild(errOpt);
             });
         }
 
@@ -2129,7 +2255,7 @@
             
             // Call backend to send email
             const baseUrl = typeof SITE_URL !== 'undefined' ? SITE_URL : '';
-            fetch(baseUrl + '/api/method/one_fm.one_fm.page.route_planner.route_planner.process_rambo_replacement', {
+            fetch(baseUrl + '/api/method/one_fm.one_fm.page.transportation_schedule.transportation_schedule.process_rambo_replacement', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': (typeof FRAPPE_CSRF_TOKEN !== 'undefined' ? FRAPPE_CSRF_TOKEN : '') },
                 body: JSON.stringify({

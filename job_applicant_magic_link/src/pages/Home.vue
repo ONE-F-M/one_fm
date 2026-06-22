@@ -32,7 +32,7 @@ export default {
   },
   methods:{
     loadContent(){
-      let magicLink = this.$route.query.magic_link;
+      let magicLink = new URLSearchParams(window.location.search).get('magic_link');
       if (!magicLink){
         Swal.fire(
           'Error',
@@ -165,6 +165,9 @@ export default {
             )
             me.loadContent();
           }
+          // Clear cached images after upload so a later submit does not
+          // re-run OCR and overwrite the user's manual corrections.
+          me.imageFiles = {};
           document.querySelector('#cover-spin').style.display = 'none';
         },
       })
@@ -210,7 +213,10 @@ export default {
     },
     submitForm(e){
       let me = this;
-      me.upload();
+      // Do NOT re-run upload()/OCR here — documents are already uploaded when
+      // selected. Re-running OCR on submit would overwrite any field the user
+      // manually corrected (e.g. gender, passport holder of) with the original
+      // OCR-detected value.
       document.querySelectorAll('#personal-detail input:required').forEach(function(e) {
         if(!e.value){
           Swal.fire(

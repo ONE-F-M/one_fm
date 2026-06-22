@@ -279,6 +279,8 @@ class EmployeeResignation(Document):
 			pmr.workflow_state = "Draft"
 			pmr.insert()
 			frappe.db.set_value("Project Manpower Request", pmr.name, "workflow_state", "Draft")
+			# Write backlink so PMR's Connections panel shows this resignation with count 1
+			frappe.db.set_value("Employee Resignation", self.name, "project_manpower_request", pmr.name)
 
 	def on_trash(self):
 		for row in self.get("employees", []):

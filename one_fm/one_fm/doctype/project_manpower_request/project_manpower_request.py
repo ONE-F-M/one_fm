@@ -28,7 +28,11 @@ class ProjectManpowerRequest(Document):
 		self.project_request_code = self.name
 
 	def validate(self):
+		if getattr(self, "_reason_for_rejection", None):
+			self.reason_for_rejection = self._reason_for_rejection
+
 		self.update_select_field_options()
+		self.calculate_actual_deployment_date()
 		if self.reason == "Exit":
 			if self.get("resignation_links"):
 				self.count = len(self.resignation_links)
@@ -47,6 +51,17 @@ class ProjectManpowerRequest(Document):
 		self.validate_change_request_reason()
 		self.validate_deployment_date()
 		self.validate_completion()
+
+	def calculate_actual_deployment_date(self):
+		if self.reason != "Exit":
+			if self.deployment_date:
+				from frappe.utils import add_days
+				ojt = self.ojt_days or 0
+				self.actual_recruiters_deployment_date = add_days(self.deployment_date, -ojt)
+			else:
+				self.actual_recruiters_deployment_date = None
+		else:
+			self.actual_recruiters_deployment_date = None
 
 	def validate_project_allocation(self):
 		exempt_reasons = ["Annual Leave Reliever", "Day OFF Reliever", "Reliever"]

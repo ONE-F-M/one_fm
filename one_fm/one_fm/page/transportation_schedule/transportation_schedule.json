@@ -1,0 +1,13 @@
+{
+    "doctype": "Page",
+    "module": "One FM",
+    "name": "transportation-schedule",
+    "page_name": "transportation-schedule",
+    "standard": "Yes",
+    "title": "Transportation Schedule",
+    "roles": [
+        {
+            "role": "System Manager"
+        }
+    ]
+}
