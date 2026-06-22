@@ -11,6 +11,7 @@ def after_insert(doc, event):
 	# Grab the AMP content set by one_bpmn's compose_and_send_task_email
 	# or dispatchers.dispatch_email before the force-send fires.
 	amp_html = getattr(frappe.flags, "amp_html", None)
+	frappe.flags.amp_html = None  # Always clear — even if falsy (e.g. empty string)
 	if amp_html:
 		try:
 			_inject_amp_into_message(doc, amp_html)
@@ -19,8 +20,6 @@ def after_insert(doc, event):
 				title="AMP: Failed to inject AMP part into email",
 				message=frappe.get_traceback(),
 			)
-		finally:
-			frappe.flags.amp_html = None
 
 	# ── Force-send for small queues ───────────────────────────────────
 	found = True
@@ -91,13 +90,16 @@ def _inject_amp_into_message(doc, amp_html):
 	else:
 		alt.attach(amp_part)             # fallback: just append
 
-	doc.message = msg.as_string()
-	doc.db_update()
-
-	# Store on the doc for audit (requires the custom field from one_bpmn)
+	# Update both message and amp_html in a single DB call
+	update_fields = {"message": msg.as_string()}
 	if doc.meta.has_field("amp_html"):
+		update_fields["amp_html"] = amp_html
+
+	doc.message = update_fields["message"]
+	if "amp_html" in update_fields:
 		doc.amp_html = amp_html
-		frappe.db.set_value("Email Queue", doc.name, "amp_html", amp_html)
+
+	frappe.db.set_value("Email Queue", doc.name, update_fields, update_modified=False)
 
 
 def _find_alternative(msg):
