@@ -176,6 +176,10 @@
   {
    "link_doctype": "Shift Assignment",
    "link_fieldname": "client_event"
+  },
+  {
+   "link_doctype": "Attendance",
+   "link_fieldname": "custom_client_event"
   }
  ],
  "modified": "2026-05-16 08:31:37.561450",

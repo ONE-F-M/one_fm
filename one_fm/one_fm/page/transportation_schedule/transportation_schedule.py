@@ -2,6 +2,7 @@ import frappe
 import requests
 from frappe import _
 from frappe.utils import cint
+from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
 
 PICKUP_BUFFER = 10             # minutes
 MAX_TRANSIT = 60               # minutes
@@ -1374,6 +1375,100 @@ def get_manifest_data_for_plan(plan_name: str):
 	c_map = {}  # dirKey -> { lbl, idx }
 	si = 0
 
+	# Lazily sync Transportation Manifest documents for each vehicle on today's date
+	schedule_date_str = frappe.utils.today()
+	assigned_vehicles = list({row.vehicle for row in doc.assignments if row.vehicle})
+	
+	manifests = {}
+
+	for v_id in assigned_vehicles:
+		manifest_name = frappe.db.get_value(
+			"Transportation Manifest",
+			{"vehicle_no": v_id, "schedule_date": schedule_date_str},
+			"name"
+		)
+		if manifest_name:
+			manifest_doc = frappe.get_doc("Transportation Manifest", manifest_name)
+		else:
+			if not frappe.has_permission("Transportation Manifest", "create"):
+				continue
+			manifest_doc = frappe.new_doc("Transportation Manifest")
+			manifest_doc.vehicle_no = v_id
+			manifest_doc.schedule_date = schedule_date_str
+
+		# Always sync rows — handles both new and existing manifests
+		v_rows = [row for row in doc.assignments if row.vehicle == v_id]
+		rows_changed = sync_manifest_details(manifest_doc, v_rows, card_emp_map, card_return_emp_map)
+
+		if manifest_doc.is_new():
+			manifest_doc.insert()
+		elif rows_changed:
+			manifest_doc.check_permission("write")
+			manifest_doc.save()
+
+		manifests[v_id] = manifest_doc
+
+	def enrich_employees(emp_list, vehicle_id, stop_location, trip_id, is_return):
+		manifest_doc = manifests.get(vehicle_id)
+		if not manifest_doc:
+			return emp_list
+			
+		enriched = []
+		action = "Dropping Off" if is_return else "Boarding"
+		stop_location_normalized = stop_location or ""
+		direction = "RETURN" if is_return else "OUTBOUND"
+		stop_id_val = f"{stop_location_normalized}|{direction}"
+		
+		for emp in emp_list:
+			emp_id = emp.get("id")
+			matching_row = None
+			# Primary match: compound key using stop_id
+			for row in manifest_doc.transportation_manifest_details:
+				if (row.employee == emp_id and 
+					(row.stop_id or "") == stop_id_val and 
+					(row.trip_id or "") == (trip_id or "") and 
+					row.employee_action == action):
+					matching_row = row
+					break
+			# Fallback: match by stop_name for rows created before stop_id was added
+			if not matching_row:
+				for row in manifest_doc.transportation_manifest_details:
+					if (row.employee == emp_id and 
+						(row.stop_name or "") == stop_location_normalized and 
+						(row.trip_id or "") == (trip_id or "") and 
+						row.employee_action == action):
+						matching_row = row
+						break
+			
+			if not matching_row:
+				for row in manifest_doc.transportation_manifest_details:
+					if row.employee == emp_id:
+						matching_row = row
+						break
+						
+			emp_copy = dict(emp)
+			if matching_row:
+				emp_copy["row_id"] = matching_row.name
+				emp_copy["attendance_status"] = matching_row.attendance_status
+				emp_copy["qoa_status"] = matching_row.qoa_status
+				emp_copy["qoa_reason"] = matching_row.qoa_reason
+				emp_copy["requires_reliever"] = matching_row.requires_reliever
+				emp_copy["reliever_employee"] = matching_row.reliever_employee
+				
+				if matching_row.reliever_employee:
+					rel_name = frappe.db.get_value("Employee", matching_row.reliever_employee, "employee_name") or matching_row.reliever_employee
+					rel_mobile = frappe.db.get_value("Employee", matching_row.reliever_employee, "cell_number") or ""
+					emp_copy["replacement"] = {
+						"id": matching_row.reliever_employee,
+						"name": rel_name,
+						"mobile": rel_mobile
+					}
+			else:
+				emp_copy["row_id"] = ""
+				
+			enriched.append(emp_copy)
+		return enriched
+
 	# Process assignments to build shipments
 	for row in doc.assignments:
 		dir_key = f"{row.card_id}_{row.direction}"
@@ -1389,11 +1484,13 @@ def get_manifest_data_for_plan(plan_name: str):
 		# Map employees
 		if row.direction == "RETURN":
 			ret_emps = card_return_emp_map.get(row.card_id, [])
-			ship_emp[lbl] = ret_emps if ret_emps else []
+			ship_emp[lbl] = enrich_employees(ret_emps, row.vehicle, row.stop_location or "", row.trip_group, True) if ret_emps else []
 		else:
-			ship_emp[lbl] = card_emp_map.get(row.card_id, [])
+			emps = card_emp_map.get(row.card_id, [])
+			ship_emp[lbl] = enrich_employees(emps, row.vehicle, row.stop_location or "", row.trip_group, False) if emps else []
 
-		ship_return_emp[lbl] = card_return_emp_map.get(row.card_id, [])
+		ret_emps = card_return_emp_map.get(row.card_id, [])
+		ship_return_emp[lbl] = enrich_employees(ret_emps, row.vehicle, row.stop_location or "", row.trip_group, True) if ret_emps else []
 
 		# Site location
 		if row.shift and row.shift in shift_doc_map:

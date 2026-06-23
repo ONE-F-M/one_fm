@@ -299,6 +299,9 @@ one_fm.patches.v15_0.remove_vehicle_autoname_property_setter
 one_fm.patches.v15_0.update_vehicle_category_naming #2026-06-17
 one_fm.patches.v15_0.rename_fleet_workspace_to_transportation #2026-06-10 #2
 one_fm.patches.v15_0.rename_route_planner_page_to_transportation_schedule
+one_fm.patches.v15_0.cleanup_todo_type_field
+
+
 [post_model_sync]
 one_fm.patches.v15_0.process_task_for_wiki_employee_task
 one_fm.patches.v15_0.add_assignment_rule_returning_to_operations_supervisor_of_client_event #2
@@ -414,7 +417,7 @@ one_fm.patches.v15_0.update_bank_account_workflow
 one_fm.patches.v15_0.add_courier_tracking_custom_fields
 one_fm.patches.v15_0.update_client_interview_shortlist_workflow #2026-05-13
 one_fm.patches.v15_0.add_resignation_fields_to_employee
-one_fm.patches.v15_0.update_overtime_request_workflow #4
+one_fm.patches.v15_0.update_overtime_request_workflow #6-2026-06-19
 one_fm.patches.v15_0.add_assignment_rule_overtime_request_employee_acceptance #1
 one_fm.patches.v15_0.add_assignment_rule_overtime_request_line_manager_approval #1
 one_fm.patches.v15_0.add_assignment_rule_overtime_request_payroll_officer #1
@@ -441,6 +444,8 @@ one_fm.patches.v15_0.add_employee_status_update_notification_to_hr_settings
 one_fm.patches.v15_0.update_leave_application_pending_hr_assignment_rule #1
 one_fm.patches.v15_0.add_leave_application_approved_gs_employee_assignment_rule #2
 one_fm.patches.v15_0.add_accommodation_checked_out_field_and_update_approved_rule #1
+one_fm.patches.v15_0.add_client_event_field_to_attendance
 one_fm.patches.v15_0.add_asset_serial_and_warranty_fields
 one_fm.patches.v15_0.add_asset_repair_custom_fields
 one_fm.patches.v15_0.add_asset_repair_workflow_and_assignment_rules #4
+one_fm.patches.v15_0.set_todo_type_read_only
