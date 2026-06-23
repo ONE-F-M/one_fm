@@ -27,7 +27,7 @@ def execute():
 
 	if not schedules:
 		print(f"No Employee Schedule found for {EMPLOYEE} on {DATE}; nothing to repair.")
-
+		return
 	for es in schedules:
 		# Only repair day-off rows that still carry a Client Event link (the conflict).
 		if es.employee_availability in ("Day Off", "Client Day Off") and es.client_event:
