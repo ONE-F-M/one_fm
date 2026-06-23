@@ -31,6 +31,8 @@ def custom_send_notification_email(doc):
 
     if doc.document_type == "HD Ticket":
         doc_link = frappe.utils.get_url(f"/helpdesk/tickets/{doc.document_name}")
+    elif doc.document_type == "BPMN Process Model" and doc.link:
+        doc_link = frappe.utils.get_url(f"{doc.link}")
     else:
         doc_link = get_url_to_form(doc.document_type, doc.document_name)
     header = get_email_header(doc)
