@@ -110,10 +110,10 @@ def create_or_update_cdo_checker(employee, period_start, period_end, cdo_count, 
 	Logic:
 	- If no record exists: Create new with repeat_count = 1
 	- If record exists with status = "Pending":
-		- If CDO still > 3: Delete old record and create new with incremented repeat_count
-		- If CDO <= 3: Skip (issue resolved but not marked Complete)
+		- If CDO still > 1: Delete old record and create new with incremented repeat_count
+		- If CDO <= 1: Skip (issue resolved but not marked Complete)
 	- If record exists with status = "Completed":
-		- If CDO > 3 again: Create new record with repeat_count = 1 (new issue)
+		- If CDO > 1 again: Create new record with repeat_count = 1 (new issue)
 
 	Args:
 		employee (frappe.Document): Employee document
@@ -159,7 +159,7 @@ def create_or_update_cdo_checker(employee, period_start, period_end, cdo_count, 
 		
 		if existing_record["status"] == "Pending":
 			# Check if issue is still present
-			if cdo_count > 3:
+			if cdo_count > 1:
 				# Issue still exists - increment repeat count
 				yesterday_repeat_count = frappe.db.get_value(
 					"Roster Client Day Off Checker",
@@ -186,11 +186,11 @@ def create_or_update_cdo_checker(employee, period_start, period_end, cdo_count, 
 					project_manager=project_manager,
 					today=today
 				)
-			# else: CDO <= 3, issue resolved but not marked Complete - skip
+			# else: CDO <= 1, issue resolved but not marked Complete - skip
 		
 		elif existing_record["status"] == "Completed":
 			# Issue was previously resolved but has recurred
-			if cdo_count > 3:
+			if cdo_count > 1:
 				# Create new record with repeat_count = 1 (new issue)
 				# Autoname format now supports multiple records per month
 				_create_new_cdo_checker(
@@ -227,7 +227,7 @@ def _create_new_cdo_checker(employee, reporting_week, cdo_count, repeat_count, s
 	cdo_checker.employee = employee.name
 	cdo_checker.assigned_client_day_off_count = cdo_count
 	cdo_checker.client_day_off_explanation = (
-		"The employee has been scheduled for more than 3 Client Day Off "
+		"The employee has been scheduled for more than 1 Client Day Off "
 		"within the current and next week window."
 	)
 	cdo_checker.shift_supervisor = shift_supervisor
@@ -246,7 +246,7 @@ def check_roster_client_day_off():
 	1. Query all active, shift-working employees
 	2. Count CDO records in a combined two-week window (current week + next week,
 	   Sunday-Saturday)
-	3. Create/update checker records for employees with > 3 CDOs in the window
+	3. Create/update checker records for employees with > 1 CDOs in the window
 	"""
 	try:
 		today = getdate(nowdate())
@@ -274,7 +274,7 @@ def check_roster_client_day_off():
 				employee.name, current_week_start, next_week_end
 			)
 
-			if cdo_count > 3:
+			if cdo_count > 1:
 				# Use current week start as the reference for the reporting label
 				create_or_update_cdo_checker(
 					employee, current_week_start, next_week_end,
