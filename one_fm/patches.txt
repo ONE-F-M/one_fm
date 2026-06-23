@@ -443,4 +443,4 @@ one_fm.patches.v15_0.add_leave_application_approved_gs_employee_assignment_rule 
 one_fm.patches.v15_0.add_accommodation_checked_out_field_and_update_approved_rule #1
 one_fm.patches.v15_0.add_asset_serial_and_warranty_fields
 one_fm.patches.v15_0.add_asset_repair_custom_fields
-one_fm.patches.v15_0.add_asset_repair_workflow_and_assignment_rules
+one_fm.patches.v15_0.add_asset_repair_workflow_and_assignment_rules #4
