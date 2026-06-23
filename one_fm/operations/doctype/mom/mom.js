@@ -10,7 +10,7 @@ frappe.ui.form.on('MOM', {
 		frm.refresh_fields("attendees");
 	},
 	project: function(frm) {
-		if(frm.doc.project_type != "External"){
+		if(frm.doc.project && frm.doc.project_type != "External"){
 			frappe.call({
                 method: "one_fm.operations.doctype.mom.mom.get_project_users",
                 args: {
