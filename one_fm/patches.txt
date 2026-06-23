@@ -445,3 +445,4 @@ one_fm.patches.v15_0.close_job_openings_for_closed_erf #2026-06-15
 one_fm.patches.v15_0.update_interview_console_permissions
 one_fm.patches.v15_0.standardize_marital_status_options
 one_fm.patches.v15_0.fix_nirmala_day_off_client_event_conflict #2026-06-18
+one_fm.patches.v15_0.update_pmr_workflow_in_process_role
