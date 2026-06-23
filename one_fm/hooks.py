@@ -845,10 +845,6 @@ fixtures = [
 	# },
 	{
 		"dt": "Email Template"
-	},
-	{
-		"dt": "HD Ticket Template",
-		"filters": [["name", "in",["Default"]]]
 	}
 ]
 
