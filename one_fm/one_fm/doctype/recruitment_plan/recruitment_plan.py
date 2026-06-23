@@ -28,14 +28,14 @@ class RecruitmentPlan(Document):
 				frappe.throw(_("Actual Recruitment End Date cannot be before Actual Recruitment Start Date"))
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["GET"])
 def get_autocomplete_options() -> dict:
 	"""Fetch all Country and Nationality options for Recruitment Plan Autocomplete fields."""
-	if not frappe.has_permission("Recruitment Plan", "read"):
+	if not frappe.has_permission("Recruitment Plan", ptype="read"):
 		frappe.throw(_("Not permitted to access recruitment plan details."), frappe.PermissionError)
 
-	countries = frappe.get_all("Country", fields=["name"], order_by="name asc", ignore_permissions=True)
-	nationalities = frappe.get_all("Nationality", fields=["name"], order_by="name asc", ignore_permissions=True)
+	countries = frappe.get_list("Country", fields=["name"], order_by="name asc")
+	nationalities = frappe.get_list("Nationality", fields=["name"], order_by="name asc")
 
 	return {
 		"countries": [c.name for c in countries if c.name],
