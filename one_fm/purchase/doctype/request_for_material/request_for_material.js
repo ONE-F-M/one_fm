@@ -883,8 +883,10 @@ var set_employee_or_project = function(frm) {
 		}
 		else if(frm.doc.type=='Department'){
 			frm.set_df_property('department', 'reqd', true);
-			// Check if employee exit for the session user to set employee field
-			set_employee_from_the_session_user(frm);
+			frm.set_df_property('employee', 'reqd', true);
+			// Clear employee so it is not prefilled from session user or previous type selection
+			frm.set_value('employee', '');
+			frm.set_value('employee_name', '');
 		}
 		else if(frm.doc.type=='Project'|| frm.doc.type=='Project Mobilization'){
 			frm.set_df_property('project', 'reqd', true);
