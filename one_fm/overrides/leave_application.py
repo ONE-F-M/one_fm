@@ -271,7 +271,7 @@ class LeaveApplicationOverride(LeaveApplication):
         precision = cint(frappe.db.get_single_value("System Settings", "float_precision")) or 2
 
         if self.from_date and self.to_date:
-            self.total_leave_days = get_number_of_leave_days(
+            self.total_leave_days = custom_get_number_of_leave_days(
                 self.employee,
                 self.leave_type,
                 self.from_date,
