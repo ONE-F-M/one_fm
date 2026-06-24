@@ -221,6 +221,7 @@ class SalarySlipOverride(SalarySlip):
         if joining_date and (getdate(self.start_date) < joining_date <= getdate(self.end_date)):
             start_date = joining_date
             unmarked_days = get_unmarked_days_based_on_doj_or_relieving(
+                self,
                 unmarked_days,
                 include_holidays_in_total_working_days,
                 self.start_date,
@@ -230,6 +231,7 @@ class SalarySlipOverride(SalarySlip):
         if relieving_date and (getdate(self.start_date) <= relieving_date < getdate(self.end_date)):
             end_date = relieving_date
             unmarked_days = get_unmarked_days_based_on_doj_or_relieving(
+                self,
                 unmarked_days,
                 include_holidays_in_total_working_days,
                 add_days(relieving_date, 1),
@@ -238,6 +240,7 @@ class SalarySlipOverride(SalarySlip):
         if (getdate(self.posting_date) < getdate(self.end_date)):
             end_date = self.posting_date
             unmarked_days = get_unmarked_days_based_on_doj_or_relieving(
+                self,
                 unmarked_days,
                 include_holidays_in_total_working_days,
                 self.posting_date,
@@ -885,7 +888,8 @@ def get_unmarked_days_for_split_salary(doc, include_holidays_in_total_working_da
 
     if joining_date and (getdate(start_date) < joining_date <= getdate(end_date)):
         start_date = joining_date
-        unmarked_days = doc.get_unmarked_days_based_on_doj_or_relieving(
+        unmarked_days = get_unmarked_days_based_on_doj_or_relieving(
+            doc,
             unmarked_days,
             include_holidays_in_total_working_days,
             start_date,
@@ -894,7 +898,8 @@ def get_unmarked_days_for_split_salary(doc, include_holidays_in_total_working_da
 
     if relieving_date and (getdate(start_date) <= relieving_date < getdate(end_date)):
         end_date = relieving_date
-        unmarked_days = doc.get_unmarked_days_based_on_doj_or_relieving(
+        unmarked_days = get_unmarked_days_based_on_doj_or_relieving(
+            doc,
             unmarked_days,
             include_holidays_in_total_working_days,
             add_days(relieving_date, 1),
@@ -902,7 +907,8 @@ def get_unmarked_days_for_split_salary(doc, include_holidays_in_total_working_da
         )
     if (getdate(doc.posting_date) < getdate(end_date)):
         end_date = doc.posting_date
-        unmarked_days = doc.get_unmarked_days_based_on_doj_or_relieving(
+        unmarked_days = get_unmarked_days_based_on_doj_or_relieving(
+            doc,
             unmarked_days,
             include_holidays_in_total_working_days,
             doc.posting_date,
