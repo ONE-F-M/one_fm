@@ -8,6 +8,20 @@ from frappe.utils import getdate, today, add_days, formatdate
 
 
 class ClientInterviewShortlist(Document):
+	def validate(self):
+		self.validate_project_or_prospective_client()
+
+	def validate_project_or_prospective_client(self):
+		if self.is_prospective_client:
+			if not self.prospective_client:
+				frappe.throw(_("Prospective Client is required when 'Is Prospective Client' is checked."))
+			self.project = None
+		else:
+			if not self.project:
+				frappe.throw(_("Project is required when 'Is Prospective Client' is not checked."))
+			self.prospective_client = None
+			self.customer_name = None
+
 	def on_submit(self):
 		self.create_employee_schedule_for_client_interview()
 
@@ -295,3 +309,39 @@ def send_pending_operations_supervisor_reminder():
 				title=_("Client Interview Shortlist Reminder Error"),
 				message=frappe.get_traceback(),
 			)
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def get_prospective_client_list(doctype: str, txt: str, searchfield: str, start: int, page_len: int, filters: dict):
+	"""Return Opportunity records for the Prospective Client link field.
+
+	Excludes Opportunities with status Closed or Lost.
+	Shows columns: Opportunity ID, Customer Name, Status, Opportunity Type.
+	Supports searching by name and customer_name.
+	"""
+	from frappe.query_builder import DocType
+	from frappe.query_builder.functions import Locate
+
+	Opportunity = DocType("Opportunity")
+
+	query = (
+		frappe.qb.from_(Opportunity)
+		.select(
+			Opportunity.name,
+			Opportunity.customer_name,
+			Opportunity.status,
+			Opportunity.opportunity_type,
+		)
+		.where(Opportunity.status.notin(["Closed", "Lost"]))
+		.where(
+			(Opportunity.name.like(f"%{txt}%"))
+			| (Opportunity.customer_name.like(f"%{txt}%"))
+		)
+		.orderby(Locate(txt, Opportunity.name))
+		.orderby(Opportunity.modified, order=frappe.qb.desc)
+		.offset(start)
+		.limit(page_len)
+	)
+
+	return query.run()
