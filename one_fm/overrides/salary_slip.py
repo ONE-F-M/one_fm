@@ -243,7 +243,7 @@ class SalarySlipOverride(SalarySlip):
                 self,
                 unmarked_days,
                 include_holidays_in_total_working_days,
-                self.posting_date,
+                add_days(self.posting_date, 1),
                 self.end_date,
             )
         # exclude days for which attendance has been marked
@@ -911,7 +911,7 @@ def get_unmarked_days_for_split_salary(doc, include_holidays_in_total_working_da
             doc,
             unmarked_days,
             include_holidays_in_total_working_days,
-            doc.posting_date,
+            add_days(doc.posting_date, 1),
             end_date,
         )
 
