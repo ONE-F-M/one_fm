@@ -203,6 +203,10 @@ class SalarySlipOverride(SalarySlip):
                 )
                 self.absent_days += unmarked_days  # will be treated as absent
                 self.payment_days -= unmarked_days
+
+            # ensure payment_days never goes negative (can happen if absent
+            # attendance exists for dates before employee's joining date)
+            self.payment_days = max(0, self.payment_days)
         else:
             self.payment_days = 0
 
@@ -237,7 +241,7 @@ class SalarySlipOverride(SalarySlip):
                 add_days(relieving_date, 1),
                 self.end_date,
             )
-        if (getdate(self.posting_date) < getdate(self.end_date)):
+        if (getdate(self.posting_date) < getdate(end_date)) and (getdate(self.posting_date) >= getdate(start_date)):
             end_date = self.posting_date
             unmarked_days = get_unmarked_days_based_on_doj_or_relieving(
                 self,
@@ -246,6 +250,9 @@ class SalarySlipOverride(SalarySlip):
                 add_days(self.posting_date, 1),
                 self.end_date,
             )
+        # if adjustments made the range invalid, no unmarked days to count
+        if getdate(start_date) > getdate(end_date):
+            return 0
         # exclude days for which attendance has been marked
         unmarked_days -= frappe.get_all(
             "Attendance",
@@ -257,7 +264,7 @@ class SalarySlipOverride(SalarySlip):
             },
             fields=["COUNT(*) as marked_days"],
         )[0].marked_days
-        return unmarked_days
+        return max(0, unmarked_days)
     
     
 @if_lending_app_installed
@@ -905,7 +912,7 @@ def get_unmarked_days_for_split_salary(doc, include_holidays_in_total_working_da
             add_days(relieving_date, 1),
             end_date,
         )
-    if (getdate(doc.posting_date) < getdate(end_date)):
+    if (getdate(doc.posting_date) < getdate(end_date)) and (getdate(doc.posting_date) >= getdate(start_date)):
         end_date = doc.posting_date
         unmarked_days = get_unmarked_days_based_on_doj_or_relieving(
             doc,
@@ -915,6 +922,9 @@ def get_unmarked_days_for_split_salary(doc, include_holidays_in_total_working_da
             end_date,
         )
 
+    # if adjustments made the range invalid, no unmarked days to count
+    if getdate(start_date) > getdate(end_date):
+        return 0
     # exclude days for which attendance has been marked
     unmarked_days -= frappe.get_all(
         "Attendance",
@@ -926,7 +936,7 @@ def get_unmarked_days_for_split_salary(doc, include_holidays_in_total_working_da
         },
         fields=["COUNT(*) as marked_days"],
     )[0].marked_days
-    return unmarked_days
+    return max(0, unmarked_days)
 
 
 def update_earning_deductions(doc):
