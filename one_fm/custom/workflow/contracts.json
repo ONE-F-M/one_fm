@@ -271,7 +271,7 @@
     },
     {
       "state": "Inactive",
-      "action": "Return To Draft",
+      "action": "Set as Active",
       "next_state": "Draft",
       "allowed": "Finance Manager",
       "allow_self_approval": 1,
