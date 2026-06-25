@@ -12,23 +12,23 @@ class RecruitmentPlan(Document):
 		# Validate dates
 		if self.planning_recruitment_start_date and self.planning_recruitment_end_date:
 			if getdate(self.planning_recruitment_end_date) < getdate(self.planning_recruitment_start_date):
-				frappe.throw(_(\"Planning Recruitment End Date cannot be before Planning Recruitment Start Date\"))
+				frappe.throw(_("Planning Recruitment End Date cannot be before Planning Recruitment Start Date"))
 
 		if self.actual_recruitment_start_date and self.actual_recruitment_end_date:
 			if getdate(self.actual_recruitment_end_date) < getdate(self.actual_recruitment_start_date):
-				frappe.throw(_(\"Actual Recruitment End Date cannot be before Actual Recruitment Start Date\"))
+				frappe.throw(_("Actual Recruitment End Date cannot be before Actual Recruitment Start Date"))
 
 
-@frappe.whitelist(methods=[\"GET\"])
+@frappe.whitelist(methods=["GET"])
 def get_autocomplete_options() -> dict:
-	\"\"\"Fetch all Country and Nationality options for Recruitment Plan Autocomplete fields.\"\"\"
-	if not frappe.has_permission(\"Recruitment Plan\", ptype=\"read\"):
-		frappe.throw(_(\"Not permitted to access recruitment plan details.\"), frappe.PermissionError)
+	"""Fetch all Country and Nationality options for Recruitment Plan Autocomplete fields."""
+	if not frappe.has_permission("Recruitment Plan", ptype="read"):
+		frappe.throw(_("Not permitted to access recruitment plan details."), frappe.PermissionError)
 
-	countries = frappe.get_list(\"Country\", fields=[\"name\"], order_by=\"name asc\")
-	nationalities = frappe.get_list(\"Nationality\", fields=[\"name\"], order_by=\"name asc\")
+	countries = frappe.get_list("Country", fields=["name"], order_by="name asc")
+	nationalities = frappe.get_list("Nationality", fields=["name"], order_by="name asc")
 
 	return {
-		\"countries\": [c.name for c in countries if c.name],
-		\"nationalities\": [n.name for n in nationalities if n.name]
+		"countries": [c.name for c in countries if c.name],
+		"nationalities": [n.name for n in nationalities if n.name]
 	}
