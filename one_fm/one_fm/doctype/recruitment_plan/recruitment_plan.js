@@ -21,8 +21,8 @@ frappe.ui.form.on("Recruitment Plan", {
 		});
 	},
 	refresh: function(frm) {
-		loadRecruitmentPlanAutocompleteOptions(frm);
-		toggleCountryLabel(frm);
+		load_recruitment_plan_autocomplete_options(frm);
+		toggle_country_label(frm);
 	},
 	designation: function(frm) {
 		// Reset ERF if it does not match the new designation
@@ -35,11 +35,11 @@ frappe.ui.form.on("Recruitment Plan", {
 		}
 	},
 	recruitment_plan_type: function(frm) {
-		toggleCountryLabel(frm);
+		toggle_country_label(frm);
 	}
 });
 
-function toggleCountryLabel(frm) {
+function toggle_country_label(frm) {
 	if (frm.doc.recruitment_plan_type === "Recruitment Trip") {
 		frm.set_df_property("trip_country", "label", "Trip Country");
 	} else {
@@ -47,7 +47,7 @@ function toggleCountryLabel(frm) {
 	}
 }
 
-function populateAutocomplete(frm, fieldname, options) {
+function populate_autocomplete(frm, fieldname, options) {
 	let field = frm.fields_dict[fieldname];
 	if (!field) return;
 	if (field.get_query) delete field.get_query;
@@ -60,13 +60,13 @@ function populateAutocomplete(frm, fieldname, options) {
 	}, 0);
 }
 
-function loadRecruitmentPlanAutocompleteOptions(frm) {
-	const COUNTRY_KEY = "__recruitment_plan_country_options";
-	const NATIONALITY_KEY = "__recruitment_plan_nationality_options";
+function load_recruitment_plan_autocomplete_options(frm) {
+	const country_key = "__recruitment_plan_country_options";
+	const nationality_key = "__recruitment_plan_nationality_options";
 
-	if (frappe[COUNTRY_KEY] && frappe[NATIONALITY_KEY]) {
-		populateAutocomplete(frm, "trip_country", frappe[COUNTRY_KEY]);
-		populateAutocomplete(frm, "nationality_in_pr_request", frappe[NATIONALITY_KEY]);
+	if (frappe[country_key] && frappe[nationality_key]) {
+		populate_autocomplete(frm, "trip_country", frappe[country_key]);
+		populate_autocomplete(frm, "nationality_in_pr_request", frappe[nationality_key]);
 		return;
 	}
 
@@ -80,8 +80,8 @@ function loadRecruitmentPlanAutocompleteOptions(frm) {
 						countries.push(c);
 					}
 				});
-				frappe[COUNTRY_KEY] = countries;
-				populateAutocomplete(frm, "trip_country", countries);
+				frappe[country_key] = countries;
+				populate_autocomplete(frm, "trip_country", countries);
 
 				let nationalities = ["Any", "African", "Asian"];
 				(r.message.nationalities || []).forEach(n => {
@@ -89,8 +89,8 @@ function loadRecruitmentPlanAutocompleteOptions(frm) {
 						nationalities.push(n);
 					}
 				});
-				frappe[NATIONALITY_KEY] = nationalities;
-				populateAutocomplete(frm, "nationality_in_pr_request", nationalities);
+				frappe[nationality_key] = nationalities;
+				populate_autocomplete(frm, "nationality_in_pr_request", nationalities);
 			}
 		}
 	});

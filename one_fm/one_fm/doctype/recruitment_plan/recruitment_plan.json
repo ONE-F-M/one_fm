@@ -9,7 +9,6 @@
  "engine": "InnoDB",
  "field_order": [
   "general_section",
-  "recruitment_plan_code",
   "recruitment_plan_type",
   "status",
   "general_col",
@@ -39,14 +38,6 @@
    "fieldname": "general_section",
    "fieldtype": "Section Break",
    "label": "General Information"
-  },
-  {
-   "fieldname": "recruitment_plan_code",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Recruitment Plan Code",
-   "read_only": 1,
-   "search_index": 1
   },
   {
    "default": "Recruitment Trip",
