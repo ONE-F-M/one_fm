@@ -22,28 +22,11 @@ class TaskOverride(Task):
 
 
 def validate_task(doc):
-    # When new doc is added, then sync field after insert
-    if not doc.is_new() and doc.workflow_state in ["Open", "Working"]:
+    # Sync custom_assigned_to with ToDo/_assign for all workflow states
+    # Previously this only ran for "Open" and "Working", which caused _assign
+    # to go out of sync when tasks moved to other states like "Pending Review"
+    if not doc.is_new():
         sync_assign_to_field(doc)
-
-
-    all_asssigned_users = doc.get_assigned_users()
-    assignees = doc.custom_assigned_to
-    if doc.workflow_state == "Pending Review" and assignees:
-        for assignee in assignees:
-            if assignee.user in list(all_asssigned_users):
-                todos = frappe.get_all(
-                    "ToDo",
-                    filters={
-                        "reference_type": doc.doctype,
-                        "reference_name": doc.name,
-                        "allocated_to": assignee.user,
-                        "status": ["!=", "Closed"]  # only update if not already closed
-                    },
-                    pluck="name"
-                )
-                if todos:
-                    frappe.db.set_value("ToDo", {"name": ["in", todos]}, "status", "Cancelled")
 
     roles = get_user_roles()
     is_manager = is_project_manager(doc.project) if doc.project else False

@@ -447,3 +447,4 @@ one_fm.patches.v15_0.standardize_marital_status_options
 one_fm.patches.v15_0.fix_nirmala_day_off_client_event_conflict #2026-06-18
 one_fm.patches.v15_0.update_pmr_workflow_in_process_role
 one_fm.patches.v15_0.fix_shift_worker_annual_leave_total_days #2026-06-24
+one_fm.patches.v15_0.fix_task_assign_field_sync #2026-06-25
