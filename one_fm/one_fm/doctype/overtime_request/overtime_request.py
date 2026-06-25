@@ -5,7 +5,7 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils import (
 	time_diff_in_hours, getdate, get_first_day, get_last_day,
-	flt, rounded
+	flt, rounded, now_datetime, get_datetime
 )
 from frappe import _
 from frappe.query_builder.functions import Sum
@@ -24,8 +24,11 @@ class OvertimeRequest(Document):
 		self.calculate_overtime_hours()
 		self.calculate_yearly_overtime_hours()
 		self.validate_yearly_overtime_limit()
+		self.validate_attendance_verification_timing()
+		self.validate_attendance_marked()
 
 	def on_update(self):
+		self.create_attendance_on_verification()
 		self.workflow_notification()
 
 	def validate_duplicate(self):
@@ -131,6 +134,92 @@ class OvertimeRequest(Document):
 				_("This request cannot be submitted. Adding these overtime hours "
 				  "will exceed the maximum allowable limit of 180 overtime hours per year.")
 			)
+
+	def validate_attendance_verification_timing(self):
+		"""Block transition to 'Pending Payroll Officer' before overtime end time."""
+		if self.workflow_state != "Pending Payroll Officer":
+			return
+		if not self.date or not self.end_time:
+			return
+
+		overtime_end = get_datetime(f"{self.date} {self.end_time}")
+		if self.start_time:
+			overtime_start = get_datetime(f"{self.date} {self.start_time}")
+			if overtime_end <= overtime_start:
+				overtime_end = frappe.utils.add_days(overtime_end, 1)
+		if now_datetime() < overtime_end:
+			frappe.throw(
+				_("You cannot verify attendance until the scheduled overtime end time has passed.")
+			)
+
+	def validate_attendance_marked(self):
+		"""Require Present or Absent to be checked before transitioning to 'Pending Payroll Officer'."""
+		if self.workflow_state != "Pending Payroll Officer":
+			return
+
+		if not self.present and not self.absent:
+			frappe.throw(
+				_("Please mark the employee as Present or Absent before verifying attendance.")
+			)
+
+	def create_attendance_on_verification(self):
+		"""Auto-create and submit an Attendance record when the Line Manager verifies attendance.
+
+		Triggered on transition to 'Pending Payroll Officer'.
+		Maps Employee, Attendance Date, Status, Roster Type, and reference fields
+		from this Overtime Request.
+		"""
+		if self.workflow_state != "Pending Payroll Officer":
+			return
+
+		if not self.has_value_changed("workflow_state"):
+			return
+
+		# Determine attendance status from checkboxes
+		attendance_status = "Present" if self.present else "Absent"
+
+		# Check for existing Attendance with same employee + date + roster_type
+		existing = frappe.db.exists("Attendance", {
+			"employee": self.employee,
+			"attendance_date": self.date,
+			"roster_type": "Over-Time",
+			"docstatus": ["!=", 2]
+		})
+
+		if existing:
+			frappe.msgprint(
+				_("Attendance {0} already exists for {1} on {2} with roster type Over-Time. Skipping creation.".format(
+					existing, self.employee, self.date
+				)),
+				alert=True,
+				indicator="orange"
+			)
+			return
+
+		# Fetch company from the Employee record
+		company = frappe.db.get_value("Employee", self.employee, "company")
+
+		attendance = frappe.get_doc({
+			"doctype": "Attendance",
+			"employee": self.employee,
+			"attendance_date": self.date,
+			"status": attendance_status,
+			"roster_type": "Over-Time",
+			"reference_doctype": "Overtime Request",
+			"reference_docname": self.name,
+			"company": company,
+			"working_hours": flt(self.overtime_hours, 2) if attendance_status == "Present" else 0,
+		})
+		attendance.insert(ignore_permissions=True)
+		attendance.submit()
+
+		frappe.msgprint(
+			_("Attendance {0} has been created and submitted for {1}.".format(
+				attendance.name, self.full_name or self.employee
+			)),
+			alert=True,
+			indicator="green"
+		)
 
 	def workflow_notification(self):
 		"""

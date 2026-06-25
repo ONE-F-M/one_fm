@@ -78,9 +78,20 @@ def get_vehicle_custom_fields():
                 "fieldtype": "Select",
                 "label": "Vehicle Category",
                 "insert_after": "license_plate",
-                "options": "\nOwned\nLeased",
+                "options": "\nOwned\nLeased\nSubcontractor",
                 "translatable": 1,
                 "reqd": 1
+            },
+            {
+                "fieldname": "custom_naming_series",
+                "fieldtype": "Data",
+                "label": "Naming Series",
+                "insert_after": "one_fm_vehicle_category",
+                "hidden": 1,
+                "no_copy": 1,
+                "print_hide": 1,
+                "default": "VHL-.####",
+                "read_only": 1
             },
             {
                 "fieldname": "one_fm_vehicle_type",

@@ -138,6 +138,30 @@ def get_sales_invoice_custom_fields():
                 "options": "Attendance Amendment",
                 "read_only": 1
             },
+            {
+                "fieldname": "custom_billing_month",
+                "fieldtype": "Select",
+                "insert_after": "contracts",
+                "label": "Billing Month",
+                "options": "\nJanuary\nFebruary\nMarch\nApril\nMay\nJune\nJuly\nAugust\nSeptember\nOctober\nNovember\nDecember",
+                "translatable": 1
+            },
+            {
+                "fieldname": "custom_billing_year",
+                "fieldtype": "Select",
+                "insert_after": "custom_billing_month",
+                "label": "Billing Year",
+                "options": "\n2026\n2027\n2028\n2029\n2030\n2031\n2032",
+                "translatable": 1
+            },
+            {
+                "fieldname": "custom_attendance_record_based_on",
+                "fieldtype": "Select",
+                "insert_after": "custom_billing_year",
+                "label": "Attendance Record Based On",
+                "options": "\nAttendance Status\nShift Hours\nWorking Hours",
+                "translatable": 1
+            },
 
         ]
     }

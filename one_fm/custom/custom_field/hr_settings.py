@@ -162,5 +162,19 @@ def get_hr_settings_custom_fields():
                 "options": "URL",
                 "description": "The google form link for onboarding wiki assessment form.",
             },
+            {
+                "fieldname": "employee_status_update_notification_email_section",
+                "fieldtype": "Section Break",
+                "insert_after": "wiki_assessment_form_link",
+                "label": "Employee Status Update Notification Email",
+                "collapsible": 1,
+            },
+            {
+                "fieldname": "employee_status_update_notification_members",
+                "fieldtype": "Table",
+                "insert_after": "employee_status_update_notification_email_section",
+                "label": "Notification Members",
+                "options": "ALM Notification Member",
+            },
         ]
     }

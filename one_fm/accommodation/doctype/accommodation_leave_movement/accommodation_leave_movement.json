@@ -34,6 +34,8 @@
   "bed",
   "column_break_14",
   "comments",
+  "custom_notify_on_leave_start",
+  "custom_notify_on_leave_end",
   "section_break_zuun",
   "amended_from",
   "column_break_kgqw"
@@ -238,6 +240,22 @@
    "fieldname": "comments",
    "fieldtype": "Small Text",
    "label": "Comments"
+  },
+  {
+   "default": "0",
+   "fieldname": "custom_notify_on_leave_start",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Notify On Leave Start",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "custom_notify_on_leave_end",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Notify On Leave End",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_zuun",

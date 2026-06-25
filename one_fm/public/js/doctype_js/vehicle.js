@@ -4,13 +4,20 @@ frappe.ui.form.on('Vehicle', {
 		frappe.breadcrumbs.add("GSD");
 		frm.set_df_property('license_plate', 'hidden', false);
 	},
+	onload(frm) {
+		if (frm.is_new() && !frm.doc.custom_naming_series) {
+			frm.set_value("custom_naming_series", "VHL-.####");
+		}
+	},
 	one_fm_vehicle_category(frm) {
-	    if(frm.doc.one_fm_vehicle_category == 'Leased'){
-	        frm.set_df_property('vehicle_leasing_contract', 'reqd', true);
-	    }
-	    else{
-	        frm.set_df_property('vehicle_leasing_contract', 'reqd', false);
-	    }
+		const series_map = {
+			"Owned": "VHL-.####",
+			"Leased": "VHL-L-.####",
+			"Subcontractor": "VHL-S-.####"
+		};
+		const category = frm.doc.one_fm_vehicle_category;
+		frm.set_value("custom_naming_series", series_map[category] || "VHL-.####");
+		frm.set_df_property("vehicle_leasing_contract", "reqd", category === "Leased");
 	},
 	vehicle_leasing_contract(frm){
 	  if(!frm.doc.vehicle_leasing_contract){

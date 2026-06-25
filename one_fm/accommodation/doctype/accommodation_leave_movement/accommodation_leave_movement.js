@@ -5,23 +5,37 @@ frappe.ui.form.on("Accommodation Leave Movement", {
 	refresh: function(frm) {
 		frm.set_df_property("employee", "read_only", frm.doc.leave_application ? 1 : 0);
 
-		if (frm.doc.docstatus == 1 && frm.doc.type == "OUT" && !frm.doc.checked_out) {
-			frm.add_custom_button(__("Create Check-In"), function() {
-				frappe.model.with_doctype("Accommodation Leave Movement", function() {
-					frappe.call({
-						method: "one_fm.accommodation.doctype.accommodation_leave_movement.accommodation_leave_movement.make_checkin_from_checkout",
-						args: {
-							source_name: frm.doc.name
-						},
-						callback: function(r) {
-							if (r.message) {
-								var doc = frappe.model.sync(r.message)[0];
-								frappe.set_route("Form", doc.doctype, doc.name);
-							}
-						}
-					});
-				});
-			}, __("Create"));
+		if (frm.doc.docstatus == 1 && frm.doc.type == "OUT") {
+			// Dynamically check whether a non-cancelled IN record already exists for
+			// this OUT document before rendering the "Create Check-In" button.
+			// This prevents duplicate IN records even when the existing IN is still
+			// in Draft state (where checked_out flag has not yet been set).
+			frappe.call({
+				method: "one_fm.accommodation.doctype.accommodation_leave_movement.accommodation_leave_movement.has_linked_checkin",
+				args: { checkout_name: frm.doc.name },
+				callback: function(r) {
+					if (!r.message) {
+						// No linked IN record found — safe to show the button
+						frm.add_custom_button(__("Check In"), function() {
+							frappe.model.with_doctype("Accommodation Leave Movement", function() {
+								frappe.call({
+									method: "one_fm.accommodation.doctype.accommodation_leave_movement.accommodation_leave_movement.make_checkin_from_checkout",
+									args: {
+										source_name: frm.doc.name
+									},
+									callback: function(r) {
+										if (r.message) {
+											var doc = frappe.model.sync(r.message)[0];
+											frappe.set_route("Form", doc.doctype, doc.name);
+										}
+									}
+								});
+							});
+						}, __("Create"));
+					}
+					// If r.message is truthy an IN record already exists — button is intentionally omitted
+				}
+			});
 		}
 	},
 	leave_application: function(frm) {

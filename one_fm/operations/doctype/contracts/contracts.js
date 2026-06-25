@@ -18,6 +18,23 @@ function open_form(frm, doctype, child_doctype, parentfield) {
 }
 frappe.ui.form.on('Contracts', {
 	setup(frm) {
+		// --- System Manager workflow monkey-patch ---
+		// The Contracts workflow's allow_edit roles don't include System Manager.
+		// Frappe's core refresh() calls frappe.workflow.is_read_only() which
+		// returns true and calls set_read_only(), stripping write from perm[0].
+		// We patch is_read_only BEFORE the first refresh so System Managers
+		// are never locked out.
+		if (!frappe._contracts_workflow_patched && frappe.user_roles.includes('System Manager')) {
+			const _original_is_read_only = frappe.workflow.is_read_only;
+			frappe.workflow.is_read_only = function(doctype, docname) {
+				if (doctype === 'Contracts') {
+					return false;
+				}
+				return _original_is_read_only.apply(this, arguments);
+			};
+			frappe._contracts_workflow_patched = true;
+		}
+
 		frm.make_methods = {
 			'Sales Invoice': () => {
 				open_form(frm, "Sales Invoice", null, null);
@@ -215,17 +232,24 @@ frappe.ui.form.on('Contracts', {
 	},
 	before_save:function(frm){
 		if(frm.doc.use_portal_for_invoice && !frm.doc.password_management){
-			frappe.call({
-				method: "one_fm.operations.doctype.contracts.contracts.insert_login_credential",
-				args: values,
-				callback: function(r) {
-					if(!r.exc){
-						frm.set_value("password_management",r.message.name);
-						frm.refresh_field("password_management");
+			return new Promise((resolve) => {
+				frappe.call({
+					method: "one_fm.operations.doctype.contracts.contracts.insert_login_credential",
+					args: values,
+					callback: function(r) {
+						if(!r.exc){
+							frm.set_value("password_management",r.message.name);
+							frm.refresh_field("password_management");
+						}
+						resolve();
+					},
+					error: function() {
+						resolve();
 					}
-				}
+				});
 			});
 		}
+		return Promise.resolve();
 	},
 	validate: function(frm){
 		if(!frm.doc.client || !frm.doc.project || !frm.doc.start_date){
@@ -234,7 +258,7 @@ frappe.ui.form.on('Contracts', {
 				indicator: 'red',
 				message: __('You have to fill Client, Project and Contract Start Date Before Saving a Contract.')
 			});
-			validated = false;
+			frappe.validated = false;
 		}
 		if(frm.doc.end_date){
 			if(frm.doc.end_date < frm.doc.start_date){
@@ -243,9 +267,10 @@ frappe.ui.form.on('Contracts', {
 					indicator: 'red',
 					message: __('Contract End Date Cannot be before Contracts Start Date.')
 				});
-				validated = false;
+				frappe.validated = false;
 			}
 		}
+		return Promise.resolve();
 	},
 	start_date: function(frm){
 		if(frm.doc.start_date){
@@ -258,8 +283,63 @@ frappe.ui.form.on('Contracts', {
 		}
 	},
 	refresh:function(frm){
+		// --- System Manager / Administrator: ensure form is writable ---
+		// The monkey-patch in setup() prevents is_read_only from returning true.
+		// But if this is a page revisit or the patch wasn't applied yet,
+		// clean up any residual read-only state.
+		if (!frm.is_new() && frappe.user_roles.includes('System Manager')) {
+			if (frm.read_only) {
+				frm.read_only = false;
+				frm.fetch_permissions();
+			}
+			frm.enable_save();
+		}
+
+		// --- Process Task user access control ---
+		// Only users linked to Contracts Process Tasks (or System Managers)
+		// can edit. All other role-holders get read-only access.
+		if (!frm.is_new() && !frappe.user_roles.includes('System Manager')) {
+			frappe.call({
+				method: "one_fm.operations.doctype.contracts.contracts.is_contracts_process_task_user",
+				async: false,
+				callback: function(r) {
+					if (r.message === false) {
+						frm.disable_save();
+						frm.set_read_only();
+						// Explicitly set all fields to read_only to prevent editing
+						const layout_types = new Set(['Section Break', 'Column Break', 'Tab Break', 'HTML', 'Heading']);
+						(frm.meta.fields || []).forEach(df => {
+							if (!layout_types.has(df.fieldtype)) {
+								frm.set_df_property(df.fieldname, 'read_only', 1);
+							}
+						});
+						// Disable all child table add/delete/edit
+						(frm.meta.fields || []).forEach(df => {
+							if (df.fieldtype === 'Table') {
+								let grid = frm.fields_dict[df.fieldname];
+								if (grid && grid.grid) {
+									grid.grid.cannot_add_rows = true;
+									grid.grid.cannot_delete_rows = true;
+									grid.grid.refresh();
+								}
+							}
+						});
+						frm.refresh_fields();
+						frm.dashboard.set_headline(
+							__("This contract is read-only for you. Only the designated Process Task user can make changes.")
+						);
+						frm.__process_task_read_only = true;
+					}
+				}
+			});
+			// If the form was set to read-only by the Process Task check, skip
+			// all further refresh logic (buttons, section enforcement, etc.)
+			if (frm.__process_task_read_only) {
+				return;
+			}
+		}
+
 		// create delivery note and reroute to the form in draft mode
-		
 		if (frm.doc.workflow_state == "Active" && frappe.user_roles.includes("Operations Manager")){
 
 			//  Amend contract

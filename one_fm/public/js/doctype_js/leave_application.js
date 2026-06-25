@@ -142,13 +142,34 @@ frappe.ui.form.on("Leave Application", {
 				});
 			}, __('Create'));
 
-			if (frm.doc.custom_in_accommodation) {
-				frm.add_custom_button(__('Accommodation Leave Movement'), function() {
-					frappe.new_doc('Accommodation Leave Movement', {
-						leave_application: frm.doc.name,
-						employee: frm.doc.employee
-					});
-				}, __('Create'));
+			if (frm.doc.custom_in_accommodation && frm.doc.leave_type !== "Sick Leave") {
+				// Hide the button once the resumption date has arrived.
+				// The leave period has effectively ended, so an outward check-out
+				// must no longer be created (Acceptance Criteria: today >= resumption_date → hide).
+				const resumption_date = frm.doc.resumption_date;
+				const today = frappe.datetime.get_today();
+				const resumption_has_arrived = resumption_date && today >= resumption_date;
+                
+				if (!resumption_has_arrived) {
+					// Check if a submitted OUT movement already exists for this Leave Application
+                    frappe.xcall("frappe.client.get_count", {
+                        doctype: "Accommodation Leave Movement",
+                        filters: {
+                            leave_application: frm.doc.name,
+                            type: "OUT",
+                            docstatus: 1
+                        }
+                    }).then(count => {
+                        if (!count) {
+                            frm.add_custom_button(__('Accommodation Leave Movement'), function() {
+                                frappe.new_doc('Accommodation Leave Movement', {
+                                    leave_application: frm.doc.name,
+                                    employee: frm.doc.employee
+                                });
+                            }, __('Create'));
+                        }
+                    });
+				}
 			}
 		}
     },
