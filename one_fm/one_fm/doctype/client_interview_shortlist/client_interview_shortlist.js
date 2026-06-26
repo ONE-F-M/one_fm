@@ -4,6 +4,14 @@
 let skip_attendance_confirmation = false;
 
 frappe.ui.form.on("Client Interview Shortlist", {
+	setup(frm) {
+		frm.set_query("prospective_client", function() {
+			return {
+				query: "one_fm.one_fm.doctype.client_interview_shortlist.client_interview_shortlist.get_prospective_client_list",
+			};
+		});
+	},
+
 	refresh(frm) {
         if (frm.doc.docstatus === 1) {
             // Remove add row button from specific child table
@@ -11,6 +19,15 @@ frappe.ui.form.on("Client Interview Shortlist", {
             frm.fields_dict['client_interview_employee'].grid.refresh();
         }
         skip_attendance_confirmation = false;
+	},
+
+	is_prospective_client(frm) {
+		if (!frm.doc.is_prospective_client) {
+			frm.set_value("prospective_client", "");
+			frm.set_value("customer_name", "");
+		} else {
+			frm.set_value("project", "");
+		}
 	},
     onload(frm) {
         skip_attendance_confirmation = false;
