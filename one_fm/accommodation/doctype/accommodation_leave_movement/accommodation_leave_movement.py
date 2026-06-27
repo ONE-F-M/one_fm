@@ -318,9 +318,17 @@ def has_linked_checkin(checkout_name: str) -> bool:
 def make_checkin_from_checkout(source_name: str):
 	"""
 	Maps fields from an 'OUT' Accommodation Leave Movement to a new 'IN' one.
+
+	Contiguous leave handling:
+	- Resolves the full contiguous leave chain from the OUT record's leave.
+	- If the current date is within or after the last contiguous leave, the IN
+	  record's leave_application is set to that latest leave.
+	- If the employee returns early (before contiguous leaves start), the IN
+	  record's leave_application stays bound to the original leave, and a
+	  warning flag is returned so the client can display a message.
 	"""
 	if has_linked_checkin(source_name):
-		frappe.throw(frappe._("A linked check-in already exists for this check-out."))
+		frappe.throw(_("A linked check-in already exists for this check-out."))
 
 	target_doc = get_mapped_doc(
 		"Accommodation Leave Movement",
@@ -336,9 +344,301 @@ def make_checkin_from_checkout(source_name: str):
 		},
 		ignore_permissions=False,
 	)
-	
+
 	target_doc.type = "IN"
 	target_doc.checkin_reference = source_name
 	target_doc.checkin_checkout_date_time = frappe.utils.now_datetime()
-	
+
+	# --- Contiguous leave chain resolution ---
+	original_leave = target_doc.leave_application
+	if original_leave and frappe.db.exists("Leave Application", original_leave):
+		latest_leave = get_latest_contiguous_leave(target_doc.employee, original_leave)
+
+		if latest_leave != original_leave:
+			# A contiguous chain exists. Determine if this is an early check-in.
+			original_leave_data = frappe.db.get_value(
+				"Leave Application", original_leave,
+				["to_date", "resumption_date"], as_dict=True
+			)
+			current_date = getdate(today())
+
+			if original_leave_data and current_date <= getdate(original_leave_data.to_date):
+				# Early check-in: employee returned during the original leave period.
+				# Keep leave_application bound to original leave; flag warning.
+				target_doc.leave_application = original_leave
+
+				# Fetch the next contiguous leave name for the warning message
+				next_leave = _get_next_contiguous_leave(original_leave)
+				target_doc._early_checkin_warning = _(
+					"Note: Employee checked in before the start of contiguous leave ({0}). "
+					"A new Check-Out record will be required when that leave begins."
+				).format(next_leave)
+			else:
+				# Normal scenario: bind to the latest contiguous leave
+				target_doc.leave_application = latest_leave
+		# else: no contiguous chain — keep original leave_application
+
 	return target_doc
+
+
+def get_latest_contiguous_leave(employee: str, leave_application: str) -> str:
+	"""
+	Walk forward through the contiguous leave chain starting from the given
+	leave application and return the name of the last leave in the chain.
+
+	Contiguity is defined strictly:
+	  next_leave.from_date == current_leave.resumption_date
+
+	Only approved (docstatus=1) leaves for the same employee are considered.
+	Cancelled leaves (docstatus=2) break the chain.
+
+	Args:
+		employee: Employee ID
+		leave_application: Starting Leave Application name
+
+	Returns:
+		Name of the latest contiguous Leave Application (may be the same as
+		the input if no contiguous leaves exist).
+	"""
+	if not employee or not leave_application:
+		return leave_application
+
+	LeaveApp = frappe.qb.DocType("Leave Application")
+	current_leave = leave_application
+
+	# Safety limit to prevent infinite loops in case of data issues
+	max_iterations = 50
+	iteration = 0
+
+	while iteration < max_iterations:
+		iteration += 1
+
+		# Get the resumption_date of the current leave
+		resumption_date = frappe.db.get_value(
+			"Leave Application", current_leave, "resumption_date"
+		)
+
+		if not resumption_date:
+			break
+
+		# Look for the next contiguous leave: from_date == resumption_date
+		next_leave = (
+			frappe.qb.from_(LeaveApp)
+			.select(LeaveApp.name)
+			.where(LeaveApp.employee == employee)
+			.where(LeaveApp.from_date == getdate(resumption_date))
+			.where(LeaveApp.docstatus == 1)
+			.where(LeaveApp.name != current_leave)
+			.limit(1)
+		).run(as_dict=True)
+
+		if not next_leave:
+			break
+
+		current_leave = next_leave[0].name
+
+	return current_leave
+
+
+def _get_next_contiguous_leave(leave_application: str) -> str:
+	"""
+	Return the name of the immediately next contiguous leave after the given
+	leave application, or an empty string if none exists.
+
+	Used internally for building early check-in warning messages.
+	"""
+	leave_data = frappe.db.get_value(
+		"Leave Application", leave_application,
+		["employee", "resumption_date"], as_dict=True
+	)
+
+	if not leave_data or not leave_data.resumption_date:
+		return ""
+
+	LeaveApp = frappe.qb.DocType("Leave Application")
+	next_leave = (
+		frappe.qb.from_(LeaveApp)
+		.select(LeaveApp.name)
+		.where(LeaveApp.employee == leave_data.employee)
+		.where(LeaveApp.from_date == getdate(leave_data.resumption_date))
+		.where(LeaveApp.docstatus == 1)
+		.where(LeaveApp.name != leave_application)
+		.limit(1)
+	).run(as_dict=True)
+
+	return next_leave[0].name if next_leave else ""
+
+
+@frappe.whitelist()
+def has_active_checkout_for_contiguous_chain(employee: str, leave_application: str) -> bool:
+	"""
+	Check whether an active (un-returned) ALM OUT record exists for any leave
+	in the contiguous chain that includes the given leave application.
+
+	Walks backward from the given leave to find the start of the chain, then
+	walks forward checking each leave for a submitted OUT record that has not
+	been returned (checked_out == 0).
+
+	Args:
+		employee: Employee ID
+		leave_application: Leave Application name to check
+
+	Returns:
+		True if an active OUT exists anywhere in the chain, False otherwise.
+	"""
+	if not employee or not leave_application:
+		return False
+
+	# Step 1: Walk backward to find the first leave in the chain
+	chain_start = _find_chain_start(employee, leave_application)
+
+	# Step 2: Walk forward through the entire chain, checking for active OUTs
+	LeaveApp = frappe.qb.DocType("Leave Application")
+	ALM = frappe.qb.DocType("Accommodation Leave Movement")
+
+	current_leave = chain_start
+	max_iterations = 50
+	iteration = 0
+
+	while iteration < max_iterations:
+		iteration += 1
+
+		# Check if this leave has a submitted, un-returned OUT record
+		active_out = (
+			frappe.qb.from_(ALM)
+			.select(ALM.name)
+			.where(ALM.leave_application == current_leave)
+			.where(ALM.type == "OUT")
+			.where(ALM.docstatus == 1)
+			.where(ALM.checked_out == 0)
+			.limit(1)
+		).run(as_dict=True)
+
+		if active_out:
+			return True
+
+		# Move to the next contiguous leave
+		resumption_date = frappe.db.get_value(
+			"Leave Application", current_leave, "resumption_date"
+		)
+
+		if not resumption_date:
+			break
+
+		next_leave = (
+			frappe.qb.from_(LeaveApp)
+			.select(LeaveApp.name)
+			.where(LeaveApp.employee == employee)
+			.where(LeaveApp.from_date == getdate(resumption_date))
+			.where(LeaveApp.docstatus == 1)
+			.where(LeaveApp.name != current_leave)
+			.limit(1)
+		).run(as_dict=True)
+
+		if not next_leave:
+			break
+
+		current_leave = next_leave[0].name
+
+	return False
+
+
+def _find_chain_start(employee: str, leave_application: str) -> str:
+	"""
+	Walk backward through the contiguous chain to find the first leave.
+
+	A leave L_prev is the predecessor of L_current if:
+	  L_prev.resumption_date == L_current.from_date
+
+	Args:
+		employee: Employee ID
+		leave_application: Starting Leave Application name
+
+	Returns:
+		Name of the first Leave Application in the contiguous chain.
+	"""
+	LeaveApp = frappe.qb.DocType("Leave Application")
+	current_leave = leave_application
+	max_iterations = 50
+	iteration = 0
+
+	while iteration < max_iterations:
+		iteration += 1
+
+		from_date = frappe.db.get_value(
+			"Leave Application", current_leave, "from_date"
+		)
+
+		if not from_date:
+			break
+
+		# Look for a predecessor whose resumption_date == current from_date
+		prev_leave = (
+			frappe.qb.from_(LeaveApp)
+			.select(LeaveApp.name)
+			.where(LeaveApp.employee == employee)
+			.where(LeaveApp.resumption_date == getdate(from_date))
+			.where(LeaveApp.docstatus == 1)
+			.where(LeaveApp.name != current_leave)
+			.limit(1)
+		).run(as_dict=True)
+
+		if not prev_leave:
+			break
+
+		current_leave = prev_leave[0].name
+
+	return current_leave
+
+
+@frappe.whitelist()
+def get_checkin_leave_application(checkout_name: str) -> dict:
+	"""
+	Preview which Leave Application will be auto-populated on a new IN record
+	created from the given OUT record.
+
+	Returns a dict with:
+	- leave_application: the resolved leave name
+	- is_early_checkin: True if the employee is returning early
+	- warning: warning message for early check-in, or empty string
+	"""
+	if not checkout_name:
+		return {"leave_application": "", "is_early_checkin": False, "warning": ""}
+
+	out_data = frappe.db.get_value(
+		"Accommodation Leave Movement", checkout_name,
+		["employee", "leave_application"], as_dict=True
+	)
+
+	if not out_data or not out_data.leave_application:
+		return {"leave_application": "", "is_early_checkin": False, "warning": ""}
+
+	employee = out_data.employee
+	original_leave = out_data.leave_application
+
+	if not frappe.db.exists("Leave Application", original_leave):
+		return {"leave_application": original_leave, "is_early_checkin": False, "warning": ""}
+
+	latest_leave = get_latest_contiguous_leave(employee, original_leave)
+
+	if latest_leave != original_leave:
+		original_leave_data = frappe.db.get_value(
+			"Leave Application", original_leave,
+			["to_date"], as_dict=True
+		)
+		current_date = getdate(today())
+
+		if original_leave_data and current_date <= getdate(original_leave_data.to_date):
+			next_leave = _get_next_contiguous_leave(original_leave)
+			return {
+				"leave_application": original_leave,
+				"is_early_checkin": True,
+				"warning": _(
+					"Note: Employee checked in before the start of contiguous leave ({0}). "
+					"A new Check-Out record will be required when that leave begins."
+				).format(next_leave),
+			}
+
+		return {"leave_application": latest_leave, "is_early_checkin": False, "warning": ""}
+
+	return {"leave_application": original_leave, "is_early_checkin": False, "warning": ""}
