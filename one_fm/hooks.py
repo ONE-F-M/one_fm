@@ -453,15 +453,15 @@ doc_events = {
 		"after_insert": "one_fm.one_fm.task_assignment_from_email.assign_task_to_user_from_communication_content"
 	},
 	# COMMENTED OUT: ToDo hooks now handled by SpiffWorkflow/BPMN server scripts
-	"ToDo": {
-		"validate": "one_fm.overrides.todo.validate_todo",
-		"before_save":"one_fm.overrides.todo.before_save",
-		"after_insert":[
-			"one_fm.overrides.todo.create_google_task_on_todo_creation",
-			"one_fm.overrides.todo.send_email_on_todo_created"
-		],
-		"on_update": "one_fm.overrides.todo.update_google_task_on_todo_status_change"
-	},
+	# "ToDo": {
+	# 	"validate": "one_fm.overrides.todo.validate_todo",
+	# 	"before_save":"one_fm.overrides.todo.before_save",
+	# 	"after_insert":[
+	# 		"one_fm.overrides.todo.create_google_task_on_todo_creation",
+	# 		"one_fm.overrides.todo.send_email_on_todo_created"
+	# 	],
+	# 	"on_update": "one_fm.overrides.todo.update_google_task_on_todo_status_change"
+	# },
 	"OAuth Bearer Token": {
 		"after_insert": "one_fm.api.doc_methods.oauth_bearer_token.revoke_and_delete_existing_tokens",
 	}
