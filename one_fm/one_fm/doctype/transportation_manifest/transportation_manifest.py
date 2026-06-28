@@ -8,8 +8,62 @@ from frappe.utils import getdate
 
 class TransportationManifest(Document):
 	def validate(self):
+		self.populate_shift_details_from_schedule()
 		self.validate_attendance_and_qoa()
 		self.validate_relievers()
+
+	def populate_shift_details_from_schedule(self):
+		"""Auto-fetch shift details from Employee Schedule for rows missing them.
+
+		Only populates rows where operations_shift is not yet set, ensuring that
+		once operational fields are loaded from the original employee's schedule,
+		they remain frozen even when a reliever/substitute is assigned.
+		"""
+		if not self.schedule_date:
+			return
+
+		# Collect employees needing schedule lookup (only rows without operations_shift)
+		employees_needing_lookup = set()
+		for row in self.transportation_manifest_details:
+			if row.employee and not row.operations_shift:
+				employees_needing_lookup.add(row.employee)
+
+		if not employees_needing_lookup:
+			return
+
+		# Batch-fetch Employee Schedule records using Query Builder
+		from frappe.query_builder import DocType
+		EmployeeSchedule = DocType("Employee Schedule")
+		schedules = (
+			frappe.qb.from_(EmployeeSchedule)
+			.select(
+				EmployeeSchedule.employee,
+				EmployeeSchedule.shift,
+				EmployeeSchedule.site,
+				EmployeeSchedule.operations_role,
+				EmployeeSchedule.project,
+			)
+			.where(EmployeeSchedule.employee.isin(list(employees_needing_lookup)))
+			.where(EmployeeSchedule.date == self.schedule_date)
+			.where(EmployeeSchedule.employee_availability == "Working")
+			.where(EmployeeSchedule.roster_type == "Basic")
+		).run(as_dict=True)
+
+		# Build map: employee -> schedule data (first match wins)
+		schedule_map = {}
+		for s in schedules:
+			if s.employee not in schedule_map:
+				schedule_map[s.employee] = s
+
+		# Apply to child rows that still need population
+		for row in self.transportation_manifest_details:
+			if row.employee and not row.operations_shift:
+				sched = schedule_map.get(row.employee)
+				if sched:
+					row.operations_shift = sched.shift
+					row.operations_site = sched.site
+					row.operations_role = sched.operations_role
+					row.project = sched.project
 
 	def validate_attendance_and_qoa(self):
 		for row in self.transportation_manifest_details:
