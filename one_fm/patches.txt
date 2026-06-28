@@ -449,3 +449,4 @@ one_fm.patches.v15_0.add_asset_serial_and_warranty_fields
 one_fm.patches.v15_0.add_asset_repair_custom_fields
 one_fm.patches.v15_0.add_asset_repair_workflow_and_assignment_rules #4
 one_fm.patches.v15_0.set_todo_type_read_only
+one_fm.patches.v15_0.add_vehicle_branding_details_fields
