@@ -19,6 +19,9 @@ MONTH_MAP = {
 class BonusRequest(Document):
 	def before_insert(self):
 		"""Set defaults for new Bonus Request documents."""
+		if not self.posting_date:
+			self.posting_date = nowdate()
+
 		if not self.effective_year:
 			self.effective_year = getdate(nowdate()).year
 
@@ -115,7 +118,11 @@ class BonusRequest(Document):
 			)
 
 	def validate_effective_month(self):
-		"""Ensure effective month is strictly in the future (current month is blocked)."""
+		"""Ensure effective month is not in a past closed payroll period.
+
+		The current month and any future month are allowed.
+		Only past months (before the current month) are blocked.
+		"""
 		if not self.effective_month or not self.effective_year:
 			return
 
@@ -129,12 +136,13 @@ class BonusRequest(Document):
 		if not selected_month:
 			return
 
-		# Block current month AND past months — only future months allowed
+		# Block only past months — current month and future months are allowed
 		if selected_year < current_year or (
-			selected_year == current_year and selected_month <= current_month
+			selected_year == current_year and selected_month < current_month
 		):
 			frappe.throw(
-				_("Bonus requests can only take effect in future months."),
+				_("Validation Error: Bonus requests cannot be applied to "
+				  "previous closed payroll months."),
 				title=_("Invalid Effective Month")
 			)
 
@@ -232,17 +240,18 @@ def create_consolidated_bonus_request(
 	if justification == "Other" and not description:
 		frappe.throw(_("Description is mandatory when Justification is 'Other'."))
 
-	# Validate effective month is strictly in the future
+	# Validate effective month is not in a past closed payroll period
 	today = getdate(nowdate())
 	selected_month = MONTH_MAP.get(effective_month)
 	if not selected_month:
 		frappe.throw(_("Invalid Effective Month."))
 
 	if effective_year < today.year or (
-		effective_year == today.year and selected_month <= today.month
+		effective_year == today.year and selected_month < today.month
 	):
 		frappe.throw(
-			_("Bonus requests can only take effect in future months."),
+			_("Validation Error: Bonus requests cannot be applied to "
+			  "previous closed payroll months."),
 			title=_("Invalid Effective Month")
 		)
 
