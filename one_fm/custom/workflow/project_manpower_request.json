@@ -33,7 +33,7 @@
             "style": "Primary",
             "is_optional_state": 0,
             "avoid_status_override": 0,
-            "allow_edit": "Recruitment Team Leader",
+            "allow_edit": "Recruitment Team Lead",
             "send_email": 0,
             "doctype": "Workflow Document State"
         },
@@ -108,6 +108,16 @@
             "doctype": "Workflow Document State"
         },
         {
+            "state": "In Process",
+            "doc_status": "0",
+            "style": "Success",
+            "is_optional_state": 0,
+            "avoid_status_override": 0,
+            "allow_edit": "Operation Admin",
+            "send_email": 0,
+            "doctype": "Workflow Document State"
+        },
+        {
             "state": "Completed",
             "doc_status": "1",
             "style": "Success",
@@ -173,7 +183,7 @@
             "state": "Draft",
             "action": "Submit to Recruiter",
             "next_state": "Awaiting Recruiter Approval",
-            "allowed": "Recruitment Team Leader",
+            "allowed": "Recruitment Team Lead",
             "allow_self_approval": 1,
             "doctype": "Workflow Transition"
         },
@@ -205,23 +215,7 @@
             "state": "Awaiting Recruiter Approval",
             "action": "Approve",
             "next_state": "In Process",
-            "allowed": "Recruiter",
-            "allow_self_approval": 1,
-            "doctype": "Workflow Transition"
-        },
-        {
-            "state": "Awaiting Recruiter Approval",
-            "action": "Approve",
-            "next_state": "In Process",
-            "allowed": "Senior Recruiter",
-            "allow_self_approval": 1,
-            "doctype": "Workflow Transition"
-        },
-        {
-            "state": "Awaiting Recruiter Approval",
-            "action": "Approve",
-            "next_state": "In Process",
-            "allowed": "System Manager",
+            "allowed": "Recruitment Team Lead",
             "allow_self_approval": 1,
             "doctype": "Workflow Transition"
         },
@@ -278,6 +272,14 @@
             "action": "Complete",
             "next_state": "Completed",
             "allowed": "HR Manager",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "In Process",
+            "action": "Complete",
+            "next_state": "Completed",
+            "allowed": "Operation Admin",
             "allow_self_approval": 1,
             "doctype": "Workflow Transition"
         },

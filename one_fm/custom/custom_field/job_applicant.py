@@ -438,6 +438,7 @@ def get_job_applicant_custom_fields():
                 "fieldtype": "Data",
                 "insert_after": "one_fm_country_code",
                 "label": "Contact Number",
+                "options": "Phone",
                 "translatable": 1
             },
             {
@@ -964,7 +965,7 @@ def get_job_applicant_custom_fields():
                 "fieldtype": "Select",
                 "insert_after": "one_fm_place_of_birth",
                 "label": "Marital Status",
-                "options": "\nUnmarried\nMarried\nDivorce\nWidow\nUnknown",
+                "options": "\nSingle\nMarried\nDivorced\nWidowed",
                 "translatable": 1
             },
             {

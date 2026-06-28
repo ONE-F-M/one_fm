@@ -74,13 +74,19 @@ frappe.ui.form.on('Penalty', {
 						let rejection_dialog = new frappe.ui.Dialog({
 							'fields': [
 								{'fieldname': 'ht', 'fieldtype': 'HTML'},
-								{'fieldname': 'rejection_reason', 'fieldtype': 'Small Text', 'label': 'Reason for Rejection'},							
+								{'fieldname': 'rejection_reason', 'fieldtype': 'Small Text', 'label': 'Reason for Rejection', 'reqd': 1},							
 							],
 							primary_action: function(){
-								rejection_dialog.hide();
-								// show_alert(rejection_dialog.get_values());
-								console.log(rejection_dialog.get_values());
 								let {rejection_reason} = rejection_dialog.get_values();
+								
+								// Validate that rejection reason is not empty
+								if(!rejection_reason || rejection_reason.trim() === ''){
+									frappe.msgprint(__('Rejection reason is mandatory. Please provide a reason.'));
+									return;
+								}
+								
+								rejection_dialog.hide();
+								console.log(rejection_dialog.get_values());
 								// frappe.model.set_value(frm.doctype, frm.docname, "reason_for_rejection", rejection_reason);
 								frappe.xcall('one_fm.legal.doctype.penalty.penalty.reject_penalty', {rejection_reason, docname: frm.doc.name})
 								.then(res => frm.reload_doc());
