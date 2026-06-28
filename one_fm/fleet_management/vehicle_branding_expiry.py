@@ -5,7 +5,7 @@ from one_fm.processor import sendemail
 
 
 # Hardcoded recipient per business requirement
-BRANDING_EXPIRY_RECIPIENT = "y.oyedele@one-fm.com"
+BRANDING_EXPIRY_RECIPIENT = "i.anware@one-fm.com"
 
 
 def notify_vehicle_branding_expiry():
