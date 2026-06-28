@@ -76,34 +76,39 @@ class Contracts(Document):
         """
         import frappe.desk.form.assign_to as assign_module
 
+        if getattr(self.flags, "_restore_assignment_notify", False):
+            return  # Already patched
+
         # Store original so on_change can restore it
         self._original_notify_assignment = assign_module.notify_assignment
         self.flags._restore_assignment_notify = True
 
-        if not self.has_value_changed("workflow_state"):
-            # Plain save — no workflow transition happened
-            assign_module.notify_assignment = lambda *a, **kw: None
-        elif self.workflow_state in ("Active", "Inactive"):
-            # "Submit" (to Active) or "Set Inactive" — terminal states,
-            # nobody new is being assigned
-            assign_module.notify_assignment = lambda *a, **kw: None
-        else:
-            # "Submit for Further Action" or "Return to ..." —
-            # suppress "removed" emails, allow "new assignment" emails
-            original = self._original_notify_assignment
+        target_doctype = self.doctype
+        target_name = self.name
 
-            def _selective_notify(
-                assigned_by, allocated_to, doc_type, doc_name,
-                action="CLOSE", description=None,
-            ):
+        plain_save = not self.has_value_changed("workflow_state")
+        terminal_state = self.workflow_state in ("Active", "Inactive")
+        
+        original = self._original_notify_assignment
+
+        def _scoped_notify(
+            assigned_by, allocated_to, doc_type, doc_name,
+            action="CLOSE", description=None,
+        ):
+            # Only apply suppression to THIS specific document
+            if doc_type == target_doctype and doc_name == target_name:
+                if plain_save or terminal_state:
+                    return  # suppress all assignment emails
                 if action == "CLOSE":
                     return  # skip "your assignment has been removed" emails
-                return original(
-                    assigned_by, allocated_to, doc_type, doc_name,
-                    action=action, description=description,
-                )
 
-            assign_module.notify_assignment = _selective_notify
+            # For other documents or allowed actions, call original
+            return original(
+                assigned_by, allocated_to, doc_type, doc_name,
+                action=action, description=description,
+            )
+
+        assign_module.notify_assignment = _scoped_notify
 
     def on_change(self):
         """Restore the original notify_assignment after all on_update hooks."""
