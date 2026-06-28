@@ -2,6 +2,34 @@
 // For license information, please see license.txt
 
 frappe.query_reports["Annual Leave Tracker"] = {
+    "onload": function(report) {
+        report._column_filter_instance = null;
+        // Load the column filter component on-demand (only for this report)
+        frappe.require([
+            "/assets/one_fm/js/report_column_filter.js",
+            "/assets/one_fm/css/report_column_filter.css"
+        ]);
+    },
+
+    "after_datatable_render": function(datatable) {
+        const report = frappe.query_report;
+        if (!report || !report.datatable) return;
+
+        // Skip re-init if triggered by our own filter apply
+        if (report._column_filter_skip_reinit) return;
+
+        // Wait for the dynamically loaded component to be available
+        if (!frappe.ui.ReportColumnFilter) return;
+
+        if (report._column_filter_instance) {
+            // Data was re-fetched from server, refresh the filter state
+            report._column_filter_instance.refresh_after_data_reload();
+        } else {
+            // First render — initialize the column filter component
+            report._column_filter_instance = new frappe.ui.ReportColumnFilter(report);
+        }
+    },
+
     "filters": [
         {
             "fieldname": "employee",
