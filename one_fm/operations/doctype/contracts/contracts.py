@@ -1983,7 +1983,7 @@ def set_contract_active(contract_name: str, new_start_date: str, new_end_date: s
 		new_start_date: The new Contract Start Date (YYYY-MM-DD).
 		new_end_date: The new Contract End Date (YYYY-MM-DD).
 	"""
-	frappe.only_for("Sales Manager")
+	frappe.only_for(["Sales Manager", "Finance Manager"])
 
 	doc = frappe.get_doc("Contracts", contract_name)
 
@@ -3296,7 +3296,7 @@ def set_contract_active(contract_name: str, new_start_date: str, new_end_date: s
 		new_start_date: The new Contract Start Date (YYYY-MM-DD).
 		new_end_date: The new Contract End Date (YYYY-MM-DD).
 	"""
-	frappe.only_for("Sales Manager")
+	frappe.only_for(["Sales Manager", "Finance Manager"])
 
 	doc = frappe.get_doc("Contracts", contract_name)
 
