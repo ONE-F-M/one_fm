@@ -1396,8 +1396,8 @@ def _handle_existing_shifts_for_rambo(schedule, date):
 				if should_cancel:
 					try:
 						sa_doc = frappe.get_doc("Shift Assignment", existing_sa.name)
+						sa_doc.flags.ignore_permissions = True
 						sa_doc.cancel()
-						frappe.logger("rambo").info(
 							"Cancelled stale Shift Assignment {0} for employee "
 							"{1} (shift_type mismatch: SA has '{2}', schedule "
 							"now has '{3}')".format(
