@@ -51,6 +51,11 @@ class RamboAssignment(Document):
 		)
 
 		if existing_schedule:
+			# Cancel any existing Shift Assignment linked to this schedule
+			# BEFORE updating it, so the background job can create a new SA
+			# with the correct Rambo shift details.
+			self._cancel_stale_shift_assignment(existing_schedule, shift_type)
+
 			# Update the existing record
 			frappe.db.set_value("Employee Schedule", existing_schedule, {
 				"employee_availability": "Working",
@@ -108,6 +113,70 @@ class RamboAssignment(Document):
 				_("Employee Schedule {0} has been deleted.").format(schedule_name),
 				indicator="orange",
 				alert=True
+			)
+
+	def _cancel_stale_shift_assignment(self, schedule_name, new_shift_type):
+		"""Cancel the Shift Assignment linked to a schedule if it is stale.
+
+		A Shift Assignment is considered stale when:
+		  - It is submitted (docstatus=1)
+		  - Its shift_type differs from the new Rambo shift_type
+		    (meaning it was created for the OLD shift before Rambo)
+		  - It has NO Employee Checkin logs (the employee never started it)
+
+		Args:
+			schedule_name: str, name of the Employee Schedule being updated.
+			new_shift_type: str, the Rambo shift_type that will replace the old one.
+		"""
+		existing_sa = frappe.db.get_value(
+			"Shift Assignment",
+			{"employee_schedule": schedule_name, "docstatus": 1},
+			["name", "shift_type"],
+			as_dict=True
+		)
+
+		if not existing_sa:
+			return
+
+		# Only cancel if the shift_type is different (stale)
+		if existing_sa.shift_type == new_shift_type:
+			return
+
+		# Safety check: do NOT cancel if employee has checkin logs
+		has_checkin_logs = frappe.db.exists(
+			"Employee Checkin",
+			{"shift_assignment": existing_sa.name}
+		)
+
+		if has_checkin_logs:
+			frappe.msgprint(
+				_("Shift Assignment {0} has checkin logs and cannot be cancelled.").format(existing_sa.name),
+				indicator="orange",
+				alert=True
+			)
+			return
+
+		try:
+			sa_doc = frappe.get_doc("Shift Assignment", existing_sa.name)
+			sa_doc.flags.ignore_permissions = True
+			sa_doc.cancel()
+				_("Cancelled stale Shift Assignment {0} (old shift: {1}).").format(
+					existing_sa.name, existing_sa.shift_type
+				),
+				indicator="blue",
+				alert=True
+			)
+			frappe.logger("rambo").info(
+				"Cancelled stale Shift Assignment {0} for schedule {1} "
+				"(old shift_type: {2}, new: {3})".format(
+					existing_sa.name, schedule_name,
+					existing_sa.shift_type, new_shift_type
+				)
+			)
+		except Exception:
+			frappe.log_error(
+				title=_("Rambo Assignment — Cancel Stale SA"),
+				message=frappe.get_traceback()
 			)
 
 
