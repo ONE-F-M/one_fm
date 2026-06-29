@@ -1399,6 +1399,7 @@ def _handle_existing_shifts_for_rambo(schedule, date):
 						sa_doc.flags.ignore_permissions = True
 
 						sa_doc.cancel()
+						frappe.logger("rambo").info(
 							"Cancelled stale Shift Assignment {0} for employee "
 							"{1} (shift_type mismatch: SA has '{2}', schedule "
 							"now has '{3}')".format(
@@ -1503,7 +1504,6 @@ def _handle_existing_shifts_for_rambo(schedule, date):
 						{"employee": employee, "date": date, "roster_type": "Over-Time"},
 						"name"
 					) or ot_schedule.name
-					ot_schedule_name = ot_schedule.name
 
 					frappe.logger("rambo").info(
 						"Created Over-Time Employee Schedule {0} for "
