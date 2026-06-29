@@ -158,8 +158,8 @@ class RamboAssignment(Document):
 
 		try:
 			sa_doc = frappe.get_doc("Shift Assignment", existing_sa.name)
+			sa_doc.flags.ignore_permissions = True
 			sa_doc.cancel()
-			frappe.msgprint(
 				_("Cancelled stale Shift Assignment {0} (old shift: {1}).").format(
 					existing_sa.name, existing_sa.shift_type
 				),
