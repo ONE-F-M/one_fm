@@ -51,40 +51,64 @@ class CandidateCountryProcess(Document):
 
         # ── 4. Mirror ETAs to header fields ────────────────────────────────────
         if rows:
-            last = rows[-1]
-            if last.get("planned_date"):
-                self.planned_eta = last.planned_date
-            if last.get("live_plan_date"):
-                self.live_plan_eta = last.live_plan_date
-            elif last.get("planned_date"):
-                self.live_plan_eta = last.planned_date
+            planned_dates = [row.planned_date for row in rows if row.planned_date]
+            live_dates = [row.live_plan_date for row in rows if row.live_plan_date]
+
+            if planned_dates:
+                self.planned_eta = max(planned_dates)
+            if live_dates:
+                self.live_plan_eta = max(live_dates)
+            elif planned_dates:
+                self.live_plan_eta = max(planned_dates)
 
     def _compute_planned_dates(self, rows):
         """
         Compute planned_date for each row based on the dependency graph.
-        Only fills in rows that don't yet have a planned_date (first save).
-
-        For rows with before_task dependencies:
-          - Sequential: starts after the latest before_task planned_date
-          - Parallel: starts at the same time as other parallel tasks
-                      sharing the same before_task
         """
         if not self.start_date:
             return
 
         start = frappe.utils.getdate(self.start_date)
         row_map = {r.process_name: r for r in rows}
+        memo = {}
+        visiting = set()
 
-        for row in rows:
-            if row.get("planned_date"):
-                continue  # Already set
+        def get_planned_date(row):
+            if row.process_name in memo:
+                return memo[row.process_name]
+            if row.process_name in visiting:
+                # Cycle detected
+                return start
+            visiting.add(row.process_name)
 
             if row.duration_in_days is None:
-                continue
+                visiting.remove(row.process_name)
+                return None
 
-            anchor = self._get_dependency_anchor(row, row_map, "planned_date", start)
-            if anchor:
-                row.planned_date = frappe.utils.add_days(anchor, row.duration_in_days)
+            before_tasks = self._parse_task_list(row.get("before_task"))
+            if not before_tasks:
+                planned = frappe.utils.add_days(start, row.duration_in_days)
+                memo[row.process_name] = planned
+                visiting.remove(row.process_name)
+                return planned
+
+            max_dep_date = None
+            for dep_name in before_tasks:
+                dep_row = row_map.get(dep_name)
+                if not dep_row:
+                    continue
+                dep_date = get_planned_date(dep_row)
+                if dep_date and (max_dep_date is None or dep_date > max_dep_date):
+                    max_dep_date = dep_date
+
+            anchor = max_dep_date or start
+            planned = frappe.utils.add_days(anchor, row.duration_in_days)
+            memo[row.process_name] = planned
+            visiting.remove(row.process_name)
+            return planned
+
+        for row in rows:
+            row.planned_date = get_planned_date(row)
 
     def _compute_live_plan_dates(self, rows):
         """
@@ -96,83 +120,67 @@ class CandidateCountryProcess(Document):
 
         start = frappe.utils.getdate(self.start_date)
         row_map = {r.process_name: r for r in rows}
+        memo = {}
+        visiting = set()
 
-        for row in rows:
+        def get_live_date(row):
+            if row.process_name in memo:
+                return memo[row.process_name]
+            if row.process_name in visiting:
+                # Cycle detected
+                return start
+            visiting.add(row.process_name)
+
             if row.get("status") == "Skipped":
-                row.live_plan_date = None
-                continue
+                memo[row.process_name] = None
+                visiting.remove(row.process_name)
+                return None
 
             if row.duration_in_days is None:
-                continue
+                visiting.remove(row.process_name)
+                return None
 
-            anchor = self._get_dependency_anchor_live(row, row_map, start)
-            if anchor:
-                row.live_plan_date = frappe.utils.add_days(anchor, row.duration_in_days)
+            if row.actual_date:
+                actual = frappe.utils.getdate(row.actual_date)
+                memo[row.process_name] = actual
+                visiting.remove(row.process_name)
+                return actual
 
-    def _get_dependency_anchor(self, row, row_map, date_field, default_start):
-        """
-        Get the anchor date for planned_date computation.
+            before_tasks = self._parse_task_list(row.get("before_task"))
+            if not before_tasks:
+                live = frappe.utils.add_days(start, row.duration_in_days)
+                memo[row.process_name] = live
+                visiting.remove(row.process_name)
+                return live
 
-        If before_task is set, returns the MAX of all before_task planned_dates.
-        If no before_task, returns default_start for the first task,
-        or the previous row's planned_date for sequential flow.
-        """
-        before_tasks = self._parse_task_list(row.get("before_task"))
+            max_dep_date = None
+            for dep_name in before_tasks:
+                dep_row = row_map.get(dep_name)
+                if not dep_row:
+                    continue
+                if dep_row.get("status") == "Skipped":
+                    continue
 
-        if not before_tasks:
-            # First task in the chain — use start_date
-            return default_start
+                dep_date = None
+                if dep_row.actual_date:
+                    dep_date = frappe.utils.getdate(dep_row.actual_date)
+                else:
+                    dep_date = get_live_date(dep_row)
 
-        # Get the latest planned_date among all before_tasks
-        max_date = None
-        for task_name in before_tasks:
-            dep_row = row_map.get(task_name)
-            if not dep_row:
-                continue
-            dep_date = frappe.utils.getdate(dep_row.get(date_field)) if dep_row.get(date_field) else None
-            if dep_date and (max_date is None or dep_date > max_date):
-                max_date = dep_date
+                if not dep_date and dep_row.planned_date:
+                    dep_date = frappe.utils.getdate(dep_row.planned_date)
 
-        return max_date or default_start
+                if dep_date and (max_dep_date is None or dep_date > max_dep_date):
+                    max_dep_date = dep_date
 
-    def _get_dependency_anchor_live(self, row, row_map, default_start):
-        """
-        Get the anchor date for live_plan_date computation.
+            anchor = max_dep_date or start
+            live = frappe.utils.add_days(anchor, row.duration_in_days)
+            memo[row.process_name] = live
+            visiting.remove(row.process_name)
+            return live
 
-        Uses actual_date if available, falls back to live_plan_date,
-        then planned_date of dependency tasks.
-        For parallel tasks sharing the same before_task, they all start
-        from the same anchor (the before_task's completion).
-        """
-        before_tasks = self._parse_task_list(row.get("before_task"))
-
-        if not before_tasks:
-            return default_start
-
-        # Get the latest effective date among all before_tasks
-        max_date = None
-        for task_name in before_tasks:
-            dep_row = row_map.get(task_name)
-            if not dep_row:
-                continue
-
-            # Skip dependencies that are Skipped
-            if dep_row.get("status") == "Skipped":
-                continue
-
-            # Prefer actual_date > live_plan_date > planned_date
-            dep_date = None
-            if dep_row.actual_date:
-                dep_date = frappe.utils.getdate(dep_row.actual_date)
-            elif dep_row.get("live_plan_date"):
-                dep_date = frappe.utils.getdate(dep_row.live_plan_date)
-            elif dep_row.get("planned_date"):
-                dep_date = frappe.utils.getdate(dep_row.planned_date)
-
-            if dep_date and (max_date is None or dep_date > max_date):
-                max_date = dep_date
-
-        return max_date or default_start
+        for row in rows:
+            row.live_plan_date = get_live_date(row)
 
     @staticmethod
     def _parse_task_list(task_str):
