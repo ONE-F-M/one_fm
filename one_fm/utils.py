@@ -3857,6 +3857,104 @@ def set_employee_status():
         frappe.log_error(message=frappe.get_traceback(), title="Error occurred while trying to reassign duties")
 
 
+def send_pending_alm_checkout_notifications():
+    """
+    Daily scheduler job: checks for submitted ALM (OUT) records flagged with
+    custom_notify_on_leave_start=1 whose linked Leave Application has now started
+    (from_date <= today). Sends the checkout notification email and clears the flag.
+    """
+    from one_fm.accommodation.doctype.accommodation_leave_movement.accommodation_leave_movement import (
+        send_alm_checkout_notification,
+    )
+
+    pending_alms = frappe.get_all(
+        "Accommodation Leave Movement",
+        filters={
+            "type": "OUT",
+            "docstatus": 1,
+            "custom_notify_on_leave_start": 1,
+        },
+        fields=["name", "leave_application"],
+    )
+
+    for alm in pending_alms:
+        if not alm.leave_application:
+            # No leave application linked — clear the flag and skip
+            frappe.db.set_value(
+                "Accommodation Leave Movement", alm.name,
+                "custom_notify_on_leave_start", 0
+            )
+            continue
+
+        leave_from_date = frappe.db.get_value(
+            "Leave Application", alm.leave_application, "from_date"
+        )
+
+        if leave_from_date and getdate(leave_from_date) <= getdate(today()):
+            send_alm_checkout_notification(alm.name)
+            frappe.db.set_value(
+                "Accommodation Leave Movement", alm.name,
+                "custom_notify_on_leave_start", 0
+            )
+
+    frappe.db.commit()
+
+
+def send_pending_alm_checkin_notifications():
+    """
+    Daily scheduler job: checks for submitted ALM (IN) records flagged with
+    custom_notify_on_leave_end=1 whose linked Leave Application's resumption_date
+    has been reached (resumption_date <= today). Sends the check-in notification
+    email and clears the flag.
+    """
+    from one_fm.accommodation.doctype.accommodation_leave_movement.accommodation_leave_movement import (
+        send_alm_checkin_notification,
+    )
+
+    pending_alms = frappe.get_all(
+        "Accommodation Leave Movement",
+        filters={
+            "type": "IN",
+            "docstatus": 1,
+            "custom_notify_on_leave_end": 1,
+        },
+        fields=["name", "checkin_reference"],
+    )
+
+    for alm in pending_alms:
+        if not alm.checkin_reference:
+            # No check-out reference linked — clear the flag and skip
+            frappe.db.set_value(
+                "Accommodation Leave Movement", alm.name,
+                "custom_notify_on_leave_end", 0
+            )
+            continue
+
+        leave_application = frappe.db.get_value(
+            "Accommodation Leave Movement", alm.checkin_reference, "leave_application"
+        )
+
+        if not leave_application:
+            frappe.db.set_value(
+                "Accommodation Leave Movement", alm.name,
+                "custom_notify_on_leave_end", 0
+            )
+            continue
+
+        resumption_date = frappe.db.get_value(
+            "Leave Application", leave_application, "resumption_date"
+        )
+
+        if resumption_date and getdate(resumption_date) <= getdate(today()):
+            send_alm_checkin_notification(alm.name)
+            frappe.db.set_value(
+                "Accommodation Leave Movement", alm.name,
+                "custom_notify_on_leave_end", 0
+            )
+
+    frappe.db.commit()
+
+
 
 
 def is_holiday(employee, date=None, raise_exception=True,include_weekly_off = False):

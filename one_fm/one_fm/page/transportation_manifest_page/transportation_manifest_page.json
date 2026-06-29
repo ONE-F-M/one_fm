@@ -1,8 +1,8 @@
 {
     "doctype": "Page",
     "module": "One FM",
-    "name": "transportation-manifest",
-    "page_name": "transportation-manifest",
+    "name": "transportation-manifest-page",
+    "page_name": "transportation-manifest-page",
     "standard": "Yes",
     "title": "Transportation Manifest",
     "roles": [

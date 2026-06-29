@@ -66,6 +66,15 @@ def get_attendance_custom_fields():
                 "read_only": 1
             },
             {
+                "fieldname": "custom_client_event",
+                "fieldtype": "Link",
+                "insert_after": "timesheet",
+                "label": "Client Event",
+                "options": "Client Event",
+                "fetch_from": "shift_assignment.client_event",
+                "read_only": 1
+            },
+            {
                 "fieldname": "shift_assignment",
                 "fieldtype": "Link",
                 "insert_after": "section_break_17",

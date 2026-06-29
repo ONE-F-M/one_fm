@@ -1,0 +1,92 @@
+{
+  "workflow_name": "Asset Repair",
+  "document_type": "Asset Repair",
+  "is_active": 1,
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_state_field": "workflow_state",
+  "doctype": "Workflow",
+  "states": [
+    {
+      "state": "Draft",
+      "doc_status": "0",
+      "style": "Danger",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Employee",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Pending GS Admin",
+      "doc_status": "0",
+      "style": "Warning",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Employee",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Pending Warehouse Supervisor",
+      "doc_status": "0",
+      "style": "Danger",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Warehouse Supervisor",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Completed",
+      "doc_status": "1",
+      "style": "Success",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Warehouse Supervisor",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    }
+  ],
+  "transitions": [
+    {
+      "state": "Draft",
+      "action": "Submit for Review",
+      "next_state": "Pending GS Admin",
+      "allowed": "Employee",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Pending GS Admin",
+      "action": "Submit",
+      "next_state": "Pending Warehouse Supervisor",
+      "allowed": "Employee",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Pending Warehouse Supervisor",
+      "action": "Submit",
+      "next_state": "Completed",
+      "allowed": "Warehouse Supervisor",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "doctype": "Workflow Transition"
+    }
+  ]
+}

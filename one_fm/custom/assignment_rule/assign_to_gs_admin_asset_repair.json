@@ -1,0 +1,23 @@
+{
+  "name": "Assign to GS Admin-Asset Repair",
+  "document_type": "Asset Repair",
+  "priority": 0,
+  "disabled": 0,
+  "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n        <br>\n        The details of the request are as follows:\n        <br>\n        </p><table cellpadding=\"0\" cellspacing=\"0\" border=\"1\" style=\"border-collapse: collapse;\">\n            <thead>\n                <tr>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n                </tr>\n            </thead>\n        <tbody>\n        \n            <tr>\n                <td style=\"padding: 10px;\">Asset</td>\n                <td style=\"padding: 10px;\">{{ asset }}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Asset Name</td>\n                <td style=\"padding: 10px;\">{{ asset_name }}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Company</td>\n                <td style=\"padding: 10px;\">{{ company }}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Serial No</td>\n                <td style=\"padding: 10px;\">{{ custom_serial_no }}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Asset Location</td>\n                <td style=\"padding: 10px;\">{{ custom_asset_location }}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Failure Date</td>\n                <td style=\"padding: 10px;\">{{ failure_date }}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Repair Status</td>\n                <td style=\"padding: 10px;\">{{ repair_status }}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Error Description</td>\n                <td style=\"padding: 10px;\">{{ description }}</td>\n            </tr>\n            </tbody></table><p></p>",
+  "is_assignment_rule_with_workflow": 1,
+  "assign_condition": "workflow_state == 'Pending GS Admin'",
+  "unassign_condition": "workflow_state != 'Pending GS Admin'",
+  "close_condition": "",
+  "rule": "Based on Process Task",
+  "doctype": "Assignment Rule",
+  "users": [],
+  "assignment_days": [
+    { "day": "Monday", "doctype": "Assignment Rule Day" },
+    { "day": "Tuesday", "doctype": "Assignment Rule Day" },
+    { "day": "Wednesday", "doctype": "Assignment Rule Day" },
+    { "day": "Thursday", "doctype": "Assignment Rule Day" },
+    { "day": "Friday", "doctype": "Assignment Rule Day" },
+    { "day": "Saturday", "doctype": "Assignment Rule Day" },
+    { "day": "Sunday", "doctype": "Assignment Rule Day" }
+  ]
+}

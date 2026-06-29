@@ -238,9 +238,15 @@ class Contracts(Document):
         Allow Legal Manager / Legal User to save changes to the two legal
         notification fields while the contract is Active, without triggering
         any workflow transition. All other roles follow the normal path.
+        System Managers can always save — bypass workflow validation entirely.
         """
-        legal_roles = {"Legal Manager", "Legal User"}
+        # System Manager can always save — bypass workflow validation
         user_roles = set(frappe.get_roles(frappe.session.user))
+        if "System Manager" in user_roles and not self.is_new():
+            self.flags.ignore_workflow = True
+            return
+
+        legal_roles = {"Legal Manager", "Legal User"}
 
         if not (user_roles & legal_roles):
             return  # not a legal role — normal save path
@@ -2113,6 +2119,58 @@ def post_return_comment(contract_name: str, target_role: str, comment: str):
     }
 
 
+def contracts_has_permission(doc, ptype, user):
+    """Restrict write access to Contracts to users listed in Process Tasks.
+
+    System Managers are always allowed. For write/create/delete operations,
+    only users whose email matches a Process Task (erp_document='Contracts',
+    process_name='Others') employee_user are permitted. Read access is not
+    restricted by this hook.
+    """
+    if ptype == "read":
+        return None  # Don't interfere with read permissions
+
+    if "System Manager" in frappe.get_roles(user):
+        return None  # System Manager always allowed — defer to default logic
+
+    # Get all designated users from Contracts Process Tasks
+    designated_users = frappe.get_all(
+        "Process Task",
+        filters={
+            "erp_document": "Contracts",
+            "process_name": "Others",
+        },
+        pluck="employee_user"
+    )
+
+    if user not in designated_users:
+        return False  # Block write for non-designated users
+
+    return None  # Allow Frappe's default permission logic for designated users
+
+
+@frappe.whitelist()
+def is_contracts_process_task_user() -> bool:
+    """Check if the current user is a designated Contracts Process Task user.
+
+    Returns True if the user is a System Manager or if their email matches
+    an employee_user in a Process Task for Contracts.
+    """
+    if "System Manager" in frappe.get_roles():
+        return True
+
+    designated_users = frappe.get_all(
+        "Process Task",
+        filters={
+            "erp_document": "Contracts",
+            "process_name": "Others",
+        },
+        pluck="employee_user"
+    )
+
+    return frappe.session.user in designated_users
+
+
 @frappe.whitelist()
 def get_si_contracts_items(doctype, txt, searchfield, start, page_len, filters):
     result_set = frappe.db.sql("Select distinct item_code from `tabContract Item` where parent = '{}' ".format(filters.get('contracts')))
@@ -3217,16 +3275,20 @@ def cancel_unselected_day_schedules(contract_doc):
 
 @frappe.whitelist()
 def sync_contract_item_prices(contract_name):
-	"""Background task to sync item prices for a contract."""
+	"""Sync item prices for a contract, suppressing user-facing messages."""
 	if not contract_name:
 		return
-	
+
 	try:
 		doc = frappe.get_doc("Contracts", contract_name)
 		doc.sync_item_prices()
 		frappe.db.commit()
 	except Exception as e:
 		frappe.log_error("Item Price Sync Error", f"Error in sync_contract_item_prices for {contract_name}: {str(e)}")
+	finally:
+		# Always clear message log so no Item Price warnings leak to the user
+		# when saving the Contract document.
+		frappe.local.message_log = []
 
 
 @frappe.whitelist()
