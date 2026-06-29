@@ -672,6 +672,7 @@ scheduler_events = {
 			"one_fm.api.tasks.overtime_shift_assignment",
 			#"one_fm.api.tasks.automatic_checkout",
 			"one_fm.one_fm.doctype.password_reset_token.password_reset_token.revoke_password_tokens",
+			"one_fm.api.tasks.rambo_shift_assignment",
 		],
 		"0/15 * * * *": [
 			"one_fm.api.tasks.update_shift_type"
