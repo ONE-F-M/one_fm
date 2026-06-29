@@ -1396,7 +1396,8 @@ def _handle_existing_shifts_for_rambo(schedule, date):
 				if should_cancel:
 					try:
 						sa_doc = frappe.get_doc("Shift Assignment", existing_sa.name)
-						sa_doc.flags.ignore_permissions = True
+						sa_doc.flags.ignore_permissions = True
+
 						sa_doc.cancel()
 							"Cancelled stale Shift Assignment {0} for employee "
 							"{1} (shift_type mismatch: SA has '{2}', schedule "
@@ -1493,8 +1494,15 @@ def _handle_existing_shifts_for_rambo(schedule, date):
 						"is_rambo_schedule": 1,
 						"rambo_assignment": schedule.rambo_assignment,
 					})
-					ot_schedule.flags.ignore_permissions = True
-					ot_schedule.insert()
+					try:
+						ot_schedule.insert()
+					except frappe.DuplicateEntryError:
+						pass
+					ot_schedule_name = frappe.db.get_value(
+						"Employee Schedule",
+						{"employee": employee, "date": date, "roster_type": "Over-Time"},
+						"name"
+					) or ot_schedule.name
 					ot_schedule_name = ot_schedule.name
 
 					frappe.logger("rambo").info(
