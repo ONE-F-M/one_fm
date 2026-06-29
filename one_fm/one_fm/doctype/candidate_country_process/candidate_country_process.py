@@ -50,16 +50,28 @@ class CandidateCountryProcess(Document):
                     row.eta_status = "Completed on time"
 
         # ── 4. Mirror ETAs to header fields ────────────────────────────────────
-        if rows:
+        if self.start_date:
+            total_duration = 0
+            if self.agency_country_process:
+                total_duration = frappe.db.get_value("Agency Country Process", self.agency_country_process, "total_duration") or 0
+            
+            if total_duration:
+                self.planned_eta = frappe.utils.add_days(self.start_date, int(total_duration))
+            elif rows:
+                planned_dates = [row.planned_date for row in rows if row.planned_date]
+                if planned_dates:
+                    self.planned_eta = max(planned_dates)
+        elif rows:
             planned_dates = [row.planned_date for row in rows if row.planned_date]
-            live_dates = [row.live_plan_date for row in rows if row.live_plan_date]
-
             if planned_dates:
                 self.planned_eta = max(planned_dates)
+
+        if rows:
+            live_dates = [row.live_plan_date for row in rows if row.live_plan_date]
             if live_dates:
                 self.live_plan_eta = max(live_dates)
-            elif planned_dates:
-                self.live_plan_eta = max(planned_dates)
+            elif self.planned_eta:
+                self.live_plan_eta = self.planned_eta
 
     def _compute_planned_dates(self, rows):
         """
