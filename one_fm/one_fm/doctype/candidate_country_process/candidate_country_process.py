@@ -8,6 +8,15 @@ from frappe.model.document import Document
 
 class CandidateCountryProcess(Document):
     def validate(self):
+        # Auto-complete Job Offer Issuance if linked
+        if self.job_offer:
+            for row in self.agency_process_details:
+                if row.process_name == "Job Offer Issuance" and row.status == "Pending":
+                    row.status = "Offer Accepted"
+                    row.reference_name = self.job_offer
+                    if not row.actual_date:
+                        row.actual_date = self.start_date
+
         today = frappe.utils.getdate()
         rows = self.agency_process_details
 
@@ -396,6 +405,8 @@ class CandidateCountryProcess(Document):
 
         # Re-assign child table in correct order and save
         self.agency_process_details = new_details
+        for idx, row in enumerate(self.agency_process_details, start=1):
+            row.idx = idx
         self.flags.ignore_mandatory = True
         self.save()
         frappe.msgprint(
