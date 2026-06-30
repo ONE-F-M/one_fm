@@ -138,7 +138,7 @@ frappe.ui.form.on("Employee Resignation", {
 			}
 		}
 
-		if (frm.doc.workflow_state === 'Pending Operations Manager' && frappe.user_roles.includes('Operation Admin')) {
+		if (frm.doc.workflow_state === 'Pending Operations Manager' && (frappe.user_roles.includes('Operation Admin') || frappe.user_roles.includes('T4 Admin'))) {
 			// Disable editing of all fields except replacement details
 			frm.set_df_property('employees', 'read_only', 1);
 			frm.set_df_property('resignation_initiation_date', 'read_only', 1);
