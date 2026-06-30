@@ -452,7 +452,6 @@ doc_events = {
 	"Communication": {
 		"after_insert": "one_fm.one_fm.task_assignment_from_email.assign_task_to_user_from_communication_content"
 	},
-	# COMMENTED OUT: ToDo hooks now handled by SpiffWorkflow/BPMN server scripts
 	"ToDo": {
 		"validate": "one_fm.overrides.todo.validate_todo",
 		"before_save":"one_fm.overrides.todo.before_save",
@@ -558,7 +557,6 @@ override_doctype_class = {
     "Interview": "one_fm.overrides.interview.InterviewOverride",
     "Purchase Order": "one_fm.overrides.purchase_order.PurchaseOrderOverride",
     "HD Ticket": "one_fm.overrides.hd_ticket.HDTicketOverride",
-    # COMMENTED OUT: ToDo override now handled by SpiffWorkflow/BPMN server scripts
     # "ToDo": "one_fm.overrides.todo.ToDo",
     "Task": "one_fm.overrides.task.TaskOverride",
     "Loan Application": "one_fm.overrides.loan_application.LoanApplicationOverride",
