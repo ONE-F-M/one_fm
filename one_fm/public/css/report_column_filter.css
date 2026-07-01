@@ -205,9 +205,76 @@
 	background: var(--primary-dark, #1a6fc4);
 }
 
+/* --- Date Condition Selector --- */
+.column-filter-dropdown .cf-date-condition-wrapper {
+	padding: 10px 10px 4px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.column-filter-dropdown .cf-date-condition-wrapper label {
+	font-size: var(--text-xs, 11px);
+	font-weight: 500;
+	color: var(--text-muted, #8d99a6);
+	margin: 0;
+	display: block;
+}
+
+.column-filter-dropdown .cf-date-condition {
+	width: 100%;
+	padding: 5px 8px;
+	border: 1px solid var(--border-color, #d1d8dd);
+	border-radius: var(--border-radius-sm, 4px);
+	font-size: var(--text-sm, 12px);
+	background: var(--control-bg, #f4f5f6);
+	color: var(--text-color, #333);
+	outline: none;
+	cursor: pointer;
+	transition: border-color 0.2s ease;
+}
+
+.column-filter-dropdown .cf-date-condition:focus {
+	border-color: var(--primary-color, #2490ef);
+	background: var(--fg-color, #fff);
+}
+
+/* --- Single Date Input (Before / After) --- */
+.column-filter-dropdown .cf-date-single-wrapper {
+	padding: 6px 10px 10px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.column-filter-dropdown .cf-date-single-wrapper label {
+	font-size: var(--text-xs, 11px);
+	font-weight: 500;
+	color: var(--text-muted, #8d99a6);
+	margin: 0;
+	display: block;
+}
+
+.column-filter-dropdown .cf-date-single-wrapper input[type="date"] {
+	width: 100%;
+	padding: 5px 8px;
+	border: 1px solid var(--border-color, #d1d8dd);
+	border-radius: var(--border-radius-sm, 4px);
+	font-size: var(--text-sm, 12px);
+	background: var(--control-bg, #f4f5f6);
+	color: var(--text-color, #333);
+	outline: none;
+	transition: border-color 0.2s ease;
+}
+
+.column-filter-dropdown .cf-date-single-wrapper input[type="date"]:focus {
+	border-color: var(--primary-color, #2490ef);
+	background: var(--fg-color, #fff);
+}
+
 /* --- Date Range Variant --- */
 .column-filter-dropdown .cf-date-range-wrapper {
-	padding: 10px;
+	padding: 6px 10px 10px;
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
