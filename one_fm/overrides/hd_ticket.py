@@ -18,14 +18,59 @@ class HDTicketOverride(HDTicket):
     def before_insert(self):
         self.set_im_mail_ticket_to_draft()
 
+    def set_im_mail_ticket_to_draft(self):
+        if frappe.flags.in_receive or not self.via_customer_portal:
+            self.status = "Draft"
+
     def validate(self):
         super().validate()
         self.validate_hd_ticket()
         self.send_mail_for_completion()
         self.handle_process_based_on_doctype()
 
-    def on_change(self):
-        self.notify_issue_raiser_about_priority()
+    def validate_hd_ticket(self):
+        bug_buster = frappe.get_all("Bug Buster",{'docstatus':1,'from_date':['<=',getdate()],'to_date':['>=',getdate()]},['employee'])
+        if bug_buster:
+            emp_user = frappe.get_value("Employee",bug_buster[0].employee,'user_id')
+            if emp_user:
+                self.custom_bug_buster = emp_user
+
+        if (self.status == "Closed" or self.status == "Resolved") and not self.resolution_details:
+            frappe.throw(_("Please fill in Resolution Details before closing the ticket."))
+
+        if self.status == "Pending Deployment" and not self.resolution_details:
+            frappe.throw(_("Please fill in Resolution Details before updating the status to Pending Deployment."))
+
+    def send_mail_for_completion(self):
+        if self.is_new() and self.status == "Draft":
+            subject = f"HelpDesk Ticket - {self.name}"
+            context = dict(
+                document_name=self.name,
+                document_type=self.doctype,
+                link_to_form=frappe.utils.get_url(f"/helpdesk/edit-ticket/{self.name}"),
+                title=self.subject,
+                header="Complete Ticket Details"
+            )
+            msg = frappe.render_template('one_fm/templates/emails/notify_issue_raiser_to_complete_ticket_details.html', context=context)
+            frappe.enqueue(method=sendemail, queue="short", recipients=self.raised_by, subject=subject, content=msg, is_external_mail=True, is_scheduler_email=True)
+
+    def handle_process_based_on_doctype(self):
+        """Handle process field based on doctype selection"""
+        if self.custom_is_doctype_related == "Yes" and self.custom_reference_doctype:
+            # Get filtered processes for the selected doctype
+            filtered_processes = get_filtered_processes(self.custom_reference_doctype, "Yes")
+            
+            # If doctype changed, check if current process is still valid
+            if not self.is_new():
+                previous_doc = self.get_doc_before_save()
+                if previous_doc and previous_doc.custom_reference_doctype != self.custom_reference_doctype:
+                    # Doctype changed, check if current process is still valid
+                    if self.custom_process and self.custom_process not in filtered_processes:
+                        self.custom_process = None
+            
+            # Auto-set process if only one match
+            if len(filtered_processes) == 1 and not self.custom_process:
+                self.custom_process = filtered_processes[0]
 
     def on_update(self):
         super().on_update()
@@ -33,8 +78,55 @@ class HDTicketOverride(HDTicket):
         self.notify_ticket_raiser_of_resolution_details()
         self.handle_routing_field_reassignment()
 
-    def _can_bypass_assignment_permissions(self):
-        return frappe.session.user == "Administrator" or "System Manager" in frappe.get_roles()
+    def apply_ticket_escalation(self):
+        if self.agreement_status != 'Failed':
+            return
+
+        additional_settings = frappe.get_single("HD Additional Settings")
+        escalation_priorities = [record.priority for record in additional_settings.escalation_priorities]
+        escalation_ticket_types = [record.ticket_type for record in additional_settings.escalation_ticket_types]
+
+        if self.priority not in escalation_priorities and self.ticket_type not in escalation_ticket_types:
+            return
+
+        # Fetch bug buster and his reports to details
+        bug_buster = frappe.db.exists("Employee", {'user_id': self.custom_bug_buster})
+        if not bug_buster:
+            return
+
+        bug_buster_reports_to_user_id = get_employee_user_id(frappe.db.get_value('Employee', bug_buster, 'reports_to'))
+
+        # Fetch doc current assignments
+        doc_assignments = [assignment.owner for assignment in get_assignments({'doctype': self.doctype, 'name': self.name})]
+
+        # If reports to is not assigned then add assignment
+        if bug_buster_reports_to_user_id not in doc_assignments:
+            add_assignment({
+                'assign_to': [bug_buster_reports_to_user_id],
+                'doctype': self.doctype,
+                'name': self.name,
+                'description': _('HD Ticket {0} has been assigned to you due to escalation for failed SLA').format(self.name),
+            })
+
+    def notify_ticket_raiser_of_resolution_details(self):
+        if self.status == "Resolved":
+            previous_doc = self.get_doc_before_save()
+            if previous_doc and previous_doc.status != "Resolved":
+                try:
+                    subject = f"HD Ticket {self.name} Resolved"
+
+                    args = frappe._dict({
+                        "employee_name": self.get_name_for_mailing,
+                        "ticket_subject": self.subject,
+                        "resolution_details": self.resolution_details,
+                        "base_url": frappe.utils.get_url(),
+                        "doc_type": self.doctype,
+                        "doc_name": self.name
+                    })
+                    message = frappe.render_template('one_fm/templates/emails/notify_ticket_raiser_of_resolution.html', context=args)
+                    frappe.enqueue(method=sendemail, queue="short", recipients=self.raised_by, subject=subject, content=message, is_external_mail=True, is_scheduler_email=True)
+                except Exception as e:
+                    frappe.log_error(message=frappe.get_traceback(), title="HD Ticket")
 
     def handle_routing_field_reassignment(self):
         from frappe.desk.form import assign_to
@@ -64,59 +156,14 @@ class HDTicketOverride(HDTicket):
                             else:
                                 assign_to.remove(self.doctype, self.name, old_doc.custom_bug_buster)
 
+    def _can_bypass_assignment_permissions(self):
+        return frappe.session.user == "Administrator" or "System Manager" in frappe.get_roles()
+ 
     def after_insert(self):
         super().after_insert()
         self.send_google_chat_notification()
         if self.status ==  "Open":
             self.notify_ticket_raiser_of_receipt()
-
-    def send_mail_for_completion(self):
-        if self.is_new() and self.status == "Draft":
-            subject = f"HelpDesk Ticket - {self.name}"
-            context = dict(
-                document_name=self.name,
-                document_type=self.doctype,
-                link_to_form=frappe.utils.get_url(f"/helpdesk/edit-ticket/{self.name}"),
-                title=self.subject,
-                header="Complete Ticket Details"
-            )
-            msg = frappe.render_template('one_fm/templates/emails/notify_issue_raiser_to_complete_ticket_details.html', context=context)
-            frappe.enqueue(method=sendemail, queue="short", recipients=self.raised_by, subject=subject, content=msg, is_external_mail=True, is_scheduler_email=True)
-
-    def set_im_mail_ticket_to_draft(self):
-        if frappe.flags.in_receive or not self.via_customer_portal:
-            self.status = "Draft"
-
-    def validate_hd_ticket(self):
-        bug_buster = frappe.get_all("Bug Buster",{'docstatus':1,'from_date':['<=',getdate()],'to_date':['>=',getdate()]},['employee'])
-        if bug_buster:
-            emp_user = frappe.get_value("Employee",bug_buster[0].employee,'user_id')
-            if emp_user:
-                self.custom_bug_buster = emp_user
-
-        if (self.status == "Closed" or self.status == "Resolved") and not self.resolution_details:
-            frappe.throw(_("Please fill in Resolution Details before closing the ticket."))
-
-        if self.status == "Pending Deployment" and not self.resolution_details:
-            frappe.throw(_("Please fill in Resolution Details before updating the status to Pending Deployment."))
-
-    def handle_process_based_on_doctype(self):
-        """Handle process field based on doctype selection"""
-        if self.custom_is_doctype_related == "Yes" and self.custom_reference_doctype:
-            # Get filtered processes for the selected doctype
-            filtered_processes = get_filtered_processes(self.custom_reference_doctype, "Yes")
-            
-            # If doctype changed, check if current process is still valid
-            if not self.is_new():
-                previous_doc = self.get_doc_before_save()
-                if previous_doc and previous_doc.custom_reference_doctype != self.custom_reference_doctype:
-                    # Doctype changed, check if current process is still valid
-                    if self.custom_process and self.custom_process not in filtered_processes:
-                        self.custom_process = None
-            
-            # Auto-set process if only one match
-            if len(filtered_processes) == 1 and not self.custom_process:
-                self.custom_process = filtered_processes[0]
 
     def send_google_chat_notification(self):
         """Hangouts Chat incoming webhook to send the Issues Created, in Card Format."""
@@ -189,36 +236,6 @@ class HDTicketOverride(HDTicket):
         except Exception as e:
              frappe.log_error(message=frappe.get_traceback(), title="Error while sending google notification")
 
-    @property
-    def get_name_for_mailing(self):
-        try:
-            employee_name = frappe.db.get_value("Employee", {"user_id": self.raised_by}, "employee_name")
-            if employee_name:
-                return employee_name
-            return self.raised_by.split("@")[0]
-        except (AttributeError, IndexError):
-            return self.raised_by
-
-    def notify_ticket_raiser_of_resolution_details(self):
-        if self.status == "Resolved":
-            previous_doc = self.get_doc_before_save()
-            if previous_doc and previous_doc.status != "Resolved":
-                try:
-                    subject = f"HD Ticket {self.name} Resolved"
-
-                    args = frappe._dict({
-                        "employee_name": self.get_name_for_mailing,
-                        "ticket_subject": self.subject,
-                        "resolution_details": self.resolution_details,
-                        "base_url": frappe.utils.get_url(),
-                        "doc_type": self.doctype,
-                        "doc_name": self.name
-                    })
-                    message = frappe.render_template('one_fm/templates/emails/notify_ticket_raiser_of_resolution.html', context=args)
-                    frappe.enqueue(method=sendemail, queue="short", recipients=self.raised_by, subject=subject, content=message, is_external_mail=True, is_scheduler_email=True)
-                except Exception as e:
-                    frappe.log_error(message=frappe.get_traceback(), title="HD Ticket")
-
     def notify_ticket_raiser_of_receipt(self):
         try:
             subject = f"HD Ticket {self.name} Raised"
@@ -234,6 +251,19 @@ class HDTicketOverride(HDTicket):
             frappe.enqueue(method=sendemail, queue="short", recipients=self.raised_by, subject=subject, content=message, is_external_mail=True, is_scheduler_email=True)
         except Exception as e:
             frappe.log_error(message=frappe.get_traceback(), title="HD Ticket")
+   
+    @property
+    def get_name_for_mailing(self):
+        try:
+            employee_name = frappe.db.get_value("Employee", {"user_id": self.raised_by}, "employee_name")
+            if employee_name:
+                return employee_name
+            return self.raised_by.split("@")[0]
+        except (AttributeError, IndexError):
+            return self.raised_by
+
+    def on_change(self):
+        self.notify_issue_raiser_about_priority()
 
     def notify_issue_raiser_about_priority(self):
         if self.ticket_type == "Bug":
@@ -255,36 +285,6 @@ class HDTicketOverride(HDTicket):
                     )
                     msg = frappe.render_template('one_fm/templates/emails/notify_ticket_raiser_about_priority.html', context=context)
                     frappe.enqueue(method=sendemail, queue="short", recipients=self.raised_by, subject=title, content=msg, is_external_mail=True, is_scheduler_email=True)
-
-    def apply_ticket_escalation(self):
-        if self.agreement_status != 'Failed':
-            return
-
-        additional_settings = frappe.get_single("HD Additional Settings")
-        escalation_priorities = [record.priority for record in additional_settings.escalation_priorities]
-        escalation_ticket_types = [record.ticket_type for record in additional_settings.escalation_ticket_types]
-
-        if self.priority not in escalation_priorities and self.ticket_type not in escalation_ticket_types:
-            return
-
-        # Fetch bug buster and his reports to details
-        bug_buster = frappe.db.exists("Employee", {'user_id': self.custom_bug_buster})
-        if not bug_buster:
-            return
-
-        bug_buster_reports_to_user_id = get_employee_user_id(frappe.db.get_value('Employee', bug_buster, 'reports_to'))
-
-        # Fetch doc current assignments
-        doc_assignments = [assignment.owner for assignment in get_assignments({'doctype': self.doctype, 'name': self.name})]
-
-        # If reports to is not assigned then add assignment
-        if bug_buster_reports_to_user_id not in doc_assignments:
-            add_assignment({
-                'assign_to': [bug_buster_reports_to_user_id],
-                'doctype': self.doctype,
-                'name': self.name,
-                'description': _('HD Ticket {0} has been assigned to you due to escalation for failed SLA').format(self.name),
-            })
 
     def on_communication_update(self, c):
         # If communication is incoming, then it is a reply from customer, and ticket must
@@ -432,6 +432,7 @@ def get_ticket_details(name: str):
 @frappe.whitelist()
 def update_ticket(name: str, updates: str):
     """
+    Method to update HD Ticket from the ticket edit page. This method will update the ticket with the provided updates and set the status to "Open".
     updates: JSON string with keys subject, description, type, priority, attachments, etc.
     """
 
@@ -465,26 +466,6 @@ def update_ticket(name: str, updates: str):
         "message": "Operation Successful",
         "status_code": 201,
     }
-
-def _fetch_list(doctype):
-    try:
-        data = frappe.db.get_list(doctype, pluck="name")
-        return {
-            "message": f"{doctype} fetched successfully",
-            "status_code": 200,
-            "data": data,
-        }
-    except Exception as e:
-        frappe.log_error(message=frappe.get_traceback(), title=f"Error fetching list for {doctype}")
-        return {
-            "message": f"Failed to fetch {doctype}",
-            "status_code": 500,
-            "error": str(e),
-        }
-
-@frappe.whitelist()
-def get_ticket_type():
-    return _fetch_list("HD Ticket Type")
 
 @frappe.whitelist()
 def get_priority():
