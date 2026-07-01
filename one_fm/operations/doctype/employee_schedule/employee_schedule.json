@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "autoname": "format:{date}_{employee}_{roster_type}",
  "creation": "2020-05-12 15:44:18.133872",
  "doctype": "DocType",
@@ -296,11 +297,11 @@
  ],
  "grid_page_length": 50,
  "links": [],
- "modified": "2026-04-26 10:14:17.807054",
+ "modified": "2026-07-01 21:09:26.221355",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Employee Schedule",
- "naming_rule": "Expression",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -308,10 +309,24 @@
    "delete": 1,
    "email": 1,
    "export": 1,
+   "import": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Projects Manager",
    "share": 1,
    "write": 1
   }
