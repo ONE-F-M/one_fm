@@ -88,6 +88,16 @@
             "doctype": "Workflow Document State"
         },
         {
+            "state": "Draft",
+            "doc_status": "0",
+            "style": "Primary",
+            "is_optional_state": 0,
+            "avoid_status_override": 0,
+            "allow_edit": "T4 Admin",
+            "send_email": 0,
+            "doctype": "Workflow Document State"
+        },
+        {
             "state": "Awaiting Recruiter Approval",
             "doc_status": "0",
             "style": "Warning",
@@ -114,6 +124,16 @@
             "is_optional_state": 0,
             "avoid_status_override": 0,
             "allow_edit": "Operation Admin",
+            "send_email": 0,
+            "doctype": "Workflow Document State"
+        },
+        {
+            "state": "In Process",
+            "doc_status": "0",
+            "style": "Success",
+            "is_optional_state": 0,
+            "avoid_status_override": 0,
+            "allow_edit": "T4 Admin",
             "send_email": 0,
             "doctype": "Workflow Document State"
         },
@@ -212,6 +232,14 @@
             "doctype": "Workflow Transition"
         },
         {
+            "state": "Draft",
+            "action": "Submit to Recruiter",
+            "next_state": "Awaiting Recruiter Approval",
+            "allowed": "T4 Admin",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
             "state": "Awaiting Recruiter Approval",
             "action": "Approve",
             "next_state": "In Process",
@@ -280,6 +308,14 @@
             "action": "Complete",
             "next_state": "Completed",
             "allowed": "Operation Admin",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "In Process",
+            "action": "Complete",
+            "next_state": "Completed",
+            "allowed": "T4 Admin",
             "allow_self_approval": 1,
             "doctype": "Workflow Transition"
         },
@@ -384,6 +420,14 @@
             "action": "Request Edit",
             "next_state": "Draft",
             "allowed": "Operation Admin",
+            "allow_self_approval": 1,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "In Process",
+            "action": "Request Edit",
+            "next_state": "Draft",
+            "allowed": "T4 Admin",
             "allow_self_approval": 1,
             "doctype": "Workflow Transition"
         },
