@@ -252,15 +252,18 @@ frappe.ui.form.on('Contracts', {
 		return Promise.resolve();
 	},
 	validate: function(frm){
-		if(!frm.doc.client || !frm.doc.project || !frm.doc.start_date){
+		// Contract Start/End Date are intentionally NOT required here so a
+		// contract can be saved as a Draft with the dates left empty. They are
+		// enforced (via mandatory_depends_on) only when the contract leaves Draft.
+		if(!frm.doc.client || !frm.doc.project){
 			frappe.msgprint({
 				title: __('Value Missing Error'),
 				indicator: 'red',
-				message: __('You have to fill Client, Project and Contract Start Date Before Saving a Contract.')
+				message: __('You have to fill Client and Project Before Saving a Contract.')
 			});
 			frappe.validated = false;
 		}
-		if(frm.doc.end_date){
+		if(frm.doc.start_date && frm.doc.end_date){
 			if(frm.doc.end_date < frm.doc.start_date){
 				frappe.msgprint({
 					title: __('Validation Error'),

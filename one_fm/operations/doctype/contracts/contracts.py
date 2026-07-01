@@ -21,12 +21,39 @@ from one_fm.utils import get_field_with_label
 
 class Contracts(Document):
     def validate(self):
+        self.validate_dates_out_of_draft()
         self.calculate_contract_duration()
         self.sync_contract_item_operations()
         self.validate_no_of_days_off()
         self.validate_off_type_with_daily_operations()
         self.update_contract_dates()
         self.validate_items_on_active_transition()
+
+    def validate_dates_out_of_draft(self):
+        """Block moving a contract out of Draft while the dates are empty.
+
+        The field-level `mandatory_depends_on` only runs in the browser during a
+        normal save. Workflow transitions apply server-side via `apply_workflow`,
+        which bypasses that client check, so this server-side guard is what
+        actually enforces the requirement (AC3/AC4). A blank state (brand-new
+        doc) and the Draft state keep the dates optional (AC1).
+        """
+        if not self.workflow_state or self.workflow_state == "Draft":
+            return
+
+        missing = []
+        if not self.start_date:
+            missing.append(_("Contract Start Date"))
+        if not self.end_date:
+            missing.append(_("Contract End Date"))
+
+        if missing:
+            frappe.throw(
+                _("Cannot move this contract out of Draft. Please fill the following field(s) first: {0}").format(
+                    ", ".join(missing)
+                ),
+                title=_("Missing Required Fields")
+            )
 
     def validate_items_on_active_transition(self):
         if self.workflow_state == "Active" and not self.items:
@@ -349,6 +376,14 @@ class Contracts(Document):
             frappe.throw(_("Contracts Items and POC must be set before document is submitted"))
 
     def calculate_contract_duration(self):
+        # A Draft may be saved with the dates left empty. Skip the calculation
+        # in that case so we don't derive a misleading duration from
+        # getdate(None) (which resolves to today).
+        if not (self.start_date and self.end_date):
+            self.duration = None
+            self.duration_in_days = None
+            return
+
         start_date = getdate(self.start_date)
         end_date = getdate(self.end_date)
 
