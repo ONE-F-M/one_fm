@@ -1,0 +1,14 @@
+[
+ {
+  "context": null,
+  "contributed": 0,
+  "contribution_docname": null,
+  "contribution_status": null,
+  "docstatus": 0,
+  "doctype": "Translation",
+  "language": "en",
+  "name": "asset-repair-label-en",
+  "source_text": "Asset Repair",
+  "translated_text": "Asset Maintenance Request"
+ }
+]

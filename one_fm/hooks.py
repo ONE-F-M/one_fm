@@ -857,6 +857,12 @@ fixtures = [
 	{
 		"dt": "HD Ticket Template",
 		"filters": [["name", "in",["Default"]]]
+	},
+	{
+		# UI label override: display standard "Asset Repair" DocType as
+		# "Asset Maintenance Request" while keeping the backend name unchanged.
+		"dt": "Translation",
+		"filters": [["source_text", "=", "Asset Repair"]]
 	}
 ]
 
