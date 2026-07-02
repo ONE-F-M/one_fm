@@ -101,6 +101,8 @@ def set_todo_type_from_refernce_doc(doc):
         meta = frappe.get_meta(doc.reference_type)
         if meta.has_field("type"):
             doc.type = frappe.db.get_value(doc.reference_type, doc.reference_name, "type")
+            if doc.type not in ["Action", "Process", "Project"]:
+                doc.type = "Action"
             return
     doc.type = "Action"
 
