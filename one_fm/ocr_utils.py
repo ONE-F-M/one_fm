@@ -82,7 +82,13 @@ def parse_mindee_civil_id_fields(civil_id_fields):
 	
 	# Extract Civil ID Number
 	if hasattr(civil_id_fields, 'civil_id_number') and civil_id_fields.civil_id_number:
-		data['civil_id_no'] = str(civil_id_fields.civil_id_number.value) if civil_id_fields.civil_id_number.value else None
+		# Mindee may return the value as a float (e.g. 290123456789.0), which would
+		# otherwise stringify with a trailing ".0". Strip any non-digit characters so
+		# the Civil ID is captured as an exact digit string.
+		raw_value = civil_id_fields.civil_id_number.value
+		if raw_value not in (None, ""):
+			digits = re.sub(r'[^0-9]', '', str(raw_value))
+			data['civil_id_no'] = digits or None
 	
 	# Extract Expiry Date
 	if hasattr(civil_id_fields, 'expiry_date') and civil_id_fields.expiry_date:
