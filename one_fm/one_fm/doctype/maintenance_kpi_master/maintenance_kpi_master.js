@@ -2,6 +2,11 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on("Maintenance KPI Master", {
+	client: function (frm) {
+		// Client is fetched from the Contract; when it lands (or is cleared),
+		// re-resolve the Active Service Level Agreement.
+		fetch_service_level_agreement(frm);
+	},
 	validate: function (frm) {
 		// Rearrange the penalty tiers on screen before the save round-trips,
 		// then flag any row whose logic the server will reject.
@@ -9,6 +14,31 @@ frappe.ui.form.on("Maintenance KPI Master", {
 		highlight_bad_penalty_tiers(frm);
 	},
 });
+
+function fetch_service_level_agreement(frm) {
+	// No client means nothing to match against — clear the read-only field.
+	if (!frm.doc.client) {
+		frm.set_value("service_level_agreement", null);
+		return;
+	}
+
+	frappe.call({
+		method: "one_fm.one_fm.doctype.maintenance_kpi_master.maintenance_kpi_master.fetch_service_level_agreement",
+		args: { client: frm.doc.client },
+		callback: function (r) {
+			if (!r.message) {
+				return;
+			}
+
+			frm.set_value("service_level_agreement", r.message.sla || null);
+
+			// Ambiguous match: surface the non-blocking warning to the user.
+			if (r.message.message) {
+				frappe.show_alert({ message: r.message.message, indicator: "orange" }, 7);
+			}
+		},
+	});
+}
 
 function sort_penalty_tiers(frm) {
 	const rows = frm.doc.penalty_information || [];

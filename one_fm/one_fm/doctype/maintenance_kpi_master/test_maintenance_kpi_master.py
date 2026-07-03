@@ -7,6 +7,10 @@ import frappe
 from frappe import ValidationError
 from frappe.tests.utils import FrappeTestCase
 
+from one_fm.one_fm.doctype.maintenance_kpi_master.maintenance_kpi_master import (
+	get_active_service_level_agreement,
+)
+
 
 class TestMaintenanceKPIMaster(FrappeTestCase):
 	def make_master(self, **overrides):
@@ -194,3 +198,101 @@ class TestMaintenanceKPIMaster(FrappeTestCase):
 		with patch("frappe.get_all", return_value=[]):
 			# Should not raise.
 			doc.validate_no_overlapping_master()
+
+	# --- SLA fetching & fallback ----------------------------------------------
+
+	def _sla_get_all(self, client_slas=None, default_slas=None):
+		"""Build a frappe.get_all side effect that answers the resolver's two
+		queries (client-specific SLAs, then Default SLAs) by inspecting filters.
+		"""
+		client_slas = client_slas or []
+		default_slas = default_slas or []
+
+		def side_effect(doctype, filters=None, fields=None, **kwargs):
+			filters = filters or {}
+			if filters.get("default_service_level_agreement"):
+				return default_slas
+			return client_slas
+
+		return side_effect
+
+	def test_no_client_returns_nothing(self):
+		result = get_active_service_level_agreement(None)
+		self.assertEqual(result, {"sla": None, "message": None})
+
+	def test_single_client_sla_is_selected(self):
+		side = self._sla_get_all(
+			client_slas=[frappe._dict(name="SLA-ISSUE-Gold", start_date=None, end_date=None)],
+		)
+
+		with patch("frappe.get_all", side_effect=side):
+			result = get_active_service_level_agreement("_Test Client")
+
+		self.assertEqual(result["sla"], "SLA-ISSUE-Gold")
+		self.assertIsNone(result["message"])
+
+	def test_out_of_date_range_client_sla_falls_back_to_default(self):
+		# Client SLA expired before today (2026-07-03); default takes over.
+		side = self._sla_get_all(
+			client_slas=[
+				frappe._dict(name="SLA-Old", start_date="2020-01-01", end_date="2020-12-31")
+			],
+			default_slas=[frappe._dict(name="SLA-Default", start_date=None, end_date=None)],
+		)
+
+		with patch("frappe.get_all", side_effect=side):
+			result = get_active_service_level_agreement("_Test Client")
+
+		self.assertEqual(result["sla"], "SLA-Default")
+		self.assertIsNone(result["message"])
+
+	def test_multiple_client_slas_leave_blank_and_warn(self):
+		side = self._sla_get_all(
+			client_slas=[
+				frappe._dict(name="SLA-A", start_date=None, end_date=None),
+				frappe._dict(name="SLA-B", start_date=None, end_date=None),
+			],
+			default_slas=[frappe._dict(name="SLA-Default", start_date=None, end_date=None)],
+		)
+
+		with patch("frappe.get_all", side_effect=side):
+			result = get_active_service_level_agreement("_Test Client")
+
+		# Ambiguous match must NOT silently fall back — leave blank and warn.
+		self.assertIsNone(result["sla"])
+		self.assertIn("Multiple active Service Level Agreements", result["message"])
+
+	def test_falls_back_to_default_when_no_client_sla(self):
+		side = self._sla_get_all(
+			client_slas=[],
+			default_slas=[frappe._dict(name="SLA-Default", start_date=None, end_date=None)],
+		)
+
+		with patch("frappe.get_all", side_effect=side):
+			result = get_active_service_level_agreement("_Test Client")
+
+		self.assertEqual(result["sla"], "SLA-Default")
+		self.assertIsNone(result["message"])
+
+	def test_no_match_and_no_default_leaves_blank(self):
+		side = self._sla_get_all(client_slas=[], default_slas=[])
+
+		with patch("frappe.get_all", side_effect=side):
+			result = get_active_service_level_agreement("_Test Client")
+
+		self.assertEqual(result, {"sla": None, "message": None})
+
+	def test_multiple_defaults_leave_blank_and_warn(self):
+		side = self._sla_get_all(
+			client_slas=[],
+			default_slas=[
+				frappe._dict(name="SLA-Default-1", start_date=None, end_date=None),
+				frappe._dict(name="SLA-Default-2", start_date=None, end_date=None),
+			],
+		)
+
+		with patch("frappe.get_all", side_effect=side):
+			result = get_active_service_level_agreement("_Test Client")
+
+		self.assertIsNone(result["sla"])
+		self.assertIn("Multiple active Default Service Level Agreements", result["message"])

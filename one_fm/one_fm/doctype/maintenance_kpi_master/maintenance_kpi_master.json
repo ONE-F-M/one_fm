@@ -8,7 +8,6 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "naming_series",
   "basic_information_section",
   "contract",
   "service_level_agreement",
@@ -23,7 +22,8 @@
   "kpi_information",
   "section_break_kloc",
   "penalty_information",
-  "amended_from"
+  "amended_from",
+  "naming_series"
  ],
  "fields": [
   {
@@ -31,7 +31,7 @@
    "fieldtype": "Select",
    "hidden": 1,
    "label": "Naming Series",
-   "options": "KPI-{client}-.YYYY.-.#####"
+   "options": "KPI-.{client}.-.YYYY.-.#####"
   },
   {
    "fieldname": "basic_information_section",
@@ -134,7 +134,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-03 00:00:00.000000",
+ "modified": "2026-07-04 00:34:22.797125",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Maintenance KPI Master",
@@ -169,6 +169,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
