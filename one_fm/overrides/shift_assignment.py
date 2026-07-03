@@ -1,5 +1,6 @@
 import frappe
-from frappe.utils import add_days, now, today, now_datetime
+from frappe import _
+from frappe.utils import add_days, now, today, now_datetime, get_link_to_form
 from datetime import datetime, timedelta
 from hrms.hr.doctype.shift_assignment.shift_assignment import *
 from one_fm.api.v1.utils import response
@@ -10,6 +11,30 @@ class ShiftAssignmentOverride(ShiftAssignment):
     def validate(self):
         self.set_datetime()
         super(ShiftAssignmentOverride, self).validate()
+
+    def validate_employee_checkin(self):
+        """Block cancellation only when a checkin is actually linked to THIS
+        Shift Assignment.
+
+        The core HRMS check filters checkins by a calendar-date window on the
+        `time` field (start_date .. end_date). For night shifts (e.g.
+        18:00-06:00) the previous day's OUT punch lands in the early morning of
+        this assignment's start date and shares the same shift type, so the
+        core check falsely reports it as linked and blocks the cancel. Matching
+        on the `shift_assignment` link instead is exact and avoids the
+        cross-day false positive.
+        """
+        checkins = frappe.get_all(
+            "Employee Checkin",
+            filters={"employee": self.employee, "shift_assignment": self.name},
+            pluck="name",
+        )
+        if checkins:
+            frappe.throw(
+                _("Cannot cancel Shift Assignment: {0} as it is linked to Employee Checkin: {1}").format(
+                    self.name, get_link_to_form("Employee Checkin", checkins[0])
+                )
+            )
 
     def validate_overlapping_shifts(self):
         overlapping_dates = self.get_overlapping_dates()
