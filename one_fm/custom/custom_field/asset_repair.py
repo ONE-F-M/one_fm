@@ -2,6 +2,20 @@ def get_asset_repair_custom_fields():
 	return {
 		"Asset Repair": [
 			{
+				"fieldname": "custom_requestor_name",
+				"fieldtype": "Link",
+				"label": "Requestor Name",
+				"insert_after": "naming_series",
+				"options": "Employee"
+			},
+			{
+				"fieldname": "custom_requestor_date",
+				"fieldtype": "Date",
+				"label": "Request Date",
+				"insert_after": "custom_requestor_name",
+				"default": "Today"
+			},
+			{
 				"fieldname": "custom_serial_no",
 				"fieldtype": "Data",
 				"label": "Serial No",

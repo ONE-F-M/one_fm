@@ -298,7 +298,8 @@ doc_events = {
 	},
 	"Vehicle": {
 		"autoname": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.vehicle_autoname",
-		"after_insert": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.after_insert_vehicle"
+		"after_insert": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.after_insert_vehicle",
+		"validate": "one_fm.overrides.vehicle.validate_vehicle_branding"
 	},
 	"Item Group": {
 		"autoname": "one_fm.utils.item_group_naming_series",
@@ -603,6 +604,7 @@ scheduler_events = {
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
 		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today',
 		'one_fm.tasks.execute.daily',
+		'one_fm.one_fm.doctype.maintenance_schedule_entry.maintenance_schedule_entry.generate_due_work_orders',
 		"one_fm.one_fm.utils.attach_abbreviation_to_roles",
   		"one_fm.api.v2.zenquotes.set_cached_quote",
 		"one_fm.operations.doctype.contracts.contracts.send_contract_reminders",
@@ -616,7 +618,8 @@ scheduler_events = {
         'one_fm.utils.update_active_employees_assurance_level',
         'one_fm.operations.doctype.process_task.process_task.create_task_on_monthly_on_day',
         'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_day_process_task',
-        'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_last_day_process_task'
+        'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_last_day_process_task',
+		'one_fm.fleet_management.vehicle_branding_expiry.notify_vehicle_branding_expiry'
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -854,6 +857,12 @@ fixtures = [
 	{
 		"dt": "HD Ticket Template",
 		"filters": [["name", "in",["Default"]]]
+	},
+	{
+		# UI label override: display standard "Asset Repair" DocType as
+		# "Asset Maintenance Request" while keeping the backend name unchanged.
+		"dt": "Translation",
+		"filters": [["source_text", "=", "Asset Repair"]]
 	}
 ]
 

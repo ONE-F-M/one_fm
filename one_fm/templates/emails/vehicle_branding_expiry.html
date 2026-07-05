@@ -1,0 +1,80 @@
+<style>
+    table {
+      font-family: Arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    th, .branding_expiry td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+
+    th {
+      background-color: #f2f2f2;
+      color: #333;
+      width: 30%;
+      text-align: left;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    tr:hover {
+      background-color: #ddd;
+    }
+</style>
+
+<h3>Vehicle Branding Expiration Warning: {{ license_plate }}</h3>
+
+<p>Dear Team,</p>
+
+<p>
+  Please be advised that the corporate branding registration for vehicle
+  <b>{{ license_plate }}</b> is scheduled to expire in one month (30 days).
+</p>
+
+<p>
+  The branding registration expiration date for this vehicle is
+  <b>{{ expiration_date }}</b>.
+</p>
+
+<p>
+  Please coordinate the renewal application process immediately to ensure the
+  vehicle remains compliant with local regulatory and corporate branding
+  guidelines.
+</p>
+
+<h4>Vehicle Branding Details:</h4>
+
+<table>
+  <tbody class="branding_expiry">
+    <tr>
+      <th>License Plate</th>
+      <td>{{ license_plate }}</td>
+    </tr>
+    <tr>
+      <th>Make / Model</th>
+      <td>{{ make }} {{ model }}</td>
+    </tr>
+    <tr>
+      <th>Application Date</th>
+      <td>{{ application_date or "—" }}</td>
+    </tr>
+    <tr>
+      <th>Issue Date</th>
+      <td>{{ issue_date or "—" }}</td>
+    </tr>
+    <tr>
+      <th>Expiration Date</th>
+      <td>{{ expiration_date }}</td>
+    </tr>
+    <tr>
+      <th>Vehicle Record</th>
+      <td><a href="{{ vehicle_link }}">{{ vehicle_name }}</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Please review the record and update the new branding details once processed.</p>
