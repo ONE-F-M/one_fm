@@ -9,6 +9,9 @@ frappe.ui.form.on("Maintenance Work Order", {
 		// Enforce read-only on location fields (server-side enforcement is primary)
 		set_location_fields_read_only(frm);
 
+		// Freeze the auto-calculated Planned Deadline (strictly read-only)
+		set_planned_deadline_read_only(frm);
+
 		// Expose the technician's first check-in action
 		add_check_in_button(frm);
 	},
@@ -119,6 +122,18 @@ function add_check_in_button(frm) {
 			},
 		});
 	});
+}
+
+function set_planned_deadline_read_only(frm) {
+	/**
+	 * Planned Deadline: the system-calculated completion target.
+	 *
+	 * The value is computed server-side (SLA Trigger Time + Target Resolution
+	 * Minutes, projected across working shifts/holidays) and must never be
+	 * edited by hand. read_only is also set in JSON; this reinforces the lock
+	 * so the field stays greyed out and the calendar picker is blocked.
+	 */
+	frm.set_df_property("planned_deadline", "read_only", 1);
 }
 
 function set_location_fields_read_only(frm) {

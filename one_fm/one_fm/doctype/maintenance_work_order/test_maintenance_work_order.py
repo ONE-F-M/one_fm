@@ -126,6 +126,73 @@ def make_sla(
 	return sla
 
 
+def make_holiday_list_with_items(name, items):
+	"""Create (once) a Maintenance Holiday List carrying explicit holiday rows.
+
+	``items`` is an iterable of ``(holiday_date, weekly_off, public_holiday)``.
+	The Maintenance Holiday Item ``description`` is mandatory, so a placeholder
+	is supplied for each row.
+	"""
+	if frappe.db.exists("Maintenance Holiday List", name):
+		return name
+	doc = frappe.get_doc({
+		"doctype": "Maintenance Holiday List",
+		"holiday_list_name": name,
+		"from_date": "2026-01-01",
+		"to_date": "2026-12-31",
+		"holidays": [
+			{
+				"holiday_date": holiday_date,
+				"weekly_off": weekly_off,
+				"public_holiday": public_holiday,
+				"description": "Test calendar entry",
+			}
+			for (holiday_date, weekly_off, public_holiday) in items
+		],
+	})
+	doc.insert(ignore_permissions=True)
+	return doc.name
+
+
+def make_sla_with_calendar(
+	priority,
+	working_hours,
+	holiday_list,
+	resolution_minutes=TARGET_RESOLUTION_MINUTES,
+	shift_type="Working Hours",
+):
+	"""Create and submit a default SLA with an explicit working-hours calendar.
+
+	``working_hours`` is an iterable of ``(workday, start_time, end_time)`` used
+	to build the Service Day rows that drive the Planned Deadline projection.
+	"""
+	sla = frappe.get_doc({
+		"doctype": "Maintenance Service Level Agreement",
+		"service_level": f"TEST-SLA-{frappe.generate_hash(length=6)}",
+		"document_type": "Maintenance Work Order",
+		"enabled": 1,
+		"default_service_level_agreement": 1,
+		"holiday_list": holiday_list,
+		"priorities": [{
+			"priority": priority,
+			"default_priority": 1,
+			"sla_shift_type": shift_type,
+			"maintenance_hours_from": "00:00:00",
+			"maintenance_hours_to": "23:59:59",
+			"response_time": TARGET_RESPONSE_MINUTES * 60,
+			"resolution_time": resolution_minutes * 60,
+		}],
+		"sla_fulfilled_on": [{"status": "Completed"}],
+		"support_and_resolution": [
+			{"workday": day, "start_time": start, "end_time": end}
+			for (day, start, end) in working_hours
+		],
+	})
+	sla.insert(ignore_permissions=True)
+	sla.submit()
+	return sla
+
+
 def make_work_order(
 	object_name,
 	schedule_name=None,
@@ -473,3 +540,127 @@ class TestPreventiveSlaAnalytics(FrappeTestCase):
 		# ~100 minutes elapsed minus 10 paused = ~90.
 		self.assertAlmostEqual(wo.net_resolution_minutes, 90, delta=1)
 		self.assertEqual(wo.sla_resolution_status, "Pass")  # 90 <= 120 target
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Planned Deadline — automated working-calendar aware completion target
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Every day of the example week (Mon–Fri + Sun) works an 08:00–17:00 shift;
+# Saturday is deliberately omitted so the team is off that day.
+_DAY_SHIFT_NO_SATURDAY = [
+	(day, "08:00:00", "17:00:00")
+	for day in ("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
+]
+
+_DAY_SHIFT_ALL_WEEK = [
+	(day, "08:00:00", "17:00:00")
+	for day in _ALL_WEEKDAYS
+]
+
+
+class TestPlannedDeadline(FrappeTestCase):
+	def _make_wo(self, sla, trigger, priority):
+		"""Build a Preventive Work Order whose SLA Trigger Time equals ``trigger``.
+
+		The trigger is fed through the schedule slot's planned execution datetime,
+		which set_preventive_sla freezes onto the Work Order.
+		"""
+		obj = make_object(last_service_date="2026-06-01")
+		entry = make_schedule_entry(
+			obj.name, make_frequency(30).name, planned_execution_datetime=trigger
+		)
+		return make_work_order(
+			obj.name, schedule_name=entry.name, priority=priority, sla_master=sla.name
+		)
+
+	def test_field_is_read_only(self):
+		"""AC3: the Planned Deadline field is strictly read-only."""
+		meta = frappe.get_meta("Maintenance Work Order")
+		field = meta.get_field("planned_deadline")
+		self.assertIsNotNone(field)
+		self.assertEqual(field.read_only, 1)
+
+	def test_simple_addition_within_working_window(self):
+		"""AC1: trigger 2026-06-30 10:00 + 120 min → 2026-06-30 12:00.
+
+		Uses a 24/7 SLA (all weekdays 00:00–23:59:59, no holidays) so the whole
+		resolution window fits inside a single working day.
+		"""
+		priority = make_issue_priority()
+		# Default make_sla builds all-weekday 00:00–23:59:59 windows.
+		sla = make_sla(priority, resolution_minutes=120)
+		wo = self._make_wo(sla, "2026-06-30 10:00:00", priority)
+
+		self.assertEqual(
+			get_datetime(wo.planned_deadline), get_datetime("2026-06-30 12:00:00")
+		)
+
+	def test_skips_weekend_and_non_working_hours(self):
+		"""AC2 (worked example): trigger Fri 2026-07-03 16:00, 180 min, shift
+		08:00–17:00, Saturday off → deadline Sun 2026-07-05 10:00.
+
+		1 hour is consumed Friday (16:00→17:00), Saturday is skipped entirely,
+		and the remaining 2 hours resume Sunday from 08:00.
+		"""
+		priority = make_issue_priority()
+		holidays = make_holiday_list_with_items("TEST-WO-CAL-SAT-OFF", [])
+		sla = make_sla_with_calendar(
+			priority, _DAY_SHIFT_NO_SATURDAY, holidays, resolution_minutes=180
+		)
+		wo = self._make_wo(sla, "2026-07-03 16:00:00", priority)
+
+		self.assertEqual(
+			get_datetime(wo.planned_deadline), get_datetime("2026-07-05 10:00:00")
+		)
+
+	def test_skips_public_holiday(self):
+		"""AC2: a public holiday between the trigger and the deadline is skipped.
+
+		Trigger Thu 2026-07-02 16:00, 180 min, shift 08:00–17:00 every day, with
+		Fri 2026-07-03 flagged as a public holiday. 1 hour is spent Thursday, the
+		Friday holiday is skipped, and the remaining 2 hours resume Sat 08:00 →
+		deadline Sat 2026-07-04 10:00.
+		"""
+		priority = make_issue_priority()
+		holidays = make_holiday_list_with_items(
+			"TEST-WO-CAL-PUBLIC-HOL", [("2026-07-03", 0, 1)]
+		)
+		sla = make_sla_with_calendar(
+			priority, _DAY_SHIFT_ALL_WEEK, holidays, resolution_minutes=180
+		)
+		wo = self._make_wo(sla, "2026-07-02 16:00:00", priority)
+
+		self.assertEqual(
+			get_datetime(wo.planned_deadline), get_datetime("2026-07-04 10:00:00")
+		)
+
+	def test_trigger_before_shift_start_rolls_to_opening(self):
+		"""A trigger before the working window opens counts from the shift start.
+
+		Trigger 2026-07-06 06:00 (Monday, before 08:00), 120 min, shift
+		08:00–17:00 → counting starts at 08:00 → deadline 2026-07-06 10:00.
+		"""
+		priority = make_issue_priority()
+		holidays = make_holiday_list_with_items("TEST-WO-CAL-PRE-SHIFT", [])
+		sla = make_sla_with_calendar(
+			priority, _DAY_SHIFT_ALL_WEEK, holidays, resolution_minutes=120
+		)
+		wo = self._make_wo(sla, "2026-07-06 06:00:00", priority)
+
+		self.assertEqual(
+			get_datetime(wo.planned_deadline), get_datetime("2026-07-06 10:00:00")
+		)
+
+	def test_deadline_recomputed_on_resave(self):
+		"""Recompute each save: the deadline stays consistent after re-saving."""
+		priority = make_issue_priority()
+		sla = make_sla(priority, resolution_minutes=120)
+		wo = self._make_wo(sla, "2026-06-30 10:00:00", priority)
+
+		first = get_datetime(wo.planned_deadline)
+		wo.save()
+		wo.reload()
+
+		self.assertEqual(get_datetime(wo.planned_deadline), first)
+		self.assertEqual(first, get_datetime("2026-06-30 12:00:00"))

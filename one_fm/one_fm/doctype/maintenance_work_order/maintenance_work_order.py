@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import add_days, cint, flt, get_datetime, getdate, now_datetime
+from frappe.utils import add_days, add_to_date, cint, flt, get_datetime, getdate, now_datetime
 
 # Work Order status that pauses the SLA resolution clock (parts awaited).
 ON_HOLD_STATUS = "On Hold - Parts Required"
@@ -30,6 +30,7 @@ class MaintenanceWorkOrder(Document):
 		self.track_pause_windows()
 		self.refresh_sla_statuses()
 		self.evaluate_sla_response()
+		self.set_planned_deadline()
 
 	def validate(self):
 		"""Story 7: Cross-reference priority against the linked SLA contract."""
@@ -629,6 +630,139 @@ class MaintenanceWorkOrder(Document):
 		"""Bank any hold window still open at completion so paused time is complete."""
 		if self.status == ON_HOLD_STATUS and self.hold_started_on:
 			self._bank_open_hold(self.completion_time or now_datetime())
+
+	# ─────────────────────────────────────────────────────────────
+	# Planned Deadline — working-calendar aware completion target
+	# ─────────────────────────────────────────────────────────────
+
+	def set_planned_deadline(self):
+		"""Auto-calculate the Planned Deadline for every Work Order.
+
+		Base case: Planned Deadline = SLA Trigger Time + Target Resolution Minutes.
+
+		When the linked SLA contract defines working shifts and/or a holiday
+		calendar, the resolution minutes are consumed only during active working
+		windows: non-working hours, weekly offs and public holidays are skipped
+		and the remaining minutes roll forward into the next working window.
+
+		Recomputed on every save from the (frozen) SLA Trigger Time and the
+		current Target Resolution Minutes, so the deadline always reflects the
+		latest contract terms. Pause windows do not extend it — it is a fixed
+		target, not a live countdown.
+		"""
+		if not self.sla_trigger_time or not flt(self.target_resolution_minutes):
+			self.planned_deadline = None
+			return
+
+		remaining = flt(self.target_resolution_minutes)
+		trigger_dt = get_datetime(self.sla_trigger_time)
+
+		# Resolve the working-hours calendar from the linked SLA contract.
+		sla = None
+		if self.sla_master:
+			sla = frappe.get_cached_doc("Maintenance Service Level Agreement", self.sla_master)
+
+		# No contract or no working shifts defined → plain calendar addition.
+		if not sla or not sla.support_and_resolution:
+			self.planned_deadline = add_to_date(trigger_dt, minutes=remaining)
+			return
+
+		self.planned_deadline = self._project_working_deadline(sla, trigger_dt, remaining)
+
+	def _project_working_deadline(self, sla, trigger_dt, remaining_minutes):
+		"""Roll the resolution minutes forward across the SLA working calendar.
+
+		Walks day by day from the SLA Trigger Time, consuming the resolution
+		budget only inside each day's working window and skipping any day that is
+		a public holiday, a weekly off, or has no configured working shift. Returns
+		the datetime at which the budget is exhausted (the Planned Deadline).
+		"""
+		from datetime import datetime as dt_datetime
+		from datetime import time as dt_time, timedelta
+
+		def _to_time(val):
+			"""Convert a Time field value (timedelta, datetime.time, or string) to datetime.time."""
+			if val is None or val == "":
+				return None
+			if isinstance(val, dt_time):
+				return val
+			if isinstance(val, timedelta):
+				return (dt_datetime.min + val).time()
+			return get_datetime(val).time()
+
+		# Build weekday → (start, end) map. Skip malformed / zero-length windows.
+		working_days = {}
+		for day in sla.support_and_resolution:
+			start_t = _to_time(day.start_time)
+			end_t = _to_time(day.end_time)
+			if start_t is None or end_t is None or end_t <= start_t:
+				continue
+			working_days[day.workday] = (start_t, end_t)
+
+		# No usable working window → fall back to plain calendar addition.
+		if not working_days:
+			return add_to_date(trigger_dt, minutes=remaining_minutes)
+
+		# Preload the holiday calendar: any listed date (weekly off or public
+		# holiday) is treated as a full non-working day.
+		holidays = set()
+		if sla.holiday_list:
+			for holiday_date in frappe.get_all(
+				"Maintenance Holiday Item",
+				filters={"parent": sla.holiday_list},
+				pluck="holiday_date",
+			):
+				holidays.add(getdate(holiday_date))
+
+		cursor = trigger_dt
+		remaining = flt(remaining_minutes)
+
+		# Safety valve: cap the walk so a misconfigured calendar (e.g. an
+		# enormous target with very few working days) can never loop forever.
+		for _ in range(1000):
+			if remaining <= 0:
+				break
+
+			day_date = cursor.date()
+			weekday_name = cursor.strftime("%A")
+
+			# Skip full non-working days (holidays, weekly offs, no shift).
+			if day_date in holidays or weekday_name not in working_days:
+				cursor = dt_datetime.combine(day_date + timedelta(days=1), dt_time(0, 0))
+				continue
+
+			start_t, end_t = working_days[weekday_name]
+			window_start = dt_datetime.combine(day_date, start_t)
+			window_end = dt_datetime.combine(day_date, end_t)
+
+			# Advance a pre-shift cursor to the window opening.
+			if cursor < window_start:
+				cursor = window_start
+
+			# Past today's window → jump to the start of the next day.
+			if cursor >= window_end:
+				cursor = dt_datetime.combine(day_date + timedelta(days=1), dt_time(0, 0))
+				continue
+
+			available = (window_end - cursor).total_seconds() / 60.0
+			if remaining <= available:
+				return cursor + timedelta(minutes=remaining)
+
+			# Consume the rest of today's window and continue tomorrow.
+			remaining -= available
+			cursor = dt_datetime.combine(day_date + timedelta(days=1), dt_time(0, 0))
+
+		# The loop only exits early if the budget could not be placed within the
+		# cap — log for investigation and return the best-effort cursor.
+		if remaining > 0:
+			frappe.log_error(
+				title=_("Planned Deadline Projection Exceeded Calendar Window"),
+				message=_(
+					"Could not place {0} resolution minutes within the SLA working "
+					"calendar for Work Order {1}."
+				).format(flt(self.target_resolution_minutes), self.name or _("(unsaved)")),
+			)
+		return cursor
 
 
 @frappe.whitelist(methods=["POST"])
