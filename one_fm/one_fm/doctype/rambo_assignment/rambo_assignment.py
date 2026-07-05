@@ -4,112 +4,12 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import add_days, get_url_to_form
+from frappe.utils import get_url_to_form
 
 
 class RamboAssignment(Document):
 	def after_insert(self):
 		self.send_shift_supervisor_notification()
-
-	def on_submit(self):
-		self.create_employee_schedule()
-
-	def on_cancel(self):
-		self.delete_employee_schedule()
-
-	def create_employee_schedule(self):
-		"""Create or update an Employee Schedule record for this Rambo Assignment."""
-		if not self.employee:
-			frappe.throw(_("Reliever Employee is required to create an Employee Schedule."))
-		if not self.date:
-			frappe.throw(_("Date is required to create an Employee Schedule."))
-		if not self.operations_shift:
-			frappe.throw(_("Operations Shift is required to create an Employee Schedule."))
-
-		# Get shift type from Operations Shift, then get start/end times from Shift Type
-		shift_type = frappe.db.get_value("Operations Shift", self.operations_shift, "shift_type")
-		if not shift_type:
-			frappe.throw(_("Shift Type is not configured for Operations Shift {0}.").format(self.operations_shift))
-
-		start_time, end_time = frappe.db.get_value(
-			"Shift Type", shift_type, ["start_time", "end_time"]
-		)
-
-		# Calculate end_date — if shift crosses midnight, end date is next day
-		end_date = self.date
-		if start_time > end_time:
-			end_date = add_days(self.date, 1)
-
-		start_datetime = "{0} {1}".format(self.date, start_time)
-		end_datetime = "{0} {1}".format(end_date, end_time)
-
-		# Check if an Employee Schedule already exists for the same employee + date + roster_type
-		existing_schedule = frappe.db.get_value(
-			"Employee Schedule",
-			{"employee": self.employee, "date": self.date, "roster_type": self.roster_type},
-			"name"
-		)
-
-		if existing_schedule:
-			# Update the existing record
-			frappe.db.set_value("Employee Schedule", existing_schedule, {
-				"employee_availability": "Working",
-				"shift": self.operations_shift,
-				"shift_type": shift_type,
-				"operations_role": self.operations_role,
-				"site": self.operations_site,
-				"project": self.project,
-				"start_datetime": start_datetime,
-				"end_datetime": end_datetime,
-				"is_rambo_schedule": 1,
-				"rambo_assignment": self.name,
-			})
-			frappe.msgprint(
-				_("Employee Schedule {0} has been updated for {1}.").format(existing_schedule, self.employee_name),
-				indicator="blue",
-				alert=True
-			)
-		else:
-			# Create a new Employee Schedule record
-			schedule = frappe.get_doc({
-				"doctype": "Employee Schedule",
-				"employee": self.employee,
-				"date": self.date,
-				"employee_availability": "Working",
-				"shift": self.operations_shift,
-				"shift_type": shift_type,
-				"operations_role": self.operations_role,
-				"site": self.operations_site,
-				"project": self.project,
-				"roster_type": self.roster_type,
-				"start_datetime": start_datetime,
-				"end_datetime": end_datetime,
-				"is_rambo_schedule": 1,
-				"rambo_assignment": self.name,
-			})
-			schedule.flags.ignore_permissions = True
-			schedule.insert()
-			frappe.msgprint(
-				_("Employee Schedule {0} has been created for {1}.").format(schedule.name, self.employee_name),
-				indicator="green",
-				alert=True
-			)
-
-	def delete_employee_schedule(self):
-		"""Delete the Employee Schedule record linked to this Rambo Assignment."""
-		schedule_name = frappe.db.get_value(
-			"Employee Schedule",
-			{"rambo_assignment": self.name},
-			"name"
-		)
-		if schedule_name:
-			frappe.delete_doc("Employee Schedule", schedule_name, ignore_permissions=True)
-			frappe.msgprint(
-				_("Employee Schedule {0} has been deleted.").format(schedule_name),
-				indicator="orange",
-				alert=True
-			)
-
 
 	def send_shift_supervisor_notification(self):
 		"""Send email notification to the Shift Supervisor when a Rambo Assignment is created."""
