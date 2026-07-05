@@ -664,3 +664,106 @@ class TestPlannedDeadline(FrappeTestCase):
 
 		self.assertEqual(get_datetime(wo.planned_deadline), first)
 		self.assertEqual(first, get_datetime("2026-06-30 12:00:00"))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Contractual Compliance & Service Clock — creation stamp, zero-lock, live
+# counters, and hold-driven pause tracking.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestServiceClockOperations(FrappeTestCase):
+	def _make_wo(self, planned):
+		priority = make_issue_priority()
+		sla = make_sla(priority)
+		obj = make_object(last_service_date="2026-06-01")
+		entry = make_schedule_entry(
+			obj.name, make_frequency(30).name, planned_execution_datetime=planned
+		)
+		return make_work_order(
+			obj.name, schedule_name=entry.name, priority=priority, sla_master=sla.name
+		)
+
+	def test_creation_datetime_stamped_on_insert(self):
+		"""AC1: saving the record populates Creation Datetime with the system time."""
+		obj = make_object(last_service_date="2026-06-01")
+		before = now_datetime()
+		wo = make_work_order(obj.name, status="Open")
+		after = now_datetime()
+
+		self.assertTrue(wo.creation_datetime)
+		stamped = get_datetime(wo.creation_datetime)
+		self.assertGreaterEqual(stamped, get_datetime(before).replace(microsecond=0))
+		self.assertLessEqual(stamped, after)
+
+	def test_creation_datetime_not_overwritten_on_resave(self):
+		"""AC1: Creation Datetime is a stable stamp — it is set once, not per save."""
+		obj = make_object(last_service_date="2026-06-01")
+		wo = make_work_order(obj.name, status="Open")
+
+		original = get_datetime(wo.creation_datetime)
+		wo.save()
+		wo.reload()
+
+		self.assertEqual(get_datetime(wo.creation_datetime), original)
+
+	def test_counters_locked_at_zero_before_trigger(self):
+		"""AC2: with a future trigger, both live counters are locked at exactly 0."""
+		trigger = "2026-08-01 08:00:00"
+		wo = self._make_wo(trigger)
+
+		wo.refresh_sla_statuses(as_of=add_to_date(get_datetime(trigger), minutes=-5))
+
+		self.assertEqual(wo.sla_response_status, "Pre-Start")
+		self.assertEqual(wo.sla_resolution_status, "Pre-Start")
+		self.assertEqual(wo.actual_response_minutes, 0)
+		self.assertEqual(wo.net_resolution_minutes, 0)
+
+	def test_actual_response_minutes_runs_live_when_counting(self):
+		"""AC3: once the trigger is reached the running duration is written live
+		into Actual Response Minutes (and the resolution counter)."""
+		trigger = "2026-08-01 08:00:00"
+		wo = self._make_wo(trigger)
+
+		wo.refresh_sla_statuses(as_of=add_to_date(get_datetime(trigger), minutes=15))
+
+		self.assertEqual(wo.sla_response_status, "Active Counting")
+		self.assertAlmostEqual(wo.actual_response_minutes, 15, delta=0.1)
+		self.assertAlmostEqual(wo.net_resolution_minutes, 15, delta=0.1)
+
+	def test_hold_freezes_live_counters(self):
+		"""AC4: an open hold window subtracts from the live counters, so the
+		response/resolution clocks freeze for the duration of the hold."""
+		trigger = "2026-08-01 08:00:00"
+		wo = self._make_wo(trigger)
+
+		# 45 minutes after the trigger, of which the last 30 were spent On Hold.
+		wo.status = "On Hold - Parts Required"
+		wo.hold_started_on = add_to_date(get_datetime(trigger), minutes=15)
+		wo.refresh_sla_statuses(as_of=add_to_date(get_datetime(trigger), minutes=45))
+
+		# 45 elapsed − 30 paused = 15 net on both clocks.
+		self.assertAlmostEqual(wo.actual_response_minutes, 15, delta=0.1)
+		self.assertAlmostEqual(wo.net_resolution_minutes, 15, delta=0.1)
+
+	def test_paused_minutes_accrue_live_during_open_hold(self):
+		"""AC4: while the Work Order stays On Hold, each save rolls the elapsed
+		window into Total Paused Minutes and keeps the pause clock running."""
+		obj = make_object(last_service_date="2026-06-01")
+		wo = make_work_order(obj.name, status="Open")
+
+		wo.status = "On Hold - Parts Required"
+		wo.save()
+		# Backdate the open hold by 12 minutes to simulate elapsed pause time.
+		frappe.db.set_value(
+			"Maintenance Work Order", wo.name, "hold_started_on",
+			add_to_date(now_datetime(), minutes=-12), update_modified=False,
+		)
+		wo.reload()
+
+		# Re-save while STILL On Hold — the live roll-up banks the elapsed window.
+		wo.save()
+
+		self.assertAlmostEqual(wo.total_paused_minutes, 12, delta=1)
+		# The clock stays open so subsequent windows keep accruing.
+		self.assertTrue(wo.hold_started_on)
