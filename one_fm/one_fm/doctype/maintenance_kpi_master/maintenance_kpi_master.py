@@ -1,6 +1,8 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
 
+import re
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
@@ -9,13 +11,50 @@ from frappe.utils import cint, flt, getdate, today
 # Prefix used for the auto-generated, calculation-engine-facing KPI Code Key.
 KPI_CODE_PREFIX = "KPI-REQ-"
 
-# Approved variables a manager may reference inside a KPI "Conditions" rule.
-# Written as snake_case identifiers so the rule is a valid Python comparison
-# that frappe.safe_eval can parse and evaluate.
-# NOTE: extend this list as new measurable KPI variables are introduced.
-APPROVED_KPI_VARIABLES = (
-	"actual_response_minutes",
-)
+# Approved KPI metrics a manager may reference inside a "Conditions" rule.
+# Maps the calculation-engine identifier -> the human-friendly label managers type.
+# The engine computes each metric (percent / count / hours) from operational data;
+# the condition only tests the "Complied" threshold against that finished value.
+# NOTE: extend this map as new measurable KPI metrics are introduced.
+KPI_VARIABLES = {
+	"planned_maintenance_percentage": "Planned Maintenance Percentage",
+	"helpdesk_request_percentage": "Helpdesk Request Percentage",
+	"management_reporting_percentage": "Management Reporting Percentage",
+	"response_timeframe_percentage": "Response Timeframe Percentage",
+	"resolution_timeframe_percentage": "Resolution Timeframe Percentage",
+	"asset_breakdowns": "Asset Breakdowns",
+	"first_time_fix_rate": "First-Time Fix Rate",
+	"mean_time_between_failures": "Mean Time Between Failures",
+}
+
+
+def normalize_kpi_condition(condition: str) -> str:
+	"""Turn a human-friendly KPI rule into a valid Python comparison.
+
+	Managers write rules the way the PM's KPI sheet reads them, e.g.
+	"Planned Maintenance Percentage = 100%". This translates that into the
+	identifier form safe_eval can validate, e.g.
+	"planned_maintenance_percentage == 100":
+
+	- friendly labels -> engine identifiers (longest label first, case-insensitive)
+	- a lone "=" -> "==" (comparison), leaving >=, <=, !=, == untouched
+	- the "%" sign stripped (percentages are compared as plain numbers)
+	"""
+	normalized = condition
+
+	# Longest label first so multi-word labels win over any shorter overlap.
+	for label, identifier in sorted(
+		((v, k) for k, v in KPI_VARIABLES.items()),
+		key=lambda pair: len(pair[0]),
+		reverse=True,
+	):
+		normalized = re.sub(re.escape(label), identifier, normalized, flags=re.IGNORECASE)
+
+	normalized = normalized.replace("%", "")
+	# Single "=" (not part of >=, <=, ==, !=) becomes "==".
+	normalized = re.sub(r"(?<![<>=!])=(?!=)", "==", normalized)
+
+	return normalized
 
 
 class MaintenanceKPIMaster(Document):
@@ -78,38 +117,40 @@ class MaintenanceKPIMaster(Document):
 	def validate_kpi_conditions(self):
 		"""Confirm each KPI rule makes logical sense (AC1).
 
-		A rule must be a valid comparison expression that references only the
-		approved variables, so it cannot break the monthly calculation engine.
-		Validation reuses frappe.safe_eval: the expression is parsed, safety-
-		checked, and evaluated against a dummy context containing only the
-		approved variables.
+		Managers write rules in the human-friendly form from the KPI sheet, e.g.
+		"Planned Maintenance Percentage = 100%". The rule is normalized to its
+		identifier form and then validated with frappe.safe_eval: it must parse,
+		reference only approved KPI metrics, and resolve to true/false so it can
+		never break the monthly calculation engine.
 		"""
 		if not self.kpi_information:
 			return
 
+		approved_labels = ", ".join(sorted(KPI_VARIABLES.values()))
 		# Dummy numeric values so a comparison resolves to True/False.
-		context = {variable: 1 for variable in APPROVED_KPI_VARIABLES}
+		context = {identifier: 1 for identifier in KPI_VARIABLES}
 
 		for row in self.kpi_information:
 			if not row.conditions:
 				continue
 
 			condition = row.conditions.strip()
+			normalized = normalize_kpi_condition(condition)
 
 			try:
-				result = frappe.safe_eval(condition, eval_locals=context)
+				result = frappe.safe_eval(normalized, eval_locals=context)
 			except NameError:
 				frappe.throw(
 					_(
-						"Row {0}: The KPI rule uses an unapproved variable. "
-						"Approved variables are: {1}."
-					).format(row.idx, ", ".join(sorted(APPROVED_KPI_VARIABLES)))
+						"Row {0}: The KPI rule \"{1}\" uses an unapproved metric. "
+						"Approved metrics are: {2}."
+					).format(row.idx, condition, approved_labels)
 				)
 			except SyntaxError:
 				frappe.throw(
 					_(
-						"Row {0}: The KPI rule \"{1}\" is not a valid expression. "
-						"Use a comparison such as actual_response_minutes <= 45."
+						"Row {0}: The KPI rule \"{1}\" is not a valid comparison. "
+						"Write it like \"Response Timeframe Percentage >= 98%\"."
 					).format(row.idx, condition)
 				)
 			except Exception:
@@ -126,7 +167,7 @@ class MaintenanceKPIMaster(Document):
 				frappe.throw(
 					_(
 						"Row {0}: The KPI rule must be a comparison that yields "
-						"true or false (e.g. actual_response_minutes <= 45)."
+						"true or false, e.g. \"Asset Breakdowns <= 3\"."
 					).format(row.idx)
 				)
 
