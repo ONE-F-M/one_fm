@@ -8,6 +8,9 @@ frappe.ui.form.on("Maintenance Work Order", {
 
 		// Enforce read-only on location fields (server-side enforcement is primary)
 		set_location_fields_read_only(frm);
+
+		// Expose the technician's first check-in action
+		add_check_in_button(frm);
 	},
 
 	sla_master: function (frm) {
@@ -80,6 +83,42 @@ function apply_priority_filter(frm) {
 			return {};
 		});
 	}
+}
+
+function add_check_in_button(frm) {
+	/**
+	 * First Check In: stamps the exact time the technician starts the job.
+	 *
+	 * Shown only for a saved, not-yet-submitted Preventive Maintenance Work Order
+	 * that has not been checked in. The server records the timestamp once and
+	 * evaluates the SLA Response Status.
+	 */
+	if (
+		frm.is_new() ||
+		frm.doc.docstatus !== 0 ||
+		frm.doc.maintenance_type !== "Preventive Maintenance" ||
+		frm.doc.first_check_in_time
+	) {
+		return;
+	}
+
+	frm.add_custom_button(__("Check In"), function () {
+		frappe.call({
+			method: "one_fm.one_fm.doctype.maintenance_work_order.maintenance_work_order.check_in",
+			args: { work_order: frm.doc.name },
+			freeze: true,
+			freeze_message: __("Recording check-in..."),
+			callback: function (r) {
+				if (r && r.message) {
+					frappe.show_alert({
+						message: __("First check-in recorded."),
+						indicator: "green",
+					});
+					frm.reload_doc();
+				}
+			},
+		});
+	});
 }
 
 function set_location_fields_read_only(frm) {

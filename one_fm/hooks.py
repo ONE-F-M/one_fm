@@ -674,6 +674,8 @@ scheduler_events = {
 			#"one_fm.api.tasks.automatic_checkout",
 			"one_fm.one_fm.doctype.password_reset_token.password_reset_token.revoke_password_tokens",
 			"one_fm.api.tasks.rambo_shift_assignment",
+			# Advance live SLA countdown statuses for in-progress Preventive Maintenance Work Orders
+			"one_fm.one_fm.doctype.maintenance_work_order.maintenance_work_order.update_active_sla_statuses",
 		],
 		"0/15 * * * *": [
 			"one_fm.api.tasks.update_shift_type"
