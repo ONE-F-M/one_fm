@@ -37,6 +37,12 @@ PREVENTIVE_TYPE = "Preventive Maintenance"
 
 
 class MaintenanceKPIAssessment(Document):
+	def validate(self):
+		# The penalty summary is derived, never entered. Regenerating it on every
+		# save (including submit and amend) keeps it locked to the graded KPI rows
+		# and blocks any server-side tampering with the deduction (AC1, AC2).
+		self.calculate_penalty()
+
 	def get_period_range(self):
 		"""Return the (start_date, end_date_exclusive) for this assessment's Month/Year.
 
@@ -140,6 +146,64 @@ class MaintenanceKPIAssessment(Document):
 			row.status = STATUS_COMPLIED if complied else STATUS_FAILED
 			row.points_achieved = flt(row.points_weight) if complied else 0.0
 
+	def calculate_penalty(self):
+		"""Aggregate achieved points into the single locked penalty row (AC1).
+
+		Sums Points Achieved across every graded KPI row, rebuilds the Monthly
+		Penalty Details grid to hold exactly one summary row, writes the total into
+		Total Achieved Points, and pulls the matching deduction from the Master's
+		penalty tier matrix into Applied Penalty Percentage. Re-run safe: the grid
+		is cleared first so there is never more than one row.
+		"""
+		total_achieved_points = sum(
+			flt(row.points_achieved) for row in self.monthly_kpi_assessment
+		)
+
+		self.monthly_penalty_assessment = []
+		self.append(
+			"monthly_penalty_assessment",
+			{
+				"total_achieved_points": total_achieved_points,
+				"applied_penalty_percentage": self.get_applicable_deduction(
+					total_achieved_points
+				),
+			},
+		)
+
+	def get_applicable_deduction(self, total_achieved_points):
+		"""Return the deduction % for a score from the Master's tier matrix (AC1).
+
+		Tiers are read highest Score Floor Threshold first; the applicable tier is
+		the highest floor the score still meets or exceeds (score >= floor), so a
+		higher score maps to a lower deduction. If the score falls below every
+		floor, the worst (lowest-floor, highest-deduction) tier applies. An empty
+		or missing matrix carries no penalty (0%).
+		"""
+		if not self.maintenance_kpi_master:
+			return 0.0
+
+		tiers = frappe.get_all(
+			"Penalty Tier Matrix",
+			filters={
+				"parent": self.maintenance_kpi_master,
+				"parenttype": "Maintenance KPI Master",
+				"parentfield": "penalty_information",
+			},
+			fields=["score_floor_threshold", "deduction_percentage"],
+		)
+		if not tiers:
+			return 0.0
+
+		# Highest floor first (the Master stores them descending, but be defensive).
+		tiers.sort(key=lambda tier: flt(tier.score_floor_threshold), reverse=True)
+
+		for tier in tiers:
+			if flt(total_achieved_points) >= flt(tier.score_floor_threshold):
+				return flt(tier.deduction_percentage)
+
+		# Below every floor: the lowest tier carries the highest deduction.
+		return flt(tiers[-1].deduction_percentage)
+
 
 def identify_metric(condition):
 	"""Return the KPI metric identifier referenced by a rule, or None.
@@ -239,26 +303,6 @@ METRIC_CALCULATORS = {
 }
 
 
-@frappe.whitelist()
-def rebuild_and_recalculate(assessment: str):
-	"""Regenerate KPI rows from the Master and recalculate scores for a Draft.
-
-	Lets a Maintenance Manager refresh a manually created (or late-data)
-	assessment from the form. Restricted to Draft records; write permission is
-	enforced on the document.
-	"""
-	doc = frappe.get_doc("Maintenance KPI Assessment", assessment)
-	doc.check_permission("write")
-
-	if doc.docstatus != 0:
-		frappe.throw(_("Only a Draft assessment can be rebuilt and recalculated."))
-
-	doc.build_kpi_rows()
-	doc.calculate_scores()
-	doc.save()
-	return {"rows": len(doc.monthly_kpi_assessment)}
-
-
 # --- Scheduled routine ------------------------------------------------------
 
 
@@ -267,10 +311,12 @@ def create_monthly_assessments():
 
 	Runs at the start of a billing month and assesses the month that just ended.
 	For every submitted, active Maintenance KPI Master whose effective window
-	covers the target month, it creates a Draft Maintenance KPI Assessment,
-	auto-fills Contract/Project/Client/Master and Month/Year, generates the KPI
-	rows from the Master, and calculates each score. Idempotent: a Master already
-	assessed for the target period is skipped.
+	covers the target month, it creates a Maintenance KPI Assessment, auto-fills
+	Contract/Project/Client/Master and Month/Year, generates the KPI rows from the
+	Master, calculates each score, and (via validate) locks in the single penalty
+	summary row. The finished record bypasses the draft state and is auto-submitted
+	immediately (AC3). Idempotent: a Master already assessed for the target period
+	is skipped.
 	"""
 	target = add_months(getdate(today()), -1)
 	month_start = get_first_day(target)
@@ -306,6 +352,7 @@ def create_monthly_assessments():
 
 		try:
 			assessment = frappe.new_doc("Maintenance KPI Assessment")
+			assessment.flags.ignore_permissions = True
 			assessment.contract = master.contract
 			assessment.project = master.project
 			assessment.client = master.client
@@ -314,7 +361,10 @@ def create_monthly_assessments():
 			assessment.year = year_label
 			assessment.build_kpi_rows()
 			assessment.calculate_scores()
-			assessment.insert(ignore_permissions=True)
+			assessment.insert()
+			# AC3: bypass the draft state and auto-submit in one continuous step
+			# once the calculation (KPI scores + penalty summary) has finished.
+			assessment.submit()
 			created += 1
 			frappe.db.commit()
 		except Exception:

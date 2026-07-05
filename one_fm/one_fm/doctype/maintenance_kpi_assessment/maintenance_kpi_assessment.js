@@ -3,20 +3,14 @@
 
 frappe.ui.form.on("Maintenance KPI Assessment", {
 	refresh(frm) {
-		// Draft-only helper: regenerate KPI rows from the Master and re-run the
-		// score calculation (useful after field technicians submit late records).
-		if (frm.doc.docstatus === 0 && !frm.is_new() && frm.doc.maintenance_kpi_master) {
-			frm.add_custom_button(__("Rebuild & Recalculate"), () => {
-				frappe.call({
-					method: "one_fm.one_fm.doctype.maintenance_kpi_assessment.maintenance_kpi_assessment.rebuild_and_recalculate",
-					args: { assessment: frm.doc.name },
-					freeze: true,
-					freeze_message: __("Recalculating KPI scores..."),
-					callback() {
-						frm.reload_doc();
-					},
-				});
-			});
-		}
+		// AC2: The penalty summary is entirely system-generated. Forcefully lock
+		// the Monthly Penalty Details grid so the "Add Row" and "Delete Row"
+		// buttons are hidden and no manual typing is possible in its columns.
+		frm.set_df_property("monthly_penalty_assessment", "read_only", 1);
+
+		const grid = frm.fields_dict.monthly_penalty_assessment.grid;
+		grid.cannot_add_rows = true;
+		grid.cannot_delete_rows = true;
+		grid.refresh();
 	},
 });

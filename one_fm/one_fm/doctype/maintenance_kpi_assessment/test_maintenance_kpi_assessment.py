@@ -130,3 +130,82 @@ class TestMaintenanceKPIAssessment(FrappeTestCase):
 		self.assertEqual(row2.actual_value, 90.0)
 		self.assertEqual(row2.status, STATUS_FAILED)
 		self.assertEqual(row2.points_achieved, 0.0)
+
+	def _stub_tier_matrix(self, tiers):
+		"""Patch frappe.get_all so Penalty Tier Matrix returns the given tiers.
+
+		Returns a callable that restores the original frappe.get_all.
+		"""
+		original = frappe.get_all
+
+		def fake_get_all(doctype, *args, **kwargs):
+			if doctype == "Penalty Tier Matrix":
+				return [
+					frappe._dict(
+						score_floor_threshold=floor, deduction_percentage=deduction
+					)
+					for floor, deduction in tiers
+				]
+			return original(doctype, *args, **kwargs)
+
+		frappe.get_all = fake_get_all
+		return lambda: setattr(frappe, "get_all", original)
+
+	def test_deduction_lookup_picks_highest_floor_met(self):
+		"""88.5 points lands on the highest floor it still meets: 2% (AC1 example)."""
+		doc = frappe.new_doc("Maintenance KPI Assessment")
+		doc.maintenance_kpi_master = "__stub_master__"
+		# Given deliberately out of order to prove the defensive sort.
+		restore = self._stub_tier_matrix([(75, 5), (95, 0), (85, 2)])
+		try:
+			self.assertEqual(doc.get_applicable_deduction(88.5), 2.0)
+			self.assertEqual(doc.get_applicable_deduction(95.0), 0.0)
+			self.assertEqual(doc.get_applicable_deduction(80.0), 5.0)
+		finally:
+			restore()
+
+	def test_deduction_below_all_floors_uses_worst_tier(self):
+		"""A score under every floor takes the lowest tier's highest deduction."""
+		doc = frappe.new_doc("Maintenance KPI Assessment")
+		doc.maintenance_kpi_master = "__stub_master__"
+		restore = self._stub_tier_matrix([(95, 0), (85, 2), (75, 5)])
+		try:
+			self.assertEqual(doc.get_applicable_deduction(50.0), 5.0)
+		finally:
+			restore()
+
+	def test_deduction_empty_matrix_is_zero(self):
+		"""No tiers configured -> no penalty."""
+		doc = frappe.new_doc("Maintenance KPI Assessment")
+		doc.maintenance_kpi_master = "__stub_master__"
+		restore = self._stub_tier_matrix([])
+		try:
+			self.assertEqual(doc.get_applicable_deduction(88.5), 0.0)
+		finally:
+			restore()
+
+	def test_deduction_without_master_is_zero(self):
+		"""No linked Master -> no matrix to consult -> 0%."""
+		doc = frappe.new_doc("Maintenance KPI Assessment")
+		self.assertEqual(doc.get_applicable_deduction(88.5), 0.0)
+
+	def test_calculate_penalty_creates_single_summary_row(self):
+		"""Points Achieved aggregate into exactly one locked penalty row (AC1)."""
+		doc = frappe.new_doc("Maintenance KPI Assessment")
+		doc.maintenance_kpi_master = "__stub_master__"
+		doc.append("monthly_kpi_assessment", {"points_achieved": 25.0})
+		doc.append("monthly_kpi_assessment", {"points_achieved": 43.5})
+		doc.append("monthly_kpi_assessment", {"points_achieved": 20.0})
+
+		restore = self._stub_tier_matrix([(95, 0), (85, 2), (75, 5)])
+		try:
+			doc.calculate_penalty()
+			# Re-running must not add a second row.
+			doc.calculate_penalty()
+		finally:
+			restore()
+
+		self.assertEqual(len(doc.monthly_penalty_assessment), 1)
+		penalty = doc.monthly_penalty_assessment[0]
+		self.assertEqual(penalty.total_achieved_points, 88.5)
+		self.assertEqual(penalty.applied_penalty_percentage, 2.0)
