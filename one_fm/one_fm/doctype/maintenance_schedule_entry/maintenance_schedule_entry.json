@@ -26,6 +26,9 @@
   "frequency_days",
   "column_break_dvgp",
   "planned_execution_datetime",
+  "maintenance_team_section",
+  "maintenance_team",
+  "maintenance_schedule_team_members",
   "section_break_ijbe",
   "work_order",
   "column_break_giwy"
@@ -155,15 +158,31 @@
   {
    "fieldname": "column_break_giwy",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "maintenance_team_section",
+   "fieldtype": "Section Break",
+   "label": "Maintenance Team"
+  },
+  {
+   "fieldname": "maintenance_team",
+   "fieldtype": "Link",
+   "label": "Maintenance Team",
+   "options": "Object Maintenance Team"
+  },
+  {
+   "fieldname": "maintenance_schedule_team_members",
+   "fieldtype": "Table",
+   "label": "Maintenance Schedule Team Members",
+   "options": "Maintenance Schedule Team Members"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-31 13:23:00.392562",
- "modified_by": "h.imran@one-fm.com",
+ "modified": "2026-07-04 18:53:50.534855",
+ "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Maintenance Schedule Entry",
- "naming_rule": "",
  "owner": "h.imran@one-fm.com",
  "permissions": [
   {
@@ -179,6 +198,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []
