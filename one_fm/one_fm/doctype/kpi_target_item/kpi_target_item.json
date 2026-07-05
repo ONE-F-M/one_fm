@@ -38,7 +38,7 @@
    "label": "Points Weight"
   },
   {
-   "description": "The 'Complied' rule for this KPI, written in plain terms, e.g. \"Planned Maintenance Percentage = 100%\", \"Asset Breakdowns <= 3\", or \"Mean Time Between Failures >= 5000\". Approved metrics: Planned Maintenance Percentage, Helpdesk Request Percentage, Management Reporting Percentage, Response Timeframe Percentage, Resolution Timeframe Percentage, Asset Breakdowns, First-Time Fix Rate, Mean Time Between Failures.",
+   "description": "A comparison rule using approved snake_case variables, e.g. actual_response_minutes <= 45",
    "fieldname": "conditions",
    "fieldtype": "Code",
    "label": "Conditions"
