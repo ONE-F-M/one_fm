@@ -333,7 +333,9 @@ def get_active_service_level_agreement(client):
 
 	client_slas = frappe.get_all(
 		"Maintenance Service Level Agreement",
-		filters={"enabled": 1, "entity_type": "Customer", "entity": client},
+		# docstatus 1 only: a cancelled (2) or draft (0) SLA is never "active",
+		# matching how Maintenance Work Order resolves its SLA.
+		filters={"enabled": 1, "docstatus": 1, "entity_type": "Customer", "entity": client},
 		fields=["name", "start_date", "end_date"],
 	)
 	active = [sla for sla in client_slas if _is_active_on(sla, on_date)]
@@ -352,7 +354,7 @@ def get_active_service_level_agreement(client):
 	# Fallback: the global Default Service Level Agreement.
 	default_slas = frappe.get_all(
 		"Maintenance Service Level Agreement",
-		filters={"enabled": 1, "default_service_level_agreement": 1},
+		filters={"enabled": 1, "docstatus": 1, "default_service_level_agreement": 1},
 		fields=["name", "start_date", "end_date"],
 	)
 	active_defaults = [sla for sla in default_slas if _is_active_on(sla, on_date)]
