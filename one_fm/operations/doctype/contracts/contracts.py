@@ -1645,24 +1645,6 @@ def get_due_contracts():
     #Get all the contracts that are due to expire today and send a reminder to the relevant parties
     pass
 
-def get_contract_notification_cc():
-    """
-    Return the list of email addresses configured to be CC'd on contract
-    expiry/renewal notifications.
-
-    Configured on "ONEFM General Setting" -> "Contract Notification CC" as a
-    comma or newline separated list (defaults to the Finance and Legal group
-    mailboxes).
-    """
-    raw = frappe.db.get_single_value("ONEFM General Setting", "contract_notification_cc") or ""
-    emails = []
-    for part in raw.replace("\n", ",").replace(";", ",").split(","):
-        email = part.strip()
-        if email and email not in emails:
-            emails.append(email)
-    return emails
-
-
 @frappe.whitelist()
 def send_contract_reminders(is_scheduled_event=True):
     """
@@ -1705,17 +1687,9 @@ def send_contract_reminders(is_scheduled_event=True):
             # Render all expiring contracts into a single email and send once to all recipients
             context = {"contracts_list": contracts_list}
             msg = frappe.render_template('one_fm/templates/emails/contracts_reminder.html', context=context)
-
-            # CC the configured group mailboxes (e.g. Finance and Legal) so both
-            # departments are automatically informed of expiring/renewing contracts.
-            cc = users[1:] if len(users) > 1 else []
-            for email in get_contract_notification_cc():
-                if email not in cc and email != users[0]:
-                    cc.append(email)
-        
             sendemail(
                 recipients=[users[0]],
-                cc=cc or None,
+                cc=users[1:] if len(users) > 1 else None,
                 subject="Contract Internal Notification Period for Expiring Contracts",
                 content=msg, is_scheduler_email=is_scheduled_event,
                 expose_recipients="header"
