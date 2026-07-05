@@ -9,10 +9,42 @@ from frappe.utils import getdate
 
 class MaintenanceServiceLevelAgreement(Document):
 	def validate(self):
+		self.validate_single_enabled_sla_per_client()
 		self.validate_date_range()
 		self.validate_default_priority()
 		self.set_default_priority()
 		self.validate_priority_fields()
+
+	def validate_single_enabled_sla_per_client(self):
+		"""Block a second enabled Service Level Agreement for the same client.
+
+		A "client" is a Customer entity. When this SLA is enabled and targets a
+		specific Customer, ensure no other enabled SLA (Draft or Submitted, i.e.
+		not cancelled) already exists for that same customer.
+		"""
+		if not self.enabled or self.entity_type != "Customer" or not self.entity:
+			return
+
+		existing = frappe.get_all(
+			"Maintenance Service Level Agreement",
+			filters={
+				"enabled": 1,
+				"entity_type": "Customer",
+				"entity": self.entity,
+				"name": ["!=", self.name],
+				"docstatus": ["!=", 2],
+			},
+			limit=1,
+		)
+
+		if existing:
+			frappe.throw(
+				_(
+					"An active Service Level Agreement already exists"
+					" for this client. You must modify the existing agreement before a"
+					" new one can be saved."
+				)
+			)
 
 	def validate_date_range(self):
 		"""Ensure start_date is before end_date when both are specified."""
