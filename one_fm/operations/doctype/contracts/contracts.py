@@ -95,26 +95,13 @@ class Contracts(Document):
 
     def sync_item_prices(self):
         """
-        Keep each Contract Item's linked Item Price in sync with the rate on the row.
-
-        The Contract Item row's `rate` is the source of truth:
-          1. If the row is already linked to an Item Price, update that exact record's
-             price_list_rate. We use db.set_value (not doc.save) on purpose: we are only
-             changing the price of an existing record, so the duplicate-key guard in
-             one_fm/api/doc_methods/item_price.py:check_duplicates is irrelevant and would
-             otherwise block the save when legacy duplicate Item Prices exist.
-          2. If the row has no link yet, find a matching Item Price using the same
-             uniqueness key as check_duplicates; update it if found, otherwise create one.
-             Records resolved during this save are reused so two rows sharing a key do not
-             create duplicates.
+        Creates or updates Item Price records for each Contract Item row.
+        Deduplicates processing by Item/Gender/Shift/DaysOff combination to prevent duplicate errors.
         """
-        price_list = "Standard Selling"
-        customer = self.client
-        currency = self.currency_ or "KWD"
+        from one_fm.api.doc_methods.item_price import ItemPriceDuplicateItem
 
-        # Item Prices resolved during THIS save, keyed by uniqueness tuple
-        resolved = {}
-
+        # 1. Gather unique combinations to process
+        sync_groups = {}
         for row in self.items:
             if not row.item_code:
                 continue
@@ -122,58 +109,135 @@ class Contracts(Document):
             attrs = get_item_variant_attributes(row.item_code)
             gender = attrs.get("gender")
             shift_hours = attrs.get("working_hours") or 0
+            days_off = row.get("days_off") or 0
+
             uom = row.uom or frappe.db.get_value("Item", row.item_code, "stock_uom")
-            rate = flt(row.rate)
+            currency = self.currency_ or "KWD"
 
-            # 1. Row already points at an Item Price -> update that exact record.
-            if row.item_price and frappe.db.exists("Item Price", row.item_price):
-                if flt(frappe.db.get_value("Item Price", row.item_price, "price_list_rate")) != rate:
-                    frappe.db.set_value("Item Price", row.item_price, "price_list_rate", rate)
-                continue
+            # Unique key for Item Price (matching the custom logic in one_fm/api/doc_methods/item_price.py)
+            group_key = (row.item_code, uom, currency, gender, shift_hours, days_off)
 
-            # 2. No link yet -> find or create a matching Item Price.
-            key = (row.item_code, uom, currency, gender, shift_hours)
-            item_price_name = resolved.get(key)
+            if group_key not in sync_groups:
+                sync_groups[group_key] = {"rate": row.rate, "rows": []}
 
-            if not item_price_name:
-                filters = {
-                    "item_code": row.item_code,
+            # Prefer the latest rate if duplicates exist in contract rows
+            sync_groups[group_key]["rate"] = row.rate
+            sync_groups[group_key]["rows"].append(row)
+
+        price_list = "Standard Selling"
+        customer = self.client
+
+        # 2. Process each unique combination
+        for key, data in sync_groups.items():
+            item_code, uom, currency, gender, shift_hours, days_off = key
+            rate = data["rate"]
+
+            # Standard filters matching the custom check_duplicates logic
+            filters = {
+                "item_code": item_code,
+                "price_list": price_list,
+                "customer": customer,
+                "uom": uom,
+                "currency": currency,
+            }
+            if gender:
+                filters["gender"] = gender
+            if shift_hours:
+                filters["shift_hours"] = shift_hours
+            if days_off and str(days_off) != "0":
+                filters["days_off"] = days_off
+
+            # Search for existing record using standard get_value
+            existing_item_price = frappe.db.get_value(
+                "Item Price",
+                {k: v for k, v in filters.items() if v is not None and v != ""},
+                "name"
+            )
+
+            if existing_item_price:
+                ip_doc = frappe.get_doc("Item Price", existing_item_price)
+                if flt(ip_doc.price_list_rate) != flt(rate):
+                    ip_doc.price_list_rate = rate
+                    # Mute messages during save to prevent duplicate warnings
+                    # from surfacing to the user during background sync.
+                    _prev_mute = frappe.flags.mute_messages
+                    frappe.flags.mute_messages = True
+                    try:
+                        ip_doc.save(ignore_permissions=True)
+                    except ItemPriceDuplicateItem:
+                        # Duplicate detected on save — the existing record is
+                        # itself a duplicate. Log and continue; rate stays as-is.
+                        frappe.log_error(
+                            title=_("Item Price Sync: Duplicate on update"),
+                            message=_(
+                                "Could not update Item Price {0} for item {1}. "
+                                "A duplicate Item Price already exists."
+                            ).format(ip_doc.name, item_code)
+                        )
+                    finally:
+                        frappe.flags.mute_messages = _prev_mute
+                        # Clear any queued messages from the caught exception
+                        frappe.local.message_log = []
+                item_price_name = ip_doc.name
+            else:
+                new_ip = frappe.get_doc({
+                    "doctype": "Item Price",
+                    "item_code": item_code,
                     "price_list": price_list,
                     "customer": customer,
                     "uom": uom,
                     "currency": currency,
-                }
-                if gender:
-                    filters["gender"] = gender
-                if shift_hours:
-                    filters["shift_hours"] = shift_hours
-
-                item_price_name = frappe.db.get_value("Item Price", filters, "name")
-
-                if item_price_name:
-                    if flt(frappe.db.get_value("Item Price", item_price_name, "price_list_rate")) != rate:
-                        frappe.db.set_value("Item Price", item_price_name, "price_list_rate", rate)
-                else:
-                    new_ip = frappe.get_doc({
-                        "doctype": "Item Price",
-                        "item_code": row.item_code,
-                        "price_list": price_list,
-                        "customer": customer,
-                        "uom": uom,
-                        "currency": currency,
-                        "price_list_rate": rate,
-                        "gender": gender,
-                        "shift_hours": shift_hours,
-                        "valid_from": today(),
-                        "selling": 1,
-                    })
+                    "price_list_rate": rate,
+                    "gender": gender,
+                    "shift_hours": shift_hours,
+                    "days_off": days_off,
+                    "valid_from": today(),
+                    "selling": 1
+                })
+                # Mute messages during insert to prevent duplicate warnings
+                # from surfacing to the user during background sync.
+                _prev_mute = frappe.flags.mute_messages
+                frappe.flags.mute_messages = True
+                try:
                     new_ip.insert(ignore_permissions=True)
                     item_price_name = new_ip.name
+                except ItemPriceDuplicateItem:
+                    # A duplicate already exists that our filter lookup missed
+                    # (e.g. due to null-handling differences). Find it and reuse.
+                    frappe.log_error(
+                        title=_("Item Price Sync: Duplicate on insert"),
+                        message=_(
+                            "Could not create Item Price for item {0}. "
+                            "A duplicate Item Price already exists. "
+                            "Attempting to locate and reuse."
+                        ).format(item_code)
+                    )
+                    # Fallback: broader search without custom attribute filters
+                    fallback_filters = {
+                        "item_code": item_code,
+                        "price_list": price_list,
+                        "customer": customer,
+                    }
+                    if uom:
+                        fallback_filters["uom"] = uom
+                    if currency:
+                        fallback_filters["currency"] = currency
 
-                resolved[key] = item_price_name
+                    fallback_name = frappe.db.get_value("Item Price", fallback_filters, "name")
+                    if fallback_name:
+                        item_price_name = fallback_name
+                    else:
+                        # Cannot resolve — skip this group
+                        continue
+                finally:
+                    frappe.flags.mute_messages = _prev_mute
+                    # Clear any queued messages from the caught exception
+                    frappe.local.message_log = []
 
-            if row.item_price != item_price_name:
-                frappe.db.set_value("Contract Item", row.name, "item_price", item_price_name)
+            # 3. Update all rows in this group with the Item Price reference
+            for row in data["rows"]:
+                if row.item_price != item_price_name:
+                    frappe.db.set_value("Contract Item", row.name, "item_price", item_price_name)
 
     
     def update_project_start_end_date(self):
