@@ -47,6 +47,7 @@
   "net_resolution_minutes",
   "sla_analytics_section",
   "sla_trigger_time",
+  "planned_deadline",
   "sla_response_status",
   "sla_resolution_status",
   "column_break_ygiw",
@@ -309,7 +310,7 @@
    "label": "SLA Analytics"
   },
   {
-   "description": "Target start time from the asset fallback tree (Last Service Date → Commissioning Date → Creation Date + Frequency Days).",
+   "description": "Target start time from the asset fallback tree (Last Service Date \u2192 Commissioning Date \u2192 Creation Date + Frequency Days).",
    "fieldname": "sla_trigger_time",
    "fieldtype": "Datetime",
    "label": "SLA Trigger Time",
@@ -352,12 +353,18 @@
    "label": "Hold Started On",
    "no_copy": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "planned_deadline",
+   "fieldtype": "Datetime",
+   "label": "Planned Deadline",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-05 12:33:18.609551",
+ "modified": "2026-07-05 15:59:17.369669",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Maintenance Work Order",
