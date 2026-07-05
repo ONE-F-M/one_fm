@@ -15,7 +15,14 @@ FINAL_STATUSES = ("Pass", "Fail")
 
 class MaintenanceWorkOrder(Document):
 	def before_insert(self):
-		"""Story 8: Initialize SLA clock for reactive tickets on first save."""
+		"""Story 8: Initialize SLA clock for reactive tickets on first save.
+
+		AC1: stamp the current system timestamp into the Creation Datetime field
+		on first save (once) for every Maintenance Work Order — including those
+		auto-generated from a Maintenance Schedule slot.
+		"""
+		if not self.creation_datetime:
+			self.creation_datetime = now_datetime()
 		self.initialize_reactive_sla()
 
 	def before_save(self):
@@ -422,9 +429,11 @@ class MaintenanceWorkOrder(Document):
 		trigger_dt = get_datetime(self.sla_trigger_time)
 		checkin_dt = get_datetime(self.first_check_in_time)
 
-		# Net duration between SLA Trigger Time and First Check In Time (minutes)
-		elapsed_seconds = (checkin_dt - trigger_dt).total_seconds()
-		self.actual_response_minutes = flt(elapsed_seconds / 60.0, 2)
+		# Net duration between SLA Trigger Time and First Check In Time (minutes),
+		# excluding any paused (On Hold - Parts Required) time so the frozen verdict
+		# matches the live counter at the moment of check-in.
+		elapsed_minutes = (checkin_dt - trigger_dt).total_seconds() / 60.0 - flt(self.total_paused_minutes)
+		self.actual_response_minutes = flt(elapsed_minutes, 2)
 
 		if self.target_response_minutes:
 			if self.actual_response_minutes <= self.target_response_minutes:
@@ -546,24 +555,39 @@ class MaintenanceWorkOrder(Document):
 		planned_date = add_days(getdate(base_date), frequency_days)
 		return get_datetime(f"{planned_date} 08:00:00")
 
-	def track_pause_windows(self):
+	def track_pause_windows(self, as_of=None):
 		"""Accumulate Total Paused Minutes across 'On Hold - Parts Required' windows.
 
-		Detects status transitions on save: the pause clock starts when the Work
-		Order enters the hold status and the banked duration is added to
-		``total_paused_minutes`` when it leaves. The in-progress hold is tracked
-		via the internal ``hold_started_on`` timestamp.
-		"""
-		previous = self.get_doc_before_save()
-		previous_status = previous.status if previous else None
+		AC4: the pause clock starts when the Work Order enters the hold status.
+		While it remains on hold, each save (and every scheduler tick) rolls the
+		open window into ``total_paused_minutes`` so the delayed duration is tracked
+		and displayed live, then re-anchors the ``hold_started_on`` marker. The
+		final sliver is banked when the Work Order leaves the hold status.
 
-		if self.status == ON_HOLD_STATUS and previous_status != ON_HOLD_STATUS:
+		When invoked outside a save cycle (e.g. the background engine) there is no
+		"before" snapshot, so the current status is treated as unchanged and the
+		live roll-up branch handles an open hold.
+		"""
+		now = get_datetime(as_of) if as_of else now_datetime()
+
+		previous = self.get_doc_before_save()
+		previous_status = previous.status if previous else self.status
+
+		entering = self.status == ON_HOLD_STATUS and previous_status != ON_HOLD_STATUS
+		leaving = previous_status == ON_HOLD_STATUS and self.status != ON_HOLD_STATUS
+
+		if entering:
 			# Entering a hold — start the pause clock
 			if not self.hold_started_on:
-				self.hold_started_on = now_datetime()
-		elif previous_status == ON_HOLD_STATUS and self.status != ON_HOLD_STATUS:
+				self.hold_started_on = now
+		elif leaving:
 			# Leaving a hold — bank the elapsed pause duration
-			self._bank_open_hold(now_datetime())
+			self._bank_open_hold(now)
+		elif self.status == ON_HOLD_STATUS and self.hold_started_on:
+			# Still on hold — roll the elapsed window into the live paused total
+			# and keep the clock running (AC4).
+			self._bank_open_hold(now)
+			self.hold_started_on = now
 
 	def _bank_open_hold(self, as_of):
 		"""Add the currently-open hold window into Total Paused Minutes and clear it."""
@@ -582,13 +606,18 @@ class MaintenanceWorkOrder(Document):
 	def refresh_sla_statuses(self, as_of=None):
 		"""Advance the live SLA countdown for a Preventive Maintenance Work Order.
 
-		Before the trigger time  → "Pre-Start"
-		At/after the trigger time → "Active Counting"
+		Before the trigger time  → "Pre-Start", counters locked at 0 (AC2)
+		At/after the trigger time → "Active Counting", counters run live (AC3)
 		Target minutes exceeded   → "Fail" (before check-in / completion)
 
-		The terminal Pass/Fail verdicts, once reached, are owned by
-		``evaluate_sla_response`` (check-in) and ``evaluate_sla_resolution``
-		(completion), so this routine leaves those untouched.
+		While the Work Order sits in "On Hold - Parts Required", the accumulated
+		paused minutes are subtracted from both live counters, so the response and
+		resolution clocks are effectively frozen for the duration of the hold (AC4).
+
+		The terminal Pass/Fail verdicts and their frozen minute values, once
+		reached, are owned by ``evaluate_sla_response`` (check-in) and
+		``evaluate_sla_resolution`` (completion), so this routine leaves those
+		untouched.
 		"""
 		if self.maintenance_type != "Preventive Maintenance":
 			return
@@ -598,12 +627,20 @@ class MaintenanceWorkOrder(Document):
 		now = get_datetime(as_of) if as_of else now_datetime()
 		trigger = get_datetime(self.sla_trigger_time)
 
+		# Total paused = banked minutes + any currently-open hold window, so the
+		# live counters freeze while parts are awaited (AC4).
+		paused = flt(self.total_paused_minutes) + self._open_hold_minutes(now)
+
 		# Response countdown — runs until the first check-in is recorded
 		if not self.first_check_in_time and self.sla_response_status not in FINAL_STATUSES:
 			if now < trigger:
+				# AC2: lock the response countdown at exactly zero elapsed minutes
 				self.sla_response_status = "Pre-Start"
+				self.actual_response_minutes = 0
 			else:
-				elapsed = (now - trigger).total_seconds() / 60.0
+				# AC3/AC4: live running response duration, net of paused windows
+				elapsed = (now - trigger).total_seconds() / 60.0 - paused
+				self.actual_response_minutes = flt(elapsed, 2)
 				if self.target_response_minutes and elapsed > self.target_response_minutes:
 					self.sla_response_status = "Fail"
 				else:
@@ -612,10 +649,13 @@ class MaintenanceWorkOrder(Document):
 		# Resolution countdown — runs until completion is recorded
 		if not self.completion_time and self.sla_resolution_status not in FINAL_STATUSES:
 			if now < trigger:
+				# AC2: lock the resolution countdown at exactly zero elapsed minutes
 				self.sla_resolution_status = "Pre-Start"
+				self.net_resolution_minutes = 0
 			else:
-				paused = flt(self.total_paused_minutes) + self._open_hold_minutes(now)
+				# AC3/AC4: live running resolution duration, net of paused windows
 				net_elapsed = (now - trigger).total_seconds() / 60.0 - paused
+				self.net_resolution_minutes = flt(net_elapsed, 2)
 				if self.target_resolution_minutes and net_elapsed > self.target_resolution_minutes:
 					self.sla_resolution_status = "Fail"
 				else:
@@ -829,11 +869,18 @@ def update_active_sla_statuses():
 			):
 				continue
 
+			# Roll any open hold window into the live paused total (AC4), then
+			# advance the statuses and live minute counters (AC2/AC3).
+			doc.track_pause_windows()
 			doc.refresh_sla_statuses()
 			doc.db_set(
 				{
 					"sla_response_status": doc.sla_response_status,
 					"sla_resolution_status": doc.sla_resolution_status,
+					"actual_response_minutes": doc.actual_response_minutes,
+					"net_resolution_minutes": doc.net_resolution_minutes,
+					"total_paused_minutes": doc.total_paused_minutes,
+					"hold_started_on": doc.hold_started_on,
 				},
 				update_modified=False,
 			)

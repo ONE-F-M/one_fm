@@ -15,6 +15,7 @@
   "priority",
   "column_break_woru",
   "maintenance_schedule",
+  "planned_deadline",
   "status",
   "object_details_section",
   "object",
@@ -47,11 +48,11 @@
   "net_resolution_minutes",
   "sla_analytics_section",
   "sla_trigger_time",
-  "planned_deadline",
   "sla_response_status",
   "sla_resolution_status",
   "column_break_ygiw",
   "first_check_in_time",
+  "creation_datetime",
   "completion_time",
   "hold_started_on"
  ],
@@ -359,12 +360,18 @@
    "fieldtype": "Datetime",
    "label": "Planned Deadline",
    "read_only": 1
+  },
+  {
+   "fieldname": "creation_datetime",
+   "fieldtype": "Datetime",
+   "label": "Creation Datetime",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-05 15:59:17.369669",
+ "modified": "2026-07-05 17:01:27.240098",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Maintenance Work Order",
