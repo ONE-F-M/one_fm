@@ -72,6 +72,9 @@ class WorkflowActionOverride extends frappe.ui.form.States{
 							else{
 								apply_workflow(d);
 							}
+						}).catch(() => {
+							frappe.dom.unfreeze();
+							me.frm.selected_workflow_action = null;
 						});
 					});
 				}
