@@ -1,6 +1,3 @@
-# Copyright (c) 2026, ONE FM and contributors
-# For license information, please see license.txt
-
 import frappe
 from frappe import _
 from frappe.model.document import Document
@@ -8,8 +5,65 @@ from frappe.utils import getdate
 
 class TransportationManifest(Document):
 	def validate(self):
+		self.populate_shift_details_from_schedule()
 		self.validate_attendance_and_qoa()
 		self.validate_relievers()
+
+	def on_update(self):
+		self.sync_rambo_assignments()
+
+	def populate_shift_details_from_schedule(self):
+		"""Auto-fetch shift details from Employee Schedule for rows missing them.
+
+		Only populates rows where operations_shift is not yet set, ensuring that
+		once operational fields are loaded from the original employee's schedule,
+		they remain frozen even when a reliever/substitute is assigned.
+		"""
+		if not self.schedule_date:
+			return
+
+		# Collect employees needing schedule lookup (only rows without operations_shift)
+		employees_needing_lookup = set()
+		for row in self.transportation_manifest_details:
+			if row.employee and not row.operations_shift:
+				employees_needing_lookup.add(row.employee)
+
+		if not employees_needing_lookup:
+			return
+
+		# Batch-fetch Employee Schedule records using Query Builder
+		from frappe.query_builder import DocType
+		EmployeeSchedule = DocType("Employee Schedule")
+		schedules = (
+			frappe.qb.from_(EmployeeSchedule)
+			.select(
+				EmployeeSchedule.employee,
+				EmployeeSchedule.shift,
+				EmployeeSchedule.site,
+				EmployeeSchedule.operations_role,
+				EmployeeSchedule.project,
+			)
+			.where(EmployeeSchedule.employee.isin(list(employees_needing_lookup)))
+			.where(EmployeeSchedule.date == self.schedule_date)
+			.where(EmployeeSchedule.employee_availability == "Working")
+			.where(EmployeeSchedule.roster_type == "Basic")
+		).run(as_dict=True)
+
+		# Build map: employee -> schedule data (first match wins)
+		schedule_map = {}
+		for s in schedules:
+			if s.employee not in schedule_map:
+				schedule_map[s.employee] = s
+
+		# Apply to child rows that still need population
+		for row in self.transportation_manifest_details:
+			if row.employee and not row.operations_shift:
+				sched = schedule_map.get(row.employee)
+				if sched:
+					row.operations_shift = sched.shift
+					row.operations_site = sched.site
+					row.operations_role = sched.operations_role
+					row.project = sched.project
 
 	def validate_attendance_and_qoa(self):
 		for row in self.transportation_manifest_details:
@@ -17,6 +71,9 @@ class TransportationManifest(Document):
 				# Attendance is Absent -> Clear QOA status and reason
 				row.qoa_status = None
 				row.qoa_reason = None
+				# If requires_reliever was unchecked, also clear the reliever
+				if not row.requires_reliever:
+					row.reliever_employee = None
 			elif row.attendance_status == "Present":
 				row.reliever_employee = None
 				row.requires_reliever = 0
@@ -191,3 +248,102 @@ class TransportationManifest(Document):
 									end=str(other_end)
 								)
 							)
+
+	def sync_rambo_assignments(self):
+		"""Create, update, or delete Rambo Assignment records based on reliever state.
+
+		Triggered on_update (after the document is saved to DB) so child row names
+		are stable and can be used as the linking key.
+
+		Rules:
+		- If requires_reliever=1 AND reliever_employee is set AND attendance_status=Absent
+		  → create or update a Rambo Assignment for this child row.
+		- Otherwise → delete any existing Rambo Assignment for this child row.
+		"""
+		for row in self.transportation_manifest_details:
+			needs_rambo = (
+				row.requires_reliever
+				and row.reliever_employee
+				and row.attendance_status == "Absent"
+			)
+
+			# Always look up by manifest_child_row_id from DB — the in-memory
+			# back-reference (row.rambo_assignment) can be stale after db_set_value.
+			existing_rambo = frappe.db.get_value(
+				"Rambo Assignment",
+				{"manifest_child_row_id": row.name},
+				"name"
+			)
+
+			if needs_rambo:
+				# Resolve derived fields that fetch_from won't handle on db_set_value
+				original_employee_name = frappe.db.get_value(
+					"Employee", row.employee, "employee_name"
+				) if row.employee else None
+
+				reliever_data = frappe.db.get_value(
+					"Employee", row.reliever_employee,
+					["employee_name", "custom_is_rambo_reliever"],
+					as_dict=True
+				) if row.reliever_employee else {}
+
+				shift_data = frappe.db.get_value(
+					"Operations Shift", row.operations_shift,
+					["supervisor"],
+					as_dict=True
+				) if row.operations_shift else {}
+
+				shift_supervisor = shift_data.get("supervisor") if shift_data else None
+				shift_supervisor_user = frappe.db.get_value(
+					"Employee", shift_supervisor, "user_id"
+				) if shift_supervisor else None
+
+				field_values = {
+					"transportation_manifest": self.name,
+					"manifest_child_row_id": row.name,
+					"date": self.schedule_date,
+					"original_employee": row.employee,
+					"original_employee_name": original_employee_name,
+					"employee": row.reliever_employee,
+					"employee_name": reliever_data.get("employee_name") if reliever_data else None,
+					"is_rambo_reliever": reliever_data.get("custom_is_rambo_reliever", 0) if reliever_data else 0,
+					"shift_supervisor": shift_supervisor,
+					"shift_supervisor_user": shift_supervisor_user,
+					"operations_role": row.operations_role,
+					"operations_shift": row.operations_shift,
+					"operations_site": row.operations_site,
+					"project": row.project,
+					"start_time": row.start_time,
+					"end_time": row.end_time,
+					"roster_type": "Basic",
+				}
+
+				if existing_rambo:
+					# UPDATE existing Rambo Assignment
+					frappe.db.set_value("Rambo Assignment", existing_rambo, field_values)
+				else:
+					# CREATE new Rambo Assignment
+					rambo_doc = frappe.new_doc("Rambo Assignment")
+					rambo_doc.update(field_values)
+					rambo_doc.insert(ignore_permissions=True)
+
+					# Back-reference on the child row (DB + in-memory)
+					frappe.db.set_value(
+						"Transportation Manifest Details", row.name,
+						"rambo_assignment", rambo_doc.name,
+						update_modified=False
+					)
+					row.rambo_assignment = rambo_doc.name
+			else:
+				if existing_rambo:
+					# Clear the back-reference FIRST to avoid Frappe's
+					# "Cannot delete — linked with" validation error.
+					frappe.db.set_value(
+						"Transportation Manifest Details", row.name,
+						"rambo_assignment", None,
+						update_modified=False
+					)
+					row.rambo_assignment = None
+					# Now safe to DELETE the Rambo Assignment
+					frappe.delete_doc("Rambo Assignment", existing_rambo, ignore_permissions=True)
+

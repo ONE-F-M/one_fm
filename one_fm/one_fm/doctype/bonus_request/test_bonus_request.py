@@ -13,7 +13,7 @@ def make_bonus_request(**kwargs):
 	"""Factory: create a Bonus Request with sensible defaults."""
 	today = getdate(nowdate())
 	# Default to next month to pass effective month validation
-	next_month_date = getdate(add_months(nowdate(), 2))
+	next_month_date = getdate(add_months(nowdate(), 1))
 	month_names = [
 		"", "January", "February", "March", "April", "May", "June",
 		"July", "August", "September", "October", "November", "December"
@@ -92,8 +92,8 @@ class TestBonusRequest(FrappeTestCase):
 		doc.save(ignore_permissions=True)
 		self.assertEqual(doc.total_bonus_amount, 400)
 
-	def test_effective_month_rejects_current_month(self):
-		"""Selecting the current month should raise a ValidationError."""
+	def test_effective_month_accepts_current_month(self):
+		"""Selecting the current month should be accepted (not blocked)."""
 		today = getdate(nowdate())
 		month_names = [
 			"", "January", "February", "March", "April", "May", "June",
@@ -104,10 +104,11 @@ class TestBonusRequest(FrappeTestCase):
 			effective_month=month_names[today.month],
 			effective_year=today.year,
 		)
-		self.assertRaises(frappe.ValidationError, doc.insert, ignore_permissions=True)
+		doc.insert(ignore_permissions=True)
+		self.assertTrue(doc.name)
 
 	def test_effective_month_rejects_past_month(self):
-		"""Selecting a past month should raise a ValidationError."""
+		"""Selecting a past month should raise a ValidationError with closed-payroll message."""
 		past_date = getdate(add_months(nowdate(), -2))
 		month_names = [
 			"", "January", "February", "March", "April", "May", "June",
@@ -117,6 +118,25 @@ class TestBonusRequest(FrappeTestCase):
 		doc = make_bonus_request(
 			effective_month=month_names[past_date.month],
 			effective_year=past_date.year,
+		)
+		self.assertRaisesRegex(
+			frappe.ValidationError,
+			"previous closed payroll months",
+			doc.insert,
+			ignore_permissions=True,
+		)
+
+	def test_effective_month_rejects_last_month(self):
+		"""Selecting last month should raise a ValidationError."""
+		last_month_date = getdate(add_months(nowdate(), -1))
+		month_names = [
+			"", "January", "February", "March", "April", "May", "June",
+			"July", "August", "September", "October", "November", "December"
+		]
+
+		doc = make_bonus_request(
+			effective_month=month_names[last_month_date.month],
+			effective_year=last_month_date.year,
 		)
 		self.assertRaises(frappe.ValidationError, doc.insert, ignore_permissions=True)
 

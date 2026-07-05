@@ -143,5 +143,41 @@ def get_vehicle_custom_fields():
                 "insert_after": "image",
                 "default": 0
             },
+            {
+                "fieldname": "custom_branding_details",
+                "fieldtype": "Section Break",
+                "label": "Branding Details",
+                "insert_after": "one_fm_documents_cb",
+            },
+            {
+                "fieldname": "custom_branding_application_date",
+                "fieldtype": "Date",
+                "label": "Branding Application Date",
+                "insert_after": "custom_branding_details",
+            },
+            {
+                "fieldname": "custom_branding_image",
+                "fieldtype": "Attach Image",
+                "label": "Branding Image",
+                "insert_after": "custom_branding_application_date",
+            },
+            {
+                "fieldname": "custom_column_break_nnxbp",
+                "fieldtype": "Column Break",
+                "label": "",
+                "insert_after": "custom_branding_image",
+            },
+            {
+                "fieldname": "custom_branding_registration_issue_date",
+                "fieldtype": "Date",
+                "label": "Branding Registration Issue Date",
+                "insert_after": "custom_column_break_nnxbp",
+            },
+            {
+                "fieldname": "custom_branding_registration_expiration_date",
+                "fieldtype": "Date",
+                "label": "Branding Registration Expiration Date",
+                "insert_after": "custom_branding_registration_issue_date",
+            },
         ]
     }
