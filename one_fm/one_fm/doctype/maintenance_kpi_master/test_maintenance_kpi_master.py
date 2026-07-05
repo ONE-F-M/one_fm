@@ -46,10 +46,32 @@ class TestMaintenanceKPIMaster(FrappeTestCase):
 
 	# --- KPI condition validation (AC1 / Example 1) ---------------------------
 
-	def test_valid_kpi_condition_passes(self):
+	def test_friendly_condition_with_equals_and_percent_passes(self):
+		# PM-sheet form: Title Case label, single "=", trailing "%".
 		doc = self.make_master(
 			kpi_information=[
-				{"kpi_name": "Response Time", "conditions": "actual_response_minutes <= 45"},
+				{"kpi_name": "PMP", "conditions": "Planned Maintenance Percentage = 100%"},
+			]
+		)
+
+		# Should not raise.
+		doc.validate_kpi_conditions()
+
+	def test_friendly_count_and_hours_conditions_pass(self):
+		doc = self.make_master(
+			kpi_information=[
+				{"kpi_name": "Breakdowns", "conditions": "Asset Breakdowns <= 3"},
+				{"kpi_name": "MTBF", "conditions": "Mean Time Between Failures >= 5000"},
+			]
+		)
+
+		# Should not raise.
+		doc.validate_kpi_conditions()
+
+	def test_identifier_form_still_accepted(self):
+		doc = self.make_master(
+			kpi_information=[
+				{"kpi_name": "FTFR", "conditions": "first_time_fix_rate >= 85"},
 			]
 		)
 
@@ -66,10 +88,10 @@ class TestMaintenanceKPIMaster(FrappeTestCase):
 		with self.assertRaises(Exception):
 			doc.validate_kpi_conditions()
 
-	def test_unapproved_variable_condition_blocked(self):
+	def test_unapproved_metric_condition_blocked(self):
 		doc = self.make_master(
 			kpi_information=[
-				{"kpi_name": "Unknown Var", "conditions": "made_up_variable <= 10"},
+				{"kpi_name": "Typo Metric", "conditions": "Planned Maintanance Percentage = 100"},
 			]
 		)
 
@@ -86,6 +108,21 @@ class TestMaintenanceKPIMaster(FrappeTestCase):
 
 		with self.assertRaises(Exception):
 			doc.validate_kpi_conditions()
+
+	def test_normalize_kpi_condition_translation(self):
+		from one_fm.one_fm.doctype.maintenance_kpi_master.maintenance_kpi_master import (
+			normalize_kpi_condition,
+		)
+
+		self.assertEqual(
+			normalize_kpi_condition("Planned Maintenance Percentage = 100%"),
+			"planned_maintenance_percentage == 100",
+		)
+		# Existing >= / <= operators must be left intact.
+		self.assertEqual(
+			normalize_kpi_condition("Asset Breakdowns <= 3"),
+			"asset_breakdowns <= 3",
+		)
 
 	# --- Penalty tier auto-sort (Example 4, Case A) ---------------------------
 
