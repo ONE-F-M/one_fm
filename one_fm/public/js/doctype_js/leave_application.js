@@ -149,28 +149,26 @@ frappe.ui.form.on("Leave Application", {
 				const resumption_date = frm.doc.resumption_date;
 				const today = frappe.datetime.get_today();
 				const resumption_has_arrived = resumption_date && today >= resumption_date;
-
+                
 				if (!resumption_has_arrived) {
-					// Check if a submitted, un-returned OUT movement already exists
-					// for ANY leave in the contiguous chain that includes this leave.
-					// This prevents duplicate OUTs when L2 is contiguous to L1 and
-					// L1 already has an active OUT.
-					frappe.xcall(
-						"one_fm.accommodation.doctype.accommodation_leave_movement.accommodation_leave_movement.has_active_checkout_for_contiguous_chain",
-						{
-							employee: frm.doc.employee,
-							leave_application: frm.doc.name
-						}
-					).then(has_active_out => {
-						if (!has_active_out) {
-							frm.add_custom_button(__('Accommodation Leave Movement'), function() {
-								frappe.new_doc('Accommodation Leave Movement', {
-									leave_application: frm.doc.name,
-									employee: frm.doc.employee
-								});
-							}, __('Create'));
-						}
-					});
+					// Check if a submitted OUT movement already exists for this Leave Application
+                    frappe.xcall("frappe.client.get_count", {
+                        doctype: "Accommodation Leave Movement",
+                        filters: {
+                            leave_application: frm.doc.name,
+                            type: "OUT",
+                            docstatus: 1
+                        }
+                    }).then(count => {
+                        if (!count) {
+                            frm.add_custom_button(__('Accommodation Leave Movement'), function() {
+                                frappe.new_doc('Accommodation Leave Movement', {
+                                    leave_application: frm.doc.name,
+                                    employee: frm.doc.employee
+                                });
+                            }, __('Create'));
+                        }
+                    });
 				}
 			}
 		}
