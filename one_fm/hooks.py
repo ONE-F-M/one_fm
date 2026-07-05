@@ -298,7 +298,8 @@ doc_events = {
 	},
 	"Vehicle": {
 		"autoname": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.vehicle_autoname",
-		"after_insert": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.after_insert_vehicle"
+		"after_insert": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.after_insert_vehicle",
+		"validate": "one_fm.overrides.vehicle.validate_vehicle_branding"
 	},
 	"Item Group": {
 		"autoname": "one_fm.utils.item_group_naming_series",
@@ -453,15 +454,15 @@ doc_events = {
 		"after_insert": "one_fm.one_fm.task_assignment_from_email.assign_task_to_user_from_communication_content"
 	},
 	# COMMENTED OUT: ToDo hooks now handled by SpiffWorkflow/BPMN server scripts
-	"ToDo": {
-		"validate": "one_fm.overrides.todo.validate_todo",
-		"before_save":"one_fm.overrides.todo.before_save",
-		"after_insert":[
-			"one_fm.overrides.todo.create_google_task_on_todo_creation",
-			"one_fm.overrides.todo.send_email_on_todo_created"
-		],
-		"on_update": "one_fm.overrides.todo.update_google_task_on_todo_status_change"
-	},
+	# "ToDo": {
+	# 	"validate": "one_fm.overrides.todo.validate_todo",
+	# 	"before_save":"one_fm.overrides.todo.before_save",
+	# 	"after_insert":[
+	# 		"one_fm.overrides.todo.create_google_task_on_todo_creation",
+	# 		"one_fm.overrides.todo.send_email_on_todo_created"
+	# 	],
+	# 	"on_update": "one_fm.overrides.todo.update_google_task_on_todo_status_change"
+	# },
 	"OAuth Bearer Token": {
 		"after_insert": "one_fm.api.doc_methods.oauth_bearer_token.revoke_and_delete_existing_tokens",
 	}
@@ -616,7 +617,8 @@ scheduler_events = {
         'one_fm.utils.update_active_employees_assurance_level',
         'one_fm.operations.doctype.process_task.process_task.create_task_on_monthly_on_day',
         'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_day_process_task',
-        'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_last_day_process_task'
+        'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_last_day_process_task',
+		'one_fm.fleet_management.vehicle_branding_expiry.notify_vehicle_branding_expiry'
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",

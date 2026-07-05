@@ -1,0 +1,72 @@
+<style>
+    .rambo-notification-table {
+        font-family: Arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+    .rambo-notification-table th,
+    .rambo-notification-table td {
+        border: 1px solid #ddd;
+        padding: 10px;
+    }
+    .rambo-notification-table th {
+        background-color: #f2f2f2;
+        color: #333;
+        width: 35%;
+        text-align: left;
+        font-weight: bold;
+    }
+    .rambo-notification-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+</style>
+
+<p>Dear Team,</p>
+
+<p>A Rambo reliever has been assigned to cover a shift due to staff absence. Please review the details below.</p>
+
+<h4>Rambo Assignment Details:</h4>
+
+<table class="rambo-notification-table">
+    <tbody>
+        <tr>
+            <th>Date</th>
+            <td>{{ date }}</td>
+        </tr>
+        <tr>
+            <th>Original Absent Staff</th>
+            <td>{{ original_employee }} - {{ original_employee_name }}</td>
+        </tr>
+        <tr>
+            <th>Rambo Reliever Staff</th>
+            <td>{{ employee }} - {{ employee_name }}</td>
+        </tr>
+        <tr>
+            <th>Operations Site</th>
+            <td>{{ operations_site or "" }}</td>
+        </tr>
+        <tr>
+            <th>Operations Shift</th>
+            <td>{{ operations_shift or "" }}</td>
+        </tr>
+        <tr>
+            <th>Operations Role</th>
+            <td>{{ operations_role or "" }}</td>
+        </tr>
+        <tr>
+            <th>Project</th>
+            <td>{{ project or "" }}</td>
+        </tr>
+        <tr>
+            <th>Duty Timings</th>
+            <td>{{ start_time }} to {{ end_time }}</td>
+        </tr>
+        <tr>
+            <th>Transportation Manifest</th>
+            <td><a href="{{ manifest_url }}">{{ transportation_manifest }}</a></td>
+        </tr>
+    </tbody>
+</table>
+
+<br>
+<p>Please review and take necessary action.</p>

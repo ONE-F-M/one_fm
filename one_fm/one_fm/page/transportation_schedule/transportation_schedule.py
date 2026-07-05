@@ -1454,6 +1454,12 @@ def get_manifest_data_for_plan(plan_name: str):
 				emp_copy["qoa_reason"] = matching_row.qoa_reason
 				emp_copy["requires_reliever"] = matching_row.requires_reliever
 				emp_copy["reliever_employee"] = matching_row.reliever_employee
+				emp_copy["operations_shift"] = matching_row.operations_shift
+				emp_copy["operations_site"] = matching_row.operations_site
+				emp_copy["operations_role"] = matching_row.operations_role
+				emp_copy["project"] = matching_row.project
+				emp_copy["start_time"] = str(matching_row.start_time) if matching_row.start_time else None
+				emp_copy["end_time"] = str(matching_row.end_time) if matching_row.end_time else None
 				
 				if matching_row.reliever_employee:
 					rel_name = frappe.db.get_value("Employee", matching_row.reliever_employee, "employee_name") or matching_row.reliever_employee

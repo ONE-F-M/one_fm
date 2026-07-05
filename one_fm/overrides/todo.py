@@ -36,9 +36,6 @@ def notify_todo_status_change(doc):
     """Notify user if ToDo status changes. Modular, clear, and logs notification."""
     if doc.is_new():
         return
-    # Only send notifications for Action-type ToDos; Processa handles Process tasks
-    if getattr(doc, "type", "") and doc.type != "Action":
-        return
     if not doc.notify_allocated_to_via_email:
         return
     status_in_db = frappe.db.get_value(doc.doctype, doc.name, "status")
@@ -416,9 +413,6 @@ def sync_google_tasks_for_users(user_emails=[], timedelta_kwargs=None):
 
 @frappe.whitelist()
 def send_email_on_todo_created(doc, method):
-    # Only send notifications for Action-type ToDos; Processa handles Process tasks
-    if getattr(doc, "type", "") and doc.type != "Action":
-        return
     if not doc.notify_allocated_to_via_email:
         return
     user_id = frappe.session.user
