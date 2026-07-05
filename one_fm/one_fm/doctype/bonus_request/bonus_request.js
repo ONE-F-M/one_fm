@@ -3,6 +3,11 @@
 
 frappe.ui.form.on("Bonus Request", {
 	setup(frm) {
+		// Set default posting_date to today for new docs
+		if (frm.is_new() && !frm.doc.posting_date) {
+			frm.set_value("posting_date", frappe.datetime.get_today());
+		}
+
 		// Set default effective_year to current year for new docs
 		if (frm.is_new() && !frm.doc.effective_year) {
 			frm.set_value("effective_year", new Date().getFullYear());

@@ -298,7 +298,8 @@ doc_events = {
 	},
 	"Vehicle": {
 		"autoname": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.vehicle_autoname",
-		"after_insert": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.after_insert_vehicle"
+		"after_insert": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.after_insert_vehicle",
+		"validate": "one_fm.overrides.vehicle.validate_vehicle_branding"
 	},
 	"Item Group": {
 		"autoname": "one_fm.utils.item_group_naming_series",
@@ -613,7 +614,8 @@ scheduler_events = {
         'one_fm.utils.update_active_employees_assurance_level',
         'one_fm.operations.doctype.process_task.process_task.create_task_on_monthly_on_day',
         'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_day_process_task',
-        'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_last_day_process_task'
+        'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_last_day_process_task',
+		'one_fm.fleet_management.vehicle_branding_expiry.notify_vehicle_branding_expiry'
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
