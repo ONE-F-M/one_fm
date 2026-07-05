@@ -4,14 +4,6 @@
 let skip_attendance_confirmation = false;
 
 frappe.ui.form.on("Client Interview Shortlist", {
-	setup(frm) {
-		frm.set_query("prospective_client", function() {
-			return {
-				query: "one_fm.one_fm.doctype.client_interview_shortlist.client_interview_shortlist.get_prospective_client_list",
-			};
-		});
-	},
-
 	refresh(frm) {
         if (frm.doc.docstatus === 1) {
             // Remove add row button from specific child table
@@ -19,15 +11,6 @@ frappe.ui.form.on("Client Interview Shortlist", {
             frm.fields_dict['client_interview_employee'].grid.refresh();
         }
         skip_attendance_confirmation = false;
-	},
-
-	is_prospective_client(frm) {
-		if (!frm.doc.is_prospective_client) {
-			frm.set_value("prospective_client", "");
-			frm.set_value("customer_name", "");
-		} else {
-			frm.set_value("project", "");
-		}
 	},
     onload(frm) {
         skip_attendance_confirmation = false;
@@ -44,31 +27,9 @@ frappe.ui.form.on("Client Interview Shortlist", {
     },
 
     before_workflow_action(frm) {
+        // Story 2: Show informational warning for unchecked attendance/selection
+        // when the Operations Supervisor clicks Submit
         if (frm.selected_workflow_action === "Submit") {
-            // Helper: QoA validation — blocks submission if any attended
-            // employee is missing QOA Check or Upload Picture
-            function validate_qoa() {
-                let incomplete_rows = [];
-                (frm.doc.client_interview_employee || []).forEach(function(row) {
-                    if (row.attended && (!row.qoa_check || !row.upload_picture)) {
-                        incomplete_rows.push(row);
-                    }
-                });
-
-                if (incomplete_rows.length > 0) {
-                    let details = incomplete_rows.map(function(row) {
-                        return __("Row {0}: {1}", [row.idx, row.employee_name || row.employee]);
-                    }).join("<br>");
-
-                    frappe.dom.unfreeze();
-                    frm.selected_workflow_action = null;
-                    frappe.throw(
-                        __("Please complete the QOA Check and Upload Picture for the following employees before submitting:<br><br>{0}", [details])
-                    );
-                }
-            }
-
-            // Step 1: Show informational warning for unchecked attendance/selection
             let unchecked_rows = [];
             (frm.doc.client_interview_employee || []).forEach(function(row) {
                 if (!row.attended || !row.selected) {
@@ -81,33 +42,17 @@ frappe.ui.form.on("Client Interview Shortlist", {
                     return __("Row {0}: {1}", [row.idx, row.employee_name || row.employee]);
                 }).join("<br>");
 
-                // Return a Promise — after the user closes the warning,
-                // run QoA validation before proceeding to the workflow
-                return new Promise(function(resolve, reject) {
-                    let msg = frappe.msgprint({
-                        title: __("Attendance / Selection Status"),
-                        indicator: "red",
-                        message: __(
-                            "The following Employees Attendance or Selection status have not been checked for client interview:<br><br>"
-                            + "{0}"
-                            + "<br><br>But, if the employee has not been attended or has not been selected, then you can keep it unchecked.",
-                            [row_details]
-                        )
-                    });
-                    msg.$wrapper.one("hidden.bs.modal", function() {
-                        try {
-                            validate_qoa();
-                            resolve();
-                        } catch(e) {
-                            reject(e);
-                        }
-                    });
+                frappe.msgprint({
+                    title: __("Attendance / Selection Status"),
+                    indicator: "red",
+                    message: __(
+                        "The following Employees Attendance or Selection status have not been checked for client interview:<br><br>"
+                        + "{0}"
+                        + "<br><br>But, if the employee has not been attended or has not been selected, then you can keep it unchecked.",
+                        [row_details]
+                    )
                 });
             }
-
-            // Step 2: No attendance/selection issues — validate QoA directly
-            validate_qoa();
-            return Promise.resolve();
         }
     }
 });
