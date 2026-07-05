@@ -10,10 +10,7 @@
   "interview_date",
   "column_break_yybh",
   "company",
-  "is_prospective_client",
   "project",
-  "prospective_client",
-  "customer_name",
   "section_break_tkko",
   "client_interview_employee",
   "amended_from"
@@ -48,13 +45,12 @@
    "reqd": 1
   },
   {
-   "depends_on": "eval:!doc.is_prospective_client",
    "fieldname": "project",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Project",
-   "mandatory_depends_on": "eval:!doc.is_prospective_client",
-   "options": "Project"
+   "options": "Project",
+   "reqd": 1
   },
   {
    "fieldname": "section_break_tkko",
@@ -77,36 +73,13 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "is_prospective_client",
-   "fieldtype": "Check",
-   "label": "Is Prospective Client"
-  },
-  {
-   "depends_on": "eval:doc.is_prospective_client",
-   "fieldname": "prospective_client",
-   "fieldtype": "Link",
-   "ignore_user_permissions": 1,
-   "label": "Prospective Client",
-   "mandatory_depends_on": "eval:doc.is_prospective_client",
-   "options": "Opportunity"
-  },
-  {
-   "depends_on": "eval:doc.is_prospective_client",
-   "fetch_from": "prospective_client.customer_name",
-   "fieldname": "customer_name",
-   "fieldtype": "Data",
-   "label": "Customer Name",
-   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-24 22:07:55.681255",
+ "modified": "2025-12-01 12:09:56.312334",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Client Interview Shortlist",

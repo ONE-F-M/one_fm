@@ -76,11 +76,5 @@ def update_manifest_row_checkin(
 			"qoa_reason": updated_row.qoa_reason,
 			"requires_reliever": updated_row.requires_reliever,
 			"reliever_employee": updated_row.reliever_employee,
-			"operations_shift": updated_row.operations_shift,
-			"operations_site": updated_row.operations_site,
-			"operations_role": updated_row.operations_role,
-			"project": updated_row.project,
-			"start_time": str(updated_row.start_time) if updated_row.start_time else None,
-			"end_time": str(updated_row.end_time) if updated_row.end_time else None,
 		}
 	}
