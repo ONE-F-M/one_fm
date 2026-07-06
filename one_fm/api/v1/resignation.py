@@ -131,7 +131,7 @@ def create_resignation(
         doc.employment_type = emp.get("employment_type")
         doc.project_allocation = emp.get("project")
         doc.designation = emp.get("designation")
-        # Let Frappe set workflow_state to initial state (Pending Supervisor) automatically
+        # Let Frappe set workflow_state to the workflow's default initial state (Draft) on insert
 
         doc.append("employees", {
             "employee": employee_name,
@@ -158,7 +158,9 @@ def create_resignation(
             for row in doc.employees:
                 handle_attachment_internal(doc, row, att_data, "resignation_letter")
 
-        # Document is now in "Pending Supervisor" state (set by workflow automatically on insert)
+        # Step 3: Advance from Draft to Pending Supervisor now that the letter is attached
+        doc.reload()
+        apply_workflow(doc, "Submit for Review")
         return {"status": "success", "message": "Resignation submitted successfully", "name": doc.name}
 
     except Exception as e:
