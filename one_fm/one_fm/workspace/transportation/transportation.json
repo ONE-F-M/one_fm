@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Transportation</span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transportation Schedule\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transportation Manifest Page\",\"col\":3}},{\"type\":\"spacer\",\"data\":{\"col\":12}},{\"type\":\"card\",\"data\":{\"card_name\":\"Vehicles & Masters\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Scheduling & Dispatch\",\"col\":4}}]",
+ "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Transportation</span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transportation Schedule\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transportation Manifest Page\",\"col\":3}},{\"type\":\"spacer\",\"data\":{\"col\":12}},{\"type\":\"card\",\"data\":{\"card_name\":\"Vehicles & Masters\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Scheduling & Dispatch\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Transportation Reports\",\"col\":4}}]",
  "creation": "2026-06-10 20:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace",
@@ -126,9 +126,37 @@
    "link_type": "Page",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Transportation Reports",
+   "link_count": 2,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Driver-wise Route",
+   "link_count": 0,
+   "link_to": "Driver Wise Route Timeline",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Vehicle Utilization",
+   "link_count": 0,
+   "link_to": "Vehicle Wise Utilization",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-06-21 12:00:00.000000",
+ "modified": "2026-07-02 13:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Transportation",

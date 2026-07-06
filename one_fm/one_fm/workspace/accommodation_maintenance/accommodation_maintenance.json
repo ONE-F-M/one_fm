@@ -1,0 +1,34 @@
+{
+ "charts": [],
+ "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Accommodation Maintenance</span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Asset Maintenance Request\",\"col\":3}}]",
+ "creation": "2026-07-02 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "tool",
+ "idx": 0,
+ "is_standard": 1,
+ "label": "Accommodation Maintenance",
+ "links": [],
+ "modified": "2026-07-02 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Accommodation Maintenance",
+ "owner": "Administrator",
+ "parent_page": "GSD",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 12.5,
+ "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Asset Maintenance Request",
+   "link_to": "Asset Repair",
+   "type": "DocType"
+  }
+ ],
+ "title": "Accommodation Maintenance"
+}
