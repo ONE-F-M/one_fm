@@ -605,6 +605,7 @@ scheduler_events = {
 		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today',
 		'one_fm.tasks.execute.daily',
 		'one_fm.one_fm.doctype.maintenance_schedule_entry.maintenance_schedule_entry.generate_due_work_orders',
+		'one_fm.one_fm.doctype.maintenance_service_level_agreement.maintenance_service_level_agreement.send_sla_expiration_warnings',
 		"one_fm.one_fm.utils.attach_abbreviation_to_roles",
   		"one_fm.api.v2.zenquotes.set_cached_quote",
 		"one_fm.operations.doctype.contracts.contracts.send_contract_reminders",

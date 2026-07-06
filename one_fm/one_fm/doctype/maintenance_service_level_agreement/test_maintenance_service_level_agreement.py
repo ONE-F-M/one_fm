@@ -1,9 +1,16 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
 
+from unittest.mock import patch
+
 import frappe
 from frappe import ValidationError
 from frappe.tests.utils import FrappeTestCase
+from frappe.utils import add_days, today
+
+from one_fm.one_fm.doctype.maintenance_service_level_agreement.maintenance_service_level_agreement import (
+	send_sla_expiration_warnings,
+)
 
 
 def ensure_issue_priority(name):
@@ -211,3 +218,99 @@ class TestMaintenanceServiceLevelAgreement(FrappeTestCase):
 		)
 
 		territory_sla.validate()
+
+	# --- 30-day expiration warning (scheduler) --------------------------------
+
+	def _set_maintenance_manager(self, user):
+		settings = frappe.get_single("Maintenance Settings")
+		settings.maintenance_manager_user = user
+		settings.save(ignore_permissions=True)
+
+	def _make_submitted_sla(self, service_level, customer, holiday_list, end_date):
+		doc = self.make_sla(
+			service_level=service_level,
+			entity=customer,
+			holiday_list=holiday_list,
+			start_date=add_days(end_date, -365),
+			end_date=end_date,
+		)
+		doc.insert(ignore_permissions=True)
+		doc.submit()
+		return doc
+
+	def test_sends_warning_for_sla_expiring_in_30_days(self):
+		ensure_issue_priority("Low")
+		holiday_list = ensure_holiday_list("_Test Maintenance Holiday List")
+		customer = ensure_customer("_Test SLA Cust Warn30")
+		self._set_maintenance_manager("Administrator")
+
+		sla = self._make_submitted_sla(
+			"Warn30 Primary", customer, holiday_list, add_days(today(), 30)
+		)
+
+		with patch("one_fm.processor.sendemail") as mock_sendemail:
+			send_sla_expiration_warnings()
+
+		# Assert only about this test's own SLA (other tests may leave records).
+		calls = [c for c in mock_sendemail.call_args_list if sla.name in c.kwargs["subject"]]
+		self.assertEqual(len(calls), 1)
+		kwargs = calls[0].kwargs
+		self.assertEqual(kwargs["recipients"], ["Administrator"])
+		self.assertIn(customer, kwargs["subject"])
+
+	def test_no_warning_when_end_date_is_not_30_days_out(self):
+		ensure_issue_priority("Low")
+		holiday_list = ensure_holiday_list("_Test Maintenance Holiday List")
+		customer = ensure_customer("_Test SLA Cust Warn29")
+		self._set_maintenance_manager("Administrator")
+
+		# 29 days out — must not trigger (exactly 30 is required).
+		sla = self._make_submitted_sla(
+			"Warn29 Primary", customer, holiday_list, add_days(today(), 29)
+		)
+
+		with patch("one_fm.processor.sendemail") as mock_sendemail:
+			send_sla_expiration_warnings()
+
+		# No email should be sent for this SLA (ignore any leaked records).
+		calls = [c for c in mock_sendemail.call_args_list if sla.name in c.kwargs["subject"]]
+		self.assertEqual(calls, [])
+
+	def test_no_warning_for_draft_sla(self):
+		ensure_issue_priority("Low")
+		holiday_list = ensure_holiday_list("_Test Maintenance Holiday List")
+		customer = ensure_customer("_Test SLA Cust WarnDraft")
+		self._set_maintenance_manager("Administrator")
+
+		# Draft (not submitted) SLA is not "active" and must be ignored.
+		draft = self.make_sla(
+			service_level="WarnDraft Primary",
+			entity=customer,
+			holiday_list=holiday_list,
+			start_date=add_days(today(), -335),
+			end_date=add_days(today(), 30),
+		)
+		draft.insert(ignore_permissions=True)
+
+		with patch("one_fm.processor.sendemail") as mock_sendemail:
+			send_sla_expiration_warnings()
+
+		# The draft SLA must never generate an email (ignore any leaked records).
+		calls = [c for c in mock_sendemail.call_args_list if draft.name in c.kwargs["subject"]]
+		self.assertEqual(calls, [])
+
+	def test_no_warning_when_maintenance_manager_not_set(self):
+		ensure_issue_priority("Low")
+		holiday_list = ensure_holiday_list("_Test Maintenance Holiday List")
+		customer = ensure_customer("_Test SLA Cust WarnNoMgr")
+		self._set_maintenance_manager(None)
+
+		self._make_submitted_sla(
+			"WarnNoMgr Primary", customer, holiday_list, add_days(today(), 30)
+		)
+
+		with patch("one_fm.processor.sendemail") as mock_sendemail:
+			send_sla_expiration_warnings()
+
+		# No recipient configured — nothing is sent (logged instead).
+		mock_sendemail.assert_not_called()
