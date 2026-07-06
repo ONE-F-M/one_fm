@@ -1,0 +1,20 @@
+{
+ "creation": "2026-07-06 09:00:00.000000",
+ "doctype": "Page",
+ "module": "One Fm",
+ "name": "maintenance-scheduler",
+ "page_name": "maintenance-scheduler",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Maintenance Manager"
+  },
+  {
+   "role": "Maintenance User"
+  }
+ ],
+ "standard": "Yes",
+ "title": "Maintenance Scheduler"
+}
