@@ -8,12 +8,15 @@
   "workflow_state_field": "workflow_state",
   "doctype": "Workflow",
   "states": [
-    { "state": "Pending", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Stock User", "doctype": "Workflow Document State" },
-    { "state": "Transferred", "doc_status": "1", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Stock Manager", "doctype": "Workflow Document State" },
-    { "state": "Cancelled", "doc_status": "2", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Stock Manager", "doctype": "Workflow Document State" }
+    { "state": "Pending", "doc_status": "0", "style": "Warning", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Stock User", "send_email": 1, "doctype": "Workflow Document State" },
+    { "state": "Transferred", "doc_status": "1", "style": "Success", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Stock Manager", "send_email": 1, "doctype": "Workflow Document State" },
+    { "state": "Cancelled", "doc_status": "2", "style": "Danger", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Stock Manager", "send_email": 1, "doctype": "Workflow Document State" },
+    { "state": "Rejected", "doc_status": "0", "style": "Primary", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Stock User", "send_email": 1, "doctype": "Workflow Document State" }
   ],
   "transitions": [
-    { "state": "Pending", "action": "Transfer", "next_state": "Transferred", "allowed": "Stock Manager", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
-    { "state": "Transferred", "action": "Cancel", "next_state": "Cancelled", "allowed": "Stock Manager", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" }
+    { "state": "Pending", "action": "Receive Asset", "next_state": "Transferred", "allowed": "Stock Manager", "allow_self_approval": 1, "send_email_to_creator": 0, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "doctype": "Workflow Transition" },
+    { "state": "Pending", "action": "Receive Asset", "next_state": "Transferred", "allowed": "Stock User", "allow_self_approval": 1, "send_email_to_creator": 0, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "doctype": "Workflow Transition" },
+    { "state": "Pending", "action": "Reject Asset", "next_state": "Rejected", "allowed": "Stock User", "allow_self_approval": 1, "send_email_to_creator": 0, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "doctype": "Workflow Transition" },
+    { "state": "Transferred", "action": "Cancel", "next_state": "Cancelled", "allowed": "Stock Manager", "allow_self_approval": 1, "send_email_to_creator": 0, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "doctype": "Workflow Transition" }
   ]
 }
