@@ -4119,13 +4119,16 @@ def call_to_get_assurance_level(employees):
         if isinstance(employees, str):
             url = f"https://staging-apiwrapper.one-fm.com/api/DigitalSigning/CheckMobileIdentity/{employees}"
             headers = {'accept': 'text/plain','ApiKey': f'{api_key}'}
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=30)
             if response.status_code == 200:
                 data = response.json()
                 return data.get("data", None)
             else:
-                frappe.log_error(title="ERROR CALLING ASSURANCE API", message=frappe.get_traceback())
-                return {"error": response.status_code, "title": response.json()}
+                frappe.log_error(
+                    title="ERROR CALLING ASSURANCE API",
+                    message=f"Status: {response.status_code}\nBody: {response.text}"
+                )
+                return {"error": response.status_code, "title": response.text}
         else:
             url = f"https://staging-apiwrapper.one-fm.com/api/DigitalSigning/BulkCheckMobileIdentity"
             headers = {'Content-Type': 'application/json','ApiKey': f'{api_key}'}
@@ -4134,15 +4137,18 @@ def call_to_get_assurance_level(employees):
             for i in range(0, len(employees), batch_size):
                 batch = employees[i:i + batch_size]
                 try:
-                    response = requests.post(url, headers=headers, json=batch)
+                    response = requests.post(url, headers=headers, json=batch, timeout=60)
                     if response.status_code == 200:
                         data = response.json()
                         batch_result = data.get("data", [])
                         all_results.extend(batch_result)
                         frappe.msgprint(f"Batch {i} sent successfully.")
                     else:
-                        frappe.log_error(message=frappe.get_traceback(), title="Error calling assurance API")
-                        return {"error": response.status_code, "title": response.json()}
+                        frappe.log_error(
+                            message=f"Status: {response.status_code}\nBody: {response.text}",
+                            title="Error calling assurance API"
+                        )
+                        return {"error": response.status_code, "title": response.text}
                 except Exception as e:
                         frappe.log_error(message=frappe.get_traceback(), title="Error calling assurance API")
                         return {"error": str(e), "title": "API call failed"}
