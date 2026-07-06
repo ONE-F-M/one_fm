@@ -40,15 +40,15 @@ MAX_VISIBLE = 5
 
 VIEWS = ("hourly", "daily", "weekly", "monthly", "quarterly", "yearly")
 
-# Location filter chain, ordered top -> bottom. Each entry maps the filter level
-# to (child DocType, field on that DocType linking to the parent level).
-LOCATION_CHAIN = [
-	("project", None, None),
-	("operations_site", "Operations Site", "project"),
-	("building", "Building", "operations_site"),
-	("maintenance_floor", "Maintenance Floor", "building_name"),
-	("space", "Space", "maintenance_floor"),
-]
+# Location filter chain, ordered top -> bottom, for reference:
+#   project           Project
+#   operations_site   Operations Site  (link: project)
+#   building          Building         (link: operations_site, project)
+#   maintenance_floor Maintenance Floor(link: building_name, operations_site, project)
+#   space             Space            (link: maintenance_floor, building_name, ...)
+# Note the field linking Floor/Space to a Building is "building_name", not
+# "building". See get_location_filter_data() for how the ancestry is exposed.
+LOCATION_LEVELS = ("project", "operations_site", "building", "maintenance_floor", "space")
 
 
 # ---------------------------------------------------------------------------
@@ -57,46 +57,96 @@ LOCATION_CHAIN = [
 
 
 @frappe.whitelist()
-def get_location_options(level: str, parent: str | None = None) -> list[dict]:
-	"""Return the selectable options for one cascading filter level.
+def get_location_filter_data() -> dict:
+	"""Return every cascading-filter level's options with full parent ancestry.
 
-	Args:
-		level: one of "project", "operations_site", "building",
-			"maintenance_floor", "space".
-		parent: the value selected at the immediately-higher level, used to
-			constrain the options (e.g. Operations Sites for a given Project).
+	The client loads this once and performs all cascade filtering and parent
+	auto-fill in-memory (matching the Roster page's preload approach). This is
+	what lets a user pick a lower level (e.g. a Space) and have every higher
+	level (Floor / Building / Site / Project) fill in automatically.
+
+	Each option carries an ``ancestors`` dict keyed by the *filter level* keys
+	used on the client (project / operations_site / building /
+	maintenance_floor). Note the naming quirk: the field linking Maintenance
+	Floor and Space to a Building is ``building_name``, which we normalise to
+	the ``building`` key here so the client sees a uniform ancestry map.
 
 	Uses ``frappe.get_list`` so the user's read permissions are honoured.
 	"""
-	level = (level or "").strip()
-
-	if level == "project":
-		# Top of the chain - no parent constraint.
-		projects = frappe.get_list(
-			"Project",
-			fields=["name", "project_name"],
-			order_by="project_name asc",
-			limit_page_length=0,
-		)
-		return [{"value": p.name, "label": p.project_name or p.name} for p in projects]
-
-	config = next((c for c in LOCATION_CHAIN if c[0] == level), None)
-	if not config or not config[1]:
-		frappe.throw(_("Unknown location filter level: {0}").format(level))
-
-	_, doctype, parent_field = config
-	filters = {}
-	if parent:
-		filters[parent_field] = parent
-
-	rows = frappe.get_list(
-		doctype,
-		filters=filters,
-		fields=["name"],
+	projects = frappe.get_list(
+		"Project",
+		fields=["name", "project_name"],
+		order_by="project_name asc",
+		limit_page_length=0,
+	)
+	operations_sites = frappe.get_list(
+		"Operations Site",
+		fields=["name", "project"],
 		order_by="name asc",
 		limit_page_length=0,
 	)
-	return [{"value": r.name, "label": r.name} for r in rows]
+	buildings = frappe.get_list(
+		"Building",
+		fields=["name", "operations_site", "project"],
+		order_by="name asc",
+		limit_page_length=0,
+	)
+	floors = frappe.get_list(
+		"Maintenance Floor",
+		fields=["name", "building_name", "operations_site", "project"],
+		order_by="name asc",
+		limit_page_length=0,
+	)
+	spaces = frappe.get_list(
+		"Space",
+		fields=["name", "maintenance_floor", "building_name", "operations_site", "project"],
+		order_by="name asc",
+		limit_page_length=0,
+	)
+
+	return {
+		"project": [
+			{"value": p.name, "label": p.project_name or p.name, "ancestors": {}}
+			for p in projects
+		],
+		"operations_site": [
+			{"value": s.name, "label": s.name, "ancestors": {"project": s.project}}
+			for s in operations_sites
+		],
+		"building": [
+			{
+				"value": b.name,
+				"label": b.name,
+				"ancestors": {"operations_site": b.operations_site, "project": b.project},
+			}
+			for b in buildings
+		],
+		"maintenance_floor": [
+			{
+				"value": f.name,
+				"label": f.name,
+				"ancestors": {
+					"building": f.building_name,
+					"operations_site": f.operations_site,
+					"project": f.project,
+				},
+			}
+			for f in floors
+		],
+		"space": [
+			{
+				"value": sp.name,
+				"label": sp.name,
+				"ancestors": {
+					"maintenance_floor": sp.maintenance_floor,
+					"building": sp.building_name,
+					"operations_site": sp.operations_site,
+					"project": sp.project,
+				},
+			}
+			for sp in spaces
+		],
+	}
 
 
 # ---------------------------------------------------------------------------
@@ -146,8 +196,7 @@ def _parse_filters(filters) -> dict:
 	if isinstance(filters, str):
 		filters = frappe.parse_json(filters) if filters else {}
 	filters = filters or {}
-	allowed = ("project", "operations_site", "building", "maintenance_floor", "space")
-	return {k: v for k, v in filters.items() if k in allowed and v}
+	return {k: v for k, v in filters.items() if k in LOCATION_LEVELS and v}
 
 
 def _fetch_work_orders(start, end, filters: dict) -> list[dict]:

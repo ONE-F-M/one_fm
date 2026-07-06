@@ -13,7 +13,8 @@
 // schedule pattern used elsewhere in one_fm.
 
 const API_DATA = "one_fm.one_fm.page.maintenance_scheduler.maintenance_scheduler.get_schedule_data";
-const API_OPTIONS = "one_fm.one_fm.page.maintenance_scheduler.maintenance_scheduler.get_location_options";
+const API_OPTIONS =
+	"one_fm.one_fm.page.maintenance_scheduler.maintenance_scheduler.get_location_filter_data";
 const VUE_ASSET = "/assets/one_fm/js/vue.global.js";
 
 // The cascading filter levels, top -> bottom. Each depends on the one above.
@@ -85,8 +86,10 @@ function mount_app(page) {
 				loading: false,
 				// selected filter values, keyed by level
 				filters: { project: "", operations_site: "", building: "", maintenance_floor: "", space: "" },
-				// dropdown options, keyed by level
-				options: { project: [], operations_site: [], building: [], maintenance_floor: [], space: [] },
+				// full option lists (with parent ancestry) for every level, loaded
+				// once up front; the visible options per dropdown are derived from
+				// these via filteredOptions() so the cascade is done in-memory.
+				allOptions: { project: [], operations_site: [], building: [], maintenance_floor: [], space: [] },
 				// bucket keys whose "+X more" has been expanded
 				expanded: {},
 			};
@@ -142,13 +145,36 @@ function mount_app(page) {
 				});
 				return out;
 			},
-			loadOptions(level, parent) {
+			loadOptions() {
+				// Load every level's options (with ancestry) in one call. The
+				// cascade + parent auto-fill are then done client-side.
 				frappe.call({
 					method: API_OPTIONS,
-					args: { level, parent: parent || undefined },
 					callback: (r) => {
-						this.options[level] = (r && r.message) || [];
+						const m = (r && r.message) || {};
+						this.filterLevels.forEach((l) => {
+							this.allOptions[l.key] = m[l.key] || [];
+						});
 					},
+				});
+			},
+			levelIndex(level) {
+				return this.filterLevels.findIndex((l) => l.key === level);
+			},
+			// The options shown in one dropdown: every row at that level whose
+			// ancestry is consistent with the currently-selected higher-level
+			// filters. This is the "only options inside the parent" behaviour and
+			// it honours ANY selected ancestor, not just the immediate parent.
+			filteredOptions(level) {
+				const idx = this.levelIndex(level);
+				const rows = this.allOptions[level] || [];
+				return rows.filter((opt) => {
+					const anc = opt.ancestors || {};
+					for (let i = 0; i < idx; i++) {
+						const h = this.filterLevels[i].key;
+						if (this.filters[h] && anc[h] !== this.filters[h]) return false;
+					}
+					return true;
 				});
 			},
 
@@ -193,30 +219,42 @@ function mount_app(page) {
 
 			// --- cascading filters -------------------------------------------
 			onFilterChange(level) {
-				// Clear and reload every level below the one that changed.
-				const idx = this.filterLevels.findIndex((l) => l.key === level);
-				for (let i = idx + 1; i < this.filterLevels.length; i++) {
-					const child = this.filterLevels[i].key;
-					this.filters[child] = "";
-					this.options[child] = [];
+				const idx = this.levelIndex(level);
+				const value = this.filters[level];
+
+				// Selecting a level auto-fills every higher (parent) level from
+				// the chosen option's ancestry — the Roster-style back-fill, so
+				// picking a Space also selects its Floor / Building / Site / Project.
+				if (value) {
+					const opt = (this.allOptions[level] || []).find((o) => o.value === value);
+					const anc = (opt && opt.ancestors) || {};
+					for (let i = 0; i < idx; i++) {
+						const h = this.filterLevels[i].key;
+						if (anc[h]) this.filters[h] = anc[h];
+					}
 				}
-				const next = this.filterLevels[idx + 1];
-				if (next && this.filters[level]) {
-					this.loadOptions(next.key, this.filters[level]);
-				}
+
+				// Drop any lower-level selection that is no longer valid under the
+				// (possibly newly back-filled) higher-level selections.
+				this.reconcileLowerLevels();
 				this.loadData();
+			},
+			// Walk the chain top-down and clear any selection that is no longer in
+			// its own filtered option list. Because filteredOptions() only looks at
+			// higher levels, doing this top-down cascades correctly.
+			reconcileLowerLevels() {
+				this.filterLevels.forEach((l) => {
+					const val = this.filters[l.key];
+					if (val && !this.filteredOptions(l.key).some((o) => o.value === val)) {
+						this.filters[l.key] = "";
+					}
+				});
 			},
 			clearFilters() {
-				this.filterLevels.forEach((l, i) => {
+				this.filterLevels.forEach((l) => {
 					this.filters[l.key] = "";
-					if (i > 0) this.options[l.key] = [];
 				});
 				this.loadData();
-			},
-			filterDisabled(level) {
-				const idx = this.filterLevels.findIndex((l) => l.key === level);
-				if (idx === 0) return false; // Project is always enabled
-				return !this.filters[this.filterLevels[idx - 1].key];
 			},
 
 			// --- work-order card helpers -------------------------------------
@@ -255,7 +293,7 @@ function mount_app(page) {
 			},
 		},
 		mounted() {
-			this.loadOptions("project");
+			this.loadOptions();
 			this.loadData();
 		},
 	});
@@ -295,11 +333,10 @@ const TEMPLATE = `
 		<div class="ms-filter-group" v-for="level in filterLevels" :key="level.key">
 			<span class="ms-filter-label">{{ level.label }}</span>
 			<select class="form-control input-sm"
-				:disabled="filterDisabled(level.key)"
 				v-model="filters[level.key]"
 				@change="onFilterChange(level.key)">
 				<option value="">{{ __("All") }}</option>
-				<option v-for="opt in options[level.key]" :key="opt.value" :value="opt.value">
+				<option v-for="opt in filteredOptions(level.key)" :key="opt.value" :value="opt.value">
 					{{ opt.label }}
 				</option>
 			</select>
