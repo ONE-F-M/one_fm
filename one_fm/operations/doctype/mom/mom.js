@@ -321,6 +321,39 @@ function fetch_and_set_last_actions(frm) {
 	});
 }
 
+function html_to_plain_text(html) {
+	// Task descriptions are stored as rich HTML (ql-editor). The MOM Pending Action
+	// "description" is a Small Text field, so raw markup shows through. Convert to
+	// readable plain text: keep link URLs, turn block tags into line breaks.
+	if (!html) {
+		return "";
+	}
+	if (!/<[a-z][\s\S]*>/i.test(html)) {
+		// Already plain text
+		return html;
+	}
+
+	const container = document.createElement("div");
+	container.innerHTML = html;
+
+	// Replace anchors with their href so links remain visible
+	container.querySelectorAll("a[href]").forEach((a) => {
+		const href = a.getAttribute("href");
+		const text = (a.textContent || "").trim();
+		a.replaceWith(document.createTextNode(text && text !== href ? `${text} (${href})` : href));
+	});
+
+	// Turn block-level tags and <br> into newlines before extracting text
+	container.querySelectorAll("br").forEach((br) => br.replaceWith(document.createTextNode("\n")));
+	container.querySelectorAll("p, div, li, tr").forEach((el) => el.append(document.createTextNode("\n")));
+
+	const text = container.textContent || "";
+	return text
+		.replace(/\n{3,}/g, "\n\n")   // collapse excess blank lines
+		.replace(/[ \t]+\n/g, "\n")   // trim trailing spaces on lines
+		.trim();
+}
+
 function set_last_action_table(frm, action_list){
 	frm.clear_table("last_action");
 	action_list.forEach((mom_action) => {
@@ -329,7 +362,7 @@ function set_last_action_table(frm, action_list){
 		child_row.subject = mom_action.subject;
 		child_row.status = mom_action.status;
 		child_row.priority = mom_action.priority;
-		child_row.description = mom_action.description;
+		child_row.description = html_to_plain_text(mom_action.description);
 		child_row.user = mom_action.user;
 		child_row.due_date = mom_action.due_date;
 	});
@@ -344,7 +377,7 @@ function set_pending_actions_table(frm, action_list){
 		child_row.subject = mom_action.subject;
 		child_row.status = mom_action.status;
 		child_row.priority = mom_action.priority;
-		child_row.description = mom_action.description;
+		child_row.description = html_to_plain_text(mom_action.description);
 		child_row.user = mom_action.user;
 		child_row.due_date = mom_action.due_date;
 	});
