@@ -1,0 +1,463 @@
+/* Maintenance Scheduler styles
+ * High-density interactive grid: six time viewports, cascading location
+ * filters, day/bucket cards with a "+X more" overflow. Layout is driven
+ * entirely by CSS classes (no inline styles) so it works on desktop + mobile.
+ */
+
+.ms-wrapper {
+	--ms-card-w: 240px; /* fixed card width for scrolling column views */
+	padding: 12px;
+	font-family: var(--font-stack);
+	width: 100%;
+}
+
+/* ---------------- Toolbar ---------------- */
+.ms-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 12px;
+}
+
+.ms-views {
+	flex-wrap: wrap;
+}
+.ms-views .btn {
+	border-radius: 0;
+}
+.ms-views .btn:first-child {
+	border-top-left-radius: var(--border-radius, 6px);
+	border-bottom-left-radius: var(--border-radius, 6px);
+}
+.ms-views .btn:last-child {
+	border-top-right-radius: var(--border-radius, 6px);
+	border-bottom-right-radius: var(--border-radius, 6px);
+}
+
+.ms-nav {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+.ms-period {
+	font-weight: 700;
+	font-size: clamp(13px, 1.3vw, 16px);
+	margin-left: 8px;
+	color: var(--text-color, #1f2937);
+}
+.ms-count {
+	margin-left: auto;
+}
+
+/* ---------------- Filters ---------------- */
+.ms-filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	align-items: flex-end;
+	background: var(--card-bg, #fff);
+	border: 1px solid var(--border-color, #e2e8f0);
+	border-radius: 8px;
+	padding: 10px 14px;
+	margin-bottom: 12px;
+}
+.ms-filter-group {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 150px;
+	flex: 1 1 150px;
+}
+.ms-filter-label {
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--text-muted, #6b7280);
+}
+.ms-clear {
+	flex: 0 0 auto;
+}
+
+/* ---------------- Board scroll ---------------- */
+.ms-board-scroll {
+	overflow: auto;
+	max-height: calc(100vh - 260px);
+	border: 1px solid var(--border-color, #e2e8f0);
+	border-radius: 10px;
+	background: var(--subtle-fg, #f8fafc);
+	padding: 10px;
+}
+
+.ms-empty {
+	text-align: center;
+	padding: 60px 20px;
+}
+.ms-empty-icon {
+	font-size: 40px;
+	margin-bottom: 10px;
+}
+
+/* ---------------- Grid layouts per viewport ---------------- */
+.ms-grid {
+	display: grid;
+	gap: 8px;
+	/* Cells in a row share height for a clean, uniform calendar. Expanding a
+	   cell's "+X more" grows that row evenly and never overlaps neighbours. */
+	align-items: stretch;
+}
+
+/* Daily + Monthly: 7 columns Sunday -> Saturday */
+.ms-view-daily,
+.ms-view-monthly {
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+/* Quarterly: 3 month columns */
+.ms-view-quarterly {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* Yearly: responsive month cards */
+.ms-view-yearly {
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+/* Weekly: horizontally scrolling fixed-width week cards */
+.ms-view-weekly {
+	display: flex;
+	gap: 8px;
+	min-width: max-content;
+}
+.ms-view-weekly .ms-cell {
+	width: var(--ms-card-w);
+	flex: 0 0 var(--ms-card-w);
+}
+
+/* Weekday header for the monthly calendar */
+.ms-weekday-row {
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+	gap: 8px;
+	margin-bottom: 8px;
+}
+.ms-weekday {
+	text-align: center;
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--text-muted, #6b7280);
+	padding: 4px 0;
+}
+.ms-cal-blank {
+	border-radius: 8px;
+	background: repeating-linear-gradient(
+		45deg,
+		transparent,
+		transparent 8px,
+		rgba(0, 0, 0, 0.015) 8px,
+		rgba(0, 0, 0, 0.015) 16px
+	);
+}
+
+/* ---------------- Cells ---------------- */
+.ms-cell {
+	background: var(--fg-color, #fff);
+	border: 1px solid var(--border-color, #eef2f6);
+	border-radius: 8px;
+	padding: 8px;
+	min-height: 96px;
+}
+.ms-day-cell {
+	min-height: 120px;
+}
+.ms-cell.ms-today,
+.ms-cell.ms-current {
+	border-color: #3b82f6;
+	box-shadow: inset 0 0 0 1px #3b82f6;
+}
+
+.ms-cell-head {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+	margin-bottom: 6px;
+}
+.ms-cell-daynum {
+	font-weight: 700;
+	font-size: clamp(12px, 1.3vw, 16px);
+	color: var(--text-color, #1f2937);
+}
+.ms-cell-title {
+	font-weight: 700;
+	font-size: clamp(12px, 1.2vw, 15px);
+	color: var(--text-color, #1f2937);
+}
+.ms-cell-sub {
+	font-size: 11px;
+	color: var(--text-muted, #9ca3af);
+}
+.ms-cell-badge {
+	margin-left: auto;
+	font-size: 10px;
+	font-weight: 700;
+	background: var(--subtle-fg, #f1f5f9);
+	color: var(--text-muted, #64748b);
+	border-radius: 999px;
+	padding: 1px 7px;
+}
+
+/* ---------------- Work-order cards ---------------- */
+.ms-orders {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+.ms-order {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	/* Font scales with viewport width but is clamped so text stays readable
+	   between a defined minimum and maximum on any screen size. */
+	font-size: clamp(11px, 1.05vw, 13px);
+	line-height: 1.3;
+	padding: 2px 4px;
+	border-radius: 4px;
+	border-left: 3px solid #cbd5e1;
+	background: var(--subtle-fg, #f8fafc);
+	cursor: pointer;
+}
+.ms-order:hover {
+	background: rgba(59, 130, 246, 0.08);
+}
+.ms-order-inline {
+	background: var(--fg-color, #fff);
+	border: 1px solid var(--border-color, #eef2f6);
+	border-left-width: 3px;
+}
+
+.ms-order-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	flex: 0 0 auto;
+}
+/* Status colour scheme (dots + footer chips):
+ * Open = Blue, Dispatched = Purple, Completed = Green, Overdue = Red,
+ * On Hold - Parts Required = Amber. */
+.ms-status-open {
+	background: #3b82f6; /* blue */
+}
+.ms-status-dispatched {
+	background: #8b5cf6; /* purple */
+}
+.ms-status-hold {
+	background: #f59e0b; /* amber */
+}
+.ms-status-completed {
+	background: #22c55e; /* green */
+}
+.ms-status-overdue {
+	background: #ef4444; /* red */
+}
+
+/* Status-driven left border on each work-order card (same palette). */
+.ms-bd-open {
+	border-left-color: #3b82f6;
+}
+.ms-bd-dispatched {
+	border-left-color: #8b5cf6;
+}
+.ms-bd-hold {
+	border-left-color: #f59e0b;
+}
+.ms-bd-completed {
+	border-left-color: #22c55e;
+}
+.ms-bd-overdue {
+	border-left-color: #ef4444;
+}
+
+.ms-order-time {
+	font-size: 10px;
+	font-weight: 700;
+	color: var(--text-muted, #64748b);
+	flex: 0 0 auto;
+}
+.ms-order-title {
+	flex: 1 1 auto;
+	/* min-width:0 lets a flex item shrink below its content width so the
+	   ellipsis truncation actually engages inside dense cells. */
+	min-width: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	color: var(--text-color, #374151);
+}
+.ms-order-status {
+	font-size: 10px;
+	color: var(--text-muted, #9ca3af);
+	flex: 0 0 auto;
+}
+
+.ms-more {
+	align-self: flex-start;
+	background: none;
+	border: none;
+	color: #2563eb;
+	font-size: 11px;
+	font-weight: 600;
+	padding: 2px 0;
+	cursor: pointer;
+}
+.ms-more:hover {
+	text-decoration: underline;
+}
+
+/* Per-cell empty state — shown instead of a blank cell when a day/bucket has
+   no Work Orders (and never overlaps the "+X more" control). */
+.ms-cell-empty {
+	padding: 4px 2px;
+	font-style: italic;
+	opacity: 0.7;
+}
+
+/* ---------------- Drag-and-drop reschedule (Daily + Monthly) ---------------- */
+.ms-draggable {
+	cursor: grab;
+}
+.ms-draggable:active {
+	cursor: grabbing;
+}
+/* Highlight the day/bucket cell currently under the dragged card. */
+.ms-drop-target {
+	border-color: #8b5cf6;
+	box-shadow: inset 0 0 0 2px rgba(139, 92, 246, 0.55);
+	background: rgba(139, 92, 246, 0.06);
+}
+
+/* ---------------- Live footer (counters + SLA) ---------------- */
+.ms-footer {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px 18px;
+	margin-top: 12px;
+	padding: 10px 14px;
+	background: var(--card-bg, #fff);
+	border: 1px solid var(--border-color, #e2e8f0);
+	border-radius: 8px;
+}
+.ms-footer-counts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 14px;
+	align-items: center;
+}
+.ms-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: clamp(11px, 1vw, 13px);
+	color: var(--text-muted, #64748b);
+}
+.ms-chip strong {
+	color: var(--text-color, #1f2937);
+}
+.ms-footer-sla {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+	margin-left: auto;
+}
+.ms-sla-label {
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--text-muted, #6b7280);
+}
+.ms-sla-value {
+	font-size: clamp(15px, 1.6vw, 20px);
+	font-weight: 700;
+	color: var(--text-color, #1f2937);
+}
+
+/* ---------------- Hourly view ---------------- */
+.ms-view-hourly {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+.ms-hour-row {
+	display: flex;
+	gap: 10px;
+	align-items: flex-start;
+	padding: 6px 4px;
+	border-bottom: 1px solid var(--border-color, #eef2f6);
+}
+.ms-hour-row.ms-current {
+	background: rgba(59, 130, 246, 0.06);
+}
+.ms-hour-label {
+	flex: 0 0 64px;
+	text-align: right;
+}
+.ms-hour-24 {
+	font-weight: 700;
+	font-size: 13px;
+	color: var(--text-color, #1f2937);
+}
+.ms-hour-orders {
+	flex: 1 1 auto;
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	min-height: 22px;
+}
+.ms-hour-empty {
+	padding: 2px 0;
+}
+
+/* ---------------- Responsive (mobile) ---------------- */
+@media (max-width: 768px) {
+	.ms-view-daily,
+	.ms-view-monthly {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	.ms-weekday-row {
+		display: none; /* calendar collapses to a 2-col agenda on small screens */
+	}
+	.ms-cal-blank {
+		display: none;
+	}
+	.ms-view-quarterly,
+	.ms-view-yearly {
+		grid-template-columns: 1fr;
+	}
+	.ms-count {
+		margin-left: 0;
+	}
+	.ms-filter-group {
+		min-width: 120px;
+	}
+}
+
+/* ---------------- Dark mode ---------------- */
+[data-theme="dark"] .ms-order {
+	background: rgba(255, 255, 255, 0.03);
+}
+[data-theme="dark"] .ms-order:hover {
+	background: rgba(59, 130, 246, 0.18);
+}
+[data-theme="dark"] .ms-cal-blank {
+	background: repeating-linear-gradient(
+		45deg,
+		transparent,
+		transparent 8px,
+		rgba(255, 255, 255, 0.03) 8px,
+		rgba(255, 255, 255, 0.03) 16px
+	);
+}

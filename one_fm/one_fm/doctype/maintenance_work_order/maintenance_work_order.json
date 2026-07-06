@@ -2,7 +2,7 @@
  "actions": [],
  "allow_rename": 1,
  "autoname": "naming_series:",
- "creation": "2026-05-22 12:00:00.000000",
+ "creation": "2026-05-22 12:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -15,6 +15,7 @@
   "priority",
   "column_break_woru",
   "maintenance_schedule",
+  "planned_deadline",
   "status",
   "object_details_section",
   "object",
@@ -51,7 +52,9 @@
   "sla_resolution_status",
   "column_break_ygiw",
   "first_check_in_time",
-  "completion_time"
+  "creation_datetime",
+  "completion_time",
+  "hold_started_on"
  ],
  "fields": [
   {
@@ -95,8 +98,7 @@
    "fieldname": "priority",
    "fieldtype": "Link",
    "label": "Priority",
-   "options": "Issue Priority",
-   "reqd": 1
+   "options": "Issue Priority"
   },
   {
    "fieldname": "column_break_woru",
@@ -214,8 +216,7 @@
    "fieldname": "assigned_maintenance_team",
    "fieldtype": "Link",
    "label": "Assigned Maintenance Team",
-   "options": "Asset Maintenance Team",
-   "reqd": 1
+   "options": "Asset Maintenance Team"
   },
   {
    "fetch_from": "assigned_maintenance_team.maintenance_manager",
@@ -310,6 +311,7 @@
    "label": "SLA Analytics"
   },
   {
+   "description": "Target start time from the asset fallback tree (Last Service Date \u2192 Commissioning Date \u2192 Creation Date + Frequency Days).",
    "fieldname": "sla_trigger_time",
    "fieldtype": "Datetime",
    "label": "SLA Trigger Time",
@@ -319,14 +321,14 @@
    "fieldname": "sla_response_status",
    "fieldtype": "Select",
    "label": "SLA Response Status",
-   "options": "\nPass\nFail",
+   "options": "\nPre-Start\nActive Counting\nPass\nFail",
    "read_only": 1
   },
   {
    "fieldname": "sla_resolution_status",
    "fieldtype": "Select",
    "label": "SLA Resolution Status",
-   "options": "\nPass\nFail",
+   "options": "\nPre-Start\nActive Counting\nPass\nFail",
    "read_only": 1
   },
   {
@@ -336,20 +338,40 @@
   {
    "fieldname": "first_check_in_time",
    "fieldtype": "Datetime",
-   "label": "First Check In Time",
-   "read_only": 1
+   "label": "First Check In Time"
   },
   {
    "fieldname": "completion_time",
    "fieldtype": "Datetime",
    "label": "Completion Time",
    "read_only": 1
+  },
+  {
+   "description": "Internal: timestamp the Work Order entered 'On Hold - Parts Required'. Used to accumulate Total Paused Minutes.",
+   "fieldname": "hold_started_on",
+   "fieldtype": "Datetime",
+   "hidden": 1,
+   "label": "Hold Started On",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "planned_deadline",
+   "fieldtype": "Datetime",
+   "label": "Planned Deadline",
+   "read_only": 1
+  },
+  {
+   "fieldname": "creation_datetime",
+   "fieldtype": "Datetime",
+   "label": "Creation Datetime",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-22 12:00:00.000000",
+ "modified": "2026-07-05 17:01:27.240098",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Maintenance Work Order",
@@ -373,7 +395,6 @@
   {
    "cancel": 1,
    "create": 1,
-   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,

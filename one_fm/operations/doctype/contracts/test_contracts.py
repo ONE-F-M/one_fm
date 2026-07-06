@@ -115,13 +115,14 @@ class TestContracts(FrappeTestCase):
 		return contract
 
 	# ------------------------------------------------------------------
-	# Test: send_contract_reminders (existing, fixed)
+	# Test: send_contract_reminders — one separate email per expiring contract
 	# ------------------------------------------------------------------
 	@patch('one_fm.operations.doctype.contracts.contracts.sendemail')
-	def test_send_contract_reminders_grouped_email_delivery(self, mock_sendemail):
+	def test_send_contract_reminders_separate_email_per_contract(self, mock_sendemail):
 		"""
-		Verifies that multiple contracts expiring today generate a single grouped email
-		sent to the configurable 'notify_contract_expiry_users' Action Users in ONEFM General Setting.
+		Verifies that multiple contracts sharing the same internal notification date
+		each generate a separate, individual email (NOT grouped into a single email),
+		sent to the configurable Action Users in ONEFM General Setting.
 		"""
 
 		contract1 = frappe.get_doc({
@@ -156,37 +157,60 @@ class TestContracts(FrappeTestCase):
 		# Action: Trigger the scheduled event
 		send_contract_reminders(is_scheduled_event=False)
 
-		# Verify: Determine if sendemail patch was called exactly ONCE
+		# Verify: one separate email per expiring contract (NOT grouped)
 		self.assertEqual(
-			mock_sendemail.call_count, 1,
-			"sendemail should only be called once, grouping all contracts into a single email."
+			mock_sendemail.call_count, 2,
+			"sendemail should be called once per expiring contract — no grouping."
 		)
 
-		call_kwargs = mock_sendemail.call_args[1]
+		# Index each call by the emailed contract name (appended to the subject)
+		calls_by_contract = {}
+		for call in mock_sendemail.call_args_list:
+			kwargs = call[1]
+			subject = kwargs.get("subject", "")
+			# Subject keeps the current structure, with the contract id appended
+			self.assertTrue(
+				subject.startswith("Contract Internal Notification Period for Expiring Contracts"),
+				"Subject must keep the current structure."
+			)
+			if contract1.name in subject:
+				calls_by_contract["contract1"] = kwargs
+			elif contract2.name in subject:
+				calls_by_contract["contract2"] = kwargs
 
-		# Verify first user is the main recipient (the existing sendemail pattern uses
-		# the first user as recipient and the rest as CC)
-		self.assertIn(
-			"test_notify1@example.com", call_kwargs.get("recipients", []),
-			"First action user must be in recipients."
-		)
+		self.assertIn("contract1", calls_by_contract, "Missing individual email for contract 1.")
+		self.assertIn("contract2", calls_by_contract, "Missing individual email for contract 2.")
 
-		# The second user should be in CC (existing sendemail pattern)
-		cc = call_kwargs.get("cc", [])
-		self.assertIn(
-			"test_notify2@example.com", cc,
-			"Second action user must be in CC."
-		)
+		action_users = {"test_notify1@example.com", "test_notify2@example.com"}
+		for key, contract in (("contract1", contract1), ("contract2", contract2)):
+			kwargs = calls_by_contract[key]
 
-		# Finance and Legal group mailboxes must always be CC'd (User Story)
-		self.assertIn("finance@one-fm.com", cc, "Finance must be CC'd on contract reminders.")
-		self.assertIn("legal@one-fm.com", cc, "Legal must be CC'd on contract reminders.")
+			# One action user is the primary recipient; the remaining users go to CC.
+			# The production code derives users via set(), so which one is primary is
+			# not deterministic — assert on membership rather than a fixed order.
+			recipients = kwargs.get("recipients", [])
+			self.assertEqual(len(recipients), 1, "Each email must have a single primary recipient.")
+			recipient = recipients[0]
+			self.assertIn(recipient, action_users, "Primary recipient must be a configured action user.")
 
-		# Verify Content Grouping (Should include both clients from the contracts)
-		email_content = call_kwargs.get("content", "")
-		self.assertIn("TEST-CLIENT-1", email_content, "First contract data missing from grouped email")
-		self.assertIn("TEST-CLIENT-2", email_content, "Second contract data missing from grouped email")
-		self.assertEqual(call_kwargs.get("subject"), "Contract Internal Notification Period for Expiring Contracts")
+			cc = kwargs.get("cc", [])
+			# The other action user (not the primary recipient) must be CC'd
+			self.assertIn(
+				(action_users - {recipient}).pop(), cc,
+				"The remaining action user must be in CC."
+			)
+			# Finance and Legal group mailboxes must always be CC'd (User Story)
+			self.assertIn("finance@one-fm.com", cc, "Finance must be CC'd on contract reminders.")
+			self.assertIn("legal@one-fm.com", cc, "Legal must be CC'd on contract reminders.")
+
+			# The subject must carry this contract's id for individual tracking
+			self.assertIn(contract.name, kwargs.get("subject", ""))
+
+		# Each email must contain only its own contract's data — not the other's
+		self.assertIn("TEST-CLIENT-1", calls_by_contract["contract1"].get("content", ""))
+		self.assertNotIn("TEST-CLIENT-2", calls_by_contract["contract1"].get("content", ""))
+		self.assertIn("TEST-CLIENT-2", calls_by_contract["contract2"].get("content", ""))
+		self.assertNotIn("TEST-CLIENT-1", calls_by_contract["contract2"].get("content", ""))
 
 	# ------------------------------------------------------------------
 	# Test: set_contract_inactive — immediate path

@@ -604,6 +604,8 @@ scheduler_events = {
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
 		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today',
 		'one_fm.tasks.execute.daily',
+		'one_fm.one_fm.doctype.maintenance_schedule_entry.maintenance_schedule_entry.generate_due_work_orders',
+		'one_fm.one_fm.doctype.maintenance_service_level_agreement.maintenance_service_level_agreement.send_sla_expiration_warnings',
 		"one_fm.one_fm.utils.attach_abbreviation_to_roles",
   		"one_fm.api.v2.zenquotes.set_cached_quote",
 		"one_fm.operations.doctype.contracts.contracts.send_contract_reminders",
@@ -659,6 +661,9 @@ scheduler_events = {
 		"15 4 1 * *": [# “At 04:15 on day-of-month 1.”
 			'one_fm.grd.doctype.pifss_monthly_deduction.pifss_monthly_deduction.auto_create_pifss_monthly_deduction_record',
 		],
+		"30 4 1 * *": [# “At 04:30 on day-of-month 1.” Assess the billing month that just ended.
+			'one_fm.one_fm.doctype.maintenance_kpi_assessment.maintenance_kpi_assessment.create_monthly_assessments',
+		],
 		"0/15 * * * *": [ #At every 15th minute from 0 through 59.”
 			"one_fm.legal.doctype.penalty.penalty.automatic_reject",
 			# 'one_fm.api.tasks.process_attendance',
@@ -673,6 +678,8 @@ scheduler_events = {
 			#"one_fm.api.tasks.automatic_checkout",
 			"one_fm.one_fm.doctype.password_reset_token.password_reset_token.revoke_password_tokens",
 			"one_fm.api.tasks.rambo_shift_assignment",
+			# Advance live SLA countdown statuses for in-progress Preventive Maintenance Work Orders
+			"one_fm.one_fm.doctype.maintenance_work_order.maintenance_work_order.update_active_sla_statuses",
 		],
 		"0/15 * * * *": [
 			"one_fm.api.tasks.update_shift_type"

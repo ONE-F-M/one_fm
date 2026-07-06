@@ -1,0 +1,154 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "MKA-.YYYY.-.#####",
+ "creation": "2026-05-31 11:05:58.473745",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "basic_information_section",
+  "contract",
+  "project",
+  "client",
+  "column_break_uqjz",
+  "maintenance_kpi_master",
+  "month",
+  "year",
+  "monthly_kpi_details_section",
+  "monthly_kpi_assessment",
+  "monthly_penalty_details_section",
+  "monthly_penalty_assessment",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "basic_information_section",
+   "fieldtype": "Section Break",
+   "label": "Basic Information"
+  },
+  {
+   "fieldname": "contract",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Contract",
+   "options": "Contracts",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "contract.project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "contract.client",
+   "fieldname": "client",
+   "fieldtype": "Link",
+   "label": "Client",
+   "options": "Customer",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_uqjz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "maintenance_kpi_master",
+   "fieldtype": "Link",
+   "label": "Maintenance KPI Master",
+   "options": "Maintenance KPI Master",
+   "read_only": 1
+  },
+  {
+   "fieldname": "month",
+   "fieldtype": "Select",
+   "label": "Month",
+   "options": "\nJanuary\nFebruary\nMarch\nApril\nMay\nJune\nJuly\nAugust\nSeptember\nOctober\nNovember\nDecember",
+   "read_only": 1
+  },
+  {
+   "fieldname": "year",
+   "fieldtype": "Select",
+   "label": "Year",
+   "options": "\n2026\n2027\n2028\n2029\n2030\n2031\n2032\n2033\n2034\n2035",
+   "read_only": 1
+  },
+  {
+   "fieldname": "monthly_kpi_details_section",
+   "fieldtype": "Section Break",
+   "label": "Monthly KPI Details"
+  },
+  {
+   "fieldname": "monthly_kpi_assessment",
+   "fieldtype": "Table",
+   "label": "Monthly KPI Assessment",
+   "options": "Monthly KPI Assessment Item"
+  },
+  {
+   "fieldname": "monthly_penalty_details_section",
+   "fieldtype": "Section Break",
+   "label": "Monthly Penalty Details"
+  },
+  {
+   "fieldname": "monthly_penalty_assessment",
+   "fieldtype": "Table",
+   "label": "Monthly Penalty Assessment",
+   "options": "Maintenance Assessment Penalty Item"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Maintenance KPI Assessment",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-07-05 21:57:20.465317",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Maintenance KPI Assessment",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Maintenance Manager",
+   "select": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

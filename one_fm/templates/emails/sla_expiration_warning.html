@@ -1,0 +1,62 @@
+<style>
+    .sla-notification-table {
+        font-family: Arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+    .sla-notification-table th,
+    .sla-notification-table td {
+        border: 1px solid #ddd;
+        padding: 10px;
+    }
+    .sla-notification-table th {
+        background-color: #f2f2f2;
+        color: #333;
+        width: 35%;
+        text-align: left;
+        font-weight: bold;
+    }
+    .sla-notification-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+</style>
+
+<p>Dear Maintenance Manager,</p>
+
+<p>Please be advised that the active Maintenance Service Level Agreement for
+	<strong>{{ client_name }}</strong> is approaching its contractual expiration horizon.</p>
+
+<p>The finalized last working date for this service agreement is <strong>{{ end_date }}</strong>.</p>
+
+<p>Please note that once this expiration date crosses, all automated compliance tracking logs,
+	active response clocks, and resolution calculation engines for both preventive (PPM) and
+	reactive work orders will immediately lose their custom contract parameters and fallback to
+	global default system baselines.</p>
+
+<h4>SLA Profile Details:</h4>
+
+<table class="sla-notification-table">
+	<tbody>
+		<tr>
+			<th>SLA Contract ID</th>
+			<td>{{ doc.name }}</td>
+		</tr>
+		<tr>
+			<th>Client Name</th>
+			<td>{{ client_name }}</td>
+		</tr>
+		<tr>
+			<th>End Date</th>
+			<td>{{ end_date }}</td>
+		</tr>
+		<tr>
+			<th>SLA Master Record</th>
+			<td><a href="{{ sla_url }}">View Service Level Agreement</a></td>
+		</tr>
+	</tbody>
+</table>
+
+<br>
+
+<p>Please review pending operational tasks or coordinate with the commercial accounts team
+	regarding contract renewals before the final termination window.</p>

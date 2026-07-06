@@ -336,10 +336,25 @@ frappe.ui.ReportColumnFilter = class ReportColumnFilter {
 
 	open_date_dropdown(fieldname, $header_cell, column) {
 		const existing = this.column_filters[fieldname];
+		// Default condition is "between" (preserves the classic from/to range)
+		const condition = existing && existing.condition ? existing.condition : "between";
+		const single_val = existing && existing.value ? existing.value : "";
 		const from_val = existing && existing.from ? existing.from : "";
 		const to_val = existing && existing.to ? existing.to : "";
 
 		const $dropdown = $(`<div class="column-filter-dropdown">
+			<div class="cf-date-condition-wrapper">
+				<label>${__("Condition")}</label>
+				<select class="cf-date-condition">
+					<option value="before">${__("Before")}</option>
+					<option value="after">${__("After")}</option>
+					<option value="between">${__("Between")}</option>
+				</select>
+			</div>
+			<div class="cf-date-single-wrapper">
+				<label class="cf-date-single-label">${__("Date")}</label>
+				<input type="date" class="cf-date-value" value="${single_val}">
+			</div>
 			<div class="cf-date-range-wrapper">
 				<div>
 					<label>${__("From Date")}</label>
@@ -351,6 +366,7 @@ frappe.ui.ReportColumnFilter = class ReportColumnFilter {
 				</div>
 			</div>
 			<div class="cf-actions-row">
+				<span class="cf-action-link cf-date-today">${__("Today")}</span>
 				<span class="cf-action-link cf-date-clear">${__("Clear")}</span>
 			</div>
 			<div class="cf-footer">
@@ -358,26 +374,77 @@ frappe.ui.ReportColumnFilter = class ReportColumnFilter {
 			</div>
 		</div>`);
 
-		// Clear date filter
+		const $condition = $dropdown.find(".cf-date-condition");
+		const $single_wrapper = $dropdown.find(".cf-date-single-wrapper");
+		const $single_label = $dropdown.find(".cf-date-single-label");
+		const $single_input = $dropdown.find(".cf-date-value");
+		const $range_wrapper = $dropdown.find(".cf-date-range-wrapper");
+
+		$condition.val(condition);
+
+		// Toggle single-date vs range inputs based on the selected condition
+		const sync_inputs = () => {
+			const cond = $condition.val();
+			if (cond === "between") {
+				$single_wrapper.hide();
+				$range_wrapper.show();
+			} else {
+				$single_wrapper.show();
+				$range_wrapper.hide();
+				$single_label.text(cond === "before" ? __("Before this date") : __("After this date"));
+			}
+		};
+		sync_inputs();
+		$condition.on("change", sync_inputs);
+
+		// "Today" fills the relevant input(s) with today's date
+		$dropdown.find(".cf-date-today").on("click", () => {
+			const today = frappe.datetime.get_today();
+			if ($condition.val() === "between") {
+				$dropdown.find(".cf-date-from").val(today);
+				$dropdown.find(".cf-date-to").val(today);
+			} else {
+				$single_input.val(today);
+			}
+		});
+
+		// Clear date inputs
 		$dropdown.find(".cf-date-clear").on("click", () => {
+			$single_input.val("");
 			$dropdown.find(".cf-date-from").val("");
 			$dropdown.find(".cf-date-to").val("");
 		});
 
 		// OK button
 		$dropdown.find(".cf-ok-btn").on("click", () => {
-			const from_date = $dropdown.find(".cf-date-from").val();
-			const to_date = $dropdown.find(".cf-date-to").val();
+			const cond = $condition.val();
 
-			if (!from_date && !to_date) {
-				// Remove filter
-				delete this.column_filters[fieldname];
+			if (cond === "between") {
+				const from_date = $dropdown.find(".cf-date-from").val();
+				const to_date = $dropdown.find(".cf-date-to").val();
+
+				if (!from_date && !to_date) {
+					delete this.column_filters[fieldname];
+				} else {
+					this.column_filters[fieldname] = {
+						type: "date",
+						condition: "between",
+						from: from_date || null,
+						to: to_date || null
+					};
+				}
 			} else {
-				this.column_filters[fieldname] = {
-					type: "date",
-					from: from_date || null,
-					to: to_date || null
-				};
+				const value = $single_input.val();
+
+				if (!value) {
+					delete this.column_filters[fieldname];
+				} else {
+					this.column_filters[fieldname] = {
+						type: "date",
+						condition: cond,
+						value: value
+					};
+				}
 			}
 
 			this.close_dropdown();
@@ -446,10 +513,21 @@ frappe.ui.ReportColumnFilter = class ReportColumnFilter {
 				return selected.has(String(val));
 			});
 		} else if (filter_info.type === "date") {
+			const condition = filter_info.condition || "between";
 			return data.filter(row => {
 				const val = row[fieldname];
-				if (!val) return true; // Don't filter out blanks for date range
+				if (!val) return false; // Blanks have no date to compare — exclude them
 				const date_str = String(val);
+
+				if (condition === "before") {
+					// Strictly earlier than the selected date
+					return date_str < filter_info.value;
+				}
+				if (condition === "after") {
+					// Strictly later than the selected date
+					return date_str > filter_info.value;
+				}
+				// "between" — inclusive of both endpoints
 				if (filter_info.from && date_str < filter_info.from) return false;
 				if (filter_info.to && date_str > filter_info.to) return false;
 				return true;

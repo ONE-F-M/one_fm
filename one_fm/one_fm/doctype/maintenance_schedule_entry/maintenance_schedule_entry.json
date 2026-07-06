@@ -1,0 +1,205 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-05-24 23:11:05.370757",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_xpwf",
+  "object",
+  "column_break_jkhy",
+  "object_category",
+  "status",
+  "location_details_section",
+  "space",
+  "maintenance_floor",
+  "building",
+  "column_break_ftrm",
+  "operations_site",
+  "project",
+  "task_details_section",
+  "maintenance_task",
+  "column_break_urrp",
+  "maintenance_frequency",
+  "column_break_igly",
+  "frequency_days",
+  "column_break_dvgp",
+  "planned_execution_datetime",
+  "maintenance_team_section",
+  "maintenance_team",
+  "maintenance_schedule_team_members",
+  "section_break_ijbe",
+  "work_order",
+  "column_break_giwy"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_xpwf",
+   "fieldtype": "Section Break",
+   "label": "Object Information"
+  },
+  {
+   "fieldname": "object",
+   "fieldtype": "Link",
+   "label": "Object",
+   "options": "Object",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_jkhy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "object_category",
+   "fieldtype": "Link",
+   "label": "Object Category",
+   "options": "Object Category"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "\nOpen\nWork Order Created\nCompleted\nOverdue\nClosed",
+   "reqd": 1
+  },
+  {
+   "fieldname": "location_details_section",
+   "fieldtype": "Section Break",
+   "label": "Location Details"
+  },
+  {
+   "fieldname": "space",
+   "fieldtype": "Link",
+   "label": "Space",
+   "options": "Space",
+   "reqd": 1
+  },
+  {
+   "fieldname": "maintenance_floor",
+   "fieldtype": "Link",
+   "label": "Maintenance Floor",
+   "options": "Maintenance Floor"
+  },
+  {
+   "fieldname": "building",
+   "fieldtype": "Link",
+   "label": "Building",
+   "options": "Building"
+  },
+  {
+   "fieldname": "column_break_ftrm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "operations_site",
+   "fieldtype": "Link",
+   "label": "Operations Site",
+   "options": "Operations Site"
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project"
+  },
+  {
+   "fieldname": "task_details_section",
+   "fieldtype": "Section Break",
+   "label": "Task Details"
+  },
+  {
+   "fieldname": "maintenance_task",
+   "fieldtype": "Data",
+   "label": "Maintenance Task"
+  },
+  {
+   "fieldname": "column_break_urrp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "maintenance_frequency",
+   "fieldtype": "Link",
+   "label": "Maintenance Frequency",
+   "options": "Maintenance Frequency"
+  },
+  {
+   "fieldname": "column_break_igly",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "maintenance_frequency.frequency_days",
+   "fieldname": "frequency_days",
+   "fieldtype": "Int",
+   "label": "Frequency (Days)"
+  },
+  {
+   "fieldname": "column_break_dvgp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "planned_execution_datetime",
+   "fieldtype": "Datetime",
+   "label": "Planned Execution Datetime"
+  },
+  {
+   "fieldname": "section_break_ijbe",
+   "fieldtype": "Section Break",
+   "label": "References"
+  },
+  {
+   "fieldname": "work_order",
+   "fieldtype": "Link",
+   "label": "Work Order",
+   "options": "Maintenance Work Order",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_giwy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "maintenance_team_section",
+   "fieldtype": "Section Break",
+   "label": "Maintenance Team"
+  },
+  {
+   "fieldname": "maintenance_team",
+   "fieldtype": "Link",
+   "label": "Maintenance Team",
+   "options": "Object Maintenance Team"
+  },
+  {
+   "fieldname": "maintenance_schedule_team_members",
+   "fieldtype": "Table",
+   "label": "Maintenance Schedule Team Members",
+   "options": "Maintenance Schedule Team Members"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-07-04 18:53:50.534855",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Maintenance Schedule Entry",
+ "owner": "h.imran@one-fm.com",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
