@@ -418,13 +418,21 @@ def update_task_from_mom(task_name: str, subject: str = None, description: str =
 	return {"success": True, "task": task_name}
 
 @frappe.whitelist()
-def fetch_designation_of_users(list_of_users: list = []):
+def fetch_designation_of_users(list_of_users=None):
 	try:
-		return frappe.db.sql("""
-							SELECT employee_name, designation from `tabEmployee`
-							WHERE user_id IN %s
-							""",(tuple(loads(list_of_users)), ) ,as_dict=1)
-	except Exception as e:
+		# The client sends this as a JSON-encoded string; accept both str and list
+		if isinstance(list_of_users, str):
+			list_of_users = loads(list_of_users) if list_of_users else []
+
+		if not list_of_users:
+			return []
+
+		return frappe.get_all(
+			"Employee",
+			filters={"user_id": ["in", list_of_users]},
+			fields=["employee_name", "designation"],
+		)
+	except Exception:
 		frappe.log_error(message=frappe.get_traceback(), title="Error encountered while fetching users designation (MOM)")
 
 
