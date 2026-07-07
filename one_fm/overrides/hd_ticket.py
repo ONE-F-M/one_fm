@@ -15,12 +15,21 @@ except ImportError:
     send_processa_message = None
 
 class HDTicketOverride(HDTicket):
-    def before_insert(self):
-        self.set_im_mail_ticket_to_draft()
+    @property
+    def default_open_status(self):
+        # Tickets created from the support email inbox (incoming mail) should
+        # start as Draft; all other tickets use the SLA/HD Settings default.
+        # When Frappe creates a ticket from an inbound email, it populates the
+        # `email_account` field (HD Ticket's recipient_account_field) before the
+        # doc is validated, so its presence on a new ticket signals email origin.
+        if self.is_new() and self.get("email_account"):
+            return "Draft"
 
-    def set_im_mail_ticket_to_draft(self):
-        if frappe.flags.in_receive or not self.via_customer_portal:
-            self.status = "Draft"
+        return frappe.db.get_value(
+            "HD Service Level Agreement",
+            self.sla,
+            "default_ticket_status",
+        ) or frappe.db.get_single_value("HD Settings", "default_ticket_status")
 
     def validate(self):
         super().validate()
