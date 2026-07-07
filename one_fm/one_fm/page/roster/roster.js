@@ -1193,6 +1193,7 @@ let classmap = {
 	"Client Event": "cyanboxcolor",
 	"Medical Appointment": "cyanboxcolor",
 	"On-the-job Training": "tealboxcolor",
+	"Client Interview": "cyanboxcolor",
 	"Suspended": "suspendedcolor"
 };
 
@@ -1216,6 +1217,7 @@ let abbr_map = {
 	"Medical Appointment": "MA",
 	"On-the-job Training": "OJT",
 	"Client Event": "CE",
+	"Client Interview": "CI",
 	"Suspended": "S"
 };
 
