@@ -473,3 +473,4 @@ one_fm.patches.v15_0.update_pmr_and_resignation_workflow_permissions #2026-06-30
 # --- Operations-011 (24th-30th) release patches ---
 one_fm.patches.v15_0.update_bank_account_workflow
 one_fm.patches.v15_0.add_vehicle_branding_details_fields
+one_fm.patches.v15_0.resync_resignation_workflow_draft_state #2026-07-07
