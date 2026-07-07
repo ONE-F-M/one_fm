@@ -34,7 +34,6 @@ class HDTicketOverride(HDTicket):
     def validate(self):
         super().validate()
         self.validate_hd_ticket()
-        self.handle_process_based_on_doctype()
 
     def validate_hd_ticket(self):
         bug_buster = frappe.get_all("Bug Buster",{'docstatus':1,'from_date':['<=',getdate()],'to_date':['>=',getdate()]},['employee'])
@@ -49,29 +48,10 @@ class HDTicketOverride(HDTicket):
         if self.status == "Pending Deployment" and not self.resolution_details:
             frappe.throw(_("Please fill in Resolution Details before updating the status to Pending Deployment."))
 
-    def handle_process_based_on_doctype(self):
-        """Handle process field based on doctype selection"""
-        if self.custom_ticket_category == "Doctype Issue" and self.custom_reference_doctype:
-            # Get filtered processes for the selected doctype
-            filtered_processes = get_filtered_processes(self.custom_reference_doctype, "Yes")
-            
-            # If doctype changed, check if current process is still valid
-            if not self.is_new():
-                previous_doc = self.get_doc_before_save()
-                if previous_doc and previous_doc.custom_reference_doctype != self.custom_reference_doctype:
-                    # Doctype changed, check if current process is still valid
-                    if self.custom_process and self.custom_process not in filtered_processes:
-                        self.custom_process = None
-            
-            # Auto-set process if only one match
-            if len(filtered_processes) == 1 and not self.custom_process:
-                self.custom_process = filtered_processes[0]
-
     def on_update(self):
         super().on_update()
         self.apply_ticket_escalation()
-        self.notify_ticket_raiser_of_resolution_details()
-        self.handle_routing_field_reassignment()
+        self.update_helpdesk_process_message()
 
     def apply_ticket_escalation(self):
         if self.agreement_status != 'Failed':
@@ -102,58 +82,29 @@ class HDTicketOverride(HDTicket):
                 'name': self.name,
                 'description': _('HD Ticket {0} has been assigned to you due to escalation for failed SLA').format(self.name),
             })
+    
+    def update_helpdesk_process_message(self):
+        if not send_processa_message:
+            return
+        previous_doc = self.get_doc_before_save()
+        if not previous_doc:
+            return
+        message_name = False
+        if self.has_value_changed("status") and previous_doc.status == "Resolved":
+            if self.status == "Open":
+                message_name = "hd_ticket_re_open"
+            if self.status == "Closed":
+                message_name = "hd_ticket_closed"
+        if message_name:
+            try:
+                send_processa_message(
+                    message_name=message_name,
+                    context_doctype="HD Ticket",
+                    context_docname=self.name
+                )
+            except Exception as e:
+                frappe.log_error(message=frappe.get_traceback(), title="Processa Message Error (HD Ticket Raiser Review)")
 
-    def notify_ticket_raiser_of_resolution_details(self):
-        if self.status == "Resolved":
-            previous_doc = self.get_doc_before_save()
-            if previous_doc and previous_doc.status != "Resolved":
-                try:
-                    subject = f"HD Ticket {self.name} Resolved"
-
-                    args = frappe._dict({
-                        "employee_name": self.get_name_for_mailing,
-                        "ticket_subject": self.subject,
-                        "resolution_details": self.resolution_details,
-                        "base_url": frappe.utils.get_url(),
-                        "doc_type": self.doctype,
-                        "doc_name": self.name
-                    })
-                    message = frappe.render_template('one_fm/templates/emails/notify_ticket_raiser_of_resolution.html', context=args)
-                    frappe.enqueue(method=sendemail, queue="short", recipients=self.raised_by, subject=subject, content=message, is_external_mail=True, is_scheduler_email=True)
-                except Exception as e:
-                    frappe.log_error(message=frappe.get_traceback(), title="HD Ticket")
-
-    def handle_routing_field_reassignment(self):
-        from frappe.desk.form import assign_to
-        if not self.is_new():
-            old_doc = self.get_doc_before_save()
-            if old_doc:
-                can_bypass_assignment_permissions = self._can_bypass_assignment_permissions()
-
-                # Handle custom_process_owner change
-                if old_doc.custom_process_owner != self.custom_process_owner:
-                    if old_doc.custom_process_owner:
-                        # Only clear if the old assignment is still Open
-                        active = frappe.db.get_value("ToDo", {"reference_type": self.doctype, "reference_name": self.name, "allocated_to": old_doc.custom_process_owner, "status": "Open"}, "name")
-                        if active:
-                            if can_bypass_assignment_permissions:
-                                assign_to.remove(self.doctype, self.name, old_doc.custom_process_owner, ignore_permissions=True)
-                            else:
-                                assign_to.remove(self.doctype, self.name, old_doc.custom_process_owner)
-
-                # Handle custom_bug_buster change
-                if old_doc.custom_bug_buster != self.custom_bug_buster:
-                    if old_doc.custom_bug_buster:
-                        active = frappe.db.get_value("ToDo", {"reference_type": self.doctype, "reference_name": self.name, "allocated_to": old_doc.custom_bug_buster, "status": "Open"}, "name")
-                        if active:
-                            if can_bypass_assignment_permissions:
-                                assign_to.remove(self.doctype, self.name, old_doc.custom_bug_buster, ignore_permissions=True)
-                            else:
-                                assign_to.remove(self.doctype, self.name, old_doc.custom_bug_buster)
-
-    def _can_bypass_assignment_permissions(self):
-        return frappe.session.user == "Administrator" or "System Manager" in frappe.get_roles()
- 
     def after_insert(self):
         super().after_insert()
         self.send_google_chat_notification()
