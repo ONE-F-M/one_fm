@@ -34,7 +34,6 @@ class HDTicketOverride(HDTicket):
     def validate(self):
         super().validate()
         self.validate_hd_ticket()
-        self.send_mail_for_completion()
         self.handle_process_based_on_doctype()
 
     def validate_hd_ticket(self):
@@ -49,19 +48,6 @@ class HDTicketOverride(HDTicket):
 
         if self.status == "Pending Deployment" and not self.resolution_details:
             frappe.throw(_("Please fill in Resolution Details before updating the status to Pending Deployment."))
-
-    def send_mail_for_completion(self):
-        if self.is_new() and self.status == "Draft":
-            subject = f"HelpDesk Ticket - {self.name}"
-            context = dict(
-                document_name=self.name,
-                document_type=self.doctype,
-                link_to_form=frappe.utils.get_url(f"/helpdesk/edit-ticket/{self.name}"),
-                title=self.subject,
-                header="Complete Ticket Details"
-            )
-            msg = frappe.render_template('one_fm/templates/emails/notify_issue_raiser_to_complete_ticket_details.html', context=context)
-            frappe.enqueue(method=sendemail, queue="short", recipients=self.raised_by, subject=subject, content=msg, is_external_mail=True, is_scheduler_email=True)
 
     def handle_process_based_on_doctype(self):
         """Handle process field based on doctype selection"""
