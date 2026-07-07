@@ -6,19 +6,23 @@ frappe.ui.form.on("HD Ticket", {
     setup_process_query(frm);
   },
 
-  custom_is_doctype_related: function (frm) {
-    // Clear reference doctype and process when switching to "No"
-    if (frm.doc.custom_is_doctype_related === "No") {
+  custom_ticket_category: function (frm) {
+    // Clear reference doctype and process when the ticket is no longer a Doctype Issue
+    if (frm.doc.custom_ticket_category !== "Doctype Issue") {
       frm.set_value("custom_reference_doctype", null);
       // Refresh process field to show all processes
       frm.set_query("custom_process", function () {
         return {};
       });
     }
+    // Clear process when the ticket is no longer a Process Issue
+    if (frm.doc.custom_ticket_category !== "Process Issue") {
+      frm.set_value("custom_process", null);
+    }
   },
 
   custom_reference_doctype: function (frm) {
-    if (frm.doc.custom_is_doctype_related === "Yes" && frm.doc.custom_reference_doctype) {
+    if (frm.doc.custom_ticket_category === "Doctype Issue" && frm.doc.custom_reference_doctype) {
       // Fetch filtered processes
       frappe.call({
         method: "one_fm.overrides.hd_ticket.get_filtered_processes",
@@ -300,7 +304,7 @@ const add_dev_ticket_button = (frm) => {
 const setup_process_query = (frm) => {
   // Set up dynamic query for process field
   frm.set_query("custom_process", function () {
-    if (frm.doc.custom_is_doctype_related === "Yes" && frm.doc.custom_reference_doctype) {
+    if (frm.doc.custom_ticket_category === "Doctype Issue" && frm.doc.custom_reference_doctype) {
       // This will be handled by the custom_reference_doctype event
       // Return empty filter for now, will be updated by the event handler
       return {};

@@ -65,7 +65,7 @@ class HDTicketOverride(HDTicket):
 
     def handle_process_based_on_doctype(self):
         """Handle process field based on doctype selection"""
-        if self.custom_is_doctype_related == "Yes" and self.custom_reference_doctype:
+        if self.custom_ticket_category == "Doctype Issue" and self.custom_reference_doctype:
             # Get filtered processes for the selected doctype
             filtered_processes = get_filtered_processes(self.custom_reference_doctype, "Yes")
             
