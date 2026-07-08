@@ -5,7 +5,6 @@ from json import dumps
 from httplib2 import Http
 from frappe.desk.form.assign_to import get as get_assignments,add as add_assignment
 from helpdesk.helpdesk.doctype.hd_ticket.hd_ticket import HDTicket
-from one_fm.processor import sendemail
 from one_fm.api.doc_events import get_employee_user_id
 from one_fm.utils import response
 from frappe.utils.password import get_decrypted_password
@@ -108,8 +107,6 @@ class HDTicketOverride(HDTicket):
     def after_insert(self):
         super().after_insert()
         self.send_google_chat_notification()
-        if self.status ==  "Open":
-            self.notify_ticket_raiser_of_receipt()
 
     def send_google_chat_notification(self):
         """Hangouts Chat incoming webhook to send the Issues Created, in Card Format."""
@@ -182,22 +179,6 @@ class HDTicketOverride(HDTicket):
         except Exception as e:
              frappe.log_error(message=frappe.get_traceback(), title="Error while sending google notification")
 
-    def notify_ticket_raiser_of_receipt(self):
-        try:
-            subject = f"HD Ticket {self.name} Raised"
-
-            args = frappe._dict({
-                "employee_name": self.get_name_for_mailing,
-                "ticket_subject": self.subject,
-                "base_url": frappe.utils.get_url(),
-                "doc_type": self.doctype,
-                "doc_name": self.name
-            })
-            message = frappe.render_template('one_fm/templates/emails/notify_ticket_raiser_receipt.html', context=args)
-            frappe.enqueue(method=sendemail, queue="short", recipients=self.raised_by, subject=subject, content=message, is_external_mail=True, is_scheduler_email=True)
-        except Exception as e:
-            frappe.log_error(message=frappe.get_traceback(), title="HD Ticket")
-   
     @property
     def get_name_for_mailing(self):
         try:
@@ -207,30 +188,6 @@ class HDTicketOverride(HDTicket):
             return self.raised_by.split("@")[0]
         except (AttributeError, IndexError):
             return self.raised_by
-
-    def on_change(self):
-        self.notify_issue_raiser_about_priority()
-
-    def notify_issue_raiser_about_priority(self):
-        if self.ticket_type == "Bug":
-            previous_doc = self.get_doc_before_save()
-            if previous_doc:
-                if any((previous_doc.priority != self.priority, previous_doc.ticket_type != self.ticket_type)):
-                    status = "HotFix" if self.priority == "Urgent" else "BugFix"
-                    is_hotfix = status == "HotFix"
-                    title = f"Ticket {self.name} - {status}"
-                    content_prefix = "A HotFix is in the works and should be completed within 24 hrs." if is_hotfix else "A BugFix is in the works and should be completed within a few days."
-                    context = dict(
-                        header="We understand the urgency, we are on it!" if is_hotfix else "It’s a bug and we’ll fix it!",
-                        document_name=self.name,
-                        document_type=self.doctype,
-                        document_link=frappe.utils.get_url(self.get_url()),
-                        content_prefix=content_prefix,
-                        title=title,
-                        priority=self.priority
-                    )
-                    msg = frappe.render_template('one_fm/templates/emails/notify_ticket_raiser_about_priority.html', context=context)
-                    frappe.enqueue(method=sendemail, queue="short", recipients=self.raised_by, subject=title, content=msg, is_external_mail=True, is_scheduler_email=True)
 
     def on_communication_update(self, c):
         # If communication is incoming, then it is a reply from customer, and ticket must
@@ -396,7 +353,6 @@ def update_ticket(name: str, updates: str):
     doc.flags.ignore_mandatory = True
     doc.save(ignore_permissions=True)
     frappe.db.commit()
-    doc.notify_ticket_raiser_of_receipt()
 
     if send_processa_message:
         try:
