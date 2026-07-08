@@ -451,6 +451,7 @@ one_fm.patches.v15_0.add_asset_repair_workflow_and_assignment_rules
 one_fm.patches.v15_0.set_todo_type_read_only
 one_fm.patches.v15_0.add_vehicle_branding_details_fields
 one_fm.patches.v15_0.add_asset_repair_requestor_fields
+one_fm.patches.v15_0.add_asset_movement_handover_workflow_and_assignment_rule
 one_fm.patches.v15_0.update_bonus_request_workflow #1
 one_fm.patches.v15_0.update_bonus_request_assignment_rules #3
 

@@ -1,0 +1,220 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2026-07-08 12:11:09.116165",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "process_name",
+  "requested_by",
+  "column_break_vsum",
+  "date",
+  "column_break_ztqa",
+  "company",
+  "section_break_dkvi",
+  "current_process_owner",
+  "column_break_cdim",
+  "new_process_owner",
+  "column_break_trlu",
+  "reason",
+  "more_information_tab",
+  "section_break_j9an",
+  "naming_series",
+  "column_break_xsar",
+  "workflow_state",
+  "column_break_iitf",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "process_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Process Name",
+   "options": "Process",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "default": "User",
+   "fieldname": "requested_by",
+   "fieldtype": "Link",
+   "label": "Requested By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_vsum",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_ztqa",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "section_break_dkvi",
+   "fieldtype": "Section Break",
+   "label": "Ownership"
+  },
+  {
+   "fetch_from": "process_name.process_owner",
+   "fieldname": "current_process_owner",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Current Process Owner",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_cdim",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "new_process_owner",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "New Process Owner",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_trlu",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Reason",
+   "options": "\nAssumption of Duty\nChange of Status\nEmployee Exit\nNew Process\nPre-Leave Handover\nPost-Leave Takeover",
+   "reqd": 1
+  },
+  {
+   "fieldname": "more_information_tab",
+   "fieldtype": "Tab Break",
+   "label": "More Information"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_j9an",
+   "fieldtype": "Section Break",
+   "label": "More Information"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Naming Series",
+   "options": "PBR-POA-.YYYY.-.MM.-.####",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_xsar",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "options": "Workflow State",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_iitf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Process Owner Assignment",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Process Owner Assignment",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-07-08 12:11:21.091417",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Process Owner Assignment",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Director",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Business Analyst",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
