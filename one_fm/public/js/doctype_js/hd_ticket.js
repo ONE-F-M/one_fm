@@ -2,7 +2,6 @@ frappe.ui.form.on("HD Ticket", {
   refresh: function (frm) {
     add_dev_ticket_button(frm);
     add_github_issue_button(frm);
-    add_process_change_request_button(frm);
     setup_process_query(frm);
   },
 
@@ -58,52 +57,6 @@ frappe.ui.form.on("HD Ticket", {
     }
   },
 });
-
-const add_process_change_request_button = (frm) => {
-  if (
-    !frm.doc.ticket_type ||
-    !(frappe.user.has_role("Business Analyst") || frappe.user.has_role("Process Owner"))
-  ) {
-    return;
-  }
-
-  frappe.db.get_value(
-    "HD Ticket Type",
-    frm.doc.ticket_type,
-    "initiate_process_change_request",
-    (r) => {
-      if (r && r.initiate_process_change_request) {
-        frm.add_custom_button(
-          "Process Change Request",
-          () => {
-            frappe.call({
-              method: "one_fm.overrides.hd_ticket.create_process_change_request",
-              args: {
-                hd_ticket_name: frm.doc.name,
-              },
-              callback: function (r) {
-                if (r.message) {
-                  frappe.msgprint({
-                    message: __(
-                      "Process Change Request <a href='/app/process-change-request/{0}'>{0}</a> has been created successfully.",
-                      [r.message]
-                    ),
-                    title: __("Process Change Request Created"),
-                    indicator: "green",
-                  });
-                  frm.reload_doc();
-                }
-              },
-              freeze: true,
-              freeze_message: "Creating Process Change Request...",
-            });
-          },
-          "Create"
-        );
-      }
-    }
-  );
-};
 
 const add_github_issue_button = (frm) => {
   if (frm.doc.ticket_type == "Bug") {
