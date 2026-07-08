@@ -2253,6 +2253,12 @@ def dayoff(employees, client_day_off=0, selected_dates=0, selected_reliever=None
 				site = "",
 				shift_type = "",
 				day_off_ot = 0,
+				client_event = "",
+				reference_doctype = "",
+				reference_docname = "",
+				event_staff = "",
+				event_location = "",
+				is_event_schedule = 0,
 				employee_availability = "{employee_availability}"
 			"""
 			frappe.db.sql(query_main)
