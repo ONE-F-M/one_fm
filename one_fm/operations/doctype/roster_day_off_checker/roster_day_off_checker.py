@@ -31,6 +31,35 @@ monthname_dict = {
 class RosterDayOffChecker(Document):
 	pass
 
+def is_exit_before_month_midpoint(period_end_date, relieving_date):
+	"""
+	Determine whether an exiting employee's final working day falls before the month's
+	midpoint, in which case no day off is expected for that month.
+
+	The midpoint is the 15th for standard months and the 14th for February. The check
+	only applies when the comparison period end has been clamped to the employee's
+	final working day (relieving_date), i.e. the employee is leaving within that period.
+
+	Args:
+		period_end_date: The (possibly clamped) end date of the comparison period.
+		relieving_date: The employee's final working day, or None if not leaving.
+
+	Returns:
+		bool: True if expected days off should be forced to 0, False otherwise.
+	"""
+	if not relieving_date:
+		return False
+
+	period_end_date = getdate(period_end_date)
+
+	# Only applies when the period end is the employee's final working day (exit month)
+	if period_end_date != getdate(relieving_date):
+		return False
+
+	# February midpoint is the 14th; all other months use the 15th
+	midpoint_day = 14 if period_end_date.month == 2 else 15
+	return period_end_date.day < midpoint_day
+
 def get_leave_dates_by_employee():
     """
     Fetch and organize approved leave dates by employee for all leave applications
@@ -135,6 +164,16 @@ def get_day_off_comparison_dates(employee, total_leave_dates):
 
         # Calculate proportional days off
         calculated_days_off = (len(working_dates) / total_days) * employee.number_of_days_off
+
+        # Exit-employee rule:
+        # When an employee is leaving the company, the period end is clamped to their
+        # final working day (relieving_date). If that final working day falls before the
+        # month's midpoint (the 15th for standard months, the 14th for February), they are
+        # not expected to take any day off this month. This prevents false shortage alerts
+        # for staff exiting early in the month. On/after the midpoint, the proportional
+        # calculation above stands.
+        if is_exit_before_month_midpoint(end_date, employee.relieving_date):
+            calculated_days_off = 0
 
         comparison_periods.append({
             "start_date": start_date,
@@ -573,6 +612,7 @@ def _get_employees_with_join(join_clause, where_clause, user_employee):
 			e.number_of_days_off,
 			e.employee_id,
 			e.shift,
+			e.relieving_date,
 		    e.custom_operations_role_allocation
 		FROM `tabEmployee` e
 		{join_clause}
