@@ -12,6 +12,50 @@ import math
 class PostSchedulerChecker(Document):
 	pass
 
+def get_post_active_windows(post):
+	"""Return all validated "Active" windows for a post as (start, end) date tuples:
+	the current main window plus every historical window archived in the
+	Operations Post Activation child table. ``None`` means an open bound."""
+	windows = []
+
+	main_start = getdate(post.start_date) if post.get("start_date") else None
+	main_end = getdate(post.end_date) if post.get("end_date") else None
+	if main_start or main_end:
+		windows.append((main_start, main_end))
+
+	history = frappe.get_all(
+		"Operations Post Activation",
+		filters={"parent": post.name, "parenttype": "Operations Post"},
+		fields=["operations_post_start_date", "operations_post_end_date"]
+	)
+	for row in history:
+		hist_start = getdate(row.operations_post_start_date) if row.operations_post_start_date else None
+		hist_end = getdate(row.operations_post_end_date) if row.operations_post_end_date else None
+		if hist_start or hist_end:
+			windows.append((hist_start, hist_end))
+
+	return windows
+
+def get_active_intervals_in_period(windows, period_start, period_end):
+	"""Clip each active window to [period_start, period_end] and merge overlapping/
+	adjacent intervals so overlapping windows are not double counted."""
+	clipped = []
+	for win_start, win_end in windows:
+		start = period_start if (win_start is None or win_start < period_start) else win_start
+		end = period_end if (win_end is None or win_end > period_end) else win_end
+		if start <= end:
+			clipped.append((start, end))
+
+	clipped.sort()
+	merged = []
+	for start, end in clipped:
+		if merged and start <= add_days(merged[-1][1], 1):
+			merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+		else:
+			merged.append((start, end))
+
+	return merged
+
 def get_post_schedules(project, post, first_day, last_day, include_client_post_off=False):
 	filters = {
 		"date": ['BETWEEN', [first_day, last_day]],
@@ -84,6 +128,9 @@ def get_post_scheduler_items(contract, project):
 				item_message += f"""Less operations post created, expected: {item.count}, created: {len(operations_post)} for roles {roles}\n\n"""
 
 			for post in operations_post:
+				# AC4: validate against all active windows (current main window + history)
+				active_windows = get_post_active_windows(post)
+
 				# Get two periods: current & next
 				periods = []
 
@@ -103,24 +150,20 @@ def get_post_scheduler_items(contract, project):
 					periods.append((next_month_start, next_month_end))
 
 				for period_start, period_end in periods:
-					first_day = getdate(period_start)
-					last_day = getdate(period_end)
+					period_start = getdate(period_start)
+					period_end = getdate(period_end)
 
-					# Check if post's start and end dates are within the period
-					if post.start_date and post.start_date > last_day:
+					# AC4: intersect the period with every active window (main + history).
+					# The post is only expected to have schedules within these windows.
+					active_intervals = get_active_intervals_in_period(
+						active_windows, period_start, period_end
+					)
+					if not active_intervals:
+						# Post was not active at all during this period.
 						continue
-					if post.end_date and post.end_date < first_day:
-						continue
 
-					if post.start_date and post.start_date > first_day:
-						first_day = getdate(post.start_date)
-					if post.end_date and post.end_date < last_day:
-						last_day = getdate(post.end_date)
-
-					expected = date_diff(last_day, first_day) + 1
-
-					if item.off_type == 'Days Off':
-						expected -= item.no_of_days_off
+					first_day = active_intervals[0][0]
+					last_day = active_intervals[-1][1]
 
 					include_client_post_off = False
 					if item.off_type == 'Full Month':
@@ -128,12 +171,22 @@ def get_post_scheduler_items(contract, project):
 					elif item.off_type == 'Days Off' and item.days_off_category in ['Monthly', 'Weekly']:
 						include_client_post_off = True
 
-					post_schedules = get_post_schedules(
-						project=contract.project,
-						post=post,
-						first_day=first_day,
-						last_day=last_day,
-						include_client_post_off=include_client_post_off
+					# Expected days and actual schedules are summed across the (disjoint)
+					# active intervals, so overlapping windows are never double counted.
+					expected = sum(date_diff(end, start) + 1 for start, end in active_intervals)
+
+					if item.off_type == 'Days Off':
+						expected -= item.no_of_days_off
+
+					post_schedules = sum(
+						get_post_schedules(
+							project=contract.project,
+							post=post,
+							first_day=start,
+							last_day=end,
+							include_client_post_off=include_client_post_off
+						)
+						for start, end in active_intervals
 					)
 
 					post_message = ""
