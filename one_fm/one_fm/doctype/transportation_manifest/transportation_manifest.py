@@ -75,16 +75,24 @@ class TransportationManifest(Document):
 				if not row.requires_reliever:
 					row.reliever_employee = None
 			elif row.attendance_status == "Present":
-				row.reliever_employee = None
-				row.requires_reliever = 0
-				if row.qoa_status == "Fail" and not row.qoa_reason:
-					frappe.throw(
-						_("Row #{idx}: QOA Reason is mandatory when QOA Status is Fail for employee {emp}").format(
-							idx=row.idx, emp=row.employee
+				if row.qoa_status == "Fail":
+					# Present but failed QOA -> reliever workflow is allowed.
+					# Require a QOA reason, and keep requires_reliever/reliever_employee
+					# unless the reliever flag is unchecked.
+					if not row.qoa_reason:
+						frappe.throw(
+							_("Row #{idx}: QOA Reason is mandatory when QOA Status is Fail for employee {emp}").format(
+								idx=row.idx, emp=row.employee
+							)
 						)
-					)
-				elif row.qoa_status == "Pass":
-					row.qoa_reason = None
+					if not row.requires_reliever:
+						row.reliever_employee = None
+				else:
+					# Present with a passing/blank QOA -> no reliever needed
+					row.reliever_employee = None
+					row.requires_reliever = 0
+					if row.qoa_status == "Pass":
+						row.qoa_reason = None
 
 	def validate_relievers(self):
 		if not self.schedule_date:
@@ -132,11 +140,17 @@ class TransportationManifest(Document):
 					)
 				assigned_relievers[reliever] = row.idx
 
-				# 0.5 Check active status and attendance constraints
-				if row.attendance_status != "Absent":
+				# 0.5 Check active status and attendance constraints.
+				# A reliever may be assigned when the original worker is Absent,
+				# or Present but has failed the QOA (uniform) inspection.
+				eligible_for_reliever = (
+					row.attendance_status == "Absent"
+					or (row.attendance_status == "Present" and row.qoa_status == "Fail")
+				)
+				if not eligible_for_reliever:
 					frappe.throw(
-						_("Employee {emp} cannot be set as a reliever because Attendance Status must be set to Absent").format(
-							emp=reliever
+						_("Row #{idx}: A reliever can only be assigned when the worker is Absent, or Present with a failed QOA inspection").format(
+							idx=row.idx
 						)
 					)
 
@@ -256,16 +270,20 @@ class TransportationManifest(Document):
 		are stable and can be used as the linking key.
 
 		Rules:
-		- If requires_reliever=1 AND reliever_employee is set AND attendance_status=Absent
+		- If requires_reliever=1 AND reliever_employee is set AND the worker is either
+		  Absent OR Present with a failed QOA inspection
 		  → create (and submit) a Rambo Assignment for this child row,
 		    or cancel+recreate if one already exists with different data.
 		- Otherwise → cancel and delete any existing Rambo Assignment for this child row.
 		"""
 		for row in self.transportation_manifest_details:
-			needs_rambo = (
+			needs_rambo = bool(
 				row.requires_reliever
 				and row.reliever_employee
-				and row.attendance_status == "Absent"
+				and (
+					row.attendance_status == "Absent"
+					or (row.attendance_status == "Present" and row.qoa_status == "Fail")
+				)
 			)
 
 			# Always look up by manifest_child_row_id from DB — the in-memory
