@@ -5,6 +5,7 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import getdate
 
 from one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker import (
+	calculate_expected_days_off,
 	is_exit_before_month_midpoint,
 )
 
@@ -64,3 +65,42 @@ class TestRosterDayOffChecker(FrappeTestCase):
 		# Values may arrive as strings from SQL/UI; the helper normalises via getdate
 		self.assertTrue(is_exit_before_month_midpoint("2026-07-10", "2026-07-10"))
 		self.assertFalse(is_exit_before_month_midpoint("2026-07-31", "2026-08-10"))
+
+
+class TestCalculateExpectedDaysOff(FrappeTestCase):
+	def test_fully_suspended_month_forces_zero(self):
+		# AC1: employee suspended every day of a 30-day month -> 0 applicable days -> 0 days off
+		self.assertEqual(calculate_expected_days_off(0, 30, 4), 0)
+
+	def test_fully_suspended_week_forces_zero(self):
+		# AC1: employee suspended every day of the week -> 0 applicable days -> 0 days off
+		self.assertEqual(calculate_expected_days_off(0, 7, 1), 0)
+
+	def test_monthly_no_deductions_returns_full_entitlement(self):
+		# No suspended/leave days -> applicable days == days in month -> full entitlement
+		self.assertEqual(calculate_expected_days_off(30, 30, 4), 4)
+
+	def test_monthly_partial_suspension_subtracts_days(self):
+		# AC2/AC3 Monthly: 30-day month, 4 days off/month, 15 suspended days.
+		# Applicable = 30 - 15 = 15 -> 15 / 30 * 4 = 2
+		self.assertEqual(calculate_expected_days_off(15, 30, 4), 2)
+
+	def test_weekly_no_deductions_returns_full_entitlement(self):
+		# 7-day week, 1 day off/week, no deductions -> full entitlement
+		self.assertEqual(calculate_expected_days_off(7, 7, 1), 1)
+
+	def test_weekly_partial_suspension_subtracts_days(self):
+		# AC2/AC3 Weekly: 7-day week, 2 days off/week, 3 suspended days.
+		# Applicable = 7 - 3 = 4 -> 4 / 7 * 2
+		self.assertAlmostEqual(calculate_expected_days_off(4, 7, 2), 4 / 7 * 2)
+
+	def test_zero_total_days_returns_zero(self):
+		# Guard against division by zero when the comparison period collapses to nothing
+		self.assertEqual(calculate_expected_days_off(0, 0, 4), 0)
+
+	def test_rounding_behaviour_matches_caller(self):
+		# The caller rounds the result; here we confirm the raw proportional value so the
+		# rounding contract (round() applied in add_period) stays explicit.
+		# 20 applicable / 30 days * 4 = 2.666...
+		self.assertAlmostEqual(calculate_expected_days_off(20, 30, 4), 20 / 30 * 4)
+		self.assertEqual(round(calculate_expected_days_off(20, 30, 4)), 3)
