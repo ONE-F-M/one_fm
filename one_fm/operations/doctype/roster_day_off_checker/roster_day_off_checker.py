@@ -129,6 +129,59 @@ def get_employee_absent_dates(employee, start_date, end_date):
     return [record.attendance_date for record in absent_dates]
 
 
+def get_employee_suspended_dates(employee, start_date, end_date):
+    """
+    Return the dates within the period on which the employee is marked as "Suspended".
+
+    Suspension is recorded in two places depending on whether the day is in the past or
+    the future:
+      - Past days: the daily attendance job converts a suspended schedule into an
+        Attendance record with status "Absent" (comment "Employee Schedule - Suspended"),
+        so those days are already covered by get_employee_absent_dates.
+      - Future/rostered days: an Employee Schedule row with
+        employee_availability == "Suspended", which does not yet have an Attendance record.
+
+    This helper reads the Employee Schedule side so that suspended days without an
+    Attendance record are still excluded from the applicable-days calculation. Querying
+    the full period (rather than only future dates) is harmless — a date already counted
+    as absent is simply excluded once.
+    """
+    suspended_dates = frappe.get_all(
+        "Employee Schedule",
+        filters=[
+            ["employee", "=", employee],
+            ["date", "between", [start_date, end_date]],
+            ["employee_availability", "=", "Suspended"],
+        ],
+        fields=["date"],
+    )
+
+    return [record.date for record in suspended_dates]
+
+
+def calculate_expected_days_off(applicable_days, total_days, number_of_days_off):
+    """
+    Compute the expected number of days off for a comparison period using the
+    proportional formula shared by the Weekly and Monthly categories:
+
+        Weekly:  [Applicable Days] / 7               * [Days Off per Week]
+        Monthly: [Applicable Days] / [Days in Month] * [Days Off per Month]
+
+    `total_days` is the length of the comparison period (7 for a week, the number of days
+    in the month for a month) and `applicable_days` is that period reduced by every
+    non-working deduction: Suspended days, Annual Leave, Leave Without Pay, days outside
+    the employee's tenure (joining/relieving), and existing absences.
+
+    When every day in the period is deducted (e.g. the employee is Suspended for the whole
+    month or week) applicable_days is 0, so the expected days off is 0 and no shortage
+    alert is raised.
+    """
+    if not total_days:
+        return 0
+
+    return (applicable_days / total_days) * number_of_days_off
+
+
 def get_day_off_comparison_dates(employee, total_leave_dates):
     today = getdate()
     comparison_periods = []
@@ -148,22 +201,34 @@ def get_day_off_comparison_dates(employee, total_leave_dates):
         if start_date > end_date:
             return
 
-        # Consider non-absent days count as total days for this period
+        # Days the employee is not actually working are excluded from the applicable days:
+        # absences (which already include past suspended days, marked as "Absent") and
+        # future suspended days rostered on the Employee Schedule.
         absent_dates = get_employee_absent_dates(employee.name, start_date, end_date)
+        suspended_dates = get_employee_suspended_dates(employee.name, start_date, end_date)
 
         working_dates = []
         leave_dates_in_period = []
+        suspended_dates_in_period = []
 
         current = start_date
         while current <= end_date:
             if current in total_leave_dates:
                 leave_dates_in_period.append(current)
+            elif current in suspended_dates:
+                # Suspended days are neither worked nor treated as leave; they are simply
+                # deducted from the applicable days per the Day Off Checker formula.
+                suspended_dates_in_period.append(current)
             elif current not in absent_dates:
                 working_dates.append(current)
             current += timedelta(days=1)
 
-        # Calculate proportional days off
-        calculated_days_off = (len(working_dates) / total_days) * employee.number_of_days_off
+        # working_dates is the [Applicable Number of Days]: the period reduced by leave,
+        # suspended days, absences and out-of-tenure (joining/relieving) days. The shared
+        # formula turns it into the expected days off for both Weekly and Monthly categories.
+        calculated_days_off = calculate_expected_days_off(
+            len(working_dates), total_days, employee.number_of_days_off
+        )
 
         # Exit-employee rule:
         # When an employee is leaving the company, the period end is clamped to their
@@ -181,6 +246,7 @@ def get_day_off_comparison_dates(employee, total_leave_dates):
             "calculated_number_of_days_off": round(calculated_days_off),
             "leave_dates": leave_dates_in_period,
             "working_dates": working_dates,
+            "suspended_dates": suspended_dates_in_period,
 			"absent_dates": absent_dates
         })
 
