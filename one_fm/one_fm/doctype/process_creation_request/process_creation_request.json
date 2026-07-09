@@ -1,0 +1,247 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2026-07-09 11:58:40.939851",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "basic_details_section",
+  "process_name",
+  "parent_process",
+  "is_group",
+  "column_break_lejk",
+  "description",
+  "column_break_bwcb",
+  "date",
+  "ownership_section",
+  "process_owner",
+  "column_break_mhzp",
+  "column_break_mmlr",
+  "governance_tab",
+  "governance_section",
+  "column_break_wlqb",
+  "ctc_requires_approval",
+  "column_break_uchb",
+  "reason_for_rejection",
+  "column_break_plvt",
+  "more_information_tab",
+  "section_break_paou",
+  "naming_series",
+  "column_break_gjny",
+  "workflow_state",
+  "column_break_kdhk",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "basic_details_section",
+   "fieldtype": "Section Break",
+   "label": "Basic Details"
+  },
+  {
+   "description": "Process name should follow the noun phrase format (e.g., Attendance Marking, Client Engagement, Purchasing, etc.)",
+   "fieldname": "process_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Process Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "parent_process",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Parent Process",
+   "options": "Process"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_group",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Is Group"
+  },
+  {
+   "fieldname": "column_break_lejk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "What does this process entail, including the inputs and outputs?",
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_bwcb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "ownership_section",
+   "fieldtype": "Section Break",
+   "label": "Ownership"
+  },
+  {
+   "default": "User",
+   "fieldname": "process_owner",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Process Owner",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_mhzp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_mmlr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "governance_tab",
+   "fieldtype": "Tab Break",
+   "label": "Governance"
+  },
+  {
+   "fieldname": "governance_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_wlqb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "Mark as true if Contingency Task Completion for this process should require approval. If unchecked, the process owner will be able to self-approve Contingency Task Completion documents for this process.",
+   "fieldname": "ctc_requires_approval",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "CTC Requires Approval"
+  },
+  {
+   "fieldname": "column_break_uchb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reason_for_rejection",
+   "fieldtype": "Small Text",
+   "label": "Reason for Rejection",
+   "read_only_depends_on": "eval:doc.workflow_state!=\"Pending Approval\""
+  },
+  {
+   "fieldname": "column_break_plvt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "more_information_tab",
+   "fieldtype": "Tab Break",
+   "label": "More Information"
+  },
+  {
+   "fieldname": "section_break_paou",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Naming Series",
+   "options": "PBR-PCR-.YYYY.-.MM.-.####"
+  },
+  {
+   "fieldname": "column_break_gjny",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "options": "Workflow State",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_kdhk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Process Creation Request",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [
+  {
+   "link_doctype": "Process",
+   "link_fieldname": "process_creation_request"
+  }
+ ],
+ "modified": "2026-07-09 12:12:07.786704",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Process Creation Request",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Process Owner",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Business Analyst",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
