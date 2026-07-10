@@ -9,7 +9,7 @@ from frappe.desk.form.assign_to import remove
 from frappe import _
 from frappe.model.workflow import apply_workflow
 from frappe.utils import (
-	now_datetime,nowtime, cstr, getdate, get_datetime, cint, add_to_date, today, add_days, now, get_url_to_form, date_diff
+	now_datetime,nowtime, cstr, getdate, get_datetime, cint, add_to_date, today, add_days, now, get_url_to_form, date_diff, formatdate
 )
 from one_fm.api.doc_events import get_employee_user_id
 from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
@@ -1495,15 +1495,15 @@ def _handle_existing_shifts_for_rambo(schedule, date):
 						"is_rambo_schedule": 1,
 						"rambo_assignment": schedule.rambo_assignment,
 					})
-					try:
-						ot_schedule.insert()
-					except frappe.DuplicateEntryError:
-						pass
-					ot_schedule_name = frappe.db.get_value(
-						"Employee Schedule",
-						{"employee": employee, "date": date, "roster_type": "Over-Time"},
-						"name"
-					) or ot_schedule.name
+					try:
+						ot_schedule.insert()
+					except frappe.DuplicateEntryError:
+						pass
+					ot_schedule_name = frappe.db.get_value(
+						"Employee Schedule",
+						{"employee": employee, "date": date, "roster_type": "Over-Time"},
+						"name"
+					) or ot_schedule.name
 
 					frappe.logger("rambo").info(
 						"Created Over-Time Employee Schedule {0} for "
@@ -2596,6 +2596,8 @@ def notify_approver_about_pending_shift_request(is_scheduled_event=True):
 def attendance_query_script():
 	"""
 	Run a background check daily to identify active employees who meet:
+	- exactly 5 consecutive absent days (early-warning email to the employee and
+	  the Default Absence Investigation HR Officer configured in HR Settings).
 	- >= 7 consecutive absent days.
 	- >= 21 non-consecutive absent days in a calendar year.
 	"""
@@ -2628,6 +2630,7 @@ def attendance_query_script():
 		for record in absent_records:
 			employee_absences.setdefault(record.employee, []).append(record.attendance_date)
 
+		flagged_5_days = []
 		flagged_7_days = []
 		flagged_21_days = []
 
@@ -2660,6 +2663,33 @@ def attendance_query_script():
 					"employee_id": emp
 				})
 
+			# Determine the current (most recent) consecutive absence streak,
+			# walking back from the latest absent date while dates stay contiguous.
+			current_streak = 1
+			streak_start = sorted_dates[0]
+			for i in range(len(sorted_dates) - 1):
+				if date_diff(sorted_dates[i], sorted_dates[i + 1]) == 1:
+					current_streak += 1
+					streak_start = sorted_dates[i + 1]
+				else:
+					break
+
+			# Early-warning: fire only on the 5th consecutive day and only while the
+			# streak is still ongoing (latest absence is today or yesterday). This
+			# sends the alert exactly once: day 6 becomes a streak of 6 (not 5), and a
+			# resolved 5-day streak is no longer "ongoing", so it never re-fires.
+			if current_streak == 5 and date_diff(today_date, sorted_dates[0]) <= 1:
+				flagged_5_days.append({
+					"employee_name": emp_name,
+					"employee_id": emp,
+					"absence_start_date": streak_start
+				})
+
+
+		# Early-warning emails on the 5th consecutive absent day are sent directly to
+		# the employee and the HR Officer, independent of the Attendance Manager digest.
+		if flagged_5_days:
+			send_five_day_absence_notifications(flagged_5_days)
 
 		manager_email = fetch_attendance_manager_user()
 
@@ -2735,3 +2765,40 @@ def create_absence_case(employee, absence_type):
 		"status": "Draft"
 	})
 	doc.insert(ignore_permissions=True)
+
+
+def send_five_day_absence_notifications(flagged_5_days):
+	"""
+	Dispatch the 5th-consecutive-day early-warning email to each flagged employee
+	and the Default Absence Investigation HR Officer configured in HR Settings.
+
+	Recipients use the User ID login email; a recipient without one is skipped.
+	is_external_mail=True bypasses the notification-preference filter so this
+	compliance warning is not silently dropped.
+	"""
+	hr_officer = frappe.db.get_single_value(
+		"HR Settings", "default_absence_investigation_hr_officer"
+	)
+
+	for emp in flagged_5_days:
+		employee_user = frappe.db.get_value("Employee", emp["employee_id"], "user_id")
+
+		recipients = [r for r in [employee_user, hr_officer] if r]
+		if not recipients:
+			continue
+
+		message = frappe.render_template(
+			"one_fm/templates/emails/five_day_absence_notification.html",
+			{
+				"employee_name": emp["employee_name"],
+				"employee": emp["employee_id"],
+				"absence_start_date": formatdate(emp["absence_start_date"])
+			}
+		)
+		sendemail(
+			recipients=recipients,
+			subject="5 Days Consecutive Absence Notification",
+			header=["5 Days Consecutive Absence Notification"],
+			message=message,
+			is_external_mail=True
+		)
