@@ -278,3 +278,85 @@ def approve_pending_attendance_request(start_date):
             apply_workflow(doc, "Approve")
         except Exception as e:
             frappe.log_error(message=frappe.get_traceback(), title="Attendance Request Marking")
+
+
+def get_permission_query_conditions(user):
+	"""
+		Restrict the Attendance Request list (and global search / list filters) to the
+		records the current user is entitled to manage: their own requests plus those of
+		their direct and indirect reports (the reports_to reporting tree).
+
+		Registered via `permission_query_conditions` in hooks.py. The framework appends the
+		returned SQL to every list/report/search query for this DocType, so restricted
+		records are hidden entirely rather than blocked only on open.
+
+		Returning an empty string means no restriction (full visibility).
+
+		args:
+			user: name of the User (falls back to the current session user)
+		return: SQL condition string
+	"""
+	if not user:
+		user = frappe.session.user
+
+	# Platform / admin users see everything
+	if user in ("Administrator", "administrator"):
+		return ""
+
+	user_roles = frappe.get_roles(user)
+
+	if "System Manager" in user_roles:
+		return ""
+
+	# Director / configured ONEFM super user role
+	if has_super_user_role(user):
+		return ""
+
+	# Roles listed under ONEFM General Setting -> Document Access Roles see everything
+	document_access_roles = frappe.get_all(
+		"ONEFM Document Access Roles Detail",
+		filters={"parentfield": "document_access_roles"},
+		pluck="role",
+	)
+	if any(role in document_access_roles for role in user_roles):
+		return ""
+
+	# Everyone else is limited to their own reporting line. Users without a linked
+	# Employee have nothing to manage, so they see nothing (privacy first).
+	employee = frappe.db.get_value("Employee", {"user_id": user}, "name")
+	if not employee:
+		return "1=0"
+
+	# The manager's own record plus all direct and indirect reports down the chain.
+	# NOTE: We walk the `reports_to` field instead of using the nested-set (lft/rgt)
+	# helpers because the Employee tree's lft/rgt is not maintained on this database
+	# (nested-set loop validation is customised), so get_descendants returns nothing.
+	employee_names = get_reporting_subtree(employee)
+
+	# Safely escape each value for the IN clause
+	escaped = ", ".join(frappe.db.escape(emp) for emp in employee_names)
+	return f"`tabAttendance Request`.`employee` in ({escaped})"
+
+
+def get_reporting_subtree(employee):
+	"""
+		Return a list containing the given employee plus every direct and indirect
+		report, resolved by walking the `reports_to` field level by level.
+
+		This does not rely on the nested-set (lft/rgt) columns, which are not kept in
+		sync on this database. Cycles (e.g. an employee reporting to themselves) are
+		handled by only expanding employees we have not already seen.
+	"""
+	subtree = {employee}
+	frontier = [employee]
+
+	while frontier:
+		direct_reports = frappe.get_all(
+			"Employee",
+			filters={"reports_to": ["in", frontier]},
+			pluck="name",
+		)
+		frontier = [emp for emp in direct_reports if emp not in subtree]
+		subtree.update(frontier)
+
+	return list(subtree)
