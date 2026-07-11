@@ -455,4 +455,5 @@ one_fm.patches.v15_0.add_asset_movement_handover_workflow_and_assignment_rule
 one_fm.patches.v15_0.update_bonus_request_workflow #1
 one_fm.patches.v15_0.update_bonus_request_assignment_rules #3
 one_fm.patches.v15_0.add_attendance_correction_fields
+one_fm.patches.v15_0.add_leave_application_emergency_contact_field #1
 

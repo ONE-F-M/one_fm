@@ -144,10 +144,24 @@ def get_leave_application_custom_fields():
             {
                 "fieldname": "custom_shift_working",
                 "fieldtype": "Check",
-                "insert_after": "employee_name",
+                "insert_after": "custom_emergency_contact_number",
                 "label": "Shift Working",
                 "read_only": 1,
                 "fetch_from": "employee.shift_working"
+            },
+            {
+                # Emergency contact number for urgent communication during long
+                # leaves. Pre-filled from the employee's own mobile (cell_number)
+                # but editable by HR. Shown only for shift working employees on
+                # Annual Leave or Leave Without Pay; hidden otherwise.
+                "fieldname": "custom_emergency_contact_number",
+                "fieldtype": "Data",
+                "insert_after": "employee_name",
+                "label": "Emergency Contact Number",
+                "options": "Phone",
+                "fetch_from": "employee.cell_number",
+                "fetch_if_empty": 1,
+                "depends_on": "eval:doc.custom_shift_working && (doc.leave_type=='Annual Leave' || doc.leave_type=='Leave Without Pay')"
             },
             {
                 "fieldname": "custom_in_accommodation",
