@@ -1,0 +1,230 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:HR-ACA-{employee}_{start_date}",
+ "creation": "2026-07-07 08:27:34.947014",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_iuz8",
+  "amended_from",
+  "section_break_xgbl",
+  "employee",
+  "employee_name",
+  "status",
+  "column_break_iany",
+  "attendance_check",
+  "action",
+  "assigned_to",
+  "procurement_and_grace_period_section",
+  "purchasing_method",
+  "grace_period",
+  "column_break_ckex",
+  "start_date",
+  "deadline_date",
+  "has_not_purchased_a_new_mobile",
+  "section_break_vqcg",
+  "comments"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_iuz8",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Attendance Check Action",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "section_break_xgbl",
+   "fieldtype": "Section Break",
+   "label": "Basic Information"
+  },
+  {
+   "fetch_from": "attendance_check.employee",
+   "fetch_if_empty": 1,
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "no_copy": 1,
+   "options": "\nDraft\nPurchased\nClosed"
+  },
+  {
+   "fieldname": "column_break_iany",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "attendance_check",
+   "fieldtype": "Link",
+   "label": "Attendance Check",
+   "options": "Attendance Check",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "attendance_check.action",
+   "fetch_if_empty": 1,
+   "fieldname": "action",
+   "fieldtype": "Select",
+   "label": "Action",
+   "options": "\nIssue a New Mobile",
+   "read_only": 1
+  },
+  {
+   "fieldname": "assigned_to",
+   "fieldtype": "Link",
+   "label": "Assigned To",
+   "options": "User"
+  },
+  {
+   "fieldname": "procurement_and_grace_period_section",
+   "fieldtype": "Section Break",
+   "label": "Procurement and Grace Period"
+  },
+  {
+   "fieldname": "purchasing_method",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Purchasing Method",
+   "options": "\nSelf Purchase\nCompany Loan"
+  },
+  {
+   "description": "Number of days from Start Date allowed to complete the purchase. Auto-set to 14 for Self Purchase / Company Loan.",
+   "fieldname": "grace_period",
+   "fieldtype": "Int",
+   "label": "Grace Period",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_ckex",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "attendance_check.date",
+   "fetch_if_empty": 1,
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Start Date",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "deadline_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Deadline Date"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "has_not_purchased_a_new_mobile",
+   "fieldtype": "Check",
+   "label": "Has not Purchased a New Mobile"
+  },
+  {
+   "fieldname": "section_break_vqcg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "comments",
+   "fieldtype": "Small Text",
+   "label": "Comments"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-07-07 10:58:59.672522",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Attendance Check Action",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Payroll Operator",
+   "select": 1,
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Finance Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "General Manager",
+   "select": 1,
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "employee_name",
+ "track_changes": 1
+}
