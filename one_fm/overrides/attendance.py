@@ -1526,3 +1526,67 @@ def mark_day_off_for_yesterday():
         attendance_type=True,
     )
     frappe.enqueue(attendance_marking.mark_day_off, queue="long", timeout=6000)
+
+
+def is_within_correction_window(attendance_date) -> bool:
+    """Attendance Correction is allowed through the last day of the month
+    following the attendance month (inclusive)."""
+    from frappe.utils import add_months, get_last_day
+
+    if not attendance_date:
+        return False
+
+    deadline = get_last_day(add_months(getdate(attendance_date), 1))
+    return getdate(today()) <= getdate(deadline)
+
+
+@frappe.whitelist(methods=["POST"])
+def apply_attendance_correction(attendance: str, day_off_ot, reason: str):
+    """Payroll Operator correction for the Day Off OT setting on a submitted,
+    Basic-roster Attendance record.
+
+    Keeps the linked Employee Schedule in sync because the payroll report reads
+    day_off_ot from Employee Schedule, not from Attendance.
+    """
+    # Layer 1: Role restriction
+    frappe.only_for("Payroll Operator")
+
+    # Layer 2: Document-level permission
+    doc = frappe.get_doc("Attendance", attendance)
+    doc.check_permission("write")
+
+    # Layer 3: Business rule guards (defense-in-depth against the client checks)
+    if doc.docstatus != 1:
+        frappe.throw(_("Attendance Correction is only allowed on submitted Attendance records."))
+
+    if doc.roster_type != "Basic":
+        frappe.throw(_("Attendance Correction is only allowed for the Basic roster type."))
+
+    if doc.custom_correction_reason:
+        frappe.throw(_("This Attendance has already been corrected."))
+
+    if not is_within_correction_window(doc.attendance_date):
+        frappe.throw(_("The correction window for this Attendance has closed."))
+
+    reason = cstr(reason).strip()
+    if not reason:
+        frappe.throw(_("Reason for Change is mandatory."))
+
+    day_off_ot = cint(day_off_ot)
+
+    # Update the Attendance record; a stored reason locks out further corrections
+    doc.db_set({
+        "day_off_ot": day_off_ot,
+        "custom_correction_reason": reason,
+    })
+
+    # Keep the source Employee Schedule aligned so payroll reflects the correction
+    employee_schedule = frappe.db.get_value("Employee Schedule", {
+        "employee": doc.employee,
+        "date": doc.attendance_date,
+        "roster_type": doc.roster_type,
+    }, "name")
+    if employee_schedule:
+        frappe.db.set_value("Employee Schedule", employee_schedule, "day_off_ot", day_off_ot)
+
+    return {"success": True, "day_off_ot": day_off_ot}
