@@ -301,6 +301,27 @@ class AttendanceCheck(Document):
             self.mark_attendance()
         # Auto-create Penalty And Investigation on approval (Stories 1, 2, 3)
         self.create_penalty_on_approval()
+        # Auto-create Attendance Check Action when action is "Issue a New Mobile"
+        self.create_attendance_check_action()
+
+    def create_attendance_check_action(self):
+        """Auto-generate an Attendance Check Action (Draft) when this check is
+        submitted with the action 'Issue a New Mobile'.
+
+        Enqueued to run in the background *after commit* so it can never block,
+        delay or freeze the Attendance Check approval — mirroring the penalty
+        creation pattern in ``create_penalty_on_approval``.
+        """
+        if self.action != "Issue a New Mobile":
+            return
+
+        frappe.enqueue(
+            _create_attendance_check_action_doc,
+            queue="short",
+            timeout=120,
+            enqueue_after_commit=True,
+            attendance_check=self.name,
+        )
 
     def create_penalty_on_approval(self):
         """Evaluate the justification gateway and trigger background penalty creation if applicable."""
@@ -701,6 +722,49 @@ def _create_penalty_document(penalty_params, attendance_check_name):
             title="Auto Penalty Creation Failed",
             message=f"Attendance Check: {attendance_check_name}\n{frappe.get_traceback()}"
         )
+
+def _create_attendance_check_action_doc(attendance_check):
+    """Background job: create a Draft Attendance Check Action for an Attendance Check
+    whose action is 'Issue a New Mobile'.
+
+    Args:
+        attendance_check (str): Name of the source Attendance Check.
+    """
+    try:
+        # Skip if an action already exists for this check (re-submit / retry safety).
+        if frappe.db.exists("Attendance Check Action", {"attendance_check": attendance_check}):
+            return
+
+        source = frappe.db.get_value(
+            "Attendance Check",
+            attendance_check,
+            ["employee", "date", "action"],
+            as_dict=True,
+        )
+        if not source or source.action != "Issue a New Mobile":
+            return
+
+        # The Attendance Check Action is named HR-ACA-{employee}_{start_date}; guard
+        # against a name collision from another roster type on the same day.
+        expected_name = f"HR-ACA-{source.employee}_{source.date}"
+        if frappe.db.exists("Attendance Check Action", expected_name):
+            return
+
+        action_doc = frappe.new_doc("Attendance Check Action")
+        action_doc.attendance_check = attendance_check
+        action_doc.employee = source.employee
+        action_doc.action = "Issue a New Mobile"
+        action_doc.start_date = source.date
+        action_doc.status = "Draft"
+        action_doc.insert(ignore_permissions=True)
+
+        frappe.db.commit()
+    except Exception:
+        frappe.log_error(
+            title="Attendance Check Action Creation Failed",
+            message=f"Attendance Check: {attendance_check}\n{frappe.get_traceback()}",
+        )
+
 
 def create_attendance_check(attendance_date=None):
     if production_domain():
