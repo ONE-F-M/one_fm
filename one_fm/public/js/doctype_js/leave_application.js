@@ -197,6 +197,12 @@ frappe.ui.form.on("Leave Application", {
         validate_reliever(frm);
     },
 
+    custom_does_the_employee_need_additional_time_to_resume: function(frm) {
+        // Dynamically show/hide the "Create -> Leave Extension" action as soon
+        // as HelpDesk confirms the returning employee needs additional time.
+        manage_leave_extension(frm);
+    },
+
 
     leave_type: function(frm) {
         updateCustomIsPaidVisibility(frm);
@@ -452,12 +458,17 @@ function updateCustomIsPaidVisibility (frm) {
 
 function manage_leave_extension(frm) {
     if(!frm.is_new()) {
+        // Always clear the action first so it stays in sync when the
+        // "Does the Employee Need Additional Time to Resume?" field toggles
+        // between "Yes" and "No" without needing a form reload.
+        frm.remove_custom_button(__('Leave Extension'), __('Create'));
+
         frappe.call({
             doc: frm.doc,
             method: 'get_leave_extension_request',
             callback: async function(res) {
                 const leaveExtensionRequest = res.message
-                
+
                 const thresholdDays = await frappe.db.get_single_value("HR and Payroll Additional Settings", "leave_extension_request_allowance") || 0;
 
                 const today = frappe.datetime.get_today()
@@ -466,9 +477,13 @@ function manage_leave_extension(frm) {
 
                 const isWithinPermittedDateRange = new Date(today) >= new Date(leavePostingDate) && new Date(today) <= new Date(permittedEndDate);
 
-                if(frm.doc.leave_type === 'Annual Leave' && frm.doc.status === 'Approved' && isWithinPermittedDateRange && !leaveExtensionRequest) {
-                    frm.add_custom_button(__('Create Leave Extension Request'),
-                        function () {                            
+                // Only surface the action once HelpDesk confirms the employee
+                // is returning but delayed (needs additional time to resume).
+                const needsAdditionalTime = frm.doc.custom_does_the_employee_need_additional_time_to_resume === 'Yes';
+
+                if(needsAdditionalTime && frm.doc.leave_type === 'Annual Leave' && frm.doc.status === 'Approved' && isWithinPermittedDateRange && !leaveExtensionRequest) {
+                    frm.add_custom_button(__('Leave Extension'),
+                        function () {
                             let d = frappe.prompt([
                                 {
                                     fieldname: 'new_resumption_date',
@@ -501,7 +516,8 @@ function manage_leave_extension(frm) {
                                     minDate: frappe.datetime.str_to_obj(min_date)
                                 });
                             }
-                        }
+                        },
+                        __('Create')
                     );
                 }
             }
