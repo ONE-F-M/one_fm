@@ -650,6 +650,9 @@ scheduler_events = {
 		"15 4 1 * *": [# “At 04:15 on day-of-month 1.”
 			'one_fm.grd.doctype.pifss_monthly_deduction.pifss_monthly_deduction.auto_create_pifss_monthly_deduction_record',
 		],
+		"30 4 1 * *": [# “At 04:30 on day-of-month 1.” Assess the billing month that just ended.
+			'one_fm.one_fm.doctype.maintenance_kpi_assessment.maintenance_kpi_assessment.create_monthly_assessments',
+		],
 		"0/15 * * * *": [ #At every 15th minute from 0 through 59.”
 			"one_fm.legal.doctype.penalty.penalty.automatic_reject",
 			# 'one_fm.api.tasks.process_attendance',

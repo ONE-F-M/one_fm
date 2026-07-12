@@ -15,6 +15,7 @@
   "priority",
   "column_break_woru",
   "maintenance_schedule",
+  "planned_deadline",
   "status",
   "object_details_section",
   "object",
@@ -51,7 +52,9 @@
   "sla_resolution_status",
   "column_break_ygiw",
   "first_check_in_time",
-  "completion_time"
+  "creation_datetime",
+  "completion_time",
+  "hold_started_on"
  ],
  "fields": [
   {
@@ -310,6 +313,7 @@
    "label": "SLA Analytics"
   },
   {
+   "description": "Target start time from the asset fallback tree (Last Service Date \u2192 Commissioning Date \u2192 Creation Date + Frequency Days).",
    "fieldname": "sla_trigger_time",
    "fieldtype": "Datetime",
    "label": "SLA Trigger Time",
@@ -319,14 +323,14 @@
    "fieldname": "sla_response_status",
    "fieldtype": "Select",
    "label": "SLA Response Status",
-   "options": "\nPass\nFail",
+   "options": "\nPre-Start\nActive Counting\nPass\nFail",
    "read_only": 1
   },
   {
    "fieldname": "sla_resolution_status",
    "fieldtype": "Select",
    "label": "SLA Resolution Status",
-   "options": "\nPass\nFail",
+   "options": "\nPre-Start\nActive Counting\nPass\nFail",
    "read_only": 1
   },
   {
@@ -336,13 +340,33 @@
   {
    "fieldname": "first_check_in_time",
    "fieldtype": "Datetime",
-   "label": "First Check In Time",
-   "read_only": 1
+   "label": "First Check In Time"
   },
   {
    "fieldname": "completion_time",
    "fieldtype": "Datetime",
    "label": "Completion Time",
+   "read_only": 1
+  },
+  {
+   "description": "Internal: timestamp the Work Order entered 'On Hold - Parts Required'. Used to accumulate Total Paused Minutes.",
+   "fieldname": "hold_started_on",
+   "fieldtype": "Datetime",
+   "hidden": 1,
+   "label": "Hold Started On",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "planned_deadline",
+   "fieldtype": "Datetime",
+   "label": "Planned Deadline",
+   "read_only": 1
+  },
+  {
+   "fieldname": "creation_datetime",
+   "fieldtype": "Datetime",
+   "label": "Creation Datetime",
    "read_only": 1
   }
  ],
