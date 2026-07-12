@@ -14,13 +14,19 @@ frappe.listview_settings["Attendance Check Action"] = {
 			return [__("Purchased"), "blue", "status,=,Purchased"];
 		}
 
-		// Draft with a passed deadline -> Deadline Breached (Red, virtual)
+		// Deadline Breached (resolved as a breach) -> Red
+		if (doc.status === "Deadline Breached") {
+			return [__("Deadline Breached"), "red", "status,=,Deadline Breached"];
+		}
+
+		// Draft whose deadline has already passed but not yet resolved -> Orange,
+		// prompting the user to set a terminal status. Filters to unresolved drafts.
 		if (
 			doc.status === "Draft" &&
 			doc.deadline_date &&
 			frappe.datetime.get_day_diff(frappe.datetime.get_today(), doc.deadline_date) > 0
 		) {
-			return [__("Deadline Breached"), "red", "status,=,Draft"];
+			return [__("Deadline Passed"), "orange", "status,=,Draft"];
 		}
 
 		// Draft -> Orange

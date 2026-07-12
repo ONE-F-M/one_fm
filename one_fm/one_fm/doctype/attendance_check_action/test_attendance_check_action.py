@@ -81,7 +81,8 @@ class TestAttendanceCheckAction(FrappeTestCase):
 			dup.insert(ignore_permissions=True)
 
 	def test_blocks_duplicate_when_purchased_action_exists(self):
-		# "Purchased" is also NOT Closed, so it must block too.
+		# A Purchased action with no deadline (deadline not yet passed) still blocks
+		# a second overlapping action for the same employee.
 		employee = self._get_employee()
 		self._make_action(employee, "2026-02-01", status="Purchased")
 
@@ -89,6 +90,64 @@ class TestAttendanceCheckAction(FrappeTestCase):
 		dup.flags.ignore_mandatory = True
 		with self.assertRaises(frappe.ValidationError):
 			dup.insert(ignore_permissions=True)
+
+	def test_deadline_passed_releases_block_for_new_action(self):
+		# Once an action's Deadline Date has passed, a genuinely new issue may
+		# start its own action even though the previous one is not yet Closed.
+		employee = self._get_employee()
+		old = self._new(
+			employee=employee,
+			start_date="2020-01-01",
+			deadline_date="2020-01-15",
+			action="Issue a New Mobile",
+		)
+		old.flags.ignore_mandatory = True
+		old.insert(ignore_permissions=True)
+
+		new_action = self._new(
+			employee=employee, start_date="2020-06-01", action="Issue a New Mobile"
+		)
+		new_action.flags.ignore_mandatory = True
+		new_action.insert(ignore_permissions=True)
+		self.assertTrue(frappe.db.exists("Attendance Check Action", new_action.name))
+
+	def test_deadline_breached_rejected_before_deadline(self):
+		# AC3 guard: "Deadline Breached" cannot be set while still within the grace
+		# window (deadline in the future).
+		employee = self._get_employee()
+		doc = self._new(
+			employee=employee,
+			start_date="2099-01-01",
+			deadline_date="2099-01-15",
+			action="Issue a New Mobile",
+		)
+		doc.flags.ignore_mandatory = True
+		doc.insert(ignore_permissions=True)
+
+		doc.status = "Deadline Breached"
+		doc.flags.ignore_mandatory = True
+		with self.assertRaises(frappe.ValidationError):
+			doc.save()
+
+	def test_deadline_breached_allowed_after_deadline(self):
+		# AC3: once the deadline has passed the breach status is accepted.
+		employee = self._get_employee()
+		doc = self._new(
+			employee=employee,
+			start_date="2020-01-01",
+			deadline_date="2020-01-15",
+			action="Issue a New Mobile",
+		)
+		doc.flags.ignore_mandatory = True
+		doc.insert(ignore_permissions=True)
+
+		doc.status = "Deadline Breached"
+		doc.flags.ignore_mandatory = True
+		doc.save()
+		self.assertEqual(
+			frappe.db.get_value("Attendance Check Action", doc.name, "status"),
+			"Deadline Breached",
+		)
 
 	def test_allows_new_action_when_previous_is_closed(self):
 		# AC2: once the previous action is Closed a brand new lifecycle may start.
