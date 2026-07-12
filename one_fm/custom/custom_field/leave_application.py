@@ -195,8 +195,50 @@ def get_leave_application_custom_fields():
                 "fieldtype": "Section Break",
                 "insert_after": "source",
                 "label": "Resumption Confirmation Details",
-                "depends_on": "eval:doc.workflow_state=='Approved' && doc.leave_type=='Annual Leave'",
+                # Shown once the leave is Approved and it is an Annual Leave or
+                # Leave Without Pay (the leave types HelpDesk follows up on for resumption).
+                "depends_on": "eval:doc.workflow_state=='Approved' && (doc.leave_type=='Annual Leave' || doc.leave_type=='Leave Without Pay')",
                 "allow_on_submit": 1
+            },
+            {
+                "fieldname": "custom_could_the_employee_be_reached",
+                "fieldtype": "Select",
+                "insert_after": "resumption_confirmation_details",
+                "label": "Could the Employee be Reached?",
+                "options": "\nYes\nNo",
+                "allow_on_submit": 1,
+                "translatable": 1
+            },
+            {
+                "fieldname": "custom_action",
+                "fieldtype": "Select",
+                "insert_after": "custom_could_the_employee_be_reached",
+                "label": "Action",
+                "options": "\nTry Again",
+                # Set automatically to "Try Again" when the employee could not be reached.
+                "read_only": 1,
+                "allow_on_submit": 1,
+                "translatable": 1
+            },
+            {
+                "fieldname": "custom_reason_employee_not_reached",
+                "fieldtype": "Small Text",
+                "insert_after": "custom_action",
+                "label": "Reason Employee Not Reached",
+                "description": "State the specific date and time the employee could not be reached",
+                # Mandatory audit trail of the unsuccessful contact attempt before escalating.
+                "depends_on": "eval:doc.custom_could_the_employee_be_reached=='No'",
+                "mandatory_depends_on": "eval:doc.custom_could_the_employee_be_reached=='No'",
+                "allow_on_submit": 1
+            },
+            {
+                "fieldname": "custom_will_the_employee_return",
+                "fieldtype": "Select",
+                "insert_after": "custom_reason_employee_not_reached",
+                "label": "Will the Employee Return?",
+                "options": "\nYes\nNo",
+                "allow_on_submit": 1,
+                "translatable": 1
             },
             {
                 "fieldname": "outcome",
@@ -221,6 +263,15 @@ def get_leave_application_custom_fields():
                 "insert_after": "return_ticket_submitted",
                 "label": "Actual Return Date",
                 "allow_on_submit": 1
+            },
+            {
+                "fieldname": "custom_does_the_employee_need_additional_time_to_resume",
+                "fieldtype": "Select",
+                "insert_after": "actual_return_date",
+                "label": "Does the Employee Need Additional Time to Resume?",
+                "options": "\nYes\nNo",
+                "allow_on_submit": 1,
+                "translatable": 1
             },
             {
                 "fieldname": "column_break_resumption_details",
