@@ -1,0 +1,42 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-05-31 11:31:18.264093",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "total_achieved_points",
+  "applied_penalty_percentage"
+ ],
+ "fields": [
+  {
+   "fieldname": "total_achieved_points",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Total Achieved Points",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "applied_penalty_percentage",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Applied Penalty Percentage",
+   "read_only": 1,
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-07-05 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Maintenance Assessment Penalty Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

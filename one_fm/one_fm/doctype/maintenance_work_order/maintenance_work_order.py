@@ -4,28 +4,49 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, get_datetime, getdate, now_datetime
+from frappe.utils import add_days, add_to_date, cint, flt, get_datetime, getdate, now_datetime
+
+# Work Order status that pauses the SLA resolution clock (parts awaited).
+ON_HOLD_STATUS = "On Hold - Parts Required"
+
+# Terminal SLA verdicts — once reached, the live countdown no longer overrides them.
+FINAL_STATUSES = ("Pass", "Fail")
 
 
 class MaintenanceWorkOrder(Document):
 	def before_insert(self):
-		"""Story 8: Initialize SLA clock for reactive tickets on first save."""
+		"""Story 8: Initialize SLA clock for reactive tickets on first save.
+
+		AC1: stamp the current system timestamp into the Creation Datetime field
+		on first save (once) for every Maintenance Work Order — including those
+		auto-generated from a Maintenance Schedule slot.
+		"""
+		if not self.creation_datetime:
+			self.creation_datetime = now_datetime()
 		self.initialize_reactive_sla()
 
 	def before_save(self):
-		"""Stories 1, 2, 3: Auto-populate asset profile, parts, team, and checklist."""
+		"""Stories 1, 2, 3: Auto-populate asset profile, parts, team, and checklist.
+		Preventive SLA: freeze the SLA Trigger Time and advance the live countdown.
+		"""
 		self.fetch_object_details()
 		self.fetch_object_parts()
 		self.populate_maintenance_team()
 		self.route_maintenance_checklist()
+		self.set_preventive_sla()
+		self.track_pause_windows()
+		self.refresh_sla_statuses()
 		self.evaluate_sla_response()
+		self.set_planned_deadline()
 
 	def validate(self):
 		"""Story 7: Cross-reference priority against the linked SLA contract."""
 		self.validate_priority_against_sla()
 
 	def before_submit(self):
-		"""Story 8: Evaluate final SLA resolution status on submission."""
+		"""Stamp the completion audit log and evaluate final SLA resolution."""
+		self.stamp_completion_time()
+		self.close_open_hold()
 		self.evaluate_sla_resolution()
 
 	# ─────────────────────────────────────────────────────────────
@@ -395,27 +416,30 @@ class MaintenanceWorkOrder(Document):
 	# ─────────────────────────────────────────────────────────────
 
 	def evaluate_sla_response(self):
-		"""When the technician performs their first check-in, compute the actual
-		response time and set the SLA Response Status to Pass or Fail.
+		"""Compliance evaluation once the technician's first check-in is recorded.
+
+		Actual Response Minutes = First Check In Time − SLA Trigger Time.
+		Pass when the actual response is within the target; Fail otherwise. This
+		is the definitive verdict and supersedes the live "Active Counting"/"Fail"
+		countdown status set by ``refresh_sla_statuses``.
 		"""
 		if not self.sla_trigger_time or not self.first_check_in_time:
-			return
-
-		# Don't re-evaluate if already set
-		if self.sla_response_status:
 			return
 
 		trigger_dt = get_datetime(self.sla_trigger_time)
 		checkin_dt = get_datetime(self.first_check_in_time)
 
-		# Calculate elapsed time in minutes
-		elapsed_seconds = (checkin_dt - trigger_dt).total_seconds()
-		self.actual_response_minutes = flt(elapsed_seconds / 60.0, 2)
+		# Net duration between SLA Trigger Time and First Check In Time (minutes),
+		# excluding any paused (On Hold - Parts Required) time so the frozen verdict
+		# matches the live counter at the moment of check-in.
+		elapsed_minutes = (checkin_dt - trigger_dt).total_seconds() / 60.0 - flt(self.total_paused_minutes)
+		self.actual_response_minutes = flt(elapsed_minutes, 2)
 
-		if self.target_response_minutes and self.actual_response_minutes <= self.target_response_minutes:
-			self.sla_response_status = "Pass"
-		elif self.target_response_minutes:
-			self.sla_response_status = "Fail"
+		if self.target_response_minutes:
+			if self.actual_response_minutes <= self.target_response_minutes:
+				self.sla_response_status = "Pass"
+			else:
+				self.sla_response_status = "Fail"
 
 	def evaluate_sla_resolution(self):
 		"""On submission, evaluate whether the resolution time meets the SLA target.
@@ -423,9 +447,6 @@ class MaintenanceWorkOrder(Document):
 		Net Resolution Minutes = (Completion Time - SLA Trigger Time) - Total Paused Minutes
 		"""
 		if not self.sla_trigger_time or not self.completion_time:
-			return
-
-		if not self.target_resolution_minutes:
 			return
 
 		trigger_dt = get_datetime(self.sla_trigger_time)
@@ -439,10 +460,437 @@ class MaintenanceWorkOrder(Document):
 			total_elapsed_minutes - flt(self.total_paused_minutes), 2
 		)
 
-		if self.net_resolution_minutes <= self.target_resolution_minutes:
-			self.sla_resolution_status = "Pass"
-		else:
-			self.sla_resolution_status = "Fail"
+		if self.target_resolution_minutes:
+			if self.net_resolution_minutes <= self.target_resolution_minutes:
+				self.sla_resolution_status = "Pass"
+			else:
+				self.sla_resolution_status = "Fail"
+
+	# ─────────────────────────────────────────────────────────────
+	# Preventive Maintenance SLA — timeline, contract & live countdown
+	# ─────────────────────────────────────────────────────────────
+
+	def set_preventive_sla(self):
+		"""Initialize the SLA profile for a Preventive Maintenance Work Order.
+
+		Freezes the SLA Trigger Time from the asset fallback tree, binds the
+		active client SLA contract, and copies the target response/resolution
+		windows matching the asset priority. Only empty fields are filled, so the
+		frozen timeline and locked contract survive subsequent saves.
+		"""
+		if self.maintenance_type != "Preventive Maintenance":
+			return
+
+		# Freeze the SLA Trigger Time (target start time) from the fallback tree
+		if not self.sla_trigger_time:
+			self.sla_trigger_time = self._compute_preventive_trigger()
+
+		# Bind the verified active client SLA contract once
+		if not self.sla_master:
+			sla = self._find_matching_sla()
+			if sla:
+				self.sla_master = sla.name
+
+		# With a contract, trigger and priority resolved, copy the SLA targets
+		if self.sla_master and self.sla_trigger_time:
+			sla = frappe.get_doc("Maintenance Service Level Agreement", self.sla_master)
+			try:
+				self._determine_sla_shift_type(sla)
+			except Exception:
+				frappe.log_error(
+					title=_("SLA Shift Type Determination Failed"),
+					message=frappe.get_traceback(),
+				)
+			if self.priority:
+				try:
+					self._fetch_sla_targets(sla)
+				except Exception:
+					frappe.log_error(
+						title=_("SLA Target Fetch Failed"),
+						message=frappe.get_traceback(),
+					)
+
+	def _compute_preventive_trigger(self):
+		"""Return the SLA Trigger Time (target start) for a Preventive Work Order.
+
+		Frequency (Days) is sourced from the linked Maintenance Schedule Entry
+		(held by name in ``maintenance_schedule``). The base date follows the
+		asset fallback tree: Last Service Date → Commissioning Date → Object
+		Creation Date. Trigger = base date + Frequency (Days) at 08:00.
+
+		When the schedule slot already carries a planned execution datetime — it
+		computes the identical fallback tree — that authoritative value is used so
+		the Work Order and its schedule slot stay perfectly aligned.
+		"""
+		if not self.object:
+			return None
+
+		schedule = None
+		if self.maintenance_schedule:
+			schedule = frappe.db.get_value(
+				"Maintenance Schedule Entry",
+				self.maintenance_schedule,
+				["frequency_days", "planned_execution_datetime"],
+				as_dict=True,
+			)
+
+		# Prefer the schedule slot's authoritative planned start when available
+		if schedule and schedule.planned_execution_datetime:
+			return get_datetime(schedule.planned_execution_datetime)
+
+		frequency_days = cint(schedule.frequency_days) if schedule else 0
+		if not frequency_days:
+			return None
+
+		obj = frappe.db.get_value(
+			"Object",
+			self.object,
+			["last_service_date", "commissioning_date", "creation"],
+			as_dict=True,
+		)
+		if not obj:
+			return None
+
+		base_date = obj.last_service_date or obj.commissioning_date or getdate(obj.creation)
+		planned_date = add_days(getdate(base_date), frequency_days)
+		return get_datetime(f"{planned_date} 08:00:00")
+
+	def track_pause_windows(self, as_of=None):
+		"""Accumulate Total Paused Minutes across 'On Hold - Parts Required' windows.
+
+		AC4: the pause clock starts when the Work Order enters the hold status.
+		While it remains on hold, each save (and every scheduler tick) rolls the
+		open window into ``total_paused_minutes`` so the delayed duration is tracked
+		and displayed live, then re-anchors the ``hold_started_on`` marker. The
+		final sliver is banked when the Work Order leaves the hold status.
+
+		When invoked outside a save cycle (e.g. the background engine) there is no
+		"before" snapshot, so the current status is treated as unchanged and the
+		live roll-up branch handles an open hold.
+		"""
+		now = get_datetime(as_of) if as_of else now_datetime()
+
+		previous = self.get_doc_before_save()
+		previous_status = previous.status if previous else self.status
+
+		entering = self.status == ON_HOLD_STATUS and previous_status != ON_HOLD_STATUS
+		leaving = previous_status == ON_HOLD_STATUS and self.status != ON_HOLD_STATUS
+
+		if entering:
+			# Entering a hold — start the pause clock
+			if not self.hold_started_on:
+				self.hold_started_on = now
+		elif leaving:
+			# Leaving a hold — bank the elapsed pause duration
+			self._bank_open_hold(now)
+		elif self.status == ON_HOLD_STATUS and self.hold_started_on:
+			# Still on hold — roll the elapsed window into the live paused total
+			# and keep the clock running (AC4).
+			self._bank_open_hold(now)
+			self.hold_started_on = now
+
+	def _bank_open_hold(self, as_of):
+		"""Add the currently-open hold window into Total Paused Minutes and clear it."""
+		if not self.hold_started_on:
+			return
+		elapsed = (get_datetime(as_of) - get_datetime(self.hold_started_on)).total_seconds() / 60.0
+		self.total_paused_minutes = flt(flt(self.total_paused_minutes) + elapsed, 2)
+		self.hold_started_on = None
+
+	def _open_hold_minutes(self, as_of):
+		"""Minutes elapsed in the current (not yet banked) hold window, if any."""
+		if self.status == ON_HOLD_STATUS and self.hold_started_on:
+			return (get_datetime(as_of) - get_datetime(self.hold_started_on)).total_seconds() / 60.0
+		return 0.0
+
+	def refresh_sla_statuses(self, as_of=None):
+		"""Advance the live SLA countdown for a Preventive Maintenance Work Order.
+
+		Before the trigger time  → "Pre-Start", counters locked at 0 (AC2)
+		At/after the trigger time → "Active Counting", counters run live (AC3)
+		Target minutes exceeded   → "Fail" (before check-in / completion)
+
+		While the Work Order sits in "On Hold - Parts Required", the accumulated
+		paused minutes are subtracted from both live counters, so the response and
+		resolution clocks are effectively frozen for the duration of the hold (AC4).
+
+		The terminal Pass/Fail verdicts and their frozen minute values, once
+		reached, are owned by ``evaluate_sla_response`` (check-in) and
+		``evaluate_sla_resolution`` (completion), so this routine leaves those
+		untouched.
+		"""
+		if self.maintenance_type != "Preventive Maintenance":
+			return
+		if not self.sla_trigger_time:
+			return
+
+		now = get_datetime(as_of) if as_of else now_datetime()
+		trigger = get_datetime(self.sla_trigger_time)
+
+		# Total paused = banked minutes + any currently-open hold window, so the
+		# live counters freeze while parts are awaited (AC4).
+		paused = flt(self.total_paused_minutes) + self._open_hold_minutes(now)
+
+		# Response countdown — runs until the first check-in is recorded
+		if not self.first_check_in_time and self.sla_response_status not in FINAL_STATUSES:
+			if now < trigger:
+				# AC2: lock the response countdown at exactly zero elapsed minutes
+				self.sla_response_status = "Pre-Start"
+				self.actual_response_minutes = 0
+			else:
+				# AC3/AC4: live running response duration, net of paused windows
+				elapsed = (now - trigger).total_seconds() / 60.0 - paused
+				self.actual_response_minutes = flt(elapsed, 2)
+				if self.target_response_minutes and elapsed > self.target_response_minutes:
+					self.sla_response_status = "Fail"
+				else:
+					self.sla_response_status = "Active Counting"
+
+		# Resolution countdown — runs until completion is recorded
+		if not self.completion_time and self.sla_resolution_status not in FINAL_STATUSES:
+			if now < trigger:
+				# AC2: lock the resolution countdown at exactly zero elapsed minutes
+				self.sla_resolution_status = "Pre-Start"
+				self.net_resolution_minutes = 0
+			else:
+				# AC3/AC4: live running resolution duration, net of paused windows
+				net_elapsed = (now - trigger).total_seconds() / 60.0 - paused
+				self.net_resolution_minutes = flt(net_elapsed, 2)
+				if self.target_resolution_minutes and net_elapsed > self.target_resolution_minutes:
+					self.sla_resolution_status = "Fail"
+				else:
+					self.sla_resolution_status = "Active Counting"
+
+	def stamp_completion_time(self):
+		"""Stamp and freeze the Completion Time when the Work Order is submitted."""
+		if not self.completion_time:
+			self.completion_time = now_datetime()
+
+	def close_open_hold(self):
+		"""Bank any hold window still open at completion so paused time is complete."""
+		if self.status == ON_HOLD_STATUS and self.hold_started_on:
+			self._bank_open_hold(self.completion_time or now_datetime())
+
+	# ─────────────────────────────────────────────────────────────
+	# Planned Deadline — working-calendar aware completion target
+	# ─────────────────────────────────────────────────────────────
+
+	def set_planned_deadline(self):
+		"""Auto-calculate the Planned Deadline for every Work Order.
+
+		Base case: Planned Deadline = SLA Trigger Time + Target Resolution Minutes.
+
+		When the linked SLA contract defines working shifts and/or a holiday
+		calendar, the resolution minutes are consumed only during active working
+		windows: non-working hours, weekly offs and public holidays are skipped
+		and the remaining minutes roll forward into the next working window.
+
+		Recomputed on every save from the (frozen) SLA Trigger Time and the
+		current Target Resolution Minutes, so the deadline always reflects the
+		latest contract terms. Pause windows do not extend it — it is a fixed
+		target, not a live countdown.
+		"""
+		if not self.sla_trigger_time or not flt(self.target_resolution_minutes):
+			self.planned_deadline = None
+			return
+
+		remaining = flt(self.target_resolution_minutes)
+		trigger_dt = get_datetime(self.sla_trigger_time)
+
+		# Resolve the working-hours calendar from the linked SLA contract.
+		sla = None
+		if self.sla_master:
+			sla = frappe.get_cached_doc("Maintenance Service Level Agreement", self.sla_master)
+
+		# No contract or no working shifts defined → plain calendar addition.
+		if not sla or not sla.support_and_resolution:
+			self.planned_deadline = add_to_date(trigger_dt, minutes=remaining)
+			return
+
+		self.planned_deadline = self._project_working_deadline(sla, trigger_dt, remaining)
+
+	def _project_working_deadline(self, sla, trigger_dt, remaining_minutes):
+		"""Roll the resolution minutes forward across the SLA working calendar.
+
+		Walks day by day from the SLA Trigger Time, consuming the resolution
+		budget only inside each day's working window and skipping any day that is
+		a public holiday, a weekly off, or has no configured working shift. Returns
+		the datetime at which the budget is exhausted (the Planned Deadline).
+		"""
+		from datetime import datetime as dt_datetime
+		from datetime import time as dt_time, timedelta
+
+		def _to_time(val):
+			"""Convert a Time field value (timedelta, datetime.time, or string) to datetime.time."""
+			if val is None or val == "":
+				return None
+			if isinstance(val, dt_time):
+				return val
+			if isinstance(val, timedelta):
+				return (dt_datetime.min + val).time()
+			return get_datetime(val).time()
+
+		# Build weekday → (start, end) map. Skip malformed / zero-length windows.
+		working_days = {}
+		for day in sla.support_and_resolution:
+			start_t = _to_time(day.start_time)
+			end_t = _to_time(day.end_time)
+			if start_t is None or end_t is None or end_t <= start_t:
+				continue
+			working_days[day.workday] = (start_t, end_t)
+
+		# No usable working window → fall back to plain calendar addition.
+		if not working_days:
+			return add_to_date(trigger_dt, minutes=remaining_minutes)
+
+		# Preload the holiday calendar: any listed date (weekly off or public
+		# holiday) is treated as a full non-working day.
+		holidays = set()
+		if sla.holiday_list:
+			for holiday_date in frappe.get_all(
+				"Maintenance Holiday Item",
+				filters={"parent": sla.holiday_list},
+				pluck="holiday_date",
+			):
+				holidays.add(getdate(holiday_date))
+
+		cursor = trigger_dt
+		remaining = flt(remaining_minutes)
+
+		# Safety valve: cap the walk so a misconfigured calendar (e.g. an
+		# enormous target with very few working days) can never loop forever.
+		for _ in range(1000):
+			if remaining <= 0:
+				break
+
+			day_date = cursor.date()
+			weekday_name = cursor.strftime("%A")
+
+			# Skip full non-working days (holidays, weekly offs, no shift).
+			if day_date in holidays or weekday_name not in working_days:
+				cursor = dt_datetime.combine(day_date + timedelta(days=1), dt_time(0, 0))
+				continue
+
+			start_t, end_t = working_days[weekday_name]
+			window_start = dt_datetime.combine(day_date, start_t)
+			window_end = dt_datetime.combine(day_date, end_t)
+
+			# Advance a pre-shift cursor to the window opening.
+			if cursor < window_start:
+				cursor = window_start
+
+			# Past today's window → jump to the start of the next day.
+			if cursor >= window_end:
+				cursor = dt_datetime.combine(day_date + timedelta(days=1), dt_time(0, 0))
+				continue
+
+			available = (window_end - cursor).total_seconds() / 60.0
+			if remaining <= available:
+				return cursor + timedelta(minutes=remaining)
+
+			# Consume the rest of today's window and continue tomorrow.
+			remaining -= available
+			cursor = dt_datetime.combine(day_date + timedelta(days=1), dt_time(0, 0))
+
+		# The loop only exits early if the budget could not be placed within the
+		# cap — log for investigation and return the best-effort cursor.
+		if remaining > 0:
+			frappe.log_error(
+				title=_("Planned Deadline Projection Exceeded Calendar Window"),
+				message=_(
+					"Could not place {0} resolution minutes within the SLA working "
+					"calendar for Work Order {1}."
+				).format(flt(self.target_resolution_minutes), self.name or _("(unsaved)")),
+			)
+		return cursor
+
+
+@frappe.whitelist(methods=["POST"])
+def check_in(work_order: str):
+	"""Record the technician's first on-site check-in on a Work Order.
+
+	Stamps ``first_check_in_time`` once (the first click wins), then runs the
+	Preventive response compliance evaluation to set Actual Response Minutes and
+	the Pass/Fail SLA Response Status.
+	"""
+	doc = frappe.get_doc("Maintenance Work Order", work_order)
+	doc.check_permission("write")
+
+	if doc.first_check_in_time:
+		return {
+			"already_checked_in": True,
+			"first_check_in_time": doc.first_check_in_time,
+			"sla_response_status": doc.sla_response_status,
+		}
+
+	doc.first_check_in_time = now_datetime()
+	doc.evaluate_sla_response()
+	doc.db_set(
+		{
+			"first_check_in_time": doc.first_check_in_time,
+			"actual_response_minutes": doc.actual_response_minutes,
+			"sla_response_status": doc.sla_response_status,
+		}
+	)
+
+	return {
+		"already_checked_in": False,
+		"first_check_in_time": doc.first_check_in_time,
+		"actual_response_minutes": doc.actual_response_minutes,
+		"sla_response_status": doc.sla_response_status,
+	}
+
+
+def update_active_sla_statuses():
+	"""Scheduled background engine: advance live SLA countdown statuses.
+
+	Recomputes the SLA Response/Resolution Status for every in-progress
+	Preventive Maintenance Work Order whose SLA clock has started but whose
+	verdicts are not yet final. Wired to run every 5 minutes.
+	"""
+	names = frappe.get_all(
+		"Maintenance Work Order",
+		filters={
+			"docstatus": 0,
+			"maintenance_type": "Preventive Maintenance",
+			"sla_trigger_time": ["is", "set"],
+		},
+		pluck="name",
+	)
+
+	for name in names:
+		try:
+			doc = frappe.get_doc("Maintenance Work Order", name)
+
+			# Skip Work Orders whose countdowns have both reached a verdict
+			if (
+				doc.sla_response_status in FINAL_STATUSES
+				and doc.sla_resolution_status in FINAL_STATUSES
+			):
+				continue
+
+			# Roll any open hold window into the live paused total (AC4), then
+			# advance the statuses and live minute counters (AC2/AC3).
+			doc.track_pause_windows()
+			doc.refresh_sla_statuses()
+			doc.db_set(
+				{
+					"sla_response_status": doc.sla_response_status,
+					"sla_resolution_status": doc.sla_resolution_status,
+					"actual_response_minutes": doc.actual_response_minutes,
+					"net_resolution_minutes": doc.net_resolution_minutes,
+					"total_paused_minutes": doc.total_paused_minutes,
+					"hold_started_on": doc.hold_started_on,
+				},
+				update_modified=False,
+			)
+		except Exception:
+			frappe.log_error(
+				title="Maintenance SLA Status Update Failed",
+				message=frappe.get_traceback(),
+			)
+
+	frappe.db.commit()
 
 
 @frappe.whitelist()
