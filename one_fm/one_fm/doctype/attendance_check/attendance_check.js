@@ -9,6 +9,11 @@ frappe.ui.form.on('Attendance Check', {
 		allow_only_attendance_manager(frm);
 		// Apply initial visibility and action state on form load
 		toggle_verification_fields(frm);
+		// When reopening a draft already filled during an active grace period,
+		// relax the screenshot requirement so it does not block save/approve.
+		if (frm.doc.docstatus == 0 && frm.doc.attendance_status == "Present") {
+			fetch_grace_period_prefill(frm, false);
+		}
 	},
 	before_workflow_action: function(frm){
 		if(frm.doc.workflow_state == 'Pending Approval'){
@@ -25,7 +30,11 @@ frappe.ui.form.on('Attendance Check', {
 			frm.set_value("justification", "");
 			frm.set_value("action", "");
 			reset_verification_fields(frm);
+			return;
 		}
+		// Present selected: auto-fill justification/answers/action from the
+		// original issue if the employee is inside an active grace period.
+		fetch_grace_period_prefill(frm, true);
 	},
 
 	justification: function(frm) {
@@ -116,6 +125,81 @@ frappe.ui.form.on('Attendance Check', {
 	},
 });
 
+
+/**
+ * Fetch the grace-period justification/answers/action from the original linked
+ * Attendance Check and, when found, populate them instantly (do_populate) and/or
+ * relax the screenshot requirement for the carried-over issue.
+ *
+ * @param {object} frm
+ * @param {boolean} do_populate - set the copied field values when true; when
+ *        false only relaxes the screenshot requirement (e.g. on form reload).
+ */
+var fetch_grace_period_prefill = function(frm, do_populate) {
+	if (!frm.doc.employee || !frm.doc.date) return;
+
+	frappe.call({
+		method: "one_fm.one_fm.doctype.attendance_check.attendance_check.get_grace_period_prefill",
+		args: {
+			employee: frm.doc.employee,
+			date: frm.doc.date
+		},
+		callback: function(r) {
+			var data = r.message;
+			if (!data || !data.justification) return;
+
+			// A grace period is active — attaching a fresh screenshot is not
+			// required, so lift the requirement on the client too.
+			relax_screenshot_requirement(frm);
+
+			if (!do_populate) return;
+
+			var answer_fields = [
+				"is_the_mobile_specification_up_to_the_standard",
+				"is_the_employee_physically_onsite",
+				"were_proper_permissions_given_to_the_app",
+				"is_the_employee_assigned_to_the_correct_shift",
+				"did_the_employee_try_to_check_in_outside_working_hours",
+				"mobile_brand",
+				"mobile_model",
+				"other_reason"
+			];
+
+			// Write the carried-over values straight to the model and repaint,
+			// instead of frm.set_value(). This deliberately bypasses the field
+			// change-handler cascade, which otherwise (a) resets sibling fields
+			// on the justification change and (b) can stall an awaited set_value
+			// inside this frappe.call callback via frappe.after_server_call().
+			frm.doc.justification = data.justification;
+			answer_fields.forEach(function(field) {
+				if (data[field]) {
+					frm.doc[field] = data[field];
+				}
+			});
+			if (data.action) {
+				frm.doc.action = data.action;
+			}
+
+			frm.refresh_fields();
+			frm.dirty();
+
+			relax_screenshot_requirement(frm);
+			frappe.show_alert({
+				message: __("Justification auto-filled from active grace period ({0}).", [data.grace_action]),
+				indicator: "green"
+			});
+		}
+	});
+};
+
+/**
+ * Lift the screenshot requirement (used during an active grace period).
+ */
+var relax_screenshot_requirement = function(frm) {
+	frm.set_df_property("screenshot", "mandatory_depends_on", "");
+	frm.set_df_property("screenshot", "reqd", 0);
+	frm.refresh_field("screenshot");
+};
 
 /**
  * Reset all verification fields to empty

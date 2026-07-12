@@ -52,7 +52,8 @@
   "customer_property_damage",
   "other_damages",
   "reference_section",
-  "shift_request"
+  "shift_request",
+  "attendance_check_action"
  ],
  "fields": [
   {
@@ -323,13 +324,20 @@
    "label": "Shift Request",
    "options": "Shift Request",
    "read_only": 1
+  },
+  {
+   "fieldname": "attendance_check_action",
+   "fieldtype": "Link",
+   "label": "Attendance Check Action",
+   "options": "Attendance Check Action",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-10 16:55:12.331672",
+ "modified": "2026-07-12 14:36:42.065746",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Penalty And Investigation",

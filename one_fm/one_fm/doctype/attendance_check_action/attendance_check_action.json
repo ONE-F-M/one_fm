@@ -74,7 +74,7 @@
    "in_standard_filter": 1,
    "label": "Status",
    "no_copy": 1,
-   "options": "\nDraft\nPurchased\nClosed"
+   "options": "\nDraft\nPurchased\nClosed\nDeadline Breached"
   },
   {
    "fieldname": "column_break_iany",
@@ -116,11 +116,13 @@
    "options": "\nSelf Purchase\nCompany Loan"
   },
   {
-   "description": "Number of days from Start Date allowed to complete the purchase. Auto-set to 14 for Self Purchase / Company Loan.",
+   "allow_on_submit": 1,
+   "description": "Number of days from Start Date allowed to complete the purchase. Auto-set to 14 for Self Purchase / Company Loan. Recalculated automatically when the Deadline Date is extended.",
    "fieldname": "grace_period",
    "fieldtype": "Int",
    "label": "Grace Period",
-   "non_negative": 1
+   "non_negative": 1,
+   "read_only": 1
   },
   {
    "fieldname": "column_break_ckex",
