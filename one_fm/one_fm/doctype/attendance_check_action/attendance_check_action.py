@@ -17,9 +17,34 @@ class AttendanceCheckAction(Document):
 		# "HR-ACA-{employee}_{start_date}" expression always resolves.
 		self.populate_from_attendance_check()
 
+	def before_insert(self):
+		# Guard against duplicate lifecycles: a new action can only be created
+		# once the employee's previous one has been Closed.
+		self.populate_from_attendance_check()
+		self.validate_no_open_action()
+
 	def validate(self):
 		self.populate_from_attendance_check()
 		self.set_grace_and_deadline()
+
+	def validate_no_open_action(self):
+		"""Block creating a new Attendance Check Action when the employee already
+		has an open (not Closed) one.
+
+		A record is considered "open" while its status is not "Closed" and it has
+		not been cancelled. Only once the previous action is Closed may a brand
+		new one be started for the same employee.
+		"""
+		if not self.employee:
+			return
+
+		open_action = get_open_action_for_employee(self.employee, exclude=self.name)
+		if open_action:
+			frappe.throw(
+				_("An open Attendance Check Action ({0}) already exists for {1}. Close it before creating a new one.").format(
+					open_action, self.employee_name or self.employee
+				)
+			)
 
 	def populate_from_attendance_check(self):
 		"""Fetch Employee, Action and Start Date (= Attendance Check Date) from the source issue."""
@@ -66,3 +91,25 @@ class AttendanceCheckAction(Document):
 	def on_submit(self):
 		# "Closed" is the submitted state.
 		self.db_set("status", "Closed")
+
+
+def get_open_action_for_employee(employee, exclude=None):
+	"""Return the name of an open (not Closed, not Cancelled) Attendance Check
+	Action for the employee, or None.
+
+	Args:
+		employee (str): Employee to check.
+		exclude (str, optional): Attendance Check Action name to exclude (self).
+	"""
+	if not employee:
+		return None
+
+	filters = {
+		"employee": employee,
+		"status": ["!=", "Closed"],
+		"docstatus": ["<", 2],
+	}
+	if exclude:
+		filters["name"] = ["!=", exclude]
+
+	return frappe.db.get_value("Attendance Check Action", filters, "name")
