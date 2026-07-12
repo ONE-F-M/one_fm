@@ -842,6 +842,10 @@ def _create_attendance_check_action_doc(attendance_check):
         action_doc.action = "Issue a New Mobile"
         action_doc.start_date = source.date
         action_doc.status = "Draft"
+        # Route the draft to the default Action Owner configured in HR Settings.
+        action_doc.assigned_to = frappe.db.get_single_value(
+            "HR Settings", "attendance_check_action_user"
+        )
         action_doc.insert(ignore_permissions=True)
 
         frappe.db.commit()

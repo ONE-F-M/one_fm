@@ -18,7 +18,8 @@ from one_fm.one_fm.doctype.attendance_check.attendance_check import (
     create_todos,
     notify_manager,
     assign_attendance_manager,
-    schedule_attendance_check
+    schedule_attendance_check,
+    _create_attendance_check_action_doc,
 )
 
 class TestAttendanceCheckMockDB(FrappeTestCase):
@@ -422,6 +423,38 @@ class TestAttendanceCheckMockDB(FrappeTestCase):
             attendance_check_pending_approval_check()
             mock_penalty.assert_called()
             mock_assign.assert_called()
+
+    def test_create_attendance_check_action_routes_to_hr_settings_user(self):
+        # No existing Attendance Check Action -> guard clauses must not early-return.
+        frappe.db.exists.return_value = False
+        # Qualifying source Attendance Check.
+        frappe.db.get_value.return_value = frappe._dict({
+            "employee": "EMP001",
+            "date": "2026-07-01",
+            "action": "Issue a New Mobile",
+        })
+        # Default Action Owner configured in HR Settings.
+        frappe.db.get_single_value.return_value = "owner@example.com"
+
+        action_doc = MagicMock()
+        with upatch("frappe.new_doc", MagicMock(return_value=action_doc)):
+            _create_attendance_check_action_doc("HR-AC-EMP001-2026-07-01")
+
+        frappe.db.get_single_value.assert_called_with("HR Settings", "attendance_check_action_user")
+        self.assertEqual(action_doc.assigned_to, "owner@example.com")
+        action_doc.insert.assert_called_once()
+
+    def test_create_attendance_check_action_skips_non_mobile_action(self):
+        # A source whose action is not "Issue a New Mobile" must not create anything.
+        frappe.db.exists.return_value = False
+        frappe.db.get_value.return_value = frappe._dict({
+            "employee": "EMP001",
+            "date": "2026-07-01",
+            "action": "No Action Required",
+        })
+        with upatch("frappe.new_doc", MagicMock()) as mock_new_doc:
+            _create_attendance_check_action_doc("HR-AC-EMP001-2026-07-01")
+            mock_new_doc.assert_not_called()
 
 
 def create_attendance_check_record(details, date):
