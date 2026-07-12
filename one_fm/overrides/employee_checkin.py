@@ -73,6 +73,11 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 		except Exception as e:
 			frappe.throw(frappe.get_traceback())
 
+		# HRMS builds the geolocation map point from latitude/longitude during its
+		# own validate(). This override replaces validate() without calling super(),
+		# so we must trigger it here or the Geolocation field is never populated.
+		self.set_geolocation()
+
 
 	def validate_duplicate_log(self):
 		doc = frappe.db.sql(f""" select name from `tabEmployee Checkin` where employee = '{self.employee}' and shift_assignment ='{self.shift_assignment}' and time = '{self.time}' and (NOT name = '{self.name}')""", as_dict=1)
