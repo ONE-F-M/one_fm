@@ -246,6 +246,17 @@ def get_roster_view(start_date, end_date, employee_search_id=None, employee_sear
 		else:
 			post_schedule_filters = get_post_schedule_filters(start_date, end_date, project, site, shift, operations_role)
 			operations_roles = frappe.get_all("Post Schedule", post_schedule_filters, ["distinct operations_role", "post_abbrv"])
+
+			# Exclude Inactive Operations Roles so they don't appear in the roster.
+			role_names = [row.operations_role for row in operations_roles if row.operations_role]
+			if role_names:
+				active_roles = set(frappe.get_all(
+					"Operations Role",
+					filters={"name": ["in", role_names], "status": "Active"},
+					pluck="name"
+				))
+				operations_roles = [row for row in operations_roles if row.operations_role in active_roles]
+
 			post_map_filters = {}
 			if project:
 				post_map_filters["project"] = project
@@ -2242,6 +2253,12 @@ def dayoff(employees, client_day_off=0, selected_dates=0, selected_reliever=None
 				site = "",
 				shift_type = "",
 				day_off_ot = 0,
+				client_event = "",
+				reference_doctype = "",
+				reference_docname = "",
+				event_staff = "",
+				event_location = "",
+				is_event_schedule = 0,
 				employee_availability = "{employee_availability}"
 			"""
 			frappe.db.sql(query_main)

@@ -821,11 +821,8 @@ var fetch_erf_items = function(frm){
 
 var set_item_field_property = function(frm) {
 	var fields_dict = [];
-	frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).read_only = true;
-	frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).depends_on = 'eval:doc.docstatus==1';
 	if((frm.doc.docstatus == 1 && (frappe.session.user == frm.doc.request_for_material_accepter || frm.doc.workflow_state == 'Approved')) || frm.doc.type == 'Stock'){
 		frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).read_only = false;
-		frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).depends_on = '';
 	}
 	if(frm.doc.type == 'Stock'){
 		if(frm.is_new()){
@@ -886,8 +883,10 @@ var set_employee_or_project = function(frm) {
 		}
 		else if(frm.doc.type=='Department'){
 			frm.set_df_property('department', 'reqd', true);
-			// Check if employee exit for the session user to set employee field
-			set_employee_from_the_session_user(frm);
+			frm.set_df_property('employee', 'reqd', true);
+			// Clear employee so it is not prefilled from session user or previous type selection
+			frm.set_value('employee', '');
+			frm.set_value('employee_name', '');
 		}
 		else if(frm.doc.type=='Project'|| frm.doc.type=='Project Mobilization'){
 			frm.set_df_property('project', 'reqd', true);

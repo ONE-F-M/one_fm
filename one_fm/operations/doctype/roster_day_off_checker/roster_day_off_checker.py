@@ -219,6 +219,17 @@ def check_roster_day_off():
 		leave_dates_by_employee = get_leave_dates_by_employee()
 
 		for employee in employees:
+			# Commit before each employee so their reads start a fresh transaction.
+			# The whole job runs in one transaction, and MariaDB's default REPEATABLE
+			# READ isolation pins every read to the snapshot taken by the job's first
+			# query (the pre-loop employee/leave fetches at ~13:30). Committing here
+			# gives each employee a new read view, so attendance/schedule corrections
+			# another job commits while this checker is running (e.g. a "Day Off"
+			# attendance created minutes after the run starts) stay visible instead of
+			# being miscounted. Placed at the top of the loop so the first employee is
+			# covered too, not just employees 2..N.
+			frappe.db.commit()
+
 			employee_leave_dates = leave_dates_by_employee.get(employee.name)
 			comparison_dates = get_day_off_comparison_dates(employee, employee_leave_dates)
 
@@ -229,23 +240,27 @@ def check_roster_day_off():
 			for period in comparison_dates:	# Always 2 iterations only because we have just two period for comparison
 				day_off_data = get_employee_day_off_comparison(employee, period["start_date"], period["end_date"], period["calculated_number_of_days_off"], period["working_dates"])
 
+				duration = day_off_data["monthweek"]
+
+				# Fetch yesterday's repeat count (before deleting) so a persisting
+				# discrepancy carries its running count forward.
+				yesterday_repeat_count = frappe.db.get_value(
+					"Roster Day Off Checker",
+					{
+						"employee": employee.name,
+						"monthweek": duration,
+						"date": add_days(today, -1),
+						"creation": ["between", [add_days(nowdate(), -1), nowdate()]],
+					},
+					["repeat_count"]
+				)
+
+				# Always delete any existing record for this (employee, period) first —
+				# even when there is no longer a discrepancy — so a previously flagged
+				# issue that has since been corrected does not leave a stale record behind.
+				frappe.delete_doc_if_exists("Roster Day Off Checker", f"OPR-RDOC-{employee.name}-{duration}")
+
 				if day_off_data["day_off_difference"]:
-					duration = day_off_data["monthweek"]
-
-					yesterday_repeat_count = frappe.db.get_value(
-						"Roster Day Off Checker",
-						{
-							"employee": employee.name,
-							"monthweek": duration,
-							"date": add_days(today, -1),
-							"creation": ["between", [add_days(nowdate(), -1), nowdate()]],
-						},
-						["repeat_count"]
-					)
-
-					# Delete exising for target duration against employee
-					frappe.delete_doc_if_exists("Roster Day Off Checker", f"OPR-RDOC-{employee.name}-{duration}")
-
 					day_off_checker = frappe.new_doc("Roster Day Off Checker")
 					day_off_checker.date = today
 					day_off_checker.monthweek = duration
@@ -332,7 +347,7 @@ def get_employee_day_off_comparison(employee, start_date, end_date, calculated_d
 		ot = (
 			frappe.qb.from_(Attendance)
 			.select(Count("name").as_("ot_days"))
-			.where(conditions & (Attendance.day_off_ot == 1))
+			.where(conditions & (Attendance.day_off_ot == 1) & (Attendance.docstatus == 1))
 			.groupby(Attendance.employee)
 		).run(as_dict=True)
 
