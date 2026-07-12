@@ -108,6 +108,7 @@ frappe.ui.form.on("Leave Application", {
         }
         updateCustomIsPaidVisibility(frm)
         manage_leave_extension(frm)
+        add_employee_resignation_button(frm)
         // Leave Handover Creation
 		if (frm.doc.status == 'Approved') {
 			frm.add_custom_button(__('Leave Handover'), function() {
@@ -238,6 +239,25 @@ frappe.ui.form.on("Leave Application", {
         frm.trigger("calculate_total_days");
     }
 })
+
+// When HelpDesk confirms the employee will NOT return, expose an "Employee
+// Resignation" action under the "Create" menu so the offboarding/exit
+// replacement process can be initiated immediately. Clicking it opens a new
+// Employee Resignation with this leave's employee prefilled into the required
+// "employees" child table.
+function add_employee_resignation_button(frm) {
+    if (frm.doc.custom_will_the_employee_return === "No") {
+        frm.add_custom_button(__("Employee Resignation"), function() {
+            frappe.model.with_doctype("Employee Resignation", function() {
+                let doc = frappe.model.get_new_doc("Employee Resignation");
+                let row = frappe.model.add_child(doc, "Employee Resignation Item", "employees");
+                row.employee = frm.doc.employee;
+                row.employee_name = frm.doc.employee_name;
+                frappe.set_route("Form", "Employee Resignation", doc.name);
+            });
+        }, __("Create"));
+    }
+}
 
 async function handle_propose_new_date_action(frm) {
     return new Promise((resolve, reject) => {
