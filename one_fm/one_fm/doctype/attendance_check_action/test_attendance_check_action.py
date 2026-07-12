@@ -3,7 +3,13 @@
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
-from frappe.utils import getdate
+from frappe.utils import getdate, nowdate
+
+from one_fm.one_fm.doctype.attendance_check_action.attendance_check_action import (
+	UNPURCHASED_MOBILE_PENALTY_CODE,
+	UNPURCHASED_MOBILE_PENALTY_REMARKS,
+	create_penalty_for_unpurchased_mobile,
+)
 
 
 class TestAttendanceCheckAction(FrappeTestCase):
@@ -158,3 +164,66 @@ class TestAttendanceCheckAction(FrappeTestCase):
 		new_action.flags.ignore_mandatory = True
 		new_action.insert(ignore_permissions=True)
 		self.assertTrue(frappe.db.exists("Attendance Check Action", new_action.name))
+
+	def _make_closed_unpurchased_action(self, employee):
+		"""Create a Closed action with "Has not Purchased a New Mobile" ticked,
+		mirroring the state the record is in when on_submit fires the penalty job."""
+		doc = self._make_action(employee, "2026-03-01", status="Closed")
+		doc.db_set("has_not_purchased_a_new_mobile", 1)
+		return doc
+
+	def test_penalty_created_for_unpurchased_mobile(self):
+		# AC: closing an action with the checkbox ticked raises a penalty linked
+		# to the employee and the originating action, with the mandated values.
+		employee = self._get_employee()
+		action = self._make_closed_unpurchased_action(employee)
+
+		create_penalty_for_unpurchased_mobile(action.name)
+
+		penalty_name = frappe.db.get_value(
+			"Penalty And Investigation", {"attendance_check_action": action.name}, "name"
+		)
+		self.assertTrue(penalty_name, "Penalty was not created for the closed action")
+
+		penalty = frappe.get_doc("Penalty And Investigation", penalty_name)
+		self.assertEqual(penalty.employee, employee)
+		self.assertEqual(penalty.applied_penalty_code, UNPURCHASED_MOBILE_PENALTY_CODE)
+		self.assertEqual(getdate(penalty.incident_date), getdate(nowdate()))
+		self.assertEqual(penalty.supervisor_remarks, frappe._(UNPURCHASED_MOBILE_PENALTY_REMARKS))
+		self.assertEqual(penalty.attendance_check_action, action.name)
+
+		# Location and Department are sourced from the employee master.
+		emp = frappe.db.get_value("Employee", employee, ["site", "department"], as_dict=True)
+		self.assertEqual(penalty.location, emp.site)
+		self.assertEqual(penalty.department, emp.department)
+
+		# Issuer resolves the HR Settings action User to its Employee record.
+		action_user = frappe.db.get_single_value("HR Settings", "attendance_check_action_user")
+		expected_issuer = (
+			frappe.db.get_value("Employee", {"user_id": action_user}, "name") if action_user else None
+		)
+		self.assertEqual(penalty.issuer, expected_issuer)
+
+	def test_no_penalty_when_checkbox_unchecked(self):
+		# A Closed action without the checkbox ticked must not raise a penalty.
+		employee = self._get_employee()
+		action = self._make_action(employee, "2026-03-01", status="Closed")
+
+		create_penalty_for_unpurchased_mobile(action.name)
+
+		self.assertFalse(
+			frappe.db.exists("Penalty And Investigation", {"attendance_check_action": action.name})
+		)
+
+	def test_penalty_creation_is_idempotent(self):
+		# Re-running the job for the same action must not create a duplicate penalty.
+		employee = self._get_employee()
+		action = self._make_closed_unpurchased_action(employee)
+
+		create_penalty_for_unpurchased_mobile(action.name)
+		create_penalty_for_unpurchased_mobile(action.name)
+
+		self.assertEqual(
+			frappe.db.count("Penalty And Investigation", {"attendance_check_action": action.name}),
+			1,
+		)

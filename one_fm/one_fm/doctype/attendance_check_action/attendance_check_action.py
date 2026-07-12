@@ -14,6 +14,14 @@ DEFAULT_GRACE_PERIOD = 14
 # (no more auto-fill from the source check). "Draft" is the only active state.
 GRACE_ENDING_STATUSES = ("Purchased", "Closed", "Deadline Breached")
 
+# Penalty Code applied when an employee fails to purchase a new mobile within
+# the grace period (per the disciplinary policy this is strictly code "18").
+UNPURCHASED_MOBILE_PENALTY_CODE = "18"
+
+# System-generated Supervisor Remarks stamped on the auto-created penalty
+# (wrapped in _() at the call site so it translates to the job user's language).
+UNPURCHASED_MOBILE_PENALTY_REMARKS = "Automated penalty issued due to failure to purchase a new mobile within the grace period."
+
 
 class AttendanceCheckAction(Document):
 	def before_naming(self):
@@ -125,6 +133,19 @@ class AttendanceCheckAction(Document):
 		# "Closed" is the submitted state.
 		self.db_set("status", "Closed")
 
+		# When the action is closed with "Has not Purchased a New Mobile" ticked,
+		# the employee failed to resolve the hardware issue within the grace period.
+		# Raise the disciplinary penalty automatically, in the background, once this
+		# submission has committed (enqueue_after_commit) so the job reads a
+		# persisted, Closed record.
+		if self.has_not_purchased_a_new_mobile:
+			frappe.enqueue(
+				method="one_fm.one_fm.doctype.attendance_check_action.attendance_check_action.create_penalty_for_unpurchased_mobile",
+				queue="short",
+				enqueue_after_commit=True,
+				action_name=self.name,
+			)
+
 
 def get_open_action_for_employee(employee, exclude=None, on_date=None):
 	"""Return the name of an Attendance Check Action that still blocks creating a
@@ -203,3 +224,73 @@ def get_active_grace_action(employee, on_date):
 		["name", "attendance_check"],
 		as_dict=True,
 	)
+
+
+def create_penalty_for_unpurchased_mobile(action_name):
+	"""Background job: raise a Penalty And Investigation for a closed action whose
+	employee failed to purchase a new mobile within the grace period.
+
+	Triggered from ``AttendanceCheckAction.on_submit`` (after commit) only when the
+	"Has not Purchased a New Mobile" checkbox is ticked. The generated penalty is
+	created as a draft so the standard disciplinary workflow can proceed from there.
+
+	The penalty is populated per the disciplinary policy:
+	  - Applied Penalty Code is strictly "18".
+	  - Incident Date is the closure date (today).
+	  - Issuer is the Employee linked to the HR Settings "Attendance Check Action
+	    User" (a User); left blank if that user has no Employee record.
+	  - Location and Department are fetched from the employee's master profile.
+	  - Supervisor Remarks carries the system-generated message.
+	  - The originating Attendance Check Action is linked back for traceability.
+
+	Runs with ``ignore_permissions=True``: this is system automation and the closing
+	operator (e.g. Payroll Operator) has no create permission on the penalty doctype.
+	"""
+	try:
+		action = frappe.get_doc("Attendance Check Action", action_name)
+
+		# Re-validate the trigger conditions on the persisted record — guards against
+		# a stale enqueue if the checkbox was cleared before the commit landed.
+		if not action.has_not_purchased_a_new_mobile or action.status != "Closed":
+			return
+
+		if not action.employee:
+			return
+
+		# Idempotency: never raise a second penalty for the same action (e.g. on an
+		# amendment or a re-run of the job).
+		if frappe.db.exists(
+			"Penalty And Investigation",
+			{"attendance_check_action": action.name, "docstatus": ["!=", 2]},
+		):
+			return
+
+		# Resolve the configured action User to their Employee record for the Issuer
+		# (the Issuer field links to Employee, the setting stores a User). Leave the
+		# Issuer blank if no Employee is linked to that user — the record is still raised.
+		action_user = frappe.db.get_single_value("HR Settings", "attendance_check_action_user")
+		issuer = frappe.db.get_value("Employee", {"user_id": action_user}, "name") if action_user else None
+
+		# Location and Department come from the employee's master profile.
+		employee_details = frappe.db.get_value(
+			"Employee", action.employee, ["site", "department"], as_dict=True
+		) or frappe._dict()
+
+		penalty = frappe.new_doc("Penalty And Investigation")
+		penalty.employee = action.employee
+		penalty.issuer = issuer
+		penalty.applied_penalty_code = UNPURCHASED_MOBILE_PENALTY_CODE
+		penalty.incident_date = nowdate()
+		penalty.issuance_date = nowdate()
+		penalty.location = employee_details.site
+		penalty.department = employee_details.department
+		penalty.supervisor_remarks = _(UNPURCHASED_MOBILE_PENALTY_REMARKS)
+		penalty.attendance_check_action = action.name
+		penalty.insert(ignore_permissions=True)
+		# No explicit commit: the background-job runner commits on success. Committing
+		# here would also break test isolation by persisting past the test rollback.
+	except Exception:
+		frappe.log_error(
+			title="Attendance Check Action Penalty Creation Failed",
+			message=f"Attendance Check Action: {action_name}\n{frappe.get_traceback()}",
+		)
