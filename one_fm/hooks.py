@@ -558,7 +558,6 @@ override_doctype_class = {
     "Interview": "one_fm.overrides.interview.InterviewOverride",
     "Purchase Order": "one_fm.overrides.purchase_order.PurchaseOrderOverride",
     "HD Ticket": "one_fm.overrides.hd_ticket.HDTicketOverride",
-    # COMMENTED OUT: ToDo override now handled by SpiffWorkflow/BPMN server scripts
     # "ToDo": "one_fm.overrides.todo.ToDo",
     "Task": "one_fm.overrides.task.TaskOverride",
     "Loan Application": "one_fm.overrides.loan_application.LoanApplicationOverride",
@@ -598,7 +597,6 @@ scheduler_events = {
 		'one_fm.utils.check_upload_original_visa_submission_daily',
 		'one_fm.hiring.utils.notify_finance_job_offer_salary_advance',
 		'one_fm.uniform_management.doctype.employee_uniform.employee_uniform.notify_gsd_and_employee_before_uniform_expiry',
-		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_reminder',
 		'one_fm.one_fm.depreciation_custom.post_depreciation_entries',
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
 		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today',
@@ -627,12 +625,6 @@ scheduler_events = {
 		"one_fm.api.tasks.validate_shift_assignment",
 		'one_fm.overrides.employee_checkin.auto_generate_checkin'
 	],
-
-	"weekly": [
-		'one_fm.operations.doctype.mom_followup.mom_followup.mom_sites_followup',
-		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_penalty',
-   ],
-
 	"monthly": [
 		"one_fm.accommodation.utils.execute_monthly",
 		"one_fm.utils.send_roster_report"
@@ -854,10 +846,6 @@ fixtures = [
 	# },
 	{
 		"dt": "Email Template"
-	},
-	{
-		"dt": "HD Ticket Template",
-		"filters": [["name", "in",["Default"]]]
 	}
 ]
 
@@ -873,6 +861,7 @@ override_whitelisted_methods = {
     "hrms.hr.doctype.leave_application.leave_application.get_number_of_leave_days": "one_fm.api.doc_methods.leave_application_calculation.custom_get_number_of_leave_days",
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.overrides.leave_application.get_leave_approver",
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_details" : "one_fm.overrides.leave_application.get_leave_details",
+	"hrms.hr.doctype.leave_application.leave_application.get_leave_balance_on" : "one_fm.overrides.leave_application.get_leave_balance_on",
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
 	"hrms.hr.doctype.goal.goal.get_children":"one_fm.overrides.goal.get_childrens",

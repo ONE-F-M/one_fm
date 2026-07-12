@@ -178,6 +178,16 @@ class OntheJobTraining(Document):
                 )
 
 
+    def on_submit(self):
+        # The "Approve" workflow action submits the document (docstatus 0 -> 1).
+        # Schedule creation currently runs during the "Pending Approval" save (on_update),
+        # which may not have occurred (e.g. OJTs approved before that logic was deployed, or a
+        # bypassed/rolled-back Pending Approval step). Re-run schedule creation here
+        # so an Approved OJT always has Employee Schedules. get_or_create is
+        # idempotent, so this is safe when schedules already exist.
+        if self.workflow_state == "Approved":
+            self.create_or_update_employee_schedules()
+
     def on_update_after_submit(self):
         self.on_update()
 

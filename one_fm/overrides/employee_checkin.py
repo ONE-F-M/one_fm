@@ -73,6 +73,11 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 		except Exception as e:
 			frappe.throw(frappe.get_traceback())
 
+		# HRMS builds the geolocation map point from latitude/longitude during its
+		# own validate(). This override replaces validate() without calling super(),
+		# so we must trigger it here or the Geolocation field is never populated.
+		self.set_geolocation()
+
 
 	def validate_duplicate_log(self):
 		doc = frappe.db.sql(f""" select name from `tabEmployee Checkin` where employee = '{self.employee}' and shift_assignment ='{self.shift_assignment}' and time = '{self.time}' and (NOT name = '{self.name}')""", as_dict=1)
@@ -176,13 +181,14 @@ def after_insert_background(employee_checkin,current_shift):
 		current_shift = validate_shift_assignment(employee_checkin,current_shift)
 		if not current_shift:
 			shift_details = get_current_shift(self.employee)
-			if shift_details:
+			if shift_details and shift_details.get('data'):
 				current_shift = shift_details.get('data').get('name')
 
 		# update shift if not exists
-		curr_shift = frappe.get_doc("Shift Assignment", current_shift)
-		if curr_shift:
-			shift_type = frappe.db.sql(f"""SELECT * FROM `tabShift Type` WHERE name='{curr_shift.shift_type}' """, as_dict=1)[0]
+		if current_shift and frappe.db.exists("Shift Assignment", current_shift) \
+			and frappe.db.exists("Shift Type", frappe.db.get_value("Shift Assignment", current_shift, "shift_type")):
+			curr_shift = frappe.get_doc("Shift Assignment", current_shift)
+			shift_type = frappe.get_cached_doc("Shift Type", curr_shift.shift_type)
 			# calculate entry
 			early_exit = 0
 			late_entry = 0

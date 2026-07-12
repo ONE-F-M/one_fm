@@ -56,19 +56,26 @@ class EmployeeSchedule(Document):
 				frappe.delete_doc("Employee Schedule", ot.name, ignore_permissions=True)
 
 	def validate(self):
-		# Clear Client Event-specific fields when transitioning AWAY from Client Event.
-		# This handles saves done from the Desk form (roster uses direct SQL).
-		if not self.is_new():
-			previous_availability = frappe.db.get_value(
-				"Employee Schedule", self.name, "employee_availability"
-			)
-			if previous_availability == "Client Event" and self.employee_availability != "Client Event":
+		# Clear stale Client Event linkage whenever this row is no longer a Client
+		# Event but still carries a Client Event marker. A Client Event schedule
+		# (set by Event Staff) has employee_availability "Client Event",
+		# is_event_schedule=1, client_event set and reference_doctype "Event Staff".
+		# When it is changed to anything else (Day Off, Client Day Off, Working, ...)
+		# those markers are stale and, if left, keep the attendance job treating the
+		# row as an event. The Desk roster page and mobile/flutter dayoff paths write
+		# via direct SQL and bypass this controller, so this also self-heals rows
+		# those paths already left with a stale link.
+		#
+		# Only the Event Staff reference is cleared here — OJT and Shift Request also
+		# use reference_doctype/reference_docname on non-event rows and must survive.
+		if self.employee_availability != "Client Event" and (self.is_event_schedule or self.client_event):
+			self.is_event_schedule = 0
+			self.client_event = ""
+			self.event_staff = ""
+			self.event_location = ""
+			if self.reference_doctype == "Event Staff":
 				self.reference_doctype = ""
 				self.reference_docname = ""
-				self.is_event_schedule = 0
-				self.client_event = ""
-				self.event_staff = ""
-				self.event_location = ""
 
 		self.validate_ojt_change()
 		self.validate_leave_application()

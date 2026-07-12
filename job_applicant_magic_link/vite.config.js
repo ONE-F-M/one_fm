@@ -6,6 +6,7 @@ import { webserver_port } from "../../../sites/common_site_config.json";
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [vue()],
+  base: '/assets/one_fm/magic_link/',
   server: {
     host: true,
     port: 8080,
