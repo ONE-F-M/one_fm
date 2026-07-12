@@ -113,3 +113,38 @@ def get_open_action_for_employee(employee, exclude=None):
 		filters["name"] = ["!=", exclude]
 
 	return frappe.db.get_value("Attendance Check Action", filters, "name")
+
+
+def get_active_grace_action(employee, on_date):
+	"""Return the open Attendance Check Action whose grace window covers ``on_date``.
+
+	The grace period is active while the action is NOT Closed (and not
+	cancelled) and ``on_date`` falls within the inclusive window
+	``start_date <= on_date <= deadline_date``.
+
+	Args:
+		employee (str): Employee to check.
+		on_date (str | date): The date to test against the grace window
+			(the Attendance Check's ``date``).
+
+	Returns:
+		frappe._dict | None: ``{"name", "attendance_check"}`` of the active
+		action, or ``None`` when no grace period is active.
+	"""
+	if not employee or not on_date:
+		return None
+
+	on_date = getdate(on_date)
+
+	return frappe.db.get_value(
+		"Attendance Check Action",
+		{
+			"employee": employee,
+			"status": ["!=", "Closed"],
+			"docstatus": ["<", 2],
+			"start_date": ["<=", on_date],
+			"deadline_date": [">=", on_date],
+		},
+		["name", "attendance_check"],
+		as_dict=True,
+	)
