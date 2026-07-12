@@ -254,6 +254,9 @@ def get_leave_application_custom_fields():
                 "insert_after": "outcome",
                 "label": "Return Ticket Submitted",
                 "options": "\nYes\nNo",
+                # Mandatory once HelpDesk confirms the employee will return, so
+                # Operations knows whether flight proof has been collected.
+                "mandatory_depends_on": "eval:doc.custom_will_the_employee_return == 'Yes'",
                 "allow_on_submit": 1,
                 "translatable": 1
             },
@@ -262,6 +265,9 @@ def get_leave_application_custom_fields():
                 "fieldtype": "Date",
                 "insert_after": "return_ticket_submitted",
                 "label": "Actual Return Date",
+                # Mandatory once HelpDesk confirms the employee will return, so
+                # Operations can schedule the duty roster against a real date.
+                "mandatory_depends_on": "eval:doc.custom_will_the_employee_return == 'Yes'",
                 "allow_on_submit": 1
             },
             {
@@ -284,6 +290,9 @@ def get_leave_application_custom_fields():
                 "insert_after": "column_break_resumption_details",
                 "label": "Attach Return Ticket",
                 "depends_on": "eval:doc.return_ticket_submitted == 'Yes'",
+                # Proof of the return flight is mandatory once the ticket is
+                # marked as submitted.
+                "mandatory_depends_on": "eval:doc.return_ticket_submitted == 'Yes'",
                 "allow_on_submit": 1
             },
             {
