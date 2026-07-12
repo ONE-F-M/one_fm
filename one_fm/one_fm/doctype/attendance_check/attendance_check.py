@@ -744,6 +744,15 @@ def _create_attendance_check_action_doc(attendance_check):
         if not source or source.action != "Issue a New Mobile":
             return
 
+        # Skip if the employee already has an open (not Closed) Attendance Check
+        # Action — a new one may only start once the previous lifecycle is Closed.
+        from one_fm.one_fm.doctype.attendance_check_action.attendance_check_action import (
+            get_open_action_for_employee,
+        )
+
+        if get_open_action_for_employee(source.employee):
+            return
+
         # The Attendance Check Action is named HR-ACA-{employee}_{start_date}; guard
         # against a name collision from another roster type on the same day.
         expected_name = f"HR-ACA-{source.employee}_{source.date}"
