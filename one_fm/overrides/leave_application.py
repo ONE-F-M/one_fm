@@ -23,6 +23,7 @@ from hrms.hr.utils import get_holidays_for_employee
 from one_fm.one_fm.doctype.reliever_assignment.reliever_assignment import ReassignRelieverAssignment, reassign_responsibilities
 from frappe.workflow.doctype.workflow_action.workflow_action import apply_workflow
 from frappe.query_builder import DocType
+from frappe.desk.form.assign_to import add as add_assignment, remove as remove_assignment
 
 def validate_active_staff(doc,event):
     emp_details = frappe.get_value("Employee",doc.employee,['status','relieving_date'],as_dict =1 )
@@ -486,6 +487,8 @@ class LeaveApplicationOverride(LeaveApplication):
         leave_application_on_cancel(self,"on_cancel")
         self.cancel_attendance()
         self.validate_cancel()
+        # Remove any HelpDesk User assignment when the leave is cancelled.
+        unassign_leave_from_helpdesk_user(self, reason="cancelled")
         send_leave_cancellation_email_to_leave_approver(self)
         frappe.enqueue(disable_out_of_office, employee_email=emp.user_id, queue='short', timeout=1200, is_async=True)
         frappe.enqueue(cancel_calendar_event, employee_email=emp.user_id, leave_application_name=self.name, queue='short', timeout=1200, is_async=True)
@@ -546,6 +549,13 @@ class LeaveApplicationOverride(LeaveApplication):
         if self.has_value_changed('workflow_state') and self.workflow_state == 'Pending Approver':
             send_leave_details_email_to_employee(self)
             self.notify_leave_approver()
+
+        # Assign / unassign the HelpDesk User on workflow state changes.
+        if self.has_value_changed('workflow_state'):
+            if self.workflow_state == "Approved":
+                maybe_assign_helpdesk_on_approval(self)
+            elif self.workflow_state in ("Cancelled", "Rejected"):
+                unassign_leave_from_helpdesk_user(self, reason=self.workflow_state.lower())
 
     def approve_attendance_check(self):
         """
@@ -1075,3 +1085,213 @@ def get_employees_whose_leave_ends_in(leave_ends_in=0, leave_type="Annual Leave"
     ).run(as_dict=True)
 
     return employees_on_leave
+
+
+# ---------------------------------------------------------------------------
+# HelpDesk User assignment for returning shift workers on Annual Leave.
+#
+# Approved Annual Leave applications for shift workers are assigned to the
+# HelpDesk User 7 days before the resumption date so the HelpDesk team can
+# prepare systems/access, and unassigned once the resumption date passes or
+# the leave is cancelled/rejected. The HelpDesk User is the User account whose
+# login email equals HR Settings > helpdesk_email.
+# ---------------------------------------------------------------------------
+
+# Number of days before the resumption date to assign the HelpDesk User.
+HELPDESK_ASSIGNMENT_LEAD_DAYS = 7
+
+
+def get_helpdesk_user():
+    """Return the User ID to assign returning-shift-worker leaves to.
+
+    Resolves HR Settings > helpdesk_email to a User account. Returns None
+    (and logs) when no email is configured or no enabled User exists with
+    that email, since a document cannot be assigned to a non-existent user.
+    """
+    helpdesk_email = frappe.db.get_single_value("HR Settings", "helpdesk_email")
+    if not helpdesk_email:
+        return None
+
+    if not frappe.db.exists("User", {"name": helpdesk_email, "enabled": 1}):
+        frappe.log_error(
+            message=_(
+                "No enabled User account found with email {0}. "
+                "Cannot assign Leave Application to the HelpDesk User."
+            ).format(helpdesk_email),
+            title="HelpDesk Leave Assignment",
+        )
+        return None
+
+    return helpdesk_email
+
+
+def is_assigned_to_helpdesk_user(leave_name, helpdesk_user):
+    """Return True if the leave already has an open ToDo for the HelpDesk User."""
+    return bool(
+        frappe.db.exists(
+            "ToDo",
+            {
+                "reference_type": "Leave Application",
+                "reference_name": leave_name,
+                "allocated_to": helpdesk_user,
+                "status": "Open",
+            },
+        )
+    )
+
+
+def assign_leave_to_helpdesk_user(doc, helpdesk_user=None):
+    """Assign the Leave Application to the HelpDesk User.
+
+    ``frappe.desk.form.assign_to.add`` creates the ToDo and fires the
+    framework's standard assignment notification (the branded email sent to
+    the assignee), so no additional email is sent here. It is idempotent, so a
+    duplicate call for an already-assigned document is a no-op.
+    """
+    helpdesk_user = helpdesk_user or get_helpdesk_user()
+    if not helpdesk_user:
+        return False
+
+    if is_assigned_to_helpdesk_user(doc.name, helpdesk_user):
+        return False
+
+    try:
+        add_assignment(
+            {
+                "doctype": "Leave Application",
+                "name": doc.name,
+                "assign_to": [helpdesk_user],
+                "description": _(
+                    "Returning shift worker {0} resumes on {1}. "
+                    "Please prepare the required systems/access before their return."
+                ).format(doc.get("employee_name") or doc.get("employee"), doc.get("resumption_date")),
+            },
+            ignore_permissions=True,
+        )
+    except Exception:
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title="HelpDesk Leave Assignment - Assign Failed",
+        )
+        return False
+
+    return True
+
+
+def unassign_leave_from_helpdesk_user(doc, reason="resumption_passed", helpdesk_user=None):
+    """Remove the HelpDesk User assignment.
+
+    ``frappe.desk.form.assign_to.remove`` fires the framework's standard
+    "assignment removed" notification email to the assignee, so no additional
+    email is sent here. ``reason`` is accepted for API compatibility with the
+    callers (cancelled / rejected / resumption_passed) but no longer changes
+    behaviour.
+    """
+    helpdesk_user = helpdesk_user or get_helpdesk_user()
+    if not helpdesk_user:
+        return False
+
+    if not is_assigned_to_helpdesk_user(doc.name, helpdesk_user):
+        return False
+
+    try:
+        remove_assignment("Leave Application", doc.name, helpdesk_user, ignore_permissions=True)
+    except Exception:
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title="HelpDesk Leave Assignment - Unassign Failed",
+        )
+        return False
+
+    return True
+
+
+def maybe_assign_helpdesk_on_approval(doc):
+    """Immediately assign the HelpDesk User when a leave is approved and the
+    resumption date is already within the lead window (the scheduled 7-day
+    trigger would otherwise be missed)."""
+    if doc.leave_type != "Annual Leave" or not cint(doc.get("custom_shift_working")):
+        return
+
+    if not doc.resumption_date:
+        return
+
+    days_to_resumption = date_diff(getdate(doc.resumption_date), getdate())
+    # Only assign while the resumption is still upcoming and inside the window.
+    if 0 <= days_to_resumption <= HELPDESK_ASSIGNMENT_LEAD_DAYS:
+        assign_leave_to_helpdesk_user(doc)
+
+
+def manage_helpdesk_leave_assignments():
+    """Daily scheduled task: assign upcoming and unassign past HelpDesk leaves."""
+    helpdesk_user = get_helpdesk_user()
+    if not helpdesk_user:
+        return
+
+    assign_upcoming_helpdesk_leaves(helpdesk_user)
+    unassign_past_helpdesk_leaves(helpdesk_user)
+
+
+def assign_upcoming_helpdesk_leaves(helpdesk_user):
+    """Assign approved Annual Leave applications for shift workers whose
+    resumption date is exactly HELPDESK_ASSIGNMENT_LEAD_DAYS away."""
+    target_date = add_days(getdate(today()), HELPDESK_ASSIGNMENT_LEAD_DAYS)
+
+    LeaveApplication = DocType("Leave Application")
+    Employee = DocType("Employee")
+
+    leaves = (
+        frappe.qb.from_(LeaveApplication)
+        .join(Employee)
+        .on(LeaveApplication.employee == Employee.name)
+        .select(
+            LeaveApplication.name,
+            LeaveApplication.employee,
+            LeaveApplication.employee_name,
+            LeaveApplication.resumption_date,
+        )
+        .where(
+            (LeaveApplication.docstatus == 1)
+            & (LeaveApplication.status == "Approved")
+            & (LeaveApplication.leave_type == "Annual Leave")
+            & (LeaveApplication.resumption_date == target_date)
+            & (Employee.shift_working == 1)
+        )
+    ).run(as_dict=True)
+
+    for leave in leaves:
+        assign_leave_to_helpdesk_user(frappe._dict(leave), helpdesk_user)
+
+    frappe.db.commit()
+
+
+def unassign_past_helpdesk_leaves(helpdesk_user):
+    """Unassign leaves currently assigned to the HelpDesk User whose
+    resumption date is in the past."""
+    ToDo = DocType("ToDo")
+    LeaveApplication = DocType("Leave Application")
+
+    leaves = (
+        frappe.qb.from_(ToDo)
+        .join(LeaveApplication)
+        .on(ToDo.reference_name == LeaveApplication.name)
+        .select(
+            LeaveApplication.name,
+            LeaveApplication.employee,
+            LeaveApplication.employee_name,
+            LeaveApplication.resumption_date,
+        )
+        .where(
+            (ToDo.reference_type == "Leave Application")
+            & (ToDo.allocated_to == helpdesk_user)
+            & (ToDo.status == "Open")
+            & (LeaveApplication.resumption_date < getdate(today()))
+        )
+    ).run(as_dict=True)
+
+    for leave in leaves:
+        unassign_leave_from_helpdesk_user(
+            frappe._dict(leave), reason="resumption_passed", helpdesk_user=helpdesk_user
+        )
+
+    frappe.db.commit()
