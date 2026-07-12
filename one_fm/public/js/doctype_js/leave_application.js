@@ -201,6 +201,21 @@ frappe.ui.form.on("Leave Application", {
         updateCustomIsPaidVisibility(frm);
     },
 
+    custom_could_the_employee_be_reached: function(frm) {
+        if (frm.doc.custom_could_the_employee_be_reached === "No") {
+            // Employee could not be reached: default the Action to "Try Again"
+            // (the mandatory reason field is enforced via mandatory_depends_on).
+            if (!frm.doc.custom_action) {
+                frm.set_value("custom_action", "Try Again");
+            }
+        } else {
+            // Reached (Yes) or cleared: the retry Action and not-reached reason
+            // no longer apply, so reset them.
+            frm.set_value("custom_action", "");
+            frm.set_value("custom_reason_employee_not_reached", "");
+        }
+    },
+
     resumption_date: function(frm) {
         if (frm.doc.resumption_date && frm.doc.from_date) {
             let resumption = frappe.datetime.str_to_obj(frm.doc.resumption_date);

@@ -277,6 +277,28 @@ class LeaveApplicationOverride(LeaveApplication):
         self.validate_leave_application_operator()
         self.reset_status_on_amend()
         self.validate_loan_repayment()
+        self.set_action_on_unreachable()
+
+    def before_update_after_submit(self):
+        # The Resumption Confirmation Details are filled in on the already-submitted
+        # (Approved) Leave Application, so validate() does not run on those edits.
+        # Enforce the "Try Again" default here as well.
+        self.set_action_on_unreachable()
+
+    def set_action_on_unreachable(self):
+        """Handle the HelpDesk resumption contact outcome.
+
+        When the employee could not be reached, default the Action to
+        "Try Again" so the absence is retried before escalation. When the
+        employee was reached (or the field is cleared), the retry Action and
+        the not-reached reason no longer apply and are reset.
+        """
+        if self.custom_could_the_employee_be_reached == "No":
+            if not self.custom_action:
+                self.custom_action = "Try Again"
+        else:
+            self.custom_action = None
+            self.custom_reason_employee_not_reached = None
 
     def validate_loan_repayment(self):
         if self.leave_type != "Annual Leave":
