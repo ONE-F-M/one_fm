@@ -472,7 +472,6 @@ one_fm.patches.v15_0.update_pmr_and_resignation_workflow_permissions #2026-06-30
 one_fm.patches.v15_0.fix_day_off_client_event_conflict_bulk #2026-07-03
 one_fm.patches.v15_0.update_bonus_request_workflow #1
 one_fm.patches.v15_0.update_bonus_request_assignment_rules #3
-
 # --- Operations-011 (24th-30th) release patches ---
 one_fm.patches.v15_0.update_bank_account_workflow
 one_fm.patches.v15_0.add_vehicle_branding_details_fields
@@ -480,3 +479,4 @@ one_fm.patches.v15_0.resync_resignation_workflow_draft_state #2026-07-07
 one_fm.patches.v15_0.mark_draft_pmr_as_completed #2026-07-07
 one_fm.patches.v15_0.backfill_checkin_geolocation_from_device_id #2026-07-12
 one_fm.patches.v15_0.normalize_user_mobile_country_code #2026-07-13
+one_fm.patches.v15_0.warm_zenquote_cache #2026-07-13
