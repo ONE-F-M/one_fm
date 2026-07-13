@@ -1,6 +1,7 @@
 # Copyright (c) 2025, ONE FM and contributors
 # For license information, please see license.txt
 import calendar
+import json
 from datetime import timedelta
 
 import frappe
@@ -627,14 +628,25 @@ def get_take_action_data(
 			},
 		}
 
-	# Operations Post issue: redirect to Operations Post list view
+	# Operations Post issue: redirect to Operations Post list view.
+	# A single row's comment can reference multiple roles, so filter post_template
+	# with an "in" condition populated with all active roles for the sale item.
+	# This mirrors the roles embedded in the comment (see get_operation_roles).
+	# site_shift is intentionally omitted: roles may span different shifts, and a
+	# single-shift filter would hide posts belonging to the other roles.
 	if issue_type == "operations_post":
+		role_names = frappe.get_list(
+			"Operations Role",
+			filters={"project": project, "sale_item": item, "status": "Active"},
+			pluck="name",
+			order_by="name asc",
+		)
 		return {
 			"path": "/app/operations-post",
 			"params": {
 				"project": project,
-				"site_shift": role.shift,
-				"post_template": role.name,
+				# Frappe list view parses ["in", [...]] into an "in" filter
+				"post_template": json.dumps(["in", role_names]),
 			},
 		}
 
