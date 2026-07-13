@@ -560,6 +560,86 @@ def deploy_ticket_views():
     print("[🎉] TicketEdit, TicketCustomer and TicketNew views deployed successfully.")
     return True
 
+
+def deploy_dashboard_view():
+    """Overwrite the helpdesk Dashboard.vue with the one_fm version.
+
+    The one_fm copy renders the trend and master charts in a single flowing
+    grid so the extra "Tickets by Status" chart (added server-side via the
+    one_fm.overrides.dashboard override) doesn't leave a gap mid-dashboard.
+    """
+    bench_path = get_bench_path()
+
+    dashboard_source = os.path.join(
+        bench_path, "apps", "one_fm", "one_fm", "public", "js",
+        "form_overrides", "dashboard", "Dashboard.vue",
+    )
+    dashboard_target = os.path.join(
+        bench_path, "apps", "helpdesk", "desk", "src", "pages",
+        "dashboard", "Dashboard.vue",
+    )
+
+    if not os.path.exists(dashboard_source):
+        print(f"[❌] Source Dashboard.vue not found: {dashboard_source}")
+        return False
+
+    if not os.path.exists(os.path.dirname(dashboard_target)):
+        print(f"[❌] Target dashboard folder not found: {os.path.dirname(dashboard_target)}")
+        return False
+
+    # Skip the copy (and the resulting rebuild) if the file is already in sync.
+    with open(dashboard_source, "r") as f:
+        source_content = f.read()
+    if os.path.exists(dashboard_target):
+        with open(dashboard_target, "r") as f:
+            if f.read() == source_content:
+                print("⚠️ Dashboard.vue already up to date.")
+                return False
+
+    shutil.copy2(dashboard_source, dashboard_target)
+    print(f"[✅] Dashboard.vue deployed to: {dashboard_target}")
+    return True
+
+def deploy_ticket_header():
+    """Overwrite the helpdesk agent TicketHeader.vue with the one_fm version.
+
+    The one_fm copy replaces the native Status dropdown with a Status-style
+    dropdown of BPMN User Task actions (coloured per action) whenever a BPMN
+    Process Instance controls the HD Ticket. It calls the one_bpmn whitelisted
+    APIs get_active_bpmn_tasks / complete_task.
+    """
+    bench_path = get_bench_path()
+
+    header_source = os.path.join(
+        bench_path, "apps", "one_fm", "one_fm", "public", "js",
+        "form_overrides", "hd_ticket", "TicketHeader.vue",
+    )
+    header_target = os.path.join(
+        bench_path, "apps", "helpdesk", "desk", "src", "components",
+        "ticket-agent", "TicketHeader.vue",
+    )
+
+    if not os.path.exists(header_source):
+        print(f"[❌] Source TicketHeader.vue not found: {header_source}")
+        return False
+
+    if not os.path.exists(os.path.dirname(header_target)):
+        print(f"[❌] Target ticket-agent folder not found: {os.path.dirname(header_target)}")
+        return False
+
+    # Skip the copy (and the resulting rebuild) if the file is already in sync.
+    with open(header_source, "r") as f:
+        source_content = f.read()
+    if os.path.exists(header_target):
+        with open(header_target, "r") as f:
+            if f.read() == source_content:
+                print("⚠️ TicketHeader.vue already up to date.")
+                return False
+
+    shutil.copy2(header_source, header_target)
+    print(f"[✅] TicketHeader.vue deployed to: {header_target}")
+    return True
+
 def update_hd_ticket_side_bar():
     FILE_PATH = frappe.utils.get_bench_path()+'/apps/helpdesk/desk/src/components/ticket/TicketAgentFields.vue'
     if (os.path.exists(FILE_PATH)):
@@ -618,6 +698,10 @@ def update_all_ticket_features():
     if add_resolution_details_updation():
         any_changes = True
     if deploy_ticket_views():
+        any_changes = True
+    if deploy_dashboard_view():
+        any_changes = True
+    if deploy_ticket_header():
         any_changes = True
     if update_hd_ticket_side_bar():
         any_changes = True
