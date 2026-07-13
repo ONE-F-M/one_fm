@@ -1,0 +1,101 @@
+{
+ "app": "one_fm",
+ "charts": [],
+ "content": "[{\"id\": \"wi1332subcontracthdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\">Subcontract</span>\", \"col\": 12}}, {\"id\": \"wi1332c0subcontract\", \"type\": \"card\", \"data\": {\"card_name\": \"Subcontract\", \"col\": 4}}]",
+ "creation": "2026-07-13 17:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "hr",
+ "idx": 0,
+ "indicator_color": "",
+ "is_hidden": 0,
+ "label": "Subcontract",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Subcontract",
+   "link_count": 6,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Subcontract Staff Request",
+   "link_count": 0,
+   "link_to": "Subcontract Staff Request",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Subcontract Staff Shortlist",
+   "link_count": 0,
+   "link_to": "Subcontract Staff Shortlist",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Onboard Subcontract Employee",
+   "link_count": 0,
+   "link_to": "Onboard Subcontract Employee",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Subcontractor Contracts",
+   "link_count": 0,
+   "link_to": "Subcontractor Contracts",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Subcontractor Exit",
+   "link_count": 0,
+   "link_to": "Subcontractor Exit",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Subcontract Staff Attendance",
+   "link_count": 0,
+   "link_to": "Subcontract Staff Attendance",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-07-13 17:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Subcontract",
+ "name": "Subcontract",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 31.0,
+ "shortcuts": [],
+ "title": "Subcontract",
+ "type": "Workspace"
+}

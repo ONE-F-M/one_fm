@@ -1,4 +1,5 @@
 {
+ "app": "one_fm",
  "charts": [
   {
    "chart_name": "Department Wise Openings",
@@ -13,7 +14,7 @@
  "hide_custom": 0,
  "icon": "users",
  "idx": 0,
- "label": "Recruitment",
+ "label": "Hiring",
  "links": [
   {
    "hidden": 0,
@@ -191,10 +192,10 @@
    "type": "Link"
   }
  ],
- "modified": "2022-10-31 21:19:35.412402",
+ "modified": "2026-07-13 19:50:00.000000",
  "modified_by": "Administrator",
- "module": "One Fm",
- "name": "Recruitment",
+ "module": "Hiring",
+ "name": "Hiring",
  "owner": "Administrator",
  "parent_page": "HR",
  "public": 1,
@@ -243,5 +244,5 @@
    "type": "DocType"
   }
  ],
- "title": "Recruitment"
+ "title": "Hiring"
 }

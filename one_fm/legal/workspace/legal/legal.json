@@ -1,20 +1,24 @@
 {
  "app": "one_fm",
  "charts": [],
- "content": "[]",
- "creation": "2022-10-30 20:08:33.221280",
+ "content": "[{\"id\": \"wi1332legalhdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\">Legal</span>\", \"col\": 12}}, {\"id\": \"wi1332c0legal\", \"type\": \"card\", \"data\": {\"card_name\": \"Penalties\", \"col\": 4}}, {\"id\": \"wi1332c1legal\", \"type\": \"card\", \"data\": {\"card_name\": \"Investigations\", \"col\": 4}}, {\"id\": \"wi1332c2legal\", \"type\": \"card\", \"data\": {\"card_name\": \"Employee Documents\", \"col\": 4}}, {\"id\": \"wi1332c3legal\", \"type\": \"card\", \"data\": {\"card_name\": \"Setup\", \"col\": 4}}]",
+ "creation": "2026-07-13 17:00:00.000000",
+ "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
+ "for_user": "",
  "hide_custom": 0,
- "icon": "folder-normal",
+ "icon": "quality",
  "idx": 0,
- "label": "Government Relation",
+ "indicator_color": "",
+ "is_hidden": 0,
+ "label": "Legal",
  "links": [
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Public Institution for Social Security",
-   "link_count": 0,
+   "label": "Penalties",
+   "link_count": 8,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -22,9 +26,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "PIFSS Authorized Signatory List",
+   "label": "Penalty",
    "link_count": 0,
-   "link_to": "PIFSS Authorized Signatory",
+   "link_to": "Penalty",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -32,9 +36,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "PIFSS Form 103 List",
+   "label": "Penalty Code",
    "link_count": 0,
-   "link_to": "PIFSS Form 103",
+   "link_to": "Penalty Code",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -42,9 +46,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "PIFSS Form 55 List",
+   "label": "Penalty Type",
    "link_count": 0,
-   "link_to": "PIFSS Form 55",
+   "link_to": "Penalty Type",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -52,9 +56,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "PIFSS Monthly Deduction List",
+   "label": "Penalty List",
    "link_count": 0,
-   "link_to": "PIFSS Monthly Deduction",
+   "link_to": "Penalty List",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -62,8 +66,48 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Manpower and Government Restructuring Program",
+   "label": "Penalty Issuance",
    "link_count": 0,
+   "link_to": "Penalty Issuance",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Penalty Deduction",
+   "link_count": 0,
+   "link_to": "Penalty Deduction",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Penalty Deduction Schedules",
+   "link_count": 0,
+   "link_to": "Penalty Deduction Schedules",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Penalty And Investigation",
+   "link_count": 0,
+   "link_to": "Penalty And Investigation",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Investigations",
+   "link_count": 2,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -71,9 +115,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "MGRP",
+   "label": "Legal Investigation",
    "link_count": 0,
-   "link_to": "MGRP",
+   "link_to": "Legal Investigation",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -81,8 +125,18 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Ministry Of Commerce And Industry",
+   "label": "Legal Investigation Session",
    "link_count": 0,
+   "link_to": "Legal Investigation Session",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Employee Documents",
+   "link_count": 5,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -90,9 +144,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "MOCI License List",
+   "label": "Employee ID",
    "link_count": 0,
-   "link_to": "MOCI License",
+   "link_to": "Employee ID",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -100,18 +154,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Public Authority Of Manpower",
+   "label": "Employee License",
    "link_count": 0,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "PAM File List",
-   "link_count": 0,
-   "link_to": "PAM File",
+   "link_to": "Employee License",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -119,9 +164,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "PAM Authorized Signatory List",
+   "label": "Employee License Issuance",
    "link_count": 0,
-   "link_to": "PAM Authorized Signatory List",
+   "link_to": "Employee License Issuance",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -129,120 +174,55 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "PAM Designation List",
+   "label": "License",
    "link_count": 0,
-   "link_to": "PAM Designation List",
+   "link_to": "License",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Work Permit List",
-   "link_count": 0,
-   "link_to": "Work Permit",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Medical Insurance",
-   "link_count": 0,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Medical Insurance List",
-   "link_count": 0,
-   "link_to": "Medical Insurance",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Ministry Of Interior ",
-   "link_count": 0,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Residency List",
-   "link_count": 0,
-   "link_to": "Residency",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Fingerprint Appointment List",
-   "link_count": 0,
-   "link_to": "Fingerprint Appointment",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Public Authority For Civil Information",
-   "link_count": 0,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "PACI List",
-   "link_count": 0,
-   "link_to": "PACI",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Roster",
-   "link_count": 0,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
   },
   {
    "hidden": 0,
    "is_query_report": 1,
-   "label": "Daily Roster Projection View",
+   "label": "Employee License",
    "link_count": 0,
-   "link_to": "Daily Roster Projection View",
+   "link_to": "Employee License",
    "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Setup",
+   "link_count": 1,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Legal Settings",
+   "link_count": 0,
+   "link_to": "Legal Settings",
+   "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
   }
  ],
- "modified": "2026-07-13 19:35:00.000000",
+ "modified": "2026-07-13 17:00:00.000000",
  "modified_by": "Administrator",
- "module": "GRD",
- "name": "Government Relation",
+ "module": "Legal",
+ "name": "Legal",
+ "number_cards": [],
  "owner": "Administrator",
  "parent_page": "",
  "public": 1,
  "quick_lists": [],
  "roles": [],
- "sequence_id": 1.0,
+ "sequence_id": 28.0,
  "shortcuts": [],
- "title": "Government Relation"
+ "title": "Legal",
+ "type": "Workspace"
 }

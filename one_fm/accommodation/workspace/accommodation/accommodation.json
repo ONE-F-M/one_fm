@@ -1,0 +1,357 @@
+{
+ "app": "one_fm",
+ "charts": [],
+ "content": "[{\"id\": \"wi1332accommodationhdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\">Accommodation</span>\", \"col\": 12}}, {\"id\": \"wi1332c0accommodation\", \"type\": \"card\", \"data\": {\"card_name\": \"Setup\", \"col\": 4}}, {\"id\": \"wi1332c1accommodation\", \"type\": \"card\", \"data\": {\"card_name\": \"Spaces & Beds\", \"col\": 4}}, {\"id\": \"wi1332c2accommodation\", \"type\": \"card\", \"data\": {\"card_name\": \"Movements\", \"col\": 4}}, {\"id\": \"wi1332c3accommodation\", \"type\": \"card\", \"data\": {\"card_name\": \"Inspections & Meters\", \"col\": 4}}, {\"id\": \"wi1332c4accommodation\", \"type\": \"card\", \"data\": {\"card_name\": \"Reports\", \"col\": 4}}]",
+ "creation": "2026-07-13 17:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "non-profit",
+ "idx": 0,
+ "indicator_color": "",
+ "is_hidden": 0,
+ "label": "Accommodation",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Setup",
+   "link_count": 5,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Accommodation",
+   "link_count": 0,
+   "link_to": "Accommodation",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Accommodation Type",
+   "link_count": 0,
+   "link_to": "Accommodation Type",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Accommodation Space Type",
+   "link_count": 0,
+   "link_to": "Accommodation Space Type",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Bed Space Type",
+   "link_count": 0,
+   "link_to": "Bed Space Type",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Floor",
+   "link_count": 0,
+   "link_to": "Floor",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Spaces & Beds",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Accommodation Unit",
+   "link_count": 0,
+   "link_to": "Accommodation Unit",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Accommodation Space",
+   "link_count": 0,
+   "link_to": "Accommodation Space",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Bed",
+   "link_count": 0,
+   "link_to": "Bed",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Book Bed",
+   "link_count": 0,
+   "link_to": "Book Bed",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Movements",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Accommodation Checkin Checkout",
+   "link_count": 0,
+   "link_to": "Accommodation Checkin Checkout",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Accommodation Leave Movement",
+   "link_count": 0,
+   "link_to": "Accommodation Leave Movement",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Accommodation Receiving Form",
+   "link_count": 0,
+   "link_to": "Accommodation Receiving Form",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Inspections & Meters",
+   "link_count": 6,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Accommodation Inspection",
+   "link_count": 0,
+   "link_to": "Accommodation Inspection",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Accommodation Inspection Template",
+   "link_count": 0,
+   "link_to": "Accommodation Inspection Template",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Accommodation Meter",
+   "link_count": 0,
+   "link_to": "Accommodation Meter",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Accommodation Meter Reading Record",
+   "link_count": 0,
+   "link_to": "Accommodation Meter Reading Record",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Accommodation Asset and Consumable",
+   "link_count": 0,
+   "link_to": "Accommodation Asset and Consumable",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Accommodation Object",
+   "link_count": 0,
+   "link_to": "Accommodation Object",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Reports",
+   "link_count": 10,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Accommodation Checkin Checkout Report",
+   "link_count": 0,
+   "link_to": "Accommodation Checkin Checkout Report",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Accommodation List",
+   "link_count": 0,
+   "link_to": "Accommodation List",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Accommodation Meter Reading Report",
+   "link_count": 0,
+   "link_to": "Accommodation Meter Reading Report",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Accommodation Nationalities",
+   "link_count": 0,
+   "link_to": "Accommodation Nationalities",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Bed Space Detailed Report",
+   "link_count": 0,
+   "link_to": "Bed Space Detailed Report",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Bed Space Summary Report",
+   "link_count": 0,
+   "link_to": "Bed Space Summary Report",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Maintenance Report",
+   "link_count": 0,
+   "link_to": "Maintenance Report",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Monthly Consumption Report",
+   "link_count": 0,
+   "link_to": "Monthly Consumption Report",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Unit List",
+   "link_count": 0,
+   "link_to": "Unit List",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Units List Report",
+   "link_count": 0,
+   "link_to": "Units List Report",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-07-13 17:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 27.0,
+ "shortcuts": [],
+ "title": "Accommodation",
+ "type": "Workspace"
+}

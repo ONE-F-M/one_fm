@@ -426,3 +426,4 @@ one_fm.patches.v15_0.add_workflow_project_manpower_request
 one_fm.patches.v15_0.update_workflow_project_manpower_request_roles
 one_fm.patches.v15_0.add_operation_admin_to_pmr_workflow
 one_fm.patches.v15_0.update_workflow_project_manpower_request_ops_edit
+one_fm.patches.v16_0.remove_stale_workspaces

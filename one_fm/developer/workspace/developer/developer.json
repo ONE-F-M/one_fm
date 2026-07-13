@@ -1,0 +1,158 @@
+{
+ "app": "one_fm",
+ "charts": [],
+ "content": "[{\"id\": \"wi1332developerhdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\">Developer</span>\", \"col\": 12}}, {\"id\": \"wi1332c0developer\", \"type\": \"card\", \"data\": {\"card_name\": \"Monitoring & Logs\", \"col\": 4}}, {\"id\": \"wi1332c1developer\", \"type\": \"card\", \"data\": {\"card_name\": \"Bug Buster\", \"col\": 4}}, {\"id\": \"wi1332c2developer\", \"type\": \"card\", \"data\": {\"card_name\": \"Tools\", \"col\": 4}}, {\"id\": \"wi1332c3developer\", \"type\": \"card\", \"data\": {\"card_name\": \"Reports\", \"col\": 4}}]",
+ "creation": "2026-07-13 17:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "tool",
+ "idx": 0,
+ "indicator_color": "",
+ "is_hidden": 0,
+ "label": "Developer",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Monitoring & Logs",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Administrator Activity Log",
+   "link_count": 0,
+   "link_to": "Administrator Activity Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Administrator Auto Log",
+   "link_count": 0,
+   "link_to": "Administrator Auto Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "DMARC Report",
+   "link_count": 0,
+   "link_to": "DMARC Report",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Bug Buster",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Bug Buster",
+   "link_count": 0,
+   "link_to": "Bug Buster",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Bug Buster Employee",
+   "link_count": 0,
+   "link_to": "Bug Buster Employee",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Bug Buster Report",
+   "link_count": 0,
+   "link_to": "Bug Buster Report",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Bug Fix Prompt Counts",
+   "link_count": 0,
+   "link_to": "Bug Fix Prompt Counts",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Tools",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Application Release Notes",
+   "link_count": 0,
+   "link_to": "Application Release Notes",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "File Transfer Wizard",
+   "link_count": 0,
+   "link_to": "File Transfer Wizard",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Reports",
+   "link_count": 0,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  }
+ ],
+ "modified": "2026-07-13 17:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Developer",
+ "name": "Developer",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 29.0,
+ "shortcuts": [],
+ "title": "Developer",
+ "type": "Workspace"
+}
