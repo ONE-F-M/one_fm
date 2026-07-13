@@ -12,6 +12,7 @@ from firebase_admin import messaging
 import frappe
 from frappe import _
 from frappe.auth import validate_ip_address
+from frappe.model.workflow import apply_workflow
 from frappe.utils.nestedset import validate_loop
 from frappe.query_builder import DocType
 from frappe.desk.form.assign_to import add as add_assignment
@@ -1724,30 +1725,63 @@ def set_job_applicant_status(doc, method):
             doc.one_fm_document_verification = status
 
 def on_update_job_applicant(doc, method):
-    if doc.one_fm_applicant_status in ["Selected"] and doc.status not in ["Rejected"]:
-        create_job_offer_from_job_applicant(doc.name)
+    if doc.status in ["Rejected"]:
+        return
+    if doc.one_fm_applicant_status == "Selected":
+        issue_job_offer_for_applicant(doc.name)
+    elif doc.one_fm_applicant_status == "Shortlisted":
+        create_draft_job_offer_for_applicant(doc.name)
 
-def create_job_offer_from_job_applicant(job_applicant):
-    if not frappe.db.exists('Job Offer', {'job_applicant': job_applicant, 'docstatus': ['<', 2]}):
-        job_app = frappe.get_doc('Job Applicant', job_applicant)
-        if not job_app.number_of_days_off:
-            frappe.throw(_("Please set the number of days off."))
-        if job_app.day_off_category == "Weekly" and frappe.utils.cint(job_app.number_of_days_off) > 7:
-            frappe.throw(_("Number of days off cannot be more than a Week!"))
-        elif job_app.day_off_category == "Monthly" and frappe.utils.cint(job_app.number_of_days_off) > 30:
-            frappe.throw(_("Number of days off cannot be more than a Month!"))
-        job_offer = frappe.new_doc('Job Offer')
-        job_offer.job_applicant = job_app.name
-        job_offer.employment_type = job_app.employment_type
-        job_offer.applicant_name = job_app.applicant_name
-        job_offer.day_off_category = job_app.day_off_category
-        job_offer.number_of_days_off = job_app.number_of_days_off
-        job_offer.designation = job_app.designation
-        job_offer.offer_date = today()
-        if job_app.one_fm_erf:
-            erf = frappe.get_doc('ERF', job_app.one_fm_erf)
-            set_erf_details(job_offer, erf, job_app)
-        job_offer.save(ignore_permissions = True)
+def create_draft_job_offer_for_applicant(job_applicant):
+    """Create a Draft Job Offer as soon as an applicant is Shortlisted, so it's
+    ready to be reviewed/edited before being issued to the candidate on Selection.
+    Silently skips (rather than throwing) if day-off details aren't set yet -
+    shortlisting must not be blocked by that."""
+    if frappe.db.exists('Job Offer', {'job_applicant': job_applicant, 'docstatus': ['<', 2]}):
+        return
+    job_app = frappe.get_doc('Job Applicant', job_applicant)
+    if not job_app.number_of_days_off or not job_app.day_off_category:
+        return
+    if job_app.day_off_category == "Weekly" and frappe.utils.cint(job_app.number_of_days_off) > 7:
+        return
+    elif job_app.day_off_category == "Monthly" and frappe.utils.cint(job_app.number_of_days_off) > 30:
+        return
+    _insert_job_offer_from_applicant(job_app)
+
+def issue_job_offer_for_applicant(job_applicant):
+    """When an applicant is Selected: issue the existing Draft Job Offer to the
+    candidate (preserving any manual edits, e.g. changed salary), or create one
+    if none exists yet (legacy path for applicants selected without ever being
+    shortlisted first)."""
+    existing_offer = frappe.db.exists('Job Offer', {'job_applicant': job_applicant, 'docstatus': ['<', 2]})
+    if existing_offer:
+        job_offer = frappe.get_doc('Job Offer', existing_offer)
+        if job_offer.docstatus == 0 and job_offer.workflow_state == "Open":
+            apply_workflow(job_offer, "Submit for Candidate Response")
+        return
+
+    job_app = frappe.get_doc('Job Applicant', job_applicant)
+    if not job_app.number_of_days_off:
+        frappe.throw(_("Please set the number of days off."))
+    if job_app.day_off_category == "Weekly" and frappe.utils.cint(job_app.number_of_days_off) > 7:
+        frappe.throw(_("Number of days off cannot be more than a Week!"))
+    elif job_app.day_off_category == "Monthly" and frappe.utils.cint(job_app.number_of_days_off) > 30:
+        frappe.throw(_("Number of days off cannot be more than a Month!"))
+    _insert_job_offer_from_applicant(job_app)
+
+def _insert_job_offer_from_applicant(job_app):
+    job_offer = frappe.new_doc('Job Offer')
+    job_offer.job_applicant = job_app.name
+    job_offer.employment_type = job_app.employment_type
+    job_offer.applicant_name = job_app.applicant_name
+    job_offer.day_off_category = job_app.day_off_category
+    job_offer.number_of_days_off = job_app.number_of_days_off
+    job_offer.designation = job_app.designation
+    job_offer.offer_date = today()
+    if job_app.one_fm_erf:
+        erf = frappe.get_doc('ERF', job_app.one_fm_erf)
+        set_erf_details(job_offer, erf, job_app)
+    job_offer.save(ignore_permissions = True)
 
 def set_erf_details(job_offer, erf, job_app):
     job_offer.erf = erf.name
