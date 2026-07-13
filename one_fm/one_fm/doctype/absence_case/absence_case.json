@@ -108,7 +108,7 @@
    "fieldname": "absence_type",
    "fieldtype": "Select",
    "label": "Absence Type",
-   "options": "\n5 Days Consecutive Absence\n7 Days Consecutive Absence\n21 Days Absence in a Year",
+   "options": "\n5 Days Consecutive Absence\n7 Days Consecutive Absence\n16 Days Absence in a Year\n21 Days Absence in a Year",
    "read_only": 1
   },
   {

@@ -1,0 +1,62 @@
+<style>
+    .absence-notification-table {
+        font-family: Arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+    .absence-notification-table th,
+    .absence-notification-table td {
+        border: 1px solid #ddd;
+        padding: 10px;
+    }
+    .absence-notification-table th {
+        background-color: #f2f2f2;
+        color: #333;
+        width: 35%;
+        text-align: left;
+        font-weight: bold;
+    }
+    .absence-notification-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+</style>
+
+<p>Dear {{ doc.employee_name }},</p>
+
+<p>
+    This serves as a formal notification that your accumulated unexcused
+    absences within the current calendar year have reached a critical milestone
+    threshold of <strong>16 days</strong>.
+</p>
+
+<p>
+    Our company policy and the provisions of Kuwait Labor Law explicitly dictate
+    that intermittent, unexcused tracking metrics totaling 21 non-consecutive
+    days within a single year empower the organization to activate contract
+    termination via Resignation by Law.
+</p>
+
+<p>
+    You currently have <strong>5 days remaining</strong> before reaching this
+    structural threshold limit. You are requested to report to the company's
+    main head office to resolve your current attendance state.
+</p>
+
+<h4>Accumulation Summary:</h4>
+
+<table class="absence-notification-table">
+    <tbody>
+        <tr>
+            <th>Employee ID</th>
+            <td>{{ doc.employee }}</td>
+        </tr>
+        <tr>
+            <th>Total Days Absent (Year-to-Date)</th>
+            <td>16 Days Intermittent</td>
+        </tr>
+        <tr>
+            <th>Current Policy Margin</th>
+            <td>5 Days Remaining</td>
+        </tr>
+    </tbody>
+</table>
