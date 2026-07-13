@@ -1,0 +1,59 @@
+<style>
+    .absence-notification-table {
+        font-family: Arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+    .absence-notification-table th,
+    .absence-notification-table td {
+        border: 1px solid #ddd;
+        padding: 10px;
+    }
+    .absence-notification-table th {
+        background-color: #f2f2f2;
+        color: #333;
+        width: 35%;
+        text-align: left;
+        font-weight: bold;
+    }
+    .absence-notification-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+</style>
+
+<p>Dear HR Officer,</p>
+
+<p>
+    Please be advised that employee <strong>{{ doc.employee_name }}</strong> has
+    reached 5 consecutive days of unexcused absence. You are required to review
+    this file immediately.
+</p>
+
+<p>
+    Under Kuwait Labor Law, this case is 2 days away from the critical 7-day
+    threshold for Constructive Resignation by Law. Please check their housing
+    type from the case file to initiate the correct procedural track:
+</p>
+
+<h4>Case Reference Summary:</h4>
+
+<table class="absence-notification-table">
+    <tbody>
+        <tr>
+            <th>Absence Case ID</th>
+            <td>{{ doc.name }}</td>
+        </tr>
+        <tr>
+            <th>Employee ID &amp; Name</th>
+            <td>{{ doc.employee }} - {{ doc.employee_name }}</td>
+        </tr>
+        <tr>
+            <th>Under Company Accommodation</th>
+            <td>{{ "Yes" if doc.under_company_accommodation else "No" }}</td>
+        </tr>
+        <tr>
+            <th>Absence Start Date</th>
+            <td>{{ doc.absence_start_date }}</td>
+        </tr>
+    </tbody>
+</table>

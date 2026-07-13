@@ -184,5 +184,20 @@ def get_hr_settings_custom_fields():
                 "label": "Notification Members",
                 "options": "ALM Notification Member",
             },
+            {
+                "fieldname": "absence_investigation_section",
+                "fieldtype": "Section Break",
+                "insert_after": "employee_status_update_notification_members",
+                "label": "Absence Investigation",
+                "collapsible": 1,
+            },
+            {
+                "fieldname": "default_absence_investigation_hr_officer",
+                "fieldtype": "Link",
+                "insert_after": "absence_investigation_section",
+                "label": "Default Absence Investigation HR Officer",
+                "options": "User",
+                "description": "Primary recipient of automated absence early-warning alerts (e.g. the 5th consecutive day of unexcused absence). The alert is sent to this user's login email.",
+            },
         ]
     }
