@@ -445,6 +445,7 @@ doc_events = {
 		"on_update":"one_fm.tasks.erpnext.customer.on_update",
 	},
 	"User": {
+		"validate": "one_fm.sms_utils.normalize_user_mobile_no",
 		"after_insert":"one_fm.tasks.erpnext.user.after_insert",
 	},
 	"Email Queue": {
