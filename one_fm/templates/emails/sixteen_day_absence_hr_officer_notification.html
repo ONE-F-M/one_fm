@@ -1,0 +1,59 @@
+<style>
+    .absence-notification-table {
+        font-family: Arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+    .absence-notification-table th,
+    .absence-notification-table td {
+        border: 1px solid #ddd;
+        padding: 10px;
+    }
+    .absence-notification-table th {
+        background-color: #f2f2f2;
+        color: #333;
+        width: 35%;
+        text-align: left;
+        font-weight: bold;
+    }
+    .absence-notification-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+</style>
+
+<p>Dear HR Officer,</p>
+
+<p>
+    This serves as a system operational alert that
+    <strong>{{ doc.employee_name }}</strong> has accumulated 16 unexcused,
+    non-consecutive absent days within the current calendar year.
+</p>
+
+<p>
+    Only <strong>5 intermittent days</strong> remain before the organization can
+    legally enforce an automated contract termination via Resignation by Law
+    under our company policy guidelines.
+</p>
+
+<h4>Attendance Timeline Metrics:</h4>
+
+<table class="absence-notification-table">
+    <tbody>
+        <tr>
+            <th>Absence Case ID</th>
+            <td>{{ doc.name }}</td>
+        </tr>
+        <tr>
+            <th>Employee Profile</th>
+            <td>{{ doc.employee }} - {{ doc.employee_name }}</td>
+        </tr>
+        <tr>
+            <th>Total Logged YTD Absences</th>
+            <td>16 Days Intermittent</td>
+        </tr>
+        <tr>
+            <th>Remaining Policy Buffer</th>
+            <td>5 Days</td>
+        </tr>
+    </tbody>
+</table>

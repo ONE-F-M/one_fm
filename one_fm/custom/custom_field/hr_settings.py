@@ -197,7 +197,7 @@ def get_hr_settings_custom_fields():
                 "insert_after": "absence_investigation_section",
                 "label": "Default Absence Investigation HR Officer",
                 "options": "User",
-                "description": "Primary recipient of automated absence early-warning alerts (e.g. the 5th consecutive day of unexcused absence). The alert is sent to this user's login email.",
+                "description": "Primary recipient of automated absence early-warning alerts (e.g. the 5th consecutive day of unexcused absence, and the 16th non-consecutive day of unexcused absence in the calendar year). Alerts are sent to this user's login email.",
             },
         ]
     }

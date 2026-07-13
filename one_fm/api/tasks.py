@@ -2632,12 +2632,25 @@ def attendance_query_script():
 
 		flagged_5_days = []
 		flagged_7_days = []
+		flagged_16_days = []
 		flagged_21_days = []
 
 		for emp, adates in employee_absences.items():
 			emp_name = frappe.db.get_value("Employee", emp, "employee_name")
 
 			year_absences = [d for d in adates if d >= start_of_year]
+
+			# Milestone early-warning fired when the yearly non-consecutive
+			# unexcused absence count reaches 16 (5 days short of the 21-day
+			# Resignation-by-Law threshold). Uses >= 16 so a retroactive
+			# attendance edit that jumps past 16 is still caught; the once-per-
+			# calendar-year dedup below ensures it fires exactly once.
+			if len(year_absences) >= 16:
+				flagged_16_days.append({
+					"employee_name": emp_name,
+					"employee_id": emp
+				})
+
 			if len(year_absences) >= 21:
 				flagged_21_days.append({
 					"employee_name": emp_name,
@@ -2700,6 +2713,22 @@ def attendance_query_script():
 				# active case already exists (its emails were already sent).
 				if case:
 					send_five_day_absence_notifications(case)
+
+		# On the 16th non-consecutive absent day of the calendar year: open an
+		# Absence Case and send the milestone warning email directly to the
+		# employee and the Default Absence Investigation HR Officer. Deduped to
+		# fire once per employee per calendar year.
+		if flagged_16_days:
+			for emp in flagged_16_days:
+				case = create_yearly_milestone_absence_case(
+					emp["employee_id"],
+					"16 Days Absence in a Year",
+					start_of_year
+				)
+				# A returning None means a milestone case already exists for
+				# this employee this calendar year (its emails were already sent).
+				if case:
+					send_sixteen_day_absence_notifications(case)
 
 		manager_email = fetch_attendance_manager_user()
 
@@ -2818,6 +2847,89 @@ def send_five_day_absence_notifications(case):
 			recipients=hr_officer,
 			subject="Action Required: 5-Day Consecutive Absence Milestone Escalation - [{0}]".format(case.employee_name),
 			header=["5-Day Consecutive Absence Milestone Escalation"],
+			message=hr_message,
+			is_external_mail=True
+		)
+
+
+def create_yearly_milestone_absence_case(employee, absence_type, start_of_year):
+	"""
+	Generate a milestone Absence Case for a yearly non-consecutive absence
+	threshold, deduped to at most one case per employee per calendar year.
+
+	Returns the new doc, or None if a case of this type already exists for the
+	employee within the current calendar year (so callers can skip re-notifying).
+	"""
+	existing_case = frappe.db.exists("Absence Case", {
+		"employee": employee,
+		"absence_type": absence_type,
+		"docstatus": ["<", 2],  # Not cancelled
+		"posting_date": [">=", start_of_year]
+	})
+
+	if existing_case:
+		return None
+
+	# Get Paid Annual Leave balance
+	leave_type = frappe.db.get_value("Leave Type", {"one_fm_is_paid_annual_leave": 1}, "name")
+
+	balance = 0
+	if leave_type:
+		balance = get_leave_balance_on(employee, leave_type, today())
+
+	doc = frappe.get_doc({
+		"doctype": "Absence Case",
+		"employee": employee,
+		"posting_date": today(),
+		"absence_type": absence_type,
+		"annual_leave_balance": balance,
+		"status": "Draft"
+	})
+	doc.insert(ignore_permissions=True)
+	return doc
+
+
+def send_sixteen_day_absence_notifications(case):
+	"""
+	Dispatch the two 16th-non-consecutive-day milestone warning emails for an
+	Absence Case:
+	- To the absent employee: a warning that they are 5 days short of the 21-day
+	  Resignation-by-Law threshold and must report to the head office.
+	- To the Default Absence Investigation HR Officer (HR Settings): an operational
+	  alert with the case reference summary.
+
+	Both emails are rendered from the Absence Case doc. Recipients use the User ID
+	login email; a recipient without one is skipped. is_external_mail=True bypasses
+	the notification-preference filter so this compliance warning is not dropped.
+	"""
+	# Employee warning email.
+	employee_user = frappe.db.get_value("Employee", case.employee, "user_id")
+	if employee_user:
+		employee_message = frappe.render_template(
+			"one_fm/templates/emails/sixteen_day_absence_notification.html",
+			{"doc": case}
+		)
+		sendemail(
+			recipients=employee_user,
+			subject="16 Days Absence in the Calendar Year Notification",
+			header=["Critical Accumulated Absence Milestone (16 Days)"],
+			message=employee_message,
+			is_external_mail=True
+		)
+
+	# HR Officer milestone alert email.
+	hr_officer = frappe.db.get_single_value(
+		"HR Settings", "default_absence_investigation_hr_officer"
+	)
+	if hr_officer:
+		hr_message = frappe.render_template(
+			"one_fm/templates/emails/sixteen_day_absence_hr_officer_notification.html",
+			{"doc": case}
+		)
+		sendemail(
+			recipients=hr_officer,
+			subject="Critical Accumulated Absence Milestone (16 Days) - [{0}]".format(case.employee_name),
+			header=["Critical Accumulated Absence Milestone (16 Days)"],
 			message=hr_message,
 			is_external_mail=True
 		)
