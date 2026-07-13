@@ -1,0 +1,63 @@
+<style>
+    .absence-notification-table {
+        font-family: Arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+    .absence-notification-table th,
+    .absence-notification-table td {
+        border: 1px solid #ddd;
+        padding: 10px;
+    }
+    .absence-notification-table th {
+        background-color: #f2f2f2;
+        color: #333;
+        width: 35%;
+        text-align: left;
+        font-weight: bold;
+    }
+    .absence-notification-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+</style>
+
+<p>Dear {{ doc.employee_name }},</p>
+
+<p>
+    Please be advised that our automated attendance systems have logged your
+    continuous absence from work for <strong>5 consecutive days</strong> without
+    an officially approved leave request or justified excuse.
+</p>
+
+<p>
+    Under the internal company regulations and matching framework parameters of
+    Kuwait Labor Law (Law No. 6 of 2010), continuous unexcused absence extending
+    to 7 consecutive days results in an automatic case escalation for
+    Constructive Resignation by Law.
+</p>
+
+<h4>Absence Profile Details:</h4>
+
+<table class="absence-notification-table">
+    <tbody>
+        <tr>
+            <th>Employee ID</th>
+            <td>{{ doc.employee }}</td>
+        </tr>
+        <tr>
+            <th>Absence Start Date</th>
+            <td>{{ doc.absence_start_date }}</td>
+        </tr>
+        <tr>
+            <th>Current Logged Days</th>
+            <td>5 Days Continuous</td>
+        </tr>
+    </tbody>
+</table>
+
+<br>
+<p>
+    You are urgently required to contact the Human Resources Department
+    immediately to clarify your situation and provide supporting documentation
+    for your absence.
+</p>
