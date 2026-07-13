@@ -479,3 +479,4 @@ one_fm.patches.v15_0.add_vehicle_branding_details_fields
 one_fm.patches.v15_0.resync_resignation_workflow_draft_state #2026-07-07
 one_fm.patches.v15_0.mark_draft_pmr_as_completed #2026-07-07
 one_fm.patches.v15_0.backfill_checkin_geolocation_from_device_id #2026-07-12
+one_fm.patches.v15_0.normalize_user_mobile_country_code #2026-07-13
