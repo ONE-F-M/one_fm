@@ -51,14 +51,35 @@ class TestApplyAttendanceCorrection(FrappeTestCase):
 			(self.employee, f"Test Emp {suffix}", "Test", "Active"),
 		)
 
-		# Submitted, Basic-roster Attendance dated today (inside the window).
+		# Submitted, Basic-roster Shift Assignment for the same employee/date.
+		self.shift_assignment = f"TEST-SA-{suffix}"
+		frappe.db.sql("DELETE FROM `tabShift Assignment` WHERE name=%s", (self.shift_assignment,))
+		frappe.db.sql(
+			"""INSERT INTO `tabShift Assignment`
+			(name, employee, start_date, roster_type, custom_day_off_ot, status, docstatus)
+			VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+			(self.shift_assignment, self.employee, today(), "Basic", 0, "Active", 1),
+		)
+
+		# Employee Schedule for the same employee/date/roster_type.
+		self.employee_schedule = f"TEST-ES-{suffix}"
+		frappe.db.sql("DELETE FROM `tabEmployee Schedule` WHERE name=%s", (self.employee_schedule,))
+		frappe.db.sql(
+			"""INSERT INTO `tabEmployee Schedule`
+			(name, employee, date, roster_type, day_off_ot, employee_availability)
+			VALUES (%s, %s, %s, %s, %s, %s)""",
+			(self.employee_schedule, self.employee, today(), "Basic", 0, "Working"),
+		)
+
+		# Submitted, Basic-roster Attendance dated today (inside the window), linked
+		# to the Shift Assignment above.
 		self.attendance = f"TEST-ATT-{suffix}"
 		frappe.db.sql("DELETE FROM `tabAttendance` WHERE name=%s", (self.attendance,))
 		frappe.db.sql(
 			"""INSERT INTO `tabAttendance`
-			(name, employee, attendance_date, status, roster_type, day_off_ot, docstatus)
-			VALUES (%s, %s, %s, %s, %s, %s, %s)""",
-			(self.attendance, self.employee, today(), "Present", "Basic", 0, 1),
+			(name, employee, attendance_date, status, roster_type, day_off_ot, shift_assignment, docstatus)
+			VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+			(self.attendance, self.employee, today(), "Present", "Basic", 0, self.shift_assignment, 1),
 		)
 		frappe.db.commit()
 		self.addCleanup(self._cleanup)
@@ -67,7 +88,14 @@ class TestApplyAttendanceCorrection(FrappeTestCase):
 
 	def _cleanup(self):
 		frappe.set_user("Administrator")
+		for doctype in ("Attendance", "Shift Assignment", "Employee Schedule"):
+			frappe.db.sql(
+				"DELETE FROM `tabComment` WHERE reference_doctype=%s AND reference_name IN (%s, %s, %s)",
+				(doctype, self.attendance, self.shift_assignment, self.employee_schedule),
+			)
 		frappe.db.sql("DELETE FROM `tabAttendance` WHERE name=%s", (self.attendance,))
+		frappe.db.sql("DELETE FROM `tabShift Assignment` WHERE name=%s", (self.shift_assignment,))
+		frappe.db.sql("DELETE FROM `tabEmployee Schedule` WHERE name=%s", (self.employee_schedule,))
 		frappe.db.sql("DELETE FROM `tabEmployee` WHERE name=%s", (self.employee,))
 		frappe.db.commit()
 
@@ -83,6 +111,47 @@ class TestApplyAttendanceCorrection(FrappeTestCase):
 		doc = frappe.get_doc("Attendance", self.attendance)
 		self.assertEqual(doc.day_off_ot, 1)
 		self.assertEqual(doc.custom_correction_reason, "Correcting Roster Mistake")
+
+	def test_cascade_updates_all_three_doctypes(self):
+		frappe.set_user("Administrator")
+		apply_attendance_correction(self.attendance, day_off_ot=1, reason="Correcting Roster Mistake")
+
+		self.assertEqual(frappe.db.get_value("Attendance", self.attendance, "day_off_ot"), 1)
+		self.assertEqual(
+			frappe.db.get_value("Shift Assignment", self.shift_assignment, "custom_day_off_ot"), 1
+		)
+		self.assertEqual(
+			frappe.db.get_value("Employee Schedule", self.employee_schedule, "day_off_ot"), 1
+		)
+
+	def test_audit_trail_added_on_all_three_doctypes(self):
+		frappe.set_user("Administrator")
+		reason = "Correcting Roster Mistake"
+		apply_attendance_correction(self.attendance, day_off_ot=1, reason=reason)
+
+		targets = {
+			"Attendance": self.attendance,
+			"Shift Assignment": self.shift_assignment,
+			"Employee Schedule": self.employee_schedule,
+		}
+		for doctype, name in targets.items():
+			# AC2: a Comment holding the Reason for Change text.
+			comment = frappe.db.exists("Comment", {
+				"reference_doctype": doctype,
+				"reference_name": name,
+				"comment_type": "Comment",
+				"content": ["like", f"%{reason}%"],
+			})
+			self.assertTrue(comment, f"Missing correction Comment on {doctype}")
+
+			# AC3: an Info entry recording the operator's User ID.
+			info = frappe.db.exists("Comment", {
+				"reference_doctype": doctype,
+				"reference_name": name,
+				"comment_type": "Info",
+				"content": ["like", "%Administrator%"],
+			})
+			self.assertTrue(info, f"Missing activity-log Info entry on {doctype}")
 
 	def test_reason_is_mandatory(self):
 		frappe.set_user("Administrator")

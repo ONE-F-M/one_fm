@@ -4,7 +4,7 @@ import frappe, erpnext
 from frappe import _
 from frappe.utils import (
     now_datetime,nowtime, cstr, getdate, get_datetime, cint, add_to_date,
-    datetime, today, add_days, now
+    datetime, today, add_days, now, get_fullname
 )
 from datetime import timedelta, datetime as p_datetime
 from hrms.hr.doctype.attendance.attendance import *
@@ -1574,13 +1574,33 @@ def apply_attendance_correction(attendance: str, day_off_ot, reason: str):
 
     day_off_ot = cint(day_off_ot)
 
-    # Update the Attendance record; a stored reason locks out further corrections
+    # Track every doctype touched so we can post the same audit trail on each.
+    affected = []
+
+    # 1) Attendance itself; a stored reason locks out further corrections.
     doc.db_set({
         "day_off_ot": day_off_ot,
         "custom_correction_reason": reason,
     })
+    affected.append(("Attendance", doc.name))
 
-    # Keep the source Employee Schedule aligned so payroll reflects the correction
+    # 2) Shift Assignment — prefer the one linked on the Attendance, else look up
+    # the active Basic-roster assignment for the same employee/date. The Day Off OT
+    # flag lives on the "custom_day_off_ot" field for this doctype.
+    shift_assignment = doc.shift_assignment
+    if not shift_assignment:
+        shift_assignment = frappe.db.get_value("Shift Assignment", {
+            "employee": doc.employee,
+            "start_date": doc.attendance_date,
+            "roster_type": doc.roster_type,
+            "docstatus": 1,
+        }, "name")
+    if shift_assignment and frappe.db.exists("Shift Assignment", shift_assignment):
+        frappe.db.set_value("Shift Assignment", shift_assignment, "custom_day_off_ot", day_off_ot)
+        affected.append(("Shift Assignment", shift_assignment))
+
+    # 3) Employee Schedule — the payroll report reads day_off_ot from here, and the
+    # Roster grid colours future days from it, so keep it aligned.
     employee_schedule = frappe.db.get_value("Employee Schedule", {
         "employee": doc.employee,
         "date": doc.attendance_date,
@@ -1588,5 +1608,37 @@ def apply_attendance_correction(attendance: str, day_off_ot, reason: str):
     }, "name")
     if employee_schedule:
         frappe.db.set_value("Employee Schedule", employee_schedule, "day_off_ot", day_off_ot)
+        affected.append(("Employee Schedule", employee_schedule))
 
-    return {"success": True, "day_off_ot": day_off_ot}
+    # Post the correction Comment (with the operator's name + reason) and an Info
+    # activity-log entry (with the operator's User ID) on every affected doctype.
+    _post_correction_trail(affected, reason, day_off_ot)
+
+    return {
+        "success": True,
+        "day_off_ot": day_off_ot,
+        "updated": [dt for dt, _ in affected],
+    }
+
+
+def _post_correction_trail(affected, reason: str, day_off_ot: int):
+    """Add an audit trail to each affected document:
+
+    - a "Comment" holding the Reason for Change and the name of the user who
+      submitted the correction modal (Acceptance Criterion 2);
+    - an "Info" timeline entry recording the User ID of the Payroll Operator who
+      made the change (Acceptance Criterion 3).
+    """
+    user = frappe.session.user
+    full_name = get_fullname(user)
+    state = _("enabled") if day_off_ot else _("disabled")
+
+    comment_text = _("Attendance Correction by {0}: Day Off OT {1}. Reason for Change: {2}").format(
+        full_name, state, reason
+    )
+    info_text = _("Day Off OT {0} via Attendance Correction by User {1}").format(state, user)
+
+    for doctype, name in affected:
+        target = frappe.get_doc(doctype, name)
+        target.add_comment("Comment", comment_text)
+        target.add_comment("Info", info_text)
