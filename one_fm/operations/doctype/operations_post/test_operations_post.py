@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe.tests.utils import FrappeTestCase
 from one_fm.tests.utils import create_test_company
-from frappe.utils import add_days, nowdate
+from frappe.utils import add_days, nowdate, getdate
 
 
 class TestOperationsPost(FrappeTestCase):
@@ -42,12 +42,25 @@ class TestOperationsPost(FrappeTestCase):
         frappe.db.rollback()
         frappe.set_user("Administrator")
 
+    def _create_test_location(self):
+        location_name = "Test Operations Location"
+        if not frappe.db.exists("Location", location_name):
+            frappe.get_doc({
+                "doctype": "Location",
+                "location_name": location_name,
+                "latitude": 29.3759,
+                "longitude": 47.9774,
+                "geofence_radius": 100
+            }).insert(ignore_permissions=True)
+        return location_name
+
     def _create_test_site(self):
         site = frappe.get_doc({
             "doctype": "Operations Site",
             "site_name": "Test Operations Site",
             "status": "Active",
-            "company": "_Test Company"
+            "company": "_Test Company",
+            "site_location": self._create_test_location()
         })
         test_poc_contact = frappe.get_doc({
             "doctype": "Contact",
@@ -161,7 +174,7 @@ class TestOperationsPost(FrappeTestCase):
         with self.assertRaises(frappe.exceptions.ValidationError) as cm:
             post.save(ignore_permissions=True)
         
-        self.assertIn("is Inactive", str(cm.exception))
+        self.assertIn("Inactive", str(cm.exception))
 
     def test_post_activation_date_appended(self):
         """Test that making an Active post Inactive appends to operations_post_activation child table"""
@@ -171,10 +184,96 @@ class TestOperationsPost(FrappeTestCase):
         post.save(ignore_permissions=True)
 
         self.assertEqual(len(post.operations_post_activation), 1)
-        self.assertEqual(post.operations_post_activation[0].operations_post_start_date, nowdate())
-        self.assertEqual(post.operations_post_activation[0].operations_post_end_date, add_days(nowdate(), 5))
+        self.assertEqual(getdate(post.operations_post_activation[0].operations_post_start_date), getdate(nowdate()))
+        self.assertEqual(getdate(post.operations_post_activation[0].operations_post_end_date), getdate(add_days(nowdate(), 5)))
         self.assertIsNone(post.start_date)
         self.assertIsNone(post.end_date)
+
+    def test_reactivation_archives_previous_dates(self):
+        """AC3: editing the main dates while the status stays Active must archive the
+        previous window into the history table and keep the new dates on the parent."""
+        post = self._create_test_operations_post(
+            status="Active", start_date=nowdate(), end_date=add_days(nowdate(), 5)
+        )
+
+        # Extend/reactivate to a new range without changing the status.
+        post.start_date = add_days(nowdate(), 10)
+        post.end_date = add_days(nowdate(), 20)
+        post.save(ignore_permissions=True)
+
+        self.assertEqual(len(post.operations_post_activation), 1)
+        self.assertEqual(getdate(post.operations_post_activation[0].operations_post_start_date), getdate(nowdate()))
+        self.assertEqual(getdate(post.operations_post_activation[0].operations_post_end_date), getdate(add_days(nowdate(), 5)))
+        self.assertEqual(getdate(post.start_date), getdate(add_days(nowdate(), 10)))
+        self.assertEqual(getdate(post.end_date), getdate(add_days(nowdate(), 20)))
+
+    def test_no_duplicate_activation_row_when_dates_unchanged(self):
+        """AC3: saving without modifying the dates must not create a history row."""
+        post = self._create_test_operations_post(
+            status="Active", start_date=nowdate(), end_date=add_days(nowdate(), 5)
+        )
+
+        # Change an unrelated field, leave the dates as-is.
+        post.handover = 1
+        post.save(ignore_permissions=True)
+
+        self.assertEqual(len(post.operations_post_activation), 0)
+
+    def test_original_start_date_preserved(self):
+        """AC5: the first activation date is captured once and never overwritten."""
+        post = self._create_test_operations_post(
+            status="Active", start_date=nowdate(), end_date=add_days(nowdate(), 5)
+        )
+        self.assertEqual(getdate(post.original_start_date), getdate(nowdate()))
+
+        # Reactivate/extend to a later range - original must stay put.
+        post.start_date = add_days(nowdate(), 10)
+        post.save(ignore_permissions=True)
+        self.assertEqual(getdate(post.original_start_date), getdate(nowdate()))
+
+    def test_get_active_windows_and_is_date_in_windows(self):
+        """AC4: active windows combine the main window with logged history windows."""
+        from one_fm.operations.doctype.operations_post.operations_post import (
+            get_active_windows, is_date_in_windows,
+        )
+
+        post = frappe._dict({
+            "start_date": "2026-02-01",
+            "end_date": "2026-02-28",
+            "operations_post_activation": [
+                frappe._dict({
+                    "operations_post_start_date": "2026-01-01",
+                    "operations_post_end_date": "2026-01-15",
+                }),
+            ],
+        })
+
+        windows = get_active_windows(post)
+        self.assertEqual(len(windows), 2)
+        self.assertTrue(is_date_in_windows("2026-02-10", windows))   # main window
+        self.assertTrue(is_date_in_windows("2026-01-10", windows))   # history window
+        self.assertFalse(is_date_in_windows("2026-01-20", windows))  # gap between windows
+        self.assertFalse(is_date_in_windows("2026-03-05", windows))  # after main window
+
+    def test_get_active_intervals_in_period(self):
+        """AC4: windows are clipped to the period and merged so overlaps are counted once."""
+        from frappe.utils import getdate
+        from one_fm.operations.doctype.post_scheduler_checker.post_scheduler_checker import (
+            get_active_intervals_in_period,
+        )
+
+        windows = [
+            (getdate("2026-02-05"), getdate("2026-02-28")),
+            (getdate("2026-01-20"), getdate("2026-02-03")),  # spills before the period
+        ]
+        intervals = get_active_intervals_in_period(
+            windows, getdate("2026-02-01"), getdate("2026-02-28")
+        )
+
+        # Feb 1-3 and Feb 5-28 -> two disjoint intervals, 3 + 24 = 27 active days.
+        self.assertEqual(len(intervals), 2)
+        total_days = sum((end - start).days + 1 for start, end in intervals)
+        self.assertEqual(total_days, 27)
 
     def test_name_validation(self):
         """Test that post forces a specific naming convention"""

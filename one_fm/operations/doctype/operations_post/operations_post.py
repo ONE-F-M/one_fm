@@ -46,16 +46,50 @@ class OperationsPost(Document):
             frappe.throw(_("The Operations Role <br/>'<b>{0}</b>' selected in the Post '<b>{1}</b>' is <b>Inactive</b>. <br/> To make the Post atcive first make the Role active".format(self.post_template, self.name)))
 
     def update_post_activation_date(self):
-        if not self.is_new() and self.has_value_changed("status"):
-            old_status = self.get_doc_before_save().status
-            if old_status == "Active" and self.status == "Inactive":
-                if self.start_date or self.end_date:
-                    self.append("operations_post_activation", {
-                        "operations_post_start_date": self.start_date,
-                        "operations_post_end_date": self.end_date
-                    })
-                    self.start_date = None
-                    self.end_date = None
+        # Preserve the first ever activation date (read-only, hidden) for long-term tracking.
+        if self.status == "Active" and self.start_date and not self.original_start_date:
+            self.original_start_date = self.start_date
+
+        if self.is_new():
+            return
+
+        before = self.get_doc_before_save()
+        if not before:
+            return
+
+        status_changed = self.status != before.status
+
+        # AC2: Active -> Inactive. Archive the concluding active window into history
+        # and clear the main dates to end that run.
+        if status_changed and before.status == "Active" and self.status == "Inactive":
+            if before.start_date or before.end_date:
+                self.append_activation_history(before.start_date, before.end_date)
+            self.start_date = None
+            self.end_date = None
+
+        # AC3: Reactivation/extension. Main dates edited while the status stays the same
+        # (and the post already had active dates). Archive the previous window before the
+        # new one is saved. The date-change guard prevents duplicate rows on unmodified saves.
+        elif not status_changed and self.status == "Active":
+            dates_changed = (
+                getdate_or_none(self.start_date) != getdate_or_none(before.start_date)
+                or getdate_or_none(self.end_date) != getdate_or_none(before.end_date)
+            )
+            if dates_changed and (before.start_date or before.end_date):
+                self.append_activation_history(before.start_date, before.end_date)
+
+    def append_activation_history(self, start_date, end_date):
+        """Append a history row, skipping if an identical window is already logged."""
+        for row in self.operations_post_activation:
+            if (
+                getdate_or_none(row.operations_post_start_date) == getdate_or_none(start_date)
+                and getdate_or_none(row.operations_post_end_date) == getdate_or_none(end_date)
+            ):
+                return
+        self.append("operations_post_activation", {
+            "operations_post_start_date": start_date,
+            "operations_post_end_date": end_date
+        })
 
     def on_update(self):
         self.validate_name()
@@ -76,6 +110,45 @@ class OperationsPost(Document):
         condition = self.post_name+"-"+self.gender+"|"+self.site_shift
         if condition != self.name:
             rename_doc(doctype=self.doctype, old=self.name, new=condition, force=True, doc=self)
+
+def getdate_or_none(value):
+    return getdate(value) if value else None
+
+
+def get_active_windows(operations_post):
+    """Return every validated "Active" window for an Operations Post as a list of
+    (start, end) date tuples: the current main window plus each historical window
+    logged in the Operations Post Activation child table.
+
+    A ``None`` start means open at the beginning; a ``None`` end means open-ended.
+    """
+    windows = []
+
+    main_start = getdate_or_none(operations_post.get("start_date"))
+    main_end = getdate_or_none(operations_post.get("end_date"))
+    if main_start or main_end:
+        windows.append((main_start, main_end))
+
+    for row in operations_post.get("operations_post_activation") or []:
+        hist_start = getdate_or_none(row.get("operations_post_start_date"))
+        hist_end = getdate_or_none(row.get("operations_post_end_date"))
+        if hist_start or hist_end:
+            windows.append((hist_start, hist_end))
+
+    return windows
+
+
+def is_date_in_windows(date, windows):
+    """True if ``date`` falls within any of the active windows (inclusive)."""
+    date = getdate(date)
+    for start, end in windows:
+        if start and date < start:
+            continue
+        if end and date > end:
+            continue
+        return True
+    return False
+
 
 def delete_schedule(doc):
     frappe.db.sql(f"""
@@ -130,8 +203,16 @@ def queue_create_post_schedule_for_operations_post(operations_post, contracts, e
 
         #The previous series value from frappe is wrong in some cases
 
+        # AC4: only create schedules for dates that fall inside a validated "Active"
+        # window (the current main window plus any historical windows). This bounds
+        # generation by the post's own End Date instead of running to the contract end.
+        active_windows = get_active_windows(operations_post)
+
         for date in	pd.date_range(start=start_date, end=contracts.end_date):
             if selected_days is not None and date.weekday() not in selected_days:
+                continue
+
+            if active_windows and not is_date_in_windows(date.date(), active_windows):
                 continue
 
             date_string = frappe.utils.get_date_str(date.date())
