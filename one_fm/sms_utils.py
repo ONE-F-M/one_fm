@@ -50,5 +50,20 @@ def normalize_user_mobile_no(doc, method=None):
 	SMS gateway, so normalizing here fixes that path at the source and prevents
 	newly entered 8-digit numbers from breaking again. See normalize_kw_mobile().
 	"""
-	if doc.mobile_no:
-		doc.mobile_no = normalize_kw_mobile(doc.mobile_no)
+	if not doc.mobile_no:
+		return
+
+	normalized = normalize_kw_mobile(doc.mobile_no)
+	if normalized == doc.mobile_no:
+		return
+
+	# mobile_no is unique; if adding the country code would collide with another
+	# user, leave the value as entered rather than blocking the save. The
+	# duplicate is a data issue to resolve manually.
+	clash = frappe.db.get_value(
+		"User", {"mobile_no": normalized, "name": ["!=", doc.name]}, "name"
+	)
+	if clash:
+		return
+
+	doc.mobile_no = normalized
