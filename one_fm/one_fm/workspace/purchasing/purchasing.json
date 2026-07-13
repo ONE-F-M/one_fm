@@ -1,4 +1,5 @@
 {
+ "app": "one_fm",
  "charts": [],
  "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h3\\\">Purchasing</span><br>\",\"col\":12}},{\"type\":\"card\",\"data\":{\"card_name\":\"RFM/RFP\",\"col\":6}},{\"type\":\"card\",\"data\":{\"card_name\":\"Quotation\",\"col\":6}},{\"type\":\"card\",\"data\":{\"card_name\":\"Settings\",\"col\":6}},{\"type\":\"card\",\"data\":{\"card_name\":\"Item Description Masters\",\"col\":6}}]",
  "creation": "2022-10-31 20:50:26.833261",
@@ -184,9 +185,9 @@
    "type": "Link"
   }
  ],
- "modified": "2023-05-15 19:20:34.838066",
+ "modified": "2026-07-13 19:35:00.000000",
  "modified_by": "Administrator",
- "module": "One Fm",
+ "module": "Purchase",
  "name": "Purchasing",
  "number_cards": [],
  "owner": "Administrator",

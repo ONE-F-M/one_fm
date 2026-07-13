@@ -1,4 +1,5 @@
 {
+ "app": "one_fm",
  "charts": [],
  "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Hospitality</span>\",\"col\":12}},{\"type\":\"card\",\"data\":{\"card_name\":\"Accommodation\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Accommodation Master\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
  "creation": "2022-10-31 20:16:25.329751",
@@ -255,7 +256,7 @@
    "type": "Link"
   }
  ],
- "modified": "2022-10-31 21:19:33.769979",
+ "modified": "2026-07-13 19:35:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Hospitality",

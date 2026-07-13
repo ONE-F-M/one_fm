@@ -1,0 +1,61 @@
+{
+ "app": "one_fm",
+ "charts": [],
+ "content": "[{\"id\": \"wi1332pacihdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\">PACI</span>\", \"col\": 12}}, {\"id\": \"wi1332c0paci\", \"type\": \"card\", \"data\": {\"card_name\": \"PACI\", \"col\": 4}}]",
+ "creation": "2026-07-13 17:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "integration",
+ "idx": 0,
+ "indicator_color": "",
+ "is_hidden": 0,
+ "label": "PACI",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "PACI",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "PACI Signature",
+   "link_count": 0,
+   "link_to": "PACI Signature",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "PACI Signature Assignment",
+   "link_count": 0,
+   "link_to": "PACI Signature Assignment",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-07-13 17:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "PACI",
+ "name": "PACI",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 30.0,
+ "shortcuts": [],
+ "title": "PACI",
+ "type": "Workspace"
+}
