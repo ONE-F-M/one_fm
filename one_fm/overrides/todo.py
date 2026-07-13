@@ -139,7 +139,7 @@ def create_google_task_on_todo_creation(doc, method):
     # Skip if general trigger is not enabled
     if not is_google_task_synchronization_enabled():
         return
-    frappe.enqueue(create_google_task_on_todo_creation_in_erp, doc=doc, method=method, is_async=True)
+    frappe.enqueue(create_google_task_on_todo_creation_in_erp(doc=doc, method=method),is_async=True)
 
 def create_google_task_on_todo_creation_in_erp(doc, method):
     """Create a Google Task for the ToDo document if not already created."""
