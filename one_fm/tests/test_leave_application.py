@@ -698,3 +698,35 @@ class TestLeaveApplicationOverride(FrappeTestCase):
             # Verify that set_value was called since from_date < today
             mock_set_value.assert_called_with("Employee", self.employee.name, "status", "Active")
             mock_hajj_status.assert_called_once()
+
+    def test_action_set_to_try_again_when_employee_not_reached(self):
+        """When the employee could not be reached and Action is empty, it defaults to 'Try Again'."""
+        doc = frappe.new_doc("Leave Application")
+        doc.custom_could_the_employee_be_reached = "No"
+        doc.custom_action = None
+
+        doc.set_action_on_unreachable()
+
+        self.assertEqual(doc.custom_action, "Try Again")
+
+    def test_action_not_overwritten_when_already_set(self):
+        """An existing Action is preserved (auto-set only fills an empty Action)."""
+        doc = frappe.new_doc("Leave Application")
+        doc.custom_could_the_employee_be_reached = "No"
+        doc.custom_action = "Try Again"
+
+        doc.set_action_on_unreachable()
+
+        self.assertEqual(doc.custom_action, "Try Again")
+
+    def test_action_and_reason_cleared_when_employee_reached(self):
+        """When the employee was reached, the retry Action and not-reached reason are reset."""
+        doc = frappe.new_doc("Leave Application")
+        doc.custom_could_the_employee_be_reached = "Yes"
+        doc.custom_action = "Try Again"
+        doc.custom_reason_employee_not_reached = "Called on 2026-07-10 10:00, no answer"
+
+        doc.set_action_on_unreachable()
+
+        self.assertIsNone(doc.custom_action)
+        self.assertIsNone(doc.custom_reason_employee_not_reached)

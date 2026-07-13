@@ -454,5 +454,10 @@ one_fm.patches.v15_0.add_asset_repair_requestor_fields
 one_fm.patches.v15_0.add_asset_movement_handover_workflow_and_assignment_rule
 one_fm.patches.v15_0.update_bonus_request_workflow #1
 one_fm.patches.v15_0.update_bonus_request_assignment_rules #3
+one_fm.patches.v15_0.add_attendance_correction_fields
+one_fm.patches.v15_0.add_leave_application_emergency_contact_field #1
+one_fm.patches.v15_0.process_task_for_manage_helpdesk_leave_assignments
+one_fm.patches.v15_0.add_attendance_check_action_user_to_hr_settings
+one_fm.patches.v15_0.add_leave_application_resumption_contact_fields #1
 
 one_fm.patches.v15_0.add_absence_investigation_hr_officer_to_hr_settings

@@ -10,6 +10,14 @@ def get_hr_settings_custom_fields():
                 "description": "User ID of current HR Manager."
             },
             {
+                "fieldname": "attendance_check_action_user",
+                "fieldtype": "Link",
+                "insert_after": "custom_hr_manager",
+                "label": "Attendance Check Action User",
+                "options": "User",
+                "description": "Default Action Owner. Auto-populated into the 'Assigned To' field of every auto-generated Attendance Check Action."
+            },
+            {
                 "fieldname": "payroll_notifications_email",
                 "fieldtype": "Data",
                 "insert_after": "unlink_payment_on_cancellation_of_employee_advance",
