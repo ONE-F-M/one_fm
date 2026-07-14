@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 from frappe.utils import getdate, add_days, date_diff, today
 import datetime
@@ -159,39 +160,59 @@ class EventStaff(Document):
 
 			day_schedules = schedules_by_date.get(current_date, [])
 
-			overlap_found = False
-			schedule_to_update = None
-
+			# Employee Schedules are keyed {date}_{employee}_{roster_type}, so a day can hold
+			# at most one Basic row and one Over-Time row. Identify this event's own previously
+			# created schedule (for idempotent re-processing) and the employee's base shift.
+			own_schedule = None
+			basic_schedule = None
 			for existing in day_schedules:
+				if existing.get("event_staff") == self.name:
+					own_schedule = existing
+				elif existing.roster_type == "Basic":
+					basic_schedule = existing
+
+			# Guard: a Basic Client Event must never overwrite the employee's real base shift.
+			# Sharing the {date}_{employee}_Basic key would replace it in place, so require Over-Time.
+			if self.roster_type == "Basic" and basic_schedule:
+				frappe.throw(_(
+					"{0} already has a Basic Employee Schedule ({1}) on {2}. A Client Event that "
+					"runs alongside the base shift must use Roster Type 'Over-Time', not 'Basic'."
+				).format(self.employee, basic_schedule.name, current_date))
+
+			# Guard: an Over-Time Client Event only makes sense on top of a base shift.
+			# Do not create a standalone Over-Time row when no Basic schedule exists that day.
+			if self.roster_type == "Over-Time" and not basic_schedule and not own_schedule:
+				frappe.throw(_(
+					"{0} has no Basic Employee Schedule on {1}. Roster the base shift before "
+					"assigning an Over-Time Client Event for that day."
+				).format(self.employee, current_date))
+
+			# Validate against time overlaps with other (different roster type) schedules.
+			for existing in day_schedules:
+				if own_schedule and existing.name == own_schedule.name:
+					continue
+				if existing.roster_type == self.roster_type:
+					continue
+
 				existing_start_dt = frappe.utils.get_datetime(existing.start_datetime) if existing.start_datetime else None
 				existing_end_dt = frappe.utils.get_datetime(existing.end_datetime) if existing.end_datetime else None
-				
-				is_overlapping = False
-				if existing_start_dt and existing_end_dt:
-					if existing_start_dt < new_end_dt and existing_end_dt > new_start_dt:
-						is_overlapping = True
-				else:
-					is_overlapping = True
 
-				if existing.roster_type == self.roster_type:
-					overlap_found = True
-					schedule_to_update = existing.name
-					break
-				elif is_overlapping:
-					if existing.roster_type == "Basic" and self.roster_type == "Over-Time":
-						frappe.throw(f"Validation Error: The designated Overtime Event Staff schedule overlaps with an existing Basic Employee Schedule ({existing.name}) for {self.employee}.")
-					else:
-						frappe.throw(f"Validation Error: The Event Staff schedule overlaps with an existing Employee Schedule ({existing.name}) for {self.employee}.")
+				# Only block on a proven time overlap; missing datetimes cannot prove a conflict.
+				if existing_start_dt and existing_end_dt and existing_start_dt < new_end_dt and existing_end_dt > new_start_dt:
+					frappe.throw(_(
+						"The Event Staff schedule overlaps with an existing Employee Schedule "
+						"({0}) for {1} on {2}."
+					).format(existing.name, self.employee, current_date))
 
-			if overlap_found and schedule_to_update:
-				schedule_doc = frappe.get_doc("Employee Schedule", schedule_to_update)
+			if own_schedule:
+				schedule_doc = frappe.get_doc("Employee Schedule", own_schedule.name)
 				schedule_doc.update(employee_schedule_data)
 				schedule_doc.save(ignore_permissions=True)
 			else:
 				new_schedule = frappe.new_doc("Employee Schedule")
 				new_schedule.update(employee_schedule_data)
 				new_schedule.insert(ignore_permissions=True)
-			frappe.msgprint(f"Employee Schedule for {current_date} processed.", alert=True)
+			frappe.msgprint(_("Employee Schedule for {0} processed.").format(current_date), alert=True)
 
 	def get_event_start_end_date_time(self, date=None):
 		start_time = frappe.utils.get_datetime(self.start_datetime).time()
@@ -416,5 +437,5 @@ def get_existing_schedules(employee=None, start_date=None, end_date=None, event_
 	return frappe.get_all(
 		"Employee Schedule",
 		filters=filters,
-		fields=["name", "date", "start_datetime", "end_datetime", "roster_type"]
+		fields=["name", "date", "start_datetime", "end_datetime", "roster_type", "event_staff"]
 	)
