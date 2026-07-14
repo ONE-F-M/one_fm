@@ -120,10 +120,12 @@ def create_roster_post_actions():
             JOIN `tabOperations Role` opr ON es.operations_role = opr.name
             JOIN `tabProject` pr ON opr.project = pr.name
             JOIN `tabEmployee` e ON es.employee = e.name
-            WHERE es.employee_availability = 'Working'
+            -- On-the-job Training employees are physically rostered on the post and appear
+            -- as filling it on the roster board, so they must count towards fill status here
+            -- too. Day Off / leave / suspended availabilities are still excluded.
+            WHERE es.employee_availability IN ('Working', 'On-the-job Training')
             AND e.status != 'Not Returned from Leave'
             AND es.date BETWEEN '{start_date}' AND '{end_date}'
-            AND (es.on_the_job_training IS NULL OR es.on_the_job_training = '')
             AND EXISTS (
                 SELECT 1
                 FROM `tabContracts` c
@@ -312,8 +314,10 @@ def get_overfilled_underfilled_posts():
     """, as_dict=1)
 
 
-    # Fetch employee schedules for employees who are working
-    employee_schedules = frappe.db.get_all("Employee Schedule", {'shift':['IN',shift_tuple],'date': ['between', (start_date, end_date)], 'employee_availability': 'Working'}, ["date", "shift", "operations_role"], order_by="date asc")
+    # Fetch employee schedules for employees on the post. On-the-job Training employees are
+    # rostered on the post and count as filling it (consistent with the roster board and the
+    # daily Roster Post Actions checker); Day Off / leave / suspended remain excluded.
+    employee_schedules = frappe.db.get_all("Employee Schedule", {'shift':['IN',shift_tuple],'date': ['between', (start_date, end_date)], 'employee_availability': ['in', ['Working', 'On-the-job Training']]}, ["date", "shift", "operations_role"], order_by="date asc")
     roles_not_filled = set()
     roles_over_filled_set = set()
     list_of_dict_of_operations_roles_not_filled = []

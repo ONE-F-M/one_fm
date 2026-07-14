@@ -141,6 +141,9 @@
 # 	def create_employee_schedule(self, employee, date):
 # 		frappe.get_doc({"doctype": "Employee Schedule", "employee": employee, "date": date, "shift": self.operations_shift.name, "operations_role": self.operations_role.name, "employee_availability": "Working", "site": self.operations_site.name}).insert(ignore_permissions=True)
 
+# 	def create_otj_employee_schedule(self, employee, date):
+# 		frappe.get_doc({"doctype": "Employee Schedule", "employee": employee, "date": date, "shift": self.operations_shift.name, "operations_role": self.operations_role.name, "employee_availability": "On-the-job Training", "site": self.operations_site.name}).insert(ignore_permissions=True)
+
 # 	def create_attendance(self, employee, date, status="On Leave"):
 # 		attendance = frappe.get_doc({"doctype": "Attendance", "employee": employee, "attendance_date": date, "status": status, "company": self.company}).insert(ignore_permissions=True)
 # 		attendance.submit()
@@ -250,6 +253,22 @@
 
 # 		roster_actions = frappe.get_all("Roster Post Actions", filters={"operations_role": self.operations_role.name, "operations_shift": self.operations_shift.name, "start_date": tomorrow})
 # 		self.assertEqual(len(roster_actions), 0, "No Roster Post Actions should be created when balanced")
+
+# 	def test_otj_employee_counted_as_filled(self):
+# 		"""Test 7: On-the-job Training employees DO count towards filling a post.
+# 		They are rostered on the post and shown as filling it on the roster board, so the
+# 		checker must count them and NOT raise a false 'not filled' action."""
+# 		tomorrow = add_days(getdate(), 1)
+# 		self.create_post_schedule(tomorrow, quantity=2)
+# 		active_emp2 = self.create_employee("Active Employee 2", "Active")
+# 		self.create_employee_schedule(self.active_employee.name, tomorrow)
+# 		self.create_otj_employee_schedule(active_emp2.name, tomorrow)
+# 		frappe.db.commit()
+
+# 		create_roster_post_actions()
+
+# 		roster_actions = frappe.get_all("Roster Post Actions", filters={"operations_role": self.operations_role.name, "operations_shift": self.operations_shift.name, "start_date": tomorrow})
+# 		self.assertEqual(len(roster_actions), 0, "No action expected: 2 posts filled by 1 Working + 1 On-the-job Training employee")
 
 # 	def tearDown(self):
 # 		frappe.db.rollback()
