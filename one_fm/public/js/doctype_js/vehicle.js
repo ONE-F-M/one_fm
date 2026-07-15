@@ -42,8 +42,75 @@ frappe.ui.form.on('Vehicle', {
 				freeze_message: "Fetching Vehicle Details..."
 	        });
 	    }
+	},
+	employee(frm) {
+		// A handover to a new custodian is logged the moment a new Employee is
+		// selected. The row snapshots the current odometer (one_fm_milage) into
+		// the hidden mileage_at_handover field. Clearing the Employee logs nothing.
+		if (!frm.doc.employee) {
+			return;
+		}
+		log_custodian_handover(frm);
+	},
+	custom_handover_date(frm) {
+		// Keep the active custodian row's handover date aligned with the form
+		// value if the date is set after the Employee was selected.
+		let active_row = get_active_custodian_row(frm);
+		if (active_row && active_row.employee_id === frm.doc.employee) {
+			active_row.handover_date = frm.doc.custom_handover_date;
+			frm.refresh_field("custom_vehicle_custodian_history");
+		}
+	},
+	one_fm_milage(frm) {
+		// The current mileage feeds the active custodian's covered distance.
+		calculate_custodian_mileage(frm);
 	}
 })
+
+var log_custodian_handover = function(frm) {
+	let row = frm.add_child("custom_vehicle_custodian_history", {
+		employee_id: frm.doc.employee,
+		handover_date: frm.doc.custom_handover_date,
+		mileage_at_handover: cint(frm.doc.one_fm_milage)
+	});
+
+	// Populate Employee Name immediately for display (also resolved on save via fetch_from).
+	if (frm.doc.employee) {
+		frappe.db.get_value("Employee", frm.doc.employee, "employee_name").then(r => {
+			if (r && r.message) {
+				row.employee_name = r.message.employee_name;
+				frm.refresh_field("custom_vehicle_custodian_history");
+			}
+		});
+	}
+
+	frm.refresh_field("custom_vehicle_custodian_history");
+	calculate_custodian_mileage(frm);
+};
+
+var get_active_custodian_row = function(frm) {
+	let rows = frm.doc.custom_vehicle_custodian_history || [];
+	return rows.length ? rows[rows.length - 1] : null;
+};
+
+var calculate_custodian_mileage = function(frm) {
+	// Past rows:  next row's mileage_at_handover - this row's mileage_at_handover.
+	// Active row: parent's current mileage (one_fm_milage) - this row's mileage_at_handover.
+	let rows = frm.doc.custom_vehicle_custodian_history || [];
+	let current_mileage = flt(frm.doc.one_fm_milage);
+
+	rows.forEach(function(row, index) {
+		let covered;
+		if (index < rows.length - 1) {
+			covered = flt(rows[index + 1].mileage_at_handover) - flt(row.mileage_at_handover);
+		} else {
+			covered = current_mileage - flt(row.mileage_at_handover);
+		}
+		row.mileage_covered = cint(covered);
+	});
+
+	frm.refresh_field("custom_vehicle_custodian_history");
+};
 
 var set_qr_code = function(frm) {
 	let qr_code_html = `{%if doc.name%}
