@@ -1,0 +1,202 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2026-07-15 21:52:42.831852",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_r1si",
+  "naming_series",
+  "section_break_ceau",
+  "source_doctype",
+  "column_break_qmjs",
+  "source_reference",
+  "section_break_bobr",
+  "from_date",
+  "departure_time",
+  "column_break_xbos",
+  "to_date",
+  "return_time",
+  "section_break_lylt",
+  "transportation_method",
+  "vehicle_retention",
+  "column_break_mxpm",
+  "destination_location",
+  "section_break_gtmp",
+  "transport_request_passenger",
+  "total_headcount",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_r1si",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "TRQ-.YYYY.-.MM.-.#####"
+  },
+  {
+   "fieldname": "section_break_ceau",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "source_doctype",
+   "fieldtype": "Link",
+   "label": "Source Doctype",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "column_break_qmjs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "source_reference",
+   "fieldtype": "Dynamic Link",
+   "label": "Source Reference",
+   "options": "source_doctype"
+  },
+  {
+   "fieldname": "section_break_bobr",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "label": "From Date"
+  },
+  {
+   "fieldname": "departure_time",
+   "fieldtype": "Time",
+   "label": "Departure Time"
+  },
+  {
+   "fieldname": "column_break_xbos",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "to_date",
+   "fieldtype": "Date",
+   "label": "To Date"
+  },
+  {
+   "fieldname": "return_time",
+   "fieldtype": "Time",
+   "label": "Return Time"
+  },
+  {
+   "fieldname": "section_break_lylt",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "Company Fleet",
+   "fieldname": "transportation_method",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Transportation Method",
+   "options": "\nCompany Fleet\nTaxi\nSubcontractor Rental\nPublic Transport\nPRO",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "vehicle_retention",
+   "fieldtype": "Check",
+   "label": "Vehicle Retention"
+  },
+  {
+   "fieldname": "column_break_mxpm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "destination_location",
+   "fieldtype": "Link",
+   "label": "Destination Location",
+   "options": "Location",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_gtmp",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "transport_request_passenger",
+   "fieldtype": "Table",
+   "label": "Trip Request Passenger",
+   "options": "Trip Request Passenger"
+  },
+  {
+   "fieldname": "total_headcount",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Total Headcount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Trip Request",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-07-15 21:54:08.071270",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Trip Request",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Fleet Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
