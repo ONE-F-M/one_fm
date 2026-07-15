@@ -132,7 +132,8 @@ doctype_js = {
     "Loan": "public/js/doctype_js/loan.js",
     "Quality Feedback": "public/js/doctype_js/quality_feedback.js",
     "Quality Feedback Template": "public/js/doctype_js/quality_feedback_template.js",
-    "Interview Round": "public/js/doctype_js/interview_round.js"
+    "Interview Round": "public/js/doctype_js/interview_round.js",
+    "HR Settings": "public/js/doctype_js/hr_settings.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
