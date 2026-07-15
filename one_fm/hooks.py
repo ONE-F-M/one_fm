@@ -300,7 +300,10 @@ doc_events = {
 	"Vehicle": {
 		"autoname": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.vehicle_autoname",
 		"after_insert": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.after_insert_vehicle",
-		"validate": "one_fm.overrides.vehicle.validate_vehicle_branding"
+		"validate": [
+			"one_fm.overrides.vehicle.validate_vehicle_branding",
+			"one_fm.overrides.vehicle.validate_custodian_history"
+		]
 	},
 	"Item Group": {
 		"autoname": "one_fm.utils.item_group_naming_series",
