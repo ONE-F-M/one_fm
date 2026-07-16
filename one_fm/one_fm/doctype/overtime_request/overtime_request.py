@@ -5,7 +5,7 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils import (
 	time_diff_in_hours, getdate, get_first_day, get_last_day,
-	flt, rounded, now_datetime, get_datetime
+	flt, rounded, now_datetime, get_datetime, add_days
 )
 from frappe import _
 from frappe.query_builder.functions import Sum
@@ -24,6 +24,7 @@ class OvertimeRequest(Document):
 		self.calculate_overtime_hours()
 		self.calculate_yearly_overtime_hours()
 		self.set_compensatory_day_off_eligibility()
+		self.validate_compensatory_day_off()
 		self.validate_yearly_overtime_limit()
 		self.validate_attendance_verification_timing()
 		self.validate_attendance_marked()
@@ -141,6 +142,35 @@ class OvertimeRequest(Document):
 		else:
 			self.eligible_for_compensatory_day_off = 0
 			self.compensatory_day_off = None
+
+	def validate_compensatory_day_off(self):
+		"""
+		Enforce the Compensatory Day Off rules when the request is eligible.
+
+		Only applies when eligible_for_compensatory_day_off is set (Overtime Type
+		is "Overtime on Public Holiday" and hours are 9 or more):
+		  1. The Compensatory Day Off date is required.
+		  2. It must fall within 7 days of the overtime date, i.e. between the
+			 overtime date and the overtime date + 7 days (inclusive).
+		"""
+		if not self.eligible_for_compensatory_day_off:
+			return
+
+		if not self.compensatory_day_off:
+			frappe.throw(
+				_("Compensatory Day Off date are required when Overtime Type is "
+				  "'Overtime on Public Holiday' and hours is or exceed 9.")
+			)
+
+		overtime_date = getdate(self.date)
+		window_end = add_days(overtime_date, 7)
+		comp_off = getdate(self.compensatory_day_off)
+
+		if comp_off < overtime_date or comp_off > window_end:
+			frappe.throw(
+				_("Compensatory Day Off date must be within 7 days of the overtime "
+				  "date ({0} to {1}).").format(overtime_date, window_end)
+			)
 
 	def validate_yearly_overtime_limit(self):
 		"""
