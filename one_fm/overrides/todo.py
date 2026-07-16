@@ -166,8 +166,14 @@ def create_google_task_on_todo_creation_in_erp(doc, trigger_method):
             "due": due_date
         }
         result = service.tasks().insert(tasklist="@default", body=task_body).execute()
-        doc.custom_google_task_id = result["id"]
-        doc.save()
+        # Reload to avoid TimestampMismatchError: the ToDo row may have been
+        # modified (e.g. by the assignment rule) after this doc was enqueued.
+        if not frappe.db.exists("ToDo", doc.name):
+            return
+        doc.reload()
+        # db_set writes only this column, skips the modified-timestamp check,
+        # and does not re-fire on_update (which would re-enqueue this job).
+        doc.db_set("custom_google_task_id", result["id"], update_modified=False)
         return result
     except Exception as e:
         title = f"Error while creating Google Task from ToDo for {employee_email}"
