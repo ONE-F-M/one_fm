@@ -1,0 +1,26 @@
+<p>{{ _("Dear {0},").format(requested_by) }}</p>
+
+<p>{{ _("Please be advised that a Purchase Receipt has been successfully submitted for your Request for Material (RFM) {0}. All requested items have now arrived at the warehouse.").format(rfm_name) }}</p>
+
+<p>{{ _("Here are the details of the received items:") }}</p>
+
+<table class="table table-bordered table-sm">
+    <thead>
+        <tr>
+            <th>{{ _("Item Name") }}</th>
+            <th>{{ _("Received Quantity") }}</th>
+            <th>{{ _("Warehouse") }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        <tr>
+            <td>{{ item.item_name or "" }}</td>
+            <td>{{ item.received_qty }}</td>
+            <td>{{ item.warehouse or "" }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<p>{{ _("You can view the full Purchase Receipt record here:") }} <a href="{{ pr_link }}">{{ pr_name }}</a></p>
