@@ -165,3 +165,55 @@ class TestOvertimeRequest(FrappeTestCase):
 		)
 		# Should not raise
 		doc.validate_compensatory_day_off()
+
+	# --- Compensatory Leave Request auto-creation guards ---
+	# These exercise the early-return guards in create_compensatory_leave_request
+	# without touching the database. The DB reuse/create path is covered by the
+	# workflow integration behaviour.
+
+	def _clr_doc(self, **kwargs):
+		"""Build an eligible, Completed, Present request ready for CLR creation."""
+		defaults = dict(
+			date="2026-07-13",
+			workflow_state="Completed",
+			eligible_for_compensatory_day_off=1,
+			present=1,
+			compensatory_day_off="2026-07-16",
+			compensatory_leave_request=None,
+		)
+		defaults.update(kwargs)
+		doc = self._make_doc("Overtime on Public Holiday", 10, **defaults)
+		# has_value_changed reads from the loaded (_doc_before_save) snapshot;
+		# a brand-new in-memory doc reports every field as changed, which is
+		# what we want for these guard tests.
+		return doc
+
+	def test_clr_skipped_when_not_completed(self):
+		# Not in Completed state -> no CLR attempt, link stays empty
+		doc = self._clr_doc(workflow_state="Pending Finance Manager")
+		doc.create_compensatory_leave_request()
+		self.assertFalse(doc.compensatory_leave_request)
+
+	def test_clr_skipped_when_not_eligible(self):
+		# Completed but not eligible -> no CLR
+		doc = self._clr_doc(eligible_for_compensatory_day_off=0)
+		doc.create_compensatory_leave_request()
+		self.assertFalse(doc.compensatory_leave_request)
+
+	def test_clr_skipped_when_absent(self):
+		# Completed + eligible but employee was Absent -> no comp leave
+		doc = self._clr_doc(present=0, absent=1)
+		doc.create_compensatory_leave_request()
+		self.assertFalse(doc.compensatory_leave_request)
+
+	def test_clr_skipped_when_no_day_off_date(self):
+		# Completed + eligible + present but no Compensatory Day Off date -> skip
+		doc = self._clr_doc(compensatory_day_off=None)
+		doc.create_compensatory_leave_request()
+		self.assertFalse(doc.compensatory_leave_request)
+
+	def test_clr_skipped_when_already_linked(self):
+		# Already linked -> no duplicate work
+		doc = self._clr_doc(compensatory_leave_request="HR-CMP-EXISTING")
+		doc.create_compensatory_leave_request()
+		self.assertEqual(doc.compensatory_leave_request, "HR-CMP-EXISTING")

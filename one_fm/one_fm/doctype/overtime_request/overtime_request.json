@@ -26,6 +26,7 @@
   "absent",
   "compensatory_day_off_section",
   "compensatory_day_off",
+  "compensatory_leave_request",
   "section_break_dqth",
   "amended_from",
   "naming_series"
@@ -172,6 +173,16 @@
    "fieldname": "compensatory_day_off",
    "fieldtype": "Date",
    "label": "Compensatory Day Off"
+  },
+  {
+   "depends_on": "eval:doc.eligible_for_compensatory_day_off",
+   "description": "Auto-populated with the Compensatory Leave Request created when this Overtime Request is Completed.",
+   "fieldname": "compensatory_leave_request",
+   "fieldtype": "Link",
+   "label": "Compensatory Leave Request",
+   "no_copy": 1,
+   "options": "Compensatory Leave Request",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_dqth",
