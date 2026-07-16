@@ -27,7 +27,7 @@ import frappe
 from frappe import _
 
 DEFAULT_SENDER = "notifications@one-fm.com"
-DEFAULT_RECIPIENT = "ampforemail.whitelisting@gmail.com"
+DEFAULT_RECIPIENT = "ampverification@yahoo.com"
 
 
 def send_amp_verification_email(
