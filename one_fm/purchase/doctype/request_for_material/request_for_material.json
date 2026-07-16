@@ -325,6 +325,7 @@
    "ignore_user_permissions": 1,
    "in_standard_filter": 1,
    "label": "Employee",
+   "mandatory_depends_on": "eval: doc.type == 'Individual' || doc.type == 'Department'",
    "options": "Employee"
   },
   {
@@ -580,7 +581,7 @@
    "link_fieldname": "linked_rfm"
   }
  ],
- "modified": "2026-05-11 12:14:13.557378",
+ "modified": "2026-07-16 19:53:14.233832",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material",
