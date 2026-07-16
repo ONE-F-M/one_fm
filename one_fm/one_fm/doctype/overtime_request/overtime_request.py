@@ -23,6 +23,7 @@ class OvertimeRequest(Document):
 		self.validate_leave_overlap()
 		self.calculate_overtime_hours()
 		self.calculate_yearly_overtime_hours()
+		self.set_compensatory_day_off_eligibility()
 		self.validate_yearly_overtime_limit()
 		self.validate_attendance_verification_timing()
 		self.validate_attendance_marked()
@@ -123,6 +124,23 @@ class OvertimeRequest(Document):
 
 		past_hours = flt(result[0].total_hours) if result else 0.0
 		self.yearly_overtime_hours = flt(past_hours + flt(self.overtime_hours), 2)
+
+	def set_compensatory_day_off_eligibility(self):
+		"""
+		Detect eligibility for a compensatory day off.
+
+		Eligible only when the Overtime Type is "Overtime on Public Holiday"
+		AND the overtime hours for this request are 9 or more. In every other
+		case the flag resets to 0 and the selected Compensatory Day Off clears.
+		"""
+		if (
+			self.overtime_type == "Overtime on Public Holiday"
+			and flt(self.overtime_hours) >= 9
+		):
+			self.eligible_for_compensatory_day_off = 1
+		else:
+			self.eligible_for_compensatory_day_off = 0
+			self.compensatory_day_off = None
 
 	def validate_yearly_overtime_limit(self):
 		"""

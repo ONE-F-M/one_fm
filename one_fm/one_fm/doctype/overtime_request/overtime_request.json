@@ -17,12 +17,15 @@
   "end_time",
   "overtime_hours",
   "yearly_overtime_hours",
+  "eligible_for_compensatory_day_off",
   "column_break_iagh",
   "requested_by",
   "reports_to",
   "reports_to_user",
   "present",
   "absent",
+  "compensatory_day_off_section",
+  "compensatory_day_off",
   "section_break_dqth",
   "amended_from",
   "naming_series"
@@ -105,6 +108,14 @@
    "read_only": 1
   },
   {
+   "default": "0",
+   "description": "Automatically set when Overtime Type is \"Overtime on Public Holiday\" and Overtime Hours are 9 or more.",
+   "fieldname": "eligible_for_compensatory_day_off",
+   "fieldtype": "Check",
+   "label": "Eligible for Compensatory Day Off",
+   "read_only": 1
+  },
+  {
    "fieldname": "column_break_iagh",
    "fieldtype": "Column Break"
   },
@@ -144,6 +155,19 @@
    "fieldname": "absent",
    "fieldtype": "Check",
    "label": "Absent"
+  },
+  {
+   "depends_on": "eval:doc.eligible_for_compensatory_day_off",
+   "fieldname": "compensatory_day_off_section",
+   "fieldtype": "Section Break",
+   "label": "Compensatory Day Off"
+  },
+  {
+   "depends_on": "eval:doc.eligible_for_compensatory_day_off",
+   "description": "Day the employee will take off in compensation for the public holiday overtime.",
+   "fieldname": "compensatory_day_off",
+   "fieldtype": "Date",
+   "label": "Compensatory Day Off"
   },
   {
    "fieldname": "section_break_dqth",
