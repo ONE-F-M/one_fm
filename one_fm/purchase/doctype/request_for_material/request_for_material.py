@@ -16,7 +16,7 @@ from frappe.utils.user import get_users_with_role
 from frappe.permissions import has_permission
 from erpnext.controllers.buying_controller import BuyingController
 from one_fm.purchase.doctype.item_reservation.item_reservation import get_item_balance
-from one_fm.utils import get_approver_user
+from one_fm.utils import get_approver_user, get_employee_site_supervisor
 from one_fm.processor import sendemail
 from one_fm.api.doc_events import get_employee_user_id
 from one_fm.utils import get_users_with_role_permitted_to_doctype
@@ -192,6 +192,10 @@ class RequestforMaterial(BuyingController):
                         return
             elif self.type in ['Individual', 'Department'] and self.employee:
                 approver = frappe.db.get_value('Employee', self.employee, 'reports_to')
+                if not approver:
+                    # No Reports To set: fall back to the Site Supervisor of the
+                    # employee's Allocated Site (Employee.site -> Operations Site.site_supervisor)
+                    approver = get_employee_site_supervisor(self.employee)
             elif self.type == 'Onboarding':
                 employee = frappe.db.exists("Employee", {'user_id': self.owner})
                 if employee:
