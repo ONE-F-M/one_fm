@@ -1,0 +1,170 @@
+{
+ "actions": [],
+ "allow_import": 0,
+ "allow_rename": 0,
+ "autoname": "format:DOC-REQ-{#####}",
+ "creation": "2026-07-15 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "requester",
+  "requester_user",
+  "column_break_request",
+  "request_action",
+  "document_type",
+  "title",
+  "requirement_text",
+  "reference_document",
+  "section_break_approval",
+  "approver",
+  "approver_user",
+  "column_break_status",
+  "status",
+  "bpmn_instance"
+ ],
+ "fields": [
+  {
+   "fieldname": "requester",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Requester",
+   "options": "Employee",
+   "reqd": 1,
+   "description": "The employee raising this documentation request."
+  },
+  {
+   "fieldname": "requester_user",
+   "fieldtype": "Link",
+   "fetch_from": "requester.user_id",
+   "label": "Requester User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_request",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "request_action",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Action",
+   "options": "Create\nUpdate\nDelete",
+   "default": "Create",
+   "reqd": 1,
+   "description": "Create a new document, revise the content of an existing one, or remove an existing one from Drive."
+  },
+  {
+   "fieldname": "document_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Document Type",
+   "options": "Policy\nSOP\nGuideline\nManual\nAI Knowledge Document",
+   "reqd": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "mandatory_depends_on": "eval:doc.request_action != 'Delete'",
+   "description": "Proposed title for the document being requested."
+  },
+  {
+   "fieldname": "requirement_text",
+   "fieldtype": "Small Text",
+   "label": "Requirement",
+   "mandatory_depends_on": "eval:doc.request_action != 'Delete'",
+   "description": "What's needed and why — this becomes the AI drafting requirement in Processa."
+  },
+  {
+   "fieldname": "reference_document",
+   "fieldtype": "Link",
+   "label": "Existing Document",
+   "options": "AI Reference Index",
+   "depends_on": "eval:doc.request_action != 'Create'",
+   "mandatory_depends_on": "eval:doc.request_action != 'Create'",
+   "description": "The existing published document (from the AI Reference Index catalog) being updated or deleted."
+  },
+  {
+   "fieldname": "section_break_approval",
+   "fieldtype": "Section Break",
+   "label": "Approval"
+  },
+  {
+   "fieldname": "approver",
+   "fieldtype": "Link",
+   "fetch_from": "requester.reports_to",
+   "in_list_view": 1,
+   "label": "Approver",
+   "options": "Employee",
+   "read_only": 1,
+   "description": "Always the requester's line manager (Employee > Reports To) — not chosen manually."
+  },
+  {
+   "fieldname": "approver_user",
+   "fieldtype": "Link",
+   "fetch_from": "approver.user_id",
+   "label": "Approver User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Pending Request Approval\nRequest Rejected\nDrafting\nPending Content Approval\nContent Rejected\nApproved\nPublished\nDeleted",
+   "default": "Pending Request Approval",
+   "read_only": 1
+  },
+  {
+   "fieldname": "bpmn_instance",
+   "fieldtype": "Link",
+   "label": "BPMN Process Instance",
+   "options": "BPMN Process Instance",
+   "read_only": 1,
+   "description": "The Processa instance running this request through Creation → Review → Approval → Publish."
+  }
+ ],
+ "links": [],
+ "modified": "2026-07-15 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Document Request",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Employee",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "title",
+ "track_changes": 1
+}
