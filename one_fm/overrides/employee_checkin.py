@@ -3,7 +3,7 @@ import random
 from dateutil.parser import parse
 import frappe
 from frappe import _
-from frappe.utils import cint, get_datetime, cstr, getdate, now_datetime, add_days, now, today
+from frappe.utils import cint, flt, get_datetime, cstr, getdate, now_datetime, add_days, now, today
 from hrms.hr.doctype.employee_checkin.employee_checkin import *
 from one_fm.utils import get_current_shift
 from one_fm.api.tasks import send_notification, issue_penalty
@@ -19,6 +19,22 @@ perm_map = {
 	"IN" : "Arrive Late",
 	"OUT": "Leave Early"
 }
+
+
+def parse_coordinates(device_id):
+	"""Return (latitude, longitude) parsed from a "latitude,longitude" string, or
+	None if the value is not a valid coordinate pair."""
+	parts = cstr(device_id).split(",")
+	if len(parts) != 2:
+		return None
+
+	try:
+		latitude = float(parts[0].strip())
+		longitude = float(parts[1].strip())
+	except (ValueError, TypeError):
+		return None
+
+	return latitude, longitude
 
 
 class EmployeeCheckinOverride(EmployeeCheckin):
@@ -73,10 +89,32 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 		except Exception as e:
 			frappe.throw(frappe.get_traceback())
 
+		# Mobile App checkins store their GPS as a "latitude,longitude" string in
+		# device_id but leave the latitude/longitude float fields at 0, so populate
+		# them from device_id before building the map point.
+		self.set_coordinates_from_device_id()
+
 		# HRMS builds the geolocation map point from latitude/longitude during its
 		# own validate(). This override replaces validate() without calling super(),
 		# so we must trigger it here or the Geolocation field is never populated.
 		self.set_geolocation()
+
+	def set_coordinates_from_device_id(self):
+		"""Backfill latitude/longitude from the "latitude,longitude" string stored
+		in device_id by Mobile App checkins.
+
+		Only runs when latitude is still unset (0/None), so a checkin whose
+		coordinates were already set (e.g. via "Fetch Geolocation") is left
+		untouched. A device_id that is not a valid coordinate pair is ignored.
+		"""
+		if flt(self.latitude) or not self.device_id:
+			return
+
+		coordinates = parse_coordinates(self.device_id)
+		if not coordinates:
+			return
+
+		self.latitude, self.longitude = coordinates
 
 
 	def validate_duplicate_log(self):
