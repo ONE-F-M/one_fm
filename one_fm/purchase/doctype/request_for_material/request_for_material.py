@@ -557,6 +557,85 @@ def update_completed_purchase_qty(purchase_order, method):
                             frappe.InvalidStatusError)
 
                     mr_obj.update_purchased_qty(mr_item_rows)
+def notify_requester_on_full_receipt(doc, method):
+    """Email the RFM's "Requested By" user when a submitted Purchase Receipt completes
+    the linked Request for Material.
+
+    Hooked on Purchase Receipt on_submit only (never cancel / update_after_submit) so the
+    email fires strictly upon submission. Runs after ``update_received_qty`` so each RFM
+    item row already carries its aggregated ``received_qty``.
+
+    All of the following must hold to send:
+    - The PR is linked to an RFM (via ``custom_request_for_material`` or resolved through the PO).
+    - The RFM ``purpose`` is "Purchase" or "Sample Purchase".
+    - Every receivable RFM item row (has ``item_code`` and ``reject_item`` = 0) is fully
+      received, i.e. the computed pending quantity (``qty`` - ``received_qty``) is 0.
+
+    Sent once per RFM, guarded by the ``full_receipt_notified`` flag to avoid duplicate
+    emails on over-receipt or subsequent Purchase Receipts.
+    """
+    rfm_name = getattr(doc, "custom_request_for_material", None)
+    if not rfm_name:
+        rfm_name = get_rfm_in_purchase_receipt(doc)
+
+    if not rfm_name or not frappe.db.exists("Request for Material", rfm_name):
+        return
+
+    rfm = frappe.get_doc("Request for Material", rfm_name)
+
+    if rfm.purpose not in ("Purchase", "Sample Purchase"):
+        return
+
+    # Guard: only notify once, even if further Purchase Receipts are submitted later.
+    if rfm.get("full_receipt_notified"):
+        return
+
+    if not rfm.requested_by:
+        return
+
+    # Only rows that can actually be received via a Purchase Receipt count: those with an
+    # Item Code that are not rejected. Non-item / rejected rows never receive and must not
+    # permanently block the notification.
+    receivable_items = [d for d in rfm.items if d.item_code and not d.reject_item]
+    if not receivable_items:
+        return
+
+    # Pending Quantity == 0 for every receivable row (qty fully received).
+    fully_received = all(flt(d.qty) - flt(d.received_qty) <= 0 for d in receivable_items)
+    if not fully_received:
+        return
+
+    subject = _("Items Arrived: Purchase Receipt Submitted for RFM {0}").format(rfm.name)
+    message = build_full_receipt_email(rfm, receivable_items, doc)
+
+    send_email(rfm, [rfm.requested_by], message, subject)
+    rfm.db_set("full_receipt_notified", 1)
+
+
+def build_full_receipt_email(rfm, items, purchase_receipt):
+    """Render the HTML email body from the ``rfm_full_receipt_notification`` template:
+    salutation, intro, an item table (Item Name, Received Quantity, Warehouse) and a link
+    to the submitted Purchase Receipt. Table format follows the Frappe assignment-rule
+    notification standard; only Frappe/Bootstrap CSS classes are used (no inline styles)."""
+    return frappe.render_template(
+        "one_fm/templates/emails/rfm_full_receipt_notification.html",
+        context={
+            "requested_by": get_fullname(rfm.requested_by),
+            "rfm_name": rfm.name,
+            "items": [
+                {
+                    "item_name": d.item_name or d.requested_item_name or d.item_code,
+                    "received_qty": flt(d.received_qty),
+                    "warehouse": d.warehouse,
+                }
+                for d in items
+            ],
+            "pr_link": get_url(purchase_receipt.get_url()),
+            "pr_name": purchase_receipt.name,
+        },
+    )
+
+
 def send_email(doc, recipients, message, subject):
     try:
         sendemail(
