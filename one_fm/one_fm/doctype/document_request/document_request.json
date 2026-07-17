@@ -61,7 +61,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Document Type",
-   "options": "Policy\nSOP\nGuideline\nManual\nAI Knowledge Document",
+   "options": "Policy\nSOP\nGuideline\nManual",
    "reqd": 1
   },
   {
