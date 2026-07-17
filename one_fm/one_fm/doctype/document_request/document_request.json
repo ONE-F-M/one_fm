@@ -15,6 +15,7 @@
   "document_type",
   "title",
   "requirement_text",
+  "source_guideline",
   "reference_document",
   "section_break_approval",
   "approver",
@@ -77,6 +78,14 @@
    "label": "Requirement",
    "mandatory_depends_on": "eval:doc.request_action != 'Delete'",
    "description": "What's needed and why — this becomes the AI drafting requirement in Processa."
+  },
+  {
+   "fieldname": "source_guideline",
+   "fieldtype": "Link",
+   "label": "Source Guideline",
+   "options": "AI Reference Index",
+   "mandatory_depends_on": "eval:doc.request_action == 'Create'",
+   "description": "The existing guideline document (already cataloged in AI Reference Index) this document should be generated from. Its real content is extracted and given to the AI — the AI does not invent the guideline itself."
   },
   {
    "fieldname": "reference_document",
