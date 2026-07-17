@@ -193,11 +193,11 @@ class CreateMap:
 	def schedule_query(self):
 		# SQL to fetch all schedule records for selected employees and date range
 		return f"""
-			SELECT es.employee, es.employee_name, es.date, es.operations_role, es.post_abbrv, 
-				es.shift, es.start_datetime, es.end_datetime, es.roster_type, es.employee_availability, 
+			SELECT es.employee, es.employee_name, es.date, es.operations_role, es.post_abbrv,
+				es.shift, es.start_datetime, es.end_datetime, es.roster_type, es.employee_availability,
 				es.day_off_ot, es.project, es.site, emp.project as actual_project,
 				emp.site as actual_site, emp.shift as actual_shift, es.event_location, es.client_event,
-				es.on_the_job_training
+				es.on_the_job_training, es.is_rambo_schedule
 			FROM `tabEmployee Schedule` es 
 			JOIN `tabEmployee` emp
 			ON es.employee = emp.name
@@ -224,7 +224,8 @@ class CreateMap:
 	def employee_query(self):
 		# SQL to fetch employee metadata for selected employees
 		return f"""
-			SELECT name, employee_id, relieving_date, employee_name, day_off_category, number_of_days_off 
+			SELECT name, employee_id, relieving_date, employee_name, day_off_category, number_of_days_off,
+				custom_is_rambo_reliever
 			FROM `tabEmployee`
 			WHERE name IN {self.employees}
 			AND shift_working = '1'
@@ -370,7 +371,13 @@ class CreateMap:
 						'client_event': matched_schedule.get('client_event'),
 						'post_abbrv': matched_schedule.get('post_abbrv'),
 						'day_off_ot': attendance['day_off_ot'],
-						'actual_shift': attendance.get('actual_shift')
+						'actual_shift': attendance.get('actual_shift'),
+						# Rambo flags + site/project carried from the matched schedule so a rambo
+						# day still resolves as "active for this grid" once attendance is filed.
+						'site': matched_schedule.get('site'),
+						'project': matched_schedule.get('project'),
+						'is_rambo_schedule': matched_schedule.get('is_rambo_schedule'),
+						'custom_is_rambo_reliever': self.employee_period_details[employee_id].get('custom_is_rambo_reliever')
 					})
 					daily_records.append(attendance_entry)
 					
@@ -390,7 +397,9 @@ class CreateMap:
 						'date': day_row['date'],
 						'relieving_date': self.employee_period_details[employee_id]['relieving_date'],
 						'day_off_category': self.employee_period_details[employee_id]['day_off_category'],
-						'number_of_days_off': self.employee_period_details[employee_id]['number_of_days_off']
+						'number_of_days_off': self.employee_period_details[employee_id]['number_of_days_off'],
+						'is_rambo_schedule': 0,
+						'custom_is_rambo_reliever': self.employee_period_details[employee_id].get('custom_is_rambo_reliever')
 					})
 					self.formated_rs[employee_name][day_row['date']] = [blank_record]
 				else:
