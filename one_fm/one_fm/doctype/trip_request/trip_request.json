@@ -112,10 +112,10 @@
    "fieldtype": "Column Break"
   },
   {
+   "description": "Auto-filled from the selected Source Reference when it carries a location; otherwise enter it manually.",
    "fieldname": "destination_location",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Destination Location",
-   "options": "Location",
    "reqd": 1
   },
   {
@@ -150,7 +150,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-15 21:54:08.071270",
+ "modified": "2026-07-18 20:36:09.355972",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Trip Request",

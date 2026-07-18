@@ -4,23 +4,14 @@
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
+from one_fm.one_fm.doctype.trip_request.trip_request import resolve_destination_location
 from one_fm.tests.utils import make_employee
 
 
 class TestTripRequest(FrappeTestCase):
 	def setUp(self):
-		# Ensure a test Location exists for the mandatory destination field
-		if not frappe.db.exists("Location", "Test Location"):
-			loc = frappe.get_doc({
-				"doctype": "Location",
-				"location_name": "Test Location",
-				"latitude": 29.3759,
-				"longitude": 47.9774,
-				"geofence_radius": 100,
-			}).insert(ignore_permissions=True)
-			self.location = loc.name
-		else:
-			self.location = "Test Location"
+		# Destination Location is free text (copied from the source document).
+		self.location = "Office A, Kuwait City"
 
 		# Create a pool of test employees to use as passengers
 		self.employees = [
@@ -72,3 +63,23 @@ class TestTripRequest(FrappeTestCase):
 		"""An empty passenger list must block the save (validate hook)."""
 		doc = self.make_trip_request(0)
 		self.assertRaises(frappe.ValidationError, doc.insert, ignore_permissions=True)
+
+	def test_resolver_returns_none_for_unmapped_source(self):
+		"""AC2: a source doctype with no location mapping (e.g. Client Interview
+		Shortlist) resolves to no destination, leaving the field empty."""
+		self.assertIsNone(
+			resolve_destination_location("Client Interview Shortlist", "any-name")
+		)
+
+	def test_resolver_returns_none_without_source(self):
+		"""No source selected → nothing to resolve."""
+		self.assertIsNone(resolve_destination_location(None, None))
+
+	def test_validate_does_not_overwrite_existing_destination(self):
+		"""A destination already entered by the dispatcher is preserved."""
+		doc = self.make_trip_request(1)
+		doc.source_doctype = "Fingerprint Appointment"
+		doc.destination_location = "Manually Entered Destination"
+		doc.insert(ignore_permissions=True)
+
+		self.assertEqual(doc.destination_location, "Manually Entered Destination")
