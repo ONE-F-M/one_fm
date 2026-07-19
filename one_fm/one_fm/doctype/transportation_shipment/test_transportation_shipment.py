@@ -139,3 +139,73 @@ class TestShipmentGenerator(FrappeTestCase):
 		_attach_return_rosters([morning, evening])
 		# Evening outbound starts when morning ends -> return riders are the morning crew.
 		self.assertEqual([e["id"] for e in evening["return_employees"]], ["M1"])
+
+
+class TestTripRequestSplit(FrappeTestCase):
+	"""MA 5 - 4: fragment a multi-camp Trip Request into per-camp demand cards."""
+
+	def _make_trip_request(self, camp_headcounts):
+		"""Build an in-memory Trip Request with passengers spread across camps.
+
+		camp_headcounts: {camp_name: headcount}. Not inserted — used to exercise
+		the pure clustering logic without provisioning Accommodation/Employee.
+		"""
+		doc = frappe.new_doc("Trip Request")
+		for camp, count in camp_headcounts.items():
+			for i in range(count):
+				doc.append("transport_request_passenger", {
+					"employee_id": f"{camp}-EMP-{i}",
+					"employee_name": f"{camp} Worker {i}",
+					"accommodation_camp": camp,
+				})
+		return doc
+
+	def test_group_passengers_clusters_strictly_by_camp(self):
+		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import (
+			_group_passengers_by_camp,
+		)
+
+		# 3 workers from Mahboula, 2 from Mangaf (the acceptance-criteria example).
+		trq = self._make_trip_request({"Mahboula Camp": 3, "Mangaf Camp": 2})
+		groups = _group_passengers_by_camp(trq)
+
+		self.assertEqual(set(groups.keys()), {"Mahboula Camp", "Mangaf Camp"})
+		self.assertEqual(len(groups["Mahboula Camp"]), 3)
+		self.assertEqual(len(groups["Mangaf Camp"]), 2)
+
+	def test_group_passengers_skips_rows_without_camp(self):
+		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import (
+			_group_passengers_by_camp,
+		)
+
+		trq = self._make_trip_request({"Mahboula Camp": 2})
+		# A passenger with no camp has no physical origin to cluster on.
+		trq.append("transport_request_passenger", {"employee_id": "NO-CAMP", "employee_name": "X"})
+		groups = _group_passengers_by_camp(trq)
+
+		self.assertEqual(list(groups.keys()), ["Mahboula Camp"])
+		self.assertEqual(len(groups["Mahboula Camp"]), 2)
+
+	def test_generation_key_pairs_directions_per_camp(self):
+		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import (
+			_trip_request_generation_key,
+		)
+
+		out_key, out_pair = _trip_request_generation_key("TRQ-001", "Mahboula Camp", "Outward")
+		ret_key, ret_pair = _trip_request_generation_key("TRQ-001", "Mahboula Camp", "Return")
+
+		self.assertTrue(out_key.startswith("TRQ|"))
+		self.assertTrue(out_key.endswith("|Outward"))
+		self.assertTrue(ret_key.endswith("|Return"))
+		# Outward and Return of the same camp share a pair group but not a key.
+		self.assertEqual(out_pair, ret_pair)
+		self.assertNotEqual(out_key, ret_key)
+
+	def test_different_camps_get_distinct_pair_groups(self):
+		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import (
+			_trip_request_generation_key,
+		)
+
+		_, mahboula_pair = _trip_request_generation_key("TRQ-001", "Mahboula Camp", "Outward")
+		_, mangaf_pair = _trip_request_generation_key("TRQ-001", "Mangaf Camp", "Outward")
+		self.assertNotEqual(mahboula_pair, mangaf_pair)

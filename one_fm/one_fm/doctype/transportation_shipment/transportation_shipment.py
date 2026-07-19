@@ -34,12 +34,26 @@ class TransportationShipment(Document):
 		# for ad-hoc Trip Request journeys, so clear any stale value.
 		self.operations_site = None
 
-		# Default the header Stop Location to the Trip Request destination if the
-		# dispatcher has not chosen one explicitly.
-		if not self.stop_location and self.source_docname:
-			self.stop_location = frappe.db.get_value(
-				TRIP_REQUEST, self.source_docname, "destination_location"
+		# Default the header Stop Location and the duration/time window from the
+		# source Trip Request when the dispatcher has not set them explicitly.
+		if self.source_docname:
+			trq = frappe.db.get_value(
+				TRIP_REQUEST,
+				self.source_docname,
+				["destination_location", "from_date", "to_date", "departure_time", "return_time"],
+				as_dict=True,
 			)
+			if trq:
+				if not self.stop_location:
+					self.stop_location = trq.destination_location
+				if not self.from_date:
+					self.from_date = trq.from_date
+				if not self.to_date:
+					self.to_date = trq.to_date
+				if not self.start_time:
+					self.start_time = trq.departure_time
+				if not self.end_time:
+					self.end_time = trq.return_time
 
 		if not self.stop_location:
 			frappe.throw(
