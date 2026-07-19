@@ -1316,6 +1316,10 @@ function render_roster(res, page) {
 
 		if (applied_filter) actual_filter += applied_filter;
 
+		// Rambo reliever: a fallback standby employee. On a site/shift/project grid, days with an
+		// active Rambo allocation matching THIS grid render normally; every other day shows "NR".
+		let employee_is_rambo_reliever = Number(first_day_records[0]["custom_is_rambo_reliever"]) === 1;
+
 		if (page.filters.operations_role) { filter_assignment = `Role: ${page.filters.operations_role}`; }
 		else if (page.filters.shift) { filter_assignment = `Shift: ${first_day_records[0][actual_filter] || page.filters.shift}`; }
 		else if (page.filters.site) { filter_assignment = `Site: ${first_day_records[0][actual_filter] || page.filters.site}`; }
@@ -1384,6 +1388,21 @@ function render_roster(res, page) {
 
 			let is_relieved_this_day = employee_relieving_date && current_day_iter.isAfter(employee_relieving_date);
 			is_not_relieving_day = false;
+
+			// A Rambo reliever's day is "active" only when it carries an Employee Schedule with
+			// Is Rambo Schedule checked AND that schedule matches the grid being viewed (shift/site/project).
+			let is_rambo_active_day = false;
+			if (employee_is_rambo_reliever && applied_filter && employees_data[employee_key][date_key]) {
+				for (let r = 0; r < employees_data[employee_key][date_key].length; r++) {
+					let rambo_rec = employees_data[employee_key][date_key][r];
+					if (Number(rambo_rec.is_rambo_schedule) === 1 &&
+						rambo_rec[applied_filter] &&
+						page.filters[applied_filter] === rambo_rec[applied_filter]) {
+						is_rambo_active_day = true;
+						break;
+					}
+				}
+			}
 
 			if (employees_data[employee_key][date_key] && employees_data[employee_key][date_key].length > 0) {
 				for (let k = 0; k < employees_data[employee_key][date_key].length; k++) {
@@ -1583,7 +1602,25 @@ function render_roster(res, page) {
 
 			todayClass = isToday ? "todayclass" : "";
 
-			if (is_relieved_this_day) {
+			// On an active Rambo day the reliever is deployed away from home, so the cell must use the
+			// "(Different)" accent (Basic/Over-Time/Present Different) regardless of the same/diff filter match.
+			if (is_rambo_active_day && bgclass) {
+				bgclass = bgclass
+					.replace(/samebasic/g, "diffbasic")
+					.replace(/sameot/g, "diffot")
+					.replace(/samedayoffot/g, "diffdayoffot")
+					.replace(/presentbasic/g, "presentdifferent");
+			}
+
+			if (employee_is_rambo_reliever && applied_filter && !is_rambo_active_day) {
+				// Rambo reliever on a non-deployment (standby) day → flat grey "NR" box.
+				sch = `
+					<td class="${todayClass}">
+						<div class="tablebox d-flex justify-content-center align-items-center so"
+							style="background-color: #EAEAEA;"
+							data-selectid="${employee}|${date_key}">NR</div>
+					</td>`;
+			} else if (is_relieved_this_day) {
 				sch = `
 					<td class="${todayClass}">
 						<div class="${moment().isBefore(current_day_iter) ? "hoverselectclass" : "forbidden"} tablebox darkblackox d-flex justify-content-center align-items-center text-white so customtooltip"
