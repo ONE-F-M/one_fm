@@ -231,6 +231,66 @@ class TestRetentionCardConversion(FrappeTestCase):
 		self.assertEqual(_card_directions(0), ("Outward", "Return"))
 
 
+class TestNonFleetBypass(FrappeTestCase):
+	"""Story 6: Taxi / Subcontractor Rental requests bypass the scheduling canvas.
+
+	A Trip Request whose Transportation Method is anything other than "Company
+	Fleet" must never materialize Transportation Shipment cards, so the canvas
+	sidebar stays focused on company assets. Enforcement lives at submission time
+	in generate_shipments_from_trip_request, before any card is built.
+	"""
+
+	def _make_non_fleet_request(self, method):
+		"""Build a named, in-memory multi-camp Trip Request for the given method.
+
+		Passengers carry an accommodation_camp so that, if the non-fleet bypass
+		ever regressed, the generator would actually attempt to split the request
+		into camp cards — making a created/errored count the proof the skip works.
+		"""
+		doc = frappe.new_doc("Trip Request")
+		doc.name = f"TRQ-NONFLEET-{method.replace(' ', '-')}"
+		doc.transportation_method = method
+		for i in range(3):
+			doc.append("transport_request_passenger", {
+				"employee_id": f"EMP-{i}",
+				"employee_name": f"Worker {i}",
+				"accommodation_camp": "Mahboula Camp",
+			})
+		return doc
+
+	def test_taxi_request_generates_no_shipments(self):
+		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import (
+			generate_shipments_from_trip_request,
+		)
+
+		trq = self._make_non_fleet_request("Taxi")
+		summary = generate_shipments_from_trip_request(trq)
+
+		self.assertEqual(summary["created"], 0)
+		self.assertEqual(summary["updated"], 0)
+		self.assertEqual(summary["errors"], 0)
+		self.assertFalse(
+			frappe.get_all("Transportation Shipment", filters={"source_docname": trq.name}),
+			msg="A Taxi Trip Request must not leave any shipment cards on the canvas",
+		)
+
+	def test_subcontractor_rental_request_generates_no_shipments(self):
+		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import (
+			generate_shipments_from_trip_request,
+		)
+
+		trq = self._make_non_fleet_request("Subcontractor Rental")
+		summary = generate_shipments_from_trip_request(trq)
+
+		self.assertEqual(summary["created"], 0)
+		self.assertEqual(summary["updated"], 0)
+		self.assertEqual(summary["errors"], 0)
+		self.assertFalse(
+			frappe.get_all("Transportation Shipment", filters={"source_docname": trq.name}),
+			msg="A Subcontractor Rental Trip Request must not leave any shipment cards on the canvas",
+		)
+
+
 class TestShipmentExpiry(FrappeTestCase):
 	"""TR 3 - 9: past-to_date Unassigned cards are flagged Inactive by the engine."""
 
