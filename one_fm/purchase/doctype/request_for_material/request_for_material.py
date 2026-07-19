@@ -181,32 +181,41 @@ class RequestforMaterial(BuyingController):
                     item.requested_description = item.description
 
     def set_request_for_material_accepter_and_approver(self):
-        if not self.request_for_material_approver:
-            approver = False
-            if self.type == 'Project' and self.project:
-                approver = frappe.db.get_value('Project', self.project, 'project_manager')
-                if not approver:
-                    approver = frappe.db.get_single_value("Operation Settings", "default_operation_manager")
-                    if approver:
-                        self.request_for_material_approver = approver
-                        return
-            elif self.type in ['Individual', 'Department'] and self.employee:
-                approver = frappe.db.get_value('Employee', self.employee, 'reports_to')
-                if not approver:
-                    # No Reports To set: fall back to the Site Supervisor of the
-                    # employee's Allocated Site (Employee.site -> Operations Site.site_supervisor)
-                    approver = get_employee_site_supervisor(self.employee)
-            elif self.type == 'Onboarding':
-                employee = frappe.db.exists("Employee", {'user_id': self.owner})
-                if employee:
-                    approver = frappe.db.get_value('Employee', employee, 'reports_to')
-            if approver:
-                request_for_material_approver = get_employee_user_id(approver)
-            else:
-                request_for_material_approver = frappe.db.get_value('Purchase Settings', None, 'request_for_material_approver')
-            if request_for_material_approver:
-                self.request_for_material_approver = request_for_material_approver
+       # The approver may only be auto-set/re-set for a newly created document
+        # or one still in the Draft workflow state.
+        can_reset = self.is_new() or self.workflow_state == "Draft"
 
+        # Fields whose change should trigger re-evaluation of the approver.
+        approver_fields = ["type", "project", "employee"]
+        fields_changed = any(self.has_value_changed(field) for field in approver_fields)
+
+        # Set the approver when it is empty, or re-set it when it is already set
+        # but a driving field changed on a new/Draft document. Otherwise keep it.
+        if self.request_for_material_approver and not (can_reset and fields_changed):
+            return
+
+        approver = self.get_request_for_material_approver()
+        if approver:
+            self.request_for_material_approver = approver
+
+    def get_request_for_material_approver(self):
+        approver = False
+        if self.type == 'Project' and self.project:
+            approver = frappe.db.get_value('Project', self.project, 'project_manager')
+            if not approver:
+                default_operation_manager = frappe.db.get_single_value("Operation Settings", "default_operation_manager")
+                if default_operation_manager:
+                    return default_operation_manager
+        elif self.type in ['Individual', 'Department'] and self.employee:
+            approver = frappe.db.get_value('Employee', self.employee, 'reports_to')
+        elif self.type == 'Onboarding':
+            employee = frappe.db.exists("Employee", {'user_id': self.owner})
+            if employee:
+                approver = frappe.db.get_value('Employee', employee, 'reports_to')
+
+        if approver:
+            return get_employee_user_id(approver)
+        return frappe.db.get_value('Purchase Settings', None, 'request_for_material_approver')
     def validate_details_against_type(self):
         if self.type:
             if self.type == 'Individual':

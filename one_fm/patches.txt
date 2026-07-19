@@ -222,7 +222,7 @@ one_fm.patches.v15_0.add_workflow_on_the_job_training #2
 one_fm.patches.v15_0.reprocess_preparation_submit
 one_fm.patches.v15_0.add_banner_message_field_to_workflow_document_state
 one_fm.patches.v15_0.add_stock_settings_custom_fields
-one_fm.patches.v15_0.update_contracts_workflow #rerun-2026-07-01-inactive-to-draft-and-finance-draft-edit
+one_fm.patches.v15_0.update_contracts_workflow #rerun-2026-06-15-workflow-confirm
 one_fm.patches.v15_0.add_workflow_shift_permission
 one_fm.patches.v15_0.update_attendance_is_unscheduled
 one_fm.patches.v15_0.update_employee_status_options
@@ -271,6 +271,7 @@ one_fm.patches.v15_0.update_job_offer_for_ERF_2026_00004
 one_fm.patches.v15_0.add_index_to_leave_application_in_attendance
 one_fm.patches.v15_0.update_attendance_request_assignment_rule
 one_fm.patches.v15_0.remove_hd_property_setter_from_non_existing_doc #3
+
 one_fm.patches.v15_0.add_assignment_rule_submit_timesheet_employee
 one_fm.patches.v15_0.add_assignment_rule_approve_timesheet_approver
 one_fm.patches.v15_0.add_assignment_rule_leave_acknowledgement_form_pending_confirmation
@@ -293,14 +294,20 @@ one_fm.patches.v15_0.add_sales_invoice_contract_fields #3
 one_fm.patches.v15_0.add_sales_taxes_charges_add_or_deduct_field
 one_fm.patches.v15_0.add_workflow_penalty_and_investigation
 one_fm.patches.v15_0.update_penalty_and_investigation_workflow
+one_fm.patches.v15_0.update_day_off_category_erf_2025_00030
 one_fm.patches.v15_0.add_rambo_reliever_custom_field #2026-05-14
 one_fm.patches.v15_0.update_vehicle_naming_series
 one_fm.patches.v15_0.remove_vehicle_autoname_property_setter
+one_fm.patches.v15_0.cleanup_todo_type_field
 one_fm.patches.v15_0.update_vehicle_category_naming #2026-06-17
 one_fm.patches.v15_0.rename_fleet_workspace_to_transportation #2026-06-10 #2
 one_fm.patches.v15_0.rename_route_planner_page_to_transportation_schedule
-one_fm.patches.v15_0.cleanup_todo_type_field
-
+one_fm.patches.v15_0.update_purchase_receipt_prc_2026_000101_posting_date
+one_fm.patches.v15_0.update_job_offer_day_off_category_for_job_applicants
+one_fm.patches.v15_0.add_phone_option_to_job_applicant_contact_number
+one_fm.patches.v15_0.remove_employee_marital_status_property_setter
+one_fm.patches.v15_0.update_vehicle_property_setter
+one_fm.patches.v15_0.add_hd_ticket_category_field
 
 [post_model_sync]
 one_fm.patches.v15_0.process_task_for_wiki_employee_task
@@ -322,7 +329,7 @@ one_fm.patches.v15_0.add_task_assignment_rule
 one_fm.patches.v15_0.add_values_to_rank_factor_table
 one_fm.patches.v15_0.update_existing_designation_to_main_head_hunt_doctype
 one_fm.patches.v15_0.attendance_check_create #09-09-2025
-one_fm.patches.v15_0.update_job_applicant_field
+one_fm.patches.v15_0.update_job_applicant_field #04-06-2026
 one_fm.patches.v15_0.create_compliance_checker_process_task
 one_fm.patches.v15_0.update_preparation_records
 one_fm.patches.v15_0.update_hr_settings_with_grd_settings #2025-10-07
@@ -413,27 +420,20 @@ one_fm.patches.v15_0.add_qcs_link_to_purchase_order
 one_fm.patches.v15_0.add_rfq_and_sq_custom_fields
 one_fm.patches.v15_0.add_attendance_amendment_to_sales_invoice
 one_fm.patches.v15_0.backfill_governorate_in_site_to_location_mapping
-one_fm.patches.v15_0.update_bank_account_workflow
 one_fm.patches.v15_0.add_courier_tracking_custom_fields
 one_fm.patches.v15_0.update_client_interview_shortlist_workflow #2026-05-13
 one_fm.patches.v15_0.add_resignation_fields_to_employee
-one_fm.patches.v15_0.update_overtime_request_workflow #6-2026-06-19
-one_fm.patches.v15_0.add_assignment_rule_overtime_request_employee_acceptance #1
-one_fm.patches.v15_0.add_assignment_rule_overtime_request_line_manager_approval #1
-one_fm.patches.v15_0.add_assignment_rule_overtime_request_payroll_officer #1
-one_fm.patches.v15_0.add_assignment_rule_overtime_request_finance_manager #1
-one_fm.patches.v15_0.add_subcontractor_exit_workflow
-one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_project_manager
-one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_operations_manager
-one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_gsd_supervisor
-one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_offboarding_officer
-one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_finance_manager
 one_fm.patches.v15_0.add_version_custom_docperm_fields
 one_fm.patches.v15_0.add_workflow_project_manpower_request
 one_fm.patches.v15_0.update_workflow_project_manpower_request_roles
 one_fm.patches.v15_0.add_operation_admin_to_pmr_workflow
 one_fm.patches.v15_0.update_workflow_project_manpower_request_ops_edit
 one_fm.patches.v15_0.add_custom_field_mom_in_task
+one_fm.patches.v15_0.update_overtime_request_workflow #6-2026-06-19
+one_fm.patches.v15_0.add_assignment_rule_overtime_request_employee_acceptance #1
+one_fm.patches.v15_0.add_assignment_rule_overtime_request_line_manager_approval #1
+one_fm.patches.v15_0.add_assignment_rule_overtime_request_payroll_officer #1
+one_fm.patches.v15_0.add_assignment_rule_overtime_request_finance_manager #1
 one_fm.patches.v15_0.update_contracts_workflow_inactive_to_draft
 one_fm.patches.v15_0.migrate_bonus_request_to_grid
 one_fm.patches.v15_0.add_recurring_bonus_process_task
@@ -447,7 +447,7 @@ one_fm.patches.v15_0.add_accommodation_checked_out_field_and_update_approved_rul
 one_fm.patches.v15_0.add_client_event_field_to_attendance
 one_fm.patches.v15_0.add_asset_serial_and_warranty_fields
 one_fm.patches.v15_0.add_asset_repair_custom_fields
-one_fm.patches.v15_0.add_asset_repair_workflow_and_assignment_rules
+one_fm.patches.v15_0.add_asset_repair_workflow_and_assignment_rules #4
 one_fm.patches.v15_0.set_todo_type_read_only
 one_fm.patches.v15_0.add_vehicle_branding_details_fields
 one_fm.patches.v15_0.add_asset_repair_requestor_fields
@@ -463,3 +463,35 @@ one_fm.patches.v15_0.add_leave_application_resumption_contact_fields #1
 one_fm.patches.v15_0.add_absence_investigation_hr_officer_to_hr_settings
 one_fm.patches.v15_0.add_vehicle_custodian_history_fields
 one_fm.patches.v15_0.update_leave_application_workflow_dss #2026-07-17-2
+ne_fm.patches.v15_0.update_sales_invoice_property_setter
+one_fm.patches.v15_0.add_subcontractor_exit_workflow
+one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_project_manager
+one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_operations_manager
+one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_gsd_supervisor
+one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_offboarding_officer
+one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_finance_manager
+one_fm.patches.v15_0.add_nationality_read_permission
+one_fm.patches.v15_0.update_workflows_for_ops_admin_edit
+one_fm.patches.v15_0.backfill_ojt_employee_schedules #2026-06-18
+one_fm.patches.v15_0.delete_medical_appointment_todos #2026-06-15
+one_fm.patches.v15_0.sync_erf_workflow_state_with_closed_status #2026-06-15
+one_fm.patches.v15_0.close_job_openings_for_closed_erf #2026-06-15
+one_fm.patches.v15_0.update_interview_console_permissions
+one_fm.patches.v15_0.standardize_marital_status_options
+one_fm.patches.v15_0.standardize_employee_marital_status_options
+one_fm.patches.v15_0.fix_nirmala_day_off_client_event_conflict #2026-06-18
+one_fm.patches.v15_0.update_pmr_workflow_in_process_role
+one_fm.patches.v15_0.fix_shift_worker_annual_leave_total_days #2026-06-24
+one_fm.patches.v15_0.fix_leave_extension_request_leave_application_status #2026-06-30
+one_fm.patches.v15_0.update_pmr_and_resignation_workflow_permissions #2026-06-30
+one_fm.patches.v15_0.fix_day_off_client_event_conflict_bulk #2026-07-03
+# --- Operations-011 (24th-30th) release patches ---
+one_fm.patches.v15_0.update_bank_account_workflow
+one_fm.patches.v15_0.resync_resignation_workflow_draft_state #2026-07-07
+one_fm.patches.v15_0.mark_draft_pmr_as_completed #2026-07-07
+one_fm.patches.v15_0.backfill_checkin_geolocation_from_device_id #2026-07-12
+one_fm.patches.v15_0.normalize_user_mobile_country_code #2026-07-13
+one_fm.patches.v15_0.warm_zenquote_cache #2026-07-13
+one_fm.patches.v15_0.backfill_subcontractor_name_in_onboard_subcontract_employee #2026-07-12
+one_fm.patches.v15_0.delete_pending_approval_attendance_checks_airport_t4_jul12 #2026-07-13
+one_fm.patches.v15_0.send_amp_verification_test_email #2026-07-14
