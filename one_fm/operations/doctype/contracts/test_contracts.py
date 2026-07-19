@@ -12,7 +12,6 @@ from one_fm.operations.doctype.contracts.contracts import (
 	set_contract_inactive,
 	set_contract_active,
 	auto_deactivate_contracts,
-	get_contract_notification_cc,
 )
 
 class TestContracts(FrappeTestCase):
@@ -54,10 +53,6 @@ class TestContracts(FrappeTestCase):
 		settings = frappe.get_doc("ONEFM General Setting")
 		settings.set("notify_contract_expiry_users", [])
 
-		# Preserve the site's configured CC and pin a known value for deterministic tests
-		self._original_contract_notification_cc = settings.contract_notification_cc
-		settings.contract_notification_cc = "finance@one-fm.com, legal@one-fm.com"
-
 		# Create test users if they don't exist
 		for email in ["test_notify1@example.com", "test_notify2@example.com"]:
 			if not frappe.db.exists("User", email):
@@ -87,13 +82,6 @@ class TestContracts(FrappeTestCase):
 			DELETE FROM `tabAction User`
 			WHERE parent = 'ONEFM General Setting' AND user IN ('test_notify1@example.com', 'test_notify2@example.com')
 		""")
-
-		# Restore the site's original CC value in case a test committed the pinned value
-		frappe.db.set_single_value(
-			"ONEFM General Setting",
-			"contract_notification_cc",
-			self._original_contract_notification_cc,
-		)
 
 		frappe.set_user("Administrator")
 		frappe.db.rollback()
@@ -388,71 +376,3 @@ class TestContracts(FrappeTestCase):
 			contract.workflow_state, "Inactive",
 			"Contract must transition to Inactive even if email sending fails."
 		)
-
-	# ------------------------------------------------------------------
-	# Test: get_contract_notification_cc — parsing of configured value
-	# ------------------------------------------------------------------
-	def test_get_contract_notification_cc_parsing(self):
-		"""
-		get_contract_notification_cc must split comma/newline/semicolon
-		separated emails, trim whitespace, drop blanks, and dedupe.
-		"""
-		frappe.db.set_single_value(
-			"ONEFM General Setting",
-			"contract_notification_cc",
-			" finance@one-fm.com ,legal@one-fm.com\nfinance@one-fm.com; ",
-		)
-
-		emails = get_contract_notification_cc()
-
-		self.assertEqual(
-			emails, ["finance@one-fm.com", "legal@one-fm.com"],
-			"CC list must be parsed, trimmed and deduplicated."
-		)
-
-	def test_get_contract_notification_cc_empty(self):
-		"""An empty/unset CC setting must return an empty list, not raise."""
-		frappe.db.set_single_value("ONEFM General Setting", "contract_notification_cc", "")
-		self.assertEqual(get_contract_notification_cc(), [])
-
-	# ------------------------------------------------------------------
-	# Test: send_contract_reminders — CC deduped against recipient
-	# ------------------------------------------------------------------
-	@patch('one_fm.operations.doctype.contracts.contracts.sendemail')
-	def test_send_contract_reminders_cc_not_duplicating_recipient(self, mock_sendemail):
-		"""
-		If a configured CC address is also the primary recipient (first action
-		user), it must not be added to CC as a duplicate.
-		"""
-		# Make the first action user's email equal to a configured CC address
-		frappe.db.set_single_value(
-			"ONEFM General Setting",
-			"contract_notification_cc",
-			"test_notify1@example.com, finance@one-fm.com",
-		)
-
-		frappe.get_doc({
-			"doctype": "Contracts",
-			"contract": "TEST-CONTRACT-003",
-			"client": "TEST-CLIENT-1",
-			"project": "Test Project Alpha",
-			"start_date": add_days(nowdate(), -60),
-			"end_date": add_months(getdate(), 4),
-			"contract_end_internal_notification": 1,
-			"contract_termination_decision_period": 3,
-			"workflow_state": "Draft"
-		}).insert(ignore_permissions=True).db_set("workflow_state", "Active")
-		frappe.db.commit()
-
-		send_contract_reminders(is_scheduled_event=False)
-
-		self.assertEqual(mock_sendemail.call_count, 1)
-		call_kwargs = mock_sendemail.call_args[1]
-		recipient = call_kwargs.get("recipients", [])[0]
-		cc = call_kwargs.get("cc", []) or []
-
-		self.assertNotIn(
-			recipient, cc,
-			"Primary recipient must not be duplicated in the CC list."
-		)
-		self.assertIn("finance@one-fm.com", cc, "Other configured CC addresses must still be present.")

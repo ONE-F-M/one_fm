@@ -6,24 +6,16 @@ frappe.listview_settings['ToDo'] = {
 
 const sync_my_google_tasks = function(listview) {
 	listview.page.add_button(__('Sync My Google Tasks'), function() {
-        frappe.show_alert({
-            message: __('Syncing Google Tasks...'),
-            indicator: 'blue'
-        }, 3);
         frappe.call({
-			method: 'one_bpmn.api.instance_api.start_process',
-			args: {
-				model_name: 'Sync Google Task to ERPNext ToDo'
-			},
+			method: 'one_fm.overrides.todo.sync_my_google_tasks_with_todos',
 			callback: function (r) {
 				if (!r.exc) {
-					frappe.show_alert({
-						message: __('Google Tasks synced successfully'),
-						indicator: 'green'
-					}, 5);
+					frappe.msgprint(__(r.message || "Tasks Synched!"));
 					listview.refresh();
 				}
-			}
+			},
+			freeze: true,
+			freeze_message: __('Syncing My Google Tasks')
 		});
     }, 'primary');
 };

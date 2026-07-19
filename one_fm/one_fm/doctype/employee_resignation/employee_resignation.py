@@ -35,7 +35,9 @@ class EmployeeResignation(Document):
 
 		# Enforce replacement_required explicitly for Operations Manager / Approved
 		if self.get("workflow_state") == "Approved":
-			if not self.replacement_required:
+			if not self.shift_working:
+				self.replacement_required = "No"
+			elif not self.replacement_required:
 				frappe.throw(
 					_("You must explicitly select Yes or No for 'Is a Replacement Required?' before you can approve and spawn a PMR."),
 					title=_("Replacement Required")
@@ -58,6 +60,10 @@ class EmployeeResignation(Document):
 			
 		# Allow workflow assignees to modify the document
 		if frappe.session.user in [self.supervisor, self.operations_manager, self.offboarding_officer]:
+			return
+			
+		# Allow Operation Admin and T4 Admin to edit replacement details in Pending Operations Manager state
+		if self.get("workflow_state") == "Pending Operations Manager" and any(role in roles for role in ["Operation Admin", "T4 Admin"]):
 			return
 		
 		linked_employee = frappe.db.get_value("Employee", {"user_id": frappe.session.user})
@@ -277,6 +283,8 @@ class EmployeeResignation(Document):
 			pmr.workflow_state = "Draft"
 			pmr.insert()
 			frappe.db.set_value("Project Manpower Request", pmr.name, "workflow_state", "Draft")
+			# Write backlink so PMR's Connections panel shows this resignation with count 1
+			frappe.db.set_value("Employee Resignation", self.name, "project_manpower_request", pmr.name)
 
 	def on_trash(self):
 		for row in self.get("employees", []):
@@ -327,3 +335,19 @@ def get_employee_resignation_details(employee):
 				result["site_supervisor_id"] = frappe.db.get_value("Employee", site_data.get("site_supervisor"), "user_id")
 
 	return result
+
+
+@frappe.whitelist()
+def get_autocomplete_options() -> dict:
+	"""Secure fetch of all genders and nationalities for Autocomplete fields, bypassing lookup restrictions for non-admin roles."""
+	if not frappe.has_permission("Employee Resignation", "read"):
+		frappe.throw(_("Not permitted to access resignation details."), frappe.PermissionError)
+
+	genders = frappe.get_all("Gender", fields=["name"], order_by="name asc", ignore_permissions=True)
+	nationalities = frappe.get_all("Nationality", fields=["name"], order_by="name asc", ignore_permissions=True)
+
+	return {
+		"nationalities": [n.name for n in nationalities if n.name],
+		"genders": [g.name for g in genders if g.name]
+	}
+

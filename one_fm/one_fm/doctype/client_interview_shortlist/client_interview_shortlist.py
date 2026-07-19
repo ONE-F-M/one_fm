@@ -83,36 +83,49 @@ class ClientInterviewShortlist(Document):
 
 	def delete_shift_assignments_for_schedule(self, employee, schedule_name):
 		"""Story 5: Cancel and delete shift assignments linked to an employee schedule.
-		If an Attendance record already exists for the shift assignment, preserve it and warn instead."""
+		If an Attendance record with status 'Absent' exists, remove it first before cancelling.
+		If any other attendance status exists, preserve it and warn instead."""
 		shift_assignments = frappe.get_all(
 			"Shift Assignment",
 			filters={"start_date": self.interview_date, "employee": employee, "employee_schedule": schedule_name},
 			fields=["name", "docstatus"]
 		)
 		for sa in shift_assignments:
-			# Story 5: If attendance already exists for this shift, do NOT delete
-			attendance_exists = frappe.db.exists(
+			# Story 5: Check if attendance exists for this shift
+			attendance_record = frappe.db.get_value(
 				"Attendance",
 				{
 					"employee": employee,
 					"attendance_date": self.interview_date,
 					"shift_assignment": sa.name,
 					"docstatus": ["!=", 2],
-				}
+				},
+				["name", "status", "docstatus"]
 			)
-			if attendance_exists:
-				employee_name = frappe.db.get_value("Employee", employee, "employee_name") or employee
-				frappe.throw(
-					_(
-						"{0} already has attendance marked on {1}. "
-						"This shift assignment cannot be deleted to avoid inconsistencies."
-					).format(employee_name, self.interview_date)
-				)	
+			
+			if attendance_record:
+				# If attendance status is "Absent", remove it to allow shift assignment cancellation
+				if attendance_record[1] == "Absent":
+					if attendance_record[2] == 1:  # If submitted, cancel it first
+						frappe.get_doc("Attendance", attendance_record[0]).cancel()
+					frappe.delete_doc("Attendance", attendance_record[0], ignore_permissions=True)
+				else:
+					# If attendance has any other status, do NOT cancel the shift assignment
+					employee_name = frappe.db.get_value("Employee", employee, "employee_name") or employee
+					frappe.throw(
+						_(
+							"{0} already has attendance marked with status '{1}' on {2}. "
+							"This shift assignment cannot be cancelled to avoid inconsistencies."
+						).format(employee_name, attendance_record[1], self.interview_date)
+					)	
 
 			# Cancel submitted shift assignments before deleting
-			if sa.docstatus == 1:
-				frappe.get_doc("Shift Assignment", sa.name).cancel()
-			frappe.delete_doc("Shift Assignment", sa.name, ignore_permissions=True)
+			shift_assignment = frappe.get_doc("Shift Assignment", sa.name)
+			shift_assignment.ignore_linked_doctypes = ["Attendance Check", "Shift Permission", "Shift Assignment", "Employee Checkin Issue", "Employee Checkin", "Attendance", "Missing Checkin", "Site"]
+			if shift_assignment.docstatus == 1:
+				shift_assignment.cancel()
+			frappe.delete_doc("Shift Assignment", shift_assignment.name, ignore_permissions=True)
+
 
 
 	def create_employee_schedule(self, employee, roster_type, day_off_ot):

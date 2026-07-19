@@ -579,6 +579,31 @@ def _determine_issue_type(comment: str) -> str:
 	return ""
 
 
+def _extract_post_name(comment: str) -> str:
+	"""Extract the specific Operations Post name referenced in a post schedule comment.
+
+	Post schedule comments are generated in two shapes:
+	  - "No post schedules created for Post (<name>) from <date> to <date>"
+	  - "More/Less post schedules created from <date> to <date>, ... for post <name>"
+
+	Returns the first matched post name, or an empty string when none is found.
+	"""
+	if not comment:
+		return ""
+
+	# Shape 1: post name wrapped in parentheses after "for Post ("
+	paren_match = re.search(r"for [Pp]ost \((.+?)\) from", comment)
+	if paren_match:
+		return paren_match.group(1).strip()
+
+	# Shape 2: post name trails "for post " up to end of line
+	trailing_match = re.search(r"for post (.+?)(?:\n|$)", comment)
+	if trailing_match:
+		return trailing_match.group(1).strip()
+
+	return ""
+
+
 @frappe.whitelist()
 def get_take_action_data(
 	project: str,
@@ -677,17 +702,37 @@ def get_take_action_data(
 			},
 		}
 
-	# Post Schedule issue: redirect to Roster Post View
+	# Post Schedule issue: redirect to Roster Post View.
+	# The comment names the exact Operations Post that is non-compliant, so
+	# resolve the site/shift/role from that specific post rather than the first
+	# active role — otherwise the redirect filters the wrong shift.
 	if issue_type == "post_schedule":
+		site = role.site
+		shift = role.shift
+		operations_role = role.name
+
+		post_name = _extract_post_name(comment)
+		if post_name:
+			post = frappe.db.get_value(
+				"Operations Post",
+				post_name,
+				["site", "site_shift", "post_template"],
+				as_dict=True,
+			)
+			if post:
+				site = post.site
+				shift = post.site_shift
+				operations_role = post.post_template
+
 		return {
 			"path": "/app/roster",
 			"params": {
 				"main_view": "roster",
 				"sub_view": "post",
 				"project": project,
-				"site": role.site,
-				"shift": role.shift,
-				"operations_role": role.name,
+				"site": site,
+				"shift": shift,
+				"operations_role": operations_role,
 				"year": year,
 				"month": month,
 			},

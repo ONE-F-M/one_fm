@@ -291,8 +291,7 @@ class TransportationManifest(Document):
 			existing_rambo = frappe.db.get_value(
 				"Rambo Assignment",
 				{"manifest_child_row_id": row.name},
-				["name", "docstatus"],
-				as_dict=True
+				"name"
 			)
 
 			if needs_rambo:
@@ -339,46 +338,31 @@ class TransportationManifest(Document):
 				}
 
 				if existing_rambo:
-					# Cancel and delete the existing submitted Rambo Assignment,
-					# then create a fresh one. This ensures the on_cancel hook
-					# cleans up the old Employee Schedule and on_submit creates
-					# a new one with the updated field values.
-					self._cancel_and_delete_rambo(existing_rambo, row)
+					# UPDATE existing Rambo Assignment
+					frappe.db.set_value("Rambo Assignment", existing_rambo, field_values)
+				else:
+					# CREATE new Rambo Assignment
+					rambo_doc = frappe.new_doc("Rambo Assignment")
+					rambo_doc.update(field_values)
+					rambo_doc.insert(ignore_permissions=True)
 
-				# CREATE and SUBMIT new Rambo Assignment
-				rambo_doc = frappe.new_doc("Rambo Assignment")
-				rambo_doc.update(field_values)
-				rambo_doc.insert(ignore_permissions=True)
-				rambo_doc.submit()
-
-				# Back-reference on the child row (DB + in-memory)
-				frappe.db.set_value(
-					"Transportation Manifest Details", row.name,
-					"rambo_assignment", rambo_doc.name,
-					update_modified=False
-				)
-				row.rambo_assignment = rambo_doc.name
+					# Back-reference on the child row (DB + in-memory)
+					frappe.db.set_value(
+						"Transportation Manifest Details", row.name,
+						"rambo_assignment", rambo_doc.name,
+						update_modified=False
+					)
+					row.rambo_assignment = rambo_doc.name
 			else:
 				if existing_rambo:
-					self._cancel_and_delete_rambo(existing_rambo, row)
-
-	def _cancel_and_delete_rambo(self, rambo_info, row):
-		"""Cancel (if submitted) and delete a Rambo Assignment, clearing the back-reference."""
-		# Clear the back-reference FIRST to avoid Frappe's
-		# "Cannot delete — linked with" validation error.
-		frappe.db.set_value(
-			"Transportation Manifest Details", row.name,
-			"rambo_assignment", None,
-			update_modified=False
-		)
-		row.rambo_assignment = None
-
-		rambo_doc = frappe.get_doc("Rambo Assignment", rambo_info.name)
-		if rambo_doc.docstatus == 1:
-			# Cancel first — this triggers on_cancel which deletes
-			# the linked Employee Schedule
-			rambo_doc.flags.ignore_permissions = True
-			rambo_doc.cancel()
-		# Now safe to DELETE the Rambo Assignment
-		frappe.delete_doc("Rambo Assignment", rambo_info.name, ignore_permissions=True)
+					# Clear the back-reference FIRST to avoid Frappe's
+					# "Cannot delete — linked with" validation error.
+					frappe.db.set_value(
+						"Transportation Manifest Details", row.name,
+						"rambo_assignment", None,
+						update_modified=False
+					)
+					row.rambo_assignment = None
+					# Now safe to DELETE the Rambo Assignment
+					frappe.delete_doc("Rambo Assignment", existing_rambo, ignore_permissions=True)
 
