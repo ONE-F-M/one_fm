@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import add_days, get_url_to_form
+from frappe.utils import get_url_to_form
 
 
 class RamboAssignment(Document):
