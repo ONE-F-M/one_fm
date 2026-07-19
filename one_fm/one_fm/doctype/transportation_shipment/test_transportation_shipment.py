@@ -211,6 +211,26 @@ class TestTripRequestSplit(FrappeTestCase):
 		self.assertNotEqual(mahboula_pair, mangaf_pair)
 
 
+class TestRetentionCardConversion(FrappeTestCase):
+	"""MA-10: Vehicle Retention decides one combined vs two split cards per camp."""
+
+	def test_retention_on_collapses_to_single_outward(self):
+		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import (
+			_card_directions,
+		)
+
+		# Retention ON → exactly one combined Outward card (drop-off + return leg).
+		self.assertEqual(_card_directions(1), ("Outward",))
+
+	def test_retention_off_keeps_outward_and_return(self):
+		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import (
+			_card_directions,
+		)
+
+		# Retention OFF → two separate master cards, Outward and Return.
+		self.assertEqual(_card_directions(0), ("Outward", "Return"))
+
+
 class TestShipmentExpiry(FrappeTestCase):
 	"""TR 3 - 9: past-to_date Unassigned cards are flagged Inactive by the engine."""
 
