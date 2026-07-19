@@ -1,16 +1,18 @@
 {
  "actions": [],
  "allow_rename": 1,
- "creation": "2026-07-15 21:53:25.537926",
+ "creation": "2026-07-06 14:55:06.699414",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "employee_id",
   "employee_name",
-  "accommodation_camp",
+  "column_break_oiey",
+  "cell_number",
+  "accommodation",
   "stop_location",
-  "operations_site"
+  "operation_site"
  ],
  "fields": [
   {
@@ -18,8 +20,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Employee ID",
-   "options": "Employee",
-   "reqd": 1
+   "options": "Employee"
   },
   {
    "fetch_from": "employee_id.employee_name",
@@ -30,32 +31,43 @@
    "read_only": 1
   },
   {
-   "fieldname": "accommodation_camp",
+   "fieldname": "column_break_oiey",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee_id.cell_number",
+   "fieldname": "cell_number",
+   "fieldtype": "Data",
+   "label": "Cell Number"
+  },
+  {
+   "fieldname": "accommodation",
    "fieldtype": "Link",
-   "label": "Accommodation Camp",
+   "label": "Accommodation",
    "options": "Accommodation"
   },
   {
    "fieldname": "stop_location",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Stop Location",
    "options": "Location"
   },
   {
-   "fieldname": "operations_site",
+   "fieldname": "operation_site",
    "fieldtype": "Link",
-   "label": "Operations Site",
+   "in_list_view": 1,
+   "label": "Operation Site",
    "options": "Operations Site"
   }
  ],
- "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-07-15 21:53:25.537926",
+ "modified": "2026-07-15 17:22:25.874304",
  "modified_by": "Administrator",
  "module": "One Fm",
- "name": "Trip Request Passenger",
+ "name": "Transportation Shipment Employee",
  "owner": "Administrator",
  "permissions": [],
  "row_format": "Dynamic",
