@@ -15,7 +15,7 @@ demand has disappeared. Assigned shipments are never touched.
 
 import frappe
 from frappe import _
-from frappe.utils import get_datetime
+from frappe.utils import get_datetime, getdate, today
 
 from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
 	get_coords,
@@ -552,3 +552,56 @@ def remove_unassigned_shipments_for_trip_request(trip_request: str) -> int:
 	pull a shipment out from under a Route Plan that already placed it.
 	"""
 	return _prune_stale_for_trip_request(trip_request, current_keys=set())
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Expiry engine (TR 3 - 9)
+#
+# A multi-day shipment card is only relevant while its event is still running.
+# Once the system date crosses the card's to_date (end date), the card is stale
+# and must leave the canvas workspace. We flip its status to "Inactive" rather
+# than delete it, so the record is preserved for reporting/audit while the canvas
+# (which only renders Unassigned + Assigned cards) stops showing it.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def deactivate_expired_shipments(as_of: str | None = None) -> int:
+	"""Flag still-Unassigned shipments whose to_date has passed as Inactive.
+
+	Daily scheduler entry point. Scoped deliberately:
+	- Only ``Unassigned`` cards are touched — an ``Assigned`` card already sits in
+	  a Route Plan and must not be pulled out from under it.
+	- Only cards with a ``to_date`` that is strictly before today qualify; the
+	  card stays active on its own to_date and expires the day after. Standing
+	  Operations Shift cards carry no to_date and are never affected.
+
+	Returns the number of shipments deactivated.
+	"""
+	cutoff_date = getdate(as_of or today())
+
+	# Blank Date fields can land as NULL or '0000-00-00' in the DB, and the latter
+	# slips past a plain SQL "< cutoff" filter. We fetch the value and re-check it
+	# in Python with getdate() so standing (undated) cards are reliably excluded.
+	candidates = frappe.get_all(
+		"Transportation Shipment",
+		filters={"status": "Unassigned"},
+		fields=["name", "to_date"],
+	)
+
+	count = 0
+	for row in candidates:
+		if not row.to_date:
+			continue
+		if getdate(row.to_date) >= cutoff_date:
+			continue
+		try:
+			frappe.db.set_value("Transportation Shipment", row.name, "status", "Inactive")
+			count += 1
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), "Transportation Shipment Expiry Error")
+
+	if count:
+		frappe.db.commit()
+
+	frappe.logger().info(f"deactivate_expired_shipments[{cutoff_date}]: deactivated {count}")
+	return count
