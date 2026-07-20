@@ -4,6 +4,10 @@
 frappe.ui.form.on('Operations Post', {
     refresh: (frm) => {
       frm.trigger('set_site_query');
+      // AC5: history table is read-only for standard users; only System Manager
+      // may manually correct rows. The controller always writes to it server-side.
+      frm.set_df_property('operations_post_activation', 'read_only',
+        frappe.user.has_role('System Manager') ? 0 : 1);
     },
 	post_template: function(frm){
 		let post_template = frm.doc.post_template;

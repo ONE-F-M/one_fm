@@ -144,10 +144,24 @@ def get_leave_application_custom_fields():
             {
                 "fieldname": "custom_shift_working",
                 "fieldtype": "Check",
-                "insert_after": "employee_name",
+                "insert_after": "custom_emergency_contact_number",
                 "label": "Shift Working",
                 "read_only": 1,
                 "fetch_from": "employee.shift_working"
+            },
+            {
+                # Emergency contact number for urgent communication during long
+                # leaves. Pre-filled from the employee's own mobile (cell_number)
+                # but editable by HR. Shown only for shift working employees on
+                # Annual Leave or Leave Without Pay; hidden otherwise.
+                "fieldname": "custom_emergency_contact_number",
+                "fieldtype": "Data",
+                "insert_after": "employee_name",
+                "label": "Emergency Contact Number",
+                "options": "Phone",
+                "fetch_from": "employee.cell_number",
+                "fetch_if_empty": 1,
+                "depends_on": "eval:doc.custom_shift_working && (doc.leave_type=='Annual Leave' || doc.leave_type=='Leave Without Pay')"
             },
             {
                 "fieldname": "custom_in_accommodation",
@@ -181,8 +195,50 @@ def get_leave_application_custom_fields():
                 "fieldtype": "Section Break",
                 "insert_after": "source",
                 "label": "Resumption Confirmation Details",
-                "depends_on": "eval:doc.workflow_state=='Approved' && doc.leave_type=='Annual Leave'",
+                # Shown once the leave is Approved and it is an Annual Leave or
+                # Leave Without Pay (the leave types HelpDesk follows up on for resumption).
+                "depends_on": "eval:doc.workflow_state=='Approved' && (doc.leave_type=='Annual Leave' || doc.leave_type=='Leave Without Pay')",
                 "allow_on_submit": 1
+            },
+            {
+                "fieldname": "custom_could_the_employee_be_reached",
+                "fieldtype": "Select",
+                "insert_after": "resumption_confirmation_details",
+                "label": "Could the Employee be Reached?",
+                "options": "\nYes\nNo",
+                "allow_on_submit": 1,
+                "translatable": 1
+            },
+            {
+                "fieldname": "custom_action",
+                "fieldtype": "Select",
+                "insert_after": "custom_could_the_employee_be_reached",
+                "label": "Action",
+                "options": "\nTry Again",
+                # Set automatically to "Try Again" when the employee could not be reached.
+                "read_only": 1,
+                "allow_on_submit": 1,
+                "translatable": 1
+            },
+            {
+                "fieldname": "custom_reason_employee_not_reached",
+                "fieldtype": "Small Text",
+                "insert_after": "custom_action",
+                "label": "Reason Employee Not Reached",
+                "description": "State the specific date and time the employee could not be reached",
+                # Mandatory audit trail of the unsuccessful contact attempt before escalating.
+                "depends_on": "eval:doc.custom_could_the_employee_be_reached=='No'",
+                "mandatory_depends_on": "eval:doc.custom_could_the_employee_be_reached=='No'",
+                "allow_on_submit": 1
+            },
+            {
+                "fieldname": "custom_will_the_employee_return",
+                "fieldtype": "Select",
+                "insert_after": "custom_reason_employee_not_reached",
+                "label": "Will the Employee Return?",
+                "options": "\nYes\nNo",
+                "allow_on_submit": 1,
+                "translatable": 1
             },
             {
                 "fieldname": "outcome",
@@ -198,6 +254,9 @@ def get_leave_application_custom_fields():
                 "insert_after": "outcome",
                 "label": "Return Ticket Submitted",
                 "options": "\nYes\nNo",
+                # Mandatory once HelpDesk confirms the employee will return, so
+                # Operations knows whether flight proof has been collected.
+                "mandatory_depends_on": "eval:doc.custom_will_the_employee_return == 'Yes'",
                 "allow_on_submit": 1,
                 "translatable": 1
             },
@@ -206,7 +265,19 @@ def get_leave_application_custom_fields():
                 "fieldtype": "Date",
                 "insert_after": "return_ticket_submitted",
                 "label": "Actual Return Date",
+                # Mandatory once HelpDesk confirms the employee will return, so
+                # Operations can schedule the duty roster against a real date.
+                "mandatory_depends_on": "eval:doc.custom_will_the_employee_return == 'Yes'",
                 "allow_on_submit": 1
+            },
+            {
+                "fieldname": "custom_does_the_employee_need_additional_time_to_resume",
+                "fieldtype": "Select",
+                "insert_after": "actual_return_date",
+                "label": "Does the Employee Need Additional Time to Resume?",
+                "options": "\nYes\nNo",
+                "allow_on_submit": 1,
+                "translatable": 1
             },
             {
                 "fieldname": "column_break_resumption_details",
@@ -219,6 +290,9 @@ def get_leave_application_custom_fields():
                 "insert_after": "column_break_resumption_details",
                 "label": "Attach Return Ticket",
                 "depends_on": "eval:doc.return_ticket_submitted == 'Yes'",
+                # Proof of the return flight is mandatory once the ticket is
+                # marked as submitted.
+                "mandatory_depends_on": "eval:doc.return_ticket_submitted == 'Yes'",
                 "allow_on_submit": 1
             },
             {

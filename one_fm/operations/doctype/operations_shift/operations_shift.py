@@ -8,7 +8,10 @@ from datetime import timedelta
 from frappe.model.document import Document
 from frappe import _
 from frappe.model.rename_doc import rename_doc
-from frappe.utils import cstr, get_datetime, today, formatdate, getdate, add_days, get_time
+from frappe.utils import cstr, cint, get_datetime, today, formatdate, getdate, add_days, get_time
+
+# Roles allowed to change the "Double Shift OT Allowed" flag on Operations Shift.
+DOUBLE_SHIFT_OT_EDITOR_ROLES = {"Operations Manager", "Operation Admin", "Facility Engineer"}
 
 class OperationsShift(Document):
 	def autoname(self):
@@ -43,11 +46,37 @@ class OperationsShift(Document):
 				frappe.throw("Kindly, make sure all required fields are not missing")
 
 	def validate(self):
+		self.validate_double_shift_ot_allowed_permission()
 		if self.status != 'Active':
 			self.set_operation_role_inactive()
 		self.validate_operations_site_status()
 		self.validate_operations_shift_link_to_employees()
 		self.validate_duration()
+
+	def validate_double_shift_ot_allowed_permission(self):
+		"""Only Operations Manager, Operation Admin or Facility Engineer may change
+		the "Double Shift OT Allowed" flag. This mirrors the client-side read-only
+		rule and prevents bypass via API, import or scripting."""
+		# Allow framework operations (migrations, installs, patches) to set the value.
+		if frappe.flags.in_migrate or frappe.flags.in_install or frappe.flags.in_patch:
+			return
+
+		if self.is_new():
+			# On create, only guard when the flag is actively enabled (default is unchecked).
+			if not cint(self.double_shift_ot_allowed):
+				return
+		elif not self.has_value_changed("double_shift_ot_allowed"):
+			return
+
+		user_roles = set(frappe.get_roles())
+		# System Manager (the only role with write access on this DocType) retains full control.
+		if "System Manager" in user_roles or not DOUBLE_SHIFT_OT_EDITOR_ROLES.isdisjoint(user_roles):
+			return
+
+		frappe.throw(_(
+			"You are not permitted to change 'Double Shift OT Allowed'. "
+			"This can only be updated by Operations Manager, Operation Admin or Facility Engineer."
+		))
 
 	def validate_duration(self):
 		if self.shift_type:
