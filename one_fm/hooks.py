@@ -211,7 +211,8 @@ permission_query_conditions = {
     "Leave Application": "one_fm.permissions.leave_application_list_",
     "Roster Post Actions":"one_fm.one_fm.doctype.roster_post_actions.roster_post_actions.get_permission_query_conditions",
 	"Roster Employee Actions": "one_fm.one_fm.doctype.roster_employee_actions.roster_employee_actions.get_permission_query_conditions",
-	"Warehouse": "one_fm.permissions.warehouse_list"
+	"Warehouse": "one_fm.permissions.warehouse_list",
+	"Attendance Request": "one_fm.overrides.attendance_request.get_permission_query_conditions"
 }
 
 has_permission = {

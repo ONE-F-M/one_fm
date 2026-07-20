@@ -9,7 +9,7 @@ from frappe.desk.form.assign_to import remove
 from frappe import _
 from frappe.model.workflow import apply_workflow
 from frappe.utils import (
-	now_datetime,nowtime, cstr, getdate, get_datetime, cint, add_to_date, today, add_days, now, get_url_to_form, date_diff
+	now_datetime,nowtime, cstr, getdate, get_datetime, cint, add_to_date, today, add_days, now, get_url_to_form, date_diff, formatdate
 )
 from one_fm.api.doc_events import get_employee_user_id
 from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
@@ -1262,6 +1262,363 @@ def create_overtime_shift_assignment(schedule, date):
 			# Log all the errors except the OverlappingShiftError(ValidationError)
 			frappe.log_error(title="Create Overtime Shift Assignment", message=frappe.get_traceback())
 
+def rambo_shift_assignment():
+	"""
+	Scheduled background job to auto-generate Shift Assignment records
+	for Employee Schedule entries created from Rambo Assignments.
+
+	Runs every 5 minutes via hooks.py cron.
+	Filters Employee Schedule rows where:
+	  - date = today
+	  - is_rambo_schedule = 1
+	  - is_replaced = 0
+	  - roster_type IN ("Basic", "Over-Time")
+	  - employee_availability IN ("Working", "On-the-job Training", "Client Event")
+	  - Employee is Active with eligible employment_type
+	"""
+	from frappe.query_builder import DocType
+
+	date = cstr(getdate())
+	employment_types = ["Full-time", "Part-time", "Intern", "Subcontractor"]
+
+	EmployeeSchedule = DocType("Employee Schedule")
+	Employee = DocType("Employee")
+
+	schedules = (
+		frappe.qb.from_(EmployeeSchedule)
+		.select(EmployeeSchedule.star)
+		.where(
+			(EmployeeSchedule.date == date)
+			& (EmployeeSchedule.is_rambo_schedule == 1)
+			& (EmployeeSchedule.is_replaced == 0)
+			& (EmployeeSchedule.roster_type.isin(["Basic", "Over-Time"]))
+			& (EmployeeSchedule.employee_availability.isin([
+				"Working", "On-the-job Training", "Client Event"
+			]))
+			& (EmployeeSchedule.employee.isin(
+				frappe.qb.from_(Employee)
+				.select(Employee.name)
+				.where(
+					(Employee.status == "Active")
+					& (Employee.employment_type.isin(employment_types))
+				)
+			))
+		)
+	).run(as_dict=True)
+
+	if schedules:
+		frappe.enqueue(
+			process_rambo_shift_assignment,
+			schedules=schedules,
+			date=date,
+			is_async=True,
+			queue="long"
+		)
+
+
+def _handle_existing_shifts_for_rambo(schedule, date):
+	"""
+	Pre-process existing shifts before creating a Rambo Shift Assignment.
+
+	Background:
+	  When a Rambo Assignment is submitted, it updates the Employee Schedule
+	  IN-PLACE (because of the naming constraint: employee + date + roster_type).
+	  This means the Employee Schedule name stays the same but the shift details
+	  change.  Any previously-created Shift Assignment is now stale — it was
+	  built for the OLD shift, not the new Rambo shift.
+
+	This function handles two scenarios:
+
+	Scenario 1 — Cancel stale Shift Assignment (unstarted old shift):
+	  If an existing Shift Assignment is linked to this Employee Schedule but
+	  was created for a DIFFERENT shift_type (i.e. the old shift before Rambo
+	  updated the schedule), AND it has NO checkin logs, cancel it so a new SA
+	  can be created with the correct Rambo shift details.
+
+	Scenario 2 — Reclassify Rambo as overtime:
+	  If the employee already has a completed shift with attendance for the
+	  day, update the Rambo Employee Schedule's roster_type to "Over-Time".
+
+	Args:
+		schedule: frappe._dict of the Rambo Employee Schedule row.
+		date: str, the current date (YYYY-MM-DD).
+
+	Returns:
+		bool: True if the schedule should be skipped (do NOT create a
+		      Shift Assignment), False to proceed normally.
+	"""
+	employee = schedule.employee
+
+	# ── Scenario 1: Cancel stale Shift Assignment ──────────────────────
+	# Check if an existing submitted SA is linked to this Employee Schedule
+	existing_sa = frappe.db.get_value(
+		"Shift Assignment",
+		{"employee_schedule": schedule.name, "docstatus": 1},
+		["name", "shift_type"],
+		as_dict=True
+	)
+
+	if existing_sa:
+		# Compare the SA's shift_type with the schedule's current shift_type.
+		# If they differ, Rambo updated the schedule but the old SA is stale.
+		if existing_sa.shift_type != schedule.shift_type:
+			# Verify the old SA has NO checkin logs before cancelling
+			has_checkin_logs = frappe.db.exists(
+				"Employee Checkin",
+				{"shift_assignment": existing_sa.name}
+			)
+
+			if not has_checkin_logs:
+				# Also verify the old shift starts AFTER the Rambo shift ends
+				# (same-day comparison using Shift Type times)
+				rambo_end_time = None
+				old_start_time = None
+
+				if schedule.shift_type:
+					rambo_end_time = frappe.db.get_value(
+						"Shift Type", schedule.shift_type, "end_time"
+					)
+				if existing_sa.shift_type:
+					old_start_time = frappe.db.get_value(
+						"Shift Type", existing_sa.shift_type, "start_time"
+					)
+
+				should_cancel = False
+				if rambo_end_time and old_start_time:
+					# Cancel if old shift starts after Rambo shift ends
+					if old_start_time > rambo_end_time:
+						should_cancel = True
+				else:
+					# If we can't compare times (missing shift type),
+					# still cancel the stale SA since shift_type changed
+					should_cancel = True
+
+				if should_cancel:
+					try:
+						sa_doc = frappe.get_doc("Shift Assignment", existing_sa.name)
+						sa_doc.flags.ignore_permissions = True
+
+						sa_doc.cancel()
+						frappe.logger("rambo").info(
+							"Cancelled stale Shift Assignment {0} for employee "
+							"{1} (shift_type mismatch: SA has '{2}', schedule "
+							"now has '{3}')".format(
+								existing_sa.name, employee,
+								existing_sa.shift_type, schedule.shift_type
+							)
+						)
+						# Return False to allow the new SA to be created
+						return False
+					except Exception:
+						frappe.log_error(
+							title="Rambo Shift — Cancel Stale SA",
+							message=frappe.get_traceback()
+						)
+						# If we can't cancel, skip to avoid creating a duplicate
+						return True
+			else:
+				# Old SA has checkin logs — the employee started the old shift.
+				# Do NOT cancel it. Skip creating a new SA for this schedule.
+				frappe.logger("rambo").info(
+					"Shift Assignment {0} for employee {1} has checkin logs. "
+					"Skipping Rambo SA creation.".format(
+						existing_sa.name, employee
+					)
+				)
+				return True
+		else:
+			# SA shift_type matches the schedule — SA is already correct.
+			# This schedule was already processed. Skip.
+			return True
+
+	# ── Scenario 2: Create Over-Time schedule if employee already worked ──
+	# Only applies when the Rambo schedule is currently "Basic".
+	if schedule.roster_type == "Basic":
+		# Check if the employee has ANY submitted Attendance for today
+		has_attendance = frappe.db.exists(
+			"Attendance",
+			{
+				"employee": employee,
+				"attendance_date": date,
+				"docstatus": 1,
+				"status": ["!=", "On Leave"],
+			}
+		)
+
+		if has_attendance:
+			# Check that the attended shift also has checkin logs
+			# (confirming the employee actually worked)
+			attended_sa = frappe.db.get_value(
+				"Shift Assignment",
+				{
+					"employee": employee,
+					"start_date": date,
+					"docstatus": 1,
+				},
+				"name"
+			)
+
+			has_work_checkins = False
+			if attended_sa:
+				has_work_checkins = frappe.db.exists(
+					"Employee Checkin",
+					{"shift_assignment": attended_sa}
+				)
+
+			if has_work_checkins:
+				# Check if an Over-Time schedule already exists
+				ot_schedule_name = frappe.db.get_value(
+					"Employee Schedule",
+					{
+						"employee": employee,
+						"date": date,
+						"roster_type": "Over-Time",
+					},
+					"name"
+				)
+
+				if not ot_schedule_name:
+					# Create a NEW Employee Schedule with roster_type Over-Time
+					ot_schedule = frappe.get_doc({
+						"doctype": "Employee Schedule",
+						"employee": schedule.employee,
+						"date": date,
+						"employee_availability": schedule.employee_availability,
+						"shift": schedule.shift,
+						"shift_type": schedule.shift_type,
+						"operations_role": schedule.operations_role,
+						"site": schedule.site,
+						"project": schedule.project,
+						"roster_type": "Over-Time",
+						"start_datetime": schedule.start_datetime,
+						"end_datetime": schedule.end_datetime,
+						"is_rambo_schedule": 1,
+						"rambo_assignment": schedule.rambo_assignment,
+					})
+					try:
+						ot_schedule.insert()
+					except frappe.DuplicateEntryError:
+						pass
+					ot_schedule_name = frappe.db.get_value(
+						"Employee Schedule",
+						{"employee": employee, "date": date, "roster_type": "Over-Time"},
+						"name"
+					) or ot_schedule.name
+
+					frappe.logger("rambo").info(
+						"Created Over-Time Employee Schedule {0} for "
+						"employee {1} (completed shift with attendance "
+						"exists on {2})".format(
+							ot_schedule_name, employee, date
+						)
+					)
+
+				# Reset the original Basic schedule so it is not
+				# picked up again by the background job
+				frappe.db.set_value(
+					"Employee Schedule",
+					schedule.name,
+					"is_rambo_schedule", 0
+				)
+
+				# Update the in-memory schedule dict so the Shift
+				# Assignment is created with the new Over-Time schedule
+				schedule["name"] = ot_schedule_name
+				schedule["roster_type"] = "Over-Time"
+
+	return False
+
+
+def process_rambo_shift_assignment(schedules, date):
+	"""
+	Worker function enqueued by rambo_shift_assignment().
+	For each Rambo Employee Schedule row:
+	  1. Skip if employee status is "Vacation" or "Not Returned from Leave"
+	  2. Skip if employee has Attendance marked "On Leave" for today
+	  3. Handle existing shifts: cancel stale SA or reclassify as overtime
+	  4. Skip if a correct Shift Assignment already exists
+	  5. Otherwise, create and submit a new Shift Assignment
+	"""
+	# Build skip sets once for all schedules
+	todays_leaves = get_today_leaves(date)
+	employees_on_vacation = [
+		i.name for i in frappe.db.get_list(
+			"Employee",
+			filters={"status": ["in", ["Vacation", "Not Returned from Leave"]]},
+			fields=["name"],
+			ignore_permissions=True
+		)
+	]
+	employees_on_leave_attendance = [
+		i.employee for i in frappe.db.get_list(
+			"Attendance",
+			filters={
+				"attendance_date": date,
+				"status": "On Leave",
+				"docstatus": 1
+			},
+			fields=["employee"],
+			ignore_permissions=True
+		)
+	]
+
+	# Merge all skip employees into one set for fast lookup
+	skip_employees = set(todays_leaves + employees_on_vacation + employees_on_leave_attendance)
+
+	for schedule in schedules:
+		try:
+			# Guard: skip employees on leave / vacation
+			if schedule.employee in skip_employees:
+				continue
+
+			# Handle existing shifts: cancel stale SA or reclassify as overtime.
+			# This MUST run before the "already exists" guard because it may
+			# cancel the stale SA, allowing a new one to be created.
+			should_skip = _handle_existing_shifts_for_rambo(schedule, date)
+			if should_skip:
+				continue
+
+			# Guard: skip if a correct Shift Assignment already exists
+			if frappe.db.exists("Shift Assignment", {
+				"employee_schedule": schedule.name,
+				"docstatus": 1
+			}):
+				continue
+
+			# Create the Shift Assignment
+			shift_assignment = frappe.new_doc("Shift Assignment")
+			shift_assignment.employee = schedule.employee
+			shift_assignment.employee_name = schedule.employee_name
+			shift_assignment.department = schedule.department
+			shift_assignment.shift_type = schedule.shift_type
+			shift_assignment.shift = schedule.shift
+			shift_assignment.site = schedule.site
+			shift_assignment.project = schedule.project
+			shift_assignment.operations_role = schedule.operations_role
+			shift_assignment.post_abbrv = schedule.post_abbrv
+			shift_assignment.roster_type = schedule.roster_type
+			shift_assignment.employee_schedule = schedule.name
+			shift_assignment.start_date = get_datetime(schedule.start_datetime).date()
+			shift_assignment.start_datetime = schedule.start_datetime
+			shift_assignment.end_datetime = schedule.end_datetime
+			shift_assignment.custom_day_off_ot = schedule.day_off_ot
+
+			shift_assignment.insert(ignore_permissions=True)
+			shift_assignment.submit()
+
+		except frappe.ValidationError:
+			# Silently skip overlap / validation errors (e.g. duplicate shift)
+			pass
+		except Exception:
+			frappe.log_error(
+				title="Create Rambo Shift Assignment",
+				message=frappe.get_traceback()
+			)
+			continue
+
+	frappe.db.commit()
+
+
 def update_shift_type():
 	today_datetime = now_datetime()
 	minute = today_datetime.strftime("%M")
@@ -2239,6 +2596,8 @@ def notify_approver_about_pending_shift_request(is_scheduled_event=True):
 def attendance_query_script():
 	"""
 	Run a background check daily to identify active employees who meet:
+	- exactly 5 consecutive absent days (early-warning email to the employee and
+	  the Default Absence Investigation HR Officer configured in HR Settings).
 	- >= 7 consecutive absent days.
 	- >= 21 non-consecutive absent days in a calendar year.
 	"""
@@ -2271,13 +2630,27 @@ def attendance_query_script():
 		for record in absent_records:
 			employee_absences.setdefault(record.employee, []).append(record.attendance_date)
 
+		flagged_5_days = []
 		flagged_7_days = []
+		flagged_16_days = []
 		flagged_21_days = []
 
 		for emp, adates in employee_absences.items():
 			emp_name = frappe.db.get_value("Employee", emp, "employee_name")
 
 			year_absences = [d for d in adates if d >= start_of_year]
+
+			# Milestone early-warning fired when the yearly non-consecutive
+			# unexcused absence count reaches 16 (5 days short of the 21-day
+			# Resignation-by-Law threshold). Uses >= 16 so a retroactive
+			# attendance edit that jumps past 16 is still caught; the once-per-
+			# calendar-year dedup below ensures it fires exactly once.
+			if len(year_absences) >= 16:
+				flagged_16_days.append({
+					"employee_name": emp_name,
+					"employee_id": emp
+				})
+
 			if len(year_absences) >= 21:
 				flagged_21_days.append({
 					"employee_name": emp_name,
@@ -2303,6 +2676,59 @@ def attendance_query_script():
 					"employee_id": emp
 				})
 
+			# Determine the current (most recent) consecutive absence streak,
+			# walking back from the latest absent date while dates stay contiguous.
+			current_streak = 1
+			streak_start = sorted_dates[0]
+			for i in range(len(sorted_dates) - 1):
+				if date_diff(sorted_dates[i], sorted_dates[i + 1]) == 1:
+					current_streak += 1
+					streak_start = sorted_dates[i + 1]
+				else:
+					break
+
+			# Early-warning: fire only on the 5th consecutive day and only while the
+			# streak is still ongoing (latest absence is today or yesterday). This
+			# sends the alert exactly once: day 6 becomes a streak of 6 (not 5), and a
+			# resolved 5-day streak is no longer "ongoing", so it never re-fires.
+			if current_streak == 5 and date_diff(today_date, sorted_dates[0]) <= 1:
+				flagged_5_days.append({
+					"employee_name": emp_name,
+					"employee_id": emp,
+					"absence_start_date": streak_start
+				})
+
+
+		# On the 5th consecutive absent day: open an Absence Case and send the
+		# early-warning email directly to the employee and the HR Officer. Both are
+		# independent of the Attendance Manager digest handled below.
+		if flagged_5_days:
+			for emp in flagged_5_days:
+				case = create_absence_case(
+					emp["employee_id"],
+					"5 Days Consecutive Absence",
+					absence_start_date=emp["absence_start_date"]
+				)
+				# Only notify when a new case was opened; a returning None means an
+				# active case already exists (its emails were already sent).
+				if case:
+					send_five_day_absence_notifications(case)
+
+		# On the 16th non-consecutive absent day of the calendar year: open an
+		# Absence Case and send the milestone warning email directly to the
+		# employee and the Default Absence Investigation HR Officer. Deduped to
+		# fire once per employee per calendar year.
+		if flagged_16_days:
+			for emp in flagged_16_days:
+				case = create_yearly_milestone_absence_case(
+					emp["employee_id"],
+					"16 Days Absence in a Year",
+					start_of_year
+				)
+				# A returning None means a milestone case already exists for
+				# this employee this calendar year (its emails were already sent).
+				if case:
+					send_sixteen_day_absence_notifications(case)
 
 		manager_email = fetch_attendance_manager_user()
 
@@ -2346,7 +2772,7 @@ def attendance_query_script():
 
 
 
-def create_absence_case(employee, absence_type):
+def create_absence_case(employee, absence_type, absence_start_date=None):
 	"""
 	Generate a new Absence Case for flagged employees if an active one doesn't exist.
 	"""
@@ -2360,11 +2786,93 @@ def create_absence_case(employee, absence_type):
 	})
 
 	if existing_case:
-		return
+		return None
 
 	# Get Paid Annual Leave balance
 	leave_type = frappe.db.get_value("Leave Type", {"one_fm_is_paid_annual_leave": 1}, "name")
 	
+	balance = 0
+	if leave_type:
+		balance = get_leave_balance_on(employee, leave_type, today())
+
+	doc = frappe.get_doc({
+		"doctype": "Absence Case",
+		"employee": employee,
+		"posting_date": today(),
+		"absence_start_date": absence_start_date,
+		"absence_type": absence_type,
+		"annual_leave_balance": balance,
+		"status": "Draft"
+	})
+	doc.insert(ignore_permissions=True)
+	return doc
+
+
+def send_five_day_absence_notifications(case):
+	"""
+	Dispatch the two 5th-consecutive-day early-warning emails for an Absence Case:
+	- To the absent employee: a warning to contact HR.
+	- To the Default Absence Investigation HR Officer (HR Settings): a milestone
+	  escalation alert with the case reference summary.
+
+	Both emails are rendered from the Absence Case doc. Recipients use the User ID
+	login email; a recipient without one is skipped. is_external_mail=True bypasses
+	the notification-preference filter so this compliance warning is not dropped.
+	"""
+	# Employee warning email.
+	employee_user = frappe.db.get_value("Employee", case.employee, "user_id")
+	if employee_user:
+		employee_message = frappe.render_template(
+			"one_fm/templates/emails/five_day_absence_notification.html",
+			{"doc": case}
+		)
+		sendemail(
+			recipients=employee_user,
+			subject="5 Days Consecutive Absence Notification",
+			header=["5 Days Consecutive Absence Notification"],
+			message=employee_message,
+			is_external_mail=True
+		)
+
+	# HR Officer escalation email.
+	hr_officer = frappe.db.get_single_value(
+		"HR Settings", "default_absence_investigation_hr_officer"
+	)
+	if hr_officer:
+		hr_message = frappe.render_template(
+			"one_fm/templates/emails/five_day_absence_hr_officer_notification.html",
+			{"doc": case}
+		)
+		sendemail(
+			recipients=hr_officer,
+			subject="Action Required: 5-Day Consecutive Absence Milestone Escalation - [{0}]".format(case.employee_name),
+			header=["5-Day Consecutive Absence Milestone Escalation"],
+			message=hr_message,
+			is_external_mail=True
+		)
+
+
+def create_yearly_milestone_absence_case(employee, absence_type, start_of_year):
+	"""
+	Generate a milestone Absence Case for a yearly non-consecutive absence
+	threshold, deduped to at most one case per employee per calendar year.
+
+	Returns the new doc, or None if a case of this type already exists for the
+	employee within the current calendar year (so callers can skip re-notifying).
+	"""
+	existing_case = frappe.db.exists("Absence Case", {
+		"employee": employee,
+		"absence_type": absence_type,
+		"docstatus": ["<", 2],  # Not cancelled
+		"posting_date": [">=", start_of_year]
+	})
+
+	if existing_case:
+		return None
+
+	# Get Paid Annual Leave balance
+	leave_type = frappe.db.get_value("Leave Type", {"one_fm_is_paid_annual_leave": 1}, "name")
+
 	balance = 0
 	if leave_type:
 		balance = get_leave_balance_on(employee, leave_type, today())
@@ -2378,3 +2886,50 @@ def create_absence_case(employee, absence_type):
 		"status": "Draft"
 	})
 	doc.insert(ignore_permissions=True)
+	return doc
+
+
+def send_sixteen_day_absence_notifications(case):
+	"""
+	Dispatch the two 16th-non-consecutive-day milestone warning emails for an
+	Absence Case:
+	- To the absent employee: a warning that they are 5 days short of the 21-day
+	  Resignation-by-Law threshold and must report to the head office.
+	- To the Default Absence Investigation HR Officer (HR Settings): an operational
+	  alert with the case reference summary.
+
+	Both emails are rendered from the Absence Case doc. Recipients use the User ID
+	login email; a recipient without one is skipped. is_external_mail=True bypasses
+	the notification-preference filter so this compliance warning is not dropped.
+	"""
+	# Employee warning email.
+	employee_user = frappe.db.get_value("Employee", case.employee, "user_id")
+	if employee_user:
+		employee_message = frappe.render_template(
+			"one_fm/templates/emails/sixteen_day_absence_notification.html",
+			{"doc": case}
+		)
+		sendemail(
+			recipients=employee_user,
+			subject="16 Days Absence in the Calendar Year Notification",
+			header=["Critical Accumulated Absence Milestone (16 Days)"],
+			message=employee_message,
+			is_external_mail=True
+		)
+
+	# HR Officer milestone alert email.
+	hr_officer = frappe.db.get_single_value(
+		"HR Settings", "default_absence_investigation_hr_officer"
+	)
+	if hr_officer:
+		hr_message = frappe.render_template(
+			"one_fm/templates/emails/sixteen_day_absence_hr_officer_notification.html",
+			{"doc": case}
+		)
+		sendemail(
+			recipients=hr_officer,
+			subject="Critical Accumulated Absence Milestone (16 Days) - [{0}]".format(case.employee_name),
+			header=["Critical Accumulated Absence Milestone (16 Days)"],
+			message=hr_message,
+			is_external_mail=True
+		)

@@ -52,6 +52,16 @@ def get_attendance_custom_fields():
                 "read_only_depends_on": "eval:doc.docstatus==1"
             },
             {
+                "fieldname": "custom_correction_reason",
+                "fieldtype": "Small Text",
+                "insert_after": "comment",
+                "label": "Correction Reason",
+                "read_only": 1,
+                "allow_on_submit": 1,
+                "no_copy": 1,
+                "depends_on": "eval:doc.custom_correction_reason"
+            },
+            {
                 "fieldname": "attendance_comment",
                 "fieldtype": "Section Break",
                 "insert_after": "day_off_ot",

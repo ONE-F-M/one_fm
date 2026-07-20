@@ -31,6 +31,35 @@ monthname_dict = {
 class RosterDayOffChecker(Document):
 	pass
 
+def is_exit_before_month_midpoint(period_end_date, relieving_date):
+	"""
+	Determine whether an exiting employee's final working day falls before the month's
+	midpoint, in which case no day off is expected for that month.
+
+	The midpoint is the 15th for standard months and the 14th for February. The check
+	only applies when the comparison period end has been clamped to the employee's
+	final working day (relieving_date), i.e. the employee is leaving within that period.
+
+	Args:
+		period_end_date: The (possibly clamped) end date of the comparison period.
+		relieving_date: The employee's final working day, or None if not leaving.
+
+	Returns:
+		bool: True if expected days off should be forced to 0, False otherwise.
+	"""
+	if not relieving_date:
+		return False
+
+	period_end_date = getdate(period_end_date)
+
+	# Only applies when the period end is the employee's final working day (exit month)
+	if period_end_date != getdate(relieving_date):
+		return False
+
+	# February midpoint is the 14th; all other months use the 15th
+	midpoint_day = 14 if period_end_date.month == 2 else 15
+	return period_end_date.day < midpoint_day
+
 def get_leave_dates_by_employee():
     """
     Fetch and organize approved leave dates by employee for all leave applications
@@ -100,6 +129,59 @@ def get_employee_absent_dates(employee, start_date, end_date):
     return [record.attendance_date for record in absent_dates]
 
 
+def get_employee_suspended_dates(employee, start_date, end_date):
+    """
+    Return the dates within the period on which the employee is marked as "Suspended".
+
+    Suspension is recorded in two places depending on whether the day is in the past or
+    the future:
+      - Past days: the daily attendance job converts a suspended schedule into an
+        Attendance record with status "Absent" (comment "Employee Schedule - Suspended"),
+        so those days are already covered by get_employee_absent_dates.
+      - Future/rostered days: an Employee Schedule row with
+        employee_availability == "Suspended", which does not yet have an Attendance record.
+
+    This helper reads the Employee Schedule side so that suspended days without an
+    Attendance record are still excluded from the applicable-days calculation. Querying
+    the full period (rather than only future dates) is harmless — a date already counted
+    as absent is simply excluded once.
+    """
+    suspended_dates = frappe.get_all(
+        "Employee Schedule",
+        filters=[
+            ["employee", "=", employee],
+            ["date", "between", [start_date, end_date]],
+            ["employee_availability", "=", "Suspended"],
+        ],
+        fields=["date"],
+    )
+
+    return [record.date for record in suspended_dates]
+
+
+def calculate_expected_days_off(applicable_days, total_days, number_of_days_off):
+    """
+    Compute the expected number of days off for a comparison period using the
+    proportional formula shared by the Weekly and Monthly categories:
+
+        Weekly:  [Applicable Days] / 7               * [Days Off per Week]
+        Monthly: [Applicable Days] / [Days in Month] * [Days Off per Month]
+
+    `total_days` is the length of the comparison period (7 for a week, the number of days
+    in the month for a month) and `applicable_days` is that period reduced by every
+    non-working deduction: Suspended days, Annual Leave, Leave Without Pay, days outside
+    the employee's tenure (joining/relieving), and existing absences.
+
+    When every day in the period is deducted (e.g. the employee is Suspended for the whole
+    month or week) applicable_days is 0, so the expected days off is 0 and no shortage
+    alert is raised.
+    """
+    if not total_days:
+        return 0
+
+    return (applicable_days / total_days) * number_of_days_off
+
+
 def get_day_off_comparison_dates(employee, total_leave_dates):
     today = getdate()
     comparison_periods = []
@@ -119,22 +201,44 @@ def get_day_off_comparison_dates(employee, total_leave_dates):
         if start_date > end_date:
             return
 
-        # Consider non-absent days count as total days for this period
+        # Days the employee is not actually working are excluded from the applicable days:
+        # absences (which already include past suspended days, marked as "Absent") and
+        # future suspended days rostered on the Employee Schedule.
         absent_dates = get_employee_absent_dates(employee.name, start_date, end_date)
+        suspended_dates = get_employee_suspended_dates(employee.name, start_date, end_date)
 
         working_dates = []
         leave_dates_in_period = []
+        suspended_dates_in_period = []
 
         current = start_date
         while current <= end_date:
             if current in total_leave_dates:
                 leave_dates_in_period.append(current)
+            elif current in suspended_dates:
+                # Suspended days are neither worked nor treated as leave; they are simply
+                # deducted from the applicable days per the Day Off Checker formula.
+                suspended_dates_in_period.append(current)
             elif current not in absent_dates:
                 working_dates.append(current)
             current += timedelta(days=1)
 
-        # Calculate proportional days off
-        calculated_days_off = (len(working_dates) / total_days) * employee.number_of_days_off
+        # working_dates is the [Applicable Number of Days]: the period reduced by leave,
+        # suspended days, absences and out-of-tenure (joining/relieving) days. The shared
+        # formula turns it into the expected days off for both Weekly and Monthly categories.
+        calculated_days_off = calculate_expected_days_off(
+            len(working_dates), total_days, employee.number_of_days_off
+        )
+
+        # Exit-employee rule:
+        # When an employee is leaving the company, the period end is clamped to their
+        # final working day (relieving_date). If that final working day falls before the
+        # month's midpoint (the 15th for standard months, the 14th for February), they are
+        # not expected to take any day off this month. This prevents false shortage alerts
+        # for staff exiting early in the month. On/after the midpoint, the proportional
+        # calculation above stands.
+        if is_exit_before_month_midpoint(end_date, employee.relieving_date):
+            calculated_days_off = 0
 
         comparison_periods.append({
             "start_date": start_date,
@@ -142,6 +246,7 @@ def get_day_off_comparison_dates(employee, total_leave_dates):
             "calculated_number_of_days_off": round(calculated_days_off),
             "leave_dates": leave_dates_in_period,
             "working_dates": working_dates,
+            "suspended_dates": suspended_dates_in_period,
 			"absent_dates": absent_dates
         })
 
@@ -588,6 +693,7 @@ def _get_employees_with_join(join_clause, where_clause, user_employee):
 			e.number_of_days_off,
 			e.employee_id,
 			e.shift,
+			e.relieving_date,
 		    e.custom_operations_role_allocation
 		FROM `tabEmployee` e
 		{join_clause}

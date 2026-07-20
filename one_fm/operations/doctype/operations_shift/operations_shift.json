@@ -16,6 +16,7 @@
   "shift_number",
   "shift_type",
   "day_off_ot_allowed",
+  "double_shift_ot_allowed",
   "automate_roster",
   "supervisor",
   "supervisor_name",
@@ -193,6 +194,12 @@
    "fieldname": "day_off_ot_allowed",
    "fieldtype": "Check",
    "label": "Day Off OT Allowed"
+  },
+  {
+   "default": "0",
+   "fieldname": "double_shift_ot_allowed",
+   "fieldtype": "Check",
+   "label": "Double Shift OT Allowed"
   }
  ],
  "links": [
@@ -202,7 +209,7 @@
    "link_fieldname": "shift"
   }
  ],
- "modified": "2026-03-05 20:20:22.004307",
+ "modified": "2026-07-08 20:24:45.560363",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Shift",

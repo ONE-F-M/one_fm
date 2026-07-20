@@ -16,6 +16,7 @@
   "status",
   "start_date",
   "end_date",
+  "original_start_date",
   "priority_level",
   "allow_staff_rotation",
   "day_off_priority",
@@ -162,6 +163,14 @@
    "fieldname": "end_date",
    "fieldtype": "Date",
    "label": "End Date"
+  },
+  {
+   "description": "First ever activation date. Preserved for long-term tracking and never overwritten.",
+   "fieldname": "original_start_date",
+   "fieldtype": "Date",
+   "hidden": 1,
+   "label": "Original Start Date",
+   "read_only": 1
   },
   {
    "fieldname": "operations_post_activation",

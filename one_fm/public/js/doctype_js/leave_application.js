@@ -108,6 +108,7 @@ frappe.ui.form.on("Leave Application", {
         }
         updateCustomIsPaidVisibility(frm)
         manage_leave_extension(frm)
+        add_employee_resignation_button(frm)
         // Leave Handover Creation
 		if (frm.doc.status == 'Approved') {
 			frm.add_custom_button(__('Leave Handover'), function() {
@@ -196,9 +197,30 @@ frappe.ui.form.on("Leave Application", {
         validate_reliever(frm);
     },
 
+    custom_does_the_employee_need_additional_time_to_resume: function(frm) {
+        // Dynamically show/hide the "Create -> Leave Extension" action as soon
+        // as HelpDesk confirms the returning employee needs additional time.
+        manage_leave_extension(frm);
+    },
+
 
     leave_type: function(frm) {
         updateCustomIsPaidVisibility(frm);
+    },
+
+    custom_could_the_employee_be_reached: function(frm) {
+        if (frm.doc.custom_could_the_employee_be_reached === "No") {
+            // Employee could not be reached: default the Action to "Try Again"
+            // (the mandatory reason field is enforced via mandatory_depends_on).
+            if (!frm.doc.custom_action) {
+                frm.set_value("custom_action", "Try Again");
+            }
+        } else {
+            // Reached (Yes) or cleared: the retry Action and not-reached reason
+            // no longer apply, so reset them.
+            frm.set_value("custom_action", "");
+            frm.set_value("custom_reason_employee_not_reached", "");
+        }
     },
 
     resumption_date: function(frm) {
@@ -223,6 +245,25 @@ frappe.ui.form.on("Leave Application", {
         frm.trigger("calculate_total_days");
     }
 })
+
+// When HelpDesk confirms the employee will NOT return, expose an "Employee
+// Resignation" action under the "Create" menu so the offboarding/exit
+// replacement process can be initiated immediately. Clicking it opens a new
+// Employee Resignation with this leave's employee prefilled into the required
+// "employees" child table.
+function add_employee_resignation_button(frm) {
+    if (frm.doc.custom_will_the_employee_return === "No") {
+        frm.add_custom_button(__("Employee Resignation"), function() {
+            frappe.model.with_doctype("Employee Resignation", function() {
+                let doc = frappe.model.get_new_doc("Employee Resignation");
+                let row = frappe.model.add_child(doc, "Employee Resignation Item", "employees");
+                row.employee = frm.doc.employee;
+                row.employee_name = frm.doc.employee_name;
+                frappe.set_route("Form", "Employee Resignation", doc.name);
+            });
+        }, __("Create"));
+    }
+}
 
 async function handle_propose_new_date_action(frm) {
     return new Promise((resolve, reject) => {
@@ -417,12 +458,18 @@ function updateCustomIsPaidVisibility (frm) {
 
 function manage_leave_extension(frm) {
     if(!frm.is_new()) {
+        // Always clear the action first so it stays in sync when the
+        // "Does the Employee Need Additional Time to Resume?" field toggles
+        // between "Yes" and "No" without needing a form reload.
+        frm.remove_custom_button(__('Leave Extension'), __('Create'));
+
         frappe.call({
             doc: frm.doc,
             method: 'get_leave_extension_request',
-            callback: function(res) {
-                const leaveExtensionRequest = res.message ? res.message.request : null
-                const thresholdDays = (res.message && res.message.threshold_days) || 0;
+            callback: async function(res) {
+                const leaveExtensionRequest = res.message
+
+                const thresholdDays = await frappe.db.get_single_value("HR and Payroll Additional Settings", "leave_extension_request_allowance") || 0;
 
                 const today = frappe.datetime.get_today()
                 const leavePostingDate = frm.doc.posting_date
@@ -430,9 +477,13 @@ function manage_leave_extension(frm) {
 
                 const isWithinPermittedDateRange = new Date(today) >= new Date(leavePostingDate) && new Date(today) <= new Date(permittedEndDate);
 
-                if(frm.doc.leave_type === 'Annual Leave' && frm.doc.status === 'Approved' && isWithinPermittedDateRange && !leaveExtensionRequest) {
-                    frm.add_custom_button(__('Create Leave Extension Request'),
-                        function () {                            
+                // Only surface the action once HelpDesk confirms the employee
+                // is returning but delayed (needs additional time to resume).
+                const needsAdditionalTime = frm.doc.custom_does_the_employee_need_additional_time_to_resume === 'Yes';
+
+                if(needsAdditionalTime && frm.doc.leave_type === 'Annual Leave' && frm.doc.status === 'Approved' && isWithinPermittedDateRange && !leaveExtensionRequest) {
+                    frm.add_custom_button(__('Leave Extension'),
+                        function () {
                             let d = frappe.prompt([
                                 {
                                     fieldname: 'new_resumption_date',
@@ -465,7 +516,8 @@ function manage_leave_extension(frm) {
                                     minDate: frappe.datetime.str_to_obj(min_date)
                                 });
                             }
-                        }
+                        },
+                        __('Create')
                     );
                 }
             }
