@@ -65,19 +65,6 @@ def get_attachment_details(data, qp_letter):
                 attach_file_to_gp_letter_request(form_data[qp], gp_letter_request)
 
 
-                doc = frappe.new_doc("PAM Visa")
-                doc.pam_visa_reminder1 = frappe.utils.now()
-                doc.insert()
-
-                page_link = get_url(doc.get_url())
-                msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link})
-                sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
-                recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
-
-                sendemail(sender=sender, recipients= recipient,
-                    content=msg, subject="PAM Visa", delayed=False)
-
-
         return 'success'
 
     else:
