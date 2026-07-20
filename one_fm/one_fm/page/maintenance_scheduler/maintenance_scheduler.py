@@ -188,6 +188,59 @@ def get_schedule_data(view: str = "monthly", anchor: str | None = None, filters=
 		"end": end.isoformat(),
 		"max_visible": MAX_VISIBLE,
 		"buckets": buckets,
+		"summary": _build_summary(work_orders),
+	}
+
+
+@frappe.whitelist(methods=["POST"])
+def reschedule_work_order(name: str, new_date: str) -> dict:
+	"""Move a Work Order to a new planned date (drag-and-drop reschedule).
+
+	The Planned Deadline is a read-only field the controller derives from the
+	SLA Trigger Time, so we shift the SLA Trigger Time by the same delta as the
+	new date and write both values. Persisted with ``db_set`` so the move works
+	on submitted Work Orders and applies as a straight last-write-wins update
+	(no timestamp-mismatch conflict) when two users move the same task.
+
+	Blocks Completed Work Orders and any drop onto a past date.
+	"""
+	if not name or not new_date:
+		frappe.throw(_("Work Order and target date are required."))
+
+	doc = frappe.get_doc("Maintenance Work Order", name)
+	# Document-level permission gate (whitelisted method — never trust the caller).
+	doc.check_permission("write")
+
+	# AC: a Completed Work Order cannot be moved.
+	if doc.status == "Completed":
+		frappe.throw(_("Completed Work Orders cannot be rescheduled."))
+
+	# AC: a Work Order cannot be dropped on a past date.
+	target_date = getdate(new_date)
+	if target_date < getdate(nowdate()):
+		frappe.throw(_("A Work Order cannot be moved to a past date."))
+
+	if not doc.planned_deadline:
+		frappe.throw(_("This Work Order has no Planned Deadline to reschedule."))
+
+	old_deadline = get_datetime(doc.planned_deadline)
+	# Only the date changes — preserve the original time-of-day.
+	new_deadline = get_datetime(f"{target_date.isoformat()} {old_deadline.strftime('%H:%M:%S')}")
+
+	updates = {"planned_deadline": new_deadline}
+
+	# Shift the SLA Trigger Time by the same delta so the SLA-derived model stays
+	# consistent with the new planned date (per the reschedule design decision).
+	if doc.sla_trigger_time:
+		delta = new_deadline - old_deadline
+		updates["sla_trigger_time"] = get_datetime(doc.sla_trigger_time) + delta
+
+	doc.db_set(updates, update_modified=True)
+
+	return {
+		"name": doc.name,
+		"planned_deadline": new_deadline.isoformat(),
+		"status": doc.status,
 	}
 
 
@@ -223,6 +276,7 @@ def _fetch_work_orders(start, end, filters: dict) -> list[dict]:
 		"project",
 		"planned_deadline",
 		"creation_datetime",
+		"completion_time",
 	]
 
 	start_str = get_datetime(start).strftime("%Y-%m-%d %H:%M:%S")
@@ -250,12 +304,31 @@ def _fetch_work_orders(start, end, filters: dict) -> list[dict]:
 		limit_page_length=0,
 	)
 
+	# "Overdue" is a derived/virtual state (not a stored status): a Work Order is
+	# overdue when its planned deadline has passed and it is not yet Completed.
+	# Compared against a single "now" so all cards share one reference point.
+	now = now_datetime()
+
 	work_orders = []
 	for wo in planned + unplanned:
 		slot = wo.get("planned_deadline") or wo.get("creation_datetime")
 		if not slot:
 			continue
 		slot_dt = get_datetime(slot)
+		is_planned = bool(wo.get("planned_deadline"))
+		is_completed = wo.get("status") == "Completed"
+		planned_dt = get_datetime(wo.get("planned_deadline")) if is_planned else None
+		is_overdue = bool(is_planned and not is_completed and planned_dt and planned_dt < now)
+
+		# SLA: a planned order is "due" in the range; it counts as met when it was
+		# completed on or before its planned deadline (contract deadline).
+		completed_within_deadline = bool(
+			is_completed
+			and is_planned
+			and wo.get("completion_time")
+			and get_datetime(wo.get("completion_time")) <= planned_dt
+		)
+
 		work_orders.append(
 			{
 				"name": wo.name,
@@ -271,10 +344,61 @@ def _fetch_work_orders(start, end, filters: dict) -> list[dict]:
 				"time_label": slot_dt.strftime("%H:%M"),
 				"date_key": slot_dt.date().isoformat(),
 				"hour": slot_dt.hour,
-				"is_planned": bool(wo.get("planned_deadline")),
+				"is_planned": is_planned,
+				"is_completed": is_completed,
+				"is_overdue": is_overdue,
+				# "due in the selected range" == has a planned deadline in the window.
+				"is_due": is_planned,
+				"completed_within_deadline": completed_within_deadline,
 			}
 		)
 	return work_orders
+
+
+def _build_summary(work_orders: list[dict]) -> dict:
+	"""Aggregate footer counters + SLA % for the currently visible Work Orders.
+
+	Recomputed on every load, so it stays live with the selected viewport,
+	anchor date and location filters. Overdue takes precedence over the stored
+	status when counting so Open / Completed / Overdue partition cleanly.
+
+	SLA % = completed-within-planned-deadline / total-due-in-range * 100.
+	"""
+	summary = {
+		"open": 0,
+		"dispatched": 0,
+		"on_hold": 0,
+		"completed": 0,
+		"overdue": 0,
+		"total": len(work_orders),
+		"due": 0,
+		"completed_within_deadline": 0,
+		"sla_percent": 0.0,
+	}
+
+	for wo in work_orders:
+		if wo["is_overdue"]:
+			summary["overdue"] += 1
+		elif wo["status"] == "Completed":
+			summary["completed"] += 1
+		elif wo["status"] == "Open":
+			summary["open"] += 1
+		elif wo["status"] == "Dispatched":
+			summary["dispatched"] += 1
+		elif wo["status"] == "On Hold - Parts Required":
+			summary["on_hold"] += 1
+
+		if wo["is_due"]:
+			summary["due"] += 1
+			if wo["completed_within_deadline"]:
+				summary["completed_within_deadline"] += 1
+
+	if summary["due"]:
+		summary["sla_percent"] = round(
+			summary["completed_within_deadline"] / summary["due"] * 100, 1
+		)
+
+	return summary
 
 
 # ---------------------------------------------------------------------------

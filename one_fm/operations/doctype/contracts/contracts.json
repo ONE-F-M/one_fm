@@ -126,14 +126,14 @@
    "fieldtype": "Date",
    "in_list_view": 1,
    "label": "Contract Start Date",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.workflow_state && doc.workflow_state != \"Draft\""
   },
   {
    "fieldname": "end_date",
    "fieldtype": "Date",
    "in_list_view": 1,
    "label": "Contract End Date",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.workflow_state && doc.workflow_state != \"Draft\""
   },
   {
    "fieldname": "duration",
@@ -346,7 +346,7 @@
   }
  ],
  "links": [],
- "modified": "2026-06-09 02:48:00.000000",
+ "modified": "2026-07-01 23:49:36.349654",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",

@@ -15,6 +15,8 @@
 const API_DATA = "one_fm.one_fm.page.maintenance_scheduler.maintenance_scheduler.get_schedule_data";
 const API_OPTIONS =
 	"one_fm.one_fm.page.maintenance_scheduler.maintenance_scheduler.get_location_filter_data";
+const API_RESCHEDULE =
+	"one_fm.one_fm.page.maintenance_scheduler.maintenance_scheduler.reschedule_work_order";
 const VUE_ASSET = "/assets/one_fm/js/vue.global.js";
 
 // The cascading filter levels, top -> bottom. Each depends on the one above.
@@ -92,6 +94,21 @@ function mount_app(page) {
 				allOptions: { project: [], operations_site: [], building: [], maintenance_floor: [], space: [] },
 				// bucket keys whose "+X more" has been expanded
 				expanded: {},
+				// live footer counters + SLA %, refreshed on every load
+				summary: {
+					open: 0,
+					dispatched: 0,
+					on_hold: 0,
+					completed: 0,
+					overdue: 0,
+					total: 0,
+					due: 0,
+					completed_within_deadline: 0,
+					sla_percent: 0,
+				},
+				// drag-and-drop reschedule state (Daily + Monthly views only)
+				dragging: null, // { wo, from } while a card is being dragged
+				dragOverKey: "", // bucket key currently hovered as a drop target
 			};
 		},
 		computed: {
@@ -108,6 +125,10 @@ function mount_app(page) {
 			},
 			totalWorkOrders() {
 				return this.buckets.reduce((n, b) => n + (b.work_orders ? b.work_orders.length : 0), 0);
+			},
+			// Drag-to-reschedule is only unambiguous on the day-based calendars.
+			dragEnabled() {
+				return this.view === "daily" || this.view === "monthly";
 			},
 		},
 		methods: {
@@ -131,6 +152,7 @@ function mount_app(page) {
 						this.buckets = m.buckets || [];
 						this.periodLabel = m.period_label || "";
 						this.maxVisible = m.max_visible || 5;
+						if (m.summary) this.summary = m.summary;
 						this.expanded = {}; // collapse everything on each (re)load
 					},
 					error: () => {
@@ -272,16 +294,48 @@ function mount_app(page) {
 			openWorkOrder(wo) {
 				window.open(`/app/maintenance-work-order/${encodeURIComponent(wo.name)}`, "_blank");
 			},
-			statusClass(status) {
-				return {
-					Open: "ms-status-open",
-					Dispatched: "ms-status-dispatched",
-					"On Hold - Parts Required": "ms-status-hold",
-					Completed: "ms-status-completed",
-				}[status] || "ms-status-open";
+			// The colour-driving status: "Overdue" is a virtual state (past its
+			// planned deadline and not Completed) that overrides the stored status.
+			effectiveStatus(wo) {
+				if (wo.is_completed) return "Completed";
+				if (wo.is_overdue) return "Overdue";
+				return wo.status;
 			},
-			typeClass(type) {
-				return type === "Reactive Maintenance" ? "ms-type-reactive" : "ms-type-preventive";
+			// Dot colour by status: Open=Blue, Dispatched=Purple, Completed=Green,
+			// Overdue=Red, On Hold=Amber.
+			statusClass(wo) {
+				return (
+					{
+						Open: "ms-status-open",
+						Dispatched: "ms-status-dispatched",
+						"On Hold - Parts Required": "ms-status-hold",
+						Completed: "ms-status-completed",
+						Overdue: "ms-status-overdue",
+					}[this.effectiveStatus(wo)] || "ms-status-open"
+				);
+			},
+			// Left-border colour by status — same palette as the dot.
+			statusBorderClass(wo) {
+				return (
+					{
+						Open: "ms-bd-open",
+						Dispatched: "ms-bd-dispatched",
+						"On Hold - Parts Required": "ms-bd-hold",
+						Completed: "ms-bd-completed",
+						Overdue: "ms-bd-overdue",
+					}[this.effectiveStatus(wo)] || "ms-bd-open"
+				);
+			},
+			// Multi-line native tooltip with quick task details on hover.
+			tooltipText(wo) {
+				const lines = [
+					wo.object_name || wo.name,
+					`${__("Status")}: ${this.effectiveStatus(wo)}`,
+					wo.maintenance_type ? `${__("Type")}: ${wo.maintenance_type}` : null,
+					wo.time_label ? `${__("Planned")}: ${wo.date_key || ""} ${wo.time_label}` : null,
+					wo.space ? `${__("Space")}: ${wo.space}` : null,
+				];
+				return lines.filter(Boolean).join("\n");
 			},
 			escape(v) {
 				return frappe.utils.escape_html(v == null ? "" : String(v));
@@ -290,6 +344,94 @@ function mount_app(page) {
 				// The hourly view already groups by hour; other views benefit from
 				// the exact time badge on each card.
 				return this.view !== "hourly";
+			},
+
+			// --- drag-and-drop reschedule (Daily + Monthly) ------------------
+			// A card is draggable only in a day view, only when it has a planned
+			// deadline, and never when Completed (blocks moving finished orders).
+			isDraggable(wo) {
+				return this.dragEnabled && !!wo.is_planned && !wo.is_completed;
+			},
+			onDragStart(e, wo, bucket) {
+				if (!this.isDraggable(wo)) {
+					// Completed / non-planned cards must not start a drag.
+					e.preventDefault();
+					return;
+				}
+				this.dragging = { wo, from: bucket.key };
+				if (e.dataTransfer) {
+					e.dataTransfer.effectAllowed = "move";
+					try {
+						e.dataTransfer.setData("text/plain", wo.name);
+					} catch (_e) {
+						// Some browsers restrict setData; the in-memory state is enough.
+					}
+				}
+			},
+			onDragEnd() {
+				this.dragging = null;
+				this.dragOverKey = "";
+			},
+			onDragOver(e, bucket) {
+				// Only accept drops on real date cells while a drag is in progress.
+				if (!this.dragging || !this.dragEnabled || !bucket.date) return;
+				e.preventDefault();
+				if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+				this.dragOverKey = bucket.key;
+			},
+			onDragLeave(bucket) {
+				if (this.dragOverKey === bucket.key) this.dragOverKey = "";
+			},
+			onDrop(e, bucket) {
+				if (!this.dragEnabled) return;
+				e.preventDefault();
+				const drag = this.dragging;
+				this.dragOverKey = "";
+				this.dragging = null;
+				if (!drag || !bucket.date) return;
+
+				const wo = drag.wo;
+				// Guard again client-side (server re-validates authoritatively).
+				if (wo.is_completed) {
+					frappe.show_alert({
+						message: __("Completed Work Orders cannot be moved."),
+						indicator: "red",
+					});
+					return;
+				}
+				const today = frappe.datetime.get_today();
+				if (bucket.date < today) {
+					frappe.show_alert({
+						message: __("A Work Order cannot be moved to a past date."),
+						indicator: "orange",
+					});
+					return;
+				}
+				if (drag.from === bucket.key) return; // dropped back on its own cell
+
+				this.rescheduleWorkOrder(wo, bucket.date);
+			},
+			rescheduleWorkOrder(wo, newDate) {
+				frappe.call({
+					method: API_RESCHEDULE,
+					args: { name: wo.name, new_date: newDate },
+					freeze: true,
+					freeze_message: __("Rescheduling…"),
+					callback: (r) => {
+						if (r && r.message) {
+							frappe.show_alert({
+								message: __("Moved to {0}", [frappe.datetime.str_to_user(newDate)]),
+								indicator: "green",
+							});
+						}
+						this.loadData();
+					},
+					error: () => {
+						// Server rejected the move (past date, completed, permission,
+						// concurrent state) — reload to show the confirmed state.
+						this.loadData();
+					},
+				});
 			},
 		},
 		mounted() {
@@ -362,19 +504,29 @@ const TEMPLATE = `
 			<div :class="gridClass">
 				<div class="ms-cal-blank" v-for="(b, i) in monthLeadBlanks" :key="'blank-' + i"></div>
 				<div v-for="bucket in buckets" :key="bucket.key"
-					class="ms-cell ms-day-cell" :class="{ 'ms-today': bucket.is_today }">
+					class="ms-cell ms-day-cell"
+					:class="{ 'ms-today': bucket.is_today, 'ms-drop-target': dragOverKey === bucket.key }"
+					@dragover="onDragOver($event, bucket)"
+					@dragleave="onDragLeave(bucket)"
+					@drop="onDrop($event, bucket)">
 					<div class="ms-cell-head">
 						<span class="ms-cell-daynum">{{ bucket.label }}</span>
 						<span class="ms-cell-sub">{{ bucket.sublabel }}</span>
 					</div>
 					<div class="ms-orders">
 						<div v-for="wo in visibleOrders(bucket)" :key="wo.name"
-							class="ms-order" :class="typeClass(wo.maintenance_type)"
-							:title="wo.object_name + ' · ' + wo.status"
-							@click="openWorkOrder(wo)">
-							<span class="ms-order-dot" :class="statusClass(wo.status)"></span>
+							class="ms-order" :class="[statusBorderClass(wo), { 'ms-draggable': isDraggable(wo) }]"
+							:draggable="isDraggable(wo)"
+							:title="tooltipText(wo)"
+							@click="openWorkOrder(wo)"
+							@dragstart="onDragStart($event, wo, bucket)"
+							@dragend="onDragEnd">
+							<span class="ms-order-dot" :class="statusClass(wo)"></span>
 							<span v-if="showTime(wo)" class="ms-order-time">{{ wo.time_label }}</span>
 							<span class="ms-order-title">{{ wo.object_name || wo.name }}</span>
+						</div>
+						<div v-if="!bucket.work_orders.length" class="ms-cell-empty text-muted small">
+							{{ __("No Work Orders") }}
 						</div>
 						<button v-if="hiddenCount(bucket)" class="ms-more" @click.stop="toggleExpand(bucket)">
 							+{{ hiddenCount(bucket) }} {{ __("more") }}
@@ -398,13 +550,13 @@ const TEMPLATE = `
 				</div>
 				<div class="ms-hour-orders">
 					<div v-for="wo in visibleOrders(bucket)" :key="wo.name"
-						class="ms-order ms-order-inline" :class="typeClass(wo.maintenance_type)"
-						:title="wo.object_name + ' · ' + wo.status"
+						class="ms-order ms-order-inline" :class="statusBorderClass(wo)"
+						:title="tooltipText(wo)"
 						@click="openWorkOrder(wo)">
-						<span class="ms-order-dot" :class="statusClass(wo.status)"></span>
+						<span class="ms-order-dot" :class="statusClass(wo)"></span>
 						<span class="ms-order-time">{{ wo.time_label }}</span>
 						<span class="ms-order-title">{{ wo.object_name || wo.name }}</span>
-						<span class="ms-order-status">{{ wo.status }}</span>
+						<span class="ms-order-status">{{ effectiveStatus(wo) }}</span>
 					</div>
 					<span v-if="!bucket.work_orders.length" class="ms-hour-empty text-muted small">—</span>
 					<button v-if="hiddenCount(bucket)" class="ms-more" @click.stop="toggleExpand(bucket)">
@@ -422,7 +574,10 @@ const TEMPLATE = `
 		<div v-else :class="gridClass">
 			<div v-for="bucket in buckets" :key="bucket.key"
 				class="ms-cell ms-bucket-cell"
-				:class="{ 'ms-today': bucket.is_today, 'ms-current': bucket.is_current }">
+				:class="{ 'ms-today': bucket.is_today, 'ms-current': bucket.is_current, 'ms-drop-target': dragOverKey === bucket.key }"
+				@dragover="onDragOver($event, bucket)"
+				@dragleave="onDragLeave(bucket)"
+				@drop="onDrop($event, bucket)">
 				<div class="ms-cell-head">
 					<span class="ms-cell-title">{{ bucket.label }}</span>
 					<span class="ms-cell-sub">{{ bucket.sublabel }}</span>
@@ -430,12 +585,18 @@ const TEMPLATE = `
 				</div>
 				<div class="ms-orders">
 					<div v-for="wo in visibleOrders(bucket)" :key="wo.name"
-						class="ms-order" :class="typeClass(wo.maintenance_type)"
-						:title="wo.object_name + ' · ' + wo.status"
-						@click="openWorkOrder(wo)">
-						<span class="ms-order-dot" :class="statusClass(wo.status)"></span>
+						class="ms-order" :class="[statusBorderClass(wo), { 'ms-draggable': isDraggable(wo) }]"
+						:draggable="isDraggable(wo)"
+						:title="tooltipText(wo)"
+						@click="openWorkOrder(wo)"
+						@dragstart="onDragStart($event, wo, bucket)"
+						@dragend="onDragEnd">
+						<span class="ms-order-dot" :class="statusClass(wo)"></span>
 						<span v-if="showTime(wo)" class="ms-order-time">{{ wo.time_label }}</span>
 						<span class="ms-order-title">{{ wo.object_name || wo.name }}</span>
+					</div>
+					<div v-if="!bucket.work_orders.length" class="ms-cell-empty text-muted small">
+						{{ __("No Work Orders") }}
 					</div>
 					<button v-if="hiddenCount(bucket)" class="ms-more" @click.stop="toggleExpand(bucket)">
 						+{{ hiddenCount(bucket) }} {{ __("more") }}
@@ -446,6 +607,35 @@ const TEMPLATE = `
 					</button>
 				</div>
 			</div>
+		</div>
+	</div>
+
+	<!-- Live footer: status counters + SLA %, refreshed on every load so it
+	     always reflects the visible date range and active filters. -->
+	<div class="ms-footer">
+		<div class="ms-footer-counts">
+			<span class="ms-chip">
+				<span class="ms-order-dot ms-status-open"></span>{{ __("Open") }}: <strong>{{ summary.open }}</strong>
+			</span>
+			<span class="ms-chip">
+				<span class="ms-order-dot ms-status-dispatched"></span>{{ __("Dispatched") }}: <strong>{{ summary.dispatched }}</strong>
+			</span>
+			<span class="ms-chip">
+				<span class="ms-order-dot ms-status-hold"></span>{{ __("On Hold") }}: <strong>{{ summary.on_hold }}</strong>
+			</span>
+			<span class="ms-chip">
+				<span class="ms-order-dot ms-status-completed"></span>{{ __("Completed") }}: <strong>{{ summary.completed }}</strong>
+			</span>
+			<span class="ms-chip">
+				<span class="ms-order-dot ms-status-overdue"></span>{{ __("Overdue") }}: <strong>{{ summary.overdue }}</strong>
+			</span>
+		</div>
+		<div class="ms-footer-sla">
+			<span class="ms-sla-label">{{ __("SLA") }}</span>
+			<span class="ms-sla-value">{{ summary.sla_percent }}%</span>
+			<span class="text-muted small">
+				({{ summary.completed_within_deadline }}/{{ summary.due }} {{ __("within deadline") }})
+			</span>
 		</div>
 	</div>
 </div>

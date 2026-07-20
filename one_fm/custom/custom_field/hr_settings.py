@@ -10,6 +10,14 @@ def get_hr_settings_custom_fields():
                 "description": "User ID of current HR Manager."
             },
             {
+                "fieldname": "attendance_check_action_user",
+                "fieldtype": "Link",
+                "insert_after": "custom_hr_manager",
+                "label": "Attendance Check Action User",
+                "options": "User",
+                "description": "Default Action Owner. Auto-populated into the 'Assigned To' field of every auto-generated Attendance Check Action."
+            },
+            {
                 "fieldname": "payroll_notifications_email",
                 "fieldtype": "Data",
                 "insert_after": "unlink_payment_on_cancellation_of_employee_advance",
@@ -175,6 +183,21 @@ def get_hr_settings_custom_fields():
                 "insert_after": "employee_status_update_notification_email_section",
                 "label": "Notification Members",
                 "options": "ALM Notification Member",
+            },
+            {
+                "fieldname": "absence_investigation_section",
+                "fieldtype": "Section Break",
+                "insert_after": "employee_status_update_notification_members",
+                "label": "Absence Investigation",
+                "collapsible": 1,
+            },
+            {
+                "fieldname": "default_absence_investigation_hr_officer",
+                "fieldtype": "Link",
+                "insert_after": "absence_investigation_section",
+                "label": "Default Absence Investigation HR Officer",
+                "options": "User",
+                "description": "Primary recipient of automated absence early-warning alerts (e.g. the 5th consecutive day of unexcused absence, and the 16th non-consecutive day of unexcused absence in the calendar year). Alerts are sent to this user's login email.",
             },
         ]
     }

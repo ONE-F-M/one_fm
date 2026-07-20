@@ -15,6 +15,24 @@ from one_fm.utils import (
     get_shift_supervisor,
 )
 
+# Fields copied from the grace-period source Attendance Check (the check linked
+# to the active Attendance Check Action) onto a new Attendance Check while the
+# grace period is active. Justification, questionnaire answers and the resulting
+# action, so the supervisor never re-enters the same justification each day.
+GRACE_COPY_FIELDS = (
+    "justification",
+    "is_the_mobile_specification_up_to_the_standard",
+    "is_the_employee_physically_onsite",
+    "were_proper_permissions_given_to_the_app",
+    "is_the_employee_assigned_to_the_correct_shift",
+    "did_the_employee_try_to_check_in_outside_working_hours",
+    "mobile_brand",
+    "mobile_model",
+    "other_reason",
+    "action",
+)
+
+
 class AttendanceCheck(Document):
     def before_insert(self):
         self.validate_duplicate()
@@ -207,8 +225,65 @@ class AttendanceCheck(Document):
 
     def validate(self):
         self.validate_is_replaced_shift_assignment()
+        # Auto-populate justification/answers from the active grace period before
+        # validating them, so the copied values are validated like any other.
+        self.apply_grace_period_autofill()
         self.validate_justification()
         self.set_action()
+
+    def get_active_grace_action(self):
+        """Return (and cache) the active grace-period Attendance Check Action for
+        this employee on this check's date, or None.
+
+        A grace period is active while an Attendance Check Action for the same
+        employee is NOT Closed and this check's ``date`` falls within its
+        ``start_date``..``deadline_date`` window (inclusive).
+        """
+        if not hasattr(self, "_grace_action"):
+            from one_fm.one_fm.doctype.attendance_check_action.attendance_check_action import (
+                get_active_grace_action,
+            )
+
+            self._grace_action = (
+                get_active_grace_action(self.employee, self.date)
+                if self.employee and self.date
+                else None
+            )
+        return self._grace_action
+
+    def is_grace_period_active(self):
+        return bool(self.get_active_grace_action())
+
+    def apply_grace_period_autofill(self):
+        """Fetch Justification, questionnaire answers and Action from the source
+        Attendance Check linked to the active Attendance Check Action, and fill
+        them into this check.
+
+        Only runs when the status is Present and the justification has not been
+        entered yet, so an explicit supervisor entry is never overwritten. This
+        server-side pass mirrors the instant client-side auto-fill and guards the
+        API / save / approve paths.
+        """
+        if self.attendance_status != "Present" or self.justification:
+            return
+
+        action = self.get_active_grace_action()
+        if not action or not action.get("attendance_check"):
+            return
+
+        source = frappe.db.get_value(
+            "Attendance Check",
+            action.get("attendance_check"),
+            list(GRACE_COPY_FIELDS),
+            as_dict=True,
+        )
+        if not source:
+            return
+
+        for field in GRACE_COPY_FIELDS:
+            value = source.get(field)
+            if value:
+                self.set(field, value)
 
     def validate_is_replaced_shift_assignment(self):
         if self.attendance_status and self.attendance_status == "Present" and self.shift_assignment:
@@ -237,7 +312,9 @@ class AttendanceCheck(Document):
                 self.mobile_model = ""
 
             if self.justification in ["Out-of-site location", "User not assigned to shift", "Forgot to check in"]:
-                if not self.screenshot:
+                # During an active grace period the justification is carried over
+                # from the original issue, so a fresh screenshot is not required.
+                if not self.screenshot and not self.is_grace_period_active():
                     frappe.throw("Please Attach ScreenShot")
             else:
                 self.screenshot = ""
@@ -301,6 +378,27 @@ class AttendanceCheck(Document):
             self.mark_attendance()
         # Auto-create Penalty And Investigation on approval (Stories 1, 2, 3)
         self.create_penalty_on_approval()
+        # Auto-create Attendance Check Action when action is "Issue a New Mobile"
+        self.create_attendance_check_action()
+
+    def create_attendance_check_action(self):
+        """Auto-generate an Attendance Check Action (Draft) when this check is
+        submitted with the action 'Issue a New Mobile'.
+
+        Enqueued to run in the background *after commit* so it can never block,
+        delay or freeze the Attendance Check approval — mirroring the penalty
+        creation pattern in ``create_penalty_on_approval``.
+        """
+        if self.action != "Issue a New Mobile":
+            return
+
+        frappe.enqueue(
+            _create_attendance_check_action_doc,
+            queue="short",
+            timeout=120,
+            enqueue_after_commit=True,
+            attendance_check=self.name,
+        )
 
     def create_penalty_on_approval(self):
         """Evaluate the justification gateway and trigger background penalty creation if applicable."""
@@ -702,6 +800,62 @@ def _create_penalty_document(penalty_params, attendance_check_name):
             message=f"Attendance Check: {attendance_check_name}\n{frappe.get_traceback()}"
         )
 
+def _create_attendance_check_action_doc(attendance_check):
+    """Background job: create a Draft Attendance Check Action for an Attendance Check
+    whose action is 'Issue a New Mobile'.
+
+    Args:
+        attendance_check (str): Name of the source Attendance Check.
+    """
+    try:
+        # Skip if an action already exists for this check (re-submit / retry safety).
+        if frappe.db.exists("Attendance Check Action", {"attendance_check": attendance_check}):
+            return
+
+        source = frappe.db.get_value(
+            "Attendance Check",
+            attendance_check,
+            ["employee", "date", "action"],
+            as_dict=True,
+        )
+        if not source or source.action != "Issue a New Mobile":
+            return
+
+        # Skip if the employee already has an open (not Closed) Attendance Check
+        # Action — a new one may only start once the previous lifecycle is Closed.
+        from one_fm.one_fm.doctype.attendance_check_action.attendance_check_action import (
+            get_open_action_for_employee,
+        )
+
+        if get_open_action_for_employee(source.employee):
+            return
+
+        # The Attendance Check Action is named HR-ACA-{employee}_{start_date}; guard
+        # against a name collision from another roster type on the same day.
+        expected_name = f"HR-ACA-{source.employee}_{source.date}"
+        if frappe.db.exists("Attendance Check Action", expected_name):
+            return
+
+        action_doc = frappe.new_doc("Attendance Check Action")
+        action_doc.attendance_check = attendance_check
+        action_doc.employee = source.employee
+        action_doc.action = "Issue a New Mobile"
+        action_doc.start_date = source.date
+        action_doc.status = "Draft"
+        # Route the draft to the default Action Owner configured in HR Settings.
+        action_doc.assigned_to = frappe.db.get_single_value(
+            "HR Settings", "attendance_check_action_user"
+        )
+        action_doc.insert(ignore_permissions=True)
+
+        frappe.db.commit()
+    except Exception:
+        frappe.log_error(
+            title="Attendance Check Action Creation Failed",
+            message=f"Attendance Check: {attendance_check}\n{frappe.get_traceback()}",
+        )
+
+
 def create_attendance_check(attendance_date=None):
     if production_domain():
         if not attendance_date:
@@ -869,6 +1023,47 @@ def _get_yesterday_carryover_data(employee_ids, yesterday):
         carryover_map[rec.employee] = rec
 
     return carryover_map
+
+
+@frappe.whitelist()
+def get_grace_period_prefill(employee: str, date: str) -> dict:
+    """Return the Justification, questionnaire answers and Action to auto-fill a
+    new Attendance Check when the employee is inside an active grace period.
+
+    Called by the client script the moment the supervisor selects an Attendance
+    Status of "Present". Returns an empty dict when no grace period is active.
+
+    Args:
+        employee (str): Employee the Attendance Check is for.
+        date (str): The Attendance Check's date (business day being justified).
+    """
+    # get_list-style permission gate: only users who may read Attendance Check
+    # can pull another check's justification onto a new one.
+    frappe.has_permission("Attendance Check", "read", throw=True)
+
+    from one_fm.one_fm.doctype.attendance_check_action.attendance_check_action import (
+        get_active_grace_action,
+    )
+
+    action = get_active_grace_action(employee, date)
+    if not action or not action.get("attendance_check"):
+        return {}
+
+    source = frappe.db.get_value(
+        "Attendance Check",
+        action.get("attendance_check"),
+        list(GRACE_COPY_FIELDS),
+        as_dict=True,
+    )
+    if not source:
+        return {}
+
+    data = {field: source.get(field) for field in GRACE_COPY_FIELDS if source.get(field)}
+    if not data:
+        return {}
+
+    data["grace_action"] = action.get("name")
+    return data
 
 
 @frappe.whitelist()

@@ -114,6 +114,30 @@ class TestTransportationManifest(FrappeTestCase):
 		self.assertEqual(doc.transportation_manifest_details[0].qoa_status, None)
 		self.assertEqual(doc.transportation_manifest_details[0].qoa_reason, None)
 
+	def test_present_qoa_fail_allows_reliever(self):
+		# A Present worker who fails QOA can be flagged and assigned a reliever.
+		doc = frappe.new_doc("Transportation Manifest")
+		doc.vehicle_no = self.vehicle1
+		doc.schedule_date = today()
+		doc.append("transportation_manifest_details", {
+			"stop_name": "Test Stop",
+			"employee": self.employee1,
+			"attendance_status": "Present",
+			"qoa_status": "Fail",
+			"qoa_reason": "Uniform",
+			"reliever_employee": self.reliever,
+			"scheduled_time": "08:00:00"
+		})
+		doc.save()
+
+		row = doc.transportation_manifest_details[0]
+		# requires_reliever is auto-set when a reliever is assigned
+		self.assertEqual(row.requires_reliever, 1)
+		# QOA fields are preserved (not cleared, since the worker is Present)
+		self.assertEqual(row.qoa_status, "Fail")
+		self.assertEqual(row.qoa_reason, "Uniform")
+		self.assertEqual(row.reliever_employee, self.reliever)
+
 	def test_reliever_replacement_validation(self):
 		# Assign reliever employee
 		doc1 = frappe.new_doc("Transportation Manifest")
