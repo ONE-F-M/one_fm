@@ -541,6 +541,8 @@ def deploy_ticket_views():
     meta: {
       onSuccessRoute: "TicketCustomer",
       parent: "TicketsCustomer",
+      public: true,
+      auth: true,
     },
   },'''
 
