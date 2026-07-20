@@ -23,6 +23,8 @@ class RoutePlan(Document):
 		self._validate_single_default()
 		self._validate_vehicle_retention_locks()
 		self._validate_vehicle_datetime_locks()
+		self._validate_trip_group_single_vehicle()
+		self._validate_vehicle_capacity()
 
 	def _validate_dates(self):
 		"""Ensure effective_until >= effective_from when set."""
@@ -193,9 +195,110 @@ class RoutePlan(Document):
 			title=_("Vehicle Assignment Error"),
 		)
 
+	def _validate_trip_group_single_vehicle(self):
+		"""A journey leg lives on exactly one vehicle (MA4-13 AC1/AC2).
+
+		Every accommodation stop merged into one bus run shares the same
+		``trip_group`` hash, and each direction of that run is one physical
+		vehicle. Reassigning the vehicle on the scheduling board cascades to
+		every stop of the leg (handled on the canvas), so a saved plan must never
+		have one ``(trip_group, direction)`` split across vehicles. Outbound and
+		return legs keep their own vehicle (Multi-Day Lane Replication), so the
+		direction is part of the key. Reject the save when a leg is split, naming
+		the journey so the dispatcher can re-drop it cleanly.
+		"""
+		leg_vehicle = {}
+		for row in self.assignments:
+			if not row.trip_group or not row.vehicle:
+				continue
+			key = (row.trip_group, _row_direction(row))
+			existing = leg_vehicle.get(key)
+			if existing and existing != row.vehicle:
+				trip_label = row.trip_name or row.trip_group
+				frappe.throw(
+					_(
+						"Trip Assignment Error: the stops of {0} are split across "
+						"vehicles ({1} and {2}). A journey must run on a single "
+						"vehicle — reassign the whole trip together."
+					).format(trip_label, existing, row.vehicle),
+					title=_("Trip Assignment Error"),
+				)
+			leg_vehicle.setdefault(key, row.vehicle)
+
+	def _validate_vehicle_capacity(self):
+		"""Block a merged run whose combined headcount exceeds the bus seats (MA4-13).
+
+		Multiple accommodation cards from different camps dropped on one vehicle
+		for the same shift share a ``trip_group`` hash. Each physical run is one
+		direction of that trip, so we sum the ``headcount`` of every assignment
+		row sharing a ``(vehicle, trip_group, direction)`` and compare it against
+		the assigned Vehicle's legal seat count, reserving one seat for the driver
+		(consistent with the route optimizer's ``seats - 1`` load limit). When the
+		combined mixed-passenger total overshoots, the save is rejected with the
+		exact seat shortfall so the dispatcher can assign a larger bus or arrange a
+		taxi. Scope is trip_group clusters — the multi-accommodation merge this
+		story guards; standalone drops keep their existing client-side check.
+		"""
+		# Cluster the merged legs and tally their combined demand.
+		cluster_headcount = {}
+		for row in self.assignments:
+			if not row.vehicle or not row.trip_group:
+				continue
+			key = (row.vehicle, row.trip_group, _row_direction(row))
+			cluster_headcount[key] = cluster_headcount.get(key, 0) + cint(row.headcount)
+
+		if not cluster_headcount:
+			return
+
+		# Batch-fetch seat counts for every vehicle referenced on the plan.
+		vehicle_names = list({key[0] for key in cluster_headcount})
+		seats_map = {
+			v.name: cint(v.seats)
+			for v in frappe.get_all(
+				"Vehicle",
+				filters={"name": ["in", vehicle_names]},
+				fields=["name", "seats"],
+			)
+		}
+
+		for (vehicle, trip_group, direction), total_passengers in cluster_headcount.items():
+			seats = seats_map.get(vehicle)
+			if not seats:
+				# Vehicle master has no seat count configured — nothing to enforce.
+				continue
+			# Reserve one seat for the driver: the legal passenger capacity.
+			passenger_capacity = max(seats - 1, 0)
+			if total_passengers > passenger_capacity:
+				self._throw_capacity_exceeded(
+					vehicle, direction, total_passengers, passenger_capacity, seats
+				)
+
+	def _throw_capacity_exceeded(self, vehicle, direction, total_passengers, passenger_capacity, seats):
+		"""Raise the overloading block with the exact seat shortfall (MA4-13 AC4)."""
+		short_by = total_passengers - passenger_capacity
+		dir_label = _("return") if direction == "RETURN" else _("outbound")
+		frappe.throw(
+			_(
+				"Capacity Exceeded: the {0} run on {1} carries {2} passengers but the "
+				"vehicle seats only {3} ({4} total minus the driver). You are short {5} "
+				"seat(s) — assign a larger bus or arrange a taxi."
+			).format(dir_label, vehicle, total_passengers, passenger_capacity, seats, short_by),
+			title=_("Vehicle Capacity Exceeded"),
+		)
+
 	def before_save(self):
 		self.last_modified_by_user = frappe.session.user
 		self.last_modified_at = frappe.utils.now()
+
+
+def _row_direction(row) -> str:
+	"""Normalize an assignment row's direction to OUTBOUND/RETURN.
+
+	The Route Plan Assignment ``direction`` Select stores OUTBOUND/RETURN, but a
+	blank or stray value is collapsed to OUTBOUND so a leg is never silently
+	dropped from a capacity or single-vehicle cluster.
+	"""
+	return "RETURN" if (row.direction or "").strip().upper().startswith("RET") else "OUTBOUND"
 
 
 def _detect_retention_conflict(shipment_names, shipment_map):

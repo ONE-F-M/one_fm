@@ -13,6 +13,7 @@ from one_fm.operations.doctype.route_plan.route_plan import (
 	_is_multiday_lock,
 	_iso_to_date,
 	_row_date_range,
+	_row_direction,
 	_time_windows_overlap,
 	_windows_overlap,
 )
@@ -347,6 +348,137 @@ class TestRoutePlanDatetimeLockSave(FrappeTestCase):
 					  start_iso=f"{today()}T06:00:00Z", end_iso=f"{lock_end_day}T07:00:00Z"),
 			self._row(run_ship, "VHL-0009",
 					  start_iso=f"{today()}T08:00:00Z", end_iso=f"{today()}T09:00:00Z"),
+		])
+		plan.insert(ignore_permissions=True)
+		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
+
+
+class TestRowDirection(FrappeTestCase):
+	"""MA4-13: direction normalization used by the capacity/single-vehicle clusters."""
+
+	def test_outbound_and_blank_normalize_to_outbound(self):
+		self.assertEqual(_row_direction(frappe._dict({"direction": "OUTBOUND"})), "OUTBOUND")
+		self.assertEqual(_row_direction(frappe._dict({"direction": ""})), "OUTBOUND")
+		self.assertEqual(_row_direction(frappe._dict({"direction": None})), "OUTBOUND")
+
+	def test_return_variants_normalize_to_return(self):
+		self.assertEqual(_row_direction(frappe._dict({"direction": "RETURN"})), "RETURN")
+		self.assertEqual(_row_direction(frappe._dict({"direction": " return "})), "RETURN")
+
+
+class TestRoutePlanCapacitySave(FrappeTestCase):
+	"""MA4-13: combined headcount of a merged trip_group leg cannot exceed seats-1.
+
+	Uses a real 4-seat vehicle (legal passenger capacity = 3 after reserving the
+	driver seat) so the validation reads a genuine Vehicle.seats value.
+	"""
+
+	VEHICLE = "VHL-L-0022"  # 4 seats -> 3 legal passenger seats
+	SEATS = 4
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		if not frappe.db.exists("Vehicle", cls.VEHICLE):
+			raise cls.skipTest(cls, f"Fixture vehicle {cls.VEHICLE} missing on this site")
+
+	def _make_plan(self, rows):
+		doc = frappe.new_doc("Route Plan")
+		doc.title = frappe.generate_hash("RP-CAP", 8)
+		doc.status = "Draft"
+		doc.effective_from = today()
+		for row in rows:
+			doc.append("assignments", row)
+		doc.flags.ignore_mandatory = True
+		doc.flags.ignore_links = True
+		return doc
+
+	def _row(self, vehicle, *, trip, direction="OUTBOUND", headcount, card=None):
+		return {
+			"card_id": card or frappe.generate_hash("CARD", 8),
+			"vehicle": vehicle,
+			"direction": direction,
+			"trip_group": trip,
+			"trip_name": trip,
+			"headcount": headcount,
+		}
+
+	def test_merged_camps_exceeding_seats_are_blocked(self):
+		# Two camps on one outbound run: 3 + 2 = 5 > 3 legal seats.
+		plan = self._make_plan([
+			self._row(self.VEHICLE, trip="TRIP-MB-MG", headcount=3),
+			self._row(self.VEHICLE, trip="TRIP-MB-MG", headcount=2),
+		])
+		with self.assertRaises(frappe.ValidationError) as cm:
+			plan.insert(ignore_permissions=True)
+		message = str(cm.exception)
+		self.assertIn(self.VEHICLE, message)
+		self.assertIn("short 2 seat", message)  # 5 - 3
+
+	def test_merged_camps_within_seats_are_allowed(self):
+		# 2 + 1 = 3 <= 3 legal seats.
+		plan = self._make_plan([
+			self._row(self.VEHICLE, trip="TRIP-OK", headcount=2),
+			self._row(self.VEHICLE, trip="TRIP-OK", headcount=1),
+		])
+		plan.insert(ignore_permissions=True)
+		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
+
+	def test_outbound_and_return_of_one_trip_are_counted_separately(self):
+		# Same trip_group but opposite directions are two physical runs, so each
+		# 3-seat leg is fine even though they'd overflow if summed together.
+		plan = self._make_plan([
+			self._row(self.VEHICLE, trip="TRIP-BOTH", direction="OUTBOUND", headcount=3),
+			self._row(self.VEHICLE, trip="TRIP-BOTH", direction="RETURN", headcount=3),
+		])
+		plan.insert(ignore_permissions=True)
+		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
+
+	def test_standalone_rows_are_not_capacity_clustered(self):
+		# Rows without a trip_group are standalone drops (client-side guarded) and
+		# are not summed by the backend trip_group capacity check.
+		plan = self._make_plan([
+			{"card_id": frappe.generate_hash("C", 8), "vehicle": self.VEHICLE,
+			 "direction": "OUTBOUND", "headcount": 20},
+			{"card_id": frappe.generate_hash("C", 8), "vehicle": self.VEHICLE,
+			 "direction": "OUTBOUND", "headcount": 20},
+		])
+		plan.insert(ignore_permissions=True)
+		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
+
+
+class TestRoutePlanSingleVehicleSave(FrappeTestCase):
+	"""MA4-13 AC2: a journey leg (trip_group + direction) must run on one vehicle."""
+
+	def _make_plan(self, rows):
+		doc = frappe.new_doc("Route Plan")
+		doc.title = frappe.generate_hash("RP-SV", 8)
+		doc.status = "Draft"
+		doc.effective_from = today()
+		for row in rows:
+			doc.append("assignments", row)
+		doc.flags.ignore_mandatory = True
+		doc.flags.ignore_links = True
+		return doc
+
+	def test_split_leg_across_vehicles_is_blocked(self):
+		plan = self._make_plan([
+			{"card_id": "C1", "vehicle": "VHL-0005", "direction": "OUTBOUND",
+			 "trip_group": "TRIP-SPLIT", "trip_name": "TRIP-SPLIT", "headcount": 5},
+			{"card_id": "C2", "vehicle": "VHL-0009", "direction": "OUTBOUND",
+			 "trip_group": "TRIP-SPLIT", "trip_name": "TRIP-SPLIT", "headcount": 5},
+		])
+		with self.assertRaises(frappe.ValidationError) as cm:
+			plan.insert(ignore_permissions=True)
+		self.assertIn("TRIP-SPLIT", str(cm.exception))
+
+	def test_opposite_directions_may_use_different_vehicles(self):
+		# Outbound and return of one trip are independently assignable.
+		plan = self._make_plan([
+			{"card_id": "C1", "vehicle": "VHL-0005", "direction": "OUTBOUND",
+			 "trip_group": "TRIP-IND", "trip_name": "TRIP-IND", "headcount": 5},
+			{"card_id": "C2", "vehicle": "VHL-0009", "direction": "RETURN",
+			 "trip_group": "TRIP-IND", "trip_name": "TRIP-IND", "headcount": 5},
 		])
 		plan.insert(ignore_permissions=True)
 		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
