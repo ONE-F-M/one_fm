@@ -14,7 +14,7 @@ from frappe.query_builder import DocType
 def execute():
     """
     Migrate marital status data from old options to new standardized options
-    across Job Applicant, Onboard Employee, Work Permit, Transfer Paper, and PAM Visa
+    across Job Applicant, Onboard Employee, Work Permit, Transfer Paper, and Visa Request
     using Query Builder for optimal performance
     """
     
@@ -76,20 +76,6 @@ def execute():
                 ).run()
             except Exception as e:
                 frappe.log_error(f"Error updating Transfer Paper: {str(e)}")
-    
-    # Update PAM Visa marital status field using Query Builder
-    PAMVisa = DocType("PAM Visa")
-    
-    for old_value, new_value in marital_status_mapping.items():
-        if old_value != new_value:
-            try:
-                (
-                    frappe.qb.update(PAMVisa)
-                    .set(PAMVisa.marital_status, new_value)
-                    .where(PAMVisa.marital_status == old_value)
-                ).run()
-            except Exception as e:
-                frappe.log_error(f"Error updating PAM Visa: {str(e)}")
     
     # Update Visa Request marital status field using Query Builder
     VisaRequest = DocType("Visa Request")
