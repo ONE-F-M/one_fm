@@ -15,7 +15,6 @@
   "submission_date",
   "receiving_date",
   "section_break_visa",
-  "pam_visa",
   "visa_type",
   "pam_file_number",
   "column_break_2",
@@ -92,46 +91,31 @@
   {
    "fieldname": "section_break_visa",
    "fieldtype": "Section Break",
-   "label": "Visa Details (from PAM Visa)"
+   "label": "Visa Details"
   },
   {
-   "fieldname": "pam_visa",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "PAM Visa",
-   "options": "PAM Visa"
-  },
-  {
-   "fetch_from": "pam_visa.passport_type",
    "fieldname": "visa_type",
    "fieldtype": "Data",
-   "label": "Visa Type",
-   "read_only": 1
+   "label": "Visa Type"
   },
   {
-   "fetch_from": "pam_visa.pam_file_number",
    "fieldname": "pam_file_number",
    "fieldtype": "Data",
-   "label": "PAM File Number",
-   "read_only": 1
+   "label": "PAM File Number"
   },
   {
    "fieldname": "column_break_2",
    "fieldtype": "Column Break"
   },
   {
-   "fetch_from": "pam_visa.nationality",
    "fieldname": "nationality",
    "fieldtype": "Data",
-   "label": "Nationality",
-   "read_only": 1
+   "label": "Nationality"
   },
   {
-   "fetch_from": "pam_visa.pam_designation",
    "fieldname": "pam_designation",
    "fieldtype": "Data",
-   "label": "PAM Designation",
-   "read_only": 1
+   "label": "PAM Designation"
   },
   {
    "fieldname": "section_break_notes",

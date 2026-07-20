@@ -139,9 +139,9 @@ def create_google_task_on_todo_creation(doc, method):
     # Skip if general trigger is not enabled
     if not is_google_task_synchronization_enabled():
         return
-    frappe.enqueue(create_google_task_on_todo_creation_in_erp(doc=doc, method=method),is_async=True)
+    frappe.enqueue(create_google_task_on_todo_creation_in_erp, doc=doc, trigger_method=method, is_async=True)
 
-def create_google_task_on_todo_creation_in_erp(doc, method):
+def create_google_task_on_todo_creation_in_erp(doc, trigger_method):
     """Create a Google Task for the ToDo document if not already created."""
     employee_email = doc.allocated_to
     if doc.custom_google_task_id:
@@ -152,8 +152,8 @@ def create_google_task_on_todo_creation_in_erp(doc, method):
         service = get_google_task_service(employee_email)
         if not service:
             return
-        if method == "on_update":
-            prev_service = before_save(doc, method)
+        if trigger_method == "on_update":
+            prev_service = before_save(doc, trigger_method)
             if doc.custom_google_task_id and prev_service:
                 check_google_task_exists(doc.custom_google_task_id, prev_service)
         task_notes = create_description_for_google_todo(doc)
@@ -166,8 +166,14 @@ def create_google_task_on_todo_creation_in_erp(doc, method):
             "due": due_date
         }
         result = service.tasks().insert(tasklist="@default", body=task_body).execute()
-        doc.custom_google_task_id = result["id"]
-        doc.save()
+        # Reload to avoid TimestampMismatchError: the ToDo row may have been
+        # modified (e.g. by the assignment rule) after this doc was enqueued.
+        if not frappe.db.exists("ToDo", doc.name):
+            return
+        doc.reload()
+        # db_set writes only this column, skips the modified-timestamp check,
+        # and does not re-fire on_update (which would re-enqueue this job).
+        doc.db_set("custom_google_task_id", result["id"], update_modified=False)
         return result
     except Exception as e:
         title = f"Error while creating Google Task from ToDo for {employee_email}"
