@@ -3,11 +3,16 @@
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
+from frappe.utils import add_days, getdate, today
 
 from one_fm.operations.doctype.route_plan.route_plan import (
 	_date_ranges_overlap,
 	_detect_retention_conflict,
+	_format_lock_date,
 	_format_lock_until,
+	_is_multiday_lock,
+	_iso_to_date,
+	_row_date_range,
 	_time_windows_overlap,
 	_windows_overlap,
 )
@@ -122,6 +127,34 @@ class TestLockUntilLabel(FrappeTestCase):
 		self.assertEqual(_format_lock_until(None), "")
 
 
+class TestDatetimeLockLogic(FrappeTestCase):
+	"""TR-8: the DATE part of start_time/end_time drives the multi-day lock."""
+
+	def _row(self, start, end):
+		return frappe._dict({"start_time": start, "end_time": end})
+
+	def test_iso_to_date_parses_zulu_stamp(self):
+		# Only the calendar date is extracted from the timeline timestamp.
+		self.assertEqual(_iso_to_date("2026-07-20T06:00:00Z"), getdate("2026-07-20"))
+		self.assertEqual(_iso_to_date("2026-07-15T06:00:00.000Z"), getdate("2026-07-15"))
+		self.assertIsNone(_iso_to_date(""))
+
+	def test_is_multiday_lock_true_when_end_date_after_start(self):
+		self.assertTrue(_is_multiday_lock(self._row("2026-07-15T06:00:00Z", "2026-07-20T07:00:00Z")))
+
+	def test_is_multiday_lock_false_for_single_day(self):
+		# Same-day start/end is an ordinary trip, not a block-out lock.
+		self.assertFalse(_is_multiday_lock(self._row("2026-07-20T06:00:00Z", "2026-07-20T07:00:00Z")))
+
+	def test_row_date_range(self):
+		r = self._row("2026-07-15T06:00:00Z", "2026-07-20T07:00:00Z")
+		self.assertEqual(_row_date_range(r), (getdate("2026-07-15"), getdate("2026-07-20")))
+
+	def test_format_lock_date(self):
+		self.assertEqual(_format_lock_date(getdate("2026-07-15")), "15-07-2026")
+		self.assertEqual(_format_lock_date(None), "")
+
+
 class TestRoutePlanRetentionSave(FrappeTestCase):
 	"""TR4-7: the before-save hook rejects the drop end to end on the plan."""
 
@@ -207,5 +240,113 @@ class TestRoutePlanRetentionSave(FrappeTestCase):
 			 "vehicle": "VHL-0009", "direction": "OUTBOUND"},
 		])
 		# The grocery run overlaps in time but sits on a different vehicle.
+		plan.insert(ignore_permissions=True)
+		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
+
+
+class TestRoutePlanDatetimeLockSave(FrappeTestCase):
+	"""TR-8: a multi-day lock (DATE span of start_time/end_time) blocks the vehicle."""
+
+	def _make_shipment(self):
+		doc = frappe.new_doc("Transportation Shipment")
+		doc.status = "Unassigned"
+		doc.trip_direction = "Outward"
+		doc.routing_type_badge = "Direct"
+		doc.flags.ignore_validate = True
+		doc.flags.ignore_links = True
+		doc.insert(ignore_permissions=True)
+		return doc.name
+
+	def _make_plan(self, rows):
+		doc = frappe.new_doc("Route Plan")
+		doc.title = frappe.generate_hash("RP-TEST", 8)
+		doc.status = "Draft"
+		doc.effective_from = today()
+		for row in rows:
+			doc.append("assignments", row)
+		doc.flags.ignore_mandatory = True
+		doc.flags.ignore_links = True
+		return doc
+
+	def _row(self, shipment, vehicle, *, start_iso, end_iso, trip=None):
+		"""A run whose DATE span is the lock lifespan and TIME is the daily trip."""
+		return {"card_id": f"TSHIP-{shipment}", "transportation_shipment": shipment,
+				"vehicle": vehicle, "direction": "OUTBOUND", "trip_group": trip,
+				"start_time": start_iso, "end_time": end_iso}
+
+	def test_multiday_lock_blocks_overlapping_run(self):
+		# AC3: a multi-day lock blocks any run landing inside those days, even a
+		# short daily one at a different time.
+		lock_ship = self._make_shipment()
+		run_ship = self._make_shipment()
+		lock_end_day = add_days(today(), 5)
+
+		plan = self._make_plan([
+			self._row(lock_ship, "VHL-0005",
+					  start_iso=f"{today()}T06:00:00Z", end_iso=f"{lock_end_day}T07:00:00Z"),
+			self._row(run_ship, "VHL-0005",
+					  start_iso=f"{today()}T08:00:00Z", end_iso=f"{today()}T09:00:00Z"),
+		])
+		with self.assertRaises(frappe.ValidationError) as cm:
+			plan.insert(ignore_permissions=True)
+		self.assertIn("VHL-0005", str(cm.exception))
+
+	def test_single_day_runs_do_not_block(self):
+		# Two ordinary single-day runs may share a vehicle (normal multi-trip).
+		a = self._make_shipment()
+		b = self._make_shipment()
+
+		plan = self._make_plan([
+			self._row(a, "VHL-0005",
+					  start_iso=f"{today()}T06:00:00Z", end_iso=f"{today()}T07:00:00Z"),
+			self._row(b, "VHL-0005",
+					  start_iso=f"{today()}T08:00:00Z", end_iso=f"{today()}T09:00:00Z"),
+		])
+		plan.insert(ignore_permissions=True)
+		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
+
+	def test_expired_lock_frees_the_vehicle(self):
+		# A lock whose last day is before today no longer blocks new drops.
+		lock_ship = self._make_shipment()
+		run_ship = self._make_shipment()
+
+		plan = self._make_plan([
+			self._row(lock_ship, "VHL-0005",
+					  start_iso=f"{add_days(today(), -5)}T06:00:00Z",
+					  end_iso=f"{add_days(today(), -2)}T07:00:00Z"),
+			self._row(run_ship, "VHL-0005",
+					  start_iso=f"{today()}T08:00:00Z", end_iso=f"{today()}T09:00:00Z"),
+		])
+		plan.insert(ignore_permissions=True)
+		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
+
+	def test_same_trip_stops_are_exempt(self):
+		# Two stops chained into one trip legitimately share the locked vehicle.
+		lock_ship = self._make_shipment()
+		stop_ship = self._make_shipment()
+		lock_end_day = add_days(today(), 5)
+
+		plan = self._make_plan([
+			self._row(lock_ship, "VHL-0005",
+					  start_iso=f"{today()}T06:00:00Z", end_iso=f"{lock_end_day}T07:00:00Z",
+					  trip="TRIP-A"),
+			self._row(stop_ship, "VHL-0005",
+					  start_iso=f"{today()}T08:00:00Z", end_iso=f"{today()}T09:00:00Z",
+					  trip="TRIP-A"),
+		])
+		plan.insert(ignore_permissions=True)
+		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
+
+	def test_lock_on_different_vehicle_does_not_block(self):
+		lock_ship = self._make_shipment()
+		run_ship = self._make_shipment()
+		lock_end_day = add_days(today(), 5)
+
+		plan = self._make_plan([
+			self._row(lock_ship, "VHL-0005",
+					  start_iso=f"{today()}T06:00:00Z", end_iso=f"{lock_end_day}T07:00:00Z"),
+			self._row(run_ship, "VHL-0009",
+					  start_iso=f"{today()}T08:00:00Z", end_iso=f"{today()}T09:00:00Z"),
+		])
 		plan.insert(ignore_permissions=True)
 		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
