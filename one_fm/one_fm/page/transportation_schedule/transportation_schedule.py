@@ -829,12 +829,29 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
         fields=["parent", "employee_id", "employee_name", "cell_number"],
         order_by="idx asc",
     )
+
+    # Flag which passengers are Rambo relievers (filling in for a shift) so the
+    # canvas detail panel can label regular staff vs replacements (MA3-12 AC6).
+    # Reliever status is a role-level attribute on the Employee master.
+    reliever_ids = set()
+    passenger_ids = list({row.employee_id for row in emp_rows if row.employee_id})
+    if passenger_ids:
+        reliever_ids = {
+            e.name
+            for e in frappe.get_all(
+                "Employee",
+                filters={"name": ["in", passenger_ids], "custom_is_rambo_reliever": 1},
+                fields=["name"],
+            )
+        }
+
     emps_by_ship = {}
     for row in emp_rows:
         emps_by_ship.setdefault(row.parent, []).append({
             "id": row.employee_id,
             "name": row.employee_name or row.employee_id,
             "mobile": row.cell_number or "",
+            "is_reliever": row.employee_id in reliever_ids,
         })
 
     # Fallback times for shipments without an Operations Shift (ad-hoc journeys).
