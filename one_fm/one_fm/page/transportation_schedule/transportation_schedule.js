@@ -106,6 +106,37 @@ function mountRoutePlannerApp(wrapper, data) {
                 return this.windowEnd - this.windowStart;
             },
 
+            // Vehicle ids whose lane is held by an active multi-day lock today —
+            // used to grey the lane and warn the dispatcher (TR-8). Only spans of
+            // more than one day (lockTo > lockFrom) count as a block-out.
+            lockedLaneIds() {
+                const todayStr = frappe.datetime.get_today();
+                const ids = new Set();
+                this.swimItems.forEach(i => {
+                    if (!(i.lockFrom && i.lockTo && i.lockTo > i.lockFrom)) return;
+                    if (i.lockFrom <= todayStr && todayStr <= i.lockTo) ids.add(i.vehicleId);
+                });
+                return ids;
+            },
+
+            // Vehicle id -> earliest UPCOMING multi-day lock start date. A future
+            // reservation is saved but not yet active today, so the lane shows a
+            // "reserved from <date>" badge even though the block itself is still
+            // hidden (TR-8). Locks active today (lockedLaneIds) take precedence.
+            upcomingLockByVehicle() {
+                const todayStr = frappe.datetime.get_today();
+                const map = {};
+                this.swimItems.forEach(i => {
+                    if (!(i.lockFrom && i.lockTo && i.lockTo > i.lockFrom)) return;
+                    const from = String(i.lockFrom).slice(0, 10);
+                    const to = String(i.lockTo).slice(0, 10);
+                    if (to < todayStr) return;      // expired
+                    if (from <= todayStr) return;   // active today, not "upcoming"
+                    if (!map[i.vehicleId] || from < map[i.vehicleId]) map[i.vehicleId] = from;
+                });
+                return map;
+            },
+
             filteredPoolCards() {
                 const q = this.searchQuery.toLowerCase().trim();
                 return this.planData.shipment_cards.filter(c => {
@@ -174,7 +205,10 @@ function mountRoutePlannerApp(wrapper, data) {
             itemsByVehicle() {
                 const map = {};
                 this.planData.vehicles.forEach(v => { map[v.id] = []; });
+                // Only render items live today — future-dated placements wait for
+                // their start date, lapsed ones drop off (TR-8).
                 this.swimItems.forEach(item => {
+                    if (!this._liveToday(item)) return;
                     if (map[item.vehicleId] !== undefined) map[item.vehicleId].push(item);
                 });
 
@@ -634,7 +668,57 @@ function mountRoutePlannerApp(wrapper, data) {
                 this.handleDrop(card, vehicle);
             },
 
+            // Return the swim item whose multi-day lock holds this vehicle today,
+            // ignoring blocks that belong to `excludeCardId`. Only a lock spanning
+            // more than one day (lockTo > lockFrom) blocks out the vehicle; a
+            // single-day run does not (TR-8).
+            vehicleLockToday(vehicleId, excludeCardId) {
+                const todayStr = frappe.datetime.get_today();
+                return this.swimItems.find(i => {
+                    if (i.vehicleId !== vehicleId) return false;
+                    if (excludeCardId && i.cardId === excludeCardId) return false;
+                    if (!(i.lockFrom && i.lockTo && i.lockTo > i.lockFrom)) return false;
+                    return i.lockFrom <= todayStr && todayStr <= i.lockTo;
+                }) || null;
+            },
+
+            // The [from, to] calendar span a swim item reserves. Items without an
+            // explicit lock window are ordinary single-day runs (today..today).
+            _lockDateRange(item) {
+                const today = frappe.datetime.get_today();
+                const from = item.lockFrom ? String(item.lockFrom).slice(0, 10) : today;
+                const to = item.lockTo ? String(item.lockTo).slice(0, 10) : from;
+                return [from, to];
+            },
+
+            // Mirror of the backend block-out check (route_plan.py): a candidate
+            // placement spanning [newFrom, newTo] on a vehicle conflicts when it
+            // overlaps an existing run's date range and at least one side is a
+            // multi-day lock. Expired locks and the card's own rows are ignored.
+            // Returns the conflicting swim item, or null. Lets the modal warn
+            // before a future-dated overlap would otherwise only fail at save.
+            _overlappingLock(vehicleId, newFrom, newTo, excludeCardId) {
+                const today = frappe.datetime.get_today();
+                const newMulti = newTo > newFrom;
+                return this.swimItems.find(i => {
+                    if (i.vehicleId !== vehicleId) return false;
+                    if (excludeCardId && i.cardId === excludeCardId) return false;
+                    const [ef, et] = this._lockDateRange(i);
+                    if (et < today) return false;                 // existing lock expired
+                    if (!newMulti && !(et > ef)) return false;    // both single-day: normal multi-trip
+                    return newFrom <= et && ef <= newTo;          // inclusive date-range overlap
+                }) || null;
+            },
+
             handleDrop(card, vehicle) {
+                // ── Multi-day vehicle lock (TR-8): reject a drop onto a lane whose
+                // vehicle is already held by another shipment's multi-day lock. ──
+                const lock = this.vehicleLockToday(vehicle.id, card.id);
+                if (lock) {
+                    frappe.throw(`Vehicle Locked: ${vehicle.label} is reserved for a multi-day run until ${lock.lockTo}. It cannot take another overlapping shipment.`);
+                    return;
+                }
+
                 // ── Seat capacity check (time-aware) ──
                 const peakLoad = this.peakLoadDuringCardWindows(card, vehicle.id);
 
@@ -830,13 +914,46 @@ function mountRoutePlannerApp(wrapper, data) {
                         {
                             fieldtype: 'Int', fieldname: 'duration_min',
                             label: 'Trip Duration (minutes)', default: 60, reqd: 1
+                        },
+                        { fieldtype: 'Section Break', label: 'Multi-Day Vehicle Lock' },
+                        {
+                            fieldtype: 'Datetime', fieldname: 'start_datetime',
+                            label: 'Start Date Time',
+                            description: 'First day this run holds the vehicle. Defaults to the card\'s From Date (or today).',
+                            default: self._defaultLockStart(card)
+                        },
+                        { fieldtype: 'Column Break' },
+                        {
+                            fieldtype: 'Datetime', fieldname: 'end_datetime',
+                            label: 'End Date Time',
+                            description: 'Last day this run holds the vehicle. Leave blank for a continuous (open-ended) run.',
+                            default: self._defaultLockEnd(card)
                         }
                     ],
                     primary_action_label: 'Create Trip',
                     primary_action(vals) {
+                        const startDt = vals.start_datetime || '';
+                        const endDt = vals.end_datetime || '';
+                        if (startDt && startDt.slice(0, 10) < frappe.datetime.get_today()) {
+                            frappe.throw('Start Date Time cannot be in the past.');
+                            return;
+                        }
+                        if (startDt && endDt && startDt > endDt) {
+                            frappe.throw('Start Date Time must be on or before End Date Time.');
+                            return;
+                        }
+                        const newFrom = startDt ? startDt.slice(0, 10) : frappe.datetime.get_today();
+                        const newTo = endDt ? endDt.slice(0, 10) : newFrom;
+                        const clash = self._overlappingLock(vehicleId, newFrom, newTo, card.id);
+                        if (clash) {
+                            const [cf, ct] = self._lockDateRange(clash);
+                            frappe.throw(`Vehicle Reserved: ${self.vehicleLabelForItem({ vehicleId })} is already locked from ${cf} to ${ct} for an overlapping run. Choose different dates or another vehicle.`);
+                            return;
+                        }
                         d.hide();
                         const durMs = (vals.duration_min || 60) * 60000;
-                        self._doPlace(card, vehicleId, durMs, isOutbound, !isOutbound, 0, vals.trip_name || '');
+                        self._doPlace(card, vehicleId, durMs, isOutbound, !isOutbound, 0,
+                            vals.trip_name || '', startDt, endDt);
                     }
                 });
                 d.show();
@@ -960,7 +1077,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
             // ── Time-aware peak load helper ─────────────────────────────────
             _getLogicalTrips(vehicleId) {
-                const vi = this.swimItems.filter(i => i.vehicleId === vehicleId);
+                const vi = this.swimItems.filter(i => i.vehicleId === vehicleId && this._liveToday(i));
                 const tripsMap = {};
                 let soloIdx = 0;
                 
@@ -1067,22 +1184,124 @@ function mountRoutePlannerApp(wrapper, data) {
                                 ? 'Driving time from accommodation to site'
                                 : 'Driving time from site to accommodation',
                             default: 60, reqd: 1
+                        },
+                        { fieldtype: 'Section Break', label: 'Multi-Day Vehicle Lock' },
+                        {
+                            fieldtype: 'Datetime', fieldname: 'start_datetime',
+                            label: 'Start Date Time',
+                            description: 'First day this run holds the vehicle. Defaults to the card\'s From Date (or today).',
+                            default: self._defaultLockStart(card)
+                        },
+                        { fieldtype: 'Column Break' },
+                        {
+                            fieldtype: 'Datetime', fieldname: 'end_datetime',
+                            label: 'End Date Time',
+                            description: 'Last day this run holds the vehicle. Leave blank for a continuous (open-ended) run.',
+                            default: self._defaultLockEnd(card)
                         }
                     ],
                     primary_action_label: 'Place on Timeline',
                     primary_action(vals) {
+                        // ── Validate the multi-day lock window before placing ──
+                        const startDt = vals.start_datetime || '';
+                        const endDt = vals.end_datetime || '';
+                        if (startDt) {
+                            const today = frappe.datetime.get_today();
+                            if (startDt.slice(0, 10) < today) {
+                                frappe.throw('Start Date Time cannot be in the past.');
+                                return;
+                            }
+                        }
+                        if (startDt && endDt && startDt > endDt) {
+                            frappe.throw('Start Date Time must be on or before End Date Time.');
+                            return;
+                        }
+                        // Block a date range that overlaps an existing multi-day
+                        // lock on this vehicle — including future reservations —
+                        // before the drop is committed (mirrors the backend).
+                        const newFrom = startDt ? startDt.slice(0, 10) : frappe.datetime.get_today();
+                        const newTo = endDt ? endDt.slice(0, 10) : newFrom;
+                        const clash = self._overlappingLock(vehicleId, newFrom, newTo, card.id);
+                        if (clash) {
+                            const [cf, ct] = self._lockDateRange(clash);
+                            frappe.throw(`Vehicle Reserved: ${self.vehicleLabelForItem({ vehicleId })} is already locked from ${cf} to ${ct} for an overlapping run. Choose different dates or another vehicle.`);
+                            return;
+                        }
                         d.hide();
                         const bufferMs = (vals.buffer_min || 15) * 60000;
                         const transitMs = (vals.duration_min || 60) * 60000;
-                        self._doPlace(card, vehicleId, transitMs, isOutbound, !isOutbound, bufferMs, vals.trip_name || '');
+                        self._doPlace(card, vehicleId, transitMs, isOutbound, !isOutbound,
+                            bufferMs, vals.trip_name || '', startDt, endDt);
                     }
                 });
                 d.show();
             },
 
-            _doPlace(card, vehicleId, durMs, placeOutbound, placeReturn, bufferMs, tripName) {
+            // A placement is "bounded" (its lock can lapse) when it spans more than
+            // one day, or when its linked shipment carries a to_date. A single-day
+            // run with no to_date is an open-ended / continuous run that never
+            // lapses (AC2). Mirrors the backend _expired_assigned_shipments rule so
+            // the canvas and the expiry job agree on what "expired" means.
+            _isBoundedItem(item) {
+                const from = item.lockFrom ? String(item.lockFrom).slice(0, 10) : null;
+                const to = item.lockTo ? String(item.lockTo).slice(0, 10) : null;
+                if (from && to && to > from) return true;   // multi-day span
+                const card = this.planData.shipment_cards.find(c => c.id === item.cardId);
+                return !!(card && card.to_date);
+            },
+
+            // True when a swim item is active on the current system date. A future
+            // placement (lockFrom later than today) stays hidden until its start
+            // date; a bounded lapsed one (lockTo before today) drops off; a
+            // continuous run is always live. This is what makes a future-dated card
+            // wait for its start date and an expired one disappear (TR-8).
+            _liveToday(item) {
+                const t = frappe.datetime.get_today();
+                if (item.lockFrom && String(item.lockFrom).slice(0, 10) > t) return false;
+                if (this._isBoundedItem(item) && item.lockTo && String(item.lockTo).slice(0, 10) < t) return false;
+                return true;
+            },
+
+            // Serialize a render-position Date to an ISO stamp, replacing its
+            // calendar date with the lock lifespan date when one is set. The time
+            // of day (the daily trip window) is preserved either way.
+            _stampLifespan(renderDate, lockDate) {
+                const iso = new Date(renderDate).toISOString();
+                if (!lockDate) return iso;
+                return lockDate + iso.slice(10);
+            },
+
+            // Default the lock window's Start Date Time to the card's From Date,
+            // clamped to today: use From Date when it is today or later, otherwise
+            // fall back to today so the default never lands in the past (the "cannot
+            // be in the past" rule). Undated cards default to today. The time part
+            // is cosmetic — the block always runs at the card's own trip time.
+            _defaultLockStart(card) {
+                const today = frappe.datetime.get_today();
+                let day = today;
+                if (card && card.from_date) {
+                    const fd = String(card.from_date).slice(0, 10);
+                    day = fd > today ? fd : today;
+                }
+                return day + ' 00:00:00';
+            },
+
+            // Default the End Date Time to the card's To Date at end of day. Undated
+            // (continuous / standing) cards get a blank end — an open-ended lock.
+            _defaultLockEnd(card) {
+                if (card && card.to_date) return card.to_date + ' 23:59:59';
+                return '';
+            },
+
+            _doPlace(card, vehicleId, durMs, placeOutbound, placeReturn, bufferMs, tripName, startDatetime, endDatetime) {
                 bufferMs = bufferMs || 0;
                 tripName = tripName || '';
+                // The lock lifespan lives in the DATE part of the persisted
+                // start_time/end_time. We carry it separately on the swim item so
+                // the block still renders at today's daily trip time; persistence
+                // stamps the date onto the timestamps (see persistAssignments).
+                const lockFrom = startDatetime ? String(startDatetime).slice(0, 10) : null;
+                const lockTo = endDatetime ? String(endDatetime).slice(0, 10) : null;
                 const totalMs = bufferMs + durMs;
                 const outEnd = new Date(card.outbound_window_end);
                 const outStart = new Date(outEnd.getTime() - totalMs);
@@ -1101,7 +1320,8 @@ function mountRoutePlannerApp(wrapper, data) {
                         bufferMin: Math.round(bufferMs / 60000),
                         transitMin: Math.round(durMs / 60000),
                         tripId: autoTripId, tripName: tripName || null,
-                        stopIndex: 1
+                        stopIndex: 1,
+                        lockFrom, lockTo
                     });
                 }
                 if (placeReturn) {
@@ -1112,7 +1332,8 @@ function mountRoutePlannerApp(wrapper, data) {
                         bufferMin: Math.round(bufferMs / 60000),
                         transitMin: Math.round(durMs / 60000),
                         tripId: autoTripId, tripName: tripName || null,
-                        stopIndex: 1
+                        stopIndex: 1,
+                        lockFrom, lockTo
                     });
                 }
 
@@ -1126,10 +1347,21 @@ function mountRoutePlannerApp(wrapper, data) {
                 const dirLabel = (placeOutbound && placeReturn) ? 'Both trips'
                     : placeOutbound ? 'Outbound (→)' : 'Return (←)';
                 const tripNote = tripName ? ` · Trip: ${tripName}` : '';
-                frappe.show_alert({
-                    message: `${dirLabel} placed on ${this.vehicleLabelForItem({ vehicleId })} (${Math.round(durMs/60000)}min transit${bufferNote})${tripNote}`,
-                    indicator: 'green'
-                }, 4);
+
+                // A future-dated placement is saved now but only appears on the
+                // lane from its start date — tell the dispatcher so the "vanished"
+                // block isn't mistaken for a failed drop (TR-8).
+                if (lockFrom && String(lockFrom).slice(0, 10) > frappe.datetime.get_today()) {
+                    frappe.show_alert({
+                        message: `${dirLabel} scheduled on ${this.vehicleLabelForItem({ vehicleId })} — will appear on the lane from ${lockFrom}.`,
+                        indicator: 'blue'
+                    }, 6);
+                } else {
+                    frappe.show_alert({
+                        message: `${dirLabel} placed on ${this.vehicleLabelForItem({ vehicleId })} (${Math.round(durMs/60000)}min transit${bufferNote})${tripNote}`,
+                        indicator: 'green'
+                    }, 4);
+                }
             },
 
 
@@ -1137,7 +1369,9 @@ function mountRoutePlannerApp(wrapper, data) {
             checkConflicts() {
                 this.swimItems.forEach(i => { i.conflict = false; i.overcapacity = false; });
                 this.planData.vehicles.forEach(v => {
-                    const vi = this.swimItems.filter(i => i.vehicleId === v.id);
+                    // Only reconcile items live today; a future-dated placement
+                    // must not conflict with today's runs (TR-8).
+                    const vi = this.swimItems.filter(i => i.vehicleId === v.id && this._liveToday(i));
 
                     // Time overlap detection
                     for (let a = 0; a < vi.length; a++) {
@@ -1808,55 +2042,72 @@ function mountRoutePlannerApp(wrapper, data) {
                     is_default: Number(msg.is_default) || 0
                 };
 
-                // Restore swim items — convert ISO strings to Date,
-                // rebasing dates to today's timeline if the plan was saved on a different day.
-                // The planStart is always based on "today", so saved dates from yesterday
-                // would render off-screen without rebasing.
-                let parsedItems = items.map(i => ({
-                    ...i,
-                    start: new Date(i.start),
-                    end: new Date(i.end)
-                }));
+                // Restore swim items. start_time/end_time encode two things: the
+                // TIME-of-day is the daily trip window (drives render position) and
+                // the DATE is the multi-day lock lifespan. We split them here.
+                const dayMs = 24 * 3600000;
+                const todayStr = frappe.datetime.get_today();
 
-                if (parsedItems.length > 0) {
-                    // Find the earliest saved timestamp
-                    const earliestSaved = Math.min(...parsedItems.map(i => i.start.getTime()));
-
-                    // Only rebase when the saved blocks fall OUTSIDE today's timeline
-                    // window (i.e. a genuinely old plan). Blocks already within the
-                    // current window are left untouched: the timeline starts 3h before
-                    // local midnight, so its UTC day can differ from a same-day block's
-                    // UTC day — rebasing those by a whole day would push them off the
-                    // left edge and make the assignment invisible after a reload.
-                    const inWindow = earliestSaved >= this.planStart.getTime()
-                        && earliestSaved <= this.planEnd.getTime();
-
-                    if (!inWindow) {
-                        // Shift every block by whole days until the earliest one lands
-                        // inside the current window. Keying off UTC midnight is wrong
-                        // here: the timeline starts 3h before local midnight, so a plan
-                        // saved for the PREVIOUS local day can share the same UTC
-                        // calendar date as planStart (giving a 0-day offset) while still
-                        // sitting before the left edge, leaving its blocks invisible.
-                        // Measuring the gap to the window edge instead shifts by the
-                        // correct number of days whether the plan is one or many days old.
-                        const dayMs = 24 * 3600000;
-                        let offsetMs = 0;
-                        if (earliestSaved < this.planStart.getTime()) {
-                            offsetMs = Math.ceil((this.planStart.getTime() - earliestSaved) / dayMs) * dayMs;
-                        } else if (earliestSaved > this.planEnd.getTime()) {
-                            offsetMs = -Math.ceil((earliestSaved - this.planEnd.getTime()) / dayMs) * dayMs;
-                        }
-
-                        if (offsetMs !== 0) {
-                            parsedItems = parsedItems.map(i => ({
-                                ...i,
-                                start: new Date(i.start.getTime() + offsetMs),
-                                end:   new Date(i.end.getTime() + offsetMs)
-                            }));
-                        }
+                const DEFAULT_DUR_MS = 60 * 60000;
+                let parsedItems = items.map(i => {
+                    const startD = new Date(i.start);
+                    const endD = new Date(i.end);
+                    // Daily trip length = time-of-day span; the % dayMs strips the
+                    // multi-day date component so the block is never days wide.
+                    // Guard a missing/invalid end_time (e.g. edited away on the
+                    // assignment) so the block falls back to a 1h daily bar instead
+                    // of collapsing to a NaN/zero-width invisible one.
+                    let dur;
+                    if (!i.end || isNaN(endD.getTime())) {
+                        dur = DEFAULT_DUR_MS;
+                    } else {
+                        dur = (((endD.getTime() - startD.getTime()) % dayMs) + dayMs) % dayMs;
+                        if (!dur) dur = DEFAULT_DUR_MS;
                     }
-                }
+                    return {
+                        ...i,
+                        start: startD,
+                        end: (!i.end || isNaN(endD.getTime())) ? new Date(startD.getTime() + dur) : endD,
+                        lockFrom: i.start ? String(i.start).slice(0, 10) : null,
+                        lockTo: i.end ? String(i.end).slice(0, 10) : null,
+                        _dailyDurMs: dur
+                    };
+                });
+
+                // ── Multi-day lifespan gate (TR-8) ──
+                // A placed block re-renders every day until the system date crosses
+                // its lock end, then disappears. Continuous cards (linked shipment
+                // has no to_date) are always shown; bounded cards stop once today
+                // passes the lock end. This is AC1's "disappear after To Date".
+                parsedItems = parsedItems.filter(i => {
+                    if (!this._isBoundedItem(i)) return true;   // continuous — keep
+                    const card = this.planData.shipment_cards.find(c => c.id === i.cardId);
+                    const endDate = i.lockTo
+                        ? String(i.lockTo).slice(0, 10)
+                        : (card && card.to_date ? String(card.to_date).slice(0, 10) : todayStr);
+                    return endDate >= todayStr;   // drop lapsed (release the lane)
+                });
+
+                // Rebase EACH block onto today's timeline independently, then
+                // re-derive its end from the daily trip length. Every block now
+                // carries its own lifespan start date (the DATE part of start_time),
+                // so a single shared offset is wrong: one block whose start sits in
+                // the past — an ongoing multi-day lock, or a row edited to a past
+                // date — would otherwise drag every block off-screen and blank the
+                // whole grid. Shifting per block by whole days (which preserves the
+                // UTC time-of-day, and so the render position) keeps each one in the
+                // current window on its own.
+                parsedItems = parsedItems.map(i => {
+                    let startMs = i.start.getTime();
+                    if (startMs < this.planStart.getTime()) {
+                        startMs += Math.ceil((this.planStart.getTime() - startMs) / dayMs) * dayMs;
+                    } else if (startMs > this.planEnd.getTime()) {
+                        startMs -= Math.ceil((startMs - this.planEnd.getTime()) / dayMs) * dayMs;
+                    }
+                    const start = new Date(startMs);
+                    const end = new Date(startMs + i._dailyDurMs);
+                    return { ...i, start, end };
+                });
 
                 this.swimItems = parsedItems;
                 this.assignedCards = new Set(cards);
@@ -2022,8 +2273,11 @@ function mountRoutePlannerApp(wrapper, data) {
                         const card = this.planData.shipment_cards.find(c => c.id === i.cardId);
                         return {
                             ...i,
-                            start: new Date(i.start).toISOString(),
-                            end: new Date(i.end).toISOString(),
+                            // Persist the daily trip time (from the render position) but
+                            // stamp the multi-day lock lifespan onto the DATE part so
+                            // start_time/end_time carry both (TR-8).
+                            start: this._stampLifespan(i.start, i.lockFrom),
+                            end: this._stampLifespan(i.end, i.lockTo || i.lockFrom),
                             _site: card ? card.site : '',
                             _shift: card ? card.shift_name : '',
                             _accommodation: card ? card.accommodation : '',
@@ -2681,12 +2935,16 @@ function injectRPVueTemplate() {
         <!-- Scrollable vehicle rows -->
         <div id="rp-lanes-area">
           <div v-for="(vehicle, vi) in planData.vehicles" :key="vehicle.id"
-               :class="['rp-lane-row', vi % 2 === 1 ? 'rp-lane-alt' : '']"
+               :class="['rp-lane-row', vi % 2 === 1 ? 'rp-lane-alt' : '', lockedLaneIds.has(vehicle.id) ? 'rp-lane-locked' : '']"
                :data-vehicle-id="vehicle.id">
 
             <!-- Vehicle label column -->
             <div class="rp-lane-label">
-              <div class="rp-gv-plate">{{ vehicle.label }}</div>
+              <div class="rp-gv-plate">
+                {{ vehicle.label }}
+                <span v-if="lockedLaneIds.has(vehicle.id)" class="rp-lock-badge" title="Reserved for a multi-day run — blocked for other shipments">&#x1F512;</span>
+                <span v-else-if="upcomingLockByVehicle[vehicle.id]" class="rp-lock-upcoming" :title="'Reserved for an upcoming multi-day run from ' + upcomingLockByVehicle[vehicle.id]">&#x1F512; from {{ upcomingLockByVehicle[vehicle.id] }}</span>
+              </div>
               <div v-if="vehicle.license_plate" class="rp-gv-lp">{{ vehicle.license_plate }}</div>
               <div class="rp-gv-meta">{{ vehicle.driver }} &middot; {{ vehicle.seats }} seats</div>
               <div class="rp-gv-acc">{{ vehicle.accommodation }}</div>
@@ -2706,6 +2964,11 @@ function injectRPVueTemplate() {
                 <line v-for="tick in axisTicks" :key="'g' + tick.key"
                       :x1="tick.x" :x2="tick.x" y1="0" :y2="rowHeight"
                       :stroke="tick.isMajor ? '#ebebeb' : '#f6f6f6'" stroke-width="1"/>
+
+                <!-- Locked-lane wash: a vehicle held by an active multi-day lock is
+                     blocked out for any other shipment (TR-8). -->
+                <rect v-if="lockedLaneIds.has(vehicle.id)" x="0" y="0" :width="svgWidth" :height="rowHeight"
+                      fill="rgba(120,120,120,0.10)" style="pointer-events:none"/>
 
                 <!-- Drop target highlight when dragging a card -->
                 <rect v-if="draggingCard" x="0" y="0" :width="svgWidth" :height="rowHeight"
@@ -3487,6 +3750,9 @@ function injectRPStyles() {
         .rp-lane-svg       { display: block; }
 
         .rp-gv-plate { font-size: 14px; font-weight: 700; color: var(--md-sys-color-on-surface); }
+        .rp-lock-badge { font-size: 12px; margin-left: 4px; vertical-align: middle; }
+        .rp-lock-upcoming { font-size: 10px; margin-left: 4px; padding: 1px 5px; border-radius: 8px; background: rgba(124,58,237,0.12); color: #7c3aed; white-space: nowrap; vertical-align: middle; }
+        .rp-lane-locked .rp-lane-label { background: rgba(120,120,120,0.08); }
         .rp-gv-lp    { font-size: 11px; font-weight: 500; color: var(--md-sys-color-outline); margin-top: 1px; }
         .rp-gv-meta  { font-size: 12px; color: var(--md-sys-color-on-surface-variant); margin-top: 1px; }
         .rp-gv-acc   { font-size: 11px; color: var(--md-sys-color-outline); margin-top: 1px; }
