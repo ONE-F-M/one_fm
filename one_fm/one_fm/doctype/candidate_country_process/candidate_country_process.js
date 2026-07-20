@@ -33,9 +33,6 @@ frappe.ui.form.on('Candidate Country Process', {
     }
 
     if (!frm.is_new()) {
-      // ── "Apply Visa" button: manually trigger PAM Visa creation ──
-      add_apply_visa_button(frm);
-
       // ── "Open Record" link on each child row that has reference_name ──
       setup_open_record_links(frm);
 
@@ -182,71 +179,6 @@ var candidate_country_process_flow_btn = function(frm) {
         }
       }
     });
-  }
-};
-
-// ── "Apply Visa" button: manually create a PAM Visa from the tracker ─────────
-var add_apply_visa_button = function(frm) {
-  // Find the Visa Processing row
-  var visa_row = (frm.doc.agency_process_details || []).find(function(r) {
-    return r.process_name === "Visa Processing";
-  });
-
-  if (!visa_row) return;
-
-  // Only show button if no PAM Visa is linked yet
-  if (visa_row.reference_name) {
-    // Already linked — show "Open PAM Visa" instead
-    frm.add_custom_button(__("Open PAM Visa"), function() {
-      frappe.set_route("Form", "PAM Visa", visa_row.reference_name);
-    }, __("Visa"));
-  } else {
-    // Check if Job Offer is accepted (prerequisite)
-    var jo_row = (frm.doc.agency_process_details || []).find(function(r) {
-      return r.process_name === "Job Offer Issuance";
-    });
-    var jo_done = jo_row && jo_row.status === "Offer Accepted";
-
-    if (jo_done) {
-      frm.add_custom_button(__("Apply Visa"), function() {
-        frappe.confirm(
-          __("Create a new PAM Visa application for <b>{0}</b>?", [frm.doc.candidate_name]),
-          function() {
-            frappe.call({
-              method: "frappe.client.save",
-              args: {
-                doc: {
-                  doctype: "PAM Visa",
-                  candidate_country_process: frm.doc.name
-                }
-              },
-              freeze: true,
-              freeze_message: __("Creating PAM Visa..."),
-              callback: function(r) {
-                if (r.message) {
-                  // Update the tracker row with the reference
-                  frappe.model.set_value(
-                    visa_row.doctype, visa_row.name,
-                    "reference_name", r.message.name
-                  );
-                  frm.dirty();
-                  frm.save().then(function() {
-                    frappe.show_alert({
-                      message: __("PAM Visa {0} created", [r.message.name]),
-                      indicator: "green"
-                    });
-                    frappe.set_route("Form", "PAM Visa", r.message.name);
-                  });
-                }
-              }
-            });
-          }
-        );
-      }, __("Visa"));
-
-      // Highlight the button in primary color
-      frm.change_custom_button_type(__("Apply Visa"), __("Visa"), "primary");
-    }
   }
 };
 
