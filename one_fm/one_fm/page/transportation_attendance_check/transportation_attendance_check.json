@@ -1,0 +1,16 @@
+{
+    "doctype": "Page",
+    "module": "One FM",
+    "name": "transportation-attendance-check",
+    "page_name": "transportation-attendance-check",
+    "standard": "Yes",
+    "title": "Transportation Attendance Check",
+    "roles": [
+        {
+            "role": "System Manager"
+        },
+        {
+            "role": "Operations Manager"
+        }
+    ]
+}
