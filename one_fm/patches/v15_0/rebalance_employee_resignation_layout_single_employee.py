@@ -5,9 +5,10 @@ import frappe
 
 NEW_FIELD_ORDER = [
 	"workflow_state", "resigning_employees_section",
-	"employee", "resignation_letter", "reason_for_exit", "employees",
+	"employee", "resignation_letter", "employees",
 	"designation", "resignation_initiation_date",
 	"column_break_twru", "department", "project_allocation", "site_allocation", "relieving_date",
+	"reason_for_exit",
 	"column_break_pdtv", "employment_type", "shift_allocation", "operations_role_allocation",
 	"section_break_xfjj", "full_name_in_english", "full_name_in_arabic",
 	"nationality", "under_company_residency", "date_of_joining",
@@ -40,6 +41,11 @@ def execute():
 	Also makes resignation_letter allow_on_submit, so the attachment stays
 	visible and editable for every role at every stage of the workflow instead
 	of being locked once the document is submitted.
+
+	Also places Reason for Exit directly below Relieving Date in column 2,
+	rather than under Resignation Letter in column 1 -- as a multi-line Small
+	Text field it was pushing Designation/Resignation Initiation Date down
+	the page when placed at the top of column 1.
 
 	This doctype's field_order is controlled by a live "field_order" Property
 	Setter that takes precedence over the DocType JSON's own field_order --
