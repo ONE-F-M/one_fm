@@ -2867,9 +2867,8 @@ function change_ot_schedule(page) {
 							});
 					}
 				}, get_query: function () {
-					// Only shifts that permit double-shift OT can be selected as a second (OT) shift.
 					return {
-						"filters": { "status": "Active", "double_shift_ot_allowed": 1 },
+						"filters": { "status": "Active" },
 						"page_length": 9999
 					};
 				}

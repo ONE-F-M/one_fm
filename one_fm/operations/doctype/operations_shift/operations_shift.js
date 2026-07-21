@@ -7,8 +7,6 @@ frappe.ui.form.on('Operations Shift', {
 	},
 
 	refresh: function(frm) {
-		set_double_shift_ot_allowed_access(frm);
-
 		if(!frm.doc.__islocal){
 			frm.add_custom_button(
 				'Add Posts',
@@ -229,15 +227,6 @@ frappe.ui.form.on('Operations Shift', {
 	}
 	
 });
-
-// Only Operations Manager, Operation Admin and Facility Engineer may edit the
-// "Double Shift OT Allowed" flag. Everyone else (e.g. Operations Supervisor)
-// sees it read-only. Server-side controller enforces the same rule.
-function set_double_shift_ot_allowed_access(frm){
-	const editor_roles = ["Operations Manager", "Operation Admin", "Facility Engineer"];
-	const can_edit = editor_roles.some((role) => frappe.user_roles.includes(role));
-	frm.set_df_property("double_shift_ot_allowed", "read_only", can_edit ? 0 : 1);
-}
 
 function  validate_linked_schedules(frm){
 	if (frm.doc.status == "Inactive" && !frm.__confirmed_inactive && !frm.is_new()){
