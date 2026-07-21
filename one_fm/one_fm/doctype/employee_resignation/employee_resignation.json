@@ -12,12 +12,12 @@
         "employees",
         "designation",
         "resignation_initiation_date",
+        "reason_for_exit",
         "column_break_twru",
         "department",
         "project_allocation",
         "site_allocation",
         "relieving_date",
-        "reason_for_exit",
         "column_break_pdtv",
         "employment_type",
         "shift_allocation",
@@ -79,7 +79,8 @@
         {
             "fieldname": "reason_for_exit",
             "fieldtype": "Small Text",
-            "label": "Reason for Exit"
+            "label": "Reason for Exit",
+            "max_height": "4rem"
         },
         {
             "allow_on_submit": 1,
