@@ -14,7 +14,6 @@ NEW_FIELD_ORDER = [
 	"operational_impact_section", "supervisor", "replacement_required", "replacement_priority",
 	"column_break_qfvv", "replacement_nationality", "replacement_gender",
 	"column_break_visn", "replacement_salary", "ojt_days",
-	"section_break_tdav", "language_requirements", "skill_requirements", "certification_requirements",
 	"more_information_section", "status", "offboarding_officer",
 	"column_break_jkbg", "naming_series",
 	"column_break_bqiy", "amended_from", "shift_working", "operations_manager",
@@ -46,6 +45,15 @@ def execute():
 	Also places Reason for Exit directly below Resignation Initiation Date,
 	at the bottom of column 1 (its box height is also capped via max_height
 	on the field itself so it no longer dominates the column).
+
+	Also removes the "Language and Skill Requirement" section (language_
+	requirements, skill_requirements, certification_requirements) entirely --
+	Project Manpower Request already has its own identical section for this,
+	and Employee Resignation's copy only ever existed to pre-fill the PMR
+	that gets auto-spawned on submit when a replacement is required. That
+	pre-fill logic is removed from employee_resignation.py's on_submit() in
+	the same change; the PMR now starts blank on these fields and whoever
+	manages it fills them in directly there.
 
 	This doctype's field_order is controlled by a live "field_order" Property
 	Setter that takes precedence over the DocType JSON's own field_order --

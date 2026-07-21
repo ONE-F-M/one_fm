@@ -40,10 +40,6 @@
         "ojt_days",
         "erf",
         "recruiter",
-        "section_break_tdav",
-        "language_requirements",
-        "skill_requirements",
-        "certification_requirements",
         "more_information_section",
         "status",
         "column_break_jkbg",
@@ -279,30 +275,6 @@
             "fieldtype": "Select",
             "label": "Replacement Priority",
             "options": "\nHigh\nMedium\nLow"
-        },
-        {
-            "depends_on": "eval: doc.replacement_required == \"Yes\"",
-            "fieldname": "section_break_tdav",
-            "fieldtype": "Section Break",
-            "label": "Language and Skill Requirement"
-        },
-        {
-            "fieldname": "language_requirements",
-            "fieldtype": "Table",
-            "label": "Language Requirements",
-            "options": "Employee Language Requirement"
-        },
-        {
-            "fieldname": "skill_requirements",
-            "fieldtype": "Table",
-            "label": "Skill Requirements",
-            "options": "Designation Skill"
-        },
-        {
-            "fieldname": "certification_requirements",
-            "fieldtype": "Table",
-            "label": "Certification Requirements",
-            "options": "Candidate Certification List"
         },
         {
             "fieldname": "more_information_section",

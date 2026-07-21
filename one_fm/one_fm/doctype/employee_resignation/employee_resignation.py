@@ -219,27 +219,6 @@ class EmployeeResignation(Document):
 			pmr.nationality = self.replacement_nationality
 			pmr.salary = self.replacement_salary
 			pmr.deployment_date = self.relieving_date
-			for row in self.get("language_requirements"):
-				new_row = pmr.append("language_requirements", {})
-				row_dict = row.as_dict().copy()
-				for field in ("name", "parent", "parentfield", "parenttype", "creation", "modified", "modified_by", "owner"):
-					row_dict.pop(field, None)
-				new_row.update(row_dict)
-				
-			for row in self.get("skill_requirements"):
-				new_row = pmr.append("skill_requirements", {})
-				row_dict = row.as_dict().copy()
-				for field in ("name", "parent", "parentfield", "parenttype", "creation", "modified", "modified_by", "owner"):
-					row_dict.pop(field, None)
-				new_row.update(row_dict)
-				
-			for row in self.get("certification_requirements"):
-				new_row = pmr.append("certification_requirements", {})
-				row_dict = row.as_dict().copy()
-				for field in ("name", "parent", "parentfield", "parenttype", "creation", "modified", "modified_by", "owner"):
-					row_dict.pop(field, None)
-				new_row.update(row_dict)
-				
 			pmr.workflow_state = "Draft"
 			pmr.insert()
 			frappe.db.set_value("Project Manpower Request", pmr.name, "workflow_state", "Draft")
