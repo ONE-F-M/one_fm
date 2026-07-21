@@ -63,6 +63,13 @@ def execute():
 	toward the visible row -- both are just parked after Naming Series where
 	their hidden state keeps them out of the layout.
 
+	Also restores "Operational Impact" section's depends_on to match
+	version-15/production (gated to workflow_state in ['Pending Operations
+	Manager', 'Approved', 'Withdrawn']) instead of staging's looser
+	"!doc.__islocal" (visible as soon as the doc is saved, even in Draft) --
+	staging had drifted from production's behavior here independently of
+	this refactor.
+
 	This doctype's field_order is controlled by a live "field_order" Property
 	Setter that takes precedence over the DocType JSON's own field_order --
 	editing the JSON alone (even with a forced doctype reload) does not
