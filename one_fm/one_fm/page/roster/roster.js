@@ -1571,7 +1571,10 @@ function render_roster(res, page) {
 							}
 							abbrv += `${abbr_map[attendance]}<br>`;
 						} else if (employee_availability && !post_abbrv) {
-							tooltiptext = ``;
+							// Do NOT reset tooltiptext here: a cell can hold multiple records
+							// (e.g. a Basic "Working" shift plus an Over-Time Client Event on the
+							// same day). Resetting would discard the earlier record's tooltip and
+							// show only this one. Append so every record contributes its own line.
 							abbrv += `${abbr_map[employee_availability]}<br>`;
 							if (employee_availability == "Client Event") {
 								tooltiptext += `Client Event<br>Event Location: ${event_location}<br>Start: ${shift_start}<br>End: ${shift_end}<br>`;
