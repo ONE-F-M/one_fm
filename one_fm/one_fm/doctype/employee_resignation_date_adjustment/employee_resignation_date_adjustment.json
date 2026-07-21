@@ -8,11 +8,14 @@
  "field_order": [
   "section_break_xfjj",
   "employee_resignation",
+  "employee",
   "column_break_twru",
   "relieving_date",
   "current_relieving_date",
   "table_section",
   "employees",
+  "reason",
+  "extension_letter",
   "more_information_section",
   "naming_series",
   "column_break_fhar",
@@ -40,6 +43,15 @@
    "options": "Employee Resignation",
    "read_only": 1,
    "reqd": 1
+  },
+  {
+   "fetch_from": "employee_resignation.employee",
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee",
+   "read_only": 1,
+   "in_list_view": 1
   },
   {
    "fieldname": "column_break_twru",
@@ -71,7 +83,18 @@
    "fieldtype": "Table",
    "label": "Employees",
    "options": "Employee Resignation Date Adjustment Item",
-   "reqd": 1
+   "hidden": 1,
+   "description": "Legacy multi-employee table, no longer used. Kept only so historical multi-employee extensions remain readable."
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason"
+  },
+  {
+   "fieldname": "extension_letter",
+   "fieldtype": "Attach",
+   "label": "Extension Letter"
   },
   {
    "fieldname": "more_information_section",
@@ -113,6 +136,13 @@
    "fieldtype": "Column Break"
   },
   {
+   "fieldname": "workflow_state",
+   "fieldtype": "Data",
+   "label": "Workflow State",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
    "fieldname": "extended_relieving_date",
    "fieldtype": "Date",
    "label": "Extended Relieving Date",
@@ -139,13 +169,6 @@
    "label": "Offboarding Officer",
    "mandatory_depends_on": "eval:!doc.__islocal && ['Pending Operations Manager', 'Accepted by Supervisor', 'Approved'].includes(doc.workflow_state)",
    "options": "User"
-  },
-  {
-   "fieldname": "workflow_state",
-   "fieldtype": "Data",
-   "label": "Workflow State",
-   "read_only": 1,
-   "no_copy": 1
   }
  ],
  "grid_page_length": 50,

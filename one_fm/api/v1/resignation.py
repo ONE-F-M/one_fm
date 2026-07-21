@@ -130,18 +130,9 @@ def create_resignation(
         # Insert as Draft first so validate() doesn't block on missing letter
         doc.workflow_state = "Draft"
 
-        doc.append("employees", {
-            "employee": employee_name,
-            "employee_name": emp.get("employee_name"),
-            "designation": emp.get("designation"),
-            "project_allocation": emp.get("project"),
-            "employment_type": emp.get("employment_type"),
-            "resignation_letter_date": rel_date,
-        })
-
         doc.insert()
 
-        # Step 2: Attach the letter (must happen after insert so the row has a name)
+        # Step 2: Attach the letter (must happen after insert so the doc has a name)
         if attachment:
             if isinstance(attachment, str):
                 try:
@@ -152,8 +143,7 @@ def create_resignation(
                 "attachment_name": get_param("attachment_name", explicit_value=None) or "resignation_letter.png",
                 "attachment": attachment,
             }
-            for row in doc.employees:
-                handle_attachment_internal(doc, row, att_data, "resignation_letter")
+            handle_attachment_internal(doc, doc, att_data, "resignation_letter")
 
         # Step 3: Advance to Pending Supervisor now that the letter is saved
         doc.reload()
@@ -223,23 +213,17 @@ def extend_resignation(
         ext = frappe.new_doc("Employee Resignation Date Adjustment")
         ext.owner = employee_user or frappe.session.user
         ext.employee_resignation = resignation_id
+        ext.employee = active_doc.employee
         ext.supervisor = supervisor or active_doc.supervisor
         ext.extended_relieving_date = extended_date
+        ext.reason = reason or "Adjustment requested by employee"
         # Do NOT set workflow_state before insert — Frappe sets it to the
         # workflow's initial state ('Pending Supervisor') automatically
 
-        for row in active_doc.employees:
-            ext.append("employees", {
-                "employee": row.employee,
-                "employee_name": row.employee_name,
-                "designation": row.designation,
-                "reason": reason or "Adjustment requested by employee"
-            })
-
         ext.insert()
 
-        # Attach letter after insert so the row has a name
-        if attachment and ext.get("employees"):
+        # Attach letter after insert so the doc has a name
+        if attachment:
             if isinstance(attachment, dict):
                 att_data = attachment
             else:
@@ -251,8 +235,7 @@ def extend_resignation(
                 except Exception:
                     att_data = {"attachment_name": "extension_letter.png", "attachment": attachment}
 
-            first_row = ext.employees[0]
-            handle_attachment_internal(ext, first_row, att_data, "extension_letter")
+            handle_attachment_internal(ext, ext, att_data, "extension_letter")
 
         return {
             "status": "success",
@@ -314,20 +297,14 @@ def withdraw_resignation(
         withdrawal = frappe.new_doc("Employee Resignation Withdrawal")
         withdrawal.owner = employee_user or frappe.session.user
         withdrawal.employee_resignation = active_doc.name
+        withdrawal.employee = active_doc.employee
+        withdrawal.reason = reason or "Employee-initiated withdrawal"
         # Do NOT set workflow_state before insert — Frappe sets it to the
         # workflow's initial state ('Pending Supervisor') automatically
 
-        for row in active_doc.employees:
-            withdrawal.append("employees", {
-                "employee": row.employee,
-                "employee_name": row.employee_name,
-                "designation": row.designation,
-                "reason": reason or "Employee-initiated withdrawal"
-            })
-
         withdrawal.insert()
 
-        if attachment and withdrawal.get("employees"):
+        if attachment:
             if isinstance(attachment, dict):
                 att_data = attachment
             else:
@@ -339,9 +316,7 @@ def withdraw_resignation(
                 except Exception:
                     att_data = {"attachment_name": "withdrawal_letter.png", "attachment": attachment}
 
-            # Attach to the first child row on the 'attachment' field
-            first_row = withdrawal.employees[0]
-            handle_attachment_internal(withdrawal, first_row, att_data, "attachment")
+            handle_attachment_internal(withdrawal, withdrawal, att_data, "resignation_withdrawal_letter")
 
         # Notify offboarding officer
         try:
@@ -415,8 +390,7 @@ def correct_resignation_date_app(
                 "attachment_name": att_name,
                 "attachment": attachment,
             }
-            for row in doc.employees:
-                handle_attachment_internal(doc, row, att_data, "resignation_letter")
+            handle_attachment_internal(doc, doc, att_data, "resignation_letter")
 
         apply_workflow(doc, "Resubmit Date")
 

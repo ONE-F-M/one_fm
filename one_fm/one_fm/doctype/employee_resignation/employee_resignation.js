@@ -34,11 +34,6 @@ frappe.ui.form.on("Employee Resignation", {
 			};
 		});
 
-		// Hide Withdrawal Status column strictly for initial entry
-		if (frm.fields_dict.employees && frm.fields_dict.employees.grid) {
-			frm.fields_dict.employees.grid.set_column_disp("withdrawal_status", show_header);
-		}
-
 		// Bring the standard workflow button to the front
 		setTimeout(() => {
 			if (frm.page.custom_buttons) {
@@ -67,20 +62,21 @@ frappe.ui.form.on("Employee Resignation", {
 			});
 		}
 
-		if (!frm.doc.__islocal && frm.doc.employees && frm.doc.employees.length > 0) {
-			let view_exit_tab = function(employee_id) {
+		if (!frm.doc.__islocal && frm.doc.employee) {
+			frm.remove_custom_button(__('Employee Exit Tab'), __('Employee Profiles'));
+			frm.add_custom_button(__('Employee Exit Tab'), function() {
 				frappe.route_options = {"scroll_to": "exit"};
-				frappe.set_route('Form', 'Employee', employee_id).then(() => {
+				frappe.set_route('Form', 'Employee', frm.doc.employee).then(() => {
 					let ticks = 0;
 					let focus_tab = setInterval(() => {
 						ticks++;
-						if (frappe.get_route()[0] === "Form" && frappe.get_route()[1] === "Employee" && cur_frm && cur_frm.docname === employee_id && cur_frm.layout) {
-							
+						if (frappe.get_route()[0] === "Form" && frappe.get_route()[1] === "Employee" && cur_frm && cur_frm.docname === frm.doc.employee && cur_frm.layout) {
+
 							// Trigger standard scroll mechanism which natively maps and activates Tab Breaks
 							try {
 								cur_frm.scroll_to_field("exit");
 							} catch(e) {}
-							
+
 							// Directly target the framework's internal tab link reference for Bulletproof v14/v15 Bootstrap triggering
 							if (cur_frm.fields_dict.exit && cur_frm.fields_dict.exit.$tab) {
 								let $tab = cur_frm.fields_dict.exit.$tab;
@@ -98,24 +94,10 @@ frappe.ui.form.on("Employee Resignation", {
 						}
 					}, 100);
 				});
-			};
-
-			if (frm.doc.employees.length === 1) {
-				frm.remove_custom_button(__('Employee Exit Tab'), __('Employee Profiles'));
-				frm.add_custom_button(__('Employee Exit Tab'), function() {
-					view_exit_tab(frm.doc.employees[0].employee);
-				}, __('Employee Profiles'));
-			} else {
-				frm.doc.employees.forEach(row => {
-					let btn_label = row.employee_name || row.employee;
-					frm.add_custom_button(btn_label, function() {
-						view_exit_tab(row.employee);
-					}, __('Employee Profiles'));
-				});
-			}
+			}, __('Employee Profiles'));
 		}
 	},
-	
+
 	before_save: function(frm) {
 		// Prevent WAF payload blocking by stripping strings with special characters
 		// The python backend has been programmed to repopulate these natively
@@ -125,12 +107,12 @@ frappe.ui.form.on("Employee Resignation", {
 		frm.doc.shift_allocation = null;
 		frm.doc.operations_role_allocation = null;
 	},
-	
+
 	validate: function(frm) {
-	    if (!frm.doc.employees || frm.doc.employees.length === 0) {
+	    if (!frm.doc.employee) {
 	        frappe.msgprint({
 	            title: __('Missing Information'),
-	            message: __('You must add at least one Resigning Employee before saving.'),
+	            message: __('You must select the Resigning Employee before saving.'),
 	            indicator: 'red'
 	        });
 	        frappe.validated = false;
@@ -145,17 +127,10 @@ frappe.ui.form.on("Employee Resignation", {
 	before_workflow_action: function(frm) {
 		if (frm.selected_workflow_action === "Submit to Supervisor") {
 			return new Promise((resolve, reject) => {
-				let missing = [];
-				if (frm.doc.employees) {
-					frm.doc.employees.forEach(row => {
-						if (!row.resignation_letter) missing.push(row.employee_name || row.employee);
-					});
-				}
-
-				if (missing.length > 0) {
+				if (!frm.doc.resignation_letter) {
 					frappe.msgprint({
 						title: __('Missing Attachments'),
-						message: __('Missing Resignation Letter for <b>{0}</b>. Please click the pencil edit icon ✏️ on their row and attach the file before submitting.').replace('{0}', missing.join(", ")),
+						message: __('Missing Resignation Letter. Please attach the file before submitting.'),
 						indicator: 'red'
 					});
 					frappe.dom.unfreeze();
@@ -232,7 +207,59 @@ frappe.ui.form.on("Employee Resignation", {
 	},
 
 	employee: function (frm) {
-		// Legacy field triggers inside JS, safely disabled
+		if (!frm.doc.employee) return;
+
+		frappe.call({
+			method: 'one_fm.one_fm.doctype.employee_resignation.employee_resignation.get_employee_resignation_details',
+			args: { employee: frm.doc.employee },
+			callback: function(r) {
+				let d = r.message;
+				if (!d || Object.keys(d).length === 0) return;
+
+				// Validation: Profile completeness check
+				if (!d.project || !d.designation) {
+					let missing = [];
+					if (!d.project) missing.push("Project");
+					if (!d.designation) missing.push("Designation");
+
+					frappe.msgprint({
+						title: 'Incomplete Employee Profile',
+						message: `Employee <b>${d.employee_name} (${frm.doc.employee})</b> cannot be selected because their profile is missing: <b>${missing.join(" and ")}</b>. Please update their Employee record first.`,
+						indicator: 'red'
+					});
+					frm.set_value('employee', '');
+					return;
+				}
+
+				frm.set_value('project_allocation', d.project);
+				frm.set_value('department', d.department);
+				frm.set_value('designation', d.designation);
+				frm.set_value('site_allocation', d.site);
+				frm.set_value('employment_type', d.employment_type);
+				frm.set_value('shift_allocation', d.shift);
+				frm.set_value('operations_role_allocation', d.custom_operations_role_allocation);
+
+				frm.set_value('shift_working', cint(d.shift_working) || 0);
+
+				// Automatically fetch Supervisor (Priority: Line Manager -> Site Supervisor)
+				let supervisor_found = false;
+				if (d.supervisor_id) {
+					frm.set_value('supervisor', d.supervisor_id);
+					supervisor_found = true;
+				}
+
+				if (d.operations_manager) {
+					frm.set_value('operations_manager', d.operations_manager);
+				}
+
+				// Only set site supervisor if line manager (reports_to) was not found
+				if (d.site_supervisor_id && !supervisor_found) {
+					frm.set_value('supervisor', d.site_supervisor_id);
+				}
+
+				frm.trigger('update_ops_manager_mandatory');
+			}
+		});
 	},
 
 	replacement_required: function(frm) {
@@ -240,8 +267,7 @@ frappe.ui.form.on("Employee Resignation", {
 	},
 
 	update_ops_manager_mandatory: function(frm) {
-		let first_emp = frm.doc.employees && frm.doc.employees[0] ? frm.doc.employees[0].employee : null;
-		if (!first_emp) {
+		if (!frm.doc.employee) {
 			frm.toggle_display("operational_impact_section", false);
 			frm.set_df_property('operations_manager', 'reqd', 0);
 			frm.set_df_property('offboarding_officer', 'reqd', 0);
@@ -271,88 +297,4 @@ frappe.ui.form.on("Employee Resignation", {
 			frm.set_df_property('offboarding_officer', 'reqd', 1);
 		}
 	}
-});
-
-frappe.ui.form.on('Employee Resignation Item', {
-    employee: function(frm, cdt, cdn) {
-        let row = locals[cdt][cdn];
-        
-        if (row.employee) {
-            frappe.call({
-                method: 'one_fm.one_fm.doctype.employee_resignation.employee_resignation.get_employee_resignation_details',
-                args: { employee: row.employee },
-                callback: function(r) {
-                    let d = r.message;
-                    if (d && Object.keys(d).length > 0) {
-                    	// Validation: Profile completeness check
-                    	if (!d.project || !d.designation) {
-                    		let missing = [];
-                    		if (!d.project) missing.push("Project");
-                    		if (!d.designation) missing.push("Designation");
-                    		
-                    		frappe.msgprint({
-                    			title: 'Incomplete Employee Profile',
-                    			message: `Employee <b>${d.employee_name} (${row.employee})</b> cannot be added because their profile is missing: <b>${missing.join(" and ")}</b>. Please update their Employee record first.`,
-                    			indicator: 'red'
-                    		});
-                    		frappe.model.set_value(cdt, cdn, 'employee', '');
-                    		return;
-                    	}
-
-                    	// Force the child table exactly visually immediately
-                    	frappe.model.set_value(cdt, cdn, 'employee_name', d.employee_name);
-                    	frappe.model.set_value(cdt, cdn, 'project_allocation', d.project);
-                    	frappe.model.set_value(cdt, cdn, 'designation', d.designation);
-                    	frappe.model.set_value(cdt, cdn, 'employment_type', d.employment_type);
-                        // Natively sync properties if it's the first or master needs syncing
-                        if (!frm.doc.project_allocation) frm.set_value('project_allocation', d.project);
-                        if (!frm.doc.department) frm.set_value('department', d.department);
-                        if (!frm.doc.designation) frm.set_value('designation', d.designation);
-                        if (!frm.doc.site_allocation) frm.set_value('site_allocation', d.site);
-                        if (!frm.doc.employment_type) frm.set_value('employment_type', d.employment_type);
-                        if (!frm.doc.shift_allocation) frm.set_value('shift_allocation', d.shift);
-                        if (!frm.doc.operations_role_allocation) frm.set_value('operations_role_allocation', d.custom_operations_role_allocation);
-                        
-                        frm.set_value('shift_working', cint(d.shift_working) || 0);
-                        
-                        // Automatically fetch Supervisor (Priority: Line Manager -> Site Supervisor)
-                        let supervisor_found = false;
-                        if (d.supervisor_id) {
-                            frm.set_value('supervisor', d.supervisor_id);
-                            supervisor_found = true;
-                        }
-
-                        if (d.operations_manager) {
-                            frm.set_value('operations_manager', d.operations_manager);
-                        }
-                        
-                        // Only set site supervisor if line manager (reports_to) was not found
-                        if (d.site_supervisor_id && !supervisor_found) {
-                            frm.set_value('supervisor', d.site_supervisor_id);
-                        }
-                        
-                        frm.trigger('update_ops_manager_mandatory');
-                        
-                        // Validate live Project AND Designation mismatch
-                        let errors = [];
-                        if (frm.doc.project_allocation && frm.doc.project_allocation !== d.project) {
-                            errors.push(`Project (${d.project} vs ${frm.doc.project_allocation})`);
-                        }
-                        if (frm.doc.designation && frm.doc.designation !== d.designation) {
-                            errors.push(`Designation (${d.designation} vs ${frm.doc.designation})`);
-                        }
-                        
-                        if (errors.length > 0) {
-                            frappe.msgprint({
-                                title: 'Mismatch Error',
-                                message: `Employee ${row.employee} does not match the collective batch! Mismatches: ${errors.join(", ")}. All resigning employees must share both exact Project AND Designation!`,
-                                indicator: 'red'
-                            });
-                            frappe.model.set_value(cdt, cdn, 'employee', '');
-                        }
-                    }
-                }
-            });
-        }
-    }
 });

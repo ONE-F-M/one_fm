@@ -11,8 +11,8 @@ class EmployeeResignation(Document):
 		self.set_allocations()
 		self.set_supervisor()
 		self.validate_employee_permissions()
-		self.validate_employees()
-		self.validate_resignation_letters()
+		self.set_employee_allocation_details()
+		self.validate_resignation_letter()
 
 		# Enforce relieving_date explicitly for Supervisor before forwarding
 		if self.get("workflow_state") in ("Pending Operations Manager", "Approved"):
@@ -59,68 +59,49 @@ class EmployeeResignation(Document):
 		# Allow workflow assignees to modify the document
 		if frappe.session.user in [self.supervisor, self.operations_manager, self.offboarding_officer]:
 			return
-		
+
 		linked_employee = frappe.db.get_value("Employee", {"user_id": frappe.session.user})
 		if not linked_employee:
 			frappe.throw(_("Your user account is not linked to an Employee profile. You cannot initiate resignations."))
-			
-		for row in self.get("employees", []):
-			if row.employee and row.employee != linked_employee:
-				frappe.throw(_("You can only submit a resignation for yourself."), frappe.PermissionError)
 
-	def validate_employees(self):
-		# Ensure all employees belong to the same project and designation
-		if self.get("employees"):
-			projects = set()
-			designations = set()
-			for row in self.employees:
-				if not row.employee:
-					continue
-					
-				emp_data = frappe.db.get_value("Employee", row.employee, ["project", "designation", "employee_name"], as_dict=True)
-				if emp_data:
-					# Validation: Project and Designation must exist to spawn PMR later
-					if not emp_data.project:
-						frappe.throw(_("Employee <b>{0} ({1})</b> has no <b>Project</b> assigned in their profile. Please update the Employee profile first.").format(emp_data.employee_name, row.employee))
-					
-					if not emp_data.designation:
-						frappe.throw(_("Employee <b>{0} ({1})</b> has no <b>Designation</b> assigned in their profile. Please update the Employee profile first.").format(emp_data.employee_name, row.employee))
+		if self.employee and self.employee != linked_employee:
+			frappe.throw(_("You can only submit a resignation for yourself."), frappe.PermissionError)
 
-					projects.add(emp_data.project)
-					designations.add(emp_data.designation)
-					
-			if len(projects) > 1:
-				frappe.throw(_("All employees added to this collective resignation MUST belong to the exact same Project. You mixed: {0}").format(", ".join(projects)))
-				
-			if len(designations) > 1:
-				frappe.throw(_("All employees added to this collective resignation MUST share the exact same Designation. You mixed: {0}").format(", ".join(designations)))
-		
-			# Set the master project and designation allocation to the shared values
-			if projects:
-				self.project_allocation = list(projects)[0]
-			if designations:
-				self.designation = list(designations)[0]
+	def set_employee_allocation_details(self):
+		# Set project/designation from the resigning employee's profile (needed to spawn PMR later)
+		if not self.employee:
+			return
 
-	def validate_resignation_letters(self):
-		# We only strictly enforce attachments if the document is being submitted 
+		emp_data = frappe.db.get_value("Employee", self.employee, ["project", "designation", "employee_name"], as_dict=True)
+		if not emp_data:
+			return
+
+		if not emp_data.project:
+			frappe.throw(_("Employee <b>{0} ({1})</b> has no <b>Project</b> assigned in their profile. Please update the Employee profile first.").format(emp_data.employee_name, self.employee))
+
+		if not emp_data.designation:
+			frappe.throw(_("Employee <b>{0} ({1})</b> has no <b>Designation</b> assigned in their profile. Please update the Employee profile first.").format(emp_data.employee_name, self.employee))
+
+		self.project_allocation = emp_data.project
+		self.designation = emp_data.designation
+
+	def validate_resignation_letter(self):
+		# We only strictly enforce the attachment if the document is being submitted
 		# or if it's moving beyond the Draft phase to a supervisor.
 		if self.docstatus == 0 and self.get("workflow_state") in (None, "Draft", ""):
 			return
 
-		if self.get("employees"):
-			for row in self.employees:
-				if not row.employee:
-					continue
-				
-				# Mandatory for EVERYONE (Employee, Supervisor, HR)
-				if not row.resignation_letter:
-					emp_name = frappe.db.get_value("Employee", row.employee, "employee_name") or row.employee
-					frappe.throw(_("Missing Resignation Letter for <b>{0}</b>. Please click the pencil edit icon ✏️ on their row and attach the file before submitting.").format(str(emp_name)), title=_("Missing Attachments"))
+		if not self.employee:
+			return
+
+		if not self.resignation_letter:
+			emp_name = frappe.db.get_value("Employee", self.employee, "employee_name") or self.employee
+			frappe.throw(_("Missing Resignation Letter for <b>{0}</b>. Please attach the file before submitting.").format(str(emp_name)), title=_("Missing Attachments"))
 
 	def on_update(self):
 		old_doc = self.get_doc_before_save()
 		if not old_doc or old_doc.get("workflow_state") != self.workflow_state:
-			self.sync_status_to_employees()
+			self.sync_status_to_employee()
 			
 		if not self.is_new():
 			if old_doc and old_doc.get("workflow_state") != "Approved" and self.get("workflow_state") == "Approved":
@@ -142,23 +123,15 @@ class EmployeeResignation(Document):
 		subject = _("Employee Resignation Approved: {0}").format(self.name)
 		message = _("The employee resignation {0} has been fully approved by the Operations Manager and is now ready for offboarding processing.").format(self.name)
 
-		if self.get("employees"):
-			emp_list = []
-			for row in self.employees:
-				if row.employee:
-					emp_name = frappe.db.get_value("Employee", row.employee, "employee_name") or row.employee
-					emp_list.append(emp_name)
-					# Optionally notify the employee directly if they have an active user ID
-					user_id = frappe.db.get_value("Employee", row.employee, "user_id")
-					if user_id:
-						recipients.add(user_id)
-			
-			if emp_list:
-				message += "<br><br>" + _("Employees involved:") + "<ul>"
-				for emp in emp_list:
-					message += "<li>{}</li>".format(emp)
-				message += "</ul>"
-				
+		if self.employee:
+			emp_name = frappe.db.get_value("Employee", self.employee, "employee_name") or self.employee
+			message += "<br><br>" + _("Employee:") + " " + emp_name
+
+			# Optionally notify the employee directly if they have an active user ID
+			user_id = frappe.db.get_value("Employee", self.employee, "user_id")
+			if user_id:
+				recipients.add(user_id)
+
 		if self.relieving_date:
 			from frappe.utils import formatdate
 			message += "<br>" + _("<b>Approved Relieving Date:</b> {0}").format(formatdate(self.relieving_date))
@@ -178,34 +151,28 @@ class EmployeeResignation(Document):
 		self.set_allocations()
 
 	def set_allocations(self):
-		if self.get("employees"):
-			first_emp = self.employees[0].employee
-			if first_emp:
-				emp = frappe.db.get_value("Employee", first_emp, ["site", "project", "department", "shift", "custom_operations_role_allocation", "shift_working"], as_dict=True)
-				if emp:
-					self.site_allocation = emp.site
-					self.project_allocation = emp.project
-					self.department = emp.department
-					self.shift_allocation = emp.shift
-					self.operations_role_allocation = emp.custom_operations_role_allocation
-					self.shift_working = emp.shift_working or 0
+		if not self.employee:
+			return
+		emp = frappe.db.get_value("Employee", self.employee, ["site", "project", "department", "shift", "custom_operations_role_allocation", "shift_working"], as_dict=True)
+		if emp:
+			self.site_allocation = emp.site
+			self.project_allocation = emp.project
+			self.department = emp.department
+			self.shift_allocation = emp.shift
+			self.operations_role_allocation = emp.custom_operations_role_allocation
+			self.shift_working = emp.shift_working or 0
 
 
 	def set_supervisor(self):
 		# Only auto-resolve supervisor if it hasn't already been set manually
 		if self.get("supervisor"):
 			return
-		
-		# We base supervisor routing on the FIRST employee
-		if not self.get("employees"):
-			return
-			
-		first_emp = self.employees[0].employee
-		if not first_emp:
+
+		if not self.employee:
 			return
 
 		from one_fm.utils import get_approver
-		approver_emp = get_approver(first_emp)
+		approver_emp = get_approver(self.employee)
 		if approver_emp:
 			user_id = frappe.db.get_value("Employee", approver_emp, "user_id")
 			if user_id and frappe.db.exists("User", user_id):
@@ -215,32 +182,30 @@ class EmployeeResignation(Document):
 		self.supervisor = None
 
 	def on_submit(self):
-		self.sync_status_to_employees()
-		if self.get("employees"):
-			for row in self.employees:
-				if row.employee:
-					if row.resignation_letter:
-						file_name = row.resignation_letter.split('/')[-1] if '/' in row.resignation_letter else row.resignation_letter
-						
-						if not frappe.db.exists("File", {"attached_to_doctype": "Employee", "attached_to_name": row.employee, "file_url": row.resignation_letter}):
-							try:
-								from frappe.utils.file_manager import save_url
-								save_url(row.resignation_letter, file_name, "Employee", row.employee, "Home/Attachments", is_private=1)
-							except Exception as e:
-								frappe.log_error("Error attaching resignation file to Employee", str(e))
-					
-					frappe.db.set_value("Employee", row.employee, {
-						"resignation_date": self.resignation_initiation_date,
-						"relieving_date": self.relieving_date,
-						"current_resignation": self.name
-					})
+		self.sync_status_to_employee()
+		if self.employee:
+			if self.resignation_letter:
+				file_name = self.resignation_letter.split('/')[-1] if '/' in self.resignation_letter else self.resignation_letter
+
+				if not frappe.db.exists("File", {"attached_to_doctype": "Employee", "attached_to_name": self.employee, "file_url": self.resignation_letter}):
+					try:
+						from frappe.utils.file_manager import save_url
+						save_url(self.resignation_letter, file_name, "Employee", self.employee, "Home/Attachments", is_private=1)
+					except Exception as e:
+						frappe.log_error("Error attaching resignation file to Employee", str(e))
+
+			frappe.db.set_value("Employee", self.employee, {
+				"resignation_date": self.resignation_initiation_date,
+				"relieving_date": self.relieving_date,
+				"current_resignation": self.name
+			})
 
 		if self.replacement_required == "Yes":
 			pmr = frappe.new_doc("Project Manpower Request")
 			pmr.reason = "Exit"
 			pmr.employee_resignation = self.name
 			pmr.priority = self.replacement_priority
-			pmr.count = len(self.get("employees", []))
+			pmr.count = 1
 			pmr.employment_type = self.employment_type
 			pmr.designation = self.designation
 			pmr.department = self.department
@@ -279,25 +244,25 @@ class EmployeeResignation(Document):
 			frappe.db.set_value("Project Manpower Request", pmr.name, "workflow_state", "Draft")
 
 	def on_trash(self):
-		for row in self.get("employees", []):
-			if row.employee:
-				frappe.db.set_value("Employee", row.employee, {
-					"resignation_status": "",
-					"current_resignation": ""
-				})
+		if self.employee:
+			frappe.db.set_value("Employee", self.employee, {
+				"resignation_status": "",
+				"current_resignation": ""
+			})
 
-	def sync_status_to_employees(self):
+	def sync_status_to_employee(self):
+		if not self.employee:
+			return
 		status = self.workflow_state or "Draft"
-		for row in self.get("employees", []):
-			if row.employee:
-				update_data = {
-					"resignation_status": status,
-					"current_resignation": self.name,
-					"resignation_date": self.resignation_initiation_date,
-					"relieving_date": self.relieving_date,
-				}
-				frappe.db.set_value("Employee", row.employee, update_data, update_modified=False)
-				
+		update_data = {
+			"resignation_status": status,
+			"current_resignation": self.name,
+			"resignation_date": self.resignation_initiation_date,
+			"relieving_date": self.relieving_date,
+		}
+		frappe.db.set_value("Employee", self.employee, update_data, update_modified=False)
+
+
 @frappe.whitelist()
 def get_employee_resignation_details(employee):
 	"""Secure backend fetch to bypass frontend permission limits for restricted roles."""

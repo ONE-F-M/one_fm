@@ -63,12 +63,10 @@ class EmployeeResignationDateAdjustment(Document):
                 if self.employee_resignation:
                     resignation = frappe.get_doc("Employee Resignation", self.employee_resignation)
                     resignation.db_set("relieving_date", self.extended_relieving_date)
-                    
-                    # 2. Update all Employees natively linked to the parent resignation batch!
-                    if self.get("employees"):
-                        for row in self.employees:
-                            if row.employee:
-                                frappe.db.set_value("Employee", row.employee, "relieving_date", self.extended_relieving_date)
+
+                    # 2. Update the Employee linked to the parent resignation
+                    if self.employee:
+                        frappe.db.set_value("Employee", self.employee, "relieving_date", self.extended_relieving_date)
 
                     # 3. Update Project Manpower Request Deployment Date securely
                     pmr_name = frappe.db.get_value("Project Manpower Request", {"employee_resignation": self.employee_resignation}, "name")
@@ -91,15 +89,14 @@ class EmployeeResignationDateAdjustment(Document):
                             )
 
     def set_approver(self):
-        if not self.get("employees"):
-            return
-            
-        first_employee = self.employees[0].employee
-        if not first_employee:
+        if not self.employee and self.employee_resignation:
+            self.employee = frappe.db.get_value("Employee Resignation", self.employee_resignation, "employee")
+
+        if not self.employee:
             return
 
         employee_details = frappe.db.get_value(
-            "Employee", first_employee, ["reports_to", "site", "project"], as_dict=True
+            "Employee", self.employee, ["reports_to", "site", "project"], as_dict=True
         )
 
         if not employee_details:
