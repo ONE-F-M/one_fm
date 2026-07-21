@@ -11,9 +11,9 @@ NEW_FIELD_ORDER = [
 	"column_break_pdtv", "employment_type", "shift_allocation", "operations_role_allocation",
 	"section_break_xfjj", "full_name_in_english", "full_name_in_arabic",
 	"nationality", "under_company_residency", "date_of_joining",
-	"operational_impact_section", "supervisor", "replacement_required",
+	"operational_impact_section", "supervisor", "replacement_required", "replacement_priority",
 	"column_break_qfvv", "replacement_nationality", "replacement_gender",
-	"column_break_visn", "replacement_salary", "ojt_days", "replacement_priority",
+	"column_break_visn", "replacement_salary", "ojt_days",
 	"section_break_tdav", "language_requirements", "skill_requirements", "certification_requirements",
 	"more_information_section", "status", "offboarding_officer",
 	"column_break_jkbg", "naming_series",
@@ -35,7 +35,9 @@ def execute():
 	longer needed and the dates can live in the same grid.
 
 	Also moves OJT Days from the first "Operational Impact" column to the
-	third, directly below Replacement Salary.
+	third, directly below Replacement Salary, and moves Replacement Priority
+	from the third column to the first, directly below Is a Replacement
+	Required?.
 
 	Also makes resignation_letter allow_on_submit, so the attachment stays
 	visible and editable for every role at every stage of the workflow instead
