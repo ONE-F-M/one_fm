@@ -21,6 +21,7 @@
   "approvers_section",
   "workflow_state",
   "supervisor",
+  "is_corporate",
   "operations_manager",
   "offboarding_officer",
   "column_break_wetd",
@@ -111,6 +112,14 @@
    "label": "Supervisor",
    "options": "User",
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_corporate",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Is Corporate",
+   "read_only": 1
   },
   {
    "fieldname": "operations_manager",
