@@ -43,7 +43,7 @@ class ArrivalAcknowledgement(Document):
 
 
 @frappe.whitelist()
-def acknowledge(name):
+def acknowledge(name: str):
 	doc = frappe.get_doc("Arrival Acknowledgement", name)
 	required_role = DEPARTMENT_ROLES.get(doc.department)
 	roles = frappe.get_roles()
@@ -66,7 +66,7 @@ def acknowledge(name):
 
 
 @frappe.whitelist()
-def confirm_arrival(name, outcome):
+def confirm_arrival(name: str, outcome: str):
 	"""Transportation-only: once Transportation has acknowledged the pickup assignment,
 	they separately confirm whether the candidate actually arrived. This is the only
 	practical way to record that outcome at all -- Transportation Manager has no
@@ -74,6 +74,15 @@ def confirm_arrival(name, outcome):
 	Joined/Did Not Arrive on their behalf, reusing everything already wired to that
 	(clearing other departments' assignments, syncing CCP status, recalculating the
 	CCP timeline, notifying the recruiter).
+
+	Deliberately does not use frappe.model.workflow.apply_workflow(): its
+	get_transitions() call does doc.check_permission("read") on Arrival and
+	Deployment before even checking the transition's allowed role, and
+	Transportation Manager has zero role-permission grant on that doctype by
+	design (see has_permission on this doctype) -- apply_workflow() would throw
+	a PermissionError for the exact user this method exists for. The role check
+	above (mirroring what the transition's "allowed" role would enforce) plus
+	the guards on doc.status/doc.arrival_confirmation substitute for it.
 	"""
 	if outcome not in ("Arrived", "Did Not Arrive"):
 		frappe.throw(_("Invalid arrival outcome."))
@@ -122,7 +131,7 @@ def _run_bulk(names, fn, title):
 
 
 @frappe.whitelist()
-def bulk_acknowledge(names):
+def bulk_acknowledge(names: str):
 	"""Acknowledge multiple records in one go -- e.g. every candidate arriving on the
 	same day, filtered by Arrival Date in the list view. Records whose department
 	requires orientation/site fields must already have them filled in and saved
@@ -132,7 +141,7 @@ def bulk_acknowledge(names):
 
 
 @frappe.whitelist()
-def bulk_confirm_arrival(names, outcome):
+def bulk_confirm_arrival(names: str, outcome: str):
 	"""Confirm the same Arrived/Did Not Arrive outcome for multiple Transportation
 	records at once -- e.g. everyone arriving the same day who's already been
 	acknowledged.

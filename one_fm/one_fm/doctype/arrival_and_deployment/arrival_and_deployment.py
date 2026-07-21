@@ -181,8 +181,8 @@ class ArrivalandDeployment(Document):
         ):
             try:
                 clear_assignment("Arrival Acknowledgement", ack_name, ignore_permissions=True)
-            except Exception:
-                pass
+            except Exception as e:
+                frappe.log_error(title="Arrival Assignment Error", message=f"Failed to clear assignment for {ack_name}: {str(e)}")
 
 
     def notify_onboarding_officer(self):
