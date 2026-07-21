@@ -43,9 +43,12 @@
         "more_information_section",
         "status",
         "column_break_jkbg",
-        "naming_series",
+        "offboarding_officer",
         "column_break_bqiy",
-        "amended_from"
+        "operations_manager",
+        "naming_series",
+        "amended_from",
+        "shift_working"
     ],
     "fields": [
         {
@@ -295,6 +298,7 @@
         {
             "fieldname": "naming_series",
             "fieldtype": "Select",
+            "hidden": 1,
             "label": "Naming Series",
             "options": "HR-RSGN-.YYYY.MM.-",
             "read_only": 1
