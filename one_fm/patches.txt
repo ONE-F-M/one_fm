@@ -496,3 +496,5 @@ one_fm.patches.v15_0.mark_draft_pmr_as_completed #2026-07-07
 #one_fm.patches.v15_0.delete_pending_approval_attendance_checks_airport_t4_jul12 #2026-07-13
 #one_fm.patches.v15_0.send_amp_verification_test_email #2026-07-14
 one_fm.patches.v15_0.allow_any_operations_manager_to_approve_resignation_withdrawal #2026-07-22
+one_fm.patches.v15_0.backfill_pmr_resignation_custom_docperm #2026-07-22
+one_fm.patches.v15_0.add_transportation_manager_to_pmr_and_resignation_workflows #2026-07-22

@@ -59,6 +59,9 @@ class EmployeeResignation(Document):
 		# Allow workflow assignees to modify the document
 		if frappe.session.user in [self.supervisor, self.operations_manager, self.offboarding_officer]:
 			return
+		# Allow Operation Admin, T4 Admin, and Transportation Manager to edit replacement details in Pending Operations Manager state
+		if self.get("workflow_state") == "Pending Operations Manager" and any(role in roles for role in ["Operation Admin", "T4 Admin", "Transportation Manager"]):
+			return
 		
 		linked_employee = frappe.db.get_value("Employee", {"user_id": frappe.session.user})
 		if not linked_employee:
