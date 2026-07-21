@@ -141,7 +141,7 @@ frappe.ui.form.on("Employee Resignation", {
 			});
 		}
 
-		if (frm.selected_workflow_action === "Approve") {
+		if (frm.selected_workflow_action === "Approve" && frm.doc.workflow_state === "Pending Operations Manager") {
 			if (!frm.doc.replacement_required) {
 				frappe.msgprint({
 					title: __('Missing Replacement Decision'),

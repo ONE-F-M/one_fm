@@ -33,9 +33,14 @@ class EmployeeResignation(Document):
 				if not self.offboarding_officer:
 					frappe.throw(_("Please specify the <b>Offboarding Officer</b> before saving or submitting."))
 
-		# Enforce replacement_required explicitly for Operations Manager / Approved
+		# Enforce replacement_required explicitly for Operations Manager / Approved.
+		# Non-shift-workers skip the Operations Manager stage entirely (direct
+		# Pending Supervisor -> Approved transition), so they're auto-exempted
+		# rather than forced to answer -- they never see the field at all.
 		if self.get("workflow_state") == "Approved":
-			if not self.replacement_required:
+			if not self.shift_working:
+				self.replacement_required = "No"
+			elif not self.replacement_required:
 				frappe.throw(
 					_("You must explicitly select Yes or No for 'Is a Replacement Required?' before you can approve and spawn a PMR."),
 					title=_("Replacement Required")
