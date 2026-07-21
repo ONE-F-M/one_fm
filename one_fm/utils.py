@@ -4824,7 +4824,12 @@ def get_sibling_counts(doctype, name, items=None):
     for d in items:
         # custom count logic for siblings
         try:
-            filters = {"candidate_country_process": ccp_name} if ccp_name else {"name": "invalid"}
+            if d == "Candidate Country Process":
+                # The CCP has no candidate_country_process field pointing to itself;
+                # it's the parent we're already linked to, so count is just 1.
+                filters = {"name": ccp_name} if ccp_name else {"name": "invalid"}
+            else:
+                filters = {"candidate_country_process": ccp_name} if ccp_name else {"name": "invalid"}
             docs = frappe.get_list(d, filters=filters, limit=100, distinct=True, ignore_ifnull=True)
             total_count = len(docs)
             out["external_links_found"].append({"doctype": d, "count": total_count, "open_count": 0})

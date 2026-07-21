@@ -219,7 +219,9 @@ has_permission = {
  	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.has_permission",
 	"Issue": "one_fm.utils.has_permission_to_issue",
 	"Notification Settings":'one_fm.overrides.notification_settings.has_permission_',
-	"Contracts": "one_fm.operations.doctype.contracts.contracts.contracts_has_permission"
+	"Contracts": "one_fm.operations.doctype.contracts.contracts.contracts_has_permission",
+	"Candidate Country Process": "one_fm.one_fm.doctype.candidate_country_process.candidate_country_process.has_permission",
+	"Arrival Acknowledgement": "one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement.has_permission"
 }
 
 standard_queries = {
@@ -586,11 +588,6 @@ override_doctype_class = {
 # ---------------
 
 scheduler_events = {
-	"cron": {
-		"0 12 * * *": [
-			'one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment.send_daily_acknowledgement_reminders'
-		]
-	},
 	"daily": [
 		'one_fm.utils.pam_salary_certificate_expiry_date',
 		'one_fm.utils.pam_authorized_signatory',

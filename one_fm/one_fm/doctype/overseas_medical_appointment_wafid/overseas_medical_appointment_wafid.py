@@ -49,6 +49,28 @@ class OverseasMedicalAppointmentWAFID(Document):
                 update_modified=True
             )
 
+        # 3. Skip Re-Medical when the candidate is Fit/Unfit (no re-medical needed);
+        # make sure it's active if the result says otherwise. Only touches rows
+        # still at Pending/Skipped so genuine re-medical progress is never overwritten.
+        remedical_rows = frappe.get_all(
+            "Candidate Country Process Details",
+            filters={"parent": self.candidate_country_process, "process_name": "Re-Medical"},
+            fields=["name", "status"],
+            limit=1,
+        )
+        if remedical_rows:
+            remedical_row = remedical_rows[0]
+            if self.status in ("Fit", "Unfit") and remedical_row.status == "Pending":
+                frappe.db.set_value(
+                    "Candidate Country Process Details", remedical_row.name,
+                    "status", "Skipped", update_modified=True
+                )
+            elif self.status == "Medical failed and Proceeded to Remedical" and remedical_row.status == "Skipped":
+                frappe.db.set_value(
+                    "Candidate Country Process Details", remedical_row.name,
+                    "status", "Pending", update_modified=True
+                )
+
     def on_update(self):
         """Notify the CCP engine to evaluate downstream triggers."""
         if self.candidate_country_process and self.status in (

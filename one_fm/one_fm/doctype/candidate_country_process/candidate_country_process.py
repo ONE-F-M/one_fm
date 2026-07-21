@@ -108,7 +108,7 @@ class CandidateCountryProcess(Document):
         If no before_task, returns default_start for the first task,
         or the previous row's planned_date for sequential flow.
         """
-        before_tasks = self._parse_task_list(row.get("before_task"))
+        before_tasks = self._expand_through_skipped(self._parse_task_list(row.get("before_task")), row_map)
 
         if not before_tasks:
             # First task in the chain — use start_date
@@ -135,7 +135,7 @@ class CandidateCountryProcess(Document):
         For parallel tasks sharing the same before_task, they all start
         from the same anchor (the before_task's completion).
         """
-        before_tasks = self._parse_task_list(row.get("before_task"))
+        before_tasks = self._expand_through_skipped(self._parse_task_list(row.get("before_task")), row_map)
 
         if not before_tasks:
             return default_start
@@ -145,10 +145,6 @@ class CandidateCountryProcess(Document):
         for task_name in before_tasks:
             dep_row = row_map.get(task_name)
             if not dep_row:
-                continue
-
-            # Skip dependencies that are Skipped
-            if dep_row.get("status") == "Skipped":
                 continue
 
             # Prefer actual_date > live_plan_date > planned_date
@@ -171,6 +167,27 @@ class CandidateCountryProcess(Document):
         if not task_str:
             return []
         return [t.strip() for t in task_str.split(",") if t.strip()]
+
+    def _expand_through_skipped(self, task_names, row_map, _seen=None):
+        """
+        Replace any Skipped process name in task_names with its own before_task
+        names (recursively), so date computation anchors off the nearest
+        non-skipped ancestor instead of stopping at a skipped step.
+        """
+        if _seen is None:
+            _seen = set()
+        resolved = []
+        for name in task_names:
+            if name in _seen:
+                continue
+            dep_row = row_map.get(name)
+            if dep_row and dep_row.get("status") == "Skipped":
+                _seen.add(name)
+                skip_before = self._parse_task_list(dep_row.get("before_task"))
+                resolved.extend(self._expand_through_skipped(skip_before, row_map, _seen))
+            else:
+                resolved.append(name)
+        return resolved
 
     def autoname(self):
         if not self.candidate_name and self.job_applicant:
@@ -218,13 +235,14 @@ class CandidateCountryProcess(Document):
         row_map = {r.process_name: r for r in rows}
 
         for row in rows:
-            # Check if this row is "complete" per its configured status
-            if not row.reference_complete_status_value:
-                continue
-            if row.status != row.reference_complete_status_value:
+            # A row hands off to its dependents either by reaching its configured
+            # completion status, or by being Skipped (nothing to wait for).
+            is_skipped = row.status == "Skipped"
+            is_complete = bool(row.reference_complete_status_value) and row.status == row.reference_complete_status_value
+            if not (is_skipped or is_complete):
                 continue
 
-            # This task is complete — find tasks that depend on it (by before_task)
+            # This task is complete (or skipped) — find tasks that depend on it (by before_task)
             dependent_rows = [
                 r for r in rows
                 if row.process_name in self._parse_task_list(r.get("before_task"))
@@ -315,8 +333,8 @@ class CandidateCountryProcess(Document):
 
         except Exception as e:
             frappe.log_error(
-                f"Failed to auto-create {doctype} for {self.name}: {e}",
-                "CCP Auto-Create Error"
+                title="CCP Auto-Create Error",
+                message=f"Failed to auto-create {doctype} for {self.name}: {e}",
             )
             return None
 
@@ -509,7 +527,38 @@ def recalculate_ccp_live_eta(ccp_name: str):
         doc = frappe.get_doc("Candidate Country Process", ccp_name)
         doc.save(ignore_permissions=True)
     except Exception as e:
-        frappe.log_error(f"Failed to recalculate CCP live ETA for {ccp_name}: {e}", "CCP Recalculate Error")
+        frappe.log_error(title="CCP Recalculate Error", message=f"Failed to recalculate CCP live ETA for {ccp_name}: {e}")
     finally:
         frappe.local.in_ccp_recalculation = False
+
+
+def has_permission(doc, ptype=None, user=None, **kwargs):
+    """
+    Onboarding Officer has read access to every Candidate Country Process via its
+    role permission (they need to be able to find/see candidates ahead of time), but
+    should only be able to start editing one once its linked Arrival and Deployment
+    record has actually reached "Pending Onboarding" or a later stage in that flow.
+
+    Frappe's controller has_permission hooks can only DENY access, never grant
+    anything beyond the role permission table — so write/create/delete/submit/cancel
+    is granted at the role-permission level (see the DocType's own permissions),
+    and this hook denies it back for Onboarding Officer specifically until that
+    condition is met. Returns None everywhere else so other roles are never affected.
+    """
+    if ptype not in ("write", "create", "delete", "submit", "cancel"):
+        return None
+
+    user = user or frappe.session.user
+    if "Onboarding Officer" not in frappe.get_roles(user):
+        return None
+
+    arrival_state = frappe.db.get_value(
+        "Arrival and Deployment",
+        {"candidate_country_process": doc.name},
+        "workflow_state",
+    )
+    if arrival_state in ("Pending Onboarding", "Pending Support Departments", "Joined", "Did Not Arrive"):
+        return None
+
+    return False
 
