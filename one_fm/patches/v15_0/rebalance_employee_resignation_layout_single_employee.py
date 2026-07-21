@@ -5,7 +5,7 @@ import frappe
 
 NEW_FIELD_ORDER = [
 	"workflow_state", "resigning_employees_section",
-	"employee", "resignation_letter", "employees",
+	"employee", "resignation_letter", "reason_for_exit", "employees",
 	"designation", "resignation_initiation_date",
 	"column_break_twru", "department", "project_allocation", "site_allocation", "relieving_date",
 	"column_break_pdtv", "employment_type", "shift_allocation", "operations_role_allocation",

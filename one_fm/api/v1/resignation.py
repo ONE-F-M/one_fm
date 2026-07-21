@@ -78,6 +78,7 @@ def create_resignation(
     supervisor=None,
     resignation_initiation_date=None,
     relieving_date=None,
+    reason_for_exit=None,
     attachment=None,
     data=None,
     **kwargs
@@ -88,12 +89,14 @@ def create_resignation(
             supervisor=supervisor,
             resignation_initiation_date=resignation_initiation_date,
             relieving_date=relieving_date,
+            reason_for_exit=reason_for_exit,
             attachment=attachment,
         )
         input_id   = p["employee_id"]
         supervisor = p["supervisor"]
         init_date  = p["resignation_initiation_date"]
         rel_date   = p["relieving_date"] or get_param("resignation_date")
+        reason     = p["reason_for_exit"]
         attachment = p["attachment"]
 
         if not attachment:
@@ -122,6 +125,7 @@ def create_resignation(
         doc.employee = employee_name
         doc.resignation_initiation_date = init_date
         doc.relieving_date = rel_date
+        doc.reason_for_exit = reason
         doc.supervisor = supervisor
         doc.department = emp.get("department")
         doc.employment_type = emp.get("employment_type")

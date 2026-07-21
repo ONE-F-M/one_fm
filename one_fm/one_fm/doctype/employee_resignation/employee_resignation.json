@@ -9,6 +9,7 @@
         "resigning_employees_section",
         "employee",
         "resignation_letter",
+        "reason_for_exit",
         "employees",
         "designation",
         "resignation_initiation_date",
@@ -74,6 +75,11 @@
             "label": "Resignation Letter",
             "mandatory_depends_on": "eval:doc.workflow_state && doc.workflow_state !== 'Draft'",
             "allow_on_submit": 1
+        },
+        {
+            "fieldname": "reason_for_exit",
+            "fieldtype": "Small Text",
+            "label": "Reason for Exit"
         },
         {
             "allow_on_submit": 1,

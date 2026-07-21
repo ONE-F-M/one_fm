@@ -197,6 +197,7 @@ class EmployeeResignation(Document):
 			frappe.db.set_value("Employee", self.employee, {
 				"resignation_date": self.resignation_initiation_date,
 				"relieving_date": self.relieving_date,
+				"reason_for_leaving": self.reason_for_exit,
 				"current_resignation": self.name
 			})
 
@@ -259,6 +260,7 @@ class EmployeeResignation(Document):
 			"current_resignation": self.name,
 			"resignation_date": self.resignation_initiation_date,
 			"relieving_date": self.relieving_date,
+			"reason_for_leaving": self.reason_for_exit,
 		}
 		frappe.db.set_value("Employee", self.employee, update_data, update_modified=False)
 
