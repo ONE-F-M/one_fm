@@ -96,6 +96,22 @@ frappe.ui.form.on("Employee Resignation", {
 				});
 			}, __('Employee Profiles'));
 		}
+
+		if (frm.doc.workflow_state === 'Pending Operations Manager' && ['Operation Admin', 'T4 Admin', 'Transportation Manager'].some(role => frappe.user_roles.includes(role))) {
+			// Disable editing of all fields except replacement details
+			frm.set_df_property('employee', 'read_only', 1);
+			frm.set_df_property('resignation_initiation_date', 'read_only', 1);
+			frm.set_df_property('relieving_date', 'read_only', 1);
+			frm.set_df_property('reason_for_exit', 'read_only', 1);
+			frm.set_df_property('supervisor', 'read_only', 1);
+			frm.set_df_property('operations_manager', 'read_only', 1);
+			frm.set_df_property('offboarding_officer', 'read_only', 1);
+
+			// Explicitly allow editing of replacement fields
+			frm.set_df_property('replacement_required', 'read_only', 0);
+			frm.set_df_property('replacement_nationality', 'read_only', 0);
+			frm.set_df_property('replacement_gender', 'read_only', 0);
+		}
 	},
 
 	before_save: function(frm) {
