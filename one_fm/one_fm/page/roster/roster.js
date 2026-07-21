@@ -1455,11 +1455,31 @@ function render_roster(res, page) {
 						ot_count++;
 						bgclass = bgclass ? `${bgclass}-sameot` : "sameot";
 						data_ot = `${employee}|${date}|${operations_role}|${shift}|${employee_availability}`;
+						// Over-Time Client Event / OJT cells must still carry a data-selectid and the
+						// event metadata so the "Change Employee Schedule (Others)" action can target them.
+						if (employee_availability == "Client Event" || employee_availability == "On-the-job Training") {
+							data_selectid = `${employee}|${date}|${operations_role}|${shift}|${employee_availability}`;
+							if (employee_availability == "Client Event") {
+								data_extra_attrs = ` data-event-location="${event_location || ""}" data-shift="${shift || ""}" data-operations-role="${operations_role || ""}" data-project="${project || ""}" data-site="${site || ""}" data-day-off-ot="0" data-client-event="${client_event || ""}" data-ojt=""`;
+							} else {
+								data_extra_attrs = ` data-event-location="" data-shift="${shift || ""}" data-operations-role="${operations_role || ""}" data-project="${project || ""}" data-site="${site || ""}" data-day-off-ot="0" data-client-event="" data-ojt="${on_the_job_training || ""}"`;
+							}
+						}
 					}
 					else if (!attendance && roster_type == "Over-Time" && page.filters[applied_filter] != record[applied_filter]) {
 						ot_count++;
 						bgclass = bgclass ? `${bgclass}-diffot` : "diffot";
 						data_ot = `${employee}|${date}|${operations_role}|${shift}|${employee_availability}`;
+						// Over-Time Client Event / OJT cells must still carry a data-selectid and the
+						// event metadata so the "Change Employee Schedule (Others)" action can target them.
+						if (employee_availability == "Client Event" || employee_availability == "On-the-job Training") {
+							data_selectid = `${employee}|${date}|${operations_role}|${shift}|${employee_availability}`;
+							if (employee_availability == "Client Event") {
+								data_extra_attrs = ` data-event-location="${event_location || ""}" data-shift="${shift || ""}" data-operations-role="${operations_role || ""}" data-project="${project || ""}" data-site="${site || ""}" data-day-off-ot="0" data-client-event="${client_event || ""}" data-ojt=""`;
+							} else {
+								data_extra_attrs = ` data-event-location="" data-shift="${shift || ""}" data-operations-role="${operations_role || ""}" data-project="${project || ""}" data-site="${site || ""}" data-day-off-ot="0" data-client-event="" data-ojt="${on_the_job_training || ""}"`;
+							}
+						}
 					}
 					else if (!attendance && roster_type == "Basic" && page.filters[applied_filter] == record[applied_filter] && day_off_ot == 1) {
 						if (employee_availability == "Working") basic_count++;

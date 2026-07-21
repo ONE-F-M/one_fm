@@ -462,6 +462,13 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 		if not employees:
 			frappe.throw("Employees must be selected.")
 
+		# Drop entries without a valid employee. These occur when an Over-Time-only cell
+		# (e.g. an Over-Time Client Event) is selected for a Basic action: such cells have an
+		# empty data-selectid, so the client sends an entry with a blank employee.
+		employees = [obj for obj in employees if obj.get("employee")]
+		if not employees:
+			frappe.throw(_("The selected cell cannot be scheduled as Basic. Use 'Change Employee Schedule (OT)' or 'Change Employee Schedule (Others)' for Over-Time / Client Event cells."))
+
 		employee_list = list({obj["employee"] for obj in employees})
 		employee_leave_attendance = get_employee_leave_attendance(employee_list,start_date)
 		if cint(project_end_date) and not end_date:
