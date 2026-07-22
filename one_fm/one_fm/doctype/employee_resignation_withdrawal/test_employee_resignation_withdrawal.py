@@ -152,10 +152,29 @@ def _make_employee(employee_id, employee_name):
 			"department": _get_or_create_department("Test Department", company),
 			"one_fm_basic_salary": 1000,
 			"date_of_joining": frappe.utils.add_days(frappe.utils.today(), -100),
-			"status": "Active"
+			"status": "Active",
+			"project": _get_or_create_project("Test ERW Project", company),
+			"designation": _get_or_create_designation("Test ERW Designation")
 		}).insert(ignore_permissions=True)
 		return doc.name
 	return existing
+
+def _get_or_create_project(project_name, company):
+	if not frappe.db.exists("Project", project_name):
+		frappe.get_doc({
+			"doctype": "Project",
+			"project_name": project_name,
+			"company": company
+		}).insert(ignore_permissions=True)
+	return project_name
+
+def _get_or_create_designation(designation_name):
+	if not frappe.db.exists("Designation", designation_name):
+		frappe.get_doc({
+			"doctype": "Designation",
+			"designation_name": designation_name
+		}).insert(ignore_permissions=True)
+	return designation_name
 
 def _get_or_create_department(department_name, company):
 	# The actual name in DB is usually 'Department Name - Company Abbr'
