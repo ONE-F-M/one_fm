@@ -1321,6 +1321,15 @@ def get_manifest_data_for_plan(plan_name: str):
 		if _link_shipment_on_manifest_rows(manifest_doc, v_rows, card_emp_map):
 			rows_changed = True
 
+		# Recompute per-camp stop numbering in memory so existing manifests pick up
+		# the current sequencing rule (per unique camp, incl. Direct) even when their
+		# rows are otherwise unchanged — the manifest page's per-camp banners + lock
+		# depend on it (MA2-11). Persist if the numbers actually shifted.
+		_old_seqs = [(r.name, r.stop_sequence) for r in manifest_doc.transportation_manifest_details]
+		manifest_doc.populate_stop_sequence_and_pickup_accommodation()
+		if _old_seqs != [(r.name, r.stop_sequence) for r in manifest_doc.transportation_manifest_details]:
+			rows_changed = True
+
 		if manifest_doc.is_new():
 			manifest_doc.insert()
 		elif rows_changed:
@@ -1328,6 +1337,18 @@ def get_manifest_data_for_plan(plan_name: str):
 			manifest_doc.save()
 
 		manifests[v_id] = manifest_doc
+
+	# Resolve Accommodation display labels once (collapsing Mahboula sub-camps),
+	# so the manifest page can group boarding staff camp-by-camp (MA2-11).
+	acc_label_cache = {}
+
+	def _acc_label(acc):
+		if not acc:
+			return None
+		if acc not in acc_label_cache:
+			lbl = frappe.db.get_value("Accommodation", acc, "accommodation") or acc
+			acc_label_cache[acc] = "Mahboula Camp" if lbl in MAHBOULA_LABELS else lbl
+		return acc_label_cache[acc]
 
 	def enrich_employees(emp_list, vehicle_id, stop_location, trip_id, is_return):
 		manifest_doc = manifests.get(vehicle_id)
@@ -1368,6 +1389,9 @@ def get_manifest_data_for_plan(plan_name: str):
 						break
 						
 			emp_copy = dict(emp)
+			# Manifest link is stamped regardless of match so the page can wire the
+			# per-camp attendance-check trigger/lock to the right manifest (MA2-11).
+			emp_copy["manifest"] = manifest_doc.name if not manifest_doc.is_new() else None
 			if matching_row:
 				emp_copy["row_id"] = matching_row.name
 				emp_copy["attendance_status"] = matching_row.attendance_status
@@ -1375,6 +1399,11 @@ def get_manifest_data_for_plan(plan_name: str):
 				emp_copy["qoa_reason"] = matching_row.qoa_reason
 				emp_copy["requires_reliever"] = matching_row.requires_reliever
 				emp_copy["reliever_employee"] = matching_row.reliever_employee
+				# Pickup camp + stop sequence drive the DEPART camp banners and the
+				# strictly-sequential unlock (MA2-11).
+				emp_copy["pickup_accommodation"] = matching_row.pickup_accommodation
+				emp_copy["pickup_camp_label"] = _acc_label(matching_row.pickup_accommodation)
+				emp_copy["stop_sequence"] = matching_row.stop_sequence or 1
 				emp_copy["operations_shift"] = matching_row.operations_shift
 				emp_copy["operations_site"] = matching_row.operations_site
 				emp_copy["operations_role"] = matching_row.operations_role
@@ -1448,6 +1477,7 @@ def get_manifest_data_for_plan(plan_name: str):
 			acc_label = "Mahboula Camp"
 
 		vehicles_list.append({"label": v_label, "startLocation": None})
+		_mf = manifests.get(vid)
 		v_meta[v_label] = {
 			"accommodation": acc_label,
 			"driver": driver_name,
@@ -1456,6 +1486,10 @@ def get_manifest_data_for_plan(plan_name: str):
 			"license_plate": v_doc.get("license_plate", ""),
 			"make": v_doc.get("make", ""),
 			"type": v_doc.get("one_fm_vehicle_type", ""),
+			# Attendance-check lock state for this vehicle's manifest (MA2-11):
+			# active_stop_sequence drives which pickup camp is currently unlocked.
+			"manifest": _mf.name if (_mf and not _mf.is_new()) else None,
+			"active_stop_sequence": int(_mf.active_stop_sequence or 0) if _mf else 0,
 		}
 
 		# Sort items: trip stops by stopIndex, solo by start_time

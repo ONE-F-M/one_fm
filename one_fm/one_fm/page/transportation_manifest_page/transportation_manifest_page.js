@@ -230,6 +230,40 @@ function renderManifest($container, data) {
 	window._mfst_showNoNumber = showNoNumber;
 	window._mfst_copyNumber = copyNumber;
 
+	// ── Per-camp attendance-check lock (MA2-11) ──
+	// Trigger unlocks the next pickup camp for checks; Complete locks the active
+	// camp. Both persist server-side (active_stop_sequence) via the shared manifest
+	// API, then we sync the local pointer and re-render the current route.
+	function _setActiveStopAndRerender(vehicleLabel, newActive) {
+		const meta = (ROUTE_DATA.vehicleMeta ?? {})[vehicleLabel];
+		if (meta) meta.active_stop_sequence = newActive;
+		if (activeView) renderRoute(activeView);
+	}
+
+	window._mfst_triggerStop = function (manifest, stopSeq, vehicleLabel) {
+		frappe.call({
+			method: "one_fm.one_fm.doctype.transportation_manifest.manifest_sheet.trigger_attendance_check",
+			args: { manifest: manifest, stop_sequence: stopSeq },
+			freeze: true,
+			freeze_message: __("Unlocking stop…"),
+			callback: function (r) {
+				if (r.message) _setActiveStopAndRerender(vehicleLabel, r.message.active_stop_sequence);
+			}
+		});
+	};
+
+	window._mfst_completeStop = function (manifest, stopSeq, vehicleLabel) {
+		frappe.call({
+			method: "one_fm.one_fm.doctype.transportation_manifest.manifest_sheet.complete_stop",
+			args: { manifest: manifest, stop_sequence: stopSeq },
+			freeze: true,
+			freeze_message: __("Locking stop…"),
+			callback: function (r) {
+				if (r.message) _setActiveStopAndRerender(vehicleLabel, r.message.active_stop_sequence);
+			}
+		});
+	};
+
 	function empChipHtml(e, chipStyle, interactive) {
 		interactive = interactive || false;
 		const id = (typeof e === "object" && e !== null) ? (e.id || e.name || "—") : (e || "—");
@@ -653,77 +687,53 @@ function renderManifest($container, data) {
 					<div class="mfst-trip-body">
 			`;
 
-			// Boarding employees for DEPART
-			const boardingEmployees = [];
-			const boardingNames = new Set();
+			// Boarding grouped by pickup camp, and each camp's DROP-OFF stops nested
+			// under it (MA2-11): the manifest reads camp-by-camp — a camp's DEPART
+			// banner is followed by the drop-off stop(s) its passengers ride to,
+			// then the next camp block. Camps run in strict stop-sequence order.
+			const boardingByCamp = {};   // seq -> { seq, label, employees, names }
+			const dropByCamp = {};       // seq -> [ orderedStops item ]
 			orderedStops.forEach(item => {
-				if (item.stop.type === "dropoff") {
-					(shipmentEmployees[item.stop.raw] ?? []).forEach(e => {
-						const eName = (typeof e === "object" && e !== null) ? (e.name || "") : (e || "");
-						if (eName && !boardingNames.has(eName)) {
-							boardingNames.add(eName);
-							boardingEmployees.push(e);
-						}
-					});
-				}
+				if (item.stop.type !== "dropoff") return;
+				let campSeq = 1;
+				(shipmentEmployees[item.stop.raw] ?? []).forEach(e => {
+					const eName = (typeof e === "object" && e !== null) ? (e.name || "") : (e || "");
+					if (!eName) return;
+					const seq = (e && e.stop_sequence) ? e.stop_sequence : 1;
+					const label = (e && e.pickup_camp_label) ? e.pickup_camp_label : accommodation;
+					campSeq = seq;
+					if (!boardingByCamp[seq]) boardingByCamp[seq] = { seq: seq, label: label, employees: [], names: new Set() };
+					if (!boardingByCamp[seq].names.has(eName)) {
+						boardingByCamp[seq].names.add(eName);
+						boardingByCamp[seq].employees.push(e);
+					}
+				});
+				if (!dropByCamp[campSeq]) dropByCamp[campSeq] = [];
+				dropByCamp[campSeq].push(item);
 			});
 
-			// DEPART card
-			html += renderDepartCard(firstTimeISO, accommodation, boardingEmployees);
+			const activeStop = meta.active_stop_sequence || 0;
+			const manifestName = meta.manifest || null;
+			const campGroups = Object.values(boardingByCamp).sort((a, b) => a.seq - b.seq);
 
-			// Transit to first site
-			const firstSiteStop = orderedStops[0]?.stop;
-			if (firstSiteStop) {
-				html += renderTransit(calcTransit(firstTimeISO, firstSiteStop.time));
-			}
+			// Camp block: DEPART banner, then that camp's drop-off stop(s)
+			campGroups.forEach(cg => {
+				html += renderDepartCard(firstTimeISO, cg, activeStop, manifestName, pr.label);
+				let prevTime = firstTimeISO;
+				(dropByCamp[cg.seq] || []).forEach(item => {
+					html += renderTransit(calcTransit(prevTime, item.stop.time));
+					html += renderSiteStopCard(item);
+					prevTime = item.stop.time;
+				});
+			});
 
-			// Site stops
-			orderedStops.forEach((item, si) => {
-				const stop = item.stop;
-				const siteNum = item.siteNum;
-				const site = shipmentSiteLocations[stop.raw] || stop.title || "Unknown";
-				const emps = stop._isVirtualReturn ? stop._virtualEmps : (shipmentEmployees[stop.raw] ?? []);
-				const shift = shipmentShiftNames[stop.raw] || "";
-				const isDropoff = stop.type === "dropoff";
-
-				let empHtml = "";
-				if (emps.length > 0) {
-					const actionWord = isDropoff ? "Dropping off" : "Picking up";
-					const actionColor = isDropoff ? "var(--mfst-accent)" : "var(--mfst-green)";
-					const actionIcon = isDropoff ? "south" : "north";
-					empHtml = `<div class="mfst-stop-emp-section">
-						<div class="mfst-stop-emp-label" style="color:${actionColor}">
-							<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">${actionIcon}</span>
-							${actionWord} ${emps.length} employee${emps.length !== 1 ? "s" : ""}
-						</div>
-						<div class="mfst-stop-employees">${emps.map(n => empChipHtml(n)).join("")}</div>
-					</div>`;
-				}
-
-				html += `
-					<div class="mfst-stop-card ${isDropoff ? 'dropoff' : 'pickup'}">
-						<div class="mfst-stop-card-header">
-							<div class="mfst-stop-card-left">
-								<span class="mfst-stop-tag ${isDropoff ? 'tag-dropoff' : 'tag-pickup'}">${isDropoff ? 'DROP OFF' : 'PICK UP'}</span>
-								<span class="mfst-stop-tag tag-stop">STOP ${siteNum}</span>
-							</div>
-							<div class="mfst-stop-card-time">
-								<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">schedule</span>
-								${fmtTime(stop.time)}
-							</div>
-						</div>
-						<div class="mfst-stop-card-title">${escHtml(site)}</div>
-						${shift ? `<div class="mfst-stop-card-shift">${escHtml(shift)}</div>` : ""}
-						${empHtml}
-					</div>
-				`;
-
-				if (si < orderedStops.length - 1) {
-					const nextStop = orderedStops[si + 1].stop;
-					if (item.siteNum !== orderedStops[si + 1].siteNum) {
-						html += renderTransit(calcTransit(stop.time, nextStop.time));
-					}
-				}
+			// Any non-drop-off stops (e.g. return pickups) keep chronological order
+			const otherStops = orderedStops.filter(item => item.stop.type !== "dropoff");
+			let prevOtherTime = firstTimeISO;
+			otherStops.forEach(item => {
+				html += renderTransit(calcTransit(prevOtherTime, item.stop.time));
+				html += renderSiteStopCard(item);
+				prevOtherTime = item.stop.time;
 			});
 
 			// Return employees
@@ -791,9 +801,41 @@ function renderManifest($container, data) {
 		return allTrips;
 	}
 
-	function renderDepartCard(time, accommodation, employees) {
+	// Per-camp DEPART card (MA2-11). `camp` = { seq, label, employees }.
+	// Lock state is derived from the manifest's active_stop_sequence:
+	//   seq <  active → Completed (read-only)   seq === active → Active (editable)
+	//   seq === active+1 → next (can Trigger)    seq >  active+1 → Locked
+	function renderDepartCard(time, camp, activeStop, manifestName, vehicleLabel) {
+		const employees = camp.employees || [];
+		const seq = camp.seq || 1;
+		const isCompleted = activeStop && seq < activeStop;
+		const isActive = activeStop && seq === activeStop;
+		const canTrigger = seq === (activeStop || 0) + 1;
+		const status = isCompleted ? "completed" : (isActive ? "active" : "locked");
+
+		let statusChip;
+		if (isCompleted) {
+			statusChip = `<span class="mfst-depart-status completed"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">check_circle</span> Completed</span>`;
+		} else if (isActive) {
+			statusChip = `<span class="mfst-depart-status active"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">fact_check</span> In Progress</span>`;
+		} else {
+			statusChip = `<span class="mfst-depart-status locked"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">lock</span> Locked</span>`;
+		}
+
+		let actionBtn = "";
+		const safeVeh = (vehicleLabel || "").replace(/'/g, "\\'");
+		if (manifestName && canTrigger) {
+			actionBtn = `<button class="mfst-depart-btn trigger" onclick="window._mfst_triggerStop('${manifestName}', ${seq}, '${safeVeh}')">
+				<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">fact_check</span> Trigger Attendance Check</button>`;
+		} else if (manifestName && isActive) {
+			actionBtn = `<button class="mfst-depart-btn complete" onclick="window._mfst_completeStop('${manifestName}', ${seq}, '${safeVeh}')">
+				<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">lock</span> Complete &amp; Lock Stop ${seq}</button>`;
+		}
+
 		let empHtml = "";
 		if (employees.length > 0) {
+			const hint = isActive ? "Tap name to check in"
+				: (isCompleted ? "Verified — locked" : "Locked until triggered");
 			empHtml = `<div class="mfst-stop-emp-section">
 				<div class="mfst-depart-emp-header">
 					<div class="mfst-stop-emp-label" style="color:var(--mfst-green)">
@@ -802,28 +844,76 @@ function renderManifest($container, data) {
 					</div>
 					<div class="mfst-depart-check-badge">
 						<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">fact_check</span>
-						Tap name to check in
+						${hint}
 					</div>
 				</div>
-				<div class="mfst-stop-employees">${employees.map(n => empChipHtml(n, null, true)).join("")}</div>
+				<div class="mfst-stop-employees">${employees.map(n => empChipHtml(n, null, isActive)).join("")}</div>
 			</div>`;
 		}
 
 		return `
-			<div class="mfst-stop-card depart">
+			<div class="mfst-stop-card depart ${status}">
 				<div class="mfst-stop-card-header">
 					<div class="mfst-stop-card-left">
 						<span class="mfst-stop-tag tag-depart">
 							<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">play_arrow</span>
 							DEPART
 						</span>
+						<span class="mfst-stop-tag tag-stop">STOP ${seq}</span>
 					</div>
 					<div class="mfst-stop-card-time">
 						<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">schedule</span>
 						${fmtTime(time)}
 					</div>
 				</div>
-				<div class="mfst-stop-card-title">${accommodation}</div>
+				<div class="mfst-depart-camp-row">
+					<div class="mfst-stop-card-title">${escHtml(camp.label)}</div>
+					${statusChip}
+				</div>
+				${actionBtn ? `<div class="mfst-depart-actions">${actionBtn}</div>` : ""}
+				${empHtml}
+			</div>
+		`;
+	}
+
+	// One site stop card (DROP OFF / PICK UP). Extracted so drop-offs can be
+	// rendered nested under their pickup camp's DEPART banner (MA2-11).
+	function renderSiteStopCard(item) {
+		const stop = item.stop;
+		const siteNum = item.siteNum;
+		const site = shipmentSiteLocations[stop.raw] || stop.title || "Unknown";
+		const emps = stop._isVirtualReturn ? stop._virtualEmps : (shipmentEmployees[stop.raw] ?? []);
+		const shift = shipmentShiftNames[stop.raw] || "";
+		const isDropoff = stop.type === "dropoff";
+
+		let empHtml = "";
+		if (emps.length > 0) {
+			const actionWord = isDropoff ? "Dropping off" : "Picking up";
+			const actionColor = isDropoff ? "var(--mfst-accent)" : "var(--mfst-green)";
+			const actionIcon = isDropoff ? "south" : "north";
+			empHtml = `<div class="mfst-stop-emp-section">
+				<div class="mfst-stop-emp-label" style="color:${actionColor}">
+					<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">${actionIcon}</span>
+					${actionWord} ${emps.length} employee${emps.length !== 1 ? "s" : ""}
+				</div>
+				<div class="mfst-stop-employees">${emps.map(n => empChipHtml(n)).join("")}</div>
+			</div>`;
+		}
+
+		return `
+			<div class="mfst-stop-card ${isDropoff ? 'dropoff' : 'pickup'}">
+				<div class="mfst-stop-card-header">
+					<div class="mfst-stop-card-left">
+						<span class="mfst-stop-tag ${isDropoff ? 'tag-dropoff' : 'tag-pickup'}">${isDropoff ? 'DROP OFF' : 'PICK UP'}</span>
+						<span class="mfst-stop-tag tag-stop">STOP ${siteNum}</span>
+					</div>
+					<div class="mfst-stop-card-time">
+						<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">schedule</span>
+						${fmtTime(stop.time)}
+					</div>
+				</div>
+				<div class="mfst-stop-card-title">${escHtml(site)}</div>
+				${shift ? `<div class="mfst-stop-card-shift">${escHtml(shift)}</div>` : ""}
 				${empHtml}
 			</div>
 		`;
@@ -1618,6 +1708,22 @@ function getManifestCSS() {
 		.mfst-stop-emp-label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
 		.mfst-depart-emp-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
 		.mfst-depart-check-badge { font-size: 12px; font-weight: 600; color: var(--mfst-accent); background: var(--mfst-accent-dim); border: 1px solid rgba(249,115,22,0.2); padding: 4px 10px; border-radius: 6px; display: flex; align-items: center; gap: 4px; }
+
+		/* ── Per-camp DEPART attendance-check lock (MA2-11) ── */
+		.mfst-depart-camp-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+		.mfst-depart-status { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px; }
+		.mfst-depart-status.locked { color: var(--mfst-text-muted); background: rgba(148,163,184,0.15); }
+		.mfst-depart-status.active { color: var(--mfst-accent); background: var(--mfst-accent-dim); }
+		.mfst-depart-status.completed { color: var(--mfst-green); background: var(--mfst-green-dim); }
+		.mfst-depart-actions { margin: 12px 0 4px; }
+		.mfst-depart-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 18px; border: none; border-radius: 12px; font-family: var(--mfst-font-body); font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.15s; min-height: 48px; }
+		.mfst-depart-btn.trigger { background: var(--mfst-accent); color: #fff; }
+		.mfst-depart-btn.trigger:active { transform: scale(0.98); }
+		.mfst-depart-btn.complete { background: var(--mfst-green); color: #fff; }
+		.mfst-depart-btn.complete:active { transform: scale(0.98); }
+		.mfst-stop-card.depart.completed { border-left-color: var(--mfst-green); opacity: 0.85; }
+		.mfst-stop-card.depart.locked { border-left-color: var(--mfst-border); background: var(--mfst-bg-card); }
+		.mfst-stop-card.depart.locked .mfst-stop-employees { opacity: 0.6; }
 
 		/* ── EMPLOYEE CHIPS — Large & Tappable ── */
 		.mfst-stop-employees { display: flex; flex-wrap: wrap; gap: 6px; }
