@@ -36,6 +36,11 @@ class TransportationManifest(Document):
 		locked_fields = ("attendance_status", "qoa_status", "qoa_reason")
 
 		for row in self.transportation_manifest_details:
+			# The attendance-check lock only covers BOARDING (pickup-camp) rows —
+			# return/drop-off rows are never part of the DEPART camp sequence and
+			# must stay editable (they default to stop_sequence 1). (MA2-11)
+			if row.employee_action and row.employee_action != "Boarding":
+				continue
 			# Only Completed stops are frozen; the Active stop stays editable.
 			if int(row.stop_sequence or 1) >= active:
 				continue
@@ -62,11 +67,12 @@ class TransportationManifest(Document):
 		Rules:
 		- Pickup Accommodation is read from each row's linked Transportation
 		  Shipment (the camp the shipment originates from).
-		- A row whose shipment is a "Direct" route is always Stop Sequence 1 —
-		  a Direct journey is a single terminal pickup.
-		- Multi-stop rows (OSM/OLM) are numbered per unique Pickup Accommodation,
-		  in the order each accommodation's first row appears in the table
-		  (e.g. all Mahboula rows -> Stop 1, all Mangaf rows -> Stop 2).
+		- Stop Sequence is numbered per unique Pickup Accommodation, in the order
+		  each accommodation's first row appears in the table (e.g. all Mahboula
+		  rows -> Stop 1, all Mangaf rows -> Stop 2). This holds for every routing
+		  type: a single vehicle chaining Direct pickups from several camps still
+		  gets one stop number per camp, which the manifest page needs for its
+		  per-camp boarding banners and strictly-sequential attendance check (MA2-11).
 		- Rows with NO linked shipment but a pre-set Pickup Accommodation are
 		  reliever passengers injected by the daily manifest compiler (MA1-14).
 		  Their camp is preserved (not wiped), so a reliever whose camp matches an
@@ -112,18 +118,15 @@ class TransportationManifest(Document):
 			if row.pickup_accommodation and row.pickup_accommodation not in accommodation_sequence:
 				accommodation_sequence[row.pickup_accommodation] = len(accommodation_sequence) + 1
 
-		# Second pass: assign Stop Sequence
+		# Second pass: assign Stop Sequence per unique Pickup Accommodation.
+		# Every distinct pickup camp is its own stop — including Direct routes — so
+		# a bus chaining pickups from several camps numbers them 1, 2, 3… A single
+		# camp (Direct or otherwise) still resolves to Stop 1 naturally.
 		for row in rows:
-			shipment = shipment_map.get(row.transportation_shipment) if row.transportation_shipment else None
-			is_direct = bool(shipment and shipment.routing_type_badge == "Direct")
-
-			if is_direct:
-				# Direct route -> single terminal pickup, always the first stop
-				row.stop_sequence = 1
-			elif row.pickup_accommodation:
+			if row.pickup_accommodation:
 				row.stop_sequence = accommodation_sequence.get(row.pickup_accommodation, 1)
 			else:
-				# No shipment/accommodation to key on -> default to the first stop
+				# No accommodation to key on -> default to the first stop
 				row.stop_sequence = 1
 
 	def on_update(self):
