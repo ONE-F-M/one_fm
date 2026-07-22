@@ -209,11 +209,6 @@ class TestEmployeeResignation(FrappeTestCase):
 			doc.resignation_initiation_date = "2026-10-10"
 			doc.relieving_date = "2026-10-15"
 			
-			doc.append("employees", {
-				"employee": emp_name,
-				"resignation_letter": "/files/test_letter.pdf"
-			})
-			
 			doc.workflow_state = "Pending Operations Manager"
 			doc.offboarding_officer = "test-rsgn-manager@example.com"
 			
@@ -277,11 +272,6 @@ class TestEmployeeResignation(FrappeTestCase):
 			doc = self._make_resignation(emp_name)
 			doc.resignation_initiation_date = "2026-10-10"
 			doc.relieving_date = "2026-10-15"
-			
-			doc.append("employees", {
-				"employee": emp_name,
-				"resignation_letter": "/files/test_letter.pdf"
-			})
 			
 			doc.workflow_state = "Pending Operations Manager"
 			doc.offboarding_officer = "test-rsgn-manager@example.com"
