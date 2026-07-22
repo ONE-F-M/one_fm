@@ -65,8 +65,18 @@ class EmployeeResignation(Document):
 		if frappe.session.user in [self.supervisor, self.operations_manager, self.offboarding_officer]:
 			return
 
-		# Allow Operation Admin, T4 Admin, and Transportation Manager to edit replacement details in Pending Operations Manager state
+		# Allow Operation Admin, T4 Admin, and Transportation Manager to edit replacement details in Pending Operations Manager state.
+		# Restricted to just those fields server-side too -- the JS only locks the form
+		# UI, which doesn't stop a direct save/API call from touching anything else.
 		if self.get("workflow_state") == "Pending Operations Manager" and any(role in roles for role in ["Operation Admin", "T4 Admin", "Transportation Manager"]):
+			allowed_fields = {"replacement_required", "replacement_priority", "replacement_nationality", "replacement_gender", "replacement_salary"}
+			before = self.get_doc_before_save()
+			if before:
+				for df in self.meta.fields:
+					if df.fieldtype in ("Table", "Table MultiSelect") or df.fieldname in allowed_fields:
+						continue
+					if self.get(df.fieldname) != before.get(df.fieldname):
+						frappe.throw(_("You can only edit the replacement decision fields at this stage."), frappe.PermissionError)
 			return
 
 		linked_employee = frappe.db.get_value("Employee", {"user_id": frappe.session.user})

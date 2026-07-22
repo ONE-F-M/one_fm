@@ -126,7 +126,11 @@ class EmployeeResignationWithdrawal(Document):
 				if pmr_wf_state in ["Completed", "Closed", "Fulfilled", "Hired"]:
 					frappe.throw(_("Cannot withdraw resignation because the replacement Project Manpower Request ({0}) has already been completed or fulfilled. A replacement has likely already been hired. Please contact HR.").format(pmr_name))
 
-		if not self.reason or not self.resignation_withdrawal_letter:
+		# Skip on the initial insert: the mobile API (and the desk "New" flow) creates
+		# the document first, then attaches the letter via a direct db.set_value once
+		# the doc has a name -- resignation_withdrawal_letter is genuinely empty at
+		# this exact moment. Enforced on every save/transition after that.
+		if not self.is_new() and (not self.reason or not self.resignation_withdrawal_letter):
 			frappe.throw(_("You must provide both a Reason and a Withdrawal Letter to submit a withdrawal."), title=_("Missing Information"))
 
 
