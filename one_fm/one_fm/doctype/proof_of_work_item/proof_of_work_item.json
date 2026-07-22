@@ -1,0 +1,56 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-07-22 12:37:21.588002",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sale_item_code",
+  "item_type",
+  "contractual_hours",
+  "actual_hours",
+  "staff_breakdown"
+ ],
+ "fields": [
+  {
+   "fieldname": "sale_item_code",
+   "fieldtype": "Link",
+   "label": "Sale Item Code",
+   "options": "Item"
+  },
+  {
+   "fetch_from": "sale_item_code.item_type",
+   "fieldname": "item_type",
+   "fieldtype": "Data",
+   "label": "Item Type"
+  },
+  {
+   "fieldname": "contractual_hours",
+   "fieldtype": "Long Text",
+   "label": "Contractual Hours"
+  },
+  {
+   "fieldname": "actual_hours",
+   "fieldtype": "Long Text",
+   "label": "Actual Hours"
+  },
+  {
+   "fieldname": "staff_breakdown",
+   "fieldtype": "Long Text",
+   "label": "Staff Breakdown"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-07-22 12:40:42.479111",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Proof of Work Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

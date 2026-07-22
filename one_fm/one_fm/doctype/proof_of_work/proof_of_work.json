@@ -1,0 +1,150 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:POW-{contract}-{start_date}",
+ "creation": "2026-07-22 12:04:28.496802",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_uc5c",
+  "amended_from",
+  "section_break_jqkg",
+  "contract",
+  "project",
+  "customer",
+  "column_break_hvko",
+  "current_contract_start_date",
+  "start_date",
+  "end_date",
+  "generation_basis",
+  "section_break_hyox",
+  "proof_of_work_item"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_uc5c",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Proof of Work",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "section_break_jqkg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "contract",
+   "fieldtype": "Link",
+   "label": "Contract",
+   "options": "Contracts"
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "column_break_hvko",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "contract.start_date",
+   "fieldname": "current_contract_start_date",
+   "fieldtype": "Date",
+   "label": "Current Contract Start Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Start Date"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End Date"
+  },
+  {
+   "fieldname": "generation_basis",
+   "fieldtype": "Select",
+   "label": "Generation Basis",
+   "options": "\nShift Hours\nAttendance Day\nBoth"
+  },
+  {
+   "fieldname": "section_break_hyox",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "proof_of_work_item",
+   "fieldtype": "Table",
+   "label": "Proof of Work Item",
+   "options": "Proof of Work Item"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-07-22 17:10:01.881650",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Proof of Work",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Finance Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Legal Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
