@@ -452,6 +452,37 @@ class TestTransportationManifest(FrappeTestCase):
 			self.assertEqual(row.stop_sequence, 1)
 			self.assertEqual(row.pickup_accommodation, camp)
 
+	def test_multi_camp_direct_numbers_per_camp(self):
+		"""Direct shipments from different camps on one vehicle number per camp.
+
+		A bus chaining Direct pickups from Mangaf then Mahboula must get Stop 1 and
+		Stop 2 — not both collapsed to Stop 1 — so the manifest page can separate
+		them into per-camp boarding banners with a sequential attendance check.
+		"""
+		mangaf = self._ensure_accommodation("Direct Mangaf")
+		mahboula = self._ensure_accommodation("Direct Mahboula")
+		ship_mangaf = self._make_shipment(mangaf, "Direct")
+		ship_mahboula = self._make_shipment(mahboula, "Direct")
+
+		doc = frappe.new_doc("Transportation Manifest")
+		doc.vehicle_no = self.vehicle1
+		doc.schedule_date = today()
+		doc.append("transportation_manifest_details", {
+			"employee": self.employee1, "transportation_shipment": ship_mangaf,
+			"scheduled_time": "06:00:00",
+		})
+		doc.append("transportation_manifest_details", {
+			"employee": self.employee2, "transportation_shipment": ship_mahboula,
+			"scheduled_time": "06:30:00",
+		})
+		doc.save()
+
+		rows = doc.transportation_manifest_details
+		self.assertEqual(rows[0].pickup_accommodation, mangaf)
+		self.assertEqual(rows[0].stop_sequence, 1)
+		self.assertEqual(rows[1].pickup_accommodation, mahboula)
+		self.assertEqual(rows[1].stop_sequence, 2)
+
 	# ── MA2-11: Multi-accommodation attendance-check sheet ────────────────────
 
 	def _make_two_stop_manifest(self):
