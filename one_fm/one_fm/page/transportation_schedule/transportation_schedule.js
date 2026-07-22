@@ -462,6 +462,25 @@ function mountRoutePlannerApp(wrapper, data) {
                         return { item, card: card || {}, stopNum: idx + 1 };
                     });
             },
+            selectedTripStopsByCamp() {
+                // Group the trip's stops by their pickup accommodation camp, in the
+                // order each camp first appears. The detail panel renders one camp
+                // banner followed by only the stops that belong to it, so a chained
+                // trip spanning several camps reads camp-by-camp. stopNum is carried
+                // through unchanged so drag-reorder still keys off the global index.
+                const groups = [];
+                const index = {};
+                for (const stop of this.selectedTripStops) {
+                    const acc = (stop.card && stop.card.accommodation)
+                        ? stop.card.accommodation : '—';
+                    if (!(acc in index)) {
+                        index[acc] = groups.length;
+                        groups.push({ accommodation: acc, stops: [] });
+                    }
+                    groups[index[acc]].stops.push(stop);
+                }
+                return groups;
+            },
         },
 
         // ── Methods ────────────────────────────────────────────────────────
@@ -3214,83 +3233,91 @@ function injectRPVueTemplate() {
               </div>
             </div>
 
-            <!-- Each stop as a numbered card (draggable for reorder) -->
-            <div v-for="(stop, si) in selectedTripStops" :key="stop.item.id"
-                 class="rp-detail-card rp-stop-draggable"
-                 draggable="true"
-                 @dragstart="onStopDragStart($event, si)"
-                 @dragover.prevent="onStopDragOver($event, si)"
-                 @dragend="onStopDragEnd($event)"
-                 @drop.prevent="onStopDrop($event, si)"
-                 :class="{ 'rp-stop-drag-over': stopDragOverIndex === si && stopDragSourceIndex !== null && stopDragSourceIndex !== si }"
-                 :style="'border-left:3px solid ' + (stop.item.id === selectedItem.id ? '#f97316' : '#1565c0')">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-                <span class="rp-icon rp-stop-drag-handle" title="Drag to reorder">drag_indicator</span>
-                <span class="rp-stop-num rp-stop-num-out">{{ stop.stopNum }}</span>
-                <div style="font-size:13px;font-weight:700;color:#111">{{ stop.card.site_location || 'Unknown' }}</div>
-              </div>
-              <div class="rp-detail-row" style="padding:4px 0 3px 30px">
-                <div class="rp-detail-row-icon"><span class="rp-icon">schedule</span></div>
-                <div class="rp-detail-row-content">
-                  <div class="rp-detail-row-label">Shift</div>
-                  <div class="rp-detail-row-value">{{ stop.card.shift_name || '—' }}</div>
-                </div>
-              </div>
-              <div class="rp-detail-row" style="padding:4px 0 3px 30px">
-                <div class="rp-detail-row-icon"><span class="rp-icon">location_on</span></div>
-                <div class="rp-detail-row-content">
-                  <div class="rp-detail-row-label">Stop Location</div>
-                  <div class="rp-detail-row-value">{{ stop.card.stop_location || '—' }}</div>
-                </div>
-              </div>
-              <!-- Passenger breakdown for this camp stop (AC5): how many board here -->
-              <div class="rp-detail-row" style="padding:4px 0 3px 30px">
-                <div class="rp-detail-row-icon"><span class="rp-icon">group</span></div>
-                <div class="rp-detail-row-content">
-                  <div class="rp-detail-row-label">Boarding at this stop</div>
-                  <div class="rp-detail-row-value">
-                    {{ (stop.card.employees || []).length - relieverCount(stop.card.employees) }} regular
-                    <span v-if="relieverCount(stop.card.employees) > 0">
-                      · {{ relieverCount(stop.card.employees) }} reliever
-                    </span>
-                    <span class="rp-detail-row-label" style="display:inline">({{ (stop.card.employees || []).length }} total)</span>
+            <!-- Stops grouped under their pickup accommodation camp banner -->
+            <template v-for="(camp, ci) in selectedTripStopsByCamp" :key="'camp_' + ci">
+
+              <!-- Accommodation camp banner: everything below it boards at this camp -->
+              <div class="rp-detail-card" style="background:#eef2ff;border-color:#c7d2fe">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span class="rp-icon" style="font-size:18px;color:#4338ca">home</span>
+                    <div style="font-size:13px;font-weight:700;color:#111">{{ camp.accommodation }}</div>
+                  </div>
+                  <div class="rp-detail-row-label" style="margin:0">
+                    {{ camp.stops.length }} stop<span v-if="camp.stops.length !== 1">s</span>
+                    · {{ camp.stops.reduce((sum, s) => sum + ((s.card.employees || []).length), 0) }} pax
                   </div>
                 </div>
               </div>
-              <div style="display:flex;gap:6px;margin:6px 0 0 30px">
-                <div class="rp-time-pill rp-time-pill-start">
-                  {{ fmtISO(new Date(stop.item.start).toISOString()) }}
+
+              <!-- Each stop under this camp (draggable for reorder) -->
+              <div v-for="stop in camp.stops" :key="stop.item.id"
+                   class="rp-detail-card rp-stop-draggable"
+                   draggable="true"
+                   @dragstart="onStopDragStart($event, stop.stopNum - 1)"
+                   @dragover.prevent="onStopDragOver($event, stop.stopNum - 1)"
+                   @dragend="onStopDragEnd($event)"
+                   @drop.prevent="onStopDrop($event, stop.stopNum - 1)"
+                   :class="{ 'rp-stop-drag-over': stopDragOverIndex === (stop.stopNum - 1) && stopDragSourceIndex !== null && stopDragSourceIndex !== (stop.stopNum - 1) }"
+                   :style="'border-left:3px solid ' + (stop.item.id === selectedItem.id ? '#f97316' : '#1565c0')">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                  <span class="rp-icon rp-stop-drag-handle" title="Drag to reorder">drag_indicator</span>
+                  <span class="rp-stop-num rp-stop-num-out">{{ stop.stopNum }}</span>
+                  <div style="font-size:13px;font-weight:700;color:#111">{{ stop.card.site_location || 'Unknown' }}</div>
                 </div>
-                <span class="rp-detail-time-arrow"><span class="rp-icon" style="font-size:12px">arrow_forward</span></span>
-                <div class="rp-time-pill rp-time-pill-end">
-                  {{ fmtISO(new Date(stop.item.end).toISOString()) }}
+                <div class="rp-detail-row" style="padding:4px 0 3px 30px">
+                  <div class="rp-detail-row-icon"><span class="rp-icon">schedule</span></div>
+                  <div class="rp-detail-row-content">
+                    <div class="rp-detail-row-label">Shift</div>
+                    <div class="rp-detail-row-value">{{ stop.card.shift_name || '—' }}</div>
+                  </div>
+                </div>
+                <div class="rp-detail-row" style="padding:4px 0 3px 30px">
+                  <div class="rp-detail-row-icon"><span class="rp-icon">location_on</span></div>
+                  <div class="rp-detail-row-content">
+                    <div class="rp-detail-row-label">Stop Location</div>
+                    <div class="rp-detail-row-value">{{ stop.card.stop_location || '—' }}</div>
+                  </div>
+                </div>
+                <!-- Passenger breakdown for this camp stop (AC5): how many board here -->
+                <div class="rp-detail-row" style="padding:4px 0 3px 30px">
+                  <div class="rp-detail-row-icon"><span class="rp-icon">group</span></div>
+                  <div class="rp-detail-row-content">
+                    <div class="rp-detail-row-label">Boarding at this stop</div>
+                    <div class="rp-detail-row-value">
+                      {{ (stop.card.employees || []).length - relieverCount(stop.card.employees) }} regular
+                      <span v-if="relieverCount(stop.card.employees) > 0">
+                        · {{ relieverCount(stop.card.employees) }} reliever
+                      </span>
+                      <span class="rp-detail-row-label" style="display:inline">({{ (stop.card.employees || []).length }} total)</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:6px;margin:6px 0 0 30px">
+                  <div class="rp-time-pill rp-time-pill-start">
+                    {{ fmtISO(new Date(stop.item.start).toISOString()) }}
+                  </div>
+                  <span class="rp-detail-time-arrow"><span class="rp-icon" style="font-size:12px">arrow_forward</span></span>
+                  <div class="rp-time-pill rp-time-pill-end">
+                    {{ fmtISO(new Date(stop.item.end).toISOString()) }}
+                  </div>
+                </div>
+
+                <!-- Passenger manifest for this camp stop (AC6): regular vs reliever -->
+                <div class="rp-detail-emp-list" style="margin:8px 0 0 30px" v-if="stop.card.employees && stop.card.employees.length">
+                  <span v-for="(e, ei) in stop.card.employees" :key="stop.stopNum + '_' + ei"
+                        class="rp-emp-chip rp-emp-chip-call"
+                        :class="{ 'rp-emp-chip-reliever': empIsReliever(e) }"
+                        @click.stop="handleEmployeeCall(e)"
+                        :title="empMobile(e) ? 'Call ' + empMobile(e) : 'No mobile number'">
+                    <span class="rp-emp-tag" :class="empIsReliever(e) ? 'rp-emp-tag-reliever' : 'rp-emp-tag-regular'">{{ empIsReliever(e) ? 'Reliever' : 'Regular' }}</span>
+                    {{ empName(e) }}
+                    <span class="rp-icon rp-call-icon" :class="empMobile(e) ? '' : 'rp-call-disabled'">call</span>
+                  </span>
                 </div>
               </div>
 
-              <!-- Passenger manifest for this camp stop (AC6): regular vs reliever -->
-              <div class="rp-detail-emp-list" style="margin:8px 0 0 30px" v-if="stop.card.employees && stop.card.employees.length">
-                <span v-for="(e, ei) in stop.card.employees" :key="si + '_' + ei"
-                      class="rp-emp-chip rp-emp-chip-call"
-                      :class="{ 'rp-emp-chip-reliever': empIsReliever(e) }"
-                      @click.stop="handleEmployeeCall(e)"
-                      :title="empMobile(e) ? 'Call ' + empMobile(e) : 'No mobile number'">
-                  <span class="rp-emp-tag" :class="empIsReliever(e) ? 'rp-emp-tag-reliever' : 'rp-emp-tag-regular'">{{ empIsReliever(e) ? 'Reliever' : 'Regular' }}</span>
-                  {{ empName(e) }}
-                  <span class="rp-icon rp-call-icon" :class="empMobile(e) ? '' : 'rp-call-disabled'">call</span>
-                </span>
-              </div>
-            </div>
-
-            <!-- Accommodation (shared for all stops) -->
-            <div class="rp-detail-card">
-              <div class="rp-detail-row" style="border:none;padding:4px 0">
-                <div class="rp-detail-row-icon"><span class="rp-icon">home</span></div>
-                <div class="rp-detail-row-content">
-                  <div class="rp-detail-row-label">Accommodation</div>
-                  <div class="rp-detail-row-value">{{ selectedCard.accommodation }}</div>
-                </div>
-              </div>
-            </div>
+            </template>
 
             <!-- Trip-wide passenger total (regular vs reliever across all stops) -->
             <div class="rp-detail-card">
