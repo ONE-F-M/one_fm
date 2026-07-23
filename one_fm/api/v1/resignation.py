@@ -384,6 +384,15 @@ def correct_resignation_date_app(
         if new_initiation:
             doc.resignation_initiation_date = frappe.utils.getdate(new_initiation)
 
+        # apply_workflow() reloads the doc from the DB before saving (see
+        # frappe.model.workflow.apply_workflow), which would silently discard
+        # the date fields set above if they aren't persisted first. Must run
+        # before handle_attachment_internal(), which writes to this same
+        # document via frappe.db.set_value() -- doing this save afterwards
+        # would see a "modified" timestamp already bumped out from under it
+        # and fail with TimestampMismatchError.
+        doc.save(ignore_permissions=True)
+
         if attachment:
             if isinstance(attachment, str):
                 try:
@@ -395,11 +404,6 @@ def correct_resignation_date_app(
                 "attachment": attachment,
             }
             handle_attachment_internal(doc, doc, att_data, "resignation_letter")
-
-        # apply_workflow() reloads the doc from the DB before saving (see
-        # frappe.model.workflow.apply_workflow), which would silently discard
-        # the date fields set above if they aren't persisted first.
-        doc.save(ignore_permissions=True)
 
         apply_workflow(doc, "Resubmit Date")
 
