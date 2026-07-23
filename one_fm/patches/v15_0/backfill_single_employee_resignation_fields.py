@@ -11,9 +11,17 @@ def execute():
 	have already set on the singular field.
 
 	For every doctype, only the FIRST row of the legacy "employees" child table is
-	used -- these controllers already only ever acted on row 0 (set_allocations,
-	set_supervisor, set_approver), so any additional rows on a historical
-	multi-employee record were never functionally significant beyond the first.
+	used. For Employee Resignation and Employee Resignation Date Adjustment, these
+	controllers already only ever acted on row 0 (set_allocations, set_supervisor,
+	set_approver), so additional rows were never functionally significant there.
+
+	Employee Resignation Withdrawal is the one exception: process_withdrawal_approval()
+	used to loop over every row, tracking a per-row approved_count that fed PMR
+	fulfillment quantities -- real, previously load-bearing behavior. Confirmed
+	against real data that zero in-flight (not yet Approved/Rejected/Withdrawn)
+	multi-employee records exist on staging/production, so this backfill's row-0-only
+	choice has no actual blast radius today, but it is a real simplification for
+	Withdrawal specifically, not a no-op like the other two doctypes.
 	"""
 	_backfill_employee_resignation()
 	_backfill_employee_resignation_withdrawal()
