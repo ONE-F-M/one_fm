@@ -149,6 +149,57 @@ def bulk_confirm_arrival(names: str, outcome: str):
 	_run_bulk(names, lambda name: confirm_arrival(name, outcome), _("Bulk Confirm Arrival"))
 
 
+def send_daily_acknowledgement_reminders():
+	"""Daily nudge for any department that hasn't acknowledged yet -- replaces the
+	reminder Arrival and Deployment used to send off its own boolean ack fields
+	(dropped along with those fields in favour of this doctype's own status).
+
+	Scoped to arrival_and_deployment.workflow_state == "Pending Support Departments"
+	to match clear_support_assignments(), which already clears every department's
+	ToDo (including Warehouse/General Services) the moment the record reaches
+	"Joined" -- nagging after that point would contradict that existing signal.
+	"""
+	pending = frappe.get_all(
+		"Arrival Acknowledgement",
+		filters={"status": "Not Acknowledged"},
+		fields=["name", "department", "assigned_to", "arrival_and_deployment"],
+	)
+	if not pending:
+		return
+
+	active_ards = set(frappe.get_all(
+		"Arrival and Deployment",
+		filters={
+			"name": ["in", list({p.arrival_and_deployment for p in pending})],
+			"workflow_state": "Pending Support Departments",
+		},
+		pluck="name",
+	))
+
+	for ack in pending:
+		if ack.arrival_and_deployment not in active_ards or not ack.assigned_to:
+			continue
+		user_email = frappe.db.get_value("User", ack.assigned_to, "email")
+		if not user_email:
+			continue
+		try:
+			frappe.enqueue(
+				method=frappe.sendmail,
+				queue="short",
+				recipients=[user_email],
+				subject=f"Reminder: Action Required for {ack.arrival_and_deployment}",
+				message=(
+					f"<p>Dear {ack.department} Team,</p>"
+					f"<p>Please note that the Arrival Acknowledgement "
+					f"<a href='/app/arrival-acknowledgement/{ack.name}'>{ack.name}</a> "
+					f"for {ack.arrival_and_deployment} is pending your acknowledgement.</p>"
+					f"<p>Kindly review and acknowledge it at your earliest convenience.</p>"
+				),
+			)
+		except Exception as e:
+			frappe.log_error(title="Arrival Acknowledgement Reminder Error", message=f"Reminder failed for {ack.name}: {str(e)}")
+
+
 def has_permission(doc, ptype=None, user=None, **kwargs):
 	"""
 	Access to an Arrival Acknowledgement is scoped by department role, not by who
