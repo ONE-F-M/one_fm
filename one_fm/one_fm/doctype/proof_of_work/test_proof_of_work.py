@@ -6,6 +6,8 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import get_first_day, get_last_day, getdate
 
 from one_fm.one_fm.doctype.proof_of_work.proof_of_work import (
+	_fmt_contractual,
+	_fmt_staff_breakdown,
 	_shift_hours_from_item,
 	generate_proof_of_work,
 	get_eligible_contracts,
@@ -186,12 +188,74 @@ class TestProofofWork(FrappeTestCase):
 	# --- contractual hours (shift hours from item code) ------------------------
 
 	def test_shift_hours_parsed_from_item_code(self):
-		# contractual_hours = planned days x these hours-per-shift.
+		# actual_hours falls back to present-days x these hours-per-shift.
 		self.assertEqual(_shift_hours_from_item("SER-SEC-000136-NKW-M-30DY-12HR"), 12)
 		self.assertEqual(_shift_hours_from_item("SER-SEC-000200-8HR"), 8)
 		# Service items with no encoded hours -> 0 (contractual falls back to 0).
 		self.assertEqual(_shift_hours_from_item("SER-FMG-001706"), 0)
 		self.assertEqual(_shift_hours_from_item(""), 0)
+
+	# --- summary calculations & grouping (this story) --------------------------
+
+	@staticmethod
+	def _staff_source():
+		# 3 relievers/staff worked 15 days / 200 hrs, 2 worked 10 days / 100 hrs.
+		# Distinct head-count (5) is intentionally decoupled from any contracted
+		# count so grouping is exercised regardless of the contracted total.
+		staff = {}
+		for i in range(3):
+			staff[f"A{i}"] = {"name": f"A{i}", "id": f"A{i}", "days": 15, "hours": 200}
+		for i in range(2):
+			staff[f"B{i}"] = {"name": f"B{i}", "id": f"B{i}", "days": 10, "hours": 100}
+		return {"staff": staff}
+
+	def test_breakdown_grouped_by_days(self):
+		out = _fmt_staff_breakdown(self._staff_source(), shift_hours=0, basis="Attendance Day")
+		self.assertEqual(
+			out,
+			"- 3 Staff worked 15 days: 45 Days\n- 2 Staff worked 10 days: 20 Days",
+		)
+
+	def test_breakdown_grouped_by_hours(self):
+		out = _fmt_staff_breakdown(self._staff_source(), shift_hours=0, basis="Shift Hours")
+		self.assertEqual(
+			out,
+			"- 3 Staff worked 200 Hours: 600 Hrs\n- 2 Staff worked 100 Hours: 200 Hrs",
+		)
+
+	def test_breakdown_both_joined_with_or(self):
+		out = _fmt_staff_breakdown(self._staff_source(), shift_hours=0, basis="Both")
+		self.assertEqual(
+			out,
+			"- 3 Staff worked 15 days: 45 Days\n- 2 Staff worked 10 days: 20 Days"
+			"\nOR\n"
+			"- 3 Staff worked 200 Hours: 600 Hrs\n- 2 Staff worked 100 Hours: 200 Hrs",
+		)
+
+	def test_breakdown_hours_falls_back_to_days_times_shift(self):
+		# No numeric hours recorded -> hours group uses days x shift length.
+		source = {"staff": {"X": {"name": "X", "id": "X", "days": 15, "hours": 0}}}
+		out = _fmt_staff_breakdown(source, shift_hours=12, basis="Shift Hours")
+		self.assertEqual(out, "- 1 Staff worked 180 Hours: 180 Hrs")
+
+	def test_breakdown_counts_relievers_beyond_contracted(self):
+		# 21 distinct individuals all appear in the breakdown even if the contract
+		# only covers 20 -> group totals sum to the true worked total.
+		staff = {f"E{i}": {"name": f"E{i}", "id": f"E{i}", "days": 30, "hours": 0} for i in range(21)}
+		out = _fmt_staff_breakdown({"staff": staff}, shift_hours=0, basis="Attendance Day")
+		self.assertEqual(out, "- 21 Staff worked 30 days: 630 Days")
+
+	def test_contractual_days_basis(self):
+		self.assertEqual(_fmt_contractual(20, "Attendance Day"), "={20 staff * 30 days} = 600 DAYS")
+
+	def test_contractual_hours_basis(self):
+		self.assertEqual(_fmt_contractual(20, "Shift Hours"), "={20 staff * 208 hours} = 4160 HOURS")
+
+	def test_contractual_both_joined_with_or(self):
+		self.assertEqual(
+			_fmt_contractual(20, "Both"),
+			"={20 staff * 30 days} = 600 DAYS\nOR\n={20 staff * 208 hours} = 4160 HOURS",
+		)
 
 	# --- read-only integrity (AC2) ---------------------------------------------
 

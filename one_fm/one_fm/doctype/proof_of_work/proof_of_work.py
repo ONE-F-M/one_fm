@@ -35,6 +35,12 @@ MONTH_NAMES = (
 # Attendance statuses that count as a worked/present day.
 PRESENT_STATUSES = {"Present", "Working", "Work From Home"}
 
+# Standard month used for the contractual justification (Column 3). Fixed by
+# business policy: a contracted head is expected to cover 30 days / 208 hours a
+# month, independent of the per-item shift length.
+STANDARD_MONTH_DAYS = 30
+STANDARD_MONTH_HOURS = 208
+
 
 class ProofofWork(Document):
 	pass
@@ -74,8 +80,9 @@ def _get_month_range(month: int, year: int):
 #      records for the project in the period.
 #
 # One Proof of Work Item row is produced per Sale Item. `contractual_hours`
-# comes from planned post-days (Post Schedule) x hours-per-shift, mirroring the
-# Sales Invoice logic; `actual_hours` and `staff_breakdown` come from the
+# (Column 3) is the legal justification: contracted head-count (Contract Item
+# `count`) x the standard month (30 days / 208 hours). `actual_hours` and
+# `staff_breakdown` (Column 1, grouped by identical time worked) come from the
 # resolved source above.
 # ---------------------------------------------------------------------------
 
@@ -137,53 +144,22 @@ def _shift_hours_from_item(item_code: str) -> float:
 	return flt(match.group(1)) if match else 0.0
 
 
-def _planned_days_by_sale_item(contract_name: str, project: str, first_day, last_day) -> dict:
+def _contracted_count_by_sale_item(contract_name: str) -> dict:
 	"""
-	Planned post-days per Sale Item, mirroring the Sales Invoice logic in
-	``attendance_invoicing.generate_invoice_from_amendment``: only Service
-	contract items, resolved through their Active Operations Roles -> Operations
-	Posts -> Post Schedule rows with ``post_status == "Planned"`` in the period.
+	Contracted head-count per Sale Item, from the Contract Item ``count`` field
+	(Service items only). This is the "20 staff" the contract legally commits to,
+	and the basis for the Column 3 justification.
 
-	Returns ``{sale_item: required_days}``.
+	Returns ``{sale_item: contracted_count}``.
 	"""
 	result = {}
-	items = frappe.get_all(
+	for it in frappe.get_all(
 		"Contract Item",
 		filters={"parent": contract_name, "parenttype": "Contracts", "item_type": "Service"},
-		fields=["item_code"],
-	)
-	for it in items:
-		sale_item = it.item_code
-		if not sale_item:
-			continue
-
-		roles = frappe.get_all(
-			"Operations Role",
-			filters={"project": project, "sale_item": sale_item, "status": "Active"},
-			pluck="name",
-		)
-		if not roles:
-			continue
-
-		posts = frappe.get_all(
-			"Operations Post",
-			filters={"project": project, "post_template": ["in", roles], "status": "Active"},
-			pluck="name",
-		)
-		if not posts:
-			continue
-
-		planned = frappe.db.count(
-			"Post Schedule",
-			{
-				"project": project,
-				"post": ["in", posts],
-				"date": ["between", [first_day, last_day]],
-				"post_status": "Planned",
-			},
-		)
-		result[sale_item] = result.get(sale_item, 0) + planned
-
+		fields=["item_code", "count"],
+	):
+		if it.item_code:
+			result[it.item_code] = result.get(it.item_code, 0) + cint(it.count)
 	return result
 
 
@@ -307,19 +283,75 @@ def _actual_hours(source: dict, shift_hours: float, basis: str) -> float:
 	return flt(source.get("hours", 0.0)) or (flt(source.get("days", 0.0)) * shift_hours)
 
 
+def _num(value) -> str:
+	"""Render a number without a trailing ``.0`` but keep real decimals (e.g. 0.5)."""
+	value = flt(value)
+	if value == int(value):
+		return str(int(value))
+	return f"{value:.2f}".rstrip("0").rstrip(".")
+
+
+def _group_breakdown(staff: dict, metric: str, shift_hours: float) -> str:
+	"""
+	Group distinct staff by identical time worked for one metric.
+
+	``metric == "days"``  -> ``"- {n} Staff worked {v} days: {n*v} Days"``
+	``metric == "hours"`` -> ``"- {n} Staff worked {v} Hours: {n*v} Hrs"``
+
+	Every distinct individual is counted (relievers included), so the group
+	totals sum to the actual worked total even when head-count exceeds the
+	contracted count. Hours fall back to days x shift length when no numeric
+	hours were recorded.
+	"""
+	groups = {}
+	for info in staff.values():
+		if metric == "days":
+			value = flt(info.get("days", 0.0))
+		else:
+			value = flt(info.get("hours", 0.0)) or (flt(info.get("days", 0.0)) * shift_hours)
+		key = round(value, 2)
+		groups[key] = groups.get(key, 0) + 1
+
+	lines = []
+	for value in sorted(groups, reverse=True):
+		n = groups[value]
+		total = n * value
+		if metric == "days":
+			lines.append(f"- {n} Staff worked {_num(value)} days: {_num(total)} Days")
+		else:
+			lines.append(f"- {n} Staff worked {_num(value)} Hours: {_num(total)} Hrs")
+	return "\n".join(lines)
+
+
 def _fmt_staff_breakdown(source: dict, shift_hours: float, basis: str) -> str:
+	"""Column 1: staff grouped by identical time worked. For "Both", the days
+	breakdown, an "OR" line, then the hours breakdown."""
 	staff = source.get("staff", {})
 	if not staff:
 		return _("No attendance recorded for this item in the period.")
 
-	lines = []
-	for _key, info in sorted(staff.items(), key=lambda kv: (kv[1].get("name") or "", kv[0] or "")):
-		label = info.get("name") or info.get("id") or _key
-		prefix = f"{info.get('id')} - " if info.get("id") else ""
-		hrs = _actual_hours(info, shift_hours, basis)
-		lines.append(f"{prefix}{label}: {hrs:.2f} hrs")
+	blocks = []
+	if basis in ("Attendance Day", "Both"):
+		blocks.append(_group_breakdown(staff, "days", shift_hours))
+	if basis in ("Shift Hours", "Both"):
+		blocks.append(_group_breakdown(staff, "hours", shift_hours))
+	return "\nOR\n".join(b for b in blocks if b)
 
-	return "\n".join(lines)
+
+def _fmt_contractual(count: int, basis: str) -> str:
+	"""Column 3: contracted head-count x the standard month. For "Both", the days
+	justification, an "OR" line, then the hours justification."""
+	count = cint(count)
+	blocks = []
+	if basis in ("Attendance Day", "Both"):
+		blocks.append(
+			f"={{{count} staff * {STANDARD_MONTH_DAYS} days}} = {count * STANDARD_MONTH_DAYS} DAYS"
+		)
+	if basis in ("Shift Hours", "Both"):
+		blocks.append(
+			f"={{{count} staff * {STANDARD_MONTH_HOURS} hours}} = {count * STANDARD_MONTH_HOURS} HOURS"
+		)
+	return "\nOR\n".join(blocks)
 
 
 def _populate_pow_items(doc, first_day, last_day):
@@ -327,12 +359,14 @@ def _populate_pow_items(doc, first_day, last_day):
 	Fill the ``proof_of_work_item`` summary table on a POW document, one row per
 	Sale Item, using the resolved data source. Called during generation only.
 
-	contractual_hours = planned post-days (Post Schedule) x hours-per-shift.
+	contractual_hours = contracted head-count (Contract Item `count`) x the
+	                    standard month (30 days / 208 hours), per generation basis.
 	actual_hours      = hours worked from the resolved source.
+	staff_breakdown   = distinct staff grouped by identical time worked.
 	"""
 	total_days = date_diff(last_day, first_day) + 1
 
-	planned = _planned_days_by_sale_item(doc.contract, doc.project, first_day, last_day)
+	contracted = _contracted_count_by_sale_item(doc.contract)
 
 	source_type, reference = resolve_attendance_source(
 		doc.contract, doc.project, getdate(first_day).month, getdate(first_day).year
@@ -343,8 +377,8 @@ def _populate_pow_items(doc, first_day, last_day):
 		source = _source_from_attendance(doc.project, first_day, last_day)
 
 	basis = doc.generation_basis
-	# Union of Sale Items with planned posts and/or actual attendance.
-	sale_items = sorted(set(planned) | set(source))
+	# Union of Sale Items on the contract and/or with actual attendance.
+	sale_items = sorted(set(contracted) | set(source))
 
 	# Resolve item_type for all sale items in one query.
 	item_types = {}
@@ -357,7 +391,6 @@ def _populate_pow_items(doc, first_day, last_day):
 	doc.set("proof_of_work_item", [])
 	for sale_item in sale_items:
 		shift_hours = _shift_hours_from_item(sale_item)
-		contractual_hours = flt(planned.get(sale_item, 0)) * shift_hours
 		s_entry = source.get(sale_item, _blank_source_entry())
 
 		doc.append(
@@ -365,7 +398,7 @@ def _populate_pow_items(doc, first_day, last_day):
 			{
 				"sale_item_code": sale_item,
 				"item_type": item_types.get(sale_item, ""),
-				"contractual_hours": f"{contractual_hours:.2f} hrs",
+				"contractual_hours": _fmt_contractual(contracted.get(sale_item, 0), basis),
 				"actual_hours": f"{_actual_hours(s_entry, shift_hours, basis):.2f} hrs",
 				"staff_breakdown": _fmt_staff_breakdown(s_entry, shift_hours, basis),
 			},
