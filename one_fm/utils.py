@@ -1263,11 +1263,7 @@ def validate_job_applicant(doc, method):
     # validate_pam_file_number_and_pam_designation(doc, method)
     validate_transferable_field(doc)
     set_job_applicant_fields(doc)
-    if (
-        not doc.one_fm_is_easy_apply
-        and doc.one_fm_applicant_status != "Shortlisted"
-        and not doc.flags.get("skip_recruitment_mandatory_check")
-    ):
+    if not doc.one_fm_is_easy_apply and doc.one_fm_applicant_status != "Shortlisted":
         validate_mandatory_fields(doc)
     set_job_applicant_status(doc, method)
     if doc.is_new():
@@ -1521,6 +1517,11 @@ def _insert_job_offer_from_applicant(job_app):
     if job_app.one_fm_erf:
         erf = frappe.get_doc('ERF', job_app.one_fm_erf)
         set_erf_details(job_offer, erf, job_app)
+    # This is a silent draft auto-created the moment an applicant is Shortlisted/
+    # Selected -- document collection (passport, DOB, religion, etc.) hasn't
+    # happened yet at this point. The full check still applies when this draft
+    # is later actually submitted/issued to the candidate.
+    job_offer.flags.skip_recruitment_mandatory_check = True
     job_offer.save(ignore_permissions = True)
 
 def set_erf_details(job_offer, erf, job_app):

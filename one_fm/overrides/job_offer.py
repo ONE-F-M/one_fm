@@ -27,7 +27,8 @@ class JobOfferOverride(JobOffer):
         super(JobOfferOverride, self).validate()
         job_applicant = frappe.get_doc("Job Applicant", self.job_applicant)
         self.one_fm_erf = job_applicant.one_fm_erf
-        validate_mandatory_fields(job_applicant)
+        if not self.flags.get("skip_recruitment_mandatory_check"):
+            validate_mandatory_fields(job_applicant)
         self.job_offer_validate_attendance_by_timesheet()
         self.validate_job_offer_mandatory_fields()
         self.reset_status_on_amend()

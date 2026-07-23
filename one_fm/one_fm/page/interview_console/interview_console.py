@@ -210,10 +210,6 @@ def _update_applicant_status(applicant: str, status: str, height: str | None):
 
     if height:
         doc.one_fm_height = float(height)
-    # Interview-stage candidates haven't gone through document collection yet --
-    # the full KYC mandatory-field check (passport, DOB, religion, etc.) belongs
-    # at Job Offer creation, not here.
-    doc.flags.skip_recruitment_mandatory_check = True
     doc.save(ignore_permissions=True)
 
     if status == "Accepted":
@@ -420,7 +416,6 @@ def clear_interview_data(applicant: str):
     if doc.meta.has_field("workflow_state"):
         if doc.workflow_state in ["Accepted", "Job Offer Issued", "Shortlisted", "Hired", "Hold", "Rejected", "Cleared"]:
             doc.workflow_state = ""
-    doc.flags.skip_recruitment_mandatory_check = True
     doc.save(ignore_permissions=True)
 
     return "Success"
