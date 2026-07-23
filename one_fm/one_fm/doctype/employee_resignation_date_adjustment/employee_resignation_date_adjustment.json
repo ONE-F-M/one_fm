@@ -122,7 +122,6 @@
   {
    "fieldname": "supervisor",
    "fieldtype": "Link",
-   "hidden": 1,
    "label": "Supervisor",
    "options": "User"
   },
