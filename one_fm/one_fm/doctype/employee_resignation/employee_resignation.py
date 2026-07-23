@@ -64,10 +64,19 @@ class EmployeeResignation(Document):
 		# UI, which doesn't stop a direct save/API call from touching anything else.
 		if self.get("workflow_state") == "Pending Operations Manager" and any(role in roles for role in ["Operation Admin", "T4 Admin", "Transportation Manager"]):
 			allowed_fields = {"replacement_required", "replacement_priority", "replacement_nationality", "replacement_gender", "replacement_salary"}
+			# Only these child tables are the replacement spec -- NOT "employees" (the
+			# actual Resigning Employees grid), which must stay fully locked here too.
+			allowed_tables = {"language_requirements", "skill_requirements", "certification_requirements"}
 			before = self.get_doc_before_save()
 			if before:
 				for df in self.meta.fields:
-					if df.fieldtype in ("Table", "Table MultiSelect") or df.fieldname in allowed_fields:
+					if df.fieldname in allowed_fields or df.fieldname in allowed_tables:
+						continue
+					if df.fieldtype in ("Table", "Table MultiSelect"):
+						before_employees = [d.employee for d in (before.get(df.fieldname) or [])]
+						after_employees = [d.employee for d in (self.get(df.fieldname) or [])]
+						if before_employees != after_employees:
+							frappe.throw(_("You can only edit the replacement decision fields at this stage."), frappe.PermissionError)
 						continue
 					if self.get(df.fieldname) != before.get(df.fieldname):
 						frappe.throw(_("You can only edit the replacement decision fields at this stage."), frappe.PermissionError)

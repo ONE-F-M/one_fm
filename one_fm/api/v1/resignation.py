@@ -501,7 +501,7 @@ def get_all_my_resignations(employee_id=None, **kwargs):
 
 
 @frappe.whitelist()
-def get_employee_supervisor(employee_id=None, **kwargs):
+def get_employee_supervisor(employee_id: str = None, **kwargs):
     from one_fm.utils import get_approver
     input_id = get_param("employee_id", employee_id)
     employee_name = resolve_employee_name(input_id)
