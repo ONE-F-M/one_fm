@@ -42,5 +42,3 @@ def execute():
 				changed = True
 			if changed:
 				doc.save(ignore_permissions=True)
-
-	frappe.db.commit()
