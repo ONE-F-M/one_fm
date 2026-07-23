@@ -508,14 +508,23 @@ def get_employee_supervisor(employee_id=None, **kwargs):
     if not employee_name:
         return {}
 
+    # Corporate hires have no Operations Manager step -- their "Supervisor" is
+    # really their Line Manager (matches the ERP desk's own relabeling on
+    # Employee Resignation / Withdrawal / Date Adjustment).
+    shift_working = frappe.db.get_value("Employee", employee_name, "shift_working") or 0
+
     approver_name = get_approver(employee_name)
     if not approver_name:
-        return {}
+        return {"shift_working": shift_working}
 
     supervisor = frappe.db.get_value(
         "Employee", approver_name,
         ["user_id", "employee_name"], as_dict=True
     )
     if supervisor and supervisor.get("user_id"):
-        return {"user_id": supervisor.get("user_id"), "full_name": supervisor.get("employee_name")}
-    return {}
+        return {
+            "user_id": supervisor.get("user_id"),
+            "full_name": supervisor.get("employee_name"),
+            "shift_working": shift_working,
+        }
+    return {"shift_working": shift_working}
