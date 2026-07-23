@@ -10,7 +10,7 @@ frappe.ui.form.on("Employee Resignation", {
 		frm.trigger('update_ops_manager_mandatory');
 
 		let is_draft = frm.doc.__islocal || frm.doc.workflow_state === 'Draft';
-		let is_editable = is_draft || frm.doc.workflow_state === 'Pending Relieving Date Correction';
+		let is_editable = is_draft || frm.doc.workflow_state === 'Pending Relieving Date Correction' || frm.doc.workflow_state === 'Pending Supervisor';
 		frm.set_df_property('resignation_initiation_date', 'read_only', is_editable ? 0 : 1);
 		frm.set_df_property('relieving_date', 'read_only', is_editable ? 0 : 1);
 
