@@ -149,7 +149,7 @@
    "fieldtype": "Link",
    "label": "Transportation Manager",
    "options": "User",
-   "mandatory_depends_on": "eval:doc.candidate_country_process"
+   "mandatory_depends_on": "eval:doc.candidate_country_process && [\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
    "fieldname": "general_services",
@@ -163,7 +163,7 @@
    "fieldtype": "Link",
    "label": "Finance",
    "options": "User",
-   "mandatory_depends_on": "eval:doc.candidate_country_process"
+   "mandatory_depends_on": "eval:doc.candidate_country_process && [\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
    "fieldname": "warehouse",
