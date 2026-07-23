@@ -96,6 +96,9 @@ frappe.ui.form.on("Employee Resignation Withdrawal", {
 			.then(r => {
 				let is_shift_worker = r.message ? cint(r.message.shift_working) : 0;
 				frm.set_value('is_corporate', is_shift_worker ? 0 : 1);
+				// Corporate hires have no Operations Manager step (see operations_manager's
+				// depends_on) -- their "Supervisor" is really their Line Manager.
+				frm.set_df_property('supervisor', 'label', is_shift_worker ? __('Supervisor') : __('Line Manager'));
 				frm.refresh_fields();
 			});
 		}
