@@ -305,8 +305,10 @@ class JobOfferOverride(JobOffer):
         if not job_applicant.job_title:
             return
 
-        # Fetch Agency from Job Opening
-        agency = frappe.db.get_value("Job Opening", job_applicant.job_title, "agency")
+        # Job Opening can list several willing agencies (one_fm_active_willing_agency) --
+        # the one that actually matters here is whichever agency this specific
+        # candidate applied through, tracked on the Job Applicant itself.
+        agency = job_applicant.one_fm_agency
         if not agency:
             return
 
