@@ -588,11 +588,6 @@ override_doctype_class = {
 # ---------------
 
 scheduler_events = {
-	"cron": {
-		"0 12 * * *": [
-			'one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement.send_daily_acknowledgement_reminders'
-		]
-	},
 	"daily": [
 		'one_fm.utils.pam_salary_certificate_expiry_date',
 		'one_fm.utils.pam_authorized_signatory',
@@ -654,6 +649,9 @@ scheduler_events = {
 	],
 
 	"cron": {
+		"0 12 * * *": [
+			'one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement.send_daily_acknowledgement_reminders'
+		],
 		"40 5 * * 0,1,2,3,4":[#run durring working days only “At 05:40 on Sunday, Monday, Tuesday, Wednesday, and Thursday.”
 			'one_fm.grd.doctype.work_permit.work_permit.system_remind_renewal_operator_to_apply',#wp
 			'one_fm.grd.doctype.work_permit.work_permit.system_remind_transfer_operator_to_apply',
