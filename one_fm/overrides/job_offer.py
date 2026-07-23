@@ -27,7 +27,12 @@ class JobOfferOverride(JobOffer):
         super(JobOfferOverride, self).validate()
         job_applicant = frappe.get_doc("Job Applicant", self.job_applicant)
         self.one_fm_erf = job_applicant.one_fm_erf
-        if not self.flags.get("skip_recruitment_mandatory_check"):
+        # While still a draft (docstatus 0), this offer may have been auto-created
+        # the moment the applicant was Shortlisted/Selected -- before document
+        # collection happened -- and recruiters need to be able to freely review/
+        # edit it in the meantime. Only enforce full KYC completeness once it's
+        # actually being submitted/issued to the candidate.
+        if self.docstatus != 0:
             validate_mandatory_fields(job_applicant)
         self.job_offer_validate_attendance_by_timesheet()
         self.validate_job_offer_mandatory_fields()
