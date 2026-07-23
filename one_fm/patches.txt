@@ -307,7 +307,7 @@ one_fm.patches.v15_0.update_job_offer_day_off_category_for_job_applicants
 one_fm.patches.v15_0.add_phone_option_to_job_applicant_contact_number
 one_fm.patches.v15_0.remove_employee_marital_status_property_setter
 one_fm.patches.v15_0.update_vehicle_property_setter
-#one_fm.patches.v15_0.add_hd_ticket_category_field
+one_fm.patches.v15_0.add_hd_ticket_category_field
 
 [post_model_sync]
 one_fm.patches.v15_0.process_task_for_wiki_employee_task
@@ -463,7 +463,7 @@ one_fm.patches.v15_0.add_leave_application_resumption_contact_fields #1
 one_fm.patches.v15_0.add_absence_investigation_hr_officer_to_hr_settings
 one_fm.patches.v15_0.add_vehicle_custodian_history_fields
 one_fm.patches.v15_0.update_leave_application_workflow_dss #2026-07-17-2
-#ne_fm.patches.v15_0.update_sales_invoice_property_setter
+ne_fm.patches.v15_0.update_sales_invoice_property_setter
 one_fm.patches.v15_0.add_subcontractor_exit_workflow
 one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_project_manager
 one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_operations_manager
@@ -488,12 +488,12 @@ one_fm.patches.v15_0.fix_day_off_client_event_conflict_bulk #2026-07-03
 one_fm.patches.v15_0.update_bank_account_workflow
 one_fm.patches.v15_0.resync_resignation_workflow_draft_state #2026-07-07
 one_fm.patches.v15_0.mark_draft_pmr_as_completed #2026-07-07
-#one_fm.patches.v15_0.backfill_checkin_geolocation_from_device_id #2026-07-12
-#one_fm.patches.v15_0.normalize_user_mobile_country_code #2026-07-13
-#one_fm.patches.v15_0.warm_zenquote_cache #2026-07-13
-#one_fm.patches.v15_0.backfill_subcontractor_name_in_onboard_subcontract_employee #2026-07-12
-#one_fm.patches.v15_0.delete_pending_approval_attendance_checks_airport_t4_jul12 #2026-07-13
-#one_fm.patches.v15_0.send_amp_verification_test_email #2026-07-14
+one_fm.patches.v15_0.backfill_checkin_geolocation_from_device_id #2026-07-12
+one_fm.patches.v15_0.normalize_user_mobile_country_code #2026-07-13
+one_fm.patches.v15_0.warm_zenquote_cache #2026-07-13
+one_fm.patches.v15_0.backfill_subcontractor_name_in_onboard_subcontract_employee #2026-07-12
+one_fm.patches.v15_0.delete_pending_approval_attendance_checks_airport_t4_jul12 #2026-07-13
+one_fm.patches.v15_0.send_amp_verification_test_email #2026-07-14
 one_fm.patches.v15_0.allow_any_operations_manager_to_approve_resignation_withdrawal #2026-07-22
 one_fm.patches.v15_0.backfill_pmr_resignation_custom_docperm #2026-07-22
 one_fm.patches.v15_0.add_transportation_manager_to_pmr_and_resignation_workflows #2026-07-22
