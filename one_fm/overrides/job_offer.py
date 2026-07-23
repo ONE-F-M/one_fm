@@ -211,6 +211,11 @@ class JobOfferOverride(JobOffer):
             Returns:
                 None
         """
+        # Never auto-email a still-draft offer, regardless of how job_offer_workflow_state
+        # is configured -- KYC completeness is only guaranteed once docstatus is 1 (see
+        # JobOfferOverride.validate()).
+        if self.docstatus != 1:
+            return
         auto_email_settings = get_job_offer_auto_email_settings()
         if not auto_email_settings or not cint(auto_email_settings.get("auto_email_job_offer")):
             return
