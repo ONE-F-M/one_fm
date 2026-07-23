@@ -5,7 +5,7 @@ import frappe
 
 NEW_FIELD_ORDER = [
 	"workflow_state", "resigning_employees_section", "employees",
-	"resignation_dates_section", "resignation_initiation_date", "column_break_resg_dates", "relieving_date",
+	"resignation_dates_section", "resignation_initiation_date", "relieving_date",
 	"section_break_xfjj", "employee", "full_name_in_english", "full_name_in_arabic",
 	"nationality", "under_company_residency", "date_of_joining",
 	"department", "employment_type", "designation",
@@ -24,16 +24,14 @@ NEW_FIELD_ORDER = [
 def execute():
 	"""Rebalance Employee Resignation's form layout, purely cosmetic (no data/behavior change):
 
-	- Resignation Initiation Date / Relieving Date now sit side by side instead of
-	  each taking a full-width row. This needs its own new, unlabeled Section Break
-	  (resignation_dates_section) placed right after the "employees" Table field --
-	  a Column Break alone is not enough here. Frappe renders every column in a
-	  section as an independent flex-box sibling within one shared section-body row
-	  (see frappe/public/js/frappe/form/{layout,section,column}.js); a Table field
-	  does not force a "row break" for sibling columns, so a trailing column would
-	  render at the TOP of the section, beside the Table, instead of below it next
-	  to a field that comes after the Table in the first column. Isolating the
-	  Table in its own single-column section avoids this entirely.
+	- Relieving Date now sits directly below Resignation Initiation Date, in the
+	  same column, instead of side by side. This still needs its own new,
+	  unlabeled Section Break (resignation_dates_section) placed right after the
+	  "employees" Table field -- a Table field does not force a "row break" for
+	  a section that follows it, so without this dedicated section the date
+	  fields would render at the TOP of the next section, beside the Table,
+	  instead of below it. Isolating the Table in its own single-column section
+	  avoids this entirely.
 	- The "Resignation Details" section previously rendered a large empty gap on
 	  the left: its first column held only hidden lookup fields (employee,
 	  full_name_in_english, full_name_in_arabic, nationality, under_company_residency,

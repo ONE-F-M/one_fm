@@ -10,7 +10,6 @@
         "employees",
         "resignation_dates_section",
         "resignation_initiation_date",
-        "column_break_resg_dates",
         "relieving_date",
         "section_break_xfjj",
         "employee",
@@ -78,10 +77,6 @@
             "fieldtype": "Date",
             "label": "Resignation Initiation Date",
             "reqd": 1
-        },
-        {
-            "fieldname": "column_break_resg_dates",
-            "fieldtype": "Column Break"
         },
         {
             "fieldname": "relieving_date",
