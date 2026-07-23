@@ -27,7 +27,13 @@ class JobOfferOverride(JobOffer):
         super(JobOfferOverride, self).validate()
         job_applicant = frappe.get_doc("Job Applicant", self.job_applicant)
         self.one_fm_erf = job_applicant.one_fm_erf
-        validate_mandatory_fields(job_applicant)
+        # While still a draft (docstatus 0), this offer may have been auto-created
+        # the moment the applicant was marked Selected -- before document collection
+        # happened -- and recruiters need to be able to freely review/edit it in the
+        # meantime. Only enforce full KYC completeness once it's actually being
+        # submitted/issued to the candidate.
+        if self.docstatus != 0:
+            validate_mandatory_fields(job_applicant)
         self.job_offer_validate_attendance_by_timesheet()
         self.validate_job_offer_mandatory_fields()
         self.reset_status_on_amend()
@@ -205,6 +211,11 @@ class JobOfferOverride(JobOffer):
             Returns:
                 None
         """
+        # Never auto-email a still-draft offer, regardless of how job_offer_workflow_state
+        # is configured -- KYC completeness is only guaranteed once docstatus is 1 (see
+        # JobOfferOverride.validate()).
+        if self.docstatus != 1:
+            return
         auto_email_settings = get_job_offer_auto_email_settings()
         if not auto_email_settings or not cint(auto_email_settings.get("auto_email_job_offer")):
             return
