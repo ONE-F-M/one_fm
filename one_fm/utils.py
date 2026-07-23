@@ -1263,7 +1263,11 @@ def validate_job_applicant(doc, method):
     # validate_pam_file_number_and_pam_designation(doc, method)
     validate_transferable_field(doc)
     set_job_applicant_fields(doc)
-    if not doc.one_fm_is_easy_apply and doc.one_fm_applicant_status != "Shortlisted":
+    if (
+        not doc.one_fm_is_easy_apply
+        and doc.one_fm_applicant_status != "Shortlisted"
+        and not doc.flags.get("skip_recruitment_mandatory_check")
+    ):
         validate_mandatory_fields(doc)
     set_job_applicant_status(doc, method)
     if doc.is_new():
