@@ -380,9 +380,9 @@ def correct_resignation_date_app(
                 frappe.ValidationError
             )
 
-        doc.relieving_date = new_date
+        doc.relieving_date = frappe.utils.getdate(new_date)
         if new_initiation:
-            doc.resignation_initiation_date = new_initiation
+            doc.resignation_initiation_date = frappe.utils.getdate(new_initiation)
 
         if attachment:
             if isinstance(attachment, str):
@@ -395,6 +395,11 @@ def correct_resignation_date_app(
                 "attachment": attachment,
             }
             handle_attachment_internal(doc, doc, att_data, "resignation_letter")
+
+        # apply_workflow() reloads the doc from the DB before saving (see
+        # frappe.model.workflow.apply_workflow), which would silently discard
+        # the date fields set above if they aren't persisted first.
+        doc.save(ignore_permissions=True)
 
         apply_workflow(doc, "Resubmit Date")
 
