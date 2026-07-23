@@ -118,10 +118,8 @@ class EmployeeResignation(Document):
 			frappe.throw(_("Missing Resignation Letter for <b>{0}</b>. Please attach the file before submitting.").format(str(emp_name)), title=_("Missing Attachments"))
 
 	def on_update(self):
+		self.sync_status_to_employee()
 		old_doc = self.get_doc_before_save()
-		if not old_doc or old_doc.get("workflow_state") != self.workflow_state:
-			self.sync_status_to_employee()
-			
 		if not self.is_new():
 			if old_doc and old_doc.get("workflow_state") != "Approved" and self.get("workflow_state") == "Approved":
 				self.send_approval_notification()
