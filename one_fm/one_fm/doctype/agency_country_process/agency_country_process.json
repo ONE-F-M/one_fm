@@ -18,7 +18,9 @@
   "section_break_3",
   "agency_country_process_template",
   "agency_process_details",
-  "total_duration"
+  "total_duration",
+  "column_break_20",
+  "total_duration_without_remedical"
  ],
  "fields": [
   {
@@ -63,6 +65,16 @@
    "fieldname": "total_duration",
    "fieldtype": "Float",
    "label": "Total Duration",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_20",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_duration_without_remedical",
+   "fieldtype": "Float",
+   "label": "Total Duration Without Remedical",
    "read_only": 1
   },
   {
