@@ -17,28 +17,33 @@
    "fieldname": "sale_item_code",
    "fieldtype": "Link",
    "label": "Sale Item Code",
-   "options": "Item"
+   "options": "Item",
+   "read_only": 1
   },
   {
    "fetch_from": "sale_item_code.item_type",
    "fieldname": "item_type",
    "fieldtype": "Data",
-   "label": "Item Type"
+   "label": "Item Type",
+   "read_only": 1
   },
   {
    "fieldname": "contractual_hours",
    "fieldtype": "Long Text",
-   "label": "Contractual Hours"
+   "label": "Contractual Hours",
+   "read_only": 1
   },
   {
    "fieldname": "actual_hours",
    "fieldtype": "Long Text",
-   "label": "Actual Hours"
+   "label": "Actual Hours",
+   "read_only": 1
   },
   {
    "fieldname": "staff_breakdown",
    "fieldtype": "Long Text",
-   "label": "Staff Breakdown"
+   "label": "Staff Breakdown",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
