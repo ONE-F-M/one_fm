@@ -199,7 +199,19 @@ class JobOfferOverride(JobOffer):
             if applicant_details.one_fm_hiring_method == "Bulk Recruitment" and applicant_details.one_fm_applicant_status == "Selected" and not applicant_details.mark_as_shortlisted_first:
                 if frappe.session.user == "Guest":
                     frappe.set_user("Administrator")
-                apply_workflow(self, "Submit for Candidate Response")
+                try:
+                    apply_workflow(self, "Submit for Candidate Response")
+                except frappe.ValidationError:
+                    # The candidate's KYC documentation isn't complete yet (validate()
+                    # re-enforces it at submit time, per docstatus gate above). Marking
+                    # the applicant "Selected" must still succeed -- leave this offer as
+                    # an unsubmitted draft rather than letting the throw propagate up
+                    # through Job Applicant's own save and abort that action entirely.
+                    frappe.clear_last_message()
+                    frappe.log_error(
+                        title="Bulk Recruitment auto-submit deferred",
+                        message=f"Job Offer {self.name} could not be auto-submitted to the candidate (likely incomplete KYC fields) -- left as a draft for manual review.\n{frappe.get_traceback()}"
+                    )
 
     def auto_email_job_offer(self):
         """

@@ -1526,7 +1526,12 @@ def validate_job_applicant(doc, method):
     # validate_pam_file_number_and_pam_designation(doc, method)
     validate_transferable_field(doc)
     set_job_applicant_fields(doc)
-    if not doc.one_fm_is_easy_apply:
+    # Marking an applicant "Selected" auto-creates/auto-submits a Job Offer
+    # (on_update_job_applicant -> create_job_offer_from_job_applicant), which is an
+    # internal recruiter decision, not the candidate's own KYC submission -- full
+    # completeness is enforced at the Job Offer level instead, once it's actually
+    # being submitted to the candidate (JobOfferOverride.validate()'s docstatus gate).
+    if not doc.one_fm_is_easy_apply and doc.one_fm_applicant_status != "Selected":
         validate_mandatory_fields(doc)
     set_job_applicant_status(doc, method)
     if doc.is_new():
