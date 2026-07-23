@@ -52,6 +52,7 @@ class EmployeeResignationWithdrawal(Document):
 					frappe.db.set_value("Employee", self.employee, {
 						"relieving_date": None,
 						"resignation_date": None,
+						"resignation_letter_date": None,
 						"reason_for_leaving": None,
 						"resignation_status": None,
 						"current_resignation": None
