@@ -20,10 +20,10 @@ class ArrivalandDeployment(Document):
 
         if self.get("workflow_state") == "Pending Onboarding":
             if not self.arrival_date:
-                frappe.throw("Please ensure Arrival Date is filled before submitting to Onboarding.")
+                frappe.throw(_("Please ensure Arrival Date is filled before submitting to Onboarding."))
             if self.candidate_country_process:
                 if not self.arrival_time or not self.ticket_attachment or not self.flight_number or not self.airline or not self.terminal or not self.arrival_airport:
-                    frappe.throw("Please ensure Arrival Time, Flight Number, Airline, Terminal, Ticket Attachment, and Arrival Airport are filled for Overseas hires before submitting to Onboarding.")
+                    frappe.throw(_("Please ensure Arrival Time, Flight Number, Airline, Terminal, Ticket Attachment, and Arrival Airport are filled for Overseas hires before submitting to Onboarding."))
 
         # Keep the plain status field (used for reporting/CCP sync) in step with the
         # actual workflow_state -- Pending/Draft/Pending Onboarding stay "Pending".

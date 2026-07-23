@@ -4796,7 +4796,7 @@ def get_next(doctype, value, prev, filters=None, sort_order="desc", sort_field="
     return res[0][0]
 @frappe.whitelist()
 @frappe.read_only()
-def get_sibling_counts(doctype, name, items=None):
+def get_sibling_counts(doctype: str, name: str, items: list | str | None = None):
     from frappe.desk.notifications import _get_linked_document_counts, get_external_links
     
     doc = frappe.get_doc(doctype, name)

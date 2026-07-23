@@ -42,11 +42,11 @@ frappe.ui.form.on("Arrival and Deployment", {
 	before_workflow_action: function(frm) {
 		if (frappe.selected_workflow_action === "Submit to Onboarding") {
 			if (!frm.doc.arrival_date) {
-				frappe.throw("Please ensure Arrival Date is filled before submitting to Onboarding.");
+				frappe.throw(__("Please ensure Arrival Date is filled before submitting to Onboarding."));
 			}
 			if (frm.doc.candidate_country_process) {
 				if (!frm.doc.arrival_time || !frm.doc.ticket_attachment || !frm.doc.flight_number || !frm.doc.airline || !frm.doc.terminal || !frm.doc.arrival_airport) {
-					frappe.throw("Please ensure Arrival Time, Flight Number, Airline, Terminal, Ticket Attachment, and Arrival Airport are filled for Overseas hires before submitting to Onboarding.");
+					frappe.throw(__("Please ensure Arrival Time, Flight Number, Airline, Terminal, Ticket Attachment, and Arrival Airport are filled for Overseas hires before submitting to Onboarding."));
 				}
 			}
 		}
@@ -54,15 +54,15 @@ frappe.ui.form.on("Arrival and Deployment", {
 		if (frappe.selected_workflow_action === "Mark as Joined" || frappe.selected_workflow_action === "Did Not Arrive") {
 			let is_overseas = !!frm.doc.candidate_country_process;
 			if (is_overseas && frappe.session.user !== frm.doc.transportation_manager && frappe.session.user !== "Administrator") {
-				frappe.throw("Only the Transportation Manager can perform this action for Overseas hires.");
+				frappe.throw(__("Only the Transportation Manager can perform this action for Overseas hires."));
 			} else if (!is_overseas && frappe.session.user !== frm.doc.general_services && frappe.session.user !== "Administrator") {
-				frappe.throw("Only General Services can perform this action for Local hires.");
+				frappe.throw(__("Only General Services can perform this action for Local hires."));
 			}
 		}
 
 		if (frappe.selected_workflow_action === "Did Not Arrive") {
 			if (!frm.doc.recruiter) {
-				frappe.throw("Please enter the Recruiter before notifying them that the candidate did not arrive.");
+				frappe.throw(__("Please enter the Recruiter before notifying them that the candidate did not arrive."));
 			}
 		}
 	}

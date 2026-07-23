@@ -676,6 +676,7 @@ scheduler_events = {
 		"0/15 * * * *": [ #At every 15th minute from 0 through 59.”
 			"one_fm.legal.doctype.penalty.penalty.automatic_reject",
 			# 'one_fm.api.tasks.process_attendance',
+			"one_fm.api.tasks.update_shift_type"
 		],
 		"0/5 * * * *": [
 			"one_fm.api.tasks.run_checkin_reminder",
@@ -689,9 +690,6 @@ scheduler_events = {
 			"one_fm.api.tasks.rambo_shift_assignment",
 			# Advance live SLA countdown statuses for in-progress Preventive Maintenance Work Orders
 			"one_fm.one_fm.doctype.maintenance_work_order.maintenance_work_order.update_active_sla_statuses",
-		],
-		"0/15 * * * *": [
-			"one_fm.api.tasks.update_shift_type"
 		],
 		"37 23 * * *": [  #“At 23:37.”
 			'one_fm.api.tasks.issue_penalties'
