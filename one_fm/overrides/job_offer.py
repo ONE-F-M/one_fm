@@ -305,10 +305,13 @@ class JobOfferOverride(JobOffer):
         if not job_applicant.job_title:
             return
 
-        # Job Opening can list several willing agencies (one_fm_active_willing_agency) --
-        # the one that actually matters here is whichever agency this specific
-        # candidate applied through, tracked on the Job Applicant itself.
-        agency = job_applicant.one_fm_agency
+        # Agencies are stored in the Job Opening child table (one_fm_active_willing_agency),
+        # not as a single field on Job Opening. Use the first willing agency.
+        job_opening = frappe.get_doc("Job Opening", job_applicant.job_title)
+        if not job_opening.one_fm_active_willing_agency:
+            return
+
+        agency = job_opening.one_fm_active_willing_agency[0].agency
         if not agency:
             return
 
