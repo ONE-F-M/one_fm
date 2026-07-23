@@ -22,7 +22,10 @@ def get_project_properties():
             "field_name":"users_section",
             "property":"depends_on",
             "property_type":"Data",
-            "value":"eval:['External','Internal'].includes(doc.project_type)"
+            # Show the "Project Manager and Users" section for External, Internal,
+            # and SCRUM projects (SCRUM already requires `users` via
+            # mandatory_depends_on, so it must be visible for them too).
+            "value":"eval:['External','Internal','SCRUM Project'].includes(doc.project_type)"
         },
         {
             "doctype_or_field":"DocField",
