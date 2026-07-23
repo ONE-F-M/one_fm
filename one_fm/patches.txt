@@ -498,4 +498,5 @@ one_fm.patches.v15_0.allow_any_operations_manager_to_approve_resignation_withdra
 one_fm.patches.v15_0.backfill_pmr_resignation_custom_docperm #2026-07-22
 one_fm.patches.v15_0.add_transportation_manager_to_pmr_and_resignation_workflows #2026-07-22
 one_fm.patches.v15_0.backfill_employee_resignation_letter_date #2026-07-22
-one_fm.patches.v15_0.rebalance_employee_resignation_layout #2026-07-22
+one_fm.patches.v15_0.rebalance_employee_resignation_layout
+one_fm.patches.v15_0.finalize_line_manager_approval_for_corporate_withdrawal #2026-07-22
