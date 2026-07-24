@@ -61,7 +61,7 @@ def acknowledge(name: str):
 	doc.status = "Acknowledged"
 	doc.acknowledged_by = frappe.session.user
 	doc.acknowledged_on = frappe.utils.now_datetime()
-	doc.save(ignore_permissions=True)
+	doc.save()
 	return doc.status
 
 
@@ -103,7 +103,7 @@ def confirm_arrival(name: str, outcome: str):
 		return doc.arrival_confirmation
 
 	doc.arrival_confirmation = outcome
-	doc.save(ignore_permissions=True)
+	doc.save()
 
 	ard = frappe.get_doc("Arrival and Deployment", doc.arrival_and_deployment)
 	if ard.get("workflow_state") == "Pending Support Departments":
