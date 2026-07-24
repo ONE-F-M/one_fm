@@ -707,7 +707,7 @@ scheduler_events = {
 			'one_fm.operations.doctype.post_scheduler_checker.post_scheduler_checker.schedule_roster_checker',
             'one_fm.operations.doctype.default_shift_checker.default_shift_checker.create_default_shift_checker'
 		],
-		"30 13 * * *": [ #“At 01:30 pm - Need to run after attendance is marked”
+		"15 12 * * *": [ #"At 12:15 pm - preponed from 01:30 pm (WI-001704); run after attendance is marked"
 			'one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.generate_checker',
 		],
 		"30 4 * * *": [
