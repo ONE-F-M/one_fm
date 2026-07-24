@@ -1,0 +1,173 @@
+{
+	"workflow_name": "Employee Schedule Suspension",
+	"document_type": "Employee Schedule",
+	"is_active": 1,
+	"override_status": 0,
+	"send_email_alert": 0,
+	"workflow_state_field": "workflow_state",
+	"doctype": "Workflow",
+	"states": [
+		{
+			"state": "Active",
+			"doc_status": "0",
+			"style": "Success",
+			"is_optional_state": 0,
+			"avoid_status_override": 0,
+			"allow_edit": "System Manager",
+			"send_email": 1,
+			"doctype": "Workflow Document State"
+		},
+		{
+			"state": "Pending Suspension",
+			"doc_status": "0",
+			"style": "Warning",
+			"is_optional_state": 0,
+			"avoid_status_override": 0,
+			"allow_edit": "System Manager",
+			"send_email": 1,
+			"doctype": "Workflow Document State"
+		},
+		{
+			"state": "Suspended",
+			"doc_status": "0",
+			"style": "Danger",
+			"is_optional_state": 0,
+			"avoid_status_override": 0,
+			"allow_edit": "System Manager",
+			"send_email": 1,
+			"doctype": "Workflow Document State"
+		}
+	],
+	"transitions": [
+		{
+			"state": "Active",
+			"action": "Request Suspension",
+			"next_state": "Pending Suspension",
+			"allowed": "Operations Manager",
+			"allow_self_approval": 1,
+			"send_email_to_creator": 0,
+			"skip_multiple_action": 0,
+			"skip_creation_of_workflow_action": 0,
+			"custom_confirm_transition": 0,
+			"require_digital_signature": 0,
+			"doctype": "Workflow Transition"
+		},
+		{
+			"state": "Active",
+			"action": "Request Suspension",
+			"next_state": "Pending Suspension",
+			"allowed": "System Manager",
+			"allow_self_approval": 1,
+			"send_email_to_creator": 0,
+			"skip_multiple_action": 0,
+			"skip_creation_of_workflow_action": 0,
+			"custom_confirm_transition": 0,
+			"require_digital_signature": 0,
+			"doctype": "Workflow Transition"
+		},
+		{
+			"state": "Pending Suspension",
+			"action": "Approve",
+			"next_state": "Suspended",
+			"allowed": "Operations Manager",
+			"allow_self_approval": 1,
+			"send_email_to_creator": 0,
+			"skip_multiple_action": 0,
+			"skip_creation_of_workflow_action": 0,
+			"custom_confirm_transition": 0,
+			"require_digital_signature": 0,
+			"doctype": "Workflow Transition"
+		},
+		{
+			"state": "Pending Suspension",
+			"action": "Approve",
+			"next_state": "Suspended",
+			"allowed": "Operations Admin",
+			"allow_self_approval": 1,
+			"send_email_to_creator": 0,
+			"skip_multiple_action": 0,
+			"skip_creation_of_workflow_action": 0,
+			"custom_confirm_transition": 0,
+			"require_digital_signature": 0,
+			"doctype": "Workflow Transition"
+		},
+		{
+			"state": "Pending Suspension",
+			"action": "Approve",
+			"next_state": "Suspended",
+			"allowed": "General Manager",
+			"allow_self_approval": 1,
+			"send_email_to_creator": 0,
+			"skip_multiple_action": 0,
+			"skip_creation_of_workflow_action": 0,
+			"custom_confirm_transition": 0,
+			"require_digital_signature": 0,
+			"doctype": "Workflow Transition"
+		},
+		{
+			"state": "Pending Suspension",
+			"action": "Approve",
+			"next_state": "Suspended",
+			"allowed": "System Manager",
+			"allow_self_approval": 1,
+			"send_email_to_creator": 0,
+			"skip_multiple_action": 0,
+			"skip_creation_of_workflow_action": 0,
+			"custom_confirm_transition": 0,
+			"require_digital_signature": 0,
+			"doctype": "Workflow Transition"
+		},
+		{
+			"state": "Pending Suspension",
+			"action": "Reject",
+			"next_state": "Active",
+			"allowed": "Operations Manager",
+			"allow_self_approval": 1,
+			"send_email_to_creator": 0,
+			"skip_multiple_action": 0,
+			"skip_creation_of_workflow_action": 0,
+			"custom_confirm_transition": 0,
+			"require_digital_signature": 0,
+			"doctype": "Workflow Transition"
+		},
+		{
+			"state": "Pending Suspension",
+			"action": "Reject",
+			"next_state": "Active",
+			"allowed": "Operations Admin",
+			"allow_self_approval": 1,
+			"send_email_to_creator": 0,
+			"skip_multiple_action": 0,
+			"skip_creation_of_workflow_action": 0,
+			"custom_confirm_transition": 0,
+			"require_digital_signature": 0,
+			"doctype": "Workflow Transition"
+		},
+		{
+			"state": "Pending Suspension",
+			"action": "Reject",
+			"next_state": "Active",
+			"allowed": "General Manager",
+			"allow_self_approval": 1,
+			"send_email_to_creator": 0,
+			"skip_multiple_action": 0,
+			"skip_creation_of_workflow_action": 0,
+			"custom_confirm_transition": 0,
+			"require_digital_signature": 0,
+			"doctype": "Workflow Transition"
+		},
+		{
+			"state": "Pending Suspension",
+			"action": "Reject",
+			"next_state": "Active",
+			"allowed": "System Manager",
+			"allow_self_approval": 1,
+			"send_email_to_creator": 0,
+			"skip_multiple_action": 0,
+			"skip_creation_of_workflow_action": 0,
+			"custom_confirm_transition": 0,
+			"require_digital_signature": 0,
+			"doctype": "Workflow Transition"
+		}
+	]
+}

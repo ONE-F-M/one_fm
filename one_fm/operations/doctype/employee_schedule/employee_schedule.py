@@ -22,9 +22,40 @@ class EmployeeSchedule(Document):
 			if getattr(self.flags, "ignore_permissions", False):
 				return
 			
+			# WI-001694: allow suspension-workflow transitions (Approve/Reject) by the
+			# approver roles even though they aren't System Managers.
+			if self._is_suspension_workflow_transition():
+				return
+
 			# Check if user has System Manager role
 			if frappe.session.user != "Administrator" and "System Manager" not in frappe.get_roles():
 				frappe.throw(_("Only System Managers can edit Employee Schedule records directly. Please use the appropriate tools (Roster, OJT, Client Event, etc.) to make schedule changes."))
+
+	def _is_suspension_workflow_transition(self):
+		"""WI-001694: True when this save advances the suspension workflow_state and
+		the user holds one of the approver roles."""
+		prev_state = frappe.db.get_value("Employee Schedule", self.name, "workflow_state")
+		if self.get("workflow_state") == prev_state:
+			return False
+		approver_roles = {"Operations Manager", "Operations Admin", "General Manager", "System Manager"}
+		return bool(approver_roles & set(frappe.get_roles()))
+
+	def handle_suspension_workflow(self):
+		"""WI-001694: apply the suspension workflow side-effects.
+
+		Approve (Pending Suspension -> Suspended): block past dates, else set
+		Employee Availability to Suspended. Reject (-> Active) leaves availability
+		unchanged. Employee Availability is untouched while Pending Suspension.
+		"""
+		if self.is_new():
+			return
+		prev_state = frappe.db.get_value("Employee Schedule", self.name, "workflow_state")
+		if prev_state == self.get("workflow_state"):
+			return
+		if prev_state == "Pending Suspension" and self.workflow_state == "Suspended":
+			if getdate(self.date) < getdate():
+				frappe.throw(_("Suspensions cannot be approved for past dates. It can be rejected."))
+			self.employee_availability = "Suspended"
 
 	def before_insert(self):
 		if frappe.db.exists("Employee Schedule", {"employee": self.employee, "date": self.date, "roster_type" : self.roster_type}):
@@ -56,6 +87,7 @@ class EmployeeSchedule(Document):
 				frappe.delete_doc("Employee Schedule", ot.name, ignore_permissions=True)
 
 	def validate(self):
+		self.handle_suspension_workflow()
 		# Clear Client Event-specific fields when transitioning AWAY from Client Event.
 		# This handles saves done from the Desk form (roster uses direct SQL).
 		if not self.is_new():
