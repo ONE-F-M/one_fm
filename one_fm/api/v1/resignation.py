@@ -391,7 +391,7 @@ def correct_resignation_date_app(
         # document via frappe.db.set_value() -- doing this save afterwards
         # would see a "modified" timestamp already bumped out from under it
         # and fail with TimestampMismatchError.
-        doc.save(ignore_permissions=True)
+        doc.save()
 
         if attachment:
             if isinstance(attachment, str):
