@@ -90,17 +90,36 @@ function set_rejection_remarks(frm) {
 	}
 }
 
+// Predefined rejection reasons for PAM & MOI states (WI-001693)
+const PAM_MOI_REJECTION_REASONS = [
+	'Passport Validity is Less than 18 Months',
+	"Worker's age is below the legal minimum",
+	"The worker's gender does not match the profession",
+	"The occupation requires amendment to specify the worker's specialization",
+	'An active file exists for this worker',
+	'Worker is in Black List'
+];
+
 function get_rejection_remarks(frm, resolve, reject) {
 	frappe.dom.unfreeze();
+	// PAM & MOI require a predefined reason (Select); other states keep free text
+	const use_select = ['Pending By PAM', 'Pending By MOI'].includes(frm.doc.workflow_state);
+	const reason_field = use_select
+		? {
+			label: 'Reason for Rejection',
+			fieldname: 'reason',
+			fieldtype: 'Select',
+			options: PAM_MOI_REJECTION_REASONS.join('\n'),
+			reqd: 1
+		}
+		: {
+			label: 'Reason for Rejection',
+			fieldname: 'reason',
+			fieldtype: 'Small Text',
+			reqd: 1
+		};
 	frappe.prompt(
-		[
-			{
-				label: 'Reason for Rejection',
-				fieldname: 'reason',
-				fieldtype: 'Small Text',
-				reqd: 1
-			}
-		],
+		[reason_field],
 		function(values) {
 			try {
 				const state = frm.doc.workflow_state;
