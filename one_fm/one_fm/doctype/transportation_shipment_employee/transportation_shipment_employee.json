@@ -1,0 +1,77 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-07-06 14:55:06.699414",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "employee_id",
+  "employee_name",
+  "column_break_oiey",
+  "cell_number",
+  "accommodation",
+  "stop_location",
+  "operation_site"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee_id",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee ID",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "employee_id.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_oiey",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee_id.cell_number",
+   "fieldname": "cell_number",
+   "fieldtype": "Data",
+   "label": "Cell Number"
+  },
+  {
+   "fieldname": "accommodation",
+   "fieldtype": "Link",
+   "label": "Accommodation",
+   "options": "Accommodation"
+  },
+  {
+   "fieldname": "stop_location",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Stop Location",
+   "options": "Location"
+  },
+  {
+   "fieldname": "operation_site",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Operation Site",
+   "options": "Operations Site"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-07-15 17:22:25.874304",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Transportation Shipment Employee",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

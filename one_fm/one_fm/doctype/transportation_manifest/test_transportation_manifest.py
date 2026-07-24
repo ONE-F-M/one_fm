@@ -45,6 +45,7 @@ class TestTransportationManifest(FrappeTestCase):
 			"last_odometer": 1000,
 			"location": self.loc_name,
 			"employee": self.driver,
+			"custom_handover_date": today(),
 			"fuel_type": "Diesel",
 			"uom": "Litre",
 			"seats": 15
@@ -65,6 +66,7 @@ class TestTransportationManifest(FrappeTestCase):
 			"last_odometer": 1000,
 			"location": self.loc_name,
 			"employee": self.driver,
+			"custom_handover_date": today(),
 			"fuel_type": "Diesel",
 			"uom": "Litre",
 			"seats": 15
@@ -361,4 +363,245 @@ class TestTransportationManifest(FrappeTestCase):
 		# Attendance preserved
 		self.assertEqual(row.attendance_status, "Present")
 		self.assertEqual(row.qoa_status, "Pass")
+
+	# ── Stop Sequence / Pickup Accommodation auto-population ──────────────────
+
+	def _ensure_accommodation(self, label):
+		"""Create (once) an Accommodation record and return its docname."""
+		if not frappe.db.exists("Accommodation Type", "Test Acc Type"):
+			frappe.get_doc({
+				"doctype": "Accommodation Type",
+				"accommodation_type": "Test Acc Type",
+			}).insert(ignore_permissions=True)
+
+		existing = frappe.db.get_value("Accommodation", {"accommodation": label}, "name")
+		if existing:
+			return existing
+
+		acc = frappe.get_doc({
+			"doctype": "Accommodation",
+			"accommodation": label,
+			"type": "Test Acc Type",
+		}).insert(ignore_permissions=True)
+		return acc.name
+
+	def _make_shipment(self, accommodation, badge):
+		"""Create a Transportation Shipment for the given camp and routing badge."""
+		ship = frappe.get_doc({
+			"doctype": "Transportation Shipment",
+			"accommodation": accommodation,
+			"routing_type_badge": badge,
+			"trip_direction": "Outward",
+		}).insert(ignore_permissions=True)
+		return ship.name
+
+	def test_multi_stop_sequence_and_pickup_accommodation(self):
+		"""OSM/OLM rows are numbered per unique accommodation in first-appearance order."""
+		mahboula = self._ensure_accommodation("Mahboula Camp Test")
+		mangaf = self._ensure_accommodation("Mangaf Camp Test")
+		ship_mahboula = self._make_shipment(mahboula, "OSM")
+		ship_mangaf = self._make_shipment(mangaf, "OSM")
+
+		doc = frappe.new_doc("Transportation Manifest")
+		doc.vehicle_no = self.vehicle1
+		doc.schedule_date = today()
+		# Two Mahboula rows first, then one Mangaf row (mirrors the operational example)
+		doc.append("transportation_manifest_details", {
+			"employee": self.employee1, "transportation_shipment": ship_mahboula,
+			"scheduled_time": "06:00:00",
+		})
+		doc.append("transportation_manifest_details", {
+			"employee": self.employee2, "transportation_shipment": ship_mahboula,
+			"scheduled_time": "06:00:00",
+		})
+		doc.append("transportation_manifest_details", {
+			"employee": self.reliever, "transportation_shipment": ship_mangaf,
+			"scheduled_time": "06:30:00",
+		})
+		doc.save()
+
+		rows = doc.transportation_manifest_details
+		# Mahboula rows -> Stop 1
+		self.assertEqual(rows[0].pickup_accommodation, mahboula)
+		self.assertEqual(rows[0].stop_sequence, 1)
+		self.assertEqual(rows[1].pickup_accommodation, mahboula)
+		self.assertEqual(rows[1].stop_sequence, 1)
+		# Mangaf row -> Stop 2
+		self.assertEqual(rows[2].pickup_accommodation, mangaf)
+		self.assertEqual(rows[2].stop_sequence, 2)
+
+	def test_direct_route_forces_stop_sequence_one(self):
+		"""A Direct shipment row is always Stop Sequence 1 with its own camp as pickup."""
+		camp = self._ensure_accommodation("Direct Camp Test")
+		ship_direct = self._make_shipment(camp, "Direct")
+
+		doc = frappe.new_doc("Transportation Manifest")
+		doc.vehicle_no = self.vehicle1
+		doc.schedule_date = today()
+		doc.append("transportation_manifest_details", {
+			"employee": self.employee1, "transportation_shipment": ship_direct,
+			"scheduled_time": "06:00:00",
+		})
+		doc.append("transportation_manifest_details", {
+			"employee": self.employee2, "transportation_shipment": ship_direct,
+			"scheduled_time": "06:00:00",
+		})
+		doc.save()
+
+		for row in doc.transportation_manifest_details:
+			self.assertEqual(row.stop_sequence, 1)
+			self.assertEqual(row.pickup_accommodation, camp)
+
+	def test_multi_camp_direct_numbers_per_camp(self):
+		"""Direct shipments from different camps on one vehicle number per camp.
+
+		A bus chaining Direct pickups from Mangaf then Mahboula must get Stop 1 and
+		Stop 2 — not both collapsed to Stop 1 — so the manifest page can separate
+		them into per-camp boarding banners with a sequential attendance check.
+		"""
+		mangaf = self._ensure_accommodation("Direct Mangaf")
+		mahboula = self._ensure_accommodation("Direct Mahboula")
+		ship_mangaf = self._make_shipment(mangaf, "Direct")
+		ship_mahboula = self._make_shipment(mahboula, "Direct")
+
+		doc = frappe.new_doc("Transportation Manifest")
+		doc.vehicle_no = self.vehicle1
+		doc.schedule_date = today()
+		doc.append("transportation_manifest_details", {
+			"employee": self.employee1, "transportation_shipment": ship_mangaf,
+			"scheduled_time": "06:00:00",
+		})
+		doc.append("transportation_manifest_details", {
+			"employee": self.employee2, "transportation_shipment": ship_mahboula,
+			"scheduled_time": "06:30:00",
+		})
+		doc.save()
+
+		rows = doc.transportation_manifest_details
+		self.assertEqual(rows[0].pickup_accommodation, mangaf)
+		self.assertEqual(rows[0].stop_sequence, 1)
+		self.assertEqual(rows[1].pickup_accommodation, mahboula)
+		self.assertEqual(rows[1].stop_sequence, 2)
+
+	# ── MA2-11: Multi-accommodation attendance-check sheet ────────────────────
+
+	def _make_two_stop_manifest(self):
+		"""Build a saved 2-stop manifest (Mahboula = Stop 1, Mangaf = Stop 2)."""
+		import json as _json  # noqa: F401 (kept local; sheet API imports json itself)
+
+		mahboula = self._ensure_accommodation("Sheet Mahboula")
+		mangaf = self._ensure_accommodation("Sheet Mangaf")
+		ship_mahboula = self._make_shipment(mahboula, "OSM")
+		ship_mangaf = self._make_shipment(mangaf, "OSM")
+
+		doc = frappe.new_doc("Transportation Manifest")
+		doc.vehicle_no = self.vehicle1
+		doc.schedule_date = today()
+		doc.append("transportation_manifest_details", {
+			"employee": self.employee1, "transportation_shipment": ship_mahboula,
+			"scheduled_time": "06:00:00",
+		})
+		doc.append("transportation_manifest_details", {
+			"employee": self.employee2, "transportation_shipment": ship_mangaf,
+			"scheduled_time": "06:30:00",
+		})
+		doc.save()
+		return doc
+
+	def test_sheet_groups_rows_by_stop(self):
+		from one_fm.one_fm.doctype.transportation_manifest.manifest_sheet import get_manifest_sheet
+
+		doc = self._make_two_stop_manifest()
+		sheet = get_manifest_sheet(doc.name)
+
+		self.assertEqual(len(sheet["stops"]), 2)
+		self.assertEqual(sheet["stops"][0]["stop_sequence"], 1)
+		self.assertEqual(sheet["stops"][1]["stop_sequence"], 2)
+		self.assertEqual(sheet["active_stop_sequence"], 0)
+		# Nothing triggered yet -> every stop locked, only Stop 1 can be triggered.
+		self.assertEqual(sheet["stops"][0]["status"], "Locked")
+		self.assertTrue(sheet["stops"][0]["can_trigger"])
+		self.assertFalse(sheet["stops"][1]["can_trigger"])
+
+	def test_sheet_flags_reliever_rows(self):
+		from one_fm.one_fm.doctype.transportation_manifest.manifest_sheet import get_manifest_sheet
+
+		doc = self._make_two_stop_manifest()
+		# Assign a reliever to Stop 1's worker (Present + failed QOA path, with the
+		# reliever flag set so the controller preserves reliever_employee).
+		row = doc.transportation_manifest_details[0]
+		row.attendance_status = "Present"
+		row.qoa_status = "Fail"
+		row.qoa_reason = "Uniform"
+		row.requires_reliever = 1
+		row.reliever_employee = self.reliever
+		doc.save()
+
+		sheet = get_manifest_sheet(doc.name)
+		p1 = sheet["stops"][0]["passengers"][0]
+		p2 = sheet["stops"][1]["passengers"][0]
+		self.assertTrue(p1["is_reliever"])
+		self.assertEqual(p1["reliever_employee"], self.reliever)
+		self.assertFalse(p2["is_reliever"])
+
+	def test_trigger_is_strictly_sequential(self):
+		from one_fm.one_fm.doctype.transportation_manifest.manifest_sheet import (
+			trigger_attendance_check,
+		)
+
+		doc = self._make_two_stop_manifest()
+
+		# Cannot jump straight to Stop 2.
+		self.assertRaises(frappe.ValidationError, trigger_attendance_check, doc.name, 2)
+
+		# Stop 1 unlocks; it becomes Active, Stop 2 stays Locked.
+		sheet = trigger_attendance_check(doc.name, 1)
+		self.assertEqual(sheet["active_stop_sequence"], 1)
+		self.assertEqual(sheet["stops"][0]["status"], "Active")
+		self.assertEqual(sheet["stops"][1]["status"], "Locked")
+		self.assertTrue(sheet["stops"][1]["can_trigger"])
+
+	def test_save_only_active_stop_and_completed_stays_locked(self):
+		from one_fm.one_fm.doctype.transportation_manifest.manifest_sheet import (
+			trigger_attendance_check,
+			save_stop_checks,
+		)
+
+		doc = self._make_two_stop_manifest()
+		row1 = doc.transportation_manifest_details[0].name
+
+		# Stop 2 is locked -> saving it must fail.
+		self.assertRaises(
+			frappe.ValidationError,
+			save_stop_checks,
+			doc.name, 2, [{"row_name": row1, "attendance_status": "Present"}],
+		)
+
+		# Unlock + save Stop 1.
+		trigger_attendance_check(doc.name, 1)
+		sheet = save_stop_checks(
+			doc.name, 1, [{"row_name": row1, "attendance_status": "Present", "qoa_status": "Pass"}]
+		)
+		self.assertEqual(sheet["stops"][0]["passengers"][0]["attendance_status"], "Present")
+
+		# Advance to Stop 2 -> Stop 1 is now Completed and frozen.
+		trigger_attendance_check(doc.name, 2)
+		doc.reload()
+		doc.transportation_manifest_details[0].attendance_status = "Absent"
+		self.assertRaises(frappe.ValidationError, doc.save)
+
+	def test_complete_stop_advances_pointer(self):
+		from one_fm.one_fm.doctype.transportation_manifest.manifest_sheet import (
+			trigger_attendance_check,
+			complete_stop,
+		)
+
+		doc = self._make_two_stop_manifest()
+		trigger_attendance_check(doc.name, 1)
+		trigger_attendance_check(doc.name, 2)
+		# Completing the final (active) stop locks everything.
+		sheet = complete_stop(doc.name, 2)
+		self.assertEqual(sheet["active_stop_sequence"], 3)
+		self.assertTrue(sheet["all_completed"])
+		self.assertTrue(all(s["status"] == "Completed" for s in sheet["stops"]))
 

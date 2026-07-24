@@ -144,6 +144,14 @@ def get_project_custom_fields():
                 "translatable": 1
             },
             {
+                "fieldname": "custom_sprint_prefix",
+                "label": "Sprint Prefix",
+                "fieldtype": "Data",
+                "insert_after": "type",
+                "depends_on": "eval: doc.type==\"SCRUM\"",
+                "mandatory_depends_on": "eval: doc.type==\"SCRUM\"",
+            },
+            {
                 "fieldname": "total_expense_claim",
                 "label": "Total Expense Claim (via Expense Claims)",
                 "fieldtype": "Currency",

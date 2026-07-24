@@ -93,382 +93,14 @@ def get_route_planner_data():
                 "is_leased":     v.one_fm_vehicle_category == "Leased"
             })
 
-        # ── 2. Shipment cards ────────────────────────────────────────────
-        nested_map = get_grouped_employees_by_accommodation()
-
-        # Batch resolve all employee names + mobile numbers up front
-        all_emp_ids = set()
-        for acc_data in nested_map.values():
-            for emp_list in acc_data["shifts"].values():
-                all_emp_ids.update(emp_list)
-
-        emp_name_map = {
-            e.name: {"employee_name": e.employee_name, "cell_number": e.cell_number or ""}
-            for e in frappe.get_all("Employee",
-                filters={"name": ["in", list(all_emp_ids)]},
-                fields=["name", "employee_name", "cell_number"]
-            )
-        }
-
-        def emp_to_obj(emp_id):
-            """Convert employee ID to {name, mobile} dict for frontend call action."""
-            info = emp_name_map.get(emp_id, {})
-            if isinstance(info, dict):
-                return {"id": emp_id, "name": info.get("employee_name", emp_id), "mobile": info.get("cell_number", "")}
-            return {"id": emp_id, "name": info or emp_id, "mobile": ""}
-
-        # Batch-fetch all shift docs in one query (instead of per-shift frappe.get_doc)
-        all_shift_names = set()
-        for acc_data in nested_map.values():
-            all_shift_names.update(acc_data["shifts"].keys())
-
-        shift_doc_map = {}
-        if all_shift_names:
-            for s in frappe.get_all("Operations Shift",
-                filters={"name": ["in", list(all_shift_names)]},
-                fields=["name", "site", "start_time", "end_time", "expected_arrival_time_at_site"]
-            ):
-                shift_doc_map[s.name] = s
-
-        # Batch-fetch all site locations in one query
-        all_sites = list({s.site for s in shift_doc_map.values() if s.site})
-        site_location_map = {}
-        if all_sites:
-            for row in frappe.get_all("Operations Site",
-                filters={"name": ["in", all_sites]},
-                fields=["name", "site_location"]
-            ):
-                site_location_map[row.name] = row.site_location or row.name
-
-        # Batch-fetch all OSM mappings in two queries (parent + child)
-        osm_by_site = {}
-        if all_sites:
-            osm_records = frappe.get_all("Site Transport Stop Location",
-                filters={"site_arrangement": "One Site Many Locations", "site": ["in", all_sites]},
-                fields=["name", "site"]
-            )
-            if osm_records:
-                osm_parent_names = [r.name for r in osm_records]
-                osm_child_rows = frappe.get_all("Site To Location Mapping",
-                    filters={"parent": ["in", osm_parent_names]},
-                    fields=["parent", "location"]
-                )
-                osm_site_lookup = {r.name: r.site for r in osm_records}
-                for child in osm_child_rows:
-                    site = osm_site_lookup.get(child.parent)
-                    if site:
-                        coords = get_coords_cached("Location", child.location)
-                        if coords:
-                            osm_by_site.setdefault(site, []).append({"name": child.location, "coords": coords})
-
-        # Batch-fetch all OLM mappings in two queries
-        # Filter at DB level by sites IN all_sites (fix #1: avoid loading all rows)
-        olm_by_site = {}
-        olm_doc_map = {}
-        if all_sites:
-            olm_child_rows = frappe.get_all("Location To Site Mapping",
-                filters={"parenttype": "Site Transport Stop Location", "sites": ["in", all_sites]},
-                fields=["parent", "sites"]
-            )
-            olm_parent_names = set()
-            for child in olm_child_rows:
-                olm_by_site.setdefault(child.sites, []).append(child.parent)
-                olm_parent_names.add(child.parent)
-            if olm_parent_names:
-                for doc in frappe.get_all("Site Transport Stop Location",
-                    filters={"name": ["in", list(olm_parent_names)], "site_arrangement": "One Location Many Sites"},
-                    fields=["name", "transport_stop_location"]
-                ):
-                    olm_doc_map[doc.name] = doc
-
-        # ── Build shipment cards ──
-        shipment_cards = []
-
-        for acc_name, acc_data in nested_map.items():
-            lookup_id  = acc_data["lookup_id"]
-            acc_coords = get_coords_cached("Accommodation", lookup_id)
-            if not acc_coords:
-                continue
-
-            olm_groups = {}
-
-            for shift_name, employee_list in acc_data["shifts"].items():
-                shift_doc = shift_doc_map.get(shift_name)
-                if not shift_doc:
-                    continue
-
-                operations_site = shift_doc.site
-                headcount       = len(employee_list)
-                site_location   = site_location_map.get(operations_site, operations_site)
-
-                start_utc = to_utc(shift_doc.start_time)
-                end_utc   = to_utc(shift_doc.end_time)
-
-                # Expected arrival logic
-                expected_arrival = shift_doc.expected_arrival_time_at_site
-                use_expected = False
-                if expected_arrival and str(expected_arrival) != str(shift_doc.start_time):
-                    effective_start_utc = to_utc(expected_arrival)
-                    if effective_start_utc < end_utc:
-                        use_expected = True
-
-                if use_expected:
-                    outbound_window_start = fmt(effective_start_utc)
-                    outbound_window_end   = fmt(effective_start_utc)
-                else:
-                    outbound_window_start = fmt(start_utc - timedelta(minutes=PICKUP_BUFFER))
-                    outbound_window_end   = fmt(start_utc)
-
-                employees_named = [emp_to_obj(e) for e in employee_list]
-
-                handled = False
-
-                # ── OSM (pre-fetched) ──
-                all_osm_locations = osm_by_site.get(operations_site, [])
-
-                # (handled already set above)
-
-                if all_osm_locations:
-                    handled = True
-                    num_locs = len(all_osm_locations)
-                    base_h   = headcount // num_locs
-                    extra_h  = headcount % num_locs
-                    emp_idx  = 0
-
-                    for i, loc in enumerate(all_osm_locations):
-                        current_h     = base_h + (1 if i < extra_h else 0)
-                        loc_employees = employee_list[emp_idx:emp_idx + current_h]
-                        emp_idx      += current_h
-                        if current_h == 0:
-                            continue
-
-                        card_id = f"{acc_name}_{shift_name}_{loc['name']}"
-                        shipment_cards.append({
-                            "id":                   card_id,
-                            "accommodation":        acc_name,
-                            "accommodation_coords": {"lat": acc_coords[0], "lng": acc_coords[1]},
-                            "shift_name":           shift_name,
-                            "site":                 operations_site,
-                            "site_location":        site_location,
-                            "stop_location":        loc["name"],
-                            "stop_coords":          {"lat": loc["coords"][0], "lng": loc["coords"][1]},
-                            "headcount":            current_h,
-                            "employees":            [emp_to_obj(e) for e in loc_employees],
-                            "outbound_window_start": outbound_window_start,
-                            "outbound_window_end":   outbound_window_end,
-                            "return_window_start":   fmt(end_utc),
-                            "return_window_end":     fmt(end_utc + timedelta(minutes=PICKUP_BUFFER)),
-                            "shift_start":           fmt(start_utc),
-                            "shift_end":             fmt(end_utc),
-                            "type":                 "OSM"
-                        })
-
-                # ── OLM (pre-fetched) ──
-                olm_parents = olm_by_site.get(operations_site, [])
-                for parent_name in olm_parents:
-                    olm_doc = olm_doc_map.get(parent_name)
-                    if not olm_doc:
-                        continue
-
-                    handled = True
-                    stop_location = olm_doc.transport_stop_location
-                    start_dt      = frappe.utils.get_datetime(f"2000-01-01 {shift_doc.start_time}")
-                    time_key      = start_dt.hour
-                    group_key     = (stop_location, time_key)
-
-                    if group_key not in olm_groups:
-                        olm_groups[group_key] = {
-                            "shifts":    [],
-                            "headcount": 0,
-                            "employees": [],
-                            "shift_employees": {}  # shift_name → [emp_ids] for accurate per-site count
-                        }
-                    olm_groups[group_key]["shifts"].append(shift_doc)
-                    olm_groups[group_key]["headcount"] += headcount
-                    olm_groups[group_key]["employees"].extend(employee_list)
-                    olm_groups[group_key]["shift_employees"][shift_name] = employee_list
-
-                # ── Default fallback: DIRECT ──
-                if not handled:
-                    site_loc_name = site_location_map.get(operations_site)
-                    site_coords = get_coords_cached("Location", site_loc_name) if site_loc_name else None
-                    if site_coords:
-                        card_id = f"{acc_name}_{shift_name}_{site_loc_name}"
-                        shipment_cards.append({
-                            "id":                   card_id,
-                            "accommodation":        acc_name,
-                            "accommodation_coords": {"lat": acc_coords[0], "lng": acc_coords[1]},
-                            "shift_name":           shift_name,
-                            "site":                 operations_site,
-                            "site_location":        site_location,
-                            "stop_location":        site_loc_name,
-                            "stop_coords":          {"lat": site_coords[0], "lng": site_coords[1]},
-                            "headcount":            headcount,
-                            "employees":            employees_named,
-                            "outbound_window_start": outbound_window_start,
-                            "outbound_window_end":   outbound_window_end,
-                            "return_window_start":   fmt(end_utc),
-                            "return_window_end":     fmt(end_utc + timedelta(minutes=PICKUP_BUFFER)),
-                            "shift_start":           fmt(start_utc),
-                            "shift_end":             fmt(end_utc),
-                            "type":                 "DIRECT"
-                        })
-
-            # ── OLM cards ──
-            for group_key, group_data in olm_groups.items():
-                stop_location, time_key = group_key
-                stop_coords = get_coords_cached("Location", stop_location)
-                if not stop_coords:
-                    continue
-
-                shifts         = group_data["shifts"]
-                earliest_start = min(s.start_time for s in shifts)
-                latest_end     = max(s.end_time for s in shifts)
-                start_utc      = to_utc(earliest_start)
-                end_utc        = to_utc(latest_end)
-
-                site_locations = sorted({
-                    site_location_map.get(s.site, s.site)
-                    for s in shifts
-                })
-                real_shift_names = " · ".join(sorted(set(s.name for s in shifts)))
-
-                card_id = f"{acc_name}_Grouped_{stop_location}_{time_key}"
-
-                # Build per-site breakdown for OLM detail display
-                # Fix #2: use site_location_map (already batch-fetched) instead of N+1 db.get_value
-                # Fix #3: use shift_employees map for accurate per-site headcount
-                site_breakdown = []
-                site_shift_map = {}
-                shift_employees = group_data.get("shift_employees", {})
-                for s in shifts:
-                    site_name = s.site
-                    if site_name not in site_shift_map:
-                        site_shift_map[site_name] = {
-                            "site": site_name,
-                            "site_location": site_location_map.get(site_name, site_name),
-                            "shifts": [],
-                            "employee_count": 0
-                        }
-                    site_shift_map[site_name]["shifts"].append(s.name)
-                # Count employees per site using only shifts that belong to that site
-                for site_name, info in site_shift_map.items():
-                    site_emps = set()
-                    for s in shifts:
-                        if s.site == site_name:
-                            site_emps.update(shift_employees.get(s.name, []))
-                    info["employee_count"] = len(site_emps)
-                    site_breakdown.append(info)
-
-                shipment_cards.append({
-                    "id":                   card_id,
-                    "accommodation":        acc_name,
-                    "accommodation_coords": {"lat": acc_coords[0], "lng": acc_coords[1]},
-                    "shift_name":           real_shift_names,
-                    "site":                 " · ".join(sorted(set(s.site for s in shifts))),
-                    "site_location":        " · ".join(site_locations),
-                    "stop_location":        stop_location,
-                    "stop_coords":          {"lat": stop_coords[0], "lng": stop_coords[1]},
-                    "headcount":            group_data["headcount"],
-                    "employees":            [emp_to_obj(e) for e in group_data["employees"]],
-                    "outbound_window_start": fmt(start_utc - timedelta(minutes=PICKUP_BUFFER)),
-                    "outbound_window_end":   fmt(start_utc),
-                    "return_window_start":   fmt(end_utc),
-                    "return_window_end":     fmt(end_utc + timedelta(minutes=PICKUP_BUFFER)),
-                    "shift_start":           fmt(start_utc),
-                    "shift_end":             fmt(end_utc),
-                    "type":                 "OLM",
-                    "sites":                site_breakdown
-                })
-
-        # ── Cross-reference: find return-leg employees (previous shift at same stop) ──
-        # For each card, find employees from a DIFFERENT shift at the same stop_location
-        # whose shift ends around the time this card's shift starts.
-        # These are the employees finishing their shift who need to be picked up.
-        from datetime import datetime as dt_cls
-
-        def parse_iso(s):
-            try:
-                return dt_cls.fromisoformat(s.replace("Z", "+00:00")).replace(tzinfo=None)
-            except Exception:
-                return None
-
-        # Build stop_location → [card] index
-        stop_cards = {}
-        for card in shipment_cards:
-            sl = card.get("stop_location", "")
-            if sl:
-                if sl not in stop_cards:
-                    stop_cards[sl] = []
-                stop_cards[sl].append(card)
-
-        # For each card, find the "previous shift" card at the same stop
-        for card in shipment_cards:
-            sl = card.get("stop_location", "")
-            card_shift_start = parse_iso(card.get("shift_start", ""))
-            if not sl or not card_shift_start:
-                card["return_employees"] = []
-                continue
-
-            best_match = None
-            best_gap = float("inf")
-
-            for other in stop_cards.get(sl, []):
-                if other["id"] == card["id"]:
-                    continue  # skip self
-                if other.get("shift_name") == card.get("shift_name"):
-                    continue  # skip same shift
-
-                if other.get("accommodation") != card.get("accommodation"):
-                    continue
-
-                other_shift_end = parse_iso(other.get("shift_end", ""))
-                if not other_shift_end:
-                    continue
-
-                # How close is other's shift_end to this card's shift_start?
-                diff_seconds = (card_shift_start - other_shift_end).total_seconds()
-                
-                # other_shift_end should be around the same time as card_shift_start, or ANY TIME BEFORE it.
-                # Allow shift to end up to 1 hour after dropoff (vehicle waits for them)
-                # No upper limit on how long ago the shift ended (they wait for vehicle)
-                if -3600 <= diff_seconds:
-                    gap = abs(diff_seconds)
-                    if gap < best_gap:
-                        best_gap = gap
-                        best_match = other
-
-            if best_match:
-                card["return_employees"] = best_match.get("employees", [])
-            else:
-                card["return_employees"] = []
-
-        # ── Split each card into OUTBOUND + RETURN direction-specific cards ──
-        # This gives the dispatcher two separate draggable items per shift×stop
-        expanded_cards = []
-        for card in shipment_cards:
-            original_id = card["id"]
-
-            # Outbound card — employees going TO the site
-            out_card = {**card}
-            out_card["id"] = f"{original_id}_OUT"
-            out_card["direction"] = "OUTBOUND"
-            out_card["shift_direction_label"] = "\u2192 Outbound (To Site)"
-            out_card["pair_id"] = original_id  # links OUT ↔ RET
-            expanded_cards.append(out_card)
-
-            # Return card — employees coming BACK from the site
-            ret_employees = card.get("return_employees", [])
-            ret_card = {**card}
-            ret_card["id"] = f"{original_id}_RET"
-            ret_card["direction"] = "RETURN"
-            ret_card["shift_direction_label"] = "\u2190 Return (From Site)"
-            ret_card["pair_id"] = original_id  # links OUT ↔ RET
-            ret_card["headcount"] = len(ret_employees) if ret_employees else card["headcount"]
-            ret_card["employees"] = ret_employees if ret_employees else card["employees"]
-            expanded_cards.append(ret_card)
-
-        shipment_cards = expanded_cards
+        # ── 2. Shipment cards (materialized in the backend) ──
+        # Cards are now generated by
+        # shipment_generator.generate_transportation_shipments and stored as
+        # Transportation Shipment records; we read them here instead of
+        # recomputing the accommodation/shift demand on every page load.
+        shipment_cards = _build_transportation_shipment_cards(
+            fmt, to_utc, get_coords_cached, timedelta
+        )
 
         return {
             "status":         "ok",
@@ -1159,6 +791,251 @@ def get_route_plans():
     return plans
 
 
+SHIPMENT_CARD_PREFIX = "TSHIP-"
+
+
+def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedelta):
+    """Return draggable cards for Transportation Shipment records.
+
+    Each shipment renders as a single compact card (one per shipment) exposing
+    the fields the pool template and placement logic consume: headcount, its
+    routing-type badge, destination and a time window. Card ids are namespaced
+    with ``TSHIP-`` so save_assignments can flip the shipment to Assigned when
+    the card is dropped on a vehicle.
+
+    Both Unassigned and Assigned shipments are returned: the frontend hides the
+    Assigned ones from the pool via its ``assignedCards`` set, but keeps them in
+    ``shipment_cards`` so placed blocks can still resolve their card (needed for
+    trip chaining, block detail, and manifest building after a reload).
+    """
+    cards = []
+    shipments = frappe.get_all(
+        "Transportation Shipment",
+        filters={"status": ["in", ["Unassigned", "Assigned"]]},
+        fields=[
+            "name", "accommodation", "accommodation_name", "operations_shift",
+            "operations_site", "stop_location", "headcount", "trip_direction",
+            "routing_type_badge", "start_time", "end_time", "from_date", "to_date",
+            "source_doctype", "source_docname", "pair_group",
+        ],
+    )
+    if not shipments:
+        return cards
+
+    ship_names = [s.name for s in shipments]
+    emp_rows = frappe.get_all(
+        "Transportation Shipment Employee",
+        filters={"parent": ["in", ship_names], "parenttype": "Transportation Shipment"},
+        fields=["parent", "employee_id", "employee_name", "cell_number"],
+        order_by="idx asc",
+    )
+
+    # Flag which passengers are Rambo relievers (filling in for a shift) so the
+    # canvas detail panel can label regular staff vs replacements (MA3-12 AC6).
+    # Reliever status is a role-level attribute on the Employee master.
+    reliever_ids = set()
+    passenger_ids = list({row.employee_id for row in emp_rows if row.employee_id})
+    if passenger_ids:
+        reliever_ids = {
+            e.name
+            for e in frappe.get_all(
+                "Employee",
+                filters={"name": ["in", passenger_ids], "custom_is_rambo_reliever": 1},
+                fields=["name"],
+            )
+        }
+
+    emps_by_ship = {}
+    for row in emp_rows:
+        emps_by_ship.setdefault(row.parent, []).append({
+            "id": row.employee_id,
+            "name": row.employee_name or row.employee_id,
+            "mobile": row.cell_number or "",
+            "is_reliever": row.employee_id in reliever_ids,
+        })
+
+    # Fallback times for shipments without an Operations Shift (ad-hoc journeys).
+    trq_names = list({
+        s.source_docname for s in shipments
+        if s.source_doctype == "Trip Request" and s.source_docname
+    })
+    trq_time_map = {}
+    if trq_names:
+        for trq in frappe.get_all(
+            "Trip Request",
+            filters={"name": ["in", trq_names]},
+            fields=["name", "departure_time", "return_time"],
+        ):
+            trq_time_map[trq.name] = trq
+
+    for s in shipments:
+        try:
+            employees = emps_by_ship.get(s.name, [])
+
+            trq = trq_time_map.get(s.source_docname) if s.source_docname else None
+            dep = s.start_time or (trq.departure_time if trq else None) or "06:00:00"
+            ret = s.end_time or (trq.return_time if trq else None) or "18:00:00"
+
+            dep_utc = to_utc(str(dep))
+            ret_utc = to_utc(str(ret))
+            if ret_utc <= dep_utc:
+                ret_utc = dep_utc + timedelta(hours=1)
+
+            stop_coords = get_coords_cached("Location", s.stop_location) if s.stop_location else None
+            acc_coords = get_coords_cached("Accommodation", s.accommodation) if s.accommodation else None
+
+            direction = "RETURN" if s.trip_direction == "Return" else "OUTBOUND"
+            badge = (s.routing_type_badge or "DIRECT").upper()
+            destination = s.stop_location or s.operations_site or ""
+
+            cards.append({
+                "id":                    f"{SHIPMENT_CARD_PREFIX}{s.name}",
+                "shipment":              s.name,
+                "is_shipment_doc":       True,
+                "accommodation":         s.accommodation_name or s.accommodation or "—",
+                "accommodation_coords":  {"lat": acc_coords[0], "lng": acc_coords[1]} if acc_coords else None,
+                "shift_name":            s.operations_shift or "Ad-hoc",
+                "site":                  s.operations_site or "",
+                "site_location":         destination,
+                "stop_location":         s.stop_location or "",
+                "stop_coords":           {"lat": stop_coords[0], "lng": stop_coords[1]} if stop_coords else None,
+                "headcount":             s.headcount or len(employees),
+                "employees":             employees,
+                "return_employees":      [],
+                "from_date":             str(s.from_date) if s.from_date else None,
+                "to_date":               str(s.to_date) if s.to_date else None,
+                "outbound_window_start": fmt(dep_utc - timedelta(minutes=PICKUP_BUFFER)),
+                "outbound_window_end":   fmt(dep_utc),
+                "return_window_start":   fmt(ret_utc),
+                "return_window_end":     fmt(ret_utc + timedelta(minutes=PICKUP_BUFFER)),
+                "shift_start":           fmt(dep_utc),
+                "shift_end":             fmt(ret_utc),
+                "type":                  badge,
+                "direction":             direction,
+                "pair_id":               f"{SHIPMENT_CARD_PREFIX}{s.pair_group}" if s.pair_group else f"{SHIPMENT_CARD_PREFIX}{s.name}",
+                "shift_direction_label": "→ Outbound (To Site)" if direction == "OUTBOUND" else "← Return (From Site)",
+            })
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "Transportation Shipment Card Build Error")
+            continue
+
+    return cards
+
+
+def _shipment_from_card_id(card_id: str) -> str:
+    """Extract the Transportation Shipment name from a namespaced card id.
+
+    Returns an empty string for cards that are not backed by a shipment doc.
+    """
+    if not card_id or not card_id.startswith(SHIPMENT_CARD_PREFIX):
+        return ""
+    name = card_id[len(SHIPMENT_CARD_PREFIX):]
+    for suffix in ("_OUTBOUND", "_RETURN", "_OUT", "_RET"):
+        if name.endswith(suffix):
+            name = name[: -len(suffix)]
+            break
+    return name
+
+
+def _normalize_direction(value: str) -> str:
+    """Collapse the two direction vocabularies onto a single OUTBOUND/RETURN flag.
+
+    Shipment docs store ``trip_direction`` as "Outward"/"Return"; the canvas swim
+    items and Route Plan Assignment rows carry "OUTBOUND"/"RETURN". Both map to the
+    same flag so a companion match can validate direction across the vocabularies.
+    """
+    return "RETURN" if (value or "").strip().upper().startswith("RET") else "OUTBOUND"
+
+
+def _sync_shipment_statuses(items, previously_linked=None):
+    """Reconcile Transportation Shipment status with the saved canvas state.
+
+    Shipments placed on a vehicle become Assigned; shipments this plan carried
+    before but no longer places revert to Unassigned. Uses db.set_value to
+    update the status directly without re-running the shipment controller.
+
+    A card is only counted as Assigned when the swim item's direction flag matches
+    the shipment's own trip_direction. The outbound and return legs of one demand
+    share a pair group (the trip_group hash), so this direction check keeps an
+    outbound placement from ever flipping the paired return card to Assigned, and
+    vice-versa — the two legs stay independently assignable to different vehicles
+    (Multi-Day Lane Replication).
+    """
+    # Resolve each placed card to the direction(s) it was dropped in.
+    placed_dirs_by_shipment = {}
+    for item in items:
+        name = _shipment_from_card_id(item.get("cardId", ""))
+        if name:
+            placed_dirs_by_shipment.setdefault(name, set()).add(
+                _normalize_direction(item.get("direction", ""))
+            )
+
+    # Companion selection: a shipment is Assigned only when it exists AND the
+    # direction it was placed in matches its own trip_direction (trip_group hash
+    # AND direction flag — never one leg sweeping the other).
+    assigned = set()
+    if placed_dirs_by_shipment:
+        shipment_dir = {
+            row.name: _normalize_direction(row.trip_direction)
+            for row in frappe.get_all(
+                "Transportation Shipment",
+                filters={"name": ["in", list(placed_dirs_by_shipment)]},
+                fields=["name", "trip_direction"],
+            )
+        }
+        for name, placed_dirs in placed_dirs_by_shipment.items():
+            own_dir = shipment_dir.get(name)
+            if own_dir is None:
+                continue  # shipment vanished between save and sync
+            if own_dir in placed_dirs:
+                assigned.add(name)
+            else:
+                frappe.log_error(
+                    f"Skipped assigning {name}: placed as {sorted(placed_dirs)} but "
+                    f"shipment direction is {own_dir}.",
+                    "Transportation Shipment Direction Mismatch",
+                )
+
+    for name in assigned:
+        if frappe.db.get_value("Transportation Shipment", name, "status") != "Assigned":
+            frappe.db.set_value("Transportation Shipment", name, "status", "Assigned")
+
+    # Revert only shipments this plan dropped — never touch shipments that are
+    # placed in a different Route Plan.
+    for name in (previously_linked or set()):
+        if name and name not in assigned and frappe.db.exists("Transportation Shipment", name):
+            frappe.db.set_value("Transportation Shipment", name, "status", "Unassigned")
+
+
+def _link_shipment_on_manifest_rows(manifest_doc, v_rows, card_emp_map):
+    """Set transportation_shipment on manifest detail rows for shipment blocks.
+
+    Builds an employee -> shipment map from this vehicle's shipment-backed
+    assignment rows and stamps it onto the matching manifest detail rows.
+    Returns True if any row was changed. Only ever sets an extra reference
+    field, so it never disturbs the reliever/attendance sync.
+    """
+    emp_to_ship = {}
+    for row in v_rows:
+        if not row.transportation_shipment:
+            continue
+        for emp in card_emp_map.get(row.card_id, []):
+            emp_id = emp.get("id")
+            if emp_id:
+                emp_to_ship[emp_id] = row.transportation_shipment
+
+    if not emp_to_ship:
+        return False
+
+    changed = False
+    for detail in manifest_doc.transportation_manifest_details:
+        shipment = emp_to_ship.get(detail.employee)
+        if shipment and detail.transportation_shipment != shipment:
+            detail.transportation_shipment = shipment
+            changed = True
+    return changed
+
+
 @frappe.whitelist()
 def save_assignments(plan_name: str, swim_items: str, assigned_cards: str):
     """Save route planner swim items into a Route Plan DocType."""
@@ -1172,26 +1049,39 @@ def save_assignments(plan_name: str, swim_items: str, assigned_cards: str):
     doc = frappe.get_doc("Route Plan", plan_name)
     doc.check_permission("write")
 
+    # Remember shipments this plan previously carried so we can revert only the
+    # ones this plan drops (never touching shipments placed in another plan).
+    previously_linked = {
+        row.transportation_shipment for row in doc.assignments if row.transportation_shipment
+    }
+
     # Clear existing assignments and rebuild
     doc.assignments = []
     for item in items:
+        shipment = _shipment_from_card_id(item.get("cardId", ""))
         doc.append("assignments", {
-            "card_id":       item.get("cardId", ""),
-            "vehicle":       item.get("vehicleId", ""),
-            "direction":     item.get("direction", ""),
-            "stop_index":    item.get("stopIndex", 0),
-            "trip_group":    item.get("tripId", ""),
-            "trip_name":     item.get("tripName", ""),
-            "headcount":     item.get("headcount", 0),
-            "start_time":    item.get("start", ""),
-            "end_time":      item.get("end", ""),
-            "site":          item.get("_site", ""),
-            "shift":         item.get("_shift", ""),
-            "accommodation": item.get("_accommodation", ""),
-            "stop_location": item.get("_stopLocation", ""),
+            "card_id":                 item.get("cardId", ""),
+            "transportation_shipment": shipment,
+            "vehicle":                 item.get("vehicleId", ""),
+            "direction":               item.get("direction", ""),
+            "stop_index":              item.get("stopIndex", 0),
+            "trip_group":              item.get("tripId", ""),
+            "trip_name":               item.get("tripName", ""),
+            "headcount":               item.get("headcount", 0),
+            "start_time":              item.get("start", ""),
+            "end_time":                item.get("end", ""),
+            "site":                    item.get("_site", ""),
+            "shift":                   item.get("_shift", ""),
+            "accommodation":           item.get("_accommodation", ""),
+            "stop_location":           item.get("_stopLocation", ""),
         })
 
     doc.save(ignore_permissions=False)
+
+    # Keep persisted Transportation Shipment records in sync with the canvas:
+    # any shipment now placed on a vehicle becomes Assigned; any shipment this
+    # plan dropped back into the pool reverts to Unassigned.
+    _sync_shipment_statuses(items, previously_linked)
 
     return {
         "status": "ok",
@@ -1363,6 +1253,32 @@ def get_manifest_data_for_plan(plan_name: str):
 		card_return_emp_map[card["id"]] = card.get("return_employees", [])
 		card_headcount_map[card["id"]] = card.get("headcount", 0)
 
+	# Supplement rosters for shipment-backed assignment rows. Once a shipment is
+	# Assigned it no longer surfaces as an Unassigned pool card above, so pull its
+	# employee list straight from the shipment document instead.
+	shipment_by_card = {
+		row.card_id: row.transportation_shipment
+		for row in doc.assignments
+		if row.transportation_shipment and row.card_id not in card_emp_map
+	}
+	if shipment_by_card:
+		ship_names = list({v for v in shipment_by_card.values() if v})
+		emps_by_ship = {}
+		for r in frappe.get_all(
+			"Transportation Shipment Employee",
+			filters={"parent": ["in", ship_names], "parenttype": "Transportation Shipment"},
+			fields=["parent", "employee_id", "employee_name", "cell_number"],
+			order_by="idx asc",
+		):
+			emps_by_ship.setdefault(r.parent, []).append(
+				{"id": r.employee_id, "name": r.employee_name or r.employee_id, "mobile": r.cell_number or ""}
+			)
+		for card_id, ship_name in shipment_by_card.items():
+			emps = emps_by_ship.get(ship_name, [])
+			card_emp_map[card_id] = emps
+			card_return_emp_map[card_id] = []
+			card_headcount_map[card_id] = len(emps)
+
 	# ── Build manifest data structure ──
 	shipments = []
 	vehicles_list = []
@@ -1400,6 +1316,20 @@ def get_manifest_data_for_plan(plan_name: str):
 		v_rows = [row for row in doc.assignments if row.vehicle == v_id]
 		rows_changed = sync_manifest_details(manifest_doc, v_rows, card_emp_map, card_return_emp_map)
 
+		# Stamp the source shipment onto the compiled manifest detail rows so the
+		# vehicle's manifest array references the Transportation Shipment record.
+		if _link_shipment_on_manifest_rows(manifest_doc, v_rows, card_emp_map):
+			rows_changed = True
+
+		# Recompute per-camp stop numbering in memory so existing manifests pick up
+		# the current sequencing rule (per unique camp, incl. Direct) even when their
+		# rows are otherwise unchanged — the manifest page's per-camp banners + lock
+		# depend on it (MA2-11). Persist if the numbers actually shifted.
+		_old_seqs = [(r.name, r.stop_sequence) for r in manifest_doc.transportation_manifest_details]
+		manifest_doc.populate_stop_sequence_and_pickup_accommodation()
+		if _old_seqs != [(r.name, r.stop_sequence) for r in manifest_doc.transportation_manifest_details]:
+			rows_changed = True
+
 		if manifest_doc.is_new():
 			manifest_doc.insert()
 		elif rows_changed:
@@ -1407,6 +1337,18 @@ def get_manifest_data_for_plan(plan_name: str):
 			manifest_doc.save()
 
 		manifests[v_id] = manifest_doc
+
+	# Resolve Accommodation display labels once (collapsing Mahboula sub-camps),
+	# so the manifest page can group boarding staff camp-by-camp (MA2-11).
+	acc_label_cache = {}
+
+	def _acc_label(acc):
+		if not acc:
+			return None
+		if acc not in acc_label_cache:
+			lbl = frappe.db.get_value("Accommodation", acc, "accommodation") or acc
+			acc_label_cache[acc] = "Mahboula Camp" if lbl in MAHBOULA_LABELS else lbl
+		return acc_label_cache[acc]
 
 	def enrich_employees(emp_list, vehicle_id, stop_location, trip_id, is_return):
 		manifest_doc = manifests.get(vehicle_id)
@@ -1447,6 +1389,9 @@ def get_manifest_data_for_plan(plan_name: str):
 						break
 						
 			emp_copy = dict(emp)
+			# Manifest link is stamped regardless of match so the page can wire the
+			# per-camp attendance-check trigger/lock to the right manifest (MA2-11).
+			emp_copy["manifest"] = manifest_doc.name if not manifest_doc.is_new() else None
 			if matching_row:
 				emp_copy["row_id"] = matching_row.name
 				emp_copy["attendance_status"] = matching_row.attendance_status
@@ -1454,6 +1399,11 @@ def get_manifest_data_for_plan(plan_name: str):
 				emp_copy["qoa_reason"] = matching_row.qoa_reason
 				emp_copy["requires_reliever"] = matching_row.requires_reliever
 				emp_copy["reliever_employee"] = matching_row.reliever_employee
+				# Pickup camp + stop sequence drive the DEPART camp banners and the
+				# strictly-sequential unlock (MA2-11).
+				emp_copy["pickup_accommodation"] = matching_row.pickup_accommodation
+				emp_copy["pickup_camp_label"] = _acc_label(matching_row.pickup_accommodation)
+				emp_copy["stop_sequence"] = matching_row.stop_sequence or 1
 				emp_copy["operations_shift"] = matching_row.operations_shift
 				emp_copy["operations_site"] = matching_row.operations_site
 				emp_copy["operations_role"] = matching_row.operations_role
@@ -1527,6 +1477,7 @@ def get_manifest_data_for_plan(plan_name: str):
 			acc_label = "Mahboula Camp"
 
 		vehicles_list.append({"label": v_label, "startLocation": None})
+		_mf = manifests.get(vid)
 		v_meta[v_label] = {
 			"accommodation": acc_label,
 			"driver": driver_name,
@@ -1535,6 +1486,10 @@ def get_manifest_data_for_plan(plan_name: str):
 			"license_plate": v_doc.get("license_plate", ""),
 			"make": v_doc.get("make", ""),
 			"type": v_doc.get("one_fm_vehicle_type", ""),
+			# Attendance-check lock state for this vehicle's manifest (MA2-11):
+			# active_stop_sequence drives which pickup camp is currently unlocked.
+			"manifest": _mf.name if (_mf and not _mf.is_new()) else None,
+			"active_stop_sequence": int(_mf.active_stop_sequence or 0) if _mf else 0,
 		}
 
 		# Sort items: trip stops by stopIndex, solo by start_time
@@ -1559,12 +1514,16 @@ def get_manifest_data_for_plan(plan_name: str):
 			i_s = row.start_time or ""
 			i_e = row.end_time or ""
 
-			# Calculate duration in seconds
+			# Calculate duration in seconds. start_time/end_time carry the multi-day
+			# lock lifespan in their DATE part, so we take only the time-of-day
+			# difference — the run itself is a single-day trip (a 6-day lock is still
+			# a ~1h daily ride); otherwise the manifest would report a multi-day
+			# travel duration.
 			try:
 				from datetime import datetime as dt_cls
 				dt_start = dt_cls.fromisoformat(i_s.replace("Z", "+00:00")).replace(tzinfo=None)
 				dt_end = dt_cls.fromisoformat(i_e.replace("Z", "+00:00")).replace(tzinfo=None)
-				d_sec = max(0, int((dt_end - dt_start).total_seconds()))
+				d_sec = int((dt_end - dt_start).total_seconds()) % 86400
 			except Exception:
 				d_sec = 0
 
@@ -1592,7 +1551,8 @@ def get_manifest_data_for_plan(plan_name: str):
 				nxt = v_rows[idx_r + 1]
 				try:
 					nxt_start = dt_cls.fromisoformat((nxt.start_time or "").replace("Z", "+00:00")).replace(tzinfo=None)
-					gap = max(0, int((nxt_start - dt_end).total_seconds()))
+					# Time-of-day gap only (ignore the multi-day lifespan date part).
+					gap = int((nxt_start - dt_end).total_seconds()) % 86400
 				except Exception:
 					gap = 0
 			else:
@@ -1609,11 +1569,13 @@ def get_manifest_data_for_plan(plan_name: str):
 		r_s = v_rows[0].start_time or ""
 		r_e = v_rows[-1].end_time or ""
 		try:
+			# Daily route span — time-of-day only, so a multi-day lock does not
+			# balloon the reported route/trip duration into days.
 			tot_ms = (dt_cls.fromisoformat(r_e.replace("Z", "+00:00")).replace(tzinfo=None)
-					  - dt_cls.fromisoformat(r_s.replace("Z", "+00:00")).replace(tzinfo=None)).total_seconds()
+					  - dt_cls.fromisoformat(r_s.replace("Z", "+00:00")).replace(tzinfo=None)).total_seconds() % 86400
 			trip_ms = sum(
-				max(0, (dt_cls.fromisoformat((r.end_time or "").replace("Z", "+00:00")).replace(tzinfo=None)
-						- dt_cls.fromisoformat((r.start_time or "").replace("Z", "+00:00")).replace(tzinfo=None)).total_seconds())
+				int((dt_cls.fromisoformat((r.end_time or "").replace("Z", "+00:00")).replace(tzinfo=None)
+						- dt_cls.fromisoformat((r.start_time or "").replace("Z", "+00:00")).replace(tzinfo=None)).total_seconds()) % 86400
 				for r in v_rows
 			)
 		except Exception:

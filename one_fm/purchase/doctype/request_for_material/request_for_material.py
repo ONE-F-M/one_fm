@@ -16,7 +16,7 @@ from frappe.utils.user import get_users_with_role
 from frappe.permissions import has_permission
 from erpnext.controllers.buying_controller import BuyingController
 from one_fm.purchase.doctype.item_reservation.item_reservation import get_item_balance
-from one_fm.utils import get_approver_user
+from one_fm.utils import get_approver_user, get_employee_site_supervisor
 from one_fm.processor import sendemail
 from one_fm.api.doc_events import get_employee_user_id
 from one_fm.utils import get_users_with_role_permitted_to_doctype
@@ -181,28 +181,45 @@ class RequestforMaterial(BuyingController):
                     item.requested_description = item.description
 
     def set_request_for_material_accepter_and_approver(self):
-        if not self.request_for_material_approver:
-            approver = False
-            if self.type == 'Project' and self.project:
-                approver = frappe.db.get_value('Project', self.project, 'project_manager')
-                if not approver:
-                    approver = frappe.db.get_single_value("Operation Settings", "default_operation_manager")
-                    if approver:
-                        self.request_for_material_approver = approver
-                        return
-            elif self.type in ['Individual', 'Department'] and self.employee:
-                approver = frappe.db.get_value('Employee', self.employee, 'reports_to')
-            elif self.type == 'Onboarding':
-                employee = frappe.db.exists("Employee", {'user_id': self.owner})
-                if employee:
-                    approver = frappe.db.get_value('Employee', employee, 'reports_to')
-            if approver:
-                request_for_material_approver = get_employee_user_id(approver)
-            else:
-                request_for_material_approver = frappe.db.get_value('Purchase Settings', None, 'request_for_material_approver')
-            if request_for_material_approver:
-                self.request_for_material_approver = request_for_material_approver
+       # The approver may only be auto-set/re-set for a newly created document
+        # or one still in the Draft workflow state.
+        can_reset = self.is_new() or self.workflow_state == "Draft"
 
+        # Fields whose change should trigger re-evaluation of the approver.
+        approver_fields = ["type", "project", "employee"]
+        fields_changed = any(self.has_value_changed(field) for field in approver_fields)
+
+        # Set the approver when it is empty, or re-set it when it is already set
+        # but a driving field changed on a new/Draft document. Otherwise keep it.
+        if self.request_for_material_approver and not (can_reset and fields_changed):
+            return
+
+        approver = self.get_request_for_material_approver()
+        if approver:
+            self.request_for_material_approver = approver
+
+    def get_request_for_material_approver(self):
+        approver = False
+        if self.type == 'Project' and self.project:
+            approver = frappe.db.get_value('Project', self.project, 'project_manager')
+            if not approver:
+                default_operation_manager = frappe.db.get_single_value("Operation Settings", "default_operation_manager")
+                if default_operation_manager:
+                    return default_operation_manager
+        elif self.type in ['Individual', 'Department'] and self.employee:
+            approver = frappe.db.get_value('Employee', self.employee, 'reports_to')
+            if not approver:
+                    # No Reports To set: fall back to the Site Supervisor of the
+                    # employee's Allocated Site (Employee.site -> Operations Site.site_supervisor)
+                    approver = get_employee_site_supervisor(self.employee)
+        elif self.type == 'Onboarding':
+            employee = frappe.db.exists("Employee", {'user_id': self.owner})
+            if employee:
+                approver = frappe.db.get_value('Employee', employee, 'reports_to')
+
+        if approver:
+            return get_employee_user_id(approver)
+        return frappe.db.get_value('Purchase Settings', None, 'request_for_material_approver')
     def validate_details_against_type(self):
         if self.type:
             if self.type == 'Individual':
@@ -553,6 +570,85 @@ def update_completed_purchase_qty(purchase_order, method):
                             frappe.InvalidStatusError)
 
                     mr_obj.update_purchased_qty(mr_item_rows)
+def notify_requester_on_full_receipt(doc, method):
+    """Email the RFM's "Requested By" user when a submitted Purchase Receipt completes
+    the linked Request for Material.
+
+    Hooked on Purchase Receipt on_submit only (never cancel / update_after_submit) so the
+    email fires strictly upon submission. Runs after ``update_received_qty`` so each RFM
+    item row already carries its aggregated ``received_qty``.
+
+    All of the following must hold to send:
+    - The PR is linked to an RFM (via ``custom_request_for_material`` or resolved through the PO).
+    - The RFM ``purpose`` is "Purchase" or "Sample Purchase".
+    - Every receivable RFM item row (has ``item_code`` and ``reject_item`` = 0) is fully
+      received, i.e. the computed pending quantity (``qty`` - ``received_qty``) is 0.
+
+    Sent once per RFM, guarded by the ``full_receipt_notified`` flag to avoid duplicate
+    emails on over-receipt or subsequent Purchase Receipts.
+    """
+    rfm_name = getattr(doc, "custom_request_for_material", None)
+    if not rfm_name:
+        rfm_name = get_rfm_in_purchase_receipt(doc)
+
+    if not rfm_name or not frappe.db.exists("Request for Material", rfm_name):
+        return
+
+    rfm = frappe.get_doc("Request for Material", rfm_name)
+
+    if rfm.purpose not in ("Purchase", "Sample Purchase"):
+        return
+
+    # Guard: only notify once, even if further Purchase Receipts are submitted later.
+    if rfm.get("full_receipt_notified"):
+        return
+
+    if not rfm.requested_by:
+        return
+
+    # Only rows that can actually be received via a Purchase Receipt count: those with an
+    # Item Code that are not rejected. Non-item / rejected rows never receive and must not
+    # permanently block the notification.
+    receivable_items = [d for d in rfm.items if d.item_code and not d.reject_item]
+    if not receivable_items:
+        return
+
+    # Pending Quantity == 0 for every receivable row (qty fully received).
+    fully_received = all(flt(d.qty) - flt(d.received_qty) <= 0 for d in receivable_items)
+    if not fully_received:
+        return
+
+    subject = _("Items Arrived: Purchase Receipt Submitted for RFM {0}").format(rfm.name)
+    message = build_full_receipt_email(rfm, receivable_items, doc)
+
+    send_email(rfm, [rfm.requested_by], message, subject)
+    rfm.db_set("full_receipt_notified", 1)
+
+
+def build_full_receipt_email(rfm, items, purchase_receipt):
+    """Render the HTML email body from the ``rfm_full_receipt_notification`` template:
+    salutation, intro, an item table (Item Name, Received Quantity, Warehouse) and a link
+    to the submitted Purchase Receipt. Table format follows the Frappe assignment-rule
+    notification standard; only Frappe/Bootstrap CSS classes are used (no inline styles)."""
+    return frappe.render_template(
+        "one_fm/templates/emails/rfm_full_receipt_notification.html",
+        context={
+            "requested_by": get_fullname(rfm.requested_by),
+            "rfm_name": rfm.name,
+            "items": [
+                {
+                    "item_name": d.item_name or d.requested_item_name or d.item_code,
+                    "received_qty": flt(d.received_qty),
+                    "warehouse": d.warehouse,
+                }
+                for d in items
+            ],
+            "pr_link": get_url(purchase_receipt.get_url()),
+            "pr_name": purchase_receipt.name,
+        },
+    )
+
+
 def send_email(doc, recipients, message, subject):
     try:
         sendemail(

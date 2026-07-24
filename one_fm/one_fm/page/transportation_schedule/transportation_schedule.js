@@ -80,11 +80,15 @@ function mountRoutePlannerApp(wrapper, data) {
                 searchQuery: '',
                 collapsedGroups: {},          // { [accommodation]: boolean }
                 canSave: false,
+                isGenerating: false,          // shipment generation in progress
                 stopDragSourceIndex: null,  // drag-reorder: source stop index
                 stopDragOverIndex: null,    // drag-reorder: hovered stop index
 
                 // ── Drag tooltip (5-min snap) ──
                 dragTooltip: null,          // { x, y, timeLabel } — floating HH:MM tooltip during block drag
+
+                // ── Multi-stop hover popup ──
+                hoverPopup: null,           // { x, y, groups:[{seq, accommodation, pax}] } — stop-sequence pax summary
 
                 // ── Plan management ──
                 currentPlan: null,        // { name, title, status, effective_from, effective_until }
@@ -100,6 +104,37 @@ function mountRoutePlannerApp(wrapper, data) {
         computed: {
             windowDurationMs() {
                 return this.windowEnd - this.windowStart;
+            },
+
+            // Vehicle ids whose lane is held by an active multi-day lock today —
+            // used to grey the lane and warn the dispatcher (TR-8). Only spans of
+            // more than one day (lockTo > lockFrom) count as a block-out.
+            lockedLaneIds() {
+                const todayStr = frappe.datetime.get_today();
+                const ids = new Set();
+                this.swimItems.forEach(i => {
+                    if (!(i.lockFrom && i.lockTo && i.lockTo > i.lockFrom)) return;
+                    if (i.lockFrom <= todayStr && todayStr <= i.lockTo) ids.add(i.vehicleId);
+                });
+                return ids;
+            },
+
+            // Vehicle id -> earliest UPCOMING multi-day lock start date. A future
+            // reservation is saved but not yet active today, so the lane shows a
+            // "reserved from <date>" badge even though the block itself is still
+            // hidden (TR-8). Locks active today (lockedLaneIds) take precedence.
+            upcomingLockByVehicle() {
+                const todayStr = frappe.datetime.get_today();
+                const map = {};
+                this.swimItems.forEach(i => {
+                    if (!(i.lockFrom && i.lockTo && i.lockTo > i.lockFrom)) return;
+                    const from = String(i.lockFrom).slice(0, 10);
+                    const to = String(i.lockTo).slice(0, 10);
+                    if (to < todayStr) return;      // expired
+                    if (from <= todayStr) return;   // active today, not "upcoming"
+                    if (!map[i.vehicleId] || from < map[i.vehicleId]) map[i.vehicleId] = from;
+                });
+                return map;
             },
 
             filteredPoolCards() {
@@ -170,7 +205,10 @@ function mountRoutePlannerApp(wrapper, data) {
             itemsByVehicle() {
                 const map = {};
                 this.planData.vehicles.forEach(v => { map[v.id] = []; });
+                // Only render items live today — future-dated placements wait for
+                // their start date, lapsed ones drop off (TR-8).
                 this.swimItems.forEach(item => {
+                    if (!this._liveToday(item)) return;
                     if (map[item.vehicleId] !== undefined) map[item.vehicleId].push(item);
                 });
 
@@ -424,6 +462,25 @@ function mountRoutePlannerApp(wrapper, data) {
                         return { item, card: card || {}, stopNum: idx + 1 };
                     });
             },
+            selectedTripStopsByCamp() {
+                // Group the trip's stops by their pickup accommodation camp, in the
+                // order each camp first appears. The detail panel renders one camp
+                // banner followed by only the stops that belong to it, so a chained
+                // trip spanning several camps reads camp-by-camp. stopNum is carried
+                // through unchanged so drag-reorder still keys off the global index.
+                const groups = [];
+                const index = {};
+                for (const stop of this.selectedTripStops) {
+                    const acc = (stop.card && stop.card.accommodation)
+                        ? stop.card.accommodation : '—';
+                    if (!(acc in index)) {
+                        index[acc] = groups.length;
+                        groups.push({ accommodation: acc, stops: [] });
+                    }
+                    groups[index[acc]].stops.push(stop);
+                }
+                return groups;
+            },
         },
 
         // ── Methods ────────────────────────────────────────────────────────
@@ -473,6 +530,17 @@ function mountRoutePlannerApp(wrapper, data) {
             /** Safe accessor: extract mobile from employee object. */
             empMobile(e) {
                 return (typeof e === 'object' && e !== null) ? (e.mobile || '') : '';
+            },
+
+            /** True when the employee is a Rambo reliever filling in for the shift. */
+            empIsReliever(e) {
+                return (typeof e === 'object' && e !== null) ? !!e.is_reliever : false;
+            },
+
+            /** Count of relievers in an employee list (regulars = length − this). */
+            relieverCount(emps) {
+                if (!Array.isArray(emps)) return 0;
+                return emps.filter(e => this.empIsReliever(e)).length;
             },
 
             /** Handle click on employee phone icon — tel: on mobile, clipboard on desktop. */
@@ -630,7 +698,57 @@ function mountRoutePlannerApp(wrapper, data) {
                 this.handleDrop(card, vehicle);
             },
 
+            // Return the swim item whose multi-day lock holds this vehicle today,
+            // ignoring blocks that belong to `excludeCardId`. Only a lock spanning
+            // more than one day (lockTo > lockFrom) blocks out the vehicle; a
+            // single-day run does not (TR-8).
+            vehicleLockToday(vehicleId, excludeCardId) {
+                const todayStr = frappe.datetime.get_today();
+                return this.swimItems.find(i => {
+                    if (i.vehicleId !== vehicleId) return false;
+                    if (excludeCardId && i.cardId === excludeCardId) return false;
+                    if (!(i.lockFrom && i.lockTo && i.lockTo > i.lockFrom)) return false;
+                    return i.lockFrom <= todayStr && todayStr <= i.lockTo;
+                }) || null;
+            },
+
+            // The [from, to] calendar span a swim item reserves. Items without an
+            // explicit lock window are ordinary single-day runs (today..today).
+            _lockDateRange(item) {
+                const today = frappe.datetime.get_today();
+                const from = item.lockFrom ? String(item.lockFrom).slice(0, 10) : today;
+                const to = item.lockTo ? String(item.lockTo).slice(0, 10) : from;
+                return [from, to];
+            },
+
+            // Mirror of the backend block-out check (route_plan.py): a candidate
+            // placement spanning [newFrom, newTo] on a vehicle conflicts when it
+            // overlaps an existing run's date range and at least one side is a
+            // multi-day lock. Expired locks and the card's own rows are ignored.
+            // Returns the conflicting swim item, or null. Lets the modal warn
+            // before a future-dated overlap would otherwise only fail at save.
+            _overlappingLock(vehicleId, newFrom, newTo, excludeCardId) {
+                const today = frappe.datetime.get_today();
+                const newMulti = newTo > newFrom;
+                return this.swimItems.find(i => {
+                    if (i.vehicleId !== vehicleId) return false;
+                    if (excludeCardId && i.cardId === excludeCardId) return false;
+                    const [ef, et] = this._lockDateRange(i);
+                    if (et < today) return false;                 // existing lock expired
+                    if (!newMulti && !(et > ef)) return false;    // both single-day: normal multi-trip
+                    return newFrom <= et && ef <= newTo;          // inclusive date-range overlap
+                }) || null;
+            },
+
             handleDrop(card, vehicle) {
+                // ── Multi-day vehicle lock (TR-8): reject a drop onto a lane whose
+                // vehicle is already held by another shipment's multi-day lock. ──
+                const lock = this.vehicleLockToday(vehicle.id, card.id);
+                if (lock) {
+                    frappe.throw(`Vehicle Locked: ${vehicle.label} is reserved for a multi-day run until ${lock.lockTo}. It cannot take another overlapping shipment.`);
+                    return;
+                }
+
                 // ── Seat capacity check (time-aware) ──
                 const peakLoad = this.peakLoadDuringCardWindows(card, vehicle.id);
 
@@ -652,10 +770,13 @@ function mountRoutePlannerApp(wrapper, data) {
                 const cardWindowEnd   = new Date(isOutbound ? card.outbound_window_end   : card.return_window_end).getTime();
                 const PROXIMITY_MS = 2 * 60 * 60 * 1000; // 2 hours
 
+                // Multi-camp trips are valid: a single vehicle may pick up from
+                // several accommodations on one run (e.g. Mahboula then Mangaf),
+                // so proximity — not a shared accommodation — decides chaining.
                 const nearbyBlocks = this.swimItems.filter(i => {
                     if (i.vehicleId !== vehicle.id) return false;
                     const existingCard = this.planData.shipment_cards.find(c => c.id === i.cardId);
-                    if (!existingCard || existingCard.accommodation !== card.accommodation) return false;
+                    if (!existingCard) return false;
                     const blockEnd = new Date(i.end).getTime();
                     const blockStart = new Date(i.start).getTime();
                     return blockEnd > (cardWindowStart - PROXIMITY_MS) && blockStart < (cardWindowEnd + PROXIMITY_MS);
@@ -677,14 +798,16 @@ function mountRoutePlannerApp(wrapper, data) {
                         const existingStops = nearbyBlocks.map(i => {
                             const c = this.planData.shipment_cards.find(sc => sc.id === i.cardId);
                             const siteName = c ? c.site_location : i.cardId;
+                            const campName = (c && c.accommodation) ? c.accommodation : '';
                             const dirBadge = i.direction === 'RETURN' ? '← RET' : '→ OUT';
-                            return `${siteName} <span style="font-size:11px;color:#888">(${dirBadge})</span>`;
+                            return `${campName ? '<strong>' + campName + '</strong> — ' : ''}${siteName} <span style="font-size:11px;color:#888">(${dirBadge})</span>`;
                         });
                         const newDirBadge = card.direction === 'RETURN' ? '← RET' : '→ OUT';
+                        const newCamp = card.accommodation ? `<strong>${card.accommodation}</strong> — ` : '';
                         frappe.confirm(
-                            `<strong>${vehicle.label}</strong> already has stops from <strong>${card.accommodation}</strong>:<br><br>` +
+                            `<strong>${vehicle.label}</strong> already has an active trip:<br><br>` +
                             existingStops.map((s, i) => `&nbsp;&nbsp;${i + 1}. ${s}`).join('<br>') +
-                            `<br><br>Add <strong>${card.site_location}</strong> <span style="font-size:11px;color:#888">(${newDirBadge})</span> as the next stop on this trip?`,
+                            `<br><br>Add ${newCamp}<strong>${card.site_location}</strong> <span style="font-size:11px;color:#888">(${newDirBadge})</span> as the next stop on this trip?`,
                             () => this._chainToTrip(card, tripMap[tripKeys[0]], vehicle.id),
                             () => this._doPlaceWithDialog(card, vehicle.id)
                         );
@@ -696,8 +819,9 @@ function mountRoutePlannerApp(wrapper, data) {
                             const sites = items.map(i => {
                                 const c = self.planData.shipment_cards.find(sc => sc.id === i.cardId);
                                 const siteName = c ? c.site_location : i.cardId;
+                                const campName = (c && c.accommodation) ? c.accommodation + ' — ' : '';
                                 const dir = i.direction === 'RETURN' ? '←' : '→';
-                                return `${dir} ${siteName}`;
+                                return `${dir} ${campName}${siteName}`;
                             });
                             const timeRange = self.fmtTime(items[0].start) + '–' + self.fmtTime(items[items.length - 1].end);
                             const tName = items.find(i => i.tripName)?.tripName;
@@ -715,8 +839,8 @@ function mountRoutePlannerApp(wrapper, data) {
                                 {
                                     fieldtype: 'HTML',
                                     options: `<p style="margin:0 0 12px;color:#555;font-size:13px">
-                                        <strong>${vehicle.label}</strong> has <strong>${tripKeys.length} trips</strong>
-                                        from <strong>${card.accommodation}</strong>. Choose which trip to add this stop to:</p>`
+                                        <strong>${vehicle.label}</strong> has <strong>${tripKeys.length} active trips</strong>.
+                                        Choose which trip to add <strong>${card.accommodation ? card.accommodation + ' — ' : ''}${card.site_location}</strong> to:</p>`
                                 },
                                 {
                                     fieldtype: 'Select', fieldname: 'trip_choice',
@@ -820,13 +944,46 @@ function mountRoutePlannerApp(wrapper, data) {
                         {
                             fieldtype: 'Int', fieldname: 'duration_min',
                             label: 'Trip Duration (minutes)', default: 60, reqd: 1
+                        },
+                        { fieldtype: 'Section Break', label: 'Multi-Day Vehicle Lock' },
+                        {
+                            fieldtype: 'Datetime', fieldname: 'start_datetime',
+                            label: 'Start Date Time',
+                            description: 'First day this run holds the vehicle. Defaults to the card\'s From Date (or today).',
+                            default: self._defaultLockStart(card)
+                        },
+                        { fieldtype: 'Column Break' },
+                        {
+                            fieldtype: 'Datetime', fieldname: 'end_datetime',
+                            label: 'End Date Time',
+                            description: 'Last day this run holds the vehicle. Leave blank for a continuous (open-ended) run.',
+                            default: self._defaultLockEnd(card)
                         }
                     ],
                     primary_action_label: 'Create Trip',
                     primary_action(vals) {
+                        const startDt = vals.start_datetime || '';
+                        const endDt = vals.end_datetime || '';
+                        if (startDt && startDt.slice(0, 10) < frappe.datetime.get_today()) {
+                            frappe.throw('Start Date Time cannot be in the past.');
+                            return;
+                        }
+                        if (startDt && endDt && startDt > endDt) {
+                            frappe.throw('Start Date Time must be on or before End Date Time.');
+                            return;
+                        }
+                        const newFrom = startDt ? startDt.slice(0, 10) : frappe.datetime.get_today();
+                        const newTo = endDt ? endDt.slice(0, 10) : newFrom;
+                        const clash = self._overlappingLock(vehicleId, newFrom, newTo, card.id);
+                        if (clash) {
+                            const [cf, ct] = self._lockDateRange(clash);
+                            frappe.throw(`Vehicle Reserved: ${self.vehicleLabelForItem({ vehicleId })} is already locked from ${cf} to ${ct} for an overlapping run. Choose different dates or another vehicle.`);
+                            return;
+                        }
                         d.hide();
                         const durMs = (vals.duration_min || 60) * 60000;
-                        self._doPlace(card, vehicleId, durMs, isOutbound, !isOutbound, 0, vals.trip_name || '');
+                        self._doPlace(card, vehicleId, durMs, isOutbound, !isOutbound, 0,
+                            vals.trip_name || '', startDt, endDt);
                     }
                 });
                 d.show();
@@ -950,7 +1107,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
             // ── Time-aware peak load helper ─────────────────────────────────
             _getLogicalTrips(vehicleId) {
-                const vi = this.swimItems.filter(i => i.vehicleId === vehicleId);
+                const vi = this.swimItems.filter(i => i.vehicleId === vehicleId && this._liveToday(i));
                 const tripsMap = {};
                 let soloIdx = 0;
                 
@@ -1057,22 +1214,124 @@ function mountRoutePlannerApp(wrapper, data) {
                                 ? 'Driving time from accommodation to site'
                                 : 'Driving time from site to accommodation',
                             default: 60, reqd: 1
+                        },
+                        { fieldtype: 'Section Break', label: 'Multi-Day Vehicle Lock' },
+                        {
+                            fieldtype: 'Datetime', fieldname: 'start_datetime',
+                            label: 'Start Date Time',
+                            description: 'First day this run holds the vehicle. Defaults to the card\'s From Date (or today).',
+                            default: self._defaultLockStart(card)
+                        },
+                        { fieldtype: 'Column Break' },
+                        {
+                            fieldtype: 'Datetime', fieldname: 'end_datetime',
+                            label: 'End Date Time',
+                            description: 'Last day this run holds the vehicle. Leave blank for a continuous (open-ended) run.',
+                            default: self._defaultLockEnd(card)
                         }
                     ],
                     primary_action_label: 'Place on Timeline',
                     primary_action(vals) {
+                        // ── Validate the multi-day lock window before placing ──
+                        const startDt = vals.start_datetime || '';
+                        const endDt = vals.end_datetime || '';
+                        if (startDt) {
+                            const today = frappe.datetime.get_today();
+                            if (startDt.slice(0, 10) < today) {
+                                frappe.throw('Start Date Time cannot be in the past.');
+                                return;
+                            }
+                        }
+                        if (startDt && endDt && startDt > endDt) {
+                            frappe.throw('Start Date Time must be on or before End Date Time.');
+                            return;
+                        }
+                        // Block a date range that overlaps an existing multi-day
+                        // lock on this vehicle — including future reservations —
+                        // before the drop is committed (mirrors the backend).
+                        const newFrom = startDt ? startDt.slice(0, 10) : frappe.datetime.get_today();
+                        const newTo = endDt ? endDt.slice(0, 10) : newFrom;
+                        const clash = self._overlappingLock(vehicleId, newFrom, newTo, card.id);
+                        if (clash) {
+                            const [cf, ct] = self._lockDateRange(clash);
+                            frappe.throw(`Vehicle Reserved: ${self.vehicleLabelForItem({ vehicleId })} is already locked from ${cf} to ${ct} for an overlapping run. Choose different dates or another vehicle.`);
+                            return;
+                        }
                         d.hide();
                         const bufferMs = (vals.buffer_min || 15) * 60000;
                         const transitMs = (vals.duration_min || 60) * 60000;
-                        self._doPlace(card, vehicleId, transitMs, isOutbound, !isOutbound, bufferMs, vals.trip_name || '');
+                        self._doPlace(card, vehicleId, transitMs, isOutbound, !isOutbound,
+                            bufferMs, vals.trip_name || '', startDt, endDt);
                     }
                 });
                 d.show();
             },
 
-            _doPlace(card, vehicleId, durMs, placeOutbound, placeReturn, bufferMs, tripName) {
+            // A placement is "bounded" (its lock can lapse) when it spans more than
+            // one day, or when its linked shipment carries a to_date. A single-day
+            // run with no to_date is an open-ended / continuous run that never
+            // lapses (AC2). Mirrors the backend _expired_assigned_shipments rule so
+            // the canvas and the expiry job agree on what "expired" means.
+            _isBoundedItem(item) {
+                const from = item.lockFrom ? String(item.lockFrom).slice(0, 10) : null;
+                const to = item.lockTo ? String(item.lockTo).slice(0, 10) : null;
+                if (from && to && to > from) return true;   // multi-day span
+                const card = this.planData.shipment_cards.find(c => c.id === item.cardId);
+                return !!(card && card.to_date);
+            },
+
+            // True when a swim item is active on the current system date. A future
+            // placement (lockFrom later than today) stays hidden until its start
+            // date; a bounded lapsed one (lockTo before today) drops off; a
+            // continuous run is always live. This is what makes a future-dated card
+            // wait for its start date and an expired one disappear (TR-8).
+            _liveToday(item) {
+                const t = frappe.datetime.get_today();
+                if (item.lockFrom && String(item.lockFrom).slice(0, 10) > t) return false;
+                if (this._isBoundedItem(item) && item.lockTo && String(item.lockTo).slice(0, 10) < t) return false;
+                return true;
+            },
+
+            // Serialize a render-position Date to an ISO stamp, replacing its
+            // calendar date with the lock lifespan date when one is set. The time
+            // of day (the daily trip window) is preserved either way.
+            _stampLifespan(renderDate, lockDate) {
+                const iso = new Date(renderDate).toISOString();
+                if (!lockDate) return iso;
+                return lockDate + iso.slice(10);
+            },
+
+            // Default the lock window's Start Date Time to the card's From Date,
+            // clamped to today: use From Date when it is today or later, otherwise
+            // fall back to today so the default never lands in the past (the "cannot
+            // be in the past" rule). Undated cards default to today. The time part
+            // is cosmetic — the block always runs at the card's own trip time.
+            _defaultLockStart(card) {
+                const today = frappe.datetime.get_today();
+                let day = today;
+                if (card && card.from_date) {
+                    const fd = String(card.from_date).slice(0, 10);
+                    day = fd > today ? fd : today;
+                }
+                return day + ' 00:00:00';
+            },
+
+            // Default the End Date Time to the card's To Date at end of day. Undated
+            // (continuous / standing) cards get a blank end — an open-ended lock.
+            _defaultLockEnd(card) {
+                if (card && card.to_date) return card.to_date + ' 23:59:59';
+                return '';
+            },
+
+            _doPlace(card, vehicleId, durMs, placeOutbound, placeReturn, bufferMs, tripName, startDatetime, endDatetime) {
                 bufferMs = bufferMs || 0;
                 tripName = tripName || '';
+                // The lock lifespan lives in the DATE part of the persisted
+                // start_time/end_time. We carry it separately on the swim item so
+                // the block still renders at today's daily trip time; persistence
+                // stamps the date onto the timestamps (see persistAssignments).
+                const lockFrom = startDatetime ? String(startDatetime).slice(0, 10) : null;
+                const lockTo = endDatetime ? String(endDatetime).slice(0, 10) : null;
                 const totalMs = bufferMs + durMs;
                 const outEnd = new Date(card.outbound_window_end);
                 const outStart = new Date(outEnd.getTime() - totalMs);
@@ -1091,7 +1350,8 @@ function mountRoutePlannerApp(wrapper, data) {
                         bufferMin: Math.round(bufferMs / 60000),
                         transitMin: Math.round(durMs / 60000),
                         tripId: autoTripId, tripName: tripName || null,
-                        stopIndex: 1
+                        stopIndex: 1,
+                        lockFrom, lockTo
                     });
                 }
                 if (placeReturn) {
@@ -1102,7 +1362,8 @@ function mountRoutePlannerApp(wrapper, data) {
                         bufferMin: Math.round(bufferMs / 60000),
                         transitMin: Math.round(durMs / 60000),
                         tripId: autoTripId, tripName: tripName || null,
-                        stopIndex: 1
+                        stopIndex: 1,
+                        lockFrom, lockTo
                     });
                 }
 
@@ -1116,10 +1377,21 @@ function mountRoutePlannerApp(wrapper, data) {
                 const dirLabel = (placeOutbound && placeReturn) ? 'Both trips'
                     : placeOutbound ? 'Outbound (→)' : 'Return (←)';
                 const tripNote = tripName ? ` · Trip: ${tripName}` : '';
-                frappe.show_alert({
-                    message: `${dirLabel} placed on ${this.vehicleLabelForItem({ vehicleId })} (${Math.round(durMs/60000)}min transit${bufferNote})${tripNote}`,
-                    indicator: 'green'
-                }, 4);
+
+                // A future-dated placement is saved now but only appears on the
+                // lane from its start date — tell the dispatcher so the "vanished"
+                // block isn't mistaken for a failed drop (TR-8).
+                if (lockFrom && String(lockFrom).slice(0, 10) > frappe.datetime.get_today()) {
+                    frappe.show_alert({
+                        message: `${dirLabel} scheduled on ${this.vehicleLabelForItem({ vehicleId })} — will appear on the lane from ${lockFrom}.`,
+                        indicator: 'blue'
+                    }, 6);
+                } else {
+                    frappe.show_alert({
+                        message: `${dirLabel} placed on ${this.vehicleLabelForItem({ vehicleId })} (${Math.round(durMs/60000)}min transit${bufferNote})${tripNote}`,
+                        indicator: 'green'
+                    }, 4);
+                }
             },
 
 
@@ -1127,7 +1399,9 @@ function mountRoutePlannerApp(wrapper, data) {
             checkConflicts() {
                 this.swimItems.forEach(i => { i.conflict = false; i.overcapacity = false; });
                 this.planData.vehicles.forEach(v => {
-                    const vi = this.swimItems.filter(i => i.vehicleId === v.id);
+                    // Only reconcile items live today; a future-dated placement
+                    // must not conflict with today's runs (TR-8).
+                    const vi = this.swimItems.filter(i => i.vehicleId === v.id && this._liveToday(i));
 
                     // Time overlap detection
                     for (let a = 0; a < vi.length; a++) {
@@ -1407,36 +1681,47 @@ function mountRoutePlannerApp(wrapper, data) {
                         const targetVehicle = self.planData.vehicles.find(v => v.label === label);
                         if (!targetVehicle) return;
 
-                        // Seat capacity check on target vehicle during this block's time
-                        const blockStart = new Date(item.start).getTime();
-                        const blockEnd = new Date(item.end).getTime();
+                        // The whole journey leg moves together (MA4-13 AC2): every stop
+                        // sharing this block's trip id AND direction. Outbound and return
+                        // legs stay independently assignable, so direction is part of the
+                        // match; a standalone block (no tripId) moves on its own.
+                        const journeyItems = item.tripId
+                            ? self.swimItems.filter(i =>
+                                i.tripId === item.tripId && i.direction === item.direction)
+                            : [item];
+                        const movingHeadcount = journeyItems.reduce((sum, i) => sum + (i.headcount || 0), 0);
+
+                        // Seat capacity check on the target vehicle across the journey's
+                        // combined time window. The selector excludes the current vehicle,
+                        // so none of the moving stops are already on the target.
+                        const blockStart = Math.min(...journeyItems.map(i => new Date(i.start).getTime()));
+                        const blockEnd = Math.max(...journeyItems.map(i => new Date(i.end).getTime()));
                         const logicalTrips = self._getLogicalTrips(targetVehicle.id);
                         const existingLoad = logicalTrips
-                            .filter(t => {
-                                return t.start < blockEnd && t.end > blockStart;
-                            })
+                            .filter(t => t.start < blockEnd && t.end > blockStart)
                             .reduce((sum, t) => sum + t.headcount, 0);
 
-                        if (existingLoad + item.headcount > targetVehicle.seats) {
+                        if (existingLoad + movingHeadcount > targetVehicle.seats) {
                             const shell = document.getElementById('rp-shell');
                             if (shell) {
                                 shell.style.transition = 'background-color 0.2s';
                                 shell.style.backgroundColor = '#ffebee';
                                 setTimeout(() => { shell.style.backgroundColor = ''; }, 400);
                             }
-                            frappe.throw(`Capacity Exceeded: Cannot assign ${item.headcount} employees to a ${targetVehicle.seats}-seater vehicle.`);
+                            frappe.throw(`Capacity Exceeded: Cannot assign ${movingHeadcount} employees to a ${targetVehicle.seats}-seater vehicle.`);
                             return;
                         }
 
-                        // Move the block
-                        item.vehicleId = targetVehicle.id;
+                        // Move every stop of the journey leg to the new vehicle/driver.
+                        journeyItems.forEach(i => { i.vehicleId = targetVehicle.id; });
                         self.checkConflicts();
                         self.canSave = self.assignedCards.size > 0;
                         self.persistAssignments();
                         self.selectedItem = null;
                         d.hide();
+                        const stopNote = journeyItems.length > 1 ? ` (${journeyItems.length} stops)` : '';
                         frappe.show_alert({
-                            message: `${dirLabel} moved to ${targetVehicle.label}`,
+                            message: `${dirLabel} moved to ${targetVehicle.label}${stopNote}`,
                             indicator: 'green'
                         });
                     }
@@ -1798,35 +2083,72 @@ function mountRoutePlannerApp(wrapper, data) {
                     is_default: Number(msg.is_default) || 0
                 };
 
-                // Restore swim items — convert ISO strings to Date,
-                // rebasing dates to today's timeline if the plan was saved on a different day.
-                // The planStart is always based on "today", so saved dates from yesterday
-                // would render off-screen without rebasing.
-                let parsedItems = items.map(i => ({
-                    ...i,
-                    start: new Date(i.start),
-                    end: new Date(i.end)
-                }));
+                // Restore swim items. start_time/end_time encode two things: the
+                // TIME-of-day is the daily trip window (drives render position) and
+                // the DATE is the multi-day lock lifespan. We split them here.
+                const dayMs = 24 * 3600000;
+                const todayStr = frappe.datetime.get_today();
 
-                if (parsedItems.length > 0) {
-                    // Find the earliest saved timestamp
-                    const earliestSaved = Math.min(...parsedItems.map(i => i.start.getTime()));
-                    // Calculate day offset: how many whole days between saved date and planStart
-                    const savedDay = new Date(earliestSaved);
-                    savedDay.setUTCHours(0, 0, 0, 0);
-                    const todayDay = new Date(this.planStart);
-                    todayDay.setUTCHours(0, 0, 0, 0);
-                    const dayOffsetMs = todayDay.getTime() - savedDay.getTime();
-
-                    // Only rebase if saved on a different calendar day
-                    if (Math.abs(dayOffsetMs) > 12 * 3600000) {  // >12h means different day
-                        parsedItems = parsedItems.map(i => ({
-                            ...i,
-                            start: new Date(i.start.getTime() + dayOffsetMs),
-                            end:   new Date(i.end.getTime() + dayOffsetMs)
-                        }));
+                const DEFAULT_DUR_MS = 60 * 60000;
+                let parsedItems = items.map(i => {
+                    const startD = new Date(i.start);
+                    const endD = new Date(i.end);
+                    // Daily trip length = time-of-day span; the % dayMs strips the
+                    // multi-day date component so the block is never days wide.
+                    // Guard a missing/invalid end_time (e.g. edited away on the
+                    // assignment) so the block falls back to a 1h daily bar instead
+                    // of collapsing to a NaN/zero-width invisible one.
+                    let dur;
+                    if (!i.end || isNaN(endD.getTime())) {
+                        dur = DEFAULT_DUR_MS;
+                    } else {
+                        dur = (((endD.getTime() - startD.getTime()) % dayMs) + dayMs) % dayMs;
+                        if (!dur) dur = DEFAULT_DUR_MS;
                     }
-                }
+                    return {
+                        ...i,
+                        start: startD,
+                        end: (!i.end || isNaN(endD.getTime())) ? new Date(startD.getTime() + dur) : endD,
+                        lockFrom: i.start ? String(i.start).slice(0, 10) : null,
+                        lockTo: i.end ? String(i.end).slice(0, 10) : null,
+                        _dailyDurMs: dur
+                    };
+                });
+
+                // ── Multi-day lifespan gate (TR-8) ──
+                // A placed block re-renders every day until the system date crosses
+                // its lock end, then disappears. Continuous cards (linked shipment
+                // has no to_date) are always shown; bounded cards stop once today
+                // passes the lock end. This is AC1's "disappear after To Date".
+                parsedItems = parsedItems.filter(i => {
+                    if (!this._isBoundedItem(i)) return true;   // continuous — keep
+                    const card = this.planData.shipment_cards.find(c => c.id === i.cardId);
+                    const endDate = i.lockTo
+                        ? String(i.lockTo).slice(0, 10)
+                        : (card && card.to_date ? String(card.to_date).slice(0, 10) : todayStr);
+                    return endDate >= todayStr;   // drop lapsed (release the lane)
+                });
+
+                // Rebase EACH block onto today's timeline independently, then
+                // re-derive its end from the daily trip length. Every block now
+                // carries its own lifespan start date (the DATE part of start_time),
+                // so a single shared offset is wrong: one block whose start sits in
+                // the past — an ongoing multi-day lock, or a row edited to a past
+                // date — would otherwise drag every block off-screen and blank the
+                // whole grid. Shifting per block by whole days (which preserves the
+                // UTC time-of-day, and so the render position) keeps each one in the
+                // current window on its own.
+                parsedItems = parsedItems.map(i => {
+                    let startMs = i.start.getTime();
+                    if (startMs < this.planStart.getTime()) {
+                        startMs += Math.ceil((this.planStart.getTime() - startMs) / dayMs) * dayMs;
+                    } else if (startMs > this.planEnd.getTime()) {
+                        startMs -= Math.ceil((startMs - this.planEnd.getTime()) / dayMs) * dayMs;
+                    }
+                    const start = new Date(startMs);
+                    const end = new Date(startMs + i._dailyDurMs);
+                    return { ...i, start, end };
+                });
 
                 this.swimItems = parsedItems;
                 this.assignedCards = new Set(cards);
@@ -1975,7 +2297,15 @@ function mountRoutePlannerApp(wrapper, data) {
 
 
             persistAssignments() {
-                if (!this.currentPlan) return; // no plan selected — skip
+                if (!this.currentPlan) {
+                    // Surface the silent failure: without a loaded Route Plan there
+                    // is nowhere to save, so the assignment would vanish on refresh.
+                    frappe.show_alert({
+                        message: 'No Route Plan is loaded — this assignment was NOT saved. Create or select a plan (and mark it Default) first.',
+                        indicator: 'red'
+                    }, 6);
+                    return;
+                }
                 // Debounce: clear any pending save and schedule a new one
                 if (this._saveTimer) clearTimeout(this._saveTimer);
                 this._saveTimer = setTimeout(() => {
@@ -1984,8 +2314,11 @@ function mountRoutePlannerApp(wrapper, data) {
                         const card = this.planData.shipment_cards.find(c => c.id === i.cardId);
                         return {
                             ...i,
-                            start: new Date(i.start).toISOString(),
-                            end: new Date(i.end).toISOString(),
+                            // Persist the daily trip time (from the render position) but
+                            // stamp the multi-day lock lifespan onto the DATE part so
+                            // start_time/end_time carry both (TR-8).
+                            start: this._stampLifespan(i.start, i.lockFrom),
+                            end: this._stampLifespan(i.end, i.lockTo || i.lockFrom),
                             _site: card ? card.site : '',
                             _shift: card ? card.shift_name : '',
                             _accommodation: card ? card.accommodation : '',
@@ -2002,7 +2335,16 @@ function mountRoutePlannerApp(wrapper, data) {
                             assigned_cards: JSON.stringify(cards)
                         },
                         async: true,
-                        callback: () => { } // silent save
+                        callback: () => { }, // silent save on success
+                        error: () => {
+                            // A server-side validation (e.g. the vehicle-retention
+                            // STANDBY lock) rejected the drop. Frappe already shows
+                            // the thrown message; reload the plan so the phantom
+                            // block is removed and the canvas mirrors what persisted.
+                            if (this.currentPlan && this.currentPlan.name) {
+                                this.switchPlan(this.currentPlan.name);
+                            }
+                        }
                     });
                 }, 500); // 500ms debounce
             },
@@ -2056,6 +2398,51 @@ function mountRoutePlannerApp(wrapper, data) {
 
             bsel(item) {
                 return !!(this.selectedItem && this.selectedItem.id === item.id);
+            },
+
+            // ── Multi-stop hover popup (AC: group by Pickup Accommodation) ──
+
+            /**
+             * Group a list of swim-item stops by their Pickup Accommodation,
+             * summing pax (headcount) per accommodation. Stop sequence numbers
+             * follow the order each accommodation first appears — matching the
+             * backend Transportation Manifest rule.
+             * @returns {Array<{seq:number, accommodation:string, pax:number, stops:number}>}
+             */
+            computeStopGroups(stops) {
+                const order = [];
+                const map = {};
+                (stops || []).forEach(s => {
+                    const card = this.bcard(s);
+                    const acc = (card && card.accommodation)
+                        ? card.accommodation
+                        : (s._accommodation || '—');
+                    if (!(acc in map)) {
+                        map[acc] = { seq: order.length + 1, accommodation: acc, pax: 0, stops: 0 };
+                        order.push(acc);
+                    }
+                    map[acc].pax += (s.headcount || 0);
+                    map[acc].stops += 1;
+                });
+                return order.map(acc => map[acc]);
+            },
+
+            showStopHover(e, stops) {
+                if (this.isDraggingBlock) return;   // don't compete with block drag
+                const groups = this.computeStopGroups(stops);
+                if (!groups.length) return;
+                this.hoverPopup = { x: e.clientX, y: e.clientY, groups };
+            },
+
+            moveStopHover(e) {
+                if (this.hoverPopup) {
+                    this.hoverPopup.x = e.clientX;
+                    this.hoverPopup.y = e.clientY;
+                }
+            },
+
+            hideStopHover() {
+                this.hoverPopup = null;
             },
 
             // ── Merged block position helpers ──
@@ -2129,6 +2516,35 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             // ─ Manifest generation (ported verbatim from vis version) ───────
+
+            generateShipments() {
+                // Materialize/refresh Transportation Shipment records from Operations
+                // Shift data, then reload the pool from the persisted records.
+                if (this.isGenerating) return;
+                this.isGenerating = true;
+                const self = this;
+                frappe.call({
+                    method: 'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.generate_transportation_shipments',
+                    callback: function (r) {
+                        const s = r.message || {};
+                        frappe.show_alert({
+                            message: `Shipments: ${s.created || 0} created, ${s.updated || 0} updated, ${s.deleted || 0} removed`,
+                            indicator: 'green'
+                        });
+                        frappe.call({
+                            method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.get_route_planner_data',
+                            callback: function (rd) {
+                                if (rd.message && rd.message.status === 'ok') {
+                                    self.planData.shipment_cards = rd.message.shipment_cards;
+                                }
+                            }
+                        });
+                    },
+                    always: function () {
+                        self.isGenerating = false;
+                    }
+                });
+            },
 
             async openManifest() {
                 if (!this.currentPlan || !this.currentPlan.name) {
@@ -2347,6 +2763,28 @@ function injectRPVueTemplate() {
     {{ dragTooltip.timeLabel }}
   </div>
 
+  <!-- ── Multi-stop hover popup (rows-per-stop pax summary) ── -->
+  <div v-if="hoverPopup && !isDraggingBlock"
+       class="rp-stop-hover"
+       :style="{
+           left: hoverPopup.x + 'px',
+           top: (hoverPopup.y + 18) + 'px'
+       }">
+    <div class="rp-stop-hover-title">
+      {{ hoverPopup.groups.length > 1 ? 'Multi-Stop Route' : 'Route Stop' }}
+    </div>
+    <div class="rp-stop-hover-flow">
+      <template v-for="(g, gi) in hoverPopup.groups" :key="'sh' + gi">
+        <span class="rp-stop-hover-chip">
+          <span class="rp-stop-hover-seq">Stop {{ g.seq }}</span>
+          <span class="rp-stop-hover-acc">{{ g.accommodation }}</span>
+          <span class="rp-stop-hover-pax">[{{ g.pax }} Pax]</span>
+        </span>
+        <span v-if="gi < hoverPopup.groups.length - 1" class="rp-stop-hover-arrow">&#10142;</span>
+      </template>
+    </div>
+  </div>
+
   <!-- ══ Header ══ -->
   <div id="rp-header">
     <div id="rp-header-left">
@@ -2398,6 +2836,9 @@ function injectRPVueTemplate() {
       <div v-if="currentPlan" class="text-muted" style="font-size:12px; margin-right: 12px; display: flex; align-items: center; gap: 4px; color: var(--green, #16a34a)">
         <span class="rp-icon" style="font-size:16px;">check_circle</span> Auto-Saved
       </div>
+      <button class="rp-btn rp-btn-default" :disabled="isGenerating" @click="generateShipments" title="Refresh unassigned shipments from Operations Shift data">
+        <span class="rp-icon">{{ isGenerating ? 'hourglass_empty' : 'sync' }}</span> {{ isGenerating ? 'Generating…' : 'Generate Shipments' }}
+      </button>
       <button class="rp-btn rp-btn-default rp-btn-manifest" :disabled="!canSave || !currentPlan" @click="openManifest">
         <span class="rp-icon">assignment</span> Manifest
       </button>
@@ -2535,12 +2976,16 @@ function injectRPVueTemplate() {
         <!-- Scrollable vehicle rows -->
         <div id="rp-lanes-area">
           <div v-for="(vehicle, vi) in planData.vehicles" :key="vehicle.id"
-               :class="['rp-lane-row', vi % 2 === 1 ? 'rp-lane-alt' : '']"
+               :class="['rp-lane-row', vi % 2 === 1 ? 'rp-lane-alt' : '', lockedLaneIds.has(vehicle.id) ? 'rp-lane-locked' : '']"
                :data-vehicle-id="vehicle.id">
 
             <!-- Vehicle label column -->
             <div class="rp-lane-label">
-              <div class="rp-gv-plate">{{ vehicle.label }}</div>
+              <div class="rp-gv-plate">
+                {{ vehicle.label }}
+                <span v-if="lockedLaneIds.has(vehicle.id)" class="rp-lock-badge" title="Reserved for a multi-day run — blocked for other shipments">&#x1F512;</span>
+                <span v-else-if="upcomingLockByVehicle[vehicle.id]" class="rp-lock-upcoming" :title="'Reserved for an upcoming multi-day run from ' + upcomingLockByVehicle[vehicle.id]">&#x1F512; from {{ upcomingLockByVehicle[vehicle.id] }}</span>
+              </div>
               <div v-if="vehicle.license_plate" class="rp-gv-lp">{{ vehicle.license_plate }}</div>
               <div class="rp-gv-meta">{{ vehicle.driver }} &middot; {{ vehicle.seats }} seats</div>
               <div class="rp-gv-acc">{{ vehicle.accommodation }}</div>
@@ -2560,6 +3005,11 @@ function injectRPVueTemplate() {
                 <line v-for="tick in axisTicks" :key="'g' + tick.key"
                       :x1="tick.x" :x2="tick.x" y1="0" :y2="rowHeight"
                       :stroke="tick.isMajor ? '#ebebeb' : '#f6f6f6'" stroke-width="1"/>
+
+                <!-- Locked-lane wash: a vehicle held by an active multi-day lock is
+                     blocked out for any other shipment (TR-8). -->
+                <rect v-if="lockedLaneIds.has(vehicle.id)" x="0" y="0" :width="svgWidth" :height="rowHeight"
+                      fill="rgba(120,120,120,0.10)" style="pointer-events:none"/>
 
                 <!-- Drop target highlight when dragging a card -->
                 <rect v-if="draggingCard" x="0" y="0" :width="svgWidth" :height="rowHeight"
@@ -2583,6 +3033,9 @@ function injectRPVueTemplate() {
                      :class="isDraggingBlock && bsel(entry.item) ? 'rp-block-grabbing' : 'rp-block-grab'"
                      @mousedown="onBlockMouseDown($event, entry.item)"
                      @touchstart.prevent="onBlockTouchStart($event, entry.item)"
+                     @mouseenter="showStopHover($event, [entry.item])"
+                     @mousemove="moveStopHover($event)"
+                     @mouseleave="hideStopHover()"
                      @click.stop="onBlockClick(entry.item, $event)">
 
                     <!-- Native tooltip showing full site name + shift + time -->
@@ -2647,6 +3100,9 @@ function injectRPVueTemplate() {
                   <!-- ═══ Merged trip block ═══ -->
                   <g v-else
                      class="rp-block-grab"
+                     @mouseenter="showStopHover($event, entry.stops)"
+                     @mousemove="moveStopHover($event)"
+                     @mouseleave="hideStopHover()"
                      @click.stop="onBlockClick(entry.primaryItem, $event)">
 
                     <!-- Native tooltip showing all stops + time -->
@@ -2777,74 +3233,99 @@ function injectRPVueTemplate() {
               </div>
             </div>
 
-            <!-- Each stop as a numbered card (draggable for reorder) -->
-            <div v-for="(stop, si) in selectedTripStops" :key="stop.item.id"
-                 class="rp-detail-card rp-stop-draggable"
-                 draggable="true"
-                 @dragstart="onStopDragStart($event, si)"
-                 @dragover.prevent="onStopDragOver($event, si)"
-                 @dragend="onStopDragEnd($event)"
-                 @drop.prevent="onStopDrop($event, si)"
-                 :class="{ 'rp-stop-drag-over': stopDragOverIndex === si && stopDragSourceIndex !== null && stopDragSourceIndex !== si }"
-                 :style="'border-left:3px solid ' + (stop.item.id === selectedItem.id ? '#f97316' : '#1565c0')">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-                <span class="rp-icon rp-stop-drag-handle" title="Drag to reorder">drag_indicator</span>
-                <span class="rp-stop-num rp-stop-num-out">{{ stop.stopNum }}</span>
-                <div style="font-size:13px;font-weight:700;color:#111">{{ stop.card.site_location || 'Unknown' }}</div>
-              </div>
-              <div class="rp-detail-row" style="padding:4px 0 3px 30px">
-                <div class="rp-detail-row-icon"><span class="rp-icon">schedule</span></div>
-                <div class="rp-detail-row-content">
-                  <div class="rp-detail-row-label">Shift</div>
-                  <div class="rp-detail-row-value">{{ stop.card.shift_name || '—' }}</div>
-                </div>
-              </div>
-              <div class="rp-detail-row" style="padding:4px 0 3px 30px">
-                <div class="rp-detail-row-icon"><span class="rp-icon">location_on</span></div>
-                <div class="rp-detail-row-content">
-                  <div class="rp-detail-row-label">Stop Location</div>
-                  <div class="rp-detail-row-value">{{ stop.card.stop_location || '—' }}</div>
-                </div>
-              </div>
-              <div class="rp-detail-row" style="padding:4px 0 3px 30px">
-                <div class="rp-detail-row-icon"><span class="rp-icon">group</span></div>
-                <div class="rp-detail-row-content">
-                  <div class="rp-detail-row-label">Headcount</div>
-                  <div class="rp-detail-row-value">{{ stop.item.headcount || 0 }} employees</div>
-                </div>
-              </div>
-              <div style="display:flex;gap:6px;margin:6px 0 0 30px">
-                <div class="rp-time-pill rp-time-pill-start">
-                  {{ fmtISO(new Date(stop.item.start).toISOString()) }}
-                </div>
-                <span class="rp-detail-time-arrow"><span class="rp-icon" style="font-size:12px">arrow_forward</span></span>
-                <div class="rp-time-pill rp-time-pill-end">
-                  {{ fmtISO(new Date(stop.item.end).toISOString()) }}
-                </div>
-              </div>
-            </div>
+            <!-- Stops grouped under their pickup accommodation camp banner -->
+            <template v-for="(camp, ci) in selectedTripStopsByCamp" :key="'camp_' + ci">
 
-            <!-- Accommodation (shared for all stops) -->
-            <div class="rp-detail-card">
-              <div class="rp-detail-row" style="border:none;padding:4px 0">
-                <div class="rp-detail-row-icon"><span class="rp-icon">home</span></div>
-                <div class="rp-detail-row-content">
-                  <div class="rp-detail-row-label">Accommodation</div>
-                  <div class="rp-detail-row-value">{{ selectedCard.accommodation }}</div>
+              <!-- Accommodation camp banner: everything below it boards at this camp -->
+              <div class="rp-detail-card" style="background:#eef2ff;border-color:#c7d2fe">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span class="rp-icon" style="font-size:18px;color:#4338ca">home</span>
+                    <div style="font-size:13px;font-weight:700;color:#111">{{ camp.accommodation }}</div>
+                  </div>
+                  <div class="rp-detail-row-label" style="margin:0">
+                    {{ camp.stops.length }} stop<span v-if="camp.stops.length !== 1">s</span>
+                    · {{ camp.stops.reduce((sum, s) => sum + ((s.card.employees || []).length), 0) }} pax
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- All employees across all stops -->
-            <div class="rp-detail-card">
-              <div class="rp-detail-row-label" style="padding:0 0 8px 0"><span class="rp-icon" style="font-size:16px">group</span> All Employees ({{ selectedTripStops.reduce((sum, s) => sum + (s.item.headcount || 0), 0) }})</div>
-              <div class="rp-detail-emp-list">
-                <template v-for="(stop, si) in selectedTripStops">
-                  <span v-for="(e, ei) in stop.card.employees" :key="si + '_' + ei" class="rp-emp-chip rp-emp-chip-call" @click.stop="handleEmployeeCall(e)" :title="empMobile(e) ? 'Call ' + empMobile(e) : 'No mobile number'">
+              <!-- Each stop under this camp (draggable for reorder) -->
+              <div v-for="stop in camp.stops" :key="stop.item.id"
+                   class="rp-detail-card rp-stop-draggable"
+                   draggable="true"
+                   @dragstart="onStopDragStart($event, stop.stopNum - 1)"
+                   @dragover.prevent="onStopDragOver($event, stop.stopNum - 1)"
+                   @dragend="onStopDragEnd($event)"
+                   @drop.prevent="onStopDrop($event, stop.stopNum - 1)"
+                   :class="{ 'rp-stop-drag-over': stopDragOverIndex === (stop.stopNum - 1) && stopDragSourceIndex !== null && stopDragSourceIndex !== (stop.stopNum - 1) }"
+                   :style="'border-left:3px solid ' + (stop.item.id === selectedItem.id ? '#f97316' : '#1565c0')">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                  <span class="rp-icon rp-stop-drag-handle" title="Drag to reorder">drag_indicator</span>
+                  <span class="rp-stop-num rp-stop-num-out">{{ stop.stopNum }}</span>
+                  <div style="font-size:13px;font-weight:700;color:#111">{{ stop.card.site_location || 'Unknown' }}</div>
+                </div>
+                <div class="rp-detail-row" style="padding:4px 0 3px 30px">
+                  <div class="rp-detail-row-icon"><span class="rp-icon">schedule</span></div>
+                  <div class="rp-detail-row-content">
+                    <div class="rp-detail-row-label">Shift</div>
+                    <div class="rp-detail-row-value">{{ stop.card.shift_name || '—' }}</div>
+                  </div>
+                </div>
+                <div class="rp-detail-row" style="padding:4px 0 3px 30px">
+                  <div class="rp-detail-row-icon"><span class="rp-icon">location_on</span></div>
+                  <div class="rp-detail-row-content">
+                    <div class="rp-detail-row-label">Stop Location</div>
+                    <div class="rp-detail-row-value">{{ stop.card.stop_location || '—' }}</div>
+                  </div>
+                </div>
+                <!-- Passenger breakdown for this camp stop (AC5): how many board here -->
+                <div class="rp-detail-row" style="padding:4px 0 3px 30px">
+                  <div class="rp-detail-row-icon"><span class="rp-icon">group</span></div>
+                  <div class="rp-detail-row-content">
+                    <div class="rp-detail-row-label">Boarding at this stop</div>
+                    <div class="rp-detail-row-value">
+                      {{ (stop.card.employees || []).length - relieverCount(stop.card.employees) }} regular
+                      <span v-if="relieverCount(stop.card.employees) > 0">
+                        · {{ relieverCount(stop.card.employees) }} reliever
+                      </span>
+                      <span class="rp-detail-row-label" style="display:inline">({{ (stop.card.employees || []).length }} total)</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:6px;margin:6px 0 0 30px">
+                  <div class="rp-time-pill rp-time-pill-start">
+                    {{ fmtISO(new Date(stop.item.start).toISOString()) }}
+                  </div>
+                  <span class="rp-detail-time-arrow"><span class="rp-icon" style="font-size:12px">arrow_forward</span></span>
+                  <div class="rp-time-pill rp-time-pill-end">
+                    {{ fmtISO(new Date(stop.item.end).toISOString()) }}
+                  </div>
+                </div>
+
+                <!-- Passenger manifest for this camp stop (AC6): regular vs reliever -->
+                <div class="rp-detail-emp-list" style="margin:8px 0 0 30px" v-if="stop.card.employees && stop.card.employees.length">
+                  <span v-for="(e, ei) in stop.card.employees" :key="stop.stopNum + '_' + ei"
+                        class="rp-emp-chip rp-emp-chip-call"
+                        :class="{ 'rp-emp-chip-reliever': empIsReliever(e) }"
+                        @click.stop="handleEmployeeCall(e)"
+                        :title="empMobile(e) ? 'Call ' + empMobile(e) : 'No mobile number'">
+                    <span class="rp-emp-tag" :class="empIsReliever(e) ? 'rp-emp-tag-reliever' : 'rp-emp-tag-regular'">{{ empIsReliever(e) ? 'Reliever' : 'Regular' }}</span>
                     {{ empName(e) }}
                     <span class="rp-icon rp-call-icon" :class="empMobile(e) ? '' : 'rp-call-disabled'">call</span>
                   </span>
-                </template>
+                </div>
+              </div>
+
+            </template>
+
+            <!-- Trip-wide passenger total (regular vs reliever across all stops) -->
+            <div class="rp-detail-card">
+              <div class="rp-detail-row-label" style="padding:0 0 6px 0"><span class="rp-icon" style="font-size:16px">group</span> Trip Total</div>
+              <div class="rp-detail-row-value">
+                {{ selectedTripStops.reduce((sum, s) => sum + ((s.card.employees || []).length - relieverCount(s.card.employees)), 0) }} regular
+                · {{ selectedTripStops.reduce((sum, s) => sum + relieverCount(s.card.employees), 0) }} reliever
+                <span class="rp-detail-row-label" style="display:inline">({{ selectedTripStops.reduce((sum, s) => sum + (s.card.employees || []).length, 0) }} passengers)</span>
               </div>
             </div>
           </template>
@@ -2942,11 +3423,20 @@ function injectRPVueTemplate() {
               </div>
             </div>
 
-            <!-- Employees -->
+            <!-- Employees (regular vs reliever) -->
             <div class="rp-detail-card">
-              <div class="rp-detail-row-label" style="padding:0 0 8px 0"><span class="rp-icon" style="font-size:16px">group</span> Employees ({{ selectedCard.headcount }})</div>
+              <div class="rp-detail-row-label" style="padding:0 0 4px 0"><span class="rp-icon" style="font-size:16px">group</span> Employees ({{ selectedCard.headcount }})</div>
+              <div class="rp-detail-row-value" style="padding:0 0 8px 0">
+                {{ (selectedCard.employees || []).length - relieverCount(selectedCard.employees) }} regular
+                <span v-if="relieverCount(selectedCard.employees) > 0">· {{ relieverCount(selectedCard.employees) }} reliever</span>
+              </div>
               <div class="rp-detail-emp-list">
-                <span v-for="(e, ei) in selectedCard.employees" :key="'emp_' + ei" class="rp-emp-chip rp-emp-chip-call" @click.stop="handleEmployeeCall(e)" :title="empMobile(e) ? 'Call ' + empMobile(e) : 'No mobile number'">
+                <span v-for="(e, ei) in selectedCard.employees" :key="'emp_' + ei"
+                      class="rp-emp-chip rp-emp-chip-call"
+                      :class="{ 'rp-emp-chip-reliever': empIsReliever(e) }"
+                      @click.stop="handleEmployeeCall(e)"
+                      :title="empMobile(e) ? 'Call ' + empMobile(e) : 'No mobile number'">
+                  <span class="rp-emp-tag" :class="empIsReliever(e) ? 'rp-emp-tag-reliever' : 'rp-emp-tag-regular'">{{ empIsReliever(e) ? 'Reliever' : 'Regular' }}</span>
                   {{ empName(e) }}
                   <span class="rp-icon rp-call-icon" :class="empMobile(e) ? '' : 'rp-call-disabled'">call</span>
                 </span>
@@ -3276,6 +3766,13 @@ function injectRPStyles() {
         .rp-emp-chip-call:hover .rp-call-icon { color: #16a34a; }
         .rp-call-disabled { color: var(--md-sys-color-outline) !important; opacity: 0.35; cursor: default; }
 
+        /* ── Regular vs Reliever passenger labels (MA3-12 AC6) ── */
+        .rp-emp-chip-reliever { border-color: #c084fc; background: rgba(124,58,237,0.06); }
+        .rp-emp-chip-reliever:hover { border-color: var(--rp-color-trip-chain); background: rgba(124,58,237,0.12); }
+        .rp-emp-tag { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; border-radius: 3px; padding: 1px 4px; line-height: 1.4; }
+        .rp-emp-tag-regular  { background: var(--rp-color-outbound-container); color: var(--rp-color-outbound); }
+        .rp-emp-tag-reliever { background: var(--rp-color-trip-container); color: var(--rp-color-trip-chain); }
+
         /* ── Timeline Panel ── */
         #rp-timeline-panel {
             flex: 1; display: flex; flex-direction: column;
@@ -3335,6 +3832,9 @@ function injectRPStyles() {
         .rp-lane-svg       { display: block; }
 
         .rp-gv-plate { font-size: 14px; font-weight: 700; color: var(--md-sys-color-on-surface); }
+        .rp-lock-badge { font-size: 12px; margin-left: 4px; vertical-align: middle; }
+        .rp-lock-upcoming { font-size: 10px; margin-left: 4px; padding: 1px 5px; border-radius: 8px; background: rgba(124,58,237,0.12); color: #7c3aed; white-space: nowrap; vertical-align: middle; }
+        .rp-lane-locked .rp-lane-label { background: rgba(120,120,120,0.08); }
         .rp-gv-lp    { font-size: 11px; font-weight: 500; color: var(--md-sys-color-outline); margin-top: 1px; }
         .rp-gv-meta  { font-size: 12px; color: var(--md-sys-color-on-surface-variant); margin-top: 1px; }
         .rp-gv-acc   { font-size: 11px; color: var(--md-sys-color-outline); margin-top: 1px; }
@@ -3366,6 +3866,44 @@ function injectRPStyles() {
             from { opacity: 0; transform: translateX(-50%) translateY(4px); }
             to   { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
+
+        /* ── Multi-stop hover popup ── */
+        .rp-stop-hover {
+            position: fixed;
+            z-index: 9999;
+            pointer-events: none;
+            background: rgba(17, 24, 39, 0.94);
+            color: #fff;
+            font-family: 'Google Sans', Roboto, sans-serif;
+            padding: 10px 12px;
+            border-radius: 10px;
+            max-width: 460px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(4px);
+            animation: rp-tooltip-in 0.1s ease-out;
+            transform: translateX(-50%);
+        }
+        .rp-stop-hover-title {
+            font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+            text-transform: uppercase; color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 6px;
+        }
+        .rp-stop-hover-flow {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px;
+        }
+        .rp-stop-hover-chip {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 7px; padding: 4px 8px; font-size: 13px; white-space: nowrap;
+        }
+        .rp-stop-hover-seq {
+            font-size: 10px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.04em; color: #93c5fd;
+            background: rgba(59, 130, 246, 0.18); border-radius: 4px; padding: 1px 6px;
+        }
+        .rp-stop-hover-acc  { font-weight: 600; }
+        .rp-stop-hover-pax  { color: #86efac; font-weight: 700; }
+        .rp-stop-hover-arrow { color: rgba(255, 255, 255, 0.5); font-size: 15px; font-weight: 700; }
 
         /* ── Detail Panel ── */
         #rp-detail-panel {

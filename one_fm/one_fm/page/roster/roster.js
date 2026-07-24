@@ -1316,6 +1316,10 @@ function render_roster(res, page) {
 
 		if (applied_filter) actual_filter += applied_filter;
 
+		// Rambo relievers are treated as relievers (like Day Off / Weekend relievers): their home
+		// grid renders normally, and foreign grids show NR on every day except the ones they work there.
+		let employee_is_rambo_reliever = Number(first_day_records[0]["custom_is_rambo_reliever"]) === 1;
+
 		if (page.filters.operations_role) { filter_assignment = `Role: ${page.filters.operations_role}`; }
 		else if (page.filters.shift) { filter_assignment = `Shift: ${first_day_records[0][actual_filter] || page.filters.shift}`; }
 		else if (page.filters.site) { filter_assignment = `Site: ${first_day_records[0][actual_filter] || page.filters.site}`; }
@@ -1370,6 +1374,12 @@ function render_roster(res, page) {
 				}
 			}
 			if (employee_has_relieving_days) break;
+		}
+
+		// A Rambo reliever is always a reliever, so the foreign-grid NR logic below engages for them
+		// exactly like Day Off / Weekend relievers — even if the site/shift heuristic above didn't trip.
+		if (employee_is_rambo_reliever) {
+			employee_has_relieving_days = true;
 		}
 
 		while (current_day_iter <= end_moment_iter) {

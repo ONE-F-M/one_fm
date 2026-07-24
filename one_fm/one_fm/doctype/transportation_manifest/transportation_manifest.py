@@ -6,8 +6,128 @@ from frappe.utils import getdate
 class TransportationManifest(Document):
 	def validate(self):
 		self.populate_shift_details_from_schedule()
+		self.populate_stop_sequence_and_pickup_accommodation()
+		self.enforce_stop_locking()
 		self.validate_attendance_and_qoa()
 		self.validate_relievers()
+
+	def enforce_stop_locking(self):
+		"""Freeze attendance/QOA entries on stops already verified (MA2-11).
+
+		Once the attendance-check workflow has advanced past a stop
+		(``stop_sequence < active_stop_sequence``), that stop is Completed and its
+		verified entries must stay read-only — a supervisor moving to the next camp
+		must not be able to alter data already checked at an earlier gate.
+
+		Only kicks in once checks have started (active >= 1), so the daily compiler
+		and dispatchers can still populate rows freely before boarding begins. Guards
+		exactly the three fields the sheet edits; new rows (no before-image) are
+		exempt. Set ``frappe.flags.ignore_stop_lock`` to bypass for admin recovery.
+		"""
+		active = int(self.active_stop_sequence or 0)
+		if not active or frappe.flags.get("ignore_stop_lock"):
+			return
+
+		before = self.get_doc_before_save()
+		if not before:
+			return
+
+		previous_rows = {row.name: row for row in before.transportation_manifest_details}
+		locked_fields = ("attendance_status", "qoa_status", "qoa_reason")
+
+		for row in self.transportation_manifest_details:
+			# The attendance-check lock only covers BOARDING (pickup-camp) rows —
+			# return/drop-off rows are never part of the DEPART camp sequence and
+			# must stay editable (they default to stop_sequence 1). (MA2-11)
+			if row.employee_action and row.employee_action != "Boarding":
+				continue
+			# Only Completed stops are frozen; the Active stop stays editable.
+			if int(row.stop_sequence or 1) >= active:
+				continue
+			old_row = previous_rows.get(row.name)
+			if not old_row:
+				continue
+			for field in locked_fields:
+				if (row.get(field) or None) != (old_row.get(field) or None):
+					frappe.throw(
+						_("Stop {stop} is locked. The verified {field} for row #{idx} cannot be changed.").format(
+							stop=row.stop_sequence,
+							field=field.replace("_", " ").title(),
+							idx=row.idx,
+						)
+					)
+
+	def populate_stop_sequence_and_pickup_accommodation(self):
+		"""Auto-stamp Stop Sequence and Pickup Accommodation on every manifest row.
+
+		The frontend timeline canvas and driver mobile app read these two fields
+		to group, sort and render multi-stop journeys, so dispatchers never enter
+		them by hand.
+
+		Rules:
+		- Pickup Accommodation is read from each row's linked Transportation
+		  Shipment (the camp the shipment originates from).
+		- Stop Sequence is numbered per unique Pickup Accommodation, in the order
+		  each accommodation's first row appears in the table (e.g. all Mahboula
+		  rows -> Stop 1, all Mangaf rows -> Stop 2). This holds for every routing
+		  type: a single vehicle chaining Direct pickups from several camps still
+		  gets one stop number per camp, which the manifest page needs for its
+		  per-camp boarding banners and strictly-sequential attendance check (MA2-11).
+		- Rows with NO linked shipment but a pre-set Pickup Accommodation are
+		  reliever passengers injected by the daily manifest compiler (MA1-14).
+		  Their camp is preserved (not wiped), so a reliever whose camp matches an
+		  existing stop is clustered under that stop's number, and a reliever whose
+		  camp is new gets the next stop number (its row also carries
+		  is_adhoc_stop=1, set by the compiler).
+		"""
+		rows = self.transportation_manifest_details
+		if not rows:
+			return
+
+		# Batch-fetch shipment -> accommodation + routing badge in one query
+		shipment_ids = {
+			row.transportation_shipment
+			for row in rows
+			if row.transportation_shipment
+		}
+		shipment_map = {}
+		if shipment_ids:
+			from frappe.query_builder import DocType
+			TransportationShipment = DocType("Transportation Shipment")
+			shipments = (
+				frappe.qb.from_(TransportationShipment)
+				.select(
+					TransportationShipment.name,
+					TransportationShipment.accommodation,
+					TransportationShipment.routing_type_badge,
+				)
+				.where(TransportationShipment.name.isin(list(shipment_ids)))
+			).run(as_dict=True)
+			shipment_map = {s.name: s for s in shipments}
+
+		# First pass: stamp Pickup Accommodation and record first-appearance order
+		accommodation_sequence = {}  # accommodation -> stop number (1-based)
+		for row in rows:
+			shipment = shipment_map.get(row.transportation_shipment) if row.transportation_shipment else None
+			# Shipment-backed rows derive their camp from the shipment. Rows without a
+			# shipment keep whatever camp was already set — the daily compiler stamps
+			# reliever rows with the reliever's live camp, and that must not be wiped.
+			if shipment:
+				row.pickup_accommodation = shipment.accommodation
+
+			if row.pickup_accommodation and row.pickup_accommodation not in accommodation_sequence:
+				accommodation_sequence[row.pickup_accommodation] = len(accommodation_sequence) + 1
+
+		# Second pass: assign Stop Sequence per unique Pickup Accommodation.
+		# Every distinct pickup camp is its own stop — including Direct routes — so
+		# a bus chaining pickups from several camps numbers them 1, 2, 3… A single
+		# camp (Direct or otherwise) still resolves to Stop 1 naturally.
+		for row in rows:
+			if row.pickup_accommodation:
+				row.stop_sequence = accommodation_sequence.get(row.pickup_accommodation, 1)
+			else:
+				# No accommodation to key on -> default to the first stop
+				row.stop_sequence = 1
 
 	def on_update(self):
 		self.sync_rambo_assignments()
@@ -291,8 +411,7 @@ class TransportationManifest(Document):
 			existing_rambo = frappe.db.get_value(
 				"Rambo Assignment",
 				{"manifest_child_row_id": row.name},
-				["name", "docstatus"],
-				as_dict=True
+				"name"
 			)
 
 			if needs_rambo:
@@ -339,46 +458,31 @@ class TransportationManifest(Document):
 				}
 
 				if existing_rambo:
-					# Cancel and delete the existing submitted Rambo Assignment,
-					# then create a fresh one. This ensures the on_cancel hook
-					# cleans up the old Employee Schedule and on_submit creates
-					# a new one with the updated field values.
-					self._cancel_and_delete_rambo(existing_rambo, row)
+					# UPDATE existing Rambo Assignment
+					frappe.db.set_value("Rambo Assignment", existing_rambo, field_values)
+				else:
+					# CREATE new Rambo Assignment
+					rambo_doc = frappe.new_doc("Rambo Assignment")
+					rambo_doc.update(field_values)
+					rambo_doc.insert(ignore_permissions=True)
 
-				# CREATE and SUBMIT new Rambo Assignment
-				rambo_doc = frappe.new_doc("Rambo Assignment")
-				rambo_doc.update(field_values)
-				rambo_doc.insert(ignore_permissions=True)
-				rambo_doc.submit()
-
-				# Back-reference on the child row (DB + in-memory)
-				frappe.db.set_value(
-					"Transportation Manifest Details", row.name,
-					"rambo_assignment", rambo_doc.name,
-					update_modified=False
-				)
-				row.rambo_assignment = rambo_doc.name
+					# Back-reference on the child row (DB + in-memory)
+					frappe.db.set_value(
+						"Transportation Manifest Details", row.name,
+						"rambo_assignment", rambo_doc.name,
+						update_modified=False
+					)
+					row.rambo_assignment = rambo_doc.name
 			else:
 				if existing_rambo:
-					self._cancel_and_delete_rambo(existing_rambo, row)
-
-	def _cancel_and_delete_rambo(self, rambo_info, row):
-		"""Cancel (if submitted) and delete a Rambo Assignment, clearing the back-reference."""
-		# Clear the back-reference FIRST to avoid Frappe's
-		# "Cannot delete — linked with" validation error.
-		frappe.db.set_value(
-			"Transportation Manifest Details", row.name,
-			"rambo_assignment", None,
-			update_modified=False
-		)
-		row.rambo_assignment = None
-
-		rambo_doc = frappe.get_doc("Rambo Assignment", rambo_info.name)
-		if rambo_doc.docstatus == 1:
-			# Cancel first — this triggers on_cancel which deletes
-			# the linked Employee Schedule
-			rambo_doc.flags.ignore_permissions = True
-			rambo_doc.cancel()
-		# Now safe to DELETE the Rambo Assignment
-		frappe.delete_doc("Rambo Assignment", rambo_info.name, ignore_permissions=True)
+					# Clear the back-reference FIRST to avoid Frappe's
+					# "Cannot delete — linked with" validation error.
+					frappe.db.set_value(
+						"Transportation Manifest Details", row.name,
+						"rambo_assignment", None,
+						update_modified=False
+					)
+					row.rambo_assignment = None
+					# Now safe to DELETE the Rambo Assignment
+					frappe.delete_doc("Rambo Assignment", existing_rambo, ignore_permissions=True)
 

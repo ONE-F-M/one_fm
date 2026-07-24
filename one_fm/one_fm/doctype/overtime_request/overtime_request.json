@@ -17,12 +17,16 @@
   "end_time",
   "overtime_hours",
   "yearly_overtime_hours",
+  "eligible_for_compensatory_day_off",
   "column_break_iagh",
   "requested_by",
   "reports_to",
   "reports_to_user",
   "present",
   "absent",
+  "compensatory_day_off_section",
+  "compensatory_day_off",
+  "compensatory_leave_request",
   "section_break_dqth",
   "amended_from",
   "naming_series"
@@ -48,6 +52,7 @@
    "fieldname": "employee_user",
    "fieldtype": "Link",
    "hidden": 1,
+   "ignore_user_permissions": 1,
    "label": "Employee User",
    "options": "User",
    "read_only": 1
@@ -105,12 +110,21 @@
    "read_only": 1
   },
   {
+   "default": "0",
+   "description": "Automatically set when Overtime Type is \"Overtime on Public Holiday\" and Overtime Hours are 9 or more.",
+   "fieldname": "eligible_for_compensatory_day_off",
+   "fieldtype": "Check",
+   "label": "Eligible for Compensatory Day Off",
+   "read_only": 1
+  },
+  {
    "fieldname": "column_break_iagh",
    "fieldtype": "Column Break"
   },
   {
    "fieldname": "requested_by",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Requested By",
    "options": "User",
    "read_only": 1
@@ -119,6 +133,7 @@
    "fetch_from": "employee.reports_to",
    "fieldname": "reports_to",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Reports To",
    "options": "Employee",
    "read_only": 1
@@ -127,6 +142,7 @@
    "fetch_from": "reports_to.user_id",
    "fieldname": "reports_to_user",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Reports To User",
    "options": "User",
    "read_only": 1
@@ -144,6 +160,29 @@
    "fieldname": "absent",
    "fieldtype": "Check",
    "label": "Absent"
+  },
+  {
+   "depends_on": "eval:doc.eligible_for_compensatory_day_off",
+   "fieldname": "compensatory_day_off_section",
+   "fieldtype": "Section Break",
+   "label": "Compensatory Day Off"
+  },
+  {
+   "depends_on": "eval:doc.eligible_for_compensatory_day_off",
+   "description": "Day the employee will take off in compensation for the public holiday overtime.",
+   "fieldname": "compensatory_day_off",
+   "fieldtype": "Date",
+   "label": "Compensatory Day Off"
+  },
+  {
+   "depends_on": "eval:doc.eligible_for_compensatory_day_off",
+   "description": "Auto-populated with the Compensatory Leave Request created when this Overtime Request is Completed.",
+   "fieldname": "compensatory_leave_request",
+   "fieldtype": "Link",
+   "label": "Compensatory Leave Request",
+   "no_copy": 1,
+   "options": "Compensatory Leave Request",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_dqth",
