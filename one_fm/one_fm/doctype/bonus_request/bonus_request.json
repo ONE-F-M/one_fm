@@ -12,6 +12,8 @@
   "section_break_clag",
   "posting_date",
   "requested_by",
+  "reports_to",
+  "reports_to_user",
   "column_break_ujeg",
   "funding_category",
   "is_recurring_monthly",
@@ -62,6 +64,21 @@
    "fieldname": "requested_by",
    "fieldtype": "Link",
    "label": "Requested By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reports_to",
+   "fieldtype": "Link",
+   "label": "Reports To",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "reports_to.user_id",
+   "fieldname": "reports_to_user",
+   "fieldtype": "Link",
+   "label": "Reports To User",
    "options": "User",
    "read_only": 1
   },

@@ -497,3 +497,5 @@ one_fm.patches.v15_0.delete_pending_approval_attendance_checks_airport_t4_jul12 
 one_fm.patches.v15_0.send_amp_verification_test_email #2026-07-14
 one_fm.patches.v15_0.add_project_sprint_prefix_field #2026-07-23
 one_fm.patches.v15_0.show_project_users_section_for_scrum #2026-07-23
+one_fm.patches.v15_0.add_bonus_request_line_manager_workflow #2026-07-23
+one_fm.patches.v15_0.add_bonus_request_line_manager_assignment_rule #2026-07-23
