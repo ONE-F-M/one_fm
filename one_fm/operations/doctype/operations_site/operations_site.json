@@ -14,6 +14,7 @@
   "site_location",
   "column_break_7",
   "site_supervisor",
+  "is_managed_by_helpdesk",
   "site_supervisor_name",
   "multiple_location_details_section",
   "operations_site_location",
@@ -185,6 +186,13 @@
    "ignore_user_permissions": 1,
    "label": "Site Supervisor",
    "options": "Employee"
+  },
+  {
+   "default": "0",
+   "description": "When enabled, roster editing for this site is managed by the Helpdesk roles (Helpdesk Operator / Helpdesk Supervisor); the Site Supervisor becomes read-only.",
+   "fieldname": "is_managed_by_helpdesk",
+   "fieldtype": "Check",
+   "label": "Is Managed by the Helpdesk"
   },
   {
    "fetch_from": "site_supervisor.employee_name",

@@ -357,6 +357,26 @@ def get_current_user_details():
 	return user, user_roles, user_employee
 
 
+def check_site_roster_permission(site):
+	"""WI-001692: gate roster edits on a Helpdesk-managed Operations Site.
+
+	No-op for sites that are not managed by the Helpdesk (standard behaviour
+	unchanged). For a managed site, only Helpdesk/Operations roles may edit;
+	everyone else (e.g. the site's own Site Supervisor) is read-only.
+	"""
+	if not site:
+		return
+	if not frappe.db.get_value("Operations Site", site, "is_managed_by_helpdesk"):
+		return
+	allowed = {"Helpdesk Operator", "Helpdesk Supervisor", "Operations Manager", "System Manager"}
+	if allowed & set(frappe.get_roles()):
+		return
+	frappe.throw(
+		_("This site's roster is managed by the Helpdesk and is read-only for your role."),
+		title=_("Read-Only Roster"),
+	)
+
+
 def get_employee_leave_attendance(employees, start_date):
     """
     Returns a dict of employees and their corresponding attendance dates if it falls on or after the start date,
@@ -406,6 +426,7 @@ def get_employee_leave_attendance(employees, start_date):
 @frappe.whitelist()
 def schedule_overtime(employees, shift, operations_role,start_date,end_date=None, selected_days_only=0,project_end_date=None):
 	try:
+		check_site_roster_permission(frappe.db.get_value("Operations Shift", shift, "site"))
 		employees = json.loads(employees)
 		if not employees:
 			frappe.throw("Employees must be selected.")
@@ -436,6 +457,7 @@ def schedule_overtime(employees, shift, operations_role,start_date,end_date=None
 @frappe.whitelist()
 def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off=0, keep_days_off_ot=0, day_off_ot=None, end_date=None, selected_days_only=0):
 	try:
+		check_site_roster_permission(frappe.db.get_value("Operations Shift", shift, "site"))
 		_start_date = getdate(start_date)
 
 		validation_logs = []
@@ -2436,6 +2458,7 @@ def assign_staff(employees, shift, custom_is_reliever, custom_is_weekend_relieve
 		frappe.throw("Please select employees first")
 
 	shift_name_val, site_val, project_val = frappe.db.get_value("Operations Shift", shift, ["name", "site", "project"])
+	check_site_roster_permission(site_val)
 
 	try:
 		employees_list_json = json.loads(employees)
