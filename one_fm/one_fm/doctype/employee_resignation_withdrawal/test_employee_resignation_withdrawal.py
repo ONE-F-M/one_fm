@@ -18,7 +18,7 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 			"resignation_letter": "/files/resignation_letter.txt",
 			"status": "Pending",
 			"relieving_date": frappe.utils.add_days(frappe.utils.today(), 30)
-		}).insert(ignore_permissions=True)
+		}).insert()
 		
 	def tearDown(self):
 		frappe.db.rollback()
@@ -30,13 +30,13 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 			"reason": "Test",
 			"resignation_withdrawal_letter": "/files/test.txt",
 			"workflow_state": "Pending Supervisor"
-		}).insert(ignore_permissions=True)
+		}).insert()
 
 		# Change state without giving reason
 		erw.workflow_state = "Rejected By Supervisor"
 		
 		with self.assertRaises(frappe.ValidationError) as context:
-			erw.save(ignore_permissions=True)
+			erw.save()
 		
 		self.assertTrue("Please provide Reason for Rejection" in str(context.exception))
 
@@ -47,14 +47,14 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 			"reason": "Test",
 			"resignation_withdrawal_letter": "/files/test.txt",
 			"workflow_state": "Pending Supervisor"
-		}).insert(ignore_permissions=True)
+		}).insert()
 
 		# Change state and provide reason
 		erw.workflow_state = "Rejected By Supervisor"
 		erw.reason_for_rejection = "Not a valid reason"
 		
 		# Should not raise any error
-		erw.save(ignore_permissions=True)
+		erw.save()
 		self.assertEqual(erw.workflow_state, "Rejected By Supervisor")
 
 	def test_process_withdrawal_approval(self):
@@ -66,7 +66,7 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 				"employee_resignation": self.resignation.name,
 				"project": _get_or_create_project(),
 				"title": "Test PMR"
-			}).insert(ignore_permissions=True)
+			}).insert()
 
 		# Set an initial relieving date on the employee to verify it gets cleared
 		frappe.db.set_value("Employee", self.employee.name, "relieving_date", frappe.utils.today())
@@ -77,15 +77,15 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 			"reason": "Changed my mind",
 			"resignation_withdrawal_letter": "/files/test.txt",
 			"workflow_state": "Pending Supervisor"
-		}).insert(ignore_permissions=True)
+		}).insert()
 
 		# Transition 1
 		erw.workflow_state = "Accepted by Supervisor"
-		erw.save(ignore_permissions=True)
+		erw.save()
 
 		# Trigger withdrawal approval
 		erw.workflow_state = "Approved"
-		erw.save(ignore_permissions=True)
+		erw.save()
 
 		# Assertions
 		self.employee.reload()
@@ -111,7 +111,7 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 				"project": _get_or_create_project(),
 				"title": "Test PMR",
 				"workflow_state": "Completed"
-			}).insert(ignore_permissions=True)
+			}).insert()
 			
 			erw = frappe.get_doc({
 				"doctype": "Employee Resignation Withdrawal",
@@ -131,7 +131,7 @@ def _get_or_create_project():
 		frappe.get_doc({
 			"doctype": "Project",
 			"project_name": project_name
-		}).insert(ignore_permissions=True)
+		}).insert()
 	return project_name
 
 def _make_employee(employee_id, employee_name):
@@ -155,7 +155,7 @@ def _make_employee(employee_id, employee_name):
 			"status": "Active",
 			"project": _get_or_create_project("Test ERW Project", company),
 			"designation": _get_or_create_designation("Test ERW Designation")
-		}).insert(ignore_permissions=True)
+		}).insert()
 		return doc.name
 	return existing
 
@@ -165,7 +165,7 @@ def _get_or_create_project(project_name, company):
 			"doctype": "Project",
 			"project_name": project_name,
 			"company": company
-		}).insert(ignore_permissions=True)
+		}).insert()
 	return project_name
 
 def _get_or_create_designation(designation_name):
@@ -173,7 +173,7 @@ def _get_or_create_designation(designation_name):
 		frappe.get_doc({
 			"doctype": "Designation",
 			"designation_name": designation_name
-		}).insert(ignore_permissions=True)
+		}).insert()
 	return designation_name
 
 def _get_or_create_department(department_name, company):
@@ -188,5 +188,5 @@ def _get_or_create_department(department_name, company):
 			"department_name": department_name,
 			"department_code": "TEST-DEPT",
 			"company": company
-		}).insert(ignore_permissions=True)
+		}).insert()
 	return full_dept_name
