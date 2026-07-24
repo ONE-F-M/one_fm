@@ -15,7 +15,7 @@ def execute():
 	untouched.
 	"""
 	if not frappe.db.exists("Role", "Transportation Manager"):
-		frappe.get_doc({"doctype": "Role", "role_name": "Transportation Manager"}).insert(ignore_permissions=True)
+		frappe.get_doc({"doctype": "Role", "role_name": "Transportation Manager"}).insert()
 
 	grants = {
 		"i.anware@one-fm.com": "Transportation Manager",
@@ -34,6 +34,6 @@ def execute():
 			"parenttype": "User",
 			"parentfield": "roles",
 			"role": role,
-		}).insert(ignore_permissions=True)
+		}).insert()
 
 	frappe.clear_cache(doctype="Arrival Acknowledgement")

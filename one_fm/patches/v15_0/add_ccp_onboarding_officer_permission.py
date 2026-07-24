@@ -50,6 +50,6 @@ def execute():
 			"role": role,
 			"permlevel": 0,
 			**perms,
-		}).insert(ignore_permissions=True)
+		}).insert()
 
 	frappe.clear_cache(doctype="Candidate Country Process")

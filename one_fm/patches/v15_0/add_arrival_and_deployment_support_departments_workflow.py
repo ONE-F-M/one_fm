@@ -53,7 +53,7 @@ def execute():
 				{"state": s, "action": a, "next_state": ns, "allowed": r}
 				for s, a, ns, r in new_transitions
 			],
-		}).insert(ignore_permissions=True)
+		}).insert()
 		return
 
 	workflow = frappe.get_doc("Workflow", "Arrival and Deployment")
@@ -80,5 +80,5 @@ def execute():
 			})
 
 	workflow.flags.ignore_mandatory = True
-	workflow.save(ignore_permissions=True)
+	workflow.save()
 	frappe.clear_cache(doctype="Arrival and Deployment")

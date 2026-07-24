@@ -10,14 +10,15 @@ from one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement impor
 class TestArrivalAcknowledgement(FrappeTestCase):
 	def test_acknowledge_sets_status_and_acknowledger(self):
 		ard = frappe.new_doc("Arrival and Deployment")
-		ard.insert(ignore_permissions=True, ignore_mandatory=True)
+		ard.flags.ignore_mandatory = True
+		ard.insert()
 
 		doc = frappe.new_doc("Arrival Acknowledgement")
 		doc.arrival_and_deployment = ard.name
 		doc.department = "Warehouse"
 		doc.assigned_to = "Administrator"
 		doc.owner = "Administrator"
-		doc.insert(ignore_permissions=True)
+		doc.insert()
 
 		self.assertEqual(doc.status, "Not Acknowledged")
 
@@ -28,5 +29,5 @@ class TestArrivalAcknowledgement(FrappeTestCase):
 		self.assertEqual(doc.acknowledged_by, "Administrator")
 		self.assertIsNotNone(doc.acknowledged_on)
 
-		doc.delete(ignore_permissions=True)
-		ard.delete(ignore_permissions=True)
+		doc.delete()
+		ard.delete()

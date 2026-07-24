@@ -41,4 +41,4 @@ def execute():
 				row.reference_complete_status_value = target_value
 				changed = True
 			if changed:
-				doc.save(ignore_permissions=True)
+				doc.save()
