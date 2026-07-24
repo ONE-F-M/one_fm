@@ -732,17 +732,23 @@ def _build_zip(entries) -> bytes:
 
 
 def _attendance_pdf(doc) -> dict:
-	"""Render the Attendance Report PDF using the doctype's default (Standard)
-	print. Returns ``{"fname": ..., "fcontent": ...}``.
-
-	Reverted from the dedicated print-format approach: that format called a
-	jinja `pf` global the sandbox does not expose (only module-level functions
-	are registered), which raised PrintFormatError during export.
+	"""Render the Attendance Report PDF via the dedicated, self-contained
+	"Proof of Work Attendance Report" format (header rendered once, spaced
+	breakdown lines, wider breakdown column). Falls back to the default print
+	if the format is ever missing/disabled. Returns ``{"fname":..., "fcontent":...}``.
 	"""
+	fmt = (
+		"Proof of Work Attendance Report"
+		if frappe.db.exists(
+			"Print Format", {"name": "Proof of Work Attendance Report", "disabled": 0}
+		)
+		else None
+	)
+	# The format embeds the logo/heading itself, so disable Frappe's auto letter
+	# head to avoid a duplicate logo.
 	return frappe.attach_print(
-		"Proof of Work",
-		doc.name,
-		file_name=f"Attendance-{doc.name}",
+		"Proof of Work", doc.name, file_name=f"Attendance-{doc.name}",
+		print_format=fmt, print_letterhead=False,
 	)
 
 
@@ -756,7 +762,19 @@ def export_zip(name: str):
 	doc = frappe.get_doc("Proof of Work", name)
 	doc.check_permission("read")
 
-	letter = frappe.attach_print("Proof of Work", name, file_name=f"POW-Letter-{name}")
+	# Use the dedicated POW Letter format (WI-001702); fall back to the default
+	# print if it is ever missing/disabled so the export never hard-fails. Both
+	# formats embed the ONEFM logo themselves, so Frappe's auto letter head is
+	# turned off to avoid a duplicate logo.
+	letter_format = (
+		"Proof of Work Letter"
+		if frappe.db.exists("Print Format", {"name": "Proof of Work Letter", "disabled": 0})
+		else None
+	)
+	letter = frappe.attach_print(
+		"Proof of Work", name, file_name=f"POW-Letter-{name}",
+		print_format=letter_format, print_letterhead=False,
+	)
 	attendance = _attendance_pdf(doc)
 
 	frappe.local.response.filename = f"{name}.zip"
