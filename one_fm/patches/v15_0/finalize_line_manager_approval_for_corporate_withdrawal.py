@@ -81,6 +81,6 @@ def execute():
 
 	if changed:
 		workflow.flags.ignore_mandatory = True
-		workflow.save(ignore_permissions=True)
+		workflow.save()
 
 	frappe.clear_cache(doctype=workflow.document_type)

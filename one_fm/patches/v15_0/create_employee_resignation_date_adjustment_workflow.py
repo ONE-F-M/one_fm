@@ -76,6 +76,6 @@ def execute():
 				"allowed": "Operations Manager",
 			},
 		],
-	}).insert(ignore_permissions=True)
+	}).insert()
 
 	frappe.clear_cache(doctype=workflow_name)

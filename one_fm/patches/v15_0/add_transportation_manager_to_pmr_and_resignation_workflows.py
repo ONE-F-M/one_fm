@@ -69,6 +69,6 @@ def _add_role_to_workflow(workflow_name, allow_edit_states, transitions, role):
 
 	if changed:
 		workflow.flags.ignore_mandatory = True
-		workflow.save(ignore_permissions=True)
+		workflow.save()
 
 	frappe.clear_cache(doctype=workflow.document_type)

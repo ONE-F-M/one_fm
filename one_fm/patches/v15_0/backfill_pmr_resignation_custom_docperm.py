@@ -45,7 +45,7 @@ def execute():
 			"role": role,
 			"permlevel": 0,
 			**perms,
-		}).insert(ignore_permissions=True)
+		}).insert()
 
 	frappe.clear_cache(doctype="Project Manpower Request")
 	frappe.clear_cache(doctype="Employee Resignation")

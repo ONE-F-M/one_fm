@@ -65,7 +65,7 @@ def execute():
 			return
 
 		ps.value = json.dumps(NEW_FIELD_ORDER)
-		ps.save(ignore_permissions=True)
+		ps.save()
 	else:
 		frappe.get_doc({
 			"doctype": "Property Setter",
@@ -74,6 +74,6 @@ def execute():
 			"property": "field_order",
 			"property_type": "Text",
 			"value": json.dumps(NEW_FIELD_ORDER),
-		}).insert(ignore_permissions=True)
+		}).insert()
 
 	frappe.clear_cache(doctype="Employee Resignation")
