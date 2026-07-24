@@ -320,9 +320,8 @@ class CandidateCountryProcess(Document):
                 if meta.has_field(field) and value:
                     new_doc.set(field, value)
 
-            new_doc.flags.ignore_permissions = True
             new_doc.flags.ignore_mandatory = True
-            new_doc.insert(ignore_permissions=True)
+            new_doc.insert()
 
             frappe.msgprint(
                 f"Auto-created {doctype}: <b>{new_doc.name}</b>",
@@ -497,7 +496,7 @@ def update_candidate_country_process():
                                     if process_list.idx > ccp.idx and process_list.reference_type:
                                         ccp_doc.db_set("current_process_id", process_list.name)
                                         break
-                            ccp_doc.save(ignore_permissions=True)
+                            ccp_doc.save()
                 else:
                     is_completed = (process_doc.get(ccp.reference_complete_status_field) == ccp.reference_complete_status_value)
                     if is_completed:
@@ -510,7 +509,7 @@ def update_candidate_country_process():
                                 if process_list.idx > ccp.idx and process_list.reference_type:
                                     ccp_doc.db_set("current_process_id", process_list.name)
                                     break
-                        ccp_doc.save(ignore_permissions=True)
+                        ccp_doc.save()
 
 
 def recalculate_ccp_live_eta(ccp_name: str):
@@ -525,7 +524,7 @@ def recalculate_ccp_live_eta(ccp_name: str):
     frappe.local.in_ccp_recalculation = True
     try:
         doc = frappe.get_doc("Candidate Country Process", ccp_name)
-        doc.save(ignore_permissions=True)
+        doc.save()
     except Exception as e:
         frappe.log_error(title="CCP Recalculate Error", message=f"Failed to recalculate CCP live ETA for {ccp_name}: {e}")
     finally:

@@ -146,7 +146,7 @@ class ArrivalandDeployment(Document):
             ack.terminal = self.terminal
             ack.arrival_airport = self.arrival_airport
             ack.ticket_attachment = self.ticket_attachment
-            ack.insert(ignore_permissions=True)
+            ack.insert()
             ack_name = ack.name
 
             # Frappe unconditionally defaults every Time-type field to nowtime() on
@@ -172,7 +172,7 @@ class ArrivalandDeployment(Document):
         assignment actually gets created (see create_arrival_acknowledgement)."""
         from frappe.desk.form.assign_to import clear as clear_assignment
         try:
-            clear_assignment(self.doctype, self.name, ignore_permissions=True)
+            clear_assignment(self.doctype, self.name)
         except Exception:
             pass
 
@@ -180,7 +180,7 @@ class ArrivalandDeployment(Document):
             "Arrival Acknowledgement", filters={"arrival_and_deployment": self.name}, pluck="name"
         ):
             try:
-                clear_assignment("Arrival Acknowledgement", ack_name, ignore_permissions=True)
+                clear_assignment("Arrival Acknowledgement", ack_name)
             except Exception as e:
                 frappe.log_error(title="Arrival Assignment Error", message=f"Failed to clear assignment for {ack_name}: {str(e)}")
 
