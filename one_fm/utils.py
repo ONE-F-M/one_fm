@@ -1789,7 +1789,7 @@ def _insert_job_offer_from_applicant(job_app):
     if job_app.one_fm_erf:
         erf = frappe.get_doc('ERF', job_app.one_fm_erf)
         set_erf_details(job_offer, erf, job_app)
-    job_offer.save(ignore_permissions = True)
+    job_offer.save()
 
 def set_erf_details(job_offer, erf, job_app):
     job_offer.erf = erf.name
