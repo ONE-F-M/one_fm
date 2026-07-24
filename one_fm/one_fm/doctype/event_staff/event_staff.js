@@ -3,7 +3,17 @@
 
 frappe.ui.form.on("Event Staff", {
 	// Frontend replace warnings have been removed as backend handles roster overlap directly.
-  
+
+	refresh(frm) {
+		// WI-001686: quick jump to this event's attendance, filtered by the linked Client Event.
+		// (Attendance links to Client Event, not Event Staff, so a native Connection can't filter it — hence a button.)
+		if (frm.doc.docstatus === 1 && frm.doc.client_event) {
+			frm.add_custom_button(__("Attendance"), () => {
+				frappe.set_route("List", "Attendance", { custom_client_event: frm.doc.client_event });
+			});
+		}
+	},
+
 	client_event(frm) {
 		if (frm.doc.client_event) {
 			frappe.db.get_value("Client Event", frm.doc.client_event,
