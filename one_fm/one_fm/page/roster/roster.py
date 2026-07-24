@@ -738,14 +738,10 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 	# day_off_ot is an independent flag: a Day Off OT first shift is still "Basic".
 	roster_type = "Over-Time" if otRoster == "true" else "Basic"
 
-	# A second (Over-Time) shift is only permitted when the target shift explicitly
-	# allows double-shift OT in the Operations Shift master. The OT dialog already
-	# filters the Shift dropdown, so this is defense-in-depth against API/import bypass.
-	if roster_type == "Over-Time" and not cint(operations_shift_doc.double_shift_ot_allowed):
-		frappe.throw(_(
-			"Double Shift OT is not allowed for shift {0}. Enable 'Double Shift OT Allowed' "
-			"in the Operations Shift master to schedule a second (overtime) shift."
-		).format(shift))
+	# WI-001687: OT scheduling is no longer blocked for shifts without
+	# 'Double Shift OT Allowed'. Selection is unrestricted (a soft warning is
+	# shown client-side); non-compliant OT is tracked via the Roster Double
+	# Shift OT Checker (WI-001688) rather than blocked here.
 
 	# check for end date
 	if end_date:
