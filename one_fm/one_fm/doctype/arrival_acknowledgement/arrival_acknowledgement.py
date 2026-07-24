@@ -68,21 +68,22 @@ def acknowledge(name: str):
 @frappe.whitelist()
 def confirm_arrival(name: str, outcome: str):
 	"""Transportation-only: once Transportation has acknowledged the pickup assignment,
-	they separately confirm whether the candidate actually arrived. This is the only
-	practical way to record that outcome at all -- Transportation Manager has no
-	access to Arrival and Deployment itself, so this drives its workflow_state to
-	Joined/Did Not Arrive on their behalf, reusing everything already wired to that
-	(clearing other departments' assignments, syncing CCP status, recalculating the
-	CCP timeline, notifying the recruiter).
+	they separately confirm whether the candidate actually arrived. This drives
+	Arrival and Deployment's workflow_state to Joined/Did Not Arrive on their behalf,
+	reusing everything already wired to that (clearing other departments'
+	assignments, syncing CCP status, recalculating the CCP timeline, notifying the
+	recruiter).
 
-	Deliberately does not use frappe.model.workflow.apply_workflow(): its
-	get_transitions() call does doc.check_permission("read") on Arrival and
-	Deployment before even checking the transition's allowed role, and
-	Transportation Manager has zero role-permission grant on that doctype by
-	design (see has_permission on this doctype) -- apply_workflow() would throw
-	a PermissionError for the exact user this method exists for. The role check
-	above (mirroring what the transition's "allowed" role would enforce) plus
-	the guards on doc.status/doc.arrival_confirmation substitute for it.
+	Transportation Manager has a real role-permission grant on Arrival and
+	Deployment (see the DocType's own permissions, restricted to workflow_state via
+	permlevel) scoped by has_permission() on that doctype to just the record where
+	they're the assigned transportation contact -- exactly the record
+	create_arrival_acknowledgement() routed to them, so this always matches in the
+	legitimate flow. Deliberately still doesn't use
+	frappe.model.workflow.apply_workflow(): the explicit role check above
+	(mirroring what the transition's "allowed" role would enforce) plus the guards
+	on doc.status/doc.arrival_confirmation already cover what it would validate,
+	without coupling this to the Workflow doctype's own transition configuration.
 	"""
 	if outcome not in ("Arrived", "Did Not Arrive"):
 		frappe.throw(_("Invalid arrival outcome."))
@@ -108,7 +109,7 @@ def confirm_arrival(name: str, outcome: str):
 	ard = frappe.get_doc("Arrival and Deployment", doc.arrival_and_deployment)
 	if ard.get("workflow_state") == "Pending Support Departments":
 		ard.workflow_state = "Joined" if outcome == "Arrived" else "Did Not Arrive"
-		ard.save(ignore_permissions=True)
+		ard.save()
 
 	return doc.arrival_confirmation
 

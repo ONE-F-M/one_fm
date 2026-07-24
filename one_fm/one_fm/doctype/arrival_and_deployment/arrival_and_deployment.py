@@ -270,4 +270,39 @@ class ArrivalandDeployment(Document):
         )
 
 
+def has_permission(doc, ptype=None, user=None, **kwargs):
+    """
+    Transportation Manager gets a real read/write grant on Arrival and Deployment
+    (see the DocType's own permissions, restricted to workflow_state via permlevel)
+    so confirm_arrival() no longer needs ignore_permissions -- but only scoped to
+    records where they're the assigned transportation contact. Without this hook,
+    that plain role-permission grant would let every Transportation Manager read
+    and write every candidate's record company-wide, not just the ones assigned
+    to them.
+
+    Every other role with real access here (System Manager, HR Manager, HR User,
+    Recruitment Manager, Recruiter, Senior Recruiter, Interviewer) already has
+    unrestricted doctype-level access and is unaffected -- this hook only narrows
+    things down for Transportation Manager specifically.
+    """
+    user = user or frappe.session.user
+    if user == "Administrator":
+        return None
+
+    roles = frappe.get_roles(user)
+    if "Transportation Manager" not in roles:
+        return None
+
+    if any(role in roles for role in (
+        "System Manager", "HR Manager", "HR User", "Recruitment Manager",
+        "Recruiter", "Senior Recruiter", "Interviewer",
+    )):
+        return None
+
+    if doc.get("transportation_manager") == user:
+        return None
+
+    return False
+
+
 
