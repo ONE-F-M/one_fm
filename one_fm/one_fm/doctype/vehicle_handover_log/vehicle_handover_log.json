@@ -1,0 +1,201 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2026-07-14 09:53:48.103495",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_tb4n",
+  "amended_from",
+  "naming_series",
+  "section_break_bdpr",
+  "vehicle",
+  "assigned_driver",
+  "column_break_rsnr",
+  "posting_date",
+  "status",
+  "operational_driver",
+  "section_break_lbmh",
+  "handover_start_time",
+  "column_break_vjgv",
+  "handover_end_time",
+  "section_break_ouin",
+  "odometer_start_km",
+  "column_break_dotm",
+  "odometer_end_km",
+  "total_kilometers",
+  "section_break_kuoh",
+  "transportation_manifest",
+  "column_break_vzqw",
+  "trip_group_hash"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_tb4n",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "label": "Amended From",
+   "fieldtype": "Link",
+   "options": "Vehicle Handover Log",
+   "read_only": 1,
+   "print_hide": 1,
+   "no_copy": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "label": "Naming Series",
+   "fieldtype": "Select",
+   "options": "VHL-HO-.YYYY.-.#####",
+   "hidden": 1
+  },
+  {
+   "fieldname": "section_break_bdpr",
+   "label": "Basic Information",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "vehicle",
+   "label": "Vehicle",
+   "fieldtype": "Link",
+   "options": "Vehicle",
+   "reqd": 1
+  },
+  {
+   "fieldname": "assigned_driver",
+   "label": "Assigned Driver",
+   "fieldtype": "Link",
+   "options": "Employee",
+   "reqd": 1,
+   "in_list_view": 1,
+   "fetch_from": "vehicle.employee"
+  },
+  {
+   "fieldname": "column_break_rsnr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "posting_date",
+   "label": "Posting Date",
+   "fieldtype": "Date",
+   "reqd": 1,
+   "default": "Today"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Active\nCompleted\nCancelled",
+   "default": "Active",
+   "read_only": 1,
+   "no_copy": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "operational_driver",
+   "label": "Operational Driver",
+   "fieldtype": "Link",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "section_break_lbmh",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "handover_start_time",
+   "label": "Handover Start Time",
+   "fieldtype": "Datetime",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_vjgv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "handover_end_time",
+   "label": "Handover End Time",
+   "fieldtype": "Datetime"
+  },
+  {
+   "fieldname": "section_break_ouin",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "odometer_start_km",
+   "label": "Odometer Start (KM)",
+   "fieldtype": "Int",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_dotm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "odometer_end_km",
+   "label": "Odometer End (KM)",
+   "fieldtype": "Int"
+  },
+  {
+   "fieldname": "total_kilometers",
+   "fieldtype": "Int",
+   "label": "Total Kilometers (KM)",
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "Odometer End minus Odometer Start. Calculated and locked on submit."
+  },
+  {
+   "fieldname": "section_break_kuoh",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "transportation_manifest",
+   "label": "Transportation Manifest",
+   "fieldtype": "Link",
+   "options": "Transportation Manifest"
+  },
+  {
+   "fieldname": "column_break_vzqw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "trip_group_hash",
+   "label": "Trip Group Hash",
+   "fieldtype": "Data"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-07-25 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Vehicle Handover Log",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
