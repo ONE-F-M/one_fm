@@ -3,10 +3,13 @@
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
+from frappe.utils import get_datetime
 
 from one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log import (
 	calculate_total_kilometers,
 	get_handover_status,
+	get_handover_windows,
+	get_manifest_departure_datetime,
 	validate_handover_window,
 	validate_odometer_readings,
 )
@@ -91,3 +94,57 @@ class TestVehicleHandoverLog(FrappeTestCase):
 
 	def test_cancelled_session_is_cancelled(self):
 		self.assertEqual(get_handover_status(2), "Cancelled")
+
+
+class TestManifestDepartureDatetime(FrappeTestCase):
+	"""
+	WI-001577: the instant the 12:10am job matches a handover log against, taken from the
+	manifest's earliest scheduled stop.
+	"""
+
+	def test_earliest_scheduled_time_wins(self):
+		manifest = {
+			"schedule_date": "2026-07-26",
+			"transportation_manifest_details": [
+				{"scheduled_time": "14:30:00"},
+				{"scheduled_time": "05:45:00"},
+				{"scheduled_time": "09:15:00"},
+			],
+		}
+		self.assertEqual(
+			get_manifest_departure_datetime(manifest), get_datetime("2026-07-26 05:45:00")
+		)
+
+	def test_falls_back_to_start_time_when_unscheduled(self):
+		# Rows compiled without a scheduled_time still carry the shift's start_time.
+		manifest = {
+			"schedule_date": "2026-07-26",
+			"transportation_manifest_details": [{"scheduled_time": None, "start_time": "06:00:00"}],
+		}
+		self.assertEqual(
+			get_manifest_departure_datetime(manifest), get_datetime("2026-07-26 06:00:00")
+		)
+
+	def test_no_timed_stops_returns_none(self):
+		# Nothing to match a handover window against - the job leaves the header alone
+		# rather than guessing, so the permanent driver from fetch_from stands.
+		for details in ([], [{"scheduled_time": None, "start_time": None}]):
+			manifest = {"schedule_date": "2026-07-26", "transportation_manifest_details": details}
+			self.assertIsNone(get_manifest_departure_datetime(manifest))
+
+	def test_no_schedule_date_returns_none(self):
+		manifest = {
+			"schedule_date": None,
+			"transportation_manifest_details": [{"scheduled_time": "06:00:00"}],
+		}
+		self.assertIsNone(get_manifest_departure_datetime(manifest))
+
+
+class TestHandoverWindows(FrappeTestCase):
+	def test_no_vehicles_skips_the_query(self):
+		# Guards the canvas payload: an empty lane list must not build a query with an
+		# empty IN clause.
+		self.assertEqual(get_handover_windows([], "2026-07-25 00:00:00", "2026-07-25 23:59:59"), {})
+		self.assertEqual(
+			get_handover_windows([None], "2026-07-25 00:00:00", "2026-07-25 23:59:59"), {}
+		)

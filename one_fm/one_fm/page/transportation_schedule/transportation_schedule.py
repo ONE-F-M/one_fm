@@ -3,6 +3,7 @@ import requests
 from frappe import _
 from frappe.utils import cint
 from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
+from one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log import get_handover_windows
 
 PICKUP_BUFFER = 10             # minutes
 MAX_TRANSIT = 60               # minutes
@@ -102,13 +103,38 @@ def get_route_planner_data():
             fmt, to_utc, get_coords_cached, timedelta
         )
 
+        # ── 3. Driver handover windows (WI-001577) ──
+        # Who is actually driving each vehicle, and when. The canvas labels every block
+        # with the driver holding the vehicle at that hour, falling back to the permanent
+        # custodian outside every handover window.
+        def local_to_utc_iso(dt):
+            local_dt = site_tz.localize(frappe.utils.get_datetime(dt))
+            return fmt(local_dt.astimezone(pytz.utc).replace(tzinfo=None))
+
+        handover_windows = {}
+        raw_windows = get_handover_windows(
+            [v["id"] for v in vehicles],
+            local_today_start.replace(tzinfo=None),
+            local_today_end.replace(tzinfo=None),
+        )
+        for vehicle_id, windows in raw_windows.items():
+            handover_windows[vehicle_id] = [
+                {
+                    "start":       local_to_utc_iso(w["start"]),
+                    "end":         local_to_utc_iso(w["end"]),
+                    "driver_name": w["driver_name"],
+                }
+                for w in windows
+            ]
+
         return {
-            "status":         "ok",
-            "date":           frappe.utils.today(),
-            "global_start":   fmt(global_start_utc),
-            "global_end":     fmt(global_end_utc),
-            "vehicles":       vehicles,
-            "shipment_cards": shipment_cards
+            "status":            "ok",
+            "date":              frappe.utils.today(),
+            "global_start":      fmt(global_start_utc),
+            "global_end":        fmt(global_end_utc),
+            "vehicles":          vehicles,
+            "shipment_cards":    shipment_cards,
+            "handover_windows":  handover_windows
         }
 
     except Exception as e:
