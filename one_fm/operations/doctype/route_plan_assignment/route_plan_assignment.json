@@ -6,6 +6,7 @@
   "engine": "InnoDB",
   "field_order": [
     "card_id",
+    "transportation_shipment",
     "vehicle",
     "direction",
     "column_break_1",
@@ -30,6 +31,13 @@
       "label": "Card ID",
       "reqd": 1,
       "in_list_view": 1
+    },
+    {
+      "fieldname": "transportation_shipment",
+      "fieldtype": "Link",
+      "label": "Transportation Shipment",
+      "options": "Transportation Shipment",
+      "description": "Source shipment record linked into this vehicle's manifest array"
     },
     {
       "fieldname": "vehicle",
@@ -114,13 +122,13 @@
       "fieldname": "start_time",
       "fieldtype": "Data",
       "label": "Start Time",
-      "description": "ISO timestamp of block start on timeline"
+      "description": "ISO timestamp of block start on timeline. Date part = multi-day lock lifespan start; time part = daily trip start."
     },
     {
       "fieldname": "end_time",
       "fieldtype": "Data",
       "label": "End Time",
-      "description": "ISO timestamp of block end on timeline"
+      "description": "ISO timestamp of block end on timeline. Date part = multi-day lock lifespan end; time part = daily trip end."
     }
   ],
   "index_web_pages_for_search": 0,

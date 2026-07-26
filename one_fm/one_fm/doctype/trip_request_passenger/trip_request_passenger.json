@@ -8,7 +8,9 @@
  "field_order": [
   "employee_id",
   "employee_name",
-  "accommodation_camp"
+  "accommodation_camp",
+  "stop_location",
+  "operations_site"
  ],
  "fields": [
   {
@@ -32,6 +34,18 @@
    "fieldtype": "Link",
    "label": "Accommodation Camp",
    "options": "Accommodation"
+  },
+  {
+   "fieldname": "stop_location",
+   "fieldtype": "Link",
+   "label": "Stop Location",
+   "options": "Location"
+  },
+  {
+   "fieldname": "operations_site",
+   "fieldtype": "Link",
+   "label": "Operations Site",
+   "options": "Operations Site"
   }
  ],
  "grid_page_length": 50,

@@ -53,6 +53,7 @@
   "column_break_26",
   "per_ordered",
   "per_received",
+  "full_receipt_notified",
   "notes_section",
   "notes",
   "printing_details",
@@ -229,6 +230,18 @@
    "fieldname": "per_received",
    "fieldtype": "Percent",
    "label": "% Received",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "description": "Set once the full-receipt notification email has been sent to the Requested By user, to prevent duplicate emails.",
+   "fieldname": "full_receipt_notified",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Full Receipt Notified",
    "no_copy": 1,
    "print_hide": 1,
    "read_only": 1
