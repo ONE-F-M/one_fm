@@ -17,6 +17,8 @@
   "project",
   "start_time",
   "end_time",
+  "from_date",
+  "to_date",
   "headcount",
   "column_break_fnwr",
   "trip_direction",
@@ -103,6 +105,20 @@
    "fieldname": "end_time",
    "fieldtype": "Time",
    "label": "End Time",
+   "read_only": 1
+  },
+  {
+   "description": "Start of the duration block this shipment covers (from the source Trip Request).",
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "label": "From Date",
+   "read_only": 1
+  },
+  {
+   "description": "End of the duration block this shipment covers (from the source Trip Request).",
+   "fieldname": "to_date",
+   "fieldtype": "Date",
+   "label": "To Date",
    "read_only": 1
   },
   {

@@ -815,7 +815,7 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
         fields=[
             "name", "accommodation", "accommodation_name", "operations_shift",
             "operations_site", "stop_location", "headcount", "trip_direction",
-            "routing_type_badge", "start_time", "end_time",
+            "routing_type_badge", "start_time", "end_time", "from_date", "to_date",
             "source_doctype", "source_docname", "pair_group",
         ],
     )
@@ -885,6 +885,8 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
                 "headcount":             s.headcount or len(employees),
                 "employees":             employees,
                 "return_employees":      [],
+                "from_date":             str(s.from_date) if s.from_date else None,
+                "to_date":               str(s.to_date) if s.to_date else None,
                 "outbound_window_start": fmt(dep_utc - timedelta(minutes=PICKUP_BUFFER)),
                 "outbound_window_end":   fmt(dep_utc),
                 "return_window_start":   fmt(ret_utc),
