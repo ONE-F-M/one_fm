@@ -1651,47 +1651,36 @@ function mountRoutePlannerApp(wrapper, data) {
                         const targetVehicle = self.planData.vehicles.find(v => v.label === label);
                         if (!targetVehicle) return;
 
-                        // The whole journey leg moves together (MA4-13 AC2): every stop
-                        // sharing this block's trip id AND direction. Outbound and return
-                        // legs stay independently assignable, so direction is part of the
-                        // match; a standalone block (no tripId) moves on its own.
-                        const journeyItems = item.tripId
-                            ? self.swimItems.filter(i =>
-                                i.tripId === item.tripId && i.direction === item.direction)
-                            : [item];
-                        const movingHeadcount = journeyItems.reduce((sum, i) => sum + (i.headcount || 0), 0);
-
-                        // Seat capacity check on the target vehicle across the journey's
-                        // combined time window. The selector excludes the current vehicle,
-                        // so none of the moving stops are already on the target.
-                        const blockStart = Math.min(...journeyItems.map(i => new Date(i.start).getTime()));
-                        const blockEnd = Math.max(...journeyItems.map(i => new Date(i.end).getTime()));
+                        // Seat capacity check on target vehicle during this block's time
+                        const blockStart = new Date(item.start).getTime();
+                        const blockEnd = new Date(item.end).getTime();
                         const logicalTrips = self._getLogicalTrips(targetVehicle.id);
                         const existingLoad = logicalTrips
-                            .filter(t => t.start < blockEnd && t.end > blockStart)
+                            .filter(t => {
+                                return t.start < blockEnd && t.end > blockStart;
+                            })
                             .reduce((sum, t) => sum + t.headcount, 0);
 
-                        if (existingLoad + movingHeadcount > targetVehicle.seats) {
+                        if (existingLoad + item.headcount > targetVehicle.seats) {
                             const shell = document.getElementById('rp-shell');
                             if (shell) {
                                 shell.style.transition = 'background-color 0.2s';
                                 shell.style.backgroundColor = '#ffebee';
                                 setTimeout(() => { shell.style.backgroundColor = ''; }, 400);
                             }
-                            frappe.throw(`Capacity Exceeded: Cannot assign ${movingHeadcount} employees to a ${targetVehicle.seats}-seater vehicle.`);
+                            frappe.throw(`Capacity Exceeded: Cannot assign ${item.headcount} employees to a ${targetVehicle.seats}-seater vehicle.`);
                             return;
                         }
 
-                        // Move every stop of the journey leg to the new vehicle/driver.
-                        journeyItems.forEach(i => { i.vehicleId = targetVehicle.id; });
+                        // Move the block
+                        item.vehicleId = targetVehicle.id;
                         self.checkConflicts();
                         self.canSave = self.assignedCards.size > 0;
                         self.persistAssignments();
                         self.selectedItem = null;
                         d.hide();
-                        const stopNote = journeyItems.length > 1 ? ` (${journeyItems.length} stops)` : '';
                         frappe.show_alert({
-                            message: `${dirLabel} moved to ${targetVehicle.label}${stopNote}`,
+                            message: `${dirLabel} moved to ${targetVehicle.label}`,
                             indicator: 'green'
                         });
                     }
