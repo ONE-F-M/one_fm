@@ -9,7 +9,6 @@
  "field_order": [
   "general_settings_section",
   "default_operation_manager",
-  "operation_admin",
   "section_break_kzb5e",
   "exclude_project"
  ],
@@ -33,13 +32,6 @@
    "options": "User"
   },
   {
-   "description": "Administrative user targeted for automated emergency staffing alerts.",
-   "fieldname": "operation_admin",
-   "fieldtype": "Link",
-   "label": "Operation Admin",
-   "options": "User"
-  },
-  {
    "fieldname": "section_break_kzb5e",
    "fieldtype": "Section Break"
   }
@@ -60,15 +52,6 @@
    "print": 1,
    "read": 1,
    "role": "System Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "email": 1,
-   "print": 1,
-   "read": 1,
-   "role": "Operations Manager",
    "share": 1,
    "write": 1
   }
