@@ -33,6 +33,19 @@ class EmployeeResignation(Document):
 				if not self.offboarding_officer:
 					frappe.throw(_("Please specify the <b>Offboarding Officer</b> before saving or submitting."))
 
+			# Enforce Supervisor Remarks once the resignation has moved past the
+			# Supervisor's own review stage (mandatory_depends_on in the JSON is
+			# client-side only in this Frappe version, so it must be backed up here).
+			if state != "Pending Supervisor" and not self.supervisor_remarks:
+				frappe.throw(_("Please provide Supervisor Remarks before proceeding."), title=_("Missing Remarks"))
+
+			# Operations Manager Remarks only applies to shift-workers -- corporate
+			# hires skip the Operations Manager stage entirely (direct Pending
+			# Supervisor -> Approved transition), so Supervisor Remarks above already
+			# covers their only reviewer.
+			if state == "Approved" and self.shift_working and not self.operations_manager_remarks:
+				frappe.throw(_("Please provide Operations Manager Remarks before approving."), title=_("Missing Remarks"))
+
 		# Enforce replacement_required explicitly for Operations Manager / Approved.
 		# Non-shift-workers skip the Operations Manager stage entirely (direct
 		# Pending Supervisor -> Approved transition), so they're auto-exempted

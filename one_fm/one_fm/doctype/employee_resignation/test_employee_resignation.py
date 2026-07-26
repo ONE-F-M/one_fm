@@ -276,7 +276,8 @@ class TestEmployeeResignation(FrappeTestCase):
 			doc.workflow_state = "Pending Operations Manager"
 			doc.offboarding_officer = "test-rsgn-manager@example.com"
 			doc.operations_manager = ""
-			
+			doc.supervisor_remarks = "Line Manager approved, no concerns."
+
 			# Validation must pass successfully since shift_working = 0
 			doc.validate()
 		finally:

@@ -14,6 +14,11 @@ frappe.ui.form.on("Employee Resignation", {
 		frm.set_df_property('resignation_initiation_date', 'read_only', is_editable ? 0 : 1);
 		frm.set_df_property('relieving_date', 'read_only', is_editable ? 0 : 1);
 
+		// Corporate hires have no Operations Manager step -- their "Supervisor" is
+		// really their Line Manager, so their remarks field is labeled to match.
+		frm.set_df_property('supervisor_remarks', 'label', frm.doc.shift_working ? __('Supervisor Remarks') : __('Line Manager Remarks'));
+		frm.refresh_field('supervisor_remarks');
+
 		// Filter Offboarding Officer to only show users with the 'Offboarding Officer' role
 		frm.set_query('offboarding_officer', () => {
 			return {
@@ -157,6 +162,28 @@ frappe.ui.form.on("Employee Resignation", {
 			});
 		}
 
+		// Supervisor/Line Manager Remarks are required before their step moves on --
+		// "Submit for Approval" (shift-workers, to Operations Manager) or "Approve"
+		// while still "Pending Supervisor" (corporate's direct-to-Approved path,
+		// since they have no separate Operations Manager step).
+		if (
+			(frm.selected_workflow_action === "Submit for Approval" || frm.selected_workflow_action === "Approve")
+			&& frm.doc.workflow_state === "Pending Supervisor"
+			&& !frm.doc.supervisor_remarks
+		) {
+			frappe.msgprint({
+				title: __('Missing Remarks'),
+				message: frm.doc.shift_working
+					? __('Please provide Supervisor Remarks before proceeding.')
+					: __('Please provide Line Manager Remarks before proceeding.'),
+				indicator: 'red'
+			});
+			setTimeout(() => {
+				frappe.dom.unfreeze();
+			}, 100);
+			return Promise.reject("Missing Supervisor Remarks");
+		}
+
 		if (frm.selected_workflow_action === "Approve" && frm.doc.workflow_state === "Pending Operations Manager") {
 			if (!frm.doc.replacement_required) {
 				frappe.msgprint({
@@ -168,6 +195,17 @@ frappe.ui.form.on("Employee Resignation", {
 					frappe.dom.unfreeze();
 				}, 100);
 				return Promise.reject("Missing Replacement Decision");
+			}
+			if (!frm.doc.operations_manager_remarks) {
+				frappe.msgprint({
+					title: __('Missing Remarks'),
+					message: __('Please provide Operations Manager Remarks before approving.'),
+					indicator: 'red'
+				});
+				setTimeout(() => {
+					frappe.dom.unfreeze();
+				}, 100);
+				return Promise.reject("Missing Operations Manager Remarks");
 			}
 		}
 	},

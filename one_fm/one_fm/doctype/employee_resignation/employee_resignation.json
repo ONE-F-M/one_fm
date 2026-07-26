@@ -30,6 +30,7 @@
         "date_of_joining",
         "operational_impact_section",
         "supervisor",
+        "supervisor_remarks",
         "replacement_required",
         "replacement_priority",
         "column_break_qfvv",
@@ -46,6 +47,7 @@
         "offboarding_officer",
         "column_break_bqiy",
         "operations_manager",
+        "operations_manager_remarks",
         "naming_series",
         "amended_from",
         "shift_working"
@@ -213,7 +215,7 @@
             "read_only": 1
         },
         {
-            "depends_on": "eval:!doc.__islocal && ['Pending Operations Manager', 'Approved', 'Withdrawn'].includes(doc.workflow_state)",
+            "depends_on": "eval:!doc.__islocal && ['Pending Supervisor', 'Pending Operations Manager', 'Approved', 'Withdrawn'].includes(doc.workflow_state)",
             "fieldname": "operational_impact_section",
             "fieldtype": "Section Break",
             "label": "Operational Impact"
@@ -225,6 +227,13 @@
             "options": "User",
             "read_only": 1,
             "ignore_user_permissions": 1
+        },
+        {
+            "fieldname": "supervisor_remarks",
+            "fieldtype": "Small Text",
+            "label": "Supervisor Remarks",
+            "max_height": "4rem",
+            "mandatory_depends_on": "eval:!doc.__islocal && !['Draft', 'Pending Supervisor', 'Pending Relieving Date Correction'].includes(doc.workflow_state)"
         },
         {
             "fieldname": "replacement_required",
@@ -332,6 +341,14 @@
             "reqd": 0,
             "mandatory_depends_on": "eval:!doc.__islocal && ['Pending Operations Manager', 'Approved'].includes(doc.workflow_state)",
             "ignore_user_permissions": 1
+        },
+        {
+            "fieldname": "operations_manager_remarks",
+            "fieldtype": "Small Text",
+            "label": "Operations Manager Remarks",
+            "max_height": "4rem",
+            "depends_on": "eval:doc.shift_working",
+            "mandatory_depends_on": "eval:doc.shift_working && !doc.__islocal && doc.workflow_state === 'Approved'"
         },
         {
             "fieldname": "offboarding_officer",
