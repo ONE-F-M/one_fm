@@ -33,7 +33,6 @@
   "column_break_izzg",
   "operations_site",
   "project",
-  "transportation_shipment",
   "rambo_assignment"
  ],
  "fields": [
@@ -209,14 +208,6 @@
    "fieldtype": "Link",
    "label": "Project",
    "options": "Project"
-  },
-  {
-   "fieldname": "transportation_shipment",
-   "fieldtype": "Link",
-   "label": "Transportation Shipment",
-   "no_copy": 1,
-   "options": "Transportation Shipment",
-   "read_only": 1
   },
   {
    "fieldname": "rambo_assignment",

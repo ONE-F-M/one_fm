@@ -6,7 +6,6 @@
   "engine": "InnoDB",
   "field_order": [
     "card_id",
-    "transportation_shipment",
     "vehicle",
     "direction",
     "column_break_1",
@@ -31,13 +30,6 @@
       "label": "Card ID",
       "reqd": 1,
       "in_list_view": 1
-    },
-    {
-      "fieldname": "transportation_shipment",
-      "fieldtype": "Link",
-      "label": "Transportation Shipment",
-      "options": "Transportation Shipment",
-      "description": "Source shipment record linked into this vehicle's manifest array"
     },
     {
       "fieldname": "vehicle",

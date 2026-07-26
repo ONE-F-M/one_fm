@@ -80,7 +80,6 @@ function mountRoutePlannerApp(wrapper, data) {
                 searchQuery: '',
                 collapsedGroups: {},          // { [accommodation]: boolean }
                 canSave: false,
-                isGenerating: false,          // shipment generation in progress
                 stopDragSourceIndex: null,  // drag-reorder: source stop index
                 stopDragOverIndex: null,    // drag-reorder: hovered stop index
 
@@ -1812,30 +1811,20 @@ function mountRoutePlannerApp(wrapper, data) {
                 if (parsedItems.length > 0) {
                     // Find the earliest saved timestamp
                     const earliestSaved = Math.min(...parsedItems.map(i => i.start.getTime()));
+                    // Calculate day offset: how many whole days between saved date and planStart
+                    const savedDay = new Date(earliestSaved);
+                    savedDay.setUTCHours(0, 0, 0, 0);
+                    const todayDay = new Date(this.planStart);
+                    todayDay.setUTCHours(0, 0, 0, 0);
+                    const dayOffsetMs = todayDay.getTime() - savedDay.getTime();
 
-                    // Only rebase when the saved blocks fall OUTSIDE today's timeline
-                    // window (i.e. a genuinely old plan). Blocks already within the
-                    // current window are left untouched: the timeline starts 3h before
-                    // local midnight, so its UTC day can differ from a same-day block's
-                    // UTC day — rebasing those by a whole day would push them off the
-                    // left edge and make the assignment invisible after a reload.
-                    const inWindow = earliestSaved >= this.planStart.getTime()
-                        && earliestSaved <= this.planEnd.getTime();
-
-                    if (!inWindow) {
-                        const savedDay = new Date(earliestSaved);
-                        savedDay.setUTCHours(0, 0, 0, 0);
-                        const todayDay = new Date(this.planStart);
-                        todayDay.setUTCHours(0, 0, 0, 0);
-                        const dayOffsetMs = todayDay.getTime() - savedDay.getTime();
-
-                        if (Math.abs(dayOffsetMs) > 12 * 3600000) {  // >12h means different day
-                            parsedItems = parsedItems.map(i => ({
-                                ...i,
-                                start: new Date(i.start.getTime() + dayOffsetMs),
-                                end:   new Date(i.end.getTime() + dayOffsetMs)
-                            }));
-                        }
+                    // Only rebase if saved on a different calendar day
+                    if (Math.abs(dayOffsetMs) > 12 * 3600000) {  // >12h means different day
+                        parsedItems = parsedItems.map(i => ({
+                            ...i,
+                            start: new Date(i.start.getTime() + dayOffsetMs),
+                            end:   new Date(i.end.getTime() + dayOffsetMs)
+                        }));
                     }
                 }
 
@@ -1986,15 +1975,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
 
             persistAssignments() {
-                if (!this.currentPlan) {
-                    // Surface the silent failure: without a loaded Route Plan there
-                    // is nowhere to save, so the assignment would vanish on refresh.
-                    frappe.show_alert({
-                        message: 'No Route Plan is loaded — this assignment was NOT saved. Create or select a plan (and mark it Default) first.',
-                        indicator: 'red'
-                    }, 6);
-                    return;
-                }
+                if (!this.currentPlan) return; // no plan selected — skip
                 // Debounce: clear any pending save and schedule a new one
                 if (this._saveTimer) clearTimeout(this._saveTimer);
                 this._saveTimer = setTimeout(() => {
@@ -2148,35 +2129,6 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             // ─ Manifest generation (ported verbatim from vis version) ───────
-
-            generateShipments() {
-                // Materialize/refresh Transportation Shipment records from Operations
-                // Shift data, then reload the pool from the persisted records.
-                if (this.isGenerating) return;
-                this.isGenerating = true;
-                const self = this;
-                frappe.call({
-                    method: 'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.generate_transportation_shipments',
-                    callback: function (r) {
-                        const s = r.message || {};
-                        frappe.show_alert({
-                            message: `Shipments: ${s.created || 0} created, ${s.updated || 0} updated, ${s.deleted || 0} removed`,
-                            indicator: 'green'
-                        });
-                        frappe.call({
-                            method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.get_route_planner_data',
-                            callback: function (rd) {
-                                if (rd.message && rd.message.status === 'ok') {
-                                    self.planData.shipment_cards = rd.message.shipment_cards;
-                                }
-                            }
-                        });
-                    },
-                    always: function () {
-                        self.isGenerating = false;
-                    }
-                });
-            },
 
             async openManifest() {
                 if (!this.currentPlan || !this.currentPlan.name) {
@@ -2446,9 +2398,6 @@ function injectRPVueTemplate() {
       <div v-if="currentPlan" class="text-muted" style="font-size:12px; margin-right: 12px; display: flex; align-items: center; gap: 4px; color: var(--green, #16a34a)">
         <span class="rp-icon" style="font-size:16px;">check_circle</span> Auto-Saved
       </div>
-      <button class="rp-btn rp-btn-default" :disabled="isGenerating" @click="generateShipments" title="Refresh unassigned shipments from Operations Shift data">
-        <span class="rp-icon">{{ isGenerating ? 'hourglass_empty' : 'sync' }}</span> {{ isGenerating ? 'Generating…' : 'Generate Shipments' }}
-      </button>
       <button class="rp-btn rp-btn-default rp-btn-manifest" :disabled="!canSave || !currentPlan" @click="openManifest">
         <span class="rp-icon">assignment</span> Manifest
       </button>
