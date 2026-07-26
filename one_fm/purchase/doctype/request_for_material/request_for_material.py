@@ -208,6 +208,10 @@ class RequestforMaterial(BuyingController):
                     return default_operation_manager
         elif self.type in ['Individual', 'Department'] and self.employee:
             approver = frappe.db.get_value('Employee', self.employee, 'reports_to')
+            if not approver:
+                    # No Reports To set: fall back to the Site Supervisor of the
+                    # employee's Allocated Site (Employee.site -> Operations Site.site_supervisor)
+                    approver = get_employee_site_supervisor(self.employee)
         elif self.type == 'Onboarding':
             employee = frappe.db.exists("Employee", {'user_id': self.owner})
             if employee:
