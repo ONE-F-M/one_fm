@@ -26,7 +26,6 @@
   "qoa_status",
   "qoa_reason",
   "pickup_accommodation",
-  "is_adhoc_stop",
   "section_break_vwjh",
   "operations_role",
   "column_break_yspc",
@@ -241,14 +240,6 @@
    "fieldtype": "Link",
    "label": "Pickup Accommodation",
    "options": "Accommodation"
-  },
-  {
-   "default": "0",
-   "description": "Set by the daily manifest compiler when a reliever's camp is not part of the standard route blueprint and a temporary detour stop was inserted for this day only.",
-   "fieldname": "is_adhoc_stop",
-   "fieldtype": "Check",
-   "label": "Is Adhoc Stop",
-   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
