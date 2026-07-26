@@ -13,7 +13,6 @@ class RamboAssignment(Document):
 
 	def on_submit(self):
 		self.create_employee_schedule()
-		self.send_submission_notifications()
 
 	def on_cancel(self):
 		self.delete_employee_schedule()
@@ -181,9 +180,12 @@ class RamboAssignment(Document):
 			)
 
 
-	def _build_email_context(self):
-		"""Build the render context for the Rambo Assignment email template."""
-		return {
+	def send_shift_supervisor_notification(self):
+		"""Send email notification to the Shift Supervisor when a Rambo Assignment is created."""
+		if not self.shift_supervisor_user:
+			return
+
+		context = {
 			"date": self.date,
 			"original_employee": self.original_employee or "",
 			"original_employee_name": self.original_employee_name or "",
@@ -201,26 +203,19 @@ class RamboAssignment(Document):
 			),
 		}
 
-	def _send_rambo_email(self, recipients):
-		"""Render the table-format template and email it to the given recipients."""
-		# Deduplicate and drop empty recipients so we never send to a blank address.
-		recipients = list({r for r in recipients if r})
-		if not recipients:
-			return
-
 		message = frappe.render_template(
 			"one_fm/templates/emails/rambo_assignment_notification.html",
-			self._build_email_context()
+			context
 		)
 
-		subject = _("Rambo Reliever Assigned for Manifest {0}").format(
+		subject = _("Rambo Assignment Alert: Reliever Assigned for Manifest {0}").format(
 			self.transportation_manifest
 		)
 
 		try:
 			from one_fm.processor import sendemail
 			sendemail(
-				recipients=recipients,
+				recipients=[self.shift_supervisor_user],
 				subject=subject,
 				header=[_("Rambo Assignment Alert: {0}").format(self.name)],
 				message=message,
@@ -230,50 +225,3 @@ class RamboAssignment(Document):
 				message=frappe.get_traceback(),
 				title=_("Rambo Assignment Email Error for {0}").format(self.name)
 			)
-
-	def send_shift_supervisor_notification(self):
-		"""Send email notification to the Shift Supervisor when a Rambo Assignment is created."""
-		if not self.shift_supervisor_user:
-			return
-		self._send_rambo_email([self.shift_supervisor_user])
-
-	def send_submission_notifications(self):
-		"""On submission, notify management by email and the reliever by mobile push.
-
-		Email recipients:
-		  1. The Operation Admin configured in Operation Settings.
-		  2. The Site Supervisor responsible for the reliever's allocated site
-		     (Employee.site -> Operations Site.site_supervisor -> user_id).
-		"""
-		from one_fm.utils import get_employee_site_supervisor_user
-
-		operation_admin = frappe.db.get_single_value("Operation Settings", "operation_admin")
-
-		site_supervisor_user = None
-		if self.employee:
-			site_supervisor_user = get_employee_site_supervisor_user(self.employee)
-
-		self._send_rambo_email([operation_admin, site_supervisor_user])
-
-		self.send_reliever_mobile_notification()
-
-	def send_reliever_mobile_notification(self):
-		"""Push an immediate deployment alert to the reliever's mobile app.
-
-		The push helper resolves the reliever's device token from Employee.fcm_token
-		and silently skips (logging errors) when no token is registered, so a reliever
-		who has never logged into the app never blocks submission.
-		"""
-		if not self.employee:
-			return
-
-		from one_fm.utils import send_push_notification
-
-		title = _("Rambo Reliever Deployment")
-		body = _("Site: You have been deployed at {0} | Shift: {1} ({2}). Report immediately.").format(
-			self.operations_site or "",
-			self.operations_shift or "",
-			self.date or "",
-		)
-
-		send_push_notification(self.employee, title, body)
