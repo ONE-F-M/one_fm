@@ -2,11 +2,11 @@
 // For license information, please see license.txt
 
 const ARRIVAL_ACKNOWLEDGEMENT_DEPARTMENT_ROLES = {
-	"Transportation": "Transportation Manager",
-	"General Services": "Accommodation User",
-	"Finance": "Finance User",
-	"Warehouse": "Warehouse Supervisor",
-	"Operations": "Operation Admin",
+	"Transportation": ["Transportation Manager"],
+	"General Services": ["Accommodation User"],
+	"Finance": ["Finance User"],
+	"Warehouse": ["Warehouse Supervisor"],
+	"Operations": ["Operation Admin", "T4 Admin"],
 };
 
 function arrival_acknowledgement_call_acknowledge(frm) {
@@ -27,8 +27,8 @@ frappe.ui.form.on("Arrival Acknowledgement", {
 		}
 
 		if (frm.doc.status !== "Acknowledged") {
-			let required_role = ARRIVAL_ACKNOWLEDGEMENT_DEPARTMENT_ROLES[frm.doc.department];
-			let can_acknowledge = frappe.user.has_role("System Manager") || (required_role && frappe.user.has_role(required_role));
+			let required_roles = ARRIVAL_ACKNOWLEDGEMENT_DEPARTMENT_ROLES[frm.doc.department] || [];
+			let can_acknowledge = frappe.user.has_role("System Manager") || required_roles.some((role) => frappe.user.has_role(role));
 			if (!can_acknowledge) {
 				return;
 			}

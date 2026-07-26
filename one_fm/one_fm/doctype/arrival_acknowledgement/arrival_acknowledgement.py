@@ -7,11 +7,11 @@ from frappe import _
 from frappe.model.document import Document
 
 DEPARTMENT_ROLES = {
-	"Transportation": "Transportation Manager",
-	"General Services": "Accommodation User",
-	"Finance": "Finance User",
-	"Warehouse": "Warehouse Supervisor",
-	"Operations": "Operation Admin",
+	"Transportation": ("Transportation Manager",),
+	"General Services": ("Accommodation User",),
+	"Finance": ("Finance User",),
+	"Warehouse": ("Warehouse Supervisor",),
+	"Operations": ("Operation Admin", "T4 Admin"),
 }
 
 # Extra fields a department must fill in (manual entry, directly on the form) before
@@ -45,11 +45,11 @@ class ArrivalAcknowledgement(Document):
 @frappe.whitelist()
 def acknowledge(name: str):
 	doc = frappe.get_doc("Arrival Acknowledgement", name)
-	required_role = DEPARTMENT_ROLES.get(doc.department)
+	required_roles = DEPARTMENT_ROLES.get(doc.department, ())
 	roles = frappe.get_roles()
 
-	if "System Manager" not in roles and (not required_role or required_role not in roles):
-		frappe.throw(_("Only users with the {0} role can acknowledge this.").format(required_role))
+	if "System Manager" not in roles and not any(role in roles for role in required_roles):
+		frappe.throw(_("Only users with the {0} role can acknowledge this.").format(" or ".join(required_roles)))
 
 	if doc.status == "Acknowledged":
 		return doc.status
@@ -228,8 +228,8 @@ def has_permission(doc, ptype=None, user=None, **kwargs):
 	if any(role in roles for role in ("System Manager", "HR Manager", "Onboarding Officer", "Recruiter", "Offboarding Officer")):
 		return None
 
-	required_role = DEPARTMENT_ROLES.get(doc.department)
-	if required_role and required_role in roles:
+	required_roles = DEPARTMENT_ROLES.get(doc.department, ())
+	if any(role in roles for role in required_roles):
 		return None
 
 	return False

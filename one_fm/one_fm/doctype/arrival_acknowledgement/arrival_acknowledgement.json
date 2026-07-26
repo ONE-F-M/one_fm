@@ -291,6 +291,11 @@
    "role": "Operation Admin"
   },
   {
+   "read": 1,
+   "write": 1,
+   "role": "T4 Admin"
+  },
+  {
    "permlevel": 1,
    "read": 1,
    "role": "System Manager",
@@ -324,6 +329,12 @@
    "permlevel": 1,
    "read": 1,
    "role": "Operation Admin",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "T4 Admin",
    "write": 1
   }
  ],

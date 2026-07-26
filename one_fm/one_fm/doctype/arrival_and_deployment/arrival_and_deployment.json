@@ -175,7 +175,7 @@
   {
    "fieldname": "operations_admin",
    "fieldtype": "Link",
-   "label": "Operations Admin",
+   "label": "Admin",
    "options": "User",
    "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
