@@ -543,6 +543,7 @@ override_doctype_class = {
 	"Holiday List": "one_fm.overrides.holiday_list.HolidayListOverride",
 	"Leave Application": "one_fm.overrides.leave_application.LeaveApplicationOverride",
     "Leave Allocation": "one_fm.overrides.leave_allocation.LeaveAllocationOverride",
+    "Compensatory Leave Request": "one_fm.overrides.compensatory_leave_request.CompensatoryLeaveRequestOverride",
 	"Employee": "one_fm.overrides.employee.EmployeeOverride",
 	"Employee Checkin": "one_fm.overrides.employee_checkin.EmployeeCheckinOverride",
 	"Timesheet": "one_fm.overrides.timesheet.TimesheetOveride",
