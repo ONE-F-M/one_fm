@@ -478,3 +478,26 @@ one_fm.patches.v15_0.backfill_subcontractor_name_in_onboard_subcontract_employee
 one_fm.patches.v15_0.delete_pending_approval_attendance_checks_airport_t4_jul12 #2026-07-13
 one_fm.patches.v15_0.send_amp_verification_test_email #2026-07-14
 one_fm.patches.v15_0.remove_pam_visa_doctype #2026-07-16
+
+one_fm.patches.v15_0.update_day_off_category_erf_2025_00030
+
+one_fm.patches.v15_0.add_asset_repair_requestor_fields
+one_fm.patches.v15_0.process_task_for_manage_helpdesk_leave_assignments
+
+one_fm.patches.v15_0.add_vehicle_custodian_history_fields
+ne_fm.patches.v15_0.update_sales_invoice_property_setter
+one_fm.patches.v15_0.add_nationality_read_permission
+one_fm.patches.v15_0.update_workflows_for_ops_admin_edit
+one_fm.patches.v15_0.backfill_ojt_employee_schedules #2026-06-18
+one_fm.patches.v15_0.delete_medical_appointment_todos #2026-06-15
+one_fm.patches.v15_0.sync_erf_workflow_state_with_closed_status #2026-06-15
+one_fm.patches.v15_0.close_job_openings_for_closed_erf #2026-06-15
+one_fm.patches.v15_0.update_interview_console_permissions
+one_fm.patches.v15_0.standardize_marital_status_options
+one_fm.patches.v15_0.standardize_employee_marital_status_options
+one_fm.patches.v15_0.fix_nirmala_day_off_client_event_conflict #2026-06-18
+one_fm.patches.v15_0.update_pmr_workflow_in_process_role
+one_fm.patches.v15_0.fix_shift_worker_annual_leave_total_days #2026-06-24
+one_fm.patches.v15_0.fix_leave_extension_request_leave_application_status #2026-06-30
+one_fm.patches.v15_0.update_pmr_and_resignation_workflow_permissions #2026-06-30
+one_fm.patches.v15_0.fix_day_off_client_event_conflict_bulk #2026-07-03
