@@ -501,3 +501,7 @@ one_fm.patches.v15_0.fix_shift_worker_annual_leave_total_days #2026-06-24
 one_fm.patches.v15_0.fix_leave_extension_request_leave_application_status #2026-06-30
 one_fm.patches.v15_0.update_pmr_and_resignation_workflow_permissions #2026-06-30
 one_fm.patches.v15_0.fix_day_off_client_event_conflict_bulk #2026-07-03
+
+
+
+one_fm.patches.v15_0.update_leave_application_workflow_dss #2026-07-17-2
