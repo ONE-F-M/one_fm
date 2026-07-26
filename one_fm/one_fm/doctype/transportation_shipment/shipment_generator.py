@@ -27,9 +27,6 @@ GEN_PREFIX = "OPS"
 # Identity prefix for shipments split out of a single Trip Request by camp.
 TRQ_PREFIX = "TRQ"
 TRIP_REQUEST = "Trip Request"
-# Retention-based card conversion (MA-10) is a Company Fleet concern only; other
-# transportation methods are handled off the fleet scheduling canvas.
-COMPANY_FLEET = "Company Fleet"
 MAHBOULA_LABELS = {"Mahboula 3", "Mahboula 12", "Mahboula 13", "Mahboula 15"}
 # Return riders may finish up to an hour after the outbound leg departs.
 RETURN_MATCH_FLOOR_SECONDS = -3600
@@ -405,16 +402,6 @@ def _prune_stale(current_keys: set) -> int:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def _card_directions(vehicle_retention) -> tuple:
-	"""Directions to materialize per camp for a Company Fleet Trip Request (MA-10).
-
-	Vehicle Retention ON collapses the round trip into a single combined Outward
-	card (drop-off + immediate return leg); OFF keeps separate Outward and Return
-	master cards.
-	"""
-	return ("Outward",) if vehicle_retention else ("Outward", "Return")
-
-
 def _trip_request_generation_key(trip_request: str, camp: str, direction: str) -> tuple:
 	"""Return (generation_key, pair_group) for a Trip Request camp cluster.
 
@@ -476,42 +463,16 @@ def _write_trip_request_shipment(doc, trip_request_doc, camp, passengers, direct
 
 
 def generate_shipments_from_trip_request(trip_request) -> dict:
-	"""Split one Trip Request into per-camp shipment cards, retention-aware (MA-10).
-
-	Only Company Fleet trips produce cards; any other transportation method yields
-	nothing (and prunes stale Unassigned cards, so amending the method away from
-	Company Fleet cleans up). For a Company Fleet trip, Vehicle Retention decides
-	how many cards each camp cluster becomes:
-
-	- Retention ON  → a single combined Outward card per camp covering both the
-	  drop-off and the immediate return leg (short window / turnaround).
-	- Retention OFF → separate Outward and Return master cards per camp (two),
-	  for independent daily drops and pickups.
+	"""Split one Trip Request into per-camp Outward + Return shipment cards.
 
 	Idempotent: re-running (e.g. on amend) refreshes still-Unassigned cards and
-	prunes Unassigned cards for camps/directions no longer on the request, but
-	never touches cards already Assigned to a Route Plan. So flipping retention on
-	prunes the now-orphaned Return card, and flipping it off recreates it. Returns
-	a summary of what changed.
+	prunes Unassigned cards for camps no longer on the request, but never touches
+	cards already Assigned to a Route Plan. Returns a summary of what changed.
 	"""
 	trip_request_doc = (
 		trip_request if hasattr(trip_request, "transport_request_passenger")
 		else frappe.get_doc(TRIP_REQUEST, trip_request)
 	)
-
-	# Non-Company-Fleet trips have no fleet cards; prune any left from a prior
-	# submit/amend so switching method away from Company Fleet clears the canvas.
-	if trip_request_doc.transportation_method != COMPANY_FLEET:
-		deleted = remove_unassigned_shipments_for_trip_request(trip_request_doc.name)
-		summary = {"created": 0, "updated": 0, "deleted": deleted, "errors": 0}
-		frappe.logger().info(
-			f"generate_shipments_from_trip_request[{trip_request_doc.name}]: "
-			f"method={trip_request_doc.transportation_method} (skipped) {summary}"
-		)
-		return summary
-
-	# Vehicle Retention collapses the round trip into one combined Outward card.
-	directions = _card_directions(trip_request_doc.vehicle_retention)
 
 	groups = _group_passengers_by_camp(trip_request_doc)
 
@@ -519,7 +480,7 @@ def generate_shipments_from_trip_request(trip_request) -> dict:
 	current_keys = set()
 
 	for camp, passengers in groups.items():
-		for direction in directions:
+		for direction in ("Outward", "Return"):
 			try:
 				gen_key, pair_group = _trip_request_generation_key(
 					trip_request_doc.name, camp, direction
