@@ -7,11 +7,16 @@ def execute():
 	"""Insert the new supervisor_remarks/operations_manager_remarks fields into
 	Employee Resignation's field_order Property Setter (which overrides the
 	DocType JSON's own field_order entirely -- see
-	rebalance_employee_resignation_layout_single_employee for the same pattern),
-	right after "supervisor" and "operations_manager" respectively.
+	rebalance_employee_resignation_layout_single_employee for the same pattern):
+	supervisor_remarks right after "supervisor", operations_manager_remarks
+	right after "status" (first column of "More Information", alongside
+	Offboarding Officer/Operations Manager rather than tucked under Operations
+	Manager specifically in the third column).
 
-	Additive only: inserts each fieldname only if it's missing, leaving
-	everything else in the stored order untouched.
+	Idempotent and self-relocating: removes each fieldname from wherever it
+	currently sits (in case this patch already ran with an earlier anchor)
+	before re-inserting it at the correct position, so reruns always converge
+	on the same layout regardless of the field's current position.
 	"""
 	frappe.reload_doc("one_fm", "doctype", "employee_resignation", force=True)
 
@@ -30,12 +35,14 @@ def execute():
 		return
 
 	changed = False
-	pairs = [("supervisor", "supervisor_remarks"), ("operations_manager", "operations_manager_remarks")]
+	pairs = [("supervisor", "supervisor_remarks"), ("status", "operations_manager_remarks")]
 	for anchor, new_field in pairs:
-		if new_field in order:
-			continue
 		if anchor not in order:
 			continue
+		if new_field in order:
+			if order.index(new_field) == order.index(anchor) + 1:
+				continue
+			order.remove(new_field)
 		order.insert(order.index(anchor) + 1, new_field)
 		changed = True
 
