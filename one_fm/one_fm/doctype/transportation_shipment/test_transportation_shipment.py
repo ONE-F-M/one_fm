@@ -331,111 +331,14 @@ class TestShipmentExpiry(FrappeTestCase):
 			frappe.db.get_value("Transportation Shipment", name, "status"), "Unassigned"
 		)
 
-	def test_assigned_card_past_to_date_becomes_inactive(self):
-		# TR-8: an Assigned card whose to_date has passed now expires too, so the
-		# block leaves the canvas after its To Date (TR 3-9 left Assigned alone).
+	def test_assigned_card_is_never_deactivated(self):
 		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import (
 			deactivate_expired_shipments,
 		)
 
-		name = self._make_shipment("Assigned", "2026-07-05")
+		# An Assigned card already sits in a Route Plan and must be left alone.
+		name = self._make_shipment("Assigned", "2026-01-01")
 		deactivate_expired_shipments(as_of="2026-07-19")
-		self.assertEqual(
-			frappe.db.get_value("Transportation Shipment", name, "status"), "Inactive"
-		)
-
-	def test_assigned_card_before_to_date_stays_assigned(self):
-		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import (
-			deactivate_expired_shipments,
-		)
-
-		name = self._make_shipment("Assigned", "2026-07-25")
-		deactivate_expired_shipments(as_of="2026-07-19")
-		self.assertEqual(
-			frappe.db.get_value("Transportation Shipment", name, "status"), "Assigned"
-		)
-
-	def test_assigned_card_without_to_date_never_expires(self):
-		# A continuous (standing) Assigned card carries no to_date — AC2.
-		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import (
-			deactivate_expired_shipments,
-		)
-
-		name = self._make_shipment("Assigned", None)
-		deactivate_expired_shipments(as_of="2026-07-19")
-		self.assertEqual(
-			frappe.db.get_value("Transportation Shipment", name, "status"), "Assigned"
-		)
-
-	def _assign_to_plan(self, shipment, *, start_iso, end_iso):
-		"""Place a shipment on a throwaway Route Plan with a lock window."""
-		doc = frappe.new_doc("Route Plan")
-		doc.title = frappe.generate_hash("RP-EXP", 8)
-		doc.status = "Draft"
-		doc.effective_from = "2026-07-01"
-		doc.append("assignments", {
-			"card_id": f"TSHIP-{shipment}", "transportation_shipment": shipment,
-			"vehicle": "VHL-0005", "direction": "OUTBOUND",
-			"start_time": start_iso, "end_time": end_iso,
-		})
-		doc.flags.ignore_mandatory = True
-		doc.flags.ignore_links = True
-		doc.insert(ignore_permissions=True)
-		return doc.name
-
-	def test_assigned_expires_on_edited_lock_end_not_to_date(self):
-		# Dispatcher SHORTENED the lock: to_date is still in the future, but the
-		# assignment's end_time date has passed -> expire on the lock end (TR-8).
-		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import (
-			deactivate_expired_shipments,
-		)
-
-		name = self._make_shipment("Assigned", "2026-07-30")
-		self._assign_to_plan(name, start_iso="2026-07-01T06:00:00Z", end_iso="2026-07-05T07:00:00Z")
-		deactivate_expired_shipments(as_of="2026-07-19")
-		self.assertEqual(
-			frappe.db.get_value("Transportation Shipment", name, "status"), "Inactive"
-		)
-
-	def test_assigned_survives_when_lock_end_extended_past_to_date(self):
-		# Dispatcher EXTENDED the lock: to_date has passed, but the assignment's
-		# end_time date is still in the future -> the card stays Assigned.
-		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import (
-			deactivate_expired_shipments,
-		)
-
-		name = self._make_shipment("Assigned", "2026-07-05")
-		self._assign_to_plan(name, start_iso="2026-07-01T06:00:00Z", end_iso="2026-07-25T07:00:00Z")
-		deactivate_expired_shipments(as_of="2026-07-19")
-		self.assertEqual(
-			frappe.db.get_value("Transportation Shipment", name, "status"), "Assigned"
-		)
-
-	def test_assigned_no_to_date_multiday_lock_expires(self):
-		# The TS-0725 case: a shipment with NO to_date but a bounded multi-day
-		# assignment lock whose end date has passed must expire — the assignment
-		# lock end is authoritative, not the (absent) shipment to_date.
-		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import (
-			deactivate_expired_shipments,
-		)
-
-		name = self._make_shipment("Assigned", None)
-		self._assign_to_plan(name, start_iso="2026-07-17T05:45:00Z", end_iso="2026-07-19T07:00:00Z")
-		deactivate_expired_shipments(as_of="2026-07-20")
-		self.assertEqual(
-			frappe.db.get_value("Transportation Shipment", name, "status"), "Inactive"
-		)
-
-	def test_assigned_no_to_date_single_day_lock_never_expires(self):
-		# A single-day span with no to_date is an open-ended/continuous run — it
-		# stays Assigned forever even though its lock date is in the past (AC2).
-		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import (
-			deactivate_expired_shipments,
-		)
-
-		name = self._make_shipment("Assigned", None)
-		self._assign_to_plan(name, start_iso="2026-07-10T06:00:00Z", end_iso="2026-07-10T07:00:00Z")
-		deactivate_expired_shipments(as_of="2026-07-20")
 		self.assertEqual(
 			frappe.db.get_value("Transportation Shipment", name, "status"), "Assigned"
 		)

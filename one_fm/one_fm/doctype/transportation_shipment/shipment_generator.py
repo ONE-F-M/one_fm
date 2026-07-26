@@ -605,40 +605,36 @@ def remove_unassigned_shipments_for_trip_request(trip_request: str) -> int:
 
 
 def deactivate_expired_shipments(as_of: str | None = None) -> int:
-	"""Flag shipments whose event window has passed as Inactive.
+	"""Flag still-Unassigned shipments whose to_date has passed as Inactive.
 
-	Daily scheduler entry point covering both pools:
-	- ``Unassigned`` cards expire the day after their own ``to_date``. Standing
-	  Operations Shift cards carry no to_date and are never affected (AC2).
-	- ``Assigned`` cards (placed on a vehicle) expire once their Route Plan lock
-	  window has ended — see ``_expired_assigned_shipments`` — so the block leaves
-	  the canvas after the dispatcher's lock End Date (TR-8, AC1). The vehicle
-	  frees automatically because the lock-overlap check ignores ended windows.
+	Daily scheduler entry point. Scoped deliberately:
+	- Only ``Unassigned`` cards are touched — an ``Assigned`` card already sits in
+	  a Route Plan and must not be pulled out from under it.
+	- Only cards with a ``to_date`` that is strictly before today qualify; the
+	  card stays active on its own to_date and expires the day after. Standing
+	  Operations Shift cards carry no to_date and are never affected.
 
 	Returns the number of shipments deactivated.
 	"""
 	cutoff_date = getdate(as_of or today())
 
-	# Unassigned cards expire on their own to_date. Blank Date fields can land as
-	# NULL or '0000-00-00' in the DB, and the latter slips past a plain SQL
-	# "< cutoff" filter, so we re-check in Python with getdate() to reliably
-	# exclude standing (undated) cards.
-	expired = set()
-	for row in frappe.get_all(
+	# Blank Date fields can land as NULL or '0000-00-00' in the DB, and the latter
+	# slips past a plain SQL "< cutoff" filter. We fetch the value and re-check it
+	# in Python with getdate() so standing (undated) cards are reliably excluded.
+	candidates = frappe.get_all(
 		"Transportation Shipment",
 		filters={"status": "Unassigned"},
 		fields=["name", "to_date"],
-	):
-		if row.to_date and getdate(row.to_date) < cutoff_date:
-			expired.add(row.name)
-
-	# Assigned cards expire once their Route Plan lock window has fully ended.
-	expired |= _expired_assigned_shipments(cutoff_date)
+	)
 
 	count = 0
-	for name in expired:
+	for row in candidates:
+		if not row.to_date:
+			continue
+		if getdate(row.to_date) >= cutoff_date:
+			continue
 		try:
-			frappe.db.set_value("Transportation Shipment", name, "status", "Inactive")
+			frappe.db.set_value("Transportation Shipment", row.name, "status", "Inactive")
 			count += 1
 		except Exception:
 			frappe.log_error(frappe.get_traceback(), "Transportation Shipment Expiry Error")
@@ -648,70 +644,3 @@ def deactivate_expired_shipments(as_of: str | None = None) -> int:
 
 	frappe.logger().info(f"deactivate_expired_shipments[{cutoff_date}]: deactivated {count}")
 	return count
-
-
-def _expired_assigned_shipments(cutoff_date) -> set:
-	"""Return Assigned shipments whose Route Plan lock window has fully ended.
-
-	Each placement's lock lifespan lives in the DATE part of the Route Plan
-	Assignment ``start_time``/``end_time`` (the TIME part is the daily trip
-	window). The lock end — the DATE the dispatcher set in the canvas modal — is
-	authoritative here, mirroring the canvas display gate:
-
-	- A placement is **bounded** when its assignment spans more than one day
-	  (``end date > start date``) OR the shipment carries a ``to_date``. It
-	  expires once every assignment that references it ends before ``cutoff_date``.
-	- A placement is **continuous** (single-day span AND no ``to_date``) and never
-	  expires (AC2).
-	- An Assigned shipment referenced by no plan row falls back to its own
-	  ``to_date``.
-	"""
-	assigned = frappe.get_all(
-		"Transportation Shipment",
-		filters={"status": "Assigned"},
-		fields=["name", "to_date"],
-	)
-	if not assigned:
-		return set()
-
-	to_date_by = {row.name: row.to_date for row in assigned}
-
-	rows_by = {}
-	for r in frappe.get_all(
-		"Route Plan Assignment",
-		filters={"transportation_shipment": ["in", list(to_date_by)]},
-		fields=["transportation_shipment", "start_time", "end_time"],
-	):
-		rows_by.setdefault(r.transportation_shipment, []).append(r)
-
-	expired = set()
-	for name, to_date in to_date_by.items():
-		rows = rows_by.get(name)
-		if not rows:
-			# Assigned but no plan row references it — fall back to its to_date.
-			if to_date and getdate(to_date) < cutoff_date:
-				expired.add(name)
-			continue
-
-		ends, is_multiday, parseable = [], False, True
-		for r in rows:
-			start_date = getdate(str(r.start_time)[:10]) if r.start_time else None
-			end_date = getdate(str(r.end_time)[:10]) if r.end_time else None
-			if end_date is None:
-				parseable = False  # a blank/unparseable end keeps the card live
-				break
-			ends.append(end_date)
-			if start_date and end_date > start_date:
-				is_multiday = True
-
-		if not parseable:
-			continue
-
-		# Single-day placements with no to_date are open-ended runs — never expire.
-		if not is_multiday and not to_date:
-			continue
-
-		if max(ends) < cutoff_date:
-			expired.add(name)
-
-	return expired

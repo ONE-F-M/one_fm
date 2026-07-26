@@ -122,13 +122,13 @@
       "fieldname": "start_time",
       "fieldtype": "Data",
       "label": "Start Time",
-      "description": "ISO timestamp of block start on timeline. Date part = multi-day lock lifespan start; time part = daily trip start."
+      "description": "ISO timestamp of block start on timeline"
     },
     {
       "fieldname": "end_time",
       "fieldtype": "Data",
       "label": "End Time",
-      "description": "ISO timestamp of block end on timeline. Date part = multi-day lock lifespan end; time part = daily trip end."
+      "description": "ISO timestamp of block end on timeline"
     }
   ],
   "index_web_pages_for_search": 0,

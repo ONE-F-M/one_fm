@@ -196,7 +196,6 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Generation Key",
-   "length": 500,
    "no_copy": 1,
    "read_only": 1,
    "search_index": 1
@@ -207,7 +206,6 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Pair Group",
-   "length": 500,
    "no_copy": 1,
    "read_only": 1
   },

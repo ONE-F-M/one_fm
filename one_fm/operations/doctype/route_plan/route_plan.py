@@ -5,7 +5,7 @@ import datetime
 
 import frappe
 from frappe import _
-from frappe.utils import cint, get_datetime, getdate, now_datetime, to_timedelta
+from frappe.utils import cint, getdate, to_timedelta
 from frappe.model.document import Document
 
 # Open-ended sentinels: a shipment missing a bound is treated as always-active on
@@ -22,7 +22,6 @@ class RoutePlan(Document):
 		self._validate_single_active()
 		self._validate_single_default()
 		self._validate_vehicle_retention_locks()
-		self._validate_vehicle_datetime_locks()
 
 	def _validate_dates(self):
 		"""Ensure effective_until >= effective_from when set."""
@@ -88,76 +87,6 @@ class RoutePlan(Document):
 			conflict = _detect_retention_conflict(names, shipment_map)
 			if conflict:
 				self._throw_retention_lock(vehicle, conflict)
-
-	def _validate_vehicle_datetime_locks(self):
-		"""Full-span vehicle block-out for multi-day lock windows (TR-8).
-
-		The assignment ``start_time``/``end_time`` are ISO timestamps whose DATE
-		part encodes the multi-day lock lifespan and whose TIME part is the daily
-		trip window. A row whose lock spans more than a single day (its end date
-		is later than its start date) reserves the vehicle across every calendar
-		day in that span, so no other shipment's run may share the vehicle while
-		the lock is live (the operational example: a bus retained across all six
-		calendar days).
-
-		For every vehicle we compare each multi-day lock against every other row
-		and reject the save when their date ranges overlap. Rows of the same
-		shipment (Outward + Return) and stops chained into the same trip are
-		exempt, and a lock whose last day has already passed is ignored so an
-		expired reservation frees the vehicle automatically. Scope is this plan's
-		own assignments — the canvas keeps every drop in one active/default plan,
-		mirroring the retention lock above.
-		"""
-		by_vehicle = {}
-		for row in self.assignments:
-			if row.vehicle:
-				by_vehicle.setdefault(row.vehicle, []).append(row)
-
-		today = getdate(now_datetime())
-
-		for vehicle, rows in by_vehicle.items():
-			# Only a multi-day lock blocks the whole vehicle; single-day runs keep
-			# the normal time-overlap rules (client-side + retention lock).
-			lock_rows = [r for r in rows if _is_multiday_lock(r)]
-			if not lock_rows:
-				continue
-
-			for lock in lock_rows:
-				lock_from, lock_to = _row_date_range(lock)
-
-				# Skip a lock whose last day has passed — the vehicle is free again.
-				if lock_to and lock_to < today:
-					continue
-
-				for other in rows:
-					if other is lock:
-						continue
-					# Same shipment (OUT + RET) or same chained trip never conflict.
-					if (
-						other.transportation_shipment
-						and other.transportation_shipment == lock.transportation_shipment
-					):
-						continue
-					if other.trip_group and other.trip_group == lock.trip_group:
-						continue
-
-					other_from, other_to = _row_date_range(other)
-					if _date_ranges_overlap(lock_from, lock_to, other_from, other_to):
-						self._throw_datetime_lock(vehicle, lock)
-
-	def _throw_datetime_lock(self, vehicle, lock):
-		"""Raise the block-out error for an overlapping multi-day lock window."""
-		trip_label = lock.transportation_shipment or lock.card_id or _("a multi-day run")
-		lock_from, lock_to = _row_date_range(lock)
-		start = _format_lock_date(lock_from) or _("today")
-		end = _format_lock_date(lock_to) or _("ongoing")
-		frappe.throw(
-			_(
-				"Vehicle Assignment Error: {0} is locked from {1} to {2} for {3} and "
-				"cannot be assigned to an overlapping run."
-			).format(vehicle, start, end, trip_label),
-			title=_("Vehicle Assignment Error"),
-		)
 
 	def _get_shipment_windows(self, shipment_names) -> dict:
 		"""Return {name: retention window dict} for the given shipments."""
@@ -252,40 +181,6 @@ def _time_windows_overlap(a_start, a_end, b_start, b_end) -> bool:
 	b_start = to_timedelta(b_start) if b_start else _TIME_START
 	b_end = to_timedelta(b_end) if b_end else _TIME_END
 	return a_start < b_end and b_start < a_end
-
-
-def _iso_to_date(value):
-	"""Return the calendar date of a timeline ISO stamp (``2026-07-20T06:00:00Z``)."""
-	if not value:
-		return None
-	text = str(value).replace("T", " ").replace("Z", "").strip()
-	try:
-		return getdate(get_datetime(text))
-	except Exception:
-		return None
-
-
-def _row_date_range(row):
-	"""Return the (from_date, to_date) lock lifespan encoded in a row's timestamps."""
-	return _iso_to_date(row.start_time), _iso_to_date(row.end_time)
-
-
-def _is_multiday_lock(row) -> bool:
-	"""True when a row's lock lifespan spans more than one calendar day.
-
-	Single-day runs (start date == end date) are ordinary trips and never
-	block the whole vehicle; only a genuine multi-day span acts as a full
-	block-out reservation.
-	"""
-	start, end = _row_date_range(row)
-	return bool(start and end and end > start)
-
-
-def _format_lock_date(value) -> str:
-	"""Render a date as ``15-07-2026`` for lock error messages."""
-	if not value:
-		return ""
-	return getdate(value).strftime("%d-%m-%Y")
 
 
 def _format_lock_until(end_time) -> str:

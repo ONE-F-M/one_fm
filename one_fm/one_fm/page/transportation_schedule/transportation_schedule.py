@@ -1419,16 +1419,12 @@ def get_manifest_data_for_plan(plan_name: str):
 			i_s = row.start_time or ""
 			i_e = row.end_time or ""
 
-			# Calculate duration in seconds. start_time/end_time carry the multi-day
-			# lock lifespan in their DATE part, so we take only the time-of-day
-			# difference — the run itself is a single-day trip (a 6-day lock is still
-			# a ~1h daily ride); otherwise the manifest would report a multi-day
-			# travel duration.
+			# Calculate duration in seconds
 			try:
 				from datetime import datetime as dt_cls
 				dt_start = dt_cls.fromisoformat(i_s.replace("Z", "+00:00")).replace(tzinfo=None)
 				dt_end = dt_cls.fromisoformat(i_e.replace("Z", "+00:00")).replace(tzinfo=None)
-				d_sec = int((dt_end - dt_start).total_seconds()) % 86400
+				d_sec = max(0, int((dt_end - dt_start).total_seconds()))
 			except Exception:
 				d_sec = 0
 
@@ -1456,8 +1452,7 @@ def get_manifest_data_for_plan(plan_name: str):
 				nxt = v_rows[idx_r + 1]
 				try:
 					nxt_start = dt_cls.fromisoformat((nxt.start_time or "").replace("Z", "+00:00")).replace(tzinfo=None)
-					# Time-of-day gap only (ignore the multi-day lifespan date part).
-					gap = int((nxt_start - dt_end).total_seconds()) % 86400
+					gap = max(0, int((nxt_start - dt_end).total_seconds()))
 				except Exception:
 					gap = 0
 			else:
@@ -1474,13 +1469,11 @@ def get_manifest_data_for_plan(plan_name: str):
 		r_s = v_rows[0].start_time or ""
 		r_e = v_rows[-1].end_time or ""
 		try:
-			# Daily route span — time-of-day only, so a multi-day lock does not
-			# balloon the reported route/trip duration into days.
 			tot_ms = (dt_cls.fromisoformat(r_e.replace("Z", "+00:00")).replace(tzinfo=None)
-					  - dt_cls.fromisoformat(r_s.replace("Z", "+00:00")).replace(tzinfo=None)).total_seconds() % 86400
+					  - dt_cls.fromisoformat(r_s.replace("Z", "+00:00")).replace(tzinfo=None)).total_seconds()
 			trip_ms = sum(
-				int((dt_cls.fromisoformat((r.end_time or "").replace("Z", "+00:00")).replace(tzinfo=None)
-						- dt_cls.fromisoformat((r.start_time or "").replace("Z", "+00:00")).replace(tzinfo=None)).total_seconds()) % 86400
+				max(0, (dt_cls.fromisoformat((r.end_time or "").replace("Z", "+00:00")).replace(tzinfo=None)
+						- dt_cls.fromisoformat((r.start_time or "").replace("Z", "+00:00")).replace(tzinfo=None)).total_seconds())
 				for r in v_rows
 			)
 		except Exception:
