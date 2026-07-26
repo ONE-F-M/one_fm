@@ -616,7 +616,8 @@ scheduler_events = {
         'one_fm.operations.doctype.process_task.process_task.create_task_on_monthly_on_day',
         'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_day_process_task',
         'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_last_day_process_task',
-		'one_fm.fleet_management.vehicle_branding_expiry.notify_vehicle_branding_expiry'
+		'one_fm.fleet_management.vehicle_branding_expiry.notify_vehicle_branding_expiry',
+		'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.generate_transportation_shipments'
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
