@@ -357,6 +357,27 @@ def get_current_user_details():
 	return user, user_roles, user_employee
 
 
+# WI-001692: roles that keep roster edit rights on a Helpdesk-managed Operations Site.
+# Operations Manager and System Manager are retained because the Operations Manager is
+# the role that enables the flag in the first place.
+HELPDESK_MANAGED_ROSTER_EDIT_ROLES = {
+	"Helpdesk Operator",
+	"Helpdesk Supervisor",
+	"Operations Manager",
+	"System Manager",
+}
+
+
+def is_site_roster_read_only(site):
+	"""Whether the current user may only read the roster of `site` (WI-001692)."""
+	if not site:
+		return False
+	if not frappe.db.get_value("Operations Site", site, "is_managed_by_helpdesk"):
+		return False
+
+	return not (HELPDESK_MANAGED_ROSTER_EDIT_ROLES & set(frappe.get_roles()))
+
+
 def check_site_roster_permission(site):
 	"""WI-001692: gate roster edits on a Helpdesk-managed Operations Site.
 
@@ -364,17 +385,67 @@ def check_site_roster_permission(site):
 	unchanged). For a managed site, only Helpdesk/Operations roles may edit;
 	everyone else (e.g. the site's own Site Supervisor) is read-only.
 	"""
-	if not site:
+	if not is_site_roster_read_only(site):
 		return
-	if not frappe.db.get_value("Operations Site", site, "is_managed_by_helpdesk"):
-		return
-	allowed = {"Helpdesk Operator", "Helpdesk Supervisor", "Operations Manager", "System Manager"}
-	if allowed & set(frappe.get_roles()):
-		return
+
 	frappe.throw(
 		_("This site's roster is managed by the Helpdesk and is read-only for your role."),
 		title=_("Read-Only Roster"),
 	)
+
+
+def get_employee_roster_sites(employees, key="employee"):
+	"""Distinct sites whose rosters a payload of employees touches.
+
+	Resolved in two queries regardless of payload size: an employee's own site, falling
+	back to the site of their allocated shift. `key` is the field naming the employee in
+	each row ("employee" for roster actions, "name" for Employee record updates).
+	"""
+	names = set()
+	for row in employees or []:
+		name = row.get(key) if isinstance(row, dict) else row
+		if name:
+			names.add(name)
+
+	if not names:
+		return set()
+
+	rows = frappe.get_all(
+		"Employee", filters={"name": ["in", list(names)]}, fields=["name", "site", "shift"]
+	)
+	sites = {row.site for row in rows if row.site}
+
+	shifts = list({row.shift for row in rows if not row.site and row.shift})
+	if shifts:
+		sites |= {
+			row.site
+			for row in frappe.get_all(
+				"Operations Shift", filters={"name": ["in", shifts]}, fields=["site"]
+			)
+			if row.site
+		}
+
+	return sites
+
+
+def check_employee_roster_permission(employees, key="employee"):
+	"""WI-001692: gate a roster action that targets employees rather than one shift.
+
+	Every distinct site in the payload is checked, so a bulk action spanning sites cannot
+	slip a Helpdesk-managed site through alongside an unmanaged one.
+	"""
+	for site in get_employee_roster_sites(employees, key=key):
+		check_site_roster_permission(site)
+
+
+@frappe.whitelist()
+def is_roster_read_only(site: str = None) -> bool:
+	"""Read-only state of a site's roster for the current user (WI-001692).
+
+	Used by the Roster page to disable the action buttons. The server-side gate on each
+	write remains the authority; this only keeps the UI honest.
+	"""
+	return is_site_roster_read_only(site)
 
 
 def get_employee_leave_attendance(employees, start_date):
@@ -680,6 +751,8 @@ def update_others_schedule(employees: str, day_off_ot: int, category: str):
 		employees_list = json.loads(employees)
 		if not employees_list:
 			frappe.throw(_("No employees selected."))
+
+		check_employee_roster_permission(employees_list)
 
 		day_off_ot = cint(day_off_ot)
 
@@ -1127,7 +1200,10 @@ def update_employee_shift(employees, shift, owner, creation):
 @frappe.whitelist()
 def schedule_leave(employees, leave_type, start_date, end_date):
 	try:
-		for employee_item in json.loads(employees):
+		employees_list = json.loads(employees)
+		check_employee_roster_permission(employees_list)
+
+		for employee_item in employees_list:
 			for date_item in pd.date_range(start=start_date, end=end_date):
 				date_str = cstr(date_item.date())
 				if frappe.db.exists("Employee Schedule", {"employee": employee_item["employee"], "date": date_str}):
@@ -1155,6 +1231,7 @@ def unschedule_staff(employees, roster_type, start_date=None, end_date=None, nev
 		stop_date = getdate(end_date) if end_date else None
 
 		employees = json.loads(employees)
+		check_employee_roster_permission(employees)
 		employee_list = list({obj["employee"] for obj in employees})
 
 		if not employees:
@@ -2072,6 +2149,7 @@ def dayoff(employees, client_day_off=0, selected_dates=0, selected_reliever=None
 		# We'll collect all dates into a dict of {employee: [dates]} to pass to validation.
 		emp_date_map = frappe._dict()
 		employees_list = json.loads(employees)
+		check_employee_roster_permission(employees_list)
 
 		is_weekend_reliever = False
 		if selected_reliever:
@@ -2842,6 +2920,8 @@ def bulk_employee_record_update(updates):
 	if not isinstance(updates, list):
 		frappe.throw("Invalid data format. Expected a list of updates.")
 
+	check_employee_roster_permission(updates, key="name")
+
 	updated_records_names = []
 	failed_updates = []
 
@@ -2887,6 +2967,8 @@ def suspend_employee_action(employees, selected_dates=0, repeat=0, repeat_freq=N
 	from dateutil.relativedelta import relativedelta
 	try:
 		employees = json.loads(employees)
+		check_employee_roster_permission(employees)
+
 		if week_days:
 			week_days = json.loads(week_days)
 		
