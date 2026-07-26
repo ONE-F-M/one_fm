@@ -1832,17 +1832,27 @@ function mountRoutePlannerApp(wrapper, data) {
                         && earliestSaved <= this.planEnd.getTime();
 
                     if (!inWindow) {
-                        const savedDay = new Date(earliestSaved);
-                        savedDay.setUTCHours(0, 0, 0, 0);
-                        const todayDay = new Date(this.planStart);
-                        todayDay.setUTCHours(0, 0, 0, 0);
-                        const dayOffsetMs = todayDay.getTime() - savedDay.getTime();
+                        // Shift every block by whole days until the earliest one lands
+                        // inside the current window. Keying off UTC midnight is wrong
+                        // here: the timeline starts 3h before local midnight, so a plan
+                        // saved for the PREVIOUS local day can share the same UTC
+                        // calendar date as planStart (giving a 0-day offset) while still
+                        // sitting before the left edge, leaving its blocks invisible.
+                        // Measuring the gap to the window edge instead shifts by the
+                        // correct number of days whether the plan is one or many days old.
+                        const dayMs = 24 * 3600000;
+                        let offsetMs = 0;
+                        if (earliestSaved < this.planStart.getTime()) {
+                            offsetMs = Math.ceil((this.planStart.getTime() - earliestSaved) / dayMs) * dayMs;
+                        } else if (earliestSaved > this.planEnd.getTime()) {
+                            offsetMs = -Math.ceil((earliestSaved - this.planEnd.getTime()) / dayMs) * dayMs;
+                        }
 
-                        if (Math.abs(dayOffsetMs) > 12 * 3600000) {  // >12h means different day
+                        if (offsetMs !== 0) {
                             parsedItems = parsedItems.map(i => ({
                                 ...i,
-                                start: new Date(i.start.getTime() + dayOffsetMs),
-                                end:   new Date(i.end.getTime() + dayOffsetMs)
+                                start: new Date(i.start.getTime() + offsetMs),
+                                end:   new Date(i.end.getTime() + offsetMs)
                             }));
                         }
                     }
