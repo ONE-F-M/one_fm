@@ -505,3 +505,14 @@ one_fm.patches.v15_0.fix_day_off_client_event_conflict_bulk #2026-07-03
 
 
 one_fm.patches.v15_0.update_leave_application_workflow_dss #2026-07-17-2
+
+#one_fm.patches.v15_0.add_hd_ticket_category_field
+
+
+#ne_fm.patches.v15_0.update_sales_invoice_property_setter
+#one_fm.patches.v15_0.backfill_checkin_geolocation_from_device_id #2026-07-12
+#one_fm.patches.v15_0.normalize_user_mobile_country_code #2026-07-13
+#one_fm.patches.v15_0.warm_zenquote_cache #2026-07-13
+#one_fm.patches.v15_0.backfill_subcontractor_name_in_onboard_subcontract_employee #2026-07-12
+#one_fm.patches.v15_0.delete_pending_approval_attendance_checks_airport_t4_jul12 #2026-07-13
+#one_fm.patches.v15_0.send_amp_verification_test_email #2026-07-14
