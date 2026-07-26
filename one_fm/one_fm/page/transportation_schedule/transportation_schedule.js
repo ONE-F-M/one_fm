@@ -513,17 +513,6 @@ function mountRoutePlannerApp(wrapper, data) {
                 return (typeof e === 'object' && e !== null) ? (e.mobile || '') : '';
             },
 
-            /** True when the employee is a Rambo reliever filling in for the shift. */
-            empIsReliever(e) {
-                return (typeof e === 'object' && e !== null) ? !!e.is_reliever : false;
-            },
-
-            /** Count of relievers in an employee list (regulars = length − this). */
-            relieverCount(emps) {
-                if (!Array.isArray(emps)) return 0;
-                return emps.filter(e => this.empIsReliever(e)).length;
-            },
-
             /** Handle click on employee phone icon — tel: on mobile, clipboard on desktop. */
             handleEmployeeCall(e) {
                 const name = this.empName(e);
@@ -3243,18 +3232,11 @@ function injectRPVueTemplate() {
                   <div class="rp-detail-row-value">{{ stop.card.stop_location || '—' }}</div>
                 </div>
               </div>
-              <!-- Passenger breakdown for this camp stop (AC5): how many board here -->
               <div class="rp-detail-row" style="padding:4px 0 3px 30px">
                 <div class="rp-detail-row-icon"><span class="rp-icon">group</span></div>
                 <div class="rp-detail-row-content">
-                  <div class="rp-detail-row-label">Boarding at this stop</div>
-                  <div class="rp-detail-row-value">
-                    {{ (stop.card.employees || []).length - relieverCount(stop.card.employees) }} regular
-                    <span v-if="relieverCount(stop.card.employees) > 0">
-                      · {{ relieverCount(stop.card.employees) }} reliever
-                    </span>
-                    <span class="rp-detail-row-label" style="display:inline">({{ (stop.card.employees || []).length }} total)</span>
-                  </div>
+                  <div class="rp-detail-row-label">Headcount</div>
+                  <div class="rp-detail-row-value">{{ stop.item.headcount || 0 }} employees</div>
                 </div>
               </div>
               <div style="display:flex;gap:6px;margin:6px 0 0 30px">
@@ -3265,19 +3247,6 @@ function injectRPVueTemplate() {
                 <div class="rp-time-pill rp-time-pill-end">
                   {{ fmtISO(new Date(stop.item.end).toISOString()) }}
                 </div>
-              </div>
-
-              <!-- Passenger manifest for this camp stop (AC6): regular vs reliever -->
-              <div class="rp-detail-emp-list" style="margin:8px 0 0 30px" v-if="stop.card.employees && stop.card.employees.length">
-                <span v-for="(e, ei) in stop.card.employees" :key="si + '_' + ei"
-                      class="rp-emp-chip rp-emp-chip-call"
-                      :class="{ 'rp-emp-chip-reliever': empIsReliever(e) }"
-                      @click.stop="handleEmployeeCall(e)"
-                      :title="empMobile(e) ? 'Call ' + empMobile(e) : 'No mobile number'">
-                  <span class="rp-emp-tag" :class="empIsReliever(e) ? 'rp-emp-tag-reliever' : 'rp-emp-tag-regular'">{{ empIsReliever(e) ? 'Reliever' : 'Regular' }}</span>
-                  {{ empName(e) }}
-                  <span class="rp-icon rp-call-icon" :class="empMobile(e) ? '' : 'rp-call-disabled'">call</span>
-                </span>
               </div>
             </div>
 
@@ -3292,13 +3261,16 @@ function injectRPVueTemplate() {
               </div>
             </div>
 
-            <!-- Trip-wide passenger total (regular vs reliever across all stops) -->
+            <!-- All employees across all stops -->
             <div class="rp-detail-card">
-              <div class="rp-detail-row-label" style="padding:0 0 6px 0"><span class="rp-icon" style="font-size:16px">group</span> Trip Total</div>
-              <div class="rp-detail-row-value">
-                {{ selectedTripStops.reduce((sum, s) => sum + ((s.card.employees || []).length - relieverCount(s.card.employees)), 0) }} regular
-                · {{ selectedTripStops.reduce((sum, s) => sum + relieverCount(s.card.employees), 0) }} reliever
-                <span class="rp-detail-row-label" style="display:inline">({{ selectedTripStops.reduce((sum, s) => sum + (s.card.employees || []).length, 0) }} passengers)</span>
+              <div class="rp-detail-row-label" style="padding:0 0 8px 0"><span class="rp-icon" style="font-size:16px">group</span> All Employees ({{ selectedTripStops.reduce((sum, s) => sum + (s.item.headcount || 0), 0) }})</div>
+              <div class="rp-detail-emp-list">
+                <template v-for="(stop, si) in selectedTripStops">
+                  <span v-for="(e, ei) in stop.card.employees" :key="si + '_' + ei" class="rp-emp-chip rp-emp-chip-call" @click.stop="handleEmployeeCall(e)" :title="empMobile(e) ? 'Call ' + empMobile(e) : 'No mobile number'">
+                    {{ empName(e) }}
+                    <span class="rp-icon rp-call-icon" :class="empMobile(e) ? '' : 'rp-call-disabled'">call</span>
+                  </span>
+                </template>
               </div>
             </div>
           </template>
@@ -3396,20 +3368,11 @@ function injectRPVueTemplate() {
               </div>
             </div>
 
-            <!-- Employees (regular vs reliever) -->
+            <!-- Employees -->
             <div class="rp-detail-card">
-              <div class="rp-detail-row-label" style="padding:0 0 4px 0"><span class="rp-icon" style="font-size:16px">group</span> Employees ({{ selectedCard.headcount }})</div>
-              <div class="rp-detail-row-value" style="padding:0 0 8px 0">
-                {{ (selectedCard.employees || []).length - relieverCount(selectedCard.employees) }} regular
-                <span v-if="relieverCount(selectedCard.employees) > 0">· {{ relieverCount(selectedCard.employees) }} reliever</span>
-              </div>
+              <div class="rp-detail-row-label" style="padding:0 0 8px 0"><span class="rp-icon" style="font-size:16px">group</span> Employees ({{ selectedCard.headcount }})</div>
               <div class="rp-detail-emp-list">
-                <span v-for="(e, ei) in selectedCard.employees" :key="'emp_' + ei"
-                      class="rp-emp-chip rp-emp-chip-call"
-                      :class="{ 'rp-emp-chip-reliever': empIsReliever(e) }"
-                      @click.stop="handleEmployeeCall(e)"
-                      :title="empMobile(e) ? 'Call ' + empMobile(e) : 'No mobile number'">
-                  <span class="rp-emp-tag" :class="empIsReliever(e) ? 'rp-emp-tag-reliever' : 'rp-emp-tag-regular'">{{ empIsReliever(e) ? 'Reliever' : 'Regular' }}</span>
+                <span v-for="(e, ei) in selectedCard.employees" :key="'emp_' + ei" class="rp-emp-chip rp-emp-chip-call" @click.stop="handleEmployeeCall(e)" :title="empMobile(e) ? 'Call ' + empMobile(e) : 'No mobile number'">
                   {{ empName(e) }}
                   <span class="rp-icon rp-call-icon" :class="empMobile(e) ? '' : 'rp-call-disabled'">call</span>
                 </span>
@@ -3738,13 +3701,6 @@ function injectRPStyles() {
         .rp-call-icon { font-size: 13px !important; color: var(--rp-color-success); transition: color 0.15s; }
         .rp-emp-chip-call:hover .rp-call-icon { color: #16a34a; }
         .rp-call-disabled { color: var(--md-sys-color-outline) !important; opacity: 0.35; cursor: default; }
-
-        /* ── Regular vs Reliever passenger labels (MA3-12 AC6) ── */
-        .rp-emp-chip-reliever { border-color: #c084fc; background: rgba(124,58,237,0.06); }
-        .rp-emp-chip-reliever:hover { border-color: var(--rp-color-trip-chain); background: rgba(124,58,237,0.12); }
-        .rp-emp-tag { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; border-radius: 3px; padding: 1px 4px; line-height: 1.4; }
-        .rp-emp-tag-regular  { background: var(--rp-color-outbound-container); color: var(--rp-color-outbound); }
-        .rp-emp-tag-reliever { background: var(--rp-color-trip-container); color: var(--rp-color-trip-chain); }
 
         /* ── Timeline Panel ── */
         #rp-timeline-panel {
