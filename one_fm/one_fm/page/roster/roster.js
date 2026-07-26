@@ -1193,6 +1193,7 @@ let classmap = {
 	"Client Event": "cyanboxcolor",
 	"Medical Appointment": "cyanboxcolor",
 	"On-the-job Training": "tealboxcolor",
+	"Client Interview": "cyanboxcolor",
 	"Suspended": "suspendedcolor"
 };
 
@@ -1216,6 +1217,7 @@ let abbr_map = {
 	"Medical Appointment": "MA",
 	"On-the-job Training": "OJT",
 	"Client Event": "CE",
+	"Client Interview": "CI",
 	"Suspended": "S"
 };
 
@@ -1798,10 +1800,64 @@ function get_post_data(page) {
 
 
 				bind_events(page);
+				setup_post_tooltip_position();
 			}).catch(e => {
 				console.log(e);
 			});
 	}
+}
+
+// Show the full post name in a floating tooltip on hover. The tooltip is
+// appended to <body> (not inside the table) because .table-parent has
+// overflow/scroll and a transform that would clip any tooltip rendered inside
+// it. It shows above the cell by default, but flips below when showing above
+// would place it behind the sticky column header.
+function setup_post_tooltip_position() {
+	let $postMonth = $(".postMonth");
+
+	// Single reusable floating tooltip element on <body>.
+	let $tooltip = $("#roster-post-tooltip");
+	if (!$tooltip.length) {
+		$tooltip = $('<div id="roster-post-tooltip" class="roster-post-tooltip"></div>').appendTo("body");
+	}
+
+	function position_tooltip(cell) {
+		let cell_rect = cell.getBoundingClientRect();
+		let $thead = $postMonth.find("#calenderviewtable thead");
+		let header_bottom = $thead.length ? $thead[0].getBoundingClientRect().bottom : 0;
+
+		let tip_width = $tooltip.outerWidth();
+		let tip_height = $tooltip.outerHeight();
+		let gap = 10;
+
+		// Center horizontally over the cell, clamped to the viewport.
+		let left = cell_rect.left + cell_rect.width / 2 - tip_width / 2;
+		left = Math.max(8, Math.min(left, window.innerWidth - tip_width - 8));
+
+		// Prefer above; flip below if the header would cover it.
+		let top_above = cell_rect.top - tip_height - gap;
+		let below = top_above < header_bottom;
+		let top = below ? cell_rect.bottom + gap : top_above;
+
+		$tooltip
+			.toggleClass("tooltip-below", below)
+			.toggleClass("tooltip-above", !below)
+			.css({ left: left + "px", top: top + "px" });
+	}
+
+	// Rebind cleanly so repeated renders don't stack duplicate handlers.
+	$postMonth.off(".tooltipflip", ".simplecheckbox")
+		.on("mouseenter.tooltipflip", ".simplecheckbox", function () {
+			let text = $(this).find(".tooltiptext").text().trim()
+				|| $(this).find(".postname").text().trim();
+			if (!text) return;
+			$tooltip.text(text);
+			position_tooltip(this);
+			$tooltip.addClass("show");
+		})
+		.on("mouseleave.tooltipflip", ".simplecheckbox", function () {
+			$tooltip.removeClass("show");
+		});
 }
 
 function escape_values(string) {

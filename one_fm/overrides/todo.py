@@ -36,6 +36,9 @@ def notify_todo_status_change(doc):
     """Notify user if ToDo status changes. Modular, clear, and logs notification."""
     if doc.is_new():
         return
+    # Only send notifications for Action-type ToDos; Processa handles Process tasks
+    if getattr(doc, "type", "") and doc.type != "Action":
+        return
     if not doc.notify_allocated_to_via_email:
         return
     status_in_db = frappe.db.get_value(doc.doctype, doc.name, "status")
@@ -98,6 +101,8 @@ def set_todo_type_from_refernce_doc(doc):
         meta = frappe.get_meta(doc.reference_type)
         if meta.has_field("type"):
             doc.type = frappe.db.get_value(doc.reference_type, doc.reference_name, "type")
+            if doc.type not in ["Action", "Process", "Project"]:
+                doc.type = "Action"
             return
     doc.type = "Action"
 
@@ -134,9 +139,9 @@ def create_google_task_on_todo_creation(doc, method):
     # Skip if general trigger is not enabled
     if not is_google_task_synchronization_enabled():
         return
-    frappe.enqueue(create_google_task_on_todo_creation_in_erp(doc=doc, method=method),is_async=True)
+    frappe.enqueue(create_google_task_on_todo_creation_in_erp, doc=doc, trigger_method=method, is_async=True)
 
-def create_google_task_on_todo_creation_in_erp(doc, method):
+def create_google_task_on_todo_creation_in_erp(doc, trigger_method):
     """Create a Google Task for the ToDo document if not already created."""
     employee_email = doc.allocated_to
     if doc.custom_google_task_id:
@@ -147,8 +152,8 @@ def create_google_task_on_todo_creation_in_erp(doc, method):
         service = get_google_task_service(employee_email)
         if not service:
             return
-        if method == "on_update":
-            prev_service = before_save(doc, method)
+        if trigger_method == "on_update":
+            prev_service = before_save(doc, trigger_method)
             if doc.custom_google_task_id and prev_service:
                 check_google_task_exists(doc.custom_google_task_id, prev_service)
         task_notes = create_description_for_google_todo(doc)
@@ -161,8 +166,14 @@ def create_google_task_on_todo_creation_in_erp(doc, method):
             "due": due_date
         }
         result = service.tasks().insert(tasklist="@default", body=task_body).execute()
-        doc.custom_google_task_id = result["id"]
-        doc.save()
+        # Reload to avoid TimestampMismatchError: the ToDo row may have been
+        # modified (e.g. by the assignment rule) after this doc was enqueued.
+        if not frappe.db.exists("ToDo", doc.name):
+            return
+        doc.reload()
+        # db_set writes only this column, skips the modified-timestamp check,
+        # and does not re-fire on_update (which would re-enqueue this job).
+        doc.db_set("custom_google_task_id", result["id"], update_modified=False)
         return result
     except Exception as e:
         title = f"Error while creating Google Task from ToDo for {employee_email}"
@@ -187,7 +198,7 @@ def create_description_for_google_todo(doc):
     if doc.reference_type and doc.reference_name:
         todo_reference = get_url_to_form("Todo", doc.name) if doc.name else ""
         todo_doc_type = doc.reference_type or ""
-        todo_reference_link = get_url_to_form(todo_doc_type, doc.reference_name) if doc.reference_name else ""
+        todo_reference_link = get_url_to_todo_reference_doc(todo_doc_type, doc.reference_name) if doc.reference_name else ""
         warning_msg = f"""
         Hey you can't update this task on Google Task, Close the task in ERPNext
 
@@ -413,6 +424,9 @@ def sync_google_tasks_for_users(user_emails=[], timedelta_kwargs=None):
 
 @frappe.whitelist()
 def send_email_on_todo_created(doc, method):
+    # Only send notifications for Action-type ToDos; Processa handles Process tasks
+    if getattr(doc, "type", "") and doc.type != "Action":
+        return
     if not doc.notify_allocated_to_via_email:
         return
     user_id = frappe.session.user
@@ -426,7 +440,7 @@ def send_email_on_todo_created(doc, method):
     if doc.reference_type and doc.reference_name:
         todo_reference = get_url_to_form("Todo", doc.name)
         todo_doc_type = doc.reference_type
-        todo_reference_link = get_url_to_form(todo_doc_type, doc.reference_name)
+        todo_reference_link = get_url_to_todo_reference_doc(todo_doc_type, doc.reference_name)
     args = frappe._dict({
                     "task_id": doc.custom_google_task_id,
                     "source": doc.custom_source,
@@ -444,3 +458,17 @@ def send_email_on_todo_created(doc, method):
     message = frappe.render_template("one_fm/templates/emails/email_notification_on_task_creation.html", args)
     subject = f"""A Task has been Created via {doc.custom_source} by {user_id}"""
     sendemail(recipients= recipients, message=message, subject=subject)
+
+def get_url_to_todo_reference_doc(document_type, name):
+    url = ""
+    if not document_type or not name:
+        return ""
+    try:
+        if document_type == "HD Ticket":
+            url = frappe.utils.get_url(f"/helpdesk/tickets/{name}")
+        else:
+            url = get_url_to_form(document_type, name)
+        return url
+    except Exception as e:
+        frappe.log_error(message=str(e), title=f"Failed to get URL for {document_type} {name}")
+        return ""

@@ -2,23 +2,26 @@ frappe.ui.form.on("HD Ticket", {
   refresh: function (frm) {
     add_dev_ticket_button(frm);
     add_github_issue_button(frm);
-    add_process_change_request_button(frm);
     setup_process_query(frm);
   },
 
-  custom_is_doctype_related: function (frm) {
-    // Clear reference doctype and process when switching to "No"
-    if (frm.doc.custom_is_doctype_related === "No") {
+  custom_ticket_category: function (frm) {
+    // Clear reference doctype and process when the ticket is no longer a Doctype Issue
+    if (frm.doc.custom_ticket_category !== "Doctype Issue") {
       frm.set_value("custom_reference_doctype", null);
       // Refresh process field to show all processes
       frm.set_query("custom_process", function () {
         return {};
       });
     }
+    // Clear process when the ticket is no longer a Process Issue
+    if (frm.doc.custom_ticket_category !== "Process Issue") {
+      frm.set_value("custom_process", null);
+    }
   },
 
   custom_reference_doctype: function (frm) {
-    if (frm.doc.custom_is_doctype_related === "Yes" && frm.doc.custom_reference_doctype) {
+    if (frm.doc.custom_ticket_category === "Doctype Issue" && frm.doc.custom_reference_doctype) {
       // Fetch filtered processes
       frappe.call({
         method: "one_fm.overrides.hd_ticket.get_filtered_processes",
@@ -54,52 +57,6 @@ frappe.ui.form.on("HD Ticket", {
     }
   },
 });
-
-const add_process_change_request_button = (frm) => {
-  if (
-    !frm.doc.ticket_type ||
-    !(frappe.user.has_role("Business Analyst") || frappe.user.has_role("Process Owner"))
-  ) {
-    return;
-  }
-
-  frappe.db.get_value(
-    "HD Ticket Type",
-    frm.doc.ticket_type,
-    "initiate_process_change_request",
-    (r) => {
-      if (r && r.initiate_process_change_request) {
-        frm.add_custom_button(
-          "Process Change Request",
-          () => {
-            frappe.call({
-              method: "one_fm.overrides.hd_ticket.create_process_change_request",
-              args: {
-                hd_ticket_name: frm.doc.name,
-              },
-              callback: function (r) {
-                if (r.message) {
-                  frappe.msgprint({
-                    message: __(
-                      "Process Change Request <a href='/app/process-change-request/{0}'>{0}</a> has been created successfully.",
-                      [r.message]
-                    ),
-                    title: __("Process Change Request Created"),
-                    indicator: "green",
-                  });
-                  frm.reload_doc();
-                }
-              },
-              freeze: true,
-              freeze_message: "Creating Process Change Request...",
-            });
-          },
-          "Create"
-        );
-      }
-    }
-  );
-};
 
 const add_github_issue_button = (frm) => {
   if (frm.doc.ticket_type == "Bug") {
@@ -300,7 +257,7 @@ const add_dev_ticket_button = (frm) => {
 const setup_process_query = (frm) => {
   // Set up dynamic query for process field
   frm.set_query("custom_process", function () {
-    if (frm.doc.custom_is_doctype_related === "Yes" && frm.doc.custom_reference_doctype) {
+    if (frm.doc.custom_ticket_category === "Doctype Issue" && frm.doc.custom_reference_doctype) {
       // This will be handled by the custom_reference_doctype event
       // Return empty filter for now, will be updated by the event handler
       return {};

@@ -59,8 +59,11 @@ class CareerHistory(Document):
 
 	def validate_with_applicant(self):
 		if self.job_applicant:
+			# If the Job Applicant is already Rejected, do not block the Career History.
+			# Allow it to be saved/submitted, but flag it so the linked Interview and
+			# Interview Feedback flow bypasses any further Job Applicant status update.
 			if frappe.db.get_value('Job Applicant', self.job_applicant, 'status') == 'Rejected':
-				frappe.throw(_('Applicant is Rejected'))
+				self.flags.skip_job_applicant_update = True
 			# validate_applicant_overseas_transferable(self.job_applicant)
 		if not self.name:
 			# hack! if name is null, it could cause problems with !=
@@ -175,6 +178,11 @@ def update_interview_and_feedback(career_history, submit=False):
 		interview_feedback.submit()
 		interview = frappe.get_doc('Interview', interview_feedback.interview)
 		interview.status = interview_feedback.result
+		# If the Job Applicant is already Rejected, bypass the Job Applicant update
+		# prompt triggered on Interview submit.
+		if career_history.job_applicant and frappe.db.get_value(
+			'Job Applicant', career_history.job_applicant, 'status') == 'Rejected':
+			interview.flags.skip_job_applicant_update = True
 		interview.submit()
 
 	frappe.msgprint(_('Interview Feedback {0} {1} successfully').format(
