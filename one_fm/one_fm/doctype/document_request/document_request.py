@@ -31,9 +31,11 @@ class DocumentRequest(Document):
 	def apply_reference_document_defaults(self):
 		if self.request_action == "Create" or not self.reference_document:
 			return
-		document_type, title = frappe.db.get_value(
-			"AI Reference Index", self.reference_document, ["document_type", "title"]
+		ref = frappe.db.get_value(
+			"AI Reference Index", self.reference_document, ["document_type", "title"], as_dict=True
 		)
-		self.document_type = document_type
+		if not ref:
+			return
+		self.document_type = ref.document_type
 		if not self.title:
-			self.title = title
+			self.title = ref.title
