@@ -87,27 +87,3 @@ class TripRequest(Document):
 	def calculate_total_headcount(self):
 		"""Populate the read-only Total Headcount from the passenger table."""
 		self.total_headcount = len(self.transport_request_passenger)
-
-	def on_submit(self):
-		"""Fragment the request into per-camp shipment demand cards.
-
-		Passengers living in different camps have different physical pickup
-		points, so a single multi-passenger request is split — clustered strictly
-		by accommodation_camp — into one Outward + one Return shipment per camp.
-		"""
-		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import (
-			generate_shipments_from_trip_request,
-		)
-
-		generate_shipments_from_trip_request(self)
-
-	def on_cancel(self):
-		"""Withdraw the still-Unassigned camp cards generated for this request.
-
-		Cards already Assigned to a Route Plan are deliberately left untouched.
-		"""
-		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import (
-			remove_unassigned_shipments_for_trip_request,
-		)
-
-		remove_unassigned_shipments_for_trip_request(self.name)
