@@ -25,6 +25,12 @@ class TransportationManifest(Document):
 		- Multi-stop rows (OSM/OLM) are numbered per unique Pickup Accommodation,
 		  in the order each accommodation's first row appears in the table
 		  (e.g. all Mahboula rows -> Stop 1, all Mangaf rows -> Stop 2).
+		- Rows with NO linked shipment but a pre-set Pickup Accommodation are
+		  reliever passengers injected by the daily manifest compiler (MA1-14).
+		  Their camp is preserved (not wiped), so a reliever whose camp matches an
+		  existing stop is clustered under that stop's number, and a reliever whose
+		  camp is new gets the next stop number (its row also carries
+		  is_adhoc_stop=1, set by the compiler).
 		"""
 		rows = self.transportation_manifest_details
 		if not rows:
@@ -55,7 +61,11 @@ class TransportationManifest(Document):
 		accommodation_sequence = {}  # accommodation -> stop number (1-based)
 		for row in rows:
 			shipment = shipment_map.get(row.transportation_shipment) if row.transportation_shipment else None
-			row.pickup_accommodation = shipment.accommodation if shipment else None
+			# Shipment-backed rows derive their camp from the shipment. Rows without a
+			# shipment keep whatever camp was already set — the daily compiler stamps
+			# reliever rows with the reliever's live camp, and that must not be wiped.
+			if shipment:
+				row.pickup_accommodation = shipment.accommodation
 
 			if row.pickup_accommodation and row.pickup_accommodation not in accommodation_sequence:
 				accommodation_sequence[row.pickup_accommodation] = len(accommodation_sequence) + 1
