@@ -6,73 +6,8 @@ from frappe.utils import getdate
 class TransportationManifest(Document):
 	def validate(self):
 		self.populate_shift_details_from_schedule()
-		self.populate_stop_sequence_and_pickup_accommodation()
 		self.validate_attendance_and_qoa()
 		self.validate_relievers()
-
-	def populate_stop_sequence_and_pickup_accommodation(self):
-		"""Auto-stamp Stop Sequence and Pickup Accommodation on every manifest row.
-
-		The frontend timeline canvas and driver mobile app read these two fields
-		to group, sort and render multi-stop journeys, so dispatchers never enter
-		them by hand.
-
-		Rules:
-		- Pickup Accommodation is read from each row's linked Transportation
-		  Shipment (the camp the shipment originates from).
-		- A row whose shipment is a "Direct" route is always Stop Sequence 1 —
-		  a Direct journey is a single terminal pickup.
-		- Multi-stop rows (OSM/OLM) are numbered per unique Pickup Accommodation,
-		  in the order each accommodation's first row appears in the table
-		  (e.g. all Mahboula rows -> Stop 1, all Mangaf rows -> Stop 2).
-		"""
-		rows = self.transportation_manifest_details
-		if not rows:
-			return
-
-		# Batch-fetch shipment -> accommodation + routing badge in one query
-		shipment_ids = {
-			row.transportation_shipment
-			for row in rows
-			if row.transportation_shipment
-		}
-		shipment_map = {}
-		if shipment_ids:
-			from frappe.query_builder import DocType
-			TransportationShipment = DocType("Transportation Shipment")
-			shipments = (
-				frappe.qb.from_(TransportationShipment)
-				.select(
-					TransportationShipment.name,
-					TransportationShipment.accommodation,
-					TransportationShipment.routing_type_badge,
-				)
-				.where(TransportationShipment.name.isin(list(shipment_ids)))
-			).run(as_dict=True)
-			shipment_map = {s.name: s for s in shipments}
-
-		# First pass: stamp Pickup Accommodation and record first-appearance order
-		accommodation_sequence = {}  # accommodation -> stop number (1-based)
-		for row in rows:
-			shipment = shipment_map.get(row.transportation_shipment) if row.transportation_shipment else None
-			row.pickup_accommodation = shipment.accommodation if shipment else None
-
-			if row.pickup_accommodation and row.pickup_accommodation not in accommodation_sequence:
-				accommodation_sequence[row.pickup_accommodation] = len(accommodation_sequence) + 1
-
-		# Second pass: assign Stop Sequence
-		for row in rows:
-			shipment = shipment_map.get(row.transportation_shipment) if row.transportation_shipment else None
-			is_direct = bool(shipment and shipment.routing_type_badge == "Direct")
-
-			if is_direct:
-				# Direct route -> single terminal pickup, always the first stop
-				row.stop_sequence = 1
-			elif row.pickup_accommodation:
-				row.stop_sequence = accommodation_sequence.get(row.pickup_accommodation, 1)
-			else:
-				# No shipment/accommodation to key on -> default to the first stop
-				row.stop_sequence = 1
 
 	def on_update(self):
 		self.sync_rambo_assignments()

@@ -87,9 +87,6 @@ function mountRoutePlannerApp(wrapper, data) {
                 // ── Drag tooltip (5-min snap) ──
                 dragTooltip: null,          // { x, y, timeLabel } — floating HH:MM tooltip during block drag
 
-                // ── Multi-stop hover popup ──
-                hoverPopup: null,           // { x, y, groups:[{seq, accommodation, pax}] } — stop-sequence pax summary
-
                 // ── Plan management ──
                 currentPlan: null,        // { name, title, status, effective_from, effective_until }
                 planList: [],           // all available plans
@@ -656,13 +653,10 @@ function mountRoutePlannerApp(wrapper, data) {
                 const cardWindowEnd   = new Date(isOutbound ? card.outbound_window_end   : card.return_window_end).getTime();
                 const PROXIMITY_MS = 2 * 60 * 60 * 1000; // 2 hours
 
-                // Multi-camp trips are valid: a single vehicle may pick up from
-                // several accommodations on one run (e.g. Mahboula then Mangaf),
-                // so proximity — not a shared accommodation — decides chaining.
                 const nearbyBlocks = this.swimItems.filter(i => {
                     if (i.vehicleId !== vehicle.id) return false;
                     const existingCard = this.planData.shipment_cards.find(c => c.id === i.cardId);
-                    if (!existingCard) return false;
+                    if (!existingCard || existingCard.accommodation !== card.accommodation) return false;
                     const blockEnd = new Date(i.end).getTime();
                     const blockStart = new Date(i.start).getTime();
                     return blockEnd > (cardWindowStart - PROXIMITY_MS) && blockStart < (cardWindowEnd + PROXIMITY_MS);
@@ -684,16 +678,14 @@ function mountRoutePlannerApp(wrapper, data) {
                         const existingStops = nearbyBlocks.map(i => {
                             const c = this.planData.shipment_cards.find(sc => sc.id === i.cardId);
                             const siteName = c ? c.site_location : i.cardId;
-                            const campName = (c && c.accommodation) ? c.accommodation : '';
                             const dirBadge = i.direction === 'RETURN' ? '← RET' : '→ OUT';
-                            return `${campName ? '<strong>' + campName + '</strong> — ' : ''}${siteName} <span style="font-size:11px;color:#888">(${dirBadge})</span>`;
+                            return `${siteName} <span style="font-size:11px;color:#888">(${dirBadge})</span>`;
                         });
                         const newDirBadge = card.direction === 'RETURN' ? '← RET' : '→ OUT';
-                        const newCamp = card.accommodation ? `<strong>${card.accommodation}</strong> — ` : '';
                         frappe.confirm(
-                            `<strong>${vehicle.label}</strong> already has an active trip:<br><br>` +
+                            `<strong>${vehicle.label}</strong> already has stops from <strong>${card.accommodation}</strong>:<br><br>` +
                             existingStops.map((s, i) => `&nbsp;&nbsp;${i + 1}. ${s}`).join('<br>') +
-                            `<br><br>Add ${newCamp}<strong>${card.site_location}</strong> <span style="font-size:11px;color:#888">(${newDirBadge})</span> as the next stop on this trip?`,
+                            `<br><br>Add <strong>${card.site_location}</strong> <span style="font-size:11px;color:#888">(${newDirBadge})</span> as the next stop on this trip?`,
                             () => this._chainToTrip(card, tripMap[tripKeys[0]], vehicle.id),
                             () => this._doPlaceWithDialog(card, vehicle.id)
                         );
@@ -705,9 +697,8 @@ function mountRoutePlannerApp(wrapper, data) {
                             const sites = items.map(i => {
                                 const c = self.planData.shipment_cards.find(sc => sc.id === i.cardId);
                                 const siteName = c ? c.site_location : i.cardId;
-                                const campName = (c && c.accommodation) ? c.accommodation + ' — ' : '';
                                 const dir = i.direction === 'RETURN' ? '←' : '→';
-                                return `${dir} ${campName}${siteName}`;
+                                return `${dir} ${siteName}`;
                             });
                             const timeRange = self.fmtTime(items[0].start) + '–' + self.fmtTime(items[items.length - 1].end);
                             const tName = items.find(i => i.tripName)?.tripName;
@@ -725,8 +716,8 @@ function mountRoutePlannerApp(wrapper, data) {
                                 {
                                     fieldtype: 'HTML',
                                     options: `<p style="margin:0 0 12px;color:#555;font-size:13px">
-                                        <strong>${vehicle.label}</strong> has <strong>${tripKeys.length} active trips</strong>.
-                                        Choose which trip to add <strong>${card.accommodation ? card.accommodation + ' — ' : ''}${card.site_location}</strong> to:</p>`
+                                        <strong>${vehicle.label}</strong> has <strong>${tripKeys.length} trips</strong>
+                                        from <strong>${card.accommodation}</strong>. Choose which trip to add this stop to:</p>`
                                 },
                                 {
                                     fieldtype: 'Select', fieldname: 'trip_choice',
@@ -2086,51 +2077,6 @@ function mountRoutePlannerApp(wrapper, data) {
                 return !!(this.selectedItem && this.selectedItem.id === item.id);
             },
 
-            // ── Multi-stop hover popup (AC: group by Pickup Accommodation) ──
-
-            /**
-             * Group a list of swim-item stops by their Pickup Accommodation,
-             * summing pax (headcount) per accommodation. Stop sequence numbers
-             * follow the order each accommodation first appears — matching the
-             * backend Transportation Manifest rule.
-             * @returns {Array<{seq:number, accommodation:string, pax:number, stops:number}>}
-             */
-            computeStopGroups(stops) {
-                const order = [];
-                const map = {};
-                (stops || []).forEach(s => {
-                    const card = this.bcard(s);
-                    const acc = (card && card.accommodation)
-                        ? card.accommodation
-                        : (s._accommodation || '—');
-                    if (!(acc in map)) {
-                        map[acc] = { seq: order.length + 1, accommodation: acc, pax: 0, stops: 0 };
-                        order.push(acc);
-                    }
-                    map[acc].pax += (s.headcount || 0);
-                    map[acc].stops += 1;
-                });
-                return order.map(acc => map[acc]);
-            },
-
-            showStopHover(e, stops) {
-                if (this.isDraggingBlock) return;   // don't compete with block drag
-                const groups = this.computeStopGroups(stops);
-                if (!groups.length) return;
-                this.hoverPopup = { x: e.clientX, y: e.clientY, groups };
-            },
-
-            moveStopHover(e) {
-                if (this.hoverPopup) {
-                    this.hoverPopup.x = e.clientX;
-                    this.hoverPopup.y = e.clientY;
-                }
-            },
-
-            hideStopHover() {
-                this.hoverPopup = null;
-            },
-
             // ── Merged block position helpers ──
             mbx(entry) { return this.timeToX(entry.start); },
             mbw(entry) { return Math.max(8, this.timeToX(entry.end) - this.timeToX(entry.start)); },
@@ -2449,28 +2395,6 @@ function injectRPVueTemplate() {
     {{ dragTooltip.timeLabel }}
   </div>
 
-  <!-- ── Multi-stop hover popup (rows-per-stop pax summary) ── -->
-  <div v-if="hoverPopup && !isDraggingBlock"
-       class="rp-stop-hover"
-       :style="{
-           left: hoverPopup.x + 'px',
-           top: (hoverPopup.y + 18) + 'px'
-       }">
-    <div class="rp-stop-hover-title">
-      {{ hoverPopup.groups.length > 1 ? 'Multi-Stop Route' : 'Route Stop' }}
-    </div>
-    <div class="rp-stop-hover-flow">
-      <template v-for="(g, gi) in hoverPopup.groups" :key="'sh' + gi">
-        <span class="rp-stop-hover-chip">
-          <span class="rp-stop-hover-seq">Stop {{ g.seq }}</span>
-          <span class="rp-stop-hover-acc">{{ g.accommodation }}</span>
-          <span class="rp-stop-hover-pax">[{{ g.pax }} Pax]</span>
-        </span>
-        <span v-if="gi < hoverPopup.groups.length - 1" class="rp-stop-hover-arrow">&#10142;</span>
-      </template>
-    </div>
-  </div>
-
   <!-- ══ Header ══ -->
   <div id="rp-header">
     <div id="rp-header-left">
@@ -2710,9 +2634,6 @@ function injectRPVueTemplate() {
                      :class="isDraggingBlock && bsel(entry.item) ? 'rp-block-grabbing' : 'rp-block-grab'"
                      @mousedown="onBlockMouseDown($event, entry.item)"
                      @touchstart.prevent="onBlockTouchStart($event, entry.item)"
-                     @mouseenter="showStopHover($event, [entry.item])"
-                     @mousemove="moveStopHover($event)"
-                     @mouseleave="hideStopHover()"
                      @click.stop="onBlockClick(entry.item, $event)">
 
                     <!-- Native tooltip showing full site name + shift + time -->
@@ -2777,9 +2698,6 @@ function injectRPVueTemplate() {
                   <!-- ═══ Merged trip block ═══ -->
                   <g v-else
                      class="rp-block-grab"
-                     @mouseenter="showStopHover($event, entry.stops)"
-                     @mousemove="moveStopHover($event)"
-                     @mouseleave="hideStopHover()"
                      @click.stop="onBlockClick(entry.primaryItem, $event)">
 
                     <!-- Native tooltip showing all stops + time -->
@@ -3499,44 +3417,6 @@ function injectRPStyles() {
             from { opacity: 0; transform: translateX(-50%) translateY(4px); }
             to   { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
-
-        /* ── Multi-stop hover popup ── */
-        .rp-stop-hover {
-            position: fixed;
-            z-index: 9999;
-            pointer-events: none;
-            background: rgba(17, 24, 39, 0.94);
-            color: #fff;
-            font-family: 'Google Sans', Roboto, sans-serif;
-            padding: 10px 12px;
-            border-radius: 10px;
-            max-width: 460px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-            backdrop-filter: blur(4px);
-            animation: rp-tooltip-in 0.1s ease-out;
-            transform: translateX(-50%);
-        }
-        .rp-stop-hover-title {
-            font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
-            text-transform: uppercase; color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 6px;
-        }
-        .rp-stop-hover-flow {
-            display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px;
-        }
-        .rp-stop-hover-chip {
-            display: inline-flex; align-items: center; gap: 6px;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 7px; padding: 4px 8px; font-size: 13px; white-space: nowrap;
-        }
-        .rp-stop-hover-seq {
-            font-size: 10px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 0.04em; color: #93c5fd;
-            background: rgba(59, 130, 246, 0.18); border-radius: 4px; padding: 1px 6px;
-        }
-        .rp-stop-hover-acc  { font-weight: 600; }
-        .rp-stop-hover-pax  { color: #86efac; font-weight: 700; }
-        .rp-stop-hover-arrow { color: rgba(255, 255, 255, 0.5); font-size: 15px; font-weight: 700; }
 
         /* ── Detail Panel ── */
         #rp-detail-panel {

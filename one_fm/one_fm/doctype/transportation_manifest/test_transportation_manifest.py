@@ -45,7 +45,6 @@ class TestTransportationManifest(FrappeTestCase):
 			"last_odometer": 1000,
 			"location": self.loc_name,
 			"employee": self.driver,
-			"custom_handover_date": today(),
 			"fuel_type": "Diesel",
 			"uom": "Litre",
 			"seats": 15
@@ -66,7 +65,6 @@ class TestTransportationManifest(FrappeTestCase):
 			"last_odometer": 1000,
 			"location": self.loc_name,
 			"employee": self.driver,
-			"custom_handover_date": today(),
 			"fuel_type": "Diesel",
 			"uom": "Litre",
 			"seats": 15
@@ -363,92 +361,4 @@ class TestTransportationManifest(FrappeTestCase):
 		# Attendance preserved
 		self.assertEqual(row.attendance_status, "Present")
 		self.assertEqual(row.qoa_status, "Pass")
-
-	# ── Stop Sequence / Pickup Accommodation auto-population ──────────────────
-
-	def _ensure_accommodation(self, label):
-		"""Create (once) an Accommodation record and return its docname."""
-		if not frappe.db.exists("Accommodation Type", "Test Acc Type"):
-			frappe.get_doc({
-				"doctype": "Accommodation Type",
-				"accommodation_type": "Test Acc Type",
-			}).insert(ignore_permissions=True)
-
-		existing = frappe.db.get_value("Accommodation", {"accommodation": label}, "name")
-		if existing:
-			return existing
-
-		acc = frappe.get_doc({
-			"doctype": "Accommodation",
-			"accommodation": label,
-			"type": "Test Acc Type",
-		}).insert(ignore_permissions=True)
-		return acc.name
-
-	def _make_shipment(self, accommodation, badge):
-		"""Create a Transportation Shipment for the given camp and routing badge."""
-		ship = frappe.get_doc({
-			"doctype": "Transportation Shipment",
-			"accommodation": accommodation,
-			"routing_type_badge": badge,
-			"trip_direction": "Outward",
-		}).insert(ignore_permissions=True)
-		return ship.name
-
-	def test_multi_stop_sequence_and_pickup_accommodation(self):
-		"""OSM/OLM rows are numbered per unique accommodation in first-appearance order."""
-		mahboula = self._ensure_accommodation("Mahboula Camp Test")
-		mangaf = self._ensure_accommodation("Mangaf Camp Test")
-		ship_mahboula = self._make_shipment(mahboula, "OSM")
-		ship_mangaf = self._make_shipment(mangaf, "OSM")
-
-		doc = frappe.new_doc("Transportation Manifest")
-		doc.vehicle_no = self.vehicle1
-		doc.schedule_date = today()
-		# Two Mahboula rows first, then one Mangaf row (mirrors the operational example)
-		doc.append("transportation_manifest_details", {
-			"employee": self.employee1, "transportation_shipment": ship_mahboula,
-			"scheduled_time": "06:00:00",
-		})
-		doc.append("transportation_manifest_details", {
-			"employee": self.employee2, "transportation_shipment": ship_mahboula,
-			"scheduled_time": "06:00:00",
-		})
-		doc.append("transportation_manifest_details", {
-			"employee": self.reliever, "transportation_shipment": ship_mangaf,
-			"scheduled_time": "06:30:00",
-		})
-		doc.save()
-
-		rows = doc.transportation_manifest_details
-		# Mahboula rows -> Stop 1
-		self.assertEqual(rows[0].pickup_accommodation, mahboula)
-		self.assertEqual(rows[0].stop_sequence, 1)
-		self.assertEqual(rows[1].pickup_accommodation, mahboula)
-		self.assertEqual(rows[1].stop_sequence, 1)
-		# Mangaf row -> Stop 2
-		self.assertEqual(rows[2].pickup_accommodation, mangaf)
-		self.assertEqual(rows[2].stop_sequence, 2)
-
-	def test_direct_route_forces_stop_sequence_one(self):
-		"""A Direct shipment row is always Stop Sequence 1 with its own camp as pickup."""
-		camp = self._ensure_accommodation("Direct Camp Test")
-		ship_direct = self._make_shipment(camp, "Direct")
-
-		doc = frappe.new_doc("Transportation Manifest")
-		doc.vehicle_no = self.vehicle1
-		doc.schedule_date = today()
-		doc.append("transportation_manifest_details", {
-			"employee": self.employee1, "transportation_shipment": ship_direct,
-			"scheduled_time": "06:00:00",
-		})
-		doc.append("transportation_manifest_details", {
-			"employee": self.employee2, "transportation_shipment": ship_direct,
-			"scheduled_time": "06:00:00",
-		})
-		doc.save()
-
-		for row in doc.transportation_manifest_details:
-			self.assertEqual(row.stop_sequence, 1)
-			self.assertEqual(row.pickup_accommodation, camp)
 

@@ -7,7 +7,6 @@
  "engine": "InnoDB",
  "field_order": [
   "stop_name",
-  "stop_sequence",
   "employee",
   "employee_name",
   "stop_id",
@@ -25,7 +24,6 @@
   "attendance_status",
   "qoa_status",
   "qoa_reason",
-  "pickup_accommodation",
   "section_break_vwjh",
   "operations_role",
   "column_break_yspc",
@@ -229,23 +227,12 @@
    "options": "Rambo Assignment",
    "print_hide": 1,
    "read_only": 1
-  },
-  {
-   "fieldname": "stop_sequence",
-   "fieldtype": "Int",
-   "label": "Stop Sequence"
-  },
-  {
-   "fieldname": "pickup_accommodation",
-   "fieldtype": "Link",
-   "label": "Pickup Accommodation",
-   "options": "Accommodation"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-07-19 18:34:06.888198",
+ "modified": "2026-07-09 23:13:09.020320",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Transportation Manifest Details",
