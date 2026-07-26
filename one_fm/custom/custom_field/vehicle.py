@@ -179,36 +179,5 @@ def get_vehicle_custom_fields():
                 "label": "Branding Registration Expiration Date",
                 "insert_after": "custom_branding_registration_issue_date",
             },
-            {
-                "fieldname": "custom_status",
-                "fieldtype": "Select",
-                "label": "Status",
-                "insert_after": "one_fm_vehicle_status",
-                "options": "\nActive\nInactive",
-                "default": "Active",
-                "reqd": 1,
-                "translatable": 1,
-            },
-            {
-                "fieldname": "custom_handover_date",
-                "fieldtype": "Date",
-                "label": "Handover Date",
-                "insert_after": "employee",
-                "reqd": 1,
-            },
-            {
-                "fieldname": "custom_section_break_ufvnv",
-                "fieldtype": "Section Break",
-                "label": "",
-                "insert_after": "custom_branding_registration_expiration_date",
-            },
-            {
-                "fieldname": "custom_vehicle_custodian_history",
-                "fieldtype": "Table",
-                "label": "Vehicle Custodian History",
-                "insert_after": "custom_section_break_ufvnv",
-                "options": "Vehicle Custodian History",
-                "read_only": 1,
-            },
         ]
     }
