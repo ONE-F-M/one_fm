@@ -31,7 +31,6 @@ class OvertimeRequest(Document):
 
 	def on_update(self):
 		self.create_attendance_on_verification()
-		self.create_compensatory_leave_request()
 		self.workflow_notification()
 
 	def validate_duplicate(self):
@@ -291,87 +290,6 @@ class OvertimeRequest(Document):
 			)),
 			alert=True,
 			indicator="green"
-		)
-
-	def create_compensatory_leave_request(self):
-		"""Auto-create (or link) a Compensatory Leave Request when the request is Completed.
-
-		Only runs for eligible Public Holiday overtime (Overtime Type
-		"Overtime on Public Holiday" and hours >= 9) where the employee was
-		marked Present and a Compensatory Day Off date is set.
-
-		To avoid a duplicate / double leave credit, an existing Compensatory
-		Leave Request for the same employee and overtime (worked) date is reused
-		— such a request is normally already created by the holiday attendance
-		hook (see one_fm.one_fm.utils.manage_attendance_on_holiday) when the
-		Over-Time attendance is submitted at the "Pending Payroll Officer" stage.
-		If none exists, a new one is created and submitted so the leave balance
-		is credited. Either way the request is back-linked to this document.
-
-		The work dates map to the worked holiday date (required for the
-		Compensatory Leave Request to validate/submit — that day must be a
-		holiday with Present attendance). The Compensatory Day Off date itself
-		stays on this Overtime Request (compensatory_day_off).
-		"""
-		if self.workflow_state != "Completed":
-			return
-
-		if not self.has_value_changed("workflow_state"):
-			return
-
-		# Only Public Holiday overtime of 9+ hours earns a compensatory day off.
-		if not self.eligible_for_compensatory_day_off:
-			return
-
-		# Already linked (e.g. on re-save) — nothing to do.
-		if self.compensatory_leave_request:
-			return
-
-		# Comp leave is only credited when the employee actually worked (Present).
-		if not self.present:
-			return
-
-		# The Compensatory Day Off date is mandatory at this stage (enforced by
-		# validate_compensatory_day_off); guard defensively.
-		if not self.compensatory_day_off:
-			return
-
-		leave_type = frappe.db.get_single_value(
-			"HR and Payroll Additional Settings", "holiday_compensatory_leave_type"
-		)
-		if not leave_type:
-			frappe.throw(
-				_("Please Contact HRD to configure Leave Type for Holiday Compensatory Leave Request !!")
-			)
-
-		# Reuse an existing (non-cancelled) request for this employee + worked date.
-		existing = frappe.db.exists("Compensatory Leave Request", {
-			"employee": self.employee,
-			"work_from_date": self.date,
-			"work_end_date": self.date,
-			"docstatus": ["!=", 2],
-		})
-		if existing:
-			self.db_set("compensatory_leave_request", existing)
-			return
-
-		clr = frappe.new_doc("Compensatory Leave Request")
-		clr.employee = self.employee
-		clr.leave_type = leave_type
-		clr.work_from_date = self.date
-		clr.work_end_date = self.date
-		clr.reason = _("Auto-generated from Overtime Request {0}").format(self.name)
-		clr.insert(ignore_permissions=True)
-		clr.submit()
-
-		self.db_set("compensatory_leave_request", clr.name)
-
-		frappe.msgprint(
-			_("Compensatory Leave Request {0} has been created and submitted for {1}.").format(
-				clr.name, self.full_name or self.employee
-			),
-			alert=True,
-			indicator="green",
 		)
 
 	def workflow_notification(self):
