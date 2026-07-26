@@ -77,9 +77,8 @@
         },
         {
             "fieldname": "reason_for_exit",
-            "fieldtype": "Small Text",
-            "label": "Reason for Exit",
-            "max_height": "4rem"
+            "fieldtype": "Data",
+            "label": "Reason for Exit"
         },
         {
             "allow_on_submit": 1,
