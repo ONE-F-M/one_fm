@@ -626,34 +626,6 @@ class LeaveApplicationOverride(LeaveApplication):
             self.status = "Approved"
 
 
-    def before_cancel(self):
-        # Guard data integrity before any cancellation side effects run:
-        # a linked Accommodation Leave Movement must be cancelled first.
-        self.validate_no_active_accommodation_movement()
-        super(LeaveApplicationOverride, self).before_cancel()
-
-    def validate_no_active_accommodation_movement(self):
-        """Block cancellation while any non-cancelled Accommodation Leave
-        Movement (IN or OUT) is still linked to this Leave Application.
-
-        A movement in Draft (docstatus 0) or Submitted (docstatus 1) keeps the
-        leave locked; only fully cancelled movements (docstatus 2) release it.
-        Throwing here rolls back the cancellation, so the Leave Application
-        stays in its current (Approved) state.
-        """
-        active_movement = frappe.db.exists(
-            "Accommodation Leave Movement",
-            {"leave_application": self.name, "docstatus": ["!=", 2]},
-        )
-        if active_movement:
-            frappe.throw(
-                _(
-                    "Cannot cancel Leave Application. There are submitted "
-                    "Accommodation Leave Movement records linked to this leave. "
-                    "Please cancel the movement records first."
-                )
-            )
-
     def validate_cancel(self):
         if (self.workflow_state == "Approved" and self.custom_is_paid and not "System Manager" in frappe.get_roles()):
             frappe.throw(
