@@ -143,47 +143,24 @@ class OvertimeRequest(Document):
 			self.eligible_for_compensatory_day_off = 0
 			self.compensatory_day_off = None
 
-	# Workflow states from which a Compensatory Day Off date is mandatory.
-	# Before these (Draft, Pending Acceptance by Employee) the date is optional:
-	# a Line Manager may pre-fill it when routing to the employee, and the
-	# employee adds/confirms it when accepting the request.
-	COMPENSATORY_DAY_OFF_REQUIRED_STATES = (
-		"Pending Line Manager",
-		"Pending Payroll Officer",
-		"Pending Finance Manager",
-		"Completed",
-	)
-
 	def validate_compensatory_day_off(self):
 		"""
 		Enforce the Compensatory Day Off rules when the request is eligible.
 
 		Only applies when eligible_for_compensatory_day_off is set (Overtime Type
 		is "Overtime on Public Holiday" and hours are 9 or more):
-		  1. Whenever a Compensatory Day Off date is provided, it must fall within
-			 7 days of the overtime date, i.e. between the overtime date and the
-			 overtime date + 7 days (inclusive). This applies at every stage so a
-			 Line Manager cannot pre-fill an out-of-window date.
-		  2. The date is required only once the employee has accepted the request
-			 (workflow state "Pending Line Manager" onward). At the Line Manager
-			 routing stage it is optional so the employee can add it on review.
+		  1. The Compensatory Day Off date is required.
+		  2. It must fall within 7 days of the overtime date, i.e. between the
+			 overtime date and the overtime date + 7 days (inclusive).
 		"""
 		if not self.eligible_for_compensatory_day_off:
 			return
 
-		# Require the date once the request has moved to the employee-accepted
-		# stage (or beyond). It stays optional while the Line Manager routes it.
-		if (
-			not self.compensatory_day_off
-			and self.workflow_state in self.COMPENSATORY_DAY_OFF_REQUIRED_STATES
-		):
-			frappe.throw(
-				_("Compensatory Day Off date is required when Overtime Type is "
-				  "'Overtime on Public Holiday' and hours are 9 or more.")
-			)
-
 		if not self.compensatory_day_off:
-			return
+			frappe.throw(
+				_("Compensatory Day Off date are required when Overtime Type is "
+				  "'Overtime on Public Holiday' and hours is or exceed 9.")
+			)
 
 		overtime_date = getdate(self.date)
 		window_end = add_days(overtime_date, 7)

@@ -60,48 +60,13 @@ class TestOvertimeRequest(FrappeTestCase):
 		self.assertEqual(doc.eligible_for_compensatory_day_off, 0)
 		self.assertIsNone(doc.compensatory_day_off)
 
-	def test_day_off_required_once_employee_accepts(self):
-		# AC2: eligible, no Compensatory Day Off, employee has accepted
-		# (Pending Line Manager onward) -> blocked until a date is added.
-		for state in (
-			"Pending Line Manager",
-			"Pending Payroll Officer",
-			"Pending Finance Manager",
-			"Completed",
-		):
-			doc = self._make_doc(
-				"Overtime on Public Holiday",
-				10,
-				date="2026-07-13",
-				eligible_for_compensatory_day_off=1,
-				workflow_state=state,
-			)
-			with self.assertRaises(frappe.ValidationError, msg=f"state {state} should require a date"):
-				doc.validate_compensatory_day_off()
-
-	def test_day_off_optional_when_line_manager_routes(self):
-		# AC1: LM creates an eligible request and routes it to the employee
-		# without a Compensatory Day Off -> allowed (date filled by employee later).
-		for state in ("Draft", "Pending Acceptance by Employee"):
-			doc = self._make_doc(
-				"Overtime on Public Holiday",
-				10,
-				date="2026-07-13",
-				eligible_for_compensatory_day_off=1,
-				workflow_state=state,
-			)
-			# Should not raise
-			doc.validate_compensatory_day_off()
-
-	def test_line_manager_prefilled_date_still_window_validated(self):
-		# AC1: even at the routing stage, a pre-filled out-of-window date is blocked.
+	def test_day_off_required_when_eligible(self):
+		# AC: eligible but no Compensatory Day Off selected -> blocked
 		doc = self._make_doc(
 			"Overtime on Public Holiday",
 			10,
 			date="2026-07-13",
 			eligible_for_compensatory_day_off=1,
-			workflow_state="Pending Acceptance by Employee",
-			compensatory_day_off="2026-07-25",
 		)
 		with self.assertRaises(frappe.ValidationError):
 			doc.validate_compensatory_day_off()

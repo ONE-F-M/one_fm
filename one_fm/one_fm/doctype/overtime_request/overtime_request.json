@@ -51,7 +51,6 @@
    "fieldname": "employee_user",
    "fieldtype": "Link",
    "hidden": 1,
-   "ignore_user_permissions": 1,
    "label": "Employee User",
    "options": "User",
    "read_only": 1
@@ -123,7 +122,6 @@
   {
    "fieldname": "requested_by",
    "fieldtype": "Link",
-   "ignore_user_permissions": 1,
    "label": "Requested By",
    "options": "User",
    "read_only": 1
@@ -132,7 +130,6 @@
    "fetch_from": "employee.reports_to",
    "fieldname": "reports_to",
    "fieldtype": "Link",
-   "ignore_user_permissions": 1,
    "label": "Reports To",
    "options": "Employee",
    "read_only": 1
@@ -141,7 +138,6 @@
    "fetch_from": "reports_to.user_id",
    "fieldname": "reports_to_user",
    "fieldtype": "Link",
-   "ignore_user_permissions": 1,
    "label": "Reports To User",
    "options": "User",
    "read_only": 1
