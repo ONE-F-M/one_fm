@@ -41,6 +41,66 @@ class ArrivalAcknowledgement(Document):
 			if not self.get(fieldname):
 				frappe.throw(_("{0} is mandatory for {1}.").format(frappe.unscrub(fieldname), self.department))
 
+	def on_update(self):
+		old_status = self.get_doc_before_save().get("status") if self.get_doc_before_save() else None
+		if self.status == "Acknowledged" and old_status != "Acknowledged":
+			self.notify_onboarding_officer_of_acknowledgement()
+
+	def notify_onboarding_officer_of_acknowledgement(self):
+		"""Notify the assigned Onboarding Officer every time a department acknowledges,
+		including whatever orientation/site details that department collected along
+		the way (see DEPARTMENT_REQUIRED_FIELDS) -- Operations gets Site Allocation
+		plus Orientation Date/Time, General Services gets Orientation Date/Time.
+		"""
+		if not self.arrival_and_deployment:
+			return
+
+		onboarding_officer = frappe.db.get_value("Arrival and Deployment", self.arrival_and_deployment, "onboarding_officer")
+		if not onboarding_officer:
+			return
+
+		officer_email = frappe.db.get_value("User", onboarding_officer, "email")
+		if not officer_email:
+			return
+
+		from frappe.utils import escape_html
+
+		details = ""
+		if self.department == "Operations":
+			details = (
+				f"<li><b>Site Allocation:</b> {escape_html(self.site_allocation) if self.site_allocation else 'N/A'}</li>"
+				f"<li><b>Orientation Date:</b> {self.orientation_date or 'N/A'}</li>"
+				f"<li><b>Orientation Time:</b> {self.orientation_time or 'N/A'}</li>"
+			)
+		elif self.department == "General Services":
+			details = (
+				f"<li><b>Orientation Date:</b> {self.orientation_date or 'N/A'}</li>"
+				f"<li><b>Orientation Time:</b> {self.orientation_time or 'N/A'}</li>"
+			)
+
+		message = (
+			f"<p>Dear Onboarding Officer,</p>"
+			f"<p><b>{escape_html(self.department)}</b> has acknowledged the arrival of "
+			f"<b>{escape_html(self.candidate_name)}</b>.</p>"
+		)
+		if details:
+			message += f"<ul>{details}</ul>"
+		message += (
+			f"<p>Please review the "
+			f"<a href='/app/arrival-acknowledgement/{self.name}'>Arrival Acknowledgement</a> for full details.</p>"
+		)
+
+		try:
+			frappe.enqueue(
+				method=frappe.sendmail,
+				queue="short",
+				recipients=[officer_email],
+				subject=f"{self.department} Acknowledged Arrival: {self.candidate_name}",
+				message=message,
+			)
+		except Exception as e:
+			frappe.log_error(title="Arrival Acknowledgement Notification Error", message=f"Notify failed for {self.name}: {str(e)}")
+
 
 @frappe.whitelist()
 def acknowledge(name: str):
