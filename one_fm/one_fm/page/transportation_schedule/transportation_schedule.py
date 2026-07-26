@@ -920,66 +920,22 @@ def _shipment_from_card_id(card_id: str) -> str:
     return name
 
 
-def _normalize_direction(value: str) -> str:
-    """Collapse the two direction vocabularies onto a single OUTBOUND/RETURN flag.
-
-    Shipment docs store ``trip_direction`` as "Outward"/"Return"; the canvas swim
-    items and Route Plan Assignment rows carry "OUTBOUND"/"RETURN". Both map to the
-    same flag so a companion match can validate direction across the vocabularies.
-    """
-    return "RETURN" if (value or "").strip().upper().startswith("RET") else "OUTBOUND"
-
-
 def _sync_shipment_statuses(items, previously_linked=None):
     """Reconcile Transportation Shipment status with the saved canvas state.
 
     Shipments placed on a vehicle become Assigned; shipments this plan carried
     before but no longer places revert to Unassigned. Uses db.set_value to
     update the status directly without re-running the shipment controller.
-
-    A card is only counted as Assigned when the swim item's direction flag matches
-    the shipment's own trip_direction. The outbound and return legs of one demand
-    share a pair group (the trip_group hash), so this direction check keeps an
-    outbound placement from ever flipping the paired return card to Assigned, and
-    vice-versa — the two legs stay independently assignable to different vehicles
-    (Multi-Day Lane Replication).
     """
-    # Resolve each placed card to the direction(s) it was dropped in.
-    placed_dirs_by_shipment = {}
+    assigned = set()
     for item in items:
         name = _shipment_from_card_id(item.get("cardId", ""))
         if name:
-            placed_dirs_by_shipment.setdefault(name, set()).add(
-                _normalize_direction(item.get("direction", ""))
-            )
-
-    # Companion selection: a shipment is Assigned only when it exists AND the
-    # direction it was placed in matches its own trip_direction (trip_group hash
-    # AND direction flag — never one leg sweeping the other).
-    assigned = set()
-    if placed_dirs_by_shipment:
-        shipment_dir = {
-            row.name: _normalize_direction(row.trip_direction)
-            for row in frappe.get_all(
-                "Transportation Shipment",
-                filters={"name": ["in", list(placed_dirs_by_shipment)]},
-                fields=["name", "trip_direction"],
-            )
-        }
-        for name, placed_dirs in placed_dirs_by_shipment.items():
-            own_dir = shipment_dir.get(name)
-            if own_dir is None:
-                continue  # shipment vanished between save and sync
-            if own_dir in placed_dirs:
-                assigned.add(name)
-            else:
-                frappe.log_error(
-                    f"Skipped assigning {name}: placed as {sorted(placed_dirs)} but "
-                    f"shipment direction is {own_dir}.",
-                    "Transportation Shipment Direction Mismatch",
-                )
+            assigned.add(name)
 
     for name in assigned:
+        if not frappe.db.exists("Transportation Shipment", name):
+            continue
         if frappe.db.get_value("Transportation Shipment", name, "status") != "Assigned":
             frappe.db.set_value("Transportation Shipment", name, "status", "Assigned")
 
