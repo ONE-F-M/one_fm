@@ -301,7 +301,7 @@
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
       "custom_confirm_transition": 0,
-      "require_digital_signature": 1,
+      "require_digital_signature": 0,
       "doctype": "Workflow Transition"
     },
     {

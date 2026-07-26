@@ -462,7 +462,6 @@ one_fm.patches.v15_0.add_leave_application_resumption_contact_fields #1
 
 one_fm.patches.v15_0.add_absence_investigation_hr_officer_to_hr_settings
 one_fm.patches.v15_0.add_vehicle_custodian_history_fields
-one_fm.patches.v15_0.update_leave_application_workflow_dss #2026-07-17-2
 ne_fm.patches.v15_0.update_sales_invoice_property_setter
 one_fm.patches.v15_0.add_subcontractor_exit_workflow
 one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_project_manager
