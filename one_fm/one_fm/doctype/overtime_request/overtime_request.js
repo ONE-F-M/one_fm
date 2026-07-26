@@ -44,6 +44,13 @@ frappe.ui.form.on("Overtime Request", {
 		}
 	},
 
+	overtime_type: function(frm) {
+		// Re-evaluate compensatory day off eligibility when the type changes.
+		// When switching away from "Overtime on Public Holiday", this resets
+		// the flag, hides the section and clears the selected day off.
+		frm.trigger("set_compensatory_day_off_eligibility");
+	},
+
 	start_time: function(frm) {
 		// Story 3: Calculate overtime hours when start_time changes
 		frm.trigger("calculate_overtime_hours");
@@ -129,6 +136,28 @@ frappe.ui.form.on("Overtime Request", {
 			frm.doc.overtime_hours = 0;
 			frm.doc.yearly_overtime_hours = 0;
 			frm.refresh_fields(["overtime_hours", "yearly_overtime_hours"]);
+		}
+
+		// Re-evaluate compensatory day off eligibility whenever hours change
+		frm.trigger("set_compensatory_day_off_eligibility");
+	},
+
+	set_compensatory_day_off_eligibility: function(frm) {
+		// Eligible only when Overtime Type is "Overtime on Public Holiday"
+		// AND overtime hours are 9 or more. Setting the flag drives the
+		// depends_on visibility of the Compensatory Day Off section.
+		let eligible = (
+			frm.doc.overtime_type === "Overtime on Public Holiday"
+			&& flt(frm.doc.overtime_hours) >= 9
+		) ? 1 : 0;
+
+		if (frm.doc.eligible_for_compensatory_day_off !== eligible) {
+			frm.set_value("eligible_for_compensatory_day_off", eligible);
+		}
+
+		// When no longer eligible, clear any previously selected day off
+		if (!eligible && frm.doc.compensatory_day_off) {
+			frm.set_value("compensatory_day_off", null);
 		}
 	},
 
