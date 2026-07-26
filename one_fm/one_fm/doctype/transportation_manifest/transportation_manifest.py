@@ -7,50 +7,8 @@ class TransportationManifest(Document):
 	def validate(self):
 		self.populate_shift_details_from_schedule()
 		self.populate_stop_sequence_and_pickup_accommodation()
-		self.enforce_stop_locking()
 		self.validate_attendance_and_qoa()
 		self.validate_relievers()
-
-	def enforce_stop_locking(self):
-		"""Freeze attendance/QOA entries on stops already verified (MA2-11).
-
-		Once the attendance-check workflow has advanced past a stop
-		(``stop_sequence < active_stop_sequence``), that stop is Completed and its
-		verified entries must stay read-only — a supervisor moving to the next camp
-		must not be able to alter data already checked at an earlier gate.
-
-		Only kicks in once checks have started (active >= 1), so the daily compiler
-		and dispatchers can still populate rows freely before boarding begins. Guards
-		exactly the three fields the sheet edits; new rows (no before-image) are
-		exempt. Set ``frappe.flags.ignore_stop_lock`` to bypass for admin recovery.
-		"""
-		active = int(self.active_stop_sequence or 0)
-		if not active or frappe.flags.get("ignore_stop_lock"):
-			return
-
-		before = self.get_doc_before_save()
-		if not before:
-			return
-
-		previous_rows = {row.name: row for row in before.transportation_manifest_details}
-		locked_fields = ("attendance_status", "qoa_status", "qoa_reason")
-
-		for row in self.transportation_manifest_details:
-			# Only Completed stops are frozen; the Active stop stays editable.
-			if int(row.stop_sequence or 1) >= active:
-				continue
-			old_row = previous_rows.get(row.name)
-			if not old_row:
-				continue
-			for field in locked_fields:
-				if (row.get(field) or None) != (old_row.get(field) or None):
-					frappe.throw(
-						_("Stop {stop} is locked. The verified {field} for row #{idx} cannot be changed.").format(
-							stop=row.stop_sequence,
-							field=field.replace("_", " ").title(),
-							idx=row.idx,
-						)
-					)
 
 	def populate_stop_sequence_and_pickup_accommodation(self):
 		"""Auto-stamp Stop Sequence and Pickup Accommodation on every manifest row.
