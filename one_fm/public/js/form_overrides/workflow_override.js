@@ -48,6 +48,34 @@ class WorkflowActionOverride extends frappe.ui.form.States{
 				() => {
 					// Yes
 					frappe.dom.freeze();
+					// If the transition also requires a digital signature (DSS),
+					// trigger the DSS acknowledgement before applying.
+					if(d.require_digital_signature){
+						trigger_digital_signature(d);
+					}
+					else{
+						apply_workflow(d);
+					}
+				},
+				() => {
+					// No
+				}
+			)
+		}
+
+		// Trigger the Digital Signature Service (DSS) acknowledgement for
+		// transitions flagged with require_digital_signature.
+		// Mirrors the placeholder flow in one_bpmn; the actual signature capture
+		// UI is a follow-up. On acknowledgement the workflow action is applied.
+		function trigger_digital_signature(d){
+			frappe.dom.unfreeze();
+			frappe.confirm(
+				__('<b>Digital Signature Required</b><br><br>' +
+					'This action requires a digital signature to proceed. ' +
+					'By clicking "Proceed", you acknowledge and authorize this action with your identity.'),
+				() => {
+					// Yes / Proceed
+					frappe.dom.freeze();
 					apply_workflow(d);
 				},
 				() => {
@@ -68,6 +96,10 @@ class WorkflowActionOverride extends frappe.ui.form.States{
 						me.frm.script_manager.trigger("before_workflow_action").then(() => {
 							if(d.custom_confirm_transition){
 								confirm_to_apply_workflow(d);
+							}
+							else if(d.require_digital_signature){
+								// Digital Signature Service (DSS) trigger
+								trigger_digital_signature(d);
 							}
 							else{
 								apply_workflow(d);

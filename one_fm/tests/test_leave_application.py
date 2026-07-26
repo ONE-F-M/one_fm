@@ -699,6 +699,99 @@ class TestLeaveApplicationOverride(FrappeTestCase):
             mock_set_value.assert_called_with("Employee", self.employee.name, "status", "Active")
             mock_hajj_status.assert_called_once()
 
+    def _make_accommodation_leave_movement(self, employee, leave_application, alm_type="OUT", submit=True):
+        """Create an Accommodation Leave Movement linked to a Leave Application."""
+        alm = frappe.get_doc({
+            "doctype": "Accommodation Leave Movement",
+            "type": alm_type,
+            "employee": employee.name,
+            "full_name": employee.employee_name,
+            "leave_application": leave_application,
+            "checkin_checkout_date_time": add_days(nowdate(), -1),
+        })
+        alm.flags.ignore_validate = True
+        alm.insert(ignore_permissions=True)
+        if submit:
+            alm.flags.ignore_validate = True
+            alm.submit()
+        return alm
+
+    def _make_approved_leave(self, employee):
+        """Create and approve a Leave Application for the given employee."""
+        from_date = add_days(nowdate(), 1)
+        leave_application = make_leave_application(
+            employee.name, from_date, add_days(from_date, 2), self.leave_type.name
+        )
+        leave_application.save()
+        self.apply_approve_workflow(leave_application)
+        leave_application.reload()
+        return leave_application
+
+    @patch("frappe.sendmail")
+    def test_cannot_cancel_leave_with_submitted_alm(self, mock_sendmail):
+        """Test 15: A submitted ALM blocks cancellation; the leave stays Approved."""
+        mock_sendmail.return_value = None
+        employee = self.create_test_employee_with_allocation()
+        leave_application = self._make_approved_leave(employee)
+
+        self._make_accommodation_leave_movement(
+            employee, leave_application.name, alm_type="OUT", submit=True
+        )
+
+        with self.assertRaises(frappe.ValidationError):
+            leave_application.cancel()
+
+        # The Leave Application remains in its Approved / submitted state.
+        state, docstatus = frappe.db.get_value(
+            "Leave Application", leave_application.name, ["workflow_state", "docstatus"]
+        )
+        self.assertEqual(docstatus, 1, "Leave should remain submitted after blocked cancellation")
+        self.assertEqual(state, "Approved", "Leave should remain in Approved state")
+
+    @patch("frappe.sendmail")
+    def test_cannot_cancel_leave_with_draft_alm(self, mock_sendmail):
+        """Test 16: A draft (unsubmitted) ALM also blocks cancellation."""
+        mock_sendmail.return_value = None
+        employee = self.create_test_employee_with_allocation()
+        leave_application = self._make_approved_leave(employee)
+
+        self._make_accommodation_leave_movement(
+            employee, leave_application.name, alm_type="IN", submit=False
+        )
+
+        with self.assertRaises(frappe.ValidationError):
+            leave_application.validate_no_active_accommodation_movement()
+
+    @patch("frappe.sendmail")
+    def test_can_cancel_leave_when_all_alm_cancelled(self, mock_sendmail):
+        """Test 17: Once every linked ALM is cancelled, the guard allows cancellation."""
+        mock_sendmail.return_value = None
+        employee = self.create_test_employee_with_allocation()
+        leave_application = self._make_approved_leave(employee)
+
+        alm = self._make_accommodation_leave_movement(
+            employee, leave_application.name, alm_type="OUT", submit=True
+        )
+        alm.cancel()
+
+        # No non-cancelled movement remains, so the guard must not raise.
+        try:
+            leave_application.validate_no_active_accommodation_movement()
+        except frappe.ValidationError:
+            self.fail("Cancellation should be allowed when all linked ALMs are cancelled")
+
+    @patch("frappe.sendmail")
+    def test_can_cancel_leave_with_no_alm(self, mock_sendmail):
+        """Test 18: A leave with no linked ALM records is unaffected by the guard."""
+        mock_sendmail.return_value = None
+        employee = self.create_test_employee_with_allocation()
+        leave_application = self._make_approved_leave(employee)
+
+        try:
+            leave_application.validate_no_active_accommodation_movement()
+        except frappe.ValidationError:
+            self.fail("Cancellation should be allowed when no ALM records are linked")
+
     def test_action_set_to_try_again_when_employee_not_reached(self):
         """When the employee could not be reached and Action is empty, it defaults to 'Try Again'."""
         doc = frappe.new_doc("Leave Application")

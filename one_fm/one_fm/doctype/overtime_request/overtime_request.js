@@ -23,6 +23,10 @@ frappe.ui.form.on("Overtime Request", {
 		frm.set_df_property("end_time", "read_only", lock_attendance ? 1 : 0);
 		frm.set_df_property("present", "read_only", lock_attendance ? 1 : 0);
 		frm.set_df_property("absent", "read_only", lock_attendance ? 1 : 0);
+
+		// Restrict the Compensatory Day Off picker when opening an eligible
+		// record (e.g. the Line Manager reviewing a pending request).
+		frm.trigger("set_compensatory_day_off_range");
 	},
 
 	set_employee_query: function(frm) {
@@ -42,6 +46,18 @@ frappe.ui.form.on("Overtime Request", {
 		if (frm.doc.employee && frm.doc.overtime_hours) {
 			frm.trigger("fetch_yearly_overtime_hours");
 		}
+	},
+
+	overtime_type: function(frm) {
+		// Re-evaluate compensatory day off eligibility when the type changes.
+		// When switching away from "Overtime on Public Holiday", this resets
+		// the flag, hides the section and clears the selected day off.
+		frm.trigger("set_compensatory_day_off_eligibility");
+	},
+
+	date: function(frm) {
+		// Re-apply the Compensatory Day Off window when the overtime date changes.
+		frm.trigger("set_compensatory_day_off_range");
 	},
 
 	start_time: function(frm) {
@@ -129,6 +145,69 @@ frappe.ui.form.on("Overtime Request", {
 			frm.doc.overtime_hours = 0;
 			frm.doc.yearly_overtime_hours = 0;
 			frm.refresh_fields(["overtime_hours", "yearly_overtime_hours"]);
+		}
+
+		// Re-evaluate compensatory day off eligibility whenever hours change
+		frm.trigger("set_compensatory_day_off_eligibility");
+	},
+
+	set_compensatory_day_off_eligibility: function(frm) {
+		// Eligible only when Overtime Type is "Overtime on Public Holiday"
+		// AND overtime hours are 9 or more. Setting the flag drives the
+		// depends_on visibility of the Compensatory Day Off section.
+		let eligible = (
+			frm.doc.overtime_type === "Overtime on Public Holiday"
+			&& flt(frm.doc.overtime_hours) >= 9
+		) ? 1 : 0;
+
+		let was_eligible = frm.doc.eligible_for_compensatory_day_off ? 1 : 0;
+
+		if (was_eligible !== eligible) {
+			frm.set_value("eligible_for_compensatory_day_off", eligible);
+		}
+
+		// When no longer eligible, clear any previously selected day off
+		if (!eligible && frm.doc.compensatory_day_off) {
+			frm.set_value("compensatory_day_off", null);
+		}
+
+		// Prompt the employee to pick their Compensatory Day Off when they
+		// first become eligible (transition from not-eligible → eligible).
+		if (eligible && !was_eligible) {
+			frm.trigger("prompt_compensatory_day_off");
+		}
+
+		// Restrict the selectable range on the Compensatory Day Off picker.
+		frm.trigger("set_compensatory_day_off_range");
+	},
+
+	prompt_compensatory_day_off: function(frm) {
+		// Informational alert: tells the employee that a Compensatory Day Off
+		// is required and the window it must fall within (7 days of the
+		// overtime date). The date itself is selected in the form field.
+		if (!frm.doc.date) return;
+
+		frappe.msgprint({
+			title: __("Compensatory Day Off Required"),
+			indicator: "blue",
+			message: __("Overtime on a Public Holiday ≥ 9 hours detected. Please select your Compensatory Day Off date (within 7 days of {0}).", [frappe.datetime.str_to_user(frm.doc.date)])
+		});
+	},
+
+	set_compensatory_day_off_range: function(frm) {
+		// Limit the Compensatory Day Off datepicker to the overtime date
+		// through the overtime date + 7 days (inclusive). Server-side
+		// validation remains the authority; this improves the UX.
+		let field = frm.fields_dict["compensatory_day_off"];
+		if (!field || !field.datepicker) return;
+
+		if (frm.doc.eligible_for_compensatory_day_off && frm.doc.date) {
+			field.datepicker.update({
+				minDate: frappe.datetime.str_to_obj(frm.doc.date),
+				maxDate: frappe.datetime.str_to_obj(frappe.datetime.add_days(frm.doc.date, 7))
+			});
+		} else {
+			field.datepicker.update({ minDate: null, maxDate: null });
 		}
 	},
 
