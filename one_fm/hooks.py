@@ -337,6 +337,7 @@ doc_events = {
 			"one_fm.one_fm.doctype.customer_asset.customer_asset.on_purchase_receipt_submit",
 			"one_fm.overrides.purchase_receipt.update_received_qty",
 			"one_fm.purchase.doctype.request_for_material.request_for_material.update_rfm_status_against_purchase_receipt",
+			"one_fm.purchase.doctype.request_for_material.request_for_material.notify_requester_on_full_receipt",
 			"one_fm.one_fm.doctype.transit_log.transit_log_utils.update_transit_log_from_purchase_receipt"
 		],
 		"on_cancel": [
