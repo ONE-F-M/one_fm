@@ -2040,16 +2040,7 @@ function mountRoutePlannerApp(wrapper, data) {
                             assigned_cards: JSON.stringify(cards)
                         },
                         async: true,
-                        callback: () => { }, // silent save on success
-                        error: () => {
-                            // A server-side validation (e.g. the vehicle-retention
-                            // STANDBY lock) rejected the drop. Frappe already shows
-                            // the thrown message; reload the plan so the phantom
-                            // block is removed and the canvas mirrors what persisted.
-                            if (this.currentPlan && this.currentPlan.name) {
-                                this.switchPlan(this.currentPlan.name);
-                            }
-                        }
+                        callback: () => { } // silent save
                     });
                 }, 500); // 500ms debounce
             },
