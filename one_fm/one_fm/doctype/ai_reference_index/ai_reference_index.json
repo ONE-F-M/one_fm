@@ -1,0 +1,85 @@
+{
+ "actions": [],
+ "allow_import": 0,
+ "allow_rename": 0,
+ "autoname": "field:drive_file_id",
+ "creation": "2026-07-15 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "drive_file_id",
+  "title",
+  "document_type",
+  "drive_file_link",
+  "source_process",
+  "content"
+ ],
+ "fields": [
+  {
+   "fieldname": "drive_file_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Drive File ID",
+   "reqd": 1,
+   "unique": 1,
+   "description": "The Google Drive file id this index entry mirrors. One entry per Drive file — re-indexing updates the same record rather than creating a duplicate."
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "document_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Document Type"
+  },
+  {
+   "fieldname": "drive_file_link",
+   "fieldtype": "Data",
+   "label": "Drive File Link"
+  },
+  {
+   "fieldname": "source_process",
+   "fieldtype": "Data",
+   "label": "Source Process",
+   "description": "Which BPMN process produced/published this document, e.g. 'SOP Generation from Guidelines'."
+  },
+  {
+   "fieldname": "content",
+   "fieldtype": "Long Text",
+   "label": "Indexed Content",
+   "description": "Plain-text/Markdown content used for keyword matching by Gather Reference-style Script Tasks. Not a semantic/vector index — see AI integration notes."
+  }
+ ],
+ "links": [],
+ "modified": "2026-07-15 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "AI Reference Index",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title",
+ "track_changes": 1
+}
