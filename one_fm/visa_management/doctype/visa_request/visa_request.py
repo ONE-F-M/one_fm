@@ -19,6 +19,11 @@ class VisaRequest(Document):
 		if not ccp_name:
 			return
 
+		# Keep our own candidate_country_process field in sync so this record
+		# shows up correctly in the CCP's Connections panel and sibling counts.
+		if self.candidate_country_process != ccp_name:
+			self.candidate_country_process = ccp_name
+
 		# Find the row in Candidate Country Process Details for Visa Processing
 		rows = frappe.get_all(
 			"Candidate Country Process Details",
@@ -28,8 +33,12 @@ class VisaRequest(Document):
 		)
 		if rows:
 			row = rows[0]
+			# Visa Request's own workflow_state passes through as-is at every
+			# intermediate stage; only the final "Completed" state is relabeled
+			# to "Visa issued" for the candidate-facing tracker.
+			display_status = "Visa issued" if self.workflow_state == "Completed" else (self.workflow_state or "Draft")
 			update_fields = {
-				"status": self.workflow_state or "Draft",
+				"status": display_status,
 			}
 			if not row.reference_name:
 				update_fields["reference_name"] = self.name
