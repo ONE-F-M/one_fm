@@ -17,7 +17,7 @@
           @click="handleReopen()"
         >
           <template #prefix>
-            <Icon icon="lucide:rotate-ccw" />
+            <LucideRotateCcw class="size-4" />
           </template>
         </Button>
         <Button
@@ -28,7 +28,7 @@
           @click="handleClose()"
         >
           <template #prefix>
-            <Icon icon="lucide:check" />
+            <LucideCheck class="size-4" />
           </template>
         </Button>
 
@@ -124,12 +124,11 @@ import { useScreenSize } from "@/composables/screen";
 import { socket } from "@/socket";
 import { useConfigStore } from "@/stores/config";
 import { globalStore } from "@/stores/globalStore";
-import { isContentEmpty, uploadFunction } from "@/utils";
-import { Icon } from "@iconify/vue";
+import { useTicketStatusStore } from "@/stores/ticketStatus";
+import { isContentEmpty, isCustomerPortal, uploadFunction } from "@/utils";
 import { Breadcrumbs, Button, call, createResource, toast, TextEditor, Dialog } from "frappe-ui";
 import { computed, onMounted, onUnmounted, provide, ref } from "vue";
 import { useRouter } from "vue-router";
-import { useTicket } from "./data";
 import { ITicket } from "./symbols";
 import TicketCustomerTemplateFields from "./TicketCustomerTemplateFields.vue";
 import TicketConversation from "./TicketConversation.vue";
@@ -142,11 +141,19 @@ interface P {
 const router = useRouter();
 
 const props = defineProps<P>();
-const ticket = useTicket(
-  props.ticketId,
-  true,
-  null,
-  (data) => {
+
+const { getStatus } = useTicketStatusStore();
+
+const ticket = createResource({
+  url: "helpdesk.helpdesk.doctype.hd_ticket.api.get_one",
+  cache: ["Ticket", props.ticketId],
+  params: {
+    name: props.ticketId,
+    is_customer_portal: isCustomerPortal.value,
+  },
+  auto: true,
+  onSuccess: (data) => {
+    data.status = getStatus(data.status)?.label_customer;
     setupCustomizations(ticket, {
       doc: data,
       call,
@@ -157,11 +164,11 @@ const ticket = useTicket(
       createToast: toast.create,
     });
   },
-  () => {
+  onError: () => {
     toast.error("Ticket not found");
     router.replace("/my-tickets");
-  }
-);
+  },
+});
 provide(ITicket, ticket);
 
 const editor = ref(null);

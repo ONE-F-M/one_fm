@@ -96,7 +96,7 @@
    "fieldname": "marital_status",
    "fieldtype": "Select",
    "label": "Marital Status",
-   "options": "Married\nSingle\nDivorced\nWidow"
+   "options": "\nSingle\nMarried\nDivorced\nWidowed"
   },
   {
    "default": "Monthly",

@@ -45,6 +45,10 @@ def update_interview_rounds_in_job_applicant(doc, method):
 class InterviewOverride(Interview):
 
     def show_job_applicant_update_dialog(self):
+        # Bypass the Job Applicant update when explicitly flagged (e.g. the linked
+        # Career History flow when the Job Applicant is already Rejected).
+        if self.flags.get('skip_job_applicant_update'):
+            return
         job_applicant_status = self.get_job_applicant_status()
         if not job_applicant_status:
             return

@@ -198,7 +198,8 @@ def reset_password(user, password_expired=False):
 		{link}
 	""".format(username=user.full_name, link=link)
 
-	send_sms([user.mobile_no], msg)
+	from one_fm.sms_utils import normalize_kw_mobile
+	send_sms([normalize_kw_mobile(user.mobile_no)], msg)
 
 
 def process_2fa_for_whatsapp(user, token, otp_secret):
