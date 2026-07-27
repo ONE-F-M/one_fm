@@ -80,17 +80,20 @@ def create_resignation(
     relieving_date=None,
     reason_for_exit=None,
     attachment=None,
+    attachment_name=None,
     data=None,
     **kwargs
 ):
     try:
         p = get_all_params(
+            "attachment_name",
             employee_id=employee_id,
             supervisor=supervisor,
             resignation_initiation_date=resignation_initiation_date,
             relieving_date=relieving_date,
             reason_for_exit=reason_for_exit,
             attachment=attachment,
+            attachment_name=attachment_name,
         )
         input_id   = p["employee_id"]
         supervisor = p["supervisor"]
@@ -98,6 +101,7 @@ def create_resignation(
         rel_date   = p["relieving_date"] or get_param("resignation_date")
         reason     = p["reason_for_exit"]
         attachment = p["attachment"]
+        att_name   = p["attachment_name"] or "resignation_letter.png"
 
         if not attachment:
             frappe.throw(_("Attachment is mandatory for resignation submission"), frappe.ValidationError)
@@ -131,8 +135,7 @@ def create_resignation(
         doc.employment_type = emp.get("employment_type")
         doc.project_allocation = emp.get("project")
         doc.designation = emp.get("designation")
-        # Insert as Draft first so validate() doesn't block on missing letter
-        doc.workflow_state = "Draft"
+        # Let Frappe set workflow_state to the workflow's default initial state (Draft) on insert
 
         doc.insert()
 
@@ -144,12 +147,12 @@ def create_resignation(
                 except Exception:
                     pass
             att_data = attachment if isinstance(attachment, dict) else {
-                "attachment_name": get_param("attachment_name", explicit_value=None) or "resignation_letter.png",
+                "attachment_name": att_name,
                 "attachment": attachment,
             }
             handle_attachment_internal(doc, doc, att_data, "resignation_letter")
 
-        # Step 3: Advance to Pending Supervisor now that the letter is saved
+        # Step 3: Advance from Draft to Pending Supervisor now that the letter is attached
         doc.reload()
         apply_workflow(doc, "Submit for Review")
         return {"status": "success", "message": "Resignation submitted successfully", "name": doc.name}
@@ -169,6 +172,7 @@ def extend_resignation(
     extended_date=None,
     resignation_id=None,
     attachment=None,
+    attachment_name=None,
     data=None,
     **kwargs
 ):
@@ -181,6 +185,8 @@ def extend_resignation(
             resignation_id=resignation_id,
             reason=reason,
             extended_date=extended_date,
+            attachment=attachment,
+            attachment_name=attachment_name,
         )
         input_id       = p["employee_id"]
         supervisor     = p["supervisor"]
@@ -188,6 +194,7 @@ def extend_resignation(
         extended_date  = p["extended_date"]
         resignation_id = p["resignation_id"]
         attachment     = p["attachment"]
+        att_name       = p["attachment_name"] or "extension_letter.png"
 
         employee_name = resolve_employee_name(input_id)
         if not employee_name:
@@ -235,9 +242,9 @@ def extend_resignation(
                     att_json = json.loads(attachment)
                     if isinstance(att_json, list):
                         att_json = att_json[0]
-                    att_data = att_json if isinstance(att_json, dict) else {"attachment_name": "extension_letter.png", "attachment": attachment}
+                    att_data = att_json if isinstance(att_json, dict) else {"attachment_name": att_name, "attachment": attachment}
                 except Exception:
-                    att_data = {"attachment_name": "extension_letter.png", "attachment": attachment}
+                    att_data = {"attachment_name": att_name, "attachment": attachment}
 
             handle_attachment_internal(ext, ext, att_data, "extension_letter")
 
@@ -257,6 +264,7 @@ def withdraw_resignation(
     employee_id=None,
     reason=None,
     attachment=None,
+    attachment_name=None,
     employee_resignation=None,
     supervisor=None,
     data=None,
@@ -269,10 +277,13 @@ def withdraw_resignation(
             reason=reason,
             employee_resignation=employee_resignation,
             supervisor=supervisor,
+            attachment=attachment,
+            attachment_name=attachment_name,
         )
         input_id   = p["employee_id"]
         reason     = p["reason"]
         attachment = p["attachment"]
+        att_name   = p["attachment_name"] or "withdrawal_letter.png"
         employee_resignation_id = p["employee_resignation"]
         supervisor_id = p["supervisor"]
 
@@ -316,9 +327,9 @@ def withdraw_resignation(
                     att_json = json.loads(attachment)
                     if isinstance(att_json, list):
                         att_json = att_json[0]
-                    att_data = att_json if isinstance(att_json, dict) else {"attachment_name": "withdrawal_letter.png", "attachment": attachment}
+                    att_data = att_json if isinstance(att_json, dict) else {"attachment_name": att_name, "attachment": attachment}
                 except Exception:
-                    att_data = {"attachment_name": "withdrawal_letter.png", "attachment": attachment}
+                    att_data = {"attachment_name": att_name, "attachment": attachment}
 
             handle_attachment_internal(withdrawal, withdrawal, att_data, "resignation_withdrawal_letter")
 
@@ -359,6 +370,10 @@ def correct_resignation_date_app(
             "new_date", "new_initiation_date", "attachment", "attachment_name",
             employee_id=employee_id,
             resignation_id=resignation_id,
+            new_date=new_date,
+            new_initiation_date=new_initiation_date,
+            attachment=attachment,
+            attachment_name=attachment_name,
         )
         input_id         = p["employee_id"]
         resignation_id   = p["resignation_id"]

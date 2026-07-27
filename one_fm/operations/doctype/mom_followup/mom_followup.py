@@ -11,6 +11,7 @@ from frappe import _
 from one_fm.api.tasks import issue_penalty
 from frappe.utils.data import nowdate
 from datetime import datetime
+from one_fm.overrides.workflow import apply_workflow_ignore_permissions
 
 class MOMFollowup(Document):
 	def on_update(self):
@@ -68,26 +69,39 @@ def mom_sites_followup():
 						'assign_to': [user_id],
 						'description': _('Please explain your reason of missing the MOM for this site/POC within 48 hours')
 					})
+
 def mom_followup_reminder():
-	
 	reminder = frappe.db.sql("""
 	SELECT name 
 	FROM `tabMOM Followup` 
 	WHERE (creation < DATE_SUB(NOW(), INTERVAL 48 HOUR)) AND (workflow_state = 'Assign to Site Supervisor')
 	""", as_dict=1)
 	for re in reminder:
-		doc = frappe.get_doc('MOM Followup', re.name)
-		doc.workflow_state = 'Review by Projects Manager'
-		doc.save()
-		
-		user_id = frappe.db.get_value('Employee', doc.project_manager, 'user_id')
-		if user_id:
-			add_assignment({
-						'doctype': 'MOM Followup',
-						'name': doc.name,
-						'assign_to': [user_id],
-						'description': _('Please take Action')
-			})
+		try:
+			doc = frappe.get_doc('MOM Followup', re.name)
+			
+			# Auto-populate reason if not already filled
+			if not doc.reason_for_missed_mom:
+				automated_reason_for_missed_mom = 'Automated Reminder - Auto-escalated after 48 hours'
+				frappe.db.set_value('MOM Followup', doc.name, 'reason_for_missed_mom', automated_reason_for_missed_mom, update_modified=False)
+			
+			# Apply proper workflow transition, bypassing role validation using shared utility
+			apply_workflow_ignore_permissions(doc, "Submit for Review")
+			
+			# Assign to project manager
+			user_id = frappe.db.get_value('Employee', doc.project_manager, 'user_id')
+			if user_id:
+				add_assignment({
+							'doctype': 'MOM Followup',
+							'name': doc.name,
+							'assign_to': [user_id],
+							'description': _('Please take Action')
+				})
+		except Exception as e:
+			frappe.log_error(
+				"MOM Followup Auto-escalation Error",
+				f"Error auto-escalating MOM Followup {re.name}: {str(e)}"
+			)
 
 @frappe.whitelist()
 def mom_followup_penalty():

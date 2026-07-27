@@ -21,7 +21,7 @@ function set_perms(frm){
         if(!res.exc){
             let roles = res[0];
             let is_project_manager = res[1];
-
+            
             // Lock entire form.
             if (!roles.includes("Projects Manager") && !roles.includes("Projects User") && !is_project_manager && frm.doc.owner !== frappe.session.user) {
                 Object.keys(frm.fields_dict || {}).forEach(f => frm.set_df_property(f, "read_only", 1));

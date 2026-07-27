@@ -28,38 +28,55 @@ body[data-route="roster"] .postname {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* The in-table tooltip is only a data holder now; it stays hidden because the
+   scrolling/scaled .table-parent container clips any tooltip rendered inside
+   it. The visible tooltip is rendered as .roster-post-tooltip on <body>. */
 body[data-route="roster"] .simplecheckbox .tooltiptext {
-  visibility: hidden;
-  width: 300px;
+  display: none;
+}
+
+/* Floating tooltip appended to <body> so it escapes the .table-parent
+   overflow/transform clipping and is never covered by the sticky header. */
+.roster-post-tooltip {
+  position: fixed;
+  max-width: 320px;
   background-color: #c7c7c7;
   color: #444;
   text-align: center;
   border-radius: 6px;
   font-weight: 400;
-  padding: 5px 0;
-  position: absolute;
-  z-index: 1;
-  bottom: 125%;
-  left: 50%;
-  margin-left: -90px;
+  padding: 6px 10px;
+  font-size: 13px;
+  z-index: 1080;
+  pointer-events: none;
   opacity: 0;
-  transition: opacity 0.3s;
+  transition: opacity 0.15s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
-body[data-route="roster"] .simplecheckbox .tooltiptext::after {
+.roster-post-tooltip.show {
+  opacity: 1;
+}
+
+.roster-post-tooltip::after {
   content: "";
   position: absolute;
-  top: 100%;
   left: 50%;
-  margin-left: -60px;
-  border-width: 5px;
+  margin-left: -6px;
+  border-width: 6px;
   border-style: solid;
+}
+
+/* Arrow points down when the tooltip sits above the cell (default). */
+.roster-post-tooltip.tooltip-above::after {
+  top: 100%;
   border-color: #c7c7c7 transparent transparent transparent;
 }
 
-body[data-route="roster"] .simplecheckbox:hover .tooltiptext {
-  visibility: visible;
-  opacity: 1;
+/* Arrow points up when the tooltip is flipped below the sticky header. */
+.roster-post-tooltip.tooltip-below::after {
+  bottom: 100%;
+  border-color: transparent transparent #c7c7c7 transparent;
 }
 body[data-route="roster"] .sticky {
   position: -webkit-sticky;
