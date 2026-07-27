@@ -21,6 +21,7 @@ class PricingProposal(Document):
 		"""
 		if self.docstatus == 0:
 			self.budget_configuration = get_budget_configuration_for_date(self.date_of_inception)
+			self.pull_budget_configuration_values()
 
 		if not self.budget_configuration:
 			frappe.throw(
@@ -31,6 +32,25 @@ class PricingProposal(Document):
 				),
 				title=_("Budget Configuration Not Found"),
 			)
+
+
+	def pull_budget_configuration_values(self):
+		"""
+		Copy the resolved configuration's values onto this proposal.
+
+		overhead_cost_percent declares fetch_from budget_configuration.overhead_cost_percentage,
+		but Frappe resolves fetch_from in _validate_links(), which runs *before* validate -
+		so on the save that first sets budget_configuration the link is still empty and
+		nothing is fetched. It would only appear on a later save. Reading it here keeps the
+		percentage in step with the configuration from the first save onwards.
+		"""
+		self.overhead_cost_percent = (
+			frappe.db.get_value(
+				"Budget Configuration", self.budget_configuration, "overhead_cost_percentage"
+			)
+			if self.budget_configuration
+			else None
+		)
 
 
 def get_budget_configuration_for_date(date_of_inception):

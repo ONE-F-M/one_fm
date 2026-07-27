@@ -16,6 +16,24 @@ class TestPricingProposal(FrappeTestCase):
 	inside the window under test.
 	"""
 
+	# Every fixture below is dated in the 1990s; real configurations are dated 2026. The
+	# controller's resolver and its unique-effective-from rule only started running when
+	# custom was set to 0 (WI-001707), which exposed these tests to any 1990s row left
+	# behind by an earlier test. Resetting the window makes each test own the resolver's
+	# input outright, and never touches a real configuration.
+	TEST_WINDOW_END = "2000-01-01"
+
+	def setUp(self):
+		self._reset_test_window()
+
+	def _reset_test_window(self):
+		for name in frappe.get_all(
+			"Budget Configuration",
+			filters={"effective_from": ["<", self.TEST_WINDOW_END]},
+			pluck="name",
+		):
+			frappe.delete_doc("Budget Configuration", name, force=True, ignore_permissions=True)
+
 	def _make_config(self, effective_from, overhead_cost_percentage=10):
 		return frappe.get_doc(
 			{
