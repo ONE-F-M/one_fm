@@ -61,11 +61,29 @@ class EmployeeResignation(Document):
 		# Allow workflow assignees to modify the document
 		if frappe.session.user in [self.supervisor, self.operations_manager, self.offboarding_officer]:
 			return
-			
-		# Allow Operation Admin and T4 Admin to edit replacement details in Pending Operations Manager state
-		if self.get("workflow_state") == "Pending Operations Manager" and any(role in roles for role in ["Operation Admin", "T4 Admin"]):
+		# Allow Operation Admin, T4 Admin, and Transportation Manager to edit replacement details in Pending Operations Manager state.
+		# Restricted to just those fields server-side too -- the JS only locks the form
+		# UI, which doesn't stop a direct save/API call from touching anything else.
+		if self.get("workflow_state") == "Pending Operations Manager" and any(role in roles for role in ["Operation Admin", "T4 Admin", "Transportation Manager"]):
+			allowed_fields = {"replacement_required", "replacement_priority", "replacement_nationality", "replacement_gender", "replacement_salary"}
+			# Only these child tables are the replacement spec -- NOT "employees" (the
+			# actual Resigning Employees grid), which must stay fully locked here too.
+			allowed_tables = {"language_requirements", "skill_requirements", "certification_requirements"}
+			before = self.get_doc_before_save()
+			if before:
+				for df in self.meta.fields:
+					if df.fieldname in allowed_fields or df.fieldname in allowed_tables:
+						continue
+					if df.fieldtype in ("Table", "Table MultiSelect"):
+						before_employees = [d.employee for d in (before.get(df.fieldname) or [])]
+						after_employees = [d.employee for d in (self.get(df.fieldname) or [])]
+						if before_employees != after_employees:
+							frappe.throw(_("You can only edit the replacement decision fields at this stage."), frappe.PermissionError)
+						continue
+					if self.get(df.fieldname) != before.get(df.fieldname):
+						frappe.throw(_("You can only edit the replacement decision fields at this stage."), frappe.PermissionError)
 			return
-		
+
 		linked_employee = frappe.db.get_value("Employee", {"user_id": frappe.session.user})
 		if not linked_employee:
 			frappe.throw(_("Your user account is not linked to an Employee profile. You cannot initiate resignations."))
@@ -237,6 +255,7 @@ class EmployeeResignation(Document):
 					
 					frappe.db.set_value("Employee", row.employee, {
 						"resignation_date": self.resignation_initiation_date,
+						"resignation_letter_date": self.resignation_initiation_date,
 						"relieving_date": self.relieving_date,
 						"current_resignation": self.name
 					})
@@ -302,6 +321,7 @@ class EmployeeResignation(Document):
 					"resignation_status": status,
 					"current_resignation": self.name,
 					"resignation_date": self.resignation_initiation_date,
+					"resignation_letter_date": self.resignation_initiation_date,
 					"relieving_date": self.relieving_date,
 				}
 				frappe.db.set_value("Employee", row.employee, update_data, update_modified=False)
@@ -339,12 +359,12 @@ def get_employee_resignation_details(employee):
 
 @frappe.whitelist()
 def get_autocomplete_options() -> dict:
-	"""Secure fetch of all genders and nationalities for Autocomplete fields, bypassing lookup restrictions for non-admin roles."""
+	"""Fetch all genders and nationalities for the replacement_gender/replacement_nationality Autocomplete fields."""
 	if not frappe.has_permission("Employee Resignation", "read"):
 		frappe.throw(_("Not permitted to access resignation details."), frappe.PermissionError)
 
-	genders = frappe.get_all("Gender", fields=["name"], order_by="name asc", ignore_permissions=True)
-	nationalities = frappe.get_all("Nationality", fields=["name"], order_by="name asc", ignore_permissions=True)
+	genders = frappe.get_all("Gender", fields=["name"], order_by="name asc")
+	nationalities = frappe.get_all("Nationality", fields=["name"], order_by="name asc")
 
 	return {
 		"nationalities": [n.name for n in nationalities if n.name],

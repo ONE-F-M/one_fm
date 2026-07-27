@@ -127,6 +127,11 @@ class EmployeeResignationDateAdjustment(Document):
             if rsgn_om:
                 self.operations_manager = rsgn_om
 
+            # Corporate hires (not shift_working) have no Operations Manager step --
+            # operations_manager's depends_on/mandatory_depends_on rely on this field.
+            shift_working = frappe.db.get_value("Employee Resignation", self.employee_resignation, "shift_working")
+            self.is_corporate = 0 if shift_working else 1
+
         # Set Offboarding Officer — first user with that role
         if not self.get("offboarding_officer"):
             from frappe.utils.user import get_users_with_role

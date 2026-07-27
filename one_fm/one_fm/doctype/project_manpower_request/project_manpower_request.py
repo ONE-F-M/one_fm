@@ -204,7 +204,7 @@ class ProjectManpowerRequest(Document):
 					"name": self.name,
 					"assign_to": [recruiter],
 					"description": _("Assigned for Recruitment processing"),
-				}, ignore_permissions=True)
+				})
 			except Exception as e:
 				frappe.log_error(
 					message=f"Error assigning recruiter for {self.name}: {str(e)}",
@@ -270,7 +270,7 @@ class ProjectManpowerRequest(Document):
 		]:
 			field = self.meta.get_field(fieldname)
 			if field:
-				db_opts = [d for d in frappe.get_all(doctype, pluck="name", ignore_permissions=True) if d]
+				db_opts = [d for d in frappe.get_all(doctype, pluck="name") if d]
 				opts = list(default_opts)
 				for opt in db_opts:
 					if opt not in opts:
@@ -294,8 +294,8 @@ def get_autocomplete_options() -> dict:
 	if not frappe.has_permission("Project Manpower Request", "read"):
 		frappe.throw(_("Not permitted to access manpower request details."), frappe.PermissionError)
 
-	nationalities = frappe.get_all("Nationality", fields=["name"], order_by="name asc", ignore_permissions=True)
-	genders = frappe.get_all("Gender", fields=["name"], order_by="name asc", ignore_permissions=True)
+	nationalities = frappe.get_all("Nationality", fields=["name"], order_by="name asc")
+	genders = frappe.get_all("Gender", fields=["name"], order_by="name asc")
 
 	return {
 		"nationalities": [n.name for n in nationalities if n.name],
