@@ -98,10 +98,9 @@
   },
   {
    "fieldname": "nationality",
-   "fieldtype": "Data",
+   "fieldtype": "Select",
    "label": "Nationality",
-   "options": "\nKuwaiti\nNon-Kuwaiti\nNon-State",
-   "read_only": 1
+   "options": "\nKuwaiti\nNon-Kuwaiti\nNon-State"
   },
   {
    "fieldname": "gender",
@@ -176,7 +175,8 @@
   {
    "fieldname": "food_allowance",
    "fieldtype": "Currency",
-   "label": "Food Allowance"
+   "label": "Food Allowance",
+   "depends_on": "eval:doc.nationality != \"Kuwaiti\""
   },
   {
    "fieldname": "ot_allowance",
@@ -220,7 +220,8 @@
   {
    "fieldname": "laundry_allowance",
    "fieldtype": "Currency",
-   "label": "Laundry Allowance"
+   "label": "Laundry Allowance",
+   "depends_on": "eval:doc.nationality != \"Kuwaiti\""
   },
   {
    "fieldname": "mobile_phone_allowance",
@@ -235,22 +236,26 @@
   {
    "fieldname": "air_ticket_allowance",
    "fieldtype": "Currency",
-   "label": "Air Ticket Allowance"
+   "label": "Air Ticket Allowance",
+   "depends_on": "eval:doc.nationality != \"Kuwaiti\""
   },
   {
    "fieldname": "accommodation_allowance",
    "fieldtype": "Currency",
-   "label": "Accommodation Allowance"
+   "label": "Accommodation Allowance",
+   "depends_on": "eval:doc.nationality != \"Kuwaiti\""
   },
   {
    "fieldname": "transportation_allowance",
    "fieldtype": "Currency",
-   "label": "Transportation Allowance"
+   "label": "Transportation Allowance",
+   "depends_on": "eval:doc.nationality != \"Kuwaiti\""
   },
   {
    "fieldname": "uniform_cost",
    "fieldtype": "Currency",
-   "label": "Uniform Cost"
+   "label": "Uniform Cost",
+   "depends_on": "eval:doc.nationality != \"Kuwaiti\""
   },
   {
    "fieldname": "kuwaitization_fee",
@@ -264,12 +269,14 @@
   {
    "fieldname": "work_permit_fee",
    "fieldtype": "Currency",
-   "label": "Work Permit Fee"
+   "label": "Work Permit Fee",
+   "depends_on": "eval:doc.nationality != \"Kuwaiti\""
   },
   {
    "fieldname": "medical_insurance_fee",
    "fieldtype": "Currency",
-   "label": "Medical Insurance Fee"
+   "label": "Medical Insurance Fee",
+   "depends_on": "eval:doc.nationality != \"Kuwaiti\""
   },
   {
    "fieldname": "residency_stamp_fee",
@@ -279,7 +286,8 @@
   {
    "fieldname": "civil_id_fee",
    "fieldtype": "Currency",
-   "label": "Civil ID Fee"
+   "label": "Civil ID Fee",
+   "depends_on": "eval:doc.nationality != \"Kuwaiti\""
   },
   {
    "fieldname": "bank_guarantee_fee",
@@ -294,7 +302,8 @@
   {
    "fieldname": "pifss_rate",
    "fieldtype": "Currency",
-   "label": "PIFSS Rate"
+   "label": "PIFSS Rate",
+   "depends_on": "eval:doc.nationality == \"Kuwaiti\""
   }
  ],
  "index_web_pages_for_search": 1,
