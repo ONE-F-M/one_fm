@@ -9,6 +9,7 @@
   "section_break_mbv7",
   "naming_series",
   "job_offer",
+  "candidate_country_process",
   "job_applicant",
   "column_break_vujs",
   "request_date",
@@ -283,6 +284,13 @@
    "reqd": 1
   },
   {
+   "fieldname": "candidate_country_process",
+   "fieldtype": "Link",
+   "label": "Candidate Country Process",
+   "options": "Candidate Country Process",
+   "read_only": 1
+  },
+  {
    "fetch_from": "job_applicant.applicant_name",
    "fieldname": "job_applicant_full_name",
    "fieldtype": "Data",
@@ -498,7 +506,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-04 07:30:21.125399",
+ "modified": "2026-07-20 03:00:00.000000",
  "modified_by": "Administrator",
  "module": "Visa Management",
  "name": "Visa Request",

@@ -10,20 +10,15 @@
   "candidate_name",
   "passport_number",
   "column_break_1",
+  "section_break_appointment",
   "appointment_status",
-  "status",
   "submission_date",
+  "section_break_result",
+  "status",
   "receiving_date",
-  "section_break_visa",
-  "visa_type",
-  "pam_file_number",
-  "column_break_2",
-  "nationality",
-  "pam_designation",
+  "stamped_visa_copy",
   "section_break_notes",
-  "notes",
-  "section_break_attach",
-  "stamped_visa_copy"
+  "notes"
  ],
  "fields": [
   {
@@ -62,12 +57,27 @@
    "fieldtype": "Column Break"
   },
   {
+   "fieldname": "section_break_appointment",
+   "fieldtype": "Section Break",
+   "label": "Appointment"
+  },
+  {
    "default": "Pending",
    "fieldname": "appointment_status",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Appointment Status",
    "options": "Pending\nBooked\nCompleted\nCancelled"
+  },
+  {
+   "fieldname": "submission_date",
+   "fieldtype": "Date",
+   "label": "Submission Date"
+  },
+  {
+   "fieldname": "section_break_result",
+   "fieldtype": "Section Break",
+   "label": "Stamping Result"
   },
   {
    "default": "Pending",
@@ -79,43 +89,14 @@
    "reqd": 1
   },
   {
-   "fieldname": "submission_date",
-   "fieldtype": "Date",
-   "label": "Submission Date"
-  },
-  {
    "fieldname": "receiving_date",
    "fieldtype": "Date",
    "label": "Receiving Date"
   },
   {
-   "fieldname": "section_break_visa",
-   "fieldtype": "Section Break",
-   "label": "Visa Details"
-  },
-  {
-   "fieldname": "visa_type",
-   "fieldtype": "Data",
-   "label": "Visa Type"
-  },
-  {
-   "fieldname": "pam_file_number",
-   "fieldtype": "Data",
-   "label": "PAM File Number"
-  },
-  {
-   "fieldname": "column_break_2",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "nationality",
-   "fieldtype": "Data",
-   "label": "Nationality"
-  },
-  {
-   "fieldname": "pam_designation",
-   "fieldtype": "Data",
-   "label": "PAM Designation"
+   "fieldname": "stamped_visa_copy",
+   "fieldtype": "Attach",
+   "label": "Stamped Visa Copy"
   },
   {
    "fieldname": "section_break_notes",
@@ -126,41 +107,10 @@
    "fieldname": "notes",
    "fieldtype": "Small Text",
    "label": "Notes"
-  },
-  {
-   "fieldname": "section_break_attach",
-   "fieldtype": "Section Break",
-   "label": "Attachments"
-  },
-  {
-   "fieldname": "stamped_visa_copy",
-   "fieldtype": "Attach",
-   "label": "Stamped Visa Copy"
   }
  ],
- "links": [
-  {
-   "link_doctype": "Candidate Country Process",
-   "link_fieldname": "name"
-  },
-  {
-   "link_doctype": "Overseas Medical Appointment WAFID",
-   "link_fieldname": "candidate_country_process"
-  },
-  {
-   "link_doctype": "Overseas Remedical",
-   "link_fieldname": "candidate_country_process"
-  },
-  {
-   "link_doctype": "PCC Clearance",
-   "link_fieldname": "candidate_country_process"
-  },
-  {
-   "link_doctype": "Arrival and Deployment",
-   "link_fieldname": "candidate_country_process"
-  }
- ],
- "modified": "2026-04-15 13:26:49.918577",
+ "links": [],
+ "modified": "2026-07-20 02:00:00.000000",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Visa Stamping",
