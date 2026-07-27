@@ -84,6 +84,7 @@ function load_js(page) {
 			populate_dropdown_options(page, "");
 			render_selected_tags(page);
 			update_clear_button(page);
+			apply_roster_read_only(page);
 			let element = get_wrapper_element().slice(1);
 			page[element](page);
 		});
@@ -100,6 +101,7 @@ function load_js(page) {
 			populate_dropdown_options(page, "");
 			render_selected_tags(page);
 			update_clear_button(page);
+			apply_roster_read_only(page);
 			clear_roster_filters(page);
 		});
 
@@ -757,29 +759,91 @@ function setup_preset_filters(page) {
 }
 
 // Show popups on clicking edit options in Roster view
+
+// ── Helpdesk-managed sites: read-only roster (WI-001692) ──
+// The server gates every roster write and is the authority. This keeps the page honest
+// so a read-only user is not offered actions that can only fail, which is what the AC
+// means by a "strictly Read-Only" roster view.
+const ROSTER_ACTION_SELECTORS = [
+	".changepost", ".change_ot", ".change_others", ".suspend_employee",
+	".assignchangemodal", ".dayoff", "#rosterEmployeeActions"
+].join(", ");
+
+function apply_roster_read_only(page) {
+	const site = page.filters && page.filters.site;
+
+	if (!site) {
+		// With no single site in view the matrix may span managed and unmanaged sites,
+		// so the per-employee server gate is the only correct arbiter.
+		set_roster_read_only(page, false);
+		return;
+	}
+
+	frappe.call({
+		method: "one_fm.one_fm.page.roster.roster.is_roster_read_only",
+		args: { site: site },
+		callback: function (r) {
+			set_roster_read_only(page, !!r.message);
+		}
+	});
+}
+
+function set_roster_read_only(page, read_only) {
+	page._roster_read_only = read_only;
+
+	$(ROSTER_ACTION_SELECTORS).toggleClass("disabled", read_only).prop("disabled", read_only);
+	$("#roster-read-only-banner").remove();
+
+	if (read_only) {
+		$("#page-roster").prepend(
+			`<div id="roster-read-only-banner" class="alert alert-warning mb-3" role="alert">
+				${__("This site's roster is managed by the Helpdesk. You have read-only access.")}
+			</div>`
+		);
+	}
+}
+
+// Guard used by every roster action entry point. Returns true when the action must not
+// proceed, so the click is dropped before a dialog is even opened.
+function roster_action_blocked(page) {
+	if (!page._roster_read_only) return false;
+
+	frappe.show_alert({
+		message: __("This site's roster is managed by the Helpdesk and is read-only for your role."),
+		indicator: "orange"
+	}, 6);
+	return true;
+}
+
 function setup_topbar_events(page) {
 
 	$(".changepost").on("click", function () {
+		if (roster_action_blocked(page)) return;
 		schedule_change_post(page);
 	});
 
 	$(".change_ot").on("click", function () {
+		if (roster_action_blocked(page)) return;
 		change_ot_schedule(page);
 	});
 
 	$(".change_others").on("click", function () {
+		if (roster_action_blocked(page)) return;
 		change_others_schedule(page);
 	});
 
 	$(".suspend_employee").on("click", function () {
+		if (roster_action_blocked(page)) return;
 		suspend_employee_dialog(page);
 	});
 
 	$(".assignchangemodal").on("click", function () {
+		if (roster_action_blocked(page)) return;
 		unschedule_staff(page);
 	});
 
 	$(".dayoff").on("click", function () {
+		if (roster_action_blocked(page)) return;
 		dayoff(page);
 	});
 
@@ -796,6 +860,7 @@ function setup_topbar_events(page) {
 	});
 
 	$("#rosterEmployeeActions").on("click", function () {
+		if (roster_action_blocked(page)) return;
 		roster_employee_actions(page);
 	});
 
@@ -1193,6 +1258,7 @@ let classmap = {
 	"Client Event": "cyanboxcolor",
 	"Medical Appointment": "cyanboxcolor",
 	"On-the-job Training": "tealboxcolor",
+	"Client Interview": "cyanboxcolor",
 	"Suspended": "suspendedcolor"
 };
 
@@ -1216,6 +1282,7 @@ let abbr_map = {
 	"Medical Appointment": "MA",
 	"On-the-job Training": "OJT",
 	"Client Event": "CE",
+	"Client Interview": "CI",
 	"Suspended": "S"
 };
 
@@ -1771,10 +1838,64 @@ function get_post_data(page) {
 
 
 				bind_events(page);
+				setup_post_tooltip_position();
 			}).catch(e => {
 				console.log(e);
 			});
 	}
+}
+
+// Show the full post name in a floating tooltip on hover. The tooltip is
+// appended to <body> (not inside the table) because .table-parent has
+// overflow/scroll and a transform that would clip any tooltip rendered inside
+// it. It shows above the cell by default, but flips below when showing above
+// would place it behind the sticky column header.
+function setup_post_tooltip_position() {
+	let $postMonth = $(".postMonth");
+
+	// Single reusable floating tooltip element on <body>.
+	let $tooltip = $("#roster-post-tooltip");
+	if (!$tooltip.length) {
+		$tooltip = $('<div id="roster-post-tooltip" class="roster-post-tooltip"></div>').appendTo("body");
+	}
+
+	function position_tooltip(cell) {
+		let cell_rect = cell.getBoundingClientRect();
+		let $thead = $postMonth.find("#calenderviewtable thead");
+		let header_bottom = $thead.length ? $thead[0].getBoundingClientRect().bottom : 0;
+
+		let tip_width = $tooltip.outerWidth();
+		let tip_height = $tooltip.outerHeight();
+		let gap = 10;
+
+		// Center horizontally over the cell, clamped to the viewport.
+		let left = cell_rect.left + cell_rect.width / 2 - tip_width / 2;
+		left = Math.max(8, Math.min(left, window.innerWidth - tip_width - 8));
+
+		// Prefer above; flip below if the header would cover it.
+		let top_above = cell_rect.top - tip_height - gap;
+		let below = top_above < header_bottom;
+		let top = below ? cell_rect.bottom + gap : top_above;
+
+		$tooltip
+			.toggleClass("tooltip-below", below)
+			.toggleClass("tooltip-above", !below)
+			.css({ left: left + "px", top: top + "px" });
+	}
+
+	// Rebind cleanly so repeated renders don't stack duplicate handlers.
+	$postMonth.off(".tooltipflip", ".simplecheckbox")
+		.on("mouseenter.tooltipflip", ".simplecheckbox", function () {
+			let text = $(this).find(".tooltiptext").text().trim()
+				|| $(this).find(".postname").text().trim();
+			if (!text) return;
+			$tooltip.text(text);
+			position_tooltip(this);
+			$tooltip.addClass("show");
+		})
+		.on("mouseleave.tooltipflip", ".simplecheckbox", function () {
+			$tooltip.removeClass("show");
+		});
 }
 
 function escape_values(string) {
@@ -2821,9 +2942,8 @@ function change_ot_schedule(page) {
 							});
 					}
 				}, get_query: function () {
-					// Only shifts that permit double-shift OT can be selected as a second (OT) shift.
 					return {
-						"filters": { "status": "Active", "double_shift_ot_allowed": 1 },
+						"filters": { "status": "Active" },
 						"page_length": 9999
 					};
 				}

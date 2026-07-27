@@ -8,11 +8,16 @@
  "field_order": [
   "section_break_xfjj",
   "employee_resignation",
+  "employee",
+  "employee_name",
   "column_break_twru",
   "relieving_date",
   "date_of_joining",
   "under_company_residency",
   "table_section",
+  "reason",
+  "resignation_withdrawal_letter",
+  "reason_for_rejection",
   "employees",
   "more_information_section",
   "naming_series",
@@ -21,6 +26,7 @@
   "approvers_section",
   "workflow_state",
   "supervisor",
+  "is_corporate",
   "operations_manager",
   "offboarding_officer",
   "column_break_wetd",
@@ -41,6 +47,22 @@
    "options": "Employee Resignation",
    "read_only": 1,
    "reqd": 1
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee",
+   "read_only": 1,
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_twru",
@@ -72,22 +94,38 @@
    "read_only": 1
   },
   {
-   "fieldname": "column_break_pdtv",
-   "fieldtype": "Column Break",
-   "hidden": 1
+   "fieldname": "table_section",
+   "fieldtype": "Section Break",
+   "label": "Withdrawal Details"
   },
   {
-   "fieldname": "column_break_wetd",
-   "fieldtype": "Column Break"
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason"
+  },
+  {
+   "fieldname": "resignation_withdrawal_letter",
+   "fieldtype": "Attach",
+   "label": "Withdrawal Letter"
+  },
+  {
+   "fieldname": "reason_for_rejection",
+   "fieldtype": "Small Text",
+   "label": "Reason for Rejection",
+   "depends_on": "eval:doc.workflow_state && doc.workflow_state.includes('Rejected')"
+  },
+  {
+   "fieldname": "employees",
+   "fieldtype": "Table",
+   "label": "Withdrawing Employees",
+   "options": "Employee Resignation Withdrawal Item",
+   "hidden": 1,
+   "description": "Legacy multi-employee table, no longer used. Kept only so historical multi-employee withdrawals remain readable."
   },
   {
    "fieldname": "more_information_section",
    "fieldtype": "Section Break",
    "label": "More Information"
-  },
-  {
-   "fieldname": "column_break_szbe",
-   "fieldtype": "Column Break"
   },
   {
    "fieldname": "naming_series",
@@ -101,9 +139,26 @@
    "fieldtype": "Column Break"
   },
   {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Employee Resignation Withdrawal",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
    "fieldname": "approvers_section",
    "fieldtype": "Section Break",
    "label": "Workflow Approvers"
+  },
+  {
+   "fieldname": "workflow_state",
+   "fieldtype": "Data",
+   "label": "Workflow State",
+   "read_only": 1,
+   "no_copy": 1
   },
   {
    "fieldname": "supervisor",
@@ -111,6 +166,14 @@
    "label": "Supervisor",
    "options": "User",
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_corporate",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Is Corporate",
+   "read_only": 1
   },
   {
    "fieldname": "operations_manager",
@@ -131,33 +194,17 @@
    "mandatory_depends_on": "eval: doc.workflow_state && (doc.workflow_state == 'Pending Operations Manager' || doc.workflow_state == 'Approved')"
   },
   {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Employee Resignation Withdrawal",
-   "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
+   "fieldname": "column_break_wetd",
+   "fieldtype": "Column Break"
   },
   {
-   "fieldname": "employees",
-   "fieldtype": "Table",
-   "label": "Withdrawing Employees",
-   "options": "Employee Resignation Withdrawal Item",
-   "reqd": 1
+   "fieldname": "column_break_pdtv",
+   "fieldtype": "Column Break",
+   "hidden": 1
   },
   {
-   "fieldname": "workflow_state",
-   "fieldtype": "Data",
-   "label": "Workflow State",
-   "read_only": 1,
-   "no_copy": 1
-  },
-  {
-   "fieldname": "table_section",
-   "fieldtype": "Section Break",
-   "label": "Candidates"
+   "fieldname": "column_break_szbe",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
@@ -255,5 +302,6 @@
  "rows_threshold_for_grid_search": 20,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }

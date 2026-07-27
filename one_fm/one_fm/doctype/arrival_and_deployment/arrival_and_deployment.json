@@ -11,10 +11,6 @@
   "passport_number",
   "recruiter",
   "onboarding_officer",
-  "transportation_manager",
-  "general_services",
-  "finance",
-  "warehouse",
   "column_break_1",
   "status",
   "arrival_date",
@@ -22,20 +18,17 @@
   "section_break_flight",
   "flight_number",
   "airline",
+  "terminal",
+  "column_break_2",
   "ticket_attachment",
   "arrival_airport",
-  "column_break_2",
-  "pickup_arranged",
-  "pickup_contact",
-  "section_break_ack",
-  "transport_acknowledged",
-  "finance_acknowledged",
-  "column_break_ack",
-  "general_services_acknowledged",
-  "warehouse_acknowledged",
-  "support_assigned_on",
-  "section_break_notes",
-  "notes"
+  "section_break_onboarding",
+  "transportation_manager",
+  "general_services",
+  "finance",
+  "warehouse",
+  "operations_admin",
+  "support_assigned_on"
  ],
  "fields": [
   {
@@ -79,35 +72,7 @@
    "fieldtype": "Link",
    "label": "Onboarding Officer",
    "options": "User",
-   "reqd": 1
-  },
-  {
-   "fieldname": "transportation_manager",
-   "fieldtype": "Link",
-   "label": "Transportation Manager",
-   "options": "User",
-   "mandatory_depends_on": "eval:doc.candidate_country_process"
-  },
-  {
-   "fieldname": "general_services",
-   "fieldtype": "Link",
-   "label": "General Services",
-   "options": "User",
-   "reqd": 1
-  },
-  {
-   "fieldname": "finance",
-   "fieldtype": "Link",
-   "label": "Finance",
-   "options": "User",
-   "mandatory_depends_on": "eval:doc.candidate_country_process"
-  },
-  {
-   "fieldname": "warehouse",
-   "fieldtype": "Link",
-   "label": "Warehouse",
-   "options": "User",
-   "reqd": 1
+   "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
    "fieldname": "column_break_1",
@@ -125,12 +90,14 @@
   {
    "fieldname": "arrival_date",
    "fieldtype": "Date",
-   "label": "Arrival Date"
+   "label": "Arrival Date",
+   "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
    "fieldname": "arrival_time",
    "fieldtype": "Time",
-   "label": "Arrival Time"
+   "label": "Arrival Time",
+   "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
    "fieldname": "section_break_flight",
@@ -140,95 +107,92 @@
   {
    "fieldname": "flight_number",
    "fieldtype": "Data",
-   "label": "Flight Number"
+   "label": "Flight Number",
+   "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
    "fieldname": "airline",
    "fieldtype": "Data",
-   "label": "Airline"
+   "label": "Airline",
+   "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
-   "fieldname": "ticket_attachment",
-   "fieldtype": "Attach",
-   "label": "Ticket Attachment"
-  },
-  {
-   "fieldname": "arrival_airport",
+   "fieldname": "terminal",
    "fieldtype": "Data",
-   "label": "Arrival Airport"
+   "label": "Terminal",
+   "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
    "fieldname": "column_break_2",
    "fieldtype": "Column Break"
   },
   {
-   "default": "0",
-   "fieldname": "pickup_arranged",
-   "fieldtype": "Check",
-   "label": "Pickup Arranged"
+   "fieldname": "ticket_attachment",
+   "fieldtype": "Attach",
+   "label": "Ticket Attachment",
+   "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
-   "fieldname": "pickup_contact",
-   "fieldtype": "Link",
-   "label": "Pickup Contact Person",
-   "options": "Employee"
+   "fieldname": "arrival_airport",
+   "fieldtype": "Data",
+   "label": "Arrival Airport",
+   "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
-   "fieldname": "section_break_ack",
+   "depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)",
+   "fieldname": "section_break_onboarding",
    "fieldtype": "Section Break",
-   "label": "Department Acknowledgements"
+   "label": "Onboarding & Support"
   },
   {
-   "default": "0",
-   "fieldname": "transport_acknowledged",
-   "fieldtype": "Check",
-   "label": "Transportation Acknowledged",
-   "read_only": 1
+   "fieldname": "transportation_manager",
+   "fieldtype": "Link",
+   "label": "Transportation Manager",
+   "options": "User",
+   "mandatory_depends_on": "eval:doc.candidate_country_process && [\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
-   "default": "0",
-   "fieldname": "finance_acknowledged",
-   "fieldtype": "Check",
-   "label": "Finance Acknowledged",
-   "read_only": 1
+   "fieldname": "general_services",
+   "fieldtype": "Link",
+   "label": "General Services",
+   "options": "User",
+   "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
-   "fieldname": "column_break_ack",
-   "fieldtype": "Column Break"
+   "fieldname": "finance",
+   "fieldtype": "Link",
+   "label": "Finance",
+   "options": "User",
+   "mandatory_depends_on": "eval:doc.candidate_country_process && [\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
-   "default": "0",
-   "fieldname": "general_services_acknowledged",
-   "fieldtype": "Check",
-   "label": "General Services Acknowledged",
-   "read_only": 1
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Warehouse",
+   "options": "User",
+   "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
-   "default": "0",
-   "fieldname": "warehouse_acknowledged",
-   "fieldtype": "Check",
-   "label": "Warehouse Acknowledged",
-   "read_only": 1
+   "fieldname": "operations_admin",
+   "fieldtype": "Link",
+   "label": "Admin",
+   "options": "User",
+   "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
    "fieldname": "support_assigned_on",
    "fieldtype": "Datetime",
    "hidden": 1,
    "label": "Support Assigned On"
-  },
-  {
-   "fieldname": "section_break_notes",
-   "fieldtype": "Section Break",
-   "label": "Notes"
-  },
-  {
-   "fieldname": "notes",
-   "fieldtype": "Small Text",
-   "label": "Notes"
   }
  ],
- "links": [],
- "modified": "2026-05-12 11:55:01.278841",
+ "links": [
+  {
+   "link_doctype": "Arrival Acknowledgement",
+   "link_fieldname": "arrival_and_deployment"
+  }
+ ],
+ "modified": "2026-07-21 09:00:00.000000",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Arrival and Deployment",
@@ -309,6 +273,59 @@
    "read": 1,
    "report": 1,
    "role": "Interviewer",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "write": 1,
+   "role": "Transportation Manager"
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "HR Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "HR User",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Recruitment Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Recruiter",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Senior Recruiter",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Interviewer",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Transportation Manager",
    "write": 1
   }
  ],

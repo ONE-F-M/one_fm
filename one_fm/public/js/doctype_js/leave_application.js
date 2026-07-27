@@ -249,16 +249,13 @@ frappe.ui.form.on("Leave Application", {
 // When HelpDesk confirms the employee will NOT return, expose an "Employee
 // Resignation" action under the "Create" menu so the offboarding/exit
 // replacement process can be initiated immediately. Clicking it opens a new
-// Employee Resignation with this leave's employee prefilled into the required
-// "employees" child table.
+// Employee Resignation with this leave's employee prefilled.
 function add_employee_resignation_button(frm) {
     if (frm.doc.custom_will_the_employee_return === "No") {
         frm.add_custom_button(__("Employee Resignation"), function() {
             frappe.model.with_doctype("Employee Resignation", function() {
                 let doc = frappe.model.get_new_doc("Employee Resignation");
-                let row = frappe.model.add_child(doc, "Employee Resignation Item", "employees");
-                row.employee = frm.doc.employee;
-                row.employee_name = frm.doc.employee_name;
+                doc.employee = frm.doc.employee;
                 frappe.set_route("Form", "Employee Resignation", doc.name);
             });
         }, __("Create"));

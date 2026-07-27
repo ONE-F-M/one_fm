@@ -3,32 +3,33 @@ def get_hd_ticket_custom_fields():
     return {
          "HD Ticket": [
             {
-                "fieldname": "custom_is_doctype_related",
+                "fieldname": "custom_ticket_category",
                 "fieldtype": "Select",
-                "label": "Is Doctype Related",
+                "label": "Ticket Category",
                 "insert_after": "cb00",
                 "reqd": 1,
-                "options": "\nYes\nNo",
+                "options": "\nProcess Issue\nDoctype Issue\nFront End Issue\nMobile Issue\nOther Issues",
                 "translatable": 0,
-                "description": "Select \"Yes\" if this ticket is related to a specific doctype. Then the selected doctype in the \"Reference Doctype\" field can be used to determine the process."
+                "description": "Categorize the ticket. Selecting \"Process Issue\" reveals the mandatory Process field; selecting \"Doctype Issue\" reveals the mandatory Reference Doctype field."
             },
             {
                 "fieldname": "custom_reference_doctype",
                 "fieldtype": "Link",
                 "label": "Reference Doctype",
-                "insert_after": "custom_is_doctype_related",
+                "insert_after": "custom_ticket_category",
                 "options": "DocType",
-                "depends_on": "eval: doc.custom_is_doctype_related == \"Yes\"",
-                "mandatory_depends_on": "eval: doc.custom_is_doctype_related == \"Yes\""
+                "depends_on": "eval: doc.custom_ticket_category == \"Doctype Issue\"",
+                "mandatory_depends_on": "eval: doc.custom_ticket_category == \"Doctype Issue\""
             },
             {
                 "fieldname": "custom_process",
                 "fieldtype": "Link",
                 "label": "Process",
                 "insert_after": "custom_reference_doctype",
-                "reqd": 1,
-                "default": "Others", 
-                "options": "Process"
+                "options": "Process",
+                "depends_on": "eval: doc.custom_ticket_category == \"Process Issue\" || doc.custom_ticket_category == \"Doctype Issue\"",
+                "mandatory_depends_on": "eval: doc.custom_ticket_category == \"Process Issue\"",
+                "read_only_depends_on": "eval: doc.custom_ticket_category != \"Process Issue\""
             },
             {
                 "fieldname": "custom_dev_ticket",
