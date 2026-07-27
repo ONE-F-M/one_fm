@@ -22,7 +22,18 @@ def get_project_properties():
             "field_name":"users_section",
             "property":"depends_on",
             "property_type":"Data",
-            "value":"eval:['External','Internal'].includes(doc.project_type)"
+            # Show the "Project Manager and Users" section wherever `users` can be
+            # filled in — and in particular wherever it is *mandatory*, so a
+            # required field is never hidden. Keep this list in sync with the
+            # `users` mandatory_depends_on below.
+            #
+            # SCRUM is matched on `doc.type` (the controlled Select on Project
+            # Type) rather than on the Project Type record's name: the name is
+            # free text, so "SCRUM Project" is only one of the names a SCRUM
+            # type may have. External/Internal/Personal Project have no
+            # controlled equivalent ("Internal" and "Personal Project" both map
+            # to type "Personal"), so those are still matched by name.
+            "value":"eval:['External','Internal','Personal Project'].includes(doc.project_type) || doc.type=='SCRUM'"
         },
         {
             "doctype_or_field":"DocField",
@@ -115,7 +126,12 @@ def get_project_properties():
         {
             "property": "mandatory_depends_on",
             "property_type": "Data",
-            "value": "eval:['Internal',\"SCRUM Project\",'Personal Project'].includes(cur_frm.doc.project_type)",
+            # Same SCRUM test as the users_section depends_on above, so the
+            # field can never be required while its section is hidden.
+            # Uses `doc` (injected by frappe.utils.eval) rather than the
+            # `cur_frm` global, which is not this form during quick entry or
+            # list-view bulk edit.
+            "value": "eval:['Internal','Personal Project'].includes(doc.project_type) || doc.type=='SCRUM'",
             "doc_type": "Project",
             "doctype_or_field": "DocField",
             "field_name": "users"

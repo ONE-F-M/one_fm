@@ -144,6 +144,18 @@ def get_project_custom_fields():
                 "translatable": 1
             },
             {
+                "fieldname": "custom_sprint_prefix",
+                "label": "Sprint Prefix",
+                "fieldtype": "Data",
+                "insert_after": "type",
+                # `doc.type` is the controlled Select fetched from Project Type;
+                # the same test gates the users section / users field in
+                # one_fm.custom.property_setter.project. Keep them identical.
+                "depends_on": "eval:doc.type=='SCRUM'",
+                "mandatory_depends_on": "eval:doc.type=='SCRUM'",
+                "description": "Sprints for this project are named &lt;prefix&gt;-001, -002, … Keep it short and unique.",
+            },
+            {
                 "fieldname": "total_expense_claim",
                 "label": "Total Expense Claim (via Expense Claims)",
                 "fieldtype": "Currency",
