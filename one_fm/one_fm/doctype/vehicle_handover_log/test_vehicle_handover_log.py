@@ -3,10 +3,16 @@
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
+from datetime import timedelta
+
+from frappe.utils import get_datetime
 
 from one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log import (
 	calculate_total_kilometers,
 	get_handover_status,
+	as_time_string,
+	get_handover_windows,
+	get_manifest_shift_windows,
 	validate_handover_window,
 	validate_odometer_readings,
 )
@@ -91,3 +97,88 @@ class TestVehicleHandoverLog(FrappeTestCase):
 
 	def test_cancelled_session_is_cancelled(self):
 		self.assertEqual(get_handover_status(2), "Cancelled")
+
+
+class TestManifestShiftWindows(FrappeTestCase):
+	"""
+	WI-001577 AC5: the job matches a handover against the manifest's SHIFT hours, not the
+	pickup instant. A handover raised for an evening shift never lines up with a morning
+	pickup time, which is how a real submitted handover came to be ignored.
+	"""
+
+	def _manifest(self, *stops, schedule_date="2026-07-28"):
+		return {
+			"schedule_date": schedule_date,
+			"transportation_manifest_details": list(stops),
+		}
+
+	def test_shift_window_comes_from_start_and_end_time(self):
+		manifest = self._manifest({"start_time": "10:00:00", "end_time": "23:00:00"})
+		self.assertEqual(
+			get_manifest_shift_windows(manifest),
+			[(get_datetime("2026-07-28 10:00:00"), get_datetime("2026-07-28 23:00:00"))],
+		)
+
+	def test_night_shift_crosses_midnight(self):
+		# 18:00 -> 06:00 must run into the next day, not collapse to an empty window.
+		manifest = self._manifest({"start_time": "18:00:00", "end_time": "06:00:00"})
+		self.assertEqual(
+			get_manifest_shift_windows(manifest),
+			[(get_datetime("2026-07-28 18:00:00"), get_datetime("2026-07-29 06:00:00"))],
+		)
+
+	def test_windows_are_deduplicated_and_ordered(self):
+		# Several stops normally share one shift; the header needs each window once,
+		# earliest first, because the earliest match wins.
+		manifest = self._manifest(
+			{"start_time": "18:00:00", "end_time": "06:00:00"},
+			{"start_time": "10:00:00", "end_time": "23:00:00"},
+			{"start_time": "10:00:00", "end_time": "23:00:00"},
+		)
+		windows = get_manifest_shift_windows(manifest)
+
+		self.assertEqual(len(windows), 2)
+		self.assertEqual(windows[0][0], get_datetime("2026-07-28 10:00:00"))
+		self.assertEqual(windows[1][0], get_datetime("2026-07-28 18:00:00"))
+
+	def test_time_fields_read_back_as_timedelta(self):
+		# Child Time fields come back as timedelta, and str() drops the leading zero on
+		# single-digit hours ("6:00:00"), so they are normalised before parsing.
+		self.assertEqual(as_time_string(timedelta(seconds=21600)), "06:00:00")
+		self.assertEqual(as_time_string(timedelta(seconds=82800)), "23:00:00")
+
+		manifest = self._manifest(
+			{"start_time": timedelta(seconds=64800), "end_time": timedelta(seconds=21600)}
+		)
+		self.assertEqual(
+			get_manifest_shift_windows(manifest),
+			[(get_datetime("2026-07-28 18:00:00"), get_datetime("2026-07-29 06:00:00"))],
+		)
+
+	def test_stops_without_shift_hours_are_skipped(self):
+		manifest = self._manifest(
+			{"start_time": None, "end_time": None},
+			{"start_time": "10:00:00", "end_time": None},
+		)
+		self.assertEqual(get_manifest_shift_windows(manifest), [])
+
+	def test_no_schedule_date_yields_no_windows(self):
+		# Nothing to match against; the job leaves the header alone rather than guessing.
+		self.assertEqual(
+			get_manifest_shift_windows(
+				{"schedule_date": None, "transportation_manifest_details": [
+					{"start_time": "10:00:00", "end_time": "23:00:00"}
+				]}
+			),
+			[],
+		)
+
+
+class TestHandoverWindows(FrappeTestCase):
+	def test_no_vehicles_skips_the_query(self):
+		# Guards the canvas payload: an empty lane list must not build a query with an
+		# empty IN clause.
+		self.assertEqual(get_handover_windows([], "2026-07-25 00:00:00", "2026-07-25 23:59:59"), {})
+		self.assertEqual(
+			get_handover_windows([None], "2026-07-25 00:00:00", "2026-07-25 23:59:59"), {}
+		)
