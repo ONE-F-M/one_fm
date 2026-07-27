@@ -17,7 +17,7 @@ class TestEmployeeResignation(FrappeTestCase):
 			"first_name": first_name,
 			"send_welcome_email": 0
 		})
-		user.insert(ignore_permissions=True)
+		user.insert()
 		return user.name
 
 	def _make_employee(self, name_suffix, user_id=None, reports_to=None, site=None, project=None):
@@ -53,7 +53,7 @@ class TestEmployeeResignation(FrappeTestCase):
 			"site": site,
 			"project": project
 		})
-		emp.insert(ignore_permissions=True)
+		emp.insert()
 		return emp.name
 
 	def _make_resignation(self, employee):
@@ -89,7 +89,7 @@ class TestEmployeeResignation(FrappeTestCase):
 				"site_name": site_name,
 				"site_supervisor": site_sup_emp
 			})
-			site_doc.insert(ignore_permissions=True)
+			site_doc.insert()
 		else:
 			frappe.db.set_value("Operations Site", site_name, "site_supervisor", site_sup_emp)
 
@@ -112,7 +112,7 @@ class TestEmployeeResignation(FrappeTestCase):
 				"project_name": project_name,
 				"project_manager": pm_emp,
 				"expected_start_date": "2026-01-01"
-			}).insert(ignore_permissions=True)
+			}).insert()
 		else:
 			frappe.db.set_value("Project", project_name, "project_manager", pm_emp)
 
@@ -209,11 +209,6 @@ class TestEmployeeResignation(FrappeTestCase):
 			doc.resignation_initiation_date = "2026-10-10"
 			doc.relieving_date = "2026-10-15"
 			
-			doc.append("employees", {
-				"employee": emp_name,
-				"resignation_letter": "/files/test_letter.pdf"
-			})
-			
 			doc.workflow_state = "Pending Operations Manager"
 			doc.offboarding_officer = "test-rsgn-manager@example.com"
 			
@@ -278,15 +273,11 @@ class TestEmployeeResignation(FrappeTestCase):
 			doc.resignation_initiation_date = "2026-10-10"
 			doc.relieving_date = "2026-10-15"
 			
-			doc.append("employees", {
-				"employee": emp_name,
-				"resignation_letter": "/files/test_letter.pdf"
-			})
-			
 			doc.workflow_state = "Pending Operations Manager"
 			doc.offboarding_officer = "test-rsgn-manager@example.com"
 			doc.operations_manager = ""
-			
+			doc.supervisor_remarks = "Line Manager approved, no concerns."
+
 			# Validation must pass successfully since shift_working = 0
 			doc.validate()
 		finally:

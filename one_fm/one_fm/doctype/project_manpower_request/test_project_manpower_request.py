@@ -64,7 +64,7 @@ class TestProjectManpowerRequest(FrappeTestCase):
 		
 		# Gender field check
 		gender_df = meta.get_field("gender")
-		self.assertEqual(gender_df.fieldtype, "Select")
+		self.assertEqual(gender_df.fieldtype, "Autocomplete")
 		gender_opts = gender_df.options.split("\n")
 		self.assertIn("Any", gender_opts)
 		self.assertIn("Male", gender_opts)
@@ -72,7 +72,7 @@ class TestProjectManpowerRequest(FrappeTestCase):
 		
 		# Nationality field check
 		nationality_df = meta.get_field("nationality")
-		self.assertEqual(nationality_df.fieldtype, "Select")
+		self.assertEqual(nationality_df.fieldtype, "Autocomplete")
 		nationality_opts = nationality_df.options.split("\n")
 		self.assertIn("Any", nationality_opts)
 		self.assertIn("African", nationality_opts)
@@ -83,6 +83,15 @@ class TestProjectManpowerRequest(FrappeTestCase):
 		self.assertFalse(frappe.db.exists("Nationality", "African"))
 		self.assertFalse(frappe.db.exists("Nationality", "Asian"))
 		self.assertFalse(frappe.db.exists("Gender", "Any"))
+
+	def test_get_autocomplete_options(self):
+		from one_fm.one_fm.doctype.project_manpower_request.project_manpower_request import get_autocomplete_options
+		frappe.set_user("Administrator")
+		res = get_autocomplete_options()
+		self.assertIn("nationalities", res)
+		self.assertIn("genders", res)
+		self.assertTrue(len(res["nationalities"]) > 0)
+		self.assertTrue(len(res["genders"]) > 0)
 
 	def test_validate_change_request_reason(self):
 		# Setup initial workflow state as Awaiting Recruiter Approval
@@ -137,6 +146,21 @@ class TestProjectManpowerRequest(FrappeTestCase):
 		self.pmr.reason = "New Project"
 		self.pmr.project_allocation = None
 		self.assertRaises(frappe.MandatoryError, self.pmr.save, ignore_permissions=True)
+
+	def test_actual_deployment_date_calculation(self):
+		# Case 1: reason is not Exit, both deployment_date and ojt_days are set
+		self.pmr.reason = "Annual Leave Reliever"
+		self.pmr.deployment_date = "2026-07-01"
+		self.pmr.ojt_days = 5
+		self.pmr.save(ignore_permissions=True)
+		self.assertEqual(str(self.pmr.actual_recruiters_deployment_date), "2026-06-26")
+
+		# Case 2: reason is Exit
+		self.pmr.reason = "Exit"
+		self.pmr.deployment_date = "2026-07-01"
+		self.pmr.ojt_days = 5
+		self.pmr.save(ignore_permissions=True)
+		self.assertIsNone(self.pmr.actual_recruiters_deployment_date)
 
 def _make_user(email, first_name="Test"):
 	if frappe.db.exists("User", email):

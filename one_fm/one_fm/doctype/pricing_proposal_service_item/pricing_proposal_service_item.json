@@ -1,0 +1,71 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-07-12 00:00:00.000000",
+ "custom": 0,
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "service_description",
+  "service_category",
+  "rate_type",
+  "column_break_dhyd",
+  "quantity",
+  "unit_price",
+  "amount"
+ ],
+ "fields": [
+  {
+   "fieldname": "service_description",
+   "fieldtype": "Data",
+   "label": "Service Description"
+  },
+  {
+   "fieldname": "service_category",
+   "fieldtype": "Link",
+   "label": "Service Category",
+   "options": "Contract Item Category"
+  },
+  {
+   "fieldname": "rate_type",
+   "fieldtype": "Select",
+   "label": "Rate Type",
+   "options": "\nMonthly\nYearly"
+  },
+  {
+   "fieldname": "column_break_dhyd",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "quantity",
+   "fieldtype": "Int",
+   "label": "Quantity"
+  },
+  {
+   "fieldname": "unit_price",
+   "fieldtype": "Currency",
+   "label": "Unit Price"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "is_submittable": 0,
+ "links": [],
+ "modified": "2026-07-24 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Pricing Proposal Service Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

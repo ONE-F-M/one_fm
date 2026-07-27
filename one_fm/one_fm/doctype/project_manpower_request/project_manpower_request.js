@@ -12,36 +12,21 @@ frappe.ui.form.on('Project Manpower Request', {
 			localStorage.removeItem('__bundled_resignations');
 			// Defer refresh and trigger until after standard UI elements load
 			setTimeout(() => {
-			    frm.refresh_field('resignation_links');
-			    frm.set_value('count', names.length);
-			    frm.set_df_property('count', 'read_only', true);
+				frm.refresh_field('resignation_links');
+				frm.set_value('count', names.length);
+				frm.set_df_property('count', 'read_only', true);
 			}, 500);
 		}
 
-		// Dynamically populate options for gender Select field from universal Gender table
-		frappe.db.get_list('Gender', {fields: ['name'], limit_page_length: 0}).then(records => {
-			let options = ['Any', 'Male', 'Female'];
-			records.forEach(r => {
-				if (r.name && !options.includes(r.name)) {
-					options.push(r.name);
-				}
-			});
-			frm.set_df_property('gender', 'options', options);
-		});
-
-		// Dynamically populate options for nationality Select field from universal Nationality table
-		frappe.db.get_list('Nationality', {fields: ['name'], limit_page_length: 0}).then(records => {
-			let options = ['Any', 'African', 'Asian'];
-			records.forEach(r => {
-				if (r.name && !options.includes(r.name)) {
-					options.push(r.name);
-				}
-			});
-			frm.set_df_property('nationality', 'options', options);
-		});
+		// Populate nationality and gender Autocomplete fields from the DB.
+		// Called in both onload and refresh.
+		load_pmr_autocomplete_options(frm);
 	},
 	
 	refresh: function(frm) {
+		// Re-apply options every refresh (widget is mounted here, setTimeout(0) ensures
+		// the render cycle has finished before we push data into awesomplete).
+		load_pmr_autocomplete_options(frm);
 		setup_status_indicator(frm);
 
 		if (frm.doc.workflow_state === 'Draft' && frm.doc.reason_for_rejection) {
@@ -66,7 +51,7 @@ frappe.ui.form.on('Project Manpower Request', {
 				filters: {
 					designation: frm.doc.designation,
 					docstatus: 1,
-					status: ['not in', ['Cancelled', 'Closed']]
+					status: 'Accepted'
 				}
 			};
 		});
@@ -117,20 +102,8 @@ frappe.ui.form.on('Project Manpower Request', {
 					fieldtype: 'Small Text',
 					reqd: 1
 				}, (values) => {
-					frappe.call({
-						method: 'one_fm.one_fm.doctype.project_manpower_request.project_manpower_request.set_edit_reason',
-						args: {
-							name: frm.doc.name,
-							reason: values.reason_for_rejection
-						},
-						callback: function(r) {
-							frm.set_value('reason_for_rejection', values.reason_for_rejection);
-							resolve();
-						},
-						error: function(err) {
-							reject(err);
-						}
-					});
+					frm.doc._reason_for_rejection = values.reason_for_rejection;
+					resolve();
 				}, __('Change Request Reason'), __('Submit'));
 			} else {
 				if (frm.selected_workflow_action === "Submit to Recruiter" || frm.selected_workflow_action === "Request Edit") {
@@ -172,6 +145,7 @@ frappe.ui.form.on('Project Manpower Request', {
 			    frm.set_value('count', 1);
 			}
 		}
+		calculate_actual_deployment_date(frm);
 	},
 
 	deployment_date: function(frm) {
@@ -183,6 +157,11 @@ frappe.ui.form.on('Project Manpower Request', {
 			});
 			frm.set_value('deployment_date', '');
 		}
+		calculate_actual_deployment_date(frm);
+	},
+
+	ojt_days: function(frm) {
+		calculate_actual_deployment_date(frm);
 	},
 
 
@@ -285,6 +264,20 @@ function calculate_hired_dynamically(frm) {
 	frm.set_value('number_to_hire', expected_to_hire);
 }
 
+function calculate_actual_deployment_date(frm) {
+	if (frm.doc.reason !== 'Exit') {
+		if (frm.doc.deployment_date) {
+			let ojt = frm.doc.ojt_days || 0;
+			let actual = frappe.datetime.add_days(frm.doc.deployment_date, -ojt);
+			frm.set_value('actual_recruiters_deployment_date', actual);
+		} else {
+			frm.set_value('actual_recruiters_deployment_date', '');
+		}
+	} else {
+		frm.set_value('actual_recruiters_deployment_date', '');
+	}
+}
+
 function setup_status_indicator(frm) {
 	const status_colors = {
 		"Draft": "red",
@@ -306,10 +299,77 @@ frappe.ui.form.on("Project Manpower Request", {
 		frm.set_query("erf", function() {
 			return {
 				filters: {
-					docstatus: 1
+					docstatus: 1,
+					status: "Accepted"
 				}
 			};
 		});
 	},
 
 });
+
+// ─── Nationality / Gender Autocomplete helpers ────────────────────────────────
+//
+// How Frappe Autocomplete works (from the source):
+//   on 'input' event → if (this.get_query) { server call }
+//                       else { this.awesomplete.list = this._data }
+//   set_data(arr)    → this._data = arr; this.awesomplete.list = arr
+//
+// Correct pattern:
+//   1. Do NOT set field.get_query (that hijacks input to make server calls)
+//   2. Call field.set_data(full_list) AFTER the awesomplete widget is mounted
+//   3. 'refresh' hook fires with a mounted widget — use setTimeout(0) to defer
+//      to the next tick so the current render cycle finishes first
+//   4. Cache globally on the frappe object so we only fetch from DB once
+
+function _populate_autocomplete(frm, fieldname, options) {
+	// Ensure no get_query is overriding the local filter path
+	let field = frm.fields_dict[fieldname];
+	if (!field) return;
+	if (field.get_query) delete field.get_query;
+
+	// Push data into awesomplete after the current call stack clears
+	setTimeout(() => {
+		let f = frm.fields_dict[fieldname];
+		if (f && typeof f.set_data === "function") {
+			f.set_data(options);
+		}
+	}, 0);
+}
+
+function load_pmr_autocomplete_options(frm) {
+	const NATIONALITY_KEY = "__pmr_nationality_options";
+	const GENDER_KEY = "__pmr_gender_options";
+
+	if (frappe[NATIONALITY_KEY] && frappe[GENDER_KEY]) {
+		_populate_autocomplete(frm, "nationality", frappe[NATIONALITY_KEY]);
+		_populate_autocomplete(frm, "gender", frappe[GENDER_KEY]);
+		return;
+	}
+
+	frappe.call({
+		method: "one_fm.one_fm.doctype.project_manpower_request.project_manpower_request.get_autocomplete_options",
+		callback: function(r) {
+			if (r.message) {
+				let nationalities = ["Any", "African", "Asian"];
+				(r.message.nationalities || []).forEach(n => {
+					if (!nationalities.includes(n)) {
+						nationalities.push(n);
+					}
+				});
+				frappe[NATIONALITY_KEY] = nationalities;
+				_populate_autocomplete(frm, "nationality", nationalities);
+
+				let genders = ["Any", "Male", "Female"];
+				(r.message.genders || []).forEach(g => {
+					if (!genders.includes(g)) {
+						genders.push(g);
+					}
+				});
+				frappe[GENDER_KEY] = genders;
+				_populate_autocomplete(frm, "gender", genders);
+			}
+		}
+	});
+}
+

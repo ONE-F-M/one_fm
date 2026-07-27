@@ -2925,7 +2925,7 @@ function injectRPVueTemplate() {
 
           <div v-show="!collapsedGroups[group.acc]" class="rp-group-cards">
             <div v-for="card in group.cards" :key="card.id"
-                 :class="['rp-card', selectedPoolCard && selectedPoolCard.id === card.id ? 'rp-card-selected' : '']"
+                 :class="['rp-card', card.direction === 'OUTBOUND' ? 'rp-card-out' : 'rp-card-ret', selectedPoolCard && selectedPoolCard.id === card.id ? 'rp-card-selected' : '']"
                  draggable="true"
                  @dragstart="onCardDragStart($event, card)"
                  @dragend="onCardDragEnd"
@@ -3794,6 +3794,9 @@ function injectRPStyles() {
         }
 
         /* Cards */
+        /* WI-001732: distinct colour for Unassigned Outbound vs Return cards */
+        .rp-card-out { border-left: 4px solid #1565c0; }
+        .rp-card-ret { border-left: 4px solid #c62828; }
         .rp-card {
             background: var(--md-sys-color-surface-bright); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 12px;
             padding: 11px 12px; cursor: grab;

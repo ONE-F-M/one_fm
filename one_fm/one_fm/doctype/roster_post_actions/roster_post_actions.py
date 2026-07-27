@@ -135,11 +135,12 @@ def create_roster_post_actions():
             ORDER BY es.date ASC
         """, as_dict=1)
 
-        attendance_list = frappe.db.sql(""" 
-            SELECT employee, attendance_date 
+        attendance_list = frappe.db.sql("""
+            SELECT employee, attendance_date
             FROM `tabAttendance`
-            WHERE attendance_date BETWEEN %s AND %s 
-            AND status = 'On Leave' 
+            WHERE attendance_date BETWEEN %s AND %s
+            AND status = 'On Leave'
+            AND docstatus = 1
         """, (start_date, end_date), as_dict=1)
 
         attendance_dict = {}
