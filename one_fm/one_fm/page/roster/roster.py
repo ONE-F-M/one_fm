@@ -2433,12 +2433,31 @@ def assign_staff(employees, shift, custom_is_reliever, custom_is_weekend_relieve
 
 	try:
 		employees_list_json = json.loads(employees)
+		# For large batches, offload each assignment to a background worker so the
+		# web request returns quickly; for small batches, run inline (avoids queue overhead).
+		use_async = len(employees_list_json) > 10
 		for employee_name_iter in employees_list_json:
 			if not cint(request_employee_assignment):
-				frappe.enqueue(assign_job, employee=employee_name_iter, shift=shift_name_val, site=site_val, project=project_val,
-							   custom_operations_role_allocation=custom_operations_role_allocation,
-							   custom_is_reliever=custom_is_reliever,
-							   custom_is_weekend_reliever=custom_is_weekend_reliever, is_async=True, queue="long")
+				if use_async:
+					frappe.enqueue(
+						assign_job,
+						employee=employee_name_iter,
+						shift=shift_name_val,
+						site=site_val, project=project_val,
+						custom_operations_role_allocation=custom_operations_role_allocation,
+						custom_is_reliever=custom_is_reliever,
+						custom_is_weekend_reliever=custom_is_weekend_reliever,
+						is_async=True, queue="long"
+					)
+				else:
+					assign_job(
+						employee=employee_name_iter,
+						shift=shift_name_val,
+						site=site_val, project=project_val,
+						custom_operations_role_allocation=custom_operations_role_allocation,
+						custom_is_reliever=custom_is_reliever,
+						custom_is_weekend_reliever=custom_is_weekend_reliever
+					)
 			else:
 				emp_project_db, emp_site_db, emp_shift_db = frappe.db.get_value("Employee", employee_name_iter, ["project", "site", "shift"])
 
