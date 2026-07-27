@@ -83,7 +83,8 @@
   {
    "fieldname": "date_of_inception",
    "fieldtype": "Date",
-   "label": "Date of Inception"
+   "label": "Date of Inception",
+   "reqd": 1
   },
   {
    "fieldname": "budget_configuration",
