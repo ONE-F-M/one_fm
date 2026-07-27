@@ -75,6 +75,7 @@
             "skip_creation_of_workflow_action": 0,
             "custom_confirm_transition": 0,
             "require_digital_signature": 0,
+            "condition": "not doc.is_corporate",
             "doctype": "Workflow Transition"
         },
         {
@@ -89,6 +90,37 @@
             "skip_creation_of_workflow_action": 0,
             "custom_confirm_transition": 0,
             "require_digital_signature": 0,
+            "condition": "not doc.is_corporate",
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Pending Supervisor",
+            "action": "Accept",
+            "next_state": "Approved",
+            "allowed": "Employee",
+            "allow_self_approval": 1,
+            "send_email_to_creator": 0,
+            "allowed_user_field": "supervisor",
+            "skip_multiple_action": 0,
+            "skip_creation_of_workflow_action": 0,
+            "custom_confirm_transition": 0,
+            "require_digital_signature": 0,
+            "condition": "doc.is_corporate",
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Pending Supervisor",
+            "action": "Reject",
+            "next_state": "Rejected",
+            "allowed": "Employee",
+            "allow_self_approval": 1,
+            "send_email_to_creator": 0,
+            "allowed_user_field": "supervisor",
+            "skip_multiple_action": 0,
+            "skip_creation_of_workflow_action": 0,
+            "custom_confirm_transition": 0,
+            "require_digital_signature": 0,
+            "condition": "doc.is_corporate",
             "doctype": "Workflow Transition"
         },
         {
@@ -98,7 +130,6 @@
             "allowed": "Operations Manager",
             "allow_self_approval": 1,
             "send_email_to_creator": 0,
-            "allowed_user_field": "operations_manager",
             "skip_multiple_action": 0,
             "skip_creation_of_workflow_action": 0,
             "custom_confirm_transition": 0,
@@ -126,7 +157,6 @@
             "allowed": "Operations Manager",
             "allow_self_approval": 1,
             "send_email_to_creator": 0,
-            "allowed_user_field": "operations_manager",
             "skip_multiple_action": 0,
             "skip_creation_of_workflow_action": 0,
             "custom_confirm_transition": 0,

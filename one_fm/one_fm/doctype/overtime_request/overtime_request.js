@@ -1,6 +1,58 @@
 // Copyright (c) 2021, ONE FM and contributors
 // For license information, please see license.txt
 
+// Hours of unredeemed public holiday overtime that earn one compensatory day off.
+// Mirrors COMPENSATORY_DAY_OFF_THRESHOLD_HOURS in the controller.
+const COMPENSATORY_DAY_OFF_THRESHOLD_HOURS = 9;
+
+function apply_compensatory_day_off_eligibility(frm, balance) {
+	// Eligibility is driven by the employee's cumulative unredeemed public holiday
+	// overtime balance, not this request's hours (WI-001695). A request that has already
+	// been redeemed stays eligible so its Compensatory Day Off section remains visible
+	// after the balance drops back below the threshold.
+	let eligible = (
+		frm.doc.compensatory_leave_request
+		|| flt(balance) >= COMPENSATORY_DAY_OFF_THRESHOLD_HOURS
+	) ? 1 : 0;
+
+	let was_eligible = frm.doc.eligible_for_compensatory_day_off ? 1 : 0;
+
+	if (was_eligible !== eligible) {
+		frm.set_value("eligible_for_compensatory_day_off", eligible);
+	}
+
+	// When no longer eligible, clear any previously selected day off
+	if (!eligible && frm.doc.compensatory_day_off) {
+		frm.set_value("compensatory_day_off", null);
+	}
+
+	// Prompt the employee to pick their Compensatory Day Off when they first become
+	// eligible (transition from not-eligible → eligible).
+	if (eligible && !was_eligible) {
+		prompt_compensatory_day_off(frm, balance);
+	}
+
+	// Restrict the selectable range on the Compensatory Day Off picker.
+	frm.trigger("set_compensatory_day_off_range");
+}
+
+function prompt_compensatory_day_off(frm, balance) {
+	// Informational alert: tells the employee that a Compensatory Day Off is required,
+	// which cumulative balance triggered it, and the window it must fall within (7 days
+	// of the overtime date). The date itself is selected in the form field, and the
+	// server blocks the workflow from progressing until it is set.
+	if (!frm.doc.date) return;
+
+	frappe.msgprint({
+		title: __("Compensatory Day Off Required"),
+		indicator: "blue",
+		message: __("Your unredeemed Public Holiday overtime has reached {0} hours. Please select your Compensatory Day Off date (within 7 days of {1}).", [
+			format_number(flt(balance), null, 2),
+			frappe.datetime.str_to_user(frm.doc.date)
+		])
+	});
+}
+
 frappe.ui.form.on("Overtime Request", {
 	setup: function(frm) {
 		// requested_by is auto-set via before_insert in the controller
@@ -46,6 +98,10 @@ frappe.ui.form.on("Overtime Request", {
 		if (frm.doc.employee && frm.doc.overtime_hours) {
 			frm.trigger("fetch_yearly_overtime_hours");
 		}
+
+		// The unredeemed Public Holiday balance is per employee, so it has to be
+		// re-evaluated when the employee changes (WI-001695).
+		frm.trigger("set_compensatory_day_off_eligibility");
 	},
 
 	overtime_type: function(frm) {
@@ -152,45 +208,23 @@ frappe.ui.form.on("Overtime Request", {
 	},
 
 	set_compensatory_day_off_eligibility: function(frm) {
-		// Eligible only when Overtime Type is "Overtime on Public Holiday"
-		// AND overtime hours are 9 or more. Setting the flag drives the
-		// depends_on visibility of the Compensatory Day Off section.
-		let eligible = (
-			frm.doc.overtime_type === "Overtime on Public Holiday"
-			&& flt(frm.doc.overtime_hours) >= 9
-		) ? 1 : 0;
-
-		let was_eligible = frm.doc.eligible_for_compensatory_day_off ? 1 : 0;
-
-		if (was_eligible !== eligible) {
-			frm.set_value("eligible_for_compensatory_day_off", eligible);
+		// The threshold is the employee's cumulative unredeemed Public Holiday overtime,
+		// not this request's hours alone, so the balance has to come from the server.
+		if (frm.doc.overtime_type !== "Overtime on Public Holiday" || !frm.doc.employee) {
+			apply_compensatory_day_off_eligibility(frm, 0);
+			return;
 		}
 
-		// When no longer eligible, clear any previously selected day off
-		if (!eligible && frm.doc.compensatory_day_off) {
-			frm.set_value("compensatory_day_off", null);
-		}
-
-		// Prompt the employee to pick their Compensatory Day Off when they
-		// first become eligible (transition from not-eligible → eligible).
-		if (eligible && !was_eligible) {
-			frm.trigger("prompt_compensatory_day_off");
-		}
-
-		// Restrict the selectable range on the Compensatory Day Off picker.
-		frm.trigger("set_compensatory_day_off_range");
-	},
-
-	prompt_compensatory_day_off: function(frm) {
-		// Informational alert: tells the employee that a Compensatory Day Off
-		// is required and the window it must fall within (7 days of the
-		// overtime date). The date itself is selected in the form field.
-		if (!frm.doc.date) return;
-
-		frappe.msgprint({
-			title: __("Compensatory Day Off Required"),
-			indicator: "blue",
-			message: __("Overtime on a Public Holiday ≥ 9 hours detected. Please select your Compensatory Day Off date (within 7 days of {0}).", [frappe.datetime.str_to_user(frm.doc.date)])
+		frappe.call({
+			method: "one_fm.one_fm.doctype.overtime_request.overtime_request.get_projected_unredeemed_balance",
+			args: {
+				employee: frm.doc.employee,
+				overtime_hours: flt(frm.doc.overtime_hours),
+				current_name: frm.is_new() ? "" : frm.doc.name
+			},
+			callback: function(r) {
+				apply_compensatory_day_off_eligibility(frm, flt(r.message));
+			}
 		});
 	},
 

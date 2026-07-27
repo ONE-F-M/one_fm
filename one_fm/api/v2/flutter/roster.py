@@ -1187,6 +1187,12 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
                 shift_type = "",
                 day_off_ot = 0,
                 roster_type = "Basic",
+                client_event = "",
+                reference_doctype = "",
+                reference_docname = "",
+                event_staff = "",
+                event_location = "",
+                is_event_schedule = 0,
                 employee_availability = "Day Off"
             """
             frappe.db.sql(query, values=[], as_dict=1)

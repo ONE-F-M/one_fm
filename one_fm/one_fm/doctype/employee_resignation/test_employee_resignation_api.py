@@ -14,7 +14,7 @@ class TestEmployeeResignation(FrappeTestCase):
                 "status": "Active"
             })
             doc.flags.ignore_mandatory = True
-            doc.insert(ignore_permissions=True)
+            doc.insert()
 
     def test_create_resignation_invalid_attachment(self):
         # Testing invalid base64 attachment parsing

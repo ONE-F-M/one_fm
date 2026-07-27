@@ -1032,7 +1032,7 @@ def get_employee_custom_fields():
 				"is_system_generated": 1
 			},
 			{
-				"label": "Resignation Status & Documents",
+				"label": "",
 				"fieldname": "resignation_section",
 				"insert_after": "feedback",
 				"fieldtype": "Section Break",

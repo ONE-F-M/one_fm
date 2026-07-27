@@ -132,7 +132,8 @@ doctype_js = {
     "Loan": "public/js/doctype_js/loan.js",
     "Quality Feedback": "public/js/doctype_js/quality_feedback.js",
     "Quality Feedback Template": "public/js/doctype_js/quality_feedback_template.js",
-    "Interview Round": "public/js/doctype_js/interview_round.js"
+    "Interview Round": "public/js/doctype_js/interview_round.js",
+    "HR Settings": "public/js/doctype_js/hr_settings.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -219,7 +220,10 @@ has_permission = {
  	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.has_permission",
 	"Issue": "one_fm.utils.has_permission_to_issue",
 	"Notification Settings":'one_fm.overrides.notification_settings.has_permission_',
-	"Contracts": "one_fm.operations.doctype.contracts.contracts.contracts_has_permission"
+	"Contracts": "one_fm.operations.doctype.contracts.contracts.contracts_has_permission",
+	"Candidate Country Process": "one_fm.one_fm.doctype.candidate_country_process.candidate_country_process.has_permission",
+	"Arrival Acknowledgement": "one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement.has_permission",
+	"Arrival and Deployment": "one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment.has_permission"
 }
 
 standard_queries = {
@@ -450,6 +454,7 @@ doc_events = {
 		"on_update":"one_fm.tasks.erpnext.customer.on_update",
 	},
 	"User": {
+		"validate": "one_fm.sms_utils.normalize_user_mobile_no",
 		"after_insert":"one_fm.tasks.erpnext.user.after_insert",
 	},
 	"Email Queue": {
@@ -458,16 +463,15 @@ doc_events = {
 	"Communication": {
 		"after_insert": "one_fm.one_fm.task_assignment_from_email.assign_task_to_user_from_communication_content"
 	},
-	# COMMENTED OUT: ToDo hooks now handled by SpiffWorkflow/BPMN server scripts
-	# "ToDo": {
-	# 	"validate": "one_fm.overrides.todo.validate_todo",
-	# 	"before_save":"one_fm.overrides.todo.before_save",
-	# 	"after_insert":[
-	# 		"one_fm.overrides.todo.create_google_task_on_todo_creation",
-	# 		"one_fm.overrides.todo.send_email_on_todo_created"
-	# 	],
-	# 	"on_update": "one_fm.overrides.todo.update_google_task_on_todo_status_change"
-	# },
+	"ToDo": {
+		"validate": "one_fm.overrides.todo.validate_todo",
+		"before_save":"one_fm.overrides.todo.before_save",
+		"after_insert":[
+			"one_fm.overrides.todo.create_google_task_on_todo_creation",
+			"one_fm.overrides.todo.send_email_on_todo_created"
+		],
+		"on_update": "one_fm.overrides.todo.update_google_task_on_todo_status_change"
+	},
 	"OAuth Bearer Token": {
 		"after_insert": "one_fm.api.doc_methods.oauth_bearer_token.revoke_and_delete_existing_tokens",
 	}
@@ -565,7 +569,6 @@ override_doctype_class = {
     "Interview": "one_fm.overrides.interview.InterviewOverride",
     "Purchase Order": "one_fm.overrides.purchase_order.PurchaseOrderOverride",
     "HD Ticket": "one_fm.overrides.hd_ticket.HDTicketOverride",
-    # COMMENTED OUT: ToDo override now handled by SpiffWorkflow/BPMN server scripts
     # "ToDo": "one_fm.overrides.todo.ToDo",
     "Task": "one_fm.overrides.task.TaskOverride",
     "Loan Application": "one_fm.overrides.loan_application.LoanApplicationOverride",
@@ -586,11 +589,6 @@ override_doctype_class = {
 # ---------------
 
 scheduler_events = {
-	"cron": {
-		"0 12 * * *": [
-			'one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment.send_daily_acknowledgement_reminders'
-		]
-	},
 	"daily": [
 		'one_fm.utils.pam_salary_certificate_expiry_date',
 		'one_fm.utils.pam_authorized_signatory',
@@ -599,19 +597,12 @@ scheduler_events = {
 		'one_fm.utils.increase_daily_leave_balance',
 		'one_fm.one_fm.doctype.indemnity_allocation.indemnity_allocation.daily_indemnity_allocation_builder',
 		'one_fm.one_fm.doctype.indemnity_allocation.indemnity_allocation.allocate_daily_indemnity',
-		'one_fm.utils.check_grp_operator_submission_daily',
-		'one_fm.utils.check_grp_supervisor_submission_daily',
-		'one_fm.utils.check_pam_visa_approval_submission_daily',
-		'one_fm.utils.check_upload_original_visa_submission_daily',
 		'one_fm.hiring.utils.notify_finance_job_offer_salary_advance',
 		'one_fm.uniform_management.doctype.employee_uniform.employee_uniform.notify_gsd_and_employee_before_uniform_expiry',
-		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_reminder',
 		'one_fm.one_fm.depreciation_custom.post_depreciation_entries',
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
 		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today',
 		'one_fm.tasks.execute.daily',
-		'one_fm.one_fm.doctype.maintenance_schedule_entry.maintenance_schedule_entry.generate_due_work_orders',
-		'one_fm.one_fm.doctype.maintenance_service_level_agreement.maintenance_service_level_agreement.send_sla_expiration_warnings',
 		"one_fm.one_fm.utils.attach_abbreviation_to_roles",
   		"one_fm.api.v2.zenquotes.set_cached_quote",
 		"one_fm.operations.doctype.contracts.contracts.send_contract_reminders",
@@ -639,12 +630,6 @@ scheduler_events = {
 		"one_fm.api.tasks.validate_shift_assignment",
 		'one_fm.overrides.employee_checkin.auto_generate_checkin'
 	],
-
-	"weekly": [
-		'one_fm.operations.doctype.mom_followup.mom_followup.mom_sites_followup',
-		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_penalty',
-   ],
-
 	"monthly": [
 		"one_fm.accommodation.utils.execute_monthly",
 		"one_fm.utils.send_roster_report"
@@ -652,6 +637,9 @@ scheduler_events = {
 	],
 
 	"cron": {
+		"0 12 * * *": [
+			'one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement.send_daily_acknowledgement_reminders'
+		],
 		"40 5 * * 0,1,2,3,4":[#run durring working days only “At 05:40 on Sunday, Monday, Tuesday, Wednesday, and Thursday.”
 			'one_fm.grd.doctype.work_permit.work_permit.system_remind_renewal_operator_to_apply',#wp
 			'one_fm.grd.doctype.work_permit.work_permit.system_remind_transfer_operator_to_apply',
@@ -676,6 +664,7 @@ scheduler_events = {
 		"0/15 * * * *": [ #At every 15th minute from 0 through 59.”
 			"one_fm.legal.doctype.penalty.penalty.automatic_reject",
 			# 'one_fm.api.tasks.process_attendance',
+			"one_fm.api.tasks.update_shift_type"
 		],
 		"0/5 * * * *": [
 			"one_fm.api.tasks.run_checkin_reminder",
@@ -686,12 +675,6 @@ scheduler_events = {
 			"one_fm.api.tasks.overtime_shift_assignment",
 			#"one_fm.api.tasks.automatic_checkout",
 			"one_fm.one_fm.doctype.password_reset_token.password_reset_token.revoke_password_tokens",
-			"one_fm.api.tasks.rambo_shift_assignment",
-			# Advance live SLA countdown statuses for in-progress Preventive Maintenance Work Orders
-			"one_fm.one_fm.doctype.maintenance_work_order.maintenance_work_order.update_active_sla_statuses",
-		],
-		"0/15 * * * *": [
-			"one_fm.api.tasks.update_shift_type"
 		],
 		"37 23 * * *": [  #“At 23:37.”
 			'one_fm.api.tasks.issue_penalties'
@@ -703,15 +686,17 @@ scheduler_events = {
 			'one_fm.utils.send_travel_agent_email'
 		],
 		"10 4 * * *": [ #“At 04:10.”
-			'one_fm.utils.check_grp_operator_submission_four',
 			'one_fm.operations.doctype.post_scheduler_checker.post_scheduler_checker.schedule_roster_checker',
             'one_fm.operations.doctype.default_shift_checker.default_shift_checker.create_default_shift_checker'
 		],
+		"10 0 * * *": [ #"At 12:10 am - set tomorrow's manifest drivers from Vehicle Handover Logs (WI-001577)"
+			'one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log.set_manifest_drivers_for_tomorrow'
+		],
 		"15 12 * * *": [ #"At 12:15 pm - preponed from 01:30 pm (WI-001704); run after attendance is marked"
 			'one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.generate_checker',
+			'one_fm.operations.doctype.roster_double_shift_ot_checker.roster_double_shift_ot_checker.check_roster_double_shift_ot',
 		],
 		"30 4 * * *": [
-			'one_fm.utils.check_grp_operator_submission_four_half',
 			'one_fm.operations.doctype.roster_client_day_off_checker.roster_client_day_off_checker.check_roster_client_day_off'
 		],
 		"15 6 * * *": [# Runs everyday at 6:15 am.
@@ -730,29 +715,9 @@ scheduler_events = {
 			'one_fm.one_fm.doctype.roster_post_actions.roster_post_actions.create',
             'one_fm.one_fm.doctype.roster_employee_actions.roster_employee_actions.create'
 		],
-		"18 9 * * *": [ #“At 09:18"
-			'one_fm.utils.check_upload_tasriah_submission_nine',
-		],
-		"10 11 * * *": [ #“At 11:10"
-			'one_fm.utils.check_upload_tasriah_reminder1'
-		],
 		# "one_fm.one_fm.grd" doesnt find the module, only "one_fm.grd"
-		"20 10 * * *": [ #“At 10:20"
-			'one_fm.utils.check_upload_tasriah_reminder2',
-			#'one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_second'
-		],
-		"30 6 * * *": [
-			'one_fm.utils.check_pam_visa_approval_submission_six_half'
-		],
-		"05 7 * * *": [ #“At 07:05"
-			'one_fm.utils.check_pam_visa_approval_submission_seven'
-		],
 		"30 12 * * *": [
-			'one_fm.utils.check_upload_original_visa_submission_reminder1',
             "one_fm.overrides.job_applicant.notify_hr_manager_about_local_transfer"
-		],
-		"25 13 * * *": [ #“At 13:25"
-			'one_fm.utils.check_upload_original_visa_submission_reminder2'
 		],
 		"12 3 * * *":[ #“At 03:12"
 			'one_fm.one_fm.sales_invoice_custom.create_sales_invoice'
@@ -869,16 +834,6 @@ fixtures = [
 	# },
 	{
 		"dt": "Email Template"
-	},
-	{
-		"dt": "HD Ticket Template",
-		"filters": [["name", "in",["Default"]]]
-	},
-	{
-		# UI label override: display standard "Asset Repair" DocType as
-		# "Asset Maintenance Request" while keeping the backend name unchanged.
-		"dt": "Translation",
-		"filters": [["source_text", "=", "Asset Repair"]]
 	}
 ]
 
@@ -894,6 +849,7 @@ override_whitelisted_methods = {
     "hrms.hr.doctype.leave_application.leave_application.get_number_of_leave_days": "one_fm.api.doc_methods.leave_application_calculation.custom_get_number_of_leave_days",
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.overrides.leave_application.get_leave_approver",
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_details" : "one_fm.overrides.leave_application.get_leave_details",
+	"hrms.hr.doctype.leave_application.leave_application.get_leave_balance_on" : "one_fm.overrides.leave_application.get_leave_balance_on",
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
 	"hrms.hr.doctype.goal.goal.get_children":"one_fm.overrides.goal.get_childrens",
@@ -904,6 +860,8 @@ override_whitelisted_methods = {
     "erpnext.buying.doctype.purchase_order.purchase_order.make_purchase_invoice":"one_fm.overrides.purchase_order.make_purchase_invoice",
     "frappe.desk.form.utils.get_next": "one_fm.utils.get_next",
 	"frappe.desk.query_report.get_script": "one_fm.overrides.reports.stock_balance_override.custom_get_script",
+	# Helpdesk dashboard — add the "Tickets by Status" trend chart
+	"helpdesk.api.dashboard.get_dashboard_data": "one_fm.overrides.dashboard.get_dashboard_data",
 	# Role Permissions Manager — route changes to Version doctype
 	"frappe.core.page.permission_manager.permission_manager.add": "one_fm.overrides.frappe.permission_manager.add",
 	"frappe.core.page.permission_manager.permission_manager.update": "one_fm.overrides.frappe.permission_manager.update",

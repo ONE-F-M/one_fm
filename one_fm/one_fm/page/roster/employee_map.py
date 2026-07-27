@@ -65,7 +65,21 @@ class PostMap():
 		filters.update({"post_status": "Planned",'operations_role':['in',self.operation_roles]})
 		filters.pop('operations_role')
 		self.filters = filters
-		self.post_schedule_count = frappe.db.get_all("Post Schedule", ['operations_role',"name", "date"], filters, ignore_permissions=True)
+		self.post_schedule_count = frappe.db.get_all("Post Schedule", ['operations_role',"name", "date", "post"], filters, ignore_permissions=True)
+
+		# Exclude planned schedules that belong to Inactive Operations Posts so the
+		# post count reflects only active posts (e.g. a role with 2 active + 2 inactive
+		# posts should count as 2, not 4).
+		post_names = list({row.post for row in self.post_schedule_count if row.post})
+		if post_names:
+			inactive_posts = set(frappe.get_all(
+				"Operations Post",
+				filters={"name": ["in", post_names], "status": "Inactive"},
+				pluck="name"
+			))
+			if inactive_posts:
+				self.post_schedule_count = [row for row in self.post_schedule_count if row.post not in inactive_posts]
+
 		self.start_mapping()
 
 	def create_template(self,row):
