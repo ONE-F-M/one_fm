@@ -12,6 +12,8 @@ from hrms.hr.doctype.compensatory_leave_request.compensatory_leave_request impor
 )
 from hrms.hr.utils import create_additional_leave_ledger_entry
 
+from one_fm.utils import get_approver_user
+
 
 class CompensatoryLeaveRequestOverride(CompensatoryLeaveRequest):
 	"""Credit compensatory leave without requiring a Leave Period.
@@ -102,6 +104,16 @@ class CompensatoryLeaveRequestOverride(CompensatoryLeaveRequest):
 		leave_application.from_date = day_off
 		leave_application.to_date = day_off
 		leave_application.resumption_date = get_next_working_day(self.employee, day_off)
+		# The employee's reporting manager, falling back to their site supervisor -
+		# get_approver_user is the same resolution one_fm already applies to every other
+		# Leave Application (see the get_leave_approver override). Leaving this to default
+		# put the literal "Administrator" in a Link-to-User field, which then failed every
+		# approver lookup that resolves by email ("User {'email': 'Administrator'} not
+		# found") the moment the application was opened.
+		leave_approver = get_approver_user(self.employee)
+		if leave_approver:
+			leave_application.leave_approver = leave_approver
+
 		leave_application.custom_compensatory_leave_request = self.name
 		leave_application.description = _(
 			"Auto-generated from Compensatory Leave Request {0} (Overtime Request {1})."
