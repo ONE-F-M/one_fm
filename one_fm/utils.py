@@ -12,6 +12,7 @@ from firebase_admin import messaging
 import frappe
 from frappe import _
 from frappe.auth import validate_ip_address
+from frappe.model.workflow import apply_workflow
 from frappe.utils.nestedset import validate_loop
 from frappe.query_builder import DocType
 from frappe.desk.form.assign_to import add as add_assignment
@@ -82,270 +83,6 @@ def get_common_email_args(doc):
 	}
 	return common_args
 
-
-
-
-
-def check_upload_original_visa_submission_reminder2():
-    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_original_visa_submitted=0 and upload_original_visa_reminder2_done=1")
-
-    for pam_visa in pam_visas:
-        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
-        pam_visa_doc.upload_original_visa_reminder2_done = 0
-        pam_visa_doc.upload_original_visa_status = 'No Response'
-        pam_visa_doc.upload_original_visa_reminder2 = frappe.utils.now()
-        pam_visa_doc.save(ignore_permissions = True)
-
-
-        page_link = get_url(pam_visa_doc.get_url())
-
-        msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
-        sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
-        recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
-
-        sendemail(sender=sender, recipients= recipient,
-            content=msg, subject="PAM Visa Reminder", delayed=False, is_scheduler_email=True)
-
-
-
-def check_upload_original_visa_submission_reminder1():
-    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_original_visa_submitted=0 and upload_original_visa_reminder2_start=1")
-
-    for pam_visa in pam_visas:
-        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
-        pam_visa_doc.upload_original_visa_reminder1 = frappe.utils.now()
-        pam_visa_doc.upload_original_visa_reminder2_start = 0
-        pam_visa_doc.upload_original_visa_reminder2_done = 1
-        pam_visa_doc.save(ignore_permissions = True)
-
-
-        page_link = get_url(pam_visa_doc.get_url())
-
-        msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
-        sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
-        recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
-        cc = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
-
-        sendemail(sender=sender, recipients= recipient,
-            content=msg, subject="PAM Visa Reminder", cc=cc, delayed=False, is_scheduler_email=True)
-
-
-
-
-
-def check_upload_original_visa_submission_daily():
-    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_original_visa_submitted=0 and upload_original_visa_reminder2_start=0 and upload_original_visa_reminder2_done=0 and upload_original_visa_status!='No Response' and pam_visa_approval_submitted=1")
-
-    for pam_visa in pam_visas:
-        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
-        pam_visa_doc.upload_original_visa_reminder2_start = 1
-        pam_visa_doc.save(ignore_permissions = True)
-
-
-def check_pam_visa_approval_submission_seven():
-    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_approval_submitted=0 and pam_visa_approval_reminder2_done=1")
-
-    for pam_visa in pam_visas:
-        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
-        pam_visa_doc.pam_visa_approval_reminder2_done = 0
-        pam_visa_doc.pam_visa_approval_status = 'No Response'
-        pam_visa_doc.pam_visa_approval_reminder2 = frappe.utils.now()
-        pam_visa_doc.save(ignore_permissions = True)
-
-
-        page_link = get_url(pam_visa_doc.get_url())
-
-        msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
-        sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
-        recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
-
-        sendemail(sender=sender, recipients= recipient,
-            content=msg, subject="PAM Visa Reminder", delayed=False, is_scheduler_email=True)
-
-
-
-
-def check_pam_visa_approval_submission_six_half():
-    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_approval_submitted=0 and pam_visa_approval_reminder2_start=1")
-
-    for pam_visa in pam_visas:
-        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
-        pam_visa_doc.pam_visa_approval_reminder1 = frappe.utils.now()
-        pam_visa_doc.pam_visa_approval_reminder2_start = 0
-        pam_visa_doc.pam_visa_approval_reminder2_done = 1
-        pam_visa_doc.save(ignore_permissions = True)
-
-
-        page_link = get_url(pam_visa_doc.get_url())
-
-        msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
-        sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
-        recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
-        cc = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
-
-        sendemail(sender=sender, recipients= recipient,
-            content=msg, subject="PAM Visa Reminder", cc=cc, delayed=False, is_scheduler_email=True)
-
-
-def check_pam_visa_approval_submission_daily():
-    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_approval_submitted=0 and pam_visa_approval_reminder2_start=0 and pam_visa_approval_reminder2_done=0 and pam_visa_approval_status!='No Response' and pam_visa_status='Approved'")
-
-    for pam_visa in pam_visas:
-        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
-        pam_visa_doc.pam_visa_approval_reminder2_start = 1
-        pam_visa_doc.save(ignore_permissions = True)
-
-
-
-def check_upload_tasriah_reminder2():
-    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_tasriah_submitted=0 and upload_tasriah_reminder2_done=1")
-
-    for pam_visa in pam_visas:
-        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
-        pam_visa_doc.upload_tasriah_reminder2_done = 0
-        pam_visa_doc.upload_tasriah_status = 'No Response'
-        pam_visa_doc.upload_tasriah_reminder2 = frappe.utils.now()
-        pam_visa_doc.save(ignore_permissions = True)
-
-        page_link = get_url(pam_visa_doc.get_url())
-
-        msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
-        sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
-        recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
-
-        sendemail(sender=sender, recipients= recipient,
-            content=msg, subject="PAM Visa Reminder", delayed=False, is_scheduler_email=True)
-
-
-
-
-
-def check_upload_tasriah_reminder1():
-    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_tasriah_submitted=0 and upload_tasriah_reminder2_start=1")
-
-    for pam_visa in pam_visas:
-        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
-        pam_visa_doc.upload_tasriah_reminder1 = frappe.utils.now()
-        pam_visa_doc.upload_tasriah_reminder2_start = 0
-        pam_visa_doc.upload_tasriah_reminder2_done = 1
-        pam_visa_doc.save(ignore_permissions = True)
-
-
-        page_link = get_url(pam_visa_doc.get_url())
-
-        msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
-        sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
-        recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
-        cc = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
-
-        sendemail(sender=sender, recipients= recipient,
-            content=msg, subject="PAM Visa Reminder", cc=cc, delayed=False, is_scheduler_email=True)
-
-
-
-
-
-def check_upload_tasriah_submission_nine():
-    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_submitted_supervisor=1 and upload_tasriah_submitted=0 and upload_tasriah_reminder2_start=0 and upload_tasriah_reminder2_done=0 and upload_tasriah_status!='No Response'")
-
-    for pam_visa in pam_visas:
-        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
-
-        after_two_days = add_days(pam_visa_doc.pam_visa_reminder_supervisor, 2)
-
-        get_defferent = date_diff(frappe.utils.now(), after_two_days)
-
-        if get_defferent>=0:
-            pam_visa_doc.upload_tasriah_reminder2_start = 1
-            pam_visa_doc.save(ignore_permissions = True)
-
-
-
-
-
-def check_grp_supervisor_submission_daily(is_scheduled_event=True):
-    """
-    Args:
-        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
-    """
-    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_submitted=1 and pam_visa_submitted_supervisor=0")
-
-    for pam_visa in pam_visas:
-        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
-        pam_visa_doc.pam_visa_reminder_supervisor = frappe.utils.now()
-        pam_visa_doc.save(ignore_permissions = True)
-
-        page_link = get_url(pam_visa_doc.get_url())
-
-        msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Supervisor'})
-        sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
-        recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
-
-        sendemail(sender=sender, recipients= recipient,
-            content=msg, subject="PAM Visa Reminder", delayed=False, is_scheduler_email=is_scheduled_event)
-
-
-def check_grp_operator_submission_four_half(is_scheduled_event=True):
-    """
-    Args:
-        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
-    """
-    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_submitted=0 and pam_visa_reminder2_done=1")
-
-    for pam_visa in pam_visas:
-        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
-        pam_visa_doc.pam_visa_reminder2_done = 0
-        pam_visa_doc.grd_operator_status = 'No Response'
-        pam_visa_doc.pam_visa_reminder2 = frappe.utils.now()
-        pam_visa_doc.save(ignore_permissions = True)
-
-
-        page_link = get_url(pam_visa_doc.get_url())
-
-        msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
-        sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
-        recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
-        cc = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
-
-        sendemail(sender=sender, recipients= recipient,
-            content=msg, subject="PAM Visa Reminder",cc=cc, delayed=False, is_scheduler_email=is_scheduled_event)
-
-
-
-def check_grp_operator_submission_four(is_scheduled_event=True):
-    """
-    Args:
-        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
-    """
-    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_submitted=0 and pam_visa_reminder2_start=1")
-
-    for pam_visa in pam_visas:
-        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
-        pam_visa_doc.pam_visa_reminder1 = frappe.utils.now()
-        pam_visa_doc.pam_visa_reminder2_start = 0
-        pam_visa_doc.pam_visa_reminder2_done = 1
-        pam_visa_doc.save(ignore_permissions = True)
-
-
-        page_link = get_url(pam_visa_doc.get_url())
-
-        msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
-        sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
-        recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
-
-        sendemail(sender=sender, recipients= recipient,
-            content=msg, subject="PAM Visa Reminder", delayed=False, is_scheduler_email=is_scheduled_event)
-
-
-
-
-def check_grp_operator_submission_daily():
-    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_submitted=0 and pam_visa_reminder2_start=0 and pam_visa_reminder2_done=0 and grd_operator_status!='No Response'")
-
-    for pam_visa in pam_visas:
-        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
-        pam_visa_doc.pam_visa_reminder2_start = 1
-        pam_visa_doc.save(ignore_permissions = True)
 
 def send_gp_letter_attachment_reminder2(is_scheduled_event=True):
     """
@@ -1526,7 +1263,7 @@ def validate_job_applicant(doc, method):
     # validate_pam_file_number_and_pam_designation(doc, method)
     validate_transferable_field(doc)
     set_job_applicant_fields(doc)
-    if not doc.one_fm_is_easy_apply:
+    if not doc.one_fm_is_easy_apply and doc.one_fm_applicant_status != "Shortlisted":
         validate_mandatory_fields(doc)
     set_job_applicant_status(doc, method)
     if doc.is_new():
@@ -1724,30 +1461,63 @@ def set_job_applicant_status(doc, method):
             doc.one_fm_document_verification = status
 
 def on_update_job_applicant(doc, method):
-    if doc.one_fm_applicant_status in ["Selected"] and doc.status not in ["Rejected"]:
-        create_job_offer_from_job_applicant(doc.name)
+    if doc.status in ["Rejected"]:
+        return
+    if doc.one_fm_applicant_status == "Selected":
+        issue_job_offer_for_applicant(doc.name)
+    elif doc.one_fm_applicant_status == "Shortlisted":
+        create_draft_job_offer_for_applicant(doc.name)
 
-def create_job_offer_from_job_applicant(job_applicant):
-    if not frappe.db.exists('Job Offer', {'job_applicant': job_applicant, 'docstatus': ['<', 2]}):
-        job_app = frappe.get_doc('Job Applicant', job_applicant)
-        if not job_app.number_of_days_off:
-            frappe.throw(_("Please set the number of days off."))
-        if job_app.day_off_category == "Weekly" and frappe.utils.cint(job_app.number_of_days_off) > 7:
-            frappe.throw(_("Number of days off cannot be more than a Week!"))
-        elif job_app.day_off_category == "Monthly" and frappe.utils.cint(job_app.number_of_days_off) > 30:
-            frappe.throw(_("Number of days off cannot be more than a Month!"))
-        job_offer = frappe.new_doc('Job Offer')
-        job_offer.job_applicant = job_app.name
-        job_offer.employment_type = job_app.employment_type
-        job_offer.applicant_name = job_app.applicant_name
-        job_offer.day_off_category = job_app.day_off_category
-        job_offer.number_of_days_off = job_app.number_of_days_off
-        job_offer.designation = job_app.designation
-        job_offer.offer_date = today()
-        if job_app.one_fm_erf:
-            erf = frappe.get_doc('ERF', job_app.one_fm_erf)
-            set_erf_details(job_offer, erf, job_app)
-        job_offer.save(ignore_permissions = True)
+def create_draft_job_offer_for_applicant(job_applicant):
+    """Create a Draft Job Offer as soon as an applicant is Shortlisted, so it's
+    ready to be reviewed/edited before being issued to the candidate on Selection.
+    Silently skips (rather than throwing) if day-off details aren't set yet -
+    shortlisting must not be blocked by that."""
+    if frappe.db.exists('Job Offer', {'job_applicant': job_applicant, 'docstatus': ['<', 2]}):
+        return
+    job_app = frappe.get_doc('Job Applicant', job_applicant)
+    if not job_app.number_of_days_off or not job_app.day_off_category:
+        return
+    if job_app.day_off_category == "Weekly" and frappe.utils.cint(job_app.number_of_days_off) > 7:
+        return
+    elif job_app.day_off_category == "Monthly" and frappe.utils.cint(job_app.number_of_days_off) > 30:
+        return
+    _insert_job_offer_from_applicant(job_app)
+
+def issue_job_offer_for_applicant(job_applicant):
+    """When an applicant is Selected: issue the existing Draft Job Offer to the
+    candidate (preserving any manual edits, e.g. changed salary), or create one
+    if none exists yet (legacy path for applicants selected without ever being
+    shortlisted first)."""
+    existing_offer = frappe.db.exists('Job Offer', {'job_applicant': job_applicant, 'docstatus': ['<', 2]})
+    if existing_offer:
+        job_offer = frappe.get_doc('Job Offer', existing_offer)
+        if job_offer.docstatus == 0 and job_offer.workflow_state == "Open":
+            apply_workflow(job_offer, "Submit for Candidate Response")
+        return
+
+    job_app = frappe.get_doc('Job Applicant', job_applicant)
+    if not job_app.number_of_days_off:
+        frappe.throw(_("Please set the number of days off."))
+    if job_app.day_off_category == "Weekly" and frappe.utils.cint(job_app.number_of_days_off) > 7:
+        frappe.throw(_("Number of days off cannot be more than a Week!"))
+    elif job_app.day_off_category == "Monthly" and frappe.utils.cint(job_app.number_of_days_off) > 30:
+        frappe.throw(_("Number of days off cannot be more than a Month!"))
+    _insert_job_offer_from_applicant(job_app)
+
+def _insert_job_offer_from_applicant(job_app):
+    job_offer = frappe.new_doc('Job Offer')
+    job_offer.job_applicant = job_app.name
+    job_offer.employment_type = job_app.employment_type
+    job_offer.applicant_name = job_app.applicant_name
+    job_offer.day_off_category = job_app.day_off_category
+    job_offer.number_of_days_off = job_app.number_of_days_off
+    job_offer.designation = job_app.designation
+    job_offer.offer_date = today()
+    if job_app.one_fm_erf:
+        erf = frappe.get_doc('ERF', job_app.one_fm_erf)
+        set_erf_details(job_offer, erf, job_app)
+    job_offer.save(ignore_permissions = True)
 
 def set_erf_details(job_offer, erf, job_app):
     job_offer.erf = erf.name
@@ -4119,13 +3889,16 @@ def call_to_get_assurance_level(employees):
         if isinstance(employees, str):
             url = f"https://staging-apiwrapper.one-fm.com/api/DigitalSigning/CheckMobileIdentity/{employees}"
             headers = {'accept': 'text/plain','ApiKey': f'{api_key}'}
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=30)
             if response.status_code == 200:
                 data = response.json()
                 return data.get("data", None)
             else:
-                frappe.log_error(title="ERROR CALLING ASSURANCE API", message=frappe.get_traceback())
-                return {"error": response.status_code, "title": response.json()}
+                frappe.log_error(
+                    title="ERROR CALLING ASSURANCE API",
+                    message=f"Status: {response.status_code}\nBody: {response.text}"
+                )
+                return {"error": response.status_code, "title": response.text}
         else:
             url = f"https://staging-apiwrapper.one-fm.com/api/DigitalSigning/BulkCheckMobileIdentity"
             headers = {'Content-Type': 'application/json','ApiKey': f'{api_key}'}
@@ -4134,15 +3907,18 @@ def call_to_get_assurance_level(employees):
             for i in range(0, len(employees), batch_size):
                 batch = employees[i:i + batch_size]
                 try:
-                    response = requests.post(url, headers=headers, json=batch)
+                    response = requests.post(url, headers=headers, json=batch, timeout=60)
                     if response.status_code == 200:
                         data = response.json()
                         batch_result = data.get("data", [])
                         all_results.extend(batch_result)
                         frappe.msgprint(f"Batch {i} sent successfully.")
                     else:
-                        frappe.log_error(message=frappe.get_traceback(), title="Error calling assurance API")
-                        return {"error": response.status_code, "title": response.json()}
+                        frappe.log_error(
+                            message=f"Status: {response.status_code}\nBody: {response.text}",
+                            title="Error calling assurance API"
+                        )
+                        return {"error": response.status_code, "title": response.text}
                 except Exception as e:
                         frappe.log_error(message=frappe.get_traceback(), title="Error calling assurance API")
                         return {"error": str(e), "title": "API call failed"}

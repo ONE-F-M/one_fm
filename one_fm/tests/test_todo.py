@@ -259,6 +259,50 @@ class TestToDoOverrides(FrappeTestCase):
         self.assertIn("Test Desc", email_content)
         self.assertIn("Subject:Task Subject", email_content)
 
+    @patch("frappe.db.exists", return_value=True)
+    @patch("one_fm.overrides.todo.create_description_for_google_todo", return_value="notes")
+    @patch("one_fm.overrides.todo.get_google_task_service")
+    def test_create_google_task_writes_id_without_save(self, mock_service_fn, mock_notes, mock_exists):
+        """The background job must persist the Google Task id via db_set (no save())."""
+        service = MagicMock()
+        service.tasks.return_value.insert.return_value.execute.return_value = {"id": "GTASK-123"}
+        mock_service_fn.return_value = service
+
+        self.doc.custom_google_task_id = ""
+        self.doc.allocated_to = "user2@example.com"
+        self.doc.custom_google_task_title = "Some Title"
+        self.doc.date = "2024-06-10"
+
+        result = todo_mod.create_google_task_on_todo_creation_in_erp(self.doc, "after_insert")
+
+        # Reloaded, then wrote only the id column without touching modified timestamp.
+        self.doc.reload.assert_called_once_with()
+        self.doc.db_set.assert_called_once_with(
+            "custom_google_task_id", "GTASK-123", update_modified=False
+        )
+        # A bare save() would re-fire hooks and risk the TimestampMismatchError.
+        self.doc.save.assert_not_called()
+        self.assertEqual(result["id"], "GTASK-123")
+
+    @patch("frappe.db.exists", return_value=False)
+    @patch("one_fm.overrides.todo.create_description_for_google_todo", return_value="notes")
+    @patch("one_fm.overrides.todo.get_google_task_service")
+    def test_create_google_task_skips_when_todo_deleted(self, mock_service_fn, mock_notes, mock_exists):
+        """If the ToDo was removed while the job was queued, bail out cleanly."""
+        service = MagicMock()
+        service.tasks.return_value.insert.return_value.execute.return_value = {"id": "GTASK-123"}
+        mock_service_fn.return_value = service
+
+        self.doc.custom_google_task_id = ""
+        self.doc.allocated_to = "user2@example.com"
+
+        result = todo_mod.create_google_task_on_todo_creation_in_erp(self.doc, "after_insert")
+
+        self.doc.reload.assert_not_called()
+        self.doc.db_set.assert_not_called()
+        self.doc.save.assert_not_called()
+        self.assertIsNone(result)
+
     @patch("frappe.new_doc")
     @patch("one_fm.overrides.todo.send_notification_alert_only", return_value=False)
     def test_create_notification_log(self, mock_alert_only, mock_new_doc):

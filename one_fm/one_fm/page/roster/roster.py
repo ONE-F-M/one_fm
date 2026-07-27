@@ -246,6 +246,17 @@ def get_roster_view(start_date, end_date, employee_search_id=None, employee_sear
 		else:
 			post_schedule_filters = get_post_schedule_filters(start_date, end_date, project, site, shift, operations_role)
 			operations_roles = frappe.get_all("Post Schedule", post_schedule_filters, ["distinct operations_role", "post_abbrv"])
+
+			# Exclude Inactive Operations Roles so they don't appear in the roster.
+			role_names = [row.operations_role for row in operations_roles if row.operations_role]
+			if role_names:
+				active_roles = set(frappe.get_all(
+					"Operations Role",
+					filters={"name": ["in", role_names], "status": "Active"},
+					pluck="name"
+				))
+				operations_roles = [row for row in operations_roles if row.operations_role in active_roles]
+
 			post_map_filters = {}
 			if project:
 				post_map_filters["project"] = project
@@ -734,18 +745,10 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 	operations_shift_doc = frappe.get_doc("Operations Shift", shift, ignore_permissions=True)
 	operations_role_doc = frappe.get_doc("Operations Role", operations_role, ignore_permissions=True)
 	day_off_ot = cint(day_off_ot)
-	# roster_type is driven solely by whether the OT (second-shift) dialog was used.
-	# day_off_ot is an independent flag: a Day Off OT first shift is still "Basic".
-	roster_type = "Over-Time" if otRoster == "true" else "Basic"
-
-	# A second (Over-Time) shift is only permitted when the target shift explicitly
-	# allows double-shift OT in the Operations Shift master. The OT dialog already
-	# filters the Shift dropdown, so this is defense-in-depth against API/import bypass.
-	if roster_type == "Over-Time" and not cint(operations_shift_doc.double_shift_ot_allowed):
-		frappe.throw(_(
-			"Double Shift OT is not allowed for shift {0}. Enable 'Double Shift OT Allowed' "
-			"in the Operations Shift master to schedule a second (overtime) shift."
-		).format(shift))
+	if otRoster == "false":
+		roster_type = "Basic"
+	elif otRoster == "true" or day_off_ot == 1:
+		roster_type = "Over-Time"
 
 	# check for end date
 	if end_date:
@@ -803,21 +806,6 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			if day_off_ot_map.get((i["employee"], i["date"])):
 				i["day_off_ot"] = 1
 
-	# When a Basic shift is scheduled onto a day the employee currently has off,
-	# it is a Day Off OT entry: mark day_off_ot = 1 automatically. This entry stays
-	# roster_type = "Basic" and bypasses the double-shift OT check (that check only
-	# gates the second/Over-Time shift of the day).
-	if roster_type == "Basic" and employees:
-		existing_day_off = frappe.db.get_list("Employee Schedule", filters={
-			"employee": ["IN", [i["employee"] for i in employees]],
-			"date": ["IN", [i["date"] for i in employees]],
-			"employee_availability": "Day Off"
-		}, fields=["employee", "date"])
-		day_off_set = {(i.employee, str(i.date)) for i in existing_day_off}
-		for i in employees:
-			if (i["employee"], str(i["date"])) in day_off_set:
-				i["day_off_ot"] = 1
-
 	employees_list_db = frappe.db.get_list("Employee", filters={"name": ["IN", employee_list]}, fields=["name", "employee_name", "department","date_of_joining", "relieving_date"], ignore_permissions=True)
 	employees_dict = {}
 	for i in employees_list_db:
@@ -846,7 +834,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 						"day_off_ot": i.get("day_off_ot")
 					})
 				else:
-					employees_date_dict[i["employee"]] =[{"date":i["date"], "start_datetime": datetime.strptime(f"{i['date']} {shift_start_time}", "%Y-%m-%d %H:%M:%S"), "end_datetime":datetime.strptime(f"{add_days(i['date'], 1) if next_day else i['date']} {shift_end_time}", "%Y-%m-%d %H:%M:%S"), "day_off_ot": i.get("day_off_ot")}]
+					employees_date_dict[i["employee"]] =[{"date":i["date"], "start_datetime": datetime.strptime(f"{i['date']} {shift_start_time}", "%Y-%m-%d %H:%M:%S"), "end_datetime":datetime.strptime(f"{add_days(i['date'], 1) if next_day else i['date']} {shift_end_time}", "%Y-%m-%d %H:%M:%S")}]
 		else:
 			# Log or handle cases where employee details or date_of_joining is missing
 			frappe.log_error(message=f"Employee {i.get('employee')} missing details or date_of_joining.", title="Extreme Schedule Data Prep")
@@ -2265,6 +2253,12 @@ def dayoff(employees, client_day_off=0, selected_dates=0, selected_reliever=None
 				site = "",
 				shift_type = "",
 				day_off_ot = 0,
+				client_event = "",
+				reference_doctype = "",
+				reference_docname = "",
+				event_staff = "",
+				event_location = "",
+				is_event_schedule = 0,
 				employee_availability = "{employee_availability}"
 			"""
 			frappe.db.sql(query_main)

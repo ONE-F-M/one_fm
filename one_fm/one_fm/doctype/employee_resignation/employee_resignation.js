@@ -4,9 +4,12 @@
 frappe.ui.form.on("Employee Resignation", {
 	onload: function(frm) {
 		frm.trigger('update_ops_manager_mandatory');
+		load_resignation_autocomplete_options(frm);
 	},
 
 	refresh: function (frm) {
+		let show_header = !frm.doc.__islocal && frm.doc.workflow_state && (!["Draft", ""].includes(frm.doc.workflow_state));
+		load_resignation_autocomplete_options(frm);
 		frm.trigger('update_ops_manager_mandatory');
 
 		let is_draft = frm.doc.__islocal || frm.doc.workflow_state === 'Draft';
@@ -67,6 +70,26 @@ frappe.ui.form.on("Employee Resignation", {
 			});
 		}
 
+		// Force-fetch dashboard connection counts so the badge numbers display reliably.
+		// Frappe's IntersectionObserver may not fire if the Connections panel is already
+		// in the viewport when the form renders. Resetting the flag and calling
+		// set_open_count periodically ensures the counts are always fetched.
+		if (!frm.doc.__islocal && frm.dashboard) {
+			console.log("[Employee Resignation] Initializing connection counts force-fetch");
+			let attempts = 0;
+			let interval = setInterval(() => {
+				attempts++;
+				if (frm.dashboard && !frm.doc.__islocal) {
+					console.log(`[Employee Resignation] Force-fetching dashboard counts (Attempt ${attempts}/3)`);
+					frm.dashboard._fetched_counts = false;
+					frm.dashboard.set_open_count();
+				}
+				if (attempts >= 3) {
+					clearInterval(interval);
+				}
+			}, 600);
+		}
+
 		if (!frm.doc.__islocal && frm.doc.employees && frm.doc.employees.length > 0) {
 			let view_exit_tab = function(employee_id) {
 				frappe.route_options = {"scroll_to": "exit"};
@@ -112,6 +135,27 @@ frappe.ui.form.on("Employee Resignation", {
 						view_exit_tab(row.employee);
 					}, __('Employee Profiles'));
 				});
+			}
+		}
+
+		if (frm.doc.workflow_state === 'Pending Operations Manager' && (frappe.user_roles.includes('Operation Admin') || frappe.user_roles.includes('T4 Admin'))) {
+			// Disable editing of all fields except replacement details
+			frm.set_df_property('employees', 'read_only', 1);
+			frm.set_df_property('resignation_initiation_date', 'read_only', 1);
+			frm.set_df_property('relieving_date', 'read_only', 1);
+			frm.set_df_property('reason', 'read_only', 1);
+			frm.set_df_property('supervisor', 'read_only', 1);
+			frm.set_df_property('operations_manager', 'read_only', 1);
+			frm.set_df_property('offboarding_officer', 'read_only', 1);
+			
+			// Explicitly allow editing of replacement fields
+			frm.set_df_property('replacement_required', 'read_only', 0);
+			frm.set_df_property('replacement_nationality', 'read_only', 0);
+			frm.set_df_property('replacement_gender', 'read_only', 0);
+
+			// Disable buttons inside the child table grid if open
+			if (frm.fields_dict.employees && frm.fields_dict.employees.grid) {
+				frm.fields_dict.employees.grid.disable_and_hide_buttons();
 			}
 		}
 	},
@@ -166,7 +210,7 @@ frappe.ui.form.on("Employee Resignation", {
 			});
 		}
 
-		if (frm.selected_workflow_action === "Approve") {
+		if (frm.selected_workflow_action === "Approve" && frm.doc.workflow_state === "Pending Operations Manager") {
 			if (!frm.doc.replacement_required) {
 				frappe.msgprint({
 					title: __('Missing Replacement Decision'),
@@ -250,11 +294,11 @@ frappe.ui.form.on("Employee Resignation", {
 
 		let is_shift_worker = cint(frm.doc.shift_working);
 
+		let show_ops_impact = ['Pending Operations Manager', 'Approved', 'Withdrawn'].includes(frm.doc.workflow_state);
+		frm.toggle_display("operational_impact_section", show_ops_impact);
+
 		let is_draft = frm.doc.__islocal || frm.doc.workflow_state === 'Draft';
 		let is_restricted_stage = is_draft || frm.doc.workflow_state === 'Pending Relieving Date Correction';
-
-		let show_ops_impact = !is_restricted_stage;
-		frm.toggle_display("operational_impact_section", show_ops_impact);
 
 		if (is_restricted_stage) {
 			frm.set_df_property('operations_manager', 'hidden', 1);
@@ -356,3 +400,56 @@ frappe.ui.form.on('Employee Resignation Item', {
         }
     }
 });
+
+// ─── Nationality / Gender Autocomplete helpers ────────────────────────────────
+function _populate_autocomplete(frm, fieldname, options) {
+	// Ensure no get_query is overriding the local filter path
+	let field = frm.fields_dict[fieldname];
+	if (!field) return;
+	if (field.get_query) delete field.get_query;
+
+	// Push data into awesomplete after the current call stack clears
+	setTimeout(() => {
+		let f = frm.fields_dict[fieldname];
+		if (f && typeof f.set_data === "function") {
+			f.set_data(options);
+		}
+	}, 0);
+}
+
+function load_resignation_autocomplete_options(frm) {
+	const NATIONALITY_KEY = "__resignation_nationality_options";
+	const GENDER_KEY = "__resignation_gender_options";
+
+	if (frappe[NATIONALITY_KEY] && frappe[GENDER_KEY]) {
+		_populate_autocomplete(frm, "replacement_nationality", frappe[NATIONALITY_KEY]);
+		_populate_autocomplete(frm, "replacement_gender", frappe[GENDER_KEY]);
+		return;
+	}
+
+	frappe.call({
+		method: "one_fm.one_fm.doctype.employee_resignation.employee_resignation.get_autocomplete_options",
+		callback: function(r) {
+			if (r.message) {
+				let nationalities = ["Any", "African", "Asian"];
+				(r.message.nationalities || []).forEach(n => {
+					if (!nationalities.includes(n)) {
+						nationalities.push(n);
+					}
+				});
+				frappe[NATIONALITY_KEY] = nationalities;
+				_populate_autocomplete(frm, "replacement_nationality", nationalities);
+
+				let genders = ["Any", "Male", "Female"];
+				(r.message.genders || []).forEach(g => {
+					if (!genders.includes(g)) {
+						genders.push(g);
+					}
+				});
+				frappe[GENDER_KEY] = genders;
+				_populate_autocomplete(frm, "replacement_gender", genders);
+			}
+		}
+	});
+}
+

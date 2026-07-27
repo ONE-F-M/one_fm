@@ -311,25 +311,25 @@ def import_deduction_data(doc_name):
 		df_1 = pd.read_csv(url_1, encoding='utf-8', skiprows = 0)
 		for index, row in df_1.iterrows():
 			# print(row[0])
-			if frappe.db.exists("Employee", {"one_fm_civil_id": row[0]}):
-				employee_detail = frappe.db.get_value('Employee',{'one_fm_civil_id':row[0]},['pifss_id_no', 'one_fm_civil_id', 'name'])
+			if frappe.db.exists("Employee", {"one_fm_civil_id": row.iloc[0]}):
+				employee_detail = frappe.db.get_value('Employee',{'one_fm_civil_id':row.iloc[0]},['pifss_id_no', 'one_fm_civil_id', 'name'])
 				pifss_id_no = employee_detail[0]
 				civil_id = employee_detail[1]
 				employee_pk = employee_detail[2]
 				if not frappe.db.exists("Salary Structure Assignment", {"employee": employee_pk}):
 					missing_salary_structure_list.append(employee_pk)
 				table_data.append({
-				'employee': employee_pk, 'pifss_id_no': pifss_id_no, 'civil_id':civil_id, 'employee_name_in_arabic': row[1],
-				'actual_salary': flt(row[2]), 'social_security_salary':flt(row[3]), 'employee_contribution':flt(row[4]),
-				'company_contribution':flt(row[5]),'total_contribution':flt(row[6]),
+				'employee': employee_pk, 'pifss_id_no': pifss_id_no, 'civil_id':civil_id, 'employee_name_in_arabic': row.iloc[1],
+				'actual_salary': flt(row.iloc[2]), 'social_security_salary':flt(row.iloc[3]), 'employee_contribution':flt(row.iloc[4]),
+				'company_contribution':flt(row.iloc[5]),'total_contribution':flt(row.iloc[6]),
 				})
 
 			else:
 				civil_id = ' '
 				table_data.append({
-				'employee': '', 'pifss_id_no': '', 'civil_id':row[0], 'employee_name_in_arabic': row[1],
-				'actual_salary': flt(row[2]), 'social_security_salary':flt(row[3]), 'employee_contribution':flt(row[4]),
-				'company_contribution':flt(row[5]),'total_contribution':flt(row[6]),
+				'employee': '', 'pifss_id_no': '', 'civil_id':row.iloc[0], 'employee_name_in_arabic': row.iloc[1],
+				'actual_salary': flt(row.iloc[2]), 'social_security_salary':flt(row.iloc[3]), 'employee_contribution':flt(row.iloc[4]),
+				'company_contribution':flt(row.iloc[5]),'total_contribution':flt(row.iloc[6]),
 				})
 
 		if missing_salary_structure_list:
