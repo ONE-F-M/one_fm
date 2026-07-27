@@ -524,3 +524,4 @@ one_fm.patches.v15_0.seed_app_services
 one_fm.patches.v15_0.set_candidate_title_fields
 one_fm.patches.v15_0.update_attendance_check
 one_fm.patches.v15_0.update_employee_and_user_references
+one_fm.patches.v15_0.send_work_item_notify_assignee_demo_email
