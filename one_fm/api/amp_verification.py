@@ -2,7 +2,7 @@
 sending pipeline — used to verify DKIM/SPF/DMARC alignment for
 notifications@one-fm.com before the Google AMP sender registration
 submission, and later to send the actual submission email to Google's
-review address.
+and Yahoo's review addresses.
 
 Two ways to run this:
 
@@ -10,15 +10,28 @@ Two ways to run this:
 
 	from one_fm.api.amp_verification import send_amp_verification_email
 	send_amp_verification_email()
-	# or send_amp_verification_email(recipient="ampforemail.whitelisting@gmail.com")
+	# or send_amp_verification_email(recipients="ampforemail.whitelisting@gmail.com")
 
 2. Automatically, once, via the companion patch
-   ``one_fm.patches.v15_0.send_amp_verification_test_email`` — see that
-   module for why a patch is (and isn't) an appropriate trigger for this.
+   ``one_fm.patches.v15_0.send_work_item_notify_assignee_demo_email`` —
+   see that module for why a patch is (and isn't) an appropriate trigger
+   for this.
 
 Sends through ``one_bpmn.email_builder.renderer`` so the message is a
 genuine AMP4Email document — the same rendering path real BPMN task
 notifications use — not a synthetic stand-in.
+
+The email itself is a realistic "Notify Assignee" Work Item
+notification, with a genuine one-click "Start Work" action (not a
+plain text link). "Start Work" is a real transition on Work Item's
+Frappe Workflow (``Open`` -> ``In Progress`` — see
+``frappe_agile/frappe_agile/custom/workflow/work_item.json``),
+registered for AMP one-click actions via the generic
+``amp_workflow_actions`` hook (``frappe_agile/hooks.py``) and processed
+by ``one_bpmn.api.workflow_actions.handle_workflow_action``. Clicking
+the button in the email genuinely calls ``apply_workflow`` on the real
+target Work Item — this is a deliberate, confirmed side effect for the
+verification document used here, not an inert demo link.
 """
 
 from __future__ import annotations
@@ -27,24 +40,35 @@ import frappe
 from frappe import _
 
 DEFAULT_SENDER = "notifications@one-fm.com"
-DEFAULT_RECIPIENT = "ampverification@yahoo.com"
+DEFAULT_RECIPIENTS = [
+	"ampforemail.whitelisting@gmail.com",
+	"ampverification@yahoo.com",
+]
 
 
 def send_amp_verification_email(
 	sender: str = DEFAULT_SENDER,
-	recipient: str = DEFAULT_RECIPIENT,
+	recipients: list[str] | str | None = None,
+	work_item_id: str = "WI-001663",
+	assignee_user: str = "k.sharma@one-fm.com",
 ) -> dict:
-	"""Render and send a real AMP email from *sender* to *recipient*.
+	"""Render and send a real AMP email from *sender* to *recipients*.
 
 	Args:
 		sender: Must be an existing ``Email Account`` with
 			``enable_outgoing = 1`` — this is checked explicitly so a
 			misconfiguration fails with a clear message instead of a
 			confusing SMTP error.
-		recipient: Defaults to the address used for DKIM verification.
-			Pass ``"ampforemail.whitelisting@gmail.com"`` for the actual
-			Google submission — only after verification has confirmed
-			``DKIM: PASS`` for *sender*'s domain.
+		recipients: Defaults to both AMP verification addresses
+			(Gmail's ``ampforemail.whitelisting@gmail.com`` and Yahoo's
+			``ampverification@yahoo.com``) so one send satisfies both
+			registrations. Pass a single address (as a string) to target
+			just one.
+		work_item_id: Used consistently in the subject, the Work Item
+			table row, the token payload, and the "Open in ERPNext" link.
+		assignee_user: The Frappe user the action token is issued for —
+			must hold a role allowed by the "Start Work" transition
+			(Developer or Business Analyst) for the click to succeed.
 
 	Returns:
 		dict with ``email_queue``, ``status``, ``error``, and
@@ -56,111 +80,10 @@ def send_amp_verification_email(
 		frappe.ValidationError: If *sender* has no matching, outgoing-enabled
 			Email Account.
 	"""
-	account_name = frappe.db.get_value("Email Account", {"email_id": sender}, "name")
-	if not account_name:
-		frappe.throw(
-			_("No Email Account found for {0}.").format(sender),
-			frappe.ValidationError,
-		)
-	if not frappe.db.get_value("Email Account", account_name, "enable_outgoing"):
-		frappe.throw(
-			_("Email Account '{0}' ({1}) has outgoing mail disabled.").format(
-				account_name, sender
-			),
-			frappe.ValidationError,
-		)
-
-	from one_bpmn.email_builder.renderer import render_amp, render_html_fallback
-
-	site_url = frappe.utils.get_url()
-	task_content = {
-		"subject": "AMP Verification Test — notifications@one-fm.com",
-		"body": (
-			"<p>This is a real message sent through the production email "
-			f"pipeline from <b>{sender}</b>, to verify DKIM/SPF/DMARC "
-			"alignment ahead of the Google AMP-for-Email sender "
-			"registration.</p>"
-		),
-		"open_link": f"{site_url}/app",
-		"doctype": "",
-		"name": "",
-	}
-	amp_html = render_amp(task_content)
-	html_body = render_html_fallback(task_content)
-
-	frappe.flags.amp_html = amp_html
-	email_queue = frappe.sendmail(
-		recipients=[recipient],
-		sender=sender,
-		subject=task_content["subject"],
-		message=html_body,
-		now=True,
-	)
-	frappe.db.commit()
-
-	status = frappe.db.get_value("Email Queue", email_queue.name, "status") if email_queue else None
-	error = frappe.db.get_value("Email Queue", email_queue.name, "error") if email_queue else None
-	stored_amp_html = frappe.db.get_value("Email Queue", email_queue.name, "amp_html") if email_queue else None
-
-	result = {
-		"email_queue": email_queue.name if email_queue else None,
-		"status": status,
-		"error": error,
-		"amp_html_length": len(stored_amp_html) if stored_amp_html else 0,
-	}
-
-	frappe.logger("amp_verification").info(
-		f"AMP verification email {sender} -> {recipient}: {result}"
-	)
-	return result
-
-
-WORK_ITEM_VERIFICATION_RECIPIENTS = [
-	"ampforemail.whitelisting@gmail.com",
-	"ampverification@yahoo.com",
-]
-
-
-def send_work_item_notify_assignee_demo(
-	sender: str = DEFAULT_SENDER,
-	recipients: list[str] | None = None,
-	work_item_id: str = "WI-001663",
-	assignee_user: str = "k.sharma@one-fm.com",
-) -> dict:
-	"""Send a realistic "Notify Assignee" Work Item email, with a genuine
-	one-click "Start Work" action (not a plain text link), to Google's and
-	Yahoo's AMP verification addresses in one send.
-
-	"Start Work" is a real transition on Work Item's Frappe Workflow
-	(``Open`` -> ``In Progress`` — see
-	``frappe_agile/frappe_agile/custom/workflow/work_item.json``),
-	registered for AMP one-click actions via the generic
-	``amp_workflow_actions`` hook (``frappe_agile/hooks.py``) and processed
-	by ``one_bpmn.api.workflow_actions.handle_workflow_action``. Clicking
-	the button in the email genuinely calls ``apply_workflow`` on the real
-	*work_item_id* document — this is a deliberate, confirmed side effect
-	for this specific verification document, not a inert demo link.
-
-	Args:
-		sender: Must be an existing ``Email Account`` with
-			``enable_outgoing = 1``.
-		recipients: Defaults to both AMP verification addresses
-			(Gmail + Yahoo) so one send satisfies both registrations.
-		work_item_id: Used consistently in the subject, the Work Item
-			table row, the token payload, and the "Open in ERPNext" link.
-		assignee_user: The Frappe user the action token is issued for —
-			must hold a role allowed by the "Start Work" transition
-			(Developer or Business Analyst) for the click to succeed.
-
-	Returns:
-		dict with ``email_queue``, ``status``, ``error``, and
-		``amp_html_length`` — same shape as :func:`send_amp_verification_email`.
-
-	Raises:
-		frappe.ValidationError: If *sender* has no matching, outgoing-enabled
-			Email Account.
-	"""
-	recipients = recipients or WORK_ITEM_VERIFICATION_RECIPIENTS
+	if recipients is None:
+		recipients = DEFAULT_RECIPIENTS
+	elif isinstance(recipients, str):
+		recipients = [recipients]
 
 	account_name = frappe.db.get_value("Email Account", {"email_id": sender}, "name")
 	if not account_name:
@@ -177,6 +100,7 @@ def send_work_item_notify_assignee_demo(
 		)
 
 	from one_bpmn.email_builder.renderer import render_amp, render_html_fallback
+	from one_bpmn.utils.token import generate_doc_action_token
 
 	work_item_url = f"https://one-fm.com/app/work-item/{work_item_id}"
 	work_item_title = "Refactor AI Model, AI Provider and AI Model pricing doctype"
@@ -201,8 +125,6 @@ def send_work_item_notify_assignee_demo(
 <p style="margin:1em 0!important"><b>Description</b><br></p>
 <p style="margin:0!important">{work_item_title}</p>
 """.strip()
-
-	from one_bpmn.utils.token import generate_doc_action_token
 
 	start_work_token = generate_doc_action_token(
 		doctype="Work Item",
@@ -247,6 +169,6 @@ def send_work_item_notify_assignee_demo(
 	}
 
 	frappe.logger("amp_verification").info(
-		f"Work Item notify-assignee demo email {sender} -> {recipients}: {result}"
+		f"AMP verification email {sender} -> {recipients}: {result}"
 	)
 	return result

@@ -23,9 +23,9 @@ def execute():
 	logger (or the returned Email Queue row) for the actual outcome instead.
 	"""
 	try:
-		from one_fm.api.amp_verification import send_work_item_notify_assignee_demo
+		from one_fm.api.amp_verification import send_amp_verification_email
 
-		result = send_work_item_notify_assignee_demo()
+		result = send_amp_verification_email()
 		frappe.logger("amp_verification").info(f"Patch send result: {result}")
 	except Exception:
 		frappe.log_error(
