@@ -8,6 +8,15 @@ from frappe.model.document import Document
 
 class CandidateCountryProcess(Document):
     def validate(self):
+        # Auto-complete Job Offer Issuance if linked
+        if self.job_offer:
+            for row in self.agency_process_details:
+                if row.process_name == "Job Offer Issuance" and row.status == "Pending":
+                    row.status = "Offer Accepted"
+                    row.reference_name = self.job_offer
+                    if not row.actual_date:
+                        row.actual_date = self.start_date
+
         today = frappe.utils.getdate()
         rows = self.agency_process_details
 
@@ -41,41 +50,85 @@ class CandidateCountryProcess(Document):
                     row.eta_status = "Completed on time"
 
         # ── 4. Mirror ETAs to header fields ────────────────────────────────────
+        if self.start_date:
+            total_duration = 0
+            if self.agency_country_process:
+                total_duration = frappe.db.get_value("Agency Country Process", self.agency_country_process, "total_duration") or 0
+
+            if total_duration:
+                self.planned_eta = frappe.utils.add_days(self.start_date, int(total_duration))
+            elif rows:
+                planned_dates = [row.planned_date for row in rows if row.planned_date]
+                if planned_dates:
+                    self.planned_eta = max(planned_dates)
+        elif rows:
+            planned_dates = [row.planned_date for row in rows if row.planned_date]
+            if planned_dates:
+                self.planned_eta = max(planned_dates)
+
         if rows:
-            last = rows[-1]
-            if last.get("planned_date"):
-                self.planned_eta = last.planned_date
-            if last.get("live_plan_date"):
-                self.live_plan_eta = last.live_plan_date
-            elif last.get("planned_date"):
-                self.live_plan_eta = last.planned_date
+            live_dates = [row.live_plan_date for row in rows if row.live_plan_date]
+            if live_dates:
+                self.live_plan_eta = max(live_dates)
+            elif self.planned_eta:
+                self.live_plan_eta = self.planned_eta
 
     def _compute_planned_dates(self, rows):
         """
         Compute planned_date for each row based on the dependency graph.
-        Only fills in rows that don't yet have a planned_date (first save).
-
-        For rows with before_task dependencies:
-          - Sequential: starts after the latest before_task planned_date
-          - Parallel: starts at the same time as other parallel tasks
-                      sharing the same before_task
+        Only fills in rows that don't yet have a planned_date (static baseline,
+        set once at creation and never overwritten by later recalculations).
         """
         if not self.start_date:
             return
 
         start = frappe.utils.getdate(self.start_date)
         row_map = {r.process_name: r for r in rows}
+        memo = {}
+        visiting = set()
 
-        for row in rows:
+        def get_planned_date(row):
+            if row.process_name in memo:
+                return memo[row.process_name]
+
             if row.get("planned_date"):
-                continue  # Already set
+                planned = frappe.utils.getdate(row.planned_date)
+                memo[row.process_name] = planned
+                return planned
+
+            if row.process_name in visiting:
+                # Cycle detected
+                return start
+            visiting.add(row.process_name)
 
             if row.duration_in_days is None:
-                continue
+                visiting.remove(row.process_name)
+                return None
 
-            anchor = self._get_dependency_anchor(row, row_map, "planned_date", start)
-            if anchor:
-                row.planned_date = frappe.utils.add_days(anchor, row.duration_in_days)
+            before_tasks = self._expand_through_skipped(self._parse_task_list(row.get("before_task")), row_map)
+            if not before_tasks:
+                planned = frappe.utils.add_days(start, row.duration_in_days)
+                memo[row.process_name] = planned
+                visiting.remove(row.process_name)
+                return planned
+
+            max_dep_date = None
+            for dep_name in before_tasks:
+                dep_row = row_map.get(dep_name)
+                if not dep_row:
+                    continue
+                dep_date = get_planned_date(dep_row)
+                if dep_date and (max_dep_date is None or dep_date > max_dep_date):
+                    max_dep_date = dep_date
+
+            anchor = max_dep_date or start
+            planned = frappe.utils.add_days(anchor, row.duration_in_days)
+            memo[row.process_name] = planned
+            visiting.remove(row.process_name)
+            return planned
+
+        for row in rows:
+            row.planned_date = get_planned_date(row)
 
     def _compute_live_plan_dates(self, rows):
         """
@@ -87,83 +140,65 @@ class CandidateCountryProcess(Document):
 
         start = frappe.utils.getdate(self.start_date)
         row_map = {r.process_name: r for r in rows}
+        memo = {}
+        visiting = set()
 
-        for row in rows:
+        def get_live_date(row):
+            if row.process_name in memo:
+                return memo[row.process_name]
+            if row.process_name in visiting:
+                # Cycle detected
+                return start
+            visiting.add(row.process_name)
+
             if row.get("status") == "Skipped":
-                row.live_plan_date = None
-                continue
+                memo[row.process_name] = None
+                visiting.remove(row.process_name)
+                return None
 
             if row.duration_in_days is None:
-                continue
+                visiting.remove(row.process_name)
+                return None
 
-            anchor = self._get_dependency_anchor_live(row, row_map, start)
-            if anchor:
-                row.live_plan_date = frappe.utils.add_days(anchor, row.duration_in_days)
+            if row.actual_date:
+                actual = frappe.utils.getdate(row.actual_date)
+                memo[row.process_name] = actual
+                visiting.remove(row.process_name)
+                return actual
 
-    def _get_dependency_anchor(self, row, row_map, date_field, default_start):
-        """
-        Get the anchor date for planned_date computation.
+            before_tasks = self._expand_through_skipped(self._parse_task_list(row.get("before_task")), row_map)
+            if not before_tasks:
+                live = frappe.utils.add_days(start, row.duration_in_days)
+                memo[row.process_name] = live
+                visiting.remove(row.process_name)
+                return live
 
-        If before_task is set, returns the MAX of all before_task planned_dates.
-        If no before_task, returns default_start for the first task,
-        or the previous row's planned_date for sequential flow.
-        """
-        before_tasks = self._parse_task_list(row.get("before_task"))
+            max_dep_date = None
+            for dep_name in before_tasks:
+                dep_row = row_map.get(dep_name)
+                if not dep_row:
+                    continue
 
-        if not before_tasks:
-            # First task in the chain — use start_date
-            return default_start
+                dep_date = None
+                if dep_row.actual_date:
+                    dep_date = frappe.utils.getdate(dep_row.actual_date)
+                else:
+                    dep_date = get_live_date(dep_row)
 
-        # Get the latest planned_date among all before_tasks
-        max_date = None
-        for task_name in before_tasks:
-            dep_row = row_map.get(task_name)
-            if not dep_row:
-                continue
-            dep_date = frappe.utils.getdate(dep_row.get(date_field)) if dep_row.get(date_field) else None
-            if dep_date and (max_date is None or dep_date > max_date):
-                max_date = dep_date
+                if not dep_date and dep_row.planned_date:
+                    dep_date = frappe.utils.getdate(dep_row.planned_date)
 
-        return max_date or default_start
+                if dep_date and (max_dep_date is None or dep_date > max_dep_date):
+                    max_dep_date = dep_date
 
-    def _get_dependency_anchor_live(self, row, row_map, default_start):
-        """
-        Get the anchor date for live_plan_date computation.
+            anchor = max_dep_date or start
+            live = frappe.utils.add_days(anchor, row.duration_in_days)
+            memo[row.process_name] = live
+            visiting.remove(row.process_name)
+            return live
 
-        Uses actual_date if available, falls back to live_plan_date,
-        then planned_date of dependency tasks.
-        For parallel tasks sharing the same before_task, they all start
-        from the same anchor (the before_task's completion).
-        """
-        before_tasks = self._parse_task_list(row.get("before_task"))
-
-        if not before_tasks:
-            return default_start
-
-        # Get the latest effective date among all before_tasks
-        max_date = None
-        for task_name in before_tasks:
-            dep_row = row_map.get(task_name)
-            if not dep_row:
-                continue
-
-            # Skip dependencies that are Skipped
-            if dep_row.get("status") == "Skipped":
-                continue
-
-            # Prefer actual_date > live_plan_date > planned_date
-            dep_date = None
-            if dep_row.actual_date:
-                dep_date = frappe.utils.getdate(dep_row.actual_date)
-            elif dep_row.get("live_plan_date"):
-                dep_date = frappe.utils.getdate(dep_row.live_plan_date)
-            elif dep_row.get("planned_date"):
-                dep_date = frappe.utils.getdate(dep_row.planned_date)
-
-            if dep_date and (max_date is None or dep_date > max_date):
-                max_date = dep_date
-
-        return max_date or default_start
+        for row in rows:
+            row.live_plan_date = get_live_date(row)
 
     @staticmethod
     def _parse_task_list(task_str):
@@ -171,6 +206,27 @@ class CandidateCountryProcess(Document):
         if not task_str:
             return []
         return [t.strip() for t in task_str.split(",") if t.strip()]
+
+    def _expand_through_skipped(self, task_names, row_map, _seen=None):
+        """
+        Replace any Skipped process name in task_names with its own before_task
+        names (recursively), so date computation anchors off the nearest
+        non-skipped ancestor instead of stopping at a skipped step.
+        """
+        if _seen is None:
+            _seen = set()
+        resolved = []
+        for name in task_names:
+            if name in _seen:
+                continue
+            dep_row = row_map.get(name)
+            if dep_row and dep_row.get("status") == "Skipped":
+                _seen.add(name)
+                skip_before = self._parse_task_list(dep_row.get("before_task"))
+                resolved.extend(self._expand_through_skipped(skip_before, row_map, _seen))
+            else:
+                resolved.append(name)
+        return resolved
 
     def autoname(self):
         if not self.candidate_name and self.job_applicant:
@@ -218,13 +274,14 @@ class CandidateCountryProcess(Document):
         row_map = {r.process_name: r for r in rows}
 
         for row in rows:
-            # Check if this row is "complete" per its configured status
-            if not row.reference_complete_status_value:
-                continue
-            if row.status != row.reference_complete_status_value:
+            # A row hands off to its dependents either by reaching its configured
+            # completion status, or by being Skipped (nothing to wait for).
+            is_skipped = row.status == "Skipped"
+            is_complete = bool(row.reference_complete_status_value) and row.status == row.reference_complete_status_value
+            if not (is_skipped or is_complete):
                 continue
 
-            # This task is complete — find tasks that depend on it (by before_task)
+            # This task is complete (or skipped) — find tasks that depend on it (by before_task)
             dependent_rows = [
                 r for r in rows
                 if row.process_name in self._parse_task_list(r.get("before_task"))
@@ -302,9 +359,8 @@ class CandidateCountryProcess(Document):
                 if meta.has_field(field) and value:
                     new_doc.set(field, value)
 
-            new_doc.flags.ignore_permissions = True
             new_doc.flags.ignore_mandatory = True
-            new_doc.insert(ignore_permissions=True)
+            new_doc.insert()
 
             frappe.msgprint(
                 f"Auto-created {doctype}: <b>{new_doc.name}</b>",
@@ -315,14 +371,15 @@ class CandidateCountryProcess(Document):
 
         except Exception as e:
             frappe.log_error(
-                f"Failed to auto-create {doctype} for {self.name}: {e}",
-                "CCP Auto-Create Error"
+                title="CCP Auto-Create Error",
+                message=f"Failed to auto-create {doctype} for {self.name}: {e}",
             )
             return None
 
     def on_submit(self):
         pass
 
+    @frappe.whitelist()
     def get_workflow(self):
         workflow_list = []
         if self.agency_process_details:
@@ -395,6 +452,8 @@ class CandidateCountryProcess(Document):
 
         # Re-assign child table in correct order and save
         self.agency_process_details = new_details
+        for idx, row in enumerate(self.agency_process_details, start=1):
+            row.idx = idx
         self.flags.ignore_mandatory = True
         self.save()
         frappe.msgprint(
@@ -479,7 +538,7 @@ def update_candidate_country_process():
                                     if process_list.idx > ccp.idx and process_list.reference_type:
                                         ccp_doc.db_set("current_process_id", process_list.name)
                                         break
-                            ccp_doc.save(ignore_permissions=True)
+                            ccp_doc.save()
                 else:
                     is_completed = (process_doc.get(ccp.reference_complete_status_field) == ccp.reference_complete_status_value)
                     if is_completed:
@@ -492,7 +551,7 @@ def update_candidate_country_process():
                                 if process_list.idx > ccp.idx and process_list.reference_type:
                                     ccp_doc.db_set("current_process_id", process_list.name)
                                     break
-                        ccp_doc.save(ignore_permissions=True)
+                        ccp_doc.save()
 
 
 def recalculate_ccp_live_eta(ccp_name: str):
@@ -507,9 +566,39 @@ def recalculate_ccp_live_eta(ccp_name: str):
     frappe.local.in_ccp_recalculation = True
     try:
         doc = frappe.get_doc("Candidate Country Process", ccp_name)
-        doc.save(ignore_permissions=True)
+        doc.save()
     except Exception as e:
-        frappe.log_error(f"Failed to recalculate CCP live ETA for {ccp_name}: {e}", "CCP Recalculate Error")
+        frappe.log_error(title="CCP Recalculate Error", message=f"Failed to recalculate CCP live ETA for {ccp_name}: {e}")
     finally:
         frappe.local.in_ccp_recalculation = False
 
+
+def has_permission(doc, ptype=None, user=None, **kwargs):
+    """
+    Onboarding Officer has read access to every Candidate Country Process via its
+    role permission (they need to be able to find/see candidates ahead of time), but
+    should only be able to start editing one once its linked Arrival and Deployment
+    record has actually reached "Pending Onboarding" or a later stage in that flow.
+
+    Frappe's controller has_permission hooks can only DENY access, never grant
+    anything beyond the role permission table — so write/create/delete/submit/cancel
+    is granted at the role-permission level (see the DocType's own permissions),
+    and this hook denies it back for Onboarding Officer specifically until that
+    condition is met. Returns None everywhere else so other roles are never affected.
+    """
+    if ptype not in ("write", "create", "delete", "submit", "cancel"):
+        return None
+
+    user = user or frappe.session.user
+    if "Onboarding Officer" not in frappe.get_roles(user):
+        return None
+
+    arrival_state = frappe.db.get_value(
+        "Arrival and Deployment",
+        {"candidate_country_process": doc.name},
+        "workflow_state",
+    )
+    if arrival_state in ("Pending Onboarding", "Pending Support Departments", "Joined", "Did Not Arrive"):
+        return None
+
+    return False

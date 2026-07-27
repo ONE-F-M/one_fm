@@ -509,6 +509,16 @@ def deploy_ticket_views():
     shutil.copy2(ticket_edit_source, ticket_edit_target)
     print(f"[✅] TicketEdit.vue deployed to: {ticket_edit_target}")
 
+    ticket_customer_source = os.path.join(bench_path, "apps", "one_fm", "one_fm", "public", "js", "form_overrides", "hd_ticket", "TicketCustomer.vue")
+    ticket_customer_target = os.path.join(ticket_target_folder, "TicketCustomer.vue")
+
+    if not os.path.exists(ticket_customer_source):
+        print(f"[❌] Source TicketCustomer.vue not found: {ticket_customer_source}")
+        return False
+
+    shutil.copy2(ticket_customer_source, ticket_customer_target)
+    print(f"[✅] TicketCustomer.vue deployed to: {ticket_customer_target}")
+
     router_file = os.path.join(bench_path, "apps", "helpdesk", "desk", "src", "router", "index.ts")
 
     if not os.path.exists(router_file):
@@ -531,6 +541,8 @@ def deploy_ticket_views():
     meta: {
       onSuccessRoute: "TicketCustomer",
       parent: "TicketsCustomer",
+      public: true,
+      auth: true,
     },
   },'''
 
@@ -548,6 +560,86 @@ def deploy_ticket_views():
             return False
 
     print("[🎉] TicketEdit, TicketCustomer and TicketNew views deployed successfully.")
+    return True
+
+
+def deploy_dashboard_view():
+    """Overwrite the helpdesk Dashboard.vue with the one_fm version.
+
+    The one_fm copy renders the trend and master charts in a single flowing
+    grid so the extra "Tickets by Status" chart (added server-side via the
+    one_fm.overrides.dashboard override) doesn't leave a gap mid-dashboard.
+    """
+    bench_path = get_bench_path()
+
+    dashboard_source = os.path.join(
+        bench_path, "apps", "one_fm", "one_fm", "public", "js",
+        "form_overrides", "dashboard", "Dashboard.vue",
+    )
+    dashboard_target = os.path.join(
+        bench_path, "apps", "helpdesk", "desk", "src", "pages",
+        "dashboard", "Dashboard.vue",
+    )
+
+    if not os.path.exists(dashboard_source):
+        print(f"[❌] Source Dashboard.vue not found: {dashboard_source}")
+        return False
+
+    if not os.path.exists(os.path.dirname(dashboard_target)):
+        print(f"[❌] Target dashboard folder not found: {os.path.dirname(dashboard_target)}")
+        return False
+
+    # Skip the copy (and the resulting rebuild) if the file is already in sync.
+    with open(dashboard_source, "r") as f:
+        source_content = f.read()
+    if os.path.exists(dashboard_target):
+        with open(dashboard_target, "r") as f:
+            if f.read() == source_content:
+                print("⚠️ Dashboard.vue already up to date.")
+                return False
+
+    shutil.copy2(dashboard_source, dashboard_target)
+    print(f"[✅] Dashboard.vue deployed to: {dashboard_target}")
+    return True
+
+def deploy_ticket_header():
+    """Overwrite the helpdesk agent TicketHeader.vue with the one_fm version.
+
+    The one_fm copy replaces the native Status dropdown with a Status-style
+    dropdown of BPMN User Task actions (coloured per action) whenever a BPMN
+    Process Instance controls the HD Ticket. It calls the one_bpmn whitelisted
+    APIs get_active_bpmn_tasks / complete_task.
+    """
+    bench_path = get_bench_path()
+
+    header_source = os.path.join(
+        bench_path, "apps", "one_fm", "one_fm", "public", "js",
+        "form_overrides", "hd_ticket", "TicketHeader.vue",
+    )
+    header_target = os.path.join(
+        bench_path, "apps", "helpdesk", "desk", "src", "components",
+        "ticket-agent", "TicketHeader.vue",
+    )
+
+    if not os.path.exists(header_source):
+        print(f"[❌] Source TicketHeader.vue not found: {header_source}")
+        return False
+
+    if not os.path.exists(os.path.dirname(header_target)):
+        print(f"[❌] Target ticket-agent folder not found: {os.path.dirname(header_target)}")
+        return False
+
+    # Skip the copy (and the resulting rebuild) if the file is already in sync.
+    with open(header_source, "r") as f:
+        source_content = f.read()
+    if os.path.exists(header_target):
+        with open(header_target, "r") as f:
+            if f.read() == source_content:
+                print("⚠️ TicketHeader.vue already up to date.")
+                return False
+
+    shutil.copy2(header_source, header_target)
+    print(f"[✅] TicketHeader.vue deployed to: {header_target}")
     return True
 
 def update_hd_ticket_side_bar():
@@ -609,9 +701,11 @@ def update_all_ticket_features():
         any_changes = True
     if deploy_ticket_views():
         any_changes = True
-    if update_hd_ticket_side_bar():
+    if deploy_dashboard_view():
         any_changes = True
-    if update_ticket_status():
+    if deploy_ticket_header():
+        any_changes = True
+    if update_hd_ticket_side_bar():
         any_changes = True
 
     if any_changes:
@@ -658,43 +752,3 @@ def disable_sync_on_developer_mode():
             0
         )
         print(f"Disabled Google Task Synchronization")
-
-
-def update_ticket_status():
-    """
-    Replaces the standard Helpdesk ticketStatus.ts file with the custom version from one_fm
-    and triggers a build to apply the changes.
-    """
-    print("🚀 Overriding Helpdesk ticketStatus.ts file...")
-
-    # Get the base path of the bench directory
-    bench_path = frappe.utils.get_bench_path()
-
-    # Define the source and destination file paths
-    source_file = os.path.join(
-        bench_path, "apps", "helpdesk", "desk", "src", "stores", "ticketStatus.ts"
-    )
-    replacement_file = os.path.join(
-        bench_path, "apps", "one_fm", "one_fm", "public", "js", "form_overrides", "hd_ticket", "ticketStatus.ts"
-    )
-
-    # Ensure the custom replacement file actually exists before proceeding
-    if not os.path.exists(replacement_file):
-        print(f"❌ Error: Replacement file not found at: {replacement_file}")
-        return False
-
-    try:
-        # Copy the content from your custom file to the source file, overwriting it
-        print(f"📄 Copying from {replacement_file} to {source_file}")
-        shutil.copy2(replacement_file, source_file)
-        print("✅ Successfully replaced ticketStatus.ts.")
-        
-        return True
-
-    except FileNotFoundError:
-        print(f"⚠️ Warning: Original file not found at: {source_file}. Skipping replacement.")
-    except Exception as e:
-        print(f"🔥 An unexpected error occurred: {e}")
-        frappe.log_error(title="ONEFM TicketStatus.ts Override Failed", message=frappe.get_traceback())
-
-    return False

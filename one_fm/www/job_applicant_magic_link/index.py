@@ -188,9 +188,16 @@ def upload_image():
                     frappe.db.set_value(frappe.form_dict.reference_doctype, frappe.form_dict.reference_docname, k, country_code)
                     frappe.db.set_value(frappe.form_dict.reference_doctype, frappe.form_dict.reference_docname, 'one_fm_passport_holder_of', country_code)
                 if(k=="gender" and v):
-                    if v=="M":v="Male"
-                    elif v=="F":v="Female"
-                    else:v="Other"
+                    # Normalize before matching — Mindee may return "F"/"f"/"Female"/" F "
+                    # (case, whitespace, or full word). An exact "==" check would wrongly
+                    # fall through to "Other" for anything but a literal "M"/"F".
+                    gender_value = cstr(v).strip().lower()
+                    if gender_value.startswith("m"):
+                        v="Male"
+                    elif gender_value.startswith("f"):
+                        v="Female"
+                    else:
+                        v="Other"
                     frappe.db.set_value(reference_doctype, reference_docname, 'one_fm_gender', v)
                 if(k=="surname" and v):
                     frappe.db.set_value(reference_doctype, reference_docname, 'one_fm_last_name', v.title())
