@@ -527,8 +527,13 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 
 		# Evaluate final acceptance conditions for creating Employee Schedule
 		
-		month_start = get_first_day(start_date)
-		month_end = get_last_day(end_date)
+		# Derive the calendar month from the dates being scheduled — end_date is empty
+		# for Day Off OT / Selected-Days mode and get_last_day("") wrongly returns the
+		# CURRENT month, so the day-off count would be taken from the wrong month.
+		assigned_dates = [getdate(e.get("date")) for e in employees if e.get("date")]
+		ref_date = min(assigned_dates) if assigned_dates else getdate(start_date)
+		month_start = get_first_day(ref_date)
+		month_end = get_last_day(ref_date)
 		
 		for obj in employee_list:
 			rdo_count = frappe.db.count("Employee Schedule", filters={
