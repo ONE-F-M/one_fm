@@ -448,6 +448,7 @@ class OvertimeRequest(Document):
 		if existing:
 			self.db_set("compensatory_leave_request", existing)
 			self.redeem_compensatory_day_off_hours()
+			self.request_draft_leave_application(existing)
 			return
 
 		clr = frappe.new_doc("Compensatory Leave Request")
@@ -461,6 +462,7 @@ class OvertimeRequest(Document):
 
 		self.db_set("compensatory_leave_request", clr.name)
 		self.redeem_compensatory_day_off_hours()
+		self.request_draft_leave_application(clr.name)
 
 		frappe.msgprint(
 			_("Compensatory Leave Request {0} has been created and submitted for {1}.").format(
@@ -469,6 +471,35 @@ class OvertimeRequest(Document):
 			alert=True,
 			indicator="green",
 		)
+
+	def request_draft_leave_application(self, compensatory_leave_request):
+		"""
+		Ask the Compensatory Leave Request to raise its Draft Leave Application (WI-001696).
+
+		That hook lives on the request's on_submit, but by then nothing links back here:
+		the holiday-attendance path submits the request during "Verify Attendance", and even
+		the branch above submits it before db_set stores the link. Either way the hook found
+		no Overtime Request behind the request and skipped, so no Leave Application was ever
+		raised. Asking again once the link exists closes that gap.
+
+		The call is idempotent - it will not raise a second application for the same
+		request - and it must not undo a completed Overtime Request, so failures are logged
+		rather than raised.
+		"""
+		if not compensatory_leave_request:
+			return
+
+		try:
+			frappe.get_doc(
+				"Compensatory Leave Request", compensatory_leave_request
+			).create_draft_leave_application()
+		except Exception:
+			frappe.log_error(
+				title=_("Could not raise the Draft Leave Application for {0}").format(
+					compensatory_leave_request
+				),
+				message=frappe.get_traceback(),
+			)
 
 	def redeem_compensatory_day_off_hours(self):
 		"""

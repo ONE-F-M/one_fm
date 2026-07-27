@@ -3,10 +3,14 @@
 
 from unittest.mock import patch
 
+import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import getdate
 
-from one_fm.overrides.compensatory_leave_request import get_next_working_day
+from one_fm.overrides.compensatory_leave_request import (
+	CompensatoryLeaveRequestOverride,
+	get_next_working_day,
+)
 
 IS_HOLIDAY = "one_fm.overrides.compensatory_leave_request.is_holiday"
 
@@ -52,3 +56,34 @@ class TestCompensatoryLeaveRequestResumptionDate(FrappeTestCase):
 
 		self.assertEqual(stub.call_count, 5)
 		self.assertEqual(result, getdate("2026-07-26"))
+
+
+class TestCompensatoryLeaveRequestOverrideShape(FrappeTestCase):
+	def test_every_method_stays_on_the_class(self):
+		"""
+		Regression guard for a real break: get_next_working_day was inserted at module
+		level *between* two methods, which silently turned everything below it into a
+		nested function instead of a method. The file still compiled, so the only symptom
+		was AttributeError: no attribute 'create_leave_allocation_without_period', raised
+		mid-flow from "Verify Attendance" after the attendance had already been submitted.
+		"""
+		for method in (
+			"on_submit",
+			"create_draft_leave_application",
+			"create_leave_allocation_without_period",
+			"get_existing_allocation",  # inherited from HRMS
+		):
+			self.assertTrue(
+				callable(getattr(CompensatoryLeaveRequestOverride, method, None)),
+				msg=f"{method} is not a method on the override class",
+			)
+
+	def test_helper_stays_at_module_level(self):
+		# The counterpart: it must not drift back inside the class.
+		self.assertFalse(hasattr(CompensatoryLeaveRequestOverride, "get_next_working_day"))
+		self.assertTrue(callable(get_next_working_day))
+
+	def test_override_is_the_class_frappe_resolves(self):
+		# If the doctype ever went custom, the override would stop loading entirely.
+		doc = frappe.get_doc({"doctype": "Compensatory Leave Request"})
+		self.assertEqual(doc.__class__.__name__, "CompensatoryLeaveRequestOverride")

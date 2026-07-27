@@ -143,23 +143,6 @@ class CompensatoryLeaveRequestOverride(CompensatoryLeaveRequest):
 			alert=True,
 		)
 
-
-def get_next_working_day(employee, from_date, max_lookahead_days=30):
-	"""
-	First working day strictly after from_date, skipping the employee's holidays.
-
-	Same holiday-list walk as one_fm.overrides.attendance_request, bounded so a holiday
-	list that marks every day cannot spin forever.
-	"""
-	next_date = add_days(getdate(from_date), 1)
-
-	for _attempt in range(max_lookahead_days):
-		if not is_holiday(employee, next_date):
-			return next_date
-		next_date = add_days(next_date, 1)
-
-	return next_date
-
 	def create_leave_allocation_without_period(self, comp_leave_valid_from, date_difference):
 		"""Create a Leave Allocation for the comp leave, scoped to the fiscal year.
 
@@ -199,3 +182,20 @@ def get_next_working_day(employee, from_date, max_lookahead_days=30):
 		allocation.insert(ignore_permissions=True)
 		allocation.submit()
 		return allocation
+
+
+def get_next_working_day(employee, from_date, max_lookahead_days=30):
+	"""
+	First working day strictly after from_date, skipping the employee's holidays.
+
+	Same holiday-list walk as one_fm.overrides.attendance_request, bounded so a holiday
+	list that marks every day cannot spin forever.
+	"""
+	next_date = add_days(getdate(from_date), 1)
+
+	for _attempt in range(max_lookahead_days):
+		if not is_holiday(employee, next_date):
+			return next_date
+		next_date = add_days(next_date, 1)
+
+	return next_date
