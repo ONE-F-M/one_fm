@@ -1,6 +1,8 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
 
+from datetime import timedelta
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
@@ -50,39 +52,6 @@ def validate_odometer_readings(odometer_start_km, odometer_end_km, session_close
 			),
 			title=_("Invalid Odometer Reading"),
 		)
-
-
-def get_operational_driver(vehicle, at_datetime):
-	"""
-	Who is driving `vehicle` at `at_datetime`.
-
-	A submitted Vehicle Handover Log covering that moment names the Operational Driver;
-	outside every handover window the vehicle falls back to its permanent custodian
-	(Vehicle.employee).
-
-	This is what makes the "keep the bus completely free" AC hold: availability is derived
-	from a handover's own window only, so a log saved for next week says nothing about the
-	vehicle between now and then - the days in between still resolve to the permanent
-	driver and stay open for other runs.
-
-	WI-001577 consumes this for the Transportation Schedule lanes and the manifest header.
-	"""
-	if not (vehicle and at_datetime):
-		return None
-
-	operational_driver = frappe.db.get_value(
-		"Vehicle Handover Log",
-		{
-			"vehicle": vehicle,
-			"docstatus": 1,
-			"handover_start_time": ["<=", at_datetime],
-			"handover_end_time": [">=", at_datetime],
-		},
-		"operational_driver",
-		order_by="handover_start_time desc",
-	)
-
-	return operational_driver or frappe.db.get_value("Vehicle", vehicle, "employee")
 
 
 class VehicleHandoverLog(Document):
@@ -172,23 +141,86 @@ def get_handover_windows(vehicles, from_datetime, to_datetime):
 	return windows
 
 
-def get_manifest_departure_datetime(manifest):
+def as_time_string(value):
+	"""Normalise a Time field (which reads back as a timedelta) to HH:MM:SS."""
+	if isinstance(value, timedelta):
+		seconds = int(value.total_seconds())
+		return f"{seconds // 3600 % 24:02d}:{seconds % 3600 // 60:02d}:{seconds % 60:02d}"
+
+	return str(value)
+
+
+def get_manifest_shift_windows(manifest):
 	"""
-	When the driver takes the vehicle for a manifest: its earliest scheduled stop time on
-	the schedule date. Returns None when the manifest has no timed stops to match against.
+	The shift windows a manifest's stops cover, earliest first.
+
+	Each stop carries its shift's start_time and end_time. A night shift whose end is at
+	or before its start runs into the following day, so it is extended by a day rather
+	than collapsing to an empty window. Windows are de-duplicated because several stops
+	normally belong to the same shift.
+
+	Matching on the shift window rather than the pickup instant is what AC5 means by "the
+	shift hours": a driver holds the vehicle for the whole shift, and a handover raised
+	against an evening shift would never line up with a morning pickup time.
 	"""
-	if not manifest.get("schedule_date"):
+	schedule_date = manifest.get("schedule_date")
+	if not schedule_date:
+		return []
+
+	windows = set()
+	for row in manifest.get("transportation_manifest_details") or []:
+		start, end = row.get("start_time"), row.get("end_time")
+		if not (start and end):
+			continue
+
+		start_datetime = get_datetime(f"{schedule_date} {as_time_string(start)}")
+		end_datetime = get_datetime(f"{schedule_date} {as_time_string(end)}")
+		if end_datetime <= start_datetime:
+			end_datetime = add_days(end_datetime, 1)
+
+		windows.add((start_datetime, end_datetime))
+
+	return sorted(windows)
+
+
+def get_operational_driver_in_window(vehicle, from_datetime, to_datetime):
+	"""
+	Operational Driver from a submitted handover overlapping [from_datetime, to_datetime].
+
+	None when no handover covers any part of the window - the caller then falls back to
+	the vehicle's permanent custodian.
+	"""
+	if not (vehicle and from_datetime and to_datetime):
 		return None
 
-	stop_times = [
-		row.get("scheduled_time") or row.get("start_time")
-		for row in manifest.get("transportation_manifest_details") or []
-	]
-	stop_times = [time for time in stop_times if time]
-	if not stop_times:
-		return None
+	return frappe.db.get_value(
+		"Vehicle Handover Log",
+		{
+			"vehicle": vehicle,
+			"docstatus": 1,
+			"handover_start_time": ["<", to_datetime],
+			"handover_end_time": [">", from_datetime],
+		},
+		"operational_driver",
+		order_by="handover_start_time asc",
+	)
 
-	return get_datetime(f"{manifest['schedule_date']} {min(stop_times)}")
+
+def get_manifest_operational_driver(manifest, vehicle):
+	"""
+	Who drives this manifest: the Operational Driver of the earliest shift a submitted
+	handover covers, else the vehicle's permanent custodian.
+
+	A manifest can span more than one shift while its header holds a single driver, so the
+	earliest matching shift wins. Recording the remaining shifts' drivers is left to a
+	later story.
+	"""
+	for from_datetime, to_datetime in get_manifest_shift_windows(manifest):
+		driver = get_operational_driver_in_window(vehicle, from_datetime, to_datetime)
+		if driver:
+			return driver
+
+	return frappe.db.get_value("Vehicle", vehicle, "employee") if vehicle else None
 
 
 def set_manifest_drivers_for_tomorrow():
@@ -196,8 +228,8 @@ def set_manifest_drivers_for_tomorrow():
 	Stamp tomorrow's Transportation Manifest headers with the driver who will actually be
 	behind the wheel (WI-001577).
 
-	A submitted Vehicle Handover Log covering the manifest's departure names the
-	Operational Driver; with no log for those hours the vehicle's permanent custodian
+	A submitted Vehicle Handover Log overlapping one of the manifest's shift windows names
+	the Operational Driver; with no log for those hours the vehicle's permanent custodian
 	stands. Runs at 12:10am for the following day's manifests.
 	"""
 	try:
@@ -211,11 +243,8 @@ def set_manifest_drivers_for_tomorrow():
 
 		for manifest in manifests:
 			doc = frappe.get_doc("Transportation Manifest", manifest.name)
-			departure = get_manifest_departure_datetime(doc.as_dict())
-			if not departure:
-				continue
 
-			driver = get_operational_driver(doc.vehicle_no, departure)
+			driver = get_manifest_operational_driver(doc.as_dict(), doc.vehicle_no)
 			if driver and driver != doc.driver_name:
 				doc.db_set("driver_name", driver)
 
