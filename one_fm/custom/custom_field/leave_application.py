@@ -118,6 +118,16 @@ def get_leave_application_custom_fields():
                 "is_system_generated": 1
             },
             {
+                "fieldname": "custom_compensatory_leave_request",
+                "fieldtype": "Link",
+                "insert_after": "resumption_date",
+                "label": "Compensatory Leave Request",
+                "options": "Compensatory Leave Request",
+                "description": "Set when this Leave Application is auto-generated from a Compensatory Leave Request raised by the Overtime Request workflow.",
+                "read_only": 1,
+                "no_copy": 1
+            },
+            {
                 "fieldname": "source",
                 "fieldtype": "Data",
                 "insert_after": "custom_is_paid",
