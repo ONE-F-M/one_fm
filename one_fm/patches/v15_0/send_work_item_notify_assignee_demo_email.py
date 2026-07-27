@@ -19,14 +19,13 @@ def execute():
 	original precedent this follows.
 
 	Deliberately does not raise — a transient email/SMTP failure must
-	never block or fail a production migration. Check the "amp_verification"
-	logger (or the returned Email Queue row) for the actual outcome instead.
+	never block or fail a production migration. Check the Email Queue
+	for the actual outcome instead.
 	"""
 	try:
 		from one_fm.api.amp_verification import send_amp_verification_email
 
-		result = send_amp_verification_email()
-		frappe.logger("amp_verification").info(f"Patch send result: {result}")
+		send_amp_verification_email()
 	except Exception:
 		frappe.log_error(
 			title="Work Item notify-assignee demo email failed",

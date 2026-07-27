@@ -168,7 +168,4 @@ def send_amp_verification_email(
 		"amp_html_length": len(stored_amp_html) if stored_amp_html else 0,
 	}
 
-	frappe.logger("amp_verification").info(
-		f"AMP verification email {sender} -> {recipients}: {result}"
-	)
 	return result
