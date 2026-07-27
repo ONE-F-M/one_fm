@@ -153,32 +153,37 @@
  ],
  "links": [
   {
-   "group": "Medical",
+   "group": "Visa & Medical",
+   "link_doctype": "Visa Request",
+   "link_fieldname": "candidate_country_process"
+  },
+  {
+   "group": "Visa & Medical",
    "link_doctype": "Overseas Medical Appointment WAFID",
    "link_fieldname": "candidate_country_process"
   },
   {
-   "group": "Medical",
+   "group": "Remedical & Clearance",
    "link_doctype": "Overseas Remedical",
    "link_fieldname": "candidate_country_process"
   },
   {
-   "group": "Clearance",
+   "group": "Remedical & Clearance",
    "link_doctype": "PCC Clearance",
    "link_fieldname": "candidate_country_process"
   },
   {
-   "group": "Clearance",
+   "group": "Stamping & Deployment",
    "link_doctype": "Visa Stamping",
    "link_fieldname": "candidate_country_process"
   },
   {
-   "group": "Deployment",
+   "group": "Stamping & Deployment",
    "link_doctype": "Arrival and Deployment",
    "link_fieldname": "candidate_country_process"
   }
  ],
- "modified": "2026-04-15 13:26:49.188583",
+ "modified": "2026-07-21 01:00:00.000000",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Candidate Country Process",
@@ -261,7 +266,8 @@
    "read": 1,
    "report": 1,
    "role": "Interviewer",
-   "share": 1
+   "share": 1,
+   "write": 1
   },
   {
    "email": 1,
@@ -269,6 +275,46 @@
    "read": 1,
    "report": 1,
    "role": "Agency"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Onboarding Officer",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Senior Recruiter",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Transportation Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Government Relations Operator",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Manager",
+   "share": 1,
+   "write": 1
   }
  ],
  "row_format": "Dynamic",
