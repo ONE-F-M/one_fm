@@ -23,6 +23,7 @@
   "workflow_state",
   "extended_relieving_date",
   "supervisor",
+  "is_corporate",
   "operations_manager",
   "offboarding_officer"
  ],
@@ -121,9 +122,16 @@
   {
    "fieldname": "supervisor",
    "fieldtype": "Link",
-   "hidden": 1,
    "label": "Supervisor",
    "options": "User"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_corporate",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Is Corporate",
+   "read_only": 1
   },
   {
    "fieldname": "operations_manager",
