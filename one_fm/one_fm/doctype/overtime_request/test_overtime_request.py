@@ -81,12 +81,33 @@ class TestOvertimeRequest(FrappeTestCase):
 		self.assertEqual(doc.cumulative_unredemmed_balance, 1)
 		self.assertEqual(doc.eligible_for_compensatory_day_off, 1)
 
-	def test_draft_does_not_accrue(self):
-		# Only requests the employee has actually submitted count, so an abandoned
-		# draft cannot inflate the balance or raise a false prompt.
+	def test_draft_counts_its_own_hours(self):
+		"""
+		A Draft must evaluate its own hours, or the Compensatory Day Off field is hidden
+		while the employee is filling the request in and any date they pick is wiped on
+		save - the client counts them, so the server has to as well.
+		"""
 		doc = self._balance_for(10, prior_balance=0, workflow_state="Draft")
-		self.assertEqual(doc.cumulative_unredemmed_balance, 0)
-		self.assertEqual(doc.eligible_for_compensatory_day_off, 0)
+		self.assertEqual(doc.cumulative_unredemmed_balance, 10)
+		self.assertEqual(doc.eligible_for_compensatory_day_off, 1)
+
+	def test_draft_never_accrues_into_another_request(self):
+		# The anti-inflation rule lives in the query behind get_unredeemed_balance: an
+		# abandoned draft must not raise a false prompt on the employee's next request.
+		from one_fm.one_fm.doctype.overtime_request.overtime_request import (
+			ACCRUING_WORKFLOW_STATES,
+		)
+
+		self.assertNotIn("Draft", ACCRUING_WORKFLOW_STATES)
+		self.assertNotIn("Rejected", ACCRUING_WORKFLOW_STATES)
+		self.assertNotIn("Cancelled", ACCRUING_WORKFLOW_STATES)
+
+	def test_remainder_carries_into_the_next_request(self):
+		# The reported case: a 9.75-hour holiday already redeemed leaves 0.75, and a new
+		# 12-hour holiday must be eligible on 12.75 - not hidden because it is a Draft.
+		doc = self._balance_for(12, prior_balance=0.75, workflow_state="Draft")
+		self.assertEqual(doc.cumulative_unredemmed_balance, 12.75)
+		self.assertEqual(doc.eligible_for_compensatory_day_off, 1)
 
 	def test_non_public_holiday_overtime_carries_no_balance(self):
 		# Only public holiday overtime accrues; other types store 0 and never prompt.

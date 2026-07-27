@@ -14,9 +14,11 @@ from one_fm.api.notification import create_notification_log, get_employee_user_i
 # Hours of unredeemed public holiday overtime that earn one compensatory day off.
 COMPENSATORY_DAY_OFF_THRESHOLD_HOURS = 9
 
-# Workflow states whose overtime hours count towards the cumulative unredeemed balance:
+# Workflow states in which one request's hours count towards ANOTHER request's balance:
 # everything the employee has actually submitted. "Draft" is excluded so an abandoned
-# draft cannot inflate the balance, and Rejected/Cancelled never count.
+# draft cannot inflate a colleague request's balance, and Rejected/Cancelled never count.
+# A request always counts its own hours towards its own eligibility - see
+# set_cumulative_unredeemed_balance.
 ACCRUING_WORKFLOW_STATES = (
 	"Pending Acceptance by Employee",
 	"Pending Line Manager",
@@ -192,9 +194,16 @@ class OvertimeRequest(Document):
 
 		balance = get_unredeemed_balance(self.employee, exclude=self.name)
 
-		# This request contributes its own hours once the employee has submitted it.
-		if self.workflow_state in ACCRUING_WORKFLOW_STATES:
-			balance += flt(self.overtime_hours)
+		# This request always contributes its own hours, including while it is still a
+		# Draft. The employee - or the Line Manager routing it - has to be able to see and
+		# fill the Compensatory Day Off before submitting, and the client evaluates
+		# eligibility the same way. Gating this on the workflow state made the server
+		# disagree with the form: the section appeared while editing and the selected date
+		# was wiped on save.
+		#
+		# Abandoned drafts still cannot inflate anyone's balance: get_unredeemed_balance
+		# counts only OTHER requests in ACCRUING_WORKFLOW_STATES, which excludes Draft.
+		balance += flt(self.overtime_hours)
 
 		# ...and gives 9 of them back if it has already been redeemed.
 		if self.compensatory_leave_request:
