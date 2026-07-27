@@ -3,7 +3,7 @@
  "allow_rename": 1,
  "autoname": "naming_series:",
  "creation": "2026-07-12 08:56:18.113531",
- "custom": 1,
+ "custom": 0,
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
