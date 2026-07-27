@@ -1,6 +1,7 @@
 import frappe
 from frappe import _
 from frappe.utils import getdate, nowdate
+from one_fm.templates.pages.applicant_docs import send_applicant_doc_magic_link
 
 ALLOWED_ROLES = {"System Manager", "HR Manager", "Interviewer", "HR User", "Recruiter", "Senior Recruiter"}
 
@@ -210,6 +211,9 @@ def _update_applicant_status(applicant: str, status: str, height: str | None):
     if height:
         doc.one_fm_height = float(height)
     doc.save(ignore_permissions=True)
+
+    if status == "Accepted":
+        send_applicant_doc_magic_link(doc.name, doc.applicant_name, doc.one_fm_designation)
 
 def _parse_scores_detail(scores_detail: str | None) -> list:
     import json

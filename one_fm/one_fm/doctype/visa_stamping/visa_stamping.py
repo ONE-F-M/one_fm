@@ -8,20 +8,7 @@ from frappe.model.document import Document
 
 class VisaStamping(Document):
     def validate(self):
-        self.auto_link_pam_visa()
         self.update_tracker_status()
-
-    def auto_link_pam_visa(self):
-        """Auto-link PAM Visa from the same Candidate Country Process if not set."""
-        if self.pam_visa or not self.candidate_country_process:
-            return
-        pam_visa = frappe.db.get_value(
-            "PAM Visa",
-            {"candidate_country_process": self.candidate_country_process},
-            "name",
-        )
-        if pam_visa:
-            self.pam_visa = pam_visa
 
     def update_tracker_status(self):
         """Sync status back to the Candidate Country Process tracker row."""

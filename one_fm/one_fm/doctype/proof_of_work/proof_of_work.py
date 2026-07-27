@@ -1,7 +1,9 @@
 # Copyright (c) 2026, ONEFM and contributors
 # For license information, please see license.txt
 
+import io
 import re
+import zipfile
 
 import frappe
 from frappe import _
@@ -10,6 +12,17 @@ from frappe.utils import cint, cstr, date_diff, flt, get_first_day, get_last_day
 
 # Canonical values stored in the "Generation Basis" Select field.
 GENERATION_BASIS_OPTIONS = ("Shift Hours", "Attendance Day", "Both")
+
+# Attendance status -> single-letter cell in the monthly grid (used by the
+# reusable get_pow_attendance_report data layer).
+ATTENDANCE_ABBR = {
+	"Present": "P",
+	"Working": "P",
+	"Work From Home": "P",
+	"Absent": "A",
+	"Half Day": "H",
+	"On Leave": "L",
+}
 
 # Attendance Amendment workflow state that marks it as "approved". The workflow
 # keeps docstatus at 0 even for this state, so approval is a workflow_state check.
@@ -538,3 +551,246 @@ def generate_proof_of_work(month: int, year: int, generation_basis: str, contrac
 		created.append(doc.name)
 
 	return {"created": created, "skipped": skipped}
+
+
+# ---------------------------------------------------------------------------
+# Attendance Report data (WI-001703): a monthly attendance grid grouped by
+# Sale Item, from the resolved source. Consumed by the "Proof of Work
+# Attendance Report" print format.
+# ---------------------------------------------------------------------------
+
+
+def _grid_from_amendment(amendment_name: str, total_days: int) -> dict:
+	"""Per-employee day grid grouped by Sale Item, from an Attendance Amendment.
+
+	Returns ``{sale_item: {emp_key: {employee_id, employee_name, days{}, total_present}}}``.
+	"""
+	doc = frappe.get_doc("Attendance Amendment", amendment_name)
+	groups = {}
+	for row in doc.get("attendance_details"):
+		if not row.sale_item:
+			continue
+		emp_key = row.employee or row.employee_id or row.employee_name
+		emp = groups.setdefault(row.sale_item, {}).setdefault(
+			emp_key,
+			{
+				"employee_id": row.employee_id or row.employee or "",
+				"employee_name": row.employee_name or "",
+				"days": {},
+				"total_present": 0.0,
+			},
+		)
+		for i in range(1, total_days + 1):
+			status = row.get(f"day_{i}")
+			hour_val = row.get(f"day_{i}_hour")
+			if hour_val not in (None, "", "N/A") and flt(hour_val) > 0:
+				emp["days"][i] = "P"
+				emp["total_present"] += 1.0
+			elif status in PRESENT_STATUSES:
+				emp["days"][i] = "P"
+				emp["total_present"] += 1.0
+			elif status == "Half Day":
+				emp["days"][i] = "H"
+				emp["total_present"] += 0.5
+			elif status:
+				emp["days"][i] = ATTENDANCE_ABBR.get(status, status[:1].upper())
+	return groups
+
+
+def _grid_from_attendance(project: str, first_day, last_day) -> dict:
+	"""Per-employee day grid grouped by Sale Item, from standard Attendance.
+
+	Sale Item is resolved via the attendance's Operations Role.
+	"""
+	groups = {}
+	if not project:
+		return groups
+
+	Attendance = frappe.qb.DocType("Attendance")
+	OperationsRole = frappe.qb.DocType("Operations Role")
+	records = (
+		frappe.qb.from_(Attendance)
+		.left_join(OperationsRole)
+		.on(Attendance.operations_role == OperationsRole.name)
+		.select(
+			Attendance.employee,
+			Attendance.employee_name,
+			Attendance.status,
+			Attendance.attendance_date,
+			OperationsRole.sale_item.as_("sale_item"),
+		)
+		.where(
+			(Attendance.docstatus == 1)
+			& (Attendance.project == project)
+			& (Attendance.attendance_date >= first_day)
+			& (Attendance.attendance_date <= last_day)
+		)
+	).run(as_dict=True)
+
+	for r in records:
+		if not r.sale_item:
+			continue
+		emp = groups.setdefault(r.sale_item, {}).setdefault(
+			r.employee,
+			{
+				"employee_id": r.employee or "",
+				"employee_name": r.employee_name or "",
+				"days": {},
+				"total_present": 0.0,
+			},
+		)
+		day = getdate(r.attendance_date).day
+		if r.status in PRESENT_STATUSES:
+			emp["days"][day] = "P"
+			emp["total_present"] += 1.0
+		elif r.status == "Half Day":
+			emp["days"][day] = "H"
+			emp["total_present"] += 0.5
+		elif r.status:
+			emp["days"][day] = ATTENDANCE_ABBR.get(r.status, r.status[:1].upper())
+	return groups
+
+
+@frappe.whitelist()
+def get_pow_attendance_report(pow_name: str) -> dict:
+	"""Structured monthly attendance grid for a POW, grouped by Sale Item.
+
+	Drives the "Proof of Work Attendance Report" print format. Source is the
+	approved Attendance Amendment when present, else standard Attendance.
+	"""
+	doc = frappe.get_doc("Proof of Work", pow_name)
+	doc.check_permission("read")
+
+	first_day = getdate(doc.start_date)
+	last_day = getdate(doc.end_date)
+	total_days = date_diff(last_day, first_day) + 1
+
+	source_type, reference = resolve_attendance_source(
+		doc.contract, doc.project, first_day.month, first_day.year
+	)
+	if source_type == "amendment":
+		groups = _grid_from_amendment(reference, total_days)
+	else:
+		groups = _grid_from_attendance(doc.project, first_day, last_day)
+
+	item_types = {}
+	if groups:
+		for row in frappe.get_all(
+			"Item", filters={"name": ["in", list(groups)]}, fields=["name", "item_type"]
+		):
+			item_types[row.name] = row.item_type or ""
+
+	group_list = []
+	for sale_item in sorted(groups):
+		rows = []
+		staff = sorted(groups[sale_item].values(), key=lambda e: e["employee_name"] or "")
+		for sn, emp in enumerate(staff, start=1):
+			rows.append(
+				{
+					"sn": sn,
+					"employee_id": emp["employee_id"],
+					"employee_name": emp["employee_name"],
+					"days": [emp["days"].get(i, "") for i in range(1, total_days + 1)],
+					"total_present": _num(emp["total_present"]),
+				}
+			)
+		group_list.append(
+			{"sale_item": sale_item, "item_type": item_types.get(sale_item, ""), "employees": rows}
+		)
+
+	return {
+		"meta": {
+			"contract": doc.contract,
+			"project": doc.project,
+			"customer": doc.customer,
+			"month_name": MONTH_NAMES[first_day.month],
+			"year": first_day.year,
+			"total_days": total_days,
+			"day_numbers": list(range(1, total_days + 1)),
+			"source_type": source_type,
+		},
+		"groups": group_list,
+	}
+
+
+# ---------------------------------------------------------------------------
+# ZIP export (WI-001703): the POW Letter PDF + the Attendance Report PDF,
+# bundled into one client-ready download.
+# ---------------------------------------------------------------------------
+
+
+def _build_zip(entries) -> bytes:
+	"""Bundle ``[(filename, content_bytes), ...]`` into an in-memory ZIP.
+
+	Pure/stdlib so it is testable without a Frappe context (see __main__).
+	"""
+	buf = io.BytesIO()
+	with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+		for filename, content in entries:
+			zf.writestr(filename, content)
+	return buf.getvalue()
+
+
+def _attendance_pdf(doc) -> dict:
+	"""Render the Attendance Report PDF via the dedicated, self-contained
+	"Proof of Work Attendance Report" format (header rendered once, spaced
+	breakdown lines, wider breakdown column). Falls back to the default print
+	if the format is ever missing/disabled. Returns ``{"fname":..., "fcontent":...}``.
+	"""
+	fmt = (
+		"Proof of Work Attendance Report"
+		if frappe.db.exists(
+			"Print Format", {"name": "Proof of Work Attendance Report", "disabled": 0}
+		)
+		else None
+	)
+	# The format embeds the logo/heading itself, so disable Frappe's auto letter
+	# head to avoid a duplicate logo.
+	return frappe.attach_print(
+		"Proof of Work", doc.name, file_name=f"Attendance-{doc.name}",
+		print_format=fmt, print_letterhead=False,
+	)
+
+
+@frappe.whitelist()
+def export_zip(name: str):
+	"""Stream a ZIP of the POW Letter PDF + Attendance Report PDF for a POW.
+
+	Read-only (renders PDFs, no mutation), so served over GET for a direct
+	browser download.
+	"""
+	doc = frappe.get_doc("Proof of Work", name)
+	doc.check_permission("read")
+
+	# Use the dedicated POW Letter format (WI-001702); fall back to the default
+	# print if it is ever missing/disabled so the export never hard-fails. Both
+	# formats embed the ONEFM logo themselves, so Frappe's auto letter head is
+	# turned off to avoid a duplicate logo.
+	letter_format = (
+		"Proof of Work Letter"
+		if frappe.db.exists("Print Format", {"name": "Proof of Work Letter", "disabled": 0})
+		else None
+	)
+	letter = frappe.attach_print(
+		"Proof of Work", name, file_name=f"POW-Letter-{name}",
+		print_format=letter_format, print_letterhead=False,
+	)
+	attendance = _attendance_pdf(doc)
+
+	frappe.local.response.filename = f"{name}.zip"
+	frappe.local.response.filecontent = _build_zip(
+		[
+			(letter["fname"], letter["fcontent"]),
+			(attendance["fname"], attendance["fcontent"]),
+		]
+	)
+	frappe.local.response.type = "download"
+
+
+if __name__ == "__main__":
+	# Self-check for the pure zip helper (no Frappe context needed).
+	blob = _build_zip([("a.pdf", b"AAA"), ("b.pdf", b"BBB")])
+	with zipfile.ZipFile(io.BytesIO(blob)) as _zf:
+		assert _zf.namelist() == ["a.pdf", "b.pdf"], _zf.namelist()
+		assert _zf.read("b.pdf") == b"BBB"
+	print("ok: _build_zip produced a valid 2-entry zip")
