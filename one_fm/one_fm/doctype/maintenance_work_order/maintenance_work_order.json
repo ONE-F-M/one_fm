@@ -2,7 +2,7 @@
  "actions": [],
  "allow_rename": 1,
  "autoname": "naming_series:",
- "creation": "2026-05-22 12:00:00",
+ "creation": "2026-05-22 12:00:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -98,7 +98,8 @@
    "fieldname": "priority",
    "fieldtype": "Link",
    "label": "Priority",
-   "options": "Issue Priority"
+   "options": "Issue Priority",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_woru",
@@ -216,7 +217,8 @@
    "fieldname": "assigned_maintenance_team",
    "fieldtype": "Link",
    "label": "Assigned Maintenance Team",
-   "options": "Asset Maintenance Team"
+   "options": "Asset Maintenance Team",
+   "reqd": 1
   },
   {
    "fetch_from": "assigned_maintenance_team.maintenance_manager",
@@ -371,7 +373,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-05 17:01:27.240098",
+ "modified": "2026-05-22 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Maintenance Work Order",
@@ -395,6 +397,7 @@
   {
    "cancel": 1,
    "create": 1,
+   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,

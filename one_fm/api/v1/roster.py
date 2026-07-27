@@ -270,6 +270,13 @@ def create_day_off(employee, date):
         roster.post_abbrv = None
         roster.site = None
         roster.project = None
+        # Clear any stale Client Event linkage so the Day Off row is not treated as an event.
+        roster.client_event = None
+        roster.reference_doctype = None
+        roster.reference_docname = None
+        roster.event_staff = None
+        roster.event_location = None
+        roster.is_event_schedule = 0
     else:
         roster = frappe.new_doc("Employee Schedule")
         roster.employee = employee

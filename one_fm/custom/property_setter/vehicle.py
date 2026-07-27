@@ -18,25 +18,8 @@ def get_vehicle_properties():
             "doc_type": "Vehicle",
             "doctype_or_field": "DocField",
             "field_name": "employee",
-            "property": "reqd",
-            "value": "1",
-            "property_type": "Check",
-        },
-        {
-            "doc_type": "Vehicle",
-            "doctype_or_field": "DocField",
-            "field_name": "employee",
-            "property": "fieldtype",
-            "value": "Link",
-            "property_type": "Select",
-        },
-        {
-            "doc_type": "Vehicle",
-            "doctype_or_field": "DocField",
-            "field_name": "employee",
-            "property": "options",
-            "value": "Employee",
-            "property_type": "Small Text",
+            "property": "mandatory_depends_on",
+            "value": "eval:doc.one_fm_vehicle_category != 'Subcontractor'"
         },
         {
             "doc_type": "Vehicle",

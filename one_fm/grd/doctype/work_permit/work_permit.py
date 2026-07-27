@@ -62,7 +62,13 @@ class WorkPermit(Document):
                 frappe.throw(_("{0}'s Relieving Date has been set to {1}. Work Permit processing is not allowed.").format(employee_details.employee_name, employee_details.relieving_date))
 
     def validate_workflow_state_fields(self):
-        states = ['Pending By Supervisor', 'Pending By PAM']
+        # NOTE: 'Pending By Supervisor' is intentionally excluded. At that stage the
+        # GRD Supervisor only attaches the work permit and hands the document over to
+        # the operator; the invoice and updated expiry date do not exist yet (they are
+        # produced later, after PAM payment/completion). Requiring them here blocked the
+        # supervisor from saving. These fields are enforced at the operator/completion
+        # stage below and in on_submit().
+        states = ['Pending By PAM']
         db_state = frappe.db.get_value("Work Permit", self.name, 'workflow_state')
         # check for required fields based on workflow
         if db_state in states:

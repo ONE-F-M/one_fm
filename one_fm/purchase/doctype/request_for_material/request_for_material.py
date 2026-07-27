@@ -16,7 +16,7 @@ from frappe.utils.user import get_users_with_role
 from frappe.permissions import has_permission
 from erpnext.controllers.buying_controller import BuyingController
 from one_fm.purchase.doctype.item_reservation.item_reservation import get_item_balance
-from one_fm.utils import get_approver_user, get_employee_site_supervisor
+from one_fm.utils import get_approver_user
 from one_fm.processor import sendemail
 from one_fm.api.doc_events import get_employee_user_id
 from one_fm.utils import get_users_with_role_permitted_to_doctype
@@ -181,7 +181,7 @@ class RequestforMaterial(BuyingController):
                     item.requested_description = item.description
 
     def set_request_for_material_accepter_and_approver(self):
-       # The approver may only be auto-set/re-set for a newly created document
+        # The approver may only be auto-set/re-set for a newly created document
         # or one still in the Draft workflow state.
         can_reset = self.is_new() or self.workflow_state == "Draft"
 
@@ -220,6 +220,7 @@ class RequestforMaterial(BuyingController):
         if approver:
             return get_employee_user_id(approver)
         return frappe.db.get_value('Purchase Settings', None, 'request_for_material_approver')
+
     def validate_details_against_type(self):
         if self.type:
             if self.type == 'Individual':

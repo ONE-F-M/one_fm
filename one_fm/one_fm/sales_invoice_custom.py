@@ -628,7 +628,7 @@ def add_contracts_item_details_post_wise(sales_invoice, contract_item, today, st
                 and t.project = %(project)s and t.billable = 1
 	 		    and t.sales_invoice is null and t.operations_role = %(operations_role)s
                 and t.from_time >= %(from_time)s and t.to_time < %(to_time)s
-                and t.Activity_type in (select post_name from `tabPost Type` where sale_item
+                and t.Activity_type in (select post_name from `tabOperations Role` where sale_item
                 = %(item_code)s ) order by t.from_time asc
         """, values=filters, as_dict=1)[0]
         if timesheet.billing_amount != None and timesheet.count > 0:
@@ -731,7 +731,7 @@ def get_workdays_and_amount(project, item_code, from_time, to_time, site=None, p
         'post': post
     }
     conditions = "project = %(project)s and from_time >= %(from_time)s and to_time < %(to_time)s and " \
-        "activity_type in (select post_name from `tabPost Type` where sale_item = %(item_code)s)"
+        "activity_type in (select post_name from `tabOperations Role` where sale_item = %(item_code)s)"
     if site!=None:
         conditions += " and site = %(site)s"
     if post !=None:
@@ -761,7 +761,7 @@ def get_timesheet_for_day(project, item_code, date):
             WHERE parenttype = 'Timesheet' and docstatus=1
                 and project = %s and billable = 1
 	 		    and sales_invoice is null and convert(from_time,date) = %s
-                and activity_type in (select post_name from `tabPost Type` where sale_item
+                and activity_type in (select post_name from `tabOperations Role` where sale_item
                 = %s ) order by from_time asc
             """, (project, date, item_code), as_dict=1)[0]
 
@@ -865,7 +865,7 @@ def get_projectwise_timesheet_data(project, item_code, start_date = None, end_da
                 and t.docstatus=1 and t.project = %(project)s
                 and t.is_billable = 1 and t.sales_invoice is null and t.from_time >= %(start_date)s
                 and t.to_time < %(end_date)s
-                and t.Activity_type in (select post_name from `tabPost Type` where sale_item
+                and t.Activity_type in (select post_name from `tabOperations Role` where sale_item
                 = %(item_code)s )
                 and (select gender from `tabOperations Post` where name = t.operations_role) = %(gender)s
                 order by t.from_time asc
@@ -881,7 +881,7 @@ def get_sitewise_timesheet_data(project, item_code=None, start_date = None, end_
     filters = {'project': project, 'item_code': item_code, 'from_time': start_date, 'to_time': end_date }
     conditions = "project = %(project)s and from_time >= %(from_time)s and to_time < %(to_time)s"
     if item_code != None:
-        conditions += " and activity_type in (select post_name from `tabPost Type` where sale_item = %(item_code)s)" \
+        conditions += " and activity_type in (select post_name from `tabOperations Role` where sale_item = %(item_code)s)" \
             " order by site,from_time asc"
     else:
         conditions += " order by site,activity_type asc"
@@ -958,7 +958,7 @@ def add_contracts_item_details_for_t4(sales_invoice, contract_item, first_day, l
         actual_service_list = []
         timesheet = frappe.db.sql("""select count(t.operations_role) as count, sum(billing_amount) as billing_amount
 	 		from `tabTimesheet Detail` t where t.parenttype = 'Timesheet' and t.docstatus = 1 and t.project = %s and t.billable = 1
-	 		and t.sales_invoice is null and t.operations_role = %s and t.from_time >= %s and t.to_time <= %s and t.Activity_type in (select post_name from `tabPost Type` where sale_item
+	 		and t.sales_invoice is null and t.operations_role = %s and t.from_time >= %s and t.to_time <= %s and t.Activity_type in (select post_name from `tabOperations Role` where sale_item
               = %s ) order by t.from_time asc""", (sales_invoice.project, post.name, first_day, last_day, contract_item.item_code), as_dict=1)[0]
         if timesheet.billing_amount != None and timesheet.count > 0:
             case = {'item_code': contract_item.item_code, 'days': timesheet.count , 'billing_amount':timesheet.billing_amount}
