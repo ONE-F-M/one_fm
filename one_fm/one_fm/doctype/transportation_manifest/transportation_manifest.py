@@ -6,8 +6,125 @@ from frappe.utils import getdate
 class TransportationManifest(Document):
 	def validate(self):
 		self.populate_shift_details_from_schedule()
+		self.populate_stop_sequence_and_pickup_accommodation()
+		self.enforce_stop_locking()
 		self.validate_attendance_and_qoa()
 		self.validate_relievers()
+
+	def enforce_stop_locking(self):
+		"""Freeze attendance/QOA entries on stops already verified (MA2-11).
+
+		Once the attendance-check workflow has advanced past a stop
+		(``stop_sequence < active_stop_sequence``), that stop is Completed and its
+		verified entries must stay read-only — a supervisor moving to the next camp
+		must not be able to alter data already checked at an earlier gate.
+
+		Only kicks in once checks have started (active >= 1), so the daily compiler
+		and dispatchers can still populate rows freely before boarding begins. Guards
+		exactly the three fields the sheet edits; new rows (no before-image) are
+		exempt. Set ``frappe.flags.ignore_stop_lock`` to bypass for admin recovery.
+		"""
+		active = int(self.active_stop_sequence or 0)
+		if not active or frappe.flags.get("ignore_stop_lock"):
+			return
+
+		before = self.get_doc_before_save()
+		if not before:
+			return
+
+		previous_rows = {row.name: row for row in before.transportation_manifest_details}
+		locked_fields = ("attendance_status", "qoa_status", "qoa_reason")
+
+		for row in self.transportation_manifest_details:
+			# Only Completed stops are frozen; the Active stop stays editable.
+			if int(row.stop_sequence or 1) >= active:
+				continue
+			old_row = previous_rows.get(row.name)
+			if not old_row:
+				continue
+			for field in locked_fields:
+				if (row.get(field) or None) != (old_row.get(field) or None):
+					frappe.throw(
+						_("Stop {stop} is locked. The verified {field} for row #{idx} cannot be changed.").format(
+							stop=row.stop_sequence,
+							field=field.replace("_", " ").title(),
+							idx=row.idx,
+						)
+					)
+
+	def populate_stop_sequence_and_pickup_accommodation(self):
+		"""Auto-stamp Stop Sequence and Pickup Accommodation on every manifest row.
+
+		The frontend timeline canvas and driver mobile app read these two fields
+		to group, sort and render multi-stop journeys, so dispatchers never enter
+		them by hand.
+
+		Rules:
+		- Pickup Accommodation is read from each row's linked Transportation
+		  Shipment (the camp the shipment originates from).
+		- A row whose shipment is a "Direct" route is always Stop Sequence 1 —
+		  a Direct journey is a single terminal pickup.
+		- Multi-stop rows (OSM/OLM) are numbered per unique Pickup Accommodation,
+		  in the order each accommodation's first row appears in the table
+		  (e.g. all Mahboula rows -> Stop 1, all Mangaf rows -> Stop 2).
+		- Rows with NO linked shipment but a pre-set Pickup Accommodation are
+		  reliever passengers injected by the daily manifest compiler (MA1-14).
+		  Their camp is preserved (not wiped), so a reliever whose camp matches an
+		  existing stop is clustered under that stop's number, and a reliever whose
+		  camp is new gets the next stop number (its row also carries
+		  is_adhoc_stop=1, set by the compiler).
+		"""
+		rows = self.transportation_manifest_details
+		if not rows:
+			return
+
+		# Batch-fetch shipment -> accommodation + routing badge in one query
+		shipment_ids = {
+			row.transportation_shipment
+			for row in rows
+			if row.transportation_shipment
+		}
+		shipment_map = {}
+		if shipment_ids:
+			from frappe.query_builder import DocType
+			TransportationShipment = DocType("Transportation Shipment")
+			shipments = (
+				frappe.qb.from_(TransportationShipment)
+				.select(
+					TransportationShipment.name,
+					TransportationShipment.accommodation,
+					TransportationShipment.routing_type_badge,
+				)
+				.where(TransportationShipment.name.isin(list(shipment_ids)))
+			).run(as_dict=True)
+			shipment_map = {s.name: s for s in shipments}
+
+		# First pass: stamp Pickup Accommodation and record first-appearance order
+		accommodation_sequence = {}  # accommodation -> stop number (1-based)
+		for row in rows:
+			shipment = shipment_map.get(row.transportation_shipment) if row.transportation_shipment else None
+			# Shipment-backed rows derive their camp from the shipment. Rows without a
+			# shipment keep whatever camp was already set — the daily compiler stamps
+			# reliever rows with the reliever's live camp, and that must not be wiped.
+			if shipment:
+				row.pickup_accommodation = shipment.accommodation
+
+			if row.pickup_accommodation and row.pickup_accommodation not in accommodation_sequence:
+				accommodation_sequence[row.pickup_accommodation] = len(accommodation_sequence) + 1
+
+		# Second pass: assign Stop Sequence
+		for row in rows:
+			shipment = shipment_map.get(row.transportation_shipment) if row.transportation_shipment else None
+			is_direct = bool(shipment and shipment.routing_type_badge == "Direct")
+
+			if is_direct:
+				# Direct route -> single terminal pickup, always the first stop
+				row.stop_sequence = 1
+			elif row.pickup_accommodation:
+				row.stop_sequence = accommodation_sequence.get(row.pickup_accommodation, 1)
+			else:
+				# No shipment/accommodation to key on -> default to the first stop
+				row.stop_sequence = 1
 
 	def on_update(self):
 		self.sync_rambo_assignments()

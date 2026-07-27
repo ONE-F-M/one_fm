@@ -301,7 +301,10 @@ doc_events = {
 	"Vehicle": {
 		"autoname": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.vehicle_autoname",
 		"after_insert": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.after_insert_vehicle",
-		"validate": "one_fm.overrides.vehicle.validate_vehicle_branding"
+		"validate": [
+			"one_fm.overrides.vehicle.validate_vehicle_branding",
+			"one_fm.overrides.vehicle.validate_custodian_history"
+		]
 	},
 	"Item Group": {
 		"autoname": "one_fm.utils.item_group_naming_series",
@@ -337,6 +340,7 @@ doc_events = {
 			"one_fm.one_fm.doctype.customer_asset.customer_asset.on_purchase_receipt_submit",
 			"one_fm.overrides.purchase_receipt.update_received_qty",
 			"one_fm.purchase.doctype.request_for_material.request_for_material.update_rfm_status_against_purchase_receipt",
+			"one_fm.purchase.doctype.request_for_material.request_for_material.notify_requester_on_full_receipt",
 			"one_fm.one_fm.doctype.transit_log.transit_log_utils.update_transit_log_from_purchase_receipt"
 		],
 		"on_cancel": [
@@ -543,6 +547,7 @@ override_doctype_class = {
 	"Holiday List": "one_fm.overrides.holiday_list.HolidayListOverride",
 	"Leave Application": "one_fm.overrides.leave_application.LeaveApplicationOverride",
     "Leave Allocation": "one_fm.overrides.leave_allocation.LeaveAllocationOverride",
+    "Compensatory Leave Request": "one_fm.overrides.compensatory_leave_request.CompensatoryLeaveRequestOverride",
 	"Employee": "one_fm.overrides.employee.EmployeeOverride",
 	"Employee Checkin": "one_fm.overrides.employee_checkin.EmployeeCheckinOverride",
 	"Timesheet": "one_fm.overrides.timesheet.TimesheetOveride",
@@ -614,7 +619,10 @@ scheduler_events = {
         'one_fm.operations.doctype.process_task.process_task.create_task_on_monthly_on_day',
         'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_day_process_task',
         'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_last_day_process_task',
-		'one_fm.fleet_management.vehicle_branding_expiry.notify_vehicle_branding_expiry'
+		'one_fm.fleet_management.vehicle_branding_expiry.notify_vehicle_branding_expiry',
+		'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.generate_transportation_shipments',
+		'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.deactivate_expired_shipments',
+		'one_fm.one_fm.doctype.transportation_manifest.manifest_compiler.compile_daily_manifests'
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
