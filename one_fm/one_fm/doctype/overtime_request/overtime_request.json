@@ -27,6 +27,7 @@
   "compensatory_day_off_section",
   "compensatory_day_off",
   "compensatory_leave_request",
+  "cumulative_unredemmed_balance",
   "section_break_dqth",
   "amended_from",
   "naming_series"
@@ -183,6 +184,16 @@
    "no_copy": 1,
    "options": "Compensatory Leave Request",
    "read_only": 1
+  },
+  {
+   "fieldname": "cumulative_unredemmed_balance",
+   "fieldtype": "Float",
+   "label": "Cumulative Unredemmed Balance",
+   "precision": "2",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "Running total of this employee's public holiday overtime hours that have not yet been redeemed as a compensatory day off. Decreases by 9 each time a Compensatory Leave Request is raised."
   },
   {
    "fieldname": "section_break_dqth",
