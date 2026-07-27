@@ -709,6 +709,7 @@ scheduler_events = {
 		],
 		"15 12 * * *": [ #"At 12:15 pm - preponed from 01:30 pm (WI-001704); run after attendance is marked"
 			'one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.generate_checker',
+			'one_fm.operations.doctype.roster_double_shift_ot_checker.roster_double_shift_ot_checker.check_roster_double_shift_ot',
 		],
 		"30 4 * * *": [
 			'one_fm.utils.check_grp_operator_submission_four_half',
