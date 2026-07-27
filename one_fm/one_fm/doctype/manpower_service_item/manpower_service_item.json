@@ -98,10 +98,9 @@
   },
   {
    "fieldname": "nationality",
-   "fieldtype": "Data",
+   "fieldtype": "Select",
    "label": "Nationality",
-   "options": "\nKuwaiti\nNon-Kuwaiti\nNon-State",
-   "read_only": 1
+   "options": "\nKuwaiti\nNon-Kuwaiti\nNon-State"
   },
   {
    "fieldname": "gender",
