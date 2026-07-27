@@ -163,6 +163,26 @@ class CompensatoryLeaveRequestOverride(CompensatoryLeaveRequest):
 			)
 		year_end_date = fiscal_year[2]
 
+		# A later allocation for the same employee and leave type may already own part of
+		# that range - HRMS rejects overlapping allocations, so running to fiscal-year end
+		# unconditionally made back-dated compensatory leave impossible to credit once a
+		# later allocation existed. End the day before the next one starts instead; the
+		# window still covers the compensatory day off, which falls within 7 days of the
+		# worked holiday.
+		next_allocation_start = frappe.db.get_value(
+			"Leave Allocation",
+			{
+				"employee": self.employee,
+				"leave_type": self.leave_type,
+				"docstatus": 1,
+				"from_date": [">", getdate(comp_leave_valid_from)],
+			},
+			"from_date",
+			order_by="from_date asc",
+		)
+		if next_allocation_start:
+			year_end_date = min(getdate(year_end_date), add_days(getdate(next_allocation_start), -1))
+
 		is_carry_forward = frappe.db.get_value("Leave Type", self.leave_type, "is_carry_forward")
 
 		allocation = frappe.get_doc(
