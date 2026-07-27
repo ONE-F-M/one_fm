@@ -20,17 +20,16 @@
    "fieldname": "drive_file_id",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Drive File ID",
-   "reqd": 1,
+   "label": "Drive File ID or Link",
    "unique": 1,
-   "description": "The Google Drive file id this index entry mirrors. One entry per Drive file — re-indexing updates the same record rather than creating a duplicate."
+   "description": "Paste a Google Drive file id OR a share link (either this or Drive File Link). A link is normalized to the id automatically. One entry per Drive file — re-indexing updates the same record."
   },
   {
    "fieldname": "title",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Title",
-   "reqd": 1
+   "description": "Auto-filled from the Drive file name if left blank."
   },
   {
    "fieldname": "document_type",
@@ -45,9 +44,10 @@
   },
   {
    "fieldname": "source_process",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Source Process",
-   "description": "Which BPMN process produced/published this document, e.g. 'SOP Generation from Guidelines'."
+   "options": "BPMN Process Model",
+   "description": "The BPMN process model that produced/published this document (blank for manually-indexed reference material like guidelines)."
   },
   {
    "fieldname": "content",
