@@ -1263,7 +1263,15 @@ def validate_job_applicant(doc, method):
     # validate_pam_file_number_and_pam_designation(doc, method)
     validate_transferable_field(doc)
     set_job_applicant_fields(doc)
-    if not doc.one_fm_is_easy_apply and doc.one_fm_applicant_status != "Shortlisted":
+    # Marking an applicant "Shortlisted" creates a Draft Job Offer, and "Selected"
+    # issues/submits it (on_update_job_applicant), both of which are internal
+    # recruiter decisions, not the candidate's own KYC submission -- full
+    # completeness is enforced at the Job Offer level instead, once it's actually
+    # being submitted to the candidate (JobOfferOverride.validate()'s docstatus gate).
+    # "Selected" stays exempt too (not just "Shortlisted", matching version-15)
+    # for Bulk Recruitment ERFs, where an applicant can be Selected directly
+    # without ever passing through Shortlisted first.
+    if not doc.one_fm_is_easy_apply and doc.one_fm_applicant_status not in ("Shortlisted", "Selected"):
         validate_mandatory_fields(doc)
     set_job_applicant_status(doc, method)
     if doc.is_new():
@@ -1471,7 +1479,7 @@ def on_update_job_applicant(doc, method):
 def create_draft_job_offer_for_applicant(job_applicant):
     """Create a Draft Job Offer as soon as an applicant is Shortlisted, so it's
     ready to be reviewed/edited before being issued to the candidate on Selection.
-    Silently skips (rather than throwing) if day-off details aren't set yet -
+    Silently skips (rather than throwing) if day-off details aren't set yet --
     shortlisting must not be blocked by that."""
     if frappe.db.exists('Job Offer', {'job_applicant': job_applicant, 'docstatus': ['<', 2]}):
         return
@@ -1485,14 +1493,15 @@ def create_draft_job_offer_for_applicant(job_applicant):
     _insert_job_offer_from_applicant(job_app)
 
 def issue_job_offer_for_applicant(job_applicant):
-    """When an applicant is Selected: issue the existing Draft Job Offer to the
-    candidate (preserving any manual edits, e.g. changed salary), or create one
-    if none exists yet (legacy path for applicants selected without ever being
-    shortlisted first)."""
+    """When an applicant is Selected: submit the existing Draft Job Offer for
+    candidate response (preserving any manual edits, e.g. changed salary), or
+    create one if none exists yet (legacy path for applicants selected without
+    ever being shortlisted first)."""
     existing_offer = frappe.db.exists('Job Offer', {'job_applicant': job_applicant, 'docstatus': ['<', 2]})
     if existing_offer:
         job_offer = frappe.get_doc('Job Offer', existing_offer)
         if job_offer.docstatus == 0 and job_offer.workflow_state == "Open":
+            from frappe.model.workflow import apply_workflow
             apply_workflow(job_offer, "Submit for Candidate Response")
         return
 
@@ -1517,7 +1526,7 @@ def _insert_job_offer_from_applicant(job_app):
     if job_app.one_fm_erf:
         erf = frappe.get_doc('ERF', job_app.one_fm_erf)
         set_erf_details(job_offer, erf, job_app)
-    job_offer.save(ignore_permissions = True)
+    job_offer.save()
 
 def set_erf_details(job_offer, erf, job_app):
     job_offer.erf = erf.name

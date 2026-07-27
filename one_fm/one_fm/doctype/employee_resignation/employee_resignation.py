@@ -86,7 +86,13 @@ class EmployeeResignation(Document):
 			before = self.get_doc_before_save()
 			if before:
 				for df in self.meta.fields:
-					if df.fieldtype in ("Table", "Table MultiSelect") or df.fieldname in allowed_fields:
+					if df.fieldname in allowed_fields:
+						continue
+					if df.fieldtype in ("Table", "Table MultiSelect"):
+						before_employees = [d.employee for d in (before.get(df.fieldname) or [])]
+						after_employees = [d.employee for d in (self.get(df.fieldname) or [])]
+						if before_employees != after_employees:
+							frappe.throw(_("You can only edit the replacement decision fields at this stage."), frappe.PermissionError)
 						continue
 					if self.get(df.fieldname) != before.get(df.fieldname):
 						frappe.throw(_("You can only edit the replacement decision fields at this stage."), frappe.PermissionError)

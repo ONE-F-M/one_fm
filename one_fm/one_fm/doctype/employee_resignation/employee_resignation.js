@@ -16,6 +16,12 @@ frappe.ui.form.on("Employee Resignation", {
 		frm.set_df_property('resignation_initiation_date', 'read_only', is_editable ? 0 : 1);
 		frm.set_df_property('relieving_date', 'read_only', is_editable ? 0 : 1);
 
+		// Corporate hires have no Operations Manager step -- their "Supervisor"
+		// is really their Line Manager (matches Employee Resignation Withdrawal
+		// and Employee Resignation Date Adjustment).
+		frm.set_df_property('supervisor', 'label', frm.doc.shift_working ? __('Supervisor') : __('Line Manager'));
+		frm.refresh_field('supervisor');
+
 		// Corporate hires have no Operations Manager step -- their "Supervisor" is
 		// really their Line Manager, so their remarks field is labeled to match.
 		frm.set_df_property('supervisor_remarks', 'label', frm.doc.shift_working ? __('Supervisor Remarks') : __('Line Manager Remarks'));

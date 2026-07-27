@@ -189,13 +189,13 @@ class EmployeeResignationWithdrawal(Document):
 			if rsgn_om:
 				self.operations_manager = rsgn_om
 
-			# Corporate hires (not shift_working) have no Operations Manager step --
-			# the workflow's is_corporate-gated transitions rely on this. Recompute it
-			# server-side every time rather than trusting the client-set value, since
-			# it now gates real approval routing (not just a label switch).
-			if self.employee_resignation and frappe.db.has_column("Employee Resignation Withdrawal", "is_corporate"):
-				shift_working = frappe.db.get_value("Employee Resignation", self.employee_resignation, "shift_working")
-				self.is_corporate = 0 if shift_working else 1
+		# Corporate hires (not shift_working) have no Operations Manager step --
+		# the workflow's is_corporate-gated transitions rely on this. Recompute it
+		# server-side every time rather than trusting the client-set value, since
+		# it now gates real approval routing (not just a label switch).
+		if self.employee_resignation and frappe.db.has_column("Employee Resignation Withdrawal", "is_corporate"):
+			shift_working = frappe.db.get_value("Employee Resignation", self.employee_resignation, "shift_working")
+			self.is_corporate = 0 if shift_working else 1
 
 		# Set Offboarding Officer — first user with that role
 		if not self.get("offboarding_officer") and frappe.db.has_column("Employee Resignation Withdrawal", "offboarding_officer"):

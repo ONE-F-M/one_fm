@@ -497,12 +497,18 @@ one_fm.patches.v15_0.fix_nirmala_day_off_client_event_conflict #2026-06-18
 one_fm.patches.v15_0.update_pmr_workflow_in_process_role
 one_fm.patches.v15_0.fix_shift_worker_annual_leave_total_days #2026-06-24
 one_fm.patches.v15_0.fix_leave_extension_request_leave_application_status #2026-06-30
-one_fm.patches.v15_0.update_pmr_and_resignation_workflow_permissions #2026-06-30
 one_fm.patches.v15_0.fix_day_off_client_event_conflict_bulk #2026-07-03
 one_fm.patches.v15_0.add_arrival_and_deployment_onboarding_workflow #2026-07-20
 one_fm.patches.v15_0.add_ccp_onboarding_officer_permission #2026-07-21
 one_fm.patches.v15_0.add_arrival_acknowledgement_department_roles #2026-07-21
 one_fm.patches.v15_0.add_arrival_and_deployment_support_departments_workflow #2026-07-22
+one_fm.patches.v15_0.allow_any_operations_manager_to_approve_resignation_withdrawal #2026-07-22
+one_fm.patches.v15_0.backfill_pmr_resignation_custom_docperm #2026-07-22
+one_fm.patches.v15_0.add_transportation_manager_to_pmr_and_resignation_workflows #2026-07-22
+one_fm.patches.v15_0.backfill_employee_resignation_letter_date #2026-07-22
+one_fm.patches.v15_0.rebalance_employee_resignation_layout #rerun-2026-07-23-stack-dates
+one_fm.patches.v15_0.finalize_line_manager_approval_for_corporate_withdrawal
+one_fm.patches.v15_0.create_employee_resignation_date_adjustment_workflow #2026-07-22
 one_fm.patches.v15_0.backfill_single_employee_resignation_fields #2026-07-22
 one_fm.patches.v15_0.rebalance_employee_resignation_layout_single_employee #rerun-2026-07-26-employee-first
 one_fm.patches.v15_0.add_project_sprint_prefix_field #2026-07-23
