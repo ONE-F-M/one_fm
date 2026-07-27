@@ -52,7 +52,17 @@
   "civil_id_fee",
   "bank_guarantee_fee",
   "wcf_insurance_fee",
-  "pifss_rate"
+  "pifss_rate",
+  "annual_leave",
+  "reliever_breakdown_section",
+  "reliever_salary",
+  "reliever_residency",
+  "reliever_accommodation",
+  "reliever_transportation",
+  "reliever_uniform",
+  "reliever_wcf_insurance",
+  "reliever_annual_leave",
+  "reliever_indemnity"
  ],
  "fields": [
   {
@@ -201,7 +211,8 @@
   {
    "fieldname": "reliever_cost",
    "fieldtype": "Currency",
-   "label": "Reliever Cost"
+   "label": "Reliever Cost",
+   "read_only": 1
   },
   {
    "fieldname": "indemnity",
@@ -297,13 +308,73 @@
   {
    "fieldname": "wcf_insurance_fee",
    "fieldtype": "Currency",
-   "label": "WCF Insurance Fee"
+   "label": "WCF Insurance Fee",
+   "read_only": 1
   },
   {
    "fieldname": "pifss_rate",
    "fieldtype": "Currency",
    "label": "PIFSS Rate",
-   "depends_on": "eval:doc.nationality == \"Kuwaiti\""
+   "depends_on": "eval:doc.nationality == \"Kuwaiti\"",
+   "read_only": 1
+  },
+  {
+   "fieldname": "annual_leave",
+   "fieldtype": "Currency",
+   "label": "Annual Leave"
+  },
+  {
+   "fieldname": "reliever_breakdown_section",
+   "fieldtype": "Section Break",
+   "label": "Reliever Cost Breakdown"
+  },
+  {
+   "fieldname": "reliever_salary",
+   "fieldtype": "Currency",
+   "label": "Reliever Salary",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reliever_residency",
+   "fieldtype": "Currency",
+   "label": "Reliever Residency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reliever_accommodation",
+   "fieldtype": "Currency",
+   "label": "Reliever Accommodation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reliever_transportation",
+   "fieldtype": "Currency",
+   "label": "Reliever Transportation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reliever_uniform",
+   "fieldtype": "Currency",
+   "label": "Reliever Uniform",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reliever_wcf_insurance",
+   "fieldtype": "Currency",
+   "label": "Reliever WCF Insurance",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reliever_annual_leave",
+   "fieldtype": "Currency",
+   "label": "Reliever Annual Leave",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reliever_indemnity",
+   "fieldtype": "Currency",
+   "label": "Reliever Indemnity",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
