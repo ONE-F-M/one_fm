@@ -78,6 +78,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 isDraggingBlock: false,       // block being moved on lane
                 selectedPoolCard: null,    // mobile: tap-to-select card for assignment
                 searchQuery: '',
+                shiftStartFilter: '',         // WI-001683: selected shift start time, '' = all
                 collapsedGroups: {},          // { [accommodation]: boolean }
                 canSave: false,
                 isGenerating: false,          // shipment generation in progress
@@ -142,6 +143,11 @@ function mountRoutePlannerApp(wrapper, data) {
                 return this.planData.shipment_cards.filter(c => {
                     // Card is assigned when its specific ID is in assignedCards
                     if (this.assignedCards.has(c.id)) return false;
+
+                    // WI-001683: shift start time filter, applied across every
+                    // accommodation group rather than within one.
+                    if (this.shiftStartFilter && c.shift_start !== this.shiftStartFilter) return false;
+
                     if (!q) return true;
                     return (
                         c.shift_name.toLowerCase().includes(q) ||
@@ -151,6 +157,21 @@ function mountRoutePlannerApp(wrapper, data) {
                         (c.direction || '').toLowerCase().includes(q)
                     );
                 });
+            },
+
+            poolShiftStartOptions() {
+                // WI-001683: the distinct shift start times available to filter on.
+                // Derived from every unassigned card, ignoring the active filters, so the
+                // list stays stable instead of collapsing to the one already selected.
+                const times = new Map();
+                this.planData.shipment_cards.forEach(c => {
+                    if (this.assignedCards.has(c.id) || !c.shift_start) return;
+                    if (!times.has(c.shift_start)) times.set(c.shift_start, this.fmtTime(c.shift_start));
+                });
+
+                return [...times.entries()]
+                    .sort((a, b) => new Date(a[0]) - new Date(b[0]))
+                    .map(([value, label]) => ({ value, label }));
             },
 
             poolGroups() {
@@ -2913,6 +2934,13 @@ function injectRPVueTemplate() {
       <div id="rp-pool-search">
         <input v-model="searchQuery" type="text" id="rp-search-input"
                placeholder="Search shift, site, accommodation..." />
+        <select v-model="shiftStartFilter" id="rp-shift-start-filter"
+                title="Filter unassigned shipments by shift start time">
+          <option value="">All shift start times</option>
+          <option v-for="opt in poolShiftStartOptions" :key="opt.value" :value="opt.value">
+            Starts {{ opt.label }}
+          </option>
+        </select>
       </div>
       <div id="rp-pool-groups">
 
@@ -3773,6 +3801,13 @@ function injectRPStyles() {
             box-sizing: border-box;
         }
         #rp-search-input:focus { border-color: var(--rp-color-accent); }
+        #rp-shift-start-filter {
+            width: 100%; margin-top: 6px; padding: 7px 12px;
+            border: 1px solid var(--md-sys-color-outline-variant); border-radius: 8px;
+            font-size: 14px; outline: none; background: transparent;
+            box-sizing: border-box; cursor: pointer;
+        }
+        #rp-shift-start-filter:focus { border-color: var(--rp-color-accent); }
         #rp-pool-groups { flex: 1; overflow-y: auto; padding: 4px 0; }
         .rp-pool-empty  { padding: 36px 16px; text-align: center; font-size: 14px; color: var(--md-sys-color-outline); }
 
