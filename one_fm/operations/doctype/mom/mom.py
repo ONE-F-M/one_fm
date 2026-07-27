@@ -38,40 +38,49 @@ class MOM(Document):
 		table_checks  = [int(i.attended_meeting) for i in self.attendees]
 		if not any(table_checks):
 		#Create POC Check if no row in the POC table is marked
-			poc_check = frappe._dict()
-			poc_check.doctype = "POC Check"
+			poc_check = frappe.new_doc("POC Check")
 			poc_check.project = self.project
 			poc_check.site = self.site
 			poc_check.supervisor = self.supervisor
 			poc_check.supervisor_name = self.supervisor_name
 			poc_check.mom = self.name
-			attendees_list = []
-			general_attendees_list = []
 			for each in self.attendees:
-				attendees_list.append({'poc_name':each.poc_name,'poc_designation':each.poc_designation})
+				poc_check.append("mom_poc_table", {
+					"poc_name": each.poc_name,
+					"poc_designation": each.poc_designation
+				})
 
 			for attendees in self.general_attendance:
-				parts = attendees.attendee_name.split()
+				attendee_name = (attendees.attendee_name or "").strip()
+				if not attendee_name:
+					continue
+				parts = attendee_name.split()
 				first_name = parts[0]
 				last_name = " ".join(parts[1:]) if len(parts) > 1 else ""
-				general_attendees_list.append({'first_name': first_name, 'last_name': last_name})
+				poc_check.append("general_attendees", {
+					"first_name": first_name,
+					"last_name": last_name
+				})
 
-			poc_check.general_attendees = general_attendees_list
-			poc_check.mom_poc_table = attendees_list
-			poc_check_doc = frappe.get_doc(poc_check)
-			poc_check_doc.save()
-			mom_user  = frappe.get_value("Employee",self.supervisor,'user_id')
-			if mom_user:
-				add_assignment({
-						'doctype': "POC Check",
-						'name': poc_check_doc.name,
-						'assign_to': [mom_user],
-						'description':f"Kindly fill and submit this document to update the POC details for Site: {self.site} and Project: {self.project}",
-						"date": frappe.utils.getdate(),
-						"priority": "Medium"
-					})
-				frappe.db.commit()
-			frappe.msgprint(_(f"POC Check {poc_check_doc.name} Created!"),
+			current_user = frappe.session.user
+			try:
+				frappe.set_user("Administrator")
+				poc_check.save(ignore_permissions=True)
+				mom_user  = frappe.get_value("Employee",self.supervisor,'user_id')
+				if mom_user:
+					add_assignment({
+							'doctype': "POC Check",
+							'name': poc_check.name,
+							'assign_to': [mom_user],
+							'allocated_to': mom_user,
+							'description':f"Kindly fill and submit this document to update the POC details for Site: {self.site} and Project: {self.project}",
+							"date": frappe.utils.getdate(),
+							"priority": "Medium"
+						})
+					frappe.db.commit()
+			finally:
+				frappe.set_user(current_user)
+			frappe.msgprint(_(f"POC Check {poc_check.name} Created!"),
                 alert=True, indicator='green')
 
 
@@ -114,6 +123,7 @@ class MOM(Document):
 						'doctype': "Task",
 						'name': op_task.name,
 						'assign_to': [issue.user],
+						'allocated_to': issue.user,
 						"date": issue.due_date,
 						"priority": issue.priority if issue.priority in {"Low", "Medium", "High"} else "High"
 					})
@@ -408,18 +418,28 @@ def update_task_from_mom(task_name: str, subject: str = None, description: str =
 	return {"success": True, "task": task_name}
 
 @frappe.whitelist()
-def fetch_designation_of_users(list_of_users: list = []):
+def fetch_designation_of_users(list_of_users=None):
 	try:
-		return frappe.db.sql("""
-							SELECT employee_name, designation from `tabEmployee`
-							WHERE user_id IN %s
-							""",(tuple(loads(list_of_users)), ) ,as_dict=1)
-	except Exception as e:
+		# The client sends this as a JSON-encoded string; accept both str and list
+		if isinstance(list_of_users, str):
+			list_of_users = loads(list_of_users) if list_of_users else []
+
+		if not list_of_users:
+			return []
+
+		return frappe.get_all(
+			"Employee",
+			filters={"user_id": ["in", list_of_users]},
+			fields=["employee_name", "designation"],
+		)
+	except Exception:
 		frappe.log_error(message=frappe.get_traceback(), title="Error encountered while fetching users designation (MOM)")
 
 
 @frappe.whitelist()
-def get_project_users(project):
+def get_project_users(project: str | None = None):
+	if not project:
+		return []
 	doc = frappe.get_doc("Project", project)
 	users = []
 	users.append(doc.project_manager_name) if all((doc.project_manager_name, doc.project_manager, doc.project_type == "Internal")) else None

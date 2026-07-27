@@ -88,5 +88,13 @@ def get_designation_custom_fields():
                 "label": "Designation Abbreviation",
                 "translatable": 1
             }
+        ],
+        "Designation Skill": [
+            {
+                "fieldname": "one_fm_proficiency",
+                "fieldtype": "Float",
+                "insert_after": "skill",
+                "label": "Proficiency"
+            }
         ]
     }

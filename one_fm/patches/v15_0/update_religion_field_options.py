@@ -26,7 +26,6 @@ def execute():
     update_religion_field('Transfer Paper', 'religion')
     update_religion_field('Employee', 'one_fm_religion')
     update_religion_field('Job Applicant', 'one_fm_religion')
-    update_religion_field('PAM Visa', 'religion')
 
     # Delete 'Islam' from religion options
     delete_religion_option('Islam')

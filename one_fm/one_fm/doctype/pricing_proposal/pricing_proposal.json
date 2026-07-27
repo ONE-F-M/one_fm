@@ -1,0 +1,256 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-07-12 00:00:00.000000",
+ "custom": 0,
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_z9cc",
+  "amended_from",
+  "naming_series",
+  "section_break_saea",
+  "project",
+  "customer",
+  "column_break_mcxx",
+  "date_of_inception",
+  "budget_configuration",
+  "column_break_odbf",
+  "contract_duration_years",
+  "markup_percent",
+  "overhead_cost_percent",
+  "section_break_pyks",
+  "manpower_service_items",
+  "other_services_section",
+  "service_item",
+  "cost_summary_section",
+  "total_visa_cost",
+  "total_operational_cost",
+  "total_direct_cost",
+  "overhead_cost",
+  "total_cost",
+  "selling_price",
+  "column_break_dmsv",
+  "gross_profit_margin",
+  "net_profit_margin",
+  "net_profit_amount"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_z9cc",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "options": "Pricing Proposal",
+   "read_only": 1,
+   "print_hide": 1,
+   "no_copy": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Naming Series",
+   "options": "PP-.####",
+   "hidden": 1
+  },
+  {
+   "fieldname": "section_break_saea",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer",
+   "read_only": 1,
+   "fetch_from": "project.customer"
+  },
+  {
+   "fieldname": "column_break_mcxx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "date_of_inception",
+   "fieldtype": "Date",
+   "label": "Date of Inception",
+   "reqd": 1
+  },
+  {
+   "fieldname": "budget_configuration",
+   "fieldtype": "Link",
+   "label": "Budget Configuration",
+   "options": "Budget Configuration",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_odbf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "contract_duration_years",
+   "fieldtype": "Int",
+   "label": "Contract Duration Years"
+  },
+  {
+   "fieldname": "markup_percent",
+   "fieldtype": "Percent",
+   "label": "Markup Percent"
+  },
+  {
+   "fieldname": "overhead_cost_percent",
+   "fieldtype": "Percent",
+   "label": "Overhead Cost Percent",
+   "read_only": 1,
+   "fetch_from": "budget_configuration.overhead_cost_percentage"
+  },
+  {
+   "fieldname": "section_break_pyks",
+   "fieldtype": "Section Break",
+   "label": "Manpower Service Section"
+  },
+  {
+   "fieldname": "manpower_service_items",
+   "fieldtype": "Table",
+   "label": "Manpower Service Items",
+   "options": "Manpower Service Item"
+  },
+  {
+   "fieldname": "other_services_section",
+   "fieldtype": "Section Break",
+   "label": "Other Services"
+  },
+  {
+   "fieldname": "service_item",
+   "fieldtype": "Table",
+   "label": "Service Item",
+   "options": "Pricing Proposal Service Item"
+  },
+  {
+   "fieldname": "cost_summary_section",
+   "fieldtype": "Section Break",
+   "label": "Cost Summary"
+  },
+  {
+   "fieldname": "total_visa_cost",
+   "fieldtype": "Currency",
+   "label": "Total Visa Cost"
+  },
+  {
+   "fieldname": "total_operational_cost",
+   "fieldtype": "Currency",
+   "label": "Total Operational Cost"
+  },
+  {
+   "fieldname": "total_direct_cost",
+   "fieldtype": "Currency",
+   "label": "Total Direct Cost"
+  },
+  {
+   "fieldname": "overhead_cost",
+   "fieldtype": "Currency",
+   "label": "Overhead Cost"
+  },
+  {
+   "fieldname": "total_cost",
+   "fieldtype": "Currency",
+   "label": "Total Cost"
+  },
+  {
+   "fieldname": "selling_price",
+   "fieldtype": "Currency",
+   "label": "Selling Price"
+  },
+  {
+   "fieldname": "column_break_dmsv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "gross_profit_margin",
+   "fieldtype": "Percent",
+   "label": "Gross Profit Margin",
+   "read_only": 1
+  },
+  {
+   "fieldname": "net_profit_margin",
+   "fieldtype": "Percent",
+   "label": "Net Profit Margin",
+   "read_only": 1
+  },
+  {
+   "fieldname": "net_profit_amount",
+   "fieldtype": "Currency",
+   "label": "Net Profit Amount",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 0,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-07-24 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Pricing Proposal",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "select": 1
+  },
+  {
+   "role": "Finance Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "select": 1
+  },
+  {
+   "role": "Sales Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "select": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "naming_series:",
+ "naming_rule": "By \"Naming Series\" field"
+}
