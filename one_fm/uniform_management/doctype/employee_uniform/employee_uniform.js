@@ -179,20 +179,21 @@ var add_quality_feedback_schedule = function (frm) {
 			   let item_codes_to_fetch = uniforms.filter(u => !u.item_type || u.item_type === "").map(u => u.item);
 
 			   function fill_rows(itemTypeMap) {
-				   uniforms.forEach(uniform => {
-					   grid.add_new_row();
-					   let data = grid.get_data();
-					   let row = data[data.length - 1];
-					   if (row) {
-						   row.item_code = uniform.item;
-						   row.item_name = uniform.item_name;
-						   row.item_type = uniform.item_type || itemTypeMap[uniform.item] || "";
-						   row.quantity = uniform.quantity;
-						   // Template and version left for user selection
-					   }
-				   });
-				   grid.refresh();
+				   // Build the rows up front and assign them directly to the grid's
+				   // data array. add_new_row() only works once the grid has been
+				   // rendered (after d.show()), so populating it before showing the
+				   // dialog leaves get_data() empty.
+				   grid.df.data = uniforms.map((uniform, idx) => ({
+					   idx: idx + 1,
+					   __islocal: true,
+					   item_code: uniform.item,
+					   item_name: uniform.item_name,
+					   item_type: uniform.item_type || itemTypeMap[uniform.item] || "",
+					   quantity: uniform.quantity,
+					   // Template and version left for user selection
+				   }));
 				   d.show();
+				   grid.refresh();
 				   // Attach event for template selection to auto-fill version synchronously
 				   setTimeout(function() {
 					   let $dialog = $(d.$wrapper);

@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 import frappe, json
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import get_url, getdate, today
+from frappe.utils import get_url, getdate
 from one_fm.one_fm.doctype.magic_link.magic_link import authorize_magic_link, send_magic_link
 from one_fm.utils import set_expire_magic_link
 
@@ -216,7 +216,7 @@ def create_career_history_from_portal(job_applicant, career_history_details, int
             if history.get('left_the_company'):
                 company.end_date = history.get('left_the_company')
             if history.get('reason_for_leaving_job'):
-                company.end_date = today()
+                # Current role: capture the reason but keep end_date open (no end date)
                 company.why_do_you_plan_to_leave_the_job = history.get('reason_for_leaving_job')
 
     career_history.save(ignore_permissions=True)
