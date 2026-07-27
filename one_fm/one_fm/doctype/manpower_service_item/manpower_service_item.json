@@ -1,0 +1,314 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-07-12 00:00:00.000000",
+ "custom": 0,
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "manpower_details_section",
+  "service_category",
+  "item_code",
+  "item_name",
+  "quantity",
+  "column_break_lysn",
+  "service_role",
+  "nationality",
+  "gender",
+  "working_days",
+  "working_hours",
+  "section_break_dkhs",
+  "basic_salary",
+  "other_allowance",
+  "increment_base",
+  "increment_plan_percentage",
+  "column_break_eskw",
+  "average_basic_salary",
+  "average_other_allowance",
+  "average_net_salary",
+  "section_break_cgfx",
+  "food_allowance",
+  "ot_allowance",
+  "salary_bank_charges",
+  "recruitment_cost",
+  "leave_substitute",
+  "reliever_cost",
+  "indemnity",
+  "private_medical_insurance_amount",
+  "column_break_gtsu",
+  "laundry_allowance",
+  "mobile_phone_allowance",
+  "mobile_line_allowance",
+  "air_ticket_allowance",
+  "accommodation_allowance",
+  "transportation_allowance",
+  "uniform_cost",
+  "kuwaitization_fee",
+  "column_break_yiot",
+  "work_permit_fee",
+  "medical_insurance_fee",
+  "residency_stamp_fee",
+  "civil_id_fee",
+  "bank_guarantee_fee",
+  "wcf_insurance_fee",
+  "pifss_rate"
+ ],
+ "fields": [
+  {
+   "fieldname": "manpower_details_section",
+   "fieldtype": "Section Break",
+   "label": "Manpower Details"
+  },
+  {
+   "fieldname": "service_category",
+   "fieldtype": "Link",
+   "label": "Service Category",
+   "options": "Service Category",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "Item Code",
+   "options": "Item"
+  },
+  {
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "label": "Item Name",
+   "read_only": 1,
+   "fetch_from": "item_code.item_name"
+  },
+  {
+   "fieldname": "quantity",
+   "fieldtype": "Int",
+   "label": "Quantity"
+  },
+  {
+   "fieldname": "column_break_lysn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "service_role",
+   "fieldtype": "Link",
+   "label": "Service Role",
+   "options": "Service Role"
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Data",
+   "label": "Nationality",
+   "options": "\nKuwaiti\nNon-Kuwaiti\nNon-State",
+   "read_only": 1
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Data",
+   "label": "Gender",
+   "read_only": 1
+  },
+  {
+   "fieldname": "working_days",
+   "fieldtype": "Data",
+   "label": "Working Days",
+   "read_only": 1
+  },
+  {
+   "fieldname": "working_hours",
+   "fieldtype": "Data",
+   "label": "Working Hours",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_dkhs",
+   "fieldtype": "Section Break",
+   "label": "Salary Details"
+  },
+  {
+   "fieldname": "basic_salary",
+   "fieldtype": "Currency",
+   "label": "Basic Salary"
+  },
+  {
+   "fieldname": "other_allowance",
+   "fieldtype": "Currency",
+   "label": "Other Allowance"
+  },
+  {
+   "fieldname": "increment_base",
+   "fieldtype": "Select",
+   "label": "Increment Base",
+   "options": "\nBasic\nNet Salary"
+  },
+  {
+   "fieldname": "increment_plan_percentage",
+   "fieldtype": "Percent",
+   "label": "Increment Plan Percentage"
+  },
+  {
+   "fieldname": "column_break_eskw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "average_basic_salary",
+   "fieldtype": "Currency",
+   "label": "Average Basic Salary",
+   "read_only": 1
+  },
+  {
+   "fieldname": "average_other_allowance",
+   "fieldtype": "Currency",
+   "label": "Average Other Allowance",
+   "read_only": 1
+  },
+  {
+   "fieldname": "average_net_salary",
+   "fieldtype": "Currency",
+   "label": "Average Net Salary",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_cgfx",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "food_allowance",
+   "fieldtype": "Currency",
+   "label": "Food Allowance"
+  },
+  {
+   "fieldname": "ot_allowance",
+   "fieldtype": "Currency",
+   "label": "OT Allowance"
+  },
+  {
+   "fieldname": "salary_bank_charges",
+   "fieldtype": "Currency",
+   "label": "Salary Bank Charges"
+  },
+  {
+   "fieldname": "recruitment_cost",
+   "fieldtype": "Currency",
+   "label": "Recruitment Cost"
+  },
+  {
+   "fieldname": "leave_substitute",
+   "fieldtype": "Currency",
+   "label": "Leave Substitute"
+  },
+  {
+   "fieldname": "reliever_cost",
+   "fieldtype": "Currency",
+   "label": "Reliever Cost"
+  },
+  {
+   "fieldname": "indemnity",
+   "fieldtype": "Currency",
+   "label": "Indemnity"
+  },
+  {
+   "fieldname": "private_medical_insurance_amount",
+   "fieldtype": "Currency",
+   "label": "Private Medical Insurance Amount"
+  },
+  {
+   "fieldname": "column_break_gtsu",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "laundry_allowance",
+   "fieldtype": "Currency",
+   "label": "Laundry Allowance"
+  },
+  {
+   "fieldname": "mobile_phone_allowance",
+   "fieldtype": "Currency",
+   "label": "Mobile Phone Allowance"
+  },
+  {
+   "fieldname": "mobile_line_allowance",
+   "fieldtype": "Currency",
+   "label": "Mobile Line Allowance"
+  },
+  {
+   "fieldname": "air_ticket_allowance",
+   "fieldtype": "Currency",
+   "label": "Air Ticket Allowance"
+  },
+  {
+   "fieldname": "accommodation_allowance",
+   "fieldtype": "Currency",
+   "label": "Accommodation Allowance"
+  },
+  {
+   "fieldname": "transportation_allowance",
+   "fieldtype": "Currency",
+   "label": "Transportation Allowance"
+  },
+  {
+   "fieldname": "uniform_cost",
+   "fieldtype": "Currency",
+   "label": "Uniform Cost"
+  },
+  {
+   "fieldname": "kuwaitization_fee",
+   "fieldtype": "Currency",
+   "label": "Kuwaitization Fee"
+  },
+  {
+   "fieldname": "column_break_yiot",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "work_permit_fee",
+   "fieldtype": "Currency",
+   "label": "Work Permit Fee"
+  },
+  {
+   "fieldname": "medical_insurance_fee",
+   "fieldtype": "Currency",
+   "label": "Medical Insurance Fee"
+  },
+  {
+   "fieldname": "residency_stamp_fee",
+   "fieldtype": "Currency",
+   "label": "Residency Stamp Fee"
+  },
+  {
+   "fieldname": "civil_id_fee",
+   "fieldtype": "Currency",
+   "label": "Civil ID Fee"
+  },
+  {
+   "fieldname": "bank_guarantee_fee",
+   "fieldtype": "Currency",
+   "label": "Bank Guarantee Fee"
+  },
+  {
+   "fieldname": "wcf_insurance_fee",
+   "fieldtype": "Currency",
+   "label": "WCF Insurance Fee"
+  },
+  {
+   "fieldname": "pifss_rate",
+   "fieldtype": "Currency",
+   "label": "PIFSS Rate"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "is_submittable": 0,
+ "links": [],
+ "modified": "2026-07-24 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Manpower Service Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
