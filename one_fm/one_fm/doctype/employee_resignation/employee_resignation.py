@@ -35,7 +35,9 @@ class EmployeeResignation(Document):
 
 		# Enforce replacement_required explicitly for Operations Manager / Approved
 		if self.get("workflow_state") == "Approved":
-			if not self.replacement_required:
+			if not self.shift_working:
+				self.replacement_required = "No"
+			elif not self.replacement_required:
 				frappe.throw(
 					_("You must explicitly select Yes or No for 'Is a Replacement Required?' before you can approve and spawn a PMR."),
 					title=_("Replacement Required")
@@ -300,6 +302,8 @@ class EmployeeResignation(Document):
 			pmr.workflow_state = "Draft"
 			pmr.insert()
 			frappe.db.set_value("Project Manpower Request", pmr.name, "workflow_state", "Draft")
+			# Write backlink so PMR's Connections panel shows this resignation with count 1
+			frappe.db.set_value("Employee Resignation", self.name, "project_manpower_request", pmr.name)
 
 	def on_trash(self):
 		for row in self.get("employees", []):
@@ -351,3 +355,19 @@ def get_employee_resignation_details(employee):
 				result["site_supervisor_id"] = frappe.db.get_value("Employee", site_data.get("site_supervisor"), "user_id")
 
 	return result
+
+
+@frappe.whitelist()
+def get_autocomplete_options() -> dict:
+	"""Fetch all genders and nationalities for the replacement_gender/replacement_nationality Autocomplete fields."""
+	if not frappe.has_permission("Employee Resignation", "read"):
+		frappe.throw(_("Not permitted to access resignation details."), frappe.PermissionError)
+
+	genders = frappe.get_all("Gender", fields=["name"], order_by="name asc")
+	nationalities = frappe.get_all("Nationality", fields=["name"], order_by="name asc")
+
+	return {
+		"nationalities": [n.name for n in nationalities if n.name],
+		"genders": [g.name for g in genders if g.name]
+	}
+
