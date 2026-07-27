@@ -220,7 +220,10 @@ has_permission = {
  	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.has_permission",
 	"Issue": "one_fm.utils.has_permission_to_issue",
 	"Notification Settings":'one_fm.overrides.notification_settings.has_permission_',
-	"Contracts": "one_fm.operations.doctype.contracts.contracts.contracts_has_permission"
+	"Contracts": "one_fm.operations.doctype.contracts.contracts.contracts_has_permission",
+	"Candidate Country Process": "one_fm.one_fm.doctype.candidate_country_process.candidate_country_process.has_permission",
+	"Arrival Acknowledgement": "one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement.has_permission",
+	"Arrival and Deployment": "one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment.has_permission"
 }
 
 standard_queries = {
@@ -586,11 +589,6 @@ override_doctype_class = {
 # ---------------
 
 scheduler_events = {
-	"cron": {
-		"0 12 * * *": [
-			'one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment.send_daily_acknowledgement_reminders'
-		]
-	},
 	"daily": [
 		'one_fm.utils.pam_salary_certificate_expiry_date',
 		'one_fm.utils.pam_authorized_signatory',
@@ -639,6 +637,9 @@ scheduler_events = {
 	],
 
 	"cron": {
+		"0 12 * * *": [
+			'one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement.send_daily_acknowledgement_reminders'
+		],
 		"40 5 * * 0,1,2,3,4":[#run durring working days only “At 05:40 on Sunday, Monday, Tuesday, Wednesday, and Thursday.”
 			'one_fm.grd.doctype.work_permit.work_permit.system_remind_renewal_operator_to_apply',#wp
 			'one_fm.grd.doctype.work_permit.work_permit.system_remind_transfer_operator_to_apply',
@@ -663,6 +664,7 @@ scheduler_events = {
 		"0/15 * * * *": [ #At every 15th minute from 0 through 59.”
 			"one_fm.legal.doctype.penalty.penalty.automatic_reject",
 			# 'one_fm.api.tasks.process_attendance',
+			"one_fm.api.tasks.update_shift_type"
 		],
 		"0/5 * * * *": [
 			"one_fm.api.tasks.run_checkin_reminder",
@@ -673,9 +675,6 @@ scheduler_events = {
 			"one_fm.api.tasks.overtime_shift_assignment",
 			#"one_fm.api.tasks.automatic_checkout",
 			"one_fm.one_fm.doctype.password_reset_token.password_reset_token.revoke_password_tokens",
-		],
-		"0/15 * * * *": [
-			"one_fm.api.tasks.update_shift_type"
 		],
 		"37 23 * * *": [  #“At 23:37.”
 			'one_fm.api.tasks.issue_penalties'
