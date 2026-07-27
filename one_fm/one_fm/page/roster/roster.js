@@ -1193,7 +1193,9 @@ let classmap = {
 	"Client Event": "cyanboxcolor",
 	"Medical Appointment": "cyanboxcolor",
 	"On-the-job Training": "tealboxcolor",
-	"Suspended": "suspendedcolor"
+	"Suspended": "suspendedcolor",
+	// WI-001694: awaiting suspension approval - distinct from the approved Suspended colour.
+	"Pending Suspension": "pendingsuspensioncolor"
 };
 
 let abbr_map = {
@@ -1216,7 +1218,8 @@ let abbr_map = {
 	"Medical Appointment": "MA",
 	"On-the-job Training": "OJT",
 	"Client Event": "CE",
-	"Suspended": "S"
+	"Suspended": "S",
+	"Pending Suspension": "PS"
 };
 
 
@@ -1391,6 +1394,8 @@ function render_roster(res, page) {
 			let tooltiptext = ``;
 			let bgclass = ``;
 			let data_extra_attrs = ``;
+			// WI-001694: set when any schedule on this day awaits suspension approval.
+			let is_pending_suspension = false;
 
 			let is_relieved_this_day = employee_relieving_date && current_day_iter.isAfter(employee_relieving_date);
 			is_not_relieving_day = false;
@@ -1398,7 +1403,7 @@ function render_roster(res, page) {
 			if (employees_data[employee_key][date_key] && employees_data[employee_key][date_key].length > 0) {
 				for (let k = 0; k < employees_data[employee_key][date_key].length; k++) {
 					let record = employees_data[employee_key][date_key][k];
-					let { employee, date, operations_role, post_abbrv, employee_availability, shift, start_datetime, end_datetime, start_time, end_time, roster_type, attendance, day_off_ot, leave_type, leave_application, event_location, actual_site, client_event, on_the_job_training, project, site } = record;
+					let { employee, date, operations_role, post_abbrv, employee_availability, shift, start_datetime, end_datetime, start_time, end_time, roster_type, attendance, day_off_ot, leave_type, leave_application, event_location, actual_site, client_event, on_the_job_training, project, site, workflow_state } = record;
 					// NR Logic: Determine if we are on a foreign grid, and if today's schedule is outside this grid.
 					if (employee_has_relieving_days && page.filters) {
 						let is_foreign_grid = false;
@@ -1538,6 +1543,16 @@ function render_roster(res, page) {
 						}
 					}
 
+					// WI-001694: a schedule awaiting suspension approval reads as Pending
+					// Suspension. It overrides whatever colour the chain above chose, because
+					// Employee Availability deliberately stays as-is (usually Working) until an
+					// approver acts - so the state is invisible otherwise. Applied after the
+					// chain rather than inside it, to leave every existing branch untouched.
+					if (workflow_state === "Pending Suspension") {
+						is_pending_suspension = true;
+						bgclass = classmap["Pending Suspension"];
+					}
+
 					if (k == (employees_data[employee_key][date_key].length - 1)) {
 						if (attendance && attendance == "Fingerprint Appointment") {
 							tooltiptext += `Fingerprint Appointment`;
@@ -1587,6 +1602,12 @@ function render_roster(res, page) {
 						}
 					}
 				}
+			}
+
+			// WI-001694: label the cell PS. Prepended rather than replacing abbrv, so a day
+			// that also carries a post abbreviation or an OT record keeps that information.
+			if (is_pending_suspension) {
+				abbrv = `${abbr_map["Pending Suspension"]}<br>` + abbrv;
 			}
 
 			const isToday = current_day_iter.isSame(moment(), 'day');

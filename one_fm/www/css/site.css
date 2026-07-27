@@ -1155,6 +1155,10 @@ body[data-route="roster"] .suspendedcolor {
   background-color: #f55f02 !important;
 }
 
+body[data-route="roster"] .pendingsuspensioncolor {
+  background-color: #795548 !important;
+}
+
 body[data-route="roster"] .absentbasic-absentot {
   background: linear-gradient(
     to bottom,

@@ -7,6 +7,13 @@
 			background-color: #f55f02 !important;
 			color: #fff !important;
 		}
+
+		/* WI-001694: awaiting suspension approval. Deliberately not a shade of the
+		   Suspended orange (#f55f02) - the two states must not be mistaken for each other. */
+		.pendingsuspensioncolor {
+			background-color: #795548 !important;
+			color: #fff !important;
+		}
 	</style>
 	<div id="cover-spin"></div>
 
@@ -341,6 +348,13 @@
 								<div class="d-flex">
 									<div class="legendboxview tealboxcolor"></div>
 									<div class="pl10 font16 cardtitlecolor">On-the-job Training</div>
+								</div>
+							</div>
+
+							<div class="col-sm-12 col-md-3 custompageselecttype mb10">
+								<div class="d-flex">
+									<div class="legendboxview pendingsuspensioncolor"></div>
+									<div class="pl10 font16 cardtitlecolor">Pending Suspension (PS)</div>
 								</div>
 							</div>
 

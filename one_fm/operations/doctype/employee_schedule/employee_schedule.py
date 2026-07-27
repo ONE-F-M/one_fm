@@ -86,6 +86,37 @@ class EmployeeSchedule(Document):
 			for ot in ot_schedules:
 				frappe.delete_doc("Employee Schedule", ot.name, ignore_permissions=True)
 
+		# WI-001694: once the suspension request is decided - Approve (-> Suspended) or
+		# Reject (-> Active) - the approvers' pending request is resolved, so the
+		# assignment and Workflow Action are cleared. Done here rather than in validate so
+		# nothing is removed unless the state change actually persisted.
+		if (
+			previous_doc
+			and previous_doc.get("workflow_state") == "Pending Suspension"
+			and self.get("workflow_state") in ("Suspended", "Active")
+		):
+			self.clear_suspension_approval_requests()
+
+	def clear_suspension_approval_requests(self):
+		"""WI-001694: drop the pending approval request for a decided suspension.
+
+		Clearing every assignment on the schedule is safe: no Assignment Rule targets
+		Employee Schedule, so the only assignments it can carry are the ones this workflow
+		creates. Failure to tidy up must not undo an approval that already saved, so this
+		is logged rather than raised.
+		"""
+		from frappe.desk.form.assign_to import clear as clear_assignments
+		from frappe.workflow.doctype.workflow_action.workflow_action import clear_workflow_actions
+
+		try:
+			clear_workflow_actions(self.doctype, self.name)
+			clear_assignments(self.doctype, self.name, ignore_permissions=True)
+		except Exception:
+			frappe.log_error(
+				title="Could not clear suspension approval requests",
+				message=frappe.get_traceback(),
+			)
+
 	def validate(self):
 		self.handle_suspension_workflow()
 		# Clear Client Event-specific fields when transitioning AWAY from Client Event.
