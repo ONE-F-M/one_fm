@@ -308,7 +308,6 @@ one_fm.patches.v15_0.add_phone_option_to_job_applicant_contact_number
 one_fm.patches.v15_0.remove_employee_marital_status_property_setter
 one_fm.patches.v15_0.update_vehicle_property_setter
 one_fm.patches.v15_0.add_hd_ticket_category_field
-one_fm.patches.v15_0.take_ownership_of_pricing_chain_doctypes #2026-07-27
 
 [post_model_sync]
 one_fm.patches.v15_0.process_task_for_wiki_employee_task
