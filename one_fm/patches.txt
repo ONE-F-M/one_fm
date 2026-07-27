@@ -516,7 +516,6 @@ one_fm.patches.v15_0.update_leave_application_workflow_dss #2026-07-17-2
 # Re-registered 2026-07-26: these patch files exist in the tree but their
 # patches.txt entries were removed by a cleanup that ran before the
 # test-production merge, so they would never have executed.
-one_fm.patches.v15_0.add_quality_feedback_parameter_custom_field
 one_fm.patches.v15_0.adjust_ccp_column_widths
 one_fm.patches.v15_0.delete_field_assign_day_off
 one_fm.patches.v15_0.fix_sequence_type_list_view
@@ -525,4 +524,3 @@ one_fm.patches.v15_0.seed_app_services
 one_fm.patches.v15_0.set_candidate_title_fields
 one_fm.patches.v15_0.update_attendance_check
 one_fm.patches.v15_0.update_employee_and_user_references
-one_fm.patches.v15_0.update_po_approvals
