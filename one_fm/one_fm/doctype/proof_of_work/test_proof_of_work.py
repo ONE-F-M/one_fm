@@ -6,6 +6,10 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import get_first_day, get_last_day, getdate
 
 from one_fm.one_fm.doctype.proof_of_work.proof_of_work import (
+	ATTENDANCE_ABBR,
+	DAY_OFF_ABBRS,
+	_attendance_abbr,
+	_basis_for_rate_type,
 	_fmt_contractual,
 	_fmt_staff_breakdown,
 	_shift_hours_from_item,
@@ -287,3 +291,111 @@ class TestProofofWork(FrappeTestCase):
 	def test_generate_rejects_invalid_month(self):
 		with self.assertRaises(frappe.ValidationError):
 			generate_proof_of_work(13, TEST_YEAR, "Shift Hours", [self.contract.name])
+
+
+class TestRateTypeBasis(FrappeTestCase):
+	"""
+	WI-001700 update: the Contract Item's Rate Type decides which metric a Sale Item is
+	reported in, unless the contract has an Attendance Amendment.
+	"""
+
+	def test_daily_and_monthly_are_counted_in_present_days(self):
+		for rate_type in ("Daily", "Monthly"):
+			self.assertEqual(
+				_basis_for_rate_type(rate_type, "attendance", "Both"),
+				"Attendance Day",
+				msg=rate_type,
+			)
+
+	def test_hourly_is_counted_in_shift_hours(self):
+		self.assertEqual(_basis_for_rate_type("Hourly", "attendance", "Both"), "Shift Hours")
+
+	def test_an_amendment_keeps_the_generated_method(self):
+		# "If the linked Contract has Attendance Amendment, then the data will be shown as
+		# per the generated method" - the Rate Type must not override it.
+		for rate_type in ("Daily", "Monthly", "Hourly", ""):
+			self.assertEqual(
+				_basis_for_rate_type(rate_type, "amendment", "Both"), "Both", msg=rate_type
+			)
+			self.assertEqual(
+				_basis_for_rate_type(rate_type, "amendment", "Shift Hours"),
+				"Shift Hours",
+				msg=rate_type,
+			)
+
+	def test_missing_rate_type_leaves_behaviour_unchanged(self):
+		# A Contract Item with no Rate Type keeps the document's basis, so nothing that
+		# worked before this change starts reporting differently.
+		for basis in ("Attendance Day", "Shift Hours", "Both"):
+			self.assertEqual(_basis_for_rate_type("", "attendance", basis), basis, msg=basis)
+			self.assertEqual(_basis_for_rate_type(None, "attendance", basis), basis, msg=basis)
+
+
+class TestAttendanceReportStructure(FrappeTestCase):
+	"""
+	WI-001700 update: the Attendance Report print format shows the item type(s) beside the
+	Sale Item Code and drops the Item Type column.
+	"""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		# Read the shipped definition rather than the database copy: the file is what
+		# migrate installs, and asserting on the DB would only pass after a migration.
+		import json
+
+		path = frappe.get_app_path(
+			"one_fm", "one_fm", "print_format", "proof_of_work_attendance_report",
+			"proof_of_work_attendance_report.json",
+		)
+		cls.print_format = frappe._dict(json.loads(frappe.read_file(path)))
+
+	def test_item_type_column_is_gone(self):
+		self.assertNotIn("Item Type</th>", self.print_format.html)
+
+	def test_item_types_are_shown_beside_the_sale_item_code(self):
+		self.assertIn("group.sale_item", self.print_format.html)
+		self.assertIn("group.item_type", self.print_format.html)
+
+	def test_grid_carries_the_columns_from_the_agreed_structure(self):
+		for column in ("Employee ID", "Employee Name", "Working Days", "Days Off", "Total Hours"):
+			self.assertIn(f"{column}</th>", self.print_format.html, msg=column)
+
+	def test_header_repeats_without_overlapping_tall_rows(self):
+		# wkhtmltopdf overlaps a repeated thead with tall rows unless it is a row group.
+		self.assertIn("display: table-row-group", self.print_format.css)
+
+
+class TestAttendanceAbbreviations(FrappeTestCase):
+	"""
+	The day cells must carry the legend's abbreviations. Day Off previously fell through to
+	its initial ("D"), so the Days Off column added to the report could never count it.
+	"""
+
+	def test_day_off_statuses_use_the_legend_codes(self):
+		self.assertEqual(_attendance_abbr("Day Off"), "DO")
+		self.assertEqual(_attendance_abbr("Client Day Off"), "CDO")
+
+	def test_day_off_codes_are_the_ones_the_report_counts(self):
+		self.assertEqual(
+			{_attendance_abbr("Day Off"), _attendance_abbr("Client Day Off")}, DAY_OFF_ABBRS
+		)
+
+	def test_half_day_no_longer_collides_with_holiday(self):
+		self.assertEqual(_attendance_abbr("Half Day"), "HD")
+		self.assertEqual(_attendance_abbr("Holiday"), "H")
+		self.assertNotEqual(_attendance_abbr("Half Day"), _attendance_abbr("Holiday"))
+
+	def test_every_status_in_use_has_an_abbreviation(self):
+		# Statuses present in the live data; none should fall back to a bare initial.
+		for status in (
+			"Present", "Day Off", "On Leave", "Absent", "On Hold", "Client Day Off",
+			"Holiday", "Work From Home", "Medical Appointment", "Client Interview",
+			"Fingerprint Appointment", "Half Day",
+		):
+			self.assertIn(status, ATTENDANCE_ABBR, msg=status)
+
+	def test_unknown_status_falls_back_to_its_initial(self):
+		self.assertEqual(_attendance_abbr("Suspended"), "S")
+		self.assertEqual(_attendance_abbr(""), "")
+		self.assertEqual(_attendance_abbr(None), "")

@@ -18,10 +18,17 @@ GENERATION_BASIS_OPTIONS = ("Shift Hours", "Attendance Day", "Both")
 ATTENDANCE_ABBR = {
 	"Present": "P",
 	"Working": "P",
-	"Work From Home": "P",
+	"Work From Home": "WFH",
 	"Absent": "A",
-	"Half Day": "H",
 	"On Leave": "L",
+	"Half Day": "HD",
+	"Day Off": "DO",
+	"Client Day Off": "CDO",
+	"Holiday": "H",
+	"On Hold": "OH",
+	"Fingerprint Appointment": "FA",
+	"Medical Appointment": "MA",
+	"Client Interview": "CI",
 }
 
 # Attendance Amendment workflow state that marks it as "approved". The workflow
@@ -47,6 +54,14 @@ MONTH_NAMES = (
 
 # Attendance statuses that count as a worked/present day.
 PRESENT_STATUSES = {"Present", "Working", "Work From Home"}
+
+# Cells that count towards the "Days Off" column on the Attendance Report.
+DAY_OFF_ABBRS = {"DO", "CDO"}
+
+
+def _attendance_abbr(status: str) -> str:
+	"""Legend abbreviation for an attendance status, falling back to its initial."""
+	return ATTENDANCE_ABBR.get(status) or (status or "")[:1].upper()
 
 # Standard month used for the contractual justification (Column 3). Fixed by
 # business policy: a contracted head is expected to cover 30 days / 208 hours a
@@ -174,6 +189,74 @@ def _contracted_count_by_sale_item(contract_name: str) -> dict:
 		if it.item_code:
 			result[it.item_code] = result.get(it.item_code, 0) + cint(it.count)
 	return result
+
+
+def _rate_type_by_sale_item(contract_name: str) -> dict:
+	"""
+	Contract Item Rate Type per Sale Item (WI-001700 update).
+
+	Rate Type decides which metric a Sale Item is measured in - Daily and Monthly in
+	present days, Hourly in shift hours. Where one Sale Item appears on several Contract
+	Item rows, an Hourly row wins: the item is billed by the hour, so days would understate
+	it.
+
+	Returns ``{sale_item: rate_type}``.
+	"""
+	result = {}
+	for it in frappe.get_all(
+		"Contract Item",
+		filters={"parent": contract_name, "parenttype": "Contracts", "item_type": "Service"},
+		fields=["item_code", "rate_type"],
+	):
+		if not it.item_code:
+			continue
+		if it.rate_type == "Hourly" or it.item_code not in result:
+			result[it.item_code] = it.rate_type or ""
+	return result
+
+
+def _basis_for_rate_type(rate_type: str, source_type: str, generation_basis: str) -> str:
+	"""
+	The metric one Sale Item is reported in (WI-001700 update).
+
+	Without an Attendance Amendment the Contract Item's Rate Type decides: Daily and
+	Monthly are counted in present days, Hourly in shift hours. When the contract does have
+	an amendment the figures are shown as generated, so the document's own generation basis
+	stands - as does it for a Contract Item with no Rate Type set, which leaves existing
+	behaviour untouched.
+	"""
+	if source_type == "amendment":
+		return generation_basis
+
+	if rate_type == "Hourly":
+		return "Shift Hours"
+	if rate_type in ("Daily", "Monthly"):
+		return "Attendance Day"
+
+	return generation_basis
+
+
+def _item_types_by_sale_item(sale_items) -> dict:
+	"""
+	Item Type per Sale Item, comma separated where an item carries more than one.
+
+	The Attendance Report shows these beside the Sale Item Code instead of in a column
+	(WI-001700 update), so several types have to collapse into one string.
+	"""
+	if not sale_items:
+		return {}
+
+	types = {}
+	for row in frappe.get_all(
+		"Item", filters={"name": ["in", list(sale_items)]}, fields=["name", "item_type"]
+	):
+		if not row.item_type:
+			continue
+		existing = types.setdefault(row.name, [])
+		if row.item_type not in existing:
+			existing.append(row.item_type)
+
+	return {name: ", ".join(values) for name, values in types.items()}
 
 
 def _blank_source_entry() -> dict:
@@ -389,22 +472,22 @@ def _populate_pow_items(doc, first_day, last_day):
 	else:
 		source = _source_from_attendance(doc.project, first_day, last_day)
 
-	basis = doc.generation_basis
+	# Rate Type drives the metric per Sale Item; the document's basis is the fallback.
+	rate_types = _rate_type_by_sale_item(doc.contract)
 	# Union of Sale Items on the contract and/or with actual attendance.
 	sale_items = sorted(set(contracted) | set(source))
 
-	# Resolve item_type for all sale items in one query.
-	item_types = {}
-	if sale_items:
-		for row in frappe.get_all(
-			"Item", filters={"name": ["in", sale_items]}, fields=["name", "item_type"]
-		):
-			item_types[row.name] = row.item_type or ""
+	# Resolve item_type for all sale items in one query, comma joined where an item
+	# carries more than one.
+	item_types = _item_types_by_sale_item(sale_items)
 
 	doc.set("proof_of_work_item", [])
 	for sale_item in sale_items:
 		shift_hours = _shift_hours_from_item(sale_item)
 		s_entry = source.get(sale_item, _blank_source_entry())
+		basis = _basis_for_rate_type(
+			rate_types.get(sale_item, ""), source_type, doc.generation_basis
+		)
 
 		doc.append(
 			"proof_of_work_item",
@@ -593,7 +676,7 @@ def _grid_from_amendment(amendment_name: str, total_days: int) -> dict:
 				emp["days"][i] = "H"
 				emp["total_present"] += 0.5
 			elif status:
-				emp["days"][i] = ATTENDANCE_ABBR.get(status, status[:1].upper())
+				emp["days"][i] = _attendance_abbr(status)
 	return groups
 
 
@@ -641,13 +724,13 @@ def _grid_from_attendance(project: str, first_day, last_day) -> dict:
 		)
 		day = getdate(r.attendance_date).day
 		if r.status in PRESENT_STATUSES:
-			emp["days"][day] = "P"
+			emp["days"][day] = _attendance_abbr(r.status)
 			emp["total_present"] += 1.0
 		elif r.status == "Half Day":
-			emp["days"][day] = "H"
+			emp["days"][day] = _attendance_abbr(r.status)
 			emp["total_present"] += 0.5
 		elif r.status:
-			emp["days"][day] = ATTENDANCE_ABBR.get(r.status, r.status[:1].upper())
+			emp["days"][day] = _attendance_abbr(r.status)
 	return groups
 
 
@@ -673,29 +756,44 @@ def get_pow_attendance_report(pow_name: str) -> dict:
 	else:
 		groups = _grid_from_attendance(doc.project, first_day, last_day)
 
-	item_types = {}
-	if groups:
-		for row in frappe.get_all(
-			"Item", filters={"name": ["in", list(groups)]}, fields=["name", "item_type"]
-		):
-			item_types[row.name] = row.item_type or ""
+	item_types = _item_types_by_sale_item(list(groups))
 
 	group_list = []
 	for sale_item in sorted(groups):
+		shift_hours = _shift_hours_from_item(sale_item)
 		rows = []
 		staff = sorted(groups[sale_item].values(), key=lambda e: e["employee_name"] or "")
 		for sn, emp in enumerate(staff, start=1):
+			cells = [emp["days"].get(i, "") for i in range(1, total_days + 1)]
+			working_days = flt(emp["total_present"])
+			days_off = sum(1 for cell in cells if cell in DAY_OFF_ABBRS)
 			rows.append(
 				{
 					"sn": sn,
 					"employee_id": emp["employee_id"],
 					"employee_name": emp["employee_name"],
-					"days": [emp["days"].get(i, "") for i in range(1, total_days + 1)],
-					"total_present": _num(emp["total_present"]),
+					"days": cells,
+					"total_present": _num(working_days),
+					"working_days": _num(working_days),
+					"days_off": _num(days_off),
+					"total_hours": _num(working_days * shift_hours),
 				}
 			)
+
 		group_list.append(
-			{"sale_item": sale_item, "item_type": item_types.get(sale_item, ""), "employees": rows}
+			{
+				"sale_item": sale_item,
+				# WI-001700 update: the item type(s) are shown next to the Sale Item Code,
+				# comma separated, and the Item Type column is dropped.
+				"item_type": item_types.get(sale_item, ""),
+				"employees": rows,
+				"totals": {
+					"employees": len(rows),
+					"working_days": _num(sum(flt(r["working_days"]) for r in rows)),
+					"days_off": _num(sum(flt(r["days_off"]) for r in rows)),
+					"total_hours": _num(sum(flt(r["total_hours"]) for r in rows)),
+				},
+			}
 		)
 
 	return {
