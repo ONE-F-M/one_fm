@@ -1400,7 +1400,11 @@ function render_roster(res, page) {
 			if (employees_data[employee_key][date_key] && employees_data[employee_key][date_key].length > 0) {
 				for (let k = 0; k < employees_data[employee_key][date_key].length; k++) {
 					let record = employees_data[employee_key][date_key][k];
-					let { employee, date, operations_role, post_abbrv, employee_availability, shift, start_datetime, end_datetime, start_time, end_time, roster_type, attendance, day_off_ot, leave_type, leave_application, event_location, actual_site, client_event, on_the_job_training, project, site } = record;
+					let { employee, date, operations_role, post_abbrv, employee_availability, shift, start_datetime, end_datetime, start_time, end_time, roster_type, attendance, day_off_ot, leave_type, leave_application, event_location, actual_site, client_event, on_the_job_training, project, site, reference_doctype, reference_docname } = record;
+					// Tooltip details for Client Interview (same for scheduled/attended cases)
+					let client_interview_tooltip = `Client Interview`;
+					if (project) client_interview_tooltip += `<br>Project: ${project}`;
+					if (reference_docname) client_interview_tooltip += `<br>Ref: ${reference_docname}`;
 					// NR Logic: Determine if we are on a foreign grid, and if today's schedule is outside this grid.
 					if (employee_has_relieving_days && page.filters) {
 						let is_foreign_grid = false;
@@ -1521,7 +1525,7 @@ function render_roster(res, page) {
 							data_selectid = `${employee}|${date}|${operations_role}|${shift}|${employee_availability}`;
 						}
 					}
-					else if (attendance && in_list(["Day Off", "On Leave", "Absent", "On Hold", "Client Day Off", "Fingerprint Appointment", "Medical Appointment", "Client Event"], attendance)) {
+					else if (attendance && in_list(["Day Off", "On Leave", "Absent", "On Hold", "Client Day Off", "Fingerprint Appointment", "Medical Appointment", "Client Event", "Client Interview"], attendance)) {
 						data_selectid = `${employee}|${date}|${employee_availability}`;
 						if (attendance == "Fingerprint Appointment") {
 							is_fingerprint_appointment = true;
@@ -1567,6 +1571,9 @@ function render_roster(res, page) {
 						} else if (attendance && attendance == "Medical Appointment") {
 							tooltiptext += `Medical Appointment`;
 							abbrv += `${abbr_map[attendance]}<br>`;
+						} else if (attendance && attendance == "Client Interview") {
+							tooltiptext += client_interview_tooltip;
+							abbrv += `${abbr_map[attendance]}<br>`;
 						} else if (attendance && attendance == "Client Event") {
 							tooltiptext += `Client Event<br>Event Location: ${event_location}<br>Start: ${shift_start}<br>End: ${shift_end}<br>`;
 							abbrv += `${abbr_map[attendance]}<br>`;
@@ -1588,6 +1595,8 @@ function render_roster(res, page) {
 							abbrv += `${abbr_map[employee_availability]}<br>`;
 							if (employee_availability == "Client Event") {
 								tooltiptext += `Client Event<br>Event Location: ${event_location}<br>Start: ${shift_start}<br>End: ${shift_end}<br>`;
+							} else if (employee_availability == "Client Interview") {
+								tooltiptext += client_interview_tooltip;
 							}
 						} else {
 							if (!shift && client_event) {

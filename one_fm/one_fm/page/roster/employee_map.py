@@ -211,7 +211,7 @@ class CreateMap:
 				es.shift, es.start_datetime, es.end_datetime, es.roster_type, es.employee_availability,
 				es.day_off_ot, es.project, es.site, emp.project as actual_project,
 				emp.site as actual_site, emp.shift as actual_shift, es.event_location, es.client_event,
-				es.on_the_job_training
+				es.on_the_job_training, es.reference_doctype, es.reference_docname
 			FROM `tabEmployee Schedule` es 
 			JOIN `tabEmployee` emp
 			ON es.employee = emp.name
@@ -383,6 +383,9 @@ class CreateMap:
 						'end_datetime': matched_schedule.get('end_datetime'),
 						'event_location': matched_schedule.get('event_location'),
 						'client_event': matched_schedule.get('client_event'),
+						'project': matched_schedule.get('project'),
+						'reference_doctype': matched_schedule.get('reference_doctype'),
+						'reference_docname': matched_schedule.get('reference_docname'),
 						'post_abbrv': matched_schedule.get('post_abbrv'),
 						'day_off_ot': attendance['day_off_ot'],
 						'actual_shift': attendance.get('actual_shift'),
