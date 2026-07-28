@@ -3007,7 +3007,9 @@ def suspend_employee_action(employees, selected_dates=0, repeat=0, repeat_freq=N
 				sch = frappe.db.get_value("Employee Schedule", {"employee": emp_name, "date": date_str, "roster_type": "Basic"}, "name")
 				if sch:
 					doc = frappe.get_doc("Employee Schedule", sch)
-					doc.employee_availability = "Suspended"
+					# WI-001694: route through the suspension approval workflow;
+					# Employee Availability stays unchanged until an authorised role approves.
+					doc.workflow_state = "Pending Suspension"
 					doc.save(ignore_permissions=True)
 				else:
 					emp_doc = frappe.get_doc("Employee", emp_name)
@@ -3016,7 +3018,9 @@ def suspend_employee_action(employees, selected_dates=0, repeat=0, repeat_freq=N
 					doc.employee_name = emp_doc.employee_name
 					doc.department = emp_doc.department
 					doc.date = date_str
-					doc.employee_availability = "Suspended"
+					# WI-001694: created pending approval; availability becomes Suspended on approve.
+					doc.employee_availability = "Working"
+					doc.workflow_state = "Pending Suspension"
 					doc.roster_type = "Basic"
 					doc.start_datetime = f"{date_str} 00:00:00"
 					doc.end_datetime = f"{date_str} 23:59:59"
