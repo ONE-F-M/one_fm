@@ -32,6 +32,7 @@
   "total_cost",
   "selling_price",
   "column_break_dmsv",
+  "total_gross_margin",
   "gross_profit_margin",
   "net_profit_margin",
   "net_profit_amount"
@@ -164,16 +165,24 @@
   {
    "fieldname": "total_cost",
    "fieldtype": "Currency",
-   "label": "Total Cost"
+   "label": "Total Cost",
+   "read_only": 1
   },
   {
    "fieldname": "selling_price",
    "fieldtype": "Currency",
-   "label": "Selling Price"
+   "label": "Selling Price",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_dmsv",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_gross_margin",
+   "fieldtype": "Currency",
+   "label": "Total Gross Margin",
+   "read_only": 1
   },
   {
    "fieldname": "gross_profit_margin",

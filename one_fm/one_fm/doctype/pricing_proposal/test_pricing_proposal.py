@@ -5,7 +5,13 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 from one_fm.one_fm.doctype.pricing_proposal.pricing_proposal import (
+	average_over_contract,
+	calculate_total_chain,
 	get_budget_configuration_for_date,
+	get_margin_percentage,
+	get_pifss_cost,
+	get_reliever_ratio,
+	get_wcf_insurance_cost,
 )
 
 
@@ -96,3 +102,91 @@ class TestPricingProposal(FrappeTestCase):
 		proposal.validate()
 
 		self.assertEqual(proposal.budget_configuration, original.name)
+
+
+class TestPricingFormulas(FrappeTestCase):
+	"""
+	WI-001711 formulas, exercised through the module-level helpers so each AC's worked
+	example is asserted directly, without Budget Configuration or Item fixtures.
+	"""
+
+	def test_average_basic_salary_matches_the_worked_example(self):
+		# AC: Basic 75, Increment 2%, Duration 5 -> 75 + (75 x 0.02 x 2.5) = 78.75
+		self.assertEqual(average_over_contract(75, 2, 5), 78.75)
+
+	def test_average_other_allowance_uses_the_same_growth(self):
+		# AC: [Other] + ([Other] x [Inc %] x ([Duration]/2))
+		self.assertEqual(average_over_contract(100, 2, 5), 105)
+
+	def test_no_increment_leaves_the_amount_untouched(self):
+		self.assertEqual(average_over_contract(75, 0, 5), 75)
+		self.assertEqual(average_over_contract(75, 2, 0), 75)
+
+	def test_wcf_insurance_is_a_rate_per_hundred(self):
+		# AC: WCF Insurance Cost = Primary Salary x 0.66 / 100
+		self.assertAlmostEqual(get_wcf_insurance_cost(78.75, 0.66), 78.75 * 0.66 / 100)
+
+	def test_pifss_only_applies_to_kuwaiti_rows(self):
+		# AC: only when Nationality = "Kuwaiti": (Primary + Primary/2) x 11.5%
+		expected = (78.75 + 78.75 / 2) * 11.5 / 100
+		self.assertAlmostEqual(get_pifss_cost(78.75, 11.5, "Kuwaiti"), expected)
+
+		for nationality in ("Non-Kuwaiti", "Non-State", "", None):
+			self.assertEqual(get_pifss_cost(78.75, 11.5, nationality), 0, msg=str(nationality))
+
+	def test_reliever_ratio_is_factor_over_quantity(self):
+		# AC: Reliever Ratio = Reliever Factor Percentage / Quantity
+		self.assertEqual(get_reliever_ratio(10, 4), 2.5)
+
+	def test_reliever_ratio_is_zero_without_quantity(self):
+		# A row with no headcount carries no reliever cost, and dividing by it would raise.
+		self.assertEqual(get_reliever_ratio(10, 0), 0)
+		self.assertEqual(get_reliever_ratio(10, None), 0)
+
+	def test_margin_percentage_guards_a_zero_selling_price(self):
+		self.assertEqual(get_margin_percentage(50, 200), 25)
+		self.assertEqual(get_margin_percentage(50, 0), 0)
+
+
+class TestPricingProposalTotals(FrappeTestCase):
+	"""
+	The AC5 chain. Driven through calculate_total_chain so it runs without the Pricing
+	Proposal doctype installed.
+	"""
+
+	def test_total_cost_adds_the_indirect_overhead(self):
+		# AC: Total Cost (COST+OH) = Total Operation Cost + Indirect Overhead
+		self.assertEqual(calculate_total_chain(1000, 200, 0).total_cost, 1200)
+
+	def test_selling_price_applies_the_markup(self):
+		# AC: Selling Price = Total Cost x (1 + Markup%)
+		self.assertEqual(calculate_total_chain(1000, 200, 25).selling_price, 1500)
+
+	def test_gross_margin_is_measured_against_operational_cost(self):
+		# AC: Total Gross Margin = Selling Price - Total Operation Cost
+		result = calculate_total_chain(1000, 200, 25)
+
+		self.assertEqual(result.total_gross_margin, 500)
+		self.assertAlmostEqual(result.gross_profit_margin, 500 / 1500 * 100)
+
+	def test_net_profit_is_measured_against_total_cost(self):
+		# AC: Net Profit Amount = Selling Price - Total Cost
+		result = calculate_total_chain(1000, 200, 25)
+
+		self.assertEqual(result.net_profit_amount, 300)
+		self.assertAlmostEqual(result.net_profit_margin, 300 / 1500 * 100)
+
+	def test_zero_markup_leaves_no_net_profit_but_recovers_overhead(self):
+		result = calculate_total_chain(1000, 200, 0)
+
+		self.assertEqual(result.selling_price, 1200)
+		self.assertEqual(result.net_profit_amount, 0)
+		self.assertEqual(result.net_profit_margin, 0)
+		self.assertEqual(result.total_gross_margin, 200)
+
+	def test_empty_proposal_does_not_raise(self):
+		result = calculate_total_chain(None, None, None)
+
+		self.assertEqual(result.total_cost, 0)
+		self.assertEqual(result.gross_profit_margin, 0)
+		self.assertEqual(result.net_profit_margin, 0)
