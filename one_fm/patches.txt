@@ -518,6 +518,7 @@ one_fm.patches.v15_0.finalize_line_manager_approval_for_corporate_withdrawal
 one_fm.patches.v15_0.create_employee_resignation_date_adjustment_workflow #2026-07-22
 one_fm.patches.v15_0.backfill_single_employee_resignation_fields #2026-07-22
 one_fm.patches.v15_0.rebalance_employee_resignation_layout_single_employee #rerun-2026-07-26-employee-first
+one_fm.patches.v15_0.backfill_total_duration_without_remedical #2026-07-23
 one_fm.patches.v15_0.add_project_sprint_prefix_field #2026-07-23
 one_fm.patches.v15_0.show_project_users_section_for_scrum #2026-07-23
 one_fm.patches.v15_0.add_bonus_request_line_manager_workflow #2026-07-23

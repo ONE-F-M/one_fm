@@ -49,6 +49,28 @@ class OverseasMedicalAppointmentWAFID(Document):
                 update_modified=True
             )
 
+        # 3. A "Fit" result means Remedical is never needed for this candidate --
+        # auto-skip its tracker rows instead of leaving them "Pending" forever
+        # (previously only fixable by manually picking "Skipped" from the
+        # dropdown). Only touches rows still at their default "Pending" state,
+        # so it never overwrites a Remedical that's already under way.
+        if self.status == "Fit":
+            remedical_rows = frappe.get_all(
+                "Candidate Country Process Details",
+                filters={
+                    "parent": self.candidate_country_process,
+                    "process_name": ["in", ["Remedical appointment", "Remedical results"]],
+                    "status": "Pending",
+                },
+                fields=["name"],
+            )
+            for row in remedical_rows:
+                frappe.db.set_value(
+                    "Candidate Country Process Details", row.name,
+                    "status", "Skipped",
+                    update_modified=True
+                )
+
     def on_update(self):
         """Notify the CCP engine to evaluate downstream triggers."""
         if self.candidate_country_process and self.status in (
