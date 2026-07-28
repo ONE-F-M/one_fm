@@ -8,8 +8,10 @@ from frappe.utils import get_first_day, get_last_day, getdate
 from one_fm.one_fm.doctype.proof_of_work.proof_of_work import (
 	ATTENDANCE_ABBR,
 	DAY_OFF_ABBRS,
+	_actual_hours,
 	_attendance_abbr,
 	_basis_for_rate_type,
+	_uses_nominal_shift_hours,
 	_fmt_contractual,
 	_fmt_staff_breakdown,
 	_shift_hours_from_item,
@@ -399,3 +401,65 @@ class TestAttendanceAbbreviations(FrappeTestCase):
 		self.assertEqual(_attendance_abbr("Suspended"), "S")
 		self.assertEqual(_attendance_abbr(""), "")
 		self.assertEqual(_attendance_abbr(None), "")
+
+
+class TestHourlyReportsNominalShiftHours(FrappeTestCase):
+	"""
+	WI-001700 update: an Hourly Sale Item "Fetch Shift Hours", so hours are the shift
+	length x days present and come out whole. Recorded working_hours are what produced the
+	decimal figures (540.96, 537.93) that prompted this.
+	"""
+
+	def _staff(self):
+		# 45 days present, but the clock recorded a fractional total
+		return {"staff": {"E1": {"name": "E1", "id": "E1", "days": 45, "hours": 540.96}}}
+
+	def test_hourly_uses_shift_length_not_the_clock(self):
+		out = _fmt_staff_breakdown(
+			self._staff(), shift_hours=12, basis="Shift Hours", nominal_shift_hours=True
+		)
+		self.assertEqual(out, "- 1 Staff worked 540 Hours: 540 Hrs")
+		self.assertNotIn("540.96", out)
+
+	def test_recorded_hours_still_used_when_not_rate_driven(self):
+		# The amendment path shows data as generated, so the clock still wins there.
+		out = _fmt_staff_breakdown(self._staff(), shift_hours=12, basis="Shift Hours")
+		self.assertIn("540.96", out)
+
+	def test_actual_hours_total_follows_the_same_rule(self):
+		source = {"days": 45, "hours": 540.96, "staff": {}}
+		self.assertEqual(
+			_actual_hours(source, 12, "Shift Hours", nominal_shift_hours=True), 540
+		)
+		self.assertEqual(_actual_hours(source, 12, "Shift Hours"), 540.96)
+
+	def test_only_hourly_without_an_amendment_uses_the_shift_length(self):
+		self.assertTrue(_uses_nominal_shift_hours("Hourly", "attendance"))
+		self.assertFalse(_uses_nominal_shift_hours("Hourly", "amendment"))
+		for rate_type in ("Daily", "Monthly", ""):
+			self.assertFalse(_uses_nominal_shift_hours(rate_type, "attendance"), msg=rate_type)
+
+
+class TestReportDayHeader(FrappeTestCase):
+	"""WI-001700 update: the day columns carry weekday over d/m, as the sample shows."""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		import json
+
+		path = frappe.get_app_path(
+			"one_fm", "one_fm", "print_format", "proof_of_work_attendance_report",
+			"proof_of_work_attendance_report.json",
+		)
+		cls.print_format = frappe._dict(json.loads(frappe.read_file(path)))
+
+	def test_day_columns_have_two_header_rows(self):
+		self.assertIn("label.weekday", self.print_format.html)
+		self.assertIn("label.date", self.print_format.html)
+
+	def test_fixed_columns_span_both_header_rows(self):
+		# Employee ID/Name and the three totals must not repeat on the second row.
+		self.assertIn('class="c-id" rowspan="2"', self.print_format.html)
+		self.assertIn('class="c-name" rowspan="2"', self.print_format.html)
+		self.assertIn('class="c-num" rowspan="2"', self.print_format.html)

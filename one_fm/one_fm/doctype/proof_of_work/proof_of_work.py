@@ -8,7 +8,7 @@ import zipfile
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import cint, cstr, date_diff, flt, get_first_day, get_last_day, getdate
+from frappe.utils import add_days, cint, cstr, date_diff, flt, get_first_day, get_last_day, getdate
 
 # Canonical values stored in the "Generation Basis" Select field.
 GENERATION_BASIS_OPTIONS = ("Shift Hours", "Attendance Day", "Both")
@@ -236,6 +236,18 @@ def _basis_for_rate_type(rate_type: str, source_type: str, generation_basis: str
 	return generation_basis
 
 
+def _uses_nominal_shift_hours(rate_type: str, source_type: str) -> bool:
+	"""
+	Whether hours come from the shift length rather than the clock (WI-001700 update).
+
+	The update says an Hourly Sale Item "Fetch Shift Hours", which is the nominal length
+	in the item code (``-12HR``) x days present - so the figures come out whole. Actual
+	recorded working_hours are what produced values like 540.96, and they still drive the
+	amendment path, where the data is shown as generated.
+	"""
+	return source_type != "amendment" and rate_type == "Hourly"
+
+
 def _item_types_by_sale_item(sale_items) -> dict:
 	"""
 	Item Type per Sale Item, comma separated where an item carries more than one.
@@ -371,10 +383,16 @@ def _source_from_attendance(project: str, first_day, last_day) -> dict:
 	return agg
 
 
-def _actual_hours(source: dict, shift_hours: float, basis: str) -> float:
-	"""Hours worked for a Sale Item; falls back to present-days x shift hours
-	when the source only carries statuses (no numeric hours)."""
-	if basis == "Attendance Day":
+def _actual_hours(
+	source: dict, shift_hours: float, basis: str, nominal_shift_hours: bool = False
+) -> float:
+	"""Hours worked for a Sale Item.
+
+	``nominal_shift_hours`` reports days x the shift length, which is what an Hourly Rate
+	Type asks for. Otherwise recorded working hours are used, falling back to days x shift
+	length when the source only carries statuses.
+	"""
+	if basis == "Attendance Day" or nominal_shift_hours:
 		return flt(source.get("days", 0.0)) * shift_hours
 	return flt(source.get("hours", 0.0)) or (flt(source.get("days", 0.0)) * shift_hours)
 
@@ -387,7 +405,9 @@ def _num(value) -> str:
 	return f"{value:.2f}".rstrip("0").rstrip(".")
 
 
-def _group_breakdown(staff: dict, metric: str, shift_hours: float) -> str:
+def _group_breakdown(
+	staff: dict, metric: str, shift_hours: float, nominal_shift_hours: bool = False
+) -> str:
 	"""
 	Group distinct staff by identical time worked for one metric.
 
@@ -403,6 +423,9 @@ def _group_breakdown(staff: dict, metric: str, shift_hours: float) -> str:
 	for info in staff.values():
 		if metric == "days":
 			value = flt(info.get("days", 0.0))
+		elif nominal_shift_hours:
+			# Shift length x days present, so an Hourly item reports whole hours.
+			value = flt(info.get("days", 0.0)) * shift_hours
 		else:
 			value = flt(info.get("hours", 0.0)) or (flt(info.get("days", 0.0)) * shift_hours)
 		key = round(value, 2)
@@ -419,7 +442,9 @@ def _group_breakdown(staff: dict, metric: str, shift_hours: float) -> str:
 	return "\n".join(lines)
 
 
-def _fmt_staff_breakdown(source: dict, shift_hours: float, basis: str) -> str:
+def _fmt_staff_breakdown(
+	source: dict, shift_hours: float, basis: str, nominal_shift_hours: bool = False
+) -> str:
 	"""Column 1: staff grouped by identical time worked. For "Both", the days
 	breakdown, an "OR" line, then the hours breakdown."""
 	staff = source.get("staff", {})
@@ -430,7 +455,7 @@ def _fmt_staff_breakdown(source: dict, shift_hours: float, basis: str) -> str:
 	if basis in ("Attendance Day", "Both"):
 		blocks.append(_group_breakdown(staff, "days", shift_hours))
 	if basis in ("Shift Hours", "Both"):
-		blocks.append(_group_breakdown(staff, "hours", shift_hours))
+		blocks.append(_group_breakdown(staff, "hours", shift_hours, nominal_shift_hours))
 	return "\nOR\n".join(b for b in blocks if b)
 
 
@@ -485,9 +510,9 @@ def _populate_pow_items(doc, first_day, last_day):
 	for sale_item in sale_items:
 		shift_hours = _shift_hours_from_item(sale_item)
 		s_entry = source.get(sale_item, _blank_source_entry())
-		basis = _basis_for_rate_type(
-			rate_types.get(sale_item, ""), source_type, doc.generation_basis
-		)
+		rate_type = rate_types.get(sale_item, "")
+		basis = _basis_for_rate_type(rate_type, source_type, doc.generation_basis)
+		nominal = _uses_nominal_shift_hours(rate_type, source_type)
 
 		doc.append(
 			"proof_of_work_item",
@@ -495,8 +520,8 @@ def _populate_pow_items(doc, first_day, last_day):
 				"sale_item_code": sale_item,
 				"item_type": item_types.get(sale_item, ""),
 				"contractual_hours": _fmt_contractual(contracted.get(sale_item, 0), basis),
-				"actual_hours": f"{_actual_hours(s_entry, shift_hours, basis):.2f} hrs",
-				"staff_breakdown": _fmt_staff_breakdown(s_entry, shift_hours, basis),
+				"actual_hours": f"{_actual_hours(s_entry, shift_hours, basis, nominal):.2f} hrs",
+				"staff_breakdown": _fmt_staff_breakdown(s_entry, shift_hours, basis, nominal),
 			},
 		)
 
@@ -796,6 +821,18 @@ def get_pow_attendance_report(pow_name: str) -> dict:
 			}
 		)
 
+	# Weekday over d/m for each column, as the Attendance Amendment preview shows it.
+	day_labels = []
+	for offset in range(total_days):
+		day = add_days(first_day, offset)
+		day_labels.append(
+			{
+				"weekday": day.strftime("%a"),
+				"date": f"{day.day}/{day.month}",
+				"is_weekend": day.weekday() in (4, 5),
+			}
+		)
+
 	return {
 		"meta": {
 			"contract": doc.contract,
@@ -805,6 +842,7 @@ def get_pow_attendance_report(pow_name: str) -> dict:
 			"year": first_day.year,
 			"total_days": total_days,
 			"day_numbers": list(range(1, total_days + 1)),
+			"day_labels": day_labels,
 			"source_type": source_type,
 		},
 		"groups": group_list,
