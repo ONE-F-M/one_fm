@@ -581,12 +581,17 @@ def has_permission(doc, ptype=None, user=None, **kwargs):
     record has actually reached "Pending Onboarding" or a later stage in that flow.
 
     Frappe's controller has_permission hooks can only DENY access, never grant
-    anything beyond the role permission table — so write/create/delete/submit/cancel
+    anything beyond the role permission table — so write/delete/submit/cancel
     is granted at the role-permission level (see the DocType's own permissions),
     and this hook denies it back for Onboarding Officer specifically until that
     condition is met. Returns None everywhere else so other roles are never affected.
+
+    "create" is deliberately excluded: a brand-new, not-yet-inserted document can
+    never have an Arrival and Deployment record linked to it yet, so this check
+    would always deny creation outright (e.g. the automatic CCP creation cascade
+    from Job Offer's create_candidate_country_process()) regardless of role.
     """
-    if ptype not in ("write", "create", "delete", "submit", "cancel"):
+    if ptype not in ("write", "delete", "submit", "cancel"):
         return None
 
     user = user or frappe.session.user
