@@ -8,10 +8,27 @@ import zipfile
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import add_days, cint, cstr, date_diff, flt, get_first_day, get_last_day, getdate
+from frappe.utils import (
+	add_days,
+	cint,
+	cstr,
+	date_diff,
+	escape_html,
+	flt,
+	get_first_day,
+	get_last_day,
+	getdate,
+)
 
 # Canonical values stored in the "Generation Basis" Select field.
 GENERATION_BASIS_OPTIONS = ("Shift Hours", "Attendance Day", "Both")
+
+# Basis stamped on bulk-generated records (WI-001808). The generator no longer asks
+# for one - the Contract Item Rate Type decides per Sale Item - but the field still
+# backs the two paths Rate Type does not cover (an approved Attendance Amendment, and
+# a Contract Item with no Rate Type set), where "Both" reports days OR hours to match
+# the Letter's existing OR layout.
+DEFAULT_GENERATION_BASIS = "Both"
 
 # Attendance status -> single-letter cell in the monthly grid (used by the
 # reusable get_pow_attendance_report data layer).
@@ -213,6 +230,54 @@ def _rate_type_by_sale_item(contract_name: str) -> dict:
 		if it.rate_type == "Hourly" or it.item_code not in result:
 			result[it.item_code] = it.rate_type or ""
 	return result
+
+
+def _non_manpower_amount_by_category(contract_name: str) -> list:
+	"""
+	Contracted amount per Contract Item Category for the non-manpower lines (WI-001808).
+
+	The manpower tables cover Contract Items with Item Type "Service". "Items" rows are
+	the non-manpower ones - annual maintenance, pest control, handyman and the like - and
+	they carry no attendance, so there is nothing to count: they are reported as a
+	contracted amount per category.
+
+	``item_code`` is blank on most of these rows in production, so the category is the
+	only stable grouping key. ``rate`` is the figure that is consistently filled, with
+	``amount`` as the fallback where a row leaves it at zero.
+
+	Returns ``[{"contract_item_category": str, "amount": float}, ...]`` ordered by
+	category.
+	"""
+	if not contract_name:
+		return []
+
+	totals = {}
+	for it in frappe.get_all(
+		"Contract Item",
+		filters={
+			"parent": contract_name,
+			"parenttype": "Contracts",
+			"item_type": "Items",
+		},
+		fields=["contract_item_category", "rate", "amount"],
+	):
+		category = it.contract_item_category
+		if not category:
+			# Without a category the row cannot be placed in the rollup.
+			continue
+		totals[category] = totals.get(category, 0.0) + (flt(it.rate) or flt(it.amount))
+
+	return [
+		{"contract_item_category": category, "amount": totals[category]}
+		for category in sorted(totals)
+	]
+
+
+def _populate_pow_non_manpower_items(doc):
+	"""Fill the ``proof_of_work_items_nonmanpower`` rollup table on a POW document."""
+	doc.set("proof_of_work_items_nonmanpower", [])
+	for row in _non_manpower_amount_by_category(doc.contract):
+		doc.append("proof_of_work_items_nonmanpower", row)
 
 
 def _basis_for_rate_type(rate_type: str, source_type: str, generation_basis: str) -> str:
@@ -592,12 +657,18 @@ def get_eligible_contracts(month: int, year: int):
 
 
 @frappe.whitelist(methods=["POST"])
-def generate_proof_of_work(month: int, year: int, generation_basis: str, contracts):
+def generate_proof_of_work(
+	month: int, year: int, contracts, generation_basis: str = DEFAULT_GENERATION_BASIS
+):
 	"""
-	Batch-create one Proof of Work record per selected contract.
+	Batch-create and submit one Proof of Work record per selected contract.
 
-	Contracts that already have a POW for the period are skipped and
-	reported back to the caller.
+	Contracts that already have a POW for the period are skipped and reported back to
+	the caller, as is any contract whose record fails to submit (WI-001808) - one bad
+	contract must not hold up the rest of the month.
+
+	``generation_basis`` is no longer collected by the generator dialog; it defaults to
+	"Both" and stays on the document for the paths Rate Type does not cover.
 	"""
 	_guard_permission()
 
@@ -619,7 +690,7 @@ def generate_proof_of_work(month: int, year: int, generation_basis: str, contrac
 	created = []
 	skipped = []
 
-	for contract_name in contracts:
+	for idx, contract_name in enumerate(contracts):
 		if not frappe.db.exists("Contracts", contract_name):
 			skipped.append({"contract": contract_name, "reason": _("Contract not found")})
 			continue
@@ -653,10 +724,31 @@ def generate_proof_of_work(month: int, year: int, generation_basis: str, contrac
 		# Fetch & lock the summary table from the strict source hierarchy
 		# (approved Attendance Amendment first, else standard Attendance).
 		_populate_pow_items(doc, first_day, last_day)
+		# Non-manpower ("Items") contract lines, rolled up per category.
+		_populate_pow_non_manpower_items(doc)
 
 		doc.insert()
 
-		created.append(doc.name)
+		# WI-001808: bulk generation submits. A record that will not submit is reported
+		# and left as a draft to be fixed by hand, so the rest of the batch still goes
+		# through. savepoint/rollback keeps a failed submit from poisoning the
+		# transaction for the contracts that follow.
+		savepoint = f"pow_submit_{idx}"
+		frappe.db.savepoint(savepoint)
+		try:
+			doc.submit()
+			created.append(doc.name)
+		except Exception:
+			frappe.db.rollback(save_point=savepoint)
+			frappe.log_error(
+				title="Proof of Work bulk submit failed", message=frappe.get_traceback()
+			)
+			skipped.append(
+				{
+					"contract": contract_name,
+					"reason": _("Created as draft {0} - submit failed").format(doc.name),
+				}
+			)
 
 	return {"created": created, "skipped": skipped}
 
@@ -850,9 +942,20 @@ def get_pow_attendance_report(pow_name: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# ZIP export (WI-001703): the POW Letter PDF + the Attendance Report PDF,
-# bundled into one client-ready download.
+# PDF export (WI-001703, reshaped by WI-001808): the POW Letter and the
+# Attendance Report are concatenated into ONE PDF per contract - Letter first
+# (the summary + signature page), Attendance Report after it (the per-employee
+# detail grid). Bulk generation bundles one such PDF per contract into a ZIP.
 # ---------------------------------------------------------------------------
+
+# Print formats concatenated into the single per-contract PDF, in page order.
+LETTER_PRINT_FORMAT = "Proof of Work Letter"
+ATTENDANCE_PRINT_FORMAT = "Proof of Work Attendance Report"
+
+# Characters that must not reach a filename inside a ZIP or a Content-Disposition
+# header. Kept deliberately broad: contract names are free text and routinely carry
+# dots, slashes and ampersands.
+_UNSAFE_FILENAME_CHARS = re.compile(r'[\\/:*?"<>|\r\n\t]+')
 
 
 def _build_zip(entries) -> bytes:
@@ -867,66 +970,194 @@ def _build_zip(entries) -> bytes:
 	return buf.getvalue()
 
 
-def _attendance_pdf(doc) -> dict:
-	"""Render the Attendance Report PDF via the dedicated, self-contained
-	"Proof of Work Attendance Report" format (header rendered once, spaced
-	breakdown lines, wider breakdown column). Falls back to the default print
-	if the format is ever missing/disabled. Returns ``{"fname":..., "fcontent":...}``.
+def _safe_filename(text: str) -> str:
+	"""Collapse anything filesystem-hostile out of one filename component.
+
+	Pure/stdlib so it is testable without a Frappe context (see __main__).
 	"""
-	fmt = (
-		"Proof of Work Attendance Report"
-		if frappe.db.exists(
-			"Print Format", {"name": "Proof of Work Attendance Report", "disabled": 0}
+	cleaned = _UNSAFE_FILENAME_CHARS.sub(" ", cstr(text))
+	# Collapse runs of whitespace so the " - " separators stay readable.
+	return " ".join(cleaned.split())
+
+
+def pdf_file_name(customer_name: str, contract: str, start_date) -> str:
+	"""``<client name> - <contract name> - <MMM-YYYY>.pdf`` (WI-001808).
+
+	Pure/stdlib apart from ``getdate`` so it is cheap to test.
+	"""
+	period = getdate(start_date).strftime("%b-%Y") if start_date else ""
+	parts = [_safe_filename(p) for p in (customer_name, contract, period)]
+	return " - ".join(p for p in parts if p) + ".pdf"
+
+
+def _active_print_format(name: str):
+	"""The named print format if it exists and is enabled, else ``None``.
+
+	``None`` makes Frappe fall back to the default print view, so an export never
+	hard-fails just because a format was disabled.
+	"""
+	return name if frappe.db.exists("Print Format", {"name": name, "disabled": 0}) else None
+
+
+def _merged_pdf(doc) -> bytes:
+	"""The POW Letter followed by the Attendance Report, as one PDF (WI-001808).
+
+	Both formats embed the ONEFM logo themselves, so Frappe's automatic letter head is
+	turned off to avoid a duplicate. The Letter is A4 portrait and the Attendance Report
+	A4 landscape; pypdf keeps each page's own size, so the merged file is intentionally
+	mixed-orientation.
+	"""
+	from pypdf import PdfWriter
+
+	output = PdfWriter()
+	for print_format in (LETTER_PRINT_FORMAT, ATTENDANCE_PRINT_FORMAT):
+		frappe.get_print(
+			"Proof of Work",
+			doc.name,
+			print_format=_active_print_format(print_format),
+			as_pdf=True,
+			output=output,
+			no_letterhead=1,
 		)
-		else None
-	)
-	# The format embeds the logo/heading itself, so disable Frappe's auto letter
-	# head to avoid a duplicate logo.
-	return frappe.attach_print(
-		"Proof of Work", doc.name, file_name=f"Attendance-{doc.name}",
-		print_format=fmt, print_letterhead=False,
-	)
+
+	with io.BytesIO() as merged:
+		output.write(merged)
+		return merged.getvalue()
+
+
+def _pow_pdf_entry(doc) -> tuple:
+	"""``(filename, pdf_bytes)`` for one POW, named per the AC."""
+	customer_name = (
+		frappe.db.get_value("Customer", doc.customer, "customer_name") if doc.customer else None
+	) or doc.customer
+	return pdf_file_name(customer_name, doc.contract, doc.start_date), _merged_pdf(doc)
 
 
 @frappe.whitelist()
-def export_zip(name: str):
-	"""Stream a ZIP of the POW Letter PDF + Attendance Report PDF for a POW.
+def export_pdf(name: str):
+	"""Stream the single merged PDF (Letter + Attendance Report) for one POW.
 
-	Read-only (renders PDFs, no mutation), so served over GET for a direct
-	browser download.
+	Read-only (renders PDFs, no mutation), so served over GET for a direct browser
+	download.
 	"""
 	doc = frappe.get_doc("Proof of Work", name)
 	doc.check_permission("read")
 
-	# Use the dedicated POW Letter format (WI-001702); fall back to the default
-	# print if it is ever missing/disabled so the export never hard-fails. Both
-	# formats embed the ONEFM logo themselves, so Frappe's auto letter head is
-	# turned off to avoid a duplicate logo.
-	letter_format = (
-		"Proof of Work Letter"
-		if frappe.db.exists("Print Format", {"name": "Proof of Work Letter", "disabled": 0})
-		else None
-	)
-	letter = frappe.attach_print(
-		"Proof of Work", name, file_name=f"POW-Letter-{name}",
-		print_format=letter_format, print_letterhead=False,
-	)
-	attendance = _attendance_pdf(doc)
+	filename, content = _pow_pdf_entry(doc)
 
-	frappe.local.response.filename = f"{name}.zip"
-	frappe.local.response.filecontent = _build_zip(
-		[
-			(letter["fname"], letter["fcontent"]),
-			(attendance["fname"], attendance["fcontent"]),
-		]
-	)
+	frappe.local.response.filename = filename
+	frappe.local.response.filecontent = content
 	frappe.local.response.type = "download"
 
 
+def _build_pow_zip(pow_names, user: str):
+	"""Render one merged PDF per POW, ZIP them, and notify ``user`` when ready.
+
+	Runs in a background job: each contract needs two wkhtmltopdf renders, so a full
+	month would otherwise outlive the HTTP request. A contract that fails to render is
+	logged and skipped rather than losing the whole archive.
+	"""
+	entries = []
+	failed = []
+	for pow_name in pow_names:
+		try:
+			doc = frappe.get_doc("Proof of Work", pow_name)
+			entries.append(_pow_pdf_entry(doc))
+		except Exception:
+			failed.append(pow_name)
+			frappe.log_error(
+				title="Proof of Work ZIP render failed",
+				message=f"{pow_name}\n\n{frappe.get_traceback()}",
+			)
+
+	if not entries:
+		_notify_zip(user, _("No Proof of Work PDF could be rendered. Check the Error Log."))
+		return
+
+	content = _build_zip(entries)
+
+	# The archive is delivered as a private File, so it is bounded by the site's
+	# attachment limit (25 MB here). Say so plainly rather than letting the File
+	# validation surface a raw framework error from inside a background job.
+	from frappe.core.api.file import get_max_file_size
+
+	max_size = get_max_file_size()
+	if len(content) > max_size:
+		_notify_zip(
+			user,
+			_(
+				"The ZIP is {0} MB, over the {1} MB attachment limit. Generate fewer contracts at a time."
+			).format(round(len(content) / 1048576, 1), round(max_size / 1048576)),
+		)
+		return
+
+	# Private: a Proof of Work carries client attendance data and must not be public.
+	zip_file = frappe.get_doc(
+		{
+			"doctype": "File",
+			"file_name": f"Proof-of-Work-{frappe.generate_hash(length=8)}.zip",
+			"content": content,
+			"is_private": 1,
+		}
+	).save()
+
+	message = _("Your Proof of Work ZIP is ready: {0} file(s).").format(len(entries))
+	if failed:
+		message += " " + _("{0} could not be rendered - check the Error Log.").format(len(failed))
+
+	_notify_zip(user, message, file_url=zip_file.unique_url)
+
+
+def _notify_zip(user: str, message: str, file_url: str = None):
+	"""Push the ZIP outcome to the user who queued it.
+
+	``msgprint`` over realtime is how this app already reports the result of a
+	background job (see Item Request), and it renders the download anchor as HTML.
+	"""
+	body = escape_html(message)
+	if file_url:
+		body += f'<br><br><a href="{file_url}" target="_blank">{escape_html(_("Download ZIP"))}</a>'
+
+	frappe.publish_realtime(event="msgprint", message=body, user=user)
+
+
+@frappe.whitelist(methods=["POST"])
+def enqueue_pow_zip(pow_names):
+	"""Queue the ZIP build for a set of Proof of Work records (WI-001808).
+
+	Returns immediately; the download link is pushed to the calling user over realtime
+	once the archive is built.
+	"""
+	_guard_permission()
+
+	if isinstance(pow_names, str):
+		pow_names = frappe.parse_json(pow_names)
+
+	if not pow_names:
+		frappe.throw(_("No Proof of Work records to export."))
+
+	# Only export what this user is allowed to read.
+	for pow_name in pow_names:
+		frappe.get_doc("Proof of Work", pow_name).check_permission("read")
+
+	frappe.enqueue(
+		_build_pow_zip,
+		queue="long",
+		timeout=1500,
+		pow_names=pow_names,
+		user=frappe.session.user,
+	)
+
+	return {"queued": len(pow_names)}
+
+
 if __name__ == "__main__":
-	# Self-check for the pure zip helper (no Frappe context needed).
+	# Self-checks for the pure helpers (no Frappe context needed).
 	blob = _build_zip([("a.pdf", b"AAA"), ("b.pdf", b"BBB")])
 	with zipfile.ZipFile(io.BytesIO(blob)) as _zf:
 		assert _zf.namelist() == ["a.pdf", "b.pdf"], _zf.namelist()
 		assert _zf.read("b.pdf") == b"BBB"
-	print("ok: _build_zip produced a valid 2-entry zip")
+
+	assert _safe_filename("A/B:C*D?") == "A B C D", _safe_filename("A/B:C*D?")
+	assert _safe_filename("  spaced   out  ") == "spaced out"
+	print("ok: _build_zip produced a valid 2-entry zip; _safe_filename scrubs separators")

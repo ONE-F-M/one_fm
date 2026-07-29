@@ -27,12 +27,6 @@ function open_pow_generator() {
 		{ label: __("December"), value: "12" },
 	];
 
-	const basis_options = [
-		{ label: __("Generate based on Shift hours"), value: "Shift Hours" },
-		{ label: __("Generate Based on Number of Present Days"), value: "Attendance Day" },
-		{ label: __("Both"), value: "Both" },
-	];
-
 	const dialog = new frappe.ui.Dialog({
 		title: __("Proof of Work Generator"),
 		size: "large",
@@ -53,13 +47,6 @@ function open_pow_generator() {
 				reqd: 1,
 			},
 			{
-				fieldname: "generation_basis",
-				label: __("Generation Basis"),
-				fieldtype: "Select",
-				options: basis_options,
-				reqd: 1,
-			},
-			{
 				fieldname: "load_contracts_btn",
 				fieldtype: "Button",
 				label: __("Load Contracts"),
@@ -70,18 +57,23 @@ function open_pow_generator() {
 				fieldtype: "HTML",
 			},
 		],
-		primary_action_label: __("Generate"),
-		primary_action: () => generate_pow(dialog),
+		// WI-001808: generation submits the records. "Submit and Download Zip File"
+		// does the same and then queues one merged PDF per contract into a ZIP.
+		primary_action_label: __("Submit"),
+		primary_action: () => generate_pow(dialog, false),
+		secondary_action_label: __("Submit and Download Zip File"),
+		secondary_action: () => generate_pow(dialog, true),
 	});
 
-	// Hide the Generate button until contracts have been loaded.
+	// Hide both actions until contracts have been loaded.
 	dialog.get_primary_btn().addClass("hide");
+	dialog.get_secondary_btn().addClass("hide");
 
 	dialog.fields_dict.load_contracts_btn.$input.on("click", () => {
 		load_contracts(dialog);
 	});
 
-	set_placeholder(dialog, __("Choose a Month, Year and Generation Basis, then click Load Contracts."));
+	set_placeholder(dialog, __("Choose a Month and Year, then click Load Contracts."));
 
 	dialog.show();
 }
@@ -94,12 +86,13 @@ function set_placeholder(dialog, message) {
 
 function load_contracts(dialog) {
 	const values = dialog.get_values(true);
-	if (!values.month || !values.year || !values.generation_basis) {
-		frappe.msgprint(__("Please select Month, Year and Generation Basis first."));
+	if (!values.month || !values.year) {
+		frappe.msgprint(__("Please select Month and Year first."));
 		return;
 	}
 
 	dialog.get_primary_btn().addClass("hide");
+	dialog.get_secondary_btn().addClass("hide");
 	set_placeholder(dialog, __("Loading contracts..."));
 
 	frappe.call({
@@ -169,9 +162,10 @@ function render_contracts(dialog, contracts) {
 	});
 
 	dialog.get_primary_btn().removeClass("hide");
+	dialog.get_secondary_btn().removeClass("hide");
 }
 
-function generate_pow(dialog) {
+function generate_pow(dialog, download_zip) {
 	const values = dialog.get_values(true);
 	const selected = [];
 	dialog.fields_dict.contracts_html.$wrapper.find(".pow-contract-check:checked").each(function () {
@@ -183,37 +177,63 @@ function generate_pow(dialog) {
 		return;
 	}
 
-	frappe.confirm(
-		__("Generate {0} Proof of Work record(s)?", [selected.length]),
-		() => {
-			frappe.call({
-				method: "one_fm.one_fm.doctype.proof_of_work.proof_of_work.generate_proof_of_work",
-				args: {
-					month: values.month,
-					year: values.year,
-					generation_basis: values.generation_basis,
-					contracts: JSON.stringify(selected),
-				},
-				freeze: true,
-				freeze_message: __("Generating Proof of Work records..."),
-				callback: (r) => {
-					const res = r.message || {};
-					const created = (res.created || []).length;
-					const skipped = (res.skipped || []).length;
+	const confirm_message = download_zip
+		? __("Generate and submit {0} Proof of Work record(s), then build the ZIP?", [
+				selected.length,
+		  ])
+		: __("Generate and submit {0} Proof of Work record(s)?", [selected.length]);
 
-					let msg = __("Created {0} Proof of Work record(s).", [created]);
-					if (skipped) {
-						const names = (res.skipped || [])
-							.map((s) => `${frappe.utils.escape_html(s.contract)} — ${frappe.utils.escape_html(s.reason)}`)
-							.join("<br>");
-						msg += `<br><br>${__("Skipped {0}:", [skipped])}<br>${names}`;
-					}
+	frappe.confirm(confirm_message, () => {
+		frappe.call({
+			method: "one_fm.one_fm.doctype.proof_of_work.proof_of_work.generate_proof_of_work",
+			args: {
+				month: values.month,
+				year: values.year,
+				contracts: JSON.stringify(selected),
+			},
+			freeze: true,
+			freeze_message: __("Generating Proof of Work records..."),
+			callback: (r) => {
+				const res = r.message || {};
+				const created = res.created || [];
+				const skipped = res.skipped || [];
 
-					frappe.msgprint({ title: __("Generation Complete"), message: msg, indicator: "green" });
-					dialog.hide();
-					cur_list && cur_list.refresh();
-				},
+				let msg = __("Submitted {0} Proof of Work record(s).", [created.length]);
+				if (skipped.length) {
+					const names = skipped
+						.map(
+							(s) =>
+								`${frappe.utils.escape_html(s.contract)} — ${frappe.utils.escape_html(s.reason)}`
+						)
+						.join("<br>");
+					msg += `<br><br>${__("Skipped {0}:", [skipped.length])}<br>${names}`;
+				}
+
+				frappe.msgprint({ title: __("Generation Complete"), message: msg, indicator: "green" });
+				dialog.hide();
+				cur_list && cur_list.refresh();
+
+				if (download_zip && created.length) {
+					queue_pow_zip(created);
+				}
+			},
+		});
+	});
+}
+
+function queue_pow_zip(pow_names) {
+	// Rendering two print formats per contract outlives an HTTP request, so the
+	// archive is built in a background job and pushed back as a download link.
+	frappe.call({
+		method: "one_fm.one_fm.doctype.proof_of_work.proof_of_work.enqueue_pow_zip",
+		args: { pow_names: JSON.stringify(pow_names) },
+		callback: () => {
+			frappe.show_alert({
+				message: __("Building the ZIP for {0} record(s). You will get a download link shortly.", [
+					pow_names.length,
+				]),
+				indicator: "blue",
 			});
-		}
-	);
+		},
+	});
 }

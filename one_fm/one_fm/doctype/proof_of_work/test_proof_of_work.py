@@ -8,15 +8,19 @@ from frappe.utils import get_first_day, get_last_day, getdate
 from one_fm.one_fm.doctype.proof_of_work.proof_of_work import (
 	ATTENDANCE_ABBR,
 	DAY_OFF_ABBRS,
+	DEFAULT_GENERATION_BASIS,
 	_actual_hours,
 	_attendance_abbr,
 	_basis_for_rate_type,
+	_non_manpower_amount_by_category,
+	_safe_filename,
 	_uses_nominal_shift_hours,
 	_fmt_contractual,
 	_fmt_staff_breakdown,
 	_shift_hours_from_item,
 	generate_proof_of_work,
 	get_eligible_contracts,
+	pdf_file_name,
 	resolve_attendance_source,
 )
 
@@ -78,8 +82,12 @@ class TestProofofWork(FrappeTestCase):
 			"Proof of Work", filters={"contract": name}, pluck="name"
 		):
 			frappe.db.delete("Proof of Work Item", {"parent": pow_name})
+			frappe.db.delete("Proof of Work Items Non-Manpower", {"parent": pow_name})
 			frappe.db.delete("Proof of Work", {"name": pow_name})
 
+		# Child rows outlive the parent delete, and a stale line item would feed the
+		# contracted counts and the non-manpower rollup of every later test.
+		frappe.db.delete("Contract Item", {"parent": name})
 		frappe.db.delete("Contracts", {"name": name})
 
 		contract = frappe.new_doc("Contracts")
@@ -122,7 +130,7 @@ class TestProofofWork(FrappeTestCase):
 		self.assertEqual(names[self.contract.name]["has_pow"], 0)
 
 		# After generating, the same contract should report has_pow == 1
-		generate_proof_of_work(TEST_MONTH, TEST_YEAR, "Shift Hours", [self.contract.name])
+		generate_proof_of_work(TEST_MONTH, TEST_YEAR, [self.contract.name], "Shift Hours")
 		rows = get_eligible_contracts(TEST_MONTH, TEST_YEAR)
 		names = {r["name"]: r for r in rows}
 		self.assertEqual(names[self.contract.name]["has_pow"], 1)
@@ -136,7 +144,7 @@ class TestProofofWork(FrappeTestCase):
 
 	def test_generate_creates_header_record(self):
 		res = generate_proof_of_work(
-			TEST_MONTH, TEST_YEAR, "Both", [self.contract.name]
+			TEST_MONTH, TEST_YEAR, [self.contract.name], "Both"
 		)
 		self.assertEqual(len(res["created"]), 1)
 
@@ -274,9 +282,9 @@ class TestProofofWork(FrappeTestCase):
 			)
 
 	def test_generate_skips_duplicate(self):
-		generate_proof_of_work(TEST_MONTH, TEST_YEAR, "Shift Hours", [self.contract.name])
+		generate_proof_of_work(TEST_MONTH, TEST_YEAR, [self.contract.name], "Shift Hours")
 		res = generate_proof_of_work(
-			TEST_MONTH, TEST_YEAR, "Shift Hours", [self.contract.name]
+			TEST_MONTH, TEST_YEAR, [self.contract.name], "Shift Hours"
 		)
 		self.assertEqual(len(res["created"]), 0)
 		self.assertEqual(len(res["skipped"]), 1)
@@ -284,15 +292,15 @@ class TestProofofWork(FrappeTestCase):
 
 	def test_generate_rejects_invalid_basis(self):
 		with self.assertRaises(frappe.ValidationError):
-			generate_proof_of_work(TEST_MONTH, TEST_YEAR, "Nonsense", [self.contract.name])
+			generate_proof_of_work(TEST_MONTH, TEST_YEAR, [self.contract.name], "Nonsense")
 
 	def test_generate_rejects_empty_selection(self):
 		with self.assertRaises(frappe.ValidationError):
-			generate_proof_of_work(TEST_MONTH, TEST_YEAR, "Shift Hours", [])
+			generate_proof_of_work(TEST_MONTH, TEST_YEAR, [], "Shift Hours")
 
 	def test_generate_rejects_invalid_month(self):
 		with self.assertRaises(frappe.ValidationError):
-			generate_proof_of_work(13, TEST_YEAR, "Shift Hours", [self.contract.name])
+			generate_proof_of_work(13, TEST_YEAR, [self.contract.name], "Shift Hours")
 
 
 class TestRateTypeBasis(FrappeTestCase):
@@ -463,3 +471,154 @@ class TestReportDayHeader(FrappeTestCase):
 		self.assertIn('class="c-id" rowspan="2"', self.print_format.html)
 		self.assertIn('class="c-name" rowspan="2"', self.print_format.html)
 		self.assertIn('class="c-num" rowspan="2"', self.print_format.html)
+
+
+class TestSafeFilename(FrappeTestCase):
+	"""WI-001808: ``<client> - <contract> - <MMM-YYYY>.pdf``, safe for a ZIP entry."""
+
+	def test_separators_are_scrubbed(self):
+		self.assertEqual(_safe_filename("A/B:C*D?"), "A B C D")
+		self.assertEqual(_safe_filename('a"b<c>d|e'), "a b c d e")
+
+	def test_whitespace_runs_collapse(self):
+		self.assertEqual(_safe_filename("  spaced   out  "), "spaced out")
+		self.assertEqual(_safe_filename("line\nbreak\ttab"), "line break tab")
+
+	def test_name_follows_the_agreed_pattern(self):
+		self.assertEqual(
+			pdf_file_name("Aesop", "Mizzen-Aesop-2025-11-02", "2025-11-01"),
+			"Aesop - Mizzen-Aesop-2025-11-02 - Nov-2025.pdf",
+		)
+
+	def test_a_slash_in_the_contract_name_cannot_escape_the_archive(self):
+		# A ZIP entry called "../x.pdf" would write outside the extraction root.
+		self.assertNotIn("/", pdf_file_name("ACME", "../../etc/passwd", "2025-11-01"))
+
+	def test_blank_components_do_not_leave_dangling_separators(self):
+		self.assertEqual(pdf_file_name("", "CON-1", "2025-11-01"), "CON-1 - Nov-2025.pdf")
+
+
+class TestNonManpowerRollup(FrappeTestCase):
+	"""
+	WI-001808: Contract Items with Item Type "Items" carry no attendance, so they are
+	reported as a contracted amount per Contract Item Category. ``rate`` is the figure
+	consistently filled in production, with ``amount`` as the fallback.
+	"""
+
+	def setUp(self):
+		self.company = _get_company()
+		self.customer = _get_or_create_customer()
+		self.project = _get_or_create_project(self.company)
+		self.first_day = get_first_day(getdate(f"{TEST_YEAR}-{TEST_MONTH:02d}-01"))
+		self.last_day = get_last_day(self.first_day)
+		self.contract = TestProofofWork._make_contract(self, "_Test POW NM Contract")
+
+	def _add_item(self, category, item_type="Items", rate=0.0, amount=0.0):
+		"""Insert a Contract Item child row, bypassing the committing controller."""
+		row = frappe.new_doc("Contract Item")
+		row.parent = self.contract.name
+		row.parenttype = "Contracts"
+		row.parentfield = "items"
+		row.contract_item_category = category
+		row.item_type = item_type
+		row.rate = rate
+		row.amount = amount
+		row.db_insert()
+
+	def _category(self, label):
+		if not frappe.db.exists("Contract Item Category", label):
+			frappe.get_doc(
+				{"doctype": "Contract Item Category", "contract_item_category": label}
+			).insert(ignore_permissions=True)
+		return label
+
+	def test_rate_is_used_when_present(self):
+		self._add_item(self._category("_Test Handyman"), rate=100.0, amount=0.0)
+		rows = _non_manpower_amount_by_category(self.contract.name)
+		self.assertEqual(rows, [{"contract_item_category": "_Test Handyman", "amount": 100.0}])
+
+	def test_amount_is_the_fallback_when_rate_is_zero(self):
+		self._add_item(self._category("_Test Plumbing"), rate=0.0, amount=150.0)
+		rows = _non_manpower_amount_by_category(self.contract.name)
+		self.assertEqual(rows[0]["amount"], 150.0)
+
+	def test_rate_wins_where_the_two_disagree(self):
+		# Production has exactly this shape: rate 50.00 against amount 150.00.
+		self._add_item(self._category("_Test Plumbing"), rate=50.0, amount=150.0)
+		rows = _non_manpower_amount_by_category(self.contract.name)
+		self.assertEqual(rows[0]["amount"], 50.0)
+
+	def test_rows_sharing_a_category_are_summed(self):
+		category = self._category("_Test Pest Control")
+		self._add_item(category, rate=80.0)
+		self._add_item(category, rate=20.0)
+		rows = _non_manpower_amount_by_category(self.contract.name)
+		self.assertEqual(len(rows), 1)
+		self.assertEqual(rows[0]["amount"], 100.0)
+
+	def test_service_rows_are_excluded(self):
+		# "Service" lines are the manpower ones and belong to the other table.
+		self._add_item(self._category("_Test Janitorial"), item_type="Service", rate=999.0)
+		self.assertEqual(_non_manpower_amount_by_category(self.contract.name), [])
+
+	def test_rows_without_a_category_are_skipped(self):
+		self._add_item(None, rate=42.0)
+		self.assertEqual(_non_manpower_amount_by_category(self.contract.name), [])
+
+	def test_categories_come_back_ordered(self):
+		self._add_item(self._category("_Test Zeta"), rate=1.0)
+		self._add_item(self._category("_Test Alpha"), rate=2.0)
+		rows = _non_manpower_amount_by_category(self.contract.name)
+		self.assertEqual(
+			[r["contract_item_category"] for r in rows], ["_Test Alpha", "_Test Zeta"]
+		)
+
+	def test_a_contract_with_no_items_returns_nothing(self):
+		self.assertEqual(_non_manpower_amount_by_category(self.contract.name), [])
+
+	def test_generation_fills_the_table_and_submits(self):
+		self._add_item(self._category("_Test Handyman"), rate=100.0)
+		res = generate_proof_of_work(TEST_MONTH, TEST_YEAR, [self.contract.name])
+
+		self.assertEqual(len(res["created"]), 1, msg=res["skipped"])
+		pow_doc = frappe.get_doc("Proof of Work", res["created"][0])
+
+		# Bulk generation submits (AC: "all the POW record shall be submitted").
+		self.assertEqual(pow_doc.docstatus, 1)
+		# The dialog no longer asks for a basis, so the default is stamped on.
+		self.assertEqual(pow_doc.generation_basis, DEFAULT_GENERATION_BASIS)
+
+		self.assertEqual(len(pow_doc.proof_of_work_items_nonmanpower), 1)
+		self.assertEqual(
+			pow_doc.proof_of_work_items_nonmanpower[0].contract_item_category,
+			"_Test Handyman",
+		)
+		self.assertEqual(pow_doc.proof_of_work_items_nonmanpower[0].amount, 100.0)
+
+
+class TestLetterCarriesTheNonManpowerTable(FrappeTestCase):
+	"""WI-001808: the rollup is reflected in the Letter, right-to-left, with a total."""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		import json
+
+		path = frappe.get_app_path(
+			"one_fm", "one_fm", "print_format", "proof_of_work_letter",
+			"proof_of_work_letter.json",
+		)
+		cls.print_format = frappe._dict(json.loads(frappe.read_file(path)))
+
+	def test_the_table_is_rendered_from_the_new_child_table(self):
+		self.assertIn("doc.proof_of_work_items_nonmanpower", self.print_format.html)
+		self.assertIn("row.contract_item_category", self.print_format.html)
+
+	def test_it_reuses_the_right_to_left_table_styling(self):
+		# .pow-tbl is the RTL table class; the new table opts into it.
+		self.assertIn('class="pow-tbl nm-tbl"', self.print_format.html)
+		self.assertIn("direction: rtl", self.print_format.css)
+
+	def test_it_carries_a_total_row(self):
+		self.assertIn("nm-total", self.print_format.html)
+		self.assertIn('sum(attribute="amount")', self.print_format.html)
