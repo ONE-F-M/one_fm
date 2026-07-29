@@ -897,7 +897,10 @@ jinja = {
 jenv = {
     "methods": [
         "pf:one_fm.jinja.print_format.methods.pf",
-        "get_qrcode:one_fm.qr_code_generator.get_qrcode"
+        "get_qrcode:one_fm.qr_code_generator.get_qrcode",
+        # WI-001700: the Attendance Report print format is a per-employee day grid
+        # grouped by Sale Item, which cannot be built from the document's child tables.
+        "pow_attendance_report:one_fm.jinja.print_format.methods.pow_attendance_report"
     ],
     "filters": [
         # "xmul:one_fm.jinja.methods.xmultiply"

@@ -6,6 +6,12 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import get_first_day, get_last_day, getdate
 
 from one_fm.one_fm.doctype.proof_of_work.proof_of_work import (
+	ATTENDANCE_ABBR,
+	DAY_OFF_ABBRS,
+	_actual_hours,
+	_attendance_abbr,
+	_basis_for_rate_type,
+	_uses_nominal_shift_hours,
 	_fmt_contractual,
 	_fmt_staff_breakdown,
 	_shift_hours_from_item,
@@ -287,3 +293,173 @@ class TestProofofWork(FrappeTestCase):
 	def test_generate_rejects_invalid_month(self):
 		with self.assertRaises(frappe.ValidationError):
 			generate_proof_of_work(13, TEST_YEAR, "Shift Hours", [self.contract.name])
+
+
+class TestRateTypeBasis(FrappeTestCase):
+	"""
+	WI-001700 update: the Contract Item's Rate Type decides which metric a Sale Item is
+	reported in, unless the contract has an Attendance Amendment.
+	"""
+
+	def test_daily_and_monthly_are_counted_in_present_days(self):
+		for rate_type in ("Daily", "Monthly"):
+			self.assertEqual(
+				_basis_for_rate_type(rate_type, "attendance", "Both"),
+				"Attendance Day",
+				msg=rate_type,
+			)
+
+	def test_hourly_is_counted_in_shift_hours(self):
+		self.assertEqual(_basis_for_rate_type("Hourly", "attendance", "Both"), "Shift Hours")
+
+	def test_an_amendment_keeps_the_generated_method(self):
+		# "If the linked Contract has Attendance Amendment, then the data will be shown as
+		# per the generated method" - the Rate Type must not override it.
+		for rate_type in ("Daily", "Monthly", "Hourly", ""):
+			self.assertEqual(
+				_basis_for_rate_type(rate_type, "amendment", "Both"), "Both", msg=rate_type
+			)
+			self.assertEqual(
+				_basis_for_rate_type(rate_type, "amendment", "Shift Hours"),
+				"Shift Hours",
+				msg=rate_type,
+			)
+
+	def test_missing_rate_type_leaves_behaviour_unchanged(self):
+		# A Contract Item with no Rate Type keeps the document's basis, so nothing that
+		# worked before this change starts reporting differently.
+		for basis in ("Attendance Day", "Shift Hours", "Both"):
+			self.assertEqual(_basis_for_rate_type("", "attendance", basis), basis, msg=basis)
+			self.assertEqual(_basis_for_rate_type(None, "attendance", basis), basis, msg=basis)
+
+
+class TestAttendanceReportStructure(FrappeTestCase):
+	"""
+	WI-001700 update: the Attendance Report print format shows the item type(s) beside the
+	Sale Item Code and drops the Item Type column.
+	"""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		# Read the shipped definition rather than the database copy: the file is what
+		# migrate installs, and asserting on the DB would only pass after a migration.
+		import json
+
+		path = frappe.get_app_path(
+			"one_fm", "one_fm", "print_format", "proof_of_work_attendance_report",
+			"proof_of_work_attendance_report.json",
+		)
+		cls.print_format = frappe._dict(json.loads(frappe.read_file(path)))
+
+	def test_item_type_column_is_gone(self):
+		self.assertNotIn("Item Type</th>", self.print_format.html)
+
+	def test_item_types_are_shown_beside_the_sale_item_code(self):
+		self.assertIn("group.sale_item", self.print_format.html)
+		self.assertIn("group.item_type", self.print_format.html)
+
+	def test_grid_carries_the_columns_from_the_agreed_structure(self):
+		for column in ("Employee ID", "Employee Name", "Working Days", "Days Off", "Total Hours"):
+			self.assertIn(f"{column}</th>", self.print_format.html, msg=column)
+
+	def test_header_repeats_without_overlapping_tall_rows(self):
+		# wkhtmltopdf overlaps a repeated thead with tall rows unless it is a row group.
+		self.assertIn("display: table-row-group", self.print_format.css)
+
+
+class TestAttendanceAbbreviations(FrappeTestCase):
+	"""
+	The day cells must carry the legend's abbreviations. Day Off previously fell through to
+	its initial ("D"), so the Days Off column added to the report could never count it.
+	"""
+
+	def test_day_off_statuses_use_the_legend_codes(self):
+		self.assertEqual(_attendance_abbr("Day Off"), "DO")
+		self.assertEqual(_attendance_abbr("Client Day Off"), "CDO")
+
+	def test_day_off_codes_are_the_ones_the_report_counts(self):
+		self.assertEqual(
+			{_attendance_abbr("Day Off"), _attendance_abbr("Client Day Off")}, DAY_OFF_ABBRS
+		)
+
+	def test_half_day_no_longer_collides_with_holiday(self):
+		self.assertEqual(_attendance_abbr("Half Day"), "HD")
+		self.assertEqual(_attendance_abbr("Holiday"), "H")
+		self.assertNotEqual(_attendance_abbr("Half Day"), _attendance_abbr("Holiday"))
+
+	def test_every_status_in_use_has_an_abbreviation(self):
+		# Statuses present in the live data; none should fall back to a bare initial.
+		for status in (
+			"Present", "Day Off", "On Leave", "Absent", "On Hold", "Client Day Off",
+			"Holiday", "Work From Home", "Medical Appointment", "Client Interview",
+			"Fingerprint Appointment", "Half Day",
+		):
+			self.assertIn(status, ATTENDANCE_ABBR, msg=status)
+
+	def test_unknown_status_falls_back_to_its_initial(self):
+		self.assertEqual(_attendance_abbr("Suspended"), "S")
+		self.assertEqual(_attendance_abbr(""), "")
+		self.assertEqual(_attendance_abbr(None), "")
+
+
+class TestHourlyReportsNominalShiftHours(FrappeTestCase):
+	"""
+	WI-001700 update: an Hourly Sale Item "Fetch Shift Hours", so hours are the shift
+	length x days present and come out whole. Recorded working_hours are what produced the
+	decimal figures (540.96, 537.93) that prompted this.
+	"""
+
+	def _staff(self):
+		# 45 days present, but the clock recorded a fractional total
+		return {"staff": {"E1": {"name": "E1", "id": "E1", "days": 45, "hours": 540.96}}}
+
+	def test_hourly_uses_shift_length_not_the_clock(self):
+		out = _fmt_staff_breakdown(
+			self._staff(), shift_hours=12, basis="Shift Hours", nominal_shift_hours=True
+		)
+		self.assertEqual(out, "- 1 Staff worked 540 Hours: 540 Hrs")
+		self.assertNotIn("540.96", out)
+
+	def test_recorded_hours_still_used_when_not_rate_driven(self):
+		# The amendment path shows data as generated, so the clock still wins there.
+		out = _fmt_staff_breakdown(self._staff(), shift_hours=12, basis="Shift Hours")
+		self.assertIn("540.96", out)
+
+	def test_actual_hours_total_follows_the_same_rule(self):
+		source = {"days": 45, "hours": 540.96, "staff": {}}
+		self.assertEqual(
+			_actual_hours(source, 12, "Shift Hours", nominal_shift_hours=True), 540
+		)
+		self.assertEqual(_actual_hours(source, 12, "Shift Hours"), 540.96)
+
+	def test_only_hourly_without_an_amendment_uses_the_shift_length(self):
+		self.assertTrue(_uses_nominal_shift_hours("Hourly", "attendance"))
+		self.assertFalse(_uses_nominal_shift_hours("Hourly", "amendment"))
+		for rate_type in ("Daily", "Monthly", ""):
+			self.assertFalse(_uses_nominal_shift_hours(rate_type, "attendance"), msg=rate_type)
+
+
+class TestReportDayHeader(FrappeTestCase):
+	"""WI-001700 update: the day columns carry weekday over d/m, as the sample shows."""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		import json
+
+		path = frappe.get_app_path(
+			"one_fm", "one_fm", "print_format", "proof_of_work_attendance_report",
+			"proof_of_work_attendance_report.json",
+		)
+		cls.print_format = frappe._dict(json.loads(frappe.read_file(path)))
+
+	def test_day_columns_have_two_header_rows(self):
+		self.assertIn("label.weekday", self.print_format.html)
+		self.assertIn("label.date", self.print_format.html)
+
+	def test_fixed_columns_span_both_header_rows(self):
+		# Employee ID/Name and the three totals must not repeat on the second row.
+		self.assertIn('class="c-id" rowspan="2"', self.print_format.html)
+		self.assertIn('class="c-name" rowspan="2"', self.print_format.html)
+		self.assertIn('class="c-num" rowspan="2"', self.print_format.html)
