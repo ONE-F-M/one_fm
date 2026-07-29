@@ -211,7 +211,7 @@ class EmployeeResignation(Document):
 			return
 
 		from one_fm.utils import get_approver
-		approver_emp = get_approver(first_emp)
+		approver_emp = get_approver(first_emp, skip_shift_supervisor=True)
 		if approver_emp:
 			user_id = frappe.db.get_value("Employee", approver_emp, "user_id")
 			if user_id and frappe.db.exists("User", user_id):
