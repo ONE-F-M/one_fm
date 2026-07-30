@@ -158,7 +158,10 @@ def create_checker(start_date, end_date, is_day_off_reliever=False, is_weekend_r
 		)
 		.where(conditions)
 		.groupby(Employee.name)
-		.having(Count(EmployeeSchedule.shift) >= threshold)
+		# The acceptance criteria are explicit that the count must EXCEED the
+		# threshold, so a month sitting exactly on the limit is compliant and is no
+		# longer flagged (WI-001768).
+		.having(Count(EmployeeSchedule.shift) > threshold)
 	)
 
 	# Create Default Shift Checker records

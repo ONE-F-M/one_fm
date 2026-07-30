@@ -50,6 +50,12 @@ class TestDefaultShiftChecker(FrappeTestCase):
 		# would disagree.
 		self.assertIn("& (EmployeeSchedule.day_off_ot == 0)", self.source)
 
+	def test_the_threshold_must_be_exceeded_not_merely_reached(self):
+		# The ACs say "exceeds the Default Shift Checker Threshold", so a count that
+		# lands exactly on the limit is compliant.
+		self.assertIn("Count(EmployeeSchedule.shift) > threshold", self.source)
+		self.assertNotIn("Count(EmployeeSchedule.shift) >= threshold", self.source)
+
 
 class TestGetShiftAssignmentsSkipsDayOffOt(FrappeTestCase):
 	"""Exercises the date-listing query against real Employee Schedule rows."""
