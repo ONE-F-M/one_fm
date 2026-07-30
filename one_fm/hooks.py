@@ -843,6 +843,7 @@ fixtures = [
 # ------------------------------
 #
 override_whitelisted_methods = {
+    "frappe.contacts.doctype.contact.contact.invite_user": "one_fm.overrides.contact.invite_user",
     "frappe.model.workflow.get_transitions":"one_fm.overrides.workflow.get_transitions",
 	"frappe.model.workflow.apply_workflow":"one_fm.overrides.workflow.apply_workflow",
 	"frappe.core.doctype.user.user.update_password": "one_fm.api.doc_methods.user.update_password",
