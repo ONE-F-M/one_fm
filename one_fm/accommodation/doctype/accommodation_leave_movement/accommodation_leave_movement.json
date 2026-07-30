@@ -13,6 +13,7 @@
   "checked_out",
   "checkin_reference",
   "employee",
+  "site_supervisor",
   "column_break_2",
   "checkin_checkout_date_time",
   "tenant_details_section",
@@ -273,12 +274,20 @@
   {
    "fieldname": "column_break_kgqw",
    "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.custom_site_supervisor_user",
+   "fieldname": "site_supervisor",
+   "fieldtype": "Link",
+   "label": "Site Supervisor",
+   "options": "User",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-05 09:36:54.126581",
+ "modified": "2026-07-30 21:40:00.000000",
  "modified_by": "c.akeru@one-fm.com",
  "module": "Accommodation",
  "name": "Accommodation Leave Movement",
