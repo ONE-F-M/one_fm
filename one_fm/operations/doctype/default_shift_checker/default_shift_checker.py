@@ -124,6 +124,11 @@ def create_checker(start_date, end_date, is_day_off_reliever=False, is_weekend_r
 		(Employee.shift.isnotnull()) &
 		(EmployeeSchedule.employee_availability == "Working") &
 		(EmployeeSchedule.roster_type == "Basic") &
+		# WI-001768: Overtime worked on a day off is authorised, so it is not evidence
+		# of a mis-allocated shift. Those lines are excluded from every category's
+		# count, or a reliever covering approved Day Off OT trips the threshold and is
+		# flagged for doing exactly what was asked of them.
+		(EmployeeSchedule.day_off_ot == 0) &
 		(EmployeeSchedule.date.between(start_date, end_date)) &
 		(Project.custom_exclude_from_default_shift_checker != 1)
 	)
@@ -197,7 +202,9 @@ def create_checker(start_date, end_date, is_day_off_reliever=False, is_weekend_r
 				doc.is_weekend_reliever = 1
 				doc.comment = f"The Weekend Reliever is scheduled for {count} day(s) in the same shift. Either re-assign the excess days to a different shift or if the current assignment is long-term, remove the employee from the Weekend Reliever role."
 			else:
-				doc.comment = f"Employee is scheduled {count} day(s) outside their defined default shift allocation. Either relocate the shift to match the employee's default shift allocation or update the employee's default shift allocation."
+				# "Shift Mismatch:" labels the Category A finding, as the process map
+				# and the acceptance criteria both spell it.
+				doc.comment = f"Shift Mismatch: Employee is scheduled {count} day(s) outside their defined default shift allocation. Either relocate the shift to match the employee's default shift allocation or update the employee's default shift allocation."
 
 			doc.insert()
 		except Exception as e:
@@ -213,6 +220,9 @@ def get_shift_assignments(employee_id, shift_condition, start_date, end_date, Em
             & shift_condition
             & (EmployeeSchedule.employee_availability == "Working")
             & (EmployeeSchedule.roster_type == "Basic")
+            # Must mirror the exclusion in create_checker's conditions (WI-001768),
+            # or the listed dates and the count that selected the employee disagree.
+            & (EmployeeSchedule.day_off_ot == 0)
             & EmployeeSchedule.date.between(start_date, end_date)
         )
     ).run(as_dict=True)
