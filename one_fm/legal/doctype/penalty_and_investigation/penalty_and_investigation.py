@@ -1,7 +1,19 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import add_months, today, cint
+from frappe.utils import add_days, flt, getdate
+
+# Workflow states that count as an approved penalty when counting a repeat offence.
+# "Approved" is the state the redesigned workflow ends on; "Completed" is what the
+# live workflow still uses, so both are honoured while the two overlap.
+APPROVED_STATES = ("Approved", "Completed")
+
+# Offence level -> the Penalty Code's Penalty Level row, and the maximum level the
+# matrix defines. A sixth offence keeps counting but is sanctioned as a fifth.
+OFFENCE_LEVELS = ("1st", "2nd", "3rd", "4th", "5th")
+
+# How far back a repeat offence is counted, measured from the incident.
+LOOKBACK_DAYS = 365
 
 
 class PenaltyAndInvestigation(Document):
@@ -70,57 +82,67 @@ class PenaltyAndInvestigation(Document):
 		if not self.employee or not self.applied_penalty_code or not self.incident_date:
 			return
 
-		# Get date 12 months ago from today
-		twelve_months_ago = add_months(today(), -12)
+		# The rolling window runs back from the INCIDENT, not from today. Measuring it
+		# from today mis-sanctioned any backdated penalty: an incident entered late
+		# would count prior offences the incident itself predates, and drop ones that
+		# were live when it happened.
+		lookback_start = add_days(getdate(self.incident_date), -LOOKBACK_DAYS)
 
-		# Count previous occurrences for this employee and penalty code
-		# We count records within the last 12 months, excluding the current record
-		# We exclude cancelled records (docstatus 2)
+		# Only approved penalties count towards a repeat offence; drafts and cancelled
+		# records are ignored (docstatus 1 excludes both).
 		previous_count = frappe.db.count(
 			"Penalty And Investigation",
 			{
 				"employee": self.employee,
-				"workflow_state": "Completed",
+				"workflow_state": ["in", APPROVED_STATES],
 				"applied_penalty_code": self.applied_penalty_code,
-				"incident_date": [">=", twelve_months_ago],
+				"incident_date": [">=", lookback_start],
 				"name": ["!=", self.name],
 				"docstatus": 1,
 			},
 		)
 
-		# The current offence count is the previous count plus this one
+		# The current offence count is the previous count plus this one. The count is
+		# never capped - a sixth offence reads as 6 - but the sanction reuses the
+		# highest level the penalty matrix defines.
 		self.offence_count = previous_count + 1
+		level = min(self.offence_count, len(OFFENCE_LEVELS))
+		self.applied_level = OFFENCE_LEVELS[level - 1]
 
-		# Set applied_level based on offence_count, capped at 5
-		level = self.offence_count
-		if level > 5:
-			level = 5
+		self.set_sanction_from_penalty_code()
 
-		self.applied_level = str(level)
+	def set_sanction_from_penalty_code(self):
+		"""Read the sanction for the applied level off the Penalty Code matrix."""
+		penalty_code_doc = frappe.get_cached_doc("Penalty Code", self.applied_penalty_code)
 
-		# Set deduction_type and salary_deduction_days based on offence level
-		level_map = {
-			1: "1st",
-			2: "2nd",
-			3: "3rd",
-			4: "4th",
-			5: "5th"
-		}
-		target_level = level_map.get(level)
-		
-		penalty_code_doc = frappe.get_doc("Penalty Code", self.applied_penalty_code)
-		
-		found_level = False
-		for row in penalty_code_doc.get("penalty_level") or []:
-			if row.offence_level == target_level:
-				self.deduction_type = row.deduction_type
-				self.salary_deduction_days = row.salary_deduction_days
-				found_level = True
-				break
-				
-		if not found_level:
+		row = next(
+			(
+				r
+				for r in penalty_code_doc.get("penalty_level") or []
+				if r.offence_level == self.applied_level
+			),
+			None,
+		)
+
+		if not row:
 			self.deduction_type = None
+			self.penalty_category = None
 			self.salary_deduction_days = 0
+			self.salary_deduction_amount = 0
+			return
+
+		self.deduction_type = row.deduction_type
+		self.salary_deduction_days = row.salary_deduction_days
+		# Category mirrors the action for a code-driven penalty; the manual, code-less
+		# path (Uniform / Damage) is WI-001795's.
+		self.penalty_category = (
+			row.deduction_type if row.deduction_type in ("Warning", "Salary Deduction") else None
+		)
+		# A warning carries no money. The amount stays read-only and is derived, so a
+		# stale figure from an earlier level cannot survive a recalculation. flt, not
+		# cint: the matrix's smallest deduction is half a day.
+		if not flt(self.salary_deduction_days):
+			self.salary_deduction_amount = 0
 
 
 @frappe.whitelist()

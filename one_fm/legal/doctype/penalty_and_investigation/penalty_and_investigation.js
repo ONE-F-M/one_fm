@@ -149,30 +149,38 @@ frappe.ui.form.on("Penalty And Investigation", {
 		}
 	},
 	fetch_penalty_details: function (frm) {
-		if (!frm.doc.applied_penalty_code || !frm.doc.applied_level) {
+		const clear = () => {
 			frm.set_value("deduction_type", "");
+			frm.set_value("penalty_category", "");
 			frm.set_value("salary_deduction_days", 0);
+		};
+
+		if (!frm.doc.applied_penalty_code || !frm.doc.applied_level) {
+			clear();
 			return;
 		}
 
 		frappe.model.with_doc("Penalty Code", frm.doc.applied_penalty_code, function () {
 			let pc = frappe.get_doc("Penalty Code", frm.doc.applied_penalty_code);
 			if (pc && pc.penalty_level) {
-				const level_map = {
-					"1": "1st",
-					"2": "2nd",
-					"3": "3rd",
-					"4": "4th",
-					"5": "5th"
-				};
-				const target_level = level_map[frm.doc.applied_level];
-				const row = pc.penalty_level.find(d => d.offence_level === target_level);
+				// applied_level now holds the ordinal the Penalty Level rows are keyed
+				// on ("1st"), so it is matched directly - the old numeric-to-ordinal map
+				// would find nothing and silently clear the sanction (WI-001794).
+				const row = pc.penalty_level.find(
+					(d) => d.offence_level === frm.doc.applied_level
+				);
 				if (row) {
 					frm.set_value("deduction_type", row.deduction_type);
 					frm.set_value("salary_deduction_days", row.salary_deduction_days);
+					// Mirrors the server: the category only covers these two actions.
+					frm.set_value(
+						"penalty_category",
+						["Warning", "Salary Deduction"].includes(row.deduction_type)
+							? row.deduction_type
+							: ""
+					);
 				} else {
-					frm.set_value("deduction_type", "");
-					frm.set_value("salary_deduction_days", 0);
+					clear();
 				}
 			}
 		});
