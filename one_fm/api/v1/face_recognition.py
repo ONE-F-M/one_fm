@@ -7,7 +7,7 @@ from one_fm.utils import get_current_shift, is_holiday,get_holiday_today
 from one_fm.api.v1.utils import (
     response, verify_via_face_recogniton_service
 )
-from frappe.utils import cstr, getdate,now_datetime
+from frappe.utils import add_days, cint, cstr, flt, getdate, now_datetime
 from one_fm.api.doc_events import haversine
 from one_fm.overrides.employee import has_day_off, is_employee_on_leave
 
@@ -227,6 +227,112 @@ def create_checkin_log(employee: str, log_type: str, skip_attendance: int, latit
     return checkin.as_dict()
 
 
+def _fmt_clock(value) -> str:
+    """A datetime as the banner shows it, e.g. "09:00 AM"."""
+    return value.strftime("%I:%M %p").lstrip("0")
+
+
+def get_checkin_windows(employee: str) -> list:
+    """Today's shifts with their check-in boundaries (WI-001777).
+
+    Deliberately separate from ``one_fm.utils.get_current_shift``, whose query only
+    returns a shift once its window is already OPEN. Five callers depend on that to
+    decide whether a checkin is permitted, so it must not be widened - but a banner
+    that says when the next window opens needs to see the whole day.
+
+    Boundaries come from the Shift Type, not from any assumed hour:
+      opens_at      = start - begin_check_in_before_shift_start_time
+      late_after    = start + late_entry_grace_period   (flagged late, still allowed)
+      blocked_after = start + working_hours_threshold_for_absent
+    """
+    ShiftAssignment = frappe.qb.DocType("Shift Assignment")
+    ShiftType = frappe.qb.DocType("Shift Type")
+
+    today = getdate()
+    rows = (
+        frappe.qb.from_(ShiftAssignment)
+        .join(ShiftType)
+        .on(ShiftAssignment.shift_type == ShiftType.name)
+        .select(
+            ShiftAssignment.name,
+            ShiftAssignment.start_datetime,
+            ShiftAssignment.end_datetime,
+            ShiftType.begin_check_in_before_shift_start_time.as_("opens_before"),
+            ShiftType.late_entry_grace_period.as_("late_grace"),
+            ShiftType.working_hours_threshold_for_absent.as_("absent_after_hours"),
+        )
+        .where(
+            (ShiftAssignment.employee == employee)
+            & (ShiftAssignment.status == "Active")
+            & (ShiftAssignment.docstatus == 1)
+            & (ShiftAssignment.start_datetime >= today)
+            & (ShiftAssignment.start_datetime < add_days(today, 1))
+        )
+        .orderby(ShiftAssignment.start_datetime)
+    ).run(as_dict=True)
+
+    windows = []
+    for row in rows:
+        if not row.start_datetime:
+            continue
+        windows.append(
+            frappe._dict(
+                shift_assignment=row.name,
+                start=row.start_datetime,
+                opens_at=row.start_datetime - timedelta(minutes=cint(row.opens_before)),
+                late_after=row.start_datetime + timedelta(minutes=cint(row.late_grace)),
+                blocked_after=row.start_datetime
+                + timedelta(hours=flt(row.absent_after_hours)),
+            )
+        )
+
+    return windows
+
+
+def get_checkin_window_message(employee: str) -> str:
+    """Why check-in is unavailable right now, in words an employee can act on.
+
+    Consulted only when no window is open - the path that previously ended at the
+    unhelpful "You are not assigned to a shift" regardless of the reason. Returns an
+    empty string when the employee genuinely has no shift today, leaving the existing
+    day-off/holiday/leave messages to speak.
+    """
+    windows = get_checkin_windows(employee)
+    if not windows:
+        return ""
+
+    now = now_datetime()
+    closed = [w for w in windows if now > w.blocked_after]
+    upcoming = [w for w in windows if now < w.opens_at]
+
+    # Back-to-back shifts: name the one that closed AND when the next one opens, so
+    # the employee is not left guessing which shift the message is about.
+    if closed and upcoming:
+        return _(
+            "Check-In Window Closed: Your {0} shift check-in window closed at {1}. "
+            "Your next shift check-in opens at {2}. Please contact your Site "
+            "Supervisor if you are reporting late."
+        ).format(
+            _fmt_clock(closed[-1].start),
+            _fmt_clock(closed[-1].blocked_after),
+            _fmt_clock(upcoming[0].opens_at),
+        )
+
+    if closed:
+        return _(
+            "Check-In Window Closed: Your shift check-in window closed at {0}. "
+            "Please contact your Site Supervisor for late check-in authorization."
+        ).format(_fmt_clock(closed[-1].blocked_after))
+
+    if upcoming:
+        return _(
+            "Check-In Unavailable: Your scheduled shift starts at {0}. "
+            "Check-in opens at {1}."
+        ).format(_fmt_clock(upcoming[0].start), _fmt_clock(upcoming[0].opens_at))
+
+    return ""
+
+
 def check_employee_non_shift(employee):
     shift_working, employement_type = frappe.get_value("Employee", employee, ["shift_working", "employment_type"])
     if shift_working == 0 and employement_type != "Contract":
@@ -381,6 +487,15 @@ def get_site_location(employee_id: str = None, shift: str = None,latitude: float
             status, message = is_holiday(employee=employee, date=date)
             if status:
                 return response("Resource Not Found", 404, None, message)
+
+            # WI-001777: the employee may well have a shift today whose check-in
+            # window is simply not open - get_current_shift only returns a shift once
+            # it is. Saying "not assigned to a shift" in that case is both wrong and
+            # unactionable, so quote the configured window instead.
+            window_message = get_checkin_window_message(employee.name)
+            if window_message:
+                return response("Resource Not Found", 404, None, window_message)
+
             return response("Resource Not Found", 404, None, "You are not assigned to a shift.")
 
     except Exception as error:
