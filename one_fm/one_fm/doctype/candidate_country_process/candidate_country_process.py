@@ -590,8 +590,22 @@ def has_permission(doc, ptype=None, user=None, **kwargs):
     never have an Arrival and Deployment record linked to it yet, so this check
     would always deny creation outright (e.g. the automatic CCP creation cascade
     from Job Offer's create_candidate_country_process()) regardless of role.
+
+    Internal ETA-recalculation cascades are also excluded: recalculate_ccp_live_eta()
+    (called from every downstream step doctype -- Visa Request, PCC Clearance,
+    Overseas Medical Appointment WAFID, Overseas Remedical, Visa Stamping, Arrival
+    and Deployment -- whenever any of them is saved) does its own `doc.save()` on
+    this CCP under whatever user triggered that save. That's not a direct edit by
+    the acting user, so it shouldn't be subject to the Onboarding-Officer-specific
+    restriction either -- otherwise ETA tracking silently stops updating for the
+    entire process (not just the Arrival stage) for any user who happens to also
+    hold the Onboarding Officer role, since the restriction only lifts once Arrival
+    (the very last of the 11 steps) reaches a late stage.
     """
     if ptype not in ("write", "delete", "submit", "cancel"):
+        return None
+
+    if getattr(frappe.local, "in_ccp_recalculation", False):
         return None
 
     user = user or frappe.session.user
