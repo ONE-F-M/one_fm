@@ -981,6 +981,24 @@ def get_employee_custom_fields():
 			"fetch_from":"site.site_supervisor_name",
 			"read_only": 1,
 			},
+			# WI-001780: the User behind the employee's site supervisor, so downstream
+			# documents can assign to a person rather than re-deriving the chain.
+			#
+			# Deliberately ONE field, not the two the BA site carries. `tabEmployee` is
+			# at MariaDB's 65,535-byte row limit (114 varchars, ROW_FORMAT=Compressed)
+			# and has room for exactly one more varchar(140); a second fails with
+			# "Row size too large". That also rules out `fetch_from`, which would need
+			# an intermediate Employee link to hop through, so the value is resolved in
+			# EmployeeOverride.validate instead.
+			{
+			"fieldname": "custom_site_supervisor_user",
+			"fieldtype": "Link",
+			"label": "Site Supervisor User",
+			"options": "User",
+			"insert_after": "site_supervisor_name",
+			"read_only": 1,
+			"description": "The User of the site supervisor on this employee's Operations Site. Set automatically.",
+			},
 			{
 			"fieldname": "project_manager_name",
 			"fieldtype": "Data",
