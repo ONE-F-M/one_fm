@@ -163,7 +163,8 @@
    "skip_creation_of_workflow_action": 0,
    "custom_confirm_transition": 0,
    "require_digital_signature": 0,
-   "doctype": "Workflow Transition"
+   "doctype": "Workflow Transition",
+   "condition": "doc.issuance_status not in (\"Accepted\", \"Refused\", \"Not Return from Vacation\")"
   },
   {
    "state": "Pending HR Administrator",
@@ -176,7 +177,8 @@
    "skip_creation_of_workflow_action": 0,
    "custom_confirm_transition": 0,
    "require_digital_signature": 0,
-   "doctype": "Workflow Transition"
+   "doctype": "Workflow Transition",
+   "condition": "doc.issuance_status in (\"Accepted\", \"Refused\", \"Not Return from Vacation\")"
   },
   {
    "state": "Pending HR Administrator",
@@ -189,7 +191,8 @@
    "skip_creation_of_workflow_action": 0,
    "custom_confirm_transition": 0,
    "require_digital_signature": 0,
-   "doctype": "Workflow Transition"
+   "doctype": "Workflow Transition",
+   "condition": "doc.issuance_status == \"Request for Investigation by Employee\" or (frappe.db.get_value(\"Employee\", doc.employee, \"one_fm_basic_salary\") or 0) > 350"
   },
   {
    "state": "Pending Legal Manager",
