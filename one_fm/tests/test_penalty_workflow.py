@@ -5,8 +5,14 @@
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
+from one_fm.custom.workflow.workflow import get_workflow_json_file
+
 WORKFLOW = "Penalty & Investigation"
 DOCTYPE = "Penalty And Investigation"
+WORKFLOW_FILE = "penalty_and_investigation.json"
+
+STATE_FIELDS = ("state", "doc_status", "style", "allow_edit", "send_email")
+TRANSITION_FIELDS = ("state", "action", "next_state", "allowed", "allow_self_approval")
 
 
 class TestPenaltyWorkflow(FrappeTestCase):
@@ -23,18 +29,33 @@ class TestPenaltyWorkflow(FrappeTestCase):
 		)
 		self.assertEqual(active, [WORKFLOW])
 
-	def test_every_state_is_declared_once(self):
-		states = [s.state for s in self.wf.states]
-		self.assertEqual(len(states), len(set(states)), msg=f"repeated state in {states}")
+	def test_the_applied_workflow_matches_the_supplied_definition(self):
+		"""The definition is the spec - states, order, styles, edit roles and all.
 
-	def test_the_expected_states_exist(self):
+		Including the two Cancelled rows it declares: Frappe puts no unique constraint
+		on Workflow Document State.state and reads the first match, so the second row
+		is inert, and dropping it would be an edit to the spec rather than a fix.
+		"""
+		definition = get_workflow_json_file(WORKFLOW_FILE)
+
 		self.assertEqual(
-			{s.state for s in self.wf.states},
-			{
-				"Draft", "Pending HR Administrator", "Pending Legal Manager",
-				"Pending General Manager", "On Hold", "Approved", "Rejected", "Cancelled",
-			},
+			[[str(row.get(f) or "") for f in STATE_FIELDS] for row in definition["states"]],
+			[[str(row.get(f) or "") for f in STATE_FIELDS] for row in self.wf.states],
 		)
+		self.assertEqual(
+			[[str(row.get(f) or "") for f in TRANSITION_FIELDS] for row in definition["transitions"]],
+			[[str(row.get(f) or "") for f in TRANSITION_FIELDS] for row in self.wf.transitions],
+		)
+
+	def test_every_transition_allows_self_approval(self):
+		# The definition sets it on every transition; without it Frappe blocks the
+		# raiser of a penalty from actioning their own document.
+		for t in self.wf.transitions:
+			self.assertTrue(t.allow_self_approval, msg=t.action)
+
+	def test_every_state_alerts_by_email(self):
+		for s in self.wf.states:
+			self.assertTrue(s.send_email, msg=s.state)
 
 	def test_approved_is_the_submitted_state(self):
 		# The offence count only counts approved penalties, and it filters on
@@ -43,8 +64,8 @@ class TestPenaltyWorkflow(FrappeTestCase):
 		self.assertEqual(int(approved.doc_status), 1)
 
 	def test_cancelled_is_the_cancelled_state(self):
-		cancelled = next(s for s in self.wf.states if s.state == "Cancelled")
-		self.assertEqual(int(cancelled.doc_status), 2)
+		for cancelled in [s for s in self.wf.states if s.state == "Cancelled"]:
+			self.assertEqual(int(cancelled.doc_status), 2)
 
 	def test_every_transition_connects_declared_states(self):
 		declared = {s.state for s in self.wf.states}
