@@ -9,7 +9,9 @@ from one_fm.api.v1.utils import (
 )
 from frappe.utils import add_days, cint, cstr, flt, getdate, now_datetime
 from one_fm.api.doc_events import haversine
-from one_fm.overrides.employee import has_day_off, is_employee_on_leave
+from one_fm.overrides.employee import (
+    has_day_off, is_employee_on_leave, NOT_RETURNED_FROM_LEAVE
+)
 
 # setup channel for face recognition
 
@@ -366,11 +368,14 @@ def get_site_location(employee_id: str = None, shift: str = None,latitude: float
             return response("Resource Not Found", 404, None,
                             "No employee record found with {employee_id}".format(employee_id=employee_id))
 
-        # Block employees who have not returned from leave
-        if employee.status == "Not Returned From Leave":
+        # Block employees who have not returned from leave. This takes priority over
+        # every shift check below, so the banner says what to do about the status
+        # rather than talking about a check-in window the status makes irrelevant.
+        if employee.status == NOT_RETURNED_FROM_LEAVE:
             return response("Access Denied", 403, None,
-                            "Access Denied: Please contact your Site Supervisor to complete "
-                            "your Duty Resumption process before logging checkin.")
+                            _("Action Required: You are currently marked as '{0}'. Please contact "
+                              "your Site Supervisor to complete your Duty Resumption process."
+                              ).format(NOT_RETURNED_FROM_LEAVE))
         
         today = getdate()
         

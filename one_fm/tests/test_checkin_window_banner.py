@@ -20,7 +20,9 @@ from one_fm.api.v1.face_recognition import (
 	_fmt_clock,
 	get_checkin_window_message,
 	get_checkin_windows,
+	get_site_location,
 )
+from one_fm.overrides.employee import NOT_RETURNED_FROM_LEAVE
 
 
 def _window(start, opens_before=60, late_grace=15, absent_after=4.0):
@@ -135,3 +137,44 @@ class TestWindowsFromShiftType(FrappeTestCase):
 
 	def test_an_employee_with_no_assignment_today_has_no_windows(self):
 		self.assertEqual(get_checkin_windows("_no_such_employee"), [])
+
+
+class TestNotReturnedFromLeaveBlocker(FrappeTestCase):
+	"""The status blocker takes priority over any shift window (AC 3)."""
+
+	def test_the_status_is_spelled_the_way_employee_stores_it(self):
+		# The comparison used to read "Not Returned From Leave", which no Employee ever
+		# holds, so the blocker never fired and the API talked about shift windows
+		# instead. The Select option is the authority.
+		options = frappe.get_meta("Employee").get_field("status").options.split("\n")
+		self.assertIn(NOT_RETURNED_FROM_LEAVE, options)
+
+	def test_the_source_compares_against_that_constant(self):
+		for path in (
+			("one_fm", "api", "v1", "face_recognition.py"),
+			("one_fm", "overrides", "employee_checkin.py"),
+		):
+			source = frappe.read_file(frappe.get_app_path(*path))
+			self.assertNotIn("Not Returned From Leave", source, msg=path[-1])
+			self.assertIn("NOT_RETURNED_FROM_LEAVE", source, msg=path[-1])
+
+	def test_the_blocked_employee_is_told_what_to_do(self):
+		employee = frappe.db.get_value(
+			"Employee", {"status": NOT_RETURNED_FROM_LEAVE}, ["name", "employee_id"], as_dict=True
+		)
+		if not employee or not employee.employee_id:
+			self.skipTest("no employee is currently marked as not returned from leave")
+
+		# Coordinates only have to be present - the status is checked before they matter.
+		get_site_location(
+			employee_id=employee.employee_id, latitude=29.3759, longitude=47.9774
+		)
+
+		# response() puts the sentence the app shows in the "error" slot; "message" is
+		# the coarse label. The banner reads the sentence.
+		banner = frappe.local.response.get("error") or ""
+		self.assertEqual(frappe.local.response.get("status_code"), 403)
+		self.assertIn("Action Required", banner)
+		self.assertIn("Duty Resumption", banner)
+		# It must not fall through to a shift-window message the status makes moot.
+		self.assertNotIn("Check-In Window", banner)
