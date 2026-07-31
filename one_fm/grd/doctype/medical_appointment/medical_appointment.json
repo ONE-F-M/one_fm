@@ -235,8 +235,9 @@
   {
    "default": "Personnel Identification Dept - Um Alhayman",
    "fieldname": "service_location",
-   "fieldtype": "Data",
-   "label": "Service Location"
+   "fieldtype": "Link",
+   "label": "Service Location",
+   "options": "Location"
   },
   {
    "fieldname": "section_break_12",
