@@ -32,6 +32,8 @@
   "salary_deduction_days",
   "salary_deduction_amount",
   "section_break_waiv",
+  "employee_response",
+  "refusal_proof",
   "employee_rejection_remarks",
   "incident_file",
   "investigation_requiref",
@@ -285,6 +287,19 @@
   {
    "fieldname": "section_break_waiv",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "employee_response",
+   "fieldtype": "Select",
+   "label": "Employee Response",
+   "options": "\nAccept\nRefuse\nNot Return from Vacation\nRequest Investigation"
+  },
+  {
+   "depends_on": "eval:doc.employee_response == \"Refuse\"",
+   "fieldname": "refusal_proof",
+   "fieldtype": "Attach",
+   "label": "Refusal Proof",
+   "mandatory_depends_on": "eval:doc.employee_response == \"Refuse\""
   },
   {
    "fieldname": "employee_rejection_remarks",
