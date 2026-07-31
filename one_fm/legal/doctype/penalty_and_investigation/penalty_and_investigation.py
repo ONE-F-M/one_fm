@@ -4,8 +4,9 @@ from frappe.model.document import Document
 from frappe.utils import add_days, flt, getdate
 
 # Workflow states that count as an approved penalty when counting a repeat offence.
-# "Approved" is the state the redesigned workflow ends on; "Completed" is what the
-# live workflow still uses, so both are honoured while the two overlap.
+# "Completed" is where WI-001796's workflow ends; "Approved" was the end state of the
+# definition exported before the criteria were written, so both are honoured until no
+# record can be sitting in it.
 APPROVED_STATES = ("Approved", "Completed")
 
 # Offence level -> the Penalty Code's Penalty Level row, and the maximum level the
