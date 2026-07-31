@@ -111,7 +111,6 @@
    "label": "Governorate"
   },
   {
-   "default": "Personnel Identification Dept - Um Alhayman",
    "fieldname": "service_location",
    "fieldtype": "Link",
    "label": "Service Location",

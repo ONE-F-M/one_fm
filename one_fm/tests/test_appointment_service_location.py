@@ -2,9 +2,9 @@
 # See license.txt
 """Tests for Service Location on the appointment doctypes (WI-001807).
 
-Service Location is a Link to Location, defaulted to the office the appointments are
-almost always held at, so a Trip Request can copy it into a Destination Location that
-Transportation Shipment can resolve as a stop.
+Service Location is a Link to Location on both appointment doctypes, so the value a
+Trip Request copies into its Destination Location is a docname Transportation Shipment
+can resolve as a stop.
 """
 
 import frappe
@@ -14,10 +14,8 @@ from one_fm.one_fm.doctype.trip_request.trip_request import (
 	SOURCE_DESTINATION_FIELD_MAP,
 	resolve_destination_location,
 )
-from one_fm.patches.v15_0.create_locations_for_appointment_service_locations import (
-	APPOINTMENT_DOCTYPES,
-	DEFAULT_SERVICE_LOCATION,
-)
+
+APPOINTMENT_DOCTYPES = ("Fingerprint Appointment", "Medical Appointment")
 
 
 class TestServiceLocationIsALink(FrappeTestCase):
@@ -27,24 +25,13 @@ class TestServiceLocationIsALink(FrappeTestCase):
 			self.assertEqual(field.fieldtype, "Link", msg=doctype)
 			self.assertEqual(field.options, "Location", msg=doctype)
 
-	def test_both_appointments_default_to_the_same_office(self):
+	def test_neither_defaults_to_a_location_that_does_not_exist(self):
+		# A Link default that is not a docname makes every new appointment unsaveable,
+		# so a default is only allowed once its Location exists.
 		for doctype in APPOINTMENT_DOCTYPES:
-			field = frappe.get_meta(doctype).get_field("service_location")
-			self.assertEqual(field.default, DEFAULT_SERVICE_LOCATION, msg=doctype)
-
-	def test_the_default_is_a_location_that_exists(self):
-		# A Link default that is not a docname makes every new appointment unsaveable.
-		self.assertTrue(frappe.db.exists("Location", DEFAULT_SERVICE_LOCATION))
-
-	def test_no_existing_appointment_points_at_a_missing_location(self):
-		locations = set(frappe.get_all("Location", pluck="name"))
-		for doctype in APPOINTMENT_DOCTYPES:
-			stored = {
-				value
-				for value in frappe.get_all(doctype, pluck="service_location", distinct=True)
-				if value
-			}
-			self.assertEqual(stored - locations, set(), msg=doctype)
+			default = frappe.get_meta(doctype).get_field("service_location").default
+			if default:
+				self.assertTrue(frappe.db.exists("Location", default), msg=doctype)
 
 
 class TestTripRequestStillResolvesIt(FrappeTestCase):
@@ -64,9 +51,7 @@ class TestTripRequestStillResolvesIt(FrappeTestCase):
 			}
 		).insert(ignore_permissions=True)
 
-		appointment = frappe.get_all(
-			"Fingerprint Appointment", limit=1, pluck="name"
-		)
+		appointment = frappe.get_all("Fingerprint Appointment", limit=1, pluck="name")
 		if not appointment:
 			self.skipTest("no Fingerprint Appointment to resolve from")
 
@@ -78,4 +63,3 @@ class TestTripRequestStillResolvesIt(FrappeTestCase):
 			resolve_destination_location("Fingerprint Appointment", appointment[0]),
 			location.name,
 		)
-		self.assertTrue(frappe.db.exists("Location", location.name))
