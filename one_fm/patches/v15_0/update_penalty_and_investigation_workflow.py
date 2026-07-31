@@ -7,13 +7,13 @@ WORKFLOW_FILE = "penalty_and_investigation.json"
 
 
 def execute():
-	"""Apply the supplied Penalty And Investigation workflow (WI-001796).
+	"""Apply the Penalty And Investigation workflow (WI-001796).
 
 	Workflows are only created by the installer, so an existing site needs the states
 	and transitions applied here. The definition reuses the active workflow's name so
 	it replaces it: two active workflows on one doctype conflict.
 
-	Safe on the current data - every record sits in Draft, which the definition still
+	Safe on the current data - all 308 records sit in Draft, which the definition still
 	carries - but any record found in a retired state is reported rather than silently
 	left unusable.
 	"""
