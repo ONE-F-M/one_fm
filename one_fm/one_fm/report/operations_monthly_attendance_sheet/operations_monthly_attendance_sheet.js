@@ -107,7 +107,11 @@ frappe.query_reports["Operations Monthly Attendance Sheet"] = {
 	formatter: function (value, row, column, data, default_formatter) {
 		value = default_formatter(value, row, column, data);
 		if (column.colIndex < FIXED_COLUMNS) return value;
-		return `<span style='color:${status_color_map[value]}'>${value}</span>`;
+		// Under "Shift Hours" the day cells hold a duration, which has no status colour
+		// (WI-001791) - colour only what the map knows.
+		const color = status_color_map[value];
+		if (!color) return value;
+		return `<span style='color:${color}'>${value}</span>`;
 	},
 	onload: function (report) {
 		report.page.add_inner_button(__("Generate"), () => {

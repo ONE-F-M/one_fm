@@ -3,7 +3,7 @@
 
 import frappe
 from frappe import _
-from frappe.utils import add_days, cint, cstr, date_diff, getdate, nowdate
+from frappe.utils import add_days, cint, cstr, date_diff, flt, getdate, nowdate
 
 status_map = {
 	"Present": "P",
@@ -19,6 +19,48 @@ day_abbr = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 # one column per day has to stop somewhere: past this the table is unreadable and the
 # query set grows without bound (WI-001790).
 MAX_RANGE_DAYS = 62
+
+# The two things the day cells can show (WI-001791).
+BY_ATTENDANCE_STATUS = "Attendance Status"
+BY_SHIFT_HOURS = "Shift Hours"
+
+OVERTIME = "Over-Time"
+BASIC = "Basic"
+
+
+def is_invalid_roster_combination(filters):
+	"""Overtime asked for together with Day Off OT (WI-001791, Logic Rule 4).
+
+	The acceptance criteria call this combination a logical error and require an empty
+	report for it, so it is answered before any query runs.
+	"""
+	return filters.get("roster_type") == OVERTIME and cint(filters.get("day_off_ot"))
+
+
+def apply_roster_type_filters(query, roster_type_field, day_off_ot_field, filters):
+	"""The Roster Type / Day Off OT rules, shared by the Attendance and Employee
+	Schedule queries so both answer a given filter pair identically (WI-001791).
+
+	  Basic, unchecked    -> basic shifts only, with day-off OT actively excluded
+	  Basic, checked      -> only basic shifts flagged as day-off OT
+	  Overtime, unchecked -> overtime only, which already excludes both basic cases
+	  Overtime, checked   -> never reaches a query (Logic Rule 4)
+	"""
+	roster_type = filters.get("roster_type")
+	day_off_ot = cint(filters.get("day_off_ot"))
+
+	if roster_type:
+		query = query.where(roster_type_field == roster_type)
+
+	if day_off_ot:
+		query = query.where(day_off_ot_field == 1)
+	elif roster_type == BASIC:
+		# Rule 1's edge case: pure basic must not carry the day's day-off OT rows.
+		# Left unconstrained for Overtime, whose own rule asks only that the basic
+		# rows are hidden.
+		query = query.where(day_off_ot_field != 1)
+
+	return query
 
 
 def get_date_range(filters):
@@ -61,23 +103,33 @@ def execute(filters):
 	validate_filters(filters)
 	dates = get_date_range(filters)
 
-	attendance_map = get_attendance_map(filters)
+	# Logic Rule 4: Overtime and Day Off OT together is an invalid combination, so the
+	# report answers with an empty state instead of a figure someone might act on.
+	if is_invalid_roster_combination(filters):
+		return get_columns(filters, dates), [], _(
+			"<b>Overtime</b> with <b>Day Off OT</b> is not a valid combination. "
+			"Clear one of them to generate the report."
+		)
+
+	attendance_map, hours_map = get_attendance_map(filters)
 	if not attendance_map:
 		frappe.msgprint(_("No attendance records found."), alert=True, indicator="orange")
 		return get_columns(filters, dates), []
 
 	schedule_map = {}
 	if filters.get("include_future_attendance"):
-		schedule_map = get_schedule_map(filters)
+		schedule_map, schedule_hours_map = get_schedule_map(filters)
+		# Schedule wins where both exist, the same precedence the statuses use below.
+		hours_map = merge_hours_maps(hours_map, schedule_hours_map)
 
 	columns = get_columns(filters, dates)
-	data = get_data(filters, dates, attendance_map, schedule_map)
+	data = get_data(filters, dates, attendance_map, schedule_map, hours_map)
 
 	if not data:
 		frappe.msgprint(_("No attendance records found for this criteria."), alert=True, indicator="orange")
 		return columns, []
 
-	message = get_message()
+	message = get_message(filters)
 
 	return columns, data, message
 
@@ -124,13 +176,40 @@ def get_columns_for_days(dates):
 	return days
 
 
-def get_data(filters, dates, attendance_map, schedule_map):
+def get_data(filters, dates, attendance_map, schedule_map, hours_map):
 	employee_details = get_employee_details(filters)
-	data = get_rows(employee_details, filters, dates, attendance_map, schedule_map)
+	data = get_rows(employee_details, filters, dates, attendance_map, schedule_map, hours_map)
 
 	return data
 
-def get_message():
+
+def merge_hours_maps(*maps):
+	"""Merge {employee: {shift: {date: hours}}} maps, later ones winning (WI-001791)."""
+	merged = {}
+
+	for hours_map in maps:
+		for employee, shifts in (hours_map or {}).items():
+			for shift, days in shifts.items():
+				merged.setdefault(employee, {}).setdefault(shift, {}).update(days)
+
+	return merged
+
+
+def format_shift_hours(hours):
+	"""The scheduled duration as the cell shows it: 8 rather than 8.0 (WI-001791)."""
+	hours = flt(hours)
+	if not hours:
+		return ""
+
+	return cstr(int(hours)) if hours == int(hours) else cstr(hours)
+
+def get_message(filters=None):
+	filters = filters or frappe._dict()
+
+	# The status legend means nothing when the cells hold hours (WI-001791).
+	if filters.get("generate_based_on") == BY_SHIFT_HOURS:
+		return _("Each cell shows the scheduled duration of that day's shift, in hours.")
+
 	message = ""
 	colors_map = { "P": "green","A": "red","OL": "red","H": "blue","DO": "blue","CDO": "blue" }
 	legend_status_map = { **status_map, "Work From Home": "P", "Client Day Off": "CDO" }
@@ -166,15 +245,21 @@ def get_attendance_map(filters):
 	non_day_off_attendance_records = get_non_day_off_attendance_records(filters)
 
 	attendance_map = {}
+	hours_map = {}
 	leave_map = {}
 
 	for d in non_day_off_attendance_records:
+		if d.shift is None:
+			d.shift = ""
+
+		# The scheduled duration is recorded for every day that has a shift, including
+		# the days spent on leave: it is what was rostered, not what was worked.
+		if d.shift_hours:
+			hours_map.setdefault(d.employee, {}).setdefault(d.shift, {})[d.day_key] = d.shift_hours
+
 		if d.status == "On Leave":
 			leave_map.setdefault(d.employee, {}).setdefault(d.shift, []).append(d.day_key)
 			continue
-
-		if d.shift is None:
-			d.shift = ""
 
 		attendance_map.setdefault(d.employee, {}).setdefault(d.shift, {})
 		attendance_map[d.employee][d.shift][d.day_key] = d.status
@@ -190,7 +275,7 @@ def get_attendance_map(filters):
 				for shift in attendance_map[employee].keys():
 					attendance_map[employee][shift][day] = "On Leave"
 
-	return attendance_map
+	return attendance_map, hours_map
 
 def get_non_day_off_attendance_records(filters):
 	Attendance = frappe.qb.DocType("Attendance")
@@ -205,6 +290,9 @@ def get_non_day_off_attendance_records(filters):
 			Attendance.attendance_date.as_("day_key"),
 			Attendance.status,
 			OperationsShift.shift_classification.as_("shift"),
+			# The shift's scheduled length, for "Shift Hours" mode. Deliberately not
+			# Attendance.working_hours, which is what was actually clocked (WI-001791).
+			OperationsShift.duration.as_("shift_hours"),
 		)
 		.where(
 			(Attendance.docstatus == 1)
@@ -220,11 +308,9 @@ def get_non_day_off_attendance_records(filters):
 	if filters.get("site"):
 		query = query.where(Attendance.site == filters.site)
 
-	if filters.get("roster_type"):
-		query = query.where(Attendance.roster_type == filters.roster_type)
-
-	if filters.get("day_off_ot"):
-		query = query.where(Attendance.day_off_ot == 1)
+	query = apply_roster_type_filters(
+		query, Attendance.roster_type, Attendance.day_off_ot, filters
+	)
 
 	return query.run(as_dict=True)
 
@@ -275,15 +361,19 @@ def get_schedule_map(filters):
 	non_day_off_schedule_records = get_non_day_off_schedule_records(filters)
 
 	schedule_map = {}
+	hours_map = {}
 	leave_map = {}
 
 	for d in non_day_off_schedule_records:
+		if d.shift is None:
+			d.shift = ""
+
+		if d.shift_hours:
+			hours_map.setdefault(d.employee, {}).setdefault(d.shift, {})[d.day_key] = d.shift_hours
+
 		if d.status in ["Annual Leave"]:
 			leave_map.setdefault(d.employee, {}).setdefault(d.shift, []).append(d.day_key)
 			continue
-
-		if d.shift is None:
-			d.shift = ""
 
 		schedule_map.setdefault(d.employee, {}).setdefault(d.shift, {})
 		schedule_map[d.employee][d.shift][d.day_key] = d.status
@@ -299,7 +389,7 @@ def get_schedule_map(filters):
 				for shift in schedule_map[employee].keys():
 					schedule_map[employee][shift][day] = "Annual Leave"
 
-	return schedule_map
+	return schedule_map, hours_map
 
 def get_non_day_off_schedule_records(filters):
 	EmployeeSchedule = frappe.qb.DocType("Employee Schedule")
@@ -314,6 +404,7 @@ def get_non_day_off_schedule_records(filters):
 			EmployeeSchedule.date.as_("day_key"),
 			EmployeeSchedule.employee_availability.as_("status"),
 			OperationsShift.shift_classification.as_("shift"),
+			OperationsShift.duration.as_("shift_hours"),
 		)
 		.where(
 			(EmployeeSchedule.date >= nowdate())
@@ -329,11 +420,9 @@ def get_non_day_off_schedule_records(filters):
 	if filters.get("site"):
 		query = query.where(EmployeeSchedule.site == filters.site)
 
-	if filters.get("roster_type"):
-		query = query.where(EmployeeSchedule.roster_type == filters.roster_type)
-
-	if filters.get("day_off_ot"):
-		query = query.where(EmployeeSchedule.day_off_ot == 1)
+	query = apply_roster_type_filters(
+		query, EmployeeSchedule.roster_type, EmployeeSchedule.day_off_ot, filters
+	)
 
 	return query.run(as_dict=True)
 
@@ -402,7 +491,7 @@ def get_employee_details(filters):
 	return emp_map
 
 
-def get_rows(employee_details, filters, dates, attendance_map, schedule_map):
+def get_rows(employee_details, filters, dates, attendance_map, schedule_map, hours_map):
 	records = []
 
 	day_off_attendance_map = get_day_off_attendance_map(filters)
@@ -426,6 +515,8 @@ def get_rows(employee_details, filters, dates, attendance_map, schedule_map):
 			employee_day_off_attendance,
 			employee_schedule,
 			employee_day_off_schedule,
+			hours_map.get(employee, {}),
+			filters.get("generate_based_on"),
 		)
 
 		# set employee details in the first row
@@ -448,12 +539,18 @@ def get_attendance_status(
 	employee_day_off_attendance,
 	employee_non_day_off_schedule,
 	employee_day_off_schedule,
+	employee_shift_hours=None,
+	generate_based_on=BY_ATTENDANCE_STATUS,
 ):
 	"""Returns list of shift-wise attendance status for employee, keyed by ISO date
 	[
 			{'shift': 'Morning', '2026-08-01': 'A', '2026-08-02': 'P', ...},
 			{'shift': 'Evening', '2026-08-01': 'P', '2026-08-02': 'A', ...}
 	]
+
+	Under "Shift Hours" the cells carry the shift's scheduled duration instead of the
+	status abbreviation (WI-001791). The working day and day off counts are taken from
+	the status either way, so the two modes always agree on the totals.
 	"""
 	attendance_values = []
 
@@ -469,6 +566,8 @@ def get_attendance_status(
 
 	employee_non_day_off_attendance = employee_non_day_off_attendance or {}
 	employee_non_day_off_schedule = employee_non_day_off_schedule or {}
+	employee_shift_hours = employee_shift_hours or {}
+	by_shift_hours = generate_based_on == BY_SHIFT_HOURS
 
 	shifts = set(employee_non_day_off_attendance.keys()) | set(employee_non_day_off_schedule.keys())
 
@@ -493,8 +592,13 @@ def get_attendance_status(
 			elif status in ["Day Off", "Client Day Off"]:
 				off_days += 1
 
-			abbr = attendance_status_map.get(status, "")
-			row[cstr(date)] = abbr
+			if by_shift_hours:
+				# The scheduled duration of the shift, never the hours actually clocked.
+				row[cstr(date)] = format_shift_hours(
+					employee_shift_hours.get(shift, {}).get(date)
+				)
+			else:
+				row[cstr(date)] = attendance_status_map.get(status, "")
 
 		row["working_days"] = working_days
 		row["off_days"] = off_days
