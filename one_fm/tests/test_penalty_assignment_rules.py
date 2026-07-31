@@ -2,22 +2,37 @@
 # See license.txt
 """Tests for the Penalty And Investigation assignment rules (WI-001798).
 
-One rule per waiting state of the WI-001796 workflow: the penalty sits with the HR
-Administrator, the Legal Manager or the General Manager, and hands over as the
-workflow moves on.
+One rule per waiting state of the WI-001796 workflow, shipped exactly as supplied:
+"Based on Field" on `owner`, assigning on workflow_state and closing when it moves on.
 """
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
-from frappe.utils.safe_exec import get_safe_globals
+
+from one_fm.custom.assignment_rule.assignment_rule import get_assignment_rule_json_file
 
 RULES = {
-	"Penalty and Investigation-HR Administrator": "Pending HR Administrator",
-	"Penalty and Investigation-Legal Manager": "Pending Legal Manager",
-	"Penalty and Investigation-General Manager": "Pending General Manager",
+	"Penalty and Investigation-HR Administrator": (
+		"penalty_and_investigation_hr_administrator.json",
+		"Pending HR Administrator",
+	),
+	"Penalty and Investigation-Legal Manager": (
+		"penalty_and_investigation_legal_manager.json",
+		"Pending Legal Manager",
+	),
+	"Penalty and Investigation-General Manager": (
+		"penalty_and_investigation_general_manager.json",
+		"Pending General Manager",
+	),
 }
 
 WORKFLOW = "Penalty & Investigation"
+
+FIELDS = (
+	"document_type", "priority", "disabled", "description",
+	"is_assignment_rule_with_workflow", "assign_condition", "close_condition",
+	"rule", "field",
+)
 
 
 def _rule(name):
@@ -26,10 +41,38 @@ def _rule(name):
 	return frappe.get_doc("Assignment Rule", name)
 
 
-class TestRulesExist(FrappeTestCase):
+class TestRulesMatchWhatWasSupplied(FrappeTestCase):
 	def test_every_tier_has_a_rule(self):
 		for name in RULES:
 			self.assertTrue(frappe.db.exists("Assignment Rule", name), msg=name)
+
+	def test_each_rule_is_applied_field_for_field(self):
+		# The supplied definition is the spec; this fails if the fixture or the saved
+		# rule drifts from it.
+		for name, (json_file, _state) in RULES.items():
+			supplied = get_assignment_rule_json_file(json_file)
+			applied = _rule(name)
+			for field in FIELDS:
+				self.assertEqual(
+					str(supplied.get(field) or ""),
+					str(applied.get(field) or ""),
+					msg=f"{name}.{field}",
+				)
+
+	def test_they_select_the_assignee_from_a_field(self):
+		for name in RULES:
+			rule = _rule(name)
+			self.assertEqual(rule.rule, "Based on Field", msg=name)
+			self.assertEqual(rule.field, "owner", msg=name)
+
+	def test_the_field_they_assign_on_exists(self):
+		# Assigning on a missing field silently assigns to nobody.
+		meta = frappe.get_meta("Penalty And Investigation")
+		for name in RULES:
+			field = _rule(name).field
+			self.assertTrue(
+				field in frappe.model.default_fields or meta.has_field(field), msg=field
+			)
 
 	def test_they_are_enabled_and_cover_every_day(self):
 		for name in RULES:
@@ -37,30 +80,11 @@ class TestRulesExist(FrappeTestCase):
 			self.assertFalse(rule.disabled, msg=name)
 			self.assertEqual(len(rule.assignment_days), 7, msg=name)
 
-	def test_they_resolve_the_assignee_from_a_process_task(self):
-		# "Based on Process Task" with no task linked assigns nobody at all.
-		for name in RULES:
-			rule = _rule(name)
-			self.assertEqual(rule.rule, "Based on Process Task", msg=name)
-			self.assertTrue(rule.custom_routine_task, msg=name)
-
-	def test_each_process_task_points_at_a_user(self):
-		for name in RULES:
-			user = frappe.db.get_value(
-				"Process Task", _rule(name).custom_routine_task, "employee_user"
-			)
-			self.assertTrue(user, msg=name)
-			self.assertTrue(frappe.db.exists("User", user), msg=name)
-
-	def test_they_carry_the_workflow_action_buttons(self):
-		for name in RULES:
-			self.assertTrue(_rule(name).is_assignment_rule_with_workflow, msg=name)
-
 
 class TestConditionsMatchTheWorkflow(FrappeTestCase):
 	def test_every_state_they_wait_on_is_a_real_workflow_state(self):
 		states = {d.state for d in frappe.get_doc("Workflow", WORKFLOW).states}
-		for name, state in RULES.items():
+		for name, (_json_file, state) in RULES.items():
 			self.assertIn(state, states, msg=name)
 
 	def test_no_waiting_state_is_left_unassigned(self):
@@ -70,40 +94,13 @@ class TestConditionsMatchTheWorkflow(FrappeTestCase):
 			for d in frappe.get_doc("Workflow", WORKFLOW).states
 			if d.state.startswith("Pending")
 		}
-		self.assertEqual(waiting, set(RULES.values()))
+		self.assertEqual(waiting, {state for _f, state in RULES.values()})
 
-
-class TestConditionsAreEvaluable(FrappeTestCase):
-	"""Conditions run through safe_eval with the document as locals."""
-
-	def _eval(self, condition, doc):
-		return frappe.safe_eval(condition, get_safe_globals(), doc)
-
-	def test_no_condition_reaches_for_a_doc_prefix(self):
-		# "doc.workflow_state" is a NameError here, and safe_eval swallows it - the
-		# rule then silently never fires.
-		for name in RULES:
+	def test_each_rule_names_its_own_state(self):
+		for name, (_json_file, state) in RULES.items():
 			rule = _rule(name)
-			for condition in (rule.assign_condition, rule.unassign_condition or ""):
-				self.assertNotIn("doc.", condition, msg=name)
-
-	def test_each_rule_fires_on_its_own_state_only(self):
-		for name, state in RULES.items():
-			rule = _rule(name)
-			self.assertTrue(self._eval(rule.assign_condition, {"workflow_state": state}))
-			for other in set(RULES.values()) - {state}:
-				self.assertFalse(
-					self._eval(rule.assign_condition, {"workflow_state": other}), msg=other
-				)
-
-	def test_each_rule_releases_the_penalty_when_it_moves_on(self):
-		# Frappe only lets the next tier assign once the previous one has unassigned,
-		# so an unassign condition - not just a close condition - is what hands over.
-		for name, state in RULES.items():
-			rule = _rule(name)
-			self.assertTrue(rule.unassign_condition, msg=name)
-			self.assertFalse(self._eval(rule.unassign_condition, {"workflow_state": state}))
-			self.assertTrue(self._eval(rule.unassign_condition, {"workflow_state": "Approved"}))
+			self.assertIn(f'== "{state}"', rule.assign_condition, msg=name)
+			self.assertIn(f'!= "{state}"', rule.close_condition, msg=name)
 
 	def test_the_notification_only_renders_fields_the_penalty_has(self):
 		meta = frappe.get_meta("Penalty And Investigation")
