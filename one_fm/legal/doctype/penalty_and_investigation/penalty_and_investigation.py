@@ -18,9 +18,29 @@ LOOKBACK_DAYS = 365
 
 class PenaltyAndInvestigation(Document):
 	def validate(self):
+		self.validate_penalty_code_is_active()
 		self.validate_duplicate_penalty()
 		self.calculate_offence_count()
 		self.validate_workflow_transition()
+
+	def validate_penalty_code_is_active(self):
+		"""A retired penalty code cannot be applied (WI-001794).
+
+		Checked only when the code is being chosen, so that deactivating a code later
+		does not make the penalties already issued under it unsaveable.
+		"""
+		if not self.applied_penalty_code:
+			return
+
+		if not (self.is_new() or self.has_value_changed("applied_penalty_code")):
+			return
+
+		if not frappe.db.get_value("Penalty Code", self.applied_penalty_code, "is_active"):
+			frappe.throw(
+				_("Penalty Code {0} is no longer active and cannot be applied.").format(
+					frappe.bold(self.applied_penalty_code)
+				)
+			)
 
 	def validate_workflow_transition(self):
 		if not self.workflow_state:

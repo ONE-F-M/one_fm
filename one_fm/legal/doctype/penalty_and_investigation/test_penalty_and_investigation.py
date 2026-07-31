@@ -410,3 +410,61 @@ class TestPenaltyAndInvestigation(FrappeTestCase):
 		doc.evidence = "some evidence"
 		doc.supervisor_incident_report = "incident_report.pdf"
 		doc.save()  # should NOT raise
+
+	def test_a_retired_penalty_code_cannot_be_applied(self):
+		"""WI-001794: an inactive code is filtered out of the link field, and refused
+		server-side so it cannot arrive by import or API either."""
+		retired = frappe.get_doc(
+			{
+				"doctype": "Penalty Code",
+				"penalty_name": "Test Retired Penalty",
+				"violation_type": "Work",
+				"naming_series": "HR-PEN-.####",
+				"is_active": 0,
+			}
+		).insert()
+
+		doc = frappe.get_doc(
+			{
+				"doctype": "Penalty And Investigation",
+				"employee": self.employee.name,
+				"applied_penalty_code": retired.name,
+				"incident_date": today(),
+				"issuance_date": today(),
+				"supervisor_remarks": "Test remarks",
+			}
+		)
+
+		self.assertRaises(frappe.ValidationError, doc.insert)
+
+	def test_a_code_retired_after_the_fact_does_not_lock_its_penalties(self):
+		"""Deactivating a code must not make the penalties already issued under it
+		unsaveable - the check only runs when the code is being chosen."""
+		doc = frappe.get_doc(
+			{
+				"doctype": "Penalty And Investigation",
+				"employee": self.employee.name,
+				"applied_penalty_code": self.penalty_code.name,
+				"incident_date": today(),
+				"issuance_date": today(),
+				"supervisor_remarks": "Test remarks",
+			}
+		).insert()
+
+		frappe.db.set_value("Penalty Code", self.penalty_code.name, "is_active", 0)
+		frappe.clear_cache(doctype="Penalty Code")
+
+		doc.reload()
+		doc.supervisor_remarks = "amended remarks"
+		doc.save()  # should NOT raise
+
+	def test_the_form_filters_the_code_field_to_active_codes(self):
+		source = frappe.read_file(
+			frappe.get_app_path(
+				"one_fm", "legal", "doctype", "penalty_and_investigation",
+				"penalty_and_investigation.js",
+			)
+		)
+		self.assertIn('set_query("applied_penalty_code"', source)
+		self.assertIn("is_active: 1", source)
+
