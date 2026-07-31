@@ -7,6 +7,7 @@ cannot drift apart without a test failing.
 """
 
 import frappe
+from frappe.model.workflow import get_workflow_safe_globals
 from frappe.tests.utils import FrappeTestCase
 
 from one_fm.custom.workflow.workflow import get_workflow_json_file
@@ -174,31 +175,111 @@ class TestPenaltyWorkflow(FrappeTestCase):
 		self.assertEqual(orphans, {}, msg=f"records left in retired states: {orphans}")
 
 
-class TestSalaryRoutingIsManual(FrappeTestCase):
-	"""The definition carries no transition conditions, so the salary tier this story is
-	named for is not evaluated by the workflow (WI-001796).
-
-	Recorded rather than added to: Draft has a single unconditional Submit to the HR
-	Administrator, and the >350 KD route is reached by an HR User pressing
-	"Submit to Legal". If that split is meant to be automatic it needs a condition on
-	these transitions.
+class TestRoutingConditions(FrappeTestCase):
+	"""What the HR Administrator may do next, per the employee's answer and the salary
+	tier (WI-001796). The conditions are evaluated the way Frappe evaluates them.
 	"""
+
+	PAYROLL_ANSWERS = ("Accepted", "Refused", "Not Return from Vacation")
+	INVESTIGATION = "Request for Investigation by Employee"
 
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
 		cls.wf = frappe.get_doc("Workflow", WORKFLOW)
+		cls.routes = {
+			(t.state, t.action): t for t in cls.wf.transitions if t.state == "Pending HR Administrator"
+		}
 
-	def test_no_transition_carries_a_condition(self):
-		self.assertEqual([t.action for t in self.wf.transitions if t.condition], [])
-
-	def test_draft_submits_only_to_the_hr_administrator(self):
-		submits = [t for t in self.wf.transitions if t.state == "Draft" and t.action == "Submit"]
-		self.assertEqual([t.next_state for t in submits], ["Pending HR Administrator"])
-
-	def test_legal_is_reachable_from_the_hr_administrator(self):
-		# So a >350 KD penalty can still get to Legal, by hand.
-		routes = {(t.state, t.action): t.next_state for t in self.wf.transitions}
-		self.assertEqual(
-			routes[("Pending HR Administrator", "Submit to Legal")], "Pending Legal Manager"
+	def _employee(self, above_threshold):
+		operator = ">" if above_threshold else "between 1 and"
+		return frappe.db.sql(
+			f"""
+			select name from `tabEmployee`
+			where status = 'Active' and ifnull(one_fm_basic_salary, 0) {operator} 350 limit 1
+			""",
+			pluck=True,
 		)
+
+	def _allowed(self, action, issuance_status, employee):
+		transition = self.routes[("Pending HR Administrator", action)]
+		if not transition.condition:
+			return True
+		return bool(
+			frappe.safe_eval(
+				transition.condition,
+				get_workflow_safe_globals(),
+				{"doc": frappe._dict(issuance_status=issuance_status, employee=employee)},
+			)
+		)
+
+	def test_the_three_routes_out_of_hr_carry_conditions(self):
+		for action in ("Submit", "Submit to Legal", "Submit to GM"):
+			self.assertTrue(self.routes[("Pending HR Administrator", action)].condition, msg=action)
+
+	def test_put_on_hold_and_return_to_draft_stay_unconditional(self):
+		# Nothing in the criteria gates them, and gating them could strand a penalty.
+		for action in ("Put On Hold", "Return To Draft"):
+			self.assertFalse(self.routes[("Pending HR Administrator", action)].condition, msg=action)
+
+	def test_an_answered_penalty_goes_to_payroll(self):
+		employee = self._employee(above_threshold=False)
+		if not employee:
+			self.skipTest("no Active employee within the salary threshold")
+		for answer in self.PAYROLL_ANSWERS:
+			self.assertTrue(self._allowed("Submit", answer, employee[0]), msg=answer)
+
+	def test_an_answered_penalty_cannot_be_escalated_to_the_gm(self):
+		# "the system prevents triggering the HR Administrator or Legal Investigation
+		# sub-process, And the record can only be submitted directly to Payroll".
+		employee = self._employee(above_threshold=False)
+		if not employee:
+			self.skipTest("no Active employee within the salary threshold")
+		for answer in self.PAYROLL_ANSWERS:
+			self.assertFalse(self._allowed("Submit to GM", answer, employee[0]), msg=answer)
+			self.assertFalse(self._allowed("Submit to Legal", answer, employee[0]), msg=answer)
+
+	def test_a_request_for_investigation_cannot_go_straight_to_payroll(self):
+		employee = self._employee(above_threshold=False)
+		if not employee:
+			self.skipTest("no Active employee within the salary threshold")
+		self.assertFalse(self._allowed("Submit", self.INVESTIGATION, employee[0]))
+		self.assertTrue(self._allowed("Submit to Legal", self.INVESTIGATION, employee[0]))
+
+	def test_the_higher_salary_tier_can_always_reach_legal(self):
+		# "Given an employee's basic salary is more than 350 KD ... the task is routed
+		# directly to the Legal Manager."
+		employee = self._employee(above_threshold=True)
+		if not employee:
+			self.skipTest("no Active employee above the salary threshold")
+		for answer in ("", self.INVESTIGATION, *self.PAYROLL_ANSWERS):
+			self.assertTrue(self._allowed("Submit to Legal", answer, employee[0]), msg=answer)
+
+	def test_an_unanswered_penalty_is_never_stuck(self):
+		# With no answer recorded, payroll is closed but the GM route stays open, so the
+		# penalty can always be moved on by someone.
+		for above in (False, True):
+			employee = self._employee(above_threshold=above)
+			if not employee:
+				continue
+			self.assertFalse(self._allowed("Submit", "", employee[0]))
+			self.assertTrue(self._allowed("Submit to GM", "", employee[0]))
+
+	def test_every_answer_leaves_at_least_one_way_forward(self):
+		for above in (False, True):
+			employee = self._employee(above_threshold=above)
+			if not employee:
+				continue
+			for answer in ("", self.INVESTIGATION, *self.PAYROLL_ANSWERS):
+				available = [
+					action
+					for action in ("Submit", "Submit to Legal", "Submit to GM")
+					if self._allowed(action, answer, employee[0])
+				]
+				self.assertTrue(available, msg=f"{answer!r} above={above} has nothing available")
+
+	def test_the_conditions_read_the_field_that_exists(self):
+		meta = frappe.get_meta(DOCTYPE)
+		self.assertIsNotNone(meta.get_field("issuance_status"))
+		options = {o for o in (meta.get_field("issuance_status").options or "").split("\n") if o}
+		self.assertEqual(set(self.PAYROLL_ANSWERS) | {self.INVESTIGATION}, options)
