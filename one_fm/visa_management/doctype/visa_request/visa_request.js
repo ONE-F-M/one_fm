@@ -90,44 +90,17 @@ function set_rejection_remarks(frm) {
 	}
 }
 
-// Predefined rejection reasons per workflow state (WI-001693). PAM and MOI reject for
-// different reasons, so each state offers its own list rather than a shared one.
-const REJECTION_REASONS_BY_STATE = {
-	'Pending By PAM': [
-		'Passport Validity is Less than 18 Months',
-		"Worker's age is below the legal minimum",
-		"The worker's gender does not match the profession",
-		"The occupation requires amendment to specify the worker's specialization",
-		'An active file exists for this worker',
-		'Worker is in Black List'
-	],
-	'Pending By MOI': [
-		'Block Due to Pending Transactions in MOI',
-		'Active Driving License , Rejected by Transportation Department'
-	]
-};
-
 function get_rejection_remarks(frm, resolve, reject) {
 	frappe.dom.unfreeze();
-	// PAM & MOI require a predefined reason (Select), each from its own list; the other
-	// states keep free text.
-	const state_reasons = REJECTION_REASONS_BY_STATE[frm.doc.workflow_state];
-	const reason_field = state_reasons
-		? {
-			label: 'Reason for Rejection',
-			fieldname: 'reason',
-			fieldtype: 'Select',
-			options: state_reasons.join('\n'),
-			reqd: 1
-		}
-		: {
-			label: 'Reason for Rejection',
-			fieldname: 'reason',
-			fieldtype: 'Small Text',
-			reqd: 1
-		};
 	frappe.prompt(
-		[reason_field],
+		[
+			{
+				label: 'Reason for Rejection',
+				fieldname: 'reason',
+				fieldtype: 'Small Text',
+				reqd: 1
+			}
+		],
 		function(values) {
 			try {
 				const state = frm.doc.workflow_state;
