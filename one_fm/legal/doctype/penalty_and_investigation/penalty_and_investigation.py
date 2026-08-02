@@ -19,10 +19,20 @@ LOOKBACK_DAYS = 365
 
 class PenaltyAndInvestigation(Document):
 	def validate(self):
+		self.set_created_by()
 		self.validate_penalty_code_is_active()
 		self.validate_duplicate_penalty()
 		self.calculate_offence_count()
 		self.validate_workflow_transition()
+
+	def set_created_by(self):
+		"""Surface the raiser on the document (WI-001794).
+
+		Frappe already records them in `owner`; this is the visible copy the BA's
+		layout asks for, set once so it cannot drift from the real creator.
+		"""
+		if not self.created_by:
+			self.created_by = self.owner or frappe.session.user
 
 	def validate_penalty_code_is_active(self):
 		"""A retired penalty code cannot be applied (WI-001794).
@@ -70,12 +80,12 @@ class PenaltyAndInvestigation(Document):
 				frappe.throw(_("HR Remarks and HR Investigation Report are required before moving to Pending GM Decision"))
 
 	def _validate_employee_to_supervisor_transition(self):
-		if not self.employee_rejection_remarks:
-			frappe.throw(_("Employee Rejection Remarks are required before moving to Pending Supervisor Review"))
+		if not self.employee_remarks:
+			frappe.throw(_("Employee Remarks are required before moving to Pending Supervisor Review"))
 
 	def _validate_supervisor_to_hr_transition(self):
-		if not self.supervisor_remarks or not self.evidence or not self.supervisor_incident_report:
-			frappe.throw(_("Supervisor Remarks, Evidence, and Supervisor Incident Report are required before moving to Pending HR Review"))
+		if not self.supervisor_remarks or not self.supervisor_incident_report:
+			frappe.throw(_("Supervisor Remarks and Supervisor Incident Report are required before moving to Pending HR Review"))
 
 	def validate_duplicate_penalty(self):
 		if not self.employee or not self.applied_penalty_code or not self.incident_date:
@@ -154,13 +164,13 @@ class PenaltyAndInvestigation(Document):
 		)
 
 		if not row:
-			self.deduction_type = None
+			self.action_type = None
 			self.penalty_category = None
 			self.salary_deduction_days = 0
 			self.salary_deduction_amount = 0
 			return
 
-		self.deduction_type = row.deduction_type
+		self.action_type = row.deduction_type
 		self.salary_deduction_days = row.salary_deduction_days
 		# Category mirrors the action for a code-driven penalty; the manual, code-less
 		# path (Uniform / Damage) is WI-001795's.

@@ -201,7 +201,7 @@ class TestRoutingConditions(FrappeTestCase):
 			pluck=True,
 		)
 
-	def _allowed(self, action, issuance_status, employee):
+	def _allowed(self, action, employee_response, employee):
 		transition = self.routes[("Pending HR Administrator", action)]
 		if not transition.condition:
 			return True
@@ -209,7 +209,7 @@ class TestRoutingConditions(FrappeTestCase):
 			frappe.safe_eval(
 				transition.condition,
 				get_workflow_safe_globals(),
-				{"doc": frappe._dict(issuance_status=issuance_status, employee=employee)},
+				{"doc": frappe._dict(employee_response=employee_response, employee=employee)},
 			)
 		)
 
@@ -280,6 +280,6 @@ class TestRoutingConditions(FrappeTestCase):
 
 	def test_the_conditions_read_the_field_that_exists(self):
 		meta = frappe.get_meta(DOCTYPE)
-		self.assertIsNotNone(meta.get_field("issuance_status"))
-		options = {o for o in (meta.get_field("issuance_status").options or "").split("\n") if o}
+		self.assertIsNotNone(meta.get_field("employee_response"))
+		options = {o for o in (meta.get_field("employee_response").options or "").split("\n") if o}
 		self.assertEqual(set(self.PAYROLL_ANSWERS) | {self.INVESTIGATION}, options)

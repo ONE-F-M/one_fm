@@ -1,8 +1,8 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""Tests for Issuance Status and Refusal Proof on the penalty (WI-001796).
+"""Tests for Employee Response and Refusal Proof on the penalty (WI-001796).
 
-Issuance Status is the employee's answer to the penalty. The criteria name four, and say
+Employee Response is the employee's answer to the penalty. The criteria name four, and say
 a refusal carries proof - "Refuse (with valid refusal_proof attached)" - so the proof is
 mandatory for that one answer and hidden for the others.
 """
@@ -20,31 +20,31 @@ RESPONSES = ["Accepted", "Refused", "Not Return from Vacation", "Request for Inv
 # trigger an HR or Legal investigation.
 STRAIGHT_TO_PAYROLL = {"Accepted", "Refused", "Not Return from Vacation"}
 
-WHEN_REFUSED = 'eval:doc.issuance_status == "Refused"'
+WHEN_REFUSED = 'eval:doc.employee_response == "Refused"'
 
 
-class TestIssuanceStatus(FrappeTestCase):
+class TestEmployeeResponse(FrappeTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
 		cls.meta = frappe.get_meta(DOCTYPE)
 
 	def test_the_field_exists_as_a_choice_of_answers(self):
-		field = self.meta.get_field("issuance_status")
+		field = self.meta.get_field("employee_response")
 		self.assertIsNotNone(field)
 		self.assertEqual(field.fieldtype, "Select")
 
 	def test_it_offers_exactly_the_responses_the_criteria_name(self):
-		options = [o for o in (self.meta.get_field("issuance_status").options or "").split("\n") if o]
+		options = [o for o in (self.meta.get_field("employee_response").options or "").split("\n") if o]
 		self.assertEqual(options, RESPONSES)
 
 	def test_no_answer_is_the_default(self):
 		# A penalty starts with no response recorded; the employee supplies one.
-		self.assertFalse(self.meta.get_field("issuance_status").default)
-		self.assertFalse(self.meta.get_field("issuance_status").reqd)
+		self.assertFalse(self.meta.get_field("employee_response").default)
+		self.assertFalse(self.meta.get_field("employee_response").reqd)
 
 	def test_every_response_that_skips_investigation_is_an_offered_option(self):
-		options = set(o for o in (self.meta.get_field("issuance_status").options or "").split("\n") if o)
+		options = set(o for o in (self.meta.get_field("employee_response").options or "").split("\n") if o)
 		self.assertEqual(STRAIGHT_TO_PAYROLL - options, set())
 		# Request Investigation is the only one that routes to HR or Legal.
 		self.assertEqual(
@@ -74,15 +74,16 @@ class TestRefusalProof(FrappeTestCase):
 
 	def test_the_condition_reads_the_response_field(self):
 		# Guards against the two drifting apart if either is renamed.
-		self.assertIn("issuance_status", WHEN_REFUSED)
-		self.assertIsNotNone(self.meta.get_field("issuance_status"))
+		self.assertIn("employee_response", WHEN_REFUSED)
+		self.assertIsNotNone(self.meta.get_field("employee_response"))
 
 
 class TestBothSitWithTheEmployeesRemark(FrappeTestCase):
 	def test_the_replaced_field_is_gone(self):
-		# employee_response was added first, then replaced by issuance_status; leaving
-		# both would give the penalty two places to record one answer.
-		self.assertIsNone(frappe.get_meta(DOCTYPE).get_field("employee_response"))
+		# The answer moved from employee_response to issuance_status and back again as
+		# the BA's layout settled; leaving both would give the penalty two places to
+		# record one answer.
+		self.assertIsNone(frappe.get_meta(DOCTYPE).get_field("issuance_status"))
 
 	def test_they_are_ordered_before_the_rejection_remark(self):
 		# The answer, then its proof, then the remark that explains it.
@@ -90,7 +91,7 @@ class TestBothSitWithTheEmployeesRemark(FrappeTestCase):
 			f.fieldname for f in frappe.get_meta(DOCTYPE).fields
 		]
 		for earlier, later in (
-			("issuance_status", "refusal_proof"),
-			("refusal_proof", "employee_rejection_remarks"),
+			("employee_response", "refusal_proof"),
+			("refusal_proof", "employee_remarks"),
 		):
 			self.assertLess(order.index(earlier), order.index(later), msg=f"{earlier} < {later}")

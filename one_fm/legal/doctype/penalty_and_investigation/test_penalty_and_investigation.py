@@ -376,18 +376,18 @@ class TestPenaltyAndInvestigation(FrappeTestCase):
 		doc.save()  # should NOT raise
 
 	def test_pending_hr_review_requires_supervisor_fields(self):
-		"""Transitioning to 'Pending HR Review' is blocked when supervisor_remarks,
-		evidence, or supervisor_incident_report is missing."""
+		"""Transitioning to 'Pending HR Review' is blocked when supervisor_remarks or
+		supervisor_incident_report is missing. The guard used to check `evidence` too,
+		which the BA layout removed from the doctype."""
 		doc = self._make_doc()
 
 		# Simulate the state machine: old state = Pending Supervisor Review
 		frappe.db.set_value("Penalty And Investigation", doc.name, "workflow_state", "Pending Supervisor Review")
 		doc.reload()
 
-		# All three fields missing — blocked
+		# Both fields missing — blocked
 		doc.workflow_state = "Pending HR Review"
 		doc.supervisor_remarks = None
-		doc.evidence = None
 		doc.supervisor_incident_report = None
 		self.assertRaises(frappe.ValidationError, doc.save)
 
@@ -397,17 +397,15 @@ class TestPenaltyAndInvestigation(FrappeTestCase):
 		doc.reload()
 		doc.workflow_state = "Pending HR Review"
 		doc.supervisor_remarks = "remarks"
-		doc.evidence = "some evidence"
 		doc.supervisor_incident_report = None
 		self.assertRaises(frappe.ValidationError, doc.save)
 
-		# All three present — transition is allowed
+		# Both present — transition is allowed
 		doc.reload()
 		frappe.db.set_value("Penalty And Investigation", doc.name, "workflow_state", "Pending Supervisor Review")
 		doc.reload()
 		doc.workflow_state = "Pending HR Review"
 		doc.supervisor_remarks = "remarks"
-		doc.evidence = "some evidence"
 		doc.supervisor_incident_report = "incident_report.pdf"
 		doc.save()  # should NOT raise
 
