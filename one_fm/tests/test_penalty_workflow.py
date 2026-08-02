@@ -17,7 +17,7 @@ DOCTYPE = "Penalty And Investigation"
 WORKFLOW_FILE = "penalty_and_investigation.json"
 
 STATE_FIELDS = ("state", "doc_status", "style", "allow_edit", "send_email")
-TRANSITION_FIELDS = ("state", "action", "next_state", "allowed", "allow_self_approval")
+TRANSITION_FIELDS = ("state", "action", "next_state", "allowed", "allow_self_approval", "condition")
 
 # (from state, action, to state, allowed role)
 SUPPLIED_TRANSITIONS = {
@@ -283,3 +283,69 @@ class TestRoutingConditions(FrappeTestCase):
 		self.assertIsNotNone(meta.get_field("employee_response"))
 		options = {o for o in (meta.get_field("employee_response").options or "").split("\n") if o}
 		self.assertEqual(set(self.PAYROLL_ANSWERS) | {self.INVESTIGATION}, options)
+
+
+class TestConditionsOnlyNameLiveFields(FrappeTestCase):
+	"""one_fm overrides get_transitions and evaluates a condition with the Document
+	itself as the eval locals - `dict(doc=doc)`, not `doc.as_dict()`. Frappe core's
+	_dict returns None for a missing key; a Document raises. So a condition naming a
+	field the doctype no longer has is not a silent misroute here, it is an
+	AttributeError the moment the form loads.
+	"""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		cls.wf = frappe.get_doc("Workflow", WORKFLOW)
+		cls.meta = frappe.get_meta(DOCTYPE)
+
+	def test_every_doc_field_a_condition_reads_exists(self):
+		import re
+
+		for t in self.wf.transitions:
+			if not t.condition:
+				continue
+			for fieldname in set(re.findall(r"\bdoc\.([a-z_][a-z0-9_]*)", t.condition)):
+				self.assertTrue(
+					self.meta.has_field(fieldname) or fieldname in frappe.model.default_fields,
+					msg=f"{t.action}: condition reads doc.{fieldname}, which is not a field",
+				)
+
+	def test_no_condition_raises_on_a_document_built_from_the_form_payload(self):
+		"""The form posts only the fields the current meta knows about, and
+		get_transitions rebuilds the Document from that payload.
+
+		Loading the same record from the database would NOT catch a stale condition:
+		Frappe never drops the column of a removed field, so a DB row still carries it
+		as an attribute and the condition quietly evaluates. Only the form's view of the
+		document - which has no orphan columns - raises, which is exactly how this
+		surfaced in the UI.
+		"""
+		from frappe.utils.safe_exec import safe_eval
+
+		name = frappe.get_all(DOCTYPE, limit=1, pluck="name")
+		if not name:
+			self.skipTest("no Penalty And Investigation on this instance")
+
+		stored = frappe.get_doc(DOCTYPE, name[0])
+		meta = frappe.get_meta(DOCTYPE)
+		payload = {"doctype": DOCTYPE, "name": stored.name}
+		for field in meta.fields:
+			value = stored.get(field.fieldname)
+			if value is not None:
+				payload[field.fieldname] = value
+		as_the_form_sees_it = frappe.get_doc(payload)
+
+		globals_ = dict(
+			frappe=frappe._dict(
+				db=frappe._dict(get_value=frappe.db.get_value, get_list=frappe.db.get_list),
+				session=frappe.session,
+			)
+		)
+		for t in self.wf.transitions:
+			if not t.condition:
+				continue
+			try:
+				safe_eval(t.condition, globals_, dict(doc=as_the_form_sees_it))
+			except Exception as e:
+				self.fail(f"{t.action}: {t.condition!r} raised {type(e).__name__}: {e}")
