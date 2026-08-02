@@ -543,3 +543,4 @@ one_fm.patches.v15_0.set_candidate_title_fields
 one_fm.patches.v15_0.update_attendance_check
 one_fm.patches.v15_0.update_employee_and_user_references
 one_fm.patches.v15_0.add_employee_schedule_suspension_workflow #2026-07-24
+one_fm.patches.v15_0.migrate_penalty_applied_level #2026-07-30

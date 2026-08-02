@@ -26,6 +26,7 @@
   "penalty",
   "offence_count",
   "applied_level",
+  "penalty_category",
   "column_break_hgui",
   "deduction_type",
   "salary_deduction_days",
@@ -127,7 +128,14 @@
    "fieldname": "applied_level",
    "fieldtype": "Select",
    "label": "Applied Level",
-   "options": "1\n2\n3\n4\n5",
+   "options": "\n1st\n2nd\n3rd\n4th\n5th",
+   "read_only": 1
+  },
+  {
+   "fieldname": "penalty_category",
+   "fieldtype": "Select",
+   "label": "Penalty Category",
+   "options": "\nWarning\nSalary Deduction",
    "read_only": 1
   },
   {
@@ -236,8 +244,9 @@
   },
   {
    "fieldname": "deduction_type",
-   "fieldtype": "Data",
-   "label": "Deduction Type",
+   "fieldtype": "Select",
+   "label": "Action Type",
+   "options": "\nWarning\nSalary Deduction\nSuspension\nTermination",
    "read_only": 1
   },
   {
@@ -249,7 +258,8 @@
   {
    "fieldname": "salary_deduction_amount",
    "fieldtype": "Currency",
-   "label": "Salary Deduction Amount"
+   "label": "Salary Deduction Amount",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.employee_name",
@@ -337,7 +347,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-12 14:36:42.065746",
+ "modified": "2026-07-30 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Penalty And Investigation",
