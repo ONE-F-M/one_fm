@@ -2,8 +2,8 @@
 # See license.txt
 """Tests for the Penalty And Investigation assignment rules (WI-001798).
 
-One rule per waiting state of the WI-001796 workflow, shipped exactly as supplied:
-"Based on Field" on `owner`, assigning on workflow_state and closing when it moves on.
+One rule per waiting state of the WI-001796 workflow, shipped as supplied: "Based on
+Field" on `owner`, assigning on workflow_state and closing when it moves on.
 """
 
 import frappe
@@ -115,3 +115,46 @@ class TestConditionsMatchTheWorkflow(FrappeTestCase):
 			for fieldname in ("issuer", "employee"):
 				self.assertIn("{{" + fieldname + "}}", _rule(name).description, msg=name)
 				self.assertTrue(meta.has_field(fieldname), msg=fieldname)
+
+
+class TestConditionsActuallyEvaluate(FrappeTestCase):
+	"""Frappe evaluates an assignment rule's condition with the document itself as the
+	eval locals - `frappe.safe_eval(condition, None, doc)` - so a name that is not a
+	field on the document raises, AssignmentRule.safe_eval swallows it into an "Auto
+	assignment failed" message, and the rule silently never fires.
+	"""
+
+	def _eval(self, condition, workflow_state):
+		# The same call the framework makes, with the same locals.
+		return frappe.safe_eval(condition, None, frappe._dict(workflow_state=workflow_state))
+
+	def test_no_condition_raises_for_any_state_of_the_workflow(self):
+		states = [d.state for d in frappe.get_doc("Workflow", WORKFLOW).states]
+		for name in RULES:
+			rule = _rule(name)
+			for condition in (rule.assign_condition, rule.close_condition or ""):
+				if not condition:
+					continue
+				for state in states + [None, ""]:
+					try:
+						self._eval(condition, state)
+					except Exception as e:
+						self.fail(f"{name}: {condition!r} on {state!r} raised {type(e).__name__}: {e}")
+
+	def test_no_condition_reaches_for_a_name_the_document_does_not_carry(self):
+		# "doc.workflow_state" is the trap: valid in a workflow transition condition,
+		# which is handed {"doc": ...}, but a NameError here.
+		for name in RULES:
+			rule = _rule(name)
+			for condition in (rule.assign_condition, rule.close_condition or ""):
+				self.assertNotIn("doc.", condition, msg=name)
+
+	def test_each_rule_assigns_on_its_own_state_and_closes_on_the_others(self):
+		states = [d.state for d in frappe.get_doc("Workflow", WORKFLOW).states]
+		for name, (_json_file, own_state) in RULES.items():
+			rule = _rule(name)
+			self.assertTrue(self._eval(rule.assign_condition, own_state), msg=name)
+			self.assertFalse(self._eval(rule.close_condition, own_state), msg=name)
+			for other in set(states) - {own_state}:
+				self.assertFalse(self._eval(rule.assign_condition, other), msg=f"{name} on {other}")
+				self.assertTrue(self._eval(rule.close_condition, other), msg=f"{name} on {other}")
