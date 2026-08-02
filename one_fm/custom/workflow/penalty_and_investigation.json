@@ -1,363 +1,146 @@
 {
-  "name": "Penalty & Investigation",
-  "workflow_name": "Penalty & Investigation",
-  "document_type": "Penalty And Investigation",
-  "is_active": 1,
-  "override_status": 0,
-  "send_email_alert": 0,
-  "workflow_state_field": "workflow_state",
-  "doctype": "Workflow",
-  "states": [
-    {
-      "state": "Draft",
-      "doc_status": "0",
-      "update_value": "Draft",
-      "style": "Info",
-      "is_optional_state": 0,
-      "avoid_status_override": 0,
-      "allow_edit": "HR Supervisor",
-      "send_email": 1,
-      "doctype": "Workflow Document State"
-    },
-    {
-      "state": "Pending Employee Response",
-      "doc_status": "0",
-      "update_value": "Pending Employee Response",
-      "style": "Warning",
-      "is_optional_state": 0,
-      "avoid_status_override": 0,
-      "allow_edit": "HR Supervisor",
-      "send_email": 1,
-      "doctype": "Workflow Document State"
-    },
-    {
-      "state": "Employee Rejected",
-      "doc_status": "0",
-      "update_value": "Employee Rejected",
-      "style": "Inverse",
-      "is_optional_state": 0,
-      "avoid_status_override": 0,
-      "allow_edit": "Employee",
-      "send_email": 1,
-      "doctype": "Workflow Document State"
-    },
-    {
-      "state": "Pending Supervisor Review",
-      "doc_status": "0",
-      "update_value": "Pending Supervisor Review",
-      "style": "Inverse",
-      "is_optional_state": 0,
-      "avoid_status_override": 0,
-      "allow_edit": "HR Supervisor",
-      "send_email": 1,
-      "doctype": "Workflow Document State"
-    },
-    {
-      "state": "Pending HR Review",
-      "doc_status": "0",
-      "update_value": "Pending HR Review",
-      "style": "Inverse",
-      "is_optional_state": 0,
-      "avoid_status_override": 0,
-      "allow_edit": "HR Manager",
-      "send_email": 1,
-      "doctype": "Workflow Document State"
-    },
-    {
-      "state": "Pending GM Decision",
-      "doc_status": "0",
-      "update_value": "Pending GM Decision",
-      "style": "Primary",
-      "is_optional_state": 0,
-      "avoid_status_override": 0,
-      "allow_edit": "General Manager",
-      "send_email": 1,
-      "doctype": "Workflow Document State"
-    },
-    {
-      "state": "Pending Legal Investigation",
-      "doc_status": "0",
-      "update_value": "Penalty Legal Investigation",
-      "style": "Inverse",
-      "is_optional_state": 0,
-      "avoid_status_override": 0,
-      "allow_edit": "General Manager",
-      "send_email": 1,
-      "doctype": "Workflow Document State"
-    },
-    {
-      "state": "Confirm Penalty",
-      "doc_status": "0",
-      "update_value": "Confirm Penalty",
-      "style": "Danger",
-      "is_optional_state": 0,
-      "avoid_status_override": 0,
-      "allow_edit": "HR Supervisor",
-      "send_email": 1,
-      "doctype": "Workflow Document State"
-    },
-    {
-      "state": "Completed",
-      "doc_status": "1",
-      "update_value": "",
-      "style": "Success",
-      "is_optional_state": 0,
-      "avoid_status_override": 0,
-      "allow_edit": "HR Supervisor",
-      "send_email": 1,
-      "doctype": "Workflow Document State"
-    },
-    {
-      "state": "Cancelled by GM",
-      "doc_status": "2",
-      "update_value": "Canceled by GM",
-      "style": "Primary",
-      "is_optional_state": 0,
-      "avoid_status_override": 0,
-      "allow_edit": "General Manager",
-      "send_email": 1,
-      "doctype": "Workflow Document State"
-    },
-    {
-      "state": "Cancelled by Supervisor",
-      "doc_status": "2",
-      "update_value": "Canceled by Supevisor",
-      "style": "Primary",
-      "is_optional_state": 0,
-      "avoid_status_override": 0,
-      "allow_edit": "HR Supervisor",
-      "send_email": 1,
-      "doctype": "Workflow Document State"
-    },
-    {
-      "state": "Cancelled",
-      "doc_status": "0",
-      "style": "Danger",
-      "is_optional_state": 0,
-      "avoid_status_override": 0,
-      "allow_edit": "System Manager",
-      "send_email": 1,
-      "doctype": "Workflow Document State"
-    },
-    {
-      "state": "Pending HR Final Action",
-      "doc_status": "0",
-      "style": "Primary",
-      "is_optional_state": 0,
-      "avoid_status_override": 0,
-      "allow_edit": "HR Supervisor",
-      "send_email": 1,
-      "doctype": "Workflow Document State"
-    }
-  ],
-  "transitions": [
-    {
-      "state": "Draft",
-      "action": "Submit to Employee",
-      "next_state": "Pending Employee Response",
-      "allowed": "HR Supervisor",
-      "allow_self_approval": 1,
-      "send_email_to_creator": 0,
-      "skip_multiple_action": 0,
-      "skip_creation_of_workflow_action": 0,
-      "custom_confirm_transition": 0,
-      "custom_requires_frontend_input": 0,
-      "doctype": "Workflow Transition"
-    },
-    {
-      "state": "Pending Employee Response",
-      "action": "Accept",
-      "next_state": "Pending HR Final Action",
-      "allowed": "Employee",
-      "allow_self_approval": 1,
-      "send_email_to_creator": 0,
-      "skip_multiple_action": 0,
-      "skip_creation_of_workflow_action": 0,
-      "custom_confirm_transition": 0,
-      "custom_requires_frontend_input": 0,
-      "doctype": "Workflow Transition"
-    },
-    {
-      "state": "Pending Employee Response",
-      "action": "Cancel",
-      "next_state": "Cancelled",
-      "allowed": "HR Supervisor",
-      "allow_self_approval": 1,
-      "send_email_to_creator": 0,
-      "skip_multiple_action": 0,
-      "skip_creation_of_workflow_action": 0,
-      "custom_confirm_transition": 0,
-      "custom_requires_frontend_input": 0,
-      "doctype": "Workflow Transition"
-    },
-    {
-      "state": "Pending Employee Response",
-      "action": "Rejected by Employee",
-      "next_state": "Pending Supervisor Review",
-      "allowed": "Employee",
-      "allow_self_approval": 1,
-      "send_email_to_creator": 0,
-      "skip_multiple_action": 0,
-      "skip_creation_of_workflow_action": 0,
-      "custom_confirm_transition": 0,
-      "custom_requires_frontend_input": 0,
-      "doctype": "Workflow Transition"
-    },
-    {
-      "state": "Pending Supervisor Review",
-      "action": "Submit to HR",
-      "next_state": "Pending HR Review",
-      "allowed": "HR Supervisor",
-      "allow_self_approval": 1,
-      "send_email_to_creator": 0,
-      "skip_multiple_action": 0,
-      "skip_creation_of_workflow_action": 0,
-      "custom_confirm_transition": 0,
-      "custom_requires_frontend_input": 0,
-      "doctype": "Workflow Transition"
-    },
-    {
-      "state": "Pending Supervisor Review",
-      "action": "Cancel",
-      "next_state": "Cancelled",
-      "allowed": "HR Supervisor",
-      "allow_self_approval": 1,
-      "send_email_to_creator": 0,
-      "skip_multiple_action": 0,
-      "skip_creation_of_workflow_action": 0,
-      "custom_confirm_transition": 0,
-      "custom_requires_frontend_input": 0,
-      "doctype": "Workflow Transition"
-    },
-    {
-      "state": "Pending HR Review",
-      "action": "Submit to GM",
-      "next_state": "Pending GM Decision",
-      "allowed": "General Manager",
-      "allow_self_approval": 1,
-      "send_email_to_creator": 0,
-      "skip_multiple_action": 0,
-      "skip_creation_of_workflow_action": 0,
-      "custom_confirm_transition": 0,
-      "custom_requires_frontend_input": 0,
-      "doctype": "Workflow Transition"
-    },
-    {
-      "state": "Pending GM Decision",
-      "action": "Submit to Legal",
-      "next_state": "Pending Legal Investigation",
-      "allowed": "General Manager",
-      "allow_self_approval": 1,
-      "send_email_to_creator": 0,
-      "skip_multiple_action": 0,
-      "skip_creation_of_workflow_action": 0,
-      "custom_confirm_transition": 0,
-      "custom_requires_frontend_input": 0,
-      "doctype": "Workflow Transition"
-    },
-    {
-      "state": "Pending Legal Investigation",
-      "action": "Confirm",
-      "next_state": "Completed",
-      "allowed": "HR Supervisor",
-      "allow_self_approval": 1,
-      "send_email_to_creator": 0,
-      "skip_multiple_action": 0,
-      "skip_creation_of_workflow_action": 0,
-      "custom_confirm_transition": 0,
-      "custom_requires_frontend_input": 0,
-      "doctype": "Workflow Transition"
-    },
-    {
-      "state": "Completed",
-      "action": "Cancel",
-      "next_state": "Cancelled by Supervisor",
-      "allowed": "HR Supervisor",
-      "allow_self_approval": 1,
-      "send_email_to_creator": 0,
-      "skip_multiple_action": 0,
-      "skip_creation_of_workflow_action": 0,
-      "custom_confirm_transition": 0,
-      "custom_requires_frontend_input": 0,
-      "doctype": "Workflow Transition"
-    },
-    {
-      "state": "Completed",
-      "action": "Cancel",
-      "next_state": "Cancelled by GM",
-      "allowed": "General Manager",
-      "allow_self_approval": 1,
-      "send_email_to_creator": 0,
-      "skip_multiple_action": 0,
-      "skip_creation_of_workflow_action": 0,
-      "custom_confirm_transition": 0,
-      "custom_requires_frontend_input": 0,
-      "doctype": "Workflow Transition"
-    },
-    {
-      "state": "Pending HR Review",
-      "action": "Cancel",
-      "next_state": "Cancelled",
-      "allowed": "HR Supervisor",
-      "allow_self_approval": 1,
-      "send_email_to_creator": 0,
-      "skip_multiple_action": 0,
-      "skip_creation_of_workflow_action": 0,
-      "custom_confirm_transition": 0,
-      "custom_requires_frontend_input": 0,
-      "doctype": "Workflow Transition"
-    },
-    {
-      "state": "Pending GM Decision",
-      "action": "Cancel",
-      "next_state": "Cancelled",
-      "allowed": "General Manager",
-      "allow_self_approval": 1,
-      "send_email_to_creator": 0,
-      "skip_multiple_action": 0,
-      "skip_creation_of_workflow_action": 0,
-      "custom_confirm_transition": 0,
-      "custom_requires_frontend_input": 0,
-      "doctype": "Workflow Transition"
-    },
-    {
-      "state": "Pending Legal Investigation",
-      "action": "Cancel",
-      "next_state": "Cancelled",
-      "allowed": "HR Supervisor",
-      "allow_self_approval": 1,
-      "send_email_to_creator": 0,
-      "skip_multiple_action": 0,
-      "skip_creation_of_workflow_action": 0,
-      "custom_confirm_transition": 0,
-      "custom_requires_frontend_input": 0,
-      "doctype": "Workflow Transition"
-    },
-    {
-      "state": "Pending HR Final Action",
-      "action": "Confirm",
-      "next_state": "Completed",
-      "allowed": "HR Supervisor",
-      "allow_self_approval": 1,
-      "send_email_to_creator": 0,
-      "skip_multiple_action": 0,
-      "skip_creation_of_workflow_action": 0,
-      "custom_confirm_transition": 0,
-      "custom_requires_frontend_input": 0,
-      "doctype": "Workflow Transition"
-    },
-    {
-      "state": "Pending HR Final Action",
-      "action": "Cancel",
-      "next_state": "Cancelled",
-      "allowed": "HR Supervisor",
-      "allow_self_approval": 1,
-      "send_email_to_creator": 0,
-      "skip_multiple_action": 0,
-      "skip_creation_of_workflow_action": 0,
-      "custom_confirm_transition": 0,
-      "custom_requires_frontend_input": 0,
-      "doctype": "Workflow Transition"
-    }
-  ]
+ "doctype": "Workflow",
+ "document_type": "Penalty And Investigation",
+ "is_active": 1,
+ "name": "Penalty & Investigation",
+ "override_status": 0,
+ "send_email_alert": 0,
+ "states": [
+  {
+   "allow_edit": "HR User",
+   "doc_status": "0",
+   "doctype": "Workflow Document State",
+   "state": "Draft"
+  },
+  {
+   "allow_edit": "HR User",
+   "doc_status": "0",
+   "doctype": "Workflow Document State",
+   "state": "Pending HR Administrator"
+  },
+  {
+   "allow_edit": "General Manager",
+   "doc_status": "0",
+   "doctype": "Workflow Document State",
+   "state": "Pending General Manager"
+  },
+  {
+   "allow_edit": "Legal Manager",
+   "doc_status": "0",
+   "doctype": "Workflow Document State",
+   "state": "Pending Legal Manager"
+  },
+  {
+   "allow_edit": "System Manager",
+   "doc_status": "2",
+   "doctype": "Workflow Document State",
+   "state": "Cancelled"
+  },
+  {
+   "allow_edit": "HR Manager",
+   "doc_status": "1",
+   "doctype": "Workflow Document State",
+   "state": "Approved"
+  },
+  {
+   "allow_edit": "General Manager",
+   "doc_status": "0",
+   "doctype": "Workflow Document State",
+   "state": "Rejected"
+  },
+  {
+   "allow_edit": "HR User",
+   "doc_status": "0",
+   "doctype": "Workflow Document State",
+   "state": "On Hold"
+  }
+ ],
+ "transitions": [
+  {
+   "action": "Submit",
+   "allowed": "HR User",
+   "doctype": "Workflow Transition",
+   "next_state": "Pending HR Administrator",
+   "state": "Draft"
+  },
+  {
+   "action": "Put On Hold",
+   "allowed": "HR User",
+   "doctype": "Workflow Transition",
+   "next_state": "On Hold",
+   "state": "Pending HR Administrator"
+  },
+  {
+   "action": "Return To Draft",
+   "allowed": "HR User",
+   "doctype": "Workflow Transition",
+   "next_state": "Draft",
+   "state": "Pending HR Administrator"
+  },
+  {
+   "action": "Submit to GM",
+   "allowed": "HR User",
+   "doctype": "Workflow Transition",
+   "next_state": "Pending General Manager",
+   "state": "Pending HR Administrator"
+  },
+  {
+   "action": "Approve",
+   "allowed": "HR User",
+   "doctype": "Workflow Transition",
+   "next_state": "Approved",
+   "state": "Pending HR Administrator"
+  },
+  {
+   "action": "Submit to Legal",
+   "allowed": "HR User",
+   "doctype": "Workflow Transition",
+   "next_state": "Pending Legal Manager",
+   "state": "Pending HR Administrator"
+  },
+  {
+   "action": "Submit to GM",
+   "allowed": "Legal Manager",
+   "doctype": "Workflow Transition",
+   "next_state": "Pending General Manager",
+   "state": "Pending Legal Manager"
+  },
+  {
+   "action": "Approve",
+   "allowed": "General Manager",
+   "doctype": "Workflow Transition",
+   "next_state": "Approved",
+   "state": "Pending General Manager"
+  },
+  {
+   "action": "Reject",
+   "allowed": "General Manager",
+   "doctype": "Workflow Transition",
+   "next_state": "Rejected",
+   "state": "Pending General Manager"
+  },
+  {
+   "action": "Cancel",
+   "allowed": "HR User",
+   "doctype": "Workflow Transition",
+   "next_state": "Cancelled",
+   "state": "Approved"
+  },
+  {
+   "action": "Approve",
+   "allowed": "HR User",
+   "doctype": "Workflow Transition",
+   "next_state": "Approved",
+   "state": "On Hold"
+  },
+  {
+   "action": "Reject",
+   "allowed": "HR User",
+   "doctype": "Workflow Transition",
+   "next_state": "Rejected",
+   "state": "On Hold"
+  }
+ ],
+ "workflow_name": "Penalty & Investigation",
+ "workflow_state_field": "workflow_state"
 }

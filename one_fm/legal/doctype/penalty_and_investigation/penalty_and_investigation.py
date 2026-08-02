@@ -99,7 +99,15 @@ class PenaltyAndInvestigation(Document):
 			)
 
 	def calculate_offence_count(self):
-		if not self.employee or not self.applied_penalty_code or not self.incident_date:
+		if not self.applied_penalty_code:
+			# WI-001795: a non-code deduction - uniform replacement, damage - is not a
+			# repeat offence, so no history is consulted and the count reads zero
+			# rather than carrying a figure from whenever a code was last selected.
+			# Applied Level and Salary Deduction Days are deliberately left alone.
+			self.offence_count = 0
+			return
+
+		if not self.employee or not self.incident_date:
 			return
 
 		# The rolling window runs back from the INCIDENT, not from today. Measuring it
