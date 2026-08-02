@@ -311,3 +311,49 @@ def generate_client_day_off_checker():
 		)
 	frappe.enqueue(check_roster_client_day_off, queue="long", timeout=4000)
 
+
+
+@frappe.whitelist()
+def get_take_action_data(checker: str) -> dict:
+	"""
+	Redirect path and roster filters for the Take Action button (WI-001690).
+
+	Returns the same {path, params} shape as the Contract Compliance Checker's
+	equivalent, so the client handling is identical.
+
+	The checker stores the employee's allocations as plain text (project_allocation,
+	site_allocation, shift_allocation) and carries no operations role, so anything
+	missing is resolved from the Employee record - which is also where the role lives.
+	"""
+	doc = frappe.get_doc("Roster Client Day Off Checker", checker)
+	doc.check_permission("read")
+
+	employee = (
+		frappe.db.get_value(
+			"Employee",
+			doc.employee,
+			["project", "site", "shift", "custom_operations_role_allocation", "employee_id", "employee_name"],
+			as_dict=True,
+		)
+		or frappe._dict()
+	)
+
+	# The roster reads these off the query string in setup_staff_filters(); year and
+	# month drive which month the calendar opens on.
+	date = getdate(doc.date) if doc.date else getdate(nowdate())
+
+	return {
+		"path": "/app/roster",
+		"params": {
+			"main_view": "roster",
+			"sub_view": "roster",
+			"employee_id": doc.employee_id or employee.employee_id,
+			"employee_name": doc.employee_name or employee.employee_name,
+			"project": doc.project_allocation or employee.project,
+			"site": doc.site_allocation or employee.site,
+			"shift": doc.shift_allocation or employee.shift,
+			"operations_role": employee.custom_operations_role_allocation,
+			"year": str(date.year),
+			"month": str(date.month),
+		},
+	}

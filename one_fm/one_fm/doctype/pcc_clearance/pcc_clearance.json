@@ -11,16 +11,16 @@
   "passport_number",
   "nationality",
   "column_break_1",
+  "section_break_appointment",
   "appointment_status",
-  "status",
   "application_date",
-  "clearance_date",
   "section_break_details",
+  "status",
+  "clearance_date",
   "country_of_issuance",
+  "pcc_certificate",
   "section_break_notes",
-  "notes",
-  "section_break_attach",
-  "pcc_certificate"
+  "notes"
  ],
  "fields": [
   {
@@ -66,12 +66,27 @@
    "fieldtype": "Column Break"
   },
   {
+   "fieldname": "section_break_appointment",
+   "fieldtype": "Section Break",
+   "label": "Appointment"
+  },
+  {
    "default": "Pending",
    "fieldname": "appointment_status",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Appointment Status",
    "options": "Pending\nBooked\nCompleted\nCancelled"
+  },
+  {
+   "fieldname": "application_date",
+   "fieldtype": "Date",
+   "label": "Application Date"
+  },
+  {
+   "fieldname": "section_break_details",
+   "fieldtype": "Section Break",
+   "label": "Clearance Result"
   },
   {
    "default": "Pending",
@@ -83,25 +98,20 @@
    "reqd": 1
   },
   {
-   "fieldname": "application_date",
-   "fieldtype": "Date",
-   "label": "Application Date"
-  },
-  {
    "fieldname": "clearance_date",
    "fieldtype": "Date",
    "label": "Result Date"
-  },
-  {
-   "fieldname": "section_break_details",
-   "fieldtype": "Section Break",
-   "label": "Clearance Details"
   },
   {
    "fieldname": "country_of_issuance",
    "fieldtype": "Link",
    "label": "Country of Issuance",
    "options": "Country"
+  },
+  {
+   "fieldname": "pcc_certificate",
+   "fieldtype": "Attach",
+   "label": "PCC Certificate"
   },
   {
    "fieldname": "section_break_notes",
@@ -112,41 +122,10 @@
    "fieldname": "notes",
    "fieldtype": "Small Text",
    "label": "Notes"
-  },
-  {
-   "fieldname": "section_break_attach",
-   "fieldtype": "Section Break",
-   "label": "Attachments"
-  },
-  {
-   "fieldname": "pcc_certificate",
-   "fieldtype": "Attach",
-   "label": "PCC Certificate"
   }
  ],
- "links": [
-  {
-   "link_doctype": "Candidate Country Process",
-   "link_fieldname": "name"
-  },
-  {
-   "link_doctype": "Overseas Medical Appointment WAFID",
-   "link_fieldname": "candidate_country_process"
-  },
-  {
-   "link_doctype": "Overseas Remedical",
-   "link_fieldname": "candidate_country_process"
-  },
-  {
-   "link_doctype": "Visa Stamping",
-   "link_fieldname": "candidate_country_process"
-  },
-  {
-   "link_doctype": "Arrival and Deployment",
-   "link_fieldname": "candidate_country_process"
-  }
- ],
- "modified": "2026-04-15 14:45:32.615912",
+ "links": [],
+ "modified": "2026-07-20 02:00:00.000000",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "PCC Clearance",

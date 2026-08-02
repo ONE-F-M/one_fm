@@ -151,12 +151,19 @@ frappe.ui.form.on("Agency Process Details", {
 	}
 });
 
+var REMEDICAL_PROCESS_NAMES = ["Remedical appointment", "Remedical results"];
+
 var find_total_duration = function(frm){
     var total_duration = 0;
+    var total_duration_without_remedical = 0;
     $.each(frm.doc.agency_process_details || [], function (i, d) {
         if(d.duration_in_days){
             total_duration += flt(d.duration_in_days);
+            if(!REMEDICAL_PROCESS_NAMES.includes(d.process_name)){
+                total_duration_without_remedical += flt(d.duration_in_days);
+            }
         }
     });
     frm.set_value("total_duration", total_duration);
+    frm.set_value("total_duration_without_remedical", total_duration_without_remedical);
 };

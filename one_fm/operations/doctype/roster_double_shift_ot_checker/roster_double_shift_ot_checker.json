@@ -1,0 +1,322 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "format:OPR-RDSOTC-{employee}-{monthweek}",
+ "creation": "2026-07-21 16:34:09.444279",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "employee",
+  "employee_name",
+  "date",
+  "column_break_3",
+  "status",
+  "column_break_xlfy",
+  "monthweek",
+  "repeat_count",
+  "section_break_qccb",
+  "shift_supervisor",
+  "shift_supervisor_name",
+  "shift_supervisor_user",
+  "column_break_yuke",
+  "site_supervisor",
+  "site_supervisor_name",
+  "site_supervisor_user",
+  "column_break_hope",
+  "project_manager",
+  "project_manager_name",
+  "project_manager_user",
+  "shift_details_section",
+  "operations_shift",
+  "operations_site",
+  "project",
+  "column_break_ljlg",
+  "double_shift_ot_dates",
+  "double_shift_ot_explanation",
+  "detail_section_section",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "fetch_from": "employee.employee_name",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Pending\nCompleted\nOverdue\nCancelled",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "column_break_xlfy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "monthweek",
+   "fieldtype": "Data",
+   "label": "Reporting Week",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "repeat_count",
+   "fieldtype": "Int",
+   "label": "Repeat Count",
+   "default": "1",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_qccb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "shift_supervisor",
+   "fieldtype": "Link",
+   "label": "Shift Supervisor",
+   "options": "Employee",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "shift_supervisor_name",
+   "fieldtype": "Data",
+   "label": "Shift Supervisor Name",
+   "fetch_from": "shift_supervisor.employee_name",
+   "read_only": 1,
+   "in_list_view": 1,
+   "fetch_if_empty": 1
+  },
+  {
+   "fieldname": "shift_supervisor_user",
+   "fieldtype": "Link",
+   "label": "Shift Supervisor User",
+   "options": "User",
+   "hidden": 1,
+   "fetch_from": "shift_supervisor.user_id",
+   "read_only": 1,
+   "fetch_if_empty": 1
+  },
+  {
+   "fieldname": "column_break_yuke",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "site_supervisor",
+   "fieldtype": "Link",
+   "label": "Site Supervisor",
+   "options": "Employee",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "site_supervisor_name",
+   "fieldtype": "Data",
+   "label": "Site Supervisor Name",
+   "fetch_from": "site_supervisor.employee_name",
+   "read_only": 1,
+   "in_list_view": 1,
+   "fetch_if_empty": 1
+  },
+  {
+   "fieldname": "site_supervisor_user",
+   "fieldtype": "Link",
+   "label": "Site Supervisor User",
+   "options": "User",
+   "hidden": 1,
+   "fetch_from": "site_supervisor.user_id",
+   "read_only": 1,
+   "fetch_if_empty": 1
+  },
+  {
+   "fieldname": "column_break_hope",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "project_manager",
+   "fieldtype": "Link",
+   "label": "Project Manager",
+   "options": "Employee",
+   "read_only": 1,
+   "ignore_user_permissions": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "project_manager_name",
+   "fieldtype": "Data",
+   "label": "Project Manager Name",
+   "fetch_from": "project_manager.employee_name",
+   "read_only": 1,
+   "in_list_view": 1,
+   "fetch_if_empty": 1
+  },
+  {
+   "fieldname": "project_manager_user",
+   "fieldtype": "Link",
+   "label": "Project Manager User",
+   "options": "User",
+   "hidden": 1,
+   "fetch_from": "project_manager.user_id",
+   "read_only": 1,
+   "fetch_if_empty": 1
+  },
+  {
+   "fieldname": "shift_details_section",
+   "fieldtype": "Section Break",
+   "label": "Shift Details"
+  },
+  {
+   "fieldname": "operations_shift",
+   "fieldtype": "Link",
+   "label": "Operations Shift",
+   "options": "Operations Shift",
+   "read_only": 1
+  },
+  {
+   "fieldname": "operations_site",
+   "fieldtype": "Data",
+   "label": "Operations Site",
+   "fetch_from": "operations_shift.site",
+   "read_only": 1
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Data",
+   "label": "Project",
+   "fetch_from": "operations_shift.project",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_ljlg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "double_shift_ot_dates",
+   "fieldtype": "Small Text",
+   "label": "Double Shift OT Dates",
+   "read_only": 1
+  },
+  {
+   "fieldname": "double_shift_ot_explanation",
+   "fieldtype": "Data",
+   "label": "Double Shift OT Explanation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "detail_section_section",
+   "fieldtype": "Section Break",
+   "label": "Detail Section"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "options": "Roster Double Shift OT Checker",
+   "read_only": 1,
+   "print_hide": 1,
+   "no_copy": 1,
+   "search_index": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 0,
+ "links": [],
+ "modified": "2026-07-24 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Roster Double Shift OT Checker",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 1,
+   "delete": 1
+  },
+  {
+   "role": "Site Supervisor",
+   "read": 1,
+   "write": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 0,
+   "delete": 0
+  },
+  {
+   "role": "Shift Supervisor",
+   "read": 1,
+   "write": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 0,
+   "delete": 1
+  },
+  {
+   "role": "Projects User",
+   "read": 1,
+   "write": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 0,
+   "delete": 1
+  },
+  {
+   "role": "Projects Manager",
+   "read": 1,
+   "write": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "create": 0,
+   "delete": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

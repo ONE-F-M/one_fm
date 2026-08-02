@@ -29,6 +29,7 @@ class BonusRequest(Document):
 			self.requested_by = frappe.session.user
 
 	def validate(self):
+		self.set_line_manager()
 		self.validate_self_request()
 		self.validate_effective_month()
 		self.validate_items()
@@ -36,6 +37,21 @@ class BonusRequest(Document):
 		self.validate_recurring_dates()
 		self.validate_recurring_start_date()
 		self.validate_row_level_approvals()
+
+	def set_line_manager(self):
+		"""Fetch the requesting employee's line manager (Reports To).
+
+		reports_to_user is auto-populated by fetch_from (reports_to.user_id),
+		and drives the "Bonus Request - Line Manager" assignment rule.
+		"""
+		if not self.requested_by:
+			return
+
+		self.reports_to = frappe.db.get_value(
+			"Employee",
+			{"user_id": self.requested_by, "status": "Active"},
+			"reports_to"
+		)
 
 	def validate_self_request(self):
 		"""Prevent users from adding themselves to the bonus request."""

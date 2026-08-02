@@ -95,6 +95,7 @@
    "options": "currency"
   },
   {
+   "depends_on": "eval:doc.item_type != 'Items'",
    "fieldname": "item_price",
    "fieldtype": "Link",
    "label": "Item Price",
@@ -102,6 +103,7 @@
   },
   {
    "columns": 2,
+   "depends_on": "eval:doc.item_type != 'Items'",
    "fetch_from": "item_code.stock_uom",
    "fetch_if_empty": 1,
    "fieldname": "uom",
@@ -110,6 +112,7 @@
    "options": "UOM"
   },
   {
+   "depends_on": "eval:doc.item_type != 'Items'",
    "fetch_from": "item_price.price_list_rate",
    "fieldname": "price_list_rate",
    "fieldtype": "Currency",
@@ -119,6 +122,7 @@
   },
   {
    "columns": 2,
+   "depends_on": "eval:doc.item_type != 'Items'",
    "fetch_from": "item_price.price_list_rate",
    "fetch_if_empty": 1,
    "fieldname": "rate",
@@ -154,6 +158,7 @@
   },
   {
    "columns": 2,
+   "depends_on": "eval:doc.item_type != 'Items'",
    "fieldname": "count",
    "fieldtype": "Int",
    "in_list_view": 1,
@@ -261,11 +266,13 @@
    "read_only": 1
   },
   {
+   "depends_on": "eval:doc.item_type != 'Items'",
    "fieldname": "working_hours",
    "fieldtype": "Float",
    "label": "Working Hours"
   },
   {
+   "depends_on": "eval:doc.item_type != 'Items'",
    "fieldname": "working_days",
    "fieldtype": "Int",
    "label": "Working Days"

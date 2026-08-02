@@ -78,6 +78,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 isDraggingBlock: false,       // block being moved on lane
                 selectedPoolCard: null,    // mobile: tap-to-select card for assignment
                 searchQuery: '',
+                shiftStartFilter: '',         // WI-001683: selected shift start time, '' = all
                 collapsedGroups: {},          // { [accommodation]: boolean }
                 canSave: false,
                 isGenerating: false,          // shipment generation in progress
@@ -142,6 +143,11 @@ function mountRoutePlannerApp(wrapper, data) {
                 return this.planData.shipment_cards.filter(c => {
                     // Card is assigned when its specific ID is in assignedCards
                     if (this.assignedCards.has(c.id)) return false;
+
+                    // WI-001683: shift start time filter, applied across every
+                    // accommodation group rather than within one.
+                    if (this.shiftStartFilter && c.shift_start !== this.shiftStartFilter) return false;
+
                     if (!q) return true;
                     return (
                         c.shift_name.toLowerCase().includes(q) ||
@@ -151,6 +157,21 @@ function mountRoutePlannerApp(wrapper, data) {
                         (c.direction || '').toLowerCase().includes(q)
                     );
                 });
+            },
+
+            poolShiftStartOptions() {
+                // WI-001683: the distinct shift start times available to filter on.
+                // Derived from every unassigned card, ignoring the active filters, so the
+                // list stays stable instead of collapsing to the one already selected.
+                const times = new Map();
+                this.planData.shipment_cards.forEach(c => {
+                    if (this.assignedCards.has(c.id) || !c.shift_start) return;
+                    if (!times.has(c.shift_start)) times.set(c.shift_start, this.fmtTime(c.shift_start));
+                });
+
+                return [...times.entries()]
+                    .sort((a, b) => new Date(a[0]) - new Date(b[0]))
+                    .map(([value, label]) => ({ value, label }));
             },
 
             poolGroups() {
@@ -769,6 +790,24 @@ function mountRoutePlannerApp(wrapper, data) {
                 const cardWindowStart = new Date(isOutbound ? card.outbound_window_start : card.return_window_start).getTime();
                 const cardWindowEnd   = new Date(isOutbound ? card.outbound_window_end   : card.return_window_end).getTime();
                 const PROXIMITY_MS = 2 * 60 * 60 * 1000; // 2 hours
+
+                // ── Driver handover overlap (WI-001577) ──
+                // Dropping a run onto hours already covered by a submitted Vehicle
+                // Handover Log is legitimate — the operational driver simply takes it on
+                // — so the dispatcher is warned and the drop proceeds. Deliberately not a
+                // frappe.throw: the AC requires a warning that does not block.
+                const handover = this.overlapsHandover(vehicle.id, cardWindowStart, cardWindowEnd);
+                if (handover) {
+                    frappe.show_alert({
+                        message: __('{0} is under a handover to {1} ({2}–{3}) during this window. The run was still placed.', [
+                            vehicle.label,
+                            handover.driver_name,
+                            this.fmtTime(handover.start),
+                            this.fmtTime(handover.end)
+                        ]),
+                        indicator: 'orange'
+                    }, 8);
+                }
 
                 // Multi-camp trips are valid: a single vehicle may pick up from
                 // several accommodations on one run (e.g. Mahboula then Mangaf),
@@ -2372,6 +2411,41 @@ function mountRoutePlannerApp(wrapper, data) {
                 return this.by(item) + this.bh(item) / 2;
             },
 
+            // ── Driver on the wheel for a given block (WI-001577) ──
+            // A vehicle can change hands mid-day, so the driver is resolved per block
+            // rather than per lane: whoever holds the vehicle when the run starts. With
+            // no Vehicle Handover Log covering that moment the permanent custodian drives.
+            handoverWindows(vehicleId) {
+                return (this.planData && this.planData.handover_windows
+                    ? this.planData.handover_windows[vehicleId]
+                    : null) || [];
+            },
+
+            handoverAt(vehicleId, at) {
+                const instant = new Date(at).getTime();
+                if (isNaN(instant)) return null;
+
+                return this.handoverWindows(vehicleId).find(w =>
+                    instant >= new Date(w.start).getTime() && instant <= new Date(w.end).getTime()
+                ) || null;
+            },
+
+            // True when [start, end) overlaps any handover window on this vehicle.
+            overlapsHandover(vehicleId, start, end) {
+                const from = new Date(start).getTime();
+                const to = new Date(end).getTime();
+                if (isNaN(from) || isNaN(to)) return null;
+
+                return this.handoverWindows(vehicleId).find(w =>
+                    from < new Date(w.end).getTime() && to > new Date(w.start).getTime()
+                ) || null;
+            },
+
+            blockDriver(item, vehicle) {
+                const handover = this.handoverAt(vehicle.id, item.start);
+                return handover ? handover.driver_name : (vehicle.driver || '—');
+            },
+
             bfill(item) {
                 const shell = document.getElementById('rp-shell');
                 const cs = shell ? getComputedStyle(shell) : null;
@@ -2860,6 +2934,13 @@ function injectRPVueTemplate() {
       <div id="rp-pool-search">
         <input v-model="searchQuery" type="text" id="rp-search-input"
                placeholder="Search shift, site, accommodation..." />
+        <select v-model="shiftStartFilter" id="rp-shift-start-filter"
+                title="Filter unassigned shipments by shift start time">
+          <option value="">All shift start times</option>
+          <option v-for="opt in poolShiftStartOptions" :key="opt.value" :value="opt.value">
+            Starts {{ opt.label }}
+          </option>
+        </select>
       </div>
       <div id="rp-pool-groups">
 
@@ -2872,7 +2953,7 @@ function injectRPVueTemplate() {
 
           <div v-show="!collapsedGroups[group.acc]" class="rp-group-cards">
             <div v-for="card in group.cards" :key="card.id"
-                 :class="['rp-card', selectedPoolCard && selectedPoolCard.id === card.id ? 'rp-card-selected' : '']"
+                 :class="['rp-card', card.direction === 'OUTBOUND' ? 'rp-card-out' : 'rp-card-ret', selectedPoolCard && selectedPoolCard.id === card.id ? 'rp-card-selected' : '']"
                  draggable="true"
                  @dragstart="onCardDragStart($event, card)"
                  @dragend="onCardDragEnd"
@@ -3038,8 +3119,8 @@ function injectRPVueTemplate() {
                      @mouseleave="hideStopHover()"
                      @click.stop="onBlockClick(entry.item, $event)">
 
-                    <!-- Native tooltip showing full site name + shift + time -->
-                    <title>{{ bcard(entry.item).site_location || 'Unknown' }} — {{ bcard(entry.item).shift_name || '' }} | {{ fmtTime(entry.item.start) }}–{{ fmtTime(entry.item.end) }} · {{ entry.item.headcount }} pax</title>
+                    <!-- Native tooltip showing full site name + shift + time + driver -->
+                    <title>{{ bcard(entry.item).site_location || 'Unknown' }} — {{ bcard(entry.item).shift_name || '' }} | {{ fmtTime(entry.item.start) }}–{{ fmtTime(entry.item.end) }} · {{ entry.item.headcount }} pax · Driver: {{ blockDriver(entry.item, vehicle) }}</title>
 
                     <!-- Clip path for text overflow -->
                     <defs>
@@ -3088,6 +3169,18 @@ function injectRPVueTemplate() {
                         {{ fmtTime(entry.item.start) }}–{{ fmtTime(entry.item.end) }} · {{ entry.item.headcount }} pax
                       </text>
 
+                      <!-- Line 4: driver holding the vehicle for this block (WI-001577).
+                           Handed-over blocks are marked so a rotation is visible at a
+                           glance; blocks on the permanent driver read plainly. -->
+                      <text v-if="bw(entry.item) >= 60 && bh(entry.item) >= 68"
+                            :x="bx(entry.item) + 8" :y="by(entry.item) + bh(entry.item) - 27"
+                            fill="rgba(255,255,255,0.95)" font-size="11"
+                            :font-weight="handoverAt(vehicle.id, entry.item.start) ? '700' : '400'"
+                            dominant-baseline="middle"
+                            style="user-select:none;pointer-events:none">
+                        {{ handoverAt(vehicle.id, entry.item.start) ? '⇄ ' : '' }}{{ blockDriver(entry.item, vehicle) }}
+                      </text>
+
                     </g>
 
                     <rect v-if="bw(entry.item) >= 24"
@@ -3106,7 +3199,7 @@ function injectRPVueTemplate() {
                      @click.stop="onBlockClick(entry.primaryItem, $event)">
 
                     <!-- Native tooltip showing all stops + time -->
-                    <title>{{ entry.tripName ? entry.tripName + ' — ' : '' }}{{ entry.stopLabels.join(' → ') }} | {{ fmtTime(entry.start) }}–{{ fmtTime(entry.end) }} · {{ entry.headcount }} pax</title>
+                    <title>{{ entry.tripName ? entry.tripName + ' — ' : '' }}{{ entry.stopLabels.join(' → ') }} | {{ fmtTime(entry.start) }}–{{ fmtTime(entry.end) }} · {{ entry.headcount }} pax · Driver: {{ blockDriver(entry, vehicle) }}</title>
 
                     <!-- Clip path scoped to block bounds -->
                     <defs>
@@ -3167,6 +3260,16 @@ function injectRPVueTemplate() {
                             dominant-baseline="middle"
                             style="user-select:none;pointer-events:none">
                         {{ fmtTime(entry.start) }}–{{ fmtTime(entry.end) }} · {{ entry.headcount }} pax
+                      </text>
+
+                      <!-- Driver holding the vehicle for this trip (WI-001577) -->
+                      <text v-if="mbw(entry) >= 60 && mbh(entry) >= 58"
+                            :x="mbx(entry) + 8" :y="mby(entry) + mbh(entry) - 25"
+                            fill="rgba(255,255,255,0.95)" font-size="11"
+                            :font-weight="handoverAt(vehicle.id, entry.start) ? '700' : '400'"
+                            dominant-baseline="middle"
+                            style="user-select:none;pointer-events:none">
+                        {{ handoverAt(vehicle.id, entry.start) ? '⇄ ' : '' }}{{ blockDriver(entry, vehicle) }}
                       </text>
 
                     </g>
@@ -3698,6 +3801,13 @@ function injectRPStyles() {
             box-sizing: border-box;
         }
         #rp-search-input:focus { border-color: var(--rp-color-accent); }
+        #rp-shift-start-filter {
+            width: 100%; margin-top: 6px; padding: 7px 12px;
+            border: 1px solid var(--md-sys-color-outline-variant); border-radius: 8px;
+            font-size: 14px; outline: none; background: transparent;
+            box-sizing: border-box; cursor: pointer;
+        }
+        #rp-shift-start-filter:focus { border-color: var(--rp-color-accent); }
         #rp-pool-groups { flex: 1; overflow-y: auto; padding: 4px 0; }
         .rp-pool-empty  { padding: 36px 16px; text-align: center; font-size: 14px; color: var(--md-sys-color-outline); }
 
@@ -3719,6 +3829,9 @@ function injectRPStyles() {
         }
 
         /* Cards */
+        /* WI-001732: distinct colour for Unassigned Outbound vs Return cards */
+        .rp-card-out { border-left: 4px solid #1565c0; }
+        .rp-card-ret { border-left: 4px solid #c62828; }
         .rp-card {
             background: var(--md-sys-color-surface-bright); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 12px;
             padding: 11px 12px; cursor: grab;
