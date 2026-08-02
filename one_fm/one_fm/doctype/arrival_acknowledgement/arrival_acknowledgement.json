@@ -1,0 +1,348 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2026-07-21 09:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "arrival_and_deployment",
+  "department",
+  "assigned_to",
+  "column_break_1",
+  "status",
+  "acknowledged_by",
+  "acknowledged_on",
+  "arrival_confirmation",
+  "section_break_candidate",
+  "candidate_name",
+  "passport_number",
+  "arrival_date",
+  "arrival_time",
+  "column_break_2",
+  "flight_number",
+  "airline",
+  "terminal",
+  "arrival_airport",
+  "ticket_attachment",
+  "section_break_orientation",
+  "site_allocation",
+  "orientation_date",
+  "orientation_time"
+ ],
+ "fields": [
+  {
+   "default": "ARC-.YYYY.-.#####",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "ARC-.YYYY.-.#####"
+  },
+  {
+   "fieldname": "arrival_and_deployment",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Arrival and Deployment",
+   "options": "Arrival and Deployment",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Department",
+   "options": "Transportation\nGeneral Services\nFinance\nWarehouse\nOperations",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "assigned_to",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Assigned To",
+   "options": "User",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Not Acknowledged",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Not Acknowledged\nAcknowledged",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "acknowledged_by",
+   "fieldtype": "Link",
+   "label": "Acknowledged By",
+   "options": "User",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "acknowledged_on",
+   "fieldtype": "Datetime",
+   "label": "Acknowledged On",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.department==\"Transportation\"",
+   "fieldname": "arrival_confirmation",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Arrival Confirmation",
+   "options": "\nArrived\nDid Not Arrive",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_candidate",
+   "fieldtype": "Section Break",
+   "label": "Candidate & Flight Details"
+  },
+  {
+   "fetch_from": "arrival_and_deployment.candidate_name",
+   "fieldname": "candidate_name",
+   "fieldtype": "Data",
+   "label": "Candidate Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "arrival_and_deployment.passport_number",
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "arrival_and_deployment.arrival_date",
+   "fieldname": "arrival_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Arrival Date",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "arrival_and_deployment.arrival_time",
+   "fieldname": "arrival_time",
+   "fieldtype": "Time",
+   "label": "Arrival Time",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "arrival_and_deployment.flight_number",
+   "fieldname": "flight_number",
+   "fieldtype": "Data",
+   "label": "Flight Number",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "arrival_and_deployment.airline",
+   "fieldname": "airline",
+   "fieldtype": "Data",
+   "label": "Airline",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "arrival_and_deployment.terminal",
+   "fieldname": "terminal",
+   "fieldtype": "Data",
+   "label": "Terminal",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "arrival_and_deployment.arrival_airport",
+   "fieldname": "arrival_airport",
+   "fieldtype": "Data",
+   "label": "Arrival Airport",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "arrival_and_deployment.ticket_attachment",
+   "fieldname": "ticket_attachment",
+   "fieldtype": "Attach",
+   "label": "Ticket Attachment",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:[\"General Services\",\"Operations\"].includes(doc.department)",
+   "fieldname": "section_break_orientation",
+   "fieldtype": "Section Break",
+   "label": "Orientation & Site Details"
+  },
+  {
+   "depends_on": "eval:doc.department==\"Operations\"",
+   "fieldname": "site_allocation",
+   "fieldtype": "Link",
+   "label": "Site Allocation",
+   "mandatory_depends_on": "eval:doc.department==\"Operations\"",
+   "options": "Operations Site"
+  },
+  {
+   "depends_on": "eval:[\"General Services\",\"Operations\"].includes(doc.department)",
+   "fieldname": "orientation_date",
+   "fieldtype": "Date",
+   "mandatory_depends_on": "eval:[\"General Services\",\"Operations\"].includes(doc.department)",
+   "label": "Orientation Date"
+  },
+  {
+   "depends_on": "eval:[\"General Services\",\"Operations\"].includes(doc.department)",
+   "fieldname": "orientation_time",
+   "fieldtype": "Time",
+   "mandatory_depends_on": "eval:[\"General Services\",\"Operations\"].includes(doc.department)",
+   "label": "Orientation Time"
+  }
+ ],
+ "links": [],
+ "modified": "2026-07-22 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "one_fm",
+ "name": "Arrival Acknowledgement",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Onboarding Officer",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Recruiter",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Offboarding Officer"
+  },
+  {
+   "read": 1,
+   "write": 1,
+   "role": "Transportation Manager"
+  },
+  {
+   "read": 1,
+   "write": 1,
+   "role": "Accommodation User"
+  },
+  {
+   "read": 1,
+   "write": 1,
+   "role": "Finance User"
+  },
+  {
+   "read": 1,
+   "write": 1,
+   "role": "Warehouse Supervisor"
+  },
+  {
+   "read": 1,
+   "write": 1,
+   "role": "Operation Admin"
+  },
+  {
+   "read": 1,
+   "write": 1,
+   "role": "T4 Admin"
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Transportation Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Accommodation User",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Finance User",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Warehouse Supervisor",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Operation Admin",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "T4 Admin",
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "arrival_and_deployment,department,assigned_to",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "department",
+ "track_changes": 1
+}

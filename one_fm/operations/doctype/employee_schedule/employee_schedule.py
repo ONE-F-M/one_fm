@@ -22,9 +22,40 @@ class EmployeeSchedule(Document):
 			if getattr(self.flags, "ignore_permissions", False):
 				return
 			
+			# WI-001694: allow suspension-workflow transitions (Approve/Reject) by the
+			# approver roles even though they aren't System Managers.
+			if self._is_suspension_workflow_transition():
+				return
+
 			# Check if user has System Manager role
 			if frappe.session.user != "Administrator" and "System Manager" not in frappe.get_roles():
 				frappe.throw(_("Only System Managers can edit Employee Schedule records directly. Please use the appropriate tools (Roster, OJT, Client Event, etc.) to make schedule changes."))
+
+	def _is_suspension_workflow_transition(self):
+		"""WI-001694: True when this save advances the suspension workflow_state and
+		the user holds one of the approver roles."""
+		prev_state = frappe.db.get_value("Employee Schedule", self.name, "workflow_state")
+		if self.get("workflow_state") == prev_state:
+			return False
+		approver_roles = {"Operations Manager", "Operations Admin", "General Manager", "System Manager"}
+		return bool(approver_roles & set(frappe.get_roles()))
+
+	def handle_suspension_workflow(self):
+		"""WI-001694: apply the suspension workflow side-effects.
+
+		Approve (Pending Suspension -> Suspended): block past dates, else set
+		Employee Availability to Suspended. Reject (-> Active) leaves availability
+		unchanged. Employee Availability is untouched while Pending Suspension.
+		"""
+		if self.is_new():
+			return
+		prev_state = frappe.db.get_value("Employee Schedule", self.name, "workflow_state")
+		if prev_state == self.get("workflow_state"):
+			return
+		if prev_state == "Pending Suspension" and self.workflow_state == "Suspended":
+			if getdate(self.date) < getdate():
+				frappe.throw(_("Suspensions cannot be approved for past dates. It can be rejected."))
+			self.employee_availability = "Suspended"
 
 	def before_insert(self):
 		if frappe.db.exists("Employee Schedule", {"employee": self.employee, "date": self.date, "roster_type" : self.roster_type}):
@@ -55,7 +86,40 @@ class EmployeeSchedule(Document):
 			for ot in ot_schedules:
 				frappe.delete_doc("Employee Schedule", ot.name, ignore_permissions=True)
 
+		# WI-001694: once the suspension request is decided - Approve (-> Suspended) or
+		# Reject (-> Active) - the approvers' pending request is resolved, so the
+		# assignment and Workflow Action are cleared. Done here rather than in validate so
+		# nothing is removed unless the state change actually persisted.
+		if (
+			previous_doc
+			and previous_doc.get("workflow_state") == "Pending Suspension"
+			and self.get("workflow_state") in ("Suspended", "Active")
+		):
+			self.clear_suspension_approval_requests()
+
+	def clear_suspension_approval_requests(self):
+		"""WI-001694: drop the pending approval request for a decided suspension.
+
+		Clearing every assignment on the schedule is safe: no Assignment Rule targets
+		Employee Schedule, so the only assignments it can carry are the ones this workflow
+		creates. Failure to tidy up must not undo an approval that already saved, so this
+		is logged rather than raised.
+		"""
+		from frappe.desk.form.assign_to import clear as clear_assignments
+		from frappe.workflow.doctype.workflow_action.workflow_action import clear_workflow_actions
+
+		try:
+			clear_workflow_actions(self.doctype, self.name)
+			clear_assignments(self.doctype, self.name, ignore_permissions=True)
+		except Exception:
+			frappe.log_error(
+				title="Could not clear suspension approval requests",
+				message=frappe.get_traceback(),
+			)
+
 	def validate(self):
+		self.handle_suspension_workflow()
+
 		# Clear stale Client Event linkage whenever this row is no longer a Client
 		# Event but still carries a Client Event marker. A Client Event schedule
 		# (set by Event Staff) has employee_availability "Client Event",

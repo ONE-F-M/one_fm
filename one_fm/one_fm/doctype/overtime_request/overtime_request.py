@@ -11,6 +11,55 @@ from frappe import _
 from frappe.query_builder.functions import Sum
 from one_fm.api.notification import create_notification_log, get_employee_user_id
 
+# Hours of unredeemed public holiday overtime that earn one compensatory day off.
+COMPENSATORY_DAY_OFF_THRESHOLD_HOURS = 9
+
+# Workflow states in which one request's hours count towards ANOTHER request's balance:
+# everything the employee has actually submitted. "Draft" is excluded so an abandoned
+# draft cannot inflate a colleague request's balance, and Rejected/Cancelled never count.
+# A request always counts its own hours towards its own eligibility - see
+# set_cumulative_unredeemed_balance.
+ACCRUING_WORKFLOW_STATES = (
+	"Pending Acceptance by Employee",
+	"Pending Line Manager",
+	"Pending Payroll Officer",
+	"Pending Finance Manager",
+	"Completed",
+)
+
+
+def get_unredeemed_balance(employee, exclude=None):
+	"""
+	Unredeemed public holiday overtime hours accrued across an employee's requests.
+
+	Accrued hours minus 9 for every request that has already been redeemed as a
+	compensatory day off. `exclude` drops one request from the tally - callers pass the
+	document being saved, whose in-memory hours have not been written yet.
+	"""
+	if not employee:
+		return 0.0
+
+	OvertimeRequest = frappe.qb.DocType("Overtime Request")
+
+	rows = (
+		frappe.qb.from_(OvertimeRequest)
+		.select(OvertimeRequest.overtime_hours, OvertimeRequest.compensatory_leave_request)
+		.where(
+			(OvertimeRequest.employee == employee)
+			& (OvertimeRequest.overtime_type == "Overtime on Public Holiday")
+			& (OvertimeRequest.workflow_state.isin(ACCRUING_WORKFLOW_STATES))
+			& (OvertimeRequest.docstatus != 2)
+			& (OvertimeRequest.name != (exclude or ""))
+		)
+	).run(as_dict=True)
+
+	accrued = sum(flt(row.overtime_hours) for row in rows)
+	redeemed = COMPENSATORY_DAY_OFF_THRESHOLD_HOURS * sum(
+		1 for row in rows if row.compensatory_leave_request
+	)
+
+	return flt(accrued - redeemed, 2)
+
 
 class OvertimeRequest(Document):
 
@@ -23,6 +72,7 @@ class OvertimeRequest(Document):
 		self.validate_leave_overlap()
 		self.calculate_overtime_hours()
 		self.calculate_yearly_overtime_hours()
+		self.set_cumulative_unredeemed_balance()
 		self.set_compensatory_day_off_eligibility()
 		self.validate_compensatory_day_off()
 		self.validate_yearly_overtime_limit()
@@ -127,17 +177,61 @@ class OvertimeRequest(Document):
 		past_hours = flt(result[0].total_hours) if result else 0.0
 		self.yearly_overtime_hours = flt(past_hours + flt(self.overtime_hours), 2)
 
+	def set_cumulative_unredeemed_balance(self):
+		"""
+		Maintain the running balance of unredeemed public holiday overtime (WI-001695).
+
+		The balance is the employee's accrued public holiday overtime hours minus 9 for
+		every compensatory day off already redeemed. It is recomputed from the employee's
+		requests on every save rather than incremented in place, so it is idempotent and
+		self-healing: cancelling or editing an earlier request corrects the total.
+
+		Only public holiday overtime carries a balance; any other Overtime Type stores 0.
+		"""
+		if self.overtime_type != "Overtime on Public Holiday":
+			self.cumulative_unredemmed_balance = 0
+			return
+
+		balance = get_unredeemed_balance(self.employee, exclude=self.name)
+
+		# This request always contributes its own hours, including while it is still a
+		# Draft. The employee - or the Line Manager routing it - has to be able to see and
+		# fill the Compensatory Day Off before submitting, and the client evaluates
+		# eligibility the same way. Gating this on the workflow state made the server
+		# disagree with the form: the section appeared while editing and the selected date
+		# was wiped on save.
+		#
+		# Abandoned drafts still cannot inflate anyone's balance: get_unredeemed_balance
+		# counts only OTHER requests in ACCRUING_WORKFLOW_STATES, which excludes Draft.
+		balance += flt(self.overtime_hours)
+
+		# ...and gives 9 of them back if it has already been redeemed.
+		if self.compensatory_leave_request:
+			balance -= COMPENSATORY_DAY_OFF_THRESHOLD_HOURS
+
+		self.cumulative_unredemmed_balance = flt(balance, 2)
+
 	def set_compensatory_day_off_eligibility(self):
 		"""
 		Detect eligibility for a compensatory day off.
 
-		Eligible only when the Overtime Type is "Overtime on Public Holiday"
-		AND the overtime hours for this request are 9 or more. In every other
-		case the flag resets to 0 and the selected Compensatory Day Off clears.
+		Eligible when the Overtime Type is "Overtime on Public Holiday" AND the employee's
+		cumulative unredeemed balance has reached 9 hours (WI-001695). The threshold is
+		cumulative across public holidays, not per request: 3 + 4 + 3 hours earns a
+		compensatory day off just as a single 10-hour holiday does.
+
+		In every other case the flag resets to 0 and the selected Compensatory Day Off
+		clears - except on a request that has already been redeemed, where the flag and
+		date are kept so the record (and the Compensatory Day Off section) survives the
+		balance dropping back below the threshold.
 		"""
+		if self.compensatory_leave_request:
+			self.eligible_for_compensatory_day_off = 1
+			return
+
 		if (
 			self.overtime_type == "Overtime on Public Holiday"
-			and flt(self.overtime_hours) >= 9
+			and flt(self.cumulative_unredemmed_balance) >= COMPENSATORY_DAY_OFF_THRESHOLD_HOURS
 		):
 			self.eligible_for_compensatory_day_off = 1
 		else:
@@ -353,6 +447,8 @@ class OvertimeRequest(Document):
 		})
 		if existing:
 			self.db_set("compensatory_leave_request", existing)
+			self.redeem_compensatory_day_off_hours()
+			self.request_draft_leave_application(existing)
 			return
 
 		clr = frappe.new_doc("Compensatory Leave Request")
@@ -365,6 +461,8 @@ class OvertimeRequest(Document):
 		clr.submit()
 
 		self.db_set("compensatory_leave_request", clr.name)
+		self.redeem_compensatory_day_off_hours()
+		self.request_draft_leave_application(clr.name)
 
 		frappe.msgprint(
 			_("Compensatory Leave Request {0} has been created and submitted for {1}.").format(
@@ -372,6 +470,53 @@ class OvertimeRequest(Document):
 			),
 			alert=True,
 			indicator="green",
+		)
+
+	def request_draft_leave_application(self, compensatory_leave_request):
+		"""
+		Ask the Compensatory Leave Request to raise its Draft Leave Application (WI-001696).
+
+		That hook lives on the request's on_submit, but by then nothing links back here:
+		the holiday-attendance path submits the request during "Verify Attendance", and even
+		the branch above submits it before db_set stores the link. Either way the hook found
+		no Overtime Request behind the request and skipped, so no Leave Application was ever
+		raised. Asking again once the link exists closes that gap.
+
+		The call is idempotent - it will not raise a second application for the same
+		request - and it must not undo a completed Overtime Request, so failures are logged
+		rather than raised.
+		"""
+		if not compensatory_leave_request:
+			return
+
+		try:
+			frappe.get_doc(
+				"Compensatory Leave Request", compensatory_leave_request
+			).create_draft_leave_application()
+		except Exception:
+			frappe.log_error(
+				title=_("Could not raise the Draft Leave Application for {0}").format(
+					compensatory_leave_request
+				),
+				message=frappe.get_traceback(),
+			)
+
+	def redeem_compensatory_day_off_hours(self):
+		"""
+		Spend 9 hours of the cumulative balance on the compensatory day off just raised
+		(WI-001695 AC4): a balance of 10 becomes 1, and the remainder carries forward to
+		count towards the employee's next compensatory day off.
+
+		One redemption per request. An employee sitting on 20 unredeemed hours redeems 9
+		here and keeps 11, which re-triggers the prompt on their next public holiday
+		overtime request rather than raising two leave requests at once.
+
+		Written with db_set because the linking happens in on_update, after validate has
+		already stored the pre-redemption balance.
+		"""
+		self.db_set(
+			"cumulative_unredemmed_balance",
+			flt(flt(self.cumulative_unredemmed_balance) - COMPENSATORY_DAY_OFF_THRESHOLD_HOURS, 2),
 		)
 
 	def workflow_notification(self):
@@ -503,3 +648,27 @@ def get_yearly_overtime_hours(employee: str, overtime_date: str, current_hours: 
 	past_hours = flt(result[0].total_hours) if result else 0.0
 
 	return flt(past_hours + flt(current_hours), 2)
+
+
+@frappe.whitelist()
+def get_projected_unredeemed_balance(
+	employee: str, overtime_hours: float = 0, current_name: str = ""
+) -> float:
+	"""
+	The cumulative unredeemed public holiday overtime balance this request would produce.
+
+	Used by the client script to decide whether to prompt for a Compensatory Day Off,
+	since the threshold is now the employee's cumulative balance and cannot be worked out
+	from the hours on the form alone (WI-001695).
+
+	Args:
+		employee: Employee ID
+		overtime_hours: The hours currently entered on the form
+		current_name: The record's name, excluded from the tally (blank for a new record)
+
+	Returns:
+		float: Accrued unredeemed hours across the employee's requests, plus these hours
+	"""
+	frappe.has_permission("Overtime Request", "read", throw=True)
+
+	return flt(get_unredeemed_balance(employee, exclude=current_name) + flt(overtime_hours), 2)

@@ -1,0 +1,465 @@
+# Copyright (c) 2026, ONEFM and contributors
+# See license.txt
+
+import frappe
+from frappe.tests.utils import FrappeTestCase
+from frappe.utils import get_first_day, get_last_day, getdate
+
+from one_fm.one_fm.doctype.proof_of_work.proof_of_work import (
+	ATTENDANCE_ABBR,
+	DAY_OFF_ABBRS,
+	_actual_hours,
+	_attendance_abbr,
+	_basis_for_rate_type,
+	_uses_nominal_shift_hours,
+	_fmt_contractual,
+	_fmt_staff_breakdown,
+	_shift_hours_from_item,
+	generate_proof_of_work,
+	get_eligible_contracts,
+	resolve_attendance_source,
+)
+
+TEST_YEAR = 2025
+TEST_MONTH = 6
+
+
+def _get_company():
+	return frappe.db.get_value("Company", {}, "name")
+
+
+def _get_or_create_customer():
+	name = frappe.db.get_value("Customer", {}, "name")
+	if name:
+		return name
+	customer = frappe.get_doc(
+		{"doctype": "Customer", "customer_name": "_Test POW Customer"}
+	).insert(ignore_permissions=True)
+	return customer.name
+
+
+def _get_or_create_project(company):
+	# Reused as a stable fixture: Project is named after project_name, so a
+	# committed leftover from an earlier run would otherwise clash on insert.
+	name = "_Test POW Project"
+	if frappe.db.exists("Project", name):
+		return frappe.get_doc("Project", name)
+	return frappe.get_doc(
+		{"doctype": "Project", "project_name": name, "company": company}
+	).insert(ignore_permissions=True)
+
+
+class TestProofofWork(FrappeTestCase):
+	def setUp(self):
+		self.company = _get_company()
+		self.customer = _get_or_create_customer()
+
+		# Project the contract and attendance both point to.
+		self.project = _get_or_create_project(self.company)
+
+		# The Contracts controller commits internally (breaking test rollback),
+		# so build the fixture with a raw db_insert to keep the test isolated.
+		self.contract = self._make_contract("_TEST-POW-CONTRACT-A")
+
+		self.first_day = get_first_day(getdate(f"{TEST_YEAR}-{TEST_MONTH:02d}-01"))
+		self.last_day = get_last_day(self.first_day)
+
+		self._make_attendance()
+
+	def _make_contract(self, name):
+		"""Create an Active Contracts row via a raw insert.
+
+		Bypasses the Contracts controller on purpose: it calls frappe.db.commit()
+		in many code paths, which would commit test data and defeat the
+		auto-rollback that keeps tests isolated.
+		"""
+		# Clear any leftover POWs for this contract so generation is not skipped.
+		for pow_name in frappe.get_all(
+			"Proof of Work", filters={"contract": name}, pluck="name"
+		):
+			frappe.db.delete("Proof of Work Item", {"parent": pow_name})
+			frappe.db.delete("Proof of Work", {"name": pow_name})
+
+		frappe.db.delete("Contracts", {"name": name})
+
+		contract = frappe.new_doc("Contracts")
+		contract.name = name
+		contract.client = self.customer
+		contract.project = self.project.name
+		contract.price_list = frappe.db.get_value("Price List", {}, "name")
+		contract.start_date = getdate(f"{TEST_YEAR}-01-01")
+		contract.end_date = getdate(f"{TEST_YEAR}-12-31")
+		contract.workflow_state = "Active"
+		contract.db_insert()
+		return contract
+
+	def _make_attendance(self):
+		"""Insert a bare attendance row (bypassing the heavy controller) for the project."""
+		att_name = f"POW-TEST-ATT-{self.project.name}"
+		# Idempotent: the Project fixture is persistent, so clear any leftover row
+		# with this deterministic name before re-inserting.
+		frappe.db.delete("Attendance", {"name": att_name})
+
+		att = frappe.new_doc("Attendance")
+		att.naming_series = "HR-ATT-.YYYY.-"
+		att.employee = "_TEST-POW-EMP"
+		att.status = "Present"
+		att.working_hours = 8
+		att.attendance_date = self.first_day
+		att.company = self.company
+		att.project = self.project.name
+		att.docstatus = 1
+		att.name = att_name
+		att.db_insert()
+
+	# --- get_eligible_contracts -------------------------------------------------
+
+	def test_eligible_contract_listed_and_not_ticked_when_pow_exists(self):
+		rows = get_eligible_contracts(TEST_MONTH, TEST_YEAR)
+		names = {r["name"]: r for r in rows}
+		self.assertIn(self.contract.name, names)
+		# No POW yet -> should be pre-ticked (has_pow == 0)
+		self.assertEqual(names[self.contract.name]["has_pow"], 0)
+
+		# After generating, the same contract should report has_pow == 1
+		generate_proof_of_work(TEST_MONTH, TEST_YEAR, "Shift Hours", [self.contract.name])
+		rows = get_eligible_contracts(TEST_MONTH, TEST_YEAR)
+		names = {r["name"]: r for r in rows}
+		self.assertEqual(names[self.contract.name]["has_pow"], 1)
+
+	def test_contract_without_attendance_not_listed(self):
+		# A month with no attendance should not surface the contract.
+		rows = get_eligible_contracts(TEST_MONTH + 1, TEST_YEAR)
+		self.assertNotIn(self.contract.name, {r["name"] for r in rows})
+
+	# --- generate_proof_of_work -------------------------------------------------
+
+	def test_generate_creates_header_record(self):
+		res = generate_proof_of_work(
+			TEST_MONTH, TEST_YEAR, "Both", [self.contract.name]
+		)
+		self.assertEqual(len(res["created"]), 1)
+
+		pow_doc = frappe.get_doc("Proof of Work", res["created"][0])
+		self.assertEqual(pow_doc.contract, self.contract.name)
+		self.assertEqual(pow_doc.project, self.project.name)
+		self.assertEqual(pow_doc.customer, self.customer)
+		self.assertEqual(pow_doc.generation_basis, "Both")
+		self.assertEqual(getdate(pow_doc.start_date), self.first_day)
+		self.assertEqual(getdate(pow_doc.end_date), self.last_day)
+		# The base fixture has no contract line items and the attendance row has
+		# no Sale Item (no Operations Role), so the summary table is empty:
+		# a Proof of Work Item row is only created per resolvable Sale Item.
+		self.assertEqual(len(pow_doc.proof_of_work_item), 0)
+
+	# --- source hierarchy (AC1) -------------------------------------------------
+
+	def _make_approved_amendment(self, workflow_state="Approved"):
+		amendment = frappe.get_doc(
+			{
+				"doctype": "Attendance Amendment",
+				"project": self.project.name,
+				"year": str(TEST_YEAR),
+				"month": "June",
+				"attendance_based_on": "Attendance Status",
+			}
+		).insert(ignore_permissions=True)
+		amendment.db_set("workflow_state", workflow_state)
+		return amendment
+
+	def test_source_falls_back_to_attendance_when_no_amendment(self):
+		source_type, reference = resolve_attendance_source(
+			self.contract.name, self.project.name, TEST_MONTH, TEST_YEAR
+		)
+		self.assertEqual(source_type, "attendance")
+		self.assertIsNone(reference)
+
+	def test_source_prefers_approved_amendment(self):
+		amendment = self._make_approved_amendment()
+		source_type, reference = resolve_attendance_source(
+			self.contract.name, self.project.name, TEST_MONTH, TEST_YEAR
+		)
+		self.assertEqual(source_type, "amendment")
+		self.assertEqual(reference, amendment.name)
+
+	def test_source_ignores_unapproved_amendment(self):
+		# A Pending Approval amendment must not be used as the source.
+		self._make_approved_amendment(workflow_state="Pending Approval")
+		source_type, reference = resolve_attendance_source(
+			self.contract.name, self.project.name, TEST_MONTH, TEST_YEAR
+		)
+		self.assertEqual(source_type, "attendance")
+		self.assertIsNone(reference)
+
+	# --- contractual hours (shift hours from item code) ------------------------
+
+	def test_shift_hours_parsed_from_item_code(self):
+		# actual_hours falls back to present-days x these hours-per-shift.
+		self.assertEqual(_shift_hours_from_item("SER-SEC-000136-NKW-M-30DY-12HR"), 12)
+		self.assertEqual(_shift_hours_from_item("SER-SEC-000200-8HR"), 8)
+		# Service items with no encoded hours -> 0 (contractual falls back to 0).
+		self.assertEqual(_shift_hours_from_item("SER-FMG-001706"), 0)
+		self.assertEqual(_shift_hours_from_item(""), 0)
+
+	# --- summary calculations & grouping (this story) --------------------------
+
+	@staticmethod
+	def _staff_source():
+		# 3 relievers/staff worked 15 days / 200 hrs, 2 worked 10 days / 100 hrs.
+		# Distinct head-count (5) is intentionally decoupled from any contracted
+		# count so grouping is exercised regardless of the contracted total.
+		staff = {}
+		for i in range(3):
+			staff[f"A{i}"] = {"name": f"A{i}", "id": f"A{i}", "days": 15, "hours": 200}
+		for i in range(2):
+			staff[f"B{i}"] = {"name": f"B{i}", "id": f"B{i}", "days": 10, "hours": 100}
+		return {"staff": staff}
+
+	def test_breakdown_grouped_by_days(self):
+		out = _fmt_staff_breakdown(self._staff_source(), shift_hours=0, basis="Attendance Day")
+		self.assertEqual(
+			out,
+			"- 3 Staff worked 15 days: 45 Days\n- 2 Staff worked 10 days: 20 Days",
+		)
+
+	def test_breakdown_grouped_by_hours(self):
+		out = _fmt_staff_breakdown(self._staff_source(), shift_hours=0, basis="Shift Hours")
+		self.assertEqual(
+			out,
+			"- 3 Staff worked 200 Hours: 600 Hrs\n- 2 Staff worked 100 Hours: 200 Hrs",
+		)
+
+	def test_breakdown_both_joined_with_or(self):
+		out = _fmt_staff_breakdown(self._staff_source(), shift_hours=0, basis="Both")
+		self.assertEqual(
+			out,
+			"- 3 Staff worked 15 days: 45 Days\n- 2 Staff worked 10 days: 20 Days"
+			"\nOR\n"
+			"- 3 Staff worked 200 Hours: 600 Hrs\n- 2 Staff worked 100 Hours: 200 Hrs",
+		)
+
+	def test_breakdown_hours_falls_back_to_days_times_shift(self):
+		# No numeric hours recorded -> hours group uses days x shift length.
+		source = {"staff": {"X": {"name": "X", "id": "X", "days": 15, "hours": 0}}}
+		out = _fmt_staff_breakdown(source, shift_hours=12, basis="Shift Hours")
+		self.assertEqual(out, "- 1 Staff worked 180 Hours: 180 Hrs")
+
+	def test_breakdown_counts_relievers_beyond_contracted(self):
+		# 21 distinct individuals all appear in the breakdown even if the contract
+		# only covers 20 -> group totals sum to the true worked total.
+		staff = {f"E{i}": {"name": f"E{i}", "id": f"E{i}", "days": 30, "hours": 0} for i in range(21)}
+		out = _fmt_staff_breakdown({"staff": staff}, shift_hours=0, basis="Attendance Day")
+		self.assertEqual(out, "- 21 Staff worked 30 days: 630 Days")
+
+	def test_contractual_days_basis(self):
+		self.assertEqual(_fmt_contractual(20, "Attendance Day"), "={20 staff * 30 days} = 600 DAYS")
+
+	def test_contractual_hours_basis(self):
+		self.assertEqual(_fmt_contractual(20, "Shift Hours"), "={20 staff * 208 hours} = 4160 HOURS")
+
+	def test_contractual_both_joined_with_or(self):
+		self.assertEqual(
+			_fmt_contractual(20, "Both"),
+			"={20 staff * 30 days} = 600 DAYS\nOR\n={20 staff * 208 hours} = 4160 HOURS",
+		)
+
+	# --- read-only integrity (AC2) ---------------------------------------------
+
+	def test_summary_fields_are_read_only(self):
+		meta = frappe.get_meta("Proof of Work Item")
+		for field in meta.fields:
+			self.assertTrue(
+				field.read_only,
+				msg=f"Proof of Work Item field '{field.fieldname}' must be read-only",
+			)
+
+	def test_generate_skips_duplicate(self):
+		generate_proof_of_work(TEST_MONTH, TEST_YEAR, "Shift Hours", [self.contract.name])
+		res = generate_proof_of_work(
+			TEST_MONTH, TEST_YEAR, "Shift Hours", [self.contract.name]
+		)
+		self.assertEqual(len(res["created"]), 0)
+		self.assertEqual(len(res["skipped"]), 1)
+		self.assertEqual(res["skipped"][0]["contract"], self.contract.name)
+
+	def test_generate_rejects_invalid_basis(self):
+		with self.assertRaises(frappe.ValidationError):
+			generate_proof_of_work(TEST_MONTH, TEST_YEAR, "Nonsense", [self.contract.name])
+
+	def test_generate_rejects_empty_selection(self):
+		with self.assertRaises(frappe.ValidationError):
+			generate_proof_of_work(TEST_MONTH, TEST_YEAR, "Shift Hours", [])
+
+	def test_generate_rejects_invalid_month(self):
+		with self.assertRaises(frappe.ValidationError):
+			generate_proof_of_work(13, TEST_YEAR, "Shift Hours", [self.contract.name])
+
+
+class TestRateTypeBasis(FrappeTestCase):
+	"""
+	WI-001700 update: the Contract Item's Rate Type decides which metric a Sale Item is
+	reported in, unless the contract has an Attendance Amendment.
+	"""
+
+	def test_daily_and_monthly_are_counted_in_present_days(self):
+		for rate_type in ("Daily", "Monthly"):
+			self.assertEqual(
+				_basis_for_rate_type(rate_type, "attendance", "Both"),
+				"Attendance Day",
+				msg=rate_type,
+			)
+
+	def test_hourly_is_counted_in_shift_hours(self):
+		self.assertEqual(_basis_for_rate_type("Hourly", "attendance", "Both"), "Shift Hours")
+
+	def test_an_amendment_keeps_the_generated_method(self):
+		# "If the linked Contract has Attendance Amendment, then the data will be shown as
+		# per the generated method" - the Rate Type must not override it.
+		for rate_type in ("Daily", "Monthly", "Hourly", ""):
+			self.assertEqual(
+				_basis_for_rate_type(rate_type, "amendment", "Both"), "Both", msg=rate_type
+			)
+			self.assertEqual(
+				_basis_for_rate_type(rate_type, "amendment", "Shift Hours"),
+				"Shift Hours",
+				msg=rate_type,
+			)
+
+	def test_missing_rate_type_leaves_behaviour_unchanged(self):
+		# A Contract Item with no Rate Type keeps the document's basis, so nothing that
+		# worked before this change starts reporting differently.
+		for basis in ("Attendance Day", "Shift Hours", "Both"):
+			self.assertEqual(_basis_for_rate_type("", "attendance", basis), basis, msg=basis)
+			self.assertEqual(_basis_for_rate_type(None, "attendance", basis), basis, msg=basis)
+
+
+class TestAttendanceReportStructure(FrappeTestCase):
+	"""
+	WI-001700 update: the Attendance Report print format shows the item type(s) beside the
+	Sale Item Code and drops the Item Type column.
+	"""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		# Read the shipped definition rather than the database copy: the file is what
+		# migrate installs, and asserting on the DB would only pass after a migration.
+		import json
+
+		path = frappe.get_app_path(
+			"one_fm", "one_fm", "print_format", "proof_of_work_attendance_report",
+			"proof_of_work_attendance_report.json",
+		)
+		cls.print_format = frappe._dict(json.loads(frappe.read_file(path)))
+
+	def test_item_type_column_is_gone(self):
+		self.assertNotIn("Item Type</th>", self.print_format.html)
+
+	def test_item_types_are_shown_beside_the_sale_item_code(self):
+		self.assertIn("group.sale_item", self.print_format.html)
+		self.assertIn("group.item_type", self.print_format.html)
+
+	def test_grid_carries_the_columns_from_the_agreed_structure(self):
+		for column in ("Employee ID", "Employee Name", "Working Days", "Days Off", "Total Hours"):
+			self.assertIn(f"{column}</th>", self.print_format.html, msg=column)
+
+	def test_header_repeats_without_overlapping_tall_rows(self):
+		# wkhtmltopdf overlaps a repeated thead with tall rows unless it is a row group.
+		self.assertIn("display: table-row-group", self.print_format.css)
+
+
+class TestAttendanceAbbreviations(FrappeTestCase):
+	"""
+	The day cells must carry the legend's abbreviations. Day Off previously fell through to
+	its initial ("D"), so the Days Off column added to the report could never count it.
+	"""
+
+	def test_day_off_statuses_use_the_legend_codes(self):
+		self.assertEqual(_attendance_abbr("Day Off"), "DO")
+		self.assertEqual(_attendance_abbr("Client Day Off"), "CDO")
+
+	def test_day_off_codes_are_the_ones_the_report_counts(self):
+		self.assertEqual(
+			{_attendance_abbr("Day Off"), _attendance_abbr("Client Day Off")}, DAY_OFF_ABBRS
+		)
+
+	def test_half_day_no_longer_collides_with_holiday(self):
+		self.assertEqual(_attendance_abbr("Half Day"), "HD")
+		self.assertEqual(_attendance_abbr("Holiday"), "H")
+		self.assertNotEqual(_attendance_abbr("Half Day"), _attendance_abbr("Holiday"))
+
+	def test_every_status_in_use_has_an_abbreviation(self):
+		# Statuses present in the live data; none should fall back to a bare initial.
+		for status in (
+			"Present", "Day Off", "On Leave", "Absent", "On Hold", "Client Day Off",
+			"Holiday", "Work From Home", "Medical Appointment", "Client Interview",
+			"Fingerprint Appointment", "Half Day",
+		):
+			self.assertIn(status, ATTENDANCE_ABBR, msg=status)
+
+	def test_unknown_status_falls_back_to_its_initial(self):
+		self.assertEqual(_attendance_abbr("Suspended"), "S")
+		self.assertEqual(_attendance_abbr(""), "")
+		self.assertEqual(_attendance_abbr(None), "")
+
+
+class TestHourlyReportsNominalShiftHours(FrappeTestCase):
+	"""
+	WI-001700 update: an Hourly Sale Item "Fetch Shift Hours", so hours are the shift
+	length x days present and come out whole. Recorded working_hours are what produced the
+	decimal figures (540.96, 537.93) that prompted this.
+	"""
+
+	def _staff(self):
+		# 45 days present, but the clock recorded a fractional total
+		return {"staff": {"E1": {"name": "E1", "id": "E1", "days": 45, "hours": 540.96}}}
+
+	def test_hourly_uses_shift_length_not_the_clock(self):
+		out = _fmt_staff_breakdown(
+			self._staff(), shift_hours=12, basis="Shift Hours", nominal_shift_hours=True
+		)
+		self.assertEqual(out, "- 1 Staff worked 540 Hours: 540 Hrs")
+		self.assertNotIn("540.96", out)
+
+	def test_recorded_hours_still_used_when_not_rate_driven(self):
+		# The amendment path shows data as generated, so the clock still wins there.
+		out = _fmt_staff_breakdown(self._staff(), shift_hours=12, basis="Shift Hours")
+		self.assertIn("540.96", out)
+
+	def test_actual_hours_total_follows_the_same_rule(self):
+		source = {"days": 45, "hours": 540.96, "staff": {}}
+		self.assertEqual(
+			_actual_hours(source, 12, "Shift Hours", nominal_shift_hours=True), 540
+		)
+		self.assertEqual(_actual_hours(source, 12, "Shift Hours"), 540.96)
+
+	def test_only_hourly_without_an_amendment_uses_the_shift_length(self):
+		self.assertTrue(_uses_nominal_shift_hours("Hourly", "attendance"))
+		self.assertFalse(_uses_nominal_shift_hours("Hourly", "amendment"))
+		for rate_type in ("Daily", "Monthly", ""):
+			self.assertFalse(_uses_nominal_shift_hours(rate_type, "attendance"), msg=rate_type)
+
+
+class TestReportDayHeader(FrappeTestCase):
+	"""WI-001700 update: the day columns carry weekday over d/m, as the sample shows."""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		import json
+
+		path = frappe.get_app_path(
+			"one_fm", "one_fm", "print_format", "proof_of_work_attendance_report",
+			"proof_of_work_attendance_report.json",
+		)
+		cls.print_format = frappe._dict(json.loads(frappe.read_file(path)))
+
+	def test_day_columns_have_two_header_rows(self):
+		self.assertIn("label.weekday", self.print_format.html)
+		self.assertIn("label.date", self.print_format.html)
+
+	def test_fixed_columns_span_both_header_rows(self):
+		# Employee ID/Name and the three totals must not repeat on the second row.
+		self.assertIn('class="c-id" rowspan="2"', self.print_format.html)
+		self.assertIn('class="c-name" rowspan="2"', self.print_format.html)
+		self.assertIn('class="c-num" rowspan="2"', self.print_format.html)

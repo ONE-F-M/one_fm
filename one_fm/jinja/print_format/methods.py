@@ -801,3 +801,16 @@ def update_invoice_items(invoice, contracts, invoice_list):
             total_amount+=i.amount
 
     return frappe._dict({'invoice_list':invoice_list, 'total_amount':total_amount})
+
+
+def pow_attendance_report(doc):
+	"""
+	Attendance Report grid for a Proof of Work, for the print format (WI-001700).
+
+	Exposed to Jinja because the report is a per-employee day grid grouped by Sale Item,
+	which cannot be built from the document's own child tables. Returns the structure
+	documented on get_pow_attendance_report.
+	"""
+	from one_fm.one_fm.doctype.proof_of_work.proof_of_work import get_pow_attendance_report
+
+	return get_pow_attendance_report(doc.name if hasattr(doc, "name") else doc)

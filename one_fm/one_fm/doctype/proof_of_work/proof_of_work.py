@@ -1,0 +1,932 @@
+# Copyright (c) 2026, ONEFM and contributors
+# For license information, please see license.txt
+
+import io
+import re
+import zipfile
+
+import frappe
+from frappe import _
+from frappe.model.document import Document
+from frappe.utils import add_days, cint, cstr, date_diff, flt, get_first_day, get_last_day, getdate
+
+# Canonical values stored in the "Generation Basis" Select field.
+GENERATION_BASIS_OPTIONS = ("Shift Hours", "Attendance Day", "Both")
+
+# Attendance status -> single-letter cell in the monthly grid (used by the
+# reusable get_pow_attendance_report data layer).
+ATTENDANCE_ABBR = {
+	"Present": "P",
+	"Working": "P",
+	"Work From Home": "WFH",
+	"Absent": "A",
+	"On Leave": "L",
+	"Half Day": "HD",
+	"Day Off": "DO",
+	"Client Day Off": "CDO",
+	"Holiday": "H",
+	"On Hold": "OH",
+	"Fingerprint Appointment": "FA",
+	"Medical Appointment": "MA",
+	"Client Interview": "CI",
+}
+
+# Attendance Amendment workflow state that marks it as "approved". The workflow
+# keeps docstatus at 0 even for this state, so approval is a workflow_state check.
+APPROVED_AMENDMENT_STATE = "Approved"
+
+# Full month names, indexed 1..12 to match the Attendance Amendment "month" field.
+MONTH_NAMES = (
+	"",
+	"January",
+	"February",
+	"March",
+	"April",
+	"May",
+	"June",
+	"July",
+	"August",
+	"September",
+	"October",
+	"November",
+	"December",
+)
+
+# Attendance statuses that count as a worked/present day.
+PRESENT_STATUSES = {"Present", "Working", "Work From Home"}
+
+# Cells that count towards the "Days Off" column on the Attendance Report.
+DAY_OFF_ABBRS = {"DO", "CDO"}
+
+
+def _attendance_abbr(status: str) -> str:
+	"""Legend abbreviation for an attendance status, falling back to its initial."""
+	return ATTENDANCE_ABBR.get(status) or (status or "")[:1].upper()
+
+# Standard month used for the contractual justification (Column 3). Fixed by
+# business policy: a contracted head is expected to cover 30 days / 208 hours a
+# month, independent of the per-item shift length.
+STANDARD_MONTH_DAYS = 30
+STANDARD_MONTH_HOURS = 208
+
+
+class ProofofWork(Document):
+	pass
+
+
+def _guard_permission():
+	"""Only users who can create a Proof of Work may use the generator."""
+	if not frappe.has_permission("Proof of Work", "create"):
+		frappe.throw(
+			_("You do not have permission to generate Proof of Work records."),
+			frappe.PermissionError,
+		)
+
+
+def _get_month_range(month: int, year: int):
+	"""Return (first_day, last_day) date objects for the given month/year."""
+	month = cint(month)
+	year = cint(year)
+	if month < 1 or month > 12:
+		frappe.throw(_("Month must be between 1 and 12."))
+	if year < 1900 or year > 3000:
+		frappe.throw(_("Please provide a valid Year."))
+
+	anchor = getdate(f"{year}-{month:02d}-01")
+	return get_first_day(anchor), get_last_day(anchor)
+
+
+# ---------------------------------------------------------------------------
+# Source resolution & aggregation
+#
+# Data-sourcing hierarchy (per the user story):
+#   1. An APPROVED "Attendance Amendment" for the contract/month is the source
+#      of truth. Match is preferred on the amendment's `contract` field and
+#      falls back to `project` (the contract field is read-only and frequently
+#      left blank), always scoped to month + year + Approved state.
+#   2. If no approved amendment exists, fall back to the standard "Attendance"
+#      records for the project in the period.
+#
+# One Proof of Work Item row is produced per Sale Item. `contractual_hours`
+# (Column 3) is the legal justification: contracted head-count (Contract Item
+# `count`) x the standard month (30 days / 208 hours). `actual_hours` and
+# `staff_breakdown` (Column 1, grouped by identical time worked) come from the
+# resolved source above.
+# ---------------------------------------------------------------------------
+
+
+def resolve_attendance_source(contract: str, project: str, month: int, year: int):
+	"""
+	Resolve the source of attendance data for a POW period.
+
+	Returns a tuple ``(source_type, reference)`` where ``source_type`` is either
+	``"amendment"`` (with ``reference`` = the Attendance Amendment name) or
+	``"attendance"`` (with ``reference`` = ``None``).
+	"""
+	month_name = MONTH_NAMES[cint(month)]
+	year_str = cstr(cint(year))
+	base_filters = {
+		"workflow_state": APPROVED_AMENDMENT_STATE,
+		"month": month_name,
+		"year": year_str,
+	}
+
+	# Prefer matching on the amendment's own contract field ...
+	if contract:
+		match = frappe.get_all(
+			"Attendance Amendment",
+			filters={**base_filters, "contract": contract},
+			pluck="name",
+			order_by="modified desc",
+			limit=1,
+		)
+		if match:
+			return "amendment", match[0]
+
+	# ... otherwise fall back to the project (contract is often blank).
+	if project:
+		match = frappe.get_all(
+			"Attendance Amendment",
+			filters={**base_filters, "project": project},
+			pluck="name",
+			order_by="modified desc",
+			limit=1,
+		)
+		if match:
+			return "amendment", match[0]
+
+	return "attendance", None
+
+
+_SHIFT_HOURS_RE = re.compile(r"(\d+)HR", re.IGNORECASE)
+
+
+def _shift_hours_from_item(item_code: str) -> float:
+	"""Hours-per-shift encoded in the sale item code, e.g. '...-30DY-12HR' -> 12.
+
+	The Contract Item ``working_hours``/``working_days`` fields are unmaintained
+	in production, so the shift length is read from the item code (the same
+	value used to name the item).
+	"""
+	match = _SHIFT_HOURS_RE.search(item_code or "")
+	return flt(match.group(1)) if match else 0.0
+
+
+def _contracted_count_by_sale_item(contract_name: str) -> dict:
+	"""
+	Contracted head-count per Sale Item, from the Contract Item ``count`` field
+	(Service items only). This is the "20 staff" the contract legally commits to,
+	and the basis for the Column 3 justification.
+
+	Returns ``{sale_item: contracted_count}``.
+	"""
+	result = {}
+	for it in frappe.get_all(
+		"Contract Item",
+		filters={"parent": contract_name, "parenttype": "Contracts", "item_type": "Service"},
+		fields=["item_code", "count"],
+	):
+		if it.item_code:
+			result[it.item_code] = result.get(it.item_code, 0) + cint(it.count)
+	return result
+
+
+def _rate_type_by_sale_item(contract_name: str) -> dict:
+	"""
+	Contract Item Rate Type per Sale Item (WI-001700 update).
+
+	Rate Type decides which metric a Sale Item is measured in - Daily and Monthly in
+	present days, Hourly in shift hours. Where one Sale Item appears on several Contract
+	Item rows, an Hourly row wins: the item is billed by the hour, so days would understate
+	it.
+
+	Returns ``{sale_item: rate_type}``.
+	"""
+	result = {}
+	for it in frappe.get_all(
+		"Contract Item",
+		filters={"parent": contract_name, "parenttype": "Contracts", "item_type": "Service"},
+		fields=["item_code", "rate_type"],
+	):
+		if not it.item_code:
+			continue
+		if it.rate_type == "Hourly" or it.item_code not in result:
+			result[it.item_code] = it.rate_type or ""
+	return result
+
+
+def _basis_for_rate_type(rate_type: str, source_type: str, generation_basis: str) -> str:
+	"""
+	The metric one Sale Item is reported in (WI-001700 update).
+
+	Without an Attendance Amendment the Contract Item's Rate Type decides: Daily and
+	Monthly are counted in present days, Hourly in shift hours. When the contract does have
+	an amendment the figures are shown as generated, so the document's own generation basis
+	stands - as does it for a Contract Item with no Rate Type set, which leaves existing
+	behaviour untouched.
+	"""
+	if source_type == "amendment":
+		return generation_basis
+
+	if rate_type == "Hourly":
+		return "Shift Hours"
+	if rate_type in ("Daily", "Monthly"):
+		return "Attendance Day"
+
+	return generation_basis
+
+
+def _uses_nominal_shift_hours(rate_type: str, source_type: str) -> bool:
+	"""
+	Whether hours come from the shift length rather than the clock (WI-001700 update).
+
+	The update says an Hourly Sale Item "Fetch Shift Hours", which is the nominal length
+	in the item code (``-12HR``) x days present - so the figures come out whole. Actual
+	recorded working_hours are what produced values like 540.96, and they still drive the
+	amendment path, where the data is shown as generated.
+	"""
+	return source_type != "amendment" and rate_type == "Hourly"
+
+
+def _item_types_by_sale_item(sale_items) -> dict:
+	"""
+	Item Type per Sale Item, comma separated where an item carries more than one.
+
+	The Attendance Report shows these beside the Sale Item Code instead of in a column
+	(WI-001700 update), so several types have to collapse into one string.
+	"""
+	if not sale_items:
+		return {}
+
+	types = {}
+	for row in frappe.get_all(
+		"Item", filters={"name": ["in", list(sale_items)]}, fields=["name", "item_type"]
+	):
+		if not row.item_type:
+			continue
+		existing = types.setdefault(row.name, [])
+		if row.item_type not in existing:
+			existing.append(row.item_type)
+
+	return {name: ", ".join(values) for name, values in types.items()}
+
+
+def _blank_source_entry() -> dict:
+	return {"hours": 0.0, "days": 0.0, "staff": {}}
+
+
+def _source_from_amendment(amendment_name: str, total_days: int) -> dict:
+	"""
+	Aggregate actual effort per Sale Item from an approved Attendance Amendment.
+
+	Returns ``{sale_item: {"hours": float, "days": float, "staff": {...}}}``.
+	"""
+	doc = frappe.get_doc("Attendance Amendment", amendment_name)
+	agg = {}
+
+	for row in doc.get("attendance_details"):
+		sale_item = row.sale_item
+		if not sale_item:
+			# Rows without a resolvable Sale Item can't map to a POW item row.
+			continue
+
+		emp_hours = 0.0
+		emp_days = 0.0
+		for i in range(1, total_days + 1):
+			status = row.get(f"day_{i}")
+			hour_val = row.get(f"day_{i}_hour")
+
+			hours = 0.0
+			if hour_val not in (None, "", "N/A"):
+				hours = flt(hour_val)
+
+			if hours > 0:
+				emp_hours += hours
+				emp_days += 1
+			elif status in PRESENT_STATUSES:
+				emp_days += 1
+			elif status == "Half Day":
+				emp_days += 0.5
+
+		entry = agg.setdefault(sale_item, _blank_source_entry())
+		entry["hours"] += emp_hours
+		entry["days"] += emp_days
+
+		staff_key = row.employee or row.employee_id or row.employee_name
+		entry["staff"][staff_key] = {
+			"name": row.employee_name or "",
+			"id": row.employee_id or row.employee or "",
+			"hours": emp_hours,
+			"days": emp_days,
+		}
+
+	return agg
+
+
+def _source_from_attendance(project: str, first_day, last_day) -> dict:
+	"""
+	Aggregate actual effort per Sale Item from standard Attendance records.
+
+	Sale Item is resolved via the attendance's Operations Role. Returns
+	``{sale_item: {"hours": float, "days": float, "staff": {...}}}``.
+	"""
+	agg = {}
+	if not project:
+		return agg
+
+	Attendance = frappe.qb.DocType("Attendance")
+	OperationsRole = frappe.qb.DocType("Operations Role")
+
+	records = (
+		frappe.qb.from_(Attendance)
+		.left_join(OperationsRole)
+		.on(Attendance.operations_role == OperationsRole.name)
+		.select(
+			Attendance.employee,
+			Attendance.employee_name,
+			Attendance.status,
+			Attendance.working_hours,
+			OperationsRole.sale_item.as_("sale_item"),
+		)
+		.where(
+			(Attendance.docstatus == 1)
+			& (Attendance.project == project)
+			& (Attendance.attendance_date >= first_day)
+			& (Attendance.attendance_date <= last_day)
+		)
+	).run(as_dict=True)
+
+	for r in records:
+		sale_item = r.sale_item
+		if not sale_item:
+			continue
+
+		hours = flt(r.working_hours)
+		if r.status in PRESENT_STATUSES:
+			day = 1.0
+		elif r.status == "Half Day":
+			day = 0.5
+		else:
+			day = 0.0
+
+		entry = agg.setdefault(sale_item, _blank_source_entry())
+		entry["hours"] += hours
+		entry["days"] += day
+
+		staff = entry["staff"].setdefault(
+			r.employee,
+			{"name": r.employee_name or "", "id": r.employee or "", "hours": 0.0, "days": 0.0},
+		)
+		staff["hours"] += hours
+		staff["days"] += day
+
+	return agg
+
+
+def _actual_hours(
+	source: dict, shift_hours: float, basis: str, nominal_shift_hours: bool = False
+) -> float:
+	"""Hours worked for a Sale Item.
+
+	``nominal_shift_hours`` reports days x the shift length, which is what an Hourly Rate
+	Type asks for. Otherwise recorded working hours are used, falling back to days x shift
+	length when the source only carries statuses.
+	"""
+	if basis == "Attendance Day" or nominal_shift_hours:
+		return flt(source.get("days", 0.0)) * shift_hours
+	return flt(source.get("hours", 0.0)) or (flt(source.get("days", 0.0)) * shift_hours)
+
+
+def _num(value) -> str:
+	"""Render a number without a trailing ``.0`` but keep real decimals (e.g. 0.5)."""
+	value = flt(value)
+	if value == int(value):
+		return str(int(value))
+	return f"{value:.2f}".rstrip("0").rstrip(".")
+
+
+def _group_breakdown(
+	staff: dict, metric: str, shift_hours: float, nominal_shift_hours: bool = False
+) -> str:
+	"""
+	Group distinct staff by identical time worked for one metric.
+
+	``metric == "days"``  -> ``"- {n} Staff worked {v} days: {n*v} Days"``
+	``metric == "hours"`` -> ``"- {n} Staff worked {v} Hours: {n*v} Hrs"``
+
+	Every distinct individual is counted (relievers included), so the group
+	totals sum to the actual worked total even when head-count exceeds the
+	contracted count. Hours fall back to days x shift length when no numeric
+	hours were recorded.
+	"""
+	groups = {}
+	for info in staff.values():
+		if metric == "days":
+			value = flt(info.get("days", 0.0))
+		elif nominal_shift_hours:
+			# Shift length x days present, so an Hourly item reports whole hours.
+			value = flt(info.get("days", 0.0)) * shift_hours
+		else:
+			value = flt(info.get("hours", 0.0)) or (flt(info.get("days", 0.0)) * shift_hours)
+		key = round(value, 2)
+		groups[key] = groups.get(key, 0) + 1
+
+	lines = []
+	for value in sorted(groups, reverse=True):
+		n = groups[value]
+		total = n * value
+		if metric == "days":
+			lines.append(f"- {n} Staff worked {_num(value)} days: {_num(total)} Days")
+		else:
+			lines.append(f"- {n} Staff worked {_num(value)} Hours: {_num(total)} Hrs")
+	return "\n".join(lines)
+
+
+def _fmt_staff_breakdown(
+	source: dict, shift_hours: float, basis: str, nominal_shift_hours: bool = False
+) -> str:
+	"""Column 1: staff grouped by identical time worked. For "Both", the days
+	breakdown, an "OR" line, then the hours breakdown."""
+	staff = source.get("staff", {})
+	if not staff:
+		return _("No attendance recorded for this item in the period.")
+
+	blocks = []
+	if basis in ("Attendance Day", "Both"):
+		blocks.append(_group_breakdown(staff, "days", shift_hours))
+	if basis in ("Shift Hours", "Both"):
+		blocks.append(_group_breakdown(staff, "hours", shift_hours, nominal_shift_hours))
+	return "\nOR\n".join(b for b in blocks if b)
+
+
+def _fmt_contractual(count: int, basis: str) -> str:
+	"""Column 3: contracted head-count x the standard month. For "Both", the days
+	justification, an "OR" line, then the hours justification."""
+	count = cint(count)
+	blocks = []
+	if basis in ("Attendance Day", "Both"):
+		blocks.append(
+			f"={{{count} staff * {STANDARD_MONTH_DAYS} days}} = {count * STANDARD_MONTH_DAYS} DAYS"
+		)
+	if basis in ("Shift Hours", "Both"):
+		blocks.append(
+			f"={{{count} staff * {STANDARD_MONTH_HOURS} hours}} = {count * STANDARD_MONTH_HOURS} HOURS"
+		)
+	return "\nOR\n".join(blocks)
+
+
+def _populate_pow_items(doc, first_day, last_day):
+	"""
+	Fill the ``proof_of_work_item`` summary table on a POW document, one row per
+	Sale Item, using the resolved data source. Called during generation only.
+
+	contractual_hours = contracted head-count (Contract Item `count`) x the
+	                    standard month (30 days / 208 hours), per generation basis.
+	actual_hours      = hours worked from the resolved source.
+	staff_breakdown   = distinct staff grouped by identical time worked.
+	"""
+	total_days = date_diff(last_day, first_day) + 1
+
+	contracted = _contracted_count_by_sale_item(doc.contract)
+
+	source_type, reference = resolve_attendance_source(
+		doc.contract, doc.project, getdate(first_day).month, getdate(first_day).year
+	)
+	if source_type == "amendment":
+		source = _source_from_amendment(reference, total_days)
+	else:
+		source = _source_from_attendance(doc.project, first_day, last_day)
+
+	# Rate Type drives the metric per Sale Item; the document's basis is the fallback.
+	rate_types = _rate_type_by_sale_item(doc.contract)
+	# Union of Sale Items on the contract and/or with actual attendance.
+	sale_items = sorted(set(contracted) | set(source))
+
+	# Resolve item_type for all sale items in one query, comma joined where an item
+	# carries more than one.
+	item_types = _item_types_by_sale_item(sale_items)
+
+	doc.set("proof_of_work_item", [])
+	for sale_item in sale_items:
+		shift_hours = _shift_hours_from_item(sale_item)
+		s_entry = source.get(sale_item, _blank_source_entry())
+		rate_type = rate_types.get(sale_item, "")
+		basis = _basis_for_rate_type(rate_type, source_type, doc.generation_basis)
+		nominal = _uses_nominal_shift_hours(rate_type, source_type)
+
+		doc.append(
+			"proof_of_work_item",
+			{
+				"sale_item_code": sale_item,
+				"item_type": item_types.get(sale_item, ""),
+				"contractual_hours": _fmt_contractual(contracted.get(sale_item, 0), basis),
+				"actual_hours": f"{_actual_hours(s_entry, shift_hours, basis, nominal):.2f} hrs",
+				"staff_breakdown": _fmt_staff_breakdown(s_entry, shift_hours, basis, nominal),
+			},
+		)
+
+
+@frappe.whitelist()
+def get_eligible_contracts(month: int, year: int):
+	"""
+	Return active contracts that have logged attendance in the given month.
+
+	A contract is eligible when:
+	  1. Its workflow state is "Active", and
+	  2. Its linked Project has at least one Attendance record in the month.
+
+	Each row carries ``has_pow`` so the frontend can pre-tick only the
+	contracts that do not already have a Proof of Work for this period.
+	"""
+	_guard_permission()
+
+	first_day, last_day = _get_month_range(month, year)
+
+	# Distinct projects that logged attendance in the selected month.
+	# Server-side aggregation gated by the POW-create permission above,
+	# so get_all (which skips user permissions) is appropriate here.
+	attended_projects = frappe.get_all(
+		"Attendance",
+		filters={
+			"attendance_date": ["between", [first_day, last_day]],
+			"docstatus": ["<", 2],
+			"project": ["is", "set"],
+		},
+		distinct=True,
+		pluck="project",
+	)
+
+	if not attended_projects:
+		return []
+
+	contracts = frappe.get_all(
+		"Contracts",
+		filters={
+			"workflow_state": "Active",
+			"project": ["in", attended_projects],
+		},
+		fields=["name", "project", "client"],
+		order_by="name asc",
+	)
+
+	if not contracts:
+		return []
+
+	# Contracts that already have a (non-cancelled) POW for this period.
+	existing = set(
+		frappe.get_all(
+			"Proof of Work",
+			filters={
+				"contract": ["in", [c.name for c in contracts]],
+				"start_date": first_day,
+				"docstatus": ["<", 2],
+			},
+			pluck="contract",
+		)
+	)
+
+	for c in contracts:
+		c["has_pow"] = 1 if c.name in existing else 0
+
+	return contracts
+
+
+@frappe.whitelist(methods=["POST"])
+def generate_proof_of_work(month: int, year: int, generation_basis: str, contracts):
+	"""
+	Batch-create one Proof of Work record per selected contract.
+
+	Contracts that already have a POW for the period are skipped and
+	reported back to the caller.
+	"""
+	_guard_permission()
+
+	if generation_basis not in GENERATION_BASIS_OPTIONS:
+		frappe.throw(
+			_("Invalid Generation Basis. Must be one of: {0}").format(
+				", ".join(GENERATION_BASIS_OPTIONS)
+			)
+		)
+
+	if isinstance(contracts, str):
+		contracts = frappe.parse_json(contracts)
+
+	if not contracts:
+		frappe.throw(_("Please select at least one contract."))
+
+	first_day, last_day = _get_month_range(month, year)
+
+	created = []
+	skipped = []
+
+	for contract_name in contracts:
+		if not frappe.db.exists("Contracts", contract_name):
+			skipped.append({"contract": contract_name, "reason": _("Contract not found")})
+			continue
+
+		# Skip if a non-cancelled POW already exists for this contract + period.
+		if frappe.db.exists(
+			"Proof of Work",
+			{
+				"contract": contract_name,
+				"start_date": first_day,
+				"docstatus": ["<", 2],
+			},
+		):
+			skipped.append(
+				{"contract": contract_name, "reason": _("Proof of Work already exists")}
+			)
+			continue
+
+		contract = frappe.db.get_value(
+			"Contracts", contract_name, ["project", "client"], as_dict=True
+		)
+
+		doc = frappe.new_doc("Proof of Work")
+		doc.contract = contract_name
+		doc.project = contract.project
+		doc.customer = contract.client
+		doc.start_date = first_day
+		doc.end_date = last_day
+		doc.generation_basis = generation_basis
+
+		# Fetch & lock the summary table from the strict source hierarchy
+		# (approved Attendance Amendment first, else standard Attendance).
+		_populate_pow_items(doc, first_day, last_day)
+
+		doc.insert()
+
+		created.append(doc.name)
+
+	return {"created": created, "skipped": skipped}
+
+
+# ---------------------------------------------------------------------------
+# Attendance Report data (WI-001703): a monthly attendance grid grouped by
+# Sale Item, from the resolved source. Consumed by the "Proof of Work
+# Attendance Report" print format.
+# ---------------------------------------------------------------------------
+
+
+def _grid_from_amendment(amendment_name: str, total_days: int) -> dict:
+	"""Per-employee day grid grouped by Sale Item, from an Attendance Amendment.
+
+	Returns ``{sale_item: {emp_key: {employee_id, employee_name, days{}, total_present}}}``.
+	"""
+	doc = frappe.get_doc("Attendance Amendment", amendment_name)
+	groups = {}
+	for row in doc.get("attendance_details"):
+		if not row.sale_item:
+			continue
+		emp_key = row.employee or row.employee_id or row.employee_name
+		emp = groups.setdefault(row.sale_item, {}).setdefault(
+			emp_key,
+			{
+				"employee_id": row.employee_id or row.employee or "",
+				"employee_name": row.employee_name or "",
+				"days": {},
+				"total_present": 0.0,
+			},
+		)
+		for i in range(1, total_days + 1):
+			status = row.get(f"day_{i}")
+			hour_val = row.get(f"day_{i}_hour")
+			if hour_val not in (None, "", "N/A") and flt(hour_val) > 0:
+				emp["days"][i] = "P"
+				emp["total_present"] += 1.0
+			elif status in PRESENT_STATUSES:
+				emp["days"][i] = "P"
+				emp["total_present"] += 1.0
+			elif status == "Half Day":
+				emp["days"][i] = "H"
+				emp["total_present"] += 0.5
+			elif status:
+				emp["days"][i] = _attendance_abbr(status)
+	return groups
+
+
+def _grid_from_attendance(project: str, first_day, last_day) -> dict:
+	"""Per-employee day grid grouped by Sale Item, from standard Attendance.
+
+	Sale Item is resolved via the attendance's Operations Role.
+	"""
+	groups = {}
+	if not project:
+		return groups
+
+	Attendance = frappe.qb.DocType("Attendance")
+	OperationsRole = frappe.qb.DocType("Operations Role")
+	records = (
+		frappe.qb.from_(Attendance)
+		.left_join(OperationsRole)
+		.on(Attendance.operations_role == OperationsRole.name)
+		.select(
+			Attendance.employee,
+			Attendance.employee_name,
+			Attendance.status,
+			Attendance.attendance_date,
+			OperationsRole.sale_item.as_("sale_item"),
+		)
+		.where(
+			(Attendance.docstatus == 1)
+			& (Attendance.project == project)
+			& (Attendance.attendance_date >= first_day)
+			& (Attendance.attendance_date <= last_day)
+		)
+	).run(as_dict=True)
+
+	for r in records:
+		if not r.sale_item:
+			continue
+		emp = groups.setdefault(r.sale_item, {}).setdefault(
+			r.employee,
+			{
+				"employee_id": r.employee or "",
+				"employee_name": r.employee_name or "",
+				"days": {},
+				"total_present": 0.0,
+			},
+		)
+		day = getdate(r.attendance_date).day
+		if r.status in PRESENT_STATUSES:
+			emp["days"][day] = _attendance_abbr(r.status)
+			emp["total_present"] += 1.0
+		elif r.status == "Half Day":
+			emp["days"][day] = _attendance_abbr(r.status)
+			emp["total_present"] += 0.5
+		elif r.status:
+			emp["days"][day] = _attendance_abbr(r.status)
+	return groups
+
+
+@frappe.whitelist()
+def get_pow_attendance_report(pow_name: str) -> dict:
+	"""Structured monthly attendance grid for a POW, grouped by Sale Item.
+
+	Drives the "Proof of Work Attendance Report" print format. Source is the
+	approved Attendance Amendment when present, else standard Attendance.
+	"""
+	doc = frappe.get_doc("Proof of Work", pow_name)
+	doc.check_permission("read")
+
+	first_day = getdate(doc.start_date)
+	last_day = getdate(doc.end_date)
+	total_days = date_diff(last_day, first_day) + 1
+
+	source_type, reference = resolve_attendance_source(
+		doc.contract, doc.project, first_day.month, first_day.year
+	)
+	if source_type == "amendment":
+		groups = _grid_from_amendment(reference, total_days)
+	else:
+		groups = _grid_from_attendance(doc.project, first_day, last_day)
+
+	item_types = _item_types_by_sale_item(list(groups))
+
+	group_list = []
+	for sale_item in sorted(groups):
+		shift_hours = _shift_hours_from_item(sale_item)
+		rows = []
+		staff = sorted(groups[sale_item].values(), key=lambda e: e["employee_name"] or "")
+		for sn, emp in enumerate(staff, start=1):
+			cells = [emp["days"].get(i, "") for i in range(1, total_days + 1)]
+			working_days = flt(emp["total_present"])
+			days_off = sum(1 for cell in cells if cell in DAY_OFF_ABBRS)
+			rows.append(
+				{
+					"sn": sn,
+					"employee_id": emp["employee_id"],
+					"employee_name": emp["employee_name"],
+					"days": cells,
+					"total_present": _num(working_days),
+					"working_days": _num(working_days),
+					"days_off": _num(days_off),
+					"total_hours": _num(working_days * shift_hours),
+				}
+			)
+
+		group_list.append(
+			{
+				"sale_item": sale_item,
+				# WI-001700 update: the item type(s) are shown next to the Sale Item Code,
+				# comma separated, and the Item Type column is dropped.
+				"item_type": item_types.get(sale_item, ""),
+				"employees": rows,
+				"totals": {
+					"employees": len(rows),
+					"working_days": _num(sum(flt(r["working_days"]) for r in rows)),
+					"days_off": _num(sum(flt(r["days_off"]) for r in rows)),
+					"total_hours": _num(sum(flt(r["total_hours"]) for r in rows)),
+				},
+			}
+		)
+
+	# Weekday over d/m for each column, as the Attendance Amendment preview shows it.
+	day_labels = []
+	for offset in range(total_days):
+		day = add_days(first_day, offset)
+		day_labels.append(
+			{
+				"weekday": day.strftime("%a"),
+				"date": f"{day.day}/{day.month}",
+				"is_weekend": day.weekday() in (4, 5),
+			}
+		)
+
+	return {
+		"meta": {
+			"contract": doc.contract,
+			"project": doc.project,
+			"customer": doc.customer,
+			"month_name": MONTH_NAMES[first_day.month],
+			"year": first_day.year,
+			"total_days": total_days,
+			"day_numbers": list(range(1, total_days + 1)),
+			"day_labels": day_labels,
+			"source_type": source_type,
+		},
+		"groups": group_list,
+	}
+
+
+# ---------------------------------------------------------------------------
+# ZIP export (WI-001703): the POW Letter PDF + the Attendance Report PDF,
+# bundled into one client-ready download.
+# ---------------------------------------------------------------------------
+
+
+def _build_zip(entries) -> bytes:
+	"""Bundle ``[(filename, content_bytes), ...]`` into an in-memory ZIP.
+
+	Pure/stdlib so it is testable without a Frappe context (see __main__).
+	"""
+	buf = io.BytesIO()
+	with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+		for filename, content in entries:
+			zf.writestr(filename, content)
+	return buf.getvalue()
+
+
+def _attendance_pdf(doc) -> dict:
+	"""Render the Attendance Report PDF via the dedicated, self-contained
+	"Proof of Work Attendance Report" format (header rendered once, spaced
+	breakdown lines, wider breakdown column). Falls back to the default print
+	if the format is ever missing/disabled. Returns ``{"fname":..., "fcontent":...}``.
+	"""
+	fmt = (
+		"Proof of Work Attendance Report"
+		if frappe.db.exists(
+			"Print Format", {"name": "Proof of Work Attendance Report", "disabled": 0}
+		)
+		else None
+	)
+	# The format embeds the logo/heading itself, so disable Frappe's auto letter
+	# head to avoid a duplicate logo.
+	return frappe.attach_print(
+		"Proof of Work", doc.name, file_name=f"Attendance-{doc.name}",
+		print_format=fmt, print_letterhead=False,
+	)
+
+
+@frappe.whitelist()
+def export_zip(name: str):
+	"""Stream a ZIP of the POW Letter PDF + Attendance Report PDF for a POW.
+
+	Read-only (renders PDFs, no mutation), so served over GET for a direct
+	browser download.
+	"""
+	doc = frappe.get_doc("Proof of Work", name)
+	doc.check_permission("read")
+
+	# Use the dedicated POW Letter format (WI-001702); fall back to the default
+	# print if it is ever missing/disabled so the export never hard-fails. Both
+	# formats embed the ONEFM logo themselves, so Frappe's auto letter head is
+	# turned off to avoid a duplicate logo.
+	letter_format = (
+		"Proof of Work Letter"
+		if frappe.db.exists("Print Format", {"name": "Proof of Work Letter", "disabled": 0})
+		else None
+	)
+	letter = frappe.attach_print(
+		"Proof of Work", name, file_name=f"POW-Letter-{name}",
+		print_format=letter_format, print_letterhead=False,
+	)
+	attendance = _attendance_pdf(doc)
+
+	frappe.local.response.filename = f"{name}.zip"
+	frappe.local.response.filecontent = _build_zip(
+		[
+			(letter["fname"], letter["fcontent"]),
+			(attendance["fname"], attendance["fcontent"]),
+		]
+	)
+	frappe.local.response.type = "download"
+
+
+if __name__ == "__main__":
+	# Self-check for the pure zip helper (no Frappe context needed).
+	blob = _build_zip([("a.pdf", b"AAA"), ("b.pdf", b"BBB")])
+	with zipfile.ZipFile(io.BytesIO(blob)) as _zf:
+		assert _zf.namelist() == ["a.pdf", "b.pdf"], _zf.namelist()
+		assert _zf.read("b.pdf") == b"BBB"
+	print("ok: _build_zip produced a valid 2-entry zip")

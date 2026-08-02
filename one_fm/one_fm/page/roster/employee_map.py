@@ -5,6 +5,20 @@ import datetime
 import math
 
 
+def get_workflow_state_select():
+	"""SELECT fragment for Employee Schedule.workflow_state (WI-001694).
+
+	workflow_state is a Custom Field that only exists once the Employee Schedule
+	suspension workflow is installed. The roster must keep loading on a site where that
+	has not happened, so the column is selected only when it is really there - otherwise
+	the whole roster query would fail with "Unknown column 'workflow_state'".
+	"""
+	if "workflow_state" in frappe.db.get_table_columns("Employee Schedule"):
+		return "es.workflow_state"
+
+	return "NULL as workflow_state"
+
+
 def safe_value(val):
 	"""Convert pandas NaN/NaT and other non-JSON-serializable values to None."""
 	if val is None:
@@ -211,7 +225,7 @@ class CreateMap:
 				es.shift, es.start_datetime, es.end_datetime, es.roster_type, es.employee_availability,
 				es.day_off_ot, es.project, es.site, emp.project as actual_project,
 				emp.site as actual_site, emp.shift as actual_shift, es.event_location, es.client_event,
-				es.on_the_job_training, es.reference_doctype, es.reference_docname
+				es.on_the_job_training, es.reference_doctype, es.reference_docname, {get_workflow_state_select()}
 			FROM `tabEmployee Schedule` es 
 			JOIN `tabEmployee` emp
 			ON es.employee = emp.name

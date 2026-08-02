@@ -84,6 +84,7 @@ function load_js(page) {
 			populate_dropdown_options(page, "");
 			render_selected_tags(page);
 			update_clear_button(page);
+			apply_roster_read_only(page);
 			let element = get_wrapper_element().slice(1);
 			page[element](page);
 		});
@@ -100,6 +101,7 @@ function load_js(page) {
 			populate_dropdown_options(page, "");
 			render_selected_tags(page);
 			update_clear_button(page);
+			apply_roster_read_only(page);
 			clear_roster_filters(page);
 		});
 
@@ -757,29 +759,91 @@ function setup_preset_filters(page) {
 }
 
 // Show popups on clicking edit options in Roster view
+
+// ── Helpdesk-managed sites: read-only roster (WI-001692) ──
+// The server gates every roster write and is the authority. This keeps the page honest
+// so a read-only user is not offered actions that can only fail, which is what the AC
+// means by a "strictly Read-Only" roster view.
+const ROSTER_ACTION_SELECTORS = [
+	".changepost", ".change_ot", ".change_others", ".suspend_employee",
+	".assignchangemodal", ".dayoff", "#rosterEmployeeActions"
+].join(", ");
+
+function apply_roster_read_only(page) {
+	const site = page.filters && page.filters.site;
+
+	if (!site) {
+		// With no single site in view the matrix may span managed and unmanaged sites,
+		// so the per-employee server gate is the only correct arbiter.
+		set_roster_read_only(page, false);
+		return;
+	}
+
+	frappe.call({
+		method: "one_fm.one_fm.page.roster.roster.is_roster_read_only",
+		args: { site: site },
+		callback: function (r) {
+			set_roster_read_only(page, !!r.message);
+		}
+	});
+}
+
+function set_roster_read_only(page, read_only) {
+	page._roster_read_only = read_only;
+
+	$(ROSTER_ACTION_SELECTORS).toggleClass("disabled", read_only).prop("disabled", read_only);
+	$("#roster-read-only-banner").remove();
+
+	if (read_only) {
+		$("#page-roster").prepend(
+			`<div id="roster-read-only-banner" class="alert alert-warning mb-3" role="alert">
+				${__("This site's roster is managed by the Helpdesk. You have read-only access.")}
+			</div>`
+		);
+	}
+}
+
+// Guard used by every roster action entry point. Returns true when the action must not
+// proceed, so the click is dropped before a dialog is even opened.
+function roster_action_blocked(page) {
+	if (!page._roster_read_only) return false;
+
+	frappe.show_alert({
+		message: __("This site's roster is managed by the Helpdesk and is read-only for your role."),
+		indicator: "orange"
+	}, 6);
+	return true;
+}
+
 function setup_topbar_events(page) {
 
 	$(".changepost").on("click", function () {
+		if (roster_action_blocked(page)) return;
 		schedule_change_post(page);
 	});
 
 	$(".change_ot").on("click", function () {
+		if (roster_action_blocked(page)) return;
 		change_ot_schedule(page);
 	});
 
 	$(".change_others").on("click", function () {
+		if (roster_action_blocked(page)) return;
 		change_others_schedule(page);
 	});
 
 	$(".suspend_employee").on("click", function () {
+		if (roster_action_blocked(page)) return;
 		suspend_employee_dialog(page);
 	});
 
 	$(".assignchangemodal").on("click", function () {
+		if (roster_action_blocked(page)) return;
 		unschedule_staff(page);
 	});
 
 	$(".dayoff").on("click", function () {
+		if (roster_action_blocked(page)) return;
 		dayoff(page);
 	});
 
@@ -796,6 +860,7 @@ function setup_topbar_events(page) {
 	});
 
 	$("#rosterEmployeeActions").on("click", function () {
+		if (roster_action_blocked(page)) return;
 		roster_employee_actions(page);
 	});
 
@@ -1194,7 +1259,9 @@ let classmap = {
 	"Medical Appointment": "cyanboxcolor",
 	"On-the-job Training": "tealboxcolor",
 	"Client Interview": "cyanboxcolor",
-	"Suspended": "suspendedcolor"
+	"Suspended": "suspendedcolor",
+	// WI-001694: awaiting suspension approval - distinct from the approved Suspended colour.
+	"Pending Suspension": "pendingsuspensioncolor"
 };
 
 let abbr_map = {
@@ -1218,7 +1285,8 @@ let abbr_map = {
 	"On-the-job Training": "OJT",
 	"Client Event": "CE",
 	"Client Interview": "CI",
-	"Suspended": "S"
+	"Suspended": "S",
+	"Pending Suspension": "PS"
 };
 
 
@@ -1393,6 +1461,8 @@ function render_roster(res, page) {
 			let tooltiptext = ``;
 			let bgclass = ``;
 			let data_extra_attrs = ``;
+			// WI-001694: set when any schedule on this day awaits suspension approval.
+			let is_pending_suspension = false;
 
 			let is_relieved_this_day = employee_relieving_date && current_day_iter.isAfter(employee_relieving_date);
 			is_not_relieving_day = false;
@@ -1400,7 +1470,7 @@ function render_roster(res, page) {
 			if (employees_data[employee_key][date_key] && employees_data[employee_key][date_key].length > 0) {
 				for (let k = 0; k < employees_data[employee_key][date_key].length; k++) {
 					let record = employees_data[employee_key][date_key][k];
-					let { employee, date, operations_role, post_abbrv, employee_availability, shift, start_datetime, end_datetime, start_time, end_time, roster_type, attendance, day_off_ot, leave_type, leave_application, event_location, actual_site, client_event, on_the_job_training, project, site, reference_doctype, reference_docname } = record;
+					let { employee, date, operations_role, post_abbrv, employee_availability, shift, start_datetime, end_datetime, start_time, end_time, roster_type, attendance, day_off_ot, leave_type, leave_application, event_location, actual_site, client_event, on_the_job_training, project, site, reference_doctype, reference_docname, workflow_state } = record;
 					// Tooltip details for Client Interview (same for scheduled/attended cases)
 					let client_interview_tooltip = `Client Interview`;
 					if (project) client_interview_tooltip += `<br>Project: ${project}`;
@@ -1564,6 +1634,16 @@ function render_roster(res, page) {
 						}
 					}
 
+					// WI-001694: a schedule awaiting suspension approval reads as Pending
+					// Suspension. It overrides whatever colour the chain above chose, because
+					// Employee Availability deliberately stays as-is (usually Working) until an
+					// approver acts - so the state is invisible otherwise. Applied after the
+					// chain rather than inside it, to leave every existing branch untouched.
+					if (workflow_state === "Pending Suspension") {
+						is_pending_suspension = true;
+						bgclass = classmap["Pending Suspension"];
+					}
+
 					if (k == (employees_data[employee_key][date_key].length - 1)) {
 						if (attendance && attendance == "Fingerprint Appointment") {
 							tooltiptext += `Fingerprint Appointment`;
@@ -1621,6 +1701,12 @@ function render_roster(res, page) {
 						}
 					}
 				}
+			}
+
+			// WI-001694: label the cell PS. Prepended rather than replacing abbrv, so a day
+			// that also carries a post abbreviation or an OT record keeps that information.
+			if (is_pending_suspension) {
+				abbrv = `${abbr_map["Pending Suspension"]}<br>` + abbrv;
 			}
 
 			const isToday = current_day_iter.isSame(moment(), 'day');
@@ -2901,14 +2987,20 @@ function change_ot_schedule(page) {
 				"label": "Shift", "fieldname": "shift", "fieldtype": "Link", "options": "Operations Shift", "reqd": 1, onchange: function () {
 					let name = d.get_value("shift");
 					if (name) {
-						frappe.db.get_value("Operations Shift", name, ["site", "project"])
+						frappe.db.get_value("Operations Shift", name, ["site", "project", "double_shift_ot_allowed"])
 							.then(res => {
-								let { site, project } = res.message;
+								let { site, project, double_shift_ot_allowed } = res.message;
 								d.set_value("site", site);
 								d.set_value("project", project);
+								// WI-001687: non-blocking warning when the chosen shift disallows Double Shift OT.
+								if (!cint(double_shift_ot_allowed)) {
+									frappe.show_alert({ message: __("Warning: The selected shift does not allow Double Shift OT. A Double Shift OT Checker will be generated."), indicator: "orange" }, 7);
+								}
 							});
 					}
 				}, get_query: function () {
+					// WI-001687: show ALL active shifts for an OT slot; non-DSOT shifts are
+					// allowed with a soft warning and tracked via a checker rather than blocked.
 					return {
 						"filters": { "status": "Active" },
 						"page_length": 9999
