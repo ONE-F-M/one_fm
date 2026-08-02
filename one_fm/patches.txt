@@ -546,3 +546,4 @@ one_fm.patches.v15_0.add_employee_schedule_suspension_workflow #2026-07-24
 one_fm.patches.v15_0.migrate_penalty_applied_level #2026-07-30
 one_fm.patches.v15_0.rename_penalty_fields_to_ba_layout #2026-08-02
 one_fm.patches.v15_0.update_penalty_and_investigation_workflow #2026-08-02 rerun for employee_response
+one_fm.patches.v15_0.add_penalty_and_investigation_assignment_rules #2026-08-01 rerun for payroll officer
