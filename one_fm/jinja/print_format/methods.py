@@ -819,25 +819,31 @@ def pow_attendance_report(doc):
 def pow_logo_src():
 	"""The ONE FM logo as a data URI, for the Proof of Work PDFs (WI-001808).
 
-	wkhtmltopdf fetches a relative src over HTTP from frappe.utils.get_url(), which on a
-	site whose name is not a resolvable host - "http://one_fm.15" locally - cannot be
-	reached. wkhtmltopdf then exits with UnknownContentError and Frappe reports "PDF
-	generation failed because of broken image links", so that contract's PDF never makes
-	it into the ZIP. Reading the file off disk removes the network from the path
-	entirely, which also matters because the ZIP is built in a background job.
+	wkhtmltopdf fetches a relative src over HTTP from frappe.utils.get_url(). That is
+	one thing to go wrong per environment: locally the site name is not a resolvable
+	host ("http://one_fm.15"), so the fetch fails and Frappe reports "PDF generation
+	failed because of broken image links" - which drops that contract's PDF from the
+	ZIP - and on staging it renders as an empty box. Reading the file off disk removes
+	the network from the path entirely, which also matters because the ZIP is built in
+	a background job.
 
-	Falls back to the plain path if the file is missing, so a site without the logo
-	renders a broken image rather than failing the whole document.
+	The site's own file wins, so a site can still swap its logo; the copy shipped with
+	the app is the fallback, so a site that never had one still prints a logo.
 	"""
 	import base64
 	import os
 
-	path = os.path.join(frappe.get_site_path("public", "files"), "onefmlogo.png")
-	try:
-		with open(path, "rb") as handle:
-			encoded = base64.b64encode(handle.read()).decode()
-	except OSError:
-		frappe.log_error(title="Proof of Work logo not found", message=path)
-		return "/files/onefmlogo.png"
+	candidates = (
+		os.path.join(frappe.get_site_path("public", "files"), "onefmlogo.png"),
+		os.path.join(frappe.get_app_path("one_fm"), "public", "images", "onefmlogo.png"),
+	)
 
-	return f"data:image/png;base64,{encoded}"
+	for path in candidates:
+		try:
+			with open(path, "rb") as handle:
+				return "data:image/png;base64," + base64.b64encode(handle.read()).decode()
+		except OSError:
+			continue
+
+	frappe.log_error(title="Proof of Work logo not found", message="\n".join(candidates))
+	return "/files/onefmlogo.png"

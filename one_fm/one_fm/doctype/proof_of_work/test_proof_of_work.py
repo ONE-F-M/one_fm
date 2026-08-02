@@ -627,41 +627,42 @@ class TestLetterCarriesTheNonManpowerTable(FrappeTestCase):
 
 
 class TestHourlyDayCells(FrappeTestCase):
-	"""An Hourly Sale Item reports its day cells in hours, not attendance statuses
-	(WI-001808), so the sheet reads in the same metric as the summary above it.
+	"""A Sale Item reported in hours shows the rostered shift length in its day cells,
+	not the hours clocked (WI-001808) - the same figure the summary counts it in.
 	"""
 
-	def _emp(self, hours):
-		return {"hours": hours}
+	def test_a_worked_day_shows_the_rostered_shift_length(self):
+		self.assertEqual(_hour_cells(["P", "P", "P"], shift_hours=12), ["12", "12", "12"])
 
-	def test_a_worked_day_shows_the_hours_recorded_against_it(self):
-		cells, total = _hour_cells(
-			self._emp({1: 11.51, 2: 9.88, 3: 12.0}), ["P", "P", "P"], 3, shift_hours=12
-		)
-		self.assertEqual(cells, ["11.51", "9.88", "12"])
-		self.assertAlmostEqual(total, 33.39)
+	def test_the_length_follows_the_sale_item(self):
+		self.assertEqual(_hour_cells(["P"], shift_hours=9), ["9"])
+		self.assertEqual(_hour_cells(["P"], shift_hours=8), ["8"])
+
+	def test_it_is_the_rostered_length_not_the_hours_clocked(self):
+		# Every worked day reads the same figure, whatever the employee actually
+		# clocked - which is what the summary counts an Hourly item in.
+		self.assertEqual(set(_hour_cells(["P"] * 5, shift_hours=12)), {"12"})
 
 	def test_a_day_not_worked_keeps_its_abbreviation(self):
 		# "0" against an absence reads as a figure rather than an explanation.
-		cells, total = _hour_cells(self._emp({1: 8.0}), ["P", "DO", "A"], 3, shift_hours=8)
-		self.assertEqual(cells, ["8", "DO", "A"])
-		self.assertAlmostEqual(total, 8.0)
+		self.assertEqual(_hour_cells(["P", "DO", "A"], shift_hours=8), ["8", "DO", "A"])
 
-	def test_a_worked_day_with_no_recorded_hours_falls_back_to_the_shift_length(self):
-		# An Attendance Amendment carries statuses only. The summary applies the same
-		# fallback, so the row still adds up to what page 1 reports.
-		cells, total = _hour_cells(self._emp({}), ["P", "P"], 2, shift_hours=12)
-		self.assertEqual(cells, ["12", "12"])
-		self.assertAlmostEqual(total, 24.0)
-
-	def test_a_half_day_counts_as_worked(self):
-		cells, _total = _hour_cells(self._emp({1: 4.0}), ["HD"], 1, shift_hours=8)
-		self.assertEqual(cells, ["4"])
+	def test_a_half_day_carries_half_a_shift(self):
+		# Which is how it is already counted towards the day total.
+		self.assertEqual(_hour_cells(["HD"], shift_hours=12), ["6"])
 
 	def test_an_empty_day_stays_empty(self):
-		cells, total = _hour_cells(self._emp({}), ["", ""], 2, shift_hours=12)
-		self.assertEqual(cells, ["", ""])
-		self.assertEqual(total, 0.0)
+		self.assertEqual(_hour_cells(["", ""], shift_hours=12), ["", ""])
+
+	def test_the_totals_are_left_alone(self):
+		# Working Days counts attendance records and an employee can hold more than one
+		# a day, so the cells - one per calendar day - are not summed into the total.
+		source = frappe.read_file(
+			frappe.get_app_path(
+				"one_fm", "one_fm", "doctype", "proof_of_work", "proof_of_work.py"
+			)
+		)
+		self.assertIn('"total_hours": _num(working_days * shift_hours)', source)
 
 	def test_the_worked_set_tracks_the_present_statuses(self):
 		# Derived rather than restated, so a new present status cannot start reporting
@@ -682,4 +683,3 @@ class TestHourlyDayCells(FrappeTestCase):
 		grid = source.split("def get_pow_attendance_report")[1]
 		self.assertIn("_basis_for_rate_type(", grid)
 		self.assertIn('by_hours = basis == "Shift Hours"', grid)
-

@@ -783,7 +783,6 @@ def _grid_from_amendment(amendment_name: str, total_days: int) -> dict:
 				"employee_id": row.employee_id or row.employee or "",
 				"employee_name": row.employee_name or "",
 				"days": {},
-				"hours": {},
 				"total_present": 0.0,
 			},
 		)
@@ -823,7 +822,6 @@ def _grid_from_attendance(project: str, first_day, last_day) -> dict:
 			Attendance.employee,
 			Attendance.employee_name,
 			Attendance.status,
-			Attendance.working_hours,
 			Attendance.attendance_date,
 			OperationsRole.sale_item.as_("sale_item"),
 		)
@@ -844,48 +842,42 @@ def _grid_from_attendance(project: str, first_day, last_day) -> dict:
 				"employee_id": r.employee or "",
 				"employee_name": r.employee_name or "",
 				"days": {},
-				"hours": {},
 				"total_present": 0.0,
 			},
 		)
 		day = getdate(r.attendance_date).day
 		if r.status in PRESENT_STATUSES:
 			emp["days"][day] = _attendance_abbr(r.status)
-			emp["hours"][day] = flt(r.working_hours)
 			emp["total_present"] += 1.0
 		elif r.status == "Half Day":
 			emp["days"][day] = _attendance_abbr(r.status)
-			emp["hours"][day] = flt(r.working_hours)
 			emp["total_present"] += 0.5
 		elif r.status:
 			emp["days"][day] = _attendance_abbr(r.status)
 	return groups
 
 
-def _hour_cells(emp: dict, statuses: list, total_days: int, shift_hours: float):
-	"""Day cells for an Hourly Sale Item: hours where the day was worked, its status
-	otherwise (WI-001808).
+def _hour_cells(statuses: list, shift_hours: float) -> list:
+	"""Day cells for a Sale Item reported in hours: the rostered shift length on a day
+	worked, its status otherwise (WI-001808).
 
-	A worked day shows the hours recorded against the Attendance. Where the source
-	carries no hours - an Attendance Amendment holds statuses only - it falls back to
-	the shift length, which is the same fallback the summary applies, so the row still
-	adds up to what page 1 reports. A day that was not worked keeps its abbreviation:
-	"0" against an absence reads as a figure rather than an explanation.
+	The length rostered, not the hours clocked - that is what the summary counts an
+	Hourly item in, since `_hours_for` multiplies days by the shift length for it, so
+	the cells read in the same figure as page 1. A half day carries half a shift, which
+	is how it is already counted towards the day total.
+
+	A day that was not worked keeps its abbreviation: "0" against an absence reads as a
+	figure rather than an explanation.
 	"""
 	cells = []
-	total = 0.0
 
-	for index in range(1, total_days + 1):
-		status = statuses[index - 1]
+	for status in statuses:
 		if status not in WORKED_ABBRS:
 			cells.append(status)
 			continue
+		cells.append(_num(flt(shift_hours) * (0.5 if status == "HD" else 1.0)))
 
-		hours = flt(emp.get("hours", {}).get(index)) or flt(shift_hours)
-		total += hours
-		cells.append(_num(hours))
-
-	return cells, total
+	return cells
 
 
 @frappe.whitelist()
@@ -931,10 +923,7 @@ def get_pow_attendance_report(pow_name: str) -> dict:
 			working_days = flt(emp["total_present"])
 			days_off = sum(1 for cell in statuses if cell in DAY_OFF_ABBRS)
 
-			if by_hours:
-				cells, hours_worked = _hour_cells(emp, statuses, total_days, shift_hours)
-			else:
-				cells, hours_worked = statuses, working_days * shift_hours
+			cells = _hour_cells(statuses, shift_hours) if by_hours else statuses
 
 			rows.append(
 				{
@@ -945,7 +934,7 @@ def get_pow_attendance_report(pow_name: str) -> dict:
 					"total_present": _num(working_days),
 					"working_days": _num(working_days),
 					"days_off": _num(days_off),
-					"total_hours": _num(hours_worked),
+					"total_hours": _num(working_days * shift_hours),
 				}
 			)
 
