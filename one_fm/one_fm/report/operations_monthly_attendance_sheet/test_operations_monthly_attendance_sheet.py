@@ -28,12 +28,14 @@ from one_fm.one_fm.report.operations_monthly_attendance_sheet.operations_monthly
 	validate_filters,
 )
 
+REPORT = "Operations Monthly Attendance Sheet"
+
 FROM_DATE = "2026-01-10"
 TO_DATE = "2026-01-16"
 
 
 def _filters(**kwargs):
-	base = {"from_date": FROM_DATE, "to_date": TO_DATE, "generate": 1}
+	base = {"from_date": FROM_DATE, "to_date": TO_DATE}
 	base.update(kwargs)
 	return frappe._dict(base)
 
@@ -101,21 +103,25 @@ class TestColumns(FrappeTestCase):
 		self.assertEqual(len(fieldnames), len(set(fieldnames)))
 
 
-class TestGenerateGate(FrappeTestCase):
-	"""The report must open empty; a payroll extract is too costly to auto-run."""
+class TestTheRunIsDeferred(FrappeTestCase):
+	"""A payroll extract over every employee is too costly to run on each filter
+	change. That is the prepared report's job - it queues the run in the background and
+	offers "Generate New Report" - so the report no longer carries a Generate gate of
+	its own, which duplicated the framework's button.
+	"""
 
-	def test_nothing_is_queried_until_generate_is_set(self):
-		columns, data, message = execute(_filters(generate=0))
-		self.assertEqual(data, [])
-		self.assertIn("Generate", message)
+	def test_the_report_is_a_prepared_report(self):
+		self.assertTrue(frappe.db.get_value("Report", REPORT, "prepared_report"))
 
-	def test_no_day_columns_are_offered_before_generating(self):
-		columns, data, _msg = execute(_filters(generate=0))
-		self.assertEqual([c for c in columns if c.get("width") == 65], [])
-
-	def test_dates_are_not_validated_before_generating(self):
-		# Opening the report with no dates yet must not throw in the user's face.
-		execute(frappe._dict(generate=0))
+	def test_no_generate_filter_is_declared(self):
+		source = frappe.read_file(
+			frappe.get_app_path(
+				"one_fm", "one_fm", "report", "operations_monthly_attendance_sheet",
+				"operations_monthly_attendance_sheet.js",
+			)
+		)
+		self.assertNotIn('fieldname: "generate"', source)
+		self.assertNotIn('add_inner_button(__("Generate")', source)
 
 
 class TestDayHeaders(FrappeTestCase):
@@ -228,17 +234,24 @@ class TestShiftHours(FrappeTestCase):
 	"""WI-001791: the cells show the scheduled duration, never the clocked hours."""
 
 	DATES = [getdate("2026-01-10"), getdate("2026-01-11"), getdate("2026-01-12")]
+	# The maps are keyed by the row group from WI-001790: shift, roster type and the
+	# Day Off OT flag.
+	GROUP = ("Morning", "Basic", 0)
 
 	def _rows(self, generate_based_on):
 		return get_attendance_status(
 			self.DATES,
-			{"Morning": {self.DATES[0]: "Present", self.DATES[1]: "Absent"}},
+			{self.GROUP: {self.DATES[0]: "Present", self.DATES[1]: "Absent"}},
 			{self.DATES[2]: "Day Off"},
 			None,
 			{},
-			{"Morning": {self.DATES[0]: 12.0, self.DATES[1]: 12.0}},
+			{self.GROUP: {self.DATES[0]: 12.0, self.DATES[1]: 12.0}},
 			generate_based_on,
 		)
+
+	def test_the_row_names_its_group(self):
+		row = self._rows(BY_SHIFT_HOURS)[0]
+		self.assertEqual((row["shift"], row["roster_type"], row["day_off_ot"]), self.GROUP)
 
 	def test_the_cells_carry_the_scheduled_duration(self):
 		row = self._rows(BY_SHIFT_HOURS)[0]
@@ -285,20 +298,125 @@ class TestFormatShiftHours(FrappeTestCase):
 
 
 class TestMergeHoursMaps(FrappeTestCase):
+	MORNING = ("Morning", "Basic", 0)
+	EVENING = ("Evening", "Basic", 0)
+	NIGHT = ("Night", "Basic", 0)
+	MORNING_OT = ("Morning", "Over-Time", 0)
+
 	def test_later_maps_win_per_day(self):
 		merged = merge_hours_maps(
-			{"EMP-1": {"Morning": {"2026-01-10": 8.0, "2026-01-11": 8.0}}},
-			{"EMP-1": {"Morning": {"2026-01-11": 12.0}}},
+			{"EMP-1": {self.MORNING: {"2026-01-10": 8.0, "2026-01-11": 8.0}}},
+			{"EMP-1": {self.MORNING: {"2026-01-11": 12.0}}},
 		)
-		self.assertEqual(merged["EMP-1"]["Morning"], {"2026-01-10": 8.0, "2026-01-11": 12.0})
+		self.assertEqual(merged["EMP-1"][self.MORNING], {"2026-01-10": 8.0, "2026-01-11": 12.0})
 
-	def test_shifts_and_employees_are_kept_side_by_side(self):
+	def test_groups_and_employees_are_kept_side_by_side(self):
 		merged = merge_hours_maps(
-			{"EMP-1": {"Morning": {"2026-01-10": 8.0}}},
-			{"EMP-1": {"Evening": {"2026-01-10": 12.0}}, "EMP-2": {"Night": {"2026-01-10": 9.0}}},
+			{"EMP-1": {self.MORNING: {"2026-01-10": 8.0}}},
+			{"EMP-1": {self.EVENING: {"2026-01-10": 12.0}}, "EMP-2": {self.NIGHT: {"2026-01-10": 9.0}}},
 		)
-		self.assertEqual(set(merged["EMP-1"]), {"Morning", "Evening"})
-		self.assertEqual(merged["EMP-2"]["Night"]["2026-01-10"], 9.0)
+		self.assertEqual(set(merged["EMP-1"]), {self.MORNING, self.EVENING})
+		self.assertEqual(merged["EMP-2"][self.NIGHT]["2026-01-10"], 9.0)
+
+	def test_one_shift_on_two_roster_types_keeps_its_hours_apart(self):
+		# The reason the map is keyed by the group and not by the shift.
+		merged = merge_hours_maps(
+			{"EMP-1": {self.MORNING: {"2026-01-10": 8.0}}},
+			{"EMP-1": {self.MORNING_OT: {"2026-01-10": 4.0}}},
+		)
+		self.assertEqual(merged["EMP-1"][self.MORNING]["2026-01-10"], 8.0)
+		self.assertEqual(merged["EMP-1"][self.MORNING_OT]["2026-01-10"], 4.0)
 
 	def test_an_empty_map_is_tolerated(self):
 		self.assertEqual(merge_hours_maps({}, None), {})
+
+class TestRosterTypeAndDayOffOTAreCarried(FrappeTestCase):
+	"""Both were declared as columns and used as filters, but nothing ever put them on
+	a row, so they rendered blank down the whole report. A row is now one shift AND one
+	roster type AND one Day Off OT flag, which is what lets them carry a value.
+	"""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		cls.data = execute(_filters())[1]
+
+	def test_the_columns_are_declared(self):
+		names = {c["fieldname"] for c in execute(_filters())[0]}
+		self.assertIn("roster_type", names)
+		self.assertIn("day_off_ot", names)
+
+	def test_every_row_names_its_roster_type(self):
+		if not self.data:
+			self.skipTest("no attendance in the test range on this instance")
+		blank = [r for r in self.data if not r.get("roster_type")]
+		self.assertEqual(blank, [], msg=f"{len(blank)} rows carry no roster type")
+
+	def test_day_off_ot_is_a_flag_on_every_row(self):
+		if not self.data:
+			self.skipTest("no attendance in the test range on this instance")
+		for row in self.data:
+			self.assertIn(row.get("day_off_ot"), (0, 1), msg=row.get("employee_id"))
+
+	def test_a_filtered_run_only_returns_what_was_asked_for(self):
+		# The filter and the column have to agree, or the report says one thing and
+		# shows another.
+		for roster_type in ("Basic", "Over-Time"):
+			rows = execute(_filters(roster_type=roster_type))[1]
+			self.assertEqual(
+				{r.get("roster_type") for r in rows} - {roster_type}, set(), msg=roster_type
+			)
+
+	def test_day_off_ot_filter_returns_only_flagged_rows(self):
+		rows = execute(_filters(day_off_ot=1))[1]
+		self.assertEqual({r.get("day_off_ot") for r in rows} - {1}, set())
+
+
+class TestInPageFilters(FrappeTestCase):
+	"""Only what changes the query goes to the server. Frappe calls a filter's
+	on_change in place of refreshing, so the row-narrowing filters run in the browser
+	and no longer queue a background run per keystroke.
+	"""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		cls.source = frappe.read_file(
+			frappe.get_app_path(
+				"one_fm", "one_fm", "report", "operations_monthly_attendance_sheet",
+				"operations_monthly_attendance_sheet.js",
+			)
+		)
+
+	def test_the_row_narrowing_filters_run_in_page(self):
+		for fieldname in ("employee", "employee_status", "employment_type", "roster_type", "day_off_ot"):
+			block = self.source.split(f'fieldname: "{fieldname}"')[1].split("},")[0]
+			self.assertIn("on_change: apply_in_page_filters", block, msg=fieldname)
+
+	def test_the_filters_that_change_the_query_still_reach_the_server(self):
+		# Dates change the range, Include Future Attendance changes the source, and
+		# Generate Based On changes what the cells hold - none can be done in page.
+		for fieldname in ("from_date", "to_date", "include_future_attendance", "generate_based_on"):
+			block = self.source.split(f'fieldname: "{fieldname}"')[1].split("},")[0]
+			self.assertNotIn("on_change: apply_in_page_filters", block, msg=fieldname)
+
+	def test_project_stays_on_the_server(self):
+		# It narrows the Attendance rows too, not just which employees appear, so an
+		# employee with days booked elsewhere would come out differently in page.
+		block = self.source.split('fieldname: "project"')[1].split("},")[0]
+		self.assertNotIn("on_change: apply_in_page_filters", block)
+
+	def test_the_row_carries_what_the_in_page_filters_match_on(self):
+		columns = {c["fieldname"] for c in execute(_filters())[0]}
+		for fieldname in ("employee", "employee_status", "employment_type", "roster_type", "day_off_ot"):
+			self.assertIn(fieldname, columns, msg=fieldname)
+
+	def test_the_employee_column_holds_the_docname_the_filter_returns(self):
+		# The Employee filter returns a docname; the visible Employee ID is the badge
+		# number, so matching on that would never hit.
+		data = execute(_filters())[1]
+		if not data:
+			self.skipTest("no attendance in the test range on this instance")
+		for row in data[:20]:
+			self.assertTrue(frappe.db.exists("Employee", row.get("employee")), msg=row.get("employee"))
+

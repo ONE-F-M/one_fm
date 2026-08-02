@@ -93,13 +93,6 @@ def validate_filters(filters):
 def execute(filters):
 	filters = frappe._dict(filters or {})
 
-	# The report opens empty and is built only when Generate is clicked; a payroll
-	# extract over every employee is too expensive to run on each filter change.
-	if not cint(filters.get("generate")):
-		return get_columns(filters, dates=[]), [], _(
-			"Choose your filters, then click <b>Generate</b>."
-		)
-
 	validate_filters(filters)
 	dates = get_date_range(filters)
 
@@ -138,6 +131,9 @@ def get_columns(filters, dates):
 	# Narrow fixed columns: the AC asks the table to fit the screen, and every extra
 	# pixel here is taken from the day cells.
 	columns = [
+		# Carried for the in-page filters, which match on the docname the Employee
+		# filter returns; the badge number in Employee ID is a different value.
+		{"label": _("Employee"), "fieldname": "employee", "fieldtype": "Link", "options": "Employee", "hidden": 1, "width": 0},
 		{"label": _("Employee ID"), "fieldname": "employee_id", "fieldtype": "Data", "width": 90},
 		{"label": _("Employee Name"), "fieldname": "employee_name", "fieldtype": "Data", "width": 150},
 		{"label": _("Project"), "fieldname": "project", "fieldtype": "Link", "options": "Project", "width": 110},
@@ -184,13 +180,17 @@ def get_data(filters, dates, attendance_map, schedule_map, hours_map):
 
 
 def merge_hours_maps(*maps):
-	"""Merge {employee: {shift: {date: hours}}} maps, later ones winning (WI-001791)."""
+	"""Merge {employee: {group: {date: hours}}} maps, later ones winning (WI-001791).
+
+	The group is the row key from WI-001790 - shift, roster type and Day Off OT - so
+	each row picks up the hours belonging to it rather than to the shift as a whole.
+	"""
 	merged = {}
 
 	for hours_map in maps:
-		for employee, shifts in (hours_map or {}).items():
-			for shift, days in shifts.items():
-				merged.setdefault(employee, {}).setdefault(shift, {}).update(days)
+		for employee, groups in (hours_map or {}).items():
+			for group, days in groups.items():
+				merged.setdefault(employee, {}).setdefault(group, {}).update(days)
 
 	return merged
 
@@ -226,6 +226,16 @@ def get_message(filters=None):
 	return message
 
 
+def row_group(record):
+	"""The key a report row is grouped by: shift, roster type and the Day Off OT flag.
+
+	Grouping on all three is what lets the Roster Type and Day Off OT columns carry a
+	value - a row spanning both Basic and Over-Time could only leave them blank, which
+	is what it did.
+	"""
+	return (record.shift or "", record.roster_type or "", cint(record.day_off_ot))
+
+
 def get_attendance_map(filters):
 	"""Returns a dictionary of employee wise attendance map as per shifts for all the days of the month like
 	{
@@ -249,31 +259,32 @@ def get_attendance_map(filters):
 	leave_map = {}
 
 	for d in non_day_off_attendance_records:
-		if d.shift is None:
-			d.shift = ""
+		group = row_group(d)
 
 		# The scheduled duration is recorded for every day that has a shift, including
-		# the days spent on leave: it is what was rostered, not what was worked.
+		# the days spent on leave: it is what was rostered, not what was worked. Keyed
+		# by the same group as the row it belongs to, so a shift split across roster
+		# types keeps each part's hours with its own row.
 		if d.shift_hours:
-			hours_map.setdefault(d.employee, {}).setdefault(d.shift, {})[d.day_key] = d.shift_hours
+			hours_map.setdefault(d.employee, {}).setdefault(group, {})[d.day_key] = d.shift_hours
 
 		if d.status == "On Leave":
-			leave_map.setdefault(d.employee, {}).setdefault(d.shift, []).append(d.day_key)
+			leave_map.setdefault(d.employee, {}).setdefault(group, []).append(d.day_key)
 			continue
 
-		attendance_map.setdefault(d.employee, {}).setdefault(d.shift, {})
-		attendance_map[d.employee][d.shift][d.day_key] = d.status
+		attendance_map.setdefault(d.employee, {}).setdefault(group, {})
+		attendance_map[d.employee][group][d.day_key] = d.status
 
 	# leave is applicable for the entire day so all shifts should show the leave entry
 	for employee, leave_days in leave_map.items():
-		for assigned_shift, days in leave_days.items():
+		for assigned_group, days in leave_days.items():
 			# no attendance records exist except leaves
 			if employee not in attendance_map:
-				attendance_map.setdefault(employee, {}).setdefault(assigned_shift, {})
+				attendance_map.setdefault(employee, {}).setdefault(assigned_group, {})
 
 			for day in days:
-				for shift in attendance_map[employee].keys():
-					attendance_map[employee][shift][day] = "On Leave"
+				for group in attendance_map[employee].keys():
+					attendance_map[employee][group][day] = "On Leave"
 
 	return attendance_map, hours_map
 
@@ -289,6 +300,8 @@ def get_non_day_off_attendance_records(filters):
 			Attendance.employee,
 			Attendance.attendance_date.as_("day_key"),
 			Attendance.status,
+			Attendance.roster_type,
+			Attendance.day_off_ot,
 			OperationsShift.shift_classification.as_("shift"),
 			# The shift's scheduled length, for "Shift Hours" mode. Deliberately not
 			# Attendance.working_hours, which is what was actually clocked (WI-001791).
@@ -365,29 +378,28 @@ def get_schedule_map(filters):
 	leave_map = {}
 
 	for d in non_day_off_schedule_records:
-		if d.shift is None:
-			d.shift = ""
+		group = row_group(d)
 
 		if d.shift_hours:
-			hours_map.setdefault(d.employee, {}).setdefault(d.shift, {})[d.day_key] = d.shift_hours
+			hours_map.setdefault(d.employee, {}).setdefault(group, {})[d.day_key] = d.shift_hours
 
 		if d.status in ["Annual Leave"]:
-			leave_map.setdefault(d.employee, {}).setdefault(d.shift, []).append(d.day_key)
+			leave_map.setdefault(d.employee, {}).setdefault(group, []).append(d.day_key)
 			continue
 
-		schedule_map.setdefault(d.employee, {}).setdefault(d.shift, {})
-		schedule_map[d.employee][d.shift][d.day_key] = d.status
+		schedule_map.setdefault(d.employee, {}).setdefault(group, {})
+		schedule_map[d.employee][group][d.day_key] = d.status
 
 	# leave is applicable for the entire day so all shifts should show the leave entry
 	for employee, leave_days in leave_map.items():
-		for assigned_shift, days in leave_days.items():
+		for assigned_group, days in leave_days.items():
 			# no schedule records exist except leaves
 			if employee not in schedule_map:
-				schedule_map.setdefault(employee, {}).setdefault(assigned_shift, {})
+				schedule_map.setdefault(employee, {}).setdefault(assigned_group, {})
 
 			for day in days:
-				for shift in schedule_map[employee].keys():
-					schedule_map[employee][shift][day] = "Annual Leave"
+				for group in schedule_map[employee].keys():
+					schedule_map[employee][group][day] = "Annual Leave"
 
 	return schedule_map, hours_map
 
@@ -403,6 +415,8 @@ def get_non_day_off_schedule_records(filters):
 			EmployeeSchedule.employee,
 			EmployeeSchedule.date.as_("day_key"),
 			EmployeeSchedule.employee_availability.as_("status"),
+			EmployeeSchedule.roster_type,
+			EmployeeSchedule.day_off_ot,
 			OperationsShift.shift_classification.as_("shift"),
 			OperationsShift.duration.as_("shift_hours"),
 		)
@@ -522,6 +536,7 @@ def get_rows(employee_details, filters, dates, attendance_map, schedule_map, hou
 		# set employee details in the first row
 		for record in attendance_for_employee:
 			record.update({
+				"employee": employee,
 				"employee_id": details.employee_id,
 				"employee_name": details.employee_name,
 				"project": details.project,
@@ -569,13 +584,14 @@ def get_attendance_status(
 	employee_shift_hours = employee_shift_hours or {}
 	by_shift_hours = generate_based_on == BY_SHIFT_HOURS
 
-	shifts = set(employee_non_day_off_attendance.keys()) | set(employee_non_day_off_schedule.keys())
+	groups = set(employee_non_day_off_attendance.keys()) | set(employee_non_day_off_schedule.keys())
 
-	for shift in shifts:
-		row = {"shift": shift}
+	for group in groups:
+		shift, roster_type, day_off_ot = group
+		row = {"shift": shift, "roster_type": roster_type, "day_off_ot": day_off_ot}
 
 		# Merge Attendance and Schedule statuses
-		attendance_dict = { **employee_non_day_off_attendance.get(shift, {}), **employee_non_day_off_schedule.get(shift, {}) }
+		attendance_dict = { **employee_non_day_off_attendance.get(group, {}), **employee_non_day_off_schedule.get(group, {}) }
 
 		working_days = 0
 		off_days = 0
@@ -595,7 +611,7 @@ def get_attendance_status(
 			if by_shift_hours:
 				# The scheduled duration of the shift, never the hours actually clocked.
 				row[cstr(date)] = format_shift_hours(
-					employee_shift_hours.get(shift, {}).get(date)
+					employee_shift_hours.get(group, {}).get(date)
 				)
 			else:
 				row[cstr(date)] = attendance_status_map.get(status, "")
