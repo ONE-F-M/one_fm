@@ -92,44 +92,13 @@ frappe.query_reports["Operations Monthly Attendance Sheet"] = {
 			label: __("Include Future Attendance"),
 			fieldtype: "Check",
 		},
-		{
-			// Gates the run. The report opens empty and is built only when Generate is
-			// clicked, because a payroll extract over every employee is far too
-			// expensive to re-run on each filter change. Hidden: it is driven by the
-			// button, not set by hand.
-			fieldname: "generate",
-			label: __("Generate"),
-			fieldtype: "Check",
-			hidden: 1,
-			default: 0,
-		},
 	],
 	formatter: function (value, row, column, data, default_formatter) {
 		value = default_formatter(value, row, column, data);
 		if (column.colIndex < FIXED_COLUMNS) return value;
 		return `<span style='color:${status_color_map[value]}'>${value}</span>`;
 	},
-	onload: function (report) {
-		report.page.add_inner_button(__("Generate"), () => {
-			// Every filter change clears the flag again (see get_filter below), so the
-			// figures on screen always belong to the filters that produced them.
-			report.set_filter_value("generate", 1);
-		});
-
-		// Any filter change invalidates what is on screen: blank the report rather
-		// than leave stale numbers under new filter values.
-		report.filters
-			.filter((f) => f.df.fieldname !== "generate")
-			.forEach((filter) => {
-				const original = filter.df.onchange;
-				filter.df.onchange = function () {
-					if (original) original.apply(this, arguments);
-					if (frappe.query_report.get_filter_value("generate")) {
-						frappe.query_report.set_filter_value("generate", 0);
-					}
-				};
-			});
-
+	onload: function () {
 		attach_status_map();
 	},
 	after_datatable_render: function () {

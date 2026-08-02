@@ -21,12 +21,14 @@ from one_fm.one_fm.report.operations_monthly_attendance_sheet.operations_monthly
 	validate_filters,
 )
 
+REPORT = "Operations Monthly Attendance Sheet"
+
 FROM_DATE = "2026-01-10"
 TO_DATE = "2026-01-16"
 
 
 def _filters(**kwargs):
-	base = {"from_date": FROM_DATE, "to_date": TO_DATE, "generate": 1}
+	base = {"from_date": FROM_DATE, "to_date": TO_DATE}
 	base.update(kwargs)
 	return frappe._dict(base)
 
@@ -94,21 +96,25 @@ class TestColumns(FrappeTestCase):
 		self.assertEqual(len(fieldnames), len(set(fieldnames)))
 
 
-class TestGenerateGate(FrappeTestCase):
-	"""The report must open empty; a payroll extract is too costly to auto-run."""
+class TestTheRunIsDeferred(FrappeTestCase):
+	"""A payroll extract over every employee is too costly to run on each filter
+	change. That is the prepared report's job - it queues the run in the background and
+	offers "Generate New Report" - so the report no longer carries a Generate gate of
+	its own, which duplicated the framework's button.
+	"""
 
-	def test_nothing_is_queried_until_generate_is_set(self):
-		columns, data, message = execute(_filters(generate=0))
-		self.assertEqual(data, [])
-		self.assertIn("Generate", message)
+	def test_the_report_is_a_prepared_report(self):
+		self.assertTrue(frappe.db.get_value("Report", REPORT, "prepared_report"))
 
-	def test_no_day_columns_are_offered_before_generating(self):
-		columns, data, _msg = execute(_filters(generate=0))
-		self.assertEqual([c for c in columns if c.get("width") == 65], [])
-
-	def test_dates_are_not_validated_before_generating(self):
-		# Opening the report with no dates yet must not throw in the user's face.
-		execute(frappe._dict(generate=0))
+	def test_no_generate_filter_is_declared(self):
+		source = frappe.read_file(
+			frappe.get_app_path(
+				"one_fm", "one_fm", "report", "operations_monthly_attendance_sheet",
+				"operations_monthly_attendance_sheet.js",
+			)
+		)
+		self.assertNotIn('fieldname: "generate"', source)
+		self.assertNotIn('add_inner_button(__("Generate")', source)
 
 
 class TestDayHeaders(FrappeTestCase):
@@ -160,3 +166,46 @@ class TestAgainstRealData(FrappeTestCase):
 		if data:
 			day_fields = [c["fieldname"] for c in columns if c.get("width") == 65]
 			self.assertTrue(any(row.get(f) for row in data for f in day_fields))
+
+
+class TestRosterTypeAndDayOffOTAreCarried(FrappeTestCase):
+	"""Both were declared as columns and used as filters, but nothing ever put them on
+	a row, so they rendered blank down the whole report. A row is now one shift AND one
+	roster type AND one Day Off OT flag, which is what lets them carry a value.
+	"""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		cls.data = execute(_filters())[1]
+
+	def test_the_columns_are_declared(self):
+		names = {c["fieldname"] for c in execute(_filters())[0]}
+		self.assertIn("roster_type", names)
+		self.assertIn("day_off_ot", names)
+
+	def test_every_row_names_its_roster_type(self):
+		if not self.data:
+			self.skipTest("no attendance in the test range on this instance")
+		blank = [r for r in self.data if not r.get("roster_type")]
+		self.assertEqual(blank, [], msg=f"{len(blank)} rows carry no roster type")
+
+	def test_day_off_ot_is_a_flag_on_every_row(self):
+		if not self.data:
+			self.skipTest("no attendance in the test range on this instance")
+		for row in self.data:
+			self.assertIn(row.get("day_off_ot"), (0, 1), msg=row.get("employee_id"))
+
+	def test_a_filtered_run_only_returns_what_was_asked_for(self):
+		# The filter and the column have to agree, or the report says one thing and
+		# shows another.
+		for roster_type in ("Basic", "Over-Time"):
+			rows = execute(_filters(roster_type=roster_type))[1]
+			self.assertEqual(
+				{r.get("roster_type") for r in rows} - {roster_type}, set(), msg=roster_type
+			)
+
+	def test_day_off_ot_filter_returns_only_flagged_rows(self):
+		rows = execute(_filters(day_off_ot=1))[1]
+		self.assertEqual({r.get("day_off_ot") for r in rows} - {1}, set())
+
