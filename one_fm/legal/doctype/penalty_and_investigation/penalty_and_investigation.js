@@ -1,4 +1,10 @@
 frappe.ui.form.on("Penalty And Investigation", {
+	setup: function (frm) {
+		// A retired penalty code must not be offered for a new penalty (WI-001794).
+		frm.set_query("applied_penalty_code", function () {
+			return { filters: { is_active: 1 } };
+		});
+	},
 	onload: function (frm) {
 		if (frm.is_new()) {
 			frm.set_value("issuance_date", frappe.datetime.get_today());
