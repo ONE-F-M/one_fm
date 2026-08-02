@@ -6,6 +6,8 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import get_first_day, get_last_day, getdate
 
 from one_fm.one_fm.doctype.proof_of_work.proof_of_work import (
+	WORKED_ABBRS,
+	_hour_cells,
 	ATTENDANCE_ABBR,
 	DAY_OFF_ABBRS,
 	DEFAULT_GENERATION_BASIS,
@@ -622,3 +624,62 @@ class TestLetterCarriesTheNonManpowerTable(FrappeTestCase):
 	def test_it_carries_a_total_row(self):
 		self.assertIn("nm-total", self.print_format.html)
 		self.assertIn('sum(attribute="amount")', self.print_format.html)
+
+
+class TestHourlyDayCells(FrappeTestCase):
+	"""An Hourly Sale Item reports its day cells in hours, not attendance statuses
+	(WI-001808), so the sheet reads in the same metric as the summary above it.
+	"""
+
+	def _emp(self, hours):
+		return {"hours": hours}
+
+	def test_a_worked_day_shows_the_hours_recorded_against_it(self):
+		cells, total = _hour_cells(
+			self._emp({1: 11.51, 2: 9.88, 3: 12.0}), ["P", "P", "P"], 3, shift_hours=12
+		)
+		self.assertEqual(cells, ["11.51", "9.88", "12"])
+		self.assertAlmostEqual(total, 33.39)
+
+	def test_a_day_not_worked_keeps_its_abbreviation(self):
+		# "0" against an absence reads as a figure rather than an explanation.
+		cells, total = _hour_cells(self._emp({1: 8.0}), ["P", "DO", "A"], 3, shift_hours=8)
+		self.assertEqual(cells, ["8", "DO", "A"])
+		self.assertAlmostEqual(total, 8.0)
+
+	def test_a_worked_day_with_no_recorded_hours_falls_back_to_the_shift_length(self):
+		# An Attendance Amendment carries statuses only. The summary applies the same
+		# fallback, so the row still adds up to what page 1 reports.
+		cells, total = _hour_cells(self._emp({}), ["P", "P"], 2, shift_hours=12)
+		self.assertEqual(cells, ["12", "12"])
+		self.assertAlmostEqual(total, 24.0)
+
+	def test_a_half_day_counts_as_worked(self):
+		cells, _total = _hour_cells(self._emp({1: 4.0}), ["HD"], 1, shift_hours=8)
+		self.assertEqual(cells, ["4"])
+
+	def test_an_empty_day_stays_empty(self):
+		cells, total = _hour_cells(self._emp({}), ["", ""], 2, shift_hours=12)
+		self.assertEqual(cells, ["", ""])
+		self.assertEqual(total, 0.0)
+
+	def test_the_worked_set_tracks_the_present_statuses(self):
+		# Derived rather than restated, so a new present status cannot start reporting
+		# as an unworked day.
+		self.assertIn("P", WORKED_ABBRS)
+		self.assertIn("HD", WORKED_ABBRS)
+		self.assertNotIn("DO", WORKED_ABBRS)
+		self.assertNotIn("A", WORKED_ABBRS)
+
+	def test_the_sheet_follows_the_same_basis_as_the_summary(self):
+		# The gate calls _basis_for_rate_type - page 1's own function - so the two
+		# pages cannot end up reporting one Sale Item in two different metrics.
+		source = frappe.read_file(
+			frappe.get_app_path(
+				"one_fm", "one_fm", "doctype", "proof_of_work", "proof_of_work.py"
+			)
+		)
+		grid = source.split("def get_pow_attendance_report")[1]
+		self.assertIn("_basis_for_rate_type(", grid)
+		self.assertIn('by_hours = basis == "Shift Hours"', grid)
+
