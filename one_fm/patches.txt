@@ -301,6 +301,8 @@ one_fm.patches.v15_0.cleanup_todo_type_field
 one_fm.patches.v15_0.update_vehicle_category_naming #2026-06-17
 one_fm.patches.v15_0.rename_fleet_workspace_to_transportation #2026-06-10 #2
 one_fm.patches.v15_0.rename_route_planner_page_to_transportation_schedule
+one_fm.patches.v15_0.update_vehicle_naming_series_select #6
+one_fm.patches.v15_0.remove_vehicle_custom_naming_series_field #2026-07-27
 one_fm.patches.v15_0.update_purchase_receipt_prc_2026_000101_posting_date
 one_fm.patches.v15_0.update_job_offer_day_off_category_for_job_applicants
 one_fm.patches.v15_0.add_phone_option_to_job_applicant_contact_number
@@ -487,6 +489,9 @@ one_fm.patches.v15_0.backfill_subcontractor_name_in_onboard_subcontract_employee
 one_fm.patches.v15_0.delete_pending_approval_attendance_checks_airport_t4_jul12 #2026-07-13
 one_fm.patches.v15_0.send_amp_verification_test_email #2026-07-14
 one_fm.patches.v15_0.remove_pam_visa_doctype #2026-07-16
+one_fm.patches.v15_0.add_project_sprint_prefix_field #2026-07-23
+one_fm.patches.v15_0.show_project_users_section_for_scrum #2026-07-23
+one_fm.patches.v15_0.backfill_project_sprint_prefix #2026-07-27
 
 
 
@@ -511,6 +516,7 @@ one_fm.patches.v15_0.add_arrival_acknowledgement_department_roles #2026-07-21
 one_fm.patches.v15_0.add_arrival_and_deployment_support_departments_workflow #2026-07-22
 one_fm.patches.v15_0.allow_any_operations_manager_to_approve_resignation_withdrawal #2026-07-22
 one_fm.patches.v15_0.backfill_pmr_resignation_custom_docperm #2026-07-22
+one_fm.patches.v15_0.update_pmr_and_resignation_workflow_permissions #2026-06-30
 one_fm.patches.v15_0.add_transportation_manager_to_pmr_and_resignation_workflows #2026-07-22
 one_fm.patches.v15_0.backfill_employee_resignation_letter_date #2026-07-22
 one_fm.patches.v15_0.rebalance_employee_resignation_layout #rerun-2026-07-23-stack-dates
@@ -542,4 +548,6 @@ one_fm.patches.v15_0.seed_app_services
 one_fm.patches.v15_0.set_candidate_title_fields
 one_fm.patches.v15_0.update_attendance_check
 one_fm.patches.v15_0.update_employee_and_user_references
+one_fm.patches.v15_0.send_work_item_notify_assignee_demo_email
+one_fm.patches.v15_0.mark_present_auto_attendance_missed_checkin_jul13
 one_fm.patches.v15_0.add_employee_schedule_suspension_workflow #2026-07-24
