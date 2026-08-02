@@ -1,146 +1,289 @@
 {
- "doctype": "Workflow",
+ "workflow_name": "Penalty & Investigation",
  "document_type": "Penalty And Investigation",
  "is_active": 1,
- "name": "Penalty & Investigation",
  "override_status": 0,
  "send_email_alert": 0,
+ "workflow_state_field": "workflow_state",
+ "doctype": "Workflow",
  "states": [
   {
-   "allow_edit": "HR User",
+   "state": "Draft",
    "doc_status": "0",
-   "doctype": "Workflow Document State",
-   "state": "Draft"
+   "update_value": "",
+   "style": "Danger",
+   "is_optional_state": 0,
+   "avoid_status_override": 0,
+   "allow_edit": "HR User",
+   "send_email": 1,
+   "doctype": "Workflow Document State"
   },
   {
-   "allow_edit": "HR User",
+   "state": "Pending HR Administrator",
    "doc_status": "0",
-   "doctype": "Workflow Document State",
-   "state": "Pending HR Administrator"
+   "update_value": "",
+   "style": "Primary",
+   "is_optional_state": 0,
+   "avoid_status_override": 0,
+   "allow_edit": "HR User",
+   "send_email": 1,
+   "doctype": "Workflow Document State"
   },
   {
+   "state": "Pending General Manager",
+   "doc_status": "0",
+   "update_value": "",
+   "style": "Warning",
+   "is_optional_state": 0,
+   "avoid_status_override": 0,
    "allow_edit": "General Manager",
-   "doc_status": "0",
-   "doctype": "Workflow Document State",
-   "state": "Pending General Manager"
+   "send_email": 1,
+   "doctype": "Workflow Document State"
   },
   {
+   "state": "Pending Legal Manager",
+   "doc_status": "0",
+   "update_value": "",
+   "style": "Warning",
+   "is_optional_state": 0,
+   "avoid_status_override": 0,
    "allow_edit": "Legal Manager",
-   "doc_status": "0",
-   "doctype": "Workflow Document State",
-   "state": "Pending Legal Manager"
+   "send_email": 1,
+   "doctype": "Workflow Document State"
   },
   {
-   "allow_edit": "System Manager",
+   "state": "Cancelled",
    "doc_status": "2",
-   "doctype": "Workflow Document State",
-   "state": "Cancelled"
+   "style": "Danger",
+   "is_optional_state": 0,
+   "avoid_status_override": 0,
+   "allow_edit": "System Manager",
+   "send_email": 1,
+   "doctype": "Workflow Document State"
   },
   {
-   "allow_edit": "HR Manager",
+   "state": "Completed",
    "doc_status": "1",
-   "doctype": "Workflow Document State",
-   "state": "Approved"
+   "style": "Success",
+   "is_optional_state": 0,
+   "avoid_status_override": 0,
+   "allow_edit": "HR Manager",
+   "send_email": 1,
+   "doctype": "Workflow Document State"
   },
   {
+   "state": "Rejected",
+   "doc_status": "0",
+   "style": "Primary",
+   "is_optional_state": 0,
+   "avoid_status_override": 0,
    "allow_edit": "General Manager",
-   "doc_status": "0",
-   "doctype": "Workflow Document State",
-   "state": "Rejected"
+   "send_email": 1,
+   "doctype": "Workflow Document State"
   },
   {
+   "state": "Cancelled",
+   "doc_status": "2",
+   "style": "Danger",
+   "is_optional_state": 0,
+   "avoid_status_override": 0,
    "allow_edit": "HR User",
+   "send_email": 1,
+   "doctype": "Workflow Document State"
+  },
+  {
+   "state": "On Hold",
    "doc_status": "0",
-   "doctype": "Workflow Document State",
-   "state": "On Hold"
+   "style": "Inverse",
+   "is_optional_state": 0,
+   "avoid_status_override": 0,
+   "allow_edit": "HR User",
+   "send_email": 1,
+   "doctype": "Workflow Document State"
+  },
+  {
+   "state": "Pending Payroll Officer",
+   "doc_status": "1",
+   "style": "Danger",
+   "is_optional_state": 0,
+   "avoid_status_override": 0,
+   "allow_edit": "Payroll Operator",
+   "send_email": 1,
+   "doctype": "Workflow Document State"
   }
  ],
  "transitions": [
   {
+   "state": "Draft",
    "action": "Submit",
-   "allowed": "HR User",
-   "doctype": "Workflow Transition",
    "next_state": "Pending HR Administrator",
-   "state": "Draft"
+   "allowed": "HR User",
+   "allow_self_approval": 1,
+   "send_email_to_creator": 0,
+   "skip_multiple_action": 0,
+   "skip_creation_of_workflow_action": 0,
+   "custom_confirm_transition": 0,
+   "require_digital_signature": 0,
+   "doctype": "Workflow Transition"
   },
   {
+   "state": "Pending HR Administrator",
    "action": "Put On Hold",
-   "allowed": "HR User",
-   "doctype": "Workflow Transition",
    "next_state": "On Hold",
-   "state": "Pending HR Administrator"
+   "allowed": "HR User",
+   "allow_self_approval": 1,
+   "send_email_to_creator": 0,
+   "skip_multiple_action": 0,
+   "skip_creation_of_workflow_action": 0,
+   "custom_confirm_transition": 0,
+   "require_digital_signature": 0,
+   "doctype": "Workflow Transition"
   },
   {
+   "state": "Pending HR Administrator",
    "action": "Return To Draft",
-   "allowed": "HR User",
-   "doctype": "Workflow Transition",
    "next_state": "Draft",
-   "state": "Pending HR Administrator"
+   "allowed": "HR User",
+   "allow_self_approval": 1,
+   "send_email_to_creator": 0,
+   "skip_multiple_action": 0,
+   "skip_creation_of_workflow_action": 0,
+   "custom_confirm_transition": 0,
+   "require_digital_signature": 0,
+   "doctype": "Workflow Transition"
   },
   {
+   "state": "Pending HR Administrator",
    "action": "Submit to GM",
-   "allowed": "HR User",
-   "doctype": "Workflow Transition",
    "next_state": "Pending General Manager",
-   "state": "Pending HR Administrator"
-  },
-  {
-   "action": "Approve",
    "allowed": "HR User",
+   "allow_self_approval": 1,
+   "send_email_to_creator": 0,
+   "skip_multiple_action": 0,
+   "skip_creation_of_workflow_action": 0,
+   "custom_confirm_transition": 0,
+   "require_digital_signature": 0,
    "doctype": "Workflow Transition",
-   "next_state": "Approved",
-   "state": "Pending HR Administrator"
+   "condition": "doc.employee_response not in (\"Accepted\", \"Refused\", \"Not Return from Vacation\")"
   },
   {
+   "state": "Pending HR Administrator",
+   "action": "Submit",
+   "next_state": "Pending Payroll Officer",
+   "allowed": "HR User",
+   "allow_self_approval": 1,
+   "send_email_to_creator": 0,
+   "skip_multiple_action": 0,
+   "skip_creation_of_workflow_action": 0,
+   "custom_confirm_transition": 0,
+   "require_digital_signature": 0,
+   "doctype": "Workflow Transition",
+   "condition": "doc.employee_response in (\"Accepted\", \"Refused\", \"Not Return from Vacation\")"
+  },
+  {
+   "state": "Pending HR Administrator",
    "action": "Submit to Legal",
-   "allowed": "HR User",
-   "doctype": "Workflow Transition",
    "next_state": "Pending Legal Manager",
-   "state": "Pending HR Administrator"
+   "allowed": "HR User",
+   "allow_self_approval": 1,
+   "send_email_to_creator": 0,
+   "skip_multiple_action": 0,
+   "skip_creation_of_workflow_action": 0,
+   "custom_confirm_transition": 0,
+   "require_digital_signature": 0,
+   "doctype": "Workflow Transition",
+   "condition": "doc.employee_response == \"Request for Investigation by Employee\" or (frappe.db.get_value(\"Employee\", doc.employee, \"one_fm_basic_salary\") or 0) > 350"
   },
   {
+   "state": "Pending Legal Manager",
    "action": "Submit to GM",
-   "allowed": "Legal Manager",
-   "doctype": "Workflow Transition",
    "next_state": "Pending General Manager",
-   "state": "Pending Legal Manager"
+   "allowed": "Legal Manager",
+   "allow_self_approval": 1,
+   "send_email_to_creator": 0,
+   "skip_multiple_action": 0,
+   "skip_creation_of_workflow_action": 0,
+   "custom_confirm_transition": 0,
+   "require_digital_signature": 0,
+   "doctype": "Workflow Transition"
   },
   {
-   "action": "Approve",
+   "state": "Pending General Manager",
+   "action": "Submit",
+   "next_state": "Pending Payroll Officer",
    "allowed": "General Manager",
-   "doctype": "Workflow Transition",
-   "next_state": "Approved",
-   "state": "Pending General Manager"
+   "allow_self_approval": 1,
+   "send_email_to_creator": 0,
+   "skip_multiple_action": 0,
+   "skip_creation_of_workflow_action": 0,
+   "custom_confirm_transition": 0,
+   "require_digital_signature": 0,
+   "doctype": "Workflow Transition"
   },
   {
+   "state": "Pending General Manager",
    "action": "Reject",
-   "allowed": "General Manager",
-   "doctype": "Workflow Transition",
    "next_state": "Rejected",
-   "state": "Pending General Manager"
+   "allowed": "General Manager",
+   "allow_self_approval": 1,
+   "send_email_to_creator": 0,
+   "skip_multiple_action": 0,
+   "skip_creation_of_workflow_action": 0,
+   "custom_confirm_transition": 0,
+   "require_digital_signature": 0,
+   "doctype": "Workflow Transition"
   },
   {
+   "state": "Pending Payroll Officer",
    "action": "Cancel",
-   "allowed": "HR User",
-   "doctype": "Workflow Transition",
    "next_state": "Cancelled",
-   "state": "Approved"
+   "allowed": "HR User",
+   "allow_self_approval": 1,
+   "send_email_to_creator": 0,
+   "skip_multiple_action": 0,
+   "skip_creation_of_workflow_action": 0,
+   "custom_confirm_transition": 0,
+   "require_digital_signature": 0,
+   "doctype": "Workflow Transition"
   },
   {
+   "state": "On Hold",
    "action": "Approve",
+   "next_state": "Pending Payroll Officer",
    "allowed": "HR User",
-   "doctype": "Workflow Transition",
-   "next_state": "Approved",
-   "state": "On Hold"
+   "allow_self_approval": 1,
+   "send_email_to_creator": 0,
+   "skip_multiple_action": 0,
+   "skip_creation_of_workflow_action": 0,
+   "custom_confirm_transition": 0,
+   "require_digital_signature": 0,
+   "doctype": "Workflow Transition"
   },
   {
+   "state": "On Hold",
    "action": "Reject",
-   "allowed": "HR User",
-   "doctype": "Workflow Transition",
    "next_state": "Rejected",
-   "state": "On Hold"
+   "allowed": "HR User",
+   "allow_self_approval": 1,
+   "send_email_to_creator": 0,
+   "skip_multiple_action": 0,
+   "skip_creation_of_workflow_action": 0,
+   "custom_confirm_transition": 0,
+   "require_digital_signature": 0,
+   "doctype": "Workflow Transition"
+  },
+  {
+   "state": "Pending Payroll Officer",
+   "action": "Submit",
+   "next_state": "Completed",
+   "allowed": "Payroll Operator",
+   "allow_self_approval": 1,
+   "send_email_to_creator": 0,
+   "skip_multiple_action": 0,
+   "skip_creation_of_workflow_action": 0,
+   "custom_confirm_transition": 0,
+   "require_digital_signature": 0,
+   "doctype": "Workflow Transition"
   }
- ],
- "workflow_name": "Penalty & Investigation",
- "workflow_state_field": "workflow_state"
+ ]
 }

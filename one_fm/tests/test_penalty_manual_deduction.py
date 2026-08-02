@@ -32,13 +32,13 @@ class TestPenaltyCategoryOptions(FrappeTestCase):
 
 	def test_action_type_still_offers_the_code_driven_values(self):
 		self.assertEqual(
-			self._options("deduction_type"),
+			self._options("action_type"),
 			["Warning", "Salary Deduction", "Suspension", "Termination"],
 		)
 
 	def test_action_type_is_still_labelled_action_type(self):
 		# Relabelled rather than duplicated, so there is one source of truth.
-		self.assertEqual(self.meta.get_field("deduction_type").label, "Action Type")
+		self.assertEqual(self.meta.get_field("action_type").label, "Action Type")
 
 
 class TestEditabilityFollowsThePenaltyCode(FrappeTestCase):
@@ -50,7 +50,7 @@ class TestEditabilityFollowsThePenaltyCode(FrappeTestCase):
 		cls.meta = frappe.get_meta(DOCTYPE)
 
 	def test_the_three_manual_fields_unlock_when_no_code_is_selected(self):
-		for fieldname in ("penalty_category", "deduction_type", "salary_deduction_amount"):
+		for fieldname in ("penalty_category", "action_type", "salary_deduction_amount"):
 			df = self.meta.get_field(fieldname)
 			self.assertEqual(df.read_only_depends_on, CODE_DRIVEN, msg=fieldname)
 			# A static read_only would win over the conditional rule.
