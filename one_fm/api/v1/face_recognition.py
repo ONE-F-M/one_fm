@@ -341,7 +341,10 @@ def get_site_location(employee_id: str = None, shift: str = None,latitude: float
                 if distance > float(result.geofence_radius):
                     result['user_within_geofence_radius'] = False
 
-                result['site_name'] = site
+                # Show the resolved geofence Location as the check-in site name so an
+                # approved Shift Request / check-in-site override is reflected. Fall back to
+                # the Operations Shift site only when the location has no name.
+                result['site_name'] = result.get('name') or site
                 if shift:
                     result['shift'] = {**shift.as_dict(), 'log_type': log_type, 'is_completed': shift.get("is_completed", False)}
 
@@ -425,7 +428,7 @@ def get_shift_site_location(shift, date, log_type, latitude=None, longitude=None
             return frappe.get_value(
                 "Location",
                 {"name": shift.site_location},
-                ["latitude", "longitude", "geofence_radius"],
+                ["name", "latitude", "longitude", "geofence_radius"],
                 as_dict=True
             )
         elif shift.shift:
@@ -447,7 +450,7 @@ def get_shift_site_location(shift, date, log_type, latitude=None, longitude=None
                         if not loc_row.disabled and loc_row.site_location:
                             return frappe.db.get_value(
                                 "Location", loc_row.site_location,
-                                ["latitude", "longitude", "geofence_radius"], as_dict=True
+                                ["name", "latitude", "longitude", "geofence_radius"], as_dict=True
                             )
                     return None
 
@@ -460,7 +463,7 @@ def get_shift_site_location(shift, date, log_type, latitude=None, longitude=None
                         continue
                     loc_data = frappe.db.get_value(
                         "Location", loc_row.site_location,
-                        ["latitude", "longitude", "geofence_radius"], as_dict=True
+                        ["name", "latitude", "longitude", "geofence_radius"], as_dict=True
                     )
                     if not loc_data:
                         continue
@@ -477,7 +480,7 @@ def get_shift_site_location(shift, date, log_type, latitude=None, longitude=None
                 if site_location:
                     return frappe.db.get_value(
                         "Location", site_location,
-                        ["latitude", "longitude", "geofence_radius"], as_dict=True
+                        ["name", "latitude", "longitude", "geofence_radius"], as_dict=True
                     )
                 return None
     return location
@@ -537,7 +540,7 @@ def get_shift_request_site_location(employee, date, log_type):
             return frappe.get_value(
                 "Location",
                 {"name": location},
-                ["latitude", "longitude", "geofence_radius"],
+                ["name", "latitude", "longitude", "geofence_radius"],
                 as_dict=True
             )
     return None
