@@ -13,37 +13,30 @@
   "users": [],
   "assignment_days": [
     {
-      "name": "1jjftq9v19",
       "day": "Monday",
       "doctype": "Assignment Rule Day"
     },
     {
-      "name": "1jjh0200v6",
       "day": "Tuesday",
       "doctype": "Assignment Rule Day"
     },
     {
-      "name": "1jj4ip2rqk",
       "day": "Wednesday",
       "doctype": "Assignment Rule Day"
     },
     {
-      "name": "1jjh7fmjcn",
       "day": "Thursday",
       "doctype": "Assignment Rule Day"
     },
     {
-      "name": "1jj1jiell6",
       "day": "Friday",
       "doctype": "Assignment Rule Day"
     },
     {
-      "name": "1jjc3mqfqf",
       "day": "Saturday",
       "doctype": "Assignment Rule Day"
     },
     {
-      "name": "1jja5cimkq",
       "day": "Sunday",
       "doctype": "Assignment Rule Day"
     }

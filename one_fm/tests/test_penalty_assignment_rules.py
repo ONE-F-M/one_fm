@@ -24,6 +24,10 @@ RULES = {
 		"penalty_and_investigation_general_manager.json",
 		"Pending General Manager",
 	),
+	"Penalty and Investigation-Payroll Officer": (
+		"penalty_and_investigation_payroll_officer.json",
+		"Pending Payroll Officer",
+	),
 }
 
 WORKFLOW = "Penalty & Investigation"
@@ -87,12 +91,9 @@ class TestConditionsMatchTheWorkflow(FrappeTestCase):
 		for name, (_json_file, state) in RULES.items():
 			self.assertIn(state, states, msg=name)
 
-	def test_the_waiting_states_without_a_rule_are_known(self):
-		"""Every state a penalty stops in wants an owner, but only three rules were
-		supplied. Pending Payroll Officer arrived with WI-001796's updated criteria and
-		has no rule of its own, so nobody is assigned when a penalty reaches payroll.
-		Recorded here rather than invented: no rule for it exists in WI-001798.json.
-		"""
+	def test_no_waiting_state_is_left_unassigned(self):
+		# Every state a penalty stops in and waits for a decision needs an owner. Payroll
+		# arrived with WI-001796's updated criteria and now has a rule of its own.
 		waiting = {
 			d.state
 			for d in frappe.get_doc("Workflow", WORKFLOW).states
@@ -101,7 +102,7 @@ class TestConditionsMatchTheWorkflow(FrappeTestCase):
 		covered = {state for _f, state in RULES.values()}
 
 		self.assertEqual(covered - waiting, set(), msg="a rule waits on a state that is gone")
-		self.assertEqual(waiting - covered, {"Pending Payroll Officer"})
+		self.assertEqual(waiting - covered, set(), msg="a waiting state has no rule")
 
 	def test_each_rule_names_its_own_state(self):
 		for name, (_json_file, state) in RULES.items():
@@ -158,3 +159,21 @@ class TestConditionsActuallyEvaluate(FrappeTestCase):
 			for other in set(states) - {own_state}:
 				self.assertFalse(self._eval(rule.assign_condition, other), msg=f"{name} on {other}")
 				self.assertTrue(self._eval(rule.close_condition, other), msg=f"{name} on {other}")
+
+
+class TestAssignmentDays(FrappeTestCase):
+	def test_every_rule_covers_all_seven_days(self):
+		for name in RULES:
+			self.assertEqual(
+				[d.day for d in _rule(name).assignment_days],
+				["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+				msg=name,
+			)
+
+	def test_the_fixtures_do_not_pin_child_row_names(self):
+		# Frappe names child rows on insert. A name carried over from the site the rule
+		# was exported from is an artefact, and reusing one risks colliding with a row
+		# that already exists.
+		for _name, (json_file, _state) in RULES.items():
+			for row in get_assignment_rule_json_file(json_file)["assignment_days"]:
+				self.assertNotIn("name", row, msg=json_file)

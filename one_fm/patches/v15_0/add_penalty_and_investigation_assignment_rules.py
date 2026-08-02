@@ -8,6 +8,7 @@ ASSIGNMENT_RULES = [
 	"penalty_and_investigation_hr_administrator.json",
 	"penalty_and_investigation_legal_manager.json",
 	"penalty_and_investigation_general_manager.json",
+	"penalty_and_investigation_payroll_officer.json",
 ]
 
 

@@ -78,6 +78,7 @@ def create_assignment_rules():
 	create_assignment_rule(get_assignment_rule_json_file("penalty_and_investigation_hr_administrator.json"))
 	create_assignment_rule(get_assignment_rule_json_file("penalty_and_investigation_legal_manager.json"))
 	create_assignment_rule(get_assignment_rule_json_file("penalty_and_investigation_general_manager.json"))
+	create_assignment_rule(get_assignment_rule_json_file("penalty_and_investigation_payroll_officer.json"))
 
 def delete_assignment_rules():
 	delete_assignment_rule(get_assignment_rule_json_file("roster_post_action_site_supervisor.json"))
@@ -118,3 +119,4 @@ def delete_assignment_rules():
 	delete_assignment_rule(get_assignment_rule_json_file("penalty_and_investigation_hr_administrator.json"))
 	delete_assignment_rule(get_assignment_rule_json_file("penalty_and_investigation_legal_manager.json"))
 	delete_assignment_rule(get_assignment_rule_json_file("penalty_and_investigation_general_manager.json"))
+	delete_assignment_rule(get_assignment_rule_json_file("penalty_and_investigation_payroll_officer.json"))
