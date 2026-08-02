@@ -10,70 +10,60 @@ const status_color_map = {
 	"CDO": "blue"
 };
 
+// Fixed columns before the per-day cells; the formatter colours only the day cells.
+const FIXED_COLUMNS = 8;
+
 frappe.query_reports["Operations Monthly Attendance Sheet"] = {
 	"filters": [
 		{
-			fieldname: "month",
-			label: __("Month"),
-			fieldtype: "Select",
+			fieldname: "from_date",
+			label: __("From Date"),
+			fieldtype: "Date",
+			default: frappe.datetime.month_start(),
 			reqd: 1,
-			options: [
-				{ value: 1, label: __("January") },
-				{ value: 2, label: __("February") },
-				{ value: 3, label: __("March") },
-				{ value: 4, label: __("April") },
-				{ value: 5, label: __("May") },
-				{ value: 6, label: __("June") },
-				{ value: 7, label: __("July") },
-				{ value: 8, label: __("August") },
-				{ value: 9, label: __("September") },
-				{ value: 10, label: __("October") },
-				{ value: 11, label: __("November") },
-				{ value: 12, label: __("December") },
-			],
-			default: frappe.datetime.str_to_obj(frappe.datetime.get_today()).getMonth() + 1,
-			on_change: function (report) {
-				attach_report_additional_day_details().then(() => {
-					report.refresh();
-				})
-			}
 		},
 		{
-			fieldname: "year",
-			label: __("Year"),
-			fieldtype: "Select",
+			fieldname: "to_date",
+			label: __("To Date"),
+			fieldtype: "Date",
+			default: frappe.datetime.month_end(),
 			reqd: 1,
-			on_change: function (report) {
-				attach_report_additional_day_details().then(() => {
-					report.refresh();
-				})
-			}
+		},
+		{
+			fieldname: "employee",
+			label: __("Employee"),
+			fieldtype: "Link",
+			options: "Employee",
+		},
+		{
+			fieldname: "employee_status",
+			label: __("Employee Status"),
+			fieldtype: "Select",
+			// Blank means every status, so a payroll run can include leavers.
+			options: ["", "Active", "Inactive", "Suspended", "Left"],
+		},
+		{
+			fieldname: "employment_type",
+			label: __("Employment Type"),
+			fieldtype: "Link",
+			options: "Employment Type",
+		},
+		{
+			fieldname: "roster_type",
+			label: __("Roster Type"),
+			fieldtype: "Select",
+			options: ["", "Basic", "Over-Time"],
+		},
+		{
+			fieldname: "day_off_ot",
+			label: __("Day Off OT"),
+			fieldtype: "Check",
 		},
 		{
 			fieldname: "project",
 			label: __("Project"),
 			fieldtype: "Link",
 			options: "Project",
-			reqd: 1,
-			on_change: function (report) {
-				report.refresh();
-				const project = report.get_filter("project").get_value();
-				if (project) {
-					frappe.call({
-						method: "frappe.client.get",
-						args: {
-							doctype: "Project",
-							name: project
-						},
-						callback: function(r) {
-							frappe.query_report.additional_details = {
-								...(report.additional_details || {}),
-								client_logo: r.message.project_image || ""
-							};
-						}
-					});
-				}
-			}
 		},
 		{
 			fieldname: "site",
@@ -91,6 +81,13 @@ frappe.query_reports["Operations Monthly Attendance Sheet"] = {
 			}
 		},
 		{
+			fieldname: "generate_based_on",
+			label: __("Generate Based On"),
+			fieldtype: "Select",
+			options: ["Attendance Status", "Shift Hours"],
+			default: "Attendance Status",
+		},
+		{
 			fieldname: "include_future_attendance",
 			label: __("Include Future Attendance"),
 			fieldtype: "Check",
@@ -98,36 +95,28 @@ frappe.query_reports["Operations Monthly Attendance Sheet"] = {
 	],
 	formatter: function (value, row, column, data, default_formatter) {
 		value = default_formatter(value, row, column, data);
-		return column.colIndex < 3 ? value : `<span style='color:${status_color_map[value]}'>${value}</span>`;
+		if (column.colIndex < FIXED_COLUMNS) return value;
+		return `<span style='color:${status_color_map[value]}'>${value}</span>`;
 	},
-	onload: function (report) {
-		return frappe.call({
-			method: "one_fm.one_fm.report.operations_monthly_attendance_sheet.operations_monthly_attendance_sheet.get_attendance_years",
-			callback: function (r) {
-				const year_filter = report.get_filter("year")
-				year_filter.df.options = r.message;
-				year_filter.df.default = r.message.split("\n")[0];
-				year_filter.refresh();
-				year_filter.set_input(year_filter.df.default);
-				attach_report_additional_day_details()
-				attach_status_map()
-			},
-		});
+	onload: function () {
+		attach_status_map();
+	},
+	after_datatable_render: function () {
+		// The print template needs the day headers for the range actually rendered.
+		attach_report_additional_day_details();
 	}
 };
 
 function attach_report_additional_day_details () {
 	const report = frappe.query_report;
 
-	const selectedMonth = report.get_filter("month").value
-	const selectedYear = report.get_filter("year").value
+	const from_date = report.get_filter_value("from_date");
+	const to_date = report.get_filter_value("to_date");
+	if (!from_date || !to_date) return;
 
 	return frappe.call({
 		method: "one_fm.one_fm.report.operations_monthly_attendance_sheet.operations_monthly_attendance_sheet.get_report_additional_day_details",
-		args: {
-			month: selectedMonth,
-			year: selectedYear
-		},
+		args: { from_date: from_date, to_date: to_date },
 		callback: function (res) {
 			frappe.query_report.additional_details = {
 				...(report.additional_details || {}),
