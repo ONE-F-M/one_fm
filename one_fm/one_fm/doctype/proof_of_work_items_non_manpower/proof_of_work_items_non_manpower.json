@@ -1,0 +1,44 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-07-29 15:29:41.294280",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "contract_item_category",
+  "column_break_mpxd",
+  "amount"
+ ],
+ "fields": [
+  {
+   "fieldname": "contract_item_category",
+   "fieldtype": "Link",
+   "label": "Contract Item Category",
+   "options": "Contract Item Category",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_mpxd",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-07-29 15:45:31.207237",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Proof of Work Items Non-Manpower",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

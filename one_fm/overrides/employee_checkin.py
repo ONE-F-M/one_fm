@@ -6,6 +6,7 @@ from frappe import _
 from frappe.utils import cint, flt, get_datetime, cstr, getdate, now_datetime, add_days, now, today
 from hrms.hr.doctype.employee_checkin.employee_checkin import *
 from one_fm.utils import get_current_shift
+from one_fm.overrides.employee import NOT_RETURNED_FROM_LEAVE
 from one_fm.api.tasks import send_notification, issue_penalty
 from one_fm.operations.doctype.operations_site.operations_site import create_notification_log
 from one_fm.api.doc_events import (
@@ -44,9 +45,9 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 		pass
 
 	def validate_not_returned_from_leave(self):
-		"""Block checkin for employees with 'Not Returned From Leave' status."""
+		"""Block checkin for employees who have not returned from leave."""
 		employee_status = frappe.get_cached_value("Employee", self.employee, "status")
-		if employee_status == "Not Returned From Leave":
+		if employee_status == NOT_RETURNED_FROM_LEAVE:
 			frappe.throw(
 				_("Access Denied: Please contact your Site Supervisor to complete "
 				  "your Duty Resumption process before logging checkin."),

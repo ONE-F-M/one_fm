@@ -22,10 +22,16 @@ from frappe import _
 from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisor_operations_shifts
 from one_fm.one_fm.doctype.demand_letter.demand_letter import get_demand_letter, get_demand_letter_quota
 
+# The Employee status set when someone does not report back after leave. Spelled
+# exactly as the Select option is, because a comparison against any other casing
+# silently never matches and the blocker it guards quietly stops working.
+NOT_RETURNED_FROM_LEAVE = "Not Returned from Leave"
+
+
 class EmployeeOverride(EmployeeMaster):
     def validate(self):
         from erpnext.controllers.status_updater import validate_status
-        validate_status(self.status, ["Active", "Court Case", "Absconding", "Left", "Vacation", "Not Returned from Leave"])
+        validate_status(self.status, ["Active", "Court Case", "Absconding", "Left", "Vacation", NOT_RETURNED_FROM_LEAVE])
 
         if self.pam_type == "Kuwaiti":
             self.residency_expiry_date = None
