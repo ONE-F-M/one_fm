@@ -18,7 +18,8 @@
   "end_date",
   "generation_basis",
   "section_break_hyox",
-  "proof_of_work_item"
+  "proof_of_work_item",
+  "proof_of_work_items_nonmanpower"
  ],
  "fields": [
   {
@@ -93,12 +94,18 @@
    "fieldtype": "Table",
    "label": "Proof of Work Item",
    "options": "Proof of Work Item"
+  },
+  {
+   "fieldname": "proof_of_work_items_nonmanpower",
+   "fieldtype": "Table",
+   "label": "Proof of Work Items Non Manpower",
+   "options": "Proof of Work Items Non-Manpower"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-22 17:10:01.881650",
+ "modified": "2026-07-29 21:40:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Proof of Work",

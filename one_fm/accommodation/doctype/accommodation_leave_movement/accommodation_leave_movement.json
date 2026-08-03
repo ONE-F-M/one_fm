@@ -15,6 +15,8 @@
   "employee",
   "column_break_2",
   "checkin_checkout_date_time",
+  "site_supervisor",
+  "created_by",
   "tenant_details_section",
   "full_name",
   "passport_number",
@@ -273,13 +275,28 @@
   {
    "fieldname": "column_break_kgqw",
    "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.custom_site_supervisor_user",
+   "fieldname": "site_supervisor",
+   "fieldtype": "Link",
+   "label": "Site Supervisor",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "created_by",
+   "fieldtype": "Link",
+   "label": "Created By",
+   "options": "User",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-05 09:36:54.126581",
- "modified_by": "c.akeru@one-fm.com",
+ "modified": "2026-08-03 18:05:23.571008",
+ "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Leave Movement",
  "naming_rule": "By \"Naming Series\" field",

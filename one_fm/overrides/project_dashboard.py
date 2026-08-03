@@ -12,7 +12,11 @@ def get_data(**kwargs):
 				"items": ["Task", "Timesheet", "Issue", "Project Update"],
 			},
 			{"label": _("Material"), "items": ["Material Request", "BOM", "Stock Entry"]},
-			{"label": _("Sales"), "items": ["Sales Order", "Delivery Note", "Sales Invoice"]},
+			# WI-001776: Contracts sits beside Sales Order so a Project Manager can see,
+			# open and raise a project's contracts from the one place. Contracts carries a
+			# standard `project` link field, so the badge count, the pre-filtered list and
+			# the prefilled new-Contract form all come from the dashboard's own fieldname.
+			{"label": _("Sales"), "items": ["Sales Order", "Contracts", "Delivery Note", "Sales Invoice"]},
 			{"label": _("Purchase"), "items": ["Purchase Order", "Purchase Receipt", "Purchase Invoice"]},
 			{"label": _("Operations"), "items": ["MOM", "Operations Site", "Operations Shift", "Operations Role", "Operations Post"]},
 		],

@@ -69,6 +69,7 @@ page_js = {
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
 doctype_js = {
+	"Bank Account": "public/js/doctype_js/bank_account.js",
 	"Location" : "public/js/doctype_js/location.js",
 	"Shift Type" : "public/js/doctype_js/shift_type.js",
 	"Leave Type" : "public/js/doctype_js/leave_type.js",
@@ -327,7 +328,10 @@ doc_events = {
 		"after_insert": "one_fm.api.doc_methods.bank_account.after_insert",
 		"on_update": "one_fm.utils.bank_account_on_update",
 		"on_trash": "one_fm.utils.bank_account_on_trash",
-		"validate": "one_fm.utils.validate_iban_is_filled",
+		"validate": [
+			"one_fm.utils.validate_iban_is_filled",
+			"one_fm.overrides.bank_account.validate_iban",
+		],
 	},
 	"Employee Checkin": {
 		"on_update": "one_fm.utils.create_additional_salary_for_overtime_request_for_head_office"
@@ -900,7 +904,9 @@ jenv = {
         "get_qrcode:one_fm.qr_code_generator.get_qrcode",
         # WI-001700: the Attendance Report print format is a per-employee day grid
         # grouped by Sale Item, which cannot be built from the document's child tables.
-        "pow_attendance_report:one_fm.jinja.print_format.methods.pow_attendance_report"
+        "pow_attendance_report:one_fm.jinja.print_format.methods.pow_attendance_report",
+        # WI-001808: the logo is inlined so PDF rendering needs no HTTP fetch.
+        "pow_logo_src:one_fm.jinja.print_format.methods.pow_logo_src"
     ],
     "filters": [
         # "xmul:one_fm.jinja.methods.xmultiply"

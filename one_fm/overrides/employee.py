@@ -22,10 +22,16 @@ from frappe import _
 from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisor_operations_shifts
 from one_fm.one_fm.doctype.demand_letter.demand_letter import get_demand_letter, get_demand_letter_quota
 
+# The Employee status set when someone does not report back after leave. Spelled
+# exactly as the Select option is, because a comparison against any other casing
+# silently never matches and the blocker it guards quietly stops working.
+NOT_RETURNED_FROM_LEAVE = "Not Returned from Leave"
+
+
 class EmployeeOverride(EmployeeMaster):
     def validate(self):
         from erpnext.controllers.status_updater import validate_status
-        validate_status(self.status, ["Active", "Court Case", "Absconding", "Left", "Vacation", "Not Returned from Leave"])
+        validate_status(self.status, ["Active", "Court Case", "Absconding", "Left", "Vacation", NOT_RETURNED_FROM_LEAVE])
 
         if self.pam_type == "Kuwaiti":
             self.residency_expiry_date = None
@@ -57,6 +63,18 @@ class EmployeeOverride(EmployeeMaster):
         validate_leaves(self)
         self.validate_relieving_date()
         self.validate_subcontractor_name()
+        self.set_site_supervisor_user()
+
+    def set_site_supervisor_user(self):
+        """Resolve the User of this employee's site supervisor (WI-001780).
+
+        Done here rather than with `fetch_from` because the value is two hops away
+        (site -> Operations Site.site_supervisor -> Employee.user_id) and fetch_from
+        walks only one. Carrying an intermediate Employee link to hop through is not
+        an option: `tabEmployee` is at MariaDB's row-size limit and has room for
+        exactly one more column.
+        """
+        self.custom_site_supervisor_user = get_site_supervisor_user(self.site)
 
     def toggle_auto_attendance(self):
         try:
@@ -539,6 +557,23 @@ def create_wiki_assessment_todo_for_employees():
                 "date": getdate(),
                 "due_date": getdate()
             }).insert(ignore_permissions=True)
+
+def get_site_supervisor_user(site: str) -> str | None:
+    """The User of the site supervisor on an Operations Site (WI-001780).
+
+    Walks site -> Operations Site.site_supervisor -> Employee.user_id. Returns None
+    when the site is unset, has no supervisor, or that supervisor has no User, so
+    callers can treat "unknown" uniformly.
+    """
+    if not site:
+        return None
+
+    supervisor = frappe.db.get_value("Operations Site", site, "site_supervisor")
+    if not supervisor:
+        return None
+
+    return frappe.db.get_value("Employee", supervisor, "user_id") or None
+
 
 def validate_leaves(self):
     if self.status=='Vacation':

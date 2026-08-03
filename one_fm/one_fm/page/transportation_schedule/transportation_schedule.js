@@ -766,7 +766,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 // vehicle is already held by another shipment's multi-day lock. ──
                 const lock = this.vehicleLockToday(vehicle.id, card.id);
                 if (lock) {
-                    frappe.throw(`Vehicle Locked: ${vehicle.label} is reserved for a multi-day run until ${lock.lockTo}. It cannot take another overlapping shipment.`);
+                    frappe.throw(`Vehicle Locked: ${this.vehicleString(vehicle)} is reserved for a multi-day run until ${lock.lockTo}. It cannot take another overlapping shipment.`);
                     return;
                 }
 
@@ -800,7 +800,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 if (handover) {
                     frappe.show_alert({
                         message: __('{0} is under a handover to {1} ({2}–{3}) during this window. The run was still placed.', [
-                            vehicle.label,
+                            this.vehicleString(vehicle),
                             handover.driver_name,
                             this.fmtTime(handover.start),
                             this.fmtTime(handover.end)
@@ -844,7 +844,7 @@ function mountRoutePlannerApp(wrapper, data) {
                         const newDirBadge = card.direction === 'RETURN' ? '← RET' : '→ OUT';
                         const newCamp = card.accommodation ? `<strong>${card.accommodation}</strong> — ` : '';
                         frappe.confirm(
-                            `<strong>${vehicle.label}</strong> already has an active trip:<br><br>` +
+                            `<strong>${this.vehicleString(vehicle)}</strong> already has an active trip:<br><br>` +
                             existingStops.map((s, i) => `&nbsp;&nbsp;${i + 1}. ${s}`).join('<br>') +
                             `<br><br>Add ${newCamp}<strong>${card.site_location}</strong> <span style="font-size:11px;color:#888">(${newDirBadge})</span> as the next stop on this trip?`,
                             () => this._chainToTrip(card, tripMap[tripKeys[0]], vehicle.id),
@@ -878,7 +878,7 @@ function mountRoutePlannerApp(wrapper, data) {
                                 {
                                     fieldtype: 'HTML',
                                     options: `<p style="margin:0 0 12px;color:#555;font-size:13px">
-                                        <strong>${vehicle.label}</strong> has <strong>${tripKeys.length} active trips</strong>.
+                                        <strong>${this.vehicleString(vehicle)}</strong> has <strong>${tripKeys.length} active trips</strong>.
                                         Choose which trip to add <strong>${card.accommodation ? card.accommodation + ' — ' : ''}${card.site_location}</strong> to:</p>`
                                 },
                                 {
@@ -1921,7 +1921,7 @@ function mountRoutePlannerApp(wrapper, data) {
                         const tName = t.items.find(i => i.tripName)?.tripName;
                         const prefix = tName ? tName : (t.isSolo ? 'Single stop' : 'Trip');
                         tripOptions.push({
-                            label: `[${vehicle.label}] ${prefix} ending at ${lastCard.site_location}`,
+                            label: `[${this.vehicleString(vehicle)}] ${prefix} ending at ${lastCard.site_location}`,
                             value: tid,
                             lastItem, lastCard, vehicle,
                             tripName: tName || null
@@ -2030,15 +2030,27 @@ function mountRoutePlannerApp(wrapper, data) {
                         self.canSave = self.assignedCards.size > 0;
                         self.persistAssignments();
 
-                        frappe.show_alert({ message: `Merged into ${selectedOpt.vehicle.label} trip`, indicator: 'green' });
+                        frappe.show_alert({ message: `Merged into ${self.vehicleString(selectedOpt.vehicle)} trip`, indicator: 'green' });
                     }
                 });
                 d.show();
             },
 
+            /**
+             * WI-001778: a dispatcher identifies a vehicle by its plate and model, so
+             * both are shown as "<plate>, <model>". A vehicle whose master record has
+             * no model shows the plate alone - the parts are filtered before joining,
+             * so there is no orphaned comma. With neither, the vehicle code stands in
+             * so a lane is never left unlabelled.
+             */
+            vehicleString(v) {
+                if (!v) return '';
+                return [v.license_plate, v.model].filter(Boolean).join(', ') || v.label || v.id;
+            },
+
             vehicleLabelForItem(item) {
                 const v = this.planData.vehicles.find(v => v.id === item.vehicleId);
-                return v ? v.label : item.vehicleId;
+                return v ? this.vehicleString(v) : item.vehicleId;
             },
 
             /**
@@ -3063,11 +3075,10 @@ function injectRPVueTemplate() {
             <!-- Vehicle label column -->
             <div class="rp-lane-label">
               <div class="rp-gv-plate">
-                {{ vehicle.label }}
+                {{ vehicleString(vehicle) }}
                 <span v-if="lockedLaneIds.has(vehicle.id)" class="rp-lock-badge" title="Reserved for a multi-day run — blocked for other shipments">&#x1F512;</span>
                 <span v-else-if="upcomingLockByVehicle[vehicle.id]" class="rp-lock-upcoming" :title="'Reserved for an upcoming multi-day run from ' + upcomingLockByVehicle[vehicle.id]">&#x1F512; from {{ upcomingLockByVehicle[vehicle.id] }}</span>
               </div>
-              <div v-if="vehicle.license_plate" class="rp-gv-lp">{{ vehicle.license_plate }}</div>
               <div class="rp-gv-meta">{{ vehicle.driver }} &middot; {{ vehicle.seats }} seats</div>
               <div class="rp-gv-acc">{{ vehicle.accommodation }}</div>
             </div>
@@ -3948,7 +3959,6 @@ function injectRPStyles() {
         .rp-lock-badge { font-size: 12px; margin-left: 4px; vertical-align: middle; }
         .rp-lock-upcoming { font-size: 10px; margin-left: 4px; padding: 1px 5px; border-radius: 8px; background: rgba(124,58,237,0.12); color: #7c3aed; white-space: nowrap; vertical-align: middle; }
         .rp-lane-locked .rp-lane-label { background: rgba(120,120,120,0.08); }
-        .rp-gv-lp    { font-size: 11px; font-weight: 500; color: var(--md-sys-color-outline); margin-top: 1px; }
         .rp-gv-meta  { font-size: 12px; color: var(--md-sys-color-on-surface-variant); margin-top: 1px; }
         .rp-gv-acc   { font-size: 11px; color: var(--md-sys-color-outline); margin-top: 1px; }
 
@@ -4158,7 +4168,6 @@ function injectRPStyles() {
             .rp-lane-label { width: 100px; min-width: 100px; padding: 4px 8px; }
             .rp-label-stub { min-height: 36px; }
             .rp-gv-plate { font-size: 11px; }
-            .rp-gv-lp    { font-size: 9px; }
             .rp-gv-meta  { font-size: 9px; }
             .rp-gv-acc   { display: none; } /* Hide accommodation on label */
 
@@ -4197,7 +4206,6 @@ function injectRPStyles() {
             /* Lane labels: even narrower */
             .rp-lane-label { width: 75px; min-width: 75px; padding: 3px 6px; }
             .rp-gv-plate { font-size: 10px; }
-            .rp-gv-lp    { display: none; }
             .rp-gv-meta  { display: none; }
 
             /* Zoom buttons */
@@ -4320,7 +4328,6 @@ function injectRPStyles() {
         #rp-shell.rp-dark .rp-lane-alt { background: rgba(255,255,255,0.02); }
         #rp-shell.rp-dark .rp-lane-label { border-color: var(--md-sys-color-outline-variant); }
         #rp-shell.rp-dark .rp-gv-plate { color: var(--md-sys-color-on-surface); }
-        #rp-shell.rp-dark .rp-gv-lp    { color: var(--md-sys-color-outline); }
         #rp-shell.rp-dark .rp-gv-meta { color: var(--md-sys-color-outline); }
         #rp-shell.rp-dark .rp-gv-acc { color: var(--md-sys-color-outline); }
 

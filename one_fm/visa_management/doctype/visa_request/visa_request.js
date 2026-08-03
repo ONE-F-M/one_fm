@@ -29,14 +29,14 @@ function validate_references(frm, action) {
 		return show_reference_validation(frm, 'pam_reference_number', __('PAM Reference Missing'), __('Please add PAM Reference Number before approving to MOI.'));
 	}
 
-	// MOI -> Pending Visa
+	// MOI -> Pending Visa Issuance
 	if (action === 'Approve' && frm.doc.workflow_state === 'Pending By MOI') {
 		if (frm.doc.moi_reference_number) return;
-		return show_reference_validation(frm, 'moi_reference_number', __('MOI Reference Missing'), __('Please add MOI Reference Number before approving to Pending Visa.'));
+		return show_reference_validation(frm, 'moi_reference_number', __('MOI Reference Missing'), __('Please add MOI Reference Number before approving to Pending Visa Issuance.'));
 	}
 
-	// Pending Visa -> Submit to Recruiter: require visa_reference_number, payment_receipt and visa_document
-	if (action === 'Submit to Recruiter' && frm.doc.workflow_state === 'Pending Visa') {
+	// Pending Visa Issuance -> Submit to Recruiter: require visa_reference_number, payment_receipt and visa_document
+	if (action === 'Submit to Recruiter' && frm.doc.workflow_state === 'Pending Visa Issuance') {
 		const missing = [];
 		if (!frm.doc.visa_reference_number) missing.push({field: 'visa_reference_number', label: __('Visa Reference Number')});
 		if (!frm.doc.payment_receipt) missing.push({field: 'payment_receipt', label: __('Payment Receipt')});
@@ -74,7 +74,7 @@ function set_rejection_remarks(frm) {
 	try {
 		const state = frm.doc.workflow_state;
 		const handledStates = [
-			'Pending Initial Review',
+			'Pending by GRD Operator',
 			'Pending GRD Manager Approval',
 			'Pending By PAM',
 			'Pending By MOI'
@@ -90,8 +90,20 @@ function set_rejection_remarks(frm) {
 	}
 }
 
+// Where a rejection reason is stored, per the state it was rejected from. Also decides
+// which field reasons_for_state() reads its options off.
+const REJECTION_REMARK_FIELD_BY_STATE = {
+	'Pending by GRD Operator': 'operator_rejection_remark',
+	'Pending GRD Manager Approval': 'grd_manager_remark',
+	'Pending By PAM': 'pam_rejection_remark',
+	'Pending By MOI': 'moi_rejection_remark'
+};
+
 // Predefined rejection reasons per workflow state (WI-001693). PAM and MOI reject for
 // different reasons, so each state offers its own list rather than a shared one.
+// MOI is absent on purpose: WI-001773 made moi_rejection_remark a Select, so its
+// reasons come from the field itself via reasons_for_state() rather than being
+// repeated here, where they would only drift from what the field accepts.
 const REJECTION_REASONS_BY_STATE = {
 	'Pending By PAM': [
 		'Passport Validity is Less than 18 Months',
@@ -100,18 +112,29 @@ const REJECTION_REASONS_BY_STATE = {
 		"The occupation requires amendment to specify the worker's specialization",
 		'An active file exists for this worker',
 		'Worker is in Black List'
-	],
-	'Pending By MOI': [
-		'Block Due to Pending Transactions in MOI',
-		'Active Driving License , Rejected by Transportation Department'
 	]
 };
+
+// The reasons to offer for a state: the target field's own options when it is a
+// Select, otherwise the hardcoded list above. Offering anything else would write a
+// value the field rejects on save.
+function reasons_for_state(frm, state) {
+	const fieldname = REJECTION_REMARK_FIELD_BY_STATE[state];
+	const df = fieldname && frappe.meta.get_docfield('Visa Request', fieldname, frm.doc.name);
+
+	if (df && df.fieldtype === 'Select') {
+		const options = (df.options || '').split('\n').filter(o => o);
+		if (options.length) return options;
+	}
+
+	return REJECTION_REASONS_BY_STATE[state];
+}
 
 function get_rejection_remarks(frm, resolve, reject) {
 	frappe.dom.unfreeze();
 	// PAM & MOI require a predefined reason (Select), each from its own list; the other
 	// states keep free text.
-	const state_reasons = REJECTION_REASONS_BY_STATE[frm.doc.workflow_state];
+	const state_reasons = reasons_for_state(frm, frm.doc.workflow_state);
 	const reason_field = state_reasons
 		? {
 			label: 'Reason for Rejection',
@@ -131,21 +154,7 @@ function get_rejection_remarks(frm, resolve, reject) {
 		function(values) {
 			try {
 				const state = frm.doc.workflow_state;
-				let target_field = null;
-
-				if (state === 'Pending Initial Review') {
-					target_field = 'operator_rejection_remark';
-				} else if (state === 'Pending GRD Manager Approval') {
-					target_field = 'grd_manager_remark';
-				} else if (state === 'Pending By PAM') {
-					target_field = 'pam_rejection_remark';
-				} else if (state === 'Pending By MOI') {
-					target_field = 'moi_rejection_remark';
-				}
-
-				if (!target_field) {
-					target_field = 'rejection_remarks';
-				}
+				const target_field = REJECTION_REMARK_FIELD_BY_STATE[state] || 'rejection_remarks';
 
 				frappe.dom.freeze();
 				frm.set_value(target_field, values.reason);
