@@ -10,6 +10,12 @@ from frappe.model.document import Document
 # listed here (e.g. "Client Interview Shortlist") carry no location, so the
 # Destination Location is left empty for the dispatcher to fill in manually.
 SOURCE_DESTINATION_FIELD_MAP = {
+	# WI-001806: Event Staff carries the event's Location, so a dispatcher raising a
+	# Trip Request against it does not re-enter the destination. `event_location` is a
+	# Link to Location and Location autonames from `location_name`, so the value is
+	# both the location's name and a valid link - which matters because Transportation
+	# Shipment copies this field straight into its `stop_location` Link field.
+	"Event Staff": "event_location",
 	"Fingerprint Appointment": "service_location",
 	"Medical Appointment": "service_location",
 }
