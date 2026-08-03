@@ -552,9 +552,12 @@ def update_candidate_country_process():
                         frappe.db.set_value("Candidate Country Process Details", ccp.dt_name, "status", ref_status)
                         
                         is_completed = (ref_status == ccp.reference_complete_status_value)
+                        # "Work Permit Cancelled" is what WI-001773 renamed the visa's
+                        # terminal cancelled state to; without it a cancelled visa never
+                        # stamps its actual_date.
                         is_rejected = ref_status in [
                             "Rejected", "Rejected By Operator", "Rejected By PAM", "Rejected By MOI",
-                            "Rejected for Re Issue", "Canceled", "Cancelled"
+                            "Rejected for Re Issue", "Canceled", "Cancelled", "Work Permit Cancelled"
                         ]
                         
                         if is_completed or is_rejected:
