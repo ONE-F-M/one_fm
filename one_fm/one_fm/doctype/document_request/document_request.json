@@ -88,16 +88,16 @@
    "fieldname": "source_guideline",
    "fieldtype": "Link",
    "label": "Source Guideline",
-   "options": "AI Reference Index",
+   "options": "Document Register",
    "depends_on": "eval:doc.request_action == 'Create'",
    "mandatory_depends_on": "eval:doc.request_action == 'Create'",
-   "description": "The existing guideline document (already cataloged in AI Reference Index) this document should be generated from. Its real content is extracted and given to the AI — the AI does not invent the guideline itself."
+   "description": "The existing guideline document (already cataloged in Document Register) this document should be generated from. Its real content is extracted and given to the AI — the AI does not invent the guideline itself."
   },
   {
    "fieldname": "reference_document",
    "fieldtype": "Link",
    "label": "Existing Document",
-   "options": "AI Reference Index",
+   "options": "Document Register",
    "depends_on": "eval:doc.request_action != 'Create'",
    "mandatory_depends_on": "eval:doc.request_action != 'Create'",
    "description": "The existing published document being revised or withdrawn. Only active controlled documents can be picked — an already-withdrawn one has nothing to revise or withdraw, and input material is not a controlled document."
@@ -106,10 +106,10 @@
    "fieldname": "update_source",
    "fieldtype": "Link",
    "label": "New Content Document",
-   "options": "AI Reference Index",
+   "options": "Document Register",
    "depends_on": "eval:doc.request_action == 'Update'",
    "mandatory_depends_on": "eval:doc.request_action == 'Update'",
-   "description": "The document holding the content you want the revision to say — catalogue it on AI Reference Index first (pasting its Drive link is enough) and tick Input Material. Its text is authoritative: the AI reformats it into the official template and may not add, remove or reword anything. Say what the change is for in Requirement; that guides the layout, not the wording."
+   "description": "The document holding the content you want the revision to say — catalogue it on Document Register first (pasting its Drive link is enough) and tick Input Material. Its text is authoritative: the AI reformats it into the official template and may not add, remove or reword anything. Say what the change is for in Requirement; that guides the layout, not the wording."
   },
   {
    "fieldname": "section_break_approval",

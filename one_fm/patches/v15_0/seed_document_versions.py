@@ -5,7 +5,7 @@ Give every already-registered document a version history and a lifecycle state.
 
 Versioning starts counting at the next publish, which leaves documents already
 in the register looking like they have no history at all — ``current_version``
-0, no ``AI Document Version`` row, and a blank lifecycle that reads as neither
+0, no ``Document Revision`` row, and a blank lifecycle that reads as neither
 active nor withdrawn. This patch states what is already true about them: each
 one is at version 1, and that version's text is whatever the register holds.
 
@@ -30,16 +30,16 @@ from frappe.utils import cint
 
 
 def execute():
-	frappe.reload_doc("one_fm", "doctype", "ai_document_version")
-	frappe.reload_doc("one_fm", "doctype", "ai_reference_index")
+	frappe.reload_doc("one_fm", "doctype", "document_revision")
+	frappe.reload_doc("one_fm", "doctype", "document_register")
 	frappe.reload_doc("one_fm", "doctype", "document_request")
 
 	entries = frappe.get_all(
-		"AI Reference Index",
+		"Document Register",
 		fields=["name", "title", "document_type", "drive_file_link", "content", "current_version"],
 	)
 	if not entries:
-		print("No AI Reference Index entries to seed.")
+		print("No Document Register entries to seed.")
 		return
 
 	withdrawn = _withdrawn_documents()
@@ -69,7 +69,7 @@ def execute():
 		if not cint(entry.current_version):
 			updates["current_version"] = 1
 
-		frappe.db.set_value("AI Reference Index", entry.name, updates, update_modified=False)
+		frappe.db.set_value("Document Register", entry.name, updates, update_modified=False)
 
 		if _has_version_row(entry.name):
 			continue
@@ -92,14 +92,14 @@ def execute():
 
 def _ensure_code(entry) -> str | None:
 	"""Allocate a readable document code, keeping any that is already set."""
-	existing = frappe.db.get_value("AI Reference Index", entry.name, "document_code")
+	existing = frappe.db.get_value("Document Register", entry.name, "document_code")
 	if existing:
 		return existing
 
-	from one_fm.one_fm.doctype.ai_reference_index.ai_reference_index import allocate_document_code
+	from one_fm.one_fm.doctype.document_register.document_register import allocate_document_code
 
 	code = allocate_document_code(entry.document_type)
-	frappe.db.set_value("AI Reference Index", entry.name, "document_code", code, update_modified=False)
+	frappe.db.set_value("Document Register", entry.name, "document_code", code, update_modified=False)
 	return code
 
 
@@ -119,7 +119,7 @@ def _withdrawn_documents() -> dict:
 
 
 def _has_version_row(document: str) -> bool:
-	return bool(frappe.db.exists("AI Document Version", {"document": document}))
+	return bool(frappe.db.exists("Document Revision", {"document": document}))
 
 
 def _text_from_drive(file_id: str) -> str:
@@ -148,12 +148,12 @@ def _create_version_row(entry, code: str, snapshot: str, request) -> None:
 	document was published when it was published, and stamping the migration
 	date would make the register lie about when it took effect.
 	"""
-	created = frappe.db.get_value("AI Reference Index", entry.name, "creation")
-	owner = frappe.db.get_value("AI Reference Index", entry.name, "owner")
+	created = frappe.db.get_value("Document Register", entry.name, "creation")
+	owner = frappe.db.get_value("Document Register", entry.name, "owner")
 
 	version = frappe.get_doc(
 		{
-			"doctype": "AI Document Version",
+			"doctype": "Document Revision",
 			"document": entry.name,
 			"document_code": code,
 			"version": 1,

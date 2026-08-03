@@ -8,7 +8,7 @@
 # single Drive file, so the file id stays the stable identity for the document's
 # whole life and the link handed to staff never breaks. `content` and
 # `current_version` describe the revision Drive currently holds; superseded
-# revisions live on AI Document Version.
+# revisions live on Document Revision.
 #
 # Withdrawal is reversible by construction. Nothing here deletes: an `Inactive`
 # document keeps its file, its content and every version snapshot, and only
@@ -56,7 +56,7 @@ def _drive_id(value):
 	return m.group(1) if m else s
 
 
-class AIReferenceIndex(Document):
+class DocumentRegister(Document):
 	# begin: auto-generated types
 	# This code is auto-generated. Do not modify anything in this block.
 
@@ -128,7 +128,7 @@ class AIReferenceIndex(Document):
 				self.content = gd.download_file_text(self.drive_file_id)
 		except Exception:
 			frappe.log_error(
-				title="AI Reference Index: Drive auto-fill failed",
+				title="Document Register: Drive auto-fill failed",
 				message=frappe.get_traceback(),
 			)
 			if not self.title:
@@ -174,7 +174,7 @@ def _highest_issued(prefix: str) -> int:
 	"""
 	issued = frappe.db.sql(
 		"""
-		select `document_code` from `tabAI Reference Index`
+		select `document_code` from `tabDocument Register`
 		where `document_code` like %s
 		""",
 		(prefix + "-%",),
@@ -219,10 +219,10 @@ def deactivate(document: str, reason: str = None, via_request: str = None, revok
 	flag — leaving the register saying "Active" because Drive was unreachable is
 	worse than a flag that is ahead of the sharing.
 	"""
-	if not frappe.has_permission("AI Reference Index", "write", doc=document):
+	if not frappe.has_permission("Document Register", "write", doc=document):
 		frappe.throw(_("Not permitted to withdraw this document."), frappe.PermissionError)
 
-	doc = frappe.get_doc("AI Reference Index", document)
+	doc = frappe.get_doc("Document Register", document)
 
 	revoked = 0
 	skipped = []
@@ -237,7 +237,7 @@ def deactivate(document: str, reason: str = None, via_request: str = None, revok
 		except Exception as e:
 			revoke_error = str(e)
 			frappe.log_error(
-				title="AI Reference Index: deactivate could not revoke Drive sharing",
+				title="Document Register: deactivate could not revoke Drive sharing",
 				message=frappe.get_traceback(),
 			)
 
@@ -269,7 +269,7 @@ def reactivate(document: str, reason: str = None) -> dict:
 			_("Only a System Manager can reactivate a controlled document."), frappe.PermissionError
 		)
 
-	doc = frappe.get_doc("AI Reference Index", document)
+	doc = frappe.get_doc("Document Register", document)
 	if doc.lifecycle_state == "Active":
 		return {"ok": True, "already_active": True, "shared": 0}
 
@@ -282,7 +282,7 @@ def reactivate(document: str, reason: str = None) -> dict:
 	except Exception as e:
 		share_error = str(e)
 		frappe.log_error(
-			title="AI Reference Index: reactivate could not restore Drive sharing",
+			title="Document Register: reactivate could not restore Drive sharing",
 			message=frappe.get_traceback(),
 		)
 
@@ -310,9 +310,9 @@ def reactivate(document: str, reason: str = None) -> dict:
 @frappe.whitelist()
 def get_version_history(document: str) -> list:
 	"""Every published revision of a document, newest first."""
-	if not frappe.has_permission("AI Reference Index", "read", doc=document):
+	if not frappe.has_permission("Document Register", "read", doc=document):
 		frappe.throw(_("Not permitted to read this document."), frappe.PermissionError)
 
-	from one_fm.one_fm.doctype.ai_document_version.ai_document_version import get_versions
+	from one_fm.one_fm.doctype.document_revision.document_revision import get_versions
 
 	return get_versions(document)

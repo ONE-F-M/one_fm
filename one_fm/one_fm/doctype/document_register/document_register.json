@@ -149,20 +149,20 @@
    "fieldname": "content",
    "fieldtype": "Long Text",
    "label": "Indexed Content",
-   "description": "Plain-text/Markdown of the CURRENT version, used for keyword matching by Gather Reference-style Script Tasks. Superseded text lives on AI Document Version, not here. Not a semantic/vector index — see AI integration notes."
+   "description": "Plain-text/Markdown of the CURRENT version, used for keyword matching by Gather Reference-style Script Tasks. Superseded text lives on Document Revision, not here. Not a semantic/vector index — see AI integration notes."
   }
  ],
  "links": [
   {
    "group": "History",
-   "link_doctype": "AI Document Version",
+   "link_doctype": "Document Revision",
    "link_fieldname": "document"
   }
  ],
  "modified": "2026-07-15 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
- "name": "AI Reference Index",
+ "name": "Document Register",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [

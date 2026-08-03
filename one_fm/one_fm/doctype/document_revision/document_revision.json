@@ -38,7 +38,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Document",
-   "options": "AI Reference Index",
+   "options": "Document Register",
    "read_only": 1,
    "reqd": 1,
    "description": "The controlled document this is a version of. Every version of a document shares one Drive file — the link never changes — so the file id is the stable identity."
@@ -147,7 +147,7 @@
  "modified": "2026-08-03 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
- "name": "AI Document Version",
+ "name": "Document Revision",
  "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [

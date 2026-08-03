@@ -10,7 +10,7 @@ reads. These tests cover the two properties around it:
   * when it is empty, the link is recovered and **written into it**, so the
     recovery happens once per request rather than on every view.
 
-Recovery has two sources, in order of authority — the AI Reference Index entry,
+Recovery has two sources, in order of authority — the Document Register entry,
 then the BPMN run's task data. It exists because ``update_field`` writes the
 published status with ``frappe.db.set_value``, so no doc hook fires at publish;
 without it, every document published before this field existed is unreachable.
@@ -82,7 +82,7 @@ class DocumentRequestFixtures:
 
 	def _index_entry(self, link=WEB_VIEW_LINK, file_id=FILE_ID):
 		entry = frappe.get_doc({
-			"doctype": "AI Reference Index",
+			"doctype": "Document Register",
 			"drive_file_id": file_id,
 			"title": "_Test Indexed Document",
 			"document_type": "SOP",
@@ -183,7 +183,7 @@ class TestStoredFieldIsTheReadPath(DocumentRequestFixtures, unittest.TestCase):
 		*what* was withdrawn.
 		"""
 		entry = self._index_entry()
-		frappe.db.set_value("AI Reference Index", entry, "lifecycle_state", "Inactive")
+		frappe.db.set_value("Document Register", entry, "lifecycle_state", "Inactive")
 		request = self._request(status="Deleted", reference_document=entry)
 
 		link = get_published_document_link(request)
@@ -262,7 +262,7 @@ class TestLinkResolution(DocumentRequestFixtures, unittest.TestCase):
 		following any more", and the URL alone cannot carry that.
 		"""
 		entry = self._index_entry()
-		frappe.db.set_value("AI Reference Index", entry, "lifecycle_state", "Inactive")
+		frappe.db.set_value("Document Register", entry, "lifecycle_state", "Inactive")
 		request = self._request(status="Deleted", reference_document=entry)
 
 		link = get_published_document_link(request)

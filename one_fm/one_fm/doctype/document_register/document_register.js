@@ -11,7 +11,7 @@
 // withdrawing a document in error is a correction to the register, not a
 // request to rewrite it.
 
-frappe.ui.form.on("AI Reference Index", {
+frappe.ui.form.on("Document Register", {
 	refresh(frm) {
 		if (frm.is_new()) return;
 
@@ -63,7 +63,7 @@ function confirm_reactivate(frm) {
 		],
 		({ reason }) => {
 			frappe.call({
-				method: "one_fm.one_fm.doctype.ai_reference_index.ai_reference_index.reactivate",
+				method: "one_fm.one_fm.doctype.document_register.document_register.reactivate",
 				args: { document: frm.doc.name, reason },
 				freeze: true,
 				freeze_message: __("Restoring access…"),
@@ -105,7 +105,7 @@ function confirm_deactivate(frm) {
 		],
 		({ reason }) => {
 			frappe.call({
-				method: "one_fm.one_fm.doctype.ai_reference_index.ai_reference_index.deactivate",
+				method: "one_fm.one_fm.doctype.document_register.document_register.deactivate",
 				args: { document: frm.doc.name, reason },
 				freeze: true,
 				freeze_message: __("Revoking access…"),
@@ -131,7 +131,7 @@ function show_version_history(frm) {
 	if (!frm.doc.current_version) return;
 
 	frappe.call({
-		method: "one_fm.one_fm.doctype.ai_reference_index.ai_reference_index.get_version_history",
+		method: "one_fm.one_fm.doctype.document_register.document_register.get_version_history",
 		args: { document: frm.doc.name },
 		callback: (r) => {
 			const versions = (r && r.message) || [];
@@ -151,7 +151,7 @@ function render_history(versions) {
 			const reason = frappe.utils.escape_html(v.change_reason || "");
 			return `
 				<tr>
-					<td><a href="/app/ai-document-version/${encodeURIComponent(v.name)}">v${v.version}</a>${current}</td>
+					<td><a href="/app/document-revision/${encodeURIComponent(v.name)}">v${v.version}</a>${current}</td>
 					<td>${frappe.utils.escape_html(v.title_at_version || "")}</td>
 					<td>${when}</td>
 					<td>${frappe.utils.escape_html(v.approved_by || "—")}</td>

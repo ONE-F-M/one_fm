@@ -6,7 +6,7 @@ Versioning and withdrawal of controlled documents.
 Two properties hold this together, and both are easy to break by accident:
 
   * **A version is never lost.** Every revision overwrites the same Drive file,
-    so Drive keeps only the newest text. The ``AI Document Version`` snapshot is
+    so Drive keeps only the newest text. The ``Document Revision`` snapshot is
     the only surviving copy of a superseded revision — if a publish stops writing
     one, history silently stops existing rather than visibly failing.
 
@@ -21,8 +21,8 @@ from unittest.mock import patch
 
 import frappe
 
-from one_fm.one_fm.doctype.ai_document_version.ai_document_version import get_versions
-from one_fm.one_fm.doctype.ai_reference_index.ai_reference_index import (
+from one_fm.one_fm.doctype.document_revision.document_revision import get_versions
+from one_fm.one_fm.doctype.document_register.document_register import (
 	allocate_document_code,
 	code_prefix,
 	deactivate,
@@ -54,7 +54,7 @@ class VersioningFixtures:
 
 	def _document(self, file_id="_TestVerDoc001", document_type="Policy", state="Active", version=1):
 		entry = frappe.get_doc({
-			"doctype": "AI Reference Index",
+			"doctype": "Document Register",
 			"drive_file_id": file_id,
 			"title": "_Test Controlled Document",
 			"document_type": document_type,
@@ -69,9 +69,9 @@ class VersioningFixtures:
 
 	def _version(self, document, version, content, code=None):
 		row = frappe.get_doc({
-			"doctype": "AI Document Version",
+			"doctype": "Document Revision",
 			"document": document,
-			"document_code": code or frappe.db.get_value("AI Reference Index", document, "document_code"),
+			"document_code": code or frappe.db.get_value("Document Register", document, "document_code"),
 			"version": version,
 			"title_at_version": "_Test Controlled Document",
 			"content_snapshot": content,
@@ -111,7 +111,7 @@ class TestDocumentCodes(VersioningFixtures, unittest.TestCase):
 		confusion a controlled-document register exists to prevent."""
 		doomed = self._document(file_id="_TestVerE", document_type="Policy")
 		taken = doomed.document_code
-		frappe.delete_doc("AI Reference Index", doomed.name, force=True, ignore_permissions=True)
+		frappe.delete_doc("Document Register", doomed.name, force=True, ignore_permissions=True)
 
 		self.assertNotEqual(allocate_document_code("Policy"), taken)
 
@@ -133,7 +133,7 @@ class TestVersionHistory(VersioningFixtures, unittest.TestCase):
 		self._version(doc.name, 2, "the revised wording")
 
 		snapshots = {
-			v.version: frappe.db.get_value("AI Document Version", v.name, "content_snapshot")
+			v.version: frappe.db.get_value("Document Revision", v.name, "content_snapshot")
 			for v in get_versions(doc.name)
 		}
 		self.assertEqual(snapshots[1], "the original wording")
@@ -157,10 +157,10 @@ class TestWithdrawal(VersioningFixtures, unittest.TestCase):
 		with patch(f"{DRIVE_MODULE}.revoke_permissions", return_value=_revoked([{"id": "p1"}])):
 			deactivate(doc.name, reason="superseded by the 2027 policy")
 
-		self.assertTrue(frappe.db.exists("AI Reference Index", doc.name))
+		self.assertTrue(frappe.db.exists("Document Register", doc.name))
 		self.assertEqual(len(get_versions(doc.name)), 2)
 		self.assertEqual(
-			frappe.db.get_value("AI Reference Index", doc.name, "content"), "current text"
+			frappe.db.get_value("Document Register", doc.name, "content"), "current text"
 		)
 
 	def test_withdrawal_records_who_what_and_why(self):
@@ -216,7 +216,7 @@ class TestWithdrawal(VersioningFixtures, unittest.TestCase):
 
 		revoke.assert_not_called()
 		self.assertEqual(
-			frappe.db.get_value("AI Reference Index", doc.name, "lifecycle_state"), "Inactive"
+			frappe.db.get_value("Document Register", doc.name, "lifecycle_state"), "Inactive"
 		)
 
 	def test_an_unreachable_drive_does_not_block_the_withdrawal(self):
@@ -229,7 +229,7 @@ class TestWithdrawal(VersioningFixtures, unittest.TestCase):
 
 		self.assertIn("drive is down", outcome["revoke_error"])
 		self.assertEqual(
-			frappe.db.get_value("AI Reference Index", doc.name, "lifecycle_state"), "Inactive"
+			frappe.db.get_value("Document Register", doc.name, "lifecycle_state"), "Inactive"
 		)
 
 
@@ -239,7 +239,7 @@ class TestReactivation(VersioningFixtures, unittest.TestCase):
 		the worst of the three possible states."""
 		doc = self._document(file_id="_TestVerN", state="Inactive")
 		frappe.db.set_value(
-			"AI Reference Index",
+			"Document Register",
 			doc.name,
 			{"deactivation_reason": "was a mistake", "deactivated_by": frappe.session.user},
 		)
@@ -272,7 +272,7 @@ class TestReactivation(VersioningFixtures, unittest.TestCase):
 
 		self.assertIn("no such file", outcome["share_error"])
 		self.assertEqual(
-			frappe.db.get_value("AI Reference Index", doc.name, "lifecycle_state"), "Active"
+			frappe.db.get_value("Document Register", doc.name, "lifecycle_state"), "Active"
 		)
 
 
@@ -314,7 +314,7 @@ class TestRequestsAgainstWithdrawnDocuments(VersioningFixtures, unittest.TestCas
 		"""An Update also needs its New Content Document — see TestInputMaterial."""
 		doc = self._document(file_id="_TestVerS", state="Active")
 		src = frappe.get_doc({
-			"doctype": "AI Reference Index",
+			"doctype": "Document Register",
 			"drive_file_id": "_TestVerSsrc",
 			"title": "_Test New Content",
 			"is_input_material": 1,
@@ -347,7 +347,7 @@ class TestInputMaterial(VersioningFixtures, unittest.TestCase):
 
 	def _input_doc(self, file_id="_TestInput001"):
 		entry = frappe.get_doc({
-			"doctype": "AI Reference Index",
+			"doctype": "Document Register",
 			"drive_file_id": file_id,
 			"title": "_Test New Content",
 			"document_type": "Amendment",

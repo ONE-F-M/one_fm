@@ -36,7 +36,7 @@ class DocumentRequest(Document):
 		if self.request_action == "Create" or not self.reference_document:
 			return
 		ref = frappe.db.get_value(
-			"AI Reference Index", self.reference_document, ["document_type", "title"], as_dict=True
+			"Document Register", self.reference_document, ["document_type", "title"], as_dict=True
 		)
 		if not ref:
 			return
@@ -56,7 +56,7 @@ class DocumentRequest(Document):
 		if self.request_action == "Create" or not self.reference_document:
 			return
 
-		state = frappe.db.get_value("AI Reference Index", self.reference_document, "lifecycle_state")
+		state = frappe.db.get_value("Document Register", self.reference_document, "lifecycle_state")
 		if state != "Inactive":
 			return
 
@@ -79,7 +79,7 @@ class DocumentRequest(Document):
 		if self.request_action == "Create" or not self.reference_document:
 			return
 
-		if frappe.db.get_value("AI Reference Index", self.reference_document, "is_input_material"):
+		if frappe.db.get_value("Document Register", self.reference_document, "is_input_material"):
 			frappe.throw(
 				_(
 					"{0} is input material — reference content the process reads, not a "
@@ -110,7 +110,7 @@ class DocumentRequest(Document):
 			frappe.throw(
 				_(
 					"An Update needs a New Content Document — the document holding what the "
-					"revision should say. Catalogue it on AI Reference Index first (pasting its "
+					"revision should say. Catalogue it on Document Register first (pasting its "
 					"Drive link is enough), tick Input Material, then pick it here. The wording "
 					"published comes from that document, not from the AI."
 				)
@@ -151,7 +151,7 @@ class DocumentRequest(Document):
 # existed, and any run whose publish step predates the map change that writes
 # it. Two sources, in order of authority:
 #
-#   1. AI Reference Index.drive_file_link — written by the map's "Drive — Index
+#   1. Document Register.drive_file_link — written by the map's "Drive — Index
 #      Document" step at publish. This is the canonical record of the published
 #      document, and `reference_document` already links to it. It is only
 #      populated for Update/Delete requests, where the user picks it up front;
@@ -226,7 +226,7 @@ def get_published_document_link(document_request: str) -> dict:
 	title = request.title
 	if request.reference_document:
 		entry = frappe.db.get_value(
-			"AI Reference Index",
+			"Document Register",
 			request.reference_document,
 			["drive_file_link", "title"],
 			as_dict=True,
@@ -264,7 +264,7 @@ def _lifecycle_of(reference_document: str | None) -> str | None:
 	"""
 	if not reference_document:
 		return None
-	return frappe.db.get_value("AI Reference Index", reference_document, "lifecycle_state")
+	return frappe.db.get_value("Document Register", reference_document, "lifecycle_state")
 
 
 def _remember(document_request: str, url: str) -> None:

@@ -19,7 +19,7 @@ from frappe.model.document import Document
 from frappe.utils import cint
 
 
-class AIDocumentVersion(Document):
+class DocumentRevision(Document):
 	def before_naming(self):
 		"""Guarantee the pieces the `format:` autoname interpolates.
 
@@ -38,12 +38,12 @@ class AIDocumentVersion(Document):
 def get_versions(document: str) -> list[dict]:
 	"""Every version of a document, newest first.
 
-	Used by the AI Reference Index form and by the tests. Kept here rather than
+	Used by the Document Register form and by the tests. Kept here rather than
 	inlined at each call site because "newest first" is a contract — a version
 	list in creation order reads as though the oldest revision were current.
 	"""
 	return frappe.get_all(
-		"AI Document Version",
+		"Document Revision",
 		filters={"document": document},
 		fields=[
 			"name",

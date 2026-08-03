@@ -1,10 +1,10 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
 """
-Point published Document Requests at the AI Reference Index entry they created.
+Point published Document Requests at the Document Register entry they created.
 
 A Create request publishes a Google Doc and the map indexes it as an
-``AI Reference Index`` entry — but nothing writes that entry back onto the
+``Document Register`` entry — but nothing writes that entry back onto the
 request. ``Document Request.reference_document`` already links to exactly this
 doctype; it is simply only ever filled in by the user, on Update and Delete
 requests, and never by the run itself.
@@ -32,7 +32,7 @@ def execute():
 		# Only link to an entry that actually exists — the file id is the index
 		# entry's primary key, so a run whose document was later deleted from
 		# Drive would otherwise leave a dangling Link.
-		if entry and frappe.db.exists("AI Reference Index", entry):
+		if entry and frappe.db.exists("Document Register", entry):
 			if not frappe.db.get_value("Document Request", request, "reference_document"):
 				frappe.db.set_value(
 					"Document Request", request, "reference_document", entry, update_modified=False

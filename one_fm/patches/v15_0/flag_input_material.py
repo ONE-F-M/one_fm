@@ -3,7 +3,7 @@
 """
 Mark guidelines in the register as input material.
 
-``AI Reference Index`` holds two different kinds of thing. Most rows are
+``Document Register`` holds two different kinds of thing. Most rows are
 controlled documents the process *produced* — they carry a document code, a
 version history and a lifecycle. Guidelines are the opposite: they are material
 the process *reads*, catalogued so a requester can point at one as the basis for
@@ -24,10 +24,10 @@ import frappe
 
 
 def execute():
-	frappe.reload_doc("one_fm", "doctype", "ai_reference_index")
+	frappe.reload_doc("one_fm", "doctype", "document_register")
 
 	guidelines = frappe.get_all(
-		"AI Reference Index",
+		"Document Register",
 		filters={"document_type": "Guideline", "is_input_material": 0},
 		pluck="name",
 	)
@@ -40,7 +40,7 @@ def execute():
 		# always was, not an edit to the document. Bumping `modified` would hand
 		# a stale-document error to anyone with the form open and would make the
 		# register look freshly touched in every report sorted by modified.
-		frappe.db.set_value("AI Reference Index", name, "is_input_material", 1, update_modified=False)
+		frappe.db.set_value("Document Register", name, "is_input_material", 1, update_modified=False)
 
 	frappe.db.commit()
 	print(f"Flagged {len(guidelines)} Guideline entr(ies) as input material: {', '.join(guidelines)}")
