@@ -12,6 +12,7 @@ class DocumentRequest(Document):
 		self.set_requester_defaults()
 		self.check_approver_resolved()
 		self.apply_reference_document_defaults()
+		self.check_reference_document_is_active()
 
 	def set_requester_defaults(self):
 		if not self.requester:
@@ -40,6 +41,30 @@ class DocumentRequest(Document):
 		if not self.title:
 			self.title = ref.title
 
+	def check_reference_document_is_active(self):
+		"""Refuse to revise or withdraw a document that is already withdrawn.
+
+		Both branches would otherwise run to completion and mean nothing: a
+		second Delete re-withdraws what is already out of use, and an Update
+		would quietly re-share and republish a document somebody deliberately
+		took down — reactivation by side effect, bypassing the System Manager
+		check that guards the real Reactivate button.
+		"""
+		if self.request_action == "Create" or not self.reference_document:
+			return
+
+		state = frappe.db.get_value("AI Reference Index", self.reference_document, "lifecycle_state")
+		if state != "Inactive":
+			return
+
+		frappe.throw(
+			_(
+				"{0} is already inactive — it has been withdrawn from use. To bring it "
+				"back, use the Reactivate button on the document itself; a System Manager "
+				"has to approve that. There is nothing for a {1} request to do here."
+			).format(frappe.bold(self.reference_document), self.request_action)
+		)
+
 
 # ── Reaching the published document ─────────────────────────────────────────
 # `document_link` holds the Google Docs URL, and it is the only thing the form
@@ -59,6 +84,10 @@ class DocumentRequest(Document):
 #      a Create request publishes without ever being pointed at the entry its
 #      own run created.
 #
+#      One link serves every revision. Because a new version overwrites the same
+#      Drive file rather than making a new one, this URL never goes stale — it
+#      opens whatever the current version is.
+#
 #   2. The BPMN instance's task data — `drive_file.webViewLink`, the value the
 #      Drive connector returned when the file was made.
 #
@@ -67,19 +96,29 @@ class DocumentRequest(Document):
 # every view.
 
 # Statuses where there is no document to open, even though the request may
-# still name one. "Deleted" is the case that matters: a Delete request points
-# at the document it removed.
-NO_DOCUMENT_STATUSES = ("Deleted", "Request Rejected")
+# still name one.
+#
+# "Deleted" used to be listed here, back when the Delete branch trashed the
+# Drive file: resolving a link then handed back a URL to a file that no longer
+# existed. Delete now withdraws the document instead — the file, its content and
+# every version are kept, and only the sharing is revoked — so the link resolves
+# and hiding it would be wrong. The form says the document is inactive rather
+# than pretending it is gone, because a request that says "withdrawn" while
+# offering no way to see *what* was withdrawn is useless to an auditor.
+NO_DOCUMENT_STATUSES = ("Request Rejected",)
 
 
 @frappe.whitelist()
 def get_published_document_link(document_request: str) -> dict:
 	"""Return the Google Docs link for a published Document Request.
 
-	Returns ``{"url": ..., "title": ..., "source": ...}``, or ``{}`` when no
-	link can be found — an unpublished request, or a published one whose run
-	predates the Drive integration. ``source`` says which of the two routes
-	answered, so a support question can be diagnosed from the response alone.
+	Returns ``{"url": ..., "title": ..., "source": ..., "lifecycle": ...,
+	"version": ...}``, or ``{}`` when no link can be found — an unpublished
+	request, or a published one whose run predates the Drive integration.
+	``source`` says which of the two routes answered, so a support question can
+	be diagnosed from the response alone. ``lifecycle`` lets the form warn that a
+	document has been withdrawn instead of silently offering a link to something
+	nobody should be following.
 	"""
 	if not frappe.has_permission("Document Request", "read", doc=document_request):
 		frappe.throw(_("Not permitted to read this Document Request."), frappe.PermissionError)
@@ -87,17 +126,16 @@ def get_published_document_link(document_request: str) -> dict:
 	request = frappe.db.get_value(
 		"Document Request",
 		document_request,
-		["name", "title", "status", "reference_document", "document_link"],
+		["name", "title", "status", "reference_document", "document_link", "document_version"],
 		as_dict=True,
 	)
 	if not request:
 		return {}
 
-	# A completed Delete request still carries a reference_document — the user
-	# picked it in order to say what to delete. Resolving it would hand back a
-	# link to a file that the process has since removed from Drive.
 	if request.status in NO_DOCUMENT_STATUSES:
 		return {}
+
+	lifecycle = _lifecycle_of(request.reference_document)
 
 	# The stored field is the answer whenever it is set — no lookups at all.
 	if request.document_link:
@@ -105,6 +143,8 @@ def get_published_document_link(document_request: str) -> dict:
 			"url": request.document_link,
 			"title": request.title,
 			"source": "document_link",
+			"lifecycle": lifecycle,
+			"version": request.document_version,
 		}
 
 	# 1. The canonical index entry, when the request is pointed at one.
@@ -132,7 +172,25 @@ def get_published_document_link(document_request: str) -> dict:
 		return {}
 
 	_remember(document_request, url)
-	return {"url": url, "title": title, "source": source}
+	return {
+		"url": url,
+		"title": title,
+		"source": source,
+		"lifecycle": lifecycle,
+		"version": request.document_version,
+	}
+
+
+def _lifecycle_of(reference_document: str | None) -> str | None:
+	"""Whether the document this request points at is still in use.
+
+	``None`` when the request names no document, or names one that is no longer
+	in the register — neither is an error, and neither justifies claiming the
+	document is active.
+	"""
+	if not reference_document:
+		return None
+	return frappe.db.get_value("AI Reference Index", reference_document, "lifecycle_state")
 
 
 def _remember(document_request: str, url: str) -> None:

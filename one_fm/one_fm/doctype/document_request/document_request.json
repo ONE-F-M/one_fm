@@ -23,6 +23,7 @@
   "column_break_status",
   "status",
   "document_link",
+  "document_version",
   "bpmn_instance"
  ],
  "fields": [
@@ -55,7 +56,7 @@
    "options": "Create\nUpdate\nDelete",
    "default": "Create",
    "reqd": 1,
-   "description": "Create a new document, revise the content of an existing one, or remove an existing one from Drive."
+   "description": "Create a new document, revise an existing one (which publishes a new version), or withdraw an existing one from use. Delete does NOT destroy anything — it marks the document inactive and revokes its Drive sharing, and a System Manager can reactivate it."
   },
   {
    "fieldname": "document_type",
@@ -98,7 +99,7 @@
    "options": "AI Reference Index",
    "depends_on": "eval:doc.request_action != 'Create'",
    "mandatory_depends_on": "eval:doc.request_action != 'Create'",
-   "description": "The existing published document (from the AI Reference Index catalog) being updated or deleted."
+   "description": "The existing published document being revised or withdrawn. Only documents that are currently active can be picked — an already-withdrawn document has nothing to revise or withdraw."
   },
   {
    "fieldname": "section_break_approval",
@@ -143,7 +144,15 @@
    "fieldtype": "Data",
    "label": "Published Document",
    "options": "URL",
-   "read_only": 1
+   "read_only": 1,
+   "description": "Every revision shares one Drive file, so this link stays valid for the life of the document — it always opens the current version."
+  },
+  {
+   "fieldname": "document_version",
+   "fieldtype": "Int",
+   "label": "Published Version",
+   "read_only": 1,
+   "description": "Which revision of the document this request produced. Stamped at publish."
   },
   {
    "fieldname": "bpmn_instance",

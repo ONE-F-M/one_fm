@@ -172,12 +172,25 @@ class TestStoredFieldIsTheReadPath(DocumentRequestFixtures, unittest.TestCase):
 		self.assertEqual(get_published_document_link(request), {})
 		self.assertIsNone(self._stored_link(request))
 
-	def test_a_deleted_request_never_gets_a_link_written(self):
-		"""Its reference_document names the document the process removed."""
-		request = self._request(status="Deleted", reference_document=self._index_entry())
+	def test_a_withdrawn_requests_link_is_resolved_and_stored(self):
+		"""Withdrawal keeps the document, so the link is still worth having.
 
-		self.assertEqual(get_published_document_link(request), {})
-		self.assertIsNone(self._stored_link(request))
+		This used to assert the opposite, back when the Delete branch trashed the
+		Drive file and resolving the link handed back a URL to something gone. A
+		Delete request now marks the document inactive and revokes its sharing;
+		the file, its content and its versions are all kept. Refusing to resolve
+		the link would leave an auditor reading "withdrawn" with no way to see
+		*what* was withdrawn.
+		"""
+		entry = self._index_entry()
+		frappe.db.set_value("AI Reference Index", entry, "lifecycle_state", "Inactive")
+		request = self._request(status="Deleted", reference_document=entry)
+
+		link = get_published_document_link(request)
+
+		self.assertEqual(link["url"], WEB_VIEW_LINK)
+		self.assertEqual(link["lifecycle"], "Inactive")
+		self.assertEqual(self._stored_link(request), WEB_VIEW_LINK)
 
 
 class TestLinkResolution(DocumentRequestFixtures, unittest.TestCase):
@@ -241,12 +254,26 @@ class TestLinkResolution(DocumentRequestFixtures, unittest.TestCase):
 	def test_no_link_when_there_is_no_run_at_all(self):
 		self.assertEqual(get_published_document_link(self._request()), {})
 
-	def test_a_deleted_request_offers_no_link(self):
-		"""A completed Delete request still names the document it removed —
-		resolving it would hand back a link to a file that is gone from Drive."""
-		request = self._request(status="Deleted", reference_document=self._index_entry())
+	def test_a_withdrawn_request_still_offers_its_link(self):
+		"""Nothing was deleted, so there is something to open — and it says so.
 
-		self.assertEqual(get_published_document_link(request), {})
+		The interesting half is ``lifecycle``: the caller has to be able to tell
+		"here is the document" from "here is a document nobody should be
+		following any more", and the URL alone cannot carry that.
+		"""
+		entry = self._index_entry()
+		frappe.db.set_value("AI Reference Index", entry, "lifecycle_state", "Inactive")
+		request = self._request(status="Deleted", reference_document=entry)
+
+		link = get_published_document_link(request)
+
+		self.assertEqual(link["url"], WEB_VIEW_LINK)
+		self.assertEqual(link["lifecycle"], "Inactive")
+
+	def test_an_active_documents_link_reports_it_as_active(self):
+		request = self._request(reference_document=self._index_entry())
+
+		self.assertEqual(get_published_document_link(request)["lifecycle"], "Active")
 
 	def test_a_rejected_request_offers_no_link(self):
 		request = self._request(status="Request Rejected")

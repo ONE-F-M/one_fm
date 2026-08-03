@@ -9,10 +9,21 @@
  "engine": "InnoDB",
  "field_order": [
   "drive_file_id",
+  "document_code",
   "title",
   "document_type",
+  "column_break_lifecycle",
+  "lifecycle_state",
+  "current_version",
   "drive_file_link",
   "source_process",
+  "section_break_deactivation",
+  "deactivated_on",
+  "deactivated_by",
+  "column_break_deactivation",
+  "deactivated_via_request",
+  "deactivation_reason",
+  "section_break_content",
   "content"
  ],
  "fields": [
@@ -50,13 +61,94 @@
    "description": "Which BPMN process produced/published this document, e.g. 'SOP Generation from Guidelines'."
   },
   {
+   "fieldname": "document_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Document Code",
+   "read_only": 1,
+   "unique": 1,
+   "description": "Readable, citable identifier allocated at first publish — POL-0001, SOP-0004. The Drive file id is the real key; this exists because nobody cites a 44-character id in a meeting."
+  },
+  {
+   "fieldname": "column_break_lifecycle",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "lifecycle_state",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Lifecycle State",
+   "options": "Active\nInactive",
+   "default": "Active",
+   "read_only": 1,
+   "description": "Inactive means withdrawn from use, not destroyed: the Drive file and every version snapshot are kept, and sharing is revoked so it stops appearing to staff. Reversible from the Reactivate button."
+  },
+  {
+   "fieldname": "current_version",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Current Version",
+   "read_only": 1,
+   "default": "0",
+   "description": "Which revision the Drive file currently holds. Incremented once per publish; 0 means nothing has been published yet."
+  },
+  {
+   "fieldname": "section_break_deactivation",
+   "fieldtype": "Section Break",
+   "label": "Deactivation",
+   "depends_on": "eval:doc.lifecycle_state == \"Inactive\""
+  },
+  {
+   "fieldname": "deactivated_on",
+   "fieldtype": "Datetime",
+   "label": "Deactivated On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "deactivated_by",
+   "fieldtype": "Link",
+   "label": "Deactivated By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_deactivation",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "deactivated_via_request",
+   "fieldtype": "Link",
+   "label": "Deactivated Via Request",
+   "options": "Document Request",
+   "read_only": 1
+  },
+  {
+   "fieldname": "deactivation_reason",
+   "fieldtype": "Small Text",
+   "label": "Deactivation Reason",
+   "read_only": 1,
+   "description": "Why it was withdrawn — taken from the requirement text on the request that withdrew it."
+  },
+  {
+   "fieldname": "section_break_content",
+   "fieldtype": "Section Break",
+   "label": "Current Content"
+  },
+  {
    "fieldname": "content",
    "fieldtype": "Long Text",
    "label": "Indexed Content",
-   "description": "Plain-text/Markdown content used for keyword matching by Gather Reference-style Script Tasks. Not a semantic/vector index — see AI integration notes."
+   "description": "Plain-text/Markdown of the CURRENT version, used for keyword matching by Gather Reference-style Script Tasks. Superseded text lives on AI Document Version, not here. Not a semantic/vector index — see AI integration notes."
   }
  ],
- "links": [],
+ "links": [
+  {
+   "group": "History",
+   "link_doctype": "AI Document Version",
+   "link_fieldname": "document"
+  }
+ ],
  "modified": "2026-07-15 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
@@ -75,6 +167,14 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Employee",
+   "share": 1
   }
  ],
  "sort_field": "modified",
