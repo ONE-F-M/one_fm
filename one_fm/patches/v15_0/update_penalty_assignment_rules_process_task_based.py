@@ -17,7 +17,7 @@ ASSIGNMENT_RULES = [
 	{
 		"json_file": "penalty_and_investigation_legal_manager.json",
 		"task_description": "Assigning Legal Manager",
-		"employee": "HR-EMP-02758",
+		"employee": "HR-EMP-02960",
 	},
 	{
 		"json_file": "penalty_and_investigation_payroll_officer.json",
