@@ -904,7 +904,9 @@ jenv = {
         "get_qrcode:one_fm.qr_code_generator.get_qrcode",
         # WI-001700: the Attendance Report print format is a per-employee day grid
         # grouped by Sale Item, which cannot be built from the document's child tables.
-        "pow_attendance_report:one_fm.jinja.print_format.methods.pow_attendance_report"
+        "pow_attendance_report:one_fm.jinja.print_format.methods.pow_attendance_report",
+        # WI-001808: the logo is inlined so PDF rendering needs no HTTP fetch.
+        "pow_logo_src:one_fm.jinja.print_format.methods.pow_logo_src"
     ],
     "filters": [
         # "xmul:one_fm.jinja.methods.xmultiply"

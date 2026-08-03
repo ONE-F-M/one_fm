@@ -80,6 +80,12 @@ def _attendance_abbr(status: str) -> str:
 	"""Legend abbreviation for an attendance status, falling back to its initial."""
 	return ATTENDANCE_ABBR.get(status) or (status or "")[:1].upper()
 
+
+# Cells that represent a day actually worked, and so carry hours on an Hourly Sale
+# Item. Derived from PRESENT_STATUSES so the two cannot drift apart; Half Day is worked
+# too, and carries whatever hours were recorded against it.
+WORKED_ABBRS = {_attendance_abbr(status) for status in PRESENT_STATUSES} | {"HD"}
+
 # Standard month used for the contractual justification (Column 3). Fixed by
 # business policy: a contracted head is expected to cover 30 days / 208 hours a
 # month, independent of the per-item shift length.
@@ -851,6 +857,29 @@ def _grid_from_attendance(project: str, first_day, last_day) -> dict:
 	return groups
 
 
+def _hour_cells(statuses: list, shift_hours: float) -> list:
+	"""Day cells for a Sale Item reported in hours: the rostered shift length on a day
+	worked, its status otherwise (WI-001808).
+
+	The length rostered, not the hours clocked - that is what the summary counts an
+	Hourly item in, since `_hours_for` multiplies days by the shift length for it, so
+	the cells read in the same figure as page 1. A half day carries half a shift, which
+	is how it is already counted towards the day total.
+
+	A day that was not worked keeps its abbreviation: "0" against an absence reads as a
+	figure rather than an explanation.
+	"""
+	cells = []
+
+	for status in statuses:
+		if status not in WORKED_ABBRS:
+			cells.append(status)
+			continue
+		cells.append(_num(flt(shift_hours) * (0.5 if status == "HD" else 1.0)))
+
+	return cells
+
+
 @frappe.whitelist()
 def get_pow_attendance_report(pow_name: str) -> dict:
 	"""Structured monthly attendance grid for a POW, grouped by Sale Item.
@@ -874,16 +903,28 @@ def get_pow_attendance_report(pow_name: str) -> dict:
 		groups = _grid_from_attendance(doc.project, first_day, last_day)
 
 	item_types = _item_types_by_sale_item(list(groups))
+	rate_types = _rate_type_by_sale_item(doc.contract)
 
 	group_list = []
 	for sale_item in sorted(groups):
 		shift_hours = _shift_hours_from_item(sale_item)
+		# The sheet reads in whatever the summary counts this Sale Item in, decided by
+		# the one function page 1 uses - so the two pages cannot disagree. An Hourly
+		# Rate Type lands on Shift Hours, and its day cells then carry hours worked
+		# instead of the attendance status.
+		basis = _basis_for_rate_type(
+			rate_types.get(sale_item, ""), source_type, doc.generation_basis
+		)
+		by_hours = basis == "Shift Hours"
 		rows = []
 		staff = sorted(groups[sale_item].values(), key=lambda e: e["employee_name"] or "")
 		for sn, emp in enumerate(staff, start=1):
-			cells = [emp["days"].get(i, "") for i in range(1, total_days + 1)]
+			statuses = [emp["days"].get(i, "") for i in range(1, total_days + 1)]
 			working_days = flt(emp["total_present"])
-			days_off = sum(1 for cell in cells if cell in DAY_OFF_ABBRS)
+			days_off = sum(1 for cell in statuses if cell in DAY_OFF_ABBRS)
+
+			cells = _hour_cells(statuses, shift_hours) if by_hours else statuses
+
 			rows.append(
 				{
 					"sn": sn,
