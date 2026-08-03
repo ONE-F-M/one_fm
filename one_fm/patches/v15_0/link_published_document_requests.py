@@ -22,29 +22,39 @@ import frappe
 
 
 def execute():
-	published = frappe.get_all(
-		"Document Request",
-		filters={"status": "Published", "reference_document": ["in", (None, "")]},
-		pluck="name",
-	)
+	published = frappe.get_all("Document Request", filters={"status": "Published"}, pluck="name")
 	if not published:
 		return
 
-	linked = 0
+	linked = filled = 0
 	for request in published:
 		entry = _index_entry_for(request)
 		# Only link to an entry that actually exists — the file id is the index
 		# entry's primary key, so a run whose document was later deleted from
 		# Drive would otherwise leave a dangling Link.
-		if not entry or not frappe.db.exists("AI Reference Index", entry):
-			continue
-		frappe.db.set_value(
-			"Document Request", request, "reference_document", entry, update_modified=False
-		)
-		linked += 1
+		if entry and frappe.db.exists("AI Reference Index", entry):
+			if not frappe.db.get_value("Document Request", request, "reference_document"):
+				frappe.db.set_value(
+					"Document Request", request, "reference_document", entry, update_modified=False
+				)
+				linked += 1
+
+		# document_link is what the form actually reads. Resolve it the same way
+		# a form view would, so the field is populated up front instead of being
+		# repaired one request at a time as people open them.
+		if not frappe.db.get_value("Document Request", request, "document_link"):
+			from one_fm.one_fm.doctype.document_request.document_request import (
+				get_published_document_link,
+			)
+
+			if get_published_document_link(request).get("url"):
+				filled += 1
 
 	frappe.db.commit()
-	print(f"Linked {linked} of {len(published)} published Document Request(s) to their document")
+	print(
+		f"{len(published)} published Document Request(s): "
+		f"{linked} linked to an index entry, {filled} document_link(s) filled"
+	)
 
 
 def _index_entry_for(request: str) -> str | None:

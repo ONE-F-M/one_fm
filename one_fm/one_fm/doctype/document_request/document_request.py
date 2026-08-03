@@ -42,23 +42,29 @@ class DocumentRequest(Document):
 
 
 # ── Reaching the published document ─────────────────────────────────────────
-# Once the process publishes, the Google Doc exists and is readable — but the
-# request that produced it holds no way to reach it. The link is recorded in
-# two places and neither is on this form:
+# `document_link` holds the Google Docs URL, and it is the only thing the form
+# reads. A stored field beats resolving on every view: it renders without a
+# server round-trip, and it shows up in list view, reports and exports, which a
+# computed value never would.
+#
+# The process writes it at publish. Everything below exists to populate it when
+# the process did not — which covers every document published before the field
+# existed, and any run whose publish step predates the map change that writes
+# it. Two sources, in order of authority:
 #
 #   1. AI Reference Index.drive_file_link — written by the map's "Drive — Index
 #      Document" step at publish. This is the canonical record of the published
-#      document, and `reference_document` on this doctype already links to it.
-#      It is only populated for Update/Delete requests, where the user picks it
-#      up front; a Create request publishes without ever being pointed at the
-#      entry its own run created.
+#      document, and `reference_document` already links to it. It is only
+#      populated for Update/Delete requests, where the user picks it up front;
+#      a Create request publishes without ever being pointed at the entry its
+#      own run created.
 #
 #   2. The BPMN instance's task data — `drive_file.webViewLink`, the value the
 #      Drive connector returned when the file was made.
 #
-# So the link is resolved rather than stored: prefer the index entry, fall back
-# to the run that produced it. The fallback is what makes this work for
-# documents published before any of this existed.
+# Resolution is therefore a repair path, not the read path. It fills the field
+# the first time anyone looks, so each request pays it once rather than on
+# every view.
 
 # Statuses where there is no document to open, even though the request may
 # still name one. "Deleted" is the case that matters: a Delete request points
@@ -81,7 +87,7 @@ def get_published_document_link(document_request: str) -> dict:
 	request = frappe.db.get_value(
 		"Document Request",
 		document_request,
-		["name", "title", "status", "reference_document"],
+		["name", "title", "status", "reference_document", "document_link"],
 		as_dict=True,
 	)
 	if not request:
@@ -93,7 +99,17 @@ def get_published_document_link(document_request: str) -> dict:
 	if request.status in NO_DOCUMENT_STATUSES:
 		return {}
 
+	# The stored field is the answer whenever it is set — no lookups at all.
+	if request.document_link:
+		return {
+			"url": request.document_link,
+			"title": request.title,
+			"source": "document_link",
+		}
+
 	# 1. The canonical index entry, when the request is pointed at one.
+	source = url = None
+	title = request.title
 	if request.reference_document:
 		entry = frappe.db.get_value(
 			"AI Reference Index",
@@ -102,21 +118,40 @@ def get_published_document_link(document_request: str) -> dict:
 			as_dict=True,
 		)
 		if entry and entry.drive_file_link:
-			return {
-				"url": entry.drive_file_link,
-				"title": entry.title or request.title,
-				"source": "reference_document",
-			}
+			url, title, source = entry.drive_file_link, entry.title or request.title, "reference_document"
 
 	# 2. The run that produced it. `update_field` writes status with
-	#    frappe.db.set_value, so no doc hook fires at publish and nothing ever
-	#    stamps the link back onto the request — the instance is the only
-	#    remaining record of what was created.
-	link = _link_from_process_instance(document_request)
-	if link:
-		return {"url": link, "title": request.title, "source": "process_instance"}
+	#    frappe.db.set_value, so no doc hook fires at publish — for any run
+	#    predating the map change, the instance is the only remaining record of
+	#    what was created.
+	if not url:
+		url = _link_from_process_instance(document_request)
+		source = "process_instance" if url else None
 
-	return {}
+	if not url:
+		return {}
+
+	_remember(document_request, url)
+	return {"url": url, "title": title, "source": source}
+
+
+def _remember(document_request: str, url: str) -> None:
+	"""Store a repaired link so this resolution happens once, not per view.
+
+	Written straight to the database: the field is read-only and derived, so it
+	must not bump ``modified`` or add a Version row — a stale-document error on
+	someone else's open form would be a poor trade for a cached URL. A failure
+	here is not worth failing the read over; the caller still gets its link.
+	"""
+	try:
+		frappe.db.set_value(
+			"Document Request", document_request, "document_link", url, update_modified=False
+		)
+	except Exception:
+		frappe.log_error(
+			title="Document Request: could not store the resolved document link",
+			message=frappe.get_traceback(),
+		)
 
 
 def _link_from_process_instance(document_request: str) -> str | None:

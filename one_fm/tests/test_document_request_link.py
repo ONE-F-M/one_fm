@@ -3,17 +3,17 @@
 """
 Reaching the published document from the Document Request that produced it.
 
-The link is resolved rather than stored, from two sources with a deliberate
-order of preference:
+``document_link`` on the request holds the URL and is the only thing the form
+reads. These tests cover the two properties around it:
 
-  1. ``reference_document`` -> AI Reference Index.drive_file_link — the
-     canonical record of the published document.
-  2. The BPMN run's task data — ``drive_file.webViewLink``.
+  * it is preferred over every other source, with no lookups at all; and
+  * when it is empty, the link is recovered and **written into it**, so the
+    recovery happens once per request rather than on every view.
 
-The fallback is the interesting one. It exists because ``update_field`` writes
-the published status with ``frappe.db.set_value``, so no doc hook fires and
-nothing ever stamps the link onto the request. Without it, every document
-published before this change would be unreachable.
+Recovery has two sources, in order of authority — the AI Reference Index entry,
+then the BPMN run's task data. It exists because ``update_field`` writes the
+published status with ``frappe.db.set_value``, so no doc hook fires at publish;
+without it, every document published before this field existed is unreachable.
 """
 
 import json
@@ -46,7 +46,7 @@ class DocumentRequestFixtures:
 
 	# --- fixtures ----------------------------------------------------------
 
-	def _request(self, status="Published", reference_document=None):
+	def _request(self, status="Published", reference_document=None, document_link=None):
 		doc = frappe.get_doc({
 			"doctype": "Document Request",
 			"requester": self.requester,
@@ -67,7 +67,18 @@ class DocumentRequestFixtures:
 				reference_document,
 				update_modified=False,
 			)
+		if document_link:
+			frappe.db.set_value(
+				"Document Request",
+				doc.name,
+				"document_link",
+				document_link,
+				update_modified=False,
+			)
 		return doc.name
+
+	def _stored_link(self, request):
+		return frappe.db.get_value("Document Request", request, "document_link")
 
 	def _index_entry(self, link=WEB_VIEW_LINK, file_id=FILE_ID):
 		entry = frappe.get_doc({
@@ -98,6 +109,75 @@ class DocumentRequestFixtures:
 			update_modified=False,
 		)
 		return instance.name
+
+
+class TestStoredFieldIsTheReadPath(DocumentRequestFixtures, unittest.TestCase):
+	"""`document_link` is what the form reads; everything else is recovery."""
+
+	STORED = "https://docs.google.com/document/d/_stored_/edit"
+
+	def test_the_stored_field_is_returned(self):
+		request = self._request(document_link=self.STORED)
+
+		link = get_published_document_link(request)
+
+		self.assertEqual(link["url"], self.STORED)
+		self.assertEqual(link["source"], "document_link")
+
+	def test_the_stored_field_beats_both_recovery_sources(self):
+		"""Once stored, nothing else is consulted — so a document moved in Drive
+		keeps the link the request was published with rather than silently
+		following an index entry that was updated by a later request."""
+		request = self._request(
+			document_link=self.STORED, reference_document=self._index_entry()
+		)
+		self._instance_with_drive_file(request, {"id": FILE_ID, "webViewLink": WEB_VIEW_LINK})
+
+		self.assertEqual(get_published_document_link(request)["url"], self.STORED)
+
+	def test_recovery_writes_the_link_into_the_field(self):
+		"""The point of recovery: it happens once per request, not per view."""
+		request = self._request(reference_document=self._index_entry())
+		self.assertIsNone(self._stored_link(request))
+
+		first = get_published_document_link(request)
+
+		self.assertEqual(first["source"], "reference_document")
+		self.assertEqual(self._stored_link(request), WEB_VIEW_LINK)
+
+		# Second call now takes the cheap path.
+		self.assertEqual(get_published_document_link(request)["source"], "document_link")
+
+	def test_recovery_from_the_run_also_writes_the_field(self):
+		request = self._request()
+		self._instance_with_drive_file(request, {"id": FILE_ID, "webViewLink": WEB_VIEW_LINK})
+
+		self.assertEqual(get_published_document_link(request)["source"], "process_instance")
+		self.assertEqual(self._stored_link(request), WEB_VIEW_LINK)
+
+	def test_recovery_does_not_bump_the_modified_timestamp(self):
+		"""The field is derived and read-only. Bumping `modified` would give
+		anyone with the form open a stale-document error in exchange for a
+		cached URL, and would add a Version row for a value nobody typed."""
+		request = self._request(reference_document=self._index_entry())
+		before = frappe.db.get_value("Document Request", request, "modified")
+
+		get_published_document_link(request)
+
+		self.assertEqual(frappe.db.get_value("Document Request", request, "modified"), before)
+
+	def test_nothing_is_stored_when_there_is_nothing_to_store(self):
+		request = self._request()
+
+		self.assertEqual(get_published_document_link(request), {})
+		self.assertIsNone(self._stored_link(request))
+
+	def test_a_deleted_request_never_gets_a_link_written(self):
+		"""Its reference_document names the document the process removed."""
+		request = self._request(status="Deleted", reference_document=self._index_entry())
+
+		self.assertEqual(get_published_document_link(request), {})
+		self.assertIsNone(self._stored_link(request))
 
 
 class TestLinkResolution(DocumentRequestFixtures, unittest.TestCase):
