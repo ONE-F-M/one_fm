@@ -182,7 +182,7 @@ def create_retroactive_day_off_penalty(doc):
         penalty = frappe.new_doc("Penalty And Investigation")
         penalty.employee = offender
         penalty.issuer = issuer
-        penalty.location = doc.site
+        penalty.operations_site = doc.site
         penalty.issuance_date = today()
         penalty.incident_date = getdate(doc.from_date)
         penalty.supervisor_remarks = _(
