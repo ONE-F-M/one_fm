@@ -73,7 +73,7 @@ class PenaltyIssuance(Document):
 			penalty.penalty_issuance = self.name
 			penalty.penalty_issuance_time = self.issuing_time
 
-			penalty.location = self.location
+			penalty.operations_site = self.location
 
 			penalty.issuer_employee = self.issuing_employee
 			penalty.issuer_name = self.employee_name

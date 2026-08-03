@@ -110,21 +110,17 @@
 {% var monthDays = report.additional_details ? report.additional_details.days : [] %}
 {% var statusMap = report.additional_details ? report.additional_details.status_map : [] %}
 
-{% var totalColumns = 44; %}
-{% var fixedColumns = 1 + 2 + 1; %}
 {% var dayColumns = monthDays.length; %}
-{% var dynamicColumns = totalColumns - dayColumns - fixedColumns; %}
+{% var fixedColumns = 1 + 2 + 1; %}
+{% var dynamicColumns = 12; %}
+{% var totalColumns = dayColumns + fixedColumns + dynamicColumns; %}
 
 {% var empIdColSpan = Math.floor(dynamicColumns * 4 / 12); %}
 {% var empNameColSpan = Math.floor(dynamicColumns * 6 / 12); %}
 {% var shiftColSpan = dynamicColumns - empIdColSpan - empNameColSpan; %}
 
-{% var selectedMonth = "" %}
-{% for (var i = 0; i < report.get_filter("month").options.length; i++) { %}
-  {% if (report.get_filter("month").options[i].value == report.get_filter("month").value) { %}
-    {% selectedMonth = report.get_filter("month").options[i].label %}
-  {% } %}
-{% } %}
+{% var periodLabel = frappe.datetime.str_to_user(report.get_filter_value("from_date"))
+     + " - " + frappe.datetime.str_to_user(report.get_filter_value("to_date")); %}
 
 {% function chunk(array, size) {
   var out = [];
@@ -146,7 +142,7 @@
           <td colspan="5" class="logo-cell">
             <img src="https://one-fm.com/files/ONEFM_Identity.png" alt="one-fm" />
           </td>
-          <td colspan="34">{%= __("Monthly Attendance Sheet") %}</td>
+          <td colspan="{{ totalColumns - 10 }}">{%= __("Monthly Attendance Sheet") %}</td>
           <td colspan="5" class="logo-cell">
             {% const clientLogo = report.additional_details.client_logo || "" %}
             {% if clientLogo %}
@@ -157,12 +153,14 @@
   
         <!-- Meta Info -->
         <tr class="meta-section">
-          <td colspan="5" class="meta-cell"><strong>Project Name:</strong></td>
-          <td colspan="13" class="meta-cell">{{ report.get_filter_value("project") }}</td>
+{% var metaValueSpan = Math.max(1, Math.floor((totalColumns - 12) / 3)); %}
+{% var metaPeriodSpan = totalColumns - 12 - (2 * metaValueSpan); %}
+          <td colspan="4" class="meta-cell"><strong>Project Name:</strong></td>
+          <td colspan="{{ metaValueSpan }}" class="meta-cell">{{ report.get_filter_value("project") }}</td>
           <td colspan="4" class="meta-cell"><strong>Site Name:</strong></td>
-          <td colspan="13" class="meta-cell">{{ report.get_filter_value("site") }}</td>
-          <td colspan="3" class="meta-cell"><strong>Month:</strong></td>
-          <td colspan="6" class="meta-cell">{{ selectedMonth }} {{ report.get_filter_value("year") }}</td>
+          <td colspan="{{ metaValueSpan }}" class="meta-cell">{{ report.get_filter_value("site") }}</td>
+          <td colspan="4" class="meta-cell"><strong>Period:</strong></td>
+          <td colspan="{{ metaPeriodSpan }}" class="meta-cell">{{ periodLabel }}</td>
         </tr>
   
         <!-- Header -->
@@ -172,7 +170,7 @@
           <th rowspan="2" colspan="{{ empNameColSpan }}">Employee Name</th>
           <th rowspan="2" colspan="{{ shiftColSpan }}">Shift</th>
           {% for (var i = 0; i < monthDays.length; i++) { %}
-            <th>{{ monthDays[i].date }}</th>
+            <th>{{ monthDays[i].date }} {{ monthDays[i].month }}</th>
           {% } %}
           <th rowspan="2" colspan="2">Working Days</th>
           <th rowspan="2">Days Off</th>
@@ -193,7 +191,7 @@
             <td colspan="{{ empNameColSpan }}">{{ row.employee_name }}</td>
             <td colspan="{{ shiftColSpan }}">{{ row.shift }}</td>
             {% for (var j = 0; j < monthDays.length; j++) { %}
-              {% var status = row[monthDays[j].date]; %}
+              {% var status = row[monthDays[j].key]; %}
               <td class="{{ status ? "" : "empty-attendance-cell" }}">{{ status == "CDO" ? "DO" : status }}</td>
               {% if (status == "P") { %}
                 {% dateWiseDutyStaff[monthDays[j].date] = (dateWiseDutyStaff[monthDays[j].date] || 0) + 1 %}

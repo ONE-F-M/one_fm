@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import frappe
 import unittest
 from frappe.utils import today, add_days, getdate
+from one_fm.overrides.employee import NOT_RETURNED_FROM_LEAVE
 from one_fm.overrides.leave_application import update_employee_status_after_leave
 
 
@@ -166,8 +167,8 @@ class TestLeaveResumption(unittest.TestCase):
         update_employee_status_after_leave()
 
         self.shift_no_accommodation_employee.reload()
-        self.assertEqual(self.shift_no_accommodation_employee.status, "Not Returned From Leave",
-                        "Shift worker without accommodation should be Not Returned From Leave")
+        self.assertEqual(self.shift_no_accommodation_employee.status, NOT_RETURNED_FROM_LEAVE,
+                        "Shift worker without accommodation should not be marked as returned")
 
     def test_shift_worker_with_accommodation_no_checkin_not_returned(self):
         today_date = getdate(today())
@@ -178,8 +179,8 @@ class TestLeaveResumption(unittest.TestCase):
         update_employee_status_after_leave()
 
         self.shift_with_accommodation_employee.reload()
-        self.assertEqual(self.shift_with_accommodation_employee.status, "Not Returned From Leave",
-                        "Shift worker with accommodation but no check-in should be Not Returned From Leave")
+        self.assertEqual(self.shift_with_accommodation_employee.status, NOT_RETURNED_FROM_LEAVE,
+                        "Shift worker with accommodation but no check-in should not be marked as returned")
 
     def test_shift_worker_with_accommodation_with_checkin_active(self):
         today_date = getdate(today())
