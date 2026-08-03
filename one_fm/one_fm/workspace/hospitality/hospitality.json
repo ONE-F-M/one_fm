@@ -14,7 +14,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Accommodation",
-   "link_count": 7,
+   "link_count": 8,
    "onboard": 0,
    "type": "Card Break"
   },
@@ -64,6 +64,16 @@
    "label": "Checkin/Checkout",
    "link_count": 0,
    "link_to": "Accommodation Checkin Checkout",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Leave Movement",
+   "link_count": 0,
+   "link_to": "Accommodation Leave Movement",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -255,7 +265,7 @@
    "type": "Link"
   }
  ],
- "modified": "2022-10-31 21:19:33.769979",
+ "modified": "2026-07-30 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Hospitality",

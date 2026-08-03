@@ -28,6 +28,11 @@ class AccommodationLeaveMovement(Document):
 	def on_submit(self):
 		if self.type == "IN" and self.checkin_reference:
 			frappe.db.set_value("Accommodation Leave Movement", self.checkin_reference, "checked_out", 1)
+			# WI-001781: the OUT movement's assignment closes on `checked_out`, but
+			# set_value does not save that document, so its assignment rule is never
+			# re-evaluated and the supervisor's ToDo would stay open forever. Same
+			# reasoning as reapply_leave_application_assignment_rules below.
+			self.reapply_own_assignment_rules(self.checkin_reference)
 
 		if self.type == "OUT":
 			self.handle_checkout_notification()
@@ -44,6 +49,22 @@ class AccommodationLeaveMovement(Document):
 
 		if self.type == "OUT" and self.leave_application:
 			self.reapply_leave_application_assignment_rules()
+
+	def reapply_own_assignment_rules(self, name):
+		"""Re-evaluate the assignment rules on another movement of this doctype.
+
+		Assignment rules only fire on their own document's save, so a flag written
+		with set_value leaves the rule unaware and the assignment open.
+		"""
+		from frappe.automation.doctype.assignment_rule.assignment_rule import apply
+
+		try:
+			apply(doctype=self.doctype, name=name)
+		except Exception:
+			frappe.log_error(
+				message=frappe.get_traceback(),
+				title="Error Reapplying Assignment Rules for Accommodation Leave Movement",
+			)
 
 	def reapply_leave_application_assignment_rules(self):
 		"""Set accommodation checkout flag and re-evaluate assignment rules.
