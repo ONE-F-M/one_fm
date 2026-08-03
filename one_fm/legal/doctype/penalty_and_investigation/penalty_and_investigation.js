@@ -1,4 +1,10 @@
 frappe.ui.form.on("Penalty And Investigation", {
+	setup: function (frm) {
+		// A retired penalty code must not be offered for a new penalty (WI-001794).
+		frm.set_query("applied_penalty_code", function () {
+			return { filters: { is_active: 1 } };
+		});
+	},
 	onload: function (frm) {
 		if (frm.is_new()) {
 			frm.set_value("issuance_date", frappe.datetime.get_today());
@@ -38,12 +44,12 @@ frappe.ui.form.on("Penalty And Investigation", {
 		if (is_supervisor) {
 			frm.set_df_property("hr_remarks", "hidden", 1);
 			frm.set_df_property("general_manager_decision", "hidden", 1);
-			frm.set_df_property("legal_findings", "hidden", 1);
+			frm.set_df_property("legal_department_remarks", "hidden", 1);
 		} else {
 			// If not supervisor, ensure they are shown
 			frm.set_df_property("hr_remarks", "hidden", 0);
 			frm.set_df_property("general_manager_decision", "hidden", 0);
-			frm.set_df_property("legal_findings", "hidden", 0);
+			frm.set_df_property("legal_department_remarks", "hidden", 0);
 		}
 
 		// 3. general_manager_decision and hr_remarks read-only logic
@@ -63,21 +69,19 @@ frappe.ui.form.on("Penalty And Investigation", {
 			frm.set_df_property("hr_remarks", "read_only", 0);
 		}
 
-		// 4. supervisor_remarks and evidence read-only logic
+		// 4. supervisor_remarks read-only logic
 		const supervisor_read_only_states = ["Pending HR Review", "Pending GM Decision", "Pending Legal Investigation"];
 		if (supervisor_read_only_states.includes(current_state)) {
 			frm.set_df_property("supervisor_remarks", "read_only", 1);
-			frm.set_df_property("evidence", "read_only", 1);
 		} else {
 			frm.set_df_property("supervisor_remarks", "read_only", 0);
-			frm.set_df_property("evidence", "read_only", 0);
 		}
 
 		// 5. salary_deduction_amount read-only logic based on damages
 		const has_damage = frm.doc.company_damage || frm.doc.asset_damage || frm.doc.customer_property_damage || frm.doc.other_damages;
 		frm.set_df_property("salary_deduction_amount", "read_only", !has_damage);
 
-		// 6. employee_rejection_remarks read-only logic
+		// 6. employee_remarks read-only logic
 		const employee_rejection_read_only_states = [
 			"Pending Supervisor Review",
 			"Pending HR Review",
@@ -85,9 +89,9 @@ frappe.ui.form.on("Penalty And Investigation", {
 			"Pending Legal Investigation"
 		];
 		if (employee_rejection_read_only_states.includes(current_state)) {
-			frm.set_df_property("employee_rejection_remarks", "read_only", 1);
+			frm.set_df_property("employee_remarks", "read_only", 1);
 		} else {
-			frm.set_df_property("employee_rejection_remarks", "read_only", 0);
+			frm.set_df_property("employee_remarks", "read_only", 0);
 		}
 	},
 	applied_penalty_code: function (frm) {
@@ -118,7 +122,7 @@ frappe.ui.form.on("Penalty And Investigation", {
 		if (!frm.doc.employee) return;
 
 		let set_details = (site, project) => {
-			if (site) frm.set_value("location", site);
+			if (site) frm.set_value("operations_site", site);
 			if (project) frm.set_value("project", project);
 		};
 
@@ -149,30 +153,38 @@ frappe.ui.form.on("Penalty And Investigation", {
 		}
 	},
 	fetch_penalty_details: function (frm) {
-		if (!frm.doc.applied_penalty_code || !frm.doc.applied_level) {
-			frm.set_value("deduction_type", "");
+		const clear = () => {
+			frm.set_value("action_type", "");
+			frm.set_value("penalty_category", "");
 			frm.set_value("salary_deduction_days", 0);
+		};
+
+		if (!frm.doc.applied_penalty_code || !frm.doc.applied_level) {
+			clear();
 			return;
 		}
 
 		frappe.model.with_doc("Penalty Code", frm.doc.applied_penalty_code, function () {
 			let pc = frappe.get_doc("Penalty Code", frm.doc.applied_penalty_code);
 			if (pc && pc.penalty_level) {
-				const level_map = {
-					"1": "1st",
-					"2": "2nd",
-					"3": "3rd",
-					"4": "4th",
-					"5": "5th"
-				};
-				const target_level = level_map[frm.doc.applied_level];
-				const row = pc.penalty_level.find(d => d.offence_level === target_level);
+				// applied_level now holds the ordinal the Penalty Level rows are keyed
+				// on ("1st"), so it is matched directly - the old numeric-to-ordinal map
+				// would find nothing and silently clear the sanction (WI-001794).
+				const row = pc.penalty_level.find(
+					(d) => d.offence_level === frm.doc.applied_level
+				);
 				if (row) {
-					frm.set_value("deduction_type", row.deduction_type);
+					frm.set_value("action_type", row.deduction_type);
 					frm.set_value("salary_deduction_days", row.salary_deduction_days);
+					// Mirrors the server: the category only covers these two actions.
+					frm.set_value(
+						"penalty_category",
+						["Warning", "Salary Deduction"].includes(row.deduction_type)
+							? row.deduction_type
+							: ""
+					);
 				} else {
-					frm.set_value("deduction_type", "");
-					frm.set_value("salary_deduction_days", 0);
+					clear();
 				}
 			}
 		});

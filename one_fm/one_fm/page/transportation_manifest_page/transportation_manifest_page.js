@@ -203,6 +203,13 @@ function renderManifest($container, data) {
 		return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 	}
 
+	// WI-001766: a driver or supervisor identifies the bus on site by its plate and
+	// model, so both are shown as "<plate>, <model>". A vehicle whose master record
+	// carries no model shows the plate alone - no trailing comma.
+	function vehicleString(meta) {
+		return [meta.license_plate, meta.model].filter(Boolean).join(", ");
+	}
+
 	function showToast(msg) {
 		const toast = document.createElement("div");
 		toast.textContent = msg;
@@ -487,11 +494,12 @@ function renderManifest($container, data) {
 
 	parsed.forEach((pr, idx) => {
 		const meta = (ROUTE_DATA.vehicleMeta ?? {})[pr.label] ?? {};
+		const vstr = vehicleString(meta);
 		const tab = document.createElement("button");
 		tab.className = "mfst-tab";
 		tab.innerHTML = `
 			<span class="mfst-tab-name">${pr.label}</span>
-			${meta.license_plate ? `<span class="mfst-tab-plate">${escHtml(meta.license_plate)}</span>` : ""}
+			${vstr ? `<span class="mfst-tab-plate">${escHtml(vstr)}</span>` : ""}
 			<span class="mfst-tab-time">${fmtTime(pr.route.vehicleStartTime)} → ${fmtTime(pr.route.vehicleEndTime)}</span>
 		`;
 		tab.addEventListener("click", () => {
@@ -562,6 +570,7 @@ function renderManifest($container, data) {
 	function renderRoute(pr) {
 		activeView = pr;
 		const meta = (ROUTE_DATA.vehicleMeta ?? {})[pr.label] ?? {};
+		const vstr = vehicleString(meta);
 		const accommodation = meta.accommodation || meta.location || "Depot";
 		const allTrips = buildTrips(pr);
 
@@ -585,7 +594,7 @@ function renderManifest($container, data) {
 							<span class="material-symbols-outlined" style="font-size:28px;vertical-align:middle;margin-right:8px;color:var(--mfst-accent)">directions_bus</span>
 							${pr.label}
 						</div>
-						${meta.license_plate ? `<div class="mfst-vehicle-plate">${escHtml(meta.license_plate)}</div>` : ""}
+						${vstr ? `<div class="mfst-vehicle-plate">${escHtml(vstr)}</div>` : ""}
 					</div>
 					<div class="mfst-vehicle-card-right">
 						<div class="mfst-vehicle-time-badge">
