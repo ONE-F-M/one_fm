@@ -4,8 +4,42 @@
 frappe.ui.form.on('Roster Day Off Checker', {
     refresh: function(frm) {
         add_make_cdo_button(frm);
+        add_take_action_button(frm);
     }
 });
+
+// WI-001654: open the roster already filtered to this employee's allocation, so a
+// supervisor can correct the day off schedule without rebuilding the filters by hand.
+function add_take_action_button(frm) {
+    if (!frm.is_new()) {
+        frm.add_custom_button(__('Take Action'), function() {
+            open_filtered_roster(frm);
+        }).addClass('btn-primary');
+    }
+}
+
+function open_filtered_roster(frm) {
+    frappe.call({
+        method: 'one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.get_take_action_data',
+        args: { checker: frm.doc.name },
+        freeze: true,
+        freeze_message: __('Opening roster...'),
+        callback: function(r) {
+            if (!r.message || !r.message.path) {
+                frappe.msgprint(__('Unable to determine the roster filters for this record.'));
+                return;
+            }
+
+            // Same handling as the Roster Client Day Off Checker: build the URL from the
+            // returned params, dropping any the server could not resolve.
+            let url = new URL(r.message.path, window.location.origin);
+            Object.entries(r.message.params || {}).forEach(function([key, value]) {
+                if (value) url.searchParams.set(key, value);
+            });
+            window.open(url.toString(), '_blank');
+        }
+    });
+}
 
 function add_make_cdo_button(frm) {
     if (!frm.doc.__islocal && 
