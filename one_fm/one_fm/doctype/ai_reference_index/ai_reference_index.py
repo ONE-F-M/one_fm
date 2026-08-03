@@ -75,6 +75,7 @@ class AIReferenceIndex(Document):
 		document_type: DF.Data | None
 		drive_file_id: DF.Data | None
 		drive_file_link: DF.Data | None
+		is_input_material: DF.Check
 		lifecycle_state: DF.Literal["Active", "Inactive"]
 		source_process: DF.Link | None
 		title: DF.Data | None

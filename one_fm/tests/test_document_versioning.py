@@ -284,7 +284,7 @@ class TestRequestsAgainstWithdrawnDocuments(VersioningFixtures, unittest.TestCas
 		if not self.requester:
 			self.skipTest("no active Employee to raise a request as")
 
-	def _raise(self, action, reference_document):
+	def _raise(self, action, reference_document, **kw):
 		return frappe.get_doc({
 			"doctype": "Document Request",
 			"requester": self.requester,
@@ -293,6 +293,7 @@ class TestRequestsAgainstWithdrawnDocuments(VersioningFixtures, unittest.TestCas
 			"title": "_Test Request",
 			"requirement_text": "x",
 			"reference_document": reference_document,
+			**kw,
 		}).insert(ignore_permissions=True)
 
 	def test_an_update_against_a_withdrawn_document_is_refused(self):
@@ -310,9 +311,17 @@ class TestRequestsAgainstWithdrawnDocuments(VersioningFixtures, unittest.TestCas
 			self._raise("Delete", doc.name)
 
 	def test_an_active_document_can_still_be_revised(self):
+		"""An Update also needs its New Content Document — see TestInputMaterial."""
 		doc = self._document(file_id="_TestVerS", state="Active")
+		src = frappe.get_doc({
+			"doctype": "AI Reference Index",
+			"drive_file_id": "_TestVerSsrc",
+			"title": "_Test New Content",
+			"is_input_material": 1,
+		})
+		src.insert(ignore_permissions=True)
 
-		request = self._raise("Update", doc.name)
+		request = self._raise("Update", doc.name, update_source=src.name)
 
 		self.assertEqual(request.reference_document, doc.name)
 
@@ -320,3 +329,91 @@ class TestRequestsAgainstWithdrawnDocuments(VersioningFixtures, unittest.TestCas
 		request = self._raise("Create", None)
 
 		self.assertIsNone(request.reference_document)
+
+
+class TestInputMaterial(VersioningFixtures, unittest.TestCase):
+	"""Input material is catalogued alongside controlled documents but is not one.
+
+	Guidelines, amendment documents and regulations live in the same register so a
+	requester can point at them as a source. Letting one be *revised* would give
+	it a document code and a version history, quietly promoting reference material
+	into the controlled set.
+	"""
+
+	def setUp(self):
+		super().setUp()
+		if not self.requester:
+			self.skipTest("no active Employee to raise a request as")
+
+	def _input_doc(self, file_id="_TestInput001"):
+		entry = frappe.get_doc({
+			"doctype": "AI Reference Index",
+			"drive_file_id": file_id,
+			"title": "_Test New Content",
+			"document_type": "Amendment",
+			"is_input_material": 1,
+			"content": "Mark is a boy.\n\nJane is a girl.",
+		})
+		entry.insert(ignore_permissions=True)
+		return entry
+
+	def _raise(self, **kw):
+		return frappe.get_doc({
+			"doctype": "Document Request",
+			"requester": self.requester,
+			"document_type": "Policy",
+			"title": "_Test Request",
+			"requirement_text": "x",
+			**kw,
+		}).insert(ignore_permissions=True)
+
+	def test_input_material_cannot_be_revised(self):
+		src = self._input_doc("_TestInputA")
+		target = self._document(file_id="_TestCtrlA")
+
+		with self.assertRaises(frappe.ValidationError):
+			self._raise(request_action="Update", reference_document=src.name, update_source=target.name)
+
+	def test_input_material_cannot_be_withdrawn_by_request(self):
+		src = self._input_doc("_TestInputB")
+
+		with self.assertRaises(frappe.ValidationError):
+			self._raise(request_action="Delete", reference_document=src.name)
+
+	def test_an_update_requires_a_new_content_document(self):
+		"""mandatory_depends_on is client-side only in Frappe, so the rule has to
+		be enforced here or the API sails straight past it."""
+		target = self._document(file_id="_TestCtrlB")
+
+		with self.assertRaises(frappe.ValidationError):
+			self._raise(request_action="Update", reference_document=target.name)
+
+	def test_the_new_content_cannot_be_the_document_being_revised(self):
+		"""It would publish a version identical to the one before it."""
+		target = self._document(file_id="_TestCtrlC")
+
+		with self.assertRaises(frappe.ValidationError):
+			self._raise(request_action="Update", reference_document=target.name,
+			            update_source=target.name)
+
+	def test_a_valid_update_is_accepted(self):
+		src = self._input_doc("_TestInputC")
+		target = self._document(file_id="_TestCtrlD")
+
+		req = self._raise(request_action="Update", reference_document=target.name,
+		                  update_source=src.name)
+
+		self.assertEqual(req.update_source, src.name)
+
+	def test_update_source_is_cleared_on_a_non_update(self):
+		"""A stale value would be fetched by the process and treated as the new
+		content of a document nobody asked to revise."""
+		src = self._input_doc("_TestInputD")
+
+		req = self._raise(request_action="Create", update_source=src.name)
+
+		self.assertIsNone(req.update_source)
+
+	def test_a_delete_still_needs_its_document(self):
+		with self.assertRaises(frappe.ValidationError):
+			self._raise(request_action="Delete")

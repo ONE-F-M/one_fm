@@ -12,7 +12,10 @@ class DocumentRequest(Document):
 		self.set_requester_defaults()
 		self.check_approver_resolved()
 		self.apply_reference_document_defaults()
+		self.check_required_links()
 		self.check_reference_document_is_active()
+		self.check_reference_document_is_controlled()
+		self.check_update_source()
 
 	def set_requester_defaults(self):
 		if not self.requester:
@@ -64,6 +67,77 @@ class DocumentRequest(Document):
 				"has to approve that. There is nothing for a {1} request to do here."
 			).format(frappe.bold(self.reference_document), self.request_action)
 		)
+
+	def check_reference_document_is_controlled(self):
+		"""Input material is not a controlled document, so it cannot be revised.
+
+		Guidelines, amendment documents and the like are catalogued in the same
+		register so they can be *picked as a source*. Revising one through this
+		process would give it a document code and a version history, quietly
+		promoting reference material into the controlled set.
+		"""
+		if self.request_action == "Create" or not self.reference_document:
+			return
+
+		if frappe.db.get_value("AI Reference Index", self.reference_document, "is_input_material"):
+			frappe.throw(
+				_(
+					"{0} is input material — reference content the process reads, not a "
+					"controlled document it produced. It has no version history to add to. "
+					"Pick the controlled document you want to revise, and use this one as "
+					"the New Content Document instead."
+				).format(frappe.bold(self.reference_document))
+			)
+
+	def check_required_links(self):
+		"""Enforce the action's required links here, not just on the form.
+
+		``mandatory_depends_on`` is evaluated **client-side only** — Frappe has no
+		server-side equivalent — so it styles the field and blocks the Save button
+		and nothing more. Anything that inserts a request without going through
+		the form (the API, a bulk import, a test) sails past it, and the gap only
+		surfaces later as a process that runs with nothing to act on.
+		"""
+		if self.request_action == "Create":
+			return
+
+		if not self.reference_document:
+			frappe.throw(
+				_("Pick the existing document this {0} request applies to.").format(self.request_action)
+			)
+
+		if self.request_action == "Update" and not self.update_source:
+			frappe.throw(
+				_(
+					"An Update needs a New Content Document — the document holding what the "
+					"revision should say. Catalogue it on AI Reference Index first (pasting its "
+					"Drive link is enough), tick Input Material, then pick it here. The wording "
+					"published comes from that document, not from the AI."
+				)
+			)
+
+	def check_update_source(self):
+		"""The revision's content has to come from somewhere other than itself.
+
+		On an Update the uploaded document is the authoritative content — the AI
+		is only allowed to reformat it, never to invent wording. Pointing that at
+		the document being revised would ask it to reformat a document into
+		itself, which produces a version identical to the one before it.
+		"""
+		if self.request_action != "Update":
+			# Only Update consumes it; a stale value on a Create/Delete would be
+			# fetched by the process and silently treated as the new content.
+			self.update_source = None
+			return
+
+		if self.update_source and self.update_source == self.reference_document:
+			frappe.throw(
+				_(
+					"The New Content Document cannot be the document being revised — "
+					"that would publish a new version identical to the current one. "
+					"Catalogue the new content as its own entry and pick that."
+				)
+			)
 
 
 # ── Reaching the published document ─────────────────────────────────────────

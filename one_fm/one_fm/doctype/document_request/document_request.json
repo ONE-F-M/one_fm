@@ -17,6 +17,7 @@
   "requirement_text",
   "source_guideline",
   "reference_document",
+  "update_source",
   "section_break_approval",
   "approver",
   "approver_user",
@@ -99,7 +100,16 @@
    "options": "AI Reference Index",
    "depends_on": "eval:doc.request_action != 'Create'",
    "mandatory_depends_on": "eval:doc.request_action != 'Create'",
-   "description": "The existing published document being revised or withdrawn. Only documents that are currently active can be picked — an already-withdrawn document has nothing to revise or withdraw."
+   "description": "The existing published document being revised or withdrawn. Only active controlled documents can be picked — an already-withdrawn one has nothing to revise or withdraw, and input material is not a controlled document."
+  },
+  {
+   "fieldname": "update_source",
+   "fieldtype": "Link",
+   "label": "New Content Document",
+   "options": "AI Reference Index",
+   "depends_on": "eval:doc.request_action == 'Update'",
+   "mandatory_depends_on": "eval:doc.request_action == 'Update'",
+   "description": "The document holding the content you want the revision to say — catalogue it on AI Reference Index first (pasting its Drive link is enough) and tick Input Material. Its text is authoritative: the AI reformats it into the official template and may not add, remove or reword anything. Say what the change is for in Requirement; that guides the layout, not the wording."
   },
   {
    "fieldname": "section_break_approval",

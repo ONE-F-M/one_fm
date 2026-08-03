@@ -12,6 +12,7 @@
   "document_code",
   "title",
   "document_type",
+  "is_input_material",
   "column_break_lifecycle",
   "lifecycle_state",
   "current_version",
@@ -47,6 +48,15 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Document Type"
+  },
+  {
+   "fieldname": "is_input_material",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Input Material",
+   "default": "0",
+   "description": "Tick for material the process READS rather than produces — guidelines, amendment documents, regulations, meeting outcomes. Input material is catalogued here so it can be picked as a source, but it is not a controlled document: it gets no document code, carries no versions, and cannot be selected as the document to revise or withdraw."
   },
   {
    "fieldname": "drive_file_link",

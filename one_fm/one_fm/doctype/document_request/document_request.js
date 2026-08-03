@@ -35,20 +35,31 @@ frappe.ui.form.on("Document Request", {
 	},
 
 	setup(frm) {
+		// Two pickers over the same register, filtered to opposite halves of it.
+		//
 		// A withdrawn document has nothing to revise and nothing left to
-		// withdraw, so it must not be offerable. The server refuses it in
-		// validate too — this only saves the user from finding out after typing
+		// withdraw, and input material was never a controlled document in the
+		// first place — neither should be offerable. The server refuses both in
+		// validate too; this only saves the user from finding out after typing
 		// the rest of the request.
 		frm.set_query("reference_document", () => ({
-			filters: { lifecycle_state: "Active" },
+			filters: { lifecycle_state: "Active", is_input_material: 0 },
+		}));
+
+		// The mirror image: the new content comes *from* input material.
+		frm.set_query("update_source", () => ({
+			filters: { is_input_material: 1 },
 		}));
 	},
 
 	request_action(frm) {
-		// The previously picked document may no longer be a legal choice for the
-		// new action, and a stale link is worse than an empty field.
+		// A document picked for one action may be an illegal choice for another,
+		// and a stale link is worse than an empty field.
 		if (frm.doc.request_action === "Create" && frm.doc.reference_document) {
 			frm.set_value("reference_document", null);
+		}
+		if (frm.doc.request_action !== "Update" && frm.doc.update_source) {
+			frm.set_value("update_source", null);
 		}
 	},
 });
