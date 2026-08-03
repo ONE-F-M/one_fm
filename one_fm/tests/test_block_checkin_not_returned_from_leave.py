@@ -5,9 +5,11 @@ import frappe
 import unittest
 from frappe.utils import today, add_days, now_datetime
 
+from one_fm.overrides.employee import NOT_RETURNED_FROM_LEAVE
+
 
 class TestBlockCheckinNotReturnedFromLeave(unittest.TestCase):
-	"""Tests for blocking Employee Checkin when employee status is 'Not Returned From Leave'."""
+	"""Tests for blocking Employee Checkin when an employee has not returned from leave."""
 
 	def setUp(self):
 		frappe.flags.in_test = 1
@@ -49,9 +51,8 @@ class TestBlockCheckinNotReturnedFromLeave(unittest.TestCase):
 		return employee
 
 	def test_checkin_blocked_for_not_returned_from_leave(self):
-		"""Employee with status 'Not Returned From Leave' must NOT be able to check in."""
-		# Set employee status to "Not Returned From Leave"
-		frappe.db.set_value("Employee", self.employee.name, "status", "Not Returned From Leave")
+		"""An employee who has not returned from leave must NOT be able to check in."""
+		frappe.db.set_value("Employee", self.employee.name, "status", NOT_RETURNED_FROM_LEAVE)
 		frappe.db.commit()
 		frappe.clear_cache(doctype="Employee")
 
@@ -73,13 +74,13 @@ class TestBlockCheckinNotReturnedFromLeave(unittest.TestCase):
 		try:
 			checkin.insert(ignore_permissions=True)
 		except frappe.ValidationError as e:
-			if "Not Returned From Leave" in str(e) or "Access Denied" in str(e):
+			if "Access Denied" in str(e):
 				self.fail("Active employee was incorrectly blocked from checking in.")
 
 	def test_checkin_allowed_after_status_restored(self):
 		"""After status changes back to 'Active', checkin should succeed."""
 		# Block first
-		frappe.db.set_value("Employee", self.employee.name, "status", "Not Returned From Leave")
+		frappe.db.set_value("Employee", self.employee.name, "status", NOT_RETURNED_FROM_LEAVE)
 		frappe.db.commit()
 		frappe.clear_cache(doctype="Employee")
 
@@ -104,12 +105,12 @@ class TestBlockCheckinNotReturnedFromLeave(unittest.TestCase):
 		try:
 			checkin2.insert(ignore_permissions=True)
 		except frappe.ValidationError as e:
-			if "Not Returned From Leave" in str(e) or "Access Denied" in str(e):
+			if "Access Denied" in str(e):
 				self.fail("Employee was still blocked after status was restored to Active.")
 
 	def test_blocked_checkin_error_message(self):
 		"""Verify the exact error message text for blocked checkin."""
-		frappe.db.set_value("Employee", self.employee.name, "status", "Not Returned From Leave")
+		frappe.db.set_value("Employee", self.employee.name, "status", NOT_RETURNED_FROM_LEAVE)
 		frappe.db.commit()
 		frappe.clear_cache(doctype="Employee")
 
