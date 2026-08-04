@@ -4,9 +4,7 @@ from frappe.utils import get_fullname, get_url_to_form, getdate
 from bs4 import BeautifulSoup
 from datetime import datetime,timezone, timedelta
 from one_fm.processor import is_user_id_company_prefred_email_in_employee, sendemail
-from googleapiclient.discovery import build
 from frappe import _
-from google.oauth2 import service_account
 from frappe.desk.doctype.todo.todo import ToDo as FrappeToDo
 
 class ToDo(FrappeToDo):
@@ -119,13 +117,14 @@ def get_google_task_service(employee_email):
         )
         return None
 
-    credentials_path = frappe.get_site_path("private", "files", "gcp.json")
+    # Key from ONEFM General Setting > Google > Service Account JSON, falling
+    # back to private/files/gcp.json for sites still carrying the file.
+    from one_fm.one_fm.google_credentials import get_service
+
     try:
-        with open(credentials_path, "r") as file:
-            credentials_dict = json.load(file)
-        credentials = service_account.Credentials.from_service_account_info(credentials_dict, scopes=["https://www.googleapis.com/auth/tasks"])
-        delegated_credentials = credentials.with_subject(employee_email)
-        return build("tasks", "v1", credentials=delegated_credentials)
+        return get_service(
+            "tasks", "v1", ["https://www.googleapis.com/auth/tasks"], subject=employee_email
+        )
     except Exception as e:
         frappe.log_error(title="Error reading Google credentials", message=str(e))
         return None
