@@ -15,6 +15,7 @@ class DocumentRequest(Document):
 		self.check_required_links()
 		self.check_reference_document_is_active()
 		self.check_reference_document_is_controlled()
+		self.check_source_documents_are_active()
 		self.check_update_source()
 
 	def set_requester_defaults(self):
@@ -87,6 +88,41 @@ class DocumentRequest(Document):
 					"Pick the controlled document you want to revise, and use this one as "
 					"the New Content Document instead."
 				).format(frappe.bold(self.reference_document))
+			)
+
+	def check_source_documents_are_active(self):
+		"""A withdrawn document is not usable as SOURCE material either.
+
+		``check_reference_document_is_active`` already refuses to revise or
+		withdraw an inactive document. The two fields that point the other way —
+		the guideline a Create is generated from, and the New Content Document an
+		Update takes its wording from — had no such check, so a withdrawn document
+		could still be read and its content published into a live one. Withdrawing
+		is how this system says "stop using this"; quietly using it as the source
+		of a new document is the same mistake with an extra step.
+
+		The pickers filter these fields to Active as well, but that is Frappe's
+		``link_filters``, which runs in the browser. It shapes the dropdown and
+		nothing else — the API, an import and a test all sail past it, which is
+		exactly the gap ``check_required_links`` was written for.
+		"""
+		fields = (
+			("source_guideline", "Create", _("Source Guideline")),
+			("update_source", "Update", _("New Content Document")),
+		)
+		for fieldname, action, label in fields:
+			name = self.get(fieldname)
+			if not name or self.request_action != action:
+				continue
+			if frappe.db.get_value("Document Register", name, "lifecycle_state") != "Inactive":
+				continue
+			frappe.throw(
+				_(
+					"{0} is inactive — it has been withdrawn from use, so it cannot be the "
+					"{1}. Publishing its content into a live document would put withdrawn "
+					"material back into circulation. Pick an active document, or reactivate "
+					"that one first."
+				).format(frappe.bold(name), label)
 			)
 
 	def check_required_links(self):

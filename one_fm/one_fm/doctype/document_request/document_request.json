@@ -86,6 +86,7 @@
   },
   {
    "fieldname": "source_guideline",
+   "link_filters": "[[\"Document Register\",\"lifecycle_state\",\"=\",\"Active\"]]",
    "fieldtype": "Link",
    "label": "Source Guideline",
    "options": "Document Register",
@@ -95,6 +96,7 @@
   },
   {
    "fieldname": "reference_document",
+   "link_filters": "[[\"Document Register\",\"lifecycle_state\",\"=\",\"Active\"]]",
    "fieldtype": "Link",
    "label": "Existing Document",
    "options": "Document Register",
@@ -104,6 +106,7 @@
   },
   {
    "fieldname": "update_source",
+   "link_filters": "[[\"Document Register\",\"lifecycle_state\",\"=\",\"Active\"]]",
    "fieldtype": "Link",
    "label": "New Content Document",
    "options": "Document Register",
