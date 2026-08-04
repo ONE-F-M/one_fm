@@ -15,11 +15,47 @@
 # that no approval produced is not a version.
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint
 
 
 class DocumentRevision(Document):
+	def validate(self):
+		self.refuse_empty_snapshot()
+
+	def refuse_empty_snapshot(self):
+		"""A revision with no content is not a revision.
+
+		This is the last line of defence on the publish path, and it earns its
+		place: a drafting step that timed out wrote nothing to
+		``document_markdown``, the process carried on regardless, and a Policy
+		was published, indexed and issued a code and a version — with an empty
+		Drive file and an empty snapshot behind it. Nobody was told.
+
+		Refusing here stops the record that makes it *official*. Whatever failed
+		upstream, an issued revision that preserves nothing is worse than no
+		revision at all: the register would assert that this text was approved,
+		and the text is not there to read.
+		"""
+		# .strip() alone is not enough. A Drive text export always begins with a
+		# BOM, and U+FEFF is a *format* character, not whitespace — so an empty
+		# document exports as "\ufeff" and sails straight through a truthiness
+		# or .strip() check. Zero-width space gets the same treatment.
+		if (self.content_snapshot or "").strip("\ufeff\u200b \t\r\n"):
+			return
+
+		frappe.throw(
+			_(
+				"Refusing to record version {0} of {1} with no content. The snapshot is "
+				"the only surviving copy of a revision — Drive keeps just the newest "
+				"text — so an empty one would leave the register asserting an approval "
+				"for a document nobody can read. Check whether the drafting step "
+				"failed before republishing."
+			).format(self.version, self.document_code or self.document),
+			title=_("Empty revision"),
+		)
+
 	def before_naming(self):
 		"""Guarantee the pieces the `format:` autoname interpolates.
 

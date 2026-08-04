@@ -37,9 +37,16 @@ class DocumentRequestFixtures:
 	"""
 
 	def setUp(self):
-		self.requester = frappe.db.get_value("Employee", {"status": "Active"}, "name")
+		# Must have a line manager: Document Request refuses to save when it cannot
+		# resolve an approver, so any Active employee is not good enough — picking
+		# one without a Reports To made every test in this file error out on insert
+		# with a message about the *employee's* record rather than anything the
+		# test was about.
+		self.requester = frappe.db.get_value(
+			"Employee", {"status": "Active", "reports_to": ["is", "set"]}, "name"
+		)
 		if not self.requester:
-			self.skipTest("no active Employee to raise a request as")
+			self.skipTest("no active Employee with a line manager to raise a request as")
 
 	def tearDown(self):
 		frappe.db.rollback()
