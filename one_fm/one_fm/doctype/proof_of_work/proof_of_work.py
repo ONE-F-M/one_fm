@@ -937,6 +937,13 @@ def get_pow_attendance_report(pow_name: str) -> dict:
 	else:
 		groups = _grid_from_attendance(doc.project, first_day, last_day)
 
+	# The sheet reports against the contract, exactly as the summary does: a Sale Item
+	# with attendance but no Contract Item line is not the contract's work and gets no
+	# section here either. Without this the sheet contradicted page 1, listing staff
+	# against an item the summary did not carry.
+	contracted = _contracted_count_by_sale_item(doc.contract)
+	groups = {item: grid for item, grid in groups.items() if item in contracted}
+
 	item_types = _item_types_by_sale_item(list(groups))
 	rate_types = _rate_type_by_sale_item(doc.contract)
 

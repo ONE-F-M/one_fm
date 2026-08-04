@@ -24,6 +24,7 @@ from one_fm.one_fm.doctype.proof_of_work.proof_of_work import (
 	_shift_hours_from_item,
 	generate_proof_of_work,
 	get_eligible_contracts,
+	get_pow_attendance_report,
 	pdf_file_name,
 	resolve_attendance_source,
 )
@@ -362,6 +363,83 @@ class TestOnlyContractItemsBecomeRows(FrappeTestCase):
 			),
 			[],
 		)
+
+
+class TestTheAttendanceSheetFollowsTheContract(FrappeTestCase):
+	"""The sheet on the later pages reports the same items as the summary on page 1.
+
+	It is built from attendance rather than from the contract, so it used to carry a
+	section for a Sale Item the summary did not list - the sheet and the summary of the
+	same document disagreeing about what was worked.
+	"""
+
+	def _sections(self, contracted, grid):
+		from unittest.mock import patch
+
+		module = "one_fm.one_fm.doctype.proof_of_work.proof_of_work"
+		pow_doc = frappe.new_doc("Proof of Work")
+		pow_doc.contract = "_TEST-POW-SHEET"
+		pow_doc.project = "_TEST-POW-PROJECT"
+		pow_doc.start_date = "2026-01-01"
+		pow_doc.end_date = "2026-01-31"
+		pow_doc.generation_basis = "Attendance Day"
+
+		with patch(f"{module}.frappe.get_doc", return_value=pow_doc), patch(
+			f"{module}.resolve_attendance_source", return_value=("attendance", None)
+		), patch(f"{module}._grid_from_attendance", return_value=grid), patch(
+			f"{module}._contracted_count_by_sale_item", return_value=contracted
+		), patch(f"{module}._item_types_by_sale_item", return_value={}), patch(
+			f"{module}._shift_hours_from_item", return_value=12.0
+		), patch(f"{module}._rate_type_by_sale_item", return_value={}):
+			report = get_pow_attendance_report("_TEST-POW-SHEET-DOC")
+
+		return [g["sale_item"] for g in report["groups"]]
+
+	def _grid_entry(self, employee):
+		return {
+			employee: {
+				"employee_id": employee,
+				"employee_name": employee,
+				"days": {1: "P"},
+				"total_present": 1.0,
+			}
+		}
+
+	def test_an_item_with_no_contract_line_gets_no_section(self):
+		sections = self._sections(
+			contracted={"UNF-TRS-000208": 3},
+			grid={"SER-SEC-000136": self._grid_entry("HR-EMP-03926")},
+		)
+		self.assertEqual(sections, [])
+
+	def test_a_contracted_item_keeps_its_section(self):
+		sections = self._sections(
+			contracted={"SER-SEC-000136": 50},
+			grid={"SER-SEC-000136": self._grid_entry("HR-EMP-03926")},
+		)
+		self.assertEqual(sections, ["SER-SEC-000136"])
+
+	def test_only_the_contracted_items_survive_a_mixed_grid(self):
+		sections = self._sections(
+			contracted={"SER-A": 1, "SER-B": 2},
+			grid={
+				"SER-A": self._grid_entry("EMP-1"),
+				"SER-B": self._grid_entry("EMP-2"),
+				"SER-NOT-ON-CONTRACT": self._grid_entry("EMP-3"),
+			},
+		)
+		self.assertEqual(sorted(sections), ["SER-A", "SER-B"])
+
+	def test_the_print_format_has_something_to_say_when_nothing_survives(self):
+		# An empty sheet must not render as a bare page.
+		import json
+
+		path = frappe.get_app_path(
+			"one_fm", "one_fm", "print_format", "proof_of_work_attendance_report",
+			"proof_of_work_attendance_report.json",
+		)
+		html = json.loads(frappe.read_file(path))["html"]
+		self.assertIn("if not report.groups", html)
 
 
 class TestTheWorkedColumnUsesTheRightUnit(FrappeTestCase):
