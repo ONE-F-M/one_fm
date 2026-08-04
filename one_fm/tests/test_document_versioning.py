@@ -47,7 +47,14 @@ class VersioningFixtures:
 	"""Shared fixtures. Not a TestCase — a base TestCase re-runs its own tests."""
 
 	def setUp(self):
-		self.requester = frappe.db.get_value("Employee", {"status": "Active"}, "name")
+		# Must have a line manager: Document Request refuses to save when it cannot
+		# resolve an approver, so any Active employee is not good enough — picking
+		# one without a Reports To made every test in this file error out on insert
+		# with a message about the *employee's* record rather than anything the
+		# test was about.
+		self.requester = frappe.db.get_value(
+			"Employee", {"status": "Active", "reports_to": ["is", "set"]}, "name"
+		)
 
 	def tearDown(self):
 		frappe.db.rollback()
