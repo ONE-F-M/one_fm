@@ -17,6 +17,7 @@ from one_fm.one_fm.doctype.proof_of_work.proof_of_work import (
 	_non_manpower_amount_by_category,
 	_safe_filename,
 	_uses_nominal_shift_hours,
+	_fmt_actual,
 	_fmt_contractual,
 	_fmt_staff_breakdown,
 	_shift_hours_from_item,
@@ -303,6 +304,65 @@ class TestProofofWork(FrappeTestCase):
 	def test_generate_rejects_invalid_month(self):
 		with self.assertRaises(frappe.ValidationError):
 			generate_proof_of_work(13, TEST_YEAR, [self.contract.name], "Shift Hours")
+
+
+class TestTheWorkedColumnUsesTheRightUnit(FrappeTestCase):
+	"""The "Total number Days worked OR Total No of Hours worked" column.
+
+	It used to render hours whatever the Rate Type, and for Daily/Monthly the hours were
+	days x the shift length - so a 344-day month printed "4128.00 hrs" next to a
+	contractual figure quoted in DAYS. It now follows the same basis as the columns either
+	side of it.
+	"""
+
+	SOURCE = {"days": 344.0, "hours": 4000.0, "staff": {}}
+
+	def test_a_day_basis_reports_days(self):
+		self.assertEqual(_fmt_actual(self.SOURCE, 12.0, "Attendance Day"), "344 Days")
+
+	def test_a_day_basis_never_reports_hours(self):
+		# The regression: days x shift length rendered as "hrs".
+		self.assertNotIn("hrs", _fmt_actual(self.SOURCE, 12.0, "Attendance Day"))
+
+	def test_an_hours_basis_reports_recorded_hours(self):
+		self.assertEqual(_fmt_actual(self.SOURCE, 12.0, "Shift Hours"), "4000.00 hrs")
+
+	def test_an_hourly_rate_type_reports_nominal_shift_hours(self):
+		# Hourly items take days x the shift length, not the clock (WI-001700).
+		self.assertEqual(
+			_fmt_actual(self.SOURCE, 12.0, "Shift Hours", True), "4128.00 hrs"
+		)
+
+	def test_both_reports_each_unit_on_its_own_line(self):
+		self.assertEqual(
+			_fmt_actual(self.SOURCE, 12.0, "Both"), "344 Days\nOR\n4000.00 hrs"
+		)
+
+	def test_a_half_day_survives_the_day_count(self):
+		self.assertEqual(
+			_fmt_actual({"days": 20.5, "hours": 0.0}, 12.0, "Attendance Day"), "20.5 Days"
+		)
+
+	def test_no_attendance_reports_zero_in_the_right_unit(self):
+		blank = {"days": 0.0, "hours": 0.0, "staff": {}}
+		self.assertEqual(_fmt_actual(blank, 12.0, "Attendance Day"), "0 Days")
+		self.assertEqual(_fmt_actual(blank, 12.0, "Shift Hours"), "0.00 hrs")
+
+	def test_hours_fall_back_to_days_when_only_statuses_were_recorded(self):
+		# Same fallback _actual_hours has: a source with no numeric hours.
+		self.assertEqual(
+			_fmt_actual({"days": 10.0, "hours": 0.0}, 8.0, "Shift Hours"), "80.00 hrs"
+		)
+
+	def test_it_agrees_with_the_column_beside_it(self):
+		# Both figures in a row must be in the same unit, or the row cannot be read.
+		for basis, unit in (("Attendance Day", "DAYS"), ("Shift Hours", "HOURS")):
+			contractual = _fmt_contractual(20, basis)
+			worked = _fmt_actual(self.SOURCE, 12.0, basis)
+			self.assertIn(unit, contractual, msg=basis)
+			self.assertEqual(
+				unit == "DAYS", "Days" in worked, msg=f"{basis}: {contractual} vs {worked}"
+			)
 
 
 class TestRateTypeBasis(FrappeTestCase):

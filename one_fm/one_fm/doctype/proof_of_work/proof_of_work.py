@@ -530,6 +530,33 @@ def _fmt_staff_breakdown(
 	return "\nOR\n".join(b for b in blocks if b)
 
 
+def _fmt_actual(
+	source: dict, shift_hours: float, basis: str, nominal_shift_hours: bool = False
+) -> str:
+	"""Column 2: what was actually worked, in the metric the Rate Type asks for.
+
+	The column is headed "Total number Days worked OR Total No of Hours worked", so a
+	Daily or Monthly Sale Item belongs in days. It used to render hours unconditionally -
+	and for those Rate Types the hours were days x the shift length, so a 344-day month
+	printed as "4128.00 hrs" beside a contractual figure quoted in DAYS.
+
+	Split on basis like the two columns either side of it, so all three of a row's
+	figures are in the same unit.
+	"""
+	days = flt(source.get("days", 0.0))
+	if nominal_shift_hours:
+		hours = days * shift_hours
+	else:
+		hours = flt(source.get("hours", 0.0)) or (days * shift_hours)
+
+	blocks = []
+	if basis in ("Attendance Day", "Both"):
+		blocks.append(f"{_num(days)} Days")
+	if basis in ("Shift Hours", "Both"):
+		blocks.append(f"{hours:.2f} hrs")
+	return "\nOR\n".join(blocks)
+
+
 def _fmt_contractual(count: int, basis: str) -> str:
 	"""Column 3: contracted head-count x the standard month. For "Both", the days
 	justification, an "OR" line, then the hours justification."""
@@ -591,7 +618,7 @@ def _populate_pow_items(doc, first_day, last_day):
 				"sale_item_code": sale_item,
 				"item_type": item_types.get(sale_item, ""),
 				"contractual_hours": _fmt_contractual(contracted.get(sale_item, 0), basis),
-				"actual_hours": f"{_actual_hours(s_entry, shift_hours, basis, nominal):.2f} hrs",
+				"actual_hours": _fmt_actual(s_entry, shift_hours, basis, nominal),
 				"staff_breakdown": _fmt_staff_breakdown(s_entry, shift_hours, basis, nominal),
 			},
 		)
