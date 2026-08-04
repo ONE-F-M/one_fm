@@ -17,11 +17,14 @@
   "requirement_text",
   "source_guideline",
   "reference_document",
+  "update_source",
   "section_break_approval",
   "approver",
   "approver_user",
   "column_break_status",
   "status",
+  "document_link",
+  "document_version",
   "bpmn_instance"
  ],
  "fields": [
@@ -54,7 +57,7 @@
    "options": "Create\nUpdate\nDelete",
    "default": "Create",
    "reqd": 1,
-   "description": "Create a new document, revise the content of an existing one, or remove an existing one from Drive."
+   "description": "Create a new document, revise an existing one (which publishes a new version), or withdraw an existing one from use. Delete does NOT destroy anything — it marks the document inactive and revokes its Drive sharing, and a System Manager can reactivate it."
   },
   {
    "fieldname": "document_type",
@@ -85,19 +88,28 @@
    "fieldname": "source_guideline",
    "fieldtype": "Link",
    "label": "Source Guideline",
-   "options": "AI Reference Index",
+   "options": "Document Register",
    "depends_on": "eval:doc.request_action == 'Create'",
    "mandatory_depends_on": "eval:doc.request_action == 'Create'",
-   "description": "The existing guideline document (already cataloged in AI Reference Index) this document should be generated from. Its real content is extracted and given to the AI — the AI does not invent the guideline itself."
+   "description": "The existing guideline document (already cataloged in Document Register) this document should be generated from. Its real content is extracted and given to the AI — the AI does not invent the guideline itself."
   },
   {
    "fieldname": "reference_document",
    "fieldtype": "Link",
    "label": "Existing Document",
-   "options": "AI Reference Index",
+   "options": "Document Register",
    "depends_on": "eval:doc.request_action != 'Create'",
    "mandatory_depends_on": "eval:doc.request_action != 'Create'",
-   "description": "The existing published document (from the AI Reference Index catalog) being updated or deleted."
+   "description": "The existing published document being revised or withdrawn. Only active controlled documents can be picked — an already-withdrawn one has nothing to revise or withdraw, and input material is not a controlled document."
+  },
+  {
+   "fieldname": "update_source",
+   "fieldtype": "Link",
+   "label": "New Content Document",
+   "options": "Document Register",
+   "depends_on": "eval:doc.request_action == 'Update'",
+   "mandatory_depends_on": "eval:doc.request_action == 'Update'",
+   "description": "The document holding the content you want the revision to say — catalogue it on Document Register first (pasting its Drive link is enough) and tick Input Material. Its text is authoritative: the AI reformats it into the official template and may not add, remove or reword anything. Say what the change is for in Requirement; that guides the layout, not the wording."
   },
   {
    "fieldname": "section_break_approval",
@@ -134,6 +146,23 @@
    "options": "Pending Request Approval\nRequest Rejected\nDrafting\nPending Content Approval\nContent Rejected\nApproved\nPublished\nDeleted",
    "default": "Pending Request Approval",
    "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.document_link",
+   "description": "Link to the published document in Google Docs. Written by the process when the document is published — blank until then.",
+   "fieldname": "document_link",
+   "fieldtype": "Data",
+   "label": "Published Document",
+   "options": "URL",
+   "read_only": 1,
+   "description": "Every revision shares one Drive file, so this link stays valid for the life of the document — it always opens the current version."
+  },
+  {
+   "fieldname": "document_version",
+   "fieldtype": "Int",
+   "label": "Published Version",
+   "read_only": 1,
+   "description": "Which revision of the document this request produced. Stamped at publish."
   },
   {
    "fieldname": "bpmn_instance",
