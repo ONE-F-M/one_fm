@@ -126,13 +126,63 @@ class DocumentRegister(Document):
 					self.drive_file_link = meta.get("webViewLink")
 			if not self.content:
 				self.content = gd.download_file_text(self.drive_file_id)
-		except Exception:
+		except Exception as e:
 			frappe.log_error(
 				title="Document Register: Drive auto-fill failed",
 				message=frappe.get_traceback(),
 			)
+			self._warn_autofill_failed(e)
 			if not self.title:
 				self.title = self.drive_file_id
+
+	def _warn_autofill_failed(self, error):
+		"""Say so on screen. Failing quietly is what makes this expensive.
+
+		The record still saves — a catalogue entry blocked by a transient API
+		problem is worse than one with a placeholder title. But until now the
+		only trace was an Error Log entry, so pasting a link the service account
+		cannot read looked exactly like pasting one it can: the fields simply
+		stayed empty and nothing said why.
+
+		Google answers 404, not 403, for a file you have no permission on, so
+		"File not found" almost always means "not shared with us" rather than
+		"does not exist" — and guessing wrong sends people looking for a
+		deleted file that is sitting right there in their Drive.
+		"""
+		text = str(error)
+		if "File not found" in text or "404" in text or "notFound" in text:
+			account = _service_account_email() or "the Processa service account"
+			frappe.msgprint(
+				_(
+					"Could not read {0} from Google Drive, so the title and content were "
+					"not filled in.<br><br>Drive reports this the same way whether a file "
+					"is missing or simply not shared, and it is almost always the latter. "
+					"Share the file with <b>{1}</b> (Viewer is enough) and save again."
+				).format(frappe.bold(self.drive_file_id), account),
+				title=_("Drive file not accessible"),
+				indicator="orange",
+			)
+			return
+
+		frappe.msgprint(
+			_(
+				"Could not read this file from Google Drive, so the title and content "
+				"were not filled in. The record has been saved — see the Error Log for "
+				"the reason, then save again to retry."
+			),
+			title=_("Drive auto-fill failed"),
+			indicator="orange",
+		)
+
+
+def _service_account_email():
+	"""Which Google identity Processa uses, for an actionable error message."""
+	try:
+		from one_bpmn.one_bpmn.integrations.google_common import load_service_account_info
+
+		return (load_service_account_info("google_drive") or {}).get("client_email")
+	except Exception:
+		return None
 
 
 def code_prefix(document_type: str) -> str:
