@@ -141,7 +141,10 @@ def get_columns(filters, dates):
 		{"label": _("Employment Type"), "fieldname": "employment_type", "fieldtype": "Data", "width": 110},
 		{"label": _("Roster Type"), "fieldname": "roster_type", "fieldtype": "Data", "width": 80},
 		{"label": _("Day Off OT"), "fieldname": "day_off_ot", "fieldtype": "Check", "width": 70},
-		{"label": _("Shift"), "fieldname": "shift", "fieldtype": "Data", "width": 90},
+		# No Shift column: WI-001790 lists the columns to display and shift is not one of
+		# them. Rows are still grouped by shift (see row_group), so a day worked across two
+		# shifts stays on its own row rather than being merged into one - the column is what
+		# was asked for, not the grouping.
 	]
 
 	columns.extend(get_columns_for_days(dates))
@@ -587,8 +590,10 @@ def get_attendance_status(
 	groups = set(employee_non_day_off_attendance.keys()) | set(employee_non_day_off_schedule.keys())
 
 	for group in groups:
-		shift, roster_type, day_off_ot = group
-		row = {"shift": shift, "roster_type": roster_type, "day_off_ot": day_off_ot}
+		# Shift still separates the rows (see row_group) but is not carried into the row:
+		# WI-001790 does not list it as a column, and an undeclared key is dead weight.
+		_shift, roster_type, day_off_ot = group
+		row = {"roster_type": roster_type, "day_off_ot": day_off_ot}
 
 		# Merge Attendance and Schedule statuses
 		attendance_dict = { **employee_non_day_off_attendance.get(group, {}), **employee_non_day_off_schedule.get(group, {}) }
