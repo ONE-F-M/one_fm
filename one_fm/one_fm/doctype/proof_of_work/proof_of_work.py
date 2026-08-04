@@ -597,8 +597,16 @@ def _populate_pow_items(doc, first_day, last_day):
 
 	# Rate Type drives the metric per Sale Item; the document's basis is the fallback.
 	rate_types = _rate_type_by_sale_item(doc.contract)
-	# Union of Sale Items on the contract and/or with actual attendance.
-	sale_items = sorted(set(contracted) | set(source))
+	# Only the Sale Items on the contract. A Proof of Work states work done against a
+	# contract, so an item with attendance but no Contract Item line is not a row here.
+	#
+	# Note the consequence, which is deliberate: where the contract does not list the
+	# service that was actually worked, that work is not reported at all. The Alghanim
+	# Industries contract is such a case - its only Service line is a uniform - and its
+	# summary is empty as a result. That is a contract to correct, not output to read.
+	# The attendance sheet on the later pages still lists every employee who worked,
+	# because it is built from attendance rather than from the contract.
+	sale_items = sorted(contracted)
 
 	# Resolve item_type for all sale items in one query, comma joined where an item
 	# carries more than one.

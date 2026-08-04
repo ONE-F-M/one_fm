@@ -15,6 +15,7 @@ from one_fm.one_fm.doctype.proof_of_work.proof_of_work import (
 	_attendance_abbr,
 	_basis_for_rate_type,
 	_non_manpower_amount_by_category,
+	_populate_pow_items,
 	_safe_filename,
 	_uses_nominal_shift_hours,
 	_fmt_actual,
@@ -304,6 +305,63 @@ class TestProofofWork(FrappeTestCase):
 	def test_generate_rejects_invalid_month(self):
 		with self.assertRaises(frappe.ValidationError):
 			generate_proof_of_work(13, TEST_YEAR, [self.contract.name], "Shift Hours")
+
+
+class TestOnlyContractItemsBecomeRows(FrappeTestCase):
+	"""The summary reports against the contract, so its rows come from the Contract Items.
+
+	It used to be the union of Contract Items and items with attendance, which produced two
+	rows on a contract whose Service line was a uniform: one for the service actually
+	worked, carrying every hour but contracted 0, and one for the contract's own item with
+	nothing against it.
+	"""
+
+	def _populate(self, contracted, source):
+		from unittest.mock import patch
+
+		module = "one_fm.one_fm.doctype.proof_of_work.proof_of_work"
+		doc = frappe.new_doc("Proof of Work")
+		doc.contract = "_TEST-POW-ROWS"
+		doc.project = "_TEST-POW-PROJECT"
+		doc.generation_basis = "Attendance Day"
+
+		with patch(f"{module}._contracted_count_by_sale_item", return_value=contracted), patch(
+			f"{module}.resolve_attendance_source", return_value=("attendance", None)
+		), patch(f"{module}._source_from_attendance", return_value=source), patch(
+			f"{module}._rate_type_by_sale_item", return_value={}
+		), patch(f"{module}._item_types_by_sale_item", return_value={}), patch(
+			f"{module}._shift_hours_from_item", return_value=12.0
+		):
+			_populate_pow_items(doc, "2026-01-01", "2026-01-31")
+
+		return [r.sale_item_code for r in doc.proof_of_work_item]
+
+	def test_an_item_with_attendance_but_no_contract_line_is_not_a_row(self):
+		rows = self._populate(
+			contracted={"UNF-TRS-000208": 3},
+			source={"SER-SEC-000136": {"days": 1318.0, "hours": 15658.97, "staff": {}}},
+		)
+		self.assertEqual(rows, ["UNF-TRS-000208"])
+
+	def test_a_contract_item_with_no_attendance_is_still_a_row(self):
+		# The contract committed to it, so it is reported - at zero.
+		rows = self._populate(contracted={"SER-A": 2}, source={})
+		self.assertEqual(rows, ["SER-A"])
+
+	def test_every_contract_item_gets_exactly_one_row(self):
+		rows = self._populate(
+			contracted={"SER-A": 2, "SER-B": 1},
+			source={"SER-A": {"days": 10.0, "hours": 80.0, "staff": {}}},
+		)
+		self.assertEqual(rows, ["SER-A", "SER-B"])
+
+	def test_a_contract_with_no_service_items_produces_no_rows(self):
+		self.assertEqual(
+			self._populate(
+				contracted={}, source={"SER-A": {"days": 5.0, "hours": 40.0, "staff": {}}}
+			),
+			[],
+		)
 
 
 class TestTheWorkedColumnUsesTheRightUnit(FrappeTestCase):
