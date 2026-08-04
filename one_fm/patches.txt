@@ -491,6 +491,8 @@ one_fm.patches.v15_0.send_amp_verification_test_email #2026-07-14
 one_fm.patches.v15_0.remove_pam_visa_doctype #2026-07-16
 one_fm.patches.v15_0.show_project_users_section_for_scrum #2026-07-23
 one_fm.patches.v15_0.backfill_project_sprint_prefix #2026-07-27
+one_fm.patches.v15_0.backfill_checkin_geolocation_for_employees #2026-08-02
+one_fm.patches.v15_0.fix_checkin_metadata_and_timeline #2026-08-02
 
 
 
