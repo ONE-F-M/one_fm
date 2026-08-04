@@ -417,3 +417,64 @@ class TestInputMaterial(VersioningFixtures, unittest.TestCase):
 	def test_a_delete_still_needs_its_document(self):
 		with self.assertRaises(frappe.ValidationError):
 			self._raise(request_action="Delete")
+
+
+class TestEmptyRevisionsAreRefused(VersioningFixtures, unittest.TestCase):
+	"""A revision with no content is not a revision.
+
+	Written from a real failure. The AI drafting step timed out at the old 30s
+	limit, produced nothing, and the process carried on: it saved an empty file
+	to Drive, indexed it, allocated POL-0014, issued version 1 and marked the
+	request Published. The register ended up asserting that a document had been
+	approved, with nothing behind it to read, and nobody was told.
+
+	The upstream causes are fixed separately (a real timeout, and the drafting
+	task now halting on error). This is the last line of defence, and it is the
+	one that does not care *which* step failed.
+	"""
+
+	def test_a_revision_with_no_snapshot_is_refused(self):
+		doc = self._document(file_id="_TestEmptyRev001")
+		with self.assertRaises(frappe.ValidationError) as ctx:
+			self._version(doc.name, 1, "")
+		self.assertIn("no content", str(ctx.exception))
+
+	def test_whitespace_does_not_count_as_content(self):
+		"""An empty Drive export comes back as a newline or a BOM, not "" — so
+		a truthiness check alone would have let this through."""
+		doc = self._document(file_id="_TestEmptyRev002")
+		for blank in ("   ", "\n", "﻿", "\r\n\r\n"):
+			with self.subTest(value=repr(blank)):
+				with self.assertRaises(frappe.ValidationError):
+					self._version(doc.name, 1, blank)
+
+	def test_the_message_says_why_it_matters_and_what_to_check(self):
+		"""Whoever hits this is looking at a failed publish and needs to know
+		the drafting step is the likely culprit."""
+		doc = self._document(file_id="_TestEmptyRev003")
+		with self.assertRaises(frappe.ValidationError) as ctx:
+			self._version(doc.name, 1, "")
+		message = str(ctx.exception)
+		self.assertIn("only surviving copy", message)
+		self.assertIn("drafting", message)
+
+	def test_a_revision_with_content_still_saves(self):
+		"""The guard must not make the normal path harder."""
+		doc = self._document(file_id="_TestEmptyRev004")
+		row = self._version(doc.name, 1, "# Policy for Remote Work\n\nReal content.")
+		self.assertTrue(frappe.db.exists("Document Revision", row.name))
+		self.assertIn("-V1", row.name)
+
+	def test_the_failure_that_prompted_this_would_now_be_stopped(self):
+		"""POL-0014-V1 was created with a 0-character snapshot. Recreating that
+		exact shape must now fail."""
+		doc = self._document(file_id="_TestEmptyRev005", document_type="Policy")
+		with self.assertRaises(frappe.ValidationError):
+			frappe.get_doc({
+				"doctype": "Document Revision",
+				"document": doc.name,
+				"document_code": doc.document_code,
+				"version": 1,
+				"title_at_version": "Policy create",
+				"content_snapshot": None,
+			}).insert(ignore_permissions=True)
