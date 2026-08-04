@@ -14,6 +14,12 @@
 # document keeps its file, its content and every version snapshot, and only
 # loses its Drive sharing — which is the part staff actually experience as
 # "it's gone".
+#
+# Drive access here authenticates as ONE FM's own service account (ONEFM General
+# Setting > Google > Service Account JSON), not as a BPMN connector — see
+# `_drive_service`. The register is ONE FM's catalogue; the connectors are how
+# processes create the files it catalogues. Both accounts therefore need to be
+# members of the same Shared Drive.
 
 import re
 
@@ -107,6 +113,8 @@ class DocumentRegister(Document):
 
 		try:
 			from one_bpmn.one_bpmn.integrations import google_drive as gd
+
+			service = _drive_service()
 		except Exception:
 			if not self.title:
 				self.title = self.drive_file_id
@@ -115,8 +123,7 @@ class DocumentRegister(Document):
 		try:
 			if not self.title or not self.drive_file_link:
 				meta = (
-					gd._get_service()
-					.files()
+					service.files()
 					.get(fileId=self.drive_file_id, fields="name,webViewLink", supportsAllDrives=True)
 					.execute()
 				)
@@ -125,7 +132,7 @@ class DocumentRegister(Document):
 				if not self.drive_file_link:
 					self.drive_file_link = meta.get("webViewLink")
 			if not self.content:
-				self.content = gd.download_file_text(self.drive_file_id)
+				self.content = gd.download_file_text(self.drive_file_id, service=service)
 		except Exception as e:
 			frappe.log_error(
 				title="Document Register: Drive auto-fill failed",
@@ -151,7 +158,7 @@ class DocumentRegister(Document):
 		"""
 		text = str(error)
 		if "File not found" in text or "404" in text or "notFound" in text:
-			account = _service_account_email() or "the Processa service account"
+			account = _service_account_email() or "ONE FM's Google service account"
 			frappe.msgprint(
 				_(
 					"Could not read {0} from Google Drive, so the title and content were "
@@ -175,14 +182,31 @@ class DocumentRegister(Document):
 		)
 
 
-def _service_account_email():
-	"""Which Google identity Processa uses, for an actionable error message."""
-	try:
-		from one_bpmn.one_bpmn.integrations.google_common import load_service_account_info
+def _drive_service():
+	"""Drive client for the register, as ONE FM's own service account.
 
-		return (load_service_account_info("google_drive") or {}).get("client_email")
-	except Exception:
-		return None
+	The register is ONE FM's catalogue, so it authenticates as ONE FM rather than
+	borrowing a BPMN connector's key — the connectors create these files, this
+	account reads and shares them, and each can now be rotated alone.
+
+	The consequence to know about: both accounts must be members of the same
+	Shared Drive. Drive answers 404 for a file an account cannot see, so a
+	missing membership looks exactly like a deleted document (which is what
+	``_warn_autofill_failed`` exists to explain).
+
+	one_bpmn's Drive helpers are still reused — they take an optional
+	``service``, so only the identity differs, not the .docx/.pptx handling.
+	"""
+	from one_fm.one_fm.google_credentials import get_drive_service
+
+	return get_drive_service()
+
+
+def _service_account_email():
+	"""Which Google identity ONE FM uses, for an actionable error message."""
+	from one_fm.one_fm.google_credentials import service_account_email
+
+	return service_account_email()
 
 
 def code_prefix(document_type: str) -> str:
@@ -281,7 +305,7 @@ def deactivate(document: str, reason: str = None, via_request: str = None, revok
 		try:
 			from one_bpmn.one_bpmn.integrations.google_drive import revoke_permissions
 
-			outcome = revoke_permissions(doc.drive_file_id, scope="all")
+			outcome = revoke_permissions(doc.drive_file_id, scope="all", service=_drive_service())
 			revoked = len(outcome["removed"])
 			skipped = outcome["skipped"]
 		except Exception as e:
@@ -328,7 +352,9 @@ def reactivate(document: str, reason: str = None) -> dict:
 	try:
 		from one_bpmn.one_bpmn.integrations.google_drive import set_permissions
 
-		granted = len(set_permissions(doc.drive_file_id, DEFAULT_GRANTS))
+		granted = len(
+			set_permissions(doc.drive_file_id, DEFAULT_GRANTS, service=_drive_service())
+		)
 	except Exception as e:
 		share_error = str(e)
 		frappe.log_error(

@@ -17,7 +17,7 @@ Two properties hold this together, and both are easy to break by accident:
 """
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import frappe
 
@@ -55,6 +55,19 @@ class VersioningFixtures:
 		self.requester = frappe.db.get_value(
 			"Employee", {"status": "Active", "reports_to": ["is", "set"]}, "name"
 		)
+
+		# The register authenticates as ONE FM's own service account, so building
+		# the Drive client is a second collaborator alongside the Drive calls the
+		# tests already stub. Without this, a site with no key configured raises
+		# before revoke_permissions/set_permissions is ever reached — the
+		# revocation is skipped and reported in revoke_error, which is correct
+		# behaviour but not what these tests are about.
+		patcher = patch(
+			"one_fm.one_fm.doctype.document_register.document_register._drive_service",
+			return_value=MagicMock(name="drive_service"),
+		)
+		patcher.start()
+		self.addCleanup(patcher.stop)
 
 	def tearDown(self):
 		frappe.db.rollback()
