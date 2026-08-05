@@ -229,7 +229,7 @@ def extend_resignation(
         ext.extended_relieving_date = extended_date
         ext.reason = reason or "Adjustment requested by employee"
         # Do NOT set workflow_state before insert — Frappe sets it to the
-        # workflow's initial state ('Pending Supervisor') automatically
+        # workflow's initial state ('Draft') automatically
 
         ext.insert()
 
@@ -247,6 +247,10 @@ def extend_resignation(
                     att_data = {"attachment_name": att_name, "attachment": attachment}
 
             handle_attachment_internal(ext, ext, att_data, "extension_letter")
+
+        # Advance from Draft to Pending Supervisor now that the letter is attached
+        ext.reload()
+        apply_workflow(ext, "Submit for Review")
 
         return {
             "status": "success",
@@ -315,7 +319,7 @@ def withdraw_resignation(
         withdrawal.employee = active_doc.employee
         withdrawal.reason = reason or "Employee-initiated withdrawal"
         # Do NOT set workflow_state before insert — Frappe sets it to the
-        # workflow's initial state ('Pending Supervisor') automatically
+        # workflow's initial state ('Draft') automatically
 
         withdrawal.insert()
 
@@ -332,6 +336,10 @@ def withdraw_resignation(
                     att_data = {"attachment_name": att_name, "attachment": attachment}
 
             handle_attachment_internal(withdrawal, withdrawal, att_data, "resignation_withdrawal_letter")
+
+        # Advance from Draft to Pending Supervisor now that the letter is attached
+        withdrawal.reload()
+        apply_workflow(withdrawal, "Submit for Review")
 
         # Notify offboarding officer
         try:
