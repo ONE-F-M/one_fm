@@ -217,8 +217,56 @@ class EmployeeResignation(Document):
 		if not self.is_new():
 			if old_doc and old_doc.get("workflow_state") != "Approved" and self.get("workflow_state") == "Approved":
 				self.send_approval_notification()
+				self.notify_employee_app(
+					_("Resignation Approved"),
+					_("Your resignation has been approved."),
+				)
 			if old_doc and old_doc.get("workflow_state") != "Pending Relieving Date Correction" and self.get("workflow_state") == "Pending Relieving Date Correction":
 				self.assign_employee_for_relieving_date_correction()
+				self.notify_employee_app(
+					_("Date Change Requested"),
+					_("Your supervisor has requested a correction to your resignation dates."),
+				)
+			if old_doc and old_doc.get("workflow_state") == "Pending Relieving Date Correction" and self.get("workflow_state") != "Pending Relieving Date Correction":
+				self.clear_employee_correction_assignment()
+
+	def clear_employee_correction_assignment(self):
+		"""The employee's ToDo from assign_employee_for_relieving_date_correction()
+		is created manually, not via an Assignment Rule -- so Frappe's
+		assignment-rule engine won't clear it (it only clears assignments its
+		own rule created), and its mere presence blocks the engine from ever
+		reassigning this document again. Remove it explicitly once the
+		correction is resubmitted, so the Pending Supervisor/T4 Admin/Line
+		Manager assignment rule can correctly take back over."""
+		if not self.employee:
+			return
+		user_id = frappe.db.get_value("Employee", self.employee, "user_id")
+		if not user_id:
+			return
+
+		from frappe.desk.form.assign_to import remove as remove_assignment
+		for todo in frappe.get_all("ToDo", filters={
+			"reference_type": self.doctype, "reference_name": self.name,
+			"allocated_to": user_id, "status": "Open"
+		}, fields=["allocated_to"]):
+			try:
+				remove_assignment(self.doctype, self.name, todo.allocated_to)
+			except Exception:
+				pass
+
+	def notify_employee_app(self, title, body):
+		"""Push a mobile-app notification straight to the employee's phone via
+		FCM, alongside the email notifications above -- best-effort only,
+		since a missing/stale device token shouldn't block the save (the
+		underlying helper already swallows its own errors)."""
+		if not self.employee:
+			return
+		from one_fm.utils import send_push_notification
+		send_push_notification(self.employee, title, body, data={
+			"type": "resignation_update",
+			"resignation": self.name,
+			"workflow_state": self.get("workflow_state"),
+		})
 
 	def assign_employee_for_relieving_date_correction(self):
 		"""Whoever requested the correction (Supervisor/T4 Admin/etc.) isn't
