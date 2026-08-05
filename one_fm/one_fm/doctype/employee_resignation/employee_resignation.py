@@ -582,15 +582,6 @@ def get_employee_resignation_details(employee):
 		if site_data and site_data.get("site_supervisor"):
 			result["site_supervisor_id"] = frappe.db.get_value("Employee", site_data.get("site_supervisor"), "user_id")
 
-	# Fetch current salary, same way Employee Resignation itself does (most recent
-	# submitted Salary Structure Assignment as of today)
-	result["current_salary"] = frappe.db.get_value(
-		"Salary Structure Assignment",
-		{"employee": employee, "docstatus": 1, "from_date": ["<=", frappe.utils.today()]},
-		"base",
-		order_by="from_date desc",
-	)
-
 	return result
 
 
