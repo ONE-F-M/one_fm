@@ -94,9 +94,26 @@ class TestColumns(FrappeTestCase):
 		fieldnames = [c["fieldname"] for c in get_columns(_filters(), [])]
 		for expected in (
 			"employee_id", "employee_name", "project", "employee_status",
-			"employment_type", "roster_type", "day_off_ot", "shift",
+			"employment_type", "roster_type", "day_off_ot",
 		):
 			self.assertIn(expected, fieldnames)
+
+	def test_no_column_the_ac_does_not_list_is_shown(self):
+		# WI-001790 enumerates the columns to display; Shift is not among them. The
+		# hidden employee column is excluded - it carries the docname for the in-page
+		# filters and renders nothing.
+		allowed = {
+			"employee", "employee_id", "employee_name", "project", "employee_status",
+			"employment_type", "roster_type", "day_off_ot",
+			"working_days", "off_days", "total_hours",
+		}
+		shown = {
+			c["fieldname"]
+			for c in get_columns(_filters(), [])
+			if not c.get("hidden")
+		}
+		self.assertEqual(shown - allowed, set())
+		self.assertNotIn("shift", shown)
 
 	def test_column_keys_are_unique(self):
 		fieldnames = [c["fieldname"] for c in get_columns(_filters(), get_date_range(_filters()))]
@@ -250,8 +267,12 @@ class TestShiftHours(FrappeTestCase):
 		)
 
 	def test_the_row_names_its_group(self):
+		# Shift is part of the group key but is not a column, so the row carries only the
+		# two attributes WI-001790 lists.
 		row = self._rows(BY_SHIFT_HOURS)[0]
-		self.assertEqual((row["shift"], row["roster_type"], row["day_off_ot"]), self.GROUP)
+		_shift, roster_type, day_off_ot = self.GROUP
+		self.assertEqual((row["roster_type"], row["day_off_ot"]), (roster_type, day_off_ot))
+		self.assertNotIn("shift", row)
 
 	def test_the_cells_carry_the_scheduled_duration(self):
 		row = self._rows(BY_SHIFT_HOURS)[0]
