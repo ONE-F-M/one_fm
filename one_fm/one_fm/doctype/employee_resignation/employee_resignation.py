@@ -557,7 +557,7 @@ class EmployeeResignation(Document):
 
 
 @frappe.whitelist()
-def get_employee_resignation_details(employee):
+def get_employee_resignation_details(employee: str = None):
 	"""Secure backend fetch to bypass frontend permission limits for restricted roles."""
 	if not employee:
 		return {}

@@ -19,15 +19,17 @@ def execute():
 
 
 def repair(doctype):
-	rows = frappe.db.sql(
-		f"""
-		select t.name, t.project_manager
-		from `tab{doctype}` t
-		left join `tabUser` u on u.name = t.project_manager
-		where t.project_manager is not null and t.project_manager != '' and u.name is null
-		""",
-		as_dict=True,
-	)
+	Doc = frappe.qb.DocType(doctype)
+	User = frappe.qb.DocType("User")
+
+	rows = (
+		frappe.qb.from_(Doc)
+		.left_join(User).on(User.name == Doc.project_manager)
+		.select(Doc.name, Doc.project_manager)
+		.where(Doc.project_manager.isnotnull())
+		.where(Doc.project_manager != "")
+		.where(User.name.isnull())
+	).run(as_dict=True)
 
 	for row in rows:
 		user_id = frappe.db.get_value("Employee", row.project_manager, "user_id")

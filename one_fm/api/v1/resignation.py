@@ -166,14 +166,14 @@ def create_resignation(
 
 @frappe.whitelist()
 def extend_resignation(
-    employee_id=None,
-    supervisor=None,
-    reason=None,
-    extended_date=None,
-    resignation_id=None,
-    attachment=None,
-    attachment_name=None,
-    data=None,
+    employee_id: str = None,
+    supervisor: str = None,
+    reason: str = None,
+    extended_date: str = None,
+    resignation_id: str = None,
+    attachment: str = None,
+    attachment_name: str = None,
+    data: str = None,
     **kwargs
 ):
     """Create an Employee Resignation Date Adjustment for the employee's active resignation."""
@@ -265,13 +265,13 @@ def extend_resignation(
 
 @frappe.whitelist()
 def withdraw_resignation(
-    employee_id=None,
-    reason=None,
-    attachment=None,
-    attachment_name=None,
-    employee_resignation=None,
-    supervisor=None,
-    data=None,
+    employee_id: str = None,
+    reason: str = None,
+    attachment: str = None,
+    attachment_name: str = None,
+    employee_resignation: str = None,
+    supervisor: str = None,
+    data: str = None,
     **kwargs
 ):
     try:

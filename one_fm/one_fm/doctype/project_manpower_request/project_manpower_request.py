@@ -230,8 +230,8 @@ class ProjectManpowerRequest(Document):
 				remove_assignment(self.doctype, self.name, self.recruiter)
 			except Exception:
 				pass
-			self.db_set("recruiter", None, update_modified=False)
 			self.recruiter = None
+			self.db_set("recruiter", None, update_modified=False)
 
 		if not frappe.db.exists("ToDo", {
 			"reference_type": self.doctype, "reference_name": self.name,
