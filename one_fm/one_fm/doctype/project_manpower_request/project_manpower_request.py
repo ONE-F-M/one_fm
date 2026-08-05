@@ -99,8 +99,21 @@ class ProjectManpowerRequest(Document):
 						title=_("Change Request Reason Required")
 					)
 
+	def just_submitted_to_recruiter(self):
+		"""True only for the exact save that performs Draft -> Awaiting
+		Recruiter Approval (the Project Manager's "Submit to Recruiter"
+		action). apply_workflow() sets workflow_state to the target state
+		before calling save(), so without this check the mandatory
+		ERF/Recruiter validation would fire on that very save and block the
+		transition itself -- ERF and Recruiter aren't the Project Manager's
+		to provide, only the Recruiter's, once it's actually in their queue."""
+		if getattr(self, "workflow_state", None) != "Awaiting Recruiter Approval":
+			return False
+		before = self.get_doc_before_save()
+		return bool(before) and before.get("workflow_state") == "Draft"
+
 	def validate_recruiter_presence(self):
-		if self.flags.ignore_mandatory:
+		if self.flags.ignore_mandatory or self.just_submitted_to_recruiter():
 			return
 		if (getattr(self, "workflow_state", None) or "Draft") != "Draft":
 			if not self.recruiter:
@@ -111,7 +124,7 @@ class ProjectManpowerRequest(Document):
 
 
 	def validate_erf_presence(self):
-		if self.flags.ignore_mandatory:
+		if self.flags.ignore_mandatory or self.just_submitted_to_recruiter():
 			return
 		if getattr(self, "workflow_state", None) in ["Awaiting Recruiter Approval", "In Process", "Completed"]:
 			if not self.erf:
@@ -172,7 +185,96 @@ class ProjectManpowerRequest(Document):
 
 	def on_update(self):
 		self.update_erf_headcount()
+		self.reassign_owner_on_change_request()
+		self.close_owner_assignment_on_submit()
 		self.assign_recruiter()
+
+	def get_pmr_owner(self):
+		"""Whoever raised this PMR and is responsible for reviewing/
+		submitting it to the recruiter -- T4 Admin for the T4 branch,
+		Project Manager otherwise, since Operations has no T4-Admin-
+		equivalent actor of its own."""
+		if not self.employee_resignation:
+			return None
+		data = frappe.db.get_value(
+			"Employee Resignation", self.employee_resignation,
+			["t4_admin", "project_manager"], as_dict=True,
+		)
+		if not data:
+			return None
+		return data.t4_admin or data.project_manager
+
+	def reassign_owner_on_change_request(self):
+		"""assign_recruiter() re-confirms the recruiter's assignment on every
+		save regardless of workflow_state, so without this, a PMR sent back
+		to Draft via "Request Change" would just sit there still assigned to
+		the recruiter. The ball is back in the owner's court -- reassign it
+		to whoever raised it instead. Clears `recruiter` itself (not just
+		the ToDo) so assign_recruiter(), which runs right after this in
+		on_update(), doesn't immediately re-create the assignment we just
+		cancelled -- it'll get re-resolved from the ERF once resubmitted."""
+		if self.is_new() or self.workflow_state != "Draft":
+			return
+
+		old_doc = self.get_doc_before_save()
+		if not old_doc or old_doc.get("workflow_state") != "Awaiting Recruiter Approval":
+			return
+
+		owner = self.get_pmr_owner()
+		if not owner:
+			return
+
+		if self.recruiter:
+			try:
+				from frappe.desk.form.assign_to import remove as remove_assignment
+				remove_assignment(self.doctype, self.name, self.recruiter)
+			except Exception:
+				pass
+			self.db_set("recruiter", None, update_modified=False)
+			self.recruiter = None
+
+		if not frappe.db.exists("ToDo", {
+			"reference_type": self.doctype, "reference_name": self.name,
+			"allocated_to": owner, "status": "Open"
+		}):
+			description = _("The recruiter requested changes to {0}.").format(self.name)
+			if getattr(self, "reason_for_rejection", None):
+				description += " " + _("Reason: {0}").format(self.reason_for_rejection)
+
+			add_assignment({
+				"doctype": self.doctype,
+				"name": self.name,
+				"assign_to": [owner],
+				"description": description,
+			})
+
+	def close_owner_assignment_on_submit(self):
+		"""The complement to reassign_owner_on_change_request() -- once the
+		owner submits this to the recruiter (Draft -> Awaiting Recruiter
+		Approval), their job here is done. Without this, their ToDo from
+		notify_pmr_owner_for_review()/reassign_owner_on_change_request() just
+		stays open forever, so Assignments shows both of them at once even
+		though only the recruiter actually has anything left to do."""
+		if self.is_new() or self.workflow_state != "Awaiting Recruiter Approval":
+			return
+
+		old_doc = self.get_doc_before_save()
+		if not old_doc or old_doc.get("workflow_state") != "Draft":
+			return
+
+		owner = self.get_pmr_owner()
+		if not owner:
+			return
+
+		if frappe.db.exists("ToDo", {
+			"reference_type": self.doctype, "reference_name": self.name,
+			"allocated_to": owner, "status": "Open"
+		}):
+			try:
+				from frappe.desk.form.assign_to import remove as remove_assignment
+				remove_assignment(self.doctype, self.name, owner)
+			except Exception:
+				pass
 
 	def assign_recruiter(self):
 		recruiter = self.get("recruiter")

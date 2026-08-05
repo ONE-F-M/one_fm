@@ -147,19 +147,132 @@ class TestProjectManpowerRequest(FrappeTestCase):
 		self.pmr.project_allocation = None
 		self.assertRaises(frappe.MandatoryError, self.pmr.save, ignore_permissions=True)
 
+	def test_reassign_owner_on_change_request(self):
+		"""assign_recruiter() re-confirms the recruiter's assignment on every
+		save regardless of workflow_state -- without reassign_owner_on_change_request(),
+		a PMR sent back to Draft via "Request Change" would stay assigned to
+		the recruiter instead of going back to whoever raised it."""
+		t4_admin = _make_user(f"test_t4admin_{frappe.generate_hash(length=8)}@example.com", "T4 Admin")
+
+		resignation = frappe.get_doc({
+			"doctype": "Employee Resignation",
+			"t4_admin": t4_admin,
+		})
+		resignation.flags.ignore_mandatory = True
+		resignation.insert()
+
+		self.pmr.employee_resignation = resignation.name
+		self.pmr.workflow_state = "Awaiting Recruiter Approval"
+		self.pmr.save()
+
+		recruiter_todo_open = frappe.db.exists("ToDo", {
+			"reference_type": "Project Manpower Request", "reference_name": self.pmr.name,
+			"allocated_to": self.recruiter, "status": "Open"
+		})
+		self.assertTrue(recruiter_todo_open)
+
+		self.pmr.workflow_state = "Draft"
+		self.pmr.reason_for_rejection = "Please clarify details"
+		self.pmr.flags.ignore_mandatory = True
+		self.pmr.save()
+
+		recruiter_todo_still_open = frappe.db.exists("ToDo", {
+			"reference_type": "Project Manpower Request", "reference_name": self.pmr.name,
+			"allocated_to": self.recruiter, "status": "Open"
+		})
+		self.assertFalse(recruiter_todo_still_open)
+
+		t4_admin_todo_open = frappe.db.exists("ToDo", {
+			"reference_type": "Project Manpower Request", "reference_name": self.pmr.name,
+			"allocated_to": t4_admin, "status": "Open"
+		})
+		self.assertTrue(t4_admin_todo_open)
+
+	def test_close_owner_assignment_on_submit(self):
+		"""The reverse direction: once T4 Admin submits to the recruiter
+		(Draft -> Awaiting Recruiter Approval), their own ToDo should close
+		instead of sitting open alongside the recruiter's."""
+		t4_admin = _make_user(f"test_t4admin2_{frappe.generate_hash(length=8)}@example.com", "T4 Admin")
+
+		resignation = frappe.get_doc({
+			"doctype": "Employee Resignation",
+			"t4_admin": t4_admin,
+		})
+		resignation.flags.ignore_mandatory = True
+		resignation.insert()
+
+		self.pmr.employee_resignation = resignation.name
+		self.pmr.save()
+
+		from frappe.desk.form.assign_to import add as add_assignment
+		add_assignment({
+			"doctype": "Project Manpower Request",
+			"name": self.pmr.name,
+			"assign_to": [t4_admin],
+		})
+
+		self.pmr.workflow_state = "Awaiting Recruiter Approval"
+		self.pmr.save()
+
+		t4_admin_todo_open = frappe.db.exists("ToDo", {
+			"reference_type": "Project Manpower Request", "reference_name": self.pmr.name,
+			"allocated_to": t4_admin, "status": "Open"
+		})
+		self.assertFalse(t4_admin_todo_open)
+
+		recruiter_todo_open = frappe.db.exists("ToDo", {
+			"reference_type": "Project Manpower Request", "reference_name": self.pmr.name,
+			"allocated_to": self.recruiter, "status": "Open"
+		})
+		self.assertTrue(recruiter_todo_open)
+
+	def test_reassign_falls_back_to_project_manager_for_operations(self):
+		"""Operations-route resignations have no T4 Admin at all --
+		reassignment on "Request Change" must fall back to Project Manager,
+		the universal final approver for both branches."""
+		project_manager = _make_user(f"test_pm_{frappe.generate_hash(length=8)}@example.com", "Project Manager")
+
+		resignation = frappe.get_doc({
+			"doctype": "Employee Resignation",
+			"project_manager": project_manager,
+		})
+		resignation.flags.ignore_mandatory = True
+		resignation.insert()
+
+		self.pmr.employee_resignation = resignation.name
+		self.pmr.workflow_state = "Awaiting Recruiter Approval"
+		self.pmr.save()
+
+		self.pmr.workflow_state = "Draft"
+		self.pmr.reason_for_rejection = "Please clarify details"
+		self.pmr.flags.ignore_mandatory = True
+		self.pmr.save()
+
+		recruiter_todo_still_open = frappe.db.exists("ToDo", {
+			"reference_type": "Project Manpower Request", "reference_name": self.pmr.name,
+			"allocated_to": self.recruiter, "status": "Open"
+		})
+		self.assertFalse(recruiter_todo_still_open)
+
+		pm_todo_open = frappe.db.exists("ToDo", {
+			"reference_type": "Project Manpower Request", "reference_name": self.pmr.name,
+			"allocated_to": project_manager, "status": "Open"
+		})
+		self.assertTrue(pm_todo_open)
+
 	def test_actual_deployment_date_calculation(self):
 		# Case 1: reason is not Exit, both deployment_date and ojt_days are set
 		self.pmr.reason = "Annual Leave Reliever"
 		self.pmr.deployment_date = "2026-07-01"
 		self.pmr.ojt_days = 5
-		self.pmr.save(ignore_permissions=True)
+		self.pmr.save()
 		self.assertEqual(str(self.pmr.actual_recruiters_deployment_date), "2026-06-26")
 
 		# Case 2: reason is Exit
 		self.pmr.reason = "Exit"
 		self.pmr.deployment_date = "2026-07-01"
 		self.pmr.ojt_days = 5
-		self.pmr.save(ignore_permissions=True)
+		self.pmr.save()
 		self.assertIsNone(self.pmr.actual_recruiters_deployment_date)
 
 def _make_user(email, first_name="Test"):
