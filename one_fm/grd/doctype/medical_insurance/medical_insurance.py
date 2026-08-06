@@ -78,11 +78,21 @@ def create_mi_record(WorkPermit):
     if(WorkPermit.work_permit_type == "Renewal Non Kuwaiti"):
         Insurance_status = "Renewal"
         new_medical_insurance.date_of_application = WorkPermit.date_of_application #setting the same date of application of wp
-    elif(WorkPermit.work_permit_type == "New Non Kuwaiti"):#Overseas
+    elif(WorkPermit.work_permit_type == "Overseas"):
+        # An overseas hire has no insurance yet, so the policy is opened as New
+        # (WI-001881). Applied for the day the Work Permit was, which for an Overseas
+        # Work Permit is the day its Preparation was submitted.
         Insurance_status = "New"
+        new_medical_insurance.date_of_application = WorkPermit.date_of_application
     elif (WorkPermit.work_permit_type == "Local Transfer"):#for non kuwaiti <if it is for kuwait called new or renew and they don't have MI process
         Insurance_status = "Local Transfer" # the Insurance_status will be new for overseas only
         new_medical_insurance.date_of_application = today() #set the date of creation
+    else:
+        # Kuwaitis have no Medical Insurance process at all, so reaching here means a
+        # caller asked for one against a Work Permit type that does not have a status to
+        # open it under. Better to say so than to insert a row with a blank status.
+        frappe.throw(_("Medical Insurance cannot be opened for a {0} Work Permit ({1}).").format(
+            WorkPermit.work_permit_type, WorkPermit.name))
 
     new_medical_insurance.work_permit = WorkPermit.name
     new_medical_insurance.preparation = WorkPermit.preparation

@@ -160,6 +160,23 @@ class Residency(Document):
         return {'Normal':'طبيعي','Diplomat':'دبلوماسي'}.get(passport)
     
 
+# The Actions whose Residency is opened by Preparation's own dispatcher rather than by
+# the "for extend" branch below (WI-001824). Without this the branch - which reads as
+# "anything that is not a renewal is an extension" - would open a second Residency for
+# them, categorised as Extend.
+ACTIONS_HANDLED_ON_SUBMIT = ('Renewal (Non-Kuwaiti)', 'New Kuwaiti', 'Overseas')
+
+# The Residency a category opens, and how many days before the residency expires it is
+# applied for. Anything not listed is an extension, applied for a week ahead.
+MOI_CATEGORY_BY_ACTION = {
+    'Renewal (Non-Kuwaiti)': ('Renewal', -14),
+    'Transfer': ('Transfer', None),
+    # First residency for an overseas hire (WI-001881): there is no expiry to count
+    # back from, so it is applied for the day the Preparation was submitted.
+    'Overseas': ('First Time', None),
+}
+
+
 #fetching the list of employee has Extend and renewal status from HR list.
 def set_employee_list_for_moi(preparation_name):
     # filter work permit records only take the non kuwaiti
@@ -172,7 +189,10 @@ def set_employee_list_for_moi(preparation_name):
                 except Exception as e:
                     frappe.log_error(message=frappe.get_traceback(), title=f"Error creating MOI for Employee {employee.employee} in Preparation {preparation_name}")
                     continue
-            if employee.renewal_or_extend != 'Renewal (Non-Kuwaiti)' and employee.nationality != 'Kuwaiti':# For extend
+            if (
+                employee.renewal_or_extend not in ACTIONS_HANDLED_ON_SUBMIT
+                and employee.nationality != 'Kuwaiti'
+            ):# For extend
                 try:
                     create_moi_record(frappe.get_doc('Employee',employee.employee),employee.renewal_or_extend,preparation_name)
                 except Exception as e:
@@ -189,15 +209,8 @@ def creat_moi_for_transfer(work_permit_name):
 
 def create_moi_record(employee,Renewal_or_Extend,preparation_name = None):
 
-    if Renewal_or_Extend == "Renewal (Non-Kuwaiti)":
-        category = "Renewal"
-        start_date = add_days(employee.residency_expiry_date, -14)
-    if Renewal_or_Extend == "Transfer":
-        category = "Transfer"
-        start_date = today()
-    if Renewal_or_Extend != "Renewal (Non-Kuwaiti)" and Renewal_or_Extend != "Transfer":
-        category = "Extend"
-        start_date = add_days(employee.residency_expiry_date, -7)
+    category, days_before_expiry = MOI_CATEGORY_BY_ACTION.get(Renewal_or_Extend, ("Extend", -7))
+    start_date = add_days(employee.residency_expiry_date, days_before_expiry) if days_before_expiry else today()
 
 
     # start_day_for_renewal = add_days(employee.residency_expiry_date, -14)# MIGHT CHANGE IN TRANSFER
