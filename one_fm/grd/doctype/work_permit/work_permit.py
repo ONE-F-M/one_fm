@@ -269,6 +269,12 @@ class WorkPermit(Document):
         param: work_permit object
         This method to update work permit status if completed in transfer paper, close the transfer paper, and submit it.
         """
+        if not self.transfer_paper:
+            # A Local Transfer opened from a Preparation row has no Transfer Paper
+            # (WI-001824), and there is nothing to update or close in that case. Without
+            # this the completion raises DoesNotExistError on a Transfer Paper of None.
+            return
+
         tp = frappe.get_doc('Transfer Paper',self.transfer_paper)
         if tp:
             for wp in tp.work_permit_records:
