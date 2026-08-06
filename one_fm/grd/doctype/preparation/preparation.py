@@ -49,6 +49,16 @@ NEW_ACTION_DOCUMENTS = {
         "residency": None,
         "paci": "New Application",
     },
+    # The process map groups Local Transfer with Overseas and the non-Kuwaiti renewal:
+    # all four documents, opened by the Preparation itself. There is no Transfer Paper in
+    # that path, which is why the transfer side of the Work Permit lifecycle had to stop
+    # assuming one.
+    "Local Transfer": {
+        "work_permit": "Local Transfer",
+        "medical_insurance": None,
+        "residency": None,
+        "paci": "Transfer",
+    },
 }
 
 

@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import today, get_url,getdate
+from frappe.utils import today, get_url,getdate, get_year_start
 from frappe import _
 from datetime import date
 from frappe.core.doctype.communication.email import make
@@ -69,7 +69,32 @@ def valid_work_permit_exists(preparation_name):
 def creat_medical_insurance_for_transfer(employee_name):
     employee = frappe.get_doc('Employee',employee_name)
     if employee:
-        create_mi_record(frappe.get_doc('Work Permit',{'employee':employee.employee}))
+        if transfer_insurance_already_open(employee.name):
+            return
+        # The employee's latest transfer permit, not whichever Work Permit the filter
+        # happened to return first - that could be a renewal from years ago, which has no
+        # insurance status to open a policy under.
+        create_mi_record(frappe.get_last_doc('Work Permit', filters={
+            'employee': employee.employee,
+            'work_permit_type': 'Local Transfer',
+        }))
+
+
+def transfer_insurance_already_open(employee):
+    """Is there already a Local Transfer policy open for this employee this year?
+
+    A Preparation opens the whole set of documents up front (WI-001824) and the Work
+    Permit reaching Completed asks for one as well, so without this the employee ends up
+    insured twice for the same transfer. Scoped to the current year to match
+    cancel_existing, so a genuine second transfer in a later year is still a new record.
+    """
+    return bool(frappe.get_all('Medical Insurance', limit=1, filters={
+        'employee': employee,
+        'insurance_status': 'Local Transfer',
+        'date_of_application': ['>=', get_year_start(today())],
+        'workflow_state': ['!=', 'Cancelled'],
+        'docstatus': ['<', 2],
+    }))
 
 
 def create_mi_record(WorkPermit):
