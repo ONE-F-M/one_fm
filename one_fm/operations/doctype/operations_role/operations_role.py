@@ -30,6 +30,41 @@ class OperationsRole(Document):
 			self.set_operation_post_inactive()
 
 		self.validate_operations_shift_status()
+		self.validate_sale_item_against_contract()
+
+	def validate_sale_item_against_contract(self):
+		"""Keep the Sale Item inside the project's contract (WI-001982).
+
+		The link query below already filters the dropdown; this is what makes it a rule
+		rather than a convenience, since a Link field can still be set through the API, an
+		import or a paste.
+
+		Only when the pairing is new or being changed. 422 of the 1,015 roles on this site
+		already carry an item that is not on their project's contract, 149 of them Active -
+		holding every later edit of those to the rule would block a status or shift change
+		on a role nobody is trying to re-bill, and take rostering down with it.
+		"""
+		if not (self.sale_item and self.project):
+			return
+
+		if not (
+			self.is_new()
+			or self.has_value_changed("sale_item")
+			or self.has_value_changed("project")
+		):
+			return
+
+		contracted = get_contracted_sale_items(self.project)
+		if contracted is None or self.sale_item in contracted:
+			return
+
+		frappe.throw(
+			_(
+				"Sale Item <b>{0}</b> is not on any Active contract for project <b>{1}</b>. "
+				"Pick one of the items the project is contracted for."
+			).format(self.sale_item, self.project),
+			title=_("Sale Item Not Contracted"),
+		)
 
 	def validate_operations_shift_status(self):
 		if self.status=='Active' and self.shift \
@@ -45,6 +80,65 @@ class OperationsRole(Document):
 			else:
 				queue_operation_post_inactive(operations_post_list)
 				frappe.msgprint(_("Operations Post linked to this Role {0} is set to Inactive!".format(self.name)), alert=True, indicator='green')
+
+def get_contracted_sale_items(project):
+	"""The Sale Items a project's Active contracts cover, or None if it has none.
+
+	None rather than an empty set, and the difference matters: the rule presupposes a
+	contract to read the items from. 259 of the roles on this site belong to projects with
+	no Active contract at all - the head office among them - and an empty set would leave
+	those with nothing selectable and no way to add a post.
+
+	"Active" is the contract's workflow state, the same test Proof of Work generation uses
+	to decide which contracts are billable.
+	"""
+	contracts = frappe.get_all(
+		"Contracts", filters={"project": project, "workflow_state": "Active"}, pluck="name"
+	)
+	if not contracts:
+		return None
+
+	return set(
+		frappe.get_all(
+			"Contract Item",
+			filters={
+				"parent": ["in", contracts],
+				"parenttype": "Contracts",
+				"item_code": ["is", "set"],
+			},
+			pluck="item_code",
+		)
+	)
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def sale_item_query(doctype, txt, searchfield, start, page_len, filters):
+	"""Sale Items selectable on an Operations Role: the project's contracted items (WI-001982).
+
+	Server-side rather than an ``in`` list built on the client, so the dropdown cannot go
+	stale against a contract that changed while the form was open.
+	"""
+	project = (filters or {}).get("project")
+	contracted = get_contracted_sale_items(project) if project else None
+
+	item_filters = {"is_stock_item": 0}
+	if contracted is not None:
+		# [""] rather than an empty list: a contract with no items should match nothing,
+		# and `in ()` is not valid SQL.
+		item_filters["name"] = ["in", sorted(contracted) or [""]]
+
+	return frappe.get_all(
+		"Item",
+		filters=item_filters,
+		or_filters={"name": ["like", f"%{txt}%"], "item_name": ["like", f"%{txt}%"]},
+		fields=["name", "item_name"],
+		order_by="name asc",
+		limit_start=start,
+		limit_page_length=page_len,
+		as_list=True,
+	)
+
 
 def queue_operation_post_inactive(operations_post_list):
 	for operations_post in operations_post_list:
