@@ -416,6 +416,28 @@ def create_work_permit_transfer(tp_name,employee):
             create_wp_transfer(frappe.get_doc('Employee',employee_in_tp.employee),"Local Transfer",tp_name)#check if you need to do it this way create_wp_transfer(employee_in_tp,"Local Transfer",tp_name)
 
 
+def create_wp_from_preparation(employee, work_permit_type, preparation_name):
+    """Open a Work Permit for a Preparation row whose Action is not a renewal (WI-001824).
+
+    A renewal dates its application off the residency it is renewing, which is what
+    create_wp_renewal does. A New Kuwaiti or Overseas application has no residency yet,
+    so it is applied for on the day the Preparation is submitted.
+
+    No copy of a previous Work Permit either: these are first applications, so there is
+    nothing to carry forward, and copying one would bring the old PAM references with it.
+    """
+    work_permit = frappe.new_doc('Work Permit')
+    work_permit.employee = employee.name
+    work_permit.work_permit_type = work_permit_type
+    work_permit.date_of_application = today()
+    work_permit.preparation = preparation_name
+    work_permit.ref_doctype = 'Preparation'
+    work_permit.ref_name = preparation_name
+    work_permit.insert()
+
+    return work_permit
+
+
 # Create Work Permit record once a month for renewals list
 def create_work_permit_renewal(preparation_name):
 #Get employees of the choosen preparation record

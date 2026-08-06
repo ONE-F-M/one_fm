@@ -137,7 +137,10 @@ def create_PACI(employee,Type,preparation_name = None):
         # Create New PACI: 1. New Overseas, 2. New Kuwaiti, 3. Transfer
         if Type == "Renewal":
             start_day = add_days(employee.residency_expiry_date, -14)# MIGHT CHANGE
-        if Type == "Transfer":
+        else:
+            # Every other category - Transfer, and New Application for an overseas hire
+            # (WI-001881) - has no residency expiry to count back from, so the civil ID is
+            # applied for the day the record is opened.
             start_day = today()
         PACI_new = frappe.new_doc('PACI')
         PACI_new.employee = employee.name
