@@ -42,6 +42,8 @@
   "google_service_account_section",
   "google_service_account_intro",
   "google_service_account_json",
+  "pow_drive_section",
+  "pow_drive_folder_link",
   "google_task_section",
   "google_task_synchronization_enabled",
   "sync_google_tasks_btn",
@@ -233,6 +235,17 @@
    "length": 10000
   },
   {
+   "fieldname": "pow_drive_section",
+   "fieldtype": "Section Break",
+   "label": "Proof of Work"
+  },
+  {
+   "description": "Shared Drive folder the Proof of Work export uploads into, as a share link or a folder id. The folder must be shared with the service account above. Leave empty to keep downloading a ZIP instead.",
+   "fieldname": "pow_drive_folder_link",
+   "fieldtype": "Data",
+   "label": "Proof of Work Drive Folder"
+  },
+  {
    "fieldname": "google_task_section",
    "fieldtype": "Section Break",
    "label": "Google Task"
@@ -329,7 +342,7 @@
  "grid_page_length": 50,
  "issingle": 1,
  "links": [],
- "modified": "2026-04-26 10:00:00.000000",
+ "modified": "2026-08-06 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",

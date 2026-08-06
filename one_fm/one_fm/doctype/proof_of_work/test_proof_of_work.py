@@ -879,3 +879,110 @@ class TestHourlyDayCells(FrappeTestCase):
 		grid = source.split("def get_pow_attendance_report")[1]
 		self.assertIn("_basis_for_rate_type(", grid)
 		self.assertIn('by_hours = basis == "Shift Hours"', grid)
+
+
+class TestTheExportGoesToDrive(FrappeTestCase):
+	"""WI-001981: the export uploads into a "Month Year" subfolder of a shared folder.
+
+	Drive is mocked - what is under test is which calls are made and with what, not
+	Google. The service account and the folder are site configuration.
+	"""
+
+	MODULE = "one_fm.one_fm.doctype.proof_of_work.proof_of_work"
+
+	def setUp(self):
+		from unittest.mock import MagicMock
+
+		self.service = MagicMock()
+		self.files = self.service.files.return_value
+		# No existing subfolder unless a test says otherwise.
+		self.files.list.return_value.execute.return_value = {"files": []}
+		self.files.create.return_value.execute.return_value = {"id": "NEWFOLDER"}
+
+	def test_the_subfolder_is_named_after_the_period_it_covers(self):
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import _period_folder_name
+
+		self.assertEqual(_period_folder_name("2026-07-01"), "July 2026")
+		# The period, not the month the export was run in.
+		self.assertEqual(_period_folder_name("2025-12-31"), "December 2025")
+
+	def test_an_existing_subfolder_is_reused(self):
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import _period_folder
+
+		self.files.list.return_value.execute.return_value = {"files": [{"id": "EXISTING"}]}
+
+		self.assertEqual(_period_folder(self.service, "PARENT", "July 2026"), "EXISTING")
+		self.files.create.assert_not_called()
+
+	def test_a_missing_subfolder_is_created_under_the_parent(self):
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import (
+			DRIVE_FOLDER_MIME,
+			_period_folder,
+		)
+
+		self.assertEqual(_period_folder(self.service, "PARENT", "July 2026"), "NEWFOLDER")
+
+		body = self.files.create.call_args.kwargs["body"]
+		self.assertEqual(body["name"], "July 2026")
+		self.assertEqual(body["mimeType"], DRIVE_FOLDER_MIME)
+		self.assertEqual(body["parents"], ["PARENT"])
+
+	def test_a_share_link_in_the_setting_resolves_to_its_folder_id(self):
+		"""The setting takes what someone copies out of Drive's address bar."""
+		from unittest.mock import patch
+
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import _configured_drive_folder
+
+		link = "https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQ?usp=sharing"
+		with patch.object(frappe.db, "get_single_value", return_value=link):
+			self.assertEqual(_configured_drive_folder(), "1AbCdEfGhIjKlMnOpQ")
+
+	def test_the_export_uploads_each_pdf_and_reports_the_folder(self):
+		from unittest.mock import patch
+
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import _upload_pow_pdfs
+
+		doc = frappe._dict({"start_date": "2026-07-01"})
+		self.files.create.return_value.execute.side_effect = [
+			{"id": "FOLDER-JULY"},  # the period subfolder
+			{"id": "FILE-1"},  # the PDF
+		]
+		notified = {}
+
+		with patch(f"{self.MODULE}._configured_drive_folder", return_value="PARENT"), patch(
+			f"{self.MODULE}.google_credentials.get_drive_service", return_value=self.service
+		), patch.object(frappe, "get_doc", return_value=doc), patch(
+			f"{self.MODULE}._pow_pdf_entry", return_value=("Client - Contract - Jul-2026.pdf", b"%PDF-")
+		), patch(
+			f"{self.MODULE}._notify_zip",
+			side_effect=lambda user, message, file_url=None, link_label=None: notified.update(
+				message=message, file_url=file_url
+			),
+		):
+			_upload_pow_pdfs(["POW-1"], "someone@example.com")
+
+		# The PDF went into the period folder, under its own filename.
+		upload_body = self.files.create.call_args.kwargs["body"]
+		self.assertEqual(upload_body["name"], "Client - Contract - Jul-2026.pdf")
+		self.assertEqual(upload_body["parents"], ["FOLDER-JULY"])
+
+		# And the user is told where it went (AC 1.3).
+		self.assertIn("1 Proof of Work PDF(s) uploaded", notified["message"])
+		# Straight to the period folder the PDFs are in, not the parent.
+		self.assertEqual(notified["file_url"], "https://drive.google.com/drive/folders/FOLDER-JULY")
+
+	def test_an_unconfigured_site_still_gets_its_zip(self):
+		"""The ZIP is what every site has today; losing the button is not an upgrade."""
+		from unittest.mock import patch
+
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import enqueue_pow_zip
+
+		with patch(f"{self.MODULE}._configured_drive_folder", return_value=""), patch(
+			f"{self.MODULE}._guard_permission"
+		), patch.object(frappe, "get_doc", return_value=frappe._dict(check_permission=lambda p: None)), patch(
+			f"{self.MODULE}.frappe.enqueue"
+		) as enqueue:
+			result = enqueue_pow_zip(["POW-1"])
+
+		self.assertEqual(result["destination"], "zip")
+		self.assertEqual(enqueue.call_args.args[0].__name__, "_build_pow_zip")
