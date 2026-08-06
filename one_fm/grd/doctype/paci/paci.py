@@ -13,6 +13,12 @@ from frappe.core.doctype.communication.email import make
 from one_fm.processor import sendemail
 from one_fm.utils import is_scheduler_emails_enabled
 
+# The Overseas category and the state its record opens in (WI-001830). Named because the
+# controller, create_PACI and the assignment rule all have to agree on the spelling.
+NEW_APPLICATION = "New Application"
+PENDING_PRO = "Pending PRO"
+
+
 class PACI(Document):
     def before_insert(self):
         self.cancel_existing()
@@ -166,6 +172,33 @@ def create_PACI(employee,Type,preparation_name = None):
         PACI_new.preparation = preparation_name
         PACI_new.date_of_application = start_day
         PACI_new.save()
+        if Type == NEW_APPLICATION:
+            hand_to_pro(PACI_new)
+        return PACI_new
+
+
+def hand_to_pro(paci):
+    """Move a first civil ID application to the PRO, who applies on the portal (WI-001830).
+
+    Written to the field rather than applied as a workflow action, because the
+    Draft --Save--> Pending PRO transition belongs to the PRO role and this record is
+    opened by the system on behalf of a Preparation - there is no PRO in the session to
+    make it, and Frappe rejects the jump as a transition the current user cannot perform.
+
+    A field written this way leaves the assignment rules unaware, so they are re-run
+    explicitly; without that the record sits in Pending PRO assigned to nobody.
+    """
+    from frappe.automation.doctype.assignment_rule.assignment_rule import apply
+
+    paci.db_set("workflow_state", PENDING_PRO)
+
+    try:
+        apply(doctype=paci.doctype, name=paci.name)
+    except Exception:
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title=f"Error assigning PACI {paci.name} to the PRO",
+        )
 
 
 #==============================================================================> Reminder Notification

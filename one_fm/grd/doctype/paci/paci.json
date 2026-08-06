@@ -13,6 +13,8 @@
   "category",
   "paci_status",
   "preparation",
+  "paci_details_section",
+  "paci_reference_number",
   "section_break_3",
   "first_name_arabic",
   "second_name_arabic",
@@ -244,6 +246,16 @@
    "read_only": 1
   },
   {
+   "fieldname": "paci_details_section",
+   "fieldtype": "Section Break",
+   "label": "PACI Details"
+  },
+  {
+   "fieldname": "paci_reference_number",
+   "fieldtype": "Data",
+   "label": "PACI Reference Number"
+  },
+  {
    "fetch_from": "employee.one_fm_civil_id",
    "fieldname": "civil_id",
    "fieldtype": "Data",
@@ -313,7 +325,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-05 12:00:00.000000",
+ "modified": "2026-08-06 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PACI",
