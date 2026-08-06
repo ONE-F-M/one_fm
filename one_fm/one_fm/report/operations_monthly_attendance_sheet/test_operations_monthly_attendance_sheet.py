@@ -26,6 +26,7 @@ from one_fm.one_fm.report.operations_monthly_attendance_sheet.operations_monthly
 	get_report_additional_day_details,
 	is_invalid_roster_combination,
 	merge_hours_maps,
+	row_group,
 	summary_counter,
 	validate_filters,
 )
@@ -257,7 +258,7 @@ class TestShiftHours(FrappeTestCase):
 	DATES = [getdate("2026-01-10"), getdate("2026-01-11"), getdate("2026-01-12")]
 	# The maps are keyed by the row group from WI-001790: shift, roster type and the
 	# Day Off OT flag.
-	GROUP = ("Morning", "Basic", 0)
+	GROUP = ("Morning", "Basic", 0, "")
 
 	def _rows(self, generate_based_on):
 		return get_attendance_status(
@@ -274,7 +275,7 @@ class TestShiftHours(FrappeTestCase):
 		# Shift is part of the group key but is not a column, so the row carries only the
 		# two attributes WI-001790 lists.
 		row = self._rows(BY_SHIFT_HOURS)[0]
-		_shift, roster_type, day_off_ot = self.GROUP
+		_shift, roster_type, day_off_ot, _project = self.GROUP
 		self.assertEqual((row["roster_type"], row["day_off_ot"]), (roster_type, day_off_ot))
 		self.assertNotIn("shift", row)
 
@@ -323,10 +324,10 @@ class TestFormatShiftHours(FrappeTestCase):
 
 
 class TestMergeHoursMaps(FrappeTestCase):
-	MORNING = ("Morning", "Basic", 0)
-	EVENING = ("Evening", "Basic", 0)
-	NIGHT = ("Night", "Basic", 0)
-	MORNING_OT = ("Morning", "Over-Time", 0)
+	MORNING = ("Morning", "Basic", 0, "")
+	EVENING = ("Evening", "Basic", 0, "")
+	NIGHT = ("Night", "Basic", 0, "")
+	MORNING_OT = ("Morning", "Over-Time", 0, "")
 
 	def test_later_maps_win_per_day(self):
 		merged = merge_hours_maps(
@@ -495,7 +496,7 @@ class TestTheSummaryBlock(FrappeTestCase):
 	def test_the_row_reconciles_to_the_range(self):
 		"""The AC's own check: the summary columns add up to the days selected."""
 		dates = get_date_range(_filters())
-		group = ("Morning", "Basic", 0)
+		group = ("Morning", "Basic", 0, "")
 		attendance = {
 			group: {
 				dates[0]: "Present",
@@ -613,3 +614,118 @@ class TestAttendanceWithoutAShiftIsStillCounted(FrappeTestCase):
 
 		source = inspect.getsource(get_non_day_off_attendance_records)
 		self.assertIn("left_join(OperationsShift)", source)
+class TestTheIncludeProjectToggle(FrappeTestCase):
+	"""WI-001980: one row per employee, or one row per project they worked on."""
+
+	def _record(self, project):
+		return frappe._dict(
+			{"shift": "Morning", "roster_type": "Basic", "day_off_ot": 0, "project": project}
+		)
+
+	def test_the_project_joins_the_row_key_only_when_asked_for(self):
+		a, b = self._record("Project A"), self._record("Project B")
+
+		# Off: two projects, one key - so one row for the employee.
+		self.assertEqual(row_group(a), row_group(b))
+		# On: a key each.
+		self.assertNotEqual(row_group(a, include_project=True), row_group(b, include_project=True))
+		self.assertEqual(row_group(a, include_project=True)[3], "Project A")
+
+	def test_the_key_keeps_its_shape_either_way(self):
+		"""Everything that unpacks the key reads one shape, whichever way the toggle is."""
+		self.assertEqual(len(row_group(self._record("Project A"))), 4)
+		self.assertEqual(len(row_group(self._record("Project A"), include_project=True)), 4)
+
+	def test_the_project_column_is_hidden_rather_than_dropped(self):
+		"""The client formatter colours by column index and counts hidden columns."""
+		off = [c for c in get_columns(_filters(), []) if c["fieldname"] == "project"][0]
+		on = [
+			c for c in get_columns(_filters(include_project=1), []) if c["fieldname"] == "project"
+		][0]
+
+		self.assertTrue(off.get("hidden"))
+		self.assertFalse(on.get("hidden"))
+		# Same number of columns either way, so the day cells stay under the same indices.
+		self.assertEqual(
+			len(get_columns(_filters(), [])), len(get_columns(_filters(include_project=1), []))
+		)
+
+
+class TestTheToggleAgainstRealData(FrappeTestCase):
+	def setUp(self):
+		busiest = frappe.db.sql(
+			"""
+			select project, year(attendance_date) as y, month(attendance_date) as mo
+			from `tabAttendance`
+			where docstatus = 1 and project is not null and project != ''
+			group by project, y, mo order by count(*) desc limit 1
+			""",
+			as_dict=True,
+		)
+		if not busiest:
+			self.skipTest("no submitted attendance with a project on this instance")
+
+		from frappe.utils import get_first_day, get_last_day
+
+		anchor = getdate(f"{busiest[0].y}-{busiest[0].mo:02d}-01")
+		self.lo, self.hi = get_first_day(anchor), get_last_day(anchor)
+
+	def _rows(self, **extra):
+		return execute(_filters(from_date=self.lo, to_date=self.hi, **extra))[1] or []
+
+	def test_including_the_project_never_loses_an_employee(self):
+		"""Splitting rows must add rows, not drop people."""
+		consolidated = self._rows()
+		split = self._rows(include_project=1)
+		if not consolidated:
+			self.skipTest("no rows for the busiest project month")
+
+		self.assertGreaterEqual(len(split), len(consolidated))
+		self.assertEqual({r["employee"] for r in split}, {r["employee"] for r in consolidated})
+
+	def test_a_split_row_carries_the_project_it_is_for(self):
+		split = self._rows(include_project=1)
+		if not split:
+			self.skipTest("no rows for the busiest project month")
+
+		self.assertTrue(any(r.get("project") for r in split))
+
+	def test_each_row_still_reconciles_with_the_project_split_on(self):
+		"""WI-001979's arithmetic has to survive the regrouping."""
+		split = self._rows(include_project=1)
+		if not split:
+			self.skipTest("no rows for the busiest project month")
+
+		total_days = len(get_date_range(_filters(from_date=self.lo, to_date=self.hi)))
+		for row in split[:200]:
+			self.assertEqual(sum(row.get(counter, 0) for counter in SUMMARY_COUNTERS), total_days)
+
+	def test_splitting_by_project_never_loses_a_day_worked(self):
+		"""Compared per employee across all their rows, not row to row.
+
+		An employee already gets a row per shift and per Day Off OT flag, so both runs
+		return several rows for the same person - the comparison has to be the totals.
+
+		Greater-or-equal rather than equal, and the gap is meaningful: the two runs differ
+		only where one date carries attendance under two projects. Consolidated, those
+		collapse onto one cell and count once; split, each project counts its own - which
+		is what a per-project row is for.
+		"""
+		consolidated = self._rows()
+		split = self._rows(include_project=1)
+		if not consolidated:
+			self.skipTest("no rows for the busiest project month")
+
+		def present_by_employee(rows):
+			totals = {}
+			for row in rows:
+				totals[row["employee"]] = totals.get(row["employee"], 0) + row.get("working_days", 0)
+			return totals
+
+		split_totals = present_by_employee(split)
+		for employee, present in present_by_employee(consolidated).items():
+			self.assertGreaterEqual(
+				split_totals.get(employee, 0),
+				present,
+				msg=f"{employee} lost present days when split by project",
+			)

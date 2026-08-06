@@ -194,7 +194,17 @@ def get_columns(filters, dates):
 		{"label": _("Employee"), "fieldname": "employee", "fieldtype": "Link", "options": "Employee", "hidden": 1, "width": 0},
 		{"label": _("Employee ID"), "fieldname": "employee_id", "fieldtype": "Data", "width": 90},
 		{"label": _("Employee Name"), "fieldname": "employee_name", "fieldtype": "Data", "width": 150},
-		{"label": _("Project"), "fieldname": "project", "fieldtype": "Link", "options": "Project", "width": 110},
+		# WI-001980: hidden rather than dropped when Include Project is off. The client
+		# formatter colours by column index and counts the hidden columns, so removing one
+		# would shift the day cells out from under it.
+		{
+			"label": _("Project"), "fieldname": "project", "fieldtype": "Link", "options": "Project",
+			**(
+				{"width": 110}
+				if cint(filters.get("include_project"))
+				else {"hidden": 1, "width": 0}
+			),
+		},
 		{"label": _("Status"), "fieldname": "employee_status", "fieldtype": "Data", "width": 80},
 		{"label": _("Employment Type"), "fieldname": "employment_type", "fieldtype": "Data", "width": 110},
 		{"label": _("Roster Type"), "fieldname": "roster_type", "fieldtype": "Data", "width": 80},
@@ -303,14 +313,23 @@ def get_message(filters=None):
 	return message
 
 
-def row_group(record):
-	"""The key a report row is grouped by: shift, roster type and the Day Off OT flag.
+def row_group(record, include_project=False):
+	"""The key a report row is grouped by: shift, roster type, the Day Off OT flag - and
+	the project when Include Project is on (WI-001980).
 
-	Grouping on all three is what lets the Roster Type and Day Off OT columns carry a
-	value - a row spanning both Basic and Over-Time could only leave them blank, which
+	Grouping on the first three is what lets the Roster Type and Day Off OT columns carry
+	a value - a row spanning both Basic and Over-Time could only leave them blank, which
 	is what it did.
+
+	The arity does not change with the toggle: the project slot is empty when it is off,
+	so everything that unpacks this key reads the same shape either way.
 	"""
-	return (record.shift or "", record.roster_type or "", cint(record.day_off_ot))
+	return (
+		record.shift or "",
+		record.roster_type or "",
+		cint(record.day_off_ot),
+		(record.project or "") if include_project else "",
+	)
 
 
 def get_attendance_map(filters):
@@ -338,8 +357,10 @@ def get_attendance_map(filters):
 	# every one of the employee's rows below, so its type cannot belong to one shift.
 	leave_type_map = {}
 
+	include_project = cint(filters.get("include_project"))
+
 	for d in non_day_off_attendance_records:
-		group = row_group(d)
+		group = row_group(d, include_project)
 
 		# The scheduled duration is recorded for every day that has a shift, including
 		# the days spent on leave: it is what was rostered, not what was worked. Keyed
@@ -390,6 +411,9 @@ def get_non_day_off_attendance_records(filters):
 			Attendance.leave_type,
 			Attendance.roster_type,
 			Attendance.day_off_ot,
+			# WI-001980: the project the day was worked on, which is what the rows split
+			# by - not the employee's own project, which is a single current posting.
+			Attendance.project,
 			OperationsShift.shift_classification.as_("shift"),
 			# The shift's scheduled length, for "Shift Hours" mode. Deliberately not
 			# Attendance.working_hours, which is what was actually clocked (WI-001791).
@@ -465,8 +489,10 @@ def get_schedule_map(filters):
 	hours_map = {}
 	leave_map = {}
 
+	include_project = cint(filters.get("include_project"))
+
 	for d in non_day_off_schedule_records:
-		group = row_group(d)
+		group = row_group(d, include_project)
 
 		if d.shift_hours:
 			hours_map.setdefault(d.employee, {}).setdefault(group, {})[d.day_key] = d.shift_hours
@@ -506,6 +532,7 @@ def get_non_day_off_schedule_records(filters):
 			EmployeeSchedule.employee_availability.as_("status"),
 			EmployeeSchedule.roster_type,
 			EmployeeSchedule.day_off_ot,
+			EmployeeSchedule.project,
 			OperationsShift.shift_classification.as_("shift"),
 			OperationsShift.duration.as_("shift_hours"),
 		)
@@ -630,10 +657,13 @@ def get_rows(employee_details, filters, dates, attendance_map, schedule_map, hou
 				"employee": employee,
 				"employee_id": details.employee_id,
 				"employee_name": details.employee_name,
-				"project": details.project,
 				"employee_status": details.employee_status,
 				"employment_type": details.employment_type,
 			})
+			# With Include Project on the row already carries the project it was grouped
+			# by; the employee's own project is a single current posting and would
+			# overwrite it (WI-001980).
+			record.setdefault("project", details.project)
 
 		records.extend(attendance_for_employee)
 
@@ -682,8 +712,10 @@ def get_attendance_status(
 	for group in groups:
 		# Shift still separates the rows (see row_group) but is not carried into the row:
 		# WI-001790 does not list it as a column, and an undeclared key is dead weight.
-		_shift, roster_type, day_off_ot = group
+		_shift, roster_type, day_off_ot, project = group
 		row = {"roster_type": roster_type, "day_off_ot": day_off_ot}
+		if project:
+			row["project"] = project
 
 		# Merge Attendance and Schedule statuses
 		attendance_dict = { **employee_non_day_off_attendance.get(group, {}), **employee_non_day_off_schedule.get(group, {}) }
