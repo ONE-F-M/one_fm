@@ -1,6 +1,8 @@
 # Copyright (c) 2026, ONEFM and contributors
 # See license.txt
 
+import re
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import get_first_day, get_last_day, getdate
@@ -668,7 +670,27 @@ class TestReportDayHeader(FrappeTestCase):
 		# Employee ID/Name and the three totals must not repeat on the second row.
 		self.assertIn('class="c-id" rowspan="2"', self.print_format.html)
 		self.assertIn('class="c-name" rowspan="2"', self.print_format.html)
-		self.assertIn('class="c-num" rowspan="2"', self.print_format.html)
+		# Each totals column carries its own class as well as c-num since WI-001983.
+		for column in ("c-worked-days", "c-days-off", "c-total-hours"):
+			self.assertIn(f'class="c-num {column}" rowspan="2"', self.print_format.html)
+
+	def test_the_totals_columns_have_separate_widths(self):
+		"""WI-001983: "Working Days" and "Days Off" ran together inside one 32px width."""
+		for column in ("c-worked-days", "c-days-off", "c-total-hours"):
+			self.assertIn(f".pow-grid .{column} {{ width:", self.print_format.css)
+
+	def test_the_header_line_carries_the_report_period_on_the_right(self):
+		"""WI-001983: logo and title left, Report Period right, on one line."""
+		self.assertIn('<td class="pow-hd-right"><strong>Report Period:</strong>', self.print_format.html)
+		# And it is not also left in the metadata line below.
+		metadata = self.print_format.html.split('<div class="pow-meta">')[1].split("</div>")[0]
+		self.assertNotIn("Report Period", metadata)
+
+	def test_the_metadata_reads_client_then_project_then_contract(self):
+		metadata = self.print_format.html.split('<div class="pow-meta">')[1].split("</div>")[0]
+		labels = re.findall(r"<strong>(.*?):</strong>", metadata)
+
+		self.assertEqual(labels, ["Client", "Project", "Contract"])
 
 
 class TestSafeFilename(FrappeTestCase):
@@ -879,3 +901,50 @@ class TestHourlyDayCells(FrappeTestCase):
 		grid = source.split("def get_pow_attendance_report")[1]
 		self.assertIn("_basis_for_rate_type(", grid)
 		self.assertIn('by_hours = basis == "Shift Hours"', grid)
+
+
+class TestTheLetterHeadingsNameTheUnitsOnThePage(FrappeTestCase):
+	"""WI-001983: the Letter's figure columns are headed after what their rows hold.
+
+	Both columns used to read "<days wording> OR <hours wording>" whatever the document
+	reported, so a letter quoting only days still asked the reader to pick a line.
+	"""
+
+	def _headers(self, contractual, actual):
+		from one_fm.jinja.print_format.methods import pow_letter_headers
+
+		doc = frappe.new_doc("Proof of Work")
+		for c, a in zip(contractual, actual):
+			doc.append("proof_of_work_item", {"contractual_hours": c, "actual_hours": a})
+		return pow_letter_headers(doc)
+
+	def test_a_days_only_document_is_headed_in_days(self):
+		headers = self._headers(["={2 staff * 30 days} = 60 DAYS"], ["44 Days"])
+
+		self.assertEqual(headers["contractual"], ["Contractual Number of days per month"])
+		self.assertEqual(headers["worked"], ["Total number Days worked"])
+
+	def test_an_hours_only_document_is_headed_in_hours(self):
+		headers = self._headers(["={50 staff * 208 hours} = 10400 HOURS"], ["31860.00 hrs"])
+
+		self.assertEqual(headers["contractual"], ["Contractual number of hours per month"])
+		self.assertEqual(headers["worked"], ["Total No of Hours worked"])
+
+	def test_a_document_reporting_both_carries_both_headings_and_no_or(self):
+		"""A "Both" basis, or one Daily item beside one Hourly one."""
+		headers = self._headers(
+			["={2 staff * 30 days} = 60 DAYS", "={50 staff * 208 hours} = 10400 HOURS"],
+			["44 Days", "31860.00 hrs"],
+		)
+
+		self.assertEqual(len(headers["contractual"]), 2)
+		self.assertEqual(len(headers["worked"]), 2)
+		for column in headers.values():
+			self.assertNotIn("OR", " ".join(column))
+
+	def test_an_empty_document_keeps_both_headings(self):
+		"""A column headed with no unit at all reads as a missing heading."""
+		headers = self._headers([], [])
+
+		self.assertEqual(len(headers["contractual"]), 2)
+		self.assertEqual(len(headers["worked"]), 2)

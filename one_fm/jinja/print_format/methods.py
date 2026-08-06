@@ -816,6 +816,61 @@ def pow_attendance_report(doc):
 	return get_pow_attendance_report(doc.name if hasattr(doc, "name") else doc)
 
 
+# WI-001983: the Letter's two figure columns are headed after the units their rows
+# actually hold. The wording is the contract's own; what goes is the "OR" that used to
+# join both halves whatever the document reported, so a letter quoting only days no
+# longer asks the reader to pick a line.
+LETTER_COLUMN_HEADINGS = {
+	"contractual": {
+		"days": "Contractual Number of days per month",
+		"hours": "Contractual number of hours per month",
+	},
+	"worked": {
+		"days": "Total number Days worked",
+		"hours": "Total No of Hours worked",
+	},
+}
+
+
+def pow_letter_headers(doc):
+	"""Headings for the Proof of Work Letter's contractual and worked columns (WI-001983).
+
+	Read off the rendered rows rather than recomputed from the contract, so the heading
+	always describes the figures on the page - a contract whose Rate Type changed after
+	the document was generated cannot relabel figures that were generated under the old
+	one.
+
+	A row carrying both figures (a "Both" basis) puts both headings in the column, on
+	their own lines and with no "OR" between them.
+	"""
+	rows = doc.get("proof_of_work_item") or []
+
+	return {
+		"contractual": _letter_heading_lines(
+			"contractual", [row.get("contractual_hours") for row in rows]
+		),
+		"worked": _letter_heading_lines("worked", [row.get("actual_hours") for row in rows]),
+	}
+
+
+def _letter_heading_lines(column, values):
+	"""The headings for one column, in days-then-hours order, for the units present."""
+	haystack = " ".join(cstr(value) for value in values).lower()
+
+	units = []
+	if "day" in haystack:
+		units.append("days")
+	if "hour" in haystack or "hrs" in haystack:
+		units.append("hours")
+
+	# An empty document, or figures in a wording this does not recognise, keeps both
+	# headings: a column header that names no unit at all reads as a missing heading.
+	if not units:
+		units = ["days", "hours"]
+
+	return [LETTER_COLUMN_HEADINGS[column][unit] for unit in units]
+
+
 def pow_logo_src():
 	"""The ONE FM logo as a data URI, for the Proof of Work PDFs (WI-001808).
 
