@@ -553,3 +553,4 @@ one_fm.patches.v15_0.send_work_item_notify_assignee_demo_email
 one_fm.patches.v15_0.mark_present_auto_attendance_missed_checkin_jul13
 one_fm.patches.v15_0.add_employee_schedule_suspension_workflow #2026-07-24
 one_fm.patches.v15_0.add_onboarding_officer_arrival_deployment_permission #2026-08-04
+one_fm.patches.v15_0.create_attendance_check_jul11_2026 #1
