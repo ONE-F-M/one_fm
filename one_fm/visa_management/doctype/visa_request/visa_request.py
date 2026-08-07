@@ -64,6 +64,9 @@ class VisaRequest(Document):
 			)
 
 	def on_update(self):
+		# WI-001977: a Visa Copy or Payment Receipt just attached is read by OCR.
+		queue_document_ocr(self)
+
 		if self.job_offer:
 			ccp_name = frappe.db.get_value("Candidate Country Process", {"job_offer": self.job_offer}, "name")
 			if ccp_name:
@@ -103,3 +106,102 @@ class VisaRequest(Document):
 					),
 					title="Missing Required Fields",
 				)
+
+# WI-001977: the attachments that are read by OCR, and the fields each one fills.
+# Keyed by the Visa Request field the operator attaches to.
+OCR_DOCUMENTS = {
+	"visa_document": {
+		"label": "Visa Copy",
+		"extract": "one_fm.ocr_utils.extract_evisa_data",
+		"fills": ("visa_reference_number", "visa_issue_date", "visa_expiry_date"),
+	},
+	"payment_receipt": {
+		"label": "Payment Receipt",
+		"extract": "one_fm.ocr_utils.extract_payment_receipt_data",
+		"fills": ("payment_date",),
+	},
+}
+
+# The state the operator attaches these in. Outside it the attachments are not the
+# ones this reads - a passport copy on a Draft has nothing to do with a visa.
+OCR_STATE = "Pending Visa Issuance"
+
+
+def queue_document_ocr(doc, method=None):
+	"""Read a freshly attached Visa Copy or Payment Receipt (WI-001977).
+
+	Enqueued rather than run inline: Mindee is an external call that takes seconds, and
+	the operator should not be made to wait on a save for it. The extracted values land
+	on the form for review - nothing here advances the workflow, which is the AC's point.
+
+	Only fires for an attachment that actually changed, so an operator's correction to an
+	extracted date survives the next save.
+	"""
+	if doc.workflow_state != OCR_STATE:
+		return
+
+	changed = [
+		fieldname
+		for fieldname in OCR_DOCUMENTS
+		if doc.get(fieldname) and doc.has_value_changed(fieldname)
+	]
+	if not changed:
+		return
+
+	frappe.enqueue(
+		"one_fm.visa_management.doctype.visa_request.visa_request.run_document_ocr",
+		queue="short",
+		visa_request=doc.name,
+		fieldnames=changed,
+		user=frappe.session.user,
+	)
+
+
+def run_document_ocr(visa_request: str, fieldnames: list, user: str | None = None):
+	"""Extract from each attachment and write what came back (background job)."""
+	doc = frappe.get_doc("Visa Request", visa_request)
+	extracted = {}
+
+	for fieldname in fieldnames:
+		spec = OCR_DOCUMENTS[fieldname]
+		try:
+			file_path = _attachment_path(doc.get(fieldname))
+			extracted.update(frappe.get_attr(spec["extract"])(file_path))
+		except Exception:
+			# One unreadable document must not cost the other its extraction, and the
+			# operator can still type the values in - so this is logged, not raised.
+			frappe.log_error(
+				title=f"Visa Request OCR failed — {spec['label']}",
+				message=f"{visa_request}\n{frappe.get_traceback()}",
+			)
+
+	if not extracted:
+		return
+
+	doc.db_set(extracted, update_modified=False)
+
+	frappe.publish_realtime(
+		"visa_request_ocr_complete",
+		{"name": visa_request, "fields": list(extracted)},
+		user=user or frappe.session.user,
+	)
+
+
+def _attachment_path(file_url: str) -> str:
+	"""Absolute path on disk for an attachment URL, public or private."""
+	import os
+
+	if not file_url:
+		raise ValueError("No file attached")
+
+	if file_url.startswith("/private/files/"):
+		path = frappe.get_site_path("private", "files", file_url.split("/private/files/")[-1])
+	elif file_url.startswith("/files/"):
+		path = frappe.get_site_path("public", "files", file_url.split("/files/")[-1])
+	else:
+		path = frappe.get_site_path("public", file_url.lstrip("/"))
+
+	if not os.path.exists(path):
+		raise FileNotFoundError(f"Attachment not found on disk: {file_url}")
+
+	return path
