@@ -79,3 +79,55 @@ class TestNoPermitIsLeftUnactionable(FrappeTestCase):
 		}
 
 		self.assertEqual(held - defined, set())
+
+
+class TestThePamRejectionIsOneStep(FrappeTestCase):
+	"""WI-001827: PAM's refusal used to park in an intermediate state and need a second
+	click to become Rejected."""
+
+	RETIRED_STATE = "Reason of Rejection"
+
+	def setUp(self):
+		self.fixture = _transitions(_fixture()["transitions"])
+		self.applied = _transitions(
+			t.as_dict() for t in frappe.get_doc("Workflow", WORKFLOW).transitions
+		)
+
+	def test_pam_rejects_straight_to_rejected(self):
+		reject = ("Pending By PAM", "Reject", "Rejected")
+
+		self.assertIn(reject, self.fixture)
+		self.assertIn(reject, self.applied)
+
+	def test_the_two_step_route_is_gone(self):
+		for transitions in (self.fixture, self.applied):
+			self.assertEqual(
+				[t for t in transitions if self.RETIRED_STATE in (t[0], t[2])], []
+			)
+
+	def test_the_reject_action_is_offered_once(self):
+		"""BA's export carries the transition twice; two identical Reject buttons on the
+		same state is a UI bug waiting to happen."""
+		rejects = [
+			t for t in _fixture()["transitions"]
+			if (t["state"], t["action"]) == ("Pending By PAM", "Reject")
+		]
+
+		self.assertEqual(len(rejects), 1)
+
+	def test_no_permit_is_left_in_the_retired_state(self):
+		self.assertEqual(
+			frappe.db.count("Work Permit", {"workflow_state": self.RETIRED_STATE}),
+			0,
+			msg="the patch should have moved these to Rejected",
+		)
+
+	def test_a_rejected_permit_can_still_say_why(self):
+		"""The reason dropdowns (WI-001829) are what the retired state used to be for."""
+		meta = frappe.get_meta("Work Permit")
+
+		self.assertIsNotNone(meta.get_field("pam_rejection_reason"))
+		self.assertIn(
+			'reason_of_rejection == "Rejected by PAM"',
+			meta.get_field("pam_rejection_reason").depends_on,
+		)
