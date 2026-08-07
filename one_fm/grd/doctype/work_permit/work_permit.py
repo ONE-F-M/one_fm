@@ -664,3 +664,114 @@ def get_employee_last_checkin(employee):
     if len(result) > 0:
         return result[0].last_checkin_date
     return None
+
+# ── Previous company response window (WI-001829) ──────────────────────────────
+#
+# PAM gives the previous employer three working days to answer a Local Transfer.
+# Silence past that is a refusal, and it is recorded under its own reason so a report can
+# tell it apart from an employer who actually said no.
+PREVIOUS_COMPANY_STATE = "Pending By Previous Company"
+PREVIOUS_COMPANY_RESPONSE_DAYS = 3
+AUTO_REJECTION_REASON = "Auto rejected after 3 days"
+REJECTED_BY_PREVIOUS_COMPANY = "Rejected by previous company"
+
+
+def auto_reject_unanswered_previous_company():
+	"""Reject Local Transfers the previous employer never answered.
+
+	Cron, on the same working-days schedule as the other GRD reminders. Goes through the
+	workflow rather than writing the state directly: Rejected is a submitted state, so a
+	db_set would leave a permit reading Rejected while still sitting at docstatus 0.
+	"""
+	from frappe.model.workflow import apply_workflow
+
+	waiting = frappe.get_all(
+		"Work Permit",
+		filters={
+			"workflow_state": PREVIOUS_COMPANY_STATE,
+			"work_permit_type": "Local Transfer",
+			"docstatus": 0,
+		},
+		fields=["name", "inform_previous_company_on", "modified"],
+	)
+
+	for permit in waiting:
+		# The clock starts when the previous company was informed. Older permits predate
+		# that field, so the last change - which is when it entered this state - stands in.
+		informed_on = permit.inform_previous_company_on or permit.modified
+		if working_days_between(informed_on, today()) < PREVIOUS_COMPANY_RESPONSE_DAYS:
+			continue
+
+		try:
+			doc = frappe.get_doc("Work Permit", permit.name)
+			doc.db_set(
+				{
+					"previous_company_rejection_reason": AUTO_REJECTION_REASON,
+					"reason_of_rejection": REJECTED_BY_PREVIOUS_COMPANY,
+				},
+				update_modified=False,
+			)
+			apply_workflow(doc, "Reject")
+		except Exception:
+			# One permit that will not transition must not stop the rest of the sweep.
+			frappe.log_error(
+				title="WI-001829: auto-rejection failed",
+				message=f"{permit.name}\n{frappe.get_traceback()}",
+			)
+
+
+# Kuwait's government weekend. Held here rather than read from a Holiday List because
+# this window is PAM's, not an employee's - and because the list cannot be relied on for
+# it: the company default on production is "Default Company Holiday List 2024", which
+# ends in 2024 and carries no weekly off at all, so every Friday since would have counted
+# as a working day (WI-001829).
+WEEKEND_WEEKDAYS = (4, 5)  # Friday, Saturday
+
+
+def working_days_between(from_date, to_date):
+	"""Working days after `from_date` up to and including `to_date`.
+
+	The weekend is the floor; public holidays come off the company's holiday list on top
+	of it, when that list actually covers the dates being counted. So a request that goes
+	out on a Wednesday is not three working days old by Saturday.
+	"""
+	from frappe.utils import getdate
+
+	start, end = getdate(from_date), getdate(to_date)
+	if start >= end:
+		return 0
+
+	holidays = get_company_holidays(start, end)
+
+	days = 0
+	current = add_days(start, 1)
+	while current <= end:
+		if current.weekday() not in WEEKEND_WEEKDAYS and current not in holidays:
+			days += 1
+		current = add_days(current, 1)
+
+	return days
+
+
+def get_company_holidays(from_date, to_date):
+	"""Public holidays in a range, from the default company's holiday list.
+
+	An empty set when the list is missing or does not reach these dates - the weekend
+	floor in working_days_between is what keeps the count honest in that case.
+	"""
+	holiday_list = frappe.db.get_value(
+		"Company", frappe.defaults.get_global_default("company"), "default_holiday_list"
+	)
+	if not holiday_list:
+		return set()
+
+	return set(
+		frappe.get_all(
+			"Holiday",
+			filters={
+				"parent": holiday_list,
+				"holiday_date": ["between", [from_date, to_date]],
+			},
+			pluck="holiday_date",
+		)
+	)
