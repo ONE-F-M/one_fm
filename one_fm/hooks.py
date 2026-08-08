@@ -302,7 +302,7 @@ doc_events = {
 		"validate": "one_fm.utils.validate_warehouse"
 	},
 	"Vehicle": {
-		"autoname": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.vehicle_autoname",
+		"before_insert": "one_fm.overrides.vehicle.set_naming_series",
 		"after_insert": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.after_insert_vehicle",
 		"validate": [
 			"one_fm.overrides.vehicle.validate_vehicle_branding",
@@ -675,6 +675,7 @@ scheduler_events = {
 			"one_fm.api.tasks.overtime_shift_assignment",
 			#"one_fm.api.tasks.automatic_checkout",
 			"one_fm.one_fm.doctype.password_reset_token.password_reset_token.revoke_password_tokens",
+			"one_fm.api.tasks.rambo_shift_assignment",
 		],
 		"37 23 * * *": [  #“At 23:37.”
 			'one_fm.api.tasks.issue_penalties'
