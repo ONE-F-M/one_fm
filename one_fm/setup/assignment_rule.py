@@ -73,7 +73,7 @@ def create_assignment_rules():
 	create_assignment_rule(get_assignment_rule_json_file("formal_hearing_hr_manager.json"))
 	create_assignment_rule(get_assignment_rule_json_file("formal_hearing_general_manager.json"))
 	create_assignment_rule(get_assignment_rule_json_file("absence_case_hr_officer.json"))
-	create_assignment_rule(get_assignment_rule_json_file("grd_operator_visa_request.json"))
+	create_assignment_rule(get_assignment_rule_json_file("groperator_visa_request.json"))
 	create_assignment_rule(get_assignment_rule_json_file("recruiter_visa_request.json"))
 	create_assignment_rule(get_assignment_rule_json_file("grd_manager_visa_request.json"))
 	create_assignment_rule(get_assignment_rule_json_file("asset_movement_employee.json"))

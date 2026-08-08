@@ -44,12 +44,9 @@ class VisaRequest(Document):
 				update_fields["reference_name"] = self.name
 
 			is_completed = (self.workflow_state == "Completed")
-			# "Work Permit Cancelled" is what WI-001773 renamed the terminal cancelled
-			# state to; without it a cancelled visa never stamps its actual_date on the
-			# tracker and the step reads as still in progress.
 			is_rejected = self.workflow_state in [
 				"Rejected", "Rejected By Operator", "Rejected By PAM", "Rejected By MOI",
-				"Rejected for Re Issue", "Work Permit Cancelled", "Cancelled"
+				"Rejected for Re Issue", "Canceled", "Cancelled"
 			]
 			if is_completed or is_rejected:
 				update_fields["actual_date"] = frappe.utils.nowdate()
@@ -72,16 +69,16 @@ class VisaRequest(Document):
 
 	def validate_workflow_transitions(self):
 		# PAM -> MOI: require pam_reference_number when workflow becomes Pending By MOI
-		if self.workflow_state == "Pending By MOI" and not self.get("pam_reference_number"):
+		if (self.workflow_state in ("Pending By MOI", "Pending By MOI")) and (not self.get("pam_reference_number")):
 			frappe.throw(
 				"PAM Reference Number is required before submitting to MOI.",
 				title="Missing PAM Reference Number",
 			)
 
-		# MOI -> Pending Visa Issuance: require moi_reference_number
-		if self.workflow_state == "Pending Visa Issuance" and not self.get("moi_reference_number"):
+		# MOI -> Pending Visa: require moi_reference_number
+		if (self.workflow_state in ("Pending Visa", "Pending visa")) and (not self.get("moi_reference_number")):
 			frappe.throw(
-				"MOI Reference Number is required before moving to Pending Visa Issuance.",
+				"MOI Reference Number is required before moving to Pending Visa.",
 				title="Missing MOI Reference Number",
 			)
 

@@ -10,32 +10,58 @@
   "transitions": [
     {
       "state": "Draft",
-      "action": "Submit to GRD Operator",
-      "next_state": "Pending by GRD Operator",
+      "action": "Submit for Review",
+      "next_state": "Pending Initial Review",
       "allowed": "Recruiter",
       "allow_self_approval": 1,
       "send_email_to_creator": 0,
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
       "custom_confirm_transition": 0,
-      "doctype": "Workflow Transition",
-      "require_digital_signature": 0
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
     },
     {
       "state": "Rejected By Operator",
       "action": "Submit for Review",
-      "next_state": "Pending by GRD Operator",
+      "next_state": "Pending Initial Review",
       "allowed": "Recruiter",
       "allow_self_approval": 1,
       "send_email_to_creator": 0,
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
       "custom_confirm_transition": 0,
-      "doctype": "Workflow Transition",
-      "require_digital_signature": 0
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
     },
     {
-      "state": "Pending by GRD Operator",
+      "state": "Rejected By PAM",
+      "action": "Submit for Review",
+      "next_state": "Pending Initial Review",
+      "allowed": "Recruiter",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Rejected By MOI",
+      "action": "Submit for Review",
+      "next_state": "Pending Initial Review",
+      "allowed": "Recruiter",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Pending Initial Review",
       "action": "Submit to GRD Manager",
       "next_state": "Pending GRD Manager Approval",
       "allowed": "Government Relations Operator",
@@ -44,11 +70,11 @@
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
       "custom_confirm_transition": 0,
-      "doctype": "Workflow Transition",
-      "require_digital_signature": 0
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
     },
     {
-      "state": "Pending by GRD Operator",
+      "state": "Pending Initial Review",
       "action": "Awaiting Quota Availability",
       "next_state": "Awaiting Quota Availability",
       "allowed": "Government Relations Operator",
@@ -57,11 +83,11 @@
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
       "custom_confirm_transition": 0,
-      "doctype": "Workflow Transition",
-      "require_digital_signature": 0
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
     },
     {
-      "state": "Pending by GRD Operator",
+      "state": "Pending Initial Review",
       "action": "Reject",
       "next_state": "Rejected By Operator",
       "allowed": "Government Relations Operator",
@@ -70,8 +96,8 @@
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
       "custom_confirm_transition": 0,
-      "doctype": "Workflow Transition",
-      "require_digital_signature": 0
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
     },
     {
       "state": "Awaiting Quota Availability",
@@ -83,8 +109,8 @@
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
       "custom_confirm_transition": 0,
-      "doctype": "Workflow Transition",
-      "require_digital_signature": 0
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
     },
     {
       "state": "Pending GRD Manager Approval",
@@ -96,21 +122,21 @@
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
       "custom_confirm_transition": 0,
-      "doctype": "Workflow Transition",
-      "require_digital_signature": 0
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
     },
     {
       "state": "Pending GRD Manager Approval",
       "action": "Reject",
-      "next_state": "Pending by GRD Operator",
+      "next_state": "Pending Initial Review",
       "allowed": "GRD Manager",
       "allow_self_approval": 1,
       "send_email_to_creator": 0,
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
       "custom_confirm_transition": 0,
-      "doctype": "Workflow Transition",
-      "require_digital_signature": 0
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
     },
     {
       "state": "Pending By PAM",
@@ -122,8 +148,8 @@
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
       "custom_confirm_transition": 0,
-      "doctype": "Workflow Transition",
-      "require_digital_signature": 0
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
     },
     {
       "state": "Pending By PAM",
@@ -135,21 +161,21 @@
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
       "custom_confirm_transition": 0,
-      "doctype": "Workflow Transition",
-      "require_digital_signature": 0
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
     },
     {
       "state": "Pending By MOI",
       "action": "Approve",
-      "next_state": "Pending Visa Issuance",
+      "next_state": "Pending Visa",
       "allowed": "Government Relations Operator",
       "allow_self_approval": 1,
       "send_email_to_creator": 0,
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
       "custom_confirm_transition": 0,
-      "doctype": "Workflow Transition",
-      "require_digital_signature": 0
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
     },
     {
       "state": "Pending By MOI",
@@ -161,11 +187,11 @@
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
       "custom_confirm_transition": 0,
-      "doctype": "Workflow Transition",
-      "require_digital_signature": 0
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
     },
     {
-      "state": "Pending Visa Issuance",
+      "state": "Pending Visa",
       "action": "Submit to Recruiter",
       "next_state": "Pending Recruiter Confirmation",
       "allowed": "Government Relations Operator",
@@ -174,8 +200,8 @@
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
       "custom_confirm_transition": 0,
-      "doctype": "Workflow Transition",
-      "require_digital_signature": 0
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
     },
     {
       "state": "Pending Recruiter Confirmation",
@@ -187,8 +213,8 @@
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
       "custom_confirm_transition": 0,
-      "doctype": "Workflow Transition",
-      "require_digital_signature": 0
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
     },
     {
       "state": "Pending Recruiter Confirmation",
@@ -200,24 +226,24 @@
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
       "custom_confirm_transition": 0,
-      "doctype": "Workflow Transition",
-      "require_digital_signature": 0
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
     },
     {
       "state": "Pending Recruiter Confirmation",
       "action": "Request to Cancel",
-      "next_state": "Awaiting Visa Cancellation",
+      "next_state": "Pending Visa Request Cancel",
       "allowed": "Recruiter",
       "allow_self_approval": 1,
       "send_email_to_creator": 0,
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
       "custom_confirm_transition": 0,
-      "doctype": "Workflow Transition",
-      "require_digital_signature": 0
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
     },
     {
-      "state": "Awaiting Visa Cancellation",
+      "state": "Pending Visa Request Cancel",
       "action": "Cancel Visa",
       "next_state": "Pending Cancel Work Permit",
       "allowed": "Government Relations Operator",
@@ -226,21 +252,21 @@
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
       "custom_confirm_transition": 0,
-      "doctype": "Workflow Transition",
-      "require_digital_signature": 0
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
     },
     {
       "state": "Pending Cancel Work Permit",
       "action": "Cancel Work Permit",
-      "next_state": "Work Permit Cancelled",
+      "next_state": "Canceled",
       "allowed": "Government Relations Operator",
       "allow_self_approval": 1,
       "send_email_to_creator": 0,
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
       "custom_confirm_transition": 0,
-      "doctype": "Workflow Transition",
-      "require_digital_signature": 0
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
     }
   ],
   "states": [
@@ -249,7 +275,7 @@
       "doc_status": "0",
       "update_field": "",
       "update_value": "",
-      "style": "Danger",
+      "style": "Info",
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Recruiter",
@@ -257,7 +283,7 @@
       "doctype": "Workflow Document State"
     },
     {
-      "state": "Pending by GRD Operator",
+      "state": "Pending Initial Review",
       "doc_status": "0",
       "update_field": "",
       "update_value": "",
@@ -285,7 +311,7 @@
       "doc_status": "0",
       "update_field": "",
       "update_value": "",
-      "style": "Primary",
+      "style": "Warning",
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Government Relations Operator",
@@ -297,7 +323,7 @@
       "doc_status": "0",
       "update_field": "",
       "update_value": "",
-      "style": "Primary",
+      "style": "Warning",
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Government Relations Operator",
@@ -305,7 +331,7 @@
       "doctype": "Workflow Document State"
     },
     {
-      "state": "Pending Visa Issuance",
+      "state": "Pending Visa",
       "doc_status": "0",
       "update_field": "",
       "update_value": "",
@@ -333,7 +359,7 @@
       "doc_status": "0",
       "update_field": "",
       "update_value": "",
-      "style": "Primary",
+      "style": "Warning",
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Recruiter",
@@ -345,7 +371,7 @@
       "doc_status": "0",
       "update_field": "",
       "update_value": "",
-      "style": "Primary",
+      "style": "Inverse",
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Government Relations Operator",
@@ -355,7 +381,7 @@
     {
       "state": "Awaiting Quota Availability",
       "doc_status": "0",
-      "style": "Primary",
+      "style": "Warning",
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Government Relations Operator",
@@ -373,7 +399,7 @@
       "doctype": "Workflow Document State"
     },
     {
-      "state": "Awaiting Visa Cancellation",
+      "state": "Pending Visa Request Cancel",
       "doc_status": "0",
       "style": "Warning",
       "is_optional_state": 0,
@@ -433,9 +459,9 @@
       "doctype": "Workflow Document State"
     },
     {
-      "state": "Work Permit Cancelled",
+      "state": "Canceled",
       "doc_status": "0",
-      "style": "Warning",
+      "style": "Danger",
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Government Relations Operator",
