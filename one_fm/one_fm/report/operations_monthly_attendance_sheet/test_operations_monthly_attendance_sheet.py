@@ -552,3 +552,64 @@ class TestTheSummaryBlock(FrappeTestCase):
 				total_days,
 				msg=f"{report_row.get('employee_id')}: {[(c, report_row.get(c)) for c in SUMMARY_COUNTERS]}",
 			)
+
+
+class TestAttendanceWithoutAShiftIsStillCounted(FrappeTestCase):
+	"""An attendance record with no Operations Shift used to be dropped by an inner join,
+	so the day it recorded became a "missing day" and an absence went uncounted. 42,840
+	submitted records in 2026 alone have no shift."""
+
+	def setUp(self):
+		row = frappe.db.get_value(
+			"Attendance",
+			{
+				"docstatus": 1,
+				"operations_shift": ["is", "not set"],
+				"status": ["in", ["Absent", "Present", "On Leave"]],
+			},
+			["employee", "attendance_date", "status", "leave_type"],
+			as_dict=True,
+			order_by="attendance_date desc",
+		)
+		if not row:
+			self.skipTest("no shift-less attendance on this instance")
+		self.record = row
+
+	def test_the_day_it_records_is_not_reported_as_missing(self):
+		data = execute(
+			_filters(
+				from_date=self.record.attendance_date,
+				to_date=self.record.attendance_date,
+				employee=self.record.employee,
+			)
+		)[1]
+
+		self.assertTrue(data, msg="the shift-less record produced no row at all")
+		self.assertEqual(
+			sum(row.get("missing_days", 0) for row in data),
+			0,
+			msg=f"{self.record} was dropped and counted as a missing day",
+		)
+
+	def test_it_lands_in_the_counter_its_status_belongs_to(self):
+		data = execute(
+			_filters(
+				from_date=self.record.attendance_date,
+				to_date=self.record.attendance_date,
+				employee=self.record.employee,
+			)
+		)[1]
+
+		# On Leave routes by its leave type, so the expected counter needs both.
+		counter = summary_counter(self.record.status, self.record.leave_type)
+		self.assertEqual(sum(row.get(counter, 0) for row in data), 1)
+
+	def test_the_query_left_joins_the_shift(self):
+		"""Pinned on the SQL: an inner join here silently loses rows rather than failing."""
+		from one_fm.one_fm.report.operations_monthly_attendance_sheet.operations_monthly_attendance_sheet import (
+			get_non_day_off_attendance_records,
+		)
+		import inspect
+
+		source = inspect.getsource(get_non_day_off_attendance_records)
+		self.assertIn("left_join(OperationsShift)", source)

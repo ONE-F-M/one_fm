@@ -375,7 +375,11 @@ def get_non_day_off_attendance_records(filters):
 
 	query = (
 		frappe.qb.from_(Attendance)
-		.join(OperationsShift)
+		# Left, not inner: an attendance record with no Operations Shift is still a day
+		# that was recorded, and an inner join drops it from the report entirely. 42,840
+		# submitted records in 2026 alone have no shift - each one silently became a
+		# "missing day" on the summary, and an absence that went uncounted (WI-001979).
+		.left_join(OperationsShift)
 		.on(Attendance.operations_shift == OperationsShift.name)
 		.select(
 			Attendance.employee,
@@ -493,7 +497,8 @@ def get_non_day_off_schedule_records(filters):
 
 	query = (
 		frappe.qb.from_(EmployeeSchedule)
-		.join(OperationsShift)
+		# Left, for the same reason as the attendance query above.
+		.left_join(OperationsShift)
 		.on(EmployeeSchedule.shift == OperationsShift.name)
 		.select(
 			EmployeeSchedule.employee,
