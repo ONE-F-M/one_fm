@@ -937,6 +937,30 @@ class TestTheExportGoesToDrive(FrappeTestCase):
 		with patch.object(frappe.db, "get_single_value", return_value=link):
 			self.assertEqual(_configured_drive_folder(), "1AbCdEfGhIjKlMnOpQ")
 
+	def test_the_folder_is_read_from_google_settings(self):
+		"""Where the work item puts it. It was first built on ONEFM General Setting,
+		beside the service account, and read from the wrong page as a result."""
+		from unittest.mock import patch
+
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import _configured_drive_folder
+
+		with patch.object(frappe.db, "get_single_value", return_value="") as reader:
+			_configured_drive_folder()
+
+		reader.assert_called_once_with("Google Settings", "pow_drive_folder_link")
+
+	def test_the_field_is_on_the_google_settings_page(self):
+		field = frappe.get_meta("Google Settings").get_field("pow_drive_folder_link")
+
+		self.assertIsNotNone(field, "the patch has not been applied on this instance")
+		self.assertEqual(field.fieldtype, "Data")
+
+	def test_the_field_is_gone_from_onefm_general_setting(self):
+		"""Two places to set one folder is one place too many."""
+		self.assertIsNone(
+			frappe.get_meta("ONEFM General Setting").get_field("pow_drive_folder_link")
+		)
+
 	def test_the_export_uploads_each_pdf_and_reports_the_folder(self):
 		from unittest.mock import patch
 

@@ -1144,6 +1144,10 @@ def export_pdf(name: str):
 # Document Register uses - so the configured folder has to be shared with it.
 # ---------------------------------------------------------------------------
 
+# On Google Settings, per the work item. Note the upload still authenticates with the
+# service account JSON on ONEFM General Setting - that is the identity the folder has to
+# be shared with, not the OAuth client Google Settings configures.
+DRIVE_FOLDER_DOCTYPE = "Google Settings"
 DRIVE_FOLDER_SETTING = "pow_drive_folder_link"
 DRIVE_FOLDER_MIME = "application/vnd.google-apps.folder"
 
@@ -1158,7 +1162,7 @@ def _configured_drive_folder() -> str:
 	from one_fm.one_fm.doctype.document_register.document_register import _drive_id
 
 	return _drive_id(
-		frappe.db.get_single_value("ONEFM General Setting", DRIVE_FOLDER_SETTING)
+		frappe.db.get_single_value(DRIVE_FOLDER_DOCTYPE, DRIVE_FOLDER_SETTING)
 	)
 
 

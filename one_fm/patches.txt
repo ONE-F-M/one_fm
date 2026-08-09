@@ -558,3 +558,4 @@ one_fm.patches.v15_0.update_visa_request_workflow_and_rules
 one_fm.patches.v15_0.link_published_document_requests #2026-08-03 WI-001844
 one_fm.patches.v15_0.seed_document_versions #2026-08-03
 one_fm.patches.v15_0.flag_input_material #2026-08-03
+one_fm.patches.v15_0.move_pow_drive_folder_to_google_settings #2026-08-09 WI-001981
