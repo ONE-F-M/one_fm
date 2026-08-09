@@ -948,3 +948,50 @@ class TestTheLetterHeadingsNameTheUnitsOnThePage(FrappeTestCase):
 
 		self.assertEqual(len(headers["contractual"]), 2)
 		self.assertEqual(len(headers["worked"]), 2)
+
+
+class TestTheLetterSurvivesADeployGap(FrappeTestCase):
+	"""The heading method arrives with the app code; the print format arrives with the
+	database. A migrate not yet followed by a restart - or a worker that has not recycled
+	- has one without the other, and an undefined Jinja method fails the whole PDF."""
+
+	def _heading_line(self):
+		import json
+
+		path = frappe.get_app_path(
+			"one_fm", "one_fm", "print_format", "proof_of_work_letter",
+			"proof_of_work_letter.json",
+		)
+		html = json.loads(frappe.read_file(path))["html"]
+		return next(l for l in html.split("\n") if l.startswith("{%- set headers"))
+
+	def _render(self, line, **globals_):
+		import jinja2
+
+		env = jinja2.Environment()
+		env.globals.update(globals_)
+		return env.from_string(line + "{{ headers.contractual | join('|') }}|{{ headers.worked | join('|') }}").render(doc=None)
+
+	def test_the_heading_still_renders_without_the_method(self):
+		rendered = self._render(self._heading_line())
+
+		# Falls back to naming both units, which is what the heading said before.
+		self.assertIn("Contractual Number of days per month", rendered)
+		self.assertIn("Total No of Hours worked", rendered)
+
+	def test_the_method_is_used_when_it_is_there(self):
+		rendered = self._render(
+			self._heading_line(),
+			pow_letter_headers=lambda doc: {"contractual": ["DAYS ONLY"], "worked": ["WORKED"]},
+		)
+
+		self.assertEqual(rendered, "DAYS ONLY|WORKED")
+
+	def test_the_method_is_registered_in_hooks(self):
+		"""The fallback is insurance, not the plan - the heading should be dynamic."""
+		from one_fm import hooks
+
+		self.assertIn(
+			"pow_letter_headers:one_fm.jinja.print_format.methods.pow_letter_headers",
+			hooks.jenv["methods"],
+		)
