@@ -1231,6 +1231,58 @@ def _folder_link(folder_id: str) -> str:
 	return f"https://drive.google.com/drive/folders/{folder_id}"
 
 
+def _check_drive_folder(service, folder_id: str):
+	"""Fail before the batch, saying what to do about it (WI-001981).
+
+	Drive answers a folder it cannot write to with a bare
+	"Insufficient permissions for the specified parent", raised from whichever contract
+	happened to be first - a traceback that says nothing about which folder, which
+	identity, or what to change. Asked once here instead, with the service account named,
+	because sharing the folder with it is the fix and its address is not otherwise
+	visible anywhere.
+	"""
+	from googleapiclient.errors import HttpError
+
+	identity = google_credentials.service_account_email() or _("the service account")
+
+	try:
+		folder = (
+			service.files()
+			.get(
+				fileId=folder_id,
+				fields="name,driveId,capabilities(canAddChildren)",
+				supportsAllDrives=True,
+			)
+			.execute()
+		)
+	except HttpError as exc:
+		if exc.status_code == 404:
+			frappe.throw(
+				_(
+					"The Proof of Work Drive folder ({0}) is not there, or is not shared with "
+					"<b>{1}</b>. Share it with that address, or correct the folder on Google "
+					"Settings."
+				).format(folder_id, identity),
+				title=_("Drive Folder Not Reachable"),
+			)
+		raise
+
+	if not folder.get("capabilities", {}).get("canAddChildren"):
+		frappe.throw(
+			_(
+				"<b>{0}</b> can see the Drive folder \"{1}\" but cannot write to it, so the "
+				"month's subfolder cannot be created. Share the folder with that address as "
+				"<b>Editor</b> (Content manager on a Shared Drive)."
+			).format(identity, folder.get("name") or folder_id)
+			+ ("" if folder.get("driveId") else "<br><br>" + _(
+				"Note this folder lives in a personal My Drive. A service account has no "
+				"storage of its own there, so uploads can still be refused for quota even "
+				"once it can write - a <b>Shared Drive</b> is the arrangement that works."
+			)),
+			title=_("Drive Folder Not Writable"),
+		)
+
+
 def _upload_pow_pdfs(pow_names, user: str):
 	"""Render each POW's merged PDF and upload it to Drive (WI-001981).
 
@@ -1243,6 +1295,9 @@ def _upload_pow_pdfs(pow_names, user: str):
 	"""
 	parent_id = _configured_drive_folder()
 	service = google_credentials.get_drive_service()
+	# Before anything is rendered: a folder that cannot be written to fails every
+	# document in the batch, and the reason is the same one every time.
+	_check_drive_folder(service, parent_id)
 
 	folders = {}
 	uploaded = []

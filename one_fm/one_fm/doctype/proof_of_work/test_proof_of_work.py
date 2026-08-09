@@ -955,6 +955,67 @@ class TestTheExportGoesToDrive(FrappeTestCase):
 		self.assertIsNotNone(field, "the patch has not been applied on this instance")
 		self.assertEqual(field.fieldtype, "Data")
 
+	def test_a_folder_it_cannot_write_to_is_refused_before_the_batch_runs(self):
+		"""Drive answers this with a bare "Insufficient permissions for the specified
+		parent" from whichever contract came first - naming neither the folder, the
+		identity, nor the fix."""
+		from unittest.mock import MagicMock, patch
+
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import _check_drive_folder
+
+		service = MagicMock()
+		service.files.return_value.get.return_value.execute.return_value = {
+			"name": "Proof of Work",
+			"capabilities": {"canAddChildren": False},
+		}
+
+		with patch(
+			f"{self.MODULE}.google_credentials.service_account_email",
+			return_value="robot@project.iam.gserviceaccount.com",
+		):
+			with self.assertRaises(frappe.ValidationError) as caught:
+				_check_drive_folder(service, "FOLDER")
+
+		message = str(caught.exception)
+		# The three things someone needs in order to fix it.
+		self.assertIn("robot@project.iam.gserviceaccount.com", message)
+		self.assertIn("Proof of Work", message)
+		self.assertIn("Editor", message)
+
+	def test_a_my_drive_folder_is_called_out_as_the_wrong_home(self):
+		"""A service account has no storage of its own in a personal Drive, so writing
+		can still be refused for quota after the sharing is fixed."""
+		from unittest.mock import MagicMock, patch
+
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import _check_drive_folder
+
+		service = MagicMock()
+		service.files.return_value.get.return_value.execute.return_value = {
+			"name": "Proof of Work",
+			"capabilities": {"canAddChildren": False},
+			# No driveId - it is in someone's My Drive rather than a Shared Drive.
+		}
+
+		with patch(f"{self.MODULE}.google_credentials.service_account_email", return_value="robot@x"):
+			with self.assertRaises(frappe.ValidationError) as caught:
+				_check_drive_folder(service, "FOLDER")
+
+		self.assertIn("Shared Drive", str(caught.exception))
+
+	def test_a_writable_shared_drive_folder_passes(self):
+		from unittest.mock import MagicMock
+
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import _check_drive_folder
+
+		service = MagicMock()
+		service.files.return_value.get.return_value.execute.return_value = {
+			"name": "Proof of Work",
+			"driveId": "0AShared",
+			"capabilities": {"canAddChildren": True},
+		}
+
+		_check_drive_folder(service, "FOLDER")
+
 	def test_the_field_is_gone_from_onefm_general_setting(self):
 		"""Two places to set one folder is one place too many."""
 		self.assertIsNone(

@@ -528,7 +528,7 @@ one_fm.patches.v15_0.add_bonus_request_line_manager_assignment_rule #2026-07-23
 one_fm.patches.v15_0.add_leave_application_compensatory_leave_request_field #2026-07-25
 
 one_fm.patches.v15_0.add_roster_double_shift_ot_checker_assignment_rules #2026-07-24
-one_fm.patches.v15_0.configure_agency_process_completion_values #2026-07-24
+#one_fm.patches.v15_0.configure_agency_process_completion_values #2026-07-24
 one_fm.patches.v15_0.set_arrival_deployment_workflow_state_permlevel #2026-07-24
 one_fm.patches.v15_0.add_transportation_manager_arrival_deployment_transitions #2026-07-24
 one_fm.patches.v15_0.add_employee_resignation_remarks_fields #rerun-2026-07-26-ops-remarks-column1
