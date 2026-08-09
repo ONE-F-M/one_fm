@@ -55,7 +55,21 @@ class OperationsRole(Document):
 			return
 
 		contracted = get_contracted_sale_items(self.project)
-		if contracted is None or self.sale_item in contracted:
+
+		if contracted is None:
+			# No Active contract means there is nothing to bill this role against, so the
+			# item cannot be checked - and an unchecked item is what the rule exists to
+			# stop. Named separately because the fix is the contract, not the item.
+			frappe.throw(
+				_(
+					"Project <b>{0}</b> has no Active contract, so there are no Sale Items to "
+					"choose from. Activate the project's contract before setting a Sale Item "
+					"on its roles."
+				).format(self.project),
+				title=_("No Active Contract"),
+			)
+
+		if self.sale_item in contracted:
 			return
 
 		frappe.throw(
@@ -82,12 +96,12 @@ class OperationsRole(Document):
 				frappe.msgprint(_("Operations Post linked to this Role {0} is set to Inactive!".format(self.name)), alert=True, indicator='green')
 
 def get_contracted_sale_items(project):
-	"""The Sale Items a project's Active contracts cover, or None if it has none.
+	"""The Sale Items a project's Active contracts cover, or None if it has no such contract.
 
-	None rather than an empty set, and the difference matters: the rule presupposes a
-	contract to read the items from. 259 of the roles on this site belong to projects with
-	no Active contract at all - the head office among them - and an empty set would leave
-	those with nothing selectable and no way to add a post.
+	The two cases are kept apart because they read differently to whoever hits them: an
+	empty set is "this contract covers nothing", None is "there is no contract to read".
+	Both refuse the item - the AC asks for a filter that cannot be bypassed - but only the
+	second can be fixed by activating a contract.
 
 	"Active" is the contract's workflow state, the same test Proof of Work generation uses
 	to decide which contracts are billable.
@@ -123,10 +137,12 @@ def sale_item_query(doctype, txt, searchfield, start, page_len, filters):
 	contracted = get_contracted_sale_items(project) if project else None
 
 	item_filters = {"is_stock_item": 0}
-	if contracted is not None:
-		# [""] rather than an empty list: a contract with no items should match nothing,
-		# and `in ()` is not valid SQL.
-		item_filters["name"] = ["in", sorted(contracted) or [""]]
+	if project:
+		# [""] rather than an empty list: a project whose contract covers nothing - or
+		# which has no Active contract at all - offers nothing, and `in ()` is not valid
+		# SQL. Without a project chosen yet the list is unfiltered, since there is nothing
+		# to filter it against.
+		item_filters["name"] = ["in", sorted(contracted or []) or [""]]
 
 	return frappe.get_all(
 		"Item",

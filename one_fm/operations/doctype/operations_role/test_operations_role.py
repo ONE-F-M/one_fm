@@ -71,11 +71,33 @@ class TestContractedSaleItems(FrappeTestCase):
 	def test_the_contracted_items_are_read_off_active_contracts(self):
 		self.assertEqual(get_contracted_sale_items(self.project.name), {self.contracted_item})
 
-	def test_a_project_with_no_active_contract_is_unrestricted(self):
-		"""None, not an empty set - otherwise an internal project could hold no post."""
+	def test_a_project_with_no_active_contract_reads_as_having_none(self):
+		"""None rather than an empty set: "no contract to read" and "a contract that
+		covers nothing" refuse the item alike, but only the first is fixed by activating
+		a contract, and the message says so."""
 		frappe.db.set_value("Contracts", CONTRACT, "workflow_state", "Inactive")
 
 		self.assertIsNone(get_contracted_sale_items(self.project.name))
+
+	def test_an_item_is_refused_when_the_project_has_no_active_contract(self):
+		"""Reported from testing: pasting an off-contract code onto a role saved anyway.
+		It was a role on a project with no Active contract, which used to be unrestricted."""
+		frappe.db.set_value("Contracts", CONTRACT, "workflow_state", "Inactive")
+
+		with self.assertRaises(frappe.ValidationError) as caught:
+			self._role(self.off_contract_item).validate_sale_item_against_contract()
+
+		message = str(caught.exception)
+		self.assertIn("no Active contract", message)
+		# The fix is the contract, not the item, so the message has to say which project.
+		self.assertIn(self.project.name, message)
+
+	def test_even_a_contracted_item_is_refused_without_an_active_contract(self):
+		"""Nothing is billable against a contract that is not active."""
+		frappe.db.set_value("Contracts", CONTRACT, "workflow_state", "Inactive")
+
+		with self.assertRaises(frappe.ValidationError):
+			self._role(self.contracted_item).validate_sale_item_against_contract()
 
 	def test_the_dropdown_offers_only_contracted_items(self):
 		offered = [
@@ -87,15 +109,20 @@ class TestContractedSaleItems(FrappeTestCase):
 
 		self.assertEqual(offered, [self.contracted_item])
 
-	def test_the_dropdown_is_unrestricted_without_an_active_contract(self):
+	def test_the_dropdown_offers_nothing_without_an_active_contract(self):
+		"""It used to offer every non-stock item, which is what let an off-contract code
+		be pasted onto a role for such a project and saved."""
 		frappe.db.set_value("Contracts", CONTRACT, "workflow_state", "Inactive")
 
-		offered = [
-			row[0]
-			for row in sale_item_query(
-				"Item", "", "name", 0, 20, {"project": self.project.name}
-			)
-		]
+		offered = sale_item_query("Item", "", "name", 0, 20, {"project": self.project.name})
+
+		# list() because get_all(as_list=True) hands back a tuple when it finds nothing.
+		self.assertEqual(list(offered), [])
+
+	def test_the_dropdown_is_unfiltered_before_a_project_is_chosen(self):
+		"""A new role has no project until the shift is picked; there is nothing to
+		filter against yet."""
+		offered = [row[0] for row in sale_item_query("Item", "", "name", 0, 20, {})]
 
 		self.assertIn(self.off_contract_item, offered)
 
