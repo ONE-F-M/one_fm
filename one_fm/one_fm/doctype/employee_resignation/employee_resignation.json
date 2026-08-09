@@ -234,7 +234,8 @@
    "fieldtype": "Small Text",
    "label": "Supervisor Remarks",
    "max_height": "4rem",
-   "mandatory_depends_on": "eval:!doc.__islocal && !['Draft', 'Pending Supervisor', 'Pending Relieving Date Correction'].includes(doc.workflow_state)"
+   "mandatory_depends_on": "eval:!doc.__islocal && !['Draft', 'Pending Supervisor', 'Pending Relieving Date Correction'].includes(doc.workflow_state)",
+   "read_only_depends_on": "eval:!doc.__islocal && doc.workflow_state !== 'Pending Supervisor'"
   },
   {
    "fieldname": "replacement_required",
@@ -314,8 +315,9 @@
    "fieldtype": "Small Text",
    "label": "Operations Manager Remarks",
    "max_height": "4rem",
-   "depends_on": "eval:doc.shift_working",
-   "mandatory_depends_on": "eval:doc.shift_working && !doc.__islocal && doc.workflow_state === 'Approved'"
+   "depends_on": "eval:doc.shift_working && ['Pending Operations Manager', 'Approved', 'Withdrawn'].includes(doc.workflow_state)",
+   "mandatory_depends_on": "eval:doc.shift_working && !doc.__islocal && doc.workflow_state === 'Approved'",
+   "read_only_depends_on": "eval:!doc.__islocal && doc.workflow_state !== 'Pending Operations Manager'"
   },
   {
    "fieldname": "column_break_jkbg",

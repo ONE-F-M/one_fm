@@ -57,9 +57,7 @@ from one_fm.one_fm.payroll_utils import get_user_list_by_role
 from one_fm.operations.doctype.operations_shift.operations_shift import get_shift_supervisor
 from one_fm.api import api
 from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
-from google.oauth2 import service_account
 
 
 def get_common_email_args(doc):
@@ -3763,21 +3761,29 @@ def is_holiday(employee, date=None, raise_exception=True,include_weekly_off = Fa
 
 
 def get_service(employee_email, api, version, scopes):
-    credentials_path = frappe.get_site_path('private', 'files', 'gcp.json')
-    credentials_dict = None
+    """Google client acting as ``employee_email`` (domain-wide delegation).
+
+    The key comes from ONEFM General Setting > Google > Service Account JSON,
+    falling back to private/files/gcp.json for sites still carrying the file —
+    see one_fm.one_fm.google_credentials, which logs when the file is used.
+
+    Returning None on a configuration problem is kept deliberately: every caller
+    here is a notification side-effect (out-of-office, task sync), and failing
+    an employee's leave submission because Google is misconfigured would be
+    worse than not setting their auto-reply. The reason is logged.
+    """
+    from one_fm.one_fm.google_credentials import GoogleCredentialError, get_service as _google_service
+
     try:
-        with open(credentials_path, 'r') as file:
-            credentials_dict = json.load(file)
-    except Exception as e:
-        frappe.log_error(title="Error reading Google credentials:", message=str(e))
+        return _google_service(api, version, scopes, subject=employee_email)
+    except GoogleCredentialError as e:
+        frappe.log_error(title="Google service account not configured", message=str(e))
         return
-
-    credentials = service_account.Credentials.from_service_account_info(credentials_dict, scopes=scopes)
-
-    delegated_credentials = credentials.with_subject(employee_email)
-
-    service = build(api, version, credentials=delegated_credentials)
-    return service
+    except Exception:
+        frappe.log_error(
+            title="Error building Google service", message=frappe.get_traceback()
+        )
+        return
 
 
 def set_out_of_office(employee_email, start_date, end_date, custom_reliever_name, custom_reliever, employee_name):

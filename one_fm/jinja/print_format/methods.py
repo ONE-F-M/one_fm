@@ -814,3 +814,36 @@ def pow_attendance_report(doc):
 	from one_fm.one_fm.doctype.proof_of_work.proof_of_work import get_pow_attendance_report
 
 	return get_pow_attendance_report(doc.name if hasattr(doc, "name") else doc)
+
+
+def pow_logo_src():
+	"""The ONE FM logo as a data URI, for the Proof of Work PDFs (WI-001808).
+
+	wkhtmltopdf fetches a relative src over HTTP from frappe.utils.get_url(). That is
+	one thing to go wrong per environment: locally the site name is not a resolvable
+	host ("http://one_fm.15"), so the fetch fails and Frappe reports "PDF generation
+	failed because of broken image links" - which drops that contract's PDF from the
+	ZIP - and on staging it renders as an empty box. Reading the file off disk removes
+	the network from the path entirely, which also matters because the ZIP is built in
+	a background job.
+
+	The site's own file wins, so a site can still swap its logo; the copy shipped with
+	the app is the fallback, so a site that never had one still prints a logo.
+	"""
+	import base64
+	import os
+
+	candidates = (
+		os.path.join(frappe.get_site_path("public", "files"), "onefmlogo.png"),
+		os.path.join(frappe.get_app_path("one_fm"), "public", "images", "onefmlogo.png"),
+	)
+
+	for path in candidates:
+		try:
+			with open(path, "rb") as handle:
+				return "data:image/png;base64," + base64.b64encode(handle.read()).decode()
+		except OSError:
+			continue
+
+	frappe.log_error(title="Proof of Work logo not found", message="\n".join(candidates))
+	return "/files/onefmlogo.png"

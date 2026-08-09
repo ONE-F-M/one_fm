@@ -39,6 +39,9 @@
   "wiki_page_access",
   "employee_info_access",
   "google_tab",
+  "google_service_account_section",
+  "google_service_account_intro",
+  "google_service_account_json",
   "google_task_section",
   "google_task_synchronization_enabled",
   "sync_google_tasks_btn",
@@ -211,6 +214,23 @@
    "fieldname": "google_tab",
    "fieldtype": "Tab Break",
    "label": "Google"
+  },
+  {
+   "fieldname": "google_service_account_section",
+   "fieldtype": "Section Break",
+   "label": "Service Account"
+  },
+  {
+   "fieldname": "google_service_account_intro",
+   "fieldtype": "HTML",
+   "options": "<p>The Google identity <b>ONE FM itself</b> acts as — Google Tasks sync, Gmail out-of-office, and reading documents into the Document Register.</p><p>This is <b>not</b> the credential the BPMN connectors use. Each connector carries its own key (BPMN Connector → Authentication → Secret) and neither falls back to the other, so the two can be different Google accounts and either can be rotated alone.</p><p><b>Both accounts need access to the same Shared Drive.</b> The connectors create the document files; this account reads and shares them. Add both as <i>Content Manager</i> — Drive answers <code>404 File not found</code> rather than a permission error when an account cannot see a file, which reads as a missing document and sends people looking in the wrong place.</p><p>Google Tasks and Gmail additionally need <b>domain-wide delegation</b> enabled for this service account in Google Workspace admin, because they act as an employee rather than as the service account itself.</p>"
+  },
+  {
+   "description": "Paste the whole key file Google issued — every brace, the full private_key, nothing trimmed. Stored encrypted.",
+   "fieldname": "google_service_account_json",
+   "fieldtype": "Password",
+   "label": "Service Account JSON",
+   "length": 10000
   },
   {
    "fieldname": "google_task_section",

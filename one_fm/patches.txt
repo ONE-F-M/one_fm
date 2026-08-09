@@ -311,6 +311,8 @@ one_fm.patches.v15_0.update_vehicle_property_setter
 one_fm.patches.v15_0.add_hd_ticket_category_field
 one_fm.patches.v15_0.take_ownership_of_vehicle_handover_log #2026-07-25
 
+
+one_fm.patches.v15_0.rename_document_register_and_revision #2026-08-03
 [post_model_sync]
 one_fm.patches.v15_0.process_task_for_wiki_employee_task
 one_fm.patches.v15_0.add_assignment_rule_returning_to_operations_supervisor_of_client_event #2
@@ -462,7 +464,6 @@ one_fm.patches.v15_0.add_leave_application_resumption_contact_fields #1
 
 one_fm.patches.v15_0.add_absence_investigation_hr_officer_to_hr_settings
 one_fm.patches.v15_0.update_leave_application_workflow_dss #2026-07-17-2
-one_fm.patches.v15_0.update_sales_invoice_property_setter
 one_fm.patches.v15_0.add_subcontractor_exit_workflow
 one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_project_manager
 one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_operations_manager
@@ -472,12 +473,6 @@ one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_finance_manager
 # --- Operations-011 (24th-30th) release patches ---
 one_fm.patches.v15_0.update_bank_account_workflow
 
-one_fm.patches.v15_0.update_purchase_receipt_prc_2026_000101_posting_date
-one_fm.patches.v15_0.update_job_offer_day_off_category_for_job_applicants
-one_fm.patches.v15_0.add_phone_option_to_job_applicant_contact_number
-one_fm.patches.v15_0.remove_employee_marital_status_property_setter
-one_fm.patches.v15_0.update_vehicle_property_setter
-one_fm.patches.v15_0.add_hd_ticket_category_field
 
 
 one_fm.patches.v15_0.resync_resignation_workflow_draft_state #2026-07-07
@@ -489,11 +484,9 @@ one_fm.patches.v15_0.backfill_subcontractor_name_in_onboard_subcontract_employee
 one_fm.patches.v15_0.delete_pending_approval_attendance_checks_airport_t4_jul12 #2026-07-13
 one_fm.patches.v15_0.send_amp_verification_test_email #2026-07-14
 one_fm.patches.v15_0.remove_pam_visa_doctype #2026-07-16
+one_fm.patches.v15_0.add_project_sprint_prefix_field #2026-07-23
 one_fm.patches.v15_0.show_project_users_section_for_scrum #2026-07-23
 one_fm.patches.v15_0.backfill_project_sprint_prefix #2026-07-27
-one_fm.patches.v15_0.backfill_checkin_geolocation_for_employees #2026-08-02
-one_fm.patches.v15_0.fix_checkin_metadata_and_timeline #2026-08-02
-one_fm.patches.v15_0.set_checkin_modified_by_administrator #2026-08-04
 
 
 
@@ -527,7 +520,6 @@ one_fm.patches.v15_0.create_employee_resignation_date_adjustment_workflow #2026-
 one_fm.patches.v15_0.backfill_single_employee_resignation_fields #2026-07-22
 one_fm.patches.v15_0.rebalance_employee_resignation_layout_single_employee #rerun-2026-07-26-employee-first
 one_fm.patches.v15_0.backfill_total_duration_without_remedical #2026-07-23
-one_fm.patches.v15_0.add_project_sprint_prefix_field #2026-07-23
 one_fm.patches.v15_0.add_bonus_request_line_manager_workflow #2026-07-23
 one_fm.patches.v15_0.add_bonus_request_line_manager_assignment_rule #2026-07-23
 one_fm.patches.v15_0.add_leave_application_compensatory_leave_request_field #2026-07-25
@@ -552,5 +544,36 @@ one_fm.patches.v15_0.update_employee_and_user_references
 one_fm.patches.v15_0.send_work_item_notify_assignee_demo_email
 one_fm.patches.v15_0.mark_present_auto_attendance_missed_checkin_jul13
 one_fm.patches.v15_0.add_employee_schedule_suspension_workflow #2026-07-24
+one_fm.patches.v15_0.add_accommodation_leave_movement_assignment_rules #2026-07-30
+one_fm.patches.v15_0.add_employee_site_supervisor_fields #2026-07-30
+one_fm.patches.v15_0.add_vehicle_list_view_columns #2026-07-30
+one_fm.patches.v15_0.migrate_penalty_applied_level #2026-07-30
+one_fm.patches.v15_0.rename_penalty_fields_to_ba_layout #2026-08-02
+one_fm.patches.v15_0.add_penalty_and_investigation_assignment_rules #2026-08-01 rerun for payroll officer
+one_fm.patches.v15_0.link_published_document_requests #2026-08-03 WI-001844
+one_fm.patches.v15_0.seed_document_versions #2026-08-03
+one_fm.patches.v15_0.flag_input_material #2026-08-03
+#one_fm.patches.v14_0.update_operations_status
+#one_fm.patches.v14_0.update_employee_checkin_record
+#one_fm.patches.v14_0.rename_user_id #2023-09-18
+#one_fm.patches.v15_0.update_employee_and_user_references
+
+
+
+# --- Operations-011 (24th-30th) release patches ---
+
+
+
+one_fm.patches.v15_0.backfill_checkin_geolocation_for_employees #2026-08-02
+one_fm.patches.v15_0.fix_checkin_metadata_and_timeline #2026-08-02
+one_fm.patches.v15_0.set_checkin_modified_by_administrator #2026-08-04
+
+
+
+
+
+# Re-registered 2026-07-26: these patch files exist in the tree but their
+# patches.txt entries were removed by a cleanup that ran before the
+# test-production merge, so they would never have executed.
 one_fm.patches.v15_0.add_onboarding_officer_arrival_deployment_permission #2026-08-04
 one_fm.patches.v15_0.create_attendance_check_jul11_2026 #1

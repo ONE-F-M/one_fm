@@ -1,0 +1,180 @@
+{
+ "actions": [],
+ "allow_import": 0,
+ "allow_rename": 0,
+ "autoname": "format:{document_code}-V{version}",
+ "creation": "2026-08-03 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_identity",
+  "document",
+  "document_code",
+  "version",
+  "column_break_identity",
+  "title_at_version",
+  "document_type",
+  "drive_file_link",
+  "section_break_provenance",
+  "document_request",
+  "change_reason",
+  "column_break_provenance",
+  "published_on",
+  "published_by",
+  "approved_by",
+  "section_break_content",
+  "content_snapshot"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_identity",
+   "fieldtype": "Section Break",
+   "label": "Version"
+  },
+  {
+   "fieldname": "document",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Document",
+   "options": "Document Register",
+   "read_only": 1,
+   "reqd": 1,
+   "description": "The controlled document this is a version of. Every version of a document shares one Drive file — the link never changes — so the file id is the stable identity."
+  },
+  {
+   "fieldname": "document_code",
+   "fieldtype": "Data",
+   "label": "Document Code",
+   "read_only": 1,
+   "description": "Copied from the document at publish so the version keeps a readable name (e.g. POL-0001-V2) even if the document is later recoded."
+  },
+  {
+   "fieldname": "version",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Version",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_identity",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "title_at_version",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "read_only": 1,
+   "description": "The title as published for this version. Kept per-version because a later revision may rename the document."
+  },
+  {
+   "fieldname": "document_type",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Document Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "drive_file_link",
+   "fieldtype": "Data",
+   "label": "Drive File Link",
+   "options": "URL",
+   "read_only": 1,
+   "description": "Points at the live Drive document, which now holds the newest version. Older versions are readable from Indexed Content below, not from Drive."
+  },
+  {
+   "fieldname": "section_break_provenance",
+   "fieldtype": "Section Break",
+   "label": "Provenance"
+  },
+  {
+   "fieldname": "document_request",
+   "fieldtype": "Link",
+   "label": "Raised By Request",
+   "options": "Document Request",
+   "read_only": 1,
+   "description": "The Document Request whose approval published this version."
+  },
+  {
+   "fieldname": "change_reason",
+   "fieldtype": "Small Text",
+   "label": "Change Reason",
+   "read_only": 1,
+   "description": "What this revision was for — taken from the requirement text on the request that produced it."
+  },
+  {
+   "fieldname": "column_break_provenance",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "published_on",
+   "fieldtype": "Datetime",
+   "label": "Published On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "published_by",
+   "fieldtype": "Link",
+   "label": "Published By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "approved_by",
+   "fieldtype": "Link",
+   "label": "Approved By",
+   "options": "User",
+   "read_only": 1,
+   "description": "Who signed off the content approval that released this version."
+  },
+  {
+   "fieldname": "section_break_content",
+   "fieldtype": "Section Break",
+   "label": "Content"
+  },
+  {
+   "fieldname": "content_snapshot",
+   "fieldtype": "Long Text",
+   "label": "Content Snapshot",
+   "read_only": 1,
+   "description": "The document text exactly as published in this version. This is the whole point of the record: the Drive file only ever holds the newest revision, so superseded text survives nowhere else."
+  }
+ ],
+ "links": [],
+ "modified": "2026-08-03 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Document Revision",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Employee",
+   "share": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title_at_version",
+ "track_changes": 1
+}

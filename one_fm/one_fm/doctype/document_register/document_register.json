@@ -1,0 +1,195 @@
+{
+ "actions": [],
+ "allow_import": 0,
+ "allow_rename": 0,
+ "autoname": "field:drive_file_id",
+ "creation": "2026-07-15 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "drive_file_id",
+  "document_code",
+  "title",
+  "document_type",
+  "is_input_material",
+  "column_break_lifecycle",
+  "lifecycle_state",
+  "current_version",
+  "drive_file_link",
+  "source_process",
+  "section_break_deactivation",
+  "deactivated_on",
+  "deactivated_by",
+  "column_break_deactivation",
+  "deactivated_via_request",
+  "deactivation_reason",
+  "section_break_content",
+  "content"
+ ],
+ "fields": [
+  {
+   "fieldname": "drive_file_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Drive File ID or Link",
+   "unique": 1,
+   "description": "Paste a Google Drive file id OR a share link (either this or Drive File Link). A link is normalized to the id automatically. One entry per Drive file — re-indexing updates the same record."
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "description": "Auto-filled from the Drive file name if left blank."
+  },
+  {
+   "fieldname": "document_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Document Type"
+  },
+  {
+   "fieldname": "is_input_material",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Input Material",
+   "default": "0",
+   "description": "Tick for material the process READS rather than produces — guidelines, amendment documents, regulations, meeting outcomes. Input material is catalogued here so it can be picked as a source, but it is not a controlled document: it gets no document code, carries no versions, and cannot be selected as the document to revise or withdraw."
+  },
+  {
+   "fieldname": "drive_file_link",
+   "fieldtype": "Data",
+   "label": "Drive File Link"
+  },
+  {
+   "fieldname": "source_process",
+   "fieldtype": "Link",
+   "label": "Source Process",
+   "options": "BPMN Process Model",
+   "description": "The BPMN process model that produced/published this document (blank for manually-indexed reference material like guidelines)."
+  },
+  {
+   "fieldname": "document_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Document Code",
+   "read_only": 1,
+   "unique": 1,
+   "description": "Readable, citable identifier allocated at first publish — POL-0001, SOP-0004. The Drive file id is the real key; this exists because nobody cites a 44-character id in a meeting."
+  },
+  {
+   "fieldname": "column_break_lifecycle",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "lifecycle_state",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Lifecycle State",
+   "options": "Active\nInactive",
+   "default": "Active",
+   "read_only": 1,
+   "description": "Inactive means withdrawn from use, not destroyed: the Drive file and every version snapshot are kept, and sharing is revoked so it stops appearing to staff. Reversible from the Reactivate button."
+  },
+  {
+   "fieldname": "current_version",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Current Version",
+   "read_only": 1,
+   "default": "0",
+   "description": "Which revision the Drive file currently holds. Incremented once per publish; 0 means nothing has been published yet."
+  },
+  {
+   "fieldname": "section_break_deactivation",
+   "fieldtype": "Section Break",
+   "label": "Deactivation",
+   "depends_on": "eval:doc.lifecycle_state == \"Inactive\""
+  },
+  {
+   "fieldname": "deactivated_on",
+   "fieldtype": "Datetime",
+   "label": "Deactivated On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "deactivated_by",
+   "fieldtype": "Link",
+   "label": "Deactivated By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_deactivation",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "deactivated_via_request",
+   "fieldtype": "Link",
+   "label": "Deactivated Via Request",
+   "options": "Document Request",
+   "read_only": 1
+  },
+  {
+   "fieldname": "deactivation_reason",
+   "fieldtype": "Small Text",
+   "label": "Deactivation Reason",
+   "read_only": 1,
+   "description": "Why it was withdrawn — taken from the requirement text on the request that withdrew it."
+  },
+  {
+   "fieldname": "section_break_content",
+   "fieldtype": "Section Break",
+   "label": "Current Content"
+  },
+  {
+   "fieldname": "content",
+   "fieldtype": "Long Text",
+   "label": "Indexed Content",
+   "description": "Plain-text/Markdown of the CURRENT version, used for keyword matching by Gather Reference-style Script Tasks. Superseded text lives on Document Revision, not here. Not a semantic/vector index — see AI integration notes."
+  }
+ ],
+ "links": [
+  {
+   "group": "History",
+   "link_doctype": "Document Revision",
+   "link_fieldname": "document"
+  }
+ ],
+ "modified": "2026-07-15 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Document Register",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Employee",
+   "share": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title",
+ "track_changes": 1
+}
