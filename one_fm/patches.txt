@@ -559,3 +559,15 @@ one_fm.patches.v15_0.link_published_document_requests #2026-08-03 WI-001844
 one_fm.patches.v15_0.seed_document_versions #2026-08-03
 one_fm.patches.v15_0.flag_input_material #2026-08-03
 one_fm.patches.v15_0.move_pow_drive_folder_to_google_settings #2026-08-09 WI-001981
+one_fm.patches.v15_0.add_resignation_v2_branch_routing #2026-08-04
+one_fm.patches.v15_0.add_resignation_v2_actor_permissions #2026-08-04
+one_fm.patches.v15_0.fix_resignation_project_manager_employee_id #2026-08-04
+one_fm.patches.v15_0.drop_resignation_step_remarks_table #2026-08-04
+one_fm.patches.v15_0.fix_resignation_t4_shift_category #2026-08-04
+one_fm.patches.v15_0.remove_stale_resignation_property_setters #2026-08-05
+one_fm.patches.v15_0.add_resignation_v2_assignment_rules #2026-08-05
+one_fm.patches.v15_0.rename_resignation_withdrawal_forward_to_approve #2026-08-05
+one_fm.patches.v15_0.update_resignation_date_adjustment_workflow_and_rules #2026-08-05
+one_fm.patches.v15_0.rename_cleaning_head_supervisor_to_janitorial #2026-08-05
+one_fm.patches.v15_0.add_draft_state_to_withdrawal_and_date_adjustment #2026-08-05
+one_fm.patches.v15_0.grant_hr_and_recruiter_full_resignation_access #2026-08-05

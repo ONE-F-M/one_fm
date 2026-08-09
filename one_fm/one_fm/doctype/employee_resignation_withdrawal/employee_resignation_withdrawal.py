@@ -13,10 +13,12 @@ class EmployeeResignationWithdrawal(Document):
 		self.notify_offboarding_on_submission()
 
 	def notify_offboarding_on_submission(self):
-		# Notify Offboarding Officer when state hits 'Pending Supervisor'
-		if self.workflow_state == "Pending Supervisor":
+		# Notify Offboarding Officer as soon as the withdrawal is first submitted,
+		# whichever of the three branch entry states it lands in.
+		entry_states = ("Pending Line Manager", "Pending Supervisor", "Pending T4 Admin")
+		if self.workflow_state in entry_states:
 			old_doc = self.get_doc_before_save()
-			if not old_doc or old_doc.workflow_state != "Pending Supervisor":
+			if not old_doc or old_doc.workflow_state not in entry_states:
 				recipients = set()
 				from frappe.utils.user import get_users_with_role
 				offboarding_officers = get_users_with_role("Offboarding Officer")
@@ -119,6 +121,7 @@ class EmployeeResignationWithdrawal(Document):
 
 	def validate(self):
 		self.set_approver()
+		self.validate_no_active_withdrawal()
 		if self.employee_resignation:
 			pmr_name = frappe.db.get_value("Project Manpower Request", {"employee_resignation": self.employee_resignation}, "name")
 			if pmr_name:
@@ -127,21 +130,51 @@ class EmployeeResignationWithdrawal(Document):
 				if pmr_wf_state in ["Completed", "Closed", "Fulfilled", "Hired"]:
 					frappe.throw(_("Cannot withdraw resignation because the replacement Project Manpower Request ({0}) has already been completed or fulfilled. A replacement has likely already been hired. Please contact HR.").format(pmr_name))
 
-		# Skip on the initial insert: the mobile API (and the desk "New" flow) creates
-		# the document first, then attaches the letter via a direct db.set_value once
-		# the doc has a name -- resignation_withdrawal_letter is genuinely empty at
-		# this exact moment. Enforced on every save/transition after that.
-		if not self.is_new() and (not self.reason or not self.resignation_withdrawal_letter):
+		# Skip on the initial insert and while still a Draft: the mobile API (and
+		# the desk "New" flow) creates the document first, then attaches the
+		# letter via a direct db.set_value once the doc has a name --
+		# resignation_withdrawal_letter is genuinely empty at that moment, and a
+		# Draft may be saved incomplete before the requester submits it for
+		# review. Enforced from "Submit for Review" onward.
+		if (
+			not self.is_new()
+			and self.workflow_state not in (None, "", "Draft")
+			and (not self.reason or not self.resignation_withdrawal_letter)
+		):
 			frappe.throw(_("You must provide both a Reason and a Withdrawal Letter to submit a withdrawal."), title=_("Missing Information"))
 
+
+	def validate_no_active_withdrawal(self):
+		# One withdrawal request per employee at a time -- otherwise a second
+		# request could get approved/rejected independently of the first and
+		# leave the employee's resignation in an inconsistent state.
+		if not self.employee:
+			return
+
+		existing = frappe.db.get_value(
+			"Employee Resignation Withdrawal",
+			{
+				"employee": self.employee,
+				"workflow_state": ["not in", ["Approved", "Rejected"]],
+				"name": ["!=", self.name or ""],
+			},
+			"name",
+		)
+		if existing:
+			frappe.throw(
+				_("Withdrawal request {0} for this employee is still in progress. Please wait until it is Approved or Rejected before submitting another.").format(existing),
+				title=_("Withdrawal Already In Progress"),
+			)
 
 	def validate_rejection_reason(self):
 		if not self.is_new():
 			old_doc = self.get_doc_before_save()
 			if (
 				old_doc
-				and old_doc.workflow_state in ["Pending Supervisor", "Accepted by Supervisor","Rejected By Supervisor"]
-				and self.workflow_state in ["Rejected By Supervisor","Rejected"]
+				and old_doc.workflow_state in [
+					"Pending Line Manager", "Pending Supervisor", "Pending T4 Admin", "Pending Project Manager",
+				]
+				and self.workflow_state == "Rejected"
 			):
 				if not getattr(self, "reason_for_rejection", None):
 					frappe.throw(_("Please provide Reason for Rejection"))
@@ -153,53 +186,28 @@ class EmployeeResignationWithdrawal(Document):
 		if not self.employee:
 			return
 
-		employee_details = frappe.db.get_value(
-			"Employee", self.employee, ["reports_to", "site", "project"], as_dict=True
-		)
-
-		if not employee_details:
-			return
-
-		approver_employee = None
-
-		# 1. Reports to
-		if employee_details.reports_to:
-			approver_employee = employee_details.reports_to
-
-		# 2. Site Supervisor
-		if not approver_employee and employee_details.site:
-			approver_employee = frappe.db.get_value("Operations Site", employee_details.site, "site_supervisor")
-
-		# 3. Project Manager
-		if not approver_employee and employee_details.project:
-			approver_employee = frappe.db.get_value("Project", employee_details.project, "project_manager")
-
-		if approver_employee:
-			approver_user = frappe.db.get_value("Employee", approver_employee, "user_id")
-			if approver_user and frappe.db.exists("User", approver_user):
-				if frappe.db.has_column("Employee Resignation Withdrawal", "supervisor"):
-					self.supervisor = approver_user
-			else:
-				if frappe.db.has_column("Employee Resignation Withdrawal", "supervisor"):
-					self.supervisor = None
-
-		# Set Operations Manager from the resignation document
-		if self.employee_resignation and frappe.db.has_column("Employee Resignation Withdrawal", "operations_manager"):
-			rsgn_om = frappe.db.get_value("Employee Resignation", self.employee_resignation, "operations_manager")
-			if rsgn_om:
-				self.operations_manager = rsgn_om
-
-		# Corporate hires (not shift_working) have no Operations Manager step --
-		# the workflow's is_corporate-gated transitions rely on this. Recompute it
-		# server-side every time rather than trusting the client-set value, since
-		# it now gates real approval routing (not just a label switch).
-		if self.employee_resignation and frappe.db.has_column("Employee Resignation Withdrawal", "is_corporate"):
-			shift_working = frappe.db.get_value("Employee Resignation", self.employee_resignation, "shift_working")
-			self.is_corporate = 0 if shift_working else 1
+		# Withdrawal reuses the exact same routing/actors already resolved on the
+		# originating Employee Resignation -- fetch rather than re-derive, so the
+		# two documents can never disagree on who the actor is.
+		if self.employee_resignation:
+			resignation = frappe.db.get_value(
+				"Employee Resignation", self.employee_resignation,
+				["shift_working", "supervisor", "t4_admin", "cleaning_head_supervisor",
+				 "security_manager", "project_manager"],
+				as_dict=True,
+			)
+			if resignation:
+				self.is_corporate = 0 if resignation.shift_working else 1
+				self.supervisor = resignation.supervisor
+				self.t4_admin = resignation.t4_admin
+				self.cleaning_head_supervisor = resignation.cleaning_head_supervisor
+				self.security_manager = resignation.security_manager
+				self.project_manager = resignation.project_manager
 
 		# Set Offboarding Officer — first user with that role
-		if not self.get("offboarding_officer") and frappe.db.has_column("Employee Resignation Withdrawal", "offboarding_officer"):
+		if not self.get("offboarding_officer"):
 			from frappe.utils.user import get_users_with_role
 			om_users = get_users_with_role("Offboarding Officer")
 			if om_users:
 				self.offboarding_officer = om_users[0]
+

@@ -20,13 +20,9 @@ frappe.ui.form.on("Employee Resignation Withdrawal", {
 
 					// AUTO-FETCH Supervisor logic (Same as Resignation)
 					if (doc.site_allocation) {
-						frappe.db.get_value('Operations Site', doc.site_allocation, ['site_supervisor', 'operations_manager'])
+						frappe.db.get_value('Operations Site', doc.site_allocation, 'site_supervisor')
 							.then(site_data => {
 								if (site_data && site_data.message) {
-									if (site_data.message.operations_manager) {
-										frm.set_value('operations_manager', site_data.message.operations_manager);
-									}
-
 									// Always prioritize Line Manager from the resignation itself if it was set
 									if (doc.supervisor) {
 										frm.set_value('supervisor', doc.supervisor);
@@ -96,8 +92,8 @@ frappe.ui.form.on("Employee Resignation Withdrawal", {
 			.then(r => {
 				let is_shift_worker = r.message ? cint(r.message.shift_working) : 0;
 				frm.set_value('is_corporate', is_shift_worker ? 0 : 1);
-				// Corporate hires have no Operations Manager step (see operations_manager's
-				// depends_on) -- their "Supervisor" is really their Line Manager.
+				// Corporate hires have no Project Manager step -- their "Supervisor"
+				// is really their Line Manager, the sole final approver.
 				frm.set_df_property('supervisor', 'label', is_shift_worker ? __('Supervisor') : __('Line Manager'));
 				frm.refresh_fields();
 			});
