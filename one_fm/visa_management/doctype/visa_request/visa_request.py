@@ -28,7 +28,7 @@ class VisaRequest(Document):
 		rows = frappe.get_all(
 			"Candidate Country Process Details",
 			filters={"parent": ccp_name, "process_name": "Visa Processing"},
-			fields=["name", "reference_name"],
+			fields=["name", "reference_name", "reference_type"],
 			limit=1,
 		)
 		if rows:
@@ -42,6 +42,12 @@ class VisaRequest(Document):
 			}
 			if not row.reference_name:
 				update_fields["reference_name"] = self.name
+			# reference_name is a Dynamic Link keyed off reference_type -- writing
+			# one without the other leaves the row unsaveable ("Reference Type must
+			# be set first") the next time anything calls a full doc.save() on the
+			# parent CCP, since this update bypasses Document validation.
+			if not row.reference_type:
+				update_fields["reference_type"] = "Visa Request"
 
 			is_completed = (self.workflow_state == "Completed")
 			# "Work Permit Cancelled" is what WI-001773 renamed the terminal cancelled

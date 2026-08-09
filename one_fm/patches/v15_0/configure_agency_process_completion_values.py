@@ -24,6 +24,7 @@ def execute():
 		"Arrival & Deployment": "Joined",
 	}
 
+	skipped = []
 	for doctype in ("Agency Country Process Template", "Agency Country Process", "Candidate Country Process"):
 		if not frappe.db.exists("DocType", doctype):
 			continue
@@ -40,5 +41,24 @@ def execute():
 				row.reference_complete_status_field = "status"
 				row.reference_complete_status_value = target_value
 				changed = True
-			if changed:
+			if not changed:
+				continue
+			try:
 				doc.save()
+			except Exception:
+				# doc.save() validates every row in agency_process_details, not just
+				# the ones this patch touched -- a single record with unrelated,
+				# pre-existing bad data (e.g. a Dynamic Link field set without its
+				# reference-type field) would otherwise abort the whole patch.
+				frappe.db.rollback()
+				skipped.append(f"{doctype} {parent}")
+				frappe.log_error(
+					title="configure_agency_process_completion_values: skipped a record",
+					message=frappe.get_traceback(),
+				)
+
+	if skipped:
+		frappe.log_error(
+			title="configure_agency_process_completion_values: records skipped",
+			message="\n".join(skipped),
+		)
