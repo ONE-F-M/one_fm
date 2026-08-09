@@ -311,6 +311,8 @@ one_fm.patches.v15_0.update_vehicle_property_setter
 one_fm.patches.v15_0.add_hd_ticket_category_field
 one_fm.patches.v15_0.take_ownership_of_vehicle_handover_log #2026-07-25
 
+
+one_fm.patches.v15_0.rename_document_register_and_revision #2026-08-03
 [post_model_sync]
 one_fm.patches.v15_0.process_task_for_wiki_employee_task
 one_fm.patches.v15_0.add_assignment_rule_returning_to_operations_supervisor_of_client_event #2
@@ -551,3 +553,13 @@ one_fm.patches.v15_0.update_employee_and_user_references
 one_fm.patches.v15_0.send_work_item_notify_assignee_demo_email
 one_fm.patches.v15_0.mark_present_auto_attendance_missed_checkin_jul13
 one_fm.patches.v15_0.add_employee_schedule_suspension_workflow #2026-07-24
+one_fm.patches.v15_0.add_accommodation_leave_movement_assignment_rules #2026-07-30
+one_fm.patches.v15_0.add_employee_site_supervisor_fields #2026-07-30
+one_fm.patches.v15_0.add_vehicle_list_view_columns #2026-07-30
+one_fm.patches.v15_0.migrate_penalty_applied_level #2026-07-30
+one_fm.patches.v15_0.rename_penalty_fields_to_ba_layout #2026-08-02
+one_fm.patches.v15_0.update_penalty_and_investigation_workflow #2026-08-02 rerun for employee_response
+one_fm.patches.v15_0.add_penalty_and_investigation_assignment_rules #2026-08-01 rerun for payroll officer
+one_fm.patches.v15_0.link_published_document_requests #2026-08-03 WI-001844
+one_fm.patches.v15_0.seed_document_versions #2026-08-03
+one_fm.patches.v15_0.flag_input_material #2026-08-03

@@ -43,7 +43,7 @@ def get_route_planner_data():
         # ── 1. Vehicles (batch queries) ──
         transport_vehicles = frappe.get_all("Vehicle",
             filters={"transport_stop_vehicle": 1},
-            fields=["name", "license_plate", "location", "seats", "one_fm_vehicle_type", "make", "employee", "one_fm_vehicle_category"],
+            fields=["name", "license_plate", "location", "seats", "one_fm_vehicle_type", "make", "model", "employee", "one_fm_vehicle_category"],
             order_by="name asc"
         )
 
@@ -84,6 +84,9 @@ def get_route_planner_data():
                 "id":            v.name,
                 "label":         v.name,
                 "license_plate": v.license_plate or "",
+                # WI-001778: the lane header and the details panel identify a vehicle
+                # as "<plate>, <model>", so the model rides along with the plate.
+                "model":         v.model or "",
                 "driver":        driver_name,
                 "seats":         v.seats or 0,
                 "type":          v.one_fm_vehicle_type or "—",
@@ -1216,7 +1219,7 @@ def get_manifest_data_for_plan(plan_name: str):
 		for v in frappe.get_all("Vehicle",
 			filters={"name": ["in", vehicle_ids]},
 			fields=["name", "license_plate", "location", "seats",
-					"one_fm_vehicle_type", "make", "employee"]
+					"one_fm_vehicle_type", "make", "model", "employee"]
 		):
 			vehicle_map[v.name] = v
 
@@ -1511,6 +1514,9 @@ def get_manifest_data_for_plan(plan_name: str):
 			"location": v_doc.get("location", ""),
 			"license_plate": v_doc.get("license_plate", ""),
 			"make": v_doc.get("make", ""),
+			# WI-001766: the manifest identifies the bus as "<plate>, <model>", so the
+			# model travels with the plate rather than being looked up on site.
+			"model": v_doc.get("model", ""),
 			"type": v_doc.get("one_fm_vehicle_type", ""),
 			# Attendance-check lock state for this vehicle's manifest (MA2-11):
 			# active_stop_sequence drives which pickup camp is currently unlocked.
