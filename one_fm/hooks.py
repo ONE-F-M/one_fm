@@ -695,6 +695,7 @@ scheduler_events = {
 		"15 12 * * *": [ #"At 12:15 pm - preponed from 01:30 pm (WI-001704); run after attendance is marked"
 			'one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.generate_checker',
 			'one_fm.operations.doctype.roster_double_shift_ot_checker.roster_double_shift_ot_checker.check_roster_double_shift_ot',
+			'one_fm.api.tasks.assign_pm_shift', # create shift assignment
 		],
 		"30 4 * * *": [
 			'one_fm.operations.doctype.roster_client_day_off_checker.roster_client_day_off_checker.check_roster_client_day_off'
@@ -750,9 +751,6 @@ scheduler_events = {
 		],
         "0 6 * * *": [ # update currency exchange rates daily at 6 am
 			"one_fm.tasks.one_fm.currency_exchange.update_currency_exchange_rates"
-		],
-		"15 12 * * *": [ # create shift assignment
-			'one_fm.api.tasks.assign_pm_shift'
 		],
 		"45 13 * * *": [ # validate shift assignmet
 			'one_fm.api.tasks.validate_pm_shift_assignment'
