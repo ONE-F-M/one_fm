@@ -123,6 +123,15 @@ class TestWhenTheOcrRuns(FrappeTestCase):
 		self.assertEqual(len(self._queue(self._doc())), 1)
 		self.assertEqual(self.calls[0]["fieldnames"], ["visa_document"])
 
+	def test_the_job_is_queued_only_after_the_save_commits(self):
+		"""Reported from testing: the job ran and logged "No file attached" against a
+		request that plainly had one. on_update runs inside the save transaction, so a
+		worker picking the job up before the commit re-reads the document without the
+		attachment on it."""
+		self._queue(self._doc())
+
+		self.assertTrue(self.calls[0].get("enqueue_after_commit"))
+
 	def test_both_attachments_at_once_are_read_in_one_job(self):
 		doc = self._doc(
 			changed=("visa_document", "payment_receipt"),
@@ -152,6 +161,25 @@ class TestTheAttachmentPath(FrappeTestCase):
 	def test_no_attachment_is_an_error_not_a_silent_pass(self):
 		with self.assertRaises(ValueError):
 			_attachment_path("")
+
+	def test_an_attachment_removed_before_the_job_runs_is_skipped_quietly(self):
+		"""Nothing to read, and nothing worth a traceback in the Error Log."""
+		from unittest.mock import patch
+
+		from one_fm.visa_management.doctype.visa_request.visa_request import run_document_ocr
+
+		doc = frappe.new_doc("Visa Request")
+		doc.workflow_state = OCR_STATE
+		doc.visa_document = ""
+
+		logged = []
+		with patch.object(frappe, "get_doc", return_value=doc), patch.object(
+			frappe, "log_error", side_effect=lambda **kw: logged.append(kw)
+		), patch.object(frappe, "publish_realtime") as published:
+			run_document_ocr("VR-TEST", ["visa_document"], user="Administrator")
+
+		self.assertEqual(logged, [])
+		published.assert_not_called()
 
 	def test_each_document_names_a_real_extractor(self):
 		for fieldname, spec in OCR_DOCUMENTS.items():

@@ -151,6 +151,11 @@ def queue_document_ocr(doc, method=None):
 	frappe.enqueue(
 		"one_fm.visa_management.doctype.visa_request.visa_request.run_document_ocr",
 		queue="short",
+		# After the commit, not before it. on_update runs inside the save transaction, and
+		# a worker that picks the job up before that transaction lands re-reads the
+		# document without the attachment on it - which is exactly what happened: the job
+		# ran and logged "No file attached" against a request that plainly had one.
+		enqueue_after_commit=True,
 		visa_request=doc.name,
 		fieldnames=changed,
 		user=frappe.session.user,
@@ -164,6 +169,12 @@ def run_document_ocr(visa_request: str, fieldnames: list, user: str | None = Non
 
 	for fieldname in fieldnames:
 		spec = OCR_DOCUMENTS[fieldname]
+
+		if not doc.get(fieldname):
+			# Removed again between the save and this job running. Nothing to read, and
+			# nothing worth a traceback in the Error Log either.
+			continue
+
 		try:
 			file_path = _attachment_path(doc.get(fieldname))
 			extracted.update(frappe.get_attr(spec["extract"])(file_path))
