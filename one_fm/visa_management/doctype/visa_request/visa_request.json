@@ -88,6 +88,7 @@
   "payment_receipt",
   "payment_date",
   "section_break_jrbe",
+  "reapplied_from",
   "amended_from"
  ],
  "fields": [
@@ -252,6 +253,15 @@
   {
    "fieldname": "section_break_jrbe",
    "fieldtype": "Section Break"
+  },
+  {
+   "description": "The rejected request this one was raised to replace",
+   "fieldname": "reapplied_from",
+   "fieldtype": "Link",
+   "label": "Reapplied From",
+   "no_copy": 1,
+   "options": "Visa Request",
+   "read_only": 1
   },
   {
    "fieldname": "amended_from",
@@ -570,7 +580,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-28 09:41:37.120225",
+ "modified": "2026-08-06 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "Visa Management",
  "name": "Visa Request",
