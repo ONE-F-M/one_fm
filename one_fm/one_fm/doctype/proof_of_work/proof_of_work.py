@@ -15,10 +15,13 @@ from frappe.utils import (
 	date_diff,
 	escape_html,
 	flt,
+	formatdate,
 	get_first_day,
 	get_last_day,
 	getdate,
 )
+
+from one_fm.one_fm import google_credentials
 
 # Canonical values stored in the "Generation Basis" Select field.
 GENERATION_BASIS_OPTIONS = ("Shift Hours", "Attendance Day", "Both")
@@ -1133,6 +1136,210 @@ def export_pdf(name: str):
 	frappe.local.response.type = "download"
 
 
+# ---------------------------------------------------------------------------
+# Google Drive delivery (WI-001981). The export uploads each merged PDF into a
+# "Month Year" subfolder of a shared Drive folder instead of handing back a ZIP,
+# so the team reads the records where they live rather than passing archives
+# around. Authenticated as ONE FM's own service account - the same identity the
+# Document Register uses - so the configured folder has to be shared with it.
+# ---------------------------------------------------------------------------
+
+# On Google Settings, per the work item. Note the upload still authenticates with the
+# service account JSON on ONEFM General Setting - that is the identity the folder has to
+# be shared with, not the OAuth client Google Settings configures.
+DRIVE_FOLDER_DOCTYPE = "Google Settings"
+DRIVE_FOLDER_SETTING = "pow_drive_folder_link"
+DRIVE_FOLDER_MIME = "application/vnd.google-apps.folder"
+
+
+def _configured_drive_folder() -> str:
+	"""The Drive folder id the export uploads into, or "" when unconfigured.
+
+	Accepts a share link or a bare id through the Document Register's reader, so the two
+	places that take a Drive folder from a human agree on what a link is - a second
+	regex here would be a second thing to get wrong.
+	"""
+	from one_fm.one_fm.doctype.document_register.document_register import _drive_id
+
+	return _drive_id(
+		frappe.db.get_single_value(DRIVE_FOLDER_DOCTYPE, DRIVE_FOLDER_SETTING)
+	)
+
+
+def _period_folder_name(start_date) -> str:
+	"""``"July 2026"`` - the month the Proof of Work covers, not the month it was run."""
+	return formatdate(start_date, "MMMM yyyy")
+
+
+def _period_folder(service, parent_id: str, name: str) -> str:
+	"""Id of the ``Month Year`` subfolder, creating it only if it is not there yet.
+
+	Looked up by name under the parent rather than remembered anywhere: the folder is a
+	place in someone's Drive, and it can be renamed, moved or recreated by hand between
+	one month's export and the next.
+	"""
+	query = (
+		f"name = '{name}' and mimeType = '{DRIVE_FOLDER_MIME}' "
+		f"and '{parent_id}' in parents and trashed = false"
+	)
+	found = (
+		service.files()
+		.list(
+			q=query,
+			fields="files(id)",
+			pageSize=1,
+			supportsAllDrives=True,
+			includeItemsFromAllDrives=True,
+		)
+		.execute()
+	)
+	files = found.get("files") or []
+	if files:
+		return files[0]["id"]
+
+	created = (
+		service.files()
+		.create(
+			body={"name": name, "mimeType": DRIVE_FOLDER_MIME, "parents": [parent_id]},
+			fields="id",
+			supportsAllDrives=True,
+		)
+		.execute()
+	)
+	return created["id"]
+
+
+def _upload_pdf(service, folder_id: str, filename: str, content: bytes) -> str:
+	"""Put one PDF in a Drive folder and return its id."""
+	from googleapiclient.http import MediaIoBaseUpload
+
+	media = MediaIoBaseUpload(io.BytesIO(content), mimetype="application/pdf", resumable=False)
+	created = (
+		service.files()
+		.create(
+			body={"name": filename, "parents": [folder_id]},
+			media_body=media,
+			fields="id",
+			supportsAllDrives=True,
+		)
+		.execute()
+	)
+	return created["id"]
+
+
+def _folder_link(folder_id: str) -> str:
+	return f"https://drive.google.com/drive/folders/{folder_id}"
+
+
+def _check_drive_folder(service, folder_id: str):
+	"""Fail before the batch, saying what to do about it (WI-001981).
+
+	Drive answers a folder it cannot write to with a bare
+	"Insufficient permissions for the specified parent", raised from whichever contract
+	happened to be first - a traceback that says nothing about which folder, which
+	identity, or what to change. Asked once here instead, with the service account named,
+	because sharing the folder with it is the fix and its address is not otherwise
+	visible anywhere.
+	"""
+	from googleapiclient.errors import HttpError
+
+	identity = google_credentials.service_account_email() or _("the service account")
+
+	try:
+		folder = (
+			service.files()
+			.get(
+				fileId=folder_id,
+				fields="name,driveId,capabilities(canAddChildren)",
+				supportsAllDrives=True,
+			)
+			.execute()
+		)
+	except HttpError as exc:
+		if exc.status_code == 404:
+			frappe.throw(
+				_(
+					"The Proof of Work Drive folder ({0}) is not there, or is not shared with "
+					"<b>{1}</b>. Share it with that address, or correct the folder on Google "
+					"Settings."
+				).format(folder_id, identity),
+				title=_("Drive Folder Not Reachable"),
+			)
+		raise
+
+	if not folder.get("capabilities", {}).get("canAddChildren"):
+		frappe.throw(
+			_(
+				"<b>{0}</b> can see the Drive folder \"{1}\" but cannot write to it, so the "
+				"month's subfolder cannot be created. Share the folder with that address as "
+				"<b>Editor</b> (Content manager on a Shared Drive)."
+			).format(identity, folder.get("name") or folder_id)
+			+ ("" if folder.get("driveId") else "<br><br>" + _(
+				"Note this folder lives in a personal My Drive. A service account has no "
+				"storage of its own there, so uploads can still be refused for quota even "
+				"once it can write - a <b>Shared Drive</b> is the arrangement that works."
+			)),
+			title=_("Drive Folder Not Writable"),
+		)
+
+
+def _upload_pow_pdfs(pow_names, user: str):
+	"""Render each POW's merged PDF and upload it to Drive (WI-001981).
+
+	One period subfolder per document rather than one for the batch: a batch is normally
+	a single month, but nothing stops two periods being exported together, and a July
+	record filed under August is worse than a second API call.
+
+	A document that fails to render or upload is logged and skipped, the same contract
+	the ZIP build keeps - one bad contract must not cost the others their upload.
+	"""
+	parent_id = _configured_drive_folder()
+	service = google_credentials.get_drive_service()
+	# Before anything is rendered: a folder that cannot be written to fails every
+	# document in the batch, and the reason is the same one every time.
+	_check_drive_folder(service, parent_id)
+
+	folders = {}
+	uploaded = []
+	failed = []
+	for pow_name in pow_names:
+		try:
+			doc = frappe.get_doc("Proof of Work", pow_name)
+			period = _period_folder_name(doc.start_date)
+			if period not in folders:
+				folders[period] = _period_folder(service, parent_id, period)
+
+			filename, content = _pow_pdf_entry(doc)
+			_upload_pdf(service, folders[period], filename, content)
+			uploaded.append(filename)
+		except Exception:
+			failed.append(pow_name)
+			frappe.log_error(
+				title="Proof of Work Drive upload failed",
+				message=f"{pow_name}\n\n{frappe.get_traceback()}",
+			)
+
+	if not uploaded:
+		_notify_zip(
+			user,
+			_("No Proof of Work PDF could be uploaded to Google Drive. Check the Error Log."),
+		)
+		return
+
+	message = _("{0} Proof of Work PDF(s) uploaded to Google Drive.").format(len(uploaded))
+	if failed:
+		message += " " + _("{0} could not be uploaded - check the Error Log.").format(len(failed))
+
+	# Straight to the period folder the PDFs are in, which is what the reader wants -
+	# unless the batch spanned two periods, when there is no single one to send them to
+	# and the parent is the only honest answer.
+	destination = folders[next(iter(folders))] if len(folders) == 1 else parent_id
+
+	_notify_zip(
+		user, message, file_url=_folder_link(destination), link_label=_("Open Drive Folder")
+	)
+
+
 def _build_pow_zip(pow_names, user: str):
 	"""Render one merged PDF per POW, ZIP them, and notify ``user`` when ready.
 
@@ -1191,15 +1398,16 @@ def _build_pow_zip(pow_names, user: str):
 	_notify_zip(user, message, file_url=zip_file.unique_url)
 
 
-def _notify_zip(user: str, message: str, file_url: str = None):
-	"""Push the ZIP outcome to the user who queued it.
+def _notify_zip(user: str, message: str, file_url: str = None, link_label: str = None):
+	"""Push the export outcome to the user who queued it.
 
 	``msgprint`` over realtime is how this app already reports the result of a
-	background job (see Item Request), and it renders the download anchor as HTML.
+	background job (see Item Request), and it renders the anchor as HTML.
 	"""
 	body = escape_html(message)
 	if file_url:
-		body += f'<br><br><a href="{file_url}" target="_blank">{escape_html(_("Download ZIP"))}</a>'
+		label = link_label or _("Download ZIP")
+		body += f'<br><br><a href="{file_url}" target="_blank">{escape_html(label)}</a>'
 
 	frappe.publish_realtime(event="msgprint", message=body, user=user)
 
@@ -1223,15 +1431,21 @@ def enqueue_pow_zip(pow_names):
 	for pow_name in pow_names:
 		frappe.get_doc("Proof of Work", pow_name).check_permission("read")
 
+	# WI-001981: Drive is the destination once a folder is configured. The ZIP stays as
+	# the path for a site that has not set one - the alternative is a site whose export
+	# button stops working until someone pastes a link, and the ZIP is what every site
+	# has today.
+	to_drive = bool(_configured_drive_folder())
+
 	frappe.enqueue(
-		_build_pow_zip,
+		_upload_pow_pdfs if to_drive else _build_pow_zip,
 		queue="long",
 		timeout=1500,
 		pow_names=pow_names,
 		user=frappe.session.user,
 	)
 
-	return {"queued": len(pow_names)}
+	return {"queued": len(pow_names), "destination": "drive" if to_drive else "zip"}
 
 
 if __name__ == "__main__":
