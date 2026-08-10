@@ -159,7 +159,10 @@ def send_amp_verification_email(
 
 	status = frappe.db.get_value("Email Queue", email_queue.name, "status") if email_queue else None
 	error = frappe.db.get_value("Email Queue", email_queue.name, "error") if email_queue else None
-	stored_amp_html = frappe.db.get_value("Email Queue", email_queue.name, "amp_html") if email_queue else None
+
+	stored_amp_html = None
+	if email_queue and frappe.get_meta("Email Queue").has_field("amp_html"):
+		stored_amp_html = frappe.db.get_value("Email Queue", email_queue.name, "amp_html")
 
 	result = {
 		"email_queue": email_queue.name if email_queue else None,
