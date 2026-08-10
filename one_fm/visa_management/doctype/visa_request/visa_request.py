@@ -2,14 +2,67 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
+from frappe.utils import add_months, add_years, getdate, nowdate
+
+# WI-001975: the eligibility a Draft has to clear before it can be saved. Both are
+# government requirements rather than internal policy, so they are checked at the door -
+# an applicant who fails them cannot be put through the visa process at all.
+MINIMUM_PASSPORT_VALIDITY_MONTHS = 18
+MINIMUM_APPLICANT_AGE_YEARS = 21
 
 
 class VisaRequest(Document):
 	def validate(self):
+		self.validate_applicant_eligibility()
 		self.validate_workflow_transitions()
 		self.validate_references()
 		self.update_tracker_status()
+
+	def validate_applicant_eligibility(self):
+		"""Hold a Draft to the passport and age rules (WI-001975).
+
+		Only in Draft. A record that has already moved into the workflow was accepted on
+		the day it was raised, and re-checking it here would strand it: the passport
+		carries on ageing while the application is in progress, so a visa halfway through
+		PAM would become unsaveable through no fault of the operator.
+		"""
+		if (self.workflow_state or "Draft") != "Draft":
+			return
+
+		self.validate_passport_validity()
+		self.validate_applicant_age()
+
+	def validate_passport_validity(self):
+		if not (self.passport_issued_on and self.passport_expires_on):
+			return
+
+		# Compared by adding the months to the issue date rather than counting days, so
+		# the answer does not drift with the length of the months in between.
+		if getdate(self.passport_expires_on) < getdate(
+			add_months(self.passport_issued_on, MINIMUM_PASSPORT_VALIDITY_MONTHS)
+		):
+			frappe.throw(
+				_(
+					"The applicant's passport validity must be at least {0} months from the "
+					"passport expiry date. The Visa Request cannot be saved."
+				).format(MINIMUM_PASSPORT_VALIDITY_MONTHS),
+				title=_("Passport Validity Too Short"),
+			)
+
+	def validate_applicant_age(self):
+		if not self.date_of_birth:
+			return
+
+		if getdate(add_years(self.date_of_birth, MINIMUM_APPLICANT_AGE_YEARS)) > getdate(nowdate()):
+			frappe.throw(
+				_(
+					"The applicant must be at least {0} years old to create a Visa Request. "
+					"The Visa Request cannot be saved."
+				).format(MINIMUM_APPLICANT_AGE_YEARS),
+				title=_("Applicant Below Minimum Age"),
+			)
 
 	def update_tracker_status(self):
 		if not self.job_offer:
