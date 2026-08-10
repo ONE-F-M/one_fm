@@ -269,6 +269,12 @@ class WorkPermit(Document):
         param: work_permit object
         This method to update work permit status if completed in transfer paper, close the transfer paper, and submit it.
         """
+        if not self.transfer_paper:
+            # A Local Transfer opened from a Preparation row has no Transfer Paper
+            # (WI-001824), and there is nothing to update or close in that case. Without
+            # this the completion raises DoesNotExistError on a Transfer Paper of None.
+            return
+
         tp = frappe.get_doc('Transfer Paper',self.transfer_paper)
         if tp:
             for wp in tp.work_permit_records:
@@ -414,6 +420,28 @@ def create_work_permit_transfer(tp_name,employee):
         employee_in_tp = frappe.get_doc('Employee',employee)
         if employee_in_tp:
             create_wp_transfer(frappe.get_doc('Employee',employee_in_tp.employee),"Local Transfer",tp_name)#check if you need to do it this way create_wp_transfer(employee_in_tp,"Local Transfer",tp_name)
+
+
+def create_wp_from_preparation(employee, work_permit_type, preparation_name):
+    """Open a Work Permit for a Preparation row whose Action is not a renewal (WI-001824).
+
+    A renewal dates its application off the residency it is renewing, which is what
+    create_wp_renewal does. A New Kuwaiti or Overseas application has no residency yet,
+    so it is applied for on the day the Preparation is submitted.
+
+    No copy of a previous Work Permit either: these are first applications, so there is
+    nothing to carry forward, and copying one would bring the old PAM references with it.
+    """
+    work_permit = frappe.new_doc('Work Permit')
+    work_permit.employee = employee.name
+    work_permit.work_permit_type = work_permit_type
+    work_permit.date_of_application = today()
+    work_permit.preparation = preparation_name
+    work_permit.ref_doctype = 'Preparation'
+    work_permit.ref_name = preparation_name
+    work_permit.insert()
+
+    return work_permit
 
 
 # Create Work Permit record once a month for renewals list

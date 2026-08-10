@@ -7,7 +7,7 @@ from frappe import _
 from frappe.model.document import Document
 from datetime import date
 from one_fm.api.notification import create_notification_log
-from frappe.utils import today, add_days, get_url, date_diff
+from frappe.utils import today, add_days, get_url, date_diff, get_year_start
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from frappe.core.doctype.communication.email import make
 from one_fm.processor import sendemail
@@ -131,13 +131,34 @@ def create_PACI_renewal(preparation_name):
 def create_PACI_for_transfer(employee_name):
     employee = frappe.get_doc('Employee',employee_name)
     if employee:
+        if transfer_civil_id_already_open(employee.name):
+            return
         create_PACI(frappe.get_doc('Employee',employee.employee),"Transfer")
+
+
+def transfer_civil_id_already_open(employee):
+    """Is there already a Transfer PACI open for this employee this year?
+
+    Called from two directions now: a Preparation opens the set up front (WI-001824), and
+    a Transfer Residency asks for one when it is submitted. Same year scope as
+    cancel_existing, so a later transfer still gets its own record.
+    """
+    return bool(frappe.get_all('PACI', limit=1, filters={
+        'employee': employee,
+        'category': 'Transfer',
+        'date_of_application': ['>=', get_year_start(today())],
+        'workflow_state': ['!=', 'Cancelled'],
+        'docstatus': ['<', 2],
+    }))
 
 def create_PACI(employee,Type,preparation_name = None):
         # Create New PACI: 1. New Overseas, 2. New Kuwaiti, 3. Transfer
         if Type == "Renewal":
             start_day = add_days(employee.residency_expiry_date, -14)# MIGHT CHANGE
-        if Type == "Transfer":
+        else:
+            # Every other category - Transfer, and New Application for an overseas hire
+            # (WI-001881) - has no residency expiry to count back from, so the civil ID is
+            # applied for the day the record is opened.
             start_day = today()
         PACI_new = frappe.new_doc('PACI')
         PACI_new.employee = employee.name
