@@ -558,4 +558,4 @@ one_fm.patches.v15_0.update_visa_request_workflow_and_rules
 one_fm.patches.v15_0.link_published_document_requests #2026-08-03 WI-001844
 one_fm.patches.v15_0.seed_document_versions #2026-08-03
 one_fm.patches.v15_0.flag_input_material #2026-08-03
-one_fm.patches.v15_0.add_paci_pro_workflow_and_rule #2026-08-06 WI-001830
+one_fm.patches.v15_0.add_paci_pro_workflow_and_rule #2026-08-10 WI-001830 rerun for the second Completed row

@@ -24,6 +24,12 @@ EXPECTED_TRANSITIONS = (
 	("Pending by PACI", "Reject", "Rejected"),
 )
 
+# allow_edit holds one role per state row, so granting two roles on Completed means two
+# rows for it - which is how the BA site does it, and what
+# frappe.workflow.get_document_state_roles reads. Verified here because treating the
+# second row as a duplicate is exactly what took the operator's edit rights away.
+COMPLETED_EDIT_ROLES = ("System Manager", "Government Relations Operator")
+
 # The rule selects its assignee from this Process Task, so the task has to exist before
 # the rule does - a rule pointing at a missing task silently assigns nobody.
 PROCESS_NAME = "Maintain Employee Legal Status"
@@ -47,11 +53,15 @@ def verify_workflow():
 	transitions = {(t.state, t.action, t.next_state) for t in workflow.transitions}
 	missing_transitions = [t for t in EXPECTED_TRANSITIONS if t not in transitions]
 
-	if missing_states or missing_transitions:
+	completed_roles = {state.allow_edit for state in workflow.states if state.state == "Completed"}
+	missing_roles = [role for role in COMPLETED_EDIT_ROLES if role not in completed_roles]
+
+	if missing_states or missing_transitions or missing_roles:
 		frappe.throw(
 			f"WI-001830: the {WORKFLOW} workflow was not updated. "
 			f"Missing states: {missing_states or 'none'}. "
 			f"Missing transitions: {missing_transitions or 'none'}. "
+			f"Roles that cannot edit Completed: {missing_roles or 'none'}. "
 			"Check the Error Log - create_workflow swallows its failures."
 		)
 

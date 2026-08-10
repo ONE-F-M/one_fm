@@ -101,6 +101,30 @@ class TestPACIProWorkflow(FrappeTestCase):
 			"the PACI Process Task has no employee to assign to",
 		)
 
+	def test_both_roles_can_edit_a_completed_paci(self):
+		"""allow_edit holds one role per state row, so two roles on Completed means two
+		rows for it - which is how the BA site grants it, and what Frappe reads:
+		get_document_state_roles collects the allow_edit of every row matching the state.
+
+		Treating that second row as a duplicate is what took the operator's edit rights
+		away, and nothing in the states-and-transitions check noticed.
+		"""
+		workflow = frappe.get_doc("Workflow", "PACI")
+		roles = {state.allow_edit for state in workflow.states if state.state == "Completed"}
+
+		self.assertEqual(roles, {"System Manager", "Government Relations Operator"})
+
+	def test_the_completed_rows_agree_on_everything_but_the_role(self):
+		"""Two rows for one state must not disagree about what the state means."""
+		workflow = frappe.get_doc("Workflow", "PACI")
+		rows = [state for state in workflow.states if state.state == "Completed"]
+
+		self.assertEqual(len(rows), 2)
+		for field in ("doc_status", "update_field", "update_value"):
+			self.assertEqual(
+				len({row.get(field) for row in rows}), 1, msg=f"the rows differ on {field}"
+			)
+
 	def test_the_reference_number_is_on_the_form(self):
 		field = frappe.get_meta("PACI").get_field("paci_reference_number")
 
