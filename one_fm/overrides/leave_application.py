@@ -1165,6 +1165,12 @@ def update_employee_status_after_leave():
     
     frappe.db.commit()
 
+# The leave types HelpDesk chases a resumption for (WI-001873). Leave Without Pay sits
+# beside Annual Leave because both are long enough that the employee has to be contacted
+# before the roster can count on them coming back.
+RESUMPTION_LEAVE_TYPES = ("Annual Leave", "Leave Without Pay")
+
+
 def remind_annual_leave_employees_to_helpdesk_user():
     """
         Send a reminder email to helpdesk user with the list of employees whose leave ends soon.
@@ -1173,20 +1179,20 @@ def remind_annual_leave_employees_to_helpdesk_user():
     if not helpdesk_email:
         return
 
-    employees_on_annual_leave = get_employees_whose_leave_ends_in(leave_ends_in=6)
+    employees_on_leave = get_employees_whose_leave_ends_in(leave_ends_in=6)
 
-    if not employees_on_annual_leave:
+    if not employees_on_leave:
         return
 
-    message = frappe.render_template("one_fm/templates/emails/reminder_employees_on_annual_leave.html", {"employees": employees_on_annual_leave})
+    message = frappe.render_template("one_fm/templates/emails/reminder_employees_on_annual_leave.html", {"employees": employees_on_leave})
     sendemail(
         recipients=[helpdesk_email],
-        subject="Reminder: Employees' Annual Leave Ending in 7 Days",
+        subject="Reminder: Employees' Leave Ending in 7 Days",
         message=message,
         is_external_mail=True
     )
 
-def get_employees_whose_leave_ends_in(leave_ends_in=0, leave_type="Annual Leave", shift_working=1):
+def get_employees_whose_leave_ends_in(leave_ends_in=0, leave_types=RESUMPTION_LEAVE_TYPES, shift_working=1):
     to_date = add_days(getdate(today()), leave_ends_in)
 
     LeaveApplication = DocType("Leave Application")
@@ -1207,8 +1213,11 @@ def get_employees_whose_leave_ends_in(leave_ends_in=0, leave_type="Annual Leave"
         )
         .where(
             (LeaveApplication.docstatus == 1) &
-            (LeaveApplication.status == "Approved") &
-            (LeaveApplication.leave_type == leave_type) &
+            # The AC names the workflow state, not the HRMS status field. The two agree on
+            # every submitted record on this site, and the workflow is what the rest of the
+            # resumption block keys off (WI-001873).
+            (LeaveApplication.workflow_state == "Approved") &
+            (LeaveApplication.leave_type.isin(list(leave_types))) &
             (LeaveApplication.to_date == to_date) &
             (Employee.shift_working == shift_working)
         )
