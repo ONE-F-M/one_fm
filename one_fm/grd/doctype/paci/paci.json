@@ -239,9 +239,9 @@
   {
    "fieldname": "preparation",
    "fieldtype": "Link",
-   "hidden": 1,
    "label": "Preparation",
-   "options": "Preparation"
+   "options": "Preparation",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_civil_id",
@@ -313,7 +313,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2025-11-16 13:14:06.886454",
+ "modified": "2026-08-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PACI",
