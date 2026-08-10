@@ -161,9 +161,13 @@ class WorkPermit(Document):
 
         if self.workflow_state == "Rejected":
             if self.work_permit_type == "Local Transfer":
-                field_list = [{'Reason Of Rejection':'reason_of_rejection'},{'Details of Rejection':'details_of_rejection'}]
-                message_detail = '<b style="color:red; text-align:center;">First, You Need to set the reason of Rejection Mentioned in <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
-                self.set_mendatory_fields(field_list,message_detail)
+                # No longer demands Reason Of Rejection and Details of Rejection. Those
+                # are the free-text pair the two rejection Selects replaced (WI-001829),
+                # and they are hidden now - so a rejection could neither pass this check
+                # nor be filled in to satisfy it. The reason is still required: the two
+                # Selects carry mandatory_depends_on tied to which kind of rejection it
+                # was, which Frappe enforces on every save, and the Reject dialog asks
+                # for it on the way out.
                 self.update_work_permit_details_in_tp()# update the rejected record in the transfer paper child table
             self.reload()
 

@@ -136,6 +136,60 @@ class TestTheAutomaticRejection(FrappeTestCase):
 
 		self.assertIn((PREVIOUS_COMPANY_STATE, "Reject"), transitions)
 
+	def test_a_local_transfer_can_actually_reach_rejected(self):
+		"""Reported from testing: rejecting from Pending By Previous Company threw
+		"Mandatory fields required: Reason Of Rejection, Details of Rejection" - the
+		free-text pair the two Selects replaced. Both are hidden now, so the rejection
+		could neither pass that check nor be filled in to satisfy it."""
+		from frappe.model.workflow import apply_workflow
+
+		name = frappe.db.get_value(
+			"Work Permit",
+			{"work_permit_type": "Local Transfer", "docstatus": 0},
+			"name",
+			order_by="creation desc",
+		)
+		if not name:
+			self.skipTest("no draft Local Transfer Work Permit on this instance")
+
+		frappe.db.set_value(
+			"Work Permit",
+			name,
+			{
+				"workflow_state": PREVIOUS_COMPANY_STATE,
+				"reason_of_rejection": None,
+				"details_of_rejection": None,
+				"previous_company_rejection_reason": None,
+			},
+			update_modified=False,
+		)
+
+		doc = frappe.get_doc("Work Permit", name)
+		# What the dialog sets on the way out.
+		doc.previous_company_rejection_reason = "Previous Sponsor Rejected"
+		doc.reason_of_rejection = REJECTED_BY_PREVIOUS_COMPANY
+		doc.save()
+		apply_workflow(doc, "Reject")
+
+		self.assertEqual(doc.workflow_state, "Rejected")
+		self.assertEqual(
+			frappe.db.get_value("Work Permit", name, "previous_company_rejection_reason"),
+			"Previous Sponsor Rejected",
+		)
+
+	def test_the_retired_free_text_pair_is_not_demanded_any_more(self):
+		"""Pinned on the source: demanding a hidden field is unresolvable by definition."""
+		import inspect
+
+		from one_fm.grd.doctype.work_permit.work_permit import WorkPermit
+
+		source = inspect.getsource(WorkPermit.check_required_document_for_workflow)
+
+		self.assertNotIn("'Details of Rejection':'details_of_rejection'", source)
+		self.assertNotIn("'Reason Of Rejection':'reason_of_rejection'", source)
+		# The Transfer Paper still gets updated when a transfer is rejected.
+		self.assertIn("update_work_permit_details_in_tp", source)
+
 	def test_it_is_scheduled(self):
 		from one_fm import hooks
 
