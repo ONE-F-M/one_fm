@@ -458,7 +458,7 @@ one_fm.patches.v15_0.update_bonus_request_assignment_rules #3
 one_fm.patches.v15_0.add_attendance_correction_fields
 one_fm.patches.v15_0.add_leave_application_emergency_contact_field #1
 one_fm.patches.v15_0.add_attendance_check_action_user_to_hr_settings
-one_fm.patches.v15_0.add_leave_application_resumption_contact_fields #1
+one_fm.patches.v15_0.add_leave_application_resumption_contact_fields #2 2026-08-06 WI-001873
 
 one_fm.patches.v15_0.add_absence_investigation_hr_officer_to_hr_settings
 one_fm.patches.v15_0.update_leave_application_workflow_dss #2026-07-17-2
@@ -528,6 +528,7 @@ one_fm.patches.v15_0.add_bonus_request_line_manager_assignment_rule #2026-07-23
 one_fm.patches.v15_0.add_leave_application_compensatory_leave_request_field #2026-07-25
 
 one_fm.patches.v15_0.add_roster_double_shift_ot_checker_assignment_rules #2026-07-24
+one_fm.patches.v15_0.backfill_visa_processing_reference_type #2026-08-09
 one_fm.patches.v15_0.configure_agency_process_completion_values #2026-07-24
 one_fm.patches.v15_0.set_arrival_deployment_workflow_state_permlevel #2026-07-24
 one_fm.patches.v15_0.add_transportation_manager_arrival_deployment_transitions #2026-07-24
@@ -559,3 +560,16 @@ one_fm.patches.v15_0.link_published_document_requests #2026-08-03 WI-001844
 one_fm.patches.v15_0.seed_document_versions #2026-08-03
 one_fm.patches.v15_0.flag_input_material #2026-08-03
 one_fm.patches.v15_0.add_paci_pro_workflow_and_rule #2026-08-10 WI-001830 rerun for the second Completed row
+one_fm.patches.v15_0.move_pow_drive_folder_to_google_settings #2026-08-09 WI-001981
+one_fm.patches.v15_0.add_resignation_v2_branch_routing #2026-08-04
+one_fm.patches.v15_0.add_resignation_v2_actor_permissions #2026-08-04
+one_fm.patches.v15_0.fix_resignation_project_manager_employee_id #2026-08-04
+one_fm.patches.v15_0.drop_resignation_step_remarks_table #2026-08-04
+one_fm.patches.v15_0.fix_resignation_t4_shift_category #2026-08-04
+one_fm.patches.v15_0.remove_stale_resignation_property_setters #2026-08-05
+one_fm.patches.v15_0.add_resignation_v2_assignment_rules #2026-08-05
+one_fm.patches.v15_0.rename_resignation_withdrawal_forward_to_approve #2026-08-05
+one_fm.patches.v15_0.update_resignation_date_adjustment_workflow_and_rules #2026-08-05
+one_fm.patches.v15_0.rename_cleaning_head_supervisor_to_janitorial #2026-08-05
+one_fm.patches.v15_0.add_draft_state_to_withdrawal_and_date_adjustment #2026-08-05
+one_fm.patches.v15_0.grant_hr_and_recruiter_full_resignation_access #2026-08-05

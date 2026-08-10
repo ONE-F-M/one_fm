@@ -8,12 +8,14 @@
  "field_order": [
   "resigning_employees_section",
   "employee",
+  "request_type",
   "resignation_letter",
   "employees",
   "designation",
   "resignation_initiation_date",
   "reason_for_exit",
   "column_break_twru",
+  "full_name_in_english",
   "department",
   "project_allocation",
   "site_allocation",
@@ -22,17 +24,24 @@
   "employment_type",
   "shift_allocation",
   "operations_role_allocation",
+  "current_salary",
   "section_break_xfjj",
-  "full_name_in_english",
   "full_name_in_arabic",
   "nationality",
   "under_company_residency",
   "date_of_joining",
   "operational_impact_section",
-  "supervisor",
-  "supervisor_remarks",
-  "replacement_required",
+  "shift_category",
+  "t4_route",
   "replacement_priority",
+  "column_break_route1",
+  "supervisor",
+  "t4_admin",
+  "cleaning_head_supervisor",
+  "security_manager",
+  "supervisor_remarks",
+  "column_break_route2",
+  "replacement_required",
   "column_break_qfvv",
   "replacement_nationality",
   "replacement_gender",
@@ -41,14 +50,20 @@
   "ojt_days",
   "erf",
   "recruiter",
+  "remarks_history_section",
+  "remarks_log",
+  "performance_remarks",
+  "complaints_remarks",
+  "negotiation_remarks",
   "more_information_section",
-  "project_manpower_request",
   "status",
+  "project_manager",
+  "column_break_pmst",
+  "project_manpower_request",
   "operations_manager_remarks",
   "column_break_jkbg",
   "offboarding_officer",
   "column_break_bqiy",
-  "operations_manager",
   "naming_series",
   "amended_from",
   "shift_working"
@@ -69,6 +84,16 @@
    "label": "Employee",
    "options": "Employee",
    "ignore_user_permissions": 1,
+   "reqd": 1
+  },
+  {
+   "default": "Resignation",
+   "fieldname": "request_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Request Type",
+   "options": "Resignation\nExtension\nReduction",
    "reqd": 1
   },
   {
@@ -173,13 +198,19 @@
    "ignore_user_permissions": 1
   },
   {
+   "fieldname": "current_salary",
+   "fieldtype": "Currency",
+   "label": "Current Salary",
+   "read_only": 1
+  },
+  {
    "fieldname": "section_break_xfjj",
    "fieldtype": "Section Break"
   },
   {
    "fieldname": "full_name_in_english",
    "fieldtype": "Data",
-   "hidden": 1,
+   "fetch_from": "employee.employee_name",
    "label": "Full Name in English",
    "read_only": 1
   },
@@ -216,32 +247,84 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:!doc.__islocal && ['Pending Supervisor', 'Pending Operations Manager', 'Approved', 'Withdrawn'].includes(doc.workflow_state)",
+   "depends_on": "eval:!doc.__islocal && ['Pending Line Manager', 'Pending Supervisor', 'Pending T4 Admin', 'Pending Janitorial Head Supervisor', 'Pending Security Manager', 'Pending Project Manager', 'Approved', 'Withdrawn'].includes(doc.workflow_state)",
    "fieldname": "operational_impact_section",
    "fieldtype": "Section Break",
    "label": "Operational Impact"
   },
   {
+   "fieldname": "shift_category",
+   "fieldtype": "Select",
+   "label": "Shift Category",
+   "options": "\nT4\nOperations",
+   "read_only": 1,
+   "depends_on": "eval:doc.shift_working"
+  },
+  {
+   "fieldname": "t4_route",
+   "fieldtype": "Select",
+   "label": "T4 Route",
+   "options": "\nSecurity\nJanitorial\nPassenger-Customer Service",
+   "read_only": 1,
+   "depends_on": "eval:doc.shift_category === 'T4'"
+  },
+  {
+   "fieldname": "column_break_route1",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "supervisor",
    "fieldtype": "Link",
-   "label": "Supervisor",
+   "label": "Supervisor / Line Manager",
    "options": "User",
    "read_only": 1,
    "ignore_user_permissions": 1
   },
   {
+   "fieldname": "t4_admin",
+   "fieldtype": "Link",
+   "label": "T4 Admin",
+   "options": "User",
+   "read_only": 1,
+   "ignore_user_permissions": 1,
+   "depends_on": "eval:doc.shift_category === 'T4'"
+  },
+  {
+   "fieldname": "column_break_route2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "cleaning_head_supervisor",
+   "fieldtype": "Link",
+   "label": "Janitorial Head Supervisor",
+   "options": "User",
+   "read_only": 1,
+   "ignore_user_permissions": 1,
+   "depends_on": "eval:doc.t4_route === 'Janitorial'"
+  },
+  {
+   "fieldname": "security_manager",
+   "fieldtype": "Link",
+   "label": "Security Manager",
+   "options": "User",
+   "read_only": 1,
+   "ignore_user_permissions": 1,
+   "depends_on": "eval:doc.t4_route === 'Security'"
+  },
+  {
    "fieldname": "supervisor_remarks",
    "fieldtype": "Small Text",
-   "label": "Supervisor Remarks",
+   "label": "Supervisor Remarks (Legacy)",
    "max_height": "4rem",
-   "mandatory_depends_on": "eval:!doc.__islocal && !['Draft', 'Pending Supervisor', 'Pending Relieving Date Correction'].includes(doc.workflow_state)",
-   "read_only_depends_on": "eval:!doc.__islocal && doc.workflow_state !== 'Pending Supervisor'"
+   "description": "Kept for historical records created before the Remarks History table was introduced. No longer required going forward.",
+   "depends_on": "eval:doc.supervisor_remarks",
+   "read_only": 1
   },
   {
    "fieldname": "replacement_required",
    "fieldtype": "Select",
    "label": "Is a Replacement Required?",
-   "mandatory_depends_on": "eval:!doc.__islocal && doc.workflow_state === \"Pending Operations Manager\"",
+   "mandatory_depends_on": "eval:!doc.__islocal && doc.workflow_state === \"Pending Project Manager\"",
    "options": "\nYes\nNo"
   },
   {
@@ -257,6 +340,7 @@
   },
   {
    "depends_on": "eval: doc.replacement_required == \"Yes\"",
+   "mandatory_depends_on": "eval: doc.replacement_required == \"Yes\"",
    "fieldname": "replacement_nationality",
    "fieldtype": "Autocomplete",
    "label": "Replacement Nationality",
@@ -265,6 +349,7 @@
   },
   {
    "depends_on": "eval: doc.replacement_required == \"Yes\"",
+   "mandatory_depends_on": "eval: doc.replacement_required == \"Yes\"",
    "fieldname": "replacement_gender",
    "fieldtype": "Autocomplete",
    "label": "Replacement Gender",
@@ -277,17 +362,47 @@
   },
   {
    "depends_on": "eval: doc.replacement_required == \"Yes\"",
+   "mandatory_depends_on": "eval: doc.replacement_required == \"Yes\"",
    "fieldname": "replacement_salary",
    "fieldtype": "Currency",
    "label": "Replacement Salary"
   },
   {
    "depends_on": "eval: doc.replacement_required == \"Yes\"",
-   "description": "The number of on-the-job-training days as agreed with the client.",
    "fieldname": "ojt_days",
    "fieldtype": "Int",
    "label": "OJT Days",
    "non_negative": 1
+  },
+  {
+   "fieldname": "remarks_history_section",
+   "fieldtype": "Section Break",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "remarks_log",
+   "fieldtype": "Long Text",
+   "label": "Remarks History",
+   "read_only": 1,
+   "depends_on": "eval:doc.remarks_log"
+  },
+  {
+   "fieldname": "performance_remarks",
+   "fieldtype": "Small Text",
+   "label": "Performance Remarks",
+   "max_height": "4rem"
+  },
+  {
+   "fieldname": "complaints_remarks",
+   "fieldtype": "Small Text",
+   "label": "Complaints Remarks",
+   "max_height": "4rem"
+  },
+  {
+   "fieldname": "negotiation_remarks",
+   "fieldtype": "Small Text",
+   "label": "Resignation Negotiation Remarks",
+   "max_height": "4rem"
   },
   {
    "fieldname": "more_information_section",
@@ -313,11 +428,11 @@
   {
    "fieldname": "operations_manager_remarks",
    "fieldtype": "Small Text",
-   "label": "Operations Manager Remarks",
+   "label": "Operations Manager Remarks (Legacy)",
    "max_height": "4rem",
-   "depends_on": "eval:doc.shift_working && ['Pending Operations Manager', 'Approved', 'Withdrawn'].includes(doc.workflow_state)",
-   "mandatory_depends_on": "eval:doc.shift_working && !doc.__islocal && doc.workflow_state === 'Approved'",
-   "read_only_depends_on": "eval:!doc.__islocal && doc.workflow_state !== 'Pending Operations Manager'"
+   "description": "Kept for historical records created before the Remarks History table was introduced. Operations Manager is no longer a workflow actor -- see Remarks History instead.",
+   "depends_on": "eval:doc.operations_manager_remarks",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_jkbg",
@@ -329,7 +444,7 @@
    "label": "Offboarding Officer",
    "options": "User",
    "reqd": 0,
-   "mandatory_depends_on": "eval:!doc.__islocal && ['Pending Operations Manager', 'Approved'].includes(doc.workflow_state)",
+   "mandatory_depends_on": "eval:!doc.__islocal && ['Pending Project Manager', 'Approved'].includes(doc.workflow_state)",
    "ignore_user_permissions": 1
   },
   {
@@ -337,12 +452,15 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "operations_manager",
+   "fieldname": "column_break_pmst",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "project_manager",
    "fieldtype": "Link",
-   "label": "Operations Manager",
+   "label": "Project Manager",
    "options": "User",
-   "reqd": 0,
-   "mandatory_depends_on": "eval:!doc.__islocal && ['Pending Operations Manager', 'Approved'].includes(doc.workflow_state)",
+   "read_only": 1,
    "ignore_user_permissions": 1
   },
   {
@@ -381,6 +499,10 @@
   },
   {
    "link_doctype": "Employee Resignation Withdrawal",
+   "link_fieldname": "employee_resignation"
+  },
+  {
+   "link_doctype": "Employee Resignation Date Adjustment",
    "link_fieldname": "employee_resignation"
   }
  ],

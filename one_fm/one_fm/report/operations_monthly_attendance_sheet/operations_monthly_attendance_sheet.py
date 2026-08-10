@@ -27,6 +27,94 @@ BY_SHIFT_HOURS = "Shift Hours"
 OVERTIME = "Over-Time"
 BASIC = "Basic"
 
+# WI-001979: the summary block at the end of a row. Every day in the range increments
+# exactly one of these, which is what makes them reconcilable - add them up and you get
+# the days in the range, with no cell counting.
+#
+# `working_days` and `off_days` keep their fieldnames (the print format renders them by
+# name); only the Present Days label changed.
+SUMMARY_COUNTERS = (
+	"working_days",
+	"off_days",
+	"absent_days",
+	"annual_leave_days",
+	"sick_leave_days",
+	"leave_without_pay_days",
+	"other_days",
+	"missing_days",
+)
+
+# Statuses that count as a day present. Work From Home and Working already showed as "P"
+# in the day cells, so they count here too - the column follows the cell.
+PRESENT_STATUSES = ("Present", "Working", "Work From Home")
+
+# Both kinds of day off share one column, per the AC.
+DAY_OFF_STATUSES = ("Day Off", "Client Day Off")
+
+# Leave Type -> its own column. A leave of any other type (Business Trip, Hajj Leave)
+# counts as Other: naming it would mean a column per Leave Type on this site, which is
+# eleven of them.
+LEAVE_TYPE_COUNTERS = {
+	"Annual Leave": "annual_leave_days",
+	"Sick Leave": "sick_leave_days",
+	"Leave Without Pay": "leave_without_pay_days",
+}
+
+
+# Which status stands when an employee has more than one record for the same day - two
+# shifts, or a basic shift beside day-off overtime. Presence wins: they worked that day,
+# whatever else was recorded against it. Anything not listed here ranks last, so a
+# recognised status always beats an unrecognised one.
+STATUS_PRECEDENCE = (
+	"Present",
+	"Working",
+	"Work From Home",
+	"Half Day",
+	"On Leave",
+	"Day Off",
+	"Client Day Off",
+	"Absent",
+)
+
+
+def more_significant(status, existing):
+	"""Should `status` replace `existing` as the day's cell?"""
+	if not existing:
+		return True
+
+	def rank(value):
+		try:
+			return STATUS_PRECEDENCE.index(value)
+		except ValueError:
+			return len(STATUS_PRECEDENCE)
+
+	return rank(status) < rank(existing)
+
+
+def summary_counter(status, leave_type=None):
+	"""Which summary column one day belongs to (WI-001979).
+
+	Total, rather than a chain of ifs with a gap at the end: a day with a status this
+	does not name is Other, and a day with no status at all is Missing. Nothing falls
+	through uncounted, so the row's figures always reconcile to the range.
+	"""
+	if not status:
+		return "missing_days"
+
+	if status in PRESENT_STATUSES:
+		return "working_days"
+
+	if status in DAY_OFF_STATUSES:
+		return "off_days"
+
+	if status == "Absent":
+		return "absent_days"
+
+	if status == "On Leave":
+		return LEAVE_TYPE_COUNTERS.get(leave_type, "other_days")
+
+	return "other_days"
+
 
 def is_invalid_roster_combination(filters):
 	"""Overtime asked for together with Day Off OT (WI-001791, Logic Rule 4).
@@ -104,19 +192,22 @@ def execute(filters):
 			"Clear one of them to generate the report."
 		)
 
-	attendance_map, hours_map = get_attendance_map(filters)
+	attendance_map, hours_map, leave_type_map, attributes_map = get_attendance_map(filters)
 	if not attendance_map:
 		frappe.msgprint(_("No attendance records found."), alert=True, indicator="orange")
 		return get_columns(filters, dates), []
 
 	schedule_map = {}
 	if filters.get("include_future_attendance"):
-		schedule_map, schedule_hours_map = get_schedule_map(filters)
+		schedule_map, schedule_hours_map, schedule_attributes = get_schedule_map(filters)
 		# Schedule wins where both exist, the same precedence the statuses use below.
 		hours_map = merge_hours_maps(hours_map, schedule_hours_map)
+		attributes_map = merge_attribute_maps(attributes_map, schedule_attributes)
 
 	columns = get_columns(filters, dates)
-	data = get_data(filters, dates, attendance_map, schedule_map, hours_map)
+	data = get_data(
+		filters, dates, attendance_map, schedule_map, hours_map, leave_type_map, attributes_map
+	)
 
 	if not data:
 		frappe.msgprint(_("No attendance records found for this criteria."), alert=True, indicator="orange")
@@ -136,7 +227,17 @@ def get_columns(filters, dates):
 		{"label": _("Employee"), "fieldname": "employee", "fieldtype": "Link", "options": "Employee", "hidden": 1, "width": 0},
 		{"label": _("Employee ID"), "fieldname": "employee_id", "fieldtype": "Data", "width": 90},
 		{"label": _("Employee Name"), "fieldname": "employee_name", "fieldtype": "Data", "width": 150},
-		{"label": _("Project"), "fieldname": "project", "fieldtype": "Link", "options": "Project", "width": 110},
+		# WI-001980: hidden rather than dropped when Include Project is off. The client
+		# formatter colours by column index and counts the hidden columns, so removing one
+		# would shift the day cells out from under it.
+		{
+			"label": _("Project"), "fieldname": "project", "fieldtype": "Link", "options": "Project",
+			**(
+				{"width": 110}
+				if cint(filters.get("include_project"))
+				else {"hidden": 1, "width": 0}
+			),
+		},
 		{"label": _("Status"), "fieldname": "employee_status", "fieldtype": "Data", "width": 80},
 		{"label": _("Employment Type"), "fieldname": "employment_type", "fieldtype": "Data", "width": 110},
 		{"label": _("Roster Type"), "fieldname": "roster_type", "fieldtype": "Data", "width": 80},
@@ -149,9 +250,23 @@ def get_columns(filters, dates):
 
 	columns.extend(get_columns_for_days(dates))
 
+	# WI-001979: every day in the range lands in exactly one of these, so a payroll
+	# administrator can reconcile a row by adding them up instead of counting cells.
+	# Fieldnames for the first two are left as they are: the print format renders
+	# `working_days` and `off_days` by name, and renaming them there would blank those
+	# cells rather than relabel them.
 	columns.extend([
-		{"label": _("Working Days"), "fieldname": "working_days", "fieldtype": "Float", "width": 80},
+		{"label": _("Present Days"), "fieldname": "working_days", "fieldtype": "Float", "width": 90},
 		{"label": _("Days Off"), "fieldname": "off_days", "fieldtype": "Float", "width": 70},
+		{"label": _("Absent Days"), "fieldname": "absent_days", "fieldtype": "Float", "width": 85},
+		{"label": _("Annual Leave"), "fieldname": "annual_leave_days", "fieldtype": "Float", "width": 90},
+		{"label": _("Sick Leave"), "fieldname": "sick_leave_days", "fieldtype": "Float", "width": 80},
+		{"label": _("Leave Without Pay"), "fieldname": "leave_without_pay_days", "fieldtype": "Float", "width": 120},
+		# Days that carry a status none of the columns above name - On Hold, Holiday, a
+		# leave of another type. Without it the row's parts do not add up to the range,
+		# which is the whole point of the block (288 days were On Hold in July 2026 alone).
+		{"label": _("Other"), "fieldname": "other_days", "fieldtype": "Float", "width": 70},
+		{"label": _("Missing/Empty Days"), "fieldname": "missing_days", "fieldtype": "Float", "width": 120},
 	])
 
 	return columns
@@ -175,9 +290,15 @@ def get_columns_for_days(dates):
 	return days
 
 
-def get_data(filters, dates, attendance_map, schedule_map, hours_map):
+def get_data(
+	filters, dates, attendance_map, schedule_map, hours_map, leave_type_map=None,
+	attributes_map=None,
+):
 	employee_details = get_employee_details(filters)
-	data = get_rows(employee_details, filters, dates, attendance_map, schedule_map, hours_map)
+	data = get_rows(
+		employee_details, filters, dates, attendance_map, schedule_map, hours_map,
+		leave_type_map, attributes_map,
+	)
 
 	return data
 
@@ -229,14 +350,19 @@ def get_message(filters=None):
 	return message
 
 
-def row_group(record):
-	"""The key a report row is grouped by: shift, roster type and the Day Off OT flag.
+def row_group(record, include_project=False):
+	"""The key a report row is grouped by (WI-001980).
 
-	Grouping on all three is what lets the Roster Type and Day Off OT columns carry a
-	value - a row spanning both Basic and Over-Time could only leave them blank, which
-	is what it did.
+	One row per employee, and that is all - shift, roster type and the Day Off OT flag no
+	longer split it, so an employee who worked a basic shift and day-off overtime in the
+	same period is one line, not three. With Include Project on, the project joins the key
+	and the employee gets a row per project they worked on.
+
+	The Roster Type and Day Off OT columns still carry a value when every record behind
+	the row agrees on one; where they do not, the row leaves them blank rather than
+	picking whichever was read last.
 	"""
-	return (record.shift or "", record.roster_type or "", cint(record.day_off_ot))
+	return ((record.project or "") if include_project else "",)
 
 
 def get_attendance_map(filters):
@@ -260,9 +386,18 @@ def get_attendance_map(filters):
 	attendance_map = {}
 	hours_map = {}
 	leave_map = {}
+	# Roster Type and Day Off OT used to be part of the row key, so a row always had one
+	# of each. A row is an employee now (WI-001980), so they are collected and shown only
+	# where every record behind the row agrees.
+	attributes_map = {}
+	# Keyed by day alone, not by group: a leave covers the whole day and is mirrored onto
+	# every one of the employee's rows below, so its type cannot belong to one shift.
+	leave_type_map = {}
+
+	include_project = cint(filters.get("include_project"))
 
 	for d in non_day_off_attendance_records:
-		group = row_group(d)
+		group = row_group(d, include_project)
 
 		# The scheduled duration is recorded for every day that has a shift, including
 		# the days spent on leave: it is what was rostered, not what was worked. Keyed
@@ -271,12 +406,18 @@ def get_attendance_map(filters):
 		if d.shift_hours:
 			hours_map.setdefault(d.employee, {}).setdefault(group, {})[d.day_key] = d.shift_hours
 
+		collect_row_attributes(attributes_map, d.employee, group, d)
+
 		if d.status == "On Leave":
 			leave_map.setdefault(d.employee, {}).setdefault(group, []).append(d.day_key)
+			leave_type_map.setdefault(d.employee, {})[d.day_key] = d.leave_type
 			continue
 
 		attendance_map.setdefault(d.employee, {}).setdefault(group, {})
-		attendance_map[d.employee][group][d.day_key] = d.status
+		# A row can now cover several records for one day (WI-001980), so the day's cell
+		# is decided rather than overwritten by whichever the query returned last.
+		if more_significant(d.status, attendance_map[d.employee][group].get(d.day_key)):
+			attendance_map[d.employee][group][d.day_key] = d.status
 
 	# leave is applicable for the entire day so all shifts should show the leave entry
 	for employee, leave_days in leave_map.items():
@@ -289,7 +430,42 @@ def get_attendance_map(filters):
 				for group in attendance_map[employee].keys():
 					attendance_map[employee][group][day] = "On Leave"
 
-	return attendance_map, hours_map
+	return attendance_map, hours_map, leave_type_map, attributes_map
+
+
+def collect_row_attributes(attributes_map, employee, group, record):
+	"""Remember the roster types and Day Off OT flags behind one row (WI-001980)."""
+	attributes = attributes_map.setdefault(employee, {}).setdefault(
+		group, {"roster_type": set(), "day_off_ot": set()}
+	)
+	attributes["roster_type"].add(record.roster_type or "")
+	attributes["day_off_ot"].add(cint(record.day_off_ot))
+
+
+def merge_attribute_maps(*maps):
+	"""Union the attribute sets of {employee: {group: {...}}} maps."""
+	merged = {}
+
+	for attributes_map in maps:
+		for employee, groups in (attributes_map or {}).items():
+			for group, attributes in groups.items():
+				target = merged.setdefault(employee, {}).setdefault(
+					group, {"roster_type": set(), "day_off_ot": set()}
+				)
+				for key, values in attributes.items():
+					target[key] |= values
+
+	return merged
+
+
+def only_value(values, default=""):
+	"""The single value a set holds, or the default when it holds none or several.
+
+	A row spanning both Basic and Over-Time cannot name one roster type, and naming
+	whichever record was read last would be worse than leaving it blank.
+	"""
+	return next(iter(values)) if len(values or ()) == 1 else default
+
 
 def get_non_day_off_attendance_records(filters):
 	Attendance = frappe.qb.DocType("Attendance")
@@ -297,14 +473,24 @@ def get_non_day_off_attendance_records(filters):
 
 	query = (
 		frappe.qb.from_(Attendance)
-		.join(OperationsShift)
+		# Left, not inner: an attendance record with no Operations Shift is still a day
+		# that was recorded, and an inner join drops it from the report entirely. 42,840
+		# submitted records in 2026 alone have no shift - each one silently became a
+		# "missing day" on the summary, and an absence that went uncounted (WI-001979).
+		.left_join(OperationsShift)
 		.on(Attendance.operations_shift == OperationsShift.name)
 		.select(
 			Attendance.employee,
 			Attendance.attendance_date.as_("day_key"),
 			Attendance.status,
+			# WI-001979: which leave a day off work was taken under, for the per-type
+			# summary columns.
+			Attendance.leave_type,
 			Attendance.roster_type,
 			Attendance.day_off_ot,
+			# WI-001980: the project the day was worked on, which is what the rows split
+			# by - not the employee's own project, which is a single current posting.
+			Attendance.project,
 			OperationsShift.shift_classification.as_("shift"),
 			# The shift's scheduled length, for "Shift Hours" mode. Deliberately not
 			# Attendance.working_hours, which is what was actually clocked (WI-001791).
@@ -379,19 +565,25 @@ def get_schedule_map(filters):
 	schedule_map = {}
 	hours_map = {}
 	leave_map = {}
+	attributes_map = {}
+
+	include_project = cint(filters.get("include_project"))
 
 	for d in non_day_off_schedule_records:
-		group = row_group(d)
+		group = row_group(d, include_project)
 
 		if d.shift_hours:
 			hours_map.setdefault(d.employee, {}).setdefault(group, {})[d.day_key] = d.shift_hours
+
+		collect_row_attributes(attributes_map, d.employee, group, d)
 
 		if d.status in ["Annual Leave"]:
 			leave_map.setdefault(d.employee, {}).setdefault(group, []).append(d.day_key)
 			continue
 
 		schedule_map.setdefault(d.employee, {}).setdefault(group, {})
-		schedule_map[d.employee][group][d.day_key] = d.status
+		if more_significant(d.status, schedule_map[d.employee][group].get(d.day_key)):
+			schedule_map[d.employee][group][d.day_key] = d.status
 
 	# leave is applicable for the entire day so all shifts should show the leave entry
 	for employee, leave_days in leave_map.items():
@@ -404,7 +596,7 @@ def get_schedule_map(filters):
 				for group in schedule_map[employee].keys():
 					schedule_map[employee][group][day] = "Annual Leave"
 
-	return schedule_map, hours_map
+	return schedule_map, hours_map, attributes_map
 
 def get_non_day_off_schedule_records(filters):
 	EmployeeSchedule = frappe.qb.DocType("Employee Schedule")
@@ -412,7 +604,8 @@ def get_non_day_off_schedule_records(filters):
 
 	query = (
 		frappe.qb.from_(EmployeeSchedule)
-		.join(OperationsShift)
+		# Left, for the same reason as the attendance query above.
+		.left_join(OperationsShift)
 		.on(EmployeeSchedule.shift == OperationsShift.name)
 		.select(
 			EmployeeSchedule.employee,
@@ -420,6 +613,7 @@ def get_non_day_off_schedule_records(filters):
 			EmployeeSchedule.employee_availability.as_("status"),
 			EmployeeSchedule.roster_type,
 			EmployeeSchedule.day_off_ot,
+			EmployeeSchedule.project,
 			OperationsShift.shift_classification.as_("shift"),
 			OperationsShift.duration.as_("shift_hours"),
 		)
@@ -508,8 +702,13 @@ def get_employee_details(filters):
 	return emp_map
 
 
-def get_rows(employee_details, filters, dates, attendance_map, schedule_map, hours_map):
+def get_rows(
+	employee_details, filters, dates, attendance_map, schedule_map, hours_map,
+	leave_type_map=None, attributes_map=None,
+):
 	records = []
+	leave_type_map = leave_type_map or {}
+	attributes_map = attributes_map or {}
 
 	day_off_attendance_map = get_day_off_attendance_map(filters)
 	day_off_schedule_map = get_day_off_schedule_map(filters) if filters.get("include_future_attendance") else {}
@@ -534,6 +733,8 @@ def get_rows(employee_details, filters, dates, attendance_map, schedule_map, hou
 			employee_day_off_schedule,
 			hours_map.get(employee, {}),
 			filters.get("generate_based_on"),
+			leave_type_map.get(employee, {}),
+			attributes_map.get(employee, {}),
 		)
 
 		# set employee details in the first row
@@ -542,10 +743,13 @@ def get_rows(employee_details, filters, dates, attendance_map, schedule_map, hou
 				"employee": employee,
 				"employee_id": details.employee_id,
 				"employee_name": details.employee_name,
-				"project": details.project,
 				"employee_status": details.employee_status,
 				"employment_type": details.employment_type,
 			})
+			# With Include Project on the row already carries the project it was grouped
+			# by; the employee's own project is a single current posting and would
+			# overwrite it (WI-001980).
+			record.setdefault("project", details.project)
 
 		records.extend(attendance_for_employee)
 
@@ -559,6 +763,8 @@ def get_attendance_status(
 	employee_day_off_schedule,
 	employee_shift_hours=None,
 	generate_based_on=BY_ATTENDANCE_STATUS,
+	employee_leave_types=None,
+	employee_attributes=None,
 ):
 	"""Returns list of shift-wise attendance status for employee, keyed by ISO date
 	[
@@ -585,6 +791,8 @@ def get_attendance_status(
 	employee_non_day_off_attendance = employee_non_day_off_attendance or {}
 	employee_non_day_off_schedule = employee_non_day_off_schedule or {}
 	employee_shift_hours = employee_shift_hours or {}
+	employee_leave_types = employee_leave_types or {}
+	employee_attributes = employee_attributes or {}
 	by_shift_hours = generate_based_on == BY_SHIFT_HOURS
 
 	groups = set(employee_non_day_off_attendance.keys()) | set(employee_non_day_off_schedule.keys())
@@ -592,14 +800,25 @@ def get_attendance_status(
 	for group in groups:
 		# Shift still separates the rows (see row_group) but is not carried into the row:
 		# WI-001790 does not list it as a column, and an undeclared key is dead weight.
-		_shift, roster_type, day_off_ot = group
-		row = {"roster_type": roster_type, "day_off_ot": day_off_ot}
+		(project,) = group
+		attributes = employee_attributes.get(group, {})
+
+		row = {
+			# Blank where the row spans more than one, rather than whichever record was
+			# read last. Filtering by Roster Type or Day Off OT makes them single-valued
+			# again, which is when they say something.
+			"roster_type": only_value(attributes.get("roster_type")),
+			"day_off_ot": only_value(attributes.get("day_off_ot"), default=0),
+		}
+		if project:
+			row["project"] = project
 
 		# Merge Attendance and Schedule statuses
 		attendance_dict = { **employee_non_day_off_attendance.get(group, {}), **employee_non_day_off_schedule.get(group, {}) }
 
-		working_days = 0
-		off_days = 0
+		# WI-001979: one counter per summary column, and every day increments exactly one
+		# of them - so the row's counters always add up to the days in the range.
+		counts = dict.fromkeys(SUMMARY_COUNTERS, 0)
 
 		for date in dates:
 			status = attendance_dict.get(date)
@@ -608,10 +827,7 @@ def get_attendance_status(
 			if not status:
 				status = employee_day_off_attendance.get(date, "") or employee_day_off_schedule.get(date, "")
 
-			if status in ["Present", "Working", "Work From Home"]:
-				working_days += 1
-			elif status in ["Day Off", "Client Day Off"]:
-				off_days += 1
+			counts[summary_counter(status, employee_leave_types.get(date))] += 1
 
 			if by_shift_hours:
 				# The scheduled duration of the shift, never the hours actually clocked.
@@ -621,9 +837,8 @@ def get_attendance_status(
 			else:
 				row[cstr(date)] = attendance_status_map.get(status, "")
 
-		row["working_days"] = working_days
-		row["off_days"] = off_days
-		
+		row.update(counts)
+
 		attendance_values.append(row)
 
 	return attendance_values

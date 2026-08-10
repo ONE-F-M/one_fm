@@ -205,9 +205,11 @@ def get_leave_application_custom_fields():
                 "fieldtype": "Section Break",
                 "insert_after": "source",
                 "label": "Resumption Confirmation Details",
-                # Shown once the leave is Approved and it is an Annual Leave or
-                # Leave Without Pay (the leave types HelpDesk follows up on for resumption).
-                "depends_on": "eval:doc.workflow_state=='Approved' && (doc.leave_type=='Annual Leave' || doc.leave_type=='Leave Without Pay')",
+                # Shown once the leave is Approved, it is an Annual Leave or Leave Without
+                # Pay (the leave types HelpDesk follows up on for resumption), and the
+                # employee is shift working (WI-001873) - resumption is only chased for
+                # the people a duty roster depends on.
+                "depends_on": "eval:doc.workflow_state=='Approved' && doc.custom_shift_working && (doc.leave_type=='Annual Leave' || doc.leave_type=='Leave Without Pay')",
                 "allow_on_submit": 1
             },
             {
@@ -253,7 +255,9 @@ def get_leave_application_custom_fields():
             {
                 "fieldname": "outcome",
                 "fieldtype": "Select",
-                "insert_after": "resumption_confirmation_details",
+                # After the contact questions rather than at the top of the section: it is
+                # the conclusion drawn from them (WI-001873).
+                "insert_after": "custom_will_the_employee_return",
                 "label": "Outcome",
                 "options": "\nConfirmed\nTry again\nResignation\nExtension Request",
                 "allow_on_submit": 1
@@ -261,7 +265,7 @@ def get_leave_application_custom_fields():
             {
                 "fieldname": "return_ticket_submitted",
                 "fieldtype": "Select",
-                "insert_after": "outcome",
+                "insert_after": "custom_does_the_employee_need_additional_time_to_resume",
                 "label": "Return Ticket Submitted",
                 "options": "\nYes\nNo",
                 # Mandatory once HelpDesk confirms the employee will return, so
@@ -276,14 +280,21 @@ def get_leave_application_custom_fields():
                 "insert_after": "return_ticket_submitted",
                 "label": "Actual Return Date",
                 # Mandatory once HelpDesk confirms the employee will return, so
-                # Operations can schedule the duty roster against a real date.
-                "mandatory_depends_on": "eval:doc.custom_will_the_employee_return == 'Yes'",
+                # Operations can schedule the duty roster against a real date - unless the
+                # employee has asked for more time, when there is no date to give yet
+                # (WI-001873).
+                "mandatory_depends_on": (
+                    "eval:doc.custom_will_the_employee_return == 'Yes'"
+                    " && doc.custom_does_the_employee_need_additional_time_to_resume != 'Yes'"
+                ),
                 "allow_on_submit": 1
             },
             {
                 "fieldname": "custom_does_the_employee_need_additional_time_to_resume",
                 "fieldtype": "Select",
-                "insert_after": "actual_return_date",
+                # Ahead of the return ticket and the return date, because the answer
+                # decides whether a return date is expected at all (WI-001873).
+                "insert_after": "outcome",
                 "label": "Does the Employee Need Additional Time to Resume?",
                 "options": "\nYes\nNo",
                 "allow_on_submit": 1,

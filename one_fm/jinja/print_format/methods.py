@@ -816,6 +816,95 @@ def pow_attendance_report(doc):
 	return get_pow_attendance_report(doc.name if hasattr(doc, "name") else doc)
 
 
+# WI-001983: the Letter's three figure columns are headed after the units the contract
+# actually bills in, decided by the Contract Item Rate Type - Daily and Monthly are
+# counted in days, Hourly in hours. A contract that mixes them keeps the OR, because the
+# column genuinely holds both across its rows; a contract that does not stops asking the
+# reader to pick a line.
+#
+# Each heading is (Arabic, English); the Arabic is empty on the two columns that never
+# carried any.
+LETTER_COLUMN_HEADINGS = {
+	"contractual": {
+		"days": ("", "Contractual Number of days per month"),
+		"hours": ("", "Contractual number of hours per month"),
+	},
+	"worked": {
+		"days": ("", "Total number Days worked"),
+		"hours": ("", "Total No of Hours worked"),
+	},
+	"breakdown": {
+		"days": ("اجمالي عدد ايام عمل", "Total Number of Days"),
+		"hours": ("اجمالي عدد ساعات عمل", "Total Number of Hours"),
+	},
+}
+
+
+def pow_letter_headers(doc):
+	"""Headings for the Letter's three figure columns (WI-001983).
+
+	The units come from the same decision the rows were built with - the Contract Item
+	Rate Type through _basis_for_rate_type - so a heading can never describe the column
+	as something its figures are not. Where that decision lands on "Both", for an item
+	with no Rate Type or a contract reported from an approved Attendance Amendment, the
+	heading names both units, which is what the row does too.
+	"""
+	units = _letter_units(doc)
+
+	return {
+		column: _heading_lines(column, units)
+		for column in LETTER_COLUMN_HEADINGS
+	}
+
+
+def _letter_units(doc):
+	"""``["days"]``, ``["hours"]``, or both - what this contract's items bill in."""
+	from one_fm.one_fm.doctype.proof_of_work.proof_of_work import (
+		_basis_for_rate_type,
+		_rate_type_by_sale_item,
+		resolve_attendance_source,
+	)
+
+	rows = doc.get("proof_of_work_item") or []
+	if not rows or not doc.get("contract"):
+		return ["days", "hours"]
+
+	start = getdate(doc.get("start_date"))
+	source_type, _reference = resolve_attendance_source(
+		doc.get("contract"), doc.get("project"), start.month, start.year
+	)
+	rate_types = _rate_type_by_sale_item(doc.get("contract"))
+
+	bases = {
+		_basis_for_rate_type(
+			rate_types.get(row.get("sale_item_code"), ""),
+			source_type,
+			doc.get("generation_basis"),
+		)
+		for row in rows
+	}
+
+	if bases == {"Attendance Day"}:
+		return ["days"]
+	if bases == {"Shift Hours"}:
+		return ["hours"]
+	return ["days", "hours"]
+
+
+def _heading_lines(column, units):
+	"""The lines one column's heading is made of, with an OR between two units."""
+	headings = LETTER_COLUMN_HEADINGS[column]
+
+	lines = []
+	for unit in units:
+		if lines:
+			lines.append({"separator": True})
+		arabic, english = headings[unit]
+		lines.append({"ar": arabic, "en": english})
+
+	return lines
+
+
 def pow_logo_src():
 	"""The ONE FM logo as a data URI, for the Proof of Work PDFs (WI-001808).
 
