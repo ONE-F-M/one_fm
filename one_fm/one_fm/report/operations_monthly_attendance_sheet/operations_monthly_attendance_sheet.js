@@ -97,6 +97,14 @@ frappe.query_reports["Operations Monthly Attendance Sheet"] = {
 			label: __("Include Future Attendance"),
 			fieldtype: "Check",
 		},
+		{
+			// WI-001980: off, an employee gets one row and the Project column is hidden.
+			// On, they get a row per project they worked on. Not an in-page filter - it
+			// changes how the rows are grouped, so the report has to be re-run.
+			fieldname: "include_project",
+			label: __("Include Project"),
+			fieldtype: "Check",
+		},
 	],
 	formatter: function (value, row, column, data, default_formatter) {
 		value = default_formatter(value, row, column, data);

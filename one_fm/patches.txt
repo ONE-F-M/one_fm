@@ -458,7 +458,7 @@ one_fm.patches.v15_0.update_bonus_request_assignment_rules #3
 one_fm.patches.v15_0.add_attendance_correction_fields
 one_fm.patches.v15_0.add_leave_application_emergency_contact_field #1
 one_fm.patches.v15_0.add_attendance_check_action_user_to_hr_settings
-one_fm.patches.v15_0.add_leave_application_resumption_contact_fields #1
+one_fm.patches.v15_0.add_leave_application_resumption_contact_fields #2 2026-08-06 WI-001873
 
 one_fm.patches.v15_0.add_absence_investigation_hr_officer_to_hr_settings
 one_fm.patches.v15_0.update_leave_application_workflow_dss #2026-07-17-2
@@ -558,6 +558,7 @@ one_fm.patches.v15_0.update_visa_request_workflow_and_rules
 one_fm.patches.v15_0.link_published_document_requests #2026-08-03 WI-001844
 one_fm.patches.v15_0.seed_document_versions #2026-08-03
 one_fm.patches.v15_0.flag_input_material #2026-08-03
+one_fm.patches.v15_0.move_pow_drive_folder_to_google_settings #2026-08-09 WI-001981
 one_fm.patches.v15_0.add_resignation_v2_branch_routing #2026-08-04
 one_fm.patches.v15_0.add_resignation_v2_actor_permissions #2026-08-04
 one_fm.patches.v15_0.fix_resignation_project_manager_employee_id #2026-08-04

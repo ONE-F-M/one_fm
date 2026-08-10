@@ -1,6 +1,8 @@
 # Copyright (c) 2026, ONEFM and contributors
 # See license.txt
 
+import re
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import get_first_day, get_last_day, getdate
@@ -668,7 +670,27 @@ class TestReportDayHeader(FrappeTestCase):
 		# Employee ID/Name and the three totals must not repeat on the second row.
 		self.assertIn('class="c-id" rowspan="2"', self.print_format.html)
 		self.assertIn('class="c-name" rowspan="2"', self.print_format.html)
-		self.assertIn('class="c-num" rowspan="2"', self.print_format.html)
+		# Each totals column carries its own class as well as c-num since WI-001983.
+		for column in ("c-worked-days", "c-days-off", "c-total-hours"):
+			self.assertIn(f'class="c-num {column}" rowspan="2"', self.print_format.html)
+
+	def test_the_totals_columns_have_separate_widths(self):
+		"""WI-001983: "Working Days" and "Days Off" ran together inside one 32px width."""
+		for column in ("c-worked-days", "c-days-off", "c-total-hours"):
+			self.assertIn(f".pow-grid .{column} {{ width:", self.print_format.css)
+
+	def test_the_header_line_carries_the_report_period_on_the_right(self):
+		"""WI-001983: logo and title left, Report Period right, on one line."""
+		self.assertIn('<td class="pow-hd-right"><strong>Report Period:</strong>', self.print_format.html)
+		# And it is not also left in the metadata line below.
+		metadata = self.print_format.html.split('<div class="pow-meta">')[1].split("</div>")[0]
+		self.assertNotIn("Report Period", metadata)
+
+	def test_the_metadata_reads_client_then_project_then_contract(self):
+		metadata = self.print_format.html.split('<div class="pow-meta">')[1].split("</div>")[0]
+		labels = re.findall(r"<strong>(.*?):</strong>", metadata)
+
+		self.assertEqual(labels, ["Client", "Project", "Contract"])
 
 
 class TestSafeFilename(FrappeTestCase):
@@ -879,3 +901,324 @@ class TestHourlyDayCells(FrappeTestCase):
 		grid = source.split("def get_pow_attendance_report")[1]
 		self.assertIn("_basis_for_rate_type(", grid)
 		self.assertIn('by_hours = basis == "Shift Hours"', grid)
+
+
+
+class TestTheLetterHeadingsFollowTheRateType(FrappeTestCase):
+	"""WI-001983: each figure column is headed after the units the contract bills in.
+
+	Daily and Monthly are counted in days, Hourly in hours. A contract that mixes them
+	keeps the OR - the column really does hold both across its rows - and one that does
+	not stops asking the reader to pick a line.
+	"""
+
+	def _headers(self, *rate_types):
+		from unittest.mock import patch
+
+		from one_fm.jinja.print_format.methods import pow_letter_headers
+
+		doc = frappe.new_doc("Proof of Work")
+		doc.contract = "_TEST-CONTRACT"
+		doc.project = "_TEST-PROJECT"
+		doc.start_date = "2026-07-01"
+		doc.generation_basis = "Both"
+		by_item = {}
+		for index, rate_type in enumerate(rate_types):
+			item = f"ITEM-{index}"
+			doc.append("proof_of_work_item", {"sale_item_code": item})
+			if rate_type:
+				by_item[item] = rate_type
+
+		module = "one_fm.one_fm.doctype.proof_of_work.proof_of_work"
+		with patch(f"{module}._rate_type_by_sale_item", return_value=by_item), patch(
+			f"{module}.resolve_attendance_source", return_value=("attendance", None)
+		):
+			return pow_letter_headers(doc)
+
+	def _english(self, column):
+		return [line.get("en") for line in column if not line.get("separator")]
+
+	def _has_or(self, column):
+		return any(line.get("separator") for line in column)
+
+	def test_a_daily_and_monthly_contract_is_headed_in_days(self):
+		headers = self._headers("Daily", "Monthly")
+
+		self.assertEqual(self._english(headers["contractual"]), ["Contractual Number of days per month"])
+		self.assertEqual(self._english(headers["worked"]), ["Total number Days worked"])
+		self.assertEqual(self._english(headers["breakdown"]), ["Total Number of Days"])
+		for column in headers.values():
+			self.assertFalse(self._has_or(column))
+
+	def test_an_hourly_contract_is_headed_in_hours(self):
+		headers = self._headers("Hourly", "Hourly")
+
+		self.assertEqual(self._english(headers["contractual"]), ["Contractual number of hours per month"])
+		self.assertEqual(self._english(headers["worked"]), ["Total No of Hours worked"])
+		self.assertEqual(self._english(headers["breakdown"]), ["Total Number of Hours"])
+		for column in headers.values():
+			self.assertFalse(self._has_or(column))
+
+	def test_a_contract_that_mixes_them_keeps_the_or(self):
+		"""Al Babtain is Hourly and Monthly together, so its column holds both."""
+		headers = self._headers("Hourly", "Monthly")
+
+		for column in headers.values():
+			self.assertTrue(self._has_or(column))
+		self.assertEqual(
+			self._english(headers["worked"]),
+			["Total number Days worked", "Total No of Hours worked"],
+		)
+
+	def test_an_item_with_no_rate_type_names_both(self):
+		"""Nothing decides its unit, so the row reports both and the heading says so."""
+		headers = self._headers("Monthly", None)
+
+		self.assertTrue(self._has_or(headers["worked"]))
+
+	def test_the_breakdown_column_keeps_its_arabic_in_both_units(self):
+		days = self._headers("Monthly")["breakdown"]
+		hours = self._headers("Hourly")["breakdown"]
+
+		self.assertEqual(days[0]["ar"], "اجمالي عدد ايام عمل")
+		self.assertEqual(hours[0]["ar"], "اجمالي عدد ساعات عمل")
+
+	def test_the_other_two_columns_carry_no_arabic(self):
+		"""They never did - only the breakdown column is bilingual."""
+		headers = self._headers("Monthly")
+
+		for column in ("contractual", "worked"):
+			for line in headers[column]:
+				self.assertFalse(line.get("ar"))
+
+	def test_a_document_with_no_rows_names_both(self):
+		headers = self._headers()
+
+		self.assertTrue(self._has_or(headers["contractual"]))
+
+
+class TestTheLetterSurvivesADeployGap(FrappeTestCase):
+	"""The method arrives with the app code, the print format with the database. A
+	migrate not yet followed by a restart has one without the other, and an undefined
+	Jinja method fails the whole PDF rather than one heading."""
+
+	def _heading_line(self):
+		import json
+
+		path = frappe.get_app_path(
+			"one_fm", "one_fm", "print_format", "proof_of_work_letter",
+			"proof_of_work_letter.json",
+		)
+		html = json.loads(frappe.read_file(path))["html"]
+		start = html.index("{%- set headers")
+		return html[start:html.index("-%}", start) + 3]
+
+	def test_the_heading_still_renders_without_the_method(self):
+		import jinja2
+
+		rendered = jinja2.Environment().from_string(
+			self._heading_line() + "{{ headers.worked | map(attribute='en') | select | join('|') }}"
+		).render()
+
+		self.assertEqual(rendered, "Total number Days worked|Total No of Hours worked")
+
+	def test_the_method_is_registered_in_hooks(self):
+		"""The fallback is insurance, not the plan."""
+		from one_fm import hooks
+
+		self.assertIn(
+			"pow_letter_headers:one_fm.jinja.print_format.methods.pow_letter_headers",
+			hooks.jenv["methods"],
+		)
+    
+    
+class TestTheExportGoesToDrive(FrappeTestCase):
+	"""WI-001981: the export uploads into a "Month Year" subfolder of a shared folder.
+
+	Drive is mocked - what is under test is which calls are made and with what, not
+	Google. The service account and the folder are site configuration.
+	"""
+
+	MODULE = "one_fm.one_fm.doctype.proof_of_work.proof_of_work"
+
+	def setUp(self):
+		from unittest.mock import MagicMock
+
+		self.service = MagicMock()
+		self.files = self.service.files.return_value
+		# No existing subfolder unless a test says otherwise.
+		self.files.list.return_value.execute.return_value = {"files": []}
+		self.files.create.return_value.execute.return_value = {"id": "NEWFOLDER"}
+
+	def test_the_subfolder_is_named_after_the_period_it_covers(self):
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import _period_folder_name
+
+		self.assertEqual(_period_folder_name("2026-07-01"), "July 2026")
+		# The period, not the month the export was run in.
+		self.assertEqual(_period_folder_name("2025-12-31"), "December 2025")
+
+	def test_an_existing_subfolder_is_reused(self):
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import _period_folder
+
+		self.files.list.return_value.execute.return_value = {"files": [{"id": "EXISTING"}]}
+
+		self.assertEqual(_period_folder(self.service, "PARENT", "July 2026"), "EXISTING")
+		self.files.create.assert_not_called()
+
+	def test_a_missing_subfolder_is_created_under_the_parent(self):
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import (
+			DRIVE_FOLDER_MIME,
+			_period_folder,
+		)
+
+		self.assertEqual(_period_folder(self.service, "PARENT", "July 2026"), "NEWFOLDER")
+
+		body = self.files.create.call_args.kwargs["body"]
+		self.assertEqual(body["name"], "July 2026")
+		self.assertEqual(body["mimeType"], DRIVE_FOLDER_MIME)
+		self.assertEqual(body["parents"], ["PARENT"])
+
+	def test_a_share_link_in_the_setting_resolves_to_its_folder_id(self):
+		"""The setting takes what someone copies out of Drive's address bar."""
+		from unittest.mock import patch
+
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import _configured_drive_folder
+
+		link = "https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQ?usp=sharing"
+		with patch.object(frappe.db, "get_single_value", return_value=link):
+			self.assertEqual(_configured_drive_folder(), "1AbCdEfGhIjKlMnOpQ")
+
+	def test_the_folder_is_read_from_google_settings(self):
+		"""Where the work item puts it. It was first built on ONEFM General Setting,
+		beside the service account, and read from the wrong page as a result."""
+		from unittest.mock import patch
+
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import _configured_drive_folder
+
+		with patch.object(frappe.db, "get_single_value", return_value="") as reader:
+			_configured_drive_folder()
+
+		reader.assert_called_once_with("Google Settings", "pow_drive_folder_link")
+
+	def test_the_field_is_on_the_google_settings_page(self):
+		field = frappe.get_meta("Google Settings").get_field("pow_drive_folder_link")
+
+		self.assertIsNotNone(field, "the patch has not been applied on this instance")
+		self.assertEqual(field.fieldtype, "Data")
+
+	def test_a_folder_it_cannot_write_to_is_refused_before_the_batch_runs(self):
+		"""Drive answers this with a bare "Insufficient permissions for the specified
+		parent" from whichever contract came first - naming neither the folder, the
+		identity, nor the fix."""
+		from unittest.mock import MagicMock, patch
+
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import _check_drive_folder
+
+		service = MagicMock()
+		service.files.return_value.get.return_value.execute.return_value = {
+			"name": "Proof of Work",
+			"capabilities": {"canAddChildren": False},
+		}
+
+		with patch(
+			f"{self.MODULE}.google_credentials.service_account_email",
+			return_value="robot@project.iam.gserviceaccount.com",
+		):
+			with self.assertRaises(frappe.ValidationError) as caught:
+				_check_drive_folder(service, "FOLDER")
+
+		message = str(caught.exception)
+		# The three things someone needs in order to fix it.
+		self.assertIn("robot@project.iam.gserviceaccount.com", message)
+		self.assertIn("Proof of Work", message)
+		self.assertIn("Editor", message)
+
+	def test_a_my_drive_folder_is_called_out_as_the_wrong_home(self):
+		"""A service account has no storage of its own in a personal Drive, so writing
+		can still be refused for quota after the sharing is fixed."""
+		from unittest.mock import MagicMock, patch
+
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import _check_drive_folder
+
+		service = MagicMock()
+		service.files.return_value.get.return_value.execute.return_value = {
+			"name": "Proof of Work",
+			"capabilities": {"canAddChildren": False},
+			# No driveId - it is in someone's My Drive rather than a Shared Drive.
+		}
+
+		with patch(f"{self.MODULE}.google_credentials.service_account_email", return_value="robot@x"):
+			with self.assertRaises(frappe.ValidationError) as caught:
+				_check_drive_folder(service, "FOLDER")
+
+		self.assertIn("Shared Drive", str(caught.exception))
+
+	def test_a_writable_shared_drive_folder_passes(self):
+		from unittest.mock import MagicMock
+
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import _check_drive_folder
+
+		service = MagicMock()
+		service.files.return_value.get.return_value.execute.return_value = {
+			"name": "Proof of Work",
+			"driveId": "0AShared",
+			"capabilities": {"canAddChildren": True},
+		}
+
+		_check_drive_folder(service, "FOLDER")
+
+	def test_the_field_is_gone_from_onefm_general_setting(self):
+		"""Two places to set one folder is one place too many."""
+		self.assertIsNone(
+			frappe.get_meta("ONEFM General Setting").get_field("pow_drive_folder_link")
+		)
+
+	def test_the_export_uploads_each_pdf_and_reports_the_folder(self):
+		from unittest.mock import patch
+
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import _upload_pow_pdfs
+
+		doc = frappe._dict({"start_date": "2026-07-01"})
+		self.files.create.return_value.execute.side_effect = [
+			{"id": "FOLDER-JULY"},  # the period subfolder
+			{"id": "FILE-1"},  # the PDF
+		]
+		notified = {}
+
+		with patch(f"{self.MODULE}._configured_drive_folder", return_value="PARENT"), patch(
+			f"{self.MODULE}.google_credentials.get_drive_service", return_value=self.service
+		), patch.object(frappe, "get_doc", return_value=doc), patch(
+			f"{self.MODULE}._pow_pdf_entry", return_value=("Client - Contract - Jul-2026.pdf", b"%PDF-")
+		), patch(
+			f"{self.MODULE}._notify_zip",
+			side_effect=lambda user, message, file_url=None, link_label=None: notified.update(
+				message=message, file_url=file_url
+			),
+		):
+			_upload_pow_pdfs(["POW-1"], "someone@example.com")
+
+		# The PDF went into the period folder, under its own filename.
+		upload_body = self.files.create.call_args.kwargs["body"]
+		self.assertEqual(upload_body["name"], "Client - Contract - Jul-2026.pdf")
+		self.assertEqual(upload_body["parents"], ["FOLDER-JULY"])
+
+		# And the user is told where it went (AC 1.3).
+		self.assertIn("1 Proof of Work PDF(s) uploaded", notified["message"])
+		# Straight to the period folder the PDFs are in, not the parent.
+		self.assertEqual(notified["file_url"], "https://drive.google.com/drive/folders/FOLDER-JULY")
+
+	def test_an_unconfigured_site_still_gets_its_zip(self):
+		"""The ZIP is what every site has today; losing the button is not an upgrade."""
+		from unittest.mock import patch
+
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import enqueue_pow_zip
+
+		with patch(f"{self.MODULE}._configured_drive_folder", return_value=""), patch(
+			f"{self.MODULE}._guard_permission"
+		), patch.object(frappe, "get_doc", return_value=frappe._dict(check_permission=lambda p: None)), patch(
+			f"{self.MODULE}.frappe.enqueue"
+		) as enqueue:
+			result = enqueue_pow_zip(["POW-1"])
+
+		self.assertEqual(result["destination"], "zip")
+		self.assertEqual(enqueue.call_args.args[0].__name__, "_build_pow_zip")
