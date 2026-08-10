@@ -127,3 +127,13 @@ class TestReapplyAfterRejection(FrappeTestCase):
 
 		self.assertIn("frm.doc.workflow_state !== 'Rejected'", source)
 		self.assertIn("reapply_work_permit", source)
+
+	def test_it_is_the_only_button_on_a_rejected_permit(self):
+		"""Reported from testing: Reapply and the older "Restart Application" both showed
+		on Rejected, offering the same thing twice."""
+		source = frappe.read_file(
+			frappe.get_app_path("one_fm", "grd", "doctype", "work_permit", "work_permit.js")
+		)
+
+		self.assertNotIn("__('Restart Application')", source)
+		self.assertNotIn("set_restart_application(frm)", source)
