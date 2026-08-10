@@ -14,6 +14,7 @@ from frappe.utils import add_days, getdate
 from one_fm.one_fm.report.operations_monthly_attendance_sheet.operations_monthly_attendance_sheet import (
 	BY_SHIFT_HOURS,
 	MAX_RANGE_DAYS,
+	SUMMARY_COUNTERS,
 	apply_roster_type_filters,
 	execute,
 	format_shift_hours,
@@ -25,6 +26,7 @@ from one_fm.one_fm.report.operations_monthly_attendance_sheet.operations_monthly
 	get_report_additional_day_details,
 	is_invalid_roster_combination,
 	merge_hours_maps,
+	summary_counter,
 	validate_filters,
 )
 
@@ -106,6 +108,8 @@ class TestColumns(FrappeTestCase):
 			"employee", "employee_id", "employee_name", "project", "employee_status",
 			"employment_type", "roster_type", "day_off_ot",
 			"working_days", "off_days", "total_hours",
+			# WI-001979 added the rest of the summary block.
+			*SUMMARY_COUNTERS,
 		}
 		shown = {
 			c["fieldname"]
@@ -441,3 +445,171 @@ class TestInPageFilters(FrappeTestCase):
 		for row in data[:20]:
 			self.assertTrue(frappe.db.exists("Employee", row.get("employee")), msg=row.get("employee"))
 
+
+
+class TestTheSummaryBlock(FrappeTestCase):
+	"""WI-001979: the columns at the end of a row, and the arithmetic they promise."""
+
+	def test_present_days_counts_only_days_present(self):
+		for status in ("Present", "Working", "Work From Home"):
+			with self.subTest(status=status):
+				self.assertEqual(summary_counter(status), "working_days")
+
+		# What it must NOT absorb - before this the only counters were present and days
+		# off, so anything else went uncounted entirely.
+		for status in ("Absent", "On Leave", "On Hold", "Holiday"):
+			self.assertNotEqual(summary_counter(status), "working_days")
+
+	def test_both_kinds_of_day_off_share_one_column(self):
+		self.assertEqual(summary_counter("Day Off"), "off_days")
+		self.assertEqual(summary_counter("Client Day Off"), "off_days")
+
+	def test_a_leave_is_counted_under_its_own_type(self):
+		self.assertEqual(summary_counter("On Leave", "Annual Leave"), "annual_leave_days")
+		self.assertEqual(summary_counter("On Leave", "Sick Leave"), "sick_leave_days")
+		self.assertEqual(
+			summary_counter("On Leave", "Leave Without Pay"), "leave_without_pay_days"
+		)
+
+	def test_a_leave_of_another_type_is_other_not_a_missing_day(self):
+		"""Business Trip and Hajj Leave are real leave types on this site."""
+		self.assertEqual(summary_counter("On Leave", "Business Trip"), "other_days")
+		self.assertEqual(summary_counter("On Leave", None), "other_days")
+
+	def test_a_status_no_column_names_is_other(self):
+		# 288 days were On Hold in July 2026; they have to land somewhere.
+		self.assertEqual(summary_counter("On Hold"), "other_days")
+		self.assertEqual(summary_counter("Holiday"), "other_days")
+		self.assertEqual(summary_counter("Client Interview"), "other_days")
+
+	def test_a_day_with_no_status_is_missing(self):
+		self.assertEqual(summary_counter(None), "missing_days")
+		self.assertEqual(summary_counter(""), "missing_days")
+
+	def test_every_status_lands_on_a_declared_column(self):
+		"""A counter this does not declare would vanish from the row silently."""
+		statuses = frappe.get_meta("Attendance").get_field("status").options.split("\n")
+		for status in statuses + ["Working", "Client Interview", None]:
+			self.assertIn(summary_counter(status), SUMMARY_COUNTERS, msg=status)
+
+	def test_the_row_reconciles_to_the_range(self):
+		"""The AC's own check: the summary columns add up to the days selected."""
+		dates = get_date_range(_filters())
+		group = ("Morning", "Basic", 0)
+		attendance = {
+			group: {
+				dates[0]: "Present",
+				dates[1]: "Absent",
+				dates[2]: "On Leave",
+				dates[3]: "On Hold",
+				# dates[4] deliberately left with no record at all
+			}
+		}
+		day_off = {dates[5]: "Day Off", dates[6]: "Client Day Off"}
+		leave_types = {dates[2]: "Sick Leave"}
+
+		rows = get_attendance_status(
+			dates, attendance, day_off, {}, {}, employee_leave_types=leave_types
+		)
+
+		self.assertEqual(len(rows), 1)
+		row = rows[0]
+		self.assertEqual(row["working_days"], 1)
+		self.assertEqual(row["absent_days"], 1)
+		self.assertEqual(row["sick_leave_days"], 1)
+		self.assertEqual(row["annual_leave_days"], 0)
+		self.assertEqual(row["other_days"], 1)
+		self.assertEqual(row["off_days"], 2)
+		self.assertEqual(row["missing_days"], 1)
+		self.assertEqual(sum(row[counter] for counter in SUMMARY_COUNTERS), len(dates))
+
+	def test_the_row_reconciles_on_real_data(self):
+		"""Every row of the busiest month has to add up, not just the constructed one."""
+		busiest = frappe.db.sql(
+			"""
+			select year(attendance_date) as y, month(attendance_date) as mo
+			from `tabAttendance` where docstatus = 1
+			group by y, mo order by count(*) desc limit 1
+			""",
+			as_dict=True,
+		)
+		if not busiest:
+			self.skipTest("no submitted attendance on this instance")
+
+		from frappe.utils import get_first_day, get_last_day
+
+		anchor = getdate(f"{busiest[0].y}-{busiest[0].mo:02d}-01")
+		lo, hi = get_first_day(anchor), get_last_day(anchor)
+		total_days = len(get_date_range(_filters(from_date=lo, to_date=hi)))
+
+		data = execute(_filters(from_date=lo, to_date=hi))[1]
+		if not data:
+			self.skipTest("no rows for the busiest month")
+
+		for report_row in data[:200]:
+			self.assertEqual(
+				sum(report_row.get(counter, 0) for counter in SUMMARY_COUNTERS),
+				total_days,
+				msg=f"{report_row.get('employee_id')}: {[(c, report_row.get(c)) for c in SUMMARY_COUNTERS]}",
+			)
+
+
+class TestAttendanceWithoutAShiftIsStillCounted(FrappeTestCase):
+	"""An attendance record with no Operations Shift used to be dropped by an inner join,
+	so the day it recorded became a "missing day" and an absence went uncounted. 42,840
+	submitted records in 2026 alone have no shift."""
+
+	def setUp(self):
+		row = frappe.db.get_value(
+			"Attendance",
+			{
+				"docstatus": 1,
+				"operations_shift": ["is", "not set"],
+				"status": ["in", ["Absent", "Present", "On Leave"]],
+			},
+			["employee", "attendance_date", "status", "leave_type"],
+			as_dict=True,
+			order_by="attendance_date desc",
+		)
+		if not row:
+			self.skipTest("no shift-less attendance on this instance")
+		self.record = row
+
+	def test_the_day_it_records_is_not_reported_as_missing(self):
+		data = execute(
+			_filters(
+				from_date=self.record.attendance_date,
+				to_date=self.record.attendance_date,
+				employee=self.record.employee,
+			)
+		)[1]
+
+		self.assertTrue(data, msg="the shift-less record produced no row at all")
+		self.assertEqual(
+			sum(row.get("missing_days", 0) for row in data),
+			0,
+			msg=f"{self.record} was dropped and counted as a missing day",
+		)
+
+	def test_it_lands_in_the_counter_its_status_belongs_to(self):
+		data = execute(
+			_filters(
+				from_date=self.record.attendance_date,
+				to_date=self.record.attendance_date,
+				employee=self.record.employee,
+			)
+		)[1]
+
+		# On Leave routes by its leave type, so the expected counter needs both.
+		counter = summary_counter(self.record.status, self.record.leave_type)
+		self.assertEqual(sum(row.get(counter, 0) for row in data), 1)
+
+	def test_the_query_left_joins_the_shift(self):
+		"""Pinned on the SQL: an inner join here silently loses rows rather than failing."""
+		from one_fm.one_fm.report.operations_monthly_attendance_sheet.operations_monthly_attendance_sheet import (
+			get_non_day_off_attendance_records,
+		)
+		import inspect
+
+		source = inspect.getsource(get_non_day_off_attendance_records)
+		self.assertIn("left_join(OperationsShift)", source)
