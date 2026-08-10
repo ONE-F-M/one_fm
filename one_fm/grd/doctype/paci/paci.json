@@ -13,6 +13,8 @@
   "category",
   "paci_status",
   "preparation",
+  "paci_details_section",
+  "paci_reference_number",
   "section_break_3",
   "first_name_arabic",
   "second_name_arabic",
@@ -45,7 +47,10 @@
   "grd_supervisor",
   "grd_operator_transfer",
   "reminder_grd_operator",
-  "reminder_grd_operator_again"
+  "reminder_grd_operator_again",
+  "rejection_details_section",
+  "paci_rejection_reason",
+  "rejected_paci"
  ],
  "fields": [
   {
@@ -244,6 +249,16 @@
    "read_only": 1
   },
   {
+   "fieldname": "paci_details_section",
+   "fieldtype": "Section Break",
+   "label": "PACI Details"
+  },
+  {
+   "fieldname": "paci_reference_number",
+   "fieldtype": "Data",
+   "label": "PACI Reference Number"
+  },
+  {
    "fetch_from": "employee.one_fm_civil_id",
    "fieldname": "civil_id",
    "fieldtype": "Data",
@@ -309,11 +324,32 @@
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Reminder Government Relations Operator Again"
+  },
+  {
+   "fieldname": "rejection_details_section",
+   "fieldtype": "Section Break",
+   "label": "Rejection Details"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "paci_rejection_reason",
+   "fieldtype": "Select",
+   "label": "PACI Rejection Reason",
+   "options": "\nIncorrect Address\nIncorrect Data"
+  },
+  {
+   "description": "The rejected application this one was raised to replace",
+   "fieldname": "rejected_paci",
+   "fieldtype": "Link",
+   "label": "Rejected PACI",
+   "no_copy": 1,
+   "options": "PACI",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-05 12:00:00.000000",
+ "modified": "2026-08-10 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PACI",

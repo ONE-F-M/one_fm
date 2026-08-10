@@ -13,6 +13,12 @@ from frappe.core.doctype.communication.email import make
 from one_fm.processor import sendemail
 from one_fm.utils import is_scheduler_emails_enabled
 
+# The Overseas category and the state its record opens in (WI-001830). Named because the
+# controller, create_PACI and the assignment rule all have to agree on the spelling.
+NEW_APPLICATION = "New Application"
+PENDING_PRO = "Pending PRO"
+
+
 class PACI(Document):
     def before_insert(self):
         self.cancel_existing()
@@ -106,15 +112,42 @@ class PACI(Document):
             })
             frappe.db.set_value("Employee", self.employee, "civil_id_expiry_date", self.new_civil_id_expiry_date)
         else:
-            employee = frappe.get_doc('Employee', self.employee)
-            employee.append("one_fm_employee_documents", {
+            # Written directly, the same way the branch above writes an existing row.
+            # employee.append(...) + employee.save() drags the whole Employee through
+            # validation, so completing a civil ID failed on data that has nothing to do
+            # with it: 1,124 employees hold a Marital Status the field's options no longer
+            # accept ("Single", "Divorced", "Widowed"), and any full save of one throws.
+            # This writes the two facts it actually has - the document row and the expiry
+            # date - and nothing else.
+            frappe.get_doc({
+                "doctype": "Employee Document",
+                "parent": self.employee,
+                "parenttype": "Employee",
+                "parentfield": "one_fm_employee_documents",
+                "idx": next_employee_document_idx(self.employee),
                 "attach": self.upload_civil_id,
                 "document_name": "Civil ID",
-                "issued_on":today,
-                "valid_till":self.new_civil_id_expiry_date
-            })
-            employee.civil_id_expiry_date = self.new_civil_id_expiry_date
-            employee.save()
+                "issued_on": today,
+                "valid_till": self.new_civil_id_expiry_date,
+            }).db_insert()
+            frappe.db.set_value(
+                "Employee", self.employee, "civil_id_expiry_date", self.new_civil_id_expiry_date
+            )
+
+def next_employee_document_idx(employee):
+    """The idx a new Employee Document row should take.
+
+    A raw insert does not get the ordering a child table append would, so it is worked
+    out here rather than left at 0, where two rows would tie.
+    """
+    last = frappe.db.get_value(
+        "Employee Document",
+        {"parent": employee, "parenttype": "Employee"},
+        "idx",
+        order_by="idx desc",
+    )
+    return (last or 0) + 1
+
 
 # Create PACI record once a month for renewals list
 def create_PACI_renewal(preparation_name):
@@ -166,6 +199,33 @@ def create_PACI(employee,Type,preparation_name = None):
         PACI_new.preparation = preparation_name
         PACI_new.date_of_application = start_day
         PACI_new.save()
+        if Type == NEW_APPLICATION:
+            hand_to_pro(PACI_new)
+        return PACI_new
+
+
+def hand_to_pro(paci):
+    """Move a first civil ID application to the PRO, who applies on the portal (WI-001830).
+
+    Written to the field rather than applied as a workflow action, because the
+    Draft --Save--> Pending PRO transition belongs to the PRO role and this record is
+    opened by the system on behalf of a Preparation - there is no PRO in the session to
+    make it, and Frappe rejects the jump as a transition the current user cannot perform.
+
+    A field written this way leaves the assignment rules unaware, so they are re-run
+    explicitly; without that the record sits in Pending PRO assigned to nobody.
+    """
+    from frappe.automation.doctype.assignment_rule.assignment_rule import apply
+
+    paci.db_set("workflow_state", PENDING_PRO)
+
+    try:
+        apply(doctype=paci.doctype, name=paci.name)
+    except Exception:
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title=f"Error assigning PACI {paci.name} to the PRO",
+        )
 
 
 #==============================================================================> Reminder Notification
@@ -277,3 +337,65 @@ def send_email(doc, recipients, message, subject):
 		reference_doctype=doc.doctype,
 		reference_name=doc.name
 	)
+
+
+# ── Reapplying after a PACI rejection (WI-001830 AC4) ─────────────────────────
+#
+# Cleared on the new application: the reference the rejected attempt was given and the
+# reason it was refused. Everything else - the candidate, the category, the Preparation
+# that started it - comes across, which is the point of the button.
+REJECTED = "Rejected"
+REJECTION_OUTCOME_FIELDS = (
+    "paci_reference_number",
+    "paci_rejection_reason",
+    "upload_civil_id_payment",
+    "upload_civil_id_payment_datetime",
+    "upload_civil_id",
+    "upload_civil_id_datetime",
+    "upload_hawiyati",
+    "completed_on",
+)
+
+
+def can_reapply(doc) -> bool:
+    """Is this an application a fresh attempt can be raised from (WI-001830)?
+
+    The gate the button and the server share, so the button cannot offer something the
+    method then refuses.
+    """
+    return doc.get("workflow_state") == REJECTED
+
+
+@frappe.whitelist(methods=["POST"])
+def reapply_paci(name: str):
+    """Raise a fresh PACI from one that was rejected (WI-001830 AC4).
+
+    A copy rather than a new document with a few fields set: the candidate's details are
+    what the AC asks to keep, and re-entering them is what the button exists to avoid.
+    The rejected application is left as the audit history, and ``rejected_paci`` on the
+    new one is the parent reference link back to it.
+    """
+    source = frappe.get_doc("PACI", name)
+    source.check_permission("read")
+
+    if not frappe.has_permission("PACI", "create"):
+        frappe.throw(_("You do not have permission to create a PACI."), frappe.PermissionError)
+
+    if not can_reapply(source):
+        frappe.throw(
+            _("Only a PACI in <b>{0}</b> can be reapplied. {1} is in {2}.").format(
+                REJECTED, source.name, source.workflow_state
+            ),
+            title=_("Cannot Reapply"),
+        )
+
+    reapplication = frappe.copy_doc(source)
+    for fieldname in REJECTION_OUTCOME_FIELDS:
+        reapplication.set(fieldname, None)
+
+    reapplication.workflow_state = "Draft"
+    reapplication.date_of_application = today()
+    reapplication.rejected_paci = source.name
+    reapplication.insert()
+
+    return {"name": reapplication.name}
