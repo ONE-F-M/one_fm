@@ -310,3 +310,65 @@ def send_email(doc, recipients, message, subject):
 		reference_doctype=doc.doctype,
 		reference_name=doc.name
 	)
+
+
+# ── Reapplying after a PACI rejection (WI-001830 AC4) ─────────────────────────
+#
+# Cleared on the new application: the reference the rejected attempt was given and the
+# reason it was refused. Everything else - the candidate, the category, the Preparation
+# that started it - comes across, which is the point of the button.
+REJECTED = "Rejected"
+REJECTION_OUTCOME_FIELDS = (
+    "paci_reference_number",
+    "paci_rejection_reason",
+    "upload_civil_id_payment",
+    "upload_civil_id_payment_datetime",
+    "upload_civil_id",
+    "upload_civil_id_datetime",
+    "upload_hawiyati",
+    "completed_on",
+)
+
+
+def can_reapply(doc) -> bool:
+    """Is this an application a fresh attempt can be raised from (WI-001830)?
+
+    The gate the button and the server share, so the button cannot offer something the
+    method then refuses.
+    """
+    return doc.get("workflow_state") == REJECTED
+
+
+@frappe.whitelist(methods=["POST"])
+def reapply_paci(name: str):
+    """Raise a fresh PACI from one that was rejected (WI-001830 AC4).
+
+    A copy rather than a new document with a few fields set: the candidate's details are
+    what the AC asks to keep, and re-entering them is what the button exists to avoid.
+    The rejected application is left as the audit history, and ``rejected_paci`` on the
+    new one is the parent reference link back to it.
+    """
+    source = frappe.get_doc("PACI", name)
+    source.check_permission("read")
+
+    if not frappe.has_permission("PACI", "create"):
+        frappe.throw(_("You do not have permission to create a PACI."), frappe.PermissionError)
+
+    if not can_reapply(source):
+        frappe.throw(
+            _("Only a PACI in <b>{0}</b> can be reapplied. {1} is in {2}.").format(
+                REJECTED, source.name, source.workflow_state
+            ),
+            title=_("Cannot Reapply"),
+        )
+
+    reapplication = frappe.copy_doc(source)
+    for fieldname in REJECTION_OUTCOME_FIELDS:
+        reapplication.set(fieldname, None)
+
+    reapplication.workflow_state = "Draft"
+    reapplication.date_of_application = today()
+    reapplication.rejected_paci = source.name
+    reapplication.insert()
+
+    return {"name": reapplication.name}

@@ -125,6 +125,94 @@ class TestPACIProWorkflow(FrappeTestCase):
 				len({row.get(field) for row in rows}), 1, msg=f"the rows differ on {field}"
 			)
 
+	def test_the_rejection_reason_dropdown_offers_what_ba_supplied(self):
+		"""AC3: the pop-up on Reject prompts for a reason, and it has to be a value the
+		field will accept on save - so the dialog reads its options off the field."""
+		field = frappe.get_meta("PACI").get_field("paci_rejection_reason")
+
+		self.assertIsNotNone(field)
+		self.assertEqual(field.options.split("\n"), ["", "Incorrect Address", "Incorrect Data"])
+		# Rejected is a draft state, but Completed is submitted - a reason recorded on a
+		# submitted record needs this.
+		self.assertTrue(field.allow_on_submit)
+
+	def test_the_reject_dialog_is_wired_to_the_rejecting_state(self):
+		source = frappe.read_file(
+			frappe.get_app_path("one_fm", "grd", "doctype", "paci", "paci.js")
+		)
+
+		self.assertIn("before_workflow_action", source)
+		self.assertIn("Pending by PACI", source)
+		# Options off the field, not a list kept in the client.
+		self.assertIn("frappe.meta.get_docfield('PACI', 'paci_rejection_reason'", source)
+
+	def test_the_state_the_dialog_fires_from_can_actually_reject(self):
+		"""A dialog on an action the workflow does not offer would never open."""
+		transitions = {
+			(t.state, t.action, t.next_state)
+			for t in frappe.get_doc("Workflow", "PACI").transitions
+		}
+
+		self.assertIn(("Pending by PACI", "Reject", "Rejected"), transitions)
+
+	def test_only_a_rejected_paci_can_be_reapplied(self):
+		from one_fm.grd.doctype.paci.paci import can_reapply
+
+		self.assertTrue(can_reapply(frappe._dict(workflow_state="Rejected")))
+		for state in ("Draft", "Pending PRO", "Pending by PACI", "Completed"):
+			self.assertFalse(can_reapply(frappe._dict(workflow_state=state)), msg=state)
+
+	def test_the_reapply_link_field_points_back_and_is_not_copied_onward(self):
+		"""AC4's parent reference link. no_copy so a copy of a copy does not inherit it."""
+		field = frappe.get_meta("PACI").get_field("rejected_paci")
+
+		self.assertIsNotNone(field)
+		self.assertEqual(field.options, "PACI")
+		self.assertTrue(field.read_only)
+		self.assertTrue(field.no_copy)
+
+	def test_reapplying_clears_the_reference_and_keeps_the_candidate(self):
+		from one_fm.grd.doctype.paci.paci import reapply_paci
+
+		employee = frappe.db.get_value(
+			"Employee", {"status": "Active", "relieving_date": ["is", "not set"]}, "name"
+		)
+		source = frappe.get_doc(
+			{
+				"doctype": "PACI",
+				"employee": employee,
+				"category": "New Application",
+				"date_of_application": frappe.utils.today(),
+			}
+		).insert(ignore_permissions=True)
+		frappe.db.set_value(
+			"PACI",
+			source.name,
+			{
+				"workflow_state": "Rejected",
+				"paci_reference_number": "PACI-REF-999",
+				"paci_rejection_reason": "Incorrect Address",
+			},
+			update_modified=False,
+		)
+		self.addCleanup(
+			lambda: frappe.db.delete("PACI", {"rejected_paci": source.name})
+		)
+
+		new = frappe.get_doc("PACI", reapply_paci(source.name)["name"])
+
+		self.assertEqual(new.rejected_paci, source.name)
+		self.assertEqual(new.workflow_state, "Draft")
+		self.assertEqual(new.employee, source.employee)
+		self.assertEqual(new.category, source.category)
+		self.assertFalse(new.paci_reference_number)
+		self.assertFalse(new.paci_rejection_reason)
+
+		# The rejected one is the history and stays as it is.
+		self.assertEqual(
+			frappe.db.get_value("PACI", source.name, "paci_rejection_reason"), "Incorrect Address"
+		)
+
 	def test_the_reference_number_is_on_the_form(self):
 		field = frappe.get_meta("PACI").get_field("paci_reference_number")
 
