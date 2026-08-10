@@ -112,15 +112,42 @@ class PACI(Document):
             })
             frappe.db.set_value("Employee", self.employee, "civil_id_expiry_date", self.new_civil_id_expiry_date)
         else:
-            employee = frappe.get_doc('Employee', self.employee)
-            employee.append("one_fm_employee_documents", {
+            # Written directly, the same way the branch above writes an existing row.
+            # employee.append(...) + employee.save() drags the whole Employee through
+            # validation, so completing a civil ID failed on data that has nothing to do
+            # with it: 1,124 employees hold a Marital Status the field's options no longer
+            # accept ("Single", "Divorced", "Widowed"), and any full save of one throws.
+            # This writes the two facts it actually has - the document row and the expiry
+            # date - and nothing else.
+            frappe.get_doc({
+                "doctype": "Employee Document",
+                "parent": self.employee,
+                "parenttype": "Employee",
+                "parentfield": "one_fm_employee_documents",
+                "idx": next_employee_document_idx(self.employee),
                 "attach": self.upload_civil_id,
                 "document_name": "Civil ID",
-                "issued_on":today,
-                "valid_till":self.new_civil_id_expiry_date
-            })
-            employee.civil_id_expiry_date = self.new_civil_id_expiry_date
-            employee.save()
+                "issued_on": today,
+                "valid_till": self.new_civil_id_expiry_date,
+            }).db_insert()
+            frappe.db.set_value(
+                "Employee", self.employee, "civil_id_expiry_date", self.new_civil_id_expiry_date
+            )
+
+def next_employee_document_idx(employee):
+    """The idx a new Employee Document row should take.
+
+    A raw insert does not get the ordering a child table append would, so it is worked
+    out here rather than left at 0, where two rows would tie.
+    """
+    last = frappe.db.get_value(
+        "Employee Document",
+        {"parent": employee, "parenttype": "Employee"},
+        "idx",
+        order_by="idx desc",
+    )
+    return (last or 0) + 1
+
 
 # Create PACI record once a month for renewals list
 def create_PACI_renewal(preparation_name):

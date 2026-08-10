@@ -213,6 +213,65 @@ class TestPACIProWorkflow(FrappeTestCase):
 			frappe.db.get_value("PACI", source.name, "paci_rejection_reason"), "Incorrect Address"
 		)
 
+	def test_completing_writes_the_expiry_without_validating_the_whole_employee(self):
+		"""AC5 broke on data that has nothing to do with a civil ID: 1,124 employees hold
+		a Marital Status the field's options no longer accept ("Single", "Divorced",
+		"Widowed"), and employee.save() validates all of it. The two facts this has - the
+		document row and the expiry date - are written directly instead."""
+		employee = frappe.db.get_value(
+			"Employee",
+			{
+				"marital_status": ["not in", (frappe.get_meta("Employee").get_field("marital_status").options or "").split("\n")],
+				"status": "Active",
+				"work_permit_expiry_date": ["is", "set"],
+			},
+			"name",
+		)
+		if not employee:
+			self.skipTest("no employee with an out-of-options Marital Status on this instance")
+
+		expiry = frappe.db.get_value("Employee", employee, "work_permit_expiry_date")
+		frappe.db.delete("Employee Document", {"parent": employee, "document_name": "Civil ID"})
+
+		paci = frappe.get_doc(
+			{
+				"doctype": "PACI",
+				"employee": employee,
+				"category": "New Application",
+				"date_of_application": frappe.utils.today(),
+				"upload_civil_id": "/files/civil-id.pdf",
+			}
+		).insert(ignore_permissions=True)
+
+		# Would raise ValidationError on the employee's Marital Status before this.
+		paci.set_New_civil_id_Expiry_date_in_employee_doctype()
+
+		self.assertEqual(
+			frappe.db.get_value("Employee", employee, "civil_id_expiry_date"), expiry
+		)
+		rows = frappe.db.get_all(
+			"Employee Document",
+			{"parent": employee, "document_name": "Civil ID"},
+			["idx", "valid_till"],
+		)
+		self.assertEqual(len(rows), 1)
+		self.assertEqual(rows[0].valid_till, expiry)
+		# A raw insert gets no ordering for free, so idx has to be worked out.
+		self.assertGreaterEqual(rows[0].idx, 1)
+
+	def test_a_second_document_row_does_not_tie_on_idx(self):
+		from one_fm.grd.doctype.paci.paci import next_employee_document_idx
+
+		employee = frappe.db.get_value("Employee", {"status": "Active"}, "name")
+		highest = frappe.db.get_value(
+			"Employee Document",
+			{"parent": employee, "parenttype": "Employee"},
+			"idx",
+			order_by="idx desc",
+		)
+
+		self.assertEqual(next_employee_document_idx(employee), (highest or 0) + 1)
+
 	def test_the_reference_number_is_on_the_form(self):
 		field = frappe.get_meta("PACI").get_field("paci_reference_number")
 
