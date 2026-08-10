@@ -177,6 +177,49 @@ class TestTheAutomaticRejection(FrappeTestCase):
 			"Previous Sponsor Rejected",
 		)
 
+	def test_a_pam_rejection_does_not_need_a_payment_invoice(self):
+		"""Reported from testing: rejecting at Pending By PAM threw "Upload the required
+		document(Invoice) to submit". Nothing was paid on a rejection, so there is no
+		invoice - and the reject dialog has to save the reason before the action runs,
+		because apply_workflow reloads the document server-side."""
+		name = self.a_draft_local_transfer()
+
+		frappe.db.set_value(
+			"Work Permit",
+			name,
+			{
+				"workflow_state": "Pending By PAM",
+				"attach_invoice": None,
+				"new_work_permit_expiry_date": None,
+				"pam_rejection_reason": None,
+			},
+			update_modified=False,
+		)
+
+		doc = frappe.get_doc("Work Permit", name)
+		# Without a reason it is on its way to being approved, and the invoice is still due.
+		self.assertRaises(frappe.ValidationError, doc.save)
+
+		doc.reload()
+		doc.pam_rejection_reason = "PAM Contract"
+		doc.reason_of_rejection = "Rejected by PAM"
+		doc.save()
+
+		self.assertEqual(
+			frappe.db.get_value("Work Permit", name, "pam_rejection_reason"), "PAM Contract"
+		)
+
+	def a_draft_local_transfer(self):
+		name = frappe.db.get_value(
+			"Work Permit",
+			{"work_permit_type": "Local Transfer", "docstatus": 0},
+			"name",
+			order_by="creation desc",
+		)
+		if not name:
+			self.skipTest("no draft Local Transfer Work Permit on this instance")
+		return name
+
 	def test_the_retired_free_text_pair_is_not_demanded_any_more(self):
 		"""Pinned on the source: demanding a hidden field is unresolvable by definition."""
 		import inspect

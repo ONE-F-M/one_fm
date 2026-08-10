@@ -71,7 +71,11 @@ class WorkPermit(Document):
         states = ['Pending By PAM']
         db_state = frappe.db.get_value("Work Permit", self.name, 'workflow_state')
         # check for required fields based on workflow
-        if db_state in states:
+        # A PAM rejection is exempt: nothing was paid, so there is no invoice and no new
+        # expiry date to record. The invoice belongs to the two Accept transitions
+        # (Completed / Pending For Payment), and demanding it on a rejection stopped the
+        # reject dialog from storing its reason (WI-001829).
+        if db_state in states and not self.pam_rejection_reason:
             msg = False
             if not self.attach_invoice:
                 msg = "Upload the required document(Invoice)"

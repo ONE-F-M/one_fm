@@ -372,7 +372,14 @@ function ask_for_rejection_reason(frm, spec) {
 			(values) => {
 				frm.set_value(spec.field, values.reason);
 				frm.set_value('reason_of_rejection', spec.rejected_by);
-				frm.save().then(resolve).catch(reject);
+				// The reason has to be in the database before the action runs:
+				// apply_workflow() reloads the document server-side and throws away
+				// whatever the form was holding. Saving a document with nothing to save
+				// only shows "No changes in document" and never calls back, which would
+				// leave the rejection hanging with no error - so only save when there is
+				// something to save (a retry after a failed attempt already has the
+				// reason stored).
+				(frm.is_dirty() ? frm.save() : Promise.resolve()).then(resolve).catch(reject);
 			},
 			spec.title,
 			__('Reject')
