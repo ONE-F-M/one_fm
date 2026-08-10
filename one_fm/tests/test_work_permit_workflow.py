@@ -105,15 +105,17 @@ class TestThePamRejectionIsOneStep(FrappeTestCase):
 				[t for t in transitions if self.RETIRED_STATE in (t[0], t[2])], []
 			)
 
-	def test_the_reject_action_is_offered_once(self):
-		"""BA's export carries the transition twice; two identical Reject buttons on the
-		same state is a UI bug waiting to happen."""
+	def test_the_reject_row_is_carried_twice_like_the_export(self):
+		"""BA's export has the row twice. Kept as-is rather than deduped: the two are
+		identical, so apply_workflow's last-match-wins picks the same transition either
+		way, and the Actions dropdown drops the repeat because it keys on the label."""
 		rejects = [
 			t for t in _fixture()["transitions"]
 			if (t["state"], t["action"]) == ("Pending By PAM", "Reject")
 		]
 
-		self.assertEqual(len(rejects), 1)
+		self.assertEqual(len(rejects), 2)
+		self.assertEqual(rejects[0], rejects[1])
 
 	def test_no_permit_is_left_in_the_retired_state(self):
 		self.assertEqual(

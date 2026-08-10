@@ -289,6 +289,14 @@
    "doctype": "Workflow Transition",
    "next_state": "Rejected",
    "state": "Pending By PAM"
+  },
+  {
+   "action": "Reject",
+   "allow_self_approval": 1,
+   "allowed": "Government Relations Operator",
+   "doctype": "Workflow Transition",
+   "next_state": "Rejected",
+   "state": "Pending By PAM"
   }
  ],
  "workflow_name": "Work Permit",
