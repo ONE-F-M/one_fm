@@ -25,9 +25,16 @@
   "amended_from",
   "approvers_section",
   "workflow_state",
-  "supervisor",
   "is_corporate",
-  "operations_manager",
+  "shift_category",
+  "t4_route",
+  "column_break_route1",
+  "supervisor",
+  "t4_admin",
+  "column_break_route2",
+  "cleaning_head_supervisor",
+  "security_manager",
+  "project_manager",
   "offboarding_officer",
   "column_break_wetd",
   "column_break_pdtv",
@@ -161,13 +168,6 @@
    "no_copy": 1
   },
   {
-   "fieldname": "supervisor",
-   "fieldtype": "Link",
-   "label": "Supervisor",
-   "options": "User",
-   "reqd": 1
-  },
-  {
    "default": "0",
    "fieldname": "is_corporate",
    "fieldtype": "Check",
@@ -176,13 +176,66 @@
    "read_only": 1
   },
   {
-   "fieldname": "operations_manager",
+   "fetch_from": "employee_resignation.shift_category",
+   "fieldname": "shift_category",
+   "fieldtype": "Select",
+   "label": "Shift Category",
+   "options": "\nT4\nOperations",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee_resignation.t4_route",
+   "fieldname": "t4_route",
+   "fieldtype": "Select",
+   "label": "T4 Route",
+   "options": "\nSecurity\nJanitorial\nPassenger-Customer Service",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_route1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "supervisor",
    "fieldtype": "Link",
-   "label": "Operations Manager",
+   "label": "Supervisor / Line Manager",
    "options": "User",
-   "reqd": 0,
-   "depends_on": "eval:!doc.is_corporate && doc.workflow_state && (doc.workflow_state == 'Pending Operations Manager' || doc.workflow_state == 'Approved')",
-   "mandatory_depends_on": "eval:!doc.is_corporate && doc.workflow_state && (doc.workflow_state == 'Pending Operations Manager' || doc.workflow_state == 'Approved')"
+   "read_only": 1
+  },
+  {
+   "fieldname": "t4_admin",
+   "fieldtype": "Link",
+   "label": "T4 Admin",
+   "options": "User",
+   "read_only": 1,
+   "depends_on": "eval:doc.shift_category === 'T4'"
+  },
+  {
+   "fieldname": "column_break_route2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "cleaning_head_supervisor",
+   "fieldtype": "Link",
+   "label": "Janitorial Head Supervisor",
+   "options": "User",
+   "read_only": 1,
+   "depends_on": "eval:doc.t4_route === 'Janitorial'"
+  },
+  {
+   "fieldname": "security_manager",
+   "fieldtype": "Link",
+   "label": "Security Manager",
+   "options": "User",
+   "read_only": 1,
+   "depends_on": "eval:doc.t4_route === 'Security'"
+  },
+  {
+   "fieldname": "project_manager",
+   "fieldtype": "Link",
+   "label": "Project Manager",
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "offboarding_officer",
@@ -190,8 +243,8 @@
    "label": "Offboarding Officer",
    "options": "User",
    "reqd": 0,
-   "depends_on": "eval: doc.workflow_state && (doc.workflow_state == 'Pending Operations Manager' || doc.workflow_state == 'Approved')",
-   "mandatory_depends_on": "eval: doc.workflow_state && (doc.workflow_state == 'Pending Operations Manager' || doc.workflow_state == 'Approved')"
+   "depends_on": "eval: doc.workflow_state && (doc.workflow_state == 'Pending Project Manager' || doc.workflow_state == 'Approved')",
+   "mandatory_depends_on": "eval: doc.workflow_state && (doc.workflow_state == 'Pending Project Manager' || doc.workflow_state == 'Approved')"
   },
   {
    "fieldname": "column_break_wetd",

@@ -13,8 +13,8 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 		self.resignation = frappe.get_doc({
 			"doctype": "Employee Resignation",
 			"employee": self.employee.name,
-			"resignation_letter_date": frappe.utils.today(),
-			"reason_for_resignation": "Better opportunity",
+			"resignation_initiation_date": frappe.utils.today(),
+			"reason_for_exit": "Better opportunity",
 			"resignation_letter": "/files/resignation_letter.txt",
 			"status": "Pending",
 			"relieving_date": frappe.utils.add_days(frappe.utils.today(), 30)
@@ -28,16 +28,16 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 			"doctype": "Employee Resignation Withdrawal",
 			"employee_resignation": self.resignation.name,
 			"reason": "Test",
-			"resignation_withdrawal_letter": "/files/test.txt",
-			"workflow_state": "Pending Supervisor"
+			"resignation_withdrawal_letter": "/files/test.txt"
 		}).insert()
+		_submit_for_review(erw)
 
 		# Change state without giving reason
-		erw.workflow_state = "Rejected By Supervisor"
-		
+		erw.workflow_state = "Rejected"
+
 		with self.assertRaises(frappe.ValidationError) as context:
 			erw.save()
-		
+
 		self.assertTrue("Please provide Reason for Rejection" in str(context.exception))
 
 	def test_validate_rejection_reason_provided(self):
@@ -45,17 +45,17 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 			"doctype": "Employee Resignation Withdrawal",
 			"employee_resignation": self.resignation.name,
 			"reason": "Test",
-			"resignation_withdrawal_letter": "/files/test.txt",
-			"workflow_state": "Pending Supervisor"
+			"resignation_withdrawal_letter": "/files/test.txt"
 		}).insert()
+		_submit_for_review(erw)
 
 		# Change state and provide reason
-		erw.workflow_state = "Rejected By Supervisor"
+		erw.workflow_state = "Rejected"
 		erw.reason_for_rejection = "Not a valid reason"
-		
+
 		# Should not raise any error
 		erw.save()
-		self.assertEqual(erw.workflow_state, "Rejected By Supervisor")
+		self.assertEqual(erw.workflow_state, "Rejected")
 
 	def test_process_withdrawal_approval(self):
 		# Create a PMR tied to the resignation if the doctype exists
@@ -64,9 +64,9 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 			pmr = frappe.get_doc({
 				"doctype": "Project Manpower Request",
 				"employee_resignation": self.resignation.name,
-				"project": _get_or_create_project(),
+				"project": _get_or_create_project("Test ERW Project", self.employee.company),
 				"title": "Test PMR"
-			}).insert()
+			}).insert(ignore_mandatory=True)
 
 		# Set an initial relieving date on the employee to verify it gets cleared
 		frappe.db.set_value("Employee", self.employee.name, "relieving_date", frappe.utils.today())
@@ -75,12 +75,13 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 			"doctype": "Employee Resignation Withdrawal",
 			"employee_resignation": self.resignation.name,
 			"reason": "Changed my mind",
-			"resignation_withdrawal_letter": "/files/test.txt",
-			"workflow_state": "Pending Supervisor"
+			"resignation_withdrawal_letter": "/files/test.txt"
 		}).insert()
+		_submit_for_review(erw)
 
-		# Transition 1
-		erw.workflow_state = "Accepted by Supervisor"
+		# Operations branch: Supervisor forwards straight to Project Manager, no
+		# separate "Accepted by Supervisor" state anymore.
+		erw.workflow_state = "Pending Project Manager"
 		erw.save()
 
 		# Trigger withdrawal approval
@@ -108,31 +109,98 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 			pmr = frappe.get_doc({
 				"doctype": "Project Manpower Request",
 				"employee_resignation": self.resignation.name,
-				"project": _get_or_create_project(),
-				"title": "Test PMR",
-				"workflow_state": "Completed"
-			}).insert()
-			
+				"project": _get_or_create_project("Test ERW Project", self.employee.company),
+				"title": "Test PMR"
+			}).insert(ignore_mandatory=True)
+			# Set directly rather than via save(): a new PMR's workflow_state must
+			# start at that workflow's states[0], same constraint as Withdrawal's
+			# own workflow -- bypass to simulate an already-completed PMR.
+			pmr.db_set("workflow_state", "Completed", update_modified=False)
+
 			erw = frappe.get_doc({
 				"doctype": "Employee Resignation Withdrawal",
 				"employee_resignation": self.resignation.name,
 				"reason": "Changed my mind",
 				"resignation_withdrawal_letter": "/files/test.txt",
 			})
-			
+
 			with self.assertRaises(frappe.ValidationError) as context:
 				erw.validate()
-			
+
 			self.assertTrue("Cannot withdraw resignation because the replacement Project Manpower Request" in str(context.exception))
 
-def _get_or_create_project():
-	project_name = "Test Project"
-	if not frappe.db.exists("Project", project_name):
+	def test_blocks_second_active_withdrawal(self):
 		frappe.get_doc({
-			"doctype": "Project",
-			"project_name": project_name
+			"doctype": "Employee Resignation Withdrawal",
+			"employee_resignation": self.resignation.name,
+			"reason": "Changed my mind",
+			"resignation_withdrawal_letter": "/files/test.txt",
 		}).insert()
-	return project_name
+
+		second = frappe.get_doc({
+			"doctype": "Employee Resignation Withdrawal",
+			"employee_resignation": self.resignation.name,
+			"reason": "Changed my mind again",
+			"resignation_withdrawal_letter": "/files/test2.txt",
+		})
+
+		with self.assertRaises(frappe.ValidationError) as context:
+			second.insert()
+
+		self.assertTrue("still in progress" in str(context.exception))
+
+	def test_allows_new_withdrawal_after_previous_resolved(self):
+		first = frappe.get_doc({
+			"doctype": "Employee Resignation Withdrawal",
+			"employee_resignation": self.resignation.name,
+			"reason": "Changed my mind",
+			"resignation_withdrawal_letter": "/files/test.txt",
+		}).insert()
+
+		_submit_for_review(first)
+		first.workflow_state = "Rejected"
+		first.reason_for_rejection = "Not accepted"
+		first.save()
+
+		second = frappe.get_doc({
+			"doctype": "Employee Resignation Withdrawal",
+			"employee_resignation": self.resignation.name,
+			"reason": "Trying again",
+			"resignation_withdrawal_letter": "/files/test2.txt",
+		}).insert()
+
+		self.assertEqual(second.employee, self.employee.name)
+
+
+	def test_insert_lands_on_draft_without_reason_or_letter(self):
+		erw = frappe.get_doc({
+			"doctype": "Employee Resignation Withdrawal",
+			"employee_resignation": self.resignation.name,
+		}).insert()
+
+		self.assertEqual(erw.workflow_state, "Draft")
+		self.assertFalse(erw.reason)
+		self.assertFalse(erw.resignation_withdrawal_letter)
+
+	def test_submit_for_review_requires_reason_and_letter(self):
+		erw = frappe.get_doc({
+			"doctype": "Employee Resignation Withdrawal",
+			"employee_resignation": self.resignation.name,
+		}).insert()
+
+		erw.workflow_state = "Pending Supervisor"
+		with self.assertRaises(frappe.ValidationError) as context:
+			erw.save()
+
+		self.assertTrue("Reason and a Withdrawal Letter" in str(context.exception))
+
+
+def _submit_for_review(erw):
+	# Test employees are all non-corporate / Operations-branch, so the entry
+	# state Draft resolves to is always "Pending Supervisor".
+	erw.workflow_state = "Pending Supervisor"
+	erw.save()
+
 
 def _make_employee(employee_id, employee_name):
 	company = frappe.db.get_single_value("Global Defaults", "default_company") or frappe.get_all("Company", limit=1)[0].name

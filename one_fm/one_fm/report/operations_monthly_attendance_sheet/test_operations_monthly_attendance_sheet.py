@@ -14,6 +14,7 @@ from frappe.utils import add_days, getdate
 from one_fm.one_fm.report.operations_monthly_attendance_sheet.operations_monthly_attendance_sheet import (
 	BY_SHIFT_HOURS,
 	MAX_RANGE_DAYS,
+	SUMMARY_COUNTERS,
 	apply_roster_type_filters,
 	execute,
 	format_shift_hours,
@@ -25,6 +26,9 @@ from one_fm.one_fm.report.operations_monthly_attendance_sheet.operations_monthly
 	get_report_additional_day_details,
 	is_invalid_roster_combination,
 	merge_hours_maps,
+	more_significant,
+	row_group,
+	summary_counter,
 	validate_filters,
 )
 
@@ -106,6 +110,8 @@ class TestColumns(FrappeTestCase):
 			"employee", "employee_id", "employee_name", "project", "employee_status",
 			"employment_type", "roster_type", "day_off_ot",
 			"working_days", "off_days", "total_hours",
+			# WI-001979 added the rest of the summary block.
+			*SUMMARY_COUNTERS,
 		}
 		shown = {
 			c["fieldname"]
@@ -251,9 +257,9 @@ class TestShiftHours(FrappeTestCase):
 	"""WI-001791: the cells show the scheduled duration, never the clocked hours."""
 
 	DATES = [getdate("2026-01-10"), getdate("2026-01-11"), getdate("2026-01-12")]
-	# The maps are keyed by the row group from WI-001790: shift, roster type and the
-	# Day Off OT flag.
-	GROUP = ("Morning", "Basic", 0)
+	# The maps are keyed by the row group, which since WI-001980 is the project alone -
+	# empty when Include Project is off, which is the case these fixtures cover.
+	GROUP = ("",)
 
 	def _rows(self, generate_based_on):
 		return get_attendance_status(
@@ -264,14 +270,14 @@ class TestShiftHours(FrappeTestCase):
 			{},
 			{self.GROUP: {self.DATES[0]: 12.0, self.DATES[1]: 12.0}},
 			generate_based_on,
+			employee_attributes={self.GROUP: {"roster_type": {"Basic"}, "day_off_ot": {0}}},
 		)
 
 	def test_the_row_names_its_group(self):
-		# Shift is part of the group key but is not a column, so the row carries only the
-		# two attributes WI-001790 lists.
+		# Shift is not a column, and since WI-001980 not part of the key either; the row
+		# carries the two attributes WI-001790 lists, taken from the records behind it.
 		row = self._rows(BY_SHIFT_HOURS)[0]
-		_shift, roster_type, day_off_ot = self.GROUP
-		self.assertEqual((row["roster_type"], row["day_off_ot"]), (roster_type, day_off_ot))
+		self.assertEqual((row["roster_type"], row["day_off_ot"]), ("Basic", 0))
 		self.assertNotIn("shift", row)
 
 	def test_the_cells_carry_the_scheduled_duration(self):
@@ -319,10 +325,10 @@ class TestFormatShiftHours(FrappeTestCase):
 
 
 class TestMergeHoursMaps(FrappeTestCase):
-	MORNING = ("Morning", "Basic", 0)
-	EVENING = ("Evening", "Basic", 0)
-	NIGHT = ("Night", "Basic", 0)
-	MORNING_OT = ("Morning", "Over-Time", 0)
+	MORNING = ("Morning", "Basic", 0, "")
+	EVENING = ("Evening", "Basic", 0, "")
+	NIGHT = ("Night", "Basic", 0, "")
+	MORNING_OT = ("Morning", "Over-Time", 0, "")
 
 	def test_later_maps_win_per_day(self):
 		merged = merge_hours_maps(
@@ -367,11 +373,24 @@ class TestRosterTypeAndDayOffOTAreCarried(FrappeTestCase):
 		self.assertIn("roster_type", names)
 		self.assertIn("day_off_ot", names)
 
-	def test_every_row_names_its_roster_type(self):
+	def test_a_row_names_its_roster_type_when_it_has_only_one(self):
+		"""Since WI-001980 a row is an employee, so it can span Basic and Over-Time. It
+		names the roster type when there is one to name and blanks it otherwise, rather
+		than showing whichever record happened to be read last."""
 		if not self.data:
 			self.skipTest("no attendance in the test range on this instance")
-		blank = [r for r in self.data if not r.get("roster_type")]
-		self.assertEqual(blank, [], msg=f"{len(blank)} rows carry no roster type")
+
+		named = [r for r in self.data if r.get("roster_type")]
+		self.assertTrue(named, msg="no row names a roster type at all")
+		for row in named:
+			self.assertIn(row["roster_type"], ("Basic", "Over-Time"), msg=row.get("employee_id"))
+
+	def test_filtering_makes_the_roster_type_certain_again(self):
+		filtered = execute(_filters(roster_type="Basic"))[1]
+		if not filtered:
+			self.skipTest("no Basic attendance in the test range on this instance")
+
+		self.assertEqual({r.get("roster_type") for r in filtered}, {"Basic"})
 
 	def test_day_off_ot_is_a_flag_on_every_row(self):
 		if not self.data:
@@ -441,3 +460,410 @@ class TestInPageFilters(FrappeTestCase):
 		for row in data[:20]:
 			self.assertTrue(frappe.db.exists("Employee", row.get("employee")), msg=row.get("employee"))
 
+
+
+class TestTheSummaryBlock(FrappeTestCase):
+	"""WI-001979: the columns at the end of a row, and the arithmetic they promise."""
+
+	def test_present_days_counts_only_days_present(self):
+		for status in ("Present", "Working", "Work From Home"):
+			with self.subTest(status=status):
+				self.assertEqual(summary_counter(status), "working_days")
+
+		# What it must NOT absorb - before this the only counters were present and days
+		# off, so anything else went uncounted entirely.
+		for status in ("Absent", "On Leave", "On Hold", "Holiday"):
+			self.assertNotEqual(summary_counter(status), "working_days")
+
+	def test_both_kinds_of_day_off_share_one_column(self):
+		self.assertEqual(summary_counter("Day Off"), "off_days")
+		self.assertEqual(summary_counter("Client Day Off"), "off_days")
+
+	def test_a_leave_is_counted_under_its_own_type(self):
+		self.assertEqual(summary_counter("On Leave", "Annual Leave"), "annual_leave_days")
+		self.assertEqual(summary_counter("On Leave", "Sick Leave"), "sick_leave_days")
+		self.assertEqual(
+			summary_counter("On Leave", "Leave Without Pay"), "leave_without_pay_days"
+		)
+
+	def test_a_leave_of_another_type_is_other_not_a_missing_day(self):
+		"""Business Trip and Hajj Leave are real leave types on this site."""
+		self.assertEqual(summary_counter("On Leave", "Business Trip"), "other_days")
+		self.assertEqual(summary_counter("On Leave", None), "other_days")
+
+	def test_a_status_no_column_names_is_other(self):
+		# 288 days were On Hold in July 2026; they have to land somewhere.
+		self.assertEqual(summary_counter("On Hold"), "other_days")
+		self.assertEqual(summary_counter("Holiday"), "other_days")
+		self.assertEqual(summary_counter("Client Interview"), "other_days")
+
+	def test_a_day_with_no_status_is_missing(self):
+		self.assertEqual(summary_counter(None), "missing_days")
+		self.assertEqual(summary_counter(""), "missing_days")
+
+	def test_every_status_lands_on_a_declared_column(self):
+		"""A counter this does not declare would vanish from the row silently."""
+		statuses = frappe.get_meta("Attendance").get_field("status").options.split("\n")
+		for status in statuses + ["Working", "Client Interview", None]:
+			self.assertIn(summary_counter(status), SUMMARY_COUNTERS, msg=status)
+
+	def test_the_row_reconciles_to_the_range(self):
+		"""The AC's own check: the summary columns add up to the days selected."""
+		dates = get_date_range(_filters())
+		group = ("",)
+		attendance = {
+			group: {
+				dates[0]: "Present",
+				dates[1]: "Absent",
+				dates[2]: "On Leave",
+				dates[3]: "On Hold",
+				# dates[4] deliberately left with no record at all
+			}
+		}
+		day_off = {dates[5]: "Day Off", dates[6]: "Client Day Off"}
+		leave_types = {dates[2]: "Sick Leave"}
+
+		rows = get_attendance_status(
+			dates, attendance, day_off, {}, {}, employee_leave_types=leave_types
+		)
+
+		self.assertEqual(len(rows), 1)
+		row = rows[0]
+		self.assertEqual(row["working_days"], 1)
+		self.assertEqual(row["absent_days"], 1)
+		self.assertEqual(row["sick_leave_days"], 1)
+		self.assertEqual(row["annual_leave_days"], 0)
+		self.assertEqual(row["other_days"], 1)
+		self.assertEqual(row["off_days"], 2)
+		self.assertEqual(row["missing_days"], 1)
+		self.assertEqual(sum(row[counter] for counter in SUMMARY_COUNTERS), len(dates))
+
+	def test_the_row_reconciles_on_real_data(self):
+		"""Every row of the busiest month has to add up, not just the constructed one."""
+		busiest = frappe.db.sql(
+			"""
+			select year(attendance_date) as y, month(attendance_date) as mo
+			from `tabAttendance` where docstatus = 1
+			group by y, mo order by count(*) desc limit 1
+			""",
+			as_dict=True,
+		)
+		if not busiest:
+			self.skipTest("no submitted attendance on this instance")
+
+		from frappe.utils import get_first_day, get_last_day
+
+		anchor = getdate(f"{busiest[0].y}-{busiest[0].mo:02d}-01")
+		lo, hi = get_first_day(anchor), get_last_day(anchor)
+		total_days = len(get_date_range(_filters(from_date=lo, to_date=hi)))
+
+		data = execute(_filters(from_date=lo, to_date=hi))[1]
+		if not data:
+			self.skipTest("no rows for the busiest month")
+
+		for report_row in data[:200]:
+			self.assertEqual(
+				sum(report_row.get(counter, 0) for counter in SUMMARY_COUNTERS),
+				total_days,
+				msg=f"{report_row.get('employee_id')}: {[(c, report_row.get(c)) for c in SUMMARY_COUNTERS]}",
+			)
+
+
+class TestAttendanceWithoutAShiftIsStillCounted(FrappeTestCase):
+	"""An attendance record with no Operations Shift used to be dropped by an inner join,
+	so the day it recorded became a "missing day" and an absence went uncounted. 42,840
+	submitted records in 2026 alone have no shift."""
+
+	def setUp(self):
+		row = frappe.db.get_value(
+			"Attendance",
+			{
+				"docstatus": 1,
+				"operations_shift": ["is", "not set"],
+				"status": ["in", ["Absent", "Present", "On Leave"]],
+			},
+			["employee", "attendance_date", "status", "leave_type"],
+			as_dict=True,
+			order_by="attendance_date desc",
+		)
+		if not row:
+			self.skipTest("no shift-less attendance on this instance")
+		self.record = row
+
+	def test_the_day_it_records_is_not_reported_as_missing(self):
+		data = execute(
+			_filters(
+				from_date=self.record.attendance_date,
+				to_date=self.record.attendance_date,
+				employee=self.record.employee,
+			)
+		)[1]
+
+		self.assertTrue(data, msg="the shift-less record produced no row at all")
+		self.assertEqual(
+			sum(row.get("missing_days", 0) for row in data),
+			0,
+			msg=f"{self.record} was dropped and counted as a missing day",
+		)
+
+	def test_it_lands_in_the_counter_its_status_belongs_to(self):
+		data = execute(
+			_filters(
+				from_date=self.record.attendance_date,
+				to_date=self.record.attendance_date,
+				employee=self.record.employee,
+			)
+		)[1]
+
+		# On Leave routes by its leave type, so the expected counter needs both.
+		counter = summary_counter(self.record.status, self.record.leave_type)
+		self.assertEqual(sum(row.get(counter, 0) for row in data), 1)
+
+	def test_the_query_left_joins_the_shift(self):
+		"""Pinned on the SQL: an inner join here silently loses rows rather than failing."""
+		from one_fm.one_fm.report.operations_monthly_attendance_sheet.operations_monthly_attendance_sheet import (
+			get_non_day_off_attendance_records,
+		)
+		import inspect
+
+		source = inspect.getsource(get_non_day_off_attendance_records)
+		self.assertIn("left_join(OperationsShift)", source)
+class TestTheIncludeProjectToggle(FrappeTestCase):
+	"""WI-001980: one row per employee, or one row per project they worked on."""
+
+	def _record(self, project):
+		return frappe._dict(
+			{"shift": "Morning", "roster_type": "Basic", "day_off_ot": 0, "project": project}
+		)
+
+	def test_the_project_joins_the_row_key_only_when_asked_for(self):
+		a, b = self._record("Project A"), self._record("Project B")
+
+		# Off: two projects, one key - so one row for the employee.
+		self.assertEqual(row_group(a), row_group(b))
+		# On: a key each.
+		self.assertNotEqual(row_group(a, include_project=True), row_group(b, include_project=True))
+		self.assertEqual(row_group(a, include_project=True)[0], "Project A")
+
+	def test_nothing_else_splits_a_row(self):
+		"""An employee is one row: the shift, the roster type and the Day Off OT flag no
+		longer key it, so a basic shift and day-off overtime share one line."""
+		basic = self._record("Project A")
+		overtime = frappe._dict(
+			{"shift": "Night", "roster_type": "Over-Time", "day_off_ot": 1, "project": "Project A"}
+		)
+
+		self.assertEqual(row_group(basic), row_group(overtime))
+		self.assertEqual(
+			row_group(basic, include_project=True), row_group(overtime, include_project=True)
+		)
+
+	def test_the_key_keeps_its_shape_either_way(self):
+		"""Everything that unpacks the key reads one shape, whichever way the toggle is."""
+		self.assertEqual(len(row_group(self._record("Project A"))), 1)
+		self.assertEqual(len(row_group(self._record("Project A"), include_project=True)), 1)
+
+	def test_the_project_column_is_hidden_rather_than_dropped(self):
+		"""The client formatter colours by column index and counts hidden columns."""
+		off = [c for c in get_columns(_filters(), []) if c["fieldname"] == "project"][0]
+		on = [
+			c for c in get_columns(_filters(include_project=1), []) if c["fieldname"] == "project"
+		][0]
+
+		self.assertTrue(off.get("hidden"))
+		self.assertFalse(on.get("hidden"))
+		# Same number of columns either way, so the day cells stay under the same indices.
+		self.assertEqual(
+			len(get_columns(_filters(), [])), len(get_columns(_filters(include_project=1), []))
+		)
+
+
+class TestTheToggleAgainstRealData(FrappeTestCase):
+	def setUp(self):
+		busiest = frappe.db.sql(
+			"""
+			select project, year(attendance_date) as y, month(attendance_date) as mo
+			from `tabAttendance`
+			where docstatus = 1 and project is not null and project != ''
+			group by project, y, mo order by count(*) desc limit 1
+			""",
+			as_dict=True,
+		)
+		if not busiest:
+			self.skipTest("no submitted attendance with a project on this instance")
+
+		from frappe.utils import get_first_day, get_last_day
+
+		anchor = getdate(f"{busiest[0].y}-{busiest[0].mo:02d}-01")
+		self.lo, self.hi = get_first_day(anchor), get_last_day(anchor)
+
+	def _rows(self, **extra):
+		return execute(_filters(from_date=self.lo, to_date=self.hi, **extra))[1] or []
+
+	def test_including_the_project_never_loses_an_employee(self):
+		"""Splitting rows must add rows, not drop people."""
+		consolidated = self._rows()
+		split = self._rows(include_project=1)
+		if not consolidated:
+			self.skipTest("no rows for the busiest project month")
+
+		self.assertGreaterEqual(len(split), len(consolidated))
+		self.assertEqual({r["employee"] for r in split}, {r["employee"] for r in consolidated})
+
+	def test_a_split_row_carries_the_project_it_is_for(self):
+		split = self._rows(include_project=1)
+		if not split:
+			self.skipTest("no rows for the busiest project month")
+
+		self.assertTrue(any(r.get("project") for r in split))
+
+	def test_each_row_still_reconciles_with_the_project_split_on(self):
+		"""WI-001979's arithmetic has to survive the regrouping."""
+		split = self._rows(include_project=1)
+		if not split:
+			self.skipTest("no rows for the busiest project month")
+
+		total_days = len(get_date_range(_filters(from_date=self.lo, to_date=self.hi)))
+		for row in split[:200]:
+			self.assertEqual(sum(row.get(counter, 0) for counter in SUMMARY_COUNTERS), total_days)
+
+	def test_splitting_by_project_never_loses_a_day_worked(self):
+		"""Compared per employee across all their rows, not row to row.
+
+		An employee already gets a row per shift and per Day Off OT flag, so both runs
+		return several rows for the same person - the comparison has to be the totals.
+
+		Greater-or-equal rather than equal, and the gap is meaningful: the two runs differ
+		only where one date carries attendance under two projects. Consolidated, those
+		collapse onto one cell and count once; split, each project counts its own - which
+		is what a per-project row is for.
+		"""
+		consolidated = self._rows()
+		split = self._rows(include_project=1)
+		if not consolidated:
+			self.skipTest("no rows for the busiest project month")
+
+		def present_by_employee(rows):
+			totals = {}
+			for row in rows:
+				totals[row["employee"]] = totals.get(row["employee"], 0) + row.get("working_days", 0)
+			return totals
+
+		split_totals = present_by_employee(split)
+		for employee, present in present_by_employee(consolidated).items():
+			self.assertGreaterEqual(
+				split_totals.get(employee, 0),
+				present,
+				msg=f"{employee} lost present days when split by project",
+			)
+
+
+class TestAnEmployeeIsOneRow(FrappeTestCase):
+	"""Reported on WI-001980: with Include Project unchecked an employee still appeared on
+	several rows - one per shift, roster type and Day Off OT flag."""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		from frappe.utils import get_first_day, get_last_day
+
+		# Busiest month first, then the employee inside it - grouping the whole
+		# attendance table by employee would scan far more than the test needs.
+		month = frappe.db.sql(
+			"""
+			select year(attendance_date) y, month(attendance_date) mo
+			from `tabAttendance` where docstatus = 1
+			group by y, mo order by count(*) desc limit 1
+			""",
+			as_dict=True,
+		)
+		cls.employee = None
+		if not month:
+			return
+
+		anchor = getdate(f"{month[0].y}-{month[0].mo:02d}-01")
+		cls.lo, cls.hi = get_first_day(anchor), get_last_day(anchor)
+
+		mixed = frappe.db.sql(
+			"""
+			select employee from `tabAttendance`
+			where docstatus = 1 and attendance_date between %s and %s
+			group by employee
+			having count(distinct roster_type) > 1
+			order by count(*) desc limit 1
+			""",
+			(cls.lo, cls.hi),
+			as_dict=True,
+		)
+		if mixed:
+			cls.employee = mixed[0].employee
+
+	def setUp(self):
+		if not self.employee:
+			self.skipTest("no employee with more than one roster type in the busiest month")
+
+	def _rows(self, **extra):
+		data = execute(
+			_filters(from_date=self.lo, to_date=self.hi, employee=self.employee, **extra)
+		)[1] or []
+		return [r for r in data if r.get("employee") == self.employee]
+
+	def test_one_row_when_the_project_is_not_included(self):
+		"""Even though this employee worked both Basic and Over-Time in the period."""
+		self.assertEqual(len(self._rows()), 1)
+
+	def test_one_row_per_project_when_it_is(self):
+		rows = self._rows(include_project=1)
+
+		self.assertEqual(len(rows), len({r.get("project") for r in rows}))
+
+	def test_the_single_row_still_reconciles(self):
+		total_days = len(get_date_range(_filters(from_date=self.lo, to_date=self.hi)))
+		row = self._rows()[0]
+
+		self.assertEqual(sum(row.get(c, 0) for c in SUMMARY_COUNTERS), total_days)
+
+
+class TestADayWithTwoRecords(FrappeTestCase):
+	"""One row per employee means a day can carry more than one record - a basic shift
+	beside day-off overtime, or two shifts. The day is still one day."""
+
+	def test_presence_wins(self):
+		"""They worked that day, whatever else was recorded against it."""
+		self.assertTrue(more_significant("Present", "Absent"))
+		self.assertTrue(more_significant("Present", "Day Off"))
+		self.assertTrue(more_significant("Work From Home", "On Leave"))
+
+	def test_a_day_off_does_not_displace_the_work_done_on_it(self):
+		"""The day-off overtime case: the basic row says Day Off, the OT row says Present."""
+		self.assertFalse(more_significant("Day Off", "Present"))
+
+	def test_the_first_recognised_status_holds_against_an_unknown_one(self):
+		self.assertFalse(more_significant("On Hold", "Absent"))
+		self.assertTrue(more_significant("Absent", "On Hold"))
+
+	def test_anything_beats_an_empty_cell(self):
+		self.assertTrue(more_significant("On Hold", None))
+		self.assertTrue(more_significant("Absent", ""))
+
+	def test_a_day_with_two_records_is_counted_once(self):
+		dates = get_date_range(_filters())
+		group = ("",)
+
+		rows = get_attendance_status(
+			dates,
+			# Both a present and an absent record for the same day, as two rows would
+			# have carried separately before.
+			{group: {dates[0]: "Present"}},
+			{},
+			{},
+			{},
+			employee_attributes={group: {"roster_type": {"Basic", "Over-Time"}, "day_off_ot": {0, 1}}},
+		)
+
+		row = rows[0]
+		self.assertEqual(row["working_days"], 1)
+		self.assertEqual(sum(row[c] for c in SUMMARY_COUNTERS), len(dates))
+		# Neither is claimed for the row, because the row spans both.
+		self.assertEqual(row["roster_type"], "")
+		self.assertEqual(row["day_off_ot"], 0)

@@ -179,3 +179,26 @@ function get_rejection_remarks(frm, resolve, reject) {
 	);
 }
 
+
+// WI-001977: OCR runs in the background after a Visa Copy or Payment Receipt is
+// attached, so the extracted values arrive after the save has already returned. Without
+// this the operator would be looking at a stale form and would key them in by hand.
+frappe.ui.form.on("Visa Request", {
+	onload: function(frm) {
+		if (frm.__ocr_listener) return;
+		frm.__ocr_listener = true;
+
+		frappe.realtime.on("visa_request_ocr_complete", (data) => {
+			if (!data || data.name !== frm.doc.name) return;
+
+			frm.reload_doc().then(() => {
+				frappe.show_alert({
+					message: __("Read from the attachment: {0}. Please check the values.", [
+						(data.fields || []).map((f) => frappe.meta.get_label("Visa Request", f)).join(", ")
+					]),
+					indicator: "green"
+				}, 10);
+			});
+		});
+	}
+});
