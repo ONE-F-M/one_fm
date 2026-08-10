@@ -3,19 +3,24 @@ import frappe
 from one_fm.setup.assignment_rule import create_assignment_rule, get_assignment_rule_json_file
 from one_fm.utils import create_process_task
 
-# WI-001827: the three Work Permit assignment rules the work item links to, applied as
-# exported. Each is "Based on Process Task", so the assignee comes from the task's
-# employee rather than a user list on the rule.
+# WI-001827: the three Work Permit assignment rules the work item links to. Each is
+# "Based on Process Task", so the assignee comes from the task's employee rather than a
+# user list on the rule.
 #
-# Two things in the export do not work as written; both are left as given for the BA to
-# decide on, and both are pinned by tests so the state of them is visible:
-#  - the GRD Supervisor rule tests `doc.workflow_state`. assign_condition is evaluated
-#    with the document's own dict as locals, so `doc` is not a name that exists: the rule
-#    never fires and every save msgprints "Auto assignment failed: name 'doc' is not
-#    defined".
-#  - it names the payment state "Pending For Payment"; the state is "Pending  For Payment"
-#    with two spaces, so nothing matches it and the supervisor is never assigned while a
-#    transfer waits for payment.
+# Three corrections to the export, all agreed with the reporter, because it cannot work as
+# written:
+#  - it tested `doc.workflow_state`. assign_condition is evaluated with the document's own
+#    dict as locals, so `doc` is not a name that exists: the rule never fired and every
+#    save msgprinted "Auto assignment failed: name 'doc' is not defined".
+#  - it named the payment state "Pending For Payment"; the state is "Pending  For Payment"
+#    with two spaces, so nothing matched it and nobody was assigned while a transfer
+#    waited for payment.
+#  - it put the states a rule merely hands over in close_condition. apply() runs
+#    close_assignments for every rule and it closes *every* assignment on the document,
+#    whoever made it - so the operator's close list, which named the two states the
+#    supervisor holds, shut the supervisor's assignment the moment it was made. Those
+#    states are now unassign_condition, which only touches the rule's own assignment;
+#    close_condition keeps the terminal states only.
 PROCESS = "Residency"
 RULES = [
 	{
