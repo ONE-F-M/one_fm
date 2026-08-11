@@ -160,16 +160,14 @@
   },
   {
    "fieldname": "reference_type",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Reference Type",
-   "options": "DocType",
    "read_only": 1
   },
   {
    "fieldname": "reference_name",
-   "fieldtype": "Dynamic Link",
+   "fieldtype": "Data",
    "label": "Reference Name",
-   "options": "reference_type",
    "read_only": 1
   },
   {
