@@ -11,10 +11,14 @@ from one_fm.operations.doctype.route_plan.route_plan import (
 	_format_lock_date,
 	_format_lock_until,
 	_is_multiday_lock,
+	_iso_time_of_day,
 	_iso_to_date,
+	_peak_concurrent_headcount,
 	_row_date_range,
 	_row_direction,
+	_row_time_window,
 	_time_windows_overlap,
+	_trips_share_the_road,
 	_windows_overlap,
 )
 
@@ -434,16 +438,267 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 		plan.insert(ignore_permissions=True)
 		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
 
-	def test_standalone_rows_are_not_capacity_clustered(self):
-		# Rows without a trip_group are standalone drops (client-side guarded) and
-		# are not summed by the backend trip_group capacity check.
+	def test_standalone_rows_are_weighed_too(self):
+		# WI-002000: a drop with no trip_group used to be skipped by the backend
+		# entirely. It is a trip of its own now, so an overloaded one is caught
+		# server-side instead of resting on the canvas check alone.
 		plan = self._make_plan([
 			{"card_id": frappe.generate_hash("C", 8), "vehicle": self.VEHICLE,
 			 "direction": "OUTBOUND", "headcount": 20},
-			{"card_id": frappe.generate_hash("C", 8), "vehicle": self.VEHICLE,
-			 "direction": "OUTBOUND", "headcount": 20},
 		])
+		with self.assertRaises(frappe.ValidationError) as cm:
+			plan.insert(ignore_permissions=True)
+
+		self.assertIn("short 17 seat", str(cm.exception))  # 20 - 3
+
+
+def _trip(key, *, headcount, start, end, direction="OUTBOUND",
+		  live_from="2026-07-20", live_to="2026-07-20"):
+	"""An in-memory logical trip as _logical_trips() builds them.
+
+	``start``/``end`` are ``HH:MM`` clock times, turned into seconds past
+	midnight the way a row's timestamps are read.
+	"""
+	def secs(label):
+		hours, minutes = label.split(":")
+		return int(hours) * 3600 + int(minutes) * 60
+
+	start_secs, end_secs = secs(start), secs(end)
+	if end_secs <= start_secs:
+		end_secs += 24 * 60 * 60
+
+	return frappe._dict({
+		"key": ("VHL-TEST", key, direction),
+		"vehicle": "VHL-TEST",
+		"direction": direction,
+		"headcount": headcount,
+		"start": start_secs,
+		"end": end_secs,
+		"live_from": getdate(live_from) if live_from else None,
+		"live_to": getdate(live_to) if live_to else None,
+	})
+
+
+class TestTheDailyWindowOfARow(FrappeTestCase):
+	"""WI-002000: the clock time is what decides overlap; the date half of a
+	Route Plan Assignment timestamp is the multi-day lock lifespan (TR-8)."""
+
+	def test_the_clock_time_is_read_off_the_stamp(self):
+		self.assertEqual(_iso_time_of_day("2026-07-20T06:30:15.000Z"), 6 * 3600 + 30 * 60 + 15)
+
+	def test_a_missing_stamp_has_no_time(self):
+		self.assertIsNone(_iso_time_of_day(None))
+		self.assertIsNone(_iso_time_of_day(""))
+
+	def test_the_same_hour_on_two_different_days_reads_the_same(self):
+		"""Otherwise a run repeating daily under a multi-day lock would never be
+		seen to overlap anything."""
+		self.assertEqual(
+			_iso_time_of_day("2026-07-24T13:45:00.000Z"),
+			_iso_time_of_day("2026-07-30T13:45:00.000Z"),
+		)
+
+	def test_a_row_with_no_times_spans_the_whole_day(self):
+		"""It could be running at any hour, so it is never taken for a finished run."""
+		self.assertEqual(
+			_row_time_window(frappe._dict(start_time=None, end_time=None)), (0, 86400)
+		)
+
+	def test_a_run_over_midnight_carries_past_the_day_boundary(self):
+		start, end = _row_time_window(
+			frappe._dict(start_time="2026-07-20T22:00:00Z", end_time="2026-07-21T01:00:00Z")
+		)
+
+		self.assertEqual(start, 22 * 3600)
+		self.assertEqual(end, 25 * 3600)
+
+
+class TestWhichTripsShareTheRoad(FrappeTestCase):
+	"""WI-002000 AC1/AC3: only trips running at the same time carry each other's
+	passengers."""
+
+	def test_a_finished_run_does_not_meet_the_next_one(self):
+		"""AC1: Trip 401 ends 05:10, Trip 402 starts 07:00."""
+		self.assertFalse(_trips_share_the_road(
+			_trip("T401", headcount=25, start="04:00", end="05:10"),
+			_trip("T402", headcount=10, start="07:00", end="08:30"),
+		))
+
+	def test_two_hours_apart_is_still_apart(self):
+		"""AC3: S101 ends 06:00, S102 starts 08:00."""
+		self.assertFalse(_trips_share_the_road(
+			_trip("S101", headcount=25, start="05:00", end="06:00"),
+			_trip("S102", headcount=25, start="08:00", end="10:00"),
+		))
+
+	def test_a_bus_can_turn_straight_around(self):
+		"""Touching windows are not an overlap, or a 10:00 departure could never
+		follow a run that lands at 10:00."""
+		self.assertFalse(_trips_share_the_road(
+			_trip("A", headcount=25, start="08:00", end="10:00"),
+			_trip("B", headcount=10, start="10:00", end="11:00"),
+		))
+
+	def test_overlapping_windows_do_share(self):
+		"""AC2: 08:00-10:00 against a card whose window reaches into it."""
+		self.assertTrue(_trips_share_the_road(
+			_trip("A", headcount=25, start="08:00", end="10:00"),
+			_trip("B", headcount=10, start="09:00", end="11:00"),
+		))
+
+	def test_a_run_past_midnight_meets_the_early_morning(self):
+		self.assertTrue(_trips_share_the_road(
+			_trip("NIGHT", headcount=20, start="22:00", end="01:00"),
+			_trip("DAWN", headcount=10, start="00:30", end="02:00"),
+		))
+
+	def test_runs_live_in_different_months_never_meet(self):
+		"""Same hour, but the multi-day lifespans do not overlap."""
+		self.assertFalse(_trips_share_the_road(
+			_trip("JUNE", headcount=25, start="08:00", end="10:00",
+				  live_from="2026-06-01", live_to="2026-06-30"),
+			_trip("JULY", headcount=25, start="08:00", end="10:00",
+				  live_from="2026-07-01", live_to="2026-07-31"),
+		))
+
+	def test_the_two_directions_of_one_journey_never_meet(self):
+		"""The same bus going out and coming back is not two buses (MA4-13). Held
+		even with no times recorded, where both default to the whole day."""
+		out = _trip("TRIP-BOTH", headcount=3, start="00:00", end="00:00")
+		ret = _trip("TRIP-BOTH", headcount=3, start="00:00", end="00:00", direction="RETURN")
+		out.start, out.end = 0, 86400
+		ret.start, ret.end = 0, 86400
+
+		self.assertFalse(_trips_share_the_road(out, ret))
+
+	def test_two_different_trips_do_meet_across_directions(self):
+		"""A return leg of one journey can still collide with another journey's
+		outbound run — that is a real double-booking, not the same bus."""
+		self.assertTrue(_trips_share_the_road(
+			_trip("JOURNEY-A", headcount=10, start="08:00", end="10:00", direction="RETURN"),
+			_trip("JOURNEY-B", headcount=10, start="09:00", end="11:00"),
+		))
+
+
+class TestPeakConcurrentHeadcount(FrappeTestCase):
+	def test_trips_apart_in_time_are_not_pooled(self):
+		"""AC1/AC3: the lane total is irrelevant; only what is aboard at once."""
+		peak = _peak_concurrent_headcount([
+			_trip("T401", headcount=25, start="04:00", end="05:10"),
+			_trip("T402", headcount=25, start="07:00", end="08:30"),
+		])
+
+		self.assertEqual(peak, 25)
+
+	def test_overlapping_trips_are_summed(self):
+		"""AC2: 25 aboard from 08:00-10:00 plus 10 more from 09:00."""
+		peak = _peak_concurrent_headcount([
+			_trip("A", headcount=25, start="08:00", end="10:00"),
+			_trip("B", headcount=10, start="09:00", end="11:00"),
+		])
+
+		self.assertEqual(peak, 35)
+
+	def test_an_empty_lane_peaks_at_nothing(self):
+		self.assertEqual(_peak_concurrent_headcount([]), 0)
+
+
+class TestRoutePlanTimeWindowCapacitySave(FrappeTestCase):
+	"""WI-002000 end to end, on a real 4-seat vehicle (3 legal passenger seats)."""
+
+	VEHICLE = "VHL-L-0022"
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		if not frappe.db.exists("Vehicle", cls.VEHICLE):
+			raise cls.skipTest(cls, f"Fixture vehicle {cls.VEHICLE} missing on this site")
+
+	def _make_plan(self, rows):
+		doc = frappe.new_doc("Route Plan")
+		doc.title = frappe.generate_hash("RP-TW", 8)
+		doc.status = "Draft"
+		doc.effective_from = today()
+		for row in rows:
+			doc.append("assignments", row)
+		doc.flags.ignore_mandatory = True
+		doc.flags.ignore_links = True
+		return doc
+
+	def _row(self, *, trip=None, headcount, start, end, direction="OUTBOUND", day=DAY):
+		return {
+			"card_id": frappe.generate_hash("CARD", 8),
+			"vehicle": self.VEHICLE,
+			"direction": direction,
+			"trip_group": trip,
+			"trip_name": trip,
+			"headcount": headcount,
+			"start_time": f"{day}T{start}:00.000Z",
+			"end_time": f"{day}T{end}:00.000Z",
+		}
+
+	def test_a_second_trip_later_in_the_day_is_allowed(self):
+		"""AC1, the whole point: the 05:10 run is over by the time the 07:00 one
+		leaves, and both fill the bus. The old lane-wide sum rejected this."""
+		plan = self._make_plan([
+			self._row(trip="TRIP-401", headcount=3, start="04:00", end="05:10"),
+			self._row(trip="TRIP-402", headcount=3, start="07:00", end="08:30"),
+		])
+
 		plan.insert(ignore_permissions=True)
+
+		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
+
+	def test_concurrent_trips_are_summed_and_blocked(self):
+		"""AC2: 2 aboard 08:00-10:00 plus 2 more from 09:00 is 4 on a 3-seater."""
+		plan = self._make_plan([
+			self._row(trip="TRIP-A", headcount=2, start="08:00", end="10:00"),
+			self._row(trip="TRIP-B", headcount=2, start="09:00", end="11:00"),
+		])
+
+		with self.assertRaises(frappe.ValidationError) as cm:
+			plan.insert(ignore_permissions=True)
+		message = str(cm.exception)
+
+		self.assertIn("Total overlapping passengers (4)", message)
+		self.assertIn("vehicle limit (3)", message)
+		self.assertIn(self.VEHICLE, message)
+
+	def test_separate_trips_are_each_still_held_to_the_seats(self):
+		"""AC3's tail: separate trips are not merged, but neither is let off."""
+		plan = self._make_plan([
+			self._row(trip="S101", headcount=1, start="05:00", end="06:00"),
+			self._row(trip="S102", headcount=9, start="08:00", end="10:00"),
+		])
+
+		with self.assertRaises(frappe.ValidationError) as cm:
+			plan.insert(ignore_permissions=True)
+
+		self.assertIn("short 6 seat", str(cm.exception))  # 9 - 3, the S102 run alone
+
+	def test_the_stops_of_one_trip_still_sum(self):
+		"""MA4-13 must survive: two camps on one run ride together even though
+		their stops are sequential rather than overlapping."""
+		plan = self._make_plan([
+			self._row(trip="TRIP-MERGED", headcount=2, start="04:45", end="06:00"),
+			self._row(trip="TRIP-MERGED", headcount=2, start="06:50", end="07:20"),
+		])
+
+		with self.assertRaises(frappe.ValidationError) as cm:
+			plan.insert(ignore_permissions=True)
+
+		self.assertIn("short 1 seat", str(cm.exception))  # 4 - 3
+
+	def test_a_lane_full_of_short_runs_is_fine(self):
+		"""Four back-to-back full loads across the day: 12 passengers on a bus
+		that seats 3, and every one of them legitimate."""
+		plan = self._make_plan([
+			self._row(trip=f"TRIP-{hour}", headcount=3, start=f"{hour:02d}:00", end=f"{hour:02d}:45")
+			for hour in (5, 8, 13, 20)
+		])
+
+		plan.insert(ignore_permissions=True)
+
 		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
 
 
