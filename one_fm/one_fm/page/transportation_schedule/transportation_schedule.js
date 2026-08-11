@@ -1145,13 +1145,20 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             // ── Time-aware peak load helper ─────────────────────────────────
+            // The trips a vehicle actually runs today. Stops chained onto one trip
+            // merge — they ride together — but the outbound and return legs stay
+            // apart (WI-002000): they share a tripId, so keying on it alone fused a
+            // 05:00 drop and its 17:00 pickup into one twelve-hour block carrying
+            // double the passengers, which every later drop then "overlapped".
             _getLogicalTrips(vehicleId) {
                 const vi = this.swimItems.filter(i => i.vehicleId === vehicleId && this._liveToday(i));
                 const tripsMap = {};
                 let soloIdx = 0;
-                
+
                 vi.forEach(item => {
-                    const key = item.tripId || `_solo_${soloIdx++}`;
+                    const key = item.tripId
+                        ? `${item.tripId}::${item.direction}`
+                        : `_solo_${soloIdx++}`;
                     if (!tripsMap[key]) {
                         tripsMap[key] = {
                             start: new Date(item.start).getTime(),
@@ -1167,26 +1174,26 @@ function mountRoutePlannerApp(wrapper, data) {
                 return Object.values(tripsMap);
             },
 
-            // Returns the maximum simultaneous headcount on a vehicle during
-            // the new card's outbound or return windows.
-            peakLoadDuringCardWindows(card, vehicleId) {
+            // The headcount already aboard the vehicle during the window this card
+            // would occupy. Only the leg being placed counts (WI-002000): taking
+            // the worse of the outbound and return windows meant an early drop was
+            // judged against the evening traffic it never shares the road with.
+            peakLoadDuringCardWindows(card, vehicleId, direction) {
                 const DEF = 3600000;
-                const outEnd = new Date(card.outbound_window_end).getTime();
-                const outStart = outEnd - DEF;
-                const retStart = new Date(card.return_window_start).getTime();
-                const retEnd = retStart + DEF;
+                const leg = direction || card.direction;
 
-                const logicalTrips = this._getLogicalTrips(vehicleId);
+                let wStart, wEnd;
+                if (leg === 'RETURN') {
+                    wStart = new Date(card.return_window_start).getTime();
+                    wEnd = wStart + DEF;
+                } else {
+                    wEnd = new Date(card.outbound_window_end).getTime();
+                    wStart = wEnd - DEF;
+                }
 
-                const loadDuring = (wS, wE) => {
-                    return logicalTrips
-                        .filter(t => {
-                            return t.start < wE && t.end > wS;  // overlaps
-                        })
-                        .reduce((sum, t) => sum + t.headcount, 0);
-                };
-
-                return Math.max(loadDuring(outStart, outEnd), loadDuring(retStart, retEnd));
+                return this._getLogicalTrips(vehicleId)
+                    .filter(t => t.start < wEnd && t.end > wStart)  // overlaps
+                    .reduce((sum, t) => sum + t.headcount, 0);
             },
 
             // ─ Place card + direction picker ─────────────────────────────
@@ -1555,7 +1562,8 @@ function mountRoutePlannerApp(wrapper, data) {
                                 item.vehicleId = targetVehicleId;
                                 const peakLoad = this.peakLoadDuringCardWindows(
                                     this.planData.shipment_cards.find(c => c.id === item.cardId) || { outbound_window_start: item.start, outbound_window_end: item.end, return_window_start: item.start, return_window_end: item.end },
-                                    targetVehicleId
+                                    targetVehicleId,
+                                    item.direction
                                 );
                                 if (peakLoad > targetVehicle.seats) {
                                     // Revert — capacity exceeded
