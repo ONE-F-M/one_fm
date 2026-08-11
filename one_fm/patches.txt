@@ -574,3 +574,5 @@ one_fm.patches.v15_0.rename_cleaning_head_supervisor_to_janitorial #2026-08-05
 one_fm.patches.v15_0.add_draft_state_to_withdrawal_and_date_adjustment #2026-08-05
 one_fm.patches.v15_0.grant_hr_and_recruiter_full_resignation_access #2026-08-05
 one_fm.patches.v15_0.update_work_permit_previous_company_workflow #2026-08-07 WI-001974
+one_fm.patches.v15_0.update_work_permit_pam_rejection #2026-08-07 WI-001827
+one_fm.patches.v15_0.add_work_permit_assignment_rules #2026-08-10 WI-001827
