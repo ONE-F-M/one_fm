@@ -307,7 +307,8 @@ doc_events = {
 		"after_insert": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.after_insert_vehicle",
 		"validate": [
 			"one_fm.overrides.vehicle.validate_vehicle_branding",
-			"one_fm.overrides.vehicle.validate_custodian_history"
+			"one_fm.overrides.vehicle.validate_custodian_history",
+			"one_fm.overrides.vehicle.set_max_passenger_capacity"
 		]
 	},
 	"Item Group": {
