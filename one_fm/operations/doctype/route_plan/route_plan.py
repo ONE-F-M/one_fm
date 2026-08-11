@@ -241,52 +241,41 @@ class RoutePlan(Document):
 		Trips whose windows do not overlap never see each other's passengers, which
 		is what stops a finished earlier run from blocking the next assignment.
 
-		The limit is ``seats - 1`` throughout: one seat is the driver's, matching
-		the route optimizer's load limit and the rule already in force.
+		The limit is the vehicle's own ``Max Passenger Capacity``: whether its seat
+		count includes the driver is a per-vehicle answer, so the fleet record
+		decides, not this code.
 		"""
 		trips = self._logical_trips()
 		if not trips:
 			return
 
-		# Batch-fetch seat counts for every vehicle referenced on the plan.
-		seats_map = {
-			v.name: cint(v.seats)
-			for v in frappe.get_all(
-				"Vehicle",
-				filters={"name": ["in", list({trip.vehicle for trip in trips})]},
-				fields=["name", "seats"],
-			)
-		}
+		limits = _passenger_limits({trip.vehicle for trip in trips})
 
 		by_vehicle = {}
 		for trip in trips:
 			by_vehicle.setdefault(trip.vehicle, []).append(trip)
 
 		for vehicle, vehicle_trips in by_vehicle.items():
-			seats = seats_map.get(vehicle)
-			if not seats:
+			limit = limits.get(vehicle)
+			if not limit:
 				# Vehicle master has no seat count configured — nothing to enforce.
 				continue
-			# Reserve one seat for the driver: the legal passenger capacity.
-			passenger_capacity = max(seats - 1, 0)
 
 			# One trip over the limit on its own is reported as the overloaded run
 			# it is, naming the seat shortfall (MA4-13). Ordered so the reported
 			# trip is stable across saves.
 			for trip in sorted(vehicle_trips, key=lambda t: t.key):
-				if trip.headcount > passenger_capacity:
-					self._throw_capacity_exceeded(
-						vehicle, trip.direction, trip.headcount, passenger_capacity, seats
-					)
+				if trip.headcount > limit:
+					self._throw_capacity_exceeded(vehicle, trip.direction, trip.headcount, limit)
 
 			concurrent = _peak_concurrent_headcount(vehicle_trips)
-			if concurrent > passenger_capacity:
+			if concurrent > limit:
 				frappe.throw(
 					_(
 						"Capacity Exceeded: Total overlapping passengers ({0}) exceeds "
-						"vehicle limit ({1}) on {2}."
-					).format(concurrent, passenger_capacity, vehicle),
-					title=_("Vehicle Capacity Exceeded"),
+						"vehicle limit ({1})."
+					).format(concurrent, limit),
+					title=_("{0}: Vehicle Capacity Exceeded").format(vehicle),
 				)
 
 	def _logical_trips(self) -> list:
@@ -335,16 +324,15 @@ class RoutePlan(Document):
 
 		return list(trips.values())
 
-	def _throw_capacity_exceeded(self, vehicle, direction, total_passengers, passenger_capacity, seats):
+	def _throw_capacity_exceeded(self, vehicle, direction, total_passengers, limit):
 		"""Raise the overloading block with the exact seat shortfall (MA4-13 AC4)."""
-		short_by = total_passengers - passenger_capacity
 		dir_label = _("return") if direction == "RETURN" else _("outbound")
 		frappe.throw(
 			_(
 				"Capacity Exceeded: the {0} run on {1} carries {2} passengers but the "
-				"vehicle seats only {3} ({4} total minus the driver). You are short {5} "
-				"seat(s) — assign a larger bus or arrange a taxi."
-			).format(dir_label, vehicle, total_passengers, passenger_capacity, seats, short_by),
+				"vehicle takes {3}. You are short {4} seat(s) — assign a larger bus or "
+				"arrange a taxi."
+			).format(dir_label, vehicle, total_passengers, limit, total_passengers - limit),
 			title=_("Vehicle Capacity Exceeded"),
 		)
 
@@ -420,6 +408,29 @@ def _time_windows_overlap(a_start, a_end, b_start, b_end) -> bool:
 
 
 _DAY_SECONDS = 24 * 60 * 60
+
+
+def _passenger_limits(vehicle_names) -> dict:
+	"""``{vehicle: passengers it may carry}`` for the vehicles on a plan.
+
+	The stored ``custom_max_passenger_capacity`` is what the Vehicle form shows,
+	so it is what the dispatcher is held to. It is derived on every Vehicle save
+	and backfilled by patch, but a record that has somehow never been through
+	either would read 0 and wave everything through — so the same formula is
+	applied on the spot instead (WI-002000).
+	"""
+	from one_fm.overrides.vehicle import passenger_capacity
+
+	limits = {}
+	for vehicle in frappe.get_all(
+		"Vehicle",
+		filters={"name": ["in", list(vehicle_names)]},
+		fields=["name", "seats", "custom_includes_driver_seat", "custom_max_passenger_capacity"],
+	):
+		limits[vehicle.name] = cint(vehicle.custom_max_passenger_capacity) or passenger_capacity(
+			vehicle.seats, vehicle.custom_includes_driver_seat
+		)
+	return limits
 
 
 def _iso_time_of_day(value):

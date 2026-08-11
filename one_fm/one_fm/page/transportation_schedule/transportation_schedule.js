@@ -1174,21 +1174,24 @@ function mountRoutePlannerApp(wrapper, data) {
                 return Object.values(tripsMap);
             },
 
-            // Seats a vehicle can sell to passengers: one is the driver's. The
-            // backend has reserved it since MA4-13 and the route optimizer's load
-            // limit does too, but the canvas was comparing against the full seat
-            // count — so a last-seat run passed the drop and was then refused on
-            // save. Every seat check here goes through this (WI-002000).
+            // How many passengers a vehicle may carry — its Max Passenger Capacity,
+            // which the Vehicle record derives from its seat count and whether that
+            // count includes the driver (WI-002000). The canvas used to compare
+            // against the raw seat count while the save reserved a seat, so a
+            // last-seat run passed the drop and was then refused. Every seat check
+            // here goes through this.
             passengerSeats(vehicle) {
-                return Math.max((vehicle && vehicle.seats ? vehicle.seats : 0) - 1, 0);
+                if (!vehicle) return 0;
+                if (vehicle.max_passenger_capacity != null) return vehicle.max_passenger_capacity;
+                return Math.max((vehicle.seats || 0) - (vehicle.custom_includes_driver_seat ? 1 : 0), 0);
             },
 
             // One wording for every seat refusal, naming the limit the check
             // actually applied rather than the size of the bus.
             capacityMessage(headcount, vehicle) {
                 return __(
-                    'Capacity Exceeded: cannot assign {0} employees to {1} — it takes {2} passengers ({3} seats, less the driver\'s).',
-                    [headcount, this.vehicleString(vehicle), this.passengerSeats(vehicle), vehicle.seats]
+                    'Capacity Exceeded: cannot assign {0} employees to {1} — it takes {2} passengers.',
+                    [headcount, this.vehicleString(vehicle), this.passengerSeats(vehicle)]
                 );
             },
 

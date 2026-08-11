@@ -210,5 +210,26 @@ def get_vehicle_custom_fields():
                 "options": "Vehicle Custodian History",
                 "read_only": 1,
             },
+            # WI-002000. Whether "seats" counts the driver is per vehicle, so the
+            # passenger limit is derived rather than assumed: capacity = seats - 1
+            # when the driver's seat is included, seats when it is not. Both are
+            # applied exactly as exported from the BA site, including
+            # insert_after "amended_from", which puts the read-only capacity at the
+            # foot of the form.
+            {
+                "fieldname": "custom_includes_driver_seat",
+                "fieldtype": "Check",
+                "label": "Includes Driver Seat",
+                "insert_after": "seats",
+                "allow_on_submit": 1,
+            },
+            {
+                "fieldname": "custom_max_passenger_capacity",
+                "fieldtype": "Int",
+                "label": "Max Passenger Capacity",
+                "insert_after": "amended_from",
+                "read_only": 1,
+                "allow_on_submit": 1,
+            },
         ]
     }
