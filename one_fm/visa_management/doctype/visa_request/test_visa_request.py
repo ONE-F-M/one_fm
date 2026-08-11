@@ -156,13 +156,12 @@ class TestApplicantEligibility(FrappeTestCase):
 	"""
 
 	def _draft(self, **overrides):
-		issued = "2020-01-01"
 		visa_request = frappe.new_doc("Visa Request")
 		visa_request.update(
 			{
 				"workflow_state": "Draft",
-				"passport_issued_on": issued,
-				"passport_expires_on": add_years(issued, 10),
+				"passport_issued_on": add_years(nowdate(), -5),
+				"passport_expires_on": add_years(nowdate(), 5),
 				"date_of_birth": add_years(nowdate(), -30),
 				**overrides,
 			}
@@ -173,22 +172,29 @@ class TestApplicantEligibility(FrappeTestCase):
 		self._draft().validate_applicant_eligibility()
 
 	def test_a_passport_short_of_the_minimum_validity_is_refused(self):
-		issued = "2020-01-01"
+		"""Counted from today, not from the issue date."""
 		visa_request = self._draft(
-			passport_issued_on=issued,
-			passport_expires_on=add_days(add_months(issued, MINIMUM_PASSPORT_VALIDITY_MONTHS), -1),
+			passport_expires_on=add_days(add_months(nowdate(), MINIMUM_PASSPORT_VALIDITY_MONTHS), -1)
 		)
 
 		with self.assertRaises(frappe.ValidationError) as caught:
 			visa_request.validate_applicant_eligibility()
-		self.assertIn("passport validity must be at least 18 months", str(caught.exception))
+		self.assertIn("valid for at least 18 more months", str(caught.exception))
+
+	def test_a_long_lived_passport_near_its_expiry_is_refused(self):
+		"""Issued well over 18 months ago; only the remaining validity counts."""
+		visa_request = self._draft(
+			passport_issued_on=add_years(nowdate(), -9),
+			passport_expires_on=add_months(nowdate(), 1),
+		)
+
+		with self.assertRaises(frappe.ValidationError):
+			visa_request.validate_applicant_eligibility()
 
 	def test_a_passport_exactly_at_the_minimum_validity_passes(self):
 		""""At least" 18 months, so the boundary is allowed."""
-		issued = "2020-01-01"
 		self._draft(
-			passport_issued_on=issued,
-			passport_expires_on=add_months(issued, MINIMUM_PASSPORT_VALIDITY_MONTHS),
+			passport_expires_on=add_months(nowdate(), MINIMUM_PASSPORT_VALIDITY_MONTHS)
 		).validate_applicant_eligibility()
 
 	def test_an_applicant_below_the_minimum_age_is_refused(self):
@@ -207,11 +213,9 @@ class TestApplicantEligibility(FrappeTestCase):
 
 	def test_a_record_past_draft_is_left_alone(self):
 		"""A passport ages while the application is in progress; that must not strand it."""
-		issued = "2020-01-01"
 		self._draft(
 			workflow_state="Pending By PAM",
-			passport_issued_on=issued,
-			passport_expires_on=add_months(issued, 1),
+			passport_expires_on=add_months(nowdate(), 1),
 			date_of_birth=nowdate(),
 		).validate_applicant_eligibility()
 

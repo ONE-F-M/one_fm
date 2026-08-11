@@ -655,7 +655,10 @@ scheduler_events = {
 			'one_fm.grd.doctype.paci.paci.system_remind_renewal_operator_to_apply',#paci
 			'one_fm.grd.doctype.paci.paci.system_remind_transfer_operator_to_apply',
 			'one_fm.grd.doctype.paci.paci.notify_operator_to_take_hawiyati_renewal',#paci hawiyati
-			'one_fm.grd.doctype.paci.paci.notify_operator_to_take_hawiyati_transfer'
+			'one_fm.grd.doctype.paci.paci.notify_operator_to_take_hawiyati_transfer',
+			# WI-001829: three working days of silence from the previous employer is a
+			# refusal. On this schedule because it only counts working days anyway.
+			'one_fm.grd.doctype.work_permit.work_permit.auto_reject_unanswered_previous_company'
 		],
 		"15 3 * * *": [
 			'one_fm.tasks.one_fm.daily.generate_contracts_invoice', #Generate contracts sales invoice

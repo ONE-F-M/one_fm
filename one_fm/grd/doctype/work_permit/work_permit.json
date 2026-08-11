@@ -115,6 +115,10 @@
   "work_permit_approved",
   "reminded_grd_operator_again",
   "reminded_grd_operator_approve_previous_company_again",
+  "section_break_aueh",
+  "pam_rejection_reason",
+  "column_break_heim",
+  "previous_company_rejection_reason",
   "reason_for_rejection",
   "section_break_60",
   "notify_finance_user",
@@ -123,7 +127,9 @@
   "column_break_65",
   "payment_transferred_from_finance_dept",
   "notify_to_upload",
-  "pam_website"
+  "pam_website",
+  "section_break_yqjj",
+  "rejected_work_permit"
  ],
  "fields": [
   {
@@ -611,14 +617,42 @@
   },
   {
    "depends_on": "eval:doc.workflow_state == \"Rejected\"",
+   "fieldname": "section_break_aueh",
+   "fieldtype": "Section Break",
+   "label": "Rejection Reason"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.reason_of_rejection == \"Rejected by PAM\"",
+   "fieldname": "pam_rejection_reason",
+   "fieldtype": "Select",
+   "label": "PAM Rejection Reason",
+   "mandatory_depends_on": "eval:doc.reason_of_rejection == \"Rejected by PAM\"",
+   "options": "\nPAM Contract\nGender"
+  },
+  {
+   "fieldname": "column_break_heim",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.reason_of_rejection == \"Rejected by previous company\"",
+   "fieldname": "previous_company_rejection_reason",
+   "fieldtype": "Select",
+   "label": "Previous Company Rejection Reason",
+   "mandatory_depends_on": "eval:doc.reason_of_rejection == \"Rejected by previous company\"",
+   "options": "\nAuto rejected after 3 days\nPrevious Sponsor Rejected"
+  },
+  {
    "fieldname": "reason_of_rejection",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Reason Of Rejection",
    "options": "\nRejected by PAM\nRejected by previous company"
   },
   {
-   "depends_on": "eval:doc.workflow_state == \"Rejected\" ",
    "fieldname": "details_of_rejection",
+   "hidden": 1,
    "fieldtype": "Small Text",
    "label": "Details of Rejection"
   },
@@ -667,6 +701,20 @@
    "fieldname": "reference_number_set_on",
    "fieldtype": "Datetime",
    "label": "Reference Number Set On",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.rejected_work_permit",
+   "fieldname": "section_break_yqjj",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "The rejected permit this application was raised to replace",
+   "fieldname": "rejected_work_permit",
+   "fieldtype": "Link",
+   "label": "Rejected Work Permit",
+   "no_copy": 1,
+   "options": "Work Permit",
    "read_only": 1
   },
   {
@@ -921,7 +969,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-05 12:00:00.000000",
+ "modified": "2026-08-07 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
