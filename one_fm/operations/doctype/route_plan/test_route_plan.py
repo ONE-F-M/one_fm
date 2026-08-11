@@ -702,6 +702,48 @@ class TestRoutePlanTimeWindowCapacitySave(FrappeTestCase):
 		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
 
 
+class TestTheCanvasAgreesWithTheBackend(FrappeTestCase):
+	"""The driver's seat is reserved on both sides (WI-002000).
+
+	The canvas compared against the full seat count while the save reserved a
+	seat, so a last-seat run passed the drop and was refused on save. Pinned on
+	the source because a page script has no server-side entry point to exercise.
+	"""
+
+	def canvas(self):
+		return frappe.read_file(
+			frappe.get_app_path(
+				"one_fm", "one_fm", "page", "transportation_schedule",
+				"transportation_schedule.js",
+			)
+		)
+
+	def test_every_seat_comparison_goes_through_the_passenger_limit(self):
+		import re
+
+		source = self.canvas()
+		# A comparison straight against .seats is the bug this closes; the helper
+		# and the display strings are what may still mention it.
+		offenders = [
+			line.strip()
+			for line in source.splitlines()
+			if re.search(r"[<>]=?\s*[\w.]*\.seats\b", line) or re.search(r"\.seats\s*[<>]=?", line)
+		]
+
+		self.assertEqual(offenders, [])
+
+	def test_the_helper_reserves_exactly_one_seat(self):
+		self.assertIn("Math.max((vehicle && vehicle.seats ? vehicle.seats : 0) - 1, 0)", self.canvas())
+
+	def test_the_refusal_names_the_limit_it_applied(self):
+		"""Telling a dispatcher "30-seater" while blocking at 29 is what made this
+		look like a bug rather than a reserved seat."""
+		source = self.canvas()
+
+		self.assertIn("capacityMessage(", source)
+		self.assertIn("less the driver", source)
+
+
 class TestRoutePlanSingleVehicleSave(FrappeTestCase):
 	"""MA4-13 AC2: a journey leg (trip_group + direction) must run on one vehicle."""
 
