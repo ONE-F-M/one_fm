@@ -783,3 +783,77 @@ def get_company_holidays(from_date, to_date):
 			pluck="holiday_date",
 		)
 	)
+
+
+# ── Reapplying after a rejection (WI-001828) ──────────────────────────────────
+#
+# Cleared on the new attempt: the references PAM issued for the application that was
+# refused, and the outcome of that refusal. Everything else - the candidate's details,
+# their salary, the contract, the Preparation that started it - is carried over, which is
+# the point of the button.
+REJECTION_OUTCOME_FIELDS = (
+	"reference_number_on_pam_registration",
+	"reference_number_registration_set_on",
+	"reference_number_on_pam",
+	"reference_number_set_on",
+	"reason_of_rejection",
+	"details_of_rejection",
+	"pam_rejection_reason",
+	"previous_company_rejection_reason",
+	"previous_company_status",
+	"inform_previous_company_on",
+	"attach_invoice",
+	"attach_payment_invoice",
+	"work_permit_approved",
+	"new_work_permit_expiry_date",
+)
+
+REJECTED_STATE = "Rejected"
+
+
+def can_reapply(doc) -> bool:
+	"""Is this a permit a fresh attempt can be raised from (WI-001828)?
+
+	The gate the button and the server share, so the button cannot offer something the
+	method then refuses.
+	"""
+	return doc.get("workflow_state") == REJECTED_STATE
+
+
+@frappe.whitelist(methods=["POST"])
+def reapply_work_permit(name: str):
+	"""Raise a fresh Work Permit from one that was rejected (WI-001828).
+
+	A copy rather than a new document with a few fields set: the candidate's personal,
+	salary and contract details are exactly what the AC asks to keep, and re-entering
+	them is what the button exists to avoid.
+
+	The rejected permit is left as it is - it is the audit history, and
+	rejected_work_permit on the new one is the link back to it.
+	"""
+	source = frappe.get_doc("Work Permit", name)
+	source.check_permission("read")
+
+	if not frappe.has_permission("Work Permit", "create"):
+		frappe.throw(
+			_("You do not have permission to create a Work Permit."), frappe.PermissionError
+		)
+
+	if not can_reapply(source):
+		frappe.throw(
+			_("Only a permit in <b>{0}</b> can be reapplied. {1} is in {2}.").format(
+				REJECTED_STATE, source.name, source.workflow_state
+			),
+			title=_("Cannot Reapply"),
+		)
+
+	reapplication = frappe.copy_doc(source)
+	for fieldname in REJECTION_OUTCOME_FIELDS:
+		reapplication.set(fieldname, None)
+
+	reapplication.workflow_state = "Draft"
+	reapplication.date_of_application = today()
+	reapplication.rejected_work_permit = source.name
+	reapplication.insert()
+
+	return {"name": reapplication.name}

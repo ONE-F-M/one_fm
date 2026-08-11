@@ -127,7 +127,9 @@
   "column_break_65",
   "payment_transferred_from_finance_dept",
   "notify_to_upload",
-  "pam_website"
+  "pam_website",
+  "section_break_yqjj",
+  "rejected_work_permit"
  ],
  "fields": [
   {
@@ -702,6 +704,20 @@
    "read_only": 1
   },
   {
+   "depends_on": "eval:doc.rejected_work_permit",
+   "fieldname": "section_break_yqjj",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "The rejected permit this application was raised to replace",
+   "fieldname": "rejected_work_permit",
+   "fieldtype": "Link",
+   "label": "Rejected Work Permit",
+   "no_copy": 1,
+   "options": "Work Permit",
+   "read_only": 1
+  },
+  {
    "default": "https://e-portal.manpower.gov.kw/PamAshalPortalApp/login.jsp",
    "fieldname": "pam_website",
    "fieldtype": "Attach",
@@ -953,7 +969,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-07 10:00:00.000000",
+ "modified": "2026-08-07 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",

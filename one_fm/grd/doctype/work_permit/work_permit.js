@@ -40,7 +40,6 @@ frappe.ui.form.on('Work Permit', {
     },
     refresh(frm) {
         set_button_for_medical_insurance_transfer(frm);
-        set_restart_application(frm);
         set_grd_supervisor(frm);
         set_mgrp(frm);
         
@@ -95,27 +94,10 @@ var set_button_for_medical_insurance_transfer = function(frm){
 ).addClass('btn-primary');
 }
 };
-var set_restart_application = function(frm){
-    if(frm.doc.docstatus == 1 && frm.doc.workflow_state == "Rejected"){
-        frm.add_custom_button(__('Restart Application'), function(){
-            frappe.call({
-                method: "one_fm.hiring.utils.create_new_work_permit", 
-                args: {
-                    'work_permit': frm.doc.name
-                },
-                callback: function(r){
-                    if(r.message){
-                        var doclist = frappe.model.sync(r.message);
-                        console.log(doclist)
-                        frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
-                    }
-                },
-                freeze: true,
-                freeze_message: __("Creating New Work Permit ...!")
-                  });
-            }).addClass('btn-primary');	
-    }
-};
+// WI-001828 retires "Restart Application": it sat on the same Rejected state as
+// Reapply and did the same thing, only without carrying anything over or linking back
+// to the permit it came from. one_fm.hiring.utils.create_new_work_permit has no caller
+// left.
 var set_mgrp = function(frm){
 if (frm.doc.docstatus == 1 && frm.doc.work_permit_type == "Cancellation" && frm.doc.nationality == "Kuwaiti") {
     
@@ -390,3 +372,31 @@ function ask_for_rejection_reason(frm, spec) {
 		frappe.dom.unfreeze();
 	});
 }
+
+// WI-001828: a rejected permit gets a Reapply button in the header, which raises a fresh
+// application carrying the candidate's details rather than making the GRO key them in
+// again. The rejected one stays as the audit history.
+frappe.ui.form.on('Work Permit', {
+	refresh: function(frm) {
+		if (frm.is_new() || frm.doc.workflow_state !== 'Rejected') return;
+
+		frm.add_custom_button(__('Reapply'), () => {
+			frappe.confirm(
+				__('Raise a new Work Permit from {0}? The rejected one is kept as history.', [frm.doc.name]),
+				() => {
+					frappe.call({
+						method: 'one_fm.grd.doctype.work_permit.work_permit.reapply_work_permit',
+						args: { name: frm.doc.name },
+						freeze: true,
+						freeze_message: __('Reapplying...'),
+						callback: (r) => {
+							if (!r.message) return;
+							frappe.show_alert({ message: __('Created {0}', [r.message.name]), indicator: 'green' });
+							frappe.set_route('Form', 'Work Permit', r.message.name);
+						}
+					});
+				}
+			);
+		});
+	}
+});
