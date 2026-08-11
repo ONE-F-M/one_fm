@@ -208,9 +208,9 @@
   {
    "fieldname": "preparation",
    "fieldtype": "Link",
-   "hidden": 1,
    "label": "Preparation",
-   "options": "Preparation"
+   "options": "Preparation",
+   "read_only": 1
   },
   {
    "allow_on_submit": 1,
@@ -289,7 +289,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-11-08 07:38:16.062987",
+ "modified": "2026-08-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Insurance",

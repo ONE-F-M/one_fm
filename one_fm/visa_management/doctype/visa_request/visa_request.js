@@ -1,7 +1,20 @@
 // Copyright (c) 2026, ONE FM and contributors
 // For license information, please see license.txt
 
+// WI-001976: the state and the two PAM reasons a fresh attempt is worth making under.
+// Kept in step with REAPPLY_REASONS in visa_request.py - the server refuses anything else,
+// so a button offered outside these would only produce an error dialog.
+const PAM_REJECTED_STATE = 'Rejected By PAM';
+const REAPPLY_REASONS = [
+	"The occupation requires amendment to specify the worker's specialization",
+	"The worker's gender does not match the profession"
+];
+
 frappe.ui.form.on("Visa Request", {
+	refresh: function(frm) {
+		add_reapply_button(frm);
+	},
+
 	before_workflow_action: async function(frm) {
 		try {
 			let action = frm.selected_workflow_action;
@@ -177,6 +190,35 @@ function get_rejection_remarks(frm, resolve, reject) {
 		'Enter Rejection Remark',
 		'Proceed'
 	);
+}
+
+
+// WI-001976: PAM rejections for the designation or the worker's gender are worth another
+// attempt with the application corrected - a black-listed worker or an active file would
+// be refused again for the same cause, so the button is not offered there.
+function add_reapply_button(frm) {
+	if (frm.is_new()) return;
+	if (frm.doc.workflow_state !== PAM_REJECTED_STATE) return;
+	if (!REAPPLY_REASONS.includes(frm.doc.pam_rejection_remark)) return;
+
+	frm.add_custom_button(__('Reapply Visa'), () => {
+		frappe.confirm(
+			__('Raise a new Visa Request from {0}? The rejected one is kept as history.', [frm.doc.name]),
+			() => {
+				frappe.call({
+					method: 'one_fm.visa_management.doctype.visa_request.visa_request.reapply_visa_request',
+					args: { name: frm.doc.name },
+					freeze: true,
+					freeze_message: __('Reapplying...'),
+					callback: (r) => {
+						if (!r.message) return;
+						frappe.show_alert({ message: __('Created {0}', [r.message.name]), indicator: 'green' });
+						frappe.set_route('Form', 'Visa Request', r.message.name);
+					}
+				});
+			}
+		);
+	});
 }
 
 

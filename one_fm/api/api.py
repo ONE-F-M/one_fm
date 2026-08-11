@@ -60,8 +60,8 @@ def get_user_details():
     try:
         user_id = frappe.session.user
         user= frappe.get_value("User",user_id,"*")
-        employee_ID = frappe.get_value("Employee", {"user_id": user_id}, ["name","designation","employee_name_in_arabic"])
-        
+        employee_ID = frappe.get_value("Employee", {"user_id": user_id}, ["name","designation","employee_name_in_arabic","one_fm_nationality"])
+
         Rank = get_user_rank(user_id)
         energy_Review_Point = get_user_energy_and_review_points(user_id)
 
@@ -72,6 +72,7 @@ def get_user_details():
         user_details["Mobile_no"]= user.mobile_no
         user_details["Designation"]= employee_ID[1]
         user_details["EMP_ID"]= employee_ID[0]
+        user_details["Nationality"]= employee_ID[3]
         user_details["User_Image"] = user.user_image
         user_details["Monthly_Rank"] = str(Rank["monthly_rank"]).strip('[]') if len(Rank["monthly_rank"])!=0 else "0"
         user_details["Rank"] = str(Rank["all_time_rank"]).strip('[]') if len(Rank["all_time_rank"])!=0 else "0"

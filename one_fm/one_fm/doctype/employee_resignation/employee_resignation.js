@@ -1,29 +1,62 @@
 // Copyright (c) 2026, ONE FM and contributors
 // For license information, please see license.txt
 
+// Mirrors REVIEW_STATES in employee_resignation.py
+const REVIEW_STATES = [
+	"Pending Line Manager",
+	"Pending Supervisor",
+	"Pending T4 Admin",
+	"Pending Janitorial Head Supervisor",
+	"Pending Security Manager",
+	"Pending Project Manager",
+];
+
+// The Remarks section's fields are shared/reused across every stage -- only
+// the heading changes, to make clear whose remarks are currently expected.
+const STAGE_REMARKS_SECTION_LABELS = {
+	"Pending Line Manager": "Line Manager Remarks",
+	"Pending Supervisor": "Supervisor Remarks",
+	"Pending T4 Admin": "T4 Admin Remarks",
+	"Pending Janitorial Head Supervisor": "Janitorial Head Supervisor Remarks",
+	"Pending Security Manager": "Security Manager Remarks",
+	"Pending Project Manager": "Project Manager Remarks",
+};
+
+function _has_step_remarks(frm) {
+	return !!(frm.doc.negotiation_remarks && frm.doc.performance_remarks && frm.doc.complaints_remarks);
+}
+
+// Section Break labels are baked into the DOM once at render time -- Frappe's
+// own set_df_property/refresh_field never re-render a section's heading text,
+// so update the section-head element directly.
+function _set_section_label(frm, fieldname, label) {
+	let $head = frm.$wrapper.find(`.form-section[data-fieldname="${fieldname}"] > .section-head`);
+	if (!$head.length) return;
+	$head.contents().filter(function() { return this.nodeType === 3; }).remove();
+	$head.prepend(document.createTextNode(label + " "));
+}
+
 frappe.ui.form.on("Employee Resignation", {
 	onload: function(frm) {
-		frm.trigger('update_ops_manager_mandatory');
+		frm.trigger('update_operational_impact_visibility');
 		load_resignation_autocomplete_options(frm);
 	},
 
 	refresh: function (frm) {
 		load_resignation_autocomplete_options(frm);
-		frm.trigger('update_ops_manager_mandatory');
+		frm.trigger('update_operational_impact_visibility');
 
 		let is_draft = frm.doc.__islocal || frm.doc.workflow_state === 'Draft';
 		let is_editable = is_draft || frm.doc.workflow_state === 'Pending Relieving Date Correction';
 		frm.set_df_property('resignation_initiation_date', 'read_only', is_editable ? 0 : 1);
 		frm.set_df_property('relieving_date', 'read_only', is_editable ? 0 : 1);
 
-		// Corporate hires have no Operations Manager step -- their "Supervisor"
-		// is really their Line Manager (matches Employee Resignation Withdrawal
-		// and Employee Resignation Date Adjustment).
+		// Non-shift (corporate) hires have no Project Manager step -- their
+		// "Supervisor" is really their Line Manager, the sole final approver
+		// (matches Employee Resignation Withdrawal and Date Adjustment).
 		frm.set_df_property('supervisor', 'label', frm.doc.shift_working ? __('Supervisor') : __('Line Manager'));
 		frm.refresh_field('supervisor');
 
-		// Corporate hires have no Operations Manager step -- their "Supervisor" is
-		// really their Line Manager, so their remarks field is labeled to match.
 		frm.set_df_property('supervisor_remarks', 'label', frm.doc.shift_working ? __('Supervisor Remarks') : __('Line Manager Remarks'));
 		frm.refresh_field('supervisor_remarks');
 
@@ -33,16 +66,6 @@ frappe.ui.form.on("Employee Resignation", {
 				query: 'frappe.core.doctype.user.user.user_query',
 				filters: {
 					'role': 'Offboarding Officer'
-				}
-			};
-		});
-
-		// Filter Operations Manager to only show users with the 'Operations Manager' role
-		frm.set_query('operations_manager', () => {
-			return {
-				query: 'frappe.core.doctype.user.user.user_query',
-				filters: {
-					'role': 'Operations Manager'
 				}
 			};
 		});
@@ -130,41 +153,20 @@ frappe.ui.form.on("Employee Resignation", {
 			}, __('Employee Profiles'));
 		}
 
-		if (frm.doc.workflow_state === 'Pending Operations Manager' && ['Operation Admin', 'T4 Admin', 'Transportation Manager'].some(role => frappe.user_roles.includes(role))) {
-			// Disable editing of all fields except replacement details
+		// Mirrors validate_employee_permissions() server-side: at the final
+		// decision stage, these roles may only touch the replacement fields.
+		if (frm.doc.workflow_state === 'Pending Project Manager' && ['Operation Admin', 'T4 Admin', 'Transportation Manager'].some(role => frappe.user_roles.includes(role))) {
 			frm.set_df_property('employee', 'read_only', 1);
 			frm.set_df_property('resignation_initiation_date', 'read_only', 1);
 			frm.set_df_property('relieving_date', 'read_only', 1);
 			frm.set_df_property('reason_for_exit', 'read_only', 1);
 			frm.set_df_property('supervisor', 'read_only', 1);
-			frm.set_df_property('operations_manager', 'read_only', 1);
 			frm.set_df_property('offboarding_officer', 'read_only', 1);
 
 			// Explicitly allow editing of replacement fields
 			frm.set_df_property('replacement_required', 'read_only', 0);
 			frm.set_df_property('replacement_nationality', 'read_only', 0);
 			frm.set_df_property('replacement_gender', 'read_only', 0);
-		}
-
-		if (frm.doc.workflow_state === 'Pending Operations Manager' && (frappe.user_roles.includes('Operation Admin') || frappe.user_roles.includes('T4 Admin'))) {
-			// Disable editing of all fields except replacement details
-			frm.set_df_property('employees', 'read_only', 1);
-			frm.set_df_property('resignation_initiation_date', 'read_only', 1);
-			frm.set_df_property('relieving_date', 'read_only', 1);
-			frm.set_df_property('reason', 'read_only', 1);
-			frm.set_df_property('supervisor', 'read_only', 1);
-			frm.set_df_property('operations_manager', 'read_only', 1);
-			frm.set_df_property('offboarding_officer', 'read_only', 1);
-			
-			// Explicitly allow editing of replacement fields
-			frm.set_df_property('replacement_required', 'read_only', 0);
-			frm.set_df_property('replacement_nationality', 'read_only', 0);
-			frm.set_df_property('replacement_gender', 'read_only', 0);
-
-			// Disable buttons inside the child table grid if open
-			if (frm.fields_dict.employees && frm.fields_dict.employees.grid) {
-				frm.fields_dict.employees.grid.disable_and_hide_buttons();
-			}
 		}
 	},
 
@@ -211,29 +213,24 @@ frappe.ui.form.on("Employee Resignation", {
 			});
 		}
 
-		// Supervisor/Line Manager Remarks are required before their step moves on --
-		// "Submit for Approval" (shift-workers, to Operations Manager) or "Approve"
-		// while still "Pending Supervisor" (corporate's direct-to-Approved path,
-		// since they have no separate Operations Manager step).
-		if (
-			(frm.selected_workflow_action === "Submit for Approval" || frm.selected_workflow_action === "Approve")
-			&& frm.doc.workflow_state === "Pending Supervisor"
-			&& !frm.doc.supervisor_remarks
-		) {
+		// Every review stage (Line Manager, Supervisor, T4 Admin, Cleaning Head
+		// Supervisor, Security Manager, Project Manager) must have its Negotiation /
+		// Performance / Complaints remarks filled in before the document is allowed
+		// to leave that stage. Mirrors validate_step_remarks() server-side -- this
+		// is just the friendlier inline warning.
+		if (REVIEW_STATES.includes(frm.doc.workflow_state) && !_has_step_remarks(frm)) {
 			frappe.msgprint({
 				title: __('Missing Remarks'),
-				message: frm.doc.shift_working
-					? __('Please provide Supervisor Remarks before proceeding.')
-					: __('Please provide Line Manager Remarks before proceeding.'),
+				message: __('Please record Negotiation, Performance, and Complaints remarks for this stage before proceeding.'),
 				indicator: 'red'
 			});
 			setTimeout(() => {
 				frappe.dom.unfreeze();
 			}, 100);
-			return Promise.reject("Missing Supervisor Remarks");
+			return Promise.reject("Missing Step Remarks");
 		}
 
-		if (frm.selected_workflow_action === "Approve" && frm.doc.workflow_state === "Pending Operations Manager") {
+		if (frm.selected_workflow_action === "Approve" && frm.doc.workflow_state === "Pending Project Manager") {
 			if (!frm.doc.replacement_required) {
 				frappe.msgprint({
 					title: __('Missing Replacement Decision'),
@@ -244,17 +241,6 @@ frappe.ui.form.on("Employee Resignation", {
 					frappe.dom.unfreeze();
 				}, 100);
 				return Promise.reject("Missing Replacement Decision");
-			}
-			if (!frm.doc.operations_manager_remarks) {
-				frappe.msgprint({
-					title: __('Missing Remarks'),
-					message: __('Please provide Operations Manager Remarks before approving.'),
-					indicator: 'red'
-				});
-				setTimeout(() => {
-					frappe.dom.unfreeze();
-				}, 100);
-				return Promise.reject("Missing Operations Manager Remarks");
 			}
 		}
 	},
@@ -351,16 +337,12 @@ frappe.ui.form.on("Employee Resignation", {
 					supervisor_found = true;
 				}
 
-				if (d.operations_manager) {
-					frm.set_value('operations_manager', d.operations_manager);
-				}
-
 				// Only set site supervisor if line manager (reports_to) was not found
 				if (d.site_supervisor_id && !supervisor_found) {
 					frm.set_value('supervisor', d.site_supervisor_id);
 				}
 
-				frm.trigger('update_ops_manager_mandatory');
+				frm.trigger('update_operational_impact_visibility');
 			}
 		});
 	},
@@ -369,36 +351,23 @@ frappe.ui.form.on("Employee Resignation", {
 		// Field trigger handled in server-side logic
 	},
 
-	update_ops_manager_mandatory: function(frm) {
+	update_operational_impact_visibility: function(frm) {
 		if (!frm.doc.employee) {
 			frm.toggle_display("operational_impact_section", false);
-			frm.set_df_property('operations_manager', 'reqd', 0);
 			frm.set_df_property('offboarding_officer', 'reqd', 0);
 			return;
 		}
 
-		let is_shift_worker = cint(frm.doc.shift_working);
-
-		let show_ops_impact = ['Pending Operations Manager', 'Approved', 'Withdrawn'].includes(frm.doc.workflow_state);
+		let show_ops_impact = REVIEW_STATES.includes(frm.doc.workflow_state) || ['Approved', 'Withdrawn'].includes(frm.doc.workflow_state);
 		frm.toggle_display("operational_impact_section", show_ops_impact);
+
+		_set_section_label(frm, 'remarks_history_section', STAGE_REMARKS_SECTION_LABELS[frm.doc.workflow_state] || __('Remarks'));
 
 		let is_draft = frm.doc.__islocal || frm.doc.workflow_state === 'Draft';
 		let is_restricted_stage = is_draft || frm.doc.workflow_state === 'Pending Relieving Date Correction';
 
-		if (is_restricted_stage) {
-			frm.set_df_property('operations_manager', 'hidden', 1);
-			frm.set_df_property('offboarding_officer', 'hidden', 1);
-			frm.set_df_property('operations_manager', 'reqd', 0);
-			frm.set_df_property('offboarding_officer', 'reqd', 0);
-		} else {
-			frm.set_df_property('operations_manager', 'hidden', 0);
-			frm.set_df_property('operations_manager', 'read_only', !is_shift_worker ? 1 : 0);
-			frm.set_df_property('offboarding_officer', 'hidden', 0);
-
-			// Mandatory for all non-restricted stages (Pending Supervisor, Pending Operations Manager, Approved)
-			frm.set_df_property('operations_manager', 'reqd', is_shift_worker ? 1 : 0);
-			frm.set_df_property('offboarding_officer', 'reqd', 1);
-		}
+		frm.set_df_property('offboarding_officer', 'hidden', is_restricted_stage ? 1 : 0);
+		frm.set_df_property('offboarding_officer', 'reqd', is_restricted_stage ? 0 : 1);
 	}
 });
 

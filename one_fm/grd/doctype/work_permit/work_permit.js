@@ -40,7 +40,6 @@ frappe.ui.form.on('Work Permit', {
     },
     refresh(frm) {
         set_button_for_medical_insurance_transfer(frm);
-        set_restart_application(frm);
         set_grd_supervisor(frm);
         set_mgrp(frm);
         
@@ -95,27 +94,10 @@ var set_button_for_medical_insurance_transfer = function(frm){
 ).addClass('btn-primary');
 }
 };
-var set_restart_application = function(frm){
-    if(frm.doc.docstatus == 1 && frm.doc.workflow_state == "Rejected"){
-        frm.add_custom_button(__('Restart Application'), function(){
-            frappe.call({
-                method: "one_fm.hiring.utils.create_new_work_permit", 
-                args: {
-                    'work_permit': frm.doc.name
-                },
-                callback: function(r){
-                    if(r.message){
-                        var doclist = frappe.model.sync(r.message);
-                        console.log(doclist)
-                        frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
-                    }
-                },
-                freeze: true,
-                freeze_message: __("Creating New Work Permit ...!")
-                  });
-            }).addClass('btn-primary');	
-    }
-};
+// WI-001828 retires "Restart Application": it sat on the same Rejected state as
+// Reapply and did the same thing, only without carrying anything over or linking back
+// to the permit it came from. one_fm.hiring.utils.create_new_work_permit has no caller
+// left.
 var set_mgrp = function(frm){
 if (frm.doc.docstatus == 1 && frm.doc.work_permit_type == "Cancellation" && frm.doc.nationality == "Kuwaiti") {
     
@@ -325,3 +307,96 @@ var set_required_documents = function(frm) {
   }
     frm.refresh_field('documents_required');
 };
+
+// WI-001829: a rejection has to say why. Both rejecting states land in the same
+// "Rejected" state, so the reason is asked for on the way out and the state it came
+// from is recorded in reason_of_rejection - which is what decides, afterwards, which of
+// the two dropdowns the form shows.
+const REJECTION_REASON_BY_STATE = {
+	'Pending By PAM': {
+		field: 'pam_rejection_reason',
+		rejected_by: 'Rejected by PAM',
+		title: __('PAM Rejection Reason')
+	},
+	'Pending By Previous Company': {
+		field: 'previous_company_rejection_reason',
+		rejected_by: 'Rejected by previous company',
+		title: __('Previous Company Rejection Reason')
+	}
+};
+
+frappe.ui.form.on('Work Permit', {
+	before_workflow_action: function(frm) {
+		if (frm.selected_workflow_action !== 'Reject') return;
+
+		const spec = REJECTION_REASON_BY_STATE[frm.doc.workflow_state];
+		if (!spec) return;
+
+		return ask_for_rejection_reason(frm, spec);
+	}
+});
+
+function ask_for_rejection_reason(frm, spec) {
+	// The options come from the field itself rather than a list kept here, which would
+	// only drift from what the field will accept on save.
+	const df = frappe.meta.get_docfield('Work Permit', spec.field, frm.doc.name);
+	const options = (df && df.options ? df.options : '').split('\n').filter((o) => o);
+
+	return new Promise((resolve, reject) => {
+		frappe.prompt(
+			[{
+				label: spec.title,
+				fieldname: 'reason',
+				fieldtype: 'Select',
+				options: options.join('\n'),
+				reqd: 1
+			}],
+			(values) => {
+				frm.set_value(spec.field, values.reason);
+				frm.set_value('reason_of_rejection', spec.rejected_by);
+				// The reason has to be in the database before the action runs:
+				// apply_workflow() reloads the document server-side and throws away
+				// whatever the form was holding. Saving a document with nothing to save
+				// only shows "No changes in document" and never calls back, which would
+				// leave the rejection hanging with no error - so only save when there is
+				// something to save (a retry after a failed attempt already has the
+				// reason stored).
+				(frm.is_dirty() ? frm.save() : Promise.resolve()).then(resolve).catch(reject);
+			},
+			spec.title,
+			__('Reject')
+		);
+
+		// Frappe freezes the form for the workflow action; the prompt is unusable until
+		// it is released.
+		frappe.dom.unfreeze();
+	});
+}
+
+// WI-001828: a rejected permit gets a Reapply button in the header, which raises a fresh
+// application carrying the candidate's details rather than making the GRO key them in
+// again. The rejected one stays as the audit history.
+frappe.ui.form.on('Work Permit', {
+	refresh: function(frm) {
+		if (frm.is_new() || frm.doc.workflow_state !== 'Rejected') return;
+
+		frm.add_custom_button(__('Reapply'), () => {
+			frappe.confirm(
+				__('Raise a new Work Permit from {0}? The rejected one is kept as history.', [frm.doc.name]),
+				() => {
+					frappe.call({
+						method: 'one_fm.grd.doctype.work_permit.work_permit.reapply_work_permit',
+						args: { name: frm.doc.name },
+						freeze: true,
+						freeze_message: __('Reapplying...'),
+						callback: (r) => {
+							if (!r.message) return;
+							frappe.show_alert({ message: __('Created {0}', [r.message.name]), indicator: 'green' });
+							frappe.set_route('Form', 'Work Permit', r.message.name);
+						}
+					});
+				}
+			);
+		});
+	}
+});

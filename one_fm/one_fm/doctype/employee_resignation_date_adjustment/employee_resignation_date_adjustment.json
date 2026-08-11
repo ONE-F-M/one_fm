@@ -9,6 +9,7 @@
   "section_break_xfjj",
   "employee_resignation",
   "employee",
+  "employee_name",
   "column_break_twru",
   "relieving_date",
   "current_relieving_date",
@@ -18,16 +19,18 @@
   "extension_letter",
   "more_information_section",
   "naming_series",
-  "column_break_fhar",
-  "amended_from",
-  "column_break_wetd",
-  "column_break_pdtv",
-  "column_break_szbe",
   "workflow_state",
   "extended_relieving_date",
   "supervisor",
   "is_corporate",
-  "operations_manager",
+  "shift_category",
+  "t4_route",
+  "column_break_fhar",
+  "amended_from",
+  "t4_admin",
+  "cleaning_head_supervisor",
+  "security_manager",
+  "project_manager",
   "offboarding_officer"
  ],
  "fields": [
@@ -53,6 +56,13 @@
    "options": "Employee",
    "read_only": 1,
    "in_list_view": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_twru",
@@ -124,19 +134,6 @@
    "search_index": 1
   },
   {
-   "fieldname": "column_break_wetd",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_pdtv",
-   "fieldtype": "Column Break",
-   "hidden": 1
-  },
-  {
-   "fieldname": "column_break_szbe",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "workflow_state",
    "fieldtype": "Data",
    "label": "Workflow State",
@@ -147,7 +144,7 @@
    "fieldname": "extended_relieving_date",
    "fieldtype": "Date",
    "label": "Extended Relieving Date",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.workflow_state && doc.workflow_state !== 'Draft'"
   },
   {
    "fieldname": "supervisor",
@@ -164,18 +161,60 @@
    "read_only": 1
   },
   {
-   "fieldname": "operations_manager",
+   "fetch_from": "employee_resignation.shift_category",
+   "fieldname": "shift_category",
+   "fieldtype": "Select",
+   "label": "Shift Category",
+   "options": "\nT4\nOperations",
+   "read_only": 1,
+   "depends_on": "eval:!doc.is_corporate"
+  },
+  {
+   "fetch_from": "employee_resignation.t4_route",
+   "fieldname": "t4_route",
+   "fieldtype": "Select",
+   "label": "T4 Route",
+   "options": "\nSecurity\nJanitorial\nPassenger-Customer Service",
+   "read_only": 1,
+   "depends_on": "eval:doc.shift_category === 'T4'"
+  },
+  {
+   "fieldname": "t4_admin",
    "fieldtype": "Link",
-   "label": "Operations Manager",
-   "depends_on": "eval:!doc.is_corporate",
-   "mandatory_depends_on": "eval:!doc.is_corporate && !doc.__islocal && ['Pending Operations Manager', 'Accepted by Supervisor', 'Approved'].includes(doc.workflow_state)",
-   "options": "User"
+   "label": "T4 Admin",
+   "options": "User",
+   "read_only": 1,
+   "depends_on": "eval:doc.shift_category === 'T4'"
+  },
+  {
+   "fieldname": "cleaning_head_supervisor",
+   "fieldtype": "Link",
+   "label": "Janitorial Head Supervisor",
+   "options": "User",
+   "read_only": 1,
+   "depends_on": "eval:doc.t4_route === 'Janitorial'"
+  },
+  {
+   "fieldname": "security_manager",
+   "fieldtype": "Link",
+   "label": "Security Manager",
+   "options": "User",
+   "read_only": 1,
+   "depends_on": "eval:doc.t4_route === 'Security'"
+  },
+  {
+   "fieldname": "project_manager",
+   "fieldtype": "Link",
+   "label": "Project Manager",
+   "options": "User",
+   "read_only": 1,
+   "depends_on": "eval:!doc.is_corporate"
   },
   {
    "fieldname": "offboarding_officer",
    "fieldtype": "Link",
    "label": "Offboarding Officer",
-   "mandatory_depends_on": "eval:!doc.__islocal && ['Pending Operations Manager', 'Accepted by Supervisor', 'Approved'].includes(doc.workflow_state)",
+   "mandatory_depends_on": "eval:!doc.__islocal && ['Pending Project Manager', 'Approved'].includes(doc.workflow_state)",
    "options": "User"
   }
  ],
@@ -222,7 +261,37 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Operations Manager",
+   "role": "T4 Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Janitorial Head Supervisor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Security Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Project Manager",
    "share": 1,
    "submit": 1,
    "write": 1
