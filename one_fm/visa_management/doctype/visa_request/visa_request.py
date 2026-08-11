@@ -76,18 +76,19 @@ class VisaRequest(Document):
 		self.validate_applicant_age()
 
 	def validate_passport_validity(self):
-		if not (self.passport_issued_on and self.passport_expires_on):
+		if not self.passport_expires_on:
 			return
 
-		# Compared by adding the months to the issue date rather than counting days, so
-		# the answer does not drift with the length of the months in between.
+		# Measured from today, not from the issue date: what matters is how much validity
+		# the passport has left now. Compared by adding the months to today rather than
+		# counting days, so the answer does not drift with the length of the months.
 		if getdate(self.passport_expires_on) < getdate(
-			add_months(self.passport_issued_on, MINIMUM_PASSPORT_VALIDITY_MONTHS)
+			add_months(nowdate(), MINIMUM_PASSPORT_VALIDITY_MONTHS)
 		):
 			frappe.throw(
 				_(
-					"The applicant's passport validity must be at least {0} months from the "
-					"passport expiry date. The Visa Request cannot be saved."
+					"The applicant's passport must be valid for at least {0} more months "
+					"from today. The Visa Request cannot be saved."
 				).format(MINIMUM_PASSPORT_VALIDITY_MONTHS),
 				title=_("Passport Validity Too Short"),
 			)
