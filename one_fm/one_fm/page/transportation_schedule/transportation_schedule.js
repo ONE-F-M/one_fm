@@ -773,14 +773,14 @@ function mountRoutePlannerApp(wrapper, data) {
                 // ── Seat capacity check (time-aware) ──
                 const peakLoad = this.peakLoadDuringCardWindows(card, vehicle.id);
 
-                if (peakLoad + card.headcount > vehicle.seats) {
+                if (peakLoad + card.headcount > this.passengerSeats(vehicle)) {
                     const shell = document.getElementById('rp-shell');
                     if (shell) {
                         shell.style.transition = 'background-color 0.2s';
                         shell.style.backgroundColor = '#ffebee';
                         setTimeout(() => { shell.style.backgroundColor = ''; }, 400);
                     }
-                    frappe.throw(`Capacity Exceeded: Cannot assign ${card.headcount} employees to a ${vehicle.seats}-seater vehicle.`);
+                    frappe.throw(this.capacityMessage(card.headcount, vehicle));
                     return;
                 }
 
@@ -1036,14 +1036,14 @@ function mountRoutePlannerApp(wrapper, data) {
                 const vehicle = this.planData.vehicles.find(v => v.id === vehicleId);
                 if (vehicle) {
                     const currentLoad = this.peakLoadDuringCardWindows(newCard, vehicleId);
-                    if (currentLoad + newCard.headcount > vehicle.seats) {
+                    if (currentLoad + newCard.headcount > this.passengerSeats(vehicle)) {
                         const shell = document.getElementById('rp-shell');
                         if (shell) {
                             shell.style.transition = 'background-color 0.2s';
                             shell.style.backgroundColor = '#ffebee';
                             setTimeout(() => { shell.style.backgroundColor = ''; }, 400);
                         }
-                        frappe.throw(`Capacity Exceeded: Cannot assign ${newCard.headcount} employees to a ${vehicle.seats}-seater vehicle.`);
+                        frappe.throw(this.capacityMessage(newCard.headcount, vehicle));
                         return;
                     }
                 }
@@ -1110,7 +1110,7 @@ function mountRoutePlannerApp(wrapper, data) {
                     .slice(-1)[0];
                 const lastCard = this.planData.shipment_cards.find(c => c.id === lastItem.cardId);
                 const lastSiteName = lastCard ? lastCard.site_location : 'previous stop';
-                const seatInfo = vehicle ? ` (${vehicle.seats} seats, ${this.peakLoadDuringCardWindows(newCard, vehicleId) + newCard.headcount} needed)` : '';
+                const seatInfo = vehicle ? ` (${this.passengerSeats(vehicle)} passenger seats, ${this.peakLoadDuringCardWindows(newCard, vehicleId) + newCard.headcount} needed)` : '';
 
                 const d = new frappe.ui.Dialog({
                     title: `Transit to ${newCard.site_location}`,
@@ -1172,6 +1172,24 @@ function mountRoutePlannerApp(wrapper, data) {
                     }
                 });
                 return Object.values(tripsMap);
+            },
+
+            // Seats a vehicle can sell to passengers: one is the driver's. The
+            // backend has reserved it since MA4-13 and the route optimizer's load
+            // limit does too, but the canvas was comparing against the full seat
+            // count — so a last-seat run passed the drop and was then refused on
+            // save. Every seat check here goes through this (WI-002000).
+            passengerSeats(vehicle) {
+                return Math.max((vehicle && vehicle.seats ? vehicle.seats : 0) - 1, 0);
+            },
+
+            // One wording for every seat refusal, naming the limit the check
+            // actually applied rather than the size of the bus.
+            capacityMessage(headcount, vehicle) {
+                return __(
+                    'Capacity Exceeded: cannot assign {0} employees to {1} — it takes {2} passengers ({3} seats, less the driver\'s).',
+                    [headcount, this.vehicleString(vehicle), this.passengerSeats(vehicle), vehicle.seats]
+                );
             },
 
             // The headcount already aboard the vehicle during the window this card
@@ -1472,7 +1490,7 @@ function mountRoutePlannerApp(wrapper, data) {
                                     return t.start < iE && t.end > iS;
                                 })
                                 .reduce((sum, t) => sum + t.headcount, 0);
-                            if (load > v.seats) {
+                            if (load > this.passengerSeats(v)) {
                                 item.overcapacity = true;
                             }
                         });
@@ -1565,7 +1583,7 @@ function mountRoutePlannerApp(wrapper, data) {
                                     targetVehicleId,
                                     item.direction
                                 );
-                                if (peakLoad > targetVehicle.seats) {
+                                if (peakLoad > this.passengerSeats(targetVehicle)) {
                                     // Revert — capacity exceeded
                                     item.vehicleId = origVid;
                                     item.start = new Date(origStart);
@@ -1580,7 +1598,7 @@ function mountRoutePlannerApp(wrapper, data) {
                                     frappe.msgprint({
                                         title: __('Capacity Exceeded'),
                                         indicator: 'red',
-                                        message: __(`Capacity Exceeded: Cannot assign ${item.headcount} employees to a ${targetVehicle.seats}-seater vehicle.`)
+                                        message: this.capacityMessage(item.headcount, targetVehicle)
                                     });
                                 } else {
                                     frappe.show_alert({
@@ -1748,14 +1766,14 @@ function mountRoutePlannerApp(wrapper, data) {
                             .filter(t => t.start < blockEnd && t.end > blockStart)
                             .reduce((sum, t) => sum + t.headcount, 0);
 
-                        if (existingLoad + movingHeadcount > targetVehicle.seats) {
+                        if (existingLoad + movingHeadcount > self.passengerSeats(targetVehicle)) {
                             const shell = document.getElementById('rp-shell');
                             if (shell) {
                                 shell.style.transition = 'background-color 0.2s';
                                 shell.style.backgroundColor = '#ffebee';
                                 setTimeout(() => { shell.style.backgroundColor = ''; }, 400);
                             }
-                            frappe.throw(`Capacity Exceeded: Cannot assign ${movingHeadcount} employees to a ${targetVehicle.seats}-seater vehicle.`);
+                            frappe.throw(self.capacityMessage(movingHeadcount, targetVehicle));
                             return;
                         }
 
@@ -1982,11 +2000,11 @@ function mountRoutePlannerApp(wrapper, data) {
                         // Check logical trip capacity directly instead of peakLoadDuringCardWindows 
                         // because we want to know the target trip's total capacity + new card
                         const tripLoad = targetTripItems.reduce((sum, i) => sum + (i.headcount || 0), 0);
-                        if (tripLoad + card.headcount > selectedOpt.vehicle.seats) {
+                        if (tripLoad + card.headcount > self.passengerSeats(selectedOpt.vehicle)) {
                             frappe.msgprint({
                                 title: __('Capacity Exceeded'),
                                 indicator: 'red',
-                                message: __(`Capacity Exceeded: Cannot assign ${card.headcount} employees to a ${selectedOpt.vehicle.seats}-seater vehicle.`)
+                                message: self.capacityMessage(card.headcount, selectedOpt.vehicle)
                             });
                             return;
                         }
