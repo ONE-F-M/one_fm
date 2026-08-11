@@ -562,7 +562,7 @@
   },
   {
    "fieldname": "payment_date",
-   "fieldtype": "Date",
+   "fieldtype": "Datetime",
    "label": "Payment Date"
   }
  ],
@@ -570,7 +570,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-28 09:41:37.120225",
+ "modified": "2026-08-11 22:00:00.000000",
  "modified_by": "Administrator",
  "module": "Visa Management",
  "name": "Visa Request",
