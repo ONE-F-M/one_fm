@@ -202,13 +202,19 @@ def set_employee_list_for_moi(preparation_name):
                     frappe.log_error(message=frappe.get_traceback(), title=f"Error creating MOI for Employee {employee.employee} in Preparation {preparation_name}")
                     continue
 
-# Creat moi for transfer
-def creat_moi_for_transfer(work_permit_name):
+# Open the MOI for a transferred employee, called when their Medical Insurance is
+# marked Done. Named "creat_moi_for_transfer" until the module was renamed from
+# moi_residency_jawazat to residency: that refactor corrected the spelling at the call
+# site but not here, so every Local Transfer insurance raised AttributeError on submit
+# and the MOI was never opened.
+def create_moi_for_transfer(work_permit_name):
     work_permit = frappe.get_doc('Work Permit',work_permit_name)
     if work_permit:
         employee = frappe.get_doc('Employee',work_permit.employee)
         if employee:
-            create_moi_record(frappe.get_doc('Employee',employee.employee),"Transfer")
+            # The employee is already loaded; re-fetching it through its own mirror
+            # field only risked a second lookup failing.
+            create_moi_record(employee,"Transfer")
 
 def create_moi_record(employee,Renewal_or_Extend,preparation_name = None):
 
