@@ -662,7 +662,6 @@ class TestRoutePlanTimeWindowCapacitySave(FrappeTestCase):
 
 		self.assertIn("Total overlapping passengers (4)", message)
 		self.assertIn("vehicle limit (3)", message)
-		self.assertIn(self.VEHICLE, message)
 
 	def test_separate_trips_are_each_still_held_to_the_seats(self):
 		"""AC3's tail: separate trips are not merged, but neither is let off."""
@@ -688,6 +687,58 @@ class TestRoutePlanTimeWindowCapacitySave(FrappeTestCase):
 			plan.insert(ignore_permissions=True)
 
 		self.assertIn("short 1 seat", str(cm.exception))  # 4 - 3
+
+	def test_the_limit_follows_the_vehicles_driver_seat_flag(self):
+		"""WI-002000 AC4/AC5: the same 4 passengers on the same 4-seater are an
+		overload when the seat count includes the driver and a full bus when it does
+		not. Nothing about the limit is decided here — the fleet record decides."""
+		rows = [self._row(trip="TRIP-FULL", headcount=4, start="08:00", end="09:00")]
+		was = frappe.db.get_value(
+			"Vehicle", self.VEHICLE,
+			["custom_includes_driver_seat", "custom_max_passenger_capacity"], as_dict=True,
+		)
+		self.addCleanup(
+			frappe.db.set_value, "Vehicle", self.VEHICLE, dict(was), update_modified=False
+		)
+
+		frappe.db.set_value(
+			"Vehicle", self.VEHICLE,
+			{"custom_includes_driver_seat": 1, "custom_max_passenger_capacity": 3},
+			update_modified=False,
+		)
+		with self.assertRaises(frappe.ValidationError):
+			self._make_plan(rows).insert(ignore_permissions=True)
+
+		frappe.db.set_value(
+			"Vehicle", self.VEHICLE,
+			{"custom_includes_driver_seat": 0, "custom_max_passenger_capacity": 4},
+			update_modified=False,
+		)
+		plan = self._make_plan(rows)
+		plan.insert(ignore_permissions=True)
+
+		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
+
+	def test_a_vehicle_that_has_never_been_derived_still_gets_a_limit(self):
+		"""A stored 0 would wave every drop through, so the formula is applied on
+		the spot from the seat count and the flag."""
+		was = frappe.db.get_value("Vehicle", self.VEHICLE, "custom_max_passenger_capacity")
+		self.addCleanup(
+			frappe.db.set_value, "Vehicle", self.VEHICLE,
+			"custom_max_passenger_capacity", was, update_modified=False,
+		)
+		frappe.db.set_value(
+			"Vehicle", self.VEHICLE,
+			{"custom_includes_driver_seat": 1, "custom_max_passenger_capacity": 0},
+			update_modified=False,
+		)
+
+		with self.assertRaises(frappe.ValidationError) as cm:
+			self._make_plan([
+				self._row(trip="TRIP-FULL", headcount=4, start="08:00", end="09:00")
+			]).insert(ignore_permissions=True)
+
+		self.assertIn("short 1 seat", str(cm.exception))  # 4 - (4 seats - driver)
 
 	def test_a_lane_full_of_short_runs_is_fine(self):
 		"""Four back-to-back full loads across the day: 12 passengers on a bus
@@ -732,8 +783,10 @@ class TestTheCanvasAgreesWithTheBackend(FrappeTestCase):
 
 		self.assertEqual(offenders, [])
 
-	def test_the_helper_reserves_exactly_one_seat(self):
-		self.assertIn("Math.max((vehicle && vehicle.seats ? vehicle.seats : 0) - 1, 0)", self.canvas())
+	def test_the_helper_reads_the_vehicles_own_limit(self):
+		"""Not a rule in the code: the Vehicle record says whether its seat count
+		includes the driver, and Max Passenger Capacity is the answer."""
+		self.assertIn("vehicle.max_passenger_capacity", self.canvas())
 
 	def test_the_refusal_names_the_limit_it_applied(self):
 		"""Telling a dispatcher "30-seater" while blocking at 29 is what made this
@@ -741,7 +794,7 @@ class TestTheCanvasAgreesWithTheBackend(FrappeTestCase):
 		source = self.canvas()
 
 		self.assertIn("capacityMessage(", source)
-		self.assertIn("less the driver", source)
+		self.assertIn("it takes {2} passengers", source)
 
 
 class TestRoutePlanSingleVehicleSave(FrappeTestCase):
