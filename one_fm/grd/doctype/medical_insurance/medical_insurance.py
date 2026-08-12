@@ -103,10 +103,13 @@ def create_mi_record(WorkPermit):
     if(WorkPermit.work_permit_type == "Renewal Non Kuwaiti"):
         Insurance_status = "Renewal"
         new_medical_insurance.date_of_application = WorkPermit.date_of_application #setting the same date of application of wp
-    elif(WorkPermit.work_permit_type == "Overseas"):
+    elif(WorkPermit.work_permit_type in ("Overseas", "Overseas (Government)")):
         # An overseas hire has no insurance yet, so the policy is opened as New
         # (WI-001881). Applied for the day the Work Permit was, which for an Overseas
         # Work Permit is the day its Preparation was submitted.
+        #
+        # A government-contract hire is the same insurance (WI-002024): the file the work
+        # permit was raised against changes its fee, not whether the employee is insured.
         Insurance_status = "New"
         new_medical_insurance.date_of_application = WorkPermit.date_of_application
     elif (WorkPermit.work_permit_type == "Local Transfer"):#for non kuwaiti <if it is for kuwait called new or renew and they don't have MI process
