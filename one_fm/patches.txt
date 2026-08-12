@@ -482,7 +482,6 @@ one_fm.patches.v15_0.normalize_user_mobile_country_code #2026-07-13
 one_fm.patches.v15_0.warm_zenquote_cache #2026-07-13
 one_fm.patches.v15_0.backfill_subcontractor_name_in_onboard_subcontract_employee #2026-07-12
 one_fm.patches.v15_0.delete_pending_approval_attendance_checks_airport_t4_jul12 #2026-07-13
-one_fm.patches.v15_0.send_amp_verification_test_email #2026-07-14
 one_fm.patches.v15_0.remove_pam_visa_doctype #2026-07-16
 one_fm.patches.v15_0.add_project_sprint_prefix_field #2026-07-23
 one_fm.patches.v15_0.show_project_users_section_for_scrum #2026-07-23
@@ -541,7 +540,7 @@ one_fm.patches.v15_0.seed_app_services
 one_fm.patches.v15_0.set_candidate_title_fields
 one_fm.patches.v15_0.update_attendance_check
 one_fm.patches.v15_0.update_employee_and_user_references
-one_fm.patches.v15_0.send_work_item_notify_assignee_demo_email
+one_fm.patches.v15_0.send_work_item_notify_assignee_demo_email #2026-08-12
 one_fm.patches.v15_0.mark_present_auto_attendance_missed_checkin_jul13
 one_fm.patches.v15_0.add_employee_schedule_suspension_workflow #2026-07-24
 one_fm.patches.v15_0.add_accommodation_leave_movement_assignment_rules #2026-07-30
