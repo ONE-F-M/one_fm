@@ -226,63 +226,113 @@ class RoutePlan(Document):
 			leg_vehicle.setdefault(key, row.vehicle)
 
 	def _validate_vehicle_capacity(self):
-		"""Block a merged run whose combined headcount exceeds the bus seats (MA4-13).
+		"""Hold each trip, and each set of concurrent trips, to the bus seats.
 
-		Multiple accommodation cards from different camps dropped on one vehicle
-		for the same shift share a ``trip_group`` hash. Each physical run is one
-		direction of that trip, so we sum the ``headcount`` of every assignment
-		row sharing a ``(vehicle, trip_group, direction)`` and compare it against
-		the assigned Vehicle's legal seat count, reserving one seat for the driver
-		(consistent with the route optimizer's ``seats - 1`` load limit). When the
-		combined mixed-passenger total overshoots, the save is rejected with the
-		exact seat shortfall so the dispatcher can assign a larger bus or arrange a
-		taxi. Scope is trip_group clusters — the multi-accommodation merge this
-		story guards; standalone drops keep their existing client-side check.
+		A vehicle that finishes a 05:10 drop is free to run again at 07:00, so a
+		lane is not one pooled load — it is a series of time-bounded trips
+		(WI-002000). Two levels are enforced against the same limit:
+
+		* **Each trip on its own** — the accommodation cards merged onto one
+		  ``(vehicle, trip_group, direction)`` ride together even though their
+		  stops are sequential, so their headcounts still sum (MA4-13).
+		* **Trips that run at the same time** — when two trips' windows overlap,
+		  their passengers are on the bus together and the totals add up.
+
+		Trips whose windows do not overlap never see each other's passengers, which
+		is what stops a finished earlier run from blocking the next assignment.
+
+		The limit is the vehicle's own ``Max Passenger Capacity``: whether its seat
+		count includes the driver is a per-vehicle answer, so the fleet record
+		decides, not this code.
 		"""
-		# Cluster the merged legs and tally their combined demand.
-		cluster_headcount = {}
-		for row in self.assignments:
-			if not row.vehicle or not row.trip_group:
-				continue
-			key = (row.vehicle, row.trip_group, _row_direction(row))
-			cluster_headcount[key] = cluster_headcount.get(key, 0) + cint(row.headcount)
-
-		if not cluster_headcount:
+		trips = self._logical_trips()
+		if not trips:
 			return
 
-		# Batch-fetch seat counts for every vehicle referenced on the plan.
-		vehicle_names = list({key[0] for key in cluster_headcount})
-		seats_map = {
-			v.name: cint(v.seats)
-			for v in frappe.get_all(
-				"Vehicle",
-				filters={"name": ["in", vehicle_names]},
-				fields=["name", "seats"],
-			)
-		}
+		limits = _passenger_limits({trip.vehicle for trip in trips})
 
-		for (vehicle, trip_group, direction), total_passengers in cluster_headcount.items():
-			seats = seats_map.get(vehicle)
-			if not seats:
+		by_vehicle = {}
+		for trip in trips:
+			by_vehicle.setdefault(trip.vehicle, []).append(trip)
+
+		for vehicle, vehicle_trips in by_vehicle.items():
+			limit = limits.get(vehicle)
+			if not limit:
 				# Vehicle master has no seat count configured — nothing to enforce.
 				continue
-			# Reserve one seat for the driver: the legal passenger capacity.
-			passenger_capacity = max(seats - 1, 0)
-			if total_passengers > passenger_capacity:
-				self._throw_capacity_exceeded(
-					vehicle, direction, total_passengers, passenger_capacity, seats
+
+			# One trip over the limit on its own is reported as the overloaded run
+			# it is, naming the seat shortfall (MA4-13). Ordered so the reported
+			# trip is stable across saves.
+			for trip in sorted(vehicle_trips, key=lambda t: t.key):
+				if trip.headcount > limit:
+					self._throw_capacity_exceeded(vehicle, trip.direction, trip.headcount, limit)
+
+			concurrent = _peak_concurrent_headcount(vehicle_trips)
+			if concurrent > limit:
+				frappe.throw(
+					_(
+						"Capacity Exceeded: Total overlapping passengers ({0}) exceeds "
+						"vehicle limit ({1})."
+					).format(concurrent, limit),
+					title=_("{0}: Vehicle Capacity Exceeded").format(vehicle),
 				)
 
-	def _throw_capacity_exceeded(self, vehicle, direction, total_passengers, passenger_capacity, seats):
+	def _logical_trips(self) -> list:
+		"""Collapse the assignment rows into the trips a vehicle actually runs.
+
+		Rows sharing a ``(vehicle, trip_group, direction)`` are the stops of one
+		run: their headcounts sum and the trip spans from its first stop's start
+		to its last stop's end. A row with no ``trip_group`` is a standalone drop
+		and becomes a trip of its own, so it is weighed like any other.
+
+		Each trip carries the daily time window its stops cover and the calendar
+		lifespan they are live for — the two halves of the timestamps a Route Plan
+		Assignment stores (TR-8: date part = multi-day lock, time part = the daily
+		run).
+		"""
+		trips = {}
+		for idx, row in enumerate(self.assignments):
+			if not row.vehicle:
+				continue
+			direction = _row_direction(row)
+			# Standalone rows are keyed by position so two of them never merge.
+			group = row.trip_group or f"\0row-{idx}"
+			key = (row.vehicle, group, direction)
+			start, end = _row_time_window(row)
+			live_from, live_to = _row_date_range(row)
+
+			trip = trips.get(key)
+			if not trip:
+				trips[key] = frappe._dict(
+					key=key,
+					vehicle=row.vehicle,
+					direction=direction,
+					headcount=cint(row.headcount),
+					start=start,
+					end=end,
+					live_from=live_from,
+					live_to=live_to,
+				)
+				continue
+
+			trip.headcount += cint(row.headcount)
+			trip.start = min(trip.start, start)
+			trip.end = max(trip.end, end)
+			trip.live_from = min(filter(None, [trip.live_from, live_from]), default=None)
+			trip.live_to = max(filter(None, [trip.live_to, live_to]), default=None)
+
+		return list(trips.values())
+
+	def _throw_capacity_exceeded(self, vehicle, direction, total_passengers, limit):
 		"""Raise the overloading block with the exact seat shortfall (MA4-13 AC4)."""
-		short_by = total_passengers - passenger_capacity
 		dir_label = _("return") if direction == "RETURN" else _("outbound")
 		frappe.throw(
 			_(
 				"Capacity Exceeded: the {0} run on {1} carries {2} passengers but the "
-				"vehicle seats only {3} ({4} total minus the driver). You are short {5} "
-				"seat(s) — assign a larger bus or arrange a taxi."
-			).format(dir_label, vehicle, total_passengers, passenger_capacity, seats, short_by),
+				"vehicle takes {3}. You are short {4} seat(s) — assign a larger bus or "
+				"arrange a taxi."
+			).format(dir_label, vehicle, total_passengers, limit, total_passengers - limit),
 			title=_("Vehicle Capacity Exceeded"),
 		)
 
@@ -355,6 +405,120 @@ def _time_windows_overlap(a_start, a_end, b_start, b_end) -> bool:
 	b_start = to_timedelta(b_start) if b_start else _TIME_START
 	b_end = to_timedelta(b_end) if b_end else _TIME_END
 	return a_start < b_end and b_start < a_end
+
+
+_DAY_SECONDS = 24 * 60 * 60
+
+
+def _passenger_limits(vehicle_names) -> dict:
+	"""``{vehicle: passengers it may carry}`` for the vehicles on a plan.
+
+	The stored ``custom_max_passenger_capacity`` is what the Vehicle form shows,
+	so it is what the dispatcher is held to. It is derived on every Vehicle save
+	and backfilled by patch, but a record that has somehow never been through
+	either would read 0 and wave everything through — so the same formula is
+	applied on the spot instead (WI-002000).
+	"""
+	from one_fm.overrides.vehicle import passenger_capacity
+
+	limits = {}
+	for vehicle in frappe.get_all(
+		"Vehicle",
+		filters={"name": ["in", list(vehicle_names)]},
+		fields=["name", "seats", "custom_includes_driver_seat", "custom_max_passenger_capacity"],
+	):
+		limits[vehicle.name] = cint(vehicle.custom_max_passenger_capacity) or passenger_capacity(
+			vehicle.seats, vehicle.custom_includes_driver_seat
+		)
+	return limits
+
+
+def _iso_time_of_day(value):
+	"""Seconds past midnight of a timeline stamp (``2026-07-20T06:00:00Z``).
+
+	Only the clock time is taken: the date half of these stamps is the multi-day
+	lock lifespan (TR-8), so a run that repeats daily has to be compared by the
+	hour it leaves, not the day it was first placed.
+	"""
+	if not value:
+		return None
+	text = str(value).replace("T", " ").replace("Z", "").strip()
+	try:
+		moment = get_datetime(text)
+	except Exception:
+		return None
+	return moment.hour * 3600 + moment.minute * 60 + moment.second
+
+
+def _row_time_window(row):
+	"""The daily window a row occupies, as seconds past midnight.
+
+	A row with no times spans the whole day, so it is never mistaken for a run
+	that has already finished. An end at or before the start is a run over
+	midnight (22:00 -> 01:00) and is carried past the day boundary rather than
+	being read as a zero-length block.
+	"""
+	start = _iso_time_of_day(row.start_time)
+	end = _iso_time_of_day(row.end_time)
+
+	if start is None and end is None:
+		return 0, _DAY_SECONDS
+	if start is None:
+		start = 0
+	if end is None:
+		end = _DAY_SECONDS
+	if end <= start:
+		end += _DAY_SECONDS
+	return start, end
+
+
+def _trips_share_the_road(a, b) -> bool:
+	"""True when two trips put passengers on the same bus at the same moment.
+
+	Both halves have to meet: the trips must be live on overlapping calendar
+	dates, and their daily windows must overlap. Windows that merely touch — one
+	ending exactly as the next begins — do not, so a bus can turn straight around.
+	Comparison is circular over the day so a run past midnight still meets an
+	early-morning one.
+
+	The two directions of one journey are the exception: they are the same bus
+	going out and coming back, never both at once, so they are never added
+	together however their windows are recorded (MA4-13, and the same exemption
+	the multi-day lock check makes).
+	"""
+	same_journey = a.key[1] == b.key[1]
+	if same_journey and a.direction != b.direction:
+		return False
+
+	if not _date_ranges_overlap(a.live_from, a.live_to, b.live_from, b.live_to):
+		return False
+
+	for shift in (-_DAY_SECONDS, 0, _DAY_SECONDS):
+		if a.start < b.end + shift and b.start + shift < a.end:
+			return True
+	return False
+
+
+def _peak_concurrent_headcount(trips) -> int:
+	"""The most passengers these trips ever have on the bus at once.
+
+	Each trip in turn is taken as the anchor and everything overlapping it is
+	added, which is what "total overlapping passengers" means from the point of
+	view of the trip being assigned.
+
+	ponytail: O(n^2) and anchored rather than a true sweep, so a chain where A
+	meets B and A meets C but B and C never meet is counted as all three. A lane
+	holds a handful of trips a day; swap in a sweep line if that ever changes.
+	"""
+	peak = 0
+	for anchor in trips:
+		total = anchor.headcount + sum(
+			other.headcount
+			for other in trips
+			if other is not anchor and _trips_share_the_road(anchor, other)
+		)
+		peak = max(peak, total)
+	return peak
 
 
 def _iso_to_date(value):

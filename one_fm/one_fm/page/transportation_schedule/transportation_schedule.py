@@ -4,6 +4,7 @@ from frappe import _
 from frappe.utils import cint
 from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
 from one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log import get_handover_windows
+from one_fm.overrides.vehicle import passenger_capacity
 
 PICKUP_BUFFER = 10             # minutes
 MAX_TRANSIT = 60               # minutes
@@ -43,7 +44,9 @@ def get_route_planner_data():
         # ── 1. Vehicles (batch queries) ──
         transport_vehicles = frappe.get_all("Vehicle",
             filters={"transport_stop_vehicle": 1},
-            fields=["name", "license_plate", "location", "seats", "one_fm_vehicle_type", "make", "model", "employee", "one_fm_vehicle_category"],
+            fields=["name", "license_plate", "location", "seats", "custom_max_passenger_capacity",
+                    "custom_includes_driver_seat", "one_fm_vehicle_type", "make", "model", "employee",
+                    "one_fm_vehicle_category"],
             order_by="name asc"
         )
 
@@ -89,6 +92,10 @@ def get_route_planner_data():
                 "model":         v.model or "",
                 "driver":        driver_name,
                 "seats":         v.seats or 0,
+                # WI-002000: the passenger limit the canvas holds a drop to. Whether
+                # "seats" counts the driver is per vehicle, so the fleet record
+                # answers it rather than the page assuming.
+                "max_passenger_capacity": passenger_capacity(v.seats, v.custom_includes_driver_seat),
                 "type":          v.one_fm_vehicle_type or "—",
                 "make":          v.make or "—",
                 "accommodation": acc_name,
@@ -718,7 +725,8 @@ def build_vehicle_list(global_bounds: tuple) -> tuple:
 
     transport_vehicles = frappe.get_all("Vehicle",
         filters={"transport_stop_vehicle": 1},
-        fields=["name", "location", "seats", "one_fm_vehicle_type", "make", "employee"],
+        fields=["name", "location", "seats", "custom_includes_driver_seat",
+                "one_fm_vehicle_type", "make", "employee"],
         order_by="name asc"
     )
 
@@ -748,7 +756,7 @@ def build_vehicle_list(global_bounds: tuple) -> tuple:
             "label": v.name,
             "startLocation": start_end_coords,
             "endLocation":   start_end_coords,
-            "loadLimits":    {"seats": {"maxLoad": max((v.seats or 1) - 1, 1)}},
+            "loadLimits":    {"seats": {"maxLoad": max(passenger_capacity(v.seats, v.custom_includes_driver_seat), 1)}},
             "startTimeWindows": [{"startTime": today_start}],
             "endTimeWindows":   [{"endTime":   today_end}],
             "fixedCost":        config.fixed_cost or 0,

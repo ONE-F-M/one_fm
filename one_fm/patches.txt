@@ -557,6 +557,7 @@ one_fm.patches.v15_0.flag_input_material #2026-08-03
 #one_fm.patches.v14_0.update_employee_checkin_record
 #one_fm.patches.v14_0.rename_user_id #2023-09-18
 #one_fm.patches.v15_0.update_employee_and_user_references
+one_fm.patches.v15_0.add_vehicle_max_passenger_capacity #2026-08-11 WI-002000
 
 
 
