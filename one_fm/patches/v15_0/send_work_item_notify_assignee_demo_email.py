@@ -48,7 +48,7 @@ def execute():
 	for the actual outcome instead.
 	"""
 	try:
-		_send()
+		send()
 	except Exception:
 		frappe.log_error(
 			title="WI-001875 Start Work AMP notify failed",
@@ -56,7 +56,7 @@ def execute():
 		)
 
 
-def _send():
+def send():
 	account_name = frappe.db.get_value("Email Account", {"email_id": SENDER}, "name")
 	if not account_name:
 		frappe.throw(
@@ -98,7 +98,7 @@ def _send():
 """.strip()
 
 	# Real BPMN-instance-tied token — the same mechanism
-	# compose_and_send_task_email uses for every other task action.
+	# compose_andsend_task_email uses for every other task action.
 	actions = build_email_actions(
 		instance_name=INSTANCE_NAME,
 		task_id=TASK_ID,
