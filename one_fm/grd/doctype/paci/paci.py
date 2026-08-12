@@ -7,7 +7,7 @@ from frappe import _
 from frappe.model.document import Document
 from datetime import date
 from one_fm.api.notification import create_notification_log
-from frappe.utils import today, add_days, get_url, date_diff, get_year_start
+from frappe.utils import today, add_days, get_url, date_diff, get_year_start, flt
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from frappe.core.doctype.communication.email import make
 from one_fm.processor import sendemail
@@ -37,6 +37,27 @@ class PACI(Document):
     def validate(self):
         self.set_grd_values()
         self.set_new_expiry_date()
+        self.set_paci_fine_amount()
+
+    def set_paci_fine_amount(self):
+        """Fetch the PACI late fine off HR Settings, or clear it (WI-002023).
+
+        The rate is fixed by PACI, not negotiated per record, so the operator states
+        whether the fine applies and the amount follows from the master rate. Derived on
+        every save rather than only when the box is ticked, so a record saved after PACI
+        changes the rate carries the rate that was current when it was saved, and the
+        field cannot be left holding a number the operator typed by hand.
+
+        Cleared to 0 when the box is unticked. The field is hidden then, so a stale amount
+        left behind would be invisible and still reach the costing.
+        """
+        if not self.is_paci_fine_applicable:
+            self.paci_fine_amount_kwd = 0
+            return
+
+        self.paci_fine_amount_kwd = flt(
+            frappe.db.get_single_value('HR Settings', 'paci_fine_amount_kwd')
+        )
 
 
     def set_grd_values(self):
