@@ -3911,8 +3911,9 @@ def call_to_get_assurance_level(employees):
     response = None
     try:
         api_key = frappe.conf.bulbul_api_wrapper_key
+        api_wrapper_base_url = frappe.db.get_single_value("Bumblebee Settings", "end_user_api_base_url")
         if isinstance(employees, str):
-            url = f"https://staging-apiwrapper.one-fm.com/api/DigitalSigning/CheckMobileIdentity/{employees}"
+            url = f"{api_wrapper_base_url}/api/DigitalSigning/CheckMobileIdentity/{employees}"
             headers = {'accept': 'text/plain','ApiKey': f'{api_key}'}
             response = requests.get(url, headers=headers, timeout=30)
             if response.status_code == 200:
@@ -3925,7 +3926,7 @@ def call_to_get_assurance_level(employees):
                 )
                 return {"error": response.status_code, "title": response.text}
         else:
-            url = f"https://staging-apiwrapper.one-fm.com/api/DigitalSigning/BulkCheckMobileIdentity"
+            url = f"{api_wrapper_base_url}/api/DigitalSigning/BulkCheckMobileIdentity"
             headers = {'Content-Type': 'application/json','ApiKey': f'{api_key}'}
             batch_size=200
             all_results = []
