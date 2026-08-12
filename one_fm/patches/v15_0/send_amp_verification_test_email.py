@@ -14,17 +14,12 @@ def execute():
 	registered IP for Google Workspace's SMTP relay to accept it, and
 	`bench migrate` is the one thing guaranteed to execute there.
 
-	Deliberately does not raise — a transient email/SMTP failure must
-	never block or fail a production migration. Check the "amp_verification"
-	logger (or the returned Email Queue row) for the actual outcome instead.
+	Already executed on production (Patch Log ensures it never re-runs) —
+	this function body is retained only for historical reference. The
+	``one_fm.api.amp_verification`` module it originally called has since
+	been removed; its logic now lives inline in the newer
+	``send_work_item_notify_assignee_demo_email`` patch, which follows the
+	same "trigger via bench migrate on production" pattern for a different
+	verification send.
 	"""
-	try:
-		from one_fm.api.amp_verification import send_amp_verification_email
-
-		result = send_amp_verification_email()
-		frappe.logger("amp_verification").info(f"Patch send result: {result}")
-	except Exception:
-		frappe.log_error(
-			title="AMP verification test email failed",
-			message=frappe.get_traceback(),
-		)
+	pass
