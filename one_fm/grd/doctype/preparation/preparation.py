@@ -192,18 +192,18 @@ class Preparation(Document):
             subject = 'Records are created for WP, MI, MOI, PACI, and FP'
             create_notification_log(subject, message, [self.grd_operator], self)
 
-        inform_the_costing_to = frappe.db.get_single_value('HR Settings', 'inform_the_costing_to')
-        if inform_the_costing_to:
-            page_link = get_url(self.get_url())
-            message = "<p>Records are created<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
-            subject = 'Details of the Preparation Cost for WP, MI, MOI, PACI, and FP'
-            print_format = frappe.db.get_single_value('HR Settings', 'costing_print_format')
-            if not print_format:
-                print_format = 'Standard'
-            attachments = [frappe.attach_print(self.doctype, self.name, file_name=self.name, print_format=print_format)]
-            send_email(self, [inform_the_costing_to], message, subject, attachments)
-
-   
+        # The costing mail renders a PDF and hands it to the mail server, and neither belongs
+        # inside the submit transaction. wkhtmltopdf died with SIGSEGV on staging and took the
+        # whole submit down with it - but the Work Permit, Medical Insurance, MOI and PACI
+        # records created above each commit as they go, so they survived while the Preparation
+        # rolled back to draft, and re-submitting created them a second time. Queued after the
+        # commit so a broken PDF is an Error Log entry, not a failed submit.
+        frappe.enqueue(
+            'one_fm.grd.doctype.preparation.preparation.send_costing_notification',
+            queue='short',
+            enqueue_after_commit=True,
+            preparation=self.name
+        )
 
     @frappe.whitelist()
     def set_renewal_for_all_preparation_record(self, renew_all):
@@ -290,6 +290,22 @@ def notify_request_for_renewal_or_extend():# Notify finance
     subject = '{0} Renewal and Extend list approved'.format("Prepare Payments")
     send_email(preparation_list, [preparation_list.notify_finance_user], message, subject)
     create_notification_log(subject, message, [preparation_list.notify_finance_user], preparation_list)
+
+def send_costing_notification(preparation):
+    """Email the costing print of a submitted Preparation to the user set in HR Settings.
+
+    Runs in the background - see Preparation.send_notifications for why.
+    """
+    inform_the_costing_to = frappe.db.get_single_value('HR Settings', 'inform_the_costing_to')
+    if not inform_the_costing_to:
+        return
+
+    doc = frappe.get_doc('Preparation', preparation)
+    message = "<p>Records are created<a href='{0}'>{1}</a>.</p>".format(get_url(doc.get_url()), doc.name)
+    subject = 'Details of the Preparation Cost for WP, MI, MOI, PACI, and FP'
+    print_format = frappe.db.get_single_value('HR Settings', 'costing_print_format') or 'Standard'
+    attachments = [frappe.attach_print(doc.doctype, doc.name, file_name=doc.name, print_format=print_format)]
+    send_email(doc, [inform_the_costing_to], message, subject, attachments)
 
 def send_email(doc, recipients, message, subject, attachments=None):
     sendemail(
