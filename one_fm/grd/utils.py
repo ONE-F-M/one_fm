@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.utils import today, add_days, get_url, date_diff, getdate
 from frappe.model.document import Document
-from frappe.utils import cstr, cint, get_fullname
+from frappe.utils import cstr, cint, get_fullname, flt
 from frappe.utils import today, add_days, get_url
 from datetime import date
 from frappe.model.mapper import get_mapped_doc
@@ -147,3 +147,45 @@ def attach_employee_document(employee, document_name, attach, valid_till, issued
     })
     row.db_insert()
     return row.name
+
+
+def validate_embassy_attestation_rates(doc, method=None):
+    """One row per country in the Embassy Cost Table (WI-002025).
+
+    The table answers two questions at once: does a PCC for this country need embassy
+    attestation at all, and what does that embassy charge. A country listed twice makes
+    the second question ambiguous, and the lookup would silently take whichever row came
+    first - so an operator correcting a fee by adding a second row would see no change and
+    no error.
+    """
+    seen = set()
+    for row in doc.get('embassy_attestation_rates') or []:
+        if not row.country:
+            continue
+        if row.country in seen:
+            frappe.throw(
+                _("{0} appears more than once in the Embassy Cost Table. Each country can only appear once.")
+                .format(frappe.bold(row.country)),
+                title=_("Duplicate Country")
+            )
+        seen.add(row.country)
+
+
+def get_embassy_attestation_fee(country):
+    """The embassy attestation fee configured for a country, or None if there is none.
+
+    None and 0 mean different things here and the caller has to be able to tell them
+    apart: None is "this country's embassy does not attest, skip the step", 0 is "it does,
+    and charges nothing". WI-002028 routes the PCC workflow on that distinction.
+
+    Read off the cached HR Settings rather than queried per call - it is a settings
+    document read once per PCC Attestation save.
+    """
+    if not country:
+        return None
+
+    for row in frappe.get_cached_doc('HR Settings').get('embassy_attestation_rates') or []:
+        if row.country == country:
+            return flt(row.embassy_fee_kwd)
+
+    return None
