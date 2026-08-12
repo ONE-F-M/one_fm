@@ -39,9 +39,7 @@ def execute():
 	never re-runs after that) — including production, which is the whole
 	point: the SMTP connection needs to originate from production's
 	registered IP for Google Workspace's SMTP relay to accept it, and
-	`bench migrate` is the one thing guaranteed to execute there. See
-	`one_fm.patches.v15_0.send_amp_verification_test_email` for the
-	original precedent this follows.
+	`bench migrate` is the one thing guaranteed to execute there.
 
 	Deliberately does not raise — a transient email/SMTP failure must
 	never block or fail a production migration. Check the Email Queue
