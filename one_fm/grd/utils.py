@@ -94,3 +94,56 @@ def map_to_mgrp(source_name, target_doc=None):
     }, target_doc)
     return doc
 
+
+
+def next_employee_document_idx(employee):
+    """The idx a new Employee Document row should take.
+
+    A raw insert does not get the ordering a child table append would, so it is worked
+    out here rather than left at 0, where two rows would tie.
+    """
+    last = frappe.db.get_value(
+        "Employee Document",
+        {"parent": employee, "parenttype": "Employee"},
+        "idx",
+        order_by="idx desc",
+    )
+    return (last or 0) + 1
+
+
+def attach_employee_document(employee, document_name, attach, valid_till, issued_on=None):
+    """Record a government document on an Employee, without saving the whole Employee.
+
+    ``employee.append(...)`` followed by ``employee.save()`` drags the entire Employee
+    record through validation, so a GRD document could not be completed because of data
+    that has nothing to do with it - 1,124 employees hold a Marital Status the field's
+    options no longer accept ("Single", "Divorced", "Widowed"), and any full save of one
+    throws. This writes the one row it actually has and nothing else.
+
+    An existing row for the same ``document_name`` is updated rather than joined by a
+    second one, so a renewal replaces what it renews instead of stacking up.
+    """
+    values = {
+        "attach": attach,
+        "issued_on": issued_on or today(),
+        "valid_till": valid_till,
+    }
+
+    existing = frappe.db.exists(
+        "Employee Document", {"parent": employee, "document_name": document_name}
+    )
+    if existing:
+        frappe.db.set_value("Employee Document", existing, values)
+        return existing
+
+    row = frappe.get_doc({
+        "doctype": "Employee Document",
+        "parent": employee,
+        "parenttype": "Employee",
+        "parentfield": "one_fm_employee_documents",
+        "idx": next_employee_document_idx(employee),
+        "document_name": document_name,
+        **values,
+    })
+    row.db_insert()
+    return row.name
