@@ -12,6 +12,7 @@ from frappe.core.doctype.communication.email import make
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from one_fm.grd.doctype.paci import paci
 from one_fm.utils import is_scheduler_emails_enabled
+from one_fm.grd.utils import attach_employee_document
 
 class Residency(Document):
     company = frappe.db.get_value("Company", frappe.defaults.get_global_default('company'), 
@@ -118,43 +119,27 @@ class Residency(Document):
     def set_residency_expiry_new_date_in_employee_doctype(self):
         """
         runs: `on_submit`
-        This method to sort records of employee documents upon document name;
-        First, get the employee document child table.
-        second, find index of the document.
-        Third, set the new document.
-        After that, clear the child table and append the new order
-        """
-        today = date.today()
-        Find = False
-        employee = frappe.get_doc('Employee', self.employee)
-        document_dic = frappe.get_list('Employee Document',
-            fields={'attach','document_name','issued_on','valid_till'},
-            filters={'parent':self.employee}, ignore_permissions=True
-        )
-        for index,document in enumerate(document_dic):
-            if document.document_name == "Residency Expiry Attachment":
-                Find = True
-                break
-        if Find:
-            document_dic.insert(index,{
-                "attach": self.residency_attachment,
-                "document_name": "Residency Expiry Attachment",
-                "issued_on":today,
-                "valid_till": self.new_residency_expiry_date
-            })
-            employee.set('one_fm_employee_documents',[]) #clear the child table
-            for document in document_dic:                # append new arrangements
-                employee.append('one_fm_employee_documents',document)
+        Record the new residency attachment and expiry date on the Employee.
 
-        if not Find:
-            employee.append("one_fm_employee_documents", {
-            "attach": self.residency_attachment,
-            "document_name": "Residency Expiry Attachment",
-            "issued_on":today,
-            "valid_till":self.new_residency_expiry_date
-            })
-        employee.residency_expiry_date = self.new_residency_expiry_date
-        employee.save()
+        The two facts are written directly rather than through a full save of the
+        Employee, which re-validates every field on it - so completing a Residency
+        failed on data that has nothing to do with it: 1,124 employees hold a Marital
+        Status the field's options no longer accept ("Single", "Divorced", "Widowed").
+
+        The old version rebuilt the whole child table to keep it ordered, and inserted
+        the new row beside the existing one rather than over it, so every renewal left
+        another Residency Expiry Attachment behind. The helper updates the row in place.
+        """
+        attach_employee_document(
+            self.employee,
+            document_name="Residency Expiry Attachment",
+            attach=self.residency_attachment,
+            valid_till=self.new_residency_expiry_date,
+            issued_on=date.today(),
+        )
+        frappe.db.set_value(
+            "Employee", self.employee, "residency_expiry_date", self.new_residency_expiry_date
+        )
 
     def get_passport_arabic(self, passport):
         return {'Normal':'طبيعي','Diplomat':'دبلوماسي'}.get(passport)
