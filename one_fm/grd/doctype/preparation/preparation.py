@@ -6,7 +6,10 @@
 
 from __future__ import unicode_literals
 import frappe
+from frappe import _
 from frappe.model.document import Document
+from frappe.query_builder import DocType
+from frappe.utils import flt
 from frappe.utils import (
     today,
     add_months,
@@ -75,12 +78,47 @@ NEW_ACTION_DOCUMENTS = {
 }
 
 
+# WI-002031: the fee components a master row and a Preparation row both carry, and which
+# the Total Amount on each is the sum of. Named once because HR Settings and Preparation
+# have to agree on the list - a component added to one and not the other silently drops
+# out of the total on the other side.
+COST_COMPONENT_FIELDS = (
+    'work_permit_amount',
+    'medical_insurance_amount',
+    'residency_stamp_amount',
+    'civil_id_amount',
+)
+
+# The Actions whose master fee row is keyed by the number of years as well as the Action.
+# Mirrors the depends_on the costing table already puts on its No. of Years field.
+YEAR_SCOPED_ACTIONS = ('Renewal (Kuwaiti)', 'Renewal (Non-Kuwaiti)')
+
+
 class Preparation(Document):
     def update_total_amount(self):
-        doc_total =  sum(i.total_amount or 0 for i in self.preparation_record if i)
+        """Derive each row's Total Amount from its components, then the document total.
+
+        The row total was summed only in the browser (WI-002031), which left the field -
+        read-only, and the number finance is emailed - holding whatever the last client to
+        touch the row happened to compute. A row whose components were edited after submit,
+        or filled by any path other than the Action dropdown, kept a total that did not
+        match its own parts.
+
+        Rows are written with `db_set` once the document is submitted, because
+        `on_update_after_submit` runs after the child rows are already saved and a plain
+        assignment there would be discarded.
+        """
+        for row in self.preparation_record:
+            row_total = sum(flt(row.get(field)) for field in COST_COMPONENT_FIELDS)
+            if self.docstatus == 1:
+                row.db_set('total_amount', row_total)
+            else:
+                row.total_amount = row_total
+
+        doc_total = sum(flt(row.total_amount) for row in self.preparation_record)
         frappe.db.set_value(self.doctype,self.name,'total_payment',doc_total)
         self.total_payment = doc_total
-                     
+
     def on_update_after_submit(self):
         self.compare_preparation_record()
         self.update_total_amount()
@@ -229,11 +267,16 @@ class Preparation(Document):
 
             preparation.renewal_or_extend = extension_type if renew_all else ""
             preparation.no_of_years = no_of_years if renew_all else ""
-            preparation.work_permit_amount = costing.work_permit_amount if renew_all else ""
-            preparation.medical_insurance_amount = costing.medical_insurance_amount if renew_all else ""
-            preparation.residency_stamp_amount = costing.residency_stamp_amount if renew_all else ""
-            preparation.civil_id_amount = costing.civil_id_amount if renew_all else ""
-            preparation.total_amount = costing.total_amount if renew_all else ""
+            # A nationality with no master row configured used to fail here on
+            # `None.work_permit_amount`, taking the whole "renew all" action down with it
+            # (WI-002031). The row is left at zero instead, which the operator can see and
+            # fill, and the totals below stay consistent with it.
+            costing = costing or frappe._dict()
+            for field in COST_COMPONENT_FIELDS:
+                preparation.set(field, flt(costing.get(field)) if renew_all else 0)
+            preparation.total_amount = sum(
+                flt(preparation.get(field)) for field in COST_COMPONENT_FIELDS
+            )
 
 # Calculate the date of the next month (First & Last) (monthly cron in hooks)
 def auto_create_preparation_record():
@@ -342,25 +385,47 @@ def create_notification_log(subject, message, for_users, reference_doc):
         doc.insert(ignore_permissions=True)
 
 @frappe.whitelist()
-def get_grd_renewal_extension_cost(renewal_or_extend, no_of_years=False):
-	if renewal_or_extend == 'Renewal' and not no_of_years:
-		return False
-	else:
-		query = """
-			select
-				*
-			from
-				`tabGRD Renewal Extension Cost`
-			where
-				parent = 'HR Settings'
-				and
-				renewal_or_extend = '{0}'
-		""".format(renewal_or_extend)
-		if renewal_or_extend == 'Renewal':
-			query += " and no_of_years = '{0}'".format(no_of_years)
-		result = frappe.db.sql(query, as_dict=True)
-		if result and len(result) > 0:
-			return result[0]
+def get_grd_renewal_extension_cost(renewal_or_extend: str, no_of_years: str = None):
+    """The master fee breakdown HR Settings holds for an Action (WI-002031).
+
+    Rewritten off `frappe.db.sql` with the Action interpolated into the string. The Action
+    arrives from the browser through a whitelisted method, so that was an injection hole
+    open to any logged-in user, and the method had no permission check at all. Both are
+    closed here: the Query Builder parameterises the value, and the caller has to be
+    someone who could fill in a Preparation row, which is the only thing this feeds.
+
+    The old version filtered on the number of years only when the Action was exactly
+    "Renewal" - a value the field has not offered since the options became
+    "Renewal (Kuwaiti)" and "Renewal (Non-Kuwaiti)". The filter was therefore dead, and a
+    renewal with three configured rows (1, 2 and 3 Years) got whichever the database
+    handed back first. The years now scope the lookup for the two renewal Actions, which
+    are the ones whose master rows are keyed by it.
+
+    Deliberately not scoped by years for any other Action: the field is hidden for them
+    but not cleared, so a row switched from Renewal (Non-Kuwaiti) to Extend 1 month still
+    carries "1 Year", and filtering on it would find nothing and quietly return no fees.
+    """
+    if not frappe.has_permission('Preparation', 'write'):
+        frappe.throw(_("Not permitted to read the GRD renewal and extension costing."),
+                     frappe.PermissionError)
+
+    if renewal_or_extend in YEAR_SCOPED_ACTIONS and not no_of_years:
+        return False
+
+    Cost = DocType('GRD Renewal Extension Cost')
+    query = (
+        frappe.qb.from_(Cost)
+        .select('*')
+        .where(Cost.parent == 'HR Settings')
+        .where(Cost.parenttype == 'HR Settings')
+        .where(Cost.renewal_or_extend == renewal_or_extend)
+    )
+    if renewal_or_extend in YEAR_SCOPED_ACTIONS:
+        query = query.where(Cost.no_of_years == no_of_years)
+
+    result = query.run(as_dict=True)
+    if result:
+        return result[0]
 
 def create_documents_for_new_actions(preparation_name):
     """Generate the sub-documents the New Kuwaiti and Overseas Actions ask for (WI-001824).

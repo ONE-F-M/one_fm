@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.utils import today, add_days, get_url, date_diff, getdate
 from frappe.model.document import Document
-from frappe.utils import cstr, cint, get_fullname
+from frappe.utils import cstr, cint, get_fullname, flt
 from frappe.utils import today, add_days, get_url
 from datetime import date
 from frappe.model.mapper import get_mapped_doc
@@ -147,3 +147,21 @@ def attach_employee_document(employee, document_name, attach, valid_till, issued
     })
     row.db_insert()
     return row.name
+
+
+def set_renewal_extension_cost_totals(doc, method=None):
+    """Sum each master fee row's components into its Total Amount (WI-002031).
+
+    Runs on HR Settings validate. The sum was only ever done in the browser, so a row
+    saved by any other route - a data import, a patch, the API - kept a Total Amount that
+    did not match its own components, and every Preparation row that fetched it inherited
+    the mismatch. The field is read-only, so nobody could correct it by hand either.
+
+    Imported inside the function: the module is loaded by HR Settings' validate hook, and
+    importing Preparation at module scope makes HR Settings depend on the GRD doctype
+    module for a four-item tuple.
+    """
+    from one_fm.grd.doctype.preparation.preparation import COST_COMPONENT_FIELDS
+
+    for row in doc.get('renewal_extension_cost') or []:
+        row.total_amount = sum(flt(row.get(field)) for field in COST_COMPONENT_FIELDS)

@@ -36,29 +36,54 @@ frappe.ui.form.on('Preparation Record',{
 	}
 });
 
+// WI-002031: the Actions whose master fee row is keyed by the number of years too. Kept
+// in step with YEAR_SCOPED_ACTIONS in preparation.py and with the costing table's own
+// depends_on.
+const YEAR_SCOPED_ACTIONS = ['Renewal (Kuwaiti)', 'Renewal (Non-Kuwaiti)'];
+const COST_COMPONENT_FIELDS = [
+	'work_permit_amount',
+	'medical_insurance_amount',
+	'residency_stamp_amount',
+	'civil_id_amount'
+];
+
 var set_preparation_record_costing = function(frm, cdt, cdn) {
 	var row = locals[cdt][cdn];
-	if(row.renewal_or_extend){
-		if(row.renewal_or_extend == 'Renewal' & !row.no_of_years){
-			frappe.model.set_value(row.doctype, row.name, "no_of_years", '1 Year');
+	if(!row.renewal_or_extend){
+		return;
+	}
+
+	// The years only mean something for a renewal. Cleared otherwise, because the field is
+	// hidden rather than emptied when the Action changes, and a stale "1 Year" left on an
+	// Extend row is a year the master lookup would have been scoped by.
+	if(YEAR_SCOPED_ACTIONS.includes(row.renewal_or_extend)){
+		if(!row.no_of_years){
+			frappe.model.set_value(row.doctype, row.name, 'no_of_years', '1 Year');
+		}
+	} else if(row.no_of_years){
+		frappe.model.set_value(row.doctype, row.name, 'no_of_years', '');
+	}
+
+	// Cleared before the fetch, not inside a successful callback. Switching to an Action
+	// with no master row configured used to leave the fees of the previous Action sitting
+	// in the row, which is exactly the case the story calls out.
+	COST_COMPONENT_FIELDS.forEach(field => frappe.model.set_value(row.doctype, row.name, field, 0));
+	frappe.model.set_value(row.doctype, row.name, 'total_amount', 0);
+	frm.refresh_field('preparation_record');
+
+	frappe.call({
+		method: 'one_fm.grd.doctype.preparation.preparation.get_grd_renewal_extension_cost',
+		args: {'renewal_or_extend': row.renewal_or_extend, 'no_of_years': row.no_of_years},
+		callback: function(r) {
+			if(!r.message){
+				return;
+			}
+			var cost = r.message;
+			COST_COMPONENT_FIELDS.forEach(field =>
+				frappe.model.set_value(row.doctype, row.name, field, cost[field] || 0));
 			frm.refresh_field('preparation_record');
 		}
-		frappe.call({
-			method: 'one_fm.grd.doctype.preparation.preparation.get_grd_renewal_extension_cost',
-			args: {'renewal_or_extend': row.renewal_or_extend, 'no_of_years': row.no_of_years},
-			callback: function(r) {
-				if(r.message){
-					var cost = r.message;
-					frappe.model.set_value(row.doctype, row.name, "work_permit_amount", cost.work_permit_amount);
-					frappe.model.set_value(row.doctype, row.name, "medical_insurance_amount", cost.medical_insurance_amount);
-					frappe.model.set_value(row.doctype, row.name, "residency_stamp_amount", cost.residency_stamp_amount);
-					frappe.model.set_value(row.doctype, row.name, "civil_id_amount", cost.civil_id_amount);
-					frappe.model.set_value(row.doctype, row.name, "total_amount", cost.total_amount);
-					frm.refresh_field('preparation_record');
-				}
-			}
-		});
-	}
+	});
 };
 
 var caclulate_renewal_extension_cost_total = function(frm, child) {
