@@ -3918,12 +3918,12 @@ def call_to_get_assurance_level(employees):
         else:
             url = f"{api_wrapper_base_url}/api/DigitalSigning/BulkCheckMobileIdentity"
             headers = {'Content-Type': 'application/json','ApiKey': f'{api_key}'}
-            batch_size=200
+            batch_size=100
             all_results = []
             for i in range(0, len(employees), batch_size):
                 batch = employees[i:i + batch_size]
                 try:
-                    response = requests.post(url, headers=headers, json=batch, timeout=60)
+                    response = requests.post(url, headers=headers, json=batch, timeout=180)
                     if response.status_code == 200:
                         data = response.json()
                         batch_result = data.get("data", [])
