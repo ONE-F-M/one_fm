@@ -36,20 +36,25 @@ from one_fm.processor import sendemail
 # New Kuwaiti gets a Work Permit and nothing else: a Kuwaiti has no residency, no civil
 # ID application and no medical insurance process to open.
 #
-# A key means "open this document"; its value is the classification we have to hand the
-# creator. None where the creator works it out itself and its other callers rely on it
-# doing so - Medical Insurance maps the status off the Work Permit type, Residency maps
-# the category off the Action (see MOI_CATEGORY_BY_ACTION in residency.py). PACI writes
-# whatever it is given, so its category is named here. The values that result are the
-# mapping WI-001881 defines.
+# A key means "open this document"; its value is the government classification that
+# document is opened under. WI-002033: every value is stated here rather than left to the
+# creator to derive. Three of the four used to be None, meaning "Medical Insurance will
+# map the status off the Work Permit type and Residency will map the category off the
+# Action" - so this table, the one place an operator or a reviewer looks to see what an
+# Action produces, did not actually say what three of the four documents would get, and a
+# change to either creator's own mapping silently changed what Preparation produced.
+#
+# The creators keep their derivations for their other callers, which do not come through a
+# Preparation row and have nothing to pass. Residency still takes its application date
+# from MOI_CATEGORY_BY_ACTION; only the category is handed to it.
 NEW_ACTION_DOCUMENTS = {
     "New Kuwaiti": {
         "work_permit": "New Kuwaiti",
     },
     "Overseas": {
         "work_permit": "Overseas",
-        "medical_insurance": None,
-        "residency": None,
+        "medical_insurance": "New",
+        "residency": "First Time",
         "paci": "New Application",
     },
     # WI-002024: the same overseas hire, but against a government contract file rather
@@ -61,8 +66,8 @@ NEW_ACTION_DOCUMENTS = {
     # distinction is actually made.
     "Overseas (Government)": {
         "work_permit": "Overseas (Government)",
-        "medical_insurance": None,
-        "residency": None,
+        "medical_insurance": "New",
+        "residency": "First Time",
         "paci": "New Application",
     },
     # The process map groups Local Transfer with Overseas and the non-Kuwaiti renewal:
@@ -71,8 +76,8 @@ NEW_ACTION_DOCUMENTS = {
     # assuming one.
     "Local Transfer": {
         "work_permit": "Local Transfer",
-        "medical_insurance": None,
-        "residency": None,
+        "medical_insurance": "Local Transfer",
+        "residency": "Transfer",
         "paci": "Transfer",
     },
 }
@@ -464,10 +469,14 @@ def create_documents_for_row(row, preparation_name):
     )
 
     if "medical_insurance" in plan:
-        medical_insurance.create_mi_record(work_permit_doc)
+        medical_insurance.create_mi_record(
+            work_permit_doc, insurance_status=plan["medical_insurance"]
+        )
 
     if "residency" in plan:
-        residency.create_moi_record(employee_doc, row.renewal_or_extend, preparation_name)
+        residency.create_moi_record(
+            employee_doc, row.renewal_or_extend, preparation_name, category=plan["residency"]
+        )
 
     if "paci" in plan:
         paci.create_PACI(employee_doc, plan["paci"], preparation_name)

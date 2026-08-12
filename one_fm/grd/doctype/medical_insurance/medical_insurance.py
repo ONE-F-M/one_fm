@@ -97,10 +97,24 @@ def transfer_insurance_already_open(employee):
     }))
 
 
-def create_mi_record(WorkPermit):
+def create_mi_record(WorkPermit, insurance_status=None):
+    """Open the insurance a Work Permit calls for.
+
+    WI-002033: a caller that already knows the classification - a Preparation row, whose
+    Action states it in NEW_ACTION_DOCUMENTS - passes it in. The derivation below is kept
+    for the callers that do not: the transfer path and the renewal path arrive with a Work
+    Permit and nothing else.
+    """
     new_medical_insurance = frappe.new_doc('Medical Insurance')
 
-    if(WorkPermit.work_permit_type == "Renewal Non Kuwaiti"):
+    if insurance_status:
+        Insurance_status = insurance_status
+        # The application date still follows the Work Permit's, which is the fact the
+        # caller does not have and this function does.
+        new_medical_insurance.date_of_application = (
+            today() if insurance_status == "Local Transfer" else WorkPermit.date_of_application
+        )
+    elif(WorkPermit.work_permit_type == "Renewal Non Kuwaiti"):
         Insurance_status = "Renewal"
         new_medical_insurance.date_of_application = WorkPermit.date_of_application #setting the same date of application of wp
     elif(WorkPermit.work_permit_type in ("Overseas", "Overseas (Government)")):

@@ -296,9 +296,20 @@ def create_moi_for_transfer(work_permit_name):
             # field only risked a second lookup failing.
             create_moi_record(employee,"Transfer")
 
-def create_moi_record(employee,Renewal_or_Extend,preparation_name = None):
+def create_moi_record(employee,Renewal_or_Extend,preparation_name = None, category=None):
+    """Open the Residency an Action calls for.
 
-    category, days_before_expiry = MOI_CATEGORY_BY_ACTION.get(Renewal_or_Extend, ("Extend", -7))
+    WI-002033: a Preparation row states the category in NEW_ACTION_DOCUMENTS and passes it
+    in, so the table an operator reads to see what an Action produces is the one the
+    document is actually opened under. The map below still supplies the application date -
+    how many days before the residency expires it is applied for - which the caller does
+    not know, and still supplies the category for the callers that pass none: the transfer
+    path and the extend branch.
+    """
+    mapped_category, days_before_expiry = MOI_CATEGORY_BY_ACTION.get(
+        Renewal_or_Extend, ("Extend", -7)
+    )
+    category = category or mapped_category
     start_date = add_days(employee.residency_expiry_date, days_before_expiry) if days_before_expiry else today()
 
 
