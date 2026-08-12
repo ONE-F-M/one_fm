@@ -258,14 +258,24 @@ def compare_arabic_names(name1, name2):
 # the e-visa copy and the payment receipt the GRD Operator attaches once a visa is
 # issued. The mapping is the work item's own table - Mindee's field name on the left,
 # the Visa Request field it fills on the right.
+#
+# Carrier key, not a Frappe field: the receipt's clock time rides through the mapping
+# under this name and is folded into payment_date afterwards.
+_PAYMENT_TIME = "_payment_time"
 EVISA_FIELD_MAP = {
-	"reference_number": "visa_reference_number",
+	# The visa carries two numbers and they are not the same: the Visa Number at the
+	# top (رقم التأشيرة) and the Reference below it (رقم المرجع). Review settled on
+	# the Visa Number, and the model now returns it under visa_number.
+	"visa_number": "visa_reference_number",
 	"date_of_issue": "visa_issue_date",
 	"date_of_expiry": "visa_expiry_date",
 }
 
 RECEIPT_FIELD_MAP = {
 	"date": "payment_date",
+	# The receipt gives the clock time separately. It is not a field of its own on the
+	# Visa Request - it is merged into Payment Date below, which records both.
+	"time": _PAYMENT_TIME,
 }
 
 # Which of the mapped values are dates, and so go through the Frappe format conversion.
@@ -283,8 +293,26 @@ def extract_evisa_data(file_path):
 
 
 def extract_payment_receipt_data(file_path):
-	"""Read a payment receipt through Mindee (WI-001977). Returns {payment_date}."""
-	return _extract_mapped_fields(file_path, "receipt_model_id", RECEIPT_FIELD_MAP, "Payment Receipt")
+	"""Read a payment receipt through Mindee (WI-001977). Returns {payment_date}.
+
+	The receipt states the date and the clock time separately; Payment Date records
+	both, so two payments made on one day can be told apart by their receipts.
+	"""
+	return _merge_payment_time(
+		_extract_mapped_fields(file_path, "receipt_model_id", RECEIPT_FIELD_MAP, "Payment Receipt")
+	)
+
+
+def _merge_payment_time(extracted):
+	"""Fold the receipt's clock time into payment_date and drop the carrier key.
+
+	A receipt with no time still yields a usable Payment Date - it just lands at
+	midnight, which is what a Datetime field does with a bare date anyway.
+	"""
+	clock = extracted.pop(_PAYMENT_TIME, None)
+	if clock and extracted.get("payment_date"):
+		extracted["payment_date"] = f"{extracted['payment_date']} {clock}"
+	return extracted
 
 
 def _extract_mapped_fields(file_path, model_conf_key, field_map, label):
