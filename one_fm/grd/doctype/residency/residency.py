@@ -150,6 +150,40 @@ class Residency(Document):
 
         frappe.db.set_value('Employee', self.employee, 'one_fm_civil_id', self.original_civil_id)
         self.db_set('one_fm_civil_id', self.original_civil_id)
+        self.sync_damj_civil_id_to_paci()
+
+    def sync_damj_civil_id_to_paci(self):
+        """Carry the merged Civil ID over to the PACI opened alongside this Residency (WI-002027).
+
+        The PACI's Civil ID is fetched from the Employee, which means it is copied once at
+        insert and never looked at again. A Damj completed after the PACI was opened
+        therefore leaves the civil ID application quoting the number the government just
+        retired - the one thing it must not do.
+
+        Scoped to the same Preparation, which is what pairs the two documents: a
+        Preparation opens one Residency and one PACI per employee, so that pair is the
+        "linked record" the story means. A Residency with no Preparation - a transfer, say
+        - has no PACI to pair with and is left alone.
+
+        Cancelled records are skipped; there can be more than one live PACI for the same
+        employee (a rejected application and its replacement), and both need the
+        correction. Written with set_value because the field is read-only and the PACI may
+        already be submitted, and because a full save would re-run the PACI's own
+        validation over a document this change has no business re-validating.
+        """
+        if not self.preparation:
+            return
+
+        for paci_name in frappe.get_all(
+            'PACI',
+            filters={
+                'preparation': self.preparation,
+                'employee': self.employee,
+                'docstatus': ['!=', 2],
+            },
+            pluck='name',
+        ):
+            frappe.db.set_value('PACI', paci_name, 'civil_id', self.original_civil_id)
 
     def recall_create_paci(self):
         paci.create_PACI_for_transfer(self.employee)
