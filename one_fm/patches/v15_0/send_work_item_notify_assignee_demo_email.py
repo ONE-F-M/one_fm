@@ -2,23 +2,34 @@ import frappe
 from frappe import _
 
 SENDER = "notifications@one-fm.com"
-RECIPIENT = "s.shariff@one-fm.com"
+RECIPIENT = "notifications@one-fm.com"
 
-# Real, live BPMN Process Instance task for WI-001875's "Start Work" step —
-# not a synthetic demo. Must be in READY (16) or WAITING (8) state at the
-# time this runs; look these up fresh from the BPMN Process Instance's
-# `workflow_state` (not the older, possibly-stale `serialized_spec`) if
-# reusing this pattern for a different task.
-INSTANCE_NAME = "c57ogcqvmu"
-TASK_ID = "1c9b34b8-019e-4402-bd74-75905d15b0f6"
-WORK_ITEM_ID = "WI-001875"
-WORK_ITEM_TITLE = "1.2 Skills index in the static context and on-trigger body loading"
+# Real, live BPMN Process Instance task for WI-001663's "Start Work" step —
+# not a synthetic demo. Confirmed via both the instance's `workflow_state`
+# (task state 16 = READY) and its `active_tasks` child table (status
+# "Waiting", task_name "Start Work"). Must stay in READY (16) or WAITING (8)
+# state at the time this runs; look these up fresh from the BPMN Process
+# Instance's `workflow_state` (not the older, possibly-stale
+# `serialized_spec`) if reusing this pattern for a different task.
+INSTANCE_NAME = "orj9cj8ajr"
+TASK_ID = "bb085897-1b90-488a-836a-846672b4aacd"
+WORK_ITEM_ID = "WI-001663"
+WORK_ITEM_TITLE = "Refactor AI Model, AI Provider and AI Model pricing doctype"
+
+# The task's real assignee — the token must be issued for this user (not
+# RECIPIENT) since handle_amp_action checks it against the task's actual
+# assignment. RECIPIENT is only where this copy of the email is delivered
+# for inspection (notifications@one-fm.com itself, to verify the MIME/CORS
+# mechanics) — not who's expected to click it.
+ASSIGNEE_USER = "k.sharma@one-fm.com"
 
 
 def execute():
 	"""One-time trigger: send a real "Start Work" notification email — tied
-	to the actual live BPMN task for WI-001875 — from
-	notifications@one-fm.com to the real assignee (s.shariff@one-fm.com),
+	to the actual live BPMN task for WI-001663 — from
+	notifications@one-fm.com to notifications@one-fm.com itself (a
+	self-addressed copy, to inspect the MIME structure and CORS headers
+	directly via "Show original" before pointing this at a real assignee),
 	through the actual production sending pipeline.
 
 	The email's "Start Work" action is a genuine one-click AMP action tied
@@ -32,7 +43,9 @@ def execute():
 	`amp_workflow_actions` static allowlist, which is reserved for
 	documents with no BPMN engine behind them at all. Clicking the button
 	calls `complete_task` on the real Process Instance, genuinely advancing
-	it — a deliberate, confirmed side effect for this specific task.
+	it — a deliberate, confirmed side effect for this specific task, for
+	whoever actually clicks it (the token is issued to ASSIGNEE_USER, not
+	RECIPIENT).
 
 	This runs automatically, once, the first time `bench migrate` executes
 	on any site with this patch present (Frappe's Patch Log ensures it
@@ -49,7 +62,7 @@ def execute():
 		send()
 	except Exception:
 		frappe.log_error(
-			title="WI-001875 Start Work AMP notify failed",
+			title="WI-001663 Start Work AMP notify failed",
 			message=frappe.get_traceback(),
 		)
 
@@ -84,24 +97,24 @@ def send():
 <tr><td><b>Type</b></td><td>User Story</td></tr>
 <tr><td><b>Priority</b></td><td>Medium</td></tr>
 <tr><td><b>Sprint</b></td><td>AI-017 (Active)</td></tr>
-<tr><td><b>Story Points</b></td><td>5</td></tr>
-<tr><td><b>Epic</b></td><td>Agent Skills</td></tr>
+<tr><td><b>Story Points</b></td><td>3</td></tr>
+<tr><td><b>Epic</b></td><td>Processa</td></tr>
 <tr><td><b>Reported By</b></td><td><a href="mailto:k.sharma@one-fm.com">k.sharma@one-fm.com</a></td></tr>
-<tr><td><b>PR Required</b></td><td>Yes</td></tr>
+<tr><td><b>PR Required</b></td><td>No</td></tr>
 <tr><td><b>Research Required</b></td><td>No</td></tr>
 </tbody>
 </table>
 <p style="margin:1em 0!important"><b>Description</b><br></p>
-<p style="margin:0!important">Add skills-index rendering in context_assembler.build_static_context and active-skill tracking in the dispatcher's dynamic-preamble path.</p>
+<p style="margin:0!important">{WORK_ITEM_TITLE}</p>
 """.strip()
 
 	# Real BPMN-instance-tied token — the same mechanism
-	# compose_andsend_task_email uses for every other task action.
+	# compose_and_send_task_email uses for every other task action.
 	actions = build_email_actions(
 		instance_name=INSTANCE_NAME,
 		task_id=TASK_ID,
 		actions=[{"label": "Start Work", "primary": True}],
-		user=RECIPIENT,
+		user=ASSIGNEE_USER,
 	)
 
 	task_content = {
