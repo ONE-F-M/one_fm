@@ -217,20 +217,29 @@ def get_nationality_attestation_rule(nationality):
     return None
 
 
-def get_pcc_attestation_fees(nationality):
+def get_pcc_attestation_fees(nationality, is_translation=False):
     """What a PCC for this nationality requires, and what each step costs.
 
-    Returned as a dict of the three requirements and the three fees, so the PCC controller
-    and the workflow conditions both read the same answer rather than each re-deriving it
-    from the table.
+    Returned as one dict of the three requirements and the three fees, so the PCC controller
+    and the workflow conditions read the same answer rather than each re-deriving it.
 
-    A step that is not required carries a fee of 0 rather than None: the fee fields on PCC
-    Attestation are Currency and the cost breakdown adds them up, so a step that does not
-    apply has to contribute nothing rather than blank out the total.
+    `is_translation` is the record's own Type. Translation work never goes near an embassy or
+    MOFA, so those two are off for it whatever the nationality's rule says - and it is
+    translation by definition, so the translation fee applies even to a nationality whose rule
+    does not call for one.
+
+    The translation fee otherwise follows the nationality's Translation Required flag. The
+    reporter's data marks four nationalities that way regardless of what an operator selects,
+    which is a fact about the certificate rather than a choice, so an Attestation for one of
+    them carries the fee too.
+
+    A step that is not required carries a fee of 0 rather than None: the fee fields are
+    Currency and the cost breakdown adds them up, so a step that does not apply has to
+    contribute nothing rather than blank out the total.
 
     A required MOFA step with no fee of its own falls back to the standard MOFA Fee in HR
-    Settings. The reporter's data charges every nationality the same 5 KWD, so the per-row
-    fee exists for the day one of them differs, and leaving it blank should mean "the usual"
+    Settings. The reporter's data charges every nationality the same 5 KWD, so the per-row fee
+    exists for the day one of them differs, and leaving it blank should mean "the usual"
     rather than "free".
 
     MOFA is the baseline, so a nationality with no row in the table still goes through it at
@@ -246,20 +255,23 @@ def get_pcc_attestation_fees(nationality):
     settings = frappe.get_cached_doc('HR Settings')
     rule = get_nationality_attestation_rule(nationality)
 
-    if not rule:
-        return frappe._dict(
-            embassy_required=False, embassy_fee=0.0,
-            mofa_required=True, mofa_fee=flt(settings.get('mofa_fee_kwd')),
-            translation_required=False, translation_fee=0.0,
-        )
+    # MOFA is the baseline, so a nationality with no row still goes through it. The table
+    # records exceptions - the one nationality that skips MOFA is listed with the box
+    # unchecked - and reading an absent row as "needs nothing" would send every unlisted
+    # candidate past an attestation they actually require (WI-002029, third criterion).
+    embassy_required = bool(rule and rule.embassy_required) and not is_translation
+    mofa_required = (bool(rule.mofa_required) if rule else True) and not is_translation
+    translation_required = is_translation or bool(rule and rule.translation_required)
+
+    mofa_fee = 0.0
+    if mofa_required:
+        mofa_fee = (flt(rule.mofa_fee_kwd) if rule else 0.0) or flt(settings.get('mofa_fee_kwd'))
 
     return frappe._dict(
-        embassy_required=bool(rule.embassy_required),
-        embassy_fee=flt(rule.embassy_fee_kwd) if rule.embassy_required else 0.0,
-        mofa_required=bool(rule.mofa_required),
-        mofa_fee=(
-            flt(rule.mofa_fee_kwd) or flt(settings.get('mofa_fee_kwd'))
-        ) if rule.mofa_required else 0.0,
-        translation_required=bool(rule.translation_required),
-        translation_fee=flt(settings.get('pcc_translation_fee_kwd')) if rule.translation_required else 0.0,
+        embassy_required=embassy_required,
+        embassy_fee=flt(rule.embassy_fee_kwd) if embassy_required else 0.0,
+        mofa_required=mofa_required,
+        mofa_fee=mofa_fee,
+        translation_required=translation_required,
+        translation_fee=flt(settings.get('pcc_translation_fee_kwd')) if translation_required else 0.0,
     )
