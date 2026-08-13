@@ -111,22 +111,22 @@ def get_hr_settings_custom_fields():
                 "options": "GRD Renewal Extension Cost"
             },
             {
-                "fieldname": "embassy_attestation_rates_section",
+                "fieldname": "nationality_attestation_rules_section",
                 "fieldtype": "Section Break",
                 "insert_after": "renewal_extension_cost",
-                "label": "Embassy Attestation Rates"
+                "label": "Nationality Attestation Rules"
             },
             {
-                "fieldname": "embassy_attestation_rates",
+                "fieldname": "nationality_attestation_rules",
                 "fieldtype": "Table",
-                "insert_after": "embassy_attestation_rates_section",
-                "options": "Embassy Attestation Rate",
-                "description": "Countries whose embassy charges an attestation fee, and the fee. A country listed here means a PCC for a candidate born there needs embassy attestation; a country absent from the table means it does not."
+                "insert_after": "nationality_attestation_rules_section",
+                "options": "Nationality Attestation Rule",
+                "description": "What a Police Clearance Certificate needs for each nationality: whether the embassy attests and at what fee, whether MOFA attests and at what fee, and whether the certificate has to be translated. A nationality with no row here needs none of the three."
             },
             {
                 "fieldname": "costing_section",
                 "fieldtype": "Section Break",
-                "insert_after": "embassy_attestation_rates",
+                "insert_after": "nationality_attestation_rules",
                 "label": "Costing Settings"
             },
             {

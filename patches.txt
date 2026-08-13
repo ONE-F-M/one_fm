@@ -1,1 +1,0 @@
-one_fm.patches.v15_0.add_embassy_attestation_rates_to_hr_settings #2026-08-12 WI-002025

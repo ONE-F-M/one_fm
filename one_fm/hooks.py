@@ -242,7 +242,7 @@ doc_events = {
 	},
 	"HR Settings": {
 		"validate": [
-			"one_fm.grd.utils.validate_embassy_attestation_rates"
+			"one_fm.grd.utils.validate_nationality_attestation_rules"
 		]
 	},
 	"Stock Entry": {
