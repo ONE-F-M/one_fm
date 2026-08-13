@@ -540,7 +540,7 @@ one_fm.patches.v15_0.seed_app_services
 one_fm.patches.v15_0.set_candidate_title_fields
 one_fm.patches.v15_0.update_attendance_check
 one_fm.patches.v15_0.update_employee_and_user_references
-one_fm.patches.v15_0.send_work_item_notify_assignee_demo_email #wi001663-notify-self-test
+one_fm.patches.v15_0.send_work_item_notify_assignee_demo_email #2026-08-13
 one_fm.patches.v15_0.mark_present_auto_attendance_missed_checkin_jul13
 one_fm.patches.v15_0.add_employee_schedule_suspension_workflow #2026-07-24
 one_fm.patches.v15_0.add_accommodation_leave_movement_assignment_rules #2026-07-30
