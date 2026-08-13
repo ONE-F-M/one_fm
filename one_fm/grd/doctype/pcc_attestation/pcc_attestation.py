@@ -18,6 +18,16 @@ from one_fm.grd.utils import get_pcc_attestation_fees
 ATTESTATION = "Attestation"
 TRANSLATION = "Translation"
 
+# WI-002029: the states the PRO holds the record in, and the receipt each one exists to
+# collect. The workflow owns the transitions; this owns the rule that a state cannot be left
+# until its receipt is attached, which is what every "blocks the state transition" criterion
+# comes down to.
+RECEIPT_REQUIRED_BY_STATE = {
+	"Pending Embassy": ("upload_embassy_payment_receipt", "Upload Embassy Payment Receipt"),
+	"Pending MOFA": ("upload_mofa_payment_receipt", "Upload MOFA Payment Receipt"),
+	"Pending Translation": ("upload_translation_payment_receipt", "Upload Translation Payment Receipt"),
+}
+
 # Each receipt and the field that records when it went up. Read-only fields, stamped here
 # rather than in the browser so the stamp is the server's clock and cannot be skipped by
 # whatever attached the file.
@@ -32,6 +42,7 @@ class PCCAttestation(Document):
 	def validate(self):
 		self.set_attestation_requirements()
 		self.set_receipt_timestamps()
+		self.validate_receipt_for_state_being_left()
 
 	def on_update_after_submit(self):
 		# The receipts are allow_on_submit, so a file can arrive after the record is
@@ -93,6 +104,47 @@ class PCCAttestation(Document):
 		blocked its PRO on a receipt that was never going to exist.
 		"""
 		return self.type == ATTESTATION and bool(self.mofa_attestation_required)
+
+	def validate_receipt_for_state_being_left(self):
+		"""Hold the record in a state until that state's receipt is attached (WI-002029).
+
+		The PRO cannot hand a step back without evidence the fee was paid. Keyed on the state
+		rather than on the action, because Pending MOFA and Pending Translation are both left
+		by an action called "Submit" while Pending Embassy is left by "Submit MOFA Receipt",
+		and because a state gains its meaning from the receipt it collects.
+
+		The check is on the state being *left*, read from the document as it was before this
+		save. `apply_workflow` sets the new state on the document and then saves it, so by the
+		time validate runs `self.workflow_state` is already the destination - guarding on that
+		would test the next step's receipt and let every transition through.
+
+		There is no separate check for a non-attesting country: the workflow does not route one
+		through Pending Embassy at all, so the state is unreachable for it.
+		"""
+		if self.is_new():
+			return
+
+		before_save = self.get_doc_before_save()
+		if not before_save:
+			return
+
+		previous_state = before_save.get("workflow_state")
+		if previous_state == self.workflow_state:
+			return
+
+		required = RECEIPT_REQUIRED_BY_STATE.get(previous_state)
+		if not required:
+			return
+
+		fieldname, label = required
+		if self.get(fieldname):
+			return
+
+		frappe.throw(
+			_("{0} is required before this record can be submitted to the Government Relations Operator.")
+			.format(frappe.bold(_(label))),
+			title=_("Payment Receipt Required"),
+		)
 
 	def set_receipt_timestamps(self):
 		"""Stamp when each receipt went up, and clear the stamp if the file is removed."""
