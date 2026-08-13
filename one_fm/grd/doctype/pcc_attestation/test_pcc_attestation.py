@@ -6,9 +6,15 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 A_RECEIPT = "/files/receipt.pdf"
-ATTESTING_COUNTRY = "Nepal"
-NON_ATTESTING_COUNTRY = "India"
-EMBASSY_FEE = 15.0
+
+# From the reporter's master data. Nepali needs all of embassy and MOFA; Indian needs MOFA
+# only; Ugandan needs neither, translation only - the row the earlier shape could not
+# represent, and the reason the requirements are three separate flags.
+EMBASSY_AND_MOFA = "Nepali"
+MOFA_ONLY = "Indian"
+NEITHER = "Ugandan"
+EMBASSY_FEE = 16.0
+MOFA_FEE = 5.0
 
 
 def _an_active_employee():
@@ -20,31 +26,45 @@ def _an_active_employee():
 
 class TestPCCAttestation(FrappeTestCase):
 	def setUp(self):
-		for country in (ATTESTING_COUNTRY, NON_ATTESTING_COUNTRY):
-			if not frappe.db.exists("Country", country):
-				self.skipTest(f"Country {country} is not on this site")
+		for nationality in (EMBASSY_AND_MOFA, MOFA_ONLY, NEITHER):
+			if not frappe.db.exists("Nationality", nationality):
+				self.skipTest(f"Nationality {nationality} is not on this site")
 
 		self.employee = _an_active_employee()
 		settings = frappe.get_doc("HR Settings")
-		settings.set("embassy_attestation_rates", [])
-		settings.append(
-			"embassy_attestation_rates",
-			{"country": ATTESTING_COUNTRY, "embassy_fee_kwd": EMBASSY_FEE},
-		)
+		settings.set("nationality_attestation_rules", [])
+		settings.append("nationality_attestation_rules", {
+			"nationality": EMBASSY_AND_MOFA,
+			"embassy_required": 1, "embassy_fee_kwd": EMBASSY_FEE,
+			"mofa_required": 1, "mofa_fee_kwd": MOFA_FEE,
+			"translation_required": 0,
+		})
+		settings.append("nationality_attestation_rules", {
+			"nationality": MOFA_ONLY,
+			"embassy_required": 0,
+			"mofa_required": 1, "mofa_fee_kwd": MOFA_FEE,
+			"translation_required": 0,
+		})
+		settings.append("nationality_attestation_rules", {
+			"nationality": NEITHER,
+			"embassy_required": 0, "mofa_required": 0, "translation_required": 1,
+		})
+		settings.mofa_fee_kwd = MOFA_FEE
 		settings.flags.ignore_permissions = True
 		settings.save()
 		frappe.clear_cache(doctype="HR Settings")
 
-	def _pcc(self, born_in=None, **kwargs):
-		"""A PCC Attestation for the test employee, optionally born in a given country.
+	def _pcc(self, nationality=None, **kwargs):
+		"""A PCC Attestation for the test employee, optionally of a given nationality.
 
-		The country is set on the Employee, not on the record: place_of_birth is fetched from
-		employee.one_fm_place_of_birth, and Frappe applies fetch_from before validate runs, so
-		a value passed here would be overwritten before the controller ever saw it. Which is
-		the behaviour we want - the country is the Employee's fact, not the operator's.
+		The nationality is set on the Employee, not on the record: PCC Attestation.nationality
+		is fetched from employee.one_fm_nationality, and Frappe applies fetch_from before
+		validate runs, so a value passed here would be overwritten before the controller ever
+		saw it. Which is the behaviour we want - the nationality is the Employee's fact, not
+		the operator's.
 		"""
-		if born_in is not None:
-			frappe.db.set_value("Employee", self.employee, "one_fm_place_of_birth", born_in)
+		if nationality is not None:
+			frappe.db.set_value("Employee", self.employee, "one_fm_nationality", nationality)
 
 		pcc = frappe.get_doc(
 			{
@@ -69,29 +89,72 @@ class TestPCCAttestation(FrappeTestCase):
 		self.assertEqual(pcc.passport_number, employee.passport_number)
 		self.assertEqual(pcc.company_pam_file_number, employee.pam_file_number)
 
-	def test_an_attesting_country_gets_its_embassy_fee(self):
-		pcc = self._pcc(born_in=ATTESTING_COUNTRY)
-		self.assertEqual(pcc.place_of_birth, ATTESTING_COUNTRY)
+	def test_a_nationality_needing_embassy_and_mofa_gets_both_fees(self):
+		pcc = self._pcc(nationality=EMBASSY_AND_MOFA)
+
+		self.assertEqual(pcc.nationality, EMBASSY_AND_MOFA)
+		self.assertTrue(pcc.embassy_attestation_required)
 		self.assertEqual(pcc.requires_embassy_attestation, EMBASSY_FEE)
+		self.assertTrue(pcc.mofa_attestation_required)
+		self.assertEqual(pcc.mofa_fee, MOFA_FEE)
 		self.assertTrue(pcc.needs_embassy_attestation)
+		self.assertTrue(pcc.needs_mofa_attestation)
 
-	def test_the_country_comes_from_the_employee_not_the_operator(self):
-		# place_of_birth is fetched from the Employee, so an operator cannot talk the record
-		# into an embassy fee the candidate is not entitled to by typing a country in.
-		pcc = self._pcc(born_in=NON_ATTESTING_COUNTRY, place_of_birth=ATTESTING_COUNTRY)
+	def test_a_mofa_only_nationality_skips_the_embassy(self):
+		pcc = self._pcc(nationality=MOFA_ONLY)
 
-		self.assertEqual(pcc.place_of_birth, NON_ATTESTING_COUNTRY)
+		self.assertFalse(pcc.embassy_attestation_required)
 		self.assertEqual(pcc.requires_embassy_attestation, 0)
-
-	def test_a_country_not_in_the_table_needs_no_embassy_step(self):
-		pcc = self._pcc(born_in=NON_ATTESTING_COUNTRY)
-		self.assertEqual(pcc.requires_embassy_attestation, 0)
+		self.assertTrue(pcc.mofa_attestation_required)
+		self.assertEqual(pcc.mofa_fee, MOFA_FEE)
 		self.assertFalse(pcc.needs_embassy_attestation)
+		self.assertTrue(pcc.needs_mofa_attestation)
 
-	def test_translation_work_never_carries_an_embassy_fee(self):
-		pcc = self._pcc(born_in=ATTESTING_COUNTRY, type="Translation")
-		self.assertEqual(pcc.requires_embassy_attestation, 0)
+	def test_a_nationality_needing_neither_step(self):
+		# Ugandan. Under the earlier shape this routed to Pending MOFA and blocked the PRO on
+		# a receipt that was never going to exist.
+		pcc = self._pcc(nationality=NEITHER)
+
+		self.assertFalse(pcc.embassy_attestation_required)
+		self.assertFalse(pcc.mofa_attestation_required)
 		self.assertFalse(pcc.needs_embassy_attestation)
+		self.assertFalse(pcc.needs_mofa_attestation)
+		self.assertEqual([pcc.requires_embassy_attestation, pcc.mofa_fee], [0, 0])
+
+	def test_the_translation_flag_comes_from_the_nationality(self):
+		self.assertTrue(self._pcc(nationality=NEITHER).translation_required)
+		self.assertFalse(self._pcc(nationality=MOFA_ONLY).translation_required)
+
+	def test_the_nationality_comes_from_the_employee_not_the_operator(self):
+		# An operator cannot talk the record into an embassy fee the candidate is not entitled
+		# to by typing a nationality in.
+		pcc = self._pcc(nationality=MOFA_ONLY)
+		self.assertEqual(pcc.nationality, MOFA_ONLY)
+		self.assertEqual(pcc.requires_embassy_attestation, 0)
+
+	def test_an_unlisted_nationality_needs_nothing(self):
+		unlisted = frappe.db.get_value(
+			"Nationality",
+			{"name": ["not in", [EMBASSY_AND_MOFA, MOFA_ONLY, NEITHER]]},
+			"name",
+			order_by="name asc",
+		)
+		if not unlisted:
+			self.skipTest("No unlisted Nationality on this site")
+
+		pcc = self._pcc(nationality=unlisted)
+
+		self.assertFalse(pcc.embassy_attestation_required)
+		self.assertFalse(pcc.mofa_attestation_required)
+		self.assertFalse(pcc.translation_required)
+
+	def test_translation_work_never_carries_an_embassy_or_mofa_fee(self):
+		pcc = self._pcc(nationality=EMBASSY_AND_MOFA, type="Translation")
+
+		self.assertEqual(pcc.requires_embassy_attestation, 0)
+		self.assertEqual(pcc.mofa_fee, 0)
+		self.assertFalse(pcc.needs_embassy_attestation)
+		self.assertFalse(pcc.needs_mofa_attestation)
 
 	def test_attaching_a_receipt_stamps_its_timestamp(self):
 		pcc = self._pcc(upload_mofa_payment_receipt=A_RECEIPT)

@@ -13,7 +13,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import now
 
-from one_fm.grd.utils import get_embassy_attestation_fee
+from one_fm.grd.utils import get_pcc_attestation_fees
 
 ATTESTATION = "Attestation"
 TRANSLATION = "Translation"
@@ -30,7 +30,7 @@ RECEIPT_TIMESTAMPS = (
 
 class PCCAttestation(Document):
 	def validate(self):
-		self.set_embassy_attestation_fee()
+		self.set_attestation_requirements()
 		self.set_receipt_timestamps()
 
 	def on_update_after_submit(self):
@@ -38,32 +38,61 @@ class PCCAttestation(Document):
 		# submitted. validate does not run on that path.
 		self.set_receipt_timestamps()
 
-	def set_embassy_attestation_fee(self):
-		"""Fetch the embassy fee for the candidate's Place of Birth (WI-002025 / WI-002028).
+	def set_attestation_requirements(self):
+		"""Derive what this certificate needs from the candidate's nationality (WI-002025).
 
-		A country in the Embassy Cost Table means its embassy attests and charges the stated
-		fee. A country absent from the table means it does not attest at all, and the fee
-		stays empty - which is what `requires_embassy_attestation` is read for when the
-		workflow decides whether to route through Pending Embassy.
+		The Nationality Attestation Rules in HR Settings say, per nationality, whether the
+		embassy attests, whether MOFA attests, and whether the certificate has to be
+		translated. All three are independent: the reporter's data has nationalities that need
+		MOFA but no embassy, and one - Ugandan - that needs neither, only translation.
 
-		Translation work never goes near an embassy, so the fee is cleared for it rather
-		than left showing a charge nobody will pay.
+		Held on the record as three flags rather than inferred from the fees, because a fee of
+		zero and a step that does not apply are different things, and the workflow routes on
+		the difference. An embassy that attests for free still has to be visited.
+
+		A nationality with no row in the table needs none of the three.
+
+		Translation work never goes near an embassy or MOFA, so those two are cleared for it
+		rather than left showing charges nobody will pay - and an Attestation is not a
+		translation, so its translation fee is cleared for the same reason.
 		"""
+		fees = get_pcc_attestation_fees(self.nationality)
+
 		if self.type == TRANSLATION:
+			self.embassy_attestation_required = 0
+			self.mofa_attestation_required = 0
 			self.requires_embassy_attestation = 0
+			self.mofa_fee = 0
+			self.translation_required = 1
+			self.translation_fee = fees.translation_fee
 			return
 
-		fee = get_embassy_attestation_fee(self.place_of_birth)
-		self.requires_embassy_attestation = fee if fee is not None else 0
+		self.embassy_attestation_required = int(fees.embassy_required)
+		self.mofa_attestation_required = int(fees.mofa_required)
+		self.translation_required = int(fees.translation_required)
+
+		self.requires_embassy_attestation = fees.embassy_fee
+		self.mofa_fee = fees.mofa_fee
+		self.translation_fee = 0
 
 	@property
 	def needs_embassy_attestation(self):
-		"""Does this candidate's country attest at all?
+		"""Does this candidate's nationality need the embassy step at all?
 
-		Distinct from the fee being non-zero: an embassy that attests for free still has to
-		be visited, so the question is whether the country is in the table.
+		Distinct from the fee being non-zero: an embassy that attests for free still has to be
+		visited, so the question is what the rule says, not what it charges.
 		"""
-		return self.type == ATTESTATION and get_embassy_attestation_fee(self.place_of_birth) is not None
+		return self.type == ATTESTATION and bool(self.embassy_attestation_required)
+
+	@property
+	def needs_mofa_attestation(self):
+		"""Does this candidate's nationality need the MOFA step at all?
+
+		The reason this exists: the reporter's data has a nationality that needs neither
+		embassy nor MOFA, and routing "not embassy" straight to Pending MOFA would have
+		blocked its PRO on a receipt that was never going to exist.
+		"""
+		return self.type == ATTESTATION and bool(self.mofa_attestation_required)
 
 	def set_receipt_timestamps(self):
 		"""Stamp when each receipt went up, and clear the stamp if the file is removed."""

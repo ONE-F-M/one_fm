@@ -34,6 +34,9 @@
   "residency_expiry_date",
   "company_pam_file_number",
   "attestation_and_cost_breakdown_section",
+  "embassy_attestation_required",
+  "mofa_attestation_required",
+  "translation_required",
   "requires_embassy_attestation",
   "translation_fee",
   "column_break_oidl",
@@ -336,12 +339,39 @@
    "options": "PCC Attestation",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "description": "Derived from the Nationality Attestation Rules in HR Settings.",
+   "fieldname": "embassy_attestation_required",
+   "fieldtype": "Check",
+   "label": "Embassy Attestation Required",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "description": "Derived from the Nationality Attestation Rules in HR Settings.",
+   "fieldname": "mofa_attestation_required",
+   "fieldtype": "Check",
+   "label": "MOFA Attestation Required",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "description": "Derived from the Nationality Attestation Rules in HR Settings.",
+   "fieldname": "translation_required",
+   "fieldtype": "Check",
+   "label": "Translation Required",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-12 11:30:00.000000",
+ "modified": "2026-08-13 09:30:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PCC Attestation",
