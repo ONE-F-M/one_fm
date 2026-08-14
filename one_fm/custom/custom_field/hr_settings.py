@@ -133,6 +133,20 @@ def get_hr_settings_custom_fields():
                 "description": "The print format to attach in the notification to the finance team about the preparation cost. If leave this field blank the will consider Standard print format for attachment."
             },
             {
+                "fieldname": "penalty_email_section",
+                "fieldtype": "Section Break",
+                "insert_after": "costing_print_format",
+                "label": "Penalty Report Email"
+            },
+            {
+                "fieldname": "penalty_email_recipients",
+                "fieldtype": "Table",
+                "insert_after": "penalty_email_section",
+                "label": "Penalty Email Recipients",
+                "options": "Penalty Email Recipient",
+                "description": "Who receives the monthly penalty report. TO rows are addressed directly, CC rows are copied. With no rows here the monthly job sends nothing rather than broadcasting to nobody."
+            },
+            {
                 "fieldname": "helpdesk_email",
                 "fieldtype": "Data",
                 "options": "Email",
@@ -143,7 +157,7 @@ def get_hr_settings_custom_fields():
             {
                 "fieldname": "onboarding_settings_tab",
                 "fieldtype": "Tab Break",
-                "insert_after": "costing_print_format",
+                "insert_after": "penalty_email_recipients",
                 "label": "Onboarding Settings"
             },
             {
