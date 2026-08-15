@@ -132,7 +132,7 @@ class TestPCCAttestation(FrappeTestCase):
 		self.assertEqual(pcc.nationality, MOFA_ONLY)
 		self.assertEqual(pcc.requires_embassy_attestation, 0)
 
-	def test_an_unlisted_nationality_needs_nothing(self):
+	def test_an_unlisted_nationality_still_goes_through_mofa(self):
 		unlisted = frappe.db.get_value(
 			"Nationality",
 			{"name": ["not in", [EMBASSY_AND_MOFA, MOFA_ONLY, NEITHER]]},
@@ -145,7 +145,8 @@ class TestPCCAttestation(FrappeTestCase):
 		pcc = self._pcc(nationality=unlisted)
 
 		self.assertFalse(pcc.embassy_attestation_required)
-		self.assertFalse(pcc.mofa_attestation_required)
+		self.assertTrue(pcc.mofa_attestation_required)
+		self.assertEqual(pcc.mofa_fee, MOFA_FEE)
 		self.assertFalse(pcc.translation_required)
 
 	def test_translation_work_never_carries_an_embassy_or_mofa_fee(self):

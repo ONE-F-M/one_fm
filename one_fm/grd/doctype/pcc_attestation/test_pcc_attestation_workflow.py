@@ -104,6 +104,8 @@ class TestPCCAttestationWorkflow(FrappeTestCase):
 			("Attestation", 0, 1, 0, "Pending MOFA"),
 			("Attestation", 0, 1, 1, "Pending MOFA"),
 			("Attestation", 0, 0, 1, "Pending Translation"),
+			# Only reachable by an explicit row with all three unchecked; an unlisted
+			# nationality resolves to mofa_required=1 and takes the Pending MOFA branch.
 			("Attestation", 0, 0, 0, "Pending GR Operator"),
 			("Translation", 1, 1, 1, "Pending Translation"),
 			("Translation", 0, 0, 0, "Pending Translation"),
@@ -215,8 +217,8 @@ class TestPCCAttestationWorkflow(FrappeTestCase):
 					f"{rule_name} does not assign in {state}",
 				)
 				self.assertFalse(
-					frappe.safe_eval(rule.close_condition, None, dict(context)),
-					f"{rule_name} closes in {state}",
+					frappe.safe_eval(rule.unassign_condition, None, dict(context)),
+					f"{rule_name} unassigns in {state}",
 				)
 
 			context = {"workflow_state": other_state}
@@ -225,9 +227,22 @@ class TestPCCAttestationWorkflow(FrappeTestCase):
 				f"{rule_name} assigns in {other_state}",
 			)
 			self.assertTrue(
-				frappe.safe_eval(rule.close_condition, None, dict(context)),
-				f"{rule_name} does not close in {other_state}",
+				frappe.safe_eval(rule.unassign_condition, None, dict(context)),
+				f"{rule_name} does not unassign in {other_state}",
 			)
+
+	def test_the_rules_unassign_rather_than_close(self):
+		"""The state-exit condition lives on unassign_condition, with close_condition empty.
+
+		Unassigning removes the ToDo when the record moves on; closing would leave it in the
+		assignee's list as a completed task they never completed. Requested by the reporter.
+		"""
+		for rule_name in ("PCC Attestation-GRO", "PCC Attestation-PRO"):
+			with self.subTest(rule=rule_name):
+				rule = frappe.get_doc("Assignment Rule", rule_name)
+
+				self.assertTrue(rule.unassign_condition, f"{rule_name} has no unassign condition")
+				self.assertFalse(rule.close_condition, f"{rule_name} still carries a close condition")
 
 	def test_the_pro_rule_assigns_from_the_pro_user_field(self):
 		rule = frappe.get_doc("Assignment Rule", "PCC Attestation-PRO")
@@ -337,9 +352,31 @@ class TestPCCAttestationWorkflow(FrappeTestCase):
 
 		self.assertEqual(self._state_after_assign_pro(pcc), "Pending Translation")
 
-	def test_a_nationality_needing_nothing_goes_straight_to_the_operator(self):
+	def test_a_nationality_not_in_the_table_goes_to_pending_mofa(self):
+		"""WI-002029's third criterion, and the case an empty table makes universal.
+
+		MOFA is the baseline; the table records exceptions. An unlisted nationality is the
+		ordinary case, so it takes the ordinary route.
+		"""
 		settings = frappe.get_doc("HR Settings")
 		settings.set("nationality_attestation_rules", [])
+		settings.flags.ignore_permissions = True
+		settings.save()
+		frappe.clear_cache(doctype="HR Settings")
+
+		pcc = self._pcc(MOFA_ONLY)
+
+		self.assertEqual(self._state_after_assign_pro(pcc), "Pending MOFA")
+
+	def test_only_an_explicit_row_can_exempt_a_nationality_from_every_step(self):
+		# Pending GR Operator is reachable, but only by listing a nationality with all three
+		# boxes unchecked - never by omission.
+		settings = frappe.get_doc("HR Settings")
+		settings.set("nationality_attestation_rules", [])
+		settings.append("nationality_attestation_rules", {
+			"nationality": MOFA_ONLY, "embassy_required": 0, "mofa_required": 0,
+			"translation_required": 0,
+		})
 		settings.flags.ignore_permissions = True
 		settings.save()
 		frappe.clear_cache(doctype="HR Settings")
