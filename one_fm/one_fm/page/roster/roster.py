@@ -17,6 +17,7 @@ from frappe.query_builder import DocType, Order
 
 from one_fm.one_fm.page.roster.employee_map  import CreateMap, PostMap
 from one_fm.api.v1.utils import response
+from one_fm.operations.doctype.operations_shift.operations_shift import resolve_shift_timing
 
 
 
@@ -912,9 +913,24 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 
 	# make data structure for the roster
 	shift_start_time, shift_end_time = frappe.db.get_value("Operations Shift", shift, ["start_time", "end_time"])
-	next_day = False
-	if shift_start_time > shift_end_time:
-		next_day = True
+
+	# WI-001832: the hours are resolved per date rather than once for the whole batch. A post
+	# with a Friday override runs different hours that day, so one pair of times for the
+	# range would have written the default over every Friday in it.
+	timing_cache = {}
+
+	def schedule_timing(date):
+		"""(shift_type, start_datetime, end_datetime) this post resolves to on one date."""
+		if date not in timing_cache:
+			timing = resolve_shift_timing(operations_shift_doc, date)
+			end_date = add_days(date, 1) if timing.start_time > timing.end_time else date
+			timing_cache[date] = (
+				timing.shift_type,
+				datetime.strptime(f"{date} {timing.start_time}", "%Y-%m-%d %H:%M:%S"),
+				datetime.strptime(f"{end_date} {timing.end_time}", "%Y-%m-%d %H:%M:%S"),
+			)
+		return timing_cache[date]
+
 	employees_date_dict = {}
 	for i in employees:
 		# Ensure employee exists in employees_dict and has date_of_joining
@@ -925,15 +941,14 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			relieving_date = employee_detail.get("relieving_date")
 
 			if joining_date <= current_date and (not relieving_date or current_date <= getdate(relieving_date)):
-				if employees_date_dict.get(i["employee"]):
-					employees_date_dict[i["employee"]].append({
-						"date":i["date"],
-						"start_datetime": datetime.strptime(f"{i['date']} {shift_start_time}", "%Y-%m-%d %H:%M:%S"), 
-						"end_datetime":datetime.strptime(f"{add_days(i['date'], 1) if next_day else i['date']} {shift_end_time}", "%Y-%m-%d %H:%M:%S"),
-						"day_off_ot": i.get("day_off_ot")
-					})
-				else:
-					employees_date_dict[i["employee"]] =[{"date":i["date"], "start_datetime": datetime.strptime(f"{i['date']} {shift_start_time}", "%Y-%m-%d %H:%M:%S"), "end_datetime":datetime.strptime(f"{add_days(i['date'], 1) if next_day else i['date']} {shift_end_time}", "%Y-%m-%d %H:%M:%S")}]
+				day_shift_type, day_start, day_end = schedule_timing(i["date"])
+				employees_date_dict.setdefault(i["employee"], []).append({
+					"date": i["date"],
+					"shift_type": day_shift_type,
+					"start_datetime": day_start,
+					"end_datetime": day_end,
+					"day_off_ot": i.get("day_off_ot")
+				})
 		else:
 			# Log or handle cases where employee details or date_of_joining is missing
 			frappe.log_error(message=f"Employee {i.get('employee')} missing details or date_of_joining.", title="Extreme Schedule Data Prep")
@@ -1042,7 +1057,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			query_values.append(f"""
 				(
 					'{name}', '{employee_name_iter}', '{employee_doc.employee_name}', '{employee_doc.department}', '{datevalue['date']}', '{operations_shift_doc.name}',
-					'{operations_shift_doc.site}', '{operations_shift_doc.project}', '{operations_shift_doc.shift_type}', 'Working',
+					'{operations_shift_doc.site}', '{operations_shift_doc.project}', '{datevalue.get('shift_type') or operations_shift_doc.shift_type}', 'Working',
 					'{operations_role_doc.name}', '{operations_role_doc.post_abbrv}', '{roster_type}',
 					{day_off_ot_val}, '{datevalue.get('start_datetime')}', '{datevalue.get('end_datetime')}', '{owner}', '{owner}', '{creation}', '{creation}',
 					0, NULL
