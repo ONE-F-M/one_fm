@@ -239,7 +239,9 @@ class Residency(Document):
 # the "for extend" branch below (WI-001824). Without this the branch - which reads as
 # "anything that is not a renewal is an extension" - would open a second Residency for
 # them, categorised as Extend.
-ACTIONS_HANDLED_ON_SUBMIT = ('Renewal (Non-Kuwaiti)', 'New Kuwaiti', 'Overseas', 'Local Transfer')
+ACTIONS_HANDLED_ON_SUBMIT = (
+    'Renewal (Non-Kuwaiti)', 'New Kuwaiti', 'Overseas', 'Overseas (Government)', 'Local Transfer'
+)
 
 # The Residency a category opens, and how many days before the residency expires it is
 # applied for. Anything not listed is an extension, applied for a week ahead.
@@ -252,6 +254,9 @@ MOI_CATEGORY_BY_ACTION = {
     # First residency for an overseas hire (WI-001881): there is no expiry to count
     # back from, so it is applied for the day the Preparation was submitted.
     'Overseas': ('First Time', None),
+    # WI-002024: a government-contract overseas hire gets the same first residency. MOI
+    # does not care which file the work permit was raised against.
+    'Overseas (Government)': ('First Time', None),
 }
 
 

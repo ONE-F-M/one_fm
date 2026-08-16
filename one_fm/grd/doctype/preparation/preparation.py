@@ -49,6 +49,19 @@ NEW_ACTION_DOCUMENTS = {
         "residency": None,
         "paci": "New Application",
     },
+    # WI-002024: the same overseas hire, but against a government contract file rather
+    # than a private one. Every document it opens is the one Overseas opens - what
+    # differs is the work permit fee, which PAM charges at the lower government project
+    # rate, so the Action has to be distinguishable at the point the fee is fetched and
+    # on the permit itself. Splitting it here rather than adding a flag beside Overseas
+    # keeps it a single choice in the operator's Action dropdown, which is where the
+    # distinction is actually made.
+    "Overseas (Government)": {
+        "work_permit": "Overseas (Government)",
+        "medical_insurance": None,
+        "residency": None,
+        "paci": "New Application",
+    },
     # The process map groups Local Transfer with Overseas and the non-Kuwaiti renewal:
     # all four documents, opened by the Preparation itself. There is no Transfer Paper in
     # that path, which is why the transfer side of the Work Permit lifecycle had to stop

@@ -153,7 +153,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Work Permit Type",
-   "options": "\nRenewal Non Kuwaiti\nRenewal Kuwaiti\nOverseas\nLocal Transfer\nNew Kuwaiti\nCancellation",
+   "options": "\nRenewal Non Kuwaiti\nRenewal Kuwaiti\nOverseas\nOverseas (Government)\nLocal Transfer\nNew Kuwaiti\nCancellation",
    "permlevel": 1,
    "reqd": 1
   },
@@ -969,7 +969,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-07 12:00:00.000000",
+ "modified": "2026-08-12 10:30:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
