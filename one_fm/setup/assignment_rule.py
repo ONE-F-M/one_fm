@@ -45,6 +45,8 @@ def create_assignment_rules():
 	create_assignment_rule(get_assignment_rule_json_file("assign_attendance_amendment_to_project_manager.json"))
 	create_assignment_rule(get_assignment_rule_json_file("assign_to_site_supervisor.json"))
 	create_assignment_rule(get_assignment_rule_json_file("preparation.json"))
+	create_assignment_rule(get_assignment_rule_json_file("pcc_attestation_gro.json"))
+	create_assignment_rule(get_assignment_rule_json_file("pcc_attestation_pro.json"))
 	create_assignment_rule(get_assignment_rule_json_file("assign_rfp_to_purchase_officer.json"))
 	create_assignment_rule(get_assignment_rule_json_file("assign_to_purchase_manager_for_approval.json"))
 	create_assignment_rule(get_assignment_rule_json_file("assign_rfp_owner_on_rfp_return_to_draft.json"))

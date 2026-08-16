@@ -232,6 +232,16 @@ def get_pcc_attestation_fees(nationality):
     Settings. The reporter's data charges every nationality the same 5 KWD, so the per-row
     fee exists for the day one of them differs, and leaving it blank should mean "the usual"
     rather than "free".
+
+    MOFA is the baseline, so a nationality with no row in the table still goes through it at
+    the standard rate. The table records exceptions: twelve of the reporter's thirteen
+    nationalities need MOFA, and the one that does not - Ugandan - says so explicitly by
+    being listed with the box unchecked. Reading an absent row as "needs nothing" would send
+    every unlisted candidate straight past the attestation they actually require, which is
+    what WI-002029's third criterion means by "not listed in the table -> Pending MOFA".
+
+    An employee with no nationality recorded at all takes the same default. It is a data gap
+    rather than an exemption, and MOFA is the safe side of it.
     """
     settings = frappe.get_cached_doc('HR Settings')
     rule = get_nationality_attestation_rule(nationality)
@@ -239,7 +249,7 @@ def get_pcc_attestation_fees(nationality):
     if not rule:
         return frappe._dict(
             embassy_required=False, embassy_fee=0.0,
-            mofa_required=False, mofa_fee=0.0,
+            mofa_required=True, mofa_fee=flt(settings.get('mofa_fee_kwd')),
             translation_required=False, translation_fee=0.0,
         )
 

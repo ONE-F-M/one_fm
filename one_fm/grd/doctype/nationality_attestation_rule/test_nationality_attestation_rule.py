@@ -91,19 +91,31 @@ class TestNationalityAttestationRule(FrappeTestCase):
 		self.assertTrue(fees.translation_required)
 		self.assertEqual(fees.translation_fee, TRANSLATION_FEE)
 
-	def test_an_unlisted_nationality_needs_nothing(self):
+	def test_an_unlisted_nationality_still_goes_through_mofa(self):
+		# WI-002029's third criterion: not listed in the table -> Pending MOFA. The table
+		# records exceptions, so an absent row is the ordinary case, not an exemption.
 		fees = get_pcc_attestation_fees("Kuwaiti")
 
 		self.assertFalse(fees.embassy_required)
-		self.assertFalse(fees.mofa_required)
+		self.assertTrue(fees.mofa_required)
+		self.assertEqual(fees.mofa_fee, STANDARD_MOFA_FEE)
 		self.assertFalse(fees.translation_required)
-		self.assertEqual([fees.embassy_fee, fees.mofa_fee, fees.translation_fee], [0.0, 0.0, 0.0])
+		self.assertEqual([fees.embassy_fee, fees.translation_fee], [0.0, 0.0])
 
-	def test_no_nationality_at_all_needs_nothing(self):
+	def test_no_nationality_at_all_takes_the_same_default(self):
+		# A data gap rather than an exemption, and MOFA is the safe side of it.
 		fees = get_pcc_attestation_fees(None)
 
 		self.assertFalse(fees.embassy_required)
+		self.assertTrue(fees.mofa_required)
 		self.assertIsNone(get_nationality_attestation_rule(None))
+
+	def test_a_listed_nationality_with_mofa_off_is_respected(self):
+		# Ugandan. The only way to be exempt from MOFA is to be listed with the box unchecked.
+		fees = get_pcc_attestation_fees("Ugandan")
+
+		self.assertFalse(fees.mofa_required)
+		self.assertEqual(fees.mofa_fee, 0.0)
 
 	# -------------------------------------------------------- fees follow the flags
 
