@@ -577,3 +577,4 @@ one_fm.patches.v15_0.set_checkin_modified_by_administrator #2026-08-04
 # test-production merge, so they would never have executed.
 one_fm.patches.v15_0.add_onboarding_officer_arrival_deployment_permission #2026-08-04
 one_fm.patches.v15_0.create_attendance_check_jul11_2026 #1
+one_fm.patches.v15_0.approve_attendance_check_jul11_2026 #2026-08-16
