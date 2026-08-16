@@ -222,16 +222,23 @@ function generate_pow(dialog, download_zip) {
 }
 
 function queue_pow_zip(pow_names) {
-	// Rendering two print formats per contract outlives an HTTP request, so the
-	// archive is built in a background job and pushed back as a download link.
+	// Rendering two print formats per contract outlives an HTTP request, so the export
+	// runs as a background job and pushes its result back. Where it goes is the server's
+	// call (WI-001981: Google Drive once a folder is configured, a ZIP otherwise), so the
+	// alert reports the destination it answers with rather than assuming one.
 	frappe.call({
 		method: "one_fm.one_fm.doctype.proof_of_work.proof_of_work.enqueue_pow_zip",
 		args: { pow_names: JSON.stringify(pow_names) },
-		callback: () => {
+		callback: (r) => {
+			const to_drive = (r.message || {}).destination === "drive";
 			frappe.show_alert({
-				message: __("Building the ZIP for {0} record(s). You will get a download link shortly.", [
-					pow_names.length,
-				]),
+				message: to_drive
+					? __("Uploading {0} record(s) to Google Drive. You will get the folder link shortly.", [
+							pow_names.length,
+					  ])
+					: __("Building the ZIP for {0} record(s). You will get a download link shortly.", [
+							pow_names.length,
+					  ]),
 				indicator: "blue",
 			});
 		},

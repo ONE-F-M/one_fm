@@ -650,7 +650,10 @@ scheduler_events = {
 			'one_fm.grd.doctype.paci.paci.system_remind_renewal_operator_to_apply',#paci
 			'one_fm.grd.doctype.paci.paci.system_remind_transfer_operator_to_apply',
 			'one_fm.grd.doctype.paci.paci.notify_operator_to_take_hawiyati_renewal',#paci hawiyati
-			'one_fm.grd.doctype.paci.paci.notify_operator_to_take_hawiyati_transfer'
+			'one_fm.grd.doctype.paci.paci.notify_operator_to_take_hawiyati_transfer',
+			# WI-001829: three working days of silence from the previous employer is a
+			# refusal. On this schedule because it only counts working days anyway.
+			'one_fm.grd.doctype.work_permit.work_permit.auto_reject_unanswered_previous_company'
 		],
 		"15 3 * * *": [
 			'one_fm.tasks.one_fm.daily.generate_contracts_invoice', #Generate contracts sales invoice
@@ -901,7 +904,10 @@ jenv = {
         # grouped by Sale Item, which cannot be built from the document's child tables.
         "pow_attendance_report:one_fm.jinja.print_format.methods.pow_attendance_report",
         # WI-001808: the logo is inlined so PDF rendering needs no HTTP fetch.
-        "pow_logo_src:one_fm.jinja.print_format.methods.pow_logo_src"
+        "pow_logo_src:one_fm.jinja.print_format.methods.pow_logo_src",
+        # WI-001983: the Letter's figure columns are headed after the units the contract
+        # bills in, decided by the Contract Item Rate Type.
+        "pow_letter_headers:one_fm.jinja.print_format.methods.pow_letter_headers"
     ],
     "filters": [
         # "xmul:one_fm.jinja.methods.xmultiply"

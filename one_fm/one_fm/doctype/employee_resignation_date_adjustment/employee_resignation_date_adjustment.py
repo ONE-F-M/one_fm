@@ -5,6 +5,17 @@ from frappe import _
 class EmployeeResignationDateAdjustment(Document):
     def validate(self):
         self.set_approver()
+        self.validate_extended_relieving_date()
+
+    def validate_extended_relieving_date(self):
+        # mandatory_depends_on on the field only enforces this in the browser --
+        # it's never checked server-side, so a Draft can be saved without it,
+        # but "Submit for Review" and beyond must not proceed without it.
+        if self.workflow_state and self.workflow_state != "Draft" and not self.extended_relieving_date:
+            frappe.throw(
+                _("Extended Relieving Date is mandatory before submitting this request for review."),
+                title=_("Missing Extended Relieving Date"),
+            )
 
     def on_update(self):
         self.clear_manual_assignments()
@@ -118,16 +129,23 @@ class EmployeeResignationDateAdjustment(Document):
             else:
                 self.supervisor = None
 
-        # Set Operations Manager from the resignation document
+        # Reuse the exact same routing/actors already resolved on the originating
+        # Employee Resignation -- fetch rather than re-derive.
         if self.employee_resignation:
-            rsgn_om = frappe.db.get_value("Employee Resignation", self.employee_resignation, "operations_manager")
-            if rsgn_om:
-                self.operations_manager = rsgn_om
-
-            # Corporate hires (not shift_working) have no Operations Manager step --
-            # operations_manager's depends_on/mandatory_depends_on rely on this field.
-            shift_working = frappe.db.get_value("Employee Resignation", self.employee_resignation, "shift_working")
-            self.is_corporate = 0 if shift_working else 1
+            resignation = frappe.db.get_value(
+                "Employee Resignation", self.employee_resignation,
+                ["shift_working", "shift_category", "t4_route", "t4_admin",
+                 "cleaning_head_supervisor", "security_manager", "project_manager"],
+                as_dict=True,
+            )
+            if resignation:
+                self.is_corporate = 0 if resignation.shift_working else 1
+                self.shift_category = resignation.shift_category
+                self.t4_route = resignation.t4_route
+                self.t4_admin = resignation.t4_admin
+                self.cleaning_head_supervisor = resignation.cleaning_head_supervisor
+                self.security_manager = resignation.security_manager
+                self.project_manager = resignation.project_manager
 
         # Set Offboarding Officer — first user with that role
         if not self.get("offboarding_officer"):

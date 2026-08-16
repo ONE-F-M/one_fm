@@ -29,9 +29,9 @@
   "gender",
   "religion",
   "place_of_birth",
+  "date_of_birth",
   "marital_status",
   "designation",
-  "pam_designation",
   "salary_details_section",
   "salary_type",
   "column_break_lzkz",
@@ -54,9 +54,8 @@
   "column_break_sqvj",
   "driver_license",
   "column_break_byjf",
-  "payment_receipt",
+  "degree_certificate",
   "column_break_wjxj",
-  "visa_document",
   "rejection_remarks_section",
   "column_break_cpvu",
   "operator_rejection_remark",
@@ -65,8 +64,12 @@
   "pam_rejection_remark",
   "moi_rejection_remark",
   "pam_details_section",
+  "custom_pam_file",
   "pam_reference_number",
+  "custom_visa_application_date",
   "column_break_gvey",
+  "custom_pam_designation_list",
+  "custom_work_permit_number",
   "pam_remarks",
   "column_break_gcih",
   "pam_decision_date",
@@ -78,7 +81,14 @@
   "moi_decision_date",
   "visa_details_section",
   "visa_reference_number",
+  "visa_issue_date",
+  "visa_expiry_date",
+  "column_break_uxnb",
+  "visa_document",
+  "payment_receipt",
+  "payment_date",
   "section_break_jrbe",
+  "reapplied_from",
   "amended_from"
  ],
  "fields": [
@@ -96,7 +106,7 @@
    "fieldname": "marital_status",
    "fieldtype": "Select",
    "label": "Marital Status",
-   "options": "\nSingle\nMarried\nDivorced\nWidowed"
+   "options": "Married\nSingle\nDivorced\nWidow"
   },
   {
    "default": "Monthly",
@@ -191,7 +201,8 @@
   {
    "fieldname": "pam_reference_number",
    "fieldtype": "Data",
-   "label": "PAM Reference Number"
+   "label": "PAM Reference Number",
+   "mandatory_depends_on": "// eval:doc.workflow_state==\"Pending by GRD Operator\""
   },
   {
    "fieldname": "column_break_gvey",
@@ -242,6 +253,15 @@
   {
    "fieldname": "section_break_jrbe",
    "fieldtype": "Section Break"
+  },
+  {
+   "description": "The rejected request this one was raised to replace",
+   "fieldname": "reapplied_from",
+   "fieldtype": "Link",
+   "label": "Reapplied From",
+   "no_copy": 1,
+   "options": "Visa Request",
+   "read_only": 1
   },
   {
    "fieldname": "amended_from",
@@ -419,11 +439,6 @@
    "options": "Designation"
   },
   {
-   "fieldname": "pam_designation",
-   "fieldtype": "Data",
-   "label": "PAM Designation"
-  },
-  {
    "default": "0",
    "fieldname": "applicant_details_section",
    "fieldtype": "Section Break"
@@ -437,7 +452,8 @@
   {
    "fieldname": "work_permit_salary",
    "fieldtype": "Currency",
-   "label": "Work Permit Salary"
+   "label": "Work Permit Salary",
+   "mandatory_depends_on": "// eval:doc.workflow_state==\"Pending by GRD Operator\""
   },
   {
    "fieldname": "place_of_issue",
@@ -479,8 +495,9 @@
   },
   {
    "fieldname": "moi_rejection_remark",
-   "fieldtype": "Small Text",
+   "fieldtype": "Select",
    "label": "MOI Rejection Remark",
+   "options": "\n1.Block Due to Pending Transactions in MOI\n2.Active Driving License , Rejected by Transportation Department",
    "read_only": 1
   },
   {
@@ -500,13 +517,70 @@
    "label": "Passport Holder of",
    "options": "Country",
    "reqd": 1
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_date_of_birth",
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth"
+  },
+  {
+   "fieldname": "degree_certificate",
+   "fieldtype": "Attach",
+   "label": "Degree Certificate"
+  },
+  {
+   "fieldname": "custom_pam_file",
+   "fieldtype": "Link",
+   "label": "PAM File",
+   "mandatory_depends_on": "// eval:doc.workflow_state==\"Pending by GRD Operator\"",
+   "options": "PAM File"
+  },
+  {
+   "fieldname": "custom_visa_application_date",
+   "fieldtype": "Datetime",
+   "label": "Visa Application Date"
+  },
+  {
+   "fieldname": "custom_pam_designation_list",
+   "fieldtype": "Link",
+   "label": "PAM Designation List",
+   "mandatory_depends_on": "// eval:doc.workflow_state==\"Pending by GRD Operator\"",
+   "options": "PAM Designation List"
+  },
+  {
+   "fieldname": "custom_work_permit_number",
+   "fieldtype": "Data",
+   "label": "Work Permit Number",
+   "mandatory_depends_on": "eval:doc.workflow_state==\"Pending By MOI\""
+  },
+  {
+   "fieldname": "visa_issue_date",
+   "fieldtype": "Date",
+   "label": "Visa Issue Date",
+   "mandatory_depends_on": "eval:doc.workflow_state==\"Pending Visa Issuance\""
+  },
+  {
+   "fieldname": "visa_expiry_date",
+   "fieldtype": "Date",
+   "label": "Visa Expiry Date",
+   "mandatory_depends_on": "eval:doc.workflow_state==\"Pending Visa Issuance\""
+  },
+  {
+   "fieldname": "column_break_uxnb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "payment_date",
+   "fieldtype": "Date",
+   "label": "Payment Date"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-20 03:00:00.000000",
+ "modified": "2026-08-06 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "Visa Management",
  "name": "Visa Request",
