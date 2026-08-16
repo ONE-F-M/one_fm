@@ -63,20 +63,11 @@ class PCCAttestation(Document):
 
 		A nationality with no row in the table needs none of the three.
 
-		Translation work never goes near an embassy or MOFA, so those two are cleared for it
-		rather than left showing charges nobody will pay - and an Attestation is not a
-		translation, so its translation fee is cleared for the same reason.
+		The record's Type is handed to the resolver rather than applied afterwards, so there is
+		one place that decides which fees apply: translation work never goes near an embassy or
+		MOFA, and it carries the translation fee whatever the nationality's rule says.
 		"""
-		fees = get_pcc_attestation_fees(self.nationality)
-
-		if self.type == TRANSLATION:
-			self.embassy_attestation_required = 0
-			self.mofa_attestation_required = 0
-			self.requires_embassy_attestation = 0
-			self.mofa_fee = 0
-			self.translation_required = 1
-			self.translation_fee = fees.translation_fee
-			return
+		fees = get_pcc_attestation_fees(self.nationality, is_translation=self.type == TRANSLATION)
 
 		self.embassy_attestation_required = int(fees.embassy_required)
 		self.mofa_attestation_required = int(fees.mofa_required)
@@ -84,7 +75,7 @@ class PCCAttestation(Document):
 
 		self.requires_embassy_attestation = fees.embassy_fee
 		self.mofa_fee = fees.mofa_fee
-		self.translation_fee = 0
+		self.translation_fee = fees.translation_fee
 
 	@property
 	def needs_embassy_attestation(self):
