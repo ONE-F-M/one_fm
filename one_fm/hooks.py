@@ -239,6 +239,12 @@ doc_events = {
 			"one_fm.overrides.todo.delete_linked_todos"
 		]
 	},
+	"HR Settings": {
+		"validate": [
+			"one_fm.grd.utils.set_renewal_extension_cost_totals",
+			"one_fm.grd.utils.validate_nationality_attestation_rules"
+		]
+	},
 	"Stock Entry": {
 		"validate": [
 			"one_fm.overrides.stock_entry.alert_item_multiple_entry",
@@ -306,7 +312,8 @@ doc_events = {
 		"after_insert": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.after_insert_vehicle",
 		"validate": [
 			"one_fm.overrides.vehicle.validate_vehicle_branding",
-			"one_fm.overrides.vehicle.validate_custodian_history"
+			"one_fm.overrides.vehicle.validate_custodian_history",
+			"one_fm.overrides.vehicle.set_max_passenger_capacity"
 		]
 	},
 	"Item Group": {

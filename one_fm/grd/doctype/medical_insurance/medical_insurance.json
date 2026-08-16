@@ -21,6 +21,7 @@
   "gender",
   "civil_id",
   "passport_expiry_date",
+  "centralized_number",
   "column_break_11",
   "employee_id",
   "nationality",
@@ -236,6 +237,14 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_centralized_number",
+   "fieldname": "centralized_number",
+   "fieldtype": "Data",
+   "label": "Centralized Number",
+   "read_only": 1
+  },
+  {
    "collapsible": 1,
    "fieldname": "finance_department_section",
    "fieldtype": "Section Break",
@@ -289,7 +298,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-05 12:00:00.000000",
+ "modified": "2026-08-12 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Insurance",
