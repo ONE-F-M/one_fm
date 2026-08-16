@@ -419,16 +419,40 @@ class EmployeeOverride(EmployeeMaster):
             frappe.log_error(message=f"Failed to send status update notification: {str(e)}", title="Employee Status Update Notification")
 
     def clear_schedules(self):
-        # clear future employee schedules
-        if(self.has_value_changed('relieving_date') or self.has_value_changed('status')):
-            if self.status == 'Left' or self.relieving_date:
-                frappe.db.sql(f"""
-                    DELETE FROM `tabEmployee Schedule` WHERE employee = '{self.name}'
-                    AND date > '{self.relieving_date}'
-                """)
-                frappe.msgprint(f"""
-                    Employee Schedule cleared for {self.employee_name} starting from {add_days(self.relieving_date, 1)}
-                """)
+        """Drop the schedules an exiting employee can no longer work (WI-002019).
+
+        Enqueued rather than run inline: a long-serving employee can carry a month of
+        future rows across several projects, and the person setting a relieving date should
+        not wait on the delete - nor have their save fail because of it.
+
+        Gated on a relieving date being present. The previous version also ran for status
+        'Left' with no relieving date, where it interpolated None into the comparison and
+        comfortably deleted nothing while reporting success; there is no meaningful "after"
+        without a date to be after. Nothing new can be scheduled for them either way, since
+        Employee Schedule refuses a non-Active employee on insert.
+        """
+        if not (self.has_value_changed('relieving_date') or self.has_value_changed('status')):
+            return
+
+        if not self.relieving_date:
+            return
+
+        first_date_to_clear = add_days(getdate(self.relieving_date), 1)
+
+        frappe.enqueue(
+            delete_employee_schedules_from,
+            queue='long',
+            timeout=1500,
+            employee=self.name,
+            from_date=first_date_to_clear,
+        )
+        frappe.msgprint(
+            _("Schedule cleanup queued. Employee Schedules for {0} on or after {1} are being removed.").format(
+                self.employee_name, first_date_to_clear
+            ),
+            alert=True,
+            indicator='orange',
+        )
 
     def notify_supervisor_of_status_change(self):
         """
@@ -969,3 +993,27 @@ def delete_employee_schedules_for_next_7_days(employee_id):
                 title=f"Employee Schedule Deletion Error - {employee_id}"
             )
             raise
+
+
+def delete_employee_schedules_from(employee, from_date):
+    """Delete every Employee Schedule for an employee dated on or after `from_date`.
+
+    Shared by the two exit paths that have to clear a roster - a relieving date being set
+    (WI-002019) and a non-return from leave (WI-002018) - so there is one definition of what
+    clearing a roster means, and one place where the boundary is inclusive.
+
+    Returns the projects the deleted rows belonged to, which is what a caller needs to know
+    in order to re-run the checkers over the gaps this has just opened.
+    """
+    affected = frappe.get_all(
+        "Employee Schedule",
+        filters={"employee": employee, "date": [">=", getdate(from_date)]},
+        fields=["name", "project"],
+    )
+    if not affected:
+        return []
+
+    frappe.db.delete("Employee Schedule", {"name": ["in", [row.name for row in affected]]})
+    frappe.db.commit()
+
+    return sorted({row.project for row in affected if row.project})
