@@ -21,6 +21,31 @@ def validate_vehicle_branding(doc, method):
 	validate_branding_image_required(doc)
 
 
+def passenger_capacity(seats, includes_driver_seat) -> int:
+	"""How many passengers a vehicle may legally carry (WI-002000).
+
+	Whether ``seats`` counts the driver differs from vehicle to vehicle, so it is
+	the fleet team's answer per record rather than a rule in the code: a 5-seater
+	that includes the driver carries 4, a 30-seater that does not carries 30.
+
+	The one place the arithmetic lives, so the Vehicle form, the schedule canvas,
+	the route optimizer and the Route Plan save can never disagree about how full
+	a bus is.
+	"""
+	return max(cint(seats) - (1 if cint(includes_driver_seat) else 0), 0)
+
+
+def set_max_passenger_capacity(doc, method=None):
+	"""Keep Max Passenger Capacity in step with seats and the driver-seat flag.
+
+	The field is read-only on the form (AC6), so it is only ever derived here —
+	on every save, which is what makes editing either input enough to correct it.
+	"""
+	doc.custom_max_passenger_capacity = passenger_capacity(
+		doc.get("seats"), doc.get("custom_includes_driver_seat")
+	)
+
+
 def validate_custodian_history(doc, method):
 	"""Validate and recompute the Vehicle Custodian History table on save.
 

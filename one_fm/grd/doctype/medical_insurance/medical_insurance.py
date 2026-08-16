@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import today, get_url,getdate
+from frappe.utils import today, get_url,getdate, get_year_start
 from frappe import _
 from datetime import date
 from frappe.core.doctype.communication.email import make
@@ -69,7 +69,32 @@ def valid_work_permit_exists(preparation_name):
 def creat_medical_insurance_for_transfer(employee_name):
     employee = frappe.get_doc('Employee',employee_name)
     if employee:
-        create_mi_record(frappe.get_doc('Work Permit',{'employee':employee.employee}))
+        if transfer_insurance_already_open(employee.name):
+            return
+        # The employee's latest transfer permit, not whichever Work Permit the filter
+        # happened to return first - that could be a renewal from years ago, which has no
+        # insurance status to open a policy under.
+        create_mi_record(frappe.get_last_doc('Work Permit', filters={
+            'employee': employee.employee,
+            'work_permit_type': 'Local Transfer',
+        }))
+
+
+def transfer_insurance_already_open(employee):
+    """Is there already a Local Transfer policy open for this employee this year?
+
+    A Preparation opens the whole set of documents up front (WI-001824) and the Work
+    Permit reaching Completed asks for one as well, so without this the employee ends up
+    insured twice for the same transfer. Scoped to the current year to match
+    cancel_existing, so a genuine second transfer in a later year is still a new record.
+    """
+    return bool(frappe.get_all('Medical Insurance', limit=1, filters={
+        'employee': employee,
+        'insurance_status': 'Local Transfer',
+        'date_of_application': ['>=', get_year_start(today())],
+        'workflow_state': ['!=', 'Cancelled'],
+        'docstatus': ['<', 2],
+    }))
 
 
 def create_mi_record(WorkPermit):
@@ -78,11 +103,21 @@ def create_mi_record(WorkPermit):
     if(WorkPermit.work_permit_type == "Renewal Non Kuwaiti"):
         Insurance_status = "Renewal"
         new_medical_insurance.date_of_application = WorkPermit.date_of_application #setting the same date of application of wp
-    elif(WorkPermit.work_permit_type == "New Non Kuwaiti"):#Overseas
+    elif(WorkPermit.work_permit_type == "Overseas"):
+        # An overseas hire has no insurance yet, so the policy is opened as New
+        # (WI-001881). Applied for the day the Work Permit was, which for an Overseas
+        # Work Permit is the day its Preparation was submitted.
         Insurance_status = "New"
+        new_medical_insurance.date_of_application = WorkPermit.date_of_application
     elif (WorkPermit.work_permit_type == "Local Transfer"):#for non kuwaiti <if it is for kuwait called new or renew and they don't have MI process
         Insurance_status = "Local Transfer" # the Insurance_status will be new for overseas only
         new_medical_insurance.date_of_application = today() #set the date of creation
+    else:
+        # Kuwaitis have no Medical Insurance process at all, so reaching here means a
+        # caller asked for one against a Work Permit type that does not have a status to
+        # open it under. Better to say so than to insert a row with a blank status.
+        frappe.throw(_("Medical Insurance cannot be opened for a {0} Work Permit ({1}).").format(
+            WorkPermit.work_permit_type, WorkPermit.name))
 
     new_medical_insurance.work_permit = WorkPermit.name
     new_medical_insurance.preparation = WorkPermit.preparation

@@ -11,6 +11,7 @@ Uses the same Mindee implementation as the magic link module for consistency and
 
 import frappe
 import re
+from frappe import _
 from datetime import datetime
 from mindee import ClientV2, InferenceParameters, PathInput
 import os
@@ -249,3 +250,106 @@ def compare_arabic_names(name1, name2):
 	name2_normalized = ' '.join(str(name2).strip().split())
 	
 	return name1_normalized == name2_normalized
+
+
+# ── Visa Request documents (WI-001977) ────────────────────────────────────────
+#
+# Two more Mindee models, each with its own id in site_config beside the Civil ID's:
+# the e-visa copy and the payment receipt the GRD Operator attaches once a visa is
+# issued. The mapping is the work item's own table - Mindee's field name on the left,
+# the Visa Request field it fills on the right.
+EVISA_FIELD_MAP = {
+	"reference_number": "visa_reference_number",
+	"date_of_issue": "visa_issue_date",
+	"date_of_expiry": "visa_expiry_date",
+}
+
+RECEIPT_FIELD_MAP = {
+	"date": "payment_date",
+}
+
+# Which of the mapped values are dates, and so go through the Frappe format conversion.
+_DATE_TARGETS = {"visa_issue_date", "visa_expiry_date", "payment_date"}
+
+
+def extract_evisa_data(file_path):
+	"""Read an e-visa copy through Mindee (WI-001977).
+
+	Returns {visa_reference_number, visa_issue_date, visa_expiry_date}, with a key
+	absent when the model did not find it - a partly-read visa is still worth
+	presenting for review, which is what the AC asks for.
+	"""
+	return _extract_mapped_fields(file_path, "e-visa_model_id", EVISA_FIELD_MAP, "E-Visa")
+
+
+def extract_payment_receipt_data(file_path):
+	"""Read a payment receipt through Mindee (WI-001977). Returns {payment_date}."""
+	return _extract_mapped_fields(file_path, "receipt_model_id", RECEIPT_FIELD_MAP, "Payment Receipt")
+
+
+def _extract_mapped_fields(file_path, model_conf_key, field_map, label):
+	"""Run one Mindee model over a file and map its fields onto Frappe fieldnames.
+
+	Shares the Civil ID's client and call shape; only the model and the mapping differ.
+	Raises when the model is not configured, rather than quietly returning nothing:
+	a missing model id is a deployment problem and should read as one.
+	"""
+	model_id = frappe.local.conf.get(model_conf_key)
+	if not model_id:
+		frappe.throw(
+			_("No Mindee model configured for {0}. Add {1} to site_config.json.").format(
+				label, model_conf_key
+			)
+		)
+
+	try:
+		mindee_client = ClientV2(api_key=frappe.local.conf.mindee_passport_api)
+		response = mindee_client.enqueue_and_get_inference(
+			PathInput(file_path),
+			InferenceParameters(
+				model_id=model_id, rag=None, raw_text=None, polygon=None, confidence=None
+			),
+		)
+		return parse_mindee_mapped_fields(response.inference.result.fields, field_map)
+
+	except Exception as e:
+		frappe.log_error(
+			message=f"Mindee OCR Extraction Failed ({label}): {str(e)}",
+			title=f"{label} OCR Error",
+		)
+		raise Exception(f"OCR failed to read the {label} clearly.")
+
+
+def parse_mindee_mapped_fields(fields, field_map):
+	"""Pull the mapped fields out of a Mindee result.
+
+	Kept separate from the API call so it can be tested against a saved response - the
+	sample the work item shipped is what the mapping was written from.
+
+	Values arrive as objects carrying ``.value``; a dict is accepted too so a raw JSON
+	response can be passed straight in. A reference number comes back as a number, and
+	the target is a Data field, so it is cast - via int() first, or a float would leave
+	a ".0" on the end.
+	"""
+	extracted = {}
+
+	for source_name, target_field in field_map.items():
+		field = fields.get(source_name) if isinstance(fields, dict) else getattr(fields, source_name, None)
+		if field is None:
+			continue
+
+		value = field.get("value") if isinstance(field, dict) else getattr(field, "value", None)
+		if value in (None, ""):
+			continue
+
+		if target_field in _DATE_TARGETS:
+			value = convert_date_to_frappe_format(value)
+		elif isinstance(value, float):
+			value = str(int(value))
+		else:
+			value = str(value)
+
+		if value:
+			extracted[target_field] = value
+
+	return extracted

@@ -71,7 +71,11 @@ class WorkPermit(Document):
         states = ['Pending By PAM']
         db_state = frappe.db.get_value("Work Permit", self.name, 'workflow_state')
         # check for required fields based on workflow
-        if db_state in states:
+        # A PAM rejection is exempt: nothing was paid, so there is no invoice and no new
+        # expiry date to record. The invoice belongs to the two Accept transitions
+        # (Completed / Pending For Payment), and demanding it on a rejection stopped the
+        # reject dialog from storing its reason (WI-001829).
+        if db_state in states and not self.pam_rejection_reason:
             msg = False
             if not self.attach_invoice:
                 msg = "Upload the required document(Invoice)"
@@ -161,9 +165,13 @@ class WorkPermit(Document):
 
         if self.workflow_state == "Rejected":
             if self.work_permit_type == "Local Transfer":
-                field_list = [{'Reason Of Rejection':'reason_of_rejection'},{'Details of Rejection':'details_of_rejection'}]
-                message_detail = '<b style="color:red; text-align:center;">First, You Need to set the reason of Rejection Mentioned in <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
-                self.set_mendatory_fields(field_list,message_detail)
+                # No longer demands Reason Of Rejection and Details of Rejection. Those
+                # are the free-text pair the two rejection Selects replaced (WI-001829),
+                # and they are hidden now - so a rejection could neither pass this check
+                # nor be filled in to satisfy it. The reason is still required: the two
+                # Selects carry mandatory_depends_on tied to which kind of rejection it
+                # was, which Frappe enforces on every save, and the Reject dialog asks
+                # for it on the way out.
                 self.update_work_permit_details_in_tp()# update the rejected record in the transfer paper child table
             self.reload()
 
@@ -269,6 +277,12 @@ class WorkPermit(Document):
         param: work_permit object
         This method to update work permit status if completed in transfer paper, close the transfer paper, and submit it.
         """
+        if not self.transfer_paper:
+            # A Local Transfer opened from a Preparation row has no Transfer Paper
+            # (WI-001824), and there is nothing to update or close in that case. Without
+            # this the completion raises DoesNotExistError on a Transfer Paper of None.
+            return
+
         tp = frappe.get_doc('Transfer Paper',self.transfer_paper)
         if tp:
             for wp in tp.work_permit_records:
@@ -414,6 +428,28 @@ def create_work_permit_transfer(tp_name,employee):
         employee_in_tp = frappe.get_doc('Employee',employee)
         if employee_in_tp:
             create_wp_transfer(frappe.get_doc('Employee',employee_in_tp.employee),"Local Transfer",tp_name)#check if you need to do it this way create_wp_transfer(employee_in_tp,"Local Transfer",tp_name)
+
+
+def create_wp_from_preparation(employee, work_permit_type, preparation_name):
+    """Open a Work Permit for a Preparation row whose Action is not a renewal (WI-001824).
+
+    A renewal dates its application off the residency it is renewing, which is what
+    create_wp_renewal does. A New Kuwaiti or Overseas application has no residency yet,
+    so it is applied for on the day the Preparation is submitted.
+
+    No copy of a previous Work Permit either: these are first applications, so there is
+    nothing to carry forward, and copying one would bring the old PAM references with it.
+    """
+    work_permit = frappe.new_doc('Work Permit')
+    work_permit.employee = employee.name
+    work_permit.work_permit_type = work_permit_type
+    work_permit.date_of_application = today()
+    work_permit.preparation = preparation_name
+    work_permit.ref_doctype = 'Preparation'
+    work_permit.ref_name = preparation_name
+    work_permit.insert()
+
+    return work_permit
 
 
 # Create Work Permit record once a month for renewals list
@@ -636,3 +672,188 @@ def get_employee_last_checkin(employee):
     if len(result) > 0:
         return result[0].last_checkin_date
     return None
+
+# ── Previous company response window (WI-001829) ──────────────────────────────
+#
+# PAM gives the previous employer three working days to answer a Local Transfer.
+# Silence past that is a refusal, and it is recorded under its own reason so a report can
+# tell it apart from an employer who actually said no.
+PREVIOUS_COMPANY_STATE = "Pending By Previous Company"
+PREVIOUS_COMPANY_RESPONSE_DAYS = 3
+AUTO_REJECTION_REASON = "Auto rejected after 3 days"
+REJECTED_BY_PREVIOUS_COMPANY = "Rejected by previous company"
+
+
+def auto_reject_unanswered_previous_company():
+	"""Reject Local Transfers the previous employer never answered.
+
+	Cron, on the same working-days schedule as the other GRD reminders. Goes through the
+	workflow rather than writing the state directly: Rejected is a submitted state, so a
+	db_set would leave a permit reading Rejected while still sitting at docstatus 0.
+	"""
+	from frappe.model.workflow import apply_workflow
+
+	waiting = frappe.get_all(
+		"Work Permit",
+		filters={
+			"workflow_state": PREVIOUS_COMPANY_STATE,
+			"work_permit_type": "Local Transfer",
+			"docstatus": 0,
+		},
+		fields=["name", "inform_previous_company_on", "modified"],
+	)
+
+	for permit in waiting:
+		# The clock starts when the previous company was informed. Older permits predate
+		# that field, so the last change - which is when it entered this state - stands in.
+		informed_on = permit.inform_previous_company_on or permit.modified
+		if working_days_between(informed_on, today()) < PREVIOUS_COMPANY_RESPONSE_DAYS:
+			continue
+
+		try:
+			doc = frappe.get_doc("Work Permit", permit.name)
+			doc.db_set(
+				{
+					"previous_company_rejection_reason": AUTO_REJECTION_REASON,
+					"reason_of_rejection": REJECTED_BY_PREVIOUS_COMPANY,
+				},
+				update_modified=False,
+			)
+			apply_workflow(doc, "Reject")
+		except Exception:
+			# One permit that will not transition must not stop the rest of the sweep.
+			frappe.log_error(
+				title="WI-001829: auto-rejection failed",
+				message=f"{permit.name}\n{frappe.get_traceback()}",
+			)
+
+
+# Kuwait's government weekend. Held here rather than read from a Holiday List because
+# this window is PAM's, not an employee's - and because the list cannot be relied on for
+# it: the company default on production is "Default Company Holiday List 2024", which
+# ends in 2024 and carries no weekly off at all, so every Friday since would have counted
+# as a working day (WI-001829).
+WEEKEND_WEEKDAYS = (4, 5)  # Friday, Saturday
+
+
+def working_days_between(from_date, to_date):
+	"""Working days after `from_date` up to and including `to_date`.
+
+	The weekend is the floor; public holidays come off the company's holiday list on top
+	of it, when that list actually covers the dates being counted. So a request that goes
+	out on a Wednesday is not three working days old by Saturday.
+	"""
+	from frappe.utils import getdate
+
+	start, end = getdate(from_date), getdate(to_date)
+	if start >= end:
+		return 0
+
+	holidays = get_company_holidays(start, end)
+
+	days = 0
+	current = add_days(start, 1)
+	while current <= end:
+		if current.weekday() not in WEEKEND_WEEKDAYS and current not in holidays:
+			days += 1
+		current = add_days(current, 1)
+
+	return days
+
+
+def get_company_holidays(from_date, to_date):
+	"""Public holidays in a range, from the default company's holiday list.
+
+	An empty set when the list is missing or does not reach these dates - the weekend
+	floor in working_days_between is what keeps the count honest in that case.
+	"""
+	holiday_list = frappe.db.get_value(
+		"Company", frappe.defaults.get_global_default("company"), "default_holiday_list"
+	)
+	if not holiday_list:
+		return set()
+
+	return set(
+		frappe.get_all(
+			"Holiday",
+			filters={
+				"parent": holiday_list,
+				"holiday_date": ["between", [from_date, to_date]],
+			},
+			pluck="holiday_date",
+		)
+	)
+
+
+# ── Reapplying after a rejection (WI-001828) ──────────────────────────────────
+#
+# Cleared on the new attempt: the references PAM issued for the application that was
+# refused, and the outcome of that refusal. Everything else - the candidate's details,
+# their salary, the contract, the Preparation that started it - is carried over, which is
+# the point of the button.
+REJECTION_OUTCOME_FIELDS = (
+	"reference_number_on_pam_registration",
+	"reference_number_registration_set_on",
+	"reference_number_on_pam",
+	"reference_number_set_on",
+	"reason_of_rejection",
+	"details_of_rejection",
+	"pam_rejection_reason",
+	"previous_company_rejection_reason",
+	"previous_company_status",
+	"inform_previous_company_on",
+	"attach_invoice",
+	"attach_payment_invoice",
+	"work_permit_approved",
+	"new_work_permit_expiry_date",
+)
+
+REJECTED_STATE = "Rejected"
+
+
+def can_reapply(doc) -> bool:
+	"""Is this a permit a fresh attempt can be raised from (WI-001828)?
+
+	The gate the button and the server share, so the button cannot offer something the
+	method then refuses.
+	"""
+	return doc.get("workflow_state") == REJECTED_STATE
+
+
+@frappe.whitelist(methods=["POST"])
+def reapply_work_permit(name: str):
+	"""Raise a fresh Work Permit from one that was rejected (WI-001828).
+
+	A copy rather than a new document with a few fields set: the candidate's personal,
+	salary and contract details are exactly what the AC asks to keep, and re-entering
+	them is what the button exists to avoid.
+
+	The rejected permit is left as it is - it is the audit history, and
+	rejected_work_permit on the new one is the link back to it.
+	"""
+	source = frappe.get_doc("Work Permit", name)
+	source.check_permission("read")
+
+	if not frappe.has_permission("Work Permit", "create"):
+		frappe.throw(
+			_("You do not have permission to create a Work Permit."), frappe.PermissionError
+		)
+
+	if not can_reapply(source):
+		frappe.throw(
+			_("Only a permit in <b>{0}</b> can be reapplied. {1} is in {2}.").format(
+				REJECTED_STATE, source.name, source.workflow_state
+			),
+			title=_("Cannot Reapply"),
+		)
+
+	reapplication = frappe.copy_doc(source)
+	for fieldname in REJECTION_OUTCOME_FIELDS:
+		reapplication.set(fieldname, None)
+
+	reapplication.workflow_state = "Draft"
+	reapplication.date_of_application = today()
+	reapplication.rejected_work_permit = source.name
+	reapplication.insert()
+
+	return {"name": reapplication.name}

@@ -435,9 +435,9 @@
   {
    "fieldname": "preparation",
    "fieldtype": "Link",
-   "hidden": 1,
    "label": "Preparation",
-   "options": "Preparation"
+   "options": "Preparation",
+   "read_only": 1
   },
   {
    "fieldname": "company_contact_number",
@@ -520,7 +520,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2025-12-08 16:34:24.973261",
+ "modified": "2026-08-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Residency",

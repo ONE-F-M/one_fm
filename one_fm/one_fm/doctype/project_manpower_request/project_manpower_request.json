@@ -120,6 +120,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Recruiter",
+   "depends_on": "eval:in_list(['Awaiting Recruiter Approval', 'In Process', 'Completed'], doc.workflow_state)",
    "mandatory_depends_on": "eval:doc.workflow_state && !in_list(['Draft'], doc.workflow_state)",
    "options": "User"
   },
@@ -161,6 +162,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "ERF",
+   "depends_on": "eval:in_list(['Awaiting Recruiter Approval', 'In Process', 'Completed'], doc.workflow_state)",
    "mandatory_depends_on": "eval:in_list(['Awaiting Recruiter Approval', 'In Process', 'Completed'], doc.workflow_state)",
    "options": "ERF",
    "search_index": 1

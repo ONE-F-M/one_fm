@@ -26,6 +26,42 @@ from one_fm.grd.doctype.paci import paci
 from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.processor import sendemail
 
+# WI-001824: which documents each of the new Actions generates on submit. An Action
+# absent from here keeps its existing behaviour, which the renewal and extend paths
+# below still own.
+#
+# New Kuwaiti gets a Work Permit and nothing else: a Kuwaiti has no residency, no civil
+# ID application and no medical insurance process to open.
+#
+# A key means "open this document"; its value is the classification we have to hand the
+# creator. None where the creator works it out itself and its other callers rely on it
+# doing so - Medical Insurance maps the status off the Work Permit type, Residency maps
+# the category off the Action (see MOI_CATEGORY_BY_ACTION in residency.py). PACI writes
+# whatever it is given, so its category is named here. The values that result are the
+# mapping WI-001881 defines.
+NEW_ACTION_DOCUMENTS = {
+    "New Kuwaiti": {
+        "work_permit": "New Kuwaiti",
+    },
+    "Overseas": {
+        "work_permit": "Overseas",
+        "medical_insurance": None,
+        "residency": None,
+        "paci": "New Application",
+    },
+    # The process map groups Local Transfer with Overseas and the non-Kuwaiti renewal:
+    # all four documents, opened by the Preparation itself. There is no Transfer Paper in
+    # that path, which is why the transfer side of the Work Permit lifecycle had to stop
+    # assuming one.
+    "Local Transfer": {
+        "work_permit": "Local Transfer",
+        "medical_insurance": None,
+        "residency": None,
+        "paci": "Transfer",
+    },
+}
+
+
 class Preparation(Document):
     def update_total_amount(self):
         doc_total =  sum(i.total_amount or 0 for i in self.preparation_record if i)
@@ -109,7 +145,11 @@ class Preparation(Document):
         self.recall_create_moi_renewal_and_extend() # create moi record for all employee
         self.recall_create_paci() # create paci record for all
         # self.recall_create_fp()# create fp record for all
+        self.recall_create_documents_for_new_actions() # WI-001824: New Kuwaiti / Overseas
         self.send_notifications()
+
+    def recall_create_documents_for_new_actions(self):
+        create_documents_for_new_actions(self.name)
 
     def validate_mandatory_fields_on_submit(self):
         mandatory_fields = []
@@ -293,12 +333,72 @@ def get_grd_renewal_extension_cost(renewal_or_extend, no_of_years=False):
 		if result and len(result) > 0:
 			return result[0]
 
+def create_documents_for_new_actions(preparation_name):
+    """Generate the sub-documents the New Kuwaiti and Overseas Actions ask for (WI-001824).
+
+    One row at a time, and one row's failure does not stop the rest: the same contract
+    the renewal and extend paths already keep, so a single bad employee record cannot
+    cost the whole batch its documents.
+    """
+    preparation = frappe.get_doc('Preparation', preparation_name)
+
+    for row in preparation.preparation_record:
+        if row.renewal_or_extend not in NEW_ACTION_DOCUMENTS:
+            continue
+        try:
+            create_documents_for_row(row, preparation_name)
+        except Exception:
+            frappe.log_error(
+                title=f"Error creating GRD documents for {row.employee} in Preparation {preparation_name}",
+                message=frappe.get_traceback(),
+            )
+            continue
+
+
+def create_documents_for_row(row, preparation_name):
+    """Open the documents one Preparation row's Action calls for, in dependency order.
+
+    The Work Permit comes first because Medical Insurance is opened against it - it
+    reads the type, the application date and the passport expiry off the permit rather
+    than being told them.
+    """
+    plan = NEW_ACTION_DOCUMENTS[row.renewal_or_extend]
+    employee_doc = frappe.get_doc('Employee', row.employee)
+
+    work_permit_doc = work_permit.create_wp_from_preparation(
+        employee_doc, plan["work_permit"], preparation_name
+    )
+
+    if "medical_insurance" in plan:
+        medical_insurance.create_mi_record(work_permit_doc)
+
+    if "residency" in plan:
+        residency.create_moi_record(employee_doc, row.renewal_or_extend, preparation_name)
+
+    if "paci" in plan:
+        paci.create_PACI(employee_doc, plan["paci"], preparation_name)
+
+    return work_permit_doc
+
+
 def handle_creation_of_grd_docs(row,source):
     """
             Handle the creation of grd documents for  new rows just added after the submission of a preparation  document
     Args:
         row (dict): dict containing employee information
     """
+    # A row added after submit takes the same route as one that was there at submit,
+    # or the new Actions would silently create nothing here (WI-001824).
+    if row.renewal_or_extend in NEW_ACTION_DOCUMENTS:
+        try:
+            create_documents_for_row(row, source)
+        except Exception:
+            frappe.log_error(
+                title=f"Error creating New GRD documents for {row.employee}",
+                message=frappe.get_traceback(),
+            )
+        return
+
     try:
         employee_doc = frappe.get_doc("Employee",row.employee)
         work_permit.create_wp_renewal(employee_doc,row.renewal_or_extend,source)
