@@ -1500,6 +1500,13 @@ def issue_job_offer_for_applicant(job_applicant):
         job_offer = frappe.get_doc('Job Offer', existing_offer)
         if job_offer.docstatus == 0 and job_offer.workflow_state == "Open":
             from frappe.model.workflow import apply_workflow
+            # Guest-triggered (e.g. the magic-link candidate self-service form
+            # marking a Bulk Recruitment applicant Selected) has no Job Offer
+            # workflow-transition permission of its own. Same elevation already
+            # used in JobOfferOverride.submit_job_offer_to_candidate() for this
+            # exact scenario.
+            if frappe.session.user == "Guest":
+                frappe.set_user("Administrator")
             apply_workflow(job_offer, "Submit for Candidate Response")
         return
 
@@ -1524,7 +1531,10 @@ def _insert_job_offer_from_applicant(job_app):
     if job_app.one_fm_erf:
         erf = frappe.get_doc('ERF', job_app.one_fm_erf)
         set_erf_details(job_offer, erf, job_app)
-    job_offer.save()
+    # Guest-triggered (magic-link candidate self-service) has no Job Offer
+    # create permission of its own -- Recruiter/HR User (the desk-side
+    # triggers) already do, so this bypass only ever matters for Guest.
+    job_offer.save(ignore_permissions=(frappe.session.user == "Guest"))
 
 def set_erf_details(job_offer, erf, job_app):
     job_offer.erf = erf.name

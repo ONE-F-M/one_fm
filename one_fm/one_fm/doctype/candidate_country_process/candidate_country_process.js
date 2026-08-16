@@ -4,14 +4,13 @@
 // ── Status options per process name ──────────────────────────────────────────
 var STATUS_MAP = {
   "Job Offer Issuance": ["Pending", "Offer Accepted", "Rejected"],
-  // Mirrors the Visa Request workflow states, so it tracks their WI-001773 renames.
   "Visa Processing": [
-    "Pending", "Draft", "Pending by GRD Operator", "Pending GRD Manager Approval",
-    "Pending By PAM", "Pending By MOI", "Pending Visa Issuance", "Completed",
+    "Pending", "Draft", "Pending Initial Review", "Pending GRD Manager Approval",
+    "Pending By PAM", "Pending By MOI", "Pending Visa", "Completed",
     "Pending Recruiter Confirmation", "Rejected", "Awaiting Quota Availability",
-    "Pending Visa Cancel", "Awaiting Visa Cancellation", "Pending Cancel Work Permit",
+    "Pending Visa Cancel", "Pending Visa Request Cancel", "Pending Cancel Work Permit",
     "Rejected By Operator", "Rejected By PAM", "Rejected By MOI",
-    "Rejected for Re Issue", "Work Permit Cancelled"
+    "Rejected for Re Issue", "Canceled"
   ],
   "Medical Test": ["Pending", "In Process", "Fit", "Unfit", "Passed", "Failed"],
   "Remedical Test": ["Pending", "Skipped", "In Process", "Fit", "Unfit", "Passed", "Failed"],

@@ -606,6 +606,56 @@ def user_login(employee_id, password):
 
 
 @frappe.whitelist(allow_guest=True)
+def refresh_token(refresh_token: str = None):
+	"""
+	Exchange a valid OAuth2 refresh token for a new access token so the mobile app can
+	keep the user signed in without re-entering credentials.
+
+	params
+	refresh_token (str): the refresh_token issued by user_login
+
+	returns
+	token (str): new "Bearer <access_token>"
+	refresh_token (str): the rotated refresh_token to store for next time
+	"""
+	try:
+		if not refresh_token:
+			return response("Bad Request", 400, None, "refresh_token is required.")
+
+		client_id = frappe.db.get_value("OAuth Client", {"app_name": "OneFM"}, "client_id")
+		if not client_id:
+			return response("error", 500, None, "OAuth Client 'OneFM' not configured in the system.")
+
+		site = frappe.utils.cstr(frappe.local.conf.app_url) if frappe.local.conf.app_url else "http://127.0.0.1:8000"
+		if site.endswith('/'):
+			site = site[:-1]
+
+		args = {
+			'client_id': client_id,
+			'grant_type': 'refresh_token',
+			'refresh_token': refresh_token,
+		}
+		auth_api = f"{site}/api/method/frappe.integrations.oauth2.get_token"
+		auth_api_response = requests.post(auth_api, data=args, headers={'Accept': 'application/json'})
+
+		if auth_api_response.status_code == 200:
+			token_data = auth_api_response.json()
+			msg = {
+				'token': f"Bearer {token_data.get('access_token')}",
+				# oauthlib rotates the refresh token; keep the new one if returned,
+				# otherwise the caller reuses the existing one.
+				'refresh_token': token_data.get('refresh_token') or refresh_token,
+			}
+			return response("success", 200, msg)
+
+		# Refresh token expired/revoked — client must log in again.
+		return response("error", 401, None, "Refresh token is invalid or expired. Please log in again.")
+	except Exception as e:
+		print(frappe.get_traceback(), 'Refresh Token')
+		return response("error", 500, None, str(e))
+
+
+@frappe.whitelist(allow_guest=True)
 def enrollment_status(employee_id: str):
 	"""
 	Check if employee is enrolled 

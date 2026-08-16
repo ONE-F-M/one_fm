@@ -69,7 +69,6 @@ page_js = {
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
 doctype_js = {
-	"Bank Account": "public/js/doctype_js/bank_account.js",
 	"Location" : "public/js/doctype_js/location.js",
 	"Shift Type" : "public/js/doctype_js/shift_type.js",
 	"Leave Type" : "public/js/doctype_js/leave_type.js",
@@ -222,7 +221,6 @@ has_permission = {
 	"Issue": "one_fm.utils.has_permission_to_issue",
 	"Notification Settings":'one_fm.overrides.notification_settings.has_permission_',
 	"Contracts": "one_fm.operations.doctype.contracts.contracts.contracts_has_permission",
-	"Candidate Country Process": "one_fm.one_fm.doctype.candidate_country_process.candidate_country_process.has_permission",
 	"Arrival Acknowledgement": "one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement.has_permission",
 	"Arrival and Deployment": "one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment.has_permission"
 }
@@ -303,7 +301,7 @@ doc_events = {
 		"validate": "one_fm.utils.validate_warehouse"
 	},
 	"Vehicle": {
-		"autoname": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.vehicle_autoname",
+		"before_insert": "one_fm.overrides.vehicle.set_naming_series",
 		"after_insert": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.after_insert_vehicle",
 		"validate": [
 			"one_fm.overrides.vehicle.validate_vehicle_branding",
@@ -329,10 +327,7 @@ doc_events = {
 		"after_insert": "one_fm.api.doc_methods.bank_account.after_insert",
 		"on_update": "one_fm.utils.bank_account_on_update",
 		"on_trash": "one_fm.utils.bank_account_on_trash",
-		"validate": [
-			"one_fm.utils.validate_iban_is_filled",
-			"one_fm.overrides.bank_account.validate_iban",
-		],
+		"validate": "one_fm.utils.validate_iban_is_filled",
 	},
 	"Employee Checkin": {
 		"on_update": "one_fm.utils.create_additional_salary_for_overtime_request_for_head_office"
@@ -574,7 +569,7 @@ override_doctype_class = {
     "Interview": "one_fm.overrides.interview.InterviewOverride",
     "Purchase Order": "one_fm.overrides.purchase_order.PurchaseOrderOverride",
     "HD Ticket": "one_fm.overrides.hd_ticket.HDTicketOverride",
-    # "ToDo": "one_fm.overrides.todo.ToDo",
+    "ToDo": "one_fm.overrides.todo.ToDo",
     "Task": "one_fm.overrides.task.TaskOverride",
     "Loan Application": "one_fm.overrides.loan_application.LoanApplicationOverride",
     "Loan": "one_fm.overrides.loan.LoanOverride",
@@ -683,6 +678,7 @@ scheduler_events = {
 			"one_fm.api.tasks.overtime_shift_assignment",
 			#"one_fm.api.tasks.automatic_checkout",
 			"one_fm.one_fm.doctype.password_reset_token.password_reset_token.revoke_password_tokens",
+			"one_fm.api.tasks.rambo_shift_assignment",
 		],
 		"37 23 * * *": [  #“At 23:37.”
 			'one_fm.api.tasks.issue_penalties'

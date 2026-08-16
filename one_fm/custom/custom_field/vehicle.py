@@ -83,15 +83,15 @@ def get_vehicle_custom_fields():
                 "reqd": 1
             },
             {
-                "fieldname": "custom_naming_series",
-                "fieldtype": "Data",
+                "fieldname": "naming_series",
+                "fieldtype": "Select",
                 "label": "Naming Series",
                 "insert_after": "one_fm_vehicle_category",
-                "hidden": 1,
+                "options": "\nVHL-S-.####\nVHL-L-.####\nVHL-.####",
                 "no_copy": 1,
-                "print_hide": 1,
                 "default": "VHL-.####",
-                "read_only": 1
+                "read_only": 1,
+                "print_hide": 1
             },
             {
                 "fieldname": "one_fm_vehicle_type",
