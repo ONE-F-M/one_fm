@@ -38,6 +38,37 @@ class Residency(Document):
         self.set_company_address()
         self.set_company_unified_number()
         self.set_paci_number()
+        self.validate_exception_details()
+
+    def validate_exception_details(self):
+        """Hold the save until a ticked exception carries its evidence (WI-002022).
+
+        On `validate` rather than `on_submit` because the story blocks the save, not
+        only the completion: a Damj or a fine recorded without the government letter or
+        the payment receipt is not a record of anything, and letting one sit in Draft
+        that way means the operator finds out at the end of the process instead of the
+        moment they tick the box.
+
+        A fine amount of 0 counts as missing. Ticking "Residency Fine to be Added" and
+        then entering nothing is the mistake the check exists to catch, and a zero-value
+        fine has nothing for finance to reference.
+        """
+        field_list = []
+
+        if self.damj_is_applicable:
+            field_list += [
+                {'Original Civil ID': 'original_civil_id'},
+                {'Upload DAMJ Letter': 'upload_damj_letter'},
+            ]
+
+        if self.residency_fine_to_be_added:
+            field_list += [
+                {'Residency Fine Amount (KWD)': 'residency_fine_amount_kwd'},
+                {'Upload Residency Fine Payment Receipt': 'upload_residency_fine_payment_receipt'},
+            ]
+
+        if field_list:
+            self.set_mendatory_fields(field_list)
 
     def set_grd_values(self):
         if not self.grd_supervisor:
@@ -91,9 +122,34 @@ class Residency(Document):
     def on_submit(self):
         self.validate_mandatory_fields_on_submit()
         self.set_residency_expiry_new_date_in_employee_doctype()
+        self.apply_damj_civil_id()
         self.db_set('completed_on', now_datetime())
         if self.category == "Transfer":
             self.recall_create_paci()
+
+    def apply_damj_civil_id(self):
+        """Put the corrected Civil ID on the Employee once the Damj is completed (WI-002022).
+
+        A Damj merges two civil ID numbers the government issued the same person, and the
+        surviving one is the original. Until it is written back, every record that reads
+        the Civil ID off the Employee - and every one already holding the superseded
+        number - is wrong.
+
+        Written with `db_set`/`set_value` rather than a full Employee save for the same
+        reason `set_residency_expiry_new_date_in_employee_doctype` does: a full save
+        re-validates the whole Employee, and 1,124 of them hold a Marital Status the
+        field's options no longer accept, so any such save throws on data that has
+        nothing to do with the civil ID.
+
+        This record's own mirror of the number is updated too. It is fetched from the
+        Employee and would otherwise keep showing the number the merge just retired, on
+        the very document that recorded the merge.
+        """
+        if not (self.damj_is_applicable and self.original_civil_id):
+            return
+
+        frappe.db.set_value('Employee', self.employee, 'one_fm_civil_id', self.original_civil_id)
+        self.db_set('one_fm_civil_id', self.original_civil_id)
 
     def recall_create_paci(self):
         paci.create_PACI_for_transfer(self.employee)
