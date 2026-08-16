@@ -165,3 +165,91 @@ def set_renewal_extension_cost_totals(doc, method=None):
 
     for row in doc.get('renewal_extension_cost') or []:
         row.total_amount = sum(flt(row.get(field)) for field in COST_COMPONENT_FIELDS)
+
+
+def validate_nationality_attestation_rules(doc, method=None):
+    """One row per nationality in the attestation rules table (WI-002025).
+
+    The table is the master list of what a PCC needs for each nationality: whether the
+    embassy attests and at what fee, whether MOFA attests and at what fee, and whether the
+    certificate has to be translated. A nationality listed twice makes every one of those
+    answers ambiguous, and the lookup would silently take whichever row came first - so an
+    operator correcting a fee by adding a second row would see neither a change nor an error.
+    """
+    seen = set()
+    for row in doc.get('nationality_attestation_rules') or []:
+        if not row.nationality:
+            continue
+        if row.nationality in seen:
+            frappe.throw(
+                _("{0} appears more than once in the Nationality Attestation Rules. "
+                  "Each nationality can only appear once.").format(frappe.bold(row.nationality)),
+                title=_("Duplicate Nationality")
+            )
+        seen.add(row.nationality)
+
+
+def get_nationality_attestation_rule(nationality):
+    """The attestation rule configured for a nationality, or None if it has no row.
+
+    Keyed on Nationality, matched against the candidate's own Employee.one_fm_nationality.
+    The reporter's master data is a list of nationalities - "Nepali", "Sudanese",
+    "Bangladeshi" - not of countries, so Nationality is the only field those values can be
+    matched against. WI-002025's own wording says "Country (== Place of Birth)", but its
+    example value is "Nepal" against real data that reads "Nepali", and WI-002028 and
+    WI-002029 both word the rule as the candidate's nationality. Nationality is what the
+    data supports.
+
+    A nationality with no row needs nothing: no embassy, no MOFA, no translation. That is a
+    meaningful answer rather than missing configuration, which is why the caller gets None
+    and decides, instead of being handed a row of zeroes it cannot distinguish from a
+    nationality that is configured to need nothing.
+
+    Read off the cached HR Settings - it is a settings document read once per PCC save.
+    """
+    if not nationality:
+        return None
+
+    for row in frappe.get_cached_doc('HR Settings').get('nationality_attestation_rules') or []:
+        if row.nationality == nationality:
+            return row
+
+    return None
+
+
+def get_pcc_attestation_fees(nationality):
+    """What a PCC for this nationality requires, and what each step costs.
+
+    Returned as a dict of the three requirements and the three fees, so the PCC controller
+    and the workflow conditions both read the same answer rather than each re-deriving it
+    from the table.
+
+    A step that is not required carries a fee of 0 rather than None: the fee fields on PCC
+    Attestation are Currency and the cost breakdown adds them up, so a step that does not
+    apply has to contribute nothing rather than blank out the total.
+
+    A required MOFA step with no fee of its own falls back to the standard MOFA Fee in HR
+    Settings. The reporter's data charges every nationality the same 5 KWD, so the per-row
+    fee exists for the day one of them differs, and leaving it blank should mean "the usual"
+    rather than "free".
+    """
+    settings = frappe.get_cached_doc('HR Settings')
+    rule = get_nationality_attestation_rule(nationality)
+
+    if not rule:
+        return frappe._dict(
+            embassy_required=False, embassy_fee=0.0,
+            mofa_required=False, mofa_fee=0.0,
+            translation_required=False, translation_fee=0.0,
+        )
+
+    return frappe._dict(
+        embassy_required=bool(rule.embassy_required),
+        embassy_fee=flt(rule.embassy_fee_kwd) if rule.embassy_required else 0.0,
+        mofa_required=bool(rule.mofa_required),
+        mofa_fee=(
+            flt(rule.mofa_fee_kwd) or flt(settings.get('mofa_fee_kwd'))
+        ) if rule.mofa_required else 0.0,
+        translation_required=bool(rule.translation_required),
+        translation_fee=flt(settings.get('pcc_translation_fee_kwd')) if rule.translation_required else 0.0,
+    )
