@@ -38,6 +38,37 @@ class Residency(Document):
         self.set_company_address()
         self.set_company_unified_number()
         self.set_paci_number()
+        self.validate_exception_details()
+
+    def validate_exception_details(self):
+        """Hold the save until a ticked exception carries its evidence (WI-002022).
+
+        On `validate` rather than `on_submit` because the story blocks the save, not
+        only the completion: a Damj or a fine recorded without the government letter or
+        the payment receipt is not a record of anything, and letting one sit in Draft
+        that way means the operator finds out at the end of the process instead of the
+        moment they tick the box.
+
+        A fine amount of 0 counts as missing. Ticking "Residency Fine to be Added" and
+        then entering nothing is the mistake the check exists to catch, and a zero-value
+        fine has nothing for finance to reference.
+        """
+        field_list = []
+
+        if self.damj_is_applicable:
+            field_list += [
+                {'Original Civil ID': 'original_civil_id'},
+                {'Upload DAMJ Letter': 'upload_damj_letter'},
+            ]
+
+        if self.residency_fine_to_be_added:
+            field_list += [
+                {'Residency Fine Amount (KWD)': 'residency_fine_amount_kwd'},
+                {'Upload Residency Fine Payment Receipt': 'upload_residency_fine_payment_receipt'},
+            ]
+
+        if field_list:
+            self.set_mendatory_fields(field_list)
 
     def set_grd_values(self):
         if not self.grd_supervisor:
@@ -91,9 +122,68 @@ class Residency(Document):
     def on_submit(self):
         self.validate_mandatory_fields_on_submit()
         self.set_residency_expiry_new_date_in_employee_doctype()
+        self.apply_damj_civil_id()
         self.db_set('completed_on', now_datetime())
         if self.category == "Transfer":
             self.recall_create_paci()
+
+    def apply_damj_civil_id(self):
+        """Put the corrected Civil ID on the Employee once the Damj is completed (WI-002022).
+
+        A Damj merges two civil ID numbers the government issued the same person, and the
+        surviving one is the original. Until it is written back, every record that reads
+        the Civil ID off the Employee - and every one already holding the superseded
+        number - is wrong.
+
+        Written with `db_set`/`set_value` rather than a full Employee save for the same
+        reason `set_residency_expiry_new_date_in_employee_doctype` does: a full save
+        re-validates the whole Employee, and 1,124 of them hold a Marital Status the
+        field's options no longer accept, so any such save throws on data that has
+        nothing to do with the civil ID.
+
+        This record's own mirror of the number is updated too. It is fetched from the
+        Employee and would otherwise keep showing the number the merge just retired, on
+        the very document that recorded the merge.
+        """
+        if not (self.damj_is_applicable and self.original_civil_id):
+            return
+
+        frappe.db.set_value('Employee', self.employee, 'one_fm_civil_id', self.original_civil_id)
+        self.db_set('one_fm_civil_id', self.original_civil_id)
+        self.sync_damj_civil_id_to_paci()
+
+    def sync_damj_civil_id_to_paci(self):
+        """Carry the merged Civil ID over to the PACI opened alongside this Residency (WI-002027).
+
+        The PACI's Civil ID is fetched from the Employee, which means it is copied once at
+        insert and never looked at again. A Damj completed after the PACI was opened
+        therefore leaves the civil ID application quoting the number the government just
+        retired - the one thing it must not do.
+
+        Scoped to the same Preparation, which is what pairs the two documents: a
+        Preparation opens one Residency and one PACI per employee, so that pair is the
+        "linked record" the story means. A Residency with no Preparation - a transfer, say
+        - has no PACI to pair with and is left alone.
+
+        Cancelled records are skipped; there can be more than one live PACI for the same
+        employee (a rejected application and its replacement), and both need the
+        correction. Written with set_value because the field is read-only and the PACI may
+        already be submitted, and because a full save would re-run the PACI's own
+        validation over a document this change has no business re-validating.
+        """
+        if not self.preparation:
+            return
+
+        for paci_name in frappe.get_all(
+            'PACI',
+            filters={
+                'preparation': self.preparation,
+                'employee': self.employee,
+                'docstatus': ['!=', 2],
+            },
+            pluck='name',
+        ):
+            frappe.db.set_value('PACI', paci_name, 'civil_id', self.original_civil_id)
 
     def recall_create_paci(self):
         paci.create_PACI_for_transfer(self.employee)
@@ -149,7 +239,9 @@ class Residency(Document):
 # the "for extend" branch below (WI-001824). Without this the branch - which reads as
 # "anything that is not a renewal is an extension" - would open a second Residency for
 # them, categorised as Extend.
-ACTIONS_HANDLED_ON_SUBMIT = ('Renewal (Non-Kuwaiti)', 'New Kuwaiti', 'Overseas', 'Local Transfer')
+ACTIONS_HANDLED_ON_SUBMIT = (
+    'Renewal (Non-Kuwaiti)', 'New Kuwaiti', 'Overseas', 'Overseas (Government)', 'Local Transfer'
+)
 
 # The Residency a category opens, and how many days before the residency expires it is
 # applied for. Anything not listed is an extension, applied for a week ahead.
@@ -162,6 +254,9 @@ MOI_CATEGORY_BY_ACTION = {
     # First residency for an overseas hire (WI-001881): there is no expiry to count
     # back from, so it is applied for the day the Preparation was submitted.
     'Overseas': ('First Time', None),
+    # WI-002024: a government-contract overseas hire gets the same first residency. MOI
+    # does not care which file the work permit was raised against.
+    'Overseas (Government)': ('First Time', None),
 }
 
 
