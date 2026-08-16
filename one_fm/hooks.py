@@ -240,6 +240,11 @@ doc_events = {
 			"one_fm.overrides.todo.delete_linked_todos"
 		]
 	},
+	"HR Settings": {
+		"validate": [
+			"one_fm.grd.utils.set_renewal_extension_cost_totals"
+		]
+	},
 	"Stock Entry": {
 		"validate": [
 			"one_fm.overrides.stock_entry.alert_item_multiple_entry",
