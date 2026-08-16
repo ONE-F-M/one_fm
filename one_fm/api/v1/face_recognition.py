@@ -234,8 +234,8 @@ def _fmt_clock(value) -> str:
     return value.strftime("%I:%M %p").lstrip("0")
 
 
-def get_checkin_windows(employee: str) -> list:
-    """Today's shifts with their check-in boundaries (WI-001777).
+def get_checkin_windows(employee: str, include_previous_day: bool = False) -> list:
+    """Today's shifts with their check-in and check-out boundaries (WI-001777).
 
     Deliberately separate from ``one_fm.utils.get_current_shift``, whose query only
     returns a shift once its window is already OPEN. Five callers depend on that to
@@ -243,14 +243,19 @@ def get_checkin_windows(employee: str) -> list:
     that says when the next window opens needs to see the whole day.
 
     Boundaries come from the Shift Type, not from any assumed hour:
-      opens_at      = start - begin_check_in_before_shift_start_time
-      late_after    = start + late_entry_grace_period   (flagged late, still allowed)
-      blocked_after = start + working_hours_threshold_for_absent
+      opens_at        = start - begin_check_in_before_shift_start_time
+      late_after      = start + late_entry_grace_period   (flagged late, still allowed)
+      blocked_after   = start + working_hours_threshold_for_absent
+      checkout_closes = end + allow_check_out_after_shift_end_time
+
+    ``include_previous_day`` also returns yesterday's shifts, which an overnight
+    check-out still belongs to after midnight.
     """
     ShiftAssignment = frappe.qb.DocType("Shift Assignment")
     ShiftType = frappe.qb.DocType("Shift Type")
 
     today = getdate()
+    earliest = add_days(today, -1) if include_previous_day else today
     rows = (
         frappe.qb.from_(ShiftAssignment)
         .join(ShiftType)
@@ -262,12 +267,13 @@ def get_checkin_windows(employee: str) -> list:
             ShiftType.begin_check_in_before_shift_start_time.as_("opens_before"),
             ShiftType.late_entry_grace_period.as_("late_grace"),
             ShiftType.working_hours_threshold_for_absent.as_("absent_after_hours"),
+            ShiftType.allow_check_out_after_shift_end_time.as_("checkout_grace"),
         )
         .where(
             (ShiftAssignment.employee == employee)
             & (ShiftAssignment.status == "Active")
             & (ShiftAssignment.docstatus == 1)
-            & (ShiftAssignment.start_datetime >= today)
+            & (ShiftAssignment.start_datetime >= earliest)
             & (ShiftAssignment.start_datetime < add_days(today, 1))
         )
         .orderby(ShiftAssignment.start_datetime)
@@ -281,10 +287,16 @@ def get_checkin_windows(employee: str) -> list:
             frappe._dict(
                 shift_assignment=row.name,
                 start=row.start_datetime,
+                end=row.end_datetime,
                 opens_at=row.start_datetime - timedelta(minutes=cint(row.opens_before)),
                 late_after=row.start_datetime + timedelta(minutes=cint(row.late_grace)),
                 blocked_after=row.start_datetime
                 + timedelta(hours=flt(row.absent_after_hours)),
+                checkout_closes_at=(
+                    row.end_datetime + timedelta(minutes=cint(row.checkout_grace))
+                    if row.end_datetime
+                    else None
+                ),
             )
         )
 
@@ -331,6 +343,46 @@ def get_checkin_window_message(employee: str) -> str:
             "Check-In Unavailable: Your scheduled shift starts at {0}. "
             "Check-in opens at {1}."
         ).format(_fmt_clock(upcoming[0].start), _fmt_clock(upcoming[0].opens_at))
+
+    return ""
+
+
+def has_open_checkin(shift_assignment: str) -> bool:
+    """True when the employee checked IN for this shift and never checked OUT.
+
+    Distinguishes "could not check in" from "could not check out" - both arrive at the
+    same dead end in ``get_site_location`` once the shift's window has passed, but only
+    one of them is what the employee is actually trying to do.
+    """
+    last_log = frappe.get_all(
+        "Employee Checkin",
+        filters={"shift_assignment": shift_assignment},
+        fields=["log_type"],
+        order_by="time desc",
+        limit_page_length=1,
+    )
+    return bool(last_log) and last_log[0].log_type == "IN"
+
+
+def get_checkout_window_message(employee: str) -> str:
+    """Why check-out is unavailable right now, in words an employee can act on.
+
+    An employee who is still checked IN after the check-out window closed used to be
+    told their *check-in* window had closed - true, but not the thing they were trying
+    to do, and it left the open IN looking like their own mistake. Returns an empty
+    string unless there really is an unclosed check-in past its deadline, so the
+    check-in banner keeps speaking for every other case.
+    """
+    now = now_datetime()
+    for window in get_checkin_windows(employee, include_previous_day=True):
+        if not window.checkout_closes_at or now <= window.checkout_closes_at:
+            continue
+        if not has_open_checkin(window.shift_assignment):
+            continue
+        return _(
+            "Check-Out Window Closed: Your shift ended at {0} and check-out was allowed "
+            "until {1}. Please contact your Site Supervisor to record your check-out."
+        ).format(_fmt_clock(window.end), _fmt_clock(window.checkout_closes_at))
 
     return ""
 
@@ -478,6 +530,13 @@ def get_site_location(employee_id: str = None, shift: str = None,latitude: float
             elif site:
                 return response("Resource Not Found", 404, None, "No site location set for {site}".format(site=site))
 
+            # Neither a location nor a site left this branch without a response at all,
+            # so the app received an empty body and showed its generic "unexpected
+            # error" with nothing logged to explain it. Always say something.
+            return response("Resource Not Found", 404, None,
+                            _("No check-in location is configured for your shift. "
+                              "Please contact your Site Supervisor."))
+
         else:
             if employee.shift_working:
                 if has_day_off(employee.name, date):
@@ -495,6 +554,13 @@ def get_site_location(employee_id: str = None, shift: str = None,latitude: float
             status, message = is_holiday(employee=employee, date=date)
             if status:
                 return response("Resource Not Found", 404, None, message)
+
+            # An unclosed check-in past its deadline is a check-OUT problem; say so
+            # before the check-in banner, which would otherwise blame a window the
+            # employee already used successfully.
+            checkout_message = get_checkout_window_message(employee.name)
+            if checkout_message:
+                return response("Resource Not Found", 404, None, checkout_message)
 
             # WI-001777: the employee may well have a shift today whose check-in
             # window is simply not open - get_current_shift only returns a shift once
