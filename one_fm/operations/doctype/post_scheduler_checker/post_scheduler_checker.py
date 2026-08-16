@@ -211,9 +211,22 @@ def get_post_scheduler_items(contract, project):
 
 	return items
 
-def schedule_roster_checker():
+def schedule_roster_checker(projects=None):
+	"""Rebuild today's Post Scheduler Checker for every active contract, or just some.
+
+	WI-002018: `projects` narrows it to the projects whose roster has just changed, so a
+	staffing gap opened by a cleanup is reported the moment it appears rather than waiting
+	for tomorrow's scheduled run. Left empty it behaves exactly as the scheduled job always
+	has, which is how it is still called from the scheduler.
+	"""
+	conditions = ""
+	values = {}
+	if projects:
+		conditions = " AND p.name IN %(projects)s"
+		values["projects"] = tuple(projects)
+
 	contracts = frappe.db.sql("""SELECT c.name, p.name as project from `tabContracts` c JOIN `tabProject` p ON p.name = c.project WHERE c.workflow_state = 'Active'
-						   		  AND p.is_active = 'Yes' """, as_dict=1)
+						   		  AND p.is_active = 'Yes' """ + conditions, values, as_dict=1)
 	if not contracts:
 		return
 
