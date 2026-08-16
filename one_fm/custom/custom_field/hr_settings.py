@@ -99,9 +99,16 @@ def get_hr_settings_custom_fields():
                 "description": "Specify the number of days in advance the supervisor should be notified before an employee's document expires. A notification will be triggered based on this value."
             },
             {
+                "fieldname": "paci_fine_amount_kwd",
+                "fieldtype": "Currency",
+                "insert_after": "days_before_expiry_to_notify_supervisor",
+                "label": "PACI Fine Amount (KWD)",
+                "description": "The fixed PACI late fine. Fetched onto a PACI record when the operator marks the fine applicable, so the rate is changed in one place when PACI changes it."
+            },
+            {
                 "fieldname": "renewal_extension_costing_section",
                 "fieldtype": "Section Break",
-                "insert_after": "days_before_expiry_to_notify_supervisor",
+                "insert_after": "paci_fine_amount_kwd",
                 "label": "Renewal Extension Costing"
             },
             {

@@ -149,6 +149,24 @@ def attach_employee_document(employee, document_name, attach, valid_till, issued
     return row.name
 
 
+def set_renewal_extension_cost_totals(doc, method=None):
+    """Sum each master fee row's components into its Total Amount (WI-002031).
+
+    Runs on HR Settings validate. The sum was only ever done in the browser, so a row
+    saved by any other route - a data import, a patch, the API - kept a Total Amount that
+    did not match its own components, and every Preparation row that fetched it inherited
+    the mismatch. The field is read-only, so nobody could correct it by hand either.
+
+    Imported inside the function: the module is loaded by HR Settings' validate hook, and
+    importing Preparation at module scope makes HR Settings depend on the GRD doctype
+    module for a four-item tuple.
+    """
+    from one_fm.grd.doctype.preparation.preparation import COST_COMPONENT_FIELDS
+
+    for row in doc.get('renewal_extension_cost') or []:
+        row.total_amount = sum(flt(row.get(field)) for field in COST_COMPONENT_FIELDS)
+
+
 def validate_nationality_attestation_rules(doc, method=None):
     """One row per nationality in the attestation rules table (WI-002025).
 

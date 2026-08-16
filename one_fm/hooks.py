@@ -242,6 +242,7 @@ doc_events = {
 	},
 	"HR Settings": {
 		"validate": [
+			"one_fm.grd.utils.set_renewal_extension_cost_totals",
 			"one_fm.grd.utils.validate_nationality_attestation_rules"
 		]
 	},
