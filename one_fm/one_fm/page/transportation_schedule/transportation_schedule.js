@@ -1028,9 +1028,183 @@ function mountRoutePlannerApp(wrapper, data) {
                 d.show();
             },
 
+            // ── Merge Trip modal (WI-002078) ──
+            _isMergeDrop(newCard, existingItems) {
+                // A merge is two cards travelling different ways on one run. Chaining two
+                // outbound stops is the existing multi-stop behaviour and is left alone.
+                const dirs = new Set(existingItems.map(i => i.direction || 'OUTBOUND'));
+                dirs.add(newCard.direction || 'OUTBOUND');
+                return dirs.size > 1 || dirs.has('MIXED');
+            },
+
+            _mergeShipmentIds(newCard, existingItems) {
+                const ids = existingItems.map(i => i.cardId).filter(Boolean);
+                ids.push(newCard.id);
+                // The backend resolves a card id to its shipment; de-duplicated so a card
+                // already on the lane in both directions is offered once.
+                return Array.from(new Set(ids));
+            },
+
+            _openMergeTripModal(newCard, existingItems, vehicleId) {
+                const self = this;
+                const vehicle = this.planData.vehicles.find(v => v.id === vehicleId) || {};
+                const shipments = this._mergeShipmentIds(newCard, existingItems);
+                let timings = {};
+
+                const d = new frappe.ui.Dialog({
+                    title: __('Merge Trip'),
+                    size: 'large',
+                    fields: [{ fieldtype: 'HTML', fieldname: 'preview' }],
+                    primary_action_label: __('Confirm & Merge Trip'),
+                    primary_action() {
+                        frappe.call({
+                            method: 'one_fm.one_fm.doctype.transportation_shipment.transportation_shipment.merge_trip_shipments',
+                            args: { shipments: shipments },
+                            freeze: true,
+                            callback(r) {
+                                if (!r.message) return;
+                                d.hide();
+                                self._applyMerge(newCard, existingItems, vehicleId, r.message, timings);
+                            }
+                        });
+                    }
+                });
+
+                const render = () => {
+                    frappe.call({
+                        method: 'one_fm.one_fm.doctype.transportation_shipment.transportation_shipment.get_merge_preview',
+                        args: { shipments: shipments, vehicle: vehicleId, timings: timings },
+                        callback(r) {
+                            const p = r.message;
+                            if (!p) return;
+                            d.fields_dict.preview.$wrapper.html(self._mergeModalHtml(p, vehicle));
+                            // Confirm is disabled by the server's verdict, so the button and
+                            // the banner can never disagree about whether the trip fits.
+                            d.get_primary_btn().prop('disabled', !p.can_merge);
+
+                            d.fields_dict.preview.$wrapper.find('.rp-leg-min').off('change').on('change', function () {
+                                const ship = this.dataset.shipment;
+                                const key = this.dataset.key;
+                                timings[ship] = timings[ship] || {};
+                                timings[ship][key] = parseInt(this.value, 10) || 0;
+                                render();   // re-times every stop after this one
+                            });
+                        }
+                    });
+                };
+
+                render();
+                d.show();
+            },
+
+            _mergeModalHtml(p, vehicle) {
+                const esc = (v) => frappe.utils.escape_html(String(v == null ? '' : v));
+
+                const banner = p.exceeded
+                    ? `<div style="background:#fee2e2;border:1px solid #fecaca;color:#b91c1c;border-radius:6px;padding:10px 12px;margin-bottom:12px;font-weight:600">
+                           ${esc(p.message)} — reduce the load or choose another vehicle.
+                       </div>`
+                    : '';
+
+                // One container per visit: a stop where riders both leave and join is two
+                // entries, and so is a stop the run returns to (second criterion).
+                const stops = p.stops.map((s) => {
+                    const boarding = s.action === 'Boarding';
+                    const tone = boarding ? '#2e7d32' : '#e65100';
+                    const label = boarding ? 'EMPLOYEES BOARDING' : 'DROPPING OFF EMPLOYEES';
+                    const over = s.exceeded ? 'border-color:#ef4444;background:#fef2f2' : '';
+                    return `<div style="border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;margin-bottom:8px;${over}">
+                        <div style="display:flex;justify-content:space-between;align-items:center">
+                            <div style="font-weight:700">Seq ${s.stop_index}: ${esc(s.stop_location || '—')}</div>
+                            <span style="font-size:11px;font-weight:700;color:${tone}">${label} &middot; ${esc(s.headcount)}</span>
+                        </div>
+                        <div style="font-size:12px;color:#6b7280;margin-top:4px">
+                            On board after this stop: <b>${esc(s.occupancy)}</b> / ${esc(p.max_passenger_capacity || '—')}
+                        </div>
+                    </div>`;
+                }).join('');
+
+                const legs = p.stops.map((s) => `
+                    <tr>
+                        <td style="padding:4px 8px">Seq ${s.stop_index}</td>
+                        <td style="padding:4px 8px">${esc(s.stop_location || '—')}</td>
+                        <td style="padding:4px 8px"><input class="rp-leg-min" type="number" min="0"
+                            data-shipment="${esc(s.shipment)}" data-key="transit_minutes"
+                            value="${esc(s.transit_minutes)}" style="width:70px"></td>
+                        <td style="padding:4px 8px"><input class="rp-leg-min" type="number" min="0"
+                            data-shipment="${esc(s.shipment)}" data-key="buffer_minutes"
+                            value="${esc(s.buffer_minutes)}" style="width:70px"></td>
+                    </tr>`).join('');
+
+                return `
+                    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+                        <span style="background:#819171;color:#fff;font-weight:700;font-size:12px;padding:3px 10px;border-radius:6px">MIXED</span>
+                        <span style="font-size:12px;color:#6b7280">Direction is set by the merge and cannot be changed here.</span>
+                        <span style="margin-left:auto;font-size:12px">Max Passenger Capacity: <b>${esc(p.max_passenger_capacity || '—')}</b></span>
+                    </div>
+                    ${banner}
+                    <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:6px">Itinerary</div>
+                    ${stops}
+                    <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;margin:12px 0 6px">Per-Leg Transit &amp; Buffer Times</div>
+                    <table style="width:100%;font-size:12px;border-collapse:collapse">
+                        <thead><tr style="background:#f3f4f6">
+                            <th style="text-align:left;padding:4px 8px">Leg</th>
+                            <th style="text-align:left;padding:4px 8px">Stop</th>
+                            <th style="text-align:left;padding:4px 8px">Transit (min)</th>
+                            <th style="text-align:left;padding:4px 8px">Buffer (min)</th>
+                        </tr></thead>
+                        <tbody>${legs}</tbody>
+                    </table>`;
+            },
+
+            _applyMerge(newCard, existingItems, vehicleId, merged, timings) {
+                const self = this;
+                const tripId = merged.trip_group;
+
+                // Every stop of the merged run answers to one group and one direction.
+                existingItems.forEach((item) => { item.tripId = tripId; item.direction = 'MIXED'; });
+
+                const order = merged.itinerary.map((s) => s.shipment);
+                const lastEnd = new Date(Math.max(...existingItems.map((i) => new Date(i.end).getTime())));
+                const uid = Math.random().toString(36).slice(2, 10);
+                const adj = timings[newCard.id] || {};
+                const transitMs = Math.max(parseInt(adj.transit_minutes, 10) || 30, 5) * 60000;
+                const dwellMs = (parseInt(adj.buffer_minutes, 10) || 0) * 60000;
+                const segStart = new Date(lastEnd.getTime() + dwellMs);
+                const segEnd = new Date(segStart.getTime() + transitMs);
+
+                self.swimItems.push({
+                    id: `${newCard.id}_MIX_${uid}`, cardId: newCard.id, vehicleId,
+                    direction: 'MIXED', start: segStart, end: segEnd,
+                    headcount: newCard.headcount, conflict: false,
+                    tripId, stopIndex: order.indexOf(newCard.id) + 1 || existingItems.length + 1
+                });
+
+                const allTrip = self.swimItems.filter((i) => i.tripId === tripId);
+                allTrip.forEach((i) => { i.totalStops = allTrip.length; });
+
+                self.assignedCards.add(newCard.id);
+                self.selectedPoolCard = null;
+                self.checkConflicts();
+                self.canSave = self.assignedCards.size > 0;
+                self.persistAssignments();
+
+                frappe.show_alert({ message: __('Trip merged — direction is now Mixed'), indicator: 'green' });
+            },
+
             // ── Chain a card as the next stop on an existing trip ──
             _chainToTrip(newCard, existingItems, vehicleId, presetTransitMin) {
                 const self = this;
+
+                // WI-002078: dropping a card onto a lane that already has a block is a merge,
+                // and a merge is a decision - it changes the run's direction, re-times every
+                // stop after it and can put the bus over its seats. The modal is where the
+                // operator sees all three before committing, instead of the card being
+                // silently re-timed on a default 30-minute transit.
+                if (!presetTransitMin && self._isMergeDrop(newCard, existingItems)) {
+                    self._openMergeTripModal(newCard, existingItems, vehicleId);
+                    return;
+                }
 
                 // ── Capacity check before chaining ──
                 const vehicle = this.planData.vehicles.find(v => v.id === vehicleId);

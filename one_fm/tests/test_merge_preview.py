@@ -123,3 +123,57 @@ class TestMergePreviewShape(FrappeTestCase):
 		self.assertEqual(_minutes("15"), 15)
 		self.assertEqual(_minutes(-5), 0)          # a negative wait would run the clock backwards
 		self.assertEqual(_minutes("not a number"), 0)
+
+
+class TestTheMergeModal(FrappeTestCase):
+	"""AC1-AC4: what the drop opens, and what it shows before Confirm is enabled."""
+
+	def setUp(self):
+		self.source = CANVAS.read_text()
+
+	def test_a_drop_onto_an_occupied_lane_opens_the_modal(self):
+		# Before this the card was silently re-timed on a default 30-minute transit.
+		self.assertIn("_isMergeDrop(newCard, existingItems)", self.source)
+		self.assertIn("_openMergeTripModal(newCard, existingItems, vehicleId)", self.source)
+
+	def test_chaining_two_stops_the_same_way_is_left_alone(self):
+		# Multi-stop chaining in one direction is existing behaviour, not a merge.
+		self.assertIn("return dirs.size > 1 || dirs.has('MIXED')", self.source)
+
+	def test_the_direction_badge_is_mixed_and_read_only(self):
+		self.assertIn(">MIXED<", self.source)
+		self.assertIn("cannot be changed here", self.source)
+
+	def test_the_modal_shows_the_vehicle_capacity(self):
+		self.assertIn("Max Passenger Capacity", self.source)
+
+	def test_the_primary_action_is_confirm_and_merge(self):
+		self.assertIn("__('Confirm & Merge Trip')", self.source)
+
+	def test_each_visit_is_its_own_container(self):
+		self.assertIn("Seq ${s.stop_index}", self.source)
+		self.assertIn("EMPLOYEES BOARDING", self.source)
+		self.assertIn("DROPPING OFF EMPLOYEES", self.source)
+
+	def test_there_is_a_per_leg_transit_and_buffer_table(self):
+		self.assertIn("Per-Leg Transit &amp; Buffer Times", self.source)
+		self.assertIn('data-key="transit_minutes"', self.source)
+		self.assertIn('data-key="buffer_minutes"', self.source)
+
+	def test_editing_a_leg_re_times_the_rest_of_the_run(self):
+		# The change handler re-renders from the server, which recomputes every later stop.
+		self.assertIn(".rp-leg-min", self.source)
+		self.assertIn("render();   // re-times every stop after this one", self.source)
+
+	def test_an_exceeded_leg_is_banned_in_red_and_disables_confirm(self):
+		self.assertIn("#fee2e2", self.source)
+		self.assertIn("get_primary_btn().prop('disabled', !p.can_merge)", self.source)
+
+	def test_the_failing_stop_is_highlighted_in_the_itinerary(self):
+		self.assertIn("s.exceeded ?", self.source)
+
+	def test_confirming_calls_the_merge_endpoint(self):
+		self.assertIn("transportation_shipment.merge_trip_shipments", self.source)
+
+	def test_confirming_marks_every_stop_mixed_under_one_group(self):
+		self.assertIn("item.tripId = tripId; item.direction = 'MIXED';", self.source)
