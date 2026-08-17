@@ -1,4 +1,11 @@
 import frappe
+from one_fm.custom.assignment_rule.assignment_rule import delete_assignment_rule
+
+FYI_OFFBOARDING_OFFICER_RULES = [
+	"Resignation - FYI Offboarding Officer",
+	"Employee Resignation Date Adjustment - FYI Offboarding Officer",
+	"Employee Resignation Withdrawal - FYI Offboarding Officer",
+]
 
 # Assignment Rules created by these names were deleted, not renamed. A rule
 # can only unassign ToDos stamped with its own name, so ToDos they created
@@ -23,10 +30,24 @@ ROLE_ASSIGNMENTS = {
 
 def execute():
 	staff_new_workflow_roles()
+	remove_fyi_offboarding_officer_rules()
 	reroute_t4_resignations_to_t4_admin()
 	reroute_stale_operations_manager_resignations()
 	close_orphaned_assignment_rule_todos()
 	backfill_current_salary()
+
+
+def remove_fyi_offboarding_officer_rules():
+	# Same doctype can only carry one auto-assignment per save (Frappe's
+	# assignment_rule.apply() stops at the first rule that succeeds), so this
+	# rule was silently starving the real Supervisor/Project Manager
+	# assignment on every resignation that reached Pending Supervisor.
+	frappe.db.set_value(
+		"ToDo", {"assignment_rule": ["in", FYI_OFFBOARDING_OFFICER_RULES], "status": "Open"},
+		"status", "Cancelled",
+	)
+	for rule_name in FYI_OFFBOARDING_OFFICER_RULES:
+		delete_assignment_rule({"name": rule_name})
 
 
 def staff_new_workflow_roles():
