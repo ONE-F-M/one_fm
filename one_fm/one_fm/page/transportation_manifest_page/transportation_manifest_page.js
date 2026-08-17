@@ -602,6 +602,7 @@ function renderManifest($container, data) {
 							${fmtTime(pr.route.vehicleStartTime)} → ${fmtTime(pr.route.vehicleEndTime)}
 						</div>
 						<div class="mfst-vehicle-trips">${allTrips.length} trip${allTrips.length !== 1 ? "s" : ""}</div>
+						${isMixedRun(meta) ? `<div class="mfst-mixed-badge">MIXED &middot; ${mixedStopCount(pr)} stops &middot; ${mixedPassengerCount(pr, shipmentEmployees)} passengers</div>` : ""}
 					</div>
 				</div>
 				<div class="mfst-vehicle-stats">
@@ -727,7 +728,7 @@ function renderManifest($container, data) {
 
 			// Camp block: DEPART banner, then that camp's drop-off stop(s)
 			campGroups.forEach(cg => {
-				html += renderDepartCard(firstTimeISO, cg, activeStop, manifestName, pr.label);
+				html += renderDepartCard(firstTimeISO, cg, activeStop, manifestName, pr.label, isMixedRun(meta));
 				let prevTime = firstTimeISO;
 				(dropByCamp[cg.seq] || []).forEach(item => {
 					html += renderTransit(calcTransit(prevTime, item.stop.time));
@@ -811,15 +812,45 @@ function renderManifest($container, data) {
 	}
 
 	// Per-camp DEPART card (MA2-11). `camp` = { seq, label, employees }.
+	// A merged run reads differently from an ordinary one: it leaves one origin, calls at
+	// several stops dropping and collecting, and comes back. These three answer "is it one",
+	// "how many stops does it make" and "how many people does it carry" (WI-002074).
+	function isMixedRun(meta) {
+		return String((meta && meta.trip_direction) || "").toLowerCase() === "mixed";
+	}
+
+	function mixedStopCount(pr) {
+		const stops = (pr && pr.route && pr.route.stops) || [];
+		return stops.length;
+	}
+
+	function mixedPassengerCount(pr, shipmentEmployees) {
+		const stops = (pr && pr.route && pr.route.stops) || [];
+		const seen = new Set();
+		stops.forEach(stop => {
+			((shipmentEmployees || {})[stop.raw] || []).forEach(e => {
+				const name = (typeof e === "object" && e !== null) ? (e.name || "") : (e || "");
+				if (name) seen.add(name);
+			});
+		});
+		return seen.size;
+	}
+
 	// Lock state is derived from the manifest's active_stop_sequence:
 	//   seq <  active → Completed (read-only)   seq === active → Active (editable)
 	//   seq === active+1 → next (can Trigger)    seq >  active+1 → Locked
-	function renderDepartCard(time, camp, activeStop, manifestName, vehicleLabel) {
+	function renderDepartCard(time, camp, activeStop, manifestName, vehicleLabel, isMixed) {
 		const employees = camp.employees || [];
 		const seq = camp.seq || 1;
 		const isCompleted = activeStop && seq < activeStop;
 		const isActive = activeStop && seq === activeStop;
-		const canTrigger = seq === (activeStop || 0) + 1;
+		// On an ordinary run the check walks camp by camp, so each camp in turn can be
+		// triggered. A merged run is one vehicle leaving one origin: the second criterion
+		// puts the button in the very first DEPART card and nowhere else, so a driver
+		// cannot start a check at a mid-route pickup they have not reached (WI-002074).
+		const canTrigger = isMixed
+			? (seq === 1 && !activeStop)
+			: seq === (activeStop || 0) + 1;
 		const status = isCompleted ? "completed" : (isActive ? "active" : "locked");
 
 		let statusChip;
@@ -849,7 +880,7 @@ function renderManifest($container, data) {
 				<div class="mfst-depart-emp-header">
 					<div class="mfst-stop-emp-label" style="color:var(--mfst-green)">
 						<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">groups</span>
-						${employees.length} employee${employees.length !== 1 ? "s" : ""} boarding
+						EMPLOYEES BOARDING &middot; ${employees.length}
 					</div>
 					<div class="mfst-depart-check-badge">
 						<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">fact_check</span>
@@ -897,13 +928,13 @@ function renderManifest($container, data) {
 
 		let empHtml = "";
 		if (emps.length > 0) {
-			const actionWord = isDropoff ? "Dropping off" : "Picking up";
+			const actionWord = isDropoff ? "DROPPING OFF EMPLOYEES" : "EMPLOYEES BOARDING";
 			const actionColor = isDropoff ? "var(--mfst-accent)" : "var(--mfst-green)";
 			const actionIcon = isDropoff ? "south" : "north";
 			empHtml = `<div class="mfst-stop-emp-section">
 				<div class="mfst-stop-emp-label" style="color:${actionColor}">
 					<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">${actionIcon}</span>
-					${actionWord} ${emps.length} employee${emps.length !== 1 ? "s" : ""}
+					${actionWord} &middot; ${emps.length}
 				</div>
 				<div class="mfst-stop-employees">${emps.map(n => empChipHtml(n)).join("")}</div>
 			</div>`;
@@ -1716,6 +1747,7 @@ function getManifestCSS() {
 		.mfst-stop-emp-section { margin-top: 12px; }
 		.mfst-stop-emp-label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
 		.mfst-depart-emp-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+		.mfst-mixed-badge { font-size: 12px; font-weight: 700; letter-spacing: .04em; color: #fff; background: #819171; padding: 3px 10px; border-radius: 6px; margin-top: 6px; display: inline-block; }
 		.mfst-depart-check-badge { font-size: 12px; font-weight: 600; color: var(--mfst-accent); background: var(--mfst-accent-dim); border: 1px solid rgba(249,115,22,0.2); padding: 4px 10px; border-radius: 6px; display: flex; align-items: center; gap: 4px; }
 
 		/* ── Per-camp DEPART attendance-check lock (MA2-11) ── */
