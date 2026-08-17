@@ -1074,17 +1074,21 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			shift = VALUES(shift),
 			project = VALUES(project),
 			site = VALUES(site),
-			reference_doctype = IF(employee_availability IN ('Client Event', 'On-the-job Training'), NULL, reference_doctype),
-			reference_docname = IF(employee_availability IN ('Client Event', 'On-the-job Training'), NULL, reference_docname),
+			/* reference_docname is assigned before reference_doctype: MariaDB evaluates this
+			   list left to right, so the docname guard has to read reference_doctype while it
+			   still holds the pre-update value. The Client Event guard is unchanged; the OJT
+			   branch keys on reference_doctype so a Shift Request reference is never touched. */
+			reference_docname = IF(employee_availability = 'Client Event' OR reference_doctype = 'On the Job Training', NULL, reference_docname),
+			reference_doctype = IF(employee_availability = 'Client Event' OR reference_doctype = 'On the Job Training', NULL, reference_doctype),
 			client_event = IF(employee_availability = 'Client Event', NULL, client_event),
 			event_staff = IF(employee_availability = 'Client Event', NULL, event_staff),
 			event_location = IF(employee_availability = 'Client Event', NULL, event_location),
 			is_event_schedule = IF(employee_availability = 'Client Event', 0, is_event_schedule),
-			/* Clear the OJT link when a training row is re-rostered onto a real Working post.
-			   A stale link makes the row invisible to the Roster Post Actions fill checker.
-			   Must stay ABOVE the employee_availability assignment below: MariaDB evaluates
-			   ON DUPLICATE KEY UPDATE left to right, so this still sees the pre-update value. */
-			on_the_job_training = IF(employee_availability = 'On-the-job Training', NULL, on_the_job_training),
+			/* Every row this statement touches becomes "Working" below, and a Working schedule
+			   must never carry an OJT link: it would be dropped by the Roster Post Actions fill
+			   checker, which reads the post as short-staffed and raises a "not filled" document
+			   every day. Unconditional, so it also self-heals rows left stale by earlier writes. */
+			on_the_job_training = NULL,
 			shift_type = VALUES(shift_type),
 			day_off_ot = VALUES(day_off_ot),
 			employee_availability = "Working",
