@@ -140,6 +140,34 @@ class TestPenaltyReportEmail(FrappeTestCase):
 
 		self.assertGreater(frappe.db.count("Error Log"), before)
 
+	def test_the_cc_row_is_visible_as_cc_not_just_delivered(self):
+		"""Frappe delivers CC recipients either way, but only writes the CC header when
+		expose_recipients is "header" - so without it a department lead receives the report
+		with no idea who else was told. Asserted on the queued email rather than on the call,
+		because it is the header on the wire that was missing.
+		"""
+		second = frappe.db.get_value(
+			"User", {"enabled": 1, "email": ["is", "set"], "name": ["!=", self.user]}, "name"
+		)
+		if not second:
+			self.skipTest("Only one enabled user with an email on this site")
+		self._configure([("TO", self.user), ("CC", second)])
+
+		before = frappe.db.count("Email Queue")
+		send_penalty_report_for_cycle()
+		if frappe.db.count("Email Queue") == before:
+			self.skipTest("No penalties in the current cycle to send")
+
+		queued = frappe.get_all(
+			"Email Queue", fields=["name", "expose_recipients", "show_as_cc"],
+			order_by="creation desc", limit_page_length=1,
+		)[0]
+
+		self.assertEqual(queued.expose_recipients, "header")
+		self.assertIn(
+			frappe.db.get_value("User", second, "email"), queued.show_as_cc or ""
+		)
+
 	# ------------------------------------------------------------------- table
 
 	def test_the_table_carries_the_reporter_s_columns_in_order(self):

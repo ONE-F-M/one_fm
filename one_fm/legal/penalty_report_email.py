@@ -91,6 +91,12 @@ def send_penalty_report_for_cycle(end_date: str = None):
 		header=[_("Monthly Penalty Report")],
 		message=build_message(from_date, to_date, rows),
 		is_scheduler_email=True,
+		# Without this Frappe writes no To or CC header at all - each recipient gets a copy
+		# addressed to "<!--recipient-->" and the CC line is dropped, so a department lead
+		# cannot see who else was told. The CC rows were always delivered; they were just
+		# invisible. See frappe/email/email_body.py, which gates both headers on this being
+		# "header".
+		expose_recipients="header",
 	)
 	return {"sent_to": to_addresses, "cc": cc_addresses, "penalties": len(rows)}
 
