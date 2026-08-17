@@ -1074,12 +1074,21 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			shift = VALUES(shift),
 			project = VALUES(project),
 			site = VALUES(site),
-			reference_doctype = IF(employee_availability = 'Client Event', NULL, reference_doctype),
-			reference_docname = IF(employee_availability = 'Client Event', NULL, reference_docname),
+			/* reference_docname is assigned before reference_doctype: MariaDB evaluates this
+			   list left to right, so the docname guard has to read reference_doctype while it
+			   still holds the pre-update value. The Client Event guard is unchanged; the OJT
+			   branch keys on reference_doctype so a Shift Request reference is never touched. */
+			reference_docname = IF(employee_availability = 'Client Event' OR reference_doctype = 'On the Job Training', NULL, reference_docname),
+			reference_doctype = IF(employee_availability = 'Client Event' OR reference_doctype = 'On the Job Training', NULL, reference_doctype),
 			client_event = IF(employee_availability = 'Client Event', NULL, client_event),
 			event_staff = IF(employee_availability = 'Client Event', NULL, event_staff),
 			event_location = IF(employee_availability = 'Client Event', NULL, event_location),
 			is_event_schedule = IF(employee_availability = 'Client Event', 0, is_event_schedule),
+			/* Every row this statement touches becomes "Working" below, and a Working schedule
+			   must never carry an OJT link: it would be dropped by the Roster Post Actions fill
+			   checker, which reads the post as short-staffed and raises a "not filled" document
+			   every day. Unconditional, so it also self-heals rows left stale by earlier writes. */
+			on_the_job_training = NULL,
 			shift_type = VALUES(shift_type),
 			day_off_ot = VALUES(day_off_ot),
 			employee_availability = "Working",
@@ -2375,6 +2384,7 @@ def dayoff(employees, client_day_off=0, selected_dates=0, selected_reliever=None
 				event_staff = "",
 				event_location = "",
 				is_event_schedule = 0,
+				on_the_job_training = NULL,
 				employee_availability = "{employee_availability}"
 			"""
 			frappe.db.sql(query_main)
