@@ -1366,6 +1366,12 @@ def get_manifest_data_for_plan(plan_name: str):
 		v_rows = [row for row in doc.assignments if row.vehicle == v_id]
 		rows_changed = sync_manifest_details(manifest_doc, v_rows, card_emp_map, card_return_emp_map)
 
+		# The manifest header inherits the run's direction and, for a merged run, its
+		# shared group key (WI-002072). Read from the assignment rows rather than passed
+		# in, because those rows are what the vehicle is actually scheduled to do today.
+		if _inherit_trip_identity(manifest_doc, v_rows):
+			rows_changed = True
+
 		# Stamp the source shipment onto the compiled manifest detail rows so the
 		# vehicle's manifest array references the Transportation Shipment record.
 		if _link_shipment_on_manifest_rows(manifest_doc, v_rows, card_emp_map):
@@ -1961,3 +1967,41 @@ def _with_stop_indexes(items):
             member["stopIndex"] = position
 
     return items
+
+
+def _inherit_trip_identity(manifest_doc, assignment_rows) -> bool:
+    """Copy the run's direction and trip group onto the manifest header (WI-002072).
+
+    A vehicle running a merged trip produces a Mixed manifest carrying the same
+    trip_group as the plan, so a manifest can be traced back to the schedule block it
+    came from. Only a merged run has a group key; a plain outbound or return run has
+    nothing to share and leaves it empty.
+
+    Returns whether anything changed, so the caller only saves when it has to.
+    """
+    directions = {(row.direction or "").upper() for row in assignment_rows if row.direction}
+    if not directions:
+        return False
+
+    if "MIXED" in directions:
+        trip_direction = "Mixed"
+        # Every row of one merged trip carries the same key (WI-002077); taking the
+        # first non-empty one is enough and does not depend on row order.
+        trip_group = next(
+            (row.trip_group for row in assignment_rows
+             if (row.direction or "").upper() == "MIXED" and row.trip_group),
+            None,
+        )
+    else:
+        trip_direction = "Return" if directions == {"RETURN"} else "Outward"
+        trip_group = None
+
+    changed = False
+    if manifest_doc.get("trip_direction") != trip_direction:
+        manifest_doc.trip_direction = trip_direction
+        changed = True
+    if trip_group and manifest_doc.get("trip_group") != trip_group:
+        manifest_doc.trip_group = trip_group
+        changed = True
+
+    return changed
