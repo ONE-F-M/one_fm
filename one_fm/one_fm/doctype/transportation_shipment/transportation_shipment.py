@@ -232,10 +232,21 @@ def merge_trip_shipments(shipments) -> dict:
 	trip_group = merge_key([doc.name for doc in docs])
 
 	for doc in docs:
-		# db_set rather than save: the merge changes two header facts and must not
-		# re-run apply_routing_type, which would rewrite every rider row from the
-		# header and undo per-rider stop locations an OSM card depends on.
-		doc.db_set({"trip_direction": MIXED, "trip_group": trip_group}, update_modified=True)
+		# Remember the way this card travelled before the merge, so leaving the merged trip
+		# can put it back. A merge is a scheduling decision made on the canvas; the card's
+		# own direction is a fact about the journey it was generated for, and overwriting
+		# that without a way back left cards stranded as Mixed once their block was removed.
+		#
+		# Only recorded on the first merge: merging an already-merged card must not
+		# overwrite the original with "Mixed".
+		values = {"trip_direction": MIXED, "trip_group": trip_group}
+		if doc.trip_direction != MIXED and not doc.pre_merge_trip_direction:
+			values["pre_merge_trip_direction"] = doc.trip_direction
+
+		# db_set rather than save: the merge changes header facts and must not re-run
+		# apply_routing_type, which would rewrite every rider row from the header and undo
+		# per-rider stop locations an OSM card depends on.
+		doc.db_set(values, update_modified=True)
 
 	return {
 		"trip_group": trip_group,
@@ -378,3 +389,27 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None) -> dict:
 			if exceeded else ""
 		),
 	}
+
+
+def unmerge_trip_shipment(name) -> bool:
+	"""Put a shipment back the way it travelled before it was merged (WI-002071).
+
+	Called when a card leaves the merged trip - the block is removed from the lane, or the
+	plan no longer places it. Without this a card that was merged once stayed Mixed for
+	good: it came back to the unassigned pool describing a journey it no longer had, and no
+	amount of re-planning restored it.
+
+	Only a card that actually carries a remembered direction is touched, so this is safe to
+	call for every shipment a plan drops.
+	"""
+	original = frappe.db.get_value("Transportation Shipment", name, "pre_merge_trip_direction")
+	if not original:
+		return False
+
+	frappe.db.set_value(
+		"Transportation Shipment",
+		name,
+		{"trip_direction": original, "trip_group": None, "pre_merge_trip_direction": None},
+		update_modified=False,
+	)
+	return True

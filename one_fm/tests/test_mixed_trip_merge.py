@@ -202,3 +202,90 @@ class TestMixedLegCapacity(FrappeTestCase):
 
 		# Drop 20 first, then board 20: never more than 20 aboard.
 		self._check(plan, trip, limit=20)
+
+
+class TestAMergeCanBeUndone(FrappeTestCase):
+	"""The regression the reporter hit: an Outward card merged once stayed Mixed for good.
+
+	It came back to the unassigned pool describing a journey it no longer had, and no amount
+	of re-planning restored it.
+	"""
+
+	def test_the_shipment_remembers_the_way_it_travelled(self):
+		field = frappe.get_meta("Transportation Shipment").get_field("pre_merge_trip_direction")
+
+		self.assertIsNotNone(field, "nothing records the pre-merge direction")
+		self.assertEqual(field.options.split("\n"), ["", "Outward", "Return"])
+		self.assertTrue(field.read_only)
+		self.assertTrue(field.hidden)
+
+	def test_leaving_a_merged_trip_restores_the_original(self):
+		from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+			unmerge_trip_shipment,
+		)
+
+		name = frappe.db.get_value("Transportation Shipment", {}, "name")
+		if not name:
+			self.skipTest("No Transportation Shipment on this site")
+		before = frappe.db.get_value("Transportation Shipment", name, "trip_direction")
+
+		frappe.db.set_value("Transportation Shipment", name, {
+			"trip_direction": MIXED, "trip_group": "MIX-test", "pre_merge_trip_direction": "Outward",
+		}, update_modified=False)
+
+		self.assertTrue(unmerge_trip_shipment(name))
+		restored = frappe.db.get_value(
+			"Transportation Shipment", name,
+			["trip_direction", "trip_group", "pre_merge_trip_direction"], as_dict=True,
+		)
+
+		self.assertEqual(restored.trip_direction, "Outward")
+		self.assertFalse(restored.trip_group)
+		self.assertFalse(restored.pre_merge_trip_direction)
+
+		frappe.db.set_value("Transportation Shipment", name, "trip_direction", before,
+		                    update_modified=False)
+
+	def test_a_card_that_was_never_merged_is_left_alone(self):
+		from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+			unmerge_trip_shipment,
+		)
+
+		name = frappe.db.get_value("Transportation Shipment", {}, "name")
+		if not name:
+			self.skipTest("No Transportation Shipment on this site")
+		before = frappe.db.get_value("Transportation Shipment", name, "trip_direction")
+
+		# Safe to call for every shipment a plan drops, merged or not.
+		self.assertFalse(unmerge_trip_shipment(name))
+		self.assertEqual(
+			frappe.db.get_value("Transportation Shipment", name, "trip_direction"), before
+		)
+
+	def test_the_generation_key_records_the_original_direction(self):
+		"""What the repair patch recovers a stranded record from.
+
+		The generator ends the key with the direction it built the card for, and merging
+		never rewrote it.
+		"""
+		row = frappe.db.get_value(
+			"Transportation Shipment",
+			{"generation_key": ["is", "set"], "trip_direction": ["in", ["Outward", "Return"]]},
+			["generation_key", "trip_direction"], as_dict=True,
+		)
+		if not row:
+			self.skipTest("No generated shipment on this site")
+
+		self.assertEqual(row.generation_key.rsplit("|", 1)[-1].strip(), row.trip_direction)
+
+	def test_no_shipment_is_left_stranded_as_mixed(self):
+		# A Mixed shipment on no plan is stale by definition: nothing is scheduling it as a
+		# merged trip.
+		for row in frappe.get_all(
+			"Transportation Shipment", filters={"trip_direction": "Mixed"}, fields=["name"]
+		):
+			with self.subTest(shipment=row.name):
+				self.assertTrue(
+					frappe.db.count("Route Plan Assignment", {"transportation_shipment": row.name}),
+					f"{row.name} is Mixed but on no Route Plan",
+				)

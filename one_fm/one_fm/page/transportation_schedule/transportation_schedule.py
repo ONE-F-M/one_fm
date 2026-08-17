@@ -1049,9 +1049,24 @@ def _sync_shipment_statuses(items, previously_linked=None):
 
     # Revert only shipments this plan dropped — never touch shipments that are
     # placed in a different Route Plan.
+    from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+        unmerge_trip_shipment,
+    )
+
     for name in (previously_linked or set()):
         if name and name not in assigned and frappe.db.exists("Transportation Shipment", name):
             frappe.db.set_value("Transportation Shipment", name, "status", "Unassigned")
+            # A card returning to the pool takes its own direction back with it. Being
+            # merged is a property of the block it was in, not of the journey the shipment
+            # was generated for (WI-002071).
+            unmerge_trip_shipment(name)
+
+    # A card still on the plan but no longer placed as part of a merged trip is also no
+    # longer merged - the operator can break a merge by dragging one stop out without
+    # removing the other.
+    for name in assigned:
+        if "MIXED" not in placed_dirs_by_shipment.get(name, set()):
+            unmerge_trip_shipment(name)
 
 
 def _link_shipment_on_manifest_rows(manifest_doc, v_rows, card_emp_map):
