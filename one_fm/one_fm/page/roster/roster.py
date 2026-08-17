@@ -853,14 +853,10 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 	operations_shift_doc = frappe.get_doc("Operations Shift", shift, ignore_permissions=True)
 	operations_role_doc = frappe.get_doc("Operations Role", operations_role, ignore_permissions=True)
 	day_off_ot = cint(day_off_ot)
-	# roster_type is driven solely by whether the OT (second-shift) dialog was used.
-	# day_off_ot is an independent flag: a Day Off OT first shift is still "Basic".
-	roster_type = "Over-Time" if otRoster == "true" else "Basic"
-
-	# WI-001687: OT scheduling is no longer blocked for shifts without
-	# 'Double Shift OT Allowed'. Selection is unrestricted (a soft warning is
-	# shown client-side); non-compliant OT is tracked via the Roster Double
-	# Shift OT Checker (WI-001688) rather than blocked here.
+	if otRoster == "false":
+		roster_type = "Basic"
+	elif otRoster == "true" or day_off_ot == 1:
+		roster_type = "Over-Time"
 
 	# check for end date
 	if end_date:
