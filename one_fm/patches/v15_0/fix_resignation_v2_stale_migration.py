@@ -33,6 +33,7 @@ def execute():
 	remove_fyi_offboarding_officer_rules()
 	reroute_t4_resignations_to_t4_admin()
 	reroute_stale_operations_manager_resignations()
+	reroute_stale_date_adjustment_operations_manager_records()
 	close_orphaned_assignment_rule_todos()
 	backfill_current_salary()
 
@@ -145,6 +146,63 @@ def reroute_stale_operations_manager_resignations():
 		except Exception:
 			frappe.log_error(
 				title="Employee Resignation v2 migration: Operations Manager reroute failed",
+				message=f"{row.name}: {frappe.get_traceback()}",
+			)
+
+
+def reroute_stale_date_adjustment_operations_manager_records():
+	# Pending Operations Manager was also removed from this doctype's workflow.
+	# shift_category/t4_route/project_manager are mirrored from the parent
+	# Employee Resignation (set_approver()), so the same T4-vs-Operations split
+	# applies: T4 goes back to Pending T4 Admin, everyone else to Pending
+	# Project Manager.
+	rows = frappe.db.sql(
+		"""
+		select name
+		from `tabEmployee Resignation Date Adjustment`
+		where workflow_state = 'Pending Operations Manager'
+		""",
+		as_dict=True,
+	)
+
+	for row in rows:
+		try:
+			doc = frappe.get_doc("Employee Resignation Date Adjustment", row.name)
+			doc.set_approver()
+
+			if doc.shift_category == "T4":
+				frappe.db.set_value(
+					"Employee Resignation Date Adjustment", row.name,
+					{"workflow_state": "Pending T4 Admin", "t4_admin": doc.t4_admin},
+					update_modified=False,
+				)
+				if not doc.t4_admin:
+					frappe.log_error(
+						title="Employee Resignation v2 migration: no T4 Admin resolved (Date Adjustment)",
+						message=f"{row.name} moved to Pending T4 Admin but no user holds that role.",
+					)
+			else:
+				frappe.db.set_value(
+					"Employee Resignation Date Adjustment", row.name,
+					{"workflow_state": "Pending Project Manager", "project_manager": doc.project_manager},
+					update_modified=False,
+				)
+				if doc.project_manager:
+					from frappe.desk.form.assign_to import add as assign_to_add
+					assign_to_add({
+						"doctype": "Employee Resignation Date Adjustment",
+						"name": row.name,
+						"assign_to": [doc.project_manager],
+						"description": "Please review and approve this Resignation Date Adjustment.",
+					})
+				else:
+					frappe.log_error(
+						title="Employee Resignation v2 migration: no Project Manager resolved (Date Adjustment)",
+						message=f"{row.name} moved to Pending Project Manager but no Project Manager could be resolved.",
+					)
+		except Exception:
+			frappe.log_error(
+				title="Employee Resignation v2 migration: Date Adjustment reroute failed",
 				message=f"{row.name}: {frappe.get_traceback()}",
 			)
 
