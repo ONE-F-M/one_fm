@@ -2987,20 +2987,14 @@ function change_ot_schedule(page) {
 				"label": "Shift", "fieldname": "shift", "fieldtype": "Link", "options": "Operations Shift", "reqd": 1, onchange: function () {
 					let name = d.get_value("shift");
 					if (name) {
-						frappe.db.get_value("Operations Shift", name, ["site", "project", "double_shift_ot_allowed"])
+						frappe.db.get_value("Operations Shift", name, ["site", "project"])
 							.then(res => {
-								let { site, project, double_shift_ot_allowed } = res.message;
+								let { site, project } = res.message;
 								d.set_value("site", site);
 								d.set_value("project", project);
-								// WI-001687: non-blocking warning when the chosen shift disallows Double Shift OT.
-								if (!cint(double_shift_ot_allowed)) {
-									frappe.show_alert({ message: __("Warning: The selected shift does not allow Double Shift OT. A Double Shift OT Checker will be generated."), indicator: "orange" }, 7);
-								}
 							});
 					}
 				}, get_query: function () {
-					// WI-001687: show ALL active shifts for an OT slot; non-DSOT shifts are
-					// allowed with a soft warning and tracked via a checker rather than blocked.
 					return {
 						"filters": { "status": "Active" },
 						"page_length": 9999
