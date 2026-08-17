@@ -343,7 +343,7 @@ function mountRoutePlannerApp(wrapper, data) {
                             type: 'merged',
                             tripId,
                             tripName: stops.find(s => s.tripName)?.tripName || null,
-                            direction: firstItem.direction,
+                            direction: stops.some(s => s.direction === 'MIXED') ? 'MIXED' : firstItem.direction,
                             start: firstItem.start,
                             end: lastItem.end,
                             headcount: totalHC,
@@ -2661,6 +2661,18 @@ function mountRoutePlannerApp(wrapper, data) {
                 return handover ? handover.driver_name : (vehicle.driver || '—');
             },
 
+            // The merged (multi-stop) block and the single block are drawn by different
+            // branches of the template. They share this so a colour added to one cannot go
+            // missing from the other - which is exactly how a merged trip kept rendering in
+            // the Return colour after WI-002078 taught bfill about MIXED.
+            mfill(entry) {
+                return this.bfill({
+                    conflict: entry.conflict,
+                    overcapacity: entry.overcapacity,
+                    direction: entry.direction,
+                });
+            },
+
             bfill(item) {
                 const shell = document.getElementById('rp-shell');
                 const cs = shell ? getComputedStyle(shell) : null;
@@ -3437,7 +3449,7 @@ function injectRPVueTemplate() {
                     <!-- Block body -->
                     <rect :x="mbx(entry)" :y="mby(entry)"
                           :width="mbw(entry)" :height="mbh(entry)"
-                          :fill="entry.conflict ? '#c62828' : entry.overcapacity ? '#7b1fa2' : (entry.direction === 'OUTBOUND' ? '#1565c0' : '#e65100')"
+                          :fill="mfill(entry)"
                           :stroke="selectedItem && entry.stops.some(s => s.id === selectedItem.id) ? '#f97316' : 'transparent'"
                           stroke-width="2.5" rx="5"/>
 

@@ -231,3 +231,36 @@ class TestCardIdsResolveToShipments(FrappeTestCase):
 
 		with self.assertRaises(frappe.ValidationError):
 			merge_trip_shipments(["TSHIP-TS-0659_OUT", "TSHIP-TS-0659_RET"])
+
+
+class TestTheMergedBlockPaintsMixed(FrappeTestCase):
+	"""The regression the reporter hit: a merged trip still rendered in the Return colour.
+
+	A multi-stop block and a single block are drawn by different branches of the template,
+	and the merged branch carried its own inline colour ladder that never learned about
+	MIXED. Both now share one rule.
+	"""
+
+	def setUp(self):
+		self.source = CANVAS.read_text()
+
+	def test_the_merged_block_uses_the_shared_fill(self):
+		self.assertIn(':fill="mfill(entry)"', self.source)
+
+	def test_the_merged_branch_no_longer_hardcodes_its_colours(self):
+		self.assertNotIn(
+			"entry.direction === 'OUTBOUND' ? '#1565c0' : '#e65100'", self.source
+		)
+
+	def test_the_shared_rule_is_the_one_that_knows_mixed(self):
+		self.assertIn("mfill(entry) {", self.source)
+		self.assertIn("return this.bfill({", self.source)
+
+	def test_a_run_is_mixed_once_any_stop_is(self):
+		# Taking the first stop's direction left a merged run reading as whatever leg
+		# happened to be placed first.
+		self.assertIn("stops.some(s => s.direction === 'MIXED') ? 'MIXED'", self.source)
+
+	def test_both_block_shapes_still_show_conflict_and_overcapacity(self):
+		self.assertIn("conflict: entry.conflict", self.source)
+		self.assertIn("overcapacity: entry.overcapacity", self.source)
