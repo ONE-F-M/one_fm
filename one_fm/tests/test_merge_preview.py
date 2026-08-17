@@ -177,3 +177,57 @@ class TestTheMergeModal(FrappeTestCase):
 
 	def test_confirming_marks_every_stop_mixed_under_one_group(self):
 		self.assertIn("item.tripId = tripId; item.direction = 'MIXED';", self.source)
+
+
+class TestCardIdsResolveToShipments(FrappeTestCase):
+	"""The canvas sends card ids, not document names.
+
+	The regression this covers: both endpoints were handed "TSHIP-TS-0659" and looked up a
+	document by that name, so Confirm & Merge Trip answered 404 - Transportation Shipment
+	TSHIP-TS-0659 not found.
+	"""
+
+	def setUp(self):
+		from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+			resolve_shipment_names,
+		)
+		self.resolve = resolve_shipment_names
+
+	def test_a_card_id_is_stripped_to_its_shipment(self):
+		self.assertEqual(self.resolve(["TSHIP-TS-0659"]), ["TS-0659"])
+
+	def test_a_direction_suffix_is_stripped_too(self):
+		# The canvas suffixes a card when it places both legs of one demand.
+		self.assertEqual(self.resolve(["TSHIP-TS-0659_OUT"]), ["TS-0659"])
+		self.assertEqual(self.resolve(["TSHIP-TS-0659_RET"]), ["TS-0659"])
+		self.assertEqual(self.resolve(["TSHIP-TS-0659_OUTBOUND"]), ["TS-0659"])
+		self.assertEqual(self.resolve(["TSHIP-TS-0659_RETURN"]), ["TS-0659"])
+
+	def test_a_plain_shipment_name_passes_through(self):
+		# Callers other than the canvas pass real names; both have to work.
+		self.assertEqual(self.resolve(["TS-0659"]), ["TS-0659"])
+
+	def test_the_two_legs_of_one_card_collapse_to_one_shipment(self):
+		self.assertEqual(self.resolve(["TSHIP-TS-0659_OUT", "TSHIP-TS-0659_RET"]), ["TS-0659"])
+
+	def test_order_is_preserved(self):
+		self.assertEqual(
+			self.resolve(["TSHIP-TS-2", "TSHIP-TS-1"]), ["TS-2", "TS-1"]
+		)
+
+	def test_blanks_are_dropped(self):
+		self.assertEqual(self.resolve(["", None, "TSHIP-TS-1"]), ["TS-1"])
+
+	def test_nothing_in_nothing_out(self):
+		self.assertEqual(self.resolve([]), [])
+		self.assertEqual(self.resolve(None), [])
+
+	def test_a_merge_of_one_card_placed_twice_is_still_rejected(self):
+		# Both legs of one card are one shipment, so this is not a merge and must not
+		# silently proceed as if it were.
+		from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+			merge_trip_shipments,
+		)
+
+		with self.assertRaises(frappe.ValidationError):
+			merge_trip_shipments(["TSHIP-TS-0659_OUT", "TSHIP-TS-0659_RET"])

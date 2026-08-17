@@ -154,6 +154,25 @@ class TransportationShipment(Document):
 		self.headcount = len(self.transportation_shipment_employee)
 
 
+# The canvas identifies a card as "TSHIP-<shipment>", sometimes with a direction suffix, so
+# what it sends is a card id and not a document name. Both merge endpoints are called
+# straight from the canvas and so have to accept either (WI-002078).
+def resolve_shipment_names(values) -> list:
+	"""Card ids or shipment names in; shipment names out, order and duplicates preserved once."""
+	from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+		_shipment_from_card_id,
+	)
+
+	names = []
+	for value in values or []:
+		if not value:
+			continue
+		name = _shipment_from_card_id(value) or value
+		if name not in names:
+			names.append(name)
+	return names
+
+
 MIXED = "Mixed"
 RETURN = "Return"
 OUTWARD = "Outward"
@@ -198,14 +217,14 @@ def merge_trip_shipments(shipments) -> dict:
 	if isinstance(shipments, str):
 		shipments = frappe.parse_json(shipments)
 
-	shipments = [name for name in (shipments or []) if name]
+	shipments = resolve_shipment_names(shipments)
 	if len(shipments) < 2:
 		frappe.throw(
 			_("Select at least two shipments to merge into a Mixed trip."),
 			title=_("Nothing to Merge"),
 		)
 
-	docs = [frappe.get_doc("Transportation Shipment", name) for name in dict.fromkeys(shipments)]
+	docs = [frappe.get_doc("Transportation Shipment", name) for name in shipments]
 	for doc in docs:
 		doc.check_permission("write")
 
@@ -234,6 +253,31 @@ def merge_trip_shipments(shipments) -> dict:
 			for index, doc in enumerate(docs, start=1)
 		],
 	}
+
+
+def _seconds_into_day(value) -> int | None:
+	"""A Frappe Time field as seconds past midnight.
+
+	`start_time` comes back as a timedelta, not a number, so the clock arithmetic below has
+	to normalise it first - adding minutes to a timedelta raises rather than doing anything
+	useful.
+	"""
+	if value is None:
+		return None
+	if hasattr(value, "total_seconds"):
+		return int(value.total_seconds())
+	try:
+		return int(value)
+	except (TypeError, ValueError):
+		return None
+
+
+def _clock(seconds) -> str:
+	"""Seconds past midnight as HH:MM, for the modal to print."""
+	if seconds is None:
+		return ""
+	seconds = int(seconds) % 86400
+	return f"{seconds // 3600:02d}:{(seconds % 3600) // 60:02d}"
 
 
 def _minutes(value) -> int:
@@ -266,11 +310,11 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None) -> dict:
 		timings = frappe.parse_json(timings)
 
 	timings = timings or {}
-	names = [name for name in (shipments or []) if name]
+	names = resolve_shipment_names(shipments)
 	if len(names) < 2:
 		frappe.throw(_("Select at least two shipments to preview a merge."), title=_("Nothing to Merge"))
 
-	docs = [frappe.get_doc("Transportation Shipment", name) for name in dict.fromkeys(names)]
+	docs = [frappe.get_doc("Transportation Shipment", name) for name in names]
 	for doc in docs:
 		doc.check_permission("read")
 	docs.sort(key=arrival_order)
@@ -288,8 +332,11 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None) -> dict:
 
 		# The first stop anchors the run on its own scheduled time; every later stop is
 		# driven from the one before it, so an edit high up the run moves everything after.
-		arrival = doc.start_time if clock is None else clock + transit * 60
-		departure = (arrival or 0) + buffer_minutes * 60
+		anchor = _seconds_into_day(doc.start_time)
+		arrival = anchor if clock is None else clock + transit * 60
+		if arrival is None:
+			arrival = 0
+		departure = arrival + buffer_minutes * 60
 		clock = departure
 
 		stops.append({
@@ -302,8 +349,8 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None) -> dict:
 			"routing_type_badge": doc.routing_type_badge,
 			"transit_minutes": transit,
 			"buffer_minutes": buffer_minutes,
-			"arrival": arrival,
-			"departure": departure,
+			"arrival": _clock(arrival),
+			"departure": _clock(departure),
 		})
 
 	from one_fm.operations.doctype.route_plan.route_plan import leg_occupancy
