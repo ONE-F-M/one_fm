@@ -33,6 +33,7 @@
   "requires_vehicle_retention",
   "generation_key",
   "pair_group",
+  "trip_group",
   "section_break_yujp",
   "transportation_shipment_employee"
  ],
@@ -135,7 +136,7 @@
    "fieldname": "trip_direction",
    "fieldtype": "Select",
    "label": "Trip Direction",
-   "options": "\nOutward\nReturn"
+   "options": "\nOutward\nReturn\nMixed"
   },
   {
    "fieldname": "routing_type_badge",
@@ -220,11 +221,18 @@
    "fieldtype": "Table",
    "label": "Transportation Shipment Employee",
    "options": "Transportation Shipment Employee"
+  },
+  {
+   "description": "Shared key written across every shipment merged into one Mixed trip.",
+   "fieldname": "trip_group",
+   "fieldtype": "Data",
+   "label": "Trip Group",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-15 17:22:34.688327",
+ "modified": "2026-08-17 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Transportation Shipment",

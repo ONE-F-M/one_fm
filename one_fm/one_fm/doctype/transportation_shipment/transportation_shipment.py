@@ -152,3 +152,85 @@ class TransportationShipment(Document):
 	def calculate_headcount(self):
 		"""Keep the read-only Headcount in sync with the employee table."""
 		self.headcount = len(self.transportation_shipment_employee)
+
+
+MIXED = "Mixed"
+RETURN = "Return"
+OUTWARD = "Outward"
+
+
+def merge_key(shipment_names) -> str:
+	"""A stable, unique key shared by every shipment in one merged trip (WI-002071).
+
+	Derived from the sorted member names rather than a random token, so merging the
+	same set of cards twice produces the same key and a re-run cannot leave two half
+	of a trip pointing at different groups. Hashed rather than concatenated because
+	the field is Data and a ten-card trip would overflow it.
+	"""
+	import hashlib
+
+	digest = hashlib.sha1("|".join(sorted(shipment_names)).encode()).hexdigest()
+	return f"MIX-{digest[:12]}"
+
+
+def arrival_order(shipment):
+	"""Sort key placing shipments in the order the vehicle reaches them.
+
+	The scheduled arrival is the shipment's own start time; a card without one sorts
+	last rather than first, so an unscheduled card cannot silently claim the head of
+	the itinerary. `name` breaks ties so the order is stable across saves.
+	"""
+	return (shipment.start_time is None, shipment.start_time, shipment.name)
+
+
+@frappe.whitelist()
+def merge_trip_shipments(shipments) -> dict:
+	"""Merge two or more cards into a single Mixed trip (WI-002071).
+
+	Called by the canvas when a card is dropped onto a block already occupied. Every
+	participating shipment becomes `trip_direction = "Mixed"` and receives a shared
+	`trip_group`, while each keeps its own Routing Type Badge - Direct, OSM and OLM
+	describe how a card's own riders are routed, which merging does not change.
+
+	The returned itinerary is ordered by scheduled arrival, which is the order the
+	Route Plan Assignment rows and the manifest both have to be written in.
+	"""
+	if isinstance(shipments, str):
+		shipments = frappe.parse_json(shipments)
+
+	shipments = [name for name in (shipments or []) if name]
+	if len(shipments) < 2:
+		frappe.throw(
+			_("Select at least two shipments to merge into a Mixed trip."),
+			title=_("Nothing to Merge"),
+		)
+
+	docs = [frappe.get_doc("Transportation Shipment", name) for name in dict.fromkeys(shipments)]
+	for doc in docs:
+		doc.check_permission("write")
+
+	docs.sort(key=arrival_order)
+	trip_group = merge_key([doc.name for doc in docs])
+
+	for doc in docs:
+		# db_set rather than save: the merge changes two header facts and must not
+		# re-run apply_routing_type, which would rewrite every rider row from the
+		# header and undo per-rider stop locations an OSM card depends on.
+		doc.db_set({"trip_direction": MIXED, "trip_group": trip_group}, update_modified=True)
+
+	return {
+		"trip_group": trip_group,
+		"trip_direction": MIXED,
+		"itinerary": [
+			{
+				"shipment": doc.name,
+				"stop_index": index,
+				"stop_location": doc.stop_location,
+				"headcount": doc.headcount,
+				"routing_type_badge": doc.routing_type_badge,
+				"start_time": doc.start_time,
+				"end_time": doc.end_time,
+			}
+			for index, doc in enumerate(docs, start=1)
+		],
+	}

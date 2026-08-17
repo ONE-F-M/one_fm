@@ -1,0 +1,204 @@
+# Copyright (c) 2026, ONE FM and contributors
+# See license.txt
+"""WI-002071: merging cards into a Mixed trip, and holding every leg to the seats."""
+
+import frappe
+from frappe.tests.utils import FrappeTestCase
+
+from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+	MIXED,
+	arrival_order,
+	merge_key,
+)
+from one_fm.operations.doctype.route_plan.route_plan import (
+	MIXED_DIRECTION,
+	RoutePlan,
+	_normalize_shipment_direction,
+)
+from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+	_normalize_direction,
+)
+
+
+class TestMergeKey(FrappeTestCase):
+	def test_the_key_is_shared_by_every_member(self):
+		self.assertEqual(merge_key(["TS-0001", "TS-0002"]), merge_key(["TS-0001", "TS-0002"]))
+
+	def test_the_key_does_not_depend_on_the_order_cards_were_dropped(self):
+		# Merging the same set twice must not leave two halves pointing at different groups.
+		self.assertEqual(merge_key(["TS-0002", "TS-0001"]), merge_key(["TS-0001", "TS-0002"]))
+
+	def test_a_different_set_gets_a_different_key(self):
+		self.assertNotEqual(merge_key(["TS-0001", "TS-0002"]), merge_key(["TS-0001", "TS-0003"]))
+
+	def test_the_key_fits_a_data_field(self):
+		many = [f"TS-{n:04d}" for n in range(50)]
+
+		self.assertLessEqual(len(merge_key(many)), 140)
+
+
+class TestArrivalOrder(FrappeTestCase):
+	def _card(self, name, start_time):
+		return frappe._dict(name=name, start_time=start_time)
+
+	def test_cards_order_by_scheduled_arrival(self):
+		cards = [self._card("TS-2", 8 * 3600), self._card("TS-1", 5 * 3600)]
+
+		self.assertEqual([c.name for c in sorted(cards, key=arrival_order)], ["TS-1", "TS-2"])
+
+	def test_a_card_with_no_time_sorts_last_not_first(self):
+		# An unscheduled card must not silently claim the head of the itinerary.
+		cards = [self._card("TS-2", None), self._card("TS-1", 9 * 3600)]
+
+		self.assertEqual([c.name for c in sorted(cards, key=arrival_order)], ["TS-1", "TS-2"])
+
+	def test_ties_break_on_name_so_the_order_is_stable(self):
+		cards = [self._card("TS-9", 6 * 3600), self._card("TS-3", 6 * 3600)]
+
+		self.assertEqual([c.name for c in sorted(cards, key=arrival_order)], ["TS-3", "TS-9"])
+
+
+class TestDirectionVocabularies(FrappeTestCase):
+	"""MIXED has to be recognised, not defaulted."""
+
+	def test_the_canvas_helper_knows_mixed(self):
+		self.assertEqual(_normalize_direction("Mixed"), "MIXED")
+		self.assertEqual(_normalize_direction("MIXED"), "MIXED")
+
+	def test_the_canvas_helper_still_maps_the_original_two(self):
+		self.assertEqual(_normalize_direction("Outward"), "OUTBOUND")
+		self.assertEqual(_normalize_direction("OUTBOUND"), "OUTBOUND")
+		self.assertEqual(_normalize_direction("Return"), "RETURN")
+		self.assertEqual(_normalize_direction("RETURN"), "RETURN")
+
+	def test_a_blank_direction_is_still_treated_as_outbound(self):
+		self.assertEqual(_normalize_direction(""), "OUTBOUND")
+		self.assertEqual(_normalize_direction(None), "OUTBOUND")
+
+	def test_mixed_no_longer_falls_through_to_outbound(self):
+		# The regression this fixes: the old two-way test answered "not a return, so
+		# outbound", which drew a merged card orange and mismatched the status sync.
+		self.assertNotEqual(_normalize_direction("Mixed"), "OUTBOUND")
+
+	def test_the_route_plan_helper_agrees_with_the_canvas_one(self):
+		for value in ("Outward", "Return", "Mixed", "", None):
+			with self.subTest(value=value):
+				self.assertEqual(_normalize_shipment_direction(value), _normalize_direction(value))
+
+	def test_mixed_is_the_shipment_option_the_doctype_offers(self):
+		options = frappe.get_meta("Transportation Shipment").get_field("trip_direction").options
+		self.assertIn(MIXED, options.split("\n"))
+
+	def test_the_shipment_carries_the_shared_group_key(self):
+		field = frappe.get_meta("Transportation Shipment").get_field("trip_group")
+		self.assertIsNotNone(field, "Transportation Shipment has no trip_group field")
+		self.assertTrue(field.read_only)
+
+
+class TestMixedLegCapacity(FrappeTestCase):
+	"""The peak on any one leg is what has to fit, not everyone the trip ever carried."""
+
+	def _plan(self, rows):
+		plan = frappe.new_doc("Route Plan")
+		plan.assignments = []
+		for index, (shipment, headcount) in enumerate(rows, start=1):
+			plan.append("assignments", {
+				"transportation_shipment": shipment,
+				"vehicle": "V-1",
+				"direction": MIXED_DIRECTION,
+				"trip_group": "MIX-test",
+				"stop_index": index,
+				"headcount": headcount,
+			})
+		return plan
+
+	def _trip(self, plan, directions):
+		rows = list(plan.assignments)
+		trip = frappe._dict(
+			key=("V-1", "MIX-test", MIXED_DIRECTION), vehicle="V-1",
+			direction=MIXED_DIRECTION,
+			headcount=sum(r.headcount for r in rows), rows=rows,
+		)
+		self._directions = directions
+		return trip
+
+	def _check(self, plan, trip, limit):
+		"""Run the leg walk with the shipment directions stubbed."""
+		import one_fm.operations.doctype.route_plan.route_plan as mod
+
+		real = mod._shipment_directions
+		mod._shipment_directions = lambda names: self._directions
+		try:
+			RoutePlan._validate_mixed_trip_legs(plan, trip, limit)
+		finally:
+			mod._shipment_directions = real
+
+	def test_a_drop_then_a_pick_up_never_ride_together(self):
+		# 12 out, dropped at stop 1; 12 boarded at stop 2. Summed that is 24 and would be
+		# refused; the bus never carries more than 12 at once.
+		plan = self._plan([("TS-A", 12), ("TS-B", 12)])
+		trip = self._trip(plan, {"TS-A": "OUTBOUND", "TS-B": "RETURN"})
+
+		self._check(plan, trip, limit=12)
+
+	def test_the_busiest_leg_is_what_is_refused(self):
+		plan = self._plan([("TS-A", 12), ("TS-B", 12)])
+		trip = self._trip(plan, {"TS-A": "OUTBOUND", "TS-B": "RETURN"})
+
+		with self.assertRaises(frappe.ValidationError):
+			self._check(plan, trip, limit=11)
+
+	def test_disembarking_is_applied_before_boarding_at_a_shared_stop(self):
+		# Both cards stop at the same place: 10 off, then 10 on. Adding first would peak
+		# at 20 and refuse a run that never exceeds 10.
+		plan = self._plan([("TS-A", 10), ("TS-B", 10)])
+		for row in plan.assignments:
+			row.stop_index = 1
+		trip = self._trip(plan, {"TS-A": "OUTBOUND", "TS-B": "RETURN"})
+
+		self._check(plan, trip, limit=10)
+
+	def test_two_outward_cards_still_ride_together(self):
+		# Both loads leave the camp on the same bus, so they do sum - the leg walk must
+		# not turn a genuine overload into a pass.
+		plan = self._plan([("TS-A", 10), ("TS-B", 10)])
+		trip = self._trip(plan, {"TS-A": "OUTBOUND", "TS-B": "OUTBOUND"})
+
+		with self.assertRaises(frappe.ValidationError):
+			self._check(plan, trip, limit=15)
+
+	def test_two_return_cards_peak_when_the_last_one_boards(self):
+		plan = self._plan([("TS-A", 8), ("TS-B", 8)])
+		trip = self._trip(plan, {"TS-A": "RETURN", "TS-B": "RETURN"})
+
+		self._check(plan, trip, limit=16)
+		with self.assertRaises(frappe.ValidationError):
+			self._check(plan, trip, limit=15)
+
+	def test_a_loop_that_revisits_a_stop_is_measured_leg_by_leg(self):
+		# Camp -> Stop1 drop 10 -> Stop2 drop 12 -> Stop1 board 10 -> Camp.
+		# Total carried is 32; the peak leg is the 22 that leave the camp.
+		plan = self._plan([("TS-A", 10), ("TS-B", 12), ("TS-C", 10)])
+		trip = self._trip(plan, {"TS-A": "OUTBOUND", "TS-B": "OUTBOUND", "TS-C": "RETURN"})
+
+		self._check(plan, trip, limit=22)
+		with self.assertRaises(frappe.ValidationError):
+			self._check(plan, trip, limit=21)
+
+	def test_the_error_names_the_failing_leg(self):
+		plan = self._plan([("TS-A", 10), ("TS-B", 12), ("TS-C", 10)])
+		trip = self._trip(plan, {"TS-A": "OUTBOUND", "TS-B": "OUTBOUND", "TS-C": "RETURN"})
+
+		with self.assertRaises(frappe.ValidationError) as caught:
+			self._check(plan, trip, limit=21)
+
+		self.assertIn("leg", str(caught.exception).lower())
+
+	def test_rows_are_walked_in_stop_order_not_table_order(self):
+		plan = self._plan([("TS-A", 20), ("TS-B", 20)])
+		plan.assignments[0].stop_index = 2   # the board
+		plan.assignments[1].stop_index = 1   # the drop
+		trip = self._trip(plan, {"TS-A": "RETURN", "TS-B": "OUTBOUND"})
+
+		# Drop 20 first, then board 20: never more than 20 aboard.
+		self._check(plan, trip, limit=20)

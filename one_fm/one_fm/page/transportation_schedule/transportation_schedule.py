@@ -921,7 +921,7 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
             stop_coords = get_coords_cached("Location", s.stop_location) if s.stop_location else None
             acc_coords = get_coords_cached("Accommodation", s.accommodation) if s.accommodation else None
 
-            direction = "RETURN" if s.trip_direction == "Return" else "OUTBOUND"
+            direction = _normalize_direction(s.trip_direction)
             badge = (s.routing_type_badge or "DIRECT").upper()
             destination = s.stop_location or s.operations_site or ""
 
@@ -975,13 +975,23 @@ def _shipment_from_card_id(card_id: str) -> str:
 
 
 def _normalize_direction(value: str) -> str:
-    """Collapse the two direction vocabularies onto a single OUTBOUND/RETURN flag.
+    """Collapse the direction vocabularies onto a single OUTBOUND/RETURN/MIXED flag.
 
-    Shipment docs store ``trip_direction`` as "Outward"/"Return"; the canvas swim
-    items and Route Plan Assignment rows carry "OUTBOUND"/"RETURN". Both map to the
-    same flag so a companion match can validate direction across the vocabularies.
+    Shipment docs store ``trip_direction`` as "Outward"/"Return"/"Mixed"; the canvas
+    swim items and Route Plan Assignment rows carry "OUTBOUND"/"RETURN"/"MIXED". Both
+    map to the same flag so a companion match can validate direction across the
+    vocabularies.
+
+    MIXED is matched before the RETURN test rather than after it (WI-002071). The old
+    two-way version answered "anything that is not a return is an outbound", so a
+    merged card normalised to OUTBOUND: the canvas drew it orange instead of the merge
+    colour, and the status sync compared a MIXED placement against an OUTBOUND
+    shipment. A third direction has to be recognised, not defaulted.
     """
-    return "RETURN" if (value or "").strip().upper().startswith("RET") else "OUTBOUND"
+    flag = (value or "").strip().upper()
+    if flag.startswith("MIX"):
+        return "MIXED"
+    return "RETURN" if flag.startswith("RET") else "OUTBOUND"
 
 
 def _sync_shipment_statuses(items, previously_linked=None):
