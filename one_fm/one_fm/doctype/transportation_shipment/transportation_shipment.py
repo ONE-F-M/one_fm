@@ -234,3 +234,100 @@ def merge_trip_shipments(shipments) -> dict:
 			for index, doc in enumerate(docs, start=1)
 		],
 	}
+
+
+def _minutes(value) -> int:
+	try:
+		return max(0, int(value or 0))
+	except (TypeError, ValueError):
+		return 0
+
+
+@frappe.whitelist()
+def get_merge_preview(shipments, vehicle: str = None, timings=None) -> dict:
+	"""What the Merge Trip modal shows before anyone confirms (WI-002078).
+
+	Builds the itinerary the merged run would have, walks it leg by leg, and reports
+	whether it fits the vehicle. The leg walk is the same function Route Plan validation
+	uses, so the seat count the operator is shown is the one the save will judge them by -
+	two implementations would drift and the modal would promise a merge the save refuses.
+
+	Each shipment becomes one stop container. A stop where riders both leave and join is
+	two containers, because a drop-off and a boarding are two things the driver does even
+	when they happen in one place, and the same holds for a stop the run returns to later.
+
+	`timings` optionally carries the per-leg transit and buffer minutes the operator has
+	adjusted, keyed by shipment; the returned arrival and departure stamps are recomputed
+	from them so the modal can show the knock-on effect down the run.
+	"""
+	if isinstance(shipments, str):
+		shipments = frappe.parse_json(shipments)
+	if isinstance(timings, str):
+		timings = frappe.parse_json(timings)
+
+	timings = timings or {}
+	names = [name for name in (shipments or []) if name]
+	if len(names) < 2:
+		frappe.throw(_("Select at least two shipments to preview a merge."), title=_("Nothing to Merge"))
+
+	docs = [frappe.get_doc("Transportation Shipment", name) for name in dict.fromkeys(names)]
+	for doc in docs:
+		doc.check_permission("read")
+	docs.sort(key=arrival_order)
+
+	limit = (
+		frappe.db.get_value("Vehicle", vehicle, "custom_max_passenger_capacity") if vehicle else None
+	) or 0
+
+	stops, clock = [], None
+	for index, doc in enumerate(docs, start=1):
+		boards = (doc.trip_direction or "").strip().upper().startswith("RET")
+		adjustment = timings.get(doc.name) or {}
+		transit = _minutes(adjustment.get("transit_minutes"))
+		buffer_minutes = _minutes(adjustment.get("buffer_minutes"))
+
+		# The first stop anchors the run on its own scheduled time; every later stop is
+		# driven from the one before it, so an edit high up the run moves everything after.
+		arrival = doc.start_time if clock is None else clock + transit * 60
+		departure = (arrival or 0) + buffer_minutes * 60
+		clock = departure
+
+		stops.append({
+			"stop_index": index,
+			"shipment": doc.name,
+			"stop_location": doc.stop_location,
+			"headcount": doc.headcount or 0,
+			"boards": boards,
+			"action": "Boarding" if boards else "Dropping Off",
+			"routing_type_badge": doc.routing_type_badge,
+			"transit_minutes": transit,
+			"buffer_minutes": buffer_minutes,
+			"arrival": arrival,
+			"departure": departure,
+		})
+
+	from one_fm.operations.doctype.route_plan.route_plan import leg_occupancy
+
+	peak, worst_leg, per_leg = leg_occupancy(stops)
+	for stop, occupancy in zip(stops, per_leg):
+		stop["occupancy"] = occupancy
+		stop["exceeded"] = bool(limit) and occupancy > limit
+
+	exceeded = bool(limit) and peak > limit
+
+	return {
+		"trip_direction": MIXED,
+		"vehicle": vehicle,
+		"max_passenger_capacity": limit,
+		"stops": stops,
+		"peak_occupancy": peak,
+		"worst_leg": worst_leg,
+		"exceeded": exceeded,
+		# The modal disables Confirm on this alone, so it is decided here rather than
+		# left to the browser to work out from the numbers.
+		"can_merge": not exceeded,
+		"message": (
+			_("Leg {0}: {1}/{2} Seats EXCEEDED").format(worst_leg, peak, limit)
+			if exceeded else ""
+		),
+	}

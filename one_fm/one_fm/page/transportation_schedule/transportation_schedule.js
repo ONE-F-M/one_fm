@@ -2492,6 +2492,12 @@ function mountRoutePlannerApp(wrapper, data) {
                 const cs = shell ? getComputedStyle(shell) : null;
                 if (item.conflict) return cs ? cs.getPropertyValue('--rp-color-conflict').trim() : '#c62828';
                 if (item.overcapacity) return '#7b1fa2'; // purple for overcapacity
+                // A merged block is neither an outbound nor a return, so it gets its own
+                // colour rather than borrowing whichever direction happened to be dropped
+                // first (WI-002078).
+                if (item.direction === 'MIXED') {
+                    return cs ? cs.getPropertyValue('--rp-color-mixed').trim() : '#819171';
+                }
                 return item.direction === 'OUTBOUND'
                     ? (cs ? cs.getPropertyValue('--rp-color-outbound').trim() : '#1565c0')
                     : (cs ? cs.getPropertyValue('--rp-color-return').trim() : '#e65100');
@@ -3064,6 +3070,7 @@ function injectRPVueTemplate() {
         <div id="rp-timeline-legend">
           <span class="rp-legend-item rp-legend-out">Outbound</span>
           <span class="rp-legend-item rp-legend-ret">Return</span>
+          <span class="rp-legend-item rp-legend-mixed">Mixed</span>
           <span class="rp-legend-item rp-legend-conflict">Conflict</span>
           <span class="rp-legend-item rp-legend-overcap">Overcapacity</span>
         </div>
@@ -3670,6 +3677,8 @@ function injectRPStyles() {
             --rp-color-outbound-container: #dbeafe;
             --rp-color-return: #e65100;
             --rp-color-return-container: #ffedd5;
+            --rp-color-mixed: #819171;
+            --rp-color-mixed-container: #e4eae4;
             --rp-color-conflict: #c62828;
             --rp-color-conflict-container: #fee2e2;
             --rp-color-trip-chain: #7c3aed;
@@ -3950,6 +3959,7 @@ function injectRPStyles() {
         .rp-legend-item     { font-size: 11px; padding: 2px 9px; border-radius: 4px; font-weight: 600; }
         .rp-legend-out      { background: var(--rp-color-outbound-container); color: var(--rp-color-outbound); }
         .rp-legend-ret      { background: var(--rp-color-return-container); color: var(--rp-color-return); }
+        .rp-legend-mixed    { background: var(--rp-color-mixed-container); color: var(--rp-color-mixed); }
         .rp-legend-conflict { background: var(--rp-color-conflict-container); color: var(--rp-color-conflict); }
         .rp-legend-overcap { background: #f3e5f5; color: #7b1fa2; }
 
@@ -4363,6 +4373,7 @@ function injectRPStyles() {
         /* ── Dark mode: Legend ── */
         #rp-shell.rp-dark .rp-legend-out { background: #1a3a5c; color: #93c5fd; }
         #rp-shell.rp-dark .rp-legend-ret { background: #4a2800; color: #fdba74; }
+        #rp-shell.rp-dark .rp-legend-mixed { background: #2b332b; color: #b7c7b7; }
         #rp-shell.rp-dark .rp-legend-conflict { background: #4a0e0e; color: #ff8a80; }
         #rp-shell.rp-dark .rp-legend-overcap { background: #2d1f4e; color: #ce93d8; }
 

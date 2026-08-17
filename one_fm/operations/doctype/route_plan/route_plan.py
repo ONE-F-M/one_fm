@@ -359,23 +359,15 @@ class RoutePlan(Document):
 		"""
 		by_index = sorted(trip.rows, key=lambda row: (cint(row.stop_index), row.name or ""))
 		directions = _shipment_directions([row.transportation_shipment for row in by_index])
+		stops = [
+			{
+				"headcount": cint(row.headcount),
+				"boards": directions.get(row.transportation_shipment) == "RETURN",
+			}
+			for row in by_index
+		]
 
-		def is_return(row):
-			return directions.get(row.transportation_shipment) == "RETURN"
-
-		# Everyone the trip carries out of the camp is aboard before the first stop.
-		occupancy = sum(cint(row.headcount) for row in by_index if not is_return(row))
-		peak = occupancy
-		worst_leg = 1
-
-		for leg, row in enumerate(by_index, start=1):
-			if is_return(row):
-				occupancy += cint(row.headcount)
-			else:
-				occupancy -= cint(row.headcount)
-
-			if occupancy > peak:
-				peak, worst_leg = occupancy, leg
+		peak, worst_leg, _legs = leg_occupancy(stops)
 
 		if peak > limit:
 			frappe.throw(
@@ -655,3 +647,38 @@ def _normalize_shipment_direction(value: str) -> str:
 	if flag.startswith("MIX"):
 		return MIXED_DIRECTION
 	return "RETURN" if flag.startswith("RET") else "OUTBOUND"
+
+
+def leg_occupancy(stops):
+	"""Walk a merged trip stop by stop and report how full the bus gets.
+
+	`stops` is the run in order, each entry carrying a headcount and whether those
+	riders board there (True) or leave there (False). Returns
+	(peak, worst_leg, per_leg_occupancy).
+
+	Shared by the Route Plan validation and the canvas merge preview (WI-002078), so the
+	number the modal shows an operator before they confirm is the same number the save
+	will judge them by. Two implementations of this would drift, and the operator would
+	be told a merge is fine and then refused.
+
+	Disembarking is applied before boarding at each stop: at a stop where both happen the
+	seats being vacated are available to the people getting on, and adding first reports
+	an overload that never occurs.
+	"""
+	# Everyone the trip carries out of the camp is aboard before the first stop.
+	occupancy = sum(stop["headcount"] for stop in stops if not stop["boards"])
+	peak = occupancy
+	worst_leg = 1
+	per_leg = []
+
+	for leg, stop in enumerate(stops, start=1):
+		if stop["boards"]:
+			occupancy += stop["headcount"]
+		else:
+			occupancy -= stop["headcount"]
+
+		per_leg.append(occupancy)
+		if occupancy > peak:
+			peak, worst_leg = occupancy, leg
+
+	return peak, worst_leg, per_leg
