@@ -391,12 +391,7 @@ class EmployeeResignation(Document):
 	def set_current_salary(self):
 		if not self.employee:
 			return
-		self.current_salary = frappe.db.get_value(
-			"Salary Structure Assignment",
-			{"employee": self.employee, "docstatus": 1, "from_date": ["<=", frappe.utils.today()]},
-			"base",
-			order_by="from_date desc",
-		)
+		self.current_salary = frappe.db.get_value("Employee", self.employee, "one_fm_basic_salary")
 
 	def set_supervisor(self):
 		# Only auto-resolve supervisor if it hasn't already been set manually
