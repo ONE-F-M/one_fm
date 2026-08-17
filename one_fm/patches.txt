@@ -580,6 +580,7 @@ one_fm.patches.v15_0.add_work_permit_assignment_rules #2026-08-10 WI-001827
 one_fm.patches.v15_0.add_onboarding_officer_arrival_deployment_permission #2026-08-04
 one_fm.patches.v15_0.add_paci_fine_amount_to_hr_settings #2026-08-12 WI-002023
 one_fm.patches.v15_0.add_project_show_in_roadmap_field #2026-08-12 WI-002045
+one_fm.patches.v15_0.add_penalty_email_recipients_to_hr_settings #2026-08-13 WI-002016
 one_fm.patches.v15_0.add_embassy_attestation_rates_to_hr_settings #2026-08-12 WI-002025
 one_fm.patches.v15_0.add_pcc_attestation_doctype #2026-08-12 WI-002028
 one_fm.patches.v15_0.add_pcc_attestation_workflow_and_rules #2026-08-12 WI-002029
