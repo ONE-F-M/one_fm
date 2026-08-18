@@ -598,3 +598,4 @@ one_fm.patches.v15_0.update_penalty_assignment_rules_process_task_based
 one_fm.patches.v15_0.update_visa_request_workflow_and_rules
 one_fm.patches.v15_0.add_leave_application_resumption_contact_fields #1
 one_fm.patches.v15_0.approve_attendance_check_jul11_2026 #2026-08-16
+one_fm.patches.v15_0.processa_sync_process_creation___v2_9c736a #2026-08-18 Processa sync: Process Creation Request
