@@ -154,6 +154,25 @@ class TransportationShipment(Document):
 		self.headcount = len(self.transportation_shipment_employee)
 
 
+# The canvas identifies a card as "TSHIP-<shipment>", sometimes with a direction suffix, so
+# what it sends is a card id and not a document name. Both merge endpoints are called
+# straight from the canvas and so have to accept either (WI-002078).
+def resolve_shipment_names(values) -> list:
+	"""Card ids or shipment names in; shipment names out, order and duplicates preserved once."""
+	from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+		_shipment_from_card_id,
+	)
+
+	names = []
+	for value in values or []:
+		if not value:
+			continue
+		name = _shipment_from_card_id(value) or value
+		if name not in names:
+			names.append(name)
+	return names
+
+
 MIXED = "Mixed"
 RETURN = "Return"
 OUTWARD = "Outward"
@@ -173,14 +192,54 @@ def merge_key(shipment_names) -> str:
 	return f"MIX-{digest[:12]}"
 
 
+def own_direction(shipment) -> str:
+	"""OUTBOUND or RETURN for one card's own riders, whatever a merge did to the card.
+
+	`trip_direction` stops answering this the moment the card is merged - it reads Mixed,
+	which says how the card is *scheduled*, not which way its riders travel.
+	`pre_merge_trip_direction` is the record of the journey the card was generated for.
+	The same rule the Route Plan save applies, so the modal and the save cannot disagree
+	about who is boarding and who is getting off.
+	"""
+	from one_fm.operations.doctype.route_plan.route_plan import _card_direction
+
+	return _card_direction(shipment.trip_direction, shipment.get("pre_merge_trip_direction"))
+
+
+def arrival_time(shipment):
+	"""When the vehicle reaches this card, as seconds past midnight.
+
+	An outward card is a drop-off, so the vehicle arrives by the shift's start time. A
+	return card is a collection, which happens when the shift *ends* - `start_time` on a
+	return shipment is the beginning of the shift being collected from, not a journey
+	time. This mirrors the canvas, which draws an outward card at start_time and a
+	return card at end_time, so the itinerary reads in the order the blocks sit in on
+	the lane.
+	"""
+	start = _seconds_into_day(shipment.start_time)
+	if own_direction(shipment) != "RETURN":
+		return start
+
+	end = _seconds_into_day(shipment.end_time)
+	if end is None:
+		return start
+	if start is not None and end <= start:
+		end += 24 * 3600     # overnight shift: the collection falls the next morning
+	return end
+
+
 def arrival_order(shipment):
 	"""Sort key placing shipments in the order the vehicle reaches them.
 
-	The scheduled arrival is the shipment's own start time; a card without one sorts
-	last rather than first, so an unscheduled card cannot silently claim the head of
-	the itinerary. `name` breaks ties so the order is stable across saves.
+	A card with no time to sort on goes last rather than first, so an unscheduled card
+	cannot silently claim the head of the itinerary. Two cards due at the same moment are
+	served drop-off first: the seats one load vacates are what the next load boards into,
+	and collecting first reports an overload that never happens. `name` breaks the
+	remaining ties so the order is stable across saves.
 	"""
-	return (shipment.start_time is None, shipment.start_time, shipment.name)
+	arrival = arrival_time(shipment)
+	boards = own_direction(shipment) == "RETURN"
+	return (arrival is None, arrival or 0, boards, shipment.name)
 
 
 @frappe.whitelist()
@@ -198,14 +257,14 @@ def merge_trip_shipments(shipments) -> dict:
 	if isinstance(shipments, str):
 		shipments = frappe.parse_json(shipments)
 
-	shipments = [name for name in (shipments or []) if name]
+	shipments = resolve_shipment_names(shipments)
 	if len(shipments) < 2:
 		frappe.throw(
 			_("Select at least two shipments to merge into a Mixed trip."),
 			title=_("Nothing to Merge"),
 		)
 
-	docs = [frappe.get_doc("Transportation Shipment", name) for name in dict.fromkeys(shipments)]
+	docs = [frappe.get_doc("Transportation Shipment", name) for name in shipments]
 	for doc in docs:
 		doc.check_permission("write")
 
@@ -213,10 +272,21 @@ def merge_trip_shipments(shipments) -> dict:
 	trip_group = merge_key([doc.name for doc in docs])
 
 	for doc in docs:
-		# db_set rather than save: the merge changes two header facts and must not
-		# re-run apply_routing_type, which would rewrite every rider row from the
-		# header and undo per-rider stop locations an OSM card depends on.
-		doc.db_set({"trip_direction": MIXED, "trip_group": trip_group}, update_modified=True)
+		# Remember the way this card travelled before the merge, so leaving the merged trip
+		# can put it back. A merge is a scheduling decision made on the canvas; the card's
+		# own direction is a fact about the journey it was generated for, and overwriting
+		# that without a way back left cards stranded as Mixed once their block was removed.
+		#
+		# Only recorded on the first merge: merging an already-merged card must not
+		# overwrite the original with "Mixed".
+		values = {"trip_direction": MIXED, "trip_group": trip_group}
+		if doc.trip_direction != MIXED and not doc.pre_merge_trip_direction:
+			values["pre_merge_trip_direction"] = doc.trip_direction
+
+		# db_set rather than save: the merge changes header facts and must not re-run
+		# apply_routing_type, which would rewrite every rider row from the header and undo
+		# per-rider stop locations an OSM card depends on.
+		doc.db_set(values, update_modified=True)
 
 	return {
 		"trip_group": trip_group,
@@ -234,3 +304,177 @@ def merge_trip_shipments(shipments) -> dict:
 			for index, doc in enumerate(docs, start=1)
 		],
 	}
+
+
+def _seconds_into_day(value) -> int | None:
+	"""A Frappe Time field as seconds past midnight.
+
+	`start_time` comes back as a timedelta, not a number, so the clock arithmetic below has
+	to normalise it first - adding minutes to a timedelta raises rather than doing anything
+	useful.
+	"""
+	if value is None:
+		return None
+	if hasattr(value, "total_seconds"):
+		return int(value.total_seconds())
+	try:
+		return int(value)
+	except (TypeError, ValueError):
+		return None
+
+
+def _clock(seconds) -> str:
+	"""Seconds past midnight as HH:MM, for the modal to print."""
+	if seconds is None:
+		return ""
+	seconds = int(seconds) % 86400
+	return f"{seconds // 3600:02d}:{(seconds % 3600) // 60:02d}"
+
+
+def _minutes(value) -> int:
+	try:
+		return max(0, int(value or 0))
+	except (TypeError, ValueError):
+		return 0
+
+
+@frappe.whitelist()
+def get_merge_preview(shipments, vehicle: str = None, timings=None) -> dict:
+	"""What the Merge Trip modal shows before anyone confirms (WI-002078).
+
+	Builds the itinerary the merged run would have, walks it leg by leg, and reports
+	whether it fits the vehicle. The leg walk is the same function Route Plan validation
+	uses, so the seat count the operator is shown is the one the save will judge them by -
+	two implementations would drift and the modal would promise a merge the save refuses.
+
+	Each shipment becomes one stop container. A stop where riders both leave and join is
+	two containers, because a drop-off and a boarding are two things the driver does even
+	when they happen in one place, and the same holds for a stop the run returns to later.
+
+	`timings` optionally carries the per-leg transit and buffer minutes the operator has
+	adjusted, keyed by shipment; the returned arrival and departure stamps are recomputed
+	from them so the modal can show the knock-on effect down the run.
+	"""
+	if isinstance(shipments, str):
+		shipments = frappe.parse_json(shipments)
+	if isinstance(timings, str):
+		timings = frappe.parse_json(timings)
+
+	timings = timings or {}
+	names = resolve_shipment_names(shipments)
+	if len(names) < 2:
+		frappe.throw(_("Select at least two shipments to preview a merge."), title=_("Nothing to Merge"))
+
+	docs = [frappe.get_doc("Transportation Shipment", name) for name in names]
+	for doc in docs:
+		doc.check_permission("read")
+	docs.sort(key=arrival_order)
+
+	limit = (
+		frappe.db.get_value("Vehicle", vehicle, "custom_max_passenger_capacity") if vehicle else None
+	) or 0
+
+	stops, clock = [], None
+	for index, doc in enumerate(docs, start=1):
+		boards = own_direction(doc) == "RETURN"
+		adjustment = timings.get(doc.name) or {}
+		transit = _minutes(adjustment.get("transit_minutes"))
+		buffer_minutes = _minutes(adjustment.get("buffer_minutes"))
+
+		# The first stop anchors the run on its own scheduled time; every later stop is
+		# driven from the one before it, so an edit high up the run moves everything after.
+		anchor = arrival_time(doc)
+		arrival = anchor if clock is None else clock + transit * 60
+		if arrival is None:
+			arrival = 0
+		departure = arrival + buffer_minutes * 60
+		clock = departure
+
+		stops.append({
+			"stop_index": index,
+			"shipment": doc.name,
+			"stop_location": doc.stop_location,
+			"headcount": doc.headcount or 0,
+			"boards": boards,
+			"action": "Boarding" if boards else "Dropping Off",
+			"routing_type_badge": doc.routing_type_badge,
+			"transit_minutes": transit,
+			"buffer_minutes": buffer_minutes,
+			"arrival": _clock(arrival),
+			"departure": _clock(departure),
+		})
+
+	from one_fm.operations.doctype.route_plan.route_plan import leg_occupancy
+
+	peak, worst_leg, per_leg = leg_occupancy(stops)
+	for stop, occupancy in zip(stops, per_leg):
+		stop["occupancy"] = occupancy
+		stop["exceeded"] = bool(limit) and occupancy > limit
+
+	exceeded = bool(limit) and peak > limit
+
+	return {
+		"trip_direction": MIXED,
+		"vehicle": vehicle,
+		"max_passenger_capacity": limit,
+		"stops": stops,
+		"peak_occupancy": peak,
+		"worst_leg": worst_leg,
+		"exceeded": exceeded,
+		# The modal disables Confirm on this alone, so it is decided here rather than
+		# left to the browser to work out from the numbers.
+		"can_merge": not exceeded,
+		"message": (
+			_("Leg {0}: {1}/{2} Seats EXCEEDED").format(worst_leg, peak, limit)
+			if exceeded else ""
+		),
+	}
+
+
+def unmerge_trip_shipment(name) -> bool:
+	"""Put a shipment back the way it travelled before it was merged (WI-002071).
+
+	Called when a card leaves the merged trip - the block is removed from the lane, or the
+	plan no longer places it. Without this a card that was merged once stayed Mixed for
+	good: it came back to the unassigned pool describing a journey it no longer had, and no
+	amount of re-planning restored it.
+
+	Only a card that actually carries a remembered direction is touched, so this is safe to
+	call for every shipment a plan drops.
+	"""
+	original = frappe.db.get_value("Transportation Shipment", name, "pre_merge_trip_direction")
+	if not original:
+		return False
+
+	frappe.db.set_value(
+		"Transportation Shipment",
+		name,
+		{"trip_direction": original, "trip_group": None, "pre_merge_trip_direction": None},
+		update_modified=False,
+	)
+	return True
+
+
+@frappe.whitelist()
+def undo_merge(shipments) -> dict:
+	"""Roll a merge back from the canvas (WI-002078).
+
+	The merge is written when the operator confirms it, but the plan is saved a moment
+	later and can still be rejected - by an overlapping-trip total, a retention lock, a
+	multi-day block-out. The merge was already committed by then, so the cards were left
+	Mixed while no plan held them: back in the pool describing a journey they did not
+	have. The canvas calls this when the save that follows a merge is refused.
+
+	Reports how many cards were actually restored; a card carrying no remembered
+	direction was never merged and is left alone.
+	"""
+	names = resolve_shipment_names(shipments)
+	restored = []
+	for name in names:
+		if not frappe.db.exists("Transportation Shipment", name):
+			continue
+		frappe.get_doc("Transportation Shipment", name).check_permission("write")
+		if unmerge_trip_shipment(name):
+			restored.append(name)
+
+	return {"restored": restored}

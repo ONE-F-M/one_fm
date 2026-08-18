@@ -4,6 +4,7 @@ from frappe import _
 from frappe.utils import cint
 from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
 from one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log import get_handover_windows
+from one_fm.operations.doctype.route_plan.route_plan import _card_direction
 from one_fm.overrides.vehicle import passenger_capacity
 
 PICKUP_BUFFER = 10             # minutes
@@ -854,6 +855,9 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
             "operations_site", "stop_location", "headcount", "trip_direction",
             "routing_type_badge", "start_time", "end_time", "from_date", "to_date",
             "source_doctype", "source_docname", "pair_group",
+            # What the card's own riders do, which its live direction stops saying once
+            # the card is merged (WI-002078).
+            "pre_merge_trip_direction",
         ],
     )
     if not shipments:
@@ -922,6 +926,11 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
             acc_coords = get_coords_cached("Accommodation", s.accommodation) if s.accommodation else None
 
             direction = _normalize_direction(s.trip_direction)
+            # A merged card is drawn and grouped as MIXED, but the canvas still has to
+            # know whether its own riders board or alight to walk a merged run leg by
+            # leg. The same rule the Route Plan save uses, so the seat count the
+            # operator sees on the lane is the one the save will judge them by.
+            own_direction = _card_direction(s.trip_direction, s.pre_merge_trip_direction)
             badge = (s.routing_type_badge or "DIRECT").upper()
             destination = s.stop_location or s.operations_site or ""
 
@@ -949,6 +958,7 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
                 "shift_end":             fmt(ret_utc),
                 "type":                  badge,
                 "direction":             direction,
+                "own_direction":         own_direction,
                 "pair_id":               f"{SHIPMENT_CARD_PREFIX}{s.pair_group}" if s.pair_group else f"{SHIPMENT_CARD_PREFIX}{s.name}",
                 "shift_direction_label": "→ Outbound (To Site)" if direction == "OUTBOUND" else "← Return (From Site)",
             })
@@ -1049,9 +1059,24 @@ def _sync_shipment_statuses(items, previously_linked=None):
 
     # Revert only shipments this plan dropped — never touch shipments that are
     # placed in a different Route Plan.
+    from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+        unmerge_trip_shipment,
+    )
+
     for name in (previously_linked or set()):
         if name and name not in assigned and frappe.db.exists("Transportation Shipment", name):
             frappe.db.set_value("Transportation Shipment", name, "status", "Unassigned")
+            # A card returning to the pool takes its own direction back with it. Being
+            # merged is a property of the block it was in, not of the journey the shipment
+            # was generated for (WI-002071).
+            unmerge_trip_shipment(name)
+
+    # A card still on the plan but no longer placed as part of a merged trip is also no
+    # longer merged - the operator can break a merge by dragging one stop out without
+    # removing the other.
+    for name in assigned:
+        if "MIXED" not in placed_dirs_by_shipment.get(name, set()):
+            unmerge_trip_shipment(name)
 
 
 def _link_shipment_on_manifest_rows(manifest_doc, v_rows, card_emp_map):
