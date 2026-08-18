@@ -1,0 +1,56 @@
+{
+ "custom_fields": [],
+ "custom_perms": [],
+ "doctype": "Process Creation Request",
+ "links": [
+  {
+   "creation": "2026-07-09 11:58:40.939851",
+   "custom": 0,
+   "docstatus": 0,
+   "group": null,
+   "hidden": 0,
+   "idx": 1,
+   "is_child_table": 0,
+   "link_doctype": "Process",
+   "link_fieldname": "process_creation_request",
+   "modified": "2026-08-17 10:34:48.505866",
+   "modified_by": "Administrator",
+   "name": "fvld1gj3k2",
+   "owner": "Administrator",
+   "parent": "Process Creation Request",
+   "parent_doctype": null,
+   "parentfield": "links",
+   "parenttype": "DocType",
+   "table_fieldname": null
+  }
+ ],
+ "property_setters": [
+  {
+   "default_value": null,
+   "doc_type": "Process Creation Request",
+   "doctype_or_field": "DocField",
+   "field_name": "naming_series",
+   "is_system_generated": 1,
+   "module": null,
+   "name": "Process Creation Request-naming_series-options",
+   "property": "options",
+   "property_type": "Text",
+   "row_name": null,
+   "value": "PBR-PCR-.YYYY.-.MM.-.####"
+  },
+  {
+   "default_value": null,
+   "doc_type": "Process Creation Request",
+   "doctype_or_field": "DocField",
+   "field_name": "parent_process",
+   "is_system_generated": 0,
+   "module": null,
+   "name": "Process Creation Request-parent_process-link_filters",
+   "property": "link_filters",
+   "property_type": "JSON",
+   "row_name": null,
+   "value": "[[\"Process\",\"is_group\",\"=\",1]]"
+  }
+ ],
+ "sync_on_migrate": 1
+}
