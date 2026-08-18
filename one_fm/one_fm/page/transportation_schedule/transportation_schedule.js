@@ -1187,7 +1187,17 @@ function mountRoutePlannerApp(wrapper, data) {
                 self.selectedPoolCard = null;
                 self.checkConflicts();
                 self.canSave = self.assignedCards.size > 0;
-                self.persistAssignments();
+
+                // The shipments are already Mixed by the time the plan is saved, so a
+                // rejected save has to put them back - otherwise they return to the pool
+                // describing a journey they no longer have.
+                self.persistAssignments((reload) => {
+                    frappe.call({
+                        method: 'one_fm.one_fm.doctype.transportation_shipment.transportation_shipment.undo_merge',
+                        args: { shipments: merged.itinerary.map((s) => s.shipment) },
+                        always: reload
+                    });
+                });
 
                 frappe.show_alert({ message: __('Trip merged — direction is now Mixed'), indicator: 'green' });
             },
@@ -2550,7 +2560,11 @@ function mountRoutePlannerApp(wrapper, data) {
 
 
 
-            persistAssignments() {
+            // `onError` lets a caller undo work it committed before the save. A merge is
+            // written to the shipments the moment it is confirmed, but the plan is saved a
+            // beat later and can still be refused - and the cards would be left Mixed with
+            // no plan holding them (WI-002078).
+            persistAssignments(onError) {
                 if (!this.currentPlan) {
                     // Surface the silent failure: without a loaded Route Plan there
                     // is nowhere to save, so the assignment would vanish on refresh.
@@ -2595,9 +2609,12 @@ function mountRoutePlannerApp(wrapper, data) {
                             // STANDBY lock) rejected the drop. Frappe already shows
                             // the thrown message; reload the plan so the phantom
                             // block is removed and the canvas mirrors what persisted.
-                            if (this.currentPlan && this.currentPlan.name) {
-                                this.switchPlan(this.currentPlan.name);
-                            }
+                            const reload = () => {
+                                if (this.currentPlan && this.currentPlan.name) {
+                                    this.switchPlan(this.currentPlan.name);
+                                }
+                            };
+                            if (onError) { onError(reload); } else { reload(); }
                         }
                     });
                 }, 500); // 500ms debounce

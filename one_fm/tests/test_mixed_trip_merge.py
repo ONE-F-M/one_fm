@@ -14,7 +14,11 @@ from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment impor
 from one_fm.operations.doctype.route_plan.route_plan import (
 	MIXED_DIRECTION,
 	RoutePlan,
+	_card_direction,
 	_normalize_shipment_direction,
+	_peak_concurrent_headcount,
+	_row_direction,
+	_trip_occupancy,
 )
 from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
 	_normalize_direction,
@@ -129,6 +133,108 @@ class TestDirectionVocabularies(FrappeTestCase):
 		field = frappe.get_meta("Transportation Shipment").get_field("trip_group")
 		self.assertIsNotNone(field, "Transportation Shipment has no trip_group field")
 		self.assertTrue(field.read_only)
+
+
+class TestTheAssignmentRowSpeaksMixed(FrappeTestCase):
+	"""The regression the reporter hit on Confirm & Merge Trip.
+
+	`_row_direction` collapsed anything that was not a return to OUTBOUND, so a merged
+	trip keyed as an outbound one, took the summing branch instead of the leg walk, and
+	the save answered "the outbound run on VHL-L-0004 carries 7 passengers but the
+	vehicle takes 6" for a run that never carries more than 5 at once.
+	"""
+
+	def _row(self, direction):
+		return frappe._dict(direction=direction)
+
+	def test_a_merged_row_keeps_its_own_direction(self):
+		self.assertEqual(_row_direction(self._row("MIXED")), MIXED_DIRECTION)
+
+	def test_mixed_no_longer_falls_through_to_outbound(self):
+		self.assertNotEqual(_row_direction(self._row("MIXED")), "OUTBOUND")
+
+	def test_the_two_original_directions_still_map(self):
+		self.assertEqual(_row_direction(self._row("OUTBOUND")), "OUTBOUND")
+		self.assertEqual(_row_direction(self._row("RETURN")), "RETURN")
+
+	def test_a_blank_row_is_still_treated_as_outbound(self):
+		# A stray or missing value must not drop a leg out of the capacity cluster.
+		self.assertEqual(_row_direction(self._row("")), "OUTBOUND")
+		self.assertEqual(_row_direction(self._row(None)), "OUTBOUND")
+
+	def test_the_row_and_the_shipment_agree(self):
+		for value in ("OUTBOUND", "RETURN", "MIXED", "", None):
+			with self.subTest(value=value):
+				self.assertEqual(_row_direction(self._row(value)), _normalize_shipment_direction(value))
+
+
+class TestWhichWayAMergedCardsRidersTravel(FrappeTestCase):
+	"""The leg walk needs each card's own direction, which merging overwrites."""
+
+	def test_an_unmerged_card_answers_for_itself(self):
+		self.assertEqual(_card_direction("Outward", None), "OUTBOUND")
+		self.assertEqual(_card_direction("Return", None), "RETURN")
+
+	def test_a_merged_card_answers_from_what_the_merge_recorded(self):
+		# Without this every card on a merged trip read as OUTBOUND, so the walk put
+		# all of them aboard at the camp and peaked at the full total again.
+		self.assertEqual(_card_direction("Mixed", "Return"), "RETURN")
+		self.assertEqual(_card_direction("Mixed", "Outward"), "OUTBOUND")
+
+	def test_a_merged_card_with_no_record_is_counted_conservatively(self):
+		# Aboard from the camp over-reports rather than passing a run that cannot fit.
+		self.assertEqual(_card_direction("Mixed", None), "OUTBOUND")
+
+	def test_the_live_direction_wins_once_a_card_is_unmerged(self):
+		# unmerge_trip_shipment clears the record; a stale one must not outrank the card.
+		self.assertEqual(_card_direction("Outward", "Return"), "OUTBOUND")
+
+
+class TestOverlappingTripsMeasureAMergedRunByItsPeak(FrappeTestCase):
+	"""The second half of the reporter's block.
+
+	Once the per-trip check took the leg walk, the save still refused with "Total
+	overlapping passengers (7) exceeds vehicle limit (6)" - the concurrency check was
+	still adding `headcount`, which for a merged trip is the total it ever carried and
+	not a number the bus is ever asked to hold.
+	"""
+
+	def _trip(self, direction, headcount, occupancy=None, start=0, end=3600):
+		return frappe._dict(
+			key=(direction, headcount), vehicle="V-1", direction=direction,
+			headcount=headcount, occupancy=occupancy, start=start, end=end,
+			live_from=None, live_to=None, rows=[],
+		)
+
+	def test_a_single_direction_trip_is_its_headcount(self):
+		self.assertEqual(_trip_occupancy(self._trip("OUTBOUND", 12)), 12)
+
+	def test_a_merged_trip_is_its_busiest_leg(self):
+		self.assertEqual(_trip_occupancy(self._trip(MIXED_DIRECTION, 24, occupancy=12)), 12)
+
+	def test_a_trip_that_was_never_measured_falls_back_to_its_headcount(self):
+		self.assertEqual(_trip_occupancy(self._trip("RETURN", 9, occupancy=None)), 9)
+
+	def test_an_empty_merged_trip_is_not_mistaken_for_unmeasured(self):
+		# occupancy 0 is a measurement, not a missing one - `or headcount` would have
+		# quietly substituted the total here.
+		self.assertEqual(_trip_occupancy(self._trip(MIXED_DIRECTION, 7, occupancy=0)), 0)
+
+	def test_the_merged_run_from_the_report_fits_alongside_nothing_else(self):
+		trip = self._trip(MIXED_DIRECTION, 7, occupancy=5)
+
+		self.assertEqual(_peak_concurrent_headcount([trip]), 5)
+
+	def test_two_overlapping_trips_still_add_up(self):
+		# The leg walk must not turn a genuine double-booking into a pass.
+		trips = [self._trip("OUTBOUND", 4), self._trip("RETURN", 5)]
+
+		self.assertEqual(_peak_concurrent_headcount(trips), 9)
+
+	def test_a_merged_trip_overlapping_another_adds_its_peak_not_its_total(self):
+		trips = [self._trip(MIXED_DIRECTION, 24, occupancy=12), self._trip("OUTBOUND", 3)]
+
+		self.assertEqual(_peak_concurrent_headcount(trips), 15)
 
 
 class TestMixedLegCapacity(FrappeTestCase):
@@ -287,9 +393,13 @@ class TestAMergeCanBeUndone(FrappeTestCase):
 			unmerge_trip_shipment,
 		)
 
-		name = frappe.db.get_value("Transportation Shipment", {}, "name")
+		# Has to be a card that is actually unmerged: a merged one left on the site by a
+		# real plan would otherwise decide this test's result.
+		name = frappe.db.get_value(
+			"Transportation Shipment", {"pre_merge_trip_direction": ["is", "not set"]}, "name"
+		)
 		if not name:
-			self.skipTest("No Transportation Shipment on this site")
+			self.skipTest("No unmerged Transportation Shipment on this site")
 		before = frappe.db.get_value("Transportation Shipment", name, "trip_direction")
 
 		# Safe to call for every shipment a plan drops, merged or not.
@@ -297,6 +407,61 @@ class TestAMergeCanBeUndone(FrappeTestCase):
 		self.assertEqual(
 			frappe.db.get_value("Transportation Shipment", name, "trip_direction"), before
 		)
+
+	def test_a_refused_save_can_roll_the_merge_back_from_the_canvas(self):
+		"""The window the reporter fell into.
+
+		Confirm & Merge Trip writes the shipments, then the plan saves - and the save can
+		still be refused. The merge is already committed by then, so without this the
+		cards sit Mixed with no plan holding them.
+		"""
+		from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+			undo_merge,
+		)
+
+		frappe.is_whitelisted(undo_merge)
+
+		name = frappe.db.get_value(
+			"Transportation Shipment", {"pre_merge_trip_direction": ["is", "not set"]}, "name"
+		)
+		if not name:
+			self.skipTest("No unmerged Transportation Shipment on this site")
+
+		frappe.db.set_value("Transportation Shipment", name, {
+			"trip_direction": MIXED, "trip_group": "MIX-test", "pre_merge_trip_direction": "Return",
+		}, update_modified=False)
+
+		# Card ids, because that is what the canvas holds.
+		result = undo_merge([f"TSHIP-{name}"])
+
+		self.assertEqual(result["restored"], [name])
+		self.assertEqual(
+			frappe.db.get_value("Transportation Shipment", name, "trip_direction"), "Return"
+		)
+
+	def test_rolling_back_a_merge_that_never_happened_changes_nothing(self):
+		from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+			undo_merge,
+		)
+
+		name = frappe.db.get_value(
+			"Transportation Shipment", {"pre_merge_trip_direction": ["is", "not set"]}, "name"
+		)
+		if not name:
+			self.skipTest("No unmerged Transportation Shipment on this site")
+		before = frappe.db.get_value("Transportation Shipment", name, "trip_direction")
+
+		self.assertEqual(undo_merge([name])["restored"], [])
+		self.assertEqual(
+			frappe.db.get_value("Transportation Shipment", name, "trip_direction"), before
+		)
+
+	def test_a_shipment_that_no_longer_exists_is_skipped(self):
+		from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+			undo_merge,
+		)
+
+		self.assertEqual(undo_merge(["TSHIP-TS-does-not-exist"])["restored"], [])
 
 	def test_the_generation_key_records_the_original_direction(self):
 		"""What the repair patch recovers a stranded record from.

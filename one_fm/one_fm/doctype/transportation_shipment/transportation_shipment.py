@@ -439,3 +439,28 @@ def unmerge_trip_shipment(name) -> bool:
 		update_modified=False,
 	)
 	return True
+
+
+@frappe.whitelist()
+def undo_merge(shipments) -> dict:
+	"""Roll a merge back from the canvas (WI-002078).
+
+	The merge is written when the operator confirms it, but the plan is saved a moment
+	later and can still be rejected - by an overlapping-trip total, a retention lock, a
+	multi-day block-out. The merge was already committed by then, so the cards were left
+	Mixed while no plan held them: back in the pool describing a journey they did not
+	have. The canvas calls this when the save that follows a merge is refused.
+
+	Reports how many cards were actually restored; a card carrying no remembered
+	direction was never merged and is left alone.
+	"""
+	names = resolve_shipment_names(shipments)
+	restored = []
+	for name in names:
+		if not frappe.db.exists("Transportation Shipment", name):
+			continue
+		frappe.get_doc("Transportation Shipment", name).check_permission("write")
+		if unmerge_trip_shipment(name):
+			restored.append(name)
+
+	return {"restored": restored}
