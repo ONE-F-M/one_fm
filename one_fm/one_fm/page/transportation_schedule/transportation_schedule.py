@@ -1104,13 +1104,14 @@ def save_assignments(plan_name: str, swim_items: str, assigned_cards: str):
 
     # Clear existing assignments and rebuild
     doc.assignments = []
-    for item in items:
+    directions = _shipment_direction_flags(items)
+    for item in _with_stop_indexes(items):
         shipment = _shipment_from_card_id(item.get("cardId", ""))
         doc.append("assignments", {
             "card_id":                 item.get("cardId", ""),
             "transportation_shipment": shipment,
             "vehicle":                 item.get("vehicleId", ""),
-            "direction":               item.get("direction", ""),
+            "direction":               _assignment_direction(item, directions.get(shipment)),
             "stop_index":              item.get("stopIndex", 0),
             "trip_group":              item.get("tripId", ""),
             "trip_name":               item.get("tripName", ""),
@@ -1121,6 +1122,8 @@ def save_assignments(plan_name: str, swim_items: str, assigned_cards: str):
             "shift":                   item.get("_shift", ""),
             "accommodation":           item.get("_accommodation", ""),
             "stop_location":           item.get("_stopLocation", ""),
+            "transit_minutes":         item.get("transitMinutes") or 0,
+            "buffer_minutes":          item.get("bufferMinutes") or 0,
         })
 
     doc.save(ignore_permissions=False)
@@ -1884,3 +1887,77 @@ def process_rambo_replacement(original_employee: str, replacement_employee: str,
         "notified": False,
         "message": "Replacement processed. No supervisor found for this shift to notify."
     }
+
+
+def _shipment_direction_flags(items) -> dict:
+    """{shipment: OUTBOUND|RETURN|MIXED} for every card being saved (WI-002077).
+
+    Read in one query rather than per row: a full month's canvas is hundreds of items.
+    """
+    names = {
+        _shipment_from_card_id(item.get("cardId", ""))
+        for item in items
+        if _shipment_from_card_id(item.get("cardId", ""))
+    }
+    if not names:
+        return {}
+
+    return {
+        row.name: _normalize_direction(row.trip_direction)
+        for row in frappe.get_all(
+            "Transportation Shipment",
+            filters={"name": ["in", list(names)]},
+            fields=["name", "trip_direction"],
+        )
+    }
+
+
+def _assignment_direction(item, shipment_direction: str) -> str:
+    """The direction a row is written with (WI-002077).
+
+    Taken from the card's own Transportation Shipment rather than from whatever the
+    canvas sent, which is what "auto-fetched from the Transportation Shipment card"
+    asks for. The two sides use different vocabularies - the shipment says Outward,
+    the assignment says OUTBOUND - so this is a mapping and not a fetch_from; declaring
+    one would write "Outward" into a Select that does not offer it.
+
+    A merged card carries MIXED, so every row of one merged trip agrees on it without
+    the canvas having to say so.
+
+    Falls back to the canvas value when the shipment cannot be read - a row placed by
+    hand with no shipment link still has a direction worth keeping.
+    """
+    if shipment_direction:
+        return shipment_direction
+
+    return _normalize_direction(item.get("direction", ""))
+
+
+def _with_stop_indexes(items):
+    """Number the stops of each merged trip 1, 2, 3... in chronological order (WI-002077).
+
+    A merged trip's rows have to carry an explicit position, because the manifest and the
+    per-leg capacity walk both read the run in stop order and neither can infer it from
+    table order. The canvas sends stopIndex for the multi-stop cards it already sequences;
+    a trip merged by dropping one card onto another has no index yet, so the order is
+    derived from the start times the modal produced.
+
+    Only rows sharing a trip_group are numbered. A standalone card is its own trip and its
+    index is left exactly as the canvas sent it.
+    """
+    grouped = {}
+    for item in items:
+        group = item.get("tripId")
+        if group:
+            grouped.setdefault(group, []).append(item)
+
+    for members in grouped.values():
+        if len(members) < 2:
+            continue
+        # Sorted on the start the modal computed; a member with no start sorts last so it
+        # cannot silently take the head of the run.
+        ordered = sorted(members, key=lambda i: (not i.get("start"), i.get("start") or "", i.get("cardId", "")))
+        for position, member in enumerate(ordered, start=1):
+            member["stopIndex"] = position
+
+    return items
