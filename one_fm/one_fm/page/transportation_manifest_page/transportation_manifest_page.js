@@ -186,6 +186,7 @@ function renderManifest($container, data) {
 	let shipmentReturnEmployees = {};
 	let shipmentSiteLocations = {};
 	let shipmentShiftNames = {};
+	let shipmentOwnDirections = {};
 
 	// Expose state globally for modal scripts
 	window.manifestData = data;
@@ -420,7 +421,11 @@ function renderManifest($container, data) {
 				transition: trans[i + 1],
 				tripId: v.tripId || null,
 				tripName: v.tripName || null,
-				stopIndex: v.stopIndex || 0
+				stopIndex: v.stopIndex || 0,
+				// The label's direction reads MIXED once a card is merged, which says how
+				// the card is scheduled and not whether its riders board here or leave
+				// here. The server resolves that separately (WI-002074).
+				ownDirection: shipmentOwnDirections[parsed.raw] || parsed.direction
 			});
 		});
 
@@ -446,6 +451,7 @@ function renderManifest($container, data) {
 	shipmentReturnEmployees = ROUTE_DATA.shipmentReturnEmployees ?? {};
 	shipmentSiteLocations = ROUTE_DATA.shipmentSiteLocations ?? {};
 	shipmentShiftNames = ROUTE_DATA.shipmentShiftNames ?? {};
+	shipmentOwnDirections = ROUTE_DATA.shipmentOwnDirections ?? {};
 
 	// Pre-populate checkerState from server manifest details
 	if (shipmentEmployees) {
@@ -630,13 +636,19 @@ function renderManifest($container, data) {
 				return { travelDuration: Math.round(ms / 1000) + "s", waitDuration: "0s", travelDistanceMeters: 0 };
 			}
 
+			// Every assignment row emits both a pickup and a drop-off visit; exactly one of
+			// them is the thing the driver does at that stop. Which one used to be decided
+			// by enumerating OUTBOUND and RETURN, so a MIXED card matched neither and both
+			// survived - every merged stop appeared twice, once as PICK UP and once as
+			// DROP OFF (WI-002074).
 			const actualSiteStops = [];
 			tripStops.forEach(stop => {
-				if (stop.direction === "OUTBOUND" && stop.type === "pickup") return;
-				if (stop.direction === "RETURN" && stop.type === "dropoff") return;
+				const own = stop.ownDirection || stop.direction;
+				if (own === "OUTBOUND" && stop.type === "pickup") return;
+				if (own === "RETURN" && stop.type === "dropoff") return;
 				actualSiteStops.push(stop);
 
-				if (stop.direction === "OUTBOUND" && stop.type === "dropoff") {
+				if (own === "OUTBOUND" && stop.type === "dropoff" && stop.direction !== "MIXED") {
 					const retEmps = shipmentReturnEmployees[stop.raw] || [];
 					if (retEmps.length > 0) {
 						actualSiteStops.push({
@@ -682,10 +694,11 @@ function renderManifest($container, data) {
 			const firstTimeISO = new Date(firstTime).toISOString();
 			const lastTimeISO = new Date(lastTime).toISOString();
 
+			const isMixed = isMixedRun(meta);
 			const hasOutbound = tripStops.some(s => s.direction === "OUTBOUND");
 			const hasReturn = tripStops.some(s => s.direction === "RETURN");
-			const dirClass = !hasOutbound && hasReturn ? "return" : "outbound";
-			const dirIcon = !hasOutbound && hasReturn ? "keyboard_return" : "arrow_forward";
+			const dirClass = isMixed ? "mixed" : (!hasOutbound && hasReturn ? "return" : "outbound");
+			const dirIcon = isMixed ? "sync_alt" : (!hasOutbound && hasReturn ? "keyboard_return" : "arrow_forward");
 
 			html += `
 				<div class="mfst-trip-group ${dirClass}">
@@ -724,11 +737,25 @@ function renderManifest($container, data) {
 
 			const activeStop = meta.active_stop_sequence || 0;
 			const manifestName = meta.manifest || null;
+
+			if (isMixed) {
+				// A merged run is one journey out and back, not a series of camp blocks:
+				// it leaves one origin, calls at each stop in turn dropping and
+				// collecting, and comes home. Third criterion, top to bottom:
+				//   {Origin Depart} -> {stop} -> ... -> {Final Return}
+				// The camp-by-camp walk below split that into an outbound pass and a
+				// return pass and listed every stop twice.
+				html += renderMixedItinerary({
+					orderedStops, firstTimeISO, lastTimeISO, accommodation,
+					activeStop, manifestName, vehicleLabel: pr.label, calcTransit
+				});
+			} else {
+
 			const campGroups = Object.values(boardingByCamp).sort((a, b) => a.seq - b.seq);
 
 			// Camp block: DEPART banner, then that camp's drop-off stop(s)
 			campGroups.forEach(cg => {
-				html += renderDepartCard(firstTimeISO, cg, activeStop, manifestName, pr.label, isMixedRun(meta));
+				html += renderDepartCard(firstTimeISO, cg, activeStop, manifestName, pr.label, false);
 				let prevTime = firstTimeISO;
 				(dropByCamp[cg.seq] || []).forEach(item => {
 					html += renderTransit(calcTransit(prevTime, item.stop.time));
@@ -770,6 +797,8 @@ function renderManifest($container, data) {
 
 			// RETURN card
 			html += renderReturnCard(lastTimeISO, accommodation, returningEmployees);
+
+			}
 
 			html += `</div></div>`;
 
@@ -819,21 +848,81 @@ function renderManifest($container, data) {
 		return String((meta && meta.trip_direction) || "").toLowerCase() === "mixed";
 	}
 
-	function mixedStopCount(pr) {
-		const stops = (pr && pr.route && pr.route.stops) || [];
-		return stops.length;
+	// Every stop the run actually calls at. `pr.stops` carries the depot bookends, which
+	// are not stops the driver works, and each card contributes one visit once the
+	// pickup/drop-off pair is collapsed.
+	function mixedItineraryStops(pr) {
+		return (pr.stops || []).filter(s => s.type !== "depot" && s.type !== "end" && !s.isRest);
 	}
 
-	function mixedPassengerCount(pr, shipmentEmployees) {
-		const stops = (pr && pr.route && pr.route.stops) || [];
+	function mixedStopCount(pr) {
 		const seen = new Set();
-		stops.forEach(stop => {
-			((shipmentEmployees || {})[stop.raw] || []).forEach(e => {
+		mixedItineraryStops(pr).forEach(s => seen.add(`${s.raw}|${s.type}`));
+		return seen.size;
+	}
+
+	function mixedPassengerCount(pr, employeesByShipment) {
+		const seen = new Set();
+		mixedItineraryStops(pr).forEach(stop => {
+			((employeesByShipment || {})[stop.raw] || []).forEach(e => {
 				const name = (typeof e === "object" && e !== null) ? (e.name || "") : (e || "");
 				if (name) seen.add(name);
 			});
 		});
 		return seen.size;
+	}
+
+	// ── A merged run's itinerary (WI-002074) ──
+	// One list, top to bottom, in the order the driver drives it:
+	//   {Origin Depart (Boarding)} -> {stop} -> ... -> {Final Return}
+	// Each stop is one card: an Outward card's riders are set down there, a Return card's
+	// riders join there. Two stops due at the same moment put the drop-off first, because
+	// the seats one load vacates are what the next load boards into. A stop the run comes
+	// back to is a separate card further down the list, since it is a second visit.
+	function renderMixedItinerary(o) {
+		const stops = o.orderedStops
+			.map(item => item.stop)
+			.slice()
+			.sort((a, b) => (new Date(a.time) - new Date(b.time))
+				|| ((a.type === "dropoff" ? 0 : 1) - (b.type === "dropoff" ? 0 : 1)));
+
+		const names = (stop) => {
+			const emps = stop._isVirtualReturn ? stop._virtualEmps : (shipmentEmployees[stop.raw] ?? []);
+			return emps.filter(e => (typeof e === "object" && e !== null) ? e.name : e);
+		};
+
+		// Who is on the bus when it leaves the origin: the riders it carries out to be
+		// set down. Who comes home: the riders it collects along the way.
+		const boarding = [], returning = [];
+		const boardingSeen = new Set(), returningSeen = new Set();
+		stops.forEach(stop => {
+			const into = stop.type === "dropoff" ? boarding : returning;
+			const seen = stop.type === "dropoff" ? boardingSeen : returningSeen;
+			names(stop).forEach(e => {
+				const name = (typeof e === "object" && e !== null) ? e.name : e;
+				if (name && !seen.has(name)) { seen.add(name); into.push(e); }
+			});
+		});
+
+		// Stop 1 is the origin depart, so the stops the driver calls at start at 2. The
+		// numbers follow the visit order, which is what makes a revisited stop read as a
+		// later stop rather than the same one again.
+		let html = renderDepartCard(
+			o.firstTimeISO,
+			{ seq: 1, label: o.accommodation, employees: boarding },
+			o.activeStop, o.manifestName, o.vehicleLabel, true
+		);
+
+		let prevTime = o.firstTimeISO;
+		stops.forEach((stop, i) => {
+			html += renderTransit(o.calcTransit(prevTime, stop.time));
+			html += renderSiteStopCard({ stop: stop, siteNum: i + 2 });
+			prevTime = stop.time;
+		});
+
+		html += renderTransit(o.calcTransit(prevTime, o.lastTimeISO));
+		html += renderReturnCard(o.lastTimeISO, o.accommodation, returning);
+		return html;
 	}
 
 	// Lock state is derived from the manifest's active_stop_sequence:
@@ -1639,6 +1728,9 @@ function getManifestCSS() {
 			--mfst-blue-dim: rgba(37, 99, 235, 0.08);
 			--mfst-purple: #c2410c;
 			--mfst-purple-dim: rgba(194, 65, 12, 0.06);
+			/* WI-002074: the merge colour the story names, shared with the schedule lane. */
+			--mfst-mixed: #819171;
+			--mfst-mixed-dim: rgba(129, 145, 113, 0.10);
 			--mfst-text: #111827;
 			--mfst-text-muted: #6b7280;
 			--mfst-text-dim: #9ca3af;
@@ -1712,11 +1804,15 @@ function getManifestCSS() {
 		/* ── TRIP GROUP ── */
 		.mfst-trip-group { border: 2px solid var(--mfst-blue); border-radius: 16px; margin-bottom: 16px; overflow: hidden; background: var(--mfst-bg-card); }
 		.mfst-trip-group.return { border-color: var(--mfst-purple); }
+		.mfst-trip-group.mixed { border-color: var(--mfst-mixed); }
 		.mfst-trip-header { display: flex; align-items: center; gap: 10px; padding: 14px 20px; background: var(--mfst-blue-dim); border-bottom: 1px solid rgba(37,99,235,0.1); flex-wrap: wrap; }
 		.mfst-trip-group.return .mfst-trip-header { background: var(--mfst-purple-dim); border-bottom-color: rgba(194,65,12,0.1); }
+		.mfst-trip-group.mixed .mfst-trip-header { background: var(--mfst-mixed-dim); border-bottom-color: rgba(129,145,113,0.15); }
 		.mfst-trip-header-icon { font-size: 20px; color: var(--mfst-blue); }
+		.mfst-trip-group.mixed .mfst-trip-header-icon { color: var(--mfst-mixed); }
 		.mfst-trip-group.return .mfst-trip-header-icon { color: var(--mfst-purple); }
 		.mfst-trip-header-title { font-size: 16px; font-weight: 700; color: var(--mfst-blue); }
+		.mfst-trip-group.mixed .mfst-trip-header-title { color: var(--mfst-mixed); }
 		.mfst-trip-group.return .mfst-trip-header-title { color: var(--mfst-purple); }
 		.mfst-trip-header-meta { font-size: 12px; color: var(--mfst-text-dim); margin-left: auto; }
 		.mfst-trip-body { padding: 12px 16px 16px; }

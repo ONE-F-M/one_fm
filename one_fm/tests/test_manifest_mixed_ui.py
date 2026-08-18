@@ -68,7 +68,10 @@ class TestTheAttendanceTrigger(FrappeTestCase):
 			"renderDepartCard(time, camp, activeStop, manifestName, vehicleLabel, isMixed)",
 			self.source,
 		)
-		self.assertIn("isMixedRun(meta));", self.source)
+		# The merged branch owns the origin card and passes true; the camp-by-camp branch
+		# is never a merged run and passes false, so the two rules cannot cross over.
+		self.assertIn("o.activeStop, o.manifestName, o.vehicleLabel, true", self.source)
+		self.assertIn("renderDepartCard(firstTimeISO, cg, activeStop, manifestName, pr.label, false)", self.source)
 
 
 class TestTheStopLabels(FrappeTestCase):
@@ -105,3 +108,113 @@ class TestDriveTimeConnectors(FrappeTestCase):
 
 	def test_the_gap_is_measured_between_consecutive_stops(self):
 		self.assertIn("calcTransit(prevTime,", self.source)
+
+
+class TestThePageIsGivenWhatItNeeds(FrappeTestCase):
+	"""The gap the reporter found, and the one the source assertions above could not see.
+
+	Every criterion here is gated on the page knowing the run is merged and knowing which
+	way each card's own riders travel. Neither was in the payload, so the MIXED badge never
+	rendered, the merged attendance rule never applied, and every stop was drawn twice -
+	once as PICK UP and once as DROP OFF - while the assertions on the page source all
+	passed. These check the data actually arrives.
+	"""
+
+	def setUp(self):
+		self.plan = frappe.db.get_value("Route Plan", {"status": "Active"}, "name")
+		if not self.plan:
+			self.skipTest("No Active Route Plan on this site")
+
+	def _payload(self):
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			get_manifest_data_for_plan,
+		)
+		return get_manifest_data_for_plan(self.plan)["route_data"]
+
+	def test_every_vehicle_is_told_its_run_direction(self):
+		for label, meta in self._payload()["vehicleMeta"].items():
+			with self.subTest(vehicle=label):
+				self.assertIn("trip_direction", meta)
+				self.assertIn("trip_group", meta)
+
+	def test_a_merged_vehicle_reports_mixed(self):
+		merged = frappe.get_all(
+			"Transportation Manifest", filters={"trip_direction": "Mixed"},
+			fields=["vehicle_no"], limit_page_length=1,
+		)
+		if not merged:
+			self.skipTest("No merged manifest on this site")
+
+		meta = self._payload()["vehicleMeta"].get(merged[0].vehicle_no)
+		if not meta:
+			self.skipTest("That vehicle is not on the active plan")
+
+		self.assertEqual(str(meta["trip_direction"]).lower(), "mixed")
+
+	def test_every_card_says_which_way_its_own_riders_travel(self):
+		payload = self._payload()
+		own = payload["shipmentOwnDirections"]
+
+		self.assertTrue(own, "shipmentOwnDirections is empty")
+		for label in (s["label"] for s in payload["request"]["model"]["shipments"]):
+			with self.subTest(label=label):
+				self.assertIn(label, own)
+
+	def test_that_answer_is_never_mixed(self):
+		# "Mixed" is how a card is scheduled. The page has to draw either a drop-off or a
+		# boarding, so a third value leaves it drawing both.
+		for label, direction in self._payload()["shipmentOwnDirections"].items():
+			with self.subTest(label=label):
+				self.assertIn(direction, ("OUTBOUND", "RETURN"))
+
+	def test_a_merged_card_keeps_the_direction_it_was_generated_for(self):
+		from one_fm.operations.doctype.route_plan.route_plan import _card_direction
+
+		payload = self._payload()
+		for label, direction in payload["shipmentOwnDirections"].items():
+			if not label.endswith("_MIXED"):
+				continue
+			with self.subTest(label=label):
+				self.assertIn(direction, ("OUTBOUND", "RETURN"))
+				self.assertEqual(direction, _card_direction("Mixed", direction.title().replace("Outbound", "Outward")))
+
+
+class TestTheMergedItinerary(FrappeTestCase):
+	"""AC3: one chronological list, not an outbound pass followed by a return pass."""
+
+	def setUp(self):
+		self.source = PAGE.read_text()
+
+	def test_a_merged_run_has_its_own_itinerary(self):
+		self.assertIn("function renderMixedItinerary(o) {", self.source)
+		self.assertIn("if (isMixed) {", self.source)
+
+	def test_each_card_contributes_one_stop_not_two(self):
+		# The filter used to enumerate OUTBOUND and RETURN, so MIXED matched neither and
+		# both the pickup visit and the drop-off visit survived.
+		self.assertIn("const own = stop.ownDirection || stop.direction;", self.source)
+		self.assertIn('if (own === "OUTBOUND" && stop.type === "pickup") return;', self.source)
+		self.assertIn('if (own === "RETURN" && stop.type === "dropoff") return;', self.source)
+
+	def test_a_merged_stop_does_not_also_get_a_synthetic_return(self):
+		# On a merged run the collection is a real card of its own.
+		self.assertIn('stop.direction !== "MIXED"', self.source)
+
+	def test_the_list_is_ordered_by_time_with_the_drop_off_first_on_a_tie(self):
+		self.assertIn('(a.type === "dropoff" ? 0 : 1) - (b.type === "dropoff" ? 0 : 1)', self.source)
+
+	def test_only_the_riders_being_set_down_leave_the_origin(self):
+		self.assertIn('const into = stop.type === "dropoff" ? boarding : returning;', self.source)
+
+	def test_the_badge_counts_the_stops_the_driver_works(self):
+		# It read pr.route.stops, which does not exist - so the badge would have said
+		# "0 stops · 0 passengers" even once it rendered.
+		self.assertNotIn("pr.route.stops", self.source)
+		self.assertIn("function mixedItineraryStops(pr) {", self.source)
+
+	def test_the_trip_header_is_neither_outbound_nor_return(self):
+		self.assertIn('const dirClass = isMixed ? "mixed"', self.source)
+		self.assertIn(".mfst-trip-group.mixed", self.source)
+
+	def test_the_header_uses_the_merge_colour(self):
+		self.assertIn(f"--mfst-mixed: {MERGE_COLOUR}", self.source)
