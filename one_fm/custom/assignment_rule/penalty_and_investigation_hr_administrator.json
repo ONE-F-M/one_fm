@@ -8,7 +8,7 @@
   "assign_condition": "workflow_state == \"Pending HR Administrator\"",
   "unassign_condition": "workflow_state != \"Pending HR Administrator\"",
   "close_condition": "",
-  "rule": "Based on Field",
+  "rule": "Based on Process Task",
   "field": "owner",
   "doctype": "Assignment Rule",
   "users": [],
