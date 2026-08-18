@@ -10,6 +10,7 @@ from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment impor
 	arrival_order,
 	arrival_time,
 	merge_key,
+	own_direction,
 )
 from one_fm.operations.doctype.route_plan.route_plan import (
 	MIXED_DIRECTION,
@@ -81,6 +82,18 @@ class TestArrivalOrder(FrappeTestCase):
 	def test_a_return_with_no_end_time_falls_back_to_its_start(self):
 		self.assertEqual(arrival_time(self._card("TS-x", 9 * 3600, "Return", None)), 9 * 3600)
 
+	def test_an_already_merged_collection_is_still_reached_at_its_shift_end(self):
+		# Adding a third card re-previews cards that are already Mixed. Reading the live
+		# direction put the merged collection back at the head of the run and relabelled
+		# it a drop-off, so the whole itinerary came out wrong on the second merge.
+		card = frappe._dict(
+			name="TS-0306", start_time=6 * 3600, end_time=14 * 3600,
+			trip_direction=MIXED, pre_merge_trip_direction="Return",
+		)
+
+		self.assertEqual(arrival_time(card), 14 * 3600)
+
+
 	def test_cards_order_by_scheduled_arrival(self):
 		cards = [self._card("TS-2", 8 * 3600), self._card("TS-1", 5 * 3600)]
 
@@ -96,6 +109,35 @@ class TestArrivalOrder(FrappeTestCase):
 		cards = [self._card("TS-9", 6 * 3600), self._card("TS-3", 6 * 3600)]
 
 		self.assertEqual([c.name for c in sorted(cards, key=arrival_order)], ["TS-3", "TS-9"])
+
+
+class TestTheShipmentAnswersWhichWayItTravels(FrappeTestCase):
+	"""One answer, shared by the modal and the save."""
+
+	def _card(self, trip_direction, pre_merge=None):
+		return frappe._dict(trip_direction=trip_direction, pre_merge_trip_direction=pre_merge)
+
+	def test_an_unmerged_card_answers_for_itself(self):
+		self.assertEqual(own_direction(self._card("Outward")), "OUTBOUND")
+		self.assertEqual(own_direction(self._card("Return")), "RETURN")
+
+	def test_a_merged_card_answers_from_what_the_merge_recorded(self):
+		self.assertEqual(own_direction(self._card(MIXED, "Return")), "RETURN")
+		self.assertEqual(own_direction(self._card(MIXED, "Outward")), "OUTBOUND")
+
+	def test_a_merged_card_never_answers_mixed(self):
+		# "Mixed" is how a card is scheduled, not a way its riders can travel; the leg
+		# walk has to be told board or alight.
+		for pre in ("Outward", "Return", None):
+			with self.subTest(pre=pre):
+				self.assertIn(own_direction(self._card(MIXED, pre)), ("OUTBOUND", "RETURN"))
+
+	def test_the_modal_and_the_save_share_the_rule(self):
+		from one_fm.operations.doctype.route_plan.route_plan import _card_direction
+
+		for live, pre in ((MIXED, "Return"), (MIXED, None), ("Outward", None), ("Return", None)):
+			with self.subTest(live=live, pre=pre):
+				self.assertEqual(own_direction(self._card(live, pre)), _card_direction(live, pre))
 
 
 class TestDirectionVocabularies(FrappeTestCase):

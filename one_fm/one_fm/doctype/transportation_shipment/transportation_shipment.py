@@ -192,6 +192,20 @@ def merge_key(shipment_names) -> str:
 	return f"MIX-{digest[:12]}"
 
 
+def own_direction(shipment) -> str:
+	"""OUTBOUND or RETURN for one card's own riders, whatever a merge did to the card.
+
+	`trip_direction` stops answering this the moment the card is merged - it reads Mixed,
+	which says how the card is *scheduled*, not which way its riders travel.
+	`pre_merge_trip_direction` is the record of the journey the card was generated for.
+	The same rule the Route Plan save applies, so the modal and the save cannot disagree
+	about who is boarding and who is getting off.
+	"""
+	from one_fm.operations.doctype.route_plan.route_plan import _card_direction
+
+	return _card_direction(shipment.trip_direction, shipment.get("pre_merge_trip_direction"))
+
+
 def arrival_time(shipment):
 	"""When the vehicle reaches this card, as seconds past midnight.
 
@@ -203,7 +217,7 @@ def arrival_time(shipment):
 	the lane.
 	"""
 	start = _seconds_into_day(shipment.start_time)
-	if not (shipment.trip_direction or "").strip().upper().startswith("RET"):
+	if own_direction(shipment) != "RETURN":
 		return start
 
 	end = _seconds_into_day(shipment.end_time)
@@ -224,7 +238,7 @@ def arrival_order(shipment):
 	remaining ties so the order is stable across saves.
 	"""
 	arrival = arrival_time(shipment)
-	boards = (shipment.trip_direction or "").strip().upper().startswith("RET")
+	boards = own_direction(shipment) == "RETURN"
 	return (arrival is None, arrival or 0, boards, shipment.name)
 
 
@@ -362,7 +376,7 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None) -> dict:
 
 	stops, clock = [], None
 	for index, doc in enumerate(docs, start=1):
-		boards = (doc.trip_direction or "").strip().upper().startswith("RET")
+		boards = own_direction(doc) == "RETURN"
 		adjustment = timings.get(doc.name) or {}
 		transit = _minutes(adjustment.get("transit_minutes"))
 		buffer_minutes = _minutes(adjustment.get("buffer_minutes"))
