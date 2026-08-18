@@ -192,14 +192,40 @@ def merge_key(shipment_names) -> str:
 	return f"MIX-{digest[:12]}"
 
 
+def arrival_time(shipment):
+	"""When the vehicle reaches this card, as seconds past midnight.
+
+	An outward card is a drop-off, so the vehicle arrives by the shift's start time. A
+	return card is a collection, which happens when the shift *ends* - `start_time` on a
+	return shipment is the beginning of the shift being collected from, not a journey
+	time. This mirrors the canvas, which draws an outward card at start_time and a
+	return card at end_time, so the itinerary reads in the order the blocks sit in on
+	the lane.
+	"""
+	start = _seconds_into_day(shipment.start_time)
+	if not (shipment.trip_direction or "").strip().upper().startswith("RET"):
+		return start
+
+	end = _seconds_into_day(shipment.end_time)
+	if end is None:
+		return start
+	if start is not None and end <= start:
+		end += 24 * 3600     # overnight shift: the collection falls the next morning
+	return end
+
+
 def arrival_order(shipment):
 	"""Sort key placing shipments in the order the vehicle reaches them.
 
-	The scheduled arrival is the shipment's own start time; a card without one sorts
-	last rather than first, so an unscheduled card cannot silently claim the head of
-	the itinerary. `name` breaks ties so the order is stable across saves.
+	A card with no time to sort on goes last rather than first, so an unscheduled card
+	cannot silently claim the head of the itinerary. Two cards due at the same moment are
+	served drop-off first: the seats one load vacates are what the next load boards into,
+	and collecting first reports an overload that never happens. `name` breaks the
+	remaining ties so the order is stable across saves.
 	"""
-	return (shipment.start_time is None, shipment.start_time, shipment.name)
+	arrival = arrival_time(shipment)
+	boards = (shipment.trip_direction or "").strip().upper().startswith("RET")
+	return (arrival is None, arrival or 0, boards, shipment.name)
 
 
 @frappe.whitelist()
@@ -343,7 +369,7 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None) -> dict:
 
 		# The first stop anchors the run on its own scheduled time; every later stop is
 		# driven from the one before it, so an edit high up the run moves everything after.
-		anchor = _seconds_into_day(doc.start_time)
+		anchor = arrival_time(doc)
 		arrival = anchor if clock is None else clock + transit * 60
 		if arrival is None:
 			arrival = 0

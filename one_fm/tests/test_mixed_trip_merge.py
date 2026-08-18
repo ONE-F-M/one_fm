@@ -8,6 +8,7 @@ from frappe.tests.utils import FrappeTestCase
 from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
 	MIXED,
 	arrival_order,
+	arrival_time,
 	merge_key,
 )
 from one_fm.operations.doctype.route_plan.route_plan import (
@@ -38,8 +39,43 @@ class TestMergeKey(FrappeTestCase):
 
 
 class TestArrivalOrder(FrappeTestCase):
-	def _card(self, name, start_time):
-		return frappe._dict(name=name, start_time=start_time)
+	def _card(self, name, start_time, trip_direction=None, end_time=None):
+		return frappe._dict(
+			name=name, start_time=start_time, end_time=end_time, trip_direction=trip_direction
+		)
+
+	def test_a_return_card_is_reached_when_its_shift_ends(self):
+		# The reported bug: a 06:00-14:00 return shipment is a 14:00 collection, but sorting
+		# on start_time put it at the head of the run. The modal then walked "board 5, then
+		# drop 2", peaked at 7 on a 6-seat van and refused a merge that fits.
+		self.assertEqual(
+			arrival_time(self._card("TS-0306", 6 * 3600, "Return", 14 * 3600)), 14 * 3600
+		)
+
+	def test_an_outward_card_is_reached_by_its_shift_start(self):
+		self.assertEqual(
+			arrival_time(self._card("TS-0659", 14 * 3600, "Outward", 0)), 14 * 3600
+		)
+
+	def test_the_drop_off_comes_before_the_collection_it_shares_a_time_with(self):
+		cards = [
+			self._card("TS-0306", 6 * 3600, "Return", 14 * 3600),
+			self._card("TS-0659", 14 * 3600, "Outward", 0),
+		]
+
+		self.assertEqual(
+			[c.name for c in sorted(cards, key=arrival_order)], ["TS-0659", "TS-0306"]
+		)
+
+	def test_an_overnight_collection_falls_the_next_morning(self):
+		# A 22:00-06:00 return is collected at 06:00 the following day, not before the
+		# shift it is collecting from ever started.
+		self.assertEqual(
+			arrival_time(self._card("TS-0048", 22 * 3600, "Return", 6 * 3600)), 30 * 3600
+		)
+
+	def test_a_return_with_no_end_time_falls_back_to_its_start(self):
+		self.assertEqual(arrival_time(self._card("TS-x", 9 * 3600, "Return", None)), 9 * 3600)
 
 	def test_cards_order_by_scheduled_arrival(self):
 		cards = [self._card("TS-2", 8 * 3600), self._card("TS-1", 5 * 3600)]
