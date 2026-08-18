@@ -264,3 +264,76 @@ class TestTheMergedBlockPaintsMixed(FrappeTestCase):
 	def test_both_block_shapes_still_show_conflict_and_overcapacity(self):
 		self.assertIn("conflict: entry.conflict", self.source)
 		self.assertIn("overcapacity: entry.overcapacity", self.source)
+
+
+class TestTheLaneMeasuresAMergedRunByItsPeak(FrappeTestCase):
+	"""The regression the reporter hit: a merged block painted purple for overcapacity.
+
+	The browser keeps its own copy of the logical-trip walk for the lane colours, and it
+	was still summing headcounts - 2 dropped plus 5 collected read as 7 on a 6-seat van,
+	so a run that never carries more than 5 was flagged over capacity.
+	"""
+
+	def setUp(self):
+		self.source = CANVAS.read_text()
+
+	def test_the_lane_walks_a_merged_trip_leg_by_leg(self):
+		self.assertIn("tripOccupancy(trip) {", self.source)
+		self.assertIn("if (trip.direction !== 'MIXED') return trip.headcount;", self.source)
+
+	def test_the_overcapacity_check_reads_the_occupancy(self):
+		self.assertNotIn("reduce((sum, t) => sum + t.headcount, 0)", self.source)
+		self.assertIn("reduce((sum, t) => sum + t.occupancy, 0)", self.source)
+
+	def test_alighting_is_applied_before_boarding(self):
+		self.assertIn("boards(s) ? (s.headcount || 0) : -(s.headcount || 0)", self.source)
+
+	def test_a_stop_knows_which_way_its_own_riders_travel(self):
+		# item.direction reads MIXED for every stop of a merged run, so the per-stop
+		# answer has to come from the card.
+		self.assertIn("cardOwnDirection(item) {", self.source)
+		self.assertIn("card.own_direction", self.source)
+
+	def test_the_server_sends_that_direction_with_every_card(self):
+		card_builder = pathlib.Path(frappe.get_app_path(
+			"one_fm", "one_fm", "page", "transportation_schedule", "transportation_schedule.py"
+		)).read_text()
+
+		self.assertIn('"own_direction":         own_direction', card_builder)
+		self.assertIn("_card_direction(s.trip_direction, s.pre_merge_trip_direction)", card_builder)
+
+	def test_the_lane_and_the_save_share_one_rule(self):
+		# tripOccupancy mirrors _trip_peak; if they drift the operator is told a run fits
+		# and the save refuses it, or the reverse.
+		from one_fm.operations.doctype.route_plan.route_plan import _trip_peak
+
+		self.assertIsNotNone(_trip_peak)
+		self.assertIn("Mirrors _trip_peak on the", self.source)
+
+
+class TestAMergedRunIsNamedMixed(FrappeTestCase):
+	"""Every ad-hoc `=== 'OUTBOUND' ? ... : 'Return'` labelled a merged run Return."""
+
+	def setUp(self):
+		self.source = CANVAS.read_text()
+
+	def test_there_is_one_place_that_names_a_direction(self):
+		self.assertIn("dirName(direction) {", self.source)
+		self.assertIn("dirLabel(direction) {", self.source)
+		self.assertIn("dirBadgeClass(direction) {", self.source)
+
+	def test_mixed_is_named_rather_than_defaulted(self):
+		self.assertIn("if (direction === 'MIXED') return 'Mixed';", self.source)
+
+	def test_the_details_badge_asks_for_the_label(self):
+		self.assertIn("dirLabel(selectedItem.direction)", self.source)
+		self.assertIn("dirBadgeClass(selectedItem.direction)", self.source)
+
+	def test_the_old_inline_badge_rule_is_gone(self):
+		self.assertNotIn("selectedItem.direction === 'OUTBOUND' ? 'rp-dir-out' : 'rp-dir-ret'", self.source)
+
+	def test_the_badge_is_styled_in_the_merge_colour(self):
+		self.assertIn(".rp-dir-mixed { background: var(--rp-color-mixed-container)", self.source)
+
+	def test_the_dark_theme_covers_the_badge_too(self):
+		self.assertIn("rp-dark .rp-dir-mixed", self.source)

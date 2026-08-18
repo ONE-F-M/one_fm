@@ -1347,15 +1347,51 @@ function mountRoutePlannerApp(wrapper, data) {
                         tripsMap[key] = {
                             start: new Date(item.start).getTime(),
                             end: new Date(item.end).getTime(),
-                            headcount: item.headcount || 0
+                            headcount: item.headcount || 0,
+                            direction: item.direction,
+                            stops: [item]
                         };
                     } else {
                         tripsMap[key].start = Math.min(tripsMap[key].start, new Date(item.start).getTime());
                         tripsMap[key].end = Math.max(tripsMap[key].end, new Date(item.end).getTime());
                         tripsMap[key].headcount += (item.headcount || 0);
+                        tripsMap[key].stops.push(item);
                     }
                 });
-                return Object.values(tripsMap);
+
+                // A merged trip's stops are not all aboard at once, so its headcount is a
+                // total the bus is never asked to hold. Summing it painted a merged block
+                // purple for overcapacity on a run that fits (WI-002078).
+                const trips = Object.values(tripsMap);
+                trips.forEach(t => { t.occupancy = this.tripOccupancy(t); });
+                return trips;
+            },
+
+            // The most passengers one trip ever has aboard. Mirrors _trip_peak on the
+            // server so the lane and the save agree about whether a run fits.
+            tripOccupancy(trip) {
+                if (trip.direction !== 'MIXED') return trip.headcount;
+
+                const stops = [...trip.stops].sort((a, b) => (a.stopIndex || 0) - (b.stopIndex || 0));
+                const boards = (item) => this.cardOwnDirection(item) === 'RETURN';
+
+                // Everyone the trip carries out of the camp is aboard before stop 1.
+                let onBoard = stops.reduce((n, s) => n + (boards(s) ? 0 : (s.headcount || 0)), 0);
+                let peak = onBoard;
+                stops.forEach(s => {
+                    // Alighting first: the seats a load vacates are what the next boards into.
+                    onBoard += boards(s) ? (s.headcount || 0) : -(s.headcount || 0);
+                    peak = Math.max(peak, onBoard);
+                });
+                return peak;
+            },
+
+            // Which way one stop's own riders travel. A merged card reads MIXED, so the
+            // answer comes from the direction the merge recorded (own_direction).
+            cardOwnDirection(item) {
+                const card = this.planData.shipment_cards.find(c => c.id === item.cardId);
+                const own = card && card.own_direction;
+                return own || (item.direction === 'RETURN' ? 'RETURN' : 'OUTBOUND');
             },
 
             // How many passengers a vehicle may carry — its Max Passenger Capacity,
@@ -1398,7 +1434,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 return this._getLogicalTrips(vehicleId)
                     .filter(t => t.start < wEnd && t.end > wStart)  // overlaps
-                    .reduce((sum, t) => sum + t.headcount, 0);
+                    .reduce((sum, t) => sum + t.occupancy, 0);
             },
 
             // ─ Place card + direction picker ─────────────────────────────
@@ -1676,13 +1712,32 @@ function mountRoutePlannerApp(wrapper, data) {
                                 .filter(t => {
                                     return t.start < iE && t.end > iS;
                                 })
-                                .reduce((sum, t) => sum + t.headcount, 0);
+                                .reduce((sum, t) => sum + t.occupancy, 0);
                             if (load > this.passengerSeats(v)) {
                                 item.overcapacity = true;
                             }
                         });
                     }
                 });
+            },
+
+            // ── Naming a direction ──
+            // Kept in one place: every ad-hoc `=== 'OUTBOUND' ? ... : 'Return'` answered
+            // "not outbound, so return" and quietly labelled a merged run Return
+            // (WI-002078).
+            dirName(direction) {
+                if (direction === 'MIXED') return 'Mixed';
+                return direction === 'RETURN' ? 'Return' : 'Outbound';
+            },
+
+            dirLabel(direction) {
+                if (direction === 'MIXED') return '\u21c4 Mixed';
+                return direction === 'RETURN' ? '\u2190 Return' : '\u2192 Outbound';
+            },
+
+            dirBadgeClass(direction) {
+                if (direction === 'MIXED') return 'rp-dir-mixed';
+                return direction === 'RETURN' ? 'rp-dir-ret' : 'rp-dir-out';
             },
 
             // ─ Block interaction ────────────────────────────────────────────
@@ -1888,7 +1943,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 this.persistAssignments();
 
                 frappe.show_alert({
-                    message: `${dir === 'OUTBOUND' ? 'Outbound (→)' : 'Return (←)'} removed`,
+                    message: `${this.dirLabel(dir)} removed`,
                     indicator: 'orange'
                 }, 3);
             },
@@ -1898,7 +1953,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 const item = this.selectedItem;
                 const card = this.selectedCard;
                 const currentVehicle = this.planData.vehicles.find(v => v.id === item.vehicleId);
-                const dirLabel = item.direction === 'OUTBOUND' ? 'Outbound' : 'Return';
+                const dirLabel = this.dirName(item.direction);
 
                 // Build options for the vehicle selector (exclude current vehicle)
                 const vehicleOpts = this.planData.vehicles
@@ -1941,7 +1996,14 @@ function mountRoutePlannerApp(wrapper, data) {
                             ? self.swimItems.filter(i =>
                                 i.tripId === item.tripId && i.direction === item.direction)
                             : [item];
-                        const movingHeadcount = journeyItems.reduce((sum, i) => sum + (i.headcount || 0), 0);
+                        // What the moving journey actually needs on the target bus. A
+                        // merged run's stops are not all aboard at once, so its total is
+                        // not what has to fit (WI-002078).
+                        const movingHeadcount = self.tripOccupancy({
+                            direction: item.direction,
+                            headcount: journeyItems.reduce((sum, i) => sum + (i.headcount || 0), 0),
+                            stops: journeyItems
+                        });
 
                         // Seat capacity check on the target vehicle across the journey's
                         // combined time window. The selector excludes the current vehicle,
@@ -1951,7 +2013,7 @@ function mountRoutePlannerApp(wrapper, data) {
                         const logicalTrips = self._getLogicalTrips(targetVehicle.id);
                         const existingLoad = logicalTrips
                             .filter(t => t.start < blockEnd && t.end > blockStart)
-                            .reduce((sum, t) => sum + t.headcount, 0);
+                            .reduce((sum, t) => sum + t.occupancy, 0);
 
                         if (existingLoad + movingHeadcount > self.passengerSeats(targetVehicle)) {
                             const shell = document.getElementById('rp-shell');
@@ -3558,8 +3620,8 @@ function injectRPVueTemplate() {
 
           <!-- Direction + Vehicle badges -->
           <div class="rp-detail-badges">
-            <span :class="['rp-dir-badge', selectedItem.direction === 'OUTBOUND' ? 'rp-dir-out' : 'rp-dir-ret']">
-              {{ selectedItem.direction === 'OUTBOUND' ? '\u2192 Outbound' : '\u2190 Return' }}
+            <span :class="['rp-dir-badge', dirBadgeClass(selectedItem.direction)]">
+              {{ dirLabel(selectedItem.direction) }}
             </span>
             <span v-if="selectedItem.tripName" class="rp-dir-badge" style="background:#e8f5e9;color:#2e7d32">
               {{ selectedItem.tripName }}
@@ -4361,6 +4423,7 @@ function injectRPStyles() {
         .rp-dir-badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 4px; display: inline-block; }
         .rp-dir-out   { background: var(--rp-color-outbound-container); color: var(--rp-color-outbound); }
         .rp-dir-ret   { background: var(--rp-color-return-container); color: var(--rp-color-return); }
+        .rp-dir-mixed { background: var(--rp-color-mixed-container); color: var(--rp-color-mixed); }
         .rp-dir-trip  { background: var(--rp-color-trip-container); color: var(--rp-color-trip-chain); }
 
         /* ══════════════════════════════════════════════════════════════
@@ -4609,6 +4672,7 @@ function injectRPStyles() {
         /* ── Dark mode: Direction badges ── */
         #rp-shell.rp-dark .rp-dir-out { background: #1a3a5c; color: #93c5fd; }
         #rp-shell.rp-dark .rp-dir-ret { background: #4a2800; color: #fdba74; }
+        #rp-shell.rp-dark .rp-dir-mixed { background: #2b332b; color: #b7c7b7; }
         #rp-shell.rp-dark .rp-dir-trip { background: #2d1f4e; color: #ce93d8; }
 
         /* ── Dark mode: Stop number badges ── */
