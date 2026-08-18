@@ -523,7 +523,6 @@ one_fm.patches.v15_0.add_bonus_request_line_manager_workflow #2026-07-23
 one_fm.patches.v15_0.add_bonus_request_line_manager_assignment_rule #2026-07-23
 one_fm.patches.v15_0.add_leave_application_compensatory_leave_request_field #2026-07-25
 
-one_fm.patches.v15_0.add_roster_double_shift_ot_checker_assignment_rules #2026-07-24
 one_fm.patches.v15_0.backfill_visa_processing_reference_type #2026-08-09
 one_fm.patches.v15_0.configure_agency_process_completion_values #2026-07-24
 one_fm.patches.v15_0.set_arrival_deployment_workflow_state_permlevel #2026-07-24
@@ -541,7 +540,7 @@ one_fm.patches.v15_0.seed_app_services
 one_fm.patches.v15_0.set_candidate_title_fields
 one_fm.patches.v15_0.update_attendance_check
 one_fm.patches.v15_0.update_employee_and_user_references
-one_fm.patches.v15_0.send_work_item_notify_assignee_demo_email #2026-08-13
+one_fm.patches.v15_0.send_work_item_notify_assignee_demo_email #2026-08-18
 one_fm.patches.v15_0.mark_present_auto_attendance_missed_checkin_jul13
 one_fm.patches.v15_0.add_employee_schedule_suspension_workflow #2026-07-24
 one_fm.patches.v15_0.add_accommodation_leave_movement_assignment_rules #2026-07-30
@@ -596,7 +595,7 @@ one_fm.patches.v15_0.update_sales_invoice_property_setter
 one_fm.patches.v15_0.add_attendance_event_staff_field #2026-08-01
 one_fm.patches.v15_0.update_penalty_and_investigation_workflow #2026-08-02 rerun for employee_response
 one_fm.patches.v15_0.update_penalty_assignment_rules_process_task_based
-one_fm.patches.v15_0.update_visa_request_workflow_and_rules
+one_fm.patches.v15_0.update_visa_request_workflow_and_rules #2026-08-18 WI-001773 rerun after the sprint revert restored only the patch
 one_fm.patches.v15_0.add_leave_application_resumption_contact_fields #1
 one_fm.patches.v15_0.approve_attendance_check_jul11_2026 #2026-08-16
 one_fm.patches.v15_0.fix_resignation_v2_stale_migration #2026-08-17

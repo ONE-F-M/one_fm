@@ -2,7 +2,14 @@ import frappe
 from frappe import _
 
 SENDER = "notifications@one-fm.com"
-RECIPIENT = "notifications@one-fm.com"
+# AMP for Email sender-registration addresses (per
+# https://amp.dev/documentation/guides-and-tutorials/start/email_sender_distribution)
+# — Gmail and Yahoo/Verizon Media require a production-ready AMP email sent
+# directly to these addresses as part of allowlisting one-fm.com as a sender.
+RECIPIENTS = [
+	"ampforemail.whitelisting@gmail.com",
+	"ampverification@yahoo.com",
+]
 
 # Real, live BPMN Process Instance task for WI-001663's "Start Work" step —
 # not a synthetic demo. Confirmed via both the instance's `workflow_state`
@@ -17,20 +24,19 @@ WORK_ITEM_ID = "WI-001663"
 WORK_ITEM_TITLE = "Refactor AI Model, AI Provider and AI Model pricing doctype"
 
 # The task's real assignee — the token must be issued for this user (not
-# RECIPIENT) since handle_amp_action checks it against the task's actual
-# assignment. RECIPIENT is only where this copy of the email is delivered
-# for inspection (notifications@one-fm.com itself, to verify the MIME/CORS
-# mechanics) — not who's expected to click it.
+# RECIPIENTS) since handle_amp_action checks it against the task's actual
+# assignment. RECIPIENTS is only where this AMP submission is delivered for
+# Gmail's/Yahoo's allowlisting review — not who's expected to click it.
 ASSIGNEE_USER = "k.sharma@one-fm.com"
 
 
 def execute():
 	"""One-time trigger: send a real "Start Work" notification email — tied
 	to the actual live BPMN task for WI-001663 — from
-	notifications@one-fm.com to notifications@one-fm.com itself (a
-	self-addressed copy, to inspect the MIME structure and CORS headers
-	directly via "Show original" before pointing this at a real assignee),
-	through the actual production sending pipeline.
+	notifications@one-fm.com to Gmail's and Yahoo/Verizon Media's AMP for
+	Email sender-registration addresses, as the "production-ready AMP email"
+	submission required by their allowlisting process, through the actual
+	production sending pipeline.
 
 	The email's "Start Work" action is a genuine one-click AMP action tied
 	to a real, live BPMN Process Instance task — not a static registry
@@ -45,7 +51,8 @@ def execute():
 	calls `complete_task` on the real Process Instance, genuinely advancing
 	it — a deliberate, confirmed side effect for this specific task, for
 	whoever actually clicks it (the token is issued to ASSIGNEE_USER, not
-	RECIPIENT).
+	RECIPIENTS — so a reviewer at Gmail/Yahoo clicking "Start Work" during
+	their allowlisting review would genuinely complete this production task).
 
 	This runs automatically, once, the first time `bench migrate` executes
 	on any site with this patch present (Frappe's Patch Log ensures it
@@ -131,7 +138,7 @@ def send():
 
 	frappe.flags.amp_html = amp_html
 	email_queue = frappe.sendmail(
-		recipients=[RECIPIENT],
+		recipients=RECIPIENTS,
 		sender=SENDER,
 		subject=title,
 		message=html_body,
