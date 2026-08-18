@@ -1506,6 +1506,22 @@ def get_manifest_data_for_plan(plan_name: str):
 			enriched.append(emp_copy)
 		return enriched
 
+	# Which way each card's own riders travel. A merged card is labelled MIXED, so the
+	# label can no longer say whether its riders board at the stop or leave there - and
+	# the manifest page decides drop-off vs pick-up from exactly that (WI-002074).
+	ship_own_dir = {}
+	_own_dir_by_shipment = {}
+	_ship_names = [r.transportation_shipment for r in doc.assignments if r.transportation_shipment]
+	if _ship_names:
+		for _r in frappe.get_all(
+			"Transportation Shipment",
+			filters={"name": ["in", list(set(_ship_names))]},
+			fields=["name", "trip_direction", "pre_merge_trip_direction"],
+		):
+			_own_dir_by_shipment[_r.name] = _card_direction(
+				_r.trip_direction, _r.pre_merge_trip_direction
+			)
+
 	# Process assignments to build shipments
 	for row in doc.assignments:
 		dir_key = f"{row.card_id}_{row.direction}"
@@ -1537,6 +1553,9 @@ def get_manifest_data_for_plan(plan_name: str):
 			ship_site[lbl] = row.stop_location or ""
 
 		ship_shift[lbl] = row.shift or ""
+		ship_own_dir[lbl] = _own_dir_by_shipment.get(
+			row.transportation_shipment
+		) or _normalize_direction(row.direction)
 		c_map[dir_key] = {"lbl": lbl, "idx": idx}
 
 	# ── Build vehicles and routes ──
@@ -1574,6 +1593,11 @@ def get_manifest_data_for_plan(plan_name: str):
 			# active_stop_sequence drives which pickup camp is currently unlocked.
 			"manifest": _mf.name if (_mf and not _mf.is_new()) else None,
 			"active_stop_sequence": int(_mf.active_stop_sequence or 0) if _mf else 0,
+			# WI-002074: the manifest page badges a merged run and reads its whole
+			# itinerary differently. Without these it had no way to tell, so the MIXED
+			# badge never rendered and the merged-run attendance rule never applied.
+			"trip_direction": (_mf.trip_direction or "") if _mf else "",
+			"trip_group": (_mf.trip_group or "") if _mf else "",
 		}
 
 		# Sort items: trip stops by stopIndex, solo by start_time
@@ -1701,6 +1725,7 @@ def get_manifest_data_for_plan(plan_name: str):
 			"shipmentReturnEmployees": ship_return_emp,
 			"shipmentSiteLocations": ship_site,
 			"shipmentShiftNames": ship_shift,
+			"shipmentOwnDirections": ship_own_dir,
 			"vehicleMeta": v_meta
 		}
 	}
