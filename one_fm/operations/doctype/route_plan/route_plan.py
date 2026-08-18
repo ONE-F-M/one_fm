@@ -15,6 +15,9 @@ _DATE_MAX = datetime.date.max
 _TIME_START = datetime.timedelta(0)
 _TIME_END = datetime.timedelta(days=1)
 
+# The direction a merged trip carries once cards are combined (WI-002071).
+MIXED_DIRECTION = "MIXED"
+
 
 class RoutePlan(Document):
 	def validate(self):
@@ -265,7 +268,12 @@ class RoutePlan(Document):
 			# it is, naming the seat shortfall (MA4-13). Ordered so the reported
 			# trip is stable across saves.
 			for trip in sorted(vehicle_trips, key=lambda t: t.key):
-				if trip.headcount > limit:
+				if trip.direction == MIXED_DIRECTION:
+					# A merged trip boards and alights along the way, so its stops do
+					# not all ride together and summing them would refuse a load the
+					# bus can actually carry (WI-002071).
+					self._validate_mixed_trip_legs(trip, limit)
+				elif trip.headcount > limit:
 					self._throw_capacity_exceeded(vehicle, trip.direction, trip.headcount, limit)
 
 			concurrent = _peak_concurrent_headcount(vehicle_trips)
@@ -313,9 +321,13 @@ class RoutePlan(Document):
 					end=end,
 					live_from=live_from,
 					live_to=live_to,
+					# Kept so a merged trip can be walked stop by stop (WI-002071);
+					# the summed headcount above is meaningless for one.
+					rows=[row],
 				)
 				continue
 
+			trip.rows.append(row)
 			trip.headcount += cint(row.headcount)
 			trip.start = min(trip.start, start)
 			trip.end = max(trip.end, end)
@@ -323,6 +335,57 @@ class RoutePlan(Document):
 			trip.live_to = max(filter(None, [trip.live_to, live_to]), default=None)
 
 		return list(trips.values())
+
+	def _validate_mixed_trip_legs(self, trip, limit):
+		"""Hold every leg of a merged trip to the seat count (WI-002071).
+
+		A Mixed trip is one vehicle run that both drops off and picks up, so its stops
+		do not all ride together: workers dropped at Stop 1 are off the bus before the
+		Stop 2 boarders get on. Summing the stops - which is right for a single-direction
+		trip, where every card's riders are aboard at once - would refuse a load the bus
+		can carry.
+
+		Occupancy is walked stop by stop instead. Each row's own shipment says which way
+		its riders travel: an Outward card's riders board at the camp and leave at that
+		card's stop, a Return card's riders join at that card's stop and stay aboard to
+		the camp. So the bus leaves the camp carrying every Outward rider, and each stop
+		in turn sheds its Outward riders and takes on its Return ones.
+
+		Disembarking is applied before boarding at each stop, per the third criterion: at
+		a stop where both happen the seats being vacated are available to the people
+		getting on, and adding first would report an overload that never occurs.
+
+		The peak across the legs is what has to fit, not the total that ever rode.
+		"""
+		by_index = sorted(trip.rows, key=lambda row: (cint(row.stop_index), row.name or ""))
+		directions = _shipment_directions([row.transportation_shipment for row in by_index])
+
+		def is_return(row):
+			return directions.get(row.transportation_shipment) == "RETURN"
+
+		# Everyone the trip carries out of the camp is aboard before the first stop.
+		occupancy = sum(cint(row.headcount) for row in by_index if not is_return(row))
+		peak = occupancy
+		worst_leg = 1
+
+		for leg, row in enumerate(by_index, start=1):
+			if is_return(row):
+				occupancy += cint(row.headcount)
+			else:
+				occupancy -= cint(row.headcount)
+
+			if occupancy > peak:
+				peak, worst_leg = occupancy, leg
+
+		if peak > limit:
+			frappe.throw(
+				_(
+					"Capacity Exceeded on leg {0}: {1} passengers against a vehicle limit "
+					"of {2}. A merged trip is measured leg by leg, so this is the busiest "
+					"point of the run rather than everyone it carries in total."
+				).format(worst_leg, peak, limit),
+				title=_("{0}: Vehicle Capacity Exceeded").format(trip.vehicle),
+			)
 
 	def _throw_capacity_exceeded(self, vehicle, direction, total_passengers, limit):
 		"""Raise the overloading block with the exact seat shortfall (MA4-13 AC4)."""
@@ -563,3 +626,32 @@ def _format_lock_until(end_time) -> str:
 	hours = (total // 3600) % 24
 	minutes = (total % 3600) // 60
 	return datetime.time(hours, minutes).strftime("%I:%M %p")
+
+
+def _shipment_directions(shipment_names) -> dict:
+	"""{shipment: OUTBOUND|RETURN|MIXED} for the cards on a merged trip.
+
+	Read from the shipments rather than the assignment rows: once merged, every row
+	carries direction MIXED, so the row can no longer say which way its own riders
+	travel. The shipment still can.
+	"""
+	names = [name for name in shipment_names if name]
+	if not names:
+		return {}
+
+	return {
+		row.name: _normalize_shipment_direction(row.trip_direction)
+		for row in frappe.get_all(
+			"Transportation Shipment",
+			filters={"name": ["in", list(set(names))]},
+			fields=["name", "trip_direction"],
+		)
+	}
+
+
+def _normalize_shipment_direction(value: str) -> str:
+	"""Shipment vocabulary (Outward/Return/Mixed) as an assignment-side flag."""
+	flag = (value or "").strip().upper()
+	if flag.startswith("MIX"):
+		return MIXED_DIRECTION
+	return "RETURN" if flag.startswith("RET") else "OUTBOUND"
