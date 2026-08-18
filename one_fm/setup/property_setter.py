@@ -74,6 +74,7 @@ from one_fm.custom.property_setter.warehouse import get_warehouse_properties
 from one_fm.custom.property_setter.job_offer import get_job_offer_properties
 from one_fm.custom.property_setter.employee import get_employee_properties
 from one_fm.custom.property_setter.quality_feedback_template import get_quality_feedback_template_properties
+from one_fm.custom.property_setter.process_creation_request import get_process_creation_request_properties
 
 
 def get_field_properties():
@@ -153,5 +154,6 @@ def get_field_properties():
 	field_properties.extend(get_warehouse_properties())
 	field_properties.extend(get_user_properties())
 	field_properties.extend(get_quality_feedback_template_properties())
+	field_properties.extend(get_process_creation_request_properties())
 
 	return field_properties
