@@ -4,6 +4,7 @@ from frappe import _
 from frappe.utils import cint
 from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
 from one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log import get_handover_windows
+from one_fm.operations.doctype.route_plan.route_plan import _card_direction
 from one_fm.overrides.vehicle import passenger_capacity
 
 PICKUP_BUFFER = 10             # minutes
@@ -854,6 +855,9 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
             "operations_site", "stop_location", "headcount", "trip_direction",
             "routing_type_badge", "start_time", "end_time", "from_date", "to_date",
             "source_doctype", "source_docname", "pair_group",
+            # What the card's own riders do, which its live direction stops saying once
+            # the card is merged (WI-002078).
+            "pre_merge_trip_direction",
         ],
     )
     if not shipments:
@@ -921,7 +925,12 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
             stop_coords = get_coords_cached("Location", s.stop_location) if s.stop_location else None
             acc_coords = get_coords_cached("Accommodation", s.accommodation) if s.accommodation else None
 
-            direction = "RETURN" if s.trip_direction == "Return" else "OUTBOUND"
+            direction = _normalize_direction(s.trip_direction)
+            # A merged card is drawn and grouped as MIXED, but the canvas still has to
+            # know whether its own riders board or alight to walk a merged run leg by
+            # leg. The same rule the Route Plan save uses, so the seat count the
+            # operator sees on the lane is the one the save will judge them by.
+            own_direction = _card_direction(s.trip_direction, s.pre_merge_trip_direction)
             badge = (s.routing_type_badge or "DIRECT").upper()
             destination = s.stop_location or s.operations_site or ""
 
@@ -949,6 +958,7 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
                 "shift_end":             fmt(ret_utc),
                 "type":                  badge,
                 "direction":             direction,
+                "own_direction":         own_direction,
                 "pair_id":               f"{SHIPMENT_CARD_PREFIX}{s.pair_group}" if s.pair_group else f"{SHIPMENT_CARD_PREFIX}{s.name}",
                 "shift_direction_label": "→ Outbound (To Site)" if direction == "OUTBOUND" else "← Return (From Site)",
             })
@@ -975,13 +985,23 @@ def _shipment_from_card_id(card_id: str) -> str:
 
 
 def _normalize_direction(value: str) -> str:
-    """Collapse the two direction vocabularies onto a single OUTBOUND/RETURN flag.
+    """Collapse the direction vocabularies onto a single OUTBOUND/RETURN/MIXED flag.
 
-    Shipment docs store ``trip_direction`` as "Outward"/"Return"; the canvas swim
-    items and Route Plan Assignment rows carry "OUTBOUND"/"RETURN". Both map to the
-    same flag so a companion match can validate direction across the vocabularies.
+    Shipment docs store ``trip_direction`` as "Outward"/"Return"/"Mixed"; the canvas
+    swim items and Route Plan Assignment rows carry "OUTBOUND"/"RETURN"/"MIXED". Both
+    map to the same flag so a companion match can validate direction across the
+    vocabularies.
+
+    MIXED is matched before the RETURN test rather than after it (WI-002071). The old
+    two-way version answered "anything that is not a return is an outbound", so a
+    merged card normalised to OUTBOUND: the canvas drew it orange instead of the merge
+    colour, and the status sync compared a MIXED placement against an OUTBOUND
+    shipment. A third direction has to be recognised, not defaulted.
     """
-    return "RETURN" if (value or "").strip().upper().startswith("RET") else "OUTBOUND"
+    flag = (value or "").strip().upper()
+    if flag.startswith("MIX"):
+        return "MIXED"
+    return "RETURN" if flag.startswith("RET") else "OUTBOUND"
 
 
 def _sync_shipment_statuses(items, previously_linked=None):
@@ -1039,9 +1059,24 @@ def _sync_shipment_statuses(items, previously_linked=None):
 
     # Revert only shipments this plan dropped — never touch shipments that are
     # placed in a different Route Plan.
+    from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+        unmerge_trip_shipment,
+    )
+
     for name in (previously_linked or set()):
         if name and name not in assigned and frappe.db.exists("Transportation Shipment", name):
             frappe.db.set_value("Transportation Shipment", name, "status", "Unassigned")
+            # A card returning to the pool takes its own direction back with it. Being
+            # merged is a property of the block it was in, not of the journey the shipment
+            # was generated for (WI-002071).
+            unmerge_trip_shipment(name)
+
+    # A card still on the plan but no longer placed as part of a merged trip is also no
+    # longer merged - the operator can break a merge by dragging one stop out without
+    # removing the other.
+    for name in assigned:
+        if "MIXED" not in placed_dirs_by_shipment.get(name, set()):
+            unmerge_trip_shipment(name)
 
 
 def _link_shipment_on_manifest_rows(manifest_doc, v_rows, card_emp_map):
@@ -1094,13 +1129,14 @@ def save_assignments(plan_name: str, swim_items: str, assigned_cards: str):
 
     # Clear existing assignments and rebuild
     doc.assignments = []
-    for item in items:
+    directions = _shipment_direction_flags(items)
+    for item in _with_stop_indexes(items):
         shipment = _shipment_from_card_id(item.get("cardId", ""))
         doc.append("assignments", {
             "card_id":                 item.get("cardId", ""),
             "transportation_shipment": shipment,
             "vehicle":                 item.get("vehicleId", ""),
-            "direction":               item.get("direction", ""),
+            "direction":               _assignment_direction(item, directions.get(shipment)),
             "stop_index":              item.get("stopIndex", 0),
             "trip_group":              item.get("tripId", ""),
             "trip_name":               item.get("tripName", ""),
@@ -1111,6 +1147,8 @@ def save_assignments(plan_name: str, swim_items: str, assigned_cards: str):
             "shift":                   item.get("_shift", ""),
             "accommodation":           item.get("_accommodation", ""),
             "stop_location":           item.get("_stopLocation", ""),
+            "transit_minutes":         item.get("transitMinutes") or 0,
+            "buffer_minutes":          item.get("bufferMinutes") or 0,
         })
 
     doc.save(ignore_permissions=False)
@@ -1353,6 +1391,12 @@ def get_manifest_data_for_plan(plan_name: str):
 		v_rows = [row for row in doc.assignments if row.vehicle == v_id]
 		rows_changed = sync_manifest_details(manifest_doc, v_rows, card_emp_map, card_return_emp_map)
 
+		# The manifest header inherits the run's direction and, for a merged run, its
+		# shared group key (WI-002072). Read from the assignment rows rather than passed
+		# in, because those rows are what the vehicle is actually scheduled to do today.
+		if _inherit_trip_identity(manifest_doc, v_rows):
+			rows_changed = True
+
 		# Stamp the source shipment onto the compiled manifest detail rows so the
 		# vehicle's manifest array references the Transportation Shipment record.
 		if _link_shipment_on_manifest_rows(manifest_doc, v_rows, card_emp_map):
@@ -1462,6 +1506,22 @@ def get_manifest_data_for_plan(plan_name: str):
 			enriched.append(emp_copy)
 		return enriched
 
+	# Which way each card's own riders travel. A merged card is labelled MIXED, so the
+	# label can no longer say whether its riders board at the stop or leave there - and
+	# the manifest page decides drop-off vs pick-up from exactly that (WI-002074).
+	ship_own_dir = {}
+	_own_dir_by_shipment = {}
+	_ship_names = [r.transportation_shipment for r in doc.assignments if r.transportation_shipment]
+	if _ship_names:
+		for _r in frappe.get_all(
+			"Transportation Shipment",
+			filters={"name": ["in", list(set(_ship_names))]},
+			fields=["name", "trip_direction", "pre_merge_trip_direction"],
+		):
+			_own_dir_by_shipment[_r.name] = _card_direction(
+				_r.trip_direction, _r.pre_merge_trip_direction
+			)
+
 	# Process assignments to build shipments
 	for row in doc.assignments:
 		dir_key = f"{row.card_id}_{row.direction}"
@@ -1493,6 +1553,9 @@ def get_manifest_data_for_plan(plan_name: str):
 			ship_site[lbl] = row.stop_location or ""
 
 		ship_shift[lbl] = row.shift or ""
+		ship_own_dir[lbl] = _own_dir_by_shipment.get(
+			row.transportation_shipment
+		) or _normalize_direction(row.direction)
 		c_map[dir_key] = {"lbl": lbl, "idx": idx}
 
 	# ── Build vehicles and routes ──
@@ -1530,6 +1593,11 @@ def get_manifest_data_for_plan(plan_name: str):
 			# active_stop_sequence drives which pickup camp is currently unlocked.
 			"manifest": _mf.name if (_mf and not _mf.is_new()) else None,
 			"active_stop_sequence": int(_mf.active_stop_sequence or 0) if _mf else 0,
+			# WI-002074: the manifest page badges a merged run and reads its whole
+			# itinerary differently. Without these it had no way to tell, so the MIXED
+			# badge never rendered and the merged-run attendance rule never applied.
+			"trip_direction": (_mf.trip_direction or "") if _mf else "",
+			"trip_group": (_mf.trip_group or "") if _mf else "",
 		}
 
 		# Sort items: trip stops by stopIndex, solo by start_time
@@ -1657,6 +1725,7 @@ def get_manifest_data_for_plan(plan_name: str):
 			"shipmentReturnEmployees": ship_return_emp,
 			"shipmentSiteLocations": ship_site,
 			"shipmentShiftNames": ship_shift,
+			"shipmentOwnDirections": ship_own_dir,
 			"vehicleMeta": v_meta
 		}
 	}
@@ -1874,3 +1943,115 @@ def process_rambo_replacement(original_employee: str, replacement_employee: str,
         "notified": False,
         "message": "Replacement processed. No supervisor found for this shift to notify."
     }
+
+
+def _shipment_direction_flags(items) -> dict:
+    """{shipment: OUTBOUND|RETURN|MIXED} for every card being saved (WI-002077).
+
+    Read in one query rather than per row: a full month's canvas is hundreds of items.
+    """
+    names = {
+        _shipment_from_card_id(item.get("cardId", ""))
+        for item in items
+        if _shipment_from_card_id(item.get("cardId", ""))
+    }
+    if not names:
+        return {}
+
+    return {
+        row.name: _normalize_direction(row.trip_direction)
+        for row in frappe.get_all(
+            "Transportation Shipment",
+            filters={"name": ["in", list(names)]},
+            fields=["name", "trip_direction"],
+        )
+    }
+
+
+def _assignment_direction(item, shipment_direction: str) -> str:
+    """The direction a row is written with (WI-002077).
+
+    Taken from the card's own Transportation Shipment rather than from whatever the
+    canvas sent, which is what "auto-fetched from the Transportation Shipment card"
+    asks for. The two sides use different vocabularies - the shipment says Outward,
+    the assignment says OUTBOUND - so this is a mapping and not a fetch_from; declaring
+    one would write "Outward" into a Select that does not offer it.
+
+    A merged card carries MIXED, so every row of one merged trip agrees on it without
+    the canvas having to say so.
+
+    Falls back to the canvas value when the shipment cannot be read - a row placed by
+    hand with no shipment link still has a direction worth keeping.
+    """
+    if shipment_direction:
+        return shipment_direction
+
+    return _normalize_direction(item.get("direction", ""))
+
+
+def _with_stop_indexes(items):
+    """Number the stops of each merged trip 1, 2, 3... in chronological order (WI-002077).
+
+    A merged trip's rows have to carry an explicit position, because the manifest and the
+    per-leg capacity walk both read the run in stop order and neither can infer it from
+    table order. The canvas sends stopIndex for the multi-stop cards it already sequences;
+    a trip merged by dropping one card onto another has no index yet, so the order is
+    derived from the start times the modal produced.
+
+    Only rows sharing a trip_group are numbered. A standalone card is its own trip and its
+    index is left exactly as the canvas sent it.
+    """
+    grouped = {}
+    for item in items:
+        group = item.get("tripId")
+        if group:
+            grouped.setdefault(group, []).append(item)
+
+    for members in grouped.values():
+        if len(members) < 2:
+            continue
+        # Sorted on the start the modal computed; a member with no start sorts last so it
+        # cannot silently take the head of the run.
+        ordered = sorted(members, key=lambda i: (not i.get("start"), i.get("start") or "", i.get("cardId", "")))
+        for position, member in enumerate(ordered, start=1):
+            member["stopIndex"] = position
+
+    return items
+
+
+def _inherit_trip_identity(manifest_doc, assignment_rows) -> bool:
+    """Copy the run's direction and trip group onto the manifest header (WI-002072).
+
+    A vehicle running a merged trip produces a Mixed manifest carrying the same
+    trip_group as the plan, so a manifest can be traced back to the schedule block it
+    came from. Only a merged run has a group key; a plain outbound or return run has
+    nothing to share and leaves it empty.
+
+    Returns whether anything changed, so the caller only saves when it has to.
+    """
+    directions = {(row.direction or "").upper() for row in assignment_rows if row.direction}
+    if not directions:
+        return False
+
+    if "MIXED" in directions:
+        trip_direction = "Mixed"
+        # Every row of one merged trip carries the same key (WI-002077); taking the
+        # first non-empty one is enough and does not depend on row order.
+        trip_group = next(
+            (row.trip_group for row in assignment_rows
+             if (row.direction or "").upper() == "MIXED" and row.trip_group),
+            None,
+        )
+    else:
+        trip_direction = "Return" if directions == {"RETURN"} else "Outward"
+        trip_group = None
+
+    changed = False
+    if manifest_doc.get("trip_direction") != trip_direction:
+        manifest_doc.trip_direction = trip_direction
+        changed = True
+    if trip_group and manifest_doc.get("trip_group") != trip_group:
+        manifest_doc.trip_group = trip_group
+        changed = True
+
+    return changed
