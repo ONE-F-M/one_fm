@@ -2,6 +2,8 @@
 # See license.txt
 """WI-001834: the Shift Preview an approver reads, and what gets created from it."""
 
+import pathlib
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days
@@ -201,3 +203,43 @@ class TestShiftRequestPreview(FrappeTestCase):
 		request = frappe._dict({"shift_type": self.default_type})
 
 		self.assertEqual(shift_type_on(request, A_FRIDAY), self.default_type)
+
+
+class TestThePatchIsActuallyRegistered(FrappeTestCase):
+	"""The regression that took Shift Request down on staging.
+
+	The patch that creates `custom_shift_preview` was listed only in a stray
+	`patches.txt` at the repo root, which Frappe never reads - it reads
+	`one_fm/patches.txt`. So the patch never ran, the Custom Field was never created, and
+	`doc.append("custom_shift_preview", ...)` raised AttributeError on every save of a
+	request whose range covers an override day.
+
+	The field assertions above pass on a site where the patch has been run by hand, so they
+	could not see this. This one checks the registration itself.
+	"""
+
+	def setUp(self):
+		self.patches = pathlib.Path(frappe.get_app_path("one_fm", "patches.txt")).read_text()
+
+	def test_the_shift_preview_patch_is_listed(self):
+		self.assertIn("one_fm.patches.v15_0.add_shift_request_shift_preview", self.patches)
+
+	def test_it_runs_after_the_model_sync(self):
+		# The Table field's options point at the Shift Preview child DocType, which only
+		# exists once the model sync has run. Registered pre_model_sync, create_custom_fields
+		# fails on the link and leaves the section break behind without the grid - which is
+		# exactly the half-created state staging was found in.
+		post = self.patches.split("[post_model_sync]", 1)
+		self.assertEqual(len(post), 2, "patches.txt has no [post_model_sync] section")
+		self.assertIn("one_fm.patches.v15_0.add_shift_request_shift_preview", post[1])
+
+	def test_there_is_no_stray_patches_file_at_the_repo_root(self):
+		# It has been re-introduced three times this sprint. Frappe ignores it, so anything
+		# landing there is silently never applied.
+		root = pathlib.Path(frappe.get_app_path("one_fm")).parent / "patches.txt"
+
+		self.assertFalse(root.exists(), f"{root} is not read by Frappe - move its entries into one_fm/patches.txt")
+
+	def test_the_child_doctype_the_grid_points_at_exists(self):
+		self.assertTrue(frappe.db.exists("DocType", "Shift Preview"))
+		self.assertTrue(frappe.get_meta("Shift Preview").istable)
