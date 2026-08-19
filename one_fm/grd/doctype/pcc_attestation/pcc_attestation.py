@@ -38,6 +38,23 @@ RECEIPT_TIMESTAMPS = (
 )
 
 
+def create_pcc_attestation(employee, category, preparation_name=None, attestation_type=ATTESTATION):
+	"""Open a PCC record for an overseas hire (WI-002095).
+
+	The requirements and the fees are not passed in: the controller derives them from the
+	candidate's nationality on validate, so there is one place that reads the Nationality
+	Attestation Rules and the caller cannot hand it a different answer.
+	"""
+	pcc = frappe.new_doc("PCC Attestation")
+	pcc.employee = employee.name
+	pcc.type = attestation_type
+	pcc.category = category
+	pcc.preparation = preparation_name
+	pcc.insert()
+
+	return pcc
+
+
 class PCCAttestation(Document):
 	def validate(self):
 		self.set_attestation_requirements()
