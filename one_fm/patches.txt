@@ -599,3 +599,4 @@ one_fm.patches.v15_0.update_visa_request_workflow_and_rules #2026-08-18 WI-00177
 one_fm.patches.v15_0.add_leave_application_resumption_contact_fields #1
 one_fm.patches.v15_0.approve_attendance_check_jul11_2026 #2026-08-16
 one_fm.patches.v15_0.fix_resignation_v2_stale_migration #2026-08-17
+one_fm.patches.v15_0.backfill_employee_resignation_auto_assign #2026-08-19
