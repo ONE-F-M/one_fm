@@ -18,6 +18,13 @@ from one_fm.utils import is_scheduler_emails_enabled
 NEW_APPLICATION = "New Application"
 PENDING_PRO = "Pending PRO"
 
+# WI-002136: the two states the payment rule sits between. The operator leaves
+# Pending GR Operator for Completed by two actions - "Done", which owes an invoice, and
+# "No Payment Required", which does not - and the document carries the checkbox rather
+# than the action that moved it.
+PENDING_GR_OPERATOR = "Pending GR Operator"
+COMPLETED = "Completed"
+
 
 class PACI(Document):
     def before_insert(self):
@@ -84,12 +91,37 @@ class PACI(Document):
 
 
     def on_update(self):
-        self.validate_mandatory_fields_on_update()
+        self.validate_payment_invoice_on_done()
 
-    def validate_mandatory_fields_on_update(self):
-        if self.workflow_state == 'Under Process':
-            field_list = [{'Upload Payment Invoice':'upload_civil_id_payment'}]
-            self.set_mendatory_fields(field_list)
+    def validate_payment_invoice_on_done(self):
+        """Hold a completion until the payment invoice is in, unless no fee was charged.
+
+        WI-002136: "Done" is the operator saying the civil ID was paid for, so the receipt
+        has to be attached to it. PACI charges nothing for some transactions, and for those
+        the operator ticks No Payment Required and leaves by the action of that name - there
+        is no invoice to produce, and demanding one blocked the file with nothing that could
+        unblock it.
+
+        Keyed on the state being left, read from the document as it was before this save:
+        apply_workflow sets the new state and then saves, so self.workflow_state is already
+        the destination by the time this runs.
+
+        Replaces a check on the state "Under Process", which the workflow has not had since
+        it was rebuilt around Pending GR Operator - it could never fire.
+        """
+        if self.no_payment_required:
+            return
+
+        before_save = self.get_doc_before_save()
+        if not before_save:
+            return
+
+        if before_save.workflow_state != PENDING_GR_OPERATOR:
+            return
+        if self.workflow_state != COMPLETED:
+            return
+
+        self.set_mendatory_fields([{'Upload Payment Invoice': 'upload_civil_id_payment'}])
 
 
     def on_submit(self):
