@@ -13,7 +13,7 @@ from datetime import date, timedelta
 import calendar
 from datetime import date
 from dateutil.relativedelta import relativedelta
-from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr, get_url_to_form
+from frappe.utils import cint, get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr, get_url_to_form
 from email import policy
 from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.grd.doctype.medical_insurance import medical_insurance
@@ -43,6 +43,7 @@ class WorkPermit(Document):
             frappe.db.commit()
 
     def on_update(self):
+        self.count_amendment()
         self.update_work_permit_details_in_tp()
         self.update_passport_details_in_employee()
         self.check_required_document_for_workflow()
@@ -61,6 +62,35 @@ class WorkPermit(Document):
             if employee_details.relieving_date:
                 frappe.throw(_("{0}'s Relieving Date has been set to {1}. Work Permit processing is not allowed.").format(employee_details.employee_name, employee_details.relieving_date))
 
+    def is_being_amended(self):
+        """Is PAM handing this permit back to be amended (WI-002108)?
+
+        Read off the states rather than the action, because a Frappe document does not
+        carry the action that moved it. Pending By PAM reaches Pending By Supervisor by no
+        other route: its remaining transitions Accept to Completed or Pending For Payment,
+        or Reject to Rejected.
+        """
+        before_save = self.get_doc_before_save()
+
+        return bool(
+            before_save
+            and before_save.workflow_state == "Pending By PAM"
+            and self.workflow_state == "Pending By Supervisor"
+        )
+
+    def count_amendment(self):
+        """Tick the Amendment No every time PAM sends the permit back to be amended.
+
+        WI-002108: an amendment is a correction to the permit PAM is already holding, so
+        it stays the same record - the counter is what says how many times it has been
+        through, without a second document per attempt.
+
+        db_set because on_update runs after the row is written, and the field is read-only
+        on the form - the count is the workflow's, not something the operator types.
+        """
+        if self.is_being_amended():
+            self.db_set("amendment_no", cint(self.amendment_no) + 1)
+
     def validate_workflow_state_fields(self):
         # NOTE: 'Pending By Supervisor' is intentionally excluded. At that stage the
         # GRD Supervisor only attaches the work permit and hands the document over to
@@ -75,7 +105,11 @@ class WorkPermit(Document):
         # expiry date to record. The invoice belongs to the two Accept transitions
         # (Completed / Pending For Payment), and demanding it on a rejection stopped the
         # reject dialog from storing its reason (WI-001829).
-        if db_state in states and not self.pam_rejection_reason:
+        # An amendment is exempt for the same reason a rejection is: PAM has handed the
+        # permit back rather than issued it, so nothing has been paid and there is no
+        # invoice or new expiry date to record yet (WI-002108). Without this the Amend
+        # action could never be taken.
+        if db_state in states and not self.pam_rejection_reason and not self.is_being_amended():
             msg = False
             if not self.attach_invoice:
                 msg = "Upload the required document(Invoice)"
@@ -854,6 +888,9 @@ def reapply_work_permit(name: str):
 	reapplication.workflow_state = "Draft"
 	reapplication.date_of_application = today()
 	reapplication.rejected_work_permit = source.name
+	# A fresh application has not been amended: copy_doc ignores no_copy by default, so
+	# the count has to be reset here or the new permit inherits the old one's (WI-002108).
+	reapplication.amendment_no = 0
 	reapplication.insert()
 
 	return {"name": reapplication.name}
