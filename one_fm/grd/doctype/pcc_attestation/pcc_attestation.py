@@ -13,7 +13,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import now
 
-from one_fm.grd.utils import get_pcc_attestation_fees
+from one_fm.grd.utils import get_nationality_attestation_rule, get_pcc_attestation_fees
 
 ATTESTATION = "Attestation"
 TRANSLATION = "Translation"
@@ -43,6 +43,29 @@ RECEIPT_TIMESTAMPS = (
 	("upload_mofa_payment_receipt", "upload_mofa_payment_receipt_on"),
 	("upload_translation_payment_receipt", "upload_translation_payment_receipt_on"),
 )
+
+
+def create_pcc_attestations(employee, category, preparation_name=None):
+	"""Open the PCC records an overseas hire's nationality calls for (WI-002104).
+
+	Always the attestation itself. A nationality whose row in the Nationality Attestation
+	Rules has Translation Required ticked also gets a second, separate record for the
+	translation - separate because the two are different pieces of work, done by different
+	offices, each with its own fee and its own receipt, and the workflow routes them down
+	different paths. One record carrying both would have to be in two states at once.
+
+	A nationality with no row in the table needs no translation, which is the same answer
+	the fee resolver gives it.
+	"""
+	rule = get_nationality_attestation_rule(employee.one_fm_nationality)
+
+	records = [create_pcc_attestation(employee, category, preparation_name)]
+	if rule and rule.translation_required:
+		records.append(
+			create_pcc_attestation(employee, category, preparation_name, attestation_type=TRANSLATION)
+		)
+
+	return records
 
 
 def create_pcc_attestation(employee, category, preparation_name=None, attestation_type=ATTESTATION):
