@@ -338,6 +338,52 @@ def _minutes(value) -> int:
 		return 0
 
 
+# What the canvas assumes when a stop is chained without an explicit transit time. The
+# modal seeds the same number so the itinerary it prints is the one the blocks get drawn
+# from - a modal showing 0 while the canvas silently used 30 is a lie the operator only
+# discovers on the manifest.
+DEFAULT_TRANSIT_MINUTES = 30
+
+
+def walk_legs(legs, anchor: int) -> list:
+	"""When the vehicle leaves for each stop and when it reaches it, seconds past midnight.
+
+	One rule, applied here to the itinerary the modal prints and by the canvas to the
+	blocks on the lane: a stop's buffer is the dwell before departing towards it and its
+	transit is the drive, so a leg runs [departs, arrives].
+
+	The first stop is the one the run is scheduled on - it backs into its anchor instead
+	of being driven forward from anything - which is why editing its minutes moves when
+	the run leaves, not when it arrives. Every later stop is driven forward from the stop
+	before it, so an edit high up the run moves everything after it.
+
+	`legs` is [(transit_minutes, buffer_minutes), ...] in stop order.
+	"""
+	walked, clock = [], None
+	for transit, buffer_minutes in legs:
+		if clock is None:
+			arrives = anchor
+			departs = arrives - (buffer_minutes + transit) * 60
+		else:
+			departs = clock + buffer_minutes * 60
+			arrives = departs + transit * 60
+		walked.append((departs, arrives))
+		clock = arrives
+	return walked
+
+
+def _timings_by_shipment(timings) -> dict:
+	"""Per-leg adjustments keyed by shipment, whatever the canvas keyed them by.
+
+	The canvas knows its cards by card id and only learns the shipment name from this
+	preview, so it has to be able to seed saved timings before the first render.
+	"""
+	return {
+		(resolve_shipment_names([key]) or [key])[0]: value
+		for key, value in (timings or {}).items()
+	}
+
+
 @frappe.whitelist()
 def get_merge_preview(shipments, vehicle: str = None, timings=None) -> dict:
 	"""What the Merge Trip modal shows before anyone confirms (WI-002078).
@@ -352,16 +398,23 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None) -> dict:
 	when they happen in one place, and the same holds for a stop the run returns to later.
 
 	`timings` optionally carries the per-leg transit and buffer minutes the operator has
-	adjusted, keyed by shipment; the returned arrival and departure stamps are recomputed
-	from them so the modal can show the knock-on effect down the run.
+	adjusted, keyed by shipment or by card id; the returned departs/arrives stamps are
+	walked from them by `walk_legs`, the same rule the canvas re-times the blocks with, so
+	an edit high up the run shows its knock-on effect all the way down.
 	"""
 	if isinstance(shipments, str):
 		shipments = frappe.parse_json(shipments)
 	if isinstance(timings, str):
 		timings = frappe.parse_json(timings)
 
-	timings = timings or {}
+	timings = _timings_by_shipment(timings)
 	names = resolve_shipment_names(shipments)
+	# Card id per shipment, so the canvas can stamp what the operator typed back onto
+	# the right block: the resolve above is one-way and the mapping is lost after it.
+	card_ids = {}
+	for value in shipments or []:
+		resolved = (resolve_shipment_names([value]) or [value])[0]
+		card_ids.setdefault(resolved, value)
 	if len(names) < 2:
 		frappe.throw(_("Select at least two shipments to preview a merge."), title=_("Nothing to Merge"))
 
@@ -374,25 +427,28 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None) -> dict:
 		frappe.db.get_value("Vehicle", vehicle, "custom_max_passenger_capacity") if vehicle else None
 	) or 0
 
-	stops, clock = [], None
+	legs = []
+	for index, doc in enumerate(docs, start=1):
+		adjustment = timings.get(doc.name) or {}
+		# The first stop is what the run backs into, so it has nothing to drive from.
+		default_transit = 0 if index == 1 else DEFAULT_TRANSIT_MINUTES
+		legs.append((
+			_minutes(adjustment.get("transit_minutes", default_transit)),
+			_minutes(adjustment.get("buffer_minutes")),
+		))
+
+	walked = walk_legs(legs, arrival_time(docs[0]) or 0)
+
+	stops = []
 	for index, doc in enumerate(docs, start=1):
 		boards = own_direction(doc) == "RETURN"
-		adjustment = timings.get(doc.name) or {}
-		transit = _minutes(adjustment.get("transit_minutes"))
-		buffer_minutes = _minutes(adjustment.get("buffer_minutes"))
-
-		# The first stop anchors the run on its own scheduled time; every later stop is
-		# driven from the one before it, so an edit high up the run moves everything after.
-		anchor = arrival_time(doc)
-		arrival = anchor if clock is None else clock + transit * 60
-		if arrival is None:
-			arrival = 0
-		departure = arrival + buffer_minutes * 60
-		clock = departure
+		transit, buffer_minutes = legs[index - 1]
+		departs, arrives = walked[index - 1]
 
 		stops.append({
 			"stop_index": index,
 			"shipment": doc.name,
+			"card_id": card_ids.get(doc.name, ""),
 			"stop_location": doc.stop_location,
 			"headcount": doc.headcount or 0,
 			"boards": boards,
@@ -400,8 +456,8 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None) -> dict:
 			"routing_type_badge": doc.routing_type_badge,
 			"transit_minutes": transit,
 			"buffer_minutes": buffer_minutes,
-			"arrival": _clock(arrival),
-			"departure": _clock(departure),
+			"departs": _clock(departs),
+			"arrives": _clock(arrives),
 		})
 
 	from one_fm.operations.doctype.route_plan.route_plan import leg_occupancy

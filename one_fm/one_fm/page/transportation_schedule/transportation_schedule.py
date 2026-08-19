@@ -1203,6 +1203,12 @@ def load_assignments(plan_name: str = ""):
             "tripName":  row.trip_name or None,
             "stopIndex": row.stop_index or 0,
             "totalStops": 0,  # recalculated client-side
+            # Per-leg minutes as typed in the Merge Trip modal. Round-tripped rather
+            # than re-derived from the timestamps: the block position is a rendering of
+            # these numbers, and reading it backwards loses the operator's intent
+            # (a 0-minute buffer and a 0-minute gap are not the same statement).
+            "transitMinutes": row.transit_minutes or 0,
+            "bufferMinutes": row.buffer_minutes or 0,
             # Saved metadata for detail panel fallback
             "_site":          row.site or "",
             "_shift":         row.shift or "",
@@ -1640,18 +1646,24 @@ def get_manifest_data_for_plan(plan_name: str):
 				"loadDemands": {"seats": {"amount": str(hc)}},
 				"tripId": row.trip_group or None,
 				"tripName": row.trip_name or None,
-				"stopIndex": row.stop_index or 0
+				"stopIndex": row.stop_index or 0,
+				"transitMinutes": row.transit_minutes or 0,
+				"bufferMinutes": row.buffer_minutes or 0
 			})
+			travel_sec = (row.transit_minutes or 0) * 60 or d_sec
 			trans.append({
-				"travelDuration": f"{d_sec}s", "waitDuration": "0s",
-				"travelDistanceMeters": d_sec * 10
+				"travelDuration": f"{travel_sec}s",
+				"waitDuration": f"{(row.buffer_minutes or 0) * 60}s",
+				"travelDistanceMeters": travel_sec * 10
 			})
 			visits.append({
 				"shipmentIndex": s_idx, "isPickup": False, "startTime": i_e,
 				"loadDemands": {"seats": {"amount": str(-hc)}},
 				"tripId": row.trip_group or None,
 				"tripName": row.trip_name or None,
-				"stopIndex": row.stop_index or 0
+				"stopIndex": row.stop_index or 0,
+				"transitMinutes": row.transit_minutes or 0,
+				"bufferMinutes": row.buffer_minutes or 0
 			})
 
 			# Gap to next item

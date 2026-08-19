@@ -422,6 +422,8 @@ function renderManifest($container, data) {
 				tripId: v.tripId || null,
 				tripName: v.tripName || null,
 				stopIndex: v.stopIndex || 0,
+				transitMinutes: v.transitMinutes || 0,
+				bufferMinutes: v.bufferMinutes || 0,
 				// The label's direction reads MIXED once a card is merged, which says how
 				// the card is scheduled and not whether its riders board here or leave
 				// here. The server resolves that separately (WI-002074).
@@ -630,7 +632,20 @@ function renderManifest($container, data) {
 			const tripStops = trip.stops;
 			if (!tripStops.length) return;
 
-			function calcTransit(t1, t2) {
+			// A leg the planner timed by hand reports the minutes they entered; anything
+			// else falls back to the clock gap between the two stops. Reading a merged
+			// run off the clock alone showed the driver the old spacing, because the
+			// blocks the merge did not move still sit where they were.
+			function calcTransit(t1, t2, stop) {
+				const transit = (stop && stop.transitMinutes) || 0;
+				const buffer = (stop && stop.bufferMinutes) || 0;
+				if (transit || buffer) {
+					return {
+						travelDuration: transit * 60 + "s",
+						waitDuration: buffer * 60 + "s",
+						travelDistanceMeters: 0
+					};
+				}
 				const ms = new Date(t2).getTime() - new Date(t1).getTime();
 				if (ms <= 0) return { travelDuration: "0s", waitDuration: "0s", travelDistanceMeters: 0 };
 				return { travelDuration: Math.round(ms / 1000) + "s", waitDuration: "0s", travelDistanceMeters: 0 };
@@ -758,7 +773,7 @@ function renderManifest($container, data) {
 				html += renderDepartCard(firstTimeISO, cg, activeStop, manifestName, pr.label, false);
 				let prevTime = firstTimeISO;
 				(dropByCamp[cg.seq] || []).forEach(item => {
-					html += renderTransit(calcTransit(prevTime, item.stop.time));
+					html += renderTransit(calcTransit(prevTime, item.stop.time, item.stop));
 					html += renderSiteStopCard(item);
 					prevTime = item.stop.time;
 				});
@@ -768,7 +783,7 @@ function renderManifest($container, data) {
 			const otherStops = orderedStops.filter(item => item.stop.type !== "dropoff");
 			let prevOtherTime = firstTimeISO;
 			otherStops.forEach(item => {
-				html += renderTransit(calcTransit(prevOtherTime, item.stop.time));
+				html += renderTransit(calcTransit(prevOtherTime, item.stop.time, item.stop));
 				html += renderSiteStopCard(item);
 				prevOtherTime = item.stop.time;
 			});
@@ -915,7 +930,7 @@ function renderManifest($container, data) {
 
 		let prevTime = o.firstTimeISO;
 		stops.forEach((stop, i) => {
-			html += renderTransit(o.calcTransit(prevTime, stop.time));
+			html += renderTransit(o.calcTransit(prevTime, stop.time, stop));
 			html += renderSiteStopCard({ stop: stop, siteNum: i + 2 });
 			prevTime = stop.time;
 		});
@@ -1082,12 +1097,16 @@ function renderManifest($container, data) {
 
 	function renderTransit(t) {
 		const d = fmtDuration(t.travelDuration);
-		if (!d) return "";
+		// The buffer the planner entered for this stop. Shown next to the drive because
+		// the two together are the leg the driver is actually asked to run.
+		const w = fmtDuration(t.waitDuration);
+		if (!d && !w) return "";
+		const label = [d ? `${d} drive` : "", w ? `${w} buffer` : ""].filter(Boolean).join(" &middot; ");
 		return `
 			<div class="mfst-transit">
 				<div class="mfst-transit-line"></div>
 				<span class="material-symbols-outlined mfst-transit-icon">arrow_downward</span>
-				<span class="mfst-transit-label">${d} drive</span>
+				<span class="mfst-transit-label">${label}</span>
 				<div class="mfst-transit-line"></div>
 			</div>
 		`;
