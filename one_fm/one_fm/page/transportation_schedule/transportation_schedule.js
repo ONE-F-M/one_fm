@@ -1049,7 +1049,24 @@ function mountRoutePlannerApp(wrapper, data) {
                 const self = this;
                 const vehicle = this.planData.vehicles.find(v => v.id === vehicleId) || {};
                 const shipments = this._mergeShipmentIds(newCard, existingItems);
-                let timings = {};
+
+                // Merging onto an already-merged run must reopen on the minutes the
+                // operator entered last time, not on defaults - otherwise every extra
+                // card silently re-times the legs before it (feedback on WI-002074).
+                // Keyed by card id: the shipment name is only known once the preview
+                // comes back, and the server accepts either key.
+                const timings = {};
+                existingItems.forEach((item) => {
+                    // A reload hands back 0 for a leg that was never timed - the Int
+                    // column cannot say "unset" - so only a leg carrying real minutes
+                    // overrides the preview's defaults.
+                    if (!item.transitMinutes && !item.bufferMinutes) return;
+                    timings[item.cardId] = {
+                        transit_minutes: item.transitMinutes || 0,
+                        buffer_minutes: item.bufferMinutes || 0,
+                    };
+                });
+                let previewStops = [];
 
                 const d = new frappe.ui.Dialog({
                     title: __('Merge Trip'),
@@ -1064,7 +1081,7 @@ function mountRoutePlannerApp(wrapper, data) {
                             callback(r) {
                                 if (!r.message) return;
                                 d.hide();
-                                self._applyMerge(newCard, existingItems, vehicleId, r.message, timings);
+                                self._applyMerge(newCard, existingItems, vehicleId, r.message, previewStops);
                             }
                         });
                     }
@@ -1077,6 +1094,7 @@ function mountRoutePlannerApp(wrapper, data) {
                         callback(r) {
                             const p = r.message;
                             if (!p) return;
+                            previewStops = p.stops || [];
                             d.fields_dict.preview.$wrapper.html(self._mergeModalHtml(p, vehicle));
                             // Confirm is disabled by the server's verdict, so the button and
                             // the banner can never disagree about whether the trip fits.
@@ -1129,10 +1147,10 @@ function mountRoutePlannerApp(wrapper, data) {
                         <td style="padding:4px 8px">Seq ${s.stop_index}</td>
                         <td style="padding:4px 8px">${esc(s.stop_location || '—')}</td>
                         <td style="padding:4px 8px"><input class="rp-leg-min" type="number" min="0"
-                            data-shipment="${esc(s.shipment)}" data-key="transit_minutes"
+                            data-shipment="${esc(s.card_id || s.shipment)}" data-key="transit_minutes"
                             value="${esc(s.transit_minutes)}" style="width:70px"></td>
                         <td style="padding:4px 8px"><input class="rp-leg-min" type="number" min="0"
-                            data-shipment="${esc(s.shipment)}" data-key="buffer_minutes"
+                            data-shipment="${esc(s.card_id || s.shipment)}" data-key="buffer_minutes"
                             value="${esc(s.buffer_minutes)}" style="width:70px"></td>
                     </tr>`).join('');
 
@@ -1157,7 +1175,7 @@ function mountRoutePlannerApp(wrapper, data) {
                     </table>`;
             },
 
-            _applyMerge(newCard, existingItems, vehicleId, merged, timings) {
+            _applyMerge(newCard, existingItems, vehicleId, merged, previewStops) {
                 const self = this;
                 const tripId = merged.trip_group;
 
@@ -1167,21 +1185,40 @@ function mountRoutePlannerApp(wrapper, data) {
                 const order = merged.itinerary.map((s) => s.shipment);
                 const lastEnd = new Date(Math.max(...existingItems.map((i) => new Date(i.end).getTime())));
                 const uid = Math.random().toString(36).slice(2, 10);
-                const adj = timings[newCard.id] || {};
-                const transitMs = Math.max(parseInt(adj.transit_minutes, 10) || 30, 5) * 60000;
-                const dwellMs = (parseInt(adj.buffer_minutes, 10) || 0) * 60000;
-                const segStart = new Date(lastEnd.getTime() + dwellMs);
-                const segEnd = new Date(segStart.getTime() + transitMs);
+                const legs = {};
+                (previewStops || []).forEach((s) => { if (s.card_id) legs[s.card_id] = s; });
+                const adj = legs[newCard.id] || {};
 
+                // Placed at the tail of the run and then timed by _retimeTrip below, so
+                // the merged block and the blocks it joins are spaced by one rule.
                 self.swimItems.push({
                     id: `${newCard.id}_MIX_${uid}`, cardId: newCard.id, vehicleId,
-                    direction: 'MIXED', start: segStart, end: segEnd,
+                    direction: 'MIXED', start: new Date(lastEnd), end: new Date(lastEnd),
                     headcount: newCard.headcount, conflict: false,
+                    transitMinutes: parseInt(adj.transit_minutes, 10) || 0,
+                    bufferMinutes: parseInt(adj.buffer_minutes, 10) || 0,
                     tripId, stopIndex: order.indexOf(newCard.id) + 1 || existingItems.length + 1
+                });
+
+                // The legs the operator adjusted higher up the run belong to their own
+                // blocks: only the block carrying them is saved with them, and only a
+                // saved block can seed the next merge or reach the manifest.
+                self.swimItems.forEach((item) => {
+                    const leg = legs[item.cardId];
+                    if (!leg || item.tripId !== tripId) return;
+                    item.transitMinutes = parseInt(leg.transit_minutes, 10) || 0;
+                    item.bufferMinutes = parseInt(leg.buffer_minutes, 10) || 0;
                 });
 
                 const allTrip = self.swimItems.filter((i) => i.tripId === tripId);
                 allTrip.forEach((i) => { i.totalStops = allTrip.length; });
+
+                // The minutes are not a note about the run, they ARE its timing: editing the
+                // first leg has to move the first block. Without this the modal accepted
+                // 60/10 for a stop already on the lane, showed the itinerary they imply,
+                // and then left the block sitting on the 60/15 it was dropped with
+                // (feedback on WI-002074).
+                self._retimeTrip(tripId);
 
                 self.assignedCards.add(newCard.id);
                 self.selectedPoolCard = null;
@@ -1200,6 +1237,65 @@ function mountRoutePlannerApp(wrapper, data) {
                 });
 
                 frappe.show_alert({ message: __('Trip merged — direction is now Mixed'), indicator: 'green' });
+            },
+
+            // Which way a block's own riders travel, whatever a merge did to the block.
+            // The server resolves this from pre_merge_trip_direction and hands it over on
+            // the card, so the canvas does not have to guess it back from a MIXED label.
+            _ownDirection(item) {
+                const card = this.planData.shipment_cards.find((c) => c.id === item.cardId);
+                return (card && (card.own_direction || card.direction)) || item.direction;
+            },
+
+            // Re-draw a trip's blocks from the per-leg minutes its stops carry. Stop 1
+            // keeps the shift moment it was placed on; every later stop is driven forward
+            // from the one before it - dwell at the previous stop, then the drive.
+            _retimeTrip(tripId) {
+                const stops = this.swimItems
+                    .filter((i) => i.tripId === tripId)
+                    .sort((a, b) => (a.stopIndex || 0) - (b.stopIndex || 0));
+                if (!stops.length) return;
+
+                const MIN_BLOCK_MS = 5 * 60000;     // a block thinner than this is unclickable
+                const leg = (item) => {
+                    const transit = parseInt(item.transitMinutes, 10) || 0;
+                    const buffer = parseInt(item.bufferMinutes, 10) || 0;
+                    // A stop that was never timed keeps the length it already has, so a
+                    // trip saved before the minutes were persisted is not collapsed onto
+                    // a zero-width block.
+                    if (!transit && !buffer) {
+                        return { buffer: 0, transit: new Date(item.end) - new Date(item.start) };
+                    }
+                    return { buffer: buffer * 60000, transit: transit * 60000 };
+                };
+
+                // Which edge of the first block is the fixed point. An outward run is
+                // pinned at its END - the moment it has to be on site - so its dwell and
+                // drive are subtracted backwards from there. A return run is pinned at
+                // its START, the moment the shift ends and the riders are collected.
+                // `own_direction` is used rather than the block's, which reads MIXED
+                // after a merge and would pin every merged return run at the wrong edge.
+                const first = leg(stops[0]);
+                const span = Math.max(first.buffer + first.transit, MIN_BLOCK_MS);
+                if (this._ownDirection(stops[0]) === 'RETURN') {
+                    const anchor = new Date(stops[0].start).getTime();
+                    stops[0].end = new Date(anchor + span);
+                } else {
+                    const anchor = new Date(stops[0].end).getTime();
+                    stops[0].start = new Date(anchor - span);
+                }
+
+                let cursor = new Date(stops[0].end).getTime();
+                stops.slice(1).forEach((item) => {
+                    const { buffer, transit } = leg(item);
+                    const start = cursor + buffer;
+                    const end = start + Math.max(transit, MIN_BLOCK_MS);
+                    item.start = new Date(start);
+                    item.end = new Date(end);
+                    cursor = end;
+                });
+
+                this.swimItems = [...this.swimItems];   // Vue reactivity
             },
 
             // ── Chain a card as the next stop on an existing trip ──
@@ -1263,6 +1359,8 @@ function mountRoutePlannerApp(wrapper, data) {
                         id: `${newCard.id}_${newCard.direction === 'RETURN' ? 'RET' : 'OUT'}_${uid}`, cardId: newCard.id, vehicleId,
                         direction: newCard.direction || 'OUTBOUND', start: segStart, end: segEnd,
                         headcount: newCard.headcount, conflict: false,
+                        transitMinutes: transitMin != null ? transitMin : 0,
+                        bufferMinutes: dwellMin != null ? dwellMin : 0,
                         tripId, tripName: existingTripName, stopIndex: totalStops + 1
                     });
 
@@ -1634,8 +1732,8 @@ function mountRoutePlannerApp(wrapper, data) {
                         id: `${card.id}_OUT_${uid}`, cardId: card.id, vehicleId,
                         direction: 'OUTBOUND', start: outStart, end: outEnd,
                         headcount: card.headcount, conflict: false,
-                        bufferMin: Math.round(bufferMs / 60000),
-                        transitMin: Math.round(durMs / 60000),
+                        bufferMinutes: Math.round(bufferMs / 60000),
+                        transitMinutes: Math.round(durMs / 60000),
                         tripId: autoTripId, tripName: tripName || null,
                         stopIndex: 1,
                         lockFrom, lockTo
@@ -1646,8 +1744,8 @@ function mountRoutePlannerApp(wrapper, data) {
                         id: `${card.id}_RET_${uid}`, cardId: card.id, vehicleId,
                         direction: 'RETURN', start: retStart, end: retEnd,
                         headcount: card.headcount, conflict: false,
-                        bufferMin: Math.round(bufferMs / 60000),
-                        transitMin: Math.round(durMs / 60000),
+                        bufferMinutes: Math.round(bufferMs / 60000),
+                        transitMinutes: Math.round(durMs / 60000),
                         tripId: autoTripId, tripName: tripName || null,
                         stopIndex: 1,
                         lockFrom, lockTo
@@ -2077,6 +2175,11 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 if (sourceIndex >= tripStops.length || targetIndex >= tripStops.length) return;
 
+                // ponytail: the reorder re-derives each stop's length and dwell from where
+                // its block sits rather than from the minutes the block now carries. It
+                // stays consistent because those timestamps are generated from the
+                // minutes - swap this for _retimeTrip if a reorder ever has to survive a
+                // leg being re-timed in the same gesture.
                 // Capture durations and inter-stop gaps BEFORE reorder
                 const durations = tripStops.map(s =>
                     new Date(s.end).getTime() - new Date(s.start).getTime()
@@ -2293,8 +2396,8 @@ function mountRoutePlannerApp(wrapper, data) {
                             tripId: targetTripId, 
                             tripName: existingTripName,
                             stopIndex: totalStops + 1,
-                            bufferMin: vals.dwell_min || 0,
-                            transitMin: vals.transit_min || 30
+                            bufferMinutes: vals.dwell_min || 0,
+                            transitMinutes: vals.transit_min || 30
                         });
 
                         const allTrip = self.swimItems.filter(i => i.tripId === targetTripId);
@@ -3040,18 +3143,24 @@ function mountRoutePlannerApp(wrapper, data) {
                             loadDemands: { seats: { amount: String(hc) } },
                             tripId: item.tripId || null,
                             tripName: item.tripName || null,
-                            stopIndex: item.stopIndex || 0
+                            stopIndex: item.stopIndex || 0,
+                            transitMinutes: item.transitMinutes || 0,
+                            bufferMinutes: item.bufferMinutes || 0
                         });
+                        const travelSec = (item.transitMinutes || 0) * 60 || dSec;
                         trans.push({
-                            travelDuration: `${dSec}s`, waitDuration: '0s',
-                            travelDistanceMeters: Math.round(dSec * 10)
+                            travelDuration: `${travelSec}s`,
+                            waitDuration: `${(item.bufferMinutes || 0) * 60}s`,
+                            travelDistanceMeters: Math.round(travelSec * 10)
                         });
                         visits.push({
                             shipmentIndex: sIdx, isPickup: false, startTime: iE,
                             loadDemands: { seats: { amount: String(-hc) } },
                             tripId: item.tripId || null,
                             tripName: item.tripName || null,
-                            stopIndex: item.stopIndex || 0
+                            stopIndex: item.stopIndex || 0,
+                            transitMinutes: item.transitMinutes || 0,
+                            bufferMinutes: item.bufferMinutes || 0
                         });
 
                         const nxt = vItems[idx + 1];
@@ -3705,6 +3814,17 @@ function injectRPVueTemplate() {
                         · {{ relieverCount(stop.card.employees) }} reliever
                       </span>
                       <span class="rp-detail-row-label" style="display:inline">({{ (stop.card.employees || []).length }} total)</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="rp-detail-row" style="padding:4px 0 3px 30px"
+                     v-if="stop.item.transitMinutes || stop.item.bufferMinutes">
+                  <div class="rp-detail-row-icon"><span class="rp-icon">timer</span></div>
+                  <div class="rp-detail-row-content">
+                    <div class="rp-detail-row-label">Transit &amp; Buffer</div>
+                    <div class="rp-detail-row-value">
+                      {{ stop.item.transitMinutes || 0 }} min transit
+                      &middot; {{ stop.item.bufferMinutes || 0 }} min buffer
                     </div>
                   </div>
                 </div>

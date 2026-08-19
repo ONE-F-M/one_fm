@@ -18,6 +18,12 @@ from one_fm.operations.doctype.route_plan.route_plan import leg_occupancy
 CANVAS = pathlib.Path(frappe.get_app_path(
 	"one_fm", "one_fm", "page", "transportation_schedule", "transportation_schedule.js"
 ))
+CANVAS_SERVER = pathlib.Path(frappe.get_app_path(
+	"one_fm", "one_fm", "page", "transportation_schedule", "transportation_schedule.py"
+))
+MANIFEST = pathlib.Path(frappe.get_app_path(
+	"one_fm", "one_fm", "page", "transportation_manifest_page", "transportation_manifest_page.js"
+))
 MERGE_COLOUR = "#819171"
 
 
@@ -337,3 +343,146 @@ class TestAMergedRunIsNamedMixed(FrappeTestCase):
 
 	def test_the_dark_theme_covers_the_badge_too(self):
 		self.assertIn("rp-dark .rp-dir-mixed", self.source)
+
+
+class TestPerLegMinutesSurviveARefresh(FrappeTestCase):
+	"""Feedback on WI-002074: the minutes typed into the modal had nowhere to live.
+
+	They positioned one block and were then dropped. Merging a third card onto a run
+	reopened the modal on defaults, the Shipment Details panel never mentioned them, and
+	the manifest reported whatever spacing the blocks happened to have.
+	"""
+
+	def setUp(self):
+		self.canvas = CANVAS.read_text()
+		self.server = CANVAS_SERVER.read_text()
+		self.manifest = MANIFEST.read_text()
+
+	def test_timings_keyed_by_card_id_reach_the_right_shipment(self):
+		# The canvas has to be able to seed saved timings before the first preview, and
+		# all it knows its blocks by then is the card id.
+		from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+			_timings_by_shipment,
+		)
+
+		leg = {"transit_minutes": 20, "buffer_minutes": 5}
+
+		self.assertEqual(_timings_by_shipment({"TSHIP-TS-0001": leg}), {"TS-0001": leg})
+		self.assertEqual(_timings_by_shipment({"TS-0001": leg}), {"TS-0001": leg})
+		self.assertEqual(_timings_by_shipment(None), {})
+
+	def test_a_leg_defaults_to_the_transit_the_canvas_would_have_used(self):
+		# The modal used to print 0 while the canvas quietly placed the block on 30, so
+		# the itinerary shown was never the run that got drawn.
+		from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+			DEFAULT_TRANSIT_MINUTES,
+		)
+
+		self.assertEqual(DEFAULT_TRANSIT_MINUTES, 30)
+		self.assertIn("default_transit = 0 if index == 1 else DEFAULT_TRANSIT_MINUTES", (
+			pathlib.Path(frappe.get_app_path(
+				"one_fm", "one_fm", "doctype", "transportation_shipment",
+				"transportation_shipment.py"
+			)).read_text()
+		))
+
+	def test_the_block_carries_the_minutes_it_was_placed_on(self):
+		self.assertIn("bufferMinutes: Math.round(bufferMs / 60000),", self.canvas)
+		self.assertIn("transitMinutes: Math.round(durMs / 60000),", self.canvas)
+
+	def test_the_two_numbers_have_one_name(self):
+		# The placement stamped bufferMin/transitMin, which nothing read and nothing
+		# saved, so a card placed on 60/15 opened the merge modal on defaults.
+		self.assertNotIn("bufferMin:", self.canvas)
+		self.assertNotIn("transitMin:", self.canvas)
+
+	def test_the_merge_takes_them_from_the_leg_the_operator_edited(self):
+		self.assertIn("transitMinutes: parseInt(adj.transit_minutes, 10) || 0,", self.canvas)
+		self.assertIn("bufferMinutes: parseInt(adj.buffer_minutes, 10) || 0,", self.canvas)
+
+	def test_confirming_re_times_the_whole_run(self):
+		# The numbers are the run's timing, not a note about it.
+		self.assertIn("self._retimeTrip(tripId);", self.canvas)
+		self.assertIn("_retimeTrip(tripId) {", self.canvas)
+
+	def test_a_return_run_is_pinned_at_its_start_not_its_end(self):
+		# Pinning a return run at its end would move the collection off the shift end.
+		self.assertIn("if (this._ownDirection(stops[0]) === 'RETURN') {", self.canvas)
+
+	def test_every_stop_of_the_run_is_stamped_not_just_the_new_one(self):
+		self.assertIn("const leg = legs[item.cardId];", self.canvas)
+
+	def test_the_save_and_the_reload_agree_on_the_field_names(self):
+		self.assertIn('"transit_minutes":         item.get("transitMinutes") or 0', self.server)
+		self.assertIn('"transitMinutes": row.transit_minutes or 0', self.server)
+		self.assertIn('"bufferMinutes": row.buffer_minutes or 0', self.server)
+
+	def test_the_modal_reopens_on_what_was_saved(self):
+		self.assertIn("timings[item.cardId] = {", self.canvas)
+
+	def test_the_shipment_details_panel_reports_them(self):
+		self.assertIn("min transit", self.canvas)
+		self.assertIn("min buffer", self.canvas)
+
+	def test_the_manifest_prefers_the_entered_minutes_over_the_clock_gap(self):
+		self.assertIn("function calcTransit(t1, t2, stop)", self.manifest)
+		self.assertIn("travelDuration: transit * 60", self.manifest)
+		self.assertIn("buffer", self.manifest)
+
+
+class TestTheRunIsTimedFromTheMinutes(FrappeTestCase):
+	"""The rule the modal prints and the canvas draws, on the numbers from the feedback.
+
+	A card placed on 15 buffer + 60 transit sits 12:45 - 14:00 on the lane. Merging a
+	return card onto it and setting the first leg to 60/10 and the second to 15/5 has to
+	move the run to 12:50 - 14:20: the first stop still arrives at 14:00 because that is
+	the shift it exists to hit, but it now leaves five minutes later, and the second stop
+	follows on its own dwell and drive. Before this the modal accepted the numbers and the
+	blocks kept the ones they were dropped with.
+	"""
+
+	def _walk(self, legs, anchor="14:00"):
+		from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+			_clock,
+			walk_legs,
+		)
+
+		hours, minutes = (int(part) for part in anchor.split(":"))
+		return [
+			(_clock(departs), _clock(arrives))
+			for departs, arrives in walk_legs(legs, hours * 3600 + minutes * 60)
+		]
+
+	def test_the_feedbacks_merge(self):
+		self.assertEqual(
+			self._walk([(60, 10), (15, 5)]),
+			[("12:50", "14:00"), ("14:05", "14:20")],
+		)
+
+	def test_the_placement_that_preceded_it(self):
+		# 15 buffer + 60 transit, arriving on a 14:00 shift: the block the operator saw.
+		self.assertEqual(self._walk([(60, 15)]), [("12:45", "14:00")])
+
+	def test_the_first_stop_keeps_its_arrival_whatever_its_minutes_say(self):
+		# Its minutes decide when the run leaves, never when it is due on site.
+		for legs in ([(60, 10)], [(90, 0)], [(5, 5)]):
+			self.assertEqual(self._walk(legs)[0][1], "14:00")
+
+	def test_an_edit_high_up_the_run_moves_everything_after_it(self):
+		relaxed = self._walk([(60, 10), (15, 5), (20, 5)])
+		stretched = self._walk([(90, 10), (15, 5), (20, 5)])
+
+		# The anchor holds, so a longer first drive only moves the departure.
+		self.assertEqual(relaxed[0][1], stretched[0][1])
+		self.assertEqual(stretched[0][0], "12:20")
+		# ...and the stops after it are unmoved, because they hang off that arrival.
+		self.assertEqual(relaxed[1:], stretched[1:])
+
+	def test_a_later_stops_dwell_pushes_the_stops_after_it(self):
+		self.assertEqual(
+			self._walk([(60, 10), (15, 30), (20, 5)])[2],
+			("14:50", "15:10"),   # stop 2's 30min dwell pushed this leg back half an hour
+		)
+
+	def test_an_empty_run_walks_to_nothing(self):
+		self.assertEqual(self._walk([]), [])
