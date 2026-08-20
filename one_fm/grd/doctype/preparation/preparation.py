@@ -154,6 +154,91 @@ FALLBACK_PREFIX = 'PRE-'
 SUB_DOCUMENT_SEQUENCE = ("Work Permit", "Medical Insurance", "Residency", "PACI")
 
 
+# WI-002096: the classification that puts a document inside the legal sequence. Kuwaiti
+# permits and residency extensions are outside it - a Kuwaiti has no insurance, no residency
+# and no civil ID process to follow the permit, and an extension is a single document on its
+# own - so neither is gated and neither offers a next step.
+SEQUENCED_CLASSIFICATIONS = {
+    "Work Permit": ("work_permit_type", ("Renewal Non Kuwaiti", "Overseas", "Overseas (Government)", "Local Transfer")),
+    "Medical Insurance": ("insurance_status", ("Renewal", "New", "Local Transfer")),
+    "Residency": ("category", ("Renewal", "First Time", "Transfer")),
+    "PACI": ("category", ("Renewal", "New Application", "Transfer")),
+}
+
+COMPLETED = "Completed"
+
+
+def is_sequenced(doc):
+    """Does this document sit inside the Work Permit -> ... -> PACI sequence (WI-002096)?"""
+    classification = SEQUENCED_CLASSIFICATIONS.get(doc.doctype)
+    if not classification:
+        return False
+
+    fieldname, values = classification
+    return doc.get(fieldname) in values
+
+
+def upstream_of(doc):
+    """The document that legally has to be finished before this one (WI-002096)."""
+    if doc.doctype not in SUB_DOCUMENT_SEQUENCE:
+        return None
+
+    position = SUB_DOCUMENT_SEQUENCE.index(doc.doctype)
+    return SUB_DOCUMENT_SEQUENCE[position - 1] if position else None
+
+
+def validate_sequence(doc, method=None):
+    """Refuse to complete a step whose predecessor is not finished (WI-002096).
+
+    Kuwait issues these in one order: the work permit, then the insurance it is a condition
+    of, then the residency stamped against it, then the civil ID. Completing them out of
+    order produces paperwork the ministry rejects, and the operator finds out weeks later.
+
+    Only ever checks the step immediately before, because that step's own completion was
+    gated the same way - so the whole chain is enforced without every document querying all
+    of them.
+
+    Scoped to documents opened by a Preparation. A permit or a residency raised on its own -
+    a transfer paper, a cancellation - has no batch to be sequenced within, and there is
+    nothing to look up.
+
+    An upstream document that does not exist is not a blocker: the Action decides which
+    documents a candidate gets, and a step that was never opened is not a step that is
+    waiting.
+    """
+    if doc.get("workflow_state") != COMPLETED:
+        return
+    if not doc.get("preparation") or not doc.get("employee"):
+        return
+    if not is_sequenced(doc):
+        return
+
+    upstream = upstream_of(doc)
+    if not upstream:
+        return
+
+    pending = frappe.get_all(
+        upstream,
+        filters={
+            "preparation": doc.preparation,
+            "employee": doc.employee,
+            "docstatus": ["!=", 2],
+            "workflow_state": ["!=", COMPLETED],
+        },
+        pluck="name",
+        limit=1,
+    )
+    if not pending:
+        return
+
+    frappe.throw(
+        _("{0} {1} has to be completed first.").format(
+            _(upstream), frappe.bold(pending[0])
+        ),
+        title=_("Out of Sequence"),
+    )
+
+
 def update_row_reference(doc, method=None):
     """Point a Preparation row at the sub-document its candidate has reached (WI-002093).
 

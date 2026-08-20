@@ -1,19 +1,48 @@
 // Copyright (c) 2020, ONE FM and contributors
 // For license information, please see license.txt
 
+
+// WI-002096: the button that opens the next document in the legal sequence, once this one is
+// complete. Shown only for the classifications that have a next step. The next document is
+// found by the Preparation and employee this one carries, which is what pairs them: a
+// Preparation opens one of each per employee.
+var set_next_step_button = function(frm, next_doctype, classifications, classification_field){
+	if(frm.doc.workflow_state !== 'Completed'){
+		return;
+	}
+	if(!classifications.includes(frm.doc[classification_field])){
+		return;
+	}
+	if(!frm.doc.preparation || !frm.doc.employee){
+		return;
+	}
+
+	frm.add_custom_button(__('Go to {0}', [__(next_doctype)]), function(){
+		frappe.db.get_value(
+			next_doctype,
+			{preparation: frm.doc.preparation, employee: frm.doc.employee, docstatus: ['!=', 2]},
+			'name',
+			(r) => {
+				if(r && r.name){
+					frappe.set_route('Form', next_doctype, r.name);
+				} else {
+					frappe.msgprint({
+						title: __('Nothing to open'),
+						message: __('No {0} was opened for this candidate.', [__(next_doctype)]),
+						indicator: 'orange'
+					});
+				}
+			}
+		);
+	}).addClass('btn-primary');
+};
+
 frappe.ui.form.on('Medical Insurance', {
     refresh(frm){
-        if(frm.doc.docstatus === 1 && frm.doc.insurance_status == "Local Transfer"){
-            		frm.add_custom_button(__('Go to Residency'),
-            			  function () {
-            			frappe.db.get_value('Residency', {'category':'Transfer','one_fm_civil_id':frm.doc.civil_id}, 'name', (r) => {
-            			if (r && r.name) {
-            				frappe.set_route("Form", "Residency", r.name);
-            			}
-            		});
-            	}
-            ).addClass('btn-primary');
-        }
+        // WI-002096 widens this from Local Transfer alone to every insurance that has a
+        // residency behind it, and pairs on the Preparation rather than on a civil ID -
+        // which after a Damj merge is not the number the residency was opened under.
+        set_next_step_button(frm, 'Residency', ['Renewal', 'New', 'Local Transfer'], 'insurance_status');
     },
     // onload: function(frm){
     //     set_employee_details(frm);
