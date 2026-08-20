@@ -239,6 +239,14 @@ doc_events = {
 			"one_fm.overrides.todo.delete_linked_todos"
 		]
 	},
+	"Employee": {
+		# WI-002091: keep the PAM licence headcounts in step with the employees on the
+		# licence. The handler returns immediately unless the save touched one of the five
+		# fields that can move somebody between licences or sectors.
+		"on_update": [
+			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_counts_from_employee"
+		]
+	},
 	"HR Settings": {
 		"validate": [
 			"one_fm.grd.utils.set_renewal_extension_cost_totals",
