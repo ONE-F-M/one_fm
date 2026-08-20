@@ -14,7 +14,7 @@ from frappe.utils import nowdate
 from one_fm.grd.doctype.preparation.preparation import create_documents_for_row
 from one_fm.grd.doctype.work_permit.work_permit import reapply_work_permit
 
-AMEND_TRANSITION = ("Pending By PAM", "Amend", "Pending By Supervisor")
+AMEND_TRANSITION = ("Pending By PAM", "Amend", "Pending GR Manager")
 
 
 def _an_active_employee():
@@ -38,6 +38,8 @@ class TestWorkPermitAmendment(FrappeTestCase):
 		preparation = frappe.get_doc(
 			{
 				"doctype": "Preparation",
+				# Ignored until WI-002101 adds the field, mandatory once it does.
+				"category": "Onboarding",
 				"posting_date": nowdate(),
 				"preparation_record": [
 					{"employee": self.employee, "renewal_or_extend": "Overseas"}
@@ -63,7 +65,7 @@ class TestWorkPermitAmendment(FrappeTestCase):
 		for expected in (1, 2, 3):
 			permit.db_set("workflow_state", "Pending By PAM")
 			permit.reload()
-			permit.workflow_state = "Pending By Supervisor"
+			permit.workflow_state = "Pending GR Manager"
 			permit.save(ignore_permissions=True)
 
 			permit.reload()
@@ -78,7 +80,7 @@ class TestWorkPermitAmendment(FrappeTestCase):
 	def test_a_state_change_that_is_not_an_amendment_leaves_the_counter_alone(self):
 		permit = self._permit_from_a_preparation()
 
-		permit.db_set("workflow_state", "Pending By Supervisor")
+		permit.db_set("workflow_state", "Pending GR Manager")
 		permit.reload()
 		permit.workflow_state = "Pending By PAM"
 		permit.save(ignore_permissions=True)

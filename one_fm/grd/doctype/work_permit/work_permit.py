@@ -53,6 +53,7 @@ class WorkPermit(Document):
     def validate(self):
         self.set_grd_values()
         self.validate_workflow_state_fields()
+        self.validate_designation_on_amendment()
         self.employee_last_checkin = get_employee_last_checkin(self.employee)
 
         if self.employee:
@@ -66,7 +67,7 @@ class WorkPermit(Document):
         """Is PAM handing this permit back to be amended (WI-002108)?
 
         Read off the states rather than the action, because a Frappe document does not
-        carry the action that moved it. Pending By PAM reaches Pending By Supervisor by no
+        carry the action that moved it. Pending By PAM reaches Pending GR Manager by no
         other route: its remaining transitions Accept to Completed or Pending For Payment,
         or Reject to Rejected.
         """
@@ -75,8 +76,34 @@ class WorkPermit(Document):
         return bool(
             before_save
             and before_save.workflow_state == "Pending By PAM"
-            and self.workflow_state == "Pending By Supervisor"
+            and self.workflow_state == "Pending GR Manager"
         )
+
+    def validate_designation_on_amendment(self):
+        """An amended permit has to say which PAM designation it is now for (WI-002097).
+
+        An amendment exists to correct something PAM refused, and the designation is what it
+        is corrected to more often than anything else - so a permit going back to PAM having
+        been amended without one is an amendment of nothing.
+
+        Checked on the way out of Pending GR Manager, which is where the operator hands the
+        amended permit on, and only once the permit has actually been amended.
+        """
+        if not cint(self.amendment_no):
+            return
+
+        before_save = self.get_doc_before_save()
+        if not before_save or before_save.workflow_state != "Pending GR Manager":
+            return
+        if self.workflow_state == "Pending GR Manager":
+            return
+
+        if not self.pam_designation:
+            frappe.throw(
+                _("<b>PAM Designation</b> is required on an amended Work Permit "
+                  "(Amendment No {0}).").format(cint(self.amendment_no)),
+                title=_("PAM Designation Required"),
+            )
 
     def count_amendment(self):
         """Tick the Amendment No every time PAM sends the permit back to be amended.
@@ -92,7 +119,7 @@ class WorkPermit(Document):
             self.db_set("amendment_no", cint(self.amendment_no) + 1)
 
     def validate_workflow_state_fields(self):
-        # NOTE: 'Pending By Supervisor' is intentionally excluded. At that stage the
+        # NOTE: 'Pending GR Manager' is intentionally excluded. At that stage the
         # GRD Supervisor only attaches the work permit and hands the document over to
         # the operator; the invoice and updated expiry date do not exist yet (they are
         # produced later, after PAM payment/completion). Requiring them here blocked the
@@ -148,12 +175,12 @@ class WorkPermit(Document):
         if self.workflow_state == "Apply Online by PRO":
             self.reload()
 
-        if self.workflow_state == "Pending By Supervisor" and self.work_permit_type == "Cancellation":
+        if self.workflow_state == "Pending GR Manager" and self.work_permit_type == "Cancellation":
             field_list = [{'PAM Reference Number':'reference_number_on_pam'}]
             message_detail = '<b style="color:red; text-align:center;">First, You Need to Apply for Work Permit Cancellation through <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
             self.set_mendatory_fields(field_list,message_detail)
 
-        if self.workflow_state == "Pending By Supervisor":
+        if self.workflow_state == "Pending GR Manager":
             if self.work_permit_type == "New Kuwaiti" or self.work_permit_type == "Local Transfer" or self.work_permit_type =="Renewal Kuwaiti" or self.work_permit_type =="Renewal Non Kuwaiti":
                 field_list = [{'PAM Reference Number':'reference_number_on_pam_registration'}]
                 message_detail = '<b style="color:red; text-align:center;">First, You Need to Apply for Work Permit Registration through <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
@@ -192,9 +219,15 @@ class WorkPermit(Document):
                 self.set_mendatory_fields(field_list,message_detail)
 
             if self.work_permit_type == "Local Transfer":
-                field_list = [{'Work Permit Expiry Date':'work_permit_expiry_date'},{'Attach Work Permit ':'attach_work_permit'}]
-                message_detail = '<b style="color:red; text-align:center;">First, You Need to Attach the Work Permit Registration taken from <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
-                self.set_mendatory_fields(field_list,message_detail)
+                # WI-002097: the Work Permit attachment is no longer demanded, on any
+                # category, and the red PAM-website warning that came with it is gone. The
+                # permit arrives from PAM as a reference number that is already required a
+                # state earlier; the scan of it turns up when the operator has it, and
+                # blocking the transition on it stalled transfers that were otherwise
+                # complete. The expiry date is still required - it is the date every other
+                # document runs off.
+                field_list = [{'Work Permit Expiry Date':'work_permit_expiry_date'}]
+                self.set_mendatory_fields(field_list)
         self.reload()
 
         if self.workflow_state == "Rejected":
