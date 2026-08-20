@@ -111,3 +111,65 @@ class TestPACINoPayment(FrappeTestCase):
 	def _transitions(self):
 		workflow = frappe.get_doc("Workflow", "PACI")
 		return {(t.state, t.action, t.next_state): (t.condition or "") for t in workflow.transitions}
+
+
+class TestPACIProSubmission(FrappeTestCase):
+	"""WI-002136: what the PRO owes before handing a first application back."""
+
+	def setUp(self):
+		self.employee = _an_active_employee()
+
+	def _with_the_pro(self, **kwargs):
+		paci = create_PACI(self.employee, NEW_APPLICATION)
+		# create_PACI already hands a first application to the PRO (WI-001830), with
+		# neither of these known - which is the case this rule must not break.
+		self.assertEqual(paci.workflow_state, "Pending PRO")
+		for fieldname, value in kwargs.items():
+			paci.db_set(fieldname, value)
+		paci.reload()
+		return paci
+
+	def _submit(self, paci):
+		paci.workflow_state = "Pending by PACI"
+		paci.save(ignore_permissions=True)
+
+	def test_the_record_carries_a_pro_user(self):
+		field = frappe.get_meta("PACI").get_field("pro_user")
+		self.assertIsNotNone(field, "PACI has no PRO User field")
+		self.assertEqual(field.options, "User")
+
+	def test_submitting_without_the_reference_is_refused(self):
+		paci = self._with_the_pro(pro_user="Administrator")
+
+		with self.assertRaises(frappe.ValidationError):
+			self._submit(paci)
+
+	def test_submitting_without_a_pro_user_is_refused(self):
+		paci = self._with_the_pro(paci_reference_number="PACI-REF-1")
+
+		with self.assertRaises(frappe.ValidationError):
+			self._submit(paci)
+
+	def test_submitting_with_both_goes_through(self):
+		paci = self._with_the_pro(pro_user="Administrator", paci_reference_number="PACI-REF-1")
+
+		self._submit(paci)
+
+		self.assertEqual(paci.workflow_state, "Pending by PACI")
+
+	def test_opening_the_application_does_not_demand_them(self):
+		"""A Preparation opens a first application knowing neither."""
+		paci = self._with_the_pro()
+
+		self.assertFalse(paci.pro_user)
+		self.assertFalse(paci.paci_reference_number)
+
+	def test_the_decision_after_it_belongs_to_the_gr_operator(self):
+		workflow = frappe.get_doc("Workflow", "PACI")
+		allowed = {
+			(t.state, t.action): t.allowed
+			for t in workflow.transitions
+			if t.state == "Pending by PACI"
+		}
+		self.assertEqual(allowed[("Pending by PACI", "Approve")], "Government Relations Operator")
+		self.assertEqual(allowed[("Pending by PACI", "Reject")], "Government Relations Operator")

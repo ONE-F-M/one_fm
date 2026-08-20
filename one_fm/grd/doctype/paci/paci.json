@@ -43,6 +43,7 @@
   "upload_hawiyati",
   "upload_civil_id",
   "new_civil_id_expiry_date",
+  "pro_user",
   "column_break_25",
   "upload_civil_id_payment_datetime",
   "upload_civil_id_datetime",
@@ -381,11 +382,18 @@
    "fieldname": "no_payment_required",
    "fieldtype": "Check",
    "label": "No Payment Required"
+  },
+  {
+   "description": "The PRO who files this application on the PACI portal. Required before the application can be handed back.",
+   "fieldname": "pro_user",
+   "fieldtype": "Link",
+   "label": "PRO User",
+   "options": "User"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-19 10:00:00.000000",
+ "modified": "2026-08-20 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PACI",

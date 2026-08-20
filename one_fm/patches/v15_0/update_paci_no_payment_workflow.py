@@ -4,7 +4,8 @@ from one_fm.custom.workflow.workflow import create_workflow, get_workflow_json_f
 
 # WI-002136: PACI charges nothing for some transactions, and the workflow had no way out of
 # Pending GR Operator that did not owe a payment invoice. It also routed a saved application
-# on the role of whoever pressed Save rather than on its Category.
+# on the role of whoever pressed Save rather than on its Category. The doctype reload picks
+# up the No Payment Required and PRO User fields the rules read.
 WORKFLOW = "PACI"
 NO_PAYMENT_TRANSITION = ("Pending GR Operator", "No Payment Required", "Completed")
 CONDITIONED_TRANSITIONS = {

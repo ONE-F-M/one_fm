@@ -24,6 +24,15 @@ PENDING_PRO = "Pending PRO"
 # than the action that moved it.
 PENDING_GR_OPERATOR = "Pending GR Operator"
 COMPLETED = "Completed"
+PENDING_BY_PACI = "Pending by PACI"
+
+# WI-002136: what the PRO owes before handing a first application back. The PRO who filed
+# it, and the reference PACI issued for the filing - without the reference there is nothing
+# for the GR Operator to Approve or Reject against.
+PRO_SUBMISSION_FIELDS = (
+    {"PRO User": "pro_user"},
+    {"PACI Reference Number": "paci_reference_number"},
+)
 
 
 class PACI(Document):
@@ -92,6 +101,33 @@ class PACI(Document):
 
     def on_update(self):
         self.validate_payment_invoice_on_done()
+        self.validate_pro_submission()
+
+    def validate_pro_submission(self):
+        """Hold a first application with the PRO until they have filed it (WI-002136).
+
+        "Submit" is the PRO saying the application is lodged with PACI, so the reference
+        PACI issued has to be on the record - the GR Operator Approves or Rejects against
+        that reference, and there is nothing to approve without it. The PRO who filed it is
+        recorded for the same reason.
+
+        Keyed on the state being left, like the payment rule above: apply_workflow sets the
+        new state and then saves, so self.workflow_state is already the destination.
+
+        Not enforced when the record is opened - a Preparation hands a first application to
+        the PRO with neither of these known (WI-001830), and demanding them there would
+        stop the Preparation opening the document at all.
+        """
+        before_save = self.get_doc_before_save()
+        if not before_save:
+            return
+
+        if before_save.workflow_state != PENDING_PRO:
+            return
+        if self.workflow_state != PENDING_BY_PACI:
+            return
+
+        self.set_mendatory_fields(PRO_SUBMISSION_FIELDS)
 
     def validate_payment_invoice_on_done(self):
         """Hold a completion until the payment invoice is in, unless no fee was charged.
