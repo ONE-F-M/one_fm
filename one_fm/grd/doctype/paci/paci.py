@@ -54,6 +54,60 @@ class PACI(Document):
         self.set_grd_values()
         self.set_new_expiry_date()
         self.set_paci_fine_amount()
+        self.clear_unticked_damj_details()
+        self.validate_exception_details()
+
+    def validate_exception_details(self):
+        """Hold the save until a ticked exception carries its evidence (WI-002109).
+
+        mandatory_depends_on is a form rule only - Frappe's server-side mandatory check reads
+        `reqd` and nothing else - so a record arriving by import or through the API would
+        otherwise claim a Damj merge with no original civil ID and no letter behind it.
+
+        A fine amount of zero counts as missing: the amount comes from the master rate in HR
+        Settings, so a ticked box that produces nothing means the rate is not configured, and
+        a zero-value fine has nothing for finance to reference. Same rule Residency applies.
+        """
+        field_list = []
+
+        if self.damj_is_applicable:
+            field_list += [
+                {'Original Civil ID': 'original_civil_id'},
+                {'Upload DAMJ Letter': 'upload_damj_letter'},
+            ]
+
+        if field_list:
+            self.set_mendatory_fields(field_list)
+
+        # The fine amount is read-only and comes from the master rate, so a ticked box that
+        # produces nothing is a gap in HR Settings rather than something the operator forgot
+        # to type - and the message has to say so, or it points at a field they cannot edit.
+        # WI-002109 requires the amount to be greater than zero; WI-002023 let a record save
+        # with a zero fine, which recorded a fine finance had nothing to reference.
+        if self.is_paci_fine_applicable and not flt(self.paci_fine_amount_kwd):
+            frappe.throw(
+                _("The PACI fine rate is not configured. Set <b>PACI Fine Amount (KWD)</b> in "
+                  "HR Settings, or untick <b>Is PACI Fine Applicable?</b>."),
+                title=_("PACI Fine Rate Not Configured"),
+            )
+
+    def clear_unticked_damj_details(self):
+        """Empty the Damj details when the box is unticked (WI-002109).
+
+        Both fields are hidden then, so anything left in them is invisible - and an original
+        civil ID still on a record that no longer claims a merge is the number the employee's
+        profile would be set to if the box were ever ticked again.
+
+        Cleared on the server rather than only in the browser: the box can be unticked by an
+        import, a patch or the API, none of which run the form's handlers. The fine amount
+        already clears itself the same way in set_paci_fine_amount.
+        """
+        if self.damj_is_applicable:
+            return
+
+        self.original_civil_id = None
+        self.upload_damj_letter = None
+        self.upload_damj_letter_on = None
 
     def set_paci_fine_amount(self):
         """Fetch the PACI late fine off HR Settings, or clear it (WI-002023).
@@ -102,6 +156,18 @@ class PACI(Document):
     def on_update(self):
         self.validate_payment_invoice_on_done()
         self.validate_pro_submission()
+        self.stamp_damj_letter()
+
+    def stamp_damj_letter(self):
+        """Record when the Damj letter went up, from the server's clock (WI-002109).
+
+        The Attach field is allow_on_submit, so the letter can arrive after the record is
+        submitted - which is why this is on on_update and written with db_set.
+        """
+        if self.upload_damj_letter and not self.upload_damj_letter_on:
+            self.db_set("upload_damj_letter_on", now_datetime())
+        elif not self.upload_damj_letter and self.upload_damj_letter_on:
+            self.db_set("upload_damj_letter_on", None)
 
     def validate_pro_submission(self):
         """Hold a first application with the PRO until they have filed it (WI-002136).
