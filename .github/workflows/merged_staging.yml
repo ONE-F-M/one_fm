@@ -22,6 +22,10 @@ jobs:
           script_stop: true
           script: |
             set -x
+            export PATH="/home/frappe/.local/bin:$PATH"
+            command -v bench
+            bench --version
+            
             cd /home/frappe/frappe-bench/apps/one_fm
             git pull upstream staging
             cd /home/frappe/frappe-bench
