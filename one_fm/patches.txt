@@ -589,3 +589,4 @@ one_fm.patches.v15_0.add_shift_request_shift_preview #2026-08-12 WI-001834
 one_fm.patches.v15_0.restore_stranded_mixed_shipments #2026-08-17 WI-002071
 one_fm.patches.v15_0.migrate_pam_license_configuration #2026-08-20 WI-002102
 one_fm.patches.v15_0.add_pam_occupational_sectors #2026-08-20 WI-002099
+one_fm.patches.v15_0.set_pam_license_stats_status_read_only #2026-08-20 WI-002135
