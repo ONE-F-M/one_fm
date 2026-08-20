@@ -35,18 +35,31 @@ frappe.ui.form.on("Document Request", {
 	},
 
 	setup(frm) {
-		// Two pickers over the same register, filtered to opposite halves of it.
+		// Three pickers over the same register, each filtered to the part of it
+		// that its field actually means.
 		//
 		// A withdrawn document has nothing to revise and nothing left to
 		// withdraw, and input material was never a controlled document in the
-		// first place — neither should be offerable. The server refuses both in
-		// validate too; this only saves the user from finding out after typing
-		// the rest of the request.
-		frm.set_query("reference_document", () => ({
-			filters: { lifecycle_state: "Active", is_input_material: 0 },
+		// first place — neither should be offerable. The document type is
+		// included because a revision keeps the document's own type: offering a
+		// Policy while the request says SOP only leads to the mismatch the server
+		// then refuses. The server refuses all of this in validate too; these
+		// filters just save the user from finding out after typing the rest of
+		// the request.
+		frm.set_query("reference_document", () => {
+			const filters = { lifecycle_state: "Active", is_input_material: 0 };
+			if (frm.doc.document_type) filters.document_type = frm.doc.document_type;
+			return { filters };
+		});
+
+		// The guideline says HOW to write the document, so only a Guideline can
+		// be one. Pointing this at a finished Policy or SOP is how a request for
+		// one subject comes back written about another.
+		frm.set_query("source_guideline", () => ({
+			filters: { lifecycle_state: "Active", document_type: "Guideline" },
 		}));
 
-		// The mirror image: the new content comes *from* input material.
+		// Optional extra material, and it comes *from* input material.
 		frm.set_query("update_source", () => ({
 			filters: { is_input_material: 1 },
 		}));
@@ -58,8 +71,37 @@ frappe.ui.form.on("Document Request", {
 		if (frm.doc.request_action === "Create" && frm.doc.reference_document) {
 			frm.set_value("reference_document", null);
 		}
+		if (frm.doc.request_action !== "Create" && frm.doc.source_guideline) {
+			// An Update takes its shape from the document it is revising, which
+			// already came from a guideline. Leaving a guideline attached implies
+			// it will be applied, and it will not.
+			frm.set_value("source_guideline", null);
+		}
 		if (frm.doc.request_action !== "Update" && frm.doc.update_source) {
 			frm.set_value("update_source", null);
+		}
+	},
+
+	document_type(frm) {
+		// The reference picker is filtered by type, so a type change can leave a
+		// document selected that is now the wrong kind — and the server would
+		// refuse the save with a mismatch the user did not knowingly create.
+		if (frm.doc.reference_document) {
+			frappe.db
+				.get_value("Document Register", frm.doc.reference_document, "document_type")
+				.then((r) => {
+					const kind = r && r.message && r.message.document_type;
+					if (kind && frm.doc.document_type && kind !== frm.doc.document_type) {
+						frm.set_value("reference_document", null);
+						frappe.show_alert({
+							message: __("Cleared the selected document — it is a {0}, not a {1}.", [
+								kind,
+								frm.doc.document_type,
+							]),
+							indicator: "orange",
+						});
+					}
+				});
 		}
 	},
 });

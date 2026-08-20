@@ -337,6 +337,9 @@ class TestRequestsAgainstWithdrawnDocuments(VersioningFixtures, unittest.TestCas
 			"doctype": "Document Register",
 			"drive_file_id": "_TestVerSsrc",
 			"title": "_Test New Content",
+			# Document Type is mandatory on the register now, so input material
+			# has to say what kind it is like everything else.
+			"document_type": "Amendment",
 			"is_input_material": 1,
 		})
 		src.insert(ignore_permissions=True)
@@ -400,13 +403,31 @@ class TestInputMaterial(VersioningFixtures, unittest.TestCase):
 		with self.assertRaises(frappe.ValidationError):
 			self._raise(request_action="Delete", reference_document=src.name)
 
-	def test_an_update_requires_a_new_content_document(self):
-		"""mandatory_depends_on is client-side only in Frappe, so the rule has to
-		be enforced here or the API sails straight past it."""
+	def test_an_update_no_longer_requires_a_new_content_document(self):
+		"""An Update used to need a document holding the finished wording.
+
+		It now works the way a Create does: Requirement says what to change and
+		the existing document supplies everything it does not mention. The rule
+		this test used to assert has moved onto Requirement — see
+		``test_an_update_requires_a_requirement`` below.
+		"""
 		target = self._document(file_id="_TestCtrlB")
 
+		request = self._raise(request_action="Update", reference_document=target.name)
+
+		self.assertEqual(request.reference_document, target.name)
+		self.assertFalse(request.update_source)
+
+	def test_an_update_requires_a_requirement(self):
+		"""mandatory_depends_on is client-side only in Frappe, so the rule has to
+		be enforced here or the API sails straight past it. An Update with nothing
+		to change would republish the document unaltered as a new version."""
+		target = self._document(file_id="_TestCtrlB2")
+
 		with self.assertRaises(frappe.ValidationError):
-			self._raise(request_action="Update", reference_document=target.name)
+			self._raise(
+				request_action="Update", reference_document=target.name, requirement_text=""
+			)
 
 	def test_the_new_content_cannot_be_the_document_being_revised(self):
 		"""It would publish a version identical to the one before it."""

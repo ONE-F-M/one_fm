@@ -15,14 +15,70 @@ class DocumentRequest(Document):
 		self.check_required_links()
 		self.check_reference_document_is_active()
 		self.check_reference_document_is_controlled()
+		self.check_source_guideline_is_a_guideline()
 		self.check_source_documents_are_active()
 		self.check_update_source()
 
 	def set_requester_defaults(self):
+		"""Capture the requester from whoever is filing the request.
+
+		The field is read-only on the form, so this is the only thing that fills
+		it: a request is always filed by the person signed in, and typing it was
+		how one person's request ended up under someone else's name. An existing
+		value is left alone so a request created by an integration or a migration
+		keeps the requester it was given.
+
+		Because nobody can type it, an unresolvable requester has to be said out
+		loud rather than left blank for the mandatory check to reject with
+		"Requester is required" — which would be true and useless.
+		"""
+		if self.requester:
+			return
+
+		employee = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "name")
+		if employee:
+			self.requester = employee
+			self.fill_requester_chain()
+			return
+
+		if self.is_new():
+			frappe.throw(
+				_(
+					"There is no Employee record linked to {0}, so this request cannot record "
+					"who is asking for the document. Ask HR to set the User ID on that "
+					"employee record, then try again."
+				).format(frappe.bold(frappe.session.user)),
+				title=_("No Employee Record"),
+			)
+
+	def fill_requester_chain(self):
+		"""Resolve requester → approver → approver_user here, not via fetch_from.
+
+		``approver`` is declared ``fetch_from: requester.reports_to`` and
+		``approver_user`` hangs off *that*. Frappe resolves fetch_from BEFORE
+		validate, so a requester captured during validate arrives too late: the
+		chain stays empty and the request is refused for having no approver — on a
+		requester whose line manager is set. Worse than the refusal, an approver
+		that resolved late would leave ``approver_user`` blank, and that is the
+		field the map assigns both approval tasks to.
+
+		Only fills blanks, so a value supplied deliberately is never overwritten.
+		"""
 		if not self.requester:
-			employee = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "name")
-			if employee:
-				self.requester = employee
+			return
+
+		employee = frappe.db.get_value(
+			"Employee", self.requester, ["user_id", "reports_to"], as_dict=True
+		)
+		if not employee:
+			return
+
+		if not self.requester_user:
+			self.requester_user = employee.get("user_id")
+		if not self.approver:
+			self.approver = employee.get("reports_to")
+		if self.approver and not self.approver_user:
+			self.approver_user = frappe.db.get_value("Employee", self.approver, "user_id")
 
 	def check_approver_resolved(self):
 		if self.requester and not self.approver:
@@ -34,6 +90,18 @@ class DocumentRequest(Document):
 			)
 
 	def apply_reference_document_defaults(self):
+		"""Fill the blanks from the reference, but REFUSE a type mismatch.
+
+		This used to overwrite ``document_type`` from the register entry
+		outright. That hid a real mistake instead of reporting it: a requester
+		who chose SOP and then picked a Policy document was silently switched to
+		Policy — a different template, a different code series, and a request
+		that no longer said what they asked for. The two have to agree, and the
+		person is the one who should decide which of the two was wrong.
+
+		An empty type is still filled in, because there is nothing to disagree
+		with — that is a default, not a correction.
+		"""
 		if self.request_action == "Create" or not self.reference_document:
 			return
 		ref = frappe.db.get_value(
@@ -41,9 +109,49 @@ class DocumentRequest(Document):
 		)
 		if not ref:
 			return
-		self.document_type = ref.document_type
+
+		if not self.document_type:
+			self.document_type = ref.document_type
+		elif ref.document_type and self.document_type != ref.document_type:
+			frappe.throw(
+				_(
+					"Document Type does not match the document you picked. This request says "
+					"{0}, but {1} is a {2} in the Document Register. A revision keeps the "
+					"document's own type — change the Document Type to {2}, or pick a {0} "
+					"document instead."
+				).format(
+					frappe.bold(self.document_type),
+					frappe.bold(self.reference_document),
+					frappe.bold(ref.document_type),
+				),
+				title=_("Document Type Mismatch"),
+			)
+
 		if not self.title:
 			self.title = ref.title
+
+	def check_source_guideline_is_a_guideline(self):
+		"""The guideline a Create is written from has to actually be a guideline.
+
+		``source_guideline`` says *how* to write the document — structure, tone,
+		the section rules. Point it at a Policy or an SOP and the drafting task is
+		handed a finished document as its instructions, which is how a request for
+		one subject comes back written about another. The picker filters to
+		Guideline; this is the half that also holds for the API and for imports.
+		"""
+		if self.request_action != "Create" or not self.source_guideline:
+			return
+
+		kind = frappe.db.get_value("Document Register", self.source_guideline, "document_type")
+		if kind and kind != "Guideline":
+			frappe.throw(
+				_(
+					"Source Guideline must be a Guideline. {0} is a {1} — a finished "
+					"document, not instructions for writing one. Pick the guideline that "
+					"describes how a {2} should be written."
+				).format(frappe.bold(self.source_guideline), frappe.bold(kind), self.document_type or _("document")),
+				title=_("Not a Guideline"),
+			)
 
 	def check_reference_document_is_active(self):
 		"""Refuse to revise or withdraw a document that is already withdrawn.
@@ -142,13 +250,19 @@ class DocumentRequest(Document):
 				_("Pick the existing document this {0} request applies to.").format(self.request_action)
 			)
 
-		if self.request_action == "Update" and not self.update_source:
+		if self.request_action == "Update" and not (self.requirement_text or "").strip():
+			# An Update used to require a New Content Document holding the finished
+			# wording. It now works the way a Create does: Requirement says what to
+			# change and the existing document supplies everything it does not
+			# mention. That makes Requirement the one thing an Update cannot do
+			# without — an Update with nothing to change would republish the
+			# document unaltered as a new version.
 			frappe.throw(
 				_(
-					"An Update needs a New Content Document — the document holding what the "
-					"revision should say. Catalogue it on Document Register first (pasting its "
-					"Drive link is enough), tick Input Material, then pick it here. The wording "
-					"published comes from that document, not from the AI."
+					"Say what the revision should change, in Requirement. The existing "
+					"document supplies everything you do not mention, so describe only the "
+					"change — an Update with no requirement would publish a new version "
+					"identical to the current one."
 				)
 			)
 

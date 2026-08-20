@@ -45,9 +45,12 @@
   },
   {
    "fieldname": "document_type",
-   "fieldtype": "Data",
+   "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Document Type"
+   "label": "Document Type",
+   "options": "\nPolicy\nSOP\nGuideline\nManual\nAmendment\nRegulation\nMeeting Outcome\nOther",
+   "reqd": 1,
+   "description": "What kind of document this is. The first four are the controlled types a Document Request can produce — they decide the template and the code series. The rest exist so input material (an amendment, a regulation, meeting outcomes) can be catalogued and picked as a source without being mistaken for a controlled document."
   },
   {
    "fieldname": "is_input_material",
