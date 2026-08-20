@@ -238,7 +238,16 @@ def hand_to_pro(paci):
     """
     from frappe.automation.doctype.assignment_rule.assignment_rule import apply
 
+    # Imported here rather than at the top: preparation imports this module to open a PACI,
+    # so the other direction can only be a local import.
+    from one_fm.grd.doctype.preparation.preparation import update_row_reference
+
     paci.db_set("workflow_state", PENDING_PRO)
+
+    # db_set writes past the document's own hooks, so the Preparation row would otherwise
+    # keep showing the state the record was inserted in rather than the one it is in
+    # (WI-002093).
+    update_row_reference(paci)
 
     try:
         apply(doctype=paci.doctype, name=paci.name)

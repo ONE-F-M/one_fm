@@ -239,6 +239,21 @@ doc_events = {
 			"one_fm.overrides.todo.delete_linked_todos"
 		]
 	},
+	# WI-002093: each of these carries the Preparation that opened it, and its own save is
+	# where the row's status column comes from. The handler only ever moves a row forward
+	# along Work Permit -> Medical Insurance -> Residency -> PACI.
+	"Work Permit": {
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+	},
+	"Medical Insurance": {
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+	},
+	"Residency": {
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+	},
+	"PACI": {
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+	},
 	"HR Settings": {
 		"validate": [
 			"one_fm.grd.utils.set_renewal_extension_cost_totals",

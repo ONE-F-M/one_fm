@@ -588,3 +588,4 @@ one_fm.patches.v15_0.add_pcc_processing_fees_to_hr_settings #2026-08-12 WI-00202
 one_fm.patches.v15_0.add_shift_request_shift_preview #2026-08-12 WI-001834
 one_fm.patches.v15_0.restore_stranded_mixed_shipments #2026-08-17 WI-002071
 one_fm.patches.v15_0.add_preparation_category #2026-08-20 WI-002101
+one_fm.patches.v15_0.add_preparation_row_status #2026-08-20 WI-002093
