@@ -201,8 +201,7 @@
   {
    "fieldname": "pam_reference_number",
    "fieldtype": "Data",
-   "label": "PAM Reference Number",
-   "mandatory_depends_on": "// eval:doc.workflow_state==\"Pending by GRD Operator\""
+   "label": "PAM Reference Number"
   },
   {
    "fieldname": "column_break_gvey",
@@ -461,17 +460,20 @@
    "label": "Place of Issue"
   },
   {
+   "depends_on": "eval:doc.workflow_state==\"Pending by GRD Operator\" || doc.workflow_state==\"Awaiting Quota Availability\" || doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending By PAM\" || doc.workflow_state==\"Pending By MOI\" || doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By PAM\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\"",
    "fieldname": "pam_details_section",
    "fieldtype": "Section Break",
    "label": "PAM Details"
   },
   {
+   "depends_on": "eval:doc.workflow_state==\"Pending By MOI\" || doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\"",
    "fieldname": "moi_details_section",
    "fieldtype": "Section Break",
    "label": "MOI Details"
   },
   {
    "default": "0",
+   "depends_on": "eval:doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\"",
    "fieldname": "visa_details_section",
    "fieldtype": "Section Break",
    "label": "Visa Details"
@@ -530,10 +532,10 @@
    "label": "Degree Certificate"
   },
   {
+   "depends_on": "eval:doc.workflow_state==\"Pending by GRD Operator\" || doc.workflow_state==\"Awaiting Quota Availability\" || doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending By PAM\" || doc.workflow_state==\"Pending By MOI\"",
    "fieldname": "custom_pam_file",
    "fieldtype": "Link",
    "label": "PAM File",
-   "mandatory_depends_on": "// eval:doc.workflow_state==\"Pending by GRD Operator\"",
    "options": "PAM File"
   },
   {
@@ -545,10 +547,10 @@
    "fieldname": "custom_pam_designation_list",
    "fieldtype": "Link",
    "label": "PAM Designation List",
-   "mandatory_depends_on": "// eval:doc.workflow_state==\"Pending by GRD Operator\"",
    "options": "PAM Designation List"
   },
   {
+   "depends_on": "eval:doc.workflow_state==\"Pending By PAM\" || doc.workflow_state==\"Pending By MOI\" || doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Rejected By PAM\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\"",
    "fieldname": "custom_work_permit_number",
    "fieldtype": "Data",
    "label": "Work Permit Number",
@@ -580,7 +582,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-11 22:00:00.000000",
+ "modified": "2026-08-20 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "Visa Management",
  "name": "Visa Request",
