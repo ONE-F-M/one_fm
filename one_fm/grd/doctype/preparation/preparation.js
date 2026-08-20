@@ -72,7 +72,9 @@ var set_preparation_record_costing = function(frm, cdt, cdn) {
 	frm.refresh_field('preparation_record');
 
 	frappe.call({
-		method: 'one_fm.grd.doctype.preparation.preparation.get_grd_renewal_extension_cost',
+		// WI-002092: the row's fees, already multiplied out for a multi-year renewal. The
+		// master lookup returns the annual rate, which is not what the row carries.
+		method: 'one_fm.grd.doctype.preparation.preparation.get_preparation_row_costing',
 		args: {'renewal_or_extend': row.renewal_or_extend, 'no_of_years': row.no_of_years},
 		callback: function(r) {
 			if(!r.message){
