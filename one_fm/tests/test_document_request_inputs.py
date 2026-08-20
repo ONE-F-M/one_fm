@@ -3,11 +3,17 @@
 """
 What a Document Request is allowed to say, and who it says it on behalf of.
 
-The drafting task is now written from the **requirement**: the requirement is the
-content, the title is the subject, and the guideline only describes how a document
-of that type is shaped. Before this, the task was handed the guideline's whole
-text and nothing about the subject — so it invented one, and a request for an
-Annual Leave SOP came back as a Helpdesk Call Logging procedure.
+The drafting task is given two things that must not be confused: the **guideline**
+explains how a document of that type is written (an SOP guideline for an SOP, a
+guideline-for-guidelines for a Guideline), and the **requirement** is the subject
+and the content. The title says what the document is called.
+
+Before this, the task got the guideline's text and nothing about the subject, so
+it treated the guideline's own examples as the document — a request for an Annual
+Leave SOP came back as a Helpdesk Call Logging procedure. The guideline is still
+sent, because how-to-write is exactly what it is for; what changed is that it is
+now labelled as form and fenced off, and the requirement follows it as the
+authoritative content.
 
 That moves weight onto the request's own fields, which is what these tests cover:
 
