@@ -201,9 +201,11 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:doc.damj_is_applicable == 1",
    "fieldname": "original_civil_id",
    "fieldtype": "Data",
-   "label": "Original Civil ID"
+   "label": "Original Civil ID",
+   "mandatory_depends_on": "eval:doc.damj_is_applicable == 1"
   },
   {
    "fetch_from": "employee.designation",
@@ -360,9 +362,12 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:doc.residency_fine_to_be_added == 1",
    "fieldname": "residency_fine_amount_kwd",
    "fieldtype": "Currency",
-   "label": "Residency Fine Amount (KWD)"
+   "label": "Residency Fine Amount (KWD)",
+   "mandatory_depends_on": "eval:doc.residency_fine_to_be_added == 1",
+   "non_negative": 1
   },
   {
    "fieldname": "section_break_42",
@@ -371,15 +376,19 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:doc.residency_fine_to_be_added == 1",
    "fieldname": "upload_residency_fine_payment_receipt",
    "fieldtype": "Attach",
-   "label": "Upload Residency Fine Payment Receipt"
+   "label": "Upload Residency Fine Payment Receipt",
+   "mandatory_depends_on": "eval:doc.residency_fine_to_be_added == 1"
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:doc.damj_is_applicable == 1",
    "fieldname": "upload_damj_letter",
    "fieldtype": "Attach",
-   "label": "Upload DAMJ Letter"
+   "label": "Upload DAMJ Letter",
+   "mandatory_depends_on": "eval:doc.damj_is_applicable == 1"
   },
   {
    "allow_on_submit": 1,
@@ -554,6 +563,7 @@
   {
    "fieldname": "apply_for",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Apply for",
    "options": "\n1 \u0625\u0634\u0639\u0627\u0631\n14 \u0645\u0624\u0642\u062a\u0629\n18 \u0639\u0645\u0644 \u0623\u0647\u0644\u064a"
   },
@@ -586,7 +596,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-12 10:10:00.000000",
+ "modified": "2026-08-20 13:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Residency",
