@@ -34,6 +34,19 @@ frappe.ui.form.on("Document Request", {
 		repair_missing_link(frm);
 	},
 
+	onload(frm) {
+		// The requester is captured in validate, which is too late to be seen: the
+		// field is read-only, so a new request opens with the requester and the
+		// whole approval chain blank — and Frappe hides empty read-only fields, so
+		// the column is not merely empty, it is absent. Someone filing a request
+		// has no way to tell that the system knows who they are, or who will be
+		// asked to approve it.
+		//
+		// This fills it from the same lookup validate uses, so the form cannot show
+		// one requester and then save another.
+		if (frm.is_new() && !frm.doc.requester) show_requester(frm);
+	},
+
 	setup(frm) {
 		// Three pickers over the same register, each filtered to the part of it
 		// that its field actually means.
@@ -59,10 +72,6 @@ frappe.ui.form.on("Document Request", {
 			filters: { lifecycle_state: "Active", document_type: "Guideline" },
 		}));
 
-		// Optional extra material, and it comes *from* input material.
-		frm.set_query("update_source", () => ({
-			filters: { is_input_material: 1 },
-		}));
 	},
 
 	request_action(frm) {
@@ -76,9 +85,6 @@ frappe.ui.form.on("Document Request", {
 			// already came from a guideline. Leaving a guideline attached implies
 			// it will be applied, and it will not.
 			frm.set_value("source_guideline", null);
-		}
-		if (frm.doc.request_action !== "Update" && frm.doc.update_source) {
-			frm.set_value("update_source", null);
 		}
 	},
 
@@ -148,6 +154,28 @@ function repair_missing_link(frm) {
 					true
 				);
 			}
+		},
+	});
+}
+
+function show_requester(frm) {
+	frappe.call({
+		method: "one_fm.one_fm.doctype.document_request.document_request.get_requester_defaults",
+		callback: (r) => {
+			const chain = (r && r.message) || {};
+			if (!chain.requester) {
+				// The save would throw this same thing. Saying it before the request
+				// is written saves the requester typing all of it first.
+				frm.dashboard.add_comment(
+					__(
+						"Your user account is not linked to an Employee record, so this request cannot record who is asking for the document. Ask HR to set the User ID on your employee record."
+					),
+					"red",
+					true
+				);
+				return;
+			}
+			frm.set_value(chain);
 		},
 	});
 }

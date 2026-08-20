@@ -344,7 +344,7 @@ class TestRequestsAgainstWithdrawnDocuments(VersioningFixtures, unittest.TestCas
 		})
 		src.insert(ignore_permissions=True)
 
-		request = self._raise("Update", doc.name, update_source=src.name)
+		request = self._raise("Update", doc.name)
 
 		self.assertEqual(request.reference_document, doc.name)
 
@@ -395,28 +395,13 @@ class TestInputMaterial(VersioningFixtures, unittest.TestCase):
 		target = self._document(file_id="_TestCtrlA")
 
 		with self.assertRaises(frappe.ValidationError):
-			self._raise(request_action="Update", reference_document=src.name, update_source=target.name)
+			self._raise(request_action="Update", reference_document=src.name)
 
 	def test_input_material_cannot_be_withdrawn_by_request(self):
 		src = self._input_doc("_TestInputB")
 
 		with self.assertRaises(frappe.ValidationError):
 			self._raise(request_action="Delete", reference_document=src.name)
-
-	def test_an_update_no_longer_requires_a_new_content_document(self):
-		"""An Update used to need a document holding the finished wording.
-
-		It now works the way a Create does: Requirement says what to change and
-		the existing document supplies everything it does not mention. The rule
-		this test used to assert has moved onto Requirement — see
-		``test_an_update_requires_a_requirement`` below.
-		"""
-		target = self._document(file_id="_TestCtrlB")
-
-		request = self._raise(request_action="Update", reference_document=target.name)
-
-		self.assertEqual(request.reference_document, target.name)
-		self.assertFalse(request.update_source)
 
 	def test_an_update_requires_a_requirement(self):
 		"""mandatory_depends_on is client-side only in Frappe, so the rule has to
@@ -429,31 +414,14 @@ class TestInputMaterial(VersioningFixtures, unittest.TestCase):
 				request_action="Update", reference_document=target.name, requirement_text=""
 			)
 
-	def test_the_new_content_cannot_be_the_document_being_revised(self):
-		"""It would publish a version identical to the one before it."""
-		target = self._document(file_id="_TestCtrlC")
-
-		with self.assertRaises(frappe.ValidationError):
-			self._raise(request_action="Update", reference_document=target.name,
-			            update_source=target.name)
-
 	def test_a_valid_update_is_accepted(self):
-		src = self._input_doc("_TestInputC")
+		"""An Update now needs only the document to revise and the change to make."""
 		target = self._document(file_id="_TestCtrlD")
 
-		req = self._raise(request_action="Update", reference_document=target.name,
-		                  update_source=src.name)
+		req = self._raise(request_action="Update", reference_document=target.name)
 
-		self.assertEqual(req.update_source, src.name)
-
-	def test_update_source_is_cleared_on_a_non_update(self):
-		"""A stale value would be fetched by the process and treated as the new
-		content of a document nobody asked to revise."""
-		src = self._input_doc("_TestInputD")
-
-		req = self._raise(request_action="Create", update_source=src.name)
-
-		self.assertIsNone(req.update_source)
+		self.assertEqual(req.reference_document, target.name)
+		self.assertTrue(req.requirement_text, "the change is the whole input now")
 
 	def test_a_delete_still_needs_its_document(self):
 		with self.assertRaises(frappe.ValidationError):

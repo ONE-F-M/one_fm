@@ -20,12 +20,14 @@ That moves weight onto the request's own fields, which is what these tests cover
   * the requester is captured, not typed;
   * a revision cannot silently change the document's type;
   * a guideline has to actually be a guideline;
-  * an Update needs a requirement, and no longer needs a separate document
-    holding the finished wording.
+  * an Update needs a requirement, and the separate document that used to hold
+    the finished wording is gone entirely.
 """
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
+
+from one_fm.one_fm.doctype.document_request.document_request import get_requester_defaults
 
 REG_PREFIX = "_TestDocReqInputs"
 
@@ -143,6 +145,47 @@ class TestRequesterIsCaptured(DocumentRequestInputFixtures, FrappeTestCase):
 			frappe.set_user("Administrator")
 
 
+	def test_the_form_can_show_the_requester_before_the_first_save(self):
+		"""Capturing in validate is right for enforcement and too late for display.
+
+		The field is read-only, so a new request renders the requester and the
+		whole approval chain as empty read-only fields — which Frappe hides, so
+		the column is absent rather than blank. The requester cannot see that the
+		system knows who they are, or who will approve what they are writing.
+		"""
+		frappe.set_user(self.requester_user)
+		try:
+			chain = get_requester_defaults()
+		finally:
+			frappe.set_user("Administrator")
+		self.assertEqual(chain.get("requester"), self.requester)
+		self.assertTrue(chain.get("approver"), "no approver offered to the form")
+		self.assertTrue(chain.get("approver_user"), "the map assigns both approval tasks to this")
+
+	def test_what_the_form_shows_is_what_the_save_records(self):
+		"""Two lookups for "who approves this" drift. A form showing one approver
+		while the save records another is worse than a form showing nothing."""
+		frappe.set_user(self.requester_user)
+		try:
+			shown = get_requester_defaults()
+			doc = self._request()
+			doc.requester = None
+			doc.insert(ignore_permissions=True)
+		finally:
+			frappe.set_user("Administrator")
+		for field in ("requester", "requester_user", "approver", "approver_user"):
+			self.assertEqual(shown.get(field), doc.get(field), f"{field} differs")
+
+	def test_a_user_with_no_employee_record_is_told_at_open_time(self):
+		"""Empty, not an exception: the form turns this into a message. Throwing
+		here would break opening the form rather than explaining it."""
+		frappe.set_user("Guest")
+		try:
+			self.assertEqual(get_requester_defaults(), {})
+		finally:
+			frappe.set_user("Administrator")
+
+
 class TestDocumentTypeMustMatchTheReference(DocumentRequestInputFixtures, FrappeTestCase):
 	def test_a_mismatch_is_refused(self):
 		"""It used to overwrite the request's type from the register entry, which
@@ -209,32 +252,16 @@ class TestUpdateTakesItsChangeFromTheRequirement(DocumentRequestInputFixtures, F
 			doc.insert(ignore_permissions=True)
 		self.assertIn("Requirement", str(caught.exception))
 
-	def test_an_update_no_longer_needs_a_new_content_document(self):
-		"""update_source used to be mandatory and hold the finished wording."""
-		sop = _register("SOP", suffix="NoSource")
-		doc = self._request(
-			request_action="Update",
-			reference_document=sop,
-			requirement_text="Add a step about returning the key.",
-		)
-		doc.insert(ignore_permissions=True)
-		self.assertFalse(doc.update_source)
+	def test_the_new_content_document_field_is_gone(self):
+		"""It held the finished wording of a revision, drafted outside the system.
 
-	def test_the_field_is_no_longer_mandatory_on_the_form_either(self):
-		field = frappe.get_meta("Document Request").get_field("update_source")
-		self.assertFalse(field.mandatory_depends_on)
-
-	def test_update_source_still_cannot_be_the_document_being_revised(self):
-		"""Kept: reformatting a document into itself produces an identical version."""
-		sop = _register("SOP", suffix="SelfRef")
-		doc = self._request(
-			request_action="Update",
-			reference_document=sop,
-			update_source=sop,
-			requirement_text="Change something.",
-		)
-		with self.assertRaises(frappe.ValidationError):
-			doc.insert(ignore_permissions=True)
+		A revision is now written from Requirement against the existing document,
+		so a second document holding the answer has nothing left to do — and while
+		the field existed the process still had a task downloading it. Asserted
+		rather than assumed: re-adding it would quietly reintroduce two competing
+		sources of truth for what a revision should say.
+		"""
+		self.assertIsNone(frappe.get_meta("Document Request").get_field("update_source"))
 
 	def test_a_withdrawn_document_still_cannot_be_revised(self):
 		"""Kept: withdrawing is how this system says "stop using this"."""
@@ -253,6 +280,37 @@ class TestUpdateTakesItsChangeFromTheRequirement(DocumentRequestInputFixtures, F
 		)
 		with self.assertRaises(frappe.ValidationError):
 			doc.insert(ignore_permissions=True)
+
+
+class TestRequestActionIsChosen(FrappeTestCase):
+	def test_it_has_an_empty_first_option_and_no_default(self):
+		"""The default is the load-bearing half.
+
+		An empty first option with default "Create" still lands on Create, so
+		"what kind of request is this?" goes unasked — the same silent answer that
+		was fixed on Document Type. The action decides whether a document is
+		created, revised or withdrawn, which is not a question to answer on the
+		requester's behalf.
+		"""
+		field = frappe.get_meta("Document Request").get_field("request_action")
+		self.assertEqual(field.fieldtype, "Select")
+		self.assertTrue(field.reqd)
+		self.assertEqual((field.options or "").split("\n")[0], "", "first option must be empty")
+		self.assertFalse(field.default, f"still defaults to {field.default!r}")
+
+	def test_it_is_labelled_for_what_it_selects(self):
+		""""Action" alone reads as "what do I do now" on a form full of buttons."""
+		self.assertEqual(
+			frappe.get_meta("Document Request").get_field("request_action").label,
+			"Request Action",
+		)
+
+	def test_every_action_the_form_offers_is_one_the_map_branches_on(self):
+		"""An action with no branch would start a process that goes nowhere."""
+		offered = {o for o in (
+			frappe.get_meta("Document Request").get_field("request_action").options or ""
+		).split("\n") if o}
+		self.assertEqual(offered, {"Create", "Update", "Delete"})
 
 
 class TestRegisterDocumentType(FrappeTestCase):

@@ -17,7 +17,6 @@
   "requirement_text",
   "source_guideline",
   "reference_document",
-  "update_source",
   "section_break_approval",
   "approver",
   "approver_user",
@@ -54,11 +53,10 @@
    "fieldname": "request_action",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Action",
-   "options": "Create\nUpdate\nDelete",
-   "default": "Create",
+   "label": "Request Action",
+   "options": "\nCreate\nUpdate\nDelete",
    "reqd": 1,
-   "description": "Create a new document, revise an existing one (which publishes a new version), or withdraw an existing one from use. Delete does NOT destroy anything — it marks the document inactive and revokes its Drive sharing, and a System Manager can reactivate it."
+   "description": "Create a new document, revise an existing one (which publishes a new version), or withdraw an existing one from use. No default: a Select whose first option is a real action silently answers this question for the requester. Delete does NOT destroy anything — it marks the document inactive and revokes its Drive sharing, and a System Manager can reactivate it."
   },
   {
    "fieldname": "document_type",
@@ -105,15 +103,6 @@
    "depends_on": "eval:doc.request_action != 'Create'",
    "mandatory_depends_on": "eval:doc.request_action != 'Create'",
    "description": "The existing published document being revised or withdrawn. Only active controlled documents can be picked — an already-withdrawn one has nothing to revise or withdraw, and input material is not a controlled document."
-  },
-  {
-   "fieldname": "update_source",
-   "link_filters": "[[\"Document Register\",\"lifecycle_state\",\"=\",\"Active\"]]",
-   "fieldtype": "Link",
-   "label": "New Content Document",
-   "options": "Document Register",
-   "depends_on": "eval:doc.request_action == 'Update'",
-   "description": "Optional. Extra material the revision should draw on, catalogued on Document Register and ticked Input Material. Not required: an Update normally takes its change from Requirement and everything else from the existing document."
   },
   {
    "fieldname": "section_break_approval",

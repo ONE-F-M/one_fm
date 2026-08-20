@@ -17,7 +17,6 @@ class DocumentRequest(Document):
 		self.check_reference_document_is_controlled()
 		self.check_source_guideline_is_a_guideline()
 		self.check_source_documents_are_active()
-		self.check_update_source()
 
 	def set_requester_defaults(self):
 		"""Capture the requester from whoever is filing the request.
@@ -67,16 +66,17 @@ class DocumentRequest(Document):
 		if not self.requester:
 			return
 
-		employee = frappe.db.get_value(
-			"Employee", self.requester, ["user_id", "reports_to"], as_dict=True
-		)
-		if not employee:
+		chain = _requester_chain(self.requester)
+		if not chain:
 			return
 
 		if not self.requester_user:
-			self.requester_user = employee.get("user_id")
+			self.requester_user = chain.get("requester_user")
 		if not self.approver:
-			self.approver = employee.get("reports_to")
+			self.approver = chain.get("approver")
+		# Not chain["approver_user"]: an approver supplied deliberately is not
+		# necessarily the requester's line manager, and their user must follow the
+		# approver actually on the request.
 		if self.approver and not self.approver_user:
 			self.approver_user = frappe.db.get_value("Employee", self.approver, "user_id")
 
@@ -214,10 +214,7 @@ class DocumentRequest(Document):
 		nothing else — the API, an import and a test all sail past it, which is
 		exactly the gap ``check_required_links`` was written for.
 		"""
-		fields = (
-			("source_guideline", "Create", _("Source Guideline")),
-			("update_source", "Update", _("New Content Document")),
-		)
+		fields = (("source_guideline", "Create", _("Source Guideline")),)
 		for fieldname, action, label in fields:
 			name = self.get(fieldname)
 			if not name or self.request_action != action:
@@ -266,29 +263,6 @@ class DocumentRequest(Document):
 				)
 			)
 
-	def check_update_source(self):
-		"""The revision's content has to come from somewhere other than itself.
-
-		On an Update the uploaded document is the authoritative content — the AI
-		is only allowed to reformat it, never to invent wording. Pointing that at
-		the document being revised would ask it to reformat a document into
-		itself, which produces a version identical to the one before it.
-		"""
-		if self.request_action != "Update":
-			# Only Update consumes it; a stale value on a Create/Delete would be
-			# fetched by the process and silently treated as the new content.
-			self.update_source = None
-			return
-
-		if self.update_source and self.update_source == self.reference_document:
-			frappe.throw(
-				_(
-					"The New Content Document cannot be the document being revised — "
-					"that would publish a new version identical to the current one. "
-					"Catalogue the new content as its own entry and pick that."
-				)
-			)
-
 
 # ── Reaching the published document ─────────────────────────────────────────
 # `document_link` holds the Google Docs URL, and it is the only thing the form
@@ -330,6 +304,50 @@ class DocumentRequest(Document):
 # than pretending it is gone, because a request that says "withdrawn" while
 # offering no way to see *what* was withdrawn is useless to an auditor.
 NO_DOCUMENT_STATUSES = ("Request Rejected",)
+
+
+def _requester_chain(employee: str) -> dict:
+	"""The employee's own user, their line manager, and that manager's user.
+
+	Shared by validate and by the form so both answer "who is asking and who
+	approves" the same way. Two implementations of that drift, and a form that
+	shows one approver while the save records another is worse than a form that
+	shows nothing.
+	"""
+	row = frappe.db.get_value("Employee", employee, ["user_id", "reports_to"], as_dict=True)
+	if not row:
+		return {}
+
+	approver = row.get("reports_to")
+	return {
+		"requester_user": row.get("user_id"),
+		"approver": approver,
+		"approver_user": (
+			frappe.db.get_value("Employee", approver, "user_id") if approver else None
+		),
+	}
+
+
+@frappe.whitelist()
+def get_requester_defaults() -> dict:
+	"""Who the signed-in user is, for a request that has not been saved yet.
+
+	The requester is captured in validate, which is the right place to *enforce*
+	it and far too late to *show* it: the field is read-only, so a new request
+	opens with the requester and the whole approval chain empty, and Frappe hides
+	empty read-only fields — the column is simply absent. The requester cannot
+	tell whether the system knows who they are, or who will be asked to approve
+	what they are about to write.
+
+	Uses the same lookup validate uses, so the form cannot show one requester and
+	save another. Returns {} when the user has no Employee record: the form says
+	so at open time instead of letting a filled-in request fail on save.
+	"""
+	employee = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "name")
+	if not employee:
+		return {}
+
+	return {"requester": employee, **_requester_chain(employee)}
 
 
 @frappe.whitelist()
