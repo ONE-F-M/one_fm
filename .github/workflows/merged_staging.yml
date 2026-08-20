@@ -21,11 +21,18 @@ jobs:
           command_timeout: 30m
           script_stop: true
           script: |
-            set -x
-            export PATH="/home/frappe/.local/bin:$PATH"
-            command -v bench
-            bench --version
-            
+            set -ex
+
+            # Non-interactive SSH does not load ~/.profile or nvm.
+            export PATH="$HOME/.local/bin:$PATH"
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+            # Preflight: fail fast with a clear cause instead of mid-deploy
+            command -v bench && bench --version
+            command -v node && node --version
+            command -v yarn && yarn --version
+
             cd /home/frappe/frappe-bench/apps/one_fm
             git pull upstream staging
             cd /home/frappe/frappe-bench
