@@ -69,7 +69,6 @@ page_js = {
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
 doctype_js = {
-	"Bank Account": "public/js/doctype_js/bank_account.js",
 	"Location" : "public/js/doctype_js/location.js",
 	"Shift Type" : "public/js/doctype_js/shift_type.js",
 	"Leave Type" : "public/js/doctype_js/leave_type.js",
@@ -308,7 +307,7 @@ doc_events = {
 		"validate": "one_fm.utils.validate_warehouse"
 	},
 	"Vehicle": {
-		"autoname": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.vehicle_autoname",
+		"before_insert": "one_fm.overrides.vehicle.set_naming_series",
 		"after_insert": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.after_insert_vehicle",
 		"validate": [
 			"one_fm.overrides.vehicle.validate_vehicle_branding",
@@ -334,10 +333,7 @@ doc_events = {
 		"after_insert": "one_fm.api.doc_methods.bank_account.after_insert",
 		"on_update": "one_fm.utils.bank_account_on_update",
 		"on_trash": "one_fm.utils.bank_account_on_trash",
-		"validate": [
-			"one_fm.utils.validate_iban_is_filled",
-			"one_fm.overrides.bank_account.validate_iban",
-		],
+		"validate": "one_fm.utils.validate_iban_is_filled",
 	},
 	"Employee Checkin": {
 		"on_update": "one_fm.utils.create_additional_salary_for_overtime_request_for_head_office"
@@ -579,7 +575,7 @@ override_doctype_class = {
     "Interview": "one_fm.overrides.interview.InterviewOverride",
     "Purchase Order": "one_fm.overrides.purchase_order.PurchaseOrderOverride",
     "HD Ticket": "one_fm.overrides.hd_ticket.HDTicketOverride",
-    # "ToDo": "one_fm.overrides.todo.ToDo",
+    "ToDo": "one_fm.overrides.todo.ToDo",
     "Task": "one_fm.overrides.task.TaskOverride",
     "Loan Application": "one_fm.overrides.loan_application.LoanApplicationOverride",
     "Loan": "one_fm.overrides.loan.LoanOverride",
@@ -693,6 +689,7 @@ scheduler_events = {
 			"one_fm.api.tasks.overtime_shift_assignment",
 			#"one_fm.api.tasks.automatic_checkout",
 			"one_fm.one_fm.doctype.password_reset_token.password_reset_token.revoke_password_tokens",
+			"one_fm.api.tasks.rambo_shift_assignment",
 		],
 		"37 23 * * *": [  #“At 23:37.”
 			'one_fm.api.tasks.issue_penalties'
@@ -713,6 +710,7 @@ scheduler_events = {
 		"15 12 * * *": [ #"At 12:15 pm - preponed from 01:30 pm (WI-001704); run after attendance is marked"
 			'one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.generate_checker',
 			'one_fm.operations.doctype.roster_double_shift_ot_checker.roster_double_shift_ot_checker.check_roster_double_shift_ot',
+			'one_fm.api.tasks.assign_pm_shift', # create shift assignment
 		],
 		"30 4 * * *": [
 			'one_fm.operations.doctype.roster_client_day_off_checker.roster_client_day_off_checker.check_roster_client_day_off'
@@ -768,9 +766,6 @@ scheduler_events = {
 		],
         "0 6 * * *": [ # update currency exchange rates daily at 6 am
 			"one_fm.tasks.one_fm.currency_exchange.update_currency_exchange_rates"
-		],
-		"15 12 * * *": [ # create shift assignment
-			'one_fm.api.tasks.assign_pm_shift'
 		],
 		"45 13 * * *": [ # validate shift assignmet
 			'one_fm.api.tasks.validate_pm_shift_assignment'

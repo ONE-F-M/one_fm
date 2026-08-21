@@ -556,6 +556,13 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 		if not employees:
 			frappe.throw("Employees must be selected.")
 
+		# Drop entries without a valid employee. These occur when an Over-Time-only cell
+		# (e.g. an Over-Time Client Event) is selected for a Basic action: such cells have an
+		# empty data-selectid, so the client sends an entry with a blank employee.
+		employees = [obj for obj in employees if obj.get("employee")]
+		if not employees:
+			frappe.throw(_("The selected cell cannot be scheduled as Basic. Use 'Change Employee Schedule (OT)' or 'Change Employee Schedule (Others)' for Over-Time / Client Event cells."))
+
 		employee_list = list({obj["employee"] for obj in employees})
 		employee_leave_attendance = get_employee_leave_attendance(employee_list,start_date)
 		if cint(project_end_date) and not end_date:
@@ -621,8 +628,13 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 
 		# Evaluate final acceptance conditions for creating Employee Schedule
 		
-		month_start = get_first_day(start_date)
-		month_end = get_last_day(end_date)
+		# Derive the calendar month from the dates being scheduled — end_date is empty
+		# for Day Off OT / Selected-Days mode and get_last_day("") wrongly returns the
+		# CURRENT month, so the day-off count would be taken from the wrong month.
+		assigned_dates = [getdate(e.get("date")) for e in employees if e.get("date")]
+		ref_date = min(assigned_dates) if assigned_dates else getdate(start_date)
+		month_start = get_first_day(ref_date)
+		month_end = get_last_day(ref_date)
 		
 		for obj in employee_list:
 			rdo_count = frappe.db.count("Employee Schedule", filters={
@@ -2553,12 +2565,31 @@ def assign_staff(employees, shift, custom_is_reliever, custom_is_weekend_relieve
 
 	try:
 		employees_list_json = json.loads(employees)
+		# For large batches, offload each assignment to a background worker so the
+		# web request returns quickly; for small batches, run inline (avoids queue overhead).
+		use_async = len(employees_list_json) > 10
 		for employee_name_iter in employees_list_json:
 			if not cint(request_employee_assignment):
-				frappe.enqueue(assign_job, employee=employee_name_iter, shift=shift_name_val, site=site_val, project=project_val,
-							   custom_operations_role_allocation=custom_operations_role_allocation,
-							   custom_is_reliever=custom_is_reliever,
-							   custom_is_weekend_reliever=custom_is_weekend_reliever, is_async=True, queue="long")
+				if use_async:
+					frappe.enqueue(
+						assign_job,
+						employee=employee_name_iter,
+						shift=shift_name_val,
+						site=site_val, project=project_val,
+						custom_operations_role_allocation=custom_operations_role_allocation,
+						custom_is_reliever=custom_is_reliever,
+						custom_is_weekend_reliever=custom_is_weekend_reliever,
+						is_async=True, queue="long"
+					)
+				else:
+					assign_job(
+						employee=employee_name_iter,
+						shift=shift_name_val,
+						site=site_val, project=project_val,
+						custom_operations_role_allocation=custom_operations_role_allocation,
+						custom_is_reliever=custom_is_reliever,
+						custom_is_weekend_reliever=custom_is_weekend_reliever
+					)
 			else:
 				emp_project_db, emp_site_db, emp_shift_db = frappe.db.get_value("Employee", employee_name_iter, ["project", "site", "shift"])
 

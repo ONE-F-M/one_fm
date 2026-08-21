@@ -22,10 +22,6 @@ class ClientInterviewShortlist(Document):
 			self.prospective_client = None
 			self.customer_name = None
 
-	def before_workflow_action(self):
-		if self.workflow_action == "Submit":
-			self.validate_qoa_check_for_attended_employees()
-
 	def validate_qoa_check_for_attended_employees(self):
 		"""Ensure all attended employees have QOA Check and Upload Picture filled."""
 		for row in self.client_interview_employee:
@@ -143,6 +139,8 @@ class ClientInterviewShortlist(Document):
 		employee_schedule.insert(ignore_permissions=True)
 
 	def on_update_after_submit(self):
+		if self.has_value_changed("workflow_state") and self.workflow_state == "Completed":
+			self.validate_qoa_check_for_attended_employees()
 		self.mark_attendance_for_interviewed_employees()
 
 	def mark_attendance_for_interviewed_employees(self):
