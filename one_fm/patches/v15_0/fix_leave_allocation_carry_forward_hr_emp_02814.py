@@ -23,7 +23,21 @@ def execute():
 	leave_type = "Annual Leave"
 	allocation_2024 = "HR-LAL-2024-01853"
 	allocation_2025 = "HR-LAL-2025-03301"
-	
+
+	# Site-specific data fix: skip on sites that don't have these records
+	required_records = [
+		("Employee", employee),
+		("Leave Type", leave_type),
+		("Leave Allocation", allocation_2024),
+		("Leave Allocation", allocation_2025),
+	]
+	missing = [f"{doctype} {name}" for doctype, name in required_records if not frappe.db.exists(doctype, name)]
+	if missing:
+		frappe.logger().info(
+			f"[Fix Leave Allocation Carry-Forward] Skipping patch, records not found: {', '.join(missing)}"
+		)
+		return
+
 	# ===== STEP 1: Delete the -17.0 ledger entries (data corruption) =====
 	# Use frappe.db.delete() instead of raw SQL to respect safe mode restrictions
 	deleted = frappe.db.delete("Leave Ledger Entry", {
