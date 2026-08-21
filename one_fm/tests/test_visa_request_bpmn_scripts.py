@@ -162,23 +162,21 @@ if not reason:
 
 # (script name, BPMN script task id, task label on the canvas, body)
 #
-# Names are the ones actually on the site - they follow each shape's own label rather
-# than the "... Are Mandatory" convention proposed while drafting.
+# Each script is named after its own shape, and no two shapes share a name. That is not
+# cosmetic - it is what stops the compiler's fallback mis-binding them.
 #
-# Only four of the six drafted bodies made it in. The two rejection-reason scripts for
-# the GRD Manager and MOI shapes are not here because they do not exist yet, and the
-# reason is worth understanding before adding them:
+# ``_extract_script_task_config`` reads a script task's inline ``<bpmn:script>`` text as
+# a Server Script NAME whenever the task carries no ``serverScript`` attribute and the
+# text does not look like Python. Four shapes used to be labelled "Require Rejection
+# Reason" and carried that text inline - the operator, GRD Manager, MOI and PAM-details
+# tasks - so one Server Script by that name bound to all four, and three of them then
+# checked operator_rejection_remark, which is not their field. The PAM-details shape was
+# running the operator's check entirely.
 #
-# ``_extract_script_task_config`` falls back to reading a script task's inline
-# ``<bpmn:script>`` text as a Server Script NAME whenever the task carries no
-# ``serverScript`` attribute and the inline text does not look like Python. Four shapes
-# carry the inline text "Require Rejection Reason" - the operator, manager, MOI and PAM
-# details tasks - so a single Server Script by that name silently binds to all four,
-# and three of them then check operator_rejection_remark, which is not their field.
-#
-# So the manager and MOI scripts cannot simply be added under a shared name. Each shape
-# needs its own name AND an explicit serverScript attribute. Until then the client-side
-# dialog keeps handling those two states - see visa_request.js.
+# Two rules follow from that, and both matter when adding the next script:
+#   1. Give every shape a distinct label, and name its script the same.
+#   2. Set the ``serverScript`` attribute explicitly. The attribute wins over the inline
+#      text, so an explicit binding cannot be hijacked by a stale label.
 SCRIPTS = (
 	(
 		"Visa Details Section is Mandatory",
@@ -199,19 +197,19 @@ SCRIPTS = (
 		WORK_PERMIT_NUMBER_SCRIPT,
 	),
 	(
-		"Require Rejection Reason",
+		"Operator Rejection Reason",
 		"Activity_0sa0xb3",
-		"Require Rejection Reason",
+		"Operator Rejection Reason",
 		OPERATOR_REJECTION_REASON_SCRIPT,
 	),
 )
 
-# Drafted, reviewed, and deliberately not on the site yet. Kept here so the bodies are
-# not rewritten from scratch once each shape has a distinct name and an explicit
-# serverScript attribute; add them to SCRIPTS at that point.
+# Drafted, reviewed, and not on the site yet. Their shapes are being relabelled from the
+# shared "Require Rejection Reason" to these names; add them to SCRIPTS once each exists
+# and its shape carries the matching serverScript attribute.
 PENDING_SCRIPTS = (
-	("MOI Rejection Reason is Mandatory", "Activity_0dtjaug", MOI_REJECTION_REASON_SCRIPT),
-	("GRD Manager Rejection Reason is Mandatory", "Activity_0nxcbzb", MANAGER_REJECTION_REASON_SCRIPT),
+	("MOI Rejection Reason", "Activity_0dtjaug", MOI_REJECTION_REASON_SCRIPT),
+	("GRD Manager Rejection Reason", "Activity_0nxcbzb", MANAGER_REJECTION_REASON_SCRIPT),
 )
 
 
