@@ -244,17 +244,20 @@
    "read_only": 1
   },
   {
+   "depends_on": "eval:doc.type",
    "fieldname": "attestation_and_cost_breakdown_section",
    "fieldtype": "Section Break",
    "label": "Attestation and Cost Breakdown"
   },
   {
+   "depends_on": "eval:doc.type == 'Attestation'",
    "fieldname": "requires_embassy_attestation",
    "fieldtype": "Currency",
    "label": "Embassy Attestation Fee",
    "read_only": 1
   },
   {
+   "depends_on": "eval:doc.type == 'Translation'",
    "fieldname": "translation_fee",
    "fieldtype": "Currency",
    "label": "Translation Fee",
@@ -265,29 +268,34 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:doc.type == 'Attestation'",
    "fieldname": "mofa_fee",
    "fieldtype": "Currency",
    "label": "MOFA Fee",
    "read_only": 1
   },
   {
+   "depends_on": "eval:doc.type",
    "fieldname": "section_break_42",
    "fieldtype": "Section Break"
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:doc.type == 'Attestation'",
    "fieldname": "upload_embassy_payment_receipt",
    "fieldtype": "Attach",
    "label": "Upload Embassy Payment Receipt"
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:doc.type == 'Attestation'",
    "fieldname": "upload_mofa_payment_receipt",
    "fieldtype": "Attach",
    "label": "Upload MOFA Payment Receipt"
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:doc.type == 'Translation'",
    "fieldname": "upload_translation_payment_receipt",
    "fieldtype": "Attach",
    "label": "Upload Translation Payment Receipt"
@@ -298,6 +306,7 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:doc.type == 'Attestation' && doc.upload_embassy_payment_receipt",
    "fieldname": "upload_embassy_payment_receipt_on",
    "fieldtype": "Data",
    "label": "Upload Embassy Payment Receipt On",
@@ -305,6 +314,7 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:doc.type == 'Attestation' && doc.upload_mofa_payment_receipt",
    "fieldname": "upload_mofa_payment_receipt_on",
    "fieldtype": "Data",
    "label": "Upload MOFA Payment Receipt On",
@@ -312,6 +322,7 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:doc.type == 'Translation' && doc.upload_translation_payment_receipt",
    "fieldname": "upload_translation_payment_receipt_on",
    "fieldtype": "Data",
    "label": "Upload Translation Payment Receipt On",
@@ -343,6 +354,7 @@
   {
    "allow_on_submit": 1,
    "default": "0",
+   "depends_on": "eval:doc.type == 'Attestation'",
    "description": "Derived from the Nationality Attestation Rules in HR Settings.",
    "fieldname": "embassy_attestation_required",
    "fieldtype": "Check",
@@ -352,6 +364,7 @@
   {
    "allow_on_submit": 1,
    "default": "0",
+   "depends_on": "eval:doc.type == 'Attestation'",
    "description": "Derived from the Nationality Attestation Rules in HR Settings.",
    "fieldname": "mofa_attestation_required",
    "fieldtype": "Check",
@@ -361,6 +374,7 @@
   {
    "allow_on_submit": 1,
    "default": "0",
+   "depends_on": "eval:doc.type == 'Translation'",
    "description": "Derived from the Nationality Attestation Rules in HR Settings.",
    "fieldname": "translation_required",
    "fieldtype": "Check",
@@ -371,7 +385,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-13 09:30:00.000000",
+ "modified": "2026-08-19 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PCC Attestation",
