@@ -58,7 +58,6 @@ class VisaRequest(Document):
 	def validate(self):
 		self.validate_applicant_eligibility()
 		self.validate_workflow_transitions()
-		self.validate_references()
 		self.update_tracker_status()
 
 	def validate_applicant_eligibility(self):
@@ -175,38 +174,25 @@ class VisaRequest(Document):
 				recalculate_ccp_live_eta(ccp_name)
 
 	def validate_workflow_transitions(self):
-		# PAM -> MOI: require pam_reference_number when workflow becomes Pending By MOI
+		# WI-002106: the MOI Reference Number check that used to live here has moved to
+		# the Processa map - script task Activity_18oq1er, Server Script "MOI Reference
+		# Number is Mandatory".
+		#
+		# The PAM Reference Number check stays until the process owner settles which
+		# stage it belongs to: this requires it on the way out of Pending By PAM, while
+		# the map checks it much earlier, at the GRD Operator stage, alongside the PAM
+		# File and the PAM Designation List.
 		if self.workflow_state == "Pending By MOI" and not self.get("pam_reference_number"):
 			frappe.throw(
 				"PAM Reference Number is required before submitting to MOI.",
 				title="Missing PAM Reference Number",
 			)
 
-		# MOI -> Pending Visa Issuance: require moi_reference_number
-		if self.workflow_state == "Pending Visa Issuance" and not self.get("moi_reference_number"):
-			frappe.throw(
-				"MOI Reference Number is required before moving to Pending Visa Issuance.",
-				title="Missing MOI Reference Number",
-			)
 
-	def validate_references(self):
-		# Pending Visa -> Pending Recruiter Confirmation: require visa_reference_number, payment_receipt, visa_document
-		if (self.workflow_state == "Pending Recruiter Confirmation"):
-			missing = []
-			if not self.get("visa_reference_number"):
-				missing.append("Visa Reference Number")
-			if not self.get("payment_receipt"):
-				missing.append("Payment Receipt")
-			if not self.get("visa_document"):
-				missing.append("Visa Document")
+# WI-002106: validate_references() was removed here. The visa reference, payment receipt
+# and visa document are now required by the Processa map - script task Activity_0y674id,
+# Server Script "Visa Details Are Mandatory".
 
-			if missing:
-				frappe.throw(
-					"The following fields are required before submitting to recruiter: {0}".format(
-						", ".join(missing)
-					),
-					title="Missing Required Fields",
-				)
 
 def can_reapply(doc) -> bool:
 	"""Is this request one the GRD Operator may raise a fresh attempt for (WI-001976)?

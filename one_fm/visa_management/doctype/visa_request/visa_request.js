@@ -35,28 +35,17 @@ frappe.ui.form.on("Visa Request", {
 	}
 });
 
+// WI-002106: the MOI Reference Number check (AC 5) and the visa reference / payment
+// receipt / visa document check (AC 7) were removed from here. Both are now enforced by
+// the Processa map, which blocks the task rather than the button.
+//
+// The PAM Reference Number check stays until the process owner settles which stage it
+// belongs to - see the note in validate_workflow_transitions().
 function validate_references(frm, action) {
 	// PAM -> MOI
 	if (action === 'Approve' && frm.doc.workflow_state === 'Pending By PAM') {
 		if (frm.doc.pam_reference_number) return;
 		return show_reference_validation(frm, 'pam_reference_number', __('PAM Reference Missing'), __('Please add PAM Reference Number before approving to MOI.'));
-	}
-
-	// MOI -> Pending Visa Issuance
-	if (action === 'Approve' && frm.doc.workflow_state === 'Pending By MOI') {
-		if (frm.doc.moi_reference_number) return;
-		return show_reference_validation(frm, 'moi_reference_number', __('MOI Reference Missing'), __('Please add MOI Reference Number before approving to Pending Visa Issuance.'));
-	}
-
-	// Pending Visa Issuance -> Submit to Recruiter: require visa_reference_number, payment_receipt and visa_document
-	if (action === 'Submit to Recruiter' && frm.doc.workflow_state === 'Pending Visa Issuance') {
-		const missing = [];
-		if (!frm.doc.visa_reference_number) missing.push({field: 'visa_reference_number', label: __('Visa Reference Number')});
-		if (!frm.doc.payment_receipt) missing.push({field: 'payment_receipt', label: __('Payment Receipt')});
-		if (!frm.doc.visa_document) missing.push({field: 'visa_document', label: __('Visa Document')});
-		if (missing.length) {
-			return show_reference_validation(frm, missing[0].field, __('Missing Required Fields'), __('Please add {0} before submitting to recruiter.', [missing.map(m => m.label).join(', ')]));
-		}
 	}
 }
 
@@ -86,8 +75,26 @@ function show_reference_validation(frm, field, title, message) {
 function set_rejection_remarks(frm) {
 	try {
 		const state = frm.doc.workflow_state;
+		// WI-002106: the GRD Operator rejection reason is now required by the Processa
+		// map - Activity_0sa0xb3, Server Script "Require Rejection Reason" - which
+		// blocks the task instead of prompting in a dialog.
+		//
+		// The other three states still prompt here:
+		//
+		//   Pending GRD Manager Approval  no script yet (Activity_0nxcbzb)
+		//   Pending By MOI                no script yet (Activity_0dtjaug), AC 6
+		//   Pending By PAM                AC 3 wants the reason on a dropdown with the
+		//                                 remarks kept separately, and that field does
+		//                                 not exist yet
+		//
+		// The manager and MOI shapes are not merely unscripted, they are mis-bound: both
+		// carry the inline text "Require Rejection Reason", and the compiler reads that
+		// text as a Server Script name when no serverScript attribute is set. So they
+		// currently resolve to the OPERATOR script and would demand
+		// operator_rejection_remark on a manager or MOI rejection. Removing these two
+		// branches before each shape has its own name and an explicit attribute would
+		// swap a working dialog for a check on the wrong field.
 		const handledStates = [
-			'Pending by GRD Operator',
 			'Pending GRD Manager Approval',
 			'Pending By PAM',
 			'Pending By MOI'
@@ -106,17 +113,21 @@ function set_rejection_remarks(frm) {
 // Where a rejection reason is stored, per the state it was rejected from. Also decides
 // which field reasons_for_state() reads its options off.
 const REJECTION_REMARK_FIELD_BY_STATE = {
-	'Pending by GRD Operator': 'operator_rejection_remark',
+	// The operator entry went with its state in WI-002106 - unreachable once the dialog
+	// stopped handling it, and the reason is now written on the form instead.
 	'Pending GRD Manager Approval': 'grd_manager_remark',
 	'Pending By PAM': 'pam_rejection_remark',
 	'Pending By MOI': 'moi_rejection_remark'
 };
 
-// Predefined rejection reasons per workflow state (WI-001693). PAM and MOI reject for
-// different reasons, so each state offers its own list rather than a shared one.
-// MOI is absent on purpose: WI-001773 made moi_rejection_remark a Select, so its
-// reasons come from the field itself via reasons_for_state() rather than being
-// repeated here, where they would only drift from what the field accepts.
+// Predefined rejection reasons per workflow state (WI-001693). Only PAM has a hardcoded
+// list; MOI reads its options off moi_rejection_remark via reasons_for_state(), and the
+// manager state keeps free text.
+//
+// AC 3 will move this list onto the field itself as a Select, the way
+// moi_rejection_remark already was - which is what reasons_for_state() below prefers,
+// and what stops the options here drifting from what the field accepts. That needs the
+// process owner to confirm the field split and the authoritative list first.
 const REJECTION_REASONS_BY_STATE = {
 	'Pending By PAM': [
 		'Passport Validity is Less than 18 Months',
@@ -130,7 +141,8 @@ const REJECTION_REASONS_BY_STATE = {
 
 // The reasons to offer for a state: the target field's own options when it is a
 // Select, otherwise the hardcoded list above. Offering anything else would write a
-// value the field rejects on save.
+// value the field rejects on save. Kept field-driven-first precisely because AC 3 is
+// going to turn pam_rejection_remark into a Select.
 function reasons_for_state(frm, state) {
 	const fieldname = REJECTION_REMARK_FIELD_BY_STATE[state];
 	const df = fieldname && frappe.meta.get_docfield('Visa Request', fieldname, frm.doc.name);
@@ -145,8 +157,7 @@ function reasons_for_state(frm, state) {
 
 function get_rejection_remarks(frm, resolve, reject) {
 	frappe.dom.unfreeze();
-	// PAM & MOI require a predefined reason (Select), each from its own list; the other
-	// states keep free text.
+	// PAM is the only state that still reaches here, and it offers a predefined list.
 	const state_reasons = reasons_for_state(frm, frm.doc.workflow_state);
 	const reason_field = state_reasons
 		? {
