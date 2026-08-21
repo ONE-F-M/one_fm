@@ -1,16 +1,61 @@
 import frappe
 from frappe import _
-from frappe.utils import add_days, now, today, now_datetime, get_link_to_form
+from frappe.utils import add_days, getdate, now, today, now_datetime, get_link_to_form
 from datetime import datetime, timedelta
 from hrms.hr.doctype.shift_assignment.shift_assignment import *
 from one_fm.api.v1.utils import response
+from one_fm.operations.doctype.operations_shift.operations_shift import resolve_shift_timing
 
 
 class ShiftAssignmentOverride(ShiftAssignment):
 
     def validate(self):
+        self.apply_shift_timing_override()
         self.set_datetime()
         super(ShiftAssignmentOverride, self).validate()
+
+    def apply_shift_timing_override(self):
+        """Carry the Shift Type this assignment's own date resolves to (WI-001833).
+
+        set_datetime() below derives start_datetime and end_datetime from shift_type, and
+        get_cut_off() derives the check-in and check-out window from the same field, so an
+        assignment holding the post's default on an override day is wrong about its hours in
+        both - the employee is measured against times they were never asked to work.
+
+        Only a single-day assignment is resolved. One assignment carries one Shift Type, so a
+        range spanning an override day and a default day has no single right answer; those
+        come from a Shift Request, which splits them by date itself.
+
+        Corrected only when the field still holds the post's default, which is the signature
+        of a caller that did not know about overrides. Unlike Employee Schedule.shift_type
+        this field is not a fetch_from mirror, so a deliberate choice does survive here and is
+        left alone.
+
+        shift_classification is re-derived from whichever Shift Type ends up in effect. It is
+        declared fetch_from: shift.shift_classification - the *post's* classification, taken
+        from the post's default Shift Type - so on an override day it would have read
+        "Morning" beside an Afternoon shift. Deriving it from the assignment's own Shift Type
+        also settles the case of a deliberately chosen type, where the two have always been
+        able to disagree.
+        """
+        if not (self.shift and self.start_date):
+            return
+
+        if self.end_date and getdate(self.end_date) != getdate(self.start_date):
+            return
+
+        operations_shift = frappe.get_cached_doc("Operations Shift", self.shift)
+        if operations_shift.shift_timing_override_required and (
+            not self.shift_type or self.shift_type == operations_shift.shift_type
+        ):
+            timing = resolve_shift_timing(operations_shift, self.start_date)
+            if timing.shift_type:
+                self.shift_type = timing.shift_type
+
+        if self.shift_type:
+            self.shift_classification = frappe.get_cached_value(
+                "Shift Type", self.shift_type, "shift_type"
+            )
 
     def validate_employee_checkin(self):
         """Block cancellation only when a checkin is actually linked to THIS

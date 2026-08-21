@@ -118,6 +118,13 @@ class TransportationManifest(Document):
 			if row.pickup_accommodation and row.pickup_accommodation not in accommodation_sequence:
 				accommodation_sequence[row.pickup_accommodation] = len(accommodation_sequence) + 1
 
+		# A merged run is numbered by visit, not by camp (WI-002072). Its bus calls at
+		# the same place twice — dropping in the morning and collecting in the evening —
+		# and those are two stops on the driver's list, not one.
+		if (self.get("trip_direction") or "") == "Mixed":
+			self._number_stops_by_visit(rows)
+			return
+
 		# Second pass: assign Stop Sequence per unique Pickup Accommodation.
 		# Every distinct pickup camp is its own stop — including Direct routes — so
 		# a bus chaining pickups from several camps numbers them 1, 2, 3… A single
@@ -128,6 +135,35 @@ class TransportationManifest(Document):
 			else:
 				# No accommodation to key on -> default to the first stop
 				row.stop_sequence = 1
+
+	def _number_stops_by_visit(self, rows):
+		"""Number a merged run's stops one per visit (WI-002072).
+
+		The per-camp rule the rest of the manifests use collapses everything happening at
+		one place into a single stop. That is right for a run that only ever picks up, and
+		wrong for a merged one: a stop where workers get off and others get on is two
+		entries on the driver's list, and a stop the bus returns to later is a third.
+
+		Keyed on the place and what happens there, in the order the rows already sit -
+		which is the order the compiler built them from the assignment rows, and those
+		carry the stop_index WI-002077 wrote. So a same-stop drop-and-collect numbers 1
+		then 2, and a revisit further down the run takes the next number rather than
+		reusing the one it had on the way out.
+
+		A row with neither a stop name nor a camp cannot be placed and stays at the head
+		of the run rather than inventing a position for it.
+		"""
+		visit_sequence = {}
+		for row in rows:
+			place = row.stop_name or row.pickup_accommodation
+			if not place:
+				row.stop_sequence = 1
+				continue
+
+			key = (place, row.employee_action or "")
+			if key not in visit_sequence:
+				visit_sequence[key] = len(visit_sequence) + 1
+			row.stop_sequence = visit_sequence[key]
 
 	def on_update(self):
 		self.sync_rambo_assignments()

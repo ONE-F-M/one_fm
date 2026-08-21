@@ -12,6 +12,7 @@ from frappe.core.doctype.communication.email import make
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from one_fm.grd.doctype.paci import paci
 from one_fm.utils import is_scheduler_emails_enabled
+from one_fm.grd.utils import attach_employee_document
 
 class Residency(Document):
     company = frappe.db.get_value("Company", frappe.defaults.get_global_default('company'), 
@@ -37,6 +38,37 @@ class Residency(Document):
         self.set_company_address()
         self.set_company_unified_number()
         self.set_paci_number()
+        self.validate_exception_details()
+
+    def validate_exception_details(self):
+        """Hold the save until a ticked exception carries its evidence (WI-002022).
+
+        On `validate` rather than `on_submit` because the story blocks the save, not
+        only the completion: a Damj or a fine recorded without the government letter or
+        the payment receipt is not a record of anything, and letting one sit in Draft
+        that way means the operator finds out at the end of the process instead of the
+        moment they tick the box.
+
+        A fine amount of 0 counts as missing. Ticking "Residency Fine to be Added" and
+        then entering nothing is the mistake the check exists to catch, and a zero-value
+        fine has nothing for finance to reference.
+        """
+        field_list = []
+
+        if self.damj_is_applicable:
+            field_list += [
+                {'Original Civil ID': 'original_civil_id'},
+                {'Upload DAMJ Letter': 'upload_damj_letter'},
+            ]
+
+        if self.residency_fine_to_be_added:
+            field_list += [
+                {'Residency Fine Amount (KWD)': 'residency_fine_amount_kwd'},
+                {'Upload Residency Fine Payment Receipt': 'upload_residency_fine_payment_receipt'},
+            ]
+
+        if field_list:
+            self.set_mendatory_fields(field_list)
 
     def set_grd_values(self):
         if not self.grd_supervisor:
@@ -90,9 +122,68 @@ class Residency(Document):
     def on_submit(self):
         self.validate_mandatory_fields_on_submit()
         self.set_residency_expiry_new_date_in_employee_doctype()
+        self.apply_damj_civil_id()
         self.db_set('completed_on', now_datetime())
         if self.category == "Transfer":
             self.recall_create_paci()
+
+    def apply_damj_civil_id(self):
+        """Put the corrected Civil ID on the Employee once the Damj is completed (WI-002022).
+
+        A Damj merges two civil ID numbers the government issued the same person, and the
+        surviving one is the original. Until it is written back, every record that reads
+        the Civil ID off the Employee - and every one already holding the superseded
+        number - is wrong.
+
+        Written with `db_set`/`set_value` rather than a full Employee save for the same
+        reason `set_residency_expiry_new_date_in_employee_doctype` does: a full save
+        re-validates the whole Employee, and 1,124 of them hold a Marital Status the
+        field's options no longer accept, so any such save throws on data that has
+        nothing to do with the civil ID.
+
+        This record's own mirror of the number is updated too. It is fetched from the
+        Employee and would otherwise keep showing the number the merge just retired, on
+        the very document that recorded the merge.
+        """
+        if not (self.damj_is_applicable and self.original_civil_id):
+            return
+
+        frappe.db.set_value('Employee', self.employee, 'one_fm_civil_id', self.original_civil_id)
+        self.db_set('one_fm_civil_id', self.original_civil_id)
+        self.sync_damj_civil_id_to_paci()
+
+    def sync_damj_civil_id_to_paci(self):
+        """Carry the merged Civil ID over to the PACI opened alongside this Residency (WI-002027).
+
+        The PACI's Civil ID is fetched from the Employee, which means it is copied once at
+        insert and never looked at again. A Damj completed after the PACI was opened
+        therefore leaves the civil ID application quoting the number the government just
+        retired - the one thing it must not do.
+
+        Scoped to the same Preparation, which is what pairs the two documents: a
+        Preparation opens one Residency and one PACI per employee, so that pair is the
+        "linked record" the story means. A Residency with no Preparation - a transfer, say
+        - has no PACI to pair with and is left alone.
+
+        Cancelled records are skipped; there can be more than one live PACI for the same
+        employee (a rejected application and its replacement), and both need the
+        correction. Written with set_value because the field is read-only and the PACI may
+        already be submitted, and because a full save would re-run the PACI's own
+        validation over a document this change has no business re-validating.
+        """
+        if not self.preparation:
+            return
+
+        for paci_name in frappe.get_all(
+            'PACI',
+            filters={
+                'preparation': self.preparation,
+                'employee': self.employee,
+                'docstatus': ['!=', 2],
+            },
+            pluck='name',
+        ):
+            frappe.db.set_value('PACI', paci_name, 'civil_id', self.original_civil_id)
 
     def recall_create_paci(self):
         paci.create_PACI_for_transfer(self.employee)
@@ -118,43 +209,27 @@ class Residency(Document):
     def set_residency_expiry_new_date_in_employee_doctype(self):
         """
         runs: `on_submit`
-        This method to sort records of employee documents upon document name;
-        First, get the employee document child table.
-        second, find index of the document.
-        Third, set the new document.
-        After that, clear the child table and append the new order
-        """
-        today = date.today()
-        Find = False
-        employee = frappe.get_doc('Employee', self.employee)
-        document_dic = frappe.get_list('Employee Document',
-            fields={'attach','document_name','issued_on','valid_till'},
-            filters={'parent':self.employee}, ignore_permissions=True
-        )
-        for index,document in enumerate(document_dic):
-            if document.document_name == "Residency Expiry Attachment":
-                Find = True
-                break
-        if Find:
-            document_dic.insert(index,{
-                "attach": self.residency_attachment,
-                "document_name": "Residency Expiry Attachment",
-                "issued_on":today,
-                "valid_till": self.new_residency_expiry_date
-            })
-            employee.set('one_fm_employee_documents',[]) #clear the child table
-            for document in document_dic:                # append new arrangements
-                employee.append('one_fm_employee_documents',document)
+        Record the new residency attachment and expiry date on the Employee.
 
-        if not Find:
-            employee.append("one_fm_employee_documents", {
-            "attach": self.residency_attachment,
-            "document_name": "Residency Expiry Attachment",
-            "issued_on":today,
-            "valid_till":self.new_residency_expiry_date
-            })
-        employee.residency_expiry_date = self.new_residency_expiry_date
-        employee.save()
+        The two facts are written directly rather than through a full save of the
+        Employee, which re-validates every field on it - so completing a Residency
+        failed on data that has nothing to do with it: 1,124 employees hold a Marital
+        Status the field's options no longer accept ("Single", "Divorced", "Widowed").
+
+        The old version rebuilt the whole child table to keep it ordered, and inserted
+        the new row beside the existing one rather than over it, so every renewal left
+        another Residency Expiry Attachment behind. The helper updates the row in place.
+        """
+        attach_employee_document(
+            self.employee,
+            document_name="Residency Expiry Attachment",
+            attach=self.residency_attachment,
+            valid_till=self.new_residency_expiry_date,
+            issued_on=date.today(),
+        )
+        frappe.db.set_value(
+            "Employee", self.employee, "residency_expiry_date", self.new_residency_expiry_date
+        )
 
     def get_passport_arabic(self, passport):
         return {'Normal':'طبيعي','Diplomat':'دبلوماسي'}.get(passport)
@@ -164,7 +239,9 @@ class Residency(Document):
 # the "for extend" branch below (WI-001824). Without this the branch - which reads as
 # "anything that is not a renewal is an extension" - would open a second Residency for
 # them, categorised as Extend.
-ACTIONS_HANDLED_ON_SUBMIT = ('Renewal (Non-Kuwaiti)', 'New Kuwaiti', 'Overseas', 'Local Transfer')
+ACTIONS_HANDLED_ON_SUBMIT = (
+    'Renewal (Non-Kuwaiti)', 'New Kuwaiti', 'Overseas', 'Overseas (Government)', 'Local Transfer'
+)
 
 # The Residency a category opens, and how many days before the residency expires it is
 # applied for. Anything not listed is an extension, applied for a week ahead.
@@ -177,6 +254,9 @@ MOI_CATEGORY_BY_ACTION = {
     # First residency for an overseas hire (WI-001881): there is no expiry to count
     # back from, so it is applied for the day the Preparation was submitted.
     'Overseas': ('First Time', None),
+    # WI-002024: a government-contract overseas hire gets the same first residency. MOI
+    # does not care which file the work permit was raised against.
+    'Overseas (Government)': ('First Time', None),
 }
 
 
@@ -202,17 +282,34 @@ def set_employee_list_for_moi(preparation_name):
                     frappe.log_error(message=frappe.get_traceback(), title=f"Error creating MOI for Employee {employee.employee} in Preparation {preparation_name}")
                     continue
 
-# Creat moi for transfer
-def creat_moi_for_transfer(work_permit_name):
+# Open the MOI for a transferred employee, called when their Medical Insurance is
+# marked Done. Named "creat_moi_for_transfer" until the module was renamed from
+# moi_residency_jawazat to residency: that refactor corrected the spelling at the call
+# site but not here, so every Local Transfer insurance raised AttributeError on submit
+# and the MOI was never opened.
+def create_moi_for_transfer(work_permit_name):
     work_permit = frappe.get_doc('Work Permit',work_permit_name)
     if work_permit:
         employee = frappe.get_doc('Employee',work_permit.employee)
         if employee:
-            create_moi_record(frappe.get_doc('Employee',employee.employee),"Transfer")
+            # The employee is already loaded; re-fetching it through its own mirror
+            # field only risked a second lookup failing.
+            create_moi_record(employee,"Transfer")
 
-def create_moi_record(employee,Renewal_or_Extend,preparation_name = None):
+def create_moi_record(employee,Renewal_or_Extend,preparation_name = None, category=None):
+    """Open the Residency an Action calls for.
 
-    category, days_before_expiry = MOI_CATEGORY_BY_ACTION.get(Renewal_or_Extend, ("Extend", -7))
+    WI-002033: a Preparation row states the category in NEW_ACTION_DOCUMENTS and passes it
+    in, so the table an operator reads to see what an Action produces is the one the
+    document is actually opened under. The map below still supplies the application date -
+    how many days before the residency expires it is applied for - which the caller does
+    not know, and still supplies the category for the callers that pass none: the transfer
+    path and the extend branch.
+    """
+    mapped_category, days_before_expiry = MOI_CATEGORY_BY_ACTION.get(
+        Renewal_or_Extend, ("Extend", -7)
+    )
+    category = category or mapped_category
     start_date = add_days(employee.residency_expiry_date, days_before_expiry) if days_before_expiry else today()
 
 

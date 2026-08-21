@@ -238,6 +238,12 @@ doc_events = {
 			"one_fm.overrides.todo.delete_linked_todos"
 		]
 	},
+	"HR Settings": {
+		"validate": [
+			"one_fm.grd.utils.set_renewal_extension_cost_totals",
+			"one_fm.grd.utils.validate_nationality_attestation_rules"
+		]
+	},
 	"Stock Entry": {
 		"validate": [
 			"one_fm.overrides.stock_entry.alert_item_multiple_entry",
@@ -654,6 +660,11 @@ scheduler_events = {
 			# WI-001829: three working days of silence from the previous employer is a
 			# refusal. On this schedule because it only counts working days anyway.
 			'one_fm.grd.doctype.work_permit.work_permit.auto_reject_unanswered_previous_company'
+		],
+		# WI-002016: the monthly penalty report to the departments, on the 23rd at 06:15,
+		# covering the payroll cycle that closed on the 22nd.
+		"15 6 23 * *": [
+			'one_fm.legal.penalty_report_email.send_monthly_penalty_report'
 		],
 		"15 3 * * *": [
 			'one_fm.tasks.one_fm.daily.generate_contracts_invoice', #Generate contracts sales invoice

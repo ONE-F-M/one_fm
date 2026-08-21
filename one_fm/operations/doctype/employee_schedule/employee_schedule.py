@@ -7,6 +7,7 @@ import frappe
 from frappe.model.document import Document
 from frappe import _
 from frappe.utils import cstr, add_days, getdate, get_last_day
+from one_fm.operations.doctype.operations_shift.operations_shift import resolve_shift_timing
 from one_fm.utils import get_week_start_end, get_month_start_end
 from one_fm.processor import sendemail
 
@@ -144,6 +145,7 @@ class EmployeeSchedule(Document):
 		self.validate_ojt_change()
 		self.validate_leave_application()
 		self.validate_relieving_date()
+		self.apply_shift_timing_override()
 		if self.employee_availability=='Working' and self.shift_type and self.date:
 			start_time, end_time = frappe.db.get_value("Shift Type", self.shift_type, ['start_time', 'end_time'])
 			end_date = self.date
@@ -163,6 +165,32 @@ class EmployeeSchedule(Document):
 			self.end_datetime = ''
 
 		# validate_operations_post_overfill({self.date: 1}, self.shift)
+
+	def apply_shift_timing_override(self):
+		"""Take the Shift Type the post resolves to on this row's date (WI-001832).
+
+		The start and end datetimes below are derived from shift_type, so getting the type
+		right here is what makes a Friday schedule carry Friday's hours. Placed in the
+		controller rather than in each creator because schedules are opened from a dozen
+		places - the Desk roster, the mobile and flutter roster APIs, Request Employee
+		Schedule, OJT, Client Event - and only a choke point catches all of them.
+
+		Applied unconditionally rather than only to rows that look untouched. `shift_type` is
+		read-only and declared `fetch_from: shift.shift_type` with no `fetch_if_empty`, so
+		Frappe already overwrites whatever a caller passed with the post's default before
+		validate runs. The field has always been a mirror of the post's Shift Type; this makes
+		it a mirror of the post's Shift Type *for that date*, which is the same contract.
+		"""
+		if not (self.shift and self.date) or self.employee_availability != 'Working':
+			return
+
+		operations_shift = frappe.get_cached_doc("Operations Shift", self.shift)
+		if not operations_shift.shift_timing_override_required:
+			return
+
+		timing = resolve_shift_timing(operations_shift, self.date)
+		if timing.shift_type:
+			self.shift_type = timing.shift_type
 
 	def validate_leave_application(self):
 		if self.employee and self.date:

@@ -6,7 +6,10 @@
 
 from __future__ import unicode_literals
 import frappe
+from frappe import _
 from frappe.model.document import Document
+from frappe.query_builder import DocType
+from frappe.utils import flt
 from frappe.utils import (
     today,
     add_months,
@@ -33,20 +36,38 @@ from one_fm.processor import sendemail
 # New Kuwaiti gets a Work Permit and nothing else: a Kuwaiti has no residency, no civil
 # ID application and no medical insurance process to open.
 #
-# A key means "open this document"; its value is the classification we have to hand the
-# creator. None where the creator works it out itself and its other callers rely on it
-# doing so - Medical Insurance maps the status off the Work Permit type, Residency maps
-# the category off the Action (see MOI_CATEGORY_BY_ACTION in residency.py). PACI writes
-# whatever it is given, so its category is named here. The values that result are the
-# mapping WI-001881 defines.
+# A key means "open this document"; its value is the government classification that
+# document is opened under. WI-002033: every value is stated here rather than left to the
+# creator to derive. Three of the four used to be None, meaning "Medical Insurance will
+# map the status off the Work Permit type and Residency will map the category off the
+# Action" - so this table, the one place an operator or a reviewer looks to see what an
+# Action produces, did not actually say what three of the four documents would get, and a
+# change to either creator's own mapping silently changed what Preparation produced.
+#
+# The creators keep their derivations for their other callers, which do not come through a
+# Preparation row and have nothing to pass. Residency still takes its application date
+# from MOI_CATEGORY_BY_ACTION; only the category is handed to it.
 NEW_ACTION_DOCUMENTS = {
     "New Kuwaiti": {
         "work_permit": "New Kuwaiti",
     },
     "Overseas": {
         "work_permit": "Overseas",
-        "medical_insurance": None,
-        "residency": None,
+        "medical_insurance": "New",
+        "residency": "First Time",
+        "paci": "New Application",
+    },
+    # WI-002024: the same overseas hire, but against a government contract file rather
+    # than a private one. Every document it opens is the one Overseas opens - what
+    # differs is the work permit fee, which PAM charges at the lower government project
+    # rate, so the Action has to be distinguishable at the point the fee is fetched and
+    # on the permit itself. Splitting it here rather than adding a flag beside Overseas
+    # keeps it a single choice in the operator's Action dropdown, which is where the
+    # distinction is actually made.
+    "Overseas (Government)": {
+        "work_permit": "Overseas (Government)",
+        "medical_insurance": "New",
+        "residency": "First Time",
         "paci": "New Application",
     },
     # The process map groups Local Transfer with Overseas and the non-Kuwaiti renewal:
@@ -55,19 +76,54 @@ NEW_ACTION_DOCUMENTS = {
     # assuming one.
     "Local Transfer": {
         "work_permit": "Local Transfer",
-        "medical_insurance": None,
-        "residency": None,
+        "medical_insurance": "Local Transfer",
+        "residency": "Transfer",
         "paci": "Transfer",
     },
 }
 
 
+# WI-002031: the fee components a master row and a Preparation row both carry, and which
+# the Total Amount on each is the sum of. Named once because HR Settings and Preparation
+# have to agree on the list - a component added to one and not the other silently drops
+# out of the total on the other side.
+COST_COMPONENT_FIELDS = (
+    'work_permit_amount',
+    'medical_insurance_amount',
+    'residency_stamp_amount',
+    'civil_id_amount',
+)
+
+# The Actions whose master fee row is keyed by the number of years as well as the Action.
+# Mirrors the depends_on the costing table already puts on its No. of Years field.
+YEAR_SCOPED_ACTIONS = ('Renewal (Kuwaiti)', 'Renewal (Non-Kuwaiti)')
+
+
 class Preparation(Document):
     def update_total_amount(self):
-        doc_total =  sum(i.total_amount or 0 for i in self.preparation_record if i)
+        """Derive each row's Total Amount from its components, then the document total.
+
+        The row total was summed only in the browser (WI-002031), which left the field -
+        read-only, and the number finance is emailed - holding whatever the last client to
+        touch the row happened to compute. A row whose components were edited after submit,
+        or filled by any path other than the Action dropdown, kept a total that did not
+        match its own parts.
+
+        Rows are written with `db_set` once the document is submitted, because
+        `on_update_after_submit` runs after the child rows are already saved and a plain
+        assignment there would be discarded.
+        """
+        for row in self.preparation_record:
+            row_total = sum(flt(row.get(field)) for field in COST_COMPONENT_FIELDS)
+            if self.docstatus == 1:
+                row.db_set('total_amount', row_total)
+            else:
+                row.total_amount = row_total
+
+        doc_total = sum(flt(row.total_amount) for row in self.preparation_record)
         frappe.db.set_value(self.doctype,self.name,'total_payment',doc_total)
         self.total_payment = doc_total
-                     
+
     def on_update_after_submit(self):
         self.compare_preparation_record()
         self.update_total_amount()
@@ -192,18 +248,18 @@ class Preparation(Document):
             subject = 'Records are created for WP, MI, MOI, PACI, and FP'
             create_notification_log(subject, message, [self.grd_operator], self)
 
-        inform_the_costing_to = frappe.db.get_single_value('HR Settings', 'inform_the_costing_to')
-        if inform_the_costing_to:
-            page_link = get_url(self.get_url())
-            message = "<p>Records are created<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
-            subject = 'Details of the Preparation Cost for WP, MI, MOI, PACI, and FP'
-            print_format = frappe.db.get_single_value('HR Settings', 'costing_print_format')
-            if not print_format:
-                print_format = 'Standard'
-            attachments = [frappe.attach_print(self.doctype, self.name, file_name=self.name, print_format=print_format)]
-            send_email(self, [inform_the_costing_to], message, subject, attachments)
-
-   
+        # The costing mail renders a PDF and hands it to the mail server, and neither belongs
+        # inside the submit transaction. wkhtmltopdf died with SIGSEGV on staging and took the
+        # whole submit down with it - but the Work Permit, Medical Insurance, MOI and PACI
+        # records created above each commit as they go, so they survived while the Preparation
+        # rolled back to draft, and re-submitting created them a second time. Queued after the
+        # commit so a broken PDF is an Error Log entry, not a failed submit.
+        frappe.enqueue(
+            'one_fm.grd.doctype.preparation.preparation.send_costing_notification',
+            queue='short',
+            enqueue_after_commit=True,
+            preparation=self.name
+        )
 
     @frappe.whitelist()
     def set_renewal_for_all_preparation_record(self, renew_all):
@@ -216,11 +272,16 @@ class Preparation(Document):
 
             preparation.renewal_or_extend = extension_type if renew_all else ""
             preparation.no_of_years = no_of_years if renew_all else ""
-            preparation.work_permit_amount = costing.work_permit_amount if renew_all else ""
-            preparation.medical_insurance_amount = costing.medical_insurance_amount if renew_all else ""
-            preparation.residency_stamp_amount = costing.residency_stamp_amount if renew_all else ""
-            preparation.civil_id_amount = costing.civil_id_amount if renew_all else ""
-            preparation.total_amount = costing.total_amount if renew_all else ""
+            # A nationality with no master row configured used to fail here on
+            # `None.work_permit_amount`, taking the whole "renew all" action down with it
+            # (WI-002031). The row is left at zero instead, which the operator can see and
+            # fill, and the totals below stay consistent with it.
+            costing = costing or frappe._dict()
+            for field in COST_COMPONENT_FIELDS:
+                preparation.set(field, flt(costing.get(field)) if renew_all else 0)
+            preparation.total_amount = sum(
+                flt(preparation.get(field)) for field in COST_COMPONENT_FIELDS
+            )
 
 # Calculate the date of the next month (First & Last) (monthly cron in hooks)
 def auto_create_preparation_record():
@@ -291,6 +352,22 @@ def notify_request_for_renewal_or_extend():# Notify finance
     send_email(preparation_list, [preparation_list.notify_finance_user], message, subject)
     create_notification_log(subject, message, [preparation_list.notify_finance_user], preparation_list)
 
+def send_costing_notification(preparation):
+    """Email the costing print of a submitted Preparation to the user set in HR Settings.
+
+    Runs in the background - see Preparation.send_notifications for why.
+    """
+    inform_the_costing_to = frappe.db.get_single_value('HR Settings', 'inform_the_costing_to')
+    if not inform_the_costing_to:
+        return
+
+    doc = frappe.get_doc('Preparation', preparation)
+    message = "<p>Records are created<a href='{0}'>{1}</a>.</p>".format(get_url(doc.get_url()), doc.name)
+    subject = 'Details of the Preparation Cost for WP, MI, MOI, PACI, and FP'
+    print_format = frappe.db.get_single_value('HR Settings', 'costing_print_format') or 'Standard'
+    attachments = [frappe.attach_print(doc.doctype, doc.name, file_name=doc.name, print_format=print_format)]
+    send_email(doc, [inform_the_costing_to], message, subject, attachments)
+
 def send_email(doc, recipients, message, subject, attachments=None):
     sendemail(
         recipients= recipients,
@@ -313,25 +390,47 @@ def create_notification_log(subject, message, for_users, reference_doc):
         doc.insert(ignore_permissions=True)
 
 @frappe.whitelist()
-def get_grd_renewal_extension_cost(renewal_or_extend, no_of_years=False):
-	if renewal_or_extend == 'Renewal' and not no_of_years:
-		return False
-	else:
-		query = """
-			select
-				*
-			from
-				`tabGRD Renewal Extension Cost`
-			where
-				parent = 'HR Settings'
-				and
-				renewal_or_extend = '{0}'
-		""".format(renewal_or_extend)
-		if renewal_or_extend == 'Renewal':
-			query += " and no_of_years = '{0}'".format(no_of_years)
-		result = frappe.db.sql(query, as_dict=True)
-		if result and len(result) > 0:
-			return result[0]
+def get_grd_renewal_extension_cost(renewal_or_extend: str, no_of_years: str = None):
+    """The master fee breakdown HR Settings holds for an Action (WI-002031).
+
+    Rewritten off `frappe.db.sql` with the Action interpolated into the string. The Action
+    arrives from the browser through a whitelisted method, so that was an injection hole
+    open to any logged-in user, and the method had no permission check at all. Both are
+    closed here: the Query Builder parameterises the value, and the caller has to be
+    someone who could fill in a Preparation row, which is the only thing this feeds.
+
+    The old version filtered on the number of years only when the Action was exactly
+    "Renewal" - a value the field has not offered since the options became
+    "Renewal (Kuwaiti)" and "Renewal (Non-Kuwaiti)". The filter was therefore dead, and a
+    renewal with three configured rows (1, 2 and 3 Years) got whichever the database
+    handed back first. The years now scope the lookup for the two renewal Actions, which
+    are the ones whose master rows are keyed by it.
+
+    Deliberately not scoped by years for any other Action: the field is hidden for them
+    but not cleared, so a row switched from Renewal (Non-Kuwaiti) to Extend 1 month still
+    carries "1 Year", and filtering on it would find nothing and quietly return no fees.
+    """
+    if not frappe.has_permission('Preparation', 'write'):
+        frappe.throw(_("Not permitted to read the GRD renewal and extension costing."),
+                     frappe.PermissionError)
+
+    if renewal_or_extend in YEAR_SCOPED_ACTIONS and not no_of_years:
+        return False
+
+    Cost = DocType('GRD Renewal Extension Cost')
+    query = (
+        frappe.qb.from_(Cost)
+        .select('*')
+        .where(Cost.parent == 'HR Settings')
+        .where(Cost.parenttype == 'HR Settings')
+        .where(Cost.renewal_or_extend == renewal_or_extend)
+    )
+    if renewal_or_extend in YEAR_SCOPED_ACTIONS:
+        query = query.where(Cost.no_of_years == no_of_years)
+
+    result = query.run(as_dict=True)
+    if result:
+        return result[0]
 
 def create_documents_for_new_actions(preparation_name):
     """Generate the sub-documents the New Kuwaiti and Overseas Actions ask for (WI-001824).
@@ -370,10 +469,14 @@ def create_documents_for_row(row, preparation_name):
     )
 
     if "medical_insurance" in plan:
-        medical_insurance.create_mi_record(work_permit_doc)
+        medical_insurance.create_mi_record(
+            work_permit_doc, insurance_status=plan["medical_insurance"]
+        )
 
     if "residency" in plan:
-        residency.create_moi_record(employee_doc, row.renewal_or_extend, preparation_name)
+        residency.create_moi_record(
+            employee_doc, row.renewal_or_extend, preparation_name, category=plan["residency"]
+        )
 
     if "paci" in plan:
         paci.create_PACI(employee_doc, plan["paci"], preparation_name)

@@ -9,7 +9,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-30 22:05:00.000000",
+ "modified": "2026-08-13 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Penalty And Investigation",
@@ -275,6 +275,12 @@
    "read_only": 1
   },
   {
+   "fieldname": "penalty_serial_no",
+   "label": "Penalty Serial No",
+   "fieldtype": "Data",
+   "allow_on_submit": 1
+  },
+  {
    "fieldname": "employee_response",
    "label": "Employee Response",
    "fieldtype": "Select",
@@ -476,6 +482,7 @@
   "penalty_name",
   "penalty_status",
   "created_by",
+  "penalty_serial_no",
   "employee_response",
   "refusal_proof",
   "penalty",
