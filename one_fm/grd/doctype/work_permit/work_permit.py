@@ -368,6 +368,43 @@ class WorkPermit(Document):
                     to_remove.append(document)
             [document.delete(document) for document in to_remove]
 
+    def sync_expiry_dates_to_linked_documents(self, new_expiry_date):
+        """Carry a new Work Permit expiry over to the Residency and PACI beside it (WI-002100).
+
+        The residency and the civil ID are both issued to run with the work permit, so the
+        permit's expiry is the date all three legally share. Both documents read it off the
+        Employee - once, when they are opened - so a permit whose expiry is set or corrected
+        afterwards left them quoting the old date on the paperwork submitted to MOI and PACI.
+
+        Paired by Preparation and employee, which is what "linked" means for these two: a
+        Preparation opens one Residency and one PACI per employee. A permit raised outside a
+        Preparation - a transfer, a cancellation - has nothing to pair with.
+
+        Cancelled documents are skipped; there can be more than one live record for the same
+        employee (a rejected application and its replacement) and both need the new date.
+
+        Written with set_value: the fields are read-only, the documents may already be
+        submitted, and a full save would re-run each document's own validation over a change
+        that has no business re-validating it.
+        """
+        if not (new_expiry_date and self.preparation):
+            return
+
+        for doctype, fieldname in (
+            ("Residency", "new_residency_expiry_date"),
+            ("PACI", "new_civil_id_expiry_date"),
+        ):
+            for name in frappe.get_all(
+                doctype,
+                filters={
+                    "preparation": self.preparation,
+                    "employee": self.employee,
+                    "docstatus": ["!=", 2],
+                },
+                pluck="name",
+            ):
+                frappe.db.set_value(doctype, name, fieldname, new_expiry_date)
+
     def set_work_permit_attachment_in_employee_doctype(self,new_expiry_date, work_permit_attachment=False):
         """
         runs: `on_submit`
@@ -380,6 +417,7 @@ class WorkPermit(Document):
         """
         if not work_permit_attachment:
             frappe.db.set_value("Employee", self.employee, "work_permit_expiry_date", new_expiry_date)
+            self.sync_expiry_dates_to_linked_documents(new_expiry_date)
             return
 
         today = date.today()
@@ -407,6 +445,7 @@ class WorkPermit(Document):
             })
         employee.work_permit_expiry_date = new_expiry_date
         employee.save()
+        self.sync_expiry_dates_to_linked_documents(new_expiry_date)
 
     @frappe.whitelist()
     def get_required_documents(self):
