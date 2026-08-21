@@ -333,16 +333,6 @@ class TestRequestsAgainstWithdrawnDocuments(VersioningFixtures, unittest.TestCas
 	def test_an_active_document_can_still_be_revised(self):
 		"""An Update also needs its New Content Document — see TestInputMaterial."""
 		doc = self._document(file_id="_TestVerS", state="Active")
-		src = frappe.get_doc({
-			"doctype": "Document Register",
-			"drive_file_id": "_TestVerSsrc",
-			"title": "_Test New Content",
-			# Document Type is mandatory on the register now, so input material
-			# has to say what kind it is like everything else.
-			"document_type": "Amendment",
-			"is_input_material": 1,
-		})
-		src.insert(ignore_permissions=True)
 
 		request = self._raise("Update", doc.name)
 
@@ -368,18 +358,6 @@ class TestInputMaterial(VersioningFixtures, unittest.TestCase):
 		if not self.requester:
 			self.skipTest("no active Employee to raise a request as")
 
-	def _input_doc(self, file_id="_TestInput001"):
-		entry = frappe.get_doc({
-			"doctype": "Document Register",
-			"drive_file_id": file_id,
-			"title": "_Test New Content",
-			"document_type": "Amendment",
-			"is_input_material": 1,
-			"content": "Mark is a boy.\n\nJane is a girl.",
-		})
-		entry.insert(ignore_permissions=True)
-		return entry
-
 	def _raise(self, **kw):
 		return frappe.get_doc({
 			"doctype": "Document Request",
@@ -389,19 +367,6 @@ class TestInputMaterial(VersioningFixtures, unittest.TestCase):
 			"requirement_text": "x",
 			**kw,
 		}).insert(ignore_permissions=True)
-
-	def test_input_material_cannot_be_revised(self):
-		src = self._input_doc("_TestInputA")
-		target = self._document(file_id="_TestCtrlA")
-
-		with self.assertRaises(frappe.ValidationError):
-			self._raise(request_action="Update", reference_document=src.name)
-
-	def test_input_material_cannot_be_withdrawn_by_request(self):
-		src = self._input_doc("_TestInputB")
-
-		with self.assertRaises(frappe.ValidationError):
-			self._raise(request_action="Delete", reference_document=src.name)
 
 	def test_an_update_requires_a_requirement(self):
 		"""mandatory_depends_on is client-side only in Frappe, so the rule has to

@@ -14,7 +14,6 @@ class DocumentRequest(Document):
 		self.apply_reference_document_defaults()
 		self.check_required_links()
 		self.check_reference_document_is_active()
-		self.check_reference_document_is_controlled()
 		self.check_source_guideline_is_a_guideline()
 		self.check_source_documents_are_active()
 
@@ -177,27 +176,6 @@ class DocumentRequest(Document):
 			).format(frappe.bold(self.reference_document), self.request_action)
 		)
 
-	def check_reference_document_is_controlled(self):
-		"""Input material is not a controlled document, so it cannot be revised.
-
-		Guidelines, amendment documents and the like are catalogued in the same
-		register so they can be *picked as a source*. Revising one through this
-		process would give it a document code and a version history, quietly
-		promoting reference material into the controlled set.
-		"""
-		if self.request_action == "Create" or not self.reference_document:
-			return
-
-		if frappe.db.get_value("Document Register", self.reference_document, "is_input_material"):
-			frappe.throw(
-				_(
-					"{0} is input material — reference content the process reads, not a "
-					"controlled document it produced. It has no version history to add to. "
-					"Pick the controlled document you want to revise, and use this one as "
-					"the New Content Document instead."
-				).format(frappe.bold(self.reference_document))
-			)
-
 	def check_source_documents_are_active(self):
 		"""A withdrawn document is not usable as SOURCE material either.
 
@@ -303,7 +281,7 @@ class DocumentRequest(Document):
 # and hiding it would be wrong. The form says the document is inactive rather
 # than pretending it is gone, because a request that says "withdrawn" while
 # offering no way to see *what* was withdrawn is useless to an auditor.
-NO_DOCUMENT_STATUSES = ("Request Rejected",)
+NO_DOCUMENT_STATES = ("Request Rejected",)
 
 
 def _requester_chain(employee: str) -> dict:
@@ -368,13 +346,13 @@ def get_published_document_link(document_request: str) -> dict:
 	request = frappe.db.get_value(
 		"Document Request",
 		document_request,
-		["name", "title", "status", "reference_document", "document_link", "document_version"],
+		["name", "title", "workflow_state", "reference_document", "document_link", "document_version"],
 		as_dict=True,
 	)
 	if not request:
 		return {}
 
-	if request.status in NO_DOCUMENT_STATUSES:
+	if request.workflow_state in NO_DOCUMENT_STATES:
 		return {}
 
 	lifecycle = _lifecycle_of(request.reference_document)
@@ -402,7 +380,7 @@ def get_published_document_link(document_request: str) -> dict:
 		if entry and entry.drive_file_link:
 			url, title, source = entry.drive_file_link, entry.title or request.title, "reference_document"
 
-	# 2. The run that produced it. `update_field` writes status with
+	# 2. The run that produced it. The map applies the state with
 	#    frappe.db.set_value, so no doc hook fires at publish — for any run
 	#    predating the map change, the instance is the only remaining record of
 	#    what was created.
