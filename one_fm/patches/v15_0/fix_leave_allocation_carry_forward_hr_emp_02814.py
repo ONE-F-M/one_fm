@@ -33,7 +33,7 @@ def execute():
 	]
 	missing = [f"{doctype} {name}" for doctype, name in required_records if not frappe.db.exists(doctype, name)]
 	if missing:
-		frappe.logger().info(
+		print(
 			f"[Fix Leave Allocation Carry-Forward] Skipping patch, records not found: {', '.join(missing)}"
 		)
 		return
@@ -48,7 +48,7 @@ def execute():
 		"leaves": -17.0
 	})
 	
-	frappe.logger().info(
+	print(
 		f"[Fix Leave Allocation Carry-Forward] Deleted {deleted} negative ledger entries "
 		f"for {employee} ({leave_type})"
 	)
@@ -74,7 +74,7 @@ def execute():
 		"modified": now()
 	})
 	
-	frappe.logger().info(
+	print(
 		f"[Fix Leave Allocation Carry-Forward] Updated {allocation_2024}: "
 		f"carry_forwarded_leaves_count: {alloc_2024.carry_forwarded_leaves_count} → {corrected_carry_forward_2024}, "
 		f"unused_leaves: {alloc_2024.unused_leaves} → {corrected_carry_forward_2024}, "
@@ -113,7 +113,7 @@ def execute():
 		"modified": now()
 	})
 	
-	frappe.logger().info(
+	print(
 		f"[Fix Leave Allocation Carry-Forward] Updated {allocation_2025}: "
 		f"earned_leaves: {earned_2025:.2f}, "
 		f"carry_forwarded_leaves: {alloc_2025.unused_leaves} → {corrected_carry_forward_2025:.2f}, "
