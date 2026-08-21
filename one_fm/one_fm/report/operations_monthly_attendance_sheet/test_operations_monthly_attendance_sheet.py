@@ -30,6 +30,7 @@ from one_fm.one_fm.report.operations_monthly_attendance_sheet.operations_monthly
 	row_group,
 	summary_counter,
 	validate_filters,
+	validate_roster_type,
 )
 
 REPORT = "Operations Monthly Attendance Sheet"
@@ -39,7 +40,9 @@ TO_DATE = "2026-01-16"
 
 
 def _filters(**kwargs):
-	base = {"from_date": FROM_DATE, "to_date": TO_DATE}
+	# WI-002017: Roster Type is mandatory, so every set of filters carries one. Basic is
+	# the filter's own default and the roster 98% of the rows belong to.
+	base = {"from_date": FROM_DATE, "to_date": TO_DATE, "roster_type": "Basic"}
 	base.update(kwargs)
 	return frappe._dict(base)
 
@@ -77,9 +80,39 @@ class TestValidateFilters(FrappeTestCase):
 			)
 
 	def test_the_maximum_range_is_allowed(self):
-		validate_filters(
-			frappe._dict(from_date=FROM_DATE, to_date=add_days(FROM_DATE, MAX_RANGE_DAYS - 1))
-		)
+		validate_filters(_filters(to_date=add_days(FROM_DATE, MAX_RANGE_DAYS - 1)))
+
+	def test_a_bare_date_range_is_still_valid(self):
+		# The print template's day headers validate a range with no roster type, so the
+		# roster rule deliberately does not live here.
+		validate_filters(frappe._dict(from_date=FROM_DATE, to_date=TO_DATE))
+
+
+class TestRosterTypeIsMandatory(FrappeTestCase):
+	"""WI-002017: the report cannot be run without a Roster Type."""
+
+	def test_a_missing_roster_type_is_rejected(self):
+		with self.assertRaises(frappe.ValidationError):
+			validate_roster_type(frappe._dict(from_date=FROM_DATE, to_date=TO_DATE))
+
+	def test_a_blank_roster_type_is_rejected(self):
+		with self.assertRaises(frappe.ValidationError):
+			validate_roster_type(_filters(roster_type=""))
+
+	def test_each_roster_type_is_accepted(self):
+		for roster_type in ("Basic", "Over-Time"):
+			with self.subTest(roster_type=roster_type):
+				validate_roster_type(_filters(roster_type=roster_type))
+
+	def test_running_the_report_without_one_is_rejected(self):
+		# The guard is on execute, so it holds however the report is reached.
+		with self.assertRaises(frappe.ValidationError):
+			execute(frappe._dict(from_date=FROM_DATE, to_date=TO_DATE))
+
+	def test_the_day_headers_do_not_need_one(self):
+		days = get_report_additional_day_details(FROM_DATE, TO_DATE)
+
+		self.assertTrue(days)
 
 
 class TestColumns(FrappeTestCase):

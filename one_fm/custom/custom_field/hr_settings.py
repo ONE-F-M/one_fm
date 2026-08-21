@@ -99,9 +99,16 @@ def get_hr_settings_custom_fields():
                 "description": "Specify the number of days in advance the supervisor should be notified before an employee's document expires. A notification will be triggered based on this value."
             },
             {
+                "fieldname": "paci_fine_amount_kwd",
+                "fieldtype": "Currency",
+                "insert_after": "days_before_expiry_to_notify_supervisor",
+                "label": "PACI Fine Amount (KWD)",
+                "description": "The fixed PACI late fine. Fetched onto a PACI record when the operator marks the fine applicable, so the rate is changed in one place when PACI changes it."
+            },
+            {
                 "fieldname": "renewal_extension_costing_section",
                 "fieldtype": "Section Break",
-                "insert_after": "days_before_expiry_to_notify_supervisor",
+                "insert_after": "paci_fine_amount_kwd",
                 "label": "Renewal Extension Costing"
             },
             {
@@ -111,9 +118,41 @@ def get_hr_settings_custom_fields():
                 "options": "GRD Renewal Extension Cost"
             },
             {
-                "fieldname": "costing_section",
+                "fieldname": "nationality_attestation_rules_section",
                 "fieldtype": "Section Break",
                 "insert_after": "renewal_extension_cost",
+                "label": "Nationality Attestation Rules"
+            },
+            {
+                "fieldname": "nationality_attestation_rules",
+                "fieldtype": "Table",
+                "insert_after": "nationality_attestation_rules_section",
+                "options": "Nationality Attestation Rule",
+                "description": "What a Police Clearance Certificate needs for each nationality: whether the embassy attests and at what fee, whether MOFA attests and at what fee, and whether the certificate has to be translated. A nationality with no row here needs none of the three."
+            },
+            {
+                "fieldname": "mofa_fee_kwd",
+                "fieldtype": "Currency",
+                "insert_after": "nationality_attestation_rules",
+                "label": "MOFA Fee (KWD)",
+                "description": "The standard MOFA attestation fee, used for any nationality whose row in the table above leaves its own MOFA Fee blank."
+            },
+            {
+                "fieldname": "column_break_grd_fees",
+                "fieldtype": "Column Break",
+                "insert_after": "mofa_fee_kwd"
+            },
+            {
+                "fieldname": "pcc_translation_fee_kwd",
+                "fieldtype": "Currency",
+                "insert_after": "column_break_grd_fees",
+                "label": "PCC Translation Fee (KWD)",
+                "description": "The standard fee for translating a Police Clearance Certificate. Applied to a PCC Attestation whose Type is Translation, and to any nationality whose row in the table above is marked Translation Required."
+            },
+            {
+                "fieldname": "costing_section",
+                "fieldtype": "Section Break",
+                "insert_after": "pcc_translation_fee_kwd",
                 "label": "Costing Settings"
             },
             {
@@ -133,6 +172,20 @@ def get_hr_settings_custom_fields():
                 "description": "The print format to attach in the notification to the finance team about the preparation cost. If leave this field blank the will consider Standard print format for attachment."
             },
             {
+                "fieldname": "penalty_email_section",
+                "fieldtype": "Section Break",
+                "insert_after": "costing_print_format",
+                "label": "Penalty Report Email"
+            },
+            {
+                "fieldname": "penalty_email_recipients",
+                "fieldtype": "Table",
+                "insert_after": "penalty_email_section",
+                "label": "Penalty Email Recipients",
+                "options": "Penalty Email Recipient",
+                "description": "Who receives the monthly penalty report. TO rows are addressed directly, CC rows are copied. With no rows here the monthly job sends nothing rather than broadcasting to nobody."
+            },
+            {
                 "fieldname": "helpdesk_email",
                 "fieldtype": "Data",
                 "options": "Email",
@@ -143,7 +196,7 @@ def get_hr_settings_custom_fields():
             {
                 "fieldname": "onboarding_settings_tab",
                 "fieldtype": "Tab Break",
-                "insert_after": "costing_print_format",
+                "insert_after": "penalty_email_recipients",
                 "label": "Onboarding Settings"
             },
             {

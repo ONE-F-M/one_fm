@@ -56,7 +56,11 @@ frappe.query_reports["Operations Monthly Attendance Sheet"] = {
 			on_change: apply_in_page_filters,
 			label: __("Roster Type"),
 			fieldtype: "Select",
-			options: ["", "Basic", "Over-Time"],
+			// WI-002017: no blank option. Blank meant "every roster type", which put Basic
+			// and Over-Time rows into one figure a payroll operator then acted on.
+			options: ["Basic", "Over-Time"],
+			default: "Basic",
+			reqd: 1,
 		},
 		{
 			fieldname: "day_off_ot",

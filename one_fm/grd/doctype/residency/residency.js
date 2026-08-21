@@ -95,8 +95,25 @@ frappe.ui.form.on('Residency', {
 	},
 	new_residency_expiry_date: function(frm){
 		set_new_residency_expiry_date_update_time(frm);
+	},
+	upload_damj_letter: function(frm){
+		set_attachment_timestamp(frm, 'upload_damj_letter', 'upload_damj_letter_on');
+	},
+	upload_residency_fine_payment_receipt: function(frm){
+		set_attachment_timestamp(frm, 'upload_residency_fine_payment_receipt', 'upload_residency_fine_payment_receipt_on');
 	}
 });
+// WI-002022: stamp when an exception document went up, and clear the stamp if the file is
+// removed. One helper for both pairs - the three older stamps below each carry their own
+// copy of this same logic.
+var set_attachment_timestamp = function(frm, attach_field, timestamp_field){
+	if(frm.doc[attach_field] && !frm.doc[timestamp_field]){
+		frm.set_value(timestamp_field, frappe.datetime.now_datetime());
+	}
+	if(!frm.doc[attach_field] && frm.doc[timestamp_field]){
+		frm.set_value(timestamp_field, null);
+	}
+};
 var set_employee_details = function(frm){
     if(frm.doc.employee){
         frappe.call({

@@ -30,7 +30,7 @@ import unittest
 import frappe
 
 REGISTER = "Document Register"
-LINK_FIELDS = ("source_guideline", "reference_document", "update_source")
+LINK_FIELDS = ("source_guideline", "reference_document")
 
 
 def _employee_with_an_approver():
@@ -47,11 +47,18 @@ class TestThePickersFilter(unittest.TestCase):
 		return json.loads(raw) if raw else None
 
 	def test_every_document_register_picker_is_restricted_to_active(self):
+		"""Asserts the Active restriction is present, not that it is the only one.
+
+		This used to compare the whole filter list, which made it a test of every
+		picker's full configuration rather than of withdrawn documents: adding the
+		Guideline restriction to source_guideline broke it while changing nothing
+		about what it was written to protect.
+		"""
 		for fieldname in LINK_FIELDS:
 			with self.subTest(field=fieldname):
-				self.assertEqual(
+				self.assertIn(
+					[REGISTER, "lifecycle_state", "=", "Active"],
 					self._filters(fieldname),
-					[[REGISTER, "lifecycle_state", "=", "Active"]],
 					f"{fieldname} would still offer withdrawn documents",
 				)
 
@@ -175,33 +182,17 @@ class TestTheServerRefusesThemAnyway(unittest.TestCase):
 			)
 		self.assertIn("inactive", str(caught.exception).lower())
 
-	def test_an_update_cannot_take_its_wording_from_a_withdrawn_document(self):
-		with self.assertRaises(frappe.ValidationError) as caught:
-			self._request(
-				request_action="Update",
-				reference_document=self.controlled.name,
-				update_source=self.dead.name,
-			).insert(ignore_permissions=True)
-		self.assertIn("inactive", str(caught.exception).lower())
-
 	def test_an_active_source_is_accepted(self):
 		"""So the guard is not simply refusing everything."""
 		doc = self._insert(self._request(request_action="Create", source_guideline=self.live.name))
 		self.assertEqual(doc.source_guideline, self.live.name)
 
-	def test_the_guard_only_looks_at_the_field_the_action_uses(self):
-		"""check_update_source clears a stale update_source on a Create. Reading it
-		before that ran would reject a request whose value is about to be dropped."""
-		doc = self._insert(self._request(
-			request_action="Create", source_guideline=self.live.name, update_source=self.dead.name
-		))
-		self.assertIsNone(doc.update_source)
-
 	def test_revising_a_withdrawn_document_is_still_refused(self):
 		"""Pre-existing guard; asserted here so the new one cannot replace it."""
 		with self.assertRaises(frappe.ValidationError):
-			self._request(request_action="Update", reference_document=self.dead.name,
-			              update_source=self.live.name).insert(ignore_permissions=True)
+			self._request(
+				request_action="Update", reference_document=self.dead.name
+			).insert(ignore_permissions=True)
 
 
 class TestWithdrawalStillRevokesSharing(unittest.TestCase):
@@ -213,10 +204,22 @@ class TestWithdrawalStillRevokesSharing(unittest.TestCase):
 	``domain reader one-fm.com`` permission while the two published ones did.
 	"""
 
-	MODEL = "Document Request"
+	PROCESS = "Document Request"
 
 	def _xml(self):
-		return frappe.db.get_value("BPMN Process Model", self.MODEL, "bpmn_xml") or ""
+		"""The active model for the process, not a hard-coded model name.
+
+		Model names carry a version suffix — the live one is "Document Request
+		(1)" — so looking one up by the process name silently returned nothing,
+		and every assertion below failed against an empty string instead of
+		against the diagram.
+		"""
+		name = frappe.db.get_value(
+			"BPMN Process Model", {"process_name": self.PROCESS, "is_active": 1}, "name"
+		)
+		if not name:
+			raise unittest.SkipTest(f"no active BPMN Process Model for {self.PROCESS!r}")
+		return frappe.db.get_value("BPMN Process Model", name, "bpmn_xml") or ""
 
 	def test_the_withdrawal_branch_still_revokes_sharing(self):
 		import re

@@ -343,7 +343,7 @@ function mountRoutePlannerApp(wrapper, data) {
                             type: 'merged',
                             tripId,
                             tripName: stops.find(s => s.tripName)?.tripName || null,
-                            direction: firstItem.direction,
+                            direction: stops.some(s => s.direction === 'MIXED') ? 'MIXED' : firstItem.direction,
                             start: firstItem.start,
                             end: lastItem.end,
                             headcount: totalHC,
@@ -1028,9 +1028,289 @@ function mountRoutePlannerApp(wrapper, data) {
                 d.show();
             },
 
+            // ── Merge Trip modal (WI-002078) ──
+            _isMergeDrop(newCard, existingItems) {
+                // A merge is two cards travelling different ways on one run. Chaining two
+                // outbound stops is the existing multi-stop behaviour and is left alone.
+                const dirs = new Set(existingItems.map(i => i.direction || 'OUTBOUND'));
+                dirs.add(newCard.direction || 'OUTBOUND');
+                return dirs.size > 1 || dirs.has('MIXED');
+            },
+
+            _mergeShipmentIds(newCard, existingItems) {
+                const ids = existingItems.map(i => i.cardId).filter(Boolean);
+                ids.push(newCard.id);
+                // The backend resolves a card id to its shipment; de-duplicated so a card
+                // already on the lane in both directions is offered once.
+                return Array.from(new Set(ids));
+            },
+
+            _openMergeTripModal(newCard, existingItems, vehicleId) {
+                const self = this;
+                const vehicle = this.planData.vehicles.find(v => v.id === vehicleId) || {};
+                const shipments = this._mergeShipmentIds(newCard, existingItems);
+
+                // Merging onto an already-merged run must reopen on the minutes the
+                // operator entered last time, not on defaults - otherwise every extra
+                // card silently re-times the legs before it (feedback on WI-002074).
+                // Keyed by card id: the shipment name is only known once the preview
+                // comes back, and the server accepts either key.
+                const timings = {};
+                existingItems.forEach((item) => {
+                    // A reload hands back 0 for a leg that was never timed - the Int
+                    // column cannot say "unset" - so only a leg carrying real minutes
+                    // overrides the preview's defaults.
+                    if (!item.transitMinutes && !item.bufferMinutes) return;
+                    timings[item.cardId] = {
+                        transit_minutes: item.transitMinutes || 0,
+                        buffer_minutes: item.bufferMinutes || 0,
+                    };
+                });
+                let previewStops = [];
+
+                const d = new frappe.ui.Dialog({
+                    title: __('Merge Trip'),
+                    size: 'large',
+                    fields: [{ fieldtype: 'HTML', fieldname: 'preview' }],
+                    primary_action_label: __('Confirm & Merge Trip'),
+                    primary_action() {
+                        frappe.call({
+                            method: 'one_fm.one_fm.doctype.transportation_shipment.transportation_shipment.merge_trip_shipments',
+                            args: { shipments: shipments },
+                            freeze: true,
+                            callback(r) {
+                                if (!r.message) return;
+                                d.hide();
+                                self._applyMerge(newCard, existingItems, vehicleId, r.message, previewStops);
+                            }
+                        });
+                    }
+                });
+
+                const render = () => {
+                    frappe.call({
+                        method: 'one_fm.one_fm.doctype.transportation_shipment.transportation_shipment.get_merge_preview',
+                        args: { shipments: shipments, vehicle: vehicleId, timings: timings },
+                        callback(r) {
+                            const p = r.message;
+                            if (!p) return;
+                            previewStops = p.stops || [];
+                            d.fields_dict.preview.$wrapper.html(self._mergeModalHtml(p, vehicle));
+                            // Confirm is disabled by the server's verdict, so the button and
+                            // the banner can never disagree about whether the trip fits.
+                            d.get_primary_btn().prop('disabled', !p.can_merge);
+
+                            d.fields_dict.preview.$wrapper.find('.rp-leg-min').off('change').on('change', function () {
+                                const ship = this.dataset.shipment;
+                                const key = this.dataset.key;
+                                timings[ship] = timings[ship] || {};
+                                timings[ship][key] = parseInt(this.value, 10) || 0;
+                                render();   // re-times every stop after this one
+                            });
+                        }
+                    });
+                };
+
+                render();
+                d.show();
+            },
+
+            _mergeModalHtml(p, vehicle) {
+                const esc = (v) => frappe.utils.escape_html(String(v == null ? '' : v));
+
+                const banner = p.exceeded
+                    ? `<div style="background:#fee2e2;border:1px solid #fecaca;color:#b91c1c;border-radius:6px;padding:10px 12px;margin-bottom:12px;font-weight:600">
+                           ${esc(p.message)} — reduce the load or choose another vehicle.
+                       </div>`
+                    : '';
+
+                // One container per visit: a stop where riders both leave and join is two
+                // entries, and so is a stop the run returns to (second criterion).
+                const stops = p.stops.map((s) => {
+                    const boarding = s.action === 'Boarding';
+                    const tone = boarding ? '#2e7d32' : '#e65100';
+                    const label = boarding ? 'EMPLOYEES BOARDING' : 'DROPPING OFF EMPLOYEES';
+                    const over = s.exceeded ? 'border-color:#ef4444;background:#fef2f2' : '';
+                    return `<div style="border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;margin-bottom:8px;${over}">
+                        <div style="display:flex;justify-content:space-between;align-items:center">
+                            <div style="font-weight:700">Seq ${s.stop_index}: ${esc(s.stop_location || '—')}</div>
+                            <span style="font-size:11px;font-weight:700;color:${tone}">${label} &middot; ${esc(s.headcount)}</span>
+                        </div>
+                        <div style="font-size:12px;color:#6b7280;margin-top:4px">
+                            On board after this stop: <b>${esc(s.occupancy)}</b> / ${esc(p.max_passenger_capacity || '—')}
+                        </div>
+                    </div>`;
+                }).join('');
+
+                const legs = p.stops.map((s) => `
+                    <tr>
+                        <td style="padding:4px 8px">Seq ${s.stop_index}</td>
+                        <td style="padding:4px 8px">${esc(s.stop_location || '—')}</td>
+                        <td style="padding:4px 8px"><input class="rp-leg-min" type="number" min="0"
+                            data-shipment="${esc(s.card_id || s.shipment)}" data-key="transit_minutes"
+                            value="${esc(s.transit_minutes)}" style="width:70px"></td>
+                        <td style="padding:4px 8px"><input class="rp-leg-min" type="number" min="0"
+                            data-shipment="${esc(s.card_id || s.shipment)}" data-key="buffer_minutes"
+                            value="${esc(s.buffer_minutes)}" style="width:70px"></td>
+                    </tr>`).join('');
+
+                return `
+                    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+                        <span style="background:#819171;color:#fff;font-weight:700;font-size:12px;padding:3px 10px;border-radius:6px">MIXED</span>
+                        <span style="font-size:12px;color:#6b7280">Direction is set by the merge and cannot be changed here.</span>
+                        <span style="margin-left:auto;font-size:12px">Max Passenger Capacity: <b>${esc(p.max_passenger_capacity || '—')}</b></span>
+                    </div>
+                    ${banner}
+                    <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:6px">Itinerary</div>
+                    ${stops}
+                    <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;margin:12px 0 6px">Per-Leg Transit &amp; Buffer Times</div>
+                    <table style="width:100%;font-size:12px;border-collapse:collapse">
+                        <thead><tr style="background:#f3f4f6">
+                            <th style="text-align:left;padding:4px 8px">Leg</th>
+                            <th style="text-align:left;padding:4px 8px">Stop</th>
+                            <th style="text-align:left;padding:4px 8px">Transit (min)</th>
+                            <th style="text-align:left;padding:4px 8px">Buffer (min)</th>
+                        </tr></thead>
+                        <tbody>${legs}</tbody>
+                    </table>`;
+            },
+
+            _applyMerge(newCard, existingItems, vehicleId, merged, previewStops) {
+                const self = this;
+                const tripId = merged.trip_group;
+
+                // Every stop of the merged run answers to one group and one direction.
+                existingItems.forEach((item) => { item.tripId = tripId; item.direction = 'MIXED'; });
+
+                const order = merged.itinerary.map((s) => s.shipment);
+                const lastEnd = new Date(Math.max(...existingItems.map((i) => new Date(i.end).getTime())));
+                const uid = Math.random().toString(36).slice(2, 10);
+                const legs = {};
+                (previewStops || []).forEach((s) => { if (s.card_id) legs[s.card_id] = s; });
+                const adj = legs[newCard.id] || {};
+
+                // Placed at the tail of the run and then timed by _retimeTrip below, so
+                // the merged block and the blocks it joins are spaced by one rule.
+                self.swimItems.push({
+                    id: `${newCard.id}_MIX_${uid}`, cardId: newCard.id, vehicleId,
+                    direction: 'MIXED', start: new Date(lastEnd), end: new Date(lastEnd),
+                    headcount: newCard.headcount, conflict: false,
+                    transitMinutes: parseInt(adj.transit_minutes, 10) || 0,
+                    bufferMinutes: parseInt(adj.buffer_minutes, 10) || 0,
+                    tripId, stopIndex: order.indexOf(newCard.id) + 1 || existingItems.length + 1
+                });
+
+                // The legs the operator adjusted higher up the run belong to their own
+                // blocks: only the block carrying them is saved with them, and only a
+                // saved block can seed the next merge or reach the manifest.
+                self.swimItems.forEach((item) => {
+                    const leg = legs[item.cardId];
+                    if (!leg || item.tripId !== tripId) return;
+                    item.transitMinutes = parseInt(leg.transit_minutes, 10) || 0;
+                    item.bufferMinutes = parseInt(leg.buffer_minutes, 10) || 0;
+                });
+
+                const allTrip = self.swimItems.filter((i) => i.tripId === tripId);
+                allTrip.forEach((i) => { i.totalStops = allTrip.length; });
+
+                // The minutes are not a note about the run, they ARE its timing: editing the
+                // first leg has to move the first block. Without this the modal accepted
+                // 60/10 for a stop already on the lane, showed the itinerary they imply,
+                // and then left the block sitting on the 60/15 it was dropped with
+                // (feedback on WI-002074).
+                self._retimeTrip(tripId);
+
+                self.assignedCards.add(newCard.id);
+                self.selectedPoolCard = null;
+                self.checkConflicts();
+                self.canSave = self.assignedCards.size > 0;
+
+                // The shipments are already Mixed by the time the plan is saved, so a
+                // rejected save has to put them back - otherwise they return to the pool
+                // describing a journey they no longer have.
+                self.persistAssignments((reload) => {
+                    frappe.call({
+                        method: 'one_fm.one_fm.doctype.transportation_shipment.transportation_shipment.undo_merge',
+                        args: { shipments: merged.itinerary.map((s) => s.shipment) },
+                        always: reload
+                    });
+                });
+
+                frappe.show_alert({ message: __('Trip merged — direction is now Mixed'), indicator: 'green' });
+            },
+
+            // Which way a block's own riders travel, whatever a merge did to the block.
+            // The server resolves this from pre_merge_trip_direction and hands it over on
+            // the card, so the canvas does not have to guess it back from a MIXED label.
+            _ownDirection(item) {
+                const card = this.planData.shipment_cards.find((c) => c.id === item.cardId);
+                return (card && (card.own_direction || card.direction)) || item.direction;
+            },
+
+            // Re-draw a trip's blocks from the per-leg minutes its stops carry. Stop 1
+            // keeps the shift moment it was placed on; every later stop is driven forward
+            // from the one before it - dwell at the previous stop, then the drive.
+            _retimeTrip(tripId) {
+                const stops = this.swimItems
+                    .filter((i) => i.tripId === tripId)
+                    .sort((a, b) => (a.stopIndex || 0) - (b.stopIndex || 0));
+                if (!stops.length) return;
+
+                const MIN_BLOCK_MS = 5 * 60000;     // a block thinner than this is unclickable
+                const leg = (item) => {
+                    const transit = parseInt(item.transitMinutes, 10) || 0;
+                    const buffer = parseInt(item.bufferMinutes, 10) || 0;
+                    // A stop that was never timed keeps the length it already has, so a
+                    // trip saved before the minutes were persisted is not collapsed onto
+                    // a zero-width block.
+                    if (!transit && !buffer) {
+                        return { buffer: 0, transit: new Date(item.end) - new Date(item.start) };
+                    }
+                    return { buffer: buffer * 60000, transit: transit * 60000 };
+                };
+
+                // Which edge of the first block is the fixed point. An outward run is
+                // pinned at its END - the moment it has to be on site - so its dwell and
+                // drive are subtracted backwards from there. A return run is pinned at
+                // its START, the moment the shift ends and the riders are collected.
+                // `own_direction` is used rather than the block's, which reads MIXED
+                // after a merge and would pin every merged return run at the wrong edge.
+                const first = leg(stops[0]);
+                const span = Math.max(first.buffer + first.transit, MIN_BLOCK_MS);
+                if (this._ownDirection(stops[0]) === 'RETURN') {
+                    const anchor = new Date(stops[0].start).getTime();
+                    stops[0].end = new Date(anchor + span);
+                } else {
+                    const anchor = new Date(stops[0].end).getTime();
+                    stops[0].start = new Date(anchor - span);
+                }
+
+                let cursor = new Date(stops[0].end).getTime();
+                stops.slice(1).forEach((item) => {
+                    const { buffer, transit } = leg(item);
+                    const start = cursor + buffer;
+                    const end = start + Math.max(transit, MIN_BLOCK_MS);
+                    item.start = new Date(start);
+                    item.end = new Date(end);
+                    cursor = end;
+                });
+
+                this.swimItems = [...this.swimItems];   // Vue reactivity
+            },
+
             // ── Chain a card as the next stop on an existing trip ──
             _chainToTrip(newCard, existingItems, vehicleId, presetTransitMin) {
                 const self = this;
+
+                // WI-002078: dropping a card onto a lane that already has a block is a merge,
+                // and a merge is a decision - it changes the run's direction, re-times every
+                // stop after it and can put the bus over its seats. The modal is where the
+                // operator sees all three before committing, instead of the card being
+                // silently re-timed on a default 30-minute transit.
+                if (!presetTransitMin && self._isMergeDrop(newCard, existingItems)) {
+                    self._openMergeTripModal(newCard, existingItems, vehicleId);
+                    return;
+                }
 
                 // ── Capacity check before chaining ──
                 const vehicle = this.planData.vehicles.find(v => v.id === vehicleId);
@@ -1079,6 +1359,8 @@ function mountRoutePlannerApp(wrapper, data) {
                         id: `${newCard.id}_${newCard.direction === 'RETURN' ? 'RET' : 'OUT'}_${uid}`, cardId: newCard.id, vehicleId,
                         direction: newCard.direction || 'OUTBOUND', start: segStart, end: segEnd,
                         headcount: newCard.headcount, conflict: false,
+                        transitMinutes: transitMin != null ? transitMin : 0,
+                        bufferMinutes: dwellMin != null ? dwellMin : 0,
                         tripId, tripName: existingTripName, stopIndex: totalStops + 1
                     });
 
@@ -1163,15 +1445,51 @@ function mountRoutePlannerApp(wrapper, data) {
                         tripsMap[key] = {
                             start: new Date(item.start).getTime(),
                             end: new Date(item.end).getTime(),
-                            headcount: item.headcount || 0
+                            headcount: item.headcount || 0,
+                            direction: item.direction,
+                            stops: [item]
                         };
                     } else {
                         tripsMap[key].start = Math.min(tripsMap[key].start, new Date(item.start).getTime());
                         tripsMap[key].end = Math.max(tripsMap[key].end, new Date(item.end).getTime());
                         tripsMap[key].headcount += (item.headcount || 0);
+                        tripsMap[key].stops.push(item);
                     }
                 });
-                return Object.values(tripsMap);
+
+                // A merged trip's stops are not all aboard at once, so its headcount is a
+                // total the bus is never asked to hold. Summing it painted a merged block
+                // purple for overcapacity on a run that fits (WI-002078).
+                const trips = Object.values(tripsMap);
+                trips.forEach(t => { t.occupancy = this.tripOccupancy(t); });
+                return trips;
+            },
+
+            // The most passengers one trip ever has aboard. Mirrors _trip_peak on the
+            // server so the lane and the save agree about whether a run fits.
+            tripOccupancy(trip) {
+                if (trip.direction !== 'MIXED') return trip.headcount;
+
+                const stops = [...trip.stops].sort((a, b) => (a.stopIndex || 0) - (b.stopIndex || 0));
+                const boards = (item) => this.cardOwnDirection(item) === 'RETURN';
+
+                // Everyone the trip carries out of the camp is aboard before stop 1.
+                let onBoard = stops.reduce((n, s) => n + (boards(s) ? 0 : (s.headcount || 0)), 0);
+                let peak = onBoard;
+                stops.forEach(s => {
+                    // Alighting first: the seats a load vacates are what the next boards into.
+                    onBoard += boards(s) ? (s.headcount || 0) : -(s.headcount || 0);
+                    peak = Math.max(peak, onBoard);
+                });
+                return peak;
+            },
+
+            // Which way one stop's own riders travel. A merged card reads MIXED, so the
+            // answer comes from the direction the merge recorded (own_direction).
+            cardOwnDirection(item) {
+                const card = this.planData.shipment_cards.find(c => c.id === item.cardId);
+                const own = card && card.own_direction;
+                return own || (item.direction === 'RETURN' ? 'RETURN' : 'OUTBOUND');
             },
 
             // How many passengers a vehicle may carry — its Max Passenger Capacity,
@@ -1214,7 +1532,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 return this._getLogicalTrips(vehicleId)
                     .filter(t => t.start < wEnd && t.end > wStart)  // overlaps
-                    .reduce((sum, t) => sum + t.headcount, 0);
+                    .reduce((sum, t) => sum + t.occupancy, 0);
             },
 
             // ─ Place card + direction picker ─────────────────────────────
@@ -1414,8 +1732,8 @@ function mountRoutePlannerApp(wrapper, data) {
                         id: `${card.id}_OUT_${uid}`, cardId: card.id, vehicleId,
                         direction: 'OUTBOUND', start: outStart, end: outEnd,
                         headcount: card.headcount, conflict: false,
-                        bufferMin: Math.round(bufferMs / 60000),
-                        transitMin: Math.round(durMs / 60000),
+                        bufferMinutes: Math.round(bufferMs / 60000),
+                        transitMinutes: Math.round(durMs / 60000),
                         tripId: autoTripId, tripName: tripName || null,
                         stopIndex: 1,
                         lockFrom, lockTo
@@ -1426,8 +1744,8 @@ function mountRoutePlannerApp(wrapper, data) {
                         id: `${card.id}_RET_${uid}`, cardId: card.id, vehicleId,
                         direction: 'RETURN', start: retStart, end: retEnd,
                         headcount: card.headcount, conflict: false,
-                        bufferMin: Math.round(bufferMs / 60000),
-                        transitMin: Math.round(durMs / 60000),
+                        bufferMinutes: Math.round(bufferMs / 60000),
+                        transitMinutes: Math.round(durMs / 60000),
                         tripId: autoTripId, tripName: tripName || null,
                         stopIndex: 1,
                         lockFrom, lockTo
@@ -1492,13 +1810,32 @@ function mountRoutePlannerApp(wrapper, data) {
                                 .filter(t => {
                                     return t.start < iE && t.end > iS;
                                 })
-                                .reduce((sum, t) => sum + t.headcount, 0);
+                                .reduce((sum, t) => sum + t.occupancy, 0);
                             if (load > this.passengerSeats(v)) {
                                 item.overcapacity = true;
                             }
                         });
                     }
                 });
+            },
+
+            // ── Naming a direction ──
+            // Kept in one place: every ad-hoc `=== 'OUTBOUND' ? ... : 'Return'` answered
+            // "not outbound, so return" and quietly labelled a merged run Return
+            // (WI-002078).
+            dirName(direction) {
+                if (direction === 'MIXED') return 'Mixed';
+                return direction === 'RETURN' ? 'Return' : 'Outbound';
+            },
+
+            dirLabel(direction) {
+                if (direction === 'MIXED') return '\u21c4 Mixed';
+                return direction === 'RETURN' ? '\u2190 Return' : '\u2192 Outbound';
+            },
+
+            dirBadgeClass(direction) {
+                if (direction === 'MIXED') return 'rp-dir-mixed';
+                return direction === 'RETURN' ? 'rp-dir-ret' : 'rp-dir-out';
             },
 
             // ─ Block interaction ────────────────────────────────────────────
@@ -1704,7 +2041,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 this.persistAssignments();
 
                 frappe.show_alert({
-                    message: `${dir === 'OUTBOUND' ? 'Outbound (→)' : 'Return (←)'} removed`,
+                    message: `${this.dirLabel(dir)} removed`,
                     indicator: 'orange'
                 }, 3);
             },
@@ -1714,7 +2051,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 const item = this.selectedItem;
                 const card = this.selectedCard;
                 const currentVehicle = this.planData.vehicles.find(v => v.id === item.vehicleId);
-                const dirLabel = item.direction === 'OUTBOUND' ? 'Outbound' : 'Return';
+                const dirLabel = this.dirName(item.direction);
 
                 // Build options for the vehicle selector (exclude current vehicle)
                 const vehicleOpts = this.planData.vehicles
@@ -1757,7 +2094,14 @@ function mountRoutePlannerApp(wrapper, data) {
                             ? self.swimItems.filter(i =>
                                 i.tripId === item.tripId && i.direction === item.direction)
                             : [item];
-                        const movingHeadcount = journeyItems.reduce((sum, i) => sum + (i.headcount || 0), 0);
+                        // What the moving journey actually needs on the target bus. A
+                        // merged run's stops are not all aboard at once, so its total is
+                        // not what has to fit (WI-002078).
+                        const movingHeadcount = self.tripOccupancy({
+                            direction: item.direction,
+                            headcount: journeyItems.reduce((sum, i) => sum + (i.headcount || 0), 0),
+                            stops: journeyItems
+                        });
 
                         // Seat capacity check on the target vehicle across the journey's
                         // combined time window. The selector excludes the current vehicle,
@@ -1767,7 +2111,7 @@ function mountRoutePlannerApp(wrapper, data) {
                         const logicalTrips = self._getLogicalTrips(targetVehicle.id);
                         const existingLoad = logicalTrips
                             .filter(t => t.start < blockEnd && t.end > blockStart)
-                            .reduce((sum, t) => sum + t.headcount, 0);
+                            .reduce((sum, t) => sum + t.occupancy, 0);
 
                         if (existingLoad + movingHeadcount > self.passengerSeats(targetVehicle)) {
                             const shell = document.getElementById('rp-shell');
@@ -1831,6 +2175,11 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 if (sourceIndex >= tripStops.length || targetIndex >= tripStops.length) return;
 
+                // ponytail: the reorder re-derives each stop's length and dwell from where
+                // its block sits rather than from the minutes the block now carries. It
+                // stays consistent because those timestamps are generated from the
+                // minutes - swap this for _retimeTrip if a reorder ever has to survive a
+                // leg being re-timed in the same gesture.
                 // Capture durations and inter-stop gaps BEFORE reorder
                 const durations = tripStops.map(s =>
                     new Date(s.end).getTime() - new Date(s.start).getTime()
@@ -2047,8 +2396,8 @@ function mountRoutePlannerApp(wrapper, data) {
                             tripId: targetTripId, 
                             tripName: existingTripName,
                             stopIndex: totalStops + 1,
-                            bufferMin: vals.dwell_min || 0,
-                            transitMin: vals.transit_min || 30
+                            bufferMinutes: vals.dwell_min || 0,
+                            transitMinutes: vals.transit_min || 30
                         });
 
                         const allTrip = self.swimItems.filter(i => i.tripId === targetTripId);
@@ -2376,7 +2725,11 @@ function mountRoutePlannerApp(wrapper, data) {
 
 
 
-            persistAssignments() {
+            // `onError` lets a caller undo work it committed before the save. A merge is
+            // written to the shipments the moment it is confirmed, but the plan is saved a
+            // beat later and can still be refused - and the cards would be left Mixed with
+            // no plan holding them (WI-002078).
+            persistAssignments(onError) {
                 if (!this.currentPlan) {
                     // Surface the silent failure: without a loaded Route Plan there
                     // is nowhere to save, so the assignment would vanish on refresh.
@@ -2421,9 +2774,12 @@ function mountRoutePlannerApp(wrapper, data) {
                             // STANDBY lock) rejected the drop. Frappe already shows
                             // the thrown message; reload the plan so the phantom
                             // block is removed and the canvas mirrors what persisted.
-                            if (this.currentPlan && this.currentPlan.name) {
-                                this.switchPlan(this.currentPlan.name);
-                            }
+                            const reload = () => {
+                                if (this.currentPlan && this.currentPlan.name) {
+                                    this.switchPlan(this.currentPlan.name);
+                                }
+                            };
+                            if (onError) { onError(reload); } else { reload(); }
                         }
                     });
                 }, 500); // 500ms debounce
@@ -2487,11 +2843,29 @@ function mountRoutePlannerApp(wrapper, data) {
                 return handover ? handover.driver_name : (vehicle.driver || '—');
             },
 
+            // The merged (multi-stop) block and the single block are drawn by different
+            // branches of the template. They share this so a colour added to one cannot go
+            // missing from the other - which is exactly how a merged trip kept rendering in
+            // the Return colour after WI-002078 taught bfill about MIXED.
+            mfill(entry) {
+                return this.bfill({
+                    conflict: entry.conflict,
+                    overcapacity: entry.overcapacity,
+                    direction: entry.direction,
+                });
+            },
+
             bfill(item) {
                 const shell = document.getElementById('rp-shell');
                 const cs = shell ? getComputedStyle(shell) : null;
                 if (item.conflict) return cs ? cs.getPropertyValue('--rp-color-conflict').trim() : '#c62828';
                 if (item.overcapacity) return '#7b1fa2'; // purple for overcapacity
+                // A merged block is neither an outbound nor a return, so it gets its own
+                // colour rather than borrowing whichever direction happened to be dropped
+                // first (WI-002078).
+                if (item.direction === 'MIXED') {
+                    return cs ? cs.getPropertyValue('--rp-color-mixed').trim() : '#819171';
+                }
                 return item.direction === 'OUTBOUND'
                     ? (cs ? cs.getPropertyValue('--rp-color-outbound').trim() : '#1565c0')
                     : (cs ? cs.getPropertyValue('--rp-color-return').trim() : '#e65100');
@@ -2769,18 +3143,24 @@ function mountRoutePlannerApp(wrapper, data) {
                             loadDemands: { seats: { amount: String(hc) } },
                             tripId: item.tripId || null,
                             tripName: item.tripName || null,
-                            stopIndex: item.stopIndex || 0
+                            stopIndex: item.stopIndex || 0,
+                            transitMinutes: item.transitMinutes || 0,
+                            bufferMinutes: item.bufferMinutes || 0
                         });
+                        const travelSec = (item.transitMinutes || 0) * 60 || dSec;
                         trans.push({
-                            travelDuration: `${dSec}s`, waitDuration: '0s',
-                            travelDistanceMeters: Math.round(dSec * 10)
+                            travelDuration: `${travelSec}s`,
+                            waitDuration: `${(item.bufferMinutes || 0) * 60}s`,
+                            travelDistanceMeters: Math.round(travelSec * 10)
                         });
                         visits.push({
                             shipmentIndex: sIdx, isPickup: false, startTime: iE,
                             loadDemands: { seats: { amount: String(-hc) } },
                             tripId: item.tripId || null,
                             tripName: item.tripName || null,
-                            stopIndex: item.stopIndex || 0
+                            stopIndex: item.stopIndex || 0,
+                            transitMinutes: item.transitMinutes || 0,
+                            bufferMinutes: item.bufferMinutes || 0
                         });
 
                         const nxt = vItems[idx + 1];
@@ -3064,6 +3444,7 @@ function injectRPVueTemplate() {
         <div id="rp-timeline-legend">
           <span class="rp-legend-item rp-legend-out">Outbound</span>
           <span class="rp-legend-item rp-legend-ret">Return</span>
+          <span class="rp-legend-item rp-legend-mixed">Mixed</span>
           <span class="rp-legend-item rp-legend-conflict">Conflict</span>
           <span class="rp-legend-item rp-legend-overcap">Overcapacity</span>
         </div>
@@ -3256,7 +3637,7 @@ function injectRPVueTemplate() {
                     <!-- Block body -->
                     <rect :x="mbx(entry)" :y="mby(entry)"
                           :width="mbw(entry)" :height="mbh(entry)"
-                          :fill="entry.conflict ? '#c62828' : entry.overcapacity ? '#7b1fa2' : (entry.direction === 'OUTBOUND' ? '#1565c0' : '#e65100')"
+                          :fill="mfill(entry)"
                           :stroke="selectedItem && entry.stops.some(s => s.id === selectedItem.id) ? '#f97316' : 'transparent'"
                           stroke-width="2.5" rx="5"/>
 
@@ -3348,8 +3729,8 @@ function injectRPVueTemplate() {
 
           <!-- Direction + Vehicle badges -->
           <div class="rp-detail-badges">
-            <span :class="['rp-dir-badge', selectedItem.direction === 'OUTBOUND' ? 'rp-dir-out' : 'rp-dir-ret']">
-              {{ selectedItem.direction === 'OUTBOUND' ? '\u2192 Outbound' : '\u2190 Return' }}
+            <span :class="['rp-dir-badge', dirBadgeClass(selectedItem.direction)]">
+              {{ dirLabel(selectedItem.direction) }}
             </span>
             <span v-if="selectedItem.tripName" class="rp-dir-badge" style="background:#e8f5e9;color:#2e7d32">
               {{ selectedItem.tripName }}
@@ -3433,6 +3814,17 @@ function injectRPVueTemplate() {
                         · {{ relieverCount(stop.card.employees) }} reliever
                       </span>
                       <span class="rp-detail-row-label" style="display:inline">({{ (stop.card.employees || []).length }} total)</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="rp-detail-row" style="padding:4px 0 3px 30px"
+                     v-if="stop.item.transitMinutes || stop.item.bufferMinutes">
+                  <div class="rp-detail-row-icon"><span class="rp-icon">timer</span></div>
+                  <div class="rp-detail-row-content">
+                    <div class="rp-detail-row-label">Transit &amp; Buffer</div>
+                    <div class="rp-detail-row-value">
+                      {{ stop.item.transitMinutes || 0 }} min transit
+                      &middot; {{ stop.item.bufferMinutes || 0 }} min buffer
                     </div>
                   </div>
                 </div>
@@ -3670,6 +4062,8 @@ function injectRPStyles() {
             --rp-color-outbound-container: #dbeafe;
             --rp-color-return: #e65100;
             --rp-color-return-container: #ffedd5;
+            --rp-color-mixed: #819171;
+            --rp-color-mixed-container: #e4eae4;
             --rp-color-conflict: #c62828;
             --rp-color-conflict-container: #fee2e2;
             --rp-color-trip-chain: #7c3aed;
@@ -3950,6 +4344,7 @@ function injectRPStyles() {
         .rp-legend-item     { font-size: 11px; padding: 2px 9px; border-radius: 4px; font-weight: 600; }
         .rp-legend-out      { background: var(--rp-color-outbound-container); color: var(--rp-color-outbound); }
         .rp-legend-ret      { background: var(--rp-color-return-container); color: var(--rp-color-return); }
+        .rp-legend-mixed    { background: var(--rp-color-mixed-container); color: var(--rp-color-mixed); }
         .rp-legend-conflict { background: var(--rp-color-conflict-container); color: var(--rp-color-conflict); }
         .rp-legend-overcap { background: #f3e5f5; color: #7b1fa2; }
 
@@ -4148,6 +4543,7 @@ function injectRPStyles() {
         .rp-dir-badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 4px; display: inline-block; }
         .rp-dir-out   { background: var(--rp-color-outbound-container); color: var(--rp-color-outbound); }
         .rp-dir-ret   { background: var(--rp-color-return-container); color: var(--rp-color-return); }
+        .rp-dir-mixed { background: var(--rp-color-mixed-container); color: var(--rp-color-mixed); }
         .rp-dir-trip  { background: var(--rp-color-trip-container); color: var(--rp-color-trip-chain); }
 
         /* ══════════════════════════════════════════════════════════════
@@ -4363,6 +4759,7 @@ function injectRPStyles() {
         /* ── Dark mode: Legend ── */
         #rp-shell.rp-dark .rp-legend-out { background: #1a3a5c; color: #93c5fd; }
         #rp-shell.rp-dark .rp-legend-ret { background: #4a2800; color: #fdba74; }
+        #rp-shell.rp-dark .rp-legend-mixed { background: #2b332b; color: #b7c7b7; }
         #rp-shell.rp-dark .rp-legend-conflict { background: #4a0e0e; color: #ff8a80; }
         #rp-shell.rp-dark .rp-legend-overcap { background: #2d1f4e; color: #ce93d8; }
 
@@ -4395,6 +4792,7 @@ function injectRPStyles() {
         /* ── Dark mode: Direction badges ── */
         #rp-shell.rp-dark .rp-dir-out { background: #1a3a5c; color: #93c5fd; }
         #rp-shell.rp-dark .rp-dir-ret { background: #4a2800; color: #fdba74; }
+        #rp-shell.rp-dark .rp-dir-mixed { background: #2b332b; color: #b7c7b7; }
         #rp-shell.rp-dark .rp-dir-trip { background: #2d1f4e; color: #ce93d8; }
 
         /* ── Dark mode: Stop number badges ── */

@@ -15,14 +15,70 @@ class DocumentRequest(Document):
 		self.check_required_links()
 		self.check_reference_document_is_active()
 		self.check_reference_document_is_controlled()
+		self.check_source_guideline_is_a_guideline()
 		self.check_source_documents_are_active()
-		self.check_update_source()
 
 	def set_requester_defaults(self):
+		"""Capture the requester from whoever is filing the request.
+
+		The field is read-only on the form, so this is the only thing that fills
+		it: a request is always filed by the person signed in, and typing it was
+		how one person's request ended up under someone else's name. An existing
+		value is left alone so a request created by an integration or a migration
+		keeps the requester it was given.
+
+		Because nobody can type it, an unresolvable requester has to be said out
+		loud rather than left blank for the mandatory check to reject with
+		"Requester is required" — which would be true and useless.
+		"""
+		if self.requester:
+			return
+
+		employee = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "name")
+		if employee:
+			self.requester = employee
+			self.fill_requester_chain()
+			return
+
+		if self.is_new():
+			frappe.throw(
+				_(
+					"There is no Employee record linked to {0}, so this request cannot record "
+					"who is asking for the document. Ask HR to set the User ID on that "
+					"employee record, then try again."
+				).format(frappe.bold(frappe.session.user)),
+				title=_("No Employee Record"),
+			)
+
+	def fill_requester_chain(self):
+		"""Resolve requester → approver → approver_user here, not via fetch_from.
+
+		``approver`` is declared ``fetch_from: requester.reports_to`` and
+		``approver_user`` hangs off *that*. Frappe resolves fetch_from BEFORE
+		validate, so a requester captured during validate arrives too late: the
+		chain stays empty and the request is refused for having no approver — on a
+		requester whose line manager is set. Worse than the refusal, an approver
+		that resolved late would leave ``approver_user`` blank, and that is the
+		field the map assigns both approval tasks to.
+
+		Only fills blanks, so a value supplied deliberately is never overwritten.
+		"""
 		if not self.requester:
-			employee = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "name")
-			if employee:
-				self.requester = employee
+			return
+
+		chain = _requester_chain(self.requester)
+		if not chain:
+			return
+
+		if not self.requester_user:
+			self.requester_user = chain.get("requester_user")
+		if not self.approver:
+			self.approver = chain.get("approver")
+		# Not chain["approver_user"]: an approver supplied deliberately is not
+		# necessarily the requester's line manager, and their user must follow the
+		# approver actually on the request.
+		if self.approver and not self.approver_user:
+			self.approver_user = frappe.db.get_value("Employee", self.approver, "user_id")
 
 	def check_approver_resolved(self):
 		if self.requester and not self.approver:
@@ -34,6 +90,18 @@ class DocumentRequest(Document):
 			)
 
 	def apply_reference_document_defaults(self):
+		"""Fill the blanks from the reference, but REFUSE a type mismatch.
+
+		This used to overwrite ``document_type`` from the register entry
+		outright. That hid a real mistake instead of reporting it: a requester
+		who chose SOP and then picked a Policy document was silently switched to
+		Policy — a different template, a different code series, and a request
+		that no longer said what they asked for. The two have to agree, and the
+		person is the one who should decide which of the two was wrong.
+
+		An empty type is still filled in, because there is nothing to disagree
+		with — that is a default, not a correction.
+		"""
 		if self.request_action == "Create" or not self.reference_document:
 			return
 		ref = frappe.db.get_value(
@@ -41,9 +109,49 @@ class DocumentRequest(Document):
 		)
 		if not ref:
 			return
-		self.document_type = ref.document_type
+
+		if not self.document_type:
+			self.document_type = ref.document_type
+		elif ref.document_type and self.document_type != ref.document_type:
+			frappe.throw(
+				_(
+					"Document Type does not match the document you picked. This request says "
+					"{0}, but {1} is a {2} in the Document Register. A revision keeps the "
+					"document's own type — change the Document Type to {2}, or pick a {0} "
+					"document instead."
+				).format(
+					frappe.bold(self.document_type),
+					frappe.bold(self.reference_document),
+					frappe.bold(ref.document_type),
+				),
+				title=_("Document Type Mismatch"),
+			)
+
 		if not self.title:
 			self.title = ref.title
+
+	def check_source_guideline_is_a_guideline(self):
+		"""The guideline a Create is written from has to actually be a guideline.
+
+		``source_guideline`` says *how* to write the document — structure, tone,
+		the section rules. Point it at a Policy or an SOP and the drafting task is
+		handed a finished document as its instructions, which is how a request for
+		one subject comes back written about another. The picker filters to
+		Guideline; this is the half that also holds for the API and for imports.
+		"""
+		if self.request_action != "Create" or not self.source_guideline:
+			return
+
+		kind = frappe.db.get_value("Document Register", self.source_guideline, "document_type")
+		if kind and kind != "Guideline":
+			frappe.throw(
+				_(
+					"Source Guideline must be a Guideline. {0} is a {1} — a finished "
+					"document, not instructions for writing one. Pick the guideline that "
+					"describes how a {2} should be written."
+				).format(frappe.bold(self.source_guideline), frappe.bold(kind), self.document_type or _("document")),
+				title=_("Not a Guideline"),
+			)
 
 	def check_reference_document_is_active(self):
 		"""Refuse to revise or withdraw a document that is already withdrawn.
@@ -106,10 +214,7 @@ class DocumentRequest(Document):
 		nothing else — the API, an import and a test all sail past it, which is
 		exactly the gap ``check_required_links`` was written for.
 		"""
-		fields = (
-			("source_guideline", "Create", _("Source Guideline")),
-			("update_source", "Update", _("New Content Document")),
-		)
+		fields = (("source_guideline", "Create", _("Source Guideline")),)
 		for fieldname, action, label in fields:
 			name = self.get(fieldname)
 			if not name or self.request_action != action:
@@ -142,36 +247,19 @@ class DocumentRequest(Document):
 				_("Pick the existing document this {0} request applies to.").format(self.request_action)
 			)
 
-		if self.request_action == "Update" and not self.update_source:
+		if self.request_action == "Update" and not (self.requirement_text or "").strip():
+			# An Update used to require a New Content Document holding the finished
+			# wording. It now works the way a Create does: Requirement says what to
+			# change and the existing document supplies everything it does not
+			# mention. That makes Requirement the one thing an Update cannot do
+			# without — an Update with nothing to change would republish the
+			# document unaltered as a new version.
 			frappe.throw(
 				_(
-					"An Update needs a New Content Document — the document holding what the "
-					"revision should say. Catalogue it on Document Register first (pasting its "
-					"Drive link is enough), tick Input Material, then pick it here. The wording "
-					"published comes from that document, not from the AI."
-				)
-			)
-
-	def check_update_source(self):
-		"""The revision's content has to come from somewhere other than itself.
-
-		On an Update the uploaded document is the authoritative content — the AI
-		is only allowed to reformat it, never to invent wording. Pointing that at
-		the document being revised would ask it to reformat a document into
-		itself, which produces a version identical to the one before it.
-		"""
-		if self.request_action != "Update":
-			# Only Update consumes it; a stale value on a Create/Delete would be
-			# fetched by the process and silently treated as the new content.
-			self.update_source = None
-			return
-
-		if self.update_source and self.update_source == self.reference_document:
-			frappe.throw(
-				_(
-					"The New Content Document cannot be the document being revised — "
-					"that would publish a new version identical to the current one. "
-					"Catalogue the new content as its own entry and pick that."
+					"Say what the revision should change, in Requirement. The existing "
+					"document supplies everything you do not mention, so describe only the "
+					"change — an Update with no requirement would publish a new version "
+					"identical to the current one."
 				)
 			)
 
@@ -216,6 +304,50 @@ class DocumentRequest(Document):
 # than pretending it is gone, because a request that says "withdrawn" while
 # offering no way to see *what* was withdrawn is useless to an auditor.
 NO_DOCUMENT_STATUSES = ("Request Rejected",)
+
+
+def _requester_chain(employee: str) -> dict:
+	"""The employee's own user, their line manager, and that manager's user.
+
+	Shared by validate and by the form so both answer "who is asking and who
+	approves" the same way. Two implementations of that drift, and a form that
+	shows one approver while the save records another is worse than a form that
+	shows nothing.
+	"""
+	row = frappe.db.get_value("Employee", employee, ["user_id", "reports_to"], as_dict=True)
+	if not row:
+		return {}
+
+	approver = row.get("reports_to")
+	return {
+		"requester_user": row.get("user_id"),
+		"approver": approver,
+		"approver_user": (
+			frappe.db.get_value("Employee", approver, "user_id") if approver else None
+		),
+	}
+
+
+@frappe.whitelist()
+def get_requester_defaults() -> dict:
+	"""Who the signed-in user is, for a request that has not been saved yet.
+
+	The requester is captured in validate, which is the right place to *enforce*
+	it and far too late to *show* it: the field is read-only, so a new request
+	opens with the requester and the whole approval chain empty, and Frappe hides
+	empty read-only fields — the column is simply absent. The requester cannot
+	tell whether the system knows who they are, or who will be asked to approve
+	what they are about to write.
+
+	Uses the same lookup validate uses, so the form cannot show one requester and
+	save another. Returns {} when the user has no Employee record: the form says
+	so at open time instead of letting a filled-in request fail on save.
+	"""
+	employee = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "name")
+	if not employee:
+		return {}
+
+	return {"requester": employee, **_requester_chain(employee)}
 
 
 @frappe.whitelist()
