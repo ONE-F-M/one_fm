@@ -593,3 +593,4 @@ one_fm.patches.v15_0.update_penalty_assignment_rules_process_task_based
 one_fm.patches.v15_0.update_visa_request_workflow_and_rules #2026-08-18 WI-001773 rerun after the sprint revert restored only the patch
 one_fm.patches.v15_0.add_leave_application_resumption_contact_fields #1
 one_fm.patches.v15_0.approve_attendance_check_jul11_2026 #2026-08-16
+one_fm.patches.v15_0.disable_roster_double_shift_ot_checker_assignment_rules #2026-08-21 WI-001689 reverted
