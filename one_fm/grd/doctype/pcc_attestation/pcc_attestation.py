@@ -18,6 +18,13 @@ from one_fm.grd.utils import get_pcc_attestation_fees
 ATTESTATION = "Attestation"
 TRANSLATION = "Translation"
 
+DRAFT = "Draft"
+
+# WI-002145: the three states "Assign PRO" hands the record to a PRO in. The fourth route
+# out of Draft goes straight to the GR Operator - a nationality that needs no embassy, no
+# MOFA and no translation has no PRO work to give anybody - so it is not gated on a PRO.
+PRO_STATES = ("Pending Embassy", "Pending MOFA", "Pending Translation")
+
 # WI-002029: the states the PRO holds the record in, and the receipt each one exists to
 # collect. The workflow owns the transitions; this owns the rule that a state cannot be left
 # until its receipt is attached, which is what every "blocks the state transition" criterion
@@ -43,6 +50,38 @@ class PCCAttestation(Document):
 		self.set_attestation_requirements()
 		self.set_receipt_timestamps()
 		self.validate_receipt_for_state_being_left()
+		self.validate_pro_user_before_assigning()
+
+	def validate_pro_user_before_assigning(self):
+		"""Refuse "Assign PRO" until there is a PRO to assign it to (WI-002145).
+
+		The action names a person and the assignment rule for the three PRO states takes
+		its assignee from `pro_user`, so without one the record moved to Pending Embassy,
+		MOFA or Translation and sat there assigned to nobody - visible to no PRO and
+		waiting on a receipt none of them knew was owed.
+
+		Guarded on the state being left, read from the document as it was before this save,
+		for the same reason the receipt check is: apply_workflow sets the destination on the
+		document and then saves, so self.workflow_state is already the next state by the
+		time validate runs.
+		"""
+		if self.is_new():
+			return
+
+		before_save = self.get_doc_before_save()
+		if not before_save or before_save.get("workflow_state") != DRAFT:
+			return
+
+		if self.workflow_state not in PRO_STATES:
+			return
+
+		if self.pro_user:
+			return
+
+		frappe.throw(
+			_("Please select a PRO User before proceeding."),
+			title=_("PRO User Required"),
+		)
 
 	def on_update_after_submit(self):
 		# The receipts are allow_on_submit, so a file can arrive after the record is
