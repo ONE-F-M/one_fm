@@ -229,8 +229,35 @@ class PACI(Document):
     def on_submit(self):
         self.validate_mandatory_fields_on_submit()
         self.set_New_civil_id_Expiry_date_in_employee_doctype()
+        self.apply_damj_civil_id()
         self.db_set('paci_status',"Completed")
         self.db_set('completed_on', today())
+
+    def apply_damj_civil_id(self):
+        """Put the merged Civil ID on the Employee once the application completes (WI-002100).
+
+        A Damj merges two civil ID numbers the government issued the same person, and the
+        surviving one is the original. Until it is written back, every record that reads the
+        Civil ID off the Employee is quoting the number the government just retired.
+
+        Residency does the same thing when its own Damj completes (WI-002022). Either
+        document can be the one that finishes first, and both write the same number, so
+        whichever completes last is a no-op rather than a conflict.
+
+        Written with set_value rather than a full Employee save: a full save re-validates the
+        whole Employee, and over a thousand of them hold a Marital Status the field's options
+        no longer accept, so any such save throws on data that has nothing to do with the
+        civil ID.
+
+        This record's own mirror of the number is updated too - it is fetched from the
+        Employee and would otherwise keep showing the retired number on the very document
+        that recorded the merge.
+        """
+        if not (self.damj_is_applicable and self.original_civil_id):
+            return
+
+        frappe.db.set_value('Employee', self.employee, 'one_fm_civil_id', self.original_civil_id)
+        self.db_set('civil_id', self.original_civil_id)
 
     def validate_mandatory_fields_on_submit(self):
         if self.workflow_state == 'Completed':
