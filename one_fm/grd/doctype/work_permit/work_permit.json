@@ -16,6 +16,7 @@
   "transfer_paper",
   "column_break_8",
   "work_permit_type",
+  "amendment_no",
   "reason_of_rejection",
   "details_of_rejection",
   "employee_last_checkin",
@@ -652,8 +653,8 @@
   },
   {
    "fieldname": "details_of_rejection",
-   "hidden": 1,
    "fieldtype": "Small Text",
+   "hidden": 1,
    "label": "Details of Rejection"
   },
   {
@@ -965,11 +966,21 @@
    "fieldtype": "Date",
    "label": "Employee Last Checkin",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "How many times this permit has been amended with PAM. Incremented by the Amend action.",
+   "fieldname": "amendment_no",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Amendment No",
+   "no_copy": 1,
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-12 10:30:00.000000",
+ "modified": "2026-08-19 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
