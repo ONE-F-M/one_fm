@@ -17,6 +17,6 @@ def execute():
     )
 
     create_assignment_rule(
-        get_assignment_rule_json_file("groperator_visa_request.json"),
+        get_assignment_rule_json_file("grd_operator_visa_request.json"),
         process_task.name
     )
