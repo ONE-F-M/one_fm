@@ -6,7 +6,9 @@ from one_fm.custom.workflow.workflow import create_workflow, get_workflow_json_f
 # workflow had no way to say so - the operator either accepted a permit that was wrong or
 # rejected one that was only incomplete.
 WORKFLOW = "Work Permit"
-AMEND_TRANSITION = ("Pending By PAM", "Amend", "Pending By Supervisor")
+# The destination state was renamed to Pending GR Manager by WI-002097; the transition is
+# the same one.
+AMEND_TRANSITION = ("Pending By PAM", "Amend", "Pending GR Manager")
 
 
 def execute():
