@@ -32,7 +32,7 @@ from one_fm.one_fm.doctype.document_request.document_request import get_requeste
 REG_PREFIX = "_TestDocReqInputs"
 
 
-def _register(document_type, lifecycle_state="Active", is_input_material=0, suffix=""):
+def _register(document_type, lifecycle_state="Active", suffix=""):
 	"""A Document Register entry. Named by drive_file_id, as the register is."""
 	file_id = f"{REG_PREFIX}{document_type}{suffix}"
 	if frappe.db.exists("Document Register", file_id):
@@ -43,7 +43,6 @@ def _register(document_type, lifecycle_state="Active", is_input_material=0, suff
 		"title": f"_Test {document_type}{suffix}",
 		"document_type": document_type,
 		"lifecycle_state": lifecycle_state,
-		"is_input_material": is_input_material,
 	})
 	doc.flags.ignore_permissions = True
 	doc.insert(ignore_permissions=True)
@@ -272,16 +271,6 @@ class TestUpdateTakesItsChangeFromTheRequirement(DocumentRequestInputFixtures, F
 		with self.assertRaises(frappe.ValidationError):
 			doc.insert(ignore_permissions=True)
 
-	def test_input_material_still_cannot_be_revised(self):
-		"""Kept: input material has no version history to add to."""
-		material = _register("SOP", is_input_material=1, suffix="Material")
-		doc = self._request(
-			request_action="Update", reference_document=material, requirement_text="Revise it."
-		)
-		with self.assertRaises(frappe.ValidationError):
-			doc.insert(ignore_permissions=True)
-
-
 class TestRequestActionIsChosen(FrappeTestCase):
 	def test_it_has_an_empty_first_option_and_no_default(self):
 		"""The default is the load-bearing half.
@@ -326,12 +315,14 @@ class TestRegisterDocumentType(FrappeTestCase):
 		for kind in ("Policy", "SOP", "Guideline", "Manual"):
 			self.assertIn(kind, options)
 
-	def test_every_requestable_type_can_be_held_by_the_register(self):
+	def test_the_register_holds_exactly_the_types_a_request_can_ask_for(self):
 		"""A type a request can ask for but the register cannot hold would make the
-		two impossible to match — and the match is now enforced.
+		two impossible to match — and the match is enforced.
 
-		Not equality: the register also catalogues input material (an amendment, a
-		regulation, meeting outcomes), which no request produces.
+		Equality, not subset: the register used to also catalogue material the
+		process only reads (an amendment, a regulation, meeting outcomes) under
+		types no request produces. That material is no longer catalogued here, so
+		a type on one side and not the other is now a mistake either way round.
 		"""
 		request_types = set(
 			(frappe.get_meta("Document Request").get_field("document_type").options or "").split("\n")
@@ -339,7 +330,9 @@ class TestRegisterDocumentType(FrappeTestCase):
 		register_types = set(
 			(frappe.get_meta("Document Register").get_field("document_type").options or "").split("\n")
 		) - {""}
-		self.assertTrue(
-			request_types <= register_types,
-			f"the register cannot hold: {sorted(request_types - register_types)}",
+		self.assertEqual(
+			request_types,
+			register_types,
+			f"only the register holds: {sorted(register_types - request_types)}; "
+			f"only a request can ask for: {sorted(request_types - register_types)}",
 		)
