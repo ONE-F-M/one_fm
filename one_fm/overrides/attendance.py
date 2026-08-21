@@ -298,9 +298,11 @@ def mark_single_attendance(emp, att_date, roster_type="Basic"):
 
 
 def mark_for_shift_assignment(employee, att_date, roster_type='Basic'):
+    # att_date may arrive as a str (whitelisted call / patch), a date, a datetime or a
+    # pandas Timestamp (mark_bulk_attendance). getdate normalises all of them to a date.
     shift_assignment = frappe.db.get_value("Shift Assignment", {
         'employee':employee,
-        'start_date':att_date.date(),
+        'start_date':getdate(att_date),
         'roster_type':roster_type,
         'docstatus':1
         }, ["*"], as_dict=1

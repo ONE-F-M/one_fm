@@ -178,10 +178,26 @@ def validate_filters(filters):
 		)
 
 
+def validate_roster_type(filters):
+	"""Roster Type is mandatory (WI-002017).
+
+	Separate from validate_filters, which also vets a bare date range for the print
+	template's day headers - those have no roster type and need none.
+
+	Enforced on the server as well as on the filter because the report is reachable through
+	frappe.desk.query_report.run, which never sees the form's `reqd`. Without a roster type
+	the report answers with Basic and Over-Time rows added together, which is a payroll
+	figure that is wrong rather than a report that is empty.
+	"""
+	if not filters.get("roster_type"):
+		frappe.throw(_("Please select a Roster Type."))
+
+
 def execute(filters):
 	filters = frappe._dict(filters or {})
 
 	validate_filters(filters)
+	validate_roster_type(filters)
 	dates = get_date_range(filters)
 
 	# Logic Rule 4: Overtime and Day Off OT together is an invalid combination, so the

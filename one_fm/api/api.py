@@ -1,7 +1,7 @@
 import frappe, base64, requests, firebase_admin, json
 from frappe import _
 import pandas as pd
-from frappe.utils import cstr, cint
+from frappe.utils import cstr, cint, strip_html
 from frappe.model.rename_doc import rename_doc
 from firebase_admin import messaging, credentials
 from frappe.desk.page.user_profile.user_profile import get_energy_points_heatmap_data, get_user_rank
@@ -60,7 +60,12 @@ def get_user_details():
     try:
         user_id = frappe.session.user
         user= frappe.get_value("User",user_id,"*")
-        employee_ID = frappe.get_value("Employee", {"user_id": user_id}, ["name","designation","employee_name_in_arabic","one_fm_nationality"])
+        employee_ID = frappe.get_value("Employee", {"user_id": user_id}, ["name","designation","employee_name_in_arabic", "one_fm_nationality"])
+
+        if not employee_ID:
+            return v1_api.utils.response(_("Employee Not Found"), 404, None,
+                _("Your user account is not linked to an employee record. "
+                  "Please contact the IT Helpdesk."))
 
         Rank = get_user_rank(user_id)
         energy_Review_Point = get_user_energy_and_review_points(user_id)
@@ -80,7 +85,13 @@ def get_user_details():
         user_details["Review_Point"] = str(int(energy_Review_Point[user_id]["review_points"])) if len(energy_Review_Point)!=0 else "0"
         return user_details
     except Exception as e:
-        print(frappe.get_traceback())
+        frappe.log_error(
+            title=f"Mobile API: api.get_user_details | {frappe.session.user}",
+            message=frappe.get_traceback(),
+        )
+        frappe.db.commit()
+        return v1_api.utils.response(_("Something Went Wrong"), 500, None,
+            strip_html(cstr(e)) or type(e).__name__)
 
 @frappe.whitelist()
 def upload_file(doc, fieldname, filename, file_url, content, is_private):
@@ -201,9 +212,15 @@ def push_notification_rest_api_for_checkin(employee_id, title, body, checkin, ar
         employee_data = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["fcm_token", "device_os"],as_dict=1)
         if not employee_data:
             employee_data = frappe.db.get_value("Employee", employee_id, ["fcm_token", "device_os"],as_dict=1)
+
+        if not employee_data:
+            return v1_api.utils.response(_("Employee Not Found"), 404, None,
+                _("No employee record found for Employee ID {0}. "
+                  "Please contact the IT Helpdesk.").format(employee_id))
+
         deviceToken = employee_data.fcm_token
         device_os = employee_data.device_os
-        
+
         #Body in json form defining a message payload to send through API. 
         # The parameter defers based on OS. Hence Body is designed based on the OS of the device.
         if deviceToken:
@@ -216,8 +233,18 @@ def push_notification_rest_api_for_checkin(employee_id, title, body, checkin, ar
             )
             res = messaging.send(message)
             return v1_api.utils.response("success", 200, {'response': str(res)})
+
+        return v1_api.utils.response(_("Notifications Not Set Up"), 404, None,
+            _("This device is not registered for notifications. "
+              "Please reopen the app and allow notifications."))
     except Exception as e:
-        return v1_api.utils.response("error", 500, {}, str(e))
+        frappe.log_error(
+            title=f"Mobile API: api.push_notification_rest_api_for_checkin | {employee_id}",
+            message=frappe.get_traceback(),
+        )
+        frappe.db.commit()
+        return v1_api.utils.response(_("Something Went Wrong"), 500, None,
+            strip_html(cstr(e)) or type(e).__name__)
 
 @frappe.whitelist()
 def push_notification_rest_api_for_leave_application(employee_id, title, body, leave_id):

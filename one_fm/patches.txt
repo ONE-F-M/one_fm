@@ -293,7 +293,6 @@ one_fm.patches.v15_0.add_workflow_actions_penalty_and_investigation
 one_fm.patches.v15_0.add_sales_invoice_contract_fields #3
 one_fm.patches.v15_0.add_sales_taxes_charges_add_or_deduct_field
 one_fm.patches.v15_0.add_workflow_penalty_and_investigation
-one_fm.patches.v15_0.update_penalty_and_investigation_workflow
 one_fm.patches.v15_0.add_rambo_reliever_custom_field #2026-05-14
 one_fm.patches.v15_0.update_vehicle_naming_series
 one_fm.patches.v15_0.remove_vehicle_autoname_property_setter
@@ -442,7 +441,6 @@ one_fm.patches.v15_0.update_contracts_workflow_inactive_to_draft
 one_fm.patches.v15_0.migrate_bonus_request_to_grid
 one_fm.patches.v15_0.add_recurring_bonus_process_task
 one_fm.patches.v15_0.fix_parentfield_bonus_items
-one_fm.patches.v15_0.update_sales_invoice_property_setter #1
 one_fm.patches.v15_0.add_billing_fields_to_sales_invoice
 one_fm.patches.v15_0.add_employee_status_update_notification_to_hr_settings
 one_fm.patches.v15_0.update_leave_application_pending_hr_assignment_rule #1
@@ -460,7 +458,7 @@ one_fm.patches.v15_0.update_bonus_request_assignment_rules #3
 one_fm.patches.v15_0.add_attendance_correction_fields
 one_fm.patches.v15_0.add_leave_application_emergency_contact_field #1
 one_fm.patches.v15_0.add_attendance_check_action_user_to_hr_settings
-one_fm.patches.v15_0.add_leave_application_resumption_contact_fields #2 2026-08-06 WI-001873
+
 
 one_fm.patches.v15_0.add_absence_investigation_hr_officer_to_hr_settings
 one_fm.patches.v15_0.update_leave_application_workflow_dss #2026-07-17-2
@@ -560,19 +558,6 @@ one_fm.patches.v15_0.add_vehicle_max_passenger_capacity #2026-08-11 WI-002000
 
 
 
-# --- Operations-011 (24th-30th) release patches ---
-
-
-
-
-
-
-
-
-# Re-registered 2026-07-26: these patch files exist in the tree but their
-# patches.txt entries were removed by a cleanup that ran before the
-# test-production merge, so they would never have executed.
-one_fm.patches.v15_0.add_onboarding_officer_arrival_deployment_permission #2026-08-04
 one_fm.patches.v15_0.create_attendance_check_jul11_2026 #1
 one_fm.patches.v15_0.add_paci_pro_workflow_and_rule #2026-08-10 WI-001830 rerun for the second Completed row
 one_fm.patches.v15_0.move_pow_drive_folder_to_google_settings #2026-08-09 WI-001981
@@ -591,6 +576,16 @@ one_fm.patches.v15_0.grant_hr_and_recruiter_full_resignation_access #2026-08-05
 one_fm.patches.v15_0.update_work_permit_previous_company_workflow #2026-08-07 WI-001974
 one_fm.patches.v15_0.update_work_permit_pam_rejection #2026-08-07 WI-001827
 one_fm.patches.v15_0.add_work_permit_assignment_rules #2026-08-10 WI-001827
+one_fm.patches.v15_0.add_onboarding_officer_arrival_deployment_permission #2026-08-04
+one_fm.patches.v15_0.add_paci_fine_amount_to_hr_settings #2026-08-12 WI-002023
+one_fm.patches.v15_0.add_project_show_in_roadmap_field #2026-08-12 WI-002045
+one_fm.patches.v15_0.add_penalty_email_recipients_to_hr_settings #2026-08-13 WI-002016
+one_fm.patches.v15_0.add_embassy_attestation_rates_to_hr_settings #2026-08-12 WI-002025
+one_fm.patches.v15_0.add_pcc_attestation_doctype #2026-08-12 WI-002028
+one_fm.patches.v15_0.add_pcc_attestation_workflow_and_rules #2026-08-12 WI-002029
+one_fm.patches.v15_0.add_pcc_processing_fees_to_hr_settings #2026-08-12 WI-002026
+one_fm.patches.v15_0.add_shift_request_shift_preview #2026-08-12 WI-001834
+one_fm.patches.v15_0.restore_stranded_mixed_shipments #2026-08-17 WI-002071
 one_fm.patches.v15_0.update_sales_invoice_property_setter
 one_fm.patches.v15_0.add_attendance_event_staff_field #2026-08-01
 one_fm.patches.v15_0.update_penalty_and_investigation_workflow #2026-08-02 rerun for employee_response

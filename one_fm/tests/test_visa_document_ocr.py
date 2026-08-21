@@ -12,8 +12,10 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 from one_fm.ocr_utils import (
+	_PAYMENT_TIME,
 	EVISA_FIELD_MAP,
 	RECEIPT_FIELD_MAP,
+	_merge_payment_time,
 	parse_mindee_mapped_fields,
 )
 from one_fm.visa_management.doctype.visa_request.visa_request import (
@@ -32,6 +34,7 @@ EVISA_RESPONSE = {
 	"date_of_expiry": {"value": "2026-04-18"},
 	"place_of_birth": {"value": None},
 	"passport_number": {"value": "PA4556704"},
+	"visa_number": {"value": 283059338},
 	"reference_number": {"value": 385515182},
 }
 
@@ -50,25 +53,49 @@ class TestTheMindeeMapping(FrappeTestCase):
 		self.assertEqual(
 			parse_mindee_mapped_fields(EVISA_RESPONSE, EVISA_FIELD_MAP),
 			{
-				"visa_reference_number": "385515182",
+				"visa_reference_number": "283059338",
 				"visa_issue_date": "2026-01-19",
 				"visa_expiry_date": "2026-04-18",
 			},
 		)
 
-	def test_the_payment_receipt_gives_the_payment_date(self):
+	def test_the_visa_number_is_taken_and_not_the_reference(self):
+		"""Settled in review: the visa carries both, and Visa Reference Number holds
+		the Visa Number (283059338), not the Reference below it (385515182)."""
+		parsed = parse_mindee_mapped_fields(EVISA_RESPONSE, EVISA_FIELD_MAP)
+
+		self.assertEqual(parsed["visa_reference_number"], "283059338")
+		self.assertNotIn("385515182", parsed.values())
+
+	def test_the_payment_receipt_gives_the_date_and_the_time(self):
+		"""Payment Date is a Datetime, and the receipt states the two separately."""
 		self.assertEqual(
-			parse_mindee_mapped_fields(RECEIPT_RESPONSE, RECEIPT_FIELD_MAP),
+			_merge_payment_time(parse_mindee_mapped_fields(RECEIPT_RESPONSE, RECEIPT_FIELD_MAP)),
+			{"payment_date": "2026-01-19 19:36:05"},
+		)
+
+	def test_a_receipt_with_no_time_still_gives_a_payment_date(self):
+		"""It lands at midnight, which is what a Datetime does with a bare date."""
+		response = dict(RECEIPT_RESPONSE, time={"value": None})
+
+		self.assertEqual(
+			_merge_payment_time(parse_mindee_mapped_fields(response, RECEIPT_FIELD_MAP)),
 			{"payment_date": "2026-01-19"},
 		)
 
-	def test_a_numeric_reference_does_not_arrive_with_a_decimal_tail(self):
-		"""The sample returns 385515182 as a number and the target is a Data field."""
+	def test_the_time_carrier_never_reaches_the_document(self):
+		"""It is not a Visa Request field; writing it would raise on save."""
+		merged = _merge_payment_time(parse_mindee_mapped_fields(RECEIPT_RESPONSE, RECEIPT_FIELD_MAP))
+
+		self.assertNotIn(_PAYMENT_TIME, merged)
+
+	def test_a_numeric_visa_number_does_not_arrive_with_a_decimal_tail(self):
+		"""The sample returns it as a number and the target is a Data field."""
 		parsed = parse_mindee_mapped_fields(
-			{"reference_number": {"value": 385515182.0}}, EVISA_FIELD_MAP
+			{"visa_number": {"value": 283059338.0}}, EVISA_FIELD_MAP
 		)
 
-		self.assertEqual(parsed["visa_reference_number"], "385515182")
+		self.assertEqual(parsed["visa_reference_number"], "283059338")
 
 	def test_nothing_is_taken_from_the_document_that_was_not_asked_for(self):
 		"""The visa carries a passport number and a date of birth; neither is ours."""
@@ -91,8 +118,16 @@ class TestTheMindeeMapping(FrappeTestCase):
 	def test_the_mapping_only_fills_declared_visa_request_fields(self):
 		"""A typo in a target fieldname would write nowhere and read as OCR failing."""
 		meta = frappe.get_meta("Visa Request")
-		for fieldname in list(EVISA_FIELD_MAP.values()) + list(RECEIPT_FIELD_MAP.values()):
+		targets = [
+			f for f in list(EVISA_FIELD_MAP.values()) + list(RECEIPT_FIELD_MAP.values())
+			if f != _PAYMENT_TIME
+		]
+		for fieldname in targets:
 			self.assertIsNotNone(meta.get_field(fieldname), msg=fieldname)
+
+	def test_payment_date_records_the_time_as_well(self):
+		"""A Date field would silently drop the clock time off the receipt."""
+		self.assertEqual(frappe.get_meta("Visa Request").get_field("payment_date").fieldtype, "Datetime")
 
 
 class TestWhenTheOcrRuns(FrappeTestCase):

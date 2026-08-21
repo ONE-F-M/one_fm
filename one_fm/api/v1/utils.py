@@ -1,5 +1,6 @@
 import frappe, datetime, requests
-from frappe.utils import getdate, cint, cstr, random_string, now_datetime
+from frappe import _
+from frappe.utils import getdate, cint, cstr, random_string, now_datetime, strip_html
 
 def response(message, status_code, data=None, error=None):
     """This method generates a response for an API call with appropriate data and status code.
@@ -151,16 +152,27 @@ def enrollment_status(employee_id: str = None) -> dict:
     :return: True or False
     """
     try:
+        if not employee_id:
+            return response(_("Missing Employee ID"), 400, None,
+                            _("Please enter your Employee ID."))
+
         get_employee = get_employee_by_id(employee_id)
         if get_employee.status:
             employee = frappe.get_doc("Employee", get_employee.message.name)
             if employee.enrolled:
-                return response(message="Employee is enrolled on the mobile app.", status_code=200, data={'enrolled':True}, error=None)
-            return response(message="Employee is not enrolled.", status_code=200, data={'enrolled':False}, error=None)
+                return response(message=_("Employee is enrolled on the mobile app."), status_code=200, data={'enrolled':True}, error=None)
+            return response(message=_("Employee is not enrolled."), status_code=200, data={'enrolled':False}, error=None)
         else:
-            return response(message=get_employee.message, status_code=get_employee.http_status_code, data={'status':False}, error=None)
+            return response(_("Employee Not Found"), get_employee.http_status_code,
+                            None, get_employee.message)
     except Exception as e:
-        return response(message=str(e), status_code=500, data={'status':False}, error=str(e))
+        frappe.log_error(
+            title=f"Mobile API: utils.enrollment_status | {employee_id}",
+            message=frappe.get_traceback(),
+        )
+        frappe.db.commit()
+        return response(_("Something Went Wrong"), 500, None,
+                        strip_html(str(e)) or type(e).__name__)
 
 @frappe.whitelist()
 def update_employee(employee_id, field, value):
@@ -216,16 +228,35 @@ def log_error_via_api(traceback: str, message: str, medium: str):
 @frappe.whitelist()
 def google_map_api():
     try:
-        return response("success", 200, {
-            "google_map_api":frappe.db.get_single_value("Google Settings", "api_key")})
+        api_key = frappe.db.get_single_value("Google Settings", "api_key")
+        if not api_key:
+            return response(_("Map Unavailable"), 500, None,
+                            _("The map service is not configured. Please contact the IT Helpdesk."))
+        return response("success", 200, {"google_map_api": api_key})
     except Exception as e:
-        return response("error", 500, {}, str(e))
-    
+        frappe.log_error(
+            title=f"Mobile API: utils.google_map_api | {frappe.session.user}",
+            message=frappe.get_traceback(),
+        )
+        frappe.db.commit()
+        return response(_("Something Went Wrong"), 500, None,
+                        strip_html(str(e)) or type(e).__name__)
+
 
 def verify_via_face_recogniton_service(url: str, data: dict, files: dict) -> tuple:
     decrypt_video = 1 if type(files.get('video_file'))==str else 0
     data['decrypt_video'] = decrypt_video
-    res = requests.post(url=url, data=data, files=files)
+
+    try:
+        res = requests.post(url=url, data=data, files=files, timeout=60)
+    except requests.exceptions.RequestException:
+        frappe.log_error(
+            title=f"Mobile API: face recognition service unreachable | {frappe.session.user}",
+            message=frappe.get_traceback(),
+        )
+        return False, _("Face verification is temporarily unavailable. Please try again in a "
+                        "few minutes, or contact your Site Supervisor.")
+
     if res.status_code == 200:
         api_response = res.json()
         if api_response.get("error"):
@@ -234,7 +265,9 @@ def verify_via_face_recogniton_service(url: str, data: dict, files: dict) -> tup
             frappe.log_error(title=f"Error from face recognition system -- {frappe.session.user}", message=f"{traceback} -- {message}")# if traceback else None
             return False, message
         return True, ""
-    return False, "Facial Recogniton Service is currently available"
+
+    return False, _("Face verification is temporarily unavailable. Please try again in a "
+                    "few minutes, or contact your Site Supervisor.")
 
 def resolve_active_user(user_id, max_depth=5):
     """
