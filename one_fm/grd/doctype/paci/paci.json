@@ -38,10 +38,12 @@
   "column_break_xblr",
   "paci_fine_amount_kwd",
   "section_break_19",
+  "no_payment_required",
   "upload_civil_id_payment",
   "upload_hawiyati",
   "upload_civil_id",
   "new_civil_id_expiry_date",
+  "pro_user",
   "column_break_25",
   "upload_civil_id_payment_datetime",
   "upload_civil_id_datetime",
@@ -208,6 +210,7 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:!doc.no_payment_required",
    "fieldname": "upload_civil_id_payment",
    "fieldtype": "Attach",
    "label": "Upload Payment Invoice"
@@ -357,9 +360,11 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:doc.workflow_state == \"Rejected\"",
    "fieldname": "paci_rejection_reason",
    "fieldtype": "Select",
    "label": "PACI Rejection Reason",
+   "mandatory_depends_on": "eval:doc.workflow_state == \"Rejected\"",
    "options": "\nIncorrect Address\nIncorrect Data"
   },
   {
@@ -370,11 +375,25 @@
    "no_copy": 1,
    "options": "PACI",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "Tick when PACI charges no fee for this transaction. The payment invoice is then neither shown nor required.",
+   "fieldname": "no_payment_required",
+   "fieldtype": "Check",
+   "label": "No Payment Required"
+  },
+  {
+   "description": "The PRO who files this application on the PACI portal. Required before the application can be handed back.",
+   "fieldname": "pro_user",
+   "fieldtype": "Link",
+   "label": "PRO User",
+   "options": "User"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-12 10:20:00.000000",
+ "modified": "2026-08-20 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PACI",
