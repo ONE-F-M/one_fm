@@ -27,6 +27,8 @@ from one_fm.grd.doctype.medical_insurance import medical_insurance
 from one_fm.grd.doctype.residency_payment_request import residency_payment_request
 from one_fm.grd.doctype.residency import residency
 from one_fm.grd.doctype.paci import paci
+from one_fm.grd.doctype.medical_appointment import medical_appointment
+from one_fm.grd.doctype.pcc_attestation import pcc_attestation
 from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.processor import sendemail
 
@@ -48,6 +50,12 @@ from one_fm.processor import sendemail
 # The creators keep their derivations for their other callers, which do not come through a
 # Preparation row and have nothing to pass. Residency still takes its application date
 # from MOI_CATEGORY_BY_ACTION; only the category is handed to it.
+#
+# WI-002095: the two overseas Actions also open the medical the candidate has to pass and
+# the attestation of their police clearance - the two steps of overseas onboarding the GRO
+# was still raising by hand. No Fingerprint Appointment is opened for any Action: the
+# fingerprint is taken once the candidate is in the country and holds a civil ID, so it is
+# not part of what a Preparation generates.
 NEW_ACTION_DOCUMENTS = {
     "New Kuwaiti": {
         "work_permit": "New Kuwaiti",
@@ -57,6 +65,8 @@ NEW_ACTION_DOCUMENTS = {
         "medical_insurance": "New",
         "residency": "First Time",
         "paci": "New Application",
+        "medical_appointment": "First Time",
+        "pcc_attestation": "Overseas",
     },
     # WI-002024: the same overseas hire, but against a government contract file rather
     # than a private one. Every document it opens is the one Overseas opens - what
@@ -70,6 +80,8 @@ NEW_ACTION_DOCUMENTS = {
         "medical_insurance": "New",
         "residency": "First Time",
         "paci": "New Application",
+        "medical_appointment": "First Time",
+        "pcc_attestation": "Overseas (Government)",
     },
     # The process map groups Local Transfer with Overseas and the non-Kuwaiti renewal:
     # all four documents, opened by the Preparation itself. There is no Transfer Paper in
@@ -584,6 +596,16 @@ def create_documents_for_row(row, preparation_name):
 
     if "paci" in plan:
         paci.create_PACI(employee_doc, plan["paci"], preparation_name)
+
+    if "medical_appointment" in plan:
+        medical_appointment.create_medical_appointment(
+            employee_doc, plan["medical_appointment"], preparation_name
+        )
+
+    if "pcc_attestation" in plan:
+        pcc_attestation.create_pcc_attestations(
+            employee_doc, plan["pcc_attestation"], preparation_name
+        )
 
     return work_permit_doc
 

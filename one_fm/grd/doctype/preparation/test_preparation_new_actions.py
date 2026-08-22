@@ -19,6 +19,9 @@ from one_fm.grd.doctype.residency.residency import create_moi_record
 
 SUB_DOCUMENTS = ("Work Permit", "Medical Insurance", "Residency", "PACI")
 
+# WI-002095: the two the overseas Actions add on top of those four.
+OVERSEAS_ONLY_DOCUMENTS = ("Medical Appointment", "PCC Attestation")
+
 
 def _an_active_employee():
 	"""An employee the GRD documents can be opened for.
@@ -245,3 +248,66 @@ class TestNewActionDocuments(FrappeTestCase):
 				frappe.db.get_value(doctype, opened[doctype][0], "preparation"),
 				preparation.name,
 			)
+
+	# ── WI-002095: the two documents the overseas Actions added ───────────────────
+
+	def test_overseas_opens_the_medical_and_the_attestation(self):
+		for action in ("Overseas", "Overseas (Government)"):
+			with self.subTest(action=action):
+				preparation = self._preparation_with(action)
+
+				create_documents_for_row(preparation.preparation_record[0], preparation.name)
+
+				for doctype in OVERSEAS_ONLY_DOCUMENTS:
+					opened = frappe.get_all(
+						doctype, filters={"preparation": preparation.name}, pluck="name"
+					)
+					self.assertEqual(len(opened), 1, f"{doctype} was not opened exactly once")
+
+				appointment = frappe.get_last_doc(
+					"Medical Appointment", filters={"preparation": preparation.name}
+				)
+				self.assertEqual(appointment.medical_appointment_type, "First Time")
+
+				# The PCC is opened under the same government classification as the row,
+				# which is what tells the fee apart on a government file.
+				attestation = frappe.get_last_doc(
+					"PCC Attestation", filters={"preparation": preparation.name}
+				)
+				self.assertEqual(attestation.category, action)
+				self.assertEqual(attestation.type, "Attestation")
+				self.assertEqual(attestation.workflow_state, "Draft")
+
+	def test_no_action_opens_a_fingerprint_appointment(self):
+		"""The fingerprint is taken once the candidate is here and holds a civil ID."""
+		for action in NEW_ACTION_DOCUMENTS:
+			with self.subTest(action=action):
+				preparation = self._preparation_with(action)
+
+				create_documents_for_row(preparation.preparation_record[0], preparation.name)
+
+				self.assertEqual(
+					frappe.get_all(
+						"Fingerprint Appointment",
+						filters={"preparation": preparation.name},
+						pluck="name",
+					),
+					[],
+				)
+
+	def test_the_other_actions_open_neither(self):
+		"""Only an overseas hire needs a medical and a police clearance attestation."""
+		for action in ("New Kuwaiti", "Local Transfer"):
+			with self.subTest(action=action):
+				preparation = self._preparation_with(action)
+
+				create_documents_for_row(preparation.preparation_record[0], preparation.name)
+
+				for doctype in OVERSEAS_ONLY_DOCUMENTS:
+					self.assertEqual(
+						frappe.get_all(
+							doctype, filters={"preparation": preparation.name}, pluck="name"
+						),
+						[],
+						f"{doctype} should not be opened for {action}",
+					)
