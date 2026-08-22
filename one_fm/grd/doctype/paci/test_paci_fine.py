@@ -62,9 +62,12 @@ class TestPaciFine(FrappeTestCase):
 		self.assertEqual(paci.paci_fine_amount_kwd, MASTER_RATE)
 
 	@change_settings("HR Settings", {"paci_fine_amount_kwd": 0})
-	def test_an_unconfigured_master_rate_yields_zero_rather_than_none(self):
-		paci = self._paci(is_paci_fine_applicable=1)
-		self.assertEqual(paci.paci_fine_amount_kwd, 0)
+	def test_an_unconfigured_master_rate_is_refused(self):
+		"""WI-002109 requires a fine greater than zero. This used to save with a zero fine,
+		which recorded a fine finance had nothing to reference - the message now names the
+		HR Settings rate, because the amount field itself is read-only."""
+		with self.assertRaises(frappe.ValidationError):
+			self._paci(is_paci_fine_applicable=1)
 
 	@change_settings("HR Settings", {"paci_fine_amount_kwd": 25.5})
 	def test_a_changed_master_rate_is_picked_up_on_the_next_save(self):
