@@ -499,7 +499,7 @@ def create_documents_for_row(row, preparation_name):
         )
 
     if "pcc_attestation" in plan:
-        pcc_attestation.create_pcc_attestation(
+        pcc_attestation.create_pcc_attestations(
             employee_doc, plan["pcc_attestation"], preparation_name
         )
 
