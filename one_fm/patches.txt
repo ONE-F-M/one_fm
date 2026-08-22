@@ -587,7 +587,7 @@ one_fm.patches.v15_0.add_pcc_processing_fees_to_hr_settings #2026-08-12 WI-00202
 one_fm.patches.v15_0.add_shift_request_shift_preview #2026-08-12 WI-001834
 one_fm.patches.v15_0.restore_stranded_mixed_shipments #2026-08-17 WI-002071
 one_fm.patches.v15_0.update_sales_invoice_property_setter
-one_fm.patches.v15_0.add_attendance_event_staff_field #2026-08-01
+one_fm.patches.v15_0.add_attendance_event_staff_field #2026-08-22 rerun for the missing custom_event_staff column
 one_fm.patches.v15_0.update_penalty_and_investigation_workflow #2026-08-02 rerun for employee_response
 one_fm.patches.v15_0.update_penalty_assignment_rules_process_task_based
 one_fm.patches.v15_0.update_visa_request_workflow_and_rules #2026-08-18 WI-001773 rerun after the sprint revert restored only the patch
