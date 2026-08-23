@@ -7,13 +7,18 @@ const status_color_map = {
 	"OL": "red",
 	"H": "blue",
 	"DO": "blue",
-	"CDO": "blue"
+	"CDO": "blue",
+	// WI-002153: the statuses broken out of "Other" - neither present nor absent.
+	"FP": "orange",
+	"CI": "orange",
+	"MA": "orange",
+	"OH": "orange"
 };
 
 // Fixed columns before the per-day cells; the formatter colours only the day cells.
 const FIXED_COLUMNS = 8;
 
-frappe.query_reports["Operations Monthly Attendance Sheet"] = {
+frappe.query_reports["Monthly Payroll Attendance Sheet"] = {
 	"filters": [
 		{
 			fieldname: "from_date",
@@ -41,8 +46,10 @@ frappe.query_reports["Operations Monthly Attendance Sheet"] = {
 			on_change: apply_in_page_filters,
 			label: __("Employee Status"),
 			fieldtype: "Select",
-			// Blank means every status, so a payroll run can include leavers.
-			options: ["", "Active", "Inactive", "Suspended", "Left"],
+			// Blank means every status, so a payroll run can include leavers. WI-002153 AC2
+			// lists the statuses in scope; these are the values Employee actually holds -
+			// Inactive and Suspended never existed on it.
+			options: ["", "Active", "Court Case", "Absconding", "Left", "Not Returned from Leave", "Vacation"],
 		},
 		{
 			fieldname: "employment_type",
@@ -52,8 +59,11 @@ frappe.query_reports["Operations Monthly Attendance Sheet"] = {
 			options: "Employment Type",
 		},
 		{
+			// WI-002153 AC3/AC4: both of these reach the server. Ticking Day Off OT now
+			// consolidates the day-off OT rows with the plain Basic ones instead of
+			// narrowing to them, and in-page filtering can only ever remove rows the
+			// server already sent - it cannot add the ones the last run left out.
 			fieldname: "roster_type",
-			on_change: apply_in_page_filters,
 			label: __("Roster Type"),
 			fieldtype: "Select",
 			// WI-002017: no blank option. Blank meant "every roster type", which put Basic
@@ -64,7 +74,6 @@ frappe.query_reports["Operations Monthly Attendance Sheet"] = {
 		},
 		{
 			fieldname: "day_off_ot",
-			on_change: apply_in_page_filters,
 			label: __("Day Off OT"),
 			fieldtype: "Check",
 		},
@@ -137,7 +146,7 @@ function attach_report_additional_day_details () {
 	if (!from_date || !to_date) return;
 
 	return frappe.call({
-		method: "one_fm.one_fm.report.operations_monthly_attendance_sheet.operations_monthly_attendance_sheet.get_report_additional_day_details",
+		method: "one_fm.one_fm.report.monthly_payroll_attendance_sheet.monthly_payroll_attendance_sheet.get_report_additional_day_details",
 		args: { from_date: from_date, to_date: to_date },
 		callback: function (res) {
 			frappe.query_report.additional_details = {
@@ -152,7 +161,7 @@ function attach_status_map () {
 	const report = frappe.query_report;
 
 	return frappe.call({
-		method: "one_fm.one_fm.report.operations_monthly_attendance_sheet.operations_monthly_attendance_sheet.get_attendance_status_map",
+		method: "one_fm.one_fm.report.monthly_payroll_attendance_sheet.monthly_payroll_attendance_sheet.get_attendance_status_map",
 		callback: function (res) {
 			frappe.query_report.additional_details = {
 				...(report.additional_details || {}),
@@ -172,12 +181,12 @@ function attach_status_map () {
 // Project is deliberately absent: it also narrows the Attendance rows themselves
 // (Attendance.project), so an employee with days booked to another project would come
 // out differently in page than the server returns.
+// Roster Type and Day Off OT are deliberately absent since WI-002153: they change which
+// rows the query returns, not just which of the returned ones are shown.
 const IN_PAGE_FILTERS = [
 	"employee",
 	"employee_status",
 	"employment_type",
-	"roster_type",
-	"day_off_ot",
 ];
 
 let server_rows = null;
@@ -195,23 +204,8 @@ function row_matches(row, filters) {
 	if (filters.employee && row.employee !== filters.employee) return false;
 	if (filters.employee_status && row.employee_status !== filters.employee_status) return false;
 	if (filters.employment_type && row.employment_type !== filters.employment_type) return false;
-	// The same rules the query applies, so the two agree whichever path ran:
-	//   Basic, unchecked    -> basic only, day-off OT actively excluded
-	//   Basic, checked      -> only basic rows flagged day-off OT
-	//   Overtime, unchecked -> overtime only
-	//   Overtime, checked   -> nothing (Logic Rule 4)
-	if (filters.roster_type && row.roster_type !== filters.roster_type) return false;
-	if (filters.day_off_ot) {
-		if (cint(row.day_off_ot) !== 1) return false;
-	} else if (filters.roster_type === "Basic" && cint(row.day_off_ot) === 1) {
-		return false;
-	}
 
 	return true;
-}
-
-function cint(value) {
-	return parseInt(value, 10) || 0;
 }
 
 function apply_in_page_filters() {
