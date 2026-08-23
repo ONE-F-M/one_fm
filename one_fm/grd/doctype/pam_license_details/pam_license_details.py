@@ -115,6 +115,7 @@ def derived_figures(sector, ratio, nationals, expatriates):
 	licence needs to carry its expatriates is expatriates x ratio / (100 - ratio)
 	(WI-002094).
 
+
 	Outside 0 < ratio < 100 there is no requirement to state: at 100 the formula divides by
 	zero, above it the answer is negative, and at 0 or blank PAM asks for no nationals in
 	that sector. All three come out as no requirement rather than as an error - the ratio is
@@ -149,7 +150,7 @@ def derived_figures(sector, ratio, nationals, expatriates):
 		"required_number_of_national_workers": as_figure(required),
 		"exceeding_the_ratio_number_of_national_workers": as_figure(excess),
 		"exempt_number_of_workers": as_figure(allowed),
-		"violation_number_of_workers": as_figure(violated),
+		"violation_number_of_workers": as_figure(violated)
 	}
 
 
