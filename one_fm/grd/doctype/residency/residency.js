@@ -1,19 +1,48 @@
 // Copyright (c) 2020, ONE FM and contributors
 // For license information, please see license.txt
+
+// WI-002096: the button that opens the next document in the legal sequence, once this one is
+// complete. Shown only for the classifications that have a next step. The next document is
+// found by the Preparation and employee this one carries, which is what pairs them: a
+// Preparation opens one of each per employee.
+var set_next_step_button = function(frm, next_doctype, classifications, classification_field){
+	if(frm.doc.workflow_state !== 'Completed'){
+		return;
+	}
+	if(!classifications.includes(frm.doc[classification_field])){
+		return;
+	}
+	if(!frm.doc.preparation || !frm.doc.employee){
+		return;
+	}
+
+	frm.add_custom_button(__('Go to {0}', [__(next_doctype)]), function(){
+		frappe.db.get_value(
+			next_doctype,
+			{preparation: frm.doc.preparation, employee: frm.doc.employee, docstatus: ['!=', 2]},
+			'name',
+			(r) => {
+				if(r && r.name){
+					frappe.set_route('Form', next_doctype, r.name);
+				} else {
+					frappe.msgprint({
+						title: __('Nothing to open'),
+						message: __('No {0} was opened for this candidate.', [__(next_doctype)]),
+						indicator: 'orange'
+					});
+				}
+			}
+		);
+	}).addClass('btn-primary');
+};
+
 frappe.ui.form.on('Residency', {
 	refresh(frm){
-			if(frm.doc.docstatus === 1 && frm.doc.category == "Transfer"){
-				frm.add_custom_button(__('Go to PACI'),
-					  function () {
-					frappe.db.get_value('PACI', {'category':frm.doc.category,'civil_id':frm.doc.one_fm_civil_id}, 'name', (r) => {
-					if (r && r.name) {
-						frappe.set_route("Form", "PACI", r.name);
-					}
-				});
-			}
-		).addClass('btn-primary');
-		}
-
+		// WI-002096 widens this from Transfer alone to every residency that has a civil ID
+		// behind it - an Extend does not, so it gets no button - and pairs on the Preparation
+		// rather than on a civil ID, which after a Damj merge is not the number the PACI was
+		// opened under.
+		set_next_step_button(frm, 'PACI', ['Renewal', 'First Time', 'Transfer'], 'category');
 	},
 	onload: function(frm) {
 		// set_employee_details(frm);

@@ -243,15 +243,23 @@ doc_events = {
 	# where the row's status column comes from. The handler only ever moves a row forward
 	# along Work Permit -> Medical Insurance -> Residency -> PACI.
 	"Work Permit": {
+		# WI-002096: no step completes before the one in front of it.
+		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
 		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"Medical Insurance": {
+		# WI-002096: no step completes before the one in front of it.
+		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
 		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"Residency": {
+		# WI-002096: no step completes before the one in front of it.
+		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
 		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"PACI": {
+		# WI-002096: no step completes before the one in front of it.
+		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
 		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"Employee": {
