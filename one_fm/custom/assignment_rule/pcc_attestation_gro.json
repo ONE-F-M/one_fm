@@ -35,10 +35,9 @@
  "disabled": 0,
  "doctype": "Assignment Rule",
  "document_type": "PCC Attestation",
- "field": "owner",
  "name": "PCC Attestation-GRO",
  "priority": 0,
- "rule": "Based on Field",
+ "rule": "Based on Process Task",
  "unassign_condition": "workflow_state not in ('Draft', 'Pending GR Operator', 'On Hold')",
  "users": []
 }
