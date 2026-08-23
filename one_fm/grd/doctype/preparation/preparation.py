@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.model.naming import make_autoname
 from frappe.query_builder import DocType
 from frappe.utils import flt
 from frappe.utils import (
@@ -111,7 +112,106 @@ COST_COMPONENT_FIELDS = (
 YEAR_SCOPED_ACTIONS = ('Renewal (Kuwaiti)', 'Renewal (Non-Kuwaiti)')
 
 
+# WI-002101: the batch type, the series it is named under, and the Actions its rows may
+# carry. One table, because the naming and the restriction are two halves of the same
+# statement - an Onboarding batch named PRE-ONB- that could still carry a Cancellation row
+# would be lying about what it is.
+#
+# The Action values are the Preparation Record field's own options, spelling included:
+# WI-002101 writes "Renewal (Non Kuwaiti)" and "Extend 1 Month" where the field has
+# "Renewal (Non-Kuwaiti)" and "Extend 1 month". The field's spelling is what every existing
+# row and every lookup keyed on it already uses.
+CATEGORIES = {
+    'Onboarding': {
+        'prefix': 'PRE-ONB-',
+        'actions': ('Overseas', 'Overseas (Government)', 'Local Transfer', 'New Kuwaiti'),
+    },
+    'Offboarding': {
+        'prefix': 'PRE-OFFB-',
+        'actions': ('Cancellation',),
+    },
+    'Renewal': {
+        'prefix': 'PRE-REN-',
+        'actions': (
+            'Renewal (Kuwaiti)',
+            'Renewal (Non-Kuwaiti)',
+            'Extend 1 month',
+            'Extend 2 months',
+            'Extend 3 months',
+        ),
+    },
+}
+
+# What a batch with no Category recognised is named under. Reachable only through a record
+# whose Category was removed from the options after it was made; a new one cannot save
+# without one.
+FALLBACK_PREFIX = 'PRE-'
+
+
+def category_for_action(action):
+    """The Category a batch carrying this Action belongs to, or None (WI-002101).
+
+    The inverse of the table above. Every Action belongs to exactly one Category, which is
+    what makes a single Category per batch workable in the first place.
+    """
+    for category, rules in CATEGORIES.items():
+        if action in rules['actions']:
+            return category
+
+
+@frappe.whitelist()
+def get_actions_for_category(category: str):
+    """The Actions a batch of this Category may carry (WI-002101).
+
+    Read by the form to narrow the Action dropdown, and by nothing else - the server does
+    not take the browser's word for it, it re-checks on validate.
+    """
+    return list(CATEGORIES.get(category, {}).get('actions', ()))
+
+
 class Preparation(Document):
+    def autoname(self):
+        """Name the batch after what it is (WI-002101).
+
+        PRE-ONB-, PRE-OFFB- or PRE-REN- and the year, so the series says at a glance which
+        kind of batch a document is. WI-002093 writes the offboarding prefix as PRE-OFF-;
+        WI-002101, which is the item that specifies the naming in full, writes PRE-OFFB-,
+        and that is what is used here.
+
+        Records named under the old format:PRE-{posting_date}-{######} keep their names.
+        """
+        prefix = CATEGORIES.get(self.category, {}).get('prefix', FALLBACK_PREFIX)
+        self.name = make_autoname(prefix + '.YYYY.-.#####')
+
+    def validate_actions_match_category(self):
+        """Refuse a row whose Action does not belong to this kind of batch (WI-002101).
+
+        The form narrows the dropdown, but the dropdown is not the rule: rows arrive from
+        the monthly schedule, from a data import and from the API as well, and a
+        Cancellation sitting in an Onboarding batch would open the wrong documents on
+        submit.
+        """
+        allowed = CATEGORIES.get(self.category, {}).get('actions')
+        if not allowed:
+            return
+
+        wrong = [
+            row for row in self.preparation_record
+            if row.renewal_or_extend and row.renewal_or_extend not in allowed
+        ]
+        if not wrong:
+            return
+
+        rows = '<br>'.join(
+            _('Row {0}: {1}').format(row.idx, frappe.bold(row.renewal_or_extend)) for row in wrong
+        )
+        frappe.throw(
+            _('A {0} batch cannot carry these Actions:<br>{1}<br><br>Allowed: {2}').format(
+                frappe.bold(_(self.category)), rows, ', '.join(allowed)
+            ),
+            title=_('Action Does Not Match the Category'),
+        )
+
     def update_total_amount(self):
         """Derive each row's Total Amount from its components, then the document total.
 
@@ -180,6 +280,7 @@ class Preparation(Document):
     def validate(self):
         self.set_grd_values()
         self.set_hr_values()
+        self.validate_actions_match_category()
         validate_preparation_table(self)
         self.update_total_amount()
         
@@ -318,6 +419,9 @@ def create_preparation_record():
     """
    
     doc = frappe.new_doc('Preparation')
+    # The monthly batch is a renewal run by definition - it is built from the employees
+    # whose residency expires next month - so it names itself PRE-REN- (WI-002101).
+    doc.category = 'Renewal'
     doc.posting_date = nowdate()
     first_day = get_first_day(add_months(getdate(today()), 1))
     last_day = get_last_day(getdate(first_day))

@@ -9,6 +9,7 @@ from frappe.utils import nowdate
 from one_fm.grd.doctype.preparation.preparation import (
 	COST_COMPONENT_FIELDS,
 	YEAR_SCOPED_ACTIONS,
+	category_for_action,
 	get_grd_renewal_extension_cost,
 )
 from one_fm.grd.utils import set_renewal_extension_cost_totals
@@ -149,6 +150,7 @@ class TestActionFeeMaster(FrappeTestCase):
 		preparation = frappe.get_doc(
 			{
 				"doctype": "Preparation",
+				"category": category_for_action(GOVERNMENT),
 				"posting_date": nowdate(),
 				"preparation_record": [
 					{
