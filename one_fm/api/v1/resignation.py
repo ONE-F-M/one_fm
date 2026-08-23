@@ -131,10 +131,13 @@ def create_resignation(
         doc.relieving_date = rel_date
         doc.reason_for_exit = reason
         doc.supervisor = supervisor
-        doc.department = emp.get("department")
         doc.employment_type = emp.get("employment_type")
-        doc.project_allocation = emp.get("project")
-        doc.designation = emp.get("designation")
+        # department, project_allocation and designation are deliberately left unset here --
+        # Document.insert() runs check_permission("create") before before_save(), so setting
+        # them beforehand exposes their values to the create permission check and can trip a
+        # User Permission the employee doesn't hold for their own Department/Project. The
+        # controller's before_save -> set_allocations() populates them right after insert,
+        # same as a desk-created resignation.
         # Let Frappe set workflow_state to the workflow's default initial state (Draft) on insert
 
         doc.insert()
