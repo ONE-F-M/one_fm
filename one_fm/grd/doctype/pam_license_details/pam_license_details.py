@@ -11,6 +11,7 @@ licence that reads compliant when it is not.
 import frappe
 from frappe.model.document import Document
 from frappe.query_builder import DocType
+from frappe.utils import flt
 
 KUWAITI = "Kuwaiti"
 
@@ -30,7 +31,66 @@ WATCHED_EMPLOYEE_FIELDS = (
 
 
 class PAMLicenseDetails(Document):
-	pass
+	def validate(self):
+		self.set_sector_figures()
+
+	def set_sector_figures(self):
+		"""Derive every figure a sector row computes from its ratio (WI-002094).
+
+		On validate as well as on a recount, because the ratio is the half an operator
+		types: it is entered here and the figures that follow from it have to move with it
+		without waiting for somebody to be transferred.
+		"""
+		for row in self.pam_license_stats:
+			for fieldname, value in derived_figures(
+				row.ratio_number_of_national_workers,
+				row.national_number_of_workers,
+				row.expatriate_number_of_workers,
+			).items():
+				row.set(fieldname, value)
+
+
+def round_to_half(value):
+	"""PAM states its figures to the nearest half a person (WI-002094)."""
+	return round(flt(value) * 2) / 2
+
+
+def as_figure(value):
+	"""A figure as it goes into a Data field: "3" rather than "3.0", "2.5" as it is."""
+	value = round_to_half(value)
+	return str(int(value)) if value == int(value) else str(value)
+
+
+def derived_figures(ratio, nationals, expatriates):
+	"""What one sector row's ratio and two actual headcounts imply (WI-002094).
+
+	The ratio is the share of the workforce PAM requires to be Kuwaiti, so the nationals a
+	licence needs to carry its expatriates is expatriates x ratio / (100 - ratio).
+
+	Outside 0 < ratio < 100 there is no requirement to state: at 100 the formula divides by
+	zero, above it the answer is negative, and at 0 or blank PAM asks for no nationals in
+	that sector. All three come out as no requirement rather than as an error - the ratio is
+	typed by hand and a licence should not refuse to save because one row is unfilled.
+
+	Excess Nationals is what the licence is still short of that requirement, and never less
+	than zero: a sector already carrying enough nationals is not short of any.
+
+	Kept as a plain function so the arithmetic can be checked without a licence, and so the
+	controller and the recount both go through one copy of it.
+	"""
+	ratio = flt(ratio)
+
+	required = 0.0
+	if 0 < ratio < 100:
+		required = flt(expatriates) * ratio / (100 - ratio)
+	required = round_to_half(required)
+
+	excess = max(required - flt(nationals), 0)
+
+	return {
+		"required_number_of_national_workers": as_figure(required),
+		"exceeding_the_ratio_number_of_national_workers": as_figure(excess),
+	}
 
 
 def update_counts_from_employee(doc, method=None):
@@ -100,15 +160,21 @@ def recount_sector(license_number, sector):
 
 	nationals, expatriates = count_workers(license_number, sector)
 	for row in rows:
-		frappe.db.set_value(
-			"PAM License Stats",
-			row.name,
-			{
-				"national_number_of_workers": str(nationals),
-				"expatriate_number_of_workers": str(expatriates),
-			},
-			update_modified=False,
+		figures = {
+			"national_number_of_workers": str(nationals),
+			"expatriate_number_of_workers": str(expatriates),
+		}
+		# The derived figures move with the counts they are derived from. Written here as
+		# well as on validate because db_set bypasses the controller, and a row left with
+		# yesterday's requirement beside today's headcount is worse than either.
+		figures.update(
+			derived_figures(
+				frappe.db.get_value("PAM License Stats", row.name, "ratio_number_of_national_workers"),
+				nationals,
+				expatriates,
+			)
 		)
+		frappe.db.set_value("PAM License Stats", row.name, figures, update_modified=False)
 
 
 def count_workers(license_number, sector):
