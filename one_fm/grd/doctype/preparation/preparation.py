@@ -148,6 +148,62 @@ CATEGORIES = {
 FALLBACK_PREFIX = 'PRE-'
 
 
+# WI-002093: the order the legal steps run in, so a row can say which one the candidate has
+# reached. Furthest along wins - the sequence only moves forward, and what an operator wants
+# to see is progress, not the last document anybody happened to touch.
+SUB_DOCUMENT_SEQUENCE = ("Work Permit", "Medical Insurance", "Residency", "PACI")
+
+
+def update_row_reference(doc, method=None):
+    """Point a Preparation row at the sub-document its candidate has reached (WI-002093).
+
+    Hung off each sub-document's own save, so the status on the row is the status on the
+    document rather than a snapshot from whenever the Preparation was last touched.
+
+    Only ever moves forward: a Medical Insurance saving does not pull the row back from the
+    PACI it had already reached. That is what makes it a progress column and not a
+    last-touched column.
+
+    Written with db.set_value on the child row - the row belongs to a submitted Preparation,
+    and a status arriving here should not need permission to edit one.
+    """
+    if not doc.get("preparation") or not doc.get("employee"):
+        return
+
+    try:
+        position = SUB_DOCUMENT_SEQUENCE.index(doc.doctype)
+    except ValueError:
+        return
+
+    row = frappe.db.get_value(
+        "Preparation Record",
+        {
+            "parent": doc.preparation,
+            "parenttype": "Preparation",
+            "employee": doc.employee,
+        },
+        ["name", "ref_doctype"],
+        as_dict=True,
+    )
+    if not row:
+        return
+
+    if row.ref_doctype in SUB_DOCUMENT_SEQUENCE:
+        if SUB_DOCUMENT_SEQUENCE.index(row.ref_doctype) > position:
+            return
+
+    frappe.db.set_value(
+        "Preparation Record",
+        row.name,
+        {
+            "ref_doctype": doc.doctype,
+            "ref_name": doc.name,
+            "ref_doctype_status": doc.get("workflow_state") or "",
+        },
+        update_modified=False,
+    )
+
+
 def category_for_action(action):
     """The Category a batch carrying this Action belongs to, or None (WI-002101).
 
