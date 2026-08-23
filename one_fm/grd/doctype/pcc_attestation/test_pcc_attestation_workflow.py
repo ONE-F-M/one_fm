@@ -250,10 +250,12 @@ class TestPCCAttestationWorkflow(FrappeTestCase):
 		self.assertEqual(rule.field, "pro_user")
 		self.assertTrue(frappe.get_meta("PCC Attestation").get_field("pro_user"))
 
-	def test_the_gro_rule_assigns_from_a_field_that_exists(self):
+	def test_the_gro_rule_assigns_from_a_process_task(self):
+		"""WI-002145 moved this side off the record's owner: the GR Operator work belongs to
+		one person, named by a Process Task, not to whoever created the record."""
 		rule = frappe.get_doc("Assignment Rule", "PCC Attestation-GRO")
-		self.assertEqual(rule.rule, "Based on Field")
-		self.assertEqual(rule.field, "owner")
+		self.assertEqual(rule.rule, "Based on Process Task")
+		self.assertTrue(rule.custom_routine_task)
 
 	# ------------------------------------------------------ receipt guards
 

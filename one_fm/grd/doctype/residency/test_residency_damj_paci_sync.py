@@ -27,6 +27,7 @@ class TestDamjCivilIdSyncToPaci(FrappeTestCase):
 		preparation = frappe.get_doc(
 			{
 				"doctype": "Preparation",
+				"category": "Renewal",
 				"posting_date": today(),
 				"preparation_record": [{"employee": self.employee, "renewal_or_extend": "Renewal (Non-Kuwaiti)"}],
 			}
