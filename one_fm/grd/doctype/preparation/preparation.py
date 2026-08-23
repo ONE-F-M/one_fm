@@ -429,6 +429,30 @@ def get_grd_renewal_extension_cost(renewal_or_extend: str, no_of_years: str = No
     if renewal_or_extend in YEAR_SCOPED_ACTIONS and not no_of_years:
         return False
 
+    # The years narrow the lookup for the two renewal Actions only. The field is hidden for
+    # an extension but not cleared, so a row switched from a renewal still carries "1 Year",
+    # and filtering an extension by it would find nothing and quietly return no fees.
+    scoped_years = no_of_years if renewal_or_extend in YEAR_SCOPED_ACTIONS else None
+    result = _master_fee_rows(renewal_or_extend, scoped_years)
+
+    # WI-002092: nothing configured at that duration, so the Action's own row is used
+    # whatever duration it is filed under.
+    #
+    # The years used to have to match exactly, which meant a renewal configured as a
+    # "3 Years" row fetched nothing at all for a row asking for one year - and the browser,
+    # having already cleared the four fee fields, left the operator looking at zeros with no
+    # explanation. The duration that decides the cost is the one on the Preparation row; the
+    # master row supplies the rate, and which duration it happens to be filed under is a
+    # detail of how the table is keyed.
+    if not result and scoped_years:
+        result = _master_fee_rows(renewal_or_extend)
+
+    if result:
+        return result[0]
+
+
+def _master_fee_rows(renewal_or_extend, no_of_years=None):
+    """The master fee rows for an Action, optionally narrowed to one duration."""
     Cost = DocType('GRD Renewal Extension Cost')
     query = (
         frappe.qb.from_(Cost)
@@ -437,12 +461,10 @@ def get_grd_renewal_extension_cost(renewal_or_extend: str, no_of_years: str = No
         .where(Cost.parenttype == 'HR Settings')
         .where(Cost.renewal_or_extend == renewal_or_extend)
     )
-    if renewal_or_extend in YEAR_SCOPED_ACTIONS:
+    if no_of_years:
         query = query.where(Cost.no_of_years == no_of_years)
 
-    result = query.run(as_dict=True)
-    if result:
-        return result[0]
+    return query.run(as_dict=True)
 
 def years_in(no_of_years):
     """The number of years "2 Years" means (WI-002092).

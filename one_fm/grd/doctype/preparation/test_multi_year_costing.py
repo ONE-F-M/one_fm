@@ -122,3 +122,36 @@ class TestMultiYearCosting(FrappeTestCase):
 			PER_YEAR_COST_FIELDS,
 			("work_permit_amount", "medical_insurance_amount", "residency_stamp_amount"),
 		)
+
+
+class TestADurationWithNoMasterRowOfItsOwn(FrappeTestCase):
+	"""WI-002092: HR Settings holds one annual rate per renewal Action, and it may be filed
+	under any duration. The duration on the Preparation row is what decides the cost."""
+
+	def setUp(self):
+		# Filed under "3 Years", which is what the reporter's data actually looks like.
+		_master_rows([dict(ANNUAL, renewal_or_extend=RENEWAL, no_of_years="3 Years")])
+
+	def test_every_duration_fetches_the_rate(self):
+		"""The years used to have to match exactly, so a row asking for one year against a
+		"3 Years" master row fetched nothing - and the form, having already cleared the four
+		fee fields, left the operator looking at zeros."""
+		for years, multiplier in (("1 Year", 1), ("2 Years", 2), ("3 Years", 3)):
+			with self.subTest(years=years):
+				costing = get_preparation_row_costing(RENEWAL, years)
+				self.assertTrue(costing, f"nothing fetched for {years}")
+				for field in PER_YEAR_COST_FIELDS:
+					self.assertEqual(costing[field], ANNUAL[field] * multiplier, field)
+
+	def test_the_exact_duration_still_wins_when_it_is_configured(self):
+		"""The fallback must not override a rate someone filed under a specific duration."""
+		_master_rows([
+			dict(ANNUAL, renewal_or_extend=RENEWAL, no_of_years="3 Years"),
+			dict(ANNUAL, renewal_or_extend=RENEWAL, no_of_years="1 Year", work_permit_amount=7),
+		])
+
+		self.assertEqual(get_preparation_row_costing(RENEWAL, "1 Year")["work_permit_amount"], 7)
+
+	def test_an_action_with_no_row_at_all_still_fetches_nothing(self):
+		"""The form says so out loud rather than leaving four zeros unexplained."""
+		self.assertFalse(get_preparation_row_costing("Renewal (Kuwaiti)", "1 Year"))
