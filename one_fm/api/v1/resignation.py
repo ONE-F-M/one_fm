@@ -202,6 +202,11 @@ def extend_resignation(
         employee_name = resolve_employee_name(input_id)
         if not employee_name:
             frappe.throw(f"Employee '{input_id}' not found", frappe.ValidationError)
+
+        employee_user = frappe.db.get_value("Employee", employee_name, "user_id")
+        if employee_user != frappe.session.user and not frappe.has_permission("Employee Resignation Date Adjustment", ptype="create"):
+            frappe.throw(_("Not authorized to submit an extension for this employee"), frappe.PermissionError)
+
         if not extended_date:
             frappe.throw("extended_date is required", frappe.ValidationError)
 
@@ -222,7 +227,8 @@ def extend_resignation(
             frappe.throw("No active resignation found to extend", frappe.ValidationError)
 
         active_doc = frappe.get_doc("Employee Resignation", resignation_id)
-        employee_user = frappe.db.get_value("Employee", employee_name, "user_id")
+        if active_doc.employee != employee_name and not frappe.has_permission("Employee Resignation Date Adjustment", ptype="create"):
+            frappe.throw(_("This resignation does not belong to the specified employee"), frappe.PermissionError)
 
         ext = frappe.new_doc("Employee Resignation Date Adjustment")
         ext.owner = employee_user or frappe.session.user
@@ -298,6 +304,10 @@ def withdraw_resignation(
         if not employee_name:
             frappe.throw(f"Employee '{input_id}' not found", frappe.ValidationError)
 
+        employee_user = frappe.db.get_value("Employee", employee_name, "user_id")
+        if employee_user != frappe.session.user and not frappe.has_permission("Employee Resignation Withdrawal", ptype="create"):
+            frappe.throw(_("Not authorized to submit a withdrawal for this employee"), frappe.PermissionError)
+
         # Find the most recent active resignation
         TERMINAL = ["Resigned", "Cancelled", "Resignation Withdrawn", "Withdrawn"]
         active_resignations = frappe.get_list(
@@ -315,7 +325,6 @@ def withdraw_resignation(
         if not active_doc:
             frappe.throw("No active resignation found to withdraw", frappe.ValidationError)
 
-        employee_user = frappe.db.get_value("Employee", employee_name, "user_id")
         withdrawal = frappe.new_doc("Employee Resignation Withdrawal")
         withdrawal.owner = employee_user or frappe.session.user
         withdrawal.employee_resignation = active_doc.name
@@ -399,6 +408,10 @@ def correct_resignation_date_app(
             frappe.throw("new_date (relieving date) is required", frappe.ValidationError)
 
         doc = frappe.get_doc("Employee Resignation", resignation_id)
+
+        employee_user = frappe.db.get_value("Employee", doc.employee, "user_id")
+        if employee_user != frappe.session.user and not frappe.has_permission("Employee Resignation", ptype="write"):
+            frappe.throw(_("Not authorized to correct this resignation's dates"), frappe.PermissionError)
 
         if doc.workflow_state != "Pending Relieving Date Correction":
             frappe.throw(
