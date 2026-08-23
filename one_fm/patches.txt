@@ -587,6 +587,9 @@ one_fm.patches.v15_0.add_pcc_processing_fees_to_hr_settings #2026-08-12 WI-00202
 one_fm.patches.v15_0.add_shift_request_shift_preview #2026-08-12 WI-001834
 one_fm.patches.v15_0.restore_stranded_mixed_shipments #2026-08-17 WI-002071
 one_fm.patches.v15_0.add_preparation_category #2026-08-20 WI-002101
+one_fm.patches.v15_0.migrate_pam_license_configuration #2026-08-20 WI-002102
+one_fm.patches.v15_0.add_pam_occupational_sectors #2026-08-20 WI-002099
+one_fm.patches.v15_0.set_pam_license_stats_status_read_only #2026-08-20 WI-002135
 one_fm.patches.v15_0.assign_pcc_gro_rule_to_process_task #2026-08-20 WI-002145
 one_fm.patches.v15_0.add_work_permit_amendment_action #2026-08-19 WI-002108
 one_fm.patches.v15_0.rename_work_permit_supervisor_state #2026-08-20 WI-002097
