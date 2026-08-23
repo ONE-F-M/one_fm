@@ -34,6 +34,11 @@ SECTOR_EXPAT_ALLOWANCE = {
 # whatever the licence's nationals and ratio say.
 EXEMPT_SECTOR = "مهن غير مشمولة بالنسبة"
 
+# WI-002135: the two things a sector row's Status can say, and the only thing that decides
+# between them - whether the sector is over its expatriate allowance at all.
+COMPLIANT = "Compliant"
+NON_COMPLIANT = "Non-Compliant"
+
 # The Employee fields a headcount depends on. A save that touches none of them cannot have
 # moved anybody between licences or sectors, and Employee is saved constantly - so the
 # recount is skipped rather than run on every save.
@@ -131,6 +136,10 @@ def derived_figures(sector, ratio, nationals, expatriates):
 	one that makes the figure and the Compliant / Non-Compliant status mean what they say.
 	Reversing it is one line if PAM's own wording turns out to be literal.
 
+	The Status follows from the violation and nothing else (WI-002135): over the allowance by
+	any amount is Non-Compliant, otherwise Compliant. Derived here rather than left as a
+	Select the operator picks, so it cannot contradict the figure printed beside it.
+
 	Kept as a plain function so the arithmetic can be checked without a licence, and so the
 	controller and the recount both go through one copy of it.
 	"""
@@ -150,7 +159,8 @@ def derived_figures(sector, ratio, nationals, expatriates):
 		"required_number_of_national_workers": as_figure(required),
 		"exceeding_the_ratio_number_of_national_workers": as_figure(excess),
 		"exempt_number_of_workers": as_figure(allowed),
-		"violation_number_of_workers": as_figure(violated)
+		"violation_number_of_workers": as_figure(violated),
+		"status": NON_COMPLIANT if round_to_half(violated) > 0 else COMPLIANT,
 	}
 
 

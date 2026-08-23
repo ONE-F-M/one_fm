@@ -31,7 +31,8 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "\nCompliant\nNon-Compliant"
+   "options": "\nCompliant\nNon-Compliant",
+   "read_only": 1
   },
   {
    "fieldname": "number_of_national_workers_column",
