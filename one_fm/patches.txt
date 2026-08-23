@@ -558,7 +558,6 @@ one_fm.patches.v15_0.update_penalty_assignment_rules_process_task_based
 one_fm.patches.v15_0.update_visa_request_workflow_and_rules
 one_fm.patches.v15_0.link_published_document_requests #2026-08-03 WI-001844
 one_fm.patches.v15_0.seed_document_versions #2026-08-03
-one_fm.patches.v15_0.flag_input_material #2026-08-03
 one_fm.patches.v15_0.add_paci_pro_workflow_and_rule #2026-08-10 WI-001830 rerun for the second Completed row
 one_fm.patches.v15_0.move_pow_drive_folder_to_google_settings #2026-08-09 WI-001981
 one_fm.patches.v15_0.add_resignation_v2_branch_routing #2026-08-04
@@ -590,3 +589,9 @@ one_fm.patches.v15_0.restore_stranded_mixed_shipments #2026-08-17 WI-002071
 one_fm.patches.v15_0.migrate_pam_license_configuration #2026-08-20 WI-002102
 one_fm.patches.v15_0.add_pam_occupational_sectors #2026-08-20 WI-002099
 one_fm.patches.v15_0.set_pam_license_stats_status_read_only #2026-08-20 WI-002135
+one_fm.patches.v15_0.assign_pcc_gro_rule_to_process_task #2026-08-20 WI-002145
+one_fm.patches.v15_0.add_work_permit_amendment_action #2026-08-19 WI-002108
+one_fm.patches.v15_0.rename_work_permit_supervisor_state #2026-08-20 WI-002097
+one_fm.patches.v15_0.add_medical_insurance_draft_state #2026-08-19 WI-002098
+one_fm.patches.v15_0.update_paci_no_payment_workflow #2026-08-19 WI-002136
+one_fm.patches.v15_0.add_paci_damj_fields #2026-08-20 WI-002109

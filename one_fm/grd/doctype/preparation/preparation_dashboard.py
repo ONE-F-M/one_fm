@@ -20,6 +20,15 @@ def get_data():
             {
                 'items': ['Fingerprint Appointment']
             },
+            # WI-002107: the two overseas sub-documents WI-002095 opens. Without a badge
+            # each, the only way to reach them from the Preparation that created them was
+            # to search their own lists.
+            {
+                'items': ['Medical Appointment']
+            },
+            {
+                'items': ['PCC Attestation']
+            },
             # {
             #     'items': ['Payment Request']
             # }
