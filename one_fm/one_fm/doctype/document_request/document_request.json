@@ -17,12 +17,10 @@
   "requirement_text",
   "source_guideline",
   "reference_document",
-  "update_source",
   "section_break_approval",
   "approver",
   "approver_user",
   "column_break_status",
-  "status",
   "document_link",
   "document_version",
   "bpmn_instance"
@@ -35,7 +33,8 @@
    "label": "Requester",
    "options": "Employee",
    "reqd": 1,
-   "description": "The employee raising this documentation request."
+   "description": "The employee raising this request. Captured automatically from the signed-in user, so it always matches who actually filed it.",
+   "read_only": 1
   },
   {
    "fieldname": "requester_user",
@@ -53,19 +52,19 @@
    "fieldname": "request_action",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Action",
-   "options": "Create\nUpdate\nDelete",
-   "default": "Create",
+   "label": "Request Action",
+   "options": "\nCreate\nUpdate\nDelete",
    "reqd": 1,
-   "description": "Create a new document, revise an existing one (which publishes a new version), or withdraw an existing one from use. Delete does NOT destroy anything — it marks the document inactive and revokes its Drive sharing, and a System Manager can reactivate it."
+   "description": "Create a new document, revise an existing one (which publishes a new version), or withdraw an existing one from use. No default: a Select whose first option is a real action silently answers this question for the requester. Delete does NOT destroy anything — it marks the document inactive and revokes its Drive sharing, and a System Manager can reactivate it."
   },
   {
    "fieldname": "document_type",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Document Type",
-   "options": "Policy\nSOP\nGuideline\nManual",
-   "reqd": 1
+   "options": "\nPolicy\nSOP\nGuideline\nManual",
+   "reqd": 1,
+   "description": "What kind of document this is. Decides the template, the code series, and which guideline applies. No default: a Select whose first option is a real type silently answers this question for the requester."
   },
   {
    "fieldname": "title",
@@ -74,7 +73,7 @@
    "label": "Title",
    "depends_on": "eval:doc.request_action != 'Delete'",
    "mandatory_depends_on": "eval:doc.request_action != 'Delete'",
-   "description": "Proposed title for the document being requested."
+   "description": "Title for the document being requested. This is the subject the content is written about, so it is what the drafting task is told to write."
   },
   {
    "fieldname": "requirement_text",
@@ -82,17 +81,17 @@
    "label": "Requirement",
    "depends_on": "eval:doc.request_action != 'Delete'",
    "mandatory_depends_on": "eval:doc.request_action != 'Delete'",
-   "description": "What's needed and why — this becomes the AI drafting requirement in Processa."
+   "description": "What the document must say. On a Create this is the material the document is written from; on an Update it is the change to make — the existing document supplies everything the requirement does not mention."
   },
   {
    "fieldname": "source_guideline",
-   "link_filters": "[[\"Document Register\",\"lifecycle_state\",\"=\",\"Active\"]]",
+   "link_filters": "[[\"Document Register\", \"lifecycle_state\", \"=\", \"Active\"], [\"Document Register\", \"document_type\", \"=\", \"Guideline\"]]",
    "fieldtype": "Link",
    "label": "Source Guideline",
    "options": "Document Register",
    "depends_on": "eval:doc.request_action == 'Create'",
    "mandatory_depends_on": "eval:doc.request_action == 'Create'",
-   "description": "The existing guideline document (already cataloged in Document Register) this document should be generated from. Its real content is extracted and given to the AI — the AI does not invent the guideline itself."
+   "description": "The guideline describing HOW a document of this type is written — its structure, sections and tone. Only Guideline entries can be picked. It shapes the document; what the document SAYS comes from Requirement."
   },
   {
    "fieldname": "reference_document",
@@ -103,16 +102,6 @@
    "depends_on": "eval:doc.request_action != 'Create'",
    "mandatory_depends_on": "eval:doc.request_action != 'Create'",
    "description": "The existing published document being revised or withdrawn. Only active controlled documents can be picked — an already-withdrawn one has nothing to revise or withdraw, and input material is not a controlled document."
-  },
-  {
-   "fieldname": "update_source",
-   "link_filters": "[[\"Document Register\",\"lifecycle_state\",\"=\",\"Active\"]]",
-   "fieldtype": "Link",
-   "label": "New Content Document",
-   "options": "Document Register",
-   "depends_on": "eval:doc.request_action == 'Update'",
-   "mandatory_depends_on": "eval:doc.request_action == 'Update'",
-   "description": "The document holding the content you want the revision to say — catalogue it on Document Register first (pasting its Drive link is enough) and tick Input Material. Its text is authoritative: the AI reformats it into the official template and may not add, remove or reword anything. Say what the change is for in Requirement; that guides the layout, not the wording."
   },
   {
    "fieldname": "section_break_approval",
@@ -142,23 +131,13 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Status",
-   "options": "Pending Request Approval\nRequest Rejected\nDrafting\nPending Content Approval\nContent Rejected\nApproved\nPublished\nDeleted",
-   "default": "Pending Request Approval",
-   "read_only": 1
-  },
-  {
    "depends_on": "eval:doc.document_link",
-   "description": "Link to the published document in Google Docs. Written by the process when the document is published — blank until then.",
+   "description": "Every revision shares one Drive file, so this link stays valid for the life of the document — it always opens the current version.",
    "fieldname": "document_link",
    "fieldtype": "Data",
    "label": "Published Document",
    "options": "URL",
-   "read_only": 1,
-   "description": "Every revision shares one Drive file, so this link stays valid for the life of the document — it always opens the current version."
+   "read_only": 1
   },
   {
    "fieldname": "document_version",

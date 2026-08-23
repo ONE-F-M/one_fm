@@ -8,6 +8,7 @@ from frappe.utils import nowdate
 
 from one_fm.grd.doctype.preparation.preparation import (
 	NEW_ACTION_DOCUMENTS,
+	category_for_action,
 	create_documents_for_row,
 )
 
@@ -40,6 +41,7 @@ class TestActionCategoryMapping(FrappeTestCase):
 		preparation = frappe.get_doc(
 			{
 				"doctype": "Preparation",
+				"category": category_for_action(action),
 				"posting_date": nowdate(),
 				"preparation_record": [{"employee": self.employee.name, "renewal_or_extend": action}],
 			}
