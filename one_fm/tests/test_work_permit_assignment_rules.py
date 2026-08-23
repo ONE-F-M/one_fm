@@ -26,8 +26,8 @@ EXPORTED = {
 		"close_condition": None,
 	},
 	"Work Permit - GRD Supervisor": {
-		"assign_condition": f'workflow_state in ["Pending By Supervisor", "{PAYMENT_STATE}"]',
-		"unassign_condition": f'workflow_state not in ["Pending By Supervisor", "{PAYMENT_STATE}"]',
+		"assign_condition": f'workflow_state in ["Pending GR Manager", "{PAYMENT_STATE}"]',
+		"unassign_condition": f'workflow_state not in ["Pending GR Manager", "{PAYMENT_STATE}"]',
 		"close_condition": None,
 	},
 	"Work Permit - GR Operator": {
@@ -139,7 +139,7 @@ class TestTheConditionsActuallyRun(FrappeTestCase):
 			frappe.safe_eval(doc.assign_condition, None, {"workflow_state": "Apply Online by PRO"})
 		)
 		self.assertTrue(
-			frappe.safe_eval(doc.unassign_condition, None, {"workflow_state": "Pending By Supervisor"})
+			frappe.safe_eval(doc.unassign_condition, None, {"workflow_state": "Pending GR Manager"})
 		)
 
 	def test_the_supervisor_is_assigned_while_a_transfer_waits_for_payment(self):
@@ -211,7 +211,7 @@ class TestSavingAPermitActuallyAssignsSomeone(FrappeTestCase):
 		doc.save()
 
 	def test_the_supervisor_gets_it_at_pending_by_supervisor(self):
-		self.save_in("Pending By Supervisor")
+		self.save_in("Pending GR Manager")
 
 		self.assertEqual(
 			[a.assignment_rule for a in self.assigned()], ["Work Permit - GRD Supervisor"]
