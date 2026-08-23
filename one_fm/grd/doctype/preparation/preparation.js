@@ -78,6 +78,16 @@ var set_preparation_record_costing = function(frm, cdt, cdn) {
 		args: {'renewal_or_extend': row.renewal_or_extend, 'no_of_years': row.no_of_years},
 		callback: function(r) {
 			if(!r.message){
+				// WI-002092: say so rather than leave four zeros and no explanation. The
+				// commonest cause is a renewal whose master row is configured for a
+				// different number of years than the row is asking for.
+				frappe.show_alert({
+					message: __('No master fee row in HR Settings for {0}{1}.', [
+						row.renewal_or_extend,
+						row.no_of_years ? __(' at {0}', [row.no_of_years]) : ''
+					]),
+					indicator: 'orange'
+				}, 7);
 				return;
 			}
 			var cost = r.message;

@@ -92,6 +92,31 @@ class TestMultiYearCosting(FrappeTestCase):
 		"""Unchanged from the master lookup: without the years there is no row to scale."""
 		self.assertFalse(get_preparation_row_costing(RENEWAL))
 
+	def test_the_operator_can_actually_choose_a_duration(self):
+		"""The field was gated on the Action being exactly "Renewal", which the Action field has
+		not offered since it split in two - so it never appeared, the row was left on the
+		"1 Year" the form defaults it to, and a master row configured for two or three years
+		matched nothing and fetched zeros."""
+		depends_on = frappe.get_meta("Preparation Record").get_field("no_of_years").depends_on
+
+		for action in YEAR_SCOPED_ACTIONS:
+			with self.subTest(action=action):
+				self.assertIn(action, depends_on)
+
+		# The value that made it dead: an Action nothing can be set to.
+		self.assertNotEqual(depends_on, 'eval: doc.renewal_or_extend == "Renewal"')
+
+	def test_the_duration_is_offered_for_exactly_the_scoped_actions(self):
+		"""Anything else is a one-off, and a duration left on one would scope its lookup by a
+		year it does not have."""
+		depends_on = frappe.get_meta("Preparation Record").get_field("no_of_years").depends_on
+		options = frappe.get_meta("Preparation Record").get_field("renewal_or_extend").options
+
+		for action in options.split("\n"):
+			if action and action not in YEAR_SCOPED_ACTIONS:
+				with self.subTest(action=action):
+					self.assertNotIn(action, depends_on)
+
 	def test_the_multiplied_fields_are_the_three_annual_ones(self):
 		self.assertEqual(
 			PER_YEAR_COST_FIELDS,
