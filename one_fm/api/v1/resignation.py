@@ -133,11 +133,11 @@ def create_resignation(
         doc.supervisor = supervisor
         doc.employment_type = emp.get("employment_type")
         # department, project_allocation and designation are deliberately left unset here --
-        # Document.insert() runs check_permission("create") before before_save(), so setting
-        # them beforehand exposes their values to the create permission check and can trip a
-        # User Permission the employee doesn't hold for their own Department/Project. The
-        # controller's before_save -> set_allocations() populates them right after insert,
-        # same as a desk-created resignation.
+        # they're redundant with before_save -> set_allocations() / validate ->
+        # set_employee_allocation_details(), which populate them from the Employee
+        # record right after insert, same as a desk-created resignation. (Note: all of
+        # this doctype's Link fields, including these, carry ignore_user_permissions=1,
+        # so this is a redundancy cleanup, not a User Permission fix -- see PR discussion.)
         # Let Frappe set workflow_state to the workflow's default initial state (Draft) on insert
 
         doc.insert()
@@ -233,7 +233,11 @@ def extend_resignation(
         ext = frappe.new_doc("Employee Resignation Date Adjustment")
         ext.owner = employee_user or frappe.session.user
         ext.employee_resignation = resignation_id
-        ext.employee = active_doc.employee
+        # employee is deliberately left unset -- unlike Employee Resignation's own
+        # Link fields, this doctype's `employee` field has no ignore_user_permissions
+        # flag, so setting it before insert() would expose it to the create
+        # permission check. validate() -> set_approver() populates it from
+        # employee_resignation right after insert, same idea as create_resignation().
         ext.supervisor = supervisor or active_doc.supervisor
         ext.extended_relieving_date = extended_date
         ext.reason = reason or "Adjustment requested by employee"
@@ -269,6 +273,8 @@ def extend_resignation(
 
     except Exception as e:
         frappe.log_error("Extension Error", frappe.get_traceback())
+        if isinstance(e, frappe.ValidationError) or isinstance(e, frappe.PermissionError):
+            raise
         frappe.throw(str(e), frappe.ValidationError)
 
 
@@ -328,7 +334,9 @@ def withdraw_resignation(
         withdrawal = frappe.new_doc("Employee Resignation Withdrawal")
         withdrawal.owner = employee_user or frappe.session.user
         withdrawal.employee_resignation = active_doc.name
-        withdrawal.employee = active_doc.employee
+        # employee is deliberately left unset -- see the matching comment in
+        # extend_resignation(); validate() -> set_approver() populates it from
+        # employee_resignation right after insert.
         withdrawal.reason = reason or "Employee-initiated withdrawal"
         # Do NOT set workflow_state before insert — Frappe sets it to the
         # workflow's initial state ('Draft') automatically
@@ -371,6 +379,8 @@ def withdraw_resignation(
 
     except Exception as e:
         frappe.log_error("Withdrawal Error", frappe.get_traceback())
+        if isinstance(e, frappe.ValidationError) or isinstance(e, frappe.PermissionError):
+            raise
         frappe.throw(str(e), frappe.ValidationError)
 
 
@@ -454,6 +464,8 @@ def correct_resignation_date_app(
 
     except Exception as e:
         frappe.log_error("Correction Error", frappe.get_traceback())
+        if isinstance(e, frappe.ValidationError) or isinstance(e, frappe.PermissionError):
+            raise
         frappe.throw(str(e), frappe.ValidationError)
 
 
@@ -511,17 +523,18 @@ def get_all_my_resignations(employee_id=None, **kwargs):
     if not employee_name:
         return []
 
+    employee_user = frappe.db.get_value("Employee", employee_name, "user_id")
+    if employee_user != frappe.session.user and not frappe.has_permission("Employee Resignation", ptype="read"):
+        frappe.throw(_("Not authorized to view this employee's resignations"), frappe.PermissionError)
+
     TERMINAL_STATES = {"Resigned", "Cancelled", "Resignation Withdrawn", "Withdrawn"}
-    EMPLOYEE_ACTION_STATES = ["Pending Relieving Date Correction", "Draft"]
 
     resignations = frappe.get_list(
         "Employee Resignation",
-        filters={"employee": employee_name},
+        filters={"employee": employee_name, "workflow_state": ["not in", list(TERMINAL_STATES)]},
         fields=["name", "workflow_state", "resignation_initiation_date", "relieving_date", "creation"],
         order_by="creation desc"
     )
-
-
 
     return resignations
 
@@ -533,6 +546,10 @@ def get_employee_supervisor(employee_id: str = None, **kwargs):
     employee_name = resolve_employee_name(input_id)
     if not employee_name:
         return {}
+
+    employee_user = frappe.db.get_value("Employee", employee_name, "user_id")
+    if employee_user != frappe.session.user and not frappe.has_permission("Employee Resignation", ptype="read"):
+        frappe.throw(_("Not authorized to view this employee's supervisor"), frappe.PermissionError)
 
     # Corporate hires have no Operations Manager step -- their "Supervisor" is
     # really their Line Manager (matches the ERP desk's own relabeling on
