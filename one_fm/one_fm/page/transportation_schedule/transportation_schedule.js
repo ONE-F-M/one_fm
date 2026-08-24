@@ -1427,20 +1427,20 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             // ── Time-aware peak load helper ─────────────────────────────────
-            // The trips a vehicle actually runs today. Stops chained onto one trip
-            // merge — they ride together — but the outbound and return legs stay
-            // apart (WI-002000): they share a tripId, so keying on it alone fused a
-            // 05:00 drop and its 17:00 pickup into one twelve-hour block carrying
-            // double the passengers, which every later drop then "overlapped".
+            // The trips a vehicle actually runs today. One tripId is one bus run,
+            // however its stops are headed: keying the direction in as well (WI-002000)
+            // split a chained run — an outward drop and the return pickup made at the
+            // same stop — into two pseudo-trips whose windows overlap each other, and
+            // the seat check then added the same bus to itself (WI-002160). A run that
+            // both drops off and picks up is measured leg by leg instead, which is what
+            // the two legs of one journey needed in the first place.
             _getLogicalTrips(vehicleId) {
                 const vi = this.swimItems.filter(i => i.vehicleId === vehicleId && this._liveToday(i));
                 const tripsMap = {};
                 let soloIdx = 0;
 
                 vi.forEach(item => {
-                    const key = item.tripId
-                        ? `${item.tripId}::${item.direction}`
-                        : `_solo_${soloIdx++}`;
+                    const key = item.tripId || `_solo_${soloIdx++}`;
                     if (!tripsMap[key]) {
                         tripsMap[key] = {
                             start: new Date(item.start).getTime(),
@@ -1461,8 +1461,23 @@ function mountRoutePlannerApp(wrapper, data) {
                 // total the bus is never asked to hold. Summing it painted a merged block
                 // purple for overcapacity on a run that fits (WI-002078).
                 const trips = Object.values(tripsMap);
-                trips.forEach(t => { t.occupancy = this.tripOccupancy(t); });
+                trips.forEach(t => {
+                    t.direction = this.runDirection(t.stops);
+                    t.occupancy = this.tripOccupancy(t);
+                });
                 return trips;
+            },
+
+            // Which way a whole run travels. Stops that do not all agree make it a mixed
+            // run, whatever each one is labelled: `direction` only ever reads MIXED when
+            // the Merge Trip modal wrote it back, and chaining a return stop onto an
+            // outbound trip left every stop on its original heading. Summing those as two
+            // concurrent runs is what refused a load the bus was already carrying
+            // (WI-002160), so every seat check reads the run's direction through here.
+            runDirection(stops) {
+                if (!stops || !stops.length) return 'OUTBOUND';
+                const first = stops[0].direction || 'OUTBOUND';
+                return stops.some(s => (s.direction || 'OUTBOUND') !== first) ? 'MIXED' : first;
             },
 
             // The most passengers one trip ever has aboard. Mirrors _trip_peak on the
@@ -2098,7 +2113,7 @@ function mountRoutePlannerApp(wrapper, data) {
                         // merged run's stops are not all aboard at once, so its total is
                         // not what has to fit (WI-002078).
                         const movingHeadcount = self.tripOccupancy({
-                            direction: item.direction,
+                            direction: self.runDirection(journeyItems),
                             headcount: journeyItems.reduce((sum, i) => sum + (i.headcount || 0), 0),
                             stops: journeyItems
                         });
@@ -2349,9 +2364,16 @@ function mountRoutePlannerApp(wrapper, data) {
                         const targetTripItems = tripsMap[targetTripId].items;
                         const targetVehicleId = selectedOpt.vehicle.id;
 
-                        // Check logical trip capacity directly instead of peakLoadDuringCardWindows 
-                        // because we want to know the target trip's total capacity + new card
-                        const tripLoad = targetTripItems.reduce((sum, i) => sum + (i.headcount || 0), 0);
+                        // The target run's own load, not the lane's: what matters here is
+                        // whether that trip plus this card fits. Read through tripOccupancy
+                        // rather than summing the stops by hand — a run that both drops off
+                        // and picks up never carries its stops all at once, and summing them
+                        // refused a merge the bus could make (WI-002160).
+                        const tripLoad = self.tripOccupancy({
+                            direction: self.runDirection(targetTripItems),
+                            headcount: targetTripItems.reduce((sum, i) => sum + (i.headcount || 0), 0),
+                            stops: targetTripItems
+                        });
                         if (tripLoad + card.headcount > self.passengerSeats(selectedOpt.vehicle)) {
                             frappe.msgprint({
                                 title: __('Capacity Exceeded'),
