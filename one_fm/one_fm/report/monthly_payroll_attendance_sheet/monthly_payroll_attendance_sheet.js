@@ -7,13 +7,17 @@ const status_color_map = {
 	"OL": "red",
 	"H": "blue",
 	"DO": "blue",
-	"CDO": "blue"
+	"CDO": "blue",
+	"FP": "orange",
+	"CI": "orange",
+	"MA": "orange",
+	"OH": "orange"
 };
 
 // Fixed columns before the per-day cells; the formatter colours only the day cells.
 const FIXED_COLUMNS = 8;
 
-frappe.query_reports["Operations Monthly Attendance Sheet"] = {
+frappe.query_reports["Monthly Payroll Attendance Sheet"] = {
 	"filters": [
 		{
 			fieldname: "from_date",
@@ -42,7 +46,7 @@ frappe.query_reports["Operations Monthly Attendance Sheet"] = {
 			label: __("Employee Status"),
 			fieldtype: "Select",
 			// Blank means every status, so a payroll run can include leavers.
-			options: ["", "Active", "Inactive", "Suspended", "Left"],
+			options: ["", "Active", "Court Case", "Absconding", "Left", "Not Returned from Leave", "Vacation"],
 		},
 		{
 			fieldname: "employment_type",
@@ -53,7 +57,6 @@ frappe.query_reports["Operations Monthly Attendance Sheet"] = {
 		},
 		{
 			fieldname: "roster_type",
-			on_change: apply_in_page_filters,
 			label: __("Roster Type"),
 			fieldtype: "Select",
 			// WI-002017: no blank option. Blank meant "every roster type", which put Basic
@@ -64,7 +67,6 @@ frappe.query_reports["Operations Monthly Attendance Sheet"] = {
 		},
 		{
 			fieldname: "day_off_ot",
-			on_change: apply_in_page_filters,
 			label: __("Day Off OT"),
 			fieldtype: "Check",
 		},
@@ -137,7 +139,7 @@ function attach_report_additional_day_details () {
 	if (!from_date || !to_date) return;
 
 	return frappe.call({
-		method: "one_fm.one_fm.report.operations_monthly_attendance_sheet.operations_monthly_attendance_sheet.get_report_additional_day_details",
+		method: "one_fm.one_fm.report.monthly_payroll_attendance_sheet.monthly_payroll_attendance_sheet.get_report_additional_day_details",
 		args: { from_date: from_date, to_date: to_date },
 		callback: function (res) {
 			frappe.query_report.additional_details = {
@@ -152,7 +154,7 @@ function attach_status_map () {
 	const report = frappe.query_report;
 
 	return frappe.call({
-		method: "one_fm.one_fm.report.operations_monthly_attendance_sheet.operations_monthly_attendance_sheet.get_attendance_status_map",
+		method: "one_fm.one_fm.report.monthly_payroll_attendance_sheet.monthly_payroll_attendance_sheet.get_attendance_status_map",
 		callback: function (res) {
 			frappe.query_report.additional_details = {
 				...(report.additional_details || {}),
@@ -169,15 +171,12 @@ function attach_status_map () {
 // here: Frappe calls a filter's on_change in place of refreshing the report, which is
 // what stops every tick of a checkbox queuing another background run.
 
-// Project is deliberately absent: it also narrows the Attendance rows themselves
-// (Attendance.project), so an employee with days booked to another project would come
-// out differently in page than the server returns.
+// Project, Roster Type and Day Off OT are deliberately absent: each changes which rows
+// the query returns, and narrowing what is on screen cannot add the ones it left out.
 const IN_PAGE_FILTERS = [
 	"employee",
 	"employee_status",
 	"employment_type",
-	"roster_type",
-	"day_off_ot",
 ];
 
 let server_rows = null;
@@ -195,23 +194,8 @@ function row_matches(row, filters) {
 	if (filters.employee && row.employee !== filters.employee) return false;
 	if (filters.employee_status && row.employee_status !== filters.employee_status) return false;
 	if (filters.employment_type && row.employment_type !== filters.employment_type) return false;
-	// The same rules the query applies, so the two agree whichever path ran:
-	//   Basic, unchecked    -> basic only, day-off OT actively excluded
-	//   Basic, checked      -> only basic rows flagged day-off OT
-	//   Overtime, unchecked -> overtime only
-	//   Overtime, checked   -> nothing (Logic Rule 4)
-	if (filters.roster_type && row.roster_type !== filters.roster_type) return false;
-	if (filters.day_off_ot) {
-		if (cint(row.day_off_ot) !== 1) return false;
-	} else if (filters.roster_type === "Basic" && cint(row.day_off_ot) === 1) {
-		return false;
-	}
 
 	return true;
-}
-
-function cint(value) {
-	return parseInt(value, 10) || 0;
 }
 
 function apply_in_page_filters() {
