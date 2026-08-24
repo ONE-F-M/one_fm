@@ -18,6 +18,22 @@ from one_fm.utils import is_scheduler_emails_enabled
 NEW_APPLICATION = "New Application"
 PENDING_PRO = "Pending PRO"
 
+# WI-002136: the two states the payment rule sits between. The operator leaves
+# Pending GR Operator for Completed by two actions - "Done", which owes an invoice, and
+# "No Payment Required", which does not - and the document carries the checkbox rather
+# than the action that moved it.
+PENDING_GR_OPERATOR = "Pending GR Operator"
+COMPLETED = "Completed"
+PENDING_BY_PACI = "Pending by PACI"
+
+# WI-002136: what the PRO owes before handing a first application back. The PRO who filed
+# it, and the reference PACI issued for the filing - without the reference there is nothing
+# for the GR Operator to Approve or Reject against.
+PRO_SUBMISSION_FIELDS = (
+    {"PRO User": "pro_user"},
+    {"PACI Reference Number": "paci_reference_number"},
+)
+
 
 class PACI(Document):
     def before_insert(self):
@@ -38,6 +54,60 @@ class PACI(Document):
         self.set_grd_values()
         self.set_new_expiry_date()
         self.set_paci_fine_amount()
+        self.clear_unticked_damj_details()
+        self.validate_exception_details()
+
+    def validate_exception_details(self):
+        """Hold the save until a ticked exception carries its evidence (WI-002109).
+
+        mandatory_depends_on is a form rule only - Frappe's server-side mandatory check reads
+        `reqd` and nothing else - so a record arriving by import or through the API would
+        otherwise claim a Damj merge with no original civil ID and no letter behind it.
+
+        A fine amount of zero counts as missing: the amount comes from the master rate in HR
+        Settings, so a ticked box that produces nothing means the rate is not configured, and
+        a zero-value fine has nothing for finance to reference. Same rule Residency applies.
+        """
+        field_list = []
+
+        if self.damj_is_applicable:
+            field_list += [
+                {'Original Civil ID': 'original_civil_id'},
+                {'Upload DAMJ Letter': 'upload_damj_letter'},
+            ]
+
+        if field_list:
+            self.set_mendatory_fields(field_list)
+
+        # The fine amount is read-only and comes from the master rate, so a ticked box that
+        # produces nothing is a gap in HR Settings rather than something the operator forgot
+        # to type - and the message has to say so, or it points at a field they cannot edit.
+        # WI-002109 requires the amount to be greater than zero; WI-002023 let a record save
+        # with a zero fine, which recorded a fine finance had nothing to reference.
+        if self.is_paci_fine_applicable and not flt(self.paci_fine_amount_kwd):
+            frappe.throw(
+                _("The PACI fine rate is not configured. Set <b>PACI Fine Amount (KWD)</b> in "
+                  "HR Settings, or untick <b>Is PACI Fine Applicable?</b>."),
+                title=_("PACI Fine Rate Not Configured"),
+            )
+
+    def clear_unticked_damj_details(self):
+        """Empty the Damj details when the box is unticked (WI-002109).
+
+        Both fields are hidden then, so anything left in them is invisible - and an original
+        civil ID still on a record that no longer claims a merge is the number the employee's
+        profile would be set to if the box were ever ticked again.
+
+        Cleared on the server rather than only in the browser: the box can be unticked by an
+        import, a patch or the API, none of which run the form's handlers. The fine amount
+        already clears itself the same way in set_paci_fine_amount.
+        """
+        if self.damj_is_applicable:
+            return
+
+        self.original_civil_id = None
+        self.upload_damj_letter = None
+        self.upload_damj_letter_on = None
 
     def set_paci_fine_amount(self):
         """Fetch the PACI late fine off HR Settings, or clear it (WI-002023).
@@ -84,19 +154,110 @@ class PACI(Document):
 
 
     def on_update(self):
-        self.validate_mandatory_fields_on_update()
+        self.validate_payment_invoice_on_done()
+        self.validate_pro_submission()
+        self.stamp_damj_letter()
 
-    def validate_mandatory_fields_on_update(self):
-        if self.workflow_state == 'Under Process':
-            field_list = [{'Upload Payment Invoice':'upload_civil_id_payment'}]
-            self.set_mendatory_fields(field_list)
+    def stamp_damj_letter(self):
+        """Record when the Damj letter went up, from the server's clock (WI-002109).
+
+        The Attach field is allow_on_submit, so the letter can arrive after the record is
+        submitted - which is why this is on on_update and written with db_set.
+        """
+        if self.upload_damj_letter and not self.upload_damj_letter_on:
+            self.db_set("upload_damj_letter_on", now_datetime())
+        elif not self.upload_damj_letter and self.upload_damj_letter_on:
+            self.db_set("upload_damj_letter_on", None)
+
+    def validate_pro_submission(self):
+        """Hold a first application with the PRO until they have filed it (WI-002136).
+
+        "Submit" is the PRO saying the application is lodged with PACI, so the reference
+        PACI issued has to be on the record - the GR Operator Approves or Rejects against
+        that reference, and there is nothing to approve without it. The PRO who filed it is
+        recorded for the same reason.
+
+        Keyed on the state being left, like the payment rule above: apply_workflow sets the
+        new state and then saves, so self.workflow_state is already the destination.
+
+        Not enforced when the record is opened - a Preparation hands a first application to
+        the PRO with neither of these known (WI-001830), and demanding them there would
+        stop the Preparation opening the document at all.
+        """
+        before_save = self.get_doc_before_save()
+        if not before_save:
+            return
+
+        if before_save.workflow_state != PENDING_PRO:
+            return
+        if self.workflow_state != PENDING_BY_PACI:
+            return
+
+        self.set_mendatory_fields(PRO_SUBMISSION_FIELDS)
+
+    def validate_payment_invoice_on_done(self):
+        """Hold a completion until the payment invoice is in, unless no fee was charged.
+
+        WI-002136: "Done" is the operator saying the civil ID was paid for, so the receipt
+        has to be attached to it. PACI charges nothing for some transactions, and for those
+        the operator ticks No Payment Required and leaves by the action of that name - there
+        is no invoice to produce, and demanding one blocked the file with nothing that could
+        unblock it.
+
+        Keyed on the state being left, read from the document as it was before this save:
+        apply_workflow sets the new state and then saves, so self.workflow_state is already
+        the destination by the time this runs.
+
+        Replaces a check on the state "Under Process", which the workflow has not had since
+        it was rebuilt around Pending GR Operator - it could never fire.
+        """
+        if self.no_payment_required:
+            return
+
+        before_save = self.get_doc_before_save()
+        if not before_save:
+            return
+
+        if before_save.workflow_state != PENDING_GR_OPERATOR:
+            return
+        if self.workflow_state != COMPLETED:
+            return
+
+        self.set_mendatory_fields([{'Upload Payment Invoice': 'upload_civil_id_payment'}])
 
 
     def on_submit(self):
         self.validate_mandatory_fields_on_submit()
         self.set_New_civil_id_Expiry_date_in_employee_doctype()
+        self.apply_damj_civil_id()
         self.db_set('paci_status',"Completed")
         self.db_set('completed_on', today())
+
+    def apply_damj_civil_id(self):
+        """Put the merged Civil ID on the Employee once the application completes (WI-002100).
+
+        A Damj merges two civil ID numbers the government issued the same person, and the
+        surviving one is the original. Until it is written back, every record that reads the
+        Civil ID off the Employee is quoting the number the government just retired.
+
+        Residency does the same thing when its own Damj completes (WI-002022). Either
+        document can be the one that finishes first, and both write the same number, so
+        whichever completes last is a no-op rather than a conflict.
+
+        Written with set_value rather than a full Employee save: a full save re-validates the
+        whole Employee, and over a thousand of them hold a Marital Status the field's options
+        no longer accept, so any such save throws on data that has nothing to do with the
+        civil ID.
+
+        This record's own mirror of the number is updated too - it is fetched from the
+        Employee and would otherwise keep showing the retired number on the very document
+        that recorded the merge.
+        """
+        if not (self.damj_is_applicable and self.original_civil_id):
+            return
+
+        frappe.db.set_value('Employee', self.employee, 'one_fm_civil_id', self.original_civil_id)
+        self.db_set('civil_id', self.original_civil_id)
 
     def validate_mandatory_fields_on_submit(self):
         if self.workflow_state == 'Completed':
@@ -238,7 +399,16 @@ def hand_to_pro(paci):
     """
     from frappe.automation.doctype.assignment_rule.assignment_rule import apply
 
+    # Imported here rather than at the top: preparation imports this module to open a PACI,
+    # so the other direction can only be a local import.
+    from one_fm.grd.doctype.preparation.preparation import update_row_reference
+
     paci.db_set("workflow_state", PENDING_PRO)
+
+    # db_set writes past the document's own hooks, so the Preparation row would otherwise
+    # keep showing the state the record was inserted in rather than the one it is in
+    # (WI-002093).
+    update_row_reference(paci)
 
     try:
         apply(doctype=paci.doctype, name=paci.name)

@@ -15,6 +15,9 @@ _DATE_MAX = datetime.date.max
 _TIME_START = datetime.timedelta(0)
 _TIME_END = datetime.timedelta(days=1)
 
+# The direction a merged trip carries once cards are combined (WI-002071).
+MIXED_DIRECTION = "MIXED"
+
 
 class RoutePlan(Document):
 	def validate(self):
@@ -265,7 +268,12 @@ class RoutePlan(Document):
 			# it is, naming the seat shortfall (MA4-13). Ordered so the reported
 			# trip is stable across saves.
 			for trip in sorted(vehicle_trips, key=lambda t: t.key):
-				if trip.headcount > limit:
+				if trip.direction == MIXED_DIRECTION:
+					# A merged trip boards and alights along the way, so its stops do
+					# not all ride together and summing them would refuse a load the
+					# bus can actually carry (WI-002071).
+					self._validate_mixed_trip_legs(trip, limit)
+				elif trip.headcount > limit:
 					self._throw_capacity_exceeded(vehicle, trip.direction, trip.headcount, limit)
 
 			concurrent = _peak_concurrent_headcount(vehicle_trips)
@@ -313,16 +321,60 @@ class RoutePlan(Document):
 					end=end,
 					live_from=live_from,
 					live_to=live_to,
+					# Kept so a merged trip can be walked stop by stop (WI-002071);
+					# the summed headcount above is meaningless for one.
+					rows=[row],
 				)
 				continue
 
+			trip.rows.append(row)
 			trip.headcount += cint(row.headcount)
 			trip.start = min(trip.start, start)
 			trip.end = max(trip.end, end)
 			trip.live_from = min(filter(None, [trip.live_from, live_from]), default=None)
 			trip.live_to = max(filter(None, [trip.live_to, live_to]), default=None)
 
-		return list(trips.values())
+		# How full the bus gets is not the same as how many the trip carries once a trip
+		# can be merged, and it is the occupancy that everything downstream compares
+		# against the seats.
+		runs = list(trips.values())
+		for trip in runs:
+			trip.occupancy, trip.worst_leg = _trip_peak(trip)
+
+		return runs
+
+	def _validate_mixed_trip_legs(self, trip, limit):
+		"""Hold every leg of a merged trip to the seat count (WI-002071).
+
+		A Mixed trip is one vehicle run that both drops off and picks up, so its stops
+		do not all ride together: workers dropped at Stop 1 are off the bus before the
+		Stop 2 boarders get on. Summing the stops - which is right for a single-direction
+		trip, where every card's riders are aboard at once - would refuse a load the bus
+		can carry.
+
+		Occupancy is walked stop by stop instead. Each row's own shipment says which way
+		its riders travel: an Outward card's riders board at the camp and leave at that
+		card's stop, a Return card's riders join at that card's stop and stay aboard to
+		the camp. So the bus leaves the camp carrying every Outward rider, and each stop
+		in turn sheds its Outward riders and takes on its Return ones.
+
+		Disembarking is applied before boarding at each stop, per the third criterion: at
+		a stop where both happen the seats being vacated are available to the people
+		getting on, and adding first would report an overload that never occurs.
+
+		The peak across the legs is what has to fit, not the total that ever rode.
+		"""
+		peak, worst_leg = _trip_peak(trip)
+
+		if peak > limit:
+			frappe.throw(
+				_(
+					"Capacity Exceeded on leg {0}: {1} passengers against a vehicle limit "
+					"of {2}. A merged trip is measured leg by leg, so this is the busiest "
+					"point of the run rather than everyone it carries in total."
+				).format(worst_leg, peak, limit),
+				title=_("{0}: Vehicle Capacity Exceeded").format(trip.vehicle),
+			)
 
 	def _throw_capacity_exceeded(self, vehicle, direction, total_passengers, limit):
 		"""Raise the overloading block with the exact seat shortfall (MA4-13 AC4)."""
@@ -342,13 +394,17 @@ class RoutePlan(Document):
 
 
 def _row_direction(row) -> str:
-	"""Normalize an assignment row's direction to OUTBOUND/RETURN.
+	"""Normalize an assignment row's direction to OUTBOUND/RETURN/MIXED.
 
-	The Route Plan Assignment ``direction`` Select stores OUTBOUND/RETURN, but a
+	The Route Plan Assignment ``direction`` Select stores OUTBOUND/RETURN/MIXED, but a
 	blank or stray value is collapsed to OUTBOUND so a leg is never silently
 	dropped from a capacity or single-vehicle cluster.
+
+	MIXED has to be recognised, not defaulted: answering "not a return, so outbound"
+	keyed a merged trip as an outbound one, and its stops were then summed as if they
+	all rode together instead of being walked leg by leg.
 	"""
-	return "RETURN" if (row.direction or "").strip().upper().startswith("RET") else "OUTBOUND"
+	return _normalize_shipment_direction(row.direction)
 
 
 def _detect_retention_conflict(shipment_names, shipment_map):
@@ -512,13 +568,52 @@ def _peak_concurrent_headcount(trips) -> int:
 	"""
 	peak = 0
 	for anchor in trips:
-		total = anchor.headcount + sum(
-			other.headcount
+		total = _trip_occupancy(anchor) + sum(
+			_trip_occupancy(other)
 			for other in trips
 			if other is not anchor and _trips_share_the_road(anchor, other)
 		)
 		peak = max(peak, total)
 	return peak
+
+
+def _trip_occupancy(trip) -> int:
+	"""The most passengers one trip ever has aboard.
+
+	For a single-direction trip that is its headcount - every card's riders are on the
+	bus together. For a merged trip it is the busiest leg, because its stops are not all
+	aboard at once and the sum is a total the bus never carries (WI-002071).
+	"""
+	return cint(trip.occupancy if trip.get("occupancy") is not None else trip.headcount)
+
+
+def _trip_peak(trip):
+	"""(peak occupancy, busiest leg) for one logical trip.
+
+	A merged trip both drops off and picks up along the way, so its stops are walked in
+	order: the bus leaves the camp carrying every Outward rider, and each stop in turn
+	sheds its Outward riders and takes on its Return ones. Disembarking is applied
+	before boarding at a stop where both happen, since the seats being vacated are
+	available to the people getting on.
+
+	Shared by the per-trip check and the overlapping-trips check, so a merged run is
+	measured the same way wherever it is compared against the seats.
+	"""
+	if trip.direction != MIXED_DIRECTION:
+		return cint(trip.headcount), 1
+
+	by_index = sorted(trip.rows, key=lambda row: (cint(row.stop_index), row.name or ""))
+	directions = _shipment_directions([row.transportation_shipment for row in by_index])
+	stops = [
+		{
+			"headcount": cint(row.headcount),
+			"boards": directions.get(row.transportation_shipment) == "RETURN",
+		}
+		for row in by_index
+	]
+
+	peak, worst_leg, _legs = leg_occupancy(stops)
+	return peak, worst_leg
 
 
 def _iso_to_date(value):
@@ -563,3 +658,82 @@ def _format_lock_until(end_time) -> str:
 	hours = (total // 3600) % 24
 	minutes = (total % 3600) // 60
 	return datetime.time(hours, minutes).strftime("%I:%M %p")
+
+
+def _shipment_directions(shipment_names) -> dict:
+	"""{shipment: OUTBOUND|RETURN} for the cards on a merged trip.
+
+	Which way a card's own riders travel is what the leg walk needs: an Outward card's
+	riders are aboard from the camp and leave at its stop, a Return card's join there.
+	Neither the assignment row nor the shipment's live ``trip_direction`` can answer
+	that any more - merging overwrites both with MIXED. ``pre_merge_trip_direction``,
+	written by the merge and restored when a card leaves one, is the surviving record
+	of the journey the card was generated for, so it is read first.
+
+	A merged card with no record falls back to OUTBOUND, which is the conservative
+	answer: it counts those riders as aboard from the camp, so the walk over-reports
+	rather than passing a run the bus cannot carry.
+	"""
+	names = [name for name in shipment_names if name]
+	if not names:
+		return {}
+
+	return {
+		row.name: _card_direction(row.trip_direction, row.pre_merge_trip_direction)
+		for row in frappe.get_all(
+			"Transportation Shipment",
+			filters={"name": ["in", list(set(names))]},
+			fields=["name", "trip_direction", "pre_merge_trip_direction"],
+		)
+	}
+
+
+def _card_direction(trip_direction, pre_merge_trip_direction) -> str:
+	"""The way one card's own riders travel, as OUTBOUND or RETURN."""
+	flag = _normalize_shipment_direction(trip_direction)
+	if flag != MIXED_DIRECTION:
+		return flag
+	return _normalize_shipment_direction(pre_merge_trip_direction)
+
+
+def _normalize_shipment_direction(value: str) -> str:
+	"""Shipment vocabulary (Outward/Return/Mixed) as an assignment-side flag."""
+	flag = (value or "").strip().upper()
+	if flag.startswith("MIX"):
+		return MIXED_DIRECTION
+	return "RETURN" if flag.startswith("RET") else "OUTBOUND"
+
+
+def leg_occupancy(stops):
+	"""Walk a merged trip stop by stop and report how full the bus gets.
+
+	`stops` is the run in order, each entry carrying a headcount and whether those
+	riders board there (True) or leave there (False). Returns
+	(peak, worst_leg, per_leg_occupancy).
+
+	Shared by the Route Plan validation and the canvas merge preview (WI-002078), so the
+	number the modal shows an operator before they confirm is the same number the save
+	will judge them by. Two implementations of this would drift, and the operator would
+	be told a merge is fine and then refused.
+
+	Disembarking is applied before boarding at each stop: at a stop where both happen the
+	seats being vacated are available to the people getting on, and adding first reports
+	an overload that never occurs.
+	"""
+	# Everyone the trip carries out of the camp is aboard before the first stop.
+	occupancy = sum(stop["headcount"] for stop in stops if not stop["boards"])
+	peak = occupancy
+	worst_leg = 1
+	per_leg = []
+
+	for leg, stop in enumerate(stops, start=1):
+		if stop["boards"]:
+			occupancy += stop["headcount"]
+		else:
+			occupancy -= stop["headcount"]
+
+		per_leg.append(occupancy)
+		if occupancy > peak:
+			peak, worst_leg = occupancy, leg
+
+	return peak, worst_leg, per_leg

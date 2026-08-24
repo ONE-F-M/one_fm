@@ -13,11 +13,11 @@
  "modified": "2025-08-03 16:37:40.113571",
  "modified_by": "Administrator",
  "module": "One Fm",
- "name": "Operations Monthly Attendance Sheet",
+ "name": "Monthly Payroll Attendance Sheet",
  "owner": "Administrator",
  "prepared_report": 1,
  "ref_doctype": "Attendance",
- "report_name": "Operations Monthly Attendance Sheet",
+ "report_name": "Monthly Payroll Attendance Sheet",
  "report_type": "Script Report",
  "roles": [
   {

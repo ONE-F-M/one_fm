@@ -22,7 +22,9 @@
     "stop_location",
     "section_break_times",
     "start_time",
-    "end_time"
+    "end_time",
+    "transit_minutes",
+    "buffer_minutes"
   ],
   "fields": [
     {
@@ -51,7 +53,7 @@
       "fieldname": "direction",
       "fieldtype": "Select",
       "label": "Direction",
-      "options": "\nOUTBOUND\nRETURN",
+      "options": "\nOUTBOUND\nRETURN\nMIXED",
       "reqd": 1,
       "in_list_view": 1
     },
@@ -129,12 +131,24 @@
       "fieldtype": "Data",
       "label": "End Time",
       "description": "ISO timestamp of block end on timeline. Date part = multi-day lock lifespan end; time part = daily trip end."
+    },
+    {
+      "fieldname": "transit_minutes",
+      "fieldtype": "Int",
+      "label": "Transit Minutes",
+      "description": "Driving time from the previous stop, as set in the Merge Trip modal."
+    },
+    {
+      "fieldname": "buffer_minutes",
+      "fieldtype": "Int",
+      "label": "Buffer Minutes",
+      "description": "Waiting time at this stop before departing for the next one."
     }
   ],
   "index_web_pages_for_search": 0,
   "istable": 1,
   "links": [],
-  "modified": "2026-05-04 10:00:00.000000",
+  "modified": "2026-08-17 16:00:00.000000",
   "modified_by": "Administrator",
   "module": "Operations",
   "name": "Route Plan Assignment",

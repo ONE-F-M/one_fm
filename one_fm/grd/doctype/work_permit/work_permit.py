@@ -13,7 +13,7 @@ from datetime import date, timedelta
 import calendar
 from datetime import date
 from dateutil.relativedelta import relativedelta
-from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr, get_url_to_form
+from frappe.utils import cint, get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr, get_url_to_form
 from email import policy
 from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.grd.doctype.medical_insurance import medical_insurance
@@ -43,6 +43,7 @@ class WorkPermit(Document):
             frappe.db.commit()
 
     def on_update(self):
+        self.count_amendment()
         self.update_work_permit_details_in_tp()
         self.update_passport_details_in_employee()
         self.check_required_document_for_workflow()
@@ -52,6 +53,7 @@ class WorkPermit(Document):
     def validate(self):
         self.set_grd_values()
         self.validate_workflow_state_fields()
+        self.validate_designation_on_amendment()
         self.employee_last_checkin = get_employee_last_checkin(self.employee)
 
         if self.employee:
@@ -61,8 +63,63 @@ class WorkPermit(Document):
             if employee_details.relieving_date:
                 frappe.throw(_("{0}'s Relieving Date has been set to {1}. Work Permit processing is not allowed.").format(employee_details.employee_name, employee_details.relieving_date))
 
+    def is_being_amended(self):
+        """Is PAM handing this permit back to be amended (WI-002108)?
+
+        Read off the states rather than the action, because a Frappe document does not
+        carry the action that moved it. Pending By PAM reaches Pending GR Manager by no
+        other route: its remaining transitions Accept to Completed or Pending For Payment,
+        or Reject to Rejected.
+        """
+        before_save = self.get_doc_before_save()
+
+        return bool(
+            before_save
+            and before_save.workflow_state == "Pending By PAM"
+            and self.workflow_state == "Pending GR Manager"
+        )
+
+    def validate_designation_on_amendment(self):
+        """An amended permit has to say which PAM designation it is now for (WI-002097).
+
+        An amendment exists to correct something PAM refused, and the designation is what it
+        is corrected to more often than anything else - so a permit going back to PAM having
+        been amended without one is an amendment of nothing.
+
+        Checked on the way out of Pending GR Manager, which is where the operator hands the
+        amended permit on, and only once the permit has actually been amended.
+        """
+        if not cint(self.amendment_no):
+            return
+
+        before_save = self.get_doc_before_save()
+        if not before_save or before_save.workflow_state != "Pending GR Manager":
+            return
+        if self.workflow_state == "Pending GR Manager":
+            return
+
+        if not self.pam_designation:
+            frappe.throw(
+                _("<b>PAM Designation</b> is required on an amended Work Permit "
+                  "(Amendment No {0}).").format(cint(self.amendment_no)),
+                title=_("PAM Designation Required"),
+            )
+
+    def count_amendment(self):
+        """Tick the Amendment No every time PAM sends the permit back to be amended.
+
+        WI-002108: an amendment is a correction to the permit PAM is already holding, so
+        it stays the same record - the counter is what says how many times it has been
+        through, without a second document per attempt.
+
+        db_set because on_update runs after the row is written, and the field is read-only
+        on the form - the count is the workflow's, not something the operator types.
+        """
+        if self.is_being_amended():
+            self.db_set("amendment_no", cint(self.amendment_no) + 1)
+
     def validate_workflow_state_fields(self):
-        # NOTE: 'Pending By Supervisor' is intentionally excluded. At that stage the
+        # NOTE: 'Pending GR Manager' is intentionally excluded. At that stage the
         # GRD Supervisor only attaches the work permit and hands the document over to
         # the operator; the invoice and updated expiry date do not exist yet (they are
         # produced later, after PAM payment/completion). Requiring them here blocked the
@@ -75,7 +132,11 @@ class WorkPermit(Document):
         # expiry date to record. The invoice belongs to the two Accept transitions
         # (Completed / Pending For Payment), and demanding it on a rejection stopped the
         # reject dialog from storing its reason (WI-001829).
-        if db_state in states and not self.pam_rejection_reason:
+        # An amendment is exempt for the same reason a rejection is: PAM has handed the
+        # permit back rather than issued it, so nothing has been paid and there is no
+        # invoice or new expiry date to record yet (WI-002108). Without this the Amend
+        # action could never be taken.
+        if db_state in states and not self.pam_rejection_reason and not self.is_being_amended():
             msg = False
             if not self.attach_invoice:
                 msg = "Upload the required document(Invoice)"
@@ -114,12 +175,12 @@ class WorkPermit(Document):
         if self.workflow_state == "Apply Online by PRO":
             self.reload()
 
-        if self.workflow_state == "Pending By Supervisor" and self.work_permit_type == "Cancellation":
+        if self.workflow_state == "Pending GR Manager" and self.work_permit_type == "Cancellation":
             field_list = [{'PAM Reference Number':'reference_number_on_pam'}]
             message_detail = '<b style="color:red; text-align:center;">First, You Need to Apply for Work Permit Cancellation through <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
             self.set_mendatory_fields(field_list,message_detail)
 
-        if self.workflow_state == "Pending By Supervisor":
+        if self.workflow_state == "Pending GR Manager":
             if self.work_permit_type == "New Kuwaiti" or self.work_permit_type == "Local Transfer" or self.work_permit_type =="Renewal Kuwaiti" or self.work_permit_type =="Renewal Non Kuwaiti":
                 field_list = [{'PAM Reference Number':'reference_number_on_pam_registration'}]
                 message_detail = '<b style="color:red; text-align:center;">First, You Need to Apply for Work Permit Registration through <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
@@ -158,9 +219,15 @@ class WorkPermit(Document):
                 self.set_mendatory_fields(field_list,message_detail)
 
             if self.work_permit_type == "Local Transfer":
-                field_list = [{'Work Permit Expiry Date':'work_permit_expiry_date'},{'Attach Work Permit ':'attach_work_permit'}]
-                message_detail = '<b style="color:red; text-align:center;">First, You Need to Attach the Work Permit Registration taken from <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
-                self.set_mendatory_fields(field_list,message_detail)
+                # WI-002097: the Work Permit attachment is no longer demanded, on any
+                # category, and the red PAM-website warning that came with it is gone. The
+                # permit arrives from PAM as a reference number that is already required a
+                # state earlier; the scan of it turns up when the operator has it, and
+                # blocking the transition on it stalled transfers that were otherwise
+                # complete. The expiry date is still required - it is the date every other
+                # document runs off.
+                field_list = [{'Work Permit Expiry Date':'work_permit_expiry_date'}]
+                self.set_mendatory_fields(field_list)
         self.reload()
 
         if self.workflow_state == "Rejected":
@@ -334,6 +401,43 @@ class WorkPermit(Document):
                     to_remove.append(document)
             [document.delete(document) for document in to_remove]
 
+    def sync_expiry_dates_to_linked_documents(self, new_expiry_date):
+        """Carry a new Work Permit expiry over to the Residency and PACI beside it (WI-002100).
+
+        The residency and the civil ID are both issued to run with the work permit, so the
+        permit's expiry is the date all three legally share. Both documents read it off the
+        Employee - once, when they are opened - so a permit whose expiry is set or corrected
+        afterwards left them quoting the old date on the paperwork submitted to MOI and PACI.
+
+        Paired by Preparation and employee, which is what "linked" means for these two: a
+        Preparation opens one Residency and one PACI per employee. A permit raised outside a
+        Preparation - a transfer, a cancellation - has nothing to pair with.
+
+        Cancelled documents are skipped; there can be more than one live record for the same
+        employee (a rejected application and its replacement) and both need the new date.
+
+        Written with set_value: the fields are read-only, the documents may already be
+        submitted, and a full save would re-run each document's own validation over a change
+        that has no business re-validating it.
+        """
+        if not (new_expiry_date and self.preparation):
+            return
+
+        for doctype, fieldname in (
+            ("Residency", "new_residency_expiry_date"),
+            ("PACI", "new_civil_id_expiry_date"),
+        ):
+            for name in frappe.get_all(
+                doctype,
+                filters={
+                    "preparation": self.preparation,
+                    "employee": self.employee,
+                    "docstatus": ["!=", 2],
+                },
+                pluck="name",
+            ):
+                frappe.db.set_value(doctype, name, fieldname, new_expiry_date)
+
     def set_work_permit_attachment_in_employee_doctype(self,new_expiry_date, work_permit_attachment=False):
         """
         runs: `on_submit`
@@ -346,6 +450,7 @@ class WorkPermit(Document):
         """
         if not work_permit_attachment:
             frappe.db.set_value("Employee", self.employee, "work_permit_expiry_date", new_expiry_date)
+            self.sync_expiry_dates_to_linked_documents(new_expiry_date)
             return
 
         today = date.today()
@@ -373,6 +478,7 @@ class WorkPermit(Document):
             })
         employee.work_permit_expiry_date = new_expiry_date
         employee.save()
+        self.sync_expiry_dates_to_linked_documents(new_expiry_date)
 
     @frappe.whitelist()
     def get_required_documents(self):
@@ -854,6 +960,9 @@ def reapply_work_permit(name: str):
 	reapplication.workflow_state = "Draft"
 	reapplication.date_of_application = today()
 	reapplication.rejected_work_permit = source.name
+	# A fresh application has not been amended: copy_doc ignores no_copy by default, so
+	# the count has to be reset here or the new permit inherits the old one's (WI-002108).
+	reapplication.amendment_no = 0
 	reapplication.insert()
 
 	return {"name": reapplication.name}
