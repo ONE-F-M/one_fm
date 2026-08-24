@@ -36,6 +36,12 @@ GATED_FIELDS = (
 MOI_STATE = "Pending By MOI"
 
 
+# WI-002069 (third pass): a Link the BA site added after the migration. Hidden there, and
+# nothing on that site reads it yet - no assignment rule takes its assignee from it and no
+# script mentions it - so it comes across as the empty holder it currently is.
+NEW_FIELD = "assign_grd_operator"
+
+
 def execute():
 	frappe.reload_doc("visa_management", "doctype", "visa_request")
 
@@ -59,6 +65,9 @@ def verify():
 			frappe.throw(f"WI-002069: Visa Request has no {fieldname} field.")
 		if not field.depends_on:
 			frappe.throw(f"WI-002069: {fieldname} did not get its visibility rule.")
+
+	if not meta.get_field(NEW_FIELD):
+		frappe.throw(f"WI-002069: Visa Request has no {NEW_FIELD} field.")
 
 	for fieldname in READ_ONLY_FIELDS:
 		field = meta.get_field(fieldname)

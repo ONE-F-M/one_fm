@@ -19,6 +19,33 @@ MOI_STATE = "Pending By MOI"
 # as a fieldname and quietly treats as false.
 DISABLED_RULES = ("custom_pam_file", "pam_reference_number", "custom_pam_designation_list")
 
+# Every field the BA site's Visa Request carries. A local addition (reapplied_from) is not
+# listed - this pins that nothing of theirs is missing, not that nothing of ours is extra.
+BA_FIELDS = (
+	"section_break_mbv7", "naming_series", "job_offer", "candidate_country_process",
+	"job_applicant", "column_break_vujs", "request_date", "job_applicant_full_name", "agency",
+	"assign_grd_operator", "applicant_details_section", "first_name", "second_name",
+	"third_name", "last_name", "first_name_in_arabic", "second_name_in_arabic",
+	"third_name_in_arabic", "last_name_in_arabic", "column_break_kupi", "nationality", "gender",
+	"religion", "place_of_birth", "date_of_birth", "marital_status", "designation",
+	"salary_details_section", "salary_type", "column_break_lzkz", "work_permit_salary",
+	"educational_qualification_details_section", "educational_qualification",
+	"education_specialization", "column_break_rlpq", "university", "place_of_study",
+	"passport_details_section", "passport_number", "passport_holder_of", "place_of_issue",
+	"column_break_wims", "passport_issued_on", "passport_expires_on", "attachments",
+	"passport_copy", "column_break_sqvj", "driver_license", "column_break_byjf",
+	"degree_certificate", "column_break_wjxj", "rejection_remarks_section", "column_break_cpvu",
+	"operator_rejection_remark", "grd_manager_remark", "column_break_jdrk",
+	"pam_rejection_remark", "moi_rejection_remark", "pam_details_section", "custom_pam_file",
+	"pam_reference_number", "custom_visa_application_date", "column_break_gvey",
+	"custom_pam_designation_list", "custom_work_permit_number", "pam_remarks",
+	"column_break_gcih", "pam_decision_date", "moi_details_section", "moi_reference_number",
+	"column_break_jvjp", "moi_remarks", "column_break_hyho", "moi_decision_date",
+	"visa_details_section", "visa_reference_number", "visa_issue_date", "visa_expiry_date",
+	"column_break_uxnb", "visa_document", "payment_receipt", "payment_date",
+	"section_break_jrbe", "amended_from",
+)
+
 # Every field the BA site locks once the request has moved past the step that fills it in.
 # A reference number still editable three states later is one an operator can quietly change
 # after the ministry has it.
@@ -122,6 +149,24 @@ class TestVisaRequestVisibility(FrappeTestCase):
 				self.assertIn("Completed", named)
 				# Still editable at the step that fills them in.
 				self.assertNotIn("Pending Visa Issuance", named)
+
+	def test_the_doctype_carries_every_field_the_ba_site_has(self):
+		"""Pinned as a list rather than a count, so a field added on the BA site and missed
+		here names itself instead of showing up as an off-by-one."""
+		meta_fields = {f.fieldname for f in self.meta.fields}
+		for fieldname in BA_FIELDS:
+			with self.subTest(fieldname=fieldname):
+				self.assertIn(fieldname, meta_fields)
+
+	def test_the_grd_operator_holder_is_present_and_hidden(self):
+		"""Added on the BA site after the first migration pass. Nothing reads it there yet -
+		no assignment rule takes its assignee from it, no script mentions it - so it is an
+		empty holder, and it is hidden the way the BA site hides it."""
+		field = self.meta.get_field("assign_grd_operator")
+		self.assertIsNotNone(field)
+		self.assertEqual(field.fieldtype, "Link")
+		self.assertEqual(field.options, "User")
+		self.assertTrue(field.hidden)
 
 	def test_the_remark_fields_match_the_ba_site(self):
 		self.assertTrue(self.meta.get_field("operator_rejection_remark").read_only)
