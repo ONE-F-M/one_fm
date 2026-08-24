@@ -10,7 +10,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.model.naming import make_autoname
 from frappe.query_builder import DocType
-from frappe.utils import flt
+from frappe.utils import cint, cstr, flt
 from frappe.utils import (
     today,
     add_months,
@@ -110,6 +110,18 @@ COST_COMPONENT_FIELDS = (
 # The Actions whose master fee row is keyed by the number of years as well as the Action.
 # Mirrors the depends_on the costing table already puts on its No. of Years field.
 YEAR_SCOPED_ACTIONS = ('Renewal (Kuwaiti)', 'Renewal (Non-Kuwaiti)')
+
+# WI-002092: the fees a multi-year renewal pays once per year. The work permit, the medical
+# insurance and the residency stamp are each issued for a year at a time, so renewing for
+# three buys three of each.
+#
+# The civil ID is deliberately absent: one card is issued for the whole period, whatever it
+# costs, so multiplying it would charge the employee for cards that were never printed.
+PER_YEAR_COST_FIELDS = (
+    'work_permit_amount',
+    'medical_insurance_amount',
+    'residency_stamp_amount',
+)
 
 
 # WI-002101: the batch type, the series it is named under, and the Actions its rows may
@@ -522,7 +534,7 @@ class Preparation(Document):
         # Set the costing of renewal for an year in preparation record
         for preparation in self.preparation_record:
             # Get costing of renewal for an year
-            costing, extension_type  = get_renewal_extension_cost_for_employee(preparation.employee, no_of_years)
+            costing, extension_type = get_renewal_extension_cost_for_employee(preparation.employee, no_of_years)
 
             preparation.renewal_or_extend = extension_type if renew_all else ""
             preparation.no_of_years = no_of_years if renew_all else ""
@@ -674,6 +686,30 @@ def get_grd_renewal_extension_cost(renewal_or_extend: str, no_of_years: str = No
     if renewal_or_extend in YEAR_SCOPED_ACTIONS and not no_of_years:
         return False
 
+    # The years narrow the lookup for the two renewal Actions only. The field is hidden for
+    # an extension but not cleared, so a row switched from a renewal still carries "1 Year",
+    # and filtering an extension by it would find nothing and quietly return no fees.
+    scoped_years = no_of_years if renewal_or_extend in YEAR_SCOPED_ACTIONS else None
+    result = _master_fee_rows(renewal_or_extend, scoped_years)
+
+    # WI-002092: nothing configured at that duration, so the Action's own row is used
+    # whatever duration it is filed under.
+    #
+    # The years used to have to match exactly, which meant a renewal configured as a
+    # "3 Years" row fetched nothing at all for a row asking for one year - and the browser,
+    # having already cleared the four fee fields, left the operator looking at zeros with no
+    # explanation. The duration that decides the cost is the one on the Preparation row; the
+    # master row supplies the rate, and which duration it happens to be filed under is a
+    # detail of how the table is keyed.
+    if not result and scoped_years:
+        result = _master_fee_rows(renewal_or_extend)
+
+    if result:
+        return result[0]
+
+
+def _master_fee_rows(renewal_or_extend, no_of_years=None):
+    """The master fee rows for an Action, optionally narrowed to one duration."""
     Cost = DocType('GRD Renewal Extension Cost')
     query = (
         frappe.qb.from_(Cost)
@@ -682,12 +718,52 @@ def get_grd_renewal_extension_cost(renewal_or_extend: str, no_of_years: str = No
         .where(Cost.parenttype == 'HR Settings')
         .where(Cost.renewal_or_extend == renewal_or_extend)
     )
-    if renewal_or_extend in YEAR_SCOPED_ACTIONS:
+    if no_of_years:
         query = query.where(Cost.no_of_years == no_of_years)
 
-    result = query.run(as_dict=True)
-    if result:
-        return result[0]
+    return query.run(as_dict=True)
+
+def years_in(no_of_years):
+    """The number of years "2 Years" means (WI-002092).
+
+    Anything unparseable is one year: the field offers "1 Year", "2 Years" and "3 Years",
+    and a row that somehow carries something else should be charged the single-year rate
+    rather than nothing at all.
+    """
+    years = cint(cstr(no_of_years).split()[0]) if no_of_years else 0
+    return years or 1
+
+
+@frappe.whitelist()
+def get_preparation_row_costing(renewal_or_extend: str, no_of_years: str = None):
+    """The fees a Preparation row should carry for this Action and duration (WI-002092).
+
+    The master row in HR Settings holds the annual rate. A renewal taken for two or three
+    years pays the work permit, the medical insurance and the residency stamp once per year,
+    so those are multiplied out here - and the civil ID is not, because one card is issued
+    for the whole period.
+
+    Scaled here rather than in the master lookup so that lookup keeps returning what HR
+    Settings actually holds: the master table's own Total Amount is the annual figure, and
+    the two would otherwise disagree about what a row means.
+
+    Called by the form as well as by the "renew all" action, so the browser and the server
+    cannot scale a row differently.
+    """
+    costing = get_grd_renewal_extension_cost(renewal_or_extend, no_of_years)
+    if not costing:
+        return costing
+
+    costing = dict(costing)
+    if renewal_or_extend not in YEAR_SCOPED_ACTIONS:
+        return costing
+
+    years = years_in(no_of_years)
+    for field in PER_YEAR_COST_FIELDS:
+        costing[field] = flt(costing.get(field)) * years
+
+    return costing
+
 
 def create_documents_for_new_actions(preparation_name):
     """Generate the sub-documents the New Kuwaiti and Overseas Actions ask for (WI-001824).
@@ -933,4 +1009,6 @@ def get_renewal_extension_cost_for_employee(employee, no_of_years = "1 Year"):
     else:
         extension_type = "Renewal (Non-Kuwaiti)"
     
-    return get_grd_renewal_extension_cost(extension_type, no_of_years), extension_type
+    # The row's fees, not the master row's: a multi-year renewal pays the annual ones once
+    # per year (WI-002092).
+    return get_preparation_row_costing(extension_type, no_of_years), extension_type

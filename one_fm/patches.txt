@@ -311,6 +311,7 @@ one_fm.patches.v15_0.take_ownership_of_vehicle_handover_log #2026-07-25
 
 
 one_fm.patches.v15_0.rename_document_register_and_revision #2026-08-03
+one_fm.patches.v15_0.rename_operations_monthly_attendance_sheet #2026-08-23 WI-002153
 [post_model_sync]
 one_fm.patches.v15_0.process_task_for_wiki_employee_task
 one_fm.patches.v15_0.add_assignment_rule_returning_to_operations_supervisor_of_client_event #2
@@ -587,6 +588,7 @@ one_fm.patches.v15_0.add_pcc_processing_fees_to_hr_settings #2026-08-12 WI-00202
 one_fm.patches.v15_0.add_shift_request_shift_preview #2026-08-12 WI-001834
 one_fm.patches.v15_0.restore_stranded_mixed_shipments #2026-08-17 WI-002071
 one_fm.patches.v15_0.migrate_visa_request_visibility #2026-08-20 WI-002069
+one_fm.patches.v15_0.hide_residency_apply_for #2026-08-20 WI-002105
 one_fm.patches.v15_0.add_preparation_category #2026-08-20 WI-002101
 one_fm.patches.v15_0.add_preparation_row_status #2026-08-20 WI-002093
 one_fm.patches.v15_0.migrate_pam_license_configuration #2026-08-20 WI-002102
