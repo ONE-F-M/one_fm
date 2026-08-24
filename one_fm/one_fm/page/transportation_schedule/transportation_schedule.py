@@ -919,7 +919,15 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
 
             dep_utc = to_utc(str(dep))
             ret_utc = to_utc(str(ret))
-            if ret_utc <= dep_utc:
+            # A night shift finishes the morning after it starts, so its end time is
+            # legitimately earlier on the clock than its start. Reading that as a broken
+            # window and replacing it with "start + 1 hour" is why a 19:00-07:00 shift
+            # advertised a 20:00 finish on its card (WI-002161). The canvas is a rolling
+            # 24h view of one day's runs — the 07:00 pickup and the 19:00 drop both belong
+            # on it — so the end keeps its own time of day rather than rolling onto
+            # tomorrow's date and off the axis. Only a shift with no length recorded at
+            # all still needs a fallback.
+            if ret_utc == dep_utc:
                 ret_utc = dep_utc + timedelta(hours=1)
 
             stop_coords = get_coords_cached("Location", s.stop_location) if s.stop_location else None
