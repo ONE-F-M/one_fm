@@ -8,7 +8,6 @@ const status_color_map = {
 	"H": "blue",
 	"DO": "blue",
 	"CDO": "blue",
-	// WI-002153: the statuses broken out of "Other" - neither present nor absent.
 	"FP": "orange",
 	"CI": "orange",
 	"MA": "orange",
@@ -46,9 +45,7 @@ frappe.query_reports["Monthly Payroll Attendance Sheet"] = {
 			on_change: apply_in_page_filters,
 			label: __("Employee Status"),
 			fieldtype: "Select",
-			// Blank means every status, so a payroll run can include leavers. WI-002153 AC2
-			// lists the statuses in scope; these are the values Employee actually holds -
-			// Inactive and Suspended never existed on it.
+			// Blank means every status, so a payroll run can include leavers.
 			options: ["", "Active", "Court Case", "Absconding", "Left", "Not Returned from Leave", "Vacation"],
 		},
 		{
@@ -59,10 +56,6 @@ frappe.query_reports["Monthly Payroll Attendance Sheet"] = {
 			options: "Employment Type",
 		},
 		{
-			// WI-002153 AC3/AC4: both of these reach the server. Ticking Day Off OT now
-			// consolidates the day-off OT rows with the plain Basic ones instead of
-			// narrowing to them, and in-page filtering can only ever remove rows the
-			// server already sent - it cannot add the ones the last run left out.
 			fieldname: "roster_type",
 			label: __("Roster Type"),
 			fieldtype: "Select",
@@ -178,11 +171,8 @@ function attach_status_map () {
 // here: Frappe calls a filter's on_change in place of refreshing the report, which is
 // what stops every tick of a checkbox queuing another background run.
 
-// Project is deliberately absent: it also narrows the Attendance rows themselves
-// (Attendance.project), so an employee with days booked to another project would come
-// out differently in page than the server returns.
-// Roster Type and Day Off OT are deliberately absent since WI-002153: they change which
-// rows the query returns, not just which of the returned ones are shown.
+// Project, Roster Type and Day Off OT are deliberately absent: each changes which rows
+// the query returns, and narrowing what is on screen cannot add the ones it left out.
 const IN_PAGE_FILTERS = [
 	"employee",
 	"employee_status",
