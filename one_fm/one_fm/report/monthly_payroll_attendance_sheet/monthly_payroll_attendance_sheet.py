@@ -10,7 +10,11 @@ status_map = {
 	"Absent": "A",
 	"On Leave": "OL",
 	"Holiday": "H",
-	"Day Off": "DO"
+	"Day Off": "DO",
+	"Fingerprint Appointment": "FP",
+	"Client Interview": "CI",
+	"Medical Appointment": "MA",
+	"On Hold": "OH",
 }
 
 day_abbr = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
@@ -40,24 +44,51 @@ SUMMARY_COUNTERS = (
 	"annual_leave_days",
 	"sick_leave_days",
 	"leave_without_pay_days",
-	"other_days",
+	"other_leaves_days",
+	"fingerprint_days",
+	"client_interview_days",
+	"medical_appointment_days",
+	"on_hold_days",
 	"missing_days",
 )
 
-# Statuses that count as a day present. Work From Home and Working already showed as "P"
-# in the day cells, so they count here too - the column follows the cell.
-PRESENT_STATUSES = ("Present", "Working", "Work From Home")
+# Statuses that count as a day present. Client Event and On-the-job Training are schedule
+# availabilities that raise attendance alongside Working (one_fm/api/tasks.py).
+PRESENT_STATUSES = (
+	"Present",
+	"Working",
+	"Work From Home",
+	"Client Event",
+	"On-the-job Training",
+)
 
-# Both kinds of day off share one column, per the AC.
-DAY_OFF_STATUSES = ("Day Off", "Client Day Off")
+# Both kinds of day off and a holiday share one column, per the AC.
+DAY_OFF_STATUSES = ("Day Off", "Client Day Off", "Holiday")
 
-# Leave Type -> its own column. A leave of any other type (Business Trip, Hajj Leave)
-# counts as Other: naming it would mean a column per Leave Type on this site, which is
-# eleven of them.
+# Leave Type -> its own column.
 LEAVE_TYPE_COUNTERS = {
 	"Annual Leave": "annual_leave_days",
 	"Sick Leave": "sick_leave_days",
 	"Leave Without Pay": "leave_without_pay_days",
+}
+
+# Every leave type without a column of its own. A fallback rather than the AC's list of
+# six, so a leave type added later is still counted somewhere.
+OTHER_LEAVES = "other_leaves_days"
+
+STATUS_COUNTERS = {
+	"Fingerprint Appointment": "fingerprint_days",
+	"Client Interview": "client_interview_days",
+	"Medical Appointment": "medical_appointment_days",
+	"On Hold": "on_hold_days",
+}
+
+# Employee Schedule records a leave as the availability itself, not as On Leave with a
+# leave type, so those route by name.
+SCHEDULE_LEAVE_COUNTERS = {
+	"Annual Leave": "annual_leave_days",
+	"Sick Leave": "sick_leave_days",
+	"Emergency Leave": OTHER_LEAVES,
 }
 
 
@@ -94,9 +125,8 @@ def more_significant(status, existing):
 def summary_counter(status, leave_type=None):
 	"""Which summary column one day belongs to (WI-001979).
 
-	Total, rather than a chain of ifs with a gap at the end: a day with a status this
-	does not name is Other, and a day with no status at all is Missing. Nothing falls
-	through uncounted, so the row's figures always reconcile to the range.
+	Total, rather than a chain of ifs with a gap at the end: every day increments exactly
+	one counter, so the row's figures always reconcile to the range.
 	"""
 	if not status:
 		return "missing_days"
@@ -111,9 +141,17 @@ def summary_counter(status, leave_type=None):
 		return "absent_days"
 
 	if status == "On Leave":
-		return LEAVE_TYPE_COUNTERS.get(leave_type, "other_days")
+		return LEAVE_TYPE_COUNTERS.get(leave_type, OTHER_LEAVES)
 
-	return "other_days"
+	if status in SCHEDULE_LEAVE_COUNTERS:
+		return SCHEDULE_LEAVE_COUNTERS[status]
+
+	if status in STATUS_COUNTERS:
+		return STATUS_COUNTERS[status]
+
+	# Nothing else has a column of its own - only Half Day and a Suspended schedule day
+	# reach here - and counting them keeps the row adding up to the range.
+	return "missing_days"
 
 
 def is_invalid_roster_combination(filters):
@@ -130,7 +168,7 @@ def apply_roster_type_filters(query, roster_type_field, day_off_ot_field, filter
 	Schedule queries so both answer a given filter pair identically (WI-001791).
 
 	  Basic, unchecked    -> basic shifts only, with day-off OT actively excluded
-	  Basic, checked      -> only basic shifts flagged as day-off OT
+	  Basic, checked      -> Basic and Basic + Day Off OT together, in one view
 	  Overtime, unchecked -> overtime only, which already excludes both basic cases
 	  Overtime, checked   -> never reaches a query (Logic Rule 4)
 	"""
@@ -140,12 +178,9 @@ def apply_roster_type_filters(query, roster_type_field, day_off_ot_field, filter
 	if roster_type:
 		query = query.where(roster_type_field == roster_type)
 
-	if day_off_ot:
-		query = query.where(day_off_ot_field == 1)
-	elif roster_type == BASIC:
-		# Rule 1's edge case: pure basic must not carry the day's day-off OT rows.
-		# Left unconstrained for Overtime, whose own rule asks only that the basic
-		# rows are hidden.
+	if roster_type == BASIC and not day_off_ot:
+		# Rule 1's edge case: pure basic must not carry the day's day-off OT rows. Left
+		# unconstrained for Overtime, whose own rule asks only that the basic rows hide.
 		query = query.where(day_off_ot_field != 1)
 
 	return query
@@ -278,10 +313,11 @@ def get_columns(filters, dates):
 		{"label": _("Annual Leave"), "fieldname": "annual_leave_days", "fieldtype": "Float", "width": 90},
 		{"label": _("Sick Leave"), "fieldname": "sick_leave_days", "fieldtype": "Float", "width": 80},
 		{"label": _("Leave Without Pay"), "fieldname": "leave_without_pay_days", "fieldtype": "Float", "width": 120},
-		# Days that carry a status none of the columns above name - On Hold, Holiday, a
-		# leave of another type. Without it the row's parts do not add up to the range,
-		# which is the whole point of the block (288 days were On Hold in July 2026 alone).
-		{"label": _("Other"), "fieldname": "other_days", "fieldtype": "Float", "width": 70},
+		{"label": _("Other Leaves"), "fieldname": "other_leaves_days", "fieldtype": "Float", "width": 100},
+		{"label": _("Fingerprint"), "fieldname": "fingerprint_days", "fieldtype": "Float", "width": 90},
+		{"label": _("Client Interview"), "fieldname": "client_interview_days", "fieldtype": "Float", "width": 110},
+		{"label": _("Medical Appointment"), "fieldname": "medical_appointment_days", "fieldtype": "Float", "width": 130},
+		{"label": _("On Hold"), "fieldname": "on_hold_days", "fieldtype": "Float", "width": 80},
 		{"label": _("Missing/Empty Days"), "fieldname": "missing_days", "fieldtype": "Float", "width": 120},
 	])
 
@@ -351,17 +387,19 @@ def get_message(filters=None):
 		return _("Each cell shows the scheduled duration of that day's shift, in hours.")
 
 	message = ""
-	colors_map = { "P": "green","A": "red","OL": "red","H": "blue","DO": "blue","CDO": "blue" }
-	legend_status_map = { **status_map, "Work From Home": "P", "Client Day Off": "CDO" }
+	colors_map = {
+		"P": "green", "A": "red", "OL": "red", "H": "blue", "DO": "blue", "CDO": "blue",
+		"FP": "orange", "CI": "orange", "MA": "orange", "OH": "orange",
+	}
+	# Work From Home is Present, so it gets no entry of its own.
+	legend_status_map = { **status_map, "Client Day Off": "CDO" }
 
-	count = 0
 	for status, abbr in legend_status_map.items():
 		message += f"""
 			<span style='border-left: 2px solid {colors_map[abbr]}; padding-right: 12px; padding-left: 5px; margin-right: 3px;'>
 				{status} - {abbr}
 			</span>
 		"""
-		count += 1
 
 	return message
 
@@ -692,8 +730,10 @@ def get_employee_details(filters):
 			Employee.status.as_("employee_status"),
 			Employee.employment_type,
 		)
-		.where(Employee.shift_working == 1)
 	)
+
+	# No shift_working gate: the sheet is company-wide, so non-shift staff, subcontractors
+	# and service providers belong on it too.
 
 	if filters.get("employee"):
 		query = query.where(Employee.name == filters.employee)
@@ -801,7 +841,9 @@ def get_attendance_status(
 		"Client Day Off": "CDO",
 		"Sick Leave": "OL",
 		"Annual Leave": "OL",
-		"Emergency Leave": "OL"
+		"Emergency Leave": "OL",
+		"Client Event": "P",
+		"On-the-job Training": "P",
 	}
 
 	employee_non_day_off_attendance = employee_non_day_off_attendance or {}
