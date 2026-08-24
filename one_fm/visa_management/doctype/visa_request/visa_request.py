@@ -30,6 +30,7 @@ OUTCOME_FIELDS = (
 	"operator_rejection_remark",
 	"grd_manager_remark",
 	"pam_rejection_remark",
+	"pam_rejection_remarks",
 	"moi_rejection_remark",
 	"pam_reference_number",
 	"pam_remarks",
@@ -164,9 +165,6 @@ class VisaRequest(Document):
 			)
 
 	def on_update(self):
-		# WI-001977: a Visa Copy or Payment Receipt just attached is read by OCR.
-		queue_document_ocr(self)
-
 		if self.job_offer:
 			ccp_name = frappe.db.get_value("Candidate Country Process", {"job_offer": self.job_offer}, "name")
 			if ccp_name:
@@ -279,57 +277,38 @@ OCR_DOCUMENTS = {
 	},
 }
 
-# The state the operator attaches these in. Outside it the attachments are not the
-# ones this reads - a passport copy on a Draft has nothing to do with a visa.
-OCR_STATE = "Pending Visa Issuance"
+# WI-002106 / AC 8: queue_document_ocr() was removed here, and with it OCR_STATE and the
+# on_update trigger. Reading the documents is now a step in the Processa map - script task
+# Activity_0ljbcgg, Server Script "Auto Fetch Visa & payment Details using OCR" (named
+# after its own shape, so the compiler cannot mis-bind it) - which calls
+# run_document_ocr() below on the way from Pending Visa Issuance to the recruiter.
+#
+# Two behaviours went with the trigger, both of them consequences of firing from a save
+# rather than from a transition:
+#   * the workflow_state guard, which the map's own position replaces; and
+#   * the has_value_changed() check, which existed because on_update fired on every save
+#     and would otherwise re-read a document to overwrite an operator's correction. The
+#     step runs once per pass, so a correction is only re-read if the request comes back
+#     round to Pending Visa Issuance - at which point re-reading is the point.
 
 
-def queue_document_ocr(doc, method=None):
-	"""Read a freshly attached Visa Copy or Payment Receipt (WI-001977).
+def run_document_ocr(visa_request: str) -> dict:
+	"""Read every OCR document attached to this request and write what came back.
 
-	Enqueued rather than run inline: Mindee is an external call that takes seconds, and
-	the operator should not be made to wait on a save for it. The extracted values land
-	on the form for review - nothing here advances the workflow, which is the AC's point.
+	Returns what was extracted, so the script task can report it to the map.
 
-	Only fires for an attachment that actually changed, so an operator's correction to an
-	extracted date survives the next save.
+	Called from the map, so it runs inline: the next task hands the request to the
+	recruiter and the values have to be on it by then. One unreadable document is logged
+	and skipped rather than raised - a Mindee outage must not strand a visa, and the
+	operator can still key the values in.
 	"""
-	if doc.workflow_state != OCR_STATE:
-		return
-
-	changed = [
-		fieldname
-		for fieldname in OCR_DOCUMENTS
-		if doc.get(fieldname) and doc.has_value_changed(fieldname)
-	]
-	if not changed:
-		return
-
-	frappe.enqueue(
-		"one_fm.visa_management.doctype.visa_request.visa_request.run_document_ocr",
-		queue="short",
-		# After the commit, not before it. on_update runs inside the save transaction, and
-		# a worker that picks the job up before that transaction lands re-reads the
-		# document without the attachment on it - which is exactly what happened: the job
-		# ran and logged "No file attached" against a request that plainly had one.
-		enqueue_after_commit=True,
-		visa_request=doc.name,
-		fieldnames=changed,
-		user=frappe.session.user,
-	)
-
-
-def run_document_ocr(visa_request: str, fieldnames: list, user: str | None = None):
-	"""Extract from each attachment and write what came back (background job)."""
 	doc = frappe.get_doc("Visa Request", visa_request)
 	extracted = {}
 
-	for fieldname in fieldnames:
-		spec = OCR_DOCUMENTS[fieldname]
-
+	for fieldname, spec in OCR_DOCUMENTS.items():
 		if not doc.get(fieldname):
-			# Removed again between the save and this job running. Nothing to read, and
-			# nothing worth a traceback in the Error Log either.
+			# Nothing attached in this field, and nothing worth a traceback in the Error
+			# Log either.
 			continue
 
 		try:
@@ -344,15 +323,17 @@ def run_document_ocr(visa_request: str, fieldnames: list, user: str | None = Non
 			)
 
 	if not extracted:
-		return
+		return extracted
 
 	doc.db_set(extracted, update_modified=False)
 
 	frappe.publish_realtime(
 		"visa_request_ocr_complete",
 		{"name": visa_request, "fields": list(extracted)},
-		user=user or frappe.session.user,
+		user=frappe.session.user,
 	)
+
+	return extracted
 
 
 def _attachment_path(file_url: str) -> str:

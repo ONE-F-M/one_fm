@@ -160,6 +160,64 @@ if not reason:
 	)
 '''
 
+# AC 3 — replaces the 'Pending By PAM' branch of the client-side rejection dialog, and
+# the hardcoded reason list that branch offered.
+#
+# The list moved onto pam_rejection_remark, which is now the Select the AC calls a
+# dropdown, with pam_rejection_remarks beside it for the free text. Both fields had to
+# become writable: the dialog wrote the reason with frm.set_value, which a read-only field
+# allows, and typing it on the form does not.
+#
+# The reason is required, the remarks are not. The AC makes only the dropdown mandatory,
+# and a reason from a fixed list is what the process acts on - REAPPLY_REASONS in
+# visa_request.py reads exactly this field to decide whether a fresh attempt is worth
+# making.
+PAM_REJECTION_REASON_SCRIPT = '''# WI-002106 / AC 3: a PAM rejection must record which of the reasons applied, and the
+# remarks that go with it are kept alongside.
+#
+# The options live on pam_rejection_remark itself, so this only checks that one was
+# chosen - the field rejects anything outside its own list on save. Two fieldnames one
+# letter apart, so worth spelling out: pam_rejection_remark is the reason, and
+# pam_rejection_remarks is the free text.
+reason = (doc.get("pam_rejection_remark") or "").strip()
+remarks = (doc.get("pam_rejection_remarks") or "").strip()
+
+result["pam_rejection_reason_set"] = bool(reason)
+result["pam_rejection_reason"] = reason
+result["pam_rejection_remarks"] = remarks
+
+if not reason:
+	frappe.throw(
+		"Select a reason for the PAM rejection before proceeding.",
+		title="PAM Rejection Reason Required",
+	)
+'''
+
+# AC 8 — replaces queue_document_ocr() and the on_update trigger it fired from.
+#
+# The reading itself stays in the app. A Server Script is the wrong place for the Mindee
+# models, the field maps and the attachment paths: they are covered by
+# test_visa_document_ocr.py, and a copy in here is how the two would drift. What the work
+# item asked to move is when the reading happens, which is all this does.
+OCR_SCRIPT = '''# WI-002106 / AC 8: read the visa copy and the payment receipt attached at Pending Visa
+# Issuance, and write what they say to the request - the visa number, its issue and expiry
+# dates, and the payment date and time.
+#
+# Runs inline rather than enqueued: the next task hands the request to the recruiter, so
+# the values have to be on it by then. run_document_ocr logs and skips a document it
+# cannot read, so a Mindee outage cannot strand a visa here.
+read_documents = frappe.get_attr(
+	"one_fm.visa_management.doctype.visa_request.visa_request.run_document_ocr"
+)
+
+extracted = read_documents(doc.name)
+
+# Reported so a gateway can route on what was actually filled instead of assuming the
+# read succeeded.
+result["ocr_fields_filled"] = sorted(extracted)
+result["ocr_read_anything"] = bool(extracted)
+'''
+
 # (script name, BPMN script task id, task label on the canvas, body)
 #
 # Each script is named after its own shape, and no two shapes share a name. That is not
@@ -202,14 +260,31 @@ SCRIPTS = (
 		"Operator Rejection Reason",
 		OPERATOR_REJECTION_REASON_SCRIPT,
 	),
+	(
+		"MOI Rejection Reason",
+		"Activity_0dtjaug",
+		"MOI Rejection Reason",
+		MOI_REJECTION_REASON_SCRIPT,
+	),
+	(
+		"GRD Manager Rejection Reason",
+		"Activity_0nxcbzb",
+		"GRD Manager Rejection Reason",
+		MANAGER_REJECTION_REASON_SCRIPT,
+	),
 )
 
-# Drafted, reviewed, and not on the site yet. Their shapes are being relabelled from the
-# shared "Require Rejection Reason" to these names; add them to SCRIPTS once each exists
-# and its shape carries the matching serverScript attribute.
+# Drafted and reviewed here, not on the site yet - each one is pasted into its shape's
+# Server Script field in the editor and comes across by export/import. Move it into
+# SCRIPTS once it exists and its shape carries the matching serverScript attribute; the
+# drift guard below only covers what is in SCRIPTS.
 PENDING_SCRIPTS = (
-	("MOI Rejection Reason", "Activity_0dtjaug", MOI_REJECTION_REASON_SCRIPT),
-	("GRD Manager Rejection Reason", "Activity_0nxcbzb", MANAGER_REJECTION_REASON_SCRIPT),
+	("PAM Rejection Reason", "Activity_1pgghs6", PAM_REJECTION_REASON_SCRIPT),
+	(
+		"Auto Fetch Visa & payment Details using OCR",
+		"Activity_0ljbcgg",
+		OCR_SCRIPT,
+	),
 )
 
 
@@ -436,6 +511,175 @@ class TestTheRejectionReasonScripts(FrappeTestCase):
 					run_script(body, **others)
 
 
+class TestThePamRejectionReasonScript(FrappeTestCase):
+	"""AC 3: the reason is a dropdown and it is mandatory; the remarks beside it are
+	stored but not demanded."""
+
+	REASON = "Worker is in Black List"
+
+	def test_a_reason_passes_and_reports_itself(self):
+		result = run_script(PAM_REJECTION_REASON_SCRIPT, pam_rejection_remark=self.REASON)
+
+		self.assertTrue(result["pam_rejection_reason_set"])
+		self.assertEqual(result["pam_rejection_reason"], self.REASON)
+
+	def test_a_blank_reason_is_refused(self):
+		for blank in BLANKS:
+			with self.subTest(value=repr(blank)):
+				with self.assertRaises(frappe.ValidationError):
+					run_script(PAM_REJECTION_REASON_SCRIPT, pam_rejection_remark=blank)
+
+	def test_the_remarks_are_carried_but_not_demanded(self):
+		result = run_script(
+			PAM_REJECTION_REASON_SCRIPT,
+			pam_rejection_remark=self.REASON,
+			pam_rejection_remarks="File 88213, checked with PAM on the 4th",
+		)
+
+		self.assertEqual(result["pam_rejection_remarks"], "File 88213, checked with PAM on the 4th")
+
+	def test_remarks_on_their_own_do_not_satisfy_the_reason(self):
+		# The AC makes the dropdown mandatory. Free text in the box beside it is not a
+		# reason the process can act on - see the reapply gate.
+		with self.assertRaises(frappe.ValidationError):
+			run_script(PAM_REJECTION_REASON_SCRIPT, pam_rejection_remarks="rejected, see email")
+
+	def test_it_does_not_read_another_stage_s_reason(self):
+		with self.assertRaises(frappe.ValidationError):
+			run_script(
+				PAM_REJECTION_REASON_SCRIPT,
+				moi_rejection_remark="set at another stage",
+				grd_manager_remark="set at another stage",
+				operator_rejection_remark="set at another stage",
+			)
+
+
+class TestThePamReasonListLivesOnTheField(FrappeTestCase):
+	"""AC 3 moved the list out of the client script and onto pam_rejection_remark. These
+	are the properties that made that safe to do."""
+
+	def field(self):
+		return frappe.get_meta("Visa Request").get_field("pam_rejection_remark")
+
+	def options(self):
+		return [o for o in (self.field().options or "").split("\n") if o.strip()]
+
+	def test_the_reason_is_a_dropdown(self):
+		self.assertEqual(self.field().fieldtype, "Select")
+
+	def test_the_reason_can_be_typed_on_the_form(self):
+		# The dialog wrote it with frm.set_value, which a read-only field allows. Now that
+		# the map asks for it on the form, read-only would leave the task unpassable.
+		self.assertFalse(self.field().read_only)
+
+	def test_the_remarks_are_a_separate_writable_field(self):
+		remarks = frappe.get_meta("Visa Request").get_field("pam_rejection_remarks")
+
+		self.assertIsNotNone(remarks)
+		self.assertFalse(remarks.read_only)
+		self.assertNotEqual(remarks.fieldname, self.field().fieldname)
+
+	def test_every_option_the_field_offers_is_accepted(self):
+		for option in self.options():
+			with self.subTest(option=option):
+				result = run_script(PAM_REJECTION_REASON_SCRIPT, pam_rejection_remark=option)
+				self.assertTrue(result["pam_rejection_reason_set"])
+
+	def test_both_reapply_reasons_are_still_offered(self):
+		# The Reapply Visa button and reapply_visa_request() both gate on this field
+		# holding one of REAPPLY_REASONS. A reason dropped from the options - or reworded
+		# in it - takes reapplication with it, silently.
+		from one_fm.visa_management.doctype.visa_request.visa_request import REAPPLY_REASONS
+
+		for reason in REAPPLY_REASONS:
+			with self.subTest(reason=reason):
+				self.assertIn(reason, self.options())
+
+	def test_the_options_the_dialog_used_to_offer_are_all_still_there(self):
+		# Every value already recorded on this site came from that list, and the field
+		# refuses anything outside its options on save.
+		for reason in (
+			"Passport Validity is Less than 18 Months",
+			"Worker's age is below the legal minimum",
+			"The worker's gender does not match the profession",
+			"The occupation requires amendment to specify the worker's specialization",
+			"An active file exists for this worker",
+			"Worker is in Black List",
+		):
+			with self.subTest(reason=reason):
+				self.assertIn(reason, self.options())
+
+	def test_a_reapplication_does_not_carry_the_rejection_over(self):
+		from one_fm.visa_management.doctype.visa_request.visa_request import OUTCOME_FIELDS
+
+		self.assertIn("pam_rejection_remark", OUTCOME_FIELDS)
+		self.assertIn("pam_rejection_remarks", OUTCOME_FIELDS)
+
+
+class TestTheOcrScript(FrappeTestCase):
+	"""AC 8: the step that reads the visa copy and the payment receipt. Mindee is not
+	called - the extraction itself is covered by test_visa_document_ocr.py."""
+
+	VISA_REQUEST = "VR-TEST-00001"
+
+	def run_with(self, extracted):
+		from unittest.mock import patch
+
+		from one_fm.visa_management.doctype.visa_request import visa_request as module
+
+		calls = []
+
+		def fake_read(name):
+			calls.append(name)
+			return extracted
+
+		with patch.object(module, "run_document_ocr", fake_read):
+			result = run_script(OCR_SCRIPT, name=self.VISA_REQUEST)
+
+		return result, calls
+
+	def test_it_reads_the_request_the_task_is_running_on(self):
+		_result, calls = self.run_with({})
+
+		self.assertEqual(calls, [self.VISA_REQUEST])
+
+	def test_it_reports_which_fields_the_documents_filled(self):
+		result, _calls = self.run_with(
+			{
+				"visa_reference_number": "283059338",
+				"visa_issue_date": "2026-01-19",
+				"visa_expiry_date": "2026-04-18",
+				"payment_date": "2026-01-19 19:36:05",
+			}
+		)
+
+		self.assertTrue(result["ocr_read_anything"])
+		self.assertEqual(
+			result["ocr_fields_filled"],
+			["payment_date", "visa_expiry_date", "visa_issue_date", "visa_reference_number"],
+		)
+
+	def test_an_unreadable_document_is_reported_rather_than_raised(self):
+		# run_document_ocr logs and returns nothing. The step still completes: a Mindee
+		# outage must not strand a visa, and the operator can key the values in.
+		result, _calls = self.run_with({})
+
+		self.assertFalse(result["ocr_read_anything"])
+		self.assertEqual(result["ocr_fields_filled"], [])
+
+	def test_it_asks_for_every_field_the_work_item_named(self):
+		# AC 8 names the visa number, its two dates, and the payment date and time. They
+		# are the OCR_DOCUMENTS "fills", so this is the link between the AC and the map.
+		from one_fm.visa_management.doctype.visa_request.visa_request import OCR_DOCUMENTS
+
+		filled = {f for spec in OCR_DOCUMENTS.values() for f in spec["fills"]}
+
+		self.assertEqual(
+			filled,
+			{"visa_reference_number", "visa_issue_date", "visa_expiry_date", "payment_date"},
+		)
+
+
 class TestTheMoiReasonListIsNotDuplicated(FrappeTestCase):
 	def test_every_option_the_field_offers_is_accepted(self):
 		# The options live on moi_rejection_remark. Repeating them in the script is how
@@ -465,13 +709,36 @@ class TestTheControllerNoLongerDoesThisWork(FrappeTestCase):
 		self.assertNotIn("moi_reference_number", source)
 		self.assertIn("pam_reference_number", source)
 
-	def test_the_client_script_no_longer_prompts_for_the_operator_rejection_reason(self):
-		# The one rejection state whose script is on the site and resolves to the right
-		# field. The manager and MOI states still prompt here on purpose - see the note
-		# on SCRIPTS above and in visa_request.js.
+	def test_the_client_script_no_longer_prompts_for_the_operator_or_pam_reason(self):
+		# Both are asked for on the form now and required by the map. The manager and MOI
+		# states still prompt here on purpose - see the note in visa_request.js.
 		self.assertEqual(
 			self.handled_rejection_states(),
-			["Pending GRD Manager Approval", "Pending By PAM", "Pending By MOI"],
+			["Pending GRD Manager Approval", "Pending By MOI"],
+		)
+
+	def test_the_hardcoded_pam_reason_list_is_gone_from_the_client_script(self):
+		# It lives on pam_rejection_remark now. Two lists is how the field starts
+		# rejecting a reason the dialog offered.
+		self.assertNotIn("REJECTION_REASONS_BY_STATE", self.client_script())
+
+	def test_the_ocr_trigger_is_gone_from_the_controller(self):
+		import inspect
+
+		from one_fm.visa_management.doctype.visa_request import visa_request as module
+
+		self.assertFalse(hasattr(module, "queue_document_ocr"))
+		self.assertNotIn("ocr", inspect.getsource(module.VisaRequest.on_update).lower())
+
+	def test_the_reading_itself_is_still_in_the_app_for_the_map_to_call(self):
+		# The script task calls this by name. Renaming or removing it breaks the step with
+		# nothing on the diagram to show why.
+		self.assertTrue(
+			callable(
+				frappe.get_attr(
+					"one_fm.visa_management.doctype.visa_request.visa_request.run_document_ocr"
+				)
+			)
 		)
 
 	def test_every_state_the_dialog_still_handles_knows_where_to_store_the_reason(self):

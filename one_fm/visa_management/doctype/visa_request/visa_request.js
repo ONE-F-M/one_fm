@@ -75,28 +75,20 @@ function show_reference_validation(frm, field, title, message) {
 function set_rejection_remarks(frm) {
 	try {
 		const state = frm.doc.workflow_state;
-		// WI-002106: the GRD Operator rejection reason is now required by the Processa
-		// map - Activity_0sa0xb3, Server Script "Require Rejection Reason" - which
-		// blocks the task instead of prompting in a dialog.
+		// WI-002106: the GRD Operator rejection reason (Activity_0sa0xb3) and the PAM one
+		// (Activity_1pgghs6, AC 3) are now required by the Processa map, which blocks the
+		// task instead of prompting in a dialog. Both reasons are typed on the form -
+		// pam_rejection_remark is the dropdown AC 3 asks for, with pam_rejection_remarks
+		// alongside it for the free text.
 		//
-		// The other three states still prompt here:
-		//
-		//   Pending GRD Manager Approval  no script yet (Activity_0nxcbzb)
-		//   Pending By MOI                no script yet (Activity_0dtjaug), AC 6
-		//   Pending By PAM                AC 3 wants the reason on a dropdown with the
-		//                                 remarks kept separately, and that field does
-		//                                 not exist yet
-		//
-		// The manager and MOI shapes are not merely unscripted, they are mis-bound: both
-		// carry the inline text "Require Rejection Reason", and the compiler reads that
-		// text as a Server Script name when no serverScript attribute is set. So they
-		// currently resolve to the OPERATOR script and would demand
-		// operator_rejection_remark on a manager or MOI rejection. Removing these two
-		// branches before each shape has its own name and an explicit attribute would
-		// swap a working dialog for a check on the wrong field.
+		// The manager and MOI states still prompt here. Each has its own script on the
+		// map now, so both branches can follow the same way - but that is the next
+		// change, not this one: whoever makes it should check the shape carries an
+		// explicit serverScript attribute first, and that the field it reads is not
+		// read-only (see the operator field in the doctype JSON, which this work item
+		// had to make writable for exactly that reason).
 		const handledStates = [
 			'Pending GRD Manager Approval',
-			'Pending By PAM',
 			'Pending By MOI'
 		];
 
@@ -113,36 +105,17 @@ function set_rejection_remarks(frm) {
 // Where a rejection reason is stored, per the state it was rejected from. Also decides
 // which field reasons_for_state() reads its options off.
 const REJECTION_REMARK_FIELD_BY_STATE = {
-	// The operator entry went with its state in WI-002106 - unreachable once the dialog
-	// stopped handling it, and the reason is now written on the form instead.
+	// The operator and PAM entries went with their states in WI-002106 - unreachable once
+	// the dialog stopped handling them, and both reasons are written on the form instead.
 	'Pending GRD Manager Approval': 'grd_manager_remark',
-	'Pending By PAM': 'pam_rejection_remark',
 	'Pending By MOI': 'moi_rejection_remark'
 };
 
-// Predefined rejection reasons per workflow state (WI-001693). Only PAM has a hardcoded
-// list; MOI reads its options off moi_rejection_remark via reasons_for_state(), and the
-// manager state keeps free text.
-//
-// AC 3 will move this list onto the field itself as a Select, the way
-// moi_rejection_remark already was - which is what reasons_for_state() below prefers,
-// and what stops the options here drifting from what the field accepts. That needs the
-// process owner to confirm the field split and the authoritative list first.
-const REJECTION_REASONS_BY_STATE = {
-	'Pending By PAM': [
-		'Passport Validity is Less than 18 Months',
-		"Worker's age is below the legal minimum",
-		"The worker's gender does not match the profession",
-		"The occupation requires amendment to specify the worker's specialization",
-		'An active file exists for this worker',
-		'Worker is in Black List'
-	]
-};
-
-// The reasons to offer for a state: the target field's own options when it is a
-// Select, otherwise the hardcoded list above. Offering anything else would write a
-// value the field rejects on save. Kept field-driven-first precisely because AC 3 is
-// going to turn pam_rejection_remark into a Select.
+// The reasons to offer for a state: the target field's own options. WI-002106 removed the
+// hardcoded PAM list from here - AC 3 put it on pam_rejection_remark as a Select, the way
+// moi_rejection_remark already was, so the field is the one source of truth for what is
+// offered and the two cannot drift. Undefined for a free-text field, which is what the
+// manager state wants.
 function reasons_for_state(frm, state) {
 	const fieldname = REJECTION_REMARK_FIELD_BY_STATE[state];
 	const df = fieldname && frappe.meta.get_docfield('Visa Request', fieldname, frm.doc.name);
@@ -151,13 +124,11 @@ function reasons_for_state(frm, state) {
 		const options = (df.options || '').split('\n').filter(o => o);
 		if (options.length) return options;
 	}
-
-	return REJECTION_REASONS_BY_STATE[state];
 }
 
 function get_rejection_remarks(frm, resolve, reject) {
 	frappe.dom.unfreeze();
-	// PAM is the only state that still reaches here, and it offers a predefined list.
+	// MOI offers its own Select options; the manager state takes free text.
 	const state_reasons = reasons_for_state(frm, frm.doc.workflow_state);
 	const reason_field = state_reasons
 		? {
@@ -233,9 +204,10 @@ function add_reapply_button(frm) {
 }
 
 
-// WI-001977: OCR runs in the background after a Visa Copy or Payment Receipt is
-// attached, so the extracted values arrive after the save has already returned. Without
-// this the operator would be looking at a stale form and would key them in by hand.
+// WI-001977: the extracted values are written straight to the database, so the form the
+// operator is looking at does not have them. WI-002106 moved the reading into the map -
+// it now happens during the Reject/Submit action rather than on a save - but the push is
+// still what tells the operator which fields were read and that they are worth checking.
 frappe.ui.form.on("Visa Request", {
 	onload: function(frm) {
 		if (frm.__ocr_listener) return;
