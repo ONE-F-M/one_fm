@@ -178,6 +178,11 @@ function get_rejection_remarks(frm, resolve, reject) {
 // WI-001976: PAM rejections for the designation or the worker's gender are worth another
 // attempt with the application corrected - a black-listed worker or an active file would
 // be refused again for the same cause, so the button is not offered there.
+//
+// WI-002152: the click sends the "Reapply for Visa" message instead of creating anything.
+// The map's event subprocess catches it and its own step raises the new version, so the
+// button no longer holds a second opinion about what a reapplication is. request_reapply()
+// shares can_reapply() with this check, so the button cannot offer what it would refuse.
 function add_reapply_button(frm) {
 	if (frm.is_new()) return;
 	if (frm.doc.workflow_state !== PAM_REJECTED_STATE) return;
@@ -188,12 +193,12 @@ function add_reapply_button(frm) {
 			__('Raise a new Visa Request from {0}? The rejected one is kept as history.', [frm.doc.name]),
 			() => {
 				frappe.call({
-					method: 'one_fm.visa_management.doctype.visa_request.visa_request.reapply_visa_request',
+					method: 'one_fm.visa_management.doctype.visa_request.visa_request.request_reapply',
 					args: { name: frm.doc.name },
 					freeze: true,
 					freeze_message: __('Reapplying...'),
 					callback: (r) => {
-						if (!r.message) return;
+						if (!r.message || !r.message.name) return;
 						frappe.show_alert({ message: __('Created {0}', [r.message.name]), indicator: 'green' });
 						frappe.set_route('Form', 'Visa Request', r.message.name);
 					}

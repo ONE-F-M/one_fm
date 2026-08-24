@@ -17,6 +17,17 @@ from frappe.model.naming import append_number_if_name_exists
 # The strings are the ones the Reject dialog offers (WI-001693) and writes into
 # pam_rejection_remark; the work item names them "Designation" and "Gender".
 PAM_REJECTED_STATE = "Rejected By PAM"
+
+# WI-002152: the BPMN message the Reapply Visa button sends, caught by the event
+# subprocess Activity_0rmnc4c on the Visa map.
+#
+# It is the *name of the start event*, not a <bpmn:message> declaration: Event_1hlw0sb
+# carries a <bpmn:messageEventDefinition> with no messageRef, and SpiffWorkflow's parser
+# falls back to the parent event's name attribute in that case
+# (bpmn/parser/event_parsers.py::parse_message_event). Correlation is by name and nothing
+# else, so renaming that shape on the canvas silently stops the button working.
+REAPPLY_MESSAGE = "Reapply for Visa"
+
 REAPPLY_REASONS = (
 	"The occupation requires amendment to specify the worker's specialization",
 	"The worker's gender does not match the profession",
@@ -192,6 +203,20 @@ class VisaRequest(Document):
 # Server Script "Visa Details Are Mandatory".
 
 
+def existing_reapplication(name: str) -> str | None:
+	"""The reapplication already raised from this request, if any (WI-002152).
+
+	Once the reapplying went through a message, delivery stopped being a single click:
+	the same message can arrive twice - a double click, a redelivery - and each arrival
+	runs the create step again. This is what makes the second one a no-op instead of a
+	duplicate visa application.
+	"""
+	if not name:
+		return None
+
+	return frappe.db.get_value("Visa Request", {"reapplied_from": name}, "name")
+
+
 def can_reapply(doc) -> bool:
 	"""Is this request one the GRD Operator may raise a fresh attempt for (WI-001976)?
 
@@ -201,7 +226,45 @@ def can_reapply(doc) -> bool:
 	return (
 		doc.get("workflow_state") == PAM_REJECTED_STATE
 		and doc.get("pam_rejection_remark") in REAPPLY_REASONS
+		and not existing_reapplication(doc.get("name"))
 	)
+
+
+@frappe.whitelist(methods=["POST"])
+def request_reapply(name: str) -> dict:
+	"""Ask the process to raise a fresh attempt at this Visa Request (WI-002152).
+
+	Sends the "Reapply for Visa" message rather than creating anything: the map's event
+	subprocess catches it and its own step - Activity_0s8jngv, Server Script "Create new
+	visa request version" - does the raising. So the decision of what a reapplication is
+	lives on the diagram, which is the point of the work item.
+
+	# ponytail: falls back to raising it directly while the Visa map is undeployed
+	# (is_active=0), because there is then no instance to send a message to and the button
+	# would fail for every user. Delete the fallback once the map is live.
+	"""
+	frappe.get_doc("Visa Request", name).check_permission("read")
+
+	instance = frappe.db.get_value(
+		"BPMN Process Instance",
+		{"context_doctype": "Visa Request", "context_docname": name, "status": "Active"},
+		"name",
+	)
+	if not instance:
+		return reapply_visa_request(name)
+
+	from one_bpmn.api.instance_api import send_message
+
+	send_message(
+		message_name=REAPPLY_MESSAGE,
+		context_doctype="Visa Request",
+		context_docname=name,
+		instance_name=instance,
+	)
+
+	# Read back rather than returned from the script task: what the step put on the
+	# instance's task data is not something a whitelisted method can reach.
+	return {"name": existing_reapplication(name)}
 
 
 @frappe.whitelist(methods=["POST"])

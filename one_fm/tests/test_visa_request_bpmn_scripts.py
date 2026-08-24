@@ -218,6 +218,40 @@ result["ocr_fields_filled"] = sorted(extracted)
 result["ocr_read_anything"] = bool(extracted)
 '''
 
+# WI-002152 / WI-002106 AC 4 — the step the "Reapply for Visa" message runs.
+#
+# It sits in the event subprocess Activity_0rmnc4c, whose start event Event_1hlw0sb is a
+# message start with no messageRef. SpiffWorkflow falls back to the start event's own name
+# for the message name in that case, so the message is "Reapply for Visa" and correlation
+# is by that string alone - renaming the shape stops the button working, silently.
+#
+# The raising itself stays in reapply_visa_request(): the -1 naming, the fields that must
+# not carry over, and the permission checks are all already there and already tested. A
+# copy in here is a second opinion about what a reapplication is, which is exactly what
+# this work item is removing.
+REAPPLY_SCRIPT = '''# WI-002152: the "Reapply for Visa" message the Reapply Visa button sends arrives here,
+# and this raises the fresh Visa Request - named <original>-1, carrying the application
+# without the outcome of the attempt that failed.
+#
+# Checked before raising rather than after: a message can arrive more than once (a double
+# click, a redelivery), and each arrival runs this step again. reapply_visa_request would
+# throw on the second, which fails the whole instance - so the repeat is reported as a
+# no-op instead.
+module = "one_fm.visa_management.doctype.visa_request.visa_request."
+
+already = frappe.get_attr(module + "existing_reapplication")(doc.name)
+
+if already:
+	result["reapplication"] = already
+	result["created"] = False
+else:
+	raised = frappe.get_attr(module + "reapply_visa_request")(doc.name)
+	result["reapplication"] = raised["name"]
+	result["created"] = True
+
+result["reapplied_from"] = doc.name
+'''
+
 # (script name, BPMN script task id, task label on the canvas, body)
 #
 # Each script is named after its own shape, and no two shapes share a name. That is not
@@ -285,6 +319,7 @@ PENDING_SCRIPTS = (
 		"Activity_0ljbcgg",
 		OCR_SCRIPT,
 	),
+	("Create new visa request version", "Activity_0s8jngv", REAPPLY_SCRIPT),
 )
 
 
@@ -678,6 +713,110 @@ class TestTheOcrScript(FrappeTestCase):
 			filled,
 			{"visa_reference_number", "visa_issue_date", "visa_expiry_date", "payment_date"},
 		)
+
+
+class TestTheReapplyScript(FrappeTestCase):
+	"""WI-002152: the step the message runs. What it must not do is hold its own opinion
+	of what a reapplication is - reapply_visa_request() owns that."""
+
+	SOURCE = "VR-08-2026-00002"
+	RAISED = "VR-08-2026-00002-1"
+
+	def run_with(self, already=None):
+		from unittest.mock import patch
+
+		from one_fm.visa_management.doctype.visa_request import visa_request as module
+
+		raised = []
+
+		def fake_reapply(name):
+			raised.append(name)
+			return {"name": self.RAISED}
+
+		with patch.object(module, "existing_reapplication", lambda name: already), patch.object(
+			module, "reapply_visa_request", fake_reapply
+		):
+			result = run_script(REAPPLY_SCRIPT, name=self.SOURCE)
+
+		return result, raised
+
+	def test_it_raises_the_reapplication_and_reports_it(self):
+		result, raised = self.run_with()
+
+		self.assertEqual(raised, [self.SOURCE])
+		self.assertTrue(result["created"])
+		self.assertEqual(result["reapplication"], self.RAISED)
+		self.assertEqual(result["reapplied_from"], self.SOURCE)
+
+	def test_a_second_delivery_raises_nothing(self):
+		# A double click, or a redelivery. The first arrival already raised it, and a
+		# second would be a duplicate visa application - not an error, just nothing to do.
+		result, raised = self.run_with(already=self.RAISED)
+
+		self.assertEqual(raised, [])
+		self.assertFalse(result["created"])
+		self.assertEqual(result["reapplication"], self.RAISED)
+
+	def test_it_reports_the_reapplication_either_way(self):
+		# The gateway ahead of it, and the button reading the value back, both need a name
+		# whether this delivery raised it or found it.
+		for already in (None, self.RAISED):
+			with self.subTest(already=already):
+				result, _raised = self.run_with(already=already)
+				self.assertEqual(result["reapplication"], self.RAISED)
+
+
+class TestTheReapplyMessageWiring(FrappeTestCase):
+	"""The name is the whole correlation, so it is worth a test of its own."""
+
+	def test_the_message_name_is_the_start_event_s_own_name(self):
+		# Event_1hlw0sb carries a messageEventDefinition with no messageRef, so
+		# SpiffWorkflow takes the message name from the start event's name attribute.
+		# REAPPLY_MESSAGE has to be that string exactly or the message is never caught.
+		from one_fm.visa_management.doctype.visa_request.visa_request import REAPPLY_MESSAGE
+
+		self.assertEqual(REAPPLY_MESSAGE, "Reapply for Visa")
+
+	def test_the_button_and_the_step_share_one_gate(self):
+		# can_reapply() is what the button, request_reapply() and the step all consult.
+		# Two gates is how the button starts offering what the server refuses.
+		import inspect
+
+		from one_fm.visa_management.doctype.visa_request import visa_request as module
+
+		self.assertIn("can_reapply", inspect.getsource(module.reapply_visa_request))
+		self.assertIn("existing_reapplication", inspect.getsource(module.can_reapply))
+
+
+class TestTheOnceOnlyGate(FrappeTestCase):
+	"""WI-002152: delivery is no longer a single click, so raising has to be idempotent."""
+
+	def test_a_request_with_a_reapplication_can_not_be_reapplied_again(self):
+		from unittest.mock import patch
+
+		from one_fm.visa_management.doctype.visa_request import visa_request as module
+
+		doc = frappe._dict(
+			name="VR-08-2026-00002",
+			workflow_state=module.PAM_REJECTED_STATE,
+			pam_rejection_remark=module.REAPPLY_REASONS[0],
+		)
+
+		with patch.object(module, "existing_reapplication", lambda name: None):
+			self.assertTrue(module.can_reapply(doc))
+
+		with patch.object(module, "existing_reapplication", lambda name: "VR-08-2026-00002-1"):
+			self.assertFalse(module.can_reapply(doc))
+
+	def test_an_unsaved_request_is_not_matched_against_every_null(self):
+		# A {"reapplied_from": None} filter is "IS NULL", which would match every request
+		# that was never a reapplication - i.e. almost all of them.
+		from one_fm.visa_management.doctype.visa_request.visa_request import (
+			existing_reapplication,
+		)
+
+		self.assertIsNone(existing_reapplication(None))
+		self.assertIsNone(existing_reapplication(""))
 
 
 class TestTheMoiReasonListIsNotDuplicated(FrappeTestCase):
