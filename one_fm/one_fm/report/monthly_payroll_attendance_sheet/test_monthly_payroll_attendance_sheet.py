@@ -5,9 +5,6 @@
 The report used to take Month + Year and key every cell by day-of-month. It now
 takes a From/To range, which means two days in different months can share a day
 number - so cells are keyed by ISO date instead.
-
-WI-002153 renamed it off "Operations", opened it to every employee, and replaced the
-"Other" summary column with named ones.
 """
 
 import frappe
@@ -186,7 +183,7 @@ class TestTheRunIsDeferred(FrappeTestCase):
 
 
 class TestTheReportIsRenamed(FrappeTestCase):
-	"""WI-002153 AC1: the sheet is not Operations-only any more, so the name went with it."""
+	"""AC1: the sheet is not Operations-only any more, so the name went with it."""
 
 	def test_the_report_answers_to_its_new_name(self):
 		self.assertTrue(frappe.db.exists("Report", REPORT))
@@ -196,25 +193,21 @@ class TestTheReportIsRenamed(FrappeTestCase):
 		self.assertFalse(frappe.db.exists("Report", "Operations Monthly Attendance Sheet"))
 
 	def test_the_print_format_followed_the_rename(self):
-		"""It links the report by name, so a sync beside the old doc rather than a rename
-		would leave it printing a report nobody maintains."""
+		"""It links the report by name."""
 		self.assertEqual(
 			frappe.db.count("Print Format", {"report": "Operations Monthly Attendance Sheet"}), 0
 		)
 
 	def test_the_already_generated_prepared_reports_do_not_follow(self):
-		"""Deliberate, and it is the field type that guarantees it: each of the 175 was
-		computed under the old rules - an "Other" column, a shift-working-only employee
-		set, Day Off OT narrowing rather than consolidating - so serving one under the new
-		name would hand a payroll operator stale figures. Unmatched, the report
-		regenerates instead, and Frappe's expiry clears them."""
+		"""Deliberate: each was computed under the old rules, so serving one under the new
+		name would hand a payroll operator stale figures. The field type guarantees it."""
 		self.assertEqual(
 			frappe.get_meta("Prepared Report").get_field("report_name").fieldtype, "Data"
 		)
 
 
 class TestTheEmployeeScope(FrappeTestCase):
-	"""WI-002153 AC2: every employee, not only the shift-working ones."""
+	"""AC2: every employee, not only the shift-working ones."""
 
 	def test_non_shift_employees_are_in_scope(self):
 		non_shift = frappe.db.count("Employee", {"shift_working": 0})
@@ -228,8 +221,7 @@ class TestTheEmployeeScope(FrappeTestCase):
 		)
 
 	def test_a_service_provider_is_in_scope(self):
-		"""They are all shift_working = 0 on this instance, so they were the group the
-		old gate excluded outright."""
+		"""All shift_working = 0 here, so the old gate excluded them outright."""
 		if not frappe.db.count("Employee", {"employment_type": "Service Provider"}):
 			self.skipTest("no service providers on this instance")
 
@@ -237,8 +229,7 @@ class TestTheEmployeeScope(FrappeTestCase):
 		self.assertTrue(employees)
 
 	def test_no_employee_status_is_excluded(self):
-		"""Left, Vacation, Court Case, Absconding and Not Returned from Leave all have to
-		reach a payroll run."""
+		"""Left, Vacation, Court Case, Absconding and Not Returned from Leave included."""
 		statuses = {e.employee_status for e in get_employee_details(_filters()).values()}
 		on_site = {
 			d.status for d in frappe.get_all("Employee", fields=["distinct status as status"])
@@ -261,7 +252,7 @@ class TestTheEmployeeScope(FrappeTestCase):
 
 
 class TestTheLegend(FrappeTestCase):
-	"""WI-002153 AC6 asks for a legend indicator beside each new column."""
+	"""AC6 asks for a legend indicator beside each new column."""
 
 	def test_each_new_status_has_an_indicator(self):
 		message = get_message(_filters())
@@ -385,11 +376,7 @@ class TestRosterTypeRules(FrappeTestCase):
 		self.assertIn('`day_off_ot`<>1', sql)
 
 	def test_rule_2_basic_with_day_off_ot_consolidates_both(self):
-		"""WI-002153 AC4: Basic and Basic + Day Off OT together, in one view.
-
-		It used to narrow to the flagged rows alone, which showed the day-off overtime
-		instead of alongside the basic shifts.
-		"""
+		"""Basic and Basic + Day Off OT together, in one view (AC4)."""
 		sql = _roster_sql(roster_type="Basic", day_off_ot=1)
 		self.assertIn('`roster_type`=\'Basic\'', sql)
 		self.assertNotIn("day_off_ot", sql)
@@ -418,8 +405,7 @@ class TestRosterTypeRules(FrappeTestCase):
 		self.assertNotIn("roster_type", _roster_sql(roster_type="", day_off_ot=0))
 
 	def test_ticking_the_box_only_ever_widens_what_basic_returns(self):
-		"""The unchecked run is a subset of the checked one, so the box adds rows rather
-		than swapping them for a different set (WI-002153 AC4)."""
+		"""The unchecked run is a subset of the checked one."""
 		self.assertIn("`day_off_ot`<>1", _roster_sql(roster_type="Basic", day_off_ot=0))
 		self.assertNotIn("day_off_ot", _roster_sql(roster_type="Basic", day_off_ot=1))
 
@@ -579,8 +565,8 @@ class TestRosterTypeAndDayOffOTAreCarried(FrappeTestCase):
 			)
 
 	def test_the_day_off_ot_box_only_adds_to_what_basic_returns(self):
-		"""WI-002153 AC4: consolidated, not narrowed. Compared per employee, since a row
-		spanning both flags reports neither."""
+		"""Consolidated, not narrowed. Per employee, since a row spanning both flags
+		reports neither."""
 		plain = {r["employee"] for r in execute(_filters())[1] or []}
 		if not plain:
 			self.skipTest("no Basic attendance in the test range on this instance")
@@ -613,10 +599,8 @@ class TestInPageFilters(FrappeTestCase):
 	def test_the_filters_that_change_the_query_still_reach_the_server(self):
 		# Dates change the range, Include Future Attendance changes the source, and
 		# Generate Based On changes what the cells hold - none can be done in page.
-		#
-		# WI-002153 AC4 put Roster Type and Day Off OT back here: ticking the box now asks
-		# for rows the last run excluded, and narrowing what is already on screen cannot
-		# produce them.
+		# Roster Type and Day Off OT too: ticking the box asks for rows the last run
+		# excluded, and narrowing what is on screen cannot produce them.
 		for fieldname in (
 			"from_date", "to_date", "include_future_attendance", "generate_based_on",
 			"roster_type", "day_off_ot",
@@ -660,17 +644,14 @@ class TestTheSummaryBlock(FrappeTestCase):
 			self.assertNotEqual(summary_counter(status), "working_days")
 
 	def test_work_from_home_is_counted_as_present_and_has_no_column(self):
-		"""WI-002153 AC7."""
+		"""AC7."""
 		self.assertEqual(summary_counter("Work From Home"), "working_days")
 		fieldnames = {c["fieldname"] for c in get_columns(_filters(), [])}
 		self.assertNotIn("work_from_home_days", fieldnames)
-		# Nor a legend entry of its own, which would read "Work From Home - P" beside
-		# "Present - P".
 		self.assertNotIn("Work From Home", get_message(_filters()))
 
 	def test_a_scheduled_day_on_duty_counts_as_present(self):
-		"""Client Event and On-the-job Training raise attendance the same way Working
-		does, and with "Other" gone they would otherwise fall out of the summary."""
+		"""Client Event and On-the-job Training raise attendance the way Working does."""
 		for status in ("Client Event", "On-the-job Training"):
 			with self.subTest(status=status):
 				self.assertEqual(summary_counter(status), "working_days")
@@ -680,7 +661,7 @@ class TestTheSummaryBlock(FrappeTestCase):
 		self.assertEqual(summary_counter("Client Day Off"), "off_days")
 
 	def test_a_holiday_is_counted_with_the_days_off(self):
-		"""WI-002153 AC6: Holiday joins Days Off rather than getting a column."""
+		"""AC6: Holiday joins Days Off rather than getting a column."""
 		self.assertEqual(summary_counter("Holiday"), "off_days")
 		self.assertNotIn("holiday_days", {c["fieldname"] for c in get_columns(_filters(), [])})
 
@@ -692,8 +673,7 @@ class TestTheSummaryBlock(FrappeTestCase):
 		)
 
 	def test_every_other_leave_type_is_counted_under_other_leaves(self):
-		"""WI-002153 AC9 names six; all six are Leave Types on this site, and they are
-		every one bar the three that have a column of their own."""
+		"""AC9 names six - every Leave Type here bar the three with their own column."""
 		for leave_type in (
 			"Business Trip",
 			"Bereavement Leave",
@@ -705,14 +685,12 @@ class TestTheSummaryBlock(FrappeTestCase):
 			with self.subTest(leave_type=leave_type):
 				self.assertEqual(summary_counter("On Leave", leave_type), OTHER_LEAVES)
 
-		# Written as a fallback rather than as that list, so a type added later - or a
-		# record with none set at all - is still counted somewhere.
+		# A fallback, so a type added later - or none set at all - is still counted.
 		self.assertEqual(summary_counter("On Leave", "Compensatory Off"), OTHER_LEAVES)
 		self.assertEqual(summary_counter("On Leave", None), OTHER_LEAVES)
 
 	def test_ac9_lists_every_leave_type_without_a_column_of_its_own(self):
-		"""If a Leave Type is added to this site it lands in Other Leaves, but the AC's
-		list would then be incomplete - which is worth knowing about."""
+		"""A new Leave Type lands in Other Leaves, but makes the AC's list incomplete."""
 		named = set(("Annual Leave", "Sick Leave", "Leave Without Pay"))
 		ac9 = {
 			"Business Trip", "Bereavement Leave", "Maternity Leave", "Privilege Leave",
@@ -722,29 +700,28 @@ class TestTheSummaryBlock(FrappeTestCase):
 		self.assertEqual(on_site - named - ac9, {"Casual Leave", "Compensatory Off"})
 
 	def test_the_other_column_is_gone(self):
-		"""WI-002153 AC5."""
+		"""AC5."""
 		self.assertNotIn("other_days", SUMMARY_COUNTERS)
 		labels = {c["label"] for c in get_columns(_filters(), [])}
 		self.assertNotIn("Other", labels)
 		self.assertIn("Other Leaves", labels)
 
 	def test_each_broken_out_status_has_its_own_counter(self):
-		"""WI-002153 AC6: 288 days were On Hold in July 2026 and nothing named them."""
+		"""AC6: 288 days were On Hold in July 2026 and nothing named them."""
 		self.assertEqual(summary_counter("Fingerprint Appointment"), "fingerprint_days")
 		self.assertEqual(summary_counter("Client Interview"), "client_interview_days")
 		self.assertEqual(summary_counter("Medical Appointment"), "medical_appointment_days")
 		self.assertEqual(summary_counter("On Hold"), "on_hold_days")
 
 	def test_other_leaves_sits_immediately_right_of_leave_without_pay(self):
-		"""WI-002153 AC8 places it there."""
+		"""AC8 places it there."""
 		fieldnames = [c["fieldname"] for c in get_columns(_filters(), [])]
 		self.assertEqual(
 			fieldnames[fieldnames.index("leave_without_pay_days") + 1], OTHER_LEAVES
 		)
 
 	def test_a_scheduled_leave_lands_on_its_own_type(self):
-		"""Employee Schedule spells a leave as the availability itself, so it used to be
-		counted as Other even where a column for it existed."""
+		"""Employee Schedule spells a leave as the availability itself."""
 		self.assertEqual(summary_counter("Annual Leave"), "annual_leave_days")
 		self.assertEqual(summary_counter("Sick Leave"), "sick_leave_days")
 		self.assertEqual(summary_counter("Emergency Leave"), OTHER_LEAVES)
@@ -759,8 +736,7 @@ class TestTheSummaryBlock(FrappeTestCase):
 		schedule = frappe.get_meta("Employee Schedule").get_field(
 			"employee_availability"
 		).options.split("\n")
-		# Fingerprint / Client Interview / Medical Appointment are set on Attendance in
-		# code without being in its Select options, so they are named here too.
+		# Set on Attendance in code without being in its Select options.
 		extra = ["Working", "Fingerprint Appointment", "Client Interview", "Medical Appointment", None]
 		for status in statuses + schedule + extra:
 			self.assertIn(summary_counter(status), SUMMARY_COUNTERS, msg=status)
