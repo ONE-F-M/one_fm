@@ -6,6 +6,25 @@ import frappe
 # The state names in the rules are this site's. The BA export writes the MOI state
 # "Pending by MOI" where the workflow here has "Pending By MOI", and a depends_on naming a
 # state that does not exist hides the section at exactly the step that fills it in.
+# WI-002069 (second pass): the BA site also locks each of these once the request has moved
+# past the step that fills it in. None of them came across the first time - the diff that
+# drove that pass compared a hand-picked list of attributes and read_only_depends_on was not
+# on it.
+READ_ONLY_FIELDS = (
+	"custom_pam_file",
+	"pam_reference_number",
+	"custom_visa_application_date",
+	"custom_pam_designation_list",
+	"custom_work_permit_number",
+	"moi_reference_number",
+	"visa_reference_number",
+	"visa_issue_date",
+	"visa_expiry_date",
+	"visa_document",
+	"payment_receipt",
+	"payment_date",
+)
+
 GATED_FIELDS = (
 	"pam_details_section",
 	"custom_pam_file",
@@ -41,16 +60,29 @@ def verify():
 		if not field.depends_on:
 			frappe.throw(f"WI-002069: {fieldname} did not get its visibility rule.")
 
-	# Every state a rule names has to be one the workflow actually has.
-	for fieldname in GATED_FIELDS:
+	for fieldname in READ_ONLY_FIELDS:
+		field = meta.get_field(fieldname)
+		if not field:
+			frappe.throw(f"WI-002069: Visa Request has no {fieldname} field.")
+		if not field.read_only_depends_on:
+			frappe.throw(
+				f"WI-002069: {fieldname} did not get its read-only rule, so it stays editable "
+				"after the step that fills it in."
+			)
+
+	# Every state a rule names has to be one the workflow actually has - for both kinds of
+	# rule, because a condition naming a state that does not exist simply never fires.
+	for fieldname, attribute in (
+		[(f, "depends_on") for f in GATED_FIELDS] + [(f, "read_only_depends_on") for f in READ_ONLY_FIELDS]
+	):
 		named = {
 			part.split('"')[1]
-			for part in (meta.get_field(fieldname).depends_on or "").split("||")
+			for part in (meta.get_field(fieldname).get(attribute) or "").split("||")
 			if '"' in part
 		}
 		unknown = sorted(named - states)
 		if unknown:
 			frappe.throw(
-				f"WI-002069: {fieldname} names {unknown}, which the Visa Request workflow does "
-				"not have - the section would stay hidden in those states."
+				f"WI-002069: {fieldname}.{attribute} names {unknown}, which the Visa Request "
+				"workflow does not have - the rule would never fire."
 			)
