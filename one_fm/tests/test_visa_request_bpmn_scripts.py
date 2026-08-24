@@ -423,6 +423,61 @@ class TestTheSiteMatchesTheReviewedBodies(FrappeTestCase):
 				self.assertFalse(frappe.db.get_value("Server Script", name, "disabled"), msg=name)
 
 
+class TestTheDiagramBindsEachScriptToItsOwnShape(FrappeTestCase):
+	"""The other half of the drift guard. TestTheSiteMatchesTheReviewedBodies proves the
+	script bodies are the reviewed ones; this proves each one is attached to the shape it
+	was written for.
+
+	Worth its own test because picking the wrong script in the editor's dropdown is silent:
+	an exclusive gateway routes to the shape, the shape runs somebody else's rule, and the
+	rule that shape exists for is simply never applied. It happened - Activity_1pgghs6
+	("PAM Rejection Reason") was bound to the OCR script, so a PAM rejection ran an
+	attachment read and never asked for a reason.
+	"""
+
+	PROCESS_NAME = "Visa"
+
+	def bindings(self) -> dict:
+		"""{script task id: bound Server Script name} from the Visa model on this site."""
+		import xml.etree.ElementTree as ET
+
+		model = frappe.db.get_value(
+			"BPMN Process Model", {"process_name": self.PROCESS_NAME}, ["name", "bpmn_xml"], as_dict=True
+		)
+		if not model or not model.bpmn_xml:
+			self.skipTest(f"No {self.PROCESS_NAME} BPMN Process Model on this site")
+
+		bpmn = "{http://www.omg.org/spec/BPMN/20100524/MODEL}"
+		spiff = "{http://spiffworkflow.org/bpmn/schema/1.0/core}"
+		root = ET.fromstring(model.bpmn_xml.strip().encode("utf-8"))
+
+		# The attribute only. The compiler does fall back to the inline <bpmn:script> text
+		# when the attribute is absent, but that fallback is what mis-bound four shapes to
+		# one script before - so an explicit attribute is the thing being asserted here.
+		return {
+			elem.get("id"): elem.get(spiff + "serverScript", "").strip()
+			for elem in root.iter(bpmn + "scriptTask")
+		}
+
+	def test_every_script_is_bound_to_the_task_it_was_written_for(self):
+		bound = self.bindings()
+		expected = [(name, task_id) for name, task_id, _label, _body in SCRIPTS] + [
+			(name, task_id) for name, task_id, _body in PENDING_SCRIPTS
+		]
+
+		for name, task_id in expected:
+			with self.subTest(script=name, task=task_id):
+				self.assertIn(task_id, bound, msg=f"{task_id} is not a script task on the diagram")
+				self.assertEqual(bound[task_id], name)
+
+	def test_no_script_task_on_the_diagram_is_left_unbound(self):
+		# An unbound script task is not a compile error - it silently does nothing, so the
+		# rule looks implemented on the canvas and is not applied.
+		unbound = [task_id for task_id, script in self.bindings().items() if not script]
+
+		self.assertEqual(unbound, [])
+
+
 COMPLETE_VISA_DETAILS = {
 	"visa_reference_number": "VISA-9001",
 	"payment_receipt": "/private/files/receipt.pdf",
