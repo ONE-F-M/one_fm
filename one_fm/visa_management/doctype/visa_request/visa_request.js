@@ -35,28 +35,17 @@ frappe.ui.form.on("Visa Request", {
 	}
 });
 
+// WI-002106: the MOI Reference Number check (AC 5) and the visa reference / payment
+// receipt / visa document check (AC 7) were removed from here. Both are now enforced by
+// the Processa map, which blocks the task rather than the button.
+//
+// The PAM Reference Number check stays until the process owner settles which stage it
+// belongs to - see the note in validate_workflow_transitions().
 function validate_references(frm, action) {
 	// PAM -> MOI
 	if (action === 'Approve' && frm.doc.workflow_state === 'Pending By PAM') {
 		if (frm.doc.pam_reference_number) return;
 		return show_reference_validation(frm, 'pam_reference_number', __('PAM Reference Missing'), __('Please add PAM Reference Number before approving to MOI.'));
-	}
-
-	// MOI -> Pending Visa Issuance
-	if (action === 'Approve' && frm.doc.workflow_state === 'Pending By MOI') {
-		if (frm.doc.moi_reference_number) return;
-		return show_reference_validation(frm, 'moi_reference_number', __('MOI Reference Missing'), __('Please add MOI Reference Number before approving to Pending Visa Issuance.'));
-	}
-
-	// Pending Visa Issuance -> Submit to Recruiter: require visa_reference_number, payment_receipt and visa_document
-	if (action === 'Submit to Recruiter' && frm.doc.workflow_state === 'Pending Visa Issuance') {
-		const missing = [];
-		if (!frm.doc.visa_reference_number) missing.push({field: 'visa_reference_number', label: __('Visa Reference Number')});
-		if (!frm.doc.payment_receipt) missing.push({field: 'payment_receipt', label: __('Payment Receipt')});
-		if (!frm.doc.visa_document) missing.push({field: 'visa_document', label: __('Visa Document')});
-		if (missing.length) {
-			return show_reference_validation(frm, missing[0].field, __('Missing Required Fields'), __('Please add {0} before submitting to recruiter.', [missing.map(m => m.label).join(', ')]));
-		}
 	}
 }
 
@@ -86,10 +75,20 @@ function show_reference_validation(frm, field, title, message) {
 function set_rejection_remarks(frm) {
 	try {
 		const state = frm.doc.workflow_state;
+		// WI-002106: the GRD Operator rejection reason (Activity_0sa0xb3) and the PAM one
+		// (Activity_1pgghs6, AC 3) are now required by the Processa map, which blocks the
+		// task instead of prompting in a dialog. Both reasons are typed on the form -
+		// pam_rejection_remark is the dropdown AC 3 asks for, with pam_rejection_remarks
+		// alongside it for the free text.
+		//
+		// The manager and MOI states still prompt here. Each has its own script on the
+		// map now, so both branches can follow the same way - but that is the next
+		// change, not this one: whoever makes it should check the shape carries an
+		// explicit serverScript attribute first, and that the field it reads is not
+		// read-only (see the operator field in the doctype JSON, which this work item
+		// had to make writable for exactly that reason).
 		const handledStates = [
-			'Pending by GRD Operator',
 			'Pending GRD Manager Approval',
-			'Pending By PAM',
 			'Pending By MOI'
 		];
 
@@ -106,31 +105,17 @@ function set_rejection_remarks(frm) {
 // Where a rejection reason is stored, per the state it was rejected from. Also decides
 // which field reasons_for_state() reads its options off.
 const REJECTION_REMARK_FIELD_BY_STATE = {
-	'Pending by GRD Operator': 'operator_rejection_remark',
+	// The operator and PAM entries went with their states in WI-002106 - unreachable once
+	// the dialog stopped handling them, and both reasons are written on the form instead.
 	'Pending GRD Manager Approval': 'grd_manager_remark',
-	'Pending By PAM': 'pam_rejection_remark',
 	'Pending By MOI': 'moi_rejection_remark'
 };
 
-// Predefined rejection reasons per workflow state (WI-001693). PAM and MOI reject for
-// different reasons, so each state offers its own list rather than a shared one.
-// MOI is absent on purpose: WI-001773 made moi_rejection_remark a Select, so its
-// reasons come from the field itself via reasons_for_state() rather than being
-// repeated here, where they would only drift from what the field accepts.
-const REJECTION_REASONS_BY_STATE = {
-	'Pending By PAM': [
-		'Passport Validity is Less than 18 Months',
-		"Worker's age is below the legal minimum",
-		"The worker's gender does not match the profession",
-		"The occupation requires amendment to specify the worker's specialization",
-		'An active file exists for this worker',
-		'Worker is in Black List'
-	]
-};
-
-// The reasons to offer for a state: the target field's own options when it is a
-// Select, otherwise the hardcoded list above. Offering anything else would write a
-// value the field rejects on save.
+// The reasons to offer for a state: the target field's own options. WI-002106 removed the
+// hardcoded PAM list from here - AC 3 put it on pam_rejection_remark as a Select, the way
+// moi_rejection_remark already was, so the field is the one source of truth for what is
+// offered and the two cannot drift. Undefined for a free-text field, which is what the
+// manager state wants.
 function reasons_for_state(frm, state) {
 	const fieldname = REJECTION_REMARK_FIELD_BY_STATE[state];
 	const df = fieldname && frappe.meta.get_docfield('Visa Request', fieldname, frm.doc.name);
@@ -139,14 +124,11 @@ function reasons_for_state(frm, state) {
 		const options = (df.options || '').split('\n').filter(o => o);
 		if (options.length) return options;
 	}
-
-	return REJECTION_REASONS_BY_STATE[state];
 }
 
 function get_rejection_remarks(frm, resolve, reject) {
 	frappe.dom.unfreeze();
-	// PAM & MOI require a predefined reason (Select), each from its own list; the other
-	// states keep free text.
+	// MOI offers its own Select options; the manager state takes free text.
 	const state_reasons = reasons_for_state(frm, frm.doc.workflow_state);
 	const reason_field = state_reasons
 		? {
@@ -196,6 +178,11 @@ function get_rejection_remarks(frm, resolve, reject) {
 // WI-001976: PAM rejections for the designation or the worker's gender are worth another
 // attempt with the application corrected - a black-listed worker or an active file would
 // be refused again for the same cause, so the button is not offered there.
+//
+// WI-002152: the click sends the "Reapply for Visa" message instead of creating anything.
+// The map's event subprocess catches it and its own step raises the new version, so the
+// button no longer holds a second opinion about what a reapplication is. request_reapply()
+// shares can_reapply() with this check, so the button cannot offer what it would refuse.
 function add_reapply_button(frm) {
 	if (frm.is_new()) return;
 	if (frm.doc.workflow_state !== PAM_REJECTED_STATE) return;
@@ -206,12 +193,12 @@ function add_reapply_button(frm) {
 			__('Raise a new Visa Request from {0}? The rejected one is kept as history.', [frm.doc.name]),
 			() => {
 				frappe.call({
-					method: 'one_fm.visa_management.doctype.visa_request.visa_request.reapply_visa_request',
+					method: 'one_fm.visa_management.doctype.visa_request.visa_request.request_reapply',
 					args: { name: frm.doc.name },
 					freeze: true,
 					freeze_message: __('Reapplying...'),
 					callback: (r) => {
-						if (!r.message) return;
+						if (!r.message || !r.message.name) return;
 						frappe.show_alert({ message: __('Created {0}', [r.message.name]), indicator: 'green' });
 						frappe.set_route('Form', 'Visa Request', r.message.name);
 					}
@@ -222,9 +209,10 @@ function add_reapply_button(frm) {
 }
 
 
-// WI-001977: OCR runs in the background after a Visa Copy or Payment Receipt is
-// attached, so the extracted values arrive after the save has already returned. Without
-// this the operator would be looking at a stale form and would key them in by hand.
+// WI-001977: the extracted values are written straight to the database, so the form the
+// operator is looking at does not have them. WI-002106 moved the reading into the map -
+// it now happens during the Reject/Submit action rather than on a save - but the push is
+// still what tells the operator which fields were read and that they are worth checking.
 frappe.ui.form.on("Visa Request", {
 	onload: function(frm) {
 		if (frm.__ocr_listener) return;
