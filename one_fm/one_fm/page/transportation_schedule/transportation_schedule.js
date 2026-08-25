@@ -343,7 +343,7 @@ function mountRoutePlannerApp(wrapper, data) {
                             type: 'merged',
                             tripId,
                             tripName: stops.find(s => s.tripName)?.tripName || null,
-                            direction: stops.some(s => s.direction === 'MIXED') ? 'MIXED' : firstItem.direction,
+                            direction: this.runDirection(stops),
                             start: firstItem.start,
                             end: lastItem.end,
                             headcount: totalHC,
@@ -771,7 +771,8 @@ function mountRoutePlannerApp(wrapper, data) {
                 }
 
                 // ── Seat capacity check (time-aware) ──
-                const peakLoad = this.peakLoadDuringCardWindows(card, vehicle.id);
+                const blockers = this.tripsDuringCardWindows(card, vehicle.id);
+                const peakLoad = blockers.reduce((sum, t) => sum + t.occupancy, 0);
 
                 if (peakLoad + card.headcount > this.passengerSeats(vehicle)) {
                     const shell = document.getElementById('rp-shell');
@@ -780,7 +781,7 @@ function mountRoutePlannerApp(wrapper, data) {
                         shell.style.backgroundColor = '#ffebee';
                         setTimeout(() => { shell.style.backgroundColor = ''; }, 400);
                     }
-                    frappe.throw(this.capacityMessage(card.headcount, vehicle));
+                    frappe.throw(this.capacityMessage(card.headcount, vehicle, blockers));
                     return;
                 }
 
@@ -853,6 +854,22 @@ function mountRoutePlannerApp(wrapper, data) {
                     } else {
                         // ── Multiple trips: let user pick which trip to join ──
                         const self = this;
+
+                        // Nearest run first. The list was built from swimItems order,
+                        // which is Route Plan Assignment row order, so a 14:15 run was
+                        // offered as the DEFAULT for a 16:00 card purely because its row
+                        // had been saved earlier — and accepting the default merged the
+                        // card into a run nowhere near it. Order by the gap to the card's
+                        // own window instead; runs that overlap it sort first.
+                        const gapToCard = (items) => {
+                            const s = Math.min(...items.map(i => new Date(i.start).getTime()));
+                            const e = Math.max(...items.map(i => new Date(i.end).getTime()));
+                            if (e < cardWindowStart) return cardWindowStart - e;
+                            if (s > cardWindowEnd) return s - cardWindowEnd;
+                            return 0;
+                        };
+                        tripKeys.sort((a, b) => gapToCard(tripMap[a]) - gapToCard(tripMap[b]));
+
                         const tripOptions = tripKeys.map((key, idx) => {
                             const items = tripMap[key];
                             const sites = items.map(i => {
@@ -891,7 +908,9 @@ function mountRoutePlannerApp(wrapper, data) {
                                 {
                                     fieldtype: 'Int', fieldname: 'transit_min',
                                     label: 'Transit Time (minutes)', default: 30, reqd: 1,
-                                    description: 'Only used when adding to an existing trip'
+                                    description: 'Used when the stop joins a run going the same way. '
+                                        + 'Joining a run going the other way is a merge, and the Merge '
+                                        + 'Trip window collects the per-leg times itself.'
                                 }
                             ],
                             primary_action_label: 'Add Stop',
@@ -1307,7 +1326,15 @@ function mountRoutePlannerApp(wrapper, data) {
                 // stop after it and can put the bus over its seats. The modal is where the
                 // operator sees all three before committing, instead of the card being
                 // silently re-timed on a default 30-minute transit.
-                if (!presetTransitMin && self._isMergeDrop(newCard, existingItems)) {
+                //
+                // This used to be skipped whenever a transit time arrived with the call,
+                // which is the path the "Add Stop to which trip?" picker takes. So a
+                // cross-direction merge made through the picker never opened the modal and
+                // never reached merge_trip_shipments: the run kept every stop on its
+                // original heading and no card recorded pre_merge_trip_direction. That is
+                // where the un-marked mixed runs on the live plan came from (WI-002160).
+                // A merge is a merge however the operator got here.
+                if (self._isMergeDrop(newCard, existingItems)) {
                     self._openMergeTripModal(newCard, existingItems, vehicleId);
                     return;
                 }
@@ -1315,7 +1342,8 @@ function mountRoutePlannerApp(wrapper, data) {
                 // ── Capacity check before chaining ──
                 const vehicle = this.planData.vehicles.find(v => v.id === vehicleId);
                 if (vehicle) {
-                    const currentLoad = this.peakLoadDuringCardWindows(newCard, vehicleId);
+                    const blockers = this.tripsDuringCardWindows(newCard, vehicleId);
+                    const currentLoad = blockers.reduce((sum, t) => sum + t.occupancy, 0);
                     if (currentLoad + newCard.headcount > this.passengerSeats(vehicle)) {
                         const shell = document.getElementById('rp-shell');
                         if (shell) {
@@ -1323,7 +1351,7 @@ function mountRoutePlannerApp(wrapper, data) {
                             shell.style.backgroundColor = '#ffebee';
                             setTimeout(() => { shell.style.backgroundColor = ''; }, 400);
                         }
-                        frappe.throw(this.capacityMessage(newCard.headcount, vehicle));
+                        frappe.throw(this.capacityMessage(newCard.headcount, vehicle, blockers));
                         return;
                     }
                 }
@@ -1427,32 +1455,34 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             // ── Time-aware peak load helper ─────────────────────────────────
-            // The trips a vehicle actually runs today. Stops chained onto one trip
-            // merge — they ride together — but the outbound and return legs stay
-            // apart (WI-002000): they share a tripId, so keying on it alone fused a
-            // 05:00 drop and its 17:00 pickup into one twelve-hour block carrying
-            // double the passengers, which every later drop then "overlapped".
+            // The trips a vehicle actually runs today. One tripId is one bus run,
+            // however its stops are headed: keying the direction in as well (WI-002000)
+            // split a chained run — an outward drop and the return pickup made at the
+            // same stop — into two pseudo-trips whose windows overlap each other, and
+            // the seat check then added the same bus to itself (WI-002160). A run that
+            // both drops off and picks up is measured leg by leg instead, which is what
+            // the two legs of one journey needed in the first place.
             _getLogicalTrips(vehicleId) {
                 const vi = this.swimItems.filter(i => i.vehicleId === vehicleId && this._liveToday(i));
                 const tripsMap = {};
                 let soloIdx = 0;
 
                 vi.forEach(item => {
-                    const key = item.tripId
-                        ? `${item.tripId}::${item.direction}`
-                        : `_solo_${soloIdx++}`;
+                    const key = item.tripId || `_solo_${soloIdx++}`;
                     if (!tripsMap[key]) {
                         tripsMap[key] = {
                             start: new Date(item.start).getTime(),
                             end: new Date(item.end).getTime(),
                             headcount: item.headcount || 0,
                             direction: item.direction,
+                            tripName: item.tripName || null,
                             stops: [item]
                         };
                     } else {
                         tripsMap[key].start = Math.min(tripsMap[key].start, new Date(item.start).getTime());
                         tripsMap[key].end = Math.max(tripsMap[key].end, new Date(item.end).getTime());
                         tripsMap[key].headcount += (item.headcount || 0);
+                        tripsMap[key].tripName = tripsMap[key].tripName || item.tripName || null;
                         tripsMap[key].stops.push(item);
                     }
                 });
@@ -1461,8 +1491,23 @@ function mountRoutePlannerApp(wrapper, data) {
                 // total the bus is never asked to hold. Summing it painted a merged block
                 // purple for overcapacity on a run that fits (WI-002078).
                 const trips = Object.values(tripsMap);
-                trips.forEach(t => { t.occupancy = this.tripOccupancy(t); });
+                trips.forEach(t => {
+                    t.direction = this.runDirection(t.stops);
+                    t.occupancy = this.tripOccupancy(t);
+                });
                 return trips;
+            },
+
+            // Which way a whole run travels. Stops that do not all agree make it a mixed
+            // run, whatever each one is labelled: `direction` only ever reads MIXED when
+            // the Merge Trip modal wrote it back, and chaining a return stop onto an
+            // outbound trip left every stop on its original heading. Summing those as two
+            // concurrent runs is what refused a load the bus was already carrying
+            // (WI-002160), so every seat check reads the run's direction through here.
+            runDirection(stops) {
+                if (!stops || !stops.length) return 'OUTBOUND';
+                const first = stops[0].direction || 'OUTBOUND';
+                return stops.some(s => (s.direction || 'OUTBOUND') !== first) ? 'MIXED' : first;
             },
 
             // The most passengers one trip ever has aboard. Mirrors _trip_peak on the
@@ -1506,11 +1551,27 @@ function mountRoutePlannerApp(wrapper, data) {
 
             // One wording for every seat refusal, naming the limit the check
             // actually applied rather than the size of the bus.
-            capacityMessage(headcount, vehicle) {
-                return __(
+            capacityMessage(headcount, vehicle, blockers) {
+                const base = __(
                     'Capacity Exceeded: cannot assign {0} employees to {1} — it takes {2} passengers.',
                     [headcount, this.vehicleString(vehicle), this.passengerSeats(vehicle)]
                 );
+
+                // Name the runs holding the seats. Without this the refusal named only
+                // the bus, and a card is placed at its own shift window rather than where
+                // it was dropped — so the blocking run is routinely not the block the
+                // operator was aiming at, and the message was undiagnosable.
+                const named = (blockers || [])
+                    .filter(t => t && t.occupancy)
+                    .map(t => __('{0} ({1} aboard, {2}–{3})', [
+                        t.tripName || __('an unnamed run'),
+                        t.occupancy,
+                        this.fmtTime(t.start),
+                        this.fmtTime(t.end)
+                    ]));
+                if (!named.length) return base;
+
+                return `${base} ${__('Those seats are held by {0}.', [named.join(', ')])}`;
             },
 
             // The headcount already aboard the vehicle during the window this card
@@ -1518,21 +1579,33 @@ function mountRoutePlannerApp(wrapper, data) {
             // the worse of the outbound and return windows meant an early drop was
             // judged against the evening traffic it never shares the road with.
             peakLoadDuringCardWindows(card, vehicleId, direction) {
-                const DEF = 3600000;
-                const leg = direction || card.direction;
-
-                let wStart, wEnd;
-                if (leg === 'RETURN') {
-                    wStart = new Date(card.return_window_start).getTime();
-                    wEnd = wStart + DEF;
-                } else {
-                    wEnd = new Date(card.outbound_window_end).getTime();
-                    wStart = wEnd - DEF;
-                }
-
-                return this._getLogicalTrips(vehicleId)
-                    .filter(t => t.start < wEnd && t.end > wStart)  // overlaps
+                return this.tripsDuringCardWindows(card, vehicleId, direction)
                     .reduce((sum, t) => sum + t.occupancy, 0);
+            },
+
+            // The runs already on the road during the window this card would occupy.
+            // The seat check and the refusal message read the same list, so the message
+            // can name what actually took the seats instead of leaving the operator to
+            // guess: a card is placed at its own shift window, never where it was
+            // dropped, so the run that blocks it is often not the one under the cursor.
+            tripsDuringCardWindows(card, vehicleId, direction) {
+                const { start, end } = this.cardLegWindow(card, direction);
+                return this._getLogicalTrips(vehicleId)
+                    .filter(t => t.start < end && t.end > start);
+            },
+
+            // The hour a card's chosen leg occupies. Only the leg being placed counts
+            // (WI-002000): taking the worse of the outbound and return windows meant an
+            // early drop was judged against the evening traffic it never shares the road
+            // with.
+            cardLegWindow(card, direction) {
+                const DEF = 3600000;
+                if ((direction || card.direction) === 'RETURN') {
+                    const start = new Date(card.return_window_start).getTime();
+                    return { start, end: start + DEF };
+                }
+                const end = new Date(card.outbound_window_end).getTime();
+                return { start: end - DEF, end };
             },
 
             // ─ Place card + direction picker ─────────────────────────────
@@ -2098,7 +2171,7 @@ function mountRoutePlannerApp(wrapper, data) {
                         // merged run's stops are not all aboard at once, so its total is
                         // not what has to fit (WI-002078).
                         const movingHeadcount = self.tripOccupancy({
-                            direction: item.direction,
+                            direction: self.runDirection(journeyItems),
                             headcount: journeyItems.reduce((sum, i) => sum + (i.headcount || 0), 0),
                             stops: journeyItems
                         });
@@ -2108,10 +2181,9 @@ function mountRoutePlannerApp(wrapper, data) {
                         // so none of the moving stops are already on the target.
                         const blockStart = Math.min(...journeyItems.map(i => new Date(i.start).getTime()));
                         const blockEnd = Math.max(...journeyItems.map(i => new Date(i.end).getTime()));
-                        const logicalTrips = self._getLogicalTrips(targetVehicle.id);
-                        const existingLoad = logicalTrips
-                            .filter(t => t.start < blockEnd && t.end > blockStart)
-                            .reduce((sum, t) => sum + t.occupancy, 0);
+                        const blockers = self._getLogicalTrips(targetVehicle.id)
+                            .filter(t => t.start < blockEnd && t.end > blockStart);
+                        const existingLoad = blockers.reduce((sum, t) => sum + t.occupancy, 0);
 
                         if (existingLoad + movingHeadcount > self.passengerSeats(targetVehicle)) {
                             const shell = document.getElementById('rp-shell');
@@ -2120,7 +2192,7 @@ function mountRoutePlannerApp(wrapper, data) {
                                 shell.style.backgroundColor = '#ffebee';
                                 setTimeout(() => { shell.style.backgroundColor = ''; }, 400);
                             }
-                            frappe.throw(self.capacityMessage(movingHeadcount, targetVehicle));
+                            frappe.throw(self.capacityMessage(movingHeadcount, targetVehicle, blockers));
                             return;
                         }
 
@@ -2349,14 +2421,26 @@ function mountRoutePlannerApp(wrapper, data) {
                         const targetTripItems = tripsMap[targetTripId].items;
                         const targetVehicleId = selectedOpt.vehicle.id;
 
-                        // Check logical trip capacity directly instead of peakLoadDuringCardWindows 
-                        // because we want to know the target trip's total capacity + new card
-                        const tripLoad = targetTripItems.reduce((sum, i) => sum + (i.headcount || 0), 0);
+                        // The target run's own load, not the lane's: what matters here is
+                        // whether that trip plus this card fits. Read through tripOccupancy
+                        // rather than summing the stops by hand — a run that both drops off
+                        // and picks up never carries its stops all at once, and summing them
+                        // refused a merge the bus could make (WI-002160).
+                        const tripLoad = self.tripOccupancy({
+                            direction: self.runDirection(targetTripItems),
+                            headcount: targetTripItems.reduce((sum, i) => sum + (i.headcount || 0), 0),
+                            stops: targetTripItems
+                        });
                         if (tripLoad + card.headcount > self.passengerSeats(selectedOpt.vehicle)) {
                             frappe.msgprint({
                                 title: __('Capacity Exceeded'),
                                 indicator: 'red',
-                                message: self.capacityMessage(card.headcount, selectedOpt.vehicle)
+                                message: self.capacityMessage(card.headcount, selectedOpt.vehicle, [{
+                                    tripName: targetTripItems.find(i => i.tripName)?.tripName || null,
+                                    occupancy: tripLoad,
+                                    start: Math.min(...targetTripItems.map(i => new Date(i.start).getTime())),
+                                    end: Math.max(...targetTripItems.map(i => new Date(i.end).getTime()))
+                                }])
                             });
                             return;
                         }
@@ -2452,25 +2536,23 @@ function mountRoutePlannerApp(wrapper, data) {
                     vehicleNumber = idx >= 0 ? idx + 1 : 1;
                 }
 
-                // Count existing unique trips on this vehicle
-                const existingTripIds = new Set();
-                this.swimItems.forEach(item => {
-                    if (item.vehicleId !== vehicleId) return;
-                    if (item.tripId) {
-                        existingTripIds.add(item.tripId);
-                    } else {
-                        existingTripIds.add(item.id);
-                    }
-                });
-                const nextSeq = existingTripIds.size + 1;
-
-                // Format: vehicleNumber + 2-digit sequence (e.g., 15 + 01 = "1501")
-                const seqStr = String(nextSeq).padStart(2, '0');
-                const tripName = `${vehicleNumber}${seqStr}`;
-
-                // Leased vehicles get "S-" prefix
+                // Format: vehicleNumber + 2-digit sequence (e.g., 15 + 01 = "1501").
+                // Leased vehicles get an "S-" prefix.
                 const prefix = vehicle.is_leased ? 'S-' : '';
-                return `${prefix}${tripName}`;
+                const name = (seq) => `${prefix}${vehicleNumber}${String(seq).padStart(2, '0')}`;
+
+                // The next FREE number, not the number of trips there are. Counting
+                // re-issued a name the moment any trip but the last was removed: a lane
+                // holding S-201, S-202, S-204, S-205 counted four and offered S-205
+                // again, so two unrelated runs ended up sharing one name on the block,
+                // in the trip picker and on the manifest.
+                const taken = new Set();
+                this.swimItems.forEach(item => {
+                    if (item.vehicleId === vehicleId && item.tripName) taken.add(item.tripName);
+                });
+                let seq = 1;
+                while (taken.has(name(seq))) seq++;
+                return name(seq);
             },
 
             // ─ Persistence (save/load to Route Plan DocType) ──────────────
