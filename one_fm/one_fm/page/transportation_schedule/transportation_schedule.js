@@ -2640,22 +2640,46 @@ function mountRoutePlannerApp(wrapper, data) {
                     return endDate >= todayStr;   // drop lapsed (release the lane)
                 });
 
-                // Rebase EACH block onto today's timeline independently, then
-                // re-derive its end from the daily trip length. Every block now
-                // carries its own lifespan start date (the DATE part of start_time),
-                // so a single shared offset is wrong: one block whose start sits in
-                // the past — an ongoing multi-day lock, or a row edited to a past
-                // date — would otherwise drag every block off-screen and blank the
-                // whole grid. Shifting per block by whole days (which preserves the
-                // UTC time-of-day, and so the render position) keeps each one in the
-                // current window on its own.
+                // Rebase onto today's timeline by whole days, which preserves the UTC
+                // time-of-day and so the render position. A single shared offset is wrong
+                // — every block carries its own lifespan start date (the DATE part of
+                // start_time), and one block sitting in the past would drag every other
+                // one off-screen — so each block is moved on its own first.
+                //
+                // Blocks land on TODAY, not merely somewhere inside the window: planStart
+                // carries a 3h margin before today's local midnight, and a shift that only
+                // had to reach planStart let a stop whose time of day falls in that margin
+                // — 21:00 to midnight local — settle a day early, off the visible axis.
+                const todayStart = this.planStart.getTime() + (3 * 3600000);
+                const dayShift = (startMs) => -Math.floor((startMs - todayStart) / dayMs) * dayMs;
                 parsedItems = parsedItems.map(i => {
-                    let startMs = i.start.getTime();
-                    if (startMs < this.planStart.getTime()) {
-                        startMs += Math.ceil((this.planStart.getTime() - startMs) / dayMs) * dayMs;
-                    } else if (startMs > this.planEnd.getTime()) {
-                        startMs -= Math.ceil((startMs - this.planEnd.getTime()) / dayMs) * dayMs;
+                    const startMs = i.start.getTime();
+                    return { ...i, start: new Date(startMs + dayShift(startMs)) };
+                });
+
+                // Then pull each trip back onto one day. The plan window is ~30h wide, so
+                // a run straddling its edge came back with its first stop shifted three
+                // days and the rest two — a 45-minute trip torn into a band nearly a day
+                // wide, which then "overlapped" every other run on the lane and painted
+                // them overcapacity. The stops of one run are hours apart at most, so each
+                // takes the day that puts it NEAREST its trip's first stop: the time of
+                // day is untouched and a stop that legitimately sits a little before stop
+                // one (a leg re-timed after it was dropped) stays where it is instead of
+                // being flung a day forward.
+                const tripAnchor = {};
+                parsedItems.forEach(i => {
+                    if (!i.tripId) return;
+                    const idx = i.stopIndex || 0;
+                    const ms = i.start.getTime();
+                    const held = tripAnchor[i.tripId];
+                    if (!held || idx < held.idx || (idx === held.idx && ms < held.ms)) {
+                        tripAnchor[i.tripId] = { idx, ms };
                     }
+                });
+                parsedItems = parsedItems.map(i => {
+                    const anchor = i.tripId ? tripAnchor[i.tripId] : null;
+                    let startMs = i.start.getTime();
+                    if (anchor) startMs += Math.round((anchor.ms - startMs) / dayMs) * dayMs;
                     const start = new Date(startMs);
                     const end = new Date(startMs + i._dailyDurMs);
                     return { ...i, start, end };
