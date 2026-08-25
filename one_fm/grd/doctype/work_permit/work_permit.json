@@ -8,6 +8,7 @@
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
+  "amendment_no",
   "employee",
   "date_of_application",
   "preparation",
@@ -119,7 +120,6 @@
   "pam_rejection_reason",
   "column_break_heim",
   "previous_company_rejection_reason",
-  "reason_for_rejection",
   "section_break_60",
   "notify_finance_user",
   "amount_to_pay",
@@ -153,7 +153,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Work Permit Type",
-   "options": "\nRenewal Non Kuwaiti\nRenewal Kuwaiti\nOverseas\nLocal Transfer\nNew Kuwaiti\nCancellation",
+   "options": "\nRenewal Non Kuwaiti\nRenewal Kuwaiti\nOverseas\nOverseas (Government)\nLocal Transfer\nNew Kuwaiti\nCancellation",
    "permlevel": 1,
    "reqd": 1
   },
@@ -356,15 +356,6 @@
    "fieldname": "amount_to_pay",
    "fieldtype": "Currency",
    "label": "Amount To Pay",
-   "permlevel": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "eval: doc.workflow_state=='Rejected'",
-   "fieldname": "reason_for_rejection",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "N Reason for Rejection",
    "permlevel": 1
   },
   {
@@ -616,34 +607,6 @@
    "options": "ref_doctype"
   },
   {
-   "depends_on": "eval:doc.workflow_state == \"Rejected\"",
-   "fieldname": "section_break_aueh",
-   "fieldtype": "Section Break",
-   "label": "Rejection Reason"
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "eval:doc.reason_of_rejection == \"Rejected by PAM\"",
-   "fieldname": "pam_rejection_reason",
-   "fieldtype": "Select",
-   "label": "PAM Rejection Reason",
-   "mandatory_depends_on": "eval:doc.reason_of_rejection == \"Rejected by PAM\"",
-   "options": "\nPAM Contract\nGender"
-  },
-  {
-   "fieldname": "column_break_heim",
-   "fieldtype": "Column Break"
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "eval:doc.reason_of_rejection == \"Rejected by previous company\"",
-   "fieldname": "previous_company_rejection_reason",
-   "fieldtype": "Select",
-   "label": "Previous Company Rejection Reason",
-   "mandatory_depends_on": "eval:doc.reason_of_rejection == \"Rejected by previous company\"",
-   "options": "\nAuto rejected after 3 days\nPrevious Sponsor Rejected"
-  },
-  {
    "fieldname": "reason_of_rejection",
    "fieldtype": "Select",
    "hidden": 1,
@@ -652,8 +615,8 @@
   },
   {
    "fieldname": "details_of_rejection",
-   "hidden": 1,
    "fieldtype": "Small Text",
+   "hidden": 1,
    "label": "Details of Rejection"
   },
   {
@@ -701,20 +664,6 @@
    "fieldname": "reference_number_set_on",
    "fieldtype": "Datetime",
    "label": "Reference Number Set On",
-   "read_only": 1
-  },
-  {
-   "depends_on": "eval:doc.rejected_work_permit",
-   "fieldname": "section_break_yqjj",
-   "fieldtype": "Section Break"
-  },
-  {
-   "description": "The rejected permit this application was raised to replace",
-   "fieldname": "rejected_work_permit",
-   "fieldtype": "Link",
-   "label": "Rejected Work Permit",
-   "no_copy": 1,
-   "options": "Work Permit",
    "read_only": 1
   },
   {
@@ -965,12 +914,53 @@
    "fieldtype": "Date",
    "label": "Employee Last Checkin",
    "read_only": 1
+  },
+  {
+   "fieldname": "section_break_aueh",
+   "fieldtype": "Section Break",
+   "label": "Rejection Reason"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "pam_rejection_reason",
+   "fieldtype": "Select",
+   "label": "PAM Rejection Reason",
+   "options": "\nPAM Contract\nGender"
+  },
+  {
+   "fieldname": "column_break_heim",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "previous_company_rejection_reason",
+   "fieldtype": "Select",
+   "label": "Previous Company Rejection Reason",
+   "options": "\nAuto rejected after 3 days\nPrevious Sponsor Rejected"
+  },
+  {
+   "fieldname": "section_break_yqjj",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "rejected_work_permit",
+   "fieldtype": "Link",
+   "label": "Rejected Work Permit",
+   "options": "Work Permit",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amendment_no",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Amendment No",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-07 12:00:00.000000",
- "modified_by": "Administrator",
+ "modified": "2026-08-17 20:48:55.437366",
+ "modified_by": "h.imran@one-fm.com",
  "module": "GRD",
  "name": "Work Permit",
  "naming_rule": "By \"Naming Series\" field",

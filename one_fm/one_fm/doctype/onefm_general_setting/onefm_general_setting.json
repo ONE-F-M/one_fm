@@ -223,10 +223,10 @@
   {
    "fieldname": "google_service_account_intro",
    "fieldtype": "HTML",
-   "options": "<p>The Google identity <b>ONE FM itself</b> acts as — Google Tasks sync, Gmail out-of-office, and reading documents into the Document Register.</p><p>This is <b>not</b> the credential the BPMN connectors use. Each connector carries its own key (BPMN Connector → Authentication → Secret) and neither falls back to the other, so the two can be different Google accounts and either can be rotated alone.</p><p><b>Both accounts need access to the same Shared Drive.</b> The connectors create the document files; this account reads and shares them. Add both as <i>Content Manager</i> — Drive answers <code>404 File not found</code> rather than a permission error when an account cannot see a file, which reads as a missing document and sends people looking in the wrong place.</p><p>Google Tasks and Gmail additionally need <b>domain-wide delegation</b> enabled for this service account in Google Workspace admin, because they act as an employee rather than as the service account itself.</p>"
+   "options": "<p>The Google identity <b>ONE FM itself</b> acts as \u2014 Google Tasks sync, Gmail out-of-office, and reading documents into the Document Register.</p><p>This is <b>not</b> the credential the BPMN connectors use. Each connector carries its own key (BPMN Connector \u2192 Authentication \u2192 Secret) and neither falls back to the other, so the two can be different Google accounts and either can be rotated alone.</p><p><b>Both accounts need access to the same Shared Drive.</b> The connectors create the document files; this account reads and shares them. Add both as <i>Content Manager</i> \u2014 Drive answers <code>404 File not found</code> rather than a permission error when an account cannot see a file, which reads as a missing document and sends people looking in the wrong place.</p><p>Google Tasks and Gmail additionally need <b>domain-wide delegation</b> enabled for this service account in Google Workspace admin, because they act as an employee rather than as the service account itself.</p>"
   },
   {
-   "description": "Paste the whole key file Google issued — every brace, the full private_key, nothing trimmed. Stored encrypted.",
+   "description": "Paste the whole key file Google issued \u2014 every brace, the full private_key, nothing trimmed. Stored encrypted.",
    "fieldname": "google_service_account_json",
    "fieldtype": "Password",
    "label": "Service Account JSON",
@@ -256,7 +256,6 @@
    "description": "Any weekend reliever assigned to the same shift up to this number of times will be reported in Default Shift Checker",
    "fieldname": "weekend_reliever_default_shift_checker_threshold",
    "fieldtype": "Int",
-   "hidden": 1,
    "label": "Weekend Reliever Default Shift Checker Threshold"
   },
   {
@@ -329,8 +328,8 @@
  "grid_page_length": 50,
  "issingle": 1,
  "links": [],
- "modified": "2026-08-09 10:00:00.000000",
- "modified_by": "Administrator",
+ "modified": "2026-08-09 08:36:15.441728",
+ "modified_by": "a.adekunle@one-fm.com",
  "module": "One Fm",
  "name": "ONEFM General Setting",
  "owner": "Administrator",

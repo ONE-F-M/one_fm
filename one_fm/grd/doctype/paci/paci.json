@@ -21,6 +21,8 @@
   "third_name_arabic",
   "last_name_arabic",
   "civil_id",
+  "damj_is_applicable",
+  "original_civil_id",
   "column_break_8",
   "first_name_english",
   "second_name_english",
@@ -33,16 +35,23 @@
   "column_break_16",
   "pam_designation",
   "residency_expiry_date",
+  "section_break_flkg",
+  "is_paci_fine_applicable",
+  "paci_fine_amount_kwd",
+  "column_break_xblr",
+  "no_payment_required",
   "section_break_19",
   "upload_civil_id_payment",
   "upload_hawiyati",
   "upload_civil_id",
+  "upload_damj_letter",
   "new_civil_id_expiry_date",
+  "pro_user",
   "column_break_25",
   "upload_civil_id_payment_datetime",
   "upload_civil_id_datetime",
   "completed_on",
-  "amended_from",
+  "upload_damj_letter_on",
   "grd_operator",
   "grd_supervisor",
   "grd_operator_transfer",
@@ -50,7 +59,8 @@
   "reminder_grd_operator_again",
   "rejection_details_section",
   "paci_rejection_reason",
-  "rejected_paci"
+  "rejected_paci",
+  "amended_from"
  ],
  "fields": [
   {
@@ -249,16 +259,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "paci_details_section",
-   "fieldtype": "Section Break",
-   "label": "PACI Details"
-  },
-  {
-   "fieldname": "paci_reference_number",
-   "fieldtype": "Data",
-   "label": "PACI Reference Number"
-  },
-  {
    "fetch_from": "employee.one_fm_civil_id",
    "fieldname": "civil_id",
    "fieldtype": "Data",
@@ -326,12 +326,23 @@
    "label": "Reminder Government Relations Operator Again"
   },
   {
+   "fieldname": "paci_details_section",
+   "fieldtype": "Section Break",
+   "label": "PACI Details"
+  },
+  {
+   "fieldname": "paci_reference_number",
+   "fieldtype": "Data",
+   "label": "PACI Reference Number"
+  },
+  {
    "fieldname": "rejection_details_section",
    "fieldtype": "Section Break",
    "label": "Rejection Details"
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:doc.workflow_state == \"Rejected\"",
    "fieldname": "paci_rejection_reason",
    "fieldtype": "Select",
    "label": "PACI Rejection Reason",
@@ -345,12 +356,72 @@
    "no_copy": 1,
    "options": "PACI",
    "read_only": 1
+  },
+  {
+   "fieldname": "section_break_flkg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_paci_fine_applicable",
+   "fieldtype": "Check",
+   "label": "Is PACI Fine Applicable?"
+  },
+  {
+   "fieldname": "column_break_xblr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.is_paci_fine_applicable == 1",
+   "fieldname": "paci_fine_amount_kwd",
+   "fieldtype": "Currency",
+   "label": "PACI Fine Amount (KWD)",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "damj_is_applicable",
+   "fieldtype": "Check",
+   "label": "DAMJ is Applicable"
+  },
+  {
+   "depends_on": "eval:doc.damj_is_applicable == 1",
+   "fieldname": "original_civil_id",
+   "fieldtype": "Data",
+   "label": "Original Civil ID"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.damj_is_applicable == 1",
+   "fieldname": "upload_damj_letter",
+   "fieldtype": "Attach",
+   "label": "Upload DAMJ Letter",
+   "mandatory_depends_on": "eval:doc.damj_is_applicable == 1"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "upload_damj_letter_on",
+   "fieldtype": "Data",
+   "label": "Upload DAMJ Letter On",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "no_payment_required",
+   "fieldtype": "Check",
+   "label": "No Payment Required"
+  },
+  {
+   "fieldname": "pro_user",
+   "fieldtype": "Link",
+   "label": "PRO User",
+   "options": "User"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-10 10:00:00.000000",
- "modified_by": "Administrator",
+ "modified": "2026-08-20 08:59:37.763679",
+ "modified_by": "h.imran@one-fm.com",
  "module": "GRD",
  "name": "PACI",
  "naming_rule": "By \"Naming Series\" field",

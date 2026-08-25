@@ -1,0 +1,1459 @@
+diff --git a/one_fm/grd/doctype/paci/paci.json b/one_fm/grd/doctype/paci/paci.json
+index f516c4e3c..4ec4e630a 100644
+--- a/one_fm/grd/doctype/paci/paci.json
++++ b/one_fm/grd/doctype/paci/paci.json
+@@ -21,6 +21,8 @@
+   "third_name_arabic",
+   "last_name_arabic",
+   "civil_id",
++  "damj_is_applicable",
++  "original_civil_id",
+   "column_break_8",
+   "first_name_english",
+   "second_name_english",
+@@ -35,18 +37,21 @@
+   "residency_expiry_date",
+   "section_break_flkg",
+   "is_paci_fine_applicable",
+-  "column_break_xblr",
+   "paci_fine_amount_kwd",
++  "column_break_xblr",
++  "no_payment_required",
+   "section_break_19",
+   "upload_civil_id_payment",
+   "upload_hawiyati",
+   "upload_civil_id",
++  "upload_damj_letter",
+   "new_civil_id_expiry_date",
++  "pro_user",
+   "column_break_25",
+   "upload_civil_id_payment_datetime",
+   "upload_civil_id_datetime",
+   "completed_on",
+-  "amended_from",
++  "upload_damj_letter_on",
+   "grd_operator",
+   "grd_supervisor",
+   "grd_operator_transfer",
+@@ -54,7 +59,8 @@
+   "reminder_grd_operator_again",
+   "rejection_details_section",
+   "paci_rejection_reason",
+-  "rejected_paci"
++  "rejected_paci",
++  "amended_from"
+  ],
+  "fields": [
+   {
+@@ -336,6 +342,7 @@
+   },
+   {
+    "allow_on_submit": 1,
++   "depends_on": "eval:doc.workflow_state == \"Rejected\"",
+    "fieldname": "paci_rejection_reason",
+    "fieldtype": "Select",
+    "label": "PACI Rejection Reason",
+@@ -365,16 +372,56 @@
+    "fieldtype": "Column Break"
+   },
+   {
++   "depends_on": "eval:doc.is_paci_fine_applicable == 1",
+    "fieldname": "paci_fine_amount_kwd",
+    "fieldtype": "Currency",
+    "label": "PACI Fine Amount (KWD)",
+    "read_only": 1
++  },
++  {
++   "default": "0",
++   "fieldname": "damj_is_applicable",
++   "fieldtype": "Check",
++   "label": "DAMJ is Applicable"
++  },
++  {
++   "depends_on": "eval:doc.damj_is_applicable == 1",
++   "fieldname": "original_civil_id",
++   "fieldtype": "Data",
++   "label": "Original Civil ID"
++  },
++  {
++   "allow_on_submit": 1,
++   "depends_on": "eval:doc.damj_is_applicable == 1",
++   "fieldname": "upload_damj_letter",
++   "fieldtype": "Attach",
++   "label": "Upload DAMJ Letter",
++   "mandatory_depends_on": "eval:doc.damj_is_applicable == 1"
++  },
++  {
++   "allow_on_submit": 1,
++   "fieldname": "upload_damj_letter_on",
++   "fieldtype": "Data",
++   "label": "Upload DAMJ Letter On",
++   "read_only": 1
++  },
++  {
++   "default": "0",
++   "fieldname": "no_payment_required",
++   "fieldtype": "Check",
++   "label": "No Payment Required"
++  },
++  {
++   "fieldname": "pro_user",
++   "fieldtype": "Link",
++   "label": "PRO User",
++   "options": "User"
+   }
+  ],
+  "is_submittable": 1,
+  "links": [],
+- "modified": "2026-08-10 10:00:00.000000",
+- "modified_by": "Administrator",
++ "modified": "2026-08-20 08:59:37.763679",
++ "modified_by": "h.imran@one-fm.com",
+  "module": "GRD",
+  "name": "PACI",
+  "naming_rule": "By \"Naming Series\" field",
+diff --git a/one_fm/grd/doctype/pam_designation_list/pam_designation_list.json b/one_fm/grd/doctype/pam_designation_list/pam_designation_list.json
+index 50f969f41..456e04a0f 100755
+--- a/one_fm/grd/doctype/pam_designation_list/pam_designation_list.json
++++ b/one_fm/grd/doctype/pam_designation_list/pam_designation_list.json
+@@ -44,22 +44,23 @@
+   {
+    "fieldname": "\u0645\u0647\u0646\u0629_\u0642\u0631\u0627\u0631_\u0627\u0644\u0646\u0633\u0628\u0629",
+    "fieldtype": "Select",
++   "hidden": 1,
+    "in_list_view": 1,
+    "in_standard_filter": 1,
+    "label": "\u0645\u0647\u0646\u0629 \u0642\u0631\u0627\u0631 \u0627\u0644\u0646\u0633\u0628\u0629",
+-   "options": "\u0639\u0644\u0645\u064a\u0648\u0646 \u0648 \u0641\u0646\u064a\u0648\u0646\n\u0645\u062f\u064a\u0631\u0648\u0646\n\u0643\u062a\u0628\u0629 \u0648 \u062a\u0646\u0641\u064a\u0630\u064a\u0648\u0646\n\u0645\u0642\u062f\u0645\u064a \u062e\u062f\u0645\u0627\u062a\n\u0628\u0627\u0626\u0639\u0648\u0646",
+-   "reqd": 1
++   "options": "\u0639\u0644\u0645\u064a\u0648\u0646 \u0648 \u0641\u0646\u064a\u0648\u0646\n\u0645\u062f\u064a\u0631\u0648\u0646\n\u0643\u062a\u0628\u0629 \u0648 \u062a\u0646\u0641\u064a\u0630\u064a\u0648\u0646\n\u0645\u0642\u062f\u0645\u064a \u062e\u062f\u0645\u0627\u062a\n\u0628\u0627\u0626\u0639\u0648\u0646"
+   },
+   {
+    "fieldname": "occupational_sector",
+    "fieldtype": "Link",
+    "label": "Occupational Sector",
+-   "options": "Occupational Sector"
++   "options": "Occupational Sector",
++   "reqd": 1
+   }
+  ],
+  "grid_page_length": 50,
+  "links": [],
+- "modified": "2026-08-12 17:19:09.612998",
++ "modified": "2026-08-18 19:22:35.415282",
+  "modified_by": "g.jotshi@one-fm.com",
+  "module": "GRD",
+  "name": "PAM Designation List",
+diff --git a/one_fm/grd/doctype/preparation/preparation.json b/one_fm/grd/doctype/preparation/preparation.json
+index 345d74cd2..72200664f 100644
+--- a/one_fm/grd/doctype/preparation/preparation.json
++++ b/one_fm/grd/doctype/preparation/preparation.json
+@@ -8,6 +8,7 @@
+  "field_order": [
+   "naming_series",
+   "posting_date",
++  "category",
+   "set_renewal_for_all",
+   "preparation_record",
+   "total_payment",
+@@ -97,14 +98,34 @@
+    "fieldtype": "Currency",
+    "label": "Total Payment",
+    "read_only": 1
++  },
++  {
++   "allow_on_submit": 1,
++   "fieldname": "category",
++   "fieldtype": "Select",
++   "in_list_view": 1,
++   "in_standard_filter": 1,
++   "label": "Category",
++   "options": "\nOnboarding\nOffboarding\nRenewal"
+   }
+  ],
+  "is_submittable": 1,
+- "links": [],
+- "modified": "2021-09-09 14:09:13.594820",
+- "modified_by": "Administrator",
++ "links": [
++  {
++   "link_doctype": "Medical Appointment",
++   "link_fieldname": "preparation"
++  },
++  {
++   "group": "Overseas",
++   "link_doctype": "PCC Attestation",
++   "link_fieldname": "preparation"
++  }
++ ],
++ "modified": "2026-08-17 21:50:17.983938",
++ "modified_by": "h.imran@one-fm.com",
+  "module": "GRD",
+  "name": "Preparation",
++ "naming_rule": "Expression",
+  "owner": "Administrator",
+  "permissions": [
+   {
+@@ -135,7 +156,9 @@
+   }
+  ],
+  "quick_entry": 1,
++ "row_format": "Dynamic",
+  "sort_field": "modified",
+  "sort_order": "DESC",
++ "states": [],
+  "track_changes": 1
+ }
+\ No newline at end of file
+diff --git a/one_fm/grd/doctype/preparation_record/preparation_record.json b/one_fm/grd/doctype/preparation_record/preparation_record.json
+index b29da9d1d..bd0ec1d16 100644
+--- a/one_fm/grd/doctype/preparation_record/preparation_record.json
++++ b/one_fm/grd/doctype/preparation_record/preparation_record.json
+@@ -14,15 +14,25 @@
+   "nationality",
+   "residency_expiry_date",
+   "renewal_or_extend",
+-  "ref_doctype",
+-  "ref_name",
+   "no_of_years",
+   "column_break_11",
+   "work_permit_amount",
+   "medical_insurance_amount",
+   "residency_stamp_amount",
+   "civil_id_amount",
+-  "total_amount"
++  "total_amount",
++  "status_tracking_section",
++  "ref_doctype",
++  "column_break_vixp",
++  "ref_name",
++  "column_break_wbqs",
++  "ref_doctype_status",
++  "reference_records_section",
++  "medical_appointment",
++  "column_break_jpos",
++  "fingerprint_appointment",
++  "column_break_mdur",
++  "pcc_attestation"
+  ],
+  "fields": [
+   {
+@@ -91,7 +101,6 @@
+   },
+   {
+    "allow_on_submit": 1,
+-   "depends_on": "eval: doc.renewal_or_extend == \"Renewal\"",
+    "fieldname": "no_of_years",
+    "fieldtype": "Select",
+    "label": "No. of Years",
+@@ -136,18 +145,73 @@
+    "read_only": 1
+   },
+   {
++   "fetch_from": "employee.relieving_date",
+    "fieldname": "relieving_date",
+    "fieldtype": "Date",
+    "in_list_view": 1,
+    "label": "Relieving Date",
+    "read_only": 1
++  },
++  {
++   "allow_on_submit": 1,
++   "fieldname": "ref_doctype_status",
++   "fieldtype": "Data",
++   "label": "Ref Doctype Status",
++   "read_only": 1
++  },
++  {
++   "fieldname": "reference_records_section",
++   "fieldtype": "Section Break",
++   "label": "Reference Records"
++  },
++  {
++   "allow_on_submit": 1,
++   "fieldname": "medical_appointment",
++   "fieldtype": "Link",
++   "label": "Medical Appointment",
++   "options": "Medical Appointment"
++  },
++  {
++   "fieldname": "column_break_jpos",
++   "fieldtype": "Column Break"
++  },
++  {
++   "allow_on_submit": 1,
++   "fieldname": "fingerprint_appointment",
++   "fieldtype": "Link",
++   "label": "Fingerprint Appointment",
++   "options": "Fingerprint Appointment"
++  },
++  {
++   "fieldname": "column_break_mdur",
++   "fieldtype": "Column Break"
++  },
++  {
++   "allow_on_submit": 1,
++   "fieldname": "pcc_attestation",
++   "fieldtype": "Link",
++   "label": "PCC Attestation",
++   "options": "PCC Attestation"
++  },
++  {
++   "fieldname": "status_tracking_section",
++   "fieldtype": "Section Break",
++   "label": "Status Tracking"
++  },
++  {
++   "fieldname": "column_break_vixp",
++   "fieldtype": "Column Break"
++  },
++  {
++   "fieldname": "column_break_wbqs",
++   "fieldtype": "Column Break"
+   }
+  ],
+  "grid_page_length": 50,
+  "istable": 1,
+  "links": [],
+- "modified": "2026-08-05 12:00:00.000000",
+- "modified_by": "Administrator",
++ "modified": "2026-08-19 08:17:18.810092",
++ "modified_by": "h.imran@one-fm.com",
+  "module": "GRD",
+  "name": "Preparation Record",
+  "naming_rule": "Expression (old style)",
+diff --git a/one_fm/grd/doctype/residency/residency.json b/one_fm/grd/doctype/residency/residency.json
+index 452e2510f..21ee43ca2 100644
+--- a/one_fm/grd/doctype/residency/residency.json
++++ b/one_fm/grd/doctype/residency/residency.json
+@@ -498,6 +498,7 @@
+   {
+    "fieldname": "apply_for",
+    "fieldtype": "Select",
++   "hidden": 1,
+    "label": "Apply for",
+    "options": "\n1 \u0625\u0634\u0639\u0627\u0631\n14 \u0645\u0624\u0642\u062a\u0629\n18 \u0639\u0645\u0644 \u0623\u0647\u0644\u064a"
+   },
+@@ -542,12 +543,14 @@
+    "fieldtype": "Column Break"
+   },
+   {
++   "depends_on": "eval:doc.residency_fine_to_be_added == 1",
+    "fieldname": "residency_fine_amount_kwd",
+    "fieldtype": "Currency",
+    "label": "Residency Fine Amount (KWD)"
+   },
+   {
+    "allow_on_submit": 1,
++   "depends_on": "eval:doc.residency_fine_to_be_added == 1",
+    "fieldname": "upload_residency_fine_payment_receipt",
+    "fieldtype": "Attach",
+    "label": "Upload Residency Fine Payment Receipt",
+@@ -568,12 +571,15 @@
+   },
+   {
+    "allow_on_submit": 1,
++   "depends_on": "eval:doc.damj_is_applicable == 1",
+    "fieldname": "original_civil_id",
+    "fieldtype": "Data",
+-   "label": "Original Civil ID"
++   "label": "Original Civil ID",
++   "mandatory_depends_on": "eval:doc.damj_is_applicable == 1"
+   },
+   {
+    "allow_on_submit": 1,
++   "depends_on": "eval:doc.damj_is_applicable == 1",
+    "fieldname": "upload_damj_letter",
+    "fieldtype": "Attach",
+    "label": "Upload DAMJ Letter",
+@@ -589,7 +595,7 @@
+  ],
+  "is_submittable": 1,
+  "links": [],
+- "modified": "2026-08-11 21:50:36.147840",
++ "modified": "2026-08-19 08:57:17.680331",
+  "modified_by": "h.imran@one-fm.com",
+  "module": "GRD",
+  "name": "Residency",
+diff --git a/one_fm/grd/doctype/work_permit/work_permit.json b/one_fm/grd/doctype/work_permit/work_permit.json
+index 5670583d4..16d320fa4 100644
+--- a/one_fm/grd/doctype/work_permit/work_permit.json
++++ b/one_fm/grd/doctype/work_permit/work_permit.json
+@@ -8,6 +8,7 @@
+  "engine": "InnoDB",
+  "field_order": [
+   "naming_series",
++  "amendment_no",
+   "employee",
+   "date_of_application",
+   "preparation",
+@@ -947,11 +948,18 @@
+    "label": "Rejected Work Permit",
+    "options": "Work Permit",
+    "read_only": 1
++  },
++  {
++   "fieldname": "amendment_no",
++   "fieldtype": "Int",
++   "in_list_view": 1,
++   "label": "Amendment No",
++   "read_only": 1
+   }
+  ],
+  "is_submittable": 1,
+  "links": [],
+- "modified": "2026-08-10 20:39:32.299580",
++ "modified": "2026-08-17 20:48:55.437366",
+  "modified_by": "h.imran@one-fm.com",
+  "module": "GRD",
+  "name": "Work Permit",
+diff --git a/one_fm/one_fm/doctype/document_request/document_request.json b/one_fm/one_fm/doctype/document_request/document_request.json
+index 655a0a5c1..4e2934229 100644
+--- a/one_fm/one_fm/doctype/document_request/document_request.json
++++ b/one_fm/one_fm/doctype/document_request/document_request.json
+@@ -19,8 +19,8 @@
+   "section_break_approval",
+   "approver",
+   "approver_user",
++  "workflow_state",
+   "column_break_status",
+-  "status",
+   "document_link",
+   "document_version",
+   "bpmn_instance"
+@@ -54,7 +54,7 @@
+    "fieldtype": "Select",
+    "in_list_view": 1,
+    "label": "Request Action",
+-   "options": "Create\nUpdate\nDelete",
++   "options": "\nCreate\nUpdate\nDelete",
+    "reqd": 1
+   },
+   {
+@@ -62,7 +62,7 @@
+    "fieldtype": "Select",
+    "in_list_view": 1,
+    "label": "Document Type",
+-   "options": "Policy\nSOP\nGuideline\nManual",
++   "options": "\nPolicy\nSOP\nGuideline\nManual",
+    "reqd": 1
+   },
+   {
+@@ -88,7 +88,7 @@
+    "fieldname": "source_guideline",
+    "fieldtype": "Link",
+    "label": "Source Guideline",
+-   "link_filters": "[[\"Document Register\",\"lifecycle_state\",\"=\",\"Active\"]]",
++   "link_filters": "[[\"Document Register\",\"lifecycle_state\",\"=\",\"Active\"],[\"Document Register\",\"document_type\",\"=\",\"Guideline\"]]",
+    "mandatory_depends_on": "eval:doc.request_action == 'Create'",
+    "options": "Document Register"
+   },
+@@ -139,15 +139,6 @@
+    "fieldname": "column_break_status",
+    "fieldtype": "Column Break"
+   },
+-  {
+-   "default": "Pending Request Approval",
+-   "fieldname": "status",
+-   "fieldtype": "Select",
+-   "in_list_view": 1,
+-   "label": "Status",
+-   "options": "Pending Request Approval\nRequest Rejected\nDrafting\nPending Content Approval\nContent Rejected\nApproved\nPublished\nDeleted",
+-   "read_only": 1
+-  },
+   {
+    "depends_on": "eval:doc.document_link",
+    "description": "Every revision shares one Drive file, so this link stays valid for the life of the document \u2014 it always opens the current version.",
+@@ -171,10 +162,16 @@
+    "label": "BPMN Process Instance",
+    "options": "BPMN Process Instance",
+    "read_only": 1
++  },
++  {
++   "fieldname": "workflow_state",
++   "fieldtype": "Link",
++   "label": "Workflow State",
++   "options": "Workflow State"
+   }
+  ],
+  "links": [],
+- "modified": "2026-08-11 12:52:52.746572",
++ "modified": "2026-08-17 14:53:36.483998",
+  "modified_by": "e.olayinka@one-fm.com",
+  "module": "One Fm",
+  "name": "Document Request",
+diff --git a/one_fm/one_fm/doctype/process_creation_request/process_creation_request.json b/one_fm/one_fm/doctype/process_creation_request/process_creation_request.json
+index 998d2cf00..02b411f95 100644
+--- a/one_fm/one_fm/doctype/process_creation_request/process_creation_request.json
++++ b/one_fm/one_fm/doctype/process_creation_request/process_creation_request.json
+@@ -53,7 +53,6 @@
+    "in_list_view": 1,
+    "in_standard_filter": 1,
+    "label": "Parent Process",
+-   "link_filters": "[[\"Process\",\"is_group\",\"=\",1]]",
+    "options": "Process"
+   },
+   {
+@@ -195,8 +194,8 @@
+    "link_fieldname": "process_creation_request"
+   }
+  ],
+- "modified": "2026-08-10 14:55:53.760459",
+- "modified_by": "e.olayinka@one-fm.com",
++ "modified": "2026-08-16 22:09:11.570844",
++ "modified_by": "a.adekunle@one-fm.com",
+  "module": "One Fm",
+  "name": "Process Creation Request",
+  "naming_rule": "By \"Naming Series\" field",
+diff --git a/one_fm/one_fm/doctype/transportation_manifest/transportation_manifest.json b/one_fm/one_fm/doctype/transportation_manifest/transportation_manifest.json
+index 30f617b34..157335b72 100644
+--- a/one_fm/one_fm/doctype/transportation_manifest/transportation_manifest.json
++++ b/one_fm/one_fm/doctype/transportation_manifest/transportation_manifest.json
+@@ -1,437 +1,138 @@
+ {
+  "actions": [],
+- "allow_copy": 0,
+- "allow_import": 0,
+  "allow_rename": 1,
+  "autoname": "naming_series:",
+- "beta": 0,
+  "creation": "2026-06-18 13:20:22.623558",
+- "docstatus": 0,
+  "doctype": "DocType",
+- "document_type": "",
+- "editable_grid": 0,
+  "engine": "InnoDB",
++ "field_order": [
++  "naming_series",
++  "section_break_yjra",
++  "vehicle_no",
++  "license_plate",
++  "trip_direction",
++  "column_break_dwag",
++  "driver_name",
++  "schedule_date",
++  "section_break_kabl",
++  "transportation_manifest_details",
++  "active_stop_sequence"
++ ],
+  "fields": [
+   {
+-   "allow_bulk_edit": 0,
+-   "allow_on_submit": 0,
+-   "bold": 0,
+-   "collapsible": 0,
+-   "columns": 0,
+-   "creation": "2026-06-18 13:20:22.623558",
+    "default": "TM-.DD.-.MM.-.YYYY.-.####",
+-   "docstatus": 0,
+-   "doctype": "DocField",
+    "fieldname": "naming_series",
+    "fieldtype": "Select",
+    "hidden": 1,
+-   "ignore_user_permissions": 0,
+-   "in_filter": 0,
+-   "in_global_search": 0,
+-   "in_list_view": 0,
+-   "in_preview": 0,
+-   "in_standard_filter": 0,
+    "label": "Naming Series",
+-   "length": 0,
+-   "no_copy": 0,
+-   "non_negative": 0,
+    "options": "TM-.DD.-.MM.-.YYYY.-.####",
+-   "permlevel": 0,
+-   "print_hide": 0,
+-   "print_hide_if_no_value": 0,
+-   "read_only": 1,
+-   "remember_last_selected_value": 0,
+-   "report_hide": 0,
+-   "reqd": 0,
+-   "set_only_once": 0,
+-   "show_preview_popup": 0,
+-   "unique": 0
++   "read_only": 1
+   },
+   {
+-   "allow_bulk_edit": 0,
+-   "allow_on_submit": 0,
+-   "bold": 0,
+-   "collapsible": 0,
+-   "columns": 0,
+-   "creation": "2026-06-18 13:20:22.623558",
+-   "docstatus": 0,
+-   "doctype": "DocField",
+    "fieldname": "section_break_yjra",
+-   "fieldtype": "Section Break",
+-   "hidden": 0,
+-   "ignore_user_permissions": 0,
+-   "in_filter": 0,
+-   "in_global_search": 0,
+-   "in_list_view": 0,
+-   "in_preview": 0,
+-   "in_standard_filter": 0,
+-   "label": "",
+-   "length": 0,
+-   "no_copy": 0,
+-   "non_negative": 0,
+-   "permlevel": 0,
+-   "print_hide": 0,
+-   "print_hide_if_no_value": 0,
+-   "read_only": 0,
+-   "remember_last_selected_value": 0,
+-   "report_hide": 0,
+-   "reqd": 0,
+-   "set_only_once": 0,
+-   "show_preview_popup": 0,
+-   "unique": 0
++   "fieldtype": "Section Break"
+   },
+   {
+-   "allow_bulk_edit": 0,
+-   "allow_on_submit": 0,
+-   "bold": 0,
+-   "collapsible": 0,
+-   "columns": 0,
+-   "creation": "2026-06-18 13:20:22.623558",
+-   "docstatus": 0,
+-   "doctype": "DocField",
+    "fieldname": "vehicle_no",
+    "fieldtype": "Link",
+-   "hidden": 0,
+-   "ignore_user_permissions": 0,
+-   "in_filter": 0,
+-   "in_global_search": 0,
+    "in_list_view": 1,
+-   "in_preview": 0,
+    "in_standard_filter": 1,
+    "label": "Vehicle No",
+-   "length": 0,
+-   "no_copy": 0,
+-   "non_negative": 0,
+-   "options": "Vehicle",
+-   "permlevel": 0,
+-   "print_hide": 0,
+-   "print_hide_if_no_value": 0,
+-   "read_only": 0,
+-   "remember_last_selected_value": 0,
+-   "report_hide": 0,
+-   "reqd": 0,
+-   "set_only_once": 0,
+-   "show_preview_popup": 0,
+-   "unique": 0
++   "options": "Vehicle"
+   },
+   {
+-   "allow_bulk_edit": 0,
+-   "allow_on_submit": 0,
+-   "bold": 0,
+-   "collapsible": 0,
+-   "columns": 0,
+-   "creation": "2026-06-18 13:20:22.623558",
+-   "docstatus": 0,
+-   "doctype": "DocField",
+    "fetch_from": "vehicle_no.license_plate",
+    "fieldname": "license_plate",
+    "fieldtype": "Data",
+-   "hidden": 0,
+-   "ignore_user_permissions": 0,
+-   "in_filter": 0,
+-   "in_global_search": 0,
+    "in_list_view": 1,
+-   "in_preview": 0,
+    "in_standard_filter": 1,
+    "label": "License Plate",
+-   "length": 0,
+-   "no_copy": 0,
+-   "non_negative": 0,
+-   "permlevel": 0,
+-   "print_hide": 0,
+-   "print_hide_if_no_value": 0,
+-   "read_only": 1,
+-   "remember_last_selected_value": 0,
+-   "report_hide": 0,
+-   "reqd": 0,
+-   "set_only_once": 0,
+-   "show_preview_popup": 0,
+-   "unique": 0
++   "read_only": 1
+   },
+   {
+-   "allow_bulk_edit": 0,
+-   "allow_on_submit": 0,
+-   "bold": 0,
+-   "collapsible": 0,
+-   "columns": 0,
+-   "creation": "2026-06-18 13:20:22.623558",
+-   "docstatus": 0,
+-   "doctype": "DocField",
+    "fieldname": "column_break_dwag",
+-   "fieldtype": "Column Break",
+-   "hidden": 0,
+-   "ignore_user_permissions": 0,
+-   "in_filter": 0,
+-   "in_global_search": 0,
+-   "in_list_view": 0,
+-   "in_preview": 0,
+-   "in_standard_filter": 0,
+-   "label": "",
+-   "length": 0,
+-   "no_copy": 0,
+-   "non_negative": 0,
+-   "permlevel": 0,
+-   "print_hide": 0,
+-   "print_hide_if_no_value": 0,
+-   "read_only": 0,
+-   "remember_last_selected_value": 0,
+-   "report_hide": 0,
+-   "reqd": 0,
+-   "set_only_once": 0,
+-   "show_preview_popup": 0,
+-   "unique": 0
++   "fieldtype": "Column Break"
+   },
+   {
+-   "allow_bulk_edit": 0,
+-   "allow_on_submit": 0,
+-   "bold": 0,
+-   "collapsible": 0,
+-   "columns": 0,
+-   "creation": "2026-06-18 13:20:22.623558",
+-   "docstatus": 0,
+-   "doctype": "DocField",
+    "fetch_from": "vehicle_no.employee",
++   "fetch_if_empty": 1,
+    "fieldname": "driver_name",
+    "fieldtype": "Link",
+-   "hidden": 0,
+-   "ignore_user_permissions": 0,
+-   "in_filter": 0,
+-   "in_global_search": 0,
+    "in_list_view": 1,
+-   "in_preview": 0,
+    "in_standard_filter": 1,
+    "label": "Driver Name",
+-   "length": 0,
+-   "no_copy": 0,
+-   "non_negative": 0,
+    "options": "Employee",
+-   "permlevel": 0,
+-   "print_hide": 0,
+-   "print_hide_if_no_value": 0,
+-   "read_only": 1,
+-   "remember_last_selected_value": 0,
+-   "report_hide": 0,
+-   "reqd": 0,
+-   "set_only_once": 0,
+-   "show_preview_popup": 0,
+-   "unique": 0,
+-   "fetch_if_empty": 1
++   "read_only": 1
+   },
+   {
+-   "allow_bulk_edit": 0,
+-   "allow_on_submit": 0,
+-   "bold": 0,
+-   "collapsible": 0,
+-   "columns": 0,
+-   "creation": "2026-06-18 13:20:22.623558",
+-   "docstatus": 0,
+-   "doctype": "DocField",
+    "fieldname": "schedule_date",
+    "fieldtype": "Date",
+-   "hidden": 0,
+-   "ignore_user_permissions": 0,
+-   "in_filter": 0,
+-   "in_global_search": 0,
+    "in_list_view": 1,
+-   "in_preview": 0,
+    "in_standard_filter": 1,
+-   "label": "Schedule Date",
+-   "length": 0,
+-   "no_copy": 0,
+-   "non_negative": 0,
+-   "permlevel": 0,
+-   "print_hide": 0,
+-   "print_hide_if_no_value": 0,
+-   "read_only": 0,
+-   "remember_last_selected_value": 0,
+-   "report_hide": 0,
+-   "reqd": 0,
+-   "set_only_once": 0,
+-   "show_preview_popup": 0,
+-   "unique": 0
++   "label": "Schedule Date"
+   },
+   {
+-   "allow_bulk_edit": 0,
+-   "allow_on_submit": 0,
+-   "bold": 0,
+-   "collapsible": 0,
+-   "columns": 0,
+-   "creation": "2026-06-18 13:20:22.623558",
+-   "docstatus": 0,
+-   "doctype": "DocField",
+    "fieldname": "section_break_kabl",
+-   "fieldtype": "Section Break",
+-   "hidden": 0,
+-   "ignore_user_permissions": 0,
+-   "in_filter": 0,
+-   "in_global_search": 0,
+-   "in_list_view": 0,
+-   "in_preview": 0,
+-   "in_standard_filter": 0,
+-   "label": "",
+-   "length": 0,
+-   "no_copy": 0,
+-   "non_negative": 0,
+-   "permlevel": 0,
+-   "print_hide": 0,
+-   "print_hide_if_no_value": 0,
+-   "read_only": 0,
+-   "remember_last_selected_value": 0,
+-   "report_hide": 0,
+-   "reqd": 0,
+-   "set_only_once": 0,
+-   "show_preview_popup": 0,
+-   "unique": 0
++   "fieldtype": "Section Break"
+   },
+   {
+-   "allow_bulk_edit": 0,
+-   "allow_on_submit": 0,
+-   "bold": 0,
+-   "collapsible": 0,
+-   "columns": 0,
+-   "creation": "2026-06-18 13:20:22.623558",
+-   "docstatus": 0,
+-   "doctype": "DocField",
+    "fieldname": "transportation_manifest_details",
+    "fieldtype": "Table",
+-   "hidden": 0,
+-   "ignore_user_permissions": 0,
+-   "in_filter": 0,
+-   "in_global_search": 0,
+-   "in_list_view": 0,
+-   "in_preview": 0,
+-   "in_standard_filter": 0,
+    "label": "Transportation Manifest Details",
+-   "length": 0,
+-   "no_copy": 0,
+-   "non_negative": 0,
+-   "options": "Transportation Manifest Details",
+-   "permlevel": 0,
+-   "print_hide": 0,
+-   "print_hide_if_no_value": 0,
+-   "read_only": 0,
+-   "remember_last_selected_value": 0,
+-   "report_hide": 0,
+-   "reqd": 0,
+-   "set_only_once": 0,
+-   "show_preview_popup": 0,
+-   "unique": 0
++   "options": "Transportation Manifest Details"
+   },
+   {
+-   "allow_bulk_edit": 0,
+-   "allow_on_submit": 0,
+-   "bold": 0,
+-   "collapsible": 0,
+-   "columns": 0,
+-   "creation": "2026-06-18 13:20:22.623558",
+    "default": "0",
+    "description": "Currently unlocked pickup stop for attendance checks. 0 = not started; managed by the attendance-check page, not edited by hand.",
+-   "docstatus": 0,
+-   "doctype": "DocField",
+    "fieldname": "active_stop_sequence",
+    "fieldtype": "Int",
+    "hidden": 1,
+-   "ignore_user_permissions": 0,
+-   "in_filter": 0,
+-   "in_global_search": 0,
+-   "in_list_view": 0,
+-   "in_preview": 0,
+-   "in_standard_filter": 0,
+    "label": "Active Stop Sequence",
+-   "length": 0,
+    "no_copy": 1,
+    "non_negative": 1,
+-   "permlevel": 0,
+    "print_hide": 1,
+-   "print_hide_if_no_value": 0,
+-   "read_only": 1,
+-   "remember_last_selected_value": 0,
+-   "report_hide": 0,
+-   "reqd": 0,
+-   "set_only_once": 0,
+-   "show_preview_popup": 0,
+-   "unique": 0
++   "read_only": 1
++  },
++  {
++   "fieldname": "trip_direction",
++   "fieldtype": "Select",
++   "label": "Trip Direction",
++   "options": "\nOutward\nReturn\nMixed"
+   }
+  ],
+- "image_field": null,
+- "idx": 0,
+- "in_create": 0,
+  "index_web_pages_for_search": 1,
+- "is_calendar_and_gantt": 0,
+- "is_submittable": 0,
+- "is_tree": 0,
+- "issingle": 0,
+- "istable": 0,
+- "is_virtual": 0,
+- "max_attachments": 0,
+- "modified": "2026-06-21 09:25:00.000000",
+- "modified_by": "Administrator",
++ "links": [],
++ "modified": "2026-08-17 12:24:57.148524",
++ "modified_by": "h.imran@one-fm.com",
+  "module": "One Fm",
+  "name": "Transportation Manifest",
+  "naming_rule": "By \"Naming Series\" field",
+  "owner": "Administrator",
+  "permissions": [
+   {
+-   "amend": 0,
+-   "cancel": 0,
+    "create": 1,
+-   "creation": "2026-06-18 13:20:22.623558",
+    "delete": 1,
+-   "docstatus": 0,
+-   "doctype": "DocPerm",
+    "email": 1,
+    "export": 1,
+-   "if_owner": 0,
+-   "import": 0,
+-   "name": "g02ge1kt73",
+-   "owner": "Administrator",
+-   "parent": "Transportation Manifest",
+-   "parentfield": "permissions",
+-   "parenttype": "DocType",
+-   "permlevel": 0,
+    "print": 1,
+    "read": 1,
+    "report": 1,
+    "role": "System Manager",
+-   "select": 0,
+-   "set_user_permissions": 0,
+    "share": 1,
+-   "submit": 0,
+    "write": 1
+   },
+   {
+-   "amend": 0,
+-   "cancel": 0,
+    "create": 1,
+-   "docstatus": 0,
+-   "doctype": "DocPerm",
+-   "email": 0,
+    "export": 1,
+-   "if_owner": 0,
+-   "import": 0,
+-   "owner": "Administrator",
+-   "parent": "Transportation Manifest",
+-   "parentfield": "permissions",
+-   "parenttype": "DocType",
+-   "permlevel": 0,
+    "print": 1,
+    "read": 1,
+    "report": 1,
+    "role": "Operations Manager",
+-   "select": 0,
+-   "set_user_permissions": 0,
+-   "share": 0,
+-   "submit": 0,
+    "write": 1
+   }
+  ],
+- "protect_attached_files": 0,
+- "quick_entry": 0,
+- "read_only": 0,
+  "row_format": "Dynamic",
+- "show_name_in_global_search": 0,
+  "sort_field": "modified",
+  "sort_order": "DESC",
+- "track_changes": 0,
+- "track_seen": 0
+-}
++ "states": []
++}
+\ No newline at end of file
+diff --git a/one_fm/one_fm/doctype/transportation_shipment/transportation_shipment.json b/one_fm/one_fm/doctype/transportation_shipment/transportation_shipment.json
+index b2e69aa40..1587ab8c0 100644
+--- a/one_fm/one_fm/doctype/transportation_shipment/transportation_shipment.json
++++ b/one_fm/one_fm/doctype/transportation_shipment/transportation_shipment.json
+@@ -135,7 +135,7 @@
+    "fieldname": "trip_direction",
+    "fieldtype": "Select",
+    "label": "Trip Direction",
+-   "options": "\nOutward\nReturn"
++   "options": "\nOutward\nReturn\nMixed"
+   },
+   {
+    "fieldname": "routing_type_badge",
+@@ -224,8 +224,8 @@
+  ],
+  "index_web_pages_for_search": 1,
+  "links": [],
+- "modified": "2026-07-15 17:22:34.688327",
+- "modified_by": "Administrator",
++ "modified": "2026-08-17 08:35:37.065531",
++ "modified_by": "h.imran@one-fm.com",
+  "module": "One Fm",
+  "name": "Transportation Shipment",
+  "naming_rule": "By \"Naming Series\" field",
+@@ -249,4 +249,4 @@
+  "sort_order": "DESC",
+  "states": [],
+  "track_changes": 1
+-}
++}
+\ No newline at end of file
+diff --git a/one_fm/operations/doctype/route_plan_assignment/route_plan_assignment.json b/one_fm/operations/doctype/route_plan_assignment/route_plan_assignment.json
+index 26f7330b9..7013ef9e4 100644
+--- a/one_fm/operations/doctype/route_plan_assignment/route_plan_assignment.json
++++ b/one_fm/operations/doctype/route_plan_assignment/route_plan_assignment.json
+@@ -1,149 +1,148 @@
+ {
+-  "actions": [],
+-  "creation": "2026-05-04 10:00:00.000000",
+-  "doctype": "DocType",
+-  "editable_grid": 1,
+-  "engine": "InnoDB",
+-  "field_order": [
+-    "card_id",
+-    "transportation_shipment",
+-    "vehicle",
+-    "direction",
+-    "column_break_1",
+-    "stop_index",
+-    "trip_group",
+-    "trip_name",
+-    "headcount",
+-    "section_break_details",
+-    "site",
+-    "shift",
+-    "column_break_2",
+-    "accommodation",
+-    "stop_location",
+-    "section_break_times",
+-    "start_time",
+-    "end_time"
+-  ],
+-  "fields": [
+-    {
+-      "fieldname": "card_id",
+-      "fieldtype": "Data",
+-      "label": "Card ID",
+-      "reqd": 1,
+-      "in_list_view": 1
+-    },
+-    {
+-      "fieldname": "transportation_shipment",
+-      "fieldtype": "Link",
+-      "label": "Transportation Shipment",
+-      "options": "Transportation Shipment",
+-      "description": "Source shipment record linked into this vehicle's manifest array"
+-    },
+-    {
+-      "fieldname": "vehicle",
+-      "fieldtype": "Link",
+-      "label": "Vehicle",
+-      "options": "Vehicle",
+-      "reqd": 1,
+-      "in_list_view": 1
+-    },
+-    {
+-      "fieldname": "direction",
+-      "fieldtype": "Select",
+-      "label": "Direction",
+-      "options": "\nOUTBOUND\nRETURN",
+-      "reqd": 1,
+-      "in_list_view": 1
+-    },
+-    {
+-      "fieldname": "column_break_1",
+-      "fieldtype": "Column Break"
+-    },
+-    {
+-      "fieldname": "stop_index",
+-      "fieldtype": "Int",
+-      "label": "Stop Index",
+-      "default": "0",
+-      "description": "0 = standalone, 1+ = multi-stop trip sequence"
+-    },
+-    {
+-      "fieldname": "trip_group",
+-      "fieldtype": "Data",
+-      "label": "Trip Group",
+-      "description": "Groups multi-stop blocks into one trip"
+-    },
+-    {
+-      "fieldname": "trip_name",
+-      "fieldtype": "Data",
+-      "label": "Trip Name",
+-      "description": "User-defined name for the trip"
+-    },
+-    {
+-      "fieldname": "headcount",
+-      "fieldtype": "Int",
+-      "label": "Headcount",
+-      "in_list_view": 1
+-    },
+-    {
+-      "fieldname": "section_break_details",
+-      "fieldtype": "Section Break",
+-      "label": "Details"
+-    },
+-    {
+-      "fieldname": "site",
+-      "fieldtype": "Data",
+-      "label": "Site"
+-    },
+-    {
+-      "fieldname": "shift",
+-      "fieldtype": "Data",
+-      "label": "Shift"
+-    },
+-    {
+-      "fieldname": "column_break_2",
+-      "fieldtype": "Column Break"
+-    },
+-    {
+-      "fieldname": "accommodation",
+-      "fieldtype": "Data",
+-      "label": "Accommodation"
+-    },
+-    {
+-      "fieldname": "stop_location",
+-      "fieldtype": "Data",
+-      "label": "Stop Location"
+-    },
+-    {
+-      "fieldname": "section_break_times",
+-      "fieldtype": "Section Break",
+-      "label": "Time Window"
+-    },
+-    {
+-      "fieldname": "start_time",
+-      "fieldtype": "Data",
+-      "label": "Start Time",
+-      "description": "ISO timestamp of block start on timeline. Date part = multi-day lock lifespan start; time part = daily trip start."
+-    },
+-    {
+-      "fieldname": "end_time",
+-      "fieldtype": "Data",
+-      "label": "End Time",
+-      "description": "ISO timestamp of block end on timeline. Date part = multi-day lock lifespan end; time part = daily trip end."
+-    }
+-  ],
+-  "index_web_pages_for_search": 0,
+-  "istable": 1,
+-  "links": [],
+-  "modified": "2026-05-04 10:00:00.000000",
+-  "modified_by": "Administrator",
+-  "module": "Operations",
+-  "name": "Route Plan Assignment",
+-  "naming_rule": "Random",
+-  "autoname": "hash",
+-  "owner": "Administrator",
+-  "permissions": [],
+-  "sort_field": "creation",
+-  "sort_order": "ASC",
+-  "states": [],
+-  "track_changes": 0
+-}
++ "actions": [],
++ "autoname": "hash",
++ "creation": "2026-05-04 10:00:00",
++ "doctype": "DocType",
++ "editable_grid": 1,
++ "engine": "InnoDB",
++ "field_order": [
++  "card_id",
++  "transportation_shipment",
++  "vehicle",
++  "direction",
++  "column_break_1",
++  "stop_index",
++  "trip_group",
++  "trip_name",
++  "headcount",
++  "section_break_details",
++  "site",
++  "shift",
++  "column_break_2",
++  "accommodation",
++  "stop_location",
++  "section_break_times",
++  "start_time",
++  "end_time"
++ ],
++ "fields": [
++  {
++   "fieldname": "card_id",
++   "fieldtype": "Data",
++   "in_list_view": 1,
++   "label": "Card ID",
++   "reqd": 1
++  },
++  {
++   "description": "Source shipment record linked into this vehicle's manifest array",
++   "fieldname": "transportation_shipment",
++   "fieldtype": "Link",
++   "label": "Transportation Shipment",
++   "options": "Transportation Shipment"
++  },
++  {
++   "fieldname": "vehicle",
++   "fieldtype": "Link",
++   "in_list_view": 1,
++   "label": "Vehicle",
++   "options": "Vehicle",
++   "reqd": 1
++  },
++  {
++   "fieldname": "direction",
++   "fieldtype": "Select",
++   "in_list_view": 1,
++   "label": "Direction",
++   "options": "\nOUTBOUND\nRETURN\nMIXED",
++   "reqd": 1
++  },
++  {
++   "fieldname": "column_break_1",
++   "fieldtype": "Column Break"
++  },
++  {
++   "default": "0",
++   "description": "0 = standalone, 1+ = multi-stop trip sequence",
++   "fieldname": "stop_index",
++   "fieldtype": "Int",
++   "label": "Stop Index"
++  },
++  {
++   "description": "Groups multi-stop blocks into one trip",
++   "fieldname": "trip_group",
++   "fieldtype": "Data",
++   "label": "Trip Group"
++  },
++  {
++   "description": "User-defined name for the trip",
++   "fieldname": "trip_name",
++   "fieldtype": "Data",
++   "label": "Trip Name"
++  },
++  {
++   "fieldname": "headcount",
++   "fieldtype": "Int",
++   "in_list_view": 1,
++   "label": "Headcount"
++  },
++  {
++   "fieldname": "section_break_details",
++   "fieldtype": "Section Break",
++   "label": "Details"
++  },
++  {
++   "fieldname": "site",
++   "fieldtype": "Data",
++   "label": "Site"
++  },
++  {
++   "fieldname": "shift",
++   "fieldtype": "Data",
++   "label": "Shift"
++  },
++  {
++   "fieldname": "column_break_2",
++   "fieldtype": "Column Break"
++  },
++  {
++   "fieldname": "accommodation",
++   "fieldtype": "Data",
++   "label": "Accommodation"
++  },
++  {
++   "fieldname": "stop_location",
++   "fieldtype": "Data",
++   "label": "Stop Location"
++  },
++  {
++   "fieldname": "section_break_times",
++   "fieldtype": "Section Break",
++   "label": "Time Window"
++  },
++  {
++   "description": "ISO timestamp of block start on timeline. Date part = multi-day lock lifespan start; time part = daily trip start.",
++   "fieldname": "start_time",
++   "fieldtype": "Data",
++   "label": "Start Time"
++  },
++  {
++   "description": "ISO timestamp of block end on timeline. Date part = multi-day lock lifespan end; time part = daily trip end.",
++   "fieldname": "end_time",
++   "fieldtype": "Data",
++   "label": "End Time"
++  }
++ ],
++ "istable": 1,
++ "links": [],
++ "modified": "2026-08-17 08:41:22.107271",
++ "modified_by": "h.imran@one-fm.com",
++ "module": "Operations",
++ "name": "Route Plan Assignment",
++ "naming_rule": "Random",
++ "owner": "Administrator",
++ "permissions": [],
++ "row_format": "Dynamic",
++ "sort_field": "creation",
++ "sort_order": "ASC",
++ "states": []
++}
+\ No newline at end of file
+diff --git a/one_fm/visa_management/doctype/visa_request/visa_request.json b/one_fm/visa_management/doctype/visa_request/visa_request.json
+index f64dee1de..c35c9a551 100644
+--- a/one_fm/visa_management/doctype/visa_request/visa_request.json
++++ b/one_fm/visa_management/doctype/visa_request/visa_request.json
+@@ -182,7 +182,8 @@
+   {
+    "fieldname": "payment_receipt",
+    "fieldtype": "Attach",
+-   "label": "Payment Receipt"
++   "label": "Payment Receipt",
++   "read_only_depends_on": "eval:doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
+   },
+   {
+    "fieldname": "column_break_wjxj",
+@@ -191,7 +192,8 @@
+   {
+    "fieldname": "visa_document",
+    "fieldtype": "Attach",
+-   "label": "Visa Document"
++   "label": "Visa Document",
++   "read_only_depends_on": "eval:doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
+   },
+   {
+    "fieldname": "column_break_jdrk",
+@@ -201,7 +203,7 @@
+    "fieldname": "pam_reference_number",
+    "fieldtype": "Data",
+    "label": "PAM Reference Number",
+-   "mandatory_depends_on": "// eval:doc.workflow_state==\"Pending by GRD Operator\""
++   "read_only_depends_on": "eval:doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending by MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected By PAM\""
+   },
+   {
+    "fieldname": "column_break_gvey",
+@@ -224,7 +226,8 @@
+   {
+    "fieldname": "moi_reference_number",
+    "fieldtype": "Data",
+-   "label": "MOI Reference Number"
++   "label": "MOI Reference Number",
++   "read_only_depends_on": "eval:doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
+   },
+   {
+    "fieldname": "column_break_jvjp",
+@@ -247,7 +250,8 @@
+   {
+    "fieldname": "visa_reference_number",
+    "fieldtype": "Data",
+-   "label": "Visa Reference Number"
++   "label": "Visa Reference Number",
++   "read_only_depends_on": "eval:doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
+   },
+   {
+    "fieldname": "section_break_jrbe",
+@@ -451,17 +455,20 @@
+    "label": "Place of Issue"
+   },
+   {
++   "depends_on": "eval:doc.workflow_state==\"Pending by GRD Operator\" || doc.workflow_state==\"Awaiting Quota Availability\" || doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending By PAM\" || doc.workflow_state==\"Pending by MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By PAM\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\"",
+    "fieldname": "pam_details_section",
+    "fieldtype": "Section Break",
+    "label": "PAM Details"
+   },
+   {
++   "depends_on": "eval:doc.workflow_state==\"Pending by MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected for Re Issue\"|| doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\"",
+    "fieldname": "moi_details_section",
+    "fieldtype": "Section Break",
+    "label": "MOI Details"
+   },
+   {
+    "default": "0",
++   "depends_on": "eval:doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected for Re Issue\"|| doc.workflow_state==\"Completed\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\"",
+    "fieldname": "visa_details_section",
+    "fieldtype": "Section Break",
+    "label": "Visa Details"
+@@ -524,38 +531,40 @@
+    "fieldname": "custom_pam_file",
+    "fieldtype": "Link",
+    "label": "PAM File",
+-   "mandatory_depends_on": "// eval:doc.workflow_state==\"Pending by GRD Operator\"",
+-   "options": "PAM File"
++   "options": "PAM File",
++   "read_only_depends_on": "eval:doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending by MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected By PAM\""
+   },
+   {
+    "fieldname": "custom_visa_application_date",
+    "fieldtype": "Datetime",
+-   "label": "Visa Application Date"
++   "label": "Visa Application Date",
++   "read_only_depends_on": "eval:doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending by MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected By PAM\""
+   },
+   {
+    "fieldname": "custom_pam_designation_list",
+    "fieldtype": "Link",
+    "label": "PAM Designation List",
+-   "mandatory_depends_on": "// eval:doc.workflow_state==\"Pending by GRD Operator\"",
+-   "options": "PAM Designation List"
++   "options": "PAM Designation List",
++   "read_only_depends_on": "eval:doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending by MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected By PAM\""
+   },
+   {
++   "depends_on": "eval:doc.workflow_state==\"Pending By PAM\" || doc.workflow_state==\"Pending by MOI\" || doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Rejected By PAM\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" ",
+    "fieldname": "custom_work_permit_number",
+    "fieldtype": "Data",
+    "label": "Work Permit Number",
+-   "mandatory_depends_on": "eval:doc.workflow_state==\"Pending By MOI\""
++   "read_only_depends_on": "eval:doc.workflow_state==\"Pending by MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected By PAM\""
+   },
+   {
+    "fieldname": "visa_issue_date",
+    "fieldtype": "Date",
+    "label": "Visa Issue Date",
+-   "mandatory_depends_on": "eval:doc.workflow_state==\"Pending Visa Issuance\""
++   "read_only_depends_on": "eval:doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
+   },
+   {
+    "fieldname": "visa_expiry_date",
+    "fieldtype": "Date",
+    "label": "Visa Expiry Date",
+-   "mandatory_depends_on": "eval:doc.workflow_state==\"Pending Visa Issuance\""
++   "read_only_depends_on": "eval:doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
+   },
+   {
+    "fieldname": "column_break_uxnb",
+@@ -564,14 +573,15 @@
+   {
+    "fieldname": "payment_date",
+    "fieldtype": "Date",
+-   "label": "Payment Date"
++   "label": "Payment Date",
++   "read_only_depends_on": "eval:doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
+   }
+  ],
+  "grid_page_length": 50,
+  "index_web_pages_for_search": 1,
+  "is_submittable": 1,
+  "links": [],
+- "modified": "2026-08-11 22:34:32.374895",
++ "modified": "2026-08-23 16:52:05.272808",
+  "modified_by": "g.jotshi@one-fm.com",
+  "module": "Visa Management",
+  "name": "Visa Request",

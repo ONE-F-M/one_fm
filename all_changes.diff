@@ -1,0 +1,3690 @@
+diff --git a/one_fm/grd/doctype/medical_insurance/medical_insurance.json b/one_fm/grd/doctype/medical_insurance/medical_insurance.json
+index 0ed89657b..00dcbcaf8 100644
+--- a/one_fm/grd/doctype/medical_insurance/medical_insurance.json
++++ b/one_fm/grd/doctype/medical_insurance/medical_insurance.json
+@@ -21,6 +21,7 @@
+   "gender",
+   "civil_id",
+   "passport_expiry_date",
++  "centralized_number",
+   "column_break_11",
+   "employee_id",
+   "nationality",
+@@ -285,12 +286,20 @@
+    "fieldtype": "Check",
+    "hidden": 1,
+    "label": "Reminder Government Relations Operator Again"
++  },
++  {
++   "allow_on_submit": 1,
++   "fetch_from": "employee.one_fm_centralized_number",
++   "fieldname": "centralized_number",
++   "fieldtype": "Data",
++   "label": "Centralized Number",
++   "read_only": 1
+   }
+  ],
+  "is_submittable": 1,
+  "links": [],
+- "modified": "2026-08-05 12:00:00.000000",
+- "modified_by": "Administrator",
++ "modified": "2026-08-11 21:29:10.761176",
++ "modified_by": "h.imran@one-fm.com",
+  "module": "GRD",
+  "name": "Medical Insurance",
+  "naming_rule": "By \"Naming Series\" field",
+@@ -336,6 +345,7 @@
+    "write": 1
+   }
+  ],
++ "row_format": "Dynamic",
+  "search_fields": "civil_id,employee_id,date_of_application",
+  "sort_field": "date_of_application",
+  "sort_order": "DESC",
+diff --git a/one_fm/grd/doctype/paci/paci.json b/one_fm/grd/doctype/paci/paci.json
+index 9dee7bb95..4ec4e630a 100644
+--- a/one_fm/grd/doctype/paci/paci.json
++++ b/one_fm/grd/doctype/paci/paci.json
+@@ -21,6 +21,8 @@
+   "third_name_arabic",
+   "last_name_arabic",
+   "civil_id",
++  "damj_is_applicable",
++  "original_civil_id",
+   "column_break_8",
+   "first_name_english",
+   "second_name_english",
+@@ -33,16 +35,23 @@
+   "column_break_16",
+   "pam_designation",
+   "residency_expiry_date",
++  "section_break_flkg",
++  "is_paci_fine_applicable",
++  "paci_fine_amount_kwd",
++  "column_break_xblr",
++  "no_payment_required",
+   "section_break_19",
+   "upload_civil_id_payment",
+   "upload_hawiyati",
+   "upload_civil_id",
++  "upload_damj_letter",
+   "new_civil_id_expiry_date",
++  "pro_user",
+   "column_break_25",
+   "upload_civil_id_payment_datetime",
+   "upload_civil_id_datetime",
+   "completed_on",
+-  "amended_from",
++  "upload_damj_letter_on",
+   "grd_operator",
+   "grd_supervisor",
+   "grd_operator_transfer",
+@@ -50,7 +59,8 @@
+   "reminder_grd_operator_again",
+   "rejection_details_section",
+   "paci_rejection_reason",
+-  "rejected_paci"
++  "rejected_paci",
++  "amended_from"
+  ],
+  "fields": [
+   {
+@@ -248,16 +258,6 @@
+    "options": "Preparation",
+    "read_only": 1
+   },
+-  {
+-   "fieldname": "paci_details_section",
+-   "fieldtype": "Section Break",
+-   "label": "PACI Details"
+-  },
+-  {
+-   "fieldname": "paci_reference_number",
+-   "fieldtype": "Data",
+-   "label": "PACI Reference Number"
+-  },
+   {
+    "fetch_from": "employee.one_fm_civil_id",
+    "fieldname": "civil_id",
+@@ -325,6 +325,16 @@
+    "hidden": 1,
+    "label": "Reminder Government Relations Operator Again"
+   },
++  {
++   "fieldname": "paci_details_section",
++   "fieldtype": "Section Break",
++   "label": "PACI Details"
++  },
++  {
++   "fieldname": "paci_reference_number",
++   "fieldtype": "Data",
++   "label": "PACI Reference Number"
++  },
+   {
+    "fieldname": "rejection_details_section",
+    "fieldtype": "Section Break",
+@@ -332,6 +342,7 @@
+   },
+   {
+    "allow_on_submit": 1,
++   "depends_on": "eval:doc.workflow_state == \"Rejected\"",
+    "fieldname": "paci_rejection_reason",
+    "fieldtype": "Select",
+    "label": "PACI Rejection Reason",
+@@ -345,12 +356,72 @@
+    "no_copy": 1,
+    "options": "PACI",
+    "read_only": 1
++  },
++  {
++   "fieldname": "section_break_flkg",
++   "fieldtype": "Section Break"
++  },
++  {
++   "default": "0",
++   "fieldname": "is_paci_fine_applicable",
++   "fieldtype": "Check",
++   "label": "Is PACI Fine Applicable?"
++  },
++  {
++   "fieldname": "column_break_xblr",
++   "fieldtype": "Column Break"
++  },
++  {
++   "depends_on": "eval:doc.is_paci_fine_applicable == 1",
++   "fieldname": "paci_fine_amount_kwd",
++   "fieldtype": "Currency",
++   "label": "PACI Fine Amount (KWD)",
++   "read_only": 1
++  },
++  {
++   "default": "0",
++   "fieldname": "damj_is_applicable",
++   "fieldtype": "Check",
++   "label": "DAMJ is Applicable"
++  },
++  {
++   "depends_on": "eval:doc.damj_is_applicable == 1",
++   "fieldname": "original_civil_id",
++   "fieldtype": "Data",
++   "label": "Original Civil ID"
++  },
++  {
++   "allow_on_submit": 1,
++   "depends_on": "eval:doc.damj_is_applicable == 1",
++   "fieldname": "upload_damj_letter",
++   "fieldtype": "Attach",
++   "label": "Upload DAMJ Letter",
++   "mandatory_depends_on": "eval:doc.damj_is_applicable == 1"
++  },
++  {
++   "allow_on_submit": 1,
++   "fieldname": "upload_damj_letter_on",
++   "fieldtype": "Data",
++   "label": "Upload DAMJ Letter On",
++   "read_only": 1
++  },
++  {
++   "default": "0",
++   "fieldname": "no_payment_required",
++   "fieldtype": "Check",
++   "label": "No Payment Required"
++  },
++  {
++   "fieldname": "pro_user",
++   "fieldtype": "Link",
++   "label": "PRO User",
++   "options": "User"
+   }
+  ],
+  "is_submittable": 1,
+  "links": [],
+- "modified": "2026-08-10 10:00:00.000000",
+- "modified_by": "Administrator",
++ "modified": "2026-08-20 08:59:37.763679",
++ "modified_by": "h.imran@one-fm.com",
+  "module": "GRD",
+  "name": "PACI",
+  "naming_rule": "By \"Naming Series\" field",
+diff --git a/one_fm/grd/doctype/pam_designation_list/pam_designation_list.json b/one_fm/grd/doctype/pam_designation_list/pam_designation_list.json
+index 669862f6d..456e04a0f 100755
+--- a/one_fm/grd/doctype/pam_designation_list/pam_designation_list.json
++++ b/one_fm/grd/doctype/pam_designation_list/pam_designation_list.json
+@@ -1,4 +1,5 @@
+ {
++ "actions": [],
+  "autoname": "field:designation_name_arabic",
+  "creation": "2019-12-15 21:54:12.573888",
+  "doctype": "DocType",
+@@ -8,7 +9,8 @@
+   "designation_name_english",
+   "designation_name_arabic",
+   "designation_code",
+-  "\u0645\u0647\u0646\u0629_\u0642\u0631\u0627\u0631_\u0627\u0644\u0646\u0633\u0628\u0629"
++  "\u0645\u0647\u0646\u0629_\u0642\u0631\u0627\u0631_\u0627\u0644\u0646\u0633\u0628\u0629",
++  "occupational_sector"
+  ],
+  "fields": [
+   {
+@@ -42,16 +44,27 @@
+   {
+    "fieldname": "\u0645\u0647\u0646\u0629_\u0642\u0631\u0627\u0631_\u0627\u0644\u0646\u0633\u0628\u0629",
+    "fieldtype": "Select",
++   "hidden": 1,
+    "in_list_view": 1,
++   "in_standard_filter": 1,
+    "label": "\u0645\u0647\u0646\u0629 \u0642\u0631\u0627\u0631 \u0627\u0644\u0646\u0633\u0628\u0629",
+-   "options": "\u0639\u0644\u0645\u064a\u0648\u0646 \u0648 \u0641\u0646\u064a\u0648\u0646\n\u0645\u062f\u064a\u0631\u0648\u0646\n\u0643\u062a\u0628\u0629 \u0648 \u062a\u0646\u0641\u064a\u0630\u064a\u0648\u0646\n\u0645\u0642\u062f\u0645\u064a \u062e\u062f\u0645\u0627\u062a\n\u0628\u0627\u0626\u0639\u0648\u0646",
++   "options": "\u0639\u0644\u0645\u064a\u0648\u0646 \u0648 \u0641\u0646\u064a\u0648\u0646\n\u0645\u062f\u064a\u0631\u0648\u0646\n\u0643\u062a\u0628\u0629 \u0648 \u062a\u0646\u0641\u064a\u0630\u064a\u0648\u0646\n\u0645\u0642\u062f\u0645\u064a \u062e\u062f\u0645\u0627\u062a\n\u0628\u0627\u0626\u0639\u0648\u0646"
++  },
++  {
++   "fieldname": "occupational_sector",
++   "fieldtype": "Link",
++   "label": "Occupational Sector",
++   "options": "Occupational Sector",
+    "reqd": 1
+   }
+  ],
+- "modified": "2020-10-26 21:36:41.977915",
+- "modified_by": "Administrator",
++ "grid_page_length": 50,
++ "links": [],
++ "modified": "2026-08-18 19:22:35.415282",
++ "modified_by": "g.jotshi@one-fm.com",
+  "module": "GRD",
+  "name": "PAM Designation List",
++ "naming_rule": "By fieldname",
+  "owner": "Administrator",
+  "permissions": [
+   {
+@@ -68,8 +81,10 @@
+   }
+  ],
+  "quick_entry": 1,
++ "row_format": "Dynamic",
+  "search_fields": "designation_name_english,designation_code",
+  "sort_field": "modified",
+  "sort_order": "DESC",
++ "states": [],
+  "track_changes": 1
+ }
+\ No newline at end of file
+diff --git a/one_fm/grd/doctype/pam_file/pam_file.json b/one_fm/grd/doctype/pam_file/pam_file.json
+index f6aba8e29..25438288b 100644
+--- a/one_fm/grd/doctype/pam_file/pam_file.json
++++ b/one_fm/grd/doctype/pam_file/pam_file.json
+@@ -1,113 +1,173 @@
+ {
+-    "actions": [],
+-    "autoname": "field:pam_file_name",
+-    "creation": "2019-12-15 17:26:49.167172",
+-    "doctype": "DocType",
+-    "editable_grid": 1,
+-    "engine": "InnoDB",
+-    "field_order": [
+-     "pam_file_name",
+-     "file_number",
+-     "government_project",
+-     "pam_file_number",
+-     "license_trade_name_english",
+-     "license_trade_name_arabic",
+-     "license_number",
+-     "pam_file_governorate_arabic",
+-     "company_unified_number",
+-     "designation"
+-    ],
+-    "fields": [
+-     {
+-      "fieldname": "pam_file_name",
+-      "fieldtype": "Data",
+-      "label": "PAM File Name",
+-      "unique": 1
+-     },
+-     {
+-      "fieldname": "pam_file_governorate_arabic",
+-      "fieldtype": "Select",
+-      "hidden": 1,
+-      "label": "PAM File Governorate Arabic",
+-      "options": "\u0627\u0644\u0639\u0627\u0635\u0645\u0629 - Capital\n\u062d\u0648\u0644\u064a - Hawalli\n\u0627\u0644\u0641\u0631\u0648\u0627\u0646\u064a\u0629 - Farwaniya\n\u0645\u0628\u0627\u0631\u0643 \u0627\u0644\u0643\u0628\u064a\u0631 - Mubarak Al-Kabeer\n\u0627\u0644\u0623\u062d\u0645\u062f\u064a - Ahmadi\n\u0627\u0644\u062c\u0647\u0631\u0627\u0621 - Jahra"
+-     },
+-     {
+-      "fieldname": "company_unified_number",
+-      "fieldtype": "Data",
+-      "hidden": 1,
+-      "label": "Company Unified Number"
+-     },
+-     {
+-      "fieldname": "designation",
+-      "fieldtype": "Table",
+-      "label": "Designation",
+-      "options": "PAM File Table"
+-     },
+-     {
+-      "depends_on": "eval:doc.government_project==0",
+-      "fieldname": "license_trade_name_english",
+-      "fieldtype": "Link",
+-      "label": "Company License",
+-      "options": "MOCI License"
+-     },
+-     {
+-      "default": "0",
+-      "fieldname": "government_project",
+-      "fieldtype": "Check",
+-      "label": "Government Project"
+-     },
+-     {
+-      "depends_on": "eval:doc.government_project==0",
+-      "fetch_from": "license_trade_name_english.license_trade_name_arabic",
+-      "fieldname": "license_trade_name_arabic",
+-      "fieldtype": "Data",
+-      "label": "License Trade Name (Arabic)",
+-      "read_only": 1
+-     },
+-     {
+-      "depends_on": "eval:doc.government_project==0",
+-      "fetch_from": "license_trade_name_english.license_number",
+-      "fieldname": "license_number",
+-      "fieldtype": "Data",
+-      "label": "License Number",
+-      "read_only": 1
+-     },
+-     {
+-      "depends_on": "eval:doc.government_project==0",
+-      "fieldname": "file_number",
+-      "fieldtype": "Data",
+-      "label": "File Number"
+-     },
+-     {
+-      "fieldname": "pam_file_number",
+-      "fieldtype": "Data",
+-      "label": "PAM File Number"
+-     }
+-    ],
+-    "links": [],
+-    "modified": "2022-11-21 14:08:39.068930",
+-    "modified_by": "Administrator",
+-    "module": "GRD",
+-    "name": "PAM File",
+-    "naming_rule": "By fieldname",
+-    "owner": "Administrator",
+-    "permissions": [
+-     {
+-      "create": 1,
+-      "delete": 1,
+-      "email": 1,
+-      "export": 1,
+-      "print": 1,
+-      "read": 1,
+-      "report": 1,
+-      "role": "System Manager",
+-      "share": 1,
+-      "write": 1
+-     }
+-    ],
+-    "quick_entry": 1,
+-    "sort_field": "modified",
+-    "sort_order": "DESC",
+-    "states": [],
+-    "track_changes": 1
+-   }
++ "actions": [],
++ "autoname": "field:pam_file_name",
++ "creation": "2019-12-15 17:26:49.167172",
++ "doctype": "DocType",
++ "editable_grid": 1,
++ "engine": "InnoDB",
++ "field_order": [
++  "pam_file_name",
++  "file_number",
++  "file_status",
++  "government_project",
++  "pam_file_number",
++  "license_number",
++  "pam_file_governorate_arabic",
++  "company_unified_number",
++  "designation",
++  "column_break_qcig",
++  "license_trade_name_english",
++  "license_trade_name_arabic",
++  "number_of_active_licenses",
++  "number_of_inactive_licenses",
++  "license_numbers",
++  "section_break_lgat",
++  "pam_licenses",
++  "amended_from"
++ ],
++ "fields": [
++  {
++   "fieldname": "pam_file_name",
++   "fieldtype": "Data",
++   "label": "PAM File Name",
++   "unique": 1
++  },
++  {
++   "fieldname": "pam_file_governorate_arabic",
++   "fieldtype": "Select",
++   "hidden": 1,
++   "label": "PAM File Governorate Arabic",
++   "options": "\u0627\u0644\u0639\u0627\u0635\u0645\u0629 - Capital\n\u062d\u0648\u0644\u064a - Hawalli\n\u0627\u0644\u0641\u0631\u0648\u0627\u0646\u064a\u0629 - Farwaniya\n\u0645\u0628\u0627\u0631\u0643 \u0627\u0644\u0643\u0628\u064a\u0631 - Mubarak Al-Kabeer\n\u0627\u0644\u0623\u062d\u0645\u062f\u064a - Ahmadi\n\u0627\u0644\u062c\u0647\u0631\u0627\u0621 - Jahra"
++  },
++  {
++   "fieldname": "company_unified_number",
++   "fieldtype": "Data",
++   "hidden": 1,
++   "label": "Company Unified Number"
++  },
++  {
++   "fieldname": "designation",
++   "fieldtype": "Table",
++   "hidden": 1,
++   "label": "Designation",
++   "options": "PAM File Table"
++  },
++  {
++   "depends_on": "eval:doc.government_project==0",
++   "fieldname": "license_trade_name_english",
++   "fieldtype": "Link",
++   "label": "Company License",
++   "options": "MOCI License"
++  },
++  {
++   "default": "0",
++   "fieldname": "government_project",
++   "fieldtype": "Check",
++   "hidden": 1,
++   "label": "Government Project"
++  },
++  {
++   "depends_on": "eval:doc.government_project==0",
++   "fetch_from": "license_trade_name_english.license_trade_name_arabic",
++   "fieldname": "license_trade_name_arabic",
++   "fieldtype": "Data",
++   "label": "License Trade Name (Arabic)",
++   "read_only": 1
++  },
++  {
++   "depends_on": "eval:doc.government_project==0",
++   "fetch_from": "license_trade_name_english.license_number",
++   "fieldname": "license_number",
++   "fieldtype": "Data",
++   "label": "MOCI License Number",
++   "read_only": 1
++  },
++  {
++   "depends_on": "eval:doc.government_project==0",
++   "fieldname": "file_number",
++   "fieldtype": "Data",
++   "label": "File Number"
++  },
++  {
++   "fieldname": "pam_file_number",
++   "fieldtype": "Data",
++   "hidden": 1,
++   "label": "PAM File Number"
++  },
++  {
++   "fieldname": "file_status",
++   "fieldtype": "Select",
++   "label": "File Status",
++   "options": "\nActive\nInactive"
++  },
++  {
++   "fieldname": "column_break_qcig",
++   "fieldtype": "Column Break"
++  },
++  {
++   "fieldname": "number_of_active_licenses",
++   "fieldtype": "Data",
++   "label": "Number of Active Licenses"
++  },
++  {
++   "fieldname": "number_of_inactive_licenses",
++   "fieldtype": "Data",
++   "label": "Number of Inactive Licenses"
++  },
++  {
++   "fieldname": "license_numbers",
++   "fieldtype": "Select",
++   "hidden": 1,
++   "label": "License Numbers",
++   "options": "\n2921143(Private)\n90000426271(T4)\n15201800010(Opera File)"
++  },
++  {
++   "fieldname": "section_break_lgat",
++   "fieldtype": "Section Break"
++  },
++  {
++   "fieldname": "pam_licenses",
++   "fieldtype": "Table",
++   "label": "PAM Licenses",
++   "options": "PAM Licenses"
++  },
++  {
++   "fieldname": "amended_from",
++   "fieldtype": "Link",
++   "label": "Amended From",
++   "no_copy": 1,
++   "options": "PAM File",
++   "print_hide": 1,
++   "read_only": 1,
++   "search_index": 1
++  }
++ ],
++ "grid_page_length": 50,
++ "links": [],
++ "modified": "2026-08-11 11:22:52.987385",
++ "modified_by": "g.jotshi@one-fm.com",
++ "module": "GRD",
++ "name": "PAM File",
++ "naming_rule": "By fieldname",
++ "owner": "Administrator",
++ "permissions": [
++  {
++   "create": 1,
++   "delete": 1,
++   "email": 1,
++   "export": 1,
++   "print": 1,
++   "read": 1,
++   "report": 1,
++   "role": "System Manager",
++   "share": 1,
++   "write": 1
++  }
++ ],
++ "quick_entry": 1,
++ "row_format": "Dynamic",
++ "sort_field": "modified",
++ "sort_order": "DESC",
++ "states": [],
++ "track_changes": 1
++}
+\ No newline at end of file
+diff --git a/one_fm/grd/doctype/preparation/preparation.json b/one_fm/grd/doctype/preparation/preparation.json
+index 345d74cd2..72200664f 100644
+--- a/one_fm/grd/doctype/preparation/preparation.json
++++ b/one_fm/grd/doctype/preparation/preparation.json
+@@ -8,6 +8,7 @@
+  "field_order": [
+   "naming_series",
+   "posting_date",
++  "category",
+   "set_renewal_for_all",
+   "preparation_record",
+   "total_payment",
+@@ -97,14 +98,34 @@
+    "fieldtype": "Currency",
+    "label": "Total Payment",
+    "read_only": 1
++  },
++  {
++   "allow_on_submit": 1,
++   "fieldname": "category",
++   "fieldtype": "Select",
++   "in_list_view": 1,
++   "in_standard_filter": 1,
++   "label": "Category",
++   "options": "\nOnboarding\nOffboarding\nRenewal"
+   }
+  ],
+  "is_submittable": 1,
+- "links": [],
+- "modified": "2021-09-09 14:09:13.594820",
+- "modified_by": "Administrator",
++ "links": [
++  {
++   "link_doctype": "Medical Appointment",
++   "link_fieldname": "preparation"
++  },
++  {
++   "group": "Overseas",
++   "link_doctype": "PCC Attestation",
++   "link_fieldname": "preparation"
++  }
++ ],
++ "modified": "2026-08-17 21:50:17.983938",
++ "modified_by": "h.imran@one-fm.com",
+  "module": "GRD",
+  "name": "Preparation",
++ "naming_rule": "Expression",
+  "owner": "Administrator",
+  "permissions": [
+   {
+@@ -135,7 +156,9 @@
+   }
+  ],
+  "quick_entry": 1,
++ "row_format": "Dynamic",
+  "sort_field": "modified",
+  "sort_order": "DESC",
++ "states": [],
+  "track_changes": 1
+ }
+\ No newline at end of file
+diff --git a/one_fm/grd/doctype/preparation_record/preparation_record.json b/one_fm/grd/doctype/preparation_record/preparation_record.json
+index b29da9d1d..bd0ec1d16 100644
+--- a/one_fm/grd/doctype/preparation_record/preparation_record.json
++++ b/one_fm/grd/doctype/preparation_record/preparation_record.json
+@@ -14,15 +14,25 @@
+   "nationality",
+   "residency_expiry_date",
+   "renewal_or_extend",
+-  "ref_doctype",
+-  "ref_name",
+   "no_of_years",
+   "column_break_11",
+   "work_permit_amount",
+   "medical_insurance_amount",
+   "residency_stamp_amount",
+   "civil_id_amount",
+-  "total_amount"
++  "total_amount",
++  "status_tracking_section",
++  "ref_doctype",
++  "column_break_vixp",
++  "ref_name",
++  "column_break_wbqs",
++  "ref_doctype_status",
++  "reference_records_section",
++  "medical_appointment",
++  "column_break_jpos",
++  "fingerprint_appointment",
++  "column_break_mdur",
++  "pcc_attestation"
+  ],
+  "fields": [
+   {
+@@ -91,7 +101,6 @@
+   },
+   {
+    "allow_on_submit": 1,
+-   "depends_on": "eval: doc.renewal_or_extend == \"Renewal\"",
+    "fieldname": "no_of_years",
+    "fieldtype": "Select",
+    "label": "No. of Years",
+@@ -136,18 +145,73 @@
+    "read_only": 1
+   },
+   {
++   "fetch_from": "employee.relieving_date",
+    "fieldname": "relieving_date",
+    "fieldtype": "Date",
+    "in_list_view": 1,
+    "label": "Relieving Date",
+    "read_only": 1
++  },
++  {
++   "allow_on_submit": 1,
++   "fieldname": "ref_doctype_status",
++   "fieldtype": "Data",
++   "label": "Ref Doctype Status",
++   "read_only": 1
++  },
++  {
++   "fieldname": "reference_records_section",
++   "fieldtype": "Section Break",
++   "label": "Reference Records"
++  },
++  {
++   "allow_on_submit": 1,
++   "fieldname": "medical_appointment",
++   "fieldtype": "Link",
++   "label": "Medical Appointment",
++   "options": "Medical Appointment"
++  },
++  {
++   "fieldname": "column_break_jpos",
++   "fieldtype": "Column Break"
++  },
++  {
++   "allow_on_submit": 1,
++   "fieldname": "fingerprint_appointment",
++   "fieldtype": "Link",
++   "label": "Fingerprint Appointment",
++   "options": "Fingerprint Appointment"
++  },
++  {
++   "fieldname": "column_break_mdur",
++   "fieldtype": "Column Break"
++  },
++  {
++   "allow_on_submit": 1,
++   "fieldname": "pcc_attestation",
++   "fieldtype": "Link",
++   "label": "PCC Attestation",
++   "options": "PCC Attestation"
++  },
++  {
++   "fieldname": "status_tracking_section",
++   "fieldtype": "Section Break",
++   "label": "Status Tracking"
++  },
++  {
++   "fieldname": "column_break_vixp",
++   "fieldtype": "Column Break"
++  },
++  {
++   "fieldname": "column_break_wbqs",
++   "fieldtype": "Column Break"
+   }
+  ],
+  "grid_page_length": 50,
+  "istable": 1,
+  "links": [],
+- "modified": "2026-08-05 12:00:00.000000",
+- "modified_by": "Administrator",
++ "modified": "2026-08-19 08:17:18.810092",
++ "modified_by": "h.imran@one-fm.com",
+  "module": "GRD",
+  "name": "Preparation Record",
+  "naming_rule": "Expression (old style)",
+diff --git a/one_fm/grd/doctype/residency/residency.json b/one_fm/grd/doctype/residency/residency.json
+index 92dd00fdb..21ee43ca2 100644
+--- a/one_fm/grd/doctype/residency/residency.json
++++ b/one_fm/grd/doctype/residency/residency.json
+@@ -34,6 +34,8 @@
+   "last_name_english",
+   "section_break_20",
+   "one_fm_civil_id",
++  "damj_is_applicable",
++  "original_civil_id",
+   "designation",
+   "place_of_birth",
+   "gender",
+@@ -59,13 +61,21 @@
+   "company_street_name",
+   "company_building_name",
+   "company_contact_number",
++  "section_break_vrai",
++  "residency_fine_to_be_added",
++  "column_break_zpot",
++  "residency_fine_amount_kwd",
+   "section_break_42",
+   "invoice_attachment",
+   "residency_attachment",
++  "upload_residency_fine_payment_receipt",
++  "upload_damj_letter",
+   "new_residency_expiry_date",
+   "column_break_34",
+   "invoice_attachment_date",
+   "residency_attachment_date",
++  "upload_residency_fine_payment_receipt_on",
++  "upload_damj_letter_on",
+   "new_residency_expiry_date_update_time",
+   "section_break_40",
+   "grd_operator",
+@@ -488,6 +498,7 @@
+   {
+    "fieldname": "apply_for",
+    "fieldtype": "Select",
++   "hidden": 1,
+    "label": "Apply for",
+    "options": "\n1 \u0625\u0634\u0639\u0627\u0631\n14 \u0645\u0624\u0642\u062a\u0629\n18 \u0639\u0645\u0644 \u0623\u0647\u0644\u064a"
+   },
+@@ -516,12 +527,76 @@
+    "fieldtype": "Data",
+    "label": "Fourth Name",
+    "read_only": 1
++  },
++  {
++   "fieldname": "section_break_vrai",
++   "fieldtype": "Section Break"
++  },
++  {
++   "default": "0",
++   "fieldname": "residency_fine_to_be_added",
++   "fieldtype": "Check",
++   "label": "Residency Fine to be Added"
++  },
++  {
++   "fieldname": "column_break_zpot",
++   "fieldtype": "Column Break"
++  },
++  {
++   "depends_on": "eval:doc.residency_fine_to_be_added == 1",
++   "fieldname": "residency_fine_amount_kwd",
++   "fieldtype": "Currency",
++   "label": "Residency Fine Amount (KWD)"
++  },
++  {
++   "allow_on_submit": 1,
++   "depends_on": "eval:doc.residency_fine_to_be_added == 1",
++   "fieldname": "upload_residency_fine_payment_receipt",
++   "fieldtype": "Attach",
++   "label": "Upload Residency Fine Payment Receipt",
++   "print_hide": 1
++  },
++  {
++   "allow_on_submit": 1,
++   "fieldname": "upload_residency_fine_payment_receipt_on",
++   "fieldtype": "Data",
++   "label": "Upload Residency Fine Payment Receipt On",
++   "read_only": 1
++  },
++  {
++   "default": "0",
++   "fieldname": "damj_is_applicable",
++   "fieldtype": "Check",
++   "label": "DAMJ is Applicable"
++  },
++  {
++   "allow_on_submit": 1,
++   "depends_on": "eval:doc.damj_is_applicable == 1",
++   "fieldname": "original_civil_id",
++   "fieldtype": "Data",
++   "label": "Original Civil ID",
++   "mandatory_depends_on": "eval:doc.damj_is_applicable == 1"
++  },
++  {
++   "allow_on_submit": 1,
++   "depends_on": "eval:doc.damj_is_applicable == 1",
++   "fieldname": "upload_damj_letter",
++   "fieldtype": "Attach",
++   "label": "Upload DAMJ Letter",
++   "print_hide": 1
++  },
++  {
++   "fieldname": "upload_damj_letter_on",
++   "fieldtype": "Data",
++   "label": "Upload DAMJ Letter On",
++   "print_hide": 1,
++   "read_only": 1
+   }
+  ],
+  "is_submittable": 1,
+  "links": [],
+- "modified": "2026-08-05 12:00:00.000000",
+- "modified_by": "Administrator",
++ "modified": "2026-08-19 08:57:17.680331",
++ "modified_by": "h.imran@one-fm.com",
+  "module": "GRD",
+  "name": "Residency",
+  "naming_rule": "By \"Naming Series\" field",
+diff --git a/one_fm/grd/doctype/work_permit/work_permit.json b/one_fm/grd/doctype/work_permit/work_permit.json
+index 39cd5b95b..16d320fa4 100644
+--- a/one_fm/grd/doctype/work_permit/work_permit.json
++++ b/one_fm/grd/doctype/work_permit/work_permit.json
+@@ -8,6 +8,7 @@
+  "engine": "InnoDB",
+  "field_order": [
+   "naming_series",
++  "amendment_no",
+   "employee",
+   "date_of_application",
+   "preparation",
+@@ -119,7 +120,6 @@
+   "pam_rejection_reason",
+   "column_break_heim",
+   "previous_company_rejection_reason",
+-  "reason_for_rejection",
+   "section_break_60",
+   "notify_finance_user",
+   "amount_to_pay",
+@@ -153,7 +153,7 @@
+    "fieldtype": "Select",
+    "in_list_view": 1,
+    "label": "Work Permit Type",
+-   "options": "\nRenewal Non Kuwaiti\nRenewal Kuwaiti\nOverseas\nLocal Transfer\nNew Kuwaiti\nCancellation",
++   "options": "\nRenewal Non Kuwaiti\nRenewal Kuwaiti\nOverseas\nOverseas (Government)\nLocal Transfer\nNew Kuwaiti\nCancellation",
+    "permlevel": 1,
+    "reqd": 1
+   },
+@@ -358,15 +358,6 @@
+    "label": "Amount To Pay",
+    "permlevel": 1
+   },
+-  {
+-   "allow_on_submit": 1,
+-   "depends_on": "eval: doc.workflow_state=='Rejected'",
+-   "fieldname": "reason_for_rejection",
+-   "fieldtype": "Data",
+-   "hidden": 1,
+-   "label": "N Reason for Rejection",
+-   "permlevel": 1
+-  },
+   {
+    "allow_on_submit": 1,
+    "fieldname": "attach_invoice",
+@@ -615,34 +606,6 @@
+    "label": "Ref Name",
+    "options": "ref_doctype"
+   },
+-  {
+-   "depends_on": "eval:doc.workflow_state == \"Rejected\"",
+-   "fieldname": "section_break_aueh",
+-   "fieldtype": "Section Break",
+-   "label": "Rejection Reason"
+-  },
+-  {
+-   "allow_on_submit": 1,
+-   "depends_on": "eval:doc.reason_of_rejection == \"Rejected by PAM\"",
+-   "fieldname": "pam_rejection_reason",
+-   "fieldtype": "Select",
+-   "label": "PAM Rejection Reason",
+-   "mandatory_depends_on": "eval:doc.reason_of_rejection == \"Rejected by PAM\"",
+-   "options": "\nPAM Contract\nGender"
+-  },
+-  {
+-   "fieldname": "column_break_heim",
+-   "fieldtype": "Column Break"
+-  },
+-  {
+-   "allow_on_submit": 1,
+-   "depends_on": "eval:doc.reason_of_rejection == \"Rejected by previous company\"",
+-   "fieldname": "previous_company_rejection_reason",
+-   "fieldtype": "Select",
+-   "label": "Previous Company Rejection Reason",
+-   "mandatory_depends_on": "eval:doc.reason_of_rejection == \"Rejected by previous company\"",
+-   "options": "\nAuto rejected after 3 days\nPrevious Sponsor Rejected"
+-  },
+   {
+    "fieldname": "reason_of_rejection",
+    "fieldtype": "Select",
+@@ -652,8 +615,8 @@
+   },
+   {
+    "fieldname": "details_of_rejection",
+-   "hidden": 1,
+    "fieldtype": "Small Text",
++   "hidden": 1,
+    "label": "Details of Rejection"
+   },
+   {
+@@ -703,20 +666,6 @@
+    "label": "Reference Number Set On",
+    "read_only": 1
+   },
+-  {
+-   "depends_on": "eval:doc.rejected_work_permit",
+-   "fieldname": "section_break_yqjj",
+-   "fieldtype": "Section Break"
+-  },
+-  {
+-   "description": "The rejected permit this application was raised to replace",
+-   "fieldname": "rejected_work_permit",
+-   "fieldtype": "Link",
+-   "label": "Rejected Work Permit",
+-   "no_copy": 1,
+-   "options": "Work Permit",
+-   "read_only": 1
+-  },
+   {
+    "default": "https://e-portal.manpower.gov.kw/PamAshalPortalApp/login.jsp",
+    "fieldname": "pam_website",
+@@ -965,12 +914,53 @@
+    "fieldtype": "Date",
+    "label": "Employee Last Checkin",
+    "read_only": 1
++  },
++  {
++   "fieldname": "section_break_aueh",
++   "fieldtype": "Section Break",
++   "label": "Rejection Reason"
++  },
++  {
++   "allow_on_submit": 1,
++   "fieldname": "pam_rejection_reason",
++   "fieldtype": "Select",
++   "label": "PAM Rejection Reason",
++   "options": "\nPAM Contract\nGender"
++  },
++  {
++   "fieldname": "column_break_heim",
++   "fieldtype": "Column Break"
++  },
++  {
++   "allow_on_submit": 1,
++   "fieldname": "previous_company_rejection_reason",
++   "fieldtype": "Select",
++   "label": "Previous Company Rejection Reason",
++   "options": "\nAuto rejected after 3 days\nPrevious Sponsor Rejected"
++  },
++  {
++   "fieldname": "section_break_yqjj",
++   "fieldtype": "Section Break"
++  },
++  {
++   "fieldname": "rejected_work_permit",
++   "fieldtype": "Link",
++   "label": "Rejected Work Permit",
++   "options": "Work Permit",
++   "read_only": 1
++  },
++  {
++   "fieldname": "amendment_no",
++   "fieldtype": "Int",
++   "in_list_view": 1,
++   "label": "Amendment No",
++   "read_only": 1
+   }
+  ],
+  "is_submittable": 1,
+  "links": [],
+- "modified": "2026-08-07 12:00:00.000000",
+- "modified_by": "Administrator",
++ "modified": "2026-08-17 20:48:55.437366",
++ "modified_by": "h.imran@one-fm.com",
+  "module": "GRD",
+  "name": "Work Permit",
+  "naming_rule": "By \"Naming Series\" field",
+diff --git a/one_fm/legal/doctype/penalty_and_investigation/penalty_and_investigation.json b/one_fm/legal/doctype/penalty_and_investigation/penalty_and_investigation.json
+index ec73a020e..c1a277cac 100644
+--- a/one_fm/legal/doctype/penalty_and_investigation/penalty_and_investigation.json
++++ b/one_fm/legal/doctype/penalty_and_investigation/penalty_and_investigation.json
+@@ -5,179 +5,75 @@
+  "creation": "2026-04-21 15:49:26.670894",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+- "grid_page_length": 50,
+- "index_web_pages_for_search": 1,
+- "is_submittable": 1,
+- "links": [],
+- "modified": "2026-07-30 22:05:00.000000",
+- "modified_by": "Administrator",
+- "module": "Legal",
+- "name": "Penalty And Investigation",
+- "naming_rule": "Expression (old style)",
+- "owner": "Administrator",
+- "permissions": [
+-  {
+-   "create": 1,
+-   "delete": 1,
+-   "email": 1,
+-   "export": 1,
+-   "print": 1,
+-   "read": 1,
+-   "report": 1,
+-   "role": "System Manager",
+-   "share": 1,
+-   "submit": 1,
+-   "write": 1
+-  },
+-  {
+-   "create": 1,
+-   "delete": 1,
+-   "email": 1,
+-   "export": 1,
+-   "print": 1,
+-   "read": 1,
+-   "report": 1,
+-   "role": "Employee",
+-   "share": 1,
+-   "write": 1
+-  },
+-  {
+-   "create": 1,
+-   "delete": 1,
+-   "email": 1,
+-   "export": 1,
+-   "print": 1,
+-   "read": 1,
+-   "report": 1,
+-   "role": "HR Supervisor",
+-   "share": 1,
+-   "write": 1
+-  },
+-  {
+-   "create": 1,
+-   "delete": 1,
+-   "email": 1,
+-   "export": 1,
+-   "print": 1,
+-   "read": 1,
+-   "report": 1,
+-   "role": "HR Manager",
+-   "share": 1,
+-   "write": 1
+-  },
+-  {
+-   "create": 1,
+-   "delete": 1,
+-   "email": 1,
+-   "export": 1,
+-   "print": 1,
+-   "read": 1,
+-   "report": 1,
+-   "role": "General Manager",
+-   "share": 1,
+-   "write": 1
+-  }
+- ],
+- "row_format": "Dynamic",
+- "sort_field": "modified",
+- "sort_order": "DESC",
+- "states": [
+-  {
+-   "color": "Blue",
+-   "title": "Draft"
+-  },
+-  {
+-   "color": "Blue",
+-   "title": "Pending Employee Response"
+-  },
+-  {
+-   "color": "Blue",
+-   "title": "Rejected by Employee"
+-  },
+-  {
+-   "color": "Blue",
+-   "title": "Pending Supervisor Review"
+-  },
+-  {
+-   "color": "Blue",
+-   "title": "Pending HR Review"
+-  },
+-  {
+-   "color": "Blue",
+-   "title": "Pending GM Decision"
+-  },
+-  {
+-   "color": "Blue",
+-   "title": "Pending Legal Investigation "
+-  },
+-  {
+-   "color": "Blue",
+-   "title": "Apply Penalty"
+-  },
+-  {
+-   "color": "Blue",
+-   "title": "Mark as Completed "
+-  },
+-  {
+-   "color": "Blue",
+-   "title": "Canceled by GM"
+-  },
+-  {
+-   "color": "Blue",
+-   "title": "Canceled by Supervisor"
+-  },
+-  {
+-   "color": "Blue",
+-   "title": "Accepted by Employee"
+-  }
++ "field_order": [
++  "amended_from",
++  "series",
++  "section_break_pekz",
++  "issuance_date",
++  "issuer",
++  "employee",
++  "employee_name",
++  "employee_user",
++  "department",
++  "operations_site",
++  "project",
++  "column_break_xwza",
++  "incident_date",
++  "applied_penalty_code",
++  "penalty_name",
++  "penalty_status",
++  "created_by",
++  "penalty_serial_no",
++  "employee_response",
++  "refusal_proof",
++  "penalty",
++  "offence_count",
++  "applied_level",
++  "column_break_hgui",
++  "penalty_category",
++  "action_type",
++  "salary_deduction_days",
++  "salary_deduction_amount",
++  "section_break_waiv",
++  "employee_remarks",
++  "column_break_ahde",
++  "supervisor_remarks",
++  "supervisor_incident_report",
++  "incident_file",
++  "hr_remarks",
++  "hr_investigation_report",
++  "column_break_tncv",
++  "legal_department_remarks",
++  "legal_investigation_report",
++  "decision",
++  "general_manager_decision",
++  "additional",
++  "company_damage",
++  "asset_damage",
++  "column_break_rjfg",
++  "customer_property_damage",
++  "other_damages",
++  "reference_section",
++  "shift_request",
++  "column_break_jjer",
++  "attendance_check_action"
+  ],
+- "track_changes": 1,
+- "issingle": 0,
+- "is_tree": 0,
+- "istable": 0,
+- "editable_grid": 0,
+- "read_only": 0,
+- "in_create": 0,
+- "allow_copy": 0,
+- "allow_import": 0,
+- "hide_toolbar": 0,
+- "track_seen": 0,
+- "max_attachments": 0,
+- "show_name_in_global_search": 0,
+- "custom": 0,
+- "beta": 0,
+- "has_web_view": 0,
+- "allow_guest_to_view": 0,
+- "email_append_to": 0,
+- "migration_hash": "39ef8656f2c05b58639c3494d7d4867e",
+- "quick_entry": 0,
+- "track_views": 0,
+- "is_virtual": 0,
+- "allow_events_in_timeline": 0,
+- "allow_auto_repeat": 0,
+- "show_preview_popup": 0,
+- "is_calendar_and_gantt": 0,
+- "show_title_field_in_link": 0,
+- "translated_doctype": 0,
+- "force_re_route_to_default_view": 0,
+- "queue_in_background": 0,
+- "__unsaved": 0,
+  "fields": [
+   {
+    "fieldname": "amended_from",
+-   "label": "Amended From",
+    "fieldtype": "Link",
++   "label": "Amended From",
++   "no_copy": 1,
+    "options": "Penalty And Investigation",
+-   "search_index": 1,
+    "print_hide": 1,
+-   "no_copy": 1,
+-   "read_only": 1
++   "read_only": 1,
++   "search_index": 1
+   },
+   {
+    "fieldname": "series",
+-   "label": "Series",
+    "fieldtype": "Select",
+-   "hidden": 1
++   "hidden": 1,
++   "label": "Series"
+   },
+   {
+    "fieldname": "section_break_pekz",
+@@ -185,58 +81,58 @@
+   },
+   {
+    "fieldname": "issuance_date",
+-   "label": "Issuance Date",
+-   "fieldtype": "Date"
++   "fieldtype": "Date",
++   "label": "Issuance Date"
+   },
+   {
+    "fieldname": "issuer",
+-   "label": "Issuer",
+    "fieldtype": "Link",
++   "label": "Issuer",
+    "options": "Employee"
+   },
+   {
+    "fieldname": "employee",
+-   "label": "Employee",
+    "fieldtype": "Link",
++   "label": "Employee",
+    "options": "Employee"
+   },
+   {
++   "fetch_from": "employee.employee_name",
+    "fieldname": "employee_name",
+-   "label": "Employee Name",
+    "fieldtype": "Data",
+-   "read_only": 1,
+-   "fetch_from": "employee.employee_name"
++   "label": "Employee Name",
++   "read_only": 1
+   },
+   {
++   "fetch_from": "employee.user_id",
+    "fieldname": "employee_user",
+-   "label": "Employee User",
+    "fieldtype": "Link",
+-   "options": "User",
+    "hidden": 1,
+-   "fetch_from": "employee.user_id"
++   "label": "Employee User",
++   "options": "User"
+   },
+   {
++   "fetch_from": "employee.department",
+    "fieldname": "department",
+-   "label": "Department",
+    "fieldtype": "Link",
++   "label": "Department",
+    "options": "Department",
+-   "read_only": 1,
+-   "fetch_from": "employee.department"
++   "read_only": 1
+   },
+   {
+    "fieldname": "operations_site",
+-   "label": "Operations Site",
+    "fieldtype": "Link",
++   "label": "Operations Site",
+    "options": "Operations Site",
+    "read_only": 1
+   },
+   {
++   "fetch_from": "employee.project",
+    "fieldname": "project",
+-   "label": "Project",
+    "fieldtype": "Link",
++   "label": "Project",
+    "options": "Project",
+-   "read_only": 1,
+-   "fetch_from": "employee.project"
++   "read_only": 1
+   },
+   {
+    "fieldname": "column_break_xwza",
+@@ -244,40 +140,40 @@
+   },
+   {
+    "fieldname": "incident_date",
+-   "label": "Incident Date",
+-   "fieldtype": "Date"
++   "fieldtype": "Date",
++   "label": "Incident Date"
+   },
+   {
+    "fieldname": "applied_penalty_code",
+-   "label": "Applied Penalty Code",
+    "fieldtype": "Link",
++   "label": "Applied Penalty Code",
+    "options": "Penalty Code"
+   },
+   {
++   "fetch_from": "applied_penalty_code.penalty_name",
+    "fieldname": "penalty_name",
+-   "label": "Penalty Name",
+    "fieldtype": "Select",
+-   "read_only": 1,
+-   "fetch_from": "applied_penalty_code.penalty_name"
++   "label": "Penalty Name",
++   "read_only": 1
+   },
+   {
++   "fetch_from": "workflow_state",
+    "fieldname": "penalty_status",
+-   "label": "Penalty Status",
+    "fieldtype": "Data",
+-   "read_only": 1,
+-   "fetch_from": "workflow_state"
++   "label": "Penalty Status",
++   "read_only": 1
+   },
+   {
+    "fieldname": "created_by",
+-   "label": "Created By",
+    "fieldtype": "Link",
++   "label": "Created By",
+    "options": "User",
+    "read_only": 1
+   },
+   {
+    "fieldname": "employee_response",
+-   "label": "Employee Response",
+    "fieldtype": "Select",
++   "label": "Employee Response",
+    "options": "\nAccepted\nRefused\nNot Return from Vacation\nRequest for Investigation by Employee"
+   },
+   {
+@@ -289,19 +185,19 @@
+   },
+   {
+    "fieldname": "penalty",
+-   "label": "Penalty",
+-   "fieldtype": "Section Break"
++   "fieldtype": "Section Break",
++   "label": "Penalty"
+   },
+   {
+    "fieldname": "offence_count",
+-   "label": "Offence Count",
+    "fieldtype": "Int",
++   "label": "Offence Count",
+    "read_only": 1
+   },
+   {
+    "fieldname": "applied_level",
+-   "label": "Applied Level",
+    "fieldtype": "Select",
++   "label": "Applied Level",
+    "options": "\n1st\n2nd\n3rd\n4th\n5th",
+    "read_only": 1
+   },
+@@ -311,30 +207,29 @@
+   },
+   {
+    "fieldname": "penalty_category",
+-   "label": "Penalty Category",
+    "fieldtype": "Select",
++   "label": "Penalty Category",
+    "options": "\nWarning\nSalary Deduction\nUniform\nDamage",
+    "read_only_depends_on": "eval:!!doc.applied_penalty_code"
+   },
+   {
+    "fieldname": "action_type",
+-   "label": "Action Type",
+    "fieldtype": "Select",
++   "label": "Action Type",
+    "options": "\nWarning\nSalary Deduction\nSuspension\nTermination",
+-   "read_only": 0,
+    "read_only_depends_on": "eval:!!doc.applied_penalty_code"
+   },
+   {
+    "fieldname": "salary_deduction_days",
+-   "label": "Salary Deduction Days",
+    "fieldtype": "Float",
++   "label": "Salary Deduction Days",
+    "read_only": 1
+   },
+   {
++   "depends_on": "eval:!!doc.applied_penalty_code || ['Uniform', 'Damage'].includes(doc.penalty_category)",
+    "fieldname": "salary_deduction_amount",
+-   "label": "Salary Deduction Amount",
+    "fieldtype": "Currency",
+-   "depends_on": "eval:!!doc.applied_penalty_code || ['Uniform', 'Damage'].includes(doc.penalty_category)",
++   "label": "Salary Deduction Amount",
+    "read_only_depends_on": "eval:!!doc.applied_penalty_code"
+   },
+   {
+@@ -343,8 +238,8 @@
+   },
+   {
+    "fieldname": "employee_remarks",
+-   "label": "Employee Remarks",
+-   "fieldtype": "Small Text"
++   "fieldtype": "Small Text",
++   "label": "Employee Remarks"
+   },
+   {
+    "fieldname": "column_break_ahde",
+@@ -352,29 +247,29 @@
+   },
+   {
+    "fieldname": "supervisor_remarks",
+-   "label": "Supervisor Remarks",
+    "fieldtype": "Small Text",
+-   "in_list_view": 1
++   "in_list_view": 1,
++   "label": "Supervisor Remarks"
+   },
+   {
+    "fieldname": "supervisor_incident_report",
+-   "label": "Supervisor Incident Report",
+-   "fieldtype": "Attach"
++   "fieldtype": "Attach",
++   "label": "Supervisor Incident Report"
+   },
+   {
+    "fieldname": "incident_file",
+-   "label": "Incident File",
+-   "fieldtype": "Section Break"
++   "fieldtype": "Section Break",
++   "label": "Incident File"
+   },
+   {
+    "fieldname": "hr_remarks",
+-   "label": "HR Remarks",
+-   "fieldtype": "Small Text"
++   "fieldtype": "Small Text",
++   "label": "HR Remarks"
+   },
+   {
+    "fieldname": "hr_investigation_report",
+-   "label": "HR Investigation Report",
+-   "fieldtype": "Attach"
++   "fieldtype": "Attach",
++   "label": "HR Investigation Report"
+   },
+   {
+    "fieldname": "column_break_tncv",
+@@ -382,67 +277,67 @@
+   },
+   {
+    "fieldname": "legal_department_remarks",
+-   "label": "Legal Department Remarks",
+-   "fieldtype": "Small Text"
++   "fieldtype": "Small Text",
++   "label": "Legal Department Remarks"
+   },
+   {
+    "fieldname": "legal_investigation_report",
+-   "label": "Legal Investigation Report",
+-   "fieldtype": "Attach"
++   "fieldtype": "Attach",
++   "label": "Legal Investigation Report"
+   },
+   {
+    "fieldname": "decision",
+-   "label": "Decision",
+-   "fieldtype": "Section Break"
++   "fieldtype": "Section Break",
++   "label": "Decision"
+   },
+   {
+    "fieldname": "general_manager_decision",
+-   "label": "General Manager Decision ",
+    "fieldtype": "Select",
++   "label": "General Manager Decision ",
+    "options": "\nPenalize the Employee\nTerminate the Employee"
+   },
+   {
+    "fieldname": "additional",
+-   "label": "Additional",
+-   "fieldtype": "Section Break"
++   "fieldtype": "Section Break",
++   "label": "Additional"
+   },
+   {
++   "default": "0",
+    "fieldname": "company_damage",
+-   "label": "Company Damage",
+    "fieldtype": "Check",
+-   "default": "0"
++   "label": "Company Damage"
+   },
+   {
++   "default": "0",
+    "fieldname": "asset_damage",
+-   "label": "Asset Damage",
+    "fieldtype": "Check",
+-   "default": "0"
++   "label": "Asset Damage"
+   },
+   {
+    "fieldname": "column_break_rjfg",
+    "fieldtype": "Column Break"
+   },
+   {
++   "default": "0",
+    "fieldname": "customer_property_damage",
+-   "label": "Customer Property Damage",
+    "fieldtype": "Check",
+-   "default": "0"
++   "label": "Customer Property Damage"
+   },
+   {
++   "default": "0",
+    "fieldname": "other_damages",
+-   "label": "Other Damages",
+    "fieldtype": "Check",
+-   "default": "0"
++   "label": "Other Damages"
+   },
+   {
+    "fieldname": "reference_section",
+-   "label": "Reference",
+-   "fieldtype": "Section Break"
++   "fieldtype": "Section Break",
++   "label": "Reference"
+   },
+   {
+    "fieldname": "shift_request",
+-   "label": "Shift Request",
+    "fieldtype": "Link",
++   "label": "Shift Request",
+    "options": "Shift Request",
+    "read_only": 1
+   },
+@@ -452,62 +347,143 @@
+   },
+   {
+    "fieldname": "attendance_check_action",
+-   "label": "Attendance Check Action",
+    "fieldtype": "Link",
++   "label": "Attendance Check Action",
+    "options": "Attendance Check Action",
+    "read_only": 1
++  },
++  {
++   "allow_on_submit": 1,
++   "fieldname": "penalty_serial_no",
++   "fieldtype": "Data",
++   "label": "Penalty Serial No"
+   }
+  ],
+- "field_order": [
+-  "amended_from",
+-  "series",
+-  "section_break_pekz",
+-  "issuance_date",
+-  "issuer",
+-  "employee",
+-  "employee_name",
+-  "employee_user",
+-  "department",
+-  "operations_site",
+-  "project",
+-  "column_break_xwza",
+-  "incident_date",
+-  "applied_penalty_code",
+-  "penalty_name",
+-  "penalty_status",
+-  "created_by",
+-  "employee_response",
+-  "refusal_proof",
+-  "penalty",
+-  "offence_count",
+-  "applied_level",
+-  "column_break_hgui",
+-  "penalty_category",
+-  "action_type",
+-  "salary_deduction_days",
+-  "salary_deduction_amount",
+-  "section_break_waiv",
+-  "employee_remarks",
+-  "column_break_ahde",
+-  "supervisor_remarks",
+-  "supervisor_incident_report",
+-  "incident_file",
+-  "hr_remarks",
+-  "hr_investigation_report",
+-  "column_break_tncv",
+-  "legal_department_remarks",
+-  "legal_investigation_report",
+-  "decision",
+-  "general_manager_decision",
+-  "additional",
+-  "company_damage",
+-  "asset_damage",
+-  "column_break_rjfg",
+-  "customer_property_damage",
+-  "other_damages",
+-  "reference_section",
+-  "shift_request",
+-  "column_break_jjer",
+-  "attendance_check_action"
+- ]
+-}
++ "grid_page_length": 50,
++ "index_web_pages_for_search": 1,
++ "is_submittable": 1,
++ "links": [],
++ "modified": "2026-08-12 08:07:54.408064",
++ "modified_by": "h.imran@one-fm.com",
++ "module": "Legal",
++ "name": "Penalty And Investigation",
++ "naming_rule": "Expression (old style)",
++ "owner": "Administrator",
++ "permissions": [
++  {
++   "create": 1,
++   "delete": 1,
++   "email": 1,
++   "export": 1,
++   "print": 1,
++   "read": 1,
++   "report": 1,
++   "role": "System Manager",
++   "share": 1,
++   "submit": 1,
++   "write": 1
++  },
++  {
++   "create": 1,
++   "delete": 1,
++   "email": 1,
++   "export": 1,
++   "print": 1,
++   "read": 1,
++   "report": 1,
++   "role": "Employee",
++   "share": 1,
++   "write": 1
++  },
++  {
++   "create": 1,
++   "delete": 1,
++   "email": 1,
++   "export": 1,
++   "print": 1,
++   "read": 1,
++   "report": 1,
++   "role": "HR Supervisor",
++   "share": 1,
++   "write": 1
++  },
++  {
++   "create": 1,
++   "delete": 1,
++   "email": 1,
++   "export": 1,
++   "print": 1,
++   "read": 1,
++   "report": 1,
++   "role": "HR Manager",
++   "share": 1,
++   "write": 1
++  },
++  {
++   "create": 1,
++   "delete": 1,
++   "email": 1,
++   "export": 1,
++   "print": 1,
++   "read": 1,
++   "report": 1,
++   "role": "General Manager",
++   "share": 1,
++   "write": 1
++  }
++ ],
++ "row_format": "Dynamic",
++ "sort_field": "modified",
++ "sort_order": "DESC",
++ "states": [
++  {
++   "color": "Blue",
++   "title": "Draft"
++  },
++  {
++   "color": "Blue",
++   "title": "Pending Employee Response"
++  },
++  {
++   "color": "Blue",
++   "title": "Rejected by Employee"
++  },
++  {
++   "color": "Blue",
++   "title": "Pending Supervisor Review"
++  },
++  {
++   "color": "Blue",
++   "title": "Pending HR Review"
++  },
++  {
++   "color": "Blue",
++   "title": "Pending GM Decision"
++  },
++  {
++   "color": "Blue",
++   "title": "Pending Legal Investigation "
++  },
++  {
++   "color": "Blue",
++   "title": "Apply Penalty"
++  },
++  {
++   "color": "Blue",
++   "title": "Mark as Completed "
++  },
++  {
++   "color": "Blue",
++   "title": "Canceled by GM"
++  },
++  {
++   "color": "Blue",
++   "title": "Canceled by Supervisor"
++  },
++  {
++   "color": "Blue",
++   "title": "Accepted by Employee"
++  }
++ ],
++ "track_changes": 1
++}
+\ No newline at end of file
+diff --git a/one_fm/one_fm/doctype/document_request/document_request.json b/one_fm/one_fm/doctype/document_request/document_request.json
+index 39203d68d..4e2934229 100644
+--- a/one_fm/one_fm/doctype/document_request/document_request.json
++++ b/one_fm/one_fm/doctype/document_request/document_request.json
+@@ -1,9 +1,7 @@
+ {
+  "actions": [],
+- "allow_import": 0,
+- "allow_rename": 0,
+  "autoname": "format:DOC-REQ-{#####}",
+- "creation": "2026-07-15 00:00:00.000000",
++ "creation": "2026-07-15 00:00:00",
+  "doctype": "DocType",
+  "editable_grid": 1,
+  "engine": "InnoDB",
+@@ -21,26 +19,26 @@
+   "section_break_approval",
+   "approver",
+   "approver_user",
++  "workflow_state",
+   "column_break_status",
+-  "status",
+   "document_link",
+   "document_version",
+   "bpmn_instance"
+  ],
+  "fields": [
+   {
++   "description": "The employee raising this documentation request.",
+    "fieldname": "requester",
+    "fieldtype": "Link",
+    "in_list_view": 1,
+    "label": "Requester",
+    "options": "Employee",
+-   "reqd": 1,
+-   "description": "The employee raising this documentation request."
++   "reqd": 1
+   },
+   {
++   "fetch_from": "requester.user_id",
+    "fieldname": "requester_user",
+    "fieldtype": "Link",
+-   "fetch_from": "requester.user_id",
+    "label": "Requester User",
+    "options": "User",
+    "read_only": 1
+@@ -50,69 +48,69 @@
+    "fieldtype": "Column Break"
+   },
+   {
++   "default": "Create",
++   "description": "Create a new document, revise an existing one (which publishes a new version), or withdraw an existing one from use. Delete does NOT destroy anything \u2014 it marks the document inactive and revokes its Drive sharing, and a System Manager can reactivate it.",
+    "fieldname": "request_action",
+    "fieldtype": "Select",
+    "in_list_view": 1,
+-   "label": "Action",
+-   "options": "Create\nUpdate\nDelete",
+-   "default": "Create",
+-   "reqd": 1,
+-   "description": "Create a new document, revise an existing one (which publishes a new version), or withdraw an existing one from use. Delete does NOT destroy anything — it marks the document inactive and revokes its Drive sharing, and a System Manager can reactivate it."
++   "label": "Request Action",
++   "options": "\nCreate\nUpdate\nDelete",
++   "reqd": 1
+   },
+   {
+    "fieldname": "document_type",
+    "fieldtype": "Select",
+    "in_list_view": 1,
+    "label": "Document Type",
+-   "options": "Policy\nSOP\nGuideline\nManual",
++   "options": "\nPolicy\nSOP\nGuideline\nManual",
+    "reqd": 1
+   },
+   {
++   "depends_on": "eval:doc.request_action != 'Delete'",
++   "description": "Proposed title for the document being requested.",
+    "fieldname": "title",
+    "fieldtype": "Data",
+    "in_list_view": 1,
+    "label": "Title",
+-   "depends_on": "eval:doc.request_action != 'Delete'",
+-   "mandatory_depends_on": "eval:doc.request_action != 'Delete'",
+-   "description": "Proposed title for the document being requested."
++   "mandatory_depends_on": "eval:doc.request_action != 'Delete'"
+   },
+   {
++   "depends_on": "eval:doc.request_action != 'Delete'",
++   "description": "What's needed and why \u2014 this becomes the AI drafting requirement in Processa.",
+    "fieldname": "requirement_text",
+    "fieldtype": "Small Text",
+    "label": "Requirement",
+-   "depends_on": "eval:doc.request_action != 'Delete'",
+-   "mandatory_depends_on": "eval:doc.request_action != 'Delete'",
+-   "description": "What's needed and why — this becomes the AI drafting requirement in Processa."
++   "mandatory_depends_on": "eval:doc.request_action != 'Delete'"
+   },
+   {
++   "depends_on": "eval:doc.request_action == 'Create'",
++   "description": "The existing guideline document (already cataloged in Document Register) this document should be generated from. Its real content is extracted and given to the AI \u2014 the AI does not invent the guideline itself.",
+    "fieldname": "source_guideline",
+-   "link_filters": "[[\"Document Register\",\"lifecycle_state\",\"=\",\"Active\"]]",
+    "fieldtype": "Link",
+    "label": "Source Guideline",
+-   "options": "Document Register",
+-   "depends_on": "eval:doc.request_action == 'Create'",
++   "link_filters": "[[\"Document Register\",\"lifecycle_state\",\"=\",\"Active\"],[\"Document Register\",\"document_type\",\"=\",\"Guideline\"]]",
+    "mandatory_depends_on": "eval:doc.request_action == 'Create'",
+-   "description": "The existing guideline document (already cataloged in Document Register) this document should be generated from. Its real content is extracted and given to the AI — the AI does not invent the guideline itself."
++   "options": "Document Register"
+   },
+   {
++   "depends_on": "eval:doc.request_action != 'Create'",
++   "description": "The existing published document being revised or withdrawn. Only active controlled documents can be picked \u2014 an already-withdrawn one has nothing to revise or withdraw, and input material is not a controlled document.",
+    "fieldname": "reference_document",
+-   "link_filters": "[[\"Document Register\",\"lifecycle_state\",\"=\",\"Active\"]]",
+    "fieldtype": "Link",
+    "label": "Existing Document",
+-   "options": "Document Register",
+-   "depends_on": "eval:doc.request_action != 'Create'",
++   "link_filters": "[[\"Document Register\",\"lifecycle_state\",\"=\",\"Active\"]]",
+    "mandatory_depends_on": "eval:doc.request_action != 'Create'",
+-   "description": "The existing published document being revised or withdrawn. Only active controlled documents can be picked — an already-withdrawn one has nothing to revise or withdraw, and input material is not a controlled document."
++   "options": "Document Register"
+   },
+   {
++   "depends_on": "eval:doc.request_action == 'Update'",
++   "description": "The document holding the content you want the revision to say \u2014 catalogue it on Document Register first (pasting its Drive link is enough) and tick Input Material. Its text is authoritative: the AI reformats it into the official template and may not add, remove or reword anything. Say what the change is for in Requirement; that guides the layout, not the wording.",
+    "fieldname": "update_source",
+-   "link_filters": "[[\"Document Register\",\"lifecycle_state\",\"=\",\"Active\"]]",
+    "fieldtype": "Link",
+    "label": "New Content Document",
+-   "options": "Document Register",
+-   "depends_on": "eval:doc.request_action == 'Update'",
++   "link_filters": "[[\"Document Register\",\"lifecycle_state\",\"=\",\"Active\"]]",
+    "mandatory_depends_on": "eval:doc.request_action == 'Update'",
+-   "description": "The document holding the content you want the revision to say — catalogue it on Document Register first (pasting its Drive link is enough) and tick Input Material. Its text is authoritative: the AI reformats it into the official template and may not add, remove or reword anything. Say what the change is for in Requirement; that guides the layout, not the wording."
++   "options": "Document Register"
+   },
+   {
+    "fieldname": "section_break_approval",
+@@ -120,19 +118,19 @@
+    "label": "Approval"
+   },
+   {
++   "description": "Always the requester's line manager (Employee > Reports To) \u2014 not chosen manually.",
++   "fetch_from": "requester.reports_to",
+    "fieldname": "approver",
+    "fieldtype": "Link",
+-   "fetch_from": "requester.reports_to",
+    "in_list_view": 1,
+    "label": "Approver",
+    "options": "Employee",
+-   "read_only": 1,
+-   "description": "Always the requester's line manager (Employee > Reports To) — not chosen manually."
++   "read_only": 1
+   },
+   {
++   "fetch_from": "approver.user_id",
+    "fieldname": "approver_user",
+    "fieldtype": "Link",
+-   "fetch_from": "approver.user_id",
+    "label": "Approver User",
+    "options": "User",
+    "read_only": 1
+@@ -141,44 +139,40 @@
+    "fieldname": "column_break_status",
+    "fieldtype": "Column Break"
+   },
+-  {
+-   "fieldname": "status",
+-   "fieldtype": "Select",
+-   "in_list_view": 1,
+-   "label": "Status",
+-   "options": "Pending Request Approval\nRequest Rejected\nDrafting\nPending Content Approval\nContent Rejected\nApproved\nPublished\nDeleted",
+-   "default": "Pending Request Approval",
+-   "read_only": 1
+-  },
+   {
+    "depends_on": "eval:doc.document_link",
+-   "description": "Link to the published document in Google Docs. Written by the process when the document is published — blank until then.",
++   "description": "Every revision shares one Drive file, so this link stays valid for the life of the document \u2014 it always opens the current version.",
+    "fieldname": "document_link",
+    "fieldtype": "Data",
+    "label": "Published Document",
+    "options": "URL",
+-   "read_only": 1,
+-   "description": "Every revision shares one Drive file, so this link stays valid for the life of the document — it always opens the current version."
++   "read_only": 1
+   },
+   {
++   "description": "Which revision of the document this request produced. Stamped at publish.",
+    "fieldname": "document_version",
+    "fieldtype": "Int",
+    "label": "Published Version",
+-   "read_only": 1,
+-   "description": "Which revision of the document this request produced. Stamped at publish."
++   "read_only": 1
+   },
+   {
++   "description": "The Processa instance running this request through Creation \u2192 Review \u2192 Approval \u2192 Publish.",
+    "fieldname": "bpmn_instance",
+    "fieldtype": "Link",
+    "label": "BPMN Process Instance",
+    "options": "BPMN Process Instance",
+-   "read_only": 1,
+-   "description": "The Processa instance running this request through Creation → Review → Approval → Publish."
++   "read_only": 1
++  },
++  {
++   "fieldname": "workflow_state",
++   "fieldtype": "Link",
++   "label": "Workflow State",
++   "options": "Workflow State"
+   }
+  ],
+  "links": [],
+- "modified": "2026-07-15 00:00:00.000000",
+- "modified_by": "Administrator",
++ "modified": "2026-08-17 14:53:36.483998",
++ "modified_by": "e.olayinka@one-fm.com",
+  "module": "One Fm",
+  "name": "Document Request",
+  "naming_rule": "Expression",
+@@ -207,8 +201,10 @@
+    "write": 1
+   }
+  ],
++ "row_format": "Dynamic",
+  "sort_field": "modified",
+  "sort_order": "DESC",
++ "states": [],
+  "title_field": "title",
+  "track_changes": 1
+-}
++}
+\ No newline at end of file
+diff --git a/one_fm/one_fm/doctype/onefm_general_setting/onefm_general_setting.json b/one_fm/one_fm/doctype/onefm_general_setting/onefm_general_setting.json
+index adfbbfcd6..2cb570c87 100644
+--- a/one_fm/one_fm/doctype/onefm_general_setting/onefm_general_setting.json
++++ b/one_fm/one_fm/doctype/onefm_general_setting/onefm_general_setting.json
+@@ -223,10 +223,10 @@
+   {
+    "fieldname": "google_service_account_intro",
+    "fieldtype": "HTML",
+-   "options": "<p>The Google identity <b>ONE FM itself</b> acts as — Google Tasks sync, Gmail out-of-office, and reading documents into the Document Register.</p><p>This is <b>not</b> the credential the BPMN connectors use. Each connector carries its own key (BPMN Connector → Authentication → Secret) and neither falls back to the other, so the two can be different Google accounts and either can be rotated alone.</p><p><b>Both accounts need access to the same Shared Drive.</b> The connectors create the document files; this account reads and shares them. Add both as <i>Content Manager</i> — Drive answers <code>404 File not found</code> rather than a permission error when an account cannot see a file, which reads as a missing document and sends people looking in the wrong place.</p><p>Google Tasks and Gmail additionally need <b>domain-wide delegation</b> enabled for this service account in Google Workspace admin, because they act as an employee rather than as the service account itself.</p>"
++   "options": "<p>The Google identity <b>ONE FM itself</b> acts as \u2014 Google Tasks sync, Gmail out-of-office, and reading documents into the Document Register.</p><p>This is <b>not</b> the credential the BPMN connectors use. Each connector carries its own key (BPMN Connector \u2192 Authentication \u2192 Secret) and neither falls back to the other, so the two can be different Google accounts and either can be rotated alone.</p><p><b>Both accounts need access to the same Shared Drive.</b> The connectors create the document files; this account reads and shares them. Add both as <i>Content Manager</i> \u2014 Drive answers <code>404 File not found</code> rather than a permission error when an account cannot see a file, which reads as a missing document and sends people looking in the wrong place.</p><p>Google Tasks and Gmail additionally need <b>domain-wide delegation</b> enabled for this service account in Google Workspace admin, because they act as an employee rather than as the service account itself.</p>"
+   },
+   {
+-   "description": "Paste the whole key file Google issued — every brace, the full private_key, nothing trimmed. Stored encrypted.",
++   "description": "Paste the whole key file Google issued \u2014 every brace, the full private_key, nothing trimmed. Stored encrypted.",
+    "fieldname": "google_service_account_json",
+    "fieldtype": "Password",
+    "label": "Service Account JSON",
+@@ -256,7 +256,6 @@
+    "description": "Any weekend reliever assigned to the same shift up to this number of times will be reported in Default Shift Checker",
+    "fieldname": "weekend_reliever_default_shift_checker_threshold",
+    "fieldtype": "Int",
+-   "hidden": 1,
+    "label": "Weekend Reliever Default Shift Checker Threshold"
+   },
+   {
+@@ -329,8 +328,8 @@
+  "grid_page_length": 50,
+  "issingle": 1,
+  "links": [],
+- "modified": "2026-08-09 10:00:00.000000",
+- "modified_by": "Administrator",
++ "modified": "2026-08-09 08:36:15.441728",
++ "modified_by": "a.adekunle@one-fm.com",
+  "module": "One Fm",
+  "name": "ONEFM General Setting",
+  "owner": "Administrator",
+diff --git a/one_fm/one_fm/doctype/process_creation_request/process_creation_request.json b/one_fm/one_fm/doctype/process_creation_request/process_creation_request.json
+index ca3a34c3d..02b411f95 100644
+--- a/one_fm/one_fm/doctype/process_creation_request/process_creation_request.json
++++ b/one_fm/one_fm/doctype/process_creation_request/process_creation_request.json
+@@ -194,8 +194,8 @@
+    "link_fieldname": "process_creation_request"
+   }
+  ],
+- "modified": "2026-07-09 12:12:07.786704",
+- "modified_by": "Administrator",
++ "modified": "2026-08-16 22:09:11.570844",
++ "modified_by": "a.adekunle@one-fm.com",
+  "module": "One Fm",
+  "name": "Process Creation Request",
+  "naming_rule": "By \"Naming Series\" field",
+diff --git a/one_fm/one_fm/doctype/transportation_manifest/transportation_manifest.json b/one_fm/one_fm/doctype/transportation_manifest/transportation_manifest.json
+index 30f617b34..157335b72 100644
+--- a/one_fm/one_fm/doctype/transportation_manifest/transportation_manifest.json
++++ b/one_fm/one_fm/doctype/transportation_manifest/transportation_manifest.json
+@@ -1,437 +1,138 @@
+ {
+  "actions": [],
+- "allow_copy": 0,
+- "allow_import": 0,
+  "allow_rename": 1,
+  "autoname": "naming_series:",
+- "beta": 0,
+  "creation": "2026-06-18 13:20:22.623558",
+- "docstatus": 0,
+  "doctype": "DocType",
+- "document_type": "",
+- "editable_grid": 0,
+  "engine": "InnoDB",
++ "field_order": [
++  "naming_series",
++  "section_break_yjra",
++  "vehicle_no",
++  "license_plate",
++  "trip_direction",
++  "column_break_dwag",
++  "driver_name",
++  "schedule_date",
++  "section_break_kabl",
++  "transportation_manifest_details",
++  "active_stop_sequence"
++ ],
+  "fields": [
+   {
+-   "allow_bulk_edit": 0,
+-   "allow_on_submit": 0,
+-   "bold": 0,
+-   "collapsible": 0,
+-   "columns": 0,
+-   "creation": "2026-06-18 13:20:22.623558",
+    "default": "TM-.DD.-.MM.-.YYYY.-.####",
+-   "docstatus": 0,
+-   "doctype": "DocField",
+    "fieldname": "naming_series",
+    "fieldtype": "Select",
+    "hidden": 1,
+-   "ignore_user_permissions": 0,
+-   "in_filter": 0,
+-   "in_global_search": 0,
+-   "in_list_view": 0,
+-   "in_preview": 0,
+-   "in_standard_filter": 0,
+    "label": "Naming Series",
+-   "length": 0,
+-   "no_copy": 0,
+-   "non_negative": 0,
+    "options": "TM-.DD.-.MM.-.YYYY.-.####",
+-   "permlevel": 0,
+-   "print_hide": 0,
+-   "print_hide_if_no_value": 0,
+-   "read_only": 1,
+-   "remember_last_selected_value": 0,
+-   "report_hide": 0,
+-   "reqd": 0,
+-   "set_only_once": 0,
+-   "show_preview_popup": 0,
+-   "unique": 0
++   "read_only": 1
+   },
+   {
+-   "allow_bulk_edit": 0,
+-   "allow_on_submit": 0,
+-   "bold": 0,
+-   "collapsible": 0,
+-   "columns": 0,
+-   "creation": "2026-06-18 13:20:22.623558",
+-   "docstatus": 0,
+-   "doctype": "DocField",
+    "fieldname": "section_break_yjra",
+-   "fieldtype": "Section Break",
+-   "hidden": 0,
+-   "ignore_user_permissions": 0,
+-   "in_filter": 0,
+-   "in_global_search": 0,
+-   "in_list_view": 0,
+-   "in_preview": 0,
+-   "in_standard_filter": 0,
+-   "label": "",
+-   "length": 0,
+-   "no_copy": 0,
+-   "non_negative": 0,
+-   "permlevel": 0,
+-   "print_hide": 0,
+-   "print_hide_if_no_value": 0,
+-   "read_only": 0,
+-   "remember_last_selected_value": 0,
+-   "report_hide": 0,
+-   "reqd": 0,
+-   "set_only_once": 0,
+-   "show_preview_popup": 0,
+-   "unique": 0
++   "fieldtype": "Section Break"
+   },
+   {
+-   "allow_bulk_edit": 0,
+-   "allow_on_submit": 0,
+-   "bold": 0,
+-   "collapsible": 0,
+-   "columns": 0,
+-   "creation": "2026-06-18 13:20:22.623558",
+-   "docstatus": 0,
+-   "doctype": "DocField",
+    "fieldname": "vehicle_no",
+    "fieldtype": "Link",
+-   "hidden": 0,
+-   "ignore_user_permissions": 0,
+-   "in_filter": 0,
+-   "in_global_search": 0,
+    "in_list_view": 1,
+-   "in_preview": 0,
+    "in_standard_filter": 1,
+    "label": "Vehicle No",
+-   "length": 0,
+-   "no_copy": 0,
+-   "non_negative": 0,
+-   "options": "Vehicle",
+-   "permlevel": 0,
+-   "print_hide": 0,
+-   "print_hide_if_no_value": 0,
+-   "read_only": 0,
+-   "remember_last_selected_value": 0,
+-   "report_hide": 0,
+-   "reqd": 0,
+-   "set_only_once": 0,
+-   "show_preview_popup": 0,
+-   "unique": 0
++   "options": "Vehicle"
+   },
+   {
+-   "allow_bulk_edit": 0,
+-   "allow_on_submit": 0,
+-   "bold": 0,
+-   "collapsible": 0,
+-   "columns": 0,
+-   "creation": "2026-06-18 13:20:22.623558",
+-   "docstatus": 0,
+-   "doctype": "DocField",
+    "fetch_from": "vehicle_no.license_plate",
+    "fieldname": "license_plate",
+    "fieldtype": "Data",
+-   "hidden": 0,
+-   "ignore_user_permissions": 0,
+-   "in_filter": 0,
+-   "in_global_search": 0,
+    "in_list_view": 1,
+-   "in_preview": 0,
+    "in_standard_filter": 1,
+    "label": "License Plate",
+-   "length": 0,
+-   "no_copy": 0,
+-   "non_negative": 0,
+-   "permlevel": 0,
+-   "print_hide": 0,
+-   "print_hide_if_no_value": 0,
+-   "read_only": 1,
+-   "remember_last_selected_value": 0,
+-   "report_hide": 0,
+-   "reqd": 0,
+-   "set_only_once": 0,
+-   "show_preview_popup": 0,
+-   "unique": 0
++   "read_only": 1
+   },
+   {
+-   "allow_bulk_edit": 0,
+-   "allow_on_submit": 0,
+-   "bold": 0,
+-   "collapsible": 0,
+-   "columns": 0,
+-   "creation": "2026-06-18 13:20:22.623558",
+-   "docstatus": 0,
+-   "doctype": "DocField",
+    "fieldname": "column_break_dwag",
+-   "fieldtype": "Column Break",
+-   "hidden": 0,
+-   "ignore_user_permissions": 0,
+-   "in_filter": 0,
+-   "in_global_search": 0,
+-   "in_list_view": 0,
+-   "in_preview": 0,
+-   "in_standard_filter": 0,
+-   "label": "",
+-   "length": 0,
+-   "no_copy": 0,
+-   "non_negative": 0,
+-   "permlevel": 0,
+-   "print_hide": 0,
+-   "print_hide_if_no_value": 0,
+-   "read_only": 0,
+-   "remember_last_selected_value": 0,
+-   "report_hide": 0,
+-   "reqd": 0,
+-   "set_only_once": 0,
+-   "show_preview_popup": 0,
+-   "unique": 0
++   "fieldtype": "Column Break"
+   },
+   {
+-   "allow_bulk_edit": 0,
+-   "allow_on_submit": 0,
+-   "bold": 0,
+-   "collapsible": 0,
+-   "columns": 0,
+-   "creation": "2026-06-18 13:20:22.623558",
+-   "docstatus": 0,
+-   "doctype": "DocField",
+    "fetch_from": "vehicle_no.employee",
++   "fetch_if_empty": 1,
+    "fieldname": "driver_name",
+    "fieldtype": "Link",
+-   "hidden": 0,
+-   "ignore_user_permissions": 0,
+-   "in_filter": 0,
+-   "in_global_search": 0,
+    "in_list_view": 1,
+-   "in_preview": 0,
+    "in_standard_filter": 1,
+    "label": "Driver Name",
+-   "length": 0,
+-   "no_copy": 0,
+-   "non_negative": 0,
+    "options": "Employee",
+-   "permlevel": 0,
+-   "print_hide": 0,
+-   "print_hide_if_no_value": 0,
+-   "read_only": 1,
+-   "remember_last_selected_value": 0,
+-   "report_hide": 0,
+-   "reqd": 0,
+-   "set_only_once": 0,
+-   "show_preview_popup": 0,
+-   "unique": 0,
+-   "fetch_if_empty": 1
++   "read_only": 1
+   },
+   {
+-   "allow_bulk_edit": 0,
+-   "allow_on_submit": 0,
+-   "bold": 0,
+-   "collapsible": 0,
+-   "columns": 0,
+-   "creation": "2026-06-18 13:20:22.623558",
+-   "docstatus": 0,
+-   "doctype": "DocField",
+    "fieldname": "schedule_date",
+    "fieldtype": "Date",
+-   "hidden": 0,
+-   "ignore_user_permissions": 0,
+-   "in_filter": 0,
+-   "in_global_search": 0,
+    "in_list_view": 1,
+-   "in_preview": 0,
+    "in_standard_filter": 1,
+-   "label": "Schedule Date",
+-   "length": 0,
+-   "no_copy": 0,
+-   "non_negative": 0,
+-   "permlevel": 0,
+-   "print_hide": 0,
+-   "print_hide_if_no_value": 0,
+-   "read_only": 0,
+-   "remember_last_selected_value": 0,
+-   "report_hide": 0,
+-   "reqd": 0,
+-   "set_only_once": 0,
+-   "show_preview_popup": 0,
+-   "unique": 0
++   "label": "Schedule Date"
+   },
+   {
+-   "allow_bulk_edit": 0,
+-   "allow_on_submit": 0,
+-   "bold": 0,
+-   "collapsible": 0,
+-   "columns": 0,
+-   "creation": "2026-06-18 13:20:22.623558",
+-   "docstatus": 0,
+-   "doctype": "DocField",
+    "fieldname": "section_break_kabl",
+-   "fieldtype": "Section Break",
+-   "hidden": 0,
+-   "ignore_user_permissions": 0,
+-   "in_filter": 0,
+-   "in_global_search": 0,
+-   "in_list_view": 0,
+-   "in_preview": 0,
+-   "in_standard_filter": 0,
+-   "label": "",
+-   "length": 0,
+-   "no_copy": 0,
+-   "non_negative": 0,
+-   "permlevel": 0,
+-   "print_hide": 0,
+-   "print_hide_if_no_value": 0,
+-   "read_only": 0,
+-   "remember_last_selected_value": 0,
+-   "report_hide": 0,
+-   "reqd": 0,
+-   "set_only_once": 0,
+-   "show_preview_popup": 0,
+-   "unique": 0
++   "fieldtype": "Section Break"
+   },
+   {
+-   "allow_bulk_edit": 0,
+-   "allow_on_submit": 0,
+-   "bold": 0,
+-   "collapsible": 0,
+-   "columns": 0,
+-   "creation": "2026-06-18 13:20:22.623558",
+-   "docstatus": 0,
+-   "doctype": "DocField",
+    "fieldname": "transportation_manifest_details",
+    "fieldtype": "Table",
+-   "hidden": 0,
+-   "ignore_user_permissions": 0,
+-   "in_filter": 0,
+-   "in_global_search": 0,
+-   "in_list_view": 0,
+-   "in_preview": 0,
+-   "in_standard_filter": 0,
+    "label": "Transportation Manifest Details",
+-   "length": 0,
+-   "no_copy": 0,
+-   "non_negative": 0,
+-   "options": "Transportation Manifest Details",
+-   "permlevel": 0,
+-   "print_hide": 0,
+-   "print_hide_if_no_value": 0,
+-   "read_only": 0,
+-   "remember_last_selected_value": 0,
+-   "report_hide": 0,
+-   "reqd": 0,
+-   "set_only_once": 0,
+-   "show_preview_popup": 0,
+-   "unique": 0
++   "options": "Transportation Manifest Details"
+   },
+   {
+-   "allow_bulk_edit": 0,
+-   "allow_on_submit": 0,
+-   "bold": 0,
+-   "collapsible": 0,
+-   "columns": 0,
+-   "creation": "2026-06-18 13:20:22.623558",
+    "default": "0",
+    "description": "Currently unlocked pickup stop for attendance checks. 0 = not started; managed by the attendance-check page, not edited by hand.",
+-   "docstatus": 0,
+-   "doctype": "DocField",
+    "fieldname": "active_stop_sequence",
+    "fieldtype": "Int",
+    "hidden": 1,
+-   "ignore_user_permissions": 0,
+-   "in_filter": 0,
+-   "in_global_search": 0,
+-   "in_list_view": 0,
+-   "in_preview": 0,
+-   "in_standard_filter": 0,
+    "label": "Active Stop Sequence",
+-   "length": 0,
+    "no_copy": 1,
+    "non_negative": 1,
+-   "permlevel": 0,
+    "print_hide": 1,
+-   "print_hide_if_no_value": 0,
+-   "read_only": 1,
+-   "remember_last_selected_value": 0,
+-   "report_hide": 0,
+-   "reqd": 0,
+-   "set_only_once": 0,
+-   "show_preview_popup": 0,
+-   "unique": 0
++   "read_only": 1
++  },
++  {
++   "fieldname": "trip_direction",
++   "fieldtype": "Select",
++   "label": "Trip Direction",
++   "options": "\nOutward\nReturn\nMixed"
+   }
+  ],
+- "image_field": null,
+- "idx": 0,
+- "in_create": 0,
+  "index_web_pages_for_search": 1,
+- "is_calendar_and_gantt": 0,
+- "is_submittable": 0,
+- "is_tree": 0,
+- "issingle": 0,
+- "istable": 0,
+- "is_virtual": 0,
+- "max_attachments": 0,
+- "modified": "2026-06-21 09:25:00.000000",
+- "modified_by": "Administrator",
++ "links": [],
++ "modified": "2026-08-17 12:24:57.148524",
++ "modified_by": "h.imran@one-fm.com",
+  "module": "One Fm",
+  "name": "Transportation Manifest",
+  "naming_rule": "By \"Naming Series\" field",
+  "owner": "Administrator",
+  "permissions": [
+   {
+-   "amend": 0,
+-   "cancel": 0,
+    "create": 1,
+-   "creation": "2026-06-18 13:20:22.623558",
+    "delete": 1,
+-   "docstatus": 0,
+-   "doctype": "DocPerm",
+    "email": 1,
+    "export": 1,
+-   "if_owner": 0,
+-   "import": 0,
+-   "name": "g02ge1kt73",
+-   "owner": "Administrator",
+-   "parent": "Transportation Manifest",
+-   "parentfield": "permissions",
+-   "parenttype": "DocType",
+-   "permlevel": 0,
+    "print": 1,
+    "read": 1,
+    "report": 1,
+    "role": "System Manager",
+-   "select": 0,
+-   "set_user_permissions": 0,
+    "share": 1,
+-   "submit": 0,
+    "write": 1
+   },
+   {
+-   "amend": 0,
+-   "cancel": 0,
+    "create": 1,
+-   "docstatus": 0,
+-   "doctype": "DocPerm",
+-   "email": 0,
+    "export": 1,
+-   "if_owner": 0,
+-   "import": 0,
+-   "owner": "Administrator",
+-   "parent": "Transportation Manifest",
+-   "parentfield": "permissions",
+-   "parenttype": "DocType",
+-   "permlevel": 0,
+    "print": 1,
+    "read": 1,
+    "report": 1,
+    "role": "Operations Manager",
+-   "select": 0,
+-   "set_user_permissions": 0,
+-   "share": 0,
+-   "submit": 0,
+    "write": 1
+   }
+  ],
+- "protect_attached_files": 0,
+- "quick_entry": 0,
+- "read_only": 0,
+  "row_format": "Dynamic",
+- "show_name_in_global_search": 0,
+  "sort_field": "modified",
+  "sort_order": "DESC",
+- "track_changes": 0,
+- "track_seen": 0
+-}
++ "states": []
++}
+\ No newline at end of file
+diff --git a/one_fm/one_fm/doctype/transportation_shipment/transportation_shipment.json b/one_fm/one_fm/doctype/transportation_shipment/transportation_shipment.json
+index b2e69aa40..1587ab8c0 100644
+--- a/one_fm/one_fm/doctype/transportation_shipment/transportation_shipment.json
++++ b/one_fm/one_fm/doctype/transportation_shipment/transportation_shipment.json
+@@ -135,7 +135,7 @@
+    "fieldname": "trip_direction",
+    "fieldtype": "Select",
+    "label": "Trip Direction",
+-   "options": "\nOutward\nReturn"
++   "options": "\nOutward\nReturn\nMixed"
+   },
+   {
+    "fieldname": "routing_type_badge",
+@@ -224,8 +224,8 @@
+  ],
+  "index_web_pages_for_search": 1,
+  "links": [],
+- "modified": "2026-07-15 17:22:34.688327",
+- "modified_by": "Administrator",
++ "modified": "2026-08-17 08:35:37.065531",
++ "modified_by": "h.imran@one-fm.com",
+  "module": "One Fm",
+  "name": "Transportation Shipment",
+  "naming_rule": "By \"Naming Series\" field",
+@@ -249,4 +249,4 @@
+  "sort_order": "DESC",
+  "states": [],
+  "track_changes": 1
+-}
++}
+\ No newline at end of file
+diff --git a/one_fm/operations/doctype/operations_shift/operations_shift.json b/one_fm/operations/doctype/operations_shift/operations_shift.json
+index a4a9156f7..b9c40212c 100755
+--- a/one_fm/operations/doctype/operations_shift/operations_shift.json
++++ b/one_fm/operations/doctype/operations_shift/operations_shift.json
+@@ -17,6 +17,7 @@
+   "shift_type",
+   "day_off_ot_allowed",
+   "automate_roster",
++  "shift_timing_override_required",
+   "supervisor",
+   "supervisor_name",
+   "column_break_8",
+@@ -28,6 +29,8 @@
+   "column_break_15",
+   "duration",
+   "shift_classification",
++  "operations_shift_timing_section",
++  "operations_shift_timing",
+   "accommodation_details_section",
+   "accommodations"
+  ],
+@@ -193,6 +196,26 @@
+    "fieldname": "day_off_ot_allowed",
+    "fieldtype": "Check",
+    "label": "Day Off OT Allowed"
++  },
++  {
++   "default": "0",
++   "description": "Enable this only if this post requires a different shift timing on specific day(s) of the week (e.g., a different timing on Friday).",
++   "fieldname": "shift_timing_override_required",
++   "fieldtype": "Check",
++   "label": "Shift Timing Override Required"
++  },
++  {
++   "depends_on": "eval:doc.shift_timing_override_required==1",
++   "fieldname": "operations_shift_timing",
++   "fieldtype": "Table",
++   "label": "Operations Shift Timing",
++   "mandatory_depends_on": "eval:doc.shift_timing_override_required==1",
++   "options": "Operations Shift Timing"
++  },
++  {
++   "fieldname": "operations_shift_timing_section",
++   "fieldtype": "Section Break",
++   "label": "Operations Shift Timing"
+   }
+  ],
+  "links": [
+@@ -202,8 +225,8 @@
+    "link_fieldname": "shift"
+   }
+  ],
+- "modified": "2026-03-05 20:20:22.004307",
+- "modified_by": "Administrator",
++ "modified": "2026-08-10 21:41:54.482369",
++ "modified_by": "h.imran@one-fm.com",
+  "module": "Operations",
+  "name": "Operations Shift",
+  "owner": "Administrator",
+@@ -219,6 +242,30 @@
+    "role": "System Manager",
+    "share": 1,
+    "write": 1
++  },
++  {
++   "create": 1,
++   "delete": 1,
++   "email": 1,
++   "export": 1,
++   "print": 1,
++   "read": 1,
++   "report": 1,
++   "role": "Operations Manager",
++   "share": 1,
++   "write": 1
++  },
++  {
++   "create": 1,
++   "delete": 1,
++   "email": 1,
++   "export": 1,
++   "print": 1,
++   "read": 1,
++   "report": 1,
++   "role": "Operation Admin",
++   "share": 1,
++   "write": 1
+   }
+  ],
+  "quick_entry": 1,
+diff --git a/one_fm/operations/doctype/route_plan_assignment/route_plan_assignment.json b/one_fm/operations/doctype/route_plan_assignment/route_plan_assignment.json
+index 26f7330b9..7013ef9e4 100644
+--- a/one_fm/operations/doctype/route_plan_assignment/route_plan_assignment.json
++++ b/one_fm/operations/doctype/route_plan_assignment/route_plan_assignment.json
+@@ -1,149 +1,148 @@
+ {
+-  "actions": [],
+-  "creation": "2026-05-04 10:00:00.000000",
+-  "doctype": "DocType",
+-  "editable_grid": 1,
+-  "engine": "InnoDB",
+-  "field_order": [
+-    "card_id",
+-    "transportation_shipment",
+-    "vehicle",
+-    "direction",
+-    "column_break_1",
+-    "stop_index",
+-    "trip_group",
+-    "trip_name",
+-    "headcount",
+-    "section_break_details",
+-    "site",
+-    "shift",
+-    "column_break_2",
+-    "accommodation",
+-    "stop_location",
+-    "section_break_times",
+-    "start_time",
+-    "end_time"
+-  ],
+-  "fields": [
+-    {
+-      "fieldname": "card_id",
+-      "fieldtype": "Data",
+-      "label": "Card ID",
+-      "reqd": 1,
+-      "in_list_view": 1
+-    },
+-    {
+-      "fieldname": "transportation_shipment",
+-      "fieldtype": "Link",
+-      "label": "Transportation Shipment",
+-      "options": "Transportation Shipment",
+-      "description": "Source shipment record linked into this vehicle's manifest array"
+-    },
+-    {
+-      "fieldname": "vehicle",
+-      "fieldtype": "Link",
+-      "label": "Vehicle",
+-      "options": "Vehicle",
+-      "reqd": 1,
+-      "in_list_view": 1
+-    },
+-    {
+-      "fieldname": "direction",
+-      "fieldtype": "Select",
+-      "label": "Direction",
+-      "options": "\nOUTBOUND\nRETURN",
+-      "reqd": 1,
+-      "in_list_view": 1
+-    },
+-    {
+-      "fieldname": "column_break_1",
+-      "fieldtype": "Column Break"
+-    },
+-    {
+-      "fieldname": "stop_index",
+-      "fieldtype": "Int",
+-      "label": "Stop Index",
+-      "default": "0",
+-      "description": "0 = standalone, 1+ = multi-stop trip sequence"
+-    },
+-    {
+-      "fieldname": "trip_group",
+-      "fieldtype": "Data",
+-      "label": "Trip Group",
+-      "description": "Groups multi-stop blocks into one trip"
+-    },
+-    {
+-      "fieldname": "trip_name",
+-      "fieldtype": "Data",
+-      "label": "Trip Name",
+-      "description": "User-defined name for the trip"
+-    },
+-    {
+-      "fieldname": "headcount",
+-      "fieldtype": "Int",
+-      "label": "Headcount",
+-      "in_list_view": 1
+-    },
+-    {
+-      "fieldname": "section_break_details",
+-      "fieldtype": "Section Break",
+-      "label": "Details"
+-    },
+-    {
+-      "fieldname": "site",
+-      "fieldtype": "Data",
+-      "label": "Site"
+-    },
+-    {
+-      "fieldname": "shift",
+-      "fieldtype": "Data",
+-      "label": "Shift"
+-    },
+-    {
+-      "fieldname": "column_break_2",
+-      "fieldtype": "Column Break"
+-    },
+-    {
+-      "fieldname": "accommodation",
+-      "fieldtype": "Data",
+-      "label": "Accommodation"
+-    },
+-    {
+-      "fieldname": "stop_location",
+-      "fieldtype": "Data",
+-      "label": "Stop Location"
+-    },
+-    {
+-      "fieldname": "section_break_times",
+-      "fieldtype": "Section Break",
+-      "label": "Time Window"
+-    },
+-    {
+-      "fieldname": "start_time",
+-      "fieldtype": "Data",
+-      "label": "Start Time",
+-      "description": "ISO timestamp of block start on timeline. Date part = multi-day lock lifespan start; time part = daily trip start."
+-    },
+-    {
+-      "fieldname": "end_time",
+-      "fieldtype": "Data",
+-      "label": "End Time",
+-      "description": "ISO timestamp of block end on timeline. Date part = multi-day lock lifespan end; time part = daily trip end."
+-    }
+-  ],
+-  "index_web_pages_for_search": 0,
+-  "istable": 1,
+-  "links": [],
+-  "modified": "2026-05-04 10:00:00.000000",
+-  "modified_by": "Administrator",
+-  "module": "Operations",
+-  "name": "Route Plan Assignment",
+-  "naming_rule": "Random",
+-  "autoname": "hash",
+-  "owner": "Administrator",
+-  "permissions": [],
+-  "sort_field": "creation",
+-  "sort_order": "ASC",
+-  "states": [],
+-  "track_changes": 0
+-}
++ "actions": [],
++ "autoname": "hash",
++ "creation": "2026-05-04 10:00:00",
++ "doctype": "DocType",
++ "editable_grid": 1,
++ "engine": "InnoDB",
++ "field_order": [
++  "card_id",
++  "transportation_shipment",
++  "vehicle",
++  "direction",
++  "column_break_1",
++  "stop_index",
++  "trip_group",
++  "trip_name",
++  "headcount",
++  "section_break_details",
++  "site",
++  "shift",
++  "column_break_2",
++  "accommodation",
++  "stop_location",
++  "section_break_times",
++  "start_time",
++  "end_time"
++ ],
++ "fields": [
++  {
++   "fieldname": "card_id",
++   "fieldtype": "Data",
++   "in_list_view": 1,
++   "label": "Card ID",
++   "reqd": 1
++  },
++  {
++   "description": "Source shipment record linked into this vehicle's manifest array",
++   "fieldname": "transportation_shipment",
++   "fieldtype": "Link",
++   "label": "Transportation Shipment",
++   "options": "Transportation Shipment"
++  },
++  {
++   "fieldname": "vehicle",
++   "fieldtype": "Link",
++   "in_list_view": 1,
++   "label": "Vehicle",
++   "options": "Vehicle",
++   "reqd": 1
++  },
++  {
++   "fieldname": "direction",
++   "fieldtype": "Select",
++   "in_list_view": 1,
++   "label": "Direction",
++   "options": "\nOUTBOUND\nRETURN\nMIXED",
++   "reqd": 1
++  },
++  {
++   "fieldname": "column_break_1",
++   "fieldtype": "Column Break"
++  },
++  {
++   "default": "0",
++   "description": "0 = standalone, 1+ = multi-stop trip sequence",
++   "fieldname": "stop_index",
++   "fieldtype": "Int",
++   "label": "Stop Index"
++  },
++  {
++   "description": "Groups multi-stop blocks into one trip",
++   "fieldname": "trip_group",
++   "fieldtype": "Data",
++   "label": "Trip Group"
++  },
++  {
++   "description": "User-defined name for the trip",
++   "fieldname": "trip_name",
++   "fieldtype": "Data",
++   "label": "Trip Name"
++  },
++  {
++   "fieldname": "headcount",
++   "fieldtype": "Int",
++   "in_list_view": 1,
++   "label": "Headcount"
++  },
++  {
++   "fieldname": "section_break_details",
++   "fieldtype": "Section Break",
++   "label": "Details"
++  },
++  {
++   "fieldname": "site",
++   "fieldtype": "Data",
++   "label": "Site"
++  },
++  {
++   "fieldname": "shift",
++   "fieldtype": "Data",
++   "label": "Shift"
++  },
++  {
++   "fieldname": "column_break_2",
++   "fieldtype": "Column Break"
++  },
++  {
++   "fieldname": "accommodation",
++   "fieldtype": "Data",
++   "label": "Accommodation"
++  },
++  {
++   "fieldname": "stop_location",
++   "fieldtype": "Data",
++   "label": "Stop Location"
++  },
++  {
++   "fieldname": "section_break_times",
++   "fieldtype": "Section Break",
++   "label": "Time Window"
++  },
++  {
++   "description": "ISO timestamp of block start on timeline. Date part = multi-day lock lifespan start; time part = daily trip start.",
++   "fieldname": "start_time",
++   "fieldtype": "Data",
++   "label": "Start Time"
++  },
++  {
++   "description": "ISO timestamp of block end on timeline. Date part = multi-day lock lifespan end; time part = daily trip end.",
++   "fieldname": "end_time",
++   "fieldtype": "Data",
++   "label": "End Time"
++  }
++ ],
++ "istable": 1,
++ "links": [],
++ "modified": "2026-08-17 08:41:22.107271",
++ "modified_by": "h.imran@one-fm.com",
++ "module": "Operations",
++ "name": "Route Plan Assignment",
++ "naming_rule": "Random",
++ "owner": "Administrator",
++ "permissions": [],
++ "row_format": "Dynamic",
++ "sort_field": "creation",
++ "sort_order": "ASC",
++ "states": []
++}
+\ No newline at end of file
+diff --git a/one_fm/visa_management/doctype/visa_request/visa_request.json b/one_fm/visa_management/doctype/visa_request/visa_request.json
+index e758f3b01..c35c9a551 100644
+--- a/one_fm/visa_management/doctype/visa_request/visa_request.json
++++ b/one_fm/visa_management/doctype/visa_request/visa_request.json
+@@ -88,7 +88,6 @@
+   "payment_receipt",
+   "payment_date",
+   "section_break_jrbe",
+-  "reapplied_from",
+   "amended_from"
+  ],
+  "fields": [
+@@ -183,7 +182,8 @@
+   {
+    "fieldname": "payment_receipt",
+    "fieldtype": "Attach",
+-   "label": "Payment Receipt"
++   "label": "Payment Receipt",
++   "read_only_depends_on": "eval:doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
+   },
+   {
+    "fieldname": "column_break_wjxj",
+@@ -192,7 +192,8 @@
+   {
+    "fieldname": "visa_document",
+    "fieldtype": "Attach",
+-   "label": "Visa Document"
++   "label": "Visa Document",
++   "read_only_depends_on": "eval:doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
+   },
+   {
+    "fieldname": "column_break_jdrk",
+@@ -202,7 +203,7 @@
+    "fieldname": "pam_reference_number",
+    "fieldtype": "Data",
+    "label": "PAM Reference Number",
+-   "mandatory_depends_on": "// eval:doc.workflow_state==\"Pending by GRD Operator\""
++   "read_only_depends_on": "eval:doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending by MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected By PAM\""
+   },
+   {
+    "fieldname": "column_break_gvey",
+@@ -225,7 +226,8 @@
+   {
+    "fieldname": "moi_reference_number",
+    "fieldtype": "Data",
+-   "label": "MOI Reference Number"
++   "label": "MOI Reference Number",
++   "read_only_depends_on": "eval:doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
+   },
+   {
+    "fieldname": "column_break_jvjp",
+@@ -248,21 +250,13 @@
+   {
+    "fieldname": "visa_reference_number",
+    "fieldtype": "Data",
+-   "label": "Visa Reference Number"
++   "label": "Visa Reference Number",
++   "read_only_depends_on": "eval:doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
+   },
+   {
+    "fieldname": "section_break_jrbe",
+    "fieldtype": "Section Break"
+   },
+-  {
+-   "description": "The rejected request this one was raised to replace",
+-   "fieldname": "reapplied_from",
+-   "fieldtype": "Link",
+-   "label": "Reapplied From",
+-   "no_copy": 1,
+-   "options": "Visa Request",
+-   "read_only": 1
+-  },
+   {
+    "fieldname": "amended_from",
+    "fieldtype": "Link",
+@@ -461,17 +455,20 @@
+    "label": "Place of Issue"
+   },
+   {
++   "depends_on": "eval:doc.workflow_state==\"Pending by GRD Operator\" || doc.workflow_state==\"Awaiting Quota Availability\" || doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending By PAM\" || doc.workflow_state==\"Pending by MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By PAM\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\"",
+    "fieldname": "pam_details_section",
+    "fieldtype": "Section Break",
+    "label": "PAM Details"
+   },
+   {
++   "depends_on": "eval:doc.workflow_state==\"Pending by MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected for Re Issue\"|| doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\"",
+    "fieldname": "moi_details_section",
+    "fieldtype": "Section Break",
+    "label": "MOI Details"
+   },
+   {
+    "default": "0",
++   "depends_on": "eval:doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected for Re Issue\"|| doc.workflow_state==\"Completed\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\"",
+    "fieldname": "visa_details_section",
+    "fieldtype": "Section Break",
+    "label": "Visa Details"
+@@ -530,41 +527,44 @@
+    "label": "Degree Certificate"
+   },
+   {
++   "depends_on": "eval:doc.workflow_state==\"Pending by GRD Operator\" || doc.workflow_state==\"Awaiting Quota Availability\" || doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending By PAM\" || doc.workflow_state==\"Pending by MOI\"",
+    "fieldname": "custom_pam_file",
+    "fieldtype": "Link",
+    "label": "PAM File",
+-   "mandatory_depends_on": "// eval:doc.workflow_state==\"Pending by GRD Operator\"",
+-   "options": "PAM File"
++   "options": "PAM File",
++   "read_only_depends_on": "eval:doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending by MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected By PAM\""
+   },
+   {
+    "fieldname": "custom_visa_application_date",
+    "fieldtype": "Datetime",
+-   "label": "Visa Application Date"
++   "label": "Visa Application Date",
++   "read_only_depends_on": "eval:doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending by MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected By PAM\""
+   },
+   {
+    "fieldname": "custom_pam_designation_list",
+    "fieldtype": "Link",
+    "label": "PAM Designation List",
+-   "mandatory_depends_on": "// eval:doc.workflow_state==\"Pending by GRD Operator\"",
+-   "options": "PAM Designation List"
++   "options": "PAM Designation List",
++   "read_only_depends_on": "eval:doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending by MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected By PAM\""
+   },
+   {
++   "depends_on": "eval:doc.workflow_state==\"Pending By PAM\" || doc.workflow_state==\"Pending by MOI\" || doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Rejected By PAM\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" ",
+    "fieldname": "custom_work_permit_number",
+    "fieldtype": "Data",
+    "label": "Work Permit Number",
+-   "mandatory_depends_on": "eval:doc.workflow_state==\"Pending By MOI\""
++   "read_only_depends_on": "eval:doc.workflow_state==\"Pending by MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected By PAM\""
+   },
+   {
+    "fieldname": "visa_issue_date",
+    "fieldtype": "Date",
+    "label": "Visa Issue Date",
+-   "mandatory_depends_on": "eval:doc.workflow_state==\"Pending Visa Issuance\""
++   "read_only_depends_on": "eval:doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
+   },
+   {
+    "fieldname": "visa_expiry_date",
+    "fieldtype": "Date",
+    "label": "Visa Expiry Date",
+-   "mandatory_depends_on": "eval:doc.workflow_state==\"Pending Visa Issuance\""
++   "read_only_depends_on": "eval:doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
+   },
+   {
+    "fieldname": "column_break_uxnb",
+@@ -572,16 +572,17 @@
+   },
+   {
+    "fieldname": "payment_date",
+-   "fieldtype": "Datetime",
+-   "label": "Payment Date"
++   "fieldtype": "Date",
++   "label": "Payment Date",
++   "read_only_depends_on": "eval:doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
+   }
+  ],
+  "grid_page_length": 50,
+  "index_web_pages_for_search": 1,
+  "is_submittable": 1,
+  "links": [],
+- "modified": "2026-08-11 22:00:00.000000",
+- "modified_by": "Administrator",
++ "modified": "2026-08-23 16:52:05.272808",
++ "modified_by": "g.jotshi@one-fm.com",
+  "module": "Visa Management",
+  "name": "Visa Request",
+  "naming_rule": "By \"Naming Series\" field",
+diff --git a/yarn.lock b/yarn.lock
+index c37fc613a..4638dcf3f 100644
+--- a/yarn.lock
++++ b/yarn.lock
+@@ -1,3 +1,529 @@
+ # THIS IS AN AUTOGENERATED FILE. DO NOT EDIT THIS FILE DIRECTLY.
+ # yarn lockfile v1
+ 
++
++"@babel/code-frame@^7.0.0":
++  version "7.29.7"
++  resolved "https://registry.yarnpkg.com/@babel/code-frame/-/code-frame-7.29.7.tgz#f2fbbfea87c44a21590ec515b778b2c26d8866e7"
++  integrity sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw==
++  dependencies:
++    "@babel/helper-validator-identifier" "^7.29.7"
++    js-tokens "^4.0.0"
++    picocolors "^1.1.1"
++
++"@babel/helper-validator-identifier@^7.29.7":
++  version "7.29.7"
++  resolved "https://registry.yarnpkg.com/@babel/helper-validator-identifier/-/helper-validator-identifier-7.29.7.tgz#bd87084ced0c796ec46bda492de6e83d29e89fc2"
++  integrity sha512-qehxGkRj55h/ff8EMaJ+cYhyaKlHIxqYDn682wQD7RNp9UujOQsHog2uS0r2vzr4pW+sXf90NeeayjcNaX3fFg==
++
++"@commitlint/cli@^20.1.0":
++  version "20.5.3"
++  resolved "https://registry.yarnpkg.com/@commitlint/cli/-/cli-20.5.3.tgz#6b4bfcf19fc149b0a357725f551bad11a930f145"
++  integrity sha512-OJdL0EXWD5y9LPa0nr/geOwzaS8BsdaybKkcloB0JgsguGxNv2R+hC2FTPqrAcprg35zF33KOQerY0x8W1aesA==
++  dependencies:
++    "@commitlint/format" "^20.5.0"
++    "@commitlint/lint" "^20.5.3"
++    "@commitlint/load" "^20.5.3"
++    "@commitlint/read" "^20.5.0"
++    "@commitlint/types" "^20.5.0"
++    tinyexec "^1.0.0"
++    yargs "^17.0.0"
++
++"@commitlint/config-validator@^20.5.0":
++  version "20.5.0"
++  resolved "https://registry.yarnpkg.com/@commitlint/config-validator/-/config-validator-20.5.0.tgz#b0aad5fdd520b07ac52f9ad8d41844629e5fd40e"
++  integrity sha512-T/Uh6iJUzyx7j35GmHWdIiGRQB+ouZDk0pwAaYq4SXgB54KZhFdJ0vYmxiW6AMYICTIWuyMxDBl1jK74oFp/Gw==
++  dependencies:
++    "@commitlint/types" "^20.5.0"
++    ajv "^8.11.0"
++
++"@commitlint/ensure@^20.5.3":
++  version "20.5.3"
++  resolved "https://registry.yarnpkg.com/@commitlint/ensure/-/ensure-20.5.3.tgz#6a63f52dad60a2db9b87ea1b11c8d483ced24aa1"
++  integrity sha512-4i4AgNvH62owG9MwSiWKrle7HGNpBHHdLnWFIp5fTsHUYe5kRuh15t08L/0pdbbrRk8JKXQxxN4hZQcn+szkrw==
++  dependencies:
++    "@commitlint/types" "^20.5.0"
++    es-toolkit "^1.46.0"
++
++"@commitlint/execute-rule@^20.0.0":
++  version "20.0.0"
++  resolved "https://registry.yarnpkg.com/@commitlint/execute-rule/-/execute-rule-20.0.0.tgz#013628e09179cf2d3c977e1cf37937b5cb869af8"
++  integrity sha512-xyCoOShoPuPL44gVa+5EdZsBVao/pNzpQhkzq3RdtlFdKZtjWcLlUFQHSWBuhk5utKYykeJPSz2i8ABHQA+ZZw==
++
++"@commitlint/format@^20.5.0":
++  version "20.5.0"
++  resolved "https://registry.yarnpkg.com/@commitlint/format/-/format-20.5.0.tgz#cd73c527ec60e70fc7ae45c1ce31a4f143c49202"
++  integrity sha512-TI9EwFU/qZWSK7a5qyXMpKPPv3qta7FO4tKW+Wt2al7sgMbLWTsAcDpX1cU8k16TRdsiiet9aOw0zpvRXNJu7Q==
++  dependencies:
++    "@commitlint/types" "^20.5.0"
++    picocolors "^1.1.1"
++
++"@commitlint/is-ignored@^20.5.0":
++  version "20.5.0"
++  resolved "https://registry.yarnpkg.com/@commitlint/is-ignored/-/is-ignored-20.5.0.tgz#c90ac785b0673c4aa4e6bb1e3a15fcfb399727b0"
++  integrity sha512-JWLarAsurHJhPozbuAH6GbP4p/hdOCoqS9zJMfqwswne+/GPs5V0+rrsfOkP68Y8PSLphwtFXV0EzJ+GTXTTGg==
++  dependencies:
++    "@commitlint/types" "^20.5.0"
++    semver "^7.6.0"
++
++"@commitlint/lint@^20.5.3":
++  version "20.5.3"
++  resolved "https://registry.yarnpkg.com/@commitlint/lint/-/lint-20.5.3.tgz#0848685798ea70045a1958dd3a758c01225e6cb4"
++  integrity sha512-M7JbWBNr2gXKaPc4i/KipsuW1gkDHpj35KPjWtKy3Z+2AQw5wu1gBi1LIO0uoaij67CqY4K8PxPZSGens4evCw==
++  dependencies:
++    "@commitlint/is-ignored" "^20.5.0"
++    "@commitlint/parse" "^20.5.0"
++    "@commitlint/rules" "^20.5.3"
++    "@commitlint/types" "^20.5.0"
++
++"@commitlint/load@^20.5.3":
++  version "20.5.3"
++  resolved "https://registry.yarnpkg.com/@commitlint/load/-/load-20.5.3.tgz#06eabcb21941b70c3e5d6ea5c7fb64f7a2b27935"
++  integrity sha512-1FDZWuKyu98Myb8i7Tp31jPU2rZpOwAdYRyJcy2KoGg7Xk2A+bgHN8smhMaaNSNkmE8fwt53BokywZq8Gv/5XQ==
++  dependencies:
++    "@commitlint/config-validator" "^20.5.0"
++    "@commitlint/execute-rule" "^20.0.0"
++    "@commitlint/resolve-extends" "^20.5.3"
++    "@commitlint/types" "^20.5.0"
++    cosmiconfig "^9.0.1"
++    cosmiconfig-typescript-loader "^6.1.0"
++    es-toolkit "^1.46.0"
++    is-plain-obj "^4.1.0"
++    picocolors "^1.1.1"
++
++"@commitlint/message@^20.4.3":
++  version "20.4.3"
++  resolved "https://registry.yarnpkg.com/@commitlint/message/-/message-20.4.3.tgz#0c377fbbe1c72487612330a01d1e7dea991fa467"
++  integrity sha512-6akwCYrzcrFcTYz9GyUaWlhisY4lmQ3KvrnabmhoeAV8nRH4dXJAh4+EUQ3uArtxxKQkvxJS78hNX2EU3USgxQ==
++
++"@commitlint/parse@^20.5.0":
++  version "20.5.0"
++  resolved "https://registry.yarnpkg.com/@commitlint/parse/-/parse-20.5.0.tgz#196b75a7b870aa7cda311fac525f10fb6ccacd54"
++  integrity sha512-SeKWHBMk7YOTnnEWUhx+d1a9vHsjjuo6Uo1xRfPNfeY4bdYFasCH1dDpAv13Lyn+dDPOels+jP6D2GRZqzc5fA==
++  dependencies:
++    "@commitlint/types" "^20.5.0"
++    conventional-changelog-angular "^8.2.0"
++    conventional-commits-parser "^6.3.0"
++
++"@commitlint/read@^20.5.0":
++  version "20.5.0"
++  resolved "https://registry.yarnpkg.com/@commitlint/read/-/read-20.5.0.tgz#59d4b0e98429d308be6ad0d3e5144a193638ee6b"
++  integrity sha512-JDEIJ2+GnWpK8QqwfmW7O42h0aycJEWNqcdkJnyzLD11nf9dW2dWLTVEa8Wtlo4IZFGLPATjR5neA5QlOvIH1w==
++  dependencies:
++    "@commitlint/top-level" "^20.4.3"
++    "@commitlint/types" "^20.5.0"
++    git-raw-commits "^5.0.0"
++    minimist "^1.2.8"
++    tinyexec "^1.0.0"
++
++"@commitlint/resolve-extends@^20.5.3":
++  version "20.5.3"
++  resolved "https://registry.yarnpkg.com/@commitlint/resolve-extends/-/resolve-extends-20.5.3.tgz#3c46fa1fa243f12f1cb0a4ffc47b38351abd9c50"
++  integrity sha512-+ogW9v/u9JqpvAgTrLra/YTFo0KkjU6iNblF89pPsj4NebNc+DAWctsludwezI8YnsjBmfHpApSwcXprN/f/ew==
++  dependencies:
++    "@commitlint/config-validator" "^20.5.0"
++    "@commitlint/types" "^20.5.0"
++    es-toolkit "^1.46.0"
++    global-directory "^5.0.0"
++    import-meta-resolve "^4.0.0"
++    resolve-from "^5.0.0"
++
++"@commitlint/rules@^20.5.3":
++  version "20.5.3"
++  resolved "https://registry.yarnpkg.com/@commitlint/rules/-/rules-20.5.3.tgz#95151b38e30b35ccf13d6d091e4cc61cd363e3ec"
++  integrity sha512-MPlMnb9D3wbszYMp+1hPtuhtPJndRo6I6yfkZVA4+jR8w7Kqp0u2u/Y+gzbaItx5Lltq5rw7FSZQWJMoXUC4NQ==
++  dependencies:
++    "@commitlint/ensure" "^20.5.3"
++    "@commitlint/message" "^20.4.3"
++    "@commitlint/to-lines" "^20.0.0"
++    "@commitlint/types" "^20.5.0"
++
++"@commitlint/to-lines@^20.0.0":
++  version "20.0.0"
++  resolved "https://registry.yarnpkg.com/@commitlint/to-lines/-/to-lines-20.0.0.tgz#0f6d6106016272ef0e9f7c138093fe2cc06fc34b"
++  integrity sha512-2l9gmwiCRqZNWgV+pX1X7z4yP0b3ex/86UmUFgoRt672Ez6cAM2lOQeHFRUTuE6sPpi8XBCGnd8Kh3bMoyHwJw==
++
++"@commitlint/top-level@^20.4.3":
++  version "20.4.3"
++  resolved "https://registry.yarnpkg.com/@commitlint/top-level/-/top-level-20.4.3.tgz#6f94e558c1aa6ba3a1d6962e9adaa34f657efe81"
++  integrity sha512-qD9xfP6dFg5jQ3NMrOhG0/w5y3bBUsVGyJvXxdWEwBm8hyx4WOk3kKXw28T5czBYvyeCVJgJJ6aoJZUWDpaacQ==
++  dependencies:
++    escalade "^3.2.0"
++
++"@commitlint/types@^20.5.0":
++  version "20.5.0"
++  resolved "https://registry.yarnpkg.com/@commitlint/types/-/types-20.5.0.tgz#65be36ca38183757563bd69451dbe465a5d001ef"
++  integrity sha512-ZJoS8oSq2CAZEpc/YI9SulLrdiIyXeHb/OGqGrkUP6Q7YV+0ouNAa7GjqRdXeQPncHQIDz/jbCTlHScvYvO/gA==
++  dependencies:
++    conventional-commits-parser "^6.3.0"
++    picocolors "^1.1.1"
++
++"@conventional-changelog/git-client@^2.6.0":
++  version "2.7.0"
++  resolved "https://registry.yarnpkg.com/@conventional-changelog/git-client/-/git-client-2.7.0.tgz#07ea8202fd822e71d32c54aaed08b2c5ae9cc7c2"
++  integrity sha512-j7A8/LBEQ+3rugMzPXoKYzyUPpw/0CBQCyvtTR7Lmu4olG4yRC/Tfkq79Mr3yuPs0SUitlO2HwGP3gitMJnRFw==
++  dependencies:
++    "@simple-libs/child-process-utils" "^1.0.0"
++    "@simple-libs/stream-utils" "^1.2.0"
++    semver "^7.5.2"
++
++"@simple-libs/child-process-utils@^1.0.0":
++  version "1.0.2"
++  resolved "https://registry.yarnpkg.com/@simple-libs/child-process-utils/-/child-process-utils-1.0.2.tgz#cb182d310c9bed3ace200b26258e090d898a1736"
++  integrity sha512-/4R8QKnd/8agJynkNdJmNw2MBxuFTRcNFnE5Sg/G+jkSsV8/UBgULMzhizWWW42p8L5H7flImV2ATi79Ove2Tw==
++  dependencies:
++    "@simple-libs/stream-utils" "^1.2.0"
++
++"@simple-libs/stream-utils@^1.2.0":
++  version "1.2.0"
++  resolved "https://registry.yarnpkg.com/@simple-libs/stream-utils/-/stream-utils-1.2.0.tgz#5af724b826f1ab4d7f2826d31d3efccec124102b"
++  integrity sha512-KxXvfapcixpz6rVEB6HPjOUZT22yN6v0vI0urQSk1L8MlEWPDFCZkhw2xmkyoTGYeFw7tWTZd7e3lVzRZRN/EA==
++
++ajv@^8.11.0:
++  version "8.20.0"
++  resolved "https://registry.yarnpkg.com/ajv/-/ajv-8.20.0.tgz#304b3636add88ba7d936760dd50ece006dea95f9"
++  integrity sha512-Thbli+OlOj+iMPYFBVBfJ3OmCAnaSyNn4M1vz9T6Gka5Jt9ba/HIR56joy65tY6kx/FCF5VXNB819Y7/GUrBGA==
++  dependencies:
++    fast-deep-equal "^3.1.3"
++    fast-uri "^3.0.1"
++    json-schema-traverse "^1.0.0"
++    require-from-string "^2.0.2"
++
++ansi-regex@^5.0.1:
++  version "5.0.1"
++  resolved "https://registry.yarnpkg.com/ansi-regex/-/ansi-regex-5.0.1.tgz#082cb2c89c9fe8659a311a53bd6a4dc5301db304"
++  integrity sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==
++
++ansi-styles@^4.0.0:
++  version "4.3.0"
++  resolved "https://registry.yarnpkg.com/ansi-styles/-/ansi-styles-4.3.0.tgz#edd803628ae71c04c85ae7a0906edad34b648937"
++  integrity sha512-zbB9rCJAT1rbjiVDb2hqKFHNYLxgtk8NURxZ3IZwD3F6NtxbXZQCnnSi1Lkx+IDohdPlFp222wVALIheZJQSEg==
++  dependencies:
++    color-convert "^2.0.1"
++
++argparse@^2.0.1:
++  version "2.0.1"
++  resolved "https://registry.yarnpkg.com/argparse/-/argparse-2.0.1.tgz#246f50f3ca78a3240f6c997e8a9bd1eac49e4b38"
++  integrity sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==
++
++array-ify@^1.0.0:
++  version "1.0.0"
++  resolved "https://registry.yarnpkg.com/array-ify/-/array-ify-1.0.0.tgz#9e528762b4a9066ad163a6962a364418e9626ece"
++  integrity sha512-c5AMf34bKdvPhQ7tBGhqkgKNUzMr4WUs+WDtC2ZUGOUncbxKMTvqxYctiseW3+L4bA8ec+GcZ6/A/FW4m8ukng==
++
++callsites@^3.0.0:
++  version "3.1.0"
++  resolved "https://registry.yarnpkg.com/callsites/-/callsites-3.1.0.tgz#b3630abd8943432f54b3f0519238e33cd7df2f73"
++  integrity sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==
++
++cliui@^8.0.1:
++  version "8.0.1"
++  resolved "https://registry.yarnpkg.com/cliui/-/cliui-8.0.1.tgz#0c04b075db02cbfe60dc8e6cf2f5486b1a3608aa"
++  integrity sha512-BSeNnyus75C4//NQ9gQt1/csTXyo/8Sb+afLAkzAptFuMsod9HFokGNudZpi/oQV73hnVK+sR+5PVRMd+Dr7YQ==
++  dependencies:
++    string-width "^4.2.0"
++    strip-ansi "^6.0.1"
++    wrap-ansi "^7.0.0"
++
++color-convert@^2.0.1:
++  version "2.0.1"
++  resolved "https://registry.yarnpkg.com/color-convert/-/color-convert-2.0.1.tgz#72d3a68d598c9bdb3af2ad1e84f21d896abd4de3"
++  integrity sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ==
++  dependencies:
++    color-name "~1.1.4"
++
++color-name@~1.1.4:
++  version "1.1.4"
++  resolved "https://registry.yarnpkg.com/color-name/-/color-name-1.1.4.tgz#c2a09a87acbde69543de6f63fa3995c826c536a2"
++  integrity sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==
++
++compare-func@^2.0.0:
++  version "2.0.0"
++  resolved "https://registry.yarnpkg.com/compare-func/-/compare-func-2.0.0.tgz#fb65e75edbddfd2e568554e8b5b05fff7a51fcb3"
++  integrity sha512-zHig5N+tPWARooBnb0Zx1MFcdfpyJrfTJ3Y5L+IFvUm8rM74hHz66z0gw0x4tijh5CorKkKUCnW82R2vmpeCRA==
++  dependencies:
++    array-ify "^1.0.0"
++    dot-prop "^5.1.0"
++
++conventional-changelog-angular@^8.2.0:
++  version "8.3.1"
++  resolved "https://registry.yarnpkg.com/conventional-changelog-angular/-/conventional-changelog-angular-8.3.1.tgz#0b015e25ca7f2766a8c5352ab6488dcb76a9d881"
++  integrity sha512-6gfI3otXK5Ph5DfCOI1dblr+kN3FAm5a97hYoQkqNZxOaYa5WKfXH+AnpsmS+iUH2mgVC2Cg2Qw9m5OKcmNrIg==
++  dependencies:
++    compare-func "^2.0.0"
++
++conventional-changelog-conventionalcommits@^9.1.0:
++  version "9.3.1"
++  resolved "https://registry.yarnpkg.com/conventional-changelog-conventionalcommits/-/conventional-changelog-conventionalcommits-9.3.1.tgz#14f2dd65ccc5de09322a7eb0159f3e0259d7399c"
++  integrity sha512-dTYtpIacRpcZgrvBYvBfArMmK2xvIpv2TaxM0/ZI5CBtNUzvF2x0t15HsbRABWprS6UPmvj+PzHVjSx4qAVKyw==
++  dependencies:
++    compare-func "^2.0.0"
++
++conventional-commits-parser@^6.3.0:
++  version "6.4.0"
++  resolved "https://registry.yarnpkg.com/conventional-commits-parser/-/conventional-commits-parser-6.4.0.tgz#8ac1c12ec467354ed4d73ec940efe380e1e83686"
++  integrity sha512-tvRg7FIBNlyPzjdG8wWRlPHQJJHI7DylhtRGeU9Lq+JuoPh5BKpPRX83ZdLrvXuOSu5Eo/e7SzOQhU4Hd2Miuw==
++  dependencies:
++    "@simple-libs/stream-utils" "^1.2.0"
++    meow "^13.0.0"
++
++cosmiconfig-typescript-loader@^6.1.0:
++  version "6.3.0"
++  resolved "https://registry.yarnpkg.com/cosmiconfig-typescript-loader/-/cosmiconfig-typescript-loader-6.3.0.tgz#a5ee3ec3da5a976c0c233fd0e0b5ca14b58b0327"
++  integrity sha512-Akr82WH1Wfqatyiqpj8HDkO2o2KmJRu1FhKfSNJP3K4IdXwHfEyL7MOb62i1AGQVLtIQM+iCE9CGOtrfhR+mmA==
++  dependencies:
++    jiti "2.6.1"
++
++cosmiconfig@^9.0.1:
++  version "9.0.2"
++  resolved "https://registry.yarnpkg.com/cosmiconfig/-/cosmiconfig-9.0.2.tgz#9e5615163becf6a82211fb33d2f68947c25d0c5e"
++  integrity sha512-gtTZxTDau1wL7Y7zifc2dd8jHSK/k6BTx/2Xp/BpdlAdnlYWFVt7qhJqgwi7637yRwRQ3qL4ZidbB4I8tA5VOg==
++  dependencies:
++    env-paths "^2.2.1"
++    import-fresh "^3.3.0"
++    js-yaml "^4.1.0"
++    parse-json "^5.2.0"
++
++dot-prop@^5.1.0:
++  version "5.3.0"
++  resolved "https://registry.yarnpkg.com/dot-prop/-/dot-prop-5.3.0.tgz#90ccce708cd9cd82cc4dc8c3ddd9abdd55b20e88"
++  integrity sha512-QM8q3zDe58hqUqjraQOmzZ1LIH9SWQJTlEKCH4kJ2oQvLZk7RbQXvtDM2XEq3fwkV9CCvvH4LA0AV+ogFsBM2Q==
++  dependencies:
++    is-obj "^2.0.0"
++
++emoji-regex@^8.0.0:
++  version "8.0.0"
++  resolved "https://registry.yarnpkg.com/emoji-regex/-/emoji-regex-8.0.0.tgz#e818fd69ce5ccfcb404594f842963bf53164cc37"
++  integrity sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==
++
++env-paths@^2.2.1:
++  version "2.2.1"
++  resolved "https://registry.yarnpkg.com/env-paths/-/env-paths-2.2.1.tgz#420399d416ce1fbe9bc0a07c62fa68d67fd0f8f2"
++  integrity sha512-+h1lkLKhZMTYjog1VEpJNG7NZJWcuc2DDk/qsqSTRRCOXiLjeQ1d1/udrUGhqMxUgAlwKNZ0cf2uqan5GLuS2A==
++
++error-ex@^1.3.1:
++  version "1.3.4"
++  resolved "https://registry.yarnpkg.com/error-ex/-/error-ex-1.3.4.tgz#b3a8d8bb6f92eecc1629e3e27d3c8607a8a32414"
++  integrity sha512-sqQamAnR14VgCr1A618A3sGrygcpK+HEbenA/HiEAkkUwcZIIB/tgWqHFxWgOyDh4nB4JCRimh79dR5Ywc9MDQ==
++  dependencies:
++    is-arrayish "^0.2.1"
++
++es-toolkit@^1.46.0:
++  version "1.50.0"
++  resolved "https://registry.yarnpkg.com/es-toolkit/-/es-toolkit-1.50.0.tgz#2665c21d0ab76286f478ece3a235463097aeabd3"
++  integrity sha512-OyZKhUVvEep9ITEiwHn8GKnMRQIVqoSIX7WnRbkWgJkllCujilqP2rD0u979tkl8wqyc8ICwlc1UBVv/Sl1G6w==
++
++escalade@^3.1.1, escalade@^3.2.0:
++  version "3.2.0"
++  resolved "https://registry.yarnpkg.com/escalade/-/escalade-3.2.0.tgz#011a3f69856ba189dffa7dc8fcce99d2a87903e5"
++  integrity sha512-WUj2qlxaQtO4g6Pq5c29GTcWGDyd8itL8zTlipgECz3JesAiiOKotd8JU6otB3PACgG6xkJUyVhboMS+bje/jA==
++
++fast-deep-equal@^3.1.3:
++  version "3.1.3"
++  resolved "https://registry.yarnpkg.com/fast-deep-equal/-/fast-deep-equal-3.1.3.tgz#3a7d56b559d6cbc3eb512325244e619a65c6c525"
++  integrity sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==
++
++fast-uri@^3.0.1:
++  version "3.1.5"
++  resolved "https://registry.yarnpkg.com/fast-uri/-/fast-uri-3.1.5.tgz#610f37419a030270430cecd68d74e3d4d96725d0"
++  integrity sha512-gHwA1O9LDIcKunMKhObS/HimwtehO1nPUECKAu5TpKgaO19fcWEl4bliWe1jWxVFvIXztJjjQ4L8XQ1EU9f7Jw==
++
++get-caller-file@^2.0.5:
++  version "2.0.5"
++  resolved "https://registry.yarnpkg.com/get-caller-file/-/get-caller-file-2.0.5.tgz#4f94412a82db32f36e3b0b9741f8a97feb031f7e"
++  integrity sha512-DyFP3BM/3YHTQOCUL/w0OZHR0lpKeGrxotcHWcqNEdnltqFwXVfhEBQ94eIo34AfQpo0rGki4cyIiftY06h2Fg==
++
++git-raw-commits@^5.0.0:
++  version "5.0.1"
++  resolved "https://registry.yarnpkg.com/git-raw-commits/-/git-raw-commits-5.0.1.tgz#e91d8fd4e3a264142166956fe1a23d08c069657e"
++  integrity sha512-Y+csSm2GD/PCSh6Isd/WiMjNAydu0VBiG9J7EdQsNA5P9uXvLayqjmTsNlK5Gs9IhblFZqOU0yid5Il5JPoLiQ==
++  dependencies:
++    "@conventional-changelog/git-client" "^2.6.0"
++    meow "^13.0.0"
++
++global-directory@^5.0.0:
++  version "5.0.0"
++  resolved "https://registry.yarnpkg.com/global-directory/-/global-directory-5.0.0.tgz#0f66a94212acd0f81ee838d0a991e88d1c2836cf"
++  integrity sha512-1pgFdhK3J2LeM+dVf2Pd424yHx2ou338lC0ErNP2hPx4j8eW1Sp0XqSjNxtk6Tc4Kr5wlWtSvz8cn2yb7/SG/w==
++  dependencies:
++    ini "6.0.0"
++
++import-fresh@^3.3.0:
++  version "3.3.1"
++  resolved "https://registry.yarnpkg.com/import-fresh/-/import-fresh-3.3.1.tgz#9cecb56503c0ada1f2741dbbd6546e4b13b57ccf"
++  integrity sha512-TR3KfrTZTYLPB6jUjfx6MF9WcWrHL9su5TObK4ZkYgBdWKPOFoSoQIdEuTuR82pmtxH2spWG9h6etwfr1pLBqQ==
++  dependencies:
++    parent-module "^1.0.0"
++    resolve-from "^4.0.0"
++
++import-meta-resolve@^4.0.0:
++  version "4.2.0"
++  resolved "https://registry.yarnpkg.com/import-meta-resolve/-/import-meta-resolve-4.2.0.tgz#08cb85b5bd37ecc8eb1e0f670dc2767002d43734"
++  integrity sha512-Iqv2fzaTQN28s/FwZAoFq0ZSs/7hMAHJVX+w8PZl3cY19Pxk6jFFalxQoIfW2826i/fDLXv8IiEZRIT0lDuWcg==
++
++ini@6.0.0:
++  version "6.0.0"
++  resolved "https://registry.yarnpkg.com/ini/-/ini-6.0.0.tgz#efc7642b276f6a37d22fdf56ef50889d7146bf30"
++  integrity sha512-IBTdIkzZNOpqm7q3dRqJvMaldXjDHWkEDfrwGEQTs5eaQMWV+djAhR+wahyNNMAa+qpbDUhBMVt4ZKNwpPm7xQ==
++
++is-arrayish@^0.2.1:
++  version "0.2.1"
++  resolved "https://registry.yarnpkg.com/is-arrayish/-/is-arrayish-0.2.1.tgz#77c99840527aa8ecb1a8ba697b80645a7a926a9d"
++  integrity sha512-zz06S8t0ozoDXMG+ube26zeCTNXcKIPJZJi8hBrF4idCLms4CG9QtK7qBl1boi5ODzFpjswb5JPmHCbMpjaYzg==
++
++is-fullwidth-code-point@^3.0.0:
++  version "3.0.0"
++  resolved "https://registry.yarnpkg.com/is-fullwidth-code-point/-/is-fullwidth-code-point-3.0.0.tgz#f116f8064fe90b3f7844a38997c0b75051269f1d"
++  integrity sha512-zymm5+u+sCsSWyD9qNaejV3DFvhCKclKdizYaJUuHA83RLjb7nSuGnddCHGv0hk+KY7BMAlsWeK4Ueg6EV6XQg==
++
++is-obj@^2.0.0:
++  version "2.0.0"
++  resolved "https://registry.yarnpkg.com/is-obj/-/is-obj-2.0.0.tgz#473fb05d973705e3fd9620545018ca8e22ef4982"
++  integrity sha512-drqDG3cbczxxEJRoOXcOjtdp1J/lyp1mNn0xaznRs8+muBhgQcrnbspox5X5fOw0HnMnbfDzvnEMEtqDEJEo8w==
++
++is-plain-obj@^4.1.0:
++  version "4.1.0"
++  resolved "https://registry.yarnpkg.com/is-plain-obj/-/is-plain-obj-4.1.0.tgz#d65025edec3657ce032fd7db63c97883eaed71f0"
++  integrity sha512-+Pgi+vMuUNkJyExiMBt5IlFoMyKnr5zhJ4Uspz58WOhBF5QoIZkFyNHIbBAtHwzVAgk5RtndVNsDRN61/mmDqg==
++
++jiti@2.6.1:
++  version "2.6.1"
++  resolved "https://registry.yarnpkg.com/jiti/-/jiti-2.6.1.tgz#178ef2fc9a1a594248c20627cd820187a4d78d92"
++  integrity sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==
++
++js-tokens@^4.0.0:
++  version "4.0.0"
++  resolved "https://registry.yarnpkg.com/js-tokens/-/js-tokens-4.0.0.tgz#19203fb59991df98e3a287050d4647cdeaf32499"
++  integrity sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==
++
++js-yaml@^4.1.0:
++  version "4.3.1"
++  resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-4.3.1.tgz#01216c001d67f48e2cd560d708c7af21090a3848"
++  integrity sha512-CY6crGq313MX8GkwvB7tzgp99vjQxY1++5y10/BKN/GUfHqWaOGQMNZkBvqSzsZKWk/ijwHlWzzkLulsGHhjWQ==
++  dependencies:
++    argparse "^2.0.1"
++
++json-parse-even-better-errors@^2.3.0:
++  version "2.3.1"
++  resolved "https://registry.yarnpkg.com/json-parse-even-better-errors/-/json-parse-even-better-errors-2.3.1.tgz#7c47805a94319928e05777405dc12e1f7a4ee02d"
++  integrity sha512-xyFwyhro/JEof6Ghe2iz2NcXoj2sloNsWr/XsERDK/oiPCfaNhl5ONfp+jQdAZRQQ0IJWNzH9zIZF7li91kh2w==
++
++json-schema-traverse@^1.0.0:
++  version "1.0.0"
++  resolved "https://registry.yarnpkg.com/json-schema-traverse/-/json-schema-traverse-1.0.0.tgz#ae7bcb3656ab77a73ba5c49bf654f38e6b6860e2"
++  integrity sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==
++
++lines-and-columns@^1.1.6:
++  version "1.2.4"
++  resolved "https://registry.yarnpkg.com/lines-and-columns/-/lines-and-columns-1.2.4.tgz#eca284f75d2965079309dc0ad9255abb2ebc1632"
++  integrity sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==
++
++meow@^13.0.0:
++  version "13.2.0"
++  resolved "https://registry.yarnpkg.com/meow/-/meow-13.2.0.tgz#6b7d63f913f984063b3cc261b6e8800c4cd3474f"
++  integrity sha512-pxQJQzB6djGPXh08dacEloMFopsOqGVRKFPYvPOt9XDZ1HasbgDZA74CJGreSU4G3Ak7EFJGoiH2auq+yXISgA==
++
++minimist@^1.2.8:
++  version "1.2.8"
++  resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.8.tgz#c1a464e7693302e082a075cee0c057741ac4772c"
++  integrity sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==
++
++parent-module@^1.0.0:
++  version "1.0.1"
++  resolved "https://registry.yarnpkg.com/parent-module/-/parent-module-1.0.1.tgz#691d2709e78c79fae3a156622452d00762caaaa2"
++  integrity sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==
++  dependencies:
++    callsites "^3.0.0"
++
++parse-json@^5.2.0:
++  version "5.2.0"
++  resolved "https://registry.yarnpkg.com/parse-json/-/parse-json-5.2.0.tgz#c76fc66dee54231c962b22bcc8a72cf2f99753cd"
++  integrity sha512-ayCKvm/phCGxOkYRSCM82iDwct8/EonSEgCSxWxD7ve6jHggsFl4fZVQBPRNgQoKiuV/odhFrGzQXZwbifC8Rg==
++  dependencies:
++    "@babel/code-frame" "^7.0.0"
++    error-ex "^1.3.1"
++    json-parse-even-better-errors "^2.3.0"
++    lines-and-columns "^1.1.6"
++
++picocolors@^1.1.1:
++  version "1.1.1"
++  resolved "https://registry.yarnpkg.com/picocolors/-/picocolors-1.1.1.tgz#3d321af3eab939b083c8f929a1d12cda81c26b6b"
++  integrity sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==
++
++require-directory@^2.1.1:
++  version "2.1.1"
++  resolved "https://registry.yarnpkg.com/require-directory/-/require-directory-2.1.1.tgz#8c64ad5fd30dab1c976e2344ffe7f792a6a6df42"
++  integrity sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==
++
++require-from-string@^2.0.2:
++  version "2.0.2"
++  resolved "https://registry.yarnpkg.com/require-from-string/-/require-from-string-2.0.2.tgz#89a7fdd938261267318eafe14f9c32e598c36909"
++  integrity sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==
++
++resolve-from@^4.0.0:
++  version "4.0.0"
++  resolved "https://registry.yarnpkg.com/resolve-from/-/resolve-from-4.0.0.tgz#4abcd852ad32dd7baabfe9b40e00a36db5f392e6"
++  integrity sha512-pb/MYmXstAkysRFx8piNI1tGFNQIFA3vkE3Gq4EuA1dF6gHp/+vgZqsCGJapvy8N3Q+4o7FwvquPJcnZ7RYy4g==
++
++resolve-from@^5.0.0:
++  version "5.0.0"
++  resolved "https://registry.yarnpkg.com/resolve-from/-/resolve-from-5.0.0.tgz#c35225843df8f776df21c57557bc087e9dfdfc69"
++  integrity sha512-qYg9KP24dD5qka9J47d0aVky0N+b4fTU89LN9iDnjB5waksiC49rvMB0PrUJQGoTmH50XPiqOvAjDfaijGxYZw==
++
++semver@^7.5.2, semver@^7.6.0:
++  version "7.8.5"
++  resolved "https://registry.yarnpkg.com/semver/-/semver-7.8.5.tgz#39b646037dd50c14fb451e7e4cac58ed8b863f69"
++  integrity sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==
++
++string-width@^4.1.0, string-width@^4.2.0, string-width@^4.2.3:
++  version "4.2.3"
++  resolved "https://registry.yarnpkg.com/string-width/-/string-width-4.2.3.tgz#269c7117d27b05ad2e536830a8ec895ef9c6d010"
++  integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
++  dependencies:
++    emoji-regex "^8.0.0"
++    is-fullwidth-code-point "^3.0.0"
++    strip-ansi "^6.0.1"
++
++strip-ansi@^6.0.0, strip-ansi@^6.0.1:
++  version "6.0.1"
++  resolved "https://registry.yarnpkg.com/strip-ansi/-/strip-ansi-6.0.1.tgz#9e26c63d30f53443e9489495b2105d37b67a85d9"
++  integrity sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==
++  dependencies:
++    ansi-regex "^5.0.1"
++
++tinyexec@^1.0.0:
++  version "1.3.0"
++  resolved "https://registry.yarnpkg.com/tinyexec/-/tinyexec-1.3.0.tgz#aacc1dbb1d4e93e6ad8dd64944e09f9ad147a474"
++  integrity sha512-QKAl9m8gWWGHV8jZcPeym6j+XULi6tOf1mT83WYJ4Lk2ytW/uwAWkrP0uFsdoYMdueVJ0qs26wZ+23xeB4ibNQ==
++
++wrap-ansi@^7.0.0:
++  version "7.0.0"
++  resolved "https://registry.yarnpkg.com/wrap-ansi/-/wrap-ansi-7.0.0.tgz#67e145cff510a6a6984bdf1152911d69d2eb9e43"
++  integrity sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==
++  dependencies:
++    ansi-styles "^4.0.0"
++    string-width "^4.1.0"
++    strip-ansi "^6.0.0"
++
++y18n@^5.0.5:
++  version "5.0.8"
++  resolved "https://registry.yarnpkg.com/y18n/-/y18n-5.0.8.tgz#7f4934d0f7ca8c56f95314939ddcd2dd91ce1d55"
++  integrity sha512-0pfFzegeDWJHJIAmTLRP2DwHjdF5s7jo9tuztdQxAhINCdvS+3nGINqPd00AphqJR/0LhANUS6/+7SCb98YOfA==
++
++yargs-parser@^21.1.1:
++  version "21.1.1"
++  resolved "https://registry.yarnpkg.com/yargs-parser/-/yargs-parser-21.1.1.tgz#9096bceebf990d21bb31fa9516e0ede294a77d35"
++  integrity sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw==
++
++yargs@^17.0.0:
++  version "17.7.3"
++  resolved "https://registry.yarnpkg.com/yargs/-/yargs-17.7.3.tgz#779dffe6bcafec596a7172e983289a588647faaa"
++  integrity sha512-GZtjxm/J/4TSxuL3FNYjCmLktBTnIw/rVmKSIyKeYAZpmJB2ig9VauCC5xsa82GNKVKDAqpOn3KVzNt0zmrU0g==
++  dependencies:
++    cliui "^8.0.1"
++    escalade "^3.1.1"
++    get-caller-file "^2.0.5"
++    require-directory "^2.1.1"
++    string-width "^4.2.3"
++    y18n "^5.0.5"
++    yargs-parser "^21.1.1"

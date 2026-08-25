@@ -8,6 +8,7 @@
  "field_order": [
   "naming_series",
   "posting_date",
+  "category",
   "set_renewal_for_all",
   "preparation_record",
   "total_payment",
@@ -97,14 +98,34 @@
    "fieldtype": "Currency",
    "label": "Total Payment",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Category",
+   "options": "\nOnboarding\nOffboarding\nRenewal"
   }
  ],
  "is_submittable": 1,
- "links": [],
- "modified": "2021-09-09 14:09:13.594820",
- "modified_by": "Administrator",
+ "links": [
+  {
+   "link_doctype": "Medical Appointment",
+   "link_fieldname": "preparation"
+  },
+  {
+   "group": "Overseas",
+   "link_doctype": "PCC Attestation",
+   "link_fieldname": "preparation"
+  }
+ ],
+ "modified": "2026-08-17 21:50:17.983938",
+ "modified_by": "h.imran@one-fm.com",
  "module": "GRD",
  "name": "Preparation",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -135,7 +156,9 @@
   }
  ],
  "quick_entry": 1,
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

@@ -34,6 +34,8 @@
   "last_name_english",
   "section_break_20",
   "one_fm_civil_id",
+  "damj_is_applicable",
+  "original_civil_id",
   "designation",
   "place_of_birth",
   "gender",
@@ -59,13 +61,21 @@
   "company_street_name",
   "company_building_name",
   "company_contact_number",
+  "section_break_vrai",
+  "residency_fine_to_be_added",
+  "column_break_zpot",
+  "residency_fine_amount_kwd",
   "section_break_42",
   "invoice_attachment",
   "residency_attachment",
+  "upload_residency_fine_payment_receipt",
+  "upload_damj_letter",
   "new_residency_expiry_date",
   "column_break_34",
   "invoice_attachment_date",
   "residency_attachment_date",
+  "upload_residency_fine_payment_receipt_on",
+  "upload_damj_letter_on",
   "new_residency_expiry_date_update_time",
   "section_break_40",
   "grd_operator",
@@ -488,6 +498,7 @@
   {
    "fieldname": "apply_for",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Apply for",
    "options": "\n1 \u0625\u0634\u0639\u0627\u0631\n14 \u0645\u0624\u0642\u062a\u0629\n18 \u0639\u0645\u0644 \u0623\u0647\u0644\u064a"
   },
@@ -516,12 +527,76 @@
    "fieldtype": "Data",
    "label": "Fourth Name",
    "read_only": 1
+  },
+  {
+   "fieldname": "section_break_vrai",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "residency_fine_to_be_added",
+   "fieldtype": "Check",
+   "label": "Residency Fine to be Added"
+  },
+  {
+   "fieldname": "column_break_zpot",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.residency_fine_to_be_added == 1",
+   "fieldname": "residency_fine_amount_kwd",
+   "fieldtype": "Currency",
+   "label": "Residency Fine Amount (KWD)"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.residency_fine_to_be_added == 1",
+   "fieldname": "upload_residency_fine_payment_receipt",
+   "fieldtype": "Attach",
+   "label": "Upload Residency Fine Payment Receipt",
+   "print_hide": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "upload_residency_fine_payment_receipt_on",
+   "fieldtype": "Data",
+   "label": "Upload Residency Fine Payment Receipt On",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "damj_is_applicable",
+   "fieldtype": "Check",
+   "label": "DAMJ is Applicable"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.damj_is_applicable == 1",
+   "fieldname": "original_civil_id",
+   "fieldtype": "Data",
+   "label": "Original Civil ID",
+   "mandatory_depends_on": "eval:doc.damj_is_applicable == 1"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.damj_is_applicable == 1",
+   "fieldname": "upload_damj_letter",
+   "fieldtype": "Attach",
+   "label": "Upload DAMJ Letter",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "upload_damj_letter_on",
+   "fieldtype": "Data",
+   "label": "Upload DAMJ Letter On",
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-05 12:00:00.000000",
- "modified_by": "Administrator",
+ "modified": "2026-08-19 08:57:17.680331",
+ "modified_by": "h.imran@one-fm.com",
  "module": "GRD",
  "name": "Residency",
  "naming_rule": "By \"Naming Series\" field",

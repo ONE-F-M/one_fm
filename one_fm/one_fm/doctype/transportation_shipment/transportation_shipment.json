@@ -135,7 +135,7 @@
    "fieldname": "trip_direction",
    "fieldtype": "Select",
    "label": "Trip Direction",
-   "options": "\nOutward\nReturn"
+   "options": "\nOutward\nReturn\nMixed"
   },
   {
    "fieldname": "routing_type_badge",
@@ -224,8 +224,8 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-15 17:22:34.688327",
- "modified_by": "Administrator",
+ "modified": "2026-08-17 08:35:37.065531",
+ "modified_by": "h.imran@one-fm.com",
  "module": "One Fm",
  "name": "Transportation Shipment",
  "naming_rule": "By \"Naming Series\" field",

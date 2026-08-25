@@ -1,149 +1,221 @@
 {
-  "actions": [],
-  "creation": "2026-05-04 10:00:00.000000",
-  "doctype": "DocType",
-  "editable_grid": 1,
-  "engine": "InnoDB",
-  "field_order": [
-    "card_id",
-    "transportation_shipment",
-    "vehicle",
-    "direction",
-    "column_break_1",
-    "stop_index",
-    "trip_group",
-    "trip_name",
-    "headcount",
-    "section_break_details",
-    "site",
-    "shift",
-    "column_break_2",
-    "accommodation",
-    "stop_location",
-    "section_break_times",
-    "start_time",
-    "end_time"
-  ],
-  "fields": [
-    {
-      "fieldname": "card_id",
-      "fieldtype": "Data",
-      "label": "Card ID",
-      "reqd": 1,
-      "in_list_view": 1
-    },
-    {
-      "fieldname": "transportation_shipment",
-      "fieldtype": "Link",
-      "label": "Transportation Shipment",
-      "options": "Transportation Shipment",
-      "description": "Source shipment record linked into this vehicle's manifest array"
-    },
-    {
-      "fieldname": "vehicle",
-      "fieldtype": "Link",
-      "label": "Vehicle",
-      "options": "Vehicle",
-      "reqd": 1,
-      "in_list_view": 1
-    },
-    {
-      "fieldname": "direction",
-      "fieldtype": "Select",
-      "label": "Direction",
-      "options": "\nOUTBOUND\nRETURN",
-      "reqd": 1,
-      "in_list_view": 1
-    },
-    {
-      "fieldname": "column_break_1",
-      "fieldtype": "Column Break"
-    },
-    {
-      "fieldname": "stop_index",
-      "fieldtype": "Int",
-      "label": "Stop Index",
-      "default": "0",
-      "description": "0 = standalone, 1+ = multi-stop trip sequence"
-    },
-    {
-      "fieldname": "trip_group",
-      "fieldtype": "Data",
-      "label": "Trip Group",
-      "description": "Groups multi-stop blocks into one trip"
-    },
-    {
-      "fieldname": "trip_name",
-      "fieldtype": "Data",
-      "label": "Trip Name",
-      "description": "User-defined name for the trip"
-    },
-    {
-      "fieldname": "headcount",
-      "fieldtype": "Int",
-      "label": "Headcount",
-      "in_list_view": 1
-    },
-    {
-      "fieldname": "section_break_details",
-      "fieldtype": "Section Break",
-      "label": "Details"
-    },
-    {
-      "fieldname": "site",
-      "fieldtype": "Data",
-      "label": "Site"
-    },
-    {
-      "fieldname": "shift",
-      "fieldtype": "Data",
-      "label": "Shift"
-    },
-    {
-      "fieldname": "column_break_2",
-      "fieldtype": "Column Break"
-    },
-    {
-      "fieldname": "accommodation",
-      "fieldtype": "Data",
-      "label": "Accommodation"
-    },
-    {
-      "fieldname": "stop_location",
-      "fieldtype": "Data",
-      "label": "Stop Location"
-    },
-    {
-      "fieldname": "section_break_times",
-      "fieldtype": "Section Break",
-      "label": "Time Window"
-    },
-    {
-      "fieldname": "start_time",
-      "fieldtype": "Data",
-      "label": "Start Time",
-      "description": "ISO timestamp of block start on timeline. Date part = multi-day lock lifespan start; time part = daily trip start."
-    },
-    {
-      "fieldname": "end_time",
-      "fieldtype": "Data",
-      "label": "End Time",
-      "description": "ISO timestamp of block end on timeline. Date part = multi-day lock lifespan end; time part = daily trip end."
-    }
-  ],
-  "index_web_pages_for_search": 0,
-  "istable": 1,
-  "links": [],
-  "modified": "2026-05-04 10:00:00.000000",
-  "modified_by": "Administrator",
-  "module": "Operations",
-  "name": "Route Plan Assignment",
-  "naming_rule": "Random",
-  "autoname": "hash",
-  "owner": "Administrator",
-  "permissions": [],
-  "sort_field": "creation",
-  "sort_order": "ASC",
-  "states": [],
-  "track_changes": 0
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-05-04 10:00:00",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "card_id",
+  "transportation_shipment",
+  "vehicle",
+  "max_passenger_capacity",
+  "direction",
+  "action_type",
+  "column_break_1",
+  "stop_index",
+  "trip_group",
+  "trip_name",
+  "headcount",
+  "boarding_count",
+  "current_passenger_count",
+  "drop_off_count",
+  "qoa_time",
+  "shift_start_time",
+  "section_break_details",
+  "site",
+  "shift",
+  "column_break_2",
+  "accommodation",
+  "origin_location",
+  "stop_location",
+  "is_accommodation_origin",
+  "section_break_times",
+  "start_time",
+  "end_time",
+  "is_next_day"
+ ],
+ "fields": [
+  {
+   "fieldname": "card_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Card ID",
+   "reqd": 1
+  },
+  {
+   "description": "Source shipment record linked into this vehicle's manifest array",
+   "fieldname": "transportation_shipment",
+   "fieldtype": "Link",
+   "label": "Transportation Shipment",
+   "options": "Transportation Shipment"
+  },
+  {
+   "fieldname": "vehicle",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Vehicle",
+   "options": "Vehicle",
+   "reqd": 1
+  },
+  {
+   "fieldname": "direction",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Direction",
+   "options": "\nOUTBOUND\nRETURN\nMIXED",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "0 = standalone, 1+ = multi-stop trip sequence",
+   "fieldname": "stop_index",
+   "fieldtype": "Int",
+   "label": "Stop Index"
+  },
+  {
+   "description": "Groups multi-stop blocks into one trip",
+   "fieldname": "trip_group",
+   "fieldtype": "Data",
+   "label": "Trip Group"
+  },
+  {
+   "description": "User-defined name for the trip",
+   "fieldname": "trip_name",
+   "fieldtype": "Data",
+   "label": "Trip Name"
+  },
+  {
+   "fieldname": "headcount",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Headcount"
+  },
+  {
+   "fieldname": "section_break_details",
+   "fieldtype": "Section Break",
+   "label": "Details"
+  },
+  {
+   "fieldname": "site",
+   "fieldtype": "Data",
+   "label": "Site"
+  },
+  {
+   "fieldname": "shift",
+   "fieldtype": "Data",
+   "label": "Shift"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "accommodation",
+   "fieldtype": "Data",
+   "label": "Accommodation"
+  },
+  {
+   "fieldname": "stop_location",
+   "fieldtype": "Data",
+   "label": "Stop Location"
+  },
+  {
+   "fieldname": "section_break_times",
+   "fieldtype": "Section Break",
+   "label": "Time Window"
+  },
+  {
+   "description": "ISO timestamp of block start on timeline. Date part = multi-day lock lifespan start; time part = daily trip start.",
+   "fieldname": "start_time",
+   "fieldtype": "Data",
+   "label": "Start Time"
+  },
+  {
+   "description": "ISO timestamp of block end on timeline. Date part = multi-day lock lifespan end; time part = daily trip end.",
+   "fieldname": "end_time",
+   "fieldtype": "Data",
+   "label": "End Time"
+  },
+  {
+   "description": "Identifies passenger movement at the leg's stop location.",
+   "fieldname": "action_type",
+   "fieldtype": "Select",
+   "label": "Action Type",
+   "options": "\nBoarding\nDropping Off\nCombined"
+  },
+  {
+   "description": "Number of employees boarding at this stop.",
+   "fieldname": "boarding_count",
+   "fieldtype": "Int",
+   "label": "Boarding Count"
+  },
+  {
+   "description": "Number of employees disembarking at this stop.",
+   "fieldname": "drop_off_count",
+   "fieldtype": "Int",
+   "label": "Drop Off Count"
+  },
+  {
+   "description": "Calculated QOA time (start_time - qoa_buffer_minutes) rendered ONLY for Outbound legs departing from Accommodation.",
+   "fieldname": "qoa_time",
+   "fieldtype": "Time",
+   "label": "QOA Time"
+  },
+  {
+   "description": "It will fetch defined Shift's start time (e.g., 08:00:00).",
+   "fieldname": "shift_start_time",
+   "fieldtype": "Time",
+   "label": "Shift Start Time"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_next_day",
+   "fieldtype": "Check",
+   "label": "Is Next Day"
+  },
+  {
+   "fetch_from": "vehicle.custom_max_passenger_capacity",
+   "fieldname": "max_passenger_capacity",
+   "fieldtype": "Int",
+   "label": "Max Passenger Capacity",
+   "read_only": 1
+  },
+  {
+   "fieldname": "origin_location",
+   "fieldtype": "Link",
+   "label": "Origin Location",
+   "options": "Location"
+  },
+  {
+   "description": "The dynamic total number of people physically sitting inside the bus during that specific leg segment.",
+   "fieldname": "current_passenger_count",
+   "fieldtype": "Int",
+   "label": "Current Passenger Count"
+  },
+  {
+   "default": "0",
+   "description": "Indicates if the leg departs from an Accommodation camp, triggering the QOA calculation from HR Settings.",
+   "fieldname": "is_accommodation_origin",
+   "fieldtype": "Check",
+   "label": "Is Accommodation Origin"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-08-24 22:48:54.289187",
+ "modified_by": "h.imran@one-fm.com",
+ "module": "Operations",
+ "name": "Route Plan Assignment",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": []
 }

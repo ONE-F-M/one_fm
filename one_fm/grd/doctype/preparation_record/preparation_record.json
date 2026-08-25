@@ -14,15 +14,25 @@
   "nationality",
   "residency_expiry_date",
   "renewal_or_extend",
-  "ref_doctype",
-  "ref_name",
   "no_of_years",
   "column_break_11",
   "work_permit_amount",
   "medical_insurance_amount",
   "residency_stamp_amount",
   "civil_id_amount",
-  "total_amount"
+  "total_amount",
+  "status_tracking_section",
+  "ref_doctype",
+  "column_break_vixp",
+  "ref_name",
+  "column_break_wbqs",
+  "ref_doctype_status",
+  "reference_records_section",
+  "medical_appointment",
+  "column_break_jpos",
+  "fingerprint_appointment",
+  "column_break_mdur",
+  "pcc_attestation"
  ],
  "fields": [
   {
@@ -91,7 +101,6 @@
   },
   {
    "allow_on_submit": 1,
-   "depends_on": "eval: doc.renewal_or_extend == \"Renewal\"",
    "fieldname": "no_of_years",
    "fieldtype": "Select",
    "label": "No. of Years",
@@ -136,18 +145,73 @@
    "read_only": 1
   },
   {
+   "fetch_from": "employee.relieving_date",
    "fieldname": "relieving_date",
    "fieldtype": "Date",
    "in_list_view": 1,
    "label": "Relieving Date",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "ref_doctype_status",
+   "fieldtype": "Data",
+   "label": "Ref Doctype Status",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_records_section",
+   "fieldtype": "Section Break",
+   "label": "Reference Records"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "medical_appointment",
+   "fieldtype": "Link",
+   "label": "Medical Appointment",
+   "options": "Medical Appointment"
+  },
+  {
+   "fieldname": "column_break_jpos",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "fingerprint_appointment",
+   "fieldtype": "Link",
+   "label": "Fingerprint Appointment",
+   "options": "Fingerprint Appointment"
+  },
+  {
+   "fieldname": "column_break_mdur",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "pcc_attestation",
+   "fieldtype": "Link",
+   "label": "PCC Attestation",
+   "options": "PCC Attestation"
+  },
+  {
+   "fieldname": "status_tracking_section",
+   "fieldtype": "Section Break",
+   "label": "Status Tracking"
+  },
+  {
+   "fieldname": "column_break_vixp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_wbqs",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "istable": 1,
  "links": [],
- "modified": "2026-08-05 12:00:00.000000",
- "modified_by": "Administrator",
+ "modified": "2026-08-19 08:17:18.810092",
+ "modified_by": "h.imran@one-fm.com",
  "module": "GRD",
  "name": "Preparation Record",
  "naming_rule": "Expression (old style)",

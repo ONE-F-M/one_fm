@@ -17,6 +17,7 @@
   "shift_type",
   "day_off_ot_allowed",
   "automate_roster",
+  "shift_timing_override_required",
   "supervisor",
   "supervisor_name",
   "column_break_8",
@@ -28,6 +29,8 @@
   "column_break_15",
   "duration",
   "shift_classification",
+  "operations_shift_timing_section",
+  "operations_shift_timing",
   "accommodation_details_section",
   "accommodations"
  ],
@@ -193,6 +196,26 @@
    "fieldname": "day_off_ot_allowed",
    "fieldtype": "Check",
    "label": "Day Off OT Allowed"
+  },
+  {
+   "default": "0",
+   "description": "Enable this only if this post requires a different shift timing on specific day(s) of the week (e.g., a different timing on Friday).",
+   "fieldname": "shift_timing_override_required",
+   "fieldtype": "Check",
+   "label": "Shift Timing Override Required"
+  },
+  {
+   "depends_on": "eval:doc.shift_timing_override_required==1",
+   "fieldname": "operations_shift_timing",
+   "fieldtype": "Table",
+   "label": "Operations Shift Timing",
+   "mandatory_depends_on": "eval:doc.shift_timing_override_required==1",
+   "options": "Operations Shift Timing"
+  },
+  {
+   "fieldname": "operations_shift_timing_section",
+   "fieldtype": "Section Break",
+   "label": "Operations Shift Timing"
   }
  ],
  "links": [
@@ -202,8 +225,8 @@
    "link_fieldname": "shift"
   }
  ],
- "modified": "2026-03-05 20:20:22.004307",
- "modified_by": "Administrator",
+ "modified": "2026-08-10 21:41:54.482369",
+ "modified_by": "h.imran@one-fm.com",
  "module": "Operations",
  "name": "Operations Shift",
  "owner": "Administrator",
@@ -217,6 +240,30 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Operations Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Operation Admin",
    "share": 1,
    "write": 1
   }
