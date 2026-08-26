@@ -97,3 +97,53 @@ class TestSyncShipmentStatuses(FrappeTestCase):
 
 		self.assertEqual(self._status(self.outbound), "Unassigned")
 		self.assertEqual(self._status(self.return_leg), "Assigned")
+
+
+class TestAPlacedCardIsNeverReverted(FrappeTestCase):
+	"""A direction mismatch is a flag to fix, not a card to send back to the pool."""
+
+	def setUp(self):
+		self.pair = frappe.generate_hash("TRQ-KEEP", 8)
+		self.leg = _make_leg(self.pair, "Outward", status="Assigned")
+
+	def _read(self, name):
+		return frappe.db.get_value(
+			"Transportation Shipment", name,
+			["status", "trip_direction", "pre_merge_trip_direction"], as_dict=True
+		)
+
+	def test_a_card_still_on_the_plan_keeps_its_status(self):
+		# The stale-tab shape: the shipment reads Mixed, the browser still says OUTBOUND.
+		frappe.db.set_value("Transportation Shipment", self.leg, {
+			"trip_direction": "Mixed", "pre_merge_trip_direction": "Outward"
+		})
+
+		_sync_shipment_statuses(
+			[_swim_item(self.leg, "OUTBOUND")], previously_linked={self.leg}
+		)
+
+		kept = self._read(self.leg)
+		self.assertEqual(kept.status, "Assigned")
+		self.assertEqual(kept.trip_direction, "Mixed")
+		self.assertEqual(kept.pre_merge_trip_direction, "Outward")
+
+	def test_a_card_the_plan_dropped_still_reverts(self):
+		# What the revert branch is for: the block left the lane.
+		frappe.db.set_value("Transportation Shipment", self.leg, {
+			"trip_direction": "Mixed", "pre_merge_trip_direction": "Outward"
+		})
+
+		_sync_shipment_statuses([], previously_linked={self.leg})
+
+		reverted = self._read(self.leg)
+		self.assertEqual(reverted.status, "Unassigned")
+		self.assertEqual(reverted.trip_direction, "Outward")
+		self.assertIsNone(reverted.pre_merge_trip_direction)
+
+	def test_a_mismatched_card_is_still_not_newly_assigned(self):
+		# A mismatch never promotes a card to Assigned, it only stops it being demoted.
+		frappe.db.set_value("Transportation Shipment", self.leg, "status", "Unassigned")
+
+		_sync_shipment_statuses([_swim_item(self.leg, "RETURN")])
+
+		self.assertEqual(self._read(self.leg).status, "Unassigned")

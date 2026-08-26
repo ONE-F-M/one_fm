@@ -1042,6 +1042,7 @@ def _sync_shipment_statuses(items, previously_linked=None):
                 fields=["name", "trip_direction"],
             )
         }
+        mismatched = []
         for name, placed_dirs in placed_dirs_by_shipment.items():
             own_dir = shipment_dir.get(name)
             if own_dir is None:
@@ -1049,11 +1050,20 @@ def _sync_shipment_statuses(items, previously_linked=None):
             if own_dir in placed_dirs:
                 assigned.add(name)
             else:
-                frappe.log_error(
-                    f"Skipped assigning {name}: placed as {sorted(placed_dirs)} but "
-                    f"shipment direction is {own_dir}.",
-                    "Transportation Shipment Direction Mismatch",
+                mismatched.append(
+                    f"{name}: placed as {sorted(placed_dirs)}, shipment says {own_dir}"
                 )
+
+        if mismatched:
+            # One entry per save: a stale browser disagrees about every card it carries.
+            frappe.log_error(
+                title="Transportation Shipment Direction Mismatch",
+                message=(
+                    "Left as they are - the plan still places these cards, so what needs "
+                    "looking at is the direction flag, not the status:\n\n"
+                    + "\n".join(mismatched)
+                ),
+            )
 
     for name in assigned:
         if frappe.db.get_value("Transportation Shipment", name, "status") != "Assigned":
@@ -1065,8 +1075,16 @@ def _sync_shipment_statuses(items, previously_linked=None):
         unmerge_trip_shipment,
     )
 
+    # A card the plan still places is never reverted, whatever its direction flag says:
+    # `status` answers "is this shipment on a plan", and a mismatch is a flag to fix, not
+    # a card to send back to the pool. Reverting one left it Unassigned with its block
+    # still on the lane, and Generate Shipments deletes Unassigned shift-generated cards.
+    still_placed = set(placed_dirs_by_shipment)
+
     for name in (previously_linked or set()):
-        if name and name not in assigned and frappe.db.exists("Transportation Shipment", name):
+        if not name or name in assigned or name in still_placed:
+            continue
+        if frappe.db.exists("Transportation Shipment", name):
             frappe.db.set_value("Transportation Shipment", name, "status", "Unassigned")
             # A card returning to the pool takes its own direction back with it. Being
             # merged is a property of the block it was in, not of the journey the shipment

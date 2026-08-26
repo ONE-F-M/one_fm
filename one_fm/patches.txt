@@ -598,3 +598,4 @@ one_fm.patches.v15_0.fix_resignation_v2_stale_migration #2026-08-17
 one_fm.patches.v15_0.backfill_employee_resignation_auto_assign #2026-08-19
 one_fm.patches.v15_0.disable_roster_double_shift_ot_checker_assignment_rules #2026-08-21 WI-001689 reverted
 one_fm.patches.v15_0.grant_transportation_manager_schedule_access #2026-08-24 WI-002162
+one_fm.patches.v15_0.mark_unflagged_mixed_trips #2026-08-25 WI-002160
