@@ -397,7 +397,7 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 		doc.flags.ignore_links = True
 		return doc
 
-	def _row(self, vehicle, *, trip, direction="OUTBOUND", headcount, card=None):
+	def _row(self, vehicle, *, trip, direction="OUTBOUND", headcount, card=None, stop=None):
 		return {
 			"card_id": card or frappe.generate_hash("CARD", 8),
 			"vehicle": vehicle,
@@ -405,6 +405,8 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 			"trip_group": trip,
 			"trip_name": trip,
 			"headcount": headcount,
+			# Stop order is what the leg walk reads, so a mixed run has to say its order.
+			"stop_index": stop,
 		}
 
 	def test_merged_camps_exceeding_seats_are_blocked(self):
@@ -428,12 +430,33 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 		plan.insert(ignore_permissions=True)
 		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
 
-	def test_outbound_and_return_of_one_trip_are_counted_separately(self):
-		# Same trip_group but opposite directions are two physical runs, so each
-		# 3-seat leg is fine even though they'd overflow if summed together.
+	def test_outbound_and_return_of_one_trip_are_walked_leg_by_leg(self):
+		"""WI-002160: 3 out then 3 back fits three seats - the drop is off first."""
 		plan = self._make_plan([
-			self._row(self.VEHICLE, trip="TRIP-BOTH", direction="OUTBOUND", headcount=3),
-			self._row(self.VEHICLE, trip="TRIP-BOTH", direction="RETURN", headcount=3),
+			self._row(self.VEHICLE, trip="TRIP-BOTH", direction="OUTBOUND", headcount=3, stop=1),
+			self._row(self.VEHICLE, trip="TRIP-BOTH", direction="RETURN", headcount=3, stop=2),
+		])
+		plan.insert(ignore_permissions=True)
+		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
+
+	def test_a_return_boarding_before_the_outward_drop_still_overloads(self):
+		"""Boarding the return riders first is six people on three seats, still refused."""
+		plan = self._make_plan([
+			self._row(self.VEHICLE, trip="TRIP-STACK", direction="RETURN", headcount=3, stop=1),
+			self._row(self.VEHICLE, trip="TRIP-STACK", direction="OUTBOUND", headcount=3, stop=2),
+		])
+		with self.assertRaises(frappe.ValidationError) as cm:
+			plan.insert(ignore_permissions=True)
+		self.assertIn("Capacity Exceeded on leg", str(cm.exception))
+
+	def test_a_chained_run_is_not_counted_against_itself(self):
+		"""WI-002160, the reported shape: S-204 on a 3-seat RAIZE peaks at two aboard."""
+		plan = self._make_plan([
+			self._row(self.VEHICLE, trip="S-204", direction="OUTBOUND", headcount=1, stop=1),
+			self._row(self.VEHICLE, trip="S-204", direction="RETURN", headcount=1, stop=2),
+			self._row(self.VEHICLE, trip="S-204", direction="RETURN", headcount=1, stop=3),
+			# No times recorded, so every trip spans the day and they all overlap.
+			self._row(self.VEHICLE, trip="EU-RESIDENCE", direction="RETURN", headcount=1, stop=1),
 		])
 		plan.insert(ignore_permissions=True)
 		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
