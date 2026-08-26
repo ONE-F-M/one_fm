@@ -61,7 +61,14 @@ def sync_manifest_details(manifest_doc, assignment_rows, emp_map, return_emp_map
 	for a_row in assignment_rows:
 		direction = a_row.direction
 		emps = (return_emp_map if direction == "RETURN" else emp_map).get(a_row.card_id, [])
+		# Two frames, deliberately both recorded. `employee_action` says what this rider
+		# does at the PICKUP CAMP - an outward rider boards there, a return rider is
+		# dropped there - and the attendance-check lock keys off it. `stop_action` says
+		# what happens to the same rider AT THIS STOP, which is the opposite and is what
+		# the driver needs at a handover: outward riders get off, return riders get on
+		# (WI-002171 AC 3.5).
 		action = "Dropping Off" if direction == "RETURN" else "Boarding"
+		stop_action = "Boarding" if direction == "RETURN" else "Dropping Off"
 		stop_id_val = f"{a_row.stop_location or ''}|{direction}"
 
 		for emp in emps:
@@ -107,6 +114,12 @@ def sync_manifest_details(manifest_doc, assignment_rows, emp_map, return_emp_map
 				):
 					changed = True
 
+				# Backfilled on every sync so the 4,633 rows written before this field
+				# existed pick it up without a separate migration.
+				if (row.stop_action or "") != stop_action:
+					row.stop_action = stop_action
+					changed = True
+
 				row.stop_name = new_stop_name
 				row.stop_type = new_stop_type
 				row.scheduled_time = time_str
@@ -133,6 +146,7 @@ def sync_manifest_details(manifest_doc, assignment_rows, emp_map, return_emp_map
 					"stop_id": stop_id_val,
 					"stop_type": "Return" if direction == "RETURN" else "Pick Up",
 					"employee_action": action,
+					"stop_action": stop_action,
 					"scheduled_time": time_str,
 					"requires_reliever": 0,
 				})

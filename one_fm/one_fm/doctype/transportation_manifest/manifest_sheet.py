@@ -125,6 +125,10 @@ def _build_sheet(doc) -> dict:
 			"scheduled_time": str(row.scheduled_time) if row.scheduled_time else None,
 			"stop_type": row.stop_type,
 			"employee_action": row.employee_action,
+			# What happens to this rider at THIS stop, which is what a handover reads as
+			# two sections. `employee_action` answers the same question about the pickup
+			# camp and is the opposite (WI-002171 AC 3.5).
+			"stop_action": row.stop_action,
 		})
 
 	stop_list = []

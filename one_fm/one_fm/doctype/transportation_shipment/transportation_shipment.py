@@ -389,6 +389,11 @@ def _minutes(value) -> int:
 # discovers on the manifest.
 DEFAULT_TRANSIT_MINUTES = 30
 
+# How far apart an outward shift's start and a return shift's end may sit and still read
+# as a handover (WI-002171 AC 3.1: "matches or stays around couple of hours"). The same
+# two hours the canvas uses to decide which runs are near enough to chain.
+SHIFT_ALIGNMENT_TOLERANCE_SECONDS = 2 * 3600
+
 
 def walk_legs(legs, anchor: int, departure=None) -> list:
 	"""When the vehicle leaves for each stop and when it reaches it, seconds past midnight.
@@ -542,7 +547,16 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 		leaves_camp = index == 1 and not boards
 		qoa = _clock(departs - qoa_buffer * 60) if leaves_camp else None
 
+		# AC 3.6: when the previous stop is not where this pickup happens, the bus has to
+		# drive between them, so the leg cannot be left at nothing. Only return pickups
+		# are held to it - that is the handover the AC describes, and holding outward
+		# drops to it as well would refuse multi-stop runs that are legal today.
+		needs_drive = bool(boards and index > 1 and origin and origin != doc.stop_location)
+		untimed = needs_drive and not (transit and buffer_minutes)
+
 		stops.append({
+			"needs_drive": needs_drive,
+			"untimed_handover": untimed,
 			"stop_index": index,
 			"shipment": doc.name,
 			"card_id": card_ids.get(doc.name, ""),
@@ -570,6 +584,18 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 		stop["exceeded"] = bool(limit) and occupancy > limit
 
 	exceeded = bool(limit) and peak > limit
+
+	alignment = _shift_alignment(docs)
+
+	# AC 3.6 again, at the level of the whole run: the modal cannot be confirmed while a
+	# handover leg still says the bus teleports.
+	untimed = [s for s in stops if s["untimed_handover"]]
+	handover_message = "" if not untimed else _(
+		"Leg {0} collects at {1} but the bus is coming from {2}. Enter the buffer and "
+		"transit minutes for that drive before the pickup can be scheduled."
+	).format(
+		untimed[0]["stop_index"], untimed[0]["stop_location"], untimed[0]["origin_location"]
+	)
 
 	# AC 1.5: a mixed run ends by taking its return riders home, so its last leg has to be
 	# the one that ends at the base camp. Enforced for mixed runs only - a plain outbound
@@ -600,13 +626,61 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 		"base_accommodation": camp_label or base_accommodation,
 		"ends_at_base_camp": ends_home,
 		"route_message": route_message,
+		"shift_alignment": alignment,
+		"handover_message": handover_message,
 		# The modal disables Confirm on this alone, so it is decided here rather than
 		# left to the browser to work out from the numbers.
-		"can_merge": not exceeded and ends_home,
+		"can_merge": not exceeded and ends_home and not untimed,
 		"message": (
 			_("Leg {0}: {1}/{2} Seats EXCEEDED").format(worst_leg, peak, limit)
 			if exceeded else ""
 		),
+	}
+
+
+def _shift_alignment(docs) -> dict:
+	"""Whether the outward shift hands over to the return shift (WI-002171 AC 3.1).
+
+	A bus can drop the incoming shift and collect the outgoing one in a single run when
+	the two shifts meet: the day shift starting as the night shift ends. The AC allows
+	"a couple of hours" either way, so two hours is the tolerance - the same window the
+	canvas already uses to decide which runs are near enough to chain.
+
+	Reported rather than enforced. A dispatcher merging shifts that do not quite line up
+	is making an operational decision the system should show them, not refuse: the bus
+	simply waits, which is what the buffer minutes are for.
+
+	Compared circularly, so a 20:00 finish and an 08:00 start twelve hours apart are read
+	as twelve hours and not as the same moment.
+	"""
+	outward = next((d for d in docs if own_direction(d) != "RETURN"), None)
+	back = next((d for d in docs if own_direction(d) == "RETURN"), None)
+	if not outward or not back:
+		return {"applies": False}
+
+	# _departure_seconds rather than _seconds_into_day: a Time column hands back a
+	# timedelta, but the same field read off a plain dict is a clock string, and an
+	# alignment that silently reported "no handover" for one of them would be worse than
+	# useless.
+	start = _departure_seconds(outward.start_time)
+	end = _departure_seconds(back.end_time)
+	if start is None or end is None:
+		return {"applies": False}
+
+	apart = abs(start - end)
+	apart = min(apart, 86400 - apart)
+	aligned = apart <= SHIFT_ALIGNMENT_TOLERANCE_SECONDS
+
+	return {
+		"applies": True,
+		"outbound_shift_start": _clock(start),
+		"return_shift_end": _clock(end),
+		"minutes_apart": apart // 60,
+		"aligned": aligned,
+		"message": "" if aligned else _(
+			"The outward shift starts at {0} but the return shift ends at {1} - {2} hours "
+			"apart. The bus will wait between the drop-off and the pickup."
+		).format(_clock(start), _clock(end), round(apart / 3600, 1)),
 	}
 
 
