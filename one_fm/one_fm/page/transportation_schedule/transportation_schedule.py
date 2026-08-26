@@ -5,6 +5,9 @@ from frappe.utils import cint
 from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
 from one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log import get_handover_windows
 from one_fm.operations.doctype.route_plan.route_plan import _card_direction
+from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+    qoa_buffer_minutes,
+)
 from one_fm.overrides.vehicle import passenger_capacity
 
 PICKUP_BUFFER = 10             # minutes
@@ -145,6 +148,9 @@ def get_route_planner_data():
             "global_end":        fmt(global_end_utc),
             "vehicles":          vehicles,
             "shipment_cards":    shipment_cards,
+            # The driver's report-time buffer, so the block drawer can print QOA without
+            # a second round trip (WI-002151 AC 1.2).
+            "qoa_buffer_minutes": qoa_buffer_minutes(),
             "handover_windows":  handover_windows
         }
 

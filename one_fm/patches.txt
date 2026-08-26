@@ -600,3 +600,4 @@ one_fm.patches.v15_0.update_paci_no_payment_workflow #2026-08-19 WI-002136
 one_fm.patches.v15_0.add_paci_damj_fields #2026-08-20 WI-002109
 one_fm.patches.v15_0.mark_unflagged_mixed_trips #2026-08-25 WI-002160
 one_fm.patches.v15_0.grant_transportation_manager_schedule_access #2026-08-24 WI-002162
+one_fm.patches.v15_0.add_transportation_qoa_buffer_to_hr_settings #2026-08-26 WI-002151

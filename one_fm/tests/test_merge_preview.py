@@ -153,8 +153,12 @@ class TestTheMergeModal(FrappeTestCase):
 	def test_the_modal_shows_the_vehicle_capacity(self):
 		self.assertIn("Max Passenger Capacity", self.source)
 
-	def test_the_primary_action_is_confirm_and_merge(self):
-		self.assertIn("__('Confirm & Merge Trip')", self.source)
+	def test_the_primary_action_commits_the_merge(self):
+		# Renamed with the forward-scheduling work (WI-002151): the modal now states the
+		# departure and applies the whole itinerary, not just the merge. What has to hold
+		# is that its primary action is the thing that commits it.
+		self.assertIn("__('Confirm & Apply')", self.source)
+		self.assertIn("merge_trip_shipments", self.source)
 
 	def test_each_visit_is_its_own_container(self):
 		self.assertIn("Seq ${s.stop_index}", self.source)
@@ -162,7 +166,10 @@ class TestTheMergeModal(FrappeTestCase):
 		self.assertIn("DROPPING OFF EMPLOYEES", self.source)
 
 	def test_there_is_a_per_leg_transit_and_buffer_table(self):
-		self.assertIn("Per-Leg Transit &amp; Buffer Times", self.source)
+		# The table gained the rest of the leg picture in WI-002151 - card, direction,
+		# origin, next stop and the forward-calculated arrival - but the two editable
+		# minute fields are what re-time the run and they still have to be there.
+		self.assertIn("Legs — arrival is calculated forward from the departure above", self.source)
 		self.assertIn('data-key="transit_minutes"', self.source)
 		self.assertIn('data-key="buffer_minutes"', self.source)
 

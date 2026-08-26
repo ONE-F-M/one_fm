@@ -323,12 +323,57 @@ def _seconds_into_day(value) -> int | None:
 		return None
 
 
+def _departure_seconds(value):
+	"""The departure the dispatcher stated, as seconds past midnight.
+
+	The modal sends a clock string ("05:30" or "05:30:00"), which `_seconds_into_day`
+	cannot read - it handles the timedelta a Time column returns, and int("05:30") raises.
+	A blank means "nothing stated", which is what makes the run fall back to the time it
+	would have backed into.
+	"""
+	if value is None or value == "":
+		return None
+	if hasattr(value, "total_seconds"):
+		return int(value.total_seconds())
+	if isinstance(value, str) and ":" in value:
+		parts = value.split(":")
+		try:
+			hours, minutes = int(parts[0]), int(parts[1])
+			seconds = int(parts[2]) if len(parts) > 2 else 0
+		except (TypeError, ValueError):
+			return None
+		return hours * 3600 + minutes * 60 + seconds
+	try:
+		return int(value)
+	except (TypeError, ValueError):
+		return None
+
+
 def _clock(seconds) -> str:
 	"""Seconds past midnight as HH:MM, for the modal to print."""
 	if seconds is None:
 		return ""
 	seconds = int(seconds) % 86400
 	return f"{seconds // 3600:02d}:{(seconds % 3600) // 60:02d}"
+
+
+# Where the driver's report-time buffer lives. Named away from the manifest's own QOA
+# pass/fail fields so the two are never mistaken for one another.
+QOA_BUFFER_FIELD = "custom_transportation_qoa_buffer_minutes"
+
+
+def qoa_buffer_minutes() -> int:
+	"""The driver's report-time buffer, in minutes, from HR Settings (WI-002151 AC 1.2).
+
+	One reader for the whole feature - the modal, the block drawer and the manifest all
+	print the same QOA time, and a second lookup would be a second answer. Absent or
+	unset it is 0, which makes QOA Time equal the departure time and changes nothing.
+	"""
+	# Guarded on the field existing: the modal must still open on a site that has not
+	# run the patch yet, and get_single_value throws rather than returning None.
+	if not frappe.get_meta("HR Settings").get_field(QOA_BUFFER_FIELD):
+		return 0
+	return _minutes(frappe.db.get_single_value("HR Settings", QOA_BUFFER_FIELD))
 
 
 def _minutes(value) -> int:
@@ -345,31 +390,53 @@ def _minutes(value) -> int:
 DEFAULT_TRANSIT_MINUTES = 30
 
 
-def walk_legs(legs, anchor: int) -> list:
+def walk_legs(legs, anchor: int, departure=None) -> list:
 	"""When the vehicle leaves for each stop and when it reaches it, seconds past midnight.
 
 	One rule, applied here to the itinerary the modal prints and by the canvas to the
 	blocks on the lane: a stop's buffer is the dwell before departing towards it and its
-	transit is the drive, so a leg runs [departs, arrives].
+	transit is the drive, so a leg runs [departs, arrives]. Every stop after the first is
+	driven forward from the stop before it, so an edit high up the run moves everything
+	after it.
 
-	The first stop is the one the run is scheduled on - it backs into its anchor instead
-	of being driven forward from anything - which is why editing its minutes moves when
-	the run leaves, not when it arrives. Every later stop is driven forward from the stop
-	before it, so an edit high up the run moves everything after it.
+	The first stop is the one that has nothing to drive from, and there are two ways to
+	place it. Given a `departure` the run leaves at that moment and its arrival is
+	calculated forward from it - which is what the dispatcher states in the trip modal
+	(WI-002151 AC 1.1). Without one it backs into `anchor`, the shift time the card is
+	scheduled on, which is how a run reads before anyone has stated a departure and how
+	every caller that has no departure to give still gets a sensible itinerary.
 
-	`legs` is [(transit_minutes, buffer_minutes), ...] in stop order.
+	`legs` is [(transit_minutes, buffer_minutes), ...] in stop order. Seconds may run past
+	86400: a run that crosses midnight keeps counting, so the day it rolls into is
+	recoverable rather than silently wrapped.
 	"""
 	walked, clock = [], None
 	for transit, buffer_minutes in legs:
 		if clock is None:
-			arrives = anchor
-			departs = arrives - (buffer_minutes + transit) * 60
+			if departure is None:
+				arrives = anchor
+				departs = arrives - (buffer_minutes + transit) * 60
+			else:
+				departs = departure
+				arrives = departs + (buffer_minutes + transit) * 60
 		else:
 			departs = clock + buffer_minutes * 60
 			arrives = departs + transit * 60
 		walked.append((departs, arrives))
 		clock = arrives
 	return walked
+
+
+def day_offset(seconds) -> int:
+	"""How many whole days past the run's own day a stamp falls (WI-002151 AC 1.6).
+
+	A late run keeps counting past 86400 rather than wrapping, so this is what tells the
+	modal and the manifest to print a `(+1 Day)` badge instead of a time that reads as
+	though the bus arrived before it left.
+	"""
+	if seconds is None:
+		return 0
+	return max(0, int(seconds) // 86400)
 
 
 def _timings_by_shipment(timings) -> dict:
@@ -385,7 +452,7 @@ def _timings_by_shipment(timings) -> dict:
 
 
 @frappe.whitelist()
-def get_merge_preview(shipments, vehicle: str = None, timings=None) -> dict:
+def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=None) -> dict:
 	"""What the Merge Trip modal shows before anyone confirms (WI-002078).
 
 	Builds the itinerary the merged run would have, walks it leg by leg, and reports
@@ -437,19 +504,52 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None) -> dict:
 			_minutes(adjustment.get("buffer_minutes")),
 		))
 
-	walked = walk_legs(legs, arrival_time(docs[0]) or 0)
+	anchor = arrival_time(docs[0]) or 0
+	departure = _departure_seconds(departure)
+	# What the run leaves on before anyone states otherwise: the moment it would have
+	# backed into its first stop's shift time. Pre-filling this rather than a blank keeps
+	# an untouched trip timed exactly as it is today, so switching the modal to forward
+	# calculation does not silently re-time every run on the board.
+	first_transit, first_buffer = legs[0]
+	default_departure = max(0, anchor - (first_buffer + first_transit) * 60)
+	if departure is None:
+		departure = default_departure
+
+	walked = walk_legs(legs, anchor, departure=departure)
+
+	# The camp the run belongs to, and the Location that stands for it. Stop 1 leaves
+	# from there; every later stop leaves from the stop before it, which is what makes
+	# QOA an accommodation-departure fact rather than a per-leg one (AC 1.2).
+	base_accommodation = next((doc.accommodation for doc in docs if doc.accommodation), None)
+	camp_stop = frappe.db.get_value(
+		"Accommodation", base_accommodation, "transport_stop_location"
+	) if base_accommodation else None
+	# The readable camp name lives on the shipment, not on Accommodation.
+	camp_label = next((doc.accommodation_name for doc in docs if doc.accommodation_name), None) \
+		or base_accommodation
+	qoa_buffer = qoa_buffer_minutes()
 
 	stops = []
 	for index, doc in enumerate(docs, start=1):
 		boards = own_direction(doc) == "RETURN"
 		transit, buffer_minutes = legs[index - 1]
 		departs, arrives = walked[index - 1]
+		origin = camp_stop or camp_label if index == 1 else docs[index - 2].stop_location
+
+		# QOA is the driver's report time at the camp, so it belongs to the one leg that
+		# actually departs the camp carrying outward riders. An intermediate pickup and a
+		# return leg heading home are neither, and the AC hides it for both.
+		leaves_camp = index == 1 and not boards
+		qoa = _clock(departs - qoa_buffer * 60) if leaves_camp else None
 
 		stops.append({
 			"stop_index": index,
 			"shipment": doc.name,
 			"card_id": card_ids.get(doc.name, ""),
 			"stop_location": doc.stop_location,
+			"origin_location": origin,
+			"next_stop_location": doc.stop_location,
+			"direction": own_direction(doc),
 			"headcount": doc.headcount or 0,
 			"boards": boards,
 			"action": "Boarding" if boards else "Dropping Off",
@@ -458,6 +558,8 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None) -> dict:
 			"buffer_minutes": buffer_minutes,
 			"departs": _clock(departs),
 			"arrives": _clock(arrives),
+			"arrives_day_offset": day_offset(arrives),
+			"qoa_time": qoa,
 		})
 
 	from one_fm.operations.doctype.route_plan.route_plan import leg_occupancy
@@ -469,6 +571,16 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None) -> dict:
 
 	exceeded = bool(limit) and peak > limit
 
+	# AC 1.5: a mixed run ends by taking its return riders home, so its last leg has to be
+	# the one that ends at the base camp. Enforced for mixed runs only - a plain outbound
+	# run legitimately finishes at a site, and holding those to it would refuse every
+	# multi-stop drop-off on the board.
+	ends_home = _ends_at_base_camp(docs)
+	route_message = "" if ends_home else _(
+		"The last leg of a mixed run must be the ride home: end the run on a return card "
+		"collecting for {0}, so the bus finishes at the camp rather than at a site."
+	).format(camp_label or base_accommodation or _("the base accommodation"))
+
 	return {
 		"trip_direction": MIXED,
 		"vehicle": vehicle,
@@ -477,14 +589,44 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None) -> dict:
 		"peak_occupancy": peak,
 		"worst_leg": worst_leg,
 		"exceeded": exceeded,
+		"departure": _clock(departure),
+		"default_departure": _clock(default_departure),
+		# Raw seconds as well as the clock strings: the canvas moves the blocks by the
+		# DIFFERENCE between the two, which is a duration and so needs no timezone
+		# conversion. Rebuilding an instant from "05:30" in the browser would.
+		"departure_seconds": int(departure),
+		"default_departure_seconds": int(default_departure),
+		"qoa_buffer_minutes": qoa_buffer,
+		"base_accommodation": camp_label or base_accommodation,
+		"ends_at_base_camp": ends_home,
+		"route_message": route_message,
 		# The modal disables Confirm on this alone, so it is decided here rather than
 		# left to the browser to work out from the numbers.
-		"can_merge": not exceeded,
+		"can_merge": not exceeded and ends_home,
 		"message": (
 			_("Leg {0}: {1}/{2} Seats EXCEEDED").format(worst_leg, peak, limit)
 			if exceeded else ""
 		),
 	}
+
+
+def _ends_at_base_camp(docs) -> bool:
+	"""True when the run's final leg is one that finishes at the base accommodation.
+
+	A return card's `stop_location` is where it *collects*; the camp it is heading for is
+	its `accommodation`. So "the final stop location must be the base accommodation camp"
+	is a statement about the last leg being a ride home, not about a camp appearing in the
+	stop column - no card on the board carries the camp as its stop location, and adding a
+	terminal camp stop would be a change to the route model rather than a validation.
+
+	A run that is not mixed is left alone: it has no return riders to take home.
+	"""
+	directions = {own_direction(doc) for doc in docs}
+	if len(directions) < 2:
+		return True
+
+	last = docs[-1]
+	return own_direction(last) == "RETURN"
 
 
 def unmerge_trip_shipment(name) -> bool:
