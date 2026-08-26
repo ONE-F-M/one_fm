@@ -4,6 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import cint
 
 TRIP_REQUEST = "Trip Request"
 
@@ -750,3 +751,102 @@ def undo_merge(shipments) -> dict:
 			restored.append(name)
 
 	return {"restored": restored}
+
+# Metadata an overflow card inherits from the one it was split off. The roster moves, but
+# every fact about which shift, site and camp the staff belong to is the same journey.
+SPLIT_INHERITED_FIELDS = (
+	"accommodation", "accommodation_name", "operations_role", "operations_shift",
+	"operations_site", "project", "start_time", "end_time", "from_date", "to_date",
+	"trip_direction", "routing_type_badge", "stop_location", "pair_group",
+	"source_doctype", "source_docname", "requires_vehicle_retention",
+	"pre_merge_trip_direction",
+)
+
+
+@frappe.whitelist()
+def split_shipment_for_capacity(shipment: str, keep: int) -> dict:
+	"""Fill a card to what the vehicle takes and move the rest to a new one (WI-002170).
+
+	`keep` staff stay on the card being placed; everyone beyond that moves to a fresh
+	Unassigned card in the pool. The roster is MOVED, not copied - every employee appears
+	on exactly one of the two cards, so the two headcounts still add up to the shift and
+	nobody is boarded twice.
+
+	The overflow card keeps a link to the card it came off and to the one at the top of
+	the chain, so a card split twice can still be traced back to the shift that generated
+	it (AC 2.7). Its `generation_key` takes the next free `#n` suffix rather than copying
+	its parent's: two records under one key would make the generator's lookup return an
+	arbitrary one of them and let the pruner delete the other.
+	"""
+	doc = frappe.get_doc("Transportation Shipment", shipment)
+	doc.check_permission("write")
+
+	keep = cint(keep)
+	roster = list(doc.transportation_shipment_employee or [])
+	if keep < 1 or keep >= len(roster):
+		frappe.throw(
+			_("Nothing to split: this card carries {0} staff and {1} would stay on it.").format(
+				len(roster), keep
+			),
+			title=_("Nothing to Split"),
+		)
+
+	staying, moving = roster[:keep], roster[keep:]
+
+	overflow = frappe.new_doc("Transportation Shipment")
+	for field in SPLIT_INHERITED_FIELDS:
+		overflow.set(field, doc.get(field))
+	overflow.status = "Unassigned"
+	overflow.is_split_overflow = 1
+	overflow.split_parent = doc.name
+	overflow.split_root = doc.split_root or doc.name
+	overflow.headcount = len(moving)
+	overflow.generation_key = _next_split_key(doc.generation_key)
+	for row in moving:
+		overflow.append("transportation_shipment_employee", _rider_values(row))
+	overflow.flags.ignore_permissions = True
+	overflow.insert(ignore_permissions=True)
+
+	doc.set("transportation_shipment_employee", [])
+	for row in staying:
+		doc.append("transportation_shipment_employee", _rider_values(row))
+	doc.headcount = len(staying)
+	doc.flags.ignore_permissions = True
+	doc.save(ignore_permissions=True)
+
+	return {
+		"primary": doc.name,
+		"primary_headcount": doc.headcount,
+		"overflow": overflow.name,
+		"overflow_headcount": overflow.headcount,
+		"split_root": overflow.split_root,
+	}
+
+
+def _rider_values(row) -> dict:
+	"""The rider fields worth carrying across a split, without the child row's identity."""
+	return {
+		"employee_id": row.employee_id,
+		"employee_name": row.employee_name,
+		"cell_number": row.cell_number,
+		"accommodation": row.get("accommodation"),
+		"stop_location": row.get("stop_location"),
+		"operation_site": row.get("operation_site"),
+	}
+
+
+def _next_split_key(generation_key: str):
+	"""The next free `#n` suffix on a generation key, or None when there is no key.
+
+	An ad-hoc or Trip Request card carries no key and its overflow gets none either -
+	the generator only ever looks at keyed, shift-generated records, so there is nothing
+	for an unkeyed overflow to collide with.
+	"""
+	if not generation_key:
+		return None
+
+	base = generation_key.split("#", 1)[0]
+	suffix = 2
+	while frappe.db.exists("Transportation Shipment", {"generation_key": f"{base}#{suffix}"}):
+		suffix += 1
+	return f"{base}#{suffix}"

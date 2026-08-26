@@ -770,6 +770,14 @@ function mountRoutePlannerApp(wrapper, data) {
                     return;
                 }
 
+                // ── AC 2.1: a card bigger than the whole bus is a split, not a refusal ──
+                // Checked before the seat gate below, which would otherwise throw and the
+                // dispatcher would never be offered the split.
+                if (card.headcount > this.passengerSeats(vehicle)) {
+                    this._openSplitModal(card, vehicle);
+                    return;
+                }
+
                 // ── Seat capacity check (time-aware) ──
                 const blockers = this.tripsDuringCardWindows(card, vehicle.id);
                 const peakLoad = blockers.reduce((sum, t) => sum + t.occupancy, 0);
@@ -1045,6 +1053,76 @@ function mountRoutePlannerApp(wrapper, data) {
                     }
                 });
                 d.show();
+            },
+
+            // ── Over-capacity split modal (WI-002170) ──
+            // A shift larger than the bus is not a mistake to refuse - it is two runs.
+            // The bus is filled to its usable seats and the rest becomes a fresh card in
+            // the pool, which can itself be split again onto a smaller vehicle.
+            _openSplitModal(card, vehicle) {
+                const self = this;
+                const seats = this.passengerSeats(vehicle);
+                const overflow = card.headcount - seats;
+                const esc = (v) => frappe.utils.escape_html(String(v == null ? '' : v));
+
+                const d = new frappe.ui.Dialog({
+                    title: __('Too many staff for this vehicle'),
+                    fields: [{
+                        fieldtype: 'HTML', fieldname: 'summary',
+                        options: `
+                            <p class="small">${__('{0} carries {1} passengers, and this card has {2} staff.', [
+                                esc(self.vehicleString(vehicle)), seats, esc(card.headcount)
+                            ])}</p>
+                            <table class="table table-sm table-bordered small mb-3">
+                                <tr><td>${__('Total shift headcount')}</td>
+                                    <td class="font-weight-bold text-right">${esc(card.headcount)}</td></tr>
+                                <tr><td>${__('Usable vehicle capacity')}</td>
+                                    <td class="font-weight-bold text-right">${seats}</td></tr>
+                                <tr><td>${__('Staying on this card')}</td>
+                                    <td class="font-weight-bold text-right">${seats}</td></tr>
+                                <tr class="text-warning"><td>${__('Moving to a new card')}</td>
+                                    <td class="font-weight-bold text-right">${overflow}</td></tr>
+                            </table>
+                            <p class="small text-muted">${__('The {0} who do not fit move to a new card in the unassigned column. Nobody is listed twice.', [overflow])}</p>`
+                    }],
+                    primary_action_label: __('Confirm & Split Remaining'),
+                    primary_action() {
+                        frappe.call({
+                            method: 'one_fm.one_fm.doctype.transportation_shipment.transportation_shipment.split_shipment_for_capacity',
+                            args: { shipment: self._shipmentOf(card), keep: seats },
+                            freeze: true,
+                            callback(r) {
+                                if (!r.message) return;
+                                d.hide();
+                                // The card's roster changed on the server, so the pool is
+                                // re-read rather than patched, and the drop is replayed
+                                // against the card that comes back.
+                                self.refreshCards((cards) => {
+                                    const placed = cards.find((c) => c.id === card.id);
+                                    if (placed) self.handleDrop(placed, vehicle);
+                                    frappe.show_alert({
+                                        message: __('{0} staff moved to a new card in the pool.',
+                                            [r.message.overflow_headcount]),
+                                        indicator: 'blue'
+                                    }, 6);
+                                });
+                            }
+                        });
+                    },
+                    secondary_action_label: __('Cancel Assignment'),
+                    secondary_action() {
+                        // AC 2.6: nothing is split and nothing is placed - the card stays
+                        // in the pool with all of its staff.
+                        d.hide();
+                        self.selectedPoolCard = null;
+                    }
+                });
+                d.show();
+            },
+
+            // The Transportation Shipment behind a card id, which the server keys on.
+            _shipmentOf(card) {
+                return card.shipment || String(card.id || '').replace(/^TSHIP-/, '');
             },
 
             // ── Merge Trip modal (WI-002078) ──
@@ -3234,17 +3312,26 @@ function mountRoutePlannerApp(wrapper, data) {
                             message: `Shipments: ${s.created || 0} created, ${s.updated || 0} updated, ${s.deleted || 0} removed`,
                             indicator: 'green'
                         });
-                        frappe.call({
-                            method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.get_route_planner_data',
-                            callback: function (rd) {
-                                if (rd.message && rd.message.status === 'ok') {
-                                    self.planData.shipment_cards = rd.message.shipment_cards;
-                                }
-                            }
-                        });
+                        self.refreshCards();
                     },
                     always: function () {
                         self.isGenerating = false;
+                    }
+                });
+            },
+
+            // Re-read the pool from the persisted shipments. Anything that changes a card
+            // on the server - generating them, splitting one - goes through here rather
+            // than trying to patch the browser's copy into agreement.
+            refreshCards(then) {
+                const self = this;
+                frappe.call({
+                    method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.get_route_planner_data',
+                    callback: function (rd) {
+                        if (rd.message && rd.message.status === 'ok') {
+                            self.planData.shipment_cards = rd.message.shipment_cards;
+                            if (then) then(rd.message.shipment_cards);
+                        }
                     }
                 });
             },
@@ -3599,6 +3686,10 @@ function injectRPVueTemplate() {
                   {{ card.direction === 'OUTBOUND' ? '→ OUT' : '← RET' }}
                 </span>
                 <span :class="['rp-card-type', card.type === 'OLM' ? 'rp-tag-olm' : 'rp-tag-osm']">{{ card.type }}</span>
+                <!-- AC 2.5: this card holds the staff who did not fit on the bus its
+                     parent was assigned to. -->
+                <span v-if="card.is_split_overflow" class="rp-card-type rp-tag-split"
+                      :title="'Split from ' + (card.split_root || 'another card')">SPLIT OVERFLOW</span>
               </div>
               <div class="rp-card-shift">{{ card.shift_name }}</div>
               <div class="rp-card-meta">
@@ -4524,6 +4615,7 @@ function injectRPStyles() {
         .rp-card-header { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
         .rp-card-site   { font-size: 14px; font-weight: 600; color: var(--md-sys-color-on-surface); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .rp-card-type   { font-size: 11px; font-weight: 700; letter-spacing: .06em; padding: 2px 7px; border-radius: 4px; flex-shrink: 0; }
+        .rp-tag-split   { background: #fef3c7; color: #92400e; }
         .rp-card-dir    { font-size: 10px; font-weight: 700; letter-spacing: .04em; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; flex-shrink: 0; }
         .rp-dir-out     { background: #e3f2fd; color: #1565c0; }
         .rp-dir-ret     { background: #fce4ec; color: #c62828; }
