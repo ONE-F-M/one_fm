@@ -919,7 +919,9 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
 
             dep_utc = to_utc(str(dep))
             ret_utc = to_utc(str(ret))
-            if ret_utc <= dep_utc:
+            # A night shift ends earlier on the clock than it starts; only a shift with
+            # no length recorded at all needs a fallback.
+            if ret_utc == dep_utc:
                 ret_utc = dep_utc + timedelta(hours=1)
 
             stop_coords = get_coords_cached("Location", s.stop_location) if s.stop_location else None

@@ -33,6 +33,8 @@ COMPANY_FLEET = "Company Fleet"
 MAHBOULA_LABELS = {"Mahboula 3", "Mahboula 12", "Mahboula 13", "Mahboula 15"}
 # Return riders may finish up to an hour after the outbound leg departs.
 RETURN_MATCH_FLOOR_SECONDS = -3600
+# Who may refresh the shipment cards from the canvas (WI-002162).
+GENERATE_ROLES = ("System Manager", "Transportation Manager", "Transportation Supervisor")
 
 
 def _minute_of_day(time_val) -> int | None:
@@ -328,7 +330,7 @@ def generate_transportation_shipments():
 	"""
 	# The scheduler runs as Administrator; guard interactive/API calls.
 	if frappe.session.user != "Administrator":
-		frappe.only_for("System Manager")
+		frappe.only_for(GENERATE_ROLES)
 
 	nested_map = get_grouped_employees_by_accommodation()
 	demands = build_demand_descriptors(nested_map)
