@@ -41,9 +41,12 @@ class TestTheRunWalksForward(FrappeTestCase):
 	def test_every_later_stop_is_driven_from_the_one_before(self):
 		walked = walk_legs(self.LEGS, anchor=12 * HOUR, departure=6 * HOUR)
 
+		# A leg departs when the bus is released from the stop before it, and its buffer
+		# is dwell inside the leg - so Arrival = Departure + Buffer + Transit reads
+		# literally, which is how the process owner's sample itinerary is walked.
 		first_arrival = walked[0][1]
-		self.assertEqual(walked[1][0], first_arrival + 5 * 60)          # dwell, then go
-		self.assertEqual(walked[1][1], walked[1][0] + 20 * 60)          # then drive
+		self.assertEqual(walked[1][0], first_arrival)
+		self.assertEqual(walked[1][1], walked[1][0] + (5 + 20) * 60)
 
 	def test_editing_a_leg_high_up_moves_everything_after_it(self):
 		slower = [(30, 10), (60, 5), (15, 0)]
@@ -194,8 +197,13 @@ class TestThePreviewTheModalDraws(FrappeTestCase):
 	def test_each_leg_names_where_it_comes_from_and_goes_to(self):
 		stops = self._preview()["stops"]
 
-		self.assertEqual(stops[1]["origin_location"], stops[0]["stop_location"])
-		self.assertEqual(stops[0]["next_stop_location"], stops[0]["stop_location"])
+		# An outward leg loads at its camp; a return leg loads at the site it collects
+		# from. "Next stop" is the following leg's origin, not this card's own site -
+		# a run that collects from three camps before dropping anyone needs the two to
+		# be different columns.
+		self.assertEqual(stops[1]["origin_location"], stops[1]["stop_location"])
+		self.assertEqual(stops[0]["next_stop_location"], stops[1]["origin_location"])
+		self.assertEqual(stops[0]["shift_location"], stops[0]["stop_location"])
 
 	def test_the_modal_is_told_the_run_ends_at_the_camp(self):
 		preview = self._preview()
@@ -217,4 +225,57 @@ class TestThePreviewTheModalDraws(FrappeTestCase):
 		self.assertEqual(
 			stated["departure_seconds"] - stated["default_departure_seconds"],
 			5 * HOUR + 30 * 60 - untouched["departure_seconds"],
+		)
+
+
+class TestTheProcessOwnersSampleItinerary(FrappeTestCase):
+	"""The two runs in Transport.xlsx, walked leg by leg.
+
+	The sheet is the process owner's statement of how the cascade should read, so it is
+	replayed here rather than paraphrased: if the walk ever drifts from it, these fail.
+	"""
+
+	def _clock(self, seconds):
+		seconds = int(seconds) % 86400
+		return f"{seconds // 3600:02d}:{(seconds % 3600) // 60:02d}"
+
+	def _walk(self, departure, legs):
+		hh, mm = departure.split(":")
+		walked = walk_legs(legs, anchor=0, departure=int(hh) * HOUR + int(mm) * 60)
+		return [(self._clock(d), self._clock(a)) for d, a in walked]
+
+	def test_scenario_one_camp_to_site_and_back(self):
+		# 09:00 out with 10 buffer + 50 transit, arriving 10:00 for a 10:00 shift start,
+		# then the same again back to the camp for 11:00.
+		self.assertEqual(
+			self._walk("09:00", [(50, 10), (50, 10)]),
+			[("09:00", "10:00"), ("10:00", "11:00")],
+		)
+
+	def test_scenario_two_three_camps_two_sites_and_a_collection(self):
+		walked = self._walk("08:00", [(15, 5), (10, 5), (5, 1), (4, 0), (5, 5), (8, 2)])
+
+		self.assertEqual(walked, [
+			("08:00", "08:20"),   # Accommodation 1 -> Accommodation 2
+			("08:20", "08:35"),   # Accommodation 2 -> Accommodation 3
+			("08:35", "08:41"),   # Accommodation 3 -> Grand Hayat
+			("08:41", "08:45"),   # Grand Hayat     -> 360 Car Park
+			("08:45", "08:55"),   # 360 Car Park    -> Khaldiya
+			("08:55", "09:05"),   # Khaldiya        -> Accommodation 1
+		])
+
+	def test_every_departure_is_the_previous_arrival(self):
+		walked = self._walk("08:00", [(15, 5), (10, 5), (5, 1), (4, 0), (5, 5), (8, 2)])
+
+		for previous, current in zip(walked, walked[1:]):
+			self.assertEqual(current[0], previous[1])
+
+	def test_the_report_time_the_sample_uses_is_a_quarter_hour(self):
+		# 09:00 departure reports 08:45; 08:20 reports 08:05; 08:35 reports 08:20.
+		add_qoa_buffer_field()
+
+		self.assertEqual(
+			frappe.db.get_default(QOA_BUFFER_FIELD)
+			or frappe.get_meta("HR Settings").get_field(QOA_BUFFER_FIELD).default,
+			"15",
 		)

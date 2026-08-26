@@ -426,8 +426,12 @@ def walk_legs(legs, anchor: int, departure=None) -> list:
 				departs = departure
 				arrives = departs + (buffer_minutes + transit) * 60
 		else:
-			departs = clock + buffer_minutes * 60
-			arrives = departs + transit * 60
+			# The leg begins when the bus is released from the stop before it, and its
+			# buffer is dwell WITHIN the leg - which is what makes AC 1.1's formula read
+			# literally: Arrival = Departure + Buffer + Transit. The process owner's own
+			# sample itinerary is walked exactly this way, departure by departure.
+			departs = clock
+			arrives = departs + (buffer_minutes + transit) * 60
 		walked.append((departs, arrives))
 		clock = arrives
 	return walked
@@ -527,9 +531,7 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 	# from there; every later stop leaves from the stop before it, which is what makes
 	# QOA an accommodation-departure fact rather than a per-leg one (AC 1.2).
 	base_accommodation = next((doc.accommodation for doc in docs if doc.accommodation), None)
-	camp_stop = frappe.db.get_value(
-		"Accommodation", base_accommodation, "transport_stop_location"
-	) if base_accommodation else None
+	camp_stop = _camp_stop(docs[0]) if docs else None
 	# The readable camp name lives on the shipment, not on Accommodation.
 	camp_label = next((doc.accommodation_name for doc in docs if doc.accommodation_name), None) \
 		or base_accommodation
@@ -540,30 +542,43 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 		boards = own_direction(doc) == "RETURN"
 		transit, buffer_minutes = legs[index - 1]
 		departs, arrives = walked[index - 1]
-		origin = camp_stop or camp_label if index == 1 else docs[index - 2].stop_location
+		# Where the bus collects these riders: an outward card loads at its own camp, a
+		# return card loads at the site it is collecting from.
+		origin = doc.stop_location if boards else (
+			_camp_stop(doc) or doc.accommodation_name or doc.accommodation
+		)
 
-		# QOA is the driver's report time at the camp, so it belongs to the one leg that
-		# actually departs the camp carrying outward riders. An intermediate pickup and a
-		# return leg heading home are neither, and the AC hides it for both.
-		leaves_camp = index == 1 and not boards
-		qoa = _clock(departs - qoa_buffer * 60) if leaves_camp else None
+		# QOA is the driver's report time at a camp, so it belongs to every leg that
+		# loads at one - the sample itinerary shows three camp pickups in one run, each
+		# with its own report time. A collection from a site and the run home are
+		# neither, and the AC hides it for both.
+		qoa = None if boards else _clock(departs - qoa_buffer * 60)
 
-		# AC 3.6: when the previous stop is not where this pickup happens, the bus has to
-		# drive between them, so the leg cannot be left at nothing. Only return pickups
-		# are held to it - that is the handover the AC describes, and holding outward
-		# drops to it as well would refuse multi-stop runs that are legal today.
-		needs_drive = bool(boards and index > 1 and origin and origin != doc.stop_location)
+		# AC 3.6: the bus dropped the previous card's riders at their site, and this one
+		# collects somewhere else - Site A to Site B - so the leg cannot be left at
+		# nothing. Read off the previous card's own site rather than this leg's origin:
+		# a return leg's origin IS where it collects, so comparing the two to each other
+		# would never differ. Only return pickups are held to it, which is the handover
+		# the AC describes; holding outward drops to it too would refuse multi-stop runs
+		# that are legal today.
+		came_from = docs[index - 2].stop_location if index > 1 else None
+		needs_drive = bool(boards and came_from and came_from != doc.stop_location)
 		untimed = needs_drive and not (transit and buffer_minutes)
 
 		stops.append({
 			"needs_drive": needs_drive,
 			"untimed_handover": untimed,
+			"came_from": came_from,
 			"stop_index": index,
 			"shipment": doc.name,
 			"card_id": card_ids.get(doc.name, ""),
 			"stop_location": doc.stop_location,
 			"origin_location": origin,
-			"next_stop_location": doc.stop_location,
+			# Where these riders work, which is not where the bus goes next once a run
+			# collects from several camps before dropping anyone.
+			"shift_location": doc.stop_location,
+			# Filled in below, once every leg's own origin is known.
+			"next_stop_location": None,
 			"direction": own_direction(doc),
 			"headcount": doc.headcount or 0,
 			"boards": boards,
@@ -586,6 +601,14 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 
 	exceeded = bool(limit) and peak > limit
 
+	# The next stop is the following leg's origin; the last leg drives home to the camp
+	# the run started from.
+	for position, stop in enumerate(stops):
+		stop["next_stop_location"] = (
+			stops[position + 1]["origin_location"] if position + 1 < len(stops)
+			else (camp_stop or camp_label)
+		)
+
 	alignment = _shift_alignment(docs)
 
 	# AC 3.6 again, at the level of the whole run: the modal cannot be confirmed while a
@@ -595,7 +618,7 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 		"Leg {0} collects at {1} but the bus is coming from {2}. Enter the buffer and "
 		"transit minutes for that drive before the pickup can be scheduled."
 	).format(
-		untimed[0]["stop_index"], untimed[0]["stop_location"], untimed[0]["origin_location"]
+		untimed[0]["stop_index"], untimed[0]["stop_location"], untimed[0]["came_from"]
 	)
 
 	# AC 1.5: a mixed run ends by taking its return riders home, so its last leg has to be
@@ -637,6 +660,15 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 			if exceeded else ""
 		),
 	}
+
+
+def _camp_stop(shipment):
+	"""The Location that stands for a card's accommodation camp, or None."""
+	if not shipment.accommodation:
+		return None
+	return frappe.db.get_value(
+		"Accommodation", shipment.accommodation, "transport_stop_location"
+	)
 
 
 def _shift_alignment(docs) -> dict:
