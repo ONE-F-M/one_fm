@@ -469,9 +469,14 @@ class TestTheRunIsTimedFromTheMinutes(FrappeTestCase):
 		]
 
 	def test_the_feedbacks_merge(self):
+		# A leg now departs when the bus is released from the stop before it, with its
+		# buffer counted as dwell inside the leg (WI-002151). The arrivals are the same
+		# numbers as before; only the departure column moved, so that AC 1.1's
+		# Arrival = Departure + Buffer + Transit reads literally - which is how the
+		# process owner's sample itinerary is walked.
 		self.assertEqual(
 			self._walk([(60, 10), (15, 5)]),
-			[("12:50", "14:00"), ("14:05", "14:20")],
+			[("12:50", "14:00"), ("14:00", "14:20")],
 		)
 
 	def test_the_placement_that_preceded_it(self):
@@ -496,8 +501,15 @@ class TestTheRunIsTimedFromTheMinutes(FrappeTestCase):
 	def test_a_later_stops_dwell_pushes_the_stops_after_it(self):
 		self.assertEqual(
 			self._walk([(60, 10), (15, 30), (20, 5)])[2],
-			("14:50", "15:10"),   # stop 2's 30min dwell pushed this leg back half an hour
+			("14:45", "15:10"),   # stop 2's 30min dwell pushed this leg back half an hour
 		)
+
+	def test_a_dwell_lengthens_its_own_leg_rather_than_delaying_its_departure(self):
+		# The same total either way - what changed is which column the buffer shows in.
+		lazy = self._walk([(60, 10), (15, 30)])
+
+		self.assertEqual(lazy[1][0], lazy[0][1])            # departs when stop 1 is done
+		self.assertEqual(lazy[1], ("14:00", "14:45"))       # 30 dwell + 15 drive
 
 	def test_an_empty_run_walks_to_nothing(self):
 		self.assertEqual(self._walk([]), [])

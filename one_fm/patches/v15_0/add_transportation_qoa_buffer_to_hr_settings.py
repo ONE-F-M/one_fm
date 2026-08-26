@@ -10,9 +10,9 @@ def execute():
 	have to show that report time. The number is an HR policy rather than a per-trip
 	decision, so it lives on HR Settings and is read from there in one place.
 
-	It defaults to 0, which makes QOA Time equal the departure time and changes nothing
-	on any existing trip. HR sets the real figure once, and every trip picks it up - a
-	guessed default would silently reschedule every driver on the fleet.
+	It defaults to 15 minutes, which is the figure the process owner's own sample
+	itinerary uses on every camp pickup: a 09:00 departure reports at 08:45, an 08:20 one
+	at 08:05. HR can change it once and every trip picks the new number up.
 
 	Named ``custom_transportation_qoa_buffer_minutes`` rather than ``qoa_*``: QOA already
 	means the pass/fail attendance check the manifest records against each rider
@@ -32,7 +32,7 @@ def execute():
 				"fieldtype": "Int",
 				"label": "Driver QOA Buffer (Minutes)",
 				"insert_after": "transportation_settings_section",
-				"default": "0",
+				"default": "15",
 				"non_negative": 1,
 				"description": (
 					"How many minutes before a bus leaves an accommodation camp the driver "

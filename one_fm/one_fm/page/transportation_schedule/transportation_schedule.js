@@ -1195,22 +1195,22 @@ function mountRoutePlannerApp(wrapper, data) {
                         : '';
                     // QOA belongs only to the leg that leaves the camp carrying outward
                     // riders; it is hidden for intermediate pickups and return legs (AC 1.2).
-                    const qoa = s.qoa_time
-                        ? `<div class="small text-muted">${__('QOA')} ${esc(s.qoa_time)}</div>`
-                        : '';
                     return `
                     <tr class="${s.exceeded ? 'text-danger font-weight-bold' : ''}">
                         <td class="small">${esc(s.card_id || s.shipment)}</td>
                         <td class="small">${esc(self.dirName(s.direction))}</td>
                         <td class="small">${esc(s.origin_location || '—')}</td>
-                        <td class="small">${esc(s.next_stop_location || '—')}</td>
+                        <td class="small">${s.qoa_time ? esc(s.qoa_time) : '—'}</td>
+                        <td class="small">${esc(s.departs)}</td>
                         <td><input class="rp-leg-min form-control input-sm" type="number" min="0"
                             data-shipment="${esc(s.card_id || s.shipment)}" data-key="buffer_minutes"
                             value="${esc(s.buffer_minutes)}"></td>
                         <td><input class="rp-leg-min form-control input-sm" type="number" min="0"
                             data-shipment="${esc(s.card_id || s.shipment)}" data-key="transit_minutes"
                             value="${esc(s.transit_minutes)}"></td>
-                        <td class="small font-weight-bold">${esc(s.arrives)}${rollover}${qoa}</td>
+                        <td class="small">${esc(s.shift_location || '—')}</td>
+                        <td class="small">${esc(s.next_stop_location || '—')}</td>
+                        <td class="small font-weight-bold">${esc(s.arrives)}${rollover}</td>
                     </tr>`;
                 }).join('');
 
@@ -1257,10 +1257,13 @@ function mountRoutePlannerApp(wrapper, data) {
                         <thead><tr>
                             <th>${__('Card')}</th>
                             <th>${__('Direction')}</th>
-                            <th>${__('Origin')}</th>
-                            <th>${__('Next Stop')}</th>
+                            <th>${__('Accommodation / Stop')}</th>
+                            <th>${__('QOA')}</th>
+                            <th>${__('Departure')}</th>
                             <th>${__('Buffer (min)')}</th>
                             <th>${__('Transit (min)')}</th>
+                            <th>${__('Shift Location')}</th>
+                            <th>${__('Next Stop')}</th>
                             <th>${__('Target Arrival')}</th>
                         </tr></thead>
                         <tbody>${legs}</tbody>
@@ -1394,8 +1397,11 @@ function mountRoutePlannerApp(wrapper, data) {
                 let cursor = new Date(stops[0].end).getTime();
                 stops.slice(1).forEach((item) => {
                     const { buffer, transit } = leg(item);
-                    const start = cursor + buffer;
-                    const end = start + Math.max(transit, MIN_BLOCK_MS);
+                    // A leg starts when the bus is released from the stop before it, and
+                    // its buffer is dwell inside the leg — the same walk the server prints
+                    // the itinerary with, so the block and the table cannot disagree.
+                    const start = cursor;
+                    const end = start + Math.max(buffer + transit, MIN_BLOCK_MS);
                     item.start = new Date(start);
                     item.end = new Date(end);
                     cursor = end;
