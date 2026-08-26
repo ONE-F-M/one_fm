@@ -553,16 +553,21 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 		# neither, and the AC hides it for both.
 		qoa = None if boards else _clock(departs - qoa_buffer * 60)
 
-		# AC 3.6: when the previous stop is not where this pickup happens, the bus has to
-		# drive between them, so the leg cannot be left at nothing. Only return pickups
-		# are held to it - that is the handover the AC describes, and holding outward
-		# drops to it as well would refuse multi-stop runs that are legal today.
-		needs_drive = bool(boards and index > 1 and origin and origin != doc.stop_location)
+		# AC 3.6: the bus dropped the previous card's riders at their site, and this one
+		# collects somewhere else - Site A to Site B - so the leg cannot be left at
+		# nothing. Read off the previous card's own site rather than this leg's origin:
+		# a return leg's origin IS where it collects, so comparing the two to each other
+		# would never differ. Only return pickups are held to it, which is the handover
+		# the AC describes; holding outward drops to it too would refuse multi-stop runs
+		# that are legal today.
+		came_from = docs[index - 2].stop_location if index > 1 else None
+		needs_drive = bool(boards and came_from and came_from != doc.stop_location)
 		untimed = needs_drive and not (transit and buffer_minutes)
 
 		stops.append({
 			"needs_drive": needs_drive,
 			"untimed_handover": untimed,
+			"came_from": came_from,
 			"stop_index": index,
 			"shipment": doc.name,
 			"card_id": card_ids.get(doc.name, ""),
@@ -612,7 +617,7 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 		"Leg {0} collects at {1} but the bus is coming from {2}. Enter the buffer and "
 		"transit minutes for that drive before the pickup can be scheduled."
 	).format(
-		untimed[0]["stop_index"], untimed[0]["stop_location"], untimed[0]["origin_location"]
+		untimed[0]["stop_index"], untimed[0]["stop_location"], untimed[0]["came_from"]
 	)
 
 	# AC 1.5: a mixed run ends by taking its return riders home, so its last leg has to be
