@@ -1396,9 +1396,18 @@ function mountRoutePlannerApp(wrapper, data) {
                 const order = merged.itinerary.map((s) => s.shipment);
                 const lastEnd = new Date(Math.max(...existingItems.map((i) => new Date(i.end).getTime())));
                 const uid = Math.random().toString(36).slice(2, 10);
+                // Which minutes each card's block keeps. The modal times the leg OUT of a
+                // stop, the way the sample sheet reads, but a block is drawn from the drive
+                // that BROUGHT the bus to it - so a card served at stop n keeps stop n-1's
+                // minutes. Keying this by the stop's own card silently gave every block the
+                // drive away from it instead, and the newly merged card got nothing at all.
                 const legs = {};
-                (previewStops || []).forEach((s) => { if (s.card_id) legs[s.card_id] = s; });
-                const adj = legs[newCard.id] || {};
+                (previewStops || []).forEach((stop, i) => {
+                    const inbound = i > 0 ? previewStops[i - 1] : { transit_minutes: 0, buffer_minutes: 0 };
+                    (stop.cards || []).forEach((shipment) => { legs[shipment] = inbound; });
+                });
+                const shipmentOf = (cardId) => String(cardId || '').replace(/^TSHIP-/, '');
+                const adj = legs[shipmentOf(newCard.id)] || {};
 
                 // Placed at the tail of the run and then timed by _retimeTrip below, so
                 // the merged block and the blocks it joins are spaced by one rule.
@@ -1408,6 +1417,10 @@ function mountRoutePlannerApp(wrapper, data) {
                     headcount: newCard.headcount, conflict: false,
                     transitMinutes: parseInt(adj.transit_minutes, 10) || 0,
                     bufferMinutes: parseInt(adj.buffer_minutes, 10) || 0,
+                    // A merged block belongs to the run it joined, name and all - without
+                    // this the new card saved with a blank Trip Name while every block
+                    // beside it carried one.
+                    tripName: existingItems.find((i) => i.tripName)?.tripName || null,
                     tripId, stopIndex: order.indexOf(newCard.id) + 1 || existingItems.length + 1
                 });
 
@@ -1415,7 +1428,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 // blocks: only the block carrying them is saved with them, and only a
                 // saved block can seed the next merge or reach the manifest.
                 self.swimItems.forEach((item) => {
-                    const leg = legs[item.cardId];
+                    const leg = legs[shipmentOf(item.cardId)];
                     if (!leg || item.tripId !== tripId) return;
                     item.transitMinutes = parseInt(leg.transit_minutes, 10) || 0;
                     item.bufferMinutes = parseInt(leg.buffer_minutes, 10) || 0;

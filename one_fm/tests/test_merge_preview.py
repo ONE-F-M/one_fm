@@ -428,7 +428,8 @@ class TestPerLegMinutesSurviveARefresh(FrappeTestCase):
 		self.assertIn("if (this._ownDirection(stops[0]) === 'RETURN') {", self.canvas)
 
 	def test_every_stop_of_the_run_is_stamped_not_just_the_new_one(self):
-		self.assertIn("const leg = legs[item.cardId];", self.canvas)
+		# Matched by shipment now that a leg belongs to a stop rather than to a card.
+		self.assertIn("const leg = legs[shipmentOf(item.cardId)];", self.canvas)
 
 	def test_the_save_and_the_reload_agree_on_the_field_names(self):
 		self.assertIn('"transit_minutes":         item.get("transitMinutes") or 0', self.server)
@@ -568,3 +569,28 @@ class TestTheModalOpensOnTheRunAsItStands(FrappeTestCase):
 	def test_a_leg_that_has_minutes_still_sends_those(self):
 		# Real minutes always win; the span is only the fallback for an untimed leg.
 		self.assertIn("if (item.transitMinutes || item.bufferMinutes) {", self.source)
+
+
+class TestWhatAMergeWritesBack(FrappeTestCase):
+	"""The minutes typed into the modal have to land on the blocks that get saved.
+
+	The modal times the leg OUT of a stop, the way the sample sheet reads, but a block is
+	drawn from the drive that BROUGHT the bus to it. Keying the write-back on each stop's
+	own card gave every block the drive away from it, and the newly merged card - which is
+	nobody's inbound leg - got nothing at all, saving with 0/0 and a blank trip name.
+	"""
+
+	def setUp(self):
+		self.source = CANVAS.read_text()
+
+	def test_a_block_keeps_the_drive_that_brought_the_bus_to_it(self):
+		self.assertIn("const inbound = i > 0 ? previewStops[i - 1]", self.source)
+		self.assertIn("(stop.cards || []).forEach((shipment) => { legs[shipment] = inbound; });", self.source)
+
+	def test_the_write_back_matches_a_block_to_its_shipment(self):
+		# Stops carry shipment names; blocks carry TSHIP- card ids.
+		self.assertIn("const shipmentOf = (cardId) =>", self.source)
+		self.assertIn("legs[shipmentOf(item.cardId)]", self.source)
+
+	def test_a_merged_block_joins_the_run_by_name_too(self):
+		self.assertIn("tripName: existingItems.find((i) => i.tripName)?.tripName || null,", self.source)
