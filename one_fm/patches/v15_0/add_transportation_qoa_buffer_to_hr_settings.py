@@ -1,6 +1,13 @@
 import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
+from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+	QOA_BUFFER_FIELD,
+)
+
+# The figure the process owner's sample itinerary uses on every camp pickup.
+DEFAULT_QOA_BUFFER_MINUTES = 15
+
 
 def execute():
 	"""Add the driver QOA report-time buffer to HR Settings (WI-002151 AC 1.2).
@@ -19,6 +26,27 @@ def execute():
 	(``qoa_status`` / ``qoa_reason``), and the two must not be mistaken for each other in
 	a field list.
 	"""
+	_create_field()
+	_seed_value()
+
+
+def _seed_value():
+	"""Write the buffer once, so QOA works without anyone opening HR Settings.
+
+	A field default only applies to a document being created, and HR Settings is a Single
+	that already exists - so the default alone leaves the stored value empty and every QOA
+	time reads as the departure time. Only ever written when nothing is stored: a figure
+	somebody has deliberately set, 0 included, is theirs to keep.
+	"""
+	stored = frappe.db.sql(
+		"select value from tabSingles where doctype = 'HR Settings' and field = %s",
+		QOA_BUFFER_FIELD,
+	)
+	if not stored:
+		frappe.db.set_single_value("HR Settings", QOA_BUFFER_FIELD, DEFAULT_QOA_BUFFER_MINUTES)
+
+
+def _create_field():
 	create_custom_fields({
 		"HR Settings": [
 			{

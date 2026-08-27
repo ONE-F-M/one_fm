@@ -169,6 +169,7 @@ class TestThePreviewTheModalDraws(FrappeTestCase):
 		doc.end_time = end
 		doc.headcount = 2
 		doc.stop_location = "Site Stop"
+		doc.accommodation = frappe.get_all("Accommodation", limit=1, pluck="name")[0]
 		doc.generation_key = frappe.generate_hash("TS-FWD", 10)
 		doc.flags.ignore_links = True
 		doc.flags.ignore_mandatory = True
@@ -195,6 +196,20 @@ class TestThePreviewTheModalDraws(FrappeTestCase):
 
 		# 05:30 less the 45 minute buffer HR configured.
 		self.assertEqual(stops[0]["qoa_time"], "04:45")
+		self.assertIsNone(stops[1]["qoa_time"])
+
+	def test_the_time_the_modal_seeds_its_field_with_carries_seconds(self):
+		# A Frappe Time control refuses "09:00" outright.
+		self.assertEqual(self._preview(departure="05:30")["departure_input"], "05:30:00")
+
+	def test_a_second_leg_out_of_the_same_camp_does_not_report_again(self):
+		# Riders from two cards at one camp board together once, so only the first leg
+		# actually departs it. The saved assignment row is stamped by the same rule.
+		second = self._shipment("Outward", "09:00:00", "21:00:00")
+		stops = get_merge_preview([self.outward, second])["stops"]
+
+		self.assertTrue(stops[0]["is_accommodation_origin"])
+		self.assertFalse(stops[1]["is_accommodation_origin"])
 		self.assertIsNone(stops[1]["qoa_time"])
 
 	def test_each_leg_names_where_it_comes_from_and_goes_to(self):

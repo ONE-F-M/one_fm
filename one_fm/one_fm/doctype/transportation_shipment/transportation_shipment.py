@@ -349,6 +349,19 @@ def _departure_seconds(value):
 		return None
 
 
+def _clock_seconds(seconds) -> str:
+	"""Seconds past midnight as HH:MM:SS, which is what a Time control accepts.
+
+	`_clock` prints HH:MM for people to read; a Frappe Time field rejects it outright
+	("Time 09:00 must be in format: HH:mm:ss"), so the value the modal seeds its
+	departure field with has to carry the seconds.
+	"""
+	if seconds is None:
+		return ""
+	seconds = int(seconds) % 86400
+	return f"{seconds // 3600:02d}:{(seconds % 3600) // 60:02d}:{seconds % 60:02d}"
+
+
 def _clock(seconds) -> str:
 	"""Seconds past midnight as HH:MM, for the modal to print."""
 	if seconds is None:
@@ -542,11 +555,14 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 			_camp_stop(doc) or doc.accommodation_name or doc.accommodation
 		)
 
-		# QOA is the driver's report time at a camp, so it belongs to every leg that
-		# loads at one - the sample itinerary shows three camp pickups in one run, each
-		# with its own report time. A collection from a site and the run home are
-		# neither, and the AC hides it for both.
-		qoa = None if boards else _clock(departs - qoa_buffer * 60)
+		# QOA is the driver's report time at a camp, so it belongs to a leg that actually
+		# departs one. Riders from two cards at the SAME camp board together once, so only
+		# the first of them reports; a run calling at three different camps departs each,
+		# which is why the sample itinerary carries three separate report times. The same
+		# rule the saved assignment row is stamped with, so the modal and the plan agree.
+		previous_camp = docs[index - 2].accommodation if index > 1 else None
+		departs_camp = bool(not boards and doc.accommodation and doc.accommodation != previous_camp)
+		qoa = _clock(departs - qoa_buffer * 60) if departs_camp else None
 
 		stops.append({
 			"stop_index": index,
@@ -554,6 +570,7 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 			"card_id": card_ids.get(doc.name, ""),
 			"stop_location": doc.stop_location,
 			"origin_location": origin,
+			"is_accommodation_origin": departs_camp,
 			# Where these riders work, which is not where the bus goes next once a run
 			# collects from several camps before dropping anyone.
 			"shift_location": doc.stop_location,
@@ -609,6 +626,8 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 		"exceeded": exceeded,
 		"departure": _clock(departure),
 		"default_departure": _clock(default_departure),
+		# What the Time control is seeded with; it refuses anything without seconds.
+		"departure_input": _clock_seconds(departure),
 		# Raw seconds as well as the clock strings: the canvas moves the blocks by the
 		# DIFFERENCE between the two, which is a duration and so needs no timezone
 		# conversion. Rebuilding an instant from "05:30" in the browser would.
