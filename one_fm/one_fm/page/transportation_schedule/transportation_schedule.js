@@ -831,6 +831,19 @@ function mountRoutePlannerApp(wrapper, data) {
                         if (!tripMap[key]) tripMap[key] = [];
                         tripMap[key].push(item);
                     });
+
+                    // A trip is joined WHOLE. Proximity decides which run is near enough
+                    // to join; it must not decide how much of that run takes part. A trip
+                    // whose stops are spread over more than the proximity window arrived
+                    // here half-present, so the modal drew half an itinerary, the seat
+                    // walk counted half the riders, and the merge marked half the stops
+                    // Mixed — leaving the rest of the run behind on its old heading.
+                    Object.keys(tripMap).forEach(key => {
+                        if (key.startsWith('_solo_')) return;
+                        tripMap[key] = this.swimItems.filter(
+                            i => i.vehicleId === vehicle.id && i.tripId === key
+                        );
+                    });
                     const tripKeys = Object.keys(tripMap);
 
                     if (tripKeys.length === 1) {
