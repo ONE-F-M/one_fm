@@ -1,8 +1,9 @@
-frappe.ui.form.on('Vehicle', {
+frappe.ui.form.on("Vehicle", {
 	refresh(frm) {
 		set_qr_code(frm);
 		frappe.breadcrumbs.add("GSD");
-		frm.set_df_property('license_plate', 'hidden', false);
+		frm.set_df_property("license_plate", "hidden", false);
+		check_insurance_expiry(frm);
 	},
 	onload(frm) {
 		if (frm.is_new() && !frm.doc.custom_naming_series) {
@@ -11,37 +12,37 @@ frappe.ui.form.on('Vehicle', {
 	},
 	one_fm_vehicle_category(frm) {
 		const series_map = {
-			"Owned": "VHL-.####",
-			"Leased": "VHL-L-.####",
-			"Subcontractor": "VHL-S-.####"
+			Owned: "VHL-.####",
+			Leased: "VHL-L-.####",
+			Subcontractor: "VHL-S-.####",
 		};
 		const category = frm.doc.one_fm_vehicle_category;
 		frm.set_value("custom_naming_series", series_map[category] || "VHL-.####");
 		frm.set_df_property("vehicle_leasing_contract", "reqd", category === "Leased");
 	},
-	vehicle_leasing_contract(frm){
-	  if(!frm.doc.vehicle_leasing_contract){
-	      frm.set_value('vehicle_leasing_details', '');
-	  }
+	vehicle_leasing_contract(frm) {
+		if (!frm.doc.vehicle_leasing_contract) {
+			frm.set_value("vehicle_leasing_details", "");
+		}
 	},
-	vehicle_leasing_details(frm){
-	    if(frm.doc.vehicle_leasing_details){
-	        frappe.call({
-	           method: "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.get_vehicle_from_leasing_contract",
-				args: {'vehicle_detail': frm.doc.vehicle_leasing_details},
-				callback: function(r) {
-					if(!r.exc){
-					    var data = r.message;
-					    frm.set_value('make', data.make);
-					    frm.set_value('model', data.model);
-					    frm.set_value('one_fm_vehicle_type', data.vehicle_type);
-					    frm.set_value('one_fm_year_of_made', data.year_of_made);
+	vehicle_leasing_details(frm) {
+		if (frm.doc.vehicle_leasing_details) {
+			frappe.call({
+				method: "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.get_vehicle_from_leasing_contract",
+				args: { vehicle_detail: frm.doc.vehicle_leasing_details },
+				callback: function (r) {
+					if (!r.exc) {
+						var data = r.message;
+						frm.set_value("make", data.make);
+						frm.set_value("model", data.model);
+						frm.set_value("one_fm_vehicle_type", data.vehicle_type);
+						frm.set_value("one_fm_year_of_made", data.year_of_made);
 					}
 				},
 				freeze: true,
-				freeze_message: "Fetching Vehicle Details..."
-	        });
-	    }
+				freeze_message: "Fetching Vehicle Details...",
+			});
+		}
 	},
 	employee(frm) {
 		// A handover to a new custodian is logged the moment a new Employee is
@@ -64,19 +65,24 @@ frappe.ui.form.on('Vehicle', {
 	one_fm_milage(frm) {
 		// The current mileage feeds the active custodian's covered distance.
 		calculate_custodian_mileage(frm);
-	}
-})
+	},
+	end_date(frm) {
+		// Insurance end date changed while the form is open: re-evaluate the
+		// expiry indicator immediately, without waiting for a reload.
+		check_insurance_expiry(frm);
+	},
+});
 
-var log_custodian_handover = function(frm) {
+var log_custodian_handover = function (frm) {
 	let row = frm.add_child("custom_vehicle_custodian_history", {
 		employee_id: frm.doc.employee,
 		handover_date: frm.doc.custom_handover_date,
-		mileage_at_handover: cint(frm.doc.one_fm_milage)
+		mileage_at_handover: cint(frm.doc.one_fm_milage),
 	});
 
 	// Populate Employee Name immediately for display (also resolved on save via fetch_from).
 	if (frm.doc.employee) {
-		frappe.db.get_value("Employee", frm.doc.employee, "employee_name").then(r => {
+		frappe.db.get_value("Employee", frm.doc.employee, "employee_name").then((r) => {
 			if (r && r.message) {
 				row.employee_name = r.message.employee_name;
 				frm.refresh_field("custom_vehicle_custodian_history");
@@ -88,18 +94,18 @@ var log_custodian_handover = function(frm) {
 	calculate_custodian_mileage(frm);
 };
 
-var get_active_custodian_row = function(frm) {
+var get_active_custodian_row = function (frm) {
 	let rows = frm.doc.custom_vehicle_custodian_history || [];
 	return rows.length ? rows[rows.length - 1] : null;
 };
 
-var calculate_custodian_mileage = function(frm) {
+var calculate_custodian_mileage = function (frm) {
 	// Past rows:  next row's mileage_at_handover - this row's mileage_at_handover.
 	// Active row: parent's current mileage (one_fm_milage) - this row's mileage_at_handover.
 	let rows = frm.doc.custom_vehicle_custodian_history || [];
 	let current_mileage = flt(frm.doc.one_fm_milage);
 
-	rows.forEach(function(row, index) {
+	rows.forEach(function (row, index) {
 		let covered;
 		if (index < rows.length - 1) {
 			covered = flt(rows[index + 1].mileage_at_handover) - flt(row.mileage_at_handover);
@@ -112,7 +118,32 @@ var calculate_custodian_mileage = function(frm) {
 	frm.refresh_field("custom_vehicle_custodian_history");
 };
 
-var set_qr_code = function(frm) {
+var check_insurance_expiry = function (frm) {
+	// The dashboard has no API to remove a single indicator once added, so we
+	// keep a reference to the element we appended and drop it ourselves before
+	// deciding, from scratch, whether it belongs on the form right now. This
+	// keeps the check safe to re-run on every refresh and on every end_date edit.
+	if (frm.__insurance_expired_indicator) {
+		frm.__insurance_expired_indicator.remove();
+		frm.__insurance_expired_indicator = null;
+	}
+
+	if (!frm.doc.end_date) {
+		return;
+	}
+
+	let end_date = frappe.datetime.str_to_obj(frm.doc.end_date);
+	let today = frappe.datetime.str_to_obj(frappe.datetime.get_today());
+
+	if (end_date < today) {
+		frm.__insurance_expired_indicator = frm.dashboard.add_indicator(
+			__("Insurance Expired"),
+			"red",
+		);
+	}
+};
+
+var set_qr_code = function (frm) {
 	let qr_code_html = `{%if doc.name%}
 	<div style="display: inline-block;padding: 5%;">
 	<div class="qr_code_print" id="qr_code_print">
@@ -130,8 +161,8 @@ var set_qr_code = function(frm) {
 	    newWin.print();
 	});
 	</script>
-	`
-	var qr_code = frappe.render_template(qr_code_html, {"doc":frm.doc});
+	`;
+	var qr_code = frappe.render_template(qr_code_html, { doc: frm.doc });
 	$(frm.fields_dict["one_fm_vehicle_qr_code"].wrapper).html(qr_code);
-	refresh_field("one_fm_vehicle_qr_code")
+	refresh_field("one_fm_vehicle_qr_code");
 };
