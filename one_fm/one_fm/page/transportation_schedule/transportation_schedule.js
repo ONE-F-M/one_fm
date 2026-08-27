@@ -1212,7 +1212,9 @@ function mountRoutePlannerApp(wrapper, data) {
                             // Seed the field on the first render with the moment the run would
                             // have left anyway, so an untouched trip is timed exactly as before.
                             if (!d.get_value('departure')) {
-                                d.set_value('departure', p.departure);
+                                // departure_input, not departure: a Time control refuses
+                                // anything without seconds ("must be in format HH:mm:ss").
+                                d.set_value('departure', p.departure_input);
                             }
                             d.fields_dict.preview.$wrapper.html(self._mergeModalHtml(p, vehicle));
                             // Confirm is disabled by the server's verdict, so the button and
