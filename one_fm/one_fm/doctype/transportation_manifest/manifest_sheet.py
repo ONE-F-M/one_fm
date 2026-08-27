@@ -76,6 +76,12 @@ def _build_sheet(doc) -> dict:
 
 	rows = list(doc.transportation_manifest_details)
 
+	# What happens to each rider AT THE STOP, read from the plan rather than copied onto
+	# the manifest: the Route Plan Assignment is where the itinerary is decided, and a
+	# second stored copy would be a second answer the moment a trip is re-planned. This
+	# is what splits a handover stop into its two sections for the driver (WI-002171).
+	stop_actions = _stop_actions(rows)
+
 	# Batch-resolve reliever employee names (rows that actually have a reliever).
 	reliever_ids = {r.reliever_employee for r in rows if r.reliever_employee}
 	reliever_names = {}
@@ -125,10 +131,7 @@ def _build_sheet(doc) -> dict:
 			"scheduled_time": str(row.scheduled_time) if row.scheduled_time else None,
 			"stop_type": row.stop_type,
 			"employee_action": row.employee_action,
-			# What happens to this rider at THIS stop, which is what a handover reads as
-			# two sections. `employee_action` answers the same question about the pickup
-			# camp and is the opposite (WI-002171 AC 3.5).
-			"stop_action": row.stop_action,
+			"stop_action": stop_actions.get((row.trip_id or "", row.transportation_shipment or "")),
 		})
 
 	stop_list = []
@@ -275,3 +278,33 @@ def save_stop_checks(manifest: str, stop_sequence, updates) -> dict:
 	doc.save()
 	doc.reload()
 	return _build_sheet(doc)
+
+
+def _stop_actions(rows) -> dict:
+	"""{(trip_group, shipment): action_type} for the legs these manifest rows came from.
+
+	One batched read rather than a lookup per row, and nothing is stored: the plan says
+	what happens at each stop, so the manifest asks it instead of keeping its own copy
+	that would go stale the moment the trip is re-planned.
+	"""
+	keys = {
+		(row.trip_id or "", row.transportation_shipment or "")
+		for row in rows
+		if row.trip_id and row.transportation_shipment
+	}
+	if not keys:
+		return {}
+
+	assignments = frappe.get_all(
+		"Route Plan Assignment",
+		filters={
+			"trip_group": ["in", sorted({key[0] for key in keys})],
+			"transportation_shipment": ["in", sorted({key[1] for key in keys})],
+		},
+		fields=["trip_group", "transportation_shipment", "action_type"],
+	)
+	return {
+		(row.trip_group, row.transportation_shipment): row.action_type
+		for row in assignments
+		if row.action_type
+	}

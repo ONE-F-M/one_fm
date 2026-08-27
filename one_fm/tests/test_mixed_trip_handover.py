@@ -131,25 +131,29 @@ class TestTheDriveBetweenTwoSites(FrappeTestCase):
 
 
 class TestTheManifestSaysWhatHappensAtTheStop(FrappeTestCase):
-	"""AC 3.5: two explicit sections at a handover, from stored data not a guess."""
+	"""AC 3.5: two explicit sections at a handover, from the plan rather than a copy."""
 
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		# The column is new, so a site that has not migrated yet has it in the JSON but
-		# not in the schema. Syncing here proves the definition is loadable.
+		frappe.reload_doc("operations", "doctype", "route_plan_assignment")
+		# The column was added and then removed again across this branch, so a site that
+		# has not migrated since still has it in the schema.
 		frappe.reload_doc("one_fm", "doctype", "transportation_manifest_details")
 
-	def test_the_row_records_the_stop_frame_as_well_as_the_camp_frame(self):
-		meta = frappe.get_meta("Transportation Manifest Details")
+	def test_the_plan_records_what_happens_at_each_stop(self):
+		# The BA's own field, with a third value for a stop where both movements happen.
+		field = frappe.get_meta("Route Plan Assignment").get_field("action_type")
 
-		self.assertIsNotNone(meta.get_field("stop_action"))
-		self.assertIsNotNone(meta.get_field("employee_action"))
+		self.assertIsNotNone(field)
+		self.assertEqual(
+			[o for o in (field.options or "").split("\n") if o],
+			["Boarding", "Dropping Off", "Combined"],
+		)
 
-	def test_the_two_frames_are_opposites(self):
-		# An outward rider boards at the camp and is dropped at the site; a return rider
-		# is dropped at the camp and boards at the site. Recording only one of the two is
-		# what left the manifest unable to describe a handover.
+	def test_the_camp_frame_is_untouched(self):
+		# `employee_action` says what the rider does at the PICKUP CAMP, and the
+		# attendance-check lock keys off it. Repointing it would have broken that.
 		source = frappe.read_file(frappe.get_app_path(
 			"one_fm", "one_fm", "doctype", "transportation_manifest", "manifest_sync.py"
 		))
@@ -157,16 +161,20 @@ class TestTheManifestSaysWhatHappensAtTheStop(FrappeTestCase):
 		self.assertIn(
 			'action = "Dropping Off" if direction == "RETURN" else "Boarding"', source
 		)
-		self.assertIn(
-			'stop_action = "Boarding" if direction == "RETURN" else "Dropping Off"', source
+
+	def test_the_manifest_keeps_no_second_copy_of_it(self):
+		# A stored duplicate goes stale the moment a trip is re-planned.
+		self.assertIsNone(
+			frappe.get_meta("Transportation Manifest Details").get_field("stop_action")
 		)
 
-	def test_the_printed_sheet_carries_it(self):
+	def test_the_sheet_reads_it_off_the_plan(self):
 		source = frappe.read_file(frappe.get_app_path(
 			"one_fm", "one_fm", "doctype", "transportation_manifest", "manifest_sheet.py"
 		))
 
-		self.assertIn('"stop_action": row.stop_action', source)
+		self.assertIn("def _stop_actions(rows)", source)
+		self.assertIn('"Route Plan Assignment"', source)
 
 	def test_the_driver_view_already_names_both_sections(self):
 		# The manifest page renders one card per visit, so a handover site appears as a
