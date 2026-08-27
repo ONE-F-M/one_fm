@@ -20,7 +20,6 @@
   "trip_time",
   "stop_type",
   "employee_action",
-  "stop_action",
   "column_break_ljkm",
   "scheduled_time",
   "attendance_status",
@@ -126,14 +125,6 @@
    "fieldtype": "Select",
    "label": "Employee Action",
    "options": "\nBoarding\nDropping Off"
-  },
-  {
-   "description": "What happens to this rider AT THIS STOP, which is what the driver needs at a handover. Distinct from Employee Action, which describes the same rider at the pickup camp: an outward rider boards at the camp and is dropped at the site.",
-   "fieldname": "stop_action",
-   "fieldtype": "Select",
-   "label": "Stop Action",
-   "options": "\nBoarding\nDropping Off",
-   "read_only": 1
   },
   {
    "fieldname": "column_break_ljkm",
