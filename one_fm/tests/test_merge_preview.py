@@ -513,3 +513,31 @@ class TestTheRunIsTimedFromTheMinutes(FrappeTestCase):
 
 	def test_an_empty_run_walks_to_nothing(self):
 		self.assertEqual(self._walk([]), [])
+
+
+class TestATripIsJoinedWhole(FrappeTestCase):
+	"""Proximity chooses WHICH run to join, never how much of it takes part.
+
+	A trip whose stops spread wider than the two-hour proximity window used to arrive at
+	the merge half-present: the modal drew half an itinerary, the seat walk counted half
+	the riders - S-803 read as 3 stops peaking at 6 against a run of 9 peaking at 11 -
+	and the merge marked only those stops Mixed, leaving the rest on their old heading.
+	"""
+
+	def setUp(self):
+		self.source = CANVAS.read_text()
+
+	def test_the_grouped_trip_is_expanded_to_all_of_its_stops(self):
+		self.assertIn("tripMap[key] = this.swimItems.filter(", self.source)
+		self.assertIn("i.vehicleId === vehicle.id && i.tripId === key", self.source)
+
+	def test_a_standalone_block_is_left_as_itself(self):
+		# Items with no tripId are each their own trip and must not be swept together.
+		self.assertIn("if (key.startsWith('_solo_')) return;", self.source)
+
+	def test_the_expansion_happens_before_the_operator_is_asked(self):
+		# The picker and the confirm both read tripMap, so it has to be whole by then.
+		self.assertLess(
+			self.source.index("tripMap[key] = this.swimItems.filter("),
+			self.source.index("const tripKeys = Object.keys(tripMap);"),
+		)
