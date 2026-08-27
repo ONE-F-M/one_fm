@@ -541,3 +541,27 @@ class TestATripIsJoinedWhole(FrappeTestCase):
 			self.source.index("tripMap[key] = this.swimItems.filter("),
 			self.source.index("const tripKeys = Object.keys(tripMap);"),
 		)
+
+
+class TestTheModalOpensOnTheRunAsItStands(FrappeTestCase):
+	"""What the operator is shown before they agree to anything.
+
+	The confirm named only the stops proximity had picked out while the merge took the
+	whole trip - so a three-stop run was described as two. And a leg that carries no
+	recorded minutes still has a length on the lane: sending nothing for it collapsed it,
+	and S-302's 07:00-09:00 run opened as 08:00-09:00 with its first hour gone.
+	"""
+
+	def setUp(self):
+		self.source = CANVAS.read_text()
+
+	def test_the_confirm_names_every_stop_the_merge_will_take(self):
+		self.assertIn("const existingStops = tripMap[tripKeys[0]].map(", self.source)
+		self.assertNotIn("const existingStops = nearbyBlocks.map(", self.source)
+
+	def test_a_leg_with_no_recorded_minutes_sends_the_length_it_is_drawn_with(self):
+		self.assertIn("transit_minutes: span, buffer_minutes: 0", self.source)
+
+	def test_a_leg_that_has_minutes_still_sends_those(self):
+		# Real minutes always win; the span is only the fallback for an untimed leg.
+		self.assertIn("if (item.transitMinutes || item.bufferMinutes) {", self.source)
