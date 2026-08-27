@@ -848,7 +848,10 @@ function mountRoutePlannerApp(wrapper, data) {
 
                     if (tripKeys.length === 1) {
                         // ── Single trip: simple confirm ──
-                        const existingStops = nearbyBlocks.map(i => {
+                        // The WHOLE trip, not just the stops proximity picked out: the
+                        // merge takes all of them, so the operator has to be shown all of
+                        // them before saying yes.
+                        const existingStops = tripMap[tripKeys[0]].map(i => {
                             const c = this.planData.shipment_cards.find(sc => sc.id === i.cardId);
                             const siteName = c ? c.site_location : i.cardId;
                             const campName = (c && c.accommodation) ? c.accommodation : '';
@@ -1089,14 +1092,25 @@ function mountRoutePlannerApp(wrapper, data) {
                 // comes back, and the server accepts either key.
                 const timings = {};
                 existingItems.forEach((item) => {
-                    // A reload hands back 0 for a leg that was never timed - the Int
-                    // column cannot say "unset" - so only a leg carrying real minutes
-                    // overrides the preview's defaults.
-                    if (!item.transitMinutes && !item.bufferMinutes) return;
-                    timings[item.cardId] = {
-                        transit_minutes: item.transitMinutes || 0,
-                        buffer_minutes: item.bufferMinutes || 0,
-                    };
+                    if (item.transitMinutes || item.bufferMinutes) {
+                        timings[item.cardId] = {
+                            transit_minutes: item.transitMinutes || 0,
+                            buffer_minutes: item.bufferMinutes || 0,
+                        };
+                        return;
+                    }
+                    // A leg that was never given minutes still has a length on the lane —
+                    // an Int column cannot say "unset", so 0/0 and "an hour long" look the
+                    // same in the row. Sending the drawn length keeps the modal showing
+                    // the run where it actually sits: without it a block spanning 07:00 to
+                    // 08:00 collapsed to nothing and the whole itinerary jumped an hour
+                    // later. The same rule _retimeTrip already applies when it redraws.
+                    const span = Math.round(
+                        (new Date(item.end).getTime() - new Date(item.start).getTime()) / 60000
+                    );
+                    if (span > 0) {
+                        timings[item.cardId] = { transit_minutes: span, buffer_minutes: 0 };
+                    }
                 });
                 let previewStops = [];
                 // The run's own departure and the one it would have backed into. The blocks
