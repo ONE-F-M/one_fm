@@ -14,7 +14,7 @@ from frappe.tests.utils import FrappeTestCase
 from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
 	QOA_BUFFER_FIELD,
 	_departure_seconds,
-	_ends_at_base_camp,
+	build_itinerary,
 	day_offset,
 	get_merge_preview,
 	qoa_buffer_minutes,
@@ -127,29 +127,39 @@ class TestTheQoaBuffer(FrappeTestCase):
 
 
 class TestTheRunEndsAtTheCamp(FrappeTestCase):
-	"""AC 1.5: a mixed run has to finish by taking its return riders home."""
+	"""AC 1.5, literally now that a run is its stops: the last one is the base camp."""
 
-	def _card(self, direction):
+	def _card(self, camp, site, direction):
 		return frappe._dict({
 			"name": frappe.generate_hash("TS", 6),
-			"trip_direction": direction,
-			"pre_merge_trip_direction": None,
+			"accommodation": camp, "accommodation_name": camp, "stop_location": site,
+			"headcount": 2, "trip_direction": direction, "pre_merge_trip_direction": None,
 		})
 
-	def test_a_mixed_run_ending_on_a_return_leg_is_accepted(self):
-		self.assertTrue(_ends_at_base_camp([self._card("Outward"), self._card("Return")]))
+	def test_every_run_finishes_back_at_the_camp_it_started_from(self):
+		stops = build_itinerary([
+			self._card("Camp 1", "Site A", "Outward"),
+			self._card("Camp 1", "Site A", "Return"),
+		])
 
-	def test_a_mixed_run_ending_on_an_outward_leg_is_refused(self):
-		# It would leave the return riders at a site with the bus driving away.
-		self.assertFalse(_ends_at_base_camp([self._card("Return"), self._card("Outward")]))
+		self.assertEqual(stops[-1]["kind"], "home")
+		self.assertEqual(stops[-1]["place"], "Camp 1")
 
-	def test_a_plain_outbound_run_is_left_alone(self):
-		# A drop-off run legitimately finishes at a site; holding it to this would refuse
-		# every multi-stop outbound run on the board.
-		self.assertTrue(_ends_at_base_camp([self._card("Outward"), self._card("Outward")]))
+	def test_a_plain_outbound_run_still_drives_home_empty(self):
+		# The sheet shows it too: the last row is the camp with nobody aboard.
+		stops = build_itinerary([self._card("Camp 1", "Site A", "Outward")])
 
-	def test_a_plain_return_run_is_left_alone(self):
-		self.assertTrue(_ends_at_base_camp([self._card("Return"), self._card("Return")]))
+		self.assertEqual(stops[-1]["kind"], "home")
+		self.assertEqual(stops[-1]["drop_off_count"], 0)
+
+	def test_a_run_with_no_camp_has_nowhere_to_go_home_to(self):
+		stops = build_itinerary([frappe._dict({
+			"name": "X", "accommodation": None, "accommodation_name": None,
+			"stop_location": "Site A", "headcount": 2,
+			"trip_direction": "Outward", "pre_merge_trip_direction": None,
+		})])
+
+		self.assertFalse([s for s in stops if s["kind"] == "home"])
 
 
 class TestThePreviewTheModalDraws(FrappeTestCase):
@@ -212,16 +222,18 @@ class TestThePreviewTheModalDraws(FrappeTestCase):
 		self.assertFalse(stops[1]["is_accommodation_origin"])
 		self.assertIsNone(stops[1]["qoa_time"])
 
-	def test_each_leg_names_where_it_comes_from_and_goes_to(self):
+	def test_each_stop_names_itself_and_where_the_bus_goes_next(self):
 		stops = self._preview()["stops"]
 
-		# An outward leg loads at its camp; a return leg loads at the site it collects
-		# from. "Next stop" is the following leg's origin, not this card's own site -
-		# a run that collects from three camps before dropping anyone needs the two to
-		# be different columns.
-		self.assertEqual(stops[1]["origin_location"], stops[1]["stop_location"])
-		self.assertEqual(stops[0]["next_stop_location"], stops[1]["origin_location"])
-		self.assertEqual(stops[0]["shift_location"], stops[0]["stop_location"])
+		# A row is a place the bus stops at now. "Next stop" is where it goes from here,
+		# and "shift location" is where the riders it serves are headed - which is a
+		# different thing the moment a run collects from several camps before dropping
+		# anyone.
+		for here, onward in zip(stops, stops[1:]):
+			self.assertEqual(here["next_stop_location"], onward["place"])
+		self.assertIsNone(stops[-1]["next_stop_location"])
+		self.assertEqual(stops[0]["kind"], "camp")
+		self.assertEqual(stops[-1]["kind"], "home")
 
 	def test_the_modal_is_told_the_run_ends_at_the_camp(self):
 		preview = self._preview()

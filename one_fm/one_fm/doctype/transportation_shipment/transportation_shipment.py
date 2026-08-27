@@ -469,7 +469,7 @@ def _timings_by_shipment(timings) -> dict:
 	preview, so it has to be able to seed saved timings before the first render.
 	"""
 	return {
-		(resolve_shipment_names([key]) or [key])[0]: value
+		key if str(key).startswith("leg-") else (resolve_shipment_names([key]) or [key])[0]: value
 		for key, value in (timings or {}).items()
 	}
 
@@ -527,126 +527,126 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 			_minutes(adjustment.get("buffer_minutes")),
 		))
 
+	# ── the run as stops, which is what the sheet and the manifest are written in ──
+	itinerary = build_itinerary(docs)
+
+	# Minutes belong to the leg OUT of a stop: a row says "I am here, I leave at
+	# Departure, and buffer + transit later I reach the next stop". The last stop has
+	# nowhere onward, so it carries none. They are held against a representative card at
+	# each stop so an edit survives the round trip through the per-card rows.
+	def _leg_key(stop):
+		# Keyed by the stop, not by a card: one outward card represents BOTH the camp it
+		# boards at and the site it is dropped at, so keying on it made the two stops
+		# share a leg and timing one silently timed the other.
+		return f"leg-{stop['stop_index']}"
+
+	def _serving_card(stop):
+		serving = stop["dropping"] or stop["boarding"]
+		return serving[0].name if serving else None
+
+	legs = []
+	for position, stop in enumerate(itinerary):
+		if position == len(itinerary) - 1:
+			legs.append((0, 0))
+			continue
+		adjustment = timings.get(_leg_key(stop)) or {}
+		# A drive to somewhere the run collects from is not guessed at 30 minutes: AC 3.6
+		# wants it stated, and a pre-filled default would let the pickup be scheduled on a
+		# number nobody chose. The first leg has nothing before it to drive from.
+		onward = itinerary[position + 1]
+		to_a_collection = (
+			onward["kind"] == SITE_STOP and onward["boarding"]
+			and onward["place"] != stop["place"]
+		)
+		default_transit = 0 if (position == 0 or to_a_collection) else DEFAULT_TRANSIT_MINUTES
+		legs.append((
+			_minutes(adjustment.get("transit_minutes", default_transit)),
+			_minutes(adjustment.get("buffer_minutes")),
+		))
+
 	anchor = arrival_time(docs[0]) or 0
 	departure = _departure_seconds(departure)
-	# What the run leaves on before anyone states otherwise: the moment it would have
-	# backed into its first stop's shift time. Pre-filling this rather than a blank keeps
-	# an untouched trip timed exactly as it is today, so switching the modal to forward
-	# calculation does not silently re-time every run on the board.
 	first_transit, first_buffer = legs[0]
 	default_departure = max(0, anchor - (first_buffer + first_transit) * 60)
 	if departure is None:
 		departure = default_departure
 
 	walked = walk_legs(legs, anchor, departure=departure)
-
-	# The camp the run belongs to, and the Location that stands for it. Stop 1 leaves
-	# from there; every later stop leaves from the stop before it, which is what makes
-	# QOA an accommodation-departure fact rather than a per-leg one (AC 1.2).
-	base_accommodation = next((doc.accommodation for doc in docs if doc.accommodation), None)
-	camp_stop = _camp_stop(docs[0]) if docs else None
-	# The readable camp name lives on the shipment, not on Accommodation.
-	camp_label = next((doc.accommodation_name for doc in docs if doc.accommodation_name), None) \
-		or base_accommodation
+	peak, worst_leg, per_stop = walk_occupancy(itinerary)
 	qoa_buffer = qoa_buffer_minutes()
+	camp_label = next((doc.accommodation_name for doc in docs if doc.accommodation_name), None) \
+		or next((doc.accommodation for doc in docs if doc.accommodation), None)
 
 	stops = []
-	for index, doc in enumerate(docs, start=1):
-		boards = own_direction(doc) == "RETURN"
-		transit, buffer_minutes = legs[index - 1]
-		departs, arrives = walked[index - 1]
-		# Where the bus collects these riders: an outward card loads at its own camp, a
-		# return card loads at the site it is collecting from.
-		origin = doc.stop_location if boards else (
-			_camp_stop(doc) or doc.accommodation_name or doc.accommodation
-		)
-
-		# QOA is the driver's report time at a camp, so it belongs to a leg that actually
-		# departs one. Riders from two cards at the SAME camp board together once, so only
-		# the first of them reports; a run calling at three different camps departs each,
-		# which is why the sample itinerary carries three separate report times. The same
-		# rule the saved assignment row is stamped with, so the modal and the plan agree.
-		previous_camp = docs[index - 2].accommodation if index > 1 else None
-		departs_camp = bool(not boards and doc.accommodation and doc.accommodation != previous_camp)
-		qoa = _clock(departs - qoa_buffer * 60) if departs_camp else None
-
-		# AC 3.6: the bus dropped the previous card's riders at their site, and this one
-		# collects somewhere else - Site A to Site B - so the leg cannot be left at
-		# nothing. Read off the previous card's own site rather than this leg's origin:
-		# a return leg's origin IS where it collects, so comparing the two to each other
-		# would never differ. Only return pickups are held to it, which is the handover
-		# the AC describes; holding outward drops to it too would refuse multi-stop runs
-		# that are legal today.
-		came_from = docs[index - 2].stop_location if index > 1 else None
-		needs_drive = bool(boards and came_from and came_from != doc.stop_location)
-		untimed = needs_drive and not (transit and buffer_minutes)
+	for position, stop in enumerate(itinerary):
+		transit, buffer_minutes = legs[position]
+		departs, arrives = walked[position]
+		onward = itinerary[position + 1]["place"] if position + 1 < len(itinerary) else None
+		# Where the riders this stop serves are headed. At a camp that is the sites they
+		# are bound for, which is not where the bus goes next once a run collects from
+		# several camps before dropping anyone.
+		serving = stop["boarding"] + stop["dropping"]
+		shift_places = []
+		for doc in serving:
+			if doc.stop_location and doc.stop_location not in shift_places:
+				shift_places.append(doc.stop_location)
 
 		stops.append({
-			"needs_drive": needs_drive,
-			"untimed_handover": untimed,
-			"came_from": came_from,
-			"stop_index": index,
-			"shipment": doc.name,
-			"card_id": card_ids.get(doc.name, ""),
-			"stop_location": doc.stop_location,
-			"origin_location": origin,
-			"is_accommodation_origin": departs_camp,
-			# Where these riders work, which is not where the bus goes next once a run
-			# collects from several camps before dropping anyone.
-			"shift_location": doc.stop_location,
-			# Filled in below, once every leg's own origin is known.
-			"next_stop_location": None,
-			"direction": own_direction(doc),
-			"headcount": doc.headcount or 0,
-			"boards": boards,
-			"action": "Boarding" if boards else "Dropping Off",
-			"routing_type_badge": doc.routing_type_badge,
+			"stop_index": stop["stop_index"],
+			"kind": stop["kind"],
+			"place": stop["place"],
+			"stop_location": stop["place"],
+			"origin_location": stop["place"],
+			"next_stop_location": onward,
+			"shift_location": ", ".join(shift_places) or None,
+			"action": stop["action_type"],
+			"action_type": stop["action_type"],
+			"boarding_count": stop["boarding_count"],
+			"drop_off_count": stop["drop_off_count"],
+			"headcount": stop["boarding_count"] or stop["drop_off_count"],
+			"boards": bool(stop["boarding"]),
+			"boarding_cards": len(stop["boarding"]),
+			"cards": [doc.name for doc in serving],
+			"card_id": card_ids.get(_serving_card(stop), _serving_card(stop) or ""),
+			# What the minute inputs post back: the leg belongs to the stop.
+			"shipment": _leg_key(stop),
+			"is_accommodation_origin": stop["kind"] == CAMP_STOP,
 			"transit_minutes": transit,
 			"buffer_minutes": buffer_minutes,
 			"departs": _clock(departs),
 			"arrives": _clock(arrives),
 			"arrives_day_offset": day_offset(arrives),
-			"qoa_time": qoa,
+			"occupancy": per_stop[position],
+			"exceeded": bool(limit) and per_stop[position] > limit,
+			"qoa_time": (
+				_clock(departs - qoa_buffer * 60) if stop["kind"] == CAMP_STOP else None
+			),
 		})
 
-	from one_fm.operations.doctype.route_plan.route_plan import leg_occupancy
-
-	peak, worst_leg, per_leg = leg_occupancy(stops)
-	for stop, occupancy in zip(stops, per_leg):
-		stop["occupancy"] = occupancy
-		stop["exceeded"] = bool(limit) and occupancy > limit
-
 	exceeded = bool(limit) and peak > limit
-
-	# The next stop is the following leg's origin; the last leg drives home to the camp
-	# the run started from.
-	for position, stop in enumerate(stops):
-		stop["next_stop_location"] = (
-			stops[position + 1]["origin_location"] if position + 1 < len(stops)
-			else (camp_stop or camp_label)
-		)
-
 	alignment = _shift_alignment(docs)
 
-	# AC 3.6 again, at the level of the whole run: the modal cannot be confirmed while a
-	# handover leg still says the bus teleports.
-	untimed = [s for s in stops if s["untimed_handover"]]
+	# AC 3.6: a collection the bus has to be driven to cannot be left untimed. The drive
+	# INTO a stop is the previous stop's leg - minutes belong to the leg out of a row -
+	# so that is the row the operator has to fill in.
+	untimed = []
+	for position, stop in enumerate(stops):
+		if position == 0 or stop["kind"] != SITE_STOP or not stop["boarding_cards"]:
+			continue
+		into = stops[position - 1]
+		if not (into["transit_minutes"] or into["buffer_minutes"]):
+			untimed.append(stop)
 	handover_message = "" if not untimed else _(
-		"Leg {0} collects at {1} but the bus is coming from {2}. Enter the buffer and "
-		"transit minutes for that drive before the pickup can be scheduled."
-	).format(
-		untimed[0]["stop_index"], untimed[0]["stop_location"], untimed[0]["came_from"]
-	)
+		"Leg {0} collects at {1}. Enter the buffer and transit minutes for the drive to "
+		"it before the pickup can be scheduled."
+	).format(untimed[0]["stop_index"], untimed[0]["place"])
 
-	# AC 1.5: a mixed run ends by taking its return riders home, so its last leg has to be
-	# the one that ends at the base camp. Enforced for mixed runs only - a plain outbound
-	# run legitimately finishes at a site, and holding those to it would refuse every
-	# multi-stop drop-off on the board.
-	ends_home = _ends_at_base_camp(docs)
+	# AC 1.5, literally now that a run is its stops: the last one is the base camp.
+	ends_home = bool(itinerary) and itinerary[-1]["kind"] == HOME_STOP
 	route_message = "" if ends_home else _(
-		"The last leg of a mixed run must be the ride home: end the run on a return card "
-		"collecting for {0}, so the bus finishes at the camp rather than at a site."
-	).format(camp_label or base_accommodation or _("the base accommodation"))
+		"This run does not finish at {0}. A run ends by returning to the camp it started "
+		"from."
+	).format(camp_label or _("the base accommodation"))
 
 	return {
 		"trip_direction": MIXED,
@@ -666,7 +666,7 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 		"departure_seconds": int(departure),
 		"default_departure_seconds": int(default_departure),
 		"qoa_buffer_minutes": qoa_buffer,
-		"base_accommodation": camp_label or base_accommodation,
+		"base_accommodation": camp_label,
 		"ends_at_base_camp": ends_home,
 		"route_message": route_message,
 		"shift_alignment": alignment,
@@ -734,25 +734,6 @@ def _shift_alignment(docs) -> dict:
 			"apart. The bus will wait between the drop-off and the pickup."
 		).format(_clock(start), _clock(end), round(apart / 3600, 1)),
 	}
-
-
-def _ends_at_base_camp(docs) -> bool:
-	"""True when the run's final leg is one that finishes at the base accommodation.
-
-	A return card's `stop_location` is where it *collects*; the camp it is heading for is
-	its `accommodation`. So "the final stop location must be the base accommodation camp"
-	is a statement about the last leg being a ride home, not about a camp appearing in the
-	stop column - no card on the board carries the camp as its stop location, and adding a
-	terminal camp stop would be a change to the route model rather than a validation.
-
-	A run that is not mixed is left alone: it has no return riders to take home.
-	"""
-	directions = {own_direction(doc) for doc in docs}
-	if len(directions) < 2:
-		return True
-
-	last = docs[-1]
-	return own_direction(last) == "RETURN"
 
 
 def unmerge_trip_shipment(name) -> bool:

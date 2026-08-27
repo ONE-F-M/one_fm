@@ -1300,26 +1300,31 @@ function mountRoutePlannerApp(wrapper, data) {
                     const rollover = s.arrives_day_offset
                         ? ` <span class="indicator-pill orange">${__('+{0} Day', [s.arrives_day_offset])}</span>`
                         : '';
-                    // QOA belongs only to the leg that leaves the camp carrying outward
-                    // riders; it is hidden for intermediate pickups and return legs (AC 1.2).
+                    // The last stop is where the run ends, so it has no onward drive and
+                    // nothing to time.
+                    const last = !s.next_stop_location;
+                    const minutes = (key, value) => last
+                        ? '<td class="rp-leg-mins-col small text-muted">—</td>'
+                        : `<td class="rp-leg-mins-col"><input class="rp-leg-min form-control input-sm"
+                            type="number" min="0" data-shipment="${esc(s.shipment)}"
+                            data-key="${key}" value="${esc(value)}"></td>`;
+                    const movement = [
+                        s.drop_off_count ? `−${esc(s.drop_off_count)}` : '',
+                        s.boarding_count ? `+${esc(s.boarding_count)}` : ''
+                    ].filter(Boolean).join(' ');
                     return `
                     <tr class="${s.exceeded ? 'text-danger font-weight-bold' : ''}">
-                        <td class="small">${esc(s.card_id || s.shipment)}</td>
-                        <td class="small">${esc(self.dirName(s.direction))}</td>
-                        <td class="small">${esc(s.origin_location || '—')}</td>
+                        <td class="small">${esc(s.stop_index)}</td>
+                        <td class="small">${esc(s.place || '—')}</td>
+                        <td class="small">${esc(s.action_type)}</td>
                         <td class="small rp-leg-time-col">${s.qoa_time ? esc(s.qoa_time) : '—'}</td>
                         <td class="small rp-leg-time-col">${esc(s.departs)}</td>
-                        <td class="rp-leg-mins-col"><input class="rp-leg-min form-control input-sm"
-                            type="number" min="0"
-                            data-shipment="${esc(s.card_id || s.shipment)}" data-key="buffer_minutes"
-                            value="${esc(s.buffer_minutes)}"></td>
-                        <td class="rp-leg-mins-col"><input class="rp-leg-min form-control input-sm"
-                            type="number" min="0"
-                            data-shipment="${esc(s.card_id || s.shipment)}" data-key="transit_minutes"
-                            value="${esc(s.transit_minutes)}"></td>
+                        ${minutes('buffer_minutes', s.buffer_minutes)}
+                        ${minutes('transit_minutes', s.transit_minutes)}
                         <td class="small">${esc(s.shift_location || '—')}</td>
                         <td class="small">${esc(s.next_stop_location || '—')}</td>
-                        <td class="small font-weight-bold rp-leg-time-col">${esc(s.arrives)}${rollover}</td>
+                        <td class="small font-weight-bold rp-leg-time-col">${last ? '—' : esc(s.arrives) + rollover}</td>
+                        <td class="small rp-leg-time-col">${movement || '—'} <b>${esc(s.occupancy)}</b></td>
                     </tr>`;
                 }).join('');
 
@@ -1364,9 +1369,9 @@ function mountRoutePlannerApp(wrapper, data) {
                     <div class="table-responsive">
                     <table class="table table-sm table-bordered small mb-0">
                         <thead><tr>
-                            <th>${__('Card')}</th>
-                            <th>${__('Direction')}</th>
+                            <th>${__('Stop')}</th>
                             <th>${__('Accommodation / Stop')}</th>
+                            <th>${__('Action')}</th>
                             <th>${__('QOA')}</th>
                             <th>${__('Departure')}</th>
                             <th class="rp-leg-mins-col">${__('Buffer (min)')}</th>
@@ -1374,6 +1379,7 @@ function mountRoutePlannerApp(wrapper, data) {
                             <th>${__('Shift Location')}</th>
                             <th>${__('Next Stop')}</th>
                             <th>${__('Target Arrival')}</th>
+                            <th>${__('On Board')}</th>
                         </tr></thead>
                         <tbody>${legs}</tbody>
                     </table>

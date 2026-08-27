@@ -170,8 +170,11 @@ class TestTheMergeModal(FrappeTestCase):
 		# origin, next stop and the forward-calculated arrival - but the two editable
 		# minute fields are what re-time the run and they still have to be there.
 		self.assertIn("Legs — arrival is calculated forward from the departure above", self.source)
-		self.assertIn('data-key="transit_minutes"', self.source)
-		self.assertIn('data-key="buffer_minutes"', self.source)
+		# The two editable minute fields are emitted from one helper now that a row is a
+		# stop rather than a card, so the key is templated.
+		self.assertIn('data-key="${key}"', self.source)
+		self.assertIn("minutes('buffer_minutes', s.buffer_minutes)", self.source)
+		self.assertIn("minutes('transit_minutes', s.transit_minutes)", self.source)
 
 	def test_editing_a_leg_re_times_the_rest_of_the_run(self):
 		# The change handler re-renders from the server, which recomputes every later stop.

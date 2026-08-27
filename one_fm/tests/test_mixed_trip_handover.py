@@ -98,6 +98,8 @@ class TestTheDriveBetweenTwoSites(FrappeTestCase):
 		doc.end_time = end
 		doc.headcount = 2
 		doc.stop_location = stop
+		# A run needs a camp: it starts by loading there and ends by going back.
+		doc.accommodation = frappe.get_all("Accommodation", limit=1, pluck="name")[0]
 		doc.generation_key = frappe.generate_hash("TS-HND", 10)
 		doc.flags.ignore_links = True
 		doc.flags.ignore_mandatory = True
@@ -105,29 +107,29 @@ class TestTheDriveBetweenTwoSites(FrappeTestCase):
 		return doc.name
 
 	def test_an_untimed_drive_to_another_site_blocks_the_merge(self):
-		preview = get_merge_preview([self.drop, self.collect],
-									timings={self.collect: {"transit_minutes": 0, "buffer_minutes": 0}})
+		# Camp, drop at Site A, collect at Site B, home. The drive from A to B is the
+		# leg OUT of the Site A row, so that is the row that has to be timed.
+		preview = get_merge_preview([self.drop, self.collect])
 
 		self.assertFalse(preview["can_merge"])
 		self.assertIn("Site B", preview["handover_message"])
-		self.assertTrue(preview["stops"][1]["needs_drive"])
-		self.assertTrue(preview["stops"][1]["untimed_handover"])
 
 	def test_entering_the_drive_releases_it(self):
-		preview = get_merge_preview([self.drop, self.collect],
-									timings={self.collect: {"transit_minutes": 25, "buffer_minutes": 5}})
+		preview = get_merge_preview(
+			[self.drop, self.collect],
+			timings={"leg-2": {"transit_minutes": 25, "buffer_minutes": 5}},
+		)
 
 		self.assertTrue(preview["can_merge"])
 		self.assertEqual(preview["handover_message"], "")
-		self.assertFalse(preview["stops"][1]["untimed_handover"])
 
 	def test_a_handover_at_the_same_site_needs_no_drive(self):
-		# The bus is already there; the AC's rule is about Site A to Site B.
-		preview = get_merge_preview([self.drop, self.same_site],
-									timings={self.same_site: {"transit_minutes": 0, "buffer_minutes": 0}})
+		# The bus is already there: one stop, riders off then on, nothing to drive.
+		preview = get_merge_preview([self.drop, self.same_site])
 
-		self.assertFalse(preview["stops"][1]["needs_drive"])
-		self.assertTrue(preview["can_merge"])
+		handover = next(s for s in preview["stops"] if s["place"] == "Site A")
+		self.assertEqual(handover["action_type"], "Combined")
+		self.assertEqual(preview["handover_message"], "")
 
 
 class TestTheManifestSaysWhatHappensAtTheStop(FrappeTestCase):

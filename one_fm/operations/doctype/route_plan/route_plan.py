@@ -601,44 +601,97 @@ def _trip_occupancy(trip) -> int:
 
 
 def _trip_peak(trip):
-	"""(peak occupancy, busiest leg) for one logical trip.
+	"""(peak occupancy, busiest stop) for one logical trip, walked as physical stops.
 
-	A merged trip both drops off and picks up along the way, so its stops are walked in
-	order: the bus leaves the camp carrying every Outward rider, and each stop in turn
-	sheds its Outward riders and takes on its Return ones. Disembarking is applied
-	before boarding at a stop where both happen, since the seats being vacated are
-	available to the people getting on.
+	A card is "these people, from this camp, to this site" - one record, but two things
+	the bus does. Walking the cards assumes everyone is aboard from the moment the run
+	starts, which over-reports the moment a run drops one load before calling at a later
+	camp for the next. Walking the STOPS is what actually happens, and it is the same
+	walk the trip modal shows the operator: the two must not be able to disagree about
+	whether a run fits, or the modal accepts a merge the save then refuses.
 
-	Shared by the per-trip check and the overlapping-trips check, so a merged run is
-	measured the same way wherever it is compared against the seats.
+	Falls back to the card walk when the rows carry no shipments to build stops from - a
+	hand-made row still has a headcount and a direction worth counting.
 	"""
-	if trip.direction != MIXED_DIRECTION:
-		return cint(trip.headcount), 1
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+		build_itinerary,
+		walk_occupancy,
+	)
 
-	# Stop order decides the answer — the same two loads read 3 or 6 depending on
-	# whether the return riders board before or after the outward ones get off — so the
-	# order has to be the run's, not the order the rows happen to sit in. Rows carrying
-	# no stop_index fall back to when they run; the child-row name is only a last tie
-	# break, and on its own it is a random hash.
 	by_index = sorted(
 		trip.rows,
 		key=lambda row: (cint(row.stop_index), str(row.start_time or ""), row.name or ""),
 	)
-	directions = _shipment_directions([row.transportation_shipment for row in by_index])
+	names = [row.transportation_shipment for row in by_index if row.transportation_shipment]
+	if names:
+		cards = _cards_for_itinerary(by_index)
+		if cards:
+			peak, worst, _per_stop = walk_occupancy(build_itinerary(cards))
+			return peak, worst
+
+	if trip.direction != MIXED_DIRECTION:
+		return cint(trip.headcount), 1
+
+	directions = _shipment_directions(names)
 	stops = [
 		{
 			"headcount": cint(row.headcount),
-			# The shipment is the authority on which way a card's own riders travel, but a
-			# row carrying no shipment still knows its own leg - read that rather than
-			# silently calling everyone outward.
 			"boards": (directions.get(row.transportation_shipment) or _row_direction(row))
 			== "RETURN",
 		}
 		for row in by_index
 	]
-
 	peak, worst_leg, _legs = leg_occupancy(stops)
 	return peak, worst_leg
+
+
+def _cards_for_itinerary(rows) -> list:
+	"""The rows as card-shaped records build_itinerary can read, in run order.
+
+	Each row's headcount is used rather than the shipment's: the row is what this plan
+	actually carries, and a card can be split across vehicles.
+	"""
+	names = [row.transportation_shipment for row in rows if row.transportation_shipment]
+	if not names:
+		return []
+
+	facts = {
+		doc.name: doc
+		for doc in frappe.get_all(
+			"Transportation Shipment",
+			filters={"name": ["in", list(set(names))]},
+			fields=["name", "accommodation", "accommodation_name", "stop_location",
+					"trip_direction", "pre_merge_trip_direction", "start_time", "end_time"],
+		)
+	}
+
+	cards = []
+	for row in rows:
+		fact = facts.get(row.transportation_shipment)
+		if not fact:
+			continue
+		cards.append(frappe._dict({
+			"name": fact.name,
+			"accommodation": fact.accommodation,
+			"accommodation_name": fact.accommodation_name,
+			"stop_location": fact.stop_location or row.stop_location,
+			"headcount": cint(row.headcount),
+			"trip_direction": fact.trip_direction,
+			"pre_merge_trip_direction": fact.pre_merge_trip_direction,
+			"start_time": fact.start_time,
+			"end_time": fact.end_time,
+		}))
+
+	# Ordered the way the bus reaches them, which is how the trip modal orders the same
+	# cards. Sorting on the stored stop_index instead let the two build different runs
+	# out of the same cards and reach different peaks - the modal would accept a merge
+	# the save then refused.
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+		arrival_order,
+	)
+
+	cards.sort(key=arrival_order)
+	return cards
 
 
 def _iso_to_date(value):
