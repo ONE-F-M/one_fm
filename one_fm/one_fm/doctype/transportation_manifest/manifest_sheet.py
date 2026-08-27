@@ -80,7 +80,7 @@ def _build_sheet(doc) -> dict:
 	# the manifest: the Route Plan Assignment is where the itinerary is decided, and a
 	# second stored copy would be a second answer the moment a trip is re-planned. This
 	# is what splits a handover stop into its two sections for the driver (WI-002171).
-	stop_actions = _stop_actions(rows)
+	leg_facts = _stop_actions(rows)
 
 	# Batch-resolve reliever employee names (rows that actually have a reliever).
 	reliever_ids = {r.reliever_employee for r in rows if r.reliever_employee}
@@ -131,7 +131,11 @@ def _build_sheet(doc) -> dict:
 			"scheduled_time": str(row.scheduled_time) if row.scheduled_time else None,
 			"stop_type": row.stop_type,
 			"employee_action": row.employee_action,
-			"stop_action": stop_actions.get((row.trip_id or "", row.transportation_shipment or "")),
+			"stop_action": (leg_facts.get(
+				(row.trip_id or "", row.transportation_shipment or "")) or {}).get("action_type"),
+			# AC 1.5 of WI-002151: an accommodation pickup prints when its driver reports.
+			"qoa_time": (leg_facts.get(
+				(row.trip_id or "", row.transportation_shipment or "")) or {}).get("qoa_time"),
 		})
 
 	stop_list = []
@@ -281,7 +285,7 @@ def save_stop_checks(manifest: str, stop_sequence, updates) -> dict:
 
 
 def _stop_actions(rows) -> dict:
-	"""{(trip_group, shipment): action_type} for the legs these manifest rows came from.
+	"""{(trip_group, shipment): {action_type, qoa_time}} for the legs these rows came from.
 
 	One batched read rather than a lookup per row, and nothing is stored: the plan says
 	what happens at each stop, so the manifest asks it instead of keeping its own copy
@@ -301,10 +305,12 @@ def _stop_actions(rows) -> dict:
 			"trip_group": ["in", sorted({key[0] for key in keys})],
 			"transportation_shipment": ["in", sorted({key[1] for key in keys})],
 		},
-		fields=["trip_group", "transportation_shipment", "action_type"],
+		fields=["trip_group", "transportation_shipment", "action_type", "qoa_time"],
 	)
 	return {
-		(row.trip_group, row.transportation_shipment): row.action_type
+		(row.trip_group, row.transportation_shipment): {
+			"action_type": row.action_type,
+			"qoa_time": str(row.qoa_time) if row.qoa_time else None,
+		}
 		for row in assignments
-		if row.action_type
 	}

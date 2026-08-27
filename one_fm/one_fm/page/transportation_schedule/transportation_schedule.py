@@ -2142,117 +2142,126 @@ def _time_field(seconds):
 
 
 def _stamp_leg_details(doc):
-    """Write each leg's own facts onto its assignment row (WI-002151, WI-002171).
+	"""Write each leg's own facts onto its assignment row (WI-002151, WI-002171).
 
-    The canvas works these out to draw the trip modal, but a row that only carries a
-    timestamp cannot answer what the modal showed: where the leg started, what the driver's
-    report time was, how full the bus was leaving that stop, whether it rolled past
-    midnight. The manifest, any report and anyone reading the plan later all need those,
-    and re-deriving them from the timestamps loses the answer - so the save records them.
+	The row stays one per card - that is what carries the shipment link and the roster -
+	but the numbers on it come from the run's physical stops, which is what the bus
+	actually does and what the trip modal shows. A card is served at one stop: an
+	outward card where its riders are put down, a return card where they are collected.
+	That stop's index, action and running load are what the row records, so the plan, the
+	modal and the manifest all describe the same run.
 
-    Occupancy is walked with ``leg_occupancy``, the same function the capacity validation
-    and the trip modal use, so the number stored is the number the operator was shown.
-    """
-    from collections import defaultdict
+	QOA stays with the outward rows: their riders report at the camp they board from, and
+	the camp stop itself has no row of its own. Only the first card out of a given camp
+	reports - riders from two cards at one camp board together, once.
+	"""
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+		CAMP_STOP,
+		arrival_order,
+		build_itinerary,
+		own_direction,
+		walk_occupancy,
+	)
 
-    from one_fm.operations.doctype.route_plan.route_plan import leg_occupancy
+	def _boards(card):
+		return own_direction(card) == "RETURN"
+	from one_fm.operations.doctype.route_plan.route_plan import _cards_for_itinerary
 
-    rows = [row for row in doc.assignments if row.vehicle]
-    if not rows:
-        return
+	rows = [row for row in doc.assignments if row.vehicle]
+	if not rows:
+		return
 
-    ship_names = list({row.transportation_shipment for row in rows if row.transportation_shipment})
-    ships = {
-        s.name: s
-        for s in frappe.get_all(
-            "Transportation Shipment",
-            filters={"name": ["in", ship_names]},
-            fields=["name", "accommodation", "stop_location", "start_time",
-                    "trip_direction", "pre_merge_trip_direction"],
-        )
-    } if ship_names else {}
+	limits = {
+		v.name: passenger_capacity(v.seats, v.custom_includes_driver_seat)
+		for v in frappe.get_all(
+			"Vehicle",
+			filters={"name": ["in", list({row.vehicle for row in rows})]},
+			fields=["name", "seats", "custom_includes_driver_seat"],
+		)
+	}
+	buffer_minutes = qoa_buffer_minutes()
 
-    camps = {}
-    for accommodation in {s.accommodation for s in ships.values() if s.accommodation}:
-        camps[accommodation] = frappe.db.get_value(
-            "Accommodation", accommodation, "transport_stop_location"
-        )
+	runs = {}
+	for row in rows:
+		runs.setdefault((row.vehicle, row.trip_group or f"\0{row.card_id}"), []).append(row)
 
-    limits = {
-        v.name: passenger_capacity(v.seats, v.custom_includes_driver_seat)
-        for v in frappe.get_all(
-            "Vehicle",
-            filters={"name": ["in", list({row.vehicle for row in rows})]},
-            fields=["name", "seats", "custom_includes_driver_seat"],
-        )
-    }
-    buffer_minutes = qoa_buffer_minutes()
+	for (vehicle, _group), run in runs.items():
+		cards = _cards_for_itinerary(run)
+		by_name = {card.name: card for card in cards}
+		ordered = sorted(
+			[row for row in run if row.transportation_shipment in by_name],
+			key=lambda row: arrival_order(by_name[row.transportation_shipment]),
+		)
+		if not ordered:
+			continue
 
-    runs = defaultdict(list)
-    for row in rows:
-        runs[(row.vehicle, row.trip_group or f"\0{row.card_id}")].append(row)
+		itinerary = build_itinerary([by_name[row.transportation_shipment] for row in ordered])
+		_peak, _worst, per_stop = walk_occupancy(itinerary)
 
-    for (vehicle, _group), run in runs.items():
-        run.sort(key=lambda row: cint(row.stop_index))
+		# The stop that serves each card: an outward card where its riders are put down,
+		# a return card where they are collected. A return card also appears at the home
+		# stop, where it is only being delivered - taking that one would file every
+		# return leg against the ride home.
+		serves = {}
+		for position, stop in enumerate(itinerary):
+			if stop["kind"] == CAMP_STOP:
+				continue
+			for card in stop["dropping"]:
+				if not _boards(card):
+					serves[card.name] = (stop, per_stop[position])
+			for card in stop["boarding"]:
+				serves[card.name] = (stop, per_stop[position])
 
-        stops = []
-        for row in run:
-            shipment = ships.get(row.transportation_shipment)
-            own = (
-                _card_direction(shipment.trip_direction, shipment.pre_merge_trip_direction)
-                if shipment else _normalize_direction(row.direction)
-            )
-            stops.append({"headcount": cint(row.headcount), "boards": own == "RETURN"})
+		# The first card out of each camp, and when the bus leaves that camp - which is
+		# the earliest leg belonging to a card boarding there, not this card's own.
+		camp_first, camp_departs = {}, {}
+		for stop in itinerary:
+			if stop["kind"] != CAMP_STOP or stop["place"] in camp_first:
+				continue
+			boarding = [card.name for card in stop["boarding"]]
+			camp_first[stop["place"]] = boarding[0] if boarding else None
+			leaving = [
+				_local_seconds(row.start_time) for row in ordered
+				if row.transportation_shipment in boarding and _local_seconds(row.start_time) is not None
+			]
+			camp_departs[stop["place"]] = min(leaving) if leaving else None
 
-        _peak, _worst, per_leg = leg_occupancy(stops)
+		for row in ordered:
+			card = by_name[row.transportation_shipment]
+			boards = _boards(card)
+			served = serves.get(card.name)
+			if not served:
+				continue
+			stop, onboard = served
 
-        # A stop where riders both leave and join is a handover, whichever cards carry
-        # the two halves - which is what "Combined" says.
-        movements = defaultdict(set)
-        for row, stop in zip(run, stops):
-            movements[row.stop_location].add(stop["boards"])
+			row.max_passenger_capacity = limits.get(vehicle) or 0
+			row.stop_index = stop["stop_index"]
+			row.action_type = stop["action_type"]
+			row.current_passenger_count = onboard
+			row.boarding_count = cint(row.headcount) if boards else 0
+			row.drop_off_count = 0 if boards else cint(row.headcount)
+			row.is_accommodation_origin = 0 if boards else 1
+			origin = stop["place"] if boards else _camp_place_for(card)
+			row.origin_location = (
+				origin if origin and frappe.db.exists("Location", origin) else None
+			)
+			row.shift_start_time = card.start_time
+			departs = _local_seconds(row.start_time)
+			arrives = _local_seconds(row.end_time)
+			row.is_next_day = (
+				1 if (departs is not None and arrives is not None and arrives < departs) else 0
+			)
+			# The camp reports before the run leaves IT, not before this card's own leg.
+			place = None if boards else _camp_place_for(card)
+			row.qoa_time = None
+			if place and camp_first.get(place) == card.name and camp_departs.get(place) is not None:
+				row.qoa_time = _time_field(camp_departs[place] - buffer_minutes * 60)
 
-        for position, (row, stop) in enumerate(zip(run, stops)):
-            shipment = ships.get(row.transportation_shipment)
-            boards = stop["boards"]
-            departs = _local_seconds(row.start_time)
-            arrives = _local_seconds(row.end_time)
 
-            # Where this leg departs from, and whether that is a camp. An outward leg
-            # loads at its own accommodation - but only the FIRST leg out of a given camp
-            # actually departs it: riders from two cards at the same camp board together
-            # once, and the second leg is continuing from wherever the first dropped.
-            # A run that calls at three different camps departs each of them, which is
-            # why the process owner's sample carries three separate report times.
-            previous = run[position - 1] if position else None
-            previous_camp = (
-                (ships.get(previous.transportation_shipment) or frappe._dict()).accommodation
-                if previous else None
-            )
-            camp = shipment.accommodation if shipment else None
-            departs_camp = bool(not boards and camp and camp != previous_camp)
-
-            row.max_passenger_capacity = limits.get(vehicle) or 0
-            row.boarding_count = cint(row.headcount) if boards else 0
-            row.drop_off_count = 0 if boards else cint(row.headcount)
-            row.current_passenger_count = per_leg[position]
-            row.action_type = (
-                "Combined" if len(movements.get(row.stop_location) or ()) > 1
-                else ("Boarding" if boards else "Dropping Off")
-            )
-            row.is_accommodation_origin = 1 if departs_camp else 0
-            if departs_camp:
-                origin = camps.get(camp)
-            elif boards:
-                origin = row.stop_location
-            else:
-                origin = previous.stop_location if previous else row.stop_location
-            row.origin_location = origin if origin and frappe.db.exists("Location", origin) else None
-            row.shift_start_time = shipment.start_time if shipment else None
-            row.is_next_day = (
-                1 if (departs is not None and arrives is not None and arrives < departs) else 0
-            )
-            row.qoa_time = (
-                _time_field(departs - buffer_minutes * 60)
-                if (row.is_accommodation_origin and departs is not None) else None
-            )
+def _camp_place_for(card):
+	"""The Location standing for a card's camp, or its readable name."""
+	if not card.accommodation:
+		return None
+	return frappe.db.get_value(
+		"Accommodation", card.accommodation, "transport_stop_location"
+	) or card.accommodation_name or card.accommodation

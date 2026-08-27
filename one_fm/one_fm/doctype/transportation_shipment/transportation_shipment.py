@@ -634,6 +634,12 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 		if position == 0 or stop["kind"] != SITE_STOP or not stop["boarding_cards"]:
 			continue
 		into = stops[position - 1]
+		# Only the handover drive the AC describes: dropped at Site A, collecting at
+		# Site B. Arriving from the camp is the ordinary outbound leg, and a collection
+		# at the place the bus is already standing is no drive at all - a stop where
+		# riders both get off and get on is one stop, not two.
+		if into["kind"] != SITE_STOP or into["place"] == stop["place"]:
+			continue
 		if not (into["transit_minutes"] or into["buffer_minutes"]):
 			untimed.append(stop)
 	handover_message = "" if not untimed else _(

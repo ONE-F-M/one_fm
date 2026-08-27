@@ -387,11 +387,15 @@ class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
 		self.assertEqual((collected.drop_off_count, collected.boarding_count), (0, 4))
 
 	def test_occupancy_is_walked_disembark_first(self):
-		# 4 off before 4 on, so the bus never holds 8 - the same walk the seat check uses.
+		# Both cards are served at the same place, so both rows describe that one stop:
+		# 4 off, then 4 on, leaving 4 aboard. The bus never holds 8, which is the point -
+		# and it is the same walk the seat check and the trip modal use.
 		dropped, collected = self._plan()
 
-		self.assertEqual(dropped.current_passenger_count, 0)
+		self.assertEqual(dropped.current_passenger_count, 4)
 		self.assertEqual(collected.current_passenger_count, 4)
+		self.assertEqual(dropped.stop_index, collected.stop_index)
+		self.assertEqual(dropped.action_type, "Combined")
 
 	def test_only_the_leg_that_leaves_the_camp_reports(self):
 		dropped, collected = self._plan()
@@ -415,3 +419,26 @@ class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
 		dropped, _collected = self._plan()
 
 		self.assertEqual(str(dropped.shift_start_time), "8:00:00")
+
+
+class TestTheManifestPrintsTheCascade(FrappeTestCase):
+	"""WI-002151's manifest AC: what a driver reads has to be what the modal calculated."""
+
+	def _source(self, *path):
+		return frappe.read_file(frappe.get_app_path("one_fm", *path))
+
+	def test_a_stop_prints_its_scheduled_arrival(self):
+		# It printed an outward leg's DEPARTURE before, and in UTC. end_time is when the
+		# bus reaches this leg's stop whichever way its riders travel.
+		source = self._source("one_fm", "doctype", "transportation_manifest", "manifest_sync.py")
+
+		self.assertIn("time_str = _time_field(_local_seconds(a_row.end_time))", source)
+		self.assertNotIn(
+			'time_str = a_row.end_time if direction == "RETURN" else a_row.start_time', source
+		)
+
+	def test_the_driver_report_time_reaches_the_sheet(self):
+		source = self._source("one_fm", "doctype", "transportation_manifest", "manifest_sheet.py")
+
+		self.assertIn('"qoa_time"', source)
+		self.assertIn("action_type", source)
