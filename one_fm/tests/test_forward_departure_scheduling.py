@@ -20,6 +20,9 @@ from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment impor
 	qoa_buffer_minutes,
 	walk_legs,
 )
+from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+	_stamp_leg_details,
+)
 from one_fm.patches.v15_0.add_transportation_qoa_buffer_to_hr_settings import (
 	execute as add_qoa_buffer_field,
 )
@@ -279,3 +282,109 @@ class TestTheProcessOwnersSampleItinerary(FrappeTestCase):
 			or frappe.get_meta("HR Settings").get_field(QOA_BUFFER_FIELD).default,
 			"15",
 		)
+
+
+class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
+	"""The BA's Route Plan Assignment fields, written on save.
+
+	A row that carries only a timestamp cannot answer what the trip modal showed - where
+	the leg started, the driver's report time, how full the bus was leaving that stop,
+	whether it rolled past midnight - and the manifest and every later reader need those.
+	"""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		frappe.reload_doc("one_fm", "doctype", "route_plan_assignment")
+
+	def setUp(self):
+		locations = frappe.get_all("Location", limit=1, pluck="name")
+		if not locations:
+			self.skipTest("no Location on this site to hang a stop on")
+		self.site = locations[0]
+		camps = frappe.get_all("Accommodation", limit=1, pluck="name")
+		if not camps:
+			self.skipTest("no Accommodation on this site for the run to depart")
+		self.camp = camps[0]
+		add_qoa_buffer_field()
+		frappe.db.set_single_value("HR Settings", QOA_BUFFER_FIELD, 15)
+		self.drop = self._shipment("Outward", "08:00:00")
+		self.collect = self._shipment("Return", "20:00:00")
+
+	def _shipment(self, direction, start):
+		doc = frappe.new_doc("Transportation Shipment")
+		doc.status = "Unassigned"
+		doc.trip_direction = direction
+		doc.start_time = start
+		doc.end_time = "20:00:00" if direction == "Outward" else "08:00:00"
+		doc.headcount = 4
+		doc.stop_location = self.site
+		doc.accommodation = self.camp
+		doc.generation_key = frappe.generate_hash("TS-LEG", 10)
+		doc.flags.ignore_mandatory = True
+		doc.insert(ignore_permissions=True)
+		return doc.name
+
+	def _plan(self):
+		"""A handover: 4 dropped and 4 collected at the same site, on one vehicle."""
+		vehicle = frappe.get_all("Vehicle", filters={"transport_stop_vehicle": 1},
+								 limit=1, pluck="name")
+		if not vehicle:
+			self.skipTest("no transport vehicle on this site")
+		doc = frappe.new_doc("Route Plan")
+		doc.title = frappe.generate_hash("RP-LEG", 8)
+		for index, shipment in enumerate((self.drop, self.collect), start=1):
+			doc.append("assignments", {
+				"card_id": f"TSHIP-{shipment}",
+				"transportation_shipment": shipment,
+				"vehicle": vehicle[0],
+				"direction": "OUTBOUND" if index == 1 else "RETURN",
+				"trip_group": "RUN-1",
+				"stop_index": index,
+				"headcount": 4,
+				"stop_location": self.site,
+				"start_time": "2026-08-18T05:00:00.000Z",
+				"end_time": "2026-08-18T06:00:00.000Z",
+			})
+		_stamp_leg_details(doc)
+		return doc.assignments
+
+	def test_a_stop_that_sheds_and_takes_on_is_combined(self):
+		# Both movements happen at one place, which is what a handover is.
+		self.assertEqual({row.action_type for row in self._plan()}, {"Combined"})
+
+	def test_the_counts_are_split_by_which_way_the_riders_go(self):
+		dropped, collected = self._plan()
+
+		self.assertEqual((dropped.drop_off_count, dropped.boarding_count), (4, 0))
+		self.assertEqual((collected.drop_off_count, collected.boarding_count), (0, 4))
+
+	def test_occupancy_is_walked_disembark_first(self):
+		# 4 off before 4 on, so the bus never holds 8 - the same walk the seat check uses.
+		dropped, collected = self._plan()
+
+		self.assertEqual(dropped.current_passenger_count, 0)
+		self.assertEqual(collected.current_passenger_count, 4)
+
+	def test_only_the_leg_that_leaves_the_camp_reports(self):
+		dropped, collected = self._plan()
+
+		self.assertTrue(dropped.is_accommodation_origin)
+		self.assertFalse(collected.is_accommodation_origin)
+		self.assertIsNone(collected.qoa_time)
+
+	def test_the_report_time_is_the_departure_less_the_hr_buffer(self):
+		dropped, _collected = self._plan()
+
+		# 05:00Z is 08:00 in Kuwait; 15 minutes before that is 07:45.
+		self.assertEqual(str(dropped.qoa_time), "07:45:00")
+
+	def test_the_seat_count_is_recorded_against_the_leg(self):
+		dropped, _collected = self._plan()
+
+		self.assertGreater(dropped.max_passenger_capacity, 0)
+
+	def test_the_shift_it_serves_is_recorded(self):
+		dropped, _collected = self._plan()
+
+		self.assertEqual(str(dropped.shift_start_time), "8:00:00")
