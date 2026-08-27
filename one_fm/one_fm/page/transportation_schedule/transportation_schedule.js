@@ -1202,17 +1202,19 @@ function mountRoutePlannerApp(wrapper, data) {
                         <td class="small">${esc(s.card_id || s.shipment)}</td>
                         <td class="small">${esc(self.dirName(s.direction))}</td>
                         <td class="small">${esc(s.origin_location || '—')}</td>
-                        <td class="small">${s.qoa_time ? esc(s.qoa_time) : '—'}</td>
-                        <td class="small">${esc(s.departs)}</td>
-                        <td><input class="rp-leg-min form-control input-sm" type="number" min="0"
+                        <td class="small rp-leg-time-col">${s.qoa_time ? esc(s.qoa_time) : '—'}</td>
+                        <td class="small rp-leg-time-col">${esc(s.departs)}</td>
+                        <td class="rp-leg-mins-col"><input class="rp-leg-min form-control input-sm"
+                            type="number" min="0"
                             data-shipment="${esc(s.card_id || s.shipment)}" data-key="buffer_minutes"
                             value="${esc(s.buffer_minutes)}"></td>
-                        <td><input class="rp-leg-min form-control input-sm" type="number" min="0"
+                        <td class="rp-leg-mins-col"><input class="rp-leg-min form-control input-sm"
+                            type="number" min="0"
                             data-shipment="${esc(s.card_id || s.shipment)}" data-key="transit_minutes"
                             value="${esc(s.transit_minutes)}"></td>
                         <td class="small">${esc(s.shift_location || '—')}</td>
                         <td class="small">${esc(s.next_stop_location || '—')}</td>
-                        <td class="small font-weight-bold">${esc(s.arrives)}${rollover}</td>
+                        <td class="small font-weight-bold rp-leg-time-col">${esc(s.arrives)}${rollover}</td>
                     </tr>`;
                 }).join('');
 
@@ -1242,8 +1244,8 @@ function mountRoutePlannerApp(wrapper, data) {
                             <th>${__('Accommodation / Stop')}</th>
                             <th>${__('QOA')}</th>
                             <th>${__('Departure')}</th>
-                            <th>${__('Buffer (min)')}</th>
-                            <th>${__('Transit (min)')}</th>
+                            <th class="rp-leg-mins-col">${__('Buffer (min)')}</th>
+                            <th class="rp-leg-mins-col">${__('Transit (min)')}</th>
                             <th>${__('Shift Location')}</th>
                             <th>${__('Next Stop')}</th>
                             <th>${__('Target Arrival')}</th>
@@ -4570,6 +4572,12 @@ function injectRPStyles() {
         .rp-legend-mixed    { background: var(--rp-color-mixed-container); color: var(--rp-color-mixed); }
         .rp-legend-conflict { background: var(--rp-color-conflict-container); color: var(--rp-color-conflict); }
         .rp-legend-overcap { background: #f3e5f5; color: #7b1fa2; }
+        /* Trip Builder legs. The minute inputs are edited constantly, so they get room
+           to show two or three digits instead of clipping them, and their columns do not
+           wrap. The place columns are the ones allowed to wrap. */
+        .rp-leg-min      { width: 72px; min-width: 72px; text-align: right; }
+        .rp-leg-mins-col { width: 88px; white-space: nowrap; }
+        .rp-leg-time-col { white-space: nowrap; }
 
         /* ── Grid ── */
         #rp-grid-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
