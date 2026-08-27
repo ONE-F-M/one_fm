@@ -901,3 +901,115 @@ def _next_split_key(generation_key: str):
 	while frappe.db.exists("Transportation Shipment", {"generation_key": f"{base}#{suffix}"}):
 		suffix += 1
 	return f"{base}#{suffix}"
+
+# ─── The run as the driver drives it ──────────────────────────────────────────
+#
+# A card says "these people, from this camp, to this site". That is one record but two
+# things the bus does: it calls at the camp to load them and at the site to put them
+# down. A run built out of cards therefore prints half its stops - the drop-offs have no
+# row and no arrival time - and two cards from one camp read as two visits when the bus
+# stops there once.
+#
+# build_itinerary turns the cards into the stops themselves: every camp the run loads at,
+# every site it calls at, and the run home. That is the shape the process owner's sample
+# sheet is written in, and the shape a manifest has to be printed in.
+
+CAMP_STOP, SITE_STOP, HOME_STOP = "camp", "site", "home"
+
+
+def build_itinerary(docs) -> list:
+	"""The physical stops one run makes, in order, from the cards it carries.
+
+	Camps first: the bus collects everyone before it starts putting them down, and one
+	camp is one visit however many cards board there. Then the sites in the order the
+	cards are due, with a site the run calls at twice in a row collapsed into the single
+	visit it is - a place where riders both get off and get on is one stop, not two.
+	Finally the run home, which no card describes because a card's journey ends when its
+	own riders do.
+	"""
+	stops = []
+
+	# ── the camps, in the order the run first needs them ──
+	camps = []
+	for doc in docs:
+		if own_direction(doc) == "RETURN":
+			continue
+		if doc.accommodation and doc.accommodation not in camps:
+			camps.append(doc.accommodation)
+
+	for accommodation in camps:
+		loading = [
+			doc for doc in docs
+			if doc.accommodation == accommodation and own_direction(doc) != "RETURN"
+		]
+		stops.append(_stop(CAMP_STOP, _camp_place(loading[0]), boarding=loading))
+
+	# ── the sites, in the order the cards are due ──
+	for doc in docs:
+		boards = own_direction(doc) == "RETURN"
+		place = doc.stop_location
+		last = stops[-1] if stops else None
+		if last and last["kind"] == SITE_STOP and last["place"] == place:
+			# The same visit: riders from another card leaving here too, or the handover
+			# where one load gets off and the next gets on.
+			(last["boarding"] if boards else last["dropping"]).append(doc)
+			_recount(last)
+			continue
+		stops.append(
+			_stop(SITE_STOP, place, boarding=[doc] if boards else [], dropping=[] if boards else [doc])
+		)
+
+	# ── and home ──
+	going_home = [doc for doc in docs if own_direction(doc) == "RETURN"]
+	base = next((doc for doc in docs if doc.accommodation), None)
+	if base:
+		stops.append(_stop(HOME_STOP, _camp_place(base), dropping=going_home))
+
+	for index, stop in enumerate(stops, start=1):
+		stop["stop_index"] = index
+	return stops
+
+
+def _stop(kind, place, boarding=None, dropping=None) -> dict:
+	stop = {
+		"kind": kind,
+		"place": place,
+		"boarding": list(boarding or []),
+		"dropping": list(dropping or []),
+	}
+	_recount(stop)
+	return stop
+
+
+def _recount(stop) -> None:
+	stop["boarding_count"] = sum(cint(doc.headcount) for doc in stop["boarding"])
+	stop["drop_off_count"] = sum(cint(doc.headcount) for doc in stop["dropping"])
+	if stop["boarding"] and stop["dropping"]:
+		stop["action_type"] = "Combined"
+	elif stop["boarding"]:
+		stop["action_type"] = "Boarding"
+	else:
+		stop["action_type"] = "Dropping Off"
+
+
+def _camp_place(doc):
+	"""The Location that stands for a card's camp, falling back to its readable name."""
+	return _camp_stop(doc) or doc.accommodation_name or doc.accommodation
+
+
+def walk_occupancy(stops) -> tuple:
+	"""Running load after each stop, and the peak, walked drop-off first.
+
+	The seats a load vacates are what the next load boards into, so a stop where both
+	happen is measured in that order - adding first reports an overload that never
+	happens. One walk, used by the modal, by the saved rows and by the Route Plan's own
+	capacity check, so none of them can disagree about how full the bus gets.
+	"""
+	onboard, peak, worst, per_stop = 0, 0, 1, []
+	for stop in stops:
+		onboard -= cint(stop.get("drop_off_count"))
+		onboard += cint(stop.get("boarding_count"))
+		per_stop.append(onboard)
+		if onboard > peak:
+			peak, worst = onboard, stop.get("stop_index") or len(per_stop)
+	return peak, worst, per_stop
