@@ -475,7 +475,8 @@ def _timings_by_shipment(timings) -> dict:
 
 
 @frappe.whitelist()
-def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=None) -> dict:
+def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=None,
+					  current_departure=None) -> dict:
 	"""What the Merge Trip modal shows before anyone confirms (WI-002078).
 
 	Builds the itinerary the merged run would have, walks it leg by leg, and reports
@@ -544,12 +545,29 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 		serving = stop["dropping"] or stop["boarding"]
 		return serving[0].name if serving else None
 
+	# A stop's minutes come from whatever the canvas already holds for the cards it
+	# serves, so re-opening the modal shows the run as it was timed instead of resetting
+	# it to defaults.
+	def _seeded(stop):
+		held = timings.get(_leg_key(stop))
+		if held:
+			return held
+		for card in stop["dropping"] + stop["boarding"]:
+			if card.name in timings:
+				return timings[card.name]
+		return None
+
+	# Adding a card to a run that is already timed leaves only the new leg blank: half an
+	# hour nobody chose sitting in the middle of an itinerary somebody did is worse than
+	# an empty box asking to be filled.
+	already_timed = any(_seeded(stop) for stop in itinerary[:-1])
+
 	legs = []
 	for position, stop in enumerate(itinerary):
 		if position == len(itinerary) - 1:
 			legs.append((0, 0))
 			continue
-		adjustment = timings.get(_leg_key(stop)) or {}
+		adjustment = _seeded(stop) or {}
 		# A drive to somewhere the run collects from is not guessed at 30 minutes: AC 3.6
 		# wants it stated, and a pre-filled default would let the pickup be scheduled on a
 		# number nobody chose. The first leg has nothing before it to drive from.
@@ -558,7 +576,10 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 			onward["kind"] == SITE_STOP and onward["boarding"]
 			and onward["place"] != stop["place"]
 		)
-		default_transit = 0 if (position == 0 or to_a_collection) else DEFAULT_TRANSIT_MINUTES
+		default_transit = (
+			0 if (position == 0 or to_a_collection or already_timed)
+			else DEFAULT_TRANSIT_MINUTES
+		)
 		legs.append((
 			_minutes(adjustment.get("transit_minutes", default_transit)),
 			_minutes(adjustment.get("buffer_minutes")),
@@ -567,7 +588,14 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 	anchor = arrival_time(docs[0]) or 0
 	departure = _departure_seconds(departure)
 	first_transit, first_buffer = legs[0]
-	default_departure = max(0, anchor - (first_buffer + first_transit) * 60)
+	# Where the run already sits, when the canvas knows: opening the modal on a placed run
+	# must show the time it actually leaves, not a time re-derived from its shift. It also
+	# makes the shift the canvas applies zero until somebody changes the departure.
+	current = _departure_seconds(current_departure)
+	default_departure = (
+		current if current is not None
+		else max(0, anchor - (first_buffer + first_transit) * 60)
+	)
 	if departure is None:
 		departure = default_departure
 

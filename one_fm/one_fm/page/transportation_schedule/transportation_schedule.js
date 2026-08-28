@@ -1190,6 +1190,17 @@ function mountRoutePlannerApp(wrapper, data) {
                         timings[item.cardId] = { transit_minutes: span, buffer_minutes: 0 };
                     }
                 });
+                // Where the run already leaves from, in the site's own clock. Passed so the
+                // modal opens on the time the lane shows rather than one re-derived from
+                // the shift - and so an untouched run is shifted by exactly nothing.
+                const clockOf = (value) => new Date(value).toLocaleTimeString('en-GB', {
+                    hour: '2-digit', minute: '2-digit', second: '2-digit',
+                    hour12: false, timeZone: 'Asia/Kuwait'
+                });
+                const runStart = existingItems.length
+                    ? clockOf(Math.min(...existingItems.map((i) => new Date(i.start).getTime())))
+                    : null;
+
                 let previewStops = [];
                 // The run's own departure and the one it would have backed into. The blocks
                 // are moved by the difference between them, so a departure the dispatcher
@@ -1228,7 +1239,8 @@ function mountRoutePlannerApp(wrapper, data) {
                         method: 'one_fm.one_fm.doctype.transportation_shipment.transportation_shipment.get_merge_preview',
                         args: {
                             shipments: shipments, vehicle: vehicleId, timings: timings,
-                            departure: d.get_value('departure') || null
+                            departure: d.get_value('departure') || null,
+                            current_departure: runStart
                         },
                         callback(r) {
                             const p = r.message;
@@ -4148,6 +4160,12 @@ function injectRPVueTemplate() {
                   <span class="rp-icon rp-stop-drag-handle" title="Drag to reorder">drag_indicator</span>
                   <span class="rp-stop-num rp-stop-num-out">{{ stop.stopNum }}</span>
                   <div style="font-size:13px;font-weight:700;color:#111">{{ stop.card.site_location || 'Unknown' }}</div>
+                  <!-- Which way THIS card's own riders travel. A merged block reads MIXED,
+                       so the answer comes from the direction the merge recorded, and the
+                       drawer is where an operator checks who is going which way. -->
+                  <span :class="['rp-card-dir', cardOwnDirection(stop.item) === 'RETURN' ? 'rp-dir-ret' : 'rp-dir-out']">
+                    {{ dirName(cardOwnDirection(stop.item)) }}
+                  </span>
                 </div>
                 <div class="rp-detail-row" style="padding:4px 0 3px 30px">
                   <div class="rp-detail-row-icon"><span class="rp-icon">schedule</span></div>

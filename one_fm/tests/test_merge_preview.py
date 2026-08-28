@@ -600,3 +600,54 @@ class TestWhatAMergeWritesBack(FrappeTestCase):
 
 	def test_a_merged_block_joins_the_run_by_name_too(self):
 		self.assertIn("tripName: existingItems.find((i) => i.tripName)?.tripName || null,", self.source)
+
+
+class TestTheDrawerSaysWhichWayEachCardGoes(FrappeTestCase):
+	"""A merged block reads MIXED, so each stop has to say it for itself."""
+
+	def setUp(self):
+		self.source = CANVAS.read_text()
+
+	def test_every_stop_carries_its_own_direction_tag(self):
+		self.assertIn("dirName(cardOwnDirection(stop.item))", self.source)
+
+	def test_it_reads_the_direction_the_merge_recorded(self):
+		# cardOwnDirection reads own_direction, which the server resolves from
+		# pre_merge_trip_direction - the live trip_direction says Mixed once merged.
+		self.assertIn("cardOwnDirection(item) {", self.source)
+		self.assertIn("card.own_direction", self.source)
+
+
+class TestTheModalOpensOnTheRunItAlreadyIs(FrappeTestCase):
+	"""Re-opening a timed run must not reset it, nor move it."""
+
+	def setUp(self):
+		self.source = CANVAS.read_text()
+
+	def test_the_canvas_tells_the_server_where_the_run_leaves_from(self):
+		self.assertIn("current_departure: runStart", self.source)
+		self.assertIn("existingItems.map((i) => new Date(i.start).getTime())", self.source)
+
+	def test_the_server_anchors_the_default_on_it(self):
+		source = frappe.read_file(frappe.get_app_path(
+			"one_fm", "one_fm", "doctype", "transportation_shipment", "transportation_shipment.py"
+		))
+
+		self.assertIn("current = _departure_seconds(current_departure)", source)
+		self.assertIn("current if current is not None", source)
+
+	def test_saved_minutes_are_found_by_the_cards_a_stop_serves(self):
+		source = frappe.read_file(frappe.get_app_path(
+			"one_fm", "one_fm", "doctype", "transportation_shipment", "transportation_shipment.py"
+		))
+
+		self.assertIn("def _seeded(stop):", source)
+		self.assertIn("if card.name in timings:", source)
+
+	def test_a_new_leg_on_a_timed_run_is_left_blank(self):
+		source = frappe.read_file(frappe.get_app_path(
+			"one_fm", "one_fm", "doctype", "transportation_shipment", "transportation_shipment.py"
+		))
+
+		self.assertIn("already_timed = any(_seeded(stop) for stop in itinerary[:-1])", source)
+		self.assertIn("or to_a_collection or already_timed", source)
