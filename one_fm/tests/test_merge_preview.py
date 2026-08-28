@@ -583,9 +583,15 @@ class TestWhatAMergeWritesBack(FrappeTestCase):
 	def setUp(self):
 		self.source = CANVAS.read_text()
 
-	def test_a_block_keeps_the_drive_that_brought_the_bus_to_it(self):
-		self.assertIn("const inbound = i > 0 ? previewStops[i - 1]", self.source)
-		self.assertIn("(stop.cards || []).forEach((shipment) => { legs[shipment] = inbound; });", self.source)
+	def test_a_row_keeps_the_minutes_typed_against_it(self):
+		# One framing everywhere: a row's minutes are the drive AWAY from it, as the
+		# sample sheet reads and as the modal is typed. Storing the inbound drive meant
+		# the number typed against DHL Ardiya came back on the Kuwait Airways block.
+		self.assertIn("(stop.cards || []).forEach((shipment) => { legs[shipment] = stop; });", self.source)
+
+	def test_a_block_is_laid_out_from_the_stop_before_it(self):
+		# Which is where the drive to it is recorded.
+		self.assertIn("const { buffer, transit } = leg(stops[position]);", self.source)
 
 	def test_the_write_back_matches_a_block_to_its_shipment(self):
 		# Stops carry shipment names; blocks carry TSHIP- card ids.

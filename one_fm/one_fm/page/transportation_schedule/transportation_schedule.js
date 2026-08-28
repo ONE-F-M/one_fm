@@ -1396,15 +1396,15 @@ function mountRoutePlannerApp(wrapper, data) {
                 const order = merged.itinerary.map((s) => s.shipment);
                 const lastEnd = new Date(Math.max(...existingItems.map((i) => new Date(i.end).getTime())));
                 const uid = Math.random().toString(36).slice(2, 10);
-                // Which minutes each card's block keeps. The modal times the leg OUT of a
-                // stop, the way the sample sheet reads, but a block is drawn from the drive
-                // that BROUGHT the bus to it - so a card served at stop n keeps stop n-1's
-                // minutes. Keying this by the stop's own card silently gave every block the
-                // drive away from it instead, and the newly merged card got nothing at all.
+                // One framing everywhere: a row's minutes are the drive AWAY from it, which
+                // is how the sample sheet reads and how the modal is typed. Storing the
+                // inbound drive instead meant the number an operator typed against DHL
+                // Ardiya came back on the Kuwait Airways block, so the modal and the
+                // shipment details never agreed. _retimeTrip lays each block out from the
+                // stop before it, which is where the drive to it is now recorded.
                 const legs = {};
-                (previewStops || []).forEach((stop, i) => {
-                    const inbound = i > 0 ? previewStops[i - 1] : { transit_minutes: 0, buffer_minutes: 0 };
-                    (stop.cards || []).forEach((shipment) => { legs[shipment] = inbound; });
+                (previewStops || []).forEach((stop) => {
+                    (stop.cards || []).forEach((shipment) => { legs[shipment] = stop; });
                 });
                 const shipmentOf = (cardId) => String(cardId || '').replace(/^TSHIP-/, '');
                 const adj = legs[shipmentOf(newCard.id)] || {};
@@ -1523,11 +1523,10 @@ function mountRoutePlannerApp(wrapper, data) {
                 }
 
                 let cursor = new Date(stops[0].end).getTime();
-                stops.slice(1).forEach((item) => {
-                    const { buffer, transit } = leg(item);
-                    // A leg starts when the bus is released from the stop before it, and
-                    // its buffer is dwell inside the leg — the same walk the server prints
-                    // the itinerary with, so the block and the table cannot disagree.
+                stops.slice(1).forEach((item, position) => {
+                    // The drive that brings the bus to this stop is recorded against the
+                    // stop it leaves, so a block is laid out from the one before it.
+                    const { buffer, transit } = leg(stops[position]);
                     const start = cursor;
                     const end = start + Math.max(buffer + transit, MIN_BLOCK_MS);
                     item.start = new Date(start);

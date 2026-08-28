@@ -207,7 +207,7 @@
    "label": "Is Next Day"
   },
   {
-   "description": "Driving time from the previous stop, as set in the Merge Trip modal.",
+   "description": "Driving time to the NEXT stop, as set in the Trip Builder.",
    "fieldname": "transit_minutes",
    "fieldtype": "Int",
    "label": "Transit Minutes"
