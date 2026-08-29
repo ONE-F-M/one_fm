@@ -17,6 +17,9 @@ LICENSE = "_Test Counted License"
 LICENSE_NUMBER = "_TEST-PAM-9001"
 SECTOR = "_Test Sector Technicians"
 OTHER_SECTOR = "_Test Sector Managers"
+# A sector the licence carries no row for - what a new employee lands in when nobody has
+# configured that half of the licence yet.
+UNCONFIGURED_SECTOR = "_Test Sector Salespeople"
 
 
 def _a_sector(name):
@@ -234,6 +237,54 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 		self._edit(employee, employee_name="Renamed Only")
 
 		self.assertEqual(self._row(self.sector).national_number_of_workers, "99")
+
+	# ── a sector the licence has no row for yet ───────────────────────────────────
+
+	def _in_an_unconfigured_sector(self, nationality):
+		sector = _a_sector(UNCONFIGURED_SECTOR)
+		designation = _a_designation("_Test PAM Salesperson", sector)
+		return sector, self._an_employee(nationality, designation=designation)
+
+	def test_an_employee_in_an_unconfigured_sector_gets_the_licence_a_row(self):
+		"""WI-002091's second criterion. The sector an employee belongs to is decided by their
+		PAM designation, so a licence that has never carried anybody in it has no row to
+		update - and without one the employee is counted against nothing."""
+		sector, _employee = self._in_an_unconfigured_sector("Indian")
+
+		recount_sector(LICENSE_NUMBER, sector)
+
+		row = self._row(sector)
+		self.assertEqual(row.expatriate_number_of_workers, "1")
+		self.assertEqual(row.national_number_of_workers, "0")
+
+	def test_a_sector_nobody_is_in_does_not_grow_the_table(self):
+		"""The recount runs for the sector an employee has just left as well, and a row added
+		there would grow the table every time anybody changed designation."""
+		sector = _a_sector(UNCONFIGURED_SECTOR)
+
+		recount_sector(LICENSE_NUMBER, sector)
+
+		license = frappe.get_doc("PAM License Details", self.license.name)
+		self.assertEqual([row.occupational_sector for row in license.pam_license_stats],
+			[self.sector, self.other_sector])
+
+	def test_a_new_employee_reaches_the_child_table_through_the_hook(self):
+		"""Driven the way an insert drives it: no before-state, everything set at once."""
+		sector, employee = self._in_an_unconfigured_sector("Kuwaiti")
+
+		doc = frappe.get_doc("Employee", employee)
+		doc._doc_before_save = None
+		update_counts_from_employee(doc)
+
+		self.assertEqual(self._row(sector).national_number_of_workers, "1")
+
+	def test_the_added_row_sits_after_the_ones_already_there(self):
+		sector, _employee = self._in_an_unconfigured_sector("Indian")
+
+		recount_sector(LICENSE_NUMBER, sector)
+
+		license = frappe.get_doc("PAM License Details", self.license.name)
+		self.assertEqual(license.pam_license_stats[-1].occupational_sector, sector)
 
 	def test_the_watched_fields_all_exist_on_employee(self):
 		"""A typo here would silently stop the recount ever firing."""
