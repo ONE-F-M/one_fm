@@ -863,10 +863,12 @@ function mountRoutePlannerApp(wrapper, data) {
                             const c = this.planData.shipment_cards.find(sc => sc.id === i.cardId);
                             const siteName = c ? c.site_location : i.cardId;
                             const campName = (c && c.accommodation) ? c.accommodation : '';
-                            const dirBadge = i.direction === 'RETURN' ? '← RET' : '→ OUT';
+                            const own = this.cardOwnDirection(i);
+                            const dirBadge = own === 'RETURN' ? '← RET' : '→ OUT';
                             return `${campName ? '<strong>' + campName + '</strong> — ' : ''}${siteName} <span style="font-size:11px;color:#888">(${dirBadge})</span>`;
                         });
-                        const newDirBadge = card.direction === 'RETURN' ? '← RET' : '→ OUT';
+                        const newDirBadge =
+                            (card.own_direction || card.direction) === 'RETURN' ? '← RET' : '→ OUT';
                         const newCamp = card.accommodation ? `<strong>${card.accommodation}</strong> — ` : '';
                         frappe.confirm(
                             `<strong>${this.vehicleString(vehicle)}</strong> already has an active trip:<br><br>` +
@@ -1416,7 +1418,12 @@ function mountRoutePlannerApp(wrapper, data) {
                 // stop before it, which is where the drive to it is now recorded.
                 const legs = {};
                 (previewStops || []).forEach((stop) => {
-                    (stop.cards || []).forEach((shipment) => { legs[shipment] = stop; });
+                    // `serves`, not `cards`: a return card is listed at its collection stop
+                    // AND at the home stop, and home carries no minutes - so keying on
+                    // every card a stop mentions handed every return leg 0 transit and 0
+                    // buffer. The server names the serving stop by the same rule it stamps
+                    // the saved row with, so the two cannot drift.
+                    (stop.serves || []).forEach((shipment) => { legs[shipment] = stop; });
                 });
                 const shipmentOf = (cardId) => String(cardId || '').replace(/^TSHIP-/, '');
                 const adj = legs[shipmentOf(newCard.id)] || {};

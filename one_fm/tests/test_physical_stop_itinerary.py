@@ -115,3 +115,54 @@ class TestAHandoverIsOneStop(FrappeTestCase):
 		]))
 
 		self.assertEqual(peak, 4)
+
+
+class TestEveryCardHasExactlyOneServingStop(FrappeTestCase):
+	"""Which stop a card's minutes and counts belong to.
+
+	A return card is listed twice in an itinerary - at the stop that collects it and at
+	the home stop that delivers it - and home carries no minutes. Keying the write-back
+	on every stop a card is mentioned at let home claim it last, so every return leg
+	saved with 0 transit and 0 buffer.
+	"""
+
+	def _cards(self):
+		return [
+			_card("Camp 1", "Site A", 4),
+			_card("Camp 2", "Site B", 2),
+			_card("Camp 1", "Site C", 3, direction="Return"),
+			_card("Camp 1", "Site D", 1, direction="Return"),
+		]
+
+	def _serves(self, stops):
+		"""Mirror of the `serves` list the preview publishes."""
+		out = {}
+		for stop in stops:
+			if stop["kind"] in ("camp", "home"):
+				continue
+			names = [d["name"] for d in stop["dropping"] if d.trip_direction != "Return"]
+			names += [d["name"] for d in stop["boarding"]]
+			for name in names:
+				out.setdefault(name, []).append(stop["stop_index"])
+		return out
+
+	def test_no_card_is_served_twice(self):
+		served = self._serves(build_itinerary(self._cards()))
+
+		self.assertTrue(all(len(v) == 1 for v in served.values()), served)
+
+	def test_no_card_is_left_unserved(self):
+		cards = self._cards()
+		served = self._serves(build_itinerary(cards))
+
+		self.assertEqual(sorted(served), sorted(c["name"] for c in cards))
+
+	def test_the_ride_home_serves_nobody(self):
+		stops = build_itinerary(self._cards())
+		home = stops[-1]
+
+		self.assertEqual(home["kind"], "home")
+		# It still carries the riders being delivered, so the counts stay right...
+		self.assertEqual(home["drop_off_count"], 4)
+		# ...but it is nobody's serving stop, because it has no onward leg to time.
+		self.assertNotIn(home["stop_index"], [v[0] for v in self._serves(stops).values()])

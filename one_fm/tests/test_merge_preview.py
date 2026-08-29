@@ -587,7 +587,9 @@ class TestWhatAMergeWritesBack(FrappeTestCase):
 		# One framing everywhere: a row's minutes are the drive AWAY from it, as the
 		# sample sheet reads and as the modal is typed. Storing the inbound drive meant
 		# the number typed against DHL Ardiya came back on the Kuwait Airways block.
-		self.assertIn("(stop.cards || []).forEach((shipment) => { legs[shipment] = stop; });", self.source)
+		# Keyed on the stop that SERVES the card, not every stop that mentions it: a
+		# return card is listed at its collection stop and again at the home stop.
+		self.assertIn("(stop.serves || []).forEach((shipment) => { legs[shipment] = stop; });", self.source)
 
 	def test_a_block_is_laid_out_from_the_stop_before_it(self):
 		# Which is where the drive to it is recorded.

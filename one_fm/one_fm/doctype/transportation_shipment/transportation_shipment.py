@@ -635,6 +635,16 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 			"boards": bool(stop["boarding"]),
 			"boarding_cards": len(stop["boarding"]),
 			"cards": [doc.name for doc in serving],
+			# The cards this stop is the SERVING stop for - an outward card where its
+			# riders are put down, a return card where they are collected. A return card
+			# also appears at the home stop, where it is only being delivered, and the
+			# home stop carries no minutes: letting it claim the card gave every return
+			# leg 0 transit and 0 buffer. The same rule the saved row is stamped by.
+			"serves": (
+				[] if stop["kind"] == CAMP_STOP else
+				[doc.name for doc in stop["dropping"] if own_direction(doc) != "RETURN"]
+				+ [doc.name for doc in stop["boarding"]]
+			) if stop["kind"] != HOME_STOP else [],
 			"card_id": card_ids.get(_serving_card(stop), _serving_card(stop) or ""),
 			# What the minute inputs post back: the leg belongs to the stop.
 			"shipment": _leg_key(stop),
