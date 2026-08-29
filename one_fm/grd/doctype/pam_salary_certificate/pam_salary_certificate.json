@@ -35,17 +35,17 @@
    "fieldname": "pam_file_name",
    "fieldtype": "Link",
    "label": "PAM File Name",
-   "options": "PAM File",
+   "options": "PAM License Details",
    "reqd": 1
   },
   {
-   "fetch_from": "pam_file_name.pam_file_number",
+   "fetch_from": "pam_file_name.civil_id_number_for_licensing",
    "fieldname": "pam_file_number",
    "fieldtype": "Read Only",
    "label": "PAM File Number"
   }
  ],
- "modified": "2019-12-19 14:31:02.651109",
+ "modified": "2026-08-29 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM Salary Certificate",

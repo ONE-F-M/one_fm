@@ -544,7 +544,7 @@
    "fieldname": "custom_pam_file",
    "fieldtype": "Link",
    "label": "PAM File",
-   "options": "PAM File",
+   "options": "PAM License Details",
    "read_only_depends_on": "eval:doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending By MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected By PAM\""
   },
   {
