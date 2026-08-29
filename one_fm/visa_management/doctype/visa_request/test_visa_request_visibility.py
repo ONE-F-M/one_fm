@@ -24,7 +24,7 @@ DISABLED_RULES = ("custom_pam_file", "pam_reference_number", "custom_pam_designa
 BA_FIELDS = (
 	"section_break_mbv7", "naming_series", "job_offer", "candidate_country_process",
 	"job_applicant", "column_break_vujs", "request_date", "job_applicant_full_name", "agency",
-	"assign_grd_operator", "applicant_details_section", "first_name", "second_name",
+	"grd_operator", "applicant_details_section", "first_name", "second_name",
 	"third_name", "last_name", "first_name_in_arabic", "second_name_in_arabic",
 	"third_name_in_arabic", "last_name_in_arabic", "column_break_kupi", "nationality", "gender",
 	"religion", "place_of_birth", "date_of_birth", "marital_status", "designation",
@@ -158,15 +158,19 @@ class TestVisaRequestVisibility(FrappeTestCase):
 			with self.subTest(fieldname=fieldname):
 				self.assertIn(fieldname, meta_fields)
 
-	def test_the_grd_operator_holder_is_present_and_hidden(self):
-		"""Added on the BA site after the first migration pass. Nothing reads it there yet -
-		no assignment rule takes its assignee from it, no script mentions it - so it is an
-		empty holder, and it is hidden the way the BA site hides it."""
-		field = self.meta.get_field("assign_grd_operator")
+	def test_the_grd_operator_holder_matches_the_ba_site(self):
+		"""Added on the BA site after the first migration pass, and since renamed there from
+		"assign_grd_operator" to "grd_operator" and shown on the form. Nothing reads it yet -
+		no assignment rule takes its assignee from it, no script mentions it - so it is still
+		an empty holder, under the name and label the BA site now gives it."""
+		self.assertIsNone(self.meta.get_field("assign_grd_operator"))
+
+		field = self.meta.get_field("grd_operator")
 		self.assertIsNotNone(field)
 		self.assertEqual(field.fieldtype, "Link")
 		self.assertEqual(field.options, "User")
-		self.assertTrue(field.hidden)
+		self.assertEqual(field.label, "GRD Operator")
+		self.assertFalse(field.hidden)
 
 	def test_the_remark_fields_match_the_ba_site(self):
 		self.assertTrue(self.meta.get_field("operator_rejection_remark").read_only)
