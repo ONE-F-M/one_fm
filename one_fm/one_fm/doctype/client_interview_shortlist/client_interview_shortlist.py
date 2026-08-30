@@ -7,6 +7,21 @@ from frappe.model.document import Document
 from frappe.utils import getdate, today, add_days, formatdate
 
 
+# Doctypes that must not block the cancellation of a Shift Assignment replaced by a
+# Client Interview. Frappe only honours this flag on cancel, never on delete, so the
+# blocking links are cleared separately before the Shift Assignment is deleted.
+SHIFT_ASSIGNMENT_IGNORE_LINKED_DOCTYPES = [
+	"Attendance Check",
+	"Shift Permission",
+	"Shift Assignment",
+	"Employee Checkin Issue",
+	"Employee Checkin",
+	"Attendance",
+	"Missing Checkin",
+	"Site",
+]
+
+
 class ClientInterviewShortlist(Document):
 	def validate(self):
 		self.validate_project_or_prospective_client()
@@ -70,6 +85,8 @@ class ClientInterviewShortlist(Document):
 		for schedule in existing_schedules:
 			self.delete_shift_assignments_for_schedule(interview_employee.employee, schedule.name)
 			frappe.delete_doc("Employee Schedule", schedule.name, ignore_permissions=True)
+			# Update the in-memory row as well, the caller reads it back to derive day_off_ot
+			interview_employee.previous_employee_availability = schedule.employee_availability
 			frappe.db.set_value(
 				"Client Interview Employee",
 				interview_employee.name,
@@ -116,11 +133,22 @@ class ClientInterviewShortlist(Document):
 					)	
 
 			# Cancel submitted shift assignments before deleting
-			shift_assignment = frappe.get_doc("Shift Assignment", sa.name)
-			shift_assignment.ignore_linked_doctypes = ["Attendance Check", "Shift Permission", "Shift Assignment", "Employee Checkin Issue", "Employee Checkin", "Attendance", "Missing Checkin", "Site"]
-			if shift_assignment.docstatus == 1:
-				shift_assignment.cancel()
-			frappe.delete_doc("Shift Assignment", shift_assignment.name, ignore_permissions=True)
+			self.cancel_and_delete_shift_assignment(sa.name)
+
+	def cancel_and_delete_shift_assignment(self, shift_assignment_name):
+		"""Cancel (if submitted) and delete a Shift Assignment replaced by this interview.
+
+		`ignore_linked_doctypes` is only honoured by Frappe on cancel, so any Missing Checkin
+		row still pointing at the Shift Assignment has to be cleared first, otherwise the
+		delete raises LinkExistsError and rolls the whole submission back."""
+		shift_assignment = frappe.get_doc("Shift Assignment", shift_assignment_name)
+		shift_assignment.ignore_linked_doctypes = SHIFT_ASSIGNMENT_IGNORE_LINKED_DOCTYPES
+		if shift_assignment.docstatus == 1:
+			shift_assignment.cancel()
+
+		clear_missing_checkin_entries(shift_assignment.name)
+
+		frappe.delete_doc("Shift Assignment", shift_assignment.name, ignore_permissions=True)
 
 
 
@@ -244,9 +272,7 @@ class ClientInterviewShortlist(Document):
 				fields=["name", "docstatus"]
 			)
 			for sa in shift_assignments:
-				if sa.docstatus == 1:
-					frappe.get_doc("Shift Assignment", sa.name).cancel()
-				frappe.delete_doc("Shift Assignment", sa.name, ignore_permissions=True)
+				self.cancel_and_delete_shift_assignment(sa.name)
 
 	def delete_employee_schedule(self):
 		schedules = frappe.get_all(
@@ -259,6 +285,34 @@ class ClientInterviewShortlist(Document):
 		)
 		for schedule in schedules:
 			frappe.delete_doc("Employee Schedule", schedule.name, ignore_permissions=True)
+
+
+def clear_missing_checkin_entries(shift_assignment):
+	"""Remove Missing Checkin Detail rows pointing at a Shift Assignment about to be deleted.
+
+	The parent Missing Checkin cannot be saved through the ORM (its validate() rejects any
+	record that already exists for the same date and shift, including itself), so the rows are
+	removed at the database level and the parent is deleted once it has no rows left."""
+	rows = frappe.get_all(
+		"Missing Checkin Detail",
+		filters={"shift_assignment": shift_assignment, "parenttype": "Missing Checkin"},
+		fields=["name", "parent"]
+	)
+	if not rows:
+		return
+
+	frappe.db.delete("Missing Checkin Detail", {"name": ["in", [d.name for d in rows]]})
+
+	for parent in set(d.parent for d in rows):
+		if not frappe.db.exists("Missing Checkin", parent):
+			continue
+		remaining = frappe.db.count(
+			"Missing Checkin Detail",
+			{"parent": parent, "parenttype": "Missing Checkin"}
+		)
+		if remaining:
+			continue
+		frappe.delete_doc("Missing Checkin", parent, ignore_permissions=True)
 
 
 def send_pending_operations_supervisor_reminder():
