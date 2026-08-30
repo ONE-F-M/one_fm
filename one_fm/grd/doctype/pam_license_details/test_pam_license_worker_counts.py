@@ -223,6 +223,38 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 		self.assertEqual(self._row(self.sector).expatriate_number_of_workers, "0")
 		self.assertEqual(self._row(self.other_sector).expatriate_number_of_workers, "1")
 
+	def _insert(self, name):
+		"""Hand the handler an employee shaped the way an insert leaves it.
+
+		Not a document with no before-state, which is what an insert looks like in stock
+		Frappe: one_fm's after_insert reloads the employee, and after_insert runs before
+		on_update, so the before-state the handler is given is the row that was just written.
+		"""
+		doc = frappe.get_doc("Employee", name)
+		doc._doc_before_save = frappe.get_doc("Employee", name)
+		doc.flags.in_insert = True
+		update_counts_from_employee(doc)
+
+	def test_a_new_employee_is_counted_though_nothing_reads_as_changed(self):
+		"""Why no new employee was ever counted: every watched field equals itself on an
+		insert, so the has_value_changed guard skipped the recount every time."""
+		employee = self._an_employee("Indian")
+		recount_license(self.license.name)
+		# Stale on purpose - only a recount that actually runs will correct it.
+		frappe.db.set_value(
+			"PAM License Stats", self._row(self.sector).name, "expatriate_number_of_workers", "0",
+			update_modified=False,
+		)
+
+		doc = frappe.get_doc("Employee", employee)
+		doc._doc_before_save = frappe.get_doc("Employee", employee)
+		self.assertFalse(any(doc.has_value_changed(f) for f in WATCHED_EMPLOYEE_FIELDS))
+
+		doc.flags.in_insert = True
+		update_counts_from_employee(doc)
+
+		self.assertEqual(self._row(self.sector).expatriate_number_of_workers, "1")
+
 	def test_a_save_that_touches_nothing_relevant_is_skipped(self):
 		"""Employee is saved constantly; a recount on every save would be a query per save."""
 		employee = self._an_employee("Kuwaiti")
@@ -269,12 +301,9 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 			[self.sector, self.other_sector])
 
 	def test_a_new_employee_reaches_the_child_table_through_the_hook(self):
-		"""Driven the way an insert drives it: no before-state, everything set at once."""
 		sector, employee = self._in_an_unconfigured_sector("Kuwaiti")
 
-		doc = frappe.get_doc("Employee", employee)
-		doc._doc_before_save = None
-		update_counts_from_employee(doc)
+		self._insert(employee)
 
 		self.assertEqual(self._row(sector).national_number_of_workers, "1")
 

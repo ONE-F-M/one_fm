@@ -183,11 +183,20 @@ def update_counts_from_employee(doc, method=None):
 
 	A recount rather than an increment: the count is a query over the employees on the
 	licence, so it cannot drift out of step with them the way a running total would.
+
+	An insert is always a recount, and is asked before has_value_changed rather than left to
+	it. On this Employee, has_value_changed answers False for every field on an insert:
+	one_fm's after_insert reloads the document, and after_insert runs before on_update, so by
+	the time this handler is reached the before-state is the row that was just written and
+	every field equals itself. A new employee was silently never counted.
 	"""
-	if not any(doc.has_value_changed(fieldname) for fieldname in WATCHED_EMPLOYEE_FIELDS):
+	if not doc.flags.in_insert and not any(
+		doc.has_value_changed(fieldname) for fieldname in WATCHED_EMPLOYEE_FIELDS
+	):
 		return
 
-	before = doc.get_doc_before_save()
+	# Same reason: on an insert the before-state is this employee, not who they used to be.
+	before = None if doc.flags.in_insert else doc.get_doc_before_save()
 	for license_number, sector in {
 		_license_and_sector(doc),
 		_license_and_sector(before) if before else None,
