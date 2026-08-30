@@ -772,7 +772,7 @@ def get_job_applicant_custom_fields():
                 "translatable": 1
             },
             {
-                "fetch_from": "one_fm_pam_file_number.pam_file_number",
+                "fetch_from": "one_fm_pam_file_number.civil_id_number_for_licensing",
                 "fieldname": "one_fm_file_number",
                 "fieldtype": "Data",
                 "insert_after": "column_break_154",
@@ -1047,7 +1047,7 @@ def get_job_applicant_custom_fields():
                 "fieldtype": "Link",
                 "insert_after": "column_break_152",
                 "label": "PAM File",
-                "options": "PAM File",
+                "options": "PAM License Details",
                 "permlevel": 1
             },
             {
