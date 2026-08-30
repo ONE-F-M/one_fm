@@ -75,15 +75,19 @@ class PAMLicenseDetails(Document):
 				row.set(fieldname, value)
 
 
-def round_to_half(value):
-	"""PAM states its figures to the nearest half a person (WI-002094)."""
-	return round(flt(value) * 2) / 2
+def to_whole(value):
+	"""A figure as PAM states it: a whole number of people (WI-002094, WI-002099).
+
+	Half rounds up rather than to even, and by hand rather than through round() - every
+	figure here is a headcount and cannot be negative, and a licence that reads compliant on
+	one site and not on another because of a rounding setting is worse than either answer.
+	"""
+	return int(flt(value) + 0.5)
 
 
 def as_figure(value):
-	"""A figure as it goes into a Data field: "3" rather than "3.0", "2.5" as it is."""
-	value = round_to_half(value)
-	return str(int(value)) if value == int(value) else str(value)
+	"""A figure as it goes into a Data field: "3" rather than "3.0"."""
+	return str(to_whole(value))
 
 
 def expats_allowed(sector, ratio, nationals):
@@ -136,6 +140,12 @@ def derived_figures(sector, ratio, nationals, expatriates):
 	one that makes the figure and the Compliant / Non-Compliant status mean what they say.
 	Reversing it is one line if PAM's own wording turns out to be literal.
 
+	The exempt sector is the exception WI-002099 spells out: "there will be no expat
+	violation, as Kuwaitis are not allowed for this role... if the number of expats is 100,
+	the violation will be 0". PAM does not ration it, so it is allowed none and is over by
+	none - the allowance of zero is a statement that the ratio does not apply to it, not a
+	limit every expatriate on the books breaks.
+
 	The Status follows from the violation and nothing else (WI-002135): over the allowance by
 	any amount is Non-Compliant, otherwise Compliant. Derived here rather than left as a
 	Select the operator picks, so it cannot contradict the figure printed beside it.
@@ -148,19 +158,19 @@ def derived_figures(sector, ratio, nationals, expatriates):
 	required = 0.0
 	if 0 < ratio < 100:
 		required = flt(expatriates) * ratio / (100 - ratio)
-	required = round_to_half(required)
+	required = to_whole(required)
 
 	excess = max(required - flt(nationals), 0)
 
-	allowed = round_to_half(expats_allowed(sector, ratio, nationals))
-	violated = max(flt(expatriates) - allowed, 0)
+	allowed = to_whole(expats_allowed(sector, ratio, nationals))
+	violated = 0.0 if sector == EXEMPT_SECTOR else max(flt(expatriates) - allowed, 0)
 
 	return {
 		"required_number_of_national_workers": as_figure(required),
 		"exceeding_the_ratio_number_of_national_workers": as_figure(excess),
 		"exempt_number_of_workers": as_figure(allowed),
 		"violation_number_of_workers": as_figure(violated),
-		"status": NON_COMPLIANT if round_to_half(violated) > 0 else COMPLIANT,
+		"status": NON_COMPLIANT if violated > 0 else COMPLIANT,
 	}
 
 
