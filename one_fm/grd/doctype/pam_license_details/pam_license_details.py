@@ -183,11 +183,20 @@ def update_counts_from_employee(doc, method=None):
 
 	A recount rather than an increment: the count is a query over the employees on the
 	licence, so it cannot drift out of step with them the way a running total would.
+
+	An insert is always a recount, and is asked before has_value_changed rather than left to
+	it. On this Employee, has_value_changed answers False for every field on an insert:
+	one_fm's after_insert reloads the document, and after_insert runs before on_update, so by
+	the time this handler is reached the before-state is the row that was just written and
+	every field equals itself. A new employee was silently never counted.
 	"""
-	if not any(doc.has_value_changed(fieldname) for fieldname in WATCHED_EMPLOYEE_FIELDS):
+	if not doc.flags.in_insert and not any(
+		doc.has_value_changed(fieldname) for fieldname in WATCHED_EMPLOYEE_FIELDS
+	):
 		return
 
-	before = doc.get_doc_before_save()
+	# Same reason: on an insert the before-state is this employee, not who they used to be.
+	before = None if doc.flags.in_insert else doc.get_doc_before_save()
 	for license_number, sector in {
 		_license_and_sector(doc),
 		_license_and_sector(before) if before else None,
@@ -216,31 +225,47 @@ def recount_sector(license_number, sector):
 	carries, and PAM's own numbering, so a licence renamed here still counts the same
 	people.
 
+	A licence that has never carried anybody in this sector has no row for it, and the sector
+	an employee belongs to is decided by their PAM designation rather than by what somebody
+	remembered to configure. So the row is added rather than the recount quietly doing nothing
+	(WI-002091, second criterion) - an employee counted against no row is an employee PAM
+	counts and the licence does not.
+
+	Only where there is somebody to count. The recount also runs for the sector an employee
+	has just left, and adding an empty row there would grow the table by one every time
+	anybody changed designation.
+
 	Written with db_set on the child row rather than by saving the parent, so a headcount
 	moving does not drag a licence through validation - and does not need permission to
 	edit a licence, which the employee's own editor has no reason to hold.
 	"""
-	rows = frappe.get_all(
-		"PAM License Stats",
-		filters={"occupational_sector": sector, "parenttype": "PAM License Details"},
-		fields=["name", "parent"],
+	licenses = frappe.get_all(
+		"PAM License Details",
+		filters={"civil_id_number_for_licensing": license_number},
+		pluck="name",
 	)
-	if not rows:
-		return
-
-	licenses = set(
-		frappe.get_all(
-			"PAM License Details",
-			filters={"civil_id_number_for_licensing": license_number},
-			pluck="name",
-		)
-	)
-	rows = [row for row in rows if row.parent in licenses]
-	if not rows:
+	if not licenses:
 		return
 
 	nationals, expatriates = count_workers(license_number, sector)
-	for row in rows:
+
+	for license_name in licenses:
+		row = frappe.db.get_value(
+			"PAM License Stats",
+			{
+				"parent": license_name,
+				"parenttype": "PAM License Details",
+				"parentfield": "pam_license_stats",
+				"occupational_sector": sector,
+			},
+			["name", "ratio_number_of_national_workers"],
+			as_dict=True,
+		)
+		if not row:
+			if not (nationals or expatriates):
+				continue
+			row = add_sector_row(license_name, sector)
+
 		figures = {
 			"national_number_of_workers": str(nationals),
 			"expatriate_number_of_workers": str(expatriates),
@@ -249,14 +274,34 @@ def recount_sector(license_number, sector):
 		# well as on validate because db_set bypasses the controller, and a row left with
 		# yesterday's requirement beside today's headcount is worse than either.
 		figures.update(
-			derived_figures(
-				sector,
-				frappe.db.get_value("PAM License Stats", row.name, "ratio_number_of_national_workers"),
-				nationals,
-				expatriates,
-			)
+			derived_figures(sector, row.ratio_number_of_national_workers, nationals, expatriates)
 		)
 		frappe.db.set_value("PAM License Stats", row.name, figures, update_modified=False)
+
+
+def add_sector_row(license_name, sector):
+	"""Give a licence the sector row it has no configuration for yet.
+
+	Inserted as a child in its own right rather than by saving the licence, for the same
+	reason the headcounts are written with db_set.
+
+	The ratio is left blank. It is the one figure on the row PAM sets and an operator types,
+	and inventing one would state a requirement nobody has been given - so until it is filled
+	in the row allows no expatriates and reads Non-Compliant if it holds any, which is the
+	same thing an unconfigured row typed by hand has always said.
+	"""
+	row = frappe.get_doc({
+		"doctype": "PAM License Stats",
+		"parenttype": "PAM License Details",
+		"parentfield": "pam_license_stats",
+		"parent": license_name,
+		"occupational_sector": sector,
+		"idx": frappe.db.count(
+			"PAM License Stats", {"parent": license_name, "parentfield": "pam_license_stats"}
+		) + 1,
+	})
+	row.insert(ignore_permissions=True)
+	return row
 
 
 def count_workers(license_number, sector):
