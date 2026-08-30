@@ -296,11 +296,19 @@ class RoutePlan(Document):
 		and is measured leg by leg instead. A row with no ``trip_group`` is a
 		standalone drop and becomes a trip of its own, so it is weighed like any other.
 
+		How many people a stop carries is read off its shipment rather than the row's
+		own stored copy, which is only a snapshot of the moment the card was dropped
+		(see ``_live_headcounts``).
+
 		Each trip carries the daily time window its stops cover and the calendar
 		lifespan they are live for — the two halves of the timestamps a Route Plan
 		Assignment stores (TR-8: date part = multi-day lock, time part = the daily
 		run).
 		"""
+		live_headcounts = _live_headcounts(
+			{row.transportation_shipment for row in self.assignments if row.vehicle}
+		)
+
 		trips = {}
 		for idx, row in enumerate(self.assignments):
 			if not row.vehicle:
@@ -322,7 +330,7 @@ class RoutePlan(Document):
 					key=key,
 					vehicle=row.vehicle,
 					direction=direction,
-					headcount=cint(row.headcount),
+					headcount=_row_headcount(row, live_headcounts),
 					start=start,
 					end=end,
 					live_from=live_from,
@@ -330,6 +338,8 @@ class RoutePlan(Document):
 					# Kept so a merged trip can be walked stop by stop (WI-002071);
 					# the summed headcount above is meaningless for one.
 					rows=[row],
+					# Carried so the leg walk reads the same live numbers this sum did.
+					live_headcounts=live_headcounts,
 				)
 				continue
 
@@ -339,7 +349,7 @@ class RoutePlan(Document):
 			# when the Merge Trip modal wrote it back.
 			if direction != trip.direction:
 				trip.direction = MIXED_DIRECTION
-			trip.headcount += cint(row.headcount)
+			trip.headcount += _row_headcount(row, live_headcounts)
 			trip.start = min(trip.start, start)
 			trip.end = max(trip.end, end)
 			trip.live_from = min(filter(None, [trip.live_from, live_from]), default=None)
@@ -621,9 +631,10 @@ def _trip_peak(trip):
 		key=lambda row: (cint(row.stop_index), str(row.start_time or ""), row.name or ""),
 	)
 	directions = _shipment_directions([row.transportation_shipment for row in by_index])
+	live_headcounts = trip.get("live_headcounts") or {}
 	stops = [
 		{
-			"headcount": cint(row.headcount),
+			"headcount": _row_headcount(row, live_headcounts),
 			# A row carrying no shipment still knows its own leg.
 			"boards": (directions.get(row.transportation_shipment) or _row_direction(row))
 			== "RETURN",
@@ -660,6 +671,44 @@ def _is_multiday_lock(row) -> bool:
 	"""
 	start, end = _row_date_range(row)
 	return bool(start and end and end > start)
+
+
+def _live_headcounts(shipment_names) -> dict:
+	"""``{shipment: headcount}`` as the shipments stand right now.
+
+	A Route Plan Assignment's own ``headcount`` is a snapshot taken when the card was
+	dropped and is never refreshed afterwards, so a shipment that has since gained or
+	lost an employee leaves the plan holding a number nobody can see: the board reads
+	the shipment and the save read the row, and the two quietly disagreed. It cuts
+	both ways — a stale row that over-counts refuses a bus that has a seat free, and
+	one that under-counts waves an overloaded bus through — so the seats are compared
+	against the shipment, which is the same thing the dispatcher is looking at.
+	"""
+	names = [name for name in shipment_names if name]
+	if not names:
+		return {}
+
+	from frappe.query_builder import DocType
+
+	TransportationShipment = DocType("Transportation Shipment")
+	rows = (
+		frappe.qb.from_(TransportationShipment)
+		.select(TransportationShipment.name, TransportationShipment.headcount)
+		.where(TransportationShipment.name.isin(names))
+	).run(as_dict=True)
+	return {row.name: cint(row.headcount) for row in rows}
+
+
+def _row_headcount(row, live_headcounts) -> int:
+	"""How many people one stop actually carries.
+
+	The shipment is the authority. The row's stored snapshot is the fallback for a
+	stop whose shipment has since been deleted, so a card is never silently read as
+	empty and dropped out of the sum.
+	"""
+	if row.transportation_shipment in live_headcounts:
+		return live_headcounts[row.transportation_shipment]
+	return cint(row.headcount)
 
 
 def _format_lock_date(value) -> str:

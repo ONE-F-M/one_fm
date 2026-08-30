@@ -1186,6 +1186,28 @@ def save_assignments(plan_name: str, swim_items: str, assigned_cards: str):
     }
 
 
+def _live_headcounts(shipment_names) -> dict:
+    """``{shipment: headcount}`` as the shipments stand right now.
+
+    Shared in spirit with the Route Plan's own resolver: the plan stores a headcount
+    per stop, but the board is drawn from the shipments, so the saved copy is only a
+    fallback for a stop whose shipment has since been deleted.
+    """
+    names = sorted({name for name in shipment_names if name})
+    if not names:
+        return {}
+
+    from frappe.query_builder import DocType
+
+    TransportationShipment = DocType("Transportation Shipment")
+    rows = (
+        frappe.qb.from_(TransportationShipment)
+        .select(TransportationShipment.name, TransportationShipment.headcount)
+        .where(TransportationShipment.name.isin(names))
+    ).run(as_dict=True)
+    return {row.name: cint(row.headcount) for row in rows}
+
+
 @frappe.whitelist()
 def load_assignments(plan_name: str = ""):
     """Load saved route planner swim items from a Route Plan.
@@ -1206,6 +1228,13 @@ def load_assignments(plan_name: str = ""):
     doc = frappe.get_doc("Route Plan", plan_name)
     doc.check_permission("read")
 
+    # A saved row's ``headcount`` is a snapshot of the moment the card was dropped and
+    # is never refreshed, so a shipment that has since gained or lost an employee left
+    # the timeline block and the client-side seat guard reading a number the sidebar
+    # (which loads the shipment) already disagreed with. The shipment is the authority
+    # here for the same reason it is on the Route Plan save.
+    live_headcounts = _live_headcounts([r.transportation_shipment for r in doc.assignments])
+
     swim_items = []
     assigned_card_ids = set()
 
@@ -1217,7 +1246,7 @@ def load_assignments(plan_name: str = ""):
             "direction": row.direction,
             "start":     row.start_time,
             "end":       row.end_time,
-            "headcount": row.headcount or 0,
+            "headcount": live_headcounts.get(row.transportation_shipment, row.headcount or 0),
             "conflict":  False,
             "tripId":    row.trip_group or None,
             "tripName":  row.trip_name or None,
