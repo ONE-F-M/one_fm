@@ -11,6 +11,7 @@ module.exports = {
 				"build",
 				"chore",
 				"ci",
+				"deprecate",
 				"docs",
 				"feat",
 				"fix",

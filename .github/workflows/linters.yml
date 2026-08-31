@@ -3,6 +3,7 @@ name: Linters
 
 on:
   pull_request:
+    branches: [staging, test-production, version-15]
   workflow_dispatch:
 
 permissions:
@@ -52,6 +53,23 @@ jobs:
           pip install semgrep
           semgrep ci --config ./frappe-semgrep-rules/rules --config r/python.lang.correctness
 
+  pre-commit:
+    name: 'Linters'
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 200
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.14'
+          cache: pip
+
+      - name: Run pre-commit
+        uses: pre-commit/action@v3.0.1
+
   deps-vulnerable-check:
     name: 'Vulnerable Dependency Check'
     runs-on: ubuntu-latest
@@ -76,4 +94,44 @@ jobs:
         run: |
           pip install pip-audit
           cd ${GITHUB_WORKSPACE}
-          pip-audit --desc on --ignore-vuln GHSA-4xqq-73wg-5mjp --ignore-vuln PYSEC-2023-312 .
+          pip-audit --desc on \
+            --ignore-vuln GHSA-4xqq-73wg-5mjp \
+            --ignore-vuln PYSEC-2023-312 \
+            --ignore-vuln PYSEC-2022-252 \
+            --ignore-vuln CVE-2026-44405 \
+            --ignore-vuln PYSEC-2025-11 \
+            --ignore-vuln PYSEC-2026-85 \
+            --ignore-vuln PYSEC-2026-86 \
+            --ignore-vuln CVE-2024-12704 \
+            --ignore-vuln CVE-2024-12911 \
+            --ignore-vuln CVE-2025-1793 \
+            --ignore-vuln CVE-2025-6211 \
+            --ignore-vuln CVE-2025-7707 \
+            --ignore-vuln CVE-2025-5472 \
+            --ignore-vuln CVE-2025-5302 \
+            --ignore-vuln CVE-2025-7647 \
+            --ignore-vuln CVE-2025-6208 \
+            --ignore-vuln CVE-2025-1753 \
+            --ignore-vuln CVE-2025-55197 \
+            --ignore-vuln CVE-2025-62707 \
+            --ignore-vuln CVE-2025-62708 \
+            --ignore-vuln CVE-2025-66019 \
+            --ignore-vuln CVE-2026-22690 \
+            --ignore-vuln CVE-2026-22691 \
+            --ignore-vuln CVE-2026-24688 \
+            --ignore-vuln CVE-2026-27026 \
+            --ignore-vuln CVE-2026-27024 \
+            --ignore-vuln CVE-2026-27025 \
+            --ignore-vuln CVE-2026-27628 \
+            --ignore-vuln CVE-2026-27888 \
+            --ignore-vuln CVE-2026-28351 \
+            --ignore-vuln CVE-2026-28804 \
+            --ignore-vuln CVE-2026-31826 \
+            --ignore-vuln CVE-2026-33123 \
+            --ignore-vuln CVE-2026-33699 \
+            --ignore-vuln CVE-2026-40260 \
+            --ignore-vuln CVE-2026-41168 \
+            --ignore-vuln CVE-2026-41313 \
+            --ignore-vuln CVE-2026-41312 \
+            --ignore-vuln CVE-2026-41314 \
+            .

@@ -45,7 +45,7 @@ jobs:
           python-version: '3.10'
       - uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -63,11 +63,15 @@ jobs:
           bench set-redis-socketio-host 127.0.0.1:12000
           bench get-app erpnext --branch version-15
           bench get-app hrms --branch version-15
+          bench get-app helpdesk --branch main
+          bench get-app telephony --branch develop
           bench get-app one_fm "$GITHUB_WORKSPACE"
           bench new-site --db-root-password root --admin-password admin --mariadb-root-password root test_site
           bench --site test_site set-config allow_tests true
           bench --site test_site install-app erpnext
           bench --site test_site install-app hrms
+          bench --site test_site install-app helpdesk
+          bench --site test_site install-app telephony
           bench --site test_site install-app one_fm
       - name: Run tests with coverage
         run: |
