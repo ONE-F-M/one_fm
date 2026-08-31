@@ -458,13 +458,26 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             // All stops in the selected trip chain (empty if not a trip)
+            // The run's own two ends. The bus leaves the camp before any block starts and
+            // gets back after the last one finishes, so reading the blocks reported a
+            // journey shorter than the one being driven at both ends.
+            selectedTripLegs() {
+                const tripId = this.selectedItem && this.selectedItem.tripId;
+                return (tripId && (this.legTimings || {})[tripId]) || {};
+            },
+
             selectedTripStops() {
                 if (!this.selectedItem || !this.selectedItem.tripId) return [];
                 const tripId = this.selectedItem.tripId;
                 const self = this;
                 return this.swimItems
                     .filter(i => i.tripId === tripId)
-                    .sort((a, b) => (a.stopIndex || 0) - (b.stopIndex || 0))
+                    // In the order the bus drives it. stopIndex is the order the cards
+                    // were dropped on the lane, which is not the order of the run: a card
+                    // added first can be the last stop. Sorting by it listed a 07:32 stop
+                    // above a 07:20 one and made the trip timeline read 07:32 to 07:32.
+                    .sort((a, b) => (new Date(a.start) - new Date(b.start))
+                        || (a.stopIndex || 0) - (b.stopIndex || 0))
                     .map((item, idx) => {
                         let card = self.planData.shipment_cards.find(c => c.id === item.cardId);
                         if (!card && (item._site || item._shift || item._accommodation || item._stopLocation)) {
@@ -1467,9 +1480,23 @@ function mountRoutePlannerApp(wrapper, data) {
                 // block is the first SITE, which the bus reaches after the camp leg.
                 const anchorMs = (runStartMs === null || runStartMs === undefined
                     ? lastEnd.getTime() : runStartMs) + (departureShiftMs || 0);
+                // The ride home: the last thing the bus does and the moment the run is
+                // over, which no card row records because no card is dropped there.
+                const homeStop = (previewStops || []).find((stop) => stop.kind === 'home');
                 this.legTimings = {
                     ...(this.legTimings || {}),
-                    [tripId]: { departure: new Date(anchorMs).toISOString(), camps },
+                    [tripId]: {
+                        departure: new Date(anchorMs).toISOString(),
+                        arrival: homeStop
+                            ? new Date(anchorMs + homeStop.arrives_offset * 1000).toISOString()
+                            : null,
+                        home: homeStop ? {
+                            place: homeStop.place,
+                            transit_minutes: parseInt(homeStop.transit_minutes, 10) || 0,
+                            buffer_minutes: parseInt(homeStop.buffer_minutes, 10) || 0,
+                        } : null,
+                        camps,
+                    },
                 };
                 (previewStops || []).forEach((stop) => {
                     // `serves`, not `cards`: a return card is listed at its collection stop
@@ -1574,6 +1601,33 @@ function mountRoutePlannerApp(wrapper, data) {
             // Re-draw a trip's blocks from the per-leg minutes its stops carry. Stop 1
             // keeps the shift moment it was placed on; every later stop is driven forward
             // from the one before it - dwell at the previous stop, then the drive.
+            // ── The three moments the drawer reads a run by ──
+            tripStartsAt() {
+                const stored = this.selectedTripLegs.departure;
+                const stops = this.selectedTripStops;
+                return stored || (stops.length
+                    ? new Date(stops[0].item.start).toISOString() : null);
+            },
+
+            lastStopEndsAt() {
+                const stops = this.selectedTripStops;
+                return stops.length
+                    ? new Date(stops[stops.length - 1].item.end).toISOString() : null;
+            },
+
+            tripEndsAt() {
+                return this.selectedTripLegs.arrival || this.lastStopEndsAt();
+            },
+
+            rideHomeMinutes() {
+                // Nothing to show when the last drop was already at the camp: the bus is
+                // home, and a zero-minute leg on the drawer is noise.
+                const home = this.selectedTripLegs.home;
+                if (!home) return 0;
+                return (parseInt(home.transit_minutes, 10) || 0)
+                    + (parseInt(home.buffer_minutes, 10) || 0);
+            },
+
             _retimeTrip(tripId) {
                 const stops = this.swimItems
                     .filter((i) => i.tripId === tripId)
@@ -4181,10 +4235,10 @@ function injectRPVueTemplate() {
             <div class="rp-detail-card">
               <div class="rp-detail-row-label" style="padding:0 0 6px 0">{{ selectedItem.tripName ? selectedItem.tripName + ' — ' : '' }}Trip Timeline</div>
               <div class="rp-detail-time-display">
-                {{ fmtISO(new Date(selectedTripStops[0].item.start).toISOString()) }}
+                {{ fmtISO(tripStartsAt()) }}
                 <span class="rp-detail-time-arrow">\u2192</span>
-                {{ fmtISO(new Date(selectedTripStops[selectedTripStops.length - 1].item.end).toISOString()) }}
-                <span class="rp-detail-time-dur">({{ Math.round((new Date(selectedTripStops[selectedTripStops.length - 1].item.end) - new Date(selectedTripStops[0].item.start)) / 60000) }} min)</span>
+                {{ fmtISO(tripEndsAt()) }}
+                <span class="rp-detail-time-dur">({{ Math.round((new Date(tripEndsAt()) - new Date(tripStartsAt())) / 60000) }} min)</span>
               </div>
             </div>
 
@@ -4322,6 +4376,43 @@ function injectRPVueTemplate() {
               </div>
 
             </template>
+
+            <!-- The drive back to the accommodation: the last thing the bus does, and
+                 the only leg of the run no card is filed against. -->
+            <div class="rp-detail-card" v-if="rideHomeMinutes() > 0">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="rp-icon" style="font-size:18px;color:#4338ca">home</span>
+                <div style="font-size:13px;font-weight:700;color:#111">
+                  {{ __('Return to Camp') }}
+                </div>
+              </div>
+              <div class="rp-detail-row" style="padding:6px 0 0 30px">
+                <div class="rp-detail-row-icon"><span class="rp-icon">place</span></div>
+                <div class="rp-detail-row-content">
+                  <div class="rp-detail-row-label">{{ __('Stop Location') }}</div>
+                  <div class="rp-detail-row-value">{{ selectedTripLegs.home.place || '\u2014' }}</div>
+                </div>
+              </div>
+              <div class="rp-detail-row" style="padding:4px 0 0 30px">
+                <div class="rp-detail-row-icon"><span class="rp-icon">schedule</span></div>
+                <div class="rp-detail-row-content">
+                  <div class="rp-detail-row-label">{{ __('Departure') }} &rarr; {{ __('Arrival') }}</div>
+                  <div class="rp-detail-row-value">
+                    {{ fmtISO(lastStopEndsAt()) }} &rarr; {{ fmtISO(tripEndsAt()) }}
+                  </div>
+                </div>
+              </div>
+              <div class="rp-detail-row" style="padding:4px 0 0 30px">
+                <div class="rp-detail-row-icon"><span class="rp-icon">timer</span></div>
+                <div class="rp-detail-row-content">
+                  <div class="rp-detail-row-label">{{ __('Transit & Buffer') }}</div>
+                  <div class="rp-detail-row-value">
+                    {{ selectedTripLegs.home.transit_minutes || 0 }} min transit
+                    &middot; {{ selectedTripLegs.home.buffer_minutes || 0 }} min buffer
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <!-- Trip-wide passenger total (regular vs reliever across all stops) -->
             <div class="rp-detail-card">

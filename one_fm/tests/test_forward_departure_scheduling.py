@@ -396,7 +396,10 @@ class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
 	def test_the_camp_the_bus_loads_at_is_a_row_of_its_own(self):
 		# The plan lists every stop of the run, so the table reads like the sheet. The
 		# camp is a stop no card is filed against, and before this it had no row at all.
-		camp = [row for row in self._doc().assignments if row.is_camp_leg]
+		camp = [
+			row for row in self._doc().assignments
+			if row.is_camp_leg and not row.is_home_leg
+		]
 
 		self.assertEqual(len(camp), 1)
 		self.assertEqual(camp[0].action_type, "Boarding")
@@ -406,7 +409,8 @@ class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
 	def test_a_camp_row_carries_no_riders_of_its_own(self):
 		# It describes a stop, it is not a placement: a headcount here would be counted a
 		# second time by everything that sums the column.
-		camp = next(row for row in self._doc().assignments if row.is_camp_leg)
+		camp = next(row for row in self._doc().assignments
+					if row.is_camp_leg and not row.is_home_leg)
 
 		self.assertEqual(camp.headcount, 0)
 
@@ -418,7 +422,7 @@ class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
 			row for row in self._doc({"RUN-1": {"camps": {place: {
 				"transit_minutes": 25, "buffer_minutes": 5,
 			}}}}).assignments
-			if row.is_camp_leg
+			if row.is_camp_leg and not row.is_home_leg
 		)
 
 		self.assertEqual((camp.transit_minutes, camp.buffer_minutes), (25, 5))
@@ -430,15 +434,33 @@ class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
 			row for row in self._doc({"RUN-1": {
 				"departure": "2026-08-18T04:30:00.000Z", "camps": {},
 			}}).assignments
-			if row.is_camp_leg
+			if row.is_camp_leg and not row.is_home_leg
 		)
 
 		self.assertEqual(camp.start_time, "2026-08-18T04:30:00.000Z")
 
+	def test_the_ride_home_is_a_row_of_its_own(self):
+		# The last thing the bus does, and the only leg nothing is dropped at - so the
+		# drawer had nothing to show for the drive back and the run appeared to end at
+		# its last site.
+		if not frappe.get_meta("Route Plan Assignment").get_field("is_home_leg"):
+			self.skipTest("run `bench migrate`: is_home_leg missing on Route Plan Assignment")
+
+		home = [row for row in self._doc({"RUN-1": {
+			"arrival": "2026-08-18T09:30:00.000Z",
+			"home": {"transit_minutes": 26, "buffer_minutes": 0},
+		}}).assignments if row.is_home_leg]
+
+		self.assertEqual(len(home), 1)
+		self.assertEqual(home[0].end_time, "2026-08-18T09:30:00.000Z")
+		self.assertEqual(home[0].transit_minutes, 26)
+		self.assertEqual(home[0].headcount, 0)
+
 	def test_the_camp_row_names_the_journey_it_belongs_to(self):
 		# Optional link, per the dispatcher: the row can be traced back to a card without
 		# ever standing in for one.
-		camp = next(row for row in self._doc().assignments if row.is_camp_leg)
+		camp = next(row for row in self._doc().assignments
+					if row.is_camp_leg and not row.is_home_leg)
 
 		self.assertEqual(camp.trip_group, "RUN-1")
 		self.assertIn(camp.transportation_shipment, (self.drop, self.collect))

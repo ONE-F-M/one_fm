@@ -1284,17 +1284,24 @@ def load_assignments(plan_name: str = ""):
     for row in doc.assignments:
         if cint(row.is_camp_leg):
             held = leg_timings.setdefault(
-                row.trip_group or camp_leg_group(row.card_id), {"departure": None, "camps": {}}
+                row.trip_group or camp_leg_group(row.card_id),
+                {"departure": None, "arrival": None, "home": None, "camps": {}},
             )
-            # The moment the bus leaves, which no block can be read for: the first block
-            # is the first SITE, and the bus reaches that after the camp leg.
-            held["departure"] = held["departure"] or row.start_time
             place = row.origin_location or row.stop_location
-            if place:
-                held["camps"][place] = {
-                    "transit_minutes": row.transit_minutes or 0,
-                    "buffer_minutes": row.buffer_minutes or 0,
-                }
+            minutes = {
+                "transit_minutes": row.transit_minutes or 0,
+                "buffer_minutes": row.buffer_minutes or 0,
+            }
+            if cint(row.is_home_leg):
+                # When the run is over, which is the drive back rather than the last drop.
+                held["arrival"] = row.end_time
+                held["home"] = dict(minutes, place=place)
+            else:
+                # The moment the bus leaves, which no block can be read for: the first
+                # block is the first SITE, reached after the camp leg.
+                held["departure"] = held["departure"] or row.start_time
+                if place:
+                    held["camps"][place] = minutes
             continue
 
         swim_items.append({
@@ -2362,21 +2369,37 @@ def _camp_leg_rows(itinerary, ordered, per_stop, vehicle, camp_departs,
 	traced back to a journey, but the row is a description of the run and never a
 	placement - `card_rows` keeps it out of every count and every itinerary.
 	"""
-	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import CAMP_STOP
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+		CAMP_STOP,
+		HOME_STOP,
+	)
 
 	rows = []
 	seen = set()
 	first = ordered[0]
 	for position, stop in enumerate(itinerary):
-		if stop["kind"] != CAMP_STOP or stop["place"] in seen:
+		homeward = stop["kind"] == HOME_STOP
+		if not homeward and (stop["kind"] != CAMP_STOP or stop["place"] in seen):
 			continue
 		seen.add(stop["place"])
 		boarding = [card.name for card in stop["boarding"]]
 		serving = next((row for row in ordered if row.transportation_shipment in boarding), None)
-		departs = camp_departs.get(stop["place"])
-		held = ((minutes or {}).get("camps") or {}).get(stop["place"]) or {}
+		departs = None if homeward else camp_departs.get(stop["place"])
+		held = (
+			((minutes or {}).get("home") or {}) if homeward
+			else ((minutes or {}).get("camps") or {}).get(stop["place"]) or {}
+		)
+		# The ride home is the last thing the bus does and nothing is dropped there, so
+		# without a row of its own the run simply stopped at its last site and the drawer
+		# had nothing to show for the drive back. The camp is the first.
+		window = (
+			(ordered[-1].end_time, (minutes or {}).get("arrival")) if homeward
+			else ((minutes or {}).get("departure") or (serving or first).start_time,
+				  (serving or first).start_time)
+		)
 		rows.append({
 			"card_id": f"{CAMP_LEG_PREFIX}|{group_key}|{stop['stop_index']}",
+			"is_home_leg": 1 if homeward else 0,
 			"is_camp_leg": 1,
 			"transportation_shipment": serving.transportation_shipment if serving else None,
 			"vehicle": vehicle,
@@ -2400,8 +2423,8 @@ def _camp_leg_rows(itinerary, ordered, per_stop, vehicle, camp_departs,
 			"headcount": 0,
 			# The run's departure, so it survives a reload as a decision rather than
 			# being guessed at from where the first block happens to sit.
-			"start_time": (minutes or {}).get("departure") or (serving or first).start_time,
-			"end_time": (serving or first).start_time,
+			"start_time": window[0],
+			"end_time": window[1],
 			"transit_minutes": cint(held.get("transit_minutes")),
 			"buffer_minutes": cint(held.get("buffer_minutes")),
 			"qoa_time": (

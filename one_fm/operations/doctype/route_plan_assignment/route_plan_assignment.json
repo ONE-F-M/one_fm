@@ -31,6 +31,7 @@
   "stop_location",
   "is_accommodation_origin",
   "is_camp_leg",
+  "is_home_leg",
   "section_break_times",
   "start_time",
   "end_time",
@@ -189,6 +190,14 @@
    "fieldname": "is_camp_leg",
    "fieldtype": "Check",
    "label": "Camp Leg (No Card)",
+   "read_only": 1
+  },
+  {
+   "depends_on": "is_camp_leg",
+   "description": "The last leg of the run, back to the accommodation. Nobody is dropped there, so no card is filed against it.",
+   "fieldname": "is_home_leg",
+   "fieldtype": "Check",
+   "label": "Ride Home (No Card)",
    "read_only": 1
   },
   {

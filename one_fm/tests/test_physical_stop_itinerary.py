@@ -166,3 +166,4 @@ class TestEveryCardHasExactlyOneServingStop(FrappeTestCase):
 		self.assertEqual(home["drop_off_count"], 4)
 		# ...but it is nobody's serving stop, because it has no onward leg to time.
 		self.assertNotIn(home["stop_index"], [v[0] for v in self._serves(stops).values()])
+

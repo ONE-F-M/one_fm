@@ -120,3 +120,38 @@ class TestTheRunWalksForward(FrappeTestCase):
 
 		self.assertEqual(placed["R"]["start"], "2026-08-18T18:00:00.000Z")
 		self.assertEqual(placed["R"]["end"], "2026-08-18T18:30:00.000Z")
+
+
+class TestTheDrawerReadsTheRunInOrder(FrappeTestCase):
+	"""The stops are listed in the order the bus drives them, and the run's two ends
+	are the moment it leaves the camp and the moment it gets back.
+
+	stopIndex is the order the cards were dropped on the lane, not the order of the run:
+	a card added first can be the last stop. Sorted by it, a 07:32 stop was listed above
+	a 07:20 one and the trip timeline read "07:32 to 07:32 (0 min)".
+	"""
+
+	def setUp(self):
+		self.source = CANVAS.read_text()
+
+	def test_the_stops_are_sorted_by_when_the_bus_reaches_them(self):
+		self.assertIn("new Date(a.start) - new Date(b.start)", self.source)
+
+	def test_the_timeline_starts_where_the_bus_leaves_the_camp(self):
+		# Not at the first block: the first block is the first SITE, which the bus
+		# reaches after the camp leg, so the journey read short at both ends.
+		self.assertIn("const stored = this.selectedTripLegs.departure;", self.source)
+		self.assertIn("{{ fmtISO(tripStartsAt()) }}", self.source)
+
+	def test_the_timeline_ends_when_the_bus_is_back(self):
+		self.assertIn("return this.selectedTripLegs.arrival || this.lastStopEndsAt();", self.source)
+
+	def test_the_ride_home_is_shown_before_the_trip_total(self):
+		self.assertIn("Return to Camp", self.source)
+		self.assertLess(
+			self.source.index("Return to Camp"), self.source.index("Trip Total")
+		)
+
+	def test_a_ride_home_with_no_minutes_in_it_is_not_shown(self):
+		# The last drop was already at the camp; the bus is home.
+		self.assertIn('v-if="rideHomeMinutes() > 0"', self.source)
