@@ -1635,6 +1635,27 @@ function mountRoutePlannerApp(wrapper, data) {
                 );
             },
 
+            // A stop's minutes are the dwell there and the drive AWAY from it, so the
+            // second time on its row is when the bus reaches the NEXT place - which read
+            // as this stop's own arrival and put the whole run one stop out of step.
+            nextStopName(stop) {
+                const stops = this.selectedTripStops;
+                const at = stops.findIndex((s) => s.item.id === stop.item.id);
+                const next = at >= 0 ? stops[at + 1] : null;
+                if (next) {
+                    return next.card.site_location || next.card.stop_location || __('Next Stop');
+                }
+                return (this.selectedTripLegs.home || {}).place || __('Camp');
+            },
+
+            firstStopName() {
+                const stops = this.selectedTripStops;
+                return stops.length
+                    ? (stops[0].card.site_location || stops[0].card.stop_location
+                        || __('First Stop'))
+                    : __('First Stop');
+            },
+
             firstStopStartsAt() {
                 const stops = this.selectedTripStops;
                 return stops.length ? new Date(stops[0].item.start).toISOString() : null;
@@ -4283,7 +4304,9 @@ function injectRPVueTemplate() {
               <div class="rp-detail-row" style="padding:4px 0 0 30px">
                 <div class="rp-detail-row-icon"><span class="rp-icon">schedule</span></div>
                 <div class="rp-detail-row-content">
-                  <div class="rp-detail-row-label">{{ __('Departure') }} &rarr; {{ __('Arrival') }}</div>
+                  <div class="rp-detail-row-label">
+                    {{ __('Leaves Camp') }} &rarr; {{ __('Reaches') }} {{ firstStopName() }}
+                  </div>
                   <div class="rp-detail-row-value">
                     {{ fmtISO(tripStartsAt()) }} &rarr; {{ fmtISO(firstStopStartsAt()) }}
                   </div>
@@ -4390,7 +4413,9 @@ function injectRPVueTemplate() {
                 <div class="rp-detail-row" style="padding:4px 0 3px 30px">
                   <div class="rp-detail-row-icon"><span class="rp-icon">departure_board</span></div>
                   <div class="rp-detail-row-content">
-                    <div class="rp-detail-row-label">Departure &rarr; Target Arrival</div>
+                    <div class="rp-detail-row-label">
+                      {{ __('Leaves Here') }} &rarr; {{ __('Reaches') }} {{ nextStopName(stop) }}
+                    </div>
                     <div class="rp-detail-row-value">
                       {{ fmtTime(stop.item.start) }} &rarr; {{ fmtTime(stop.item.end) }}
                       <span v-if="stopDayOffset(stop)" class="rp-detail-row-label" style="display:inline">

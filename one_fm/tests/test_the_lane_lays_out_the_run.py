@@ -166,6 +166,18 @@ class TestTheDrawerReadsTheRunInOrder(FrappeTestCase):
 		# to later - and it was printed against that stop, 15 minutes off.
 		self.assertIn('v-if="stopQoaTime(stop) && !campLegPlaces().length"', self.source)
 
+	def test_a_stops_second_time_names_the_place_it_belongs_to(self):
+		# "Departure -> Target Arrival" on a row headed Siemens reads as the arrival at
+		# Siemens. It is the arrival at the stop AFTER it, so it says which.
+		self.assertNotIn("Departure &rarr; Target Arrival", self.source)
+		self.assertIn("{{ __('Leaves Here') }} &rarr; {{ __('Reaches') }} {{ nextStopName(stop) }}",
+					  self.source)
+
+	def test_the_last_stop_reaches_the_camp(self):
+		# There is always a next place: the run ends by going home.
+		self.assertIn("return (this.selectedTripLegs.home || {}).place || __('Camp');",
+					  self.source)
+
 	def test_the_ride_home_is_shown_before_the_trip_total(self):
 		self.assertIn("Return to Camp", self.source)
 		self.assertLess(
