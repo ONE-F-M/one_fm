@@ -882,17 +882,6 @@ fixtures = [
 	# 	'filters': [['dt', 'in', ['Shift Request', 'Shift Permission', 'Employee', 'Project', 'Location', 'Employee Checkin', 'Shift Assignment', 'Shift Type', 'Operations Site']]]
 	# },
 	{
-		# Warehouse.one_fm_project (before_insert_warehouse's own
-		# set_warehouse_code assumes this field exists on every site) was
-		# only ever shipped via the old custom/warehouse.json sync file,
-		# removed in 8f44257af2 without a fixtures replacement — every
-		# environment old enough to predate that commit still has the
-		# field in its database, but a genuinely fresh install has no way
-		# to create it, since nothing in the app's code does so anymore.
-		"dt": "Custom Field",
-		"filters": [["dt", "in", ["Warehouse"]]]
-	},
-	{
 		"dt": "Email Template"
 	}
 ]
