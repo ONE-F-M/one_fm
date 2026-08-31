@@ -172,7 +172,13 @@ class TransportationShipment(Document):
 
 		rows = frappe.get_all(
 			"Route Plan Assignment",
-			filters={"transportation_shipment": self.name, "headcount": ["!=", cint(self.headcount)]},
+			filters={
+				"transportation_shipment": self.name,
+				"headcount": ["!=", cint(self.headcount)],
+				# A camp leg carries no riders of its own; giving it this card's count
+				# would have it counted twice by anything that sums the column.
+				"is_camp_leg": 0,
+			},
 			pluck="name",
 		)
 		for row in rows:
@@ -514,7 +520,8 @@ def _timings_by_shipment(timings) -> dict:
 	preview, so it has to be able to seed saved timings before the first render.
 	"""
 	return {
-		key if str(key).startswith("leg-") else (resolve_shipment_names([key]) or [key])[0]: value
+		key if str(key).startswith(("leg-", "camp:"))
+		else (resolve_shipment_names([key]) or [key])[0]: value
 		for key, value in (timings or {}).items()
 	}
 
@@ -597,6 +604,13 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 		held = timings.get(_leg_key(stop))
 		if held:
 			return held
+		# A camp has no card to key its minutes on, so the canvas seeds them by the place
+		# itself. Keyed by place rather than by stop index because adding a card to the
+		# run renumbers the stops and the camp leg would lose what was typed against it.
+		if stop["kind"] == CAMP_STOP:
+			held = timings.get(f"camp:{stop['place']}")
+			if held:
+				return held
 		for card in stop["dropping"] + stop["boarding"]:
 			if card.name in timings:
 				return timings[card.name]

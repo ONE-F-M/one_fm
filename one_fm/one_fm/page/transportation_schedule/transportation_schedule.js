@@ -66,6 +66,11 @@ function mountRoutePlannerApp(wrapper, data) {
                 planData: data,
                 // swimItems: { id, cardId, vehicleId, direction, start, end, headcount, conflict }
                 swimItems: [],
+                // Minutes for the legs no card is filed against - the drive out of each
+                // accommodation - as { tripId: { camp: {transit_minutes, buffer_minutes} } }.
+                // Keyed by the camp rather than the stop index: adding a card renumbers
+                // the stops, and the camp leg must keep what was typed against it.
+                legTimings: {},
                 assignedCards: new Set(),   // reactive Set<cardId>
                 windowStart: initStart,
                 windowEnd: initEnd,
@@ -1205,6 +1210,12 @@ function mountRoutePlannerApp(wrapper, data) {
                     hour: '2-digit', minute: '2-digit', second: '2-digit',
                     hour12: false, timeZone: 'Asia/Kuwait'
                 });
+                // The camp legs of this run, which have no block to carry their minutes.
+                const tripId = existingItems.find((i) => i.tripId)?.tripId;
+                Object.entries((this.legTimings || {})[tripId] || {}).forEach(([place, held]) => {
+                    timings[`camp:${place}`] = held;
+                });
+
                 const runStart = existingItems.length
                     ? clockOf(Math.min(...existingItems.map((i) => new Date(i.start).getTime())))
                     : null;
@@ -1373,7 +1384,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 return `
                     <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
-                        <span style="background:#819171;color:#fff;font-weight:700;font-size:12px;padding:3px 10px;border-radius:6px">${esc((p.trip_direction || 'Mixed').toUpperCase())}</span>
+                        <span style="background:#819171;color:#fff;font-weight:700;font-size:12px;padding:3px 10px;border-radius:6px">${esc({ Outward: 'OUTBOUND', Return: 'RETURN', Mixed: 'MIXED' }[p.trip_direction] || 'MIXED')}</span>
                         <span style="font-size:12px;color:#6b7280">${p.trip_direction === 'Mixed'
                             ? __('Direction is set by the merge and cannot be changed here.')
                             : __('Every stop below travels the same way, so the run keeps its direction.')}</span>
@@ -1432,6 +1443,17 @@ function mountRoutePlannerApp(wrapper, data) {
                 // shipment details never agreed. _retimeTrip lays each block out from the
                 // stop before it, which is where the drive to it is now recorded.
                 const legs = {};
+                // A camp keeps its minutes against the run, since no block does.
+                const camps = {};
+                (previewStops || []).forEach((stop) => {
+                    if (stop.is_accommodation_origin && stop.place) {
+                        camps[stop.place] = {
+                            transit_minutes: parseInt(stop.transit_minutes, 10) || 0,
+                            buffer_minutes: parseInt(stop.buffer_minutes, 10) || 0,
+                        };
+                    }
+                });
+                this.legTimings = { ...(this.legTimings || {}), [tripId]: camps };
                 (previewStops || []).forEach((stop) => {
                     // `serves`, not `cards`: a return card is listed at its collection stop
                     // AND at the home stop, and home carries no minutes - so keying on
@@ -2864,6 +2886,7 @@ function mountRoutePlannerApp(wrapper, data) {
             _applyLoadedPlan(msg) {
                 const items = msg.swim_items || [];
                 const cards = msg.assigned_cards || [];
+                this.legTimings = msg.leg_timings || {};
 
                 this.currentPlan = {
                     name: msg.plan_name,
@@ -3151,7 +3174,8 @@ function mountRoutePlannerApp(wrapper, data) {
                         args: {
                             plan_name: this.currentPlan.name,
                             swim_items: JSON.stringify(items),
-                            assigned_cards: JSON.stringify(cards)
+                            assigned_cards: JSON.stringify(cards),
+                            leg_timings: JSON.stringify(this.legTimings || {})
                         },
                         async: true,
                         callback: () => { }, // silent save on success

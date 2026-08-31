@@ -684,7 +684,7 @@ def _expired_assigned_shipments(cutoff_date) -> set:
 	rows_by = {}
 	for r in frappe.get_all(
 		"Route Plan Assignment",
-		filters={"transportation_shipment": ["in", list(to_date_by)]},
+		filters={"transportation_shipment": ["in", list(to_date_by)], "is_camp_leg": 0},
 		fields=["transportation_shipment", "start_time", "end_time"],
 	):
 		rows_by.setdefault(r.transportation_shipment, []).append(r)

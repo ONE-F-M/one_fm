@@ -78,7 +78,7 @@ class RoutePlan(Document):
 		# those so a card never conflicts with itself.
 		vehicle_shipments = {}
 		shipment_names = set()
-		for row in self.assignments:
+		for row in card_rows(self.assignments):
 			if not row.vehicle or not row.transportation_shipment:
 				continue
 			vehicle_shipments.setdefault(row.vehicle, set()).add(row.transportation_shipment)
@@ -114,7 +114,7 @@ class RoutePlan(Document):
 		mirroring the retention lock above.
 		"""
 		by_vehicle = {}
-		for row in self.assignments:
+		for row in card_rows(self.assignments):
 			if row.vehicle:
 				by_vehicle.setdefault(row.vehicle, []).append(row)
 
@@ -211,7 +211,7 @@ class RoutePlan(Document):
 		the journey so the dispatcher can re-drop it cleanly.
 		"""
 		leg_vehicle = {}
-		for row in self.assignments:
+		for row in card_rows(self.assignments):
 			if not row.trip_group or not row.vehicle:
 				continue
 			key = (row.trip_group, _row_direction(row))
@@ -302,8 +302,9 @@ class RoutePlan(Document):
 		run).
 		"""
 		trips = {}
-		live = live_headcounts(self.assignments)
-		for idx, row in enumerate(self.assignments):
+		rows = card_rows(self.assignments)
+		live = live_headcounts(rows)
+		for idx, row in enumerate(rows):
 			if not row.vehicle:
 				continue
 			direction = _row_direction(row)
@@ -656,7 +657,7 @@ def live_headcounts(rows) -> dict:
 	cuts both ways, and the dangerous way is under-counting: a stale row waved a
 	28-passenger load through on a 27-seat bus.
 	"""
-	names = list({row.transportation_shipment for row in rows if row.transportation_shipment})
+	names = list({row.transportation_shipment for row in card_rows(rows) if row.transportation_shipment})
 	if not names:
 		return {}
 	return {
@@ -675,12 +676,25 @@ def row_headcount(row, live) -> int:
 	return cint(row.headcount)
 
 
+def card_rows(rows) -> list:
+	"""The rows that stand for a card, which is every row that decides anything.
+
+	A plan also lists the stops the bus makes that no card is filed against - the
+	accommodation it loads at - so the table reads like the itinerary and the leg out of
+	the camp has somewhere to keep its minutes. Those rows are a description of the run,
+	not a placement: counting one would double a card's riders, and building an itinerary
+	from one would visit its stop twice.
+	"""
+	return [row for row in rows if not cint(row.get("is_camp_leg"))]
+
+
 def _cards_for_itinerary(rows) -> list:
 	"""The rows as card-shaped records build_itinerary can read, in run order.
 
 	The headcount comes from the shipment rather than the row, for the reason
 	live_headcounts explains.
 	"""
+	rows = card_rows(rows)
 	names = [row.transportation_shipment for row in rows if row.transportation_shipment]
 	if not names:
 		return []

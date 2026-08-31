@@ -30,6 +30,7 @@
   "origin_location",
   "stop_location",
   "is_accommodation_origin",
+  "is_camp_leg",
   "section_break_times",
   "start_time",
   "end_time",
@@ -182,6 +183,13 @@
    "fieldname": "is_accommodation_origin",
    "fieldtype": "Check",
    "label": "Is Accommodation Origin"
+  },
+  {
+   "description": "A stop the bus makes that no card is filed against - the accommodation it loads at. Written by the canvas so the plan lists every stop of the run, and so the leg out of the camp has somewhere to keep its buffer and transit.",
+   "fieldname": "is_camp_leg",
+   "fieldtype": "Check",
+   "label": "Camp Leg (No Card)",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_times",

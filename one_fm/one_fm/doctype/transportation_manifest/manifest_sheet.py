@@ -304,6 +304,10 @@ def _stop_actions(rows) -> dict:
 		filters={
 			"trip_group": ["in", sorted({key[0] for key in keys})],
 			"transportation_shipment": ["in", sorted({key[1] for key in keys})],
+			# A camp leg links the same shipment and shares its trip group, so without
+			# this it would answer for the card's stop and hand the sheet "Boarding" at
+			# a site where the riders are being put down.
+			"is_camp_leg": 0,
 		},
 		fields=["trip_group", "transportation_shipment", "action_type", "qoa_time"],
 	)

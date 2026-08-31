@@ -20,7 +20,9 @@ from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment impor
 	qoa_buffer_minutes,
 	walk_legs,
 )
+from one_fm.operations.doctype.route_plan.route_plan import card_rows
 from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+	_camp_place_for,
 	_stamp_leg_details,
 )
 from one_fm.patches.v15_0.add_transportation_qoa_buffer_to_hr_settings import (
@@ -363,7 +365,11 @@ class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
 		doc.insert(ignore_permissions=True)
 		return doc.name
 
-	def _plan(self):
+	def _plan(self, leg_timings=None):
+		"""The card rows of a saved run - the stops the bus makes that carry a card."""
+		return card_rows(self._doc(leg_timings).assignments)
+
+	def _doc(self, leg_timings=None):
 		"""A handover: 4 dropped and 4 collected at the same site, on one vehicle."""
 		vehicle = frappe.get_all("Vehicle", filters={"transport_stop_vehicle": 1},
 								 limit=1, pluck="name")
@@ -384,8 +390,46 @@ class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
 				"start_time": "2026-08-18T05:00:00.000Z",
 				"end_time": "2026-08-18T06:00:00.000Z",
 			})
-		_stamp_leg_details(doc)
-		return doc.assignments
+		_stamp_leg_details(doc, leg_timings)
+		return doc
+
+	def test_the_camp_the_bus_loads_at_is_a_row_of_its_own(self):
+		# The plan lists every stop of the run, so the table reads like the sheet. The
+		# camp is a stop no card is filed against, and before this it had no row at all.
+		camp = [row for row in self._doc().assignments if row.is_camp_leg]
+
+		self.assertEqual(len(camp), 1)
+		self.assertEqual(camp[0].action_type, "Boarding")
+		# The camp is the first thing the bus does, before any site.
+		self.assertEqual(camp[0].stop_index, 1)
+
+	def test_a_camp_row_carries_no_riders_of_its_own(self):
+		# It describes a stop, it is not a placement: a headcount here would be counted a
+		# second time by everything that sums the column.
+		camp = next(row for row in self._doc().assignments if row.is_camp_leg)
+
+		self.assertEqual(camp.headcount, 0)
+
+	def test_the_camp_row_keeps_the_minutes_typed_against_it(self):
+		# The whole point: the drive out of the camp had nowhere to be recorded, so the
+		# Trip Builder took the numbers and the plan forgot them.
+		place = _camp_place_for(frappe._dict(accommodation=self.camp, accommodation_name=None))
+		camp = next(
+			row for row in self._doc({"RUN-1": {place: {
+				"transit_minutes": 25, "buffer_minutes": 5,
+			}}}).assignments
+			if row.is_camp_leg
+		)
+
+		self.assertEqual((camp.transit_minutes, camp.buffer_minutes), (25, 5))
+
+	def test_the_camp_row_names_the_journey_it_belongs_to(self):
+		# Optional link, per the dispatcher: the row can be traced back to a card without
+		# ever standing in for one.
+		camp = next(row for row in self._doc().assignments if row.is_camp_leg)
+
+		self.assertEqual(camp.trip_group, "RUN-1")
+		self.assertIn(camp.transportation_shipment, (self.drop, self.collect))
 
 	def test_a_stop_that_sheds_and_takes_on_is_combined(self):
 		# Both movements happen at one place, which is what a handover is.

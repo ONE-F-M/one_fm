@@ -4,7 +4,7 @@ from frappe import _
 from frappe.utils import cint
 from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
 from one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log import get_handover_windows
-from one_fm.operations.doctype.route_plan.route_plan import _card_direction
+from one_fm.operations.doctype.route_plan.route_plan import _card_direction, card_rows
 from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
     qoa_buffer_minutes,
 )
@@ -1151,14 +1151,22 @@ def _link_shipment_on_manifest_rows(manifest_doc, v_rows, card_emp_map):
 
 
 @frappe.whitelist()
-def save_assignments(plan_name: str, swim_items: str, assigned_cards: str):
-    """Save route planner swim items into a Route Plan DocType."""
+def save_assignments(plan_name: str, swim_items: str, assigned_cards: str,
+                     leg_timings: str = None):
+    """Save route planner swim items into a Route Plan DocType.
+
+    ``leg_timings`` carries the minutes for the legs no card is filed against - the drive
+    out of each accommodation - keyed by trip group and then by camp. They have no block
+    on the lane to ride in on, so they are sent alongside the items and land on the camp
+    rows _stamp_leg_details writes.
+    """
     if not _route_plan_exists():
         frappe.throw(_("Route Plan DocType not found. Please run 'bench migrate' on this site first."))
 
     import json
     items = json.loads(swim_items)
     cards = json.loads(assigned_cards)
+    legs = json.loads(leg_timings) if isinstance(leg_timings, str) else (leg_timings or {})
 
     doc = frappe.get_doc("Route Plan", plan_name)
     doc.check_permission("write")
@@ -1193,7 +1201,7 @@ def save_assignments(plan_name: str, swim_items: str, assigned_cards: str):
             "buffer_minutes":          item.get("bufferMinutes") or 0,
         })
 
-    _stamp_leg_details(doc)
+    _stamp_leg_details(doc, legs)
     doc.save(ignore_permissions=False)
 
     # Keep persisted Transportation Shipment records in sync with the canvas:
@@ -1231,8 +1239,21 @@ def load_assignments(plan_name: str = ""):
 
     swim_items = []
     assigned_card_ids = set()
+    # The minutes of the legs no card is filed against, keyed by the run and the camp
+    # they leave. Without them a re-opened Trip Builder showed the camp leg back on a
+    # default nobody typed, and every stop after it moved with it.
+    leg_timings = {}
 
     for row in doc.assignments:
+        if cint(row.is_camp_leg):
+            place = row.origin_location or row.stop_location
+            if place:
+                leg_timings.setdefault(row.trip_group or camp_leg_group(row.card_id), {})[place] = {
+                    "transit_minutes": row.transit_minutes or 0,
+                    "buffer_minutes": row.buffer_minutes or 0,
+                }
+            continue
+
         swim_items.append({
             "id":        f"{row.card_id}_{row.direction}_{row.name}",
             "cardId":    row.card_id,
@@ -1271,6 +1292,7 @@ def load_assignments(plan_name: str = ""):
 
     return {
         "status": "ok",
+        "leg_timings": leg_timings,
         "plan_name": doc.name,
         "plan_title": doc.title,
         "plan_status": doc.status,
@@ -1299,14 +1321,17 @@ def get_manifest_data_for_plan(plan_name: str):
 	doc = frappe.get_doc("Route Plan", plan_name)
 	doc.check_permission("read")
 
-	if not doc.assignments:
+	# A camp leg describes a stop the bus makes; no card is filed against it and it
+	# carries no roster, so the manifest is compiled from the rows that stand for one.
+	rows = card_rows(doc.assignments)
+	if not rows:
 		return {"status": "empty", "message": _("This plan has no assignments.")}
 
 	slug = lambda s: (s or "").replace(" ", "-").replace("_", "-")
 
 	# ── Collect unique references from assignments ──
-	vehicle_ids = list({row.vehicle for row in doc.assignments if row.vehicle})
-	shift_names = list({row.shift for row in doc.assignments if row.shift})
+	vehicle_ids = list({row.vehicle for row in rows if row.vehicle})
+	shift_names = list({row.shift for row in rows if row.shift})
 
 	# ── Batch-fetch vehicle metadata ──
 	vehicle_map = {}
@@ -1382,7 +1407,7 @@ def get_manifest_data_for_plan(plan_name: str):
 	# employee list straight from the shipment document instead.
 	shipment_by_card = {
 		row.card_id: row.transportation_shipment
-		for row in doc.assignments
+		for row in rows
 		if row.transportation_shipment and row.card_id not in card_emp_map
 	}
 	if shipment_by_card:
@@ -1417,7 +1442,7 @@ def get_manifest_data_for_plan(plan_name: str):
 
 	# Lazily sync Transportation Manifest documents for each vehicle on today's date
 	schedule_date_str = frappe.utils.today()
-	assigned_vehicles = list({row.vehicle for row in doc.assignments if row.vehicle})
+	assigned_vehicles = list({row.vehicle for row in rows if row.vehicle})
 	
 	manifests = {}
 
@@ -1437,7 +1462,7 @@ def get_manifest_data_for_plan(plan_name: str):
 			manifest_doc.schedule_date = schedule_date_str
 
 		# Always sync rows — handles both new and existing manifests
-		v_rows = [row for row in doc.assignments if row.vehicle == v_id]
+		v_rows = [row for row in rows if row.vehicle == v_id]
 		rows_changed = sync_manifest_details(manifest_doc, v_rows, card_emp_map, card_return_emp_map)
 
 		# The manifest header inherits the run's direction and, for a merged run, its
@@ -1560,7 +1585,7 @@ def get_manifest_data_for_plan(plan_name: str):
 	# the manifest page decides drop-off vs pick-up from exactly that (WI-002074).
 	ship_own_dir = {}
 	_own_dir_by_shipment = {}
-	_ship_names = [r.transportation_shipment for r in doc.assignments if r.transportation_shipment]
+	_ship_names = [r.transportation_shipment for r in rows if r.transportation_shipment]
 	if _ship_names:
 		for _r in frappe.get_all(
 			"Transportation Shipment",
@@ -1572,7 +1597,7 @@ def get_manifest_data_for_plan(plan_name: str):
 			)
 
 	# Process assignments to build shipments
-	for row in doc.assignments:
+	for row in rows:
 		dir_key = f"{row.card_id}_{row.direction}"
 		if dir_key in c_map:
 			continue  # Already created shipment for this card+direction
@@ -1611,7 +1636,7 @@ def get_manifest_data_for_plan(plan_name: str):
 	# Group assignments by vehicle, preserving trip order
 	vehicle_order = []
 	vehicle_items = {}  # vehicle_id -> [rows]
-	for row in doc.assignments:
+	for row in rows:
 		if row.vehicle not in vehicle_items:
 			vehicle_items[row.vehicle] = []
 			vehicle_order.append(row.vehicle)
@@ -2141,7 +2166,7 @@ def _time_field(seconds):
     return f"{seconds // 3600:02d}:{(seconds % 3600) // 60:02d}:{seconds % 60:02d}"
 
 
-def _stamp_leg_details(doc):
+def _stamp_leg_details(doc, leg_timings=None):
 	"""Write each leg's own facts onto its assignment row (WI-002151, WI-002171).
 
 	The row stays one per card - that is what carries the shipment link and the roster -
@@ -2167,9 +2192,15 @@ def _stamp_leg_details(doc):
 		return own_direction(card) == "RETURN"
 	from one_fm.operations.doctype.route_plan.route_plan import _cards_for_itinerary
 
+	# Rebuilt from scratch every save: a camp leg is derived from the run, so a stale one
+	# left behind by a card that has since moved would describe a stop the bus no longer
+	# makes. The card rows are the input.
+	doc.assignments = [row for row in doc.assignments if not cint(row.is_camp_leg)]
 	rows = [row for row in doc.assignments if row.vehicle]
 	if not rows:
 		return
+
+	camp_legs = []
 
 	limits = {
 		v.name: passenger_capacity(v.seats, v.custom_includes_driver_seat)
@@ -2186,6 +2217,7 @@ def _stamp_leg_details(doc):
 		runs.setdefault((row.vehicle, row.trip_group or f"\0{row.card_id}"), []).append(row)
 
 	for (vehicle, _group), run in runs.items():
+		group_key = _group if not _group.startswith("\0") else run[0].card_id
 		cards = _cards_for_itinerary(run)
 		by_name = {card.name: card for card in cards}
 		ordered = sorted(
@@ -2256,6 +2288,82 @@ def _stamp_leg_details(doc):
 			row.qoa_time = None
 			if place and camp_first.get(place) == card.name and camp_departs.get(place) is not None:
 				row.qoa_time = _time_field(camp_departs[place] - buffer_minutes * 60)
+
+		camp_legs.extend(_camp_leg_rows(itinerary, ordered, per_stop, vehicle,
+										camp_departs, buffer_minutes, limits, group_key,
+										(leg_timings or {}).get(group_key, {})))
+
+	for values in camp_legs:
+		doc.append("assignments", values)
+
+
+CAMP_LEG_PREFIX = "CAMPLEG"
+
+
+def camp_leg_group(card_id) -> str:
+	"""The run a camp leg belongs to, read back out of its card id."""
+	return str(card_id or "").split("|")[1] if "|" in str(card_id or "") else ""
+
+
+def _camp_leg_rows(itinerary, ordered, per_stop, vehicle, camp_departs,
+				   buffer_minutes, limits, group_key, minutes=None) -> list:
+	"""The rows for the stops no card is filed against: the camps the bus loads at.
+
+	A card row records the leg out of the stop that SERVES it - where an outward card's
+	riders are put down, where a return card's are collected. Nothing serves a camp, so
+	the drive out of it had nowhere to be recorded: the Trip Builder accepted minutes for
+	it and the plan forgot them, and re-opening the run put that leg back on a default
+	nobody chose, moving every stop after it.
+
+	The shipment link is filled in from the first card boarding there, so the row can be
+	traced back to a journey, but the row is a description of the run and never a
+	placement - `card_rows` keeps it out of every count and every itinerary.
+	"""
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import CAMP_STOP
+
+	rows = []
+	seen = set()
+	first = ordered[0]
+	for position, stop in enumerate(itinerary):
+		if stop["kind"] != CAMP_STOP or stop["place"] in seen:
+			continue
+		seen.add(stop["place"])
+		boarding = [card.name for card in stop["boarding"]]
+		serving = next((row for row in ordered if row.transportation_shipment in boarding), None)
+		departs = camp_departs.get(stop["place"])
+		held = (minutes or {}).get(stop["place"]) or {}
+		rows.append({
+			"card_id": f"{CAMP_LEG_PREFIX}|{group_key}|{stop['stop_index']}",
+			"is_camp_leg": 1,
+			"transportation_shipment": serving.transportation_shipment if serving else None,
+			"vehicle": vehicle,
+			"direction": (serving or first).direction,
+			"trip_group": (serving or first).trip_group,
+			"trip_name": (serving or first).trip_name,
+			"stop_index": stop["stop_index"],
+			"action_type": stop["action_type"],
+			"origin_location": (
+				stop["place"] if frappe.db.exists("Location", stop["place"]) else None
+			),
+			"stop_location": stop["place"],
+			"accommodation": stop["place"],
+			"is_accommodation_origin": 1,
+			"boarding_count": stop["boarding_count"],
+			"drop_off_count": stop["drop_off_count"],
+			"current_passenger_count": per_stop[position],
+			"max_passenger_capacity": limits.get(vehicle) or 0,
+			# Not a placement: a camp row that carried riders would count them a second
+			# time in every report that sums the column.
+			"headcount": 0,
+			"start_time": (serving or first).start_time,
+			"end_time": (serving or first).end_time,
+			"transit_minutes": cint(held.get("transit_minutes")),
+			"buffer_minutes": cint(held.get("buffer_minutes")),
+			"qoa_time": (
+				_time_field(departs - buffer_minutes * 60) if departs is not None else None
+			),
+		})
+	return rows
 
 
 def _camp_place_for(card):

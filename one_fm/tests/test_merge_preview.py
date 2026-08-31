@@ -149,7 +149,12 @@ class TestTheMergeModal(FrappeTestCase):
 		self.assertIn("return existingItems.length > 0;", self.source)
 
 	def test_the_direction_badge_states_the_run_it_would_make(self):
-		self.assertIn("(p.trip_direction || 'Mixed').toUpperCase()", self.source)
+		# The canvas's own vocabulary: an outbound run reads OUTBOUND on the badge, not
+		# the document's "Outward", and it stays that way until a return card joins it.
+		self.assertIn(
+			"{ Outward: 'OUTBOUND', Return: 'RETURN', Mixed: 'MIXED' }[p.trip_direction]",
+			self.source,
+		)
 		self.assertIn("cannot be changed here", self.source)
 
 	def test_the_modal_shows_the_vehicle_capacity(self):
