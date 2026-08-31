@@ -1360,6 +1360,22 @@ def load_assignments(plan_name: str = ""):
     }
 
 
+def visit_times(row_start, row_end, own_direction, camp_departure=None) -> tuple:
+	"""When the bus is where each half of a card happens: (boards, alights).
+
+	A row runs from the moment the bus is AT its stop to the moment it reaches the next
+	one. So an outward card's riders are set down at its START - reading the end put
+	every drop-off one leg late on the driver's page, and made the run's first stop an
+	hour after it had left. They board back at the camp, which is earlier than any card
+	row and is why the camp leg has to be read for it.
+
+	A return card is the other way round: collected at its stop, carried to the camp.
+	"""
+	if own_direction == "RETURN":
+		return row_start, row_end
+	return (camp_departure or row_start), row_start
+
+
 def manifest_row_order(rows) -> list:
 	"""A vehicle's rows in the order the bus drives them.
 
@@ -1378,8 +1394,10 @@ def manifest_row_order(rows) -> list:
 		if key not in leaves or at < leaves[key]:
 			leaves[key] = at
 
+	# Within a run, by when the bus is at each stop. stop_index is the order the cards
+	# were dropped on the lane, which a re-timed run can leave out of step with itself.
 	return sorted(rows, key=lambda row: (
-		leaves[run_of(row)], row.stop_index or 0, row.start_time or ""
+		leaves[run_of(row)], row.start_time or "", row.stop_index or 0
 	))
 
 
@@ -1404,9 +1422,13 @@ def get_manifest_data_for_plan(plan_name: str):
 	# The camp and home legs, kept aside: they carry no roster and are never stops on
 	# the manifest, but they are when the bus actually leaves and when it gets back.
 	leg_rows = {}
+	camp_departure = {}
 	for row in doc.assignments:
 		if cint(row.is_camp_leg) and row.vehicle:
 			leg_rows.setdefault(row.vehicle, []).append(row)
+			if not cint(row.is_home_leg) and row.trip_group and row.start_time:
+				held = camp_departure.get(row.trip_group)
+				camp_departure[row.trip_group] = min(held, row.start_time) if held else row.start_time
 	if not rows:
 		return {"status": "empty", "message": _("This plan has no assignments.")}
 
@@ -1790,8 +1812,14 @@ def get_manifest_data_for_plan(plan_name: str):
 			except Exception:
 				d_sec = 0
 
+			own_dir = _own_dir_by_shipment.get(row.transportation_shipment) \
+				or _normalize_direction(row.direction)
+			boards_at, alights_at = visit_times(
+				i_s, i_e, own_dir, camp_departure.get(row.trip_group)
+			)
+
 			visits.append({
-				"shipmentIndex": s_idx, "isPickup": True, "startTime": i_s,
+				"shipmentIndex": s_idx, "isPickup": True, "startTime": boards_at,
 				"loadDemands": {"seats": {"amount": str(hc)}},
 				"tripId": row.trip_group or None,
 				"tripName": row.trip_name or None,
@@ -1806,7 +1834,7 @@ def get_manifest_data_for_plan(plan_name: str):
 				"travelDistanceMeters": travel_sec * 10
 			})
 			visits.append({
-				"shipmentIndex": s_idx, "isPickup": False, "startTime": i_e,
+				"shipmentIndex": s_idx, "isPickup": False, "startTime": alights_at,
 				"loadDemands": {"seats": {"amount": str(-hc)}},
 				"tripId": row.trip_group or None,
 				"tripName": row.trip_name or None,
