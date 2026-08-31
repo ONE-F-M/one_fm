@@ -4040,22 +4040,27 @@ def get_json_file(file_name, folder):
     """
     data = {}
     if not file_name.endswith(".json"):
-        frappe.log_error("Only JSON files are allowed. Please ensure the file ends with '.json'.")
+        frappe.log_error(
+            title="Only JSON files are allowed",
+            message=f"Please ensure the file ends with '.json': {file_name}",
+        )
+        return data
 
     file_path = os.path.join(folder, file_name)
 
     if not os.path.isfile(file_path):
-        frappe.log_error(f"File not found: {file_path}")
+        frappe.log_error(title="JSON file not found", message=file_path)
+        return data
 
     try:
         with open(file_path, "r") as f:
             data = json.load(f)
 
     except json.JSONDecodeError as e:
-        frappe.log_error(title=f"Invalid JSON format in file {file_path}", message=str(e))
+        frappe.log_error(title="Invalid JSON format in file", message=f"{file_path}\n\n{e}")
 
     except Exception as e:
-        frappe.log_error(title=f"An error occurred while reading the file {file_path}", message=str(e))
+        frappe.log_error(title="Error while reading JSON file", message=f"{file_path}\n\n{e}")
 
     return data
 

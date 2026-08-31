@@ -372,6 +372,7 @@ def has_day_off(employee,date):
 @frappe.whitelist()
 def get_site_location(employee_id: str = None, shift: str = None,latitude: float = None, longitude: float = None) -> dict:
     try:
+        print(employee_id, shift ,latitude , longitude)
         if not employee_id:
             return response(_("Missing Employee ID"), 400, None,
                             _("Please enter your Employee ID."))

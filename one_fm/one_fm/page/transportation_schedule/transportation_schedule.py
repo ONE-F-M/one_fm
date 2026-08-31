@@ -919,7 +919,15 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
 
             dep_utc = to_utc(str(dep))
             ret_utc = to_utc(str(ret))
-            if ret_utc <= dep_utc:
+            # A night shift finishes the morning after it starts, so its end time is
+            # legitimately earlier on the clock than its start. Reading that as a broken
+            # window and replacing it with "start + 1 hour" is why a 19:00-07:00 shift
+            # advertised a 20:00 finish on its card (WI-002161). The canvas is a rolling
+            # 24h view of one day's runs — the 07:00 pickup and the 19:00 drop both belong
+            # on it — so the end keeps its own time of day rather than rolling onto
+            # tomorrow's date and off the axis. Only a shift with no length recorded at
+            # all still needs a fallback.
+            if ret_utc == dep_utc:
                 ret_utc = dep_utc + timedelta(hours=1)
 
             stop_coords = get_coords_cached("Location", s.stop_location) if s.stop_location else None
@@ -1040,6 +1048,7 @@ def _sync_shipment_statuses(items, previously_linked=None):
                 fields=["name", "trip_direction"],
             )
         }
+        mismatched = []
         for name, placed_dirs in placed_dirs_by_shipment.items():
             own_dir = shipment_dir.get(name)
             if own_dir is None:
@@ -1047,11 +1056,22 @@ def _sync_shipment_statuses(items, previously_linked=None):
             if own_dir in placed_dirs:
                 assigned.add(name)
             else:
-                frappe.log_error(
-                    f"Skipped assigning {name}: placed as {sorted(placed_dirs)} but "
-                    f"shipment direction is {own_dir}.",
-                    "Transportation Shipment Direction Mismatch",
+                mismatched.append(
+                    f"{name}: placed as {sorted(placed_dirs)}, shipment says {own_dir}"
                 )
+
+        if mismatched:
+            # One entry per save rather than one per card. A browser holding a stale copy
+            # of the plan disagrees about every card it carries, and a hundred rows of the
+            # same fact is not a better signal than one.
+            frappe.log_error(
+                title="Transportation Shipment Direction Mismatch",
+                message=(
+                    "Left as they are - the plan still places these cards, so what needs "
+                    "looking at is the direction flag, not the status:\n\n"
+                    + "\n".join(mismatched)
+                ),
+            )
 
     for name in assigned:
         if frappe.db.get_value("Transportation Shipment", name, "status") != "Assigned":
@@ -1063,8 +1083,19 @@ def _sync_shipment_statuses(items, previously_linked=None):
         unmerge_trip_shipment,
     )
 
+    # A card the plan still places is never reverted, whatever its direction flag says.
+    # `status` answers "is this shipment on a plan", and a direction mismatch does not
+    # change that answer - it means the two sides disagree about which leg, which is a
+    # flag to fix rather than a card to send back to the pool. Reverting one that is
+    # still on a lane marked it Unassigned while its block sat there, and Generate
+    # Shipments deletes Unassigned shift-generated cards whose demand has moved on - so a
+    # browser left open across a data change could get a placed card deleted.
+    still_placed = set(placed_dirs_by_shipment)
+
     for name in (previously_linked or set()):
-        if name and name not in assigned and frappe.db.exists("Transportation Shipment", name):
+        if not name or name in assigned or name in still_placed:
+            continue
+        if frappe.db.exists("Transportation Shipment", name):
             frappe.db.set_value("Transportation Shipment", name, "status", "Unassigned")
             # A card returning to the pool takes its own direction back with it. Being
             # merged is a property of the block it was in, not of the journey the shipment

@@ -238,6 +238,37 @@ doc_events = {
 			"one_fm.overrides.todo.delete_linked_todos"
 		]
 	},
+	# WI-002093: each of these carries the Preparation that opened it, and its own save is
+	# where the row's status column comes from. The handler only ever moves a row forward
+	# along Work Permit -> Medical Insurance -> Residency -> PACI.
+	"Work Permit": {
+		# WI-002096: no step completes before the one in front of it.
+		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+	},
+	"Medical Insurance": {
+		# WI-002096: no step completes before the one in front of it.
+		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+	},
+	"Residency": {
+		# WI-002096: no step completes before the one in front of it.
+		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+	},
+	"PACI": {
+		# WI-002096: no step completes before the one in front of it.
+		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+	},
+	"Employee": {
+		# WI-002091: keep the PAM licence headcounts in step with the employees on the
+		# licence. The handler returns immediately unless the save touched one of the five
+		# fields that can move somebody between licences or sectors.
+		"on_update": [
+			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_counts_from_employee"
+		]
+	},
 	"HR Settings": {
 		"validate": [
 			"one_fm.grd.utils.set_renewal_extension_cost_totals",

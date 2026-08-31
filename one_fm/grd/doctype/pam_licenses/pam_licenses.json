@@ -1,0 +1,79 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-08-20 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "civil_id_number_for_licensing",
+  "license_name",
+  "license_expiry_date",
+  "classification",
+  "issuing_authority",
+  "status"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "civil_id_number_for_licensing",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Civil ID number for licensing",
+   "options": "PAM License Details"
+  },
+  {
+   "columns": 2,
+   "fetch_from": "civil_id_number_for_licensing.license_name",
+   "fieldname": "license_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "License Name"
+  },
+  {
+   "columns": 2,
+   "fetch_from": "civil_id_number_for_licensing.license_expiry_date",
+   "fieldname": "license_expiry_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "License expiry date"
+  },
+  {
+   "columns": 1,
+   "fetch_from": "civil_id_number_for_licensing.classification",
+   "fieldname": "classification",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Classification"
+  },
+  {
+   "columns": 2,
+   "fetch_from": "civil_id_number_for_licensing.issuing_authority",
+   "fieldname": "issuing_authority",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Issuing Authority"
+  },
+  {
+   "columns": 1,
+   "fetch_from": "civil_id_number_for_licensing.status",
+   "fieldname": "status",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Status"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-08-20 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "PAM Licenses",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

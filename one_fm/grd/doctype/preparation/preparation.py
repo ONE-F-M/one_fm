@@ -8,8 +8,9 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.model.naming import make_autoname
 from frappe.query_builder import DocType
-from frappe.utils import flt
+from frappe.utils import cint, cstr, flt
 from frappe.utils import (
     today,
     add_months,
@@ -26,6 +27,8 @@ from one_fm.grd.doctype.medical_insurance import medical_insurance
 from one_fm.grd.doctype.residency_payment_request import residency_payment_request
 from one_fm.grd.doctype.residency import residency
 from one_fm.grd.doctype.paci import paci
+from one_fm.grd.doctype.medical_appointment import medical_appointment
+from one_fm.grd.doctype.pcc_attestation import pcc_attestation
 from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.processor import sendemail
 
@@ -47,6 +50,12 @@ from one_fm.processor import sendemail
 # The creators keep their derivations for their other callers, which do not come through a
 # Preparation row and have nothing to pass. Residency still takes its application date
 # from MOI_CATEGORY_BY_ACTION; only the category is handed to it.
+#
+# WI-002095: the two overseas Actions also open the medical the candidate has to pass and
+# the attestation of their police clearance - the two steps of overseas onboarding the GRO
+# was still raising by hand. No Fingerprint Appointment is opened for any Action: the
+# fingerprint is taken once the candidate is in the country and holds a civil ID, so it is
+# not part of what a Preparation generates.
 NEW_ACTION_DOCUMENTS = {
     "New Kuwaiti": {
         "work_permit": "New Kuwaiti",
@@ -56,6 +65,8 @@ NEW_ACTION_DOCUMENTS = {
         "medical_insurance": "New",
         "residency": "First Time",
         "paci": "New Application",
+        "medical_appointment": "First Time",
+        "pcc_attestation": "Overseas",
     },
     # WI-002024: the same overseas hire, but against a government contract file rather
     # than a private one. Every document it opens is the one Overseas opens - what
@@ -69,6 +80,8 @@ NEW_ACTION_DOCUMENTS = {
         "medical_insurance": "New",
         "residency": "First Time",
         "paci": "New Application",
+        "medical_appointment": "First Time",
+        "pcc_attestation": "Overseas (Government)",
     },
     # The process map groups Local Transfer with Overseas and the non-Kuwaiti renewal:
     # all four documents, opened by the Preparation itself. There is no Transfer Paper in
@@ -76,6 +89,8 @@ NEW_ACTION_DOCUMENTS = {
     # assuming one.
     "Local Transfer": {
         "work_permit": "Local Transfer",
+        "medical_insurance": "Local Transfer",
+        "residency": "Transfer",
         "medical_insurance": "Local Transfer",
         "residency": "Transfer",
         "paci": "Transfer",
@@ -98,8 +113,260 @@ COST_COMPONENT_FIELDS = (
 # Mirrors the depends_on the costing table already puts on its No. of Years field.
 YEAR_SCOPED_ACTIONS = ('Renewal (Kuwaiti)', 'Renewal (Non-Kuwaiti)')
 
+# WI-002092: the fees a multi-year renewal pays once per year. The work permit, the medical
+# insurance and the residency stamp are each issued for a year at a time, so renewing for
+# three buys three of each.
+#
+# The civil ID is deliberately absent: one card is issued for the whole period, whatever it
+# costs, so multiplying it would charge the employee for cards that were never printed.
+PER_YEAR_COST_FIELDS = (
+    'work_permit_amount',
+    'medical_insurance_amount',
+    'residency_stamp_amount',
+)
+
+
+# WI-002101: the batch type, the series it is named under, and the Actions its rows may
+# carry. One table, because the naming and the restriction are two halves of the same
+# statement - an Onboarding batch named PRE-ONB- that could still carry a Cancellation row
+# would be lying about what it is.
+#
+# The Action values are the Preparation Record field's own options, spelling included:
+# WI-002101 writes "Renewal (Non Kuwaiti)" and "Extend 1 Month" where the field has
+# "Renewal (Non-Kuwaiti)" and "Extend 1 month". The field's spelling is what every existing
+# row and every lookup keyed on it already uses.
+CATEGORIES = {
+    'Onboarding': {
+        'prefix': 'PRE-ONB-',
+        'actions': ('Overseas', 'Overseas (Government)', 'Local Transfer', 'New Kuwaiti'),
+    },
+    'Offboarding': {
+        'prefix': 'PRE-OFFB-',
+        'actions': ('Cancellation',),
+    },
+    'Renewal': {
+        'prefix': 'PRE-REN-',
+        'actions': (
+            'Renewal (Kuwaiti)',
+            'Renewal (Non-Kuwaiti)',
+            'Extend 1 month',
+            'Extend 2 months',
+            'Extend 3 months',
+        ),
+    },
+}
+
+# What a batch with no Category recognised is named under. Reachable only through a record
+# whose Category was removed from the options after it was made; a new one cannot save
+# without one.
+FALLBACK_PREFIX = 'PRE-'
+
+
+# WI-002093: the order the legal steps run in, so a row can say which one the candidate has
+# reached. Furthest along wins - the sequence only moves forward, and what an operator wants
+# to see is progress, not the last document anybody happened to touch.
+SUB_DOCUMENT_SEQUENCE = ("Work Permit", "Medical Insurance", "Residency", "PACI")
+
+
+# WI-002096: the classification that puts a document inside the legal sequence. Kuwaiti
+# permits and residency extensions are outside it - a Kuwaiti has no insurance, no residency
+# and no civil ID process to follow the permit, and an extension is a single document on its
+# own - so neither is gated and neither offers a next step.
+SEQUENCED_CLASSIFICATIONS = {
+    "Work Permit": ("work_permit_type", ("Renewal Non Kuwaiti", "Overseas", "Overseas (Government)", "Local Transfer")),
+    "Medical Insurance": ("insurance_status", ("Renewal", "New", "Local Transfer")),
+    "Residency": ("category", ("Renewal", "First Time", "Transfer")),
+    "PACI": ("category", ("Renewal", "New Application", "Transfer")),
+}
+
+COMPLETED = "Completed"
+
+
+def is_sequenced(doc):
+    """Does this document sit inside the Work Permit -> ... -> PACI sequence (WI-002096)?"""
+    classification = SEQUENCED_CLASSIFICATIONS.get(doc.doctype)
+    if not classification:
+        return False
+
+    fieldname, values = classification
+    return doc.get(fieldname) in values
+
+
+def upstream_of(doc):
+    """The document that legally has to be finished before this one (WI-002096)."""
+    if doc.doctype not in SUB_DOCUMENT_SEQUENCE:
+        return None
+
+    position = SUB_DOCUMENT_SEQUENCE.index(doc.doctype)
+    return SUB_DOCUMENT_SEQUENCE[position - 1] if position else None
+
+
+def validate_sequence(doc, method=None):
+    """Refuse to complete a step whose predecessor is not finished (WI-002096).
+
+    Kuwait issues these in one order: the work permit, then the insurance it is a condition
+    of, then the residency stamped against it, then the civil ID. Completing them out of
+    order produces paperwork the ministry rejects, and the operator finds out weeks later.
+
+    Only ever checks the step immediately before, because that step's own completion was
+    gated the same way - so the whole chain is enforced without every document querying all
+    of them.
+
+    Scoped to documents opened by a Preparation. A permit or a residency raised on its own -
+    a transfer paper, a cancellation - has no batch to be sequenced within, and there is
+    nothing to look up.
+
+    An upstream document that does not exist is not a blocker: the Action decides which
+    documents a candidate gets, and a step that was never opened is not a step that is
+    waiting.
+    """
+    if doc.get("workflow_state") != COMPLETED:
+        return
+    if not doc.get("preparation") or not doc.get("employee"):
+        return
+    if not is_sequenced(doc):
+        return
+
+    upstream = upstream_of(doc)
+    if not upstream:
+        return
+
+    pending = frappe.get_all(
+        upstream,
+        filters={
+            "preparation": doc.preparation,
+            "employee": doc.employee,
+            "docstatus": ["!=", 2],
+            "workflow_state": ["!=", COMPLETED],
+        },
+        pluck="name",
+        limit=1,
+    )
+    if not pending:
+        return
+
+    frappe.throw(
+        _("{0} {1} has to be completed first.").format(
+            _(upstream), frappe.bold(pending[0])
+        ),
+        title=_("Out of Sequence"),
+    )
+
+
+def update_row_reference(doc, method=None):
+    """Point a Preparation row at the sub-document its candidate has reached (WI-002093).
+
+    Hung off each sub-document's own save, so the status on the row is the status on the
+    document rather than a snapshot from whenever the Preparation was last touched.
+
+    Only ever moves forward: a Medical Insurance saving does not pull the row back from the
+    PACI it had already reached. That is what makes it a progress column and not a
+    last-touched column.
+
+    Written with db.set_value on the child row - the row belongs to a submitted Preparation,
+    and a status arriving here should not need permission to edit one.
+    """
+    if not doc.get("preparation") or not doc.get("employee"):
+        return
+
+    try:
+        position = SUB_DOCUMENT_SEQUENCE.index(doc.doctype)
+    except ValueError:
+        return
+
+    row = frappe.db.get_value(
+        "Preparation Record",
+        {
+            "parent": doc.preparation,
+            "parenttype": "Preparation",
+            "employee": doc.employee,
+        },
+        ["name", "ref_doctype"],
+        as_dict=True,
+    )
+    if not row:
+        return
+
+    if row.ref_doctype in SUB_DOCUMENT_SEQUENCE:
+        if SUB_DOCUMENT_SEQUENCE.index(row.ref_doctype) > position:
+            return
+
+    frappe.db.set_value(
+        "Preparation Record",
+        row.name,
+        {
+            "ref_doctype": doc.doctype,
+            "ref_name": doc.name,
+            "ref_doctype_status": doc.get("workflow_state") or "",
+        },
+        update_modified=False,
+    )
+
+
+def category_for_action(action):
+    """The Category a batch carrying this Action belongs to, or None (WI-002101).
+
+    The inverse of the table above. Every Action belongs to exactly one Category, which is
+    what makes a single Category per batch workable in the first place.
+    """
+    for category, rules in CATEGORIES.items():
+        if action in rules['actions']:
+            return category
+
+
+@frappe.whitelist()
+def get_actions_for_category(category: str):
+    """The Actions a batch of this Category may carry (WI-002101).
+
+    Read by the form to narrow the Action dropdown, and by nothing else - the server does
+    not take the browser's word for it, it re-checks on validate.
+    """
+    return list(CATEGORIES.get(category, {}).get('actions', ()))
+
 
 class Preparation(Document):
+    def autoname(self):
+        """Name the batch after what it is (WI-002101).
+
+        PRE-ONB-, PRE-OFFB- or PRE-REN- and the year, so the series says at a glance which
+        kind of batch a document is. WI-002093 writes the offboarding prefix as PRE-OFF-;
+        WI-002101, which is the item that specifies the naming in full, writes PRE-OFFB-,
+        and that is what is used here.
+
+        Records named under the old format:PRE-{posting_date}-{######} keep their names.
+        """
+        prefix = CATEGORIES.get(self.category, {}).get('prefix', FALLBACK_PREFIX)
+        self.name = make_autoname(prefix + '.YYYY.-.#####')
+
+    def validate_actions_match_category(self):
+        """Refuse a row whose Action does not belong to this kind of batch (WI-002101).
+
+        The form narrows the dropdown, but the dropdown is not the rule: rows arrive from
+        the monthly schedule, from a data import and from the API as well, and a
+        Cancellation sitting in an Onboarding batch would open the wrong documents on
+        submit.
+        """
+        allowed = CATEGORIES.get(self.category, {}).get('actions')
+        if not allowed:
+            return
+
+        wrong = [
+            row for row in self.preparation_record
+            if row.renewal_or_extend and row.renewal_or_extend not in allowed
+        ]
+        if not wrong:
+            return
+
+        rows = '<br>'.join(
+            _('Row {0}: {1}').format(row.idx, frappe.bold(row.renewal_or_extend)) for row in wrong
+        )
+        frappe.throw(
+            _('A {0} batch cannot carry these Actions:<br>{1}<br><br>Allowed: {2}').format(
+                frappe.bold(_(self.category)), rows, ', '.join(allowed)
+            ),
+            title=_('Action Does Not Match the Category'),
+        )
+
     def update_total_amount(self):
         """Derive each row's Total Amount from its components, then the document total.
 
@@ -168,6 +435,7 @@ class Preparation(Document):
     def validate(self):
         self.set_grd_values()
         self.set_hr_values()
+        self.validate_actions_match_category()
         validate_preparation_table(self)
         self.update_total_amount()
         
@@ -268,7 +536,7 @@ class Preparation(Document):
         # Set the costing of renewal for an year in preparation record
         for preparation in self.preparation_record:
             # Get costing of renewal for an year
-            costing, extension_type  = get_renewal_extension_cost_for_employee(preparation.employee, no_of_years)
+            costing, extension_type = get_renewal_extension_cost_for_employee(preparation.employee, no_of_years)
 
             preparation.renewal_or_extend = extension_type if renew_all else ""
             preparation.no_of_years = no_of_years if renew_all else ""
@@ -306,6 +574,9 @@ def create_preparation_record():
     """
    
     doc = frappe.new_doc('Preparation')
+    # The monthly batch is a renewal run by definition - it is built from the employees
+    # whose residency expires next month - so it names itself PRE-REN- (WI-002101).
+    doc.category = 'Renewal'
     doc.posting_date = nowdate()
     first_day = get_first_day(add_months(getdate(today()), 1))
     last_day = get_last_day(getdate(first_day))
@@ -417,6 +688,30 @@ def get_grd_renewal_extension_cost(renewal_or_extend: str, no_of_years: str = No
     if renewal_or_extend in YEAR_SCOPED_ACTIONS and not no_of_years:
         return False
 
+    # The years narrow the lookup for the two renewal Actions only. The field is hidden for
+    # an extension but not cleared, so a row switched from a renewal still carries "1 Year",
+    # and filtering an extension by it would find nothing and quietly return no fees.
+    scoped_years = no_of_years if renewal_or_extend in YEAR_SCOPED_ACTIONS else None
+    result = _master_fee_rows(renewal_or_extend, scoped_years)
+
+    # WI-002092: nothing configured at that duration, so the Action's own row is used
+    # whatever duration it is filed under.
+    #
+    # The years used to have to match exactly, which meant a renewal configured as a
+    # "3 Years" row fetched nothing at all for a row asking for one year - and the browser,
+    # having already cleared the four fee fields, left the operator looking at zeros with no
+    # explanation. The duration that decides the cost is the one on the Preparation row; the
+    # master row supplies the rate, and which duration it happens to be filed under is a
+    # detail of how the table is keyed.
+    if not result and scoped_years:
+        result = _master_fee_rows(renewal_or_extend)
+
+    if result:
+        return result[0]
+
+
+def _master_fee_rows(renewal_or_extend, no_of_years=None):
+    """The master fee rows for an Action, optionally narrowed to one duration."""
     Cost = DocType('GRD Renewal Extension Cost')
     query = (
         frappe.qb.from_(Cost)
@@ -425,12 +720,52 @@ def get_grd_renewal_extension_cost(renewal_or_extend: str, no_of_years: str = No
         .where(Cost.parenttype == 'HR Settings')
         .where(Cost.renewal_or_extend == renewal_or_extend)
     )
-    if renewal_or_extend in YEAR_SCOPED_ACTIONS:
+    if no_of_years:
         query = query.where(Cost.no_of_years == no_of_years)
 
-    result = query.run(as_dict=True)
-    if result:
-        return result[0]
+    return query.run(as_dict=True)
+
+def years_in(no_of_years):
+    """The number of years "2 Years" means (WI-002092).
+
+    Anything unparseable is one year: the field offers "1 Year", "2 Years" and "3 Years",
+    and a row that somehow carries something else should be charged the single-year rate
+    rather than nothing at all.
+    """
+    years = cint(cstr(no_of_years).split()[0]) if no_of_years else 0
+    return years or 1
+
+
+@frappe.whitelist()
+def get_preparation_row_costing(renewal_or_extend: str, no_of_years: str = None):
+    """The fees a Preparation row should carry for this Action and duration (WI-002092).
+
+    The master row in HR Settings holds the annual rate. A renewal taken for two or three
+    years pays the work permit, the medical insurance and the residency stamp once per year,
+    so those are multiplied out here - and the civil ID is not, because one card is issued
+    for the whole period.
+
+    Scaled here rather than in the master lookup so that lookup keeps returning what HR
+    Settings actually holds: the master table's own Total Amount is the annual figure, and
+    the two would otherwise disagree about what a row means.
+
+    Called by the form as well as by the "renew all" action, so the browser and the server
+    cannot scale a row differently.
+    """
+    costing = get_grd_renewal_extension_cost(renewal_or_extend, no_of_years)
+    if not costing:
+        return costing
+
+    costing = dict(costing)
+    if renewal_or_extend not in YEAR_SCOPED_ACTIONS:
+        return costing
+
+    years = years_in(no_of_years)
+    for field in PER_YEAR_COST_FIELDS:
+        costing[field] = flt(costing.get(field)) * years
+
+    return costing
+
 
 def create_documents_for_new_actions(preparation_name):
     """Generate the sub-documents the New Kuwaiti and Overseas Actions ask for (WI-001824).
@@ -480,6 +815,16 @@ def create_documents_for_row(row, preparation_name):
 
     if "paci" in plan:
         paci.create_PACI(employee_doc, plan["paci"], preparation_name)
+
+    if "medical_appointment" in plan:
+        medical_appointment.create_medical_appointment(
+            employee_doc, plan["medical_appointment"], preparation_name
+        )
+
+    if "pcc_attestation" in plan:
+        pcc_attestation.create_pcc_attestations(
+            employee_doc, plan["pcc_attestation"], preparation_name
+        )
 
     return work_permit_doc
 
@@ -666,4 +1011,6 @@ def get_renewal_extension_cost_for_employee(employee, no_of_years = "1 Year"):
     else:
         extension_type = "Renewal (Non-Kuwaiti)"
     
-    return get_grd_renewal_extension_cost(extension_type, no_of_years), extension_type
+    # The row's fees, not the master row's: a multi-year renewal pays the annual ones once
+    # per year (WI-002092).
+    return get_preparation_row_costing(extension_type, no_of_years), extension_type

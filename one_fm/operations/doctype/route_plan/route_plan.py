@@ -236,8 +236,9 @@ class RoutePlan(Document):
 		(WI-002000). Two levels are enforced against the same limit:
 
 		* **Each trip on its own** — the accommodation cards merged onto one
-		  ``(vehicle, trip_group, direction)`` ride together even though their
-		  stops are sequential, so their headcounts still sum (MA4-13).
+		  ``(vehicle, trip_group)`` ride together even though their stops are
+		  sequential, so their headcounts still sum (MA4-13) — unless the run
+		  both drops off and picks up, which is walked leg by leg.
 		* **Trips that run at the same time** — when two trips' windows overlap,
 		  their passengers are on the bus together and the totals add up.
 
@@ -289,10 +290,11 @@ class RoutePlan(Document):
 	def _logical_trips(self) -> list:
 		"""Collapse the assignment rows into the trips a vehicle actually runs.
 
-		Rows sharing a ``(vehicle, trip_group, direction)`` are the stops of one
-		run: their headcounts sum and the trip spans from its first stop's start
-		to its last stop's end. A row with no ``trip_group`` is a standalone drop
-		and becomes a trip of its own, so it is weighed like any other.
+		Rows sharing a ``(vehicle, trip_group)`` are the stops of one run: their
+		headcounts sum and the trip spans from its first stop's start to its last
+		stop's end. A run whose stops do not all travel the same way is a mixed one
+		and is measured leg by leg instead. A row with no ``trip_group`` is a
+		standalone drop and becomes a trip of its own, so it is weighed like any other.
 
 		Each trip carries the daily time window its stops cover and the calendar
 		lifespan they are live for — the two halves of the timestamps a Route Plan
@@ -306,7 +308,12 @@ class RoutePlan(Document):
 			direction = _row_direction(row)
 			# Standalone rows are keyed by position so two of them never merge.
 			group = row.trip_group or f"\0row-{idx}"
-			key = (row.vehicle, group, direction)
+			# One trip group on one vehicle is one bus run, whichever way its stops
+			# travel. Keying the direction in as well split a chained run - an outward
+			# drop and the return pickup made at the same stop - into two pseudo-trips
+			# whose windows overlap each other, so the concurrency check added the same
+			# bus to itself and refused a load it was already carrying (WI-002160).
+			key = (row.vehicle, group)
 			start, end = _row_time_window(row)
 			live_from, live_to = _row_date_range(row)
 
@@ -328,6 +335,12 @@ class RoutePlan(Document):
 				continue
 
 			trip.rows.append(row)
+			# Stops that do not all travel the same way make this a mixed run, walked leg
+			# by leg instead of summed. The row's own ``direction`` only ever said MIXED
+			# when the Merge Trip modal wrote it back; chaining a return stop onto an
+			# outbound trip left every row on its original heading (WI-002160).
+			if direction != trip.direction:
+				trip.direction = MIXED_DIRECTION
 			trip.headcount += cint(row.headcount)
 			trip.start = min(trip.start, start)
 			trip.end = max(trip.end, end)
@@ -602,12 +615,24 @@ def _trip_peak(trip):
 	if trip.direction != MIXED_DIRECTION:
 		return cint(trip.headcount), 1
 
-	by_index = sorted(trip.rows, key=lambda row: (cint(row.stop_index), row.name or ""))
+	# Stop order decides the answer — the same two loads read 3 or 6 depending on
+	# whether the return riders board before or after the outward ones get off — so the
+	# order has to be the run's, not the order the rows happen to sit in. Rows carrying
+	# no stop_index fall back to when they run; the child-row name is only a last tie
+	# break, and on its own it is a random hash.
+	by_index = sorted(
+		trip.rows,
+		key=lambda row: (cint(row.stop_index), str(row.start_time or ""), row.name or ""),
+	)
 	directions = _shipment_directions([row.transportation_shipment for row in by_index])
 	stops = [
 		{
 			"headcount": cint(row.headcount),
-			"boards": directions.get(row.transportation_shipment) == "RETURN",
+			# The shipment is the authority on which way a card's own riders travel, but a
+			# row carrying no shipment still knows its own leg - read that rather than
+			# silently calling everyone outward.
+			"boards": (directions.get(row.transportation_shipment) or _row_direction(row))
+			== "RETURN",
 		}
 		for row in by_index
 	]
