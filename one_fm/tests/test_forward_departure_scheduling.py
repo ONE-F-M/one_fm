@@ -322,7 +322,11 @@ class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		frappe.reload_doc("operations", "doctype", "route_plan_assignment")
+		# NOT reload_doc: it commits, which ends the transaction FrappeTestCase wraps
+		# every test in, and everything inserted afterwards is written for real.
+		# The columns come from `bench migrate`; a site without them skips.
+		if not frappe.get_meta("Route Plan Assignment").get_field("stop_index"):
+			raise cls.skipTest(cls, "run `bench migrate`: stop_index missing on Route Plan Assignment")
 
 	def setUp(self):
 		locations = frappe.get_all("Location", limit=1, pluck="name")
@@ -344,9 +348,16 @@ class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
 		doc.trip_direction = direction
 		doc.start_time = start
 		doc.end_time = "20:00:00" if direction == "Outward" else "08:00:00"
-		doc.headcount = 4
 		doc.stop_location = self.site
 		doc.accommodation = self.camp
+		# Riders, not just a number: the controller derives headcount from this table on
+		# every save, so a fixture that only sets the field is a card carrying nobody -
+		# and the seat walk now reads the shipment rather than the stored row (#6818).
+		for n in range(4):
+			doc.append("transportation_shipment_employee", {
+				"employee_id": f"{direction[:3].upper()}-{n:02d}",
+				"employee_name": f"Rider {n}",
+			})
 		doc.generation_key = frappe.generate_hash("TS-LEG", 10)
 		doc.flags.ignore_mandatory = True
 		doc.insert(ignore_permissions=True)

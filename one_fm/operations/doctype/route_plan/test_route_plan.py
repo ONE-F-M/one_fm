@@ -874,3 +874,44 @@ class TestRoutePlanSingleVehicleSave(FrappeTestCase):
 		])
 		plan.insert(ignore_permissions=True)
 		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
+
+
+class TestSeatsAreCountedFromTheShipment(FrappeTestCase):
+	"""#6818: a row's headcount is a snapshot, and a stale one hides an overload.
+
+	The board draws its cards from the shipments while the seat check read the row, so a
+	card that had since gained an employee left the plan holding a number nobody could
+	see - and under-counting is the dangerous direction: it waved a 28-passenger load
+	through on a 27-seat bus.
+	"""
+
+	def _row(self, shipment, headcount):
+		return frappe._dict({"transportation_shipment": shipment, "headcount": headcount})
+
+	def test_the_shipments_count_wins_over_the_stored_snapshot(self):
+		from one_fm.operations.doctype.route_plan.route_plan import row_headcount
+
+		row = self._row("TS-X", 6)
+
+		self.assertEqual(row_headcount(row, {"TS-X": 7}), 7)
+
+	def test_the_row_answers_when_the_card_is_gone(self):
+		# Never count a card as empty just because its shipment was deleted.
+		from one_fm.operations.doctype.route_plan.route_plan import row_headcount
+
+		self.assertEqual(row_headcount(self._row("TS-GONE", 6), {}), 6)
+
+	def test_a_row_with_no_shipment_keeps_its_own_number(self):
+		from one_fm.operations.doctype.route_plan.route_plan import row_headcount
+
+		self.assertEqual(row_headcount(self._row(None, 4), {"TS-X": 9}), 4)
+
+	def test_an_under_count_is_what_hid_the_overload(self):
+		# 27 stored against 28 live is the difference between fitting and not.
+		from one_fm.operations.doctype.route_plan.route_plan import row_headcount
+
+		rows = [self._row("A", 20), self._row("B", 7)]
+		live = {"A": 20, "B": 8}
+
+		self.assertEqual(sum(row_headcount(r, live) for r in rows), 28)
+		self.assertEqual(sum(r.headcount for r in rows), 27)

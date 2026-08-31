@@ -138,10 +138,11 @@ class TestTheManifestSaysWhatHappensAtTheStop(FrappeTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		frappe.reload_doc("operations", "doctype", "route_plan_assignment")
-		# The column was added and then removed again across this branch, so a site that
-		# has not migrated since still has it in the schema.
-		frappe.reload_doc("one_fm", "doctype", "transportation_manifest_details")
+		# NOT reload_doc: it commits, which ends the transaction FrappeTestCase wraps
+		# every test in, and everything inserted afterwards is written for real.
+		# The columns come from `bench migrate`; a site without them skips.
+		if not frappe.get_meta("Route Plan Assignment").get_field("action_type"):
+			raise cls.skipTest(cls, "run `bench migrate`: action_type missing on Route Plan Assignment")
 
 	def test_the_plan_records_what_happens_at_each_stop(self):
 		# The BA's own field, with a third value for a stop where both movements happen.

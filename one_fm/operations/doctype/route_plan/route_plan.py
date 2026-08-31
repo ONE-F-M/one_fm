@@ -302,6 +302,7 @@ class RoutePlan(Document):
 		run).
 		"""
 		trips = {}
+		live = live_headcounts(self.assignments)
 		for idx, row in enumerate(self.assignments):
 			if not row.vehicle:
 				continue
@@ -323,7 +324,7 @@ class RoutePlan(Document):
 					key=key,
 					vehicle=row.vehicle,
 					direction=direction,
-					headcount=cint(row.headcount),
+					headcount=row_headcount(row, live),
 					start=start,
 					end=end,
 					live_from=live_from,
@@ -341,7 +342,7 @@ class RoutePlan(Document):
 			# outbound trip left every row on its original heading (WI-002160).
 			if direction != trip.direction:
 				trip.direction = MIXED_DIRECTION
-			trip.headcount += cint(row.headcount)
+			trip.headcount += row_headcount(row, live)
 			trip.start = min(trip.start, start)
 			trip.end = max(trip.end, end)
 			trip.live_from = min(filter(None, [trip.live_from, live_from]), default=None)
@@ -633,9 +634,10 @@ def _trip_peak(trip):
 		return cint(trip.headcount), 1
 
 	directions = _shipment_directions(names)
+	live = live_headcounts(by_index)
 	stops = [
 		{
-			"headcount": cint(row.headcount),
+			"headcount": row_headcount(row, live),
 			"boards": (directions.get(row.transportation_shipment) or _row_direction(row))
 			== "RETURN",
 		}
@@ -645,11 +647,39 @@ def _trip_peak(trip):
 	return peak, worst_leg
 
 
+def live_headcounts(rows) -> dict:
+	"""{shipment: headcount} read from the shipments these rows point at (#6818).
+
+	A Route Plan Assignment stores a snapshot taken when the card was dropped and never
+	refreshes it, while the board draws its cards from the shipments - so a card that has
+	since gained or lost an employee leaves the plan holding a number nobody can see. It
+	cuts both ways, and the dangerous way is under-counting: a stale row waved a
+	28-passenger load through on a 27-seat bus.
+	"""
+	names = list({row.transportation_shipment for row in rows if row.transportation_shipment})
+	if not names:
+		return {}
+	return {
+		doc.name: cint(doc.headcount)
+		for doc in frappe.get_all(
+			"Transportation Shipment", filters={"name": ["in", names]},
+			fields=["name", "headcount"],
+		)
+	}
+
+
+def row_headcount(row, live) -> int:
+	"""What this row actually carries: the shipment's count, the row's if the card is gone."""
+	if row.transportation_shipment in live:
+		return cint(live[row.transportation_shipment])
+	return cint(row.headcount)
+
+
 def _cards_for_itinerary(rows) -> list:
 	"""The rows as card-shaped records build_itinerary can read, in run order.
 
-	Each row's headcount is used rather than the shipment's: the row is what this plan
-	actually carries, and a card can be split across vehicles.
+	The headcount comes from the shipment rather than the row, for the reason
+	live_headcounts explains.
 	"""
 	names = [row.transportation_shipment for row in rows if row.transportation_shipment]
 	if not names:
@@ -661,7 +691,8 @@ def _cards_for_itinerary(rows) -> list:
 			"Transportation Shipment",
 			filters={"name": ["in", list(set(names))]},
 			fields=["name", "accommodation", "accommodation_name", "stop_location",
-					"trip_direction", "pre_merge_trip_direction", "start_time", "end_time"],
+					"trip_direction", "pre_merge_trip_direction", "start_time", "end_time",
+					"headcount"],
 		)
 	}
 
@@ -675,7 +706,7 @@ def _cards_for_itinerary(rows) -> list:
 			"accommodation": fact.accommodation,
 			"accommodation_name": fact.accommodation_name,
 			"stop_location": fact.stop_location or row.stop_location,
-			"headcount": cint(row.headcount),
+			"headcount": cint(fact.headcount) if fact.headcount is not None else cint(row.headcount),
 			"trip_direction": fact.trip_direction,
 			"pre_merge_trip_direction": fact.pre_merge_trip_direction,
 			"start_time": fact.start_time,

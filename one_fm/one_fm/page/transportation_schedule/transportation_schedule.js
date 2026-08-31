@@ -4181,6 +4181,17 @@ function injectRPVueTemplate() {
                     <div class="rp-detail-row-value">{{ stop.card.shift_name || '—' }}</div>
                   </div>
                 </div>
+                <!-- The shift these riders are due on, which is what the whole forward
+                     cascade has to land them before. -->
+                <div class="rp-detail-row" style="padding:4px 0 3px 30px" v-if="stop.card.shift_start">
+                  <div class="rp-detail-row-icon"><span class="rp-icon">login</span></div>
+                  <div class="rp-detail-row-content">
+                    <div class="rp-detail-row-label">Shift Start &rarr; End</div>
+                    <div class="rp-detail-row-value">
+                      {{ fmtISO(stop.card.shift_start) }} &rarr; {{ fmtISO(stop.card.shift_end) }}
+                    </div>
+                  </div>
+                </div>
                 <div class="rp-detail-row" style="padding:4px 0 3px 30px">
                   <div class="rp-detail-row-icon"><span class="rp-icon">location_on</span></div>
                   <div class="rp-detail-row-content">
