@@ -203,3 +203,58 @@ class TestTheRowNamesOneShift(FrappeTestCase):
 		))
 
 		self.assertIn('shifts.get(shipment, "") if shipment', source)
+
+
+class TestTheManifestReadsTheDayInOrder(FrappeTestCase):
+	"""A vehicle's trips are listed by when each one leaves.
+
+	Sorted by the trip group hash, a 06:48 run could be listed after an 08:27 one - and
+	the vehicle's day then read "08:27 to 07:12", wrapping midnight into a 22h 45m shift
+	on the driver's own page.
+	"""
+
+	def _row(self, trip, stop, start, end):
+		return frappe._dict(
+			card_id=f"TSHIP-{trip}-{stop}", trip_group=trip, stop_index=stop,
+			start_time=start, end_time=end,
+		)
+
+	def test_the_earlier_trip_comes_first_whatever_its_group_is_called(self):
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			manifest_row_order,
+		)
+
+		# "MIX-a..." sorts before "MIX-z..." by name, and after it by clock.
+		late = self._row("MIX-a", 1, "2026-08-31T05:27:00Z", "2026-08-31T05:43:00Z")
+		early = self._row("MIX-z", 1, "2026-08-31T03:48:00Z", "2026-08-31T04:03:00Z")
+
+		ordered = manifest_row_order([late, early])
+
+		self.assertEqual([row.trip_group for row in ordered], ["MIX-z", "MIX-a"])
+
+	def test_the_stops_of_a_trip_stay_in_their_own_order(self):
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			manifest_row_order,
+		)
+
+		second = self._row("MIX-a", 2, "2026-08-31T05:43:00Z", "2026-08-31T06:15:00Z")
+		first = self._row("MIX-a", 1, "2026-08-31T05:27:00Z", "2026-08-31T05:43:00Z")
+
+		ordered = manifest_row_order([second, first])
+
+		self.assertEqual([row.stop_index for row in ordered], [1, 2])
+
+	def test_a_standalone_row_is_a_run_of_its_own(self):
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			manifest_row_order,
+		)
+
+		# No trip group: two of them must not be pooled into one run by an empty key.
+		solo_late = frappe._dict(card_id="TSHIP-B", trip_group=None, stop_index=0,
+								 start_time="2026-08-31T09:00:00Z", end_time="2026-08-31T09:30:00Z")
+		solo_early = frappe._dict(card_id="TSHIP-A", trip_group=None, stop_index=0,
+								  start_time="2026-08-31T04:00:00Z", end_time="2026-08-31T04:30:00Z")
+
+		ordered = manifest_row_order([solo_late, solo_early])
+
+		self.assertEqual([row.card_id for row in ordered], ["TSHIP-A", "TSHIP-B"])

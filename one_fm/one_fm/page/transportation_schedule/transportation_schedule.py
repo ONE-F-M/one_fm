@@ -1360,6 +1360,29 @@ def load_assignments(plan_name: str = ""):
     }
 
 
+def manifest_row_order(rows) -> list:
+	"""A vehicle's rows in the order the bus drives them.
+
+	The trips of a vehicle by when each one leaves, and the stops of a trip by their
+	place in it. Sorted by the trip group HASH before this, so a 06:48 run could be
+	listed after an 08:27 one - and the vehicle's day then read 08:27 to 07:12, wrapping
+	midnight into a 22h 45m shift.
+	"""
+	def run_of(row):
+		return row.trip_group or f"\0{row.card_id}"
+
+	leaves = {}
+	for row in rows:
+		at = row.start_time or ""
+		key = run_of(row)
+		if key not in leaves or at < leaves[key]:
+			leaves[key] = at
+
+	return sorted(rows, key=lambda row: (
+		leaves[run_of(row)], row.stop_index or 0, row.start_time or ""
+	))
+
+
 @frappe.whitelist()
 def get_manifest_data_for_plan(plan_name: str):
 	"""Build manifest ROUTE_DATA from a saved Route Plan.
@@ -1378,6 +1401,12 @@ def get_manifest_data_for_plan(plan_name: str):
 	# A camp leg describes a stop the bus makes; no card is filed against it and it
 	# carries no roster, so the manifest is compiled from the rows that stand for one.
 	rows = card_rows(doc.assignments)
+	# The camp and home legs, kept aside: they carry no roster and are never stops on
+	# the manifest, but they are when the bus actually leaves and when it gets back.
+	leg_rows = {}
+	for row in doc.assignments:
+		if cint(row.is_camp_leg) and row.vehicle:
+			leg_rows.setdefault(row.vehicle, []).append(row)
 	if not rows:
 		return {"status": "empty", "message": _("This plan has no assignments.")}
 
@@ -1728,13 +1757,11 @@ def get_manifest_data_for_plan(plan_name: str):
 			"trip_group": (_mf.trip_group or "") if _mf else "",
 		}
 
-		# Sort items: trip stops by stopIndex, solo by start_time
-		v_rows = vehicle_items[vid]
-		v_rows.sort(key=lambda r: (
-			r.trip_group or "",
-			r.stop_index or 0,
-			r.start_time or ""
-		))
+		# In the order the bus drives them: the trips of a vehicle by when each one
+		# leaves, and the stops of a trip by their place in it. Sorted by the trip group
+		# HASH before this, so a 06:48 run could be listed after an 08:27 one - and the
+		# vehicle's day then read 08:27 to 07:12, wrapping midnight into 22h 45m.
+		v_rows = manifest_row_order(vehicle_items[vid])
 
 		visits = []
 		trans = [{"travelDuration": "0s", "waitDuration": "0s", "travelDistanceMeters": 0}]
@@ -1807,9 +1834,17 @@ def get_manifest_data_for_plan(plan_name: str):
 		if not visits:
 			continue
 
-		# Route start/end times
-		r_s = v_rows[0].start_time or ""
-		r_e = v_rows[-1].end_time or ""
+		# Route start/end times. The bus leaves the camp before its first drop and is
+		# not done until it is back, so both ends come from the legs no card is filed
+		# against where the run has them.
+		r_s = min(
+			[v_rows[0].start_time or ""]
+			+ [row.start_time for row in leg_rows.get(vid, []) if row.start_time]
+		)
+		r_e = max(
+			[v_rows[-1].end_time or ""]
+			+ [row.end_time for row in leg_rows.get(vid, []) if row.end_time]
+		)
 		try:
 			# Daily route span — time-of-day only, so a multi-day lock does not
 			# balloon the reported route/trip duration into days.
