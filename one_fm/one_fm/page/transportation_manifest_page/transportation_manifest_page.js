@@ -438,7 +438,7 @@ function renderManifest($container, data) {
 			load: 0
 		});
 
-		return { label, stops, route, vehicle };
+		return { label, stops, route, vehicle, tripLegs: route.tripLegs || {} };
 	}
 
 	// ── INIT ──
@@ -704,10 +704,20 @@ function renderManifest($container, data) {
 				}
 			});
 
+			// A run leaves before its first stop and is not over until the bus is back,
+			// and neither of those is a stop - so taking the earliest and latest stop
+			// reported the run as ending at its last drop-off, standing at a site. The
+			// plan records both; the stops are the fallback for a run saved without them.
+			const legs = (pr.tripLegs || {})[trip.id] || {};
 			const firstTime = tripStops.reduce((min, s) => { const t = new Date(s.time).getTime(); return t < min ? t : min; }, Infinity);
 			const lastTime = tripStops.reduce((max, s) => { const t = new Date(s.time).getTime(); return t > max ? t : max; }, 0);
-			const firstTimeISO = new Date(firstTime).toISOString();
-			const lastTimeISO = new Date(lastTime).toISOString();
+			const firstTimeISO = legs.departure
+				? new Date(legs.departure).toISOString() : new Date(firstTime).toISOString();
+			const lastTimeISO = legs.arrival
+				? new Date(legs.arrival).toISOString() : new Date(lastTime).toISOString();
+			// The camp this run comes back to, which is not always the depot the vehicle
+			// is registered at.
+			const homeCamp = legs.home || legs.camp || accommodation;
 
 			const isMixed = isMixedRun(meta);
 			const hasOutbound = tripStops.some(s => s.direction === "OUTBOUND");
@@ -761,7 +771,7 @@ function renderManifest($container, data) {
 				// The camp-by-camp walk below split that into an outbound pass and a
 				// return pass and listed every stop twice.
 				html += renderMixedItinerary({
-					orderedStops, firstTimeISO, lastTimeISO, accommodation,
+					orderedStops, firstTimeISO, lastTimeISO, accommodation: homeCamp,
 					activeStop, manifestName, vehicleLabel: pr.label, calcTransit
 				});
 			} else {
@@ -811,7 +821,7 @@ function renderManifest($container, data) {
 			}
 
 			// RETURN card
-			html += renderReturnCard(lastTimeISO, accommodation, returningEmployees);
+			html += renderReturnCard(lastTimeISO, homeCamp, returningEmployees);
 
 			}
 

@@ -1891,9 +1891,29 @@ def get_manifest_data_for_plan(plan_name: str):
 		total_sec = min(int(tot_ms), MAX_DAY_SEC)
 		trip_sec = min(int(trip_ms), MAX_DAY_SEC)
 
+		# What each run does either side of its stops: when it leaves, when it is back,
+		# and the camp it does both at. Read from the legs no card is filed against, so
+		# the driver's page states them instead of settling for the last drop-off and
+		# the vehicle's home depot.
+		trip_legs = {}
+		for leg in leg_rows.get(vid, []):
+			if not leg.trip_group:
+				continue
+			held = trip_legs.setdefault(leg.trip_group, {})
+			place = leg.origin_location or leg.stop_location
+			if cint(leg.is_home_leg):
+				held["arrival"] = leg.end_time or leg.start_time
+				held["home"] = place
+			else:
+				held["departure"] = min(held["departure"], leg.start_time) \
+					if held.get("departure") and leg.start_time else \
+					(leg.start_time or held.get("departure"))
+				held.setdefault("camp", place)
+
 		routes.append({
 			"vehicleIndex": vi, "vehicleLabel": v_label,
 			"vehicleStartTime": r_s, "vehicleEndTime": r_e,
+			"tripLegs": trip_legs,
 			"visits": visits, "transitions": trans,
 			"metrics": {
 				"travelDistanceMeters": 0,
