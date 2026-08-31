@@ -594,8 +594,6 @@ one_fm.patches.v15_0.rename_work_permit_supervisor_state #2026-08-20 WI-002097
 one_fm.patches.v15_0.add_medical_insurance_draft_state #2026-08-19 WI-002098
 one_fm.patches.v15_0.update_paci_no_payment_workflow #2026-08-19 WI-002136
 one_fm.patches.v15_0.add_paci_damj_fields #2026-08-20 WI-002109
-one_fm.patches.v15_0.mark_unflagged_mixed_trips #2026-08-25 WI-002160
-one_fm.patches.v15_0.grant_transportation_manager_schedule_access #2026-08-24 WI-002162
 one_fm.patches.v15_0.update_sales_invoice_property_setter
 one_fm.patches.v15_0.add_attendance_event_staff_field #2026-08-22 rerun for the missing custom_event_staff column
 one_fm.patches.v15_0.update_penalty_and_investigation_workflow #2026-08-02 rerun for employee_response
@@ -606,3 +604,5 @@ one_fm.patches.v15_0.approve_attendance_check_jul11_2026 #2026-08-16
 one_fm.patches.v15_0.fix_resignation_v2_stale_migration #2026-08-17
 one_fm.patches.v15_0.backfill_employee_resignation_auto_assign #2026-08-19
 one_fm.patches.v15_0.disable_roster_double_shift_ot_checker_assignment_rules #2026-08-21 WI-001689 reverted
+one_fm.patches.v15_0.grant_transportation_manager_schedule_access #2026-08-24 WI-002162
+one_fm.patches.v15_0.mark_unflagged_mixed_trips #2026-08-25 WI-002160
