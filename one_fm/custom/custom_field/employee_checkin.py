@@ -22,7 +22,7 @@ def get_employee_checkin_custom_fields():
                 "insert_after": "employee_checkin_issue",
                 "label": "Source",
                 "options": "\nMobile App\nMobile Web\nCheck-in Form\nFrappe Page\nAttendance Check",
-                "default": "Check-in Form",
+                "default": "",
                 "translatable": 1
             },
             {
