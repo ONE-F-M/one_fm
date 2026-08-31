@@ -855,12 +855,8 @@ function mountRoutePlannerApp(wrapper, data) {
                         // ── Multiple trips: let user pick which trip to join ──
                         const self = this;
 
-                        // Nearest run first. The list was built from swimItems order,
-                        // which is Route Plan Assignment row order, so a 14:15 run was
-                        // offered as the DEFAULT for a 16:00 card purely because its row
-                        // had been saved earlier — and accepting the default merged the
-                        // card into a run nowhere near it. Order by the gap to the card's
-                        // own window instead; runs that overlap it sort first.
+                        // Nearest run first: swimItems order is row order, so a distant
+                        // run could be the default. Runs overlapping the card sort first.
                         const gapToCard = (items) => {
                             const s = Math.min(...items.map(i => new Date(i.start).getTime()));
                             const e = Math.max(...items.map(i => new Date(i.end).getTime()));
@@ -1326,14 +1322,9 @@ function mountRoutePlannerApp(wrapper, data) {
                 // stop after it and can put the bus over its seats. The modal is where the
                 // operator sees all three before committing, instead of the card being
                 // silently re-timed on a default 30-minute transit.
-                //
-                // This used to be skipped whenever a transit time arrived with the call,
-                // which is the path the "Add Stop to which trip?" picker takes. So a
-                // cross-direction merge made through the picker never opened the modal and
-                // never reached merge_trip_shipments: the run kept every stop on its
-                // original heading and no card recorded pre_merge_trip_direction. That is
-                // where the un-marked mixed runs on the live plan came from (WI-002160).
-                // A merge is a merge however the operator got here.
+                // A merge is a merge however the operator got here: skipping this when a
+                // transit time arrived with the call meant the trip picker's own merges
+                // never reached merge_trip_shipments (WI-002160).
                 if (self._isMergeDrop(newCard, existingItems)) {
                     self._openMergeTripModal(newCard, existingItems, vehicleId);
                     return;
@@ -1455,13 +1446,11 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             // ── Time-aware peak load helper ─────────────────────────────────
-            // The trips a vehicle actually runs today. One tripId is one bus run,
-            // however its stops are headed: keying the direction in as well (WI-002000)
-            // split a chained run — an outward drop and the return pickup made at the
-            // same stop — into two pseudo-trips whose windows overlap each other, and
-            // the seat check then added the same bus to itself (WI-002160). A run that
-            // both drops off and picks up is measured leg by leg instead, which is what
-            // the two legs of one journey needed in the first place.
+            // The trips a vehicle actually runs today. One tripId is one bus run, however
+            // its stops are headed: keying the direction in as well split a chained run
+            // into two overlapping pseudo-trips, so the seat check added the same bus to
+            // itself (WI-002160). A run that both drops off and picks up is measured leg
+            // by leg instead.
             _getLogicalTrips(vehicleId) {
                 const vi = this.swimItems.filter(i => i.vehicleId === vehicleId && this._liveToday(i));
                 const tripsMap = {};
@@ -1498,12 +1487,9 @@ function mountRoutePlannerApp(wrapper, data) {
                 return trips;
             },
 
-            // Which way a whole run travels. Stops that do not all agree make it a mixed
-            // run, whatever each one is labelled: `direction` only ever reads MIXED when
-            // the Merge Trip modal wrote it back, and chaining a return stop onto an
-            // outbound trip left every stop on its original heading. Summing those as two
-            // concurrent runs is what refused a load the bus was already carrying
-            // (WI-002160), so every seat check reads the run's direction through here.
+            // Which way a whole run travels — every seat check reads it through here.
+            // Stops that do not all agree make it mixed whatever each one is labelled:
+            // only the Merge Trip modal ever writes MIXED onto a stop.
             runDirection(stops) {
                 if (!stops || !stops.length) return 'OUTBOUND';
                 const first = stops[0].direction || 'OUTBOUND';
@@ -1557,10 +1543,8 @@ function mountRoutePlannerApp(wrapper, data) {
                     [headcount, this.vehicleString(vehicle), this.passengerSeats(vehicle)]
                 );
 
-                // Name the runs holding the seats. Without this the refusal named only
-                // the bus, and a card is placed at its own shift window rather than where
-                // it was dropped — so the blocking run is routinely not the block the
-                // operator was aiming at, and the message was undiagnosable.
+                // Name the runs holding the seats: a card is placed at its own shift
+                // window, so the blocking run is often not the block under the cursor.
                 const named = (blockers || [])
                     .filter(t => t && t.occupancy)
                     .map(t => __('{0} ({1} aboard, {2}–{3})', [
@@ -1583,11 +1567,8 @@ function mountRoutePlannerApp(wrapper, data) {
                     .reduce((sum, t) => sum + t.occupancy, 0);
             },
 
-            // The runs already on the road during the window this card would occupy.
-            // The seat check and the refusal message read the same list, so the message
-            // can name what actually took the seats instead of leaving the operator to
-            // guess: a card is placed at its own shift window, never where it was
-            // dropped, so the run that blocks it is often not the one under the cursor.
+            // The runs already on the road during the window this card would occupy. The
+            // seat check and the refusal message read this one list so they cannot drift.
             tripsDuringCardWindows(card, vehicleId, direction) {
                 const { start, end } = this.cardLegWindow(card, direction);
                 return this._getLogicalTrips(vehicleId)
@@ -1595,9 +1576,7 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             // The hour a card's chosen leg occupies. Only the leg being placed counts
-            // (WI-002000): taking the worse of the outbound and return windows meant an
-            // early drop was judged against the evening traffic it never shares the road
-            // with.
+            // (WI-002000), not the worse of the outbound and return windows.
             cardLegWindow(card, direction) {
                 const DEF = 3600000;
                 if ((direction || card.direction) === 'RETURN') {
@@ -2541,11 +2520,8 @@ function mountRoutePlannerApp(wrapper, data) {
                 const prefix = vehicle.is_leased ? 'S-' : '';
                 const name = (seq) => `${prefix}${vehicleNumber}${String(seq).padStart(2, '0')}`;
 
-                // The next FREE number, not the number of trips there are. Counting
-                // re-issued a name the moment any trip but the last was removed: a lane
-                // holding S-201, S-202, S-204, S-205 counted four and offered S-205
-                // again, so two unrelated runs ended up sharing one name on the block,
-                // in the trip picker and on the manifest.
+                // The next FREE number, not the count: counting re-issued a name the
+                // moment any trip but the last was removed.
                 const taken = new Set();
                 this.swimItems.forEach(item => {
                     if (item.vehicleId === vehicleId && item.tripName) taken.add(item.tripName);
@@ -2641,15 +2617,11 @@ function mountRoutePlannerApp(wrapper, data) {
                 });
 
                 // Rebase onto today's timeline by whole days, which preserves the UTC
-                // time-of-day and so the render position. A single shared offset is wrong
-                // — every block carries its own lifespan start date (the DATE part of
-                // start_time), and one block sitting in the past would drag every other
-                // one off-screen — so each block is moved on its own first.
-                //
-                // Blocks land on TODAY, not merely somewhere inside the window: planStart
-                // carries a 3h margin before today's local midnight, and a shift that only
-                // had to reach planStart let a stop whose time of day falls in that margin
-                // — 21:00 to midnight local — settle a day early, off the visible axis.
+                // time-of-day and so the render position. Each block carries its own
+                // lifespan start date, so it is shifted on its own: a shared offset would
+                // let one block sitting in the past drag every other one off-screen.
+                // The anchor is today's local midnight, not planStart, which sits 3h before
+                // it — reaching the window is not the same as reaching today.
                 const todayStart = this.planStart.getTime() + (3 * 3600000);
                 const dayShift = (startMs) => -Math.floor((startMs - todayStart) / dayMs) * dayMs;
                 parsedItems = parsedItems.map(i => {
@@ -2657,15 +2629,12 @@ function mountRoutePlannerApp(wrapper, data) {
                     return { ...i, start: new Date(startMs + dayShift(startMs)) };
                 });
 
-                // Then pull each trip back onto one day. The plan window is ~30h wide, so
-                // a run straddling its edge came back with its first stop shifted three
-                // days and the rest two — a 45-minute trip torn into a band nearly a day
-                // wide, which then "overlapped" every other run on the lane and painted
-                // them overcapacity. The stops of one run are hours apart at most, so each
-                // takes the day that puts it NEAREST its trip's first stop: the time of
-                // day is untouched and a stop that legitimately sits a little before stop
-                // one (a leg re-timed after it was dropped) stays where it is instead of
-                // being flung a day forward.
+                // Then pull each trip back onto one day: shifted per block, a run
+                // straddling the ~30h window's edge came back spanning nearly a day and
+                // "overlapped" every other run on the lane. Each stop takes the day
+                // NEAREST its trip's first stop — nearest, not next, because the stops of
+                // one trip carry unrelated save-dates and one landing slightly before stop
+                // one must stay where it is.
                 const tripAnchor = {};
                 parsedItems.forEach(i => {
                     if (!i.tripId) return;

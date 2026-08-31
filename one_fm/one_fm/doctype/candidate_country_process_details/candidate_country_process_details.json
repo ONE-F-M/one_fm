@@ -123,7 +123,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Pending\nSkipped\nOffer Accepted\nAwaiting Response\nAccepted\nYet to apply\nIn process\nIn Process\nIn Progress\nStamped\nApplied\nIssued\nRejected\nFit\nUnfit\nPassed\nFailed\nSubmitted\nApproved\nArriving\nJoined\nCompleted\nDeployed\nDid Not Arrive\nDraft\nPending Initial Review\nPending GRD Manager Approval\nPending By PAM\nPending By MOI\nPending Visa\nRejected By Operator\nRejected By PAM\nRejected By MOI\nAwaiting Quota Availability\nGRD Finalization\nPending Recruiter Confirmation\nCancelled\nCanceled\nRejected for Re Issue\nPending Visa Cancel\nPending Visa Request Cancel\nPending Cancel Work Permit\nMedical failed and Proceeded to Remedical\nNot Booked\nBooked\nVisa issued"
+   "options": "Pending\nSkipped\nOffer Accepted\nAwaiting Response\nAccepted\nYet to apply\nIn process\nIn Process\nIn Progress\nStamped\nApplied\nIssued\nRejected\nFit\nUnfit\nPassed\nFailed\nSubmitted\nApproved\nArriving\nJoined\nCompleted\nDeployed\nDid Not Arrive\nDraft\nPending Initial Review\nPending GRD Manager Approval\nPending By PAM\nPending By MOI\nPending Visa\nRejected By Operator\nRejected By PAM\nRejected By MOI\nAwaiting Quota Availability\nGRD Finalization\nPending Recruiter Confirmation\nCancelled\nCanceled\nRejected for Re Issue\nPending Visa Cancel\nPending Visa Request Cancel\nPending Cancel Work Permit\nMedical failed and Proceeded to Remedical\nNot Booked\nBooked\nVisa issued\nPending by GRD Operator\nPending Visa Issuance\nAwaiting Visa Cancellation\nWork Permit Cancelled"
   },
   {
    "columns": 2,
@@ -203,7 +203,7 @@
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-08-03 09:00:00.000000",
+ "modified": "2026-08-18 09:00:00.000000",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Candidate Country Process Details",
