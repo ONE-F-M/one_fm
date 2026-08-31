@@ -1619,6 +1619,27 @@ function mountRoutePlannerApp(wrapper, data) {
                 return this.selectedTripLegs.arrival || this.lastStopEndsAt();
             },
 
+            campLegPlaces() {
+                return Object.keys(this.selectedTripLegs.camps || {});
+            },
+
+            campLegMinutes() {
+                // One run can load at more than one camp; the drive to the first site is
+                // everything the bus does before it, which is the sum of those legs.
+                return Object.values(this.selectedTripLegs.camps || {}).reduce(
+                    (total, held) => ({
+                        transit: total.transit + (parseInt(held.transit_minutes, 10) || 0),
+                        buffer: total.buffer + (parseInt(held.buffer_minutes, 10) || 0),
+                    }),
+                    { transit: 0, buffer: 0 }
+                );
+            },
+
+            firstStopStartsAt() {
+                const stops = this.selectedTripStops;
+                return stops.length ? new Date(stops[0].item.start).toISOString() : null;
+            },
+
             rideHomeMinutes() {
                 // Nothing to show when the last drop was already at the camp: the bus is
                 // home, and a zero-minute leg on the drawer is noise.
@@ -4242,6 +4263,51 @@ function injectRPVueTemplate() {
               </div>
             </div>
 
+            <!-- Leaving the camp: the first leg of the run, and the only one before
+                 this that no card is filed against - so half an hour of the journey was
+                 accounted for nowhere between the timeline and the first stop. -->
+            <div class="rp-detail-card" v-if="campLegPlaces().length">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="rp-icon" style="font-size:18px;color:#4338ca">home</span>
+                <div style="font-size:13px;font-weight:700;color:#111">
+                  {{ __('Departure from Camp') }}
+                </div>
+              </div>
+              <div class="rp-detail-row" style="padding:6px 0 0 30px">
+                <div class="rp-detail-row-icon"><span class="rp-icon">place</span></div>
+                <div class="rp-detail-row-content">
+                  <div class="rp-detail-row-label">{{ __('Stop Location') }}</div>
+                  <div class="rp-detail-row-value">{{ campLegPlaces().join(', ') }}</div>
+                </div>
+              </div>
+              <div class="rp-detail-row" style="padding:4px 0 0 30px">
+                <div class="rp-detail-row-icon"><span class="rp-icon">schedule</span></div>
+                <div class="rp-detail-row-content">
+                  <div class="rp-detail-row-label">{{ __('Departure') }} &rarr; {{ __('Arrival') }}</div>
+                  <div class="rp-detail-row-value">
+                    {{ fmtISO(tripStartsAt()) }} &rarr; {{ fmtISO(firstStopStartsAt()) }}
+                  </div>
+                </div>
+              </div>
+              <div class="rp-detail-row" style="padding:4px 0 0 30px" v-if="selectedTripLegs.qoa_time">
+                <div class="rp-detail-row-icon"><span class="rp-icon">alarm</span></div>
+                <div class="rp-detail-row-content">
+                  <div class="rp-detail-row-label">{{ __('Driver QOA Report Time') }}</div>
+                  <div class="rp-detail-row-value">{{ selectedTripLegs.qoa_time }}</div>
+                </div>
+              </div>
+              <div class="rp-detail-row" style="padding:4px 0 3px 30px">
+                <div class="rp-detail-row-icon"><span class="rp-icon">timer</span></div>
+                <div class="rp-detail-row-content">
+                  <div class="rp-detail-row-label">{{ __('Transit & Buffer') }}</div>
+                  <div class="rp-detail-row-value">
+                    {{ campLegMinutes().transit }} min transit
+                    &middot; {{ campLegMinutes().buffer }} min buffer
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Stops grouped under their pickup accommodation camp banner -->
             <template v-for="(camp, ci) in selectedTripStopsByCamp" :key="'camp_' + ci">
 
@@ -4333,8 +4399,10 @@ function injectRPVueTemplate() {
                     </div>
                   </div>
                 </div>
-                <!-- QOA: only where the leg leaves the camp carrying outward riders. -->
-                <div class="rp-detail-row" style="padding:4px 0 3px 30px" v-if="stopQoaTime(stop)">
+                <!-- QOA: shown on the camp leg where there is one, since that is the
+                     leg the driver reports for; kept here for a run saved without one. -->
+                <div class="rp-detail-row" style="padding:4px 0 3px 30px"
+                     v-if="stopQoaTime(stop) && !campLegPlaces().length">
                   <div class="rp-detail-row-icon"><span class="rp-icon">alarm</span></div>
                   <div class="rp-detail-row-content">
                     <div class="rp-detail-row-label">Driver QOA Report Time</div>

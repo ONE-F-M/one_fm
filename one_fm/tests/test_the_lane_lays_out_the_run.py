@@ -146,6 +146,26 @@ class TestTheDrawerReadsTheRunInOrder(FrappeTestCase):
 	def test_the_timeline_ends_when_the_bus_is_back(self):
 		self.assertIn("return this.selectedTripLegs.arrival || this.lastStopEndsAt();", self.source)
 
+	def test_the_drive_out_of_the_camp_is_shown_before_the_first_stop(self):
+		# The timeline began at 06:45 and the first stop at 07:15, and the half hour
+		# between them - the drive to it - was accounted for nowhere.
+		self.assertIn("Departure from Camp", self.source)
+		self.assertLess(
+			self.source.index("Departure from Camp"),
+			self.source.index("Stops grouped under their pickup accommodation camp banner"),
+		)
+
+	def test_it_spans_the_departure_to_the_first_stop(self):
+		self.assertIn(
+			"{{ fmtISO(tripStartsAt()) }} &rarr; {{ fmtISO(firstStopStartsAt()) }}",
+			self.source,
+		)
+
+	def test_the_report_time_is_shown_against_the_leg_it_belongs_to(self):
+		# The driver reports before the bus leaves the CAMP, not before a stop it drives
+		# to later - and it was printed against that stop, 15 minutes off.
+		self.assertIn('v-if="stopQoaTime(stop) && !campLegPlaces().length"', self.source)
+
 	def test_the_ride_home_is_shown_before_the_trip_total(self):
 		self.assertIn("Return to Camp", self.source)
 		self.assertLess(

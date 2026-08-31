@@ -1285,7 +1285,8 @@ def load_assignments(plan_name: str = ""):
         if cint(row.is_camp_leg):
             held = leg_timings.setdefault(
                 row.trip_group or camp_leg_group(row.card_id),
-                {"departure": None, "arrival": None, "home": None, "camps": {}},
+                {"departure": None, "arrival": None, "home": None, "qoa_time": None,
+                 "camps": {}},
             )
             place = row.origin_location or row.stop_location
             minutes = {
@@ -1300,6 +1301,9 @@ def load_assignments(plan_name: str = ""):
                 # The moment the bus leaves, which no block can be read for: the first
                 # block is the first SITE, reached after the camp leg.
                 held["departure"] = held["departure"] or row.start_time
+                held["qoa_time"] = held["qoa_time"] or (
+                    str(row.qoa_time) if row.qoa_time else None
+                )
                 if place:
                     held["camps"][place] = minutes
             continue
