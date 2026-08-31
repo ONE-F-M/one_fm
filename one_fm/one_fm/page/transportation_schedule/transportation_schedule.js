@@ -2400,11 +2400,10 @@ function mountRoutePlannerApp(wrapper, data) {
                         const targetTripItems = tripsMap[targetTripId].items;
                         const targetVehicleId = selectedOpt.vehicle.id;
 
-                        // The target run's own load, not the lane's: what matters here is
-                        // whether that trip plus this card fits. Read through tripOccupancy
-                        // rather than summing the stops by hand — a run that both drops off
-                        // and picks up never carries its stops all at once, and summing them
-                        // refused a merge the bus could make (WI-002160).
+                        // The target run's own load, not the lane's. Read through
+                        // tripOccupancy: a run that both drops off and picks up never
+                        // carries all its stops at once, so summing them by hand refused
+                        // merges the bus could make (WI-002160).
                         const tripLoad = self.tripOccupancy({
                             direction: self.runDirection(targetTripItems),
                             headcount: targetTripItems.reduce((sum, i) => sum + (i.headcount || 0), 0),
