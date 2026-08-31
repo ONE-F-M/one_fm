@@ -2301,6 +2301,10 @@ def _stamp_leg_details(doc, leg_timings=None):
 		# The first card out of each camp, and when the bus leaves that camp - which is
 		# the earliest leg belonging to a card boarding there, not this card's own.
 		camp_first, camp_departs = {}, {}
+		# When the dispatcher has stated a departure, that IS when the bus leaves the
+		# first camp. Reading it off the blocks gave the moment the bus reaches the first
+		# SITE instead, so the driver's report time came out one camp leg too late.
+		stated = _local_seconds((leg_timings or {}).get(group_key, {}).get("departure"))
 		for stop in itinerary:
 			if stop["kind"] != CAMP_STOP or stop["place"] in camp_first:
 				continue
@@ -2310,7 +2314,10 @@ def _stamp_leg_details(doc, leg_timings=None):
 				_local_seconds(row.start_time) for row in ordered
 				if row.transportation_shipment in boarding and _local_seconds(row.start_time) is not None
 			]
-			camp_departs[stop["place"]] = min(leaving) if leaving else None
+			camp_departs[stop["place"]] = (
+				stated if (stated is not None and not camp_departs)
+				else (min(leaving) if leaving else None)
+			)
 
 		for row in ordered:
 			card = by_name[row.transportation_shipment]

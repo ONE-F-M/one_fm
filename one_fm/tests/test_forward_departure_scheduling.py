@@ -439,6 +439,16 @@ class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
 
 		self.assertEqual(camp.start_time, "2026-08-18T04:30:00.000Z")
 
+	def test_the_driver_reports_before_the_bus_leaves_the_camp(self):
+		# Not before the stop it drives to: the report time was read off the first block,
+		# which is when the bus REACHES the first site, so it came out one camp leg late.
+		# 04:30Z is 07:30 in Kuwait, less the 15-minute HR buffer.
+		camp = next(row for row in self._doc({"RUN-1": {
+			"departure": "2026-08-18T04:30:00.000Z", "camps": {},
+		}}).assignments if row.is_camp_leg and not row.is_home_leg)
+
+		self.assertEqual(str(camp.qoa_time), "07:15:00")
+
 	def test_the_ride_home_is_a_row_of_its_own(self):
 		# The last thing the bus does, and the only leg nothing is dropped at - so the
 		# drawer had nothing to show for the drive back and the run appeared to end at

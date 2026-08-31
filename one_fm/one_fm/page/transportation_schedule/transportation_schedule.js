@@ -1619,6 +1619,11 @@ function mountRoutePlannerApp(wrapper, data) {
                 return this.selectedTripLegs.arrival || this.lastStopEndsAt();
             },
 
+            // A stored Time reads back as HH:MM:SS; the drawer shows clock times.
+            fmtClock(value) {
+                return value ? String(value).slice(0, 5) : '\u2014';
+            },
+
             campLegPlaces() {
                 return Object.keys(this.selectedTripLegs.camps || {});
             },
@@ -4316,7 +4321,7 @@ function injectRPVueTemplate() {
                 <div class="rp-detail-row-icon"><span class="rp-icon">alarm</span></div>
                 <div class="rp-detail-row-content">
                   <div class="rp-detail-row-label">{{ __('Driver QOA Report Time') }}</div>
-                  <div class="rp-detail-row-value">{{ selectedTripLegs.qoa_time }}</div>
+                  <div class="rp-detail-row-value">{{ fmtClock(selectedTripLegs.qoa_time) }}</div>
                 </div>
               </div>
               <div class="rp-detail-row" style="padding:4px 0 3px 30px">
