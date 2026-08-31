@@ -328,7 +328,10 @@ def generate_transportation_shipments():
 	Entry point for both the daily scheduler and the canvas "Generate" button.
 	Returns a summary dict of what changed.
 	"""
-	# The scheduler runs as Administrator; guard interactive/API calls.
+	# The scheduler runs as Administrator; guard interactive/API calls. The button
+	# lives on the Transportation Schedule canvas, which is the transport team's own
+	# board, so the roles that run it may refresh their own cards (WI-002162) instead
+	# of having to ask a System Manager.
 	if frappe.session.user != "Administrator":
 		frappe.only_for(GENERATE_ROLES)
 

@@ -9,6 +9,7 @@
  "field_order": [
   "naming_series",
   "employee",
+  "employee_name",
   "date_of_application",
   "preparation",
   "ref_doctype",
@@ -16,6 +17,7 @@
   "transfer_paper",
   "column_break_8",
   "work_permit_type",
+  "amendment_no",
   "reason_of_rejection",
   "details_of_rejection",
   "employee_last_checkin",
@@ -402,11 +404,11 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:doc.workflow_state=='Pending By Supervisor' || doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'",
+   "depends_on": "eval:doc.workflow_state=='Pending GR Manager' || doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'",
    "fieldname": "new_work_permit_expiry_date",
    "fieldtype": "Date",
    "label": "Updated Work Permit Expiry Date",
-   "mandatory_depends_on": "eval:doc.workflow_state=='Pending By Supervisor' || doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'"
+   "mandatory_depends_on": "eval:doc.workflow_state=='Pending GR Manager' || doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'"
   },
   {
    "allow_on_submit": 1,
@@ -652,8 +654,8 @@
   },
   {
    "fieldname": "details_of_rejection",
-   "hidden": 1,
    "fieldtype": "Small Text",
+   "hidden": 1,
    "label": "Details of Rejection"
   },
   {
@@ -856,13 +858,13 @@
    "options": "User"
   },
   {
-   "depends_on": "eval:doc.workflow_state == \"Pending By Supervisor\" || doc.workflow_state == \"Pending by Operator\" || doc.workflow_state == \"Completed\"|| doc.workflow_state == \"Pending By PAM\"",
+   "depends_on": "eval:doc.workflow_state == \"Pending GR Manager\" || doc.workflow_state == \"Pending by Operator\" || doc.workflow_state == \"Completed\"|| doc.workflow_state == \"Pending By PAM\"",
    "fieldname": "payment_details_section_section",
    "fieldtype": "Section Break",
    "label": "Payment Details Section"
   },
   {
-   "depends_on": "eval:doc.workflow_state=='Pending By Supervisor' || doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'",
+   "depends_on": "eval:doc.workflow_state=='Pending GR Manager' || doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'",
    "fieldname": "work_permit_information_section",
    "fieldtype": "Section Break",
    "label": "Work Permit Information"
@@ -965,11 +967,30 @@
    "fieldtype": "Date",
    "label": "Employee Last Checkin",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "How many times this permit has been amended with PAM. Incremented by the Amend action.",
+   "fieldname": "amendment_no",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Amendment No",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Employee Name",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-12 10:30:00.000000",
+ "modified": "2026-08-20 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",

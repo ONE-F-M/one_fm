@@ -72,10 +72,22 @@ var set_preparation_record_costing = function(frm, cdt, cdn) {
 	frm.refresh_field('preparation_record');
 
 	frappe.call({
-		method: 'one_fm.grd.doctype.preparation.preparation.get_grd_renewal_extension_cost',
+		// WI-002092: the row's fees, already multiplied out for a multi-year renewal. The
+		// master lookup returns the annual rate, which is not what the row carries.
+		method: 'one_fm.grd.doctype.preparation.preparation.get_preparation_row_costing',
 		args: {'renewal_or_extend': row.renewal_or_extend, 'no_of_years': row.no_of_years},
 		callback: function(r) {
 			if(!r.message){
+				// WI-002092: say so rather than leave four zeros and no explanation. The
+				// commonest cause is a renewal whose master row is configured for a
+				// different number of years than the row is asking for.
+				frappe.show_alert({
+					message: __('No master fee row in HR Settings for {0}{1}.', [
+						row.renewal_or_extend,
+						row.no_of_years ? __(' at {0}', [row.no_of_years]) : ''
+					]),
+					indicator: 'orange'
+				}, 7);
 				return;
 			}
 			var cost = r.message;
@@ -104,9 +116,45 @@ var caclulate_renewal_extension_cost_total = function(frm, child) {
 	frm.refresh_field('preparation_record');
 };
 
+// WI-002101: narrow the Action dropdown to what this kind of batch may carry. The server
+// re-checks on validate - rows also arrive from the monthly schedule, from imports and from
+// the API, none of which see a dropdown.
+var set_action_options = function(frm){
+	if(!frm.doc.category){
+		// Nothing chosen yet: leave every Action on offer rather than an empty dropdown the
+		// operator cannot explain.
+		frm.fields_dict.preparation_record.grid.update_docfield_property(
+			'renewal_or_extend', 'options', frm._all_actions);
+		return;
+	}
+
+	frappe.call({
+		method: 'one_fm.grd.doctype.preparation.preparation.get_actions_for_category',
+		args: {category: frm.doc.category},
+		callback: function(r){
+			if(!r.message){
+				return;
+			}
+			frm.fields_dict.preparation_record.grid.update_docfield_property(
+				'renewal_or_extend', 'options', [''].concat(r.message).join('\n'));
+			frm.refresh_field('preparation_record');
+		}
+	});
+};
+
 //Set renewal for all employee to facilitate process
 frappe.ui.form.on("Preparation", {
+	onload: frm => {
+		// The full list, kept so it can be put back when the Category is cleared.
+		frm._all_actions = frm.fields_dict.preparation_record.grid
+			.get_docfield('renewal_or_extend').options;
+	},
+	category: frm => {
+		set_action_options(frm);
+	},
 	refresh : frm=>{
+		set_action_options(frm);
+
 		if(frm.doc.docstatus==1){
 			if(!frappe.user.has_role("HR Manager")){
 				cur_frm.fields_dict.preparation_record.grid.update_docfield_property("renewal_or_extend", "allow_on_submit", 0);
