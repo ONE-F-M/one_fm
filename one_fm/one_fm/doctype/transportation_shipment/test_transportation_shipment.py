@@ -1,6 +1,8 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
 
+from unittest.mock import patch
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
@@ -231,7 +233,23 @@ class TestRetentionCardConversion(FrappeTestCase):
 		self.assertEqual(_card_directions(0), ("Outward", "Return"))
 
 
-class TestNonFleetBypass(FrappeTestCase):
+class SchedulerEntryPointTestCase(FrappeTestCase):
+	"""A test case for the functions the scheduler calls, with their commit muted.
+
+	`generate_transportation_shipments` and `deactivate_expired_shipments` are
+	background jobs, so committing is right for them. Called from a test, that commit
+	ends the transaction FrappeTestCase wraps every test in, and every fixture inserted
+	afterwards is written to the database for real.
+	"""
+
+	def setUp(self):
+		super().setUp()
+		muted = patch.object(frappe.db, "commit")
+		muted.start()
+		self.addCleanup(muted.stop)
+
+
+class TestNonFleetBypass(SchedulerEntryPointTestCase):
 	"""Story 6: Taxi / Subcontractor Rental requests bypass the scheduling canvas.
 
 	A Trip Request whose Transportation Method is anything other than "Company
@@ -291,7 +309,7 @@ class TestNonFleetBypass(FrappeTestCase):
 		)
 
 
-class TestShipmentExpiry(FrappeTestCase):
+class TestShipmentExpiry(SchedulerEntryPointTestCase):
 	"""TR 3 - 9: past-to_date Unassigned cards are flagged Inactive by the engine."""
 
 	def _make_shipment(self, status, to_date):
