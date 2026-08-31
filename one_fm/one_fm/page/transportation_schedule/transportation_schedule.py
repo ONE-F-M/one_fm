@@ -1909,6 +1909,10 @@ def get_manifest_data_for_plan(plan_name: str):
 					if held.get("departure") and leg.start_time else \
 					(leg.start_time or held.get("departure"))
 				held.setdefault("camp", place)
+				# The driver's report time, which AC 1.2 puts on an accommodation pickup
+				# wherever the leg is shown - the manifest included.
+				if leg.qoa_time and not held.get("qoa_time"):
+					held["qoa_time"] = str(leg.qoa_time)
 
 		routes.append({
 			"vehicleIndex": vi, "vehicleLabel": v_label,

@@ -98,8 +98,72 @@ class TestARunEndsWhenTheBusIsBack(FrappeTestCase):
 	def test_the_camp_is_the_one_the_run_comes_back_to(self):
 		# Not the depot the vehicle is registered at, which is a different fact.
 		self.assertIn("const homeCamp = legs.home || legs.camp || accommodation;", self.page)
-		self.assertIn("renderReturnCard(lastTimeISO, homeCamp, returningEmployees)", self.page)
+		self.assertIn("renderReturnCard(lastTimeISO, homeCamp, returningEmployees,", self.page)
 
 	def test_a_run_saved_without_them_still_draws(self):
 		# The stops remain the fallback: an older plan has no legs recorded.
 		self.assertIn(": new Date(lastTime).toISOString();", self.page)
+
+
+class TestTheManifestPrintsTheDriversReportTime(FrappeTestCase):
+	"""WI-002151, last criterion: an accommodation pickup stop prints the QOA report
+	time (Departure - HR QOA minutes) on the manifest, as it does in the modal.
+
+	The only QOA the manifest page knew about was the pass/fail attendance check against
+	each rider - a different thing that happens to share the name.
+	"""
+
+	def setUp(self):
+		self.page = frappe.read_file(frappe.get_app_path(
+			"one_fm", "one_fm", "page", "transportation_manifest_page",
+			"transportation_manifest_page.js"
+		))
+		self.server = frappe.read_file(frappe.get_app_path(
+			"one_fm", "one_fm", "page", "transportation_schedule",
+			"transportation_schedule.py"
+		))
+
+	def test_the_plan_sends_the_report_time_with_the_run(self):
+		self.assertIn('held["qoa_time"] = str(leg.qoa_time)', self.server)
+
+	def test_the_depart_card_prints_it(self):
+		self.assertIn("Driver QOA report time", self.page)
+		self.assertIn("qoaTime ?", self.page)
+
+	def test_both_itineraries_pass_it_in(self):
+		# A merged run and an ordinary one render through different functions.
+		self.assertIn("o.vehicleLabel, true, o.qoaTime", self.page)
+		self.assertIn("false, legs.qoa_time", self.page)
+
+	def test_a_run_without_one_prints_nothing(self):
+		# AC 1.2: QOA is hidden where it does not apply, not shown empty.
+		self.assertIn('qoaTime ? `<div class="mfst-stop-card-shift">', self.page)
+
+
+class TestTheManifestMarksADayRollover(FrappeTestCase):
+	"""AC 1.6: an arrival past midnight is a day later and says so.
+
+	The modal and the details drawer both badge it; the manifest, which is what the
+	driver actually reads at 23:50, did not.
+	"""
+
+	def setUp(self):
+		self.page = frappe.read_file(frappe.get_app_path(
+			"one_fm", "one_fm", "page", "transportation_manifest_page",
+			"transportation_manifest_page.js"
+		))
+
+	def test_the_page_can_measure_the_rollover(self):
+		self.assertIn("function dayOffset(fromISO, toISO)", self.page)
+		self.assertIn("function rolloverBadge(offset)", self.page)
+
+	def test_a_stop_that_rolls_over_is_badged(self):
+		self.assertIn("rolloverBadge(dayOffset(item.runStartISO, stop.time))", self.page)
+
+	def test_the_ride_home_is_badged_too(self):
+		# The leg most likely to cross midnight is the one back to the camp.
+		self.assertIn("rolloverBadge(dayOffset(runStartISO, time))", self.page)
+
+	def test_it_is_measured_from_when_the_run_left(self):
+		self.assertIn("runStartISO: firstTimeISO", self.page)
+		self.assertIn("runStartISO: o.firstTimeISO", self.page)
