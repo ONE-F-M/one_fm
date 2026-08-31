@@ -1574,13 +1574,24 @@ function mountRoutePlannerApp(wrapper, data) {
                 // `own_direction` is used rather than the block's, which reads MIXED
                 // after a merge and would pin every merged return run at the wrong edge.
                 const first = leg(stops[0]);
-                const span = Math.max(first.buffer + first.transit, MIN_BLOCK_MS);
+                const own = first.buffer + first.transit;
                 if (this._ownDirection(stops[0]) === 'RETURN') {
+                    // A return run leaves its first stop the moment the shift ends, and
+                    // the minutes on that stop ARE the drive away from it.
                     const anchor = new Date(stops[0].start).getTime();
-                    stops[0].end = new Date(anchor + span);
+                    stops[0].end = new Date(anchor + Math.max(own, MIN_BLOCK_MS));
                 } else {
+                    // An outward run is pinned at the moment it has to be on site, and
+                    // the drive that brings it there left the camp. Every stop's minutes
+                    // are the drive AWAY from it, so the first stop's own minutes are the
+                    // leg to the SECOND stop - subtracting them here moved the departure
+                    // the dispatcher had set, by however long the next drive happened to
+                    // be. The camp legs are that first drive.
+                    const camp = Object.values((this.legTimings || {})[tripId] || {})
+                        .reduce((ms, held) => ms + ((parseInt(held.transit_minutes, 10) || 0)
+                            + (parseInt(held.buffer_minutes, 10) || 0)) * 60000, 0);
                     const anchor = new Date(stops[0].end).getTime();
-                    stops[0].start = new Date(anchor - span);
+                    stops[0].start = new Date(anchor - Math.max(camp || own, MIN_BLOCK_MS));
                 }
 
                 let cursor = new Date(stops[0].end).getTime();
