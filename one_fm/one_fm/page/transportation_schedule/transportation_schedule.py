@@ -858,6 +858,8 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
         filters={"status": ["in", ["Unassigned", "Assigned"]]},
         fields=[
             "name", "accommodation", "accommodation_name", "operations_shift",
+            # Every shift the card serves, for the OLM stops one card covers several of.
+            "aggregated_shifts",
             "operations_site", "stop_location", "headcount", "trip_direction",
             "routing_type_badge", "start_time", "end_time", "from_date", "to_date",
             "source_doctype", "source_docname", "pair_group",
@@ -956,7 +958,9 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
                 "is_shipment_doc":       True,
                 "accommodation":         s.accommodation_name or s.accommodation or "—",
                 "accommodation_coords":  {"lat": acc_coords[0], "lng": acc_coords[1]} if acc_coords else None,
-                "shift_name":            s.operations_shift or "Ad-hoc",
+                # Every generated card comes from an Operations Shift; a card serving
+                # several names them all rather than claiming to be ad-hoc.
+                "shift_name":            s.operations_shift or s.aggregated_shifts or "Ad-hoc",
                 "site":                  s.operations_site or "",
                 "site_location":         destination,
                 "stop_location":         s.stop_location or "",
