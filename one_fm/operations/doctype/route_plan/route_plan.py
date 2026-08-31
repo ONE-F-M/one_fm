@@ -309,10 +309,9 @@ class RoutePlan(Document):
 			# Standalone rows are keyed by position so two of them never merge.
 			group = row.trip_group or f"\0row-{idx}"
 			# One trip group on one vehicle is one bus run, whichever way its stops
-			# travel. Keying the direction in as well split a chained run - an outward
-			# drop and the return pickup made at the same stop - into two pseudo-trips
-			# whose windows overlap each other, so the concurrency check added the same
-			# bus to itself and refused a load it was already carrying (WI-002160).
+			# travel. Keying the direction in as well split a chained run into two
+			# overlapping pseudo-trips, so the check added the same bus to itself
+			# (WI-002160).
 			key = (row.vehicle, group)
 			start, end = _row_time_window(row)
 			live_from, live_to = _row_date_range(row)
@@ -336,9 +335,8 @@ class RoutePlan(Document):
 
 			trip.rows.append(row)
 			# Stops that do not all travel the same way make this a mixed run, walked leg
-			# by leg instead of summed. The row's own ``direction`` only ever said MIXED
-			# when the Merge Trip modal wrote it back; chaining a return stop onto an
-			# outbound trip left every row on its original heading (WI-002160).
+			# by leg instead of summed - the row's own ``direction`` only ever said MIXED
+			# when the Merge Trip modal wrote it back.
 			if direction != trip.direction:
 				trip.direction = MIXED_DIRECTION
 			trip.headcount += cint(row.headcount)
@@ -615,11 +613,9 @@ def _trip_peak(trip):
 	if trip.direction != MIXED_DIRECTION:
 		return cint(trip.headcount), 1
 
-	# Stop order decides the answer — the same two loads read 3 or 6 depending on
-	# whether the return riders board before or after the outward ones get off — so the
-	# order has to be the run's, not the order the rows happen to sit in. Rows carrying
-	# no stop_index fall back to when they run; the child-row name is only a last tie
-	# break, and on its own it is a random hash.
+	# Stop order decides the answer - the same two loads read 3 or 6 depending on whether
+	# the return riders board before or after the outward ones get off. The child-row
+	# name is a random hash, so it can only be the last tie break.
 	by_index = sorted(
 		trip.rows,
 		key=lambda row: (cint(row.stop_index), str(row.start_time or ""), row.name or ""),
@@ -628,9 +624,7 @@ def _trip_peak(trip):
 	stops = [
 		{
 			"headcount": cint(row.headcount),
-			# The shipment is the authority on which way a card's own riders travel, but a
-			# row carrying no shipment still knows its own leg - read that rather than
-			# silently calling everyone outward.
+			# A row carrying no shipment still knows its own leg.
 			"boards": (directions.get(row.transportation_shipment) or _row_direction(row))
 			== "RETURN",
 		}

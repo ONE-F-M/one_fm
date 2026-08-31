@@ -21,7 +21,11 @@ def response(message, status_code, data=None, error=None):
         if data:
             frappe.local.response["data"] = data
         elif error:
-            frappe.local.response["error"] = error
+            # The app renders this slot verbatim. An Exception object is not JSON
+            # serialisable, so passing one through - as every `except` branch here does -
+            # loses the sentence and the client falls back to "An unexpected error
+            # occurred". Coerce so the reason always reaches the employee.
+            frappe.local.response["error"] = error if isinstance(error, str) else cstr(error)
         return
     except Exception as e:
         frappe.log_error(title="API Response", message=frappe.get_traceback())

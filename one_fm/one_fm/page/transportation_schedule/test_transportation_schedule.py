@@ -100,14 +100,7 @@ class TestSyncShipmentStatuses(FrappeTestCase):
 
 
 class TestAPlacedCardIsNeverReverted(FrappeTestCase):
-	"""A direction mismatch is a flag to fix, not a card to send back to the pool.
-
-	The mismatch fires whenever the browser's copy of the plan disagrees with the
-	shipment — a tab left open across a merge or a data change, or two people editing
-	the board at once. Reverting on it marked a card Unassigned while its block was
-	still on the lane, and Generate Shipments deletes Unassigned shift-generated cards
-	whose demand has moved on, so a stale tab could get a placed card deleted.
-	"""
+	"""A direction mismatch is a flag to fix, not a card to send back to the pool."""
 
 	def setUp(self):
 		self.pair = frappe.generate_hash("TRQ-KEEP", 8)
@@ -135,8 +128,7 @@ class TestAPlacedCardIsNeverReverted(FrappeTestCase):
 		self.assertEqual(kept.pre_merge_trip_direction, "Outward")
 
 	def test_a_card_the_plan_dropped_still_reverts(self):
-		# The case the revert branch is actually for: the block left the lane, so the
-		# card goes back to the pool with its own direction.
+		# What the revert branch is for: the block left the lane.
 		frappe.db.set_value("Transportation Shipment", self.leg, {
 			"trip_direction": "Mixed", "pre_merge_trip_direction": "Outward"
 		})
@@ -149,11 +141,9 @@ class TestAPlacedCardIsNeverReverted(FrappeTestCase):
 		self.assertIsNone(reverted.pre_merge_trip_direction)
 
 	def test_a_mismatched_card_is_still_not_newly_assigned(self):
-		# The guard the check exists for is untouched: a mismatch never promotes a card
-		# to Assigned, it only stops it being demoted.
+		# A mismatch never promotes a card to Assigned, it only stops it being demoted.
 		frappe.db.set_value("Transportation Shipment", self.leg, "status", "Unassigned")
 
 		_sync_shipment_statuses([_swim_item(self.leg, "RETURN")])
 
 		self.assertEqual(self._read(self.leg).status, "Unassigned")
-

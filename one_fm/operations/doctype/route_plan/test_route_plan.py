@@ -405,9 +405,7 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 			"trip_group": trip,
 			"trip_name": trip,
 			"headcount": headcount,
-			# Stop order is what the leg walk reads: the same two loads peak at 3 or at 6
-			# depending on whether the return riders board before or after the outward
-			# ones get off, so a test about a mixed run has to say which run it means.
+			# Stop order is what the leg walk reads, so a mixed run has to say its order.
 			"stop_index": stop,
 		}
 
@@ -433,13 +431,7 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
 
 	def test_outbound_and_return_of_one_trip_are_walked_leg_by_leg(self):
-		"""WI-002160: one trip_group on one vehicle is one bus run, not two.
-
-		A return pickup chained onto an outward drop is the same bus turning around at
-		the stop: the riders it dropped are off before the boarders get on, so 3 out
-		then 3 back fits three seats. Summing the two legs — which is what keying the
-		direction into the trip did — refused a run the bus really makes.
-		"""
+		"""WI-002160: 3 out then 3 back fits three seats - the drop is off first."""
 		plan = self._make_plan([
 			self._row(self.VEHICLE, trip="TRIP-BOTH", direction="OUTBOUND", headcount=3, stop=1),
 			self._row(self.VEHICLE, trip="TRIP-BOTH", direction="RETURN", headcount=3, stop=2),
@@ -448,11 +440,7 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
 
 	def test_a_return_boarding_before_the_outward_drop_still_overloads(self):
-		"""The other stop order genuinely does overload the bus, and is still refused.
-
-		Boarding the return riders at stop 1 puts them aboard alongside the outward
-		ones, who have not been dropped yet — six people on three seats.
-		"""
+		"""Boarding the return riders first is six people on three seats, still refused."""
 		plan = self._make_plan([
 			self._row(self.VEHICLE, trip="TRIP-STACK", direction="RETURN", headcount=3, stop=1),
 			self._row(self.VEHICLE, trip="TRIP-STACK", direction="OUTBOUND", headcount=3, stop=2),
@@ -462,19 +450,12 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 		self.assertIn("Capacity Exceeded on leg", str(cm.exception))
 
 	def test_a_chained_run_is_not_counted_against_itself(self):
-		"""WI-002160, the shape the dispatcher actually hit: S-204 on a 3-seat RAIZE.
-
-		One outward drop followed by two return pickups is a run that peaks at two
-		aboard, never three. Splitting it by direction made an outbound pseudo-trip of
-		1 and a return one of 2 whose windows overlapped each other, so a further
-		1-passenger run in the same window was told the bus was already full.
-		"""
+		"""WI-002160, the reported shape: S-204 on a 3-seat RAIZE peaks at two aboard."""
 		plan = self._make_plan([
 			self._row(self.VEHICLE, trip="S-204", direction="OUTBOUND", headcount=1, stop=1),
 			self._row(self.VEHICLE, trip="S-204", direction="RETURN", headcount=1, stop=2),
 			self._row(self.VEHICLE, trip="S-204", direction="RETURN", headcount=1, stop=3),
-			# No times recorded, so every trip here spans the whole day and they all
-			# overlap — the harshest reading of "running at the same time".
+			# No times recorded, so every trip spans the day and they all overlap.
 			self._row(self.VEHICLE, trip="EU-RESIDENCE", direction="RETURN", headcount=1, stop=1),
 		])
 		plan.insert(ignore_permissions=True)

@@ -263,11 +263,8 @@ class TestTheMergedBlockPaintsMixed(FrappeTestCase):
 		self.assertIn("return this.bfill({", self.source)
 
 	def test_a_run_is_mixed_once_any_stop_is(self):
-		# Taking the first stop's direction left a merged run reading as whatever leg
-		# happened to be placed first. The block now asks runDirection, which answers
-		# MIXED whenever the stops do not all agree - so a run holding one MIXED stop is
-		# still Mixed, and so is one whose stops merely disagree, which is the shape a
-		# run chained through the trip picker has (WI-002160).
+		# The block asks runDirection, which answers MIXED whenever the stops do not all
+		# agree - one MIXED stop, or stops that merely disagree (WI-002160).
 		self.assertIn("direction: this.runDirection(stops),", self.source)
 		self.assertIn("runDirection(stops) {", self.source)
 		self.assertIn(

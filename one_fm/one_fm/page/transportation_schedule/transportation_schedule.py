@@ -919,14 +919,8 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
 
             dep_utc = to_utc(str(dep))
             ret_utc = to_utc(str(ret))
-            # A night shift finishes the morning after it starts, so its end time is
-            # legitimately earlier on the clock than its start. Reading that as a broken
-            # window and replacing it with "start + 1 hour" is why a 19:00-07:00 shift
-            # advertised a 20:00 finish on its card (WI-002161). The canvas is a rolling
-            # 24h view of one day's runs — the 07:00 pickup and the 19:00 drop both belong
-            # on it — so the end keeps its own time of day rather than rolling onto
-            # tomorrow's date and off the axis. Only a shift with no length recorded at
-            # all still needs a fallback.
+            # A night shift ends earlier on the clock than it starts; only a shift with
+            # no length recorded at all needs a fallback.
             if ret_utc == dep_utc:
                 ret_utc = dep_utc + timedelta(hours=1)
 
@@ -1061,9 +1055,7 @@ def _sync_shipment_statuses(items, previously_linked=None):
                 )
 
         if mismatched:
-            # One entry per save rather than one per card. A browser holding a stale copy
-            # of the plan disagrees about every card it carries, and a hundred rows of the
-            # same fact is not a better signal than one.
+            # One entry per save: a stale browser disagrees about every card it carries.
             frappe.log_error(
                 title="Transportation Shipment Direction Mismatch",
                 message=(
@@ -1083,13 +1075,10 @@ def _sync_shipment_statuses(items, previously_linked=None):
         unmerge_trip_shipment,
     )
 
-    # A card the plan still places is never reverted, whatever its direction flag says.
-    # `status` answers "is this shipment on a plan", and a direction mismatch does not
-    # change that answer - it means the two sides disagree about which leg, which is a
-    # flag to fix rather than a card to send back to the pool. Reverting one that is
-    # still on a lane marked it Unassigned while its block sat there, and Generate
-    # Shipments deletes Unassigned shift-generated cards whose demand has moved on - so a
-    # browser left open across a data change could get a placed card deleted.
+    # A card the plan still places is never reverted, whatever its direction flag says:
+    # `status` answers "is this shipment on a plan", and a mismatch is a flag to fix, not
+    # a card to send back to the pool. Reverting one left it Unassigned with its block
+    # still on the lane, and Generate Shipments deletes Unassigned shift-generated cards.
     still_placed = set(placed_dirs_by_shipment)
 
     for name in (previously_linked or set()):

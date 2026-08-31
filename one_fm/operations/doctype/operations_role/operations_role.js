@@ -3,14 +3,10 @@
 
 frappe.ui.form.on('Operations Role', {
 	refresh: function(frm) {
-		// WI-001982: only the Sale Items the project's Active contract covers. The
-		// is_stock_item filter moved into the query, which applies it either way - a
-		// project with no Active contract still gets every non-stock item.
 		frm.set_query("sale_item", function() {
 			return {
-				query: "one_fm.operations.doctype.operations_role.operations_role.sale_item_query",
-				filters: {
-					project: frm.doc.project,
+				"filters": {
+					"is_stock_item": 0,
 				}
 			};
 		});
