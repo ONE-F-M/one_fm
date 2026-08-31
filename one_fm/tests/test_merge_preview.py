@@ -13,6 +13,9 @@ import re
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
+from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+	get_merge_preview,
+)
 from one_fm.operations.doctype.route_plan.route_plan import leg_occupancy
 
 CANVAS = pathlib.Path(frappe.get_app_path(
@@ -432,9 +435,12 @@ class TestPerLegMinutesSurviveARefresh(FrappeTestCase):
 		self.assertIn("self._retimeTrip(tripId);", self.canvas)
 		self.assertIn("_retimeTrip(tripId) {", self.canvas)
 
-	def test_a_return_run_is_pinned_at_its_start_not_its_end(self):
-		# Pinning a return run at its end would move the collection off the shift end.
-		self.assertIn("if (this._ownDirection(stops[0]) === 'RETURN') {", self.canvas)
+	def test_a_run_is_walked_one_way_whichever_way_it_travels(self):
+		# There were two rules here, one per direction, and neither matched the server's.
+		# Arrival = Departure + Buffer + Transit, and the next stop departs when this one
+		# is done - the same walk the modal prints.
+		self.assertNotIn("if (this._ownDirection(stops[0]) === 'RETURN') {", self.canvas)
+		self.assertIn("cursor = item.end.getTime();", self.canvas)
 
 	def test_every_stop_of_the_run_is_stamped_not_just_the_new_one(self):
 		# Matched by shipment now that a leg belongs to a stop rather than to a card.
@@ -600,9 +606,10 @@ class TestWhatAMergeWritesBack(FrappeTestCase):
 		# return card is listed at its collection stop and again at the home stop.
 		self.assertIn("(stop.serves || []).forEach((shipment) => { legs[shipment] = stop; });", self.source)
 
-	def test_a_block_is_laid_out_from_the_stop_before_it(self):
-		# Which is where the drive to it is recorded.
-		self.assertIn("const { buffer, transit } = leg(stops[position]);", self.source)
+	def test_a_block_is_as_long_as_the_leg_that_brings_the_bus_to_it(self):
+		# The other way round - sizing a block by the stop before it - is what made the
+		# lane disagree with the modal it had just confirmed.
+		self.assertIn("item.end = new Date(cursor + span(item));", self.source)
 
 	def test_the_write_back_matches_a_block_to_its_shipment(self):
 		# Stops carry shipment names; blocks carry TSHIP- card ids.
@@ -742,3 +749,70 @@ class TestLeavingARun(FrappeTestCase):
 		)
 
 		self.assertFalse(unmerge_trip_shipment(self._card()))
+
+
+class TestTheLaneCanCopyTheItinerary(FrappeTestCase):
+	"""AC 1.1: the blocks are drawn from these, so they must be the walk itself.
+
+	The canvas used to re-walk the itinerary to place its blocks, which is how the lane
+	and the modal came to disagree - the dispatcher confirmed one set of times and the
+	drawer showed another, with a departure that appeared to move on its own.
+	"""
+
+	def setUp(self):
+		self.drop = self._card("Site A")
+		self.next = self._card("Site B")
+
+	def _card(self, stop):
+		doc = frappe.new_doc("Transportation Shipment")
+		doc.status = "Unassigned"
+		doc.trip_direction = "Outward"
+		doc.start_time = "08:00:00"
+		doc.end_time = "20:00:00"
+		doc.headcount = 2
+		doc.stop_location = stop
+		# A run needs a camp: it starts by loading there and ends by going back.
+		doc.accommodation = frappe.get_all("Accommodation", limit=1, pluck="name")[0]
+		doc.generation_key = frappe.generate_hash("TS-OFF", 10)
+		doc.flags.ignore_links = True
+		doc.flags.ignore_mandatory = True
+		doc.insert(ignore_permissions=True)
+		return doc.name
+
+	def test_the_run_departs_at_offset_zero(self):
+		preview = get_merge_preview([self.drop, self.next], departure="05:00:00")
+
+		self.assertEqual(preview["stops"][0]["departs_offset"], 0)
+
+	def test_every_stop_is_that_many_seconds_after_the_departure(self):
+		# 5 + 25 to the camp's own leg, then 5 + 10 on to the first site.
+		preview = get_merge_preview(
+			[self.drop, self.next],
+			timings={"leg-1": {"transit_minutes": 25, "buffer_minutes": 5},
+					 "leg-2": {"transit_minutes": 10, "buffer_minutes": 5}},
+			departure="05:00:00",
+		)
+
+		self.assertEqual(preview["stops"][0]["arrives_offset"], 30 * 60)
+		self.assertEqual(preview["stops"][1]["departs_offset"], 30 * 60)
+		self.assertEqual(preview["stops"][1]["arrives_offset"], 45 * 60)
+
+	def test_the_offsets_do_not_move_when_the_departure_does(self):
+		# They describe the shape of the run; the departure places it.
+		early = get_merge_preview([self.drop, self.next], departure="05:00:00")
+		late = get_merge_preview([self.drop, self.next], departure="09:30:00")
+
+		self.assertEqual(
+			[s["arrives_offset"] for s in early["stops"]],
+			[s["arrives_offset"] for s in late["stops"]],
+		)
+
+
+class TestTheCanvasDrawsWhatTheModalShowed(FrappeTestCase):
+	def test_the_blocks_are_placed_on_the_previews_own_numbers(self):
+		source = frappe.read_file(frappe.get_app_path(
+			"one_fm", "one_fm", "page", "transportation_schedule", "transportation_schedule.js"
+		))
+
+		self.assertIn("item.start = new Date(anchorMs + stop.departs_offset * 1000);", source)
+		self.assertIn("item.end = new Date(anchorMs + stop.arrives_offset * 1000);", source)

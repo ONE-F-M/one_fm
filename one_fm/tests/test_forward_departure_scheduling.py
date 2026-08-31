@@ -415,13 +415,25 @@ class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
 		# Trip Builder took the numbers and the plan forgot them.
 		place = _camp_place_for(frappe._dict(accommodation=self.camp, accommodation_name=None))
 		camp = next(
-			row for row in self._doc({"RUN-1": {place: {
+			row for row in self._doc({"RUN-1": {"camps": {place: {
 				"transit_minutes": 25, "buffer_minutes": 5,
-			}}}).assignments
+			}}}}).assignments
 			if row.is_camp_leg
 		)
 
 		self.assertEqual((camp.transit_minutes, camp.buffer_minutes), (25, 5))
+
+	def test_the_camp_row_keeps_the_departure_the_dispatcher_stated(self):
+		# It cannot be read back off the blocks: the first block is the first SITE, which
+		# the bus reaches after the camp leg, so a reload would guess it wrong.
+		camp = next(
+			row for row in self._doc({"RUN-1": {
+				"departure": "2026-08-18T04:30:00.000Z", "camps": {},
+			}}).assignments
+			if row.is_camp_leg
+		)
+
+		self.assertEqual(camp.start_time, "2026-08-18T04:30:00.000Z")
 
 	def test_the_camp_row_names_the_journey_it_belongs_to(self):
 		# Optional link, per the dispatcher: the row can be traced back to a card without

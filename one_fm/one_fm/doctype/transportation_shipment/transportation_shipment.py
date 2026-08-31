@@ -712,6 +712,12 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 			"buffer_minutes": buffer_minutes,
 			"departs": _clock(departs),
 			"arrives": _clock(arrives),
+			# The same two moments as seconds from the run's own departure. The canvas
+			# lays its blocks out on these rather than re-deriving the walk, so the lane
+			# and the drawer show exactly the itinerary the modal showed - no second
+			# implementation to drift, and no clock string to rebuild in the browser.
+			"departs_offset": departs - walked[0][0],
+			"arrives_offset": arrives - walked[0][0],
 			"arrives_day_offset": day_offset(arrives),
 			"occupancy": per_stop[position],
 			"exceeded": bool(limit) and per_stop[position] > limit,

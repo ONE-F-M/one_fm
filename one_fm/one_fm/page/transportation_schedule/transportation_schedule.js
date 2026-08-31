@@ -1212,13 +1212,19 @@ function mountRoutePlannerApp(wrapper, data) {
                 });
                 // The camp legs of this run, which have no block to carry their minutes.
                 const tripId = existingItems.find((i) => i.tripId)?.tripId;
-                Object.entries((this.legTimings || {})[tripId] || {}).forEach(([place, held]) => {
-                    timings[`camp:${place}`] = held;
-                });
+                Object.entries(((this.legTimings || {})[tripId] || {}).camps || {})
+                    .forEach(([place, minutes]) => { timings[`camp:${place}`] = minutes; });
 
-                const runStart = existingItems.length
-                    ? clockOf(Math.min(...existingItems.map((i) => new Date(i.start).getTime())))
-                    : null;
+                // The run's stored departure - the moment the bus leaves the camp, which
+                // is earlier than any block because the camp has no block. Falls back to
+                // the first block for a run saved before it was recorded.
+                const held = (this.legTimings || {})[tripId] || {};
+                const runStartMs = held.departure
+                    ? new Date(held.departure).getTime()
+                    : (existingItems.length
+                        ? Math.min(...existingItems.map((i) => new Date(i.start).getTime()))
+                        : null);
+                const runStart = runStartMs === null ? null : clockOf(runStartMs);
 
                 let previewStops = [];
                 // The run's own departure and the one it would have backed into. The blocks
@@ -1247,7 +1253,7 @@ function mountRoutePlannerApp(wrapper, data) {
                                 if (!r.message) return;
                                 d.hide();
                                 self._applyMerge(newCard, existingItems, vehicleId, r.message,
-                                    previewStops, departureShiftMs);
+                                    previewStops, departureShiftMs, runStartMs);
                             }
                         });
                     }
@@ -1419,7 +1425,8 @@ function mountRoutePlannerApp(wrapper, data) {
                     </div>`;
             },
 
-            _applyMerge(newCard, existingItems, vehicleId, merged, previewStops, departureShiftMs) {
+            _applyMerge(newCard, existingItems, vehicleId, merged, previewStops, departureShiftMs,
+                        runStartMs) {
                 const self = this;
                 const tripId = merged.trip_group;
                 // The server decides: Mixed only when the cards travel different ways, so
@@ -1453,7 +1460,17 @@ function mountRoutePlannerApp(wrapper, data) {
                         };
                     }
                 });
-                this.legTimings = { ...(this.legTimings || {}), [tripId]: camps };
+                // Everything the run's timing is built from, in one place: the moment it
+                // leaves the camp, and the minutes of the legs that have no block. The
+                // departure is a decision the dispatcher made - it has to survive a
+                // reload, and it cannot be read back off the blocks because the first
+                // block is the first SITE, which the bus reaches after the camp leg.
+                const anchorMs = (runStartMs === null || runStartMs === undefined
+                    ? lastEnd.getTime() : runStartMs) + (departureShiftMs || 0);
+                this.legTimings = {
+                    ...(this.legTimings || {}),
+                    [tripId]: { departure: new Date(anchorMs).toISOString(), camps },
+                };
                 (previewStops || []).forEach((stop) => {
                     // `serves`, not `cards`: a return card is listed at its collection stop
                     // AND at the home stop, and home carries no minutes - so keying on
@@ -1498,19 +1515,28 @@ function mountRoutePlannerApp(wrapper, data) {
                 // 60/10 for a stop already on the lane, showed the itinerary they imply,
                 // and then left the block sitting on the 60/15 it was dropped with
                 // (feedback on WI-002074).
-                self._retimeTrip(tripId);
-
-                // _retimeTrip lays the run out from the shift time it backs into. Moving
-                // every stop by the difference between that and the departure the
-                // dispatcher stated puts the whole run where they asked for it, without
-                // rebuilding an instant from a clock string in the browser (AC 1.1).
-                if (departureShiftMs) {
-                    self.swimItems.forEach((item) => {
-                        if (item.tripId !== tripId) return;
-                        item.start = new Date(new Date(item.start).getTime() + departureShiftMs);
-                        item.end = new Date(new Date(item.end).getTime() + departureShiftMs);
-                    });
+                // The lane is a drawing of the itinerary the modal just showed, so it is
+                // drawn from that itinerary's own numbers. Re-walking it here is what let
+                // the two disagree: the modal said one thing, the blocks said another,
+                // and the departure appeared to move on its own.
+                const stopOf = {};
+                (previewStops || []).forEach((stop) => {
+                    (stop.serves || []).forEach((shipment) => { stopOf[shipment] = stop; });
+                });
+                let placed = false;
+                self.swimItems.forEach((item) => {
+                    if (item.tripId !== tripId) return;
+                    const stop = stopOf[shipmentOf(item.cardId)];
+                    if (!stop || stop.arrives_offset === undefined) return;
+                    item.start = new Date(anchorMs + stop.departs_offset * 1000);
+                    item.end = new Date(anchorMs + stop.arrives_offset * 1000);
+                    placed = true;
+                });
+                if (placed) {
                     self.swimItems = [...self.swimItems];
+                } else {
+                    // No itinerary to copy (an older preview): fall back to walking it.
+                    self._retimeTrip(tripId);
                 }
 
                 self.assignedCards.add(newCard.id);
@@ -1555,55 +1581,26 @@ function mountRoutePlannerApp(wrapper, data) {
                 if (!stops.length) return;
 
                 const MIN_BLOCK_MS = 5 * 60000;     // a block thinner than this is unclickable
-                const leg = (item) => {
-                    const transit = parseInt(item.transitMinutes, 10) || 0;
-                    const buffer = parseInt(item.bufferMinutes, 10) || 0;
-                    // A stop that was never timed keeps the length it already has, so a
-                    // trip saved before the minutes were persisted is not collapsed onto
-                    // a zero-width block.
-                    if (!transit && !buffer) {
-                        return { buffer: 0, transit: new Date(item.end) - new Date(item.start) };
-                    }
-                    return { buffer: buffer * 60000, transit: transit * 60000 };
+                // One rule, the server's: a stop's buffer and transit are the leg that
+                // BRINGS the bus to it, so Arrival = Departure + Buffer + Transit and the
+                // next stop departs when this one is done. Anything else here made the
+                // lane disagree with the modal that had just been confirmed.
+                const span = (item) => {
+                    const minutes = (parseInt(item.transitMinutes, 10) || 0)
+                        + (parseInt(item.bufferMinutes, 10) || 0);
+                    // A stop that was never timed keeps the width it already has, so a
+                    // trip saved before the minutes were persisted is not collapsed.
+                    return Math.max(
+                        minutes ? minutes * 60000 : new Date(item.end) - new Date(item.start),
+                        MIN_BLOCK_MS
+                    );
                 };
 
-                // Which edge of the first block is the fixed point. An outward run is
-                // pinned at its END - the moment it has to be on site - so its dwell and
-                // drive are subtracted backwards from there. A return run is pinned at
-                // its START, the moment the shift ends and the riders are collected.
-                // `own_direction` is used rather than the block's, which reads MIXED
-                // after a merge and would pin every merged return run at the wrong edge.
-                const first = leg(stops[0]);
-                const own = first.buffer + first.transit;
-                if (this._ownDirection(stops[0]) === 'RETURN') {
-                    // A return run leaves its first stop the moment the shift ends, and
-                    // the minutes on that stop ARE the drive away from it.
-                    const anchor = new Date(stops[0].start).getTime();
-                    stops[0].end = new Date(anchor + Math.max(own, MIN_BLOCK_MS));
-                } else {
-                    // An outward run is pinned at the moment it has to be on site, and
-                    // the drive that brings it there left the camp. Every stop's minutes
-                    // are the drive AWAY from it, so the first stop's own minutes are the
-                    // leg to the SECOND stop - subtracting them here moved the departure
-                    // the dispatcher had set, by however long the next drive happened to
-                    // be. The camp legs are that first drive.
-                    const camp = Object.values((this.legTimings || {})[tripId] || {})
-                        .reduce((ms, held) => ms + ((parseInt(held.transit_minutes, 10) || 0)
-                            + (parseInt(held.buffer_minutes, 10) || 0)) * 60000, 0);
-                    const anchor = new Date(stops[0].end).getTime();
-                    stops[0].start = new Date(anchor - Math.max(camp || own, MIN_BLOCK_MS));
-                }
-
-                let cursor = new Date(stops[0].end).getTime();
-                stops.slice(1).forEach((item, position) => {
-                    // The drive that brings the bus to this stop is recorded against the
-                    // stop it leaves, so a block is laid out from the one before it.
-                    const { buffer, transit } = leg(stops[position]);
-                    const start = cursor;
-                    const end = start + Math.max(buffer + transit, MIN_BLOCK_MS);
-                    item.start = new Date(start);
-                    item.end = new Date(end);
-                    cursor = end;
+                let cursor = new Date(stops[0].start).getTime();
+                stops.forEach((item) => {
+                    item.start = new Date(cursor);
+                    item.end = new Date(cursor + span(item));
+                    cursor = item.end.getTime();
                 });
 
                 this.swimItems = [...this.swimItems];   // Vue reactivity

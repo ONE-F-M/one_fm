@@ -66,75 +66,55 @@ def _block(card, stop_index, start, end, transit=0, buffer=0):
 	}
 
 
-class TestAnOutwardRunIsPinnedOnSite(FrappeTestCase):
-	"""The reported bug: the departure moved on its own after a merge.
+class TestTheRunWalksForward(FrappeTestCase):
+	"""One rule, the server's: a stop's minutes are the leg that BRINGS the bus to it.
 
-	Every stop's minutes are the drive AWAY from it. The first stop's own minutes are
-	therefore the leg to the SECOND stop - and subtracting them backwards from its
-	arrival moved the departure by however long that next drive happened to be.
+	The lane used to walk its own way - the first block pinned at its arrival and every
+	block after it sized by the minutes of the stop before. So the modal said one thing
+	and the blocks said another, and the departure appeared to move on its own.
 	"""
 
 	def setUp(self):
 		if not shutil.which("node"):
 			self.skipTest("node is not on this machine")
 
-	def test_the_departure_is_the_camp_leg_back_from_the_first_arrival(self):
-		# Camp leg 5 + 25 = 30 minutes, so a 07:00 arrival departs at 06:30 - whatever
-		# the drive from the first site to the second turns out to be.
+	def test_a_block_is_as_long_as_its_own_leg(self):
+		# Arrival = Departure + Buffer + Transit, read literally.
 		placed = retime(
-			[_block("A", 1, "2026-08-18T06:00:00Z", "2026-08-18T07:00:00Z", transit=40, buffer=5)],
-			leg_timings={"T1": {"Camp": {"transit_minutes": 25, "buffer_minutes": 5}}},
+			[_block("A", 1, "2026-08-18T06:30:00Z", "2026-08-18T06:35:00Z", transit=25, buffer=5)]
 		)
 
 		self.assertEqual(placed["A"]["start"], "2026-08-18T06:30:00.000Z")
 		self.assertEqual(placed["A"]["end"], "2026-08-18T07:00:00.000Z")
 
-	def test_the_second_drive_does_not_move_the_departure(self):
-		# The same run with a longer drive to stop two departs at exactly the same time.
-		short = retime(
-			[_block("A", 1, "2026-08-18T06:00:00Z", "2026-08-18T07:00:00Z", transit=10, buffer=0)],
-			leg_timings={"T1": {"Camp": {"transit_minutes": 25, "buffer_minutes": 5}}},
-		)
-		long = retime(
-			[_block("A", 1, "2026-08-18T06:00:00Z", "2026-08-18T07:00:00Z", transit=90, buffer=0)],
-			leg_timings={"T1": {"Camp": {"transit_minutes": 25, "buffer_minutes": 5}}},
-		)
+	def test_the_next_stop_departs_when_this_one_is_done(self):
+		placed = retime([
+			_block("A", 1, "2026-08-18T06:30:00Z", "2026-08-18T06:35:00Z", transit=25, buffer=5),
+			_block("B", 2, "2026-08-18T09:00:00Z", "2026-08-18T09:05:00Z", transit=10, buffer=5),
+		])
 
-		self.assertEqual(short["A"]["start"], long["A"]["start"])
+		self.assertEqual(placed["B"]["start"], "2026-08-18T07:00:00.000Z")
+		self.assertEqual(placed["B"]["end"], "2026-08-18T07:15:00.000Z")
 
-	def test_the_stops_after_it_follow_the_leg_out_of_the_one_before(self):
-		# A 07:00 arrival at A, 20 minutes out of A, so B runs 07:00 to 07:20.
-		placed = retime(
-			[
-				_block("A", 1, "2026-08-18T06:00:00Z", "2026-08-18T07:00:00Z", transit=15, buffer=5),
-				_block("B", 2, "2026-08-18T07:00:00Z", "2026-08-18T07:05:00Z", transit=30, buffer=0),
-			],
-			leg_timings={"T1": {"Camp": {"transit_minutes": 25, "buffer_minutes": 5}}},
-		)
+	def test_the_first_block_is_not_moved(self):
+		# It is where the run is on the lane; dragging it is how a run is moved, and
+		# nothing else may move it underneath the dispatcher.
+		placed = retime([
+			_block("A", 1, "2026-08-18T06:30:00Z", "2026-08-18T07:00:00Z", transit=90, buffer=0),
+		])
 
 		self.assertEqual(placed["A"]["start"], "2026-08-18T06:30:00.000Z")
-		self.assertEqual(placed["B"]["start"], "2026-08-18T07:00:00.000Z")
-		self.assertEqual(placed["B"]["end"], "2026-08-18T07:20:00.000Z")
 
-	def test_a_run_with_no_camp_leg_yet_keeps_the_old_behaviour(self):
-		# A plan saved before camp legs were recorded still has to draw something.
-		placed = retime(
-			[_block("A", 1, "2026-08-18T06:00:00Z", "2026-08-18T07:00:00Z", transit=40, buffer=5)]
-		)
+	def test_an_untimed_block_keeps_the_width_it_has(self):
+		# A trip saved before the minutes were persisted is not collapsed to nothing.
+		placed = retime([_block("A", 1, "2026-08-18T06:00:00Z", "2026-08-18T07:00:00Z")])
 
-		self.assertEqual(placed["A"]["start"], "2026-08-18T06:15:00.000Z")
+		self.assertEqual(placed["A"]["end"], "2026-08-18T07:00:00.000Z")
 
-
-class TestAReturnRunIsPinnedAtCollection(FrappeTestCase):
-	def setUp(self):
-		if not shutil.which("node"):
-			self.skipTest("node is not on this machine")
-
-	def test_it_runs_forward_from_the_moment_the_shift_ends(self):
-		# The riders are collected at 18:00 and the drive away is 5 + 25.
+	def test_a_return_run_walks_the_same_way(self):
+		# There is no second rule for a return run; there never should have been.
 		placed = retime(
 			[_block("R", 1, "2026-08-18T18:00:00Z", "2026-08-18T18:05:00Z", transit=25, buffer=5)],
-			leg_timings={"T1": {"Camp": {"transit_minutes": 90, "buffer_minutes": 0}}},
 			own={"R": "RETURN"},
 		)
 

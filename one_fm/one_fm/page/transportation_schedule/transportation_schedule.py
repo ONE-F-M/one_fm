@@ -1283,9 +1283,15 @@ def load_assignments(plan_name: str = ""):
 
     for row in doc.assignments:
         if cint(row.is_camp_leg):
+            held = leg_timings.setdefault(
+                row.trip_group or camp_leg_group(row.card_id), {"departure": None, "camps": {}}
+            )
+            # The moment the bus leaves, which no block can be read for: the first block
+            # is the first SITE, and the bus reaches that after the camp leg.
+            held["departure"] = held["departure"] or row.start_time
             place = row.origin_location or row.stop_location
             if place:
-                leg_timings.setdefault(row.trip_group or camp_leg_group(row.card_id), {})[place] = {
+                held["camps"][place] = {
                     "transit_minutes": row.transit_minutes or 0,
                     "buffer_minutes": row.buffer_minutes or 0,
                 }
@@ -2368,7 +2374,7 @@ def _camp_leg_rows(itinerary, ordered, per_stop, vehicle, camp_departs,
 		boarding = [card.name for card in stop["boarding"]]
 		serving = next((row for row in ordered if row.transportation_shipment in boarding), None)
 		departs = camp_departs.get(stop["place"])
-		held = (minutes or {}).get(stop["place"]) or {}
+		held = ((minutes or {}).get("camps") or {}).get(stop["place"]) or {}
 		rows.append({
 			"card_id": f"{CAMP_LEG_PREFIX}|{group_key}|{stop['stop_index']}",
 			"is_camp_leg": 1,
@@ -2392,8 +2398,10 @@ def _camp_leg_rows(itinerary, ordered, per_stop, vehicle, camp_departs,
 			# Not a placement: a camp row that carried riders would count them a second
 			# time in every report that sums the column.
 			"headcount": 0,
-			"start_time": (serving or first).start_time,
-			"end_time": (serving or first).end_time,
+			# The run's departure, so it survives a reload as a decision rather than
+			# being guessed at from where the first block happens to sit.
+			"start_time": (minutes or {}).get("departure") or (serving or first).start_time,
+			"end_time": (serving or first).start_time,
 			"transit_minutes": cint(held.get("transit_minutes")),
 			"buffer_minutes": cint(held.get("buffer_minutes")),
 			"qoa_time": (
