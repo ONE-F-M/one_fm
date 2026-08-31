@@ -1154,6 +1154,32 @@ def _link_shipment_on_manifest_rows(manifest_doc, v_rows, card_emp_map):
     return changed
 
 
+def _shift_by_shipment(items) -> dict:
+	"""{shipment: Operations Shift} read from the cards themselves.
+
+	The row's ``shift`` is matched against Employee Schedule when relievers are attached,
+	so it has to be a shift's name and nothing else. The browser sends the card's LABEL,
+	which for an OLM stop serving several shifts names all of them - too long for the
+	column and useless as a lookup. The document knows which shift it is, so ask it.
+	"""
+	names = {
+		_shipment_from_card_id(item.get("cardId", "")) for item in (items or [])
+	}
+	names.discard(None)
+	if not names:
+		return {}
+
+	return {
+		doc.name: doc.operations_shift
+		for doc in frappe.get_all(
+			"Transportation Shipment",
+			filters={"name": ["in", list(names)]},
+			fields=["name", "operations_shift"],
+		)
+		if doc.operations_shift
+	}
+
+
 @frappe.whitelist()
 def save_assignments(plan_name: str, swim_items: str, assigned_cards: str,
                      leg_timings: str = None):
@@ -1184,6 +1210,7 @@ def save_assignments(plan_name: str, swim_items: str, assigned_cards: str,
     # Clear existing assignments and rebuild
     doc.assignments = []
     directions = _shipment_direction_flags(items)
+    shifts = _shift_by_shipment(items)
     for item in _with_stop_indexes(items):
         shipment = _shipment_from_card_id(item.get("cardId", ""))
         doc.append("assignments", {
@@ -1198,7 +1225,13 @@ def save_assignments(plan_name: str, swim_items: str, assigned_cards: str,
             "start_time":              item.get("start", ""),
             "end_time":                item.get("end", ""),
             "site":                    item.get("_site", ""),
-            "shift":                   item.get("_shift", ""),
+            # A shipment-backed row takes the shift off the document, and takes nothing
+            # when the card serves several - the column means "the shift this row is
+            # for", and a list of three is not an answer to that.
+            "shift":                   (
+                shifts.get(shipment, "") if shipment
+                else str(item.get("_shift") or "")[:140]
+            ),
             "accommodation":           item.get("_accommodation", ""),
             "stop_location":           item.get("_stopLocation", ""),
             "transit_minutes":         item.get("transitMinutes") or 0,

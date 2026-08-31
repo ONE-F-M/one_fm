@@ -157,3 +157,49 @@ class TestAPlacedCardIsNeverReverted(FrappeTestCase):
 
 		self.assertEqual(self._read(self.leg).status, "Unassigned")
 
+
+
+class TestTheRowNamesOneShift(FrappeTestCase):
+	"""The row's `shift` is matched against Employee Schedule, so it must be a name.
+
+	An OLM stop serving several shifts labels its card with all of them. Sent straight
+	to the column that had been carrying a single shift, it overflowed the 140-character
+	field and would have been useless as a lookup even if it fit.
+	"""
+
+	def test_a_shipment_row_takes_the_shift_from_the_document(self):
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			_shift_by_shipment,
+		)
+
+		card = frappe.new_doc("Transportation Shipment")
+		card.status = "Unassigned"
+		card.trip_direction = "Outward"
+		card.operations_shift = frappe.get_all("Operations Shift", limit=1, pluck="name")[0]
+		card.flags.ignore_mandatory = True
+		card.insert(ignore_permissions=True)
+
+		found = _shift_by_shipment([{"cardId": f"TSHIP-{card.name}"}])
+
+		self.assertEqual(found[card.name], card.operations_shift)
+
+	def test_a_card_serving_several_shifts_names_none_of_them(self):
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			_shift_by_shipment,
+		)
+
+		card = frappe.new_doc("Transportation Shipment")
+		card.status = "Unassigned"
+		card.trip_direction = "Outward"
+		card.aggregated_shifts = "A-Afternoon-1, B-Afternoon-1, C-Afternoon-1"
+		card.flags.ignore_mandatory = True
+		card.insert(ignore_permissions=True)
+
+		self.assertNotIn(card.name, _shift_by_shipment([{"cardId": f"TSHIP-{card.name}"}]))
+
+	def test_the_browsers_label_is_never_written_for_a_shipment_row(self):
+		source = frappe.read_file(frappe.get_app_path(
+			"one_fm", "one_fm", "page", "transportation_schedule", "transportation_schedule.py"
+		))
+
+		self.assertIn('shifts.get(shipment, "") if shipment', source)
