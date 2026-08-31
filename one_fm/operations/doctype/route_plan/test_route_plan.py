@@ -915,3 +915,50 @@ class TestSeatsAreCountedFromTheShipment(FrappeTestCase):
 
 		self.assertEqual(sum(row_headcount(r, live) for r in rows), 28)
 		self.assertEqual(sum(r.headcount for r in rows), 27)
+
+
+class TestAnUntouchedBusIsNotAWall(FrappeTestCase):
+	"""A save is judged on what it does, not on everything already in the plan.
+
+	Capacity is measured against the shipments rather than the snapshot on the row, so a
+	roster that grew after a card was placed shows up as an overload on a bus nobody has
+	touched. Judged on every save, one such bus blocked the whole plan: a drop on a
+	different vehicle could not be saved until the untouched one was fixed.
+	"""
+
+	def test_a_vehicle_whose_cards_did_not_move_is_left_alone(self):
+		plan = frappe.new_doc("Route Plan")
+		plan.get_doc_before_save = lambda: frappe._dict(assignments=[
+			frappe._dict(vehicle="BUS-A", transportation_shipment="TS-1", stop_index=1,
+						 trip_group="T1", direction="OUTBOUND", headcount=27,
+						 start_time="2026-08-18T06:00:00Z", end_time="2026-08-18T07:00:00Z"),
+		])
+		rows = list(plan.get_doc_before_save().assignments)
+
+		untouched = plan._vehicles_this_save_did_not_touch(plan._logical_trips(rows))
+
+		self.assertIn("BUS-A", untouched)
+
+	def test_a_vehicle_that_gained_a_card_is_judged(self):
+		plan = frappe.new_doc("Route Plan")
+		before = [
+			frappe._dict(vehicle="BUS-A", transportation_shipment="TS-1", stop_index=1,
+						 trip_group="T1", direction="OUTBOUND", headcount=27,
+						 start_time="2026-08-18T06:00:00Z", end_time="2026-08-18T07:00:00Z"),
+		]
+		plan.get_doc_before_save = lambda: frappe._dict(assignments=before)
+		after = before + [
+			frappe._dict(vehicle="BUS-A", transportation_shipment="TS-2", stop_index=2,
+						 trip_group="T1", direction="OUTBOUND", headcount=1,
+						 start_time="2026-08-18T06:00:00Z", end_time="2026-08-18T07:00:00Z"),
+		]
+
+		untouched = plan._vehicles_this_save_did_not_touch(plan._logical_trips(after))
+
+		self.assertNotIn("BUS-A", untouched)
+
+	def test_a_brand_new_plan_is_judged_in_full(self):
+		# Nothing to grandfather: every card in it is being placed by this save.
+		plan = frappe.new_doc("Route Plan")
+
+		self.assertEqual(plan._vehicles_this_save_did_not_touch([]), set())

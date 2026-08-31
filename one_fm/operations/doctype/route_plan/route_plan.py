@@ -254,6 +254,7 @@ class RoutePlan(Document):
 			return
 
 		limits = _passenger_limits({trip.vehicle for trip in trips})
+		untouched = self._vehicles_this_save_did_not_touch(trips)
 
 		by_vehicle = {}
 		for trip in trips:
@@ -263,6 +264,14 @@ class RoutePlan(Document):
 			limit = limits.get(vehicle)
 			if not limit:
 				# Vehicle master has no seat count configured — nothing to enforce.
+				continue
+
+			if vehicle in untouched:
+				# Nothing was dropped on or taken off this bus in this save, so whatever
+				# it carries it was already carrying and the plan was saved that way. A
+				# roster that has grown since is a real overload, but it is this bus's
+				# problem and the board colours the lane for it - refusing every other
+				# edit on the plan until someone fixes it blocks the wrong person.
 				continue
 
 			# One trip over the limit on its own is reported as the overloaded run
@@ -287,7 +296,7 @@ class RoutePlan(Document):
 					title=_("{0}: Vehicle Capacity Exceeded").format(vehicle),
 				)
 
-	def _logical_trips(self) -> list:
+	def _logical_trips(self, assignments=None) -> list:
 		"""Collapse the assignment rows into the trips a vehicle actually runs.
 
 		Rows sharing a ``(vehicle, trip_group)`` are the stops of one run: their
@@ -302,7 +311,7 @@ class RoutePlan(Document):
 		run).
 		"""
 		trips = {}
-		rows = card_rows(self.assignments)
+		rows = card_rows(assignments if assignments is not None else self.assignments)
 		live = live_headcounts(rows)
 		for idx, row in enumerate(rows):
 			if not row.vehicle:
@@ -357,6 +366,35 @@ class RoutePlan(Document):
 			trip.occupancy, trip.worst_leg = _trip_peak(trip)
 
 		return runs
+
+	def _vehicles_this_save_did_not_touch(self, trips) -> set:
+		"""Vehicles whose cards are exactly where they were before this save.
+
+		Capacity is judged against the shipments rather than the snapshot on the row, so
+		a roster that grew after a card was placed shows up as an overload on a bus
+		nobody has touched. Judging it on every save turned one such bus into a wall
+		across the whole plan: a drop on a different vehicle could not be saved until the
+		untouched one was fixed. The check is for what a save DOES, so a bus it does
+		nothing to keeps the verdict it was saved with.
+		"""
+		before = self.get_doc_before_save()
+		if not before:
+			return set()
+
+		def placement(rows):
+			by_vehicle = {}
+			for trip in rows:
+				by_vehicle.setdefault(trip.vehicle, set()).update(
+					# The trip's own key is not usable here: a standalone row is keyed by
+					# its position, which moves when an unrelated row is added.
+					(row.trip_group, row.transportation_shipment, row.stop_index)
+					for row in trip.rows
+				)
+			return by_vehicle
+
+		was = placement(self._logical_trips(before.assignments))
+		now = placement(trips)
+		return {vehicle for vehicle, cards in now.items() if was.get(vehicle) == cards}
 
 	def _validate_mixed_trip_legs(self, trip, limit):
 		"""Hold every leg of a merged trip to the seat count (WI-002071).
