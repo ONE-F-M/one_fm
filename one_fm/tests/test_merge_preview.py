@@ -142,12 +142,14 @@ class TestTheMergeModal(FrappeTestCase):
 		self.assertIn("_isMergeDrop(newCard, existingItems)", self.source)
 		self.assertIn("_openMergeTripModal(newCard, existingItems, vehicleId)", self.source)
 
-	def test_chaining_two_stops_the_same_way_is_left_alone(self):
-		# Multi-stop chaining in one direction is existing behaviour, not a merge.
-		self.assertIn("return dirs.size > 1 || dirs.has('MIXED')", self.source)
+	def test_every_card_joining_a_run_opens_the_builder(self):
+		# Two outbound stops is a merge too: the run gains a stop, every leg after it is
+		# re-timed and the bus may go over its seats. Chaining silently timed those legs
+		# on a default nobody typed and recorded no buffer or transit on the run.
+		self.assertIn("return existingItems.length > 0;", self.source)
 
-	def test_the_direction_badge_is_mixed_and_read_only(self):
-		self.assertIn(">MIXED<", self.source)
+	def test_the_direction_badge_states_the_run_it_would_make(self):
+		self.assertIn("(p.trip_direction || 'Mixed').toUpperCase()", self.source)
 		self.assertIn("cannot be changed here", self.source)
 
 	def test_the_modal_shows_the_vehicle_capacity(self):
@@ -191,8 +193,10 @@ class TestTheMergeModal(FrappeTestCase):
 	def test_confirming_calls_the_merge_endpoint(self):
 		self.assertIn("transportation_shipment.merge_trip_shipments", self.source)
 
-	def test_confirming_marks_every_stop_mixed_under_one_group(self):
-		self.assertIn("item.tripId = tripId; item.direction = 'MIXED';", self.source)
+	def test_confirming_puts_every_stop_in_one_group_at_the_run_direction(self):
+		self.assertIn("item.tripId = tripId; item.direction = direction;", self.source)
+		# Mapped, not "RETURN or else OUTBOUND": that shape has swallowed MIXED before.
+		self.assertIn("{ Mixed: 'MIXED', Return: 'RETURN', Outward: 'OUTBOUND' }", self.source)
 
 
 class TestCardIdsResolveToShipments(FrappeTestCase):
@@ -653,3 +657,83 @@ class TestTheModalOpensOnTheRunItAlreadyIs(FrappeTestCase):
 
 		self.assertIn("already_timed = any(_seeded(stop) for stop in itinerary[:-1])", source)
 		self.assertIn("or to_a_collection or already_timed", source)
+
+
+class TestTheRunDirection(FrappeTestCase):
+	"""Mixed means one run doing both journeys, not "this run was merged"."""
+
+	def setUp(self):
+		from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+			run_direction,
+		)
+		self.run_direction = run_direction
+
+	def _card(self, direction, pre_merge=None):
+		return frappe._dict({
+			"name": frappe.generate_hash("TS", 6),
+			"trip_direction": direction,
+			"pre_merge_trip_direction": pre_merge,
+		})
+
+	def test_two_outbound_cards_make_an_outbound_run(self):
+		self.assertEqual(
+			self.run_direction([self._card("Outward"), self._card("Outward")]), "Outward"
+		)
+
+	def test_two_return_cards_make_a_return_run(self):
+		self.assertEqual(
+			self.run_direction([self._card("Return"), self._card("Return")]), "Return"
+		)
+
+	def test_one_of_each_is_mixed(self):
+		self.assertEqual(
+			self.run_direction([self._card("Outward"), self._card("Return")]), "Mixed"
+		)
+
+	def test_a_card_already_merged_is_read_by_the_way_its_riders_travel(self):
+		# It reads Mixed, but its riders go one way: adding another outbound card to an
+		# outbound run must not turn the run Mixed just because it was merged once.
+		self.assertEqual(
+			self.run_direction([
+				self._card("Mixed", pre_merge="Outward"), self._card("Outward"),
+			]),
+			"Outward",
+		)
+
+
+class TestLeavingARun(FrappeTestCase):
+	"""A card that leaves a run keeps nothing of it."""
+
+	def _card(self, **values):
+		doc = frappe.new_doc("Transportation Shipment")
+		doc.status = "Unassigned"
+		doc.trip_direction = "Outward"
+		doc.update(values)
+		doc.flags.ignore_mandatory = True
+		doc.flags.ignore_links = True
+		doc.insert(ignore_permissions=True)
+		return doc.name
+
+	def test_a_same_direction_run_still_gives_the_group_back(self):
+		# Nothing was overwritten, so there is no direction to restore - but a card that
+		# keeps its trip_group is counted into a run it is no longer part of.
+		from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+			unmerge_trip_shipment,
+		)
+
+		name = self._card(trip_group="GRP-SAME")
+
+		self.assertTrue(unmerge_trip_shipment(name))
+		card = frappe.db.get_value(
+			"Transportation Shipment", name,
+			["trip_group", "trip_direction"], as_dict=True
+		)
+		self.assertIsNone(card.trip_group)
+		self.assertEqual(card.trip_direction, "Outward")
+
+	def test_a_card_that_was_never_in_a_run_is_left_alone(self):
+		from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+			unmerge_trip_shipment,
+		)
+
+		self.assertFalse(unmerge_trip_shipment(self._card()))

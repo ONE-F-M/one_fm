@@ -154,6 +154,33 @@ class TransportationShipment(Document):
 		"""Keep the read-only Headcount in sync with the employee table."""
 		self.headcount = len(self.transportation_shipment_employee)
 
+	def on_update(self):
+		self.refresh_plan_headcounts()
+
+	def refresh_plan_headcounts(self):
+		"""Push a changed headcount out to the plan rows that placed this card (#6818).
+
+		A Route Plan Assignment row stores the headcount taken when the card was dropped.
+		The seat walk reads the shipment now, so the stored figure no longer decides
+		anything - but it is still what the row, the report and anyone reading the plan
+		sees, and a row saying 27 beside a card carrying 28 is how the over-capacity trip
+		went unnoticed in the first place. Written straight to the rows: a Route Plan is
+		submitted-and-amended, and re-saving one from here would fight that.
+		"""
+		if not self.has_value_changed("headcount"):
+			return
+
+		rows = frappe.get_all(
+			"Route Plan Assignment",
+			filters={"transportation_shipment": self.name, "headcount": ["!=", cint(self.headcount)]},
+			pluck="name",
+		)
+		for row in rows:
+			frappe.db.set_value(
+				"Route Plan Assignment", row, "headcount", cint(self.headcount),
+				update_modified=False,
+			)
+
 
 # The canvas identifies a card as "TSHIP-<shipment>", sometimes with a direction suffix, so
 # what it sends is a card id and not a document name. Both merge endpoints are called
@@ -177,6 +204,23 @@ def resolve_shipment_names(values) -> list:
 MIXED = "Mixed"
 RETURN = "Return"
 OUTWARD = "Outward"
+
+
+def run_direction(docs) -> str:
+	"""The direction of a merged run: Mixed only when its cards disagree.
+
+	Two outbound cards on one bus is still an outbound run - the bus loads at a camp and
+	drops at two sites, which is what a multi-stop trip has always been. Writing Mixed
+	over it would say the run carries riders both ways, colour the block as a handover
+	and, worse, stamp `pre_merge_trip_direction` on cards that never changed direction -
+	so leaving the run would "restore" a direction they already had.
+
+	Mixed is reserved for what it means: one run doing both journeys.
+	"""
+	own = {own_direction(doc) for doc in docs}
+	if len(own) != 1:
+		return MIXED
+	return RETURN if own.pop() == "RETURN" else OUTWARD
 
 
 def merge_key(shipment_names) -> str:
@@ -271,6 +315,7 @@ def merge_trip_shipments(shipments) -> dict:
 
 	docs.sort(key=arrival_order)
 	trip_group = merge_key([doc.name for doc in docs])
+	direction = run_direction(docs)
 
 	for doc in docs:
 		# Remember the way this card travelled before the merge, so leaving the merged trip
@@ -280,8 +325,8 @@ def merge_trip_shipments(shipments) -> dict:
 		#
 		# Only recorded on the first merge: merging an already-merged card must not
 		# overwrite the original with "Mixed".
-		values = {"trip_direction": MIXED, "trip_group": trip_group}
-		if doc.trip_direction != MIXED and not doc.pre_merge_trip_direction:
+		values = {"trip_direction": direction, "trip_group": trip_group}
+		if direction == MIXED and doc.trip_direction != MIXED and not doc.pre_merge_trip_direction:
 			values["pre_merge_trip_direction"] = doc.trip_direction
 
 		# db_set rather than save: the merge changes header facts and must not re-run
@@ -291,7 +336,7 @@ def merge_trip_shipments(shipments) -> dict:
 
 	return {
 		"trip_group": trip_group,
-		"trip_direction": MIXED,
+		"trip_direction": direction,
 		"itinerary": [
 			{
 				"shipment": doc.name,
@@ -693,7 +738,7 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 	).format(camp_label or _("the base accommodation"))
 
 	return {
-		"trip_direction": MIXED,
+		"trip_direction": run_direction(docs),
 		"vehicle": vehicle,
 		"max_passenger_capacity": limit,
 		"stops": stops,
@@ -791,16 +836,21 @@ def unmerge_trip_shipment(name) -> bool:
 	Only a card that actually carries a remembered direction is touched, so this is safe to
 	call for every shipment a plan drops.
 	"""
-	original = frappe.db.get_value("Transportation Shipment", name, "pre_merge_trip_direction")
-	if not original:
+	held = frappe.db.get_value(
+		"Transportation Shipment", name, ["pre_merge_trip_direction", "trip_group"], as_dict=True
+	) or frappe._dict()
+	if not held.pre_merge_trip_direction and not held.trip_group:
 		return False
 
-	frappe.db.set_value(
-		"Transportation Shipment",
-		name,
-		{"trip_direction": original, "trip_group": None, "pre_merge_trip_direction": None},
-		update_modified=False,
-	)
+	# A same-direction run leaves no remembered direction to restore - nothing was
+	# overwritten - but it still put the card in a trip group, and a card that keeps its
+	# group after leaving the run is counted into a trip it is no longer part of.
+	values = {"trip_group": None}
+	if held.pre_merge_trip_direction:
+		values["trip_direction"] = held.pre_merge_trip_direction
+		values["pre_merge_trip_direction"] = None
+
+	frappe.db.set_value("Transportation Shipment", name, values, update_modified=False)
 	return True
 
 

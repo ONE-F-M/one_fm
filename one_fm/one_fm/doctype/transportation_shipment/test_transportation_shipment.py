@@ -469,3 +469,73 @@ class TestShipmentExpiry(SchedulerEntryPointTestCase):
 		self.assertEqual(
 			frappe.db.get_value("Transportation Shipment", name, "status"), "Unassigned"
 		)
+
+
+class TestPlanRowsFollowTheShipment(FrappeTestCase):
+	"""#6818: a plan row's headcount is a snapshot, and nothing used to refresh it."""
+
+	def _card(self, riders):
+		doc = frappe.new_doc("Transportation Shipment")
+		doc.status = "Assigned"
+		doc.trip_direction = "Outward"
+		doc.routing_type_badge = "Direct"
+		for n in range(riders):
+			doc.append("transportation_shipment_employee", {
+				"employee_id": f"HC-{n:03d}", "employee_name": f"Rider {n}",
+			})
+		# Validated on the way in, so the stored headcount is settled before it is
+		# placed - otherwise the first ordinary save is itself a change.
+		doc.flags.ignore_mandatory = True
+		doc.flags.ignore_links = True
+		doc.insert(ignore_permissions=True)
+		return doc
+
+	def _place(self, shipment, headcount):
+		plan = frappe.new_doc("Route Plan")
+		plan.title = frappe.generate_hash("RP-HC", 8)
+		plan.status = "Draft"
+		plan.effective_from = "2026-07-01"
+		plan.append("assignments", {
+			"card_id": f"TSHIP-{shipment}", "transportation_shipment": shipment,
+			"vehicle": "VHL-0005", "direction": "OUTBOUND", "headcount": headcount,
+			"start_time": "2026-07-01T06:00:00Z", "end_time": "2026-07-01T07:00:00Z",
+		})
+		plan.flags.ignore_mandatory = True
+		plan.flags.ignore_links = True
+		plan.insert(ignore_permissions=True)
+		return plan.assignments[0].name
+
+	def _row_headcount(self, row):
+		return frappe.db.get_value("Route Plan Assignment", row, "headcount")
+
+	def test_a_rider_joining_updates_the_row(self):
+		card = self._card(4)
+		row = self._place(card.name, 4)
+
+		card.append("transportation_shipment_employee", {
+			"employee_id": "HC-NEW", "employee_name": "Late Addition",
+		})
+		card.save(ignore_permissions=True)
+
+		self.assertEqual(card.headcount, 5)
+		self.assertEqual(self._row_headcount(row), 5)
+
+	def test_a_rider_leaving_updates_the_row(self):
+		card = self._card(4)
+		row = self._place(card.name, 4)
+
+		card.transportation_shipment_employee.pop()
+		card.save(ignore_permissions=True)
+
+		self.assertEqual(self._row_headcount(row), 3)
+
+	def test_a_save_that_changes_nothing_leaves_the_row_alone(self):
+		# The row is written only when the count moves, so an ordinary save does not
+		# touch every plan the card has ever been on.
+		card = self._card(4)
+		row = self._place(card.name, 4)
+		frappe.db.set_value("Route Plan Assignment", row, "headcount", 99)
+
+		card.save(ignore_permissions=True)
+
+		self.assertEqual(self._row_headcount(row), 99)

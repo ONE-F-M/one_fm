@@ -1145,11 +1145,17 @@ function mountRoutePlannerApp(wrapper, data) {
 
             // ── Merge Trip modal (WI-002078) ──
             _isMergeDrop(newCard, existingItems) {
-                // A merge is two cards travelling different ways on one run. Chaining two
-                // outbound stops is the existing multi-stop behaviour and is left alone.
-                const dirs = new Set(existingItems.map(i => i.direction || 'OUTBOUND'));
-                dirs.add(newCard.direction || 'OUTBOUND');
-                return dirs.size > 1 || dirs.has('MIXED');
+                // Any card joining a run that already has stops. Two outbound cards is a
+                // merge too: the run gets a new stop, every leg after it is re-timed and
+                // the bus may go over its seats - the same three decisions a
+                // cross-direction merge asks for, and the same place to make them. It
+                // used to open only when the directions differed, so a same-direction
+                // chain was timed on a default 30 minutes nobody typed and its per-leg
+                // buffer and transit were never recorded on the run.
+                //
+                // What direction the run ends up with is the server's answer, not this
+                // one: `run_direction` writes Mixed only when the cards disagree.
+                return existingItems.length > 0;
             },
 
             _mergeShipmentIds(newCard, existingItems) {
@@ -1367,8 +1373,10 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 return `
                     <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
-                        <span style="background:#819171;color:#fff;font-weight:700;font-size:12px;padding:3px 10px;border-radius:6px">MIXED</span>
-                        <span style="font-size:12px;color:#6b7280">Direction is set by the merge and cannot be changed here.</span>
+                        <span style="background:#819171;color:#fff;font-weight:700;font-size:12px;padding:3px 10px;border-radius:6px">${esc((p.trip_direction || 'Mixed').toUpperCase())}</span>
+                        <span style="font-size:12px;color:#6b7280">${p.trip_direction === 'Mixed'
+                            ? __('Direction is set by the merge and cannot be changed here.')
+                            : __('Every stop below travels the same way, so the run keeps its direction.')}</span>
                         <span style="margin-left:auto;font-size:12px">Max Passenger Capacity: <b>${esc(p.max_passenger_capacity || '—')}</b></span>
                     </div>
                     ${banner}
@@ -1403,9 +1411,16 @@ function mountRoutePlannerApp(wrapper, data) {
             _applyMerge(newCard, existingItems, vehicleId, merged, previewStops, departureShiftMs) {
                 const self = this;
                 const tripId = merged.trip_group;
+                // The server decides: Mixed only when the cards travel different ways, so
+                // chaining two outbound stops leaves the run outbound. Mapped explicitly
+                // rather than "RETURN or else OUTBOUND", which is how MIXED has been
+                // swallowed before.
+                const direction = { Mixed: 'MIXED', Return: 'RETURN', Outward: 'OUTBOUND' }[
+                    merged.trip_direction
+                ] || 'MIXED';
 
                 // Every stop of the merged run answers to one group and one direction.
-                existingItems.forEach((item) => { item.tripId = tripId; item.direction = 'MIXED'; });
+                existingItems.forEach((item) => { item.tripId = tripId; item.direction = direction; });
 
                 const order = merged.itinerary.map((s) => s.shipment);
                 const lastEnd = new Date(Math.max(...existingItems.map((i) => new Date(i.end).getTime())));
@@ -1432,7 +1447,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 // the merged block and the blocks it joins are spaced by one rule.
                 self.swimItems.push({
                     id: `${newCard.id}_MIX_${uid}`, cardId: newCard.id, vehicleId,
-                    direction: 'MIXED', start: new Date(lastEnd), end: new Date(lastEnd),
+                    direction, start: new Date(lastEnd), end: new Date(lastEnd),
                     headcount: newCard.headcount, conflict: false,
                     transitMinutes: parseInt(adj.transit_minutes, 10) || 0,
                     bufferMinutes: parseInt(adj.buffer_minutes, 10) || 0,
@@ -1492,7 +1507,12 @@ function mountRoutePlannerApp(wrapper, data) {
                     });
                 });
 
-                frappe.show_alert({ message: __('Trip merged — direction is now Mixed'), indicator: 'green' });
+                frappe.show_alert({
+                    message: direction === 'MIXED'
+                        ? __('Trip merged — direction is now Mixed')
+                        : __('Stop added — the run is timed from the legs you entered'),
+                    indicator: 'green'
+                });
             },
 
             // Which way a block's own riders travel, whatever a merge did to the block.
