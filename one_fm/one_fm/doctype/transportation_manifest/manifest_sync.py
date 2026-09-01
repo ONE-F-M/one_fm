@@ -61,6 +61,11 @@ def sync_manifest_details(manifest_doc, assignment_rows, emp_map, return_emp_map
 	for a_row in assignment_rows:
 		direction = a_row.direction
 		emps = (return_emp_map if direction == "RETURN" else emp_map).get(a_row.card_id, [])
+		# What this rider does at the PICKUP CAMP - an outward rider boards there, a
+		# return rider is dropped there - which is what the attendance-check lock keys
+		# off. What happens at the STOP is the opposite, and is not duplicated here: the
+		# Route Plan Assignment records it as `action_type`, and the sheet reads it from
+		# there so the plan stays the single answer (WI-002171 AC 3.5).
 		action = "Dropping Off" if direction == "RETURN" else "Boarding"
 		stop_id_val = f"{a_row.stop_location or ''}|{direction}"
 
