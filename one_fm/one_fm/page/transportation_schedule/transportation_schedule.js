@@ -831,11 +831,27 @@ function mountRoutePlannerApp(wrapper, data) {
                         if (!tripMap[key]) tripMap[key] = [];
                         tripMap[key].push(item);
                     });
+
+                    // A trip is joined WHOLE. Proximity decides which run is near enough
+                    // to join; it must not decide how much of that run takes part. A trip
+                    // whose stops are spread over more than the proximity window arrived
+                    // here half-present, so the modal drew half an itinerary, the seat
+                    // walk counted half the riders, and the merge marked half the stops
+                    // Mixed — leaving the rest of the run behind on its old heading.
+                    Object.keys(tripMap).forEach(key => {
+                        if (key.startsWith('_solo_')) return;
+                        tripMap[key] = this.swimItems.filter(
+                            i => i.vehicleId === vehicle.id && i.tripId === key
+                        );
+                    });
                     const tripKeys = Object.keys(tripMap);
 
                     if (tripKeys.length === 1) {
                         // ── Single trip: simple confirm ──
-                        const existingStops = nearbyBlocks.map(i => {
+                        // The WHOLE trip, not just the stops proximity picked out: the
+                        // merge takes all of them, so the operator has to be shown all of
+                        // them before saying yes.
+                        const existingStops = tripMap[tripKeys[0]].map(i => {
                             const c = this.planData.shipment_cards.find(sc => sc.id === i.cardId);
                             const siteName = c ? c.site_location : i.cardId;
                             const campName = (c && c.accommodation) ? c.accommodation : '';
@@ -1076,22 +1092,44 @@ function mountRoutePlannerApp(wrapper, data) {
                 // comes back, and the server accepts either key.
                 const timings = {};
                 existingItems.forEach((item) => {
-                    // A reload hands back 0 for a leg that was never timed - the Int
-                    // column cannot say "unset" - so only a leg carrying real minutes
-                    // overrides the preview's defaults.
-                    if (!item.transitMinutes && !item.bufferMinutes) return;
-                    timings[item.cardId] = {
-                        transit_minutes: item.transitMinutes || 0,
-                        buffer_minutes: item.bufferMinutes || 0,
-                    };
+                    if (item.transitMinutes || item.bufferMinutes) {
+                        timings[item.cardId] = {
+                            transit_minutes: item.transitMinutes || 0,
+                            buffer_minutes: item.bufferMinutes || 0,
+                        };
+                        return;
+                    }
+                    // A leg that was never given minutes still has a length on the lane —
+                    // an Int column cannot say "unset", so 0/0 and "an hour long" look the
+                    // same in the row. Sending the drawn length keeps the modal showing
+                    // the run where it actually sits: without it a block spanning 07:00 to
+                    // 08:00 collapsed to nothing and the whole itinerary jumped an hour
+                    // later. The same rule _retimeTrip already applies when it redraws.
+                    const span = Math.round(
+                        (new Date(item.end).getTime() - new Date(item.start).getTime()) / 60000
+                    );
+                    if (span > 0) {
+                        timings[item.cardId] = { transit_minutes: span, buffer_minutes: 0 };
+                    }
                 });
                 let previewStops = [];
+                // The run's own departure and the one it would have backed into. The blocks
+                // are moved by the difference between them, so a departure the dispatcher
+                // never touched moves nothing (WI-002151 AC 1.1).
+                let departureShiftMs = 0;
 
                 const d = new frappe.ui.Dialog({
-                    title: __('Merge Trip'),
+                    title: __('Trip Builder'),
                     size: 'large',
-                    fields: [{ fieldtype: 'HTML', fieldname: 'preview' }],
-                    primary_action_label: __('Confirm & Merge Trip'),
+                    fields: [
+                        {
+                            fieldtype: 'Time', fieldname: 'departure',
+                            label: __('Initial Departure Time'),
+                            description: __('When the vehicle leaves for its first stop. Every arrival below is calculated forward from here.')
+                        },
+                        { fieldtype: 'HTML', fieldname: 'preview' }
+                    ],
+                    primary_action_label: __('Confirm & Apply'),
                     primary_action() {
                         frappe.call({
                             method: 'one_fm.one_fm.doctype.transportation_shipment.transportation_shipment.merge_trip_shipments',
@@ -1100,7 +1138,8 @@ function mountRoutePlannerApp(wrapper, data) {
                             callback(r) {
                                 if (!r.message) return;
                                 d.hide();
-                                self._applyMerge(newCard, existingItems, vehicleId, r.message, previewStops);
+                                self._applyMerge(newCard, existingItems, vehicleId, r.message,
+                                    previewStops, departureShiftMs);
                             }
                         });
                     }
@@ -1109,11 +1148,23 @@ function mountRoutePlannerApp(wrapper, data) {
                 const render = () => {
                     frappe.call({
                         method: 'one_fm.one_fm.doctype.transportation_shipment.transportation_shipment.get_merge_preview',
-                        args: { shipments: shipments, vehicle: vehicleId, timings: timings },
+                        args: {
+                            shipments: shipments, vehicle: vehicleId, timings: timings,
+                            departure: d.get_value('departure') || null
+                        },
                         callback(r) {
                             const p = r.message;
                             if (!p) return;
                             previewStops = p.stops || [];
+                            departureShiftMs =
+                                (p.departure_seconds - p.default_departure_seconds) * 1000;
+                            // Seed the field on the first render with the moment the run would
+                            // have left anyway, so an untouched trip is timed exactly as before.
+                            if (!d.get_value('departure')) {
+                                // departure_input, not departure: a Time control refuses
+                                // anything without seconds ("must be in format HH:mm:ss").
+                                d.set_value('departure', p.departure_input);
+                            }
                             d.fields_dict.preview.$wrapper.html(self._mergeModalHtml(p, vehicle));
                             // Confirm is disabled by the server's verdict, so the button and
                             // the banner can never disagree about whether the trip fits.
@@ -1132,9 +1183,12 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 render();
                 d.show();
+                // Re-walk the whole itinerary whenever the departure moves.
+                d.fields_dict.departure.$input.on('change', () => render());
             },
 
             _mergeModalHtml(p, vehicle) {
+                const self = this;
                 const esc = (v) => frappe.utils.escape_html(String(v == null ? '' : v));
 
                 const banner = p.exceeded
@@ -1161,17 +1215,40 @@ function mountRoutePlannerApp(wrapper, data) {
                     </div>`;
                 }).join('');
 
-                const legs = p.stops.map((s) => `
-                    <tr>
-                        <td style="padding:4px 8px">Seq ${s.stop_index}</td>
-                        <td style="padding:4px 8px">${esc(s.stop_location || '—')}</td>
-                        <td style="padding:4px 8px"><input class="rp-leg-min" type="number" min="0"
-                            data-shipment="${esc(s.card_id || s.shipment)}" data-key="transit_minutes"
-                            value="${esc(s.transit_minutes)}" style="width:70px"></td>
-                        <td style="padding:4px 8px"><input class="rp-leg-min" type="number" min="0"
+                const legs = p.stops.map((s) => {
+                    // A leg that crosses midnight arrives on the next day, and saying so is
+                    // the difference between a readable itinerary and one where the bus
+                    // appears to arrive before it left (AC 1.6).
+                    const rollover = s.arrives_day_offset
+                        ? ` <span class="indicator-pill orange">${__('+{0} Day', [s.arrives_day_offset])}</span>`
+                        : '';
+                    // QOA belongs only to the leg that leaves the camp carrying outward
+                    // riders; it is hidden for intermediate pickups and return legs (AC 1.2).
+                    return `
+                    <tr class="${s.exceeded ? 'text-danger font-weight-bold' : ''}">
+                        <td class="small">${esc(s.card_id || s.shipment)}</td>
+                        <td class="small">${esc(self.dirName(s.direction))}</td>
+                        <td class="small">${esc(s.origin_location || '—')}</td>
+                        <td class="small rp-leg-time-col">${s.qoa_time ? esc(s.qoa_time) : '—'}</td>
+                        <td class="small rp-leg-time-col">${esc(s.departs)}</td>
+                        <td class="rp-leg-mins-col"><input class="rp-leg-min form-control input-sm"
+                            type="number" min="0"
                             data-shipment="${esc(s.card_id || s.shipment)}" data-key="buffer_minutes"
-                            value="${esc(s.buffer_minutes)}" style="width:70px"></td>
-                    </tr>`).join('');
+                            value="${esc(s.buffer_minutes)}"></td>
+                        <td class="rp-leg-mins-col"><input class="rp-leg-min form-control input-sm"
+                            type="number" min="0"
+                            data-shipment="${esc(s.card_id || s.shipment)}" data-key="transit_minutes"
+                            value="${esc(s.transit_minutes)}"></td>
+                        <td class="small">${esc(s.shift_location || '—')}</td>
+                        <td class="small">${esc(s.next_stop_location || '—')}</td>
+                        <td class="small font-weight-bold rp-leg-time-col">${esc(s.arrives)}${rollover}</td>
+                    </tr>`;
+                }).join('');
+
+                // AC 1.5: a mixed run has to finish by taking its return riders home.
+                const routeBanner = p.route_message
+                    ? `<div class="alert alert-warning p-3 mb-3 small">${esc(p.route_message)}</div>`
+                    : '';
 
                 return `
                     <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
@@ -1182,19 +1259,30 @@ function mountRoutePlannerApp(wrapper, data) {
                     ${banner}
                     <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:6px">Itinerary</div>
                     ${stops}
-                    <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;margin:12px 0 6px">Per-Leg Transit &amp; Buffer Times</div>
-                    <table style="width:100%;font-size:12px;border-collapse:collapse">
-                        <thead><tr style="background:#f3f4f6">
-                            <th style="text-align:left;padding:4px 8px">Leg</th>
-                            <th style="text-align:left;padding:4px 8px">Stop</th>
-                            <th style="text-align:left;padding:4px 8px">Transit (min)</th>
-                            <th style="text-align:left;padding:4px 8px">Buffer (min)</th>
+                    ${routeBanner}
+                    <div class="text-muted small font-weight-bold text-uppercase mb-2 mt-3">
+                        ${__('Legs — arrival is calculated forward from the departure above')}
+                    </div>
+                    <div class="table-responsive">
+                    <table class="table table-sm table-bordered small mb-0">
+                        <thead><tr>
+                            <th>${__('Card')}</th>
+                            <th>${__('Direction')}</th>
+                            <th>${__('Accommodation / Stop')}</th>
+                            <th>${__('QOA')}</th>
+                            <th>${__('Departure')}</th>
+                            <th class="rp-leg-mins-col">${__('Buffer (min)')}</th>
+                            <th class="rp-leg-mins-col">${__('Transit (min)')}</th>
+                            <th>${__('Shift Location')}</th>
+                            <th>${__('Next Stop')}</th>
+                            <th>${__('Target Arrival')}</th>
                         </tr></thead>
                         <tbody>${legs}</tbody>
-                    </table>`;
+                    </table>
+                    </div>`;
             },
 
-            _applyMerge(newCard, existingItems, vehicleId, merged, previewStops) {
+            _applyMerge(newCard, existingItems, vehicleId, merged, previewStops, departureShiftMs) {
                 const self = this;
                 const tripId = merged.trip_group;
 
@@ -1238,6 +1326,19 @@ function mountRoutePlannerApp(wrapper, data) {
                 // and then left the block sitting on the 60/15 it was dropped with
                 // (feedback on WI-002074).
                 self._retimeTrip(tripId);
+
+                // _retimeTrip lays the run out from the shift time it backs into. Moving
+                // every stop by the difference between that and the departure the
+                // dispatcher stated puts the whole run where they asked for it, without
+                // rebuilding an instant from a clock string in the browser (AC 1.1).
+                if (departureShiftMs) {
+                    self.swimItems.forEach((item) => {
+                        if (item.tripId !== tripId) return;
+                        item.start = new Date(new Date(item.start).getTime() + departureShiftMs);
+                        item.end = new Date(new Date(item.end).getTime() + departureShiftMs);
+                    });
+                    self.swimItems = [...self.swimItems];
+                }
 
                 self.assignedCards.add(newCard.id);
                 self.selectedPoolCard = null;
@@ -1307,8 +1408,11 @@ function mountRoutePlannerApp(wrapper, data) {
                 let cursor = new Date(stops[0].end).getTime();
                 stops.slice(1).forEach((item) => {
                     const { buffer, transit } = leg(item);
-                    const start = cursor + buffer;
-                    const end = start + Math.max(transit, MIN_BLOCK_MS);
+                    // A leg starts when the bus is released from the stop before it, and
+                    // its buffer is dwell inside the leg — the same walk the server prints
+                    // the itinerary with, so the block and the table cannot disagree.
+                    const start = cursor;
+                    const end = start + Math.max(buffer + transit, MIN_BLOCK_MS);
                     item.start = new Date(start);
                     item.end = new Date(end);
                     cursor = end;
@@ -1527,6 +1631,27 @@ function mountRoutePlannerApp(wrapper, data) {
                     peak = Math.max(peak, onBoard);
                 });
                 return peak;
+            },
+
+            // The driver's report time for a leg, or '' where QOA does not apply. Only the
+            // leg that leaves the accommodation carrying outward riders has one: an
+            // intermediate pickup and a return leg heading home are neither (AC 1.2).
+            stopQoaTime(stop) {
+                if (!stop || stop.stopNum !== 1) return '';
+                if (this.cardOwnDirection(stop.item) === 'RETURN') return '';
+                const buffer = (this.planData.qoa_buffer_minutes || 0) * 60000;
+                return this.fmtTime(new Date(stop.item.start).getTime() - buffer);
+            },
+
+            // Whole days between a run's first departure and this stop's arrival, so a leg
+            // that crosses midnight says so instead of reading as though it landed earlier
+            // the same morning (AC 1.6).
+            stopDayOffset(stop) {
+                const stops = this.selectedTripStops || [];
+                if (!stops.length || !stop) return 0;
+                const first = new Date(stops[0].item.start).getTime();
+                const arrival = new Date(stop.item.end).getTime();
+                return Math.max(0, Math.floor((arrival - first) / 86400000));
             },
 
             // Which way one stop's own riders travel. A merged card reads MIXED, so the
@@ -3923,8 +4048,29 @@ function injectRPVueTemplate() {
                     </div>
                   </div>
                 </div>
-                <div class="rp-detail-row" style="padding:4px 0 3px 30px"
-                     v-if="stop.item.transitMinutes || stop.item.bufferMinutes">
+                <!-- The forward cascade, per leg (WI-002151): when the vehicle leaves
+                     for this stop and when it is due there. -->
+                <div class="rp-detail-row" style="padding:4px 0 3px 30px">
+                  <div class="rp-detail-row-icon"><span class="rp-icon">departure_board</span></div>
+                  <div class="rp-detail-row-content">
+                    <div class="rp-detail-row-label">Departure &rarr; Target Arrival</div>
+                    <div class="rp-detail-row-value">
+                      {{ fmtTime(stop.item.start) }} &rarr; {{ fmtTime(stop.item.end) }}
+                      <span v-if="stopDayOffset(stop)" class="rp-detail-row-label" style="display:inline">
+                        (+{{ stopDayOffset(stop) }} Day)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <!-- QOA: only where the leg leaves the camp carrying outward riders. -->
+                <div class="rp-detail-row" style="padding:4px 0 3px 30px" v-if="stopQoaTime(stop)">
+                  <div class="rp-detail-row-icon"><span class="rp-icon">alarm</span></div>
+                  <div class="rp-detail-row-content">
+                    <div class="rp-detail-row-label">Driver QOA Report Time</div>
+                    <div class="rp-detail-row-value">{{ stopQoaTime(stop) }}</div>
+                  </div>
+                </div>
+                <div class="rp-detail-row" style="padding:4px 0 3px 30px">
                   <div class="rp-detail-row-icon"><span class="rp-icon">timer</span></div>
                   <div class="rp-detail-row-content">
                     <div class="rp-detail-row-label">Transit &amp; Buffer</div>
@@ -4453,6 +4599,12 @@ function injectRPStyles() {
         .rp-legend-mixed    { background: var(--rp-color-mixed-container); color: var(--rp-color-mixed); }
         .rp-legend-conflict { background: var(--rp-color-conflict-container); color: var(--rp-color-conflict); }
         .rp-legend-overcap { background: #f3e5f5; color: #7b1fa2; }
+        /* Trip Builder legs. The minute inputs are edited constantly, so they get room
+           to show two or three digits instead of clipping them, and their columns do not
+           wrap. The place columns are the ones allowed to wrap. */
+        .rp-leg-min      { width: 72px; min-width: 72px; text-align: right; }
+        .rp-leg-mins-col { width: 88px; white-space: nowrap; }
+        .rp-leg-time-col { white-space: nowrap; }
 
         /* ── Grid ── */
         #rp-grid-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }

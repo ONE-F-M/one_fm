@@ -5,6 +5,9 @@ from frappe.utils import cint
 from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
 from one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log import get_handover_windows
 from one_fm.operations.doctype.route_plan.route_plan import _card_direction
+from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+    qoa_buffer_minutes,
+)
 from one_fm.overrides.vehicle import passenger_capacity
 
 PICKUP_BUFFER = 10             # minutes
@@ -145,6 +148,9 @@ def get_route_planner_data():
             "global_end":        fmt(global_end_utc),
             "vehicles":          vehicles,
             "shipment_cards":    shipment_cards,
+            # The driver's report-time buffer, so the block drawer can print QOA without
+            # a second round trip (WI-002151 AC 1.2).
+            "qoa_buffer_minutes": qoa_buffer_minutes(),
             "handover_windows":  handover_windows
         }
 
@@ -1182,6 +1188,7 @@ def save_assignments(plan_name: str, swim_items: str, assigned_cards: str):
             "buffer_minutes":          item.get("bufferMinutes") or 0,
         })
 
+    _stamp_leg_details(doc)
     doc.save(ignore_permissions=False)
 
     # Keep persisted Transportation Shipment records in sync with the canvas:
@@ -2098,3 +2105,149 @@ def _inherit_trip_identity(manifest_doc, assignment_rows) -> bool:
         changed = True
 
     return changed
+
+
+def _local_seconds(stamp):
+    """A stored UTC timeline stamp as seconds past midnight in the site's timezone.
+
+    Rows carry UTC (``2026-08-18T11:15:00.000Z``) while the shift times, the QOA report
+    time and everything a driver reads are local, so the two have to be reconciled once,
+    here, rather than in each caller.
+    """
+    if not stamp:
+        return None
+    try:
+        import pytz
+
+        text = str(stamp).replace("T", " ").replace("Z", "").split(".")[0]
+        utc = pytz.utc.localize(frappe.utils.get_datetime(text))
+        site_tz = pytz.timezone(frappe.db.get_single_value("System Settings", "time_zone") or "UTC")
+        local = utc.astimezone(site_tz)
+        return local.hour * 3600 + local.minute * 60 + local.second
+    except Exception:
+        return None
+
+
+def _time_field(seconds):
+    """Seconds past midnight as ``HH:MM:SS`` for a Time column, or None."""
+    if seconds is None:
+        return None
+    seconds = int(seconds) % 86400
+    return f"{seconds // 3600:02d}:{(seconds % 3600) // 60:02d}:{seconds % 60:02d}"
+
+
+def _stamp_leg_details(doc):
+    """Write each leg's own facts onto its assignment row (WI-002151, WI-002171).
+
+    The canvas works these out to draw the trip modal, but a row that only carries a
+    timestamp cannot answer what the modal showed: where the leg started, what the driver's
+    report time was, how full the bus was leaving that stop, whether it rolled past
+    midnight. The manifest, any report and anyone reading the plan later all need those,
+    and re-deriving them from the timestamps loses the answer - so the save records them.
+
+    Occupancy is walked with ``leg_occupancy``, the same function the capacity validation
+    and the trip modal use, so the number stored is the number the operator was shown.
+    """
+    from collections import defaultdict
+
+    from one_fm.operations.doctype.route_plan.route_plan import leg_occupancy
+
+    rows = [row for row in doc.assignments if row.vehicle]
+    if not rows:
+        return
+
+    ship_names = list({row.transportation_shipment for row in rows if row.transportation_shipment})
+    ships = {
+        s.name: s
+        for s in frappe.get_all(
+            "Transportation Shipment",
+            filters={"name": ["in", ship_names]},
+            fields=["name", "accommodation", "stop_location", "start_time",
+                    "trip_direction", "pre_merge_trip_direction"],
+        )
+    } if ship_names else {}
+
+    camps = {}
+    for accommodation in {s.accommodation for s in ships.values() if s.accommodation}:
+        camps[accommodation] = frappe.db.get_value(
+            "Accommodation", accommodation, "transport_stop_location"
+        )
+
+    limits = {
+        v.name: passenger_capacity(v.seats, v.custom_includes_driver_seat)
+        for v in frappe.get_all(
+            "Vehicle",
+            filters={"name": ["in", list({row.vehicle for row in rows})]},
+            fields=["name", "seats", "custom_includes_driver_seat"],
+        )
+    }
+    buffer_minutes = qoa_buffer_minutes()
+
+    runs = defaultdict(list)
+    for row in rows:
+        runs[(row.vehicle, row.trip_group or f"\0{row.card_id}")].append(row)
+
+    for (vehicle, _group), run in runs.items():
+        run.sort(key=lambda row: cint(row.stop_index))
+
+        stops = []
+        for row in run:
+            shipment = ships.get(row.transportation_shipment)
+            own = (
+                _card_direction(shipment.trip_direction, shipment.pre_merge_trip_direction)
+                if shipment else _normalize_direction(row.direction)
+            )
+            stops.append({"headcount": cint(row.headcount), "boards": own == "RETURN"})
+
+        _peak, _worst, per_leg = leg_occupancy(stops)
+
+        # A stop where riders both leave and join is a handover, whichever cards carry
+        # the two halves - which is what "Combined" says.
+        movements = defaultdict(set)
+        for row, stop in zip(run, stops):
+            movements[row.stop_location].add(stop["boards"])
+
+        for position, (row, stop) in enumerate(zip(run, stops)):
+            shipment = ships.get(row.transportation_shipment)
+            boards = stop["boards"]
+            departs = _local_seconds(row.start_time)
+            arrives = _local_seconds(row.end_time)
+
+            # Where this leg departs from, and whether that is a camp. An outward leg
+            # loads at its own accommodation - but only the FIRST leg out of a given camp
+            # actually departs it: riders from two cards at the same camp board together
+            # once, and the second leg is continuing from wherever the first dropped.
+            # A run that calls at three different camps departs each of them, which is
+            # why the process owner's sample carries three separate report times.
+            previous = run[position - 1] if position else None
+            previous_camp = (
+                (ships.get(previous.transportation_shipment) or frappe._dict()).accommodation
+                if previous else None
+            )
+            camp = shipment.accommodation if shipment else None
+            departs_camp = bool(not boards and camp and camp != previous_camp)
+
+            row.max_passenger_capacity = limits.get(vehicle) or 0
+            row.boarding_count = cint(row.headcount) if boards else 0
+            row.drop_off_count = 0 if boards else cint(row.headcount)
+            row.current_passenger_count = per_leg[position]
+            row.action_type = (
+                "Combined" if len(movements.get(row.stop_location) or ()) > 1
+                else ("Boarding" if boards else "Dropping Off")
+            )
+            row.is_accommodation_origin = 1 if departs_camp else 0
+            if departs_camp:
+                origin = camps.get(camp)
+            elif boards:
+                origin = row.stop_location
+            else:
+                origin = previous.stop_location if previous else row.stop_location
+            row.origin_location = origin if origin and frappe.db.exists("Location", origin) else None
+            row.shift_start_time = shipment.start_time if shipment else None
+            row.is_next_day = (
+                1 if (departs is not None and arrives is not None and arrives < departs) else 0
+            )
+            row.qoa_time = (
+                _time_field(departs - buffer_minutes * 60)
+                if (row.is_accommodation_origin and departs is not None) else None
+            )

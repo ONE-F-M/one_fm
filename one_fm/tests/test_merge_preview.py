@@ -153,8 +153,12 @@ class TestTheMergeModal(FrappeTestCase):
 	def test_the_modal_shows_the_vehicle_capacity(self):
 		self.assertIn("Max Passenger Capacity", self.source)
 
-	def test_the_primary_action_is_confirm_and_merge(self):
-		self.assertIn("__('Confirm & Merge Trip')", self.source)
+	def test_the_primary_action_commits_the_merge(self):
+		# Renamed with the forward-scheduling work (WI-002151): the modal now states the
+		# departure and applies the whole itinerary, not just the merge. What has to hold
+		# is that its primary action is the thing that commits it.
+		self.assertIn("__('Confirm & Apply')", self.source)
+		self.assertIn("merge_trip_shipments", self.source)
 
 	def test_each_visit_is_its_own_container(self):
 		self.assertIn("Seq ${s.stop_index}", self.source)
@@ -162,7 +166,10 @@ class TestTheMergeModal(FrappeTestCase):
 		self.assertIn("DROPPING OFF EMPLOYEES", self.source)
 
 	def test_there_is_a_per_leg_transit_and_buffer_table(self):
-		self.assertIn("Per-Leg Transit &amp; Buffer Times", self.source)
+		# The table gained the rest of the leg picture in WI-002151 - card, direction,
+		# origin, next stop and the forward-calculated arrival - but the two editable
+		# minute fields are what re-time the run and they still have to be there.
+		self.assertIn("Legs — arrival is calculated forward from the departure above", self.source)
 		self.assertIn('data-key="transit_minutes"', self.source)
 		self.assertIn('data-key="buffer_minutes"', self.source)
 
@@ -462,9 +469,14 @@ class TestTheRunIsTimedFromTheMinutes(FrappeTestCase):
 		]
 
 	def test_the_feedbacks_merge(self):
+		# A leg now departs when the bus is released from the stop before it, with its
+		# buffer counted as dwell inside the leg (WI-002151). The arrivals are the same
+		# numbers as before; only the departure column moved, so that AC 1.1's
+		# Arrival = Departure + Buffer + Transit reads literally - which is how the
+		# process owner's sample itinerary is walked.
 		self.assertEqual(
 			self._walk([(60, 10), (15, 5)]),
-			[("12:50", "14:00"), ("14:05", "14:20")],
+			[("12:50", "14:00"), ("14:00", "14:20")],
 		)
 
 	def test_the_placement_that_preceded_it(self):
@@ -489,8 +501,67 @@ class TestTheRunIsTimedFromTheMinutes(FrappeTestCase):
 	def test_a_later_stops_dwell_pushes_the_stops_after_it(self):
 		self.assertEqual(
 			self._walk([(60, 10), (15, 30), (20, 5)])[2],
-			("14:50", "15:10"),   # stop 2's 30min dwell pushed this leg back half an hour
+			("14:45", "15:10"),   # stop 2's 30min dwell pushed this leg back half an hour
 		)
+
+	def test_a_dwell_lengthens_its_own_leg_rather_than_delaying_its_departure(self):
+		# The same total either way - what changed is which column the buffer shows in.
+		lazy = self._walk([(60, 10), (15, 30)])
+
+		self.assertEqual(lazy[1][0], lazy[0][1])            # departs when stop 1 is done
+		self.assertEqual(lazy[1], ("14:00", "14:45"))       # 30 dwell + 15 drive
 
 	def test_an_empty_run_walks_to_nothing(self):
 		self.assertEqual(self._walk([]), [])
+
+
+class TestATripIsJoinedWhole(FrappeTestCase):
+	"""Proximity chooses WHICH run to join, never how much of it takes part.
+
+	A trip whose stops spread wider than the two-hour proximity window used to arrive at
+	the merge half-present: the modal drew half an itinerary, the seat walk counted half
+	the riders - S-803 read as 3 stops peaking at 6 against a run of 9 peaking at 11 -
+	and the merge marked only those stops Mixed, leaving the rest on their old heading.
+	"""
+
+	def setUp(self):
+		self.source = CANVAS.read_text()
+
+	def test_the_grouped_trip_is_expanded_to_all_of_its_stops(self):
+		self.assertIn("tripMap[key] = this.swimItems.filter(", self.source)
+		self.assertIn("i.vehicleId === vehicle.id && i.tripId === key", self.source)
+
+	def test_a_standalone_block_is_left_as_itself(self):
+		# Items with no tripId are each their own trip and must not be swept together.
+		self.assertIn("if (key.startsWith('_solo_')) return;", self.source)
+
+	def test_the_expansion_happens_before_the_operator_is_asked(self):
+		# The picker and the confirm both read tripMap, so it has to be whole by then.
+		self.assertLess(
+			self.source.index("tripMap[key] = this.swimItems.filter("),
+			self.source.index("const tripKeys = Object.keys(tripMap);"),
+		)
+
+
+class TestTheModalOpensOnTheRunAsItStands(FrappeTestCase):
+	"""What the operator is shown before they agree to anything.
+
+	The confirm named only the stops proximity had picked out while the merge took the
+	whole trip - so a three-stop run was described as two. And a leg that carries no
+	recorded minutes still has a length on the lane: sending nothing for it collapsed it,
+	and S-302's 07:00-09:00 run opened as 08:00-09:00 with its first hour gone.
+	"""
+
+	def setUp(self):
+		self.source = CANVAS.read_text()
+
+	def test_the_confirm_names_every_stop_the_merge_will_take(self):
+		self.assertIn("const existingStops = tripMap[tripKeys[0]].map(", self.source)
+		self.assertNotIn("const existingStops = nearbyBlocks.map(", self.source)
+
+	def test_a_leg_with_no_recorded_minutes_sends_the_length_it_is_drawn_with(self):
+		self.assertIn("transit_minutes: span, buffer_minutes: 0", self.source)
+
+	def test_a_leg_that_has_minutes_still_sends_those(self):
+		# Real minutes always win; the span is only the fallback for an untimed leg.
+		self.assertIn("if (item.transitMinutes || item.bufferMinutes) {", self.source)
