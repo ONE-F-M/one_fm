@@ -874,3 +874,91 @@ class TestRoutePlanSingleVehicleSave(FrappeTestCase):
 		])
 		plan.insert(ignore_permissions=True)
 		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
+
+
+class TestSeatsAreCountedFromTheShipment(FrappeTestCase):
+	"""#6818: a row's headcount is a snapshot, and a stale one hides an overload.
+
+	The board draws its cards from the shipments while the seat check read the row, so a
+	card that had since gained an employee left the plan holding a number nobody could
+	see - and under-counting is the dangerous direction: it waved a 28-passenger load
+	through on a 27-seat bus.
+	"""
+
+	def _row(self, shipment, headcount):
+		return frappe._dict({"transportation_shipment": shipment, "headcount": headcount})
+
+	def test_the_shipments_count_wins_over_the_stored_snapshot(self):
+		from one_fm.operations.doctype.route_plan.route_plan import row_headcount
+
+		row = self._row("TS-X", 6)
+
+		self.assertEqual(row_headcount(row, {"TS-X": 7}), 7)
+
+	def test_the_row_answers_when_the_card_is_gone(self):
+		# Never count a card as empty just because its shipment was deleted.
+		from one_fm.operations.doctype.route_plan.route_plan import row_headcount
+
+		self.assertEqual(row_headcount(self._row("TS-GONE", 6), {}), 6)
+
+	def test_a_row_with_no_shipment_keeps_its_own_number(self):
+		from one_fm.operations.doctype.route_plan.route_plan import row_headcount
+
+		self.assertEqual(row_headcount(self._row(None, 4), {"TS-X": 9}), 4)
+
+	def test_an_under_count_is_what_hid_the_overload(self):
+		# 27 stored against 28 live is the difference between fitting and not.
+		from one_fm.operations.doctype.route_plan.route_plan import row_headcount
+
+		rows = [self._row("A", 20), self._row("B", 7)]
+		live = {"A": 20, "B": 8}
+
+		self.assertEqual(sum(row_headcount(r, live) for r in rows), 28)
+		self.assertEqual(sum(r.headcount for r in rows), 27)
+
+
+class TestAnUntouchedBusIsNotAWall(FrappeTestCase):
+	"""A save is judged on what it does, not on everything already in the plan.
+
+	Capacity is measured against the shipments rather than the snapshot on the row, so a
+	roster that grew after a card was placed shows up as an overload on a bus nobody has
+	touched. Judged on every save, one such bus blocked the whole plan: a drop on a
+	different vehicle could not be saved until the untouched one was fixed.
+	"""
+
+	def test_a_vehicle_whose_cards_did_not_move_is_left_alone(self):
+		plan = frappe.new_doc("Route Plan")
+		plan.get_doc_before_save = lambda: frappe._dict(assignments=[
+			frappe._dict(vehicle="BUS-A", transportation_shipment="TS-1", stop_index=1,
+						 trip_group="T1", direction="OUTBOUND", headcount=27,
+						 start_time="2026-08-18T06:00:00Z", end_time="2026-08-18T07:00:00Z"),
+		])
+		rows = list(plan.get_doc_before_save().assignments)
+
+		untouched = plan._vehicles_this_save_did_not_touch(plan._logical_trips(rows))
+
+		self.assertIn("BUS-A", untouched)
+
+	def test_a_vehicle_that_gained_a_card_is_judged(self):
+		plan = frappe.new_doc("Route Plan")
+		before = [
+			frappe._dict(vehicle="BUS-A", transportation_shipment="TS-1", stop_index=1,
+						 trip_group="T1", direction="OUTBOUND", headcount=27,
+						 start_time="2026-08-18T06:00:00Z", end_time="2026-08-18T07:00:00Z"),
+		]
+		plan.get_doc_before_save = lambda: frappe._dict(assignments=before)
+		after = before + [
+			frappe._dict(vehicle="BUS-A", transportation_shipment="TS-2", stop_index=2,
+						 trip_group="T1", direction="OUTBOUND", headcount=1,
+						 start_time="2026-08-18T06:00:00Z", end_time="2026-08-18T07:00:00Z"),
+		]
+
+		untouched = plan._vehicles_this_save_did_not_touch(plan._logical_trips(after))
+
+		self.assertNotIn("BUS-A", untouched)
+
+	def test_a_brand_new_plan_is_judged_in_full(self):
+		# Nothing to grandfather: every card in it is being placed by this save.
+		plan = frappe.new_doc("Route Plan")
+
+		self.assertEqual(plan._vehicles_this_save_did_not_touch([]), set())

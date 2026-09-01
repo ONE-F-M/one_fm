@@ -30,6 +30,8 @@
   "origin_location",
   "stop_location",
   "is_accommodation_origin",
+  "is_camp_leg",
+  "is_home_leg",
   "section_break_times",
   "start_time",
   "end_time",
@@ -184,6 +186,21 @@
    "label": "Is Accommodation Origin"
   },
   {
+   "description": "A stop the bus makes that no card is filed against - the accommodation it loads at. Written by the canvas so the plan lists every stop of the run, and so the leg out of the camp has somewhere to keep its buffer and transit.",
+   "fieldname": "is_camp_leg",
+   "fieldtype": "Check",
+   "label": "Camp Leg (No Card)",
+   "read_only": 1
+  },
+  {
+   "depends_on": "is_camp_leg",
+   "description": "The last leg of the run, back to the accommodation. Nobody is dropped there, so no card is filed against it.",
+   "fieldname": "is_home_leg",
+   "fieldtype": "Check",
+   "label": "Ride Home (No Card)",
+   "read_only": 1
+  },
+  {
    "fieldname": "section_break_times",
    "fieldtype": "Section Break",
    "label": "Time Window"
@@ -207,7 +224,7 @@
    "label": "Is Next Day"
   },
   {
-   "description": "Driving time from the previous stop, as set in the Merge Trip modal.",
+   "description": "Driving time to the NEXT stop, as set in the Trip Builder.",
    "fieldname": "transit_minutes",
    "fieldtype": "Int",
    "label": "Transit Minutes"
