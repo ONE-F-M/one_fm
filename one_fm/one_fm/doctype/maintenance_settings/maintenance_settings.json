@@ -1,0 +1,70 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-06-29 10:20:31.839765",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "preventive_maintenance_automation_section",
+  "schedule_generation_months",
+  "work_order_generation_lead_time_days",
+  "column_break_defaults",
+  "maintenance_manager_user"
+ ],
+ "fields": [
+  {
+   "fieldname": "preventive_maintenance_automation_section",
+   "fieldtype": "Section Break",
+   "label": "Preventive Maintenance Automation"
+  },
+  {
+   "description": "How many months ahead of today empty 'Open' schedule slots are generated when an Object is submitted.",
+   "fieldname": "schedule_generation_months",
+   "fieldtype": "Int",
+   "label": "Schedule Generation (Months)",
+   "non_negative": 1
+  },
+  {
+   "description": "Look-ahead window from today. Any 'Open' slot whose planned date falls within this window has its Work Order created automatically.",
+   "fieldname": "work_order_generation_lead_time_days",
+   "fieldtype": "Int",
+   "label": "Work Order Generation Lead Time (Days)",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_defaults",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "maintenance_manager_user",
+   "fieldtype": "Link",
+   "label": "Maintenance Manager User",
+   "options": "User"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-07-04 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Maintenance Settings",
+ "naming_rule": "",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
