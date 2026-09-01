@@ -607,3 +607,4 @@ one_fm.patches.v15_0.disable_roster_double_shift_ot_checker_assignment_rules #20
 one_fm.patches.v15_0.grant_transportation_manager_schedule_access #2026-08-24 WI-002162
 one_fm.patches.v15_0.mark_unflagged_mixed_trips #2026-08-25 WI-002160
 one_fm.patches.v15_0.update_employee_checkin_form_customizations #2026-09-01
+one_fm.patches.v15_0.backfill_employee_checkin_default_source #2026-09-01
