@@ -183,7 +183,7 @@
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Maintenance Schedule Entry",
- "owner": "h.imran@one-fm.com",
+ "owner": "Administrator",
  "permissions": [
   {
    "create": 1,
