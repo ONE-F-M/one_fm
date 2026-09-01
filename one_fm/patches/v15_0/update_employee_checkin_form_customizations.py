@@ -17,6 +17,24 @@ def execute():
                 "options": "\nMobile App\nMobile Web\nCheck-in Form\nFrappe Page\nAttendance Check",
                 "default": "",
                 "translatable": 1
+            },
+            {
+                "fieldname": "shift_assignment",
+                "fieldtype": "Link",
+                "insert_after": "shift_details",
+                "label": "Shift Assignment",
+                "options": "Shift Assignment",
+                "read_only": 1
+            },
+            {
+                "fieldname": "roster_type",
+                "fieldtype": "Data",
+                "insert_after": "post_abbrv",
+                "label": "Roster Type",
+                "fetch_from": "shift_assignment.roster_type",
+                "fetch_if_empty": 1,
+                "translatable": 1,
+                "read_only": 1
             }
         ]
     }

@@ -48,24 +48,6 @@ def get_employee_checkin_properties():
             "doctype": "Property Setter",
             "doc_type": "Employee Checkin",
             "doctype_or_field": "DocField",
-            "field_name": "shift_assignment",
-            "property": "read_only",
-            "property_type": "Check",
-            "value": "1"
-        },
-        {
-            "doctype": "Property Setter",
-            "doc_type": "Employee Checkin",
-            "doctype_or_field": "DocField",
-            "field_name": "roster_type",
-            "property": "read_only",
-            "property_type": "Check",
-            "value": "1"
-        },
-        {
-            "doctype": "Property Setter",
-            "doc_type": "Employee Checkin",
-            "doctype_or_field": "DocField",
             "field_name": "fetch_geolocation",
             "property": "hidden",
             "property_type": "Check",
