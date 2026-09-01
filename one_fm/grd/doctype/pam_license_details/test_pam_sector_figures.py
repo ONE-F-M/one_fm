@@ -8,7 +8,7 @@ from frappe.tests.utils import FrappeTestCase
 from one_fm.grd.doctype.pam_license_details.pam_license_details import (
 	as_figure,
 	derived_figures,
-	round_to_half,
+	to_whole,
 )
 
 # The requirement and the shortfall do not depend on the sector - only the expatriate
@@ -26,15 +26,21 @@ def _a_sector(name):
 	return name
 
 
-class TestRoundToHalf(FrappeTestCase):
-	def test_it_rounds_to_the_nearest_half(self):
-		for value, expected in ((0, 0), (0.2, 0), (0.3, 0.5), (0.7, 0.5), (0.8, 1.0), (2.24, 2.0), (2.26, 2.5)):
+class TestToWhole(FrappeTestCase):
+	def test_it_rounds_to_the_nearest_whole_number(self):
+		for value, expected in ((0, 0), (0.2, 0), (0.49, 0), (0.7, 1), (2.24, 2), (2.75, 3)):
 			with self.subTest(value=value):
-				self.assertEqual(round_to_half(value), expected)
+				self.assertEqual(to_whole(value), expected)
 
-	def test_a_whole_figure_loses_its_decimal(self):
+	def test_half_rounds_up(self):
+		"""Not to even, which is what round() would do - 2.5 and 3.5 must not land on the
+		same side of the line as each other."""
+		self.assertEqual(to_whole(2.5), 3)
+		self.assertEqual(to_whole(3.5), 4)
+
+	def test_a_figure_carries_no_decimal(self):
 		self.assertEqual(as_figure(3.0), "3")
-		self.assertEqual(as_figure(3.5), "3.5")
+		self.assertEqual(as_figure(3.5), "4")
 		self.assertEqual(as_figure(0), "0")
 
 	def test_a_blank_reads_as_nothing(self):
@@ -49,13 +55,13 @@ class TestDerivedFigures(FrappeTestCase):
 		figures = derived_figures(SECTOR_UNDER_TEST, ratio=20, nationals=0, expatriates=8)
 		self.assertEqual(figures["required_number_of_national_workers"], "2")
 
-	def test_the_requirement_is_stated_to_the_nearest_half(self):
+	def test_the_requirement_is_stated_as_a_whole_number(self):
 		# 9 x 20 / 80 = 2.25 -> 2
 		self.assertEqual(derived_figures(SECTOR_UNDER_TEST, 20, 0, 9)["required_number_of_national_workers"], "2")
-		# 11 x 20 / 80 = 2.75 -> 2.5... rounds to 3 at .75
+		# 11 x 20 / 80 = 2.75 -> 3
 		self.assertEqual(derived_figures(SECTOR_UNDER_TEST, 20, 0, 11)["required_number_of_national_workers"], "3")
-		# 10 x 20 / 80 = 2.5, already a half
-		self.assertEqual(derived_figures(SECTOR_UNDER_TEST, 20, 0, 10)["required_number_of_national_workers"], "2.5")
+		# 10 x 20 / 80 = 2.5 -> 3
+		self.assertEqual(derived_figures(SECTOR_UNDER_TEST, 20, 0, 10)["required_number_of_national_workers"], "3")
 
 	def test_a_shortfall_is_what_the_sector_is_missing(self):
 		figures = derived_figures(SECTOR_UNDER_TEST, ratio=20, nationals=1, expatriates=8)

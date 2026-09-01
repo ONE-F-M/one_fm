@@ -326,24 +326,6 @@ def sync_google_tasks_with_todos():
 
 
 @frappe.whitelist()
-def sync_my_google_tasks_with_todos():
-    try:
-        logged_in_user = frappe.session.user
-
-        # Skip if general trigger is not enabled
-        if not is_google_task_synchronization_enabled() or logged_in_user == "Administrator":
-            return { "error": True, "message" : "You are not allowed to sync google tasks" }
-
-        frappe.enqueue(sync_google_tasks_for_users, user_emails=[logged_in_user], is_async=True, timeout=600)
-
-        return { "error": False, "message" : "Your Google Tasks will be synced in the background." }
-
-    except Exception as e:
-        frappe.log_error(message =str(e),title = "Failed to sync google tasks to ERP ToDo")
-        return { "error": True, "message" : str(e) }
-
-
-@frappe.whitelist()
 def sync_google_tasks_for_users(user_emails=[], timedelta_kwargs=None):
     all_google_tasks = []
 

@@ -585,7 +585,7 @@ one_fm.patches.v15_0.add_pcc_attestation_workflow_and_rules #2026-08-12 WI-00202
 one_fm.patches.v15_0.add_pcc_processing_fees_to_hr_settings #2026-08-12 WI-002026
 one_fm.patches.v15_0.add_shift_request_shift_preview #2026-08-12 WI-001834
 one_fm.patches.v15_0.restore_stranded_mixed_shipments #2026-08-17 WI-002071
-one_fm.patches.v15_0.migrate_visa_request_visibility #2026-08-20 WI-002069
+one_fm.patches.v15_0.migrate_visa_request_visibility #2026-08-29 WI-002069
 one_fm.patches.v15_0.hide_residency_apply_for #2026-08-20 WI-002105
 one_fm.patches.v15_0.add_preparation_category #2026-08-20 WI-002101
 one_fm.patches.v15_0.add_preparation_row_status #2026-08-20 WI-002093
@@ -602,3 +602,4 @@ one_fm.patches.v15_0.mark_unflagged_mixed_trips #2026-08-25 WI-002160
 one_fm.patches.v15_0.grant_transportation_manager_schedule_access #2026-08-24 WI-002162
 one_fm.patches.v15_0.add_transportation_qoa_buffer_to_hr_settings #2026-08-26 WI-002151
 one_fm.patches.v15_0.rekey_olm_shipments_on_shift_window #2026-08-31 WI-002151
+one_fm.patches.v15_0.repoint_pam_file_links_to_license_details #2026-08-29 WI-002233
