@@ -13,6 +13,7 @@
   "operations_role",
   "column_break_hpiz",
   "operations_shift",
+  "aggregated_shifts",
   "operations_site",
   "project",
   "start_time",
@@ -82,6 +83,13 @@
    "fieldtype": "Link",
    "label": "Operations Shift",
    "options": "Operations Shift"
+  },
+  {
+   "description": "Every Operations Shift whose staff this card carries. One shift for most cards; an OLM stop shared by several roles finishing together lists them all, and then Operations Shift is left blank because no single one is it.",
+   "fieldname": "aggregated_shifts",
+   "fieldtype": "Small Text",
+   "label": "Shifts Served",
+   "read_only": 1
   },
   {
    "fetch_from": "operations_shift.site",
