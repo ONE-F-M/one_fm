@@ -864,6 +864,8 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
             # What the card's own riders do, which its live direction stops saying once
             # the card is merged (WI-002078).
             "pre_merge_trip_direction",
+            # Lineage for a card that was split off a bigger one (WI-002170).
+            "is_split_overflow", "split_root",
         ],
     )
     if not shipments:
@@ -975,6 +977,9 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
                 "own_direction":         own_direction,
                 "pair_id":               f"{SHIPMENT_CARD_PREFIX}{s.pair_group}" if s.pair_group else f"{SHIPMENT_CARD_PREFIX}{s.name}",
                 "shift_direction_label": "→ Outbound (To Site)" if direction == "OUTBOUND" else "← Return (From Site)",
+                # AC 2.5: the pool marks a card that holds the staff who did not fit.
+                "is_split_overflow": bool(s.is_split_overflow),
+                "split_root": s.split_root or None,
             })
         except Exception:
             frappe.log_error(frappe.get_traceback(), "Transportation Shipment Card Build Error")
