@@ -151,7 +151,7 @@ def get_employee_custom_fields():
 			},
 			{
 				"depends_on": "eval:doc.under_company_residency==1",
-				"fetch_from": "pam_file.pam_file_number",
+				"fetch_from": "pam_file.civil_id_number_for_licensing",
 				"fieldname": "pam_file_number",
 				"fieldtype": "Data",
 				"insert_after": "pam_file",
@@ -165,7 +165,7 @@ def get_employee_custom_fields():
 				"fieldtype": "Link",
 				"insert_after": "one_fm_pam_designation",
 				"label": "PAM File",
-				"options": "PAM File",
+				"options": "PAM License Details",
 			},
 			{
 				"fieldname": "coulumn_break_ar2",

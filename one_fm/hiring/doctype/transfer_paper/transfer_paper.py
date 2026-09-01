@@ -140,11 +140,23 @@ class TransferPaper(Document):
 
     def set_pas_values(self):
         doc = frappe.get_doc('Job Applicant',self.applicant)
-        if doc.one_fm_pam_file_number:
-            company_data = frappe.get_doc('PAM File',doc.one_fm_pam_file_number)
-            self.db_set('company_trade_name_arabic', company_data.license_trade_name_arabic)
-            self.db_set('license_number', company_data.license_number)#licence to issuer_number
-            self.db_set('pam_file_number', company_data.pam_file_number)
+        if not doc.one_fm_pam_file_number:
+            return
+
+        # WI-002233: the applicant names a PAM License Details record now rather than a
+        # PAM File. The licence carries the PAM number; the Arabic trade name and the MOCI
+        # licence number are still file-level, so they come from the PAM File that owns
+        # this licence - reached through the PAM Licenses row that lists it.
+        pam_file = frappe.db.get_value('PAM Licenses',
+            {'civil_id_number_for_licensing': doc.one_fm_pam_file_number, 'parenttype': 'PAM File'},
+            'parent')
+        company_data = frappe.db.get_value('PAM File', pam_file,
+            ['license_trade_name_arabic', 'license_number'], as_dict=True) or frappe._dict()
+
+        self.db_set('company_trade_name_arabic', company_data.get('license_trade_name_arabic'))
+        self.db_set('license_number', company_data.get('license_number'))#licence to issuer_number
+        self.db_set('pam_file_number', frappe.db.get_value('PAM License Details',
+            doc.one_fm_pam_file_number, 'civil_id_number_for_licensing'))
 
 
     def check_signed_workContract_employee_completed(self):
