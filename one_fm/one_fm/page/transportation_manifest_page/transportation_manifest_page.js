@@ -740,24 +740,19 @@ function renderManifest($container, data) {
 			// banner is followed by the drop-off stop(s) its passengers ride to,
 			// then the next camp block. Camps run in strict stop-sequence order.
 			const boardingByCamp = {};   // seq -> { seq, label, employees, names }
-			const dropByCamp = {};       // seq -> [ orderedStops item ]
 			orderedStops.forEach(item => {
 				if (item.stop.type !== "dropoff") return;
-				let campSeq = 1;
 				(shipmentEmployees[item.stop.raw] ?? []).forEach(e => {
 					const eName = (typeof e === "object" && e !== null) ? (e.name || "") : (e || "");
 					if (!eName) return;
 					const seq = (e && e.stop_sequence) ? e.stop_sequence : 1;
 					const label = (e && e.pickup_camp_label) ? e.pickup_camp_label : accommodation;
-					campSeq = seq;
 					if (!boardingByCamp[seq]) boardingByCamp[seq] = { seq: seq, label: label, employees: [], names: new Set() };
 					if (!boardingByCamp[seq].names.has(eName)) {
 						boardingByCamp[seq].names.add(eName);
 						boardingByCamp[seq].employees.push(e);
 					}
 				});
-				if (!dropByCamp[campSeq]) dropByCamp[campSeq] = [];
-				dropByCamp[campSeq].push(item);
 			});
 
 			const activeStop = meta.active_stop_sequence || 0;
@@ -777,28 +772,35 @@ function renderManifest($container, data) {
 				});
 			} else {
 
+			// The journey, top to bottom, in the order the bus drives it: it loads at
+			// each camp in turn and only then starts calling at sites. Grouped by camp
+			// instead, a run loading at two camps read as two separate blocks whose
+			// times interleaved - Mahboula's 08:37 drop was printed above Farwaniya's
+			// 08:15 departure - which is not a sequence any driver can follow.
 			const campGroups = Object.values(boardingByCamp).sort((a, b) => a.seq - b.seq);
+			const campLegs = legs.camps_ordered || [];
 
-			// Camp block: DEPART banner, then that camp's drop-off stop(s)
-			campGroups.forEach(cg => {
-				html += renderDepartCard(firstTimeISO, cg, activeStop, manifestName, pr.label,
-					false, legs.qoa_time);
-				let prevTime = firstTimeISO;
-				(dropByCamp[cg.seq] || []).forEach(item => {
+			let prevTime = firstTimeISO;
+			campGroups.forEach((cg, index) => {
+				// Matched by position: both lists are in the order the run needs them.
+				const leg = campLegs[index] || {};
+				const departAt = leg.departure
+					? new Date(leg.departure).toISOString() : firstTimeISO;
+				if (index > 0) html += renderTransit(calcTransit(prevTime, departAt));
+				html += renderDepartCard(departAt, cg, activeStop, manifestName, pr.label,
+					false, leg.qoa_time || (index === 0 ? legs.qoa_time : null));
+				prevTime = departAt;
+			});
+
+			// Then every stop the bus calls at, once, in the order it reaches them.
+			orderedStops
+				.slice()
+				.sort((a, b) => new Date(a.stop.time) - new Date(b.stop.time))
+				.forEach(item => {
 					html += renderTransit(calcTransit(prevTime, item.stop.time, item.stop));
 					html += renderSiteStopCard({ ...item, runStartISO: firstTimeISO });
 					prevTime = item.stop.time;
 				});
-			});
-
-			// Any non-drop-off stops (e.g. return pickups) keep chronological order
-			const otherStops = orderedStops.filter(item => item.stop.type !== "dropoff");
-			let prevOtherTime = firstTimeISO;
-			otherStops.forEach(item => {
-				html += renderTransit(calcTransit(prevOtherTime, item.stop.time, item.stop));
-				html += renderSiteStopCard({ ...item, runStartISO: firstTimeISO });
-				prevOtherTime = item.stop.time;
-			});
 
 			// Return employees
 			const returningEmployees = [];
@@ -817,10 +819,7 @@ function renderManifest($container, data) {
 			});
 
 			// Transit to return
-			const lastSiteStop = orderedStops[orderedStops.length - 1]?.stop;
-			if (lastSiteStop) {
-				html += renderTransit(calcTransit(lastSiteStop.time, lastTimeISO));
-			}
+			html += renderTransit(calcTransit(prevTime, lastTimeISO));
 
 			// RETURN card
 			html += renderReturnCard(lastTimeISO, homeCamp, returningEmployees, firstTimeISO);

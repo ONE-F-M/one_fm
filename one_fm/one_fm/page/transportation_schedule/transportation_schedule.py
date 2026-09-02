@@ -1907,10 +1907,25 @@ def get_manifest_data_for_plan(plan_name: str):
 					if held.get("departure") and leg.start_time else \
 					(leg.start_time or held.get("departure"))
 				held.setdefault("camp", place)
+				# In the order the bus loads at them, each with its own departure and
+				# report time - the driver's page reads a run as one journey, and a run
+				# that loads at two camps leaves the second when it gets there.
+				held.setdefault("camps_ordered", []).append({
+					"place": place,
+					"stop_index": cint(leg.stop_index),
+					"departure": leg.start_time,
+					"arrival": leg.end_time,
+					"qoa_time": str(leg.qoa_time) if leg.qoa_time else None,
+					"transit_minutes": leg.transit_minutes or 0,
+					"buffer_minutes": leg.buffer_minutes or 0,
+				})
 				# The driver's report time, which AC 1.2 puts on an accommodation pickup
 				# wherever the leg is shown - the manifest included.
 				if leg.qoa_time and not held.get("qoa_time"):
 					held["qoa_time"] = str(leg.qoa_time)
+
+		for held in trip_legs.values():
+			held.get("camps_ordered", []).sort(key=lambda camp: camp["stop_index"])
 
 		routes.append({
 			"vehicleIndex": vi, "vehicleLabel": v_label,
