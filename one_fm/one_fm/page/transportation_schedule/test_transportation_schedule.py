@@ -296,3 +296,28 @@ class TestWhenTheBusIsWhere(FrappeTestCase):
 		)
 
 		self.assertEqual(visit_times("08:27", "08:58", "OUTBOUND"), ("08:27", "08:27"))
+
+
+class TestEachCardBoardsAtItsOwnCamp(FrappeTestCase):
+	"""A run that loads at two camps has two departures, not one repeated.
+
+	Keyed by the run alone, both camps of 13/52665 printed 07:45 on the driver's page -
+	the bus reaches the second at 08:20.
+	"""
+
+	def setUp(self):
+		self.source = frappe.read_file(frappe.get_app_path(
+			"one_fm", "one_fm", "page", "transportation_schedule",
+			"transportation_schedule.py"
+		))
+
+	def test_the_departure_is_recorded_per_camp(self):
+		self.assertIn('camp_departure[(row.trip_group, place)] = row.start_time', self.source)
+
+	def test_a_card_boards_at_the_camp_it_belongs_to(self):
+		self.assertIn(
+			"camp_departure.get((row.trip_group, row.origin_location))", self.source
+		)
+
+	def test_a_camp_with_no_leg_recorded_falls_back_to_the_run(self):
+		self.assertIn("or camp_departure.get(row.trip_group),", self.source)

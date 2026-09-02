@@ -133,7 +133,9 @@ class TestTheManifestPrintsTheDriversReportTime(FrappeTestCase):
 	def test_both_itineraries_pass_it_in(self):
 		# A merged run and an ordinary one render through different functions.
 		self.assertIn("o.vehicleLabel, true, o.qoaTime", self.page)
-		self.assertIn("false, legs.qoa_time", self.page)
+		# The camp-by-camp path takes each camp's own report time, and only the first
+		# camp falls back to the run's.
+		self.assertIn("leg.qoa_time || (index === 0 ? legs.qoa_time : null)", self.page)
 
 	def test_a_run_without_one_prints_nothing(self):
 		# AC 1.2: QOA is hidden where it does not apply, not shown empty.
@@ -167,3 +169,43 @@ class TestTheManifestMarksADayRollover(FrappeTestCase):
 	def test_it_is_measured_from_when_the_run_left(self):
 		self.assertIn("runStartISO: firstTimeISO", self.page)
 		self.assertIn("runStartISO: o.firstTimeISO", self.page)
+
+
+class TestTheManifestReadsAsOneJourney(FrappeTestCase):
+	"""Top to bottom, in the order the bus drives it.
+
+	Grouped by camp, a run loading at two camps read as two blocks whose times
+	interleaved - Mahboula's 08:37 drop printed above Farwaniya's 08:15 departure. No
+	driver can follow that, and it is the same run either way.
+	"""
+
+	def setUp(self):
+		self.page = frappe.read_file(frappe.get_app_path(
+			"one_fm", "one_fm", "page", "transportation_manifest_page",
+			"transportation_manifest_page.js"
+		))
+		self.server = frappe.read_file(frappe.get_app_path(
+			"one_fm", "one_fm", "page", "transportation_schedule",
+			"transportation_schedule.py"
+		))
+
+	def test_the_plan_sends_the_camps_in_the_order_they_are_loaded(self):
+		self.assertIn('held.setdefault("camps_ordered", []).append({', self.server)
+		self.assertIn('camp["stop_index"]', self.server)
+
+	def test_each_camp_departs_at_its_own_time(self):
+		self.assertIn("const leg = campLegs[index] || {};", self.page)
+		self.assertIn("html += renderDepartCard(departAt, cg,", self.page)
+
+	def test_each_camp_reports_its_own_driver_time(self):
+		self.assertIn("leg.qoa_time || (index === 0 ? legs.qoa_time : null)", self.page)
+
+	def test_the_stops_follow_in_the_order_the_bus_reaches_them(self):
+		self.assertIn("new Date(a.stop.time) - new Date(b.stop.time)", self.page)
+
+	def test_the_camp_by_camp_nesting_is_gone(self):
+		# It listed a camp's drops under it, so the two blocks' clocks interleaved.
+		self.assertNotIn("dropByCamp", self.page)
+
+	def test_the_drive_home_runs_from_the_last_stop_reached(self):
+		self.assertIn("renderTransit(calcTransit(prevTime, lastTimeISO))", self.page)
