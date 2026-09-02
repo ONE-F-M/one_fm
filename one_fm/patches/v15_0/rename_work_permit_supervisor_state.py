@@ -14,8 +14,8 @@ from one_fm.custom.workflow.workflow import create_workflow, get_workflow_json_f
 # different process. Only Work Permit documents are moved.
 OLD_STATE = "Pending By Supervisor"
 NEW_STATE = "Pending GR Manager"
-RULE_FILE = "work_permit_grd_supervisor.json"
-RULE = "Work Permit - GRD Supervisor"
+RULE_FILE = "work_permit_gr_manager.json"
+RULE = "Work Permit - GR Manager"
 
 
 def execute():

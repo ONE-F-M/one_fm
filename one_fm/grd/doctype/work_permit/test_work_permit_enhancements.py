@@ -83,7 +83,8 @@ class TestWorkPermitEnhancements(FrappeTestCase):
 		self.assertEqual(frappe.db.count("Work Permit", {"workflow_state": OLD_STATE}), 0)
 
 	def test_the_supervisor_is_still_assigned_the_state(self):
-		rule = frappe.get_doc("Assignment Rule", "Work Permit - GRD Supervisor")
+		# WI-002182 renamed the rule to match the state it assigns on.
+		rule = frappe.get_doc("Assignment Rule", "Work Permit - GR Manager")
 		self.assertIn(NEW_STATE, rule.assign_condition)
 		self.assertNotIn(OLD_STATE, rule.assign_condition)
 
