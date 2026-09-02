@@ -279,6 +279,12 @@ MOI_CATEGORY_BY_ACTION = {
     # WI-002024: a government-contract overseas hire gets the same first residency. MOI
     # does not care which file the work permit was raised against.
     'Overseas (Government)': ('First Time', None),
+    # WI-002181: a visa extension for an incoming candidate. Same category as any other
+    # extension - MOI has one - but applied for the day the Preparation was submitted
+    # rather than a week before an expiry: the candidate has no residency yet, and the
+    # fallback below would read a blank expiry as today and date the application a week
+    # in the past.
+    'Visa Extension': ('Extend', None),
 }
 
 

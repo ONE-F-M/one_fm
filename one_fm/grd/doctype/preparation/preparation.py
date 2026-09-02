@@ -133,6 +133,18 @@ DURATION_SCALED_COST_FIELDS = (
 # rate.
 EXTENSION_ACTION = 'Extension'
 
+# WI-002181: the one-month extension an incoming candidate's entry visa gets while the rest
+# of their onboarding is arranged. It is an Onboarding Action rather than a Renewal one -
+# there is nothing to renew yet - and it opens a Residency and nothing else: the candidate
+# has no work permit, no insurance and no civil ID for an extension to follow on from.
+VISA_EXTENSION_ACTION = 'Visa Extension'
+
+# The Actions whose whole output is a Residency. Named because two code paths have to agree
+# about it: the submit path, which opens the Residency through the extend branch in
+# residency.py, and the path a row added after submit takes - which otherwise reads
+# "not one of the new Actions, so open the four a renewal opens".
+RESIDENCY_ONLY_ACTIONS = (EXTENSION_ACTION, VISA_EXTENSION_ACTION)
+
 
 # WI-002101: the batch type, the series it is named under, and the Actions its rows may
 # carry. One table, because the naming and the restriction are two halves of the same
@@ -146,7 +158,13 @@ EXTENSION_ACTION = 'Extension'
 CATEGORIES = {
     'Onboarding': {
         'prefix': 'PRE-ONB-',
-        'actions': ('Overseas', 'Overseas (Government)', 'Local Transfer', 'New Kuwaiti'),
+        'actions': (
+            'Overseas',
+            'Overseas (Government)',
+            'Local Transfer',
+            'New Kuwaiti',
+            VISA_EXTENSION_ACTION,
+        ),
     },
     'Offboarding': {
         'prefix': 'PRE-OFFB-',
@@ -864,6 +882,21 @@ def handle_creation_of_grd_docs(row,source):
         except Exception:
             frappe.log_error(
                 title=f"Error creating New GRD documents for {row.employee}",
+                message=frappe.get_traceback(),
+            )
+        return
+
+    # WI-002181: an extension opens a Residency and nothing else. The branch below reads as
+    # "not one of the new Actions, so it is a renewal", which gave a row added after submit
+    # a work permit, an insurance and a PACI that submitting the same row never would.
+    if row.renewal_or_extend in RESIDENCY_ONLY_ACTIONS:
+        try:
+            residency.create_moi_record(
+                frappe.get_doc("Employee", row.employee), row.renewal_or_extend, source
+            )
+        except Exception:
+            frappe.log_error(
+                title=f"Error creating Residency for {row.employee}",
                 message=frappe.get_traceback(),
             )
         return

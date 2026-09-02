@@ -70,7 +70,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Action",
-   "options": "\nNew Kuwaiti\nOverseas\nOverseas (Government)\nRenewal (Kuwaiti)\nRenewal Expat\nExtension\nLocal Transfer\nCancellation"
+   "options": "\nNew Kuwaiti\nOverseas\nOverseas (Government)\nRenewal (Kuwaiti)\nRenewal Expat\nExtension\nVisa Extension\nLocal Transfer\nCancellation"
   },
   {
    "allow_on_submit": 1,
