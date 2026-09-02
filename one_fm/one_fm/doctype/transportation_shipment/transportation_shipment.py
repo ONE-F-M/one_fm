@@ -729,26 +729,21 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 	exceeded = bool(limit) and peak > limit
 	alignment = _shift_alignment(docs)
 
-	# AC 3.6: a collection the bus has to be driven to cannot be left untimed. The drive
-	# INTO a stop is the previous stop's leg - minutes belong to the leg out of a row -
-	# so that is the row the operator has to fill in.
-	untimed = []
-	for position, stop in enumerate(stops):
-		if position == 0 or stop["kind"] != SITE_STOP or not stop["boarding_cards"]:
-			continue
-		into = stops[position - 1]
-		# Only the handover drive the AC describes: dropped at Site A, collecting at
-		# Site B. Arriving from the camp is the ordinary outbound leg, and a collection
-		# at the place the bus is already standing is no drive at all - a stop where
-		# riders both get off and get on is one stop, not two.
-		if into["kind"] != SITE_STOP or into["place"] == stop["place"]:
-			continue
-		if not (into["transit_minutes"] or into["buffer_minutes"]):
-			untimed.append(stop)
+	# Every drive the bus makes has to be timed. Minutes belong to the leg OUT of a
+	# stop, so a stop whose next stop is somewhere else needs a transit time - without
+	# one the run says the bus is in two places at the same minute, and the manifest
+	# prints it that way. Two rows at one place is not a drive: the bus is already
+	# standing there, which is what a handover and a second card at one site are.
+	# AC 3.6's collection drive is the case this was first written for, and is covered.
+	untimed = [
+		(stop, stops[position + 1])
+		for position, stop in enumerate(stops[:-1])
+		if stops[position + 1]["place"] != stop["place"] and not stop["transit_minutes"]
+	]
 	handover_message = "" if not untimed else _(
-		"Leg {0} collects at {1}. Enter the buffer and transit minutes for the drive to "
-		"it before the pickup can be scheduled."
-	).format(untimed[0]["stop_index"], untimed[0]["place"])
+		"Leg {0} leaves {1} for {2} with no transit time. Every drive needs its minutes "
+		"before the trip can be confirmed."
+	).format(untimed[0][0]["stop_index"], untimed[0][0]["place"], untimed[0][1]["place"])
 
 	# AC 1.5, literally now that a run is its stops: the last one is the base camp.
 	ends_home = bool(itinerary) and itinerary[-1]["kind"] == HOME_STOP
