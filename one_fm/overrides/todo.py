@@ -1,6 +1,6 @@
 import json
 import frappe
-from frappe.utils import get_fullname, get_url_to_form, getdate
+from frappe.utils import get_fullname, get_url_to_form, getdate, get_datetime, convert_utc_to_system_timezone
 from bs4 import BeautifulSoup
 from datetime import datetime,timezone, timedelta
 from one_fm.processor import is_user_id_company_prefred_email_in_employee, sendemail
@@ -134,6 +134,32 @@ def before_save(doc,method):
     if previous_doc:
         return get_google_task_service(previous_doc.allocated_to)
 
+def get_google_task_status(todo_status):
+    """Map an ERP ToDo status to the Google Task `status` field."""
+    return "needsAction" if todo_status == "Open" else "completed"
+
+def is_google_task_newer_than_todo(google_task, todo_modified):
+    """Return True if the Google Task was updated after the ToDo row was last modified.
+
+    Google returns `updated` as an RFC3339 UTC timestamp while the ToDo timestamp is
+    in the site timezone, so convert before comparing. Used to decide who wins a
+    status conflict: only a task touched in Google *after* the ERP change may
+    override the ERP status.
+    """
+    updated = google_task.get("updated")
+    if not updated or not todo_modified:
+        return False
+    for fmt in ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"):
+        try:
+            task_updated_utc = datetime.strptime(updated, fmt)
+            break
+        except ValueError:
+            task_updated_utc = None
+    if not task_updated_utc:
+        return False
+    task_updated = convert_utc_to_system_timezone(task_updated_utc).replace(tzinfo=None)
+    return task_updated > get_datetime(todo_modified)
+
 def create_google_task_on_todo_creation(doc, method):
     # Skip if general trigger is not enabled
     if not is_google_task_synchronization_enabled():
@@ -159,10 +185,16 @@ def create_google_task_on_todo_creation_in_erp(doc, trigger_method):
         task_title = doc.custom_google_task_title
         date_obj = datetime.strptime(str(doc.date), "%Y-%m-%d")
         due_date = date_obj.replace(hour=23, minute=59, second=59, tzinfo=timezone.utc).isoformat()
+        # This job runs async on the doc as it was at insert time; the ToDo may already
+        # have been closed, so take the status from the database and send it to Google.
+        # Without this the task is always created as "needsAction" and the next sync
+        # reopens the ToDo.
+        current_status = frappe.db.get_value("ToDo", doc.name, "status") or doc.status
         task_body = {
             "title": task_title,
             "notes": task_notes,
-            "due": due_date
+            "due": due_date,
+            "status": get_google_task_status(current_status)
         }
         result = service.tasks().insert(tasklist="@default", body=task_body).execute()
         # Reload to avoid TimestampMismatchError: the ToDo row may have been
@@ -173,6 +205,11 @@ def create_google_task_on_todo_creation_in_erp(doc, trigger_method):
         # db_set writes only this column, skips the modified-timestamp check,
         # and does not re-fire on_update (which would re-enqueue this job).
         doc.db_set("custom_google_task_id", result["id"], update_modified=False)
+        # Any status change made before the id landed could not be pushed
+        # (update_google_task_on_todo_status_change bails out without an id), so
+        # reconcile now that the ToDo carries one.
+        if get_google_task_status(doc.status) != task_body["status"]:
+            update_google_task_on_todo_status_change(doc, trigger_method)
         return result
     except Exception as e:
         title = f"Error while creating Google Task from ToDo for {employee_email}"
@@ -257,7 +294,7 @@ def update_google_task_on_todo_status_change(doc, method):
         task["title"] = task_title
         task["notes"] = task_notes
         task["due"] = due_date
-        task["status"] = "needsAction" if doc.status == "Open" else "completed"
+        task["status"] = get_google_task_status(doc.status)
         service.tasks().update(tasklist="@default", task=doc.custom_google_task_id, body=task).execute()
     except Exception:
         frappe.log_error(title="Google Task Update Failed", message=frappe.get_traceback())
@@ -386,6 +423,8 @@ def sync_google_tasks_for_users(user_emails=[], timedelta_kwargs=None):
             if todos:
                 # If ToDo already exists
                 todo = frappe.get_doc("ToDo", todos[0]["name"])
+                # Capture this before the db_set calls below bump `modified`.
+                todo_modified = todo.modified
                 todo.db_set("description", task_description)
                 todo.db_set("custom_google_task_title", task_title)
                 todo.db_set("date", due_date)
@@ -402,6 +441,16 @@ def sync_google_tasks_for_users(user_emails=[], timedelta_kwargs=None):
                             "status": "needsAction"
                         }
                         service.tasks().update(tasklist="@default",task=google_task_id, body=payload).execute()
+                    elif (
+                        todo.status in ["Closed", "Cancelled"]
+                        and mapped_status == "Open"
+                        and not is_google_task_newer_than_todo(google_task, todo_modified)
+                    ):
+                        # ERP is the source of truth. The task is still incomplete only
+                        # because the close could not be pushed (no task id yet, or the
+                        # Google service was unavailable) - push it instead of silently
+                        # reopening a ToDo the user already closed.
+                        update_google_task_on_todo_status_change(todo, "on_update")
                     else:
                         todo.db_set("status", mapped_status)
             else:
