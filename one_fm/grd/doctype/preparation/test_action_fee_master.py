@@ -130,10 +130,10 @@ class TestActionFeeMaster(FrappeTestCase):
 	def test_a_non_renewal_action_ignores_a_stale_year(self):
 		# The field is hidden but not cleared when the Action changes, so an Extend row can
 		# still carry "1 Year". Scoping by it would find nothing and return no fees.
-		_master_rows([{"renewal_or_extend": "Extend 1 month", "work_permit_amount": 25}])
+		_master_rows([{"renewal_or_extend": "Extension", "work_permit_amount": 25}])
 
 		self.assertEqual(
-			get_grd_renewal_extension_cost("Extend 1 month", "1 Year")["work_permit_amount"], 25
+			get_grd_renewal_extension_cost("Extension", "1 Year")["work_permit_amount"], 25
 		)
 
 	def test_an_unconfigured_action_returns_nothing_rather_than_a_wrong_row(self):
