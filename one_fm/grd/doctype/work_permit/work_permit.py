@@ -79,6 +79,22 @@ class WorkPermit(Document):
             and self.workflow_state == "Pending GR Manager"
         )
 
+    def invoice_required(self):
+        """Does this permit still owe PAM a payment invoice (WI-002180)?
+
+        An amendment is a revision of a permit PAM is already holding, and PAM charges
+        nothing for it - so there is no second invoice to attach, and demanding one leaves
+        the operator with a permit that cannot leave its state at all.
+
+        Read off Amendment No rather than off the transition, because the exemption is not
+        a moment: a permit that has been amended once stays fee-exempt for the rest of its
+        life. `is_being_amended` above is the moment; this is the fact.
+
+        One method rather than a condition at each site: the invoice is demanded in four
+        places, and an exemption that only covers three of them is not an exemption.
+        """
+        return not cint(self.amendment_no)
+
     def validate_designation_on_amendment(self):
         """An amended permit has to say which PAM designation it is now for (WI-002097).
 
@@ -138,7 +154,7 @@ class WorkPermit(Document):
         # action could never be taken.
         if db_state in states and not self.pam_rejection_reason and not self.is_being_amended():
             msg = False
-            if not self.attach_invoice:
+            if not self.attach_invoice and self.invoice_required():
                 msg = "Upload the required document(Invoice)"
             if not self.new_work_permit_expiry_date:
                 msg = ((msg+" and ") if msg else "") + "Set <i>Updated Work Permit Expiry Date</i>"
@@ -188,7 +204,9 @@ class WorkPermit(Document):
             self.reload()
 
         if self.workflow_state == "Pending By PAM Operator":
-            if self.work_permit_type == "Renewal Kuwaiti" or self.work_permit_type == "Renewal Non Kuwaiti" or self.work_permit_type == "New Kuwaiti":
+            if self.invoice_required() and self.work_permit_type in (
+                "Renewal Kuwaiti", "Renewal Non Kuwaiti", "New Kuwaiti"
+            ):
                 field_list = [{'Upload Payment Invoice':'attach_invoice'}]
                 message_detail = '<b style="color:red; text-align:center;">First, You Need to Pay through <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
                 self.set_mendatory_fields(field_list,message_detail)
@@ -315,12 +333,14 @@ class WorkPermit(Document):
 
     def on_submit(self):
         if self.work_permit_type not in ['Cancellation', 'New Kuwaiti', 'Local Transfer'] and self.workflow_state != "Rejected":
-            if self.workflow_state == "Completed" and self.attach_invoice and self.new_work_permit_expiry_date:
+            if self.workflow_state == "Completed" and (
+                self.attach_invoice or not self.invoice_required()
+            ) and self.new_work_permit_expiry_date:
                 # self.clean_old_wp_record_in_employee_doctype()
                 self.set_work_permit_attachment_in_employee_doctype(self.new_work_permit_expiry_date)
             else:
                 msg = False
-                if not self.attach_invoice:
+                if not self.attach_invoice and self.invoice_required():
                     msg = "Upload the required document(Invoice)"
                 if not self.new_work_permit_expiry_date:
                     msg = ((msg+" and ") if msg else "") + "Set <i>Updated Work Permit Expiry Date</i>"
@@ -380,7 +400,11 @@ class WorkPermit(Document):
             if has_permission(doctype=self.doctype, user=user):
                 filtered_users.append(user)
             if filtered_users and len(filtered_users) > 0:
-                if "Pending By PAM Operator" in self.workflow_state and not self.attach_invoice:
+                if (
+                    "Pending By PAM Operator" in self.workflow_state
+                    and not self.attach_invoice
+                    and self.invoice_required()
+                ):
                     frappe.throw(_("Upload Required Documents To Submit"))
 
     def notify_grd(self,message,subject,user):
