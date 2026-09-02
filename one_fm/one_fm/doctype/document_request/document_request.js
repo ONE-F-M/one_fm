@@ -18,7 +18,13 @@
 // still in use, which is why a withdrawn document is called out rather than
 // quietly linked.
 
-const DOCUMENT_MAY_EXIST = ["Approved", "Published", "Deleted"];
+// The map applies workflow states, not a status: Draft, Pending Approval,
+// Drafting, Pending Final Approval, Content Rejected, Request Rejected and
+// Approved. Every run that got far enough to produce a document ends at
+// Approved — publishing and withdrawing alike — so that one state is what
+// says a document may exist. The removed `status` field was never written by
+// the map: every request carried its default, so this check never fired.
+const DOCUMENT_MAY_EXIST = ["Approved"];
 
 frappe.ui.form.on("Document Request", {
 	refresh(frm) {
@@ -30,7 +36,7 @@ frappe.ui.form.on("Document Request", {
 			return;
 		}
 
-		if (!DOCUMENT_MAY_EXIST.includes(frm.doc.status)) return;
+		if (!DOCUMENT_MAY_EXIST.includes(frm.doc.workflow_state)) return;
 		repair_missing_link(frm);
 	},
 
@@ -52,15 +58,14 @@ frappe.ui.form.on("Document Request", {
 		// that its field actually means.
 		//
 		// A withdrawn document has nothing to revise and nothing left to
-		// withdraw, and input material was never a controlled document in the
-		// first place — neither should be offerable. The document type is
-		// included because a revision keeps the document's own type: offering a
-		// Policy while the request says SOP only leads to the mismatch the server
-		// then refuses. The server refuses all of this in validate too; these
-		// filters just save the user from finding out after typing the rest of
-		// the request.
+		// withdraw, so it should not be offerable. The document type is included
+		// because a revision keeps the document's own type: offering a Policy
+		// while the request says SOP only leads to the mismatch the server then
+		// refuses. The server refuses all of this in validate too; these filters
+		// just save the user from finding out after typing the rest of the
+		// request.
 		frm.set_query("reference_document", () => {
-			const filters = { lifecycle_state: "Active", is_input_material: 0 };
+			const filters = { lifecycle_state: "Active" };
 			if (frm.doc.document_type) filters.document_type = frm.doc.document_type;
 			return { filters };
 		});
@@ -120,8 +125,9 @@ function add_view_button(frm, url) {
 
 function describe_lifecycle(frm) {
 	// Only a completed withdrawal needs explaining; everything else is either
-	// self-evident from the status or still in flight.
-	if (frm.doc.status !== "Deleted") return;
+	// self-evident from the state or still in flight. A withdrawal and a publish
+	// both finish at Approved, so the action is what tells them apart.
+	if (frm.doc.request_action !== "Delete" || frm.doc.workflow_state !== "Approved") return;
 
 	frm.dashboard.add_comment(
 		__(
@@ -147,7 +153,7 @@ function repair_missing_link(frm) {
 			}
 			// Published with nothing to open is worth saying out loud — it means
 			// the run never recorded what it created.
-			if (frm.doc.status === "Published") {
+			if (frm.doc.workflow_state === "Approved" && frm.doc.request_action !== "Delete") {
 				frm.dashboard.add_comment(
 					__("This document was published, but no Google Docs link was recorded for it."),
 					"orange",

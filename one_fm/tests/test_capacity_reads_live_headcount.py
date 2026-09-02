@@ -25,8 +25,8 @@ from frappe.tests.utils import FrappeTestCase
 import one_fm.operations.doctype.route_plan.route_plan as mod
 from one_fm.operations.doctype.route_plan.route_plan import (
 	MIXED_DIRECTION,
-	_row_headcount,
 	_trip_peak,
+	row_headcount,
 )
 
 
@@ -37,22 +37,22 @@ def _row(shipment=None, headcount=0, **kwargs):
 class TestAStopIsCountedByItsShipment(FrappeTestCase):
 	def test_the_shipment_outranks_the_rows_frozen_copy(self):
 		# TS-0345 from the report: the row still says 7, the shipment says 6.
-		self.assertEqual(_row_headcount(_row("TS-0345", 7), {"TS-0345": 6}), 6)
+		self.assertEqual(row_headcount(_row("TS-0345", 7), {"TS-0345": 6}), 6)
 
 	def test_a_row_that_under_counts_is_corrected_too(self):
 		# S-1301's stops, which were validating a 21-passenger bus as 19.
-		self.assertEqual(_row_headcount(_row("TS-0297", 2), {"TS-0297": 3}), 3)
+		self.assertEqual(row_headcount(_row("TS-0297", 2), {"TS-0297": 3}), 3)
 
 	def test_a_shipment_that_carries_nobody_is_an_answer_not_a_gap(self):
 		# 0 is a real count; falling back here would resurrect the stale row.
-		self.assertEqual(_row_headcount(_row("TS-A", 4), {"TS-A": 0}), 0)
+		self.assertEqual(row_headcount(_row("TS-A", 4), {"TS-A": 0}), 0)
 
 	def test_a_deleted_shipment_leaves_the_rows_snapshot_standing(self):
 		# The stop must not silently drop out of the sum because its card is gone.
-		self.assertEqual(_row_headcount(_row("TS-GONE", 5), {"TS-A": 1}), 5)
+		self.assertEqual(row_headcount(_row("TS-GONE", 5), {"TS-A": 1}), 5)
 
 	def test_a_row_carrying_no_shipment_keeps_its_own_count(self):
-		self.assertEqual(_row_headcount(_row(None, 3), {}), 3)
+		self.assertEqual(row_headcount(_row(None, 3), {}), 3)
 
 
 class TestTheTripSumsWhatTheBoardShows(FrappeTestCase):
@@ -75,12 +75,12 @@ class TestTheTripSumsWhatTheBoardShows(FrappeTestCase):
 		return plan
 
 	def _trips(self, plan, live):
-		real = mod._live_headcounts
-		mod._live_headcounts = lambda names: live
+		real = mod.live_headcounts
+		mod.live_headcounts = lambda rows: live
 		try:
 			return plan._logical_trips()
 		finally:
-			mod._live_headcounts = real
+			mod.live_headcounts = real
 
 	def test_the_run_is_weighed_at_what_it_actually_carries(self):
 		live = {shipment: count for shipment, _stored, count in self.STOPS}
@@ -123,38 +123,39 @@ class TestTheLegWalkReadsTheSameNumbers(FrappeTestCase):
 
 	def _trip(self, live, directions):
 		self._directions = directions
+		del live
 		return frappe._dict(
 			key=("V-1", "MIX-test"),
 			vehicle="V-1",
 			direction=MIXED_DIRECTION,
 			headcount=20,
-			live_headcounts=live,
 			rows=[
 				_row("TS-A", 10, direction="OUTBOUND", stop_index=1, start_time=None, name=None),
 				_row("TS-B", 10, direction="RETURN", stop_index=2, start_time=None, name=None),
 			],
 		)
 
-	def _peak(self, trip):
-		real = mod._shipment_directions
+	def _peak(self, trip, live):
+		real_dirs, real_live = mod._shipment_directions, mod.live_headcounts
 		mod._shipment_directions = lambda names: self._directions
+		mod.live_headcounts = lambda rows: live
 		try:
 			return _trip_peak(trip)
 		finally:
-			mod._shipment_directions = real
+			mod._shipment_directions, mod.live_headcounts = real_dirs, real_live
 
 	def test_a_leg_is_measured_at_the_live_count(self):
-		trip = self._trip({"TS-A": 6, "TS-B": 10}, {"TS-A": "OUTBOUND", "TS-B": "RETURN"})
+		live = {"TS-A": 6, "TS-B": 10}
+		trip = self._trip(live, {"TS-A": "OUTBOUND", "TS-B": "RETURN"})
 
-		self.assertEqual(self._peak(trip), (10, 2))
+		self.assertEqual(self._peak(trip, live), (10, 2))
 
-	def test_a_trip_with_no_live_map_still_walks_its_rows(self):
-		# _trip_peak is called directly from the tests and from the mixed-leg check;
-		# neither may fall over on a trip built without the map.
+	def test_a_trip_whose_cards_are_gone_still_walks_its_rows(self):
+		# Nothing to read the counts off, so the rows' own snapshots stand rather than
+		# the stops silently dropping out of the walk.
 		trip = self._trip({}, {"TS-A": "OUTBOUND", "TS-B": "RETURN"})
-		trip.pop("live_headcounts")
 
-		self.assertEqual(self._peak(trip), (10, 1))
+		self.assertEqual(self._peak(trip, {}), (10, 1))
 
 
 class TestTheConcurrencyCheckStillHolds(FrappeTestCase):

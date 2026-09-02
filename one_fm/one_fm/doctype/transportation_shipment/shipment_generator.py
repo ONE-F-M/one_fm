@@ -200,18 +200,18 @@ def build_demand_descriptors(nested_map: dict) -> list:
 					continue
 				handled = True
 				stop_location = olm_doc.transport_stop_location
-				start_dt = get_datetime(f"2000-01-01 {shift_doc.start_time}") if shift_doc.start_time else None
-				time_key = start_dt.hour if start_dt else 0
-				group_key = (stop_location, time_key)
+				# Grouped on the shift's own window, not the hour it starts in. Grouping
+				# by hour put a 06:30 shift and a 06:59 one on one card, and the card
+				# then had to describe both - min(start) to max(end), a window no shift
+				# actually works, on a card that could name no shift at all.
+				group_key = (stop_location, str(shift_doc.start_time), str(shift_doc.end_time))
 				grp = olm_groups.setdefault(group_key, {
-					"shifts": [], "employees": [], "start": shift_doc.start_time, "end": shift_doc.end_time,
+					"shifts": [], "sites": set(), "employees": [],
+					"start": shift_doc.start_time, "end": shift_doc.end_time,
 				})
 				grp["shifts"].append(shift_name)
+				grp["sites"].add(operations_site)
 				grp["employees"].extend(employee_list)
-				if shift_doc.start_time and (not grp["start"] or shift_doc.start_time < grp["start"]):
-					grp["start"] = shift_doc.start_time
-				if shift_doc.end_time and (not grp["end"] or shift_doc.end_time > grp["end"]):
-					grp["end"] = shift_doc.end_time
 
 			# ── Direct fallback ──
 			if not handled:
@@ -231,17 +231,24 @@ def build_demand_descriptors(nested_map: dict) -> list:
 					})
 
 		# ── Emit aggregated OLM demands for this accommodation ──
-		for (stop_location, time_key), grp in olm_groups.items():
+		for (stop_location, start_key, end_key), grp in olm_groups.items():
 			if not get_coords("Location", stop_location):
 				continue
+			# Several shifts can share one window - different roles finishing together -
+			# so the card names the one it serves when there is one, and lists them all
+			# either way. What it must never do is claim to be ad-hoc: every one of these
+			# comes from an Operations Shift.
+			named = sorted(set(grp["shifts"]))
+			sites = sorted(s for s in grp["sites"] if s)
 			demands.append({
 				"acc_name": acc_name,
 				"accommodation": lookup_id,
-				"operations_shift": None,
-				"operations_site": None,
+				"operations_shift": named[0] if len(named) == 1 else None,
+				"operations_site": sites[0] if len(sites) == 1 else None,
+				"aggregated_shifts": ", ".join(named),
 				"stop_location": stop_location,
 				"routing": "OLM",
-				"group_token": f"GROUP-{time_key}",
+				"group_token": f"GROUP-{start_key}-{end_key}",
 				"start_time": grp["start"],
 				"end_time": grp["end"],
 				"employees": [emp_obj(e) for e in grp["employees"]],
@@ -304,7 +311,8 @@ def _write_shipment(doc, demand: dict, direction: str, roster: list, gen_key: st
 	doc.end_time = demand["end_time"]
 	doc.headcount = len(roster)
 	doc.source_doctype = "Operations Shift"
-	doc.source_docname = demand["operations_shift"]  # blank for aggregated OLM
+	doc.aggregated_shifts = demand.get("aggregated_shifts") or demand["operations_shift"] or ""
+	doc.source_docname = demand["operations_shift"]  # blank when a card serves several
 	doc.is_adhoc_journey = 0
 	doc.generation_key = gen_key
 	doc.pair_group = pair_group
@@ -328,7 +336,10 @@ def generate_transportation_shipments():
 	Entry point for both the daily scheduler and the canvas "Generate" button.
 	Returns a summary dict of what changed.
 	"""
-	# The scheduler runs as Administrator; guard interactive/API calls.
+	# The scheduler runs as Administrator; guard interactive/API calls. The button
+	# lives on the Transportation Schedule canvas, which is the transport team's own
+	# board, so the roles that run it may refresh their own cards (WI-002162) instead
+	# of having to ask a System Manager.
 	if frappe.session.user != "Administrator":
 		frappe.only_for(GENERATE_ROLES)
 
@@ -681,7 +692,7 @@ def _expired_assigned_shipments(cutoff_date) -> set:
 	rows_by = {}
 	for r in frappe.get_all(
 		"Route Plan Assignment",
-		filters={"transportation_shipment": ["in", list(to_date_by)]},
+		filters={"transportation_shipment": ["in", list(to_date_by)], "is_camp_leg": 0},
 		fields=["transportation_shipment", "start_time", "end_time"],
 	):
 		rows_by.setdefault(r.transportation_shipment, []).append(r)

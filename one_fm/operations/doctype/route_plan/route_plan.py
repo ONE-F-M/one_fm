@@ -78,7 +78,7 @@ class RoutePlan(Document):
 		# those so a card never conflicts with itself.
 		vehicle_shipments = {}
 		shipment_names = set()
-		for row in self.assignments:
+		for row in card_rows(self.assignments):
 			if not row.vehicle or not row.transportation_shipment:
 				continue
 			vehicle_shipments.setdefault(row.vehicle, set()).add(row.transportation_shipment)
@@ -114,7 +114,7 @@ class RoutePlan(Document):
 		mirroring the retention lock above.
 		"""
 		by_vehicle = {}
-		for row in self.assignments:
+		for row in card_rows(self.assignments):
 			if row.vehicle:
 				by_vehicle.setdefault(row.vehicle, []).append(row)
 
@@ -211,7 +211,7 @@ class RoutePlan(Document):
 		the journey so the dispatcher can re-drop it cleanly.
 		"""
 		leg_vehicle = {}
-		for row in self.assignments:
+		for row in card_rows(self.assignments):
 			if not row.trip_group or not row.vehicle:
 				continue
 			key = (row.trip_group, _row_direction(row))
@@ -254,6 +254,7 @@ class RoutePlan(Document):
 			return
 
 		limits = _passenger_limits({trip.vehicle for trip in trips})
+		untouched = self._vehicles_this_save_did_not_touch(trips)
 
 		by_vehicle = {}
 		for trip in trips:
@@ -263,6 +264,14 @@ class RoutePlan(Document):
 			limit = limits.get(vehicle)
 			if not limit:
 				# Vehicle master has no seat count configured — nothing to enforce.
+				continue
+
+			if vehicle in untouched:
+				# Nothing was dropped on or taken off this bus in this save, so whatever
+				# it carries it was already carrying and the plan was saved that way. A
+				# roster that has grown since is a real overload, but it is this bus's
+				# problem and the board colours the lane for it - refusing every other
+				# edit on the plan until someone fixes it blocks the wrong person.
 				continue
 
 			# One trip over the limit on its own is reported as the overloaded run
@@ -287,7 +296,7 @@ class RoutePlan(Document):
 					title=_("{0}: Vehicle Capacity Exceeded").format(vehicle),
 				)
 
-	def _logical_trips(self) -> list:
+	def _logical_trips(self, assignments=None) -> list:
 		"""Collapse the assignment rows into the trips a vehicle actually runs.
 
 		Rows sharing a ``(vehicle, trip_group)`` are the stops of one run: their
@@ -296,21 +305,15 @@ class RoutePlan(Document):
 		and is measured leg by leg instead. A row with no ``trip_group`` is a
 		standalone drop and becomes a trip of its own, so it is weighed like any other.
 
-		How many people a stop carries is read off its shipment rather than the row's
-		own stored copy, which is only a snapshot of the moment the card was dropped
-		(see ``_live_headcounts``).
-
 		Each trip carries the daily time window its stops cover and the calendar
 		lifespan they are live for — the two halves of the timestamps a Route Plan
 		Assignment stores (TR-8: date part = multi-day lock, time part = the daily
 		run).
 		"""
-		live_headcounts = _live_headcounts(
-			{row.transportation_shipment for row in self.assignments if row.vehicle}
-		)
-
 		trips = {}
-		for idx, row in enumerate(self.assignments):
+		rows = card_rows(assignments if assignments is not None else self.assignments)
+		live = live_headcounts(rows)
+		for idx, row in enumerate(rows):
 			if not row.vehicle:
 				continue
 			direction = _row_direction(row)
@@ -330,7 +333,7 @@ class RoutePlan(Document):
 					key=key,
 					vehicle=row.vehicle,
 					direction=direction,
-					headcount=_row_headcount(row, live_headcounts),
+					headcount=row_headcount(row, live),
 					start=start,
 					end=end,
 					live_from=live_from,
@@ -338,8 +341,6 @@ class RoutePlan(Document):
 					# Kept so a merged trip can be walked stop by stop (WI-002071);
 					# the summed headcount above is meaningless for one.
 					rows=[row],
-					# Carried so the leg walk reads the same live numbers this sum did.
-					live_headcounts=live_headcounts,
 				)
 				continue
 
@@ -349,7 +350,7 @@ class RoutePlan(Document):
 			# when the Merge Trip modal wrote it back.
 			if direction != trip.direction:
 				trip.direction = MIXED_DIRECTION
-			trip.headcount += _row_headcount(row, live_headcounts)
+			trip.headcount += row_headcount(row, live)
 			trip.start = min(trip.start, start)
 			trip.end = max(trip.end, end)
 			trip.live_from = min(filter(None, [trip.live_from, live_from]), default=None)
@@ -363,6 +364,35 @@ class RoutePlan(Document):
 			trip.occupancy, trip.worst_leg = _trip_peak(trip)
 
 		return runs
+
+	def _vehicles_this_save_did_not_touch(self, trips) -> set:
+		"""Vehicles whose cards are exactly where they were before this save.
+
+		Capacity is judged against the shipments rather than the snapshot on the row, so
+		a roster that grew after a card was placed shows up as an overload on a bus
+		nobody has touched. Judging it on every save turned one such bus into a wall
+		across the whole plan: a drop on a different vehicle could not be saved until the
+		untouched one was fixed. The check is for what a save DOES, so a bus it does
+		nothing to keeps the verdict it was saved with.
+		"""
+		before = self.get_doc_before_save()
+		if not before:
+			return set()
+
+		def placement(rows):
+			by_vehicle = {}
+			for trip in rows:
+				by_vehicle.setdefault(trip.vehicle, set()).update(
+					# The trip's own key is not usable here: a standalone row is keyed by
+					# its position, which moves when an unrelated row is added.
+					(row.trip_group, row.transportation_shipment, row.stop_index)
+					for row in trip.rows
+				)
+			return by_vehicle
+
+		was = placement(self._logical_trips(before.assignments))
+		now = placement(trips)
+		return {vehicle for vehicle, cards in now.items() if was.get(vehicle) == cards}
 
 	def _validate_mixed_trip_legs(self, trip, limit):
 		"""Hold every leg of a merged trip to the seat count (WI-002071).
@@ -609,41 +639,140 @@ def _trip_occupancy(trip) -> int:
 
 
 def _trip_peak(trip):
-	"""(peak occupancy, busiest leg) for one logical trip.
+	"""(peak occupancy, busiest stop) for one logical trip, walked as physical stops.
 
-	A merged trip both drops off and picks up along the way, so its stops are walked in
-	order: the bus leaves the camp carrying every Outward rider, and each stop in turn
-	sheds its Outward riders and takes on its Return ones. Disembarking is applied
-	before boarding at a stop where both happen, since the seats being vacated are
-	available to the people getting on.
+	A card is "these people, from this camp, to this site" - one record, but two things
+	the bus does. Walking the cards assumes everyone is aboard from the moment the run
+	starts, which over-reports the moment a run drops one load before calling at a later
+	camp for the next. Walking the STOPS is what actually happens, and it is the same
+	walk the trip modal shows the operator: the two must not be able to disagree about
+	whether a run fits, or the modal accepts a merge the save then refuses.
 
-	Shared by the per-trip check and the overlapping-trips check, so a merged run is
-	measured the same way wherever it is compared against the seats.
+	Falls back to the card walk when the rows carry no shipments to build stops from - a
+	hand-made row still has a headcount and a direction worth counting.
 	"""
-	if trip.direction != MIXED_DIRECTION:
-		return cint(trip.headcount), 1
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+		build_itinerary,
+		walk_occupancy,
+	)
 
-	# Stop order decides the answer - the same two loads read 3 or 6 depending on whether
-	# the return riders board before or after the outward ones get off. The child-row
-	# name is a random hash, so it can only be the last tie break.
 	by_index = sorted(
 		trip.rows,
 		key=lambda row: (cint(row.stop_index), str(row.start_time or ""), row.name or ""),
 	)
-	directions = _shipment_directions([row.transportation_shipment for row in by_index])
-	live_headcounts = trip.get("live_headcounts") or {}
+	names = [row.transportation_shipment for row in by_index if row.transportation_shipment]
+	if names:
+		cards = _cards_for_itinerary(by_index)
+		if cards:
+			peak, worst, _per_stop = walk_occupancy(build_itinerary(cards))
+			return peak, worst
+
+	if trip.direction != MIXED_DIRECTION:
+		return cint(trip.headcount), 1
+
+	directions = _shipment_directions(names)
+	live = live_headcounts(by_index)
 	stops = [
 		{
-			"headcount": _row_headcount(row, live_headcounts),
-			# A row carrying no shipment still knows its own leg.
+			"headcount": row_headcount(row, live),
 			"boards": (directions.get(row.transportation_shipment) or _row_direction(row))
 			== "RETURN",
 		}
 		for row in by_index
 	]
-
 	peak, worst_leg, _legs = leg_occupancy(stops)
 	return peak, worst_leg
+
+
+def live_headcounts(rows) -> dict:
+	"""{shipment: headcount} read from the shipments these rows point at (#6818).
+
+	A Route Plan Assignment stores a snapshot taken when the card was dropped and never
+	refreshes it, while the board draws its cards from the shipments - so a card that has
+	since gained or lost an employee leaves the plan holding a number nobody can see. It
+	cuts both ways, and the dangerous way is under-counting: a stale row waved a
+	28-passenger load through on a 27-seat bus.
+	"""
+	names = list({row.transportation_shipment for row in card_rows(rows) if row.transportation_shipment})
+	if not names:
+		return {}
+	return {
+		doc.name: cint(doc.headcount)
+		for doc in frappe.get_all(
+			"Transportation Shipment", filters={"name": ["in", names]},
+			fields=["name", "headcount"],
+		)
+	}
+
+
+def row_headcount(row, live) -> int:
+	"""What this row actually carries: the shipment's count, the row's if the card is gone."""
+	if row.transportation_shipment in live:
+		return cint(live[row.transportation_shipment])
+	return cint(row.headcount)
+
+
+def card_rows(rows) -> list:
+	"""The rows that stand for a card, which is every row that decides anything.
+
+	A plan also lists the stops the bus makes that no card is filed against - the
+	accommodation it loads at - so the table reads like the itinerary and the leg out of
+	the camp has somewhere to keep its minutes. Those rows are a description of the run,
+	not a placement: counting one would double a card's riders, and building an itinerary
+	from one would visit its stop twice.
+	"""
+	return [row for row in rows if not cint(row.get("is_camp_leg"))]
+
+
+def _cards_for_itinerary(rows) -> list:
+	"""The rows as card-shaped records build_itinerary can read, in run order.
+
+	The headcount comes from the shipment rather than the row, for the reason
+	live_headcounts explains.
+	"""
+	rows = card_rows(rows)
+	names = [row.transportation_shipment for row in rows if row.transportation_shipment]
+	if not names:
+		return []
+
+	facts = {
+		doc.name: doc
+		for doc in frappe.get_all(
+			"Transportation Shipment",
+			filters={"name": ["in", list(set(names))]},
+			fields=["name", "accommodation", "accommodation_name", "stop_location",
+					"trip_direction", "pre_merge_trip_direction", "start_time", "end_time",
+					"headcount"],
+		)
+	}
+
+	cards = []
+	for row in rows:
+		fact = facts.get(row.transportation_shipment)
+		if not fact:
+			continue
+		cards.append(frappe._dict({
+			"name": fact.name,
+			"accommodation": fact.accommodation,
+			"accommodation_name": fact.accommodation_name,
+			"stop_location": fact.stop_location or row.stop_location,
+			"headcount": cint(fact.headcount) if fact.headcount is not None else cint(row.headcount),
+			"trip_direction": fact.trip_direction,
+			"pre_merge_trip_direction": fact.pre_merge_trip_direction,
+			"start_time": fact.start_time,
+			"end_time": fact.end_time,
+		}))
+
+	# Ordered the way the bus reaches them, which is how the trip modal orders the same
+	# cards. Sorting on the stored stop_index instead let the two build different runs
+	# out of the same cards and reach different peaks - the modal would accept a merge
+	# the save then refused.
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+		arrival_order,
+	)
+
+	cards.sort(key=arrival_order)
+	return cards
 
 
 def _iso_to_date(value):
@@ -671,44 +800,6 @@ def _is_multiday_lock(row) -> bool:
 	"""
 	start, end = _row_date_range(row)
 	return bool(start and end and end > start)
-
-
-def _live_headcounts(shipment_names) -> dict:
-	"""``{shipment: headcount}`` as the shipments stand right now.
-
-	A Route Plan Assignment's own ``headcount`` is a snapshot taken when the card was
-	dropped and is never refreshed afterwards, so a shipment that has since gained or
-	lost an employee leaves the plan holding a number nobody can see: the board reads
-	the shipment and the save read the row, and the two quietly disagreed. It cuts
-	both ways — a stale row that over-counts refuses a bus that has a seat free, and
-	one that under-counts waves an overloaded bus through — so the seats are compared
-	against the shipment, which is the same thing the dispatcher is looking at.
-	"""
-	names = [name for name in shipment_names if name]
-	if not names:
-		return {}
-
-	from frappe.query_builder import DocType
-
-	TransportationShipment = DocType("Transportation Shipment")
-	rows = (
-		frappe.qb.from_(TransportationShipment)
-		.select(TransportationShipment.name, TransportationShipment.headcount)
-		.where(TransportationShipment.name.isin(names))
-	).run(as_dict=True)
-	return {row.name: cint(row.headcount) for row in rows}
-
-
-def _row_headcount(row, live_headcounts) -> int:
-	"""How many people one stop actually carries.
-
-	The shipment is the authority. The row's stored snapshot is the fallback for a
-	stop whose shipment has since been deleted, so a card is never silently read as
-	empty and dropped out of the sum.
-	"""
-	if row.transportation_shipment in live_headcounts:
-		return live_headcounts[row.transportation_shipment]
-	return cint(row.headcount)
 
 
 def _format_lock_date(value) -> str:

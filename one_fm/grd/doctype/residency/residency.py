@@ -38,7 +38,29 @@ class Residency(Document):
         self.set_company_address()
         self.set_company_unified_number()
         self.set_paci_number()
+        self.clear_unticked_exception_details()
         self.validate_exception_details()
+
+    def clear_unticked_exception_details(self):
+        """Empty an exception's details when its box is unticked (WI-002105).
+
+        The fields are hidden when the box is off, so anything left in them is invisible -
+        and a Damj letter or a fine receipt still attached to a record that no longer claims
+        either would go on reaching the costing and the print format. The fine amount goes
+        back to zero rather than blank, because it is a Currency the totals add up.
+
+        Cleared here rather than only in the browser: a record can be unticked by a data
+        import, a patch or the API, none of which run the form's handlers.
+        """
+        if not self.damj_is_applicable:
+            self.original_civil_id = None
+            self.upload_damj_letter = None
+            self.upload_damj_letter_on = None
+
+        if not self.residency_fine_to_be_added:
+            self.residency_fine_amount_kwd = 0
+            self.upload_residency_fine_payment_receipt = None
+            self.upload_residency_fine_payment_receipt_on = None
 
     def validate_exception_details(self):
         """Hold the save until a ticked exception carries its evidence (WI-002022).
