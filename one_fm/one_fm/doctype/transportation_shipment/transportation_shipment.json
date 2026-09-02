@@ -13,6 +13,7 @@
   "operations_role",
   "column_break_hpiz",
   "operations_shift",
+  "aggregated_shifts",
   "operations_site",
   "project",
   "start_time",
@@ -33,6 +34,9 @@
   "requires_vehicle_retention",
   "generation_key",
   "pair_group",
+  "is_split_overflow",
+  "split_parent",
+  "split_root",
   "trip_group",
   "pre_merge_trip_direction",
   "section_break_yujp",
@@ -79,6 +83,13 @@
    "fieldtype": "Link",
    "label": "Operations Shift",
    "options": "Operations Shift"
+  },
+  {
+   "description": "Every Operations Shift whose staff this card carries. One shift for most cards; an OLM stop shared by several roles finishing together lists them all, and then Operations Shift is left blank because no single one is it.",
+   "fieldname": "aggregated_shifts",
+   "fieldtype": "Small Text",
+   "label": "Shifts Served",
+   "read_only": 1
   },
   {
    "fetch_from": "operations_shift.site",
@@ -211,6 +222,30 @@
    "label": "Pair Group",
    "length": 500,
    "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "Set when this card holds the staff that did not fit on the vehicle its parent was assigned to.",
+   "fieldname": "is_split_overflow",
+   "fieldtype": "Check",
+   "label": "Split Overflow",
+   "read_only": 1
+  },
+  {
+   "description": "The card this overflow was taken off.",
+   "fieldname": "split_parent",
+   "fieldtype": "Link",
+   "label": "Split From",
+   "options": "Transportation Shipment",
+   "read_only": 1
+  },
+  {
+   "description": "The card at the top of the split chain, kept through repeated splits so a card can always be traced back to the shift it came from.",
+   "fieldname": "split_root",
+   "fieldtype": "Link",
+   "label": "Original Card",
+   "options": "Transportation Shipment",
    "read_only": 1
   },
   {

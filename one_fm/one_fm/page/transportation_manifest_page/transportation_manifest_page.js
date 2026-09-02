@@ -438,7 +438,7 @@ function renderManifest($container, data) {
 			load: 0
 		});
 
-		return { label, stops, route, vehicle };
+		return { label, stops, route, vehicle, tripLegs: route.tripLegs || {} };
 	}
 
 	// ── INIT ──
@@ -704,10 +704,20 @@ function renderManifest($container, data) {
 				}
 			});
 
+			// A run leaves before its first stop and is not over until the bus is back,
+			// and neither of those is a stop - so taking the earliest and latest stop
+			// reported the run as ending at its last drop-off, standing at a site. The
+			// plan records both; the stops are the fallback for a run saved without them.
+			const legs = (pr.tripLegs || {})[trip.id] || {};
 			const firstTime = tripStops.reduce((min, s) => { const t = new Date(s.time).getTime(); return t < min ? t : min; }, Infinity);
 			const lastTime = tripStops.reduce((max, s) => { const t = new Date(s.time).getTime(); return t > max ? t : max; }, 0);
-			const firstTimeISO = new Date(firstTime).toISOString();
-			const lastTimeISO = new Date(lastTime).toISOString();
+			const firstTimeISO = legs.departure
+				? new Date(legs.departure).toISOString() : new Date(firstTime).toISOString();
+			const lastTimeISO = legs.arrival
+				? new Date(legs.arrival).toISOString() : new Date(lastTime).toISOString();
+			// The camp this run comes back to, which is not always the depot the vehicle
+			// is registered at.
+			const homeCamp = legs.home || legs.camp || accommodation;
 
 			const isMixed = isMixedRun(meta);
 			const hasOutbound = tripStops.some(s => s.direction === "OUTBOUND");
@@ -761,7 +771,8 @@ function renderManifest($container, data) {
 				// The camp-by-camp walk below split that into an outbound pass and a
 				// return pass and listed every stop twice.
 				html += renderMixedItinerary({
-					orderedStops, firstTimeISO, lastTimeISO, accommodation,
+					orderedStops, firstTimeISO, lastTimeISO, accommodation: homeCamp,
+					qoaTime: legs.qoa_time,
 					activeStop, manifestName, vehicleLabel: pr.label, calcTransit
 				});
 			} else {
@@ -770,11 +781,12 @@ function renderManifest($container, data) {
 
 			// Camp block: DEPART banner, then that camp's drop-off stop(s)
 			campGroups.forEach(cg => {
-				html += renderDepartCard(firstTimeISO, cg, activeStop, manifestName, pr.label, false);
+				html += renderDepartCard(firstTimeISO, cg, activeStop, manifestName, pr.label,
+					false, legs.qoa_time);
 				let prevTime = firstTimeISO;
 				(dropByCamp[cg.seq] || []).forEach(item => {
 					html += renderTransit(calcTransit(prevTime, item.stop.time, item.stop));
-					html += renderSiteStopCard(item);
+					html += renderSiteStopCard({ ...item, runStartISO: firstTimeISO });
 					prevTime = item.stop.time;
 				});
 			});
@@ -784,7 +796,7 @@ function renderManifest($container, data) {
 			let prevOtherTime = firstTimeISO;
 			otherStops.forEach(item => {
 				html += renderTransit(calcTransit(prevOtherTime, item.stop.time, item.stop));
-				html += renderSiteStopCard(item);
+				html += renderSiteStopCard({ ...item, runStartISO: firstTimeISO });
 				prevOtherTime = item.stop.time;
 			});
 
@@ -811,7 +823,7 @@ function renderManifest($container, data) {
 			}
 
 			// RETURN card
-			html += renderReturnCard(lastTimeISO, accommodation, returningEmployees);
+			html += renderReturnCard(lastTimeISO, homeCamp, returningEmployees, firstTimeISO);
 
 			}
 
@@ -925,25 +937,44 @@ function renderManifest($container, data) {
 		let html = renderDepartCard(
 			o.firstTimeISO,
 			{ seq: 1, label: o.accommodation, employees: boarding },
-			o.activeStop, o.manifestName, o.vehicleLabel, true
+			o.activeStop, o.manifestName, o.vehicleLabel, true, o.qoaTime
 		);
 
 		let prevTime = o.firstTimeISO;
 		stops.forEach((stop, i) => {
 			html += renderTransit(o.calcTransit(prevTime, stop.time, stop));
-			html += renderSiteStopCard({ stop: stop, siteNum: i + 2 });
+			html += renderSiteStopCard({ stop: stop, siteNum: i + 2, runStartISO: o.firstTimeISO });
 			prevTime = stop.time;
 		});
 
 		html += renderTransit(o.calcTransit(prevTime, o.lastTimeISO));
-		html += renderReturnCard(o.lastTimeISO, o.accommodation, returning);
+		html += renderReturnCard(o.lastTimeISO, o.accommodation, returning, o.firstTimeISO);
 		return html;
 	}
 
 	// Lock state is derived from the manifest's active_stop_sequence:
 	//   seq <  active → Completed (read-only)   seq === active → Active (editable)
 	//   seq === active+1 → next (can Trigger)    seq >  active+1 → Locked
-	function renderDepartCard(time, camp, activeStop, manifestName, vehicleLabel, isMixed) {
+	// A stored Time reads back as HH:MM:SS; the manifest shows clock times.
+	function fmtClockValue(value) {
+		return value ? String(value).slice(0, 5) : "";
+	}
+
+	// AC 1.6: a leg whose arrival crosses midnight is a day later, and has to say so
+	// rather than printing a time that reads as though the bus arrived before it left.
+	function dayOffset(fromISO, toISO) {
+		if (!fromISO || !toISO) return 0;
+		const day = 24 * 3600000;
+		const from = new Date(fromISO), to = new Date(toISO);
+		if (isNaN(from) || isNaN(to)) return 0;
+		return Math.max(0, Math.floor((to - from) / day) || (to.getDate() !== from.getDate() && to > from ? 1 : 0));
+	}
+
+	function rolloverBadge(offset) {
+		return offset > 0 ? `<span class="mfst-stop-tag tag-stop">+${offset} Day</span>` : "";
+	}
+
+	function renderDepartCard(time, camp, activeStop, manifestName, vehicleLabel, isMixed, qoaTime) {
 		const employees = camp.employees || [];
 		const seq = camp.seq || 1;
 		const isCompleted = activeStop && seq < activeStop;
@@ -1014,6 +1045,10 @@ function renderManifest($container, data) {
 					<div class="mfst-stop-card-title">${escHtml(camp.label)}</div>
 					${statusChip}
 				</div>
+				${qoaTime ? `<div class="mfst-stop-card-shift">
+					<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">alarm</span>
+					Driver QOA report time &middot; ${escHtml(fmtClockValue(qoaTime))}
+				</div>` : ""}
 				${actionBtn ? `<div class="mfst-depart-actions">${actionBtn}</div>` : ""}
 				${empHtml}
 			</div>
@@ -1054,6 +1089,7 @@ function renderManifest($container, data) {
 					<div class="mfst-stop-card-time">
 						<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">schedule</span>
 						${fmtTime(stop.time)}
+						${rolloverBadge(dayOffset(item.runStartISO, stop.time))}
 					</div>
 				</div>
 				<div class="mfst-stop-card-title">${escHtml(site)}</div>
@@ -1063,7 +1099,7 @@ function renderManifest($container, data) {
 		`;
 	}
 
-	function renderReturnCard(time, accommodation, employees) {
+	function renderReturnCard(time, accommodation, employees, runStartISO) {
 		let empHtml = "";
 		if (employees.length > 0) {
 			empHtml = `<div class="mfst-stop-emp-section">
@@ -1087,6 +1123,7 @@ function renderManifest($container, data) {
 					<div class="mfst-stop-card-time">
 						<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">schedule</span>
 						${fmtTime(time)}
+						${rolloverBadge(dayOffset(runStartISO, time))}
 					</div>
 				</div>
 				<div class="mfst-stop-card-title">Return to ${accommodation}</div>
