@@ -5,6 +5,9 @@
 // Kept in step with REAPPLY_REASONS in visa_request.py - the server refuses anything else,
 // so a button offered outside these would only produce an error dialog.
 const PAM_REJECTED_STATE = 'Rejected By PAM';
+
+// WI-002313: the state a completed visa can be cancelled from.
+const COMPLETED_STATE = 'Completed';
 const REAPPLY_REASONS = [
 	"The occupation requires amendment to specify the worker's specialization",
 	"The worker's gender does not match the profession"
@@ -13,6 +16,7 @@ const REAPPLY_REASONS = [
 frappe.ui.form.on("Visa Request", {
 	refresh: function(frm) {
 		add_reapply_button(frm);
+		add_visa_cancellation_button(frm);
 	},
 
 	before_workflow_action: async function(frm) {
@@ -218,6 +222,29 @@ function add_reapply_button(frm) {
 				});
 			}
 		);
+	});
+}
+
+
+// WI-002313: a completed visa is the one a recruiter asks to cancel - the workflow's own
+// "Request to Cancel" is offered at Pending Recruiter Confirmation, which is the state
+// before the visa exists to cancel.
+//
+// ponytail: the button is a placeholder. The Visa Cancellation DocType it will raise does
+// not exist yet - the business analyst is creating it - and the Completed state is
+// submitted (docstatus 1) while every cancellation state in the workflow is a draft, so
+// there is no legal transition to send it down either. Replace the handler with the
+// document creation once the DocType lands; the visibility rule above is the AC and stays.
+function add_visa_cancellation_button(frm) {
+	if (frm.is_new()) return;
+	if (frm.doc.workflow_state !== COMPLETED_STATE) return;
+
+	frm.add_custom_button(__('Create Visa Cancellation'), () => {
+		frappe.msgprint({
+			title: __('Not Available Yet'),
+			indicator: 'orange',
+			message: __('The Visa Cancellation process is not set up yet. This button will raise one from {0} once it is.', [frm.doc.name])
+		});
 	});
 }
 
