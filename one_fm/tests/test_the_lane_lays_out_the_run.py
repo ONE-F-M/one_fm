@@ -1,0 +1,189 @@
+# Copyright (c) 2026, ONE FM and contributors
+# See license.txt
+"""The blocks on a lane are a drawing of the minutes, so the arithmetic is tested.
+
+`_retimeTrip` is the only place a run's blocks are positioned. It lives in a Vue app and
+cannot be imported, so the method is lifted out of the source and run in node against a
+fake canvas - which is worth the awkwardness, because every timing bug reported on this
+board so far has been in these few lines.
+"""
+
+import json
+import pathlib
+import shutil
+import subprocess
+
+import frappe
+from frappe.tests.utils import FrappeTestCase
+
+CANVAS = pathlib.Path(frappe.get_app_path(
+	"one_fm", "one_fm", "page", "transportation_schedule", "transportation_schedule.js"
+))
+MINUTE = 60000
+
+
+def _method(name):
+	"""The named method's source, by counting braces from its opening one."""
+	source = CANVAS.read_text()
+	start = source.index(f"{name}(tripId) {{")
+	depth, i = 0, source.index("{", start)
+	while True:
+		if source[i] == "{":
+			depth += 1
+		elif source[i] == "}":
+			depth -= 1
+			if depth == 0:
+				break
+		i += 1
+	return source[source.index("{", start):i + 1]
+
+
+def retime(items, leg_timings=None, own=None):
+	"""Run _retimeTrip over `items` in node and hand back where the blocks landed."""
+	script = f"""
+	const retime = function (tripId) {_method('_retimeTrip')};
+	const canvas = {{
+		swimItems: {json.dumps(items)},
+		legTimings: {json.dumps(leg_timings or {})},
+		_ownDirection: (item) => ({json.dumps(own or {})})[item.cardId] || 'OUTBOUND',
+	}};
+	canvas.swimItems.forEach((i) => {{ i.start = new Date(i.start); i.end = new Date(i.end); }});
+	retime.call(canvas, 'T1');
+	console.log(JSON.stringify(canvas.swimItems.map((i) => ({{
+		cardId: i.cardId, start: i.start.toISOString(), end: i.end.toISOString(),
+	}}))));
+	"""
+	out = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=30)
+	if out.returncode:
+		raise AssertionError(out.stderr)
+	return {row["cardId"]: row for row in json.loads(out.stdout)}
+
+
+def _block(card, stop_index, start, end, transit=0, buffer=0):
+	return {
+		"cardId": card, "tripId": "T1", "stopIndex": stop_index,
+		"start": start, "end": end, "transitMinutes": transit, "bufferMinutes": buffer,
+	}
+
+
+class TestTheRunWalksForward(FrappeTestCase):
+	"""One rule, the server's: a stop's minutes are the leg that BRINGS the bus to it.
+
+	The lane used to walk its own way - the first block pinned at its arrival and every
+	block after it sized by the minutes of the stop before. So the modal said one thing
+	and the blocks said another, and the departure appeared to move on its own.
+	"""
+
+	def setUp(self):
+		if not shutil.which("node"):
+			self.skipTest("node is not on this machine")
+
+	def test_a_block_is_as_long_as_its_own_leg(self):
+		# Arrival = Departure + Buffer + Transit, read literally.
+		placed = retime(
+			[_block("A", 1, "2026-08-18T06:30:00Z", "2026-08-18T06:35:00Z", transit=25, buffer=5)]
+		)
+
+		self.assertEqual(placed["A"]["start"], "2026-08-18T06:30:00.000Z")
+		self.assertEqual(placed["A"]["end"], "2026-08-18T07:00:00.000Z")
+
+	def test_the_next_stop_departs_when_this_one_is_done(self):
+		placed = retime([
+			_block("A", 1, "2026-08-18T06:30:00Z", "2026-08-18T06:35:00Z", transit=25, buffer=5),
+			_block("B", 2, "2026-08-18T09:00:00Z", "2026-08-18T09:05:00Z", transit=10, buffer=5),
+		])
+
+		self.assertEqual(placed["B"]["start"], "2026-08-18T07:00:00.000Z")
+		self.assertEqual(placed["B"]["end"], "2026-08-18T07:15:00.000Z")
+
+	def test_the_first_block_is_not_moved(self):
+		# It is where the run is on the lane; dragging it is how a run is moved, and
+		# nothing else may move it underneath the dispatcher.
+		placed = retime([
+			_block("A", 1, "2026-08-18T06:30:00Z", "2026-08-18T07:00:00Z", transit=90, buffer=0),
+		])
+
+		self.assertEqual(placed["A"]["start"], "2026-08-18T06:30:00.000Z")
+
+	def test_an_untimed_block_keeps_the_width_it_has(self):
+		# A trip saved before the minutes were persisted is not collapsed to nothing.
+		placed = retime([_block("A", 1, "2026-08-18T06:00:00Z", "2026-08-18T07:00:00Z")])
+
+		self.assertEqual(placed["A"]["end"], "2026-08-18T07:00:00.000Z")
+
+	def test_a_return_run_walks_the_same_way(self):
+		# There is no second rule for a return run; there never should have been.
+		placed = retime(
+			[_block("R", 1, "2026-08-18T18:00:00Z", "2026-08-18T18:05:00Z", transit=25, buffer=5)],
+			own={"R": "RETURN"},
+		)
+
+		self.assertEqual(placed["R"]["start"], "2026-08-18T18:00:00.000Z")
+		self.assertEqual(placed["R"]["end"], "2026-08-18T18:30:00.000Z")
+
+
+class TestTheDrawerReadsTheRunInOrder(FrappeTestCase):
+	"""The stops are listed in the order the bus drives them, and the run's two ends
+	are the moment it leaves the camp and the moment it gets back.
+
+	stopIndex is the order the cards were dropped on the lane, not the order of the run:
+	a card added first can be the last stop. Sorted by it, a 07:32 stop was listed above
+	a 07:20 one and the trip timeline read "07:32 to 07:32 (0 min)".
+	"""
+
+	def setUp(self):
+		self.source = CANVAS.read_text()
+
+	def test_the_stops_are_sorted_by_when_the_bus_reaches_them(self):
+		self.assertIn("new Date(a.start) - new Date(b.start)", self.source)
+
+	def test_the_timeline_starts_where_the_bus_leaves_the_camp(self):
+		# Not at the first block: the first block is the first SITE, which the bus
+		# reaches after the camp leg, so the journey read short at both ends.
+		self.assertIn("const stored = this.selectedTripLegs.departure;", self.source)
+		self.assertIn("{{ fmtISO(tripStartsAt()) }}", self.source)
+
+	def test_the_timeline_ends_when_the_bus_is_back(self):
+		self.assertIn("return this.selectedTripLegs.arrival || this.lastStopEndsAt();", self.source)
+
+	def test_the_drive_out_of_the_camp_is_shown_before_the_first_stop(self):
+		# The timeline began at 06:45 and the first stop at 07:15, and the half hour
+		# between them - the drive to it - was accounted for nowhere.
+		self.assertIn("Departure from Camp", self.source)
+		self.assertLess(
+			self.source.index("Departure from Camp"),
+			self.source.index("Stops grouped under their pickup accommodation camp banner"),
+		)
+
+	def test_it_spans_the_departure_to_the_first_stop(self):
+		self.assertIn(
+			"{{ fmtISO(tripStartsAt()) }} &rarr; {{ fmtISO(firstStopStartsAt()) }}",
+			self.source,
+		)
+
+	def test_the_report_time_is_shown_against_the_leg_it_belongs_to(self):
+		# The driver reports before the bus leaves the CAMP, not before a stop it drives
+		# to later - and it was printed against that stop, 15 minutes off.
+		self.assertIn('v-if="stopQoaTime(stop) && !campLegPlaces().length"', self.source)
+
+	def test_a_stops_second_time_names_the_place_it_belongs_to(self):
+		# "Departure -> Target Arrival" on a row headed Siemens reads as the arrival at
+		# Siemens. It is the arrival at the stop AFTER it, so it says which.
+		self.assertNotIn("Departure &rarr; Target Arrival", self.source)
+		self.assertIn("{{ __('Leaves Here') }} &rarr; {{ __('Reaches') }} {{ nextStopName(stop) }}",
+					  self.source)
+
+	def test_the_last_stop_reaches_the_camp(self):
+		# There is always a next place: the run ends by going home.
+		self.assertIn("return (this.selectedTripLegs.home || {}).place || __('Camp');",
+					  self.source)
+
+	def test_the_ride_home_is_shown_before_the_trip_total(self):
+		self.assertIn("Return to Camp", self.source)
+		self.assertLess(
+			self.source.index("Return to Camp"), self.source.index("Trip Total")
+		)
+
+	def test_a_ride_home_with_no_minutes_in_it_is_not_shown(self):
+		# The last drop was already at the camp; the bus is home.
+		self.assertIn('v-if="rideHomeMinutes() > 0"', self.source)

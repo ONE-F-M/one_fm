@@ -147,3 +147,152 @@ class TestAPlacedCardIsNeverReverted(FrappeTestCase):
 		_sync_shipment_statuses([_swim_item(self.leg, "RETURN")])
 
 		self.assertEqual(self._read(self.leg).status, "Unassigned")
+
+
+
+class TestTheRowNamesOneShift(FrappeTestCase):
+	"""The row's `shift` is matched against Employee Schedule, so it must be a name.
+
+	An OLM stop serving several shifts labels its card with all of them. Sent straight
+	to the column that had been carrying a single shift, it overflowed the 140-character
+	field and would have been useless as a lookup even if it fit.
+	"""
+
+	def test_a_shipment_row_takes_the_shift_from_the_document(self):
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			_shift_by_shipment,
+		)
+
+		card = frappe.new_doc("Transportation Shipment")
+		card.status = "Unassigned"
+		card.trip_direction = "Outward"
+		card.operations_shift = frappe.get_all("Operations Shift", limit=1, pluck="name")[0]
+		card.flags.ignore_mandatory = True
+		card.insert(ignore_permissions=True)
+
+		found = _shift_by_shipment([{"cardId": f"TSHIP-{card.name}"}])
+
+		self.assertEqual(found[card.name], card.operations_shift)
+
+	def test_a_card_serving_several_shifts_names_none_of_them(self):
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			_shift_by_shipment,
+		)
+
+		card = frappe.new_doc("Transportation Shipment")
+		card.status = "Unassigned"
+		card.trip_direction = "Outward"
+		card.aggregated_shifts = "A-Afternoon-1, B-Afternoon-1, C-Afternoon-1"
+		card.flags.ignore_mandatory = True
+		card.insert(ignore_permissions=True)
+
+		self.assertNotIn(card.name, _shift_by_shipment([{"cardId": f"TSHIP-{card.name}"}]))
+
+	def test_the_browsers_label_is_never_written_for_a_shipment_row(self):
+		source = frappe.read_file(frappe.get_app_path(
+			"one_fm", "one_fm", "page", "transportation_schedule", "transportation_schedule.py"
+		))
+
+		self.assertIn('shifts.get(shipment, "") if shipment', source)
+
+
+class TestTheManifestReadsTheDayInOrder(FrappeTestCase):
+	"""A vehicle's trips are listed by when each one leaves.
+
+	Sorted by the trip group hash, a 06:48 run could be listed after an 08:27 one - and
+	the vehicle's day then read "08:27 to 07:12", wrapping midnight into a 22h 45m shift
+	on the driver's own page.
+	"""
+
+	def _row(self, trip, stop, start, end):
+		return frappe._dict(
+			card_id=f"TSHIP-{trip}-{stop}", trip_group=trip, stop_index=stop,
+			start_time=start, end_time=end,
+		)
+
+	def test_the_earlier_trip_comes_first_whatever_its_group_is_called(self):
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			manifest_row_order,
+		)
+
+		# "MIX-a..." sorts before "MIX-z..." by name, and after it by clock.
+		late = self._row("MIX-a", 1, "2026-08-31T05:27:00Z", "2026-08-31T05:43:00Z")
+		early = self._row("MIX-z", 1, "2026-08-31T03:48:00Z", "2026-08-31T04:03:00Z")
+
+		ordered = manifest_row_order([late, early])
+
+		self.assertEqual([row.trip_group for row in ordered], ["MIX-z", "MIX-a"])
+
+	def test_the_stops_of_a_trip_follow_the_clock(self):
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			manifest_row_order,
+		)
+
+		# Numbered 5 and 4 by the order they were dropped on the lane, which a re-timed
+		# run leaves out of step with itself - the live plan has runs like this.
+		second = self._row("MIX-a", 4, "2026-08-31T05:43:00Z", "2026-08-31T06:15:00Z")
+		first = self._row("MIX-a", 5, "2026-08-31T05:27:00Z", "2026-08-31T05:43:00Z")
+
+		ordered = manifest_row_order([second, first])
+
+		self.assertEqual([row.stop_index for row in ordered], [5, 4])
+
+	def test_a_standalone_row_is_a_run_of_its_own(self):
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			manifest_row_order,
+		)
+
+		# No trip group: two of them must not be pooled into one run by an empty key.
+		solo_late = frappe._dict(card_id="TSHIP-B", trip_group=None, stop_index=0,
+								 start_time="2026-08-31T09:00:00Z", end_time="2026-08-31T09:30:00Z")
+		solo_early = frappe._dict(card_id="TSHIP-A", trip_group=None, stop_index=0,
+								  start_time="2026-08-31T04:00:00Z", end_time="2026-08-31T04:30:00Z")
+
+		ordered = manifest_row_order([solo_late, solo_early])
+
+		self.assertEqual([row.card_id for row in ordered], ["TSHIP-A", "TSHIP-B"])
+
+
+class TestWhenTheBusIsWhere(FrappeTestCase):
+	"""A row runs from the moment the bus is at its stop to the moment it reaches the
+	next one, and the driver's page has to say which of those is which.
+
+	Reading the end as the drop-off put every stop one leg late: a run that left the camp
+	at 07:45 and reached 360 Car Park at 08:27 was printed as leaving at 08:27 and
+	reaching 360 at 08:58.
+	"""
+
+	def test_an_outward_card_sets_its_riders_down_when_the_bus_gets_there(self):
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			visit_times,
+		)
+
+		boards, alights = visit_times("08:27", "08:58", "OUTBOUND", camp_departure="07:45")
+
+		self.assertEqual((boards, alights), ("07:45", "08:27"))
+
+	def test_they_board_at_the_camp_which_is_before_any_stop(self):
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			visit_times,
+		)
+
+		boards, _ = visit_times("08:58", "09:59", "OUTBOUND", camp_departure="07:45")
+
+		self.assertEqual(boards, "07:45")
+
+	def test_a_return_card_is_collected_at_its_stop_and_carried_home(self):
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			visit_times,
+		)
+
+		self.assertEqual(
+			visit_times("09:59", "10:30", "RETURN", camp_departure="07:45"),
+			("09:59", "10:30"),
+		)
+
+	def test_a_run_with_no_camp_leg_recorded_boards_at_its_first_stop(self):
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			visit_times,
+		)
+
+		self.assertEqual(visit_times("08:27", "08:58", "OUTBOUND"), ("08:27", "08:27"))

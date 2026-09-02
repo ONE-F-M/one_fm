@@ -42,7 +42,11 @@ class TestTheSplit(FrappeTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		frappe.reload_doc("one_fm", "doctype", "transportation_shipment")
+		# NOT reload_doc: it commits, which ends the transaction FrappeTestCase wraps
+		# every test in, and everything inserted afterwards is written for real.
+		# The columns come from `bench migrate`; a site without them skips.
+		if not frappe.get_meta("Transportation Shipment").get_field("split_parent"):
+			raise cls.skipTest(cls, "run `bench migrate`: split_parent missing on Transportation Shipment")
 
 	def setUp(self):
 		self.location = frappe.get_all("Location", limit=1, pluck="name")

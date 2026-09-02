@@ -14,13 +14,15 @@ from frappe.tests.utils import FrappeTestCase
 from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
 	QOA_BUFFER_FIELD,
 	_departure_seconds,
-	_ends_at_base_camp,
+	build_itinerary,
 	day_offset,
 	get_merge_preview,
 	qoa_buffer_minutes,
 	walk_legs,
 )
+from one_fm.operations.doctype.route_plan.route_plan import card_rows
 from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+	_camp_place_for,
 	_stamp_leg_details,
 )
 from one_fm.patches.v15_0.add_transportation_qoa_buffer_to_hr_settings import (
@@ -127,29 +129,39 @@ class TestTheQoaBuffer(FrappeTestCase):
 
 
 class TestTheRunEndsAtTheCamp(FrappeTestCase):
-	"""AC 1.5: a mixed run has to finish by taking its return riders home."""
+	"""AC 1.5, literally now that a run is its stops: the last one is the base camp."""
 
-	def _card(self, direction):
+	def _card(self, camp, site, direction):
 		return frappe._dict({
 			"name": frappe.generate_hash("TS", 6),
-			"trip_direction": direction,
-			"pre_merge_trip_direction": None,
+			"accommodation": camp, "accommodation_name": camp, "stop_location": site,
+			"headcount": 2, "trip_direction": direction, "pre_merge_trip_direction": None,
 		})
 
-	def test_a_mixed_run_ending_on_a_return_leg_is_accepted(self):
-		self.assertTrue(_ends_at_base_camp([self._card("Outward"), self._card("Return")]))
+	def test_every_run_finishes_back_at_the_camp_it_started_from(self):
+		stops = build_itinerary([
+			self._card("Camp 1", "Site A", "Outward"),
+			self._card("Camp 1", "Site A", "Return"),
+		])
 
-	def test_a_mixed_run_ending_on_an_outward_leg_is_refused(self):
-		# It would leave the return riders at a site with the bus driving away.
-		self.assertFalse(_ends_at_base_camp([self._card("Return"), self._card("Outward")]))
+		self.assertEqual(stops[-1]["kind"], "home")
+		self.assertEqual(stops[-1]["place"], "Camp 1")
 
-	def test_a_plain_outbound_run_is_left_alone(self):
-		# A drop-off run legitimately finishes at a site; holding it to this would refuse
-		# every multi-stop outbound run on the board.
-		self.assertTrue(_ends_at_base_camp([self._card("Outward"), self._card("Outward")]))
+	def test_a_plain_outbound_run_still_drives_home_empty(self):
+		# The sheet shows it too: the last row is the camp with nobody aboard.
+		stops = build_itinerary([self._card("Camp 1", "Site A", "Outward")])
 
-	def test_a_plain_return_run_is_left_alone(self):
-		self.assertTrue(_ends_at_base_camp([self._card("Return"), self._card("Return")]))
+		self.assertEqual(stops[-1]["kind"], "home")
+		self.assertEqual(stops[-1]["drop_off_count"], 0)
+
+	def test_a_run_with_no_camp_has_nowhere_to_go_home_to(self):
+		stops = build_itinerary([frappe._dict({
+			"name": "X", "accommodation": None, "accommodation_name": None,
+			"stop_location": "Site A", "headcount": 2,
+			"trip_direction": "Outward", "pre_merge_trip_direction": None,
+		})])
+
+		self.assertFalse([s for s in stops if s["kind"] == "home"])
 
 
 class TestThePreviewTheModalDraws(FrappeTestCase):
@@ -212,16 +224,18 @@ class TestThePreviewTheModalDraws(FrappeTestCase):
 		self.assertFalse(stops[1]["is_accommodation_origin"])
 		self.assertIsNone(stops[1]["qoa_time"])
 
-	def test_each_leg_names_where_it_comes_from_and_goes_to(self):
+	def test_each_stop_names_itself_and_where_the_bus_goes_next(self):
 		stops = self._preview()["stops"]
 
-		# An outward leg loads at its camp; a return leg loads at the site it collects
-		# from. "Next stop" is the following leg's origin, not this card's own site -
-		# a run that collects from three camps before dropping anyone needs the two to
-		# be different columns.
-		self.assertEqual(stops[1]["origin_location"], stops[1]["stop_location"])
-		self.assertEqual(stops[0]["next_stop_location"], stops[1]["origin_location"])
-		self.assertEqual(stops[0]["shift_location"], stops[0]["stop_location"])
+		# A row is a place the bus stops at now. "Next stop" is where it goes from here,
+		# and "shift location" is where the riders it serves are headed - which is a
+		# different thing the moment a run collects from several camps before dropping
+		# anyone.
+		for here, onward in zip(stops, stops[1:]):
+			self.assertEqual(here["next_stop_location"], onward["place"])
+		self.assertIsNone(stops[-1]["next_stop_location"])
+		self.assertEqual(stops[0]["kind"], "camp")
+		self.assertEqual(stops[-1]["kind"], "home")
 
 	def test_the_modal_is_told_the_run_ends_at_the_camp(self):
 		preview = self._preview()
@@ -310,7 +324,11 @@ class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		frappe.reload_doc("operations", "doctype", "route_plan_assignment")
+		# NOT reload_doc: it commits, which ends the transaction FrappeTestCase wraps
+		# every test in, and everything inserted afterwards is written for real.
+		# The columns come from `bench migrate`; a site without them skips.
+		if not frappe.get_meta("Route Plan Assignment").get_field("stop_index"):
+			raise cls.skipTest(cls, "run `bench migrate`: stop_index missing on Route Plan Assignment")
 
 	def setUp(self):
 		locations = frappe.get_all("Location", limit=1, pluck="name")
@@ -332,15 +350,26 @@ class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
 		doc.trip_direction = direction
 		doc.start_time = start
 		doc.end_time = "20:00:00" if direction == "Outward" else "08:00:00"
-		doc.headcount = 4
 		doc.stop_location = self.site
 		doc.accommodation = self.camp
+		# Riders, not just a number: the controller derives headcount from this table on
+		# every save, so a fixture that only sets the field is a card carrying nobody -
+		# and the seat walk now reads the shipment rather than the stored row (#6818).
+		for n in range(4):
+			doc.append("transportation_shipment_employee", {
+				"employee_id": f"{direction[:3].upper()}-{n:02d}",
+				"employee_name": f"Rider {n}",
+			})
 		doc.generation_key = frappe.generate_hash("TS-LEG", 10)
 		doc.flags.ignore_mandatory = True
 		doc.insert(ignore_permissions=True)
 		return doc.name
 
-	def _plan(self):
+	def _plan(self, leg_timings=None):
+		"""The card rows of a saved run - the stops the bus makes that carry a card."""
+		return card_rows(self._doc(leg_timings).assignments)
+
+	def _doc(self, leg_timings=None):
 		"""A handover: 4 dropped and 4 collected at the same site, on one vehicle."""
 		vehicle = frappe.get_all("Vehicle", filters={"transport_stop_vehicle": 1},
 								 limit=1, pluck="name")
@@ -361,8 +390,90 @@ class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
 				"start_time": "2026-08-18T05:00:00.000Z",
 				"end_time": "2026-08-18T06:00:00.000Z",
 			})
-		_stamp_leg_details(doc)
-		return doc.assignments
+		_stamp_leg_details(doc, leg_timings)
+		return doc
+
+	def test_the_camp_the_bus_loads_at_is_a_row_of_its_own(self):
+		# The plan lists every stop of the run, so the table reads like the sheet. The
+		# camp is a stop no card is filed against, and before this it had no row at all.
+		camp = [
+			row for row in self._doc().assignments
+			if row.is_camp_leg and not row.is_home_leg
+		]
+
+		self.assertEqual(len(camp), 1)
+		self.assertEqual(camp[0].action_type, "Boarding")
+		# The camp is the first thing the bus does, before any site.
+		self.assertEqual(camp[0].stop_index, 1)
+
+	def test_a_camp_row_carries_no_riders_of_its_own(self):
+		# It describes a stop, it is not a placement: a headcount here would be counted a
+		# second time by everything that sums the column.
+		camp = next(row for row in self._doc().assignments
+					if row.is_camp_leg and not row.is_home_leg)
+
+		self.assertEqual(camp.headcount, 0)
+
+	def test_the_camp_row_keeps_the_minutes_typed_against_it(self):
+		# The whole point: the drive out of the camp had nowhere to be recorded, so the
+		# Trip Builder took the numbers and the plan forgot them.
+		place = _camp_place_for(frappe._dict(accommodation=self.camp, accommodation_name=None))
+		camp = next(
+			row for row in self._doc({"RUN-1": {"camps": {place: {
+				"transit_minutes": 25, "buffer_minutes": 5,
+			}}}}).assignments
+			if row.is_camp_leg and not row.is_home_leg
+		)
+
+		self.assertEqual((camp.transit_minutes, camp.buffer_minutes), (25, 5))
+
+	def test_the_camp_row_keeps_the_departure_the_dispatcher_stated(self):
+		# It cannot be read back off the blocks: the first block is the first SITE, which
+		# the bus reaches after the camp leg, so a reload would guess it wrong.
+		camp = next(
+			row for row in self._doc({"RUN-1": {
+				"departure": "2026-08-18T04:30:00.000Z", "camps": {},
+			}}).assignments
+			if row.is_camp_leg and not row.is_home_leg
+		)
+
+		self.assertEqual(camp.start_time, "2026-08-18T04:30:00.000Z")
+
+	def test_the_driver_reports_before_the_bus_leaves_the_camp(self):
+		# Not before the stop it drives to: the report time was read off the first block,
+		# which is when the bus REACHES the first site, so it came out one camp leg late.
+		# 04:30Z is 07:30 in Kuwait, less the 15-minute HR buffer.
+		camp = next(row for row in self._doc({"RUN-1": {
+			"departure": "2026-08-18T04:30:00.000Z", "camps": {},
+		}}).assignments if row.is_camp_leg and not row.is_home_leg)
+
+		self.assertEqual(str(camp.qoa_time), "07:15:00")
+
+	def test_the_ride_home_is_a_row_of_its_own(self):
+		# The last thing the bus does, and the only leg nothing is dropped at - so the
+		# drawer had nothing to show for the drive back and the run appeared to end at
+		# its last site.
+		if not frappe.get_meta("Route Plan Assignment").get_field("is_home_leg"):
+			self.skipTest("run `bench migrate`: is_home_leg missing on Route Plan Assignment")
+
+		home = [row for row in self._doc({"RUN-1": {
+			"arrival": "2026-08-18T09:30:00.000Z",
+			"home": {"transit_minutes": 26, "buffer_minutes": 0},
+		}}).assignments if row.is_home_leg]
+
+		self.assertEqual(len(home), 1)
+		self.assertEqual(home[0].end_time, "2026-08-18T09:30:00.000Z")
+		self.assertEqual(home[0].transit_minutes, 26)
+		self.assertEqual(home[0].headcount, 0)
+
+	def test_the_camp_row_names_the_journey_it_belongs_to(self):
+		# Optional link, per the dispatcher: the row can be traced back to a card without
+		# ever standing in for one.
+		camp = next(row for row in self._doc().assignments
+					if row.is_camp_leg and not row.is_home_leg)
+
+		self.assertEqual(camp.trip_group, "RUN-1")
+		self.assertIn(camp.transportation_shipment, (self.drop, self.collect))
 
 	def test_a_stop_that_sheds_and_takes_on_is_combined(self):
 		# Both movements happen at one place, which is what a handover is.
@@ -375,11 +486,15 @@ class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
 		self.assertEqual((collected.drop_off_count, collected.boarding_count), (0, 4))
 
 	def test_occupancy_is_walked_disembark_first(self):
-		# 4 off before 4 on, so the bus never holds 8 - the same walk the seat check uses.
+		# Both cards are served at the same place, so both rows describe that one stop:
+		# 4 off, then 4 on, leaving 4 aboard. The bus never holds 8, which is the point -
+		# and it is the same walk the seat check and the trip modal use.
 		dropped, collected = self._plan()
 
-		self.assertEqual(dropped.current_passenger_count, 0)
+		self.assertEqual(dropped.current_passenger_count, 4)
 		self.assertEqual(collected.current_passenger_count, 4)
+		self.assertEqual(dropped.stop_index, collected.stop_index)
+		self.assertEqual(dropped.action_type, "Combined")
 
 	def test_only_the_leg_that_leaves_the_camp_reports(self):
 		dropped, collected = self._plan()
@@ -403,3 +518,26 @@ class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
 		dropped, _collected = self._plan()
 
 		self.assertEqual(str(dropped.shift_start_time), "8:00:00")
+
+
+class TestTheManifestPrintsTheCascade(FrappeTestCase):
+	"""WI-002151's manifest AC: what a driver reads has to be what the modal calculated."""
+
+	def _source(self, *path):
+		return frappe.read_file(frappe.get_app_path("one_fm", *path))
+
+	def test_a_stop_prints_its_scheduled_arrival(self):
+		# It printed an outward leg's DEPARTURE before, and in UTC. end_time is when the
+		# bus reaches this leg's stop whichever way its riders travel.
+		source = self._source("one_fm", "doctype", "transportation_manifest", "manifest_sync.py")
+
+		self.assertIn("time_str = _time_field(_local_seconds(a_row.end_time))", source)
+		self.assertNotIn(
+			'time_str = a_row.end_time if direction == "RETURN" else a_row.start_time', source
+		)
+
+	def test_the_driver_report_time_reaches_the_sheet(self):
+		source = self._source("one_fm", "doctype", "transportation_manifest", "manifest_sheet.py")
+
+		self.assertIn('"qoa_time"', source)
+		self.assertIn("action_type", source)
