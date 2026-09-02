@@ -4,7 +4,12 @@ from frappe import _
 from frappe.utils import cint
 from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
 from one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log import get_handover_windows
-from one_fm.operations.doctype.route_plan.route_plan import _card_direction, card_rows
+from one_fm.operations.doctype.route_plan.route_plan import (
+    _card_direction,
+    card_rows,
+    live_headcounts,
+    row_headcount,
+)
 from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
     qoa_buffer_minutes,
 )
@@ -1263,6 +1268,13 @@ def load_assignments(plan_name: str = ""):
     doc = frappe.get_doc("Route Plan", plan_name)
     doc.check_permission("read")
 
+    # A saved row's ``headcount`` is a snapshot of the moment the card was dropped and
+    # is never refreshed, so a shipment that has since gained or lost an employee left
+    # the timeline block and the client-side seat guard reading a number the sidebar
+    # (which loads the shipment) already disagreed with. The shipment is the authority
+    # here for the same reason it is on the Route Plan save.
+    live = live_headcounts(doc.assignments)
+
     swim_items = []
     assigned_card_ids = set()
     # The minutes of the legs no card is filed against, keyed by the run and the camp
@@ -1304,7 +1316,7 @@ def load_assignments(plan_name: str = ""):
             "direction": row.direction,
             "start":     row.start_time,
             "end":       row.end_time,
-            "headcount": row.headcount or 0,
+            "headcount": row_headcount(row, live),
             "conflict":  False,
             "tripId":    row.trip_group or None,
             "tripName":  row.trip_name or None,
