@@ -371,6 +371,7 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:!doc.amendment_no",
    "fieldname": "attach_invoice",
    "fieldtype": "Attach",
    "label": "Upload Payment Invoice"
@@ -990,7 +991,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-29 10:00:00.000000",
+ "modified": "2026-09-02 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
