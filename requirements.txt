@@ -4,7 +4,7 @@ mindee==4.28.2
 twilio>=8.5.0,<10
 pandas>=3.0.0,<4
 deep-translator==1.11.4
-firebase-admin==6.5.0
+firebase-admin==7.4.0
 google-cloud-core>=2.3.3,<3
 google-cloud-firestore==2.13.0
 google-auth>=2.34.0
