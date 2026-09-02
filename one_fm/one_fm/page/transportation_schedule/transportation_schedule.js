@@ -1246,6 +1246,24 @@ function mountRoutePlannerApp(wrapper, data) {
                     ? `<div class="alert alert-warning p-3 mb-3 small">${esc(p.route_message)}</div>`
                     : '';
 
+                // AC 3.6: a pickup the bus has to drive to cannot be left untimed.
+                const handoverBanner = p.handover_message
+                    ? `<div class="alert alert-warning p-3 mb-3 small">${esc(p.handover_message)}</div>`
+                    : '';
+
+                // AC 3.1: whether the two shifts actually hand over. Shown, not enforced —
+                // a bus that waits between the drop and the pickup is a decision, not an
+                // error, and the buffer minutes are where that wait is recorded.
+                const al = p.shift_alignment || {};
+                const alignmentNote = !al.applies ? '' : `
+                    <div class="small ${al.aligned ? 'text-muted' : 'text-warning'} mb-3">
+                        ${__('Shift handover')}: ${esc(al.outbound_shift_start)}
+                        ${__('out')} &middot; ${esc(al.return_shift_end)} ${__('back')}
+                        ${al.aligned
+                            ? `&middot; ${__('shifts line up')}`
+                            : `&middot; ${esc(al.message)}`}
+                    </div>`;
+
                 return `
                     <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
                         <span style="background:#819171;color:#fff;font-weight:700;font-size:12px;padding:3px 10px;border-radius:6px">MIXED</span>
@@ -1256,6 +1274,8 @@ function mountRoutePlannerApp(wrapper, data) {
                     <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:6px">Itinerary</div>
                     ${stops}
                     ${routeBanner}
+                    ${handoverBanner}
+                    ${alignmentNote}
                     <div class="text-muted small font-weight-bold text-uppercase mb-2 mt-3">
                         ${__('Legs — arrival is calculated forward from the departure above')}
                     </div>

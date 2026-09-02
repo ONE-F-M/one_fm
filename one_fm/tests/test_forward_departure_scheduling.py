@@ -310,7 +310,7 @@ class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		frappe.reload_doc("one_fm", "doctype", "route_plan_assignment")
+		frappe.reload_doc("operations", "doctype", "route_plan_assignment")
 
 	def setUp(self):
 		locations = frappe.get_all("Location", limit=1, pluck="name")
