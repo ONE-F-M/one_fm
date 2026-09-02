@@ -52,7 +52,7 @@ class TestMedicalInsuranceInitialState(FrappeTestCase):
 	def test_every_other_permit_goes_straight_to_the_pro(self):
 		"""Draft is the workflow's first state now, so this is what stops it becoming the
 		default for a renewal or a transfer."""
-		for work_permit_type in ("Renewal Non Kuwaiti", "Local Transfer"):
+		for work_permit_type in ("Renewal Expat", "Local Transfer"):
 			with self.subTest(work_permit_type=work_permit_type):
 				self.assertEqual(initial_workflow_state(work_permit_type), APPLY_ONLINE_BY_PRO)
 

@@ -109,12 +109,13 @@ def get_hr_settings_custom_fields():
                 "fieldname": "renewal_extension_costing_section",
                 "fieldtype": "Section Break",
                 "insert_after": "paci_fine_amount_kwd",
-                "label": "Renewal Extension Costing"
+                "label": "HR Costing"
             },
             {
                 "fieldname": "renewal_extension_cost",
                 "fieldtype": "Table",
                 "insert_after": "renewal_extension_costing_section",
+                "label": "HR Costing",
                 "options": "GRD Renewal Extension Cost"
             },
             {
