@@ -1416,6 +1416,11 @@ def get_manifest_data_for_plan(plan_name: str):
 		if cint(row.is_camp_leg) and row.vehicle:
 			leg_rows.setdefault(row.vehicle, []).append(row)
 			if not cint(row.is_home_leg) and row.trip_group and row.start_time:
+				# Per camp, not per run: a bus that loads at two camps leaves the second
+				# when it gets there. Keyed by the run alone, both camps printed the same
+				# departure on the driver's page.
+				place = row.origin_location or row.stop_location
+				camp_departure[(row.trip_group, place)] = row.start_time
 				held = camp_departure.get(row.trip_group)
 				camp_departure[row.trip_group] = min(held, row.start_time) if held else row.start_time
 	if not rows:
@@ -1803,8 +1808,12 @@ def get_manifest_data_for_plan(plan_name: str):
 
 			own_dir = _own_dir_by_shipment.get(row.transportation_shipment) \
 				or _normalize_direction(row.direction)
+			# The camp THIS card boards at, falling back to the run's own departure for a
+			# card whose camp has no leg recorded.
 			boards_at, alights_at = visit_times(
-				i_s, i_e, own_dir, camp_departure.get(row.trip_group)
+				i_s, i_e, own_dir,
+				camp_departure.get((row.trip_group, row.origin_location))
+				or camp_departure.get(row.trip_group),
 			)
 
 			visits.append({
@@ -2374,26 +2383,20 @@ def _stamp_leg_details(doc, leg_timings=None):
 			for card in stop["boarding"]:
 				serves[card.name] = (stop, per_stop[position])
 
-		# The first card out of each camp, and when the bus leaves that camp - which is
-		# the earliest leg belonging to a card boarding there, not this card's own.
-		camp_first, camp_departs = {}, {}
-		# When the dispatcher has stated a departure, that IS when the bus leaves the
-		# first camp. Reading it off the blocks gave the moment the bus reaches the first
-		# SITE instead, so the driver's report time came out one camp leg too late.
-		stated = _local_seconds((leg_timings or {}).get(group_key, {}).get("departure"))
+		# The first card out of each camp, and when the bus leaves each one. A run can
+		# load at more than one camp, and it leaves the second when it gets there - not
+		# when it left the first. Stamping the stated departure on every camp had two
+		# camps of one run both reporting at 07:45 on the driver's page, and gave the
+		# second camp a QOA measured off a site it reaches an hour later.
+		held = (leg_timings or {}).get(group_key, {})
+		camp_first, camp_departs = {}, _walk_camp_departures(
+			itinerary, ordered, _local_seconds(held.get("departure")), held.get("camps") or {}
+		)
 		for stop in itinerary:
 			if stop["kind"] != CAMP_STOP or stop["place"] in camp_first:
 				continue
 			boarding = [card.name for card in stop["boarding"]]
 			camp_first[stop["place"]] = boarding[0] if boarding else None
-			leaving = [
-				_local_seconds(row.start_time) for row in ordered
-				if row.transportation_shipment in boarding and _local_seconds(row.start_time) is not None
-			]
-			camp_departs[stop["place"]] = (
-				stated if (stated is not None and not camp_departs)
-				else (min(leaving) if leaving else None)
-			)
 
 		for row in ordered:
 			card = by_name[row.transportation_shipment]
@@ -2442,6 +2445,68 @@ def camp_leg_group(card_id) -> str:
 	return str(card_id or "").split("|")[1] if "|" in str(card_id or "") else ""
 
 
+def _walk_camp_departures(itinerary, ordered, departure, minutes) -> dict:
+	"""{camp place: when the bus leaves it}, chained through the camps in order.
+
+	The camps are the front of a run: the bus loads at each in turn and only then calls
+	at its first site. So the second camp's departure is the first one's plus the drive
+	between them, and the chain has to land on the first card's own start - which is
+	where the canvas already put it, from the same numbers.
+
+	Falls back to the first card's start for every camp when no departure was stated,
+	which is a run saved before the camp legs were recorded.
+	"""
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import CAMP_STOP
+
+	camps, seen = [], set()
+	for stop in itinerary:
+		if stop["kind"] == CAMP_STOP and stop["place"] not in seen:
+			seen.add(stop["place"])
+			camps.append(stop["place"])
+	if not camps:
+		return {}
+
+	first_stop = next(
+		(_local_seconds(row.start_time) for row in ordered
+		 if _local_seconds(row.start_time) is not None), None
+	)
+	if departure is None:
+		return {place: first_stop for place in camps}
+
+	departs, cursor = {}, departure
+	for place in camps:
+		departs[place] = cursor
+		leg = (minutes.get(place) or {})
+		cursor += (cint(leg.get("transit_minutes")) + cint(leg.get("buffer_minutes"))) * 60
+
+	# The last camp hands over to the first site. If the minutes do not add up to it -
+	# a leg never timed - the chain still ends where the run really starts calling.
+	if first_stop is not None and camps:
+		last = camps[-1]
+		if departs[last] > first_stop:
+			departs[last] = first_stop
+	return departs
+
+
+def _time_stamp(ordered, seconds):
+	"""A local second-of-day put back onto the run's own date, stored as the rows are.
+
+	The rows carry UTC and everything a driver reads is local, so a time worked out in
+	local seconds has to travel back the same way `_local_seconds` brought it out.
+	"""
+	if seconds is None or not ordered:
+		return None
+	anchor = ordered[0].start_time
+	base = _local_seconds(anchor)
+	if base is None:
+		return None
+	from datetime import timedelta as _delta
+
+	text = str(anchor).replace("T", " ").replace("Z", "").split(".")[0]
+	moved = frappe.utils.get_datetime(text) + _delta(seconds=seconds - base)
+	return moved.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+
 def _camp_leg_rows(itinerary, ordered, per_stop, vehicle, camp_departs,
 				   buffer_minutes, limits, group_key, minutes=None) -> list:
 	"""The rows for the stops no card is filed against: the camps the bus loads at.
@@ -2464,6 +2529,11 @@ def _camp_leg_rows(itinerary, ordered, per_stop, vehicle, camp_departs,
 	rows = []
 	seen = set()
 	first = ordered[0]
+	camp_order = [
+		stop["place"] for n, stop in enumerate(itinerary)
+		if stop["kind"] == CAMP_STOP
+		and stop["place"] not in {s["place"] for s in itinerary[:n] if s["kind"] == CAMP_STOP}
+	]
 	for position, stop in enumerate(itinerary):
 		homeward = stop["kind"] == HOME_STOP
 		if not homeward and (stop["kind"] != CAMP_STOP or stop["place"] in seen):
@@ -2476,13 +2546,21 @@ def _camp_leg_rows(itinerary, ordered, per_stop, vehicle, camp_departs,
 			((minutes or {}).get("home") or {}) if homeward
 			else ((minutes or {}).get("camps") or {}).get(stop["place"]) or {}
 		)
+		# Where this camp hands over: the next camp, or the first site if it is the last.
+		next_departure = next(
+			(camp_departs[place] for place in camp_order[camp_order.index(stop["place"]) + 1:]
+			 if place in camp_departs), None
+		) if not homeward and stop["place"] in camp_order else None
 		# The ride home is the last thing the bus does and nothing is dropped there, so
 		# without a row of its own the run simply stopped at its last site and the drawer
-		# had nothing to show for the drive back. The camp is the first.
+		# had nothing to show for the drive back. The camps are the front of it, each
+		# leaving when the bus gets there and handing over to the next stop.
 		window = (
 			(ordered[-1].end_time, (minutes or {}).get("arrival")) if homeward
-			else ((minutes or {}).get("departure") or (serving or first).start_time,
-				  (serving or first).start_time)
+			else (_time_stamp(ordered, camp_departs.get(stop["place"])) or first.start_time,
+				  # The last camp hands over to the first SITE, not to the card that
+				  # happens to board there - that one can be dropped much later.
+				  _time_stamp(ordered, next_departure) or first.start_time)
 		)
 		rows.append({
 			"card_id": f"{CAMP_LEG_PREFIX}|{group_key}|{stop['stop_index']}",
