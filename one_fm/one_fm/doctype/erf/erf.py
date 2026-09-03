@@ -139,7 +139,14 @@ class ERF(Document):
 					frappe.throw(_("Select Language for Speak, Read or Write.!"))
 
 	def validate_date(self):
-		if getdate(self.erf_initiation) > getdate(self.expected_date_of_deployment):
+		# WI-002316: the deployment date is not always asked for any more, and getdate()
+		# reads an empty one as today - so an ERF with no date was being measured against
+		# today's date and told its own initiation date was too late. There is nothing to
+		# check when the field is blank.
+		if not self.expected_date_of_deployment:
+			return
+
+		if self.erf_initiation and getdate(self.erf_initiation) > getdate(self.expected_date_of_deployment):
 			frappe.throw(_("Expected Date of Deployment of an ERF cannot be before ERF Initiation Date"))
 		if getdate(self.expected_date_of_deployment) < getdate(today()):
 			frappe.throw(_("Expected Date of Deployment of an ERF cannot be before Today"))
@@ -371,9 +378,36 @@ class ERF(Document):
 
 
 
+# What an ERF falls back to when Hiring Settings names no default. The role has existed
+# since v1_0's add_erf_approver_role patch; naming it here means a site that has never
+# opened Hiring Settings still routes its ERFs somewhere.
+DEFAULT_ERF_APPROVER_ROLE = 'ERF Approver'
+
+
+def get_erf_approver_role(reason_for_request):
+	"""The role that approves an ERF raised for this reason (WI-002316).
+
+	Read from Hiring Settings rather than matched against a hard-coded option value. The
+	old rule was `'Unplanned ERF Approver' if reason == 'UnPlanned' else 'ERF Approver'`,
+	which quietly tied the approver to one spelling of one Select option: renaming or
+	removing that option sent every ERF to the general approver and left the specialised
+	role unreachable, with nothing to say so.
+
+	A reason with no rule configured goes to the default, so a reason added to the field
+	needs no code change to route.
+	"""
+	settings = frappe.get_cached_doc('Hiring Settings')
+
+	if reason_for_request:
+		for rule in settings.get('erf_approver_rules') or []:
+			if rule.reason_for_request == reason_for_request and rule.approver_role:
+				return rule.approver_role
+
+	return settings.get('default_erf_approver_role') or DEFAULT_ERF_APPROVER_ROLE
+
+
 def get_erf_approver(reason_for_request):
-	erf_approver_role = 'Unplanned ERF Approver' if reason_for_request == 'UnPlanned' else 'ERF Approver'
-	return get_users_with_role(erf_approver_role)
+	return get_users_with_role(get_erf_approver_role(reason_for_request))
 
 def create_job_opening_from_erf(erf):
 	job_opening = frappe.new_doc("Job Opening")

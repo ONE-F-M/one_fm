@@ -9,6 +9,9 @@
   "hr_for_a_quick_workshop",
   "hrm_to_fill_hr_and_salary_compensation",
   "close_erf_automatically",
+  "erf_approver_section",
+  "default_erf_approver_role",
+  "erf_approver_rules",
   "default_hr_user",
   "column_break_5",
   "do_not_notify_requester",
@@ -120,6 +123,25 @@
    "fieldname": "close_erf_automatically",
    "fieldtype": "Check",
    "label": "Close ERF Automatically"
+  },
+  {
+   "fieldname": "erf_approver_section",
+   "fieldtype": "Section Break",
+   "label": "ERF Approval Routing"
+  },
+  {
+   "description": "Who approves an ERF whose Reason for Request has no rule below.",
+   "fieldname": "default_erf_approver_role",
+   "fieldtype": "Link",
+   "label": "Default ERF Approver Role",
+   "options": "Role"
+  },
+  {
+   "description": "Send an ERF to a different role for a particular Reason for Request. A reason with no rule here goes to the default above, so a reason added to the ERF field needs no code change to route.",
+   "fieldname": "erf_approver_rules",
+   "fieldtype": "Table",
+   "label": "ERF Approver Rules",
+   "options": "ERF Approver Rule"
   },
   {
    "fieldname": "default_hr_user",
@@ -296,7 +318,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-01-06 09:07:14.570098",
+ "modified": "2026-09-03 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Hiring Settings",
