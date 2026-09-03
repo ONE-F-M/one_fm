@@ -1,7 +1,7 @@
 {
  "absolute_value": 0,
  "align_labels_right": 0,
- "creation": "2025-09-08 13:33:19.368265",
+ "creation": "2026-09-03 10:00:00.000000",
  "css": "/* ==== Print Format Styles Start (Affecting the printed/pdf report) === */\n  .print-format {\n    /* Margin should be separate because frappe is reading styles like this */\n    margin-left: 5mm;\n    margin-right: 5mm;\n    margin-top: 10mm;\n    margin-bottom: 0mm;\n    font-size: 7px !important;\n    font-family: \"Readex Pro\", sans-serif;\n  }\n\n  /* Override the existing styles */\n  .print-format td img {\n    max-height: 50px;\n    max-width: 100%;\n    height: auto !important;\n    width: auto !important;\n    object-fit: contain;\n    display: block;\n    margin: auto; \n  }\n  /* === Print Format Styles End === */\n\n  .attendance-table {\n    width: 100%;\n    border-collapse: collapse;\n    table-layout: fixed;\n    border: 1px solid #333;\n  }\n\n  .attendance-table th,\n  .attendance-table td {\n    border: 1px solid #333;\n    padding: 4px !important;\n    text-align: center !important;\n    vertical-align: middle !important;\n  }\n\n  .attendance-table .empty-attendance-cell {\n    background-color: #b9b9b9;\n  }\n\n  .section-header {\n    font-weight: bold;\n    text-align: left;\n  }\n\n  .title-section td {\n    font-family: \"Cairo\", sans-serif !important;\n    border: none !important;\n    font-size: 18px !important;\n    font-weight: bold !important;\n    font-style: italic !important;\n    text-align: center;\n    color: black;\n  }\n\n  .title-section .logo-cell {\n    padding: 10px !important;\n  }\n\n  .meta-cell {\n    text-align: left;\n    font-size: 10px;\n  }\n\n  .title-section,\n  .meta-section,\n  .header-section td,\n  .staff-duty th {\n    background-color: #f5f5f5;\n  }\n\n  .signatures td {\n    height: 50px !important;\n  }\n\n  .stamps td {\n    height: 70px !important;\n  }\n\n  .legend span {\n    border-left: 2px solid #000;\n    padding-right: 12px;\n    padding-left: 5px;\n    margin-right: 3px;\n  }\n\n  @media print {\n    .attendance-page {\n      page-break-after: always;\n    }\n    .attendance-page:not(:first-child) { /* Because first one is alreading getting the margin from print format margin's above */\n      margin-top: 10mm !important;\n    }\n  }",
  "custom_format": 1,
  "default_print_language": "en-US",
@@ -19,7 +19,7 @@
  "modified": "2026-09-03 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
- "name": "Operations Monthly Attendance Sheet",
+ "name": "Monthly Payroll Attendance Sheet",
  "owner": "Administrator",
  "page_number": "Hide",
  "pdf_generator": "wkhtmltopdf",
@@ -28,7 +28,7 @@
  "print_format_for": "Report",
  "print_format_type": "JS",
  "raw_printing": 0,
- "report": "Operations Monthly Attendance Sheet",
+ "report": "Monthly Payroll Attendance Sheet",
  "show_section_headings": 0,
  "standard": "Yes"
 }
