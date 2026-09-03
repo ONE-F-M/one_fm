@@ -22,7 +22,15 @@ class TestClientEvent(unittest.TestCase):
 
 	def create_test_dependencies(self):
 		if not frappe.db.exists("Location", "Test Location"):
-			frappe.get_doc({"doctype": "Location", "location_name": "Test Location"}).insert()
+			# Location has required coordinates and a geofence radius, so a name alone
+			# cannot be saved - this fixture has been failing on every test in the file.
+			frappe.get_doc({
+				"doctype": "Location",
+				"location_name": "Test Location",
+				"latitude": 29.3759,
+				"longitude": 47.9774,
+				"geofence_radius": 100,
+			}).insert()
 		if not frappe.db.exists("Project", "Test Project"):
 			frappe.get_doc({"doctype": "Project", "project_name": "Test Project"}).insert()
 
