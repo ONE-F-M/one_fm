@@ -308,8 +308,6 @@ one_fm.patches.v15_0.remove_employee_marital_status_property_setter
 one_fm.patches.v15_0.update_vehicle_property_setter
 one_fm.patches.v15_0.add_hd_ticket_category_field
 one_fm.patches.v15_0.take_ownership_of_vehicle_handover_log #2026-07-25
-
-
 one_fm.patches.v15_0.rename_document_register_and_revision #2026-08-03
 one_fm.patches.v15_0.rename_operations_monthly_attendance_sheet #2026-08-23 WI-002153
 [post_model_sync]
@@ -458,7 +456,6 @@ one_fm.patches.v15_0.add_attendance_correction_fields
 one_fm.patches.v15_0.add_leave_application_emergency_contact_field #1
 one_fm.patches.v15_0.add_attendance_check_action_user_to_hr_settings
 one_fm.patches.v15_0.add_leave_application_resumption_contact_fields #2 2026-08-06 WI-001873
-
 one_fm.patches.v15_0.add_absence_investigation_hr_officer_to_hr_settings
 one_fm.patches.v15_0.update_leave_application_workflow_dss #2026-07-17-2
 one_fm.patches.v15_0.update_sales_invoice_property_setter
@@ -470,15 +467,6 @@ one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_offboarding_officer
 one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_finance_manager
 # --- Operations-011 (24th-30th) release patches ---
 one_fm.patches.v15_0.update_bank_account_workflow
-
-one_fm.patches.v15_0.update_purchase_receipt_prc_2026_000101_posting_date
-one_fm.patches.v15_0.update_job_offer_day_off_category_for_job_applicants
-one_fm.patches.v15_0.add_phone_option_to_job_applicant_contact_number
-one_fm.patches.v15_0.remove_employee_marital_status_property_setter
-one_fm.patches.v15_0.update_vehicle_property_setter
-one_fm.patches.v15_0.add_hd_ticket_category_field
-
-
 one_fm.patches.v15_0.resync_resignation_workflow_draft_state #2026-07-07
 one_fm.patches.v15_0.mark_draft_pmr_as_completed #2026-07-07
 one_fm.patches.v15_0.backfill_checkin_geolocation_from_device_id #2026-07-12
@@ -488,9 +476,6 @@ one_fm.patches.v15_0.backfill_subcontractor_name_in_onboard_subcontract_employee
 one_fm.patches.v15_0.delete_pending_approval_attendance_checks_airport_t4_jul12 #2026-07-13
 one_fm.patches.v15_0.send_amp_verification_test_email #2026-07-14
 one_fm.patches.v15_0.remove_pam_visa_doctype #2026-07-16
-
-
-
 one_fm.patches.v15_0.add_vehicle_custodian_history_fields
 one_fm.patches.v15_0.add_nationality_read_permission
 one_fm.patches.v15_0.update_workflows_for_ops_admin_edit
@@ -525,14 +510,12 @@ one_fm.patches.v15_0.show_project_users_section_for_scrum #2026-07-23
 one_fm.patches.v15_0.add_bonus_request_line_manager_workflow #2026-07-23
 one_fm.patches.v15_0.add_bonus_request_line_manager_assignment_rule #2026-07-23
 one_fm.patches.v15_0.add_leave_application_compensatory_leave_request_field #2026-07-25
-
 one_fm.patches.v15_0.add_roster_double_shift_ot_checker_assignment_rules #2026-07-24
 one_fm.patches.v15_0.backfill_visa_processing_reference_type #2026-08-09
 one_fm.patches.v15_0.configure_agency_process_completion_values #2026-07-24
 one_fm.patches.v15_0.set_arrival_deployment_workflow_state_permlevel #2026-07-24
 one_fm.patches.v15_0.add_transportation_manager_arrival_deployment_transitions #2026-07-24
 one_fm.patches.v15_0.add_employee_resignation_remarks_fields #rerun-2026-07-26-ops-remarks-column1
-
 # Re-registered 2026-07-26: these patch files exist in the tree but their
 # patches.txt entries were removed by a cleanup that ran before the
 # test-production merge, so they would never have executed.
@@ -600,6 +583,4 @@ one_fm.patches.v15_0.update_paci_no_payment_workflow #2026-08-19 WI-002136
 one_fm.patches.v15_0.add_paci_damj_fields #2026-08-20 WI-002109
 one_fm.patches.v15_0.mark_unflagged_mixed_trips #2026-08-25 WI-002160
 one_fm.patches.v15_0.grant_transportation_manager_schedule_access #2026-08-24 WI-002162
-one_fm.patches.v15_0.add_transportation_qoa_buffer_to_hr_settings #2026-08-26 WI-002151
-one_fm.patches.v15_0.rekey_olm_shipments_on_shift_window #2026-08-31 WI-002151
 one_fm.patches.v15_0.repoint_pam_file_links_to_license_details #2026-08-29 WI-002233
