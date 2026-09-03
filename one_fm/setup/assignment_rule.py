@@ -40,7 +40,7 @@ def create_assignment_rules():
 	create_assignment_rule(get_assignment_rule_json_file("contract_compliance_checker.json"))
 	create_assignment_rule(get_assignment_rule_json_file("assigning_operations_manager_for_approval_client_event.json"))
 	create_assignment_rule(get_assignment_rule_json_file("returning_to_operations_supervisor_of_client_event.json"))
-	create_assignment_rule(get_assignment_rule_json_file("assigning_operations_manager_for_approval.json"))
+	create_assignment_rule(get_assignment_rule_json_file("assigning_project_manager_for_approval.json"))
 	create_assignment_rule(get_assignment_rule_json_file("erf.json"))
 	create_assignment_rule(get_assignment_rule_json_file("assign_attendance_amendment_to_project_manager.json"))
 	create_assignment_rule(get_assignment_rule_json_file("assign_to_site_supervisor.json"))
