@@ -17,6 +17,8 @@
   "operations_site",
   "operations_supervisor",
   "project",
+  "project_manager_employee",
+  "project_manager",
   "operations_manager",
   "column_break_jmxt",
   "start_date",
@@ -93,6 +95,23 @@
    "options": "Project"
   },
   {
+   "fetch_from": "project.project_manager",
+   "fieldname": "project_manager_employee",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Project Manager Employee",
+   "options": "Employee"
+  },
+  {
+   "depends_on": "eval:doc.project",
+   "fetch_from": "project_manager_employee.user_id",
+   "fieldname": "project_manager",
+   "fieldtype": "Link",
+   "label": "Project Manager",
+   "options": "User",
+   "read_only": 1
+  },
+  {
    "fieldname": "column_break_jmxt",
    "fieldtype": "Column Break"
   },
@@ -159,6 +178,7 @@
    "depends_on": "eval:doc.project",
    "fieldname": "operations_manager",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Operations Manager",
    "options": "User"
   },
@@ -213,7 +233,7 @@
    "link_fieldname": "custom_on_the_job_training"
   }
  ],
- "modified": "2025-12-09 09:23:29.820940",
+ "modified": "2026-09-03 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "On the Job Training",
