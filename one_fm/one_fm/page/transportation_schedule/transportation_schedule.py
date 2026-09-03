@@ -839,6 +839,52 @@ def get_route_plans():
 SHIPMENT_CARD_PREFIX = "TSHIP-"
 
 
+def _shifts_served(shipment) -> list:
+    """Every Operations Shift a card carries staff for (WI-002307).
+
+    Most cards name one. An OLM stop shared by several roles finishing together lists
+    them in ``aggregated_shifts`` and leaves ``operations_shift`` blank, because no
+    single one of them is it - so reading only the Link field would see no shift on the
+    cards that serve the most.
+    """
+    named = [s.strip() for s in (shipment.aggregated_shifts or "").split(",") if s.strip()]
+    if shipment.operations_shift and shipment.operations_shift not in named:
+        named.append(shipment.operations_shift)
+    return named
+
+
+def _inactive_shifts(shipments) -> set:
+    """Which of the shifts these cards serve have been switched off (WI-002307)."""
+    names = set()
+    for shipment in shipments:
+        names.update(_shifts_served(shipment))
+    if not names:
+        return set()
+
+    return {
+        row.name
+        for row in frappe.get_all(
+            "Operations Shift",
+            filters={"name": ["in", list(names)], "status": "Inactive"},
+            fields=["name"],
+        )
+    }
+
+
+def _serves_only_inactive_shifts(shipment, inactive_shifts) -> bool:
+    """Is there nothing left on this card worth planning (WI-002307)?
+
+    Every shift it serves has to be inactive, not just one of them. An OLM card
+    carrying three shifts still has to run for the two that are live, and hiding it
+    because the third was switched off would take real demand off the board.
+
+    A card that names no shift at all - an ad-hoc Trip Request journey - is never
+    hidden: there is no shift to have been switched off.
+    """
+    served = _shifts_served(shipment)
+    return bool(served) and all(name in inactive_shifts for name in served)
+
+
 def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedelta):
     """Return draggable cards for Transportation Shipment records.
 
@@ -910,6 +956,8 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
     # nobody on it is travelling as a passenger. Generation stops making these, but
     # records made before that still exist, and an Assigned one cannot be pruned, so the
     # canvas has to refuse them itself rather than wait for a Generate run.
+    inactive_shifts = _inactive_shifts(shipments)
+
     drivers = driver_employees([row.employee_id for row in emp_rows])
     driver_only = {
         ship
@@ -926,6 +974,12 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
             s for s in shipments
             if s.name not in driver_only or s.status != "Unassigned"
         ]
+
+    # WI-002307: a card for a shift that has been switched off is not work anybody is
+    # going to plan. Generation already stops making them and prunes the Unassigned
+    # ones, but that only runs daily or on the button - the dispatcher opening the board
+    # in between would still be looking at them, and an Assigned card is never pruned.
+    shipments = [s for s in shipments if not _serves_only_inactive_shifts(s, inactive_shifts)]
 
     # Fallback times for shipments without an Operations Shift (ad-hoc journeys).
     trq_names = list({
