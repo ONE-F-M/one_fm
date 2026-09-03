@@ -179,6 +179,22 @@ function mountRoutePlannerApp(wrapper, data) {
                     .map(([value, label]) => ({ value, label }));
             },
 
+            // WI-002309: how much of today's demand is placed, and how much is left.
+            // Counted over every card rather than the filtered pool, because this is
+            // scheduling progress - it must not move because somebody typed in the
+            // search box. The sidebar keeps its own filtered count next to the title.
+            totalCardsPlanned() {
+                return this.assignedCards.size;
+            },
+
+            totalCardsRemaining() {
+                return this.planData.shipment_cards.filter(c => !this.assignedCards.has(c.id)).length;
+            },
+
+            allCardsPlanned() {
+                return this.totalCardsPlanned > 0 && this.totalCardsRemaining === 0;
+            },
+
             poolGroups() {
                 const map = {};
                 this.filteredPoolCards.forEach(c => {
@@ -3856,6 +3872,20 @@ function injectRPVueTemplate() {
       </div>
     </div>
     <div id="rp-header-right">
+      <!-- WI-002309: scheduling progress at a glance. Both counters are derived from
+           the same reactive state the lanes are drawn from, so a drag updates them
+           with the block rather than on the next load. -->
+      <div class="rp-metrics">
+        <div class="rp-metric" title="Shipment cards placed on a vehicle lane">
+          <span class="rp-metric-label">Total Cards Planned</span>
+          <span class="rp-metric-value">{{ totalCardsPlanned }}</span>
+        </div>
+        <div :class="['rp-metric', allCardsPlanned ? 'rp-metric-done' : '']"
+             title="Shipment cards still waiting in the unassigned sidebar">
+          <span class="rp-metric-label">Total Cards Remaining</span>
+          <span class="rp-metric-value">{{ totalCardsRemaining }}</span>
+        </div>
+      </div>
       <div v-if="currentPlan" class="text-muted" style="font-size:12px; margin-right: 12px; display: flex; align-items: center; gap: 4px; color: var(--green, #16a34a)">
         <span class="rp-icon" style="font-size:16px;">check_circle</span> Auto-Saved
       </div>
@@ -4875,6 +4905,19 @@ function injectRPStyles() {
             border-right: 1px solid var(--md-sys-color-outline-variant);
             display: flex; flex-direction: column; overflow: hidden;
         }
+        /* WI-002309: the two progress counters in the header toolbar. */
+        .rp-metrics { display: flex; gap: 8px; margin-right: 12px; }
+        .rp-metric {
+          display: flex; flex-direction: column; align-items: flex-start;
+          padding: 4px 10px; border-radius: 6px; line-height: 1.2;
+          border: 1px solid var(--border-color, #d1d5db);
+          background: var(--fg-color, #fff);
+        }
+        .rp-metric-label { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted, #6b7280); white-space: nowrap; }
+        .rp-metric-value { font-size: 16px; font-weight: 600; color: var(--text-color, #111827); }
+        .rp-metric-done { border-color: var(--green, #16a34a); }
+        .rp-metric-done .rp-metric-value { color: var(--green, #16a34a); }
+
         #rp-pool-header {
             display: flex; align-items: center; justify-content: space-between;
             padding: 12px 16px; border-bottom: 1px solid var(--md-sys-color-surface-container-high); flex-shrink: 0;
@@ -5382,6 +5425,11 @@ function injectRPStyles() {
         /* ── Dark mode: Pool panel ── */
         #rp-shell.rp-dark #rp-pool-panel { background: var(--md-sys-color-surface); border-color: var(--md-sys-color-outline-variant); }
         #rp-shell.rp-dark #rp-pool-header { border-color: var(--md-sys-color-outline-variant); }
+        #rp-shell.rp-dark .rp-metric {
+          border-color: var(--md-sys-color-outline-variant);
+          background: var(--md-sys-color-surface-container, #1f2937);
+        }
+        #rp-shell.rp-dark .rp-metric-value { color: var(--md-sys-color-on-surface, #e5e7eb); }
         #rp-shell.rp-dark #rp-search-input {
             background: var(--md-sys-color-surface-container-high); color: var(--md-sys-color-on-surface);
             border-color: var(--md-sys-color-outline-variant);
