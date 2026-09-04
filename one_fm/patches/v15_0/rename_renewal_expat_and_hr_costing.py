@@ -25,6 +25,11 @@ RENAMES = (
 
 NEW = "Renewal Expat"
 
+# The costing table is read from HR Settings and nowhere else. A superseded "GRD Settings"
+# Single still holds the rows it was copied from - a dead copy that nothing reads and that
+# no form can save, so it is not counted when checking the rename took.
+COSTING_PARENT = {"parent": "HR Settings", "parenttype": "HR Settings"}
+
 
 def execute():
 	for module, doctype in (
@@ -53,7 +58,8 @@ def execute():
 def verify(moved):
 	"""A row left on the old value cannot be saved again, so the rename is checked."""
 	for doctype, fieldname, old in RENAMES:
-		left_behind = frappe.db.count(doctype, {fieldname: old})
+		scope = COSTING_PARENT if doctype == "GRD Renewal Extension Cost" else {}
+		left_behind = frappe.db.count(doctype, dict(scope, **{fieldname: old}))
 		if left_behind:
 			frappe.throw(
 				f"WI-002178: {left_behind} {doctype} rows still carry {old!r}, which "
