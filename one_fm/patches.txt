@@ -196,7 +196,6 @@ one_fm.patches.v15_0.add_on_the_job_training_workflow #rerun
 one_fm.patches.v15_0.add_rfm_links_to_asset_movement #re run again
 one_fm.patches.v15_0.update_employee_checkin_custom_field_source
 one_fm.patches.v15_0.update_sales_invoice
-one_fm.patches.v15_0.add_assignment_rule_process_task_work_permit_completion_gr_operator
 one_fm.patches.v15_0.add_assignment_rule_action_medical_appointment_transportation_supervisor #1
 one_fm.patches.v15_0.add_assignment_rule_action_medical_appointment_supervisor #1
 one_fm.patches.v15_0.add_assignment_rule_confirm_site_pickup_for_medical_appointment_gr_operator #1
@@ -603,3 +602,4 @@ one_fm.patches.v15_0.grant_transportation_manager_schedule_access #2026-08-24 WI
 one_fm.patches.v15_0.add_transportation_qoa_buffer_to_hr_settings #2026-08-26 WI-002151
 one_fm.patches.v15_0.rekey_olm_shipments_on_shift_window #2026-08-31 WI-002151
 one_fm.patches.v15_0.repoint_pam_file_links_to_license_details #2026-08-29 WI-002233
+one_fm.patches.v15_0.update_work_permit_assignment_rules #2026-09-02 WI-002182
