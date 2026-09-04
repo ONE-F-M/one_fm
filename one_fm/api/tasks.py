@@ -1205,7 +1205,20 @@ def overtime_shift_assignment():
 	"""
 	date = cstr(getdate())
 	now_time = add_to_date(now_datetime(), hours=1).strftime("%H:%M:00")
-	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working" , "roster_type": "Over-Time", "is_replaced": 0}, ["*"])
+	# WI-002283: a second overtime shift for somebody already working that day waits for
+	# a decision, and must not be given a Shift Assignment while it does. Rejected ones -
+	# refused outright, or left unanswered until the shift had ended - never get one.
+	roster = frappe.get_all(
+		"Employee Schedule",
+		{
+			"date": date,
+			"employee_availability": "Working",
+			"roster_type": "Over-Time",
+			"is_replaced": 0,
+			"workflow_state": ["not in", ["Pending DSOT Approval", "Rejected"]],
+		},
+		["*"],
+	)
 	shift_request = frappe.db.sql(f"""SELECT sr.*, 'Shift Request' as doctype FROM `tabShift Request` sr
 								WHERE '{date}' between  sr.from_date and sr.to_date
 								AND sr.roster_type = 'Over-Time'

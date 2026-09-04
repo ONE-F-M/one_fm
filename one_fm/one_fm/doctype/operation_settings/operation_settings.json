@@ -9,6 +9,7 @@
  "field_order": [
   "general_settings_section",
   "default_operation_manager",
+  "dsot_approver",
   "operation_admin",
   "section_break_kzb5e",
   "exclude_project"
@@ -33,6 +34,13 @@
    "options": "User"
   },
   {
+   "description": "Who approves a second, overtime schedule for an employee already working a basic shift that day. Left blank, nobody is assigned and the Operation Manager above decides.",
+   "fieldname": "dsot_approver",
+   "fieldtype": "Link",
+   "label": "DSOT Approver",
+   "options": "User"
+  },
+  {
    "description": "Administrative user targeted for automated emergency staffing alerts.",
    "fieldname": "operation_admin",
    "fieldtype": "Link",
@@ -47,7 +55,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2023-09-18 11:36:25.783875",
+ "modified": "2026-09-04 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Operation Settings",
