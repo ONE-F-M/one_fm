@@ -14,6 +14,7 @@ from one_fm.api.v2.uniform_request import (
 	PENDING_APPROVAL,
 	UNIFORM_QTY,
 	_missing_details,
+	_photo_of,
 )
 
 SIZE = "XL"
@@ -97,6 +98,24 @@ class TestWhatTheEmployeeMustGive(FrappeTestCase):
 		message = _missing_details([self._row(attach_photo=None)])
 
 		self.assertIn("photo", message.lower())
+
+	def test_a_photo_captured_on_the_phone_counts(self):
+		"""The app posts the bytes, not a file that already exists on the server."""
+		captured = {"attachment_name": "damage.jpg", "attachment": "aGVsbG8="}
+
+		self.assertEqual(_missing_details([self._row(attach_photo=captured)]), "")
+		self.assertTrue(_photo_of(self._row(attach_photo=captured)))
+
+	def test_a_half_sent_photo_does_not_count(self):
+		"""A name with no bytes, or bytes with no name, is not a photo."""
+		for broken in ({"attachment_name": "damage.jpg"}, {"attachment": "aGVsbG8="}, {}):
+			with self.subTest(photo=broken):
+				self.assertFalse(_photo_of(self._row(attach_photo=broken)))
+				self.assertIn("photo", _missing_details([self._row(attach_photo=broken)]).lower())
+
+	def test_a_file_url_still_counts(self):
+		self.assertTrue(_photo_of(self._row(attach_photo="/files/x.jpg")))
+		self.assertFalse(_photo_of(self._row(attach_photo="   ")))
 
 	def test_the_row_number_is_the_one_that_is_wrong(self):
 		"""Scenario 9: several items in one submission."""
@@ -195,3 +214,35 @@ class TestTheEndpointsShape(FrappeTestCase):
 
 		self.assertNotIn("reports_to", source)
 		self.assertNotIn("request_for_material_approver", source)
+
+
+class TestTheServiceTile(FrappeTestCase):
+	"""Scenario 1: the app builds its Requisition section from these records, so the icon
+	does not exist until they do."""
+
+	GROUP = "Requisition"
+	SERVICE = "Uniform Request"
+
+	def test_the_requisition_group_exists(self):
+		if not frappe.db.exists("App Service Group", self.GROUP):
+			self.skipTest("not migrated yet - the patch creates it")
+
+		self.assertEqual(
+			frappe.db.get_value("App Service Group", self.GROUP, "status"), "Active"
+		)
+
+	def test_the_uniform_request_tile_exists_and_is_offered_to_everyone(self):
+		if not frappe.db.exists("App Service", self.SERVICE):
+			self.skipTest("not migrated yet - the patch creates it")
+
+		service = frappe.db.get_value(
+			"App Service", self.SERVICE,
+			["status", "service_group", "assign_to_timesheet_employees",
+			 "assign_to_non_timesheet_employees"],
+			as_dict=True,
+		)
+
+		self.assertEqual(service.status, "Active")
+		self.assertEqual(service.service_group, self.GROUP)
+		self.assertTrue(service.assign_to_timesheet_employees)
+		self.assertTrue(service.assign_to_non_timesheet_employees)

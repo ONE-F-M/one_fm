@@ -6,9 +6,14 @@ department they are in, how many of the item, who approves it - the employee sho
 have to type, so none of it is asked for.
 """
 
+import base64
+import datetime
+import hashlib
+
 import frappe
 from frappe import _
 
+from one_fm.api.api import upload_file
 from one_fm.api.v1.utils import response
 
 # The request type a uniform replacement is raised as, and the state it goes straight to:
@@ -77,9 +82,25 @@ def _missing_details(items) -> str:
 			return f"Row {index}: choose the uniform item."
 		if not item.get("size"):
 			return f"Row {index}: the size of the uniform item is required."
-		if not item.get("attach_photo"):
+		if not _photo_of(item):
 			return f"Row {index}: a photo of the damaged uniform is required."
 	return ""
+
+
+def _photo_of(item):
+	"""The photo on a row, however the caller sent it.
+
+	The app captures the damage and posts it as {attachment_name, attachment} with the
+	bytes base64-encoded - the same shape the leave application takes - so there is no
+	file on the server until this request is saved. A caller that already has a file may
+	pass its url as a plain string instead.
+	"""
+	photo = item.get("attach_photo")
+	if isinstance(photo, str):
+		return photo.strip()
+	if isinstance(photo, dict):
+		return photo.get("attachment") and photo.get("attachment_name")
+	return None
 
 
 def _build_request(employee, items, schedule_date):
@@ -100,17 +121,26 @@ def _build_request(employee, items, schedule_date):
 		request.schedule_date = schedule_date
 
 	for item in items:
+		photo = item.get("attach_photo")
 		request.append("items", {
 			"item_code": item.get("item_code"),
 			"requested_item_name": item.get("item_name"),
 			"requested_description": item.get("requested_description"),
 			"size": item.get("size"),
-			"attach_photo": item.get("attach_photo"),
+			# A url the caller already had can be set now; bytes have nowhere to live
+			# until the request exists, so those rows are filled in after the insert.
+			"attach_photo": photo if isinstance(photo, str) else None,
 			"is_uniform_request": 1,
 			"qty": UNIFORM_QTY,
 		})
 
+	# The size and photo checks run on validate, and a row whose photo is still bytes has
+	# nothing in the field yet - so the rows are saved first and the photos attached
+	# before the request is validated again on its way to the approver.
+	request.flags.ignore_validate = True
 	request.insert(ignore_permissions=True)
+
+	_attach_photos(request, items)
 
 	# Straight to the supervisor. Saved first so the approver is resolved against a
 	# request that exists, and set with db_set so the state change cannot be undone by a
@@ -119,3 +149,28 @@ def _build_request(employee, items, schedule_date):
 	request.reload()
 
 	return request
+
+
+def _attach_photos(request, items):
+	"""Store each row's photo and point the row at it.
+
+	Written straight to the row with db_set: the request has already been created, and
+	re-saving the whole document here would run the very validation the photos are being
+	added to satisfy.
+	"""
+	for row, item in zip(request.items, items):
+		photo = item.get("attach_photo")
+		if not isinstance(photo, dict):
+			continue
+
+		name = photo.get("attachment_name") or "uniform.jpg"
+		extension = "." + name.split(".")[-1] if "." in name else ".jpg"
+		stored_as = hashlib.md5(
+			(name + str(datetime.datetime.now())).encode("utf-8")
+		).hexdigest() + extension
+
+		saved = upload_file(
+			request, "attach_photo", stored_as, "", base64.b64decode(photo["attachment"]),
+			is_private=True,
+		)
+		row.db_set("attach_photo", saved.file_url)
