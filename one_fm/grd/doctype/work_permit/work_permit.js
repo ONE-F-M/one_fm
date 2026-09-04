@@ -123,7 +123,7 @@ var set_next_step_button = function(frm, next_doctype, classifications, classifi
 // behind it, and pairs on the Preparation rather than on the permit - a renewal's insurance
 // is opened against the permit too, but an overseas one is opened by the Preparation.
 var set_button_for_medical_insurance_transfer = function(frm){
-	set_next_step_button(frm, 'Medical Insurance', ['Renewal Non Kuwaiti', 'Overseas', 'Overseas (Government)', 'Local Transfer'], 'work_permit_type');
+	set_next_step_button(frm, 'Medical Insurance', ['Renewal Expat', 'Overseas', 'Overseas (Government)', 'Local Transfer'], 'work_permit_type');
 };
 // WI-001828 retires "Restart Application": it sat on the same Rejected state as
 // Reapply and did the same thing, only without carrying anything over or linking back

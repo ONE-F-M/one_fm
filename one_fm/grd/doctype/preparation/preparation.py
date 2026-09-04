@@ -109,7 +109,7 @@ COST_COMPONENT_FIELDS = (
 
 # The Actions whose master fee row is keyed by the number of years as well as the Action.
 # Mirrors the depends_on the costing table already puts on its No. of Years field.
-YEAR_SCOPED_ACTIONS = ('Renewal (Kuwaiti)', 'Renewal (Non-Kuwaiti)')
+YEAR_SCOPED_ACTIONS = ('Renewal (Kuwaiti)', 'Renewal Expat')
 
 # WI-002092: the fees a multi-year renewal pays once per year. The work permit, the medical
 # insurance and the residency stamp are each issued for a year at a time, so renewing for
@@ -130,9 +130,9 @@ PER_YEAR_COST_FIELDS = (
 # would be lying about what it is.
 #
 # The Action values are the Preparation Record field's own options, spelling included:
-# WI-002101 writes "Renewal (Non Kuwaiti)" and "Extend 1 Month" where the field has
-# "Renewal (Non-Kuwaiti)" and "Extend 1 month". The field's spelling is what every existing
-# row and every lookup keyed on it already uses.
+# WI-002101 writes "Renewal (Non Kuwaiti)" and "Extend 1 Month" where the field now has
+# "Renewal Expat" (WI-002178) and "Extend 1 month". The field's spelling is what every
+# existing row and every lookup keyed on it already uses.
 CATEGORIES = {
     'Onboarding': {
         'prefix': 'PRE-ONB-',
@@ -146,7 +146,7 @@ CATEGORIES = {
         'prefix': 'PRE-REN-',
         'actions': (
             'Renewal (Kuwaiti)',
-            'Renewal (Non-Kuwaiti)',
+            'Renewal Expat',
             'Extend 1 month',
             'Extend 2 months',
             'Extend 3 months',
@@ -171,7 +171,7 @@ SUB_DOCUMENT_SEQUENCE = ("Work Permit", "Medical Insurance", "Residency", "PACI"
 # and no civil ID process to follow the permit, and an extension is a single document on its
 # own - so neither is gated and neither offers a next step.
 SEQUENCED_CLASSIFICATIONS = {
-    "Work Permit": ("work_permit_type", ("Renewal Non Kuwaiti", "Overseas", "Overseas (Government)", "Local Transfer")),
+    "Work Permit": ("work_permit_type", ("Renewal Expat", "Overseas", "Overseas (Government)", "Local Transfer")),
     "Medical Insurance": ("insurance_status", ("Renewal", "New", "Local Transfer")),
     "Residency": ("category", ("Renewal", "First Time", "Transfer")),
     "PACI": ("category", ("Renewal", "New Application", "Transfer")),
@@ -596,7 +596,7 @@ def create_preparation_record():
             if employee.relieving_date: 
                 new_row['renewal_or_extend'] = "Extend 3 months"
             else:
-                new_row['renewal_or_extend'] = "Renewal (Non-Kuwaiti)"
+                new_row['renewal_or_extend'] = "Renewal Expat"
         doc.append("preparation_record", new_row)
             
     doc.save()
@@ -670,13 +670,13 @@ def get_grd_renewal_extension_cost(renewal_or_extend: str, no_of_years: str = No
 
     The old version filtered on the number of years only when the Action was exactly
     "Renewal" - a value the field has not offered since the options became
-    "Renewal (Kuwaiti)" and "Renewal (Non-Kuwaiti)". The filter was therefore dead, and a
+    "Renewal (Kuwaiti)" and "Renewal Expat". The filter was therefore dead, and a
     renewal with three configured rows (1, 2 and 3 Years) got whichever the database
     handed back first. The years now scope the lookup for the two renewal Actions, which
     are the ones whose master rows are keyed by it.
 
     Deliberately not scoped by years for any other Action: the field is hidden for them
-    but not cleared, so a row switched from Renewal (Non-Kuwaiti) to Extend 1 month still
+    but not cleared, so a row switched from Renewal Expat to Extend 1 month still
     carries "1 Year", and filtering on it would find nothing and quietly return no fees.
     """
     if not frappe.has_permission('Preparation', 'write'):
@@ -1007,7 +1007,7 @@ def get_renewal_extension_cost_for_employee(employee, no_of_years = "1 Year"):
     if employee_nationality == "Kuwaiti":
         extension_type = "Renewal (Kuwaiti)"
     else:
-        extension_type = "Renewal (Non-Kuwaiti)"
+        extension_type = "Renewal Expat"
     
     # The row's fees, not the master row's: a multi-year renewal pays the annual ones once
     # per year (WI-002092).

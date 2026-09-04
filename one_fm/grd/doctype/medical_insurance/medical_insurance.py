@@ -58,7 +58,7 @@ def valid_work_permit_exists(preparation_name):
     employee_in_preparation = frappe.get_doc('Preparation',preparation_name)
     if employee_in_preparation.preparation_record:
         for employee in employee_in_preparation.preparation_record:
-            if employee.renewal_or_extend == 'Renewal (Non-Kuwaiti)' and employee.nationality != 'Kuwaiti':
+            if employee.renewal_or_extend == 'Renewal Expat' and employee.nationality != 'Kuwaiti':
                 try:
                     create_mi_record(frappe.get_doc('Work Permit',{'preparation':preparation_name,'employee':employee.employee}))
                 except Exception as e:
@@ -132,7 +132,7 @@ def create_mi_record(WorkPermit, insurance_status=None):
         new_medical_insurance.date_of_application = (
             today() if insurance_status == "Local Transfer" else WorkPermit.date_of_application
         )
-    elif(WorkPermit.work_permit_type == "Renewal Non Kuwaiti"):
+    elif(WorkPermit.work_permit_type == "Renewal Expat"):
         Insurance_status = "Renewal"
         new_medical_insurance.date_of_application = WorkPermit.date_of_application #setting the same date of application of wp
     elif(WorkPermit.work_permit_type in ("Overseas", "Overseas (Government)")):
