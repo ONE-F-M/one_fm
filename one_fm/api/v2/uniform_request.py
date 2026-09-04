@@ -25,6 +25,10 @@ PENDING_APPROVAL = "Pending Approval"
 # never asks and the row carries the only quantity that makes sense.
 UNIFORM_QTY = 1
 
+# What the picker falls back to when an employee has no issued uniform on record. Groups
+# rather than a fixed item list, so a new uniform item is offered the day it is created.
+UNIFORM_ITEM_GROUPS = ("Uniform", "Cleaner Uniform", "Male & Female Semi Tactical Security Uniform Design")
+
 
 @frappe.whitelist()
 def create_uniform_request(items=None, schedule_date: str = None) -> dict:
@@ -151,6 +155,19 @@ def _build_request(employee, items, schedule_date):
 	return request
 
 
+def _decode(attachment: str) -> bytes:
+	"""The image bytes, whether or not the caller left the data-URL prefix on.
+
+	FileReader.readAsDataURL yields "data:image/jpeg;base64,...", and whether the prefix
+	is stripped before sending depends on which helper the screen happens to use - the
+	app has one of each. Decoding either shape here means the two repositories can ship
+	without having to agree first.
+	"""
+	if "," in attachment[:64] and attachment.lstrip().startswith("data:"):
+		attachment = attachment.split(",", 1)[1]
+	return base64.b64decode(attachment)
+
+
 def _attach_photos(request, items):
 	"""Store each row's photo and point the row at it.
 
@@ -170,7 +187,68 @@ def _attach_photos(request, items):
 		).hexdigest() + extension
 
 		saved = upload_file(
-			request, "attach_photo", stored_as, "", base64.b64decode(photo["attachment"]),
+			request, "attach_photo", stored_as, "", _decode(photo["attachment"]),
 			is_private=True,
 		)
 		row.db_set("attach_photo", saved.file_url)
+
+
+@frappe.whitelist()
+def get_uniform_items() -> dict:
+	"""The uniform items this employee can ask to have replaced.
+
+	Their own issued uniform first: a replacement is for something they were given, so
+	the list they choose from should be the list they hold. An employee with nothing on
+	record - a new starter, or one whose issue predates the register - falls back to the
+	uniform item groups rather than being shown an empty picker with no way forward.
+	"""
+	employee = frappe.db.get_value(
+		"Employee", {"user_id": frappe.session.user, "status": "Active"}, "name"
+	)
+	if not employee:
+		return response(
+			"Bad Request", 400, None,
+			"No active employee record is linked to your user.",
+		)
+
+	items = _issued_uniform_items(employee) or _uniform_catalogue()
+
+	return response("Success", 200, items, None)
+
+
+def _issued_uniform_items(employee) -> list:
+	"""What this employee was actually issued, most recent first, one row per item."""
+	rows = frappe.db.sql(
+		"""
+		SELECT eui.item AS item_code, eui.item_name
+		FROM `tabEmployee Uniform Item` eui
+		JOIN `tabEmployee Uniform` eu ON eu.name = eui.parent
+		WHERE eu.employee = %(employee)s
+		  AND eu.type = 'Issue'
+		  AND eu.docstatus = 1
+		  AND eui.item IS NOT NULL
+		ORDER BY eu.issued_on DESC
+		""",
+		{"employee": employee},
+		as_dict=True,
+	)
+
+	seen, items = set(), []
+	for row in rows:
+		if row.item_code in seen:
+			continue
+		seen.add(row.item_code)
+		items.append({"item_code": row.item_code, "item_name": row.item_name or row.item_code})
+	return items
+
+
+def _uniform_catalogue() -> list:
+	return [
+		{"item_code": row.name, "item_name": row.item_name or row.name}
+		for row in frappe.get_all(
+			"Item",
+			filters={"item_group": ["in", UNIFORM_ITEM_GROUPS], "disabled": 0},
+			fields=["name", "item_name"],
+			order_by="item_name asc",
+		)
+	]
