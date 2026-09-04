@@ -22,6 +22,14 @@ from one_fm.api.doc_events import get_employee_user_id
 from one_fm.utils import get_users_with_role_permitted_to_doctype
 from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError, remove as remove_assignment, close_all_assignments
 
+# WI-002301: the request type a uniform replacement is raised as. Every rule the uniform
+# flow adds is scoped to it, so the other types keep the behaviour they had.
+INDIVIDUAL = "Individual"
+
+# The state a uniform request lands in, and the one its detail has to be complete to leave.
+PENDING_APPROVAL = "Pending Approval"
+
+
 class RequestforMaterial(BuyingController):
     @frappe.whitelist()
     def get_conversion_factor(self, item_code, uom):
@@ -81,8 +89,80 @@ class RequestforMaterial(BuyingController):
         self.validate_uom_conversion()
         # self.validate_item_reservation()
         self.validate_linked_request_quantities()
-        
-        
+        self.validate_uniform_request_details()
+
+
+    def validate_uniform_request_details(self):
+        """WI-002301: the rules the form shows, enforced where they actually bind.
+
+        mandatory_depends_on is a form rule - the server checks `reqd` alone - so every
+        conditional rule the doctype now carries needs its twin here, or a request made
+        through the API or an import walks straight past it.
+
+        Required Date stopped being unconditionally `reqd` so an employee can start a
+        uniform request without knowing when they need it. That must not quietly relax it
+        for every other request type, which is why the first check restores exactly what
+        `reqd` used to do for them.
+        """
+        if self.type != INDIVIDUAL:
+            if not self.schedule_date:
+                frappe.throw(_("Required Date is mandatory."), title=_("Required Date Missing"))
+            return
+
+        # What the employee has to give: the item, its size, and a photo of the damage.
+        # That is the whole mobile form, and it is checked whichever way the request
+        # arrives.
+        for item in self.items:
+            if not item.is_uniform_request:
+                continue
+            if not item.size:
+                frappe.throw(
+                    _("Row #{0}: the size of the uniform item is required.").format(item.idx),
+                    title=_("Size Missing"),
+                )
+            if not item.attach_photo:
+                frappe.throw(
+                    _("Row #{0}: a photo of the damaged uniform is required.").format(item.idx),
+                    title=_("Photo Missing"),
+                )
+
+        self.validate_uniform_request_before_approval()
+
+
+    def validate_uniform_request_before_approval(self):
+        """The detail the approver needs, demanded when they decide rather than when the
+        employee submits (WI-002301).
+
+        The criteria ask for Required Date and the line Description to be mandatory "at
+        Pending Approval", and for the mobile form to collect neither - it asks only for
+        the item, its size and a photo, and submits straight into that state. Read as a
+        condition of *entering* the state those rules cancel each other out and no mobile
+        request could ever be made. Read as a condition of *leaving* it, every scenario
+        holds: the employee reports the damage, and the supervisor completes the request
+        before approving it.
+        """
+        previous = self.get_doc_before_save()
+        was = previous.get("workflow_state") if previous else None
+
+        if was != PENDING_APPROVAL or self.workflow_state == PENDING_APPROVAL:
+            return
+
+        if not self.schedule_date:
+            frappe.throw(
+                _("Set the Required Date before deciding this request."),
+                title=_("Required Date Missing"),
+            )
+
+        for item in self.items:
+            if item.is_uniform_request and not item.requested_description:
+                frappe.throw(
+                    _("Row #{0}: describe the damage before deciding this request.").format(
+                        item.idx
+                    ),
+                    title=_("Description Missing"),
+                )
+
+
     def on_update_after_submit(self):
         self.validate_uom_conversion()
         self.set_purchase_rfm_quantity()

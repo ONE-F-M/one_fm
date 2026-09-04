@@ -163,7 +163,7 @@
    "fieldname": "schedule_date",
    "fieldtype": "Date",
    "label": "Required Date",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.type != \"Individual\" || doc.workflow_state == \"Pending Approval\""
   },
   {
    "description": "Defualt Company",
@@ -594,7 +594,7 @@
    "link_fieldname": "linked_rfm"
   }
  ],
- "modified": "2026-07-16 19:53:14.233832",
+ "modified": "2026-09-04 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material",
