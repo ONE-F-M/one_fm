@@ -15,6 +15,12 @@ MONTHS_BY_ACTION = {
 
 EXTENSION = "Extension"
 
+# The costing table is read from HR Settings and nowhere else (`_master_fee_rows` filters
+# on this parent). A superseded "GRD Settings" Single still holds the rows it was copied
+# from when update_hr_settings_with_grd_settings moved them - a dead copy that nothing
+# reads and that no form can save, so it is neither migrated nor counted here.
+COSTING_PARENT = {"parent": "HR Settings", "parenttype": "HR Settings"}
+
 # The master row that holds the monthly rate. The other two hold two and three times it,
 # which is what the Preparation row multiplies out now - keeping them would double-count.
 MONTHLY_MASTER_ROW = "Extend 1 month"
@@ -82,15 +88,16 @@ def collapse_master_rows():
 def verify(moved, kept):
 	"""A row left on a removed option cannot be saved again, so the move is checked."""
 	for action in MONTHS_BY_ACTION:
-		for doctype, fieldname in (
-			("Preparation Record", "renewal_or_extend"),
-			("GRD Renewal Extension Cost", "renewal_or_extend"),
+		for doctype, filters in (
+			("Preparation Record", {}),
+			("GRD Renewal Extension Cost", COSTING_PARENT),
 		):
-			left_behind = frappe.db.count(doctype, {fieldname: action})
+			left_behind = frappe.db.count(doctype, dict(filters, renewal_or_extend=action))
 			if left_behind:
 				frappe.throw(
 					f"WI-002179: {left_behind} {doctype} rows still carry {action!r}, which "
-					f"{fieldname} no longer offers - they would fail validation on the next save."
+					"renewal_or_extend no longer offers - they would fail validation on the "
+					"next save."
 				)
 
 	print(f"WI-002179: moved {moved} Preparation rows to {EXTENSION!r}; master row total {kept}")
