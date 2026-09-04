@@ -44,14 +44,12 @@ EXPECTED = {
 
 
 def execute():
-	carry_the_process_task_across()
-
 	for rule_file in RULES:
 		rule = get_assignment_rule_json_file(rule_file)
 		# The Process Task link is a site's own - the ids differ between sites - so the
 		# fixture does not carry one and the existing link is passed back in. A task-based
 		# rule whose task is blanked assigns nobody, and says nothing about it.
-		create_assignment_rule(rule, existing_task(rule["name"]))
+		create_assignment_rule(rule, task_for(rule["name"]))
 
 	if frappe.db.exists("Assignment Rule", SUPERSEDED_NAME):
 		frappe.delete_doc("Assignment Rule", SUPERSEDED_NAME, ignore_permissions=True)
@@ -62,22 +60,19 @@ def execute():
 	verify()
 
 
-def carry_the_process_task_across():
-	"""Give the renamed rule the task the old name was pointing at.
+def task_for(name):
+	"""The Process Task this rule should keep, resolved before the rule is written.
 
-	Production renamed this rule by hand and kept its task; a site that did not still has it
-	under the old name, and the new one would be created with none.
+	Production renamed the GR Manager rule by hand and kept its task; a site that was never
+	renamed still has that task under the old name. Resolved here rather than copied onto
+	the new rule beforehand, because on a site that was never renamed the new rule does not
+	exist yet at that point - so there is nothing to copy onto, and the rule would be
+	created with no task and assign nobody at Pending GR Manager.
 	"""
-	if frappe.db.get_value("Assignment Rule", GR_MANAGER, "custom_routine_task"):
-		return
-
-	task = frappe.db.get_value("Assignment Rule", SUPERSEDED_NAME, "custom_routine_task")
-	if task and frappe.db.exists("Assignment Rule", GR_MANAGER):
-		frappe.db.set_value("Assignment Rule", GR_MANAGER, "custom_routine_task", task)
-
-
-def existing_task(name):
-	return frappe.db.get_value("Assignment Rule", name, "custom_routine_task") or None
+	task = frappe.db.get_value("Assignment Rule", name, "custom_routine_task")
+	if not task and name == GR_MANAGER:
+		task = frappe.db.get_value("Assignment Rule", SUPERSEDED_NAME, "custom_routine_task")
+	return task or None
 
 
 def verify():
