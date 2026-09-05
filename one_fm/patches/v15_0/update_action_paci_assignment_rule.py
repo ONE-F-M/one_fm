@@ -1,5 +1,3 @@
-import re
-
 import frappe
 
 from one_fm.custom.assignment_rule.assignment_rule import (
@@ -70,28 +68,65 @@ def verify():
 			"rows were not applied."
 		)
 
-	states = {state.state for state in frappe.get_doc("Workflow", "PACI").states}
-	for named in re.findall(r'"([^"]+)"', saved.unassign_condition or ""):
-		if named not in states:
-			frappe.throw(
-				f"WI-002183: {RULE!r} unassigns on {named!r}, which the PACI workflow does "
-				"not have - it would never release a cancelled record."
-			)
+	verify_holds_and_releases(RULE, saved.assign_condition, saved.unassign_condition)
 
-	pro = frappe.db.get_value(
-		"Assignment Rule", PRO_RULE, ["close_condition", "unassign_condition"], as_dict=True
-	)
-	if pro:
-		for state in ("Draft", "Pending GR Operator"):
-			if state in (pro.close_condition or ""):
-				frappe.throw(
-					f"WI-002183: {PRO_RULE!r} still closes at {state!r}. close_assignments "
-					"closes every assignment on the document, so it would take the owner's "
-					f"away the moment {RULE!r} made it."
-				)
-			if state not in (pro.unassign_condition or ""):
-				frappe.throw(
-					f"WI-002183: {PRO_RULE!r} no longer releases the PRO at {state!r}."
-				)
+	verify_pro_rule()
+	verify_holds_and_releases(PRO_RULE, *frappe.db.get_value(
+		"Assignment Rule", PRO_RULE, ["assign_condition", "unassign_condition"]))
 
 	print(f"WI-002183: {RULE} now assigns the PACI to its owner")
+
+
+def verify_holds_and_releases(name, assign_condition, unassign_condition):
+	"""A rule holds a document while it is that person's, and lets go when it is not.
+
+	Every state has to fall on one side or the other. A state where it neither assigns nor
+	releases leaves whoever it assigned still holding a document that has moved past them -
+	and, worse, apply() never reaches its assign pass while an assignment is standing, so
+	the rule that should take over next cannot.
+
+	Checked against the states the workflow actually has, rather than by matching text: a
+	condition written as the mirror of its own assign names no state at all.
+	"""
+	for state in {state.state for state in frappe.get_doc("Workflow", "PACI").states}:
+		context = {"workflow_state": state}
+		holds = bool(frappe.safe_eval(assign_condition, None, context))
+		releases = bool(unassign_condition and frappe.safe_eval(unassign_condition, None, context))
+
+		if holds and releases:
+			frappe.throw(f"WI-002183: {name!r} both assigns and releases at {state!r}.")
+		if not holds and not releases:
+			frappe.throw(
+				f"WI-002183: {name!r} neither assigns nor releases at {state!r}, so it would "
+				"go on holding a PACI that has moved past it - and block the rule that "
+				"should take over."
+			)
+
+
+def verify_pro_rule():
+	"""The PRO holds a PACI while it is theirs, and lets go the moment it is not.
+
+	Checked by evaluating the conditions against every state the workflow has rather than
+	by matching their text: the rule is the mirror of its own assign condition now, so
+	looking for a state name in it would find nothing and prove nothing.
+	"""
+	pro = frappe.db.get_value(
+		"Assignment Rule", PRO_RULE,
+		["assign_condition", "unassign_condition", "close_condition"], as_dict=True,
+	)
+	if not pro:
+		return
+
+	for state in {state.state for state in frappe.get_doc("Workflow", "PACI").states}:
+		context = {"workflow_state": state}
+
+		# close_assignments closes every assignment on the document, whichever rule made
+		# it, so this rule may not close anywhere at all - Action PACI owns the terminal
+		# state.
+		if pro.close_condition and frappe.safe_eval(pro.close_condition, None, context):
+			frappe.throw(
+				f"WI-002183: {PRO_RULE!r} closes at {state!r}. close_assignments closes "
+				f"every assignment on the document, so it would take {RULE!r}'s away."
+			)
+
+
