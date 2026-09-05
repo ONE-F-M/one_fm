@@ -1,3 +1,5 @@
+import re
+
 import frappe
 
 from one_fm.custom.assignment_rule.assignment_rule import (
@@ -31,7 +33,9 @@ def execute():
 def verify():
 	"""create_assignment_rule logs its failures instead of raising, so check the result."""
 	saved = frappe.db.get_value(
-		"Assignment Rule", RULE, ["disabled", "rule", "field", "assign_condition"], as_dict=True
+		"Assignment Rule", RULE,
+		["disabled", "rule", "field", "assign_condition", "unassign_condition"],
+		as_dict=True,
 	)
 	if not saved:
 		frappe.throw(f"WI-002183: assignment rule {RULE!r} does not exist.")
@@ -46,5 +50,23 @@ def verify():
 		)
 	if "Pending GR Operator" not in (saved.assign_condition or ""):
 		frappe.throw(f"WI-002183: {RULE!r} no longer fires at Pending GR Operator.")
+
+	# The fixture's day rows used to carry the analyst site's own row names, which Frappe
+	# read as existing rows and quietly dropped - leaving the table blank. An empty table
+	# still fires every day, so nothing complained until somebody opened the rule.
+	days = frappe.db.count("Assignment Rule Day", {"parent": RULE, "parenttype": "Assignment Rule"})
+	if days != 7:
+		frappe.throw(
+			f"WI-002183: {RULE!r} has {days} assignment days rather than 7 - the fixture's "
+			"rows were not applied."
+		)
+
+	states = {state.state for state in frappe.get_doc("Workflow", "PACI").states}
+	for named in re.findall(r'"([^"]+)"', saved.unassign_condition or ""):
+		if named not in states:
+			frappe.throw(
+				f"WI-002183: {RULE!r} unassigns on {named!r}, which the PACI workflow does "
+				"not have - it would never release a cancelled record."
+			)
 
 	print(f"WI-002183: {RULE} now assigns the PACI to its owner")
