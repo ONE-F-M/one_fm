@@ -15,6 +15,7 @@
   "residency_expiry_date",
   "renewal_or_extend",
   "no_of_years",
+  "no_of_months",
   "column_break_11",
   "work_permit_amount",
   "medical_insurance_amount",
@@ -69,7 +70,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Action",
-   "options": "\nNew Kuwaiti\nOverseas\nOverseas (Government)\nRenewal (Kuwaiti)\nRenewal Expat\nExtend 1 month\nExtend 2 months\nExtend 3 months\nLocal Transfer\nCancellation"
+   "options": "\nNew Kuwaiti\nOverseas\nOverseas (Government)\nRenewal (Kuwaiti)\nRenewal Expat\nExtension\nLocal Transfer\nCancellation"
   },
   {
    "allow_on_submit": 1,
@@ -101,6 +102,14 @@
    "fieldtype": "Select",
    "label": "No. of Years",
    "options": "\n1 Year\n2 Years\n3 Years"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.renewal_or_extend == \"Extension\"",
+   "fieldname": "no_of_months",
+   "fieldtype": "Select",
+   "label": "No. of Months",
+   "options": "\n1 Month\n2 Months\n3 Months"
   },
   {
    "bold": 1,
@@ -172,7 +181,7 @@
  "grid_page_length": 50,
  "istable": 1,
  "links": [],
- "modified": "2026-08-24 10:00:00.000000",
+ "modified": "2026-09-02 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Preparation Record",
