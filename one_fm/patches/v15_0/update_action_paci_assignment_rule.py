@@ -17,15 +17,24 @@ from one_fm.custom.assignment_rule.assignment_rule import (
 RULE = "Action PACI"
 RULE_FILE = "action_paci.json"
 
+# PACI-PRO comes with it. Its close_condition named Draft and Pending GR Operator, and
+# close_assignments closes EVERY assignment on the document whichever rule made it - so
+# the moment Action PACI assigned the owner in one of those states, PACI-PRO closed it
+# again. The states move to unassign_condition, which apply_unassign scopes to the rule's
+# own assignment, so the PRO is released without touching anybody else's.
+PRO_RULE = "PACI-PRO"
+PRO_RULE_FILE = "paci_pro.json"
+
 
 def execute():
 	# The task link is left as it is rather than blanked: it is what the rule would fall back
 	# to if it were ever put back on "Based on Process Task", and blanking it is how a rule
 	# ends up assigning nobody in the first place.
-	create_assignment_rule(
-		get_assignment_rule_json_file(RULE_FILE),
-		frappe.db.get_value("Assignment Rule", RULE, "custom_routine_task"),
-	)
+	for rule_file, name in ((RULE_FILE, RULE), (PRO_RULE_FILE, PRO_RULE)):
+		create_assignment_rule(
+			get_assignment_rule_json_file(rule_file),
+			frappe.db.get_value("Assignment Rule", name, "custom_routine_task"),
+		)
 
 	verify()
 
@@ -68,5 +77,21 @@ def verify():
 				f"WI-002183: {RULE!r} unassigns on {named!r}, which the PACI workflow does "
 				"not have - it would never release a cancelled record."
 			)
+
+	pro = frappe.db.get_value(
+		"Assignment Rule", PRO_RULE, ["close_condition", "unassign_condition"], as_dict=True
+	)
+	if pro:
+		for state in ("Draft", "Pending GR Operator"):
+			if state in (pro.close_condition or ""):
+				frappe.throw(
+					f"WI-002183: {PRO_RULE!r} still closes at {state!r}. close_assignments "
+					"closes every assignment on the document, so it would take the owner's "
+					f"away the moment {RULE!r} made it."
+				)
+			if state not in (pro.unassign_condition or ""):
+				frappe.throw(
+					f"WI-002183: {PRO_RULE!r} no longer releases the PRO at {state!r}."
+				)
 
 	print(f"WI-002183: {RULE} now assigns the PACI to its owner")
