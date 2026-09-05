@@ -204,7 +204,17 @@ def build_demand_descriptors(nested_map: dict) -> list:
 					})
 
 			# ── OLM: aggregate across shifts by (stop_location, hour) ──
-			for parent_name in olm_by_site.get(operations_site, []):
+			#
+			# WI-002308: only when OSM has not already placed this shift. A site can be
+			# configured under both arrangements, and both branches used to run - so the
+			# same employees were generated onto two sets of cards at two different
+			# stops, and the board showed the shift's demand twice over with different
+			# names and headcounts.
+			#
+			# One Site Many Locations is configured against this specific site, so it is
+			# the more specific statement of where its staff are picked up, and it wins.
+			# Agreed with the process owner.
+			for parent_name in ([] if handled else olm_by_site.get(operations_site, [])):
 				olm_doc = olm_doc_map.get(parent_name)
 				if not olm_doc or not olm_doc.transport_stop_location:
 					continue
