@@ -6,6 +6,7 @@ from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_man
 from one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log import get_handover_windows
 from one_fm.operations.doctype.route_plan.route_plan import _card_direction, card_rows
 from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+    driver_employees,
     qoa_buffer_minutes,
 )
 from one_fm.overrides.vehicle import passenger_capacity
@@ -904,6 +905,27 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
             "mobile": row.cell_number or "",
             "is_reliever": row.employee_id in reliever_ids,
         })
+
+    # WI-002306 AC2/AC3: a card whose riders are all drivers is not assignable demand -
+    # nobody on it is travelling as a passenger. Generation stops making these, but
+    # records made before that still exist, and an Assigned one cannot be pruned, so the
+    # canvas has to refuse them itself rather than wait for a Generate run.
+    drivers = driver_employees([row.employee_id for row in emp_rows])
+    driver_only = {
+        ship
+        for ship, emps in emps_by_ship.items()
+        if emps and all(e["id"] in drivers for e in emps)
+    }
+    # Only the ones nobody has planned yet. An Assigned card is sitting on a lane in a
+    # saved plan, and a placed block resolves its card from this list - drop it and the
+    # block loses its detail panel, its trip chain and its manifest row. Withdrawing a
+    # card from the demand pool is this story's job; quietly emptying somebody's plan is
+    # not.
+    if driver_only:
+        shipments = [
+            s for s in shipments
+            if s.name not in driver_only or s.status != "Unassigned"
+        ]
 
     # Fallback times for shipments without an Operations Shift (ad-hoc journeys).
     trq_names = list({
