@@ -964,8 +964,16 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
         for ship, emps in emps_by_ship.items()
         if emps and all(e["id"] in drivers for e in emps)
     }
+    # Only the ones nobody has planned yet. An Assigned card is sitting on a lane in a
+    # saved plan, and a placed block resolves its card from this list - drop it and the
+    # block loses its detail panel, its trip chain and its manifest row. Withdrawing a
+    # card from the demand pool is this story's job; quietly emptying somebody's plan is
+    # not.
     if driver_only:
-        shipments = [s for s in shipments if s.name not in driver_only]
+        shipments = [
+            s for s in shipments
+            if s.name not in driver_only or s.status != "Unassigned"
+        ]
 
     # WI-002307: a card for a shift that has been switched off is not work anybody is
     # going to plan. Generation already stops making them and prunes the Unassigned
