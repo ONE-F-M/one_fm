@@ -904,7 +904,11 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
         "Transportation Shipment",
         filters={"status": ["in", ["Unassigned", "Assigned"]]},
         fields=[
-            "name", "accommodation", "accommodation_name", "operations_shift",
+            "name",
+            # Selected, not just filtered on: the driver-card guard below compares
+            # against it, and an unselected field reads back as None (WI-002306).
+            "status",
+            "accommodation", "accommodation_name", "operations_shift",
             # Every shift the card serves, for the OLM stops one card covers several of.
             "aggregated_shifts",
             "operations_site", "stop_location", "headcount", "trip_direction",
