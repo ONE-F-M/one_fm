@@ -164,6 +164,112 @@ class TestTheShiftAssignmentIsBlocked(FrappeTestCase):
 		self.assertIn('"workflow_state": ["not in", ["Pending DSOT Approval", "Rejected"]]', source)
 
 
+class TestTheApprovalRaisesTheAssignmentOnlyForToday(FrappeTestCase):
+	"""Shift Assignment refuses a start date in the future outright.
+
+	Approving tomorrow's overtime therefore raised "Shift cannot be created for date
+	greater than today" at the approver, on top of an approval that had in fact saved.
+	And catching the exception was not enough to hide it: frappe.throw queues its message
+	for the browser before it raises, so the popup appeared regardless.
+
+	A future date needs nothing done to it - overtime_shift_assignment runs every five
+	minutes over that day's schedules, and by then the request is Active and no longer
+	filtered out.
+	"""
+
+	def setUp(self):
+		self.employee = frappe.db.get_value("Employee", {"status": "Active"}, "name")
+		if not self.employee:
+			self.skipTest("no active employee on this site")
+		self.made = []
+
+	def tearDown(self):
+		for name in self.made:
+			frappe.db.sql("DELETE FROM `tabEmployee Schedule` WHERE name = %s", name)
+
+	def _approved_overtime(self, date):
+		schedule = frappe.new_doc("Employee Schedule")
+		schedule.employee = self.employee
+		schedule.date = date
+		schedule.roster_type = OVERTIME
+		schedule.employee_availability = WORKING
+		schedule.insert(ignore_permissions=True)
+		self.made.append(schedule.name)
+		return schedule
+
+	def _assignments(self, date):
+		return frappe.get_all(
+			"Shift Assignment", filters={"employee": self.employee, "start_date": date}, pluck="name"
+		)
+
+	def test_a_future_date_never_reaches_the_builder(self):
+		"""Asserted on the call, not on the absence of a Shift Assignment: the builder
+		swallows its own ValidationError, so "no assignment appeared" is equally true
+		when it was called and refused."""
+		import one_fm.api.tasks as tasks
+
+		schedule = self._approved_overtime(add_days(today(), 1))
+		calls = []
+		original = tasks.create_overtime_shift_assignment
+		tasks.create_overtime_shift_assignment = lambda *a, **k: calls.append(a)
+		try:
+			schedule.create_dsot_shift_assignment()
+		finally:
+			tasks.create_overtime_shift_assignment = original
+
+		self.assertEqual(calls, [], "tomorrow's overtime was sent to Shift Assignment")
+
+	def test_today_does_reach_the_builder(self):
+		"""The other half - the guard must not swallow the case it exists to serve."""
+		import one_fm.api.tasks as tasks
+
+		schedule = self._approved_overtime(today())
+		calls = []
+		original = tasks.create_overtime_shift_assignment
+		tasks.create_overtime_shift_assignment = lambda *a, **k: calls.append(a)
+		try:
+			schedule.create_dsot_shift_assignment()
+		finally:
+			tasks.create_overtime_shift_assignment = original
+
+		self.assertEqual(len(calls), 1)
+
+	def test_a_failure_never_reaches_the_approver(self):
+		"""frappe.throw queues its message for the browser before it raises, so catching
+		the exception is not enough - the popup appears on top of an approval that saved.
+		Driven with a builder that throws, because the real one swallows its own."""
+		import one_fm.api.tasks as tasks
+
+		def _throws(*args, **kwargs):
+			frappe.throw("Shift cannot be created for date greater than today")
+
+		schedule = self._approved_overtime(today())
+		original = tasks.create_overtime_shift_assignment
+		tasks.create_overtime_shift_assignment = _throws
+		before = list(frappe.message_log)
+		try:
+			schedule.create_dsot_shift_assignment()
+		finally:
+			tasks.create_overtime_shift_assignment = original
+
+		self.assertEqual(frappe.message_log, before, "the approver was shown the failure")
+
+	def test_an_availability_other_than_working_is_left_alone(self):
+		import one_fm.api.tasks as tasks
+
+		schedule = self._approved_overtime(today())
+		schedule.employee_availability = "Day Off"
+		calls = []
+		original = tasks.create_overtime_shift_assignment
+		tasks.create_overtime_shift_assignment = lambda *a, **k: calls.append(a)
+		try:
+			schedule.create_dsot_shift_assignment()
+		finally:
+			tasks.create_overtime_shift_assignment = original
+
+		self.assertEqual(calls, [])
+
+
 class TestTheExpiryJob(FrappeTestCase):
 	"""AC7: a request that outlives its own shift is closed - the hours are gone."""
 

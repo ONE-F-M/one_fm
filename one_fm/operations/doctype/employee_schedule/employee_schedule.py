@@ -308,9 +308,12 @@ class EmployeeSchedule(Document):
 	def create_dsot_shift_assignment(self):
 		"""Give an approved overtime shift its Shift Assignment now (WI-002283).
 
-		The nightly job that normally raises these has already run for today by the time
-		an approval comes through, and a shift approved for today is exactly the one that
-		cannot wait until tomorrow.
+		Only for today. Shift Assignment refuses a start date in the future outright -
+		"Shift cannot be created for date greater than today" - so approving tomorrow's
+		overtime raised that at the approver, over an approval that had in fact saved.
+		A future date needs nothing done to it: overtime_shift_assignment runs every five
+		minutes over that day's schedules, and by then this one is Active and no longer
+		filtered out.
 
 		Reuses the same builder the job uses, so an assignment made here is the one the
 		job would have made. Logged rather than raised: the approval itself has already
@@ -320,6 +323,9 @@ class EmployeeSchedule(Document):
 		from one_fm.api.tasks import create_overtime_shift_assignment
 
 		if self.employee_availability != WORKING:
+			return
+
+		if getdate(self.date) != getdate():
 			return
 
 		if frappe.db.exists("Shift Assignment", {
@@ -337,6 +343,10 @@ class EmployeeSchedule(Document):
 		schedule = frappe._dict(self.as_dict())
 		schedule.doctype = self.doctype
 
+		# frappe.throw() queues its message for the browser before it raises, so catching
+		# the exception is not enough to keep a failure here from surfacing as a red popup
+		# on top of an approval that succeeded. Anything the attempt queued is dropped.
+		messages_before = len(frappe.message_log)
 		try:
 			create_overtime_shift_assignment(schedule, self.date)
 		except Exception:
@@ -344,6 +354,8 @@ class EmployeeSchedule(Document):
 				title="Could not create the Shift Assignment for an approved DSOT",
 				message=frappe.get_traceback(),
 			)
+		finally:
+			del frappe.message_log[messages_before:]
 
 	def clear_suspension_approval_requests(self):
 		"""WI-001694: drop the pending approval request for a decided suspension.
