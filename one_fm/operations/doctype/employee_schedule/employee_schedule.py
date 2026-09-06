@@ -30,6 +30,63 @@ BASIC = "Basic"
 WORKING = "Working"
 
 
+def hold_overtime_for_approval(names):
+	"""Put bulk-created overtime schedules into the DSOT gate (WI-002283).
+
+	The roster writes Employee Schedule rows with one raw INSERT rather than through the
+	ORM - deliberately, it can be hundreds of rows - so before_insert never runs for them
+	and set_dsot_state never sees them. They arrived with no workflow_state at all and
+	went straight to a Shift Assignment, which is the whole thing this story exists to
+	stop.
+
+	Same test as set_dsot_state, asked once for the batch: an overtime schedule for
+	somebody already working a basic shift that day is a double shift. A state already
+	set is left alone, so re-running the roster over a decided request does not drag it
+	back to Pending.
+	"""
+	names = [name for name in (names or []) if name]
+	if not names:
+		return []
+
+	candidates = frappe.get_all(
+		"Employee Schedule",
+		filters={
+			"name": ["in", names],
+			"roster_type": OVERTIME,
+			"employee_availability": WORKING,
+			"workflow_state": ["in", [None, ""]],
+		},
+		fields=["name", "employee", "date"],
+	)
+	if not candidates:
+		return []
+
+	# One query for the whole batch rather than an exists() per row: the roster writes
+	# these hundreds at a time.
+	working_that_day = {
+		(row.employee, row.date)
+		for row in frappe.get_all(
+			"Employee Schedule",
+			filters={
+				"employee": ["in", list({c.employee for c in candidates})],
+				"date": ["in", list({c.date for c in candidates})],
+				"roster_type": BASIC,
+				"employee_availability": WORKING,
+			},
+			fields=["employee", "date"],
+		)
+	}
+
+	pending = [c.name for c in candidates if (c.employee, c.date) in working_that_day]
+	for name in pending:
+		frappe.db.set_value(
+			"Employee Schedule", name, "workflow_state", PENDING_DSOT, update_modified=False
+		)
+		frappe.get_doc("Employee Schedule", name).request_dsot_approval()
+
+	return pending
+
+
 def dsot_settings():
 	"""Who decides a DSOT request, from Operation Settings."""
 	return frappe.db.get_value(

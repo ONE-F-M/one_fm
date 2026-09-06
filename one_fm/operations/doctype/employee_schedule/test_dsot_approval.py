@@ -20,6 +20,7 @@ from one_fm.operations.doctype.employee_schedule.employee_schedule import (
 	OVERTIME,
 	PENDING_DSOT,
 	WORKING,
+	hold_overtime_for_approval,
 	may_decide_dsot,
 	reject_expired_dsot_requests,
 )
@@ -219,3 +220,88 @@ class TestTheApproverSetting(FrappeTestCase):
 		self.assertIsNotNone(
 			frappe.get_meta("Operation Settings").get_field("default_operation_manager")
 		)
+
+
+class TestTheRosterPath(FrappeTestCase):
+	"""The roster does not create schedules through the ORM.
+
+	`assign_schedule` writes them with one raw INSERT - deliberately, it can be hundreds
+	of rows at a time - so before_insert never runs and set_dsot_state never sees them.
+	Rows arrived with no workflow_state at all and went straight through to a Shift
+	Assignment, which is the whole thing this story exists to stop. Nothing else notices:
+	the controller's own tests all create documents the ORM way and pass.
+	"""
+
+	def setUp(self):
+		self.employee = frappe.db.get_value("Employee", {"status": "Active"}, "name")
+		if not self.employee:
+			self.skipTest("no active employee on this site")
+		self.date = add_days(today(), 45)
+		self.made = []
+
+	def tearDown(self):
+		for name in self.made:
+			frappe.db.sql("DELETE FROM `tabEmployee Schedule` WHERE name = %s", name)
+
+	def _raw_insert(self, roster_type):
+		"""Exactly how the roster writes one: raw SQL, no workflow_state column."""
+		name = f"{self.date}_{self.employee}_{roster_type}"
+		frappe.db.sql(
+			"""INSERT INTO `tabEmployee Schedule`
+			   (`name`, `employee`, `date`, `roster_type`, `employee_availability`,
+			    `owner`, `modified_by`, `creation`, `modified`)
+			   VALUES (%s, %s, %s, %s, 'Working', 'Administrator', 'Administrator',
+			           NOW(), NOW())""",
+			(name, self.employee, self.date, roster_type),
+		)
+		self.made.append(name)
+		return name
+
+	def _state(self, name):
+		return frappe.db.get_value("Employee Schedule", name, "workflow_state")
+
+	def test_a_bulk_written_second_shift_is_held(self):
+		self._raw_insert(BASIC)
+		overtime = self._raw_insert(OVERTIME)
+		self.assertIsNone(self._state(overtime), "the INSERT should not set a state itself")
+
+		hold_overtime_for_approval([overtime])
+
+		self.assertEqual(self._state(overtime), PENDING_DSOT)
+
+	def test_overtime_on_a_day_off_is_not_held(self):
+		"""Overtime on a day the employee is not already working is ordinary overtime."""
+		overtime = self._raw_insert(OVERTIME)
+
+		self.assertEqual(hold_overtime_for_approval([overtime]), [])
+		self.assertIsNone(self._state(overtime))
+
+	def test_a_decided_request_is_not_dragged_back(self):
+		"""Re-running the roster over the same day must not undo an approval."""
+		self._raw_insert(BASIC)
+		overtime = self._raw_insert(OVERTIME)
+		frappe.db.set_value("Employee Schedule", overtime, "workflow_state", ACTIVE)
+
+		self.assertEqual(hold_overtime_for_approval([overtime]), [])
+		self.assertEqual(self._state(overtime), ACTIVE)
+
+	def test_running_it_twice_changes_nothing(self):
+		self._raw_insert(BASIC)
+		overtime = self._raw_insert(OVERTIME)
+
+		self.assertEqual(hold_overtime_for_approval([overtime]), [overtime])
+		self.assertEqual(hold_overtime_for_approval([overtime]), [])
+		self.assertEqual(self._state(overtime), PENDING_DSOT)
+
+	def test_it_asks_the_database_nothing_for_an_empty_batch(self):
+		self.assertEqual(hold_overtime_for_approval([]), [])
+		self.assertEqual(hold_overtime_for_approval(None), [])
+
+	def test_the_roster_calls_it(self):
+		"""A helper nothing calls fixes nothing - and the call sits inside the bulk
+		insert branch, which no test exercises end to end."""
+		source = frappe.read_file(
+			frappe.get_app_path("one_fm", "one_fm", "page", "roster", "roster.py")
+		)
+
+		self.assertIn("hold_overtime_for_approval(inserted_names)", source)

@@ -995,6 +995,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 	"""
 	can_create = False
 	omitted_days = set()
+	inserted_names = []
 
 	# Create a temporary structure to count new schedules per day from the current batch
 	daily_add_count = defaultdict(int)
@@ -1053,6 +1054,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 
 			employee_doc = employees_dict.get(employee_name_iter)
 			name = f"{datevalue['date']}_{employee_name_iter}_{roster_type}"
+			inserted_names.append(name)
 			day_off_ot_val = datevalue.get('day_off_ot') or day_off_ot  
 			query_values.append(f"""
 				(
@@ -1094,6 +1096,17 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 		if can_create:
 			frappe.db.sql(query, values=[])
 			frappe.db.commit()
+
+			# WI-002283: these rows were written by the INSERT above, not through the
+			# ORM, so before_insert never ran and the DSOT gate never saw them. A second
+			# shift has to wait for approval however it was rostered.
+			if roster_type == "Over-Time":
+				from one_fm.operations.doctype.employee_schedule.employee_schedule import (
+					hold_overtime_for_approval,
+				)
+
+				hold_overtime_for_approval(inserted_names)
+				frappe.db.commit()
 
 
 	if skipped_ot_no_basic:
