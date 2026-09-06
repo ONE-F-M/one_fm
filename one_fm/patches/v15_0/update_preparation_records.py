@@ -27,7 +27,7 @@ def update_grd_settings():
     })
     
     doc.append("renewal_extension_cost", {
-        "renewal_or_extend": "Renewal (Non-Kuwaiti)",
+        "renewal_or_extend": "Renewal Expat",
         "no_of_years": "1 Year",
         "work_permit_amount": 10.0,
         "medical_insurance_amount": 50.0,
@@ -41,14 +41,14 @@ def update_grd_settings():
     frappe.db.commit()
     
     print(f"HR Settings: Removed {len(rows_to_remove)} 'Renewal' row(s)")
-    print("HR Settings: Added 'Renewal (Kuwaiti)' and 'Renewal (Non-Kuwaiti)'")
+    print("HR Settings: Added 'Renewal (Kuwaiti)' and 'Renewal Expat'")
 
 def get_renewal_costs():
     doc = frappe.get_doc("HR Settings", "HR Settings")
     
     costs = {}
     for row in doc.renewal_extension_cost:
-        if row.renewal_or_extend in ["Renewal (Kuwaiti)", "Renewal (Non-Kuwaiti)"]:
+        if row.renewal_or_extend in ["Renewal (Kuwaiti)", "Renewal Expat"]:
             costs[row.renewal_or_extend] = {
                 "work_permit_amount": row.work_permit_amount,
                 "medical_insurance_amount": row.medical_insurance_amount,
@@ -76,7 +76,7 @@ def update_preparation_records(renewal_costs):
     
     for record in preparation_records:
         is_kuwaiti = record.one_fm_nationality == "Kuwaiti"
-        renewal_type = "Renewal (Kuwaiti)" if is_kuwaiti else "Renewal (Non-Kuwaiti)"
+        renewal_type = "Renewal (Kuwaiti)" if is_kuwaiti else "Renewal Expat"
         
         costs = renewal_costs.get(renewal_type)
         if not costs:

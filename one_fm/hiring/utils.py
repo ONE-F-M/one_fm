@@ -619,7 +619,7 @@ def create_new_work_permit(work_permit):
 	wp.workflow_state = 'Apply Online by PRO'
 	if doc.work_permit_type == "Local Transfer":
 		wp.transfer_paper = doc.transfer_paper
-	if doc.work_permit_type == "Renewal Non Kuwaiti" or doc.work_permit_type == "Renewal Kuwaiti":
+	if doc.work_permit_type == "Renewal Expat" or doc.work_permit_type == "Renewal Kuwaiti":
 		wp.preparation = doc.preparation
 	wp.save(ignore_permissions=True)
 	return wp

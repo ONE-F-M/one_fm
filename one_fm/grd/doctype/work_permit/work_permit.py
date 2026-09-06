@@ -181,14 +181,14 @@ class WorkPermit(Document):
             self.set_mendatory_fields(field_list,message_detail)
 
         if self.workflow_state == "Pending GR Manager":
-            if self.work_permit_type == "New Kuwaiti" or self.work_permit_type == "Local Transfer" or self.work_permit_type =="Renewal Kuwaiti" or self.work_permit_type =="Renewal Non Kuwaiti":
+            if self.work_permit_type == "New Kuwaiti" or self.work_permit_type == "Local Transfer" or self.work_permit_type =="Renewal Kuwaiti" or self.work_permit_type =="Renewal Expat":
                 field_list = [{'PAM Reference Number':'reference_number_on_pam_registration'}]
                 message_detail = '<b style="color:red; text-align:center;">First, You Need to Apply for Work Permit Registration through <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
                 self.set_mendatory_fields(field_list,message_detail)
             self.reload()
 
         if self.workflow_state == "Pending By PAM Operator":
-            if self.work_permit_type == "Renewal Kuwaiti" or self.work_permit_type == "Renewal Non Kuwaiti" or self.work_permit_type == "New Kuwaiti":
+            if self.work_permit_type == "Renewal Kuwaiti" or self.work_permit_type == "Renewal Expat" or self.work_permit_type == "New Kuwaiti":
                 field_list = [{'Upload Payment Invoice':'attach_invoice'}]
                 message_detail = '<b style="color:red; text-align:center;">First, You Need to Pay through <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
                 self.set_mendatory_fields(field_list,message_detail)
@@ -564,7 +564,7 @@ def create_work_permit_renewal(preparation_name):
     employee_in_preparation = frappe.get_doc('Preparation',preparation_name)
     if employee_in_preparation.preparation_record:
         for employee in employee_in_preparation.preparation_record:
-            if employee.renewal_or_extend in  ['Renewal (Non-Kuwaiti)','Renewal (Kuwaiti)']:
+            if employee.renewal_or_extend in  ['Renewal Expat','Renewal (Kuwaiti)']:
                 try:
                     create_wp_renewal(frappe.get_doc('Employee',employee.employee),employee.renewal_or_extend,preparation_name)
                 except Exception:
@@ -574,7 +574,7 @@ def create_work_permit_renewal(preparation_name):
 
 #FOR RENEWAL
 def create_wp_renewal(employee,status,name):
-    if status and status in ['Renewal (Non-Kuwaiti)',"Renewal (Kuwaiti)"]:
+    if status and status in ['Renewal Expat',"Renewal (Kuwaiti)"]:
         start_day = add_days(employee.residency_expiry_date, -14)
         Doctype = "Preparation"
         preparation_name = name
@@ -582,7 +582,7 @@ def create_wp_renewal(employee,status,name):
         if employee.one_fm_nationality == "Kuwaiti":
             work_permit_type = "Renewal Kuwaiti"
         if employee.one_fm_nationality != "Kuwaiti":
-            work_permit_type = "Renewal Non Kuwaiti"
+            work_permit_type = "Renewal Expat"
 
     if employee.one_fm_work_permit:
         work_permit = frappe.get_doc('Work Permit', employee.one_fm_work_permit)
@@ -672,7 +672,7 @@ def system_remind_renewal_operator_to_apply():
     supervisor = frappe.db.get_single_value("HR Settings", "default_grd_supervisor")
     renewal_operator = frappe.db.get_single_value("HR Settings", "default_grd_operator")
     work_permit_list = frappe.db.get_list('Work Permit',
-    {'date_of_application':['<=',today()],'workflow_state':['in',('Draft','Apply Online by PRO')],'work_permit_type':['in',('Renewal Non Kuwaiti','Renewal Kuwaiti')]},['civil_id','name','reminded_grd_operator','reminded_grd_operator_again'])
+    {'date_of_application':['<=',today()],'workflow_state':['in',('Draft','Apply Online by PRO')],'work_permit_type':['in',('Renewal Expat','Renewal Kuwaiti')]},['civil_id','name','reminded_grd_operator','reminded_grd_operator_again'])
 
     if is_scheduler_emails_enabled():
         notification_reminder(work_permit_list,supervisor,renewal_operator,"Renewal")
