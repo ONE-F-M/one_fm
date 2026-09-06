@@ -8,6 +8,37 @@ from frappe.utils import cint
 
 TRIP_REQUEST = "Trip Request"
 
+# WI-002306: the designations that mean "this person drives the bus", so they are
+# never booked onto one as a passenger. A driver on a passenger card is a seat
+# counted twice and a dispatcher scheduling somebody who is already working the run.
+#
+# The story says "designation == Driver", but that designation has no active
+# employees - the 24 real drivers are Bus, Heavy and Light. Held as one list, agreed
+# with the process owner, so adding a fifth is a one-line change rather than a hunt
+# through three modules.
+DRIVER_DESIGNATIONS = ("Driver", "Bus Driver", "Heavy Driver", "Light Driver")
+
+
+def driver_employees(employee_ids) -> set:
+    """Which of these employees drive, so they can be left off passenger cards.
+
+    One query for the whole set rather than a designation lookup per rider: this runs
+    once per generation pass over every shift roster on site, and once more each time
+    the canvas loads its cards.
+    """
+    employee_ids = [e for e in set(employee_ids or []) if e]
+    if not employee_ids:
+        return set()
+
+    return {
+        row.name
+        for row in frappe.get_all(
+            "Employee",
+            filters={"name": ["in", employee_ids], "designation": ["in", DRIVER_DESIGNATIONS]},
+            fields=["name"],
+        )
+    }
+
 
 class TransportationShipment(Document):
 	def validate(self):
