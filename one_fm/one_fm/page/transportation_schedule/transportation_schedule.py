@@ -6,6 +6,7 @@ from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_man
 from one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log import get_handover_windows
 from one_fm.operations.doctype.route_plan.route_plan import _card_direction, card_rows
 from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+    driver_employees,
     qoa_buffer_minutes,
 )
 from one_fm.overrides.vehicle import passenger_capacity
@@ -838,6 +839,52 @@ def get_route_plans():
 SHIPMENT_CARD_PREFIX = "TSHIP-"
 
 
+def _shifts_served(shipment) -> list:
+    """Every Operations Shift a card carries staff for (WI-002307).
+
+    Most cards name one. An OLM stop shared by several roles finishing together lists
+    them in ``aggregated_shifts`` and leaves ``operations_shift`` blank, because no
+    single one of them is it - so reading only the Link field would see no shift on the
+    cards that serve the most.
+    """
+    named = [s.strip() for s in (shipment.aggregated_shifts or "").split(",") if s.strip()]
+    if shipment.operations_shift and shipment.operations_shift not in named:
+        named.append(shipment.operations_shift)
+    return named
+
+
+def _inactive_shifts(shipments) -> set:
+    """Which of the shifts these cards serve have been switched off (WI-002307)."""
+    names = set()
+    for shipment in shipments:
+        names.update(_shifts_served(shipment))
+    if not names:
+        return set()
+
+    return {
+        row.name
+        for row in frappe.get_all(
+            "Operations Shift",
+            filters={"name": ["in", list(names)], "status": "Inactive"},
+            fields=["name"],
+        )
+    }
+
+
+def _serves_only_inactive_shifts(shipment, inactive_shifts) -> bool:
+    """Is there nothing left on this card worth planning (WI-002307)?
+
+    Every shift it serves has to be inactive, not just one of them. An OLM card
+    carrying three shifts still has to run for the two that are live, and hiding it
+    because the third was switched off would take real demand off the board.
+
+    A card that names no shift at all - an ad-hoc Trip Request journey - is never
+    hidden: there is no shift to have been switched off.
+    """
+    served = _shifts_served(shipment)
+    return bool(served) and all(name in inactive_shifts for name in served)
+
+
 def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedelta):
     """Return draggable cards for Transportation Shipment records.
 
@@ -904,6 +951,35 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
             "mobile": row.cell_number or "",
             "is_reliever": row.employee_id in reliever_ids,
         })
+
+    # WI-002306 AC2/AC3: a card whose riders are all drivers is not assignable demand -
+    # nobody on it is travelling as a passenger. Generation stops making these, but
+    # records made before that still exist, and an Assigned one cannot be pruned, so the
+    # canvas has to refuse them itself rather than wait for a Generate run.
+    inactive_shifts = _inactive_shifts(shipments)
+
+    drivers = driver_employees([row.employee_id for row in emp_rows])
+    driver_only = {
+        ship
+        for ship, emps in emps_by_ship.items()
+        if emps and all(e["id"] in drivers for e in emps)
+    }
+    # Only the ones nobody has planned yet. An Assigned card is sitting on a lane in a
+    # saved plan, and a placed block resolves its card from this list - drop it and the
+    # block loses its detail panel, its trip chain and its manifest row. Withdrawing a
+    # card from the demand pool is this story's job; quietly emptying somebody's plan is
+    # not.
+    if driver_only:
+        shipments = [
+            s for s in shipments
+            if s.name not in driver_only or s.status != "Unassigned"
+        ]
+
+    # WI-002307: a card for a shift that has been switched off is not work anybody is
+    # going to plan. Generation already stops making them and prunes the Unassigned
+    # ones, but that only runs daily or on the button - the dispatcher opening the board
+    # in between would still be looking at them, and an Assigned card is never pruned.
+    shipments = [s for s in shipments if not _serves_only_inactive_shifts(s, inactive_shifts)]
 
     # Fallback times for shipments without an Operations Shift (ad-hoc journeys).
     trq_names = list({

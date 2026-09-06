@@ -61,7 +61,7 @@ class TestTheInvoiceIsNotDemandedOfAnAmendedPermit(FrappeTestCase):
 		permit = _a_permit(
 			amendment_no=1,
 			workflow_state="Completed",
-			work_permit_type="Renewal Non Kuwaiti",
+			work_permit_type="Renewal Expat",
 			new_work_permit_expiry_date=None,
 		)
 		with self.assertRaises(frappe.ValidationError) as raised:
@@ -74,7 +74,7 @@ class TestTheInvoiceIsNotDemandedOfAnAmendedPermit(FrappeTestCase):
 		permit = _a_permit(
 			amendment_no=0,
 			workflow_state="Completed",
-			work_permit_type="Renewal Non Kuwaiti",
+			work_permit_type="Renewal Expat",
 		)
 		with self.assertRaises(frappe.ValidationError) as raised:
 			permit.on_submit()
