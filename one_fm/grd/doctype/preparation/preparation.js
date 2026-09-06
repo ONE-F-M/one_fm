@@ -39,7 +39,7 @@ frappe.ui.form.on('Preparation Record',{
 // WI-002031: the Actions whose master fee row is keyed by the number of years too. Kept
 // in step with YEAR_SCOPED_ACTIONS in preparation.py and with the costing table's own
 // depends_on.
-const YEAR_SCOPED_ACTIONS = ['Renewal (Kuwaiti)', 'Renewal (Non-Kuwaiti)'];
+const YEAR_SCOPED_ACTIONS = ['Renewal (Kuwaiti)', 'Renewal Expat'];
 const COST_COMPONENT_FIELDS = [
 	'work_permit_amount',
 	'medical_insurance_amount',

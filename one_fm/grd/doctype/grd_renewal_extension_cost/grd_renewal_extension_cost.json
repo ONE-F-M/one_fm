@@ -21,10 +21,10 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Action",
-   "options": "\nNew Kuwaiti\nOverseas\nOverseas (Government)\nRenewal (Kuwaiti)\nRenewal (Non-Kuwaiti)\nExtend 1 month\nExtend 2 months\nExtend 3 months\nLocal Transfer\nCancellation"
+   "options": "\nNew Kuwaiti\nOverseas\nOverseas (Government)\nRenewal (Kuwaiti)\nRenewal Expat\nExtend 1 month\nExtend 2 months\nExtend 3 months\nLocal Transfer\nCancellation"
   },
   {
-   "depends_on": "eval: doc.renewal_or_extend == \"Renewal (Kuwaiti)\" || doc.renewal_or_extend == \"Renewal (Non-Kuwaiti)\"",
+   "depends_on": "eval: doc.renewal_or_extend == \"Renewal (Kuwaiti)\" || doc.renewal_or_extend == \"Renewal Expat\"",
    "fieldname": "no_of_years",
    "fieldtype": "Select",
    "label": "No. of Years",

@@ -13,7 +13,7 @@ from one_fm.grd.doctype.preparation.preparation import (
 	years_in,
 )
 
-RENEWAL = YEAR_SCOPED_ACTIONS[1]  # Renewal (Non-Kuwaiti)
+RENEWAL = YEAR_SCOPED_ACTIONS[1]  # Renewal Expat
 ANNUAL = {
 	"work_permit_amount": 100,
 	"medical_insurance_amount": 50,

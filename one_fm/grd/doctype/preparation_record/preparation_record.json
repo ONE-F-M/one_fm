@@ -69,7 +69,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Action",
-   "options": "\nNew Kuwaiti\nOverseas\nOverseas (Government)\nRenewal (Kuwaiti)\nRenewal (Non-Kuwaiti)\nExtend 1 month\nExtend 2 months\nExtend 3 months\nLocal Transfer\nCancellation"
+   "options": "\nNew Kuwaiti\nOverseas\nOverseas (Government)\nRenewal (Kuwaiti)\nRenewal Expat\nExtend 1 month\nExtend 2 months\nExtend 3 months\nLocal Transfer\nCancellation"
   },
   {
    "allow_on_submit": 1,
@@ -96,7 +96,7 @@
   },
   {
    "allow_on_submit": 1,
-   "depends_on": "eval:[\"Renewal (Kuwaiti)\", \"Renewal (Non-Kuwaiti)\"].includes(doc.renewal_or_extend)",
+   "depends_on": "eval:[\"Renewal (Kuwaiti)\", \"Renewal Expat\"].includes(doc.renewal_or_extend)",
    "fieldname": "no_of_years",
    "fieldtype": "Select",
    "label": "No. of Years",
