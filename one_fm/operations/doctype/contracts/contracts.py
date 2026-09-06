@@ -83,6 +83,66 @@ class Contracts(Document):
 
         sync_contract_item_prices(self.name)
 
+        # Suppress unwanted assignment notification emails.
+        # Must be at the END of on_update so the monkey-patch is active
+        # when the assignment_rule.apply hook runs after this method.
+        self._setup_assignment_notification_control()
+
+    def _setup_assignment_notification_control(self):
+        """
+        Control which assignment notification emails are sent during saves.
+
+        - Plain save (no workflow state change): suppress ALL assignment emails.
+        - Submit / Set Inactive (terminal states): suppress ALL assignment emails.
+        - Submit for Further Action / Return to X: suppress only "removed"
+          emails; allow the new-assignment email through so only the next
+          assignee is notified.
+
+        The original ``notify_assignment`` is restored in ``on_change``,
+        which Frappe calls after all ``on_update`` hooks have completed.
+        """
+        import frappe.desk.form.assign_to as assign_module
+
+        if getattr(self.flags, "_restore_assignment_notify", False):
+            return  # Already patched
+
+        # Store original so on_change can restore it
+        self._original_notify_assignment = assign_module.notify_assignment
+        self.flags._restore_assignment_notify = True
+
+        target_doctype = self.doctype
+        target_name = self.name
+
+        plain_save = not self.has_value_changed("workflow_state")
+        terminal_state = self.workflow_state in ("Active", "Inactive")
+        
+        original = self._original_notify_assignment
+
+        def _scoped_notify(
+            assigned_by, allocated_to, doc_type, doc_name,
+            action="CLOSE", description=None,
+        ):
+            # Only apply suppression to THIS specific document
+            if doc_type == target_doctype and doc_name == target_name:
+                if plain_save or terminal_state:
+                    return  # suppress all assignment emails
+                if action == "CLOSE":
+                    return  # skip "your assignment has been removed" emails
+
+            # For other documents or allowed actions, call original
+            return original(
+                assigned_by, allocated_to, doc_type, doc_name,
+                action=action, description=description,
+            )
+
+        assign_module.notify_assignment = _scoped_notify
+
+    def on_change(self):
+        """Restore the original notify_assignment after all on_update hooks."""
+        if self.flags.get("_restore_assignment_notify"):
+            import frappe.desk.form.assign_to as assign_module
+            assign_module.notify_assignment = self._original_notify_assignment
+
     def send_inactivation_email(self):
         """Send email notification when a contract is set to Inactive."""
         recipients = [
