@@ -339,10 +339,11 @@ class EmployeeOverride(EmployeeMaster):
                 push_message = f"Dear {context.first_name}, Your residency registration process has been completed and your employee ID has been updated to {self.employee_id}."
                 push_notification_rest_api_for_checkin(employee_id=self.name,title=subject,body=push_message,checkin=False,arriveLate=False,checkout=False)
                 if self.cell_number:
-                    if '(' in self.cell_number or ')' in self.cell_number or '+' in self.cell_number:
-                        cell_number = "".join(i for i in self.cell_number if i.isdigit())
-                    else:
-                        cell_number = self.cell_number
+                    # Preserve a leading '+' so Twilio Lookup reads an existing
+                    # country code as E.164; national numbers are normalized via
+                    # the KW country hint in validate_whatsapp_number.
+                    digits = "".join(i for i in self.cell_number if i.isdigit())
+                    cell_number = "+" + digits if "+" in self.cell_number else digits
                 content_variables= {
 	                    	'1':context.first_name,
                             '2':self.get_doc_before_save().employee_id or '',
