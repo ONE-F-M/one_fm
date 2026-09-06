@@ -191,10 +191,13 @@ class TestTheAssignmentRules(FrappeTestCase):
 		self.assertEqual(rule["field"], "project_manager_user")
 		self.assertIn(PM_STATE, rule["assign_condition"])
 
-	def test_the_draft_rule_releases_the_owner_at_the_new_state(self):
+	def test_the_draft_rule_releases_the_owner_on_leaving_draft(self):
+		"""Not "on reaching Pending Project Manager": an event with no project is submitted
+		to Pending Operations Manager instead, and naming one state left the owner assigned
+		on the other route."""
 		rule = self._rule("returning_to_operations_supervisor_of_client_event.json")
 
-		self.assertEqual(rule["unassign_condition"], f'workflow_state == "{PM_STATE}"')
+		self.assertEqual(rule["unassign_condition"], 'workflow_state != "Draft"')
 
 	def test_no_rule_carries_a_blank_process_task(self):
 		"""An empty custom_routine_task is written straight through and blanks the link."""
