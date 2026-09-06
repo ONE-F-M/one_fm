@@ -165,6 +165,21 @@ def verify():
 			f"Extra: {sorted(live - set(BA_RULES))or 'none'}. Missing: {sorted(set(BA_RULES) - live) or 'none'}."
 		)
 
+	# close_condition is not scoped to the rule that owns the assignment: it closes every
+	# ToDo on the document. With three rules on one doctype, the two that are not the
+	# current state both satisfy it, so a Draft assignment was closed the moment it was
+	# made. unassign_condition says the same thing and only touches its own rule's ToDos.
+	using_close = frappe.get_all(
+		"Assignment Rule",
+		filters={"document_type": "Client Event", "close_condition": ["!=", ""]},
+		pluck="name",
+	)
+	if using_close:
+		frappe.throw(
+			f"WI-002184: {using_close} use close_condition, which closes every assignment on "
+			"the event rather than their own - the Draft assignment closes as soon as it opens."
+		)
+
 	stranded = frappe.db.sql(
 		"""SELECT COUNT(*) FROM `tabToDo`
 		   WHERE status = 'Open' AND assignment_rule IS NOT NULL
