@@ -30,7 +30,7 @@ jobs:
 
       - name: Close unauthorized issues
         if: steps.auth.outputs.authorized == 'false'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const issueNumber = context.issue.number;
