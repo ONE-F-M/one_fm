@@ -752,3 +752,70 @@ def disable_sync_on_developer_mode():
             0
         )
         print(f"Disabled Google Task Synchronization")
+
+def drop_erf_field_order_property_setter():
+	"""WI-002316: let the ERF layout the app ships actually take effect.
+
+	ERF carries a Property Setter holding its whole field order, left behind when
+	somebody reordered the form through Customize Form. That setter overrides
+	field_order in erf.json, so the analyst's layout - which moves Employee Grade and
+	Hiring Method out of the HR section and up beside Reason for Request - had no
+	effect. The HR section only shows once an ERF is past initial review and both
+	fields are mandatory, so a new ERF demanded two fields it was hiding.
+
+	This runs as an after_migrate hook rather than a patch because a patch cannot make
+	it stick: twilio_integration declares a bare "Property Setter" fixture, so somebody
+	running bench export-fixtures captured 796 of this site's property setters - 47 of
+	them whole field_order snapshots - into its fixtures file, and sync_fixtures()
+	re-imports them on every migrate, after the patches have run. after_migrate runs
+	after sync_fixtures, so it gets the last word.
+
+	The real fix is to stop that app exporting every Property Setter on the site; this
+	becomes a no-op the moment it does.
+	"""
+	setters = frappe.get_all(
+		"Property Setter",
+		filters={"doc_type": "ERF", "doctype_or_field": "DocType", "property": "field_order"},
+		pluck="name",
+	)
+	if not setters:
+		return
+
+	for name in setters:
+		frappe.delete_doc("Property Setter", name, ignore_permissions=True, force=True)
+	frappe.clear_cache(doctype="ERF")
+
+	# What the removal is for: no mandatory field may sit in a section a new ERF hides.
+	# A stale order strands one there without changing any field's own properties, so
+	# nothing else in the app would notice.
+	stranded = erf_mandatory_fields_a_new_erf_cannot_reach()
+	if stranded:
+		frappe.log_error(
+			title="ERF layout: mandatory fields unreachable",
+			message="A new ERF demands fields it hides: "
+			+ ", ".join(f"{field} (under {section})" for field, section in stranded),
+		)
+		print(f"WARNING: ERF has {len(stranded)} mandatory field(s) a new ERF cannot reach")
+		return
+
+	print(f"Dropped {len(setters)} stale ERF field_order property setter(s)")
+
+
+def erf_mandatory_fields_a_new_erf_cannot_reach() -> list:
+	"""Mandatory ERF fields sitting behind a workflow_state condition, which a new ERF
+	never satisfies."""
+	section = None
+	stranded = []
+	for field in frappe.get_meta("ERF").fields:
+		if field.fieldtype == "Section Break":
+			section = field
+			continue
+		if not field.reqd or field.hidden:
+			continue
+		hidden_by_section = bool(
+			section is not None and section.depends_on and "workflow_state" in section.depends_on
+		)
+		hidden_by_itself = bool(field.depends_on and "workflow_state" in field.depends_on)
+		if hidden_by_section or hidden_by_itself:
+			stranded.append((field.fieldname, section.fieldname if section else None))
+	return stranded

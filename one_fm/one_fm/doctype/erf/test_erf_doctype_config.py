@@ -108,7 +108,11 @@ class TestEveryMandatoryFieldIsReachable(FrappeTestCase):
 		self.assertEqual(self._mandatory_fields_a_new_erf_cannot_reach(), [])
 
 	def test_the_app_layout_is_not_overridden(self):
-		"""A field_order Property Setter silently wins over erf.json."""
+		"""A field_order Property Setter silently wins over erf.json. Removed by the
+		after_migrate hook rather than a patch, because twilio_integration declares a
+		bare "Property Setter" fixture and sync_fixtures() restores 796 of this site's
+		property setters - 47 of them whole field_order snapshots - after the patches
+		have run."""
 		self.assertFalse(
 			frappe.get_all(
 				"Property Setter",
