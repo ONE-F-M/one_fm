@@ -20,6 +20,7 @@ from one_fm.operations.doctype.employee_schedule.employee_schedule import (
 	OVERTIME,
 	PENDING_DSOT,
 	WORKING,
+	expired_dsot_requests,
 	hold_overtime_for_approval,
 	may_decide_dsot,
 	reject_expired_dsot_requests,
@@ -188,6 +189,16 @@ class TestTheApprovalRaisesTheAssignmentOnlyForToday(FrappeTestCase):
 			frappe.db.sql("DELETE FROM `tabEmployee Schedule` WHERE name = %s", name)
 
 	def _approved_overtime(self, date):
+		# before_insert refuses a second schedule for the same employee, date and roster
+		# type, and rows outlive a test - FrappeTestCase rolls back per class, not per
+		# test - so three tests all wanting one for today collide.
+		for existing in frappe.get_all(
+			"Employee Schedule",
+			filters={"employee": self.employee, "date": date, "roster_type": OVERTIME},
+			pluck="name",
+		):
+			frappe.db.sql("DELETE FROM `tabEmployee Schedule` WHERE name = %s", existing)
+
 		schedule = frappe.new_doc("Employee Schedule")
 		schedule.employee = self.employee
 		schedule.date = date
@@ -275,12 +286,29 @@ class TestTheExpiryJob(FrappeTestCase):
 
 	def test_it_reads_the_schedules_own_end_datetime(self):
 		"""end_datetime already rolls onto the next day for an overnight shift, which is
-		exactly the threshold the criteria describe."""
+		exactly the threshold the criteria describe - so a night shift that started
+		yesterday and is still running is not expired, whatever its date says."""
 		source = frappe.read_file(frappe.get_app_path(
 			"one_fm", "operations", "doctype", "employee_schedule", "employee_schedule.py"))
-
 		self.assertIn("if start_time > end_time:", source)
-		self.assertIn('"end_datetime": ["<", frappe.utils.now_datetime()]', source)
+
+		employee = frappe.db.get_value("Employee", {"status": "Active"}, "name")
+		if not employee:
+			self.skipTest("no active employee on this site")
+		name = f"dsot-overnight-{frappe.generate_hash(length=8)}"
+		frappe.db.sql(
+			"""INSERT INTO `tabEmployee Schedule`
+			   (`name`, `employee`, `date`, `roster_type`, `employee_availability`,
+			    `workflow_state`, `end_datetime`, `owner`, `modified_by`, `creation`, `modified`)
+			   VALUES (%s, %s, %s, 'Over-Time', 'Working', %s, %s, 'Administrator',
+			           'Administrator', NOW(), NOW())""",
+			(name, employee, add_days(today(), -1), PENDING_DSOT,
+			 add_to_date(now_datetime(), hours=4)),
+		)
+		try:
+			self.assertNotIn(name, expired_dsot_requests())
+		finally:
+			frappe.db.sql("DELETE FROM `tabEmployee Schedule` WHERE name = %s", name)
 
 	def test_it_leaves_a_request_whose_shift_is_still_running(self):
 		"""Nothing pending with a future end time should be touched."""
@@ -312,6 +340,75 @@ class TestTheExpiryJob(FrappeTestCase):
 			"reject_expired_dsot_requests",
 			hooks,
 		)
+
+
+class TestExpiryWithoutAnEndDatetime(FrappeTestCase):
+	"""Not every schedule carries one, and "NULL < now" is not true in SQL.
+
+	21 overtime rows on this site have no end_datetime, so a request on one of them
+	could never match the filter that closes expired requests - it would wait for ever.
+	With nothing to read the shift's finish off, the day it was for decides.
+
+	Rows are written with raw SQL: what is under test is which rows the query picks,
+	and going through the ORM drags in the workflow and the one-schedule-per-day rule
+	without adding anything to the question.
+	"""
+
+	def setUp(self):
+		self.employee = frappe.db.get_value("Employee", {"status": "Active"}, "name")
+		if not self.employee:
+			self.skipTest("no active employee on this site")
+		self.made = []
+
+	def tearDown(self):
+		for name in self.made:
+			frappe.db.sql("DELETE FROM `tabEmployee Schedule` WHERE name = %s", name)
+
+	def _row(self, date, end_datetime=None, state=PENDING_DSOT):
+		name = f"dsot-expiry-test-{len(self.made)}-{frappe.generate_hash(length=6)}"
+		frappe.db.sql(
+			"""INSERT INTO `tabEmployee Schedule`
+			   (`name`, `employee`, `date`, `roster_type`, `employee_availability`,
+			    `workflow_state`, `end_datetime`, `owner`, `modified_by`, `creation`, `modified`)
+			   VALUES (%s, %s, %s, %s, 'Working', %s, %s, 'Administrator', 'Administrator',
+			           NOW(), NOW())""",
+			(name, self.employee, date, OVERTIME, state, end_datetime),
+		)
+		self.made.append(name)
+		return name
+
+	def test_a_past_day_with_no_end_datetime_is_picked_up(self):
+		name = self._row(add_days(today(), -3))
+
+		self.assertIn(name, expired_dsot_requests())
+
+	def test_today_with_no_end_datetime_is_left_waiting(self):
+		"""The shift may not have run yet - closing it throws away hours nobody decided."""
+		name = self._row(today())
+
+		self.assertNotIn(name, expired_dsot_requests())
+
+	def test_a_future_day_with_no_end_datetime_is_left_waiting(self):
+		name = self._row(add_days(today(), 3))
+
+		self.assertNotIn(name, expired_dsot_requests())
+
+	def test_end_datetime_still_wins_where_there_is_one(self):
+		"""An overnight shift on a past date finishes the morning after - and one still
+		running is not expired, whatever its date says."""
+		finished = self._row(add_days(today(), -1), add_to_date(now_datetime(), hours=-1))
+		running = self._row(add_days(today(), -1), add_to_date(now_datetime(), hours=+4))
+
+		names = expired_dsot_requests()
+
+		self.assertIn(finished, names)
+		self.assertNotIn(running, names)
+
+	def test_a_decided_request_is_never_picked_up(self):
+		for state in (ACTIVE, DSOT_REJECTED):
+			with self.subTest(state=state):
+				name = self._row(add_days(today(), -3), state=state)
+				self.assertNotIn(name, expired_dsot_requests())
 
 
 class TestTheApproverSetting(FrappeTestCase):

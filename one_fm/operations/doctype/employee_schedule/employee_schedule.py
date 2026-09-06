@@ -563,6 +563,43 @@ def get_operations_posts(doctype, txt, searchfield, start, page_len, filters):
 	return operations_roles
 
 
+def expired_dsot_requests() -> list:
+	"""Pending DSOT requests whose shift has already finished.
+
+	The finish is read off end_datetime, which the schedule rolls onto the next day when
+	the shift runs past midnight, so an overnight request is judged against its real end
+	rather than against its date.
+
+	Not every schedule carries one, though - 65,534 rows on this site have none - and a
+	plain "end_datetime < now" does not leave those alone. Frappe writes the comparison
+	as ifnull(end_datetime, '0001-01-01 00:00:00'), so a missing end time reads as year
+	one and is always in the past: a request with no end_datetime was rejected the moment
+	this ran, whatever day it was for. It has to be asked for explicitly, and judged on
+	the day it was for instead - once that day is over the hours are gone either way.
+	"""
+	# A list of conditions, not a dict: two of them are on end_datetime, and the second
+	# would replace the first as a dict key.
+	names = frappe.get_all(
+		"Employee Schedule",
+		filters=[
+			["workflow_state", "=", PENDING_DSOT],
+			["end_datetime", "is", "set"],
+			["end_datetime", "<", frappe.utils.now_datetime()],
+		],
+		pluck="name",
+	)
+	names += frappe.get_all(
+		"Employee Schedule",
+		filters=[
+			["workflow_state", "=", PENDING_DSOT],
+			["end_datetime", "is", "not set"],
+			["date", "<", frappe.utils.today()],
+		],
+		pluck="name",
+	)
+	return names
+
+
 def reject_expired_dsot_requests():
 	"""Reject overtime requests nobody answered before the shift ended (WI-002283).
 
@@ -570,18 +607,11 @@ def reject_expired_dsot_requests():
 	hours are gone - so it is closed rather than left waiting. The shift end is read off
 	end_datetime, which the schedule already rolls onto the next day when the shift runs
 	past midnight, so an overnight request is judged against its real finish rather than
-	against its date.
+	against its date. Where a schedule has no end_datetime, the date is used instead.
 
 	Rejected under Administrator, because nobody decided it.
 	"""
-	expired = frappe.get_all(
-		"Employee Schedule",
-		filters={
-			"workflow_state": PENDING_DSOT,
-			"end_datetime": ["<", frappe.utils.now_datetime()],
-		},
-		pluck="name",
-	)
+	expired = expired_dsot_requests()
 
 	for name in expired:
 		try:
