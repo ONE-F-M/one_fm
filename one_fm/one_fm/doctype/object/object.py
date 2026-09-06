@@ -16,6 +16,23 @@ class Object(Document):
 	def before_save(self):
 		self.fetch_template_parts()
 
+	def on_submit(self):
+		"""Kick off preventive maintenance automation the moment a brand-new
+		Maintenance Object is submitted.
+
+		The Build Schedule and Catch Immediate Work routines run in the
+		background (enqueued after commit so the schedule slots reference a
+		persisted Object) and are de-duplicated per object.
+		"""
+		frappe.enqueue(
+			"one_fm.one_fm.doctype.maintenance_schedule_entry.maintenance_schedule_entry.process_object_schedule",
+			queue="short",
+			object_name=self.name,
+			enqueue_after_commit=True,
+			job_id=f"maintenance-schedule-{self.name}",
+			deduplicate=True,
+		)
+
 	def validate_commissioning_date(self):
 		"""Ensure the commissioning date is not in the future."""
 		if self.commissioning_date and getdate(self.commissioning_date) > getdate(today()):
