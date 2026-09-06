@@ -155,7 +155,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Work Permit Type",
-   "options": "\nRenewal Non Kuwaiti\nRenewal Kuwaiti\nOverseas\nOverseas (Government)\nLocal Transfer\nNew Kuwaiti\nCancellation",
+   "options": "\nRenewal Expat\nRenewal Kuwaiti\nOverseas\nOverseas (Government)\nLocal Transfer\nNew Kuwaiti\nCancellation",
    "permlevel": 1,
    "reqd": 1
   },
@@ -739,7 +739,7 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:(doc.work_permit_type == \"New Kuwaiti\" || doc.work_permit_type ==\"Local Transfer\" || doc.work_permit_type ==\"Renewal Kuwaiti\" || doc.work_permit_type ==\"Renewal Non Kuwaiti\") && doc.workflow_state != \"Draft\" ",
+   "depends_on": "eval:(doc.work_permit_type == \"New Kuwaiti\" || doc.work_permit_type ==\"Local Transfer\" || doc.work_permit_type ==\"Renewal Kuwaiti\" || doc.work_permit_type ==\"Renewal Expat\") && doc.workflow_state != \"Draft\" ",
    "fieldname": "pam_work_permit_registration_section",
    "fieldtype": "Section Break",
    "label": "PAM Work Permit Registration"

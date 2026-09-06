@@ -17,6 +17,9 @@ import frappe
 from frappe import _
 from frappe.utils import get_datetime, getdate, today
 
+from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+	driver_employees,
+)
 from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
 	get_coords,
 	get_grouped_employees_by_accommodation,
@@ -55,6 +58,13 @@ def build_demand_descriptors(nested_map: dict) -> list:
 	going roster and a cross-referenced return roster attached. Direction-specific
 	records are expanded later in generate_transportation_shipments().
 	"""
+	if not nested_map:
+		return []
+
+	# WI-002306: drivers are working the run, not riding it. Taken out here, before any
+	# routing decision, so no arrangement downstream can put one on a card and no
+	# headcount counts a seat the driver was never going to sit in.
+	nested_map = _without_drivers(nested_map)
 	if not nested_map:
 		return []
 
@@ -258,6 +268,35 @@ def build_demand_descriptors(nested_map: dict) -> list:
 	return demands
 
 
+def _without_drivers(nested_map: dict) -> dict:
+	"""The demand map with every driver removed from every shift roster (WI-002306).
+
+	A shift left with no riders is dropped, and so is an accommodation left with no
+	shifts - an empty roster produces no shipment anyway, and carrying it through only
+	means the prune pass has to clean up after it.
+	"""
+	rostered = set()
+	for acc_data in nested_map.values():
+		for emp_list in acc_data["shifts"].values():
+			rostered.update(emp_list)
+
+	drivers = driver_employees(rostered)
+	if not drivers:
+		return nested_map
+
+	trimmed = {}
+	for acc_name, acc_data in nested_map.items():
+		shifts = {}
+		for shift_name, emp_list in acc_data["shifts"].items():
+			riders = [e for e in emp_list if e not in drivers]
+			if riders:
+				shifts[shift_name] = riders
+		if shifts:
+			trimmed[acc_name] = dict(acc_data, shifts=shifts)
+
+	return trimmed
+
+
 def _attach_return_rosters(demands: list) -> None:
 	"""For each demand, find the finishing-shift roster at the same stop/accommodation.
 
@@ -444,11 +483,19 @@ def _group_passengers_by_camp(trip_request_doc) -> dict:
 	Returns an ordered {camp: [passenger_row, ...]} map. Passengers with no
 	accommodation_camp are skipped — they have no physical origin to group by,
 	so they cannot be materialized as a camp-origin demand card.
+
+	WI-002306: drivers are dropped here too, not only on the shift-generated side. The
+	canvas hides a driver card whichever source made it, so leaving one in would produce
+	a record the dispatcher can neither see nor plan - worse than not making it.
 	"""
+	drivers = driver_employees(
+		[p.employee_id for p in trip_request_doc.transport_request_passenger if p.employee_id]
+	)
+
 	groups = {}
 	for passenger in trip_request_doc.transport_request_passenger:
 		camp = passenger.accommodation_camp
-		if not camp:
+		if not camp or passenger.employee_id in drivers:
 			continue
 		groups.setdefault(camp, []).append(passenger)
 	return groups

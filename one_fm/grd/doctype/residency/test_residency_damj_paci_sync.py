@@ -29,7 +29,7 @@ class TestDamjCivilIdSyncToPaci(FrappeTestCase):
 				"doctype": "Preparation",
 				"category": "Renewal",
 				"posting_date": today(),
-				"preparation_record": [{"employee": self.employee, "renewal_or_extend": "Renewal (Non-Kuwaiti)"}],
+				"preparation_record": [{"employee": self.employee, "renewal_or_extend": "Renewal Expat"}],
 			}
 		)
 		preparation.flags.ignore_permissions = True
