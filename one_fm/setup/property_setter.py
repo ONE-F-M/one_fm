@@ -30,6 +30,7 @@ from one_fm.custom.property_setter.depreciation_schedule import get_depreciation
 from one_fm.custom.property_setter.designation import get_designation_properties
 from one_fm.custom.property_setter.email_template import get_email_template_properties
 from one_fm.custom.property_setter.employee_advance import get_employee_advance_properties
+from one_fm.custom.property_setter.employee_checkin import get_employee_checkin_properties
 from one_fm.custom.property_setter.employee_incentive import get_employee_incentive_properties
 from one_fm.custom.property_setter.employee_performance_feedback import get_employee_performance_feedback_properties
 from one_fm.custom.property_setter.gender import get_gender_properties
@@ -94,6 +95,7 @@ def get_field_properties():
 	field_properties.extend(get_designation_properties())
 	field_properties.extend(get_email_template_properties())
 	field_properties.extend(get_employee_advance_properties())
+	field_properties.extend(get_employee_checkin_properties())
 	field_properties.extend(get_employee_incentive_properties())
 	field_properties.extend(get_employee_performance_feedback_properties())
 	field_properties.extend(get_employee_properties())
