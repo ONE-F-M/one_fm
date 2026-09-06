@@ -970,9 +970,7 @@ after_migrate = [
     "one_fm.after_migrate.execute.replace_prompt_message_in_goal",
     "one_fm.after_migrate.execute.update_all_ticket_features",
     "one_fm.overrides.scheduled_job_type.update_scheduled_job_type_from_process_task",
-    "one_fm.after_migrate.execute.disable_email_and_sync_on_developer_mode",
-    # After sync_fixtures, which restores the stale ERF field_order property setter.
-    "one_fm.after_migrate.execute.drop_erf_field_order_property_setter"
+    "one_fm.after_migrate.execute.disable_email_and_sync_on_developer_mode"
 ]
 
 before_migrate = [

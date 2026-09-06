@@ -107,29 +107,42 @@ class TestEveryMandatoryFieldIsReachable(FrappeTestCase):
 	def test_nothing_mandatory_is_stranded_behind_a_workflow_state(self):
 		self.assertEqual(self._mandatory_fields_a_new_erf_cannot_reach(), [])
 
-	def test_the_app_layout_is_not_overridden(self):
-		"""A field_order Property Setter silently wins over erf.json. Removed by the
-		after_migrate hook rather than a patch, because twilio_integration declares a
-		bare "Property Setter" fixture and sync_fixtures() restores 796 of this site's
-		property setters - 47 of them whole field_order snapshots - after the patches
-		have run."""
-		self.assertFalse(
-			frappe.get_all(
-				"Property Setter",
-				filters={"doc_type": "ERF", "doctype_or_field": "DocType", "property": "field_order"},
-				pluck="name",
-			)
-		)
+	def test_no_app_ships_a_field_order_fixture(self):
+		"""WI-002316 AC2: a layout change made through Customize Form has to survive.
 
-	def test_grade_and_hiring_method_sit_beside_reason_for_request(self):
-		"""Where the analyst put them - the first section, which a new ERF shows."""
-		names = [f.fieldname for f in frappe.get_meta("ERF").fields]
-		first_section = next(
-			f.fieldname for f in frappe.get_meta("ERF").fields if f.fieldtype == "Section Break"
+		Customize Form records a reorder as a "<DocType>-main-field_order" Property
+		Setter. twilio_integration declares a bare "Property Setter" fixture - no filter
+		- so running bench export-fixtures on a site captures every property setter it
+		has into that app's fixtures file, and sync_fixtures() re-imports the snapshot on
+		every migrate, after the patches. That is how ERF's 2023 layout kept coming back
+		after being deleted, and 46 other doctypes were carrying the same snapshot.
+
+		The hook belongs to an upstream app, so what is guarded here is the damage: no
+		app may ship a layout snapshot for a doctype in its fixtures.
+		"""
+		import json
+		import os
+
+		offenders = []
+		for app in frappe.get_installed_apps():
+			path = os.path.join(frappe.get_app_path(app), "fixtures", "property_setter.json")
+			if not os.path.exists(path):
+				continue
+			try:
+				with open(path) as fixture_file:
+					rows = json.load(fixture_file)
+			except (ValueError, OSError):
+				continue
+			offenders += [
+				f"{app}: {row.get('name')}"
+				for row in rows
+				if isinstance(row, dict) and row.get("property") == "field_order"
+			]
+
+		self.assertEqual(
+			offenders, [],
+			"these fixtures re-impose a doctype layout on every migrate: " + ", ".join(offenders),
 		)
-		for fieldname in ("grade", "hiring_method"):
-			with self.subTest(fieldname=fieldname):
-				self.assertLess(names.index(fieldname), names.index(first_section))
 
 
 class TestTheApproverIsNoLongerChosenInCode(FrappeTestCase):

@@ -606,4 +606,5 @@ one_fm.patches.v15_0.update_action_paci_assignment_rule #2026-09-05d WI-002183
 one_fm.patches.v15_0.rename_renewal_expat_and_hr_costing #2026-09-02 WI-002178
 one_fm.patches.v15_0.consolidate_extension_actions #2026-09-02 WI-002179
 one_fm.patches.v15_0.update_work_permit_assignment_rules #2026-09-02 WI-002182
+one_fm.patches.v15_0.drop_erf_field_order_property_setter #2026-09-06b WI-002316
 one_fm.patches.v15_0.retire_unplanned_erf_reason #2026-09-06 WI-002316
