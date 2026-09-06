@@ -227,7 +227,7 @@ class TestNewActionDocuments(FrappeTestCase):
 
 		for action, category, expected_date in (
 			("Renewal Expat", "Renewal", add_days(expiry, -14)),
-			("Extend 2 months", "Extend", add_days(expiry, -7)),
+			("Extension", "Extend", add_days(expiry, -7)),
 			("Transfer", "Transfer", getdate(nowdate())),
 		):
 			with self.subTest(action=action):

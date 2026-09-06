@@ -9,6 +9,9 @@ frappe.ui.form.on('Preparation Record',{
 	no_of_years: function(frm, cdt, cdn){
 		set_preparation_record_costing(frm, cdt, cdn);
 	},
+	no_of_months: function(frm, cdt, cdn){
+		set_preparation_record_costing(frm, cdt, cdn);
+	},
 	work_permit_amount: function(frm, cdt, cdn) {
 		var child = locals[cdt][cdn];
 		caclulate_renewal_extension_cost_total(frm, child);
@@ -40,6 +43,9 @@ frappe.ui.form.on('Preparation Record',{
 // in step with YEAR_SCOPED_ACTIONS in preparation.py and with the costing table's own
 // depends_on.
 const YEAR_SCOPED_ACTIONS = ['Renewal (Kuwaiti)', 'Renewal Expat'];
+// WI-002179: the one Action that is priced by the month. Kept in step with
+// EXTENSION_ACTION in preparation.py and with the No. of Months field's own depends_on.
+const EXTENSION_ACTION = 'Extension';
 const COST_COMPONENT_FIELDS = [
 	'work_permit_amount',
 	'medical_insurance_amount',
@@ -55,13 +61,23 @@ var set_preparation_record_costing = function(frm, cdt, cdn) {
 
 	// The years only mean something for a renewal. Cleared otherwise, because the field is
 	// hidden rather than emptied when the Action changes, and a stale "1 Year" left on an
-	// Extend row is a year the master lookup would have been scoped by.
+	// Extension row is a year the master lookup would have been scoped by.
 	if(YEAR_SCOPED_ACTIONS.includes(row.renewal_or_extend)){
 		if(!row.no_of_years){
 			frappe.model.set_value(row.doctype, row.name, 'no_of_years', '1 Year');
 		}
 	} else if(row.no_of_years){
 		frappe.model.set_value(row.doctype, row.name, 'no_of_years', '');
+	}
+
+	// WI-002179: the months are the same story the other way round. An extension always has
+	// a duration - one month unless the operator says otherwise - and a renewal never does.
+	if(row.renewal_or_extend === EXTENSION_ACTION){
+		if(!row.no_of_months){
+			frappe.model.set_value(row.doctype, row.name, 'no_of_months', '1 Month');
+		}
+	} else if(row.no_of_months){
+		frappe.model.set_value(row.doctype, row.name, 'no_of_months', '');
 	}
 
 	// Cleared before the fetch, not inside a successful callback. Switching to an Action
@@ -75,7 +91,11 @@ var set_preparation_record_costing = function(frm, cdt, cdn) {
 		// WI-002092: the row's fees, already multiplied out for a multi-year renewal. The
 		// master lookup returns the annual rate, which is not what the row carries.
 		method: 'one_fm.grd.doctype.preparation.preparation.get_preparation_row_costing',
-		args: {'renewal_or_extend': row.renewal_or_extend, 'no_of_years': row.no_of_years},
+		args: {
+			'renewal_or_extend': row.renewal_or_extend,
+			'no_of_years': row.no_of_years,
+			'no_of_months': row.no_of_months
+		},
 		callback: function(r) {
 			if(!r.message){
 				// WI-002092: say so rather than leave four zeros and no explanation. The
@@ -84,7 +104,9 @@ var set_preparation_record_costing = function(frm, cdt, cdn) {
 				frappe.show_alert({
 					message: __('No master fee row in HR Settings for {0}{1}.', [
 						row.renewal_or_extend,
-						row.no_of_years ? __(' at {0}', [row.no_of_years]) : ''
+						row.no_of_years || row.no_of_months
+							? __(' at {0}', [row.no_of_years || row.no_of_months])
+							: ''
 					]),
 					indicator: 'orange'
 				}, 7);

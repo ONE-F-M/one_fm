@@ -6,11 +6,11 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 from one_fm.grd.doctype.preparation.preparation import (
-	PER_YEAR_COST_FIELDS,
+	DURATION_SCALED_COST_FIELDS,
 	YEAR_SCOPED_ACTIONS,
 	get_grd_renewal_extension_cost,
 	get_preparation_row_costing,
-	years_in,
+	duration_in,
 )
 
 RENEWAL = YEAR_SCOPED_ACTIONS[1]  # Renewal Expat
@@ -34,15 +34,15 @@ def _master_rows(rows):
 
 class TestYearsIn(FrappeTestCase):
 	def test_it_reads_the_number_off_the_option(self):
-		self.assertEqual(years_in("1 Year"), 1)
-		self.assertEqual(years_in("2 Years"), 2)
-		self.assertEqual(years_in("3 Years"), 3)
+		self.assertEqual(duration_in("1 Year"), 1)
+		self.assertEqual(duration_in("2 Years"), 2)
+		self.assertEqual(duration_in("3 Years"), 3)
 
 	def test_anything_unparseable_is_charged_a_single_year(self):
 		"""Better the single-year rate than nothing at all."""
 		for value in (None, "", "Years", "one year"):
 			with self.subTest(value=value):
-				self.assertEqual(years_in(value), 1)
+				self.assertEqual(duration_in(value), 1)
 
 
 class TestMultiYearCosting(FrappeTestCase):
@@ -51,14 +51,14 @@ class TestMultiYearCosting(FrappeTestCase):
 			dict(ANNUAL, renewal_or_extend=RENEWAL, no_of_years="1 Year"),
 			dict(ANNUAL, renewal_or_extend=RENEWAL, no_of_years="2 Years"),
 			dict(ANNUAL, renewal_or_extend=RENEWAL, no_of_years="3 Years"),
-			dict(ANNUAL, renewal_or_extend="Extend 1 month"),
+			dict(ANNUAL, renewal_or_extend="Local Transfer"),
 		])
 
 	def test_the_annual_fees_are_multiplied_by_the_years(self):
 		for years, multiplier in (("1 Year", 1), ("2 Years", 2), ("3 Years", 3)):
 			with self.subTest(years=years):
 				costing = get_preparation_row_costing(RENEWAL, years)
-				for field in PER_YEAR_COST_FIELDS:
+				for field in DURATION_SCALED_COST_FIELDS:
 					self.assertEqual(costing[field], ANNUAL[field] * multiplier, field)
 
 	def test_the_civil_id_is_never_multiplied(self):
@@ -79,10 +79,10 @@ class TestMultiYearCosting(FrappeTestCase):
 		)
 
 	def test_an_action_with_no_duration_is_not_multiplied(self):
-		"""An extension is a one-off. The years field is hidden for it but not cleared, so a
-		stale "3 Years" must not treble an extension's fees."""
-		costing = get_preparation_row_costing("Extend 1 month", "3 Years")
-		for field in PER_YEAR_COST_FIELDS:
+		"""A transfer is a one-off. The years field is hidden for it but not cleared, so a
+		stale "3 Years" must not treble its fees."""
+		costing = get_preparation_row_costing("Local Transfer", "3 Years")
+		for field in DURATION_SCALED_COST_FIELDS:
 			self.assertEqual(costing[field], ANNUAL[field], field)
 
 	def test_an_unconfigured_action_still_returns_nothing(self):
@@ -119,7 +119,7 @@ class TestMultiYearCosting(FrappeTestCase):
 
 	def test_the_multiplied_fields_are_the_three_annual_ones(self):
 		self.assertEqual(
-			PER_YEAR_COST_FIELDS,
+			DURATION_SCALED_COST_FIELDS,
 			("work_permit_amount", "medical_insurance_amount", "residency_stamp_amount"),
 		)
 
@@ -140,7 +140,7 @@ class TestADurationWithNoMasterRowOfItsOwn(FrappeTestCase):
 			with self.subTest(years=years):
 				costing = get_preparation_row_costing(RENEWAL, years)
 				self.assertTrue(costing, f"nothing fetched for {years}")
-				for field in PER_YEAR_COST_FIELDS:
+				for field in DURATION_SCALED_COST_FIELDS:
 					self.assertEqual(costing[field], ANNUAL[field] * multiplier, field)
 
 	def test_the_exact_duration_still_wins_when_it_is_configured(self):
