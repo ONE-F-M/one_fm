@@ -19,6 +19,51 @@ MOI_STATE = "Pending By MOI"
 # as a fieldname and quietly treats as false.
 DISABLED_RULES = ("custom_pam_file", "pam_reference_number", "custom_pam_designation_list")
 
+# Every field the BA site's Visa Request carries. A local addition (reapplied_from) is not
+# listed - this pins that nothing of theirs is missing, not that nothing of ours is extra.
+BA_FIELDS = (
+	"section_break_mbv7", "naming_series", "job_offer", "candidate_country_process",
+	"job_applicant", "column_break_vujs", "request_date", "job_applicant_full_name", "agency",
+	"grd_operator", "applicant_details_section", "first_name", "second_name",
+	"third_name", "last_name", "first_name_in_arabic", "second_name_in_arabic",
+	"third_name_in_arabic", "last_name_in_arabic", "column_break_kupi", "nationality", "gender",
+	"religion", "place_of_birth", "date_of_birth", "marital_status", "designation",
+	"salary_details_section", "salary_type", "column_break_lzkz", "work_permit_salary",
+	"educational_qualification_details_section", "educational_qualification",
+	"education_specialization", "column_break_rlpq", "university", "place_of_study",
+	"passport_details_section", "passport_number", "passport_holder_of", "place_of_issue",
+	"column_break_wims", "passport_issued_on", "passport_expires_on", "attachments",
+	"passport_copy", "column_break_sqvj", "driver_license", "column_break_byjf",
+	"degree_certificate", "column_break_wjxj", "rejection_remarks_section", "column_break_cpvu",
+	"operator_rejection_remark", "grd_manager_remark", "column_break_jdrk",
+	"pam_rejection_remark", "moi_rejection_remark", "pam_details_section", "custom_pam_file",
+	"pam_reference_number", "custom_visa_application_date", "column_break_gvey",
+	"custom_pam_designation_list", "custom_work_permit_number", "pam_remarks",
+	"column_break_gcih", "pam_decision_date", "moi_details_section", "moi_reference_number",
+	"column_break_jvjp", "moi_remarks", "column_break_hyho", "moi_decision_date",
+	"visa_details_section", "visa_reference_number", "visa_issue_date", "visa_expiry_date",
+	"column_break_uxnb", "visa_document", "payment_receipt", "payment_date",
+	"section_break_jrbe", "amended_from",
+)
+
+# Every field the BA site locks once the request has moved past the step that fills it in.
+# A reference number still editable three states later is one an operator can quietly change
+# after the ministry has it.
+READ_ONLY_FIELDS = (
+	"custom_pam_file",
+	"pam_reference_number",
+	"custom_visa_application_date",
+	"custom_pam_designation_list",
+	"custom_work_permit_number",
+	"moi_reference_number",
+	"visa_reference_number",
+	"visa_issue_date",
+	"visa_expiry_date",
+	"visa_document",
+	"payment_receipt",
+	"payment_date",
+)
+
 
 def _states():
 	return {state.state for state in frappe.get_doc("Workflow", "Visa Request").states}
@@ -65,15 +110,69 @@ class TestVisaRequestVisibility(FrappeTestCase):
 			with self.subTest(fieldname=fieldname):
 				self.assertFalse(self.meta.get_field(fieldname).mandatory_depends_on)
 
-	def test_the_mandatory_rules_this_site_added_are_kept(self):
-		"""The BA site does not carry these. Dropping them to match it would make three
-		fields optional that the process needs."""
-		for fieldname, state in (
-			("custom_work_permit_number", MOI_STATE),
-			("visa_issue_date", "Pending Visa Issuance"),
-			("visa_expiry_date", "Pending Visa Issuance"),
-		):
+	def test_the_mandatory_rules_the_ba_site_never_had_are_gone(self):
+		"""Kept at first on the reasoning that dropping them would make three fields optional.
+		The BA confirmed she never wrote them, and the doctype is hers - so they go."""
+		for fieldname in ("custom_work_permit_number", "visa_issue_date", "visa_expiry_date"):
 			with self.subTest(fieldname=fieldname):
-				rule = self.meta.get_field(fieldname).mandatory_depends_on
-				self.assertTrue(rule, fieldname)
-				self.assertIn(state, rule)
+				self.assertFalse(self.meta.get_field(fieldname).mandatory_depends_on, fieldname)
+
+	# ── read-only rules (the second half of the migration) ────────────────────────
+
+	def test_every_field_the_ba_site_locks_is_locked_here(self):
+		for fieldname in READ_ONLY_FIELDS:
+			with self.subTest(fieldname=fieldname):
+				self.assertTrue(
+					self.meta.get_field(fieldname).read_only_depends_on,
+					f"{fieldname} stays editable after its step",
+				)
+
+	def test_every_state_a_read_only_rule_names_exists(self):
+		"""Same trap as the visibility rules: the export writes "Pending by MOI" where the
+		workflow here has "Pending By MOI", and a rule naming a state that does not exist
+		never fires - so the field stays editable at exactly the step it should be locked in."""
+		states = _states()
+		for fieldname in READ_ONLY_FIELDS:
+			with self.subTest(fieldname=fieldname):
+				unknown = _named_states(self.meta.get_field(fieldname).read_only_depends_on) - states
+				self.assertEqual(unknown, set(), f"{fieldname} names states the workflow lacks")
+
+	def test_a_pam_reference_locks_once_the_file_leaves_pam(self):
+		named = _named_states(self.meta.get_field("pam_reference_number").read_only_depends_on)
+		self.assertIn("Pending GRD Manager Approval", named)
+		self.assertIn(MOI_STATE, named)
+
+	def test_the_visa_fields_lock_on_completion(self):
+		for fieldname in ("visa_reference_number", "visa_issue_date", "visa_expiry_date", "visa_document"):
+			with self.subTest(fieldname=fieldname):
+				named = _named_states(self.meta.get_field(fieldname).read_only_depends_on)
+				self.assertIn("Completed", named)
+				# Still editable at the step that fills them in.
+				self.assertNotIn("Pending Visa Issuance", named)
+
+	def test_the_doctype_carries_every_field_the_ba_site_has(self):
+		"""Pinned as a list rather than a count, so a field added on the BA site and missed
+		here names itself instead of showing up as an off-by-one."""
+		meta_fields = {f.fieldname for f in self.meta.fields}
+		for fieldname in BA_FIELDS:
+			with self.subTest(fieldname=fieldname):
+				self.assertIn(fieldname, meta_fields)
+
+	def test_the_grd_operator_holder_matches_the_ba_site(self):
+		"""Added on the BA site after the first migration pass, and since renamed there from
+		"assign_grd_operator" to "grd_operator" and shown on the form. Nothing reads it yet -
+		no assignment rule takes its assignee from it, no script mentions it - so it is still
+		an empty holder, under the name and label the BA site now gives it."""
+		self.assertIsNone(self.meta.get_field("assign_grd_operator"))
+
+		field = self.meta.get_field("grd_operator")
+		self.assertIsNotNone(field)
+		self.assertEqual(field.fieldtype, "Link")
+		self.assertEqual(field.options, "User")
+		self.assertEqual(field.label, "GRD Operator")
+		self.assertFalse(field.hidden)
+
+	def test_the_remark_fields_match_the_ba_site(self):
+		self.assertTrue(self.meta.get_field("operator_rejection_remark").read_only)
+		self.assertTrue(self.meta.get_field("pam_remarks").hidden)
+		self.assertTrue(self.meta.get_field("moi_remarks").hidden)

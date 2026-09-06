@@ -1,6 +1,12 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-001827: the three Work Permit assignment rules the work item links to."""
+"""WI-001827: the three Work Permit assignment rules the work item links to.
+
+WI-002182 brought them back to the configuration the business analyst holds: the GR Manager
+rule covers one state rather than two, the GR Operator rule is back on the owner, and the
+PRO rule is off. A fourth rule, "Work Permit Completion - GR Operator", is gone - it
+assigned on a state the workflow has no transition into, so it never fired.
+"""
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -25,9 +31,11 @@ EXPORTED = {
 		"unassign_condition": 'workflow_state != "Apply Online by PRO"',
 		"close_condition": None,
 	},
-	"Work Permit - GRD Supervisor": {
-		"assign_condition": f'workflow_state in ["Pending GR Manager", "{PAYMENT_STATE}"]',
-		"unassign_condition": f'workflow_state not in ["Pending GR Manager", "{PAYMENT_STATE}"]',
+	# WI-002182: one state. Pending  For Payment is a state the supervisor moves a permit
+	# out of, not one it waits in.
+	"Work Permit - GR Manager": {
+		"assign_condition": 'workflow_state in ["Pending GR Manager"]',
+		"unassign_condition": 'workflow_state not in ["Pending GR Manager"]',
 		"close_condition": None,
 	},
 	"Work Permit - GR Operator": {
@@ -46,13 +54,34 @@ def _states():
 	return [s.state for s in frappe.get_doc("Workflow", "Work Permit").states]
 
 
+# WI-002182: the PRO rule is off. A disabled rule here is part of the configuration, not a
+# rule that failed to apply.
+DISABLED = {"Work Permit-PRO"}
+
+# WI-002182: the rule that no longer exists. It assigned on "Pending Expiry Date Update",
+# which the Work Permit workflow has no transition into.
+REMOVED_RULE = "Work Permit Completion - GR Operator"
+
+
 class TestTheRulesExist(FrappeTestCase):
-	def test_all_three_are_there_and_enabled(self):
+	def test_all_three_are_there(self):
 		for rule in RULES:
 			doc = _rule(rule["name"])
 
 			self.assertEqual(doc.document_type, "Work Permit", msg=rule["name"])
-			self.assertFalse(doc.disabled, msg=rule["name"])
+			self.assertEqual(bool(doc.disabled), rule["name"] in DISABLED, msg=rule["name"])
+
+	def test_the_rule_that_never_fired_is_gone(self):
+		self.assertFalse(frappe.db.exists("Assignment Rule", REMOVED_RULE))
+
+	def test_no_other_rule_assigns_work_permits(self):
+		"""Two rules for one state split the queue in half and nobody notices."""
+		self.assertEqual(
+			sorted(frappe.get_all(
+				"Assignment Rule", filters={"document_type": "Work Permit"}, pluck="name"
+			)),
+			sorted(rule["name"] for rule in RULES),
+		)
 
 	def test_the_conditions_are_the_exported_ones(self):
 		for name, conditions in EXPORTED.items():
@@ -80,24 +109,35 @@ class TestTheRulesExist(FrappeTestCase):
 					msg=f"{rule['name']} closes everyone's assignments at {state!r}",
 				)
 
-	def test_each_takes_its_assignee_from_a_process_task(self):
-		"""Rule type is "Based on Process Task", so an unlinked rule assigns nobody."""
+	def test_a_task_based_rule_has_a_task_that_names_somebody(self):
+		"""An unlinked "Based on Process Task" rule assigns nobody, and says nothing."""
 		for rule in RULES:
 			doc = _rule(rule["name"])
+			if doc.rule != "Based on Process Task":
+				continue
 
-			self.assertEqual(doc.rule, "Based on Process Task", msg=rule["name"])
 			self.assertTrue(doc.custom_routine_task, msg=rule["name"])
-
-			task = frappe.db.get_value(
-				"Process Task", doc.custom_routine_task, ["task", "employee_user"], as_dict=True
+			self.assertTrue(
+				frappe.db.get_value("Process Task", doc.custom_routine_task, "employee_user"),
+				msg=f"{rule['name']}: task has no user to assign",
 			)
-			self.assertEqual(task.task, rule["task"], msg=rule["name"])
-			self.assertTrue(task.employee_user, msg=f"{rule['name']}: task has no user to assign")
 
-	def test_the_three_tasks_are_not_the_same_task(self):
-		linked = {_rule(rule["name"]).custom_routine_task for rule in RULES}
+	def test_the_operator_keeps_the_permit_they_raised(self):
+		"""WI-002182: back on the owner. A task would send every permit to one person,
+		whoever raised it."""
+		doc = _rule("Work Permit - GR Operator")
 
-		self.assertEqual(len(linked), len(RULES))
+		self.assertEqual(doc.rule, "Based on Field")
+		self.assertEqual(doc.field, "owner")
+
+	def test_no_two_rules_share_a_task(self):
+		task_based = [
+			_rule(rule["name"]) for rule in RULES
+			if _rule(rule["name"]).rule == "Based on Process Task"
+		]
+		linked = {doc.custom_routine_task for doc in task_based}
+
+		self.assertEqual(len(linked), len(task_based))
 
 
 class TestTheConditionsActuallyRun(FrappeTestCase):
@@ -142,15 +182,18 @@ class TestTheConditionsActuallyRun(FrappeTestCase):
 			frappe.safe_eval(doc.unassign_condition, None, {"workflow_state": "Pending GR Manager"})
 		)
 
-	def test_the_supervisor_is_assigned_while_a_transfer_waits_for_payment(self):
-		"""The export spelt the state "Pending For Payment" with one space, which matches
-		nothing - the supervisor would never have been assigned there."""
-		doc = _rule("Work Permit - GRD Supervisor")
+	def test_the_gr_manager_holds_it_only_at_its_own_state(self):
+		"""WI-002182: not through Pending  For Payment - the supervisor moves a permit out
+		of that state rather than waiting in it."""
+		doc = _rule("Work Permit - GR Manager")
 
 		self.assertTrue(
-			frappe.safe_eval(doc.assign_condition, None, {"workflow_state": PAYMENT_STATE})
+			frappe.safe_eval(doc.assign_condition, None, {"workflow_state": "Pending GR Manager"})
 		)
 		self.assertFalse(
+			frappe.safe_eval(doc.assign_condition, None, {"workflow_state": PAYMENT_STATE})
+		)
+		self.assertTrue(
 			frappe.safe_eval(doc.unassign_condition, None, {"workflow_state": PAYMENT_STATE})
 		)
 
@@ -210,20 +253,19 @@ class TestSavingAPermitActuallyAssignsSomeone(FrappeTestCase):
 		doc.flags.ignore_permissions = True
 		doc.save()
 
-	def test_the_supervisor_gets_it_at_pending_by_supervisor(self):
+	def test_the_gr_manager_gets_it_at_pending_gr_manager(self):
 		self.save_in("Pending GR Manager")
 
 		self.assertEqual(
-			[a.assignment_rule for a in self.assigned()], ["Work Permit - GRD Supervisor"]
+			[a.assignment_rule for a in self.assigned()], ["Work Permit - GR Manager"]
 		)
 
-	def test_the_supervisor_gets_it_again_while_it_waits_for_payment(self):
-		"""The state whose spelling was wrong in the export."""
+	def test_nobody_is_assigned_while_it_waits_for_payment(self):
+		"""WI-002182: the GR Manager rule no longer covers that state, and the operator
+		releases it there. The permit waits on a payment, not on a person."""
 		self.save_in(PAYMENT_STATE)
 
-		self.assertEqual(
-			[a.assignment_rule for a in self.assigned()], ["Work Permit - GRD Supervisor"]
-		)
+		self.assertEqual([a.assignment_rule for a in self.assigned()], [])
 
 	def test_nobody_holds_it_once_it_is_completed(self):
 		self.save_in("Completed")

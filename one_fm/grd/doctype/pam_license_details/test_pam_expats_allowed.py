@@ -75,17 +75,22 @@ class TestExpatsViolated(FrappeTestCase):
 		figures = derived_figures(PROFESSIONALS, ratio=20, nationals=4, expatriates=21)
 		self.assertEqual(figures["violation_number_of_workers"], "0")
 
-	def test_every_expatriate_in_the_exempt_sector_is_in_violation(self):
-		"""Nothing is allowed there, so anyone on the books is over the line."""
-		figures = derived_figures(EXEMPT_SECTOR, ratio=20, nationals=4, expatriates=3)
-		self.assertEqual(figures["exempt_number_of_workers"], "0")
-		self.assertEqual(figures["violation_number_of_workers"], "3")
+	def test_the_exempt_sector_is_never_in_violation(self):
+		"""WI-002099: "there will be no expat violation, as Kuwaitis are not allowed for this
+		role... if the number of expats is 100, the violation will be 0". PAM does not ration
+		the sector, so the allowance of zero says the ratio does not apply to it - not that
+		every expatriate on the books breaks a limit."""
+		for expatriates in (3, 100):
+			with self.subTest(expatriates=expatriates):
+				figures = derived_figures(EXEMPT_SECTOR, ratio=20, nationals=4, expatriates=expatriates)
+				self.assertEqual(figures["exempt_number_of_workers"], "0")
+				self.assertEqual(figures["violation_number_of_workers"], "0")
 
-	def test_the_figures_are_stated_to_the_nearest_half(self):
-		# 30% ratio, 1 national: 1 x 70 / 30 = 2.333 + 1 = 3.333 -> 3.5
+	def test_the_figures_are_stated_as_whole_numbers(self):
+		# 30% ratio, 1 national: 1 x 70 / 30 = 2.333 + 1 = 3.333 -> 3 allowed, 6 on the books.
 		figures = derived_figures(MANAGERS, ratio=30, nationals=1, expatriates=6)
-		self.assertEqual(figures["exempt_number_of_workers"], "3.5")
-		self.assertEqual(figures["violation_number_of_workers"], "2.5")
+		self.assertEqual(figures["exempt_number_of_workers"], "3")
+		self.assertEqual(figures["violation_number_of_workers"], "3")
 
 	def test_the_values_may_arrive_as_the_strings_the_row_stores(self):
 		figures = derived_figures(MANAGERS, "20", "4", "25")

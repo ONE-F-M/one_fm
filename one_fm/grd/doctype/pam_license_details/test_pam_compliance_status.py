@@ -27,10 +27,11 @@ class TestComplianceStatus(FrappeTestCase):
 		self.assertEqual(figures["violation_number_of_workers"], "1")
 		self.assertEqual(figures["status"], NON_COMPLIANT)
 
-	def test_half_a_violation_still_counts(self):
-		# 30% ratio, 1 national -> 3.5 allowed; 4 on the books is 0.5 over.
+	def test_one_over_the_rounded_allowance_still_counts(self):
+		# 30% ratio, 1 national: 1 x 70 / 30 = 2.33 + 1 for managers = 3.33 -> 3 allowed;
+		# 4 on the books is 1 over.
 		figures = derived_figures("مديرون", ratio=30, nationals=1, expatriates=4)
-		self.assertEqual(figures["violation_number_of_workers"], "0.5")
+		self.assertEqual(figures["violation_number_of_workers"], "1")
 		self.assertEqual(figures["status"], NON_COMPLIANT)
 
 	def test_exactly_on_the_allowance_is_compliant(self):
@@ -41,10 +42,11 @@ class TestComplianceStatus(FrappeTestCase):
 		figures = derived_figures(PROFESSIONALS, ratio=20, nationals=0, expatriates=0)
 		self.assertEqual(figures["status"], COMPLIANT)
 
-	def test_an_expatriate_in_the_exempt_sector_is_not_compliant(self):
-		"""Nothing is allowed there, so anybody on the books is over the line."""
-		figures = derived_figures(EXEMPT_SECTOR, ratio=20, nationals=4, expatriates=1)
-		self.assertEqual(figures["status"], NON_COMPLIANT)
+	def test_the_exempt_sector_is_compliant_whoever_is_on_it(self):
+		"""WI-002099 exempts the sector from the ratio outright, so there is no limit for the
+		headcount to break and nothing for the status to report."""
+		figures = derived_figures(EXEMPT_SECTOR, ratio=20, nationals=4, expatriates=100)
+		self.assertEqual(figures["status"], COMPLIANT)
 
 	def test_the_status_is_not_the_operator_s_to_pick(self):
 		self.assertTrue(frappe.get_meta("PAM License Stats").get_field("status").read_only)

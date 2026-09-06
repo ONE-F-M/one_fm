@@ -397,7 +397,7 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 		doc.flags.ignore_links = True
 		return doc
 
-	def _row(self, vehicle, *, trip, direction="OUTBOUND", headcount, card=None):
+	def _row(self, vehicle, *, trip, direction="OUTBOUND", headcount, card=None, stop=None):
 		return {
 			"card_id": card or frappe.generate_hash("CARD", 8),
 			"vehicle": vehicle,
@@ -405,6 +405,10 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 			"trip_group": trip,
 			"trip_name": trip,
 			"headcount": headcount,
+			# Stop order is what the leg walk reads: the same two loads peak at 3 or at 6
+			# depending on whether the return riders board before or after the outward
+			# ones get off, so a test about a mixed run has to say which run it means.
+			"stop_index": stop,
 		}
 
 	def test_merged_camps_exceeding_seats_are_blocked(self):
@@ -428,12 +432,50 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 		plan.insert(ignore_permissions=True)
 		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
 
-	def test_outbound_and_return_of_one_trip_are_counted_separately(self):
-		# Same trip_group but opposite directions are two physical runs, so each
-		# 3-seat leg is fine even though they'd overflow if summed together.
+	def test_outbound_and_return_of_one_trip_are_walked_leg_by_leg(self):
+		"""WI-002160: one trip_group on one vehicle is one bus run, not two.
+
+		A return pickup chained onto an outward drop is the same bus turning around at
+		the stop: the riders it dropped are off before the boarders get on, so 3 out
+		then 3 back fits three seats. Summing the two legs — which is what keying the
+		direction into the trip did — refused a run the bus really makes.
+		"""
 		plan = self._make_plan([
-			self._row(self.VEHICLE, trip="TRIP-BOTH", direction="OUTBOUND", headcount=3),
-			self._row(self.VEHICLE, trip="TRIP-BOTH", direction="RETURN", headcount=3),
+			self._row(self.VEHICLE, trip="TRIP-BOTH", direction="OUTBOUND", headcount=3, stop=1),
+			self._row(self.VEHICLE, trip="TRIP-BOTH", direction="RETURN", headcount=3, stop=2),
+		])
+		plan.insert(ignore_permissions=True)
+		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
+
+	def test_a_return_boarding_before_the_outward_drop_still_overloads(self):
+		"""The other stop order genuinely does overload the bus, and is still refused.
+
+		Boarding the return riders at stop 1 puts them aboard alongside the outward
+		ones, who have not been dropped yet — six people on three seats.
+		"""
+		plan = self._make_plan([
+			self._row(self.VEHICLE, trip="TRIP-STACK", direction="RETURN", headcount=3, stop=1),
+			self._row(self.VEHICLE, trip="TRIP-STACK", direction="OUTBOUND", headcount=3, stop=2),
+		])
+		with self.assertRaises(frappe.ValidationError) as cm:
+			plan.insert(ignore_permissions=True)
+		self.assertIn("Capacity Exceeded on leg", str(cm.exception))
+
+	def test_a_chained_run_is_not_counted_against_itself(self):
+		"""WI-002160, the shape the dispatcher actually hit: S-204 on a 3-seat RAIZE.
+
+		One outward drop followed by two return pickups is a run that peaks at two
+		aboard, never three. Splitting it by direction made an outbound pseudo-trip of
+		1 and a return one of 2 whose windows overlapped each other, so a further
+		1-passenger run in the same window was told the bus was already full.
+		"""
+		plan = self._make_plan([
+			self._row(self.VEHICLE, trip="S-204", direction="OUTBOUND", headcount=1, stop=1),
+			self._row(self.VEHICLE, trip="S-204", direction="RETURN", headcount=1, stop=2),
+			self._row(self.VEHICLE, trip="S-204", direction="RETURN", headcount=1, stop=3),
+			# No times recorded, so every trip here spans the whole day and they all
+			# overlap — the harshest reading of "running at the same time".
+			self._row(self.VEHICLE, trip="EU-RESIDENCE", direction="RETURN", headcount=1, stop=1),
 		])
 		plan.insert(ignore_permissions=True)
 		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
@@ -832,3 +874,91 @@ class TestRoutePlanSingleVehicleSave(FrappeTestCase):
 		])
 		plan.insert(ignore_permissions=True)
 		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
+
+
+class TestSeatsAreCountedFromTheShipment(FrappeTestCase):
+	"""#6818: a row's headcount is a snapshot, and a stale one hides an overload.
+
+	The board draws its cards from the shipments while the seat check read the row, so a
+	card that had since gained an employee left the plan holding a number nobody could
+	see - and under-counting is the dangerous direction: it waved a 28-passenger load
+	through on a 27-seat bus.
+	"""
+
+	def _row(self, shipment, headcount):
+		return frappe._dict({"transportation_shipment": shipment, "headcount": headcount})
+
+	def test_the_shipments_count_wins_over_the_stored_snapshot(self):
+		from one_fm.operations.doctype.route_plan.route_plan import row_headcount
+
+		row = self._row("TS-X", 6)
+
+		self.assertEqual(row_headcount(row, {"TS-X": 7}), 7)
+
+	def test_the_row_answers_when_the_card_is_gone(self):
+		# Never count a card as empty just because its shipment was deleted.
+		from one_fm.operations.doctype.route_plan.route_plan import row_headcount
+
+		self.assertEqual(row_headcount(self._row("TS-GONE", 6), {}), 6)
+
+	def test_a_row_with_no_shipment_keeps_its_own_number(self):
+		from one_fm.operations.doctype.route_plan.route_plan import row_headcount
+
+		self.assertEqual(row_headcount(self._row(None, 4), {"TS-X": 9}), 4)
+
+	def test_an_under_count_is_what_hid_the_overload(self):
+		# 27 stored against 28 live is the difference between fitting and not.
+		from one_fm.operations.doctype.route_plan.route_plan import row_headcount
+
+		rows = [self._row("A", 20), self._row("B", 7)]
+		live = {"A": 20, "B": 8}
+
+		self.assertEqual(sum(row_headcount(r, live) for r in rows), 28)
+		self.assertEqual(sum(r.headcount for r in rows), 27)
+
+
+class TestAnUntouchedBusIsNotAWall(FrappeTestCase):
+	"""A save is judged on what it does, not on everything already in the plan.
+
+	Capacity is measured against the shipments rather than the snapshot on the row, so a
+	roster that grew after a card was placed shows up as an overload on a bus nobody has
+	touched. Judged on every save, one such bus blocked the whole plan: a drop on a
+	different vehicle could not be saved until the untouched one was fixed.
+	"""
+
+	def test_a_vehicle_whose_cards_did_not_move_is_left_alone(self):
+		plan = frappe.new_doc("Route Plan")
+		plan.get_doc_before_save = lambda: frappe._dict(assignments=[
+			frappe._dict(vehicle="BUS-A", transportation_shipment="TS-1", stop_index=1,
+						 trip_group="T1", direction="OUTBOUND", headcount=27,
+						 start_time="2026-08-18T06:00:00Z", end_time="2026-08-18T07:00:00Z"),
+		])
+		rows = list(plan.get_doc_before_save().assignments)
+
+		untouched = plan._vehicles_this_save_did_not_touch(plan._logical_trips(rows))
+
+		self.assertIn("BUS-A", untouched)
+
+	def test_a_vehicle_that_gained_a_card_is_judged(self):
+		plan = frappe.new_doc("Route Plan")
+		before = [
+			frappe._dict(vehicle="BUS-A", transportation_shipment="TS-1", stop_index=1,
+						 trip_group="T1", direction="OUTBOUND", headcount=27,
+						 start_time="2026-08-18T06:00:00Z", end_time="2026-08-18T07:00:00Z"),
+		]
+		plan.get_doc_before_save = lambda: frappe._dict(assignments=before)
+		after = before + [
+			frappe._dict(vehicle="BUS-A", transportation_shipment="TS-2", stop_index=2,
+						 trip_group="T1", direction="OUTBOUND", headcount=1,
+						 start_time="2026-08-18T06:00:00Z", end_time="2026-08-18T07:00:00Z"),
+		]
+
+		untouched = plan._vehicles_this_save_did_not_touch(plan._logical_trips(after))
+
+		self.assertNotIn("BUS-A", untouched)
+
+	def test_a_brand_new_plan_is_judged_in_full(self):
+		# Nothing to grandfather: every card in it is being placed by this save.
+		plan = frappe.new_doc("Route Plan")
+
+		self.assertEqual(plan._vehicles_this_save_did_not_touch([]), set())

@@ -17,6 +17,9 @@ import frappe
 from frappe import _
 from frappe.utils import get_datetime, getdate, today
 
+from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+	driver_employees,
+)
 from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
 	get_coords,
 	get_grouped_employees_by_accommodation,
@@ -33,6 +36,8 @@ COMPANY_FLEET = "Company Fleet"
 MAHBOULA_LABELS = {"Mahboula 3", "Mahboula 12", "Mahboula 13", "Mahboula 15"}
 # Return riders may finish up to an hour after the outbound leg departs.
 RETURN_MATCH_FLOOR_SECONDS = -3600
+# Who may refresh the shipment cards from the canvas (WI-002162).
+GENERATE_ROLES = ("System Manager", "Transportation Manager", "Transportation Supervisor")
 
 
 def _minute_of_day(time_val) -> int | None:
@@ -53,6 +58,13 @@ def build_demand_descriptors(nested_map: dict) -> list:
 	going roster and a cross-referenced return roster attached. Direction-specific
 	records are expanded later in generate_transportation_shipments().
 	"""
+	if not nested_map:
+		return []
+
+	# WI-002306: drivers are working the run, not riding it. Taken out here, before any
+	# routing decision, so no arrangement downstream can put one on a card and no
+	# headcount counts a seat the driver was never going to sit in.
+	nested_map = _without_drivers(nested_map)
 	if not nested_map:
 		return []
 
@@ -192,24 +204,34 @@ def build_demand_descriptors(nested_map: dict) -> list:
 					})
 
 			# ── OLM: aggregate across shifts by (stop_location, hour) ──
-			for parent_name in olm_by_site.get(operations_site, []):
+			#
+			# WI-002308: only when OSM has not already placed this shift. A site can be
+			# configured under both arrangements, and both branches used to run - so the
+			# same employees were generated onto two sets of cards at two different
+			# stops, and the board showed the shift's demand twice over with different
+			# names and headcounts.
+			#
+			# One Site Many Locations is configured against this specific site, so it is
+			# the more specific statement of where its staff are picked up, and it wins.
+			# Agreed with the process owner.
+			for parent_name in ([] if handled else olm_by_site.get(operations_site, [])):
 				olm_doc = olm_doc_map.get(parent_name)
 				if not olm_doc or not olm_doc.transport_stop_location:
 					continue
 				handled = True
 				stop_location = olm_doc.transport_stop_location
-				start_dt = get_datetime(f"2000-01-01 {shift_doc.start_time}") if shift_doc.start_time else None
-				time_key = start_dt.hour if start_dt else 0
-				group_key = (stop_location, time_key)
+				# Grouped on the shift's own window, not the hour it starts in. Grouping
+				# by hour put a 06:30 shift and a 06:59 one on one card, and the card
+				# then had to describe both - min(start) to max(end), a window no shift
+				# actually works, on a card that could name no shift at all.
+				group_key = (stop_location, str(shift_doc.start_time), str(shift_doc.end_time))
 				grp = olm_groups.setdefault(group_key, {
-					"shifts": [], "employees": [], "start": shift_doc.start_time, "end": shift_doc.end_time,
+					"shifts": [], "sites": set(), "employees": [],
+					"start": shift_doc.start_time, "end": shift_doc.end_time,
 				})
 				grp["shifts"].append(shift_name)
+				grp["sites"].add(operations_site)
 				grp["employees"].extend(employee_list)
-				if shift_doc.start_time and (not grp["start"] or shift_doc.start_time < grp["start"]):
-					grp["start"] = shift_doc.start_time
-				if shift_doc.end_time and (not grp["end"] or shift_doc.end_time > grp["end"]):
-					grp["end"] = shift_doc.end_time
 
 			# ── Direct fallback ──
 			if not handled:
@@ -229,17 +251,24 @@ def build_demand_descriptors(nested_map: dict) -> list:
 					})
 
 		# ── Emit aggregated OLM demands for this accommodation ──
-		for (stop_location, time_key), grp in olm_groups.items():
+		for (stop_location, start_key, end_key), grp in olm_groups.items():
 			if not get_coords("Location", stop_location):
 				continue
+			# Several shifts can share one window - different roles finishing together -
+			# so the card names the one it serves when there is one, and lists them all
+			# either way. What it must never do is claim to be ad-hoc: every one of these
+			# comes from an Operations Shift.
+			named = sorted(set(grp["shifts"]))
+			sites = sorted(s for s in grp["sites"] if s)
 			demands.append({
 				"acc_name": acc_name,
 				"accommodation": lookup_id,
-				"operations_shift": None,
-				"operations_site": None,
+				"operations_shift": named[0] if len(named) == 1 else None,
+				"operations_site": sites[0] if len(sites) == 1 else None,
+				"aggregated_shifts": ", ".join(named),
 				"stop_location": stop_location,
 				"routing": "OLM",
-				"group_token": f"GROUP-{time_key}",
+				"group_token": f"GROUP-{start_key}-{end_key}",
 				"start_time": grp["start"],
 				"end_time": grp["end"],
 				"employees": [emp_obj(e) for e in grp["employees"]],
@@ -247,6 +276,35 @@ def build_demand_descriptors(nested_map: dict) -> list:
 
 	_attach_return_rosters(demands)
 	return demands
+
+
+def _without_drivers(nested_map: dict) -> dict:
+	"""The demand map with every driver removed from every shift roster (WI-002306).
+
+	A shift left with no riders is dropped, and so is an accommodation left with no
+	shifts - an empty roster produces no shipment anyway, and carrying it through only
+	means the prune pass has to clean up after it.
+	"""
+	rostered = set()
+	for acc_data in nested_map.values():
+		for emp_list in acc_data["shifts"].values():
+			rostered.update(emp_list)
+
+	drivers = driver_employees(rostered)
+	if not drivers:
+		return nested_map
+
+	trimmed = {}
+	for acc_name, acc_data in nested_map.items():
+		shifts = {}
+		for shift_name, emp_list in acc_data["shifts"].items():
+			riders = [e for e in emp_list if e not in drivers]
+			if riders:
+				shifts[shift_name] = riders
+		if shifts:
+			trimmed[acc_name] = dict(acc_data, shifts=shifts)
+
+	return trimmed
 
 
 def _attach_return_rosters(demands: list) -> None:
@@ -302,7 +360,8 @@ def _write_shipment(doc, demand: dict, direction: str, roster: list, gen_key: st
 	doc.end_time = demand["end_time"]
 	doc.headcount = len(roster)
 	doc.source_doctype = "Operations Shift"
-	doc.source_docname = demand["operations_shift"]  # blank for aggregated OLM
+	doc.aggregated_shifts = demand.get("aggregated_shifts") or demand["operations_shift"] or ""
+	doc.source_docname = demand["operations_shift"]  # blank when a card serves several
 	doc.is_adhoc_journey = 0
 	doc.generation_key = gen_key
 	doc.pair_group = pair_group
@@ -326,9 +385,12 @@ def generate_transportation_shipments():
 	Entry point for both the daily scheduler and the canvas "Generate" button.
 	Returns a summary dict of what changed.
 	"""
-	# The scheduler runs as Administrator; guard interactive/API calls.
+	# The scheduler runs as Administrator; guard interactive/API calls. The button
+	# lives on the Transportation Schedule canvas, which is the transport team's own
+	# board, so the roles that run it may refresh their own cards (WI-002162) instead
+	# of having to ask a System Manager.
 	if frappe.session.user != "Administrator":
-		frappe.only_for("System Manager")
+		frappe.only_for(GENERATE_ROLES)
 
 	nested_map = get_grouped_employees_by_accommodation()
 	demands = build_demand_descriptors(nested_map)
@@ -431,11 +493,19 @@ def _group_passengers_by_camp(trip_request_doc) -> dict:
 	Returns an ordered {camp: [passenger_row, ...]} map. Passengers with no
 	accommodation_camp are skipped — they have no physical origin to group by,
 	so they cannot be materialized as a camp-origin demand card.
+
+	WI-002306: drivers are dropped here too, not only on the shift-generated side. The
+	canvas hides a driver card whichever source made it, so leaving one in would produce
+	a record the dispatcher can neither see nor plan - worse than not making it.
 	"""
+	drivers = driver_employees(
+		[p.employee_id for p in trip_request_doc.transport_request_passenger if p.employee_id]
+	)
+
 	groups = {}
 	for passenger in trip_request_doc.transport_request_passenger:
 		camp = passenger.accommodation_camp
-		if not camp:
+		if not camp or passenger.employee_id in drivers:
 			continue
 		groups.setdefault(camp, []).append(passenger)
 	return groups
@@ -679,7 +749,7 @@ def _expired_assigned_shipments(cutoff_date) -> set:
 	rows_by = {}
 	for r in frappe.get_all(
 		"Route Plan Assignment",
-		filters={"transportation_shipment": ["in", list(to_date_by)]},
+		filters={"transportation_shipment": ["in", list(to_date_by)], "is_camp_leg": 0},
 		fields=["transportation_shipment", "start_time", "end_time"],
 	):
 		rows_by.setdefault(r.transportation_shipment, []).append(r)

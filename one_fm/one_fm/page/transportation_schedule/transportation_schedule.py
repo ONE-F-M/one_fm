@@ -4,7 +4,11 @@ from frappe import _
 from frappe.utils import cint
 from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
 from one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log import get_handover_windows
-from one_fm.operations.doctype.route_plan.route_plan import _card_direction
+from one_fm.operations.doctype.route_plan.route_plan import _card_direction, card_rows
+from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+    driver_employees,
+    qoa_buffer_minutes,
+)
 from one_fm.overrides.vehicle import passenger_capacity
 
 PICKUP_BUFFER = 10             # minutes
@@ -145,6 +149,9 @@ def get_route_planner_data():
             "global_end":        fmt(global_end_utc),
             "vehicles":          vehicles,
             "shipment_cards":    shipment_cards,
+            # The driver's report-time buffer, so the block drawer can print QOA without
+            # a second round trip (WI-002151 AC 1.2).
+            "qoa_buffer_minutes": qoa_buffer_minutes(),
             "handover_windows":  handover_windows
         }
 
@@ -832,6 +839,52 @@ def get_route_plans():
 SHIPMENT_CARD_PREFIX = "TSHIP-"
 
 
+def _shifts_served(shipment) -> list:
+    """Every Operations Shift a card carries staff for (WI-002307).
+
+    Most cards name one. An OLM stop shared by several roles finishing together lists
+    them in ``aggregated_shifts`` and leaves ``operations_shift`` blank, because no
+    single one of them is it - so reading only the Link field would see no shift on the
+    cards that serve the most.
+    """
+    named = [s.strip() for s in (shipment.aggregated_shifts or "").split(",") if s.strip()]
+    if shipment.operations_shift and shipment.operations_shift not in named:
+        named.append(shipment.operations_shift)
+    return named
+
+
+def _inactive_shifts(shipments) -> set:
+    """Which of the shifts these cards serve have been switched off (WI-002307)."""
+    names = set()
+    for shipment in shipments:
+        names.update(_shifts_served(shipment))
+    if not names:
+        return set()
+
+    return {
+        row.name
+        for row in frappe.get_all(
+            "Operations Shift",
+            filters={"name": ["in", list(names)], "status": "Inactive"},
+            fields=["name"],
+        )
+    }
+
+
+def _serves_only_inactive_shifts(shipment, inactive_shifts) -> bool:
+    """Is there nothing left on this card worth planning (WI-002307)?
+
+    Every shift it serves has to be inactive, not just one of them. An OLM card
+    carrying three shifts still has to run for the two that are live, and hiding it
+    because the third was switched off would take real demand off the board.
+
+    A card that names no shift at all - an ad-hoc Trip Request journey - is never
+    hidden: there is no shift to have been switched off.
+    """
+    served = _shifts_served(shipment)
+    return bool(served) and all(name in inactive_shifts for name in served)
+
+
 def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedelta):
     """Return draggable cards for Transportation Shipment records.
 
@@ -851,13 +904,21 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
         "Transportation Shipment",
         filters={"status": ["in", ["Unassigned", "Assigned"]]},
         fields=[
-            "name", "accommodation", "accommodation_name", "operations_shift",
+            "name",
+            # Selected, not just filtered on: the driver-card guard below compares
+            # against it, and an unselected field reads back as None (WI-002306).
+            "status",
+            "accommodation", "accommodation_name", "operations_shift",
+            # Every shift the card serves, for the OLM stops one card covers several of.
+            "aggregated_shifts",
             "operations_site", "stop_location", "headcount", "trip_direction",
             "routing_type_badge", "start_time", "end_time", "from_date", "to_date",
             "source_doctype", "source_docname", "pair_group",
             # What the card's own riders do, which its live direction stops saying once
             # the card is merged (WI-002078).
             "pre_merge_trip_direction",
+            # Lineage for a card that was split off a bigger one (WI-002170).
+            "is_split_overflow", "split_root",
         ],
     )
     if not shipments:
@@ -895,6 +956,35 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
             "is_reliever": row.employee_id in reliever_ids,
         })
 
+    # WI-002306 AC2/AC3: a card whose riders are all drivers is not assignable demand -
+    # nobody on it is travelling as a passenger. Generation stops making these, but
+    # records made before that still exist, and an Assigned one cannot be pruned, so the
+    # canvas has to refuse them itself rather than wait for a Generate run.
+    inactive_shifts = _inactive_shifts(shipments)
+
+    drivers = driver_employees([row.employee_id for row in emp_rows])
+    driver_only = {
+        ship
+        for ship, emps in emps_by_ship.items()
+        if emps and all(e["id"] in drivers for e in emps)
+    }
+    # Only the ones nobody has planned yet. An Assigned card is sitting on a lane in a
+    # saved plan, and a placed block resolves its card from this list - drop it and the
+    # block loses its detail panel, its trip chain and its manifest row. Withdrawing a
+    # card from the demand pool is this story's job; quietly emptying somebody's plan is
+    # not.
+    if driver_only:
+        shipments = [
+            s for s in shipments
+            if s.name not in driver_only or s.status != "Unassigned"
+        ]
+
+    # WI-002307: a card for a shift that has been switched off is not work anybody is
+    # going to plan. Generation already stops making them and prunes the Unassigned
+    # ones, but that only runs daily or on the button - the dispatcher opening the board
+    # in between would still be looking at them, and an Assigned card is never pruned.
+    shipments = [s for s in shipments if not _serves_only_inactive_shifts(s, inactive_shifts)]
+
     # Fallback times for shipments without an Operations Shift (ad-hoc journeys).
     trq_names = list({
         s.source_docname for s in shipments
@@ -919,7 +1009,15 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
 
             dep_utc = to_utc(str(dep))
             ret_utc = to_utc(str(ret))
-            if ret_utc <= dep_utc:
+            # A night shift finishes the morning after it starts, so its end time is
+            # legitimately earlier on the clock than its start. Reading that as a broken
+            # window and replacing it with "start + 1 hour" is why a 19:00-07:00 shift
+            # advertised a 20:00 finish on its card (WI-002161). The canvas is a rolling
+            # 24h view of one day's runs — the 07:00 pickup and the 19:00 drop both belong
+            # on it — so the end keeps its own time of day rather than rolling onto
+            # tomorrow's date and off the axis. Only a shift with no length recorded at
+            # all still needs a fallback.
+            if ret_utc == dep_utc:
                 ret_utc = dep_utc + timedelta(hours=1)
 
             stop_coords = get_coords_cached("Location", s.stop_location) if s.stop_location else None
@@ -940,7 +1038,9 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
                 "is_shipment_doc":       True,
                 "accommodation":         s.accommodation_name or s.accommodation or "—",
                 "accommodation_coords":  {"lat": acc_coords[0], "lng": acc_coords[1]} if acc_coords else None,
-                "shift_name":            s.operations_shift or "Ad-hoc",
+                # Every generated card comes from an Operations Shift; a card serving
+                # several names them all rather than claiming to be ad-hoc.
+                "shift_name":            s.operations_shift or s.aggregated_shifts or "Ad-hoc",
                 "site":                  s.operations_site or "",
                 "site_location":         destination,
                 "stop_location":         s.stop_location or "",
@@ -961,6 +1061,9 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
                 "own_direction":         own_direction,
                 "pair_id":               f"{SHIPMENT_CARD_PREFIX}{s.pair_group}" if s.pair_group else f"{SHIPMENT_CARD_PREFIX}{s.name}",
                 "shift_direction_label": "→ Outbound (To Site)" if direction == "OUTBOUND" else "← Return (From Site)",
+                # AC 2.5: the pool marks a card that holds the staff who did not fit.
+                "is_split_overflow": bool(s.is_split_overflow),
+                "split_root": s.split_root or None,
             })
         except Exception:
             frappe.log_error(frappe.get_traceback(), "Transportation Shipment Card Build Error")
@@ -1040,6 +1143,7 @@ def _sync_shipment_statuses(items, previously_linked=None):
                 fields=["name", "trip_direction"],
             )
         }
+        mismatched = []
         for name, placed_dirs in placed_dirs_by_shipment.items():
             own_dir = shipment_dir.get(name)
             if own_dir is None:
@@ -1047,11 +1151,22 @@ def _sync_shipment_statuses(items, previously_linked=None):
             if own_dir in placed_dirs:
                 assigned.add(name)
             else:
-                frappe.log_error(
-                    f"Skipped assigning {name}: placed as {sorted(placed_dirs)} but "
-                    f"shipment direction is {own_dir}.",
-                    "Transportation Shipment Direction Mismatch",
+                mismatched.append(
+                    f"{name}: placed as {sorted(placed_dirs)}, shipment says {own_dir}"
                 )
+
+        if mismatched:
+            # One entry per save rather than one per card. A browser holding a stale copy
+            # of the plan disagrees about every card it carries, and a hundred rows of the
+            # same fact is not a better signal than one.
+            frappe.log_error(
+                title="Transportation Shipment Direction Mismatch",
+                message=(
+                    "Left as they are - the plan still places these cards, so what needs "
+                    "looking at is the direction flag, not the status:\n\n"
+                    + "\n".join(mismatched)
+                ),
+            )
 
     for name in assigned:
         if frappe.db.get_value("Transportation Shipment", name, "status") != "Assigned":
@@ -1063,8 +1178,19 @@ def _sync_shipment_statuses(items, previously_linked=None):
         unmerge_trip_shipment,
     )
 
+    # A card the plan still places is never reverted, whatever its direction flag says.
+    # `status` answers "is this shipment on a plan", and a direction mismatch does not
+    # change that answer - it means the two sides disagree about which leg, which is a
+    # flag to fix rather than a card to send back to the pool. Reverting one that is
+    # still on a lane marked it Unassigned while its block sat there, and Generate
+    # Shipments deletes Unassigned shift-generated cards whose demand has moved on - so a
+    # browser left open across a data change could get a placed card deleted.
+    still_placed = set(placed_dirs_by_shipment)
+
     for name in (previously_linked or set()):
-        if name and name not in assigned and frappe.db.exists("Transportation Shipment", name):
+        if not name or name in assigned or name in still_placed:
+            continue
+        if frappe.db.exists("Transportation Shipment", name):
             frappe.db.set_value("Transportation Shipment", name, "status", "Unassigned")
             # A card returning to the pool takes its own direction back with it. Being
             # merged is a property of the block it was in, not of the journey the shipment
@@ -1108,15 +1234,49 @@ def _link_shipment_on_manifest_rows(manifest_doc, v_rows, card_emp_map):
     return changed
 
 
+def _shift_by_shipment(items) -> dict:
+	"""{shipment: Operations Shift} read from the cards themselves.
+
+	The row's ``shift`` is matched against Employee Schedule when relievers are attached,
+	so it has to be a shift's name and nothing else. The browser sends the card's LABEL,
+	which for an OLM stop serving several shifts names all of them - too long for the
+	column and useless as a lookup. The document knows which shift it is, so ask it.
+	"""
+	names = {
+		_shipment_from_card_id(item.get("cardId", "")) for item in (items or [])
+	}
+	names.discard(None)
+	if not names:
+		return {}
+
+	return {
+		doc.name: doc.operations_shift
+		for doc in frappe.get_all(
+			"Transportation Shipment",
+			filters={"name": ["in", list(names)]},
+			fields=["name", "operations_shift"],
+		)
+		if doc.operations_shift
+	}
+
+
 @frappe.whitelist()
-def save_assignments(plan_name: str, swim_items: str, assigned_cards: str):
-    """Save route planner swim items into a Route Plan DocType."""
+def save_assignments(plan_name: str, swim_items: str, assigned_cards: str,
+                     leg_timings: str = None):
+    """Save route planner swim items into a Route Plan DocType.
+
+    ``leg_timings`` carries the minutes for the legs no card is filed against - the drive
+    out of each accommodation - keyed by trip group and then by camp. They have no block
+    on the lane to ride in on, so they are sent alongside the items and land on the camp
+    rows _stamp_leg_details writes.
+    """
     if not _route_plan_exists():
         frappe.throw(_("Route Plan DocType not found. Please run 'bench migrate' on this site first."))
 
     import json
     items = json.loads(swim_items)
     cards = json.loads(assigned_cards)
+    legs = json.loads(leg_timings) if isinstance(leg_timings, str) else (leg_timings or {})
 
     doc = frappe.get_doc("Route Plan", plan_name)
     doc.check_permission("write")
@@ -1130,6 +1290,7 @@ def save_assignments(plan_name: str, swim_items: str, assigned_cards: str):
     # Clear existing assignments and rebuild
     doc.assignments = []
     directions = _shipment_direction_flags(items)
+    shifts = _shift_by_shipment(items)
     for item in _with_stop_indexes(items):
         shipment = _shipment_from_card_id(item.get("cardId", ""))
         doc.append("assignments", {
@@ -1144,13 +1305,20 @@ def save_assignments(plan_name: str, swim_items: str, assigned_cards: str):
             "start_time":              item.get("start", ""),
             "end_time":                item.get("end", ""),
             "site":                    item.get("_site", ""),
-            "shift":                   item.get("_shift", ""),
+            # A shipment-backed row takes the shift off the document, and takes nothing
+            # when the card serves several - the column means "the shift this row is
+            # for", and a list of three is not an answer to that.
+            "shift":                   (
+                shifts.get(shipment, "") if shipment
+                else str(item.get("_shift") or "")[:140]
+            ),
             "accommodation":           item.get("_accommodation", ""),
             "stop_location":           item.get("_stopLocation", ""),
             "transit_minutes":         item.get("transitMinutes") or 0,
             "buffer_minutes":          item.get("bufferMinutes") or 0,
         })
 
+    _stamp_leg_details(doc, legs)
     doc.save(ignore_permissions=False)
 
     # Keep persisted Transportation Shipment records in sync with the canvas:
@@ -1188,8 +1356,38 @@ def load_assignments(plan_name: str = ""):
 
     swim_items = []
     assigned_card_ids = set()
+    # The minutes of the legs no card is filed against, keyed by the run and the camp
+    # they leave. Without them a re-opened Trip Builder showed the camp leg back on a
+    # default nobody typed, and every stop after it moved with it.
+    leg_timings = {}
 
     for row in doc.assignments:
+        if cint(row.is_camp_leg):
+            held = leg_timings.setdefault(
+                row.trip_group or camp_leg_group(row.card_id),
+                {"departure": None, "arrival": None, "home": None, "qoa_time": None,
+                 "camps": {}},
+            )
+            place = row.origin_location or row.stop_location
+            minutes = {
+                "transit_minutes": row.transit_minutes or 0,
+                "buffer_minutes": row.buffer_minutes or 0,
+            }
+            if cint(row.is_home_leg):
+                # When the run is over, which is the drive back rather than the last drop.
+                held["arrival"] = row.end_time
+                held["home"] = dict(minutes, place=place)
+            else:
+                # The moment the bus leaves, which no block can be read for: the first
+                # block is the first SITE, reached after the camp leg.
+                held["departure"] = held["departure"] or row.start_time
+                held["qoa_time"] = held["qoa_time"] or (
+                    str(row.qoa_time) if row.qoa_time else None
+                )
+                if place:
+                    held["camps"][place] = minutes
+            continue
+
         swim_items.append({
             "id":        f"{row.card_id}_{row.direction}_{row.name}",
             "cardId":    row.card_id,
@@ -1228,6 +1426,7 @@ def load_assignments(plan_name: str = ""):
 
     return {
         "status": "ok",
+        "leg_timings": leg_timings,
         "plan_name": doc.name,
         "plan_title": doc.title,
         "plan_status": doc.status,
@@ -1239,6 +1438,47 @@ def load_assignments(plan_name: str = ""):
         "saved_by": doc.last_modified_by_user,
         "saved_at": str(doc.last_modified_at) if doc.last_modified_at else None
     }
+
+
+def visit_times(row_start, row_end, own_direction, camp_departure=None) -> tuple:
+	"""When the bus is where each half of a card happens: (boards, alights).
+
+	A row runs from the moment the bus is AT its stop to the moment it reaches the next
+	one. So an outward card's riders are set down at its START - reading the end put
+	every drop-off one leg late on the driver's page, and made the run's first stop an
+	hour after it had left. They board back at the camp, which is earlier than any card
+	row and is why the camp leg has to be read for it.
+
+	A return card is the other way round: collected at its stop, carried to the camp.
+	"""
+	if own_direction == "RETURN":
+		return row_start, row_end
+	return (camp_departure or row_start), row_start
+
+
+def manifest_row_order(rows) -> list:
+	"""A vehicle's rows in the order the bus drives them.
+
+	The trips of a vehicle by when each one leaves, and the stops of a trip by their
+	place in it. Sorted by the trip group HASH before this, so a 06:48 run could be
+	listed after an 08:27 one - and the vehicle's day then read 08:27 to 07:12, wrapping
+	midnight into a 22h 45m shift.
+	"""
+	def run_of(row):
+		return row.trip_group or f"\0{row.card_id}"
+
+	leaves = {}
+	for row in rows:
+		at = row.start_time or ""
+		key = run_of(row)
+		if key not in leaves or at < leaves[key]:
+			leaves[key] = at
+
+	# Within a run, by when the bus is at each stop. stop_index is the order the cards
+	# were dropped on the lane, which a re-timed run can leave out of step with itself.
+	return sorted(rows, key=lambda row: (
+		leaves[run_of(row)], row.start_time or "", row.stop_index or 0
+	))
 
 
 @frappe.whitelist()
@@ -1256,14 +1496,32 @@ def get_manifest_data_for_plan(plan_name: str):
 	doc = frappe.get_doc("Route Plan", plan_name)
 	doc.check_permission("read")
 
-	if not doc.assignments:
+	# A camp leg describes a stop the bus makes; no card is filed against it and it
+	# carries no roster, so the manifest is compiled from the rows that stand for one.
+	rows = card_rows(doc.assignments)
+	# The camp and home legs, kept aside: they carry no roster and are never stops on
+	# the manifest, but they are when the bus actually leaves and when it gets back.
+	leg_rows = {}
+	camp_departure = {}
+	for row in doc.assignments:
+		if cint(row.is_camp_leg) and row.vehicle:
+			leg_rows.setdefault(row.vehicle, []).append(row)
+			if not cint(row.is_home_leg) and row.trip_group and row.start_time:
+				# Per camp, not per run: a bus that loads at two camps leaves the second
+				# when it gets there. Keyed by the run alone, both camps printed the same
+				# departure on the driver's page.
+				place = row.origin_location or row.stop_location
+				camp_departure[(row.trip_group, place)] = row.start_time
+				held = camp_departure.get(row.trip_group)
+				camp_departure[row.trip_group] = min(held, row.start_time) if held else row.start_time
+	if not rows:
 		return {"status": "empty", "message": _("This plan has no assignments.")}
 
 	slug = lambda s: (s or "").replace(" ", "-").replace("_", "-")
 
 	# ── Collect unique references from assignments ──
-	vehicle_ids = list({row.vehicle for row in doc.assignments if row.vehicle})
-	shift_names = list({row.shift for row in doc.assignments if row.shift})
+	vehicle_ids = list({row.vehicle for row in rows if row.vehicle})
+	shift_names = list({row.shift for row in rows if row.shift})
 
 	# ── Batch-fetch vehicle metadata ──
 	vehicle_map = {}
@@ -1339,7 +1597,7 @@ def get_manifest_data_for_plan(plan_name: str):
 	# employee list straight from the shipment document instead.
 	shipment_by_card = {
 		row.card_id: row.transportation_shipment
-		for row in doc.assignments
+		for row in rows
 		if row.transportation_shipment and row.card_id not in card_emp_map
 	}
 	if shipment_by_card:
@@ -1374,7 +1632,7 @@ def get_manifest_data_for_plan(plan_name: str):
 
 	# Lazily sync Transportation Manifest documents for each vehicle on today's date
 	schedule_date_str = frappe.utils.today()
-	assigned_vehicles = list({row.vehicle for row in doc.assignments if row.vehicle})
+	assigned_vehicles = list({row.vehicle for row in rows if row.vehicle})
 	
 	manifests = {}
 
@@ -1394,7 +1652,7 @@ def get_manifest_data_for_plan(plan_name: str):
 			manifest_doc.schedule_date = schedule_date_str
 
 		# Always sync rows — handles both new and existing manifests
-		v_rows = [row for row in doc.assignments if row.vehicle == v_id]
+		v_rows = [row for row in rows if row.vehicle == v_id]
 		rows_changed = sync_manifest_details(manifest_doc, v_rows, card_emp_map, card_return_emp_map)
 
 		# The manifest header inherits the run's direction and, for a merged run, its
@@ -1517,7 +1775,7 @@ def get_manifest_data_for_plan(plan_name: str):
 	# the manifest page decides drop-off vs pick-up from exactly that (WI-002074).
 	ship_own_dir = {}
 	_own_dir_by_shipment = {}
-	_ship_names = [r.transportation_shipment for r in doc.assignments if r.transportation_shipment]
+	_ship_names = [r.transportation_shipment for r in rows if r.transportation_shipment]
 	if _ship_names:
 		for _r in frappe.get_all(
 			"Transportation Shipment",
@@ -1529,7 +1787,7 @@ def get_manifest_data_for_plan(plan_name: str):
 			)
 
 	# Process assignments to build shipments
-	for row in doc.assignments:
+	for row in rows:
 		dir_key = f"{row.card_id}_{row.direction}"
 		if dir_key in c_map:
 			continue  # Already created shipment for this card+direction
@@ -1568,7 +1826,7 @@ def get_manifest_data_for_plan(plan_name: str):
 	# Group assignments by vehicle, preserving trip order
 	vehicle_order = []
 	vehicle_items = {}  # vehicle_id -> [rows]
-	for row in doc.assignments:
+	for row in rows:
 		if row.vehicle not in vehicle_items:
 			vehicle_items[row.vehicle] = []
 			vehicle_order.append(row.vehicle)
@@ -1606,13 +1864,11 @@ def get_manifest_data_for_plan(plan_name: str):
 			"trip_group": (_mf.trip_group or "") if _mf else "",
 		}
 
-		# Sort items: trip stops by stopIndex, solo by start_time
-		v_rows = vehicle_items[vid]
-		v_rows.sort(key=lambda r: (
-			r.trip_group or "",
-			r.stop_index or 0,
-			r.start_time or ""
-		))
+		# In the order the bus drives them: the trips of a vehicle by when each one
+		# leaves, and the stops of a trip by their place in it. Sorted by the trip group
+		# HASH before this, so a 06:48 run could be listed after an 08:27 one - and the
+		# vehicle's day then read 08:27 to 07:12, wrapping midnight into 22h 45m.
+		v_rows = manifest_row_order(vehicle_items[vid])
 
 		visits = []
 		trans = [{"travelDuration": "0s", "waitDuration": "0s", "travelDistanceMeters": 0}]
@@ -1641,8 +1897,18 @@ def get_manifest_data_for_plan(plan_name: str):
 			except Exception:
 				d_sec = 0
 
+			own_dir = _own_dir_by_shipment.get(row.transportation_shipment) \
+				or _normalize_direction(row.direction)
+			# The camp THIS card boards at, falling back to the run's own departure for a
+			# card whose camp has no leg recorded.
+			boards_at, alights_at = visit_times(
+				i_s, i_e, own_dir,
+				camp_departure.get((row.trip_group, row.origin_location))
+				or camp_departure.get(row.trip_group),
+			)
+
 			visits.append({
-				"shipmentIndex": s_idx, "isPickup": True, "startTime": i_s,
+				"shipmentIndex": s_idx, "isPickup": True, "startTime": boards_at,
 				"loadDemands": {"seats": {"amount": str(hc)}},
 				"tripId": row.trip_group or None,
 				"tripName": row.trip_name or None,
@@ -1657,7 +1923,7 @@ def get_manifest_data_for_plan(plan_name: str):
 				"travelDistanceMeters": travel_sec * 10
 			})
 			visits.append({
-				"shipmentIndex": s_idx, "isPickup": False, "startTime": i_e,
+				"shipmentIndex": s_idx, "isPickup": False, "startTime": alights_at,
 				"loadDemands": {"seats": {"amount": str(-hc)}},
 				"tripId": row.trip_group or None,
 				"tripName": row.trip_name or None,
@@ -1685,9 +1951,17 @@ def get_manifest_data_for_plan(plan_name: str):
 		if not visits:
 			continue
 
-		# Route start/end times
-		r_s = v_rows[0].start_time or ""
-		r_e = v_rows[-1].end_time or ""
+		# Route start/end times. The bus leaves the camp before its first drop and is
+		# not done until it is back, so both ends come from the legs no card is filed
+		# against where the run has them.
+		r_s = min(
+			[v_rows[0].start_time or ""]
+			+ [row.start_time for row in leg_rows.get(vid, []) if row.start_time]
+		)
+		r_e = max(
+			[v_rows[-1].end_time or ""]
+			+ [row.end_time for row in leg_rows.get(vid, []) if row.end_time]
+		)
 		try:
 			# Daily route span — time-of-day only, so a multi-day lock does not
 			# balloon the reported route/trip duration into days.
@@ -1706,9 +1980,48 @@ def get_manifest_data_for_plan(plan_name: str):
 		total_sec = min(int(tot_ms), MAX_DAY_SEC)
 		trip_sec = min(int(trip_ms), MAX_DAY_SEC)
 
+		# What each run does either side of its stops: when it leaves, when it is back,
+		# and the camp it does both at. Read from the legs no card is filed against, so
+		# the driver's page states them instead of settling for the last drop-off and
+		# the vehicle's home depot.
+		trip_legs = {}
+		for leg in leg_rows.get(vid, []):
+			if not leg.trip_group:
+				continue
+			held = trip_legs.setdefault(leg.trip_group, {})
+			place = leg.origin_location or leg.stop_location
+			if cint(leg.is_home_leg):
+				held["arrival"] = leg.end_time or leg.start_time
+				held["home"] = place
+			else:
+				held["departure"] = min(held["departure"], leg.start_time) \
+					if held.get("departure") and leg.start_time else \
+					(leg.start_time or held.get("departure"))
+				held.setdefault("camp", place)
+				# In the order the bus loads at them, each with its own departure and
+				# report time - the driver's page reads a run as one journey, and a run
+				# that loads at two camps leaves the second when it gets there.
+				held.setdefault("camps_ordered", []).append({
+					"place": place,
+					"stop_index": cint(leg.stop_index),
+					"departure": leg.start_time,
+					"arrival": leg.end_time,
+					"qoa_time": str(leg.qoa_time) if leg.qoa_time else None,
+					"transit_minutes": leg.transit_minutes or 0,
+					"buffer_minutes": leg.buffer_minutes or 0,
+				})
+				# The driver's report time, which AC 1.2 puts on an accommodation pickup
+				# wherever the leg is shown - the manifest included.
+				if leg.qoa_time and not held.get("qoa_time"):
+					held["qoa_time"] = str(leg.qoa_time)
+
+		for held in trip_legs.values():
+			held.get("camps_ordered", []).sort(key=lambda camp: camp["stop_index"])
+
 		routes.append({
 			"vehicleIndex": vi, "vehicleLabel": v_label,
 			"vehicleStartTime": r_s, "vehicleEndTime": r_e,
+			"tripLegs": trip_legs,
 			"visits": visits, "transitions": trans,
 			"metrics": {
 				"travelDistanceMeters": 0,
@@ -2067,3 +2380,335 @@ def _inherit_trip_identity(manifest_doc, assignment_rows) -> bool:
         changed = True
 
     return changed
+
+
+def _local_seconds(stamp):
+    """A stored UTC timeline stamp as seconds past midnight in the site's timezone.
+
+    Rows carry UTC (``2026-08-18T11:15:00.000Z``) while the shift times, the QOA report
+    time and everything a driver reads are local, so the two have to be reconciled once,
+    here, rather than in each caller.
+    """
+    if not stamp:
+        return None
+    try:
+        import pytz
+
+        text = str(stamp).replace("T", " ").replace("Z", "").split(".")[0]
+        utc = pytz.utc.localize(frappe.utils.get_datetime(text))
+        site_tz = pytz.timezone(frappe.db.get_single_value("System Settings", "time_zone") or "UTC")
+        local = utc.astimezone(site_tz)
+        return local.hour * 3600 + local.minute * 60 + local.second
+    except Exception:
+        return None
+
+
+def _time_field(seconds):
+    """Seconds past midnight as ``HH:MM:SS`` for a Time column, or None."""
+    if seconds is None:
+        return None
+    seconds = int(seconds) % 86400
+    return f"{seconds // 3600:02d}:{(seconds % 3600) // 60:02d}:{seconds % 60:02d}"
+
+
+def _stamp_leg_details(doc, leg_timings=None):
+	"""Write each leg's own facts onto its assignment row (WI-002151, WI-002171).
+
+	The row stays one per card - that is what carries the shipment link and the roster -
+	but the numbers on it come from the run's physical stops, which is what the bus
+	actually does and what the trip modal shows. A card is served at one stop: an
+	outward card where its riders are put down, a return card where they are collected.
+	That stop's index, action and running load are what the row records, so the plan, the
+	modal and the manifest all describe the same run.
+
+	QOA stays with the outward rows: their riders report at the camp they board from, and
+	the camp stop itself has no row of its own. Only the first card out of a given camp
+	reports - riders from two cards at one camp board together, once.
+	"""
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+		CAMP_STOP,
+		arrival_order,
+		build_itinerary,
+		own_direction,
+		walk_occupancy,
+	)
+
+	def _boards(card):
+		return own_direction(card) == "RETURN"
+	from one_fm.operations.doctype.route_plan.route_plan import _cards_for_itinerary
+
+	# Rebuilt from scratch every save: a camp leg is derived from the run, so a stale one
+	# left behind by a card that has since moved would describe a stop the bus no longer
+	# makes. The card rows are the input.
+	doc.assignments = [row for row in doc.assignments if not cint(row.is_camp_leg)]
+	rows = [row for row in doc.assignments if row.vehicle]
+	if not rows:
+		return
+
+	camp_legs = []
+
+	limits = {
+		v.name: passenger_capacity(v.seats, v.custom_includes_driver_seat)
+		for v in frappe.get_all(
+			"Vehicle",
+			filters={"name": ["in", list({row.vehicle for row in rows})]},
+			fields=["name", "seats", "custom_includes_driver_seat"],
+		)
+	}
+	buffer_minutes = qoa_buffer_minutes()
+
+	runs = {}
+	for row in rows:
+		runs.setdefault((row.vehicle, row.trip_group or f"\0{row.card_id}"), []).append(row)
+
+	for (vehicle, _group), run in runs.items():
+		group_key = _group if not _group.startswith("\0") else run[0].card_id
+		cards = _cards_for_itinerary(run)
+		by_name = {card.name: card for card in cards}
+		ordered = sorted(
+			[row for row in run if row.transportation_shipment in by_name],
+			key=lambda row: arrival_order(by_name[row.transportation_shipment]),
+		)
+		if not ordered:
+			continue
+
+		itinerary = build_itinerary([by_name[row.transportation_shipment] for row in ordered])
+		_peak, _worst, per_stop = walk_occupancy(itinerary)
+
+		# The stop that serves each card: an outward card where its riders are put down,
+		# a return card where they are collected. A return card also appears at the home
+		# stop, where it is only being delivered - taking that one would file every
+		# return leg against the ride home.
+		serves = {}
+		for position, stop in enumerate(itinerary):
+			if stop["kind"] == CAMP_STOP:
+				continue
+			for card in stop["dropping"]:
+				if not _boards(card):
+					serves[card.name] = (stop, per_stop[position])
+			for card in stop["boarding"]:
+				serves[card.name] = (stop, per_stop[position])
+
+		# The first card out of each camp, and when the bus leaves each one. A run can
+		# load at more than one camp, and it leaves the second when it gets there - not
+		# when it left the first. Stamping the stated departure on every camp had two
+		# camps of one run both reporting at 07:45 on the driver's page, and gave the
+		# second camp a QOA measured off a site it reaches an hour later.
+		held = (leg_timings or {}).get(group_key, {})
+		camp_first, camp_departs = {}, _walk_camp_departures(
+			itinerary, ordered, _local_seconds(held.get("departure")), held.get("camps") or {}
+		)
+		for stop in itinerary:
+			if stop["kind"] != CAMP_STOP or stop["place"] in camp_first:
+				continue
+			boarding = [card.name for card in stop["boarding"]]
+			camp_first[stop["place"]] = boarding[0] if boarding else None
+
+		for row in ordered:
+			card = by_name[row.transportation_shipment]
+			boards = _boards(card)
+			served = serves.get(card.name)
+			if not served:
+				continue
+			stop, onboard = served
+
+			row.max_passenger_capacity = limits.get(vehicle) or 0
+			row.stop_index = stop["stop_index"]
+			row.action_type = stop["action_type"]
+			row.current_passenger_count = onboard
+			row.boarding_count = cint(row.headcount) if boards else 0
+			row.drop_off_count = 0 if boards else cint(row.headcount)
+			row.is_accommodation_origin = 0 if boards else 1
+			origin = stop["place"] if boards else _camp_place_for(card)
+			row.origin_location = (
+				origin if origin and frappe.db.exists("Location", origin) else None
+			)
+			row.shift_start_time = card.start_time
+			departs = _local_seconds(row.start_time)
+			arrives = _local_seconds(row.end_time)
+			row.is_next_day = (
+				1 if (departs is not None and arrives is not None and arrives < departs) else 0
+			)
+			# The camp reports before the run leaves IT, not before this card's own leg.
+			place = None if boards else _camp_place_for(card)
+			row.qoa_time = None
+			if place and camp_first.get(place) == card.name and camp_departs.get(place) is not None:
+				row.qoa_time = _time_field(camp_departs[place] - buffer_minutes * 60)
+
+		camp_legs.extend(_camp_leg_rows(itinerary, ordered, per_stop, vehicle,
+										camp_departs, buffer_minutes, limits, group_key,
+										(leg_timings or {}).get(group_key, {})))
+
+	for values in camp_legs:
+		doc.append("assignments", values)
+
+
+CAMP_LEG_PREFIX = "CAMPLEG"
+
+
+def camp_leg_group(card_id) -> str:
+	"""The run a camp leg belongs to, read back out of its card id."""
+	return str(card_id or "").split("|")[1] if "|" in str(card_id or "") else ""
+
+
+def _walk_camp_departures(itinerary, ordered, departure, minutes) -> dict:
+	"""{camp place: when the bus leaves it}, chained through the camps in order.
+
+	The camps are the front of a run: the bus loads at each in turn and only then calls
+	at its first site. So the second camp's departure is the first one's plus the drive
+	between them, and the chain has to land on the first card's own start - which is
+	where the canvas already put it, from the same numbers.
+
+	Falls back to the first card's start for every camp when no departure was stated,
+	which is a run saved before the camp legs were recorded.
+	"""
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import CAMP_STOP
+
+	camps, seen = [], set()
+	for stop in itinerary:
+		if stop["kind"] == CAMP_STOP and stop["place"] not in seen:
+			seen.add(stop["place"])
+			camps.append(stop["place"])
+	if not camps:
+		return {}
+
+	first_stop = next(
+		(_local_seconds(row.start_time) for row in ordered
+		 if _local_seconds(row.start_time) is not None), None
+	)
+	if departure is None:
+		return {place: first_stop for place in camps}
+
+	departs, cursor = {}, departure
+	for place in camps:
+		departs[place] = cursor
+		leg = (minutes.get(place) or {})
+		cursor += (cint(leg.get("transit_minutes")) + cint(leg.get("buffer_minutes"))) * 60
+
+	# The last camp hands over to the first site. If the minutes do not add up to it -
+	# a leg never timed - the chain still ends where the run really starts calling.
+	if first_stop is not None and camps:
+		last = camps[-1]
+		if departs[last] > first_stop:
+			departs[last] = first_stop
+	return departs
+
+
+def _time_stamp(ordered, seconds):
+	"""A local second-of-day put back onto the run's own date, stored as the rows are.
+
+	The rows carry UTC and everything a driver reads is local, so a time worked out in
+	local seconds has to travel back the same way `_local_seconds` brought it out.
+	"""
+	if seconds is None or not ordered:
+		return None
+	anchor = ordered[0].start_time
+	base = _local_seconds(anchor)
+	if base is None:
+		return None
+	from datetime import timedelta as _delta
+
+	text = str(anchor).replace("T", " ").replace("Z", "").split(".")[0]
+	moved = frappe.utils.get_datetime(text) + _delta(seconds=seconds - base)
+	return moved.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+
+def _camp_leg_rows(itinerary, ordered, per_stop, vehicle, camp_departs,
+				   buffer_minutes, limits, group_key, minutes=None) -> list:
+	"""The rows for the stops no card is filed against: the camps the bus loads at.
+
+	A card row records the leg out of the stop that SERVES it - where an outward card's
+	riders are put down, where a return card's are collected. Nothing serves a camp, so
+	the drive out of it had nowhere to be recorded: the Trip Builder accepted minutes for
+	it and the plan forgot them, and re-opening the run put that leg back on a default
+	nobody chose, moving every stop after it.
+
+	The shipment link is filled in from the first card boarding there, so the row can be
+	traced back to a journey, but the row is a description of the run and never a
+	placement - `card_rows` keeps it out of every count and every itinerary.
+	"""
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+		CAMP_STOP,
+		HOME_STOP,
+	)
+
+	rows = []
+	seen = set()
+	first = ordered[0]
+	camp_order = [
+		stop["place"] for n, stop in enumerate(itinerary)
+		if stop["kind"] == CAMP_STOP
+		and stop["place"] not in {s["place"] for s in itinerary[:n] if s["kind"] == CAMP_STOP}
+	]
+	for position, stop in enumerate(itinerary):
+		homeward = stop["kind"] == HOME_STOP
+		if not homeward and (stop["kind"] != CAMP_STOP or stop["place"] in seen):
+			continue
+		seen.add(stop["place"])
+		boarding = [card.name for card in stop["boarding"]]
+		serving = next((row for row in ordered if row.transportation_shipment in boarding), None)
+		departs = None if homeward else camp_departs.get(stop["place"])
+		held = (
+			((minutes or {}).get("home") or {}) if homeward
+			else ((minutes or {}).get("camps") or {}).get(stop["place"]) or {}
+		)
+		# Where this camp hands over: the next camp, or the first site if it is the last.
+		next_departure = next(
+			(camp_departs[place] for place in camp_order[camp_order.index(stop["place"]) + 1:]
+			 if place in camp_departs), None
+		) if not homeward and stop["place"] in camp_order else None
+		# The ride home is the last thing the bus does and nothing is dropped there, so
+		# without a row of its own the run simply stopped at its last site and the drawer
+		# had nothing to show for the drive back. The camps are the front of it, each
+		# leaving when the bus gets there and handing over to the next stop.
+		window = (
+			(ordered[-1].end_time, (minutes or {}).get("arrival")) if homeward
+			else (_time_stamp(ordered, camp_departs.get(stop["place"])) or first.start_time,
+				  # The last camp hands over to the first SITE, not to the card that
+				  # happens to board there - that one can be dropped much later.
+				  _time_stamp(ordered, next_departure) or first.start_time)
+		)
+		rows.append({
+			"card_id": f"{CAMP_LEG_PREFIX}|{group_key}|{stop['stop_index']}",
+			"is_home_leg": 1 if homeward else 0,
+			"is_camp_leg": 1,
+			"transportation_shipment": serving.transportation_shipment if serving else None,
+			"vehicle": vehicle,
+			"direction": (serving or first).direction,
+			"trip_group": (serving or first).trip_group,
+			"trip_name": (serving or first).trip_name,
+			"stop_index": stop["stop_index"],
+			"action_type": stop["action_type"],
+			"origin_location": (
+				stop["place"] if frappe.db.exists("Location", stop["place"]) else None
+			),
+			"stop_location": stop["place"],
+			"accommodation": stop["place"],
+			"is_accommodation_origin": 1,
+			"boarding_count": stop["boarding_count"],
+			"drop_off_count": stop["drop_off_count"],
+			"current_passenger_count": per_stop[position],
+			"max_passenger_capacity": limits.get(vehicle) or 0,
+			# Not a placement: a camp row that carried riders would count them a second
+			# time in every report that sums the column.
+			"headcount": 0,
+			# The run's departure, so it survives a reload as a decision rather than
+			# being guessed at from where the first block happens to sit.
+			"start_time": window[0],
+			"end_time": window[1],
+			"transit_minutes": cint(held.get("transit_minutes")),
+			"buffer_minutes": cint(held.get("buffer_minutes")),
+			"qoa_time": (
+				_time_field(departs - buffer_minutes * 60) if departs is not None else None
+			),
+		})
+	return rows
+
+
+def _camp_place_for(card):
+	"""The Location standing for a card's camp, or its readable name."""
+	if not card.accommodation:
+		return None
+	return frappe.db.get_value(
+		"Accommodation", card.accommodation, "transport_stop_location"
+	) or card.accommodation_name or card.accommodation
