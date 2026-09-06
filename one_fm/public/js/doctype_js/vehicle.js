@@ -3,6 +3,7 @@ frappe.ui.form.on('Vehicle', {
 		set_qr_code(frm);
 		frappe.breadcrumbs.add("GSD");
 		frm.set_df_property('license_plate', 'hidden', false);
+		check_insurance_expiry(frm);
 	},
 	onload(frm) {
 		if (frm.is_new() && !frm.doc.custom_naming_series) {
@@ -64,6 +65,9 @@ frappe.ui.form.on('Vehicle', {
 	one_fm_milage(frm) {
 		// The current mileage feeds the active custodian's covered distance.
 		calculate_custodian_mileage(frm);
+	},
+	end_date(frm) {
+		check_insurance_expiry(frm);
 	}
 })
 
@@ -134,4 +138,23 @@ var set_qr_code = function(frm) {
 	var qr_code = frappe.render_template(qr_code_html, {"doc":frm.doc});
 	$(frm.fields_dict["one_fm_vehicle_qr_code"].wrapper).html(qr_code);
 	refresh_field("one_fm_vehicle_qr_code")
+};
+
+var check_insurance_expiry = function(frm) {
+	// Idempotent / live-updating: strip out any previously added "Insurance Expired"
+	// indicator pill before re-evaluating, so toggling end_date on an open, unsaved
+	// form never stacks duplicates and clears itself when the condition no longer holds.
+	// Avoid frm.dashboard.clear_headline() here since that would wipe other, unrelated
+	// indicators that Frappe/core may already be showing on this form.
+	frm.dashboard.wrapper.find(".indicator-pill").filter(function() {
+		return $(this).text().trim() === __("Insurance Expired");
+	}).remove();
+
+	if (!frm.doc.end_date) {
+		return;
+	}
+
+	if (frappe.datetime.get_diff(frm.doc.end_date, frappe.datetime.now_date()) < 0) {
+		frm.dashboard.add_indicator(__("Insurance Expired"), "red");
+	}
 };
