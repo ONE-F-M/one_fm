@@ -85,6 +85,11 @@ class TestShiftHandoverAlignment(FrappeTestCase):
 class TestTheDriveBetweenTwoSites(FrappeTestCase):
 	"""AC 3.6: dropping at Site A and collecting at Site B means driving between them."""
 
+	# The run out of the camp, timed, so these tests are about the handover drive and
+	# not about the leg that brings the bus to the first site - every drive now needs
+	# its minutes, and the camp's is a drive like any other.
+	CAMP_LEG = {"leg-1": {"transit_minutes": 20, "buffer_minutes": 5}}
+
 	def setUp(self):
 		self.drop = self._shipment("Outward", "08:00:00", "20:00:00", "Site A")
 		self.collect = self._shipment("Return", "20:00:00", "08:00:00", "Site B")
@@ -109,7 +114,7 @@ class TestTheDriveBetweenTwoSites(FrappeTestCase):
 	def test_an_untimed_drive_to_another_site_blocks_the_merge(self):
 		# Camp, drop at Site A, collect at Site B, home. The drive from A to B is the
 		# leg OUT of the Site A row, so that is the row that has to be timed.
-		preview = get_merge_preview([self.drop, self.collect])
+		preview = get_merge_preview([self.drop, self.collect], timings=dict(self.CAMP_LEG))
 
 		self.assertFalse(preview["can_merge"])
 		self.assertIn("Site B", preview["handover_message"])
@@ -117,7 +122,10 @@ class TestTheDriveBetweenTwoSites(FrappeTestCase):
 	def test_entering_the_drive_releases_it(self):
 		preview = get_merge_preview(
 			[self.drop, self.collect],
-			timings={"leg-2": {"transit_minutes": 25, "buffer_minutes": 5}},
+			timings=dict(self.CAMP_LEG, **{
+				"leg-2": {"transit_minutes": 25, "buffer_minutes": 5},
+				"leg-3": {"transit_minutes": 20, "buffer_minutes": 0},
+			}),
 		)
 
 		self.assertTrue(preview["can_merge"])
@@ -125,7 +133,9 @@ class TestTheDriveBetweenTwoSites(FrappeTestCase):
 
 	def test_a_handover_at_the_same_site_needs_no_drive(self):
 		# The bus is already there: one stop, riders off then on, nothing to drive.
-		preview = get_merge_preview([self.drop, self.same_site])
+		preview = get_merge_preview([self.drop, self.same_site], timings=dict(self.CAMP_LEG, **{
+			"leg-2": {"transit_minutes": 20, "buffer_minutes": 0},
+		}))
 
 		handover = next(s for s in preview["stops"] if s["place"] == "Site A")
 		self.assertEqual(handover["action_type"], "Combined")
@@ -189,3 +199,86 @@ class TestTheManifestSaysWhatHappensAtTheStop(FrappeTestCase):
 
 		self.assertIn("DROPPING OFF EMPLOYEES", source)
 		self.assertIn("EMPLOYEES BOARDING", source)
+
+
+class TestEveryDriveNeedsItsMinutes(FrappeTestCase):
+	"""Confirm is blocked until every drive the bus makes has a transit time.
+
+	A stop dropped into the middle of a run arrived with 0 transit, so it shared a clock
+	time with the stop before it - the run said the bus was in two places at the same
+	minute, and the manifest printed it that way.
+	"""
+
+	def setUp(self):
+		self.first = self._shipment("Outward", "08:00:00", "20:00:00", "Site A")
+		self.second = self._shipment("Outward", "09:00:00", "21:00:00", "Site B")
+
+	def _shipment(self, direction, start, end, stop):
+		doc = frappe.new_doc("Transportation Shipment")
+		doc.status = "Unassigned"
+		doc.trip_direction = direction
+		doc.start_time = start
+		doc.end_time = end
+		doc.headcount = 2
+		doc.stop_location = stop
+		doc.accommodation = frappe.get_all("Accommodation", limit=1, pluck="name")[0]
+		doc.generation_key = frappe.generate_hash("TS-DRV", 10)
+		doc.flags.ignore_links = True
+		doc.flags.ignore_mandatory = True
+		doc.insert(ignore_permissions=True)
+		return doc.name
+
+	def test_an_untimed_leg_in_the_middle_blocks_the_confirm(self):
+		# The camp leg and the ride home are timed; Site A's drive to Site B is not.
+		preview = get_merge_preview([self.first, self.second], timings={
+			"leg-1": {"transit_minutes": 25, "buffer_minutes": 5},
+			"leg-3": {"transit_minutes": 20, "buffer_minutes": 0},
+		})
+
+		self.assertFalse(preview["can_merge"])
+		self.assertIn("Site A", preview["handover_message"])
+		self.assertIn("Site B", preview["handover_message"])
+
+	def test_timing_it_releases_the_confirm(self):
+		preview = get_merge_preview([self.first, self.second], timings={
+			"leg-1": {"transit_minutes": 25, "buffer_minutes": 5},
+			"leg-2": {"transit_minutes": 15, "buffer_minutes": 1},
+			"leg-3": {"transit_minutes": 20, "buffer_minutes": 0},
+		})
+
+		self.assertTrue(preview["can_merge"])
+		self.assertEqual(preview["handover_message"], "")
+
+	def test_the_drive_out_of_the_camp_counts_as_a_drive(self):
+		# It is the leg that sets the departure, and leaving it at zero is what put a
+		# run's first block on top of its second.
+		preview = get_merge_preview([self.first, self.second], timings={
+			"leg-2": {"transit_minutes": 15, "buffer_minutes": 1},
+			"leg-3": {"transit_minutes": 20, "buffer_minutes": 0},
+		})
+
+		self.assertFalse(preview["can_merge"])
+
+	def test_a_buffer_alone_is_not_a_drive(self):
+		# Dwelling at a stop for five minutes does not move the bus to the next one.
+		preview = get_merge_preview([self.first, self.second], timings={
+			"leg-1": {"transit_minutes": 25, "buffer_minutes": 5},
+			"leg-2": {"transit_minutes": 0, "buffer_minutes": 5},
+			"leg-3": {"transit_minutes": 20, "buffer_minutes": 0},
+		})
+
+		self.assertFalse(preview["can_merge"])
+
+	def test_a_handover_is_one_stop_and_so_one_drive_out_of_it(self):
+		# Riders getting off and others getting on at one place is a single visit, so
+		# there is one leg out of it to time, not two.
+		same = self._shipment("Return", "20:00:00", "08:00:00", "Site B")
+
+		preview = get_merge_preview([self.first, self.second, same], timings={
+			"leg-1": {"transit_minutes": 25, "buffer_minutes": 5},
+			"leg-2": {"transit_minutes": 15, "buffer_minutes": 1},
+			"leg-3": {"transit_minutes": 20, "buffer_minutes": 0},
+		})
+
+		self.assertEqual([stop["place"] for stop in preview["stops"]].count("Site B"), 1)
+		self.assertTrue(preview["can_merge"])

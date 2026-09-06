@@ -1,5 +1,6 @@
 import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
+from frappe.database.schema import add_column
 
 from one_fm.custom.custom_field.attendance import get_attendance_custom_fields
 
@@ -17,6 +18,13 @@ def execute():
 	and skips anything already set.
 	"""
 	create_custom_fields(get_attendance_custom_fields(), update=True)
+
+	# create_custom_fields builds its ALTER TABLE from the *sorted* field list, and a
+	# custom field whose insert_after anchor cannot be resolved against the doctype's
+	# field_order is dropped from that list - the Custom Field row lands, the column
+	# does not. On Attendance the anchor is eight custom fields deep, so make sure.
+	if not frappe.db.has_column("Attendance", "custom_event_staff"):
+		add_column("Attendance", "custom_event_staff", "Link")
 
 	# Attendance -> Shift Assignment -> Event Staff, for rows that have not got there yet.
 	assignments = {

@@ -104,7 +104,7 @@ function set_rejection_remarks(frm) {
 }
 
 // Where a rejection reason is stored, per the state it was rejected from. Also decides
-// which field reasons_for_state() reads its options off.
+// which field the prompt reads its options off.
 const REJECTION_REMARK_FIELD_BY_STATE = {
 	'Pending by GRD Operator': 'operator_rejection_remark',
 	'Pending GRD Manager Approval': 'grd_manager_remark',
@@ -112,25 +112,8 @@ const REJECTION_REMARK_FIELD_BY_STATE = {
 	'Pending By MOI': 'moi_rejection_remark'
 };
 
-// Predefined rejection reasons per workflow state (WI-001693). PAM and MOI reject for
-// different reasons, so each state offers its own list rather than a shared one.
-// MOI is absent on purpose: WI-001773 made moi_rejection_remark a Select, so its
-// reasons come from the field itself via reasons_for_state() rather than being
-// repeated here, where they would only drift from what the field accepts.
-const REJECTION_REASONS_BY_STATE = {
-	'Pending By PAM': [
-		'Passport Validity is Less than 18 Months',
-		"Worker's age is below the legal minimum",
-		"The worker's gender does not match the profession",
-		"The occupation requires amendment to specify the worker's specialization",
-		'An active file exists for this worker',
-		'Worker is in Black List'
-	]
-};
-
-// The reasons to offer for a state: the target field's own options when it is a
-// Select, otherwise the hardcoded list above. Offering anything else would write a
-// value the field rejects on save.
+// WI-001773 made moi_rejection_remark a Select, so the reasons on offer have to come
+// from the field itself - a free-text remark would fail _validate_selects on save.
 function reasons_for_state(frm, state) {
 	const fieldname = REJECTION_REMARK_FIELD_BY_STATE[state];
 	const df = fieldname && frappe.meta.get_docfield('Visa Request', fieldname, frm.doc.name);
@@ -139,21 +122,17 @@ function reasons_for_state(frm, state) {
 		const options = (df.options || '').split('\n').filter(o => o);
 		if (options.length) return options;
 	}
-
-	return REJECTION_REASONS_BY_STATE[state];
 }
 
 function get_rejection_remarks(frm, resolve, reject) {
 	frappe.dom.unfreeze();
-	// PAM & MOI require a predefined reason (Select), each from its own list; the other
-	// states keep free text.
 	const state_reasons = reasons_for_state(frm, frm.doc.workflow_state);
 	const reason_field = state_reasons
 		? {
 			label: 'Reason for Rejection',
 			fieldname: 'reason',
 			fieldtype: 'Select',
-			options: state_reasons.join('\n'),
+			options: state_reasons,
 			reqd: 1
 		}
 		: {
@@ -162,6 +141,7 @@ function get_rejection_remarks(frm, resolve, reject) {
 			fieldtype: 'Small Text',
 			reqd: 1
 		};
+
 	frappe.prompt(
 		[reason_field],
 		function(values) {

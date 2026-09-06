@@ -180,7 +180,7 @@ class EmployeeOverride(EmployeeMaster):
             if role_profile:
                 user = frappe.get_doc("User", self.user_id)
                 user.role_profile_name = role_profile
-                user.save()
+                user.save(ignore_permissions=True)
             else:
                 frappe.msgprint("Role profile not set in Designation, please set default.")
 

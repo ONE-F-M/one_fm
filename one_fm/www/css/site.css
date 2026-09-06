@@ -1073,6 +1073,16 @@ body[data-route="roster"] .presentdifferent {
   background: #50C878;
 }
 
+/* Route-scoped so the box colour also wins on the tooltip (customtooltiptext),
+   which the black default rule (.customtooltip .customtooltiptext) would otherwise beat. */
+body[data-route="roster"] .cyanboxcolor {
+  background-color: #00BCD4;
+}
+
+body[data-route="roster"] .tealboxcolor {
+  background-color: #00897B;
+}
+
 body[data-route="roster"] .presentdayoffot {
   background: #70ad47;
 }

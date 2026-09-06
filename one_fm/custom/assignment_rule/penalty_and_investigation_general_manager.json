@@ -8,7 +8,7 @@
   "assign_condition": "workflow_state == \"Pending General Manager\"",
   "unassign_condition": "workflow_state != \"Pending General Manager\"",
   "close_condition": "",
-  "rule": "Based on Process Task",
+  "rule": "Based on Field",
   "field": "owner",
   "doctype": "Assignment Rule",
   "users": [],

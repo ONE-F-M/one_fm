@@ -523,7 +523,7 @@ def get_employee_supervisor(employee_id: str = None, **kwargs):
     # Employee Resignation / Withdrawal / Date Adjustment).
     shift_working = frappe.db.get_value("Employee", employee_name, "shift_working") or 0
 
-    approver_name = get_approver(employee_name)
+    approver_name = get_approver(employee_name, skip_shift_supervisor=True)
     if not approver_name:
         return {"shift_working": shift_working}
 

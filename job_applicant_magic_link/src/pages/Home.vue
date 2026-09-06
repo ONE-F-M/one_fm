@@ -17,6 +17,8 @@ export default {
       religions: {},
       education: {},
       genders: {},
+      countries: {},
+      country_calling_codes: [],
     }
   },
   resources: {
@@ -59,6 +61,7 @@ export default {
             this.job_applicant = data.job_applicant;
             this.nationalities = data.nationalities;
             this.countries = data.countries;
+            this.country_calling_codes = data.country_calling_codes || [];
             this.genders = data.genders;
             this.religions = data.religions;
             this.education = data.education;
@@ -255,6 +258,32 @@ export default {
         })
 
     },
+    // Persist a single field value directly (used by the dial-code auto-fill,
+    // which is triggered programmatically and so has no DOM change event).
+    persistField(field, value){
+      let me = this;
+      let res = createResource({
+        url: '/api/method/one_fm.www.job_applicant_magic_link.index.update_job_applicant',
+        params: {field: field, value: value, doctype: me.job_applicant.doctype, docname: me.job_applicant.name},
+        method: 'POST',
+      })
+      res.fetch().then(r => {
+        if (r && r.error){
+          Swal.fire('Error', r.error, 'warning')
+        }
+      })
+    },
+    // Auto-select the dial code that matches the chosen Country, so applicants
+    // don't have to hunt for it. Only fills when empty — never overwrites a
+    // value the applicant (or OCR) already set.
+    autofillCountryCode(country){
+      if (!country || this.job_applicant.one_fm_country_code) return;
+      let match = (this.country_calling_codes || []).find(cc => cc.country === country);
+      if (match){
+        this.job_applicant.one_fm_country_code = match.name;
+        this.persistField('one_fm_country_code', match.name);
+      }
+    },
     launchToast(desc) {
         var x = document.getElementById("toast")
         x.querySelector('#toast-desc').innerText = desc;
@@ -266,11 +295,8 @@ export default {
     }
   },
   watch: {
-      "job_applicant.one_fm_nationality":function(val) { // Set country code if nationality changes
-        // console.log(val)
-      },
-      "job_applicant.one_fm_gender":function(val) { // Set country code if nationality changes
-        // console.log(val)
+      "job_applicant.country":function(val) { // Auto-fill dial code from the selected country
+        this.autofillCountryCode(val);
       }
   }
 }
@@ -467,7 +493,10 @@ export default {
                                     <div class="col-md-4">
                                       <div class="form-group">
                                           <label class="form-label" for="one_fm_country_code">Country Dial Code</label>
-                                          <input class="form-control input2" type="text" id="one_fm_country_code" name="one_fm_country_code" size="50" v-model="job_applicant.one_fm_country_code" :onchange="putField">
+                                          <select class="form-control input2" id="one_fm_country_code" name="one_fm_country_code" aria-placeholder="Select Country Dial Code" v-model="job_applicant.one_fm_country_code" :onchange="putField">
+                                              <option value=""></option>
+                                              <option :value="cc.name" v-for="cc in country_calling_codes">{{ cc.country ? cc.name + ' — ' + cc.country : cc.name }}</option>
+                                          </select>
                                       </div>
                                     </div>
                                     <!-- <div class="col-md-4">

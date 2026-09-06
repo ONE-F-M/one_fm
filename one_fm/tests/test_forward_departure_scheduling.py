@@ -449,6 +449,65 @@ class TestEachLegRecordsItsOwnFacts(FrappeTestCase):
 
 		self.assertEqual(str(camp.qoa_time), "07:15:00")
 
+	def test_a_second_camp_leaves_when_the_bus_reaches_it(self):
+		# A run can load at more than one camp, and it leaves the second when it gets
+		# there - not when it left the first. Both camps of one run were stamped with the
+		# stated departure, so the driver's page printed the same time twice and the
+		# second camp reported for a bus already an hour into its run.
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			_walk_camp_departures,
+		)
+
+		itinerary = [
+			{"kind": "camp", "place": "Camp A", "stop_index": 1},
+			{"kind": "camp", "place": "Camp B", "stop_index": 2},
+			{"kind": "site", "place": "Site", "stop_index": 3},
+		]
+		ordered = [frappe._dict(start_time="2026-08-18T05:48:00.000Z")]
+
+		departs = _walk_camp_departures(
+			itinerary, ordered, 7 * 3600 + 45 * 60,
+			{"Camp A": {"transit_minutes": 30, "buffer_minutes": 5},
+			 "Camp B": {"transit_minutes": 25, "buffer_minutes": 3}},
+		)
+
+		# 07:45, then 35 minutes later, and the chain lands on the first site at 08:48.
+		self.assertEqual(departs["Camp A"], 7 * 3600 + 45 * 60)
+		self.assertEqual(departs["Camp B"], 8 * 3600 + 20 * 60)
+
+	def test_the_last_camp_hands_over_to_the_first_site(self):
+		# A leg that was never timed must not leave the chain short of where the run
+		# actually starts calling.
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			_walk_camp_departures,
+		)
+
+		itinerary = [
+			{"kind": "camp", "place": "Camp A", "stop_index": 1},
+			{"kind": "camp", "place": "Camp B", "stop_index": 2},
+		]
+		ordered = [frappe._dict(start_time="2026-08-18T05:48:00.000Z")]
+
+		departs = _walk_camp_departures(
+			itinerary, ordered, 7 * 3600 + 45 * 60,
+			{"Camp A": {"transit_minutes": 300, "buffer_minutes": 0}},
+		)
+
+		self.assertEqual(departs["Camp B"], 8 * 3600 + 48 * 60)
+
+	def test_a_run_with_no_departure_recorded_falls_back_to_its_first_stop(self):
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			_walk_camp_departures,
+		)
+
+		itinerary = [{"kind": "camp", "place": "Camp A", "stop_index": 1}]
+		ordered = [frappe._dict(start_time="2026-08-18T05:48:00.000Z")]
+
+		self.assertEqual(
+			_walk_camp_departures(itinerary, ordered, None, {}),
+			{"Camp A": 8 * 3600 + 48 * 60},
+		)
+
 	def test_the_ride_home_is_a_row_of_its_own(self):
 		# The last thing the bus does, and the only leg nothing is dropped at - so the
 		# drawer had nothing to show for the drive back and the run appeared to end at

@@ -391,12 +391,7 @@ class EmployeeResignation(Document):
 	def set_current_salary(self):
 		if not self.employee:
 			return
-		self.current_salary = frappe.db.get_value(
-			"Salary Structure Assignment",
-			{"employee": self.employee, "docstatus": 1, "from_date": ["<=", frappe.utils.today()]},
-			"base",
-			order_by="from_date desc",
-		)
+		self.current_salary = frappe.db.get_value("Employee", self.employee, "one_fm_basic_salary")
 
 	def set_supervisor(self):
 		# Only auto-resolve supervisor if it hasn't already been set manually
@@ -407,7 +402,9 @@ class EmployeeResignation(Document):
 			return
 
 		from one_fm.utils import get_approver
-		approver_emp = get_approver(self.employee)
+		# Single-employee shape (#6519) with WI-001814's site-supervisor routing:
+		# version-15's sole change to this file was the skip_shift_supervisor flag.
+		approver_emp = get_approver(self.employee, skip_shift_supervisor=True)
 		if approver_emp:
 			user_id = frappe.db.get_value("Employee", approver_emp, "user_id")
 			if user_id and frappe.db.exists("User", user_id):

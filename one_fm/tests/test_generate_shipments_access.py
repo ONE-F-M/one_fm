@@ -1,11 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002162: who may press "Generate Shipments" on the Transportation Schedule.
-
-The button lives on the transport team's own board, but the whitelisted method behind
-it was gated on System Manager, so the supervisor running the board was told "You do
-not have enough permissions to access this resource".
-"""
+"""WI-002162: who may press "Generate Shipments" on the Transportation Schedule."""
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -29,9 +24,8 @@ class TestGenerateShipmentsIsTheTransportTeams(FrappeTestCase):
 		return [row.role for row in frappe.get_doc("Custom Role", name).roles]
 
 	def test_the_patch_opens_the_page_and_the_plan_to_the_manager(self):
-		# Relaxing the method's role gate alone is not enough: the page is
-		# role-restricted and the board is a Route Plan, so without both grants a
-		# Transportation Manager never reaches the button to be refused by it.
+		# The page is role-restricted and the board is a Route Plan: both are needed
+		# before the manager even reaches the button.
 		if not frappe.db.exists("Role", ROLE):
 			self.skipTest(f"{ROLE} role missing on this site")
 

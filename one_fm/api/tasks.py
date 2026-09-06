@@ -1227,15 +1227,33 @@ def process_overtime_shift(roster, date, time):
 					if str(shift_end_time) == str(time):
 						frappe.set_value("Shift Assignment", shift_assignment[0].name,'end_date', date)
 						frappe.set_value("Shift Assignment", shift_assignment[0].name,'status', "Inactive")
-						create_overtime_shift_assignment(schedule, date)
-				else:
-					create_overtime_shift_assignment(schedule, date)
+				# Always create the Over-Time Shift Assignment for the scheduled OT.
+				# Previously this was nested under the `str(shift_end_time) == str(time)`
+				# match, which never fired for employees whose basic shift ends at a
+				# single-digit hour (e.g. a 06:00 night shift -> str(timedelta) == '6:00:00'
+				# while the cron builds '06:00:00'), and otherwise only fired in the one
+				# 5-min tick where the times happened to line up. As a result ~39% of OT
+				# schedules never got a Shift Assignment, so their OT attendance was never
+				# marked. Creation is idempotent (existence guard inside the helper plus the
+				# overlapping-shift validation), so running it every tick is safe.
+				create_overtime_shift_assignment(schedule, date)
 		except Exception as e:
 			frappe.log_error(title="Error Creating Overtime Shift Assignment", message=frappe.get_traceback())
 			continue
 
 def create_overtime_shift_assignment(schedule, date):
 		try:
+			# Idempotency guard: the scheduler runs every 5 minutes, so skip if an
+			# Over-Time Shift Assignment already exists for this employee on this date.
+			# This also covers assignments created via the roster "Schedule Overtime"
+			# action, so the cron never produces a duplicate.
+			if frappe.db.exists("Shift Assignment", {
+				"employee": schedule.employee,
+				"roster_type": schedule.roster_type,
+				"start_date": date,
+				"docstatus": 1,
+			}):
+				return
 			shift_assignment = frappe.new_doc("Shift Assignment")
 			shift_assignment.start_date = date
 			shift_assignment.employee = schedule.employee
