@@ -1,0 +1,323 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2026-06-23 15:00:00",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "general_section",
+  "recruitment_plan_type",
+  "status",
+  "general_col",
+  "designation",
+  "erf",
+  "agent",
+  "target_section",
+  "trip_country",
+  "nationality_in_pr_request",
+  "target_col",
+  "gender",
+  "planned_numbers_to_recruit",
+  "planning_section",
+  "planning_recruitment_start_date",
+  "planning_col",
+  "planning_recruitment_end_date",
+  "actual_section",
+  "actual_recruitment_start_date",
+  "actual_col",
+  "actual_recruitment_end_date",
+  "system_section",
+  "naming_series",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "general_section",
+   "fieldtype": "Section Break",
+   "label": "General Information"
+  },
+  {
+   "default": "Recruitment Trip",
+   "fieldname": "recruitment_plan_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Recruitment Plan Type",
+   "options": "Recruitment Trip\nOnline Event",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nCompleted\nCancelled",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "general_col",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Designation",
+   "options": "Designation",
+   "reqd": 1
+  },
+  {
+   "fieldname": "erf",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "ERF",
+   "options": "ERF",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "agent",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Agent",
+   "options": "Agency",
+   "reqd": 1
+  },
+  {
+   "fieldname": "target_section",
+   "fieldtype": "Section Break",
+   "label": "Target Specifications"
+  },
+  {
+   "fieldname": "trip_country",
+   "fieldtype": "Autocomplete",
+   "in_list_view": 1,
+   "label": "Trip Country",
+   "options": "Any\nAfrican\nAsian",
+   "reqd": 1
+  },
+  {
+   "fieldname": "nationality_in_pr_request",
+   "fieldtype": "Autocomplete",
+   "in_list_view": 1,
+   "label": "Nationality in PR Request to be filled",
+   "options": "Any\nAfrican\nAsian"
+  },
+  {
+   "fieldname": "target_col",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Any",
+   "fieldname": "gender",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Gender",
+   "options": "Any\nMale\nFemale"
+  },
+  {
+   "fieldname": "planned_numbers_to_recruit",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Planned Numbers to Recruit",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "planning_section",
+   "fieldtype": "Section Break",
+   "label": "Planning Schedule"
+  },
+  {
+   "fieldname": "planning_recruitment_start_date",
+   "fieldtype": "Date",
+   "label": "Planning Recruitment Start Date"
+  },
+  {
+   "fieldname": "planning_col",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "planning_recruitment_end_date",
+   "fieldtype": "Date",
+   "label": "Planning Recruitment End Date"
+  },
+  {
+   "fieldname": "actual_section",
+   "fieldtype": "Section Break",
+   "label": "Actual Timeline"
+  },
+  {
+   "fieldname": "actual_recruitment_start_date",
+   "fieldtype": "Date",
+   "label": "Actual Recruitment Start Date"
+  },
+  {
+   "fieldname": "actual_col",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "actual_recruitment_end_date",
+   "fieldtype": "Date",
+   "label": "Actual Recruitment End Date"
+  },
+  {
+   "fieldname": "system_section",
+   "fieldtype": "Section Break",
+   "label": "System Fields",
+   "hidden": 1
+  },
+  {
+   "default": "RPC-.YYYY.-.#####",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "RPC-.YYYY.-.#####"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Recruitment Plan",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-06-23 15:00:00",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Recruitment Plan",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Recruiter",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Recruitment Team Lead",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Interviewer",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Administrator",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
