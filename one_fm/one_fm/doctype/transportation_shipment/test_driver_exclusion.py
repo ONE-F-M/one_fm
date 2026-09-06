@@ -163,6 +163,16 @@ class TestTheCanvasRefusesDriverCards(FrappeTestCase):
 
 		self.assertNotIn(name, self._card_ids())
 
+	def test_an_assigned_driver_only_card_is_kept(self):
+		"""It is sitting on a lane in a saved plan and a placed block resolves its card
+		from this list, so withdrawing it would empty somebody's plan. This also pins
+		that the guard reads a real status - an unselected field reads back as None and
+		silently keeps every card."""
+		name = self._a_shipment([self.driver])
+		frappe.db.set_value("Transportation Shipment", name, "status", "Assigned")
+
+		self.assertIn(name, self._card_ids())
+
 	def test_a_card_carrying_a_passenger_is_still_offered(self):
 		"""The filter has to be "all of them", not "any of them" - a card with real riders
 		on it is real demand whoever else is listed."""
