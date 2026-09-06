@@ -82,6 +82,52 @@ class TestERFFieldConfiguration(FrappeTestCase):
 						self.assertIn(named, states)
 
 
+class TestEveryMandatoryFieldIsReachable(FrappeTestCase):
+	"""Eight sections now show by workflow state, so a mandatory field that ends up in
+	one of them is demanded on a new ERF with no way to fill it. That is what happened
+	here: a stale Customize Form field_order Property Setter overrode the app's layout
+	and left Employee Grade and Hiring Method in the HR section, which a new ERF hides.
+	Nothing about either field's own properties looked wrong."""
+
+	def _mandatory_fields_a_new_erf_cannot_reach(self):
+		section, stranded = None, []
+		for field in frappe.get_meta("ERF").fields:
+			if field.fieldtype == "Section Break":
+				section = field
+				continue
+			if not field.reqd or field.hidden:
+				continue
+			by_section = bool(section is not None and section.depends_on
+			                  and "workflow_state" in section.depends_on)
+			by_itself = bool(field.depends_on and "workflow_state" in field.depends_on)
+			if by_section or by_itself:
+				stranded.append((field.fieldname, section.fieldname if section else None))
+		return stranded
+
+	def test_nothing_mandatory_is_stranded_behind_a_workflow_state(self):
+		self.assertEqual(self._mandatory_fields_a_new_erf_cannot_reach(), [])
+
+	def test_the_app_layout_is_not_overridden(self):
+		"""A field_order Property Setter silently wins over erf.json."""
+		self.assertFalse(
+			frappe.get_all(
+				"Property Setter",
+				filters={"doc_type": "ERF", "doctype_or_field": "DocType", "property": "field_order"},
+				pluck="name",
+			)
+		)
+
+	def test_grade_and_hiring_method_sit_beside_reason_for_request(self):
+		"""Where the analyst put them - the first section, which a new ERF shows."""
+		names = [f.fieldname for f in frappe.get_meta("ERF").fields]
+		first_section = next(
+			f.fieldname for f in frappe.get_meta("ERF").fields if f.fieldtype == "Section Break"
+		)
+		for fieldname in ("grade", "hiring_method"):
+			with self.subTest(fieldname=fieldname):
+				self.assertLess(names.index(fieldname), names.index(first_section))
+
+
 class TestTheApproverIsNoLongerChosenInCode(FrappeTestCase):
 	def test_it_reaches_the_erf_approver_role(self):
 		self.assertEqual(get_erf_approver(), get_users_with_role("ERF Approver"))
