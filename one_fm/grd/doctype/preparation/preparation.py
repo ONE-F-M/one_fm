@@ -109,7 +109,7 @@ COST_COMPONENT_FIELDS = (
 
 # The Actions whose master fee row is keyed by the number of years as well as the Action.
 # Mirrors the depends_on the costing table already puts on its No. of Years field.
-YEAR_SCOPED_ACTIONS = ('Renewal (Kuwaiti)', 'Renewal (Non-Kuwaiti)')
+YEAR_SCOPED_ACTIONS = ('Renewal (Kuwaiti)', 'Renewal Expat')
 
 # WI-002092: the fees a multi-year renewal pays once per year. The work permit, the medical
 # insurance and the residency stamp are each issued for a year at a time, so renewing for
@@ -117,11 +117,33 @@ YEAR_SCOPED_ACTIONS = ('Renewal (Kuwaiti)', 'Renewal (Non-Kuwaiti)')
 #
 # The civil ID is deliberately absent: one card is issued for the whole period, whatever it
 # costs, so multiplying it would charge the employee for cards that were never printed.
-PER_YEAR_COST_FIELDS = (
+#
+# WI-002179: an extension is bought the same way, by the month rather than by the year, so
+# the same three scale and the same one stays flat.
+DURATION_SCALED_COST_FIELDS = (
     'work_permit_amount',
     'medical_insurance_amount',
     'residency_stamp_amount',
 )
+
+# WI-002179: one Action for every extension, however long it runs for. "Extend 1 month",
+# "Extend 2 months" and "Extend 3 months" were three master fee rows saying the same thing
+# three times, and adding a fourth duration meant adding a fourth option and a fourth row.
+# The duration is a number on the Preparation row now, and the master row holds the monthly
+# rate.
+EXTENSION_ACTION = 'Extension'
+
+# WI-002181: the one-month extension an incoming candidate's entry visa gets while the rest
+# of their onboarding is arranged. It is an Onboarding Action rather than a Renewal one -
+# there is nothing to renew yet - and it opens a Residency and nothing else: the candidate
+# has no work permit, no insurance and no civil ID for an extension to follow on from.
+VISA_EXTENSION_ACTION = 'Visa Extension'
+
+# The Actions whose whole output is a Residency. Named because two code paths have to agree
+# about it: the submit path, which opens the Residency through the extend branch in
+# residency.py, and the path a row added after submit takes - which otherwise reads
+# "not one of the new Actions, so open the four a renewal opens".
+RESIDENCY_ONLY_ACTIONS = (EXTENSION_ACTION, VISA_EXTENSION_ACTION)
 
 
 # WI-002101: the batch type, the series it is named under, and the Actions its rows may
@@ -129,14 +151,20 @@ PER_YEAR_COST_FIELDS = (
 # statement - an Onboarding batch named PRE-ONB- that could still carry a Cancellation row
 # would be lying about what it is.
 #
-# The Action values are the Preparation Record field's own options, spelling included:
-# WI-002101 writes "Renewal (Non Kuwaiti)" and "Extend 1 Month" where the field has
-# "Renewal (Non-Kuwaiti)" and "Extend 1 month". The field's spelling is what every existing
-# row and every lookup keyed on it already uses.
+# The Action values are the Preparation Record field's own options: WI-002101 writes
+# "Renewal (Non Kuwaiti)" and "Extend 1 Month" where the field now has "Renewal Expat"
+# (WI-002178) and a single "Extension" (WI-002179). The field's own spelling is what every
+# existing row and every lookup keyed on it already uses.
 CATEGORIES = {
     'Onboarding': {
         'prefix': 'PRE-ONB-',
-        'actions': ('Overseas', 'Overseas (Government)', 'Local Transfer', 'New Kuwaiti'),
+        'actions': (
+            'Overseas',
+            'Overseas (Government)',
+            'Local Transfer',
+            'New Kuwaiti',
+            VISA_EXTENSION_ACTION,
+        ),
     },
     'Offboarding': {
         'prefix': 'PRE-OFFB-',
@@ -146,10 +174,8 @@ CATEGORIES = {
         'prefix': 'PRE-REN-',
         'actions': (
             'Renewal (Kuwaiti)',
-            'Renewal (Non-Kuwaiti)',
-            'Extend 1 month',
-            'Extend 2 months',
-            'Extend 3 months',
+            'Renewal Expat',
+            EXTENSION_ACTION,
         ),
     },
 }
@@ -171,7 +197,7 @@ SUB_DOCUMENT_SEQUENCE = ("Work Permit", "Medical Insurance", "Residency", "PACI"
 # and no civil ID process to follow the permit, and an extension is a single document on its
 # own - so neither is gated and neither offers a next step.
 SEQUENCED_CLASSIFICATIONS = {
-    "Work Permit": ("work_permit_type", ("Renewal Non Kuwaiti", "Overseas", "Overseas (Government)", "Local Transfer")),
+    "Work Permit": ("work_permit_type", ("Renewal Expat", "Overseas", "Overseas (Government)", "Local Transfer")),
     "Medical Insurance": ("insurance_status", ("Renewal", "New", "Local Transfer")),
     "Residency": ("category", ("Renewal", "First Time", "Transfer")),
     "PACI": ("category", ("Renewal", "New Application", "Transfer")),
@@ -538,6 +564,10 @@ class Preparation(Document):
 
             preparation.renewal_or_extend = extension_type if renew_all else ""
             preparation.no_of_years = no_of_years if renew_all else ""
+            # "Renew all" makes every row a renewal, which is priced by the year. A months
+            # value left on the row from an extension is hidden but not harmless - it is
+            # what the fees would be multiplied by if the Action were switched back.
+            preparation.no_of_months = ""
             # A nationality with no master row configured used to fail here on
             # `None.work_permit_amount`, taking the whole "renew all" action down with it
             # (WI-002031). The row is left at zero instead, which the operator can see and
@@ -594,9 +624,10 @@ def create_preparation_record():
             new_row['renewal_or_extend'] = "Renewal (Kuwaiti)"
         else:
             if employee.relieving_date: 
-                new_row['renewal_or_extend'] = "Extend 3 months"
+                new_row['renewal_or_extend'] = EXTENSION_ACTION
+                new_row['no_of_months'] = "3 Months"
             else:
-                new_row['renewal_or_extend'] = "Renewal (Non-Kuwaiti)"
+                new_row['renewal_or_extend'] = "Renewal Expat"
         doc.append("preparation_record", new_row)
             
     doc.save()
@@ -670,13 +701,13 @@ def get_grd_renewal_extension_cost(renewal_or_extend: str, no_of_years: str = No
 
     The old version filtered on the number of years only when the Action was exactly
     "Renewal" - a value the field has not offered since the options became
-    "Renewal (Kuwaiti)" and "Renewal (Non-Kuwaiti)". The filter was therefore dead, and a
+    "Renewal (Kuwaiti)" and "Renewal Expat". The filter was therefore dead, and a
     renewal with three configured rows (1, 2 and 3 Years) got whichever the database
     handed back first. The years now scope the lookup for the two renewal Actions, which
     are the ones whose master rows are keyed by it.
 
     Deliberately not scoped by years for any other Action: the field is hidden for them
-    but not cleared, so a row switched from Renewal (Non-Kuwaiti) to Extend 1 month still
+    but not cleared, so a row switched from Renewal Expat to Extension still
     carries "1 Year", and filtering on it would find nothing and quietly return no fees.
     """
     if not frappe.has_permission('Preparation', 'write'):
@@ -723,29 +754,36 @@ def _master_fee_rows(renewal_or_extend, no_of_years=None):
 
     return query.run(as_dict=True)
 
-def years_in(no_of_years):
-    """The number of years "2 Years" means (WI-002092).
+def duration_in(duration):
+    """How many periods "2 Years" or "2 Months" means (WI-002092, WI-002179).
 
-    Anything unparseable is one year: the field offers "1 Year", "2 Years" and "3 Years",
-    and a row that somehow carries something else should be charged the single-year rate
-    rather than nothing at all.
+    Anything unparseable is one: the fields offer "1 Year"/"2 Years"/"3 Years" and
+    "1 Month"/"2 Months"/"3 Months", and a row that somehow carries something else should be
+    charged the single-period rate rather than nothing at all.
     """
-    years = cint(cstr(no_of_years).split()[0]) if no_of_years else 0
-    return years or 1
+    periods = cint(cstr(duration).split()[0]) if duration else 0
+    return periods or 1
 
 
 @frappe.whitelist()
-def get_preparation_row_costing(renewal_or_extend: str, no_of_years: str = None):
+def get_preparation_row_costing(
+    renewal_or_extend: str, no_of_years: str = None, no_of_months: str = None
+):
     """The fees a Preparation row should carry for this Action and duration (WI-002092).
 
-    The master row in HR Settings holds the annual rate. A renewal taken for two or three
-    years pays the work permit, the medical insurance and the residency stamp once per year,
-    so those are multiplied out here - and the civil ID is not, because one card is issued
-    for the whole period.
+    The master row in HR Settings holds the rate for one period. A renewal taken for two or
+    three years pays the work permit, the medical insurance and the residency stamp once per
+    year, so those are multiplied out here - and the civil ID is not, because one card is
+    issued for the whole period.
+
+    WI-002179: an extension is the same arithmetic on a shorter period. One "Extension" row
+    in HR Settings holds the monthly rate, and the number of months on the Preparation row
+    is what it is multiplied by - so a duration nobody configured a row for still costs the
+    right amount, which three fixed "Extend N months" options could never do.
 
     Scaled here rather than in the master lookup so that lookup keeps returning what HR
-    Settings actually holds: the master table's own Total Amount is the annual figure, and
-    the two would otherwise disagree about what a row means.
+    Settings actually holds: the master table's own Total Amount is the rate for one period,
+    and the two would otherwise disagree about what a row means.
 
     Called by the form as well as by the "renew all" action, so the browser and the server
     cannot scale a row differently.
@@ -755,12 +793,15 @@ def get_preparation_row_costing(renewal_or_extend: str, no_of_years: str = None)
         return costing
 
     costing = dict(costing)
-    if renewal_or_extend not in YEAR_SCOPED_ACTIONS:
+    if renewal_or_extend in YEAR_SCOPED_ACTIONS:
+        periods = duration_in(no_of_years)
+    elif renewal_or_extend == EXTENSION_ACTION:
+        periods = duration_in(no_of_months)
+    else:
         return costing
 
-    years = years_in(no_of_years)
-    for field in PER_YEAR_COST_FIELDS:
-        costing[field] = flt(costing.get(field)) * years
+    for field in DURATION_SCALED_COST_FIELDS:
+        costing[field] = flt(costing.get(field)) * periods
 
     return costing
 
@@ -845,6 +886,21 @@ def handle_creation_of_grd_docs(row,source):
             )
         return
 
+    # WI-002181: an extension opens a Residency and nothing else. The branch below reads as
+    # "not one of the new Actions, so it is a renewal", which gave a row added after submit
+    # a work permit, an insurance and a PACI that submitting the same row never would.
+    if row.renewal_or_extend in RESIDENCY_ONLY_ACTIONS:
+        try:
+            residency.create_moi_record(
+                frappe.get_doc("Employee", row.employee), row.renewal_or_extend, source
+            )
+        except Exception:
+            frappe.log_error(
+                title=f"Error creating Residency for {row.employee}",
+                message=frappe.get_traceback(),
+            )
+        return
+
     try:
         employee_doc = frappe.get_doc("Employee",row.employee)
         work_permit.create_wp_renewal(employee_doc,row.renewal_or_extend,source)
@@ -863,7 +919,7 @@ def handle_renewal_changes(old_,new_,source):
         old (dict): a dict containing details of the old row
         new (dict): a dict containing details of the new row
     """
-    if old_.renewal_or_extend == "Renewal" and new_.renewal_or_extend in ['Extend 1 month','Extend 2 months','Extend 3 months']:
+    if old_.renewal_or_extend == "Renewal" and new_.renewal_or_extend == EXTENSION_ACTION:
         handle_extension(source,new_)
     elif new_.renewal_or_extend == "Cancellation":
         handle_cancelation(source,new_)
@@ -1007,7 +1063,7 @@ def get_renewal_extension_cost_for_employee(employee, no_of_years = "1 Year"):
     if employee_nationality == "Kuwaiti":
         extension_type = "Renewal (Kuwaiti)"
     else:
-        extension_type = "Renewal (Non-Kuwaiti)"
+        extension_type = "Renewal Expat"
     
     # The row's fees, not the master row's: a multi-year renewal pays the annual ones once
     # per year (WI-002092).

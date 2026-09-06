@@ -8,13 +8,15 @@
  "field_order": [
   "naming_series",
   "reason_for_request",
-  "for_remote_working",
+  "reason_for_other",
+  "grade",
   "hiring_method",
   "number_of_candidates_required",
   "project",
   "department",
   "designation",
   "expected_date_of_deployment",
+  "urgency_of_hire",
   "status",
   "reason_for_decline",
   "draft_erf_to_hrm",
@@ -30,6 +32,7 @@
   "day_off_category",
   "number_of_days_off",
   "vacation_days",
+  "for_remote_working",
   "governorate",
   "location_of_work",
   "employment_type",
@@ -70,6 +73,8 @@
   "is_id_card_needed_for_employee",
   "is_uniform_needed_for_this_job_html",
   "is_uniform_needed_for_this_job",
+  "provide_health_insurance_html",
+  "provide_health_insurance",
   "performance_profile_section",
   "performance_profile_html",
   "help_hr_to_create_okr",
@@ -81,7 +86,6 @@
   "reports_to",
   "reports_to_name",
   "performance_profile",
-  "grade",
   "number_of_interview_rounds",
   "interview_rounds",
   "column_break_56",
@@ -99,8 +103,6 @@
   "salary_per_person",
   "total_cost_in_salary",
   "column_break_44",
-  "provide_health_insurance_html",
-  "provide_health_insurance",
   "provide_mobile_with_line_html",
   "provide_mobile_with_line",
   "provide_company_insurance_html",
@@ -143,7 +145,7 @@
    "fieldname": "reason_for_request",
    "fieldtype": "Select",
    "label": "Reason for Request",
-   "options": "\nStaffing Plan\nEmployee Exit\nNew Project\nUnPlanned",
+   "options": "\nStaffing Plan\nEmployee Exit\nNew Project\nOther\nClient ERF Hire",
    "reqd": 1
   },
   {
@@ -188,7 +190,7 @@
    "fieldname": "expected_date_of_deployment",
    "fieldtype": "Date",
    "label": "Expected Date of Deployment",
-   "reqd": 1
+   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Cancelled\" || doc.workflow_state==\"Hold\" "
   },
   {
    "allow_on_submit": 1,
@@ -303,7 +305,8 @@
    "fieldname": "governorate",
    "fieldtype": "Link",
    "label": "Governorate",
-   "options": "Governorate"
+   "options": "Governorate",
+   "hidden": 1
   },
   {
    "fieldname": "location_of_work",
@@ -416,7 +419,8 @@
    "collapsible": 1,
    "fieldname": "candidates_required_section",
    "fieldtype": "Section Break",
-   "label": "Candidates Required"
+   "label": "Candidates Required",
+   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Cancelled\" || doc.workflow_state==\"Hold\" "
   },
   {
    "default": "0",
@@ -434,7 +438,8 @@
    "collapsible": 1,
    "fieldname": "education_and_other_requirements_section",
    "fieldtype": "Section Break",
-   "label": "Education and Other Requirements"
+   "label": "Education and Other Requirements",
+   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Cancelled\" || doc.workflow_state==\"Hold\" "
   },
   {
    "fieldname": "education_qualification",
@@ -456,7 +461,8 @@
   {
    "fieldname": "minimum_experience_required",
    "fieldtype": "Int",
-   "label": "Minimum Relevant Experience Required (In Years)"
+   "label": "Minimum Relevant Experience Required (In Years)",
+   "hidden": 1
   },
   {
    "fieldname": "column_break_30",
@@ -493,7 +499,8 @@
    "collapsible": 1,
    "fieldname": "language_and_basic_skill_section",
    "fieldtype": "Section Break",
-   "label": "Language and Basic Skill"
+   "label": "Language and Basic Skill",
+   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Cancelled\" || doc.workflow_state==\"Hold\" "
   },
   {
    "fieldname": "languages",
@@ -522,7 +529,7 @@
   },
   {
    "collapsible": 1,
-   "depends_on": "eval:!doc.for_remote_working",
+   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Cancelled\" || doc.workflow_state==\"Hold\" ",
    "fieldname": "tools_section",
    "fieldtype": "Section Break",
    "label": "Tools Required for Employee to Work"
@@ -535,20 +542,23 @@
   {
    "fieldname": "is_id_card_needed_for_employee_html",
    "fieldtype": "HTML",
-   "label": "Is ID Card Needed For Employee HTML"
+   "label": "Is ID Card Needed For Employee HTML",
+   "depends_on": "eval:doc.hiring_method==\"Bulk Recruitment\""
   },
   {
    "default": "1",
    "fieldname": "is_id_card_needed_for_employee",
    "fieldtype": "Check",
    "hidden": 1,
-   "label": "Is ID Card Needed For Employee"
+   "label": "Is ID Card Needed For Employee",
+   "depends_on": "eval:doc.hiring_method==\"Bulk Recruitment\""
   },
   {
    "allow_on_submit": 1,
    "fieldname": "is_uniform_needed_for_this_job_html",
    "fieldtype": "HTML",
-   "label": "Is Uniform Needed for this Job HTML"
+   "label": "Is Uniform Needed for this Job HTML",
+   "depends_on": "eval:doc.hiring_method==\"Bulk Recruitment\""
   },
   {
    "allow_on_submit": 1,
@@ -556,12 +566,13 @@
    "fieldname": "is_uniform_needed_for_this_job",
    "fieldtype": "Check",
    "hidden": 1,
-   "label": "Is Uniform Needed for This Job"
+   "label": "Is Uniform Needed for This Job",
+   "depends_on": "eval:doc.hiring_method==\"Bulk Recruitment\""
   },
   {
    "collapsible": 1,
    "collapsible_depends_on": "eval:!doc.draft_erf_to_hrm && doc.docstatus == 0",
-   "depends_on": "eval:doc.docstatus==0",
+   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Cancelled\" || doc.workflow_state==\"Hold\" ",
    "fieldname": "performance_profile_section",
    "fieldtype": "Section Break",
    "label": "Performance Profile"
@@ -608,7 +619,8 @@
    "fieldname": "hr_section",
    "fieldtype": "Section Break",
    "label": "HR",
-   "permlevel": 1
+   "permlevel": 1,
+   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Cancelled\" || doc.workflow_state==\"Hold\" "
   },
   {
    "allow_on_submit": 1,
@@ -642,7 +654,8 @@
    "in_list_view": 1,
    "label": "Employee Grade",
    "options": "Employee Grade",
-   "permlevel": 1
+   "permlevel": 1,
+   "reqd": 1
   },
   {
    "allow_on_submit": 1,
@@ -736,7 +749,7 @@
   {
    "collapsible": 1,
    "collapsible_depends_on": "eval: doc.docstatus == 1",
-   "depends_on": "eval: doc.docstatus == 1",
+   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Cancelled\" || doc.workflow_state==\"Hold\" || doc.workflow_state==\"Open\"  || doc.workflow_state==\"Submit to Recruitment Manager\"",
    "fieldname": "salary_compensation_budget_section",
    "fieldtype": "Section Break",
    "label": "Salary Compensation Budget",
@@ -951,7 +964,7 @@
   {
    "allow_on_submit": 1,
    "collapsible": 1,
-   "depends_on": "eval:!doc.for_remote_working",
+   "depends_on": "eval:!doc.for_remote_working && doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Cancelled\" || doc.workflow_state==\"Hold\" ",
    "fieldname": "grd_section",
    "fieldtype": "Section Break",
    "label": "GRD",
@@ -998,7 +1011,8 @@
    "collapsible": 1,
    "fieldname": "job_description_section",
    "fieldtype": "Section Break",
-   "label": "Job Description"
+   "label": "Job Description",
+   "hidden": 1
   },
   {
    "fieldname": "description",
@@ -1020,11 +1034,24 @@
    "label": "ERF Employee",
    "no_copy": 1,
    "options": "ERF Employee"
+  },
+  {
+   "fieldname": "reason_for_other",
+   "label": "Reason for (Other)",
+   "fieldtype": "Small Text",
+   "mandatory_depends_on": "eval:doc.reason_for_request==\"Other\"",
+   "depends_on": "eval:doc.reason_for_request==\"Other\""
+  },
+  {
+   "fieldname": "urgency_of_hire",
+   "label": "Urgency of Hire",
+   "fieldtype": "Select",
+   "options": "\nHire Now"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-29 10:00:00.000000",
+ "modified": "2026-09-06 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

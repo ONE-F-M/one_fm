@@ -262,13 +262,13 @@ class Residency(Document):
 # "anything that is not a renewal is an extension" - would open a second Residency for
 # them, categorised as Extend.
 ACTIONS_HANDLED_ON_SUBMIT = (
-    'Renewal (Non-Kuwaiti)', 'New Kuwaiti', 'Overseas', 'Overseas (Government)', 'Local Transfer'
+    'Renewal Expat', 'New Kuwaiti', 'Overseas', 'Overseas (Government)', 'Local Transfer'
 )
 
 # The Residency a category opens, and how many days before the residency expires it is
 # applied for. Anything not listed is an extension, applied for a week ahead.
 MOI_CATEGORY_BY_ACTION = {
-    'Renewal (Non-Kuwaiti)': ('Renewal', -14),
+    'Renewal Expat': ('Renewal', -14),
     'Transfer': ('Transfer', None),
     # Same category whether the transfer came from a Transfer Paper (which says
     # "Transfer") or from a Preparation row (which says "Local Transfer").
@@ -279,6 +279,12 @@ MOI_CATEGORY_BY_ACTION = {
     # WI-002024: a government-contract overseas hire gets the same first residency. MOI
     # does not care which file the work permit was raised against.
     'Overseas (Government)': ('First Time', None),
+    # WI-002181: a visa extension for an incoming candidate. Same category as any other
+    # extension - MOI has one - but applied for the day the Preparation was submitted
+    # rather than a week before an expiry: the candidate has no residency yet, and the
+    # fallback below would read a blank expiry as today and date the application a week
+    # in the past.
+    'Visa Extension': ('Extend', None),
 }
 
 
@@ -288,7 +294,7 @@ def set_employee_list_for_moi(preparation_name):
     employee_in_preparation = frappe.get_doc('Preparation',preparation_name)
     if employee_in_preparation.preparation_record:
         for employee in employee_in_preparation.preparation_record:
-            if employee.renewal_or_extend == 'Renewal (Non-Kuwaiti)' and employee.nationality != 'Kuwaiti':# For renewals
+            if employee.renewal_or_extend == 'Renewal Expat' and employee.nationality != 'Kuwaiti':# For renewals
                 try:
                     create_moi_record(frappe.get_doc('Employee',employee.employee),employee.renewal_or_extend,preparation_name)
                 except Exception as e:
