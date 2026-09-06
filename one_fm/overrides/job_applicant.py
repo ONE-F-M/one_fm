@@ -13,6 +13,16 @@ from one_fm.utils import production_domain
 from hrms.hr.doctype.job_applicant.job_applicant import create_interview as hrms_create_interview
 
 
+# WI-002317: the hiring methods the duplicate rules turn on, spelled as the field offers
+# them - "A la carte Recruitment", not "A La Carte".
+BULK_RECRUITMENT = "Bulk Recruitment"
+A_LA_CARTE = "A la carte Recruitment"
+
+# The one status that frees a candidate to apply again. Every other status - Open,
+# Replied, Hold, Accepted - is an application still in play.
+REJECTED = "Rejected"
+
+
 class JobApplicantOverride(JobApplicant):
 	def autoname(self):
 		pass
@@ -64,17 +74,73 @@ class JobApplicantOverride(JobApplicant):
 			job title and email ID, but a different name.
 			If a duplicate application is found, an error is thrown.
 		'''
-		if self.one_fm_hiring_method != 'Bulk Recruitment' and self.is_new():
-			if frappe.db.exists("Job Applicant", {
-				"job_title": self.job_title,
-				"one_fm_email_id": self.one_fm_email_id,
-				"name": ["!=", self.name]
-			}):
-				frappe.throw(_("""
-					Not allowed to apply for same position again
-					<br/>
-					Change your email id, if you wish to apply it for different person
-				"""))
+		if not self.is_new() or self.one_fm_hiring_method == BULK_RECRUITMENT:
+			return
+
+		if self.one_fm_hiring_method == A_LA_CARTE:
+			self.validate_open_a_la_carte_application()
+			return
+
+		if frappe.db.exists("Job Applicant", {
+			"job_title": self.job_title,
+			"one_fm_email_id": self.one_fm_email_id,
+			"name": ["!=", self.name]
+		}):
+			frappe.throw(_("""
+				Not allowed to apply for same position again
+				<br/>
+				Change your email id, if you wish to apply it for different person
+			"""))
+
+	def validate_open_a_la_carte_application(self):
+		"""One live A la carte application per candidate (WI-002317).
+
+		Not per position: a candidate with an application still being considered should be
+		considered for that one, rather than the recruitment team carrying several open
+		records for the same person across different roles.
+
+		A rejected application does not hold them back - that decision is made, and they
+		are free to try for something else. Every other status does, Accepted included:
+		somebody already hired for an A la carte role is not applying for another.
+		"""
+		email = self.applicant_email()
+		if not email:
+			return
+
+		existing = frappe.get_all(
+			"Job Applicant",
+			filters={
+				"one_fm_hiring_method": A_LA_CARTE,
+				"status": ["!=", REJECTED],
+				"name": ["!=", self.name],
+			},
+			or_filters={"one_fm_email_id": email, "email_id": email},
+			fields=["name", "job_title", "status"],
+			limit=1,
+		)
+		if not existing:
+			return
+
+		open_application = existing[0]
+		frappe.throw(
+			_("{0} already has an active application for an A la carte position: {1} ({2}).<br><br>"
+			  "Only one A la carte application can be open at a time. Apply again once that "
+			  "one has been rejected.").format(
+				frappe.bold(email),
+				frappe.bold(open_application.job_title or open_application.name),
+				open_application.status,
+			),
+			title=_("Active Application Already Exists"),
+		)
+
+	def applicant_email(self):
+		"""The address that identifies the candidate.
+
+		one_fm_email_id is what the applicant fills in and what utils.validate_job_applicant
+		copies onto the standard email_id - but that copy runs after this validation, so on
+		a new record only one of the two may be set yet. Both are searched.
+		"""
+		return (self.one_fm_email_id or self.email_id or "").strip()
 
 	def after_insert(self):
 		self.notify_recruiter_and_requester_from_job_applicant()
