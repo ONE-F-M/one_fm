@@ -16,6 +16,7 @@
   "shift_number",
   "shift_type",
   "day_off_ot_allowed",
+  "double_shift_ot_allowed",
   "automate_roster",
   "shift_timing_override_required",
   "supervisor",
@@ -199,6 +200,12 @@
   },
   {
    "default": "0",
+   "fieldname": "double_shift_ot_allowed",
+   "fieldtype": "Check",
+   "label": "Double Shift OT Allowed"
+  },
+  {
+   "default": "0",
    "description": "Enable this only if this post requires a different shift timing on specific day(s) of the week (e.g., a different timing on Friday).",
    "fieldname": "shift_timing_override_required",
    "fieldtype": "Check",
@@ -226,7 +233,7 @@
    "link_fieldname": "shift"
   }
  ],
- "modified": "2026-08-12 14:00:00.000000",
+ "modified": "2026-09-06 22:30:00.000000",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Shift",
