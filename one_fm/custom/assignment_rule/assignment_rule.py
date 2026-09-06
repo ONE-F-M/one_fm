@@ -14,6 +14,37 @@ def get_assignment_rule_json_file(file_name, app_name="one_fm"):
     folder = frappe.get_app_path(app_name, "custom", "assignment_rule")
     return get_json_file(file_name, folder)
 
+# Child-row keys that belong to the site a fixture was exported from, not to this one.
+FOREIGN_ROW_KEYS = (
+    "name", "parent", "parentfield", "parenttype",
+    "owner", "creation", "modified", "modified_by", "idx",
+)
+
+
+def strip_foreign_row_names(assignment_rule: dict):
+    """Let a fixture's child rows be inserted here rather than silently dropped.
+
+    Seven of these fixtures were exported from the business analyst's site with that
+    site's row names on their Assignment Days. A child row carrying a name is an
+    *existing* row as far as Frappe is concerned, so saving issues an UPDATE against a
+    name this database has never had: nothing matches, nothing is inserted, and the rows
+    that were there are deleted as no longer present. The rule ends up with no assignment
+    days at all and nothing is raised.
+
+    Emptied days do not stop a rule firing - is_rule_not_applicable_today() reads an empty
+    list as "every day" - so the loss is invisible until somebody opens the rule and finds
+    the table blank.
+    """
+    for fieldname in ("assignment_days", "users"):
+        rows = assignment_rule.get(fieldname)
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            if isinstance(row, dict):
+                for key in FOREIGN_ROW_KEYS:
+                    row.pop(key, None)
+
+
 def create_assignment_rule(assignment_rule:dict, process_task_name:str=None):
     """
     Create or update an Assignment Rule based on the provided dictionary.
@@ -44,6 +75,7 @@ def create_assignment_rule(assignment_rule:dict, process_task_name:str=None):
         return
 
     assignment_rule_name = assignment_rule["name"]
+    strip_foreign_row_names(assignment_rule)
 
     try:
         if process_task_name:
