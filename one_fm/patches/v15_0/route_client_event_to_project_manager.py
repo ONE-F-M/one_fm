@@ -24,6 +24,25 @@ RULES = (
 NEW_STATE = "Pending Project Manager"
 PM_RULE = "Client Event - Pending Project Manager"
 
+# What the analyst's site has, and all it should have.
+BA_RULES = (
+	"Client Event - Draft",
+	"Client Event - Pending Operations Manager",
+	"Client Event - Pending Project Manager",
+)
+
+# The fixtures were renamed to the analyst's names at some point, and create_assignment_rule
+# writes the name it is given - so the records made under the old names were left behind,
+# still enabled, and the site ends up showing five rules for three. Both of them still test
+# for "Pending Approval", a state the workflow no longer has, so the Operations Manager one
+# can never fire again; the Draft one still fires, duplicating "Client Event - Draft" and
+# then never letting go, because the state its unassign_condition waits for never arrives.
+SUPERSEDED_RULES = (
+	"Returning to Operations Supervisor of Client Event",
+	"Assigning Operations Manager for Approval- Client Event",
+)
+DRAFT_RULE = "Client Event - Draft"
+
 EXPECTED_FIELDS = {
 	"project_manager": "project.project_manager",
 	"project_manager_user": "project_manager.user_id",
@@ -44,7 +63,40 @@ def execute():
 			rule, frappe.db.get_value("Assignment Rule", rule["name"], "custom_routine_task")
 		)
 
+	retire_superseded_rules()
 	verify()
+
+
+def retire_superseded_rules():
+	"""Drop the records left behind by the fixture rename, and settle their assignments.
+
+	Deleting a rule does not close what it assigned, and a surviving rule will not do it
+	either: apply_unassign only closes the ToDos its own rule created. So an open one is
+	dealt with here or never - it sits on somebody's to-do list for good.
+	"""
+	for rule_name in SUPERSEDED_RULES:
+		if not frappe.db.exists("Assignment Rule", rule_name):
+			continue
+
+		for todo in frappe.get_all(
+			"ToDo",
+			filters={"assignment_rule": rule_name, "status": "Open"},
+			fields=["name", "reference_name"],
+		):
+			state = frappe.db.get_value("Client Event", todo.reference_name, "workflow_state")
+			if state == "Draft":
+				# Still genuinely assigned, and "Client Event - Draft" assigns the same
+				# person for the same reason. Handing it over means that rule releases it
+				# when the event is submitted.
+				frappe.db.set_value(
+					"ToDo", todo.name, "assignment_rule", DRAFT_RULE, update_modified=False
+				)
+			else:
+				# The event left Draft long ago; this should have been released then and
+				# was not, because the state it was waiting for never existed.
+				frappe.db.set_value("ToDo", todo.name, "status", "Cancelled", update_modified=False)
+
+		frappe.delete_doc("Assignment Rule", rule_name, ignore_permissions=True, force=True)
 
 
 def ensure_workflow_state():
@@ -104,6 +156,24 @@ def verify():
 		frappe.throw(
 			f"WI-002184: {PM_RULE!r} reads {rule.field!r} rather than the project manager's "
 			"user, so it would assign nobody."
+		)
+
+	live = set(frappe.get_all("Assignment Rule", filters={"document_type": "Client Event"}, pluck="name"))
+	if live != set(BA_RULES):
+		frappe.throw(
+			"WI-002184: Client Event should have exactly the analyst's three rules. "
+			f"Extra: {sorted(live - set(BA_RULES))or 'none'}. Missing: {sorted(set(BA_RULES) - live) or 'none'}."
+		)
+
+	stranded = frappe.db.sql(
+		"""SELECT COUNT(*) FROM `tabToDo`
+		   WHERE status = 'Open' AND assignment_rule IS NOT NULL
+		     AND assignment_rule NOT IN (SELECT name FROM `tabAssignment Rule`)
+		     AND reference_type = 'Client Event'""")[0][0]
+	if stranded:
+		frappe.throw(
+			f"WI-002184: {stranded} open Client Event assignment(s) point at a rule that no "
+			"longer exists, so nothing will ever release them."
 		)
 
 	print(f"WI-002184: Client Event routes to {NEW_STATE} when the event has a project")

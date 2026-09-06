@@ -222,3 +222,47 @@ class TestTheAssignmentRules(FrappeTestCase):
 				for state in states:
 					with self.subTest(filename=filename, key=key, state=state):
 						frappe.safe_eval(rule[key], None, {"workflow_state": state})
+
+
+class TestTheSiteHasOnlyTheAnalystsRules(FrappeTestCase):
+	"""The fixtures were renamed to the analyst's names, and create_assignment_rule writes
+	the name it is given - so the records made under the old names stayed behind, enabled,
+	and the site listed five rules for three."""
+
+	BA_RULES = {
+		"Client Event - Draft",
+		"Client Event - Pending Operations Manager",
+		"Client Event - Pending Project Manager",
+	}
+
+	def test_exactly_the_three_the_analyst_configured(self):
+		self.assertEqual(
+			set(frappe.get_all("Assignment Rule", filters={"document_type": "Client Event"},
+			                   pluck="name")),
+			self.BA_RULES,
+		)
+
+	def test_no_assignment_is_left_pointing_at_a_rule_that_is_gone(self):
+		"""apply_unassign only closes the ToDos its own rule created, so an open one whose
+		rule has been deleted sits on somebody's to-do list for good."""
+		self.assertEqual(
+			frappe.db.sql("""
+				SELECT COUNT(*) FROM `tabToDo`
+				WHERE status = 'Open' AND assignment_rule IS NOT NULL
+				  AND assignment_rule NOT IN (SELECT name FROM `tabAssignment Rule`)
+				  AND reference_type = 'Client Event'
+			""")[0][0],
+			0,
+		)
+
+	def test_no_two_rules_claim_the_same_state(self):
+		"""Two rules assigning on the same state is what made the duplicate visible: both
+		fired, and only one of them ever let go."""
+		claims = {}
+		for name in sorted(self.BA_RULES):
+			condition = frappe.db.get_value("Assignment Rule", name, "assign_condition")
+			if condition:
+				claims.setdefault(condition, []).append(name)
+		for condition, names in claims.items():
+			with self.subTest(condition=condition):
+				self.assertEqual(len(names), 1, f"{names} all assign on {condition!r}")
