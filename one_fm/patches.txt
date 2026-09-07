@@ -610,3 +610,4 @@ one_fm.patches.v15_0.consolidate_extension_actions #2026-09-02 WI-002179
 one_fm.patches.v15_0.update_work_permit_assignment_rules #2026-09-02 WI-002182
 one_fm.patches.v15_0.drop_erf_field_order_property_setter #2026-09-06b WI-002316
 one_fm.patches.v15_0.retire_unplanned_erf_reason #2026-09-06 WI-002316
+one_fm.patches.v15_0.seed_item_type_arabic_names #2026-09-07 WI-002399

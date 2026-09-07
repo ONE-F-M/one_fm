@@ -824,20 +824,29 @@ def pow_attendance_report(doc):
 #
 # Each heading is (Arabic, English); the Arabic is empty on the two columns that never
 # carried any.
+# WI-002399: the letter is submitted to a client in Arabic, so the headings carry no
+# English at all. The breakdown pair is the analyst's own wording, already in use. The
+# other four had no Arabic anywhere - neither in the code nor in the design document -
+# and are written to match it: عدد for a count, ايام/ساعات for the unit, بالشهر for the
+# contractual monthly figure, الفعلية for what was actually worked.
 LETTER_COLUMN_HEADINGS = {
 	"contractual": {
-		"days": ("", "Contractual Number of days per month"),
-		"hours": ("", "Contractual number of hours per month"),
+		"days": "عدد ايام العمل التعاقدية بالشهر",
+		"hours": "عدد ساعات العمل التعاقدية بالشهر",
 	},
 	"worked": {
-		"days": ("", "Total number Days worked"),
-		"hours": ("", "Total No of Hours worked"),
+		"days": "اجمالي عدد ايام العمل الفعلية",
+		"hours": "اجمالي عدد ساعات العمل الفعلية",
 	},
 	"breakdown": {
-		"days": ("اجمالي عدد ايام عمل", "Total Number of Days"),
-		"hours": ("اجمالي عدد ساعات عمل", "Total Number of Hours"),
+		"days": "اجمالي عدد ايام عمل",
+		"hours": "اجمالي عدد ساعات عمل",
 	},
 }
+
+# The separator between a column's two unit headings, and between the two figures in a
+# cell. Arabic, for the same reason.
+LETTER_OR = "أو"
 
 
 def pow_letter_headers(doc):
@@ -892,17 +901,45 @@ def _letter_units(doc):
 
 
 def _heading_lines(column, units):
-	"""The lines one column's heading is made of, with an OR between two units."""
+	"""The lines one column's heading is made of, with an أو between two units."""
 	headings = LETTER_COLUMN_HEADINGS[column]
 
 	lines = []
 	for unit in units:
 		if lines:
 			lines.append({"separator": True})
-		arabic, english = headings[unit]
-		lines.append({"ar": arabic, "en": english})
+		lines.append({"ar": headings[unit]})
 
 	return lines
+
+
+def pow_item_types_arabic(doc) -> str:
+	"""The contract's Item Types in Arabic, for the letter's opening paragraph (WI-002399).
+
+	Read from Item Type.arabic_name rather than a mapping in here, so a new type is
+	translated by the person who adds it instead of by a deploy. A type with nothing
+	filled in falls back to its own name: an English word in an Arabic sentence is
+	wrong, but a blank where the service should be is worse, and the fallback is
+	visible enough to get fixed.
+	"""
+	names = []
+	for row in doc.get("proof_of_work_item") or []:
+		item_type = (row.get("item_type") or "").strip()
+		if item_type and item_type not in names:
+			names.append(item_type)
+
+	if not names:
+		return ""
+
+	arabic = dict(
+		frappe.get_all(
+			"Item Type",
+			filters={"name": ["in", names]},
+			fields=["name", "arabic_name"],
+			as_list=True,
+		)
+	)
+	return " - ".join(arabic.get(name) or name for name in names)
 
 
 def pow_logo_src():
