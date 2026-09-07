@@ -82,9 +82,9 @@ class TransportationShipment(Document):
 					self.from_date = trq.from_date
 				if not self.to_date:
 					self.to_date = trq.to_date
-				if not self.start_time:
+				if time_is_blank(self.start_time):
 					self.start_time = trq.departure_time
-				if not self.end_time:
+				if time_is_blank(self.end_time):
 					self.end_time = trq.return_time
 
 		if not self.stop_location:
@@ -389,6 +389,18 @@ def merge_trip_shipments(shipments) -> dict:
 	}
 
 
+def time_is_blank(value) -> bool:
+	"""Whether a Frappe Time field was left unset.
+
+	Not the same as falsy. Midnight comes back as ``timedelta(0)``, so ``if not
+	end_time`` reads a shift that finishes at 00:00 as one with no finish recorded at
+	all - and the literal fallback further down the ``or`` chain then advertised a
+	12:00-00:00 afternoon card as finishing at 18:00 (WI-002401 AC9). Every reader of
+	one of these fields has to ask whether it was STATED, not whether it is non-zero.
+	"""
+	return value is None or value == ""
+
+
 def _seconds_into_day(value) -> int | None:
 	"""A Frappe Time field as seconds past midnight.
 
@@ -567,9 +579,10 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 	uses, so the seat count the operator is shown is the one the save will judge them by -
 	two implementations would drift and the modal would promise a merge the save refuses.
 
-	Each shipment becomes one stop container. A stop where riders both leave and join is
-	two containers, because a drop-off and a boarding are two things the driver does even
-	when they happen in one place, and the same holds for a stop the run returns to later.
+	Each visit the bus makes is one stop container, carrying both of the movements that
+	can happen there: a drop-off and a boarding are two things the driver does, and a
+	handover stop does both in one place. A stop the run returns to later is a separate
+	visit and so a separate container.
 
 	`timings` optionally carries the per-leg transit and buffer minutes the operator has
 	adjusted, keyed by shipment or by card id; the returned departs/arrives stamps are
@@ -719,9 +732,13 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 			"shift_location": ", ".join(shift_places) or None,
 			"action": stop["action_type"],
 			"action_type": stop["action_type"],
+			# Both movements, always. A single collapsed "headcount" used to be sent
+			# alongside these - boarding_count or drop_off_count, whichever was
+			# non-zero - and a stop that does both has no such number: reading it made
+			# the modal announce one movement's label against the other's count
+			# (WI-002401). Anything showing a stop reads the two counts.
 			"boarding_count": stop["boarding_count"],
 			"drop_off_count": stop["drop_off_count"],
-			"headcount": stop["boarding_count"] or stop["drop_off_count"],
 			"boards": bool(stop["boarding"]),
 			"boarding_cards": len(stop["boarding"]),
 			"cards": [doc.name for doc in serving],
