@@ -4,7 +4,12 @@ from frappe import _
 from frappe.utils import cint
 from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
 from one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log import get_handover_windows
-from one_fm.operations.doctype.route_plan.route_plan import _card_direction, card_rows
+from one_fm.operations.doctype.route_plan.route_plan import (
+    _card_direction,
+    card_rows,
+    live_headcounts,
+    row_headcount,
+)
 from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
     driver_employees,
     qoa_buffer_minutes,
@@ -960,8 +965,6 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
     # nobody on it is travelling as a passenger. Generation stops making these, but
     # records made before that still exist, and an Assigned one cannot be pruned, so the
     # canvas has to refuse them itself rather than wait for a Generate run.
-    inactive_shifts = _inactive_shifts(shipments)
-
     drivers = driver_employees([row.employee_id for row in emp_rows])
     driver_only = {
         ship
@@ -983,6 +986,7 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
     # going to plan. Generation already stops making them and prunes the Unassigned
     # ones, but that only runs daily or on the button - the dispatcher opening the board
     # in between would still be looking at them, and an Assigned card is never pruned.
+    inactive_shifts = _inactive_shifts(shipments)
     shipments = [s for s in shipments if not _serves_only_inactive_shifts(s, inactive_shifts)]
 
     # Fallback times for shipments without an Operations Shift (ad-hoc journeys).
@@ -1354,6 +1358,13 @@ def load_assignments(plan_name: str = ""):
     doc = frappe.get_doc("Route Plan", plan_name)
     doc.check_permission("read")
 
+    # A saved row's ``headcount`` is a snapshot of the moment the card was dropped and
+    # is never refreshed, so a shipment that has since gained or lost an employee left
+    # the timeline block and the client-side seat guard reading a number the sidebar
+    # (which loads the shipment) already disagreed with. The shipment is the authority
+    # here for the same reason it is on the Route Plan save.
+    live = live_headcounts(doc.assignments)
+
     swim_items = []
     assigned_card_ids = set()
     # The minutes of the legs no card is filed against, keyed by the run and the camp
@@ -1395,7 +1406,7 @@ def load_assignments(plan_name: str = ""):
             "direction": row.direction,
             "start":     row.start_time,
             "end":       row.end_time,
-            "headcount": row.headcount or 0,
+            "headcount": row_headcount(row, live),
             "conflict":  False,
             "tripId":    row.trip_group or None,
             "tripName":  row.trip_name or None,
