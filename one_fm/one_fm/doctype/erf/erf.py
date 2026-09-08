@@ -46,9 +46,6 @@ class ERF(Document):
 		self.validate_interview_rounds()
 
 	def validate_interview_rounds(self):
-		if self.number_of_interview_rounds and self.number_of_interview_rounds != len(self.interview_rounds):
-			frappe.throw(_("Number of rows of the 'Intreview Rounds' must be equal to 'Number of Interview Rounds'!"))
-
 		if self.hiring_method == 'Bulk Recruitment' and not self.number_of_interview_rounds:
 			frappe.throw(_("Minimum one intreview rounds must be added for bulk recruitment!"))
 
