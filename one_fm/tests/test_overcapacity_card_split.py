@@ -168,13 +168,17 @@ class TestTheCanvasOffersTheSplit(FrappeTestCase):
 	def setUp(self):
 		self.source = CANVAS.read_text()
 
-	def test_the_drop_is_intercepted_before_the_seat_check(self):
-		# The seat gate would throw first and the split would never be offered.
+	def test_the_drop_is_intercepted_before_the_run_is_chosen(self):
+		# A card bigger than the whole bus is the one refusal that belongs before the
+		# picker, because no run on that lane can take it. Everything else waits until
+		# the operator has chosen a run (WI-002401 AC5), so the pooled seat gate that
+		# used to sit here - and would have thrown before the split was ever offered -
+		# is gone.
 		self.assertIn("if (card.headcount > this.passengerSeats(vehicle)) {", self.source)
 		self.assertIn("this._openSplitModal(card, vehicle);", self.source)
 		self.assertLess(
 			self.source.index("_openSplitModal(card, vehicle);"),
-			self.source.index("const blockers = this.tripsDuringCardWindows(card, vehicle.id);"),
+			self.source.index("// ── Trip chaining: detect nearby blocks"),
 		)
 
 	def test_the_modal_states_the_four_numbers(self):

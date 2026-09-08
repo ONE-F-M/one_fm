@@ -34,21 +34,8 @@ TRIP_REQUEST = "Trip Request"
 # transportation methods are handled off the fleet scheduling canvas.
 COMPANY_FLEET = "Company Fleet"
 MAHBOULA_LABELS = {"Mahboula 3", "Mahboula 12", "Mahboula 13", "Mahboula 15"}
-# Return riders may finish up to an hour after the outbound leg departs.
-RETURN_MATCH_FLOOR_SECONDS = -3600
 # Who may refresh the shipment cards from the canvas (WI-002162).
 GENERATE_ROLES = ("System Manager", "Transportation Manager", "Transportation Supervisor")
-
-
-def _minute_of_day(time_val) -> int | None:
-	"""Seconds-since-midnight for a Time value, used for return-rider matching."""
-	if not time_val:
-		return None
-	try:
-		dt = get_datetime(f"2000-01-01 {time_val}")
-		return dt.hour * 3600 + dt.minute * 60 + dt.second
-	except Exception:
-		return None
 
 
 def build_demand_descriptors(nested_map: dict) -> list:
@@ -274,7 +261,6 @@ def build_demand_descriptors(nested_map: dict) -> list:
 				"employees": [emp_obj(e) for e in grp["employees"]],
 			})
 
-	_attach_return_rosters(demands)
 	return demands
 
 
@@ -305,41 +291,6 @@ def _without_drivers(nested_map: dict) -> dict:
 			trimmed[acc_name] = dict(acc_data, shifts=shifts)
 
 	return trimmed
-
-
-def _attach_return_rosters(demands: list) -> None:
-	"""For each demand, find the finishing-shift roster at the same stop/accommodation.
-
-	Mirrors the return-rider cross-reference in get_route_planner_data: same stop
-	location, same accommodation, a different shift whose end time sits closest to
-	(and not long after) this demand's start time.
-	"""
-	by_stop = {}
-	for d in demands:
-		by_stop.setdefault(d["stop_location"], []).append(d)
-
-	for d in demands:
-		start_s = _minute_of_day(d["start_time"])
-		d["return_employees"] = []
-		if start_s is None:
-			continue
-
-		best, best_gap = None, float("inf")
-		for other in by_stop.get(d["stop_location"], []):
-			if other is d or other["group_token"] == d["group_token"]:
-				continue
-			if other["acc_name"] != d["acc_name"]:
-				continue
-			end_s = _minute_of_day(other["end_time"])
-			if end_s is None:
-				continue
-			diff = start_s - end_s
-			if diff >= RETURN_MATCH_FLOOR_SECONDS and abs(diff) < best_gap:
-				best_gap = abs(diff)
-				best = other
-
-		if best:
-			d["return_employees"] = best["employees"]
 
 
 def _generation_key(demand: dict, direction: str) -> tuple:
@@ -401,9 +352,26 @@ def generate_transportation_shipments():
 	for demand in demands:
 		for direction in ("Outward", "Return"):
 			try:
-				roster = demand["employees"] if direction == "Outward" else (
-					demand.get("return_employees") or demand["employees"]
-				)
+				# The same people, both ways. A card is "these riders, from this camp,
+				# to this site", and they come home again - so its Return leg carries
+				# its own crew.
+				#
+				# It used to substitute the roster of a DIFFERENT shift: the one
+				# finishing as this demand starts, on the reasoning that the bus
+				# arriving at 06:00 also takes the outgoing crew home. That is a real
+				# run, but it is not this card: the card's window comes from its own
+				# end_time, so the substituted riders were filed against an hour twelve
+				# hours from when they actually finish. 250 of 376 generated Return
+				# cards on the live plan carried another shift's people, and the
+				# Alghanim Guest House Day crew were told to be collected at 18:00 when
+				# their card held the Night crew who finish at 06:00 (WI-002401).
+				#
+				# Collecting the outgoing crew on the incoming run is what a Mixed trip
+				# IS: the dispatcher drops the other shift's Return card onto this run
+				# and the merge walks the legs. That machinery already exists, and it
+				# can only read the run correctly if each card tells the truth about
+				# whose ride it is.
+				roster = demand["employees"]
 				if not roster:
 					continue
 
