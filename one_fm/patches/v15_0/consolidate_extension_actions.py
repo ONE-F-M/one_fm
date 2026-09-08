@@ -32,6 +32,7 @@ def execute():
 
 	moved = move_preparation_rows()
 	kept = collapse_master_rows()
+	renumber_costing_rows()
 
 	verify(moved, kept)
 
@@ -75,7 +76,10 @@ def collapse_master_rows():
 
 	keeper.renewal_or_extend = EXTENSION
 	for row in extend_rows[1:]:
-		settings.renewal_extension_cost.remove(row)
+		# Document.remove, not the list's: the list's takes the row out and leaves every
+		# survivor's idx where it was. Nothing else renumbers - a save keeps the idx each
+		# row already carries, and _init_child only numbers a row that has none.
+		settings.remove(row)
 
 	settings.flags.ignore_mandatory = True
 	settings.flags.ignore_permissions = True
@@ -83,6 +87,36 @@ def collapse_master_rows():
 	frappe.clear_cache(doctype="HR Settings")
 
 	return keeper.total_amount
+
+
+def costing_rows():
+	return frappe.get_all(
+		"GRD Renewal Extension Cost",
+		filters=COSTING_PARENT,
+		fields=["name", "idx"],
+		order_by="idx asc, creation asc",
+	)
+
+
+def renumber_costing_rows():
+	"""Close the gap this patch left on the sites it has already run on.
+
+	It cannot live in collapse_master_rows: that returns early once the extend rows are
+	gone, so on a re-run it would never be reached. Add Row numbers a new row by the
+	table's length rather than by its highest idx (create_new.js, and _init_child server
+	side), so a gap in the middle means the next row HR adds collides with an existing one
+	and the table's order stops being decidable.
+	"""
+	renumbered = False
+	for position, row in enumerate(costing_rows(), start=1):
+		if row.idx != position:
+			frappe.db.set_value(
+				"GRD Renewal Extension Cost", row.name, "idx", position, update_modified=False
+			)
+			renumbered = True
+
+	if renumbered:
+		frappe.clear_cache(doctype="HR Settings")
 
 
 def verify(moved, kept):
@@ -100,4 +134,15 @@ def verify(moved, kept):
 					"next save."
 				)
 
-	print(f"WI-002179: moved {moved} Preparation rows to {EXTENSION!r}; master row total {kept}")
+	numbering = [row.idx for row in costing_rows()]
+	if numbering != list(range(1, len(numbering) + 1)):
+		frappe.throw(
+			f"WI-002179: HR Costing is numbered {numbering}, not 1 to {len(numbering)} - "
+			"Add Row numbers a new row by count, so a gap makes it collide with a row that "
+			"is already there."
+		)
+
+	print(
+		f"WI-002179: moved {moved} Preparation rows to {EXTENSION!r}; master row total "
+		f"{kept if kept is not None else 'already collapsed'}"
+	)
