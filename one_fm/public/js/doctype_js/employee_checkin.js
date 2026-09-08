@@ -30,12 +30,8 @@ var validate_source_of_checkin = (frm) => {
 }
 
 var balance_shift_details_columns = (frm) => {
-	// The "Shift Details" section splits fields into a fixed left/right Column
-	// Break. Several fields in it hide via depends_on (shift_assignment-derived
-	// fields) or auto-hide when read_only and empty, so one side can end up much
-	// shorter than the other. CSS multi-column layout re-flows the same fields
-	// across two visually balanced columns instead, recalculating live as fields
-	// show/hide - no JS re-run needed after this.
+	// Re-flows the section's fixed left/right columns into a CSS multi-column
+	// layout so visible fields stay balanced as some hide/show.
 	var section = $(frm.wrapper).find('.row[data-fieldname="shift_details"]').first();
 	var body = section.find('> .section-body');
 	if (!body.length) return;
