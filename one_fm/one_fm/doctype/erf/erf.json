@@ -678,7 +678,6 @@
    "fieldname": "interview_rounds",
    "fieldtype": "Table",
    "label": "Interview Rounds",
-   "mandatory_depends_on": "number_of_interview_rounds",
    "options": "ERF Interview Round"
   },
   {
