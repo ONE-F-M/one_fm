@@ -2528,9 +2528,9 @@ def _stamp_leg_details(doc, leg_timings=None):
 	"""
 	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
 		CAMP_STOP,
-		arrival_order,
 		build_itinerary,
 		own_direction,
+		run_order,
 		walk_occupancy,
 	)
 
@@ -2566,9 +2566,14 @@ def _stamp_leg_details(doc, leg_timings=None):
 		group_key = _group if not _group.startswith("\0") else run[0].card_id
 		cards = _cards_for_itinerary(run)
 		by_name = {card.name: card for card in cards}
+		# In the order the operator has the run on the lane, not the order the cards'
+		# own shift times imply. Re-deriving it here put a stop dragged in the drawer
+		# straight back where it started, on the very next save (WI-002401).
 		ordered = sorted(
 			[row for row in run if row.transportation_shipment in by_name],
-			key=lambda row: arrival_order(by_name[row.transportation_shipment]),
+			key=lambda row: run_order(
+				by_name[row.transportation_shipment], _local_seconds(row.start_time)
+			),
 		)
 		if not ordered:
 			continue

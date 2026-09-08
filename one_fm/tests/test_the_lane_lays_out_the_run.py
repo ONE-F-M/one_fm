@@ -22,10 +22,10 @@ CANVAS = pathlib.Path(frappe.get_app_path(
 MINUTE = 60000
 
 
-def _method(name):
+def _method(name, args="tripId"):
 	"""The named method's source, by counting braces from its opening one."""
 	source = CANVAS.read_text()
-	start = source.index(f"{name}(tripId) {{")
+	start = source.index(f"{name}({args}) {{")
 	depth, i = 0, source.index("{", start)
 	while True:
 		if source[i] == "{":
@@ -46,6 +46,9 @@ def retime(items, leg_timings=None, own=None):
 		swimItems: {json.dumps(items)},
 		legTimings: {json.dumps(leg_timings or {})},
 		_ownDirection: (item) => ({json.dumps(own or {})})[item.cardId] || 'OUTBOUND',
+		// The real one, not a stub: _retimeTrip lays each stop out after the one before
+		// it, so which order it walks is part of what these tests are checking.
+		_inRunOrder: function (items) {_method('_inRunOrder', 'items')},
 	}};
 	canvas.swimItems.forEach((i) => {{ i.start = new Date(i.start); i.end = new Date(i.end); }});
 	retime.call(canvas, 'T1');

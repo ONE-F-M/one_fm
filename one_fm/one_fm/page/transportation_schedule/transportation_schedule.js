@@ -348,9 +348,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
                     // Build merged blocks for each trip group
                     Object.keys(tripGroups).forEach(tripId => {
-                        const stops = tripGroups[tripId].sort(
-                            (a, b) => (a.stopIndex || 0) - (b.stopIndex || 0)
-                        );
+                        const stops = this._inRunOrder(tripGroups[tripId]);
                         const firstItem = stops[0];
                         const totalHC = stops.reduce((sum, s) => sum + (s.headcount || 0), 0);
                         // The run's extent, over ALL its stops rather than the first and
@@ -517,14 +515,10 @@ function mountRoutePlannerApp(wrapper, data) {
                 if (!this.selectedItem || !this.selectedItem.tripId) return [];
                 const tripId = this.selectedItem.tripId;
                 const self = this;
-                return this.swimItems
-                    .filter(i => i.tripId === tripId)
-                    // In the order the bus drives it. stopIndex is the order the cards
-                    // were dropped on the lane, which is not the order of the run: a card
-                    // added first can be the last stop. Sorting by it listed a 07:32 stop
-                    // above a 07:20 one and made the trip timeline read 07:32 to 07:32.
-                    .sort((a, b) => (new Date(a.start) - new Date(b.start))
-                        || (a.stopIndex || 0) - (b.stopIndex || 0))
+                // In the order the bus drives it - one definition, shared with the Trip
+                // Builder and the seat walk so the drawer cannot list a run in an order
+                // the rest of the board disagrees with.
+                return this._inRunOrder(this.swimItems.filter(i => i.tripId === tripId))
                     .map((item, idx) => {
                         let card = self.planData.shipment_cards.find(c => c.id === item.cardId);
                         if (!card && (item._site || item._shift || item._accommodation || item._stopLocation)) {
@@ -1266,7 +1260,11 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             _mergeShipmentIds(newCard, existingItems) {
-                const ids = existingItems.map(i => i.cardId).filter(Boolean);
+                // In the order the operator has the run, which is the order the drawer
+                // lists it in and the order the server now honours rather than
+                // re-deriving from the cards' shift times (WI-002401). A card dragged to
+                // the middle of the run reaches the Trip Builder in the middle of it.
+                const ids = this._inRunOrder(existingItems).map(i => i.cardId).filter(Boolean);
                 // No new card when the modal is opened to edit a run already on the lane
                 // (AC6): the run is re-timed, not merged with anything.
                 if (newCard) ids.push(newCard.id);
@@ -1709,6 +1707,17 @@ function mountRoutePlannerApp(wrapper, data) {
                 });
             },
 
+            // The order the operator has a run in: where each block sits on the lane,
+            // which is what drag-to-reorder in the drawer rewrites. stopIndex only
+            // breaks ties - it is the PHYSICAL stop number the server stamps from the
+            // itinerary, camp stops included, so it cannot lead.
+            _inRunOrder(items) {
+                return [...(items || [])].sort(
+                    (a, b) => (new Date(a.start) - new Date(b.start))
+                        || (a.stopIndex || 0) - (b.stopIndex || 0)
+                );
+            },
+
             // Reopen the Trip Builder on a run already on the lane (AC6), so its
             // departure and per-leg minutes can be changed without taking the run apart
             // and dropping it again. Nothing is merged in: the same modal is the run's
@@ -1720,10 +1729,9 @@ function mountRoutePlannerApp(wrapper, data) {
             editSelectedTrip() {
                 const item = this.selectedItem;
                 if (!item || !item.tripId) return;
-                const stops = this.swimItems
-                    .filter(i => i.tripId === item.tripId)
-                    .sort((a, b) => (new Date(a.start) - new Date(b.start))
-                        || (a.stopIndex || 0) - (b.stopIndex || 0));
+                const stops = this._inRunOrder(
+                    this.swimItems.filter(i => i.tripId === item.tripId)
+                );
                 // A run of one stop has nothing to sequence, and the merge endpoint needs
                 // two cards to name a run; use Merge into Trip to give it a second stop.
                 if (stops.length < 2) {
@@ -1822,9 +1830,12 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             _retimeTrip(tripId) {
-                const stops = this.swimItems
-                    .filter((i) => i.tripId === tripId)
-                    .sort((a, b) => (a.stopIndex || 0) - (b.stopIndex || 0));
+                // In the order the operator has the run: re-timing lays each stop out
+                // after the one before it, so walking it in stopIndex order would undo a
+                // drag-to-reorder the moment any leg was re-timed (WI-002401).
+                const stops = this._inRunOrder(
+                    this.swimItems.filter((i) => i.tripId === tripId)
+                );
                 if (!stops.length) return;
 
                 const MIN_BLOCK_MS = 5 * 60000;     // a block thinner than this is unclickable
@@ -2189,7 +2200,11 @@ function mountRoutePlannerApp(wrapper, data) {
             tripOccupancy(trip) {
                 if (trip.direction !== 'MIXED') return trip.headcount;
 
-                const stops = [...trip.stops].sort((a, b) => (a.stopIndex || 0) - (b.stopIndex || 0));
+                // The order the operator has the run in, the same one the server walks.
+                // Sorting on stopIndex alone read the physical stop number the save
+                // stamps from the itinerary, so a reordered run was walked in its old
+                // order and the lane and the save could reach different peaks.
+                const stops = this._inRunOrder(trip.stops);
                 const boards = (item) => this.cardOwnDirection(item) === 'RETURN';
 
                 // Everyone the trip carries out of the camp is aboard before stop 1.
@@ -2925,10 +2940,13 @@ function mountRoutePlannerApp(wrapper, data) {
                 const tripId = this.selectedItem.tripId;
                 if (!tripId) return;
 
-                // Get trip stops sorted by current stopIndex
-                const tripStops = this.swimItems
-                    .filter(i => i.tripId === tripId)
-                    .sort((a, b) => (a.stopIndex || 0) - (b.stopIndex || 0));
+                // The same order the drawer lists, because sourceIndex and targetIndex
+                // are positions in THAT list. Sorting differently here mapped the drag
+                // onto whichever stop happened to hold that stopIndex, so a reorder could
+                // move a stop the operator was not dragging (WI-002401).
+                const tripStops = this._inRunOrder(
+                    this.swimItems.filter(i => i.tripId === tripId)
+                );
 
                 if (sourceIndex >= tripStops.length || targetIndex >= tripStops.length) return;
 
@@ -3823,8 +3841,8 @@ function mountRoutePlannerApp(wrapper, data) {
                 });
 
                 const connectors = [];
-                Object.entries(trips).forEach(([tripId, stops]) => {
-                    stops.sort((a, b) => (a.stopIndex || 0) - (b.stopIndex || 0));
+                Object.entries(trips).forEach(([tripId, unordered]) => {
+                    const stops = this._inRunOrder(unordered);
                     for (let i = 0; i < stops.length - 1; i++) {
                         const a = stops[i], b = stops[i + 1];
                         const aEnd = this.bx(a) + this.bw(a);

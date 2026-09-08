@@ -324,6 +324,28 @@ def arrival_order(shipment):
 	return (arrival is None, arrival or 0, boards, shipment.name)
 
 
+def run_order(shipment, placed=None):
+	"""Sort key placing a run's cards in the order the OPERATOR has them.
+
+	A run's order used to be re-derived from each card's own shift times
+	(`arrival_order`) by every reader. That kept the trip modal and the save in step, but
+	it made the drawer's drag-to-reorder cosmetic: the operator moved a stop, its block
+	moved with it, and then the modal, the itinerary, the leg walk and the manifest all
+	put the run back into shift order (WI-002401).
+
+	`placed` is the second of the day the block actually sits at on the lane - the time
+	the operator has the bus at that stop - and it wins when there is one. Callers pass
+	it from the plan row the card is on, using whichever ISO parser they already have; a
+	card with no placement falls back to `arrival_order`, so a run nobody has ordered by
+	hand still reads sensibly.
+
+	The tie-breaks stay `arrival_order`'s, so two stops the operator has at the same
+	minute are still served drop-off first - the seats one load vacates are what the next
+	load boards into.
+	"""
+	return (placed is None, placed or 0) + arrival_order(shipment)
+
+
 @frappe.whitelist()
 def merge_trip_shipments(shipments) -> dict:
 	"""Merge two or more cards into a single Mixed trip (WI-002071).
@@ -350,7 +372,9 @@ def merge_trip_shipments(shipments) -> dict:
 	for doc in docs:
 		doc.check_permission("write")
 
-	docs.sort(key=arrival_order)
+	# In the order the caller listed them. The canvas sends the run as the operator has
+	# it in the drawer, so re-sorting here on the cards' own shift times threw away a
+	# drag-to-reorder the moment it was confirmed (WI-002401).
 	trip_group = merge_key([doc.name for doc in docs])
 	direction = run_direction(docs)
 
@@ -608,7 +632,9 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 	docs = [frappe.get_doc("Transportation Shipment", name) for name in names]
 	for doc in docs:
 		doc.check_permission("read")
-	docs.sort(key=arrival_order)
+	# In the order the caller listed them - see merge_trip_shipments. The preview and the
+	# merge have to build the same run out of the same cards, so both honour the order
+	# rather than re-deriving one.
 
 	limit = (
 		frappe.db.get_value("Vehicle", vehicle, "custom_max_passenger_capacity") if vehicle else None

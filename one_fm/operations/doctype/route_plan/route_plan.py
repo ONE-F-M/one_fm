@@ -873,7 +873,10 @@ def _cards_for_itinerary(rows) -> list:
 		fact = facts.get(row.transportation_shipment)
 		if not fact:
 			continue
-		cards.append(frappe._dict({
+		# Where the operator has this block on the lane, which is the order they have
+		# stated for the run. Carried alongside the card rather than on it: the card is
+		# the shipment's own facts and nothing downstream should read a plan detail off it.
+		cards.append((_iso_time_of_day(row.start_time), frappe._dict({
 			"name": fact.name,
 			"accommodation": fact.accommodation,
 			"accommodation_name": fact.accommodation_name,
@@ -883,18 +886,21 @@ def _cards_for_itinerary(rows) -> list:
 			"pre_merge_trip_direction": fact.pre_merge_trip_direction,
 			"start_time": fact.start_time,
 			"end_time": fact.end_time,
-		}))
+		})))
 
-	# Ordered the way the bus reaches them, which is how the trip modal orders the same
-	# cards. Sorting on the stored stop_index instead let the two build different runs
-	# out of the same cards and reach different peaks - the modal would accept a merge
-	# the save then refused.
+	# In the order the operator has the run, which is how the trip modal and the drawer
+	# order the same cards. This used to re-derive the order from each card's own shift
+	# times so that the modal and the save could not disagree; they still cannot, but
+	# both now read the stated order instead of rebuilding one, so a stop dragged in the
+	# drawer stays where it was put (WI-002401). Sorting on the stored stop_index is
+	# still wrong - that is the PHYSICAL stop number, camp stops included, rewritten
+	# from the itinerary on every save.
 	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
-		arrival_order,
+		run_order,
 	)
 
-	cards.sort(key=arrival_order)
-	return cards
+	cards.sort(key=lambda pair: run_order(pair[1], pair[0]))
+	return [card for _placed, card in cards]
 
 
 def _iso_to_date(value):
