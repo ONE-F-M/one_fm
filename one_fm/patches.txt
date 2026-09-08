@@ -609,3 +609,4 @@ one_fm.patches.v15_0.update_employee_checkin_form_customizations #2026-09-01
 one_fm.patches.v15_0.backfill_employee_checkin_default_source #2026-09-01
 one_fm.patches.v15_0.add_transportation_qoa_buffer_to_hr_settings #2026-08-26 WI-002151
 one_fm.patches.v15_0.rekey_olm_shipments_on_shift_window #2026-08-31 WI-002151
+one_fm.patches.v15_0.add_employee_checkin_shift_fields_depends_on #2026-09-08
