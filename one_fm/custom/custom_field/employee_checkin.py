@@ -32,7 +32,6 @@ def get_employee_checkin_custom_fields():
                 "label": "Post Abbrv",
                 "fetch_from": "operations_role.post_abbrv",
                 "fetch_if_empty": 1,
-                "depends_on": "eval:doc.shift_assignment",
                 "read_only": 1
             },
             {
@@ -43,7 +42,6 @@ def get_employee_checkin_custom_fields():
                 "options": "Operations Role",
                 "fetch_from": "shift_assignment.operations_role",
                 "fetch_if_empty": 1,
-                "depends_on": "eval:doc.shift_assignment",
                 "read_only": 1
             },
             {
@@ -54,7 +52,6 @@ def get_employee_checkin_custom_fields():
                 "options": "Company",
                 "fetch_from": "shift_assignment.company",
                 "fetch_if_empty": 1,
-                "depends_on": "eval:doc.shift_assignment",
                 "read_only": 1
             },
             {
@@ -65,7 +62,6 @@ def get_employee_checkin_custom_fields():
                 "options": "Project",
                 "fetch_from": "shift_assignment.project",
                 "fetch_if_empty": 1,
-                "depends_on": "eval:doc.shift_assignment",
                 "read_only": 1
             },
             {
@@ -76,7 +72,6 @@ def get_employee_checkin_custom_fields():
                 "options": "Operations Site",
                 "fetch_from": "shift_assignment.site",
                 "fetch_if_empty": 1,
-                "depends_on": "eval:doc.shift_assignment",
                 "read_only": 1
             },
             {
@@ -87,7 +82,6 @@ def get_employee_checkin_custom_fields():
                 "fetch_from": "shift_assignment.roster_type",
                 "fetch_if_empty": 1,
                 "translatable": 1,
-                "depends_on": "eval:doc.shift_assignment",
                 "read_only": 1
             },
             {
