@@ -174,3 +174,88 @@ class TestTheDeploymentDateCheck(FrappeTestCase):
 	def test_a_date_before_initiation_is_still_refused(self):
 		with self.assertRaises(frappe.ValidationError):
 			self._erf(frappe.utils.add_days(frappe.utils.today(), -10)).validate_date()
+
+
+class TestTheShippedLayout(FrappeTestCase):
+	"""Read from erf.json rather than from the meta: the site's copy only catches up on
+	the next migrate, and what this guards is what the app ships.
+
+	A Property Setter would still win over the file, so the two that could - a field_order
+	snapshot, and one on these fields - are covered by
+	TestEveryMandatoryFieldIsReachable.test_no_app_ships_a_field_order_fixture and by
+	drop_erf_field_order_property_setter.
+	"""
+
+	# The "Other Benefits" column: its heading and every question in it, in order.
+	OTHER_BENEFITS_COLUMN = (
+		"column_break_44",
+		"provide_mobile_with_line_html",
+		"provide_mobile_with_line",
+		"provide_company_insurance_html",
+		"provide_company_insurance",
+		"provide_salary_advance_html",
+		"provide_salary_advance",
+		"amount_in_advance",
+		"provide_accommodation_by_company_html",
+		"provide_accommodation_by_company",
+		"provide_transportation_by_company_html",
+		"provide_transportation_by_company",
+		"provide_vehicle_by_company_html",
+		"provide_vehicle_by_company",
+		"provide_laptop_by_company_html",
+		"provide_laptop_by_company",
+		"email_access_needed_html",
+		"email_access_needed",
+	)
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		import json
+		import os
+
+		with open(os.path.join(os.path.dirname(__file__), "erf.json")) as erf_json:
+			cls.erf = json.load(erf_json)
+		cls.order = cls.erf["field_order"]
+		cls.by_fieldname = {field["fieldname"]: field for field in cls.erf["fields"]}
+
+	def _section_of(self, fieldname):
+		section = None
+		for name in self.order:
+			if self.by_fieldname[name]["fieldtype"] == "Section Break":
+				section = name
+			if name == fieldname:
+				return section
+		self.fail(f"{fieldname} is not in field_order")
+
+	def test_project_shows_only_for_bulk_recruitment(self):
+		"""Verbatim from the analyst's site, spacing included."""
+		self.assertEqual(
+			self.by_fieldname["project"].get("depends_on"),
+			'eval:doc.hiring_method == "Bulk Recruitment"',
+		)
+
+	def test_the_other_benefits_column_sits_in_the_tools_section(self):
+		for fieldname in self.OTHER_BENEFITS_COLUMN:
+			with self.subTest(fieldname=fieldname):
+				self.assertEqual(self._section_of(fieldname), "tools_section")
+
+	def test_the_column_is_still_one_run_of_fields(self):
+		"""Moved as a block, so the heading keeps its own column and the questions stay
+		under it rather than being split across two."""
+		start = self.order.index(self.OTHER_BENEFITS_COLUMN[0])
+		self.assertEqual(
+			tuple(self.order[start:start + len(self.OTHER_BENEFITS_COLUMN)]),
+			self.OTHER_BENEFITS_COLUMN,
+		)
+
+	def test_the_costing_fields_stay_with_the_salary_section(self):
+		"""Only the questions moved - the totals belong beside the salary they add to."""
+		for fieldname in ("other_benefits", "benefit_cost_to_company", "total_cost_to_company"):
+			with self.subTest(fieldname=fieldname):
+				self.assertEqual(
+					self._section_of(fieldname), "salary_compensation_budget_section"
+				)
+
+	def test_every_field_is_ordered_exactly_once(self):
+		self.assertEqual(sorted(self.order), sorted(self.by_fieldname))
