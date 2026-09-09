@@ -69,10 +69,13 @@ class TestCapacityIsJudgedPerRun(FrappeTestCase):
 		self.assertNotIn("peakLoadDuringCardWindows", self.source)
 		self.assertNotIn("cardLegWindow", self.source)
 
-	def test_a_card_bigger_than_the_bus_is_still_split_on_the_drop(self):
-		# The one refusal that does belong before the picker, because no run can take it.
-		self.assertIn("if (card.headcount > this.passengerSeats(vehicle)) {", self.source)
-		self.assertIn("this._openSplitModal(card, vehicle);", self.source)
+	def test_a_card_too_big_for_the_seats_it_can_have_is_split_not_refused(self):
+		# Sized on the seats the drop can actually have, at each of handleDrop's three
+		# endings rather than once up front on the whole bus (WI-002401 item 1) - see
+		# test_overcapacity_card_split for the flow.
+		self.assertIn("_splitIfOver(card, vehicle, joining, next) {", self.source)
+		self.assertIn("if (card.headcount <= free) return false;", self.source)
+		self.assertNotIn("if (card.headcount > this.passengerSeats(vehicle)) {", self.source)
 
 	def test_a_chain_is_judged_on_the_run_it_joins(self):
 		self.assertIn("this.mergedOccupancy(existingItems, newCard)", self.source)
@@ -246,3 +249,56 @@ class TestTheItineraryNamesBothMovements(FrappeTestCase):
 
 	def test_a_stop_where_nothing_happens_still_says_so(self):
 		self.assertIn("NOBODY BOARDS OR LEAVES", self.source)
+
+
+class TestTheBoardStatesTheCapacityItValidates(FrappeTestCase):
+	"""Max Passenger Capacity is what every seat check applies (WI-002401 item 3).
+
+	The raw seat count is one higher on a bus whose count includes the driver, so a
+	lane advertising the seat count promises a seat the save will refuse. On this site
+	that is 22/32135, the RAIZE: 4 seats, driver included, 3 passengers.
+	"""
+
+	def setUp(self):
+		self.source = CANVAS.read_text()
+
+	def test_the_lane_label_states_the_passenger_capacity(self):
+		self.assertIn("{{ passengerSeats(vehicle) }} seats", self.source)
+		self.assertNotIn("{{ vehicle.seats }} seats", self.source)
+
+	def test_the_reassign_picker_states_it_too(self):
+		self.assertIn("`${v.label} (${this.passengerSeats(v)} seats)`", self.source)
+		self.assertNotIn("`${v.label} (${v.seats} seats)`", self.source)
+
+	def test_the_picker_still_parses_its_own_label_back(self):
+		# The option text is split on " (" to recover the vehicle, so the number inside
+		# the brackets is free to change but the separator is not.
+		self.assertIn("vals.target_vehicle.split(' (')[0]", self.source)
+
+
+class TestASplitCardKeepsItsName(FrappeTestCase):
+	"""Three badges that refuse to shrink left "Kuwait Airways - T4" as "K.".
+
+	.rp-card-site is the only flexible item in the header and carries min-width: 0, so
+	it absorbs the whole squeeze; SPLIT OVERFLOW is also the longest of the three.
+	"""
+
+	def setUp(self):
+		self.source = CANVAS.read_text()
+
+	def test_the_split_badge_is_on_its_own_line(self):
+		self.assertIn('<div v-if="card.is_split_overflow" class="rp-card-split-row">', self.source)
+		self.assertIn(".rp-card-split-row { display: flex; margin-bottom: 4px; }", self.source)
+
+	def test_the_header_keeps_only_the_two_short_badges(self):
+		start = self.source.index('<div class="rp-card-header">')
+		header = self.source[start:self.source.index("</div>", start)]
+		self.assertIn("rp-card-dir", header)
+		self.assertIn("rp-card-type", header)
+		self.assertNotIn("SPLIT OVERFLOW", header)
+
+	def test_the_name_is_still_the_flexible_one(self):
+		# Unchanged: the fix is which badges share the row, not how the name behaves.
+		self.assertIn(".rp-card-site   { font-size: 14px; font-weight: 600;", self.source)
+		self.assertIn("flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;",
+					  self.source)
