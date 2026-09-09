@@ -829,13 +829,19 @@ function mountRoutePlannerApp(wrapper, data) {
                     return;
                 }
 
-                // ── AC 2.1: a card bigger than the whole bus is a split, not a refusal ──
-                // Checked before the seat gate below, which would otherwise throw and the
-                // dispatcher would never be offered the split.
-                if (card.headcount > this.passengerSeats(vehicle)) {
-                    this._openSplitModal(card, vehicle);
-                    return;
-                }
+                // ── AC 2.1: a card too big for the seats it can have is a split, not a
+                // refusal - but WHICH seats depends on how this drop resolves, so the
+                // offer is made at each of the three endings below rather than here
+                // (WI-002401):
+                //
+                //   * a run of its own          -> the whole bus
+                //   * one nearby run            -> what is free on that run, offered
+                //                                  before the confirm
+                //   * several nearby runs       -> after the picker, for the run chosen
+                //
+                // Sizing it here meant sizing it on the bus for every drop, so a card
+                // joining a run that was already half full was split too big, came back
+                // still over, and was then refused.
 
                 // No seat check here. Which run this card joins has not been decided
                 // yet - the picker below offers every nearby run and a new independent
@@ -927,13 +933,20 @@ function mountRoutePlannerApp(wrapper, data) {
                         const newDirBadge =
                             (card.own_direction || card.direction) === 'RETURN' ? '← RET' : '→ OUT';
                         const newCamp = card.accommodation ? `<strong>${card.accommodation}</strong> — ` : '';
-                        frappe.confirm(
+                        // The split comes first when there is one run to join: the
+                        // seats free on THAT run are what the operator is agreeing to,
+                        // and they have to see the number before the confirm (WI-002401).
+                        const joining = tripMap[tripKeys[0]];
+                        const askToChain = (dropped) => frappe.confirm(
                             `<strong>${this.vehicleString(vehicle)}</strong> already has an active trip:<br><br>` +
                             existingStops.map((s, i) => `&nbsp;&nbsp;${i + 1}. ${s}`).join('<br>') +
-                            `<br><br>Add ${newCamp}<strong>${card.site_location}</strong> <span style="font-size:11px;color:#888">(${newDirBadge})</span> as the next stop on this trip?`,
-                            () => this._chainToTrip(card, tripMap[tripKeys[0]], vehicle.id),
-                            () => this._doPlaceWithDialog(card, vehicle.id)
+                            `<br><br>Add ${newCamp}<strong>${dropped.site_location}</strong> <span style="font-size:11px;color:#888">(${newDirBadge})</span> as the next stop on this trip?`,
+                            () => this._chainToTrip(dropped, joining, vehicle.id),
+                            () => this._doPlaceWithDialog(dropped, vehicle.id)
                         );
+                        if (!this._splitIfOver(card, vehicle, joining, askToChain)) {
+                            askToChain(card);
+                        }
                     } else {
                         // ── Multiple trips: let user pick which trip to join ──
                         const self = this;
@@ -1001,15 +1014,22 @@ function mountRoutePlannerApp(wrapper, data) {
                                 d.hide();
                                 const choice = vals.trip_choice;
 
+                                // The split waits for the pick: only now is it known
+                                // which run's free seats the card has to fit, and a run
+                                // of its own has the whole bus (WI-002401).
                                 if (choice === 'Create New Independent Trip') {
-                                    self._doPlaceWithDialog(card, vehicle.id);
+                                    const place = (dropped) => self._doPlaceWithDialog(dropped, vehicle.id);
+                                    if (!self._splitIfOver(card, vehicle, null, place)) place(card);
                                     return;
                                 }
 
                                 // Find selected trip
                                 const selected = tripOptions.find(t => t.label === choice);
-                                if (selected) {
-                                    self._chainToTrip(card, selected.items, vehicle.id, vals.transit_min);
+                                if (!selected) return;
+                                const chain = (dropped) => self._chainToTrip(
+                                    dropped, selected.items, vehicle.id, vals.transit_min);
+                                if (!self._splitIfOver(card, vehicle, selected.items, chain)) {
+                                    chain(card);
                                 }
                             }
                         });
@@ -1018,7 +1038,11 @@ function mountRoutePlannerApp(wrapper, data) {
                     return;
                 }
 
-                this.placeCard(card, vehicle.id);
+                // Nothing near it: a run of its own, so the seats it can have are the
+                // whole bus - which is what the split has always been sized on and stays
+                // correct here.
+                const place = (dropped) => this.placeCard(dropped, vehicle.id);
+                if (!this._splitIfOver(card, vehicle, null, place)) place(card);
             },
 
             // Fresh placement dialog — bypasses "already placed" direction check
@@ -1178,27 +1202,70 @@ function mountRoutePlannerApp(wrapper, data) {
             // A shift larger than the bus is not a mistake to refuse - it is two runs.
             // The bus is filled to its usable seats and the rest becomes a fresh card in
             // the pool, which can itself be split again onto a smaller vehicle.
-            _openSplitModal(card, vehicle) {
+            // Fill what is free and move the rest to a new card in the pool (AC 2.1).
+            //
+            // `opts.joining` is the run the card is going onto, when one has been chosen:
+            // the split is then sized to the seats left ON THAT RUN and the table says so,
+            // because the number the dispatcher has to agree to is the one that decides
+            // how many people get left behind. A card starting a run of its own has the
+            // whole bus, which is the figure this used to use for every drop regardless
+            // (WI-002401).
+            //
+            // `opts.onSplit` is what to do once the roster has actually moved. The caller
+            // owns that, because a split reached through the trip picker must carry on to
+            // the run the operator already picked rather than start the drop again.
+            _openSplitModal(card, vehicle, opts) {
                 const self = this;
+                opts = opts || {};
+                const joining = opts.joining || null;
                 const seats = this.passengerSeats(vehicle);
-                const overflow = card.headcount - seats;
+                const free = joining ? this._freeSeatsFor(vehicle.id, joining) : seats;
+                const overflow = card.headcount - free;
                 const esc = (v) => frappe.utils.escape_html(String(v == null ? '' : v));
+                const runName = joining
+                    ? (joining.find(i => i.tripName) || {}).tripName || __('this trip')
+                    : null;
+
+                // Nothing can be filled, so nothing can be split: keep must leave at
+                // least one rider on the card being placed. Say why instead of opening a
+                // dialog whose only honest answer is "cancel".
+                if (free < 1) {
+                    this.flashShell();
+                    frappe.msgprint({
+                        title: __('No Seats Free'),
+                        indicator: 'red',
+                        message: __('{0} has no seats free on {1}, so none of these {2} staff can be added. Free a seat on that run, or place this card on a run of its own.',
+                            [esc(self.vehicleString(vehicle)), esc(runName), esc(card.headcount)])
+                    });
+                    return;
+                }
+
+                const onRun = joining
+                    ? `<tr><td>${__('Already on {0}', [esc(runName)])}</td>
+                           <td class="font-weight-bold text-right">${seats - free}</td></tr>
+                       <tr><td>${__('Seats free on {0}', [esc(runName)])}</td>
+                           <td class="font-weight-bold text-right">${free}</td></tr>`
+                    : '';
+                const lead = joining
+                    ? __('{0} takes {1} passengers and {2} of those seats are already used, so {3} are free. This card has {4} staff.',
+                         [esc(self.vehicleString(vehicle)), seats, seats - free, free, esc(card.headcount)])
+                    : __('{0} carries {1} passengers, and this card has {2} staff.',
+                         [esc(self.vehicleString(vehicle)), seats, esc(card.headcount)]);
 
                 const d = new frappe.ui.Dialog({
                     title: __('Too many staff for this vehicle'),
                     fields: [{
                         fieldtype: 'HTML', fieldname: 'summary',
                         options: `
-                            <p class="small">${__('{0} carries {1} passengers, and this card has {2} staff.', [
-                                esc(self.vehicleString(vehicle)), seats, esc(card.headcount)
-                            ])}</p>
+                            <p class="small">${lead}</p>
                             <table class="table table-sm table-bordered small mb-3">
                                 <tr><td>${__('Total shift headcount')}</td>
                                     <td class="font-weight-bold text-right">${esc(card.headcount)}</td></tr>
                                 <tr><td>${__('Usable vehicle capacity')}</td>
                                     <td class="font-weight-bold text-right">${seats}</td></tr>
+                                ${onRun}
                                 <tr><td>${__('Staying on this card')}</td>
-                                    <td class="font-weight-bold text-right">${seats}</td></tr>
+                                    <td class="font-weight-bold text-right">${free}</td></tr>
                                 <tr class="text-warning"><td>${__('Moving to a new card')}</td>
                                     <td class="font-weight-bold text-right">${overflow}</td></tr>
                             </table>
@@ -1208,17 +1275,20 @@ function mountRoutePlannerApp(wrapper, data) {
                     primary_action() {
                         frappe.call({
                             method: 'one_fm.one_fm.doctype.transportation_shipment.transportation_shipment.split_shipment_for_capacity',
-                            args: { shipment: self._shipmentOf(card), keep: seats },
+                            args: { shipment: self._shipmentOf(card), keep: free },
                             freeze: true,
                             callback(r) {
                                 if (!r.message) return;
                                 d.hide();
                                 // The card's roster changed on the server, so the pool is
-                                // re-read rather than patched, and the drop is replayed
+                                // re-read rather than patched, and the caller carries on
                                 // against the card that comes back.
                                 self.refreshCards((cards) => {
                                     const placed = cards.find((c) => c.id === card.id);
-                                    if (placed) self.handleDrop(placed, vehicle);
+                                    if (placed) {
+                                        if (opts.onSplit) opts.onSplit(placed);
+                                        else self.handleDrop(placed, vehicle);
+                                    }
                                     frappe.show_alert({
                                         message: __('{0} staff moved to a new card in the pool.',
                                             [r.message.overflow_headcount]),
@@ -2112,6 +2182,44 @@ function mountRoutePlannerApp(wrapper, data) {
                 };
             },
 
+            // Offer the split when the card is bigger than the seats this drop can
+            // have, then carry on. Returns true when the split was offered, so the
+            // caller stops and resumes from `next` once the roster has moved.
+            //
+            // `joining` is the run the card is going onto, or null for a run of its own -
+            // that is the whole difference between the three endings of handleDrop.
+            _splitIfOver(card, vehicle, joining, next) {
+                const free = joining
+                    ? this._freeSeatsFor(vehicle.id, joining)
+                    : this.passengerSeats(vehicle);
+                if (card.headcount <= free) return false;
+                this._openSplitModal(card, vehicle, { joining, onSplit: next });
+                return true;
+            },
+
+            // How many seats this drop can actually take.
+            //
+            // For a run of its own that is the whole bus. For a card joining an existing
+            // run it is what is LEFT on that run - the bus minus what the run already
+            // carries minus the runs sharing its hours. Sizing a split on the whole bus
+            // regardless is what offered "17 staff, 7 stay, 10 move" for a 7-seat bus
+            // whose target run was already carrying 3: only 4 seats were free, so the
+            // card came back still 3 over and the drop was then refused (WI-002401).
+            _freeSeatsFor(vehicleId, joining) {
+                const vehicle = this.planData.vehicles.find(v => v.id === vehicleId);
+                if (!vehicle) return 0;
+                const seats = this.passengerSeats(vehicle);
+                if (!joining || !joining.length) return seats;
+
+                const ids = new Set(joining.map(i => i.id));
+                const target = this._getLogicalTrips(vehicleId)
+                    .find(t => t.stops.some(stop => ids.has(stop.id)));
+                const { total } = this.seatLoad(
+                    vehicleId, target ? target.occupancy : 0, { joining }
+                );
+                return Math.max(seats - total, 0);
+            },
+
             // ── Time-aware peak load helper ─────────────────────────────────
             // The trips a vehicle actually runs today. One tripId is one bus run,
             // however its stops are headed: keying the direction in as well (WI-002000)
@@ -2827,7 +2935,8 @@ function mountRoutePlannerApp(wrapper, data) {
                 // Build options for the vehicle selector (exclude current vehicle)
                 const vehicleOpts = this.planData.vehicles
                     .filter(v => v.id !== item.vehicleId)
-                    .map(v => `${v.label} (${v.seats} seats)`);
+                    // The capacity the move will be judged against, not the raw count.
+                    .map(v => `${v.label} (${this.passengerSeats(v)} seats)`);
 
                 if (vehicleOpts.length === 0) {
                     frappe.show_alert({ message: 'No other vehicles available', indicator: 'orange' });
@@ -4283,9 +4392,14 @@ function injectRPVueTemplate() {
                   {{ card.direction === 'OUTBOUND' ? '→ OUT' : '← RET' }}
                 </span>
                 <span :class="['rp-card-type', card.type === 'OLM' ? 'rp-tag-olm' : 'rp-tag-osm']">{{ card.type }}</span>
-                <!-- AC 2.5: this card holds the staff who did not fit on the bus its
-                     parent was assigned to. -->
-                <span v-if="card.is_split_overflow" class="rp-card-type rp-tag-split"
+              </div>
+              <!-- AC 2.5: this card holds the staff who did not fit on the bus its
+                   parent was assigned to. On its own line, not in the header: every badge
+                   up there refuses to shrink and the site name is the only flexible item,
+                   so a third one squeezed "Kuwait Airways - T4" down to "K." in the
+                   sidebar (WI-002401). -->
+              <div v-if="card.is_split_overflow" class="rp-card-split-row">
+                <span class="rp-card-type rp-tag-split"
                       :title="'Split from ' + (card.split_root || 'another card')">SPLIT OVERFLOW</span>
               </div>
               <div class="rp-card-shift">{{ card.shift_name }}</div>
@@ -4391,7 +4505,11 @@ function injectRPVueTemplate() {
                 <span v-if="lockedLaneIds.has(vehicle.id)" class="rp-lock-badge" title="Reserved for a multi-day run — blocked for other shipments">&#x1F512;</span>
                 <span v-else-if="upcomingLockByVehicle[vehicle.id]" class="rp-lock-upcoming" :title="'Reserved for an upcoming multi-day run from ' + upcomingLockByVehicle[vehicle.id]">&#x1F512; from {{ upcomingLockByVehicle[vehicle.id] }}</span>
               </div>
-              <div class="rp-gv-meta">{{ vehicle.driver }} &middot; {{ vehicle.seats }} seats</div>
+              <!-- Max Passenger Capacity, which is what every seat check is against.
+                   The raw seat count is one higher on a bus whose count includes the
+                   driver, so the lane advertised 4 on a RAIZE that may carry 3
+                   (WI-002401). -->
+              <div class="rp-gv-meta">{{ vehicle.driver }} &middot; {{ passengerSeats(vehicle) }} seats</div>
               <div class="rp-gv-acc">{{ vehicle.accommodation }}</div>
             </div>
 
@@ -5336,6 +5454,7 @@ function injectRPStyles() {
         .rp-card-site   { font-size: 14px; font-weight: 600; color: var(--md-sys-color-on-surface); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .rp-card-type   { font-size: 11px; font-weight: 700; letter-spacing: .06em; padding: 2px 7px; border-radius: 4px; flex-shrink: 0; }
         .rp-tag-split   { background: #fef3c7; color: #92400e; }
+        .rp-card-split-row { display: flex; margin-bottom: 4px; }
         .rp-card-dir    { font-size: 10px; font-weight: 700; letter-spacing: .04em; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; flex-shrink: 0; }
         .rp-dir-out     { background: #e3f2fd; color: #1565c0; }
         .rp-dir-ret     { background: #fce4ec; color: #c62828; }
