@@ -168,18 +168,48 @@ class TestTheCanvasOffersTheSplit(FrappeTestCase):
 	def setUp(self):
 		self.source = CANVAS.read_text()
 
-	def test_the_drop_is_intercepted_before_the_run_is_chosen(self):
-		# A card bigger than the whole bus is the one refusal that belongs before the
-		# picker, because no run on that lane can take it. Everything else waits until
-		# the operator has chosen a run (WI-002401 AC5), so the pooled seat gate that
-		# used to sit here - and would have thrown before the split was ever offered -
-		# is gone.
-		self.assertIn("if (card.headcount > this.passengerSeats(vehicle)) {", self.source)
-		self.assertIn("this._openSplitModal(card, vehicle);", self.source)
+	def test_the_split_is_offered_at_each_ending_not_before_them(self):
+		"""Which seats the card can have depends on how the drop resolves (WI-002401).
+
+		Sizing the split up front meant sizing it on the whole bus for every drop, so a
+		card joining a run that was already half full was split too big, came back still
+		over, and was then refused. There are three endings and each asks for itself.
+		"""
+		# No unconditional gate at the top of handleDrop any more.
+		self.assertNotIn("if (card.headcount > this.passengerSeats(vehicle)) {", self.source)
+		self.assertIn("_splitIfOver(card, vehicle, joining, askToChain)", self.source)
+
+		# One nearby run: sized to that run, and offered BEFORE the confirm.
 		self.assertLess(
-			self.source.index("_openSplitModal(card, vehicle);"),
-			self.source.index("// ── Trip chaining: detect nearby blocks"),
+			self.source.index("_splitIfOver(card, vehicle, joining, askToChain)"),
+			self.source.index("askToChain(card);"),
 		)
+		# Several nearby runs: after the picker, for the run actually chosen.
+		self.assertIn("_splitIfOver(card, vehicle, selected.items, chain)", self.source)
+		# A run of its own: the whole bus, which is what it always was.
+		self.assertIn("_splitIfOver(card, vehicle, null, place)", self.source)
+
+	def test_the_split_is_sized_on_the_seats_the_drop_can_have(self):
+		self.assertIn("_freeSeatsFor(vehicleId, joining)", self.source)
+		# The run's own load and the runs sharing its hours both take seats off.
+		self.assertIn("vehicleId, target ? target.occupancy : 0, { joining }", self.source)
+		self.assertIn("return Math.max(seats - total, 0);", self.source)
+		# And the split keeps exactly that, rather than a whole busload.
+		self.assertIn("args: { shipment: self._shipmentOf(card), keep: free }", self.source)
+
+	def test_the_modal_states_the_free_seats_it_sized_on(self):
+		# The number the dispatcher agrees to decides how many people are left behind.
+		self.assertIn("Already on {0}", self.source)
+		self.assertIn("Seats free on {0}", self.source)
+
+	def test_a_run_with_no_free_seat_says_so_instead_of_offering_a_split(self):
+		# keep must leave at least one rider on the card being placed.
+		self.assertIn("if (free < 1) {", self.source)
+		self.assertIn("__('No Seats Free')", self.source)
+
+	def test_a_split_reached_through_the_picker_resumes_where_it_was(self):
+		# Not by replaying the drop: the operator has already picked a run.
+		self.assertIn("if (opts.onSplit) opts.onSplit(placed);", self.source)
 
 	def test_the_modal_states_the_four_numbers(self):
 		self.assertIn("Total shift headcount", self.source)
@@ -190,7 +220,10 @@ class TestTheCanvasOffersTheSplit(FrappeTestCase):
 	def test_confirming_splits_and_then_places_the_filled_card(self):
 		self.assertIn("__('Confirm & Split Remaining')", self.source)
 		self.assertIn("split_shipment_for_capacity", self.source)
-		self.assertIn("if (placed) self.handleDrop(placed, vehicle);", self.source)
+		# Resumes where the drop had got to - the caller's continuation when there is
+		# one, and only otherwise by replaying the drop (WI-002401).
+		self.assertIn("if (opts.onSplit) opts.onSplit(placed);", self.source)
+		self.assertIn("else self.handleDrop(placed, vehicle);", self.source)
 
 	def test_cancelling_leaves_the_card_alone(self):
 		# AC 2.6: nothing split, nothing placed.
