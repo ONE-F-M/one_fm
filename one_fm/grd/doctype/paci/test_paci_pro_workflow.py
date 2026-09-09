@@ -6,7 +6,13 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, nowdate
 
-from one_fm.grd.doctype.paci.paci import NEW_APPLICATION, PENDING_PRO, create_PACI
+from one_fm.grd.doctype.paci.paci import (
+	NEW_APPLICATION,
+	PENDING_PRO,
+	PRO_RULE,
+	create_PACI,
+	pro_on_duty,
+)
 
 EXPECTED_TRANSITIONS = (
 	("Draft", "Save", "Pending PRO"),
@@ -38,6 +44,11 @@ class TestPACIProWorkflow(FrappeTestCase):
 		paci = frappe.get_last_doc("PACI", filters={"employee": self.employee.name})
 		self.assertEqual(paci.category, NEW_APPLICATION)
 		self.assertEqual(paci.workflow_state, PENDING_PRO)
+
+		# WI-002183: the PRO rule reads doc.pro_user and nothing else, and nobody is in
+		# the session to choose one - a Preparation opens this record. Without the name on
+		# it the handover assigns nobody.
+		self.assertEqual(paci.pro_user, pro_on_duty())
 
 		# And it is on someone's desk: the state is written to the field directly, which
 		# leaves the assignment rules unaware unless they are re-run.
@@ -88,13 +99,16 @@ class TestPACIProWorkflow(FrappeTestCase):
 		self.assertTrue(frappe.db.exists("Workflow State", "Pending by PACI"))
 
 	def test_the_pro_is_assigned_a_pending_pro_record(self):
-		rule = frappe.get_doc("Assignment Rule", "PACI-PRO")
+		rule = frappe.get_doc("Assignment Rule", PRO_RULE)
 
 		self.assertFalse(rule.disabled)
-		self.assertEqual(rule.rule, "Based on Process Task")
 		self.assertEqual(rule.assign_condition, 'workflow_state == "Pending PRO"')
-		# A rule of this kind picks its assignee off the task, so a missing task means it
-		# silently assigns nobody.
+
+		# WI-002183: the assignee comes off the record, not off the rule. The task is
+		# still what names the PRO on duty - hand_to_pro copies it onto the record,
+		# because a rule of this kind assigns nobody when its field is empty.
+		self.assertEqual(rule.rule, "Based on Field")
+		self.assertEqual(rule.field, "pro_user")
 		self.assertTrue(rule.custom_routine_task)
 		self.assertTrue(
 			frappe.db.get_value("Process Task", rule.custom_routine_task, "employee"),
@@ -293,3 +307,43 @@ class TestPACIProWorkflow(FrappeTestCase):
 			str(frappe.db.get_value("Employee", self.employee.name, "civil_id_expiry_date")),
 			expiry,
 		)
+
+
+class TestTheProRuleReadsTheRecord(FrappeTestCase):
+	"""WI-002183: which PRO holds a PACI is a property of that PACI, not of the rule.
+
+	Read from the fixture rather than from the Assignment Rule on the site: the rule only
+	catches up when the patch runs, and running the patch from a test is not an option
+	here - create_PACI's cancel_existing commits, so anything a test did before it stops
+	being rolled back.
+	"""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		import json
+		import os
+
+		import one_fm
+
+		path = os.path.join(
+			os.path.dirname(one_fm.__file__), "custom", "assignment_rule", "paci_pro.json"
+		)
+		with open(path) as fixture:
+			cls.fixture = json.load(fixture)
+
+	def test_the_fixture_assigns_from_the_pro_user_field(self):
+		self.assertEqual(self.fixture["name"], PRO_RULE)
+		self.assertEqual(self.fixture["rule"], "Based on Field")
+		self.assertEqual(self.fixture["field"], "pro_user")
+
+	def test_pro_user_is_a_user_link_on_paci(self):
+		"""get_user_based_on_field assigns only what frappe.db.exists("User", val) accepts."""
+		field = frappe.get_meta("PACI").get_field(self.fixture["field"])
+		self.assertEqual(field.fieldtype, "Link")
+		self.assertEqual(field.options, "User")
+
+	def test_the_duty_roster_still_names_a_pro(self):
+		"""What hand_to_pro copies onto the record. Empty here and a first application
+		reaches the PRO tier with nobody on it."""
+		self.assertTrue(pro_on_duty(), "no Process Task names a PRO for the PACI-PRO rule")
