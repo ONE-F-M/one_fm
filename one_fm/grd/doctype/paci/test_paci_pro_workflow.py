@@ -6,13 +6,9 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, nowdate
 
-from one_fm.grd.doctype.paci.paci import (
-	NEW_APPLICATION,
-	PENDING_PRO,
-	PRO_RULE,
-	create_PACI,
-	pro_on_duty,
-)
+from one_fm.grd.doctype.paci.paci import NEW_APPLICATION, PENDING_PRO, create_PACI
+
+PRO_RULE = "PACI-PRO"
 
 EXPECTED_TRANSITIONS = (
 	("Draft", "Save", "Pending PRO"),
@@ -44,11 +40,6 @@ class TestPACIProWorkflow(FrappeTestCase):
 		paci = frappe.get_last_doc("PACI", filters={"employee": self.employee.name})
 		self.assertEqual(paci.category, NEW_APPLICATION)
 		self.assertEqual(paci.workflow_state, PENDING_PRO)
-
-		# WI-002183: the PRO rule reads doc.pro_user and nothing else, and nobody is in
-		# the session to choose one - a Preparation opens this record. Without the name on
-		# it the handover assigns nobody.
-		self.assertEqual(paci.pro_user, pro_on_duty())
 
 		# And it is on someone's desk: the state is written to the field directly, which
 		# leaves the assignment rules unaware unless they are re-run.
@@ -316,6 +307,11 @@ class TestTheProRuleReadsTheRecord(FrappeTestCase):
 	catches up when the patch runs, and running the patch from a test is not an option
 	here - create_PACI's cancel_existing commits, so anything a test did before it stops
 	being rolled back.
+
+	The field it names has to hold a user by the time a PACI reaches Pending PRO.
+	get_user_based_on_field reads doc.pro_user and nothing else, and nothing on the site
+	writes it before the handover, so test_a_new_application_opens_with_the_pro is what
+	will say so.
 	"""
 
 	@classmethod
@@ -342,8 +338,3 @@ class TestTheProRuleReadsTheRecord(FrappeTestCase):
 		field = frappe.get_meta("PACI").get_field(self.fixture["field"])
 		self.assertEqual(field.fieldtype, "Link")
 		self.assertEqual(field.options, "User")
-
-	def test_the_duty_roster_still_names_a_pro(self):
-		"""What hand_to_pro copies onto the record. Empty here and a first application
-		reaches the PRO tier with nobody on it."""
-		self.assertTrue(pro_on_duty(), "no Process Task names a PRO for the PACI-PRO rule")

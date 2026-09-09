@@ -26,9 +26,6 @@ PENDING_GR_OPERATOR = "Pending GR Operator"
 COMPLETED = "Completed"
 PENDING_BY_PACI = "Pending by PACI"
 
-# The rule that hands a first application to the PRO, and the Process Task naming them.
-PRO_RULE = "PACI-PRO"
-
 # WI-002136: what the PRO owes before handing a first application back. The PRO who filed
 # it, and the reference PACI issued for the filing - without the reference there is nothing
 # for the GR Operator to Approve or Reject against.
@@ -389,17 +386,6 @@ def create_PACI(employee,Type,preparation_name = None):
         return PACI_new
 
 
-def pro_on_duty():
-    """The PRO named by the Process Task on the PACI-PRO assignment rule.
-
-    Which PRO holds a record is a property of that record, so the rule reads it off the
-    document (WI-002183) - but a first application is opened by a Preparation, with no PRO
-    in the session to name. The duty roster stays where it was: on the task.
-    """
-    task = frappe.db.get_value("Assignment Rule", PRO_RULE, "custom_routine_task")
-    return frappe.db.get_value("Process Task", task, "employee_user") if task else None
-
-
 def hand_to_pro(paci):
     """Move a first civil ID application to the PRO, who applies on the portal (WI-001830).
 
@@ -417,12 +403,7 @@ def hand_to_pro(paci):
     # so the other direction can only be a local import.
     from one_fm.grd.doctype.preparation.preparation import update_row_reference
 
-    # WI-002183 puts the PRO rule on "Based on Field" over pro_user, so the name has to be
-    # on the record before the rule runs - get_user_based_on_field reads doc.pro_user and
-    # nothing else. There is nobody in the session to choose one, and pro_user is not
-    # demanded until the PRO hands the application back (PRO_SUBMISSION_FIELDS), so it is
-    # taken from the same Process Task the rule itself used to read.
-    paci.db_set({"workflow_state": PENDING_PRO, "pro_user": pro_on_duty()})
+    paci.db_set("workflow_state", PENDING_PRO)
 
     # db_set writes past the document's own hooks, so the Preparation row would otherwise
     # keep showing the state the record was inserted in rather than the one it is in

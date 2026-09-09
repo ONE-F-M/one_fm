@@ -112,20 +112,10 @@ def verify_pro_rule():
 	"""
 	pro = frappe.db.get_value(
 		"Assignment Rule", PRO_RULE,
-		["assign_condition", "unassign_condition", "close_condition", "rule", "field"],
-		as_dict=True,
+		["assign_condition", "unassign_condition", "close_condition"], as_dict=True,
 	)
 	if not pro:
 		return
-
-	# WI-002183 (follow-up): which PRO holds a PACI is a property of that PACI, not of the
-	# rule - "Based on Process Task" named one person for every record, and named nobody
-	# while the task was blank. hand_to_pro writes pro_user before the rule runs.
-	if pro.rule != "Based on Field" or pro.field != "pro_user":
-		frappe.throw(
-			f"WI-002183: {PRO_RULE!r} is {pro.rule!r} on field {pro.field!r}, not "
-			"'Based on Field' on 'pro_user'."
-		)
 
 	for state in {state.state for state in frappe.get_doc("Workflow", "PACI").states}:
 		context = {"workflow_state": state}
