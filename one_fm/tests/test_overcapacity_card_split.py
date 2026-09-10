@@ -177,12 +177,13 @@ class TestTheCanvasOffersTheSplit(FrappeTestCase):
 		"""
 		# No unconditional gate at the top of handleDrop any more.
 		self.assertNotIn("if (card.headcount > this.passengerSeats(vehicle)) {", self.source)
-		self.assertIn("_splitIfOver(card, vehicle, joining, askToChain)", self.source)
-
-		# One nearby run: sized to that run, and offered BEFORE the confirm.
+		# One nearby run: merge-or-stand-alone is asked FIRST, because the answer decides
+		# which seats the card can have, and each answer then sizes its own split.
+		self.assertIn("if (!this._splitIfOver(card, vehicle, joining, chain)) {", self.source)
+		self.assertIn("if (!this._splitIfOver(card, vehicle, null, place)) {", self.source)
 		self.assertLess(
-			self.source.index("_splitIfOver(card, vehicle, joining, askToChain)"),
-			self.source.index("askToChain(card);"),
+			self.source.index("as the next stop on this trip?"),
+			self.source.index("_splitIfOver(card, vehicle, joining, chain)"),
 		)
 		# Several nearby runs: after the picker, for the run actually chosen.
 		self.assertIn("_splitIfOver(card, vehicle, selected.items, chain)", self.source)
@@ -190,17 +191,30 @@ class TestTheCanvasOffersTheSplit(FrappeTestCase):
 		self.assertIn("_splitIfOver(card, vehicle, null, place)", self.source)
 
 	def test_the_split_is_sized_on_the_seats_the_drop_can_have(self):
-		self.assertIn("_freeSeatsFor(vehicleId, joining)", self.source)
-		# The run's own load and the runs sharing its hours both take seats off.
-		self.assertIn("vehicleId, target ? target.occupancy : 0, { joining }", self.source)
-		self.assertIn("return Math.max(seats - total, 0);", self.source)
+		self.assertIn("_seatsAvailableFor(card, vehicleId, joining)", self.source)
+		# Asked the way the seat check asks it, not derived by subtraction - so the gate,
+		# the size the split keeps and the refusal downstream cannot disagree.
+		self.assertIn("this.mergedOccupancy(joining, { ...card, headcount })", self.source)
+		self.assertIn(").total <= seats;", self.source)
+		self.assertNotIn("return Math.max(seats - total, 0);", self.source)
 		# And the split keeps exactly that, rather than a whole busload.
 		self.assertIn("args: { shipment: self._shipmentOf(card), keep: free }", self.source)
 
-	def test_the_modal_states_the_free_seats_it_sized_on(self):
+	def test_the_largest_load_that_fits_is_found_not_guessed(self):
+		# Monotone in headcount, so a binary search lands on it exactly.
+		self.assertIn("let lo = 0, hi = card.headcount;", self.source)
+		self.assertIn("if (fits(mid)) lo = mid; else hi = mid - 1;", self.source)
+
+	def test_the_modal_states_the_seats_this_card_can_have(self):
 		# The number the dispatcher agrees to decides how many people are left behind.
-		self.assertIn("Already on {0}", self.source)
-		self.assertIn("Seats free on {0}", self.source)
+		self.assertIn("Seats this card can have on {0}", self.source)
+		# And never a "seats already taken" figure, which is a lie for a return card
+		# joining an outbound run - it boards what the outward load has left.
+		self.assertNotIn("Already on {0}", self.source)
+
+	def test_the_gate_and_the_modal_agree_on_one_number(self):
+		self.assertIn("{ joining, free, onSplit: next }", self.source)
+		self.assertIn("const free = opts.free != null", self.source)
 
 	def test_a_run_with_no_free_seat_says_so_instead_of_offering_a_split(self):
 		# keep must leave at least one rider on the card being placed.
@@ -232,3 +246,32 @@ class TestTheCanvasOffersTheSplit(FrappeTestCase):
 	def test_the_pool_marks_an_overflow_card(self):
 		self.assertIn("card.is_split_overflow", self.source)
 		self.assertIn("SPLIT OVERFLOW", self.source)
+
+
+class TestAReturnCardBoardsWhatTheOutwardLoadLeaves(FrappeTestCase):
+	"""A run that is full outbound can still take a return card (WI-002401).
+
+	The outward riders are off the bus before the returning ones get on, so how many
+	fit depends on WHEN they board - not on what is spare beside the run's peak.
+	Subtracting the peak answered zero seats and put a split, or a "No Seats Free", in
+	front of a merge that fits perfectly well. Exercised as arithmetic against the
+	shipped helpers by test_seat_rule.js; what is pinned here is that the rule is asked
+	the way the seat check asks it rather than re-derived.
+	"""
+
+	def setUp(self):
+		self.source = CANVAS.read_text()
+
+	def test_the_question_is_whether_the_merged_run_fits(self):
+		self.assertIn("const fits = (headcount) => this.seatLoad(", self.source)
+		self.assertIn("this.mergedOccupancy(joining, { ...card, headcount })", self.source)
+
+	def test_the_walk_is_the_one_the_seat_check_uses(self):
+		# mergedOccupancy walks the stops for a mixed run, which is what makes a
+		# returning load board the seats the outward one vacated.
+		self.assertIn("mergedOccupancy(stops, card) {", self.source)
+		self.assertIn("direction: this.runDirection(merged),", self.source)
+
+	def test_nothing_subtracts_the_runs_peak_any_more(self):
+		self.assertNotIn("seats - total", self.source)
+		self.assertNotIn("target ? target.occupancy : 0", self.source)

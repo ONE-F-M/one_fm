@@ -933,20 +933,34 @@ function mountRoutePlannerApp(wrapper, data) {
                         const newDirBadge =
                             (card.own_direction || card.direction) === 'RETURN' ? '← RET' : '→ OUT';
                         const newCamp = card.accommodation ? `<strong>${card.accommodation}</strong> — ` : '';
-                        // The split comes first when there is one run to join: the
-                        // seats free on THAT run are what the operator is agreeing to,
-                        // and they have to see the number before the confirm (WI-002401).
+                        // Merge or stand alone is the first question, because the answer
+                        // decides which seats the card can have - the ones left on that
+                        // run, or the whole bus. Only then is a split worth sizing, and
+                        // only then is it sized correctly. Asking first meant a card
+                        // split to a run's free seats and then placed on a run of its own
+                        // anyway, carrying fewer people than the bus could take.
                         const joining = tripMap[tripKeys[0]];
-                        const askToChain = (dropped) => frappe.confirm(
+                        frappe.confirm(
                             `<strong>${this.vehicleString(vehicle)}</strong> already has an active trip:<br><br>` +
                             existingStops.map((s, i) => `&nbsp;&nbsp;${i + 1}. ${s}`).join('<br>') +
-                            `<br><br>Add ${newCamp}<strong>${dropped.site_location}</strong> <span style="font-size:11px;color:#888">(${newDirBadge})</span> as the next stop on this trip?`,
-                            () => this._chainToTrip(dropped, joining, vehicle.id),
-                            () => this._doPlaceWithDialog(dropped, vehicle.id)
+                            `<br><br>Add ${newCamp}<strong>${card.site_location}</strong> <span style="font-size:11px;color:#888">(${newDirBadge})</span> as the next stop on this trip?`,
+                            () => {
+                                // Yes, merge: sized to the seats free on THAT run.
+                                const chain = (dropped) =>
+                                    this._chainToTrip(dropped, joining, vehicle.id);
+                                if (!this._splitIfOver(card, vehicle, joining, chain)) {
+                                    chain(card);
+                                }
+                            },
+                            () => {
+                                // No, a run of its own: the whole bus.
+                                const place = (dropped) =>
+                                    this._doPlaceWithDialog(dropped, vehicle.id);
+                                if (!this._splitIfOver(card, vehicle, null, place)) {
+                                    place(card);
+                                }
+                            }
                         );
-                        if (!this._splitIfOver(card, vehicle, joining, askToChain)) {
-                            askToChain(card);
-                        }
                     } else {
                         // ── Multiple trips: let user pick which trip to join ──
                         const self = this;
@@ -1219,7 +1233,11 @@ function mountRoutePlannerApp(wrapper, data) {
                 opts = opts || {};
                 const joining = opts.joining || null;
                 const seats = this.passengerSeats(vehicle);
-                const free = joining ? this._freeSeatsFor(vehicle.id, joining) : seats;
+                // The gate already worked this out and its answer is what the split
+                // keeps, so it is passed rather than computed twice.
+                const free = opts.free != null
+                    ? opts.free
+                    : this._seatsAvailableFor(card, vehicle.id, joining);
                 const overflow = card.headcount - free;
                 const esc = (v) => frappe.utils.escape_html(String(v == null ? '' : v));
                 const runName = joining
@@ -1240,15 +1258,17 @@ function mountRoutePlannerApp(wrapper, data) {
                     return;
                 }
 
+                // Only the figure that actually applies to this card. "Seats already
+                // taken" would be a lie for a return card joining an outbound run: it
+                // boards what the outward load has left, so none of those seats are
+                // taken at the moment these riders get on.
                 const onRun = joining
-                    ? `<tr><td>${__('Already on {0}', [esc(runName)])}</td>
-                           <td class="font-weight-bold text-right">${seats - free}</td></tr>
-                       <tr><td>${__('Seats free on {0}', [esc(runName)])}</td>
+                    ? `<tr><td>${__('Seats this card can have on {0}', [esc(runName)])}</td>
                            <td class="font-weight-bold text-right">${free}</td></tr>`
                     : '';
                 const lead = joining
-                    ? __('{0} takes {1} passengers and {2} of those seats are already used, so {3} are free. This card has {4} staff.',
-                         [esc(self.vehicleString(vehicle)), seats, seats - free, free, esc(card.headcount)])
+                    ? __('{0} takes {1} passengers, and {2} of this card\'s {3} staff can ride on {4}.',
+                         [esc(self.vehicleString(vehicle)), seats, free, esc(card.headcount), esc(runName)])
                     : __('{0} carries {1} passengers, and this card has {2} staff.',
                          [esc(self.vehicleString(vehicle)), seats, esc(card.headcount)]);
 
@@ -2189,35 +2209,48 @@ function mountRoutePlannerApp(wrapper, data) {
             // `joining` is the run the card is going onto, or null for a run of its own -
             // that is the whole difference between the three endings of handleDrop.
             _splitIfOver(card, vehicle, joining, next) {
-                const free = joining
-                    ? this._freeSeatsFor(vehicle.id, joining)
-                    : this.passengerSeats(vehicle);
+                const free = this._seatsAvailableFor(card, vehicle.id, joining);
                 if (card.headcount <= free) return false;
-                this._openSplitModal(card, vehicle, { joining, onSplit: next });
+                this._openSplitModal(card, vehicle, { joining, free, onSplit: next });
                 return true;
             },
 
-            // How many seats this drop can actually take.
+            // How many of THIS card's staff can ride on this drop.
             //
-            // For a run of its own that is the whole bus. For a card joining an existing
-            // run it is what is LEFT on that run - the bus minus what the run already
-            // carries minus the runs sharing its hours. Sizing a split on the whole bus
-            // regardless is what offered "17 staff, 7 stay, 10 move" for a 7-seat bus
-            // whose target run was already carrying 3: only 4 seats were free, so the
-            // card came back still 3 over and the drop was then refused (WI-002401).
-            _freeSeatsFor(vehicleId, joining) {
+            // For a run of its own that is the whole bus. For a card joining a run it is
+            // the most of them the merged run can carry - and that is not the bus minus
+            // what the run already holds, because how many fit depends on WHEN they
+            // board. A return card joining an outbound run takes the seats the outward
+            // load has already got out of, so a run that is full outbound can still
+            // carry it; subtracting the run's peak answered zero and put a split, or a
+            // "No Seats Free", in front of a merge that fits perfectly well (WI-002401).
+            //
+            // So the question is asked as the seat check asks it - the largest headcount
+            // whose merged run still fits, measured with the same leg walk - rather than
+            // re-derived per direction. The gate, the size the split keeps and the
+            // refusal downstream then cannot disagree, whatever shape the run is.
+            _seatsAvailableFor(card, vehicleId, joining) {
                 const vehicle = this.planData.vehicles.find(v => v.id === vehicleId);
                 if (!vehicle) return 0;
                 const seats = this.passengerSeats(vehicle);
                 if (!joining || !joining.length) return seats;
 
-                const ids = new Set(joining.map(i => i.id));
-                const target = this._getLogicalTrips(vehicleId)
-                    .find(t => t.stops.some(stop => ids.has(stop.id)));
-                const { total } = this.seatLoad(
-                    vehicleId, target ? target.occupancy : 0, { joining }
-                );
-                return Math.max(seats - total, 0);
+                const fits = (headcount) => this.seatLoad(
+                    vehicleId,
+                    this.mergedOccupancy(joining, { ...card, headcount }),
+                    { joining }
+                ).total <= seats;
+
+                if (fits(card.headcount)) return card.headcount;
+
+                // Monotone in headcount - a bigger load can only raise the peak - so the
+                // largest one that fits is a binary search away.
+                let lo = 0, hi = card.headcount;
+                while (lo < hi) {
+                    const mid = Math.ceil((lo + hi) / 2);
+                    if (fits(mid)) lo = mid; else hi = mid - 1;
+                }
+                return lo;
             },
 
             // ── Time-aware peak load helper ─────────────────────────────────
