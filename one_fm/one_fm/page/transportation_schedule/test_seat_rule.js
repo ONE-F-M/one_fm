@@ -121,8 +121,8 @@ const RUN = { id: 'RUN', tripId: 'T-RUN', tripName: 'S-106', occupancy: 3, headc
     stops: [{ id: 's106a', direction: 'OUTBOUND', headcount: 3, stopIndex: 1 }] };
 rule._getLogicalTrips = () => [RUN];
 
-assert.strictEqual(rule._freeSeatsFor('BUS', null), 7, 'a run of its own gets the whole bus');
-assert.strictEqual(rule._freeSeatsFor('BUS', RUN.stops), 4, '7 seats less the 3 already on S-106');
+assert.strictEqual(rule._seatsAvailableFor({ headcount: 99 }, 'BUS', null), 7, 'a run of its own gets the whole bus');
+assert.strictEqual(rule._seatsAvailableFor({ id: 'C', direction: 'OUTBOUND', headcount: 99 }, 'BUS', RUN.stops), 4, '7 seats less the 3 already on S-106');
 
 // A concurrent run takes seats off the total too.
 const OVERLAP = { id: 'X', tripId: 'T-X', tripName: 'S-999', occupancy: 2, headcount: 2,
@@ -130,7 +130,7 @@ const OVERLAP = { id: 'X', tripId: 'T-X', tripName: 'S-999', occupancy: 2, headc
     stops: [{ id: 'x1', direction: 'OUTBOUND', headcount: 2, stopIndex: 1 }] };
 rule._getLogicalTrips = () => [RUN, OVERLAP];
 assert.ok(rule._sharesTheRoad(RUN.window, OVERLAP.window), 'these two overlap');
-assert.strictEqual(rule._freeSeatsFor('BUS', RUN.stops), 2, '7 less 3 on the run less 2 sharing the road');
+assert.strictEqual(rule._seatsAvailableFor({ id: 'C', direction: 'OUTBOUND', headcount: 99 }, 'BUS', RUN.stops), 2, '7 less 3 on the run less 2 sharing the road');
 
 // The gate: offered when the card is over the seats it can have, not over the bus.
 rule._getLogicalTrips = () => [RUN];
@@ -139,8 +139,8 @@ rule._openSplitModal = (card, vehicle, opts) => { offered = { card, opts }; };
 
 const card17 = { id: 'C', headcount: 17, direction: 'OUTBOUND' };
 assert.strictEqual(rule._splitIfOver(card17, BUS, RUN.stops, () => {}), true);
-assert.strictEqual(rule._freeSeatsFor('BUS', offered.opts.joining), 4,
-    'the modal is handed the run, so it sizes the split at 4 - not the 7 the bus takes');
+assert.strictEqual(offered.opts.free, 4,
+    'the modal is handed 4 - not the 7 the bus takes');
 
 // A card of 5 fits the BUS but not the RUN: it used to fall through the gate entirely
 // and get refused later with a flat capacity error.
@@ -154,5 +154,63 @@ assert.ok(offered, 'so the split is offered rather than a refusal');
 offered = null;
 assert.strictEqual(rule._splitIfOver({ id: 'E', headcount: 4 }, BUS, RUN.stops, () => {}), false);
 assert.strictEqual(offered, null, 'no dialog for a card that fits');
+
+
+// ── A return card boards the seats the outward load has left (WI-002401) ──────
+// The reported case: a run whose outbound legs already fill the bus must still accept
+// a return card. Subtracting the run's peak said zero seats and put a split, or a
+// "No Seats Free", in front of a merge that fits perfectly well.
+rule.cardOwnDirection = (i) => (i.direction === 'RETURN' ? 'RETURN' : 'OUTBOUND');
+rule.tripOccupancy = function (trip) {
+    if (trip.direction !== 'MIXED') return trip.headcount;
+    const stops = this._inRunOrder(trip.stops);
+    const boards = (i) => this.cardOwnDirection(i) === 'RETURN';
+    let onBoard = stops.reduce((n, s) => n + (boards(s) ? 0 : (s.headcount || 0)), 0);
+    let peak = onBoard;
+    stops.forEach(s => {
+        onBoard += boards(s) ? (s.headcount || 0) : -(s.headcount || 0);
+        peak = Math.max(peak, onBoard);
+    });
+    return peak;
+};
+rule._inRunOrder = (items) => [...items].sort(
+    (a, b) => (new Date(a.start) - new Date(b.start)) || (a.stopIndex || 0) - (b.stopIndex || 0));
+
+// 7-seat bus, an outbound run carrying all 7 - completely full outbound.
+const FULL = { id: 'FULL', tripId: 'T-FULL', tripName: 'S-201', occupancy: 7, headcount: 7,
+    window: rule._dayWindow.call(rule, '2026-09-07T02:30:00Z', '2026-09-07T03:05:00Z'),
+    stops: [{ id: 'f1', direction: 'OUTBOUND', headcount: 7, stopIndex: 1,
+              start: '2026-09-07T02:30:00Z' }] };
+rule._getLogicalTrips = () => [FULL];
+
+const ret3 = { id: 'R', direction: 'RETURN', headcount: 3 };
+assert.strictEqual(rule._seatsAvailableFor(ret3, 'BUS', FULL.stops), 3,
+    'all 3 returning riders fit a bus that is full outbound');
+assert.strictEqual(rule._splitIfOver(ret3, BUS, FULL.stops, () => {}), false,
+    'so no split modal, and no "No Seats Free"');
+
+// A full busload of returning riders also fits; one more does not.
+assert.strictEqual(rule._seatsAvailableFor({ id: 'R', direction: 'RETURN', headcount: 7 },
+    'BUS', FULL.stops), 7);
+assert.strictEqual(rule._seatsAvailableFor({ id: 'R', direction: 'RETURN', headcount: 9 },
+    'BUS', FULL.stops), 7, 'capped at the bus, and split rather than refused');
+
+// An OUTBOUND card onto the same full run still cannot ride - those riders DO share it.
+assert.strictEqual(rule._seatsAvailableFor({ id: 'O', direction: 'OUTBOUND', headcount: 3 },
+    'BUS', FULL.stops), 0, 'nothing outbound fits a bus that is already full outbound');
+
+// A run that already mixes: 4 out, 2 back. A further return card has the seats the
+// outward load leaves, not what is spare beside its peak.
+const MIX = { id: 'MIX', tripId: 'T-MIX', tripName: 'S-301', occupancy: 4, headcount: 6,
+    window: rule._dayWindow.call(rule, '2026-09-07T02:30:00Z', '2026-09-07T03:05:00Z'),
+    stops: [{ id: 'm1', direction: 'OUTBOUND', headcount: 4, stopIndex: 1,
+              start: '2026-09-07T02:30:00Z' },
+            { id: 'm2', direction: 'RETURN', headcount: 2, stopIndex: 2,
+              start: '2026-09-07T02:45:00Z' }] };
+rule._getLogicalTrips = () => [MIX];
+assert.strictEqual(rule._seatsAvailableFor({ id: 'R2', direction: 'RETURN', headcount: 5 },
+    'BUS', MIX.stops), 5, '2 already aboard on the way home plus 5 more is 7');
+assert.strictEqual(rule._seatsAvailableFor({ id: 'R2', direction: 'RETURN', headcount: 6 },
+    'BUS', MIX.stops), 5, 'the sixth would make 8 on a 7-seat bus');
 
 console.log('seat rule OK');
