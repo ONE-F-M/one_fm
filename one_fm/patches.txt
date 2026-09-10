@@ -610,3 +610,4 @@ one_fm.patches.v15_0.backfill_employee_checkin_default_source #2026-09-01
 one_fm.patches.v15_0.add_transportation_qoa_buffer_to_hr_settings #2026-08-26 WI-002151
 one_fm.patches.v15_0.rekey_olm_shipments_on_shift_window #2026-08-31 WI-002151
 one_fm.patches.v15_0.rename_duplicate_trip_names #2026-09-07 WI-002401
+one_fm.patches.v15_0.remove_orphan_leave_ledger_entry_lap_01398 #2
