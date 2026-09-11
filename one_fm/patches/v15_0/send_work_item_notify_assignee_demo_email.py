@@ -6,18 +6,15 @@ SENDER = "notifications@one-fm.com"
 # https://amp.dev/documentation/guides-and-tutorials/start/email_sender_distribution)
 # — Gmail and Yahoo/Verizon Media require a production-ready AMP email sent
 # directly to these addresses as part of allowlisting one-fm.com as a sender.
-# Self-test run: deliver to our own inbox only. Restore the registration
-# addresses once the Gmail developer-settings check passes.
 RECIPIENTS = [
-	"notifications@one-fm.com",
-	# "ampforemail.whitelisting@gmail.com",
-	# "ampverification@yahoo.com",
+	"ampforemail.whitelisting@gmail.com",
+	"ampverification@yahoo.com",
 ]
 
 # Real, live Work Item whose "Start Work" user task is waiting in its BPMN
 # Process Instance. The instance and task id are looked up at run time from
 # `BPMN Active Task` so the token always matches the live task.
-WORK_ITEM_ID = "WI-002492"
+WORK_ITEM_ID = "WI-002493"
 TASK_NAME = "Start Work"
 
 # The task's real assignee — the token must be issued for this user (not
@@ -119,7 +116,7 @@ def send():
 	epic_title = frappe.db.get_value("Work Item", wi.epic, "title") if wi.epic else ""
 
 	work_item_url = f"https://one-fm.com/app/work-item/{WORK_ITEM_ID}"
-	title = f"[{WORK_ITEM_ID}] Assigned to you: {wi.title} ({wi.priority} priority)"
+	title = f"Assigned: {wi.title}"
 	sprint = f"{wi.sprint} ({wi.sprint_status})" if wi.sprint_status else (wi.sprint or "")
 
 	body = f"""
