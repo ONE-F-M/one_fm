@@ -1046,7 +1046,7 @@
    "fieldname": "urgency_of_hire",
    "label": "Urgency of Hire",
    "fieldtype": "Select",
-   "options": "\nHire Now"
+   "options": "\nUrgent (30 days)\nHigh (1-2 months)\nMedium (2-3 months)\nLow (Above 3 months)"
   }
  ],
  "is_submittable": 1,

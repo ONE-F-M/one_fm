@@ -41,10 +41,28 @@ class TestERFReasonForRequest(FrappeTestCase):
 
 
 class TestERFFieldConfiguration(FrappeTestCase):
-	def test_urgency_of_hire_exists(self):
+	def test_urgency_of_hire_offers_the_four_windows(self):
+		"""WI-002447: the analyst replaced the single "Hire Now" with the four hiring
+		windows below. Read off the meta, so a Property Setter that overrode the file
+		would fail here rather than silently on the form."""
 		field = _field("urgency_of_hire")
 		self.assertEqual(field.fieldtype, "Select")
-		self.assertEqual(field.options.split("\n"), ["", "Hire Now"])
+		self.assertEqual(
+			field.options.split("\n"),
+			[
+				"",
+				"Urgent (30 days)",
+				"High (1-2 months)",
+				"Medium (2-3 months)",
+				"Low (Above 3 months)",
+			],
+		)
+
+	def test_no_erf_is_left_carrying_the_retired_option(self):
+		""""Hire Now" is no longer offered, and a Select value that is no longer an option
+		fails Frappe's own validation on the next save - a workflow action saves the
+		document, so such an ERF would become unactionable."""
+		self.assertEqual(frappe.db.count("ERF", {"urgency_of_hire": "Hire Now"}), 0)
 
 	def test_expected_date_of_deployment_is_optional(self):
 		self.assertFalse(_field("expected_date_of_deployment").reqd)
