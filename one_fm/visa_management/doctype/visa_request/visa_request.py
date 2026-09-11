@@ -59,6 +59,10 @@ IN_PROGRESS_STATES = (
 	"Rejected By Operator",
 )
 
+# WI-002446: the state the request is handed to the GRD Operator in. Nobody is holding it
+# until somebody is named on it, so it cannot be reached with the field blank.
+GRD_OPERATOR_STATE = "Pending by GRD Operator"
+
 # Cleared on the new request. Everything else is copied - the AC asks for the Job Offer
 # and Job Applicant, and the applicant's own details have to come with them or the new
 # draft cannot even be saved (the passport copy is mandatory and has nothing to fetch
@@ -95,9 +99,36 @@ MINIMUM_APPLICANT_AGE_YEARS = 21
 class VisaRequest(Document):
 	def validate(self):
 		self.validate_no_request_in_progress()
+		self.validate_grd_operator_assigned()
 		self.validate_applicant_eligibility()
 		self.validate_workflow_transitions()
 		self.update_tracker_status()
+
+	def validate_grd_operator_assigned(self):
+		"""Name the GRD Operator before handing the request to them (WI-002446).
+
+		Checked on the transition rather than on every save in that state: requests are
+		already sitting in Pending by GRD Operator with the field blank - it was added
+		after they got there - and re-checking would make every one of them unsaveable.
+
+		Recruiters set the field in bulk from the list view, which needs no code: Frappe
+		offers every writable value field in the list's Edit dialog, and grd_operator is a
+		plain Link. This is the half that makes it matter.
+		"""
+		if self.workflow_state != GRD_OPERATOR_STATE or self.grd_operator:
+			return
+
+		if not self.has_value_changed("workflow_state"):
+			return
+
+		frappe.throw(
+			_(
+				"Assign a GRD Operator before submitting this request to them. "
+				"One or more requests can be assigned at a time from the Visa Request "
+				"list view, with <b>Edit → GRD Operator</b>."
+			),
+			title=_("GRD Operator Not Assigned"),
+		)
 
 	def validate_no_request_in_progress(self):
 		"""One live Visa Request per applicant (WI-002442).
