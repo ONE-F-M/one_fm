@@ -67,6 +67,42 @@ class TestPAMLicenseConfiguration(FrappeTestCase):
 			with self.subTest(fieldname=fieldname):
 				self.assertTrue(meta.get_field(fieldname).read_only)
 
+	def test_the_lg_section_is_on_the_form(self):
+		"""WI-002448: the LG Details section the analyst added, and the two fields in it.
+
+		The section is asserted as well as the fields: a Data and a Date sitting loose
+		somewhere on the form would pass a field-only check while the form still looked
+		nothing like the BA site's.
+		"""
+		meta = frappe.get_meta("PAM License Details")
+
+		section = meta.get_field("lg_details_section")
+		self.assertIsNotNone(section, "PAM License Details has no LG Details section")
+		self.assertEqual(section.fieldtype, "Section Break")
+		self.assertEqual(section.label, "LG Details")
+
+		for fieldname, fieldtype, label in (
+			("lg_number", "Data", "LG Number"),
+			("lg_expiry_date", "Date", "LG Expiry Date"),
+		):
+			with self.subTest(fieldname=fieldname):
+				field = meta.get_field(fieldname)
+				self.assertIsNotNone(field, f"PAM License Details has no {fieldname}")
+				self.assertEqual(field.fieldtype, fieldtype)
+				self.assertEqual(field.label, label)
+
+		order = [field.fieldname for field in meta.fields]
+		self.assertLess(
+			order.index("lg_details_section"),
+			order.index("lg_number"),
+			"LG Number is not inside the LG Details section",
+		)
+		self.assertLess(
+			order.index("lg_expiry_date"),
+			order.index("pam_stats_section"),
+			"the LG fields spill past the LG Details section into PAM Stats",
+		)
+
 	def test_the_pam_file_tracks_its_licenses(self):
 		meta = frappe.get_meta("PAM File")
 		for fieldname in ("file_status", "number_of_active_licenses", "number_of_inactive_licenses"):
