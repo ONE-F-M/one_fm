@@ -1355,6 +1355,69 @@ class TestTheLetterIsArabicOnly(FrappeTestCase):
 		self.assertTrue(families.group(1).strip().startswith("Arial"))
 
 
+class TestTheLetterLinesUp(FrappeTestCase):
+	"""WI-002399: the letter the client was sent had its text scattered across the page.
+
+	Every rule pinned here is about something wkhtmltopdf does that a browser does not.
+	The letter is only ever read as a PDF, so the browser's opinion of it is not the one
+	that matters.
+	"""
+
+	def _letter(self):
+		import json
+
+		path = frappe.get_app_path(
+			"one_fm", "one_fm", "print_format", "proof_of_work_letter",
+			"proof_of_work_letter.json",
+		)
+		return json.loads(frappe.read_file(path))
+
+	def test_the_masthead_is_a_table(self):
+		"""wkhtmltopdf's WebKit predates flexbox and drops display:flex without a word,
+		so the title fell onto its own line underneath the logo instead of sitting
+		opposite it."""
+		letter = self._letter()
+
+		self.assertNotIn("display: flex", letter["css"])
+		self.assertIn('<table class="pow-hd">', letter["html"])
+
+	def test_an_english_run_stays_whole_and_reads_left_to_right(self):
+		"""The contract date reached the client as "25 / 02 /" on one line and "2026"
+		on the next, and the client name broke after "Co.". nowrap keeps the run whole;
+		direction:ltr keeps 25 ahead of 2026 inside a right-to-left sentence."""
+		rule = re.search(r"\.en \{([^}]+)\}", self._letter()["css"])
+
+		self.assertTrue(rule, "the .en rule is gone, so English runs break anywhere")
+		self.assertIn("direction: ltr", rule.group(1))
+		self.assertIn("white-space: nowrap", rule.group(1))
+
+	def test_the_headings_stay_on_one_line(self):
+		"""Scenario 6 stacks two units either side of an أو in three columns at once.
+		They read as one row of headings only if no column wraps: a wrapped heading
+		pushes its أو down a line, and no two columns wrap in the same place."""
+		css = self._letter()["css"]
+
+		self.assertRegex(css, r"\.pow-tbl thead th \{[^}]*white-space: nowrap")
+		# The fixed percentages are what forced the wrapping. The table sizes its own
+		# columns now, and a heading that cannot wrap is a width the table must honour.
+		self.assertNotRegex(css, r"\.pow-tbl \{[^}]*table-layout: fixed")
+		self.assertNotRegex(css, r"\.pow-tbl \.c-(type|contract|worked|breakdown) \{[^}]*width:")
+
+	def test_the_breakdown_lines_stay_whole(self):
+		"""Twenty near-identical lines, so one that wraps reads as a ragged half-line
+		among them - and sizing the table to them is what keeps the column widest."""
+		self.assertRegex(
+			self._letter()["css"], r"\.pow-tbl \.c-breakdown \.ln \{[^}]*white-space: nowrap"
+		)
+
+	def test_the_service_column_is_named_in_arabic(self):
+		"""Scenario 2's translation, in the column that repeats it on every row."""
+		self.assertIn(
+			'frappe.db.get_value("Item Type", row.item_type, "arabic_name") or row.item_type',
+			self._letter()["html"],
+		)
+
+
 class TestTheServicesAreNamedInArabic(FrappeTestCase):
 	"""WI-002399 Scenario 2: the paragraph names the Item Types in Arabic."""
 
