@@ -73,11 +73,14 @@ def retire_superseded_rules():
 	Deleting a rule does not close what it assigned, and a surviving rule will not do it
 	either: apply_unassign only closes the ToDos its own rule created. So an open one is
 	dealt with here or never - it sits on somebody's to-do list for good.
+
+	The settling is not conditional on the rule surviving. Both of these were already
+	deleted, bare, by add_assignment_rule_returning_to_operations_supervisor_of_client_event
+	and add_assignment_rule_assigning_operations_manager_for_approval_client_event - which
+	is why there are open assignments to settle at all. A rule that is gone is the reason
+	to settle its ToDos, not a reason to skip them.
 	"""
 	for rule_name in SUPERSEDED_RULES:
-		if not frappe.db.exists("Assignment Rule", rule_name):
-			continue
-
 		for todo in frappe.get_all(
 			"ToDo",
 			filters={"assignment_rule": rule_name, "status": "Open"},
@@ -96,7 +99,8 @@ def retire_superseded_rules():
 				# was not, because the state it was waiting for never existed.
 				frappe.db.set_value("ToDo", todo.name, "status", "Cancelled", update_modified=False)
 
-		frappe.delete_doc("Assignment Rule", rule_name, ignore_permissions=True, force=True)
+		if frappe.db.exists("Assignment Rule", rule_name):
+			frappe.delete_doc("Assignment Rule", rule_name, ignore_permissions=True, force=True)
 
 
 def ensure_workflow_state():
@@ -165,15 +169,37 @@ def verify():
 			f"Extra: {sorted(live - set(BA_RULES))or 'none'}. Missing: {sorted(set(BA_RULES) - live) or 'none'}."
 		)
 
-	stranded = frappe.db.sql(
-		"""SELECT COUNT(*) FROM `tabToDo`
-		   WHERE status = 'Open' AND assignment_rule IS NOT NULL
-		     AND assignment_rule NOT IN (SELECT name FROM `tabAssignment Rule`)
-		     AND reference_type = 'Client Event'""")[0][0]
+	# close_condition is not scoped to the rule that owns the assignment: it closes every
+	# ToDo on the document. With three rules on one doctype, the two that are not the
+	# current state both satisfy it, so a Draft assignment was closed the moment it was
+	# made. unassign_condition says the same thing and only touches its own rule's ToDos.
+	using_close = frappe.get_all(
+		"Assignment Rule",
+		filters={"document_type": "Client Event", "close_condition": ["!=", ""]},
+		pluck="name",
+	)
+	if using_close:
+		frappe.throw(
+			f"WI-002184: {using_close} use close_condition, which closes every assignment on "
+			"the event rather than their own - the Draft assignment closes as soon as it opens."
+		)
+
+	# Scoped to the rules this patch retires. Asked of every dead rule name on Client Event
+	# instead, one orphan from some unrelated history blocks bench migrate for the whole
+	# site on a check the patch holds no repair for.
+	stranded = frappe.get_all(
+		"ToDo",
+		filters={
+			"reference_type": "Client Event",
+			"status": "Open",
+			"assignment_rule": ["in", SUPERSEDED_RULES],
+		},
+		pluck="name",
+	)
 	if stranded:
 		frappe.throw(
-			f"WI-002184: {stranded} open Client Event assignment(s) point at a rule that no "
-			"longer exists, so nothing will ever release them."
+			f"WI-002184: {len(stranded)} open Client Event assignment(s) still point at a "
+			"retired rule, so nothing will ever release them."
 		)
 
 	print(f"WI-002184: Client Event routes to {NEW_STATE} when the event has a project")

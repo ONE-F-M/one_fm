@@ -8,7 +8,8 @@
  "assign_condition": "workflow_state == \"Pending PRO\"",
  "unassign_condition": "workflow_state != \"Pending PRO\"",
  "close_condition": "",
- "rule": "Based on Process Task",
+ "rule": "Based on Field",
+ "field": "pro_user",
  "doctype": "Assignment Rule",
  "users": [],
  "assignment_days": [

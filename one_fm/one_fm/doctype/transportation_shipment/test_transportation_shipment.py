@@ -101,12 +101,6 @@ class TestTransportationShipment(FrappeTestCase):
 
 
 class TestShipmentGenerator(FrappeTestCase):
-	def test_minute_of_day(self):
-		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import _minute_of_day
-
-		self.assertEqual(_minute_of_day("06:30:00"), 6 * 3600 + 30 * 60)
-		self.assertIsNone(_minute_of_day(None))
-
 	def test_generation_key_shape(self):
 		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import _generation_key
 
@@ -125,22 +119,40 @@ class TestShipmentGenerator(FrappeTestCase):
 		self.assertEqual(pair, pair_ret)
 		self.assertNotEqual(key, key_ret)
 
-	def test_attach_return_rosters_matches_finishing_shift(self):
-		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import _attach_return_rosters
+	def test_a_cards_return_leg_carries_its_own_crew(self):
+		"""The same people, both ways (WI-002401).
 
-		# Two demands at the same stop/accommodation, different shifts. The one
-		# starting at 14:00 should pick up the roster of the shift ending 14:00.
-		morning = {
-			"acc_name": "Camp A", "stop_location": "LOC-1", "group_token": "MORNING",
-			"start_time": "06:00:00", "end_time": "14:00:00", "employees": [{"id": "M1"}],
-		}
-		evening = {
-			"acc_name": "Camp A", "stop_location": "LOC-1", "group_token": "EVENING",
-			"start_time": "14:00:00", "end_time": "22:00:00", "employees": [{"id": "E1"}],
-		}
-		_attach_return_rosters([morning, evening])
-		# Evening outbound starts when morning ends -> return riders are the morning crew.
-		self.assertEqual([e["id"] for e in evening["return_employees"]], ["M1"])
+		The generator used to substitute the roster of the shift finishing as this
+		demand STARTS, on the reasoning that the bus arriving at 14:00 also takes the
+		outgoing crew home. That is a real run, but it is not this card: a card's window
+		comes from its own end_time, so the substituted riders were filed against an
+		hour eight hours from when they actually finish. On the live plan 250 of 376
+		generated Return cards carried another shift's people.
+
+		Collecting the outgoing crew on the incoming run is what a Mixed trip IS - the
+		dispatcher drops the other shift's Return card onto this run and the merge walks
+		the legs - and that only reads correctly if each card tells the truth about
+		whose ride it is.
+		"""
+		import inspect
+
+		from one_fm.one_fm.doctype.transportation_shipment import shipment_generator
+
+		source = inspect.getsource(shipment_generator.generate_transportation_shipments)
+		self.assertIn('roster = demand["employees"]', source)
+		# No second roster, and no cross-shift lookup left to feed one.
+		self.assertNotIn("return_employees", source)
+		self.assertFalse(hasattr(shipment_generator, "_attach_return_rosters"))
+
+	def test_a_return_leg_on_the_manifest_lists_the_riders(self):
+		"""A return row used to list nobody while its card carried the people."""
+		import inspect
+
+		from one_fm.one_fm.doctype.transportation_manifest import manifest_sync
+
+		source = inspect.getsource(manifest_sync.sync_manifest_details)
+		self.assertIn("emps = emp_map.get(a_row.card_id, [])", source)
+		self.assertNotIn("return_emp_map", source)
 
 
 class TestTripRequestSplit(FrappeTestCase):

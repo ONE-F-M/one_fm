@@ -191,10 +191,13 @@ class TestTheAssignmentRules(FrappeTestCase):
 		self.assertEqual(rule["field"], "project_manager_user")
 		self.assertIn(PM_STATE, rule["assign_condition"])
 
-	def test_the_draft_rule_releases_the_owner_at_the_new_state(self):
+	def test_the_draft_rule_releases_the_owner_on_leaving_draft(self):
+		"""Not "on reaching Pending Project Manager": an event with no project is submitted
+		to Pending Operations Manager instead, and naming one state left the owner assigned
+		on the other route."""
 		rule = self._rule("returning_to_operations_supervisor_of_client_event.json")
 
-		self.assertEqual(rule["unassign_condition"], f'workflow_state == "{PM_STATE}"')
+		self.assertEqual(rule["unassign_condition"], 'workflow_state != "Draft"')
 
 	def test_no_rule_carries_a_blank_process_task(self):
 		"""An empty custom_routine_task is written straight through and blanks the link."""
@@ -266,3 +269,85 @@ class TestTheSiteHasOnlyTheAnalystsRules(FrappeTestCase):
 		for condition, names in claims.items():
 			with self.subTest(condition=condition):
 				self.assertEqual(len(names), 1, f"{names} all assign on {condition!r}")
+
+
+class TestTheDraftAssignmentSurvives(FrappeTestCase):
+	"""It was opening and closing in the same breath.
+
+	close_condition is not scoped to the rule that owns the assignment - Frappe closes
+	every ToDo on the document. With three rules on one doctype, the two whose state is
+	not the current one both satisfy it, so the Draft assignment was closed the instant
+	it was made. unassign_condition expresses the same rule and only touches the ToDos
+	its own rule created.
+	"""
+
+	CLIENT_EVENT_RULES = (
+		"Client Event - Draft",
+		"Client Event - Pending Operations Manager",
+		"Client Event - Pending Project Manager",
+	)
+
+	def test_no_rule_closes_assignments_it_does_not_own(self):
+		for name in self.CLIENT_EVENT_RULES:
+			with self.subTest(rule=name):
+				self.assertFalse(
+					frappe.db.get_value("Assignment Rule", name, "close_condition"),
+					f"{name} uses close_condition, which closes every assignment on the event",
+				)
+
+	def test_the_draft_rule_lets_go_on_either_route(self):
+		"""An event with no project goes to Pending Operations Manager, not Pending
+		Project Manager - naming one state left the Draft assignment open forever on the
+		other route."""
+		condition = frappe.db.get_value("Assignment Rule", "Client Event - Draft", "unassign_condition")
+		self.assertEqual(condition, 'workflow_state != "Draft"')
+
+	def test_the_assignment_stays_open_across_repeated_saves(self):
+		"""Driven through Frappe's own apply(), because the conditions can each look
+		right on their own and still cancel each other out when all three run."""
+		from frappe.automation.doctype.assignment_rule.assignment_rule import apply
+
+		name = frappe.db.get_value("Client Event", {"workflow_state": "Draft"}, "name")
+		if not name:
+			self.skipTest("no Draft Client Event on this site")
+		doc = frappe.get_doc("Client Event", name)
+		frappe.db.sql(
+			"DELETE FROM `tabToDo` WHERE reference_type='Client Event' AND reference_name=%s", name
+		)
+
+		def open_assignments():
+			return frappe.db.count(
+				"ToDo",
+				{"reference_type": "Client Event", "reference_name": name, "status": "Open"},
+			)
+
+		apply(doc)
+		self.assertEqual(open_assignments(), 1, "the Draft assignment was never made")
+		apply(doc)
+		self.assertEqual(open_assignments(), 1, "the Draft assignment was closed by another rule")
+
+	def test_it_hands_over_when_the_event_is_submitted(self):
+		"""The other half: scoping the unassign must not leave the Draft assignment open
+		alongside the approver's."""
+		from frappe.automation.doctype.assignment_rule.assignment_rule import apply
+
+		name = frappe.db.get_value(
+			"Client Event", {"workflow_state": "Draft", "project_manager_user": ["is", "set"]}, "name"
+		)
+		if not name:
+			self.skipTest("no Draft Client Event with a project manager on this site")
+		doc = frappe.get_doc("Client Event", name)
+		frappe.db.sql(
+			"DELETE FROM `tabToDo` WHERE reference_type='Client Event' AND reference_name=%s", name
+		)
+
+		apply(doc)
+		doc.workflow_state = "Pending Project Manager"
+		apply(doc)
+
+		still_open = frappe.get_all(
+			"ToDo",
+			filters={"reference_type": "Client Event", "reference_name": name, "status": "Open"},
+			pluck="assignment_rule",
+		)
+		self.assertEqual(still_open, ["Client Event - Pending Project Manager"])
