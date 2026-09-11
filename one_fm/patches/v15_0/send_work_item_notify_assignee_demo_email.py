@@ -17,7 +17,7 @@ RECIPIENTS = [
 # Real, live Work Item whose "Start Work" user task is waiting in its BPMN
 # Process Instance. The instance and task id are looked up at run time from
 # `BPMN Active Task` so the token always matches the live task.
-WORK_ITEM_ID = "WI-001328"
+WORK_ITEM_ID = "WI-002492"
 TASK_NAME = "Start Work"
 
 # The task's real assignee — the token must be issued for this user (not
