@@ -206,6 +206,17 @@ class TestTheApprovalRaisesTheAssignmentOnlyForToday(FrappeTestCase):
 		schedule.employee_availability = WORKING
 		schedule.insert(ignore_permissions=True)
 		self.made.append(schedule.name)
+
+		# WI-002437: where the employee is already working a basic shift that day, the
+		# insert puts the schedule into the DSOT gate. This class is about what happens
+		# *after* an approval, so it is put where an approval would leave it - written
+		# rather than saved, which is how the workflow moves it too.
+		if schedule.workflow_state != ACTIVE:
+			frappe.db.set_value(
+				"Employee Schedule", schedule.name, "workflow_state", ACTIVE, update_modified=False
+			)
+			schedule.workflow_state = ACTIVE
+
 		return schedule
 
 	def _assignments(self, date):
@@ -439,7 +450,12 @@ class TestTheRosterPath(FrappeTestCase):
 		self.employee = frappe.db.get_value("Employee", {"status": "Active"}, "name")
 		if not self.employee:
 			self.skipTest("no active employee on this site")
-		self.date = add_days(today(), 45)
+		# Far enough out that the employee has no real roster there. At 45 days they did:
+		# the seeded rows collided with the live ones on the primary key, and
+		# "overtime on a day off" was being asked about a day they were in fact working.
+		self.date = add_days(today(), 900)
+		if frappe.db.exists("Employee Schedule", {"employee": self.employee, "date": self.date}):
+			self.skipTest("the employee is already rostered on the test date")
 		self.made = []
 
 	def tearDown(self):
