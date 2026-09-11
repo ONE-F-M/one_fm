@@ -173,6 +173,10 @@ class TestVisaRequestVisibility(FrappeTestCase):
 		self.assertFalse(field.hidden)
 
 	def test_the_remark_fields_match_the_ba_site(self):
-		self.assertTrue(self.meta.get_field("operator_rejection_remark").read_only)
+		# WI-002106 made the operator's rejection reason writable, on purpose: the reason is
+		# now typed on the form for the Processa map to read, and a read-only field leaves
+		# the map waiting on something nobody can enter. The BA site still has it read-only.
+		# Asserted the other way round in test_visa_request_ba_migration, so a later
+		# migration pass cannot quietly put it back.
 		self.assertTrue(self.meta.get_field("pam_remarks").hidden)
 		self.assertTrue(self.meta.get_field("moi_remarks").hidden)
