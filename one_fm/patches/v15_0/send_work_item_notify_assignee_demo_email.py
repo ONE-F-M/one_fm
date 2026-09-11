@@ -131,7 +131,7 @@ def send():
 <tr><td><b>Type</b></td><td>{wi.work_item_type or ""}</td></tr>
 <tr><td><b>Priority</b></td><td>{wi.priority or ""}</td></tr>
 <tr><td><b>Sprint</b></td><td>{sprint}</td></tr>
-<tr><td><b>Story Points</b></td><td>{wi.story_points or ""}</td></tr>
+<tr><td><b>Story Points</b></td><td>{frappe.utils.flt(wi.story_points):g}</td></tr>
 <tr><td><b>Epic</b></td><td>{frappe.utils.escape_html(epic_title or wi.epic or "")}</td></tr>
 <tr><td><b>Reported By</b></td><td><a href="mailto:{wi.reporter_user}">{wi.reporter_user}</a></td></tr>
 <tr><td><b>PR Required</b></td><td>{_yes_no(wi.pr_required)}</td></tr>
