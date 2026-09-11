@@ -17,6 +17,7 @@
   "start_date",
   "end_date",
   "generation_basis",
+  "drive_file_id",
   "section_break_hyox",
   "proof_of_work_item",
   "proof_of_work_items_nonmanpower"
@@ -86,6 +87,14 @@
    "options": "\nShift Hours\nAttendance Day\nBoth"
   },
   {
+   "description": "Set when the merged PDF reaches Google Drive. Its presence is what decides whether the record offers Generate PDF or Open in Google Drive.",
+   "fieldname": "drive_file_id",
+   "fieldtype": "Data",
+   "label": "Google Drive File ID",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
    "fieldname": "section_break_hyox",
    "fieldtype": "Section Break"
   },
@@ -105,7 +114,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-29 21:40:00.000000",
+ "modified": "2026-09-07 02:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Proof of Work",
