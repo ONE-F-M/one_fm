@@ -69,9 +69,12 @@ class TestEmployeeScheduleSuspensionWorkflow(FrappeTestCase):
 		# Active -> Pending Suspension -> Suspended (Approve) / Active (Reject)
 		self.assertEqual(self.workflow["document_type"], "Employee Schedule")
 		self.assertEqual(self.workflow["workflow_state_field"], "workflow_state")
-		self.assertEqual(
-			{s["state"] for s in self.workflow["states"]},
+		# A subset rather than the whole set: Frappe allows one workflow per doctype, so
+		# WI-002283 put the DSOT approval states on this same workflow. What this guards is
+		# that the suspension flow still has its three, not that nothing else shares them.
+		self.assertLessEqual(
 			{"Active", "Pending Suspension", "Suspended"},
+			{s["state"] for s in self.workflow["states"]},
 		)
 
 		transitions = {(t["state"], t["action"], t["next_state"]) for t in self.workflow["transitions"]}
