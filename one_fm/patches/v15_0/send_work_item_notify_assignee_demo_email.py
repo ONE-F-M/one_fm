@@ -9,6 +9,7 @@ SENDER = "notifications@one-fm.com"
 RECIPIENTS = [
 	"ampforemail.whitelisting@gmail.com",
 	"ampverification@yahoo.com",
+	"notifications@one-fm.com"
 ]
 
 # Real, live Work Item whose "Start Work" user task is waiting in its BPMN
