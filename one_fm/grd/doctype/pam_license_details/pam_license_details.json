@@ -16,6 +16,10 @@
   "label_name",
   "classification",
   "status",
+  "lg_details_section",
+  "lg_number",
+  "column_break_mtwm",
+  "lg_expiry_date",
   "pam_stats_section",
   "pam_license_stats"
  ],
@@ -81,6 +85,25 @@
    "in_list_view": 1,
    "label": "Status",
    "options": "\nNot suspended\nDetained\nInactive"
+  },
+  {
+   "fieldname": "lg_details_section",
+   "fieldtype": "Section Break",
+   "label": "LG Details"
+  },
+  {
+   "fieldname": "lg_number",
+   "fieldtype": "Data",
+   "label": "LG Number"
+  },
+  {
+   "fieldname": "column_break_mtwm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "lg_expiry_date",
+   "fieldtype": "Date",
+   "label": "LG Expiry Date"
   },
   {
    "fieldname": "pam_stats_section",
