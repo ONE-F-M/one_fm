@@ -31,16 +31,38 @@ class TestReapplyAfterPamRejection(FrappeTestCase):
 		# FrappeTestCase rolls back per class, not per test, so a reapplication made by an
 		# earlier test in this class is still visible here - hence "not like %-N" rather
 		# than simply the newest draft, which could be one of them.
-		name = frappe.db.get_value(
-			"Visa Request",
-			{"docstatus": 0, "reapplied_from": ["is", "not set"]},
-			"name",
-			order_by="creation desc",
-		)
-		if not name:
+		#
+		# WI-002442: and one whose applicant is not already carrying a second request in
+		# progress. Two applicants on this site are, from before that rule existed, and a
+		# reapplication for one of them is refused by it - correctly: that is the
+		# duplication the rule exists to stop, and it is not what this class is testing.
+		self.source = self._a_source_that_can_be_reapplied()
+		if not self.source:
 			self.skipTest("no draft Visa Request on this instance to reapply from")
-		self.source = name
 		self._reject(self.reasons[0])
+
+	def _a_source_that_can_be_reapplied(self):
+		from one_fm.visa_management.doctype.visa_request.visa_request import IN_PROGRESS_STATES
+
+		drafts = frappe.get_all(
+			"Visa Request",
+			filters={"docstatus": 0, "reapplied_from": ["is", "not set"]},
+			fields=["name", "job_applicant"],
+			order_by="creation desc",
+			limit=50,
+		)
+		for draft in drafts:
+			others = frappe.get_all(
+				"Visa Request",
+				filters=[
+					["job_applicant", "=", draft.job_applicant],
+					["name", "!=", draft.name],
+					["workflow_state", "in", list(IN_PROGRESS_STATES) + [None]],
+				],
+				limit=1,
+			)
+			if not others:
+				return draft.name
 
 	def _reject(self, reason):
 		"""Put the source in the rejected state - rolled back with the test."""
