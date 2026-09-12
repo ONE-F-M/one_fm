@@ -299,7 +299,6 @@
    "fetch_from": "job_offer.job_applicant",
    "fieldname": "job_applicant",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Job Applicant",
    "options": "Job Applicant",
    "reqd": 1
@@ -322,6 +321,7 @@
    "fetch_from": "job_applicant.applicant_name",
    "fieldname": "job_applicant_full_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Job Applicant Full Name"
   },
   {

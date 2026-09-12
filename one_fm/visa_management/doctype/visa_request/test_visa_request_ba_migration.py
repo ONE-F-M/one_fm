@@ -150,6 +150,29 @@ class TestTheListView(FrappeTestCase):
 		self.assertEqual(json.loads(saved.fields), BA_COLUMNS)
 		self.assertEqual(saved.total_fields, TOTAL_FIELDS)
 
+	def test_the_applicants_name_is_what_the_list_shows(self):
+		"""A List View Settings row can only reorder columns the DocType already offers -
+		reorder_listview_fields() matches the saved fields against the in_list_view ones
+		and adds nothing - so pinning the row was not enough on its own. The BA site does
+		this with two Property Setters; this DocType belongs to the app, so it is on the
+		field."""
+		meta = frappe.get_meta("Visa Request")
+
+		self.assertTrue(meta.get_field("job_applicant_full_name").in_list_view)
+
+	def test_the_applicant_id_is_not(self):
+		"""The BA site turns this one off - the list reads as names, not as HR-APP ids."""
+		self.assertFalse(frappe.get_meta("Visa Request").get_field("job_applicant").in_list_view)
+
+	def test_the_columns_the_list_can_actually_draw_match_the_ba_site(self):
+		in_list_view = [
+			field.fieldname
+			for field in frappe.get_meta("Visa Request").fields
+			if field.in_list_view
+		]
+
+		self.assertEqual(sorted(in_list_view), ["job_applicant_full_name", "nationality"])
+
 	def test_every_column_is_a_field_that_exists(self):
 		"""Except status_field, which is Frappe's own pseudo-column for the Status
 		indicator - a real fieldname that does not exist would render a blank column."""
@@ -185,10 +208,30 @@ class TestTheJobOfferConnection(FrappeTestCase):
 
 		self.assertEqual(counts, [1, 1, 1])
 
-	def test_the_link_field_is_the_one_frappe_expects(self):
-		"""Frappe derives the fieldname from the parent doctype - "job_offer" - unless the
-		dashboard declares a non-standard one, which this connection does not."""
+	def test_the_link_field_exists_to_filter_on(self):
 		field = frappe.get_meta("Visa Request").get_field("job_offer")
 
 		self.assertIsNotNone(field)
 		self.assertEqual(field.options, "Job Offer")
+
+	def test_the_dashboard_says_which_field_to_filter_on(self):
+		"""Without it the entry opened the whole Visa Request list unfiltered, and the
+		count never loaded at all: get_document_filter() builds {undefined: name}, and
+		set_open_count() returns early when data.fieldname is missing."""
+		data = frappe.get_meta("Job Offer").get_dashboard_data()
+
+		self.assertEqual(data.fieldname, "job_offer")
+		self.assertEqual(data.non_standard_fieldnames.get("Visa Request"), "job_offer")
+
+	def test_the_filter_it_declares_finds_this_offer_s_requests(self):
+		"""The filter the client builds from that fieldname, asked of the database."""
+		request = frappe.db.get_value(
+			"Visa Request", {"job_offer": ["is", "set"]}, ["name", "job_offer"], as_dict=True
+		)
+		if not request:
+			self.skipTest("no Visa Request linked to a Job Offer on this site")
+
+		data = frappe.get_meta("Job Offer").get_dashboard_data()
+		found = frappe.get_all("Visa Request", filters={data.fieldname: request.job_offer}, pluck="name")
+
+		self.assertIn(request.name, found)
