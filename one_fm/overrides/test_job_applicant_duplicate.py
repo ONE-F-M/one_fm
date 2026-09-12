@@ -19,6 +19,7 @@ from one_fm.overrides.job_applicant import (
 	BULK_RECRUITMENT,
 	DUPLICATE_APPLICATION_MESSAGE,
 	REJECTED,
+	is_staff,
 )
 
 EMAIL = "wi002490.duplicate@example.com"
@@ -79,19 +80,73 @@ class TestTheValuesTheRuleTurnsOn(FrappeTestCase):
 		self.assertIn(REJECTED, options)
 
 
+class TestWhoIsStaff(FrappeTestCase):
+	"""The line between the two messages. A Job Applicant is created from both sides -
+	the candidate through the job portal, a recruiter through the Desk - and only a
+	System User can open the Desk."""
+
+	def test_guest_is_not_staff(self):
+		self.assertFalse(is_staff("Guest"))
+
+	def test_a_website_user_is_not_staff(self):
+		"""The job-applications web form requires a login, so a candidate can be a real
+		User - just not a System User."""
+		website_user = frappe.db.get_value("User", {"user_type": "Website User", "enabled": 1}, "name")
+		if not website_user:
+			self.skipTest("no enabled Website User on this site")
+
+		self.assertFalse(is_staff(website_user))
+
+	def test_a_desk_user_is_staff(self):
+		self.assertTrue(is_staff("Administrator"))
+
+	def test_it_reads_the_session_user_by_default(self):
+		self.assertEqual(is_staff(), is_staff(frappe.session.user))
+
+
 class TestTheMessageIsTheOneTheTeamSupplied(FrappeTestCase):
-	"""The candidate reads this, so it is quoted rather than paraphrased."""
+	"""The candidate reads this on the job portal, so it is quoted rather than
+	paraphrased - and it is only shown to the candidate."""
 
 	def setUp(self):
 		_clear()
 
-	def test_it_is_shown_word_for_word(self):
+	def _as_the_candidate(self):
+		"""Guest is what /job_application posts as."""
+		return self.set_user("Guest")
+
+	def test_a_candidate_is_shown_it_word_for_word(self):
+		_seed(status="Open")
+		doc = _applying()
+
+		frappe.set_user("Guest")
+		try:
+			with self.assertRaises(frappe.ValidationError) as raised:
+				doc.validate_active_a_la_carte_application()
+		finally:
+			frappe.set_user("Administrator")
+
+		self.assertIn(DUPLICATE_APPLICATION_MESSAGE, str(raised.exception))
+
+	def test_a_recruiter_is_not(self):
+		"""A recruiter in the Desk was being told "Thank you for your interest in joining
+		our team" about somebody else's application."""
 		_seed(status="Open")
 
 		with self.assertRaises(frappe.ValidationError) as raised:
 			_applying().validate_active_a_la_carte_application()
 
-		self.assertIn(DUPLICATE_APPLICATION_MESSAGE, str(raised.exception))
+		self.assertNotIn("Thank you for your interest", str(raised.exception))
+
+	def test_a_recruiter_is_told_which_record_blocked_them(self):
+		"""The half a candidate must not see is exactly the half staff need."""
+		_seed(status="Hold")
+
+		with self.assertRaises(frappe.ValidationError) as raised:
+			_applying().validate_active_a_la_carte_application()
+
+		self.assertIn(SEEDED + "1", str(raised.exception))
+		self.assertIn("Hold", str(raised.exception))
 
 	def test_it_carries_every_paragraph_the_team_wrote(self):
 		for sentence in (
@@ -104,14 +159,20 @@ class TestTheMessageIsTheOneTheTeamSupplied(FrappeTestCase):
 				self.assertIn(sentence, DUPLICATE_APPLICATION_MESSAGE)
 
 	def test_it_does_not_name_the_record_that_blocked_them(self):
-		"""A candidate sees this on the careers portal; another applicant's details must
-		not leak into it."""
+		"""A candidate sees this on the public job portal; another applicant's name, role
+		and record id must not leak into it."""
 		_seed(status="Hold")
+		doc = _applying()
 
-		with self.assertRaises(frappe.ValidationError) as raised:
-			_applying().validate_active_a_la_carte_application()
+		frappe.set_user("Guest")
+		try:
+			with self.assertRaises(frappe.ValidationError) as raised:
+				doc.validate_active_a_la_carte_application()
+		finally:
+			frappe.set_user("Administrator")
 
 		self.assertNotIn(SEEDED, str(raised.exception))
+		self.assertNotIn("WI-002490 Seeded", str(raised.exception))
 
 
 class TestOneActiveApplication(FrappeTestCase):
@@ -242,3 +303,79 @@ class TestTheEmailIsFoundEitherWay(FrappeTestCase):
 
 		with self.assertRaises(frappe.ValidationError):
 			_applying(email=EMAIL, standard_email=None).validate_active_a_la_carte_application()
+
+
+class TestTheMessageSurvivesTheJobPortal(FrappeTestCase):
+	"""The route the story is actually about.
+
+	/job_application posts to create_job_applicant_from_job_portal, which wrapped the
+	whole save in a bare `except` and replaced whatever came out of it with "An Error
+	Occured while submitting the job application" - plus an Error Log traceback. The
+	wording the team supplied could never reach the applicant it was written for.
+	"""
+
+	def _endpoint(self):
+		from one_fm.templates.pages import job_application
+
+		return job_application.create_job_applicant_from_job_portal
+
+	def test_a_validation_message_is_not_swallowed(self):
+		"""Driven through the endpoint with an argument list it cannot satisfy, so the
+		save raises a ValidationError of its own: what is under test is that a
+		ValidationError comes back out rather than the generic sentence."""
+		from one_fm.templates.pages import job_application
+
+		original = job_application.frappe.new_doc
+
+		def _refuse(doctype, *args, **kwargs):
+			if doctype == "Job Applicant":
+				frappe.throw("WI-002490 refusal that must reach the applicant")
+			return original(doctype, *args, **kwargs)
+
+		job_application.frappe.new_doc = _refuse
+		try:
+			with self.assertRaises(frappe.ValidationError) as raised:
+				self._endpoint()(
+					applicant_name="WI-002490 Portal",
+					nationality=None,
+					applicant_email=EMAIL,
+					applicant_mobile="0000",
+					job_opening=None,
+					name_of_file=None,
+				)
+		finally:
+			job_application.frappe.new_doc = original
+
+		self.assertIn("must reach the applicant", str(raised.exception))
+		self.assertNotIn("An Error Occured", str(raised.exception))
+
+	def test_anything_that_is_not_a_validation_error_still_reads_as_a_failure(self):
+		"""The generic sentence is still right for a real fault - a missing file, a
+		broken attachment - and those should still be logged."""
+		from one_fm.templates.pages import job_application
+
+		original = job_application.frappe.new_doc
+
+		def _break(doctype, *args, **kwargs):
+			# Only for the applicant: log_error builds an Error Log through the same
+			# function, and breaking that too would fail the logging rather than the save.
+			if doctype == "Job Applicant":
+				raise RuntimeError("WI-002490 genuine fault")
+			return original(doctype, *args, **kwargs)
+
+		job_application.frappe.new_doc = _break
+		try:
+			with self.assertRaises(frappe.ValidationError) as raised:
+				self._endpoint()(
+					applicant_name="WI-002490 Portal",
+					nationality=None,
+					applicant_email=EMAIL,
+					applicant_mobile="0000",
+					job_opening=None,
+					name_of_file=None,
+				)
+		finally:
+			job_application.frappe.new_doc = original
+
+		self.assertIn("An Error Occured", str(raised.exception))
+		self.assertNotIn("genuine fault", str(raised.exception))

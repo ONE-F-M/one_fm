@@ -188,7 +188,14 @@ def create_job_applicant_from_job_portal(applicant_name, nationality, applicant_
         #         attach_file_to_job_applicant(files_obj[file]['files_data'], job_applicant)
         # job_applicant.save(ignore_permissions=True)
         return True
-    except:
+    except frappe.ValidationError:
+        # WI-002490: a validation message is the answer, not a fault. This used to be
+        # swallowed with everything else and replaced by "An Error Occured while
+        # submitting the job application" - so a rule that refuses an application for a
+        # reason the applicant could act on told them nothing, and logged a traceback for
+        # an outcome that is not an error.
+        raise
+    except Exception:
         frappe.log_error(message=frappe.get_traceback(), title="Error while uploading file (Easy Apply)")
         frappe.throw("An Error Occured while submitting the job application")
 

@@ -23,9 +23,11 @@ A_LA_CARTE = "A la carte Recruitment"
 REJECTED = "Rejected"
 
 # Supplied by the recruitment team, and used exactly as given - wording, punctuation and
-# paragraphs. The candidate reads this, not a recruiter, so it deliberately says nothing
-# about which record blocked them. The opening line is the dialog title, so it is not
-# repeated in the body.
+# paragraphs. This is what the *candidate* reads, on the job portal, so it deliberately
+# says nothing about which record blocked them: another applicant's name and role have no
+# business on a public page. The opening line is the dialog title, so it is not repeated
+# in the body. A recruiter working in the Desk gets is_staff()'s message instead - the
+# same refusal, said to somebody who can act on it.
 DUPLICATE_APPLICATION_MESSAGE = "<br><br>".join((
 	"Thank you for your interest in joining our team.",
 	"We’ve received your application, and our Recruitment Team will review your profile "
@@ -36,6 +38,23 @@ DUPLICATE_APPLICATION_MESSAGE = "<br><br>".join((
 	"stage. We’ll take it from here!",
 	"We appreciate your interest and look forward to being in touch.",
 ))
+
+
+def is_staff(user=None):
+	"""Is the person saving this record one of ours, rather than the applicant (WI-002490)?
+
+	A Job Applicant is created from both sides. The candidate reaches it through the job
+	portal - as Guest on /job_application, or as a Website User on the job-applications web
+	form - and a recruiter reaches it through the Desk. Only a System User can open the
+	Desk, which is exactly the line the two messages need drawn.
+
+	Guest has no User record worth reading, so it is answered first and directly.
+	"""
+	user = user or frappe.session.user
+	if user in ("Guest", None, ""):
+		return False
+
+	return frappe.db.get_value("User", user, "user_type") == "System User"
 
 
 class JobApplicantOverride(JobApplicant):
@@ -127,6 +146,11 @@ class JobApplicantOverride(JobApplicant):
 		`self.name or ""` rather than `self.name`: a doc validated before a name has been
 		allocated would make that clause `name != NULL`, which matches nothing in SQL and
 		would silently switch the whole rule off.
+
+		get_all rather than get_list, deliberately: on the job portal this runs as Guest,
+		who can read no Job Applicant at all, and a permission-checked query would come
+		back empty and switch the rule off for the one caller it exists for. Nothing read
+		here is shown to the candidate - only to staff.
 		"""
 		email = self.applicant_email()
 		if not email:
@@ -140,11 +164,25 @@ class JobApplicantOverride(JobApplicant):
 				"name": ["!=", self.name or ""],
 			},
 			or_filters={"one_fm_email_id": email, "email_id": email},
-			pluck="name",
+			fields=["name", "applicant_name", "job_title", "status"],
 			limit=1,
 		)
 		if not existing:
 			return
+
+		if is_staff():
+			open_application = existing[0]
+			frappe.throw(
+				_("{0} already has an active A la carte application: {1}{2} ({3}). "
+				  "Only one can be open at a time - a new one can be raised once that "
+				  "application has been rejected.").format(
+					frappe.bold(open_application.applicant_name or email),
+					frappe.utils.get_link_to_form("Job Applicant", open_application.name),
+					f" for {open_application.job_title}" if open_application.job_title else "",
+					open_application.status,
+				),
+				title=_("Active Application Already Exists"),
+			)
 
 		frappe.throw(
 			DUPLICATE_APPLICATION_MESSAGE,
