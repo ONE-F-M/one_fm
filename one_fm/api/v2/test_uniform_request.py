@@ -12,9 +12,12 @@ from frappe.tests.utils import FrappeTestCase
 from one_fm.api.v2.uniform_request import (
 	INDIVIDUAL,
 	PENDING_APPROVAL,
+	UNIFORM_PARENT_GROUP,
 	UNIFORM_QTY,
 	_missing_details,
 	_photo_of,
+	_uniform_catalogue,
+	_uniform_item_groups,
 )
 
 SIZE = "XL"
@@ -75,6 +78,65 @@ class TestRequiredDateStaysMandatoryElsewhere(FrappeTestCase):
 		request.schedule_date = None
 
 		request.validate_uniform_request_details()
+
+
+class TestTheLineCanBeSavedWithoutARequiredDate(FrappeTestCase):
+	"""The header date was made optional for a uniform request; the line mirrored it and
+	was left unconditionally required, so every mobile submission was refused for a date
+	the form deliberately never asks for."""
+
+	def test_the_line_date_is_no_longer_unconditionally_required(self):
+		self.assertFalse(
+			frappe.get_meta("Request for Material Item").get_field("schedule_date").reqd
+		)
+
+	def test_the_line_still_demands_it_for_other_types(self):
+		rule = frappe.get_meta("Request for Material Item").get_field(
+			"schedule_date"
+		).mandatory_depends_on
+
+		self.assertIn('parent.type != "Individual"', rule)
+
+
+class TestThePickerOffersTheWholeCatalogue(FrappeTestCase):
+	"""Uniform is a group node holding no items of its own, so reading it alone offered
+	an employee four items and no way to name anything else that tore."""
+
+	def test_the_groups_are_read_from_the_tree(self):
+		groups = _uniform_item_groups()
+		children = frappe.get_all(
+			"Item Group", filters={"parent_item_group": UNIFORM_PARENT_GROUP}, pluck="name"
+		)
+
+		self.assertTrue(children, "Uniform has no child groups - the tree moved")
+		for child in children:
+			self.assertIn(child, groups)
+
+	def test_the_catalogue_is_more_than_a_handful(self):
+		"""The failure it replaces returned four items out of a catalogue of a thousand."""
+		self.assertGreater(len(_uniform_catalogue()), 100)
+
+
+class TestTheRequestReachesAnApprover(FrappeTestCase):
+	"""A request nobody is assigned to is a request nobody acts on."""
+
+	def test_an_employee_with_no_reports_to_falls_back_to_the_site_supervisor(self):
+		"""get_employee_site_supervisor was used but never imported, so this path raised
+		NameError rather than falling back - and every mobile request comes from an
+		employee whose Reports To may well be empty."""
+		employee = frappe.db.get_value(
+			"Employee",
+			{"status": "Active", "reports_to": ["in", ("", None)], "site": ["is", "set"]},
+			"name",
+		)
+		if not employee:
+			self.skipTest("no active employee with a site and no Reports To")
+
+		request = frappe.new_doc("Request for Material")
+		request.type = INDIVIDUAL
+		request.employee = employee
+
+		request.get_request_for_material_approver()
 
 
 class TestWhatTheEmployeeMustGive(FrappeTestCase):

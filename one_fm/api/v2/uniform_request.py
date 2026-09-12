@@ -25,9 +25,15 @@ PENDING_APPROVAL = "Pending Approval"
 # never asks and the row carries the only quantity that makes sense.
 UNIFORM_QTY = 1
 
-# What the picker falls back to when an employee has no issued uniform on record. Groups
-# rather than a fixed item list, so a new uniform item is offered the day it is created.
-UNIFORM_ITEM_GROUPS = ("Uniform", "Cleaner Uniform", "Male & Female Semi Tactical Security Uniform Design")
+# Where the uniform catalogue lives. "Uniform" is a group node that holds no items of its
+# own - every uniform sits in one of its children (Jacket, Trouser, Shoes...) - so the
+# children are what has to be read. Naming the parent rather than a fixed list of children
+# means a new uniform group is offered the day it is created.
+UNIFORM_PARENT_GROUP = "Uniform"
+
+# Uniform designs that sit outside that tree. Listed by name because nothing in the data
+# marks them as uniform; anything else added under Uniform is picked up on its own.
+EXTRA_UNIFORM_ITEM_GROUPS = ("Male & Female Semi Tactical Security Uniform Design",)
 
 
 @frappe.whitelist()
@@ -136,21 +142,36 @@ def _build_request(employee, items, schedule_date):
 			"attach_photo": photo if isinstance(photo, str) else None,
 			"is_uniform_request": 1,
 			"qty": UNIFORM_QTY,
+			# The unit is still required on the line, and a uniform is only ever asked
+			# for in the unit it is stocked in - so it is read off the item rather than
+			# put to an employee who is reporting a torn jacket.
+			"uom": frappe.db.get_value("Item", item.get("item_code"), "stock_uom"),
+			"conversion_factor": 1,
+			# Mirrors what the form does with the header date: the line carries the same
+			# one, and stays empty with it until the supervisor sets it.
+			"schedule_date": schedule_date,
+			# Without this the row is invisible to has_pending_uniform_items and
+			# create_employee_uniform, and the approved replacement is never issued.
+			"employee": employee.name,
 		})
 
 	# The size and photo checks run on validate, and a row whose photo is still bytes has
 	# nothing in the field yet - so the rows are saved first and the photos attached
-	# before the request is validated again on its way to the approver.
+	# before the request is validated on its way to the approver.
 	request.flags.ignore_validate = True
 	request.insert(ignore_permissions=True)
 
 	_attach_photos(request, items)
 
-	# Straight to the supervisor. Saved first so the approver is resolved against a
-	# request that exists, and set with db_set so the state change cannot be undone by a
-	# later validation on a document that has already been created.
-	request.db_set("workflow_state", PENDING_APPROVAL)
+	# Straight to the supervisor - and this save has to run validate, which is why the
+	# flag comes back off. The approver is resolved in validate, and the "RFM Approver"
+	# assignment rule matches on the field it sets and fires from on_update. Flipping the
+	# state with db_set runs neither, which leaves the request sitting in Pending Approval
+	# with no approver and nobody assigned to it.
 	request.reload()
+	request.flags.ignore_validate = False
+	request.workflow_state = PENDING_APPROVAL
+	request.save(ignore_permissions=True)
 
 	return request
 
@@ -197,10 +218,10 @@ def _attach_photos(request, items):
 def get_uniform_items() -> dict:
 	"""The uniform items this employee can ask to have replaced.
 
-	Their own issued uniform first: a replacement is for something they were given, so
-	the list they choose from should be the list they hold. An employee with nothing on
-	record - a new starter, or one whose issue predates the register - falls back to the
-	uniform item groups rather than being shown an empty picker with no way forward.
+	Their own issued uniform first - a replacement is usually for something they were
+	given - then the rest of the catalogue behind it. Their own list alone is not enough:
+	it is only ever a handful of rows, and an employee whose issue predates the register,
+	or who was handed something off the shelf, would have no way to name what tore.
 	"""
 	employee = frappe.db.get_value(
 		"Employee", {"user_id": frappe.session.user, "status": "Active"}, "name"
@@ -211,7 +232,9 @@ def get_uniform_items() -> dict:
 			"No active employee record is linked to your user.",
 		)
 
-	items = _issued_uniform_items(employee) or _uniform_catalogue()
+	items = _issued_uniform_items(employee)
+	issued = {item["item_code"] for item in items}
+	items += [item for item in _uniform_catalogue() if item["item_code"] not in issued]
 
 	return response("Success", 200, items, None)
 
@@ -242,12 +265,20 @@ def _issued_uniform_items(employee) -> list:
 	return items
 
 
+def _uniform_item_groups() -> list:
+	"""Every group a uniform item can sit in."""
+	children = frappe.get_all(
+		"Item Group", filters={"parent_item_group": UNIFORM_PARENT_GROUP}, pluck="name"
+	)
+	return [UNIFORM_PARENT_GROUP, *children, *EXTRA_UNIFORM_ITEM_GROUPS]
+
+
 def _uniform_catalogue() -> list:
 	return [
 		{"item_code": row.name, "item_name": row.item_name or row.name}
 		for row in frappe.get_all(
 			"Item",
-			filters={"item_group": ["in", UNIFORM_ITEM_GROUPS], "disabled": 0},
+			filters={"item_group": ["in", _uniform_item_groups()], "disabled": 0},
 			fields=["name", "item_name"],
 			order_by="item_name asc",
 		)
