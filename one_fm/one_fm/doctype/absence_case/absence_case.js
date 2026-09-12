@@ -18,8 +18,43 @@ frappe.ui.form.on("Absence Case", {
 	},
 	unpaid_leave_request_decision(frm) {
 		setup_unpaid_leave_buttons(frm);
+	},
+	go_to_attendance(frm) {
+		open_attendance_list(frm);
 	}
 });
+
+// WI-002465: the days the case is about, as the server wrote them - one date per line.
+function absent_dates_list(frm) {
+	return (frm.doc.absent_dates || "")
+		.split("\n")
+		.map((date) => date.trim())
+		.filter((date) => date);
+}
+
+// AC 2: open the Attendance list filtered to exactly those days.
+//
+// route_options rather than a query string: list_view.js::parse_filters_from_route_options
+// reads an array value as [operator, value], which is the only way to get an "in" filter
+// across rather than a chain of equals that would match nothing.
+function open_attendance_list(frm) {
+	const dates = absent_dates_list(frm);
+
+	if (!dates.length) {
+		frappe.msgprint({
+			message: __("There are no absent dates on this case to look up yet."),
+			indicator: "orange",
+			title: __("No Absent Dates")
+		});
+		return;
+	}
+
+	frappe.route_options = {
+		employee: frm.doc.employee,
+		attendance_date: ["in", dates]
+	};
+	frappe.set_route("List", "Attendance");
+}
 
 function set_leave_application_query(frm) {
 	frm.set_query("leave_application", function() {
