@@ -935,8 +935,10 @@ class TestTheLetterHeadingsFollowTheRateType(FrappeTestCase):
 		):
 			return pow_letter_headers(doc)
 
-	def _english(self, column):
-		return [line.get("en") for line in column if not line.get("separator")]
+	def _arabic(self, column):
+		# WI-002399 took the English half away; the units question is unchanged, so
+		# these ask it in Arabic.
+		return [line.get("ar") for line in column if not line.get("separator")]
 
 	def _has_or(self, column):
 		return any(line.get("separator") for line in column)
@@ -944,18 +946,18 @@ class TestTheLetterHeadingsFollowTheRateType(FrappeTestCase):
 	def test_a_daily_and_monthly_contract_is_headed_in_days(self):
 		headers = self._headers("Daily", "Monthly")
 
-		self.assertEqual(self._english(headers["contractual"]), ["Contractual Number of days per month"])
-		self.assertEqual(self._english(headers["worked"]), ["Total number Days worked"])
-		self.assertEqual(self._english(headers["breakdown"]), ["Total Number of Days"])
+		self.assertEqual(self._arabic(headers["contractual"]), ["عدد ايام العمل التعاقدية بالشهر"])
+		self.assertEqual(self._arabic(headers["worked"]), ["اجمالي عدد ايام العمل الفعلية"])
+		self.assertEqual(self._arabic(headers["breakdown"]), ["اجمالي عدد ايام عمل"])
 		for column in headers.values():
 			self.assertFalse(self._has_or(column))
 
 	def test_an_hourly_contract_is_headed_in_hours(self):
 		headers = self._headers("Hourly", "Hourly")
 
-		self.assertEqual(self._english(headers["contractual"]), ["Contractual number of hours per month"])
-		self.assertEqual(self._english(headers["worked"]), ["Total No of Hours worked"])
-		self.assertEqual(self._english(headers["breakdown"]), ["Total Number of Hours"])
+		self.assertEqual(self._arabic(headers["contractual"]), ["عدد ساعات العمل التعاقدية بالشهر"])
+		self.assertEqual(self._arabic(headers["worked"]), ["اجمالي عدد ساعات العمل الفعلية"])
+		self.assertEqual(self._arabic(headers["breakdown"]), ["اجمالي عدد ساعات عمل"])
 		for column in headers.values():
 			self.assertFalse(self._has_or(column))
 
@@ -966,8 +968,8 @@ class TestTheLetterHeadingsFollowTheRateType(FrappeTestCase):
 		for column in headers.values():
 			self.assertTrue(self._has_or(column))
 		self.assertEqual(
-			self._english(headers["worked"]),
-			["Total number Days worked", "Total No of Hours worked"],
+			self._arabic(headers["worked"]),
+			["اجمالي عدد ايام العمل الفعلية", "اجمالي عدد ساعات العمل الفعلية"],
 		)
 
 	def test_an_item_with_no_rate_type_names_both(self):
@@ -983,13 +985,18 @@ class TestTheLetterHeadingsFollowTheRateType(FrappeTestCase):
 		self.assertEqual(days[0]["ar"], "اجمالي عدد ايام عمل")
 		self.assertEqual(hours[0]["ar"], "اجمالي عدد ساعات عمل")
 
-	def test_the_other_two_columns_carry_no_arabic(self):
-		"""They never did - only the breakdown column is bilingual."""
+	def test_every_column_now_carries_arabic(self):
+		"""The breakdown column used to be the only bilingual one; WI-002399 made all
+		three Arabic and dropped the English."""
 		headers = self._headers("Monthly")
 
-		for column in ("contractual", "worked"):
+		for column in ("contractual", "worked", "breakdown"):
 			for line in headers[column]:
-				self.assertFalse(line.get("ar"))
+				if line.get("separator"):
+					continue
+				with self.subTest(column=column):
+					self.assertTrue(line.get("ar"))
+					self.assertIsNone(line.get("en"))
 
 	def test_a_document_with_no_rows_names_both(self):
 		headers = self._headers()
@@ -1017,19 +1024,44 @@ class TestTheLetterSurvivesADeployGap(FrappeTestCase):
 		import jinja2
 
 		rendered = jinja2.Environment().from_string(
-			self._heading_line() + "{{ headers.worked | map(attribute='en') | select | join('|') }}"
+			self._heading_line() + "{{ headers.worked | map(attribute='ar') | select | join('|') }}"
 		).render()
 
-		self.assertEqual(rendered, "Total number Days worked|Total No of Hours worked")
+		self.assertEqual(
+			rendered, "اجمالي عدد ايام العمل الفعلية|اجمالي عدد ساعات العمل الفعلية"
+		)
 
-	def test_the_method_is_registered_in_hooks(self):
+	def test_the_fallback_says_the_same_thing_the_method_does(self):
+		"""Two copies of the headings, one in the template and one in the code. A
+		fallback that drifts is a letter that reads differently for the few minutes
+		between a migrate and a restart."""
+		import jinja2
+
+		from one_fm.jinja.print_format.methods import LETTER_COLUMN_HEADINGS
+
+		rendered = jinja2.Environment().from_string(
+			self._heading_line()
+			+ "{{ headers.contractual | map(attribute='ar') | select | join('|') }}"
+		).render()
+
+		self.assertEqual(
+			rendered.split("|"),
+			[
+				LETTER_COLUMN_HEADINGS["contractual"]["days"],
+				LETTER_COLUMN_HEADINGS["contractual"]["hours"],
+			],
+		)
+
+	def test_the_methods_are_registered_in_hooks(self):
 		"""The fallback is insurance, not the plan."""
 		from one_fm import hooks
 
-		self.assertIn(
+		for method in (
 			"pow_letter_headers:one_fm.jinja.print_format.methods.pow_letter_headers",
-			hooks.jenv["methods"],
-		)
+			"pow_item_types_arabic:one_fm.jinja.print_format.methods.pow_item_types_arabic",
+		):
+			with self.subTest(method=method):
+				self.assertIn(method, hooks.jenv["methods"])
     
     
 class TestTheExportGoesToDrive(FrappeTestCase):
@@ -1222,3 +1254,559 @@ class TestTheExportGoesToDrive(FrappeTestCase):
 
 		self.assertEqual(result["destination"], "zip")
 		self.assertEqual(enqueue.call_args.args[0].__name__, "_build_pow_zip")
+
+
+class TestTheLetterIsArabicOnly(FrappeTestCase):
+	"""WI-002399: the letter is submitted to a client in Arabic.
+
+	The only Latin that may reach the page is the client's name, the figures, and the
+	dates - everything the criteria call out as staying English.
+	"""
+
+	def _letter(self):
+		import json
+
+		path = frappe.get_app_path(
+			"one_fm", "one_fm", "print_format", "proof_of_work_letter",
+			"proof_of_work_letter.json",
+		)
+		return json.loads(frappe.read_file(path))
+
+	def test_no_column_header_carries_english(self):
+		"""Scenario 1. Asked of the headings the code supplies, not of the template:
+		the template only prints what _heading_lines hands it."""
+		from one_fm.jinja.print_format.methods import LETTER_COLUMN_HEADINGS
+
+		for column, by_unit in LETTER_COLUMN_HEADINGS.items():
+			for unit, heading in by_unit.items():
+				with self.subTest(column=column, unit=unit):
+					self.assertTrue(heading, "an empty heading prints an empty column")
+					self.assertFalse(
+						re.search(r"[A-Za-z]", heading),
+						f"{column}/{unit} still carries Latin: {heading!r}",
+					)
+
+	def test_the_heading_lines_no_longer_offer_an_english_half(self):
+		"""A template that still reads line.en would print nothing for it."""
+		from one_fm.jinja.print_format.methods import _heading_lines
+
+		lines = _heading_lines("contractual", ["days", "hours"])
+
+		self.assertEqual(len([line for line in lines if line.get("separator")]), 1)
+		for line in lines:
+			if not line.get("separator"):
+				self.assertNotIn("en", line)
+				self.assertTrue(line.get("ar"))
+
+	def test_the_separator_is_arabic(self):
+		from one_fm.jinja.print_format.methods import LETTER_OR
+
+		self.assertEqual(LETTER_OR, "أو")
+		self.assertNotIn("<div class=\"or\">OR</div>", self._letter()["html"])
+
+	def test_the_table_headers_are_arabic(self):
+		html = self._letter()["html"]
+
+		for english in (
+			"Type of Service",
+			"Service Category",
+			"Amount",
+			"Non-Manpower Services",
+			"No summary items on this Proof of Work",
+		):
+			with self.subTest(english=english):
+				self.assertNotIn(english, html)
+
+		for arabic in ("نوع الخدمة", "بيان الخدمة", "المبلغ", "الإجمالي"):
+			with self.subTest(arabic=arabic):
+				self.assertIn(arabic, html)
+
+	def test_the_client_name_stays_english(self):
+		"""Scenario 4: the one exception the story makes."""
+		html = self._letter()["html"]
+
+		self.assertIn('مقدمه إلى شركه: <span class="en">{{ customer_name }}</span>', html)
+
+	def test_the_period_dates_are_dd_mmm_yyyy(self):
+		"""Scenario 5: 01/Oct/2024, not 01/10/2024."""
+		html = self._letter()["html"]
+
+		self.assertIn('ar_date(doc.start_date, "dd/MMM/yyyy")', html)
+		self.assertIn('ar_date(doc.end_date, "dd/MMM/yyyy")', html)
+		self.assertNotIn('"dd/MM/yyyy"', html)
+
+	def test_the_contract_start_date_is_still_fetched(self):
+		"""Scenario 3, already in place before this story - pinned so it stays."""
+		html = self._letter()["html"]
+
+		self.assertIn("doc.current_contract_start_date", html)
+		self.assertIn("وفقاً للعقد المؤرخ", html)
+
+	def test_arial_comes_first_and_arabic_can_still_be_drawn(self):
+		"""Scenario 1 asks for Arial. There is no Arial on the print server -
+		fontconfig answers it with Liberation Sans, which has no Arabic glyphs - so
+		Arial alone would render every Arabic word as a box. Arial leads; the fallback
+		is what keeps the letter readable."""
+		css = self._letter()["css"]
+
+		self.assertNotIn("Tahoma", css)
+		families = re.search(r"\.pow-letter, \.pow-letter \* \{ font-family: ([^;]+);", css)
+		self.assertTrue(families, "the wrapper rule is gone, so descendants pick their own face")
+		self.assertTrue(families.group(1).strip().startswith("Arial"))
+
+
+class TestTheLetterLinesUp(FrappeTestCase):
+	"""WI-002399: the letter the client was sent had its text scattered across the page.
+
+	Every rule pinned here is about something wkhtmltopdf does that a browser does not.
+	The letter is only ever read as a PDF, so the browser's opinion of it is not the one
+	that matters.
+	"""
+
+	def _letter(self):
+		import json
+
+		path = frappe.get_app_path(
+			"one_fm", "one_fm", "print_format", "proof_of_work_letter",
+			"proof_of_work_letter.json",
+		)
+		return json.loads(frappe.read_file(path))
+
+	def test_the_masthead_is_a_table(self):
+		"""wkhtmltopdf's WebKit predates flexbox and drops display:flex without a word,
+		so the title fell onto its own line underneath the logo instead of sitting
+		opposite it."""
+		letter = self._letter()
+
+		self.assertNotIn("display: flex", letter["css"])
+		self.assertIn('<table class="pow-hd">', letter["html"])
+
+	def test_an_english_run_stays_whole_and_reads_left_to_right(self):
+		"""The contract date reached the client as "25 / 02 /" on one line and "2026"
+		on the next, and the client name broke after "Co.". nowrap keeps the run whole;
+		direction:ltr keeps 25 ahead of 2026 inside a right-to-left sentence."""
+		rule = re.search(r"\.en \{([^}]+)\}", self._letter()["css"])
+
+		self.assertTrue(rule, "the .en rule is gone, so English runs break anywhere")
+		self.assertIn("direction: ltr", rule.group(1))
+		self.assertIn("white-space: nowrap", rule.group(1))
+
+	def test_the_headings_stay_on_one_line(self):
+		"""Scenario 6 stacks two units either side of an أو in three columns at once.
+		They read as one row of headings only if no column wraps: a wrapped heading
+		pushes its أو down a line, and no two columns wrap in the same place."""
+		css = self._letter()["css"]
+
+		self.assertRegex(css, r"\.pow-tbl\.stacked thead th \{[^}]*white-space: nowrap")
+		# Only where the alignment is at stake. Four columns that all refuse to wrap are
+		# wider than the page on a contract with two dozen services, and the widest of
+		# them loses its right-hand end off the edge of the paper.
+		self.assertIn('class="pow-tbl{% if headers.contractual | length > 1 %} stacked{% endif %}"', self._letter()["html"])
+		# The fixed percentages are what forced the wrapping. The table sizes its own
+		# columns now, and a heading that cannot wrap is a width the table must honour.
+		self.assertNotRegex(css, r"\.pow-tbl \{[^}]*table-layout: fixed")
+		self.assertNotRegex(css, r"\.pow-tbl \.c-(type|contract|worked|breakdown) \{[^}]*width:")
+
+	def test_the_breakdown_lines_stay_whole(self):
+		"""Twenty near-identical lines, so one that wraps reads as a ragged half-line
+		among them - and sizing the table to them is what keeps the column widest."""
+		self.assertRegex(
+			self._letter()["css"], r"\.pow-tbl \.c-breakdown \.ln \{[^}]*white-space: nowrap"
+		)
+
+	def test_the_service_column_is_named_in_arabic(self):
+		"""Scenario 2's translation, in the column that repeats it on every row."""
+		self.assertIn("{{ row.service }}", self._letter()["html"])
+		self.assertIn("pow_letter_rows(doc)", self._letter()["html"])
+
+
+class TestTheLetterIsWrittenInArabicNumerals(FrappeTestCase):
+	"""WI-002399: a Latin number inside an Arabic line is a direction change.
+
+	That is what broke the header: the renderer resolved it by putting the date on a
+	line of its own at the far side of the page. A number in the same script as the
+	sentence around it has nothing to resolve, so the dates and the day count are
+	written in Arabic-Indic digits. The client's name stays Latin - Scenario 4 says so -
+	and it is the only Latin run left in the letter's header.
+	"""
+
+	def _letter(self):
+		import json
+
+		path = frappe.get_app_path(
+			"one_fm", "one_fm", "print_format", "proof_of_work_letter",
+			"proof_of_work_letter.json",
+		)
+		return json.loads(frappe.read_file(path))
+
+	def test_a_number_is_written_in_arabic_digits(self):
+		from one_fm.jinja.print_format.methods import pow_arabic_number
+
+		self.assertEqual(pow_arabic_number(31), "٣١")
+		self.assertEqual(pow_arabic_number("2026"), "٢٠٢٦")
+		self.assertEqual(pow_arabic_number(None), "")
+
+	def test_the_period_date_keeps_its_pattern_and_changes_its_script(self):
+		"""Scenario 5 asks for DD/MMM/YYYY; this is that pattern in Arabic."""
+		from one_fm.jinja.print_format.methods import pow_arabic_date
+
+		self.assertEqual(pow_arabic_date("2026-07-01"), "٠١/يوليو/٢٠٢٦")
+		self.assertEqual(pow_arabic_date("2026-01-31"), "٣١/يناير/٢٠٢٦")
+
+	def test_the_contract_date_is_the_numeric_pattern(self):
+		from one_fm.jinja.print_format.methods import pow_arabic_date
+
+		self.assertEqual(pow_arabic_date("2026-02-25", "dd / MM / yyyy"), "٢٥ / ٠٢ / ٢٠٢٦")
+
+	def test_a_missing_date_prints_nothing_rather_than_today(self):
+		from one_fm.jinja.print_format.methods import pow_arabic_date
+
+		self.assertEqual(pow_arabic_date(None), "")
+		self.assertEqual(pow_arabic_date(""), "")
+
+	def test_the_letter_writes_every_date_and_count_through_the_helpers(self):
+		html = self._letter()["html"]
+
+		self.assertIn('ar_date(doc.current_contract_start_date, "dd / MM / yyyy")', html)
+		self.assertIn("ar_num(frappe.utils.date_diff(doc.end_date, doc.start_date) + 1)", html)
+
+	def test_only_the_client_name_is_left_in_a_latin_run(self):
+		"""Every .en span that wrapped a date is gone, because the dates are Arabic."""
+		html = self._letter()["html"]
+
+		self.assertEqual(html.count('class="en"'), 1)
+		self.assertIn('<span class="en">{{ customer_name }}</span>', html)
+
+
+class TestTheServiceNameIsResolvedOnce(FrappeTestCase):
+	"""WI-002399: where the Arabic for a service comes from, and in what order.
+
+	Item Type.arabic_name is somebody's own wording for this exact service, so it wins.
+	Below it are two readings of PAM: what the staff on the Sale Item are registered as,
+	and the designation list read as an English-to-Arabic dictionary.
+	"""
+
+	def _doc(self, *rows):
+		doc = frappe.new_doc("Proof of Work")
+		for item_type, sale_item in rows:
+			doc.append("proof_of_work_item", {"item_type": item_type, "sale_item_code": sale_item})
+		return doc
+
+	def _item_type(self, name, arabic=None):
+		if not frappe.db.exists("Item Type", name):
+			frappe.get_doc(
+				{"doctype": "Item Type", "item_type": name, "arabic_name": arabic}
+			).insert(ignore_permissions=True, ignore_mandatory=True)
+
+	def test_a_typed_translation_beats_the_derived_one(self):
+		from unittest.mock import patch
+
+		from one_fm.jinja.print_format.methods import pow_service_names_arabic
+
+		self._item_type("_Test Typed AR", "حارس أمن")
+
+		with patch(
+			"one_fm.jinja.print_format.methods._pam_designation_by_sale_item",
+			return_value={"_TEST-SALE-1": "فراش"},
+		) as derived:
+			names = pow_service_names_arabic(self._doc(("_Test Typed AR", "_TEST-SALE-1")))
+
+		self.assertEqual(names["_Test Typed AR"], "حارس أمن")
+		derived.assert_not_called()
+
+	def test_an_untyped_service_takes_the_designation_of_its_staff(self):
+		from unittest.mock import patch
+
+		from one_fm.jinja.print_format.methods import pow_service_names_arabic
+
+		self._item_type("_Test Untyped AR")
+
+		with patch(
+			"one_fm.jinja.print_format.methods._pam_designation_by_sale_item",
+			return_value={"_TEST-SALE-2": "فراش"},
+		):
+			names = pow_service_names_arabic(self._doc(("_Test Untyped AR", "_TEST-SALE-2")))
+
+		self.assertEqual(names["_Test Untyped AR"], "فراش")
+
+	def test_a_service_nobody_worked_falls_back_to_the_designation_list(self):
+		"""No attendance in the period, so there is no employee to ask - but PAM still
+		knows what the job is called."""
+		from unittest.mock import patch
+
+		from one_fm.jinja.print_format.methods import pow_service_names_arabic
+
+		self._item_type("_Test Dictionary AR")
+		if not frappe.db.exists("PAM Designation List", "_تجربة فراش"):
+			frappe.get_doc(
+				{
+					"doctype": "PAM Designation List",
+					"designation_name_english": "_Test Dictionary AR",
+					"designation_name_arabic": "_تجربة فراش",
+					"designation_code": "_TEST-001",
+				}
+			).insert(ignore_permissions=True, ignore_mandatory=True)
+
+		with patch(
+			"one_fm.jinja.print_format.methods._pam_designation_by_sale_item", return_value={}
+		):
+			names = pow_service_names_arabic(self._doc(("_Test Dictionary AR", "_TEST-SALE-3")))
+
+		self.assertEqual(names["_Test Dictionary AR"], "_تجربة فراش")
+
+	def test_a_service_nothing_knows_keeps_its_english(self):
+		from unittest.mock import patch
+
+		from one_fm.jinja.print_format.methods import pow_service_names_arabic
+
+		with patch(
+			"one_fm.jinja.print_format.methods._pam_designation_by_sale_item", return_value={}
+		):
+			names = pow_service_names_arabic(self._doc(("_Test Nothing Knows", "_TEST-SALE-4")))
+
+		self.assertEqual(names["_Test Nothing Knows"], "_Test Nothing Knows")
+
+	def test_the_paragraph_names_a_shared_designation_once(self):
+		"""Janitor and Cleaner are both فراش to PAM, and the paragraph lists services."""
+		from unittest.mock import patch
+
+		from one_fm.jinja.print_format.methods import pow_item_types_arabic
+
+		doc = frappe.new_doc("Proof of Work")
+		for item_type in ("Janitor", "Cleaner", "Security Guard"):
+			doc.append("proof_of_work_item", {"item_type": item_type, "actual_hours": "26 Days"})
+
+		with patch(
+			"one_fm.jinja.print_format.methods.pow_service_names_arabic",
+			return_value={"Janitor": "فراش", "Cleaner": "فراش", "Security Guard": "حارس أمن"},
+		):
+			self.assertEqual(pow_item_types_arabic(doc), "فراش - حارس أمن")
+
+	def test_the_designation_of_the_most_staff_speaks_for_the_service(self):
+		"""One reliever off another designation cannot rename the whole service."""
+		from one_fm.jinja.print_format.methods import _majority_designation
+
+		counts = [
+			{"sale_item": "SALE-1", "designation": "فراش", "staff": 2},
+			{"sale_item": "SALE-1", "designation": "حارس أمن", "staff": 71},
+			{"sale_item": "SALE-2", "designation": "حارس أمن", "staff": 3},
+		]
+
+		self.assertEqual(
+			_majority_designation(counts), {"SALE-1": "حارس أمن", "SALE-2": "حارس أمن"}
+		)
+
+	def test_a_tie_is_broken_on_something_stable(self):
+		"""Whichever order the rows arrive in, the same designation comes out."""
+		from one_fm.jinja.print_format.methods import _majority_designation
+
+		counts = [
+			{"sale_item": "SALE-1", "designation": "فراش", "staff": 4},
+			{"sale_item": "SALE-1", "designation": "حارس أمن", "staff": 4},
+		]
+
+		self.assertEqual(
+			_majority_designation(counts), _majority_designation(list(reversed(counts)))
+		)
+
+	def test_a_row_with_no_designation_is_ignored(self):
+		from one_fm.jinja.print_format.methods import _majority_designation
+
+		counts = [
+			{"sale_item": "SALE-1", "designation": None, "staff": 90},
+			{"sale_item": "SALE-1", "designation": "حارس أمن", "staff": 1},
+			{"sale_item": None, "designation": "حارس أمن", "staff": 5},
+		]
+
+		self.assertEqual(_majority_designation(counts), {"SALE-1": "حارس أمن"})
+
+
+class TestTheTableIsReadInArabic(FrappeTestCase):
+	"""WI-002399: the figures in the table are written in Arabic on the letter.
+
+	They are stored in English, because the desk and every other report of the same
+	numbers read them in English. Only the letter is translated, on the way to the page,
+	so nothing else that reads these fields changes and a document generated last year
+	prints the same as one generated today.
+	"""
+
+	def _rows(self, *rows):
+		doc = frappe.new_doc("Proof of Work")
+		for item_type, worked, breakdown in rows:
+			doc.append(
+				"proof_of_work_item",
+				{
+					"item_type": item_type,
+					"actual_hours": worked,
+					"staff_breakdown": breakdown,
+					"contractual_hours": "={1 staff * 30 days} = 30 DAYS",
+				},
+			)
+		return doc
+
+	def test_a_staff_line_is_translated(self):
+		from one_fm.jinja.print_format.methods import pow_arabic_figure
+
+		self.assertEqual(
+			pow_arabic_figure("- 53 Staff worked 27 days: 1431 Days"),
+			"- ٥٣ موظف عملوا ٢٧ يوم: ١٤٣١ يوم",
+		)
+		self.assertEqual(
+			pow_arabic_figure("- 16 Staff worked 552 Hours: 8832 Hrs"),
+			"- ١٦ موظف عملوا ٥٥٢ ساعة: ٨٨٣٢ ساعة",
+		)
+
+	def test_the_contracted_figure_keeps_its_shape(self):
+		"""The client reads it as the justification it is; only the words change."""
+		from one_fm.jinja.print_format.methods import pow_arabic_figure
+
+		self.assertEqual(
+			pow_arabic_figure("={145 staff * 30 days} = 4350 DAYS"),
+			"={١٤٥ موظف × ٣٠ يوم} = ٤٣٥٠ يوم",
+		)
+		self.assertEqual(
+			pow_arabic_figure("={95 staff * 208 hours} = 19760 HOURS"),
+			"={٩٥ موظف × ٢٠٨ ساعة} = ١٩٧٦٠ ساعة",
+		)
+
+	def test_the_worked_total_is_translated(self):
+		from one_fm.jinja.print_format.methods import pow_arabic_figure
+
+		self.assertEqual(pow_arabic_figure("3561 Days"), "٣٥٦١ يوم")
+		self.assertEqual(pow_arabic_figure("31236.00 hrs"), "٣١٢٣٦.٠٠ ساعة")
+
+	def test_a_line_nothing_recognises_is_left_alone(self):
+		"""A wrong translation of a figure is worse than an untranslated one."""
+		from one_fm.jinja.print_format.methods import pow_arabic_figure
+
+		self.assertEqual(pow_arabic_figure("Something nobody planned for"), "Something nobody planned for")
+		self.assertEqual(pow_arabic_figure(""), "")
+		self.assertEqual(pow_arabic_figure(None), "")
+
+	def test_the_or_separator_survives_translation(self):
+		from one_fm.jinja.print_format.methods import pow_letter_rows
+
+		doc = self._rows(("Security Guard", "62 Days\nOR\n496.00 hrs", "- 1 Staff worked 31 days: 31 Days"))
+		worked = pow_letter_rows(doc)[0]["worked"]
+
+		self.assertEqual(
+			worked,
+			[{"text": "٦٢ يوم"}, {"separator": True}, {"text": "٤٩٦.٠٠ ساعة"}],
+		)
+
+
+class TestAServiceNobodyWorkedIsNotOnTheLetter(FrappeTestCase):
+	"""WI-002399: the letter is a receipt for services received.
+
+	A Sale Item with no attendance in the period receipts nothing, and the client is not
+	asked to sign for it. The contracted figure is still true of it - it is just not what
+	this document is for.
+	"""
+
+	def _doc(self, *rows):
+		doc = frappe.new_doc("Proof of Work")
+		for item_type, worked in rows:
+			doc.append("proof_of_work_item", {"item_type": item_type, "actual_hours": worked})
+		return doc
+
+	def test_a_row_with_nothing_worked_is_dropped(self):
+		from one_fm.jinja.print_format.methods import pow_letter_rows
+
+		rows = pow_letter_rows(
+			self._doc(("_Test Idle Service", "0 Days"), ("_Test Worked Service", "254 Days"))
+		)
+
+		self.assertEqual([row["service"] for row in rows], ["_Test Worked Service"])
+
+	def test_both_halves_have_to_be_zero(self):
+		"""A row reported in both units is worked if either unit says so."""
+		from one_fm.jinja.print_format.methods import pow_letter_rows
+
+		worked = self._doc(("Guard", "0 Days\nOR\n496.00 hrs"))
+		nothing = self._doc(("Guard", "0 Days\nOR\n0.00 hrs"))
+
+		self.assertEqual(len(pow_letter_rows(worked)), 1)
+		self.assertEqual(pow_letter_rows(nothing), [])
+
+	def test_a_row_with_no_figure_at_all_is_kept(self):
+		"""The document cannot answer the question, and dropping a service the client
+		is paying for on a guess is the worse mistake."""
+		from one_fm.jinja.print_format.methods import pow_letter_rows
+
+		self.assertEqual(len(pow_letter_rows(self._doc(("Guard", "")))), 1)
+
+	def test_the_paragraph_does_not_announce_what_the_table_leaves_out(self):
+		from one_fm.jinja.print_format.methods import pow_item_types_arabic
+
+		doc = self._doc(("_Test Idle Service", "0 Days"), ("_Test Worked Service", "254 Days"))
+
+		self.assertEqual(pow_item_types_arabic(doc), "_Test Worked Service")
+
+
+class TestTheServicesAreNamedInArabic(FrappeTestCase):
+	"""WI-002399 Scenario 2: the paragraph names the Item Types in Arabic."""
+
+	def _doc(self, *item_types):
+		doc = frappe.new_doc("Proof of Work")
+		for item_type in item_types:
+			doc.append("proof_of_work_item", {"item_type": item_type})
+		return doc
+
+	def test_it_reads_the_translation_off_the_master(self):
+		from one_fm.jinja.print_format.methods import pow_item_types_arabic
+
+		for item_type, arabic in (("_Test Guard AR", "حارس أمن"), ("_Test Cleaner AR", "فراش")):
+			if not frappe.db.exists("Item Type", item_type):
+				frappe.get_doc(
+					{"doctype": "Item Type", "item_type": item_type, "arabic_name": arabic}
+				).insert(ignore_permissions=True, ignore_mandatory=True)
+
+		self.assertEqual(
+			pow_item_types_arabic(self._doc("_Test Guard AR", "_Test Cleaner AR")),
+			"حارس أمن - فراش",
+		)
+
+	def test_an_untranslated_type_falls_back_to_its_own_name(self):
+		"""An English word in an Arabic sentence is wrong; a blank where the service
+		should be is worse, and this is visible enough to get fixed."""
+		from one_fm.jinja.print_format.methods import pow_item_types_arabic
+
+		if not frappe.db.exists("Item Type", "_Test Untranslated"):
+			frappe.get_doc(
+				{"doctype": "Item Type", "item_type": "_Test Untranslated"}
+			).insert(ignore_permissions=True, ignore_mandatory=True)
+
+		self.assertEqual(pow_item_types_arabic(self._doc("_Test Untranslated")), "_Test Untranslated")
+
+	def test_a_type_with_no_master_row_still_prints(self):
+		"""item_type is a Data field copied off the Item, so a value with no Item Type
+		record behind it is possible."""
+		from one_fm.jinja.print_format.methods import pow_item_types_arabic
+
+		self.assertEqual(pow_item_types_arabic(self._doc("_Test No Master Row")), "_Test No Master Row")
+
+	def test_each_type_is_named_once(self):
+		from one_fm.jinja.print_format.methods import pow_item_types_arabic
+
+		self.assertEqual(
+			pow_item_types_arabic(self._doc("_Test No Master Row", "_Test No Master Row")),
+			"_Test No Master Row",
+		)
+
+	def test_no_items_names_nothing(self):
+		from one_fm.jinja.print_format.methods import pow_item_types_arabic
+
+		self.assertEqual(pow_item_types_arabic(self._doc()), "")
+
+	def test_the_letter_asks_for_the_arabic_names(self):
+		import json
+
+		path = frappe.get_app_path(
+			"one_fm", "one_fm", "print_format", "proof_of_work_letter",
+			"proof_of_work_letter.json",
+		)
+		html = json.loads(frappe.read_file(path))["html"]
+
+		self.assertIn("pow_item_types_arabic(doc)", html)
+		# The services read right-to-left now, so the Latin-direction span is gone.
+		self.assertIn("كشف اعتماد استلام خدمة ( {{ item_types }} )", html)

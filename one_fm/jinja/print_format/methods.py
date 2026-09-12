@@ -1,7 +1,10 @@
 import frappe, json
+import re
 from datetime import date, datetime
 from frappe.utils import cstr,month_diff,today,getdate,get_date_str,date_diff,add_years, cint, add_to_date, get_first_day, get_last_day, get_datetime, flt
 from frappe import _
+from frappe.query_builder import DocType
+from frappe.query_builder import functions as fn
 
 def get_approval_data(purchase_order):
     """
@@ -824,20 +827,29 @@ def pow_attendance_report(doc):
 #
 # Each heading is (Arabic, English); the Arabic is empty on the two columns that never
 # carried any.
+# WI-002399: the letter is submitted to a client in Arabic, so the headings carry no
+# English at all. The breakdown pair is the analyst's own wording, already in use. The
+# other four had no Arabic anywhere - neither in the code nor in the design document -
+# and are written to match it: عدد for a count, ايام/ساعات for the unit, بالشهر for the
+# contractual monthly figure, الفعلية for what was actually worked.
 LETTER_COLUMN_HEADINGS = {
 	"contractual": {
-		"days": ("", "Contractual Number of days per month"),
-		"hours": ("", "Contractual number of hours per month"),
+		"days": "عدد ايام العمل التعاقدية بالشهر",
+		"hours": "عدد ساعات العمل التعاقدية بالشهر",
 	},
 	"worked": {
-		"days": ("", "Total number Days worked"),
-		"hours": ("", "Total No of Hours worked"),
+		"days": "اجمالي عدد ايام العمل الفعلية",
+		"hours": "اجمالي عدد ساعات العمل الفعلية",
 	},
 	"breakdown": {
-		"days": ("اجمالي عدد ايام عمل", "Total Number of Days"),
-		"hours": ("اجمالي عدد ساعات عمل", "Total Number of Hours"),
+		"days": "اجمالي عدد ايام عمل",
+		"hours": "اجمالي عدد ساعات عمل",
 	},
 }
+
+# The separator between a column's two unit headings, and between the two figures in a
+# cell. Arabic, for the same reason.
+LETTER_OR = "أو"
 
 
 def pow_letter_headers(doc):
@@ -892,17 +904,284 @@ def _letter_units(doc):
 
 
 def _heading_lines(column, units):
-	"""The lines one column's heading is made of, with an OR between two units."""
+	"""The lines one column's heading is made of, with an أو between two units."""
 	headings = LETTER_COLUMN_HEADINGS[column]
 
 	lines = []
 	for unit in units:
 		if lines:
 			lines.append({"separator": True})
-		arabic, english = headings[unit]
-		lines.append({"ar": arabic, "en": english})
+		lines.append({"ar": headings[unit]})
 
 	return lines
+
+
+# WI-002399: Arabic-Indic digits. The letter is read in Arabic, and a Latin number
+# inside an Arabic line is a direction change the renderer has to resolve - which is
+# how the contract date reached a client as "25 / 02 /" on one line and "2026" on the
+# next. A number written in the same script as the sentence around it has nothing to
+# resolve. The client's name is the one thing that stays Latin, by Scenario 4.
+ARABIC_INDIC_DIGITS = str.maketrans("0123456789", "٠١٢٣٤٥٦٧٨٩")
+
+
+def pow_arabic_number(value) -> str:
+	"""``31`` as ``٣١``. Anything that is not a digit is left alone."""
+	return cstr(value if value is not None else "").translate(ARABIC_INDIC_DIGITS)
+
+
+def pow_arabic_date(value, pattern: str = "dd/MMM/yyyy") -> str:
+	"""A date in Arabic: Arabic month names and Arabic-Indic digits (WI-002399).
+
+	The pattern is unchanged - Scenario 5 asks for DD/MMM/YYYY and that is what this
+	writes - it is the script that changes, so 01/Jul/2026 is ٠١/يوليو/٢٠٢٦.
+	"""
+	if not value:
+		return ""
+
+	from babel.dates import format_date
+
+	return format_date(getdate(value), pattern, locale="ar").translate(ARABIC_INDIC_DIGITS)
+
+
+def pow_service_names_arabic(doc) -> dict:
+	"""Every service on the letter named in Arabic, keyed by the row's Item Type.
+
+	Three sources, tried in the order the wording is most likely to be the right one:
+
+	1. ``Item Type.arabic_name``. Somebody typed this for this exact service, so it
+	   wins over anything derived.
+	2. The PAM designation of the staff who actually worked that Sale Item in the
+	   period, reached through the Operations Role the way the figures themselves are.
+	   ``PAM Designation List`` is named by its Arabic designation, so the link on the
+	   Employee is already the Arabic word, and it is the government's own wording for
+	   what these people are employed as.
+	3. ``PAM Designation List`` read as a dictionary - the row whose English name is the
+	   Item Type. This covers a service that nobody worked in the period, where there is
+	   no employee to ask.
+
+	Anything still unresolved keeps its English name: an English word in an Arabic
+	sentence is wrong, but a blank where the service should be is worse, and the English
+	is visible enough to get somebody to fill the translation in.
+	"""
+	rows = [row for row in (doc.get("proof_of_work_item") or []) if (row.get("item_type") or "").strip()]
+	if not rows:
+		return {}
+
+	names = {}
+	for row in rows:
+		names.setdefault((row.get("item_type") or "").strip(), "")
+
+	for item_type, arabic in frappe.get_all(
+		"Item Type",
+		filters={"name": ["in", list(names)], "arabic_name": ["is", "set"]},
+		fields=["name", "arabic_name"],
+		as_list=True,
+	):
+		names[item_type] = arabic
+
+	if all(names.values()):
+		return names
+
+	by_sale_item = _pam_designation_by_sale_item(doc)
+	for row in rows:
+		item_type = (row.get("item_type") or "").strip()
+		if not names[item_type]:
+			names[item_type] = by_sale_item.get(row.get("sale_item_code")) or ""
+
+	untranslated = [item_type for item_type, arabic in names.items() if not arabic]
+	if untranslated:
+		for english, designation in frappe.get_all(
+			"PAM Designation List",
+			filters={"designation_name_english": ["in", untranslated]},
+			fields=["designation_name_english", "name"],
+			as_list=True,
+		):
+			if not names.get(english):
+				names[english] = designation
+
+	return {item_type: arabic or item_type for item_type, arabic in names.items()}
+
+
+def _pam_designation_by_sale_item(doc) -> dict:
+	"""The PAM designation most of a Sale Item's staff are registered under.
+
+	Most, not all: the same post is worked by a reliever off another designation often
+	enough that one employee cannot speak for the service. The attendance of the period
+	the letter reports is the same attendance its figures are built from, so the two
+	cannot disagree about who worked the item.
+	"""
+	if not (doc.get("project") and doc.get("start_date") and doc.get("end_date")):
+		return {}
+
+	# The link to PAM is a custom field, and a site part way through an install has been
+	# known to be without one. The letter still prints; the services keep their English.
+	if not frappe.db.has_column("Employee", "one_fm_pam_designation"):
+		return {}
+
+	Attendance = DocType("Attendance")
+	Role = DocType("Operations Role")
+	Employee = DocType("Employee")
+
+	counts = (
+		frappe.qb.from_(Attendance)
+		.join(Role)
+		.on(Attendance.operations_role == Role.name)
+		.join(Employee)
+		.on(Employee.name == Attendance.employee)
+		.select(
+			Role.sale_item.as_("sale_item"),
+			Employee.one_fm_pam_designation.as_("designation"),
+			fn.Count(Attendance.employee).distinct().as_("staff"),
+		)
+		.where(
+			(Attendance.docstatus == 1)
+			& (Attendance.project == doc.get("project"))
+			& (Attendance.attendance_date >= getdate(doc.get("start_date")))
+			& (Attendance.attendance_date <= getdate(doc.get("end_date")))
+			& (Employee.one_fm_pam_designation.isnotnull())
+			& (Employee.one_fm_pam_designation != "")
+		)
+		.groupby(Role.sale_item, Employee.one_fm_pam_designation)
+	).run(as_dict=True)
+
+	return _majority_designation(counts)
+
+
+def _majority_designation(counts) -> dict:
+	"""The designation with the most staff behind it, per Sale Item.
+
+	A tie is broken on the designation itself, so two designations with the same head
+	count always pick the same one rather than whichever the database listed first.
+	"""
+	best = {}
+	for row in counts:
+		if not (row.get("sale_item") and row.get("designation")):
+			continue
+
+		key = (cint(row.get("staff")), cstr(row.get("designation")))
+		if key > best.get(row["sale_item"], ((0, ""), ""))[0]:
+			best[row["sale_item"]] = (key, row["designation"])
+
+	return {sale_item: designation for sale_item, (_key, designation) in best.items()}
+
+
+# WI-002399: the figures in the table are written in English by the generator, because
+# that is also what the desk shows and what every other report of the same numbers says.
+# The letter is the one place they are read in Arabic, so they are translated here, on
+# the way to the page, rather than at the source - nothing else that reads these fields
+# changes, and a Proof of Work generated last year prints the same as one generated
+# today.
+#
+# Each pattern is one of the lines proof_of_work.py writes; a line that matches none of
+# them is left exactly as it is, because a wrong translation of a figure is worse than
+# an untranslated one.
+FIGURE_PATTERNS = (
+	(
+		re.compile(r"^-\s*([\d.]+)\s+Staff worked\s+([\d.]+)\s+days:\s*([\d.]+)\s+Days$"),
+		"- {0} موظف عملوا {1} يوم: {2} يوم",
+	),
+	(
+		re.compile(r"^-\s*([\d.]+)\s+Staff worked\s+([\d.]+)\s+Hours:\s*([\d.]+)\s+Hrs$"),
+		"- {0} موظف عملوا {1} ساعة: {2} ساعة",
+	),
+	(
+		re.compile(r"^=\{([\d.]+)\s+staff\s*\*\s*([\d.]+)\s+days\}\s*=\s*([\d.]+)\s+DAYS$"),
+		"={{{0} موظف × {1} يوم}} = {2} يوم",
+	),
+	(
+		re.compile(r"^=\{([\d.]+)\s+staff\s*\*\s*([\d.]+)\s+hours\}\s*=\s*([\d.]+)\s+HOURS$"),
+		"={{{0} موظف × {1} ساعة}} = {2} ساعة",
+	),
+	(re.compile(r"^([\d.]+)\s+Days$"), "{0} يوم"),
+	(re.compile(r"^([\d.]+)\s+hrs$"), "{0} ساعة"),
+)
+
+# The generator writes this through _(), so a site that generated its documents in
+# another language has another string here. Only the English is recognised, and anything
+# unrecognised is printed as it stands.
+NO_ATTENDANCE_EN = "No attendance recorded for this item in the period."
+NO_ATTENDANCE_AR = "لا يوجد حضور مسجل لهذا البند خلال الفترة"
+
+
+def pow_arabic_figure(line: str) -> str:
+	"""One line of the table, in Arabic (WI-002399)."""
+	line = cstr(line).strip()
+	if not line:
+		return ""
+
+	if line == NO_ATTENDANCE_EN:
+		return NO_ATTENDANCE_AR
+
+	for pattern, arabic in FIGURE_PATTERNS:
+		match = pattern.match(line)
+		if match:
+			return pow_arabic_number(arabic.format(*match.groups()))
+
+	return line
+
+
+def pow_letter_rows(doc) -> list:
+	"""The letter's table, ready to print: named, translated, and only what was worked.
+
+	A Sale Item that nobody worked in the period is left out. The contracted figure is
+	still true of it, but the letter is a receipt for services received, and a row that
+	receipts nothing is a row the client is asked to sign for nothing.
+	"""
+	names = pow_service_names_arabic(doc)
+
+	rows = []
+	for row in doc.get("proof_of_work_item") or []:
+		if _nothing_was_worked(row):
+			continue
+
+		item_type = (row.get("item_type") or "").strip()
+		rows.append(
+			{
+				"service": names.get(item_type) or item_type,
+				"contractual": _arabic_lines(row.get("contractual_hours")),
+				"worked": _arabic_lines(row.get("actual_hours")),
+				"breakdown": _arabic_lines(row.get("staff_breakdown")),
+			}
+		)
+
+	return rows
+
+
+def _nothing_was_worked(row) -> bool:
+	"""True when every figure in the row's worked column is zero.
+
+	Read off the figure rather than off the breakdown text, because the breakdown's
+	"nothing recorded" sentence is translatable and a site could have generated it in
+	any language. A row with no figure at all is kept: that is a document that cannot
+	answer the question, and dropping a service on a guess is the worse mistake.
+	"""
+	figures = re.findall(r"\d+(?:\.\d+)?", cstr(row.get("actual_hours")))
+
+	return bool(figures) and all(flt(figure) == 0 for figure in figures)
+
+
+def _arabic_lines(text) -> list:
+	"""A column's stored text as the lines the letter prints, separators marked."""
+	lines = []
+	for line in cstr(text).split("\n"):
+		if line.strip() == "OR":
+			lines.append({"separator": True})
+		elif line.strip():
+			lines.append({"text": pow_arabic_figure(line)})
+
+	return lines
+
+
+def pow_item_types_arabic(doc) -> str:
+	"""The contract's services in Arabic, for the letter's opening paragraph (WI-002399).
+
+	The services the table lists, and only those: a service nobody worked is not on the
+	table, so the paragraph does not announce it either. Two Item Types can also land on
+	one Arabic designation - Janitor and Cleaner are both فراش to PAM - and the paragraph
+	lists services, not rows, so it names each one once.
+	"""
+	return " - ".join(dict.fromkeys(row["service"] for row in pow_letter_rows(doc)))
+
 
 
 def pow_logo_src():
