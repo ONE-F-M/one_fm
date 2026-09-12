@@ -1331,8 +1331,8 @@ class TestTheLetterIsArabicOnly(FrappeTestCase):
 		"""Scenario 5: 01/Oct/2024, not 01/10/2024."""
 		html = self._letter()["html"]
 
-		self.assertIn('formatdate(doc.start_date, "dd/MMM/yyyy")', html)
-		self.assertIn('formatdate(doc.end_date, "dd/MMM/yyyy")', html)
+		self.assertIn('ar_date(doc.start_date, "dd/MMM/yyyy")', html)
+		self.assertIn('ar_date(doc.end_date, "dd/MMM/yyyy")', html)
 		self.assertNotIn('"dd/MM/yyyy"', html)
 
 	def test_the_contract_start_date_is_still_fetched(self):
@@ -1412,10 +1412,205 @@ class TestTheLetterLinesUp(FrappeTestCase):
 
 	def test_the_service_column_is_named_in_arabic(self):
 		"""Scenario 2's translation, in the column that repeats it on every row."""
-		self.assertIn(
-			'frappe.db.get_value("Item Type", row.item_type, "arabic_name") or row.item_type',
-			self._letter()["html"],
+		self.assertIn("service_names.get(row.item_type) or row.item_type", self._letter()["html"])
+		self.assertIn("pow_service_names_arabic(doc)", self._letter()["html"])
+
+
+class TestTheLetterIsWrittenInArabicNumerals(FrappeTestCase):
+	"""WI-002399: a Latin number inside an Arabic line is a direction change.
+
+	That is what broke the header: the renderer resolved it by putting the date on a
+	line of its own at the far side of the page. A number in the same script as the
+	sentence around it has nothing to resolve, so the dates and the day count are
+	written in Arabic-Indic digits. The client's name stays Latin - Scenario 4 says so -
+	and it is the only Latin run left in the letter's header.
+	"""
+
+	def _letter(self):
+		import json
+
+		path = frappe.get_app_path(
+			"one_fm", "one_fm", "print_format", "proof_of_work_letter",
+			"proof_of_work_letter.json",
 		)
+		return json.loads(frappe.read_file(path))
+
+	def test_a_number_is_written_in_arabic_digits(self):
+		from one_fm.jinja.print_format.methods import pow_arabic_number
+
+		self.assertEqual(pow_arabic_number(31), "٣١")
+		self.assertEqual(pow_arabic_number("2026"), "٢٠٢٦")
+		self.assertEqual(pow_arabic_number(None), "")
+
+	def test_the_period_date_keeps_its_pattern_and_changes_its_script(self):
+		"""Scenario 5 asks for DD/MMM/YYYY; this is that pattern in Arabic."""
+		from one_fm.jinja.print_format.methods import pow_arabic_date
+
+		self.assertEqual(pow_arabic_date("2026-07-01"), "٠١/يوليو/٢٠٢٦")
+		self.assertEqual(pow_arabic_date("2026-01-31"), "٣١/يناير/٢٠٢٦")
+
+	def test_the_contract_date_is_the_numeric_pattern(self):
+		from one_fm.jinja.print_format.methods import pow_arabic_date
+
+		self.assertEqual(pow_arabic_date("2026-02-25", "dd / MM / yyyy"), "٢٥ / ٠٢ / ٢٠٢٦")
+
+	def test_a_missing_date_prints_nothing_rather_than_today(self):
+		from one_fm.jinja.print_format.methods import pow_arabic_date
+
+		self.assertEqual(pow_arabic_date(None), "")
+		self.assertEqual(pow_arabic_date(""), "")
+
+	def test_the_letter_writes_every_date_and_count_through_the_helpers(self):
+		html = self._letter()["html"]
+
+		self.assertIn('ar_date(doc.current_contract_start_date, "dd / MM / yyyy")', html)
+		self.assertIn("ar_num(frappe.utils.date_diff(doc.end_date, doc.start_date) + 1)", html)
+
+	def test_only_the_client_name_is_left_in_a_latin_run(self):
+		"""Every .en span that wrapped a date is gone, because the dates are Arabic."""
+		html = self._letter()["html"]
+
+		self.assertEqual(html.count('class="en"'), 1)
+		self.assertIn('<span class="en">{{ customer_name }}</span>', html)
+
+
+class TestTheServiceNameIsResolvedOnce(FrappeTestCase):
+	"""WI-002399: where the Arabic for a service comes from, and in what order.
+
+	Item Type.arabic_name is somebody's own wording for this exact service, so it wins.
+	Below it are two readings of PAM: what the staff on the Sale Item are registered as,
+	and the designation list read as an English-to-Arabic dictionary.
+	"""
+
+	def _doc(self, *rows):
+		doc = frappe.new_doc("Proof of Work")
+		for item_type, sale_item in rows:
+			doc.append("proof_of_work_item", {"item_type": item_type, "sale_item_code": sale_item})
+		return doc
+
+	def _item_type(self, name, arabic=None):
+		if not frappe.db.exists("Item Type", name):
+			frappe.get_doc(
+				{"doctype": "Item Type", "item_type": name, "arabic_name": arabic}
+			).insert(ignore_permissions=True, ignore_mandatory=True)
+
+	def test_a_typed_translation_beats_the_derived_one(self):
+		from unittest.mock import patch
+
+		from one_fm.jinja.print_format.methods import pow_service_names_arabic
+
+		self._item_type("_Test Typed AR", "حارس أمن")
+
+		with patch(
+			"one_fm.jinja.print_format.methods._pam_designation_by_sale_item",
+			return_value={"_TEST-SALE-1": "فراش"},
+		) as derived:
+			names = pow_service_names_arabic(self._doc(("_Test Typed AR", "_TEST-SALE-1")))
+
+		self.assertEqual(names["_Test Typed AR"], "حارس أمن")
+		derived.assert_not_called()
+
+	def test_an_untyped_service_takes_the_designation_of_its_staff(self):
+		from unittest.mock import patch
+
+		from one_fm.jinja.print_format.methods import pow_service_names_arabic
+
+		self._item_type("_Test Untyped AR")
+
+		with patch(
+			"one_fm.jinja.print_format.methods._pam_designation_by_sale_item",
+			return_value={"_TEST-SALE-2": "فراش"},
+		):
+			names = pow_service_names_arabic(self._doc(("_Test Untyped AR", "_TEST-SALE-2")))
+
+		self.assertEqual(names["_Test Untyped AR"], "فراش")
+
+	def test_a_service_nobody_worked_falls_back_to_the_designation_list(self):
+		"""No attendance in the period, so there is no employee to ask - but PAM still
+		knows what the job is called."""
+		from unittest.mock import patch
+
+		from one_fm.jinja.print_format.methods import pow_service_names_arabic
+
+		self._item_type("_Test Dictionary AR")
+		if not frappe.db.exists("PAM Designation List", "_تجربة فراش"):
+			frappe.get_doc(
+				{
+					"doctype": "PAM Designation List",
+					"designation_name_english": "_Test Dictionary AR",
+					"designation_name_arabic": "_تجربة فراش",
+					"designation_code": "_TEST-001",
+				}
+			).insert(ignore_permissions=True, ignore_mandatory=True)
+
+		with patch(
+			"one_fm.jinja.print_format.methods._pam_designation_by_sale_item", return_value={}
+		):
+			names = pow_service_names_arabic(self._doc(("_Test Dictionary AR", "_TEST-SALE-3")))
+
+		self.assertEqual(names["_Test Dictionary AR"], "_تجربة فراش")
+
+	def test_a_service_nothing_knows_keeps_its_english(self):
+		from unittest.mock import patch
+
+		from one_fm.jinja.print_format.methods import pow_service_names_arabic
+
+		with patch(
+			"one_fm.jinja.print_format.methods._pam_designation_by_sale_item", return_value={}
+		):
+			names = pow_service_names_arabic(self._doc(("_Test Nothing Knows", "_TEST-SALE-4")))
+
+		self.assertEqual(names["_Test Nothing Knows"], "_Test Nothing Knows")
+
+	def test_the_paragraph_names_a_shared_designation_once(self):
+		"""Janitor and Cleaner are both فراش to PAM, and the paragraph lists services."""
+		from unittest.mock import patch
+
+		from one_fm.jinja.print_format.methods import pow_item_types_arabic
+
+		with patch(
+			"one_fm.jinja.print_format.methods.pow_service_names_arabic",
+			return_value={"Janitor": "فراش", "Cleaner": "فراش", "Security Guard": "حارس أمن"},
+		):
+			self.assertEqual(pow_item_types_arabic(self._doc()), "فراش - حارس أمن")
+
+	def test_the_designation_of_the_most_staff_speaks_for_the_service(self):
+		"""One reliever off another designation cannot rename the whole service."""
+		from one_fm.jinja.print_format.methods import _majority_designation
+
+		counts = [
+			{"sale_item": "SALE-1", "designation": "فراش", "staff": 2},
+			{"sale_item": "SALE-1", "designation": "حارس أمن", "staff": 71},
+			{"sale_item": "SALE-2", "designation": "حارس أمن", "staff": 3},
+		]
+
+		self.assertEqual(
+			_majority_designation(counts), {"SALE-1": "حارس أمن", "SALE-2": "حارس أمن"}
+		)
+
+	def test_a_tie_is_broken_on_something_stable(self):
+		"""Whichever order the rows arrive in, the same designation comes out."""
+		from one_fm.jinja.print_format.methods import _majority_designation
+
+		counts = [
+			{"sale_item": "SALE-1", "designation": "فراش", "staff": 4},
+			{"sale_item": "SALE-1", "designation": "حارس أمن", "staff": 4},
+		]
+
+		self.assertEqual(
+			_majority_designation(counts), _majority_designation(list(reversed(counts)))
+		)
+
+	def test_a_row_with_no_designation_is_ignored(self):
+		from one_fm.jinja.print_format.methods import _majority_designation
+
+		counts = [
+			{"sale_item": "SALE-1", "designation": None, "staff": 90},
+			{"sale_item": "SALE-1", "designation": "حارس أمن", "staff": 1},
+			{"sale_item": None, "designation": "حارس أمن", "staff": 5},
+		]
+
+		self.assertEqual(_majority_designation(counts), {"SALE-1": "حارس أمن"})
 
 
 class TestTheServicesAreNamedInArabic(FrappeTestCase):

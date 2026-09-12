@@ -2,6 +2,8 @@ import frappe, json
 from datetime import date, datetime
 from frappe.utils import cstr,month_diff,today,getdate,get_date_str,date_diff,add_years, cint, add_to_date, get_first_day, get_last_day, get_datetime, flt
 from frappe import _
+from frappe.query_builder import DocType
+from frappe.query_builder import functions as fn
 
 def get_approval_data(purchase_order):
     """
@@ -913,33 +915,165 @@ def _heading_lines(column, units):
 	return lines
 
 
-def pow_item_types_arabic(doc) -> str:
-	"""The contract's Item Types in Arabic, for the letter's opening paragraph (WI-002399).
+# WI-002399: Arabic-Indic digits. The letter is read in Arabic, and a Latin number
+# inside an Arabic line is a direction change the renderer has to resolve - which is
+# how the contract date reached a client as "25 / 02 /" on one line and "2026" on the
+# next. A number written in the same script as the sentence around it has nothing to
+# resolve. The client's name is the one thing that stays Latin, by Scenario 4.
+ARABIC_INDIC_DIGITS = str.maketrans("0123456789", "٠١٢٣٤٥٦٧٨٩")
 
-	Read from Item Type.arabic_name rather than a mapping in here, so a new type is
-	translated by the person who adds it instead of by a deploy. A type with nothing
-	filled in falls back to its own name: an English word in an Arabic sentence is
-	wrong, but a blank where the service should be is worse, and the fallback is
-	visible enough to get fixed.
+
+def pow_arabic_number(value) -> str:
+	"""``31`` as ``٣١``. Anything that is not a digit is left alone."""
+	return cstr(value if value is not None else "").translate(ARABIC_INDIC_DIGITS)
+
+
+def pow_arabic_date(value, pattern: str = "dd/MMM/yyyy") -> str:
+	"""A date in Arabic: Arabic month names and Arabic-Indic digits (WI-002399).
+
+	The pattern is unchanged - Scenario 5 asks for DD/MMM/YYYY and that is what this
+	writes - it is the script that changes, so 01/Jul/2026 is ٠١/يوليو/٢٠٢٦.
 	"""
-	names = []
-	for row in doc.get("proof_of_work_item") or []:
-		item_type = (row.get("item_type") or "").strip()
-		if item_type and item_type not in names:
-			names.append(item_type)
-
-	if not names:
+	if not value:
 		return ""
 
-	arabic = dict(
-		frappe.get_all(
-			"Item Type",
-			filters={"name": ["in", names]},
-			fields=["name", "arabic_name"],
+	from babel.dates import format_date
+
+	return format_date(getdate(value), pattern, locale="ar").translate(ARABIC_INDIC_DIGITS)
+
+
+def pow_service_names_arabic(doc) -> dict:
+	"""Every service on the letter named in Arabic, keyed by the row's Item Type.
+
+	Three sources, tried in the order the wording is most likely to be the right one:
+
+	1. ``Item Type.arabic_name``. Somebody typed this for this exact service, so it
+	   wins over anything derived.
+	2. The PAM designation of the staff who actually worked that Sale Item in the
+	   period, reached through the Operations Role the way the figures themselves are.
+	   ``PAM Designation List`` is named by its Arabic designation, so the link on the
+	   Employee is already the Arabic word, and it is the government's own wording for
+	   what these people are employed as.
+	3. ``PAM Designation List`` read as a dictionary - the row whose English name is the
+	   Item Type. This covers a service that nobody worked in the period, where there is
+	   no employee to ask.
+
+	Anything still unresolved keeps its English name: an English word in an Arabic
+	sentence is wrong, but a blank where the service should be is worse, and the English
+	is visible enough to get somebody to fill the translation in.
+	"""
+	rows = [row for row in (doc.get("proof_of_work_item") or []) if (row.get("item_type") or "").strip()]
+	if not rows:
+		return {}
+
+	names = {}
+	for row in rows:
+		names.setdefault((row.get("item_type") or "").strip(), "")
+
+	for item_type, arabic in frappe.get_all(
+		"Item Type",
+		filters={"name": ["in", list(names)], "arabic_name": ["is", "set"]},
+		fields=["name", "arabic_name"],
+		as_list=True,
+	):
+		names[item_type] = arabic
+
+	if all(names.values()):
+		return names
+
+	by_sale_item = _pam_designation_by_sale_item(doc)
+	for row in rows:
+		item_type = (row.get("item_type") or "").strip()
+		if not names[item_type]:
+			names[item_type] = by_sale_item.get(row.get("sale_item_code")) or ""
+
+	untranslated = [item_type for item_type, arabic in names.items() if not arabic]
+	if untranslated:
+		for english, designation in frappe.get_all(
+			"PAM Designation List",
+			filters={"designation_name_english": ["in", untranslated]},
+			fields=["designation_name_english", "name"],
 			as_list=True,
+		):
+			if not names.get(english):
+				names[english] = designation
+
+	return {item_type: arabic or item_type for item_type, arabic in names.items()}
+
+
+def _pam_designation_by_sale_item(doc) -> dict:
+	"""The PAM designation most of a Sale Item's staff are registered under.
+
+	Most, not all: the same post is worked by a reliever off another designation often
+	enough that one employee cannot speak for the service. The attendance of the period
+	the letter reports is the same attendance its figures are built from, so the two
+	cannot disagree about who worked the item.
+	"""
+	if not (doc.get("project") and doc.get("start_date") and doc.get("end_date")):
+		return {}
+
+	# The link to PAM is a custom field, and a site part way through an install has been
+	# known to be without one. The letter still prints; the services keep their English.
+	if not frappe.db.has_column("Employee", "one_fm_pam_designation"):
+		return {}
+
+	Attendance = DocType("Attendance")
+	Role = DocType("Operations Role")
+	Employee = DocType("Employee")
+
+	counts = (
+		frappe.qb.from_(Attendance)
+		.join(Role)
+		.on(Attendance.operations_role == Role.name)
+		.join(Employee)
+		.on(Employee.name == Attendance.employee)
+		.select(
+			Role.sale_item.as_("sale_item"),
+			Employee.one_fm_pam_designation.as_("designation"),
+			fn.Count(Attendance.employee).distinct().as_("staff"),
 		)
-	)
-	return " - ".join(arabic.get(name) or name for name in names)
+		.where(
+			(Attendance.docstatus == 1)
+			& (Attendance.project == doc.get("project"))
+			& (Attendance.attendance_date >= getdate(doc.get("start_date")))
+			& (Attendance.attendance_date <= getdate(doc.get("end_date")))
+			& (Employee.one_fm_pam_designation.isnotnull())
+			& (Employee.one_fm_pam_designation != "")
+		)
+		.groupby(Role.sale_item, Employee.one_fm_pam_designation)
+	).run(as_dict=True)
+
+	return _majority_designation(counts)
+
+
+def _majority_designation(counts) -> dict:
+	"""The designation with the most staff behind it, per Sale Item.
+
+	A tie is broken on the designation itself, so two designations with the same head
+	count always pick the same one rather than whichever the database listed first.
+	"""
+	best = {}
+	for row in counts:
+		if not (row.get("sale_item") and row.get("designation")):
+			continue
+
+		key = (cint(row.get("staff")), cstr(row.get("designation")))
+		if key > best.get(row["sale_item"], ((0, ""), ""))[0]:
+			best[row["sale_item"]] = (key, row["designation"])
+
+	return {sale_item: designation for sale_item, (_key, designation) in best.items()}
+
+
+def pow_item_types_arabic(doc) -> str:
+	"""The contract's services in Arabic, for the letter's opening paragraph (WI-002399).
+
+	Two Item Types can land on one Arabic designation - Janitor and Cleaner are both
+	فراش to PAM - and the paragraph lists services, not rows, so it names each one once.
+	"""
+	names = pow_service_names_arabic(doc)
+
+	return " - ".join(dict.fromkeys(names.values()))
+
 
 
 def pow_logo_src():

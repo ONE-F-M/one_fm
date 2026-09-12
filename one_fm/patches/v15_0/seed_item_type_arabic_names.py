@@ -1,15 +1,12 @@
-"""WI-002399: the Item Type translations the Proof of Work letter needs today.
+"""WI-002399: the two Item Type translations the design document supplies.
 
-The letter names the contract's services in Arabic, read from Item Type.arabic_name.
-Security Guard and Cleaner are the design document's own examples. Tea Boy was added
-after the letter went out with "Tea Boy" printed in English in the middle of the Arabic
-paragraph - it is the only other type any Proof of Work uses, and عامل ضيافة is the
-contract wording for the role. Nothing else is seeded: the rest are for whoever knows
-the wording to fill in, which is why the field is on the master rather than in a mapping
-in the code, and why anyone can correct the wording without a deploy.
+The Proof of Work letter names the contract's services in Arabic, read from
+Item Type.arabic_name. Only these two are written down anywhere - Security Guard and
+Cleaner, from the letter's own example - so only these two are seeded; the rest are for
+whoever knows the wording to fill in, which is why the field is on the master rather
+than in a mapping in the code.
 
-Only fills what is empty. A translation somebody has already typed is theirs, so this
-re-runs safely.
+Only fills what is empty. A translation somebody has already typed is theirs.
 """
 
 import frappe
@@ -17,7 +14,6 @@ import frappe
 ARABIC_NAMES = {
 	"Security Guard": "حارس أمن",
 	"Cleaner": "فراش",
-	"Tea Boy": "عامل ضيافة",
 }
 
 

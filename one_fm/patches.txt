@@ -613,4 +613,4 @@ one_fm.patches.v15_0.drop_erf_field_order_property_setter #2026-09-06b WI-002316
 one_fm.patches.v15_0.retire_unplanned_erf_reason #2026-09-06 WI-002316
 one_fm.patches.v15_0.seed_item_type_arabic_names #2026-09-07 WI-002399
 one_fm.patches.v15_0.rename_duplicate_trip_names #2026-09-07 WI-002401
-one_fm.patches.v15_0.seed_item_type_arabic_names #2026-09-11 WI-002399
+one_fm.patches.v15_0.drop_seeded_tea_boy_arabic_name #2026-09-12 WI-002399

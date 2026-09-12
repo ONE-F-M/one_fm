@@ -958,9 +958,12 @@ jenv = {
         # WI-001983: the Letter's figure columns are headed after the units the contract
         # bills in, decided by the Contract Item Rate Type.
         "pow_letter_headers:one_fm.jinja.print_format.methods.pow_letter_headers",
-        # WI-002399: the letter's opening paragraph names the services in Arabic, taken
-        # from Item Type.arabic_name.
-        "pow_item_types_arabic:one_fm.jinja.print_format.methods.pow_item_types_arabic"
+        # WI-002399: the letter is read in Arabic - the services are named in Arabic,
+        # and so are the dates and the day counts.
+        "pow_item_types_arabic:one_fm.jinja.print_format.methods.pow_item_types_arabic",
+        "pow_service_names_arabic:one_fm.jinja.print_format.methods.pow_service_names_arabic",
+        "pow_arabic_date:one_fm.jinja.print_format.methods.pow_arabic_date",
+        "pow_arabic_number:one_fm.jinja.print_format.methods.pow_arabic_number"
     ],
     "filters": [
         # "xmul:one_fm.jinja.methods.xmultiply"
