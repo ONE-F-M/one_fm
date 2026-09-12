@@ -8,6 +8,37 @@ from frappe.utils import cint
 
 TRIP_REQUEST = "Trip Request"
 
+# WI-002306: the designations that mean "this person drives the bus", so they are
+# never booked onto one as a passenger. A driver on a passenger card is a seat
+# counted twice and a dispatcher scheduling somebody who is already working the run.
+#
+# The story says "designation == Driver", but that designation has no active
+# employees - the 24 real drivers are Bus, Heavy and Light. Held as one list, agreed
+# with the process owner, so adding a fifth is a one-line change rather than a hunt
+# through three modules.
+DRIVER_DESIGNATIONS = ("Driver", "Bus Driver", "Heavy Driver", "Light Driver")
+
+
+def driver_employees(employee_ids) -> set:
+    """Which of these employees drive, so they can be left off passenger cards.
+
+    One query for the whole set rather than a designation lookup per rider: this runs
+    once per generation pass over every shift roster on site, and once more each time
+    the canvas loads its cards.
+    """
+    employee_ids = [e for e in set(employee_ids or []) if e]
+    if not employee_ids:
+        return set()
+
+    return {
+        row.name
+        for row in frappe.get_all(
+            "Employee",
+            filters={"name": ["in", employee_ids], "designation": ["in", DRIVER_DESIGNATIONS]},
+            fields=["name"],
+        )
+    }
+
 
 class TransportationShipment(Document):
 	def validate(self):
@@ -51,9 +82,9 @@ class TransportationShipment(Document):
 					self.from_date = trq.from_date
 				if not self.to_date:
 					self.to_date = trq.to_date
-				if not self.start_time:
+				if time_is_blank(self.start_time):
 					self.start_time = trq.departure_time
-				if not self.end_time:
+				if time_is_blank(self.end_time):
 					self.end_time = trq.return_time
 
 		if not self.stop_location:
@@ -293,6 +324,28 @@ def arrival_order(shipment):
 	return (arrival is None, arrival or 0, boards, shipment.name)
 
 
+def run_order(shipment, placed=None):
+	"""Sort key placing a run's cards in the order the OPERATOR has them.
+
+	A run's order used to be re-derived from each card's own shift times
+	(`arrival_order`) by every reader. That kept the trip modal and the save in step, but
+	it made the drawer's drag-to-reorder cosmetic: the operator moved a stop, its block
+	moved with it, and then the modal, the itinerary, the leg walk and the manifest all
+	put the run back into shift order (WI-002401).
+
+	`placed` is the second of the day the block actually sits at on the lane - the time
+	the operator has the bus at that stop - and it wins when there is one. Callers pass
+	it from the plan row the card is on, using whichever ISO parser they already have; a
+	card with no placement falls back to `arrival_order`, so a run nobody has ordered by
+	hand still reads sensibly.
+
+	The tie-breaks stay `arrival_order`'s, so two stops the operator has at the same
+	minute are still served drop-off first - the seats one load vacates are what the next
+	load boards into.
+	"""
+	return (placed is None, placed or 0) + arrival_order(shipment)
+
+
 @frappe.whitelist()
 def merge_trip_shipments(shipments) -> dict:
 	"""Merge two or more cards into a single Mixed trip (WI-002071).
@@ -319,7 +372,9 @@ def merge_trip_shipments(shipments) -> dict:
 	for doc in docs:
 		doc.check_permission("write")
 
-	docs.sort(key=arrival_order)
+	# In the order the caller listed them. The canvas sends the run as the operator has
+	# it in the drawer, so re-sorting here on the cards' own shift times threw away a
+	# drag-to-reorder the moment it was confirmed (WI-002401).
 	trip_group = merge_key([doc.name for doc in docs])
 	direction = run_direction(docs)
 
@@ -356,6 +411,18 @@ def merge_trip_shipments(shipments) -> dict:
 			for index, doc in enumerate(docs, start=1)
 		],
 	}
+
+
+def time_is_blank(value) -> bool:
+	"""Whether a Frappe Time field was left unset.
+
+	Not the same as falsy. Midnight comes back as ``timedelta(0)``, so ``if not
+	end_time`` reads a shift that finishes at 00:00 as one with no finish recorded at
+	all - and the literal fallback further down the ``or`` chain then advertised a
+	12:00-00:00 afternoon card as finishing at 18:00 (WI-002401 AC9). Every reader of
+	one of these fields has to ask whether it was STATED, not whether it is non-zero.
+	"""
+	return value is None or value == ""
 
 
 def _seconds_into_day(value) -> int | None:
@@ -536,9 +603,10 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 	uses, so the seat count the operator is shown is the one the save will judge them by -
 	two implementations would drift and the modal would promise a merge the save refuses.
 
-	Each shipment becomes one stop container. A stop where riders both leave and join is
-	two containers, because a drop-off and a boarding are two things the driver does even
-	when they happen in one place, and the same holds for a stop the run returns to later.
+	Each visit the bus makes is one stop container, carrying both of the movements that
+	can happen there: a drop-off and a boarding are two things the driver does, and a
+	handover stop does both in one place. A stop the run returns to later is a separate
+	visit and so a separate container.
 
 	`timings` optionally carries the per-leg transit and buffer minutes the operator has
 	adjusted, keyed by shipment or by card id; the returned departs/arrives stamps are
@@ -564,7 +632,9 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 	docs = [frappe.get_doc("Transportation Shipment", name) for name in names]
 	for doc in docs:
 		doc.check_permission("read")
-	docs.sort(key=arrival_order)
+	# In the order the caller listed them - see merge_trip_shipments. The preview and the
+	# merge have to build the same run out of the same cards, so both honour the order
+	# rather than re-deriving one.
 
 	limit = (
 		frappe.db.get_value("Vehicle", vehicle, "custom_max_passenger_capacity") if vehicle else None
@@ -688,9 +758,13 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 			"shift_location": ", ".join(shift_places) or None,
 			"action": stop["action_type"],
 			"action_type": stop["action_type"],
+			# Both movements, always. A single collapsed "headcount" used to be sent
+			# alongside these - boarding_count or drop_off_count, whichever was
+			# non-zero - and a stop that does both has no such number: reading it made
+			# the modal announce one movement's label against the other's count
+			# (WI-002401). Anything showing a stop reads the two counts.
 			"boarding_count": stop["boarding_count"],
 			"drop_off_count": stop["drop_off_count"],
-			"headcount": stop["boarding_count"] or stop["drop_off_count"],
 			"boards": bool(stop["boarding"]),
 			"boarding_cards": len(stop["boarding"]),
 			"cards": [doc.name for doc in serving],
