@@ -1860,7 +1860,13 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             tripEndsAt() {
-                return this.selectedTripLegs.arrival || this.lastStopEndsAt();
+                // The blocks first, the stored arrival only for a run that has none left
+                // to read. They are the same moment - a block ends when the bus reaches
+                // the next place, so the last one ends at the camp it goes home to - but
+                // the stored value is a copy, and a copy can be left behind by anything
+                // that shortens the run. That is what had a run that lost a stop still
+                // reading "13:00 -> 14:21 (81 min)" over blocks that ended at 14:11.
+                return this.lastStopEndsAt() || this.selectedTripLegs.arrival;
             },
 
             // A stored Time reads back as HH:MM:SS; the drawer shows clock times.
@@ -2928,15 +2934,89 @@ function mountRoutePlannerApp(wrapper, data) {
                 ]);
             },
 
+            // Take the time a departed stop was using back off the run (WI-002401).
+            //
+            // The bus no longer calls there, so everything it did afterwards happens that
+            // much earlier and the run is over that much sooner. Without this the blocks
+            // after the removed one kept their old positions, a hole was left where the
+            // stop had been, and the drawer went on reading the run's stored arrival - so
+            // a three-stop run that lost a stop still said "13:00 -> 14:21 (81 min)".
+            //
+            // The stops are MOVED rather than re-timed: _retimeTrip chains one stop after
+            // another, which would pull apart the two blocks of a combined stop (one visit
+            // where some riders get off and others get on) - they share a window on
+            // purpose. For the same reason nothing is freed while another stop still
+            // occupies the window: the bus is still standing there and there is no hole.
+            //
+            // The departure is left where it is. It is a decision the dispatcher typed
+            // into the Trip Builder, and the camp leg that follows it is unchanged; only
+            // the far end of the run moves.
+            _closeTripGap(tripId, removed) {
+                if (!tripId || !removed) return;
+                const from = new Date(removed.start).getTime();
+                const to = new Date(removed.end).getTime();
+                const held = (this.legTimings || {})[tripId];
+                const rest = this.swimItems.filter((i) => i.tripId === tripId);
+
+                if (!rest.length) {
+                    // Nothing left to time: the camp and home legs went with the run.
+                    if (held) {
+                        const legs = { ...this.legTimings };
+                        delete legs[tripId];
+                        this.legTimings = legs;
+                    }
+                    return;
+                }
+
+                const stillThere = rest.some((i) =>
+                    new Date(i.start).getTime() < to && new Date(i.end).getTime() > from);
+                const freed = to - from;
+                if (stillThere || freed <= 0) return;
+
+                rest.forEach((i) => {
+                    // Only what the bus had not reached yet; the stops before the hole
+                    // happened exactly as they did.
+                    if (new Date(i.start).getTime() < to) return;
+                    i.start = new Date(new Date(i.start).getTime() - freed);
+                    i.end = new Date(new Date(i.end).getTime() - freed);
+                });
+                this.swimItems = [...this.swimItems];
+
+                if (held && held.arrival) {
+                    // Read off the run rather than moved by the same offset: a block's
+                    // second moment is when the bus reaches the NEXT place, so the last
+                    // one already ends at the camp it goes home to - which is exactly
+                    // what the arrival is (verified: every run on the live plan agrees,
+                    // and the only one that did not was one a stop had been taken off).
+                    // Deriving it also repairs a run left drifted by an earlier removal.
+                    this.legTimings = {
+                        ...this.legTimings,
+                        [tripId]: { ...held, arrival: this._runEndsAt(rest) },
+                    };
+                }
+            },
+
+            // When the bus is back: the end of the last block on the run.
+            _runEndsAt(stops) {
+                if (!stops || !stops.length) return null;
+                return new Date(
+                    Math.max(...stops.map((i) => new Date(i.end).getTime()))
+                ).toISOString();
+            },
+
             removeSelectedFromLane() {
                 if (!this.selectedItem) return;
                 const itemId = this.selectedItem.id;
                 const cid = this.selectedItem.cardId;
                 const dir = this.selectedItem.direction;
+                const removed = this.selectedItem;
 
                 // Remove only the selected block, not both directions
                 const tripId = this.selectedItem.tripId;
                 this.swimItems = this.swimItems.filter(i => i.id !== itemId);
+
+                // The run closes up over the stop it no longer makes.
+                this._closeTripGap(tripId, removed);
 
                 // What is left of the run may now travel only one way (AC3).
                 this._resyncTripDirection(tripId);
