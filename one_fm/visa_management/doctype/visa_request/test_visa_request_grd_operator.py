@@ -32,9 +32,37 @@ def _request(workflow_state, grd_operator=None, previous_state="Draft"):
 	return doc
 
 
+class TestTheListViewOffersEditAtAll(FrappeTestCase):
+	"""AC 1's first gate, and the one that had the Edit entry missing from the Actions
+	menu entirely.
+
+	list_view.js pushes the Edit action only when is_bulk_edit_allowed() agrees, and for a
+	doctype carrying a workflow that answer comes from one place - the allow_edit flag on
+	its List View Settings row. Visa Request has an active workflow, and the row WI-002426
+	brought over from the BA site has the flag off, because bulk editing is what this
+	story adds.
+	"""
+
+	def test_the_doctype_really_does_carry_a_workflow(self):
+		"""If it did not, Frappe would allow bulk edit outright and the flag below would
+		be beside the point - so this is what makes the next test meaningful."""
+		self.assertTrue(
+			frappe.db.exists("Workflow", {"document_type": "Visa Request", "is_active": 1})
+		)
+
+	def test_the_list_view_settings_row_allows_editing(self):
+		if not frappe.db.exists("List View Settings", "Visa Request"):
+			self.skipTest("run bench migrate - the list view patches have not been applied")
+
+		self.assertTrue(
+			frappe.db.get_value("List View Settings", "Visa Request", "allow_edit"),
+			"the Actions menu will have no Edit entry",
+		)
+
+
 class TestTheFieldCanBeSetInBulk(FrappeTestCase):
-	"""AC 1 needs no code - Frappe's list Edit dialog offers every writable value field
-	(list_view.js::is_field_editable). What it needs is for grd_operator to stay one of
+	"""AC 1's second gate: once the dialog opens, it offers every writable value field
+	(list_view.js::is_field_editable). What that needs is for grd_operator to stay one of
 	them, which is what this pins."""
 
 	@classmethod
