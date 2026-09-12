@@ -1,4 +1,5 @@
 import frappe, json
+import re
 from datetime import date, datetime
 from frappe.utils import cstr,month_diff,today,getdate,get_date_str,date_diff,add_years, cint, add_to_date, get_first_day, get_last_day, get_datetime, flt
 from frappe import _
@@ -1064,15 +1065,122 @@ def _majority_designation(counts) -> dict:
 	return {sale_item: designation for sale_item, (_key, designation) in best.items()}
 
 
-def pow_item_types_arabic(doc) -> str:
-	"""The contract's services in Arabic, for the letter's opening paragraph (WI-002399).
+# WI-002399: the figures in the table are written in English by the generator, because
+# that is also what the desk shows and what every other report of the same numbers says.
+# The letter is the one place they are read in Arabic, so they are translated here, on
+# the way to the page, rather than at the source - nothing else that reads these fields
+# changes, and a Proof of Work generated last year prints the same as one generated
+# today.
+#
+# Each pattern is one of the lines proof_of_work.py writes; a line that matches none of
+# them is left exactly as it is, because a wrong translation of a figure is worse than
+# an untranslated one.
+FIGURE_PATTERNS = (
+	(
+		re.compile(r"^-\s*([\d.]+)\s+Staff worked\s+([\d.]+)\s+days:\s*([\d.]+)\s+Days$"),
+		"- {0} موظف عملوا {1} يوم: {2} يوم",
+	),
+	(
+		re.compile(r"^-\s*([\d.]+)\s+Staff worked\s+([\d.]+)\s+Hours:\s*([\d.]+)\s+Hrs$"),
+		"- {0} موظف عملوا {1} ساعة: {2} ساعة",
+	),
+	(
+		re.compile(r"^=\{([\d.]+)\s+staff\s*\*\s*([\d.]+)\s+days\}\s*=\s*([\d.]+)\s+DAYS$"),
+		"={{{0} موظف × {1} يوم}} = {2} يوم",
+	),
+	(
+		re.compile(r"^=\{([\d.]+)\s+staff\s*\*\s*([\d.]+)\s+hours\}\s*=\s*([\d.]+)\s+HOURS$"),
+		"={{{0} موظف × {1} ساعة}} = {2} ساعة",
+	),
+	(re.compile(r"^([\d.]+)\s+Days$"), "{0} يوم"),
+	(re.compile(r"^([\d.]+)\s+hrs$"), "{0} ساعة"),
+)
 
-	Two Item Types can land on one Arabic designation - Janitor and Cleaner are both
-	فراش to PAM - and the paragraph lists services, not rows, so it names each one once.
+# The generator writes this through _(), so a site that generated its documents in
+# another language has another string here. Only the English is recognised, and anything
+# unrecognised is printed as it stands.
+NO_ATTENDANCE_EN = "No attendance recorded for this item in the period."
+NO_ATTENDANCE_AR = "لا يوجد حضور مسجل لهذا البند خلال الفترة"
+
+
+def pow_arabic_figure(line: str) -> str:
+	"""One line of the table, in Arabic (WI-002399)."""
+	line = cstr(line).strip()
+	if not line:
+		return ""
+
+	if line == NO_ATTENDANCE_EN:
+		return NO_ATTENDANCE_AR
+
+	for pattern, arabic in FIGURE_PATTERNS:
+		match = pattern.match(line)
+		if match:
+			return pow_arabic_number(arabic.format(*match.groups()))
+
+	return line
+
+
+def pow_letter_rows(doc) -> list:
+	"""The letter's table, ready to print: named, translated, and only what was worked.
+
+	A Sale Item that nobody worked in the period is left out. The contracted figure is
+	still true of it, but the letter is a receipt for services received, and a row that
+	receipts nothing is a row the client is asked to sign for nothing.
 	"""
 	names = pow_service_names_arabic(doc)
 
-	return " - ".join(dict.fromkeys(names.values()))
+	rows = []
+	for row in doc.get("proof_of_work_item") or []:
+		if _nothing_was_worked(row):
+			continue
+
+		item_type = (row.get("item_type") or "").strip()
+		rows.append(
+			{
+				"service": names.get(item_type) or item_type,
+				"contractual": _arabic_lines(row.get("contractual_hours")),
+				"worked": _arabic_lines(row.get("actual_hours")),
+				"breakdown": _arabic_lines(row.get("staff_breakdown")),
+			}
+		)
+
+	return rows
+
+
+def _nothing_was_worked(row) -> bool:
+	"""True when every figure in the row's worked column is zero.
+
+	Read off the figure rather than off the breakdown text, because the breakdown's
+	"nothing recorded" sentence is translatable and a site could have generated it in
+	any language. A row with no figure at all is kept: that is a document that cannot
+	answer the question, and dropping a service on a guess is the worse mistake.
+	"""
+	figures = re.findall(r"\d+(?:\.\d+)?", cstr(row.get("actual_hours")))
+
+	return bool(figures) and all(flt(figure) == 0 for figure in figures)
+
+
+def _arabic_lines(text) -> list:
+	"""A column's stored text as the lines the letter prints, separators marked."""
+	lines = []
+	for line in cstr(text).split("\n"):
+		if line.strip() == "OR":
+			lines.append({"separator": True})
+		elif line.strip():
+			lines.append({"text": pow_arabic_figure(line)})
+
+	return lines
+
+
+def pow_item_types_arabic(doc) -> str:
+	"""The contract's services in Arabic, for the letter's opening paragraph (WI-002399).
+
+	The services the table lists, and only those: a service nobody worked is not on the
+	table, so the paragraph does not announce it either. Two Item Types can also land on
+	one Arabic designation - Janitor and Cleaner are both فراش to PAM - and the paragraph
+	lists services, not rows, so it names each one once.
+	"""
+	return " - ".join(dict.fromkeys(row["service"] for row in pow_letter_rows(doc)))
 
 
 

@@ -962,6 +962,7 @@ jenv = {
         # and so are the dates and the day counts.
         "pow_item_types_arabic:one_fm.jinja.print_format.methods.pow_item_types_arabic",
         "pow_service_names_arabic:one_fm.jinja.print_format.methods.pow_service_names_arabic",
+        "pow_letter_rows:one_fm.jinja.print_format.methods.pow_letter_rows",
         "pow_arabic_date:one_fm.jinja.print_format.methods.pow_arabic_date",
         "pow_arabic_number:one_fm.jinja.print_format.methods.pow_arabic_number"
     ],

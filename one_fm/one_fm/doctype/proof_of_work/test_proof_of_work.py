@@ -1397,7 +1397,11 @@ class TestTheLetterLinesUp(FrappeTestCase):
 		pushes its أو down a line, and no two columns wrap in the same place."""
 		css = self._letter()["css"]
 
-		self.assertRegex(css, r"\.pow-tbl thead th \{[^}]*white-space: nowrap")
+		self.assertRegex(css, r"\.pow-tbl\.stacked thead th \{[^}]*white-space: nowrap")
+		# Only where the alignment is at stake. Four columns that all refuse to wrap are
+		# wider than the page on a contract with two dozen services, and the widest of
+		# them loses its right-hand end off the edge of the paper.
+		self.assertIn('class="pow-tbl{% if headers.contractual | length > 1 %} stacked{% endif %}"', self._letter()["html"])
 		# The fixed percentages are what forced the wrapping. The table sizes its own
 		# columns now, and a heading that cannot wrap is a width the table must honour.
 		self.assertNotRegex(css, r"\.pow-tbl \{[^}]*table-layout: fixed")
@@ -1412,8 +1416,8 @@ class TestTheLetterLinesUp(FrappeTestCase):
 
 	def test_the_service_column_is_named_in_arabic(self):
 		"""Scenario 2's translation, in the column that repeats it on every row."""
-		self.assertIn("service_names.get(row.item_type) or row.item_type", self._letter()["html"])
-		self.assertIn("pow_service_names_arabic(doc)", self._letter()["html"])
+		self.assertIn("{{ row.service }}", self._letter()["html"])
+		self.assertIn("pow_letter_rows(doc)", self._letter()["html"])
 
 
 class TestTheLetterIsWrittenInArabicNumerals(FrappeTestCase):
@@ -1568,11 +1572,15 @@ class TestTheServiceNameIsResolvedOnce(FrappeTestCase):
 
 		from one_fm.jinja.print_format.methods import pow_item_types_arabic
 
+		doc = frappe.new_doc("Proof of Work")
+		for item_type in ("Janitor", "Cleaner", "Security Guard"):
+			doc.append("proof_of_work_item", {"item_type": item_type, "actual_hours": "26 Days"})
+
 		with patch(
 			"one_fm.jinja.print_format.methods.pow_service_names_arabic",
 			return_value={"Janitor": "فراش", "Cleaner": "فراش", "Security Guard": "حارس أمن"},
 		):
-			self.assertEqual(pow_item_types_arabic(self._doc()), "فراش - حارس أمن")
+			self.assertEqual(pow_item_types_arabic(doc), "فراش - حارس أمن")
 
 	def test_the_designation_of_the_most_staff_speaks_for_the_service(self):
 		"""One reliever off another designation cannot rename the whole service."""
@@ -1611,6 +1619,128 @@ class TestTheServiceNameIsResolvedOnce(FrappeTestCase):
 		]
 
 		self.assertEqual(_majority_designation(counts), {"SALE-1": "حارس أمن"})
+
+
+class TestTheTableIsReadInArabic(FrappeTestCase):
+	"""WI-002399: the figures in the table are written in Arabic on the letter.
+
+	They are stored in English, because the desk and every other report of the same
+	numbers read them in English. Only the letter is translated, on the way to the page,
+	so nothing else that reads these fields changes and a document generated last year
+	prints the same as one generated today.
+	"""
+
+	def _rows(self, *rows):
+		doc = frappe.new_doc("Proof of Work")
+		for item_type, worked, breakdown in rows:
+			doc.append(
+				"proof_of_work_item",
+				{
+					"item_type": item_type,
+					"actual_hours": worked,
+					"staff_breakdown": breakdown,
+					"contractual_hours": "={1 staff * 30 days} = 30 DAYS",
+				},
+			)
+		return doc
+
+	def test_a_staff_line_is_translated(self):
+		from one_fm.jinja.print_format.methods import pow_arabic_figure
+
+		self.assertEqual(
+			pow_arabic_figure("- 53 Staff worked 27 days: 1431 Days"),
+			"- ٥٣ موظف عملوا ٢٧ يوم: ١٤٣١ يوم",
+		)
+		self.assertEqual(
+			pow_arabic_figure("- 16 Staff worked 552 Hours: 8832 Hrs"),
+			"- ١٦ موظف عملوا ٥٥٢ ساعة: ٨٨٣٢ ساعة",
+		)
+
+	def test_the_contracted_figure_keeps_its_shape(self):
+		"""The client reads it as the justification it is; only the words change."""
+		from one_fm.jinja.print_format.methods import pow_arabic_figure
+
+		self.assertEqual(
+			pow_arabic_figure("={145 staff * 30 days} = 4350 DAYS"),
+			"={١٤٥ موظف × ٣٠ يوم} = ٤٣٥٠ يوم",
+		)
+		self.assertEqual(
+			pow_arabic_figure("={95 staff * 208 hours} = 19760 HOURS"),
+			"={٩٥ موظف × ٢٠٨ ساعة} = ١٩٧٦٠ ساعة",
+		)
+
+	def test_the_worked_total_is_translated(self):
+		from one_fm.jinja.print_format.methods import pow_arabic_figure
+
+		self.assertEqual(pow_arabic_figure("3561 Days"), "٣٥٦١ يوم")
+		self.assertEqual(pow_arabic_figure("31236.00 hrs"), "٣١٢٣٦.٠٠ ساعة")
+
+	def test_a_line_nothing_recognises_is_left_alone(self):
+		"""A wrong translation of a figure is worse than an untranslated one."""
+		from one_fm.jinja.print_format.methods import pow_arabic_figure
+
+		self.assertEqual(pow_arabic_figure("Something nobody planned for"), "Something nobody planned for")
+		self.assertEqual(pow_arabic_figure(""), "")
+		self.assertEqual(pow_arabic_figure(None), "")
+
+	def test_the_or_separator_survives_translation(self):
+		from one_fm.jinja.print_format.methods import pow_letter_rows
+
+		doc = self._rows(("Security Guard", "62 Days\nOR\n496.00 hrs", "- 1 Staff worked 31 days: 31 Days"))
+		worked = pow_letter_rows(doc)[0]["worked"]
+
+		self.assertEqual(
+			worked,
+			[{"text": "٦٢ يوم"}, {"separator": True}, {"text": "٤٩٦.٠٠ ساعة"}],
+		)
+
+
+class TestAServiceNobodyWorkedIsNotOnTheLetter(FrappeTestCase):
+	"""WI-002399: the letter is a receipt for services received.
+
+	A Sale Item with no attendance in the period receipts nothing, and the client is not
+	asked to sign for it. The contracted figure is still true of it - it is just not what
+	this document is for.
+	"""
+
+	def _doc(self, *rows):
+		doc = frappe.new_doc("Proof of Work")
+		for item_type, worked in rows:
+			doc.append("proof_of_work_item", {"item_type": item_type, "actual_hours": worked})
+		return doc
+
+	def test_a_row_with_nothing_worked_is_dropped(self):
+		from one_fm.jinja.print_format.methods import pow_letter_rows
+
+		rows = pow_letter_rows(
+			self._doc(("_Test Idle Service", "0 Days"), ("_Test Worked Service", "254 Days"))
+		)
+
+		self.assertEqual([row["service"] for row in rows], ["_Test Worked Service"])
+
+	def test_both_halves_have_to_be_zero(self):
+		"""A row reported in both units is worked if either unit says so."""
+		from one_fm.jinja.print_format.methods import pow_letter_rows
+
+		worked = self._doc(("Guard", "0 Days\nOR\n496.00 hrs"))
+		nothing = self._doc(("Guard", "0 Days\nOR\n0.00 hrs"))
+
+		self.assertEqual(len(pow_letter_rows(worked)), 1)
+		self.assertEqual(pow_letter_rows(nothing), [])
+
+	def test_a_row_with_no_figure_at_all_is_kept(self):
+		"""The document cannot answer the question, and dropping a service the client
+		is paying for on a guess is the worse mistake."""
+		from one_fm.jinja.print_format.methods import pow_letter_rows
+
+		self.assertEqual(len(pow_letter_rows(self._doc(("Guard", "")))), 1)
+
+	def test_the_paragraph_does_not_announce_what_the_table_leaves_out(self):
+		from one_fm.jinja.print_format.methods import pow_item_types_arabic
+
+		doc = self._doc(("_Test Idle Service", "0 Days"), ("_Test Worked Service", "254 Days"))
+
+		self.assertEqual(pow_item_types_arabic(doc), "_Test Worked Service")
 
 
 class TestTheServicesAreNamedInArabic(FrappeTestCase):
