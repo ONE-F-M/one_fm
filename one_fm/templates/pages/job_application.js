@@ -280,8 +280,12 @@ job_application = Class.extend({
             if(!r.exc && r.message) {
               frappe.msgprint(frappe._("Successfully submitted your application. Our HR team will be responding to you soon."));
               setTimeout(()=>{window.location.href = "/jobs"}, 3000);
-            } else {
-              frappe.msgprint(__("Application is not submitted. <br /> " + r.exc));
+            } else if (!(r && r._server_messages)) {
+              // WI-002490: r.exc is a raw traceback, and showing it to an applicant was
+              // both unreadable and a leak. Where the server has already said something
+              // in words - a validation message, which is what a refused application now
+              // is - that message is the answer and this adds nothing.
+              frappe.msgprint(__("Application is not submitted. Please try again."));
             }
           }
         });

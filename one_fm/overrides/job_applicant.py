@@ -13,6 +13,70 @@ from one_fm.utils import production_domain
 from hrms.hr.doctype.job_applicant.job_applicant import create_interview as hrms_create_interview
 
 
+# WI-002490: the hiring methods the duplicate rules turn on, spelled as the field offers
+# them - "A la carte Recruitment", not "A La Carte".
+BULK_RECRUITMENT = "Bulk Recruitment"
+A_LA_CARTE = "A la carte Recruitment"
+
+# The one status that frees a candidate to apply again. Every other status the Select
+# offers - Open, Replied, Hold, Accepted - is an application still in play.
+REJECTED = "Rejected"
+
+# Supplied by the recruitment team, and used exactly as given - wording, punctuation and
+# paragraphs. This is what the *candidate* reads, on the job portal, so it deliberately
+# says nothing about which record blocked them: another applicant's name and role have no
+# business on a public page. The opening line is the dialog title, so it is not repeated
+# in the body. A recruiter working in the Desk gets is_staff()'s message instead - the
+# same refusal, said to somebody who can act on it.
+DUPLICATE_APPLICATION_MESSAGE = "<br><br>".join((
+	"Thank you for your interest in joining our team.",
+	"We’ve received your application, and our Recruitment Team will review your profile "
+	"and get in touch with you regarding the best match for your experience and "
+	"qualifications.",
+	"Please note that you can have one active application at a time. Since your current "
+	"application has been received, there’s no need to submit another application at this "
+	"stage. We’ll take it from here!",
+	"We appreciate your interest and look forward to being in touch.",
+))
+
+
+# Set by the job portal's own creation endpoints (templates/pages/job_application.py) on
+# the document they are about to save. Frappe sets frappe.flags.in_web_form for the
+# job-application-from and job-applications web forms, which is the same question asked of
+# the other candidate-facing route.
+FROM_JOB_PORTAL = "from_job_portal"
+
+
+def is_candidate_facing(doc=None):
+	"""Is this save coming from a page an applicant is looking at (WI-002490)?
+
+	Asked of where the request came from, not of who is signed in. A recruiter opening
+	the public job portal - or anyone from the team with a Desk session live in the same
+	browser - is still on the candidate's page, and showing them another applicant's name
+	and record id there is exactly the leak the two messages exist to avoid.
+	"""
+	if frappe.flags.in_web_form:
+		return True
+
+	return bool(doc is not None and doc.flags.get(FROM_JOB_PORTAL))
+
+
+def is_staff(user=None):
+	"""Is the account saving this record one of ours rather than an applicant's?
+
+	Only a System User can open the Desk, so this is the second half of the question -
+	the first being where the request came from. Both have to say "internal" before the
+	message naming the blocking record is used.
+
+	Guest has no User record worth reading, so it is answered first and directly.
+	"""
+	user = user or frappe.session.user
+	if user in ("Guest", None, ""):
+		return False
+
+	return frappe.db.get_value("User", user, "user_type") == "System User"
+
+
 class JobApplicantOverride(JobApplicant):
 	def autoname(self):
 		pass
@@ -64,17 +128,90 @@ class JobApplicantOverride(JobApplicant):
 			job title and email ID, but a different name.
 			If a duplicate application is found, an error is thrown.
 		'''
-		if self.one_fm_hiring_method != 'Bulk Recruitment' and self.is_new():
-			if frappe.db.exists("Job Applicant", {
-				"job_title": self.job_title,
-				"one_fm_email_id": self.one_fm_email_id,
-				"name": ["!=", self.name]
-			}):
-				frappe.throw(_("""
-					Not allowed to apply for same position again
-					<br/>
-					Change your email id, if you wish to apply it for different person
-				"""))
+		if not self.is_new() or self.one_fm_hiring_method == BULK_RECRUITMENT:
+			return
+
+		if self.one_fm_hiring_method == A_LA_CARTE:
+			self.validate_active_a_la_carte_application()
+			return
+
+		if frappe.db.exists("Job Applicant", {
+			"job_title": self.job_title,
+			"one_fm_email_id": self.one_fm_email_id,
+			"name": ["!=", self.name or ""]
+		}):
+			frappe.throw(_("""
+				Not allowed to apply for same position again
+				<br/>
+				Change your email id, if you wish to apply it for different person
+			"""))
+
+	def validate_active_a_la_carte_application(self):
+		"""One active A la carte application per candidate (WI-002490).
+
+		Per candidate, not per position: a candidate whose application is still being
+		considered should be considered for that one, rather than the recruitment team
+		carrying several open records for the same person across different roles.
+
+		A rejected application does not hold them back - the story is explicit about that,
+		and the decision is made. Every other status does, Accepted included: somebody
+		already hired for an A la carte role is not applying for another.
+
+		The candidate is identified by either email field. one_fm_email_id is what the
+		applicant fills in and what utils.validate_job_applicant copies onto the standard
+		email_id - but that copy runs after this validation, so on a new record only one of
+		the two may be set yet. A record with neither is left alone rather than matched
+		against every other blank.
+
+		`self.name or ""` rather than `self.name`: a doc validated before a name has been
+		allocated would make that clause `name != NULL`, which matches nothing in SQL and
+		would silently switch the whole rule off.
+
+		get_all rather than get_list, deliberately: on the job portal this runs as Guest,
+		who can read no Job Applicant at all, and a permission-checked query would come
+		back empty and switch the rule off for the one caller it exists for. Nothing read
+		here is shown to the candidate - only to staff.
+		"""
+		email = self.applicant_email()
+		if not email:
+			return
+
+		existing = frappe.get_all(
+			"Job Applicant",
+			filters={
+				"one_fm_hiring_method": A_LA_CARTE,
+				"status": ["!=", REJECTED],
+				"name": ["!=", self.name or ""],
+			},
+			or_filters={"one_fm_email_id": email, "email_id": email},
+			fields=["name", "applicant_name", "job_title", "status"],
+			limit=1,
+		)
+		if not existing:
+			return
+
+		if is_staff() and not is_candidate_facing(self):
+			open_application = existing[0]
+			frappe.throw(
+				_("{0} already has an active A la carte application: {1}{2} ({3}). "
+				  "Only one can be open at a time - a new one can be raised once that "
+				  "application has been rejected.").format(
+					frappe.bold(open_application.applicant_name or email),
+					frappe.utils.get_link_to_form("Job Applicant", open_application.name),
+					f" for {open_application.job_title}" if open_application.job_title else "",
+					open_application.status,
+				),
+				title=_("Active Application Already Exists"),
+			)
+
+		frappe.throw(
+			DUPLICATE_APPLICATION_MESSAGE,
+			title=_("You’ve already applied for a position!"),
+		)
+
+	def applicant_email(self):
+		"""The address that identifies the candidate, from whichever field carries it."""
+		return (self.one_fm_email_id or self.email_id or "").strip()
 
 	def after_insert(self):
 		self.notify_recruiter_and_requester_from_job_applicant()

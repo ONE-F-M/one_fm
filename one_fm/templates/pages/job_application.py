@@ -7,6 +7,13 @@ from one_fm.processor import sendemail
 
 
 
+# WI-002490: every function below that creates a Job Applicant marks it
+# `flags.from_job_portal`. A validation rule cannot otherwise tell a candidate filling in
+# the public page from a recruiter working in the Desk - the session user is no help,
+# because a recruiter testing the portal is signed in as one of ours - and the two are
+# owed different messages.
+
+
 def get_context(context):
 	context.parents = [{'route': 'jobs', 'title': _('All Jobs') }]
 	context.title = _("Application")
@@ -175,6 +182,7 @@ def create_job_applicant_from_job_portal(applicant_name, nationality, applicant_
                 applicant_language.speak = float(language['speak'])
                 applicant_language.write = float(language['write'])
         job_applicant.flags.ignore_mandatory = 1
+        job_applicant.flags.from_job_portal = True
         job_applicant.save(ignore_permissions=True)
         if name_of_file:
             frappe.enqueue(update_file_name, dt=job_applicant.doctype, dn=job_applicant.name, fn=name_of_file, at_front=True, is_async=True)
@@ -188,7 +196,14 @@ def create_job_applicant_from_job_portal(applicant_name, nationality, applicant_
         #         attach_file_to_job_applicant(files_obj[file]['files_data'], job_applicant)
         # job_applicant.save(ignore_permissions=True)
         return True
-    except:
+    except frappe.ValidationError:
+        # WI-002490: a validation message is the answer, not a fault. This used to be
+        # swallowed with everything else and replaced by "An Error Occured while
+        # submitting the job application" - so a rule that refuses an application for a
+        # reason the applicant could act on told them nothing, and logged a traceback for
+        # an outcome that is not an error.
+        raise
+    except Exception:
         frappe.log_error(message=frappe.get_traceback(), title="Error while uploading file (Easy Apply)")
         frappe.throw("An Error Occured while submitting the job application")
 
@@ -234,6 +249,7 @@ def create_job_applicant_for_easy_apply(applicant_name, first_name, second_name,
         job_applicant.one_fm_cid_number = civil_id
         job_applicant.one_fm_contact_number = applicant_mobile
         job_applicant.one_fm_is_easy_apply = True
+        job_applicant.flags.from_job_portal = True
         job_applicant.insert(ignore_permissions=True)
 
 @frappe.whitelist(allow_guest=True)
@@ -257,6 +273,7 @@ def create_job_applicant(job_opening, email_id, job_applicant_fields, languages=
         if skills:
             skills_json = json.loads(skills)
             set_skills(job_applicant, skills_json)
+        job_applicant.flags.from_job_portal = True
         job_applicant.save(ignore_permissions=True)
         if files:
             files_json = json.loads(files)
