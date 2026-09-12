@@ -1,0 +1,48 @@
+{
+ "add_total_row": 0,
+ "columns": [],
+ "creation": "2025-07-24 09:33:16.895777",
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "letter_head": "ONEFM",
+ "letterhead": null,
+ "modified": "2025-08-03 16:37:40.113571",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Operations Monthly Attendance Sheet",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "Attendance",
+ "report_name": "Operations Monthly Attendance Sheet",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "HR Manager"
+  },
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "HR User"
+  },
+  {
+   "role": "Payroll Operator"
+  },
+  {
+   "role": "Operations Manager"
+  },
+  {
+   "role": "Operation Admin"
+  },
+  {
+   "role": "Operations Supervisor"
+  },
+  {
+   "role": "Site Supervisor"
+  }
+ ]
+}

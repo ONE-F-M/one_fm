@@ -9,7 +9,7 @@ and reuse across the schedule page backend and any future callers.
 """
 
 
-def sync_manifest_details(manifest_doc, assignment_rows, emp_map, return_emp_map):
+def sync_manifest_details(manifest_doc, assignment_rows, emp_map):
 	"""Upsert child rows using compound key: (employee, trip_id, stop_id, employee_action).
 
 	New employees/stops are appended. Existing rows have system fields refreshed
@@ -19,8 +19,10 @@ def sync_manifest_details(manifest_doc, assignment_rows, emp_map, return_emp_map
 	Args:
 		manifest_doc: A Transportation Manifest document (new or existing).
 		assignment_rows: List of Route Plan Assignment child rows for this vehicle.
-		emp_map: Dict mapping card_id -> list of employee dicts (OUTBOUND).
-		return_emp_map: Dict mapping card_id -> list of employee dicts (RETURN).
+		emp_map: Dict mapping card_id -> the card's riders, whichever way a leg of it
+			travels. There used to be a second map for RETURN legs and nothing ever
+			filled it, so every return row on a driver's manifest listed nobody while
+			its card carried the people (WI-002401).
 
 	Returns:
 		True if any rows were added or updated.
@@ -60,7 +62,7 @@ def sync_manifest_details(manifest_doc, assignment_rows, emp_map, return_emp_map
 
 	for a_row in assignment_rows:
 		direction = a_row.direction
-		emps = (return_emp_map if direction == "RETURN" else emp_map).get(a_row.card_id, [])
+		emps = emp_map.get(a_row.card_id, [])
 		# What this rider does at the PICKUP CAMP - an outward rider boards there, a
 		# return rider is dropped there - which is what the attendance-check lock keys
 		# off. What happens at the STOP is the opposite, and is not duplicated here: the

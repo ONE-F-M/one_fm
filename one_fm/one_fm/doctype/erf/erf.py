@@ -21,7 +21,7 @@ class ERF(Document):
 			self.okr_workshop_with = frappe.db.get_value('Hiring Settings', None, 'hr_for_a_quick_workshop')
 		if self.okr_workshop_with:
 			self.set_onload('okr_workshop_with_full_name', get_user_fullname(self.okr_workshop_with))
-		self.set_onload('erf_approver', get_erf_approver(self.reason_for_request))
+		self.set_onload('erf_approver', get_erf_approver())
 
 	def validate(self):
 		if self.is_new():
@@ -46,9 +46,6 @@ class ERF(Document):
 		self.validate_interview_rounds()
 
 	def validate_interview_rounds(self):
-		if self.number_of_interview_rounds and self.number_of_interview_rounds != len(self.interview_rounds):
-			frappe.throw(_("Number of rows of the 'Intreview Rounds' must be equal to 'Number of Interview Rounds'!"))
-
 		if self.hiring_method == 'Bulk Recruitment' and not self.number_of_interview_rounds:
 			frappe.throw(_("Minimum one intreview rounds must be added for bulk recruitment!"))
 
@@ -139,6 +136,11 @@ class ERF(Document):
 					frappe.throw(_("Select Language for Speak, Read or Write.!"))
 
 	def validate_date(self):
+		# WI-002316: the field is optional now, and getdate() reads an empty date as
+		# today - so a blank one was being measured against today and could be told its
+		# own initiation date was too late. There is nothing to compare when it is blank.
+		if not self.expected_date_of_deployment:
+			return
 		if getdate(self.erf_initiation) > getdate(self.expected_date_of_deployment):
 			frappe.throw(_("Expected Date of Deployment of an ERF cannot be before ERF Initiation Date"))
 		if getdate(self.expected_date_of_deployment) < getdate(today()):
@@ -219,7 +221,7 @@ class ERF(Document):
 			frappe.throw(_('Submit to HR Manager to fill Salary Compensation Budget and HR Details!'))
 
 	def notify_approver(self):
-		erf_approver = get_erf_approver(self.reason_for_request)
+		erf_approver = get_erf_approver()
 		if erf_approver and len(erf_approver) > 0:
 			send_email(self, erf_approver)
 			frappe.msgprint(_('Recruitment Manager Will Notified By Email.'))
@@ -371,9 +373,13 @@ class ERF(Document):
 
 
 
-def get_erf_approver(reason_for_request):
-	erf_approver_role = 'Unplanned ERF Approver' if reason_for_request == 'UnPlanned' else 'ERF Approver'
-	return get_users_with_role(erf_approver_role)
+def get_erf_approver():
+	"""WI-002316: who approves an ERF used to depend on Reason for Request matching the
+	literal 'UnPlanned'. That tied the approver to one spelling of one Select option and
+	blocked the option list being reconfigured - which is exactly what the business
+	analyst has now done, replacing UnPlanned with Other and Client ERF Hire. Every ERF
+	goes to ERF Approver."""
+	return get_users_with_role('ERF Approver')
 
 def create_job_opening_from_erf(erf):
 	job_opening = frappe.new_doc("Job Opening")
