@@ -29,6 +29,8 @@
   "employee_id",
   "under_company_accommodation",
   "absence_type",
+  "absent_dates",
+  "go_to_attendance",
   "absence_case_details_section",
   "location_status",
   "has_contact_been_made",
@@ -110,6 +112,23 @@
    "label": "Absence Type",
    "options": "\n5 Days Consecutive Absence\n7 Days Consecutive Absence\n16 Days Absence in a Year\n21 Days Absence in a Year",
    "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.absence_type",
+   "description": "Captures and lists all specific dates on which the employee was marked absent for the selected absence case.",
+   "fieldname": "absent_dates",
+   "fieldtype": "Long Text",
+   "label": "Absent Dates",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "bold": 1,
+   "depends_on": "eval:doc.absence_type",
+   "description": "Triggers a direct navigation route to the Attendance DocType list view, automatically filtering attendance records matching the dates listed in the Absent Dates field.",
+   "fieldname": "go_to_attendance",
+   "fieldtype": "Button",
+   "label": "Go to Attendance"
   },
   {
    "fieldname": "absence_case_details_section",
