@@ -18,7 +18,9 @@ from one_fm.overrides.job_applicant import (
 	A_LA_CARTE,
 	BULK_RECRUITMENT,
 	DUPLICATE_APPLICATION_MESSAGE,
+	FROM_JOB_PORTAL,
 	REJECTED,
+	is_candidate_facing,
 	is_staff,
 )
 
@@ -80,10 +82,37 @@ class TestTheValuesTheRuleTurnsOn(FrappeTestCase):
 		self.assertIn(REJECTED, options)
 
 
+class TestWhichPageTheRequestCameFrom(FrappeTestCase):
+	"""The half that decides which message, and the half the first attempt got wrong.
+
+	Keying on the session user alone said "staff" for a recruiter who opened the public
+	job portal with a Desk session live in the same browser - which is how this was
+	found."""
+
+	def tearDown(self):
+		frappe.flags.in_web_form = False
+
+	def test_a_document_the_portal_flagged_is_candidate_facing(self):
+		doc = _applying()
+		doc.flags[FROM_JOB_PORTAL] = True
+
+		self.assertTrue(is_candidate_facing(doc))
+
+	def test_a_web_form_submission_is_candidate_facing(self):
+		"""Frappe sets this for job-application-from and job-applications."""
+		frappe.flags.in_web_form = True
+
+		self.assertTrue(is_candidate_facing(_applying()))
+
+	def test_a_desk_save_is_not(self):
+		self.assertFalse(is_candidate_facing(_applying()))
+
+	def test_it_does_not_need_a_document(self):
+		self.assertFalse(is_candidate_facing())
+
+
 class TestWhoIsStaff(FrappeTestCase):
-	"""The line between the two messages. A Job Applicant is created from both sides -
-	the candidate through the job portal, a recruiter through the Desk - and only a
-	System User can open the Desk."""
+	"""The other half: only a System User can open the Desk."""
 
 	def test_guest_is_not_staff(self):
 		self.assertFalse(is_staff("Guest"))
@@ -111,22 +140,30 @@ class TestTheMessageIsTheOneTheTeamSupplied(FrappeTestCase):
 	def setUp(self):
 		_clear()
 
-	def _as_the_candidate(self):
-		"""Guest is what /job_application posts as."""
-		return self.set_user("Guest")
+	def _from_the_portal(self):
+		doc = _applying()
+		doc.flags[FROM_JOB_PORTAL] = True
+		return doc
 
 	def test_a_candidate_is_shown_it_word_for_word(self):
 		_seed(status="Open")
-		doc = _applying()
 
-		frappe.set_user("Guest")
-		try:
-			with self.assertRaises(frappe.ValidationError) as raised:
-				doc.validate_active_a_la_carte_application()
-		finally:
-			frappe.set_user("Administrator")
+		with self.assertRaises(frappe.ValidationError) as raised:
+			self._from_the_portal().validate_active_a_la_carte_application()
 
 		self.assertIn(DUPLICATE_APPLICATION_MESSAGE, str(raised.exception))
+
+	def test_the_portal_shows_it_even_to_somebody_signed_in_as_staff(self):
+		"""The bug this replaces: a recruiter opening the public page with a Desk session
+		live in the same browser was shown the internal message on it."""
+		_seed(status="Open")
+		self.assertTrue(is_staff(frappe.session.user))
+
+		with self.assertRaises(frappe.ValidationError) as raised:
+			self._from_the_portal().validate_active_a_la_carte_application()
+
+		self.assertIn(DUPLICATE_APPLICATION_MESSAGE, str(raised.exception))
+		self.assertNotIn(SEEDED, str(raised.exception))
 
 	def test_a_recruiter_is_not(self):
 		"""A recruiter in the Desk was being told "Thank you for your interest in joining
@@ -162,14 +199,9 @@ class TestTheMessageIsTheOneTheTeamSupplied(FrappeTestCase):
 		"""A candidate sees this on the public job portal; another applicant's name, role
 		and record id must not leak into it."""
 		_seed(status="Hold")
-		doc = _applying()
 
-		frappe.set_user("Guest")
-		try:
-			with self.assertRaises(frappe.ValidationError) as raised:
-				doc.validate_active_a_la_carte_application()
-		finally:
-			frappe.set_user("Administrator")
+		with self.assertRaises(frappe.ValidationError) as raised:
+			self._from_the_portal().validate_active_a_la_carte_application()
 
 		self.assertNotIn(SEEDED, str(raised.exception))
 		self.assertNotIn("WI-002490 Seeded", str(raised.exception))

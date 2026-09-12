@@ -40,13 +40,33 @@ DUPLICATE_APPLICATION_MESSAGE = "<br><br>".join((
 ))
 
 
-def is_staff(user=None):
-	"""Is the person saving this record one of ours, rather than the applicant (WI-002490)?
+# Set by the job portal's own creation endpoints (templates/pages/job_application.py) on
+# the document they are about to save. Frappe sets frappe.flags.in_web_form for the
+# job-application-from and job-applications web forms, which is the same question asked of
+# the other candidate-facing route.
+FROM_JOB_PORTAL = "from_job_portal"
 
-	A Job Applicant is created from both sides. The candidate reaches it through the job
-	portal - as Guest on /job_application, or as a Website User on the job-applications web
-	form - and a recruiter reaches it through the Desk. Only a System User can open the
-	Desk, which is exactly the line the two messages need drawn.
+
+def is_candidate_facing(doc=None):
+	"""Is this save coming from a page an applicant is looking at (WI-002490)?
+
+	Asked of where the request came from, not of who is signed in. A recruiter opening
+	the public job portal - or anyone from the team with a Desk session live in the same
+	browser - is still on the candidate's page, and showing them another applicant's name
+	and record id there is exactly the leak the two messages exist to avoid.
+	"""
+	if frappe.flags.in_web_form:
+		return True
+
+	return bool(doc is not None and doc.flags.get(FROM_JOB_PORTAL))
+
+
+def is_staff(user=None):
+	"""Is the account saving this record one of ours rather than an applicant's?
+
+	Only a System User can open the Desk, so this is the second half of the question -
+	the first being where the request came from. Both have to say "internal" before the
+	message naming the blocking record is used.
 
 	Guest has no User record worth reading, so it is answered first and directly.
 	"""
@@ -170,7 +190,7 @@ class JobApplicantOverride(JobApplicant):
 		if not existing:
 			return
 
-		if is_staff():
+		if is_staff() and not is_candidate_facing(self):
 			open_application = existing[0]
 			frappe.throw(
 				_("{0} already has an active A la carte application: {1}{2} ({3}). "
