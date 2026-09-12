@@ -605,7 +605,6 @@ one_fm.patches.v15_0.repoint_pam_file_links_to_license_details #2026-08-29 WI-00
 one_fm.patches.v15_0.route_ojt_to_project_manager #2026-09-03 WI-002186
 one_fm.patches.v15_0.add_dsot_approval_workflow #2026-09-04 WI-002283
 one_fm.patches.v15_0.route_client_event_to_project_manager #2026-09-06c WI-002184
-one_fm.patches.v15_0.update_action_paci_assignment_rule #2026-09-05d WI-002183
 one_fm.patches.v15_0.rename_renewal_expat_and_hr_costing #2026-09-02 WI-002178
 one_fm.patches.v15_0.consolidate_extension_actions #2026-09-08 WI-002179
 one_fm.patches.v15_0.update_work_permit_assignment_rules #2026-09-02 WI-002182
