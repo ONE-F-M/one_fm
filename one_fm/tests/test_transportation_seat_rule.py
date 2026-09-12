@@ -143,8 +143,12 @@ class TestTheRunIsDrawnEndToEnd(FrappeTestCase):
 		self.assertIn("end: runEnd,", self.source)
 
 	def test_the_drawer_header_reads_the_same_two_ends(self):
+		# The departure is a decision nothing on the lane records, so it is read from what
+		# was stored. The arrival IS on the lane - it is where the last block ends - and
+		# the stored copy is only fallen back to when no block is left to read, so a run
+		# that loses a stop cannot go on showing the total it had before (WI-002401).
 		self.assertIn("const stored = this.selectedTripLegs.departure;", self.source)
-		self.assertIn("return this.selectedTripLegs.arrival || this.lastStopEndsAt();", self.source)
+		self.assertIn("return this.lastStopEndsAt() || this.selectedTripLegs.arrival;", self.source)
 
 	def test_the_existing_trips_list_shows_every_run_on_the_lane(self):
 		# AC1: filtering to OUTBOUND hid the return runs the new trip has to fit around,
