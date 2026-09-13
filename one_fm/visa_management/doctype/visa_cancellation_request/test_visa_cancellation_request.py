@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002425, WI-002428 and WI-002432: the Visa Cancellation Request and its rules.
+"""WI-002425 / WI-002428 / WI-002431 / WI-002432: the Visa Cancellation Request.
 
 The DocType is the BA site's, field for field; the rules on top of it are this app's. The
 lifecycle is the Visa Cancellation process map and is deliberately not tested here - nothing
@@ -12,14 +12,19 @@ from pathlib import Path
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
+from frappe.utils import add_days, today
 
 from one_fm.visa_management.doctype.visa_cancellation_request.visa_cancellation_request import (
+	COMPLETED_STATE,
 	COPIED_FROM_VISA_REQUEST,
 	EXPIRY_REASON,
 	REJECTED_STATE,
 	build_cancellation,
+	cancel_expired_visas,
+	expired_visas,
 	has_workflow_state_column,
 	is_standing,
+	live_cancellation,
 	live_cancellation_filters,
 )
 
@@ -36,7 +41,7 @@ def _clear():
 	frappe.db.delete("Visa Request", {"name": ["like", VISA_REQUEST + "%"]})
 
 
-def _visa_request(suffix, workflow_state="Completed", visa_expiry_date=None, job_applicant=None):
+def _visa_request(suffix, workflow_state=COMPLETED_STATE, visa_expiry_date=None, job_applicant=None):
 	"""A Visa Request row written without the controller: it demands a passport, an
 	eligible age and a Job Offer, and none of that is what these rules read."""
 	doc = frappe.new_doc("Visa Request")
@@ -319,3 +324,94 @@ class TestRaisingOneFromAVisaRequest(FrappeTestCase):
 
 	def test_it_starts_as_a_draft(self):
 		self.assertEqual(build_cancellation(frappe.get_doc("Visa Request", self.visa), EXPIRY_REASON).docstatus, 0)
+
+
+class TestTheExpiryJob(FrappeTestCase):
+	"""WI-002431."""
+
+	def setUp(self):
+		_clear()
+
+	def tearDown(self):
+		_clear()
+
+	def test_a_completed_visa_past_its_expiry_is_picked_up(self):
+		name = _visa_request("A", visa_expiry_date=add_days(today(), -1))
+
+		self.assertIn(name, expired_visas())
+
+	def test_one_expiring_today_is_picked_up(self):
+		"""The story's own worked example: expiry date and current date the same day."""
+		name = _visa_request("B", visa_expiry_date=today())
+
+		self.assertIn(name, expired_visas())
+
+	def test_one_expiring_later_is_not(self):
+		name = _visa_request("C", visa_expiry_date=add_days(today(), 1))
+
+		self.assertNotIn(name, expired_visas())
+
+	def test_a_request_that_never_completed_is_not(self):
+		"""Only a visa that was issued can expire."""
+		name = _visa_request("D", workflow_state="Pending By PAM", visa_expiry_date=today())
+
+		self.assertNotIn(name, expired_visas())
+
+	def test_one_with_no_expiry_date_is_not(self):
+		name = _visa_request("E", visa_expiry_date=None)
+
+		self.assertNotIn(name, expired_visas())
+
+	def test_an_applicant_already_employed_is_skipped(self):
+		"""The story's own condition: they are here and working, so the visa is not one to
+		cancel behind them."""
+		employed = frappe.db.get_value("Employee", {"job_applicant": ["is", "set"]}, "job_applicant")
+		if not employed:
+			self.skipTest("no Employee linked to a Job Applicant on this site")
+		name = _visa_request("F", visa_expiry_date=today(), job_applicant=employed)
+
+		self.assertNotIn(name, expired_visas())
+
+	def _run_job(self):
+		"""cancel_expired_visas() commits, which is right for a scheduled job and wrong
+		inside a test: the commit outlives FrappeTestCase's rollback, so the seeded rows
+		survive into other modules - which is exactly what happened the first time this
+		was written. The commit is suppressed so the rollback can do its work."""
+		original = frappe.db.commit
+		frappe.db.commit = lambda *args, **kwargs: None
+		try:
+			return cancel_expired_visas()
+		finally:
+			frappe.db.commit = original
+
+	def test_the_job_raises_one_and_only_one(self):
+		visa = _visa_request("G", visa_expiry_date=today())
+
+		self._run_job()
+		self.assertIsNotNone(live_cancellation(visa))
+
+		# Running it again must not raise a second - the duplicate rule refuses it.
+		raised_again = self._run_job()
+		self.assertEqual(
+			[n for n in raised_again if frappe.db.get_value(DOCTYPE, n, "visa_request_id") == visa],
+			[],
+		)
+
+	def test_what_it_raises_is_a_draft_with_the_expiry_reason(self):
+		visa = _visa_request("H", visa_expiry_date=today())
+
+		self._run_job()
+		name = live_cancellation(visa)
+		self.assertIsNotNone(name)
+
+		doc = frappe.get_doc(DOCTYPE, name)
+		self.assertEqual(doc.docstatus, 0)
+		self.assertEqual(doc.cancellation_reason, EXPIRY_REASON)
+
+	def test_it_is_scheduled_daily(self):
+		from one_fm import hooks
+
+		self.assertIn(
+			"one_fm.visa_management.doctype.visa_cancellation_request.visa_cancellation_request.cancel_expired_visas",
+			hooks.scheduler_events["daily"],
+		)
