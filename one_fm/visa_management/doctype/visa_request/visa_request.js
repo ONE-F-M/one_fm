@@ -231,13 +231,52 @@ function add_visa_cancellation_button(frm) {
 	if (frm.is_new()) return;
 	if (frm.doc.workflow_state !== COMPLETED_STATE) return;
 
-	frm.add_custom_button(__('Create Visa Cancellation'), () => {
-		frappe.msgprint({
-			title: __('Not Available Yet'),
-			indicator: 'orange',
-			message: __('The Visa Cancellation process is not set up yet. This button will raise one from {0} once it is.', [frm.doc.name])
-		});
+	frm.add_custom_button(__('Create Visa Cancellation'), () => ask_for_cancellation_reason(frm));
+}
+
+// WI-002428: the reason has to be chosen before the cancellation process starts, so it is
+// asked for here rather than left to be filled in on the document afterwards.
+//
+// The options are read off the DocType's own Select rather than repeated here, so the
+// dialog cannot drift from the field the answer is stored in. reqd on the dialog field is
+// what stops an empty submission; the server demands it again, because the dialog is a
+// convenience and not the rule.
+function ask_for_cancellation_reason(frm) {
+	const reasons = (frappe.meta.get_docfield('Visa Cancellation Request', 'cancellation_reason')
+		|| {}).options || '';
+
+	const dialog = new frappe.ui.Dialog({
+		title: __('Reason for Visa Cancellation'),
+		fields: [
+			{
+				fieldname: 'cancellation_reason',
+				fieldtype: 'Select',
+				label: __('Cancellation Reason'),
+				options: reasons,
+				reqd: 1
+			}
+		],
+		primary_action_label: __('Create Visa Cancellation'),
+		primary_action(values) {
+			dialog.hide();
+			frappe.call({
+				method: 'one_fm.visa_management.doctype.visa_cancellation_request.visa_cancellation_request.create_from_visa_request',
+				args: {
+					visa_request: frm.doc.name,
+					cancellation_reason: values.cancellation_reason
+				},
+				freeze: true,
+				freeze_message: __('Raising the Visa Cancellation Request...'),
+				callback: (r) => {
+					if (r.message && r.message.name) {
+						frappe.set_route('Form', 'Visa Cancellation Request', r.message.name);
+					}
+				}
+			});
+		}
 	});
+
+	dialog.show();
 }
 
 

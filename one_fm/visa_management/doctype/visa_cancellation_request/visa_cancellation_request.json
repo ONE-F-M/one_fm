@@ -1,0 +1,238 @@
+{
+ "actions": [],
+ "autoname": "VCR-OFM-.#####",
+ "creation": "2026-09-13 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_4abb",
+  "amended_from",
+  "visa_request_id",
+  "pro_operator",
+  "column_break_jmap",
+  "job_applicant_full_name",
+  "grd_operator",
+  "cancellation_reason",
+  "passport_details_section",
+  "passport_copy",
+  "passport_number",
+  "passport_holder_of",
+  "column_break_kzef",
+  "passport_issued_on",
+  "passport_expires_on",
+  "moi_details_section",
+  "visa_cancellation_date",
+  "pam_details_section",
+  "pam_reference_number",
+  "attach_work_permit_cancellation_document",
+  "column_break_bixx",
+  "visa_application_date",
+  "visa_details_section",
+  "visa_reference_number",
+  "visa_issue_date",
+  "visa_expiry_date",
+  "column_break_lcrq",
+  "visa_document",
+  "section_break_fbvp",
+  "pro_officer_rejection_remark"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_4abb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Visa Cancellation Request",
+   "read_only": 1
+  },
+  {
+   "fieldname": "visa_request_id",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Visa Request",
+   "options": "Visa Request"
+  },
+  {
+   "fieldname": "pro_operator",
+   "fieldtype": "Link",
+   "label": "PRO Operator",
+   "options": "User"
+  },
+  {
+   "fieldname": "column_break_jmap",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "visa_request_id.job_applicant_full_name",
+   "fieldname": "job_applicant_full_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Job Applicant Full Name"
+  },
+  {
+   "fieldname": "grd_operator",
+   "fieldtype": "Link",
+   "label": "GRD Operator",
+   "options": "User"
+  },
+  {
+   "fieldname": "cancellation_reason",
+   "fieldtype": "Select",
+   "label": "Cancellation Reason",
+   "options": "\nCancellation Due to Visa Expiry",
+   "reqd": 1
+  },
+  {
+   "fieldname": "passport_details_section",
+   "fieldtype": "Section Break",
+   "label": "Passport Details"
+  },
+  {
+   "fetch_from": "visa_request_id.passport_copy",
+   "fieldname": "passport_copy",
+   "fieldtype": "Attach",
+   "label": "Passport Copy"
+  },
+  {
+   "fetch_from": "visa_request_id.passport_number",
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number"
+  },
+  {
+   "fetch_from": "visa_request_id.passport_holder_of",
+   "fieldname": "passport_holder_of",
+   "fieldtype": "Data",
+   "label": "Passport Holder of"
+  },
+  {
+   "fieldname": "column_break_kzef",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "visa_request_id.passport_issued_on",
+   "fieldname": "passport_issued_on",
+   "fieldtype": "Data",
+   "label": "Passport Issued on"
+  },
+  {
+   "fetch_from": "visa_request_id.passport_expires_on",
+   "fieldname": "passport_expires_on",
+   "fieldtype": "Data",
+   "label": "Passport Expires on"
+  },
+  {
+   "depends_on": "eval:doc.workflow_state==\"Pending by PRO\"|| doc.workflow_state==\"Pending for Work Permit Cancellation\"|| doc.workflow_state==\"Visa Cancelled\" || doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending By PAM\" || doc.workflow_state==\"Completed\"",
+   "fieldname": "moi_details_section",
+   "fieldtype": "Section Break",
+   "label": "MOI Details"
+  },
+  {
+   "fieldname": "visa_cancellation_date",
+   "fieldtype": "Date",
+   "label": "Visa Cancellation Date"
+  },
+  {
+   "depends_on": "eval:doc.workflow_state==\"Visa Cancelled\" || doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending By PAM\" || doc.workflow_state==\"Completed\"",
+   "fieldname": "pam_details_section",
+   "fieldtype": "Section Break",
+   "label": "PAM Details"
+  },
+  {
+   "fieldname": "pam_reference_number",
+   "fieldtype": "Data",
+   "label": "PAM Reference Number"
+  },
+  {
+   "fieldname": "attach_work_permit_cancellation_document",
+   "fieldtype": "Attach",
+   "label": "Attach Work Permit Cancellation Document"
+  },
+  {
+   "fieldname": "column_break_bixx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "visa_application_date",
+   "fieldtype": "Datetime",
+   "label": "Work Permit Cancellation Date"
+  },
+  {
+   "fieldname": "visa_details_section",
+   "fieldtype": "Section Break",
+   "label": "Visa Details"
+  },
+  {
+   "fetch_from": "visa_request_id.visa_reference_number",
+   "fieldname": "visa_reference_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Visa Reference Number"
+  },
+  {
+   "fetch_from": "visa_request_id.visa_issue_date",
+   "fieldname": "visa_issue_date",
+   "fieldtype": "Data",
+   "label": "Visa Issue Date"
+  },
+  {
+   "fetch_from": "visa_request_id.visa_expiry_date",
+   "fieldname": "visa_expiry_date",
+   "fieldtype": "Data",
+   "label": "Visa Expiry Date"
+  },
+  {
+   "fieldname": "column_break_lcrq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "visa_request_id.visa_document",
+   "fieldname": "visa_document",
+   "fieldtype": "Attach",
+   "label": "Visa Document"
+  },
+  {
+   "fieldname": "section_break_fbvp",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "pro_officer_rejection_remark",
+   "fieldtype": "Small Text",
+   "label": "PRO Officer Rejection Remark"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-09-13 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Visa Management",
+ "name": "Visa Cancellation Request",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "doctype": "DocPerm",
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
