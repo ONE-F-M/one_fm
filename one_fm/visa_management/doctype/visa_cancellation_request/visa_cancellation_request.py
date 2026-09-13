@@ -2,8 +2,9 @@
 # For license information, please see license.txt
 """The request to cancel a visa that has already been issued.
 
-The DocType is the BA site's, field for field (WI-002425). What is here in code is the
-rule stacked on top of it: one live cancellation per Visa Request (WI-002432).
+The DocType is the BA site's, field for field (WI-002425). What is here in code is the two
+rules stacked on top of it: one live cancellation per Visa Request (WI-002432), and the
+reason the request was raised for (WI-002428).
 
 The lifecycle itself is the Visa Cancellation process map, which is configured separately -
 nothing here decides which state the request moves to next.
@@ -12,13 +13,17 @@ nothing here decides which state the request moves to next.
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import getdate, today
 
 # WI-002432: the state that frees a Visa Request to be cancelled again. It is a Workflow
 # State the Visa Cancellation process map configures rather than one this app defines, so
 # it is named here as a string and checked against that master in the tests - a rename
 # there would otherwise switch the escape hatch off silently.
 REJECTED_STATE = "Visa Cancellation Rejected"
+
+# WI-002428: the reasons the popup offers. The BA site has no reason field at all, so this
+# is not a migration of theirs - it is what the story asks for, and it starts with the one
+# reason any criterion names. The others are the business's to add.
+EXPIRY_REASON = "Cancellation Due to Visa Expiry"
 
 
 def has_workflow_state_column() -> bool:
@@ -116,3 +121,70 @@ class VisaCancellationRequest(Document):
 			),
 			title=_("Visa Cancellation Request Already Exists"),
 		)
+
+
+# What a cancellation carries over from the visa it cancels. Same fieldname on both sides,
+# so the copy is a loop rather than a map. The BA site types four of these as Data where
+# the Visa Request has a Date - passport and visa dates - which is their shape, so the
+# values are stringified on the way rather than the field being "corrected" here.
+COPIED_FROM_VISA_REQUEST = (
+	"job_applicant_full_name",
+	"grd_operator",
+	"passport_copy",
+	"passport_number",
+	"passport_holder_of",
+	"passport_issued_on",
+	"passport_expires_on",
+	"pam_reference_number",
+	"visa_reference_number",
+	"visa_issue_date",
+	"visa_expiry_date",
+	"visa_document",
+)
+
+
+def build_cancellation(visa_request, cancellation_reason: str):
+	"""A Draft cancellation for this visa, unsaved.
+
+	Returned rather than inserted so both callers - the button and the expiry job - decide
+	for themselves how to handle a refusal.
+	"""
+	doc = frappe.new_doc("Visa Cancellation Request")
+	doc.visa_request_id = visa_request.name
+	doc.cancellation_reason = cancellation_reason
+
+	for fieldname in COPIED_FROM_VISA_REQUEST:
+		value = visa_request.get(fieldname)
+		if value is not None:
+			doc.set(fieldname, value)
+
+	return doc
+
+
+@frappe.whitelist(methods=["POST"])
+def create_from_visa_request(visa_request: str, cancellation_reason: str):
+	"""Raise a cancellation for a visa, with the reason the user picked (WI-002428).
+
+	The reason is demanded here as well as in the dialog: the dialog is a convenience, and
+	a method that trusted it would let the process be started without one through any
+	other caller.
+	"""
+	if not cancellation_reason:
+		frappe.throw(
+			_("Select a reason for the cancellation before raising the request."),
+			title=_("Cancellation Reason Required"),
+		)
+
+	source = frappe.get_doc("Visa Request", visa_request)
+	source.check_permission("read")
+
+	if not frappe.has_permission("Visa Cancellation Request", "create"):
+		frappe.throw(
+			_("You do not have permission to create a Visa Cancellation Request."),
+			frappe.PermissionError,
+		)
+
+	doc = build_cancellation(source, cancellation_reason)
+	doc.insert()
+
+	return {"name": doc.name}

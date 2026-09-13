@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002425 and WI-002432: the Visa Cancellation Request, and one live one per visa.
+"""WI-002425, WI-002428 and WI-002432: the Visa Cancellation Request and its rules.
 
 The DocType is the BA site's, field for field; the rules on top of it are this app's. The
 lifecycle is the Visa Cancellation process map and is deliberately not tested here - nothing
@@ -14,7 +14,10 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 from one_fm.visa_management.doctype.visa_cancellation_request.visa_cancellation_request import (
+	COPIED_FROM_VISA_REQUEST,
+	EXPIRY_REASON,
 	REJECTED_STATE,
+	build_cancellation,
 	has_workflow_state_column,
 	is_standing,
 	live_cancellation_filters,
@@ -52,6 +55,7 @@ def _cancellation(suffix, visa_request, workflow_state=None, docstatus=0):
 	doc = frappe.new_doc(DOCTYPE)
 	doc.name = SEEDED + suffix
 	doc.visa_request_id = visa_request
+	doc.cancellation_reason = EXPIRY_REASON
 	doc.docstatus = docstatus
 	if workflow_state and has_workflow_state_column():
 		doc.set("workflow_state", workflow_state)
@@ -158,6 +162,7 @@ class TestOneLiveCancellationPerVisa(FrappeTestCase):
 		doc = frappe.new_doc(DOCTYPE)
 		doc.name = SEEDED + "APPLYING"
 		doc.visa_request_id = self.visa
+		doc.cancellation_reason = EXPIRY_REASON
 		return doc
 
 	def test_a_second_one_is_refused(self):
@@ -240,3 +245,77 @@ class TestOneLiveCancellationPerVisa(FrappeTestCase):
 		"""It is configured by the Visa Cancellation process map rather than by this app,
 		so a rename there would switch the escape hatch off silently."""
 		self.assertTrue(frappe.db.exists("Workflow State", REJECTED_STATE))
+
+
+class TestTheCancellationReason(FrappeTestCase):
+	"""WI-002428. The BA site has no reason field at all - this is the story's own."""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		cls.field = {f["fieldname"]: f for f in json.loads(SHIPPED.read_text())["fields"]}[
+			"cancellation_reason"
+		]
+
+	def test_it_is_a_mandatory_select(self):
+		self.assertEqual(self.field["fieldtype"], "Select")
+		self.assertEqual(self.field["reqd"], 1)
+
+	def test_it_offers_the_reason_the_expiry_job_writes(self):
+		"""The one reason any criterion names. If these two ever disagree the job writes a
+		value the field does not offer, and the document fails to save."""
+		self.assertIn(EXPIRY_REASON, self.field["options"].split("\n"))
+
+	def test_the_popup_reads_its_options_off_the_field(self):
+		"""So the dialog cannot drift from the field the answer is stored in."""
+		script = (Path(frappe.get_app_path("one_fm")) / "visa_management" / "doctype" /
+			"visa_request" / "visa_request.js").read_text()
+
+		self.assertIn("frappe.meta.get_docfield('Visa Cancellation Request', 'cancellation_reason')", script)
+		self.assertIn("reqd: 1", script)
+
+	def test_the_server_demands_a_reason_too(self):
+		"""The dialog is a convenience; a caller that skipped it must still be refused."""
+		from one_fm.visa_management.doctype.visa_cancellation_request.visa_cancellation_request import (
+			create_from_visa_request,
+		)
+
+		with self.assertRaises(frappe.ValidationError):
+			create_from_visa_request(visa_request="whatever", cancellation_reason="")
+
+
+class TestRaisingOneFromAVisaRequest(FrappeTestCase):
+	"""WI-002428's second half: what the new request carries."""
+
+	def setUp(self):
+		_clear()
+		self.visa = _visa_request("A")
+
+	def tearDown(self):
+		_clear()
+
+	def test_it_points_back_and_carries_the_reason(self):
+		doc = build_cancellation(frappe.get_doc("Visa Request", self.visa), EXPIRY_REASON)
+
+		self.assertEqual(doc.visa_request_id, self.visa)
+		self.assertEqual(doc.cancellation_reason, EXPIRY_REASON)
+
+	def test_it_brings_the_visa_details_with_it(self):
+		source = frappe.get_doc("Visa Request", self.visa)
+		doc = build_cancellation(source, EXPIRY_REASON)
+
+		self.assertEqual(doc.passport_number, source.passport_number)
+		self.assertEqual(doc.visa_reference_number, source.visa_reference_number)
+		self.assertEqual(doc.job_applicant_full_name, source.job_applicant_full_name)
+
+	def test_every_copied_field_exists_on_both_sides(self):
+		"""A fieldname that drifted on either side would copy nothing, silently."""
+		vr = frappe.get_meta("Visa Request")
+		vcr = frappe.get_meta(DOCTYPE)
+		for fieldname in COPIED_FROM_VISA_REQUEST:
+			with self.subTest(fieldname=fieldname):
+				self.assertIsNotNone(vr.get_field(fieldname), f"Visa Request has no {fieldname}")
+				self.assertIsNotNone(vcr.get_field(fieldname), f"{DOCTYPE} has no {fieldname}")
+
+	def test_it_starts_as_a_draft(self):
+		self.assertEqual(build_cancellation(frappe.get_doc("Visa Request", self.visa), EXPIRY_REASON).docstatus, 0)
