@@ -43,6 +43,16 @@ def hold_overtime_for_approval(names):
 	somebody already working a basic shift that day is a double shift. A state already
 	set is left alone, so re-running the roster over a decided request does not drag it
 	back to Pending.
+
+	WI-002437: except a Rejected one. The roster names its rows
+	"<date>_<employee>_<roster type>", so re-rostering overtime for a day already refused
+	writes over the same row rather than making a new one - and its ON DUPLICATE KEY
+	UPDATE does not touch workflow_state. Without this the row stayed Rejected, was
+	skipped here, and was then filtered out of the Shift Assignment job for being
+	Rejected: the supervisor's new request vanished with no way to tell why.
+
+	Only for the rows the caller just wrote, which is the whole reason this cannot drag a
+	decided request back: it is handed the names of that one INSERT.
 	"""
 	names = [name for name in (names or []) if name]
 	if not names:
@@ -54,7 +64,7 @@ def hold_overtime_for_approval(names):
 			"name": ["in", names],
 			"roster_type": OVERTIME,
 			"employee_availability": WORKING,
-			"workflow_state": ["in", [None, ""]],
+			"workflow_state": ["in", [None, "", DSOT_REJECTED]],
 		},
 		fields=["name", "employee", "date"],
 	)
@@ -187,13 +197,15 @@ class EmployeeSchedule(Document):
 			self.employee_availability = "Suspended"
 
 	def before_insert(self):
-		self.set_dsot_state()
 		if frappe.db.exists("Employee Schedule", {"employee": self.employee, "date": self.date, "roster_type" : self.roster_type}):
 			frappe.throw(_("Employee Schedule already scheduled for {employee} on {date}.".format(employee=self.employee_name, date=cstr(self.date))))
 
 		# validate employee is active
 		if not frappe.db.exists("Employee", {'status':'Active', 'name':self.employee}):
 			frappe.throw(f"{self.employee} - {self.employee_name} is not active and cannot be scheduled.")
+
+	def after_insert(self):
+		self.set_dsot_state()
 
 	def on_update(self):
 		self.handle_dsot_decision()
@@ -235,8 +247,18 @@ class EmployeeSchedule(Document):
 		double shift, and somebody has to say yes to it. One raised for a day the
 		employee is not already working is ordinary overtime and goes through untouched.
 
-		Set before insert rather than on validate so it cannot be talked out of the state
-		by a later save: the workflow decides when it leaves.
+		WI-002437: written after the insert, not before it. Setting the field on the
+		document made Frappe's own workflow validation refuse the save outright -
+		"Workflow State transition not allowed from Active to Pending DSOT Approval",
+		because on an insert there is no before-state to transition from and the first
+		state is the only one a new document may carry. Every double shift raised through
+		the ORM failed at the supervisor with that message, and none ever reached the
+		approver; the roster's own path only worked because it writes its rows with raw
+		SQL and then calls hold_overtime_for_approval, which is exactly what this now does
+		for a single one.
+
+		Written rather than saved, so it cannot be talked out of the state by a later
+		save: the workflow decides when it leaves.
 		"""
 		if self.roster_type != OVERTIME or self.get("workflow_state") == PENDING_DSOT:
 			return
@@ -244,7 +266,8 @@ class EmployeeSchedule(Document):
 		if not self.has_working_basic_schedule():
 			return
 
-		self.workflow_state = PENDING_DSOT
+		self.db_set("workflow_state", PENDING_DSOT, update_modified=False)
+		self.request_dsot_approval()
 
 	def has_working_basic_schedule(self) -> bool:
 		"""Is the employee already working a basic shift on this date?"""
