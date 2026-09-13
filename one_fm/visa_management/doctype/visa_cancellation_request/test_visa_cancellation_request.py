@@ -49,7 +49,12 @@ class TestTheDocTypeMatchesTheBASite(FrappeTestCase):
 				self.assertIn(fieldname, self.by_name)
 
 	def test_the_ba_field_order_is_kept(self):
-		order = [f for f in self.shipped["field_order"] if f != "cancellation_reason"]
+		"""The two fields this app adds - the reason and the hidden workflow_state the
+		process map writes - are left out; everything else is in the BA site's order."""
+		order = [
+			f for f in self.shipped["field_order"]
+			if f not in ("cancellation_reason", "workflow_state")
+		]
 
 		self.assertEqual(order[:7], [
 			"section_break_4abb", "amended_from", "visa_request_id", "pro_operator",
@@ -72,6 +77,25 @@ class TestTheDocTypeMatchesTheBASite(FrappeTestCase):
 		"""They do it with a Document Naming Rule record; declared here instead so the
 		names travel with the code and a fresh site does not hash-name."""
 		self.assertEqual(self.shipped["autoname"], "VCR-OFM-.#####")
+
+	def test_it_carries_the_workflow_state_the_process_map_writes(self):
+		"""The Visa Cancellation process map records where a request has got to in
+		workflow_state, and its deploy readiness check refuses to deploy without the field.
+
+		On the BA site it is a Custom Field, created incidentally by the stray inactive
+		workflow on their DocType. Nothing recreates it here - Processa imports Workflow
+		States, Action Masters and Server Scripts but never a Workflow record, and it is
+		a Workflow being saved that makes Frappe create this field. So it is declared on
+		the DocType, with the same shape Visa Request's has.
+		"""
+		field = self.by_name["workflow_state"]
+
+		self.assertEqual(field["fieldtype"], "Link")
+		self.assertEqual(field["options"], "Workflow State")
+		self.assertEqual(field["hidden"], 1)
+		# The process map moves a submitted request between states.
+		self.assertEqual(field["allow_on_submit"], 1)
+		self.assertEqual(field["no_copy"], 1)
 
 	def test_it_points_back_at_the_visa_it_cancels(self):
 		field = self.by_name["visa_request_id"]

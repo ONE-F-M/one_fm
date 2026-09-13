@@ -34,7 +34,8 @@
   "column_break_lcrq",
   "visa_document",
   "section_break_fbvp",
-  "pro_officer_rejection_remark"
+  "pro_officer_rejection_remark",
+  "workflow_state"
  ],
  "fields": [
   {
@@ -196,6 +197,15 @@
    "fieldname": "pro_officer_rejection_remark",
    "fieldtype": "Small Text",
    "label": "PRO Officer Rejection Remark"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "no_copy": 1,
+   "options": "Workflow State"
   }
  ],
  "index_web_pages_for_search": 1,
