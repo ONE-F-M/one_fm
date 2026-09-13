@@ -315,3 +315,89 @@ class TestTheFieldsTheStoryAdds(FrappeTestCase):
 			order[order.index("absence_type") : order.index("absence_type") + 3],
 			["absence_type", "absent_dates", "go_to_attendance"],
 		)
+
+
+class TestTheJobSetsAStartDate(FrappeTestCase):
+	"""WI-002465: every type carries the day its absence began, not only the 5-day one.
+
+	Without it the Absent Dates field on a 7-day case had nothing to start from, which is
+	the type AC 3 actually names.
+	"""
+
+	def _run_start(self, offsets, minimum, anchor="2026-06-10"):
+		from one_fm.api.tasks import latest_consecutive_run_start
+
+		return latest_consecutive_run_start(
+			[getdate(add_days(anchor, offset)) for offset in offsets], minimum
+		)
+
+	def test_it_finds_the_head_of_a_qualifying_run(self):
+		self.assertEqual(self._run_start(range(7), 7), getdate("2026-06-10"))
+
+	def test_a_run_one_day_short_does_not_qualify(self):
+		self.assertIsNone(self._run_start(range(6), 7))
+
+	def test_the_most_recent_qualifying_run_wins(self):
+		"""Two runs of seven; the live one is what the case was raised about."""
+		offsets = list(range(7)) + list(range(20, 27))
+
+		self.assertEqual(self._run_start(offsets, 7), getdate(add_days("2026-06-10", 20)))
+
+	def test_a_longer_earlier_run_does_not_win_over_a_recent_one(self):
+		offsets = list(range(10)) + list(range(30, 37))
+
+		self.assertEqual(self._run_start(offsets, 7), getdate(add_days("2026-06-10", 30)))
+
+	def test_a_gap_breaks_the_run(self):
+		offsets = [0, 1, 2, 4, 5, 6, 7]
+
+		self.assertIsNone(self._run_start(offsets, 7))
+
+	def test_it_is_the_head_of_the_run_not_the_seventh_day(self):
+		"""Ten days in a row on a seven day case starts at day one, so the case lists the
+		first seven rather than the last."""
+		self.assertEqual(self._run_start(range(10), 7), getdate("2026-06-10"))
+
+	def test_no_absences_at_all(self):
+		self.assertIsNone(self._run_start([], 7))
+
+	def test_unsorted_input_is_handled(self):
+		"""The caller holds its dates newest-first."""
+		self.assertEqual(self._run_start(list(reversed(range(7))), 7), getdate("2026-06-10"))
+
+
+class TestTheStartDateReachesTheCase(FrappeTestCase):
+	"""End to end: what the job now puts on the case is what makes the field populate."""
+
+	def setUp(self):
+		_clear()
+		self.start = add_days(today(), -8)
+		for offset in range(8):
+			_attendance(add_days(self.start, offset), suffix=f"e2e{offset}")
+
+	def tearDown(self):
+		_clear()
+
+	def test_the_job_would_pick_the_run_the_controller_then_lists(self):
+		from one_fm.api.tasks import latest_consecutive_run_start
+
+		absent = absent_attendance_dates(EMPLOYEE, add_days(today(), -30), today())
+		start = latest_consecutive_run_start(absent, 7)
+
+		self.assertEqual(start, getdate(self.start))
+
+		dates = _dates(_case("7 Days Consecutive Absence", absence_start_date=start))
+		self.assertEqual(dates, [str(getdate(add_days(self.start, n))) for n in range(7)])
+
+	def test_the_milestone_builder_accepts_a_start_date(self):
+		"""create_yearly_milestone_absence_case gained the argument; a signature change
+		that silently dropped it would leave yearly cases blank again."""
+		import inspect
+
+		from one_fm.api.tasks import create_absence_case, create_yearly_milestone_absence_case
+
+		for builder in (create_absence_case, create_yearly_milestone_absence_case):
+			with self.subTest(builder=builder.__name__):
+				self.assertIn(
+					"absence_start_date", inspect.signature(builder).parameters
+				)
