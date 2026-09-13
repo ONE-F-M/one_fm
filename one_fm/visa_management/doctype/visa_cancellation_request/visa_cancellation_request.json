@@ -13,7 +13,6 @@
   "column_break_jmap",
   "job_applicant_full_name",
   "grd_operator",
-  "cancellation_reason",
   "passport_details_section",
   "passport_copy",
   "passport_number",
@@ -79,13 +78,6 @@
    "fieldtype": "Link",
    "label": "GRD Operator",
    "options": "User"
-  },
-  {
-   "fieldname": "cancellation_reason",
-   "fieldtype": "Select",
-   "label": "Cancellation Reason",
-   "options": "\nCancellation Due to Visa Expiry",
-   "reqd": 1
   },
   {
    "fieldname": "passport_details_section",
