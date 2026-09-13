@@ -239,6 +239,36 @@ class TestTheAlertItself(FrappeTestCase):
 		self.assertEqual(call["reference_doctype"], "PAM License Details")
 		self.assertEqual(call["reference_name"], SEEDED + "F")
 
+	def test_the_copy_is_written_as_a_real_cc_header(self):
+		"""email_body.make() writes "To: <!--recipient-->" and no Cc header at all unless
+		expose_recipients is "header" - so a copied-in reader got the mail but it arrived
+		looking as though it were addressed to them alone, and the recipient could not see
+		who else had been told. That is what came back from testing."""
+		self.assertEqual(self._send()["expose_recipients"], "header")
+
+	def test_the_notification_log_does_not_send_its_own_email(self):
+		"""Notification Log's after_insert emails through the new_notification template
+		unless the type is one Frappe never emails. Without this everybody got two emails
+		for one licence, and the one they opened was that one - no Cc, addressed to them."""
+		self._send()
+
+		types = frappe.get_all(
+			"Notification Log",
+			filters={"document_type": "PAM License Details", "document_name": SEEDED + "F"},
+			pluck="type",
+		)
+
+		self.assertEqual(set(types), {"Alert"})
+
+	def test_alert_is_still_the_type_frappe_never_emails(self):
+		"""The behaviour the line above depends on, asked of Frappe rather than assumed -
+		if this ever changes, the duplicate comes back silently."""
+		from frappe.desk.doctype.notification_settings.notification_settings import (
+			is_email_notifications_enabled_for_type,
+		)
+
+		self.assertFalse(is_email_notifications_enabled_for_type(self.users[0], "Alert"))
+
 
 class TestTheSettingsField(FrappeTestCase):
 	def test_grd_settings_carries_the_recipient_table(self):

@@ -120,6 +120,13 @@ def send_lg_expiry_alert(license, to, cc):
 	for user in [to] + list(cc):
 		frappe.get_doc({
 			"doctype": "Notification Log",
+			# "Alert" is the one type Frappe never emails - is_email_notifications_enabled_
+			# for_type() returns False for it outright. Without that, Notification Log's
+			# after_insert sends its own copy through the new_notification template, so
+			# everybody got two emails for one licence and the one they opened was the
+			# Notification Log's: addressed to them alone, with no Cc, whatever this job
+			# passed. The bell still shows it; only the duplicate email is gone.
+			"type": "Alert",
 			"subject": subject,
 			"email_content": message,
 			"document_type": "PAM License Details",
@@ -134,6 +141,12 @@ def send_lg_expiry_alert(license, to, cc):
 		content=message,
 		reference_doctype="PAM License Details",
 		reference_name=license.name,
+		# Without this Frappe writes "To: <!--recipient-->" and no Cc header at all
+		# (email_body.make), personalising one copy per address - so a copied-in reader
+		# gets the mail but it arrives looking as though it were addressed to them alone,
+		# and the recipient cannot see who else was told. "header" writes the real To and
+		# Cc, which is what makes the first row the recipient and the rest a copy.
+		expose_recipients="header",
 		is_scheduler_email=True,
 	)
 
