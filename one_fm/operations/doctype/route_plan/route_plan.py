@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import datetime
+import re
 
 import frappe
 from frappe import _
@@ -18,6 +19,11 @@ _TIME_END = datetime.timedelta(days=1)
 # The direction a merged trip carries once cards are combined (WI-002071).
 MIXED_DIRECTION = "MIXED"
 
+# A trip name as the canvas mints it: an optional leased "S-" prefix, the vehicle's own
+# number, then a two-digit sequence. "S-106" is vehicle 1 run 06; "S-1303" is vehicle 13
+# run 03; "1901" is vehicle 19 run 01 on a bus that is not leased.
+TRIP_NAME = re.compile(r"^(S-)?(\d+?)(\d{2})$")
+
 
 class RoutePlan(Document):
 	def validate(self):
@@ -27,6 +33,7 @@ class RoutePlan(Document):
 		self._validate_vehicle_retention_locks()
 		self._validate_vehicle_datetime_locks()
 		self._validate_trip_group_single_vehicle()
+		self._rename_duplicate_trip_names()
 		self._validate_vehicle_capacity()
 
 	def _validate_dates(self):
@@ -296,6 +303,70 @@ class RoutePlan(Document):
 					title=_("{0}: Vehicle Capacity Exceeded").format(vehicle),
 				)
 
+	def _rename_duplicate_trip_names(self):
+		"""No two runs on one vehicle answer to the same trip name (WI-002401).
+
+		A trip name is how a run is identified on the block, in the "Add Stop to which
+		trip?" picker and on the driver's manifest, so two runs called S-106 on one lane
+		are indistinguishable everywhere the name is all the reader has.
+
+		The canvas already mints a name by scanning for the next free sequence rather
+		than counting the runs - counting re-issued a name the moment any run but the
+		last was removed (WI-002160). But it reads that list when the placement dialog
+		OPENS and the drop commits later, so two dialogs open at once, or one left open
+		while another card is placed, still hand out the same number. Rather than chase
+		every path on the board, the rule is enforced here, where they all end up.
+
+		A repair, not a refusal: the plans already carry duplicates and refusing the save
+		would strand them. The earliest run keeps the name - it is the one the dispatcher
+		has been looking at - and each later claimant takes the next free sequence for
+		that vehicle.
+		"""
+		for vehicle, runs in self._runs_by_vehicle().items():
+			taken = {name for run in runs.values() for name in {run["name"]} if name}
+			shape = _trip_name_shape(taken)
+			if not shape:
+				# No name on this lane parses, so there is no series to extend. Renaming
+				# into a guessed one would be worse than leaving the clash visible.
+				continue
+
+			claimed = {}
+			for key in sorted(runs, key=lambda k: (runs[k]["start"], str(k))):
+				run = runs[key]
+				if not run["name"]:
+					continue
+				if run["name"] not in claimed:
+					claimed[run["name"]] = key
+					continue
+				fresh = _next_free_trip_name(shape, taken)
+				if not fresh:
+					continue
+				taken.add(fresh)
+				for row in run["rows"]:
+					row.trip_name = fresh
+
+	def _runs_by_vehicle(self) -> dict:
+		"""``{vehicle: {trip key: run}}`` over every row, camp legs included.
+
+		Camp legs carry the run's trip_name too, so a rename has to take them with it or
+		the drive out of the accommodation would answer to the old name. That is why this
+		does not go through ``_logical_trips``, which deliberately drops them.
+		"""
+		by_vehicle = {}
+		for idx, row in enumerate(self.assignments):
+			if not row.vehicle:
+				continue
+			# Standalone rows are keyed by position so two of them never merge.
+			key = row.trip_group or f"\0row-{idx}"
+			run = by_vehicle.setdefault(row.vehicle, {}).setdefault(
+				key, {"name": None, "start": _DAY_SECONDS, "rows": []}
+			)
+			run["rows"].append(row)
+			run["name"] = run["name"] or row.trip_name
+			start, _end = _row_time_window(row)
+			run["start"] = min(run["start"], start)
+		return by_vehicle
+
 	def _logical_trips(self, assignments=None) -> list:
 		"""Collapse the assignment rows into the trips a vehicle actually runs.
 
@@ -379,14 +450,28 @@ class RoutePlan(Document):
 		if not before:
 			return set()
 
-		def placement(rows):
+		def placement(trips):
+			"""``{vehicle: {(trip group, card)}}`` - which cards ride in which run.
+
+			Neither the trip's own key nor the stop numbering can stand in for that. A
+			standalone row is keyed by its position, which moves when an unrelated row is
+			added. And ``stop_index`` is DERIVED, not stated: ``_stamp_leg_details``
+			renumbers every row of every vehicle off the itinerary (physical stops, camp
+			legs included) while the canvas round-trips a logical 1..N, and the order
+			itself is re-derived from each card's own arrival time. Keying on either
+			re-lettered every card on every save, so no bus was ever "untouched" - one
+			pre-existing overload then refused every edit anywhere on the plan, on a
+			vehicle the dispatcher had never gone near (WI-002401).
+
+			ponytail: membership only, so re-sequencing a merged run's stops without
+			adding or removing a card reads as untouched and keeps the verdict it was
+			saved with. Add the order back here if stop order ever becomes something the
+			dispatcher sets by hand rather than something the itinerary derives.
+			"""
 			by_vehicle = {}
-			for trip in rows:
+			for trip in trips:
 				by_vehicle.setdefault(trip.vehicle, set()).update(
-					# The trip's own key is not usable here: a standalone row is keyed by
-					# its position, which moves when an unrelated row is added.
-					(row.trip_group, row.transportation_shipment, row.stop_index)
-					for row in trip.rows
+					(row.trip_group, row.transportation_shipment) for row in trip.rows
 				)
 			return by_vehicle
 
@@ -515,6 +600,41 @@ def _time_windows_overlap(a_start, a_end, b_start, b_end) -> bool:
 
 
 _DAY_SECONDS = 24 * 60 * 60
+
+
+def _trip_name_shape(names):
+	"""``(prefix, vehicle number)`` shared by the trip names already on one lane.
+
+	Read back off the lane rather than re-derived: the canvas numbers a vehicle by its
+	POSITION in the vehicle list, which moves as vehicles are added, retired or
+	filtered, and is not something the server can reproduce. Whatever the board has
+	been calling this bus is what a new name for it has to look like.
+
+	The commonest shape wins, so one odd name left by hand cannot re-letter the lane.
+	"""
+	shapes = {}
+	for name in names:
+		match = TRIP_NAME.match(str(name or "").strip())
+		if match:
+			prefix, vehicle_number, _seq = match.groups()
+			shapes[(prefix or "", vehicle_number)] = shapes.get((prefix or "", vehicle_number), 0) + 1
+	if not shapes:
+		return None
+	return max(shapes, key=lambda shape: (shapes[shape], shape))
+
+
+def _next_free_trip_name(shape, taken):
+	"""The lowest sequence in this lane's series that nothing is using yet.
+
+	Two digits, as the canvas writes them. A lane that has somehow used all 99 gets
+	nothing rather than a name that would collide again.
+	"""
+	prefix, vehicle_number = shape
+	for seq in range(1, 100):
+		name = f"{prefix}{vehicle_number}{seq:02d}"
+		if name not in taken:
+			return name
+	return None
 
 
 def _passenger_limits(vehicle_names) -> dict:
@@ -751,7 +871,10 @@ def _cards_for_itinerary(rows) -> list:
 		fact = facts.get(row.transportation_shipment)
 		if not fact:
 			continue
-		cards.append(frappe._dict({
+		# Where the operator has this block on the lane, which is the order they have
+		# stated for the run. Carried alongside the card rather than on it: the card is
+		# the shipment's own facts and nothing downstream should read a plan detail off it.
+		cards.append((_iso_time_of_day(row.start_time), frappe._dict({
 			"name": fact.name,
 			"accommodation": fact.accommodation,
 			"accommodation_name": fact.accommodation_name,
@@ -761,18 +884,21 @@ def _cards_for_itinerary(rows) -> list:
 			"pre_merge_trip_direction": fact.pre_merge_trip_direction,
 			"start_time": fact.start_time,
 			"end_time": fact.end_time,
-		}))
+		})))
 
-	# Ordered the way the bus reaches them, which is how the trip modal orders the same
-	# cards. Sorting on the stored stop_index instead let the two build different runs
-	# out of the same cards and reach different peaks - the modal would accept a merge
-	# the save then refused.
+	# In the order the operator has the run, which is how the trip modal and the drawer
+	# order the same cards. This used to re-derive the order from each card's own shift
+	# times so that the modal and the save could not disagree; they still cannot, but
+	# both now read the stated order instead of rebuilding one, so a stop dragged in the
+	# drawer stays where it was put (WI-002401). Sorting on the stored stop_index is
+	# still wrong - that is the PHYSICAL stop number, camp stops included, rewritten
+	# from the itinerary on every save.
 	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
-		arrival_order,
+		run_order,
 	)
 
-	cards.sort(key=arrival_order)
-	return cards
+	cards.sort(key=lambda pair: run_order(pair[1], pair[0]))
+	return [card for _placed, card in cards]
 
 
 def _iso_to_date(value):

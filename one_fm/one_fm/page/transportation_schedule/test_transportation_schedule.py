@@ -321,3 +321,79 @@ class TestEachCardBoardsAtItsOwnCamp(FrappeTestCase):
 
 	def test_a_camp_with_no_leg_recorded_falls_back_to_the_run(self):
 		self.assertIn("or camp_departure.get(row.trip_group),", self.source)
+
+
+class TestARunThatStoppedBeingMixedSaysSo(FrappeTestCase):
+	"""AC3 has a server half, and it was in the wrong place (WI-002401).
+
+	Taking one stop out of a merged run can leave what remains travelling only one way.
+	The canvas re-stamps the blocks straight away, so the colour flips - but a row's
+	direction is written from its SHIPMENT, and the shipment was still flagged Mixed. So
+	the block came back green on the next page load.
+	"""
+
+	def test_the_unmerge_runs_before_the_rows_are_written(self):
+		import inspect
+
+		from one_fm.one_fm.page.transportation_schedule import transportation_schedule
+
+		source = inspect.getsource(transportation_schedule.save_assignments)
+		self.assertIn("_unmerge_unmixed_placements(items)", source)
+		# Before, not after: the row direction is read off the shipment.
+		self.assertLess(
+			source.index("_unmerge_unmixed_placements(items)"),
+			source.index("directions = _shipment_direction_flags(items)"),
+		)
+
+	def test_a_card_whose_shipment_disagrees_is_the_one_repaired(self):
+		# The old rule only considered cards it had counted as Assigned, which requires
+		# the shipment's direction to match the placement - so it skipped every card
+		# still flagged Mixed, which is the only kind there was anything to repair.
+		import inspect
+
+		from one_fm.one_fm.page.transportation_schedule import transportation_schedule
+
+		source = inspect.getsource(transportation_schedule._unmerge_unmixed_placements)
+		self.assertIn('if "MIXED" not in placed_dirs', source)
+		self.assertNotIn("assigned", source)
+
+	def test_a_still_mixed_run_keeps_its_flag(self):
+		import inspect
+
+		from one_fm.one_fm.page.transportation_schedule import transportation_schedule
+
+		# One MIXED block is enough to say the card is still riding a merged run.
+		source = inspect.getsource(transportation_schedule._unmerge_unmixed_placements)
+		self.assertIn('placed.setdefault(name, set()).add(', source)
+
+
+class TestAPlacedBlockCanAlwaysBeOpened(FrappeTestCase):
+	"""A placed card is Assigned, so it is not a pool card (WI-002401).
+
+	Re-saving the plan overwrote each row's saved names with empty strings once that
+	happened, and with nothing left to build a card from, the detail drawer simply
+	refused to open when the block was clicked.
+	"""
+
+	def test_the_canvas_keeps_names_it_cannot_look_up(self):
+		import pathlib
+
+		canvas = pathlib.Path(frappe.get_app_path(
+			"one_fm", "one_fm", "page", "transportation_schedule",
+			"transportation_schedule.js")).read_text()
+		self.assertIn("_site: card ? card.site : (i._site || ''),", canvas)
+		self.assertIn("_shift: card ? card.shift_name : (i._shift || ''),", canvas)
+		self.assertNotIn("_site: card ? card.site : '',", canvas)
+
+	def test_the_load_fills_a_blank_copy_from_the_shipment(self):
+		# Repairs the rows an older save already blanked, without a patch.
+		import inspect
+
+		from one_fm.one_fm.page.transportation_schedule import transportation_schedule
+
+		source = inspect.getsource(transportation_schedule.load_assignments)
+		self.assertIn('"_shift":         row.shift or held.get("shift") or ""', source)
+		self.assertIn('"_stopLocation":  row.stop_location or held.get("stop_location") or ""',
+					  source)
+		# One query, not one per row.
+		self.assertIn("shipment_meta = {", source)

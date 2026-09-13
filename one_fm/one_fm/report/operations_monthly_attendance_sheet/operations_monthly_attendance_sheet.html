@@ -1,0 +1,248 @@
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Cairo:wght@200..1000&display=swap"
+  rel="stylesheet"
+/>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@160..700&display=swap" rel="stylesheet">
+
+<style>
+  /* ==== Print Format Styles Start (Affecting the printed/pdf report) === */
+  .print-format {
+    /* Margin should be separate because frappe is reading styles like this */
+    margin-left: 5mm;
+    margin-right: 5mm;
+    margin-top: 10mm;
+    margin-bottom: 0mm;
+    font-size: 7px !important;
+    font-family: "Readex Pro", sans-serif;
+  }
+
+  /* Override the existing styles */
+  .print-format td img {
+    max-height: 50px;
+    max-width: 100%;
+    height: auto !important;
+    width: auto !important;
+    object-fit: contain;
+    display: block;
+    margin: auto; 
+  }
+  /* === Print Format Styles End === */
+
+  .attendance-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    border: 1px solid #333;
+  }
+
+  .attendance-table th,
+  .attendance-table td {
+    border: 1px solid #333;
+    padding: 4px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+  }
+
+  .attendance-table .empty-attendance-cell {
+    background-color: #b9b9b9;
+  }
+
+  .section-header {
+    font-weight: bold;
+    text-align: left;
+  }
+
+  .title-section td {
+    font-family: "Cairo", sans-serif !important;
+    border: none !important;
+    font-size: 18px !important;
+    font-weight: bold !important;
+    font-style: italic !important;
+    text-align: center;
+    color: black;
+  }
+
+  .title-section .logo-cell {
+    padding: 10px !important;
+  }
+
+  .meta-cell {
+    text-align: left;
+    font-size: 10px;
+  }
+
+  .title-section,
+  .meta-section,
+  .header-section td,
+  .staff-duty th {
+    background-color: #f5f5f5;
+  }
+
+  .signatures td {
+    height: 50px !important;
+  }
+
+  .stamps td {
+    height: 70px !important;
+  }
+
+  .legend span {
+    border-left: 2px solid #000;
+    padding-right: 12px;
+    padding-left: 5px;
+    margin-right: 3px;
+  }
+
+  @media print {
+    .attendance-page {
+      page-break-after: always;
+    }
+    .attendance-page:not(:first-child) { /* Because first one is alreading getting the margin from print format margin's above */
+      margin-top: 10mm !important;
+    }
+  }
+</style>
+
+{% var CHUNK_SIZE = 20; %}
+
+{% var monthDays = report.additional_details ? report.additional_details.days : [] %}
+{% var statusMap = report.additional_details ? report.additional_details.status_map : [] %}
+
+{% var totalColumns = 44; %}
+{% var fixedColumns = 1 + 2 + 1; %}
+{% var dayColumns = monthDays.length; %}
+{% var dynamicColumns = totalColumns - dayColumns - fixedColumns; %}
+
+{% var empIdColSpan = Math.floor(dynamicColumns * 4 / 12); %}
+{% var empNameColSpan = Math.floor(dynamicColumns * 6 / 12); %}
+{% var shiftColSpan = dynamicColumns - empIdColSpan - empNameColSpan; %}
+
+{% var selectedMonth = "" %}
+{% for (var i = 0; i < report.get_filter("month").options.length; i++) { %}
+  {% if (report.get_filter("month").options[i].value == report.get_filter("month").value) { %}
+    {% selectedMonth = report.get_filter("month").options[i].label %}
+  {% } %}
+{% } %}
+
+{% function chunk(array, size) {
+  var out = [];
+  for (var i = 0; i < array.length; i += size) {
+    out.push(array.slice(i, i + size));
+  }
+  return out;
+} %}
+{% var pages = chunk(data, CHUNK_SIZE); %}
+
+{% var dateWiseDutyStaff = {} %}
+
+<div>
+  {% for (var p = 0; p < pages.length; p++) { %}
+    <div class="attendance-page">
+      <table class="attendance-table">
+        <!-- Title Row -->
+        <tr class="title-section">
+          <td colspan="5" class="logo-cell">
+            <img src="https://one-fm.com/files/ONEFM_Identity.png" alt="one-fm" />
+          </td>
+          <td colspan="34">{%= __("Monthly Attendance Sheet") %}</td>
+          <td colspan="5" class="logo-cell">
+            {% const clientLogo = report.additional_details.client_logo || "" %}
+            {% if clientLogo %}
+              <img src="{{ clientLogo }}" alt="Client Logo" />
+            {% } %}
+          </td>
+        </tr>
+  
+        <!-- Meta Info -->
+        <tr class="meta-section">
+          <td colspan="5" class="meta-cell"><strong>Project Name:</strong></td>
+          <td colspan="13" class="meta-cell">{{ report.get_filter_value("project") }}</td>
+          <td colspan="4" class="meta-cell"><strong>Site Name:</strong></td>
+          <td colspan="13" class="meta-cell">{{ report.get_filter_value("site") }}</td>
+          <td colspan="3" class="meta-cell"><strong>Month:</strong></td>
+          <td colspan="6" class="meta-cell">{{ selectedMonth }} {{ report.get_filter_value("year") }}</td>
+        </tr>
+  
+        <!-- Header -->
+        <tr class="header-section">
+          <th rowspan="2">#</th>
+          <th rowspan="2" colspan="{{ empIdColSpan }}">Employee ID</th>
+          <th rowspan="2" colspan="{{ empNameColSpan }}">Employee Name</th>
+          <th rowspan="2" colspan="{{ shiftColSpan }}">Shift</th>
+          {% for (var i = 0; i < monthDays.length; i++) { %}
+            <th>{{ monthDays[i].date }}</th>
+          {% } %}
+          <th rowspan="2" colspan="2">Working Days</th>
+          <th rowspan="2">Days Off</th>
+        </tr>
+        <tr>
+          {% for (var i = 0; i < monthDays.length; i++) { %}
+            <th>{{ monthDays[i].weekday }}</th>
+          {% } %}
+        </tr>
+  
+        <!-- Attendance Rows -->
+        {% var pageData = pages[p]; %}
+        {% for (var i = 0; i < pageData.length; i++) { %}
+          {% var row = pageData[i]; %}
+          <tr>
+            <td>{{ p * CHUNK_SIZE + i + 1 }}</td>
+            <td colspan="{{ empIdColSpan }}">{{ row.employee_id }}</td>
+            <td colspan="{{ empNameColSpan }}">{{ row.employee_name }}</td>
+            <td colspan="{{ shiftColSpan }}">{{ row.shift }}</td>
+            {% for (var j = 0; j < monthDays.length; j++) { %}
+              {% var status = row[monthDays[j].date]; %}
+              <td class="{{ status ? "" : "empty-attendance-cell" }}">{{ status == "CDO" ? "DO" : status }}</td>
+              {% if (status == "P") { %}
+                {% dateWiseDutyStaff[monthDays[j].date] = (dateWiseDutyStaff[monthDays[j].date] || 0) + 1 %}
+              {% } %}
+            {% } %}
+            <td colspan="2">{{ row.working_days }}</td>
+            <td>{{ row.off_days }}</td>
+          </tr>
+        {% } %}
+  
+        <!-- Staff on Duty (On Last Page Only) -->
+        {% if (p == (pages.length - 1)) { %}
+          <tr class="staff-duty">
+            <th colspan="{{ empIdColSpan + empNameColSpan + shiftColSpan + 1 }}">No. of Staff on Duty</th>
+            {% for (var n = 0; n < monthDays.length; n++) { %}
+              <td>{{ dateWiseDutyStaff[monthDays[n].date] || 0 }}</td>
+            {% } %}
+            <td colspan="2">{{ data.reduce((acc, rec) => acc + (rec.working_days || 0), 0) }}</td>
+            <td>{{ data.reduce((acc, rec) => acc + (rec.off_days || 0), 0) }}</td>
+          </tr>
+        {% } %}
+  
+        <!-- Signatures -->
+        <tr class="signatures">
+          <td colspan="6"><strong>Supervisor Name & Signature:</strong></td>
+          <td colspan="16"></td>
+          <td colspan="6"><strong>Client Name & Signature:</strong></td>
+          <td colspan="16"></td>
+        </tr>
+  
+        <!-- Stamps -->
+        <tr class="stamps">
+          <td colspan="6">Stamp</td>
+          <td colspan="16"></td>
+          <td colspan="6">Stamp</td>
+          <td colspan="16"></td>
+        </tr>
+  
+        <!-- Status Map -->
+         <tr>
+          <td colspan="44" class="legend">
+            {% for (var s = 0; s < statusMap.length; s++) { %}
+              <span>
+                {{ statusMap[s].key }} - {{ statusMap[s].status }}
+              </span>
+            {% } %}
+          </td>
+        </tr>
+      </table>
+    </div>
+  {% } %}
+</div>

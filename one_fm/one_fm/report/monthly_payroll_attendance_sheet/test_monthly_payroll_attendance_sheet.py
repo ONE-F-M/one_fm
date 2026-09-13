@@ -182,21 +182,52 @@ class TestTheRunIsDeferred(FrappeTestCase):
 		self.assertNotIn('add_inner_button(__("Generate")', source)
 
 
-class TestTheReportIsRenamed(FrappeTestCase):
-	"""AC1: the sheet is not Operations-only any more, so the name went with it."""
+OPERATIONS_REPORT = "Operations Monthly Attendance Sheet"
 
-	def test_the_report_answers_to_its_new_name(self):
+
+class TestTheTwoSheetsStandSideBySide(FrappeTestCase):
+	"""AC1 named the payroll sheet; it never asked for the Operations one to go.
+
+	The rename took it away, which cost every Operations user their report. Both exist
+	now, each with its own print format, and these say so - the failure they catch is a
+	future change quietly folding one back into the other.
+	"""
+
+	def test_the_payroll_sheet_exists_under_its_own_name(self):
 		self.assertTrue(frappe.db.exists("Report", REPORT))
 		self.assertEqual(REPORT, "Monthly Payroll Attendance Sheet")
 
-	def test_the_old_name_is_gone(self):
-		self.assertFalse(frappe.db.exists("Report", "Operations Monthly Attendance Sheet"))
+	def test_the_operations_sheet_is_still_there(self):
+		self.assertTrue(frappe.db.exists("Report", OPERATIONS_REPORT))
 
-	def test_the_print_format_followed_the_rename(self):
-		"""It links the report by name."""
+	def test_they_are_two_different_reports(self):
+		self.assertNotEqual(REPORT, OPERATIONS_REPORT)
+
+	def test_each_has_its_own_print_format(self):
+		"""A Report print format names one report, so sharing one is not an option."""
+		for report in (REPORT, OPERATIONS_REPORT):
+			with self.subTest(report=report):
+				self.assertEqual(frappe.db.count("Print Format", {"report": report}), 1)
+
+	def test_the_operations_format_prints_the_report_it_is_named_after(self):
 		self.assertEqual(
-			frappe.db.count("Print Format", {"report": "Operations Monthly Attendance Sheet"}), 0
+			frappe.db.get_value("Print Format", OPERATIONS_REPORT, "report"), OPERATIONS_REPORT
 		)
+
+	def test_the_two_sheets_do_not_share_a_scope(self):
+		"""Two names for one query would be worse than the rename was: the Operations
+		sheet keeps its shift-working gate, which is the whole reason it still exists."""
+		operations = frappe.read_file(frappe.get_app_path(
+			"one_fm", "one_fm", "report", "operations_monthly_attendance_sheet",
+			"operations_monthly_attendance_sheet.py",
+		))
+		payroll = frappe.read_file(frappe.get_app_path(
+			"one_fm", "one_fm", "report", "monthly_payroll_attendance_sheet",
+			"monthly_payroll_attendance_sheet.py",
+		))
+
+		self.assertIn("shift_working", operations)
+		self.assertNotIn("Employee.shift_working", payroll)
 
 	def test_the_already_generated_prepared_reports_do_not_follow(self):
 		"""Deliberate: each was computed under the old rules, so serving one under the new

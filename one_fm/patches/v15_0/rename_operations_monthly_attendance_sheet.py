@@ -2,15 +2,23 @@
 # For license information, please see license.txt
 """Rename the report "Operations Monthly Attendance Sheet" -> "Monthly Payroll Attendance Sheet".
 
-WI-002153 AC1. Renamed rather than left to the report sync to create afresh, so the Print
-Format that prints the sheet follows instead of pointing at a report nobody maintains.
+WI-002153 AC1, and a **mistake this patch is kept only to record.** AC1 asked for the payroll
+sheet to be named; it never asked for the Operations sheet to stop existing. Renaming took it
+away from everyone who used it.
+
+The Operations report is restored as its own standard report - `one_fm/one_fm/report/
+operations_monthly_attendance_sheet/` - so the report sync recreates it on the next migrate,
+and the print format named after it prints it again. Nothing here is undone: on a site where
+this already ran, the payroll report keeps the name and the identity it was given, and the
+restored report is a second, separate one.
 
 **Must run pre-model-sync.** The report sync runs between the two patch passes; if it went
-first the rename would refuse a name that already exists.
+first the rename would refuse a name that already exists. On a fresh install both report
+folders exist and neither Report record does, so this returns at the first line.
 
-The 175 Prepared Reports are deliberately not repointed - their ``report_name`` is a Data
-field, and each was computed under the old rules, so serving one under the new name would
-hand a payroll operator stale figures.
+The Prepared Reports are deliberately not repointed - their ``report_name`` is a Data field,
+and each was computed under the old rules, so serving one under the new name would hand a
+payroll operator stale figures.
 """
 
 import frappe

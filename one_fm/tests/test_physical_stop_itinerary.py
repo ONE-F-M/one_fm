@@ -167,3 +167,54 @@ class TestEveryCardHasExactlyOneServingStop(FrappeTestCase):
 		# ...but it is nobody's serving stop, because it has no onward leg to time.
 		self.assertNotIn(home["stop_index"], [v[0] for v in self._serves(stops).values()])
 
+
+
+class TestAHandoverStopNamesBothMovements(FrappeTestCase):
+	"""One visit, two things the driver does there (WI-002401 item 4).
+
+	Where an outward load gets off and a return load gets on, the Trip Builder used to
+	announce a single action - the label read off ``action_type`` and the number off a
+	collapsed ``boarding_count or drop_off_count``. So a stop putting 3 down and
+	collecting 2 read "DROPPING OFF EMPLOYEES · 2": one movement's label against the
+	other's count, with the third rider missing. The legs table below always had both.
+	"""
+
+	def _handover(self):
+		# The shape from the ticket: 3 dropped at Khairan Mall, 2 collected there.
+		return build_itinerary([
+			_card("Mahboula Camp", "Khairan Mall", 3, direction="Outward"),
+			_card("Mahboula Camp", "Khairan Mall", 2, direction="Return"),
+		])
+
+	def test_the_stop_is_one_visit_carrying_both_counts(self):
+		stops = self._handover()
+
+		handover = [s for s in stops if s["place"] == "Khairan Mall"]
+		self.assertEqual(len(handover), 1, "one place the bus calls at is one container")
+		self.assertEqual(handover[0]["action_type"], "Combined")
+		self.assertEqual(handover[0]["drop_off_count"], 3)
+		self.assertEqual(handover[0]["boarding_count"], 2)
+
+	def test_neither_count_can_stand_in_for_the_stop(self):
+		# The old collapsed field: `boarding_count or drop_off_count` would answer 2 at a
+		# stop that also puts 3 down, which is why it had to go.
+		handover = [s for s in self._handover() if s["place"] == "Khairan Mall"][0]
+
+		self.assertNotEqual(handover["boarding_count"], handover["drop_off_count"])
+
+	def test_the_running_total_reads_straight_down_from_the_two_counts(self):
+		# Drop-off first, which is the order the bus does it: 3 aboard, 3 off, 2 on.
+		stops = self._handover()
+		_peak, _worst, per_stop = walk_occupancy(stops)
+
+		self.assertEqual(per_stop, [3, 2, 0])
+
+	def test_the_preview_sends_both_counts_and_no_collapsed_one(self):
+		import inspect
+
+		from one_fm.one_fm.doctype.transportation_shipment import transportation_shipment
+
+		source = inspect.getsource(transportation_shipment.get_merge_preview)
+		self.assertIn('"boarding_count": stop["boarding_count"],', source)
+		self.assertIn('"drop_off_count": stop["drop_off_count"],', source)
+		self.assertNotIn('stop["boarding_count"] or stop["drop_off_count"]', source)

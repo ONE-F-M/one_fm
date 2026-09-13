@@ -11,7 +11,9 @@ from one_fm.operations.doctype.route_plan.route_plan import (
     row_headcount,
 )
 from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+    driver_employees,
     qoa_buffer_minutes,
+    time_is_blank,
 )
 from one_fm.overrides.vehicle import passenger_capacity
 
@@ -20,6 +22,19 @@ MAX_TRANSIT = 60               # minutes
 
 def get_context(context):
     pass
+
+def _stated_time(*values):
+    """The first of these Time values that was actually stated.
+
+    ``or`` cannot be used for this: midnight is ``timedelta(0)`` and therefore falsy,
+    so a shift finishing at 00:00 fell through to whatever literal came last in the
+    chain (WI-002401 AC9).
+    """
+    for value in values:
+        if not time_is_blank(value):
+            return value
+    return None
+
 
 @frappe.whitelist()
 def get_route_planner_data():
@@ -843,6 +858,52 @@ def get_route_plans():
 SHIPMENT_CARD_PREFIX = "TSHIP-"
 
 
+def _shifts_served(shipment) -> list:
+    """Every Operations Shift a card carries staff for (WI-002307).
+
+    Most cards name one. An OLM stop shared by several roles finishing together lists
+    them in ``aggregated_shifts`` and leaves ``operations_shift`` blank, because no
+    single one of them is it - so reading only the Link field would see no shift on the
+    cards that serve the most.
+    """
+    named = [s.strip() for s in (shipment.aggregated_shifts or "").split(",") if s.strip()]
+    if shipment.operations_shift and shipment.operations_shift not in named:
+        named.append(shipment.operations_shift)
+    return named
+
+
+def _inactive_shifts(shipments) -> set:
+    """Which of the shifts these cards serve have been switched off (WI-002307)."""
+    names = set()
+    for shipment in shipments:
+        names.update(_shifts_served(shipment))
+    if not names:
+        return set()
+
+    return {
+        row.name
+        for row in frappe.get_all(
+            "Operations Shift",
+            filters={"name": ["in", list(names)], "status": "Inactive"},
+            fields=["name"],
+        )
+    }
+
+
+def _serves_only_inactive_shifts(shipment, inactive_shifts) -> bool:
+    """Is there nothing left on this card worth planning (WI-002307)?
+
+    Every shift it serves has to be inactive, not just one of them. An OLM card
+    carrying three shifts still has to run for the two that are live, and hiding it
+    because the third was switched off would take real demand off the board.
+
+    A card that names no shift at all - an ad-hoc Trip Request journey - is never
+    hidden: there is no shift to have been switched off.
+    """
+    served = _shifts_served(shipment)
+    return bool(served) and all(name in inactive_shifts for name in served)
+
+
 def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedelta):
     """Return draggable cards for Transportation Shipment records.
 
@@ -862,7 +923,11 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
         "Transportation Shipment",
         filters={"status": ["in", ["Unassigned", "Assigned"]]},
         fields=[
-            "name", "accommodation", "accommodation_name", "operations_shift",
+            "name",
+            # Selected, not just filtered on: the driver-card guard below compares
+            # against it, and an unselected field reads back as None (WI-002306).
+            "status",
+            "accommodation", "accommodation_name", "operations_shift",
             # Every shift the card serves, for the OLM stops one card covers several of.
             "aggregated_shifts",
             "operations_site", "stop_location", "headcount", "trip_direction",
@@ -910,6 +975,34 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
             "is_reliever": row.employee_id in reliever_ids,
         })
 
+    # WI-002306 AC2/AC3: a card whose riders are all drivers is not assignable demand -
+    # nobody on it is travelling as a passenger. Generation stops making these, but
+    # records made before that still exist, and an Assigned one cannot be pruned, so the
+    # canvas has to refuse them itself rather than wait for a Generate run.
+    drivers = driver_employees([row.employee_id for row in emp_rows])
+    driver_only = {
+        ship
+        for ship, emps in emps_by_ship.items()
+        if emps and all(e["id"] in drivers for e in emps)
+    }
+    # Only the ones nobody has planned yet. An Assigned card is sitting on a lane in a
+    # saved plan, and a placed block resolves its card from this list - drop it and the
+    # block loses its detail panel, its trip chain and its manifest row. Withdrawing a
+    # card from the demand pool is this story's job; quietly emptying somebody's plan is
+    # not.
+    if driver_only:
+        shipments = [
+            s for s in shipments
+            if s.name not in driver_only or s.status != "Unassigned"
+        ]
+
+    # WI-002307: a card for a shift that has been switched off is not work anybody is
+    # going to plan. Generation already stops making them and prunes the Unassigned
+    # ones, but that only runs daily or on the button - the dispatcher opening the board
+    # in between would still be looking at them, and an Assigned card is never pruned.
+    inactive_shifts = _inactive_shifts(shipments)
+    shipments = [s for s in shipments if not _serves_only_inactive_shifts(s, inactive_shifts)]
+
     # Fallback times for shipments without an Operations Shift (ad-hoc journeys).
     trq_names = list({
         s.source_docname for s in shipments
@@ -929,8 +1022,12 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
             employees = emps_by_ship.get(s.name, [])
 
             trq = trq_time_map.get(s.source_docname) if s.source_docname else None
-            dep = s.start_time or (trq.departure_time if trq else None) or "06:00:00"
-            ret = s.end_time or (trq.return_time if trq else None) or "18:00:00"
+            # First time that was actually STATED, which is not the same as the first
+            # truthy one: midnight is timedelta(0), so an `or` chain read a shift ending
+            # at 00:00 as having no end and handed the card the 18:00 literal below
+            # (WI-002401 AC9).
+            dep = _stated_time(s.start_time, trq.departure_time if trq else None, "06:00:00")
+            ret = _stated_time(s.end_time, trq.return_time if trq else None, "18:00:00")
 
             dep_utc = to_utc(str(dep))
             ret_utc = to_utc(str(ret))
@@ -966,7 +1063,6 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
                 "stop_coords":           {"lat": stop_coords[0], "lng": stop_coords[1]} if stop_coords else None,
                 "headcount":             s.headcount or len(employees),
                 "employees":             employees,
-                "return_employees":      [],
                 "from_date":             str(s.from_date) if s.from_date else None,
                 "to_date":               str(s.to_date) if s.to_date else None,
                 "outbound_window_start": fmt(dep_utc - timedelta(minutes=PICKUP_BUFFER)),
@@ -1111,12 +1207,9 @@ def _sync_shipment_statuses(items, previously_linked=None):
             # was generated for (WI-002071).
             unmerge_trip_shipment(name)
 
-    # A card still on the plan but no longer placed as part of a merged trip is also no
-    # longer merged - the operator can break a merge by dragging one stop out without
-    # removing the other.
-    for name in assigned:
-        if "MIXED" not in placed_dirs_by_shipment.get(name, set()):
-            unmerge_trip_shipment(name)
+    # Cards still on the plan that have left a merged run are handled by
+    # _unmerge_unmixed_placements, which runs before the rows are written - the row's
+    # direction is read off the shipment, so it cannot wait until after the save.
 
 
 def _link_shipment_on_manifest_rows(manifest_doc, v_rows, card_emp_map):
@@ -1201,6 +1294,10 @@ def save_assignments(plan_name: str, swim_items: str, assigned_cards: str,
         row.transportation_shipment for row in doc.assignments if row.transportation_shipment
     }
 
+    # A run that has stopped being mixed gives its cards their own direction back -
+    # before the rows are written, because a row's direction is read off its shipment.
+    _unmerge_unmixed_placements(items)
+
     # Clear existing assignments and rebuild
     doc.assignments = []
     directions = _shipment_direction_flags(items)
@@ -1244,7 +1341,17 @@ def save_assignments(plan_name: str, swim_items: str, assigned_cards: str,
         "status": "ok",
         "plan_name": doc.name,
         "saved_at": str(doc.last_modified_at or frappe.utils.now()),
-        "assignment_count": len(doc.assignments)
+        "assignment_count": len(doc.assignments),
+        # The trip names the plan actually STORED, which are not always the ones the
+        # board sent: a name already in use on that vehicle is repaired on save
+        # (WI-002401). The save is otherwise silent, so without handing these back the
+        # board would keep showing the old name for the rest of the session and then
+        # appear to rename the run by itself on the next load.
+        "trip_names": {
+            row.trip_group: row.trip_name
+            for row in doc.assignments
+            if row.trip_group and row.trip_name
+        },
     }
 
 
@@ -1274,6 +1381,26 @@ def load_assignments(plan_name: str = ""):
     # (which loads the shipment) already disagreed with. The shipment is the authority
     # here for the same reason it is on the Route Plan save.
     live = live_headcounts(doc.assignments)
+
+    # What the shipments this plan places are called, for rows whose own copies were
+    # blanked by an older save. One query rather than one per row.
+    shipment_meta = {
+        row.name: {
+            "site": row.operations_site or "",
+            "shift": row.operations_shift or row.aggregated_shifts or "",
+            "accommodation": row.accommodation_name or row.accommodation or "",
+            "stop_location": row.stop_location or "",
+        }
+        for row in frappe.get_all(
+            "Transportation Shipment",
+            filters={"name": ["in", list({
+                r.transportation_shipment for r in doc.assignments
+                if r.transportation_shipment
+            })] or [""]},
+            fields=["name", "operations_site", "operations_shift", "aggregated_shifts",
+                    "accommodation", "accommodation_name", "stop_location"],
+        )
+    }
 
     swim_items = []
     assigned_card_ids = set()
@@ -1309,6 +1436,13 @@ def load_assignments(plan_name: str = ""):
                     held["camps"][place] = minutes
             continue
 
+        # A placed card is Assigned and so is not a pool card, and older saves
+        # overwrote a row's saved names with empty strings once that happened - which
+        # left the detail drawer unable to build a card for the block, so clicking it
+        # did nothing at all. The shipment the row points at still knows them, so a
+        # blank copy is filled in from there rather than left dead (WI-002401).
+        held = shipment_meta.get(row.transportation_shipment) or {}
+
         swim_items.append({
             "id":        f"{row.card_id}_{row.direction}_{row.name}",
             "cardId":    row.card_id,
@@ -1329,10 +1463,10 @@ def load_assignments(plan_name: str = ""):
             "transitMinutes": row.transit_minutes or 0,
             "bufferMinutes": row.buffer_minutes or 0,
             # Saved metadata for detail panel fallback
-            "_site":          row.site or "",
-            "_shift":         row.shift or "",
-            "_accommodation": row.accommodation or "",
-            "_stopLocation":  row.stop_location or "",
+            "_site":          row.site or held.get("site") or "",
+            "_shift":         row.shift or held.get("shift") or "",
+            "_accommodation": row.accommodation or held.get("accommodation") or "",
+            "_stopLocation":  row.stop_location or held.get("stop_location") or "",
         })
         assigned_card_ids.add(row.card_id)
 
@@ -1506,11 +1640,9 @@ def get_manifest_data_for_plan(plan_name: str):
 		planner_data = {"shipment_cards": [], "vehicles": []}
 
 	card_emp_map = {}
-	card_return_emp_map = {}
 	card_headcount_map = {}
 	for card in planner_data.get("shipment_cards", []):
 		card_emp_map[card["id"]] = card.get("employees", [])
-		card_return_emp_map[card["id"]] = card.get("return_employees", [])
 		card_headcount_map[card["id"]] = card.get("headcount", 0)
 
 	# Supplement rosters for shipment-backed assignment rows. Once a shipment is
@@ -1536,7 +1668,6 @@ def get_manifest_data_for_plan(plan_name: str):
 		for card_id, ship_name in shipment_by_card.items():
 			emps = emps_by_ship.get(ship_name, [])
 			card_emp_map[card_id] = emps
-			card_return_emp_map[card_id] = []
 			card_headcount_map[card_id] = len(emps)
 
 	# ── Build manifest data structure ──
@@ -1574,7 +1705,7 @@ def get_manifest_data_for_plan(plan_name: str):
 
 		# Always sync rows — handles both new and existing manifests
 		v_rows = [row for row in rows if row.vehicle == v_id]
-		rows_changed = sync_manifest_details(manifest_doc, v_rows, card_emp_map, card_return_emp_map)
+		rows_changed = sync_manifest_details(manifest_doc, v_rows, card_emp_map)
 
 		# The manifest header inherits the run's direction and, for a merged run, its
 		# shared group key (WI-002072). Read from the assignment rows rather than passed
@@ -1719,16 +1850,18 @@ def get_manifest_data_for_plan(plan_name: str):
 
 		shipments.append({"label": lbl, "pickups": [{}], "deliveries": [{}]})
 
-		# Map employees
-		if row.direction == "RETURN":
-			ret_emps = card_return_emp_map.get(row.card_id, [])
-			ship_emp[lbl] = enrich_employees(ret_emps, row.vehicle, row.stop_location or "", row.trip_group, True) if ret_emps else []
-		else:
-			emps = card_emp_map.get(row.card_id, [])
-			ship_emp[lbl] = enrich_employees(emps, row.vehicle, row.stop_location or "", row.trip_group, False) if emps else []
-
-		ret_emps = card_return_emp_map.get(row.card_id, [])
-		ship_return_emp[lbl] = enrich_employees(ret_emps, row.vehicle, row.stop_location or "", row.trip_group, True) if ret_emps else []
+		# The card's own riders, whichever way this leg travels. A return leg used to
+		# read a separate `return_employees` list, which nothing has ever filled - so
+		# every return row on the driver's manifest listed NOBODY while its card
+		# carried the people (WI-002401). A card's riders go out and come back; the
+		# leg only says which way they are travelling.
+		emps = card_emp_map.get(row.card_id, [])
+		boards = row.direction == "RETURN"
+		ship_emp[lbl] = (
+			enrich_employees(emps, row.vehicle, row.stop_location or "", row.trip_group, boards)
+			if emps else []
+		)
+		ship_return_emp[lbl] = ship_emp[lbl] if boards else []
 
 		# Site location
 		if row.shift and row.shift in shift_doc_map:
@@ -2191,6 +2324,42 @@ def process_rambo_replacement(original_employee: str, replacement_employee: str,
     }
 
 
+def _unmerge_unmixed_placements(items) -> None:
+    """A card no longer placed as part of a merged run is no longer merged.
+
+    The operator breaks a merge by taking one stop out of the run: what is left may
+    travel only one way, and every remaining card's shipment is still flagged Mixed.
+
+    Two things had to be true for this to work and neither was:
+
+    * It has to run BEFORE the rows are written. A row's direction is read off its
+      shipment (`_assignment_direction`), so unmerging afterwards left the row saying
+      MIXED while the shipment said Outward - the block came back Mixed on the next
+      load and only corrected itself on a second save.
+    * It has to run for a card whose shipment and placement DISAGREE. The old rule sat
+      in `_sync_shipment_statuses` and only considered cards it had just counted as
+      Assigned, which requires the shipment's own direction to match the direction it
+      was placed in - so it skipped every card that was still flagged Mixed, which is
+      the only kind there was anything to repair (WI-002401 AC3).
+    """
+    from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+        unmerge_trip_shipment,
+    )
+
+    placed = {}
+    for item in items:
+        name = _shipment_from_card_id(item.get("cardId", ""))
+        if name:
+            placed.setdefault(name, set()).add(
+                _normalize_direction(item.get("direction", ""))
+            )
+
+    for name, placed_dirs in placed.items():
+        # MIXED on any of its blocks means the card is still riding a merged run.
+        if "MIXED" not in placed_dirs and frappe.db.exists("Transportation Shipment", name):
+            unmerge_trip_shipment(name)
+
+
 def _shipment_direction_flags(items) -> dict:
     """{shipment: OUTBOUND|RETURN|MIXED} for every card being saved (WI-002077).
 
@@ -2348,9 +2517,9 @@ def _stamp_leg_details(doc, leg_timings=None):
 	"""
 	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
 		CAMP_STOP,
-		arrival_order,
 		build_itinerary,
 		own_direction,
+		run_order,
 		walk_occupancy,
 	)
 
@@ -2386,9 +2555,14 @@ def _stamp_leg_details(doc, leg_timings=None):
 		group_key = _group if not _group.startswith("\0") else run[0].card_id
 		cards = _cards_for_itinerary(run)
 		by_name = {card.name: card for card in cards}
+		# In the order the operator has the run on the lane, not the order the cards'
+		# own shift times imply. Re-deriving it here put a stop dragged in the drawer
+		# straight back where it started, on the very next save (WI-002401).
 		ordered = sorted(
 			[row for row in run if row.transportation_shipment in by_name],
-			key=lambda row: arrival_order(by_name[row.transportation_shipment]),
+			key=lambda row: run_order(
+				by_name[row.transportation_shipment], _local_seconds(row.start_time)
+			),
 		)
 		if not ordered:
 			continue

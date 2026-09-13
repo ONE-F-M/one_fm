@@ -43,10 +43,15 @@ class TestOneTripGroupIsOneRun(FrappeTestCase):
 			"const tripLoad = targetTripItems.reduce((sum, i) => sum + (i.headcount || 0), 0);",
 			self.source,
 		)
-		# The three places a run is weighed: the lane, a reassign, and a merge.
+		# The three places a run is weighed against the seats: the lane's own reading,
+		# reassigning a journey to another vehicle, and merging a block into a trip.
+		# The last one now reads the run WITH the joining card on it (WI-002401), which
+		# is the only way a cross-direction merge can be judged on the seats that are
+		# actually free - but it is still the same one rule.
 		self.assertIn("t.direction = this.runDirection(t.stops);", self.source)
 		self.assertIn("direction: self.runDirection(journeyItems),", self.source)
-		self.assertIn("direction: self.runDirection(targetTripItems),", self.source)
+		self.assertIn("self.mergedOccupancy(targetTripItems, card),", self.source)
+		self.assertIn("direction: this.runDirection(merged),", self.source)
 
 	def test_the_save_reads_it_the_same_way(self):
 		source = ROUTE_PLAN.read_text()
@@ -92,8 +97,14 @@ class TestARunIsDrawnAsWhatItIs(FrappeTestCase):
 
 
 class TestARefusalNamesTheRunThatTookTheSeats(FrappeTestCase):
-	"""A card is placed at its own shift window, never where it was dropped, so the run
-	that blocks it is often not the block the operator was aiming at.
+	"""Naming only the vehicle made a refusal impossible to diagnose from the screen.
+
+	This used to be weighed against the card's own shift window, on the reasoning that a
+	card is placed there rather than where it was dropped - so the run named was
+	routinely not the one the operator was aiming at, and sequential runs got added
+	together. WI-002401 AC5 replaced that: the load is weighed against the run it is
+	actually joining, plus the runs on the road at the same hours, and the message names
+	exactly those.
 	"""
 
 	def setUp(self):
@@ -101,14 +112,16 @@ class TestARefusalNamesTheRunThatTookTheSeats(FrappeTestCase):
 
 	def test_the_message_can_name_the_blocking_runs(self):
 		self.assertIn("capacityMessage(headcount, vehicle, blockers) {", self.source)
-		self.assertIn("Those seats are held by {0}.", self.source)
+		self.assertIn("Counted for this drop: {0}.", self.source)
 
 	def test_the_check_and_the_message_read_one_list(self):
-		# Computed separately they would drift, and name runs the check never counted.
-		self.assertIn("tripsDuringCardWindows(card, vehicleId, direction) {", self.source)
-		self.assertIn(
-			"return this.tripsDuringCardWindows(card, vehicleId, direction)", self.source
-		)
+		# One call answers both, so they cannot drift and the message can never name a
+		# run the check did not count.
+		self.assertIn("return {\n                    total: occupancy", self.source)
+		self.assertIn("blockers: target ? [target, ...others] : others", self.source)
+		for caller in ("const { total, blockers } = this.seatLoad(",
+					   "const { total, blockers } = self.seatLoad("):
+			self.assertIn(caller, self.source)
 
 	def test_a_logical_trip_carries_its_name(self):
 		self.assertIn("tripName: item.tripName || null,", self.source)

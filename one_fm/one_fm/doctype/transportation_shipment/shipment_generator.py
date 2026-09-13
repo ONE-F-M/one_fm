@@ -17,6 +17,9 @@ import frappe
 from frappe import _
 from frappe.utils import get_datetime, getdate, today
 
+from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+	driver_employees,
+)
 from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
 	get_coords,
 	get_grouped_employees_by_accommodation,
@@ -31,21 +34,8 @@ TRIP_REQUEST = "Trip Request"
 # transportation methods are handled off the fleet scheduling canvas.
 COMPANY_FLEET = "Company Fleet"
 MAHBOULA_LABELS = {"Mahboula 3", "Mahboula 12", "Mahboula 13", "Mahboula 15"}
-# Return riders may finish up to an hour after the outbound leg departs.
-RETURN_MATCH_FLOOR_SECONDS = -3600
 # Who may refresh the shipment cards from the canvas (WI-002162).
 GENERATE_ROLES = ("System Manager", "Transportation Manager", "Transportation Supervisor")
-
-
-def _minute_of_day(time_val) -> int | None:
-	"""Seconds-since-midnight for a Time value, used for return-rider matching."""
-	if not time_val:
-		return None
-	try:
-		dt = get_datetime(f"2000-01-01 {time_val}")
-		return dt.hour * 3600 + dt.minute * 60 + dt.second
-	except Exception:
-		return None
 
 
 def build_demand_descriptors(nested_map: dict) -> list:
@@ -55,6 +45,13 @@ def build_demand_descriptors(nested_map: dict) -> list:
 	going roster and a cross-referenced return roster attached. Direction-specific
 	records are expanded later in generate_transportation_shipments().
 	"""
+	if not nested_map:
+		return []
+
+	# WI-002306: drivers are working the run, not riding it. Taken out here, before any
+	# routing decision, so no arrangement downstream can put one on a card and no
+	# headcount counts a seat the driver was never going to sit in.
+	nested_map = _without_drivers(nested_map)
 	if not nested_map:
 		return []
 
@@ -194,7 +191,17 @@ def build_demand_descriptors(nested_map: dict) -> list:
 					})
 
 			# ── OLM: aggregate across shifts by (stop_location, hour) ──
-			for parent_name in olm_by_site.get(operations_site, []):
+			#
+			# WI-002308: only when OSM has not already placed this shift. A site can be
+			# configured under both arrangements, and both branches used to run - so the
+			# same employees were generated onto two sets of cards at two different
+			# stops, and the board showed the shift's demand twice over with different
+			# names and headcounts.
+			#
+			# One Site Many Locations is configured against this specific site, so it is
+			# the more specific statement of where its staff are picked up, and it wins.
+			# Agreed with the process owner.
+			for parent_name in ([] if handled else olm_by_site.get(operations_site, [])):
 				olm_doc = olm_doc_map.get(parent_name)
 				if not olm_doc or not olm_doc.transport_stop_location:
 					continue
@@ -254,43 +261,36 @@ def build_demand_descriptors(nested_map: dict) -> list:
 				"employees": [emp_obj(e) for e in grp["employees"]],
 			})
 
-	_attach_return_rosters(demands)
 	return demands
 
 
-def _attach_return_rosters(demands: list) -> None:
-	"""For each demand, find the finishing-shift roster at the same stop/accommodation.
+def _without_drivers(nested_map: dict) -> dict:
+	"""The demand map with every driver removed from every shift roster (WI-002306).
 
-	Mirrors the return-rider cross-reference in get_route_planner_data: same stop
-	location, same accommodation, a different shift whose end time sits closest to
-	(and not long after) this demand's start time.
+	A shift left with no riders is dropped, and so is an accommodation left with no
+	shifts - an empty roster produces no shipment anyway, and carrying it through only
+	means the prune pass has to clean up after it.
 	"""
-	by_stop = {}
-	for d in demands:
-		by_stop.setdefault(d["stop_location"], []).append(d)
+	rostered = set()
+	for acc_data in nested_map.values():
+		for emp_list in acc_data["shifts"].values():
+			rostered.update(emp_list)
 
-	for d in demands:
-		start_s = _minute_of_day(d["start_time"])
-		d["return_employees"] = []
-		if start_s is None:
-			continue
+	drivers = driver_employees(rostered)
+	if not drivers:
+		return nested_map
 
-		best, best_gap = None, float("inf")
-		for other in by_stop.get(d["stop_location"], []):
-			if other is d or other["group_token"] == d["group_token"]:
-				continue
-			if other["acc_name"] != d["acc_name"]:
-				continue
-			end_s = _minute_of_day(other["end_time"])
-			if end_s is None:
-				continue
-			diff = start_s - end_s
-			if diff >= RETURN_MATCH_FLOOR_SECONDS and abs(diff) < best_gap:
-				best_gap = abs(diff)
-				best = other
+	trimmed = {}
+	for acc_name, acc_data in nested_map.items():
+		shifts = {}
+		for shift_name, emp_list in acc_data["shifts"].items():
+			riders = [e for e in emp_list if e not in drivers]
+			if riders:
+				shifts[shift_name] = riders
+		if shifts:
+			trimmed[acc_name] = dict(acc_data, shifts=shifts)
 
-		if best:
-			d["return_employees"] = best["employees"]
+	return trimmed
 
 
 def _generation_key(demand: dict, direction: str) -> tuple:
@@ -352,9 +352,26 @@ def generate_transportation_shipments():
 	for demand in demands:
 		for direction in ("Outward", "Return"):
 			try:
-				roster = demand["employees"] if direction == "Outward" else (
-					demand.get("return_employees") or demand["employees"]
-				)
+				# The same people, both ways. A card is "these riders, from this camp,
+				# to this site", and they come home again - so its Return leg carries
+				# its own crew.
+				#
+				# It used to substitute the roster of a DIFFERENT shift: the one
+				# finishing as this demand starts, on the reasoning that the bus
+				# arriving at 06:00 also takes the outgoing crew home. That is a real
+				# run, but it is not this card: the card's window comes from its own
+				# end_time, so the substituted riders were filed against an hour twelve
+				# hours from when they actually finish. 250 of 376 generated Return
+				# cards on the live plan carried another shift's people, and the
+				# Alghanim Guest House Day crew were told to be collected at 18:00 when
+				# their card held the Night crew who finish at 06:00 (WI-002401).
+				#
+				# Collecting the outgoing crew on the incoming run is what a Mixed trip
+				# IS: the dispatcher drops the other shift's Return card onto this run
+				# and the merge walks the legs. That machinery already exists, and it
+				# can only read the run correctly if each card tells the truth about
+				# whose ride it is.
+				roster = demand["employees"]
 				if not roster:
 					continue
 
@@ -444,11 +461,19 @@ def _group_passengers_by_camp(trip_request_doc) -> dict:
 	Returns an ordered {camp: [passenger_row, ...]} map. Passengers with no
 	accommodation_camp are skipped — they have no physical origin to group by,
 	so they cannot be materialized as a camp-origin demand card.
+
+	WI-002306: drivers are dropped here too, not only on the shift-generated side. The
+	canvas hides a driver card whichever source made it, so leaving one in would produce
+	a record the dispatcher can neither see nor plan - worse than not making it.
 	"""
+	drivers = driver_employees(
+		[p.employee_id for p in trip_request_doc.transport_request_passenger if p.employee_id]
+	)
+
 	groups = {}
 	for passenger in trip_request_doc.transport_request_passenger:
 		camp = passenger.accommodation_camp
-		if not camp:
+		if not camp or passenger.employee_id in drivers:
 			continue
 		groups.setdefault(camp, []).append(passenger)
 	return groups
