@@ -226,8 +226,8 @@ class TestNewActionDocuments(FrappeTestCase):
 		expiry = getdate(employee.residency_expiry_date)
 
 		for action, category, expected_date in (
-			("Renewal (Non-Kuwaiti)", "Renewal", add_days(expiry, -14)),
-			("Extend 2 months", "Extend", add_days(expiry, -7)),
+			("Renewal Expat", "Renewal", add_days(expiry, -14)),
+			("Extension", "Extend", add_days(expiry, -7)),
 			("Transfer", "Transfer", getdate(nowdate())),
 		):
 			with self.subTest(action=action):

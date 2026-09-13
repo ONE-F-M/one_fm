@@ -853,10 +853,14 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 	operations_shift_doc = frappe.get_doc("Operations Shift", shift, ignore_permissions=True)
 	operations_role_doc = frappe.get_doc("Operations Role", operations_role, ignore_permissions=True)
 	day_off_ot = cint(day_off_ot)
-	if otRoster == "false":
-		roster_type = "Basic"
-	elif otRoster == "true" or day_off_ot == 1:
-		roster_type = "Over-Time"
+	# roster_type is driven solely by whether the OT (second-shift) dialog was used.
+	# day_off_ot is an independent flag: a Day Off OT first shift is still "Basic".
+	roster_type = "Over-Time" if otRoster == "true" else "Basic"
+
+	# WI-001687: OT scheduling is no longer blocked for shifts without
+	# 'Double Shift OT Allowed'. Selection is unrestricted (a soft warning is
+	# shown client-side); non-compliant OT is tracked via the Roster Double
+	# Shift OT Checker (WI-001688) rather than blocked here.
 
 	# check for end date
 	if end_date:
@@ -1003,6 +1007,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 	"""
 	can_create = False
 	omitted_days = set()
+	inserted_names = []
 
 	# Create a temporary structure to count new schedules per day from the current batch
 	daily_add_count = defaultdict(int)
@@ -1061,6 +1066,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 
 			employee_doc = employees_dict.get(employee_name_iter)
 			name = f"{datevalue['date']}_{employee_name_iter}_{roster_type}"
+			inserted_names.append(name)
 			day_off_ot_val = datevalue.get('day_off_ot') or day_off_ot  
 			query_values.append(f"""
 				(
@@ -1102,6 +1108,17 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 		if can_create:
 			frappe.db.sql(query, values=[])
 			frappe.db.commit()
+
+			# WI-002283: these rows were written by the INSERT above, not through the
+			# ORM, so before_insert never ran and the DSOT gate never saw them. A second
+			# shift has to wait for approval however it was rostered.
+			if roster_type == "Over-Time":
+				from one_fm.operations.doctype.employee_schedule.employee_schedule import (
+					hold_overtime_for_approval,
+				)
+
+				hold_overtime_for_approval(inserted_names)
+				frappe.db.commit()
 
 
 	if skipped_ot_no_basic:

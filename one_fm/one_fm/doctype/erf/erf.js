@@ -770,6 +770,12 @@ var validate_experience_range = function(frm) {
 };
 
 var validate_date = function(frm) {
+	// WI-002316: the field is optional now. An empty string compares less than any
+	// date, so clearing it used to throw "cannot be before Today" at somebody who had
+	// just emptied an optional field.
+	if(!frm.doc.expected_date_of_deployment){
+		return;
+	}
 	if(frm.doc.expected_date_of_deployment < frm.doc.erf_initiation){
 		frm.set_value('expected_date_of_deployment', '');
 		frappe.throw(__("Expected Date of Deployment cannot be before ERF Initiation Date"));

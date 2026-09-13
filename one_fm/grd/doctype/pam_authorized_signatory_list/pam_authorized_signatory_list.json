@@ -22,7 +22,7 @@
  ],
  "fields": [
   {
-   "fetch_from": "pam_file_name.pam_file_number",
+   "fetch_from": "pam_file_name.civil_id_number_for_licensing",
    "fieldname": "pam_file_number",
    "fieldtype": "Read Only",
    "label": "PAM File Number"
@@ -31,7 +31,7 @@
    "fieldname": "pam_file_name",
    "fieldtype": "Link",
    "label": "PAM File Name",
-   "options": "PAM File",
+   "options": "PAM License Details",
    "unique": 1
   },
   {
@@ -90,7 +90,7 @@
   }
  ],
  "links": [],
- "modified": "2022-04-21 13:10:25.328273",
+ "modified": "2026-08-29 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM Authorized Signatory List",
