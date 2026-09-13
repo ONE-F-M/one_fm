@@ -20,19 +20,24 @@ from one_fm.api.v1.face_recognition import (
 	_fmt_clock,
 	get_checkin_window_message,
 	get_checkin_windows,
+	get_checkout_window_message,
 	get_site_location,
 )
+from one_fm.api.v1.utils import response
 from one_fm.overrides.employee import NOT_RETURNED_FROM_LEAVE
 
 
-def _window(start, opens_before=60, late_grace=15, absent_after=4.0):
+def _window(start, opens_before=60, late_grace=15, absent_after=4.0, end=None, checkout_grace=120):
 	start = get_datetime(start)
+	end = get_datetime(end) if end else None
 	return frappe._dict(
 		shift_assignment="TEST-SA",
 		start=start,
+		end=end,
 		opens_at=start - timedelta(minutes=opens_before),
 		late_after=start + timedelta(minutes=late_grace),
 		blocked_after=start + timedelta(hours=absent_after),
+		checkout_closes_at=end + timedelta(minutes=checkout_grace) if end else None,
 	)
 
 
@@ -137,6 +142,91 @@ class TestWindowsFromShiftType(FrappeTestCase):
 
 	def test_an_employee_with_no_assignment_today_has_no_windows(self):
 		self.assertEqual(get_checkin_windows("_no_such_employee"), [])
+
+
+class TestCheckoutWindowMessage(FrappeTestCase):
+	"""An unclosed check-in past its deadline must be named as a check-OUT problem."""
+
+	def _message_at(self, now, windows, open_checkin=True):
+		with patch(
+			"one_fm.api.v1.face_recognition.get_checkin_windows", return_value=windows
+		), patch(
+			"one_fm.api.v1.face_recognition.now_datetime", return_value=get_datetime(now)
+		), patch(
+			"one_fm.api.v1.face_recognition.has_open_checkin", return_value=open_checkin
+		):
+			return get_checkout_window_message("EMP-TEST")
+
+	def test_it_quotes_the_shift_end_and_the_deadline(self):
+		# The 360 Foodhall case: assignment says 05:00-17:00, check-out allowed until
+		# 19:00, employee still on site at 19:50 with an open IN.
+		msg = self._message_at(
+			"2026-08-16 19:50:00",
+			[_window("2026-08-16 05:00:00", end="2026-08-16 17:00:00")],
+		)
+		self.assertIn("Check-Out Window Closed", msg)
+		self.assertIn("5:00 PM", msg)  # when the shift ended
+		self.assertIn("7:00 PM", msg)  # when check-out stopped being accepted
+		self.assertIn("Site Supervisor", msg)
+
+	def test_a_closed_shift_with_no_open_checkin_says_nothing(self):
+		# Never checked in, or already checked out - this is not a check-out problem,
+		# so the check-in banner keeps speaking.
+		self.assertEqual(
+			self._message_at(
+				"2026-08-16 19:50:00",
+				[_window("2026-08-16 05:00:00", end="2026-08-16 17:00:00")],
+				open_checkin=False,
+			),
+			"",
+		)
+
+	def test_inside_the_grace_period_says_nothing(self):
+		# 18:30 is still within end + 120 minutes, so check-out is genuinely allowed.
+		self.assertEqual(
+			self._message_at(
+				"2026-08-16 18:30:00",
+				[_window("2026-08-16 05:00:00", end="2026-08-16 17:00:00")],
+			),
+			"",
+		)
+
+	def test_no_shift_today_says_nothing(self):
+		self.assertEqual(self._message_at("2026-08-16 19:50:00", []), "")
+
+	def test_an_assignment_without_an_end_is_skipped(self):
+		# No end_datetime means no deadline to have missed.
+		self.assertEqual(
+			self._message_at("2026-08-16 19:50:00", [_window("2026-08-16 05:00:00")]), ""
+		)
+
+
+class TestEveryPathAnswers(FrappeTestCase):
+	"""No branch may return without setting a response - that is the generic toast."""
+
+	def test_get_site_location_always_returns_a_message(self):
+		source = frappe.read_file(
+			frappe.get_app_path("one_fm", "api", "v1", "face_recognition.py")
+		)
+		# The shift branch used to fall off the end when a shift had neither a
+		# resolved location nor a site, leaving frappe.local.response untouched.
+		self.assertIn("No check-in location is configured for your shift", source)
+
+
+class TestResponseErrorIsReadable(FrappeTestCase):
+	"""The app renders the error slot verbatim, so it has to be a sentence."""
+
+	def test_an_exception_is_coerced_to_its_message(self):
+		# Passing the Exception object itself is what produced the app's generic
+		# "An unexpected error occurred" - the slot could not be serialised.
+		response("Internal Server Error", 500, None, ValueError("shift lookup failed"))
+		self.assertEqual(frappe.local.response.get("error"), "shift lookup failed")
+
+	def test_a_string_is_left_alone(self):
+		response("Resource Not Found", 404, None, "Check-Out Window Closed: ...")
+		self.assertEqual(
+			frappe.local.response.get("error"), "Check-Out Window Closed: ..."
+		)
 
 
 class TestNotReturnedFromLeaveBlocker(FrappeTestCase):

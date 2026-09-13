@@ -185,6 +185,52 @@ class PenaltyAndInvestigation(Document):
 
 
 @frappe.whitelist()
+def get_incident_site_project(employee: str, incident_date: str | None = None) -> dict:
+	"""Return the operations site and project to pre-fill for a penalty's employee.
+
+	The form needs the site/project the employee was rostered to on the incident
+	date. Reading Employee Schedule (roster data) straight from the client would
+	force every penalty-raiser to hold read permission on the whole roster; this
+	method instead confirms the caller may raise a penalty, then returns only the
+	two fields - nothing else of the schedule is exposed.
+	"""
+	# Only someone allowed to create a Penalty And Investigation may look this up.
+	if not frappe.has_permission("Penalty And Investigation", "create"):
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+	if not employee:
+		return {}
+
+	site = project = None
+
+	# The working roster row for that day wins; get_all is used deliberately so the
+	# lookup does not depend on the caller having Employee Schedule read permission.
+	if incident_date:
+		schedule = frappe.get_all(
+			"Employee Schedule",
+			filters={
+				"employee": employee,
+				"date": incident_date,
+				"employee_availability": "Working",
+			},
+			fields=["site", "project"],
+			limit=1,
+		)
+		if schedule:
+			site = schedule[0].site
+			project = schedule[0].project
+
+	# Fall back to the Employee master when there is no working roster row.
+	if not site and not project:
+		emp = frappe.db.get_value("Employee", employee, ["site", "project"], as_dict=True)
+		if emp:
+			site = emp.site
+			project = emp.project
+
+	return {"site": site, "project": project}
+
+
+@frappe.whitelist()
 def get_penalty_count():
 	user = frappe.session.user
 	count = frappe.db.count("Penalty And Investigation", {

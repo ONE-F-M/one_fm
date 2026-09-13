@@ -468,6 +468,9 @@ class TestAMergeCanBeUndone(FrappeTestCase):
 		)
 		if not name:
 			self.skipTest("No unmerged Transportation Shipment on this site")
+		before = frappe.db.get_value(
+			"Transportation Shipment", name, ["trip_direction", "trip_group"], as_dict=True
+		)
 
 		frappe.db.set_value("Transportation Shipment", name, {
 			"trip_direction": MIXED, "trip_group": "MIX-test", "pre_merge_trip_direction": "Return",
@@ -480,6 +483,16 @@ class TestAMergeCanBeUndone(FrappeTestCase):
 		self.assertEqual(
 			frappe.db.get_value("Transportation Shipment", name, "trip_direction"), "Return"
 		)
+
+		# Put the card back. This walks over a real shipment, picked arbitrarily, and the
+		# rollback here is per class - so leaving it as "Return" handed the later
+		# generation-key assertion a card whose key says "|Outward", and which card that
+		# was changed with the table. Its sibling above already restores; this one did not.
+		frappe.db.set_value("Transportation Shipment", name, {
+			"trip_direction": before.trip_direction,
+			"trip_group": before.trip_group,
+			"pre_merge_trip_direction": None,
+		}, update_modified=False)
 
 	def test_rolling_back_a_merge_that_never_happened_changes_nothing(self):
 		from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
@@ -532,3 +545,112 @@ class TestAMergeCanBeUndone(FrappeTestCase):
 					frappe.db.count("Route Plan Assignment", {"transportation_shipment": row.name}),
 					f"{row.name} is Mixed but on no Route Plan",
 				)
+
+
+class TestTheOperatorOwnsTheRunOrder(FrappeTestCase):
+	"""Drag-to-reorder in the drawer used to be cosmetic (WI-002401).
+
+	Every reader re-derived a run's order from each card's own shift times
+	(`arrival_order`): the trip modal, the merge, the itinerary the save stamps, the
+	leg walk and the manifest. That kept them in step with each other, but it meant the
+	operator could move a stop, watch its block move with it, and then find the Trip
+	Builder, the legs table and the driver's manifest all putting the run back into
+	shift order. They still cannot disagree - they now all read the STATED order.
+	"""
+
+	def test_a_placed_card_sorts_by_where_the_operator_put_it(self):
+		from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+			arrival_order,
+			run_order,
+		)
+
+		# Two cards whose shift times say A then B ...
+		a = frappe._dict({"name": "TS-A", "start_time": "06:00:00", "end_time": "18:00:00",
+						  "trip_direction": "Outward", "pre_merge_trip_direction": None})
+		b = frappe._dict({"name": "TS-B", "start_time": "07:00:00", "end_time": "19:00:00",
+						  "trip_direction": "Outward", "pre_merge_trip_direction": None})
+		self.assertEqual([c.name for c in sorted([b, a], key=arrival_order)], ["TS-A", "TS-B"])
+
+		# ... but the operator has B's block on the lane first.
+		placed = {"TS-A": 8 * 3600, "TS-B": 6 * 3600}
+		self.assertEqual(
+			[c.name for c in sorted([a, b], key=lambda c: run_order(c, placed[c.name]))],
+			["TS-B", "TS-A"],
+		)
+
+	def test_a_card_with_no_placement_falls_back_to_the_shift_times(self):
+		from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+			arrival_order,
+			run_order,
+		)
+
+		card = frappe._dict({"name": "TS-A", "start_time": "06:00:00", "end_time": "18:00:00",
+							 "trip_direction": "Outward", "pre_merge_trip_direction": None})
+		# The key still ends with arrival_order's, so a run nobody has ordered by hand
+		# reads exactly as it did.
+		self.assertEqual(run_order(card)[2:], arrival_order(card))
+
+	def test_a_placed_card_always_sorts_before_an_unplaced_one(self):
+		from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+			run_order,
+		)
+
+		card = frappe._dict({"name": "TS-A", "start_time": "06:00:00", "end_time": "18:00:00",
+							 "trip_direction": "Outward", "pre_merge_trip_direction": None})
+		self.assertLess(run_order(card, 3600), run_order(card))
+
+	def test_the_two_endpoints_honour_the_order_they_are_given(self):
+		import inspect
+
+		from one_fm.one_fm.doctype.transportation_shipment import transportation_shipment
+
+		for fn in (transportation_shipment.get_merge_preview,
+				   transportation_shipment.merge_trip_shipments):
+			source = inspect.getsource(fn)
+			self.assertNotIn("docs.sort(key=arrival_order)", source)
+			self.assertIn("order the caller listed them", source)
+
+	def test_the_save_reads_the_stated_order_too(self):
+		# The modal and the save must build the same run out of the same cards, or the
+		# modal accepts a merge the save then refuses.
+		import inspect
+
+		from one_fm.one_fm.page.transportation_schedule import transportation_schedule
+		from one_fm.operations.doctype.route_plan import route_plan
+
+		self.assertIn("cards.sort(key=lambda pair: run_order(pair[1], pair[0]))",
+					  inspect.getsource(route_plan._cards_for_itinerary))
+		self.assertIn("_local_seconds(row.start_time)",
+					  inspect.getsource(transportation_schedule._stamp_leg_details))
+
+	def test_the_canvas_sends_and_walks_one_order(self):
+		import pathlib
+
+		canvas = pathlib.Path(frappe.get_app_path(
+			"one_fm", "one_fm", "page", "transportation_schedule",
+			"transportation_schedule.js")).read_text()
+		self.assertIn("_inRunOrder(items) {", canvas)
+		# The modal is opened with it, the drawer lists with it, and the seat walk
+		# follows it - one definition, so no reader can disagree with another.
+		self.assertIn("this._inRunOrder(existingItems).map(i => i.cardId)", canvas)
+		self.assertIn("const stops = this._inRunOrder(trip.stops);", canvas)
+		self.assertIn(
+			"return this._inRunOrder(this.swimItems.filter(i => i.tripId === tripId))",
+			canvas,
+		)
+		# Everything that reads a run's order goes through it: the block's own stop
+		# labels, the re-time walk, and the drag whose indices are positions in the
+		# drawer's list - sorting differently there moved a stop nobody was dragging.
+		for site in ("const stops = this._inRunOrder(tripGroups[tripId]);",
+					 "this.swimItems.filter((i) => i.tripId === tripId)",
+					 "const tripStops = this._inRunOrder(",
+					 "const stops = this._inRunOrder(unordered);"):
+			self.assertIn(site, canvas)
+		# Only two bare stopIndex comparators are left: the tie-break inside
+		# _inRunOrder itself, and the cross-trip lane sort, which orders unrelated runs
+		# against each other and is a different question.
+		self.assertEqual(canvas.count("(a.stopIndex || 0) - (b.stopIndex || 0)"), 2)
+		# stopIndex only ever breaks a tie: it is the physical stop number the save
+		# stamps from the itinerary, camp stops included.
+		self.assertNotIn("const stops = [...trip.stops].sort((a, b) => (a.stopIndex || 0)",
+						 canvas)

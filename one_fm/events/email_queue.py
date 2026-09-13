@@ -1,5 +1,21 @@
 import frappe
-from frappe.email.doctype.email_queue.email_queue import send_now
+from frappe.email.doctype.email_queue.email_queue import send_now, EmailQueue
+
+
+def _force_send_email(name):
+	"""Send a queued email from a background job without the whitelisted-API
+	permission gate.
+
+	``send_now`` is a whitelisted method that runs ``check_permission()`` first.
+	Background jobs run as the enqueuing session user, so when a non-privileged
+	user (e.g. an employee) triggers the mail, that permission check fails on the
+	System-Manager-only Email Queue DocType. Sending is a system operation — the
+	queue doc is created with ``ignore_permissions`` and the framework scheduler
+	itself calls ``EmailQueue.send()`` directly — so we do the same here.
+	"""
+	record = EmailQueue.find(name)
+	if record:
+		record.send()
 
 
 def after_insert(doc, event):
@@ -28,7 +44,7 @@ def after_insert(doc, event):
 	if found:
 		# Enqueue it safely in the background rather than blocking the main transaction
 		frappe.enqueue(
-			send_now,
+			_force_send_email,
 			name=doc.name,
 			now=frappe.flags.in_test,
 			enqueue_after_commit=True

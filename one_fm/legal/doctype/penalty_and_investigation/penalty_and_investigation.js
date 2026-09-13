@@ -121,36 +121,22 @@ frappe.ui.form.on("Penalty And Investigation", {
 	fetch_employee_details: function (frm) {
 		if (!frm.doc.employee) return;
 
-		let set_details = (site, project) => {
-			if (site) frm.set_value("operations_site", site);
-			if (project) frm.set_value("project", project);
-		};
-
-		if (frm.doc.incident_date) {
-			frappe.db.get_list("Employee Schedule", {
-				filters: {
-					employee: frm.doc.employee,
-					date: frm.doc.incident_date,
-					employee_availability: "Working"
-				},
-				fields: ["site", "project"],
-				limit: 1
-			}).then(res => {
-				if (res && res.length > 0) {
-					set_details(res[0].site, res[0].project);
-				} else {
-					// Fallback to Employee Master
-					frappe.db.get_value("Employee", frm.doc.employee, ["site", "project"], (r) => {
-						if (r) set_details(r.site, r.project);
-					});
+		// The site/project lookup reads Employee Schedule (roster data). It is done
+		// server-side so raising a penalty does not require roster read permission -
+		// the method checks access and returns only the two fields it needs.
+		frappe.call({
+			method: "one_fm.legal.doctype.penalty_and_investigation.penalty_and_investigation.get_incident_site_project",
+			args: {
+				employee: frm.doc.employee,
+				incident_date: frm.doc.incident_date
+			},
+			callback: function (r) {
+				if (r && r.message) {
+					if (r.message.site) frm.set_value("operations_site", r.message.site);
+					if (r.message.project) frm.set_value("project", r.message.project);
 				}
-			});
-		} else {
-			// No incident date, fallback to master
-			frappe.db.get_value("Employee", frm.doc.employee, ["site", "project"], (r) => {
-				if (r) set_details(r.site, r.project);
-			});
-		}
+			}
+		});
 	},
 	fetch_penalty_details: function (frm) {
 		const clear = () => {

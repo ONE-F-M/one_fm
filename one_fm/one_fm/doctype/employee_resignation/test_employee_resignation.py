@@ -661,30 +661,14 @@ class TestEmployeeResignation(FrappeTestCase):
 
 	# -- Current salary auto-fetch --
 
-	def test_set_current_salary_fetches_latest_assignment(self):
+	def test_set_current_salary_fetches_employee_base_salary(self):
+		# current_salary reads Employee.one_fm_basic_salary directly -- a
+		# mandatory field every Employee already has -- rather than a Salary
+		# Structure Assignment, which may not exist or may only have draft
+		# (unsubmitted) rows, leaving current_salary blank for real employees.
 		employee_emp = self._make_employee("EMP-SALARY")
-
-		if not frappe.db.exists("Salary Structure", "TEST-RSGN-STRUCT"):
-			frappe.get_doc({
-				"doctype": "Salary Structure",
-				"name": "TEST-RSGN-STRUCT",
-				"salary_structure_name": "TEST-RSGN-STRUCT",
-				"company": frappe.db.get_value("Employee", employee_emp, "company"),
-				"is_active": "Yes",
-			}).insert(ignore_mandatory=True)
-
-		if not frappe.db.exists("Salary Structure Assignment", {"employee": employee_emp, "from_date": "2020-01-01"}):
-			assignment = frappe.get_doc({
-				"doctype": "Salary Structure Assignment",
-				"employee": employee_emp,
-				"salary_structure": "TEST-RSGN-STRUCT",
-				"from_date": "2020-01-01",
-				"company": frappe.db.get_value("Employee", employee_emp, "company"),
-				"base": 5000,
-			})
-			assignment.insert(ignore_mandatory=True)
-			assignment.submit()
+		self.assertEqual(frappe.db.get_value("Employee", employee_emp, "one_fm_basic_salary"), 1000)
 
 		doc = self._make_resignation(employee_emp)
 		doc.set_current_salary()
-		self.assertEqual(doc.current_salary, 5000)
+		self.assertEqual(doc.current_salary, 1000)

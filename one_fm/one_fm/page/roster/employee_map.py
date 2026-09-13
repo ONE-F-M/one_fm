@@ -42,6 +42,27 @@ def sanitize_record(record):
 	return {k: safe_value(v) for k, v in record.items()}
 
 
+def format_shift_time(value):
+	"""Format an Operations Shift start/end TIME into an "HH:MM" string for the roster
+	grid tooltip.
+
+	The TIME column comes back from the DB as a (pandas) Timedelta. The roster
+	front-end parses this field with moment(value, "HH:mm"); the raw Timedelta
+	serializes as "0 days 06:00:00", which moment reads as hour 0 and renders as
+	12:00 AM (the reported bug). Returning a clean "HH:MM" string makes moment parse
+	it correctly. Returns None when there is no time, so the front-end falls back to
+	start_datetime/end_datetime.
+	"""
+	if value is None or (not isinstance(value, str) and pd.isna(value)):
+		return None
+	try:
+		total_seconds = int(pd.to_timedelta(value).total_seconds())
+	except (ValueError, TypeError):
+		return None
+	total_seconds %= 24 * 60 * 60
+	return f"{total_seconds // 3600:02d}:{(total_seconds % 3600) // 60:02d}"
+
+
 class PostMap():
 	"""
 		This class uses maps and list comprehensions to create the data structures to be returned to the front end.
@@ -225,7 +246,7 @@ class CreateMap:
 				es.shift, es.start_datetime, es.end_datetime, es.roster_type, es.employee_availability,
 				es.day_off_ot, es.project, es.site, emp.project as actual_project,
 				emp.site as actual_site, emp.shift as actual_shift, es.event_location, es.client_event,
-				es.on_the_job_training, {get_workflow_state_select()}
+				es.on_the_job_training, es.reference_doctype, es.reference_docname, {get_workflow_state_select()}
 			FROM `tabEmployee Schedule` es 
 			JOIN `tabEmployee` emp
 			ON es.employee = emp.name
@@ -391,12 +412,15 @@ class CreateMap:
 						'number_of_days_off': self.employee_period_details[employee_id].get('number_of_days_off'),
 						'shift': attendance['operations_shift'] or matched_schedule.get('shift'),
 						'employee_id': self.employee_period_details[employee_id].get('employee_id'),
-						'start_time': attendance['start_time'],
-						'end_time': attendance['end_time'],
+						'start_time': format_shift_time(attendance['start_time']),
+						'end_time': format_shift_time(attendance['end_time']),
 						'start_datetime': matched_schedule.get('start_datetime'),
 						'end_datetime': matched_schedule.get('end_datetime'),
 						'event_location': matched_schedule.get('event_location'),
 						'client_event': matched_schedule.get('client_event'),
+						'project': matched_schedule.get('project'),
+						'reference_doctype': matched_schedule.get('reference_doctype'),
+						'reference_docname': matched_schedule.get('reference_docname'),
 						'post_abbrv': matched_schedule.get('post_abbrv'),
 						'day_off_ot': attendance['day_off_ot'],
 						'actual_shift': attendance.get('actual_shift'),

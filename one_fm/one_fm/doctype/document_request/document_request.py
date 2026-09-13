@@ -328,6 +328,50 @@ def get_requester_defaults() -> dict:
 	return {"requester": employee, **_requester_chain(employee)}
 
 
+def _requester_chain(employee: str) -> dict:
+	"""The employee's own user, their line manager, and that manager's user.
+
+	Shared by validate and by the form so both answer "who is asking and who
+	approves" the same way. Two implementations of that drift, and a form that
+	shows one approver while the save records another is worse than a form that
+	shows nothing.
+	"""
+	row = frappe.db.get_value("Employee", employee, ["user_id", "reports_to"], as_dict=True)
+	if not row:
+		return {}
+
+	approver = row.get("reports_to")
+	return {
+		"requester_user": row.get("user_id"),
+		"approver": approver,
+		"approver_user": (
+			frappe.db.get_value("Employee", approver, "user_id") if approver else None
+		),
+	}
+
+
+@frappe.whitelist()
+def get_requester_defaults() -> dict:
+	"""Who the signed-in user is, for a request that has not been saved yet.
+
+	The requester is captured in validate, which is the right place to *enforce*
+	it and far too late to *show* it: the field is read-only, so a new request
+	opens with the requester and the whole approval chain empty, and Frappe hides
+	empty read-only fields — the column is simply absent. The requester cannot
+	tell whether the system knows who they are, or who will be asked to approve
+	what they are about to write.
+
+	Uses the same lookup validate uses, so the form cannot show one requester and
+	save another. Returns {} when the user has no Employee record: the form says
+	so at open time instead of letting a filled-in request fail on save.
+	"""
+	employee = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "name")
+	if not employee:
+		return {}
+
+	return {"requester": employee, **_requester_chain(employee)}
+
+
 @frappe.whitelist()
 def get_published_document_link(document_request: str) -> dict:
 	"""Return the Google Docs link for a published Document Request.
