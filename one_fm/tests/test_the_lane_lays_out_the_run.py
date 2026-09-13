@@ -125,6 +125,126 @@ class TestTheRunWalksForward(FrappeTestCase):
 		self.assertEqual(placed["R"]["end"], "2026-08-18T18:30:00.000Z")
 
 
+def remove(items, removed_card, leg_timings=None):
+	"""Take `removed_card` off the run and hand back the blocks and the run's two ends."""
+	script = f"""
+	const close = function (tripId, removed) {_method('_closeTripGap', 'tripId, removed')};
+	const all = {json.dumps(items)};
+	all.forEach((i) => {{ i.start = new Date(i.start); i.end = new Date(i.end); }});
+	const gone = all.find((i) => i.cardId === {json.dumps(removed_card)});
+	const canvas = {{
+		swimItems: all.filter((i) => i !== gone),
+		legTimings: {json.dumps(leg_timings or {})},
+		_runEndsAt: function (stops) {_method('_runEndsAt', 'stops')},
+	}};
+	close.call(canvas, 'T1', gone);
+	console.log(JSON.stringify({{
+		blocks: canvas.swimItems.map((i) => ({{
+			cardId: i.cardId,
+			start: new Date(i.start).toISOString(), end: new Date(i.end).toISOString(),
+		}})),
+		legs: canvas.legTimings,
+	}}));
+	"""
+	out = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=30)
+	if out.returncode:
+		raise AssertionError(out.stderr)
+	result = json.loads(out.stdout)
+	return {row["cardId"]: row for row in result["blocks"]}, result["legs"]
+
+
+class TestTheRunClosesOverAStopItNoLongerMakes(FrappeTestCase):
+	"""WI-002401: removing a card has to take its time off the run.
+
+	The blocks after the removed one used to keep their old positions - a hole was left
+	where the stop had been and the drawer went on reading the run's stored arrival, so a
+	three-stop run that lost a stop still read "13:00 -> 14:21 (81 min)".
+	"""
+
+	# A run of three stops, each block running from where the bus leaves that stop to
+	# where it reaches the next, and an arrival that is the end of the last one.
+	RUN = [
+		_block("A", 1, "2026-08-18T10:27:00Z", "2026-08-18T10:54:00Z", transit=25, buffer=2),
+		_block("B", 2, "2026-08-18T10:54:00Z", "2026-08-18T11:04:00Z", transit=10, buffer=0),
+		_block("C", 3, "2026-08-18T11:04:00Z", "2026-08-18T11:21:00Z", transit=15, buffer=2),
+	]
+	LEGS = {"T1": {
+		"departure": "2026-08-18T10:00:00Z", "arrival": "2026-08-18T11:21:00Z",
+		"home": {"place": "Mahboula Camp", "transit_minutes": 0, "buffer_minutes": 0},
+		"camps": {"Mahboula Camp": {"transit_minutes": 25, "buffer_minutes": 2}},
+	}}
+
+	def setUp(self):
+		if not shutil.which("node"):
+			self.skipTest("node is not on this machine")
+
+	def test_the_stops_after_it_move_up_by_what_it_was_using(self):
+		blocks, _ = remove(self.RUN, "B", self.LEGS)
+
+		# B was 10 minutes of the run; C now happens 10 minutes earlier.
+		self.assertEqual(blocks["A"]["end"], "2026-08-18T10:54:00.000Z")
+		self.assertEqual(blocks["C"]["start"], "2026-08-18T10:54:00.000Z")
+		self.assertEqual(blocks["C"]["end"], "2026-08-18T11:11:00.000Z")
+
+	def test_the_stops_before_it_are_left_alone(self):
+		blocks, _ = remove(self.RUN, "B", self.LEGS)
+
+		self.assertEqual(blocks["A"]["start"], "2026-08-18T10:27:00.000Z")
+
+	def test_the_run_is_over_that_much_sooner(self):
+		_, legs = remove(self.RUN, "B", self.LEGS)
+
+		self.assertEqual(legs["T1"]["arrival"], "2026-08-18T11:11:00.000Z")
+
+	def test_the_departure_the_dispatcher_typed_is_not_moved(self):
+		# It is a decision, and the camp leg that follows it is unchanged.
+		_, legs = remove(self.RUN, "B", self.LEGS)
+
+		self.assertEqual(legs["T1"]["departure"], "2026-08-18T10:00:00Z")
+		self.assertEqual(legs["T1"]["camps"], self.LEGS["T1"]["camps"])
+
+	def test_losing_the_first_stop_shortens_the_run_rather_than_delaying_it(self):
+		blocks, legs = remove(self.RUN, "A", self.LEGS)
+
+		self.assertEqual(blocks["B"]["start"], "2026-08-18T10:27:00.000Z")
+		self.assertEqual(legs["T1"]["arrival"], "2026-08-18T10:54:00.000Z")
+
+	def test_losing_the_last_stop_ends_the_run_where_the_one_before_it_does(self):
+		blocks, legs = remove(self.RUN, "C", self.LEGS)
+
+		self.assertEqual(blocks["B"]["end"], "2026-08-18T11:04:00.000Z")
+		self.assertEqual(legs["T1"]["arrival"], "2026-08-18T11:04:00.000Z")
+
+	def test_a_combined_stop_keeps_its_window_when_one_of_its_cards_goes(self):
+		# One visit where some riders get off and others get on: both cards are drawn on
+		# the same window on purpose. The bus is still standing there, so no time is
+		# freed and nothing after it may move.
+		run = self.RUN + [
+			_block("B2", 4, "2026-08-18T10:54:00Z", "2026-08-18T11:04:00Z", transit=10, buffer=0),
+		]
+
+		blocks, legs = remove(run, "B", self.LEGS)
+
+		self.assertEqual(blocks["B2"]["start"], "2026-08-18T10:54:00.000Z")
+		self.assertEqual(blocks["C"]["start"], "2026-08-18T11:04:00.000Z")
+		self.assertEqual(legs["T1"]["arrival"], "2026-08-18T11:21:00Z")
+
+	def test_an_arrival_left_drifted_by_an_earlier_removal_is_repaired(self):
+		# Read off the run rather than moved by the offset, so a run that was already
+		# wrong comes back right instead of staying wrong by the same amount.
+		drifted = {"T1": dict(self.LEGS["T1"], arrival="2026-08-18T11:31:00Z")}
+
+		_, legs = remove(self.RUN, "B", drifted)
+
+		self.assertEqual(legs["T1"]["arrival"], "2026-08-18T11:11:00.000Z")
+
+	def test_the_last_stop_off_a_run_takes_the_runs_timings_with_it(self):
+		# Nothing left to time: the camp and home legs belonged to a run that is gone.
+		_, legs = remove([self.RUN[0]], "A", self.LEGS)
+
+		self.assertNotIn("T1", legs)
+
+
 class TestTheDrawerReadsTheRunInOrder(FrappeTestCase):
 	"""The stops are listed in the order the bus drives them, and the run's two ends
 	are the moment it leaves the camp and the moment it gets back.
@@ -147,7 +267,10 @@ class TestTheDrawerReadsTheRunInOrder(FrappeTestCase):
 		self.assertIn("{{ fmtISO(tripStartsAt()) }}", self.source)
 
 	def test_the_timeline_ends_when_the_bus_is_back(self):
-		self.assertIn("return this.selectedTripLegs.arrival || this.lastStopEndsAt();", self.source)
+		# The blocks say when that is; the stored arrival is a copy of the same moment and
+		# is only read when there are no blocks left to read (WI-002401). The copy is what
+		# had a run that lost a stop still reading its old, longer total.
+		self.assertIn("return this.lastStopEndsAt() || this.selectedTripLegs.arrival;", self.source)
 
 	def test_the_drive_out_of_the_camp_is_shown_before_the_first_stop(self):
 		# The timeline began at 06:45 and the first stop at 07:15, and the half hour
