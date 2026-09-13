@@ -1222,3 +1222,153 @@ class TestTheExportGoesToDrive(FrappeTestCase):
 
 		self.assertEqual(result["destination"], "zip")
 		self.assertEqual(enqueue.call_args.args[0].__name__, "_build_pow_zip")
+
+
+class TestTheRecordRemembersItsDrivePdf(FrappeTestCase):
+	"""WI-002400: a record offers exactly one of two buttons, and drive_file_id decides.
+
+	Drive is mocked throughout - what is under test is what the record is left holding
+	and which link it points at, not Google.
+	"""
+
+	MODULE = "one_fm.one_fm.doctype.proof_of_work.proof_of_work"
+
+	def test_the_link_opens_the_file_not_the_folder(self):
+		"""The reader wants the document they were looking at, and Drive renders a PDF
+		in the browser from /view."""
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import drive_file_link
+
+		self.assertEqual(
+			drive_file_link("ABC123"), "https://drive.google.com/file/d/ABC123/view"
+		)
+
+	def test_the_form_and_the_server_build_the_same_link(self):
+		"""The button is drawn in JavaScript and the notification link in Python; a
+		record opening two different places is the sort of thing nobody notices."""
+		script = frappe.read_file(
+			frappe.get_app_path(
+				"one_fm", "one_fm", "doctype", "proof_of_work", "proof_of_work.js"
+			)
+		)
+
+		self.assertIn("https://drive.google.com/file/d/", script)
+		self.assertIn("/view", script)
+
+	def test_a_successful_upload_is_written_to_the_record(self):
+		from unittest.mock import patch
+
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import _remember_upload
+
+		doc = frappe.new_doc("Proof of Work")
+		doc.contract = "_TEST-CONTRACT-DRIVE"
+		doc.start_date = get_first_day(getdate())
+		doc.end_date = get_last_day(getdate())
+		doc.flags.ignore_mandatory = True
+		doc.insert(ignore_permissions=True, ignore_links=True)
+
+		with patch("frappe.publish_realtime") as published:
+			_remember_upload(doc.name, "FILEID-1")
+
+		self.assertEqual(
+			frappe.db.get_value("Proof of Work", doc.name, "drive_file_id"), "FILEID-1"
+		)
+		# Without the push, the button only changes on a reload.
+		self.assertTrue(published.called)
+		self.assertEqual(published.call_args.kwargs["message"]["drive_file_id"], "FILEID-1")
+
+	def test_the_field_is_read_only_and_not_copied_onto_an_amendment(self):
+		"""It says where a particular PDF went. An amendment has not been uploaded, and
+		inheriting the link would offer the reader the wrong document."""
+		field = frappe.get_meta("Proof of Work").get_field("drive_file_id")
+
+		self.assertTrue(field, "drive_file_id is missing from Proof of Work")
+		self.assertTrue(field.read_only)
+		self.assertTrue(field.no_copy)
+
+	def test_a_failed_upload_leaves_the_record_without_a_link(self):
+		"""Scenario 3: the record still stands, and still offers Generate PDF."""
+		from unittest.mock import MagicMock, patch
+
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import _generate_one_drive_pdf
+
+		with patch(f"{self.MODULE}.google_credentials.get_drive_service", MagicMock()), patch(
+			f"{self.MODULE}._configured_drive_folder", return_value="PARENT"
+		), patch(f"{self.MODULE}._check_drive_folder"), patch(
+			f"{self.MODULE}._period_folder", return_value="FOLDER"
+		), patch(
+			f"{self.MODULE}._pow_pdf_entry", side_effect=Exception("render blew up")
+		), patch(
+			f"{self.MODULE}._remember_upload"
+		) as remembered, patch(
+			f"{self.MODULE}._notify_zip"
+		) as notified, patch(
+			"frappe.log_error"
+		):
+			_generate_one_drive_pdf("POW-DOES-NOT-MATTER", "Administrator")
+
+		remembered.assert_not_called()
+		self.assertTrue(notified.called)
+		# Scenario 7 asks for a message the user can act on, naming the retry.
+		self.assertIn("try again", notified.call_args.args[1].lower())
+
+	def test_a_successful_generation_reports_the_file(self):
+		from unittest.mock import MagicMock, patch
+
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import _generate_one_drive_pdf
+
+		# A document is loaded before anything else happens, so it has to exist.
+		doc = frappe.new_doc("Proof of Work")
+		doc.contract = "_TEST-CONTRACT-DRIVE-OK"
+		doc.start_date = get_first_day(getdate())
+		doc.end_date = get_last_day(getdate())
+		doc.flags.ignore_mandatory = True
+		doc.insert(ignore_permissions=True, ignore_links=True)
+
+		with patch(f"{self.MODULE}.google_credentials.get_drive_service", MagicMock()), patch(
+			f"{self.MODULE}._configured_drive_folder", return_value="PARENT"
+		), patch(f"{self.MODULE}._check_drive_folder"), patch(
+			f"{self.MODULE}._period_folder", return_value="FOLDER"
+		), patch(
+			f"{self.MODULE}._pow_pdf_entry", return_value=("POW.pdf", b"%PDF-")
+		), patch(
+			f"{self.MODULE}._upload_pdf", return_value="FILEID-OK"
+		), patch(
+			f"{self.MODULE}._notify_zip"
+		) as notified, patch(
+			"frappe.publish_realtime"
+		):
+			_generate_one_drive_pdf(doc.name, "Administrator")
+
+		self.assertEqual(
+			frappe.db.get_value("Proof of Work", doc.name, "drive_file_id"), "FILEID-OK"
+		)
+		self.assertEqual(
+			notified.call_args.kwargs.get("file_url"),
+			"https://drive.google.com/file/d/FILEID-OK/view",
+		)
+
+	def test_the_bulk_button_says_where_the_pdfs_go(self):
+		"""Scenario 1: the label names Drive, not a ZIP download."""
+		script = frappe.read_file(
+			frappe.get_app_path(
+				"one_fm", "one_fm", "doctype", "proof_of_work", "proof_of_work_list.js"
+			)
+		)
+
+		self.assertIn('__("Generate Google Drive PDF")', script)
+		self.assertNotIn("Submit and Download Zip File", script)
+
+	def test_the_form_offers_one_button_or_the_other(self):
+		"""Scenarios 2 and 4: the two are mutually exclusive, decided by drive_file_id."""
+		script = frappe.read_file(
+			frappe.get_app_path(
+				"one_fm", "one_fm", "doctype", "proof_of_work", "proof_of_work.js"
+			)
+		)
+
+		self.assertIn('if (frm.doc.drive_file_id)', script)
+		self.assertIn('__("Open in Google Drive")', script)
+		self.assertIn('__("Generate PDF")', script)
+		# The early return after the Drive button is what keeps Generate PDF hidden.
+		drive_branch = script.split("if (frm.doc.drive_file_id)")[1].split("frm.add_custom_button(__(\"Generate PDF\")")[0]
+		self.assertIn("return;", drive_branch)

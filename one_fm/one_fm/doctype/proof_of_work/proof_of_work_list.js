@@ -57,11 +57,12 @@ function open_pow_generator() {
 				fieldtype: "HTML",
 			},
 		],
-		// WI-001808: generation submits the records. "Submit and Download Zip File"
-		// does the same and then queues one merged PDF per contract into a ZIP.
+		// WI-001808: generation submits the records. The second action does the same and
+		// then queues one merged PDF per contract - to Google Drive (WI-002400), or into
+		// a ZIP on a site with no Drive folder configured.
 		primary_action_label: __("Submit"),
 		primary_action: () => generate_pow(dialog, false),
-		secondary_action_label: __("Submit and Download Zip File"),
+		secondary_action_label: __("Generate Google Drive PDF"),
 		secondary_action: () => generate_pow(dialog, true),
 	});
 
@@ -178,7 +179,7 @@ function generate_pow(dialog, download_zip) {
 	}
 
 	const confirm_message = download_zip
-		? __("Generate and submit {0} Proof of Work record(s), then build the ZIP?", [
+		? __("Generate and submit {0} Proof of Work record(s), then upload the PDFs?", [
 				selected.length,
 		  ])
 		: __("Generate and submit {0} Proof of Work record(s)?", [selected.length]);

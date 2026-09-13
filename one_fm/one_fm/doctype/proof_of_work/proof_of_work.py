@@ -1144,6 +1144,10 @@ def export_pdf(name: str):
 # Document Register uses - so the configured folder has to be shared with it.
 # ---------------------------------------------------------------------------
 
+# Pushed to whoever has the record open when its PDF reaches Drive (WI-002400), so the
+# button becomes "Open in Google Drive" without a reload.
+POW_DRIVE_EVENT = "pow_drive_pdf"
+
 # On Google Settings, per the work item. Note the upload still authenticates with the
 # service account JSON on ONEFM General Setting - that is the identity the folder has to
 # be shared with, not the OAuth client Google Settings configures.
@@ -1231,6 +1235,33 @@ def _folder_link(folder_id: str) -> str:
 	return f"https://drive.google.com/drive/folders/{folder_id}"
 
 
+def drive_file_link(file_id: str) -> str:
+	"""The Drive viewer for one uploaded PDF (WI-002400).
+
+	/view rather than the folder: the reader wants the document they were looking at,
+	and Drive renders a PDF in the browser from this address.
+	"""
+	return f"https://drive.google.com/file/d/{file_id}/view"
+
+
+def _remember_upload(pow_name: str, file_id: str):
+	"""Record that this document reached Drive, and tell an open form about it.
+
+	Written straight to the row: a Proof of Work is submitted by the time it is
+	uploaded, and re-saving one from a background job would fight that. The realtime
+	event is what turns "Generate PDF" into "Open in Google Drive" without a reload,
+	which is what the criteria ask for.
+	"""
+	frappe.db.set_value("Proof of Work", pow_name, "drive_file_id", file_id, update_modified=False)
+	frappe.publish_realtime(
+		event=POW_DRIVE_EVENT,
+		message={"name": pow_name, "drive_file_id": file_id},
+		doctype="Proof of Work",
+		docname=pow_name,
+		after_commit=True,
+	)
+
+
 def _check_drive_folder(service, folder_id: str):
 	"""Fail before the batch, saying what to do about it (WI-001981).
 
@@ -1310,7 +1341,8 @@ def _upload_pow_pdfs(pow_names, user: str):
 				folders[period] = _period_folder(service, parent_id, period)
 
 			filename, content = _pow_pdf_entry(doc)
-			_upload_pdf(service, folders[period], filename, content)
+			file_id = _upload_pdf(service, folders[period], filename, content)
+			_remember_upload(pow_name, file_id)
 			uploaded.append(filename)
 		except Exception:
 			failed.append(pow_name)
@@ -1410,6 +1442,82 @@ def _notify_zip(user: str, message: str, file_url: str = None, link_label: str =
 		body += f'<br><br><a href="{file_url}" target="_blank">{escape_html(label)}</a>'
 
 	frappe.publish_realtime(event="msgprint", message=body, user=user)
+
+
+@frappe.whitelist(methods=["POST"])
+def generate_drive_pdf(name: str):
+	"""Render one Proof of Work and put it in Drive (WI-002400).
+
+	The retry for a record the bulk run could not upload, and the way a record gets its
+	PDF at all when it was submitted without one. Queued rather than done here: two print
+	formats and a Drive round trip outlive an HTTP request, which is what made the bulk
+	export a background job in the first place.
+	"""
+	_guard_permission()
+
+	doc = frappe.get_doc("Proof of Work", name)
+	doc.check_permission("read")
+
+	if not _configured_drive_folder():
+		frappe.throw(
+			_(
+				"No Proof of Work Drive folder is set on Google Settings, so there is nowhere "
+				"to upload to."
+			),
+			title=_("Drive Folder Not Configured"),
+		)
+
+	frappe.enqueue(
+		_generate_one_drive_pdf,
+		queue="long",
+		timeout=600,
+		pow_name=name,
+		user=frappe.session.user,
+	)
+
+	return {"queued": name}
+
+
+def _generate_one_drive_pdf(pow_name: str, user: str):
+	"""Upload one record's PDF, and say either way (WI-002400).
+
+	Reuses the batch's own upload so a PDF made here is the one the batch would have
+	made, filed in the same period folder.
+
+	A failure is reported to the user rather than only logged: they pressed a button and
+	are waiting for it, and the criteria ask for a message they can act on. The button
+	stays where it is, because nothing about the record changed.
+	"""
+	try:
+		doc = frappe.get_doc("Proof of Work", pow_name)
+		service = google_credentials.get_drive_service()
+		parent_id = _configured_drive_folder()
+		_check_drive_folder(service, parent_id)
+
+		period = _period_folder_name(doc.start_date)
+		folder_id = _period_folder(service, parent_id, period)
+
+		filename, content = _pow_pdf_entry(doc)
+		file_id = _upload_pdf(service, folder_id, filename, content)
+		_remember_upload(pow_name, file_id)
+		frappe.db.commit()
+	except Exception:
+		frappe.log_error(
+			title="Proof of Work Drive upload failed",
+			message=f"{pow_name}\n\n{frappe.get_traceback()}",
+		)
+		_notify_zip(
+			user,
+			_("Failed to upload {0} to Google Drive. Please try again.").format(pow_name),
+		)
+		return
+
+	_notify_zip(
+		user,
+		_("{0} uploaded to Google Drive.").format(filename),
+		file_url=drive_file_link(file_id),
+		link_label=_("Open in Google Drive"),
+	)
 
 
 @frappe.whitelist(methods=["POST"])
