@@ -19,6 +19,36 @@ def get_workflow_state_select():
 	return "NULL as workflow_state"
 
 
+# WI-002437: the two states an Employee Schedule is in when it is not a shift anybody is
+# working. A double shift waiting on the DSOT Approver is not one yet, and a rejected one
+# never will be - the hours are gone, whether it was refused outright or nobody answered
+# before the shift ended.
+#
+# Only the DSOT flow reaches either: the workflow's Rejected state has one way in, from
+# Pending DSOT Approval, so the suspension flow this shares a workflow with is untouched.
+NOT_A_WORKED_SHIFT = ("Pending DSOT Approval", "Rejected")
+
+
+def get_schedule_state_filter():
+	"""WHERE fragment that keeps those rows out of the Roster Matrix (WI-002437).
+
+	Conditional on the column for the same reason get_workflow_state_select() is: it is a
+	Custom Field the suspension workflow creates, and a site without it must still load
+	the roster.
+
+	The blank-availability half is not conditional - employee_availability is a real field
+	on every site. No row here has one today; what it guards is that a schedule carrying
+	no availability at all never renders as a shift cell (AC 1.5).
+	"""
+	clauses = ["ifnull(es.employee_availability, '') != ''"]
+
+	if "workflow_state" in frappe.db.get_table_columns("Employee Schedule"):
+		states = ", ".join(f"'{state}'" for state in NOT_A_WORKED_SHIFT)
+		clauses.append(f"ifnull(es.workflow_state, '') not in ({states})")
+
+	return " AND ".join(clauses)
+
+
 def safe_value(val):
 	"""Convert pandas NaN/NaT and other non-JSON-serializable values to None."""
 	if val is None:
@@ -226,11 +256,12 @@ class CreateMap:
 				es.day_off_ot, es.project, es.site, emp.project as actual_project,
 				emp.site as actual_site, emp.shift as actual_shift, es.event_location, es.client_event,
 				es.on_the_job_training, {get_workflow_state_select()}
-			FROM `tabEmployee Schedule` es 
+			FROM `tabEmployee Schedule` es
 			JOIN `tabEmployee` emp
 			ON es.employee = emp.name
 			WHERE {self.str_filter}
 			AND es.employee IN {self.employees}
+			AND {get_schedule_state_filter()}
 			ORDER BY es.employee, es.date, es.roster_type ASC
 		"""
 
