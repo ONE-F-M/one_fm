@@ -937,7 +937,7 @@
    "fieldname": "new_pam_file",
    "fieldtype": "Link",
    "label": "New PAM File",
-   "options": "PAM File"
+   "options": "PAM License Details"
   },
   {
    "fetch_from": "new_pam_designation.designation_name_arabic",
@@ -947,7 +947,7 @@
    "read_only": 1
   },
   {
-   "fetch_from": "new_pam_file.pam_file_number",
+   "fetch_from": "new_pam_file.civil_id_number_for_licensing",
    "fieldname": "new_pam_file_number",
    "fieldtype": "Data",
    "label": "New PAM File Number",
