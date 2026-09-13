@@ -30,8 +30,8 @@ RULES = [
 		"employee": "HR-EMP-00114",
 	},
 	{
-		"json": "work_permit_grd_supervisor.json",
-		"name": "Work Permit - GRD Supervisor",
+		"json": "work_permit_gr_manager.json",
+		"name": "Work Permit - GR Manager",
 		"task": "Assigning GRD Supervisor in W",
 		"employee": "HR-EMP-00775",
 	},
@@ -87,7 +87,8 @@ def verify():
 		)
 		if not saved:
 			frappe.throw(f"WI-001827: assignment rule {rule['name']!r} was not created.")
-		if saved.disabled:
-			frappe.throw(f"WI-001827: assignment rule {rule['name']!r} is disabled.")
-		if not saved.custom_routine_task:
-			frappe.throw(f"WI-001827: {rule['name']!r} has no Process Task to take its assignee from.")
+
+	# Whether each rule is enabled, and whether it takes its assignee from a Process Task at
+	# all, is no longer this patch's to assert: WI-002182 turns the PRO rule off and puts the
+	# GR Operator rule back on "Based on Field". A fresh install reads today's fixtures, so
+	# asserting WI-001827's answers here would fail on WI-002182's.
