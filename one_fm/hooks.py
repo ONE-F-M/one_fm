@@ -660,6 +660,8 @@ scheduler_events = {
         'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_day_process_task',
         'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_last_day_process_task',
 		'one_fm.fleet_management.vehicle_branding_expiry.notify_vehicle_branding_expiry',
+		# WI-002449: a week's notice before a PAM Licence letter of guarantee expires.
+		'one_fm.grd.lg_expiry.notify_lg_expiry',
 		'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.generate_transportation_shipments',
 		'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.deactivate_expired_shipments',
 		'one_fm.one_fm.doctype.transportation_manifest.manifest_compiler.compile_daily_manifests'
