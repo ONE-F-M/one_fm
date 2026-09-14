@@ -415,3 +415,147 @@ class TestTheExpiryJob(FrappeTestCase):
 			"one_fm.visa_management.doctype.visa_cancellation_request.visa_cancellation_request.cancel_expired_visas",
 			hooks.scheduler_events["daily"],
 		)
+
+
+class TestThePROOfficersRejectionRemark(FrappeTestCase):
+	"""WI-002427. The dialog that asks for it lives in the form script and the process map
+	routes back to the PRO's task without it; what is testable here is the rule on the
+	document, which holds whichever of those is bypassed."""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		cls.skip = not has_workflow_state_column()
+
+	def setUp(self):
+		if self.skip:
+			self.skipTest("run bench migrate - no workflow is attached to the doctype yet")
+		_clear()
+
+	def tearDown(self):
+		_clear()
+
+	def _refusing(self, remark=None, previous_state="Pending by PRO"):
+		"""The document as validate sees it on the way into the rejected state."""
+		# Built in memory, and without a Visa Request behind it: the rule reads two fields,
+		# and nothing it does goes near the row.
+		doc = frappe.new_doc(DOCTYPE)
+		doc.name = SEEDED + "R1"
+		doc.cancellation_reason = EXPIRY_REASON
+		doc.set("workflow_state", REJECTED_STATE)
+		doc.pro_officer_rejection_remark = remark
+
+		before = frappe.new_doc(DOCTYPE)
+		before.name = doc.name
+		before.set("workflow_state", previous_state)
+		doc._doc_before_save = before
+		doc.set("__islocal", False)
+
+		return doc
+
+	def test_the_field_is_one_the_doctype_carries(self):
+		"""The dialog writes to this fieldname and the map's gateway reads it by the same
+		name; a rename on either side would leave both reading nothing."""
+		field = frappe.get_meta(DOCTYPE).get_field("pro_officer_rejection_remark")
+		self.assertIsNotNone(field)
+		self.assertEqual(field.fieldtype, "Small Text")
+		self.assertFalse(field.hidden)
+		self.assertFalse(field.read_only)
+
+	def test_refusing_without_a_remark_is_blocked(self):
+		with self.assertRaises(frappe.ValidationError) as raised:
+			self._refusing().validate_rejection_remark()
+
+		self.assertIn("PRO Officer Rejection Remark", str(raised.exception))
+
+	def test_a_boxful_of_spaces_is_not_a_reason(self):
+		with self.assertRaises(frappe.ValidationError):
+			self._refusing(remark="   \n ").validate_rejection_remark()
+
+	def test_refusing_with_a_remark_goes_through(self):
+		self._refusing(remark="Passport already surrendered").validate_rejection_remark()
+
+	def test_every_other_state_is_untouched(self):
+		"""Only the refusal needs a reason - the request moves through five other states
+		with the field empty, and a rule that fired on those would stop the process dead."""
+		for state in (None, "Draft", "Pending by GRD Operator", "Pending by PRO", "Visa Cancelled"):
+			with self.subTest(state=state):
+				doc = self._refusing()
+				doc.set("workflow_state", state)
+				doc.validate_rejection_remark()
+
+	def test_a_request_already_refused_is_left_alone(self):
+		"""Requests were refused before this rule existed; re-checking on every save would
+		make every one of them unsaveable."""
+		self._refusing(previous_state=REJECTED_STATE).validate_rejection_remark()
+
+	def test_the_rule_runs_on_save(self):
+		"""The map applies the state with doc.save()/doc.submit(), so validate is the hook
+		that sees it - not a method somebody has to remember to call."""
+		visa_request = _visa_request("R2")
+		doc = frappe.new_doc(DOCTYPE)
+		doc.visa_request_id = visa_request
+		doc.cancellation_reason = EXPIRY_REASON
+		doc.insert()
+		self.addCleanup(frappe.delete_doc, DOCTYPE, doc.name, force=True, ignore_permissions=True)
+
+		doc.set("workflow_state", REJECTED_STATE)
+		with self.assertRaises(frappe.ValidationError):
+			doc.save()
+
+		# The refused save still stamped a new `modified` on the in-memory document, so the
+		# next one would be turned away as stale before the rule ever ran.
+		doc.reload()
+		doc.set("workflow_state", REJECTED_STATE)
+		doc.pro_officer_rejection_remark = "Cancelled at the applicant's request"
+		doc.save()
+		self.assertEqual(
+			frappe.db.get_value(DOCTYPE, doc.name, "pro_officer_rejection_remark"),
+			"Cancelled at the applicant's request",
+		)
+
+
+class TestTheFormScriptAsksForIt(FrappeTestCase):
+	"""WI-002427's first criterion is a popup, and a popup has no server-side surface. What
+	is pinned here is the wiring the browser needs for it to appear at all: the script ships
+	where Frappe loads doctype form scripts from, and it keys on the same three strings the
+	process map does. A rename on either side is the failure this catches."""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		cls.source = (SHIPPED.parent / "visa_cancellation_request.js").read_text()
+
+	def test_the_script_ships_beside_the_doctype(self):
+		self.assertTrue((SHIPPED.parent / "visa_cancellation_request.js").exists())
+
+	def test_it_keys_on_the_state_and_action_the_map_uses(self):
+		# The PRO's user task in the Visa Cancellation map is reached on
+		# workflow_state == "Pending by PRO" and offers "Accept" and "Cancel".
+		self.assertIn('"Pending by PRO"', self.source)
+		self.assertIn('"Cancel"', self.source)
+
+	def test_it_writes_to_the_field_the_gateway_reads(self):
+		self.assertIn('"pro_officer_rejection_remark"', self.source)
+
+	def test_it_saves_before_applying_the_action(self):
+		"""The map's gateway reads the remark off the document, not off the click - an
+		unsaved value routes the request straight back to the PRO."""
+		self.assertLess(
+			self.source.index("frm.save()"),
+			self.source.index("return apply_cancel(frm);"),
+		)
+
+	def test_it_does_not_re_fire_the_menu_item(self):
+		"""The first cut saved the remark and then re-fired the menu item the PRO had
+		clicked. Saving refreshes the form, one_bpmn clears its injected items with jQuery
+		.remove(), and that takes the click handler with them - so the remark was saved and
+		nothing transitioned. The task is fetched and completed through the API instead."""
+		self.assertNotIn('trigger("click")', self.source)
+		self.assertIn("one_bpmn.api.instance_api.get_active_bpmn_tasks", self.source)
+		self.assertIn("one_bpmn.api.instance_api.complete_task", self.source)
+
+	def test_a_retry_with_the_same_reason_is_not_saved_again(self):
+		"""frm.save() on an unchanged document answers "No changes in the document" and
+		rejects, which would strand the action behind a dialog already filled in."""
+		self.assertIn("frm.is_dirty() ? frm.save() : null", self.source)
