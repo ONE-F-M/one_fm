@@ -77,6 +77,8 @@
   {
    "fieldname": "employee",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Employee",
    "options": "Employee",
    "read_only": 1
@@ -104,11 +106,15 @@
    "fetch_from": "employee.under_company_residency",
    "fieldname": "under_company_accommodation",
    "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Under Company Accommodation"
   },
   {
    "fieldname": "absence_type",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Absence Type",
    "options": "\n5 Days Consecutive Absence\n7 Days Consecutive Absence\n16 Days Absence in a Year\n21 Days Absence in a Year",
    "read_only": 1
@@ -138,6 +144,7 @@
   {
    "fieldname": "location_status",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Location Status",
    "options": "\nInside Kuwait\nOutside Kuwait"
   },
@@ -228,7 +235,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-16 12:26:13.043475",
+ "modified": "2026-09-14 14:10:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Absence Case",
