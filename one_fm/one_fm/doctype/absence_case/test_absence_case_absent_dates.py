@@ -8,6 +8,9 @@ duplicate check, a leave application - and none of them has anything to do with 
 somebody was marked absent.
 """
 
+import json
+from pathlib import Path
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, getdate, today
@@ -400,4 +403,48 @@ class TestTheStartDateReachesTheCase(FrappeTestCase):
 			with self.subTest(builder=builder.__name__):
 				self.assertIn(
 					"absence_start_date", inspect.signature(builder).parameters
+				)
+
+
+class TestTheListViewMatchesTheBASite(FrappeTestCase):
+	"""The four columns and three filters the BA site's Absence Case carries.
+
+	Flagged on WI-002465's PR as deliberately not applied - no criterion asked for a list
+	view change - and asked for afterwards. Read from the shipped JSON rather than the meta,
+	which only catches up on the next migrate.
+
+	Nothing overrides these on this site: Absence Case has no Property Setters, no Custom
+	Fields and no List View Settings row. That last one matters - on Visa Request a List View
+	Settings row carrying reorder_listview_fields quietly overruled exactly this change.
+	"""
+
+	IN_LIST_VIEW = ("employee", "under_company_accommodation", "absence_type", "location_status")
+	IN_STANDARD_FILTER = ("employee", "under_company_accommodation", "absence_type")
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		shipped = Path(frappe.get_app_path("one_fm")) / "one_fm" / "doctype" / "absence_case" / \
+			"absence_case.json"
+		cls.fields = {f["fieldname"]: f for f in json.loads(shipped.read_text())["fields"]}
+
+	def test_the_columns_the_list_shows(self):
+		shown = [name for name, f in self.fields.items() if f.get("in_list_view")]
+		self.assertEqual(shown, list(self.IN_LIST_VIEW))
+
+	def test_the_standard_filters(self):
+		filtered = [name for name, f in self.fields.items() if f.get("in_standard_filter")]
+		self.assertEqual(filtered, list(self.IN_STANDARD_FILTER))
+
+	def test_location_status_is_a_column_but_not_a_filter(self):
+		"""The one asymmetry on the BA site, and the easiest thing to sweep in by accident."""
+		self.assertTrue(self.fields["location_status"].get("in_list_view"))
+		self.assertFalse(self.fields["location_status"].get("in_standard_filter"))
+
+	def test_nothing_on_this_site_overrides_them(self):
+		self.assertFalse(frappe.db.exists("List View Settings", "Absence Case"))
+		for prop in ("in_list_view", "in_standard_filter"):
+			with self.subTest(property=prop):
+				self.assertFalse(
+					frappe.db.exists("Property Setter", {"doc_type": "Absence Case", "property": prop})
 				)
