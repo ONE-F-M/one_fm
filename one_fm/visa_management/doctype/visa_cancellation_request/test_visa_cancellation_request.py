@@ -538,7 +538,24 @@ class TestTheFormScriptAsksForIt(FrappeTestCase):
 	def test_it_writes_to_the_field_the_gateway_reads(self):
 		self.assertIn('"pro_officer_rejection_remark"', self.source)
 
-	def test_it_saves_before_handing_the_action_on(self):
+	def test_it_saves_before_applying_the_action(self):
 		"""The map's gateway reads the remark off the document, not off the click - an
-		unsaved value routes it straight back to the PRO."""
-		self.assertLess(self.source.index("frm.save()"), self.source.index('trigger("click")'))
+		unsaved value routes the request straight back to the PRO."""
+		self.assertLess(
+			self.source.index("frm.save()"),
+			self.source.index("return apply_cancel(frm);"),
+		)
+
+	def test_it_does_not_re_fire_the_menu_item(self):
+		"""The first cut saved the remark and then re-fired the menu item the PRO had
+		clicked. Saving refreshes the form, one_bpmn clears its injected items with jQuery
+		.remove(), and that takes the click handler with them - so the remark was saved and
+		nothing transitioned. The task is fetched and completed through the API instead."""
+		self.assertNotIn('trigger("click")', self.source)
+		self.assertIn("one_bpmn.api.instance_api.get_active_bpmn_tasks", self.source)
+		self.assertIn("one_bpmn.api.instance_api.complete_task", self.source)
+
+	def test_a_retry_with_the_same_reason_is_not_saved_again(self):
+		"""frm.save() on an unchanged document answers "No changes in the document" and
+		rejects, which would strand the action behind a dialog already filled in."""
+		self.assertIn("frm.is_dirty() ? frm.save() : null", self.source)

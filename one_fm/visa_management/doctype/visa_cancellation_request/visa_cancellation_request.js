@@ -8,12 +8,14 @@
  * one_bpmn on every form refresh (bpmn_form_actions.js). one_bpmn offers no hook to run
  * something before one of its actions, so the click is caught on the way down instead -
  * a capture-phase listener on the document, which does not care when the menu item was
- * added or by whom. The remark is asked for, saved, and only then is the menu item's own
- * handler allowed to run.
+ * added or by whom.
  *
- * The map refuses the transition on its own when the remark is empty (Gateway_1o50p1k
- * routes straight back to the PRO's task) and so does the controller. This is the third of
- * the three guards and the only one the PRO ever sees.
+ * The remark is saved before the action is applied, because the map's gateway
+ * ("Is Cancellation Reason set ?") reads pro_officer_rejection_remark off the document
+ * rather than off the click. An unsaved value routes the request straight back here.
+ *
+ * The map refuses the transition on its own when the remark is empty, and so does the
+ * controller. This is the third of the three guards and the only one the PRO ever sees.
  */
 
 frappe.provide("one_fm.visa_cancellation");
@@ -26,23 +28,81 @@ frappe.provide("one_fm.visa_cancellation");
 	const CANCEL_ACTION = "Cancel";
 	const REMARK = "pro_officer_rejection_remark";
 
-	// Set on the menu item just before its own handler is re-fired, so the listener below
-	// steps aside for that one click instead of asking for the remark all over again.
-	const LET_THROUGH = "oneFmRemarkCaptured";
-
 	/** The injected "Cancel" menu item this click landed on, if it is that one. */
-	function cancel_action_item(event) {
+	function is_cancel_action_item(event) {
 		// The marker one_bpmn stamps on its own <li>. Frappe's native Cancel (docstatus)
 		// carries no marker, and is not this action.
 		const link = event.target.closest && event.target.closest("li[data-bpmn-action] a");
-		if (!link) {
-			return null;
-		}
 
-		return (link.textContent || "").trim() === __(CANCEL_ACTION) ? link : null;
+		return !!link && (link.textContent || "").trim() === __(CANCEL_ACTION);
 	}
 
-	function ask_for_remark(frm, link) {
+	function offers_cancel(task) {
+		if (Array.isArray(task.task_actions_detail) && task.task_actions_detail.length) {
+			return task.task_actions_detail.some(function (detail) {
+				return detail && detail.action === CANCEL_ACTION;
+			});
+		}
+
+		return (task.task_actions || "").indexOf(CANCEL_ACTION) !== -1;
+	}
+
+	/**
+	 * Complete the PRO's task with the Cancel action.
+	 *
+	 * The menu item's own handler cannot be re-used once the remark has been saved: saving
+	 * refreshes the form, one_bpmn clears its injected items with jQuery .remove(), and that
+	 * takes the click handler with them. The item on screen afterwards is a different
+	 * element, injected asynchronously - so the task is fetched and completed here instead,
+	 * through the same two API methods one_bpmn itself calls.
+	 */
+	function apply_cancel(frm) {
+		return frappe
+			.call({
+				method: "one_bpmn.api.instance_api.get_active_bpmn_tasks",
+				args: { doctype: frm.doctype, docname: frm.docname },
+				freeze: true,
+				freeze_message: __("Applying action…"),
+			})
+			.then(function (r) {
+				const task = (r.message || []).find(offers_cancel);
+
+				if (!task) {
+					frappe.msgprint({
+						title: __("Task Not Completed"),
+						message: __(
+							"This request has no Cancel action waiting on it any more. Refresh the page to see where it stands."
+						),
+						indicator: "red",
+					});
+					return;
+				}
+
+				return frappe
+					.call({
+						method: "one_bpmn.api.instance_api.complete_task",
+						args: {
+							instance_name: task.instance_name,
+							task_id: task.task_id,
+							data: JSON.stringify({ action: CANCEL_ACTION }),
+						},
+						freeze: true,
+						freeze_message: __("Applying action…"),
+					})
+					.then(function () {
+						frappe.show_alert(
+							{
+								message: __("{0} action applied successfully", [__(CANCEL_ACTION)]),
+								indicator: "green",
+							},
+							4
+						);
+						frm.reload_doc();
+					});
+			});
+	}
+
+	function ask_for_remark(frm) {
 		frappe.prompt(
 			{
 				fieldname: REMARK,
@@ -62,18 +122,20 @@ frappe.provide("one_fm.visa_cancellation");
 						message: __("Enter the reason for cancelling this request."),
 						indicator: "red",
 					});
-					ask_for_remark(frm, link);
+					ask_for_remark(frm);
 					return;
 				}
 
-				frm.set_value(REMARK, remark);
-				frm.save().then(function () {
-					// Hand the click back to one_bpmn rather than calling its engine here:
-					// the menu item still holds the task it was built for, and re-fired it
-					// applies the action exactly as it would have without this dialog.
-					link.dataset[LET_THROUGH] = "1";
-					$(link).trigger("click");
-				});
+				frm.set_value(REMARK, remark)
+					.then(function () {
+						// A retry with the same reason leaves nothing to save, and frm.save()
+						// answers that with "No changes in the document" and rejects - which
+						// would strand the action behind a dialog the PRO has already filled in.
+						return frm.is_dirty() ? frm.save() : null;
+					})
+					.then(function () {
+						return apply_cancel(frm);
+					});
 			},
 			__("Reason for Cancelling"),
 			__("Cancel Request")
@@ -90,14 +152,7 @@ frappe.provide("one_fm.visa_cancellation");
 			if (frm.doc.workflow_state !== PRO_STATE) {
 				return;
 			}
-
-			const link = cancel_action_item(event);
-			if (!link) {
-				return;
-			}
-
-			if (link.dataset[LET_THROUGH]) {
-				delete link.dataset[LET_THROUGH];
+			if (!is_cancel_action_item(event)) {
 				return;
 			}
 
@@ -106,7 +161,7 @@ frappe.provide("one_fm.visa_cancellation");
 			event.stopPropagation();
 			event.stopImmediatePropagation();
 
-			ask_for_remark(frm, link);
+			ask_for_remark(frm);
 		},
 		true
 	);
