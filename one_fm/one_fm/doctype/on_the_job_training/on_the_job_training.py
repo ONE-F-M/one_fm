@@ -147,6 +147,15 @@ class OntheJobTraining(Document):
                 self.handle_end_date_change()
 
     def handle_workflow_cleanup(self):
+        # has_value_changed() returns True on insert (there is no before-save doc), so
+        # without this guard every newly created OJT - which starts in Draft - enqueues
+        # delete_related_records_async. A fresh OJT has nothing to clean up, and because
+        # the delete runs in a background job it can land *after* the Pending Approval
+        # and Approve saves have created the Employee Schedules, wiping them again. That
+        # is why fast create-then-approve OJTs end up with no schedules on the roster.
+        if self.flags.in_insert or self.is_new():
+            return
+
         today = getdate(frappe.utils.nowdate())
         if not self.start_date: return
         
