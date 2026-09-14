@@ -7,6 +7,7 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils import add_days, get_first_day_of_week, get_last_day_of_week, getdate, nowdate
 
+from one_fm.operations.doctype.employee_schedule.employee_schedule import worked_shift_criterion
 from one_fm.operations.doctype.operations_shift.operations_shift import get_shift_supervisor
 
 
@@ -59,9 +60,15 @@ def get_disallowed_ot_schedules(start_date, end_date):
 	The roster blocks these at creation time (see extreme_schedule), so anything found
 	here predates the restriction or bypassed the UI - either way a supervisor has to
 	resolve it.
+
+	WI-002437: a double shift still waiting on the DSOT Approver is not one anybody has
+	worked, and a rejected one never will be. Flagging either puts a supervisor on the
+	hook for a shift that may never happen - and for a rejected one, definitely will not.
 	"""
 	EmployeeSchedule = frappe.qb.DocType("Employee Schedule")
 	OperationsShift = frappe.qb.DocType("Operations Shift")
+
+	unworked = worked_shift_criterion(EmployeeSchedule)
 
 	rows = (
 		frappe.qb.from_(EmployeeSchedule)
@@ -81,7 +88,12 @@ def get_disallowed_ot_schedules(start_date, end_date):
 		)
 		.orderby(EmployeeSchedule.employee)
 		.orderby(EmployeeSchedule.date)
-	).run(as_dict=True)
+	)
+
+	if unworked is not None:
+		rows = rows.where(unworked)
+
+	rows = rows.run(as_dict=True)
 
 	schedules_by_employee = defaultdict(list)
 	for row in rows:

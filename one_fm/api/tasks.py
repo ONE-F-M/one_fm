@@ -19,6 +19,7 @@ from one_fm.utils import (
 )
 from one_fm.utils import get_current_shift, fetch_attendance_manager_user
 from one_fm.processor import sendemail
+from one_fm.operations.doctype.employee_schedule.employee_schedule import worked_shift_sql
 from one_fm.api.api import push_notification_for_checkin, push_notification_rest_api_for_checkin
 from hrms.hr.utils import get_holidays_for_employee
 from hrms.hr.doctype.leave_application.leave_application import get_leave_balance_on
@@ -1057,10 +1058,14 @@ def validate_shift_assignment(is_scheduled_event=True):
 					WHERE E.name = SR.employee
 					AND E.status = 'Active')""".format(now_time=now_time,date=cstr(date), now=now), as_dict=1)
 
+	# WI-002437: a double shift waiting on the DSOT Approver has no Shift Assignment on
+	# purpose, and a rejected one never will have. Reporting either as a missed assignment
+	# sends Support looking for a problem this system created deliberately.
 	roster = frappe.db.sql("""
 			SELECT * from `tabEmployee Schedule` ES
 				WHERE ES.start_datetime = '{now}'
 				AND ES.employee_availability = "Working"
+				AND {unworked}
 				AND ES.is_replaced = 0
 				AND ES.employee
 					NOT IN (Select employee from `tabShift Assignment` tSA
@@ -1069,7 +1074,7 @@ def validate_shift_assignment(is_scheduled_event=True):
 				AND ES.employee
 					IN (Select employee from `tabEmployee` E
 					WHERE E.name = ES.employee
-					AND E.status = 'Active')""".format(date=cstr(date), now=now), as_dict=1)
+					AND E.status = 'Active')""".format(date=cstr(date), now=now, unworked=worked_shift_sql("ES")), as_dict=1)
 
 	non_shift = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location, shift, site from `tabEmployee` E
 				WHERE E.shift_working = 0
