@@ -152,6 +152,44 @@ class TestTheDocTypeMatchesTheBASite(FrappeTestCase):
 		self.assertEqual(field["fieldtype"], "Link")
 		self.assertEqual(field["options"], "Visa Request")
 
+	def test_the_link_only_offers_a_visa_there_is_something_to_cancel(self):
+		"""The BA site restricts the link itself rather than leaving it to a validation:
+		only a Completed Visa Request has a visa that was actually issued.
+
+		Missed on the first migration pass - the field-by-field comparison that built this
+		DocType did not look at link_filters, so the field came over without it. Asserted on
+		the parsed value rather than the string, because the BA site's copy is typed into a
+		textarea and carries its newlines with it.
+		"""
+		self.assertEqual(
+			json.loads(self.by_name["visa_request_id"]["link_filters"]),
+			[["Visa Request", "workflow_state", "=", "Completed"]],
+		)
+
+	def test_the_amend_link_is_kept_off_print_and_indexed(self):
+		"""Both are the BA site's, and neither is one Frappe sets for us - checked against
+		the live meta, where both were 0 before this."""
+		field = self.by_name["amended_from"]
+
+		self.assertEqual(field["print_hide"], 1)
+		self.assertEqual(field["search_index"], 1)
+
+	def test_a_request_can_be_renamed_like_on_the_ba_site(self):
+		self.assertEqual(self.shipped["allow_rename"], 1)
+
+	def test_nobody_is_given_cancel_on_it(self):
+		"""The BA site's System Manager row has submit but not cancel, and the process map
+		never cancels a request - it submits one into "Visa Cancellation Rejected" or
+		"Completed". The docstatus 2 clause in live_cancellation_filters stays as a
+		belt-and-braces read; "Visa Cancellation Rejected" is the escape hatch the story
+		names.
+		"""
+		for perm in self.shipped["permissions"]:
+			with self.subTest(role=perm["role"]):
+				self.assertFalse(perm.get("cancel"))
+				# The half that has to keep working: the map submits the request.
+				self.assertTrue(perm.get("submit"))
+
 
 class TestOneLiveCancellationPerVisa(FrappeTestCase):
 	"""WI-002432."""

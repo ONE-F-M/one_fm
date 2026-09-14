@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_rename": 1,
  "autoname": "VCR-OFM-.#####",
  "creation": "2026-09-13 00:00:00.000000",
  "doctype": "DocType",
@@ -49,13 +50,16 @@
    "label": "Amended From",
    "no_copy": 1,
    "options": "Visa Cancellation Request",
-   "read_only": 1
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
   },
   {
    "fieldname": "visa_request_id",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Visa Request",
+   "link_filters": "[[\"Visa Request\", \"workflow_state\", \"=\", \"Completed\"]]",
    "options": "Visa Request"
   },
   {
@@ -219,7 +223,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-13 00:00:00.000000",
+ "modified": "2026-09-14 17:30:00.000000",
  "modified_by": "Administrator",
  "module": "Visa Management",
  "name": "Visa Cancellation Request",
@@ -227,7 +231,6 @@
  "owner": "Administrator",
  "permissions": [
   {
-   "cancel": 1,
    "create": 1,
    "delete": 1,
    "doctype": "DocPerm",
