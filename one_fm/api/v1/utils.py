@@ -2,13 +2,16 @@ import frappe, datetime, requests
 from frappe import _
 from frappe.utils import getdate, cint, cstr, random_string, now_datetime, strip_html
 
-def response(message, status_code, data=None, error=None):
+def response(message, status_code, data=None, error=None, error_code=None):
     """This method generates a response for an API call with appropriate data and status code.
 
     Args:
         message (str): Message to be shown depending upon API result. Eg: Success/Error/Forbidden/Bad Request.
         status_code (int): Status code of API response.
         data (Any, optional): Any data to be passed as response (Dict, List, etc). Defaults to None.
+        error (Any, optional): Human readable reason for the failure, rendered verbatim by the app.
+        error_code (str, optional): Stable machine readable reason, so the client can branch on the
+            cause instead of pattern matching prose. Eg: INVALID_CREDENTIALS, ACCOUNT_DISABLED.
     """
 
     #if not status_code in [200, 201]:
@@ -18,6 +21,8 @@ def response(message, status_code, data=None, error=None):
         frappe.local.response["message"] = message
         frappe.local.response["http_status_code"] = status_code
         frappe.local.response["status_code"] = status_code
+        if error_code:
+            frappe.local.response["error_code"] = error_code
         if data:
             frappe.local.response["data"] = data
         elif error:
