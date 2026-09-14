@@ -177,17 +177,19 @@ class TestTheDocTypeMatchesTheBASite(FrappeTestCase):
 	def test_a_request_can_be_renamed_like_on_the_ba_site(self):
 		self.assertEqual(self.shipped["allow_rename"], 1)
 
-	def test_nobody_is_given_cancel_on_it(self):
-		"""The BA site's System Manager row has submit but not cancel, and the process map
-		never cancels a request - it submits one into "Visa Cancellation Rejected" or
-		"Completed". The docstatus 2 clause in live_cancellation_filters stays as a
-		belt-and-braces read; "Visa Cancellation Rejected" is the escape hatch the story
-		names.
+	def test_cancel_is_kept_even_though_the_ba_site_drops_it(self):
+		"""The one place this DocType deliberately does not follow the BA site.
+
+		Theirs gives System Manager submit but not cancel. Kept here on the process
+		owner's call: the process map only ever submits a request - into "Visa
+		Cancellation Rejected" or "Completed" - so nothing takes it away automatically,
+		and withdrawing one by hand has to stay possible. The docstatus 2 clause in
+		live_cancellation_filters is what reads a withdrawn request as no longer
+		standing, so this keeps that escape hatch reachable as well as the rejection one.
 		"""
 		for perm in self.shipped["permissions"]:
 			with self.subTest(role=perm["role"]):
-				self.assertFalse(perm.get("cancel"))
-				# The half that has to keep working: the map submits the request.
+				self.assertTrue(perm.get("cancel"))
 				self.assertTrue(perm.get("submit"))
 
 
