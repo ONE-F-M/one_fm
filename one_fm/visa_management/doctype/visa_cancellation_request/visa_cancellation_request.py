@@ -2,9 +2,10 @@
 # For license information, please see license.txt
 """The request to cancel a visa that has already been issued.
 
-The DocType is the BA site's, field for field (WI-002425). What is here in code is the two
-rules stacked on top of it: one live cancellation per Visa Request (WI-002432), and the
-reason the request was raised for (WI-002428).
+The DocType is the BA site's, field for field (WI-002425). What is here in code is the rules
+stacked on top of it: one live cancellation per Visa Request (WI-002432), the reason the
+request was raised for (WI-002428), and the PRO Officer's reason for refusing one
+(WI-002427).
 
 The lifecycle itself is the Visa Cancellation process map, which is configured separately -
 nothing here decides which state the request moves to next.
@@ -98,6 +99,7 @@ def live_cancellation(visa_request: str, exclude: str | None = None) -> str | No
 class VisaCancellationRequest(Document):
 	def validate(self):
 		self.validate_no_live_cancellation()
+		self.validate_rejection_remark()
 
 	def validate_no_live_cancellation(self):
 		"""One live cancellation per Visa Request (WI-002432).
@@ -125,6 +127,35 @@ class VisaCancellationRequest(Document):
 				frappe.utils.get_link_to_form("Visa Cancellation Request", existing),
 			),
 			title=_("Visa Cancellation Request Already Exists"),
+		)
+
+	def validate_rejection_remark(self):
+		"""No cancellation is refused without a reason on it (WI-002427).
+
+		The reason is asked for in the dialog and the process map routes back to the PRO's
+		task without one, but neither of those is the document's own rule: the map is
+		configuration a business analyst can redraw, and the dialog is a convenience of the
+		desk form. This is what makes the remark a condition of the state, whichever caller
+		asks for it.
+
+		Only on the way in. A request that reached the state before this rule existed - or
+		one edited afterwards for any other reason - would otherwise be unsaveable.
+		"""
+		# .get() rather than the attribute: the field only reaches the table once the site
+		# has migrated, and the duplicate rule above already treats it as optional.
+		if self.get("workflow_state") != REJECTED_STATE:
+			return
+
+		before = self.get_doc_before_save()
+		if before and before.get("workflow_state") == REJECTED_STATE:
+			return
+
+		if (self.pro_officer_rejection_remark or "").strip():
+			return
+
+		frappe.throw(
+			_("Enter the PRO Officer Rejection Remark before cancelling this request."),
+			title=_("Cancellation Reason Required"),
 		)
 
 
