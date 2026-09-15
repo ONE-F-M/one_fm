@@ -69,6 +69,78 @@ def fix_sick_leave(names):
     else:
         frappe.throw("Please select atleast 1 row")
 
+
+# WI-003352: colour-code Leave Application calendar events by leave type.
+# The palette is small and deliberately reused across leave types once it
+# runs out, since the calendar only needs entries to be visually distinct,
+# not to have a unique colour per type.
+LEAVE_TYPE_CALENDAR_COLOURS = [
+    "#2490EF",  # blue
+    "#29CD42",  # green
+    "#CB2929",  # red
+    "#F4B912",  # yellow
+    "#743EE4",  # purple
+    "#E8399D",  # pink
+    "#00B0AF",  # teal
+    "#FF7846",  # orange
+]
+
+
+def _get_leave_type_colour(leave_type, all_leave_types):
+    """Deterministic colour for a leave type, keyed by its position among
+    every configured Leave Type so the same leave type keeps the same
+    colour across calendar refreshes."""
+    if not leave_type:
+        return "#8D99A6"  # grey fallback when leave_type is blank/unknown
+    try:
+        index = all_leave_types.index(leave_type)
+    except ValueError:
+        index = len(all_leave_types)
+    return LEAVE_TYPE_CALENDAR_COLOURS[index % len(LEAVE_TYPE_CALENDAR_COLOURS)]
+
+
+@frappe.whitelist()
+def get_leave_application_calendar_events(start, end, filters=None):
+    """Leave Application calendar events enriched with a colour per leave
+    type (WI-003352).
+
+    The actual, permission-aware event fetch is delegated to hrms's own
+    get_events so who-can-see-what is unchanged; this only adds
+    `leave_type` and `color` to each event for the calendar to colour-code
+    entries by leave type.
+    """
+    fetch_events = getattr(
+        hrms.hr.doctype.leave_application.leave_application, "get_events", None
+    )
+    if fetch_events:
+        events = fetch_events(start, end, filters) or []
+    else:
+        events = frappe.get_list(
+            "Leave Application",
+            fields=["name", "from_date", "to_date", "employee_name", "status", "leave_type"],
+            filters=frappe.parse_json(filters) if filters else None,
+        )
+
+    names = [e.get("name") for e in events if e.get("name")]
+    if not names:
+        return events
+
+    leave_type_by_name = {
+        d.name: d.leave_type
+        for d in frappe.get_all(
+            "Leave Application", filters={"name": ["in", names]}, fields=["name", "leave_type"]
+        )
+    }
+    all_leave_types = frappe.get_all("Leave Type", pluck="name", order_by="name")
+
+    for event in events:
+        leave_type = leave_type_by_name.get(event.get("name"))
+        event["leave_type"] = leave_type
+        event["color"] = _get_leave_type_colour(leave_type, all_leave_types)
+
+    return events
+
+
 def is_app_user(emp):
     #Returns true if an employee is an app user or has a valid email address
     try:
