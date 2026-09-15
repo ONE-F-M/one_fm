@@ -242,8 +242,32 @@ function add_visa_cancellation_button(frm) {
 // what stops an empty submission; the server demands it again, because the dialog is a
 // convenience and not the rule.
 function ask_for_cancellation_reason(frm) {
+	// The meta has to be loaded before it can be read, and this is the one place in this
+	// app that reads a DocType the open form has nothing to do with. frappe.meta reads
+	// locals.DocType, which a browser only fills in for doctypes it has actually loaded -
+	// so in a session that had never opened a Visa Cancellation Request the dropdown came
+	// up empty, and started working later only because visiting the DocType once had
+	// cached its meta. with_doctype fetches it when it is missing and calls straight back
+	// when it is not.
+	frappe.model.with_doctype('Visa Cancellation Request', () => {
+		open_cancellation_reason_dialog(frm);
+	});
+}
+
+function open_cancellation_reason_dialog(frm) {
 	const reasons = (frappe.meta.get_docfield('Visa Cancellation Request', 'cancellation_reason')
 		|| {}).options || '';
+
+	// An empty Select is a dead end the user cannot act on and cannot explain. Say so
+	// rather than opening a dialog whose only control is blank.
+	if (!reasons.trim()) {
+		frappe.msgprint({
+			title: __('No Cancellation Reasons Configured'),
+			message: __('The Cancellation Reason field on Visa Cancellation Request offers no options. Run bench migrate, or add the reasons to the field.'),
+			indicator: 'red'
+		});
+		return;
+	}
 
 	const dialog = new frappe.ui.Dialog({
 		title: __('Reason for Visa Cancellation'),
