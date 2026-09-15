@@ -245,14 +245,46 @@ class TestAYearlyCase(FrappeTestCase):
 
 		self.assertEqual(_dates(_case("21 Days Absence in a Year")), [f"{self.year}-01-01"])
 
-	def test_it_is_not_capped_at_the_threshold(self):
-		"""The number in the type is what raised the case; an employee absent more days
-		than that is not verified by being shown fewer of them."""
+	def test_it_is_capped_at_the_threshold(self):
+		"""Reported from staging: a case called "21 Days Absence in a Year" was listing 157
+		days. The type names the number the case is about, and a list of everything since
+		cannot be checked against it."""
 		days = [f"{self.year}-02-{day:02d}" for day in range(1, 26)]
 		for day in days:
 			_attendance(day, suffix=day)
 
-		self.assertEqual(len(_dates(_case("21 Days Absence in a Year"))), 25)
+		self.assertEqual(_dates(_case("21 Days Absence in a Year")), days[:21])
+
+	def test_the_sixteen_day_type_is_capped_at_sixteen(self):
+		"""The cap is read off the type, not hard-coded at 21 - this site raises 16-day
+		cases too, and both have to say what they are named after."""
+		days = [f"{self.year}-02-{day:02d}" for day in range(1, 26)]
+		for day in days:
+			_attendance(day, suffix=day)
+
+		self.assertEqual(len(_dates(_case("16 Days Absence in a Year"))), 16)
+
+	def test_fewer_absences_than_the_threshold_are_all_listed(self):
+		"""The cap is a ceiling, not a quota: a case saved before the year is out lists
+		what there is."""
+		days = [f"{self.year}-02-{day:02d}" for day in range(1, 4)]
+		for day in days:
+			_attendance(day, suffix=day)
+
+		self.assertEqual(_dates(_case("21 Days Absence in a Year")), days)
+
+	def test_it_counts_from_the_start_date_the_case_carries(self):
+		"""The nightly job writes the year's first absence there, so this changes nothing
+		on a case it raised - but a start date corrected by hand moves the list with it."""
+		days = [f"{self.year}-02-{day:02d}" for day in range(1, 26)]
+		for day in days:
+			_attendance(day, suffix=day)
+
+		dates = _dates(
+			_case("21 Days Absence in a Year", absence_start_date=f"{self.year}-02-10")
+		)
+
+		self.assertEqual(dates, days[9:])
 
 	def test_the_year_is_the_case_s_own(self):
 		"""Read off posting_date, so a case raised last year still describes last year."""
