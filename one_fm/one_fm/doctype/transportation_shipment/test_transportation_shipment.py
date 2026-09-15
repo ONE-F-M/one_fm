@@ -1,6 +1,8 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
 
+from unittest.mock import patch
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
@@ -99,12 +101,6 @@ class TestTransportationShipment(FrappeTestCase):
 
 
 class TestShipmentGenerator(FrappeTestCase):
-	def test_minute_of_day(self):
-		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import _minute_of_day
-
-		self.assertEqual(_minute_of_day("06:30:00"), 6 * 3600 + 30 * 60)
-		self.assertIsNone(_minute_of_day(None))
-
 	def test_generation_key_shape(self):
 		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import _generation_key
 
@@ -123,22 +119,40 @@ class TestShipmentGenerator(FrappeTestCase):
 		self.assertEqual(pair, pair_ret)
 		self.assertNotEqual(key, key_ret)
 
-	def test_attach_return_rosters_matches_finishing_shift(self):
-		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import _attach_return_rosters
+	def test_a_cards_return_leg_carries_its_own_crew(self):
+		"""The same people, both ways (WI-002401).
 
-		# Two demands at the same stop/accommodation, different shifts. The one
-		# starting at 14:00 should pick up the roster of the shift ending 14:00.
-		morning = {
-			"acc_name": "Camp A", "stop_location": "LOC-1", "group_token": "MORNING",
-			"start_time": "06:00:00", "end_time": "14:00:00", "employees": [{"id": "M1"}],
-		}
-		evening = {
-			"acc_name": "Camp A", "stop_location": "LOC-1", "group_token": "EVENING",
-			"start_time": "14:00:00", "end_time": "22:00:00", "employees": [{"id": "E1"}],
-		}
-		_attach_return_rosters([morning, evening])
-		# Evening outbound starts when morning ends -> return riders are the morning crew.
-		self.assertEqual([e["id"] for e in evening["return_employees"]], ["M1"])
+		The generator used to substitute the roster of the shift finishing as this
+		demand STARTS, on the reasoning that the bus arriving at 14:00 also takes the
+		outgoing crew home. That is a real run, but it is not this card: a card's window
+		comes from its own end_time, so the substituted riders were filed against an
+		hour eight hours from when they actually finish. On the live plan 250 of 376
+		generated Return cards carried another shift's people.
+
+		Collecting the outgoing crew on the incoming run is what a Mixed trip IS - the
+		dispatcher drops the other shift's Return card onto this run and the merge walks
+		the legs - and that only reads correctly if each card tells the truth about
+		whose ride it is.
+		"""
+		import inspect
+
+		from one_fm.one_fm.doctype.transportation_shipment import shipment_generator
+
+		source = inspect.getsource(shipment_generator.generate_transportation_shipments)
+		self.assertIn('roster = demand["employees"]', source)
+		# No second roster, and no cross-shift lookup left to feed one.
+		self.assertNotIn("return_employees", source)
+		self.assertFalse(hasattr(shipment_generator, "_attach_return_rosters"))
+
+	def test_a_return_leg_on_the_manifest_lists_the_riders(self):
+		"""A return row used to list nobody while its card carried the people."""
+		import inspect
+
+		from one_fm.one_fm.doctype.transportation_manifest import manifest_sync
+
+		source = inspect.getsource(manifest_sync.sync_manifest_details)
+		self.assertIn("emps = emp_map.get(a_row.card_id, [])", source)
+		self.assertNotIn("return_emp_map", source)
 
 
 class TestTripRequestSplit(FrappeTestCase):
@@ -231,7 +245,23 @@ class TestRetentionCardConversion(FrappeTestCase):
 		self.assertEqual(_card_directions(0), ("Outward", "Return"))
 
 
-class TestNonFleetBypass(FrappeTestCase):
+class SchedulerEntryPointTestCase(FrappeTestCase):
+	"""A test case for the functions the scheduler calls, with their commit muted.
+
+	`generate_transportation_shipments` and `deactivate_expired_shipments` are
+	background jobs, so committing is right for them. Called from a test, that commit
+	ends the transaction FrappeTestCase wraps every test in, and every fixture inserted
+	afterwards is written to the database for real.
+	"""
+
+	def setUp(self):
+		super().setUp()
+		muted = patch.object(frappe.db, "commit")
+		muted.start()
+		self.addCleanup(muted.stop)
+
+
+class TestNonFleetBypass(SchedulerEntryPointTestCase):
 	"""Story 6: Taxi / Subcontractor Rental requests bypass the scheduling canvas.
 
 	A Trip Request whose Transportation Method is anything other than "Company
@@ -291,7 +321,7 @@ class TestNonFleetBypass(FrappeTestCase):
 		)
 
 
-class TestShipmentExpiry(FrappeTestCase):
+class TestShipmentExpiry(SchedulerEntryPointTestCase):
 	"""TR 3 - 9: past-to_date Unassigned cards are flagged Inactive by the engine."""
 
 	def _make_shipment(self, status, to_date):
@@ -451,3 +481,73 @@ class TestShipmentExpiry(FrappeTestCase):
 		self.assertEqual(
 			frappe.db.get_value("Transportation Shipment", name, "status"), "Unassigned"
 		)
+
+
+class TestPlanRowsFollowTheShipment(FrappeTestCase):
+	"""#6818: a plan row's headcount is a snapshot, and nothing used to refresh it."""
+
+	def _card(self, riders):
+		doc = frappe.new_doc("Transportation Shipment")
+		doc.status = "Assigned"
+		doc.trip_direction = "Outward"
+		doc.routing_type_badge = "Direct"
+		for n in range(riders):
+			doc.append("transportation_shipment_employee", {
+				"employee_id": f"HC-{n:03d}", "employee_name": f"Rider {n}",
+			})
+		# Validated on the way in, so the stored headcount is settled before it is
+		# placed - otherwise the first ordinary save is itself a change.
+		doc.flags.ignore_mandatory = True
+		doc.flags.ignore_links = True
+		doc.insert(ignore_permissions=True)
+		return doc
+
+	def _place(self, shipment, headcount):
+		plan = frappe.new_doc("Route Plan")
+		plan.title = frappe.generate_hash("RP-HC", 8)
+		plan.status = "Draft"
+		plan.effective_from = "2026-07-01"
+		plan.append("assignments", {
+			"card_id": f"TSHIP-{shipment}", "transportation_shipment": shipment,
+			"vehicle": "VHL-0005", "direction": "OUTBOUND", "headcount": headcount,
+			"start_time": "2026-07-01T06:00:00Z", "end_time": "2026-07-01T07:00:00Z",
+		})
+		plan.flags.ignore_mandatory = True
+		plan.flags.ignore_links = True
+		plan.insert(ignore_permissions=True)
+		return plan.assignments[0].name
+
+	def _row_headcount(self, row):
+		return frappe.db.get_value("Route Plan Assignment", row, "headcount")
+
+	def test_a_rider_joining_updates_the_row(self):
+		card = self._card(4)
+		row = self._place(card.name, 4)
+
+		card.append("transportation_shipment_employee", {
+			"employee_id": "HC-NEW", "employee_name": "Late Addition",
+		})
+		card.save(ignore_permissions=True)
+
+		self.assertEqual(card.headcount, 5)
+		self.assertEqual(self._row_headcount(row), 5)
+
+	def test_a_rider_leaving_updates_the_row(self):
+		card = self._card(4)
+		row = self._place(card.name, 4)
+
+		card.transportation_shipment_employee.pop()
+		card.save(ignore_permissions=True)
+
+		self.assertEqual(self._row_headcount(row), 3)
+
+	def test_a_save_that_changes_nothing_leaves_the_row_alone(self):
+		# The row is written only when the count moves, so an ordinary save does not
+		# touch every plan the card has ever been on.
+		card = self._card(4)
+		row = self._place(card.name, 4)
+		frappe.db.set_value("Route Plan Assignment", row, "headcount", 99)
+
+		card.save(ignore_permissions=True)
+
+		self.assertEqual(self._row_headcount(row), 99)

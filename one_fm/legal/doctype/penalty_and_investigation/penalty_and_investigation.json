@@ -1,9 +1,19 @@
 {
+ "__unsaved": 0,
  "actions": [],
+ "allow_auto_repeat": 0,
+ "allow_copy": 0,
+ "allow_events_in_timeline": 0,
+ "allow_guest_to_view": 0,
+ "allow_import": 0,
  "allow_rename": 1,
  "autoname": "PEN-.MM.-.YYYY.-.####",
+ "beta": 0,
  "creation": "2026-04-21 15:49:26.670894",
+ "custom": 0,
  "doctype": "DocType",
+ "editable_grid": 0,
+ "email_append_to": 0,
  "engine": "InnoDB",
  "field_order": [
   "amended_from",
@@ -169,6 +179,12 @@
    "label": "Created By",
    "options": "User",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "penalty_serial_no",
+   "fieldtype": "Data",
+   "label": "Penalty Serial No"
   },
   {
    "fieldname": "employee_response",
@@ -351,20 +367,25 @@
    "label": "Attendance Check Action",
    "options": "Attendance Check Action",
    "read_only": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "penalty_serial_no",
-   "fieldtype": "Data",
-   "label": "Penalty Serial No"
   }
  ],
+ "force_re_route_to_default_view": 0,
  "grid_page_length": 50,
+ "has_web_view": 0,
+ "hide_toolbar": 0,
+ "in_create": 0,
  "index_web_pages_for_search": 1,
+ "is_calendar_and_gantt": 0,
  "is_submittable": 1,
+ "is_tree": 0,
+ "is_virtual": 0,
+ "issingle": 0,
+ "istable": 0,
  "links": [],
- "modified": "2026-08-12 08:07:54.408064",
- "modified_by": "h.imran@one-fm.com",
+ "max_attachments": 0,
+ "migration_hash": "39ef8656f2c05b58639c3494d7d4867e",
+ "modified": "2026-09-15 07:09:02.000000",
+ "modified_by": "Administrator",
  "module": "Legal",
  "name": "Penalty And Investigation",
  "naming_rule": "Expression (old style)",
@@ -432,7 +453,13 @@
    "write": 1
   }
  ],
+ "queue_in_background": 0,
+ "quick_entry": 0,
+ "read_only": 0,
  "row_format": "Dynamic",
+ "show_name_in_global_search": 0,
+ "show_preview_popup": 0,
+ "show_title_field_in_link": 0,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [
@@ -485,5 +512,8 @@
    "title": "Accepted by Employee"
   }
  ],
- "track_changes": 1
+ "track_changes": 1,
+ "track_seen": 0,
+ "track_views": 0,
+ "translated_doctype": 0
 }

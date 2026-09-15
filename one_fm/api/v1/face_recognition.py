@@ -7,7 +7,7 @@ from one_fm.utils import get_current_shift, is_holiday,get_holiday_today
 from one_fm.api.v1.utils import (
     response, verify_via_face_recogniton_service
 )
-from frappe.utils import add_days, cint, cstr, flt, getdate, now_datetime
+from frappe.utils import add_days, cint, cstr, flt, getdate, now_datetime, strip_html
 from one_fm.api.doc_events import haversine
 from one_fm.overrides.employee import (
     has_day_off, is_employee_on_leave, NOT_RETURNED_FROM_LEAVE
@@ -51,7 +51,8 @@ def enroll(employee_id: str = None, filename: str = None, video: str = None) -> 
     """
     try:
         if not employee_id:
-            return response("Bad Request", 400, None, "Employee ID required.")
+            return response(_("Missing Employee ID"), 400, None,
+                            _("Please enter your Employee ID."))
 
         if not filename:
             filename = frappe.session.user+'.mp4'
@@ -60,26 +61,33 @@ def enroll(employee_id: str = None, filename: str = None, video: str = None) -> 
         endpoint_state = frappe.db.get_single_value("ONEFM General Setting", 'enable_face_recognition_endpoint')
         if not video_file:
             if endpoint_state:
-                return response("Bad Request", 400, None, "Video File is required.")
+                return response(_("No Video Captured"), 400, None,
+                                _("No video was captured. Please record your face again and retry."))
+
+        employee_name = frappe.db.get_value("Employee", {"employee_id": employee_id}, "name")
+        if not employee_name:
+            return response(_("Employee Not Found"), 404, None,
+                            _("No employee record found for Employee ID {0}. Please contact the IT Helpdesk.").format(employee_id))
 
         # check Face Recognition Endpoint
 
         if endpoint_state:
             if not face_recog_base_url:
-                return response("Bad Request", 400, None, "Face Recognition Service configuration is not available.")
+                frappe.log_error(
+                    title=f"Mobile API: face_recognition.enroll | {employee_id}",
+                    message="face_recognition_service_base_url is not set in site config.",
+                )
+                frappe.db.commit()
+                return response(_("Enrollment Unavailable"), 503, None,
+                                _("Face enrollment is temporarily unavailable. Please contact your Site Supervisor."))
             status, message = verify_via_face_recogniton_service(url=face_recog_base_url + "enroll", data={"username": frappe.session.user, "filename": filename}, files={"video_file": video_file})
         else:
             status, message = True, 'Successful'
 
-
-        doc = frappe.get_doc("Employee", {"employee_id": employee_id})
-        if not doc:
-            return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
-
-
-
         if not status:
-            return response("Bad Request", 400, None, message)
+            return response(_("Enrollment Failed"), 400, None, message)
+
+        doc = frappe.get_doc("Employee", employee_name)
 
         # Set a context flag to indicate an API update (It will affect in 'Employee' validate method)
         frappe.flags.allow_enrollment_update = True
@@ -90,10 +98,15 @@ def enroll(employee_id: str = None, filename: str = None, video: str = None) -> 
         frappe.db.commit()
 
         return response("Success", 201,
-                        "User enrolled successfully.<br>Please wait for 10sec, you will be redirected to checkin.")
+                        _("You are enrolled. You will be taken to check-in shortly."))
     except Exception as error:
-        frappe.log_error(message=frappe.get_traceback(), title="Enrollment")
-        return response("Internal Server Error", 500, None, error)
+        frappe.log_error(
+            title=f"Mobile API: face_recognition.enroll | {employee_id}",
+            message=frappe.get_traceback(),
+        )
+        frappe.db.commit()
+        return response(_("Something Went Wrong"), 500, None,
+                        strip_html(cstr(error)) or type(error).__name__)
 
 
 @frappe.whitelist()
@@ -118,87 +131,90 @@ def verify_checkin_checkout(employee_id: str = None, log_type: str = None,shift:
         }
     """
     try:
-        # ensure skip attendance is correctly formated
-        try:
-            current_shift = shift
-            skip_attendance = int(skip_attendance) if skip_attendance else 0
-            latitude = float(latitude)
-            longitude = float(longitude)
-        except:
-            return response("Bad Request", 400, None,
-                            "skip_attendance must be an integer, latitude and longitude must be float.")
+        current_shift = shift
 
         if not employee_id:
-            return response("Bad Request", 400, None, "Employee ID is required")
+            return response(_("Missing Employee ID"), 400, None,
+                            _("Please enter your Employee ID."))
 
         if not log_type:
-            return response("Bad Request", 400, None, "Log type parameter required")
-
-        if not skip_attendance:
-            return response("Bad Request", 400, None, "Skip attendance parameter required.")
-
-        if not latitude:
-            return response("Bad Request", 400, None, "Latitude parameter required.")
-
-        if not longitude:
-            return response("Bad Request", 400, None, "Longitude parameter required.")
-
-        if not isinstance(log_type, str):
-            return response("Bad Request", 400, None, "Invalid log type format. Please enter a valid value.")
+            return response(_("Missing Log Type"), 400, None,
+                            _("Please select whether you are checking in or out."))
 
         if log_type not in {"IN", "OUT"}:
-            return response("Bad Request", 400, None, "Invalid log type. Log type must be IN/OUT.")
+            return response(_("Invalid Log Type"), 400, None,
+                            _("Please select whether you are checking in or out."))
 
-        if not isinstance(skip_attendance, int):
-            return response("Bad Request", 400, None, "Skip attendance parameter must be an integer.")
+        if latitude is None or cstr(latitude).strip() == "":
+            return response(_("Location Unavailable"), 400, None,
+                            _("Your location could not be read. Please enable GPS and try again."))
 
-        if skip_attendance not in {0, 1}:
-            return response("Bad Request", 400, "Invalid skip attendance parameter. It must be 0 or 1.")
+        if longitude is None or cstr(longitude).strip() == "":
+            return response(_("Location Unavailable"), 400, None,
+                            _("Your location could not be read. Please enable GPS and try again."))
 
-        if not isinstance(latitude, float):
-            return response("Bad Request", 400, None, "Latitude must be of type float.")
+        try:
+            latitude = float(latitude)
+            longitude = float(longitude)
+        except (TypeError, ValueError):
+            return response(_("Location Unavailable"), 400, None,
+                            _("Your location could not be read. Please enable GPS and try again."))
 
-        if not isinstance(longitude, float):
-            return response("Bad Request", 400, None, "Longitude must be of type float.")
+        skip_attendance = cint(skip_attendance)
 
         endpoint_state = frappe.db.get_single_value("ONEFM General Setting", 'enable_face_recognition_endpoint')
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["name", "custom_enable_face_recognition"], as_dict=1)
 
+        if not employee or not employee.name:
+            return response(_("Employee Not Found"), 404, None,
+                            _("No employee record found for Employee ID {0}. Please contact the IT Helpdesk.").format(employee_id))
+
         video_file = frappe.request.files.get("video_file") or video or frappe.request.files.get("video")
         if not video_file:
             if endpoint_state and employee.custom_enable_face_recognition:
-                return response("Bad Request", 400, None, "Video File is required.")
+                return response(_("No Video Captured"), 400, None,
+                                _("No video was captured. Please record your face again and retry."))
 
-
-        if not employee.name:
-            return response("Resource Not Found", 404, None, "No employee record found with {employee_id}".format(employee_id=employee_id))
-        
         right_now = now_datetime()
         if log_type == "IN":
-            shift_info = frappe.db.sql(f"""
-                SELECT 
-                    sa.start_datetime, 
-                    st.begin_check_in_before_shift_start_time 
-                FROM 
-                    `tabShift Assignment` sa
-                JOIN 
-                    `tabShift Type` st ON sa.shift_type = st.name
-                WHERE 
-                    sa.employee = '{employee.name}' 
-                ORDER BY 
-                    sa.creation DESC 
-                LIMIT 1
-            """, as_dict=1)[0]
-            shift_actual_start = shift_info.start_datetime - timedelta(minutes=shift_info.begin_check_in_before_shift_start_time)
+            ShiftAssignment = frappe.qb.DocType("Shift Assignment")
+            ShiftType = frappe.qb.DocType("Shift Type")
+            shift_rows = (
+                frappe.qb.from_(ShiftAssignment)
+                .join(ShiftType)
+                .on(ShiftAssignment.shift_type == ShiftType.name)
+                .select(
+                    ShiftAssignment.start_datetime,
+                    ShiftType.begin_check_in_before_shift_start_time,
+                )
+                .where(ShiftAssignment.employee == employee.name)
+                .orderby(ShiftAssignment.creation, order=frappe.qb.desc)
+                .limit(1)
+            ).run(as_dict=True)
+
+            if not shift_rows:
+                return response(_("No Shift Assigned"), 400, None,
+                                _("You have no shift assigned. Please contact your Site Supervisor."))
+
+            shift_info = shift_rows[0]
+            shift_actual_start = shift_info.start_datetime - timedelta(minutes=cint(shift_info.begin_check_in_before_shift_start_time))
             if right_now < shift_actual_start:
-                return response("Bad Request", 400, None, f" Oops! You can't check in right now. Your check-in time is {shift_info.begin_check_in_before_shift_start_time} minutes before you start your shift." + "\U0001F612")
+                return response(_("Too Early to Check In"), 400, None,
+                                _("You cannot check in yet. Check-in opens {0} minutes before your shift starts, at {1}.").format(
+                                    cint(shift_info.begin_check_in_before_shift_start_time), _fmt_clock(shift_actual_start)))
         # check Face Recognition Endpoint
-        
+
         if not filename:
             filename = frappe.session.user+'.mp4'
         if endpoint_state and employee.custom_enable_face_recognition:
             if not face_recog_base_url:
-                return response("Bad Request", 400, None, "Face Recognition Service configuration is not available.")
+                frappe.log_error(
+                    title=f"Mobile API: face_recognition.verify_checkin_checkout | {employee_id}",
+                    message="face_recognition_service_base_url is not set in site config.",
+                )
+                frappe.db.commit()
+                return response(_("Verification Unavailable"), 503, None,
+                                _("Face verification is temporarily unavailable. Please contact your Site Supervisor."))
             status, message = verify_via_face_recogniton_service(url=face_recog_base_url + "verify", data={
                 "username": frappe.session.user, "filename": filename
                 }, files={"video_file": video_file})
@@ -206,13 +222,18 @@ def verify_checkin_checkout(employee_id: str = None, log_type: str = None,shift:
             status, message = True, 'Successful'
 
         if not status:
-            return response("Bad Request", 400, None, message)
+            return response(_("Face Verification Failed"), 400, None, message)
         doc = create_checkin_log(employee.name, log_type, skip_attendance, latitude, longitude,current_shift, "Mobile App")
         return response("Success", 201, doc, None)
 
     except Exception as error:
-        frappe.log_error(message=frappe.get_traceback(), title="Verify Checkin Error")
-        return response("Internal Server Error", 500, None, error)
+        frappe.log_error(
+            title=f"Mobile API: face_recognition.verify_checkin_checkout | {employee_id}",
+            message=frappe.get_traceback(),
+        )
+        frappe.db.commit()
+        return response(_("Something Went Wrong"), 500, None,
+                        strip_html(cstr(error)) or type(error).__name__)
 
 
 def create_checkin_log(employee: str, log_type: str, skip_attendance: int, latitude: float, longitude: float,current_shift:str,
@@ -351,30 +372,38 @@ def has_day_off(employee,date):
 @frappe.whitelist()
 def get_site_location(employee_id: str = None, shift: str = None,latitude: float = None, longitude: float = None) -> dict:
     try:
+        print(employee_id, shift ,latitude , longitude)
         if not employee_id:
-            return response("Bad Request", 400, None, "Employee ID required.")
+            return response(_("Missing Employee ID"), 400, None,
+                            _("Please enter your Employee ID."))
 
-        if not latitude:
-            return response("Bad Request", 400, None, "Latitude required.")
+        if latitude is None or cstr(latitude).strip() == "":
+            return response(_("Location Unavailable"), 400, None,
+                            _("Your location could not be read. Please enable GPS and try again."))
 
-        if not longitude:
-            return response("Bad Request", 400, None, "Longitude required.")
+        if longitude is None or cstr(longitude).strip() == "":
+            return response(_("Location Unavailable"), 400, None,
+                            _("Your location could not be read. Please enable GPS and try again."))
 
-        if not isinstance(employee_id, str):
-            return response("Bad Request", 400, None, "Invalid Employee ID format. Please enter a valid value.")
+        try:
+            latitude = float(latitude)
+            longitude = float(longitude)
+        except (TypeError, ValueError):
+            return response(_("Location Unavailable"), 400, None,
+                            _("Your location could not be read. Please enable GPS and try again."))
 
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["name", "holiday_list", "employee_name", "shift_working", "status"], as_dict=1)
         if not employee:
-            return response("Resource Not Found", 404, None,
-                            "No employee record found with {employee_id}".format(employee_id=employee_id))
+            return response(_("Employee Not Found"), 404, None,
+                            _("No employee record found for Employee ID {0}. Please contact the IT Helpdesk.").format(employee_id))
 
         # Block employees who have not returned from leave. This takes priority over
         # every shift check below, so the banner says what to do about the status
         # rather than talking about a check-in window the status makes irrelevant.
         if employee.status == NOT_RETURNED_FROM_LEAVE:
-            return response("Access Denied", 403, None,
-                            _("Action Required: You are currently marked as '{0}'. Please contact "
-                              "your Site Supervisor to complete your Duty Resumption process."
+            return response(_("Action Required"), 403, None,
+                            _("You are currently marked as '{0}'. Please contact your Site "
+                              "Supervisor to complete your Duty Resumption process."
                               ).format(NOT_RETURNED_FROM_LEAVE))
         
         today = getdate()
@@ -386,7 +415,9 @@ def get_site_location(employee_id: str = None, shift: str = None,latitude: float
             "employee_availability": "Fingerprint Appointment"
         })
         if fingerprint_appointment:
-            return response("Resource Not Found", 404, None, "You have a fingerprint appointment. See you soon!")
+            return response(_("Fingerprint Appointment"), 404, None,
+                            _("You have a fingerprint appointment scheduled today, so check-in is "
+                              "not required. See you soon!"))
 
         # check for medical appointment
         medical_appointment = frappe.db.exists("Employee Schedule", {
@@ -395,7 +426,9 @@ def get_site_location(employee_id: str = None, shift: str = None,latitude: float
             "employee_availability": "Medical Appointment"
         })
         if medical_appointment:
-            return response("Resource Not Found", 404, None, "You have a medical appointment. See you soon!")
+            return response(_("Medical Appointment"), 404, None,
+                            _("You have a medical appointment scheduled today, so check-in is "
+                              "not required. See you soon!"))
         shift = frappe.get_doc("Shift Assignment", shift) if shift and shift != 'undefined' else None
         upcoming_shifts = []
 
@@ -404,14 +437,15 @@ def get_site_location(employee_id: str = None, shift: str = None,latitude: float
             if shift_details:
                 if shift_details['type'] == "Early":
                     # check if user can checkin with the correct time
-                    return response("Resource Not Found", 404, None,
-                                    f"You are checking in too early. Check-in is allowed in {shift_details['time']} minutes.")
+                    return response(_("Too Early to Check In"), 404, None,
+                                    _("It is too early to check in. Check-in opens in {0} minutes.").format(shift_details['time']))
                 elif shift_details['type'] == "Late":
-                    return response("Resource Not Found", 404, None,
-                                    f"You are checking out too late. Check-out was allowed until {shift_details['time']} minutes ago.")
+                    return response(_("Check-Out Window Closed"), 404, None,
+                                    _("The check-out window for your shift closed {0} minutes ago. "
+                                      "Please contact your Site Supervisor.").format(shift_details['time']))
                 elif shift_details['type'] == "Upcoming":
-                    return response("Resource Not Found", 404, None,
-                                    f"Check-in for your shift starts in {shift_details['time']} minutes.")
+                    return response(_("Shift Not Started"), 404, None,
+                                    _("Check-in for your shift opens in {0} minutes.").format(shift_details['time']))
                 elif shift_details['type'] == "On Time":
                     shift = shift_details['data']  # Return the object of Shift Assignment
                     upcoming_shifts = shift_details['upcoming_shifts']
@@ -420,18 +454,22 @@ def get_site_location(employee_id: str = None, shift: str = None,latitude: float
 
         if shift:
             if shift.is_replaced == 1:
-                return response("Resource Not Found", 404, None, f"You have been replaced with another Employee.")
+                return response(_("Shift Reassigned"), 404, None,
+                                _("Another employee has been assigned to this shift, so you cannot "
+                                  "check in. Please contact your Site Supervisor."))
 
             if is_attendance_request_exists(employee.name, date):
-                return response("Resource Not Found", 404, None,
-                                f"You have an attendance request for today. Your attendance will be marked.")
+                return response(_("Attendance Request Approved"), 404, None,
+                                _("You have an approved attendance request for today. Your attendance "
+                                  "will be marked automatically, so no check-in is needed."))
 
             log_type = shift.get_next_checkin_log_type()
             if log_type == 'IN':
                 if shift.after_4hrs():
                     # check if hrs has passed since shift start. Here we can also allow those who checked out tp checkin by checkin if OUT exist for same shift
-                    return response("Resource Not Found", 404, None,
-                                    "You are 4 or more hours late, you cannot checkin at this time.")
+                    return response(_("Check-In Window Closed"), 404, None,
+                                    _("You are more than 4 hours late, so check-in is no longer allowed. "
+                                      "Please contact your Site Supervisor to record your attendance."))
 
             location = get_shift_site_location(shift, date, log_type, latitude, longitude)
             site = frappe.get_value("Operations Shift", shift.shift, "site")
@@ -472,26 +510,39 @@ def get_site_location(employee_id: str = None, shift: str = None,latitude: float
                 result['endpoint_status'] = facial_recognition_endpoint_state
                 return response("Success", 200, result)
 
-            elif site:
-                return response("Resource Not Found", 404, None, "No site location set for {site}".format(site=site))
+            frappe.log_error(
+                title=f"Mobile API: face_recognition.get_site_location | {employee_id}",
+                message=(
+                    f"No usable Location for shift {shift.name}.\n"
+                    f"site={site!r} site_location={shift.get('site_location')!r} "
+                    f"operations_shift={shift.get('shift')!r}\n"
+                    f"user_latitude={latitude} user_longitude={longitude}"
+                ),
+            )
+            frappe.db.commit()
+            return response(_("Site Location Missing"), 404, None,
+                            _("Your site location has not been set up yet, so check-in is "
+                              "unavailable. Please contact your Site Supervisor."))
 
         else:
             if employee.shift_working:
                 if has_day_off(employee.name, date):
-                    return response("Resource Not Found", 404, None,
-                                    f"Dear {employee.employee_name}, Today is your day off.  Happy Recharging!.")
+                    return response(_("Day Off"), 404, None,
+                                    _("Dear {0}, today is your day off. Happy recharging!").format(employee.employee_name))
             if employee.holiday_list:
                 holiday_today = get_holiday_today(str(getdate()))
                 if holiday_today.get(employee.holiday_list):
-                    return response("Resource Not Found", 404, None, "Today is your holiday, have fun.")
+                    return response(_("Holiday"), 404, None,
+                                    _("Today is a holiday, so no check-in is needed. Enjoy your day!"))
 
 
             if is_employee_on_leave(employee.name, date):
-                return response("Resource Not Found", 404, None, "You are currently on leave, see you soon!")
+                return response(_("On Leave"), 404, None,
+                                _("You are on approved leave today, so no check-in is needed. See you soon!"))
 
             status, message = is_holiday(employee=employee, date=date)
             if status:
-                return response("Resource Not Found", 404, None, message)
+                return response(_("Holiday"), 404, None, message)
 
             # WI-001777: the employee may well have a shift today whose check-in
             # window is simply not open - get_current_shift only returns a shift once
@@ -499,13 +550,20 @@ def get_site_location(employee_id: str = None, shift: str = None,latitude: float
             # unactionable, so quote the configured window instead.
             window_message = get_checkin_window_message(employee.name)
             if window_message:
-                return response("Resource Not Found", 404, None, window_message)
+                return response(_("Check-In Unavailable"), 404, None, window_message)
 
-            return response("Resource Not Found", 404, None, "You are not assigned to a shift.")
+            return response(_("No Shift Assigned"), 404, None,
+                            _("You have no shift assigned today. Please contact your Site "
+                              "Supervisor if you were expecting to work."))
 
     except Exception as error:
-        frappe.log_error(title="API Site location", message=frappe.get_traceback())
-        return response("Internal Server Error", 500, None, error)
+        frappe.log_error(
+            title=f"Mobile API: face_recognition.get_site_location | {employee_id}",
+            message=frappe.get_traceback(),
+        )
+        frappe.db.commit()
+        return response(_("Something Went Wrong"), 500, None,
+                        strip_html(cstr(error)) or type(error).__name__)
 
 
 def is_attendance_request_exists(employee, date):
@@ -668,9 +726,26 @@ def checkin_list(employee_id, from_date, to_date):
     This method retrives employee checkin list
     """
     try:
+        if not employee_id:
+            return response(_("Missing Employee ID"), 400, None,
+                            _("Please enter your Employee ID."))
+
         employee = frappe.db.get_value("Employee", {"employee_id":employee_id}, "name")
         if not employee:
-            return response("Success", 404, None, "No employee record found for {employee_id}".format(employee_id=employee_id))
+            return response(_("Employee Not Found"), 404, None,
+                            _("No employee record found for Employee ID {0}. Please contact the IT Helpdesk.").format(employee_id))
+
+        try:
+            from_date = getdate(from_date)
+            to_date = getdate(to_date)
+        except Exception:
+            return response(_("Invalid Date Range"), 400, None,
+                            _("Please select a valid date range."))
+
+        if from_date > to_date:
+            return response(_("Invalid Date Range"), 400, None,
+                            _("The start date cannot be after the end date."))
+
         checkins = frappe.get_all("Employee Checkin", filters={
             "employee": employee,
             "time": ["BETWEEN", [f"{from_date} 00:00:00", f"{to_date} 23:59:59"]]
@@ -680,4 +755,10 @@ def checkin_list(employee_id, from_date, to_date):
         )
         return response("success", 200, checkins)
     except Exception as e:
-        return response("error", 500, None, str(e))
+        frappe.log_error(
+            title=f"Mobile API: face_recognition.checkin_list | {employee_id}",
+            message=frappe.get_traceback(),
+        )
+        frappe.db.commit()
+        return response(_("Something Went Wrong"), 500, None,
+                        strip_html(cstr(e)) or type(e).__name__)

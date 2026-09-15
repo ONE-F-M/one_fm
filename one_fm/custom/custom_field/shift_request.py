@@ -292,6 +292,30 @@ def get_shift_request_custom_fields():
                 "label": "Reason",
                 "reqd": 1,
                 "translatable": 1
+            },
+            # WI-001834: the approver sees how timing varies across the requested range
+            # before approving it. Both fields hang off the preview being non-empty, so a
+            # range that is all default days shows nothing at all - which is the third
+            # acceptance criterion, and keeps the form as it is today for the common case.
+            {
+                "fieldname": "custom_section_break_z4s37",
+                "fieldtype": "Section Break",
+                "insert_after": "custom_project_manager_user",
+                "label": "Shift Preview",
+                "depends_on": "eval:doc.custom_shift_preview && doc.custom_shift_preview.length"
+            },
+            {
+                "fieldname": "custom_shift_preview",
+                "fieldtype": "Table",
+                "insert_after": "custom_section_break_z4s37",
+                "label": "Shift Preview",
+                "options": "Shift Preview",
+                # Read-only on the grid rather than on each of the child doctype's three
+                # fields: one property instead of three, and the rows are system-derived, so
+                # there is nothing here for a requester to fill in.
+                "read_only": 1,
+                "depends_on": "eval:doc.custom_shift_preview && doc.custom_shift_preview.length",
+                "description": "Filled automatically when the requested range covers a day whose Operations Shift timing differs from the default."
             }
         ]
     }

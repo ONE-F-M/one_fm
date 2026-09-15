@@ -12,7 +12,7 @@ from one_fm.utils import (
 )
 from one_fm.api.notification import get_employee_user_id
 from one_fm.operations.doctype.operations_shift.operations_shift import (
-    get_supervisor_operations_shifts, get_shift_supervisor
+    get_supervisor_operations_shifts, get_shift_supervisor, resolve_shift_timing
 )
 
 
@@ -82,6 +82,62 @@ class ShiftRequestOverride(ShiftRequest):
                 )).insert()
                 sa.submit()
 
+def build_shift_preview(doc):
+    """Show the approver how timing varies across the requested range (WI-001834).
+
+    One row per date, but only when the range actually contains a day whose Operations
+    Shift resolves to something other than the post's default - a request that is all
+    default days gets an empty table, and the section is hidden on `depends_on`, so the
+    form stays exactly as it is today for the common case.
+
+    The table is also the record of what was approved. Once it is filled, the Shift
+    Assignments and Employee Schedules raised on submit read their Shift Type from it
+    rather than from the request's single shift_type field, so what the approver saw and
+    what gets created are the same thing by construction.
+    """
+    doc.set("custom_shift_preview", [])
+
+    if not (doc.operations_shift and doc.from_date and doc.to_date):
+        return
+
+    operations_shift = frappe.get_cached_doc("Operations Shift", doc.operations_shift)
+    if not operations_shift.shift_timing_override_required:
+        return
+
+    rows = []
+    varies = False
+
+    for date in pd.date_range(start=doc.from_date, end=doc.to_date):
+        date = date.date()
+        timing = resolve_shift_timing(operations_shift, date)
+        if timing.is_override:
+            varies = True
+        rows.append({
+            "date": date,
+            "day": date.strftime("%A"),
+            "shift_type": timing.shift_type,
+        })
+
+    if not varies:
+        return
+
+    for row in rows:
+        doc.append("custom_shift_preview", row)
+
+
+def shift_type_on(doc, date):
+    """The Shift Type this request resolves to on one date of its range (WI-001834).
+
+    The preview table when it has been filled, the request's own shift_type otherwise -
+    so a request over default-only days behaves exactly as it did before.
+    """
+    for row in doc.get("custom_shift_preview") or []:
+        if row.date and getdate(row.date) == getdate(date):
+            return row.shift_type or doc.shift_type
+
+    return doc.shift_type
+
+
 def validate(doc, event=None):
     # ensure status is not pending
     if doc.is_new():
@@ -107,6 +163,7 @@ def validate(doc, event=None):
                                                 ])
         if not shift_assignemnt_exists:
             frappe.throw("Employee does not have an existing assignment. Even employees with day off do not have an existing assignment. If you want to assign a shift to an employee with a day off please use Assign Unrostered Employee.")
+    build_shift_preview(doc)  # WI-001834: before the assignments below read it
     process_shift_assignment(doc)  # set shift assignment and employee schedule
 
 
@@ -322,9 +379,10 @@ def process_shift_assignment(doc, event=None):
                     if schedule_name:
                         existing_schedule = frappe.get_doc("Employee Schedule", schedule_name)
                         
+                        date_shift_type = shift_type_on(doc, date)
                         start_time, end_time = frappe.db.get_value(
                             "Shift Type", 
-                            doc.shift_type,
+                            date_shift_type,
                             ['start_time', 'end_time']
                         )
                         
@@ -334,7 +392,7 @@ def process_shift_assignment(doc, event=None):
                         
                         update_data = {
                             'shift': doc.operations_shift,
-                            'shift_type': doc.shift_type,
+                            'shift_type': date_shift_type,
                             'start_datetime': f"{existing_schedule.date} {start_time}",
                             'end_datetime': f"{end_date} {end_time}",
                             'operations_role': doc.operations_role,
@@ -357,7 +415,7 @@ def process_shift_assignment(doc, event=None):
                         "company": doc.company,
                         "operations_shift": doc.operations_shift,
                         "roster_type": doc.roster_type,
-                        "shift_type": doc.shift_type,
+                        "shift_type": shift_type_on(doc, date),
                         "employee": doc.employee,
                         "from_date": date,
                         "name": doc.name,
@@ -616,13 +674,14 @@ def replace_employee_schedule(doc, existing_schedules, schedule_date_range):
         # replace existing schedule
         for es in existing_schedules:
             role_abbr = frappe.db.get_value("Operations Role", doc.operations_role, 'post_abbrv')
-            start_time, end_time = frappe.db.get_value("Shift Type", doc.shift_type, ['start_time', 'end_time'])
+            date_shift_type = shift_type_on(doc, es.date)
+            start_time, end_time = frappe.db.get_value("Shift Type", date_shift_type, ['start_time', 'end_time'])
             end_date = es.date
             if start_time > end_time:
                 end_date = add_days(end_date, 1)
             frappe.db.set_value('Employee Schedule', es.name, {
                 'shift': doc.operations_shift,
-                'shift_type': doc.shift_type,
+                'shift_type': date_shift_type,
                 'start_datetime': f"{es.date} {start_time}",
                 'end_datetime': f"{end_date} {end_time}",
                 'operations_role': doc.operations_role,
@@ -656,7 +715,9 @@ def create_shift_assignment_from_request(shift_request, submit=True,day_off_ot =
     assignment_doc.company = shift_request.company
     assignment_doc.shift = shift_request.operations_shift
     assignment_doc.roster_type = shift_request.roster_type
-    assignment_doc.shift_type = shift_request.shift_type
+    # WI-001834: one assignment covers one date (start_date, no end_date), so it takes that
+    # date's Shift Type off the preview rather than the request's single field.
+    assignment_doc.shift_type = shift_type_on(shift_request, shift_request.from_date)
     assignment_doc.employee = shift_request.employee
     assignment_doc.start_date = shift_request.from_date
     assignment_doc.shift_request = shift_request.name
@@ -681,7 +742,7 @@ def create_employee_schedule_from_request(doc, date):
     schedule.employee = doc.employee
     schedule.date = date
     schedule.shift = doc.operations_shift
-    schedule.shift_type = doc.shift_type
+    schedule.shift_type = shift_type_on(doc, date)
     schedule.operations_role = doc.operations_role
     # schedule.post_abbrv = frappe.db.get_value("Operations Role", doc.operations_role, 'post_abbrv')
     schedule.employee_availability = 'Working'

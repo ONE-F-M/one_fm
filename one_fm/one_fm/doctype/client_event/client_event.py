@@ -6,14 +6,44 @@ from frappe.model.document import Document
 from frappe.utils import get_datetime, now_datetime, today, getdate
 import json
 
+# WI-002184: the states an event sits in while it waits for someone to approve it. The
+# project decides which - an event against a project waits on that project's manager, one
+# without a project on the Operations Manager - and everything that used to name the one
+# pending state has to know about both, or it quietly stops applying to half the events.
+PENDING_STATES = ("Pending Project Manager", "Pending Operations Manager")
+
+
 class ClientEvent(Document):
 	def validate(self):
+		self.set_approver()
 		self.validate_date_time()
 		self.validate_workflow_transition()
 		self.validate_extension_request()
 
+	def set_approver(self):
+		"""Name the Operations Manager when no Project Manager stands behind the event.
+
+		WI-002184: the Project Manager arrives by fetch_from off the Project, so an event
+		with no project - or with a project whose manager is not set - has nobody to route
+		to. The assignment rule reads a field, not a fallback, so the fallback has to be
+		written onto the document: without it the event reaches Pending Operations Manager
+		assigned to nobody, and says nothing about it.
+
+		Only filled in, never overwritten: an operations manager named by hand on the event
+		is a deliberate choice and outranks the site default.
+		"""
+		# Read through get(): a Document raises AttributeError for a field its meta does
+		# not carry, so a site that has not migrated yet would fail on save rather than
+		# simply not having a project manager.
+		if self.get("project_manager_user") or self.get("operations_manager"):
+			return
+
+		self.operations_manager = frappe.db.get_single_value(
+			"Operation Settings", "default_operation_manager"
+		)
+
 	def validate_date_time(self):
-		if not self.is_new() and self.workflow_state not in ("Pending Operations Manager", None):
+		if not self.is_new() and self.workflow_state not in PENDING_STATES + (None,):
 			return
 		if self.workflow_state == "Approved":
 			return
@@ -86,7 +116,7 @@ class ClientEvent(Document):
 		if self.workflow_state == "Approved":
 			return
 
-		# Only act on transitions away from Pending Operations Manager
+		# Only act on transitions away from a pending state
 		if self.workflow_state not in ("Draft", "Rejected", "Cancelled"):
 			return
 

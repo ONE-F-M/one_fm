@@ -13,6 +13,7 @@
   "operations_role",
   "column_break_hpiz",
   "operations_shift",
+  "aggregated_shifts",
   "operations_site",
   "project",
   "start_time",
@@ -33,6 +34,11 @@
   "requires_vehicle_retention",
   "generation_key",
   "pair_group",
+  "is_split_overflow",
+  "split_parent",
+  "split_root",
+  "trip_group",
+  "pre_merge_trip_direction",
   "section_break_yujp",
   "transportation_shipment_employee"
  ],
@@ -77,6 +83,13 @@
    "fieldtype": "Link",
    "label": "Operations Shift",
    "options": "Operations Shift"
+  },
+  {
+   "description": "Every Operations Shift whose staff this card carries. One shift for most cards; an OLM stop shared by several roles finishing together lists them all, and then Operations Shift is left blank because no single one is it.",
+   "fieldname": "aggregated_shifts",
+   "fieldtype": "Small Text",
+   "label": "Shifts Served",
+   "read_only": 1
   },
   {
    "fetch_from": "operations_shift.site",
@@ -212,6 +225,46 @@
    "read_only": 1
   },
   {
+   "default": "0",
+   "description": "Set when this card holds the staff that did not fit on the vehicle its parent was assigned to.",
+   "fieldname": "is_split_overflow",
+   "fieldtype": "Check",
+   "label": "Split Overflow",
+   "read_only": 1
+  },
+  {
+   "description": "The card this overflow was taken off.",
+   "fieldname": "split_parent",
+   "fieldtype": "Link",
+   "label": "Split From",
+   "options": "Transportation Shipment",
+   "read_only": 1
+  },
+  {
+   "description": "The card at the top of the split chain, kept through repeated splits so a card can always be traced back to the shift it came from.",
+   "fieldname": "split_root",
+   "fieldtype": "Link",
+   "label": "Original Card",
+   "options": "Transportation Shipment",
+   "read_only": 1
+  },
+  {
+   "description": "Shared key written across every shipment merged into one Mixed trip.",
+   "fieldname": "trip_group",
+   "fieldtype": "Data",
+   "label": "Trip Group",
+   "read_only": 1
+  },
+  {
+   "description": "The direction this shipment travelled before it was merged, so leaving a merged trip restores it.",
+   "fieldname": "pre_merge_trip_direction",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Pre Merge Trip Direction",
+   "options": "\nOutward\nReturn",
+   "read_only": 1
+  },
+  {
    "fieldname": "section_break_yujp",
    "fieldtype": "Section Break"
   },
@@ -224,8 +277,8 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-17 08:35:37.065531",
- "modified_by": "h.imran@one-fm.com",
+ "modified": "2026-09-15 07:09:03.000000",
+ "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Transportation Shipment",
  "naming_rule": "By \"Naming Series\" field",

@@ -46,11 +46,47 @@
  ],
  "fields": [
   {
-   "allow_on_submit": 1,
-   "fetch_from": "employee.one_fm_civil_id",
-   "fieldname": "civil_id",
-   "fieldtype": "Data",
-   "label": "Civil ID",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "MI-.YYYY.-"
+  },
+  {
+   "fieldname": "date_of_application",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Date of Application"
+  },
+  {
+   "fieldname": "work_permit",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Work Permit",
+   "options": "Work Permit"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "in_standard_filter": 1,
+   "label": "Employee",
+   "options": "Employee"
+  },
+  {
+   "bold": 1,
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "\nDraft\nSubmitted\nCanceled"
+  },
+  {
+   "fieldname": "preparation",
+   "fieldtype": "Link",
+   "label": "Preparation",
+   "options": "Preparation",
    "read_only": 1
   },
   {
@@ -83,10 +119,55 @@
   },
   {
    "allow_on_submit": 1,
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Full Name",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
    "fetch_from": "employee.gender",
    "fieldname": "gender",
    "fieldtype": "Data",
    "label": "Gender",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_civil_id",
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "label": "Civil ID",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.valid_upto",
+   "fieldname": "passport_expiry_date",
+   "fieldtype": "Data",
+   "label": "Passport Expiry Date",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_centralized_number",
+   "fieldname": "centralized_number",
+   "fieldtype": "Data",
+   "label": "Centralized Number",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee ID",
    "read_only": 1
   },
   {
@@ -98,10 +179,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "column_break_11",
-   "fieldtype": "Column Break"
-  },
-  {
    "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_duration_of_work_permit",
    "fieldname": "no_of_years",
@@ -110,9 +187,11 @@
    "read_only": 1
   },
   {
-   "fieldname": "amount",
-   "fieldtype": "Currency",
-   "label": "Amount"
+   "fetch_from": "employee.pam_file_number",
+   "fieldname": "pam_file_number",
+   "fieldtype": "Data",
+   "label": "PAM File Number",
+   "read_only": 1
   },
   {
    "fieldname": "amended_from",
@@ -121,21 +200,6 @@
    "no_copy": 1,
    "options": "Medical Insurance",
    "print_hide": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "hidden": 1,
-   "label": "Series",
-   "options": "MI-.YYYY.-"
-  },
-  {
-   "allow_on_submit": 1,
-   "fetch_from": "employee.employee_name",
-   "fieldname": "employee_name",
-   "fieldtype": "Data",
-   "label": "Full Name",
    "read_only": 1
   },
   {
@@ -152,8 +216,39 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
+   "fieldname": "upload_medical_insurance",
+   "fieldtype": "Attach",
+   "label": "Upload Medical Insurance"
+  },
+  {
+   "fieldname": "medical_insurance_submitted_by",
+   "fieldtype": "Link",
+   "label": "Submitted By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
    "fieldname": "column_break_23",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "upload_medical_insurance_date",
+   "fieldtype": "Datetime",
+   "label": "Upload On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "upload_payment_invoice_on",
+   "fieldtype": "Datetime",
+   "hidden": 1,
+   "label": "Upload Payment Invoice On"
+  },
+  {
+   "fieldname": "medical_insurance_submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Submitted on",
+   "read_only": 1
   },
   {
    "fieldname": "grd_supervisor",
@@ -164,79 +259,6 @@
    "read_only": 1
   },
   {
-   "default": "0",
-   "fieldname": "payment_done",
-   "fieldtype": "Check",
-   "label": "Payment Done"
-  },
-  {
-   "fieldname": "work_permit",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "label": "Work Permit",
-   "options": "Work Permit"
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "upload_medical_insurance",
-   "fieldtype": "Attach",
-   "label": "Upload Medical Insurance"
-  },
-  {
-   "fieldname": "upload_medical_insurance_date",
-   "fieldtype": "Datetime",
-   "label": "Upload On",
-   "read_only": 1
-  },
-  {
-   "fieldname": "medical_insurance_submitted_by",
-   "fieldtype": "Link",
-   "label": "Submitted By",
-   "options": "User",
-   "read_only": 1
-  },
-  {
-   "fieldname": "medical_insurance_submitted_on",
-   "fieldtype": "Datetime",
-   "label": "Submitted on",
-   "read_only": 1
-  },
-  {
-   "fieldname": "rpr_ref",
-   "fieldtype": "Data",
-   "label": "RPR Ref"
-  },
-  {
-   "fieldname": "preparation",
-   "fieldtype": "Link",
-   "label": "Preparation",
-   "options": "Preparation",
-   "read_only": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fetch_from": "employee.employee_id",
-   "fieldname": "employee_id",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Employee ID",
-   "read_only": 1
-  },
-  {
-   "fieldname": "upload_payment_invoice_on",
-   "fieldtype": "Datetime",
-   "hidden": 1,
-   "label": "Upload Payment Invoice On"
-  },
-  {
-   "allow_on_submit": 1,
-   "fetch_from": "employee.valid_upto",
-   "fieldname": "passport_expiry_date",
-   "fieldtype": "Data",
-   "label": "Passport Expiry Date",
-   "read_only": 1
-  },
-  {
    "collapsible": 1,
    "fieldname": "finance_department_section",
    "fieldtype": "Section Break",
@@ -244,34 +266,20 @@
    "label": "Finance Department"
   },
   {
-   "fieldname": "date_of_application",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Date of Application"
+   "default": "0",
+   "fieldname": "payment_done",
+   "fieldtype": "Check",
+   "label": "Payment Done"
   },
   {
-   "fieldname": "employee",
-   "fieldtype": "Link",
-   "ignore_user_permissions": 1,
-   "in_standard_filter": 1,
-   "label": "Employee",
-   "options": "Employee"
-  },
-  {
-   "bold": 1,
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Status",
-   "options": "\nDraft\nSubmitted\nCanceled"
-  },
-  {
-   "fetch_from": "employee.pam_file_number",
-   "fieldname": "pam_file_number",
+   "fieldname": "rpr_ref",
    "fieldtype": "Data",
-   "label": "PAM File Number",
-   "read_only": 1
+   "label": "RPR Ref"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount"
   },
   {
    "default": "0",
@@ -286,20 +294,12 @@
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Reminder Government Relations Operator Again"
-  },
-  {
-   "allow_on_submit": 1,
-   "fetch_from": "employee.one_fm_centralized_number",
-   "fieldname": "centralized_number",
-   "fieldtype": "Data",
-   "label": "Centralized Number",
-   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-11 21:29:10.761176",
- "modified_by": "h.imran@one-fm.com",
+ "modified": "2026-09-15 07:09:02.000000",
+ "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Insurance",
  "naming_rule": "By \"Naming Series\" field",
@@ -345,7 +345,6 @@
    "write": 1
   }
  ],
- "row_format": "Dynamic",
  "search_fields": "civil_id,employee_id,date_of_application",
  "sort_field": "date_of_application",
  "sort_order": "DESC",

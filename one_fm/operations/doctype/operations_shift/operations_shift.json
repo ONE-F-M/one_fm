@@ -16,6 +16,7 @@
   "shift_number",
   "shift_type",
   "day_off_ot_allowed",
+  "double_shift_ot_allowed",
   "automate_roster",
   "shift_timing_override_required",
   "supervisor",
@@ -44,10 +45,6 @@
    "options": "Operations Site"
   },
   {
-   "fieldname": "column_break_2",
-   "fieldtype": "Column Break"
-  },
-  {
    "fetch_from": "site.project",
    "fieldname": "project",
    "fieldtype": "Link",
@@ -56,9 +53,49 @@
    "read_only": 1
   },
   {
+   "fieldname": "site_location",
+   "fieldtype": "Link",
+   "label": "Site Location",
+   "options": "Location"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Active",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Active\nInactive"
+  },
+  {
+   "fetch_from": "site_location.governorate_area",
+   "fetch_if_empty": 1,
+   "fieldname": "governorate_area",
+   "fieldtype": "Link",
+   "label": "Governorate Area",
+   "options": "Governorate Area"
+  },
+  {
+   "fieldname": "service_type",
+   "fieldtype": "Link",
+   "label": "Service Type",
+   "options": "Service Type",
+   "reqd": 1
+  },
+  {
    "fieldname": "shift_details_section",
    "fieldtype": "Section Break",
    "label": "Shift Details"
+  },
+  {
+   "fieldname": "shift_number",
+   "fieldtype": "Int",
+   "label": "Shift Number",
+   "reqd": 1
   },
   {
    "fieldname": "shift_type",
@@ -68,14 +105,29 @@
   },
   {
    "default": "0",
+   "fieldname": "day_off_ot_allowed",
+   "fieldtype": "Check",
+   "label": "Day Off OT Allowed"
+  },
+  {
+   "default": "0",
+   "fieldname": "double_shift_ot_allowed",
+   "fieldtype": "Check",
+   "label": "Double Shift OT Allowed"
+  },
+  {
+   "default": "0",
    "description": "If checked, the system automatically creates Employee Schedules for all Employees having this as their default shift.",
    "fieldname": "automate_roster",
    "fieldtype": "Check",
    "label": "Automate Roster"
   },
   {
-   "fieldname": "section_break_12",
-   "fieldtype": "Section Break"
+   "default": "0",
+   "description": "Enable this only if this post requires a different shift timing on specific day(s) of the week (e.g., a different timing on Friday).",
+   "fieldname": "shift_timing_override_required",
+   "fieldtype": "Check",
+   "label": "Shift Timing Override Required"
   },
   {
    "fieldname": "supervisor",
@@ -100,6 +152,17 @@
    "fieldtype": "Column Break"
   },
   {
+   "description": "Index of the table is the priority of the supervisor",
+   "fieldname": "shift_supervisor",
+   "fieldtype": "Table",
+   "label": "Shift Supervisor",
+   "options": "Operations Shift Supervisor"
+  },
+  {
+   "fieldname": "section_break_12",
+   "fieldtype": "Section Break"
+  },
+  {
    "fetch_from": "shift_type.start_time",
    "fieldname": "start_time",
    "fieldtype": "Time",
@@ -119,6 +182,10 @@
    "label": "Expected Arrival Time at Site"
   },
   {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break"
+  },
+  {
    "description": "In hours",
    "fetch_from": "shift_type.duration",
    "fieldname": "duration",
@@ -134,51 +201,18 @@
    "read_only": 1
   },
   {
-   "fieldname": "column_break_15",
-   "fieldtype": "Column Break"
+   "depends_on": "eval:doc.shift_timing_override_required==1",
+   "fieldname": "operations_shift_timing_section",
+   "fieldtype": "Section Break",
+   "label": "Operations Shift Timing"
   },
   {
-   "fieldname": "service_type",
-   "fieldtype": "Link",
-   "label": "Service Type",
-   "options": "Service Type",
-   "reqd": 1
-  },
-  {
-   "fieldname": "shift_number",
-   "fieldtype": "Int",
-   "label": "Shift Number",
-   "reqd": 1
-  },
-  {
-   "fieldname": "site_location",
-   "fieldtype": "Link",
-   "label": "Site Location",
-   "options": "Location"
-  },
-  {
-   "fetch_from": "site_location.governorate_area",
-   "fetch_if_empty": 1,
-   "fieldname": "governorate_area",
-   "fieldtype": "Link",
-   "label": "Governorate Area",
-   "options": "Governorate Area"
-  },
-  {
-   "default": "Active",
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Status",
-   "options": "Active\nInactive"
-  },
-  {
-   "description": "Index of the table is the priority of the supervisor",
-   "fieldname": "shift_supervisor",
+   "depends_on": "eval:doc.shift_timing_override_required==1",
+   "fieldname": "operations_shift_timing",
    "fieldtype": "Table",
-   "label": "Shift Supervisor",
-   "options": "Operations Shift Supervisor"
+   "label": "Operations Shift Timing",
+   "mandatory_depends_on": "eval:doc.shift_timing_override_required==1",
+   "options": "Operations Shift Timing"
   },
   {
    "fieldname": "accommodation_details_section",
@@ -190,32 +224,6 @@
    "fieldtype": "Table",
    "label": "Accommodations",
    "options": "Operations Shift Accommodation"
-  },
-  {
-   "default": "0",
-   "fieldname": "day_off_ot_allowed",
-   "fieldtype": "Check",
-   "label": "Day Off OT Allowed"
-  },
-  {
-   "default": "0",
-   "description": "Enable this only if this post requires a different shift timing on specific day(s) of the week (e.g., a different timing on Friday).",
-   "fieldname": "shift_timing_override_required",
-   "fieldtype": "Check",
-   "label": "Shift Timing Override Required"
-  },
-  {
-   "depends_on": "eval:doc.shift_timing_override_required==1",
-   "fieldname": "operations_shift_timing",
-   "fieldtype": "Table",
-   "label": "Operations Shift Timing",
-   "mandatory_depends_on": "eval:doc.shift_timing_override_required==1",
-   "options": "Operations Shift Timing"
-  },
-  {
-   "fieldname": "operations_shift_timing_section",
-   "fieldtype": "Section Break",
-   "label": "Operations Shift Timing"
   }
  ],
  "links": [
@@ -225,8 +233,8 @@
    "link_fieldname": "shift"
   }
  ],
- "modified": "2026-08-10 21:41:54.482369",
- "modified_by": "h.imran@one-fm.com",
+ "modified": "2026-09-15 07:09:03.000000",
+ "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Shift",
  "owner": "Administrator",

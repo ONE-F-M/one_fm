@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import datetime
+import re
 
 import frappe
 from frappe import _
@@ -15,6 +16,14 @@ _DATE_MAX = datetime.date.max
 _TIME_START = datetime.timedelta(0)
 _TIME_END = datetime.timedelta(days=1)
 
+# The direction a merged trip carries once cards are combined (WI-002071).
+MIXED_DIRECTION = "MIXED"
+
+# A trip name as the canvas mints it: an optional leased "S-" prefix, the vehicle's own
+# number, then a two-digit sequence. "S-106" is vehicle 1 run 06; "S-1303" is vehicle 13
+# run 03; "1901" is vehicle 19 run 01 on a bus that is not leased.
+TRIP_NAME = re.compile(r"^(S-)?(\d+?)(\d{2})$")
+
 
 class RoutePlan(Document):
 	def validate(self):
@@ -24,6 +33,7 @@ class RoutePlan(Document):
 		self._validate_vehicle_retention_locks()
 		self._validate_vehicle_datetime_locks()
 		self._validate_trip_group_single_vehicle()
+		self._rename_duplicate_trip_names()
 		self._validate_vehicle_capacity()
 
 	def _validate_dates(self):
@@ -75,7 +85,7 @@ class RoutePlan(Document):
 		# those so a card never conflicts with itself.
 		vehicle_shipments = {}
 		shipment_names = set()
-		for row in self.assignments:
+		for row in card_rows(self.assignments):
 			if not row.vehicle or not row.transportation_shipment:
 				continue
 			vehicle_shipments.setdefault(row.vehicle, set()).add(row.transportation_shipment)
@@ -111,7 +121,7 @@ class RoutePlan(Document):
 		mirroring the retention lock above.
 		"""
 		by_vehicle = {}
-		for row in self.assignments:
+		for row in card_rows(self.assignments):
 			if row.vehicle:
 				by_vehicle.setdefault(row.vehicle, []).append(row)
 
@@ -208,7 +218,7 @@ class RoutePlan(Document):
 		the journey so the dispatcher can re-drop it cleanly.
 		"""
 		leg_vehicle = {}
-		for row in self.assignments:
+		for row in card_rows(self.assignments):
 			if not row.trip_group or not row.vehicle:
 				continue
 			key = (row.trip_group, _row_direction(row))
@@ -233,8 +243,9 @@ class RoutePlan(Document):
 		(WI-002000). Two levels are enforced against the same limit:
 
 		* **Each trip on its own** — the accommodation cards merged onto one
-		  ``(vehicle, trip_group, direction)`` ride together even though their
-		  stops are sequential, so their headcounts still sum (MA4-13).
+		  ``(vehicle, trip_group)`` ride together even though their stops are
+		  sequential, so their headcounts still sum (MA4-13) — unless the run
+		  both drops off and picks up, which is walked leg by leg.
 		* **Trips that run at the same time** — when two trips' windows overlap,
 		  their passengers are on the bus together and the totals add up.
 
@@ -250,6 +261,7 @@ class RoutePlan(Document):
 			return
 
 		limits = _passenger_limits({trip.vehicle for trip in trips})
+		untouched = self._vehicles_this_save_did_not_touch(trips)
 
 		by_vehicle = {}
 		for trip in trips:
@@ -261,11 +273,24 @@ class RoutePlan(Document):
 				# Vehicle master has no seat count configured — nothing to enforce.
 				continue
 
+			if vehicle in untouched:
+				# Nothing was dropped on or taken off this bus in this save, so whatever
+				# it carries it was already carrying and the plan was saved that way. A
+				# roster that has grown since is a real overload, but it is this bus's
+				# problem and the board colours the lane for it - refusing every other
+				# edit on the plan until someone fixes it blocks the wrong person.
+				continue
+
 			# One trip over the limit on its own is reported as the overloaded run
 			# it is, naming the seat shortfall (MA4-13). Ordered so the reported
 			# trip is stable across saves.
 			for trip in sorted(vehicle_trips, key=lambda t: t.key):
-				if trip.headcount > limit:
+				if trip.direction == MIXED_DIRECTION:
+					# A merged trip boards and alights along the way, so its stops do
+					# not all ride together and summing them would refuse a load the
+					# bus can actually carry (WI-002071).
+					self._validate_mixed_trip_legs(trip, limit)
+				elif trip.headcount > limit:
 					self._throw_capacity_exceeded(vehicle, trip.direction, trip.headcount, limit)
 
 			concurrent = _peak_concurrent_headcount(vehicle_trips)
@@ -278,13 +303,78 @@ class RoutePlan(Document):
 					title=_("{0}: Vehicle Capacity Exceeded").format(vehicle),
 				)
 
-	def _logical_trips(self) -> list:
+	def _rename_duplicate_trip_names(self):
+		"""No two runs on one vehicle answer to the same trip name (WI-002401).
+
+		A trip name is how a run is identified on the block, in the "Add Stop to which
+		trip?" picker and on the driver's manifest, so two runs called S-106 on one lane
+		are indistinguishable everywhere the name is all the reader has.
+
+		The canvas already mints a name by scanning for the next free sequence rather
+		than counting the runs - counting re-issued a name the moment any run but the
+		last was removed (WI-002160). But it reads that list when the placement dialog
+		OPENS and the drop commits later, so two dialogs open at once, or one left open
+		while another card is placed, still hand out the same number. Rather than chase
+		every path on the board, the rule is enforced here, where they all end up.
+
+		A repair, not a refusal: the plans already carry duplicates and refusing the save
+		would strand them. The earliest run keeps the name - it is the one the dispatcher
+		has been looking at - and each later claimant takes the next free sequence for
+		that vehicle.
+		"""
+		for vehicle, runs in self._runs_by_vehicle().items():
+			taken = {name for run in runs.values() for name in {run["name"]} if name}
+			shape = _trip_name_shape(taken)
+			if not shape:
+				# No name on this lane parses, so there is no series to extend. Renaming
+				# into a guessed one would be worse than leaving the clash visible.
+				continue
+
+			claimed = {}
+			for key in sorted(runs, key=lambda k: (runs[k]["start"], str(k))):
+				run = runs[key]
+				if not run["name"]:
+					continue
+				if run["name"] not in claimed:
+					claimed[run["name"]] = key
+					continue
+				fresh = _next_free_trip_name(shape, taken)
+				if not fresh:
+					continue
+				taken.add(fresh)
+				for row in run["rows"]:
+					row.trip_name = fresh
+
+	def _runs_by_vehicle(self) -> dict:
+		"""``{vehicle: {trip key: run}}`` over every row, camp legs included.
+
+		Camp legs carry the run's trip_name too, so a rename has to take them with it or
+		the drive out of the accommodation would answer to the old name. That is why this
+		does not go through ``_logical_trips``, which deliberately drops them.
+		"""
+		by_vehicle = {}
+		for idx, row in enumerate(self.assignments):
+			if not row.vehicle:
+				continue
+			# Standalone rows are keyed by position so two of them never merge.
+			key = row.trip_group or f"\0row-{idx}"
+			run = by_vehicle.setdefault(row.vehicle, {}).setdefault(
+				key, {"name": None, "start": _DAY_SECONDS, "rows": []}
+			)
+			run["rows"].append(row)
+			run["name"] = run["name"] or row.trip_name
+			start, _end = _row_time_window(row)
+			run["start"] = min(run["start"], start)
+		return by_vehicle
+
+	def _logical_trips(self, assignments=None) -> list:
 		"""Collapse the assignment rows into the trips a vehicle actually runs.
 
-		Rows sharing a ``(vehicle, trip_group, direction)`` are the stops of one
-		run: their headcounts sum and the trip spans from its first stop's start
-		to its last stop's end. A row with no ``trip_group`` is a standalone drop
-		and becomes a trip of its own, so it is weighed like any other.
+		Rows sharing a ``(vehicle, trip_group)`` are the stops of one run: their
+		headcounts sum and the trip spans from its first stop's start to its last
+		stop's end. A run whose stops do not all travel the same way is a mixed one
+		and is measured leg by leg instead. A row with no ``trip_group`` is a
+		standalone drop and becomes a trip of its own, so it is weighed like any other.
 
 		Each trip carries the daily time window its stops cover and the calendar
 		lifespan they are live for — the two halves of the timestamps a Route Plan
@@ -292,13 +382,20 @@ class RoutePlan(Document):
 		run).
 		"""
 		trips = {}
-		for idx, row in enumerate(self.assignments):
+		rows = card_rows(assignments if assignments is not None else self.assignments)
+		live = live_headcounts(rows)
+		for idx, row in enumerate(rows):
 			if not row.vehicle:
 				continue
 			direction = _row_direction(row)
 			# Standalone rows are keyed by position so two of them never merge.
 			group = row.trip_group or f"\0row-{idx}"
-			key = (row.vehicle, group, direction)
+			# One trip group on one vehicle is one bus run, whichever way its stops
+			# travel. Keying the direction in as well split a chained run - an outward
+			# drop and the return pickup made at the same stop - into two pseudo-trips
+			# whose windows overlap each other, so the concurrency check added the same
+			# bus to itself and refused a load it was already carrying (WI-002160).
+			key = (row.vehicle, group)
 			start, end = _row_time_window(row)
 			live_from, live_to = _row_date_range(row)
 
@@ -308,21 +405,114 @@ class RoutePlan(Document):
 					key=key,
 					vehicle=row.vehicle,
 					direction=direction,
-					headcount=cint(row.headcount),
+					headcount=row_headcount(row, live),
 					start=start,
 					end=end,
 					live_from=live_from,
 					live_to=live_to,
+					# Kept so a merged trip can be walked stop by stop (WI-002071);
+					# the summed headcount above is meaningless for one.
+					rows=[row],
 				)
 				continue
 
-			trip.headcount += cint(row.headcount)
+			trip.rows.append(row)
+			# Stops that do not all travel the same way make this a mixed run, walked leg
+			# by leg instead of summed. The row's own ``direction`` only ever said MIXED
+			# when the Merge Trip modal wrote it back; chaining a return stop onto an
+			# outbound trip left every row on its original heading (WI-002160).
+			if direction != trip.direction:
+				trip.direction = MIXED_DIRECTION
+			trip.headcount += row_headcount(row, live)
 			trip.start = min(trip.start, start)
 			trip.end = max(trip.end, end)
 			trip.live_from = min(filter(None, [trip.live_from, live_from]), default=None)
 			trip.live_to = max(filter(None, [trip.live_to, live_to]), default=None)
 
-		return list(trips.values())
+		# How full the bus gets is not the same as how many the trip carries once a trip
+		# can be merged, and it is the occupancy that everything downstream compares
+		# against the seats.
+		runs = list(trips.values())
+		for trip in runs:
+			trip.occupancy, trip.worst_leg = _trip_peak(trip)
+
+		return runs
+
+	def _vehicles_this_save_did_not_touch(self, trips) -> set:
+		"""Vehicles whose cards are exactly where they were before this save.
+
+		Capacity is judged against the shipments rather than the snapshot on the row, so
+		a roster that grew after a card was placed shows up as an overload on a bus
+		nobody has touched. Judging it on every save turned one such bus into a wall
+		across the whole plan: a drop on a different vehicle could not be saved until the
+		untouched one was fixed. The check is for what a save DOES, so a bus it does
+		nothing to keeps the verdict it was saved with.
+		"""
+		before = self.get_doc_before_save()
+		if not before:
+			return set()
+
+		def placement(trips):
+			"""``{vehicle: {(trip group, card)}}`` - which cards ride in which run.
+
+			Neither the trip's own key nor the stop numbering can stand in for that. A
+			standalone row is keyed by its position, which moves when an unrelated row is
+			added. And ``stop_index`` is DERIVED, not stated: ``_stamp_leg_details``
+			renumbers every row of every vehicle off the itinerary (physical stops, camp
+			legs included) while the canvas round-trips a logical 1..N, and the order
+			itself is re-derived from each card's own arrival time. Keying on either
+			re-lettered every card on every save, so no bus was ever "untouched" - one
+			pre-existing overload then refused every edit anywhere on the plan, on a
+			vehicle the dispatcher had never gone near (WI-002401).
+
+			ponytail: membership only, so re-sequencing a merged run's stops without
+			adding or removing a card reads as untouched and keeps the verdict it was
+			saved with. Add the order back here if stop order ever becomes something the
+			dispatcher sets by hand rather than something the itinerary derives.
+			"""
+			by_vehicle = {}
+			for trip in trips:
+				by_vehicle.setdefault(trip.vehicle, set()).update(
+					(row.trip_group, row.transportation_shipment) for row in trip.rows
+				)
+			return by_vehicle
+
+		was = placement(self._logical_trips(before.assignments))
+		now = placement(trips)
+		return {vehicle for vehicle, cards in now.items() if was.get(vehicle) == cards}
+
+	def _validate_mixed_trip_legs(self, trip, limit):
+		"""Hold every leg of a merged trip to the seat count (WI-002071).
+
+		A Mixed trip is one vehicle run that both drops off and picks up, so its stops
+		do not all ride together: workers dropped at Stop 1 are off the bus before the
+		Stop 2 boarders get on. Summing the stops - which is right for a single-direction
+		trip, where every card's riders are aboard at once - would refuse a load the bus
+		can carry.
+
+		Occupancy is walked stop by stop instead. Each row's own shipment says which way
+		its riders travel: an Outward card's riders board at the camp and leave at that
+		card's stop, a Return card's riders join at that card's stop and stay aboard to
+		the camp. So the bus leaves the camp carrying every Outward rider, and each stop
+		in turn sheds its Outward riders and takes on its Return ones.
+
+		Disembarking is applied before boarding at each stop, per the third criterion: at
+		a stop where both happen the seats being vacated are available to the people
+		getting on, and adding first would report an overload that never occurs.
+
+		The peak across the legs is what has to fit, not the total that ever rode.
+		"""
+		peak, worst_leg = _trip_peak(trip)
+
+		if peak > limit:
+			frappe.throw(
+				_(
+					"Capacity Exceeded on leg {0}: {1} passengers against a vehicle limit "
+					"of {2}. A merged trip is measured leg by leg, so this is the busiest "
+					"point of the run rather than everyone it carries in total."
+				).format(worst_leg, peak, limit),
+				title=_("{0}: Vehicle Capacity Exceeded").format(trip.vehicle),
+			)
 
 	def _throw_capacity_exceeded(self, vehicle, direction, total_passengers, limit):
 		"""Raise the overloading block with the exact seat shortfall (MA4-13 AC4)."""
@@ -342,13 +532,17 @@ class RoutePlan(Document):
 
 
 def _row_direction(row) -> str:
-	"""Normalize an assignment row's direction to OUTBOUND/RETURN.
+	"""Normalize an assignment row's direction to OUTBOUND/RETURN/MIXED.
 
-	The Route Plan Assignment ``direction`` Select stores OUTBOUND/RETURN, but a
+	The Route Plan Assignment ``direction`` Select stores OUTBOUND/RETURN/MIXED, but a
 	blank or stray value is collapsed to OUTBOUND so a leg is never silently
 	dropped from a capacity or single-vehicle cluster.
+
+	MIXED has to be recognised, not defaulted: answering "not a return, so outbound"
+	keyed a merged trip as an outbound one, and its stops were then summed as if they
+	all rode together instead of being walked leg by leg.
 	"""
-	return "RETURN" if (row.direction or "").strip().upper().startswith("RET") else "OUTBOUND"
+	return _normalize_shipment_direction(row.direction)
 
 
 def _detect_retention_conflict(shipment_names, shipment_map):
@@ -408,6 +602,41 @@ def _time_windows_overlap(a_start, a_end, b_start, b_end) -> bool:
 
 
 _DAY_SECONDS = 24 * 60 * 60
+
+
+def _trip_name_shape(names):
+	"""``(prefix, vehicle number)`` shared by the trip names already on one lane.
+
+	Read back off the lane rather than re-derived: the canvas numbers a vehicle by its
+	POSITION in the vehicle list, which moves as vehicles are added, retired or
+	filtered, and is not something the server can reproduce. Whatever the board has
+	been calling this bus is what a new name for it has to look like.
+
+	The commonest shape wins, so one odd name left by hand cannot re-letter the lane.
+	"""
+	shapes = {}
+	for name in names:
+		match = TRIP_NAME.match(str(name or "").strip())
+		if match:
+			prefix, vehicle_number, _seq = match.groups()
+			shapes[(prefix or "", vehicle_number)] = shapes.get((prefix or "", vehicle_number), 0) + 1
+	if not shapes:
+		return None
+	return max(shapes, key=lambda shape: (shapes[shape], shape))
+
+
+def _next_free_trip_name(shape, taken):
+	"""The lowest sequence in this lane's series that nothing is using yet.
+
+	Two digits, as the canvas writes them. A lane that has somehow used all 99 gets
+	nothing rather than a name that would collide again.
+	"""
+	prefix, vehicle_number = shape
+	for seq in range(1, 100):
+		name = f"{prefix}{vehicle_number}{seq:02d}"
+		if name not in taken:
+			return name
+	return None
 
 
 def _passenger_limits(vehicle_names) -> dict:
@@ -512,13 +741,166 @@ def _peak_concurrent_headcount(trips) -> int:
 	"""
 	peak = 0
 	for anchor in trips:
-		total = anchor.headcount + sum(
-			other.headcount
+		total = _trip_occupancy(anchor) + sum(
+			_trip_occupancy(other)
 			for other in trips
 			if other is not anchor and _trips_share_the_road(anchor, other)
 		)
 		peak = max(peak, total)
 	return peak
+
+
+def _trip_occupancy(trip) -> int:
+	"""The most passengers one trip ever has aboard.
+
+	For a single-direction trip that is its headcount - every card's riders are on the
+	bus together. For a merged trip it is the busiest leg, because its stops are not all
+	aboard at once and the sum is a total the bus never carries (WI-002071).
+	"""
+	return cint(trip.occupancy if trip.get("occupancy") is not None else trip.headcount)
+
+
+def _trip_peak(trip):
+	"""(peak occupancy, busiest stop) for one logical trip, walked as physical stops.
+
+	A card is "these people, from this camp, to this site" - one record, but two things
+	the bus does. Walking the cards assumes everyone is aboard from the moment the run
+	starts, which over-reports the moment a run drops one load before calling at a later
+	camp for the next. Walking the STOPS is what actually happens, and it is the same
+	walk the trip modal shows the operator: the two must not be able to disagree about
+	whether a run fits, or the modal accepts a merge the save then refuses.
+
+	Falls back to the card walk when the rows carry no shipments to build stops from - a
+	hand-made row still has a headcount and a direction worth counting.
+	"""
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+		build_itinerary,
+		walk_occupancy,
+	)
+
+	by_index = sorted(
+		trip.rows,
+		key=lambda row: (cint(row.stop_index), str(row.start_time or ""), row.name or ""),
+	)
+	names = [row.transportation_shipment for row in by_index if row.transportation_shipment]
+	if names:
+		cards = _cards_for_itinerary(by_index)
+		if cards:
+			peak, worst, _per_stop = walk_occupancy(build_itinerary(cards))
+			return peak, worst
+
+	if trip.direction != MIXED_DIRECTION:
+		return cint(trip.headcount), 1
+
+	directions = _shipment_directions(names)
+	live = live_headcounts(by_index)
+	stops = [
+		{
+			"headcount": row_headcount(row, live),
+			"boards": (directions.get(row.transportation_shipment) or _row_direction(row))
+			== "RETURN",
+		}
+		for row in by_index
+	]
+	peak, worst_leg, _legs = leg_occupancy(stops)
+	return peak, worst_leg
+
+
+def live_headcounts(rows) -> dict:
+	"""{shipment: headcount} read from the shipments these rows point at (#6818).
+
+	A Route Plan Assignment stores a snapshot taken when the card was dropped and never
+	refreshes it, while the board draws its cards from the shipments - so a card that has
+	since gained or lost an employee leaves the plan holding a number nobody can see. It
+	cuts both ways, and the dangerous way is under-counting: a stale row waved a
+	28-passenger load through on a 27-seat bus.
+	"""
+	names = list({row.transportation_shipment for row in card_rows(rows) if row.transportation_shipment})
+	if not names:
+		return {}
+	return {
+		doc.name: cint(doc.headcount)
+		for doc in frappe.get_all(
+			"Transportation Shipment", filters={"name": ["in", names]},
+			fields=["name", "headcount"],
+		)
+	}
+
+
+def row_headcount(row, live) -> int:
+	"""What this row actually carries: the shipment's count, the row's if the card is gone."""
+	if row.transportation_shipment in live:
+		return cint(live[row.transportation_shipment])
+	return cint(row.headcount)
+
+
+def card_rows(rows) -> list:
+	"""The rows that stand for a card, which is every row that decides anything.
+
+	A plan also lists the stops the bus makes that no card is filed against - the
+	accommodation it loads at - so the table reads like the itinerary and the leg out of
+	the camp has somewhere to keep its minutes. Those rows are a description of the run,
+	not a placement: counting one would double a card's riders, and building an itinerary
+	from one would visit its stop twice.
+	"""
+	return [row for row in rows if not cint(row.get("is_camp_leg"))]
+
+
+def _cards_for_itinerary(rows) -> list:
+	"""The rows as card-shaped records build_itinerary can read, in run order.
+
+	The headcount comes from the shipment rather than the row, for the reason
+	live_headcounts explains.
+	"""
+	rows = card_rows(rows)
+	names = [row.transportation_shipment for row in rows if row.transportation_shipment]
+	if not names:
+		return []
+
+	facts = {
+		doc.name: doc
+		for doc in frappe.get_all(
+			"Transportation Shipment",
+			filters={"name": ["in", list(set(names))]},
+			fields=["name", "accommodation", "accommodation_name", "stop_location",
+					"trip_direction", "pre_merge_trip_direction", "start_time", "end_time",
+					"headcount"],
+		)
+	}
+
+	cards = []
+	for row in rows:
+		fact = facts.get(row.transportation_shipment)
+		if not fact:
+			continue
+		# Where the operator has this block on the lane, which is the order they have
+		# stated for the run. Carried alongside the card rather than on it: the card is
+		# the shipment's own facts and nothing downstream should read a plan detail off it.
+		cards.append((_iso_time_of_day(row.start_time), frappe._dict({
+			"name": fact.name,
+			"accommodation": fact.accommodation,
+			"accommodation_name": fact.accommodation_name,
+			"stop_location": fact.stop_location or row.stop_location,
+			"headcount": cint(fact.headcount) if fact.headcount is not None else cint(row.headcount),
+			"trip_direction": fact.trip_direction,
+			"pre_merge_trip_direction": fact.pre_merge_trip_direction,
+			"start_time": fact.start_time,
+			"end_time": fact.end_time,
+		})))
+
+	# In the order the operator has the run, which is how the trip modal and the drawer
+	# order the same cards. This used to re-derive the order from each card's own shift
+	# times so that the modal and the save could not disagree; they still cannot, but
+	# both now read the stated order instead of rebuilding one, so a stop dragged in the
+	# drawer stays where it was put (WI-002401). Sorting on the stored stop_index is
+	# still wrong - that is the PHYSICAL stop number, camp stops included, rewritten
+	# from the itinerary on every save.
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+		run_order,
+	)
+
+	cards.sort(key=lambda pair: run_order(pair[1], pair[0]))
+	return [card for _placed, card in cards]
 
 
 def _iso_to_date(value):
@@ -563,3 +945,82 @@ def _format_lock_until(end_time) -> str:
 	hours = (total // 3600) % 24
 	minutes = (total % 3600) // 60
 	return datetime.time(hours, minutes).strftime("%I:%M %p")
+
+
+def _shipment_directions(shipment_names) -> dict:
+	"""{shipment: OUTBOUND|RETURN} for the cards on a merged trip.
+
+	Which way a card's own riders travel is what the leg walk needs: an Outward card's
+	riders are aboard from the camp and leave at its stop, a Return card's join there.
+	Neither the assignment row nor the shipment's live ``trip_direction`` can answer
+	that any more - merging overwrites both with MIXED. ``pre_merge_trip_direction``,
+	written by the merge and restored when a card leaves one, is the surviving record
+	of the journey the card was generated for, so it is read first.
+
+	A merged card with no record falls back to OUTBOUND, which is the conservative
+	answer: it counts those riders as aboard from the camp, so the walk over-reports
+	rather than passing a run the bus cannot carry.
+	"""
+	names = [name for name in shipment_names if name]
+	if not names:
+		return {}
+
+	return {
+		row.name: _card_direction(row.trip_direction, row.pre_merge_trip_direction)
+		for row in frappe.get_all(
+			"Transportation Shipment",
+			filters={"name": ["in", list(set(names))]},
+			fields=["name", "trip_direction", "pre_merge_trip_direction"],
+		)
+	}
+
+
+def _card_direction(trip_direction, pre_merge_trip_direction) -> str:
+	"""The way one card's own riders travel, as OUTBOUND or RETURN."""
+	flag = _normalize_shipment_direction(trip_direction)
+	if flag != MIXED_DIRECTION:
+		return flag
+	return _normalize_shipment_direction(pre_merge_trip_direction)
+
+
+def _normalize_shipment_direction(value: str) -> str:
+	"""Shipment vocabulary (Outward/Return/Mixed) as an assignment-side flag."""
+	flag = (value or "").strip().upper()
+	if flag.startswith("MIX"):
+		return MIXED_DIRECTION
+	return "RETURN" if flag.startswith("RET") else "OUTBOUND"
+
+
+def leg_occupancy(stops):
+	"""Walk a merged trip stop by stop and report how full the bus gets.
+
+	`stops` is the run in order, each entry carrying a headcount and whether those
+	riders board there (True) or leave there (False). Returns
+	(peak, worst_leg, per_leg_occupancy).
+
+	Shared by the Route Plan validation and the canvas merge preview (WI-002078), so the
+	number the modal shows an operator before they confirm is the same number the save
+	will judge them by. Two implementations of this would drift, and the operator would
+	be told a merge is fine and then refused.
+
+	Disembarking is applied before boarding at each stop: at a stop where both happen the
+	seats being vacated are available to the people getting on, and adding first reports
+	an overload that never occurs.
+	"""
+	# Everyone the trip carries out of the camp is aboard before the first stop.
+	occupancy = sum(stop["headcount"] for stop in stops if not stop["boards"])
+	peak = occupancy
+	worst_leg = 1
+	per_leg = []
+
+	for leg, stop in enumerate(stops, start=1):
+		if stop["boards"]:
+			occupancy += stop["headcount"]
+		else:
+			occupancy -= stop["headcount"]
+
+		per_leg.append(occupancy)
+		if occupancy > peak:
+			peak, worst_leg = occupancy, leg
+
+	return peak, worst_leg, per_leg

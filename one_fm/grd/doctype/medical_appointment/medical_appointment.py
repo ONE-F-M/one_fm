@@ -172,6 +172,31 @@ class MedicalAppointment(Document):
 		attendance_doc.submit()
 
 
+# WI-002095: the medical an overseas hire needs is opened by the Preparation that hires
+# them. "First Time" for a first arrival; the field's other option, Renewal, belongs to the
+# renewal path, which does not open one.
+FIRST_TIME = "First Time"
+
+
+def create_medical_appointment(employee, appointment_type, preparation_name=None):
+	"""Open the medical appointment a Preparation row calls for (WI-002095).
+
+	Inserted without its mandatory fields. The appointment date, whether transport is
+	needed and which PRO takes it are not facts anybody holds when the Preparation is
+	submitted - the supervisor and the GR Operator supply them as the record moves through
+	the workflow, which is what the Pending Supervisor state it opens in is for. Mandatory
+	is enforced again on every later save, so nothing reaches submit half-filled.
+	"""
+	appointment = frappe.new_doc("Medical Appointment")
+	appointment.employee = employee.name
+	appointment.medical_appointment_type = appointment_type
+	appointment.preparation = preparation_name
+	appointment.date_of_application = today()
+	appointment.insert(ignore_mandatory=True)
+
+	return appointment
+
+
 @frappe.whitelist()
 def send_supervisor_notification_on_pending_medical_appointments():
 	pending_appointments = frappe.get_all(

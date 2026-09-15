@@ -80,9 +80,9 @@
   },
   {
    "fieldname": "reference_type",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Reference Type",
-   "options": "DocType"
+   "read_only": 1
   },
   {
    "default": "0",

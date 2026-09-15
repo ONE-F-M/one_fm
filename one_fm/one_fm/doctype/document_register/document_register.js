@@ -122,6 +122,13 @@ function confirm_deactivate(frm) {
 
 function add_open_button(frm) {
 	if (!frm.doc.drive_file_link) return;
+	// Withdrawal revokes the Drive sharing as well as marking the record
+	// inactive, so the link survives but stops being followable — offering it
+	// sends the reader to a permission error and reads as a broken system
+	// rather than as a withdrawn document. The record still shows the link
+	// field for an auditor who needs to know *what* was withdrawn; what goes
+	// is the invitation to click it.
+	if (frm.doc.lifecycle_state === "Inactive") return;
 	frm.add_custom_button(__("Open in Drive"), () => {
 		window.open(frm.doc.drive_file_link, "_blank", "noopener,noreferrer");
 	});

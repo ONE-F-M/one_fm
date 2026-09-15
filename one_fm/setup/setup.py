@@ -10,11 +10,35 @@ from one_fm.setup.assignment_rule import create_assignment_rules, delete_assignm
 
 
 def after_install():
-	create_custom_fields(get_custom_fields())
+	_create_custom_fields_resiliently(get_custom_fields())
 	add_property_setter(get_field_properties())
 	create_workflows()
 	create_assignment_rules()
 	frappe.db.commit()
+
+def _create_custom_fields_resiliently(custom_fields: dict):
+	"""create_custom_fields() processes every doctype in the dict as one
+	batch — it only tolerates frappe.exceptions.DuplicateEntryError per
+	field, so a genuine fieldname conflict (which raises ValidationError,
+	e.g. "A field with the name X already exists") is uncaught and aborts
+	the entire call, silently skipping every doctype that was still queued
+	after the one that conflicted. Confirmed live: Employee's "iban" field
+	conflicting on a fresh install aborted before ever reaching Warehouse's
+	fields (get_warehouse_custom_fields() is called much later in
+	get_custom_fields()' chain), even though nothing about Warehouse's own
+	fields was wrong.
+
+	Isolate each doctype into its own call so one conflict can't take down
+	unrelated doctypes' custom fields — it's logged instead, same as any
+	other install-time issue that shouldn't block the rest of setup."""
+	for doctype, fields in custom_fields.items():
+		try:
+			create_custom_fields({doctype: fields})
+		except Exception:
+			frappe.log_error(
+				title=f"one_fm after_install: failed to create custom fields for {doctype}",
+				message=frappe.get_traceback(),
+			)
 
 def before_uninstall():
 	delete_custom_fields(get_custom_fields())

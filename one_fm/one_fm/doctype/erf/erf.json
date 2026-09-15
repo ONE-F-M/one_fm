@@ -75,6 +75,24 @@
   "is_uniform_needed_for_this_job",
   "provide_health_insurance_html",
   "provide_health_insurance",
+  "column_break_44",
+  "provide_mobile_with_line_html",
+  "provide_mobile_with_line",
+  "provide_company_insurance_html",
+  "provide_company_insurance",
+  "provide_salary_advance_html",
+  "provide_salary_advance",
+  "amount_in_advance",
+  "provide_accommodation_by_company_html",
+  "provide_accommodation_by_company",
+  "provide_transportation_by_company_html",
+  "provide_transportation_by_company",
+  "provide_vehicle_by_company_html",
+  "provide_vehicle_by_company",
+  "provide_laptop_by_company_html",
+  "provide_laptop_by_company",
+  "email_access_needed_html",
+  "email_access_needed",
   "performance_profile_section",
   "performance_profile_html",
   "help_hr_to_create_okr",
@@ -102,24 +120,6 @@
   "salary_details",
   "salary_per_person",
   "total_cost_in_salary",
-  "column_break_44",
-  "provide_mobile_with_line_html",
-  "provide_mobile_with_line",
-  "provide_company_insurance_html",
-  "provide_company_insurance",
-  "provide_salary_advance_html",
-  "provide_salary_advance",
-  "amount_in_advance",
-  "provide_accommodation_by_company_html",
-  "provide_accommodation_by_company",
-  "provide_transportation_by_company_html",
-  "provide_transportation_by_company",
-  "provide_vehicle_by_company_html",
-  "provide_vehicle_by_company",
-  "provide_laptop_by_company_html",
-  "provide_laptop_by_company",
-  "email_access_needed_html",
-  "email_access_needed",
   "other_benefits",
   "benefit_cost_to_company",
   "total_cost_to_company",
@@ -149,10 +149,30 @@
    "reqd": 1
   },
   {
-   "default": "0",
-   "fieldname": "for_remote_working",
-   "fieldtype": "Check",
-   "label": "For Remote Working"
+   "depends_on": "eval:doc.reason_for_request==\"Other\"",
+   "fieldname": "reason_for_other",
+   "fieldtype": "Small Text",
+   "label": "Reason for (Other)",
+   "mandatory_depends_on": "eval:doc.reason_for_request==\"Other\""
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "grade",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee Grade",
+   "options": "Employee Grade",
+   "permlevel": 1,
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "hiring_method",
+   "fieldtype": "Select",
+   "label": "Hiring Method",
+   "options": "\nBulk Recruitment\nA la carte Recruitment",
+   "permlevel": 1,
+   "reqd": 1
   },
   {
    "allow_on_submit": 1,
@@ -188,10 +208,16 @@
    "reqd": 1
   },
   {
-   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Canceled\" || doc.workflow_state==\"Hold\" ",
+   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Cancelled\" || doc.workflow_state==\"Hold\" ",
    "fieldname": "expected_date_of_deployment",
    "fieldtype": "Date",
    "label": "Expected Date of Deployment"
+  },
+  {
+   "fieldname": "urgency_of_hire",
+   "fieldtype": "Select",
+   "label": "Urgency of Hire",
+   "options": "\nUrgent (30 days)\nHigh (1-2 months)\nMedium (2-3 months)\nLow (Above 3 months)"
   },
   {
    "allow_on_submit": 1,
@@ -301,6 +327,12 @@
    "fieldname": "vacation_days",
    "fieldtype": "Int",
    "label": "Vacation Days In an Year"
+  },
+  {
+   "default": "0",
+   "fieldname": "for_remote_working",
+   "fieldtype": "Check",
+   "label": "For Remote Working"
   },
   {
    "fieldname": "governorate",
@@ -418,7 +450,7 @@
   },
   {
    "collapsible": 1,
-   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Canceled\" || doc.workflow_state==\"Hold\" ",
+   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Cancelled\" || doc.workflow_state==\"Hold\" ",
    "fieldname": "candidates_required_section",
    "fieldtype": "Section Break",
    "label": "Candidates Required"
@@ -437,7 +469,7 @@
   },
   {
    "collapsible": 1,
-   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Canceled\" || doc.workflow_state==\"Hold\" ",
+   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Cancelled\" || doc.workflow_state==\"Hold\" ",
    "fieldname": "education_and_other_requirements_section",
    "fieldtype": "Section Break",
    "label": "Education and Other Requirements"
@@ -498,7 +530,7 @@
   },
   {
    "collapsible": 1,
-   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Canceled\" || doc.workflow_state==\"Hold\" ",
+   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Cancelled\" || doc.workflow_state==\"Hold\" ",
    "fieldname": "language_and_basic_skill_section",
    "fieldtype": "Section Break",
    "label": "Language and Basic Skill"
@@ -530,7 +562,7 @@
   },
   {
    "collapsible": 1,
-   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Canceled\" || doc.workflow_state==\"Hold\" ",
+   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Cancelled\" || doc.workflow_state==\"Hold\" ",
    "fieldname": "tools_section",
    "fieldtype": "Section Break",
    "label": "Tools Required for Employee to Work"
@@ -571,237 +603,6 @@
    "label": "Is Uniform Needed for This Job"
   },
   {
-   "collapsible": 1,
-   "collapsible_depends_on": "eval:!doc.draft_erf_to_hrm && doc.docstatus == 0",
-   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Canceled\" || doc.workflow_state==\"Hold\" ",
-   "fieldname": "performance_profile_section",
-   "fieldtype": "Section Break",
-   "label": "Performance Profile"
-  },
-  {
-   "fieldname": "performance_profile_html",
-   "fieldtype": "HTML",
-   "label": "Performance Profile HTML"
-  },
-  {
-   "fieldname": "help_hr_to_create_okr",
-   "fieldtype": "Small Text"
-  },
-  {
-   "fieldname": "schedule_for_okr_workshop_with_recruiter",
-   "fieldtype": "Datetime",
-   "label": "Set a Date With Our Recruiter For a Quick Workshop",
-   "no_copy": 1
-  },
-  {
-   "fieldname": "okr_workshop_with",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "label": "Select HR For a Quick Workshop",
-   "options": "User"
-  },
-  {
-   "depends_on": "eval: !doc.event_for_okr_workshop && !doc.__islocal",
-   "fieldname": "okr_workshop_submit_to_hr",
-   "fieldtype": "Button",
-   "label": "Create Event for Workshop"
-  },
-  {
-   "fieldname": "event_for_okr_workshop",
-   "fieldtype": "Link",
-   "label": "Meeting",
-   "no_copy": 1,
-   "options": "Event",
-   "read_only": 1
-  },
-  {
-   "collapsible": 1,
-   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Canceled\" || doc.workflow_state==\"Hold\" ",
-   "fieldname": "hr_section",
-   "fieldtype": "Section Break",
-   "label": "HR",
-   "permlevel": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "eval:!doc.shift_working",
-   "fieldname": "reports_to",
-   "fieldtype": "Link",
-   "ignore_user_permissions": 1,
-   "label": "Reports To",
-   "options": "Employee"
-  },
-  {
-   "allow_on_submit": 1,
-   "fetch_from": "reports_to.employee_name",
-   "fieldname": "reports_to_name",
-   "fieldtype": "Data",
-   "label": "Reports to Name",
-   "read_only": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "performance_profile",
-   "fieldtype": "Link",
-   "label": "Performance Profile",
-   "options": "OKR Performance Profile",
-   "permlevel": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "grade",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Employee Grade",
-   "options": "Employee Grade",
-   "permlevel": 1,
-   "reqd": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "hiring_method",
-   "fieldtype": "Select",
-   "label": "Hiring Method",
-   "options": "\nBulk Recruitment\nA la carte Recruitment",
-   "permlevel": 1,
-   "reqd": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "number_of_interview_rounds",
-   "fieldtype": "Int",
-   "label": "Number of Interview Rounds"
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "number_of_interview_rounds",
-   "fieldname": "interview_rounds",
-   "fieldtype": "Table",
-   "label": "Interview Rounds",
-   "mandatory_depends_on": "number_of_interview_rounds",
-   "options": "ERF Interview Round"
-  },
-  {
-   "fieldname": "column_break_56",
-   "fieldtype": "Column Break"
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "recruiter_assigned",
-   "fieldtype": "Link",
-   "label": "Recruiter Assigned",
-   "no_copy": 1,
-   "options": "User",
-   "permlevel": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fetch_from": "recruiter_assigned.full_name",
-   "fieldname": "recruiter_assigned_name",
-   "fieldtype": "Data",
-   "label": "Recruiter Name",
-   "permlevel": 1,
-   "read_only": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "default": "0",
-   "fieldname": "need_to_assign_more_recruiter",
-   "fieldtype": "Check",
-   "label": "Need to Assign More Recruiter",
-   "permlevel": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "need_to_assign_more_recruiter",
-   "fieldname": "secondary_recruiter_assigned",
-   "fieldtype": "Link",
-   "label": "Secondary Recruiter Assigned",
-   "options": "User",
-   "permlevel": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "need_to_assign_more_recruiter",
-   "fetch_from": "secondary_recruiter_assigned.full_name",
-   "fieldname": "secondary_recruiter_assigned_name",
-   "fieldtype": "Data",
-   "label": "Secondary Recruiter Name",
-   "permlevel": 1,
-   "read_only": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "eval: !doc.project_for_recruiter && doc.recruiter_assigned",
-   "fieldname": "create_project_for_recruiter",
-   "fieldtype": "Button",
-   "label": "Create Project for Recruiter"
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "project_for_recruiter",
-   "fieldtype": "Link",
-   "label": "Project for Recruiter",
-   "no_copy": 1,
-   "options": "Project",
-   "read_only": 1
-  },
-  {
-   "collapsible": 1,
-   "collapsible_depends_on": "eval: doc.docstatus == 1",
-   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Canceled\" || doc.workflow_state==\"Hold\" || doc.workflow_state==\"Open\"  || doc.workflow_state==\"Submit to Recruitment Manager\"",
-   "fieldname": "salary_compensation_budget_section",
-   "fieldtype": "Section Break",
-   "label": "Salary Compensation Budget",
-   "permlevel": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "description": "The total amount of salary per person",
-   "fieldname": "base",
-   "fieldtype": "Currency",
-   "label": "Base",
-   "permlevel": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "salary_structure",
-   "fieldtype": "Link",
-   "label": "Salary Structure",
-   "options": "Salary Structure",
-   "permlevel": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "salary_details",
-   "fieldtype": "Table",
-   "label": "Salary Details",
-   "options": "ERF Salary Detail",
-   "permlevel": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "salary_per_person",
-   "fieldtype": "Currency",
-   "label": "Salary Per Person",
-   "permlevel": 1,
-   "read_only": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "total_cost_in_salary",
-   "fieldtype": "Currency",
-   "label": "Total Cost in Salary",
-   "permlevel": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_44",
-   "fieldtype": "Column Break",
-   "label": "Other Benefits",
-   "permlevel": 1
-  },
-  {
    "allow_on_submit": 1,
    "fieldname": "provide_health_insurance_html",
    "fieldtype": "HTML",
@@ -815,6 +616,12 @@
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Provide Health Insurance"
+  },
+  {
+   "fieldname": "column_break_44",
+   "fieldtype": "Column Break",
+   "label": "Other Benefits",
+   "permlevel": 1
   },
   {
    "allow_on_submit": 1,
@@ -937,6 +744,211 @@
    "label": "Email Access Needed"
   },
   {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:!doc.draft_erf_to_hrm && doc.docstatus == 0",
+   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Cancelled\" || doc.workflow_state==\"Hold\" ",
+   "fieldname": "performance_profile_section",
+   "fieldtype": "Section Break",
+   "label": "Performance Profile"
+  },
+  {
+   "fieldname": "performance_profile_html",
+   "fieldtype": "HTML",
+   "label": "Performance Profile HTML"
+  },
+  {
+   "fieldname": "help_hr_to_create_okr",
+   "fieldtype": "Small Text"
+  },
+  {
+   "fieldname": "schedule_for_okr_workshop_with_recruiter",
+   "fieldtype": "Datetime",
+   "label": "Set a Date With Our Recruiter For a Quick Workshop",
+   "no_copy": 1
+  },
+  {
+   "fieldname": "okr_workshop_with",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Select HR For a Quick Workshop",
+   "options": "User"
+  },
+  {
+   "depends_on": "eval: !doc.event_for_okr_workshop && !doc.__islocal",
+   "fieldname": "okr_workshop_submit_to_hr",
+   "fieldtype": "Button",
+   "label": "Create Event for Workshop"
+  },
+  {
+   "fieldname": "event_for_okr_workshop",
+   "fieldtype": "Link",
+   "label": "Meeting",
+   "no_copy": 1,
+   "options": "Event",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Cancelled\" || doc.workflow_state==\"Hold\" ",
+   "fieldname": "hr_section",
+   "fieldtype": "Section Break",
+   "label": "HR",
+   "permlevel": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:!doc.shift_working",
+   "fieldname": "reports_to",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "Reports To",
+   "options": "Employee"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "reports_to.employee_name",
+   "fieldname": "reports_to_name",
+   "fieldtype": "Data",
+   "label": "Reports to Name",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "performance_profile",
+   "fieldtype": "Link",
+   "label": "Performance Profile",
+   "options": "OKR Performance Profile",
+   "permlevel": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "number_of_interview_rounds",
+   "fieldtype": "Int",
+   "label": "Number of Interview Rounds"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "number_of_interview_rounds",
+   "fieldname": "interview_rounds",
+   "fieldtype": "Table",
+   "label": "Interview Rounds",
+   "options": "ERF Interview Round"
+  },
+  {
+   "fieldname": "column_break_56",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "recruiter_assigned",
+   "fieldtype": "Link",
+   "label": "Recruiter Assigned",
+   "no_copy": 1,
+   "options": "User",
+   "permlevel": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "recruiter_assigned.full_name",
+   "fieldname": "recruiter_assigned_name",
+   "fieldtype": "Data",
+   "label": "Recruiter Name",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "need_to_assign_more_recruiter",
+   "fieldtype": "Check",
+   "label": "Need to Assign More Recruiter",
+   "permlevel": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "need_to_assign_more_recruiter",
+   "fieldname": "secondary_recruiter_assigned",
+   "fieldtype": "Link",
+   "label": "Secondary Recruiter Assigned",
+   "options": "User",
+   "permlevel": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "need_to_assign_more_recruiter",
+   "fetch_from": "secondary_recruiter_assigned.full_name",
+   "fieldname": "secondary_recruiter_assigned_name",
+   "fieldtype": "Data",
+   "label": "Secondary Recruiter Name",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: !doc.project_for_recruiter && doc.recruiter_assigned",
+   "fieldname": "create_project_for_recruiter",
+   "fieldtype": "Button",
+   "label": "Create Project for Recruiter"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "project_for_recruiter",
+   "fieldtype": "Link",
+   "label": "Project for Recruiter",
+   "no_copy": 1,
+   "options": "Project",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval: doc.docstatus == 1",
+   "depends_on": "eval:doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Cancelled\" || doc.workflow_state==\"Hold\" || doc.workflow_state==\"Open\"  || doc.workflow_state==\"Submit to Recruitment Manager\"",
+   "fieldname": "salary_compensation_budget_section",
+   "fieldtype": "Section Break",
+   "label": "Salary Compensation Budget",
+   "permlevel": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "The total amount of salary per person",
+   "fieldname": "base",
+   "fieldtype": "Currency",
+   "label": "Base",
+   "permlevel": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "salary_structure",
+   "fieldtype": "Link",
+   "label": "Salary Structure",
+   "options": "Salary Structure",
+   "permlevel": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "salary_details",
+   "fieldtype": "Table",
+   "label": "Salary Details",
+   "options": "ERF Salary Detail",
+   "permlevel": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "salary_per_person",
+   "fieldtype": "Currency",
+   "label": "Salary Per Person",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "total_cost_in_salary",
+   "fieldtype": "Currency",
+   "label": "Total Cost in Salary",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
    "fieldname": "other_benefits",
    "fieldtype": "Table",
    "hidden": 1,
@@ -964,7 +976,7 @@
   {
    "allow_on_submit": 1,
    "collapsible": 1,
-   "depends_on": "eval:!doc.for_remote_working && doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Canceled\" || doc.workflow_state==\"Hold\" ",
+   "depends_on": "eval:!doc.for_remote_working && doc.workflow_state==\"Under Review\" || doc.workflow_state==\"Accepted\" || doc.workflow_state==\"Rejected\" || doc.workflow_state==\"Cancelled\" || doc.workflow_state==\"Hold\" ",
    "fieldname": "grd_section",
    "fieldtype": "Section Break",
    "label": "GRD",
@@ -976,13 +988,13 @@
    "fieldtype": "Link",
    "label": "PAM File",
    "no_copy": 1,
-   "options": "PAM File",
+   "options": "PAM License Details",
    "permlevel": 1
   },
   {
    "allow_on_submit": 1,
    "depends_on": "pam_file",
-   "fetch_from": "pam_file.pam_file_number",
+   "fetch_from": "pam_file.civil_id_number_for_licensing",
    "fieldname": "pam_file_number",
    "fieldtype": "Data",
    "label": "PAM File Number",
@@ -1034,25 +1046,12 @@
    "label": "ERF Employee",
    "no_copy": 1,
    "options": "ERF Employee"
-  },
-  {
-   "depends_on": "eval:doc.reason_for_request==\"Other\"",
-   "fieldname": "reason_for_other",
-   "fieldtype": "Small Text",
-   "label": "Reason for (Other)",
-   "mandatory_depends_on": "eval:doc.reason_for_request==\"Other\""
-  },
-  {
-   "fieldname": "urgency_of_hire",
-   "fieldtype": "Select",
-   "label": "Urgency of Hire",
-   "options": "\nUrgent (30 days)\nHigh (1-2 months)\nMedium (2-3 months)\nLow (Above 3 months)"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-09 17:42:09.744139",
- "modified_by": "g.jotshi@one-fm.com",
+ "modified": "2026-09-15 07:09:02.000000",
+ "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
  "naming_rule": "By \"Naming Series\" field",

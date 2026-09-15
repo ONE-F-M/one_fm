@@ -1,0 +1,79 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-08-13 09:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "nationality",
+  "embassy_required",
+  "embassy_fee_kwd",
+  "column_break_rules",
+  "mofa_required",
+  "mofa_fee_kwd",
+  "translation_required"
+ ],
+ "fields": [
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Nationality",
+   "options": "Nationality",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "embassy_required",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Embassy Attestation Required"
+  },
+  {
+   "depends_on": "embassy_required",
+   "fieldname": "embassy_fee_kwd",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Embassy Fee (KWD)"
+  },
+  {
+   "fieldname": "column_break_rules",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "mofa_required",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "MOFA Attestation Required"
+  },
+  {
+   "depends_on": "mofa_required",
+   "fieldname": "mofa_fee_kwd",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "MOFA Fee (KWD)",
+   "description": "Leave blank to use the standard MOFA Fee configured below."
+  },
+  {
+   "default": "0",
+   "fieldname": "translation_required",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Translation Required"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-08-13 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "Nationality Attestation Rule",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

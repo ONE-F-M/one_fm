@@ -90,7 +90,7 @@
    "doctype": "Workflow Document State",
    "is_optional_state": 0,
    "send_email": 1,
-   "state": "Pending By Supervisor",
+   "state": "Pending GR Manager",
    "update_value": "Pending by Supervisor"
   },
   {
@@ -164,7 +164,7 @@
    "allowed": "Government Relations Operator",
    "custom_confirm_transition": 0,
    "doctype": "Workflow Transition",
-   "next_state": "Pending By Supervisor",
+   "next_state": "Pending GR Manager",
    "require_digital_signature": 0,
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,
@@ -182,7 +182,7 @@
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,
    "skip_multiple_action": 0,
-   "state": "Pending By Supervisor"
+   "state": "Pending GR Manager"
   },
   {
    "action": "Accept",
@@ -196,7 +196,7 @@
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,
    "skip_multiple_action": 0,
-   "state": "Pending By Supervisor"
+   "state": "Pending GR Manager"
   },
   {
    "action": "Reject",
@@ -209,7 +209,7 @@
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,
    "skip_multiple_action": 0,
-   "state": "Pending By Supervisor"
+   "state": "Pending GR Manager"
   },
   {
    "action": "Accept",
@@ -232,6 +232,19 @@
    "custom_confirm_transition": 0,
    "doctype": "Workflow Transition",
    "next_state": "Pending  For Payment",
+   "require_digital_signature": 0,
+   "send_email_to_creator": 0,
+   "skip_creation_of_workflow_action": 0,
+   "skip_multiple_action": 0,
+   "state": "Pending By PAM"
+  },
+  {
+   "action": "Amend",
+   "allow_self_approval": 1,
+   "allowed": "Government Relations Operator",
+   "custom_confirm_transition": 0,
+   "doctype": "Workflow Transition",
+   "next_state": "Pending GR Manager",
    "require_digital_signature": 0,
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,

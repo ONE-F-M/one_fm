@@ -9,6 +9,9 @@ frappe.ui.form.on('Preparation Record',{
 	no_of_years: function(frm, cdt, cdn){
 		set_preparation_record_costing(frm, cdt, cdn);
 	},
+	no_of_months: function(frm, cdt, cdn){
+		set_preparation_record_costing(frm, cdt, cdn);
+	},
 	work_permit_amount: function(frm, cdt, cdn) {
 		var child = locals[cdt][cdn];
 		caclulate_renewal_extension_cost_total(frm, child);
@@ -36,29 +39,85 @@ frappe.ui.form.on('Preparation Record',{
 	}
 });
 
+// WI-002031: the Actions whose master fee row is keyed by the number of years too. Kept
+// in step with YEAR_SCOPED_ACTIONS in preparation.py and with the costing table's own
+// depends_on.
+const YEAR_SCOPED_ACTIONS = ['Renewal (Kuwaiti)', 'Renewal Expat'];
+// WI-002179: the one Action that is priced by the month. Kept in step with
+// EXTENSION_ACTION in preparation.py and with the No. of Months field's own depends_on.
+const EXTENSION_ACTION = 'Extension';
+const COST_COMPONENT_FIELDS = [
+	'work_permit_amount',
+	'medical_insurance_amount',
+	'residency_stamp_amount',
+	'civil_id_amount'
+];
+
 var set_preparation_record_costing = function(frm, cdt, cdn) {
 	var row = locals[cdt][cdn];
-	if(row.renewal_or_extend){
-		if(row.renewal_or_extend == 'Renewal' & !row.no_of_years){
-			frappe.model.set_value(row.doctype, row.name, "no_of_years", '1 Year');
+	if(!row.renewal_or_extend){
+		return;
+	}
+
+	// The years only mean something for a renewal. Cleared otherwise, because the field is
+	// hidden rather than emptied when the Action changes, and a stale "1 Year" left on an
+	// Extension row is a year the master lookup would have been scoped by.
+	if(YEAR_SCOPED_ACTIONS.includes(row.renewal_or_extend)){
+		if(!row.no_of_years){
+			frappe.model.set_value(row.doctype, row.name, 'no_of_years', '1 Year');
+		}
+	} else if(row.no_of_years){
+		frappe.model.set_value(row.doctype, row.name, 'no_of_years', '');
+	}
+
+	// WI-002179: the months are the same story the other way round. An extension always has
+	// a duration - one month unless the operator says otherwise - and a renewal never does.
+	if(row.renewal_or_extend === EXTENSION_ACTION){
+		if(!row.no_of_months){
+			frappe.model.set_value(row.doctype, row.name, 'no_of_months', '1 Month');
+		}
+	} else if(row.no_of_months){
+		frappe.model.set_value(row.doctype, row.name, 'no_of_months', '');
+	}
+
+	// Cleared before the fetch, not inside a successful callback. Switching to an Action
+	// with no master row configured used to leave the fees of the previous Action sitting
+	// in the row, which is exactly the case the story calls out.
+	COST_COMPONENT_FIELDS.forEach(field => frappe.model.set_value(row.doctype, row.name, field, 0));
+	frappe.model.set_value(row.doctype, row.name, 'total_amount', 0);
+	frm.refresh_field('preparation_record');
+
+	frappe.call({
+		// WI-002092: the row's fees, already multiplied out for a multi-year renewal. The
+		// master lookup returns the annual rate, which is not what the row carries.
+		method: 'one_fm.grd.doctype.preparation.preparation.get_preparation_row_costing',
+		args: {
+			'renewal_or_extend': row.renewal_or_extend,
+			'no_of_years': row.no_of_years,
+			'no_of_months': row.no_of_months
+		},
+		callback: function(r) {
+			if(!r.message){
+				// WI-002092: say so rather than leave four zeros and no explanation. The
+				// commonest cause is a renewal whose master row is configured for a
+				// different number of years than the row is asking for.
+				frappe.show_alert({
+					message: __('No master fee row in HR Settings for {0}{1}.', [
+						row.renewal_or_extend,
+						row.no_of_years || row.no_of_months
+							? __(' at {0}', [row.no_of_years || row.no_of_months])
+							: ''
+					]),
+					indicator: 'orange'
+				}, 7);
+				return;
+			}
+			var cost = r.message;
+			COST_COMPONENT_FIELDS.forEach(field =>
+				frappe.model.set_value(row.doctype, row.name, field, cost[field] || 0));
 			frm.refresh_field('preparation_record');
 		}
-		frappe.call({
-			method: 'one_fm.grd.doctype.preparation.preparation.get_grd_renewal_extension_cost',
-			args: {'renewal_or_extend': row.renewal_or_extend, 'no_of_years': row.no_of_years},
-			callback: function(r) {
-				if(r.message){
-					var cost = r.message;
-					frappe.model.set_value(row.doctype, row.name, "work_permit_amount", cost.work_permit_amount);
-					frappe.model.set_value(row.doctype, row.name, "medical_insurance_amount", cost.medical_insurance_amount);
-					frappe.model.set_value(row.doctype, row.name, "residency_stamp_amount", cost.residency_stamp_amount);
-					frappe.model.set_value(row.doctype, row.name, "civil_id_amount", cost.civil_id_amount);
-					frappe.model.set_value(row.doctype, row.name, "total_amount", cost.total_amount);
-					frm.refresh_field('preparation_record');
-				}
-			}
-		});
-	}
+	});
 };
 
 var caclulate_renewal_extension_cost_total = function(frm, child) {
@@ -79,9 +138,45 @@ var caclulate_renewal_extension_cost_total = function(frm, child) {
 	frm.refresh_field('preparation_record');
 };
 
+// WI-002101: narrow the Action dropdown to what this kind of batch may carry. The server
+// re-checks on validate - rows also arrive from the monthly schedule, from imports and from
+// the API, none of which see a dropdown.
+var set_action_options = function(frm){
+	if(!frm.doc.category){
+		// Nothing chosen yet: leave every Action on offer rather than an empty dropdown the
+		// operator cannot explain.
+		frm.fields_dict.preparation_record.grid.update_docfield_property(
+			'renewal_or_extend', 'options', frm._all_actions);
+		return;
+	}
+
+	frappe.call({
+		method: 'one_fm.grd.doctype.preparation.preparation.get_actions_for_category',
+		args: {category: frm.doc.category},
+		callback: function(r){
+			if(!r.message){
+				return;
+			}
+			frm.fields_dict.preparation_record.grid.update_docfield_property(
+				'renewal_or_extend', 'options', [''].concat(r.message).join('\n'));
+			frm.refresh_field('preparation_record');
+		}
+	});
+};
+
 //Set renewal for all employee to facilitate process
 frappe.ui.form.on("Preparation", {
+	onload: frm => {
+		// The full list, kept so it can be put back when the Category is cleared.
+		frm._all_actions = frm.fields_dict.preparation_record.grid
+			.get_docfield('renewal_or_extend').options;
+	},
+	category: frm => {
+		set_action_options(frm);
+	},
 	refresh : frm=>{
+		set_action_options(frm);
+
 		if(frm.doc.docstatus==1){
 			if(!frappe.user.has_role("HR Manager")){
 				cur_frm.fields_dict.preparation_record.grid.update_docfield_property("renewal_or_extend", "allow_on_submit", 0);

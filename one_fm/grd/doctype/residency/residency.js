@@ -1,19 +1,48 @@
 // Copyright (c) 2020, ONE FM and contributors
 // For license information, please see license.txt
+
+// WI-002096: the button that opens the next document in the legal sequence, once this one is
+// complete. Shown only for the classifications that have a next step. The next document is
+// found by the Preparation and employee this one carries, which is what pairs them: a
+// Preparation opens one of each per employee.
+var set_next_step_button = function(frm, next_doctype, classifications, classification_field){
+	if(frm.doc.workflow_state !== 'Completed'){
+		return;
+	}
+	if(!classifications.includes(frm.doc[classification_field])){
+		return;
+	}
+	if(!frm.doc.preparation || !frm.doc.employee){
+		return;
+	}
+
+	frm.add_custom_button(__('Go to {0}', [__(next_doctype)]), function(){
+		frappe.db.get_value(
+			next_doctype,
+			{preparation: frm.doc.preparation, employee: frm.doc.employee, docstatus: ['!=', 2]},
+			'name',
+			(r) => {
+				if(r && r.name){
+					frappe.set_route('Form', next_doctype, r.name);
+				} else {
+					frappe.msgprint({
+						title: __('Nothing to open'),
+						message: __('No {0} was opened for this candidate.', [__(next_doctype)]),
+						indicator: 'orange'
+					});
+				}
+			}
+		);
+	}).addClass('btn-primary');
+};
+
 frappe.ui.form.on('Residency', {
 	refresh(frm){
-			if(frm.doc.docstatus === 1 && frm.doc.category == "Transfer"){
-				frm.add_custom_button(__('Go to PACI'),
-					  function () {
-					frappe.db.get_value('PACI', {'category':frm.doc.category,'civil_id':frm.doc.one_fm_civil_id}, 'name', (r) => {
-					if (r && r.name) {
-						frappe.set_route("Form", "PACI", r.name);
-					}
-				});
-			}
-		).addClass('btn-primary');
-		}
-
+		// WI-002096 widens this from Transfer alone to every residency that has a civil ID
+		// behind it - an Extend does not, so it gets no button - and pairs on the Preparation
+		// rather than on a civil ID, which after a Damj merge is not the number the PACI was
+		// opened under.
+		set_next_step_button(frm, 'PACI', ['Renewal', 'First Time', 'Transfer'], 'category');
 	},
 	onload: function(frm) {
 		// set_employee_details(frm);
@@ -95,8 +124,25 @@ frappe.ui.form.on('Residency', {
 	},
 	new_residency_expiry_date: function(frm){
 		set_new_residency_expiry_date_update_time(frm);
+	},
+	upload_damj_letter: function(frm){
+		set_attachment_timestamp(frm, 'upload_damj_letter', 'upload_damj_letter_on');
+	},
+	upload_residency_fine_payment_receipt: function(frm){
+		set_attachment_timestamp(frm, 'upload_residency_fine_payment_receipt', 'upload_residency_fine_payment_receipt_on');
 	}
 });
+// WI-002022: stamp when an exception document went up, and clear the stamp if the file is
+// removed. One helper for both pairs - the three older stamps below each carry their own
+// copy of this same logic.
+var set_attachment_timestamp = function(frm, attach_field, timestamp_field){
+	if(frm.doc[attach_field] && !frm.doc[timestamp_field]){
+		frm.set_value(timestamp_field, frappe.datetime.now_datetime());
+	}
+	if(!frm.doc[attach_field] && frm.doc[timestamp_field]){
+		frm.set_value(timestamp_field, null);
+	}
+};
 var set_employee_details = function(frm){
     if(frm.doc.employee){
         frappe.call({

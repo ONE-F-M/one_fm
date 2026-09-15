@@ -19,6 +19,7 @@ from one_fm.utils import (
 )
 from one_fm.utils import get_current_shift, fetch_attendance_manager_user
 from one_fm.processor import sendemail
+from one_fm.operations.doctype.employee_schedule.employee_schedule import worked_shift_sql
 from one_fm.api.api import push_notification_for_checkin, push_notification_rest_api_for_checkin
 from hrms.hr.utils import get_holidays_for_employee
 from hrms.hr.doctype.leave_application.leave_application import get_leave_balance_on
@@ -1057,10 +1058,14 @@ def validate_shift_assignment(is_scheduled_event=True):
 					WHERE E.name = SR.employee
 					AND E.status = 'Active')""".format(now_time=now_time,date=cstr(date), now=now), as_dict=1)
 
+	# WI-002437: a double shift waiting on the DSOT Approver has no Shift Assignment on
+	# purpose, and a rejected one never will have. Reporting either as a missed assignment
+	# sends Support looking for a problem this system created deliberately.
 	roster = frappe.db.sql("""
 			SELECT * from `tabEmployee Schedule` ES
 				WHERE ES.start_datetime = '{now}'
 				AND ES.employee_availability = "Working"
+				AND {unworked}
 				AND ES.is_replaced = 0
 				AND ES.employee
 					NOT IN (Select employee from `tabShift Assignment` tSA
@@ -1069,7 +1074,7 @@ def validate_shift_assignment(is_scheduled_event=True):
 				AND ES.employee
 					IN (Select employee from `tabEmployee` E
 					WHERE E.name = ES.employee
-					AND E.status = 'Active')""".format(date=cstr(date), now=now), as_dict=1)
+					AND E.status = 'Active')""".format(date=cstr(date), now=now, unworked=worked_shift_sql("ES")), as_dict=1)
 
 	non_shift = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location, shift, site from `tabEmployee` E
 				WHERE E.shift_working = 0
@@ -1205,7 +1210,20 @@ def overtime_shift_assignment():
 	"""
 	date = cstr(getdate())
 	now_time = add_to_date(now_datetime(), hours=1).strftime("%H:%M:00")
-	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working" , "roster_type": "Over-Time", "is_replaced": 0}, ["*"])
+	# WI-002283: a second overtime shift for somebody already working that day waits for
+	# a decision, and must not be given a Shift Assignment while it does. Rejected ones -
+	# refused outright, or left unanswered until the shift had ended - never get one.
+	roster = frappe.get_all(
+		"Employee Schedule",
+		{
+			"date": date,
+			"employee_availability": "Working",
+			"roster_type": "Over-Time",
+			"is_replaced": 0,
+			"workflow_state": ["not in", ["Pending DSOT Approval", "Rejected"]],
+		},
+		["*"],
+	)
 	shift_request = frappe.db.sql(f"""SELECT sr.*, 'Shift Request' as doctype FROM `tabShift Request` sr
 								WHERE '{date}' between  sr.from_date and sr.to_date
 								AND sr.roster_type = 'Over-Time'
@@ -2645,16 +2663,24 @@ def attendance_query_script():
 			# Resignation-by-Law threshold). Uses >= 16 so a retroactive
 			# attendance edit that jumps past 16 is still caught; the once-per-
 			# calendar-year dedup below ensures it fires exactly once.
+
+			# WI-002465: the day the year's absences began, so the case carries a start
+			# date the way the 5-day one always has. A yearly case is not one run, so this
+			# is the first absent day of the calendar year rather than the head of a streak.
+			year_absence_start = min(year_absences) if year_absences else None
+
 			if len(year_absences) >= 16:
 				flagged_16_days.append({
 					"employee_name": emp_name,
-					"employee_id": emp
+					"employee_id": emp,
+					"absence_start_date": year_absence_start
 				})
 
 			if len(year_absences) >= 21:
 				flagged_21_days.append({
 					"employee_name": emp_name,
-					"employee_id": emp
+					"employee_id": emp,
+					"absence_start_date": year_absence_start
 				})
 
 			sorted_dates = sorted(adates, reverse=True)
@@ -2673,7 +2699,11 @@ def attendance_query_script():
 			if max_consecutive >= 7:
 				flagged_7_days.append({
 					"employee_name": emp_name,
-					"employee_id": emp
+					"employee_id": emp,
+					# WI-002465: the head of the run that reached seven. max_consecutive
+					# above says how long the longest run is but not where it begins, so
+					# this is asked separately rather than by changing that count.
+					"absence_start_date": latest_consecutive_run_start(adates, 7)
 				})
 
 			# Determine the current (most recent) consecutive absence streak,
@@ -2723,7 +2753,8 @@ def attendance_query_script():
 				case = create_yearly_milestone_absence_case(
 					emp["employee_id"],
 					"16 Days Absence in a Year",
-					start_of_year
+					start_of_year,
+					absence_start_date=emp["absence_start_date"]
 				)
 				# A returning None means a milestone case already exists for
 				# this employee this calendar year (its emails were already sent).
@@ -2740,10 +2771,18 @@ def attendance_query_script():
 
 		# Generate Absence Cases for flagged employees
 		for emp in flagged_7_days:
-			create_absence_case(emp["employee_id"], "7 Days Consecutive Absence")
+			create_absence_case(
+				emp["employee_id"],
+				"7 Days Consecutive Absence",
+				absence_start_date=emp["absence_start_date"]
+			)
 
 		for emp in flagged_21_days:
-			create_absence_case(emp["employee_id"], "21 Days Absence in a Year")
+			create_absence_case(
+				emp["employee_id"],
+				"21 Days Absence in a Year",
+				absence_start_date=emp["absence_start_date"]
+			)
 
 		if flagged_7_days:
 			message_7 = frappe.render_template(
@@ -2770,6 +2809,35 @@ def attendance_query_script():
 	except Exception as e:
 		frappe.log_error(title="Attendance Query Script Failed", message=frappe.get_traceback())
 
+
+
+def latest_consecutive_run_start(absent_dates, minimum):
+	"""The first day of the most recent unbroken run of at least `minimum` absences.
+
+	WI-002465: an Absence Case carries the day its absence began, and until now only the
+	5-day path set one - so the Absent Dates field on every other type had nothing to
+	start from. The most recent qualifying run rather than the longest: where an employee
+	has two, the live one is what the case was raised about.
+
+	Bounded by the same window the caller queried, so a run reaching back before it starts
+	at the window's edge. That is the window max_consecutive is measured over too, so the
+	date agrees with the count that raised the case.
+	"""
+	if not absent_dates:
+		return None
+
+	dates = sorted(absent_dates)
+
+	start, length, found = dates[0], 1, None
+	for previous, day in zip(dates, dates[1:]):
+		if date_diff(day, previous) == 1:
+			length += 1
+		else:
+			start, length = day, 1
+		if length >= minimum:
+			found = start
+
+	return found
 
 
 def create_absence_case(employee, absence_type, absence_start_date=None):
@@ -2852,7 +2920,7 @@ def send_five_day_absence_notifications(case):
 		)
 
 
-def create_yearly_milestone_absence_case(employee, absence_type, start_of_year):
+def create_yearly_milestone_absence_case(employee, absence_type, start_of_year, absence_start_date=None):
 	"""
 	Generate a milestone Absence Case for a yearly non-consecutive absence
 	threshold, deduped to at most one case per employee per calendar year.
@@ -2881,6 +2949,7 @@ def create_yearly_milestone_absence_case(employee, absence_type, start_of_year):
 		"doctype": "Absence Case",
 		"employee": employee,
 		"posting_date": today(),
+		"absence_start_date": absence_start_date,
 		"absence_type": absence_type,
 		"annual_leave_balance": balance,
 		"status": "Draft"

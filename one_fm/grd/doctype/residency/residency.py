@@ -38,6 +38,59 @@ class Residency(Document):
         self.set_company_address()
         self.set_company_unified_number()
         self.set_paci_number()
+        self.clear_unticked_exception_details()
+        self.validate_exception_details()
+
+    def clear_unticked_exception_details(self):
+        """Empty an exception's details when its box is unticked (WI-002105).
+
+        The fields are hidden when the box is off, so anything left in them is invisible -
+        and a Damj letter or a fine receipt still attached to a record that no longer claims
+        either would go on reaching the costing and the print format. The fine amount goes
+        back to zero rather than blank, because it is a Currency the totals add up.
+
+        Cleared here rather than only in the browser: a record can be unticked by a data
+        import, a patch or the API, none of which run the form's handlers.
+        """
+        if not self.damj_is_applicable:
+            self.original_civil_id = None
+            self.upload_damj_letter = None
+            self.upload_damj_letter_on = None
+
+        if not self.residency_fine_to_be_added:
+            self.residency_fine_amount_kwd = 0
+            self.upload_residency_fine_payment_receipt = None
+            self.upload_residency_fine_payment_receipt_on = None
+
+    def validate_exception_details(self):
+        """Hold the save until a ticked exception carries its evidence (WI-002022).
+
+        On `validate` rather than `on_submit` because the story blocks the save, not
+        only the completion: a Damj or a fine recorded without the government letter or
+        the payment receipt is not a record of anything, and letting one sit in Draft
+        that way means the operator finds out at the end of the process instead of the
+        moment they tick the box.
+
+        A fine amount of 0 counts as missing. Ticking "Residency Fine to be Added" and
+        then entering nothing is the mistake the check exists to catch, and a zero-value
+        fine has nothing for finance to reference.
+        """
+        field_list = []
+
+        if self.damj_is_applicable:
+            field_list += [
+                {'Original Civil ID': 'original_civil_id'},
+                {'Upload DAMJ Letter': 'upload_damj_letter'},
+            ]
+
+        if self.residency_fine_to_be_added:
+            field_list += [
+                {'Residency Fine Amount (KWD)': 'residency_fine_amount_kwd'},
+                {'Upload Residency Fine Payment Receipt': 'upload_residency_fine_payment_receipt'},
+            ]
+
+        if field_list:
+            self.set_mendatory_fields(field_list)
 
     def set_grd_values(self):
         if not self.grd_supervisor:
@@ -91,9 +144,68 @@ class Residency(Document):
     def on_submit(self):
         self.validate_mandatory_fields_on_submit()
         self.set_residency_expiry_new_date_in_employee_doctype()
+        self.apply_damj_civil_id()
         self.db_set('completed_on', now_datetime())
         if self.category == "Transfer":
             self.recall_create_paci()
+
+    def apply_damj_civil_id(self):
+        """Put the corrected Civil ID on the Employee once the Damj is completed (WI-002022).
+
+        A Damj merges two civil ID numbers the government issued the same person, and the
+        surviving one is the original. Until it is written back, every record that reads
+        the Civil ID off the Employee - and every one already holding the superseded
+        number - is wrong.
+
+        Written with `db_set`/`set_value` rather than a full Employee save for the same
+        reason `set_residency_expiry_new_date_in_employee_doctype` does: a full save
+        re-validates the whole Employee, and 1,124 of them hold a Marital Status the
+        field's options no longer accept, so any such save throws on data that has
+        nothing to do with the civil ID.
+
+        This record's own mirror of the number is updated too. It is fetched from the
+        Employee and would otherwise keep showing the number the merge just retired, on
+        the very document that recorded the merge.
+        """
+        if not (self.damj_is_applicable and self.original_civil_id):
+            return
+
+        frappe.db.set_value('Employee', self.employee, 'one_fm_civil_id', self.original_civil_id)
+        self.db_set('one_fm_civil_id', self.original_civil_id)
+        self.sync_damj_civil_id_to_paci()
+
+    def sync_damj_civil_id_to_paci(self):
+        """Carry the merged Civil ID over to the PACI opened alongside this Residency (WI-002027).
+
+        The PACI's Civil ID is fetched from the Employee, which means it is copied once at
+        insert and never looked at again. A Damj completed after the PACI was opened
+        therefore leaves the civil ID application quoting the number the government just
+        retired - the one thing it must not do.
+
+        Scoped to the same Preparation, which is what pairs the two documents: a
+        Preparation opens one Residency and one PACI per employee, so that pair is the
+        "linked record" the story means. A Residency with no Preparation - a transfer, say
+        - has no PACI to pair with and is left alone.
+
+        Cancelled records are skipped; there can be more than one live PACI for the same
+        employee (a rejected application and its replacement), and both need the
+        correction. Written with set_value because the field is read-only and the PACI may
+        already be submitted, and because a full save would re-run the PACI's own
+        validation over a document this change has no business re-validating.
+        """
+        if not self.preparation:
+            return
+
+        for paci_name in frappe.get_all(
+            'PACI',
+            filters={
+                'preparation': self.preparation,
+                'employee': self.employee,
+                'docstatus': ['!=', 2],
+            },
+            pluck='name',
+        ):
+            frappe.db.set_value('PACI', paci_name, 'civil_id', self.original_civil_id)
 
     def recall_create_paci(self):
         paci.create_PACI_for_transfer(self.employee)
@@ -149,12 +261,14 @@ class Residency(Document):
 # the "for extend" branch below (WI-001824). Without this the branch - which reads as
 # "anything that is not a renewal is an extension" - would open a second Residency for
 # them, categorised as Extend.
-ACTIONS_HANDLED_ON_SUBMIT = ('Renewal (Non-Kuwaiti)', 'New Kuwaiti', 'Overseas', 'Local Transfer')
+ACTIONS_HANDLED_ON_SUBMIT = (
+    'Renewal Expat', 'New Kuwaiti', 'Overseas', 'Overseas (Government)', 'Local Transfer'
+)
 
 # The Residency a category opens, and how many days before the residency expires it is
 # applied for. Anything not listed is an extension, applied for a week ahead.
 MOI_CATEGORY_BY_ACTION = {
-    'Renewal (Non-Kuwaiti)': ('Renewal', -14),
+    'Renewal Expat': ('Renewal', -14),
     'Transfer': ('Transfer', None),
     # Same category whether the transfer came from a Transfer Paper (which says
     # "Transfer") or from a Preparation row (which says "Local Transfer").
@@ -162,6 +276,15 @@ MOI_CATEGORY_BY_ACTION = {
     # First residency for an overseas hire (WI-001881): there is no expiry to count
     # back from, so it is applied for the day the Preparation was submitted.
     'Overseas': ('First Time', None),
+    # WI-002024: a government-contract overseas hire gets the same first residency. MOI
+    # does not care which file the work permit was raised against.
+    'Overseas (Government)': ('First Time', None),
+    # WI-002181: a visa extension for an incoming candidate. Same category as any other
+    # extension - MOI has one - but applied for the day the Preparation was submitted
+    # rather than a week before an expiry: the candidate has no residency yet, and the
+    # fallback below would read a blank expiry as today and date the application a week
+    # in the past.
+    'Visa Extension': ('Extend', None),
 }
 
 
@@ -171,7 +294,7 @@ def set_employee_list_for_moi(preparation_name):
     employee_in_preparation = frappe.get_doc('Preparation',preparation_name)
     if employee_in_preparation.preparation_record:
         for employee in employee_in_preparation.preparation_record:
-            if employee.renewal_or_extend == 'Renewal (Non-Kuwaiti)' and employee.nationality != 'Kuwaiti':# For renewals
+            if employee.renewal_or_extend == 'Renewal Expat' and employee.nationality != 'Kuwaiti':# For renewals
                 try:
                     create_moi_record(frappe.get_doc('Employee',employee.employee),employee.renewal_or_extend,preparation_name)
                 except Exception as e:
@@ -201,9 +324,20 @@ def create_moi_for_transfer(work_permit_name):
             # field only risked a second lookup failing.
             create_moi_record(employee,"Transfer")
 
-def create_moi_record(employee,Renewal_or_Extend,preparation_name = None):
+def create_moi_record(employee,Renewal_or_Extend,preparation_name = None, category=None):
+    """Open the Residency an Action calls for.
 
-    category, days_before_expiry = MOI_CATEGORY_BY_ACTION.get(Renewal_or_Extend, ("Extend", -7))
+    WI-002033: a Preparation row states the category in NEW_ACTION_DOCUMENTS and passes it
+    in, so the table an operator reads to see what an Action produces is the one the
+    document is actually opened under. The map below still supplies the application date -
+    how many days before the residency expires it is applied for - which the caller does
+    not know, and still supplies the category for the callers that pass none: the transfer
+    path and the extend branch.
+    """
+    mapped_category, days_before_expiry = MOI_CATEGORY_BY_ACTION.get(
+        Renewal_or_Extend, ("Extend", -7)
+    )
+    category = category or mapped_category
     start_date = add_days(employee.residency_expiry_date, days_before_expiry) if days_before_expiry else today()
 
 

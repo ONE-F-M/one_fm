@@ -37,6 +37,20 @@
    "fieldtype": "Section Break"
   },
   {
+   "default": "0",
+   "fieldname": "is_extension_request",
+   "fieldtype": "Check",
+   "label": "Is Extension Request"
+  },
+  {
+   "depends_on": "eval:doc.is_extension_request",
+   "fieldname": "original_client_event",
+   "fieldtype": "Link",
+   "label": "Original Client Event",
+   "mandatory_depends_on": "eval:doc.is_extension_request",
+   "options": "Client Event"
+  },
+  {
    "fieldname": "event_name",
    "fieldtype": "Data",
    "label": "Event Name",
@@ -90,24 +104,30 @@
    "options": "Project"
   },
   {
-   "fieldname": "section_break_zhpk",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "amended_from",
+   "fetch_from": "project.project_manager",
+   "fieldname": "project_manager",
    "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Client Event",
-   "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
+   "hidden": 1,
+   "ignore_user_permissions": 1,
+   "label": "Project Manager",
+   "options": "Employee",
+   "read_only": 1
   },
   {
-   "fieldname": "staffing_requirements",
-   "fieldtype": "Table",
-   "label": "Staffing Requirements",
-   "options": "Client Event Staff Requirement"
+   "fetch_from": "project_manager.user_id",
+   "fieldname": "project_manager_user",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "Project Manager User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:!doc.project_manager_user",
+   "fieldname": "operations_manager",
+   "fieldtype": "Link",
+   "label": "Operations Manager",
+   "options": "User"
   },
   {
    "fieldname": "activity_of_the_day",
@@ -143,44 +163,24 @@
    "label": "POC Name that informed"
   },
   {
-   "default": "0",
-   "fieldname": "is_extension_request",
-   "fieldtype": "Check",
-   "label": "Is Extension Request"
+   "fieldname": "section_break_zhpk",
+   "fieldtype": "Section Break"
   },
   {
-   "depends_on": "eval:doc.is_extension_request",
-   "fieldname": "original_client_event",
-   "fieldtype": "Link",
-   "label": "Original Client Event",
-   "mandatory_depends_on": "eval:doc.is_extension_request",
-   "options": "Client Event"
+   "fieldname": "staffing_requirements",
+   "fieldtype": "Table",
+   "label": "Staffing Requirements",
+   "options": "Client Event Staff Requirement"
   },
   {
-   "fetch_from": "project.project_manager",
-   "fieldname": "project_manager",
+   "fieldname": "amended_from",
    "fieldtype": "Link",
-   "hidden": 1,
-   "ignore_user_permissions": 1,
-   "label": "Project Manager",
-   "options": "Employee",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "project_manager.user_id",
-   "fieldname": "project_manager_user",
-   "fieldtype": "Link",
-   "ignore_user_permissions": 1,
-   "label": "Project Manager User",
-   "options": "User",
-   "read_only": 1
-  },
-  {
-   "depends_on": "eval:!doc.project_manager_user",
-   "fieldname": "operations_manager",
-   "fieldtype": "Link",
-   "label": "Operations Manager",
-   "options": "User"
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Client Event",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
   }
  ],
  "grid_page_length": 50,
@@ -204,8 +204,8 @@
    "link_fieldname": "custom_client_event"
   }
  ],
- "modified": "2026-08-29 09:30:50.310931",
- "modified_by": "h.imran@one-fm.com",
+ "modified": "2026-09-15 07:09:02.000000",
+ "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Client Event",
  "naming_rule": "Expression",

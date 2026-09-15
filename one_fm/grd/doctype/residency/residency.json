@@ -94,14 +94,6 @@
    "print_hide": 1
   },
   {
-   "fieldname": "category",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Category",
-   "options": "First Time\nTransfer\nRenewal\nExtend\nCancellation"
-  },
-  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -111,12 +103,91 @@
    "read_only": 1
   },
   {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "apply_for",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Apply for",
+   "options": "\n1 \u0625\u0634\u0639\u0627\u0631\n14 \u0645\u0624\u0642\u062a\u0629\n18 \u0639\u0645\u0644 \u0623\u0647\u0644\u064a"
+  },
+  {
+   "fieldname": "section_break_8",
+   "fieldtype": "Section Break"
+  },
+  {
    "fieldname": "employee",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
    "label": "Employee",
    "options": "Employee",
    "reqd": 1
+  },
+  {
+   "fieldname": "date_of_application",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Date of Application",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Category",
+   "options": "First Time\nTransfer\nRenewal\nExtend\nCancellation"
+  },
+  {
+   "fieldname": "preparation",
+   "fieldtype": "Link",
+   "label": "Preparation",
+   "options": "Preparation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee ID",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_centralized_number",
+   "fieldname": "centeralized_number",
+   "fieldtype": "Data",
+   "label": "Centeralized Number",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval: doc.category == 'Renewal' || doc.category == 'Extend' || doc.category == 'Transfer'\n",
+   "fieldname": "renewal_or_extend",
+   "fieldtype": "Data",
+   "label": "Type",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "completed_on",
+   "fieldtype": "Date",
+   "label": "Completed On",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_16",
+   "fieldtype": "Section Break"
   },
   {
    "allow_on_submit": 1,
@@ -139,6 +210,13 @@
    "fieldname": "third_name_arabic",
    "fieldtype": "Data",
    "label": "Third Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.one_fm_fourth_name_in_arabic",
+   "fieldname": "fourth_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Fourth Name in Arabic",
    "read_only": 1
   },
   {
@@ -176,6 +254,13 @@
    "read_only": 1
   },
   {
+   "fetch_from": "employee.one_fm_fourth_name",
+   "fieldname": "fourth_name",
+   "fieldtype": "Data",
+   "label": "Fourth Name",
+   "read_only": 1
+  },
+  {
    "allow_on_submit": 1,
    "fetch_from": "employee.last_name",
    "fieldname": "last_name_english",
@@ -195,6 +280,20 @@
    "in_list_view": 1,
    "label": "Civil ID",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "damj_is_applicable",
+   "fieldtype": "Check",
+   "label": "DAMJ is Applicable"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.damj_is_applicable == 1",
+   "fieldname": "original_civil_id",
+   "fieldtype": "Data",
+   "label": "Original Civil ID",
+   "mandatory_depends_on": "eval:doc.damj_is_applicable == 1"
   },
   {
    "fetch_from": "employee.designation",
@@ -278,6 +377,14 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.residency_expiry_date",
+   "fieldname": "residency_expiry_date",
+   "fieldtype": "Data",
+   "label": "Residency Expiry Date",
+   "read_only": 1
+  },
+  {
    "fieldname": "section_break_23",
    "fieldtype": "Section Break"
   },
@@ -285,6 +392,12 @@
    "fieldname": "company_pam_file_number",
    "fieldtype": "Data",
    "label": "Company PAM File Number"
+  },
+  {
+   "fieldname": "company_centralized_number",
+   "fieldtype": "Data",
+   "label": "Company Centralized Number",
+   "read_only": 1
   },
   {
    "fieldname": "company_trade_name",
@@ -338,6 +451,34 @@
    "read_only": 1
   },
   {
+   "fieldname": "company_contact_number",
+   "fieldtype": "Data",
+   "label": "Company Contact Number",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_vrai",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "residency_fine_to_be_added",
+   "fieldtype": "Check",
+   "label": "Residency Fine to be Added"
+  },
+  {
+   "fieldname": "column_break_zpot",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.residency_fine_to_be_added == 1",
+   "fieldname": "residency_fine_amount_kwd",
+   "fieldtype": "Currency",
+   "label": "Residency Fine Amount (KWD)",
+   "mandatory_depends_on": "eval:doc.residency_fine_to_be_added == 1",
+   "non_negative": 1
+  },
+  {
    "fieldname": "section_break_42",
    "fieldtype": "Section Break",
    "print_hide": 1
@@ -354,6 +495,24 @@
    "fieldname": "residency_attachment",
    "fieldtype": "Attach",
    "label": "Upload Residency ",
+   "print_hide": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.residency_fine_to_be_added == 1",
+   "fieldname": "upload_residency_fine_payment_receipt",
+   "fieldtype": "Attach",
+   "label": "Upload Residency Fine Payment Receipt",
+   "mandatory_depends_on": "eval:doc.residency_fine_to_be_added == 1",
+   "print_hide": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.damj_is_applicable == 1",
+   "fieldname": "upload_damj_letter",
+   "fieldtype": "Attach",
+   "label": "Upload DAMJ Letter",
+   "mandatory_depends_on": "eval:doc.damj_is_applicable == 1",
    "print_hide": 1
   },
   {
@@ -382,6 +541,20 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
+   "fieldname": "upload_residency_fine_payment_receipt_on",
+   "fieldtype": "Data",
+   "label": "Upload Residency Fine Payment Receipt On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "upload_damj_letter_on",
+   "fieldtype": "Data",
+   "label": "Upload DAMJ Letter On",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
    "fieldname": "new_residency_expiry_date_update_time",
    "fieldtype": "Data",
    "label": "Date Updated On",
@@ -389,11 +562,15 @@
    "read_only": 1
   },
   {
-   "fieldname": "completed_on",
-   "fieldtype": "Date",
-   "label": "Completed On",
-   "print_hide": 1,
-   "read_only": 1
+   "fieldname": "section_break_zbqk",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "pro_user",
+   "fieldtype": "Link",
+   "label": "PRO User",
+   "link_filters": "[[\"User\",\"role\",\"=\",\"PRO\"]]",
+   "options": "User"
   },
   {
    "fieldname": "section_break_40",
@@ -433,185 +610,12 @@
    "no_copy": 1,
    "print_hide": 1,
    "read_only": 1
-  },
-  {
-   "depends_on": "eval: doc.category == 'Renewal' || doc.category == 'Extend' || doc.category == 'Transfer'\n",
-   "fieldname": "renewal_or_extend",
-   "fieldtype": "Data",
-   "label": "Type",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_5",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "preparation",
-   "fieldtype": "Link",
-   "label": "Preparation",
-   "options": "Preparation",
-   "read_only": 1
-  },
-  {
-   "fieldname": "company_contact_number",
-   "fieldtype": "Data",
-   "label": "Company Contact Number",
-   "read_only": 1
-  },
-  {
-   "fieldname": "company_centralized_number",
-   "fieldtype": "Data",
-   "label": "Company Centralized Number",
-   "read_only": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fetch_from": "employee.one_fm_centralized_number",
-   "fieldname": "centeralized_number",
-   "fieldtype": "Data",
-   "label": "Centeralized Number",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "employee.employee_id",
-   "fieldname": "employee_id",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Employee ID",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "date_of_application",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Date of Application",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fetch_from": "employee.residency_expiry_date",
-   "fieldname": "residency_expiry_date",
-   "fieldtype": "Data",
-   "label": "Residency Expiry Date",
-   "read_only": 1
-  },
-  {
-   "fieldname": "apply_for",
-   "fieldtype": "Select",
-   "hidden": 1,
-   "label": "Apply for",
-   "options": "\n1 \u0625\u0634\u0639\u0627\u0631\n14 \u0645\u0624\u0642\u062a\u0629\n18 \u0639\u0645\u0644 \u0623\u0647\u0644\u064a"
-  },
-  {
-   "fieldname": "column_break_6",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "section_break_16",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "section_break_8",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fetch_from": "employee.one_fm_fourth_name_in_arabic",
-   "fieldname": "fourth_name_in_arabic",
-   "fieldtype": "Data",
-   "label": "Fourth Name in Arabic",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "employee.one_fm_fourth_name",
-   "fieldname": "fourth_name",
-   "fieldtype": "Data",
-   "label": "Fourth Name",
-   "read_only": 1
-  },
-  {
-   "fieldname": "section_break_vrai",
-   "fieldtype": "Section Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "residency_fine_to_be_added",
-   "fieldtype": "Check",
-   "label": "Residency Fine to be Added"
-  },
-  {
-   "fieldname": "column_break_zpot",
-   "fieldtype": "Column Break"
-  },
-  {
-   "depends_on": "eval:doc.residency_fine_to_be_added == 1",
-   "fieldname": "residency_fine_amount_kwd",
-   "fieldtype": "Currency",
-   "label": "Residency Fine Amount (KWD)"
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "eval:doc.residency_fine_to_be_added == 1",
-   "fieldname": "upload_residency_fine_payment_receipt",
-   "fieldtype": "Attach",
-   "label": "Upload Residency Fine Payment Receipt",
-   "print_hide": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "upload_residency_fine_payment_receipt_on",
-   "fieldtype": "Data",
-   "label": "Upload Residency Fine Payment Receipt On",
-   "read_only": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "damj_is_applicable",
-   "fieldtype": "Check",
-   "label": "DAMJ is Applicable"
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "eval:doc.damj_is_applicable == 1",
-   "fieldname": "original_civil_id",
-   "fieldtype": "Data",
-   "label": "Original Civil ID",
-   "mandatory_depends_on": "eval:doc.damj_is_applicable == 1"
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "eval:doc.damj_is_applicable == 1",
-   "fieldname": "upload_damj_letter",
-   "fieldtype": "Attach",
-   "label": "Upload DAMJ Letter",
-   "print_hide": 1
-  },
-  {
-   "fieldname": "upload_damj_letter_on",
-   "fieldtype": "Data",
-   "label": "Upload DAMJ Letter On",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "section_break_zbqk",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "pro_user",
-   "fieldtype": "Link",
-   "label": "PRO User",
-   "link_filters": "[[\"User\",\"role\",\"=\",\"PRO\"]]",
-   "options": "User"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-11 18:02:53.791720",
- "modified_by": "h.imran@one-fm.com",
+ "modified": "2026-09-15 07:09:02.000000",
+ "modified_by": "Administrator",
  "module": "GRD",
  "name": "Residency",
  "naming_rule": "By \"Naming Series\" field",

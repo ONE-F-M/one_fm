@@ -20,7 +20,6 @@ from one_fm.ocr_utils import (
 )
 from one_fm.visa_management.doctype.visa_request.visa_request import (
 	OCR_DOCUMENTS,
-	OCR_STATE,
 	_attachment_path,
 )
 
@@ -130,62 +129,11 @@ class TestTheMindeeMapping(FrappeTestCase):
 		self.assertEqual(frappe.get_meta("Visa Request").get_field("payment_date").fieldtype, "Datetime")
 
 
-class TestWhenTheOcrRuns(FrappeTestCase):
-	"""The trigger, without calling Mindee."""
-
-	def setUp(self):
-		self.calls = []
-		self._real_enqueue = frappe.enqueue
-		frappe.enqueue = lambda *a, **kw: self.calls.append(kw)
-		self.addCleanup(lambda: setattr(frappe, "enqueue", self._real_enqueue))
-
-	def _doc(self, state=OCR_STATE, changed=("visa_document",), attached=("visa_document",)):
-		doc = frappe.new_doc("Visa Request")
-		doc.workflow_state = state
-		for fieldname in attached:
-			doc.set(fieldname, f"/files/{fieldname}.pdf")
-		doc.has_value_changed = lambda fieldname: fieldname in changed
-		return doc
-
-	def _queue(self, doc):
-		from one_fm.visa_management.doctype.visa_request.visa_request import queue_document_ocr
-
-		doc.name = "VR-TEST"
-		queue_document_ocr(doc)
-		return self.calls
-
-	def test_an_attachment_added_in_the_right_state_is_read(self):
-		self.assertEqual(len(self._queue(self._doc())), 1)
-		self.assertEqual(self.calls[0]["fieldnames"], ["visa_document"])
-
-	def test_the_job_is_queued_only_after_the_save_commits(self):
-		"""Reported from testing: the job ran and logged "No file attached" against a
-		request that plainly had one. on_update runs inside the save transaction, so a
-		worker picking the job up before the commit re-reads the document without the
-		attachment on it."""
-		self._queue(self._doc())
-
-		self.assertTrue(self.calls[0].get("enqueue_after_commit"))
-
-	def test_both_attachments_at_once_are_read_in_one_job(self):
-		doc = self._doc(
-			changed=("visa_document", "payment_receipt"),
-			attached=("visa_document", "payment_receipt"),
-		)
-
-		self._queue(doc)
-
-		self.assertEqual(sorted(self.calls[0]["fieldnames"]), ["payment_receipt", "visa_document"])
-
-	def test_a_save_that_changed_no_attachment_reads_nothing(self):
-		"""So an operator's correction to an extracted date is not overwritten."""
-		self.assertEqual(self._queue(self._doc(changed=())), [])
-
-	def test_another_state_reads_nothing(self):
-		self.assertEqual(self._queue(self._doc(state="Draft")), [])
-
-	def test_a_cleared_attachment_reads_nothing(self):
-		self.assertEqual(self._queue(self._doc(attached=())), [])
+# WI-002106 / AC 8: TestWhenTheOcrRuns was removed with queue_document_ocr(). The
+# trigger is now a step in the Processa map - script task Activity_0ljbcgg - so what used
+# to be tested here (the state guard, the changed-attachment check, the after-commit
+# enqueue) has no code left to test. The step itself is covered by
+# test_visa_request_bpmn_scripts.py::TestTheOcrScript.
 
 
 class TestTheAttachmentPath(FrappeTestCase):
@@ -197,21 +145,20 @@ class TestTheAttachmentPath(FrappeTestCase):
 		with self.assertRaises(ValueError):
 			_attachment_path("")
 
-	def test_an_attachment_removed_before_the_job_runs_is_skipped_quietly(self):
+	def test_a_request_with_nothing_attached_is_skipped_quietly(self):
 		"""Nothing to read, and nothing worth a traceback in the Error Log."""
 		from unittest.mock import patch
 
 		from one_fm.visa_management.doctype.visa_request.visa_request import run_document_ocr
 
 		doc = frappe.new_doc("Visa Request")
-		doc.workflow_state = OCR_STATE
 		doc.visa_document = ""
 
 		logged = []
 		with patch.object(frappe, "get_doc", return_value=doc), patch.object(
 			frappe, "log_error", side_effect=lambda **kw: logged.append(kw)
 		), patch.object(frappe, "publish_realtime") as published:
-			run_document_ocr("VR-TEST", ["visa_document"], user="Administrator")
+			run_document_ocr("VR-TEST")
 
 		self.assertEqual(logged, [])
 		published.assert_not_called()

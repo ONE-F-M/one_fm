@@ -58,7 +58,7 @@ def valid_work_permit_exists(preparation_name):
     employee_in_preparation = frappe.get_doc('Preparation',preparation_name)
     if employee_in_preparation.preparation_record:
         for employee in employee_in_preparation.preparation_record:
-            if employee.renewal_or_extend == 'Renewal (Non-Kuwaiti)' and employee.nationality != 'Kuwaiti':
+            if employee.renewal_or_extend == 'Renewal Expat' and employee.nationality != 'Kuwaiti':
                 try:
                     create_mi_record(frappe.get_doc('Work Permit',{'preparation':preparation_name,'employee':employee.employee}))
                 except Exception as e:
@@ -97,16 +97,51 @@ def transfer_insurance_already_open(employee):
     }))
 
 
-def create_mi_record(WorkPermit):
+# WI-002098: the state a new policy opens in. An overseas hire's insurance is paid for on
+# the provider's portal before there is anything for the PRO to apply for, so it is held in
+# Draft until the GR Operator has done that and hands it on.
+#
+# Every other policy - a renewal, a local transfer - goes straight to the PRO, the way it
+# did before Draft existed. Named here rather than left to the workflow's first state,
+# because Draft is now that first state and would otherwise become the default for all of
+# them.
+DRAFT = "Draft"
+APPLY_ONLINE_BY_PRO = "Apply Online by PRO"
+OVERSEAS_WORK_PERMIT_TYPES = ("Overseas", "Overseas (Government)")
+
+
+def initial_workflow_state(work_permit_type):
+	"""Where a policy opened against this kind of Work Permit starts (WI-002098)."""
+	return DRAFT if work_permit_type in OVERSEAS_WORK_PERMIT_TYPES else APPLY_ONLINE_BY_PRO
+
+
+def create_mi_record(WorkPermit, insurance_status=None):
+    """Open the insurance a Work Permit calls for.
+
+    WI-002033: a caller that already knows the classification - a Preparation row, whose
+    Action states it in NEW_ACTION_DOCUMENTS - passes it in. The derivation below is kept
+    for the callers that do not: the transfer path and the renewal path arrive with a Work
+    Permit and nothing else.
+    """
     new_medical_insurance = frappe.new_doc('Medical Insurance')
 
-    if(WorkPermit.work_permit_type == "Renewal Non Kuwaiti"):
+    if insurance_status:
+        Insurance_status = insurance_status
+        # The application date still follows the Work Permit's, which is the fact the
+        # caller does not have and this function does.
+        new_medical_insurance.date_of_application = (
+            today() if insurance_status == "Local Transfer" else WorkPermit.date_of_application
+        )
+    elif(WorkPermit.work_permit_type == "Renewal Expat"):
         Insurance_status = "Renewal"
         new_medical_insurance.date_of_application = WorkPermit.date_of_application #setting the same date of application of wp
-    elif(WorkPermit.work_permit_type == "Overseas"):
+    elif(WorkPermit.work_permit_type in ("Overseas", "Overseas (Government)")):
         # An overseas hire has no insurance yet, so the policy is opened as New
         # (WI-001881). Applied for the day the Work Permit was, which for an Overseas
         # Work Permit is the day its Preparation was submitted.
+        #
+        # A government-contract hire is the same insurance (WI-002024): the file the work
+        # permit was raised against changes its fee, not whether the employee is insured.
         Insurance_status = "New"
         new_medical_insurance.date_of_application = WorkPermit.date_of_application
     elif (WorkPermit.work_permit_type == "Local Transfer"):#for non kuwaiti <if it is for kuwait called new or renew and they don't have MI process
@@ -126,6 +161,17 @@ def create_mi_record(WorkPermit):
     new_medical_insurance.employee_id = WorkPermit.employee_id
     new_medical_insurance.employee = WorkPermit.employee
     new_medical_insurance.insert()
+
+    # Written after the insert rather than before it. Frappe reads a workflow_state set on
+    # a new document as a transition out of the workflow's first state and refuses one the
+    # session's user holds no role for - and these are opened by the system on behalf of a
+    # Preparation, so there is no operator in the session to make it. PACI hands its
+    # overseas applications to the PRO the same way.
+    initial_state = initial_workflow_state(WorkPermit.work_permit_type)
+    if initial_state != new_medical_insurance.workflow_state:
+        new_medical_insurance.db_set("workflow_state", initial_state)
+
+    return new_medical_insurance
 
 @frappe.whitelist()
 def get_employee_data_from_civil_id(civil_id):

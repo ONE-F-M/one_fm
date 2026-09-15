@@ -263,18 +263,18 @@ class TestTransportationManifest(FrappeTestCase):
 		)]
 		emp_map = {"C1": [{"id": self.employee1, "name": "Emp 1"}]}
 
-		changed = sync_manifest_details(doc, assignments, emp_map, {})
+		changed = sync_manifest_details(doc, assignments, emp_map)
 		self.assertTrue(changed)
 		self.assertEqual(len(doc.transportation_manifest_details), 1)
 
 		# Second sync — add employee2 to same stop
 		emp_map = {"C1": [{"id": self.employee1, "name": "Emp 1"}, {"id": self.employee2, "name": "Emp 2"}]}
-		changed = sync_manifest_details(doc, assignments, emp_map, {})
+		changed = sync_manifest_details(doc, assignments, emp_map)
 		self.assertTrue(changed)
 		self.assertEqual(len(doc.transportation_manifest_details), 2)
 
 		# Third sync — same data, no changes
-		changed = sync_manifest_details(doc, assignments, emp_map, {})
+		changed = sync_manifest_details(doc, assignments, emp_map)
 		self.assertFalse(changed)
 		self.assertEqual(len(doc.transportation_manifest_details), 2)
 
@@ -298,7 +298,7 @@ class TestTransportationManifest(FrappeTestCase):
 		emp_map = {"C1": [{"id": self.employee1, "name": "Emp 1"}]}
 
 		# Initial sync
-		sync_manifest_details(doc, assignments, emp_map, {})
+		sync_manifest_details(doc, assignments, emp_map)
 		doc.save()
 
 		# Simulate dispatcher marking attendance
@@ -308,7 +308,7 @@ class TestTransportationManifest(FrappeTestCase):
 
 		# Re-sync with updated schedule time — manual fields must survive
 		assignments[0].start_time = "06:30:00"
-		changed = sync_manifest_details(doc, assignments, emp_map, {})
+		changed = sync_manifest_details(doc, assignments, emp_map)
 
 		# Must report a change so callers know to save
 		self.assertTrue(changed)
@@ -354,7 +354,7 @@ class TestTransportationManifest(FrappeTestCase):
 		)]
 		emp_map = {"C1": [{"id": self.employee1, "name": "Emp 1"}]}
 
-		changed = sync_manifest_details(doc, assignments, emp_map, {})
+		changed = sync_manifest_details(doc, assignments, emp_map)
 
 		# Should have backfilled stop_id, not duplicated
 		self.assertEqual(len(doc.transportation_manifest_details), 1)

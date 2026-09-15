@@ -19,6 +19,12 @@ DATE = "2026-06-15"
 
 
 def execute():
+	# One-off data repair: skip silently on any site that does not have this employee
+	# (fresh/CI sites), so migrate never fails on missing data.
+	if not frappe.db.exists("Employee", EMPLOYEE):
+		print(f"Employee {EMPLOYEE} not found on this site; skipping repair.")
+		return
+
 	schedules = frappe.get_all(
 		"Employee Schedule",
 		filters={"employee": EMPLOYEE, "date": DATE},
@@ -80,8 +86,14 @@ def execute():
 	# Re-run the standard single-attendance marker, which honours the Day Off schedule.
 	from one_fm.overrides.attendance import mark_single_attendance
 
-	mark_single_attendance(EMPLOYEE, DATE, roster_type="Basic")
-	frappe.db.commit()
+	try:
+		mark_single_attendance(EMPLOYEE, DATE, roster_type="Basic")
+		frappe.db.commit()
+	except Exception:
+		# A data-repair patch must never block migrate; report and continue.
+		frappe.db.rollback()
+		print(f"Could not re-mark attendance for {EMPLOYEE} on {DATE}:")
+		print(frappe.get_traceback())
 
 	att = frappe.db.get_value(
 		"Attendance",

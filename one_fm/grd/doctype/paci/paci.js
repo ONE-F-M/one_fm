@@ -14,6 +14,17 @@ frappe.ui.form.on('PACI', {
 	upload_civil_id: function(frm){
 		set_upload_civil_id(frm);
 	},
+	// WI-002023: show the fine the moment the box is ticked instead of after a save. The
+	// controller derives the same value on validate and remains the authority on it.
+	is_paci_fine_applicable: function(frm){
+		if(!frm.doc.is_paci_fine_applicable){
+			frm.set_value('paci_fine_amount_kwd', 0);
+			return;
+		}
+		frappe.db.get_single_value('HR Settings', 'paci_fine_amount_kwd').then(amount => {
+			frm.set_value('paci_fine_amount_kwd', amount || 0);
+		});
+	},
 
 });
 var set_employee_details = function(frm){

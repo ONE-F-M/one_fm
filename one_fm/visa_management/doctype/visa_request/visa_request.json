@@ -63,6 +63,7 @@
   "grd_manager_remark",
   "column_break_jdrk",
   "pam_rejection_remark",
+  "pam_rejection_remarks",
   "moi_rejection_remark",
   "pam_details_section",
   "custom_pam_file",
@@ -94,184 +95,6 @@
  ],
  "fields": [
   {
-   "fetch_from": "job_applicant.one_fm_nationality",
-   "fieldname": "nationality",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Nationality",
-   "options": "Nationality",
-   "reqd": 1
-  },
-  {
-   "fetch_from": "job_applicant.one_fm_marital_status",
-   "fieldname": "marital_status",
-   "fieldtype": "Select",
-   "label": "Marital Status",
-   "options": "Married\nSingle\nDivorced\nWidow"
-  },
-  {
-   "default": "Monthly",
-   "fieldname": "salary_type",
-   "fieldtype": "Select",
-   "label": "Salary Type",
-   "options": "\nDaily\nWeekly\nMonthly"
-  },
-  {
-   "fetch_from": "job_applicant.one_fm_passport_number",
-   "fieldname": "passport_number",
-   "fieldtype": "Data",
-   "label": "Passport Number",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_kupi",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fetch_from": "job_applicant.one_fm_gender",
-   "fieldname": "gender",
-   "fieldtype": "Link",
-   "label": "Gender",
-   "options": "Gender"
-  },
-  {
-   "fetch_from": "job_applicant.one_fm_religion",
-   "fieldname": "religion",
-   "fieldtype": "Link",
-   "label": "Religion",
-   "options": "Religion"
-  },
-  {
-   "default": "Today",
-   "fieldname": "request_date",
-   "fieldtype": "Date",
-   "label": "Request Date ",
-   "reqd": 1
-  },
-  {
-   "fetch_from": "job_applicant.one_fm_place_of_birth",
-   "fieldname": "place_of_birth",
-   "fieldtype": "Link",
-   "label": "Place of Birth",
-   "options": "Country"
-  },
-  {
-   "default": "0",
-   "fieldname": "attachments",
-   "fieldtype": "Section Break",
-   "label": "Attachments "
-  },
-  {
-   "fieldname": "passport_copy",
-   "fieldtype": "Attach",
-   "label": "Passport Copy",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_sqvj",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "driver_license",
-   "fieldtype": "Attach",
-   "label": "Driver's License",
-   "mandatory_depends_on": "eval:doc.designation==\"Driver\""
-  },
-  {
-   "fieldname": "column_break_byjf",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "payment_receipt",
-   "fieldtype": "Attach",
-   "label": "Payment Receipt",
-   "read_only_depends_on": "eval:doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
-  },
-  {
-   "fieldname": "column_break_wjxj",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "visa_document",
-   "fieldtype": "Attach",
-   "label": "Visa Document",
-   "read_only_depends_on": "eval:doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
-  },
-  {
-   "fieldname": "column_break_jdrk",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "pam_reference_number",
-   "fieldtype": "Data",
-   "label": "PAM Reference Number",
-   "read_only_depends_on": "eval:doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending by MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected By PAM\""
-  },
-  {
-   "fieldname": "column_break_gvey",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "pam_remarks",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "PAM Remarks"
-  },
-  {
-   "fieldname": "column_break_gcih",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "pam_decision_date",
-   "fieldtype": "Date",
-   "label": "PAM Decision Date"
-  },
-  {
-   "fieldname": "moi_reference_number",
-   "fieldtype": "Data",
-   "label": "MOI Reference Number",
-   "read_only_depends_on": "eval:doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
-  },
-  {
-   "fieldname": "column_break_jvjp",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "moi_remarks",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "MOI Remarks"
-  },
-  {
-   "fieldname": "column_break_hyho",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "moi_decision_date",
-   "fieldtype": "Date",
-   "label": "MOI Decision Date"
-  },
-  {
-   "fieldname": "visa_reference_number",
-   "fieldtype": "Data",
-   "label": "Visa Reference Number",
-   "read_only_depends_on": "eval:doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
-  },
-  {
-   "fieldname": "section_break_jrbe",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Visa Request",
-   "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
-  },
-  {
    "fieldname": "section_break_mbv7",
    "fieldtype": "Section Break"
   },
@@ -280,19 +103,6 @@
    "fieldtype": "Select",
    "label": "Series",
    "options": "VR-.MM.-.YYYY.-.#####"
-  },
-  {
-   "fieldname": "column_break_vujs",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fetch_from": "job_offer.job_applicant",
-   "fieldname": "job_applicant",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Job Applicant",
-   "options": "Job Applicant",
-   "reqd": 1
   },
   {
    "fieldname": "job_offer",
@@ -309,10 +119,47 @@
    "read_only": 1
   },
   {
+   "fetch_from": "job_offer.job_applicant",
+   "fieldname": "job_applicant",
+   "fieldtype": "Link",
+   "label": "Job Applicant",
+   "options": "Job Applicant",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_vujs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "request_date",
+   "fieldtype": "Date",
+   "label": "Request Date ",
+   "reqd": 1
+  },
+  {
    "fetch_from": "job_applicant.applicant_name",
    "fieldname": "job_applicant_full_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Job Applicant Full Name"
+  },
+  {
+   "fieldname": "agency",
+   "fieldtype": "Link",
+   "label": "Agency",
+   "options": "Agency"
+  },
+  {
+   "fieldname": "grd_operator",
+   "fieldtype": "Link",
+   "label": "GRD Operator",
+   "options": "User"
+  },
+  {
+   "default": "0",
+   "fieldname": "applicant_details_section",
+   "fieldtype": "Section Break"
   },
   {
    "fetch_from": "job_applicant.one_fm_first_name",
@@ -363,9 +210,144 @@
    "label": "Last Name in Arabic"
   },
   {
+   "fieldname": "column_break_kupi",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_nationality",
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Nationality",
+   "options": "Nationality",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_gender",
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_religion",
+   "fieldname": "religion",
+   "fieldtype": "Link",
+   "label": "Religion",
+   "options": "Religion"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_place_of_birth",
+   "fieldname": "place_of_birth",
+   "fieldtype": "Link",
+   "label": "Place of Birth",
+   "options": "Country"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_date_of_birth",
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_marital_status",
+   "fieldname": "marital_status",
+   "fieldtype": "Select",
+   "label": "Marital Status",
+   "options": "Married\nSingle\nDivorced\nWidow"
+  },
+  {
+   "fetch_from": "job_applicant.designation",
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation"
+  },
+  {
+   "fieldname": "salary_details_section",
+   "fieldtype": "Section Break",
+   "label": "Salary Details"
+  },
+  {
+   "default": "Monthly",
+   "fieldname": "salary_type",
+   "fieldtype": "Select",
+   "label": "Salary Type",
+   "options": "\nDaily\nWeekly\nMonthly"
+  },
+  {
+   "fieldname": "column_break_lzkz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "work_permit_salary",
+   "fieldtype": "Currency",
+   "label": "Work Permit Salary",
+   "mandatory_depends_on": "// eval:doc.workflow_state==\"Pending by GRD Operator\""
+  },
+  {
+   "fieldname": "educational_qualification_details_section",
+   "fieldtype": "Section Break",
+   "label": " Educational Qualification Details"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_educational_qualification",
+   "fieldname": "educational_qualification",
+   "fieldtype": "Select",
+   "label": " Educational Qualification",
+   "options": "\nN/A\nPrimary\nMiddle School\nHigh School\nUnder Graduate\nDiploma\nBachelor\nMasters\nPhD\nOthers"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_education_specialization",
+   "fieldname": "education_specialization",
+   "fieldtype": "Data",
+   "label": "Specialization"
+  },
+  {
+   "fieldname": "column_break_rlpq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_university",
+   "fieldname": "university",
+   "fieldtype": "Data",
+   "label": "University / School"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_place_of_study",
+   "fieldname": "place_of_study",
+   "fieldtype": "Select",
+   "label": "Place of Study",
+   "options": "\nInside Kuwait\nOutside Kuwait"
+  },
+  {
    "fieldname": "passport_details_section",
    "fieldtype": "Section Break",
    "label": "Passport Details"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_passport_number",
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_passport_holder_of",
+   "fieldname": "passport_holder_of",
+   "fieldtype": "Link",
+   "label": "Passport Holder of",
+   "options": "Country",
+   "reqd": 1
+  },
+  {
+   "fieldname": "place_of_issue",
+   "fieldtype": "Data",
+   "label": "Place of Issue"
+  },
+  {
+   "fieldname": "column_break_wims",
+   "fieldtype": "Column Break"
   },
   {
    "fetch_from": "job_applicant.one_fm_passport_issued",
@@ -382,105 +364,53 @@
    "reqd": 1
   },
   {
-   "fieldname": "column_break_wims",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "salary_details_section",
-   "fieldtype": "Section Break",
-   "label": "Salary Details"
-  },
-  {
-   "fieldname": "column_break_lzkz",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fetch_from": "job_applicant.one_fm_educational_qualification",
-   "fieldname": "educational_qualification",
-   "fieldtype": "Select",
-   "label": " Educational Qualification",
-   "options": "\nN/A\nPrimary\nMiddle School\nHigh School\nUnder Graduate\nDiploma\nBachelor\nMasters\nPhD\nOthers"
-  },
-  {
-   "fetch_from": "job_applicant.one_fm_university",
-   "fieldname": "university",
-   "fieldtype": "Data",
-   "label": "University / School"
-  },
-  {
-   "fetch_from": "job_applicant.one_fm_education_specialization",
-   "fieldname": "education_specialization",
-   "fieldtype": "Data",
-   "label": "Specialization"
-  },
-  {
-   "fieldname": "column_break_rlpq",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "educational_qualification_details_section",
-   "fieldtype": "Section Break",
-   "label": " Educational Qualification Details"
-  },
-  {
-   "fetch_from": "job_applicant.one_fm_place_of_study",
-   "fieldname": "place_of_study",
-   "fieldtype": "Select",
-   "label": "Place of Study",
-   "options": "\nInside Kuwait\nOutside Kuwait"
-  },
-  {
-   "fetch_from": "job_applicant.designation",
-   "fieldname": "designation",
-   "fieldtype": "Link",
-   "label": "Designation",
-   "options": "Designation"
-  },
-  {
    "default": "0",
-   "fieldname": "applicant_details_section",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "agency",
-   "fieldtype": "Link",
-   "label": "Agency",
-   "options": "Agency"
-  },
-  {
-   "fieldname": "work_permit_salary",
-   "fieldtype": "Currency",
-   "label": "Work Permit Salary",
-   "mandatory_depends_on": "// eval:doc.workflow_state==\"Pending by GRD Operator\""
-  },
-  {
-   "fieldname": "place_of_issue",
-   "fieldtype": "Data",
-   "label": "Place of Issue"
-  },
-  {
-   "depends_on": "eval:doc.workflow_state==\"Pending by GRD Operator\" || doc.workflow_state==\"Awaiting Quota Availability\" || doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending By PAM\" || doc.workflow_state==\"Pending by MOI\" || doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By PAM\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\"",
-   "fieldname": "pam_details_section",
+   "fieldname": "attachments",
    "fieldtype": "Section Break",
-   "label": "PAM Details"
+   "label": "Attachments "
   },
   {
-   "depends_on": "eval:doc.workflow_state==\"Pending by MOI\" || doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\"",
-   "fieldname": "moi_details_section",
-   "fieldtype": "Section Break",
-   "label": "MOI Details"
+   "fieldname": "passport_copy",
+   "fieldtype": "Attach",
+   "label": "Passport Copy",
+   "reqd": 1
   },
   {
-   "default": "0",
-   "depends_on": "eval:doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\"",
-   "fieldname": "visa_details_section",
-   "fieldtype": "Section Break",
-   "label": "Visa Details"
+   "fieldname": "column_break_sqvj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "driver_license",
+   "fieldtype": "Attach",
+   "label": "Driver's License",
+   "mandatory_depends_on": "eval:doc.designation==\"Driver\""
+  },
+  {
+   "fieldname": "column_break_byjf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "degree_certificate",
+   "fieldtype": "Attach",
+   "label": "Degree Certificate"
+  },
+  {
+   "fieldname": "column_break_wjxj",
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "rejection_remarks_section",
    "fieldtype": "Section Break",
    "label": "Rejection Remarks"
+  },
+  {
+   "fieldname": "column_break_cpvu",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "operator_rejection_remark",
+   "fieldtype": "Small Text",
+   "label": "Operator Rejection Remark"
   },
   {
    "fieldname": "grd_manager_remark",
@@ -489,10 +419,19 @@
    "read_only": 1
   },
   {
+   "fieldname": "column_break_jdrk",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "pam_rejection_remark",
+   "fieldtype": "Select",
+   "label": "PAM Rejection Reason",
+   "options": "\nPassport Validity is Less than 18 Months\nWorker's age is below the legal minimum\nThe worker's gender does not match the profession\nThe occupation requires amendment to specify the worker's specialization\nAn active file exists for this worker\nWorker is in Black List"
+  },
+  {
+   "fieldname": "pam_rejection_remarks",
    "fieldtype": "Small Text",
-   "label": "PAM Rejection Remark",
-   "read_only": 1
+   "label": "PAM Rejection Remarks"
   },
   {
    "fieldname": "moi_rejection_remark",
@@ -502,61 +441,107 @@
    "read_only": 1
   },
   {
-   "fieldname": "operator_rejection_remark",
-   "fieldtype": "Small Text",
-   "label": "Operator Rejection Remark",
-   "read_only": 1
+   "depends_on": "eval:doc.workflow_state==\"Pending by GRD Operator\" || doc.workflow_state==\"Awaiting Quota Availability\" || doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending By PAM\" || doc.workflow_state==\"Pending By MOI\" || doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By PAM\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\"",
+   "fieldname": "pam_details_section",
+   "fieldtype": "Section Break",
+   "label": "PAM Details"
   },
   {
-   "fieldname": "column_break_cpvu",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fetch_from": "job_applicant.one_fm_passport_holder_of",
-   "fieldname": "passport_holder_of",
-   "fieldtype": "Link",
-   "label": "Passport Holder of",
-   "options": "Country",
-   "reqd": 1
-  },
-  {
-   "fetch_from": "job_applicant.one_fm_date_of_birth",
-   "fieldname": "date_of_birth",
-   "fieldtype": "Date",
-   "label": "Date of Birth"
-  },
-  {
-   "fieldname": "degree_certificate",
-   "fieldtype": "Attach",
-   "label": "Degree Certificate"
-  },
-  {
-   "depends_on": "eval:doc.workflow_state==\"Pending by GRD Operator\" || doc.workflow_state==\"Awaiting Quota Availability\" || doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending By PAM\" || doc.workflow_state==\"Pending by MOI\"",
+   "depends_on": "eval:doc.workflow_state==\"Pending by GRD Operator\" || doc.workflow_state==\"Awaiting Quota Availability\" || doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending By PAM\" || doc.workflow_state==\"Pending By MOI\"",
    "fieldname": "custom_pam_file",
    "fieldtype": "Link",
    "label": "PAM File",
-   "options": "PAM File",
-   "read_only_depends_on": "eval:doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending by MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected By PAM\""
+   "options": "PAM License Details",
+   "read_only_depends_on": "eval:doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending By MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected By PAM\""
+  },
+  {
+   "fieldname": "pam_reference_number",
+   "fieldtype": "Data",
+   "label": "PAM Reference Number",
+   "read_only_depends_on": "eval:doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending By MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected By PAM\""
   },
   {
    "fieldname": "custom_visa_application_date",
    "fieldtype": "Datetime",
    "label": "Visa Application Date",
-   "read_only_depends_on": "eval:doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending by MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected By PAM\""
+   "read_only_depends_on": "eval:doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending By MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected By PAM\""
+  },
+  {
+   "fieldname": "column_break_gvey",
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "custom_pam_designation_list",
    "fieldtype": "Link",
    "label": "PAM Designation List",
    "options": "PAM Designation List",
-   "read_only_depends_on": "eval:doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending by MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected By PAM\""
+   "read_only_depends_on": "eval:doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending By MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected By PAM\""
   },
   {
-   "depends_on": "eval:doc.workflow_state==\"Pending By PAM\" || doc.workflow_state==\"Pending by MOI\" || doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Rejected By PAM\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\"",
+   "depends_on": "eval:doc.workflow_state==\"Pending By PAM\" || doc.workflow_state==\"Pending By MOI\" || doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Rejected By PAM\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\"",
    "fieldname": "custom_work_permit_number",
    "fieldtype": "Data",
    "label": "Work Permit Number",
-   "read_only_depends_on": "eval:doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending by MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected By PAM\""
+   "read_only_depends_on": "eval:doc.workflow_state==\"Pending GRD Manager Approval\" || doc.workflow_state==\"Pending By MOI\"|| doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected By PAM\""
+  },
+  {
+   "fieldname": "pam_remarks",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "PAM Remarks"
+  },
+  {
+   "fieldname": "column_break_gcih",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "pam_decision_date",
+   "fieldtype": "Date",
+   "label": "PAM Decision Date"
+  },
+  {
+   "depends_on": "eval:doc.workflow_state==\"Pending By MOI\" || doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\"",
+   "fieldname": "moi_details_section",
+   "fieldtype": "Section Break",
+   "label": "MOI Details"
+  },
+  {
+   "fieldname": "moi_reference_number",
+   "fieldtype": "Data",
+   "label": "MOI Reference Number",
+   "read_only_depends_on": "eval:doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Rejected By MOI\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
+  },
+  {
+   "fieldname": "column_break_jvjp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "moi_remarks",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "MOI Remarks"
+  },
+  {
+   "fieldname": "column_break_hyho",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "moi_decision_date",
+   "fieldtype": "Date",
+   "label": "MOI Decision Date"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.workflow_state==\"Pending Visa Issuance\" || doc.workflow_state==\"Pending Recruiter Confirmation\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Completed\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\"",
+   "fieldname": "visa_details_section",
+   "fieldtype": "Section Break",
+   "label": "Visa Details"
+  },
+  {
+   "fieldname": "visa_reference_number",
+   "fieldtype": "Data",
+   "label": "Visa Reference Number",
+   "read_only_depends_on": "eval:doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
   },
   {
    "fieldname": "visa_issue_date",
@@ -575,16 +560,26 @@
    "fieldtype": "Column Break"
   },
   {
+   "fieldname": "visa_document",
+   "fieldtype": "Attach",
+   "label": "Visa Document",
+   "read_only_depends_on": "eval:doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
+  },
+  {
+   "fieldname": "payment_receipt",
+   "fieldtype": "Attach",
+   "label": "Payment Receipt",
+   "read_only_depends_on": "eval:doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
+  },
+  {
    "fieldname": "payment_date",
    "fieldtype": "Datetime",
    "label": "Payment Date",
    "read_only_depends_on": "eval:doc.workflow_state==\"Completed\" || doc.workflow_state==\"Rejected for Re Issue\" || doc.workflow_state==\"Awaiting Visa Cancellation\" || doc.workflow_state==\"Pending Cancel Work Permit\" || doc.workflow_state==\"Work Permit Cancelled\" || doc.workflow_state==\"Pending Recruiter Confirmation\""
   },
   {
-   "fieldname": "grd_operator",
-   "fieldtype": "Link",
-   "label": "GRD Operator",
-   "options": "User"
+   "fieldname": "section_break_jrbe",
+   "fieldtype": "Section Break"
   },
   {
    "description": "The rejected request this one was raised to replace",
@@ -594,14 +589,24 @@
    "no_copy": 1,
    "options": "Visa Request",
    "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Visa Request",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-09 17:40:17.321789",
- "modified_by": "g.jotshi@one-fm.com",
+ "modified": "2026-09-15 07:09:03.000000",
+ "modified_by": "Administrator",
  "module": "Visa Management",
  "name": "Visa Request",
  "naming_rule": "By \"Naming Series\" field",

@@ -12,7 +12,7 @@ reads. These tests cover the two properties around it:
 
 Recovery has two sources, in order of authority — the Document Register entry,
 then the BPMN run's task data. It exists because ``update_field`` writes the
-published status with ``frappe.db.set_value``, so no doc hook fires at publish;
+state with ``frappe.db.set_value``, so no doc hook fires at publish;
 without it, every document published before this field existed is unreachable.
 """
 
@@ -53,7 +53,20 @@ class DocumentRequestFixtures:
 
 	# --- fixtures ----------------------------------------------------------
 
-	def _request(self, status="Published", reference_document=None, document_link=None):
+	def _request(
+		self,
+		workflow_state="Approved",
+		reference_document=None,
+		document_link=None,
+		request_action="Create",
+	):
+		# Always inserted as a Create, then moved to the action and state under
+		# test straight in the database. That is not laziness about validation: the
+		# links are attached after insert precisely because these tests point a
+		# request at a WITHDRAWN register entry, which validate refuses — and a
+		# Delete with no reference document yet is refused for the opposite
+		# reason. Writing the end state directly is also how the map reaches it:
+		# no doc hooks fire.
 		doc = frappe.get_doc({
 			"doctype": "Document Request",
 			"requester": self.requester,
@@ -63,9 +76,14 @@ class DocumentRequestFixtures:
 			"requirement_text": "x",
 		})
 		doc.insert(ignore_permissions=True)
-		# status is read-only and normally driven by the process; set it the way
-		# the map does — straight to the database, no hooks.
-		frappe.db.set_value("Document Request", doc.name, "status", status, update_modified=False)
+		# Publishing and withdrawing both finish at Approved, so the action is
+		# what distinguishes them.
+		frappe.db.set_value(
+			"Document Request",
+			doc.name,
+			{"workflow_state": workflow_state, "request_action": request_action},
+			update_modified=False,
+		)
 		if reference_document:
 			frappe.db.set_value(
 				"Document Request",
@@ -99,10 +117,21 @@ class DocumentRequestFixtures:
 		return entry.name
 
 	def _instance_with_drive_file(self, request, drive_file):
-		"""A completed run carrying whatever the Drive connector returned."""
+		"""A completed run carrying whatever the Drive connector returned.
+
+		The model is resolved by process name rather than named outright: model
+		names carry a version suffix — the live one is "Document Request (1)" —
+		and a Link to a name that does not exist fails on insert, which made
+		every test in this class error on the fixture rather than on its subject.
+		"""
+		model = frappe.db.get_value(
+			"BPMN Process Model", {"process_name": "Document Request", "is_active": 1}, "name"
+		)
+		if not model:
+			self.skipTest("no active BPMN Process Model for Document Request")
 		instance = frappe.get_doc({
 			"doctype": "BPMN Process Instance",
-			"process_model": "Document Request",
+			"process_model": model,
 			"context_doctype": "Document Request",
 			"context_docname": request,
 			"status": "Completed",
@@ -191,7 +220,7 @@ class TestStoredFieldIsTheReadPath(DocumentRequestFixtures, unittest.TestCase):
 		"""
 		entry = self._index_entry()
 		frappe.db.set_value("Document Register", entry, "lifecycle_state", "Inactive")
-		request = self._request(status="Deleted", reference_document=entry)
+		request = self._request(reference_document=entry, request_action="Delete")
 
 		link = get_published_document_link(request)
 
@@ -270,7 +299,7 @@ class TestLinkResolution(DocumentRequestFixtures, unittest.TestCase):
 		"""
 		entry = self._index_entry()
 		frappe.db.set_value("Document Register", entry, "lifecycle_state", "Inactive")
-		request = self._request(status="Deleted", reference_document=entry)
+		request = self._request(reference_document=entry, request_action="Delete")
 
 		link = get_published_document_link(request)
 
@@ -283,7 +312,7 @@ class TestLinkResolution(DocumentRequestFixtures, unittest.TestCase):
 		self.assertEqual(get_published_document_link(request)["lifecycle"], "Active")
 
 	def test_a_rejected_request_offers_no_link(self):
-		request = self._request(status="Request Rejected")
+		request = self._request(workflow_state="Request Rejected")
 		self._instance_with_drive_file(request, {"id": FILE_ID, "webViewLink": WEB_VIEW_LINK})
 
 		self.assertEqual(get_published_document_link(request), {})

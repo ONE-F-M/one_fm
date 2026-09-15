@@ -15,6 +15,7 @@
   "residency_expiry_date",
   "renewal_or_extend",
   "no_of_years",
+  "no_of_months",
   "column_break_11",
   "work_permit_amount",
   "medical_insurance_amount",
@@ -64,6 +65,20 @@
    "label": "Civil Id"
   },
   {
+   "fetch_from": "employee.relieving_date",
+   "fieldname": "relieving_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Relieving Date",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.one_fm_nationality",
+   "fieldname": "nationality",
+   "fieldtype": "Data",
+   "label": "Nationality"
+  },
+  {
    "fetch_from": "employee.residency_expiry_date",
    "fieldname": "residency_expiry_date",
    "fieldtype": "Data",
@@ -75,36 +90,23 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Action",
-   "options": "\nNew Kuwaiti\nOverseas\nRenewal (Kuwaiti)\nRenewal (Non-Kuwaiti)\nExtend 1 month\nExtend 2 months\nExtend 3 months\nLocal Transfer\nCancellation"
+   "options": "\nNew Kuwaiti\nOverseas\nOverseas (Government)\nRenewal (Kuwaiti)\nRenewal Expat\nExtension\nVisa Extension\nLocal Transfer\nCancellation"
   },
   {
    "allow_on_submit": 1,
-   "fieldname": "ref_doctype",
-   "fieldtype": "Link",
-   "label": "Ref DocType",
-   "options": "DocType",
-   "read_only": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "ref_name",
-   "fieldtype": "Dynamic Link",
-   "label": "Ref Name",
-   "options": "ref_doctype",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "employee.one_fm_nationality",
-   "fieldname": "nationality",
-   "fieldtype": "Data",
-   "label": "Nationality"
-  },
-  {
-   "allow_on_submit": 1,
+   "depends_on": "eval:[\"Renewal (Kuwaiti)\", \"Renewal Expat\"].includes(doc.renewal_or_extend)",
    "fieldname": "no_of_years",
    "fieldtype": "Select",
    "label": "No. of Years",
    "options": "\n1 Year\n2 Years\n3 Years"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.renewal_or_extend == \"Extension\"",
+   "fieldname": "no_of_months",
+   "fieldtype": "Select",
+   "label": "No. of Months",
+   "options": "\n1 Month\n2 Months\n3 Months"
   },
   {
    "bold": 1,
@@ -140,22 +142,45 @@
    "allow_on_submit": 1,
    "fieldname": "total_amount",
    "fieldtype": "Currency",
-   "in_list_view": 1,
    "label": "Total Amount",
    "read_only": 1
   },
   {
-   "fetch_from": "employee.relieving_date",
-   "fieldname": "relieving_date",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Relieving Date",
-   "read_only": 1
+   "fieldname": "status_tracking_section",
+   "fieldtype": "Section Break",
+   "label": "Status Tracking"
   },
   {
    "allow_on_submit": 1,
+   "fieldname": "ref_doctype",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Ref DocType",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_vixp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "ref_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Ref Name",
+   "options": "ref_doctype",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_wbqs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "The workflow state of the document above. Kept in step by that document, not typed.",
    "fieldname": "ref_doctype_status",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Ref Doctype Status",
    "read_only": 1
   },
@@ -192,26 +217,13 @@
    "fieldtype": "Link",
    "label": "PCC Attestation",
    "options": "PCC Attestation"
-  },
-  {
-   "fieldname": "status_tracking_section",
-   "fieldtype": "Section Break",
-   "label": "Status Tracking"
-  },
-  {
-   "fieldname": "column_break_vixp",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_wbqs",
-   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "istable": 1,
  "links": [],
- "modified": "2026-08-19 08:17:18.810092",
- "modified_by": "h.imran@one-fm.com",
+ "modified": "2026-09-15 07:09:02.000000",
+ "modified_by": "Administrator",
  "module": "GRD",
  "name": "Preparation Record",
  "naming_rule": "Expression (old style)",

@@ -1,7 +1,7 @@
 import frappe
 import pyotp
-from frappe.utils import getdate
-from frappe.twofactor import get_otpsecret_for_, process_2fa_for_sms, confirm_otp_token, get_email_subject_for_2fa,get_email_body_for_2fa
+from frappe.utils import getdate, cstr, strip_html
+from frappe.twofactor import get_otpsecret_for_, process_2fa_for_sms, confirm_otp_token, get_email_subject_for_2fa,get_email_body_for_2fa, ExpiredLoginException
 from frappe.integrations.oauth2 import get_token
 from frappe.core.doctype.user.user import generate_keys
 from frappe.utils.background_jobs import enqueue
@@ -138,36 +138,44 @@ def forgot_password(employee_id: str = None, otp_source: str = None, is_new: int
 	"""
 
 	if not employee_id:
-		return response("Bad Request", 400, None, "Please enter your Employee ID.")
+		return response(_("Missing Employee ID"), 400, None,
+			_("Please enter your Employee ID."))
 
 	if not otp_source:
-		return response("Bad Request", 400, None, "Please select an OTP source (SMS, Email, or WhatsApp).")
+		return response(_("Missing Delivery Method"), 400, None,
+			_("Please select where you want the code sent: SMS, Email, or WhatsApp."))
 
 	if not isinstance(employee_id, str):
-		return response("Bad Request", 400, None, "Invalid Employee ID format. Please enter a valid value.")
+		return response(_("Invalid Employee ID"), 400, None,
+			_("Please enter a valid Employee ID."))
 
 	if not isinstance(otp_source, str):
-		return response("Bad Request", 400, None, "Invalid OTP source format. Please select a valid option.")
-	
+		return response(_("Invalid Delivery Method"), 400, None,
+			_("Please select a valid option: SMS, Email, or WhatsApp."))
+
 	formatted_otp_source = otp_source.lower()
 
 	if formatted_otp_source not in ["sms", "email", "whatsapp"]:
-		return response("Bad Request", 400, None, "Invalid OTP source. OTP source must be either 'sms', 'email' or 'whatsapp'.")
-	
+		return response(_("Invalid Delivery Method"), 400, None,
+			_("Please select a valid option: SMS, Email, or WhatsApp."))
+
 	try:
 		employee_user_id =  frappe.get_value("Employee", {'employee_id': employee_id}, 'user_id')
-		
+
 		if not employee_user_id:
-			return response("Bad Request", 404, None, "No account found for employee ID {employee_id}. Please check and try again.".format(employee_id=employee_id))
-		
+			return response(_("Account Not Found"), 404, None,
+				_("No account found for Employee ID {0}. Please check and try again.").format(employee_id))
+
 		# Check for phone number if otp source is 'sms' or 'whatsapp'
 		if formatted_otp_source in ("sms", "whatsapp"):
 			target_user = frappe.db.get_value('User', employee_user_id, ['phone', 'mobile_no'], as_dict=1)
 			phone = target_user.mobile_no or target_user.phone
 
 			if not phone:
-				return response("Bad Request", 400, None, "No phone number found for user {user}.".format(user=employee_user_id))
-		
+				return response(_("No Phone Number"), 400, None,
+					_("No phone number is registered on your account. Please choose Email "
+					  "instead, or contact the IT Helpdesk to add your number."))
+
 		otp_secret = get_otpsecret_for_(employee_user_id)
 		token = int(pyotp.TOTP(otp_secret).now())
 		tmp_id = frappe.generate_hash(length=8)
@@ -196,10 +204,15 @@ def forgot_password(employee_id: str = None, otp_source: str = None, is_new: int
 		}
 
 		return response("Success", 201, result)
-	
+
 	except Exception as error:
-		frappe.log_error(title="API Forgot password", message=frappe.get_traceback())
-		return response("Internal Server Error", 500, None, error)
+		frappe.log_error(
+			title=f"Mobile API: authentication.forgot_password | {employee_id}",
+			message=frappe.get_traceback(),
+		)
+		frappe.db.commit()
+		return response(_("Something Went Wrong"), 500, None,
+			strip_html(cstr(error)) or type(error).__name__)
 
 
 @frappe.whitelist(allow_guest=True)
@@ -216,24 +229,47 @@ def verify_otp(otp, temp_id):
 	status of the OTP entered 
 	"""
 	try:
-		login_manager = frappe.local.login_manager
-		check_otp = confirm_otp_token(login_manager, otp, temp_id)
+		if not otp:
+			return response(_("Missing Verification Code"), 400, None,
+				_("Please enter the verification code that was sent to you."))
+
+		if not temp_id:
+			return response(_("Session Expired"), 400, None,
+				_("Your verification session has expired. Please request a new code."))
+
 		#  get password reset
 		password_token = frappe.db.get_value(
 			"Password Reset Token",
-			{"temp_id":temp_id}, 
+			{"temp_id":temp_id},
 			['name', 'status', 'expiration_time'],
 			as_dict=1
 		)
+		if not password_token:
+			return response(_("Session Expired"), 400, None,
+				_("Your verification session has expired. Please request a new code."))
+
+		login_manager = frappe.local.login_manager
+		check_otp = confirm_otp_token(login_manager, otp, temp_id)
+
 		if check_otp:
 			frappe.db.set_value("Password Reset Token", {"temp_id":temp_id}, "status", "Active")
 			return response ("success", 200, {
 				"password_token":password_token.name,
 				"message":"OTP verified successfully!"})
 		frappe.db.set_value("Password Reset Token", {"temp_id":temp_id}, "status", "Revoked")
-		return response("Error", 400, {}, "Incorrect OTP. Please check and enter the correct code.")
+		return response(_("Incorrect Code"), 400, None,
+			_("Incorrect verification code. Please check and enter the correct code."))
+	except ExpiredLoginException:
+		return response(_("Code Expired"), 400, None,
+			_("Your verification code has expired. Please request a new code."))
 	except Exception as e:
-		response("Error", 500, {}, str(e) or "OTP verification failed!")
+		frappe.log_error(
+			title=f"Mobile API: authentication.verify_otp | {frappe.session.user}",
+			message=frappe.get_traceback(),
+		)
+		frappe.db.commit()
+		return response(_("Something Went Wrong"), 500, None,
+			strip_html(cstr(e)) or type(e).__name__)
 
 
 @frappe.whitelist(allow_guest=True)
@@ -245,17 +281,32 @@ def change_password(employee_id, new_password, password_token):
 	password_token: will be used to verify the password reset and user
 	"""
 	try:
+		if not new_password:
+			return response(_("Missing Password"), 400, None,
+				_("Please enter your new password."))
+
 		employee_user = frappe.get_value("Employee", {'employee_id':employee_id}, ["user_id"])
+		if not employee_user:
+			return response(_("Account Not Found"), 404, None,
+				_("No account found for Employee ID {0}. Please check and try again.").format(employee_id))
+
 		password_token_info = frappe.db.get_value(
 			"Password Reset Token",
-			{"name":password_token}, 
+			{"name":password_token},
 			['name', 'status', 'expiration_time', 'user', 'new_password'],
 			as_dict=1
 		)
+		if not password_token_info:
+			return response(_("Session Expired"), 400, None,
+				_("Your password reset session has expired. Please request a new code."))
+
 		if (employee_user!=password_token_info.user):
-			return response ("Error", 400, {}, "Password reset failed. The user details do not match.")
+			return response(_("Wrong Account"), 400, None,
+				_("This password reset code was issued for a different account. "
+				  "Please request a new code."))
 		elif password_token_info.status != "Active":
-			return response ("Error", 400, {}, "Your password reset token has expired. Please request a new one.")
+			return response(_("Session Expired"), 400, None,
+				_("Your password reset session has expired. Please request a new code."))
 
 		_update_password(employee_user, new_password)
 		frappe.db.set_value("Password Reset Token", password_token, "status", "Revoked")
@@ -265,8 +316,13 @@ def change_password(employee_id, new_password, password_token):
 			"message": "Password reset successful! Please login with your new password."
 		}, "")
 	except Exception as e:
-		frappe.log_error(title="API Change password", message=frappe.get_traceback())
-		return response ("Error", 500, {}, str(e))
+		frappe.log_error(
+			title=f"Mobile API: authentication.change_password | {employee_id}",
+			message=frappe.get_traceback(),
+		)
+		frappe.db.commit()
+		return response(_("Something Went Wrong"), 500, None,
+			strip_html(cstr(e)) or type(e).__name__)
 
 
 @frappe.whitelist(allow_guest=True)
@@ -551,24 +607,37 @@ def set_password(employee_user_id, new_password):
 @frappe.whitelist(allow_guest=True)
 def user_login(employee_id, password):
 	try:
+		if not employee_id:
+			return response(_("Missing Employee ID"), 400, None,
+				_("Please enter your Employee ID."))
+
+		if not password:
+			return response(_("Missing Password"), 400, None,
+				_("Please enter your password."))
+
 		username =  frappe.db.get_value("Employee", {'employee_id': employee_id}, 'user_id')
 		if not username:
-			return response("Bad Request", 400, None,  "No account found for Employee ID {employee_id}. Please check and try again.".format(employee_id=employee_id))
+			return response(_("Account Not Found"), 400, None,
+				_("No account found for Employee ID {0}. Please check and try again.").format(employee_id))
+
 		auth = frappe.auth.LoginManager()
 		auth.authenticate(user=username, pwd=password)
 		auth.post_login()
 		msg={'status':200, 'text':frappe.local.response.message, 'user': frappe.session.user}
-		
 		# Fetch OAuth2 Token (replacing the old API Key "OAuth1" method)
 		client_id = frappe.db.get_value("OAuth Client", {"app_name": "OneFM"}, "client_id")
 		if not client_id:
-			response("error", 500, None, "OAuth Client 'OneFM' not configured in the system.")
-			return
-		
+			frappe.log_error(
+				title=f"Mobile API: authentication.user_login | {employee_id}",
+				message="OAuth Client 'OneFM' is not configured. Mobile login cannot issue a token.",
+			)
+			frappe.db.commit()
+			return response(_("Sign-In Unavailable"), 500, None,
+				_("Sign-in is temporarily unavailable. Please contact the IT Helpdesk."))
+
 		site = frappe.utils.cstr(frappe.local.conf.app_url) if frappe.local.conf.app_url else "http://127.0.0.1:8000"
 		if site.endswith('/'):
 			site = site[:-1]
-			
 		args = {
 			'client_id': client_id,
 			'grant_type': 'password',
@@ -584,7 +653,13 @@ def user_login(employee_id, password):
 			msg['token'] = f"Bearer {token_data.get('access_token')}"
 			msg['refresh_token'] = token_data.get('refresh_token')
 		else:
-			frappe.throw(_("OAuth2 Authentication Failed"))
+			frappe.log_error(
+				title=f"Mobile API: authentication.user_login | {employee_id}",
+				message=f"OAuth2 token request failed with HTTP {auth_api_response.status_code}\n\n{auth_api_response.text}",
+			)
+			frappe.db.commit()
+			return response(_("Sign-In Failed"), 401, None,
+				_("We could not complete your sign-in. Please try again, or contact the IT Helpdesk."))
 		user, user_roles, user_employee =  get_current_user_details()
 		msg.update(user_employee)
 		msg.update({"roles": user_roles})
@@ -596,13 +671,19 @@ def user_login(employee_id, password):
 		msg['endpoint_state'] = endpoint_state
 		msg['employee_endpoint_state'] = user_employee.custom_enable_face_recognition
 		msg['shift_working'] = user_employee.shift_working
-		response("success", 200, msg)
+		return response("success", 200, msg)
 	except frappe.exceptions.AuthenticationError:
-		print('auth eror')
-		response("error", 401, None, frappe.local.response.message)
+		err = strip_html(cstr(frappe.local.response.get("message") or "")) \
+			or _("Incorrect Employee ID or password. Please try again.")
+		return response(_("Sign-In Failed"), 401, None, err)
 	except Exception as e:
-		print(frappe.get_traceback(), 'Email Login')
-		response("error", 500, None, str(e))
+		frappe.log_error(
+			title=f"Mobile API: authentication.user_login | {employee_id}",
+			message=frappe.get_traceback(),
+		)
+		frappe.db.commit()
+		return response(_("Something Went Wrong"), 500, None,
+			strip_html(cstr(e)) or type(e).__name__)
 
 
 @frappe.whitelist(allow_guest=True)
@@ -620,24 +701,37 @@ def enrollment_status(employee_id: str):
 	"""
 	try:
 		if not employee_id:
-			return response("error", 404, "Employee ID is required")
+			return response(_("Missing Employee ID"), 400, None,
+				_("Please enter your Employee ID."))
+
 		employee = frappe.db.get_value(
-			'Employee', 
-			{'employee_id':employee_id} 
+			'Employee',
+			{'employee_id':employee_id}
 			,['status', 'enrolled', 'registered', 'employee_name', 'user_id','employee_name_in_arabic'], as_dict=1)
 		if employee:
 			if (employee.status in ['Left', 'Court Case']):
-				return response("error", 404, {}, f"Employee is not active")
+				return response(_("Account Not Active"), 403, None,
+					_("Your employee record is marked as '{0}' and cannot sign in. "
+					  "Please contact the HR Department.").format(employee.status))
 			elif (not employee.user_id):
-				return response("error", 404, {}, f"No active user account or login email found for {employee_id}".format(employee_id=employee_id))
+				return response(_("No Login Account"), 404, None,
+					_("No login account is set up for Employee ID {0}. "
+					  "Please contact the IT Helpdesk.").format(employee_id))
 			else:
 				return response("success", 200, {
 					"enrolled": employee.enrolled,
-					"registered": employee.registered, 
+					"registered": employee.registered,
 					"employee_name":employee.employee_name,
 					"employee_name_ar":employee.employee_name_in_arabic},
 				)
 		else:
-			return response("error", 404, {}, f"Employee ID {employee_id} does not exist")
+			return response(_("Employee Not Found"), 404, None,
+				_("No employee record found for Employee ID {0}. Please check and try again.").format(employee_id))
 	except Exception as e:
-		return response("error", 500, {}, str(e))
+		frappe.log_error(
+			title=f"Mobile API: authentication.enrollment_status | {employee_id}",
+			message=frappe.get_traceback(),
+		)
+		frappe.db.commit()
+		return response(_("Something Went Wrong"), 500, None,
+			strip_html(cstr(e)) or type(e).__name__)

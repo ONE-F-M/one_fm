@@ -397,7 +397,7 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 		doc.flags.ignore_links = True
 		return doc
 
-	def _row(self, vehicle, *, trip, direction="OUTBOUND", headcount, card=None):
+	def _row(self, vehicle, *, trip, direction="OUTBOUND", headcount, card=None, stop=None):
 		return {
 			"card_id": card or frappe.generate_hash("CARD", 8),
 			"vehicle": vehicle,
@@ -405,6 +405,10 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 			"trip_group": trip,
 			"trip_name": trip,
 			"headcount": headcount,
+			# Stop order is what the leg walk reads: the same two loads peak at 3 or at 6
+			# depending on whether the return riders board before or after the outward
+			# ones get off, so a test about a mixed run has to say which run it means.
+			"stop_index": stop,
 		}
 
 	def test_merged_camps_exceeding_seats_are_blocked(self):
@@ -428,12 +432,50 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 		plan.insert(ignore_permissions=True)
 		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
 
-	def test_outbound_and_return_of_one_trip_are_counted_separately(self):
-		# Same trip_group but opposite directions are two physical runs, so each
-		# 3-seat leg is fine even though they'd overflow if summed together.
+	def test_outbound_and_return_of_one_trip_are_walked_leg_by_leg(self):
+		"""WI-002160: one trip_group on one vehicle is one bus run, not two.
+
+		A return pickup chained onto an outward drop is the same bus turning around at
+		the stop: the riders it dropped are off before the boarders get on, so 3 out
+		then 3 back fits three seats. Summing the two legs — which is what keying the
+		direction into the trip did — refused a run the bus really makes.
+		"""
 		plan = self._make_plan([
-			self._row(self.VEHICLE, trip="TRIP-BOTH", direction="OUTBOUND", headcount=3),
-			self._row(self.VEHICLE, trip="TRIP-BOTH", direction="RETURN", headcount=3),
+			self._row(self.VEHICLE, trip="TRIP-BOTH", direction="OUTBOUND", headcount=3, stop=1),
+			self._row(self.VEHICLE, trip="TRIP-BOTH", direction="RETURN", headcount=3, stop=2),
+		])
+		plan.insert(ignore_permissions=True)
+		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
+
+	def test_a_return_boarding_before_the_outward_drop_still_overloads(self):
+		"""The other stop order genuinely does overload the bus, and is still refused.
+
+		Boarding the return riders at stop 1 puts them aboard alongside the outward
+		ones, who have not been dropped yet — six people on three seats.
+		"""
+		plan = self._make_plan([
+			self._row(self.VEHICLE, trip="TRIP-STACK", direction="RETURN", headcount=3, stop=1),
+			self._row(self.VEHICLE, trip="TRIP-STACK", direction="OUTBOUND", headcount=3, stop=2),
+		])
+		with self.assertRaises(frappe.ValidationError) as cm:
+			plan.insert(ignore_permissions=True)
+		self.assertIn("Capacity Exceeded on leg", str(cm.exception))
+
+	def test_a_chained_run_is_not_counted_against_itself(self):
+		"""WI-002160, the shape the dispatcher actually hit: S-204 on a 3-seat RAIZE.
+
+		One outward drop followed by two return pickups is a run that peaks at two
+		aboard, never three. Splitting it by direction made an outbound pseudo-trip of
+		1 and a return one of 2 whose windows overlapped each other, so a further
+		1-passenger run in the same window was told the bus was already full.
+		"""
+		plan = self._make_plan([
+			self._row(self.VEHICLE, trip="S-204", direction="OUTBOUND", headcount=1, stop=1),
+			self._row(self.VEHICLE, trip="S-204", direction="RETURN", headcount=1, stop=2),
+			self._row(self.VEHICLE, trip="S-204", direction="RETURN", headcount=1, stop=3),
+			# No times recorded, so every trip here spans the whole day and they all
+			# overlap — the harshest reading of "running at the same time".
+			self._row(self.VEHICLE, trip="EU-RESIDENCE", direction="RETURN", headcount=1, stop=1),
 		])
 		plan.insert(ignore_permissions=True)
 		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
@@ -832,3 +874,370 @@ class TestRoutePlanSingleVehicleSave(FrappeTestCase):
 		])
 		plan.insert(ignore_permissions=True)
 		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
+
+
+class TestSeatsAreCountedFromTheShipment(FrappeTestCase):
+	"""#6818: a row's headcount is a snapshot, and a stale one hides an overload.
+
+	The board draws its cards from the shipments while the seat check read the row, so a
+	card that had since gained an employee left the plan holding a number nobody could
+	see - and under-counting is the dangerous direction: it waved a 28-passenger load
+	through on a 27-seat bus.
+	"""
+
+	def _row(self, shipment, headcount):
+		return frappe._dict({"transportation_shipment": shipment, "headcount": headcount})
+
+	def test_the_shipments_count_wins_over_the_stored_snapshot(self):
+		from one_fm.operations.doctype.route_plan.route_plan import row_headcount
+
+		row = self._row("TS-X", 6)
+
+		self.assertEqual(row_headcount(row, {"TS-X": 7}), 7)
+
+	def test_the_row_answers_when_the_card_is_gone(self):
+		# Never count a card as empty just because its shipment was deleted.
+		from one_fm.operations.doctype.route_plan.route_plan import row_headcount
+
+		self.assertEqual(row_headcount(self._row("TS-GONE", 6), {}), 6)
+
+	def test_a_row_with_no_shipment_keeps_its_own_number(self):
+		from one_fm.operations.doctype.route_plan.route_plan import row_headcount
+
+		self.assertEqual(row_headcount(self._row(None, 4), {"TS-X": 9}), 4)
+
+	def test_an_under_count_is_what_hid_the_overload(self):
+		# 27 stored against 28 live is the difference between fitting and not.
+		from one_fm.operations.doctype.route_plan.route_plan import row_headcount
+
+		rows = [self._row("A", 20), self._row("B", 7)]
+		live = {"A": 20, "B": 8}
+
+		self.assertEqual(sum(row_headcount(r, live) for r in rows), 28)
+		self.assertEqual(sum(r.headcount for r in rows), 27)
+
+
+class TestAnUntouchedBusIsNotAWall(FrappeTestCase):
+	"""A save is judged on what it does, not on everything already in the plan.
+
+	Capacity is measured against the shipments rather than the snapshot on the row, so a
+	roster that grew after a card was placed shows up as an overload on a bus nobody has
+	touched. Judged on every save, one such bus blocked the whole plan: a drop on a
+	different vehicle could not be saved until the untouched one was fixed.
+	"""
+
+	def test_a_vehicle_whose_cards_did_not_move_is_left_alone(self):
+		plan = frappe.new_doc("Route Plan")
+		plan.get_doc_before_save = lambda: frappe._dict(assignments=[
+			frappe._dict(vehicle="BUS-A", transportation_shipment="TS-1", stop_index=1,
+						 trip_group="T1", direction="OUTBOUND", headcount=27,
+						 start_time="2026-08-18T06:00:00Z", end_time="2026-08-18T07:00:00Z"),
+		])
+		rows = list(plan.get_doc_before_save().assignments)
+
+		untouched = plan._vehicles_this_save_did_not_touch(plan._logical_trips(rows))
+
+		self.assertIn("BUS-A", untouched)
+
+	def test_a_vehicle_that_gained_a_card_is_judged(self):
+		plan = frappe.new_doc("Route Plan")
+		before = [
+			frappe._dict(vehicle="BUS-A", transportation_shipment="TS-1", stop_index=1,
+						 trip_group="T1", direction="OUTBOUND", headcount=27,
+						 start_time="2026-08-18T06:00:00Z", end_time="2026-08-18T07:00:00Z"),
+		]
+		plan.get_doc_before_save = lambda: frappe._dict(assignments=before)
+		after = before + [
+			frappe._dict(vehicle="BUS-A", transportation_shipment="TS-2", stop_index=2,
+						 trip_group="T1", direction="OUTBOUND", headcount=1,
+						 start_time="2026-08-18T06:00:00Z", end_time="2026-08-18T07:00:00Z"),
+		]
+
+		untouched = plan._vehicles_this_save_did_not_touch(plan._logical_trips(after))
+
+		self.assertNotIn("BUS-A", untouched)
+
+	def test_a_brand_new_plan_is_judged_in_full(self):
+		# Nothing to grandfather: every card in it is being placed by this save.
+		plan = frappe.new_doc("Route Plan")
+
+		self.assertEqual(plan._vehicles_this_save_did_not_touch([]), set())
+
+
+class TestSequentialRunsAreWeighedSeparately(FrappeTestCase):
+	"""One trip is one bus run, and a finished run holds nobody (WI-002401 AC5).
+
+	A vehicle that puts its passengers down at 06:05 is empty when the 06:35 run
+	boards, so the two never see each other's riders. Pooling them refused a seat that
+	was free and named two runs the dispatcher was not aiming at.
+	"""
+
+	VEHICLE = "VHL-L-0022"  # 4 seats -> 3 legal passenger seats
+	SEATS = 3
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		if not frappe.db.exists("Vehicle", cls.VEHICLE):
+			raise cls.skipTest(cls, f"Fixture vehicle {cls.VEHICLE} missing on this site")
+
+	def _row(self, *, trip, headcount, start, end):
+		return {
+			"card_id": frappe.generate_hash("CARD", 8),
+			"vehicle": self.VEHICLE,
+			"direction": "OUTBOUND",
+			"trip_group": trip,
+			"trip_name": trip,
+			"headcount": headcount,
+			"start_time": f"2026-07-20T{start}Z",
+			"end_time": f"2026-07-20T{end}Z",
+		}
+
+	def _plan(self, rows):
+		doc = frappe.new_doc("Route Plan")
+		doc.title = frappe.generate_hash("RP-SEQ", 8)
+		doc.status = "Draft"
+		doc.effective_from = today()
+		for row in rows:
+			doc.append("assignments", row)
+		doc.flags.ignore_mandatory = True
+		doc.flags.ignore_links = True
+		return doc
+
+	def test_two_sequential_runs_are_not_added_together(self):
+		# The AC's own numbers, scaled to a 3-seat bus: an early run of 1 and a later
+		# run of 2 both fit, and 1 + 2 = 3 only matters if they share the road.
+		plan = self._plan([
+			self._row(trip="S-106", headcount=1, start="05:30:00", end="06:05:00"),
+			self._row(trip="S-102", headcount=2, start="06:35:00", end="08:20:00"),
+		])
+
+		plan.insert(ignore_permissions=True)   # must not raise
+
+		trips = plan._logical_trips()
+		self.assertEqual(_peak_concurrent_headcount(trips), 2)
+
+	def test_a_sequential_run_may_be_filled_to_the_seats(self):
+		# Adding a passenger to the later run takes it to the seat count exactly,
+		# which the earlier run has no say in.
+		plan = self._plan([
+			self._row(trip="S-106", headcount=2, start="05:30:00", end="06:05:00"),
+			self._row(trip="S-102", headcount=3, start="06:35:00", end="08:20:00"),
+		])
+
+		plan.insert(ignore_permissions=True)   # must not raise
+
+	def test_runs_that_really_do_overlap_still_add_up(self):
+		# Same bus, same hours: these passengers are aboard together.
+		plan = self._plan([
+			self._row(trip="S-106", headcount=2, start="05:30:00", end="07:00:00"),
+			self._row(trip="S-102", headcount=2, start="06:35:00", end="08:20:00"),
+		])
+
+		with self.assertRaises(frappe.ValidationError) as cm:
+			plan.insert(ignore_permissions=True)
+
+		self.assertIn("overlapping passengers", str(cm.exception))
+
+
+class TestRenumberedStopsDoNotUnprotectAnUntouchedBus(FrappeTestCase):
+	"""stop_index is derived, so it cannot decide whether a save touched a bus.
+
+	_stamp_leg_details renumbers every row of every vehicle off the itinerary on every
+	save, while the canvas round-trips a logical 1..N. Keying the untouched-vehicle
+	guard on that number re-lettered every card each time, so no bus was ever untouched
+	- and one pre-existing overload then refused every edit anywhere on the plan, on a
+	vehicle the dispatcher had never gone near (WI-002401).
+	"""
+
+	def _rows(self, *, first_index):
+		return [
+			frappe._dict(vehicle="BUS-A", transportation_shipment="TS-1",
+						 stop_index=first_index, trip_group="T1", direction="OUTBOUND",
+						 headcount=27, start_time="2026-08-18T06:00:00Z",
+						 end_time="2026-08-18T07:00:00Z"),
+			frappe._dict(vehicle="BUS-A", transportation_shipment="TS-2",
+						 stop_index=first_index + 1, trip_group="T1", direction="OUTBOUND",
+						 headcount=1, start_time="2026-08-18T07:00:00Z",
+						 end_time="2026-08-18T08:00:00Z"),
+		]
+
+	def test_the_same_cards_under_different_stop_numbers_read_as_untouched(self):
+		plan = frappe.new_doc("Route Plan")
+		plan.get_doc_before_save = lambda: frappe._dict(assignments=self._rows(first_index=2))
+
+		# The identical placement, renumbered from 1 the way the canvas sends it back.
+		untouched = plan._vehicles_this_save_did_not_touch(
+			plan._logical_trips(self._rows(first_index=1))
+		)
+
+		self.assertIn("BUS-A", untouched)
+
+	def test_a_card_that_actually_moved_is_still_judged(self):
+		plan = frappe.new_doc("Route Plan")
+		plan.get_doc_before_save = lambda: frappe._dict(assignments=self._rows(first_index=1))
+		moved = self._rows(first_index=1)
+		moved[1].vehicle = "BUS-B"
+
+		untouched = plan._vehicles_this_save_did_not_touch(plan._logical_trips(moved))
+
+		self.assertNotIn("BUS-A", untouched)
+		self.assertNotIn("BUS-B", untouched)
+
+
+class TestATripNameNamesOneRun(FrappeTestCase):
+	"""No two runs on one vehicle answer to the same trip name (WI-002401).
+
+	A trip name identifies a run on the block, in the "Add Stop to which trip?" picker and
+	on the driver's manifest, so a lane holding two runs called S-106 is ambiguous
+	everywhere the name is all the reader has. The canvas mints a name by scanning for the
+	next free sequence, but it reads that list when the placement dialog OPENS and the drop
+	commits later - so the rule is enforced here, where every path ends up.
+	"""
+
+	def _plan(self, rows):
+		doc = frappe.new_doc("Route Plan")
+		doc.title = frappe.generate_hash("RP-NAME", 8)
+		doc.status = "Draft"
+		doc.effective_from = today()
+		for row in rows:
+			doc.append("assignments", row)
+		doc.flags.ignore_mandatory = True
+		doc.flags.ignore_links = True
+		return doc
+
+	def _row(self, *, vehicle="BUS-A", trip, name, start, end="23:00:00"):
+		return {
+			"card_id": frappe.generate_hash("CARD", 8),
+			"vehicle": vehicle,
+			"direction": "OUTBOUND",
+			"trip_group": trip,
+			"trip_name": name,
+			"headcount": 1,
+			"start_time": f"2026-07-20T{start}Z",
+			"end_time": f"2026-07-20T{end}Z",
+		}
+
+	def _names(self, doc):
+		return {row.trip_group: row.trip_name for row in doc.assignments}
+
+	def test_the_earlier_run_keeps_the_name(self):
+		# The 05:30 run is the one the dispatcher has been looking at.
+		doc = self._plan([
+			self._row(trip="T-EARLY", name="S-106", start="05:30:00", end="06:05:00"),
+			self._row(trip="T-LATE", name="S-106", start="22:00:00", end="23:15:00"),
+			self._row(trip="T-OTHER", name="S-101", start="13:00:00", end="14:00:00"),
+		])
+
+		doc._rename_duplicate_trip_names()
+
+		names = self._names(doc)
+		self.assertEqual(names["T-EARLY"], "S-106")
+		self.assertEqual(names["T-OTHER"], "S-101")
+		# S-101 and S-106 are taken, so the next free sequence in this lane's series.
+		self.assertEqual(names["T-LATE"], "S-102")
+
+	def test_every_row_of_the_renamed_run_moves_together(self):
+		# Including a camp leg, which carries the run's name but no card.
+		doc = self._plan([
+			self._row(trip="T-EARLY", name="S-106", start="05:30:00", end="06:05:00"),
+			self._row(trip="T-LATE", name="S-106", start="22:00:00", end="22:30:00"),
+			self._row(trip="T-LATE", name="S-106", start="22:30:00", end="23:15:00"),
+		])
+		doc.assignments[-1].is_camp_leg = 1
+
+		doc._rename_duplicate_trip_names()
+
+		# S-106 is the only name taken, so the next free sequence is 01.
+		late = [row.trip_name for row in doc.assignments if row.trip_group == "T-LATE"]
+		self.assertEqual(late, ["S-101", "S-101"])
+
+	def test_a_lane_with_no_clash_is_left_alone(self):
+		doc = self._plan([
+			self._row(trip="T1", name="S-101", start="05:30:00"),
+			self._row(trip="T2", name="S-102", start="07:30:00"),
+		])
+
+		doc._rename_duplicate_trip_names()
+
+		self.assertEqual(self._names(doc), {"T1": "S-101", "T2": "S-102"})
+
+	def test_the_same_name_on_two_different_vehicles_is_not_a_clash(self):
+		# A name only has to be unique on its own lane.
+		doc = self._plan([
+			self._row(vehicle="BUS-A", trip="T1", name="S-101", start="05:30:00"),
+			self._row(vehicle="BUS-B", trip="T2", name="S-101", start="05:30:00"),
+		])
+
+		doc._rename_duplicate_trip_names()
+
+		self.assertEqual(self._names(doc), {"T1": "S-101", "T2": "S-101"})
+
+	def test_an_unparseable_series_is_left_visible_rather_than_guessed(self):
+		# Renaming into an invented series would be worse than the clash.
+		doc = self._plan([
+			self._row(trip="T1", name="MORNING", start="05:30:00"),
+			self._row(trip="T2", name="MORNING", start="07:30:00"),
+		])
+
+		doc._rename_duplicate_trip_names()
+
+		self.assertEqual(self._names(doc), {"T1": "MORNING", "T2": "MORNING"})
+
+	def test_the_series_is_read_off_the_lane_not_off_the_vehicle_id(self):
+		# The canvas numbers a vehicle by its POSITION in the vehicle list, which the
+		# server cannot reproduce - so a new name copies what the lane already uses.
+		doc = self._plan([
+			self._row(trip="T1", name="1901", start="05:30:00"),
+			self._row(trip="T2", name="1901", start="07:30:00"),
+		])
+
+		doc._rename_duplicate_trip_names()
+
+		self.assertEqual(self._names(doc)["T2"], "1902")
+
+	def test_repairing_twice_changes_nothing_the_second_time(self):
+		doc = self._plan([
+			self._row(trip="T1", name="S-106", start="05:30:00"),
+			self._row(trip="T2", name="S-106", start="07:30:00"),
+		])
+
+		doc._rename_duplicate_trip_names()
+		once = self._names(doc)
+		doc._rename_duplicate_trip_names()
+
+		self.assertEqual(self._names(doc), once)
+
+	def test_three_runs_sharing_one_name_all_end_up_distinct(self):
+		doc = self._plan([
+			self._row(trip="T1", name="S-101", start="05:30:00"),
+			self._row(trip="T2", name="S-101", start="07:30:00"),
+			self._row(trip="T3", name="S-101", start="09:30:00"),
+		])
+
+		doc._rename_duplicate_trip_names()
+
+		names = self._names(doc)
+		self.assertEqual(names["T1"], "S-101")
+		self.assertEqual(len(set(names.values())), 3)
+
+	def test_a_save_can_never_store_a_duplicate(self):
+		# Wired into validate(), so it does not matter which path on the board handed the
+		# name out - and it repairs rather than refuses, because the plans already carry
+		# duplicates and refusing would strand them.
+		vehicle = "VHL-L-0022"
+		if not frappe.db.exists("Vehicle", vehicle):
+			self.skipTest(f"Fixture vehicle {vehicle} missing on this site")
+
+		doc = self._plan([
+			self._row(vehicle=vehicle, trip="T1", name="S-106",
+					  start="05:30:00", end="06:05:00"),
+			self._row(vehicle=vehicle, trip="T2", name="S-106",
+					  start="22:00:00", end="23:15:00"),
+		])
+
+		doc.insert(ignore_permissions=True)
+		stored = frappe.get_doc("Route Plan", doc.name)
+
+		names = [row.trip_name for row in stored.assignments]
+		self.assertEqual(sorted(names), ["S-101", "S-106"])

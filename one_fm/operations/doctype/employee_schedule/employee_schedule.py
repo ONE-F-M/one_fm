@@ -7,8 +7,188 @@ import frappe
 from frappe.model.document import Document
 from frappe import _
 from frappe.utils import cstr, add_days, getdate, get_last_day
+from frappe.query_builder.functions import Coalesce
+from one_fm.operations.doctype.operations_shift.operations_shift import resolve_shift_timing
 from one_fm.utils import get_week_start_end, get_month_start_end
 from one_fm.processor import sendemail
+
+# WI-002283: the state a second, overtime schedule waits in while somebody decides
+# whether the employee may work twice that day. Approving lands on Active rather than a
+# state of its own: only an Active schedule is picked up for a Shift Assignment, and only
+# an Active one can later be suspended.
+PENDING_DSOT = "Pending DSOT Approval"
+DSOT_REJECTED = "Rejected"
+ACTIVE = "Active"
+
+# The Roster Type the field actually offers. The story writes "Overtime"; the option is
+# "Over-Time", and a rule keyed on the wrong spelling silently never fires.
+OVERTIME = "Over-Time"
+BASIC = "Basic"
+
+# A double shift means working twice. A Day Off, or a day of sick or annual leave, is not
+# a first shift - and Day Off OT is a flow of its own that deliberately does not go
+# through an approval gate.
+WORKING = "Working"
+
+# WI-002437: the two states an Employee Schedule is in when it is not a shift anybody is
+# working. A double shift waiting on the DSOT Approver is not one yet, and a rejected one
+# never will be - the hours are gone, whether it was refused outright or nobody answered
+# before the shift ended.
+#
+# Only the DSOT flow reaches either: the workflow's Rejected state has one way in, from
+# Pending DSOT Approval, so the suspension flow this shares a workflow with is untouched.
+#
+# The Roster Matrix applies the same pair through its own raw-SQL fragment in
+# one_fm/one_fm/page/roster/employee_map.py; the two are pinned equal in test_dsot_roster.
+NOT_A_WORKED_SHIFT = (PENDING_DSOT, DSOT_REJECTED)
+
+
+def has_workflow_state_column() -> bool:
+	"""Does this site have the workflow_state column yet?
+
+	It is a Custom Field the Employee Schedule workflow creates, not a field this app
+	ships, so a site where that workflow has not been installed has no such column -
+	and filtering on it would fail the whole query rather than narrow it.
+	"""
+	return "workflow_state" in frappe.db.get_table_columns("Employee Schedule")
+
+
+def worked_shift_filters() -> dict:
+	"""Keep unworked shifts out of an ORM query (WI-002437).
+
+	Empty where the column is not there yet, which leaves the caller's query exactly as
+	it was - the same thing the Roster Matrix does.
+
+	Frappe writes "not in" as ifnull(column, '') not in (...), so a schedule carrying no
+	state at all still counts as worked. That matters: the roster writes its rows with a
+	raw INSERT that does not list workflow_state, so a fresh Basic row genuinely has none,
+	and a plain SQL NOT IN would drop every one of them.
+	"""
+	if not has_workflow_state_column():
+		return {}
+
+	return {"workflow_state": ["not in", list(NOT_A_WORKED_SHIFT)]}
+
+
+def worked_shift_criterion(employee_schedule):
+	"""The same rule as a Query Builder criterion, or None where it does not apply.
+
+	Coalesce rather than a bare NOT IN for the reason above - the Query Builder writes
+	raw SQL, where NULL NOT IN (...) is NULL and the row is dropped.
+	"""
+	if not has_workflow_state_column():
+		return None
+
+	return Coalesce(employee_schedule.workflow_state, "").notin(list(NOT_A_WORKED_SHIFT))
+
+
+def worked_shift_sql(alias: str = "es") -> str:
+	"""The same rule as a SQL fragment for a raw query, on the given table alias.
+
+	"1 = 1" where the column is not there yet, so the caller can splice it in
+	unconditionally. The states are this module's own constants, not anything a user
+	supplies.
+	"""
+	if not has_workflow_state_column():
+		return "1 = 1"
+
+	states = ", ".join(f"'{state}'" for state in NOT_A_WORKED_SHIFT)
+
+	return f"ifnull({alias}.workflow_state, '') not in ({states})"
+
+
+def hold_overtime_for_approval(names):
+	"""Put bulk-created overtime schedules into the DSOT gate (WI-002283).
+
+	The roster writes Employee Schedule rows with one raw INSERT rather than through the
+	ORM - deliberately, it can be hundreds of rows - so before_insert never runs for them
+	and set_dsot_state never sees them. They arrived with no workflow_state at all and
+	went straight to a Shift Assignment, which is the whole thing this story exists to
+	stop.
+
+	Same test as set_dsot_state, asked once for the batch: an overtime schedule for
+	somebody already working a basic shift that day is a double shift. A state already
+	set is left alone, so re-running the roster over a decided request does not drag it
+	back to Pending.
+
+	WI-002437: except a Rejected one. The roster names its rows
+	"<date>_<employee>_<roster type>", so re-rostering overtime for a day already refused
+	writes over the same row rather than making a new one - and its ON DUPLICATE KEY
+	UPDATE does not touch workflow_state. Without this the row stayed Rejected, was
+	skipped here, and was then filtered out of the Shift Assignment job for being
+	Rejected: the supervisor's new request vanished with no way to tell why.
+
+	Only for the rows the caller just wrote, which is the whole reason this cannot drag a
+	decided request back: it is handed the names of that one INSERT.
+	"""
+	names = [name for name in (names or []) if name]
+	if not names:
+		return []
+
+	candidates = frappe.get_all(
+		"Employee Schedule",
+		filters={
+			"name": ["in", names],
+			"roster_type": OVERTIME,
+			"employee_availability": WORKING,
+			"workflow_state": ["in", [None, "", DSOT_REJECTED]],
+		},
+		fields=["name", "employee", "date"],
+	)
+	if not candidates:
+		return []
+
+	# One query for the whole batch rather than an exists() per row: the roster writes
+	# these hundreds at a time.
+	working_that_day = {
+		(row.employee, row.date)
+		for row in frappe.get_all(
+			"Employee Schedule",
+			filters={
+				"employee": ["in", list({c.employee for c in candidates})],
+				"date": ["in", list({c.date for c in candidates})],
+				"roster_type": BASIC,
+				"employee_availability": WORKING,
+			},
+			fields=["employee", "date"],
+		)
+	}
+
+	pending = [c.name for c in candidates if (c.employee, c.date) in working_that_day]
+	for name in pending:
+		frappe.db.set_value(
+			"Employee Schedule", name, "workflow_state", PENDING_DSOT, update_modified=False
+		)
+		frappe.get_doc("Employee Schedule", name).request_dsot_approval()
+
+	return pending
+
+
+def dsot_settings():
+	"""Who decides a DSOT request, from Operation Settings."""
+	return frappe.db.get_value(
+		"Operation Settings",
+		"Operation Settings",
+		["dsot_approver", "default_operation_manager"],
+		as_dict=True,
+	) or frappe._dict()
+
+
+def may_decide_dsot(user=None) -> bool:
+	"""Is this user allowed to approve or reject a DSOT request (WI-002283)?
+
+	The workflow gates its transitions by role, but the criteria name people: the DSOT
+	Approver chosen in Operation Settings, and - when that is blank - the Operation
+	Manager named there. So the roles decide who is offered the buttons and this decides
+	who may actually use them.
+	"""
+	user = user or frappe.session.user
+	if user == "Administrator" or "System Manager" in frappe.get_roles(user):
+		return True
+
+	settings = dsot_settings()
+	return user in {settings.get("dsot_approver"), settings.get("default_operation_manager")} - {None, ""}
+
 
 class EmployeeSchedule(Document):
 	def before_save(self):
@@ -27,6 +207,11 @@ class EmployeeSchedule(Document):
 			if self._is_suspension_workflow_transition():
 				return
 
+			# WI-002283: and the DSOT decision, which is gated on the people named in
+			# Operation Settings rather than on a role.
+			if self._is_dsot_workflow_transition():
+				return
+
 			# Check if user has System Manager role
 			if frappe.session.user != "Administrator" and "System Manager" not in frappe.get_roles():
 				frappe.throw(_("Only System Managers can edit Employee Schedule records directly. Please use the appropriate tools (Roster, OJT, Client Event, etc.) to make schedule changes."))
@@ -39,6 +224,27 @@ class EmployeeSchedule(Document):
 			return False
 		approver_roles = {"Operations Manager", "Operations Admin", "General Manager", "System Manager"}
 		return bool(approver_roles & set(frappe.get_roles()))
+
+	def _is_dsot_workflow_transition(self) -> bool:
+		"""WI-002283: is this save the DSOT decision, made by somebody entitled to make it?
+
+		The workflow offers Approve and Reject to the operations roles, but the criteria
+		name people - the DSOT Approver in Operation Settings, or the Operation Manager
+		there when no approver is set. Somebody holding the role but named nowhere is
+		refused here rather than in the workflow, so the message says why.
+		"""
+		previous = frappe.db.get_value("Employee Schedule", self.name, "workflow_state")
+		if previous != PENDING_DSOT or self.get("workflow_state") == previous:
+			return False
+
+		if not may_decide_dsot():
+			frappe.throw(
+				_("Only the DSOT Approver or the Operation Manager named in Operation "
+				  "Settings can decide this overtime request."),
+				title=_("Not the DSOT Approver"),
+			)
+
+		return True
 
 	def handle_suspension_workflow(self):
 		"""WI-001694: apply the suspension workflow side-effects.
@@ -65,7 +271,11 @@ class EmployeeSchedule(Document):
 		if not frappe.db.exists("Employee", {'status':'Active', 'name':self.employee}):
 			frappe.throw(f"{self.employee} - {self.employee_name} is not active and cannot be scheduled.")
 
+	def after_insert(self):
+		self.set_dsot_state()
+
 	def on_update(self):
+		self.handle_dsot_decision()
 		previous_doc =  self.get_doc_before_save()
 		if previous_doc and previous_doc.employee_availability != "Day Off" and self.employee_availability == "Day Off":
 			start_date = self.date
@@ -96,6 +306,146 @@ class EmployeeSchedule(Document):
 			and self.get("workflow_state") in ("Suspended", "Active")
 		):
 			self.clear_suspension_approval_requests()
+
+	def set_dsot_state(self):
+		"""Hold a second overtime shift for approval (WI-002283).
+
+		An overtime schedule for somebody already working a basic shift that day is a
+		double shift, and somebody has to say yes to it. One raised for a day the
+		employee is not already working is ordinary overtime and goes through untouched.
+
+		WI-002437: written after the insert, not before it. Setting the field on the
+		document made Frappe's own workflow validation refuse the save outright -
+		"Workflow State transition not allowed from Active to Pending DSOT Approval",
+		because on an insert there is no before-state to transition from and the first
+		state is the only one a new document may carry. Every double shift raised through
+		the ORM failed at the supervisor with that message, and none ever reached the
+		approver; the roster's own path only worked because it writes its rows with raw
+		SQL and then calls hold_overtime_for_approval, which is exactly what this now does
+		for a single one.
+
+		Written rather than saved, so it cannot be talked out of the state by a later
+		save: the workflow decides when it leaves.
+		"""
+		if self.roster_type != OVERTIME or self.get("workflow_state") == PENDING_DSOT:
+			return
+
+		if not self.has_working_basic_schedule():
+			return
+
+		self.db_set("workflow_state", PENDING_DSOT, update_modified=False)
+		self.request_dsot_approval()
+
+	def has_working_basic_schedule(self) -> bool:
+		"""Is the employee already working a basic shift on this date?"""
+		return bool(frappe.db.exists("Employee Schedule", {
+			"employee": self.employee,
+			"date": self.date,
+			"roster_type": BASIC,
+			"employee_availability": WORKING,
+			"name": ["!=", self.name or ""],
+		}))
+
+	def handle_dsot_decision(self):
+		"""Assign the approver, and tidy up once they have decided (WI-002283)."""
+		if self.is_new():
+			return
+
+		previous = self.get_doc_before_save()
+		was = previous.get("workflow_state") if previous else None
+		now = self.get("workflow_state")
+
+		if was == now:
+			return
+
+		if now == PENDING_DSOT:
+			self.request_dsot_approval()
+		elif was == PENDING_DSOT:
+			self.clear_suspension_approval_requests()
+			if now == ACTIVE:
+				self.create_dsot_shift_assignment()
+
+	def request_dsot_approval(self):
+		"""Put the request in front of the DSOT Approver, if there is one.
+
+		With nobody configured the request still stands and still blocks the Shift
+		Assignment - it simply waits for the Operation Manager to find it, which is what
+		the criteria ask for. Nothing is assigned to nobody.
+		"""
+		approver = dsot_settings().get("dsot_approver")
+		if not approver:
+			return
+
+		from frappe.desk.form.assign_to import add as add_assignment
+
+		try:
+			add_assignment({
+				"doctype": self.doctype,
+				"name": self.name,
+				"assign_to": [approver],
+				"description": _("Approve or reject overtime for {0} on {1}").format(
+					self.employee_name or self.employee, self.date
+				),
+				"notify": 1,
+			})
+		except Exception:
+			# A schedule that saved must not be undone because the notification failed.
+			frappe.log_error(
+				title="Could not assign the DSOT approver",
+				message=frappe.get_traceback(),
+			)
+
+	def create_dsot_shift_assignment(self):
+		"""Give an approved overtime shift its Shift Assignment now (WI-002283).
+
+		Only for today. Shift Assignment refuses a start date in the future outright -
+		"Shift cannot be created for date greater than today" - so approving tomorrow's
+		overtime raised that at the approver, over an approval that had in fact saved.
+		A future date needs nothing done to it: overtime_shift_assignment runs every five
+		minutes over that day's schedules, and by then this one is Active and no longer
+		filtered out.
+
+		Reuses the same builder the job uses, so an assignment made here is the one the
+		job would have made. Logged rather than raised: the approval itself has already
+		saved, and losing it because the assignment failed would leave nobody able to tell
+		what had been decided.
+		"""
+		from one_fm.api.tasks import create_overtime_shift_assignment
+
+		if self.employee_availability != WORKING:
+			return
+
+		if getdate(self.date) != getdate():
+			return
+
+		if frappe.db.exists("Shift Assignment", {
+			"employee": self.employee,
+			"start_date": self.date,
+			"roster_type": OVERTIME,
+			"docstatus": 1,
+		}):
+			return
+
+		# Passed as a dict, not as self. The builder reads `checkin_location`, which is not
+		# a field on Employee Schedule - a _dict answers None, a Document raises
+		# AttributeError. The nightly job feeds it get_all() rows, so a dict is also what
+		# it has always been given.
+		schedule = frappe._dict(self.as_dict())
+		schedule.doctype = self.doctype
+
+		# frappe.throw() queues its message for the browser before it raises, so catching
+		# the exception is not enough to keep a failure here from surfacing as a red popup
+		# on top of an approval that succeeded. Anything the attempt queued is dropped.
+		messages_before = len(frappe.message_log)
+		try:
+			create_overtime_shift_assignment(schedule, self.date)
+		except Exception:
+			frappe.log_error(
+				title="Could not create the Shift Assignment for an approved DSOT",
+				message=frappe.get_traceback(),
+			)
+		finally:
+			del frappe.message_log[messages_before:]
 
 	def clear_suspension_approval_requests(self):
 		"""WI-001694: drop the pending approval request for a decided suspension.
@@ -144,6 +494,7 @@ class EmployeeSchedule(Document):
 		self.validate_ojt_change()
 		self.validate_leave_application()
 		self.validate_relieving_date()
+		self.apply_shift_timing_override()
 		if self.employee_availability=='Working' and self.shift_type and self.date:
 			start_time, end_time = frappe.db.get_value("Shift Type", self.shift_type, ['start_time', 'end_time'])
 			end_date = self.date
@@ -163,6 +514,32 @@ class EmployeeSchedule(Document):
 			self.end_datetime = ''
 
 		# validate_operations_post_overfill({self.date: 1}, self.shift)
+
+	def apply_shift_timing_override(self):
+		"""Take the Shift Type the post resolves to on this row's date (WI-001832).
+
+		The start and end datetimes below are derived from shift_type, so getting the type
+		right here is what makes a Friday schedule carry Friday's hours. Placed in the
+		controller rather than in each creator because schedules are opened from a dozen
+		places - the Desk roster, the mobile and flutter roster APIs, Request Employee
+		Schedule, OJT, Client Event - and only a choke point catches all of them.
+
+		Applied unconditionally rather than only to rows that look untouched. `shift_type` is
+		read-only and declared `fetch_from: shift.shift_type` with no `fetch_if_empty`, so
+		Frappe already overwrites whatever a caller passed with the post's default before
+		validate runs. The field has always been a mirror of the post's Shift Type; this makes
+		it a mirror of the post's Shift Type *for that date*, which is the same contract.
+		"""
+		if not (self.shift and self.date) or self.employee_availability != 'Working':
+			return
+
+		operations_shift = frappe.get_cached_doc("Operations Shift", self.shift)
+		if not operations_shift.shift_timing_override_required:
+			return
+
+		timing = resolve_shift_timing(operations_shift, self.date)
+		if timing.shift_type:
+			self.shift_type = timing.shift_type
 
 	def validate_leave_application(self):
 		if self.employee and self.date:
@@ -274,3 +651,76 @@ def get_operations_posts(doctype, txt, searchfield, start, page_len, filters):
 		WHERE site_shift="{shift}"
 	""".format(shift=shift))
 	return operations_roles
+
+
+def expired_dsot_requests() -> list:
+	"""Pending DSOT requests whose shift has already finished.
+
+	The finish is read off end_datetime, which the schedule rolls onto the next day when
+	the shift runs past midnight, so an overnight request is judged against its real end
+	rather than against its date.
+
+	Not every schedule carries one, though - 65,534 rows on this site have none - and a
+	plain "end_datetime < now" does not leave those alone. Frappe writes the comparison
+	as ifnull(end_datetime, '0001-01-01 00:00:00'), so a missing end time reads as year
+	one and is always in the past: a request with no end_datetime was rejected the moment
+	this ran, whatever day it was for. It has to be asked for explicitly, and judged on
+	the day it was for instead - once that day is over the hours are gone either way.
+	"""
+	# A list of conditions, not a dict: two of them are on end_datetime, and the second
+	# would replace the first as a dict key.
+	names = frappe.get_all(
+		"Employee Schedule",
+		filters=[
+			["workflow_state", "=", PENDING_DSOT],
+			["end_datetime", "is", "set"],
+			["end_datetime", "<", frappe.utils.now_datetime()],
+		],
+		pluck="name",
+	)
+	names += frappe.get_all(
+		"Employee Schedule",
+		filters=[
+			["workflow_state", "=", PENDING_DSOT],
+			["end_datetime", "is", "not set"],
+			["date", "<", frappe.utils.today()],
+		],
+		pluck="name",
+	)
+	return names
+
+
+def reject_expired_dsot_requests():
+	"""Reject overtime requests nobody answered before the shift ended (WI-002283).
+
+	A request that outlives its own shift cannot be approved into anything useful - the
+	hours are gone - so it is closed rather than left waiting. The shift end is read off
+	end_datetime, which the schedule already rolls onto the next day when the shift runs
+	past midnight, so an overnight request is judged against its real finish rather than
+	against its date. Where a schedule has no end_datetime, the date is used instead.
+
+	Rejected under Administrator, because nobody decided it.
+	"""
+	expired = expired_dsot_requests()
+
+	for name in expired:
+		try:
+			schedule = frappe.get_doc("Employee Schedule", name)
+			schedule.workflow_state = DSOT_REJECTED
+			schedule.flags.ignore_permissions = True
+			schedule.save(ignore_permissions=True)
+			frappe.db.set_value(
+				"Employee Schedule", name, "modified_by", "Administrator", update_modified=False
+			)
+		except Exception:
+			# One stuck request must not stop the rest being closed.
+			frappe.log_error(
+				title=f"Could not reject the expired DSOT request {name}",
+				message=frappe.get_traceback(),
+			)
+			continue
+
+	if expired:
+		frappe.db.commit()
+
+	return len(expired)

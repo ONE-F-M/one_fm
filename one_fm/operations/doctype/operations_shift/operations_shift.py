@@ -48,6 +48,53 @@ class OperationsShift(Document):
 		self.validate_operations_site_status()
 		self.validate_operations_shift_link_to_employees()
 		self.validate_duration()
+		self.validate_shift_timing_overrides()
+
+	def validate_shift_timing_overrides(self):
+		"""Keep the override table to one meaningful row per day (WI-001831).
+
+		A post can need different hours on one day of the week - Friday, typically - without
+		being a second post. The override table says which day gets which Shift Type, and two
+		things make a row worthless:
+
+		A day listed twice, whatever the timings, because the resolver would take whichever
+		row came first and the operator would have no way to tell which of their two rows was
+		the one in effect.
+
+		A row whose hours are the same as the default's, because it overrides nothing. Compared
+		on the hours rather than on the Shift Type: two Shift Types can carry the same start and
+		end time, and it is the hours the roster, the attendance and the check-in window are all
+		built from.
+
+		Rows are left alone when the flag is unchecked rather than cleared. The resolver reads
+		the flag, so they cannot take effect, and clearing would throw away a configuration
+		someone is about to switch back on.
+		"""
+		if not self.shift_timing_override_required:
+			return
+
+		default_hours = shift_type_hours(self.shift_type)
+		seen_days = {}
+
+		for row in self.operations_shift_timing:
+			if row.day_of_week in seen_days:
+				frappe.throw(_(
+					"{0} appears twice in Operations Shift Timing, in rows {1} and {2}. "
+					"Each day of the week can only be overridden once."
+				).format(frappe.bold(row.day_of_week), seen_days[row.day_of_week], row.idx))
+			seen_days[row.day_of_week] = row.idx
+
+			override_hours = shift_type_hours(row.shift_type)
+			if default_hours and override_hours == default_hours:
+				frappe.throw(_(
+					"Row {0}: the {1} override runs {2} to {3}, which is the default shift's own "
+					"timing. An override has to differ from the default to be worth having."
+				).format(
+					row.idx,
+					frappe.bold(row.day_of_week),
+					override_hours[0],
+					override_hours[1],
+				))
 
 	def validate_duration(self):
 		if self.shift_type:
@@ -99,15 +146,37 @@ class OperationsShift(Document):
 				frappe.msgprint(_("Operations Role linked to the Shift {0} is set to Inactive!".format(self.name)), alert=True, indicator='green')
 
 	def update_employee_schedules_and_shift_assignments(self):
+		"""Re-stamp future schedules and assignments when this post's hours change.
+
+		WI-001831: also runs when the override table changes, not only the default Shift
+		Type. Adding a Friday override has to reach the Fridays already on the roster, or the
+		post is configured one way and rostered another until someone notices.
+		"""
 		if self.is_new():
 			return
-		
-		if self.has_value_changed('shift_type'):
-			start_time = get_time(self.start_time)
-			end_time = get_time(self.end_time)
 
-			frappe.enqueue(update_employee_schedule_shift_type, is_async=True, queue='long', operations_shift=self.name, new_shift_type=self.shift_type, new_start_time=start_time, new_end_time=end_time)
-			frappe.enqueue(update_shift_assignment_shift_type, is_async=True, queue='long', operations_shift=self.name, new_shift_type=self.shift_type, new_start_time=start_time, new_end_time=end_time)
+		if not (self.has_value_changed('shift_type')
+				or self.has_value_changed('shift_timing_override_required')
+				or self.overrides_changed()):
+			return
+
+		frappe.enqueue(update_employee_schedule_shift_type, is_async=True, queue='long', operations_shift=self.name)
+		frappe.enqueue(update_shift_assignment_shift_type, is_async=True, queue='long', operations_shift=self.name)
+
+	def overrides_changed(self):
+		"""Did the override table change in this save?
+
+		`has_value_changed` does not see into a child table, so the rows are compared as
+		(day, shift type) pairs against the document before this save.
+		"""
+		before_save = self.get_doc_before_save()
+		if not before_save:
+			return False
+
+		def rows(doc):
+			return {(row.day_of_week, row.shift_type) for row in doc.get('operations_shift_timing') or []}
+
+		return rows(self) != rows(before_save)
 
 
 def queue_operation_role_inactive(operations_role_list):
@@ -222,20 +291,133 @@ def get_supervisor_operations_shifts(supervisor=None, project=None, site=None):
 
 	return [shift.name for shift in shifts]
 
-def update_employee_schedule_shift_type(operations_shift, new_shift_type, new_start_time, new_end_time):
-	employee_schedules = frappe.get_all("Employee Schedule", filters={"shift": operations_shift, "date": [">=", today()]}, fields=["name", "date"])
+def update_employee_schedule_shift_type(operations_shift):
+	"""Re-stamp every future Employee Schedule of this post with the hours its date resolves to.
 
-	for schedule in employee_schedules:
-		start_date_time = f"{schedule.date} {new_start_time}"
-		end_date_time = f"{add_days(schedule.date, 1) if new_start_time > new_end_time else schedule.date} {new_end_time}"
+	WI-001831: resolved per date rather than stamped with one Shift Type for all of them. The
+	old version wrote the new default over every future row, which would have flattened every
+	override day the moment anyone touched the default - the roster would silently lose the
+	Friday timing it had been configured with.
+	"""
+	shift = frappe.get_doc("Operations Shift", operations_shift)
 
-		frappe.db.set_value("Employee Schedule", schedule.name, {"shift_type": new_shift_type, "start_datetime": start_date_time, "end_datetime": end_date_time})
+	for schedule in frappe.get_all(
+		"Employee Schedule",
+		filters={"shift": operations_shift, "date": [">=", today()]},
+		fields=["name", "date"],
+	):
+		timing = resolve_shift_timing(shift, schedule.date)
+		if not (timing.start_time is not None and timing.end_time is not None):
+			continue
 
-def update_shift_assignment_shift_type(operations_shift, new_shift_type, new_start_time, new_end_time):
-	shift_assignments = frappe.get_all("Shift Assignment", filters={"shift": operations_shift, "start_date": [">=", today()]}, fields=["name", "start_date", "end_date", "shift_classification"])
+		start_datetime, end_datetime = shift_window(schedule.date, timing)
+		frappe.db.set_value("Employee Schedule", schedule.name, {
+			"shift_type": timing.shift_type,
+			"start_datetime": start_datetime,
+			"end_datetime": end_datetime,
+		})
 
-	for assignment in shift_assignments:
-		start_date_time = f"{assignment.start_date} {new_start_time}"
-		end_date_time = f"{add_days(assignment.end_date, 1) if new_start_time > new_end_time else assignment.end_date} {new_end_time}" if assignment.end_date else ""
 
-		frappe.db.set_value("Shift Assignment", assignment.name, {"shift_type": new_shift_type, "start_datetime": start_date_time, "end_datetime": end_date_time, "shift_classification": assignment.shift_classification})
+def update_shift_assignment_shift_type(operations_shift):
+	"""The same, for the Shift Assignments already raised off those schedules (WI-001831)."""
+	shift = frappe.get_doc("Operations Shift", operations_shift)
+
+	for assignment in frappe.get_all(
+		"Shift Assignment",
+		filters={"shift": operations_shift, "start_date": [">=", today()]},
+		fields=["name", "start_date", "end_date", "shift_classification"],
+	):
+		timing = resolve_shift_timing(shift, assignment.start_date)
+		if not (timing.start_time is not None and timing.end_time is not None):
+			continue
+
+		start_datetime, _ = shift_window(assignment.start_date, timing)
+		end_datetime = shift_window(assignment.end_date, timing)[1] if assignment.end_date else ""
+
+		frappe.db.set_value("Shift Assignment", assignment.name, {
+			"shift_type": timing.shift_type,
+			"start_datetime": start_datetime,
+			"end_datetime": end_datetime,
+			"shift_classification": assignment.shift_classification,
+		})
+
+
+def shift_window(date, timing):
+	"""(start_datetime, end_datetime) strings for a shift's hours on a date.
+
+	An overnight shift ends on the following day, which every caller of this used to work out
+	for itself - and one of them got it wrong for the end date of a multi-day assignment.
+	"""
+	end_date = add_days(date, 1) if timing.start_time > timing.end_time else date
+	return f"{date} {timing.start_time}", f"{end_date} {timing.end_time}"
+
+
+def shift_type_hours(shift_type):
+	"""(start_time, end_time) of a Shift Type, or None if there is no Shift Type.
+
+	Read off the Shift Type rather than the mirrored start_time/end_time on the Operations
+	Shift or the override row. Those are `fetch_from` copies taken when the row was last
+	saved, so editing a Shift Type's hours leaves every copy of them stale - and the hours
+	are what the roster, the attendance benchmark and the check-in window are all built
+	from. Cached, because the resolver below runs inside roster loops.
+	"""
+	if not shift_type:
+		return None
+
+	return frappe.get_cached_value("Shift Type", shift_type, ["start_time", "end_time"])
+
+
+def get_shift_timing_for_date(operations_shift, date):
+	"""The Shift Type an Operations Shift resolves to on a given date (WI-001831).
+
+	One post, one record, different hours on the days that need them. Every consumer -
+	Employee Schedule, Shift Assignment, Shift Request, Attendance, Shift Permission,
+	Employee Checkin - asks this rather than reading `Operations Shift.shift_type`
+	directly, so there is one answer to "what are this post's hours on this date" and it
+	cannot differ between them.
+
+	Returns a dict of shift_type, start_time, end_time and is_override, or None if there is
+	no shift or no date to resolve for. `is_override` is what a caller checks to decide
+	whether a date is worth showing to a human - a Shift Request preview only earns its
+	place when some day in the range is not the default.
+	"""
+	if not (operations_shift and date):
+		return None
+
+	return resolve_shift_timing(frappe.get_cached_doc("Operations Shift", operations_shift), date)
+
+
+def resolve_shift_timing(shift, date):
+	"""As get_shift_timing_for_date, for a caller that already holds the Operations Shift."""
+	default = frappe._dict(
+		shift_type=shift.shift_type,
+		is_override=False,
+	)
+	default.start_time, default.end_time = shift_type_hours(shift.shift_type) or (None, None)
+
+	if not shift.shift_timing_override_required:
+		return default
+
+	# The Select stores the day name Python's %A produces, so no lookup table is needed
+	# between the two - and if that ever stops being true the resolver simply finds no row
+	# and falls back to the default, which is the safe direction to fail in.
+	day_of_week = getdate(date).strftime("%A")
+
+	for row in shift.operations_shift_timing or []:
+		if row.day_of_week != day_of_week:
+			continue
+
+		override = frappe._dict(shift_type=row.shift_type, is_override=True)
+		override.start_time, override.end_time = shift_type_hours(row.shift_type) or (None, None)
+		return override
+
+	return default
+
+
+def get_shift_type_for_date(operations_shift, date):
+	"""Just the Shift Type name an Operations Shift resolves to on a date.
+
+	The common case at a call site that only needs to write one field.
+	"""
+	timing = get_shift_timing_for_date(operations_shift, date)
+	return timing.shift_type if timing else None

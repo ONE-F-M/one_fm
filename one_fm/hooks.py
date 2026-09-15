@@ -222,7 +222,6 @@ has_permission = {
 	"Issue": "one_fm.utils.has_permission_to_issue",
 	"Notification Settings":'one_fm.overrides.notification_settings.has_permission_',
 	"Contracts": "one_fm.operations.doctype.contracts.contracts.contracts_has_permission",
-	"Candidate Country Process": "one_fm.one_fm.doctype.candidate_country_process.candidate_country_process.has_permission",
 	"Arrival Acknowledgement": "one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement.has_permission",
 	"Arrival and Deployment": "one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment.has_permission"
 }
@@ -238,6 +237,43 @@ doc_events = {
 	"*":{
 		"on_trash":[
 			"one_fm.overrides.todo.delete_linked_todos"
+		]
+	},
+	# WI-002093: each of these carries the Preparation that opened it, and its own save is
+	# where the row's status column comes from. The handler only ever moves a row forward
+	# along Work Permit -> Medical Insurance -> Residency -> PACI.
+	"Work Permit": {
+		# WI-002096: no step completes before the one in front of it.
+		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+	},
+	"Medical Insurance": {
+		# WI-002096: no step completes before the one in front of it.
+		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+	},
+	"Residency": {
+		# WI-002096: no step completes before the one in front of it.
+		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+	},
+	"PACI": {
+		# WI-002096: no step completes before the one in front of it.
+		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+	},
+	"Employee": {
+		# WI-002091: keep the PAM licence headcounts in step with the employees on the
+		# licence. The handler returns immediately unless the save touched one of the five
+		# fields that can move somebody between licences or sectors.
+		"on_update": [
+			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_counts_from_employee"
+		]
+	},
+	"HR Settings": {
+		"validate": [
+			"one_fm.grd.utils.set_renewal_extension_cost_totals",
+			"one_fm.grd.utils.validate_nationality_attestation_rules"
 		]
 	},
 	"Stock Entry": {
@@ -608,6 +644,7 @@ scheduler_events = {
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
 		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today',
 		'one_fm.tasks.execute.daily',
+		'one_fm.one_fm.doctype.maintenance_schedule_entry.maintenance_schedule_entry.generate_due_work_orders',
 		"one_fm.one_fm.utils.attach_abbreviation_to_roles",
   		"one_fm.api.v2.zenquotes.set_cached_quote",
 		"one_fm.operations.doctype.contracts.contracts.send_contract_reminders",
@@ -623,6 +660,10 @@ scheduler_events = {
         'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_day_process_task',
         'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_last_day_process_task',
 		'one_fm.fleet_management.vehicle_branding_expiry.notify_vehicle_branding_expiry',
+		# WI-002449: a week's notice before a PAM Licence letter of guarantee expires.
+		'one_fm.grd.lg_expiry.notify_lg_expiry',
+		# WI-002431: raise a cancellation for every visa that has reached its expiry.
+		'one_fm.visa_management.doctype.visa_cancellation_request.visa_cancellation_request.cancel_expired_visas',
 		'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.generate_transportation_shipments',
 		'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.deactivate_expired_shipments',
 		'one_fm.one_fm.doctype.transportation_manifest.manifest_compiler.compile_daily_manifests'
@@ -633,7 +674,9 @@ scheduler_events = {
 		'one_fm.utils.send_gp_letter_reminder',
         "one_fm.overrides.attendance.run_attendance_marking_hourly",
 		"one_fm.api.tasks.validate_shift_assignment",
-		'one_fm.overrides.employee_checkin.auto_generate_checkin'
+		'one_fm.overrides.employee_checkin.auto_generate_checkin',
+		# WI-002283: close overtime requests nobody answered before the shift ended.
+		"one_fm.operations.doctype.employee_schedule.employee_schedule.reject_expired_dsot_requests"
 	],
 	"monthly": [
 		"one_fm.accommodation.utils.execute_monthly",
@@ -659,6 +702,11 @@ scheduler_events = {
 			# WI-001829: three working days of silence from the previous employer is a
 			# refusal. On this schedule because it only counts working days anyway.
 			'one_fm.grd.doctype.work_permit.work_permit.auto_reject_unanswered_previous_company'
+		],
+		# WI-002016: the monthly penalty report to the departments, on the 23rd at 06:15,
+		# covering the payroll cycle that closed on the 22nd.
+		"15 6 23 * *": [
+			'one_fm.legal.penalty_report_email.send_monthly_penalty_report'
 		],
 		"15 3 * * *": [
 			'one_fm.tasks.one_fm.daily.generate_contracts_invoice', #Generate contracts sales invoice
@@ -886,7 +934,10 @@ override_doctype_dashboards = {
     'Leave Application': 'one_fm.overrides.leave_application_dashboard.get_data',
     'Sales Invoice': 'one_fm.overrides.sales_invoice_dashboard.get_data',
     "Purchase Invoice": "one_fm.overrides.purchase_invoice_dashboard.get_data",
-    "Job Applicant": "one_fm.overrides.job_applicant_dashboard.get_data"
+    "Job Applicant": "one_fm.overrides.job_applicant_dashboard.get_data",
+    # WI-002426: Job Offer belongs to hrms and has no dashboard of its own, so its
+    # Connections tab is where the Visa Requests raised against it are declared.
+    "Job Offer": "one_fm.overrides.job_offer_dashboard.get_data"
 }
 
 
@@ -913,7 +964,14 @@ jenv = {
         "pow_logo_src:one_fm.jinja.print_format.methods.pow_logo_src",
         # WI-001983: the Letter's figure columns are headed after the units the contract
         # bills in, decided by the Contract Item Rate Type.
-        "pow_letter_headers:one_fm.jinja.print_format.methods.pow_letter_headers"
+        "pow_letter_headers:one_fm.jinja.print_format.methods.pow_letter_headers",
+        # WI-002399: the letter is read in Arabic - the services are named in Arabic,
+        # and so are the dates and the day counts.
+        "pow_item_types_arabic:one_fm.jinja.print_format.methods.pow_item_types_arabic",
+        "pow_service_names_arabic:one_fm.jinja.print_format.methods.pow_service_names_arabic",
+        "pow_letter_rows:one_fm.jinja.print_format.methods.pow_letter_rows",
+        "pow_arabic_date:one_fm.jinja.print_format.methods.pow_arabic_date",
+        "pow_arabic_number:one_fm.jinja.print_format.methods.pow_arabic_number"
     ],
     "filters": [
         # "xmul:one_fm.jinja.methods.xmultiply"

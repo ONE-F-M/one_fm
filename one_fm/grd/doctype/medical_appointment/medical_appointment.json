@@ -355,7 +355,6 @@
    "fieldtype": "Section Break"
   },
   {
-   "default": "User",
    "fieldname": "government_relations_operator",
    "fieldtype": "Link",
    "label": "Government Relations Operator",

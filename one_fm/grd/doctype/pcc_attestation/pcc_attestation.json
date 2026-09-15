@@ -1,7 +1,7 @@
 {
  "actions": [],
  "autoname": "naming_series:",
- "creation": "2026-08-09 12:19:58.714497",
+ "creation": "2026-08-12 11:30:00.000000",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -12,10 +12,11 @@
   "type",
   "employee",
   "employee_name",
-  "column_break_5",
-  "centeralized_number",
   "category",
   "preparation",
+  "column_break_5",
+  "employee_id",
+  "centeralized_number",
   "section_break_20",
   "one_fm_civil_id",
   "designation",
@@ -36,10 +37,10 @@
   "embassy_attestation_required",
   "mofa_attestation_required",
   "translation_required",
-  "column_break_oidl",
   "requires_embassy_attestation",
-  "mofa_fee",
   "translation_fee",
+  "column_break_oidl",
+  "mofa_fee",
   "section_break_42",
   "upload_embassy_payment_receipt",
   "upload_mofa_payment_receipt",
@@ -59,41 +60,46 @@
    "fieldtype": "Select",
    "hidden": 1,
    "label": "Series",
-   "options": "PCC-.YYYY.-",
-   "print_hide": 1
-  },
-  {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "PCC Attestation",
-   "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
+   "options": "PCC-.YYYY.-"
   },
   {
    "fieldname": "column_break_6",
    "fieldtype": "Column Break"
   },
   {
+   "fieldname": "employee_information_section",
+   "fieldtype": "Section Break",
+   "label": "Employee Information"
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "label": "Type",
+   "options": "\nAttestation\nTranslation",
+   "reqd": 1
+  },
+  {
    "fieldname": "employee",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
    "in_list_view": 1,
-   "in_standard_filter": 1,
    "label": "Employee",
    "options": "Employee",
    "reqd": 1
   },
   {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
    "fieldname": "category",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "in_standard_filter": 1,
    "label": "Category",
-   "options": "\nOverseas\nOverseas (Government)",
-   "reqd": 1
+   "options": "\nOverseas\nOverseas (Government)"
   },
   {
    "fieldname": "preparation",
@@ -105,6 +111,14 @@
   {
    "fieldname": "column_break_5",
    "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee ID",
+   "read_only": 1
   },
   {
    "allow_on_submit": 1,
@@ -136,10 +150,17 @@
   },
   {
    "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_nationality",
+   "fieldname": "nationality",
+   "fieldtype": "Data",
+   "label": "Nationality",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_place_of_birth",
    "fieldname": "place_of_birth",
    "fieldtype": "Data",
-   "in_standard_filter": 1,
    "label": "Place Of Birth",
    "read_only": 1
   },
@@ -155,6 +176,13 @@
    "fieldname": "birth_date",
    "fieldtype": "Data",
    "label": "Birth Date",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.company_email",
+   "fieldname": "company_email_id",
+   "fieldtype": "Data",
+   "label": "Company Email ID",
    "read_only": 1
   },
   {
@@ -202,14 +230,6 @@
   },
   {
    "allow_on_submit": 1,
-   "fetch_from": "employee.one_fm_nationality",
-   "fieldname": "nationality",
-   "fieldtype": "Data",
-   "label": "Nationality",
-   "read_only": 1
-  },
-  {
-   "allow_on_submit": 1,
    "fetch_from": "employee.residency_expiry_date",
    "fieldname": "residency_expiry_date",
    "fieldtype": "Data",
@@ -224,52 +244,7 @@
    "read_only": 1
   },
   {
-   "fetch_from": "employee.company_email",
-   "fieldname": "company_email_id",
-   "fieldtype": "Data",
-   "label": "Company Email ID",
-   "read_only": 1
-  },
-  {
-   "fieldname": "section_break_42",
-   "fieldtype": "Section Break",
-   "print_hide": 1
-  },
-  {
-   "fieldname": "column_break_34",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "section_break_40",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "PCC Attestation",
-   "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
-  },
-  {
-   "fieldname": "employee_information_section",
-   "fieldtype": "Section Break",
-   "label": "Employee Information"
-  },
-  {
-   "fieldname": "pro_user",
-   "fieldtype": "Link",
-   "ignore_user_permissions": 1,
-   "label": "PRO User",
-   "options": "User"
-  },
-  {
-   "fieldname": "column_break_cxze",
-   "fieldtype": "Column Break"
-  },
-  {
+   "depends_on": "eval:doc.type",
    "fieldname": "attestation_and_cost_breakdown_section",
    "fieldtype": "Section Break",
    "label": "Attestation and Cost Breakdown"
@@ -282,55 +257,15 @@
    "read_only": 1
   },
   {
-   "fieldname": "column_break_oidl",
-   "fieldtype": "Column Break"
-  },
-  {
+   "depends_on": "eval:doc.type == 'Translation'",
    "fieldname": "translation_fee",
    "fieldtype": "Currency",
    "label": "Translation Fee",
    "read_only": 1
   },
   {
-   "allow_on_submit": 1,
-   "depends_on": "eval:doc.type == 'Attestation'",
-   "fieldname": "upload_embassy_payment_receipt",
-   "fieldtype": "Attach",
-   "label": "Upload Embassy Payment Receipt",
-   "mandatory_depends_on": "embassy_attestation_required == 1",
-   "print_hide": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "eval:doc.type == 'Attestation'",
-   "fieldname": "upload_mofa_payment_receipt",
-   "fieldtype": "Attach",
-   "label": "Upload MOFA Payment Receipt",
-   "mandatory_depends_on": "mofa_attestation_required == 1",
-   "print_hide": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "upload_embassy_payment_receipt_on",
-   "fieldtype": "Data",
-   "label": "Upload Embassy Payment Receipt On",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "upload_mofa_payment_receipt_on",
-   "fieldtype": "Data",
-   "label": "Upload MOFA Payment Receipt On",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
-   "fetch_from": "employee.employee_name",
-   "fieldname": "employee_name",
-   "fieldtype": "Data",
-   "label": "Employee Name",
-   "read_only": 1
+   "fieldname": "column_break_oidl",
+   "fieldtype": "Column Break"
   },
   {
    "depends_on": "eval:doc.type == 'Attestation'",
@@ -340,30 +275,84 @@
    "read_only": 1
   },
   {
+   "depends_on": "eval:doc.type",
+   "fieldname": "section_break_42",
+   "fieldtype": "Section Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.type == 'Attestation'",
+   "fieldname": "upload_embassy_payment_receipt",
+   "fieldtype": "Attach",
+   "label": "Upload Embassy Payment Receipt"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.type == 'Attestation'",
+   "fieldname": "upload_mofa_payment_receipt",
+   "fieldtype": "Attach",
+   "label": "Upload MOFA Payment Receipt"
+  },
+  {
    "allow_on_submit": 1,
    "depends_on": "eval:doc.type == 'Translation'",
    "fieldname": "upload_translation_payment_receipt",
    "fieldtype": "Attach",
-   "label": "Upload Translation Payment Receipt",
-   "mandatory_depends_on": "translation_required == 1",
-   "print_hide": 1
+   "label": "Upload Translation Payment Receipt"
+  },
+  {
+   "fieldname": "column_break_34",
+   "fieldtype": "Column Break"
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:doc.type == 'Attestation' && doc.upload_embassy_payment_receipt",
+   "fieldname": "upload_embassy_payment_receipt_on",
+   "fieldtype": "Data",
+   "label": "Upload Embassy Payment Receipt On",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.type == 'Attestation' && doc.upload_mofa_payment_receipt",
+   "fieldname": "upload_mofa_payment_receipt_on",
+   "fieldtype": "Data",
+   "label": "Upload MOFA Payment Receipt On",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.type == 'Translation' && doc.upload_translation_payment_receipt",
    "fieldname": "upload_translation_payment_receipt_on",
    "fieldtype": "Data",
    "label": "Upload Translation Payment Receipt On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_40",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "pro_user",
+   "fieldtype": "Link",
+   "label": "PRO User",
+   "options": "User"
+  },
+  {
+   "fieldname": "column_break_cxze",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "PCC Attestation",
    "print_hide": 1,
    "read_only": 1
   },
   {
-   "fieldname": "type",
-   "fieldtype": "Select",
-   "label": "Type",
-   "options": "\nAttestation\nTranslation",
-   "reqd": 1
-  },
-  {
+   "allow_on_submit": 1,
    "default": "0",
    "depends_on": "eval:doc.type == 'Attestation'",
    "description": "Derived from the Nationality Attestation Rules in HR Settings.",
@@ -373,6 +362,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "default": "0",
    "depends_on": "eval:doc.type == 'Attestation'",
    "description": "Derived from the Nationality Attestation Rules in HR Settings.",
@@ -382,6 +372,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "default": "0",
    "depends_on": "eval:doc.type == 'Translation'",
    "description": "Derived from the Nationality Attestation Rules in HR Settings.",
@@ -391,14 +382,15 @@
    "read_only": 1
   }
  ],
+ "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-19 09:16:21.799377",
- "modified_by": "h.imran@one-fm.com",
+ "modified": "2026-08-19 10:00:00.000000",
+ "modified_by": "Administrator",
  "module": "GRD",
  "name": "PCC Attestation",
  "naming_rule": "By \"Naming Series\" field",
- "owner": "h.imran@one-fm.com",
+ "owner": "Administrator",
  "permissions": [
   {
    "cancel": 1,
@@ -415,6 +407,7 @@
    "write": 1
   },
   {
+   "create": 1,
    "delete": 1,
    "email": 1,
    "export": 1,
@@ -453,7 +446,6 @@
    "write": 1
   }
  ],
- "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

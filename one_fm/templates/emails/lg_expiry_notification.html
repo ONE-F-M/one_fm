@@ -1,0 +1,48 @@
+{# WI-002449: the letter of guarantee on a PAM Licence expires in a week.
+
+   Laid out the way the assignment rules lay out a request - the same opening line and the
+   same Label/Value table (overrides/assignment_rule.get_assignment_rule_description) - so
+   the GRD team read one shape of email whether it came from a rule or from this job.
+
+   The styles are inline on purpose: mail clients strip stylesheets, and this is the
+   markup the assignment rules already send. #}
+<p>Here is to inform you that the following PAM License Details ({{ license_name }}) requires your attention/action.
+	<br/>
+	The letter of guarantee below expires in {{ days_left }} days.
+	<br/>
+	The details of the request are as follows:
+	<br/>
+</p>
+<table cellpadding="0" cellspacing="0" border="1" style="border-collapse: collapse;">
+	<thead>
+		<tr>
+			<th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Label</th>
+			<th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Value</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td style="padding: 10px;">LG Number</td>
+			<td style="padding: 10px;">{{ lg_number }}</td>
+		</tr>
+		<tr>
+			<td style="padding: 10px;">LG Expiry Date</td>
+			<td style="padding: 10px;">{{ lg_expiry_date }}</td>
+		</tr>
+		<tr>
+			<td style="padding: 10px;">License Name</td>
+			<td style="padding: 10px;">{{ license_name }}</td>
+		</tr>
+		<tr>
+			<td style="padding: 10px;">Civil ID Number for Licensing</td>
+			<td style="padding: 10px;">{{ civil_id_number_for_licensing }}</td>
+		</tr>
+		<tr>
+			<td style="padding: 10px;">Issuing Authority</td>
+			<td style="padding: 10px;">{{ issuing_authority }}</td>
+		</tr>
+	</tbody>
+</table>
+<p>
+	<a href="{{ license_link }}" class="btn btn-primary btn-action" style="margin-right: 10px;">Open PAM License Details</a>
+</p>
