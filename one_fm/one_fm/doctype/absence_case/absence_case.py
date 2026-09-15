@@ -125,15 +125,33 @@ class AbsenceCase(Document):
 		return run[:days] if days else run
 
 	def yearly_absent_dates(self, anchor) -> list:
-		"""Every absent day in the case's own calendar year.
+		"""The absences in the case's own calendar year that raised it.
 
-		All of them, not the number the Absence Type names: the threshold is what raised
-		the case, and an employee absent twenty-five days is not verified by being shown
-		twenty-one of them.
+		Capped at the number the Absence Type names, the same way the consecutive path is.
+		A case called "21 Days Absence in a Year" is about twenty-one days; an employee who
+		went on to be absent a hundred and fifty-seven times has a list nobody can check
+		against a case that is not about them.
+
+		The earliest of them, not the most recent: the case exists because the twenty-first
+		absence happened, so those are the days that crossed the threshold - and the start
+		date the nightly job writes on a yearly case is the first absent day of the year,
+		which anchors the list at the same end. Taking the most recent instead is one slice
+		away if the process owner wants the other end.
+
+		From absence_start_date where the case carries one, so a corrected start date moves
+		the list with it. On a case the job raised that changes nothing: the date it writes
+		is already the year's first absence.
 		"""
-		return absent_attendance_dates(
+		dates = absent_attendance_dates(
 			self.employee, anchor.replace(month=1, day=1), anchor.replace(month=12, day=31)
 		)
+
+		if self.absence_start_date:
+			start = getdate(self.absence_start_date)
+			dates = [day for day in dates if day >= start]
+
+		days = threshold_days(self.absence_type)
+		return dates[:days] if days else dates
 
 	def validate_formal_hearing_datetime(self):
 		if not self.formal_hearing_start_datetime:
