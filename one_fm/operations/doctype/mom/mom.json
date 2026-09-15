@@ -37,7 +37,8 @@
   "pending_actions_section",
   "review_pending_actions",
   "pending_actions",
-  "amended_from"
+  "amended_from",
+  "workflow_state"
  ],
  "fields": [
   {
@@ -236,13 +237,19 @@
    "label": "Last General Attendees",
    "options": "General Attendance",
    "read_only": 1
+  },
+  {
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "label": "Workflow State",
+   "options": "Workflow State"
   }
  ],
  "grid_page_length": 50,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-10-14 23:22:21.563044",
- "modified_by": "Administrator",
+ "modified": "2026-09-14 22:05:34.874142",
+ "modified_by": "e.olayinka@one-fm.com",
  "module": "Operations",
  "name": "MOM",
  "owner": "Administrator",

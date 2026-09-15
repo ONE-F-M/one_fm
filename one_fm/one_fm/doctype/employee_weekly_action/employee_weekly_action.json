@@ -9,6 +9,7 @@
   "section_break_bdgc",
   "employee",
   "employee_name",
+  "employee_user",
   "designation",
   "column_break_nbad",
   "week",
@@ -172,13 +173,20 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fetch_from": "employee.user_id",
+   "fieldname": "employee_user",
+   "fieldtype": "Link",
+   "label": "Employee User",
+   "options": "User"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-07-25 13:25:14.830109",
- "modified_by": "Administrator",
+ "modified": "2026-09-06 20:02:20.905541",
+ "modified_by": "e.olayinka@one-fm.com",
  "module": "One Fm",
  "name": "Employee Weekly Action",
  "naming_rule": "Expression",
@@ -211,6 +219,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

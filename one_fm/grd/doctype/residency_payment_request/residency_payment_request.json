@@ -18,7 +18,11 @@
   "get_todays_residency_payment_details",
   "references",
   "total_amount",
-  "amended_from"
+  "amended_from",
+  "section_break_ryrf",
+  "reference_doctype",
+  "column_break_kaln",
+  "reference_docname"
  ],
  "fields": [
   {
@@ -109,14 +113,38 @@
    "fieldtype": "Currency",
    "label": "Total Amount",
    "read_only": 1
+  },
+  {
+   "fieldname": "section_break_ryrf",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "Reference Doctype",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_kaln",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reference_docname",
+   "fieldtype": "Dynamic Link",
+   "label": "Reference Docname",
+   "options": "reference_doctype",
+   "read_only": 1
   }
  ],
+ "grid_page_length": 50,
  "is_submittable": 1,
  "links": [],
- "modified": "2020-09-04 15:34:40.790649",
- "modified_by": "Administrator",
+ "modified": "2026-09-12 08:19:13.287577",
+ "modified_by": "h.imran@one-fm.com",
  "module": "GRD",
  "name": "Residency Payment Request",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -150,7 +178,9 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

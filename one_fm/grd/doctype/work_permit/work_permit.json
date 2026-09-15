@@ -360,6 +360,7 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:cint(doc.amendment_no) == 0",
    "fieldname": "attach_invoice",
    "fieldtype": "Attach",
    "label": "Upload Payment Invoice"
@@ -959,7 +960,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-17 20:48:55.437366",
+ "modified": "2026-09-11 17:52:01.884461",
  "modified_by": "h.imran@one-fm.com",
  "module": "GRD",
  "name": "Work Permit",

@@ -8,6 +8,7 @@
  "field_order": [
   "section_break_i4gq",
   "department",
+  "department_head",
   "column_break_mvoc",
   "week",
   "column_break_bmjz",
@@ -104,13 +105,21 @@
   {
    "fieldname": "column_break_tmsy",
    "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "department.custom_department_head",
+   "fieldname": "department_head",
+   "fieldtype": "Link",
+   "label": "Department Head",
+   "options": "User"
   }
  ],
+ "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-05-05 10:07:03.280085",
- "modified_by": "Administrator",
+ "modified": "2026-09-06 18:57:25.626987",
+ "modified_by": "e.olayinka@one-fm.com",
  "module": "One Fm",
  "name": "Department Weekly Review",
  "naming_rule": "Expression (old style)",
@@ -130,6 +139,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

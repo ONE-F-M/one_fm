@@ -77,6 +77,8 @@
   "upload_residency_fine_payment_receipt_on",
   "upload_damj_letter_on",
   "new_residency_expiry_date_update_time",
+  "section_break_zbqk",
+  "pro_user",
   "section_break_40",
   "grd_operator",
   "grd_supervisor",
@@ -95,6 +97,7 @@
    "fieldname": "category",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Category",
    "options": "First Time\nTransfer\nRenewal\nExtend\nCancellation"
   },
@@ -270,6 +273,7 @@
    "fetch_from": "employee.one_fm_nationality",
    "fieldname": "nationality",
    "fieldtype": "Data",
+   "in_standard_filter": 1,
    "label": "Nationality",
    "read_only": 1
   },
@@ -591,11 +595,22 @@
    "label": "Upload DAMJ Letter On",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "section_break_zbqk",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "pro_user",
+   "fieldtype": "Link",
+   "label": "PRO User",
+   "link_filters": "[[\"User\",\"role\",\"=\",\"PRO\"]]",
+   "options": "User"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-19 08:57:17.680331",
+ "modified": "2026-09-11 18:02:53.791720",
  "modified_by": "h.imran@one-fm.com",
  "module": "GRD",
  "name": "Residency",

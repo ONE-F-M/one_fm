@@ -36,7 +36,30 @@
   "poc_list_section",
   "contact_html",
   "poc",
-  "changes_log"
+  "changes_log",
+  "dsot_governance_section",
+  "dsot_required",
+  "ac_available",
+  "rest_area",
+  "kitchen",
+  "lockers",
+  "uniform",
+  "bathroom",
+  "water_facility",
+  "rejection_reason",
+  "column_break_wxaj",
+  "dsot_approval_status",
+  "ac_availability_photo",
+  "rest_area_photo",
+  "kitchen_photo",
+  "lockers_photo",
+  "uniform_photo",
+  "bathroom_photo",
+  "water_facility_photo",
+  "section_break_htrt",
+  "dsot_bag_required",
+  "operations_manager",
+  "project_manager_user"
  ],
  "fields": [
   {
@@ -213,11 +236,147 @@
    "fieldtype": "Table",
    "label": "Operations Site Location",
    "options": "Operations Site Location Items"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "dsot_governance_section",
+   "fieldtype": "Section Break",
+   "label": "DSOT Governance"
+  },
+  {
+   "default": "0",
+   "fieldname": "ac_available",
+   "fieldtype": "Check",
+   "label": "AC Available"
+  },
+  {
+   "default": "0",
+   "fieldname": "rest_area",
+   "fieldtype": "Check",
+   "label": "Rest Area"
+  },
+  {
+   "default": "0",
+   "fieldname": "kitchen",
+   "fieldtype": "Check",
+   "label": "Kitchen"
+  },
+  {
+   "default": "0",
+   "fieldname": "lockers",
+   "fieldtype": "Check",
+   "label": "Lockers"
+  },
+  {
+   "default": "0",
+   "fieldname": "uniform",
+   "fieldtype": "Check",
+   "label": "Uniform"
+  },
+  {
+   "default": "0",
+   "fieldname": "bathroom",
+   "fieldtype": "Check",
+   "label": "Bathroom"
+  },
+  {
+   "default": "0",
+   "fieldname": "water_facility",
+   "fieldtype": "Check",
+   "label": "Water Facility"
+  },
+  {
+   "fieldname": "column_break_wxaj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.ac_available == 1",
+   "fieldname": "ac_availability_photo",
+   "fieldtype": "Attach Image",
+   "label": "AC Availability Photo"
+  },
+  {
+   "depends_on": "eval:doc.rest_area == 1",
+   "fieldname": "rest_area_photo",
+   "fieldtype": "Attach Image",
+   "label": "Rest Area Photo"
+  },
+  {
+   "depends_on": "eval:doc.kitchen == 1",
+   "fieldname": "kitchen_photo",
+   "fieldtype": "Attach Image",
+   "label": "Kitchen Photo"
+  },
+  {
+   "depends_on": "eval:doc.lockers == 1",
+   "fieldname": "lockers_photo",
+   "fieldtype": "Attach Image",
+   "label": "Lockers Photo"
+  },
+  {
+   "depends_on": "eval:doc.uniform == 1",
+   "fieldname": "uniform_photo",
+   "fieldtype": "Attach Image",
+   "label": "Uniform Photo"
+  },
+  {
+   "depends_on": "eval:doc.bathroom == 1",
+   "fieldname": "bathroom_photo",
+   "fieldtype": "Attach Image",
+   "label": "Bathroom Photo"
+  },
+  {
+   "depends_on": "eval:doc.water_facility == 1",
+   "fieldname": "water_facility_photo",
+   "fieldtype": "Attach Image",
+   "label": "Water Facility Photo"
+  },
+  {
+   "fieldname": "dsot_approval_status",
+   "fieldtype": "Select",
+   "label": "DSOT Approval Status",
+   "options": "\nNot Eligible\nPending PM Review\nPending OM Review\nApproved\nRejected",
+   "read_only": 1
+  },
+  {
+   "fieldname": "dsot_required",
+   "fieldtype": "Select",
+   "label": "DSOT Required",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fetch_from": "project.custom_project_manager_user",
+   "fieldname": "project_manager_user",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Project Manager User",
+   "options": "User"
+  },
+  {
+   "fieldname": "operations_manager",
+   "fieldtype": "Link",
+   "label": "Operations Manager",
+   "options": "User"
+  },
+  {
+   "fieldname": "rejection_reason",
+   "fieldtype": "Small Text",
+   "label": "Rejection Reason"
+  },
+  {
+   "default": "0",
+   "fieldname": "dsot_bag_required",
+   "fieldtype": "Check",
+   "label": "DSOT Bag Required"
+  },
+  {
+   "fieldname": "section_break_htrt",
+   "fieldtype": "Section Break"
   }
  ],
  "links": [],
- "modified": "2026-05-14 18:38:11.393030",
- "modified_by": "Administrator",
+ "modified": "2026-09-14 13:00:17.045022",
+ "modified_by": "h.imran@one-fm.com",
  "module": "Operations",
  "name": "Operations Site",
  "naming_rule": "By fieldname",
@@ -232,6 +391,18 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Operation Admin",
    "share": 1,
    "write": 1
   }

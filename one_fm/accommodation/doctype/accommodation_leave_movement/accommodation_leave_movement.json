@@ -67,8 +67,7 @@
    "in_list_view": 1,
    "label": "Type",
    "options": "\nIN\nOUT",
-   "read_only": 1,
-   "reqd": 1
+   "read_only": 1
   },
   {
    "default": "0",
@@ -295,8 +294,8 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-03 18:05:23.571008",
- "modified_by": "Administrator",
+ "modified": "2026-09-13 13:52:25.533443",
+ "modified_by": "g.jotshi@one-fm.com",
  "module": "Accommodation",
  "name": "Accommodation Leave Movement",
  "naming_rule": "By \"Naming Series\" field",

@@ -18,6 +18,7 @@
   "requested_by",
   "project_manager",
   "project_manager_user",
+  "operations_manager_user",
   "section_break_mqpw",
   "subcontract_exit_employee"
  ],
@@ -116,13 +117,21 @@
    "label": "Subcontract Exit Employee",
    "options": "Subcontractor Exit Items",
    "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "operations_manager_user",
+   "fieldtype": "Link",
+   "label": "Operations Manager User",
+   "options": "User",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-22 12:34:53.484800",
- "modified_by": "Administrator",
+ "modified": "2026-09-14 13:26:14.087427",
+ "modified_by": "h.imran@one-fm.com",
  "module": "One Fm",
  "name": "Subcontractor Exit",
  "naming_rule": "By \"Naming Series\" field",

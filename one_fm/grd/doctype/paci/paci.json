@@ -415,12 +415,14 @@
    "fieldname": "pro_user",
    "fieldtype": "Link",
    "label": "PRO User",
+   "link_filters": "[[\"User\",\"role\",\"=\",\"PRO\"]]",
+   "mandatory_depends_on": "eval:doc.workflow_state == 'Pending PRO' || doc.workflow_state == 'Pending Address Update by PRO' || doc.workflow_state == 'Pending Photo Update by PRO'",
    "options": "User"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-20 08:59:37.763679",
+ "modified": "2026-09-11 20:57:51.071375",
  "modified_by": "h.imran@one-fm.com",
  "module": "GRD",
  "name": "PACI",

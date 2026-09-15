@@ -9,6 +9,7 @@
   "employee",
   "employee_name",
   "designation",
+  "employee_user",
   "column_break_mmvu",
   "month",
   "year",
@@ -177,13 +178,20 @@
    "fieldname": "initiative_to_be_taken",
    "fieldtype": "Small Text",
    "label": "Initiative to be taken"
+  },
+  {
+   "fetch_from": "employee.user_id",
+   "fieldname": "employee_user",
+   "fieldtype": "Link",
+   "label": "Employee User",
+   "options": "User"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-07-25 13:25:45.927992",
- "modified_by": "Administrator",
+ "modified": "2026-09-06 20:09:07.775910",
+ "modified_by": "e.olayinka@one-fm.com",
  "module": "One Fm",
  "name": "Employee Monthly Action",
  "naming_rule": "Expression",
@@ -218,6 +226,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

@@ -33,7 +33,9 @@
   "section_break_times",
   "start_time",
   "end_time",
-  "is_next_day"
+  "is_next_day",
+  "transit_minutes",
+  "buffer_minutes"
  ],
  "fields": [
   {
@@ -203,12 +205,24 @@
    "fieldname": "is_accommodation_origin",
    "fieldtype": "Check",
    "label": "Is Accommodation Origin"
+  },
+  {
+   "description": "Driving time from the previous stop, as set in the Merge Trip modal.",
+   "fieldname": "transit_minutes",
+   "fieldtype": "Int",
+   "label": "Transit Minutes"
+  },
+  {
+   "description": "Waiting time at this stop before departing for the next one.",
+   "fieldname": "buffer_minutes",
+   "fieldtype": "Int",
+   "label": "Buffer Minutes"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-08-24 22:48:54.289187",
- "modified_by": "h.imran@one-fm.com",
+ "modified": "2026-08-25 11:46:09.237317",
+ "modified_by": "k.sharma@one-fm.com",
  "module": "Operations",
  "name": "Route Plan Assignment",
  "naming_rule": "Random",
