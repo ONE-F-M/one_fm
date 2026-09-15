@@ -155,6 +155,11 @@ doctype_tree_js = {
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
+# WI-003352: colour-code Leave Application calendar entries by leave type,
+# with a small legend mapping colour to leave type.
+doctype_calendar_js = {
+	"Leave Application": "public/js/doctype_js/leave_calendar.js",
+}
 
 # Home Pages
 # ----------
