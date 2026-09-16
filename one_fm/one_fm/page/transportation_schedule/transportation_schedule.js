@@ -3750,55 +3750,103 @@ function mountRoutePlannerApp(wrapper, data) {
                 }
                 // Debounce: clear any pending save and schedule a new one
                 if (this._saveTimer) clearTimeout(this._saveTimer);
-                this._saveTimer = setTimeout(() => {
-                    // Enrich swim items with card metadata for persistence
-                    const items = this.swimItems.map(i => {
-                        const card = this.planData.shipment_cards.find(c => c.id === i.cardId);
-                        return {
-                            ...i,
-                            // Persist the daily trip time (from the render position) but
-                            // stamp the multi-day lock lifespan onto the DATE part so
-                            // start_time/end_time carry both (TR-8).
-                            start: this._stampLifespan(i.start, i.lockFrom),
-                            end: this._stampLifespan(i.end, i.lockTo || i.lockFrom),
-                            // Keep what the item already carries when the card is not
-                            // in the pool. A PLACED card is Assigned and so is not a pool
-                            // card, so re-saving the plan overwrote its saved names with
-                            // empty strings - and once they were gone the detail drawer
-                            // could not build a card for the block at all and simply
-                            // refused to open (WI-002401).
-                            _site: card ? card.site : (i._site || ''),
-                            _shift: card ? card.shift_name : (i._shift || ''),
-                            _accommodation: card ? card.accommodation : (i._accommodation || ''),
-                            _stopLocation: card ? card.stop_location : (i._stopLocation || ''),
-                        };
-                    });
-                    const cards = [...this.assignedCards];
+                this._saveTimer = setTimeout(() => this.flushAssignments(onError), 500); // 500ms debounce
+            },
 
-                    frappe.call({
-                        method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.save_assignments',
-                        args: {
-                            plan_name: this.currentPlan.name,
-                            swim_items: JSON.stringify(items),
-                            assigned_cards: JSON.stringify(cards),
-                            leg_timings: JSON.stringify(this.legTimings || {})
-                        },
-                        async: true,
-                        callback: (r) => { this._applyStoredTripNames(r.message); },
-                        error: () => {
-                            // A server-side validation (e.g. the vehicle-retention
-                            // STANDBY lock) rejected the drop. Frappe already shows
-                            // the thrown message; reload the plan so the phantom
-                            // block is removed and the canvas mirrors what persisted.
-                            const reload = () => {
-                                if (this.currentPlan && this.currentPlan.name) {
-                                    this.switchPlan(this.currentPlan.name);
-                                }
-                            };
-                            if (onError) { onError(reload); } else { reload(); }
-                        }
-                    });
-                }, 500); // 500ms debounce
+            // One save at a time against a Route Plan (WI-002538).
+            //
+            // The debounce alone never stopped two saves OVERLAPPING: each removal
+            // schedules its own save 500ms after the click, and a full board save takes
+            // several seconds, so removing cards one after another opened a second
+            // request against the plan while the first was still running. The one that
+            // lost the race had read the document before the winner committed, and came
+            // back with "Document has been modified after you have opened it" - which
+            // the error handler below turned into a reload, putting the card the
+            // dispatcher had just removed straight back onto the lane.
+            //
+            // The server now replays a save that loses that race, so the error is gone
+            // either way. The board still refuses to start the race: a save asked for
+            // while one is in flight is remembered and re-fired afterwards from the
+            // CURRENT board state. Nothing is lost by waiting - every save posts the
+            // whole canvas, so the later payload already contains the earlier change.
+            flushAssignments(onError) {
+                if (this._saveInFlight) {
+                    this._savePending = true;
+                    if (onError) this._savePendingOnError = onError;
+                    return;
+                }
+
+                if (!this.currentPlan) return;
+
+                // Enrich swim items with card metadata for persistence
+                const items = this.swimItems.map(i => {
+                    const card = this.planData.shipment_cards.find(c => c.id === i.cardId);
+                    return {
+                        ...i,
+                        // Persist the daily trip time (from the render position) but
+                        // stamp the multi-day lock lifespan onto the DATE part so
+                        // start_time/end_time carry both (TR-8).
+                        start: this._stampLifespan(i.start, i.lockFrom),
+                        end: this._stampLifespan(i.end, i.lockTo || i.lockFrom),
+                        // Keep what the item already carries when the card is not
+                        // in the pool. A PLACED card is Assigned and so is not a pool
+                        // card, so re-saving the plan overwrote its saved names with
+                        // empty strings - and once they were gone the detail drawer
+                        // could not build a card for the block at all and simply
+                        // refused to open (WI-002401).
+                        _site: card ? card.site : (i._site || ''),
+                        _shift: card ? card.shift_name : (i._shift || ''),
+                        _accommodation: card ? card.accommodation : (i._accommodation || ''),
+                        _stopLocation: card ? card.stop_location : (i._stopLocation || ''),
+                    };
+                });
+                const cards = [...this.assignedCards];
+
+                this._saveInFlight = true;
+                frappe.call({
+                    method: 'one_fm.one_fm.page.transportation_schedule.transportation_schedule.save_assignments',
+                    args: {
+                        plan_name: this.currentPlan.name,
+                        swim_items: JSON.stringify(items),
+                        assigned_cards: JSON.stringify(cards),
+                        leg_timings: JSON.stringify(this.legTimings || {})
+                    },
+                    async: true,
+                    callback: (r) => { this._applyStoredTripNames(r.message); },
+                    error: () => {
+                        // A server-side validation (e.g. the vehicle-retention
+                        // STANDBY lock) rejected the drop. Frappe already shows
+                        // the thrown message; reload the plan so the phantom
+                        // block is removed and the canvas mirrors what persisted.
+                        // Anything queued behind this save described the board as it
+                        // was BEFORE the reload, so it is dropped rather than replayed
+                        // over the state the server just handed back.
+                        this._savePending = false;
+                        this._savePendingOnError = null;
+                        const reload = () => {
+                            if (this.currentPlan && this.currentPlan.name) {
+                                this.switchPlan(this.currentPlan.name);
+                            }
+                        };
+                        if (onError) { onError(reload); } else { reload(); }
+                    },
+                    // always() fires for success, failure and "no connection" alike, so
+                    // the lane never jams open on a save that ends any other way than a
+                    // clean callback. The queued save is released on the next tick
+                    // because jQuery runs always() BEFORE the failure handler above -
+                    // waiting lets error() cancel it first.
+                    always: () => {
+                        this._saveInFlight = false;
+                        if (!this._savePending) return;
+                        setTimeout(() => {
+                            if (!this._savePending || this._saveInFlight) return;
+                            this._savePending = false;
+                            const queued = this._savePendingOnError;
+                            this._savePendingOnError = null;
+                            this.flushAssignments(queued);
+                        }, 0);
+                    }
+                });
             },
 
 
