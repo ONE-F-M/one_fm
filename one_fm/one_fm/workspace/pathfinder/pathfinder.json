@@ -45,16 +45,6 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Pathfinder Log",
-   "link_count": 0,
-   "link_to": "Pathfinder Log",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
    "label": "Process Roadmap",
    "link_count": 0,
    "link_to": "Process Roadmap",
