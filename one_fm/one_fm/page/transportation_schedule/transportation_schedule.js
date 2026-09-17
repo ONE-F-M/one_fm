@@ -645,6 +645,23 @@ function mountRoutePlannerApp(wrapper, data) {
                 return (typeof e === 'object' && e !== null) ? !!e.is_reliever : false;
             },
 
+            /**
+             * AC2's tooltip: who this rider is standing in for, and for how long.
+             * "Relieving Kamala Tamang | Leave Span: 2026-09-10 → 2026-09-18", or the
+             * absence reason when there is no leave application behind it — which is the
+             * common case, since relief here is usually against a Day Off.
+             * Empty for a rider who is not covering anybody, so the title attribute is
+             * simply absent rather than showing a bare label.
+             */
+            empRelieverTitle(e) {
+                if (!this.empIsReliever(e) || !e || !e.relieving_employee_name) return '';
+                const who = __('Relieving {0}', [e.relieving_employee_name]);
+                if (e.leave_from && e.leave_to) {
+                    return `${who} | ${__('Leave Span')}: ${e.leave_from} → ${e.leave_to}`;
+                }
+                return e.absence_reason ? `${who} | ${e.absence_reason}` : who;
+            },
+
             /** Count of relievers in an employee list (regulars = length − this). */
             relieverCount(emps) {
                 if (!Array.isArray(emps)) return 0;
@@ -5235,7 +5252,7 @@ function injectRPVueTemplate() {
                         :class="{ 'rp-emp-chip-reliever': empIsReliever(e) }"
                         @click.stop="handleEmployeeCall(e)"
                         :title="empMobile(e) ? 'Call ' + empMobile(e) : 'No mobile number'">
-                    <span class="rp-emp-tag" :class="empIsReliever(e) ? 'rp-emp-tag-reliever' : 'rp-emp-tag-regular'">{{ empIsReliever(e) ? 'Reliever' : 'Regular' }}</span>
+                    <span class="rp-emp-tag" :class="empIsReliever(e) ? 'rp-emp-tag-reliever' : 'rp-emp-tag-regular'" :title="empRelieverTitle(e)">{{ empIsReliever(e) ? 'Reliever' : 'Regular' }}</span>
                     {{ empName(e) }}
                     <span class="rp-icon rp-call-icon" :class="empMobile(e) ? '' : 'rp-call-disabled'">call</span>
                   </span>
@@ -5398,7 +5415,7 @@ function injectRPVueTemplate() {
                       :class="{ 'rp-emp-chip-reliever': empIsReliever(e) }"
                       @click.stop="handleEmployeeCall(e)"
                       :title="empMobile(e) ? 'Call ' + empMobile(e) : 'No mobile number'">
-                  <span class="rp-emp-tag" :class="empIsReliever(e) ? 'rp-emp-tag-reliever' : 'rp-emp-tag-regular'">{{ empIsReliever(e) ? 'Reliever' : 'Regular' }}</span>
+                  <span class="rp-emp-tag" :class="empIsReliever(e) ? 'rp-emp-tag-reliever' : 'rp-emp-tag-regular'" :title="empRelieverTitle(e)">{{ empIsReliever(e) ? 'Reliever' : 'Regular' }}</span>
                   {{ empName(e) }}
                   <span class="rp-icon rp-call-icon" :class="empMobile(e) ? '' : 'rp-call-disabled'">call</span>
                 </span>

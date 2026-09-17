@@ -134,8 +134,12 @@ class TestTheGeneratorWiring(FrappeTestCase):
 		)
 
 	def test_the_assigned_branch_no_longer_skips(self):
+		# Matched on the call, not its argument list: the point is that the Assigned
+		# branch DOES something now, and pinning the exact args means every later
+		# parameter makes this fail without anything having regressed (it already did
+		# once, when the reliever context was threaded through for AC2).
 		source = inspect.getsource(shipment_generator.generate_transportation_shipments)
-		self.assertIn("_refresh_assigned_roster(existing.name, demand, roster)", source)
+		self.assertIn("elif _refresh_assigned_roster(", source)
 		self.assertNotIn("# Assigned → leave untouched", source)
 
 	def test_recrewed_runs_are_counted_apart_from_rewritten_ones(self):
@@ -149,8 +153,9 @@ class TestTheGeneratorWiring(FrappeTestCase):
 		self.assertNotIn("refreshed", other)
 
 	def test_both_writers_share_one_roster_shape(self):
-		# A second copy of the child-row mapping is how the two drift.
-		self.assertIn("_write_roster(doc, demand, roster)",
+		# A second copy of the child-row mapping is how the two drift. Matched on the
+		# call rather than its arguments, for the same reason as above.
+		self.assertIn("_write_roster(doc, demand, roster",
 					  inspect.getsource(shipment_generator._write_shipment))
-		self.assertIn("_write_roster(doc, demand, roster)",
+		self.assertIn("_write_roster(doc, demand, roster",
 					  inspect.getsource(shipment_generator._refresh_assigned_roster))
