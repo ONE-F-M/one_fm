@@ -4267,10 +4267,18 @@ function mountRoutePlannerApp(wrapper, data) {
                     method: 'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.generate_transportation_shipments',
                     callback: function (r) {
                         const s = r.message || {};
+                        // A placed card whose CREW changed is reported separately from
+                        // a pool card that was rewritten: the run stayed exactly where
+                        // the dispatcher put it and only its people moved, and saying
+                        // "updated" for both reads as though the plan was touched
+                        // (WI-002591 AC5).
+                        const crew = s.refreshed
+                            ? `, ${s.refreshed} assigned run(s) re-crewed`
+                            : '';
                         frappe.show_alert({
-                            message: `Shipments: ${s.created || 0} created, ${s.updated || 0} updated, ${s.deleted || 0} removed`,
+                            message: `Shipments: ${s.created || 0} created, ${s.updated || 0} updated, ${s.deleted || 0} removed${crew}`,
                             indicator: 'green'
-                        });
+                        }, 6);
                         self.refreshCards();
                     },
                     always: function () {

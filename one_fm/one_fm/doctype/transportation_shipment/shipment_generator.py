@@ -317,6 +317,12 @@ def _write_shipment(doc, demand: dict, direction: str, roster: list, gen_key: st
 	doc.generation_key = gen_key
 	doc.pair_group = pair_group
 
+	_write_roster(doc, demand, roster)
+
+
+def _write_roster(doc, demand: dict, roster: list) -> None:
+	"""Replace the card's crew. Shared so a roster-only refresh writes the same rows."""
+	doc.headcount = len(roster)
 	doc.set("transportation_shipment_employee", [])
 	for emp in roster:
 		doc.append("transportation_shipment_employee", {
@@ -327,6 +333,33 @@ def _write_shipment(doc, demand: dict, direction: str, roster: list, gen_key: st
 			"stop_location": demand["stop_location"],
 			"operation_site": demand["operations_site"] or emp.get("site"),
 		})
+
+
+def _refresh_assigned_roster(name: str, demand: dict, roster: list) -> bool:
+	"""Bring a PLACED card's crew up to date without disturbing where it is placed.
+
+	A shipment answers two different questions: WHERE the bus goes, which the Route
+	Plan owns once the card is on a lane, and WHO rides it, which the roster owns
+	every day. The generator used to skip an Assigned card entirely - "Assigned ->
+	leave untouched" - so a crew change after the card was placed never reached the
+	driver's manifest, and the only way to pick it up was to unassign the card and
+	re-plan the run (WI-002591 AC5).
+
+	Only the roster and headcount move. The identity fields are deliberately left
+	alone: generation_key and pair_group are what the Route Plan Assignment row
+	points at, and rewriting them would orphan the placement this is trying to
+	preserve. Returns True when something actually changed, so an unchanged card is
+	not saved and does not churn `modified`.
+	"""
+	doc = frappe.get_doc("Transportation Shipment", name)
+	before = [(row.employee_id, row.employee_name) for row in doc.transportation_shipment_employee]
+	after = [(emp["id"], emp["name"]) for emp in roster]
+	if before == after:
+		return False
+
+	_write_roster(doc, demand, roster)
+	doc.save(ignore_permissions=True)
+	return True
 
 
 @frappe.whitelist()
@@ -346,7 +379,7 @@ def generate_transportation_shipments():
 	nested_map = get_grouped_employees_by_accommodation()
 	demands = build_demand_descriptors(nested_map)
 
-	created = updated = deleted = errors = 0
+	created = updated = deleted = errors = refreshed = 0
 	current_keys = set()
 
 	for demand in demands:
@@ -393,7 +426,11 @@ def generate_transportation_shipments():
 					_write_shipment(doc, demand, direction, roster, gen_key, pair_group)
 					doc.save(ignore_permissions=True)
 					updated += 1
-				# Assigned → leave untouched
+				elif _refresh_assigned_roster(existing.name, demand, roster):
+					# Placed cards keep their lane and their trip; only the crew moves
+					# (AC5). Counted separately so the button can say how many runs had
+					# their people change without implying they were re-planned.
+					refreshed += 1
 			except Exception:
 				errors += 1
 				frappe.log_error(frappe.get_traceback(), "Transportation Shipment Generation Error")
@@ -401,7 +438,8 @@ def generate_transportation_shipments():
 	deleted = _prune_stale(current_keys)
 
 	frappe.db.commit()
-	summary = {"created": created, "updated": updated, "deleted": deleted, "errors": errors}
+	summary = {"created": created, "updated": updated, "refreshed": refreshed,
+	           "deleted": deleted, "errors": errors}
 	frappe.logger().info(f"generate_transportation_shipments: {summary}")
 	return summary
 
