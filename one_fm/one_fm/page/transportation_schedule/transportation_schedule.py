@@ -1972,6 +1972,9 @@ def get_manifest_data_for_plan(plan_name: str):
 			# active_stop_sequence drives which pickup camp is currently unlocked.
 			"manifest": _mf.name if (_mf and not _mf.is_new()) else None,
 			"active_stop_sequence": int(_mf.active_stop_sequence or 0) if _mf else 0,
+			# Per run, because one vehicle drives several in a day and each checks in
+			# on its own - the flat number above locks them all together (WI-002590).
+			"active_stop_by_trip": _mf.active_stop_map() if _mf else {},
 			# WI-002074: the manifest page badges a merged run and reads its whole
 			# itinerary differently. Without these it had no way to tell, so the MIXED
 			# badge never rendered and the merged-run attendance rule never applied.
