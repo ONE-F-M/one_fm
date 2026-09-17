@@ -3,6 +3,7 @@ import requests
 from frappe import _
 from frappe.utils import cint
 from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
+from one_fm.one_fm.doctype.transportation_shipment.roster_overlay import apply_to_shift_map
 from one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log import get_handover_windows
 from one_fm.operations.doctype.route_plan.route_plan import (
     _card_direction,
@@ -237,8 +238,18 @@ def get_grouped_employees_by_accommodation() -> dict:
     if not employees:
         return {}
 
-    emp_ids = [e.name for e in employees]
     emp_shift_map = {e.name: e.shift for e in employees}
+
+    # Who is actually travelling today, not just whose post this is (WI-002591 AC1/AC4).
+    # Employee.shift is the MASTER allocation: an employee on approved leave keeps it and
+    # kept riding a bus they were not on, and a reliever covering someone else's post is
+    # filed under their own shift rather than the one they are working. The overlay drops
+    # the first and re-files the second. It is resolved per date and stored nowhere, so a
+    # leave range ending restores the original by itself (AC3).
+    emp_shift_map = apply_to_shift_map(emp_shift_map)
+    emp_ids = list(emp_shift_map)
+    if not emp_ids:
+        return {}
 
     # 3. Bulk-fetch the latest IN checkin per employee (single query instead of N+1)
     #    Uses a correlated subquery to pick the most recent checkin per employee.
@@ -947,7 +958,9 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
     emp_rows = frappe.get_all(
         "Transportation Shipment Employee",
         filters={"parent": ["in", ship_names], "parenttype": "Transportation Shipment"},
-        fields=["parent", "employee_id", "employee_name", "cell_number"],
+        fields=["parent", "employee_id", "employee_name", "cell_number",
+                "is_reliever", "relieving_employee", "relieving_employee_name",
+                "absence_reason", "leave_from", "leave_to"],
         order_by="idx asc",
     )
 
@@ -972,7 +985,19 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
             "id": row.employee_id,
             "name": row.employee_name or row.employee_id,
             "mobile": row.cell_number or "",
-            "is_reliever": row.employee_id in reliever_ids,
+            # Two different facts share this badge, and both mean "not the usual rider".
+            # `custom_is_rambo_reliever` is a standing role - this person relieves for a
+            # living - while the row flag says they are standing in for somebody on THIS
+            # card today (WI-002591 AC2). The first was here before; adding the second is
+            # what lets a regular employee covering a colleague be badged at all.
+            "is_reliever": bool(row.is_reliever) or row.employee_id in reliever_ids,
+            # Only set when this rider is covering someone, and only for the day the card
+            # was generated for - the drawer prints it as "Relieving X | ...".
+            "relieving_employee": row.relieving_employee,
+            "relieving_employee_name": row.relieving_employee_name,
+            "absence_reason": row.absence_reason,
+            "leave_from": str(row.leave_from) if row.leave_from else None,
+            "leave_to": str(row.leave_to) if row.leave_to else None,
         })
 
     # WI-002306 AC2/AC3: a card whose riders are all drivers is not assignable demand -
