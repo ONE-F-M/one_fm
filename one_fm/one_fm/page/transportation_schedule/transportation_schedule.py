@@ -1961,6 +1961,15 @@ def get_manifest_data_for_plan(plan_name: str):
 			vehicle_order.append(row.vehicle)
 		vehicle_items[row.vehicle].append(row)
 
+	# The manifest's tabs follow the SCHEDULE's vehicle order (WI-002544 AC1). Built from
+	# the assignment rows alone this was first-appearance order - whatever order the
+	# canvas happened to save its rows in - so the same fleet was listed one way on the
+	# board and another on the driver's page, and a supervisor comparing the two had to
+	# hunt for the vehicle rather than find it in the same place. build_vehicle_list
+	# orders by Vehicle name, so this does too; the rows of each vehicle keep the trip
+	# order they were saved in.
+	vehicle_order.sort()
+
 	for vi, vid in enumerate(vehicle_order):
 		v_doc = vehicle_map.get(vid, {})
 		v_label = vid
