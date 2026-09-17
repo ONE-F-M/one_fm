@@ -295,32 +295,37 @@ function renderManifest($container, data) {
 	// Trigger unlocks the next pickup camp for checks; Complete locks the active
 	// camp. Both persist server-side (active_stop_sequence) via the shared manifest
 	// API, then we sync the local pointer and re-render the current route.
-	function _setActiveStopAndRerender(vehicleLabel, newActive) {
+	// The server answers with every run's pointer, so only the run that was acted on
+	// moves and its neighbours on the same vehicle keep their own state (WI-002590 AC1).
+	function _setActiveStopAndRerender(vehicleLabel, reply) {
 		const meta = (ROUTE_DATA.vehicleMeta ?? {})[vehicleLabel];
-		if (meta) meta.active_stop_sequence = newActive;
+		if (meta && reply) {
+			meta.active_stop_by_trip = reply.active_stop_by_trip || meta.active_stop_by_trip || {};
+			meta.active_stop_sequence = reply.active_stop_sequence;
+		}
 		if (activeView) renderRoute(activeView);
 	}
 
-	window._mfst_triggerStop = function (manifest, stopSeq, vehicleLabel) {
+	window._mfst_triggerStop = function (manifest, stopSeq, vehicleLabel, tripId) {
 		frappe.call({
 			method: "one_fm.one_fm.doctype.transportation_manifest.manifest_sheet.trigger_attendance_check",
-			args: { manifest: manifest, stop_sequence: stopSeq },
+			args: { manifest: manifest, stop_sequence: stopSeq, trip_id: tripId || "" },
 			freeze: true,
 			freeze_message: __("Unlocking stop…"),
 			callback: function (r) {
-				if (r.message) _setActiveStopAndRerender(vehicleLabel, r.message.active_stop_sequence);
+				if (r.message) _setActiveStopAndRerender(vehicleLabel, r.message);
 			}
 		});
 	};
 
-	window._mfst_completeStop = function (manifest, stopSeq, vehicleLabel) {
+	window._mfst_completeStop = function (manifest, stopSeq, vehicleLabel, tripId) {
 		frappe.call({
 			method: "one_fm.one_fm.doctype.transportation_manifest.manifest_sheet.complete_stop",
-			args: { manifest: manifest, stop_sequence: stopSeq },
+			args: { manifest: manifest, stop_sequence: stopSeq, trip_id: tripId || "" },
 			freeze: true,
 			freeze_message: __("Locking stop…"),
 			callback: function (r) {
-				if (r.message) _setActiveStopAndRerender(vehicleLabel, r.message.active_stop_sequence);
+				if (r.message) _setActiveStopAndRerender(vehicleLabel, r.message);
 			}
 		});
 	};
@@ -844,8 +849,15 @@ function renderManifest($container, data) {
 				});
 			});
 
-			const activeStop = meta.active_stop_sequence || 0;
+			// This RUN's pointer, not the vehicle's (WI-002590 AC1). A vehicle drives
+			// several runs a day and they used to share one number, so triggering the
+			// check on S-801 locked S-802 alongside it and completing one reopened the
+			// other. The map is seeded from the old flat field server-side, so a check
+			// already in progress keeps its place.
+			const activeByTrip = meta.active_stop_by_trip || {};
+			const activeStop = parseInt(activeByTrip[trip.id || ""], 10) || 0;
 			const manifestName = meta.manifest || null;
+			const tripLabel = tripStops.find(s => s.tripName)?.tripName || trip.id || "";
 
 			if (isMixed) {
 				// A merged run is one journey out and back, not a series of camp blocks:
@@ -865,7 +877,8 @@ function renderManifest($container, data) {
 					// stop the driver has to make.
 					campGroups: Object.values(boardingByCamp).sort((a, b) => a.seq - b.seq),
 					campLegs: legs.camps_ordered || [],
-					activeStop, manifestName, vehicleLabel: pr.label, calcTransit
+					activeStop, manifestName, vehicleLabel: pr.label, calcTransit,
+					tripId: trip.id, tripLabel
 				});
 			} else {
 
@@ -886,7 +899,8 @@ function renderManifest($container, data) {
 					? new Date(leg.departure).toISOString() : firstTimeISO;
 				if (index > 0) html += renderTransit(calcTransit(prevTime, departAt, prevStop));
 				html += renderDepartCard(departAt, cg, activeStop, manifestName, pr.label,
-					false, leg.qoa_time || (index === 0 ? legs.qoa_time : null));
+					false, leg.qoa_time || (index === 0 ? legs.qoa_time : null),
+					trip.id, tripLabel);
 				prevTime = departAt;
 				prevStop = leg;
 			});
@@ -1060,7 +1074,8 @@ function renderManifest($container, data) {
 					: (index === 0 ? o.firstTimeISO : prevTime);
 				if (index > 0) html += renderTransit(o.calcTransit(prevTime, departAt, prevStop));
 				html += renderDepartCard(departAt, cg, o.activeStop, o.manifestName,
-					o.vehicleLabel, true, leg.qoa_time || (index === 0 ? o.qoaTime : null));
+					o.vehicleLabel, true, leg.qoa_time || (index === 0 ? o.qoaTime : null),
+					o.tripId, o.tripLabel);
 				prevTime = departAt;
 				prevStop = leg;
 			});
@@ -1069,7 +1084,8 @@ function renderManifest($container, data) {
 			html += renderDepartCard(
 				o.firstTimeISO,
 				{ seq: 1, label: o.accommodation, employees: boarding },
-				o.activeStop, o.manifestName, o.vehicleLabel, true, o.qoaTime
+				o.activeStop, o.manifestName, o.vehicleLabel, true, o.qoaTime,
+				o.tripId, o.tripLabel
 			);
 			prevStop = o.originLeg;
 		}
@@ -1134,7 +1150,7 @@ function renderManifest($container, data) {
 		return offset > 0 ? `<span class="mfst-stop-tag tag-stop">+${offset} Day</span>` : "";
 	}
 
-	function renderDepartCard(time, camp, activeStop, manifestName, vehicleLabel, isMixed, qoaTime) {
+	function renderDepartCard(time, camp, activeStop, manifestName, vehicleLabel, isMixed, qoaTime, tripId, tripLabel) {
 		const employees = camp.employees || [];
 		const seq = camp.seq || 1;
 		const isCompleted = activeStop && seq < activeStop;
@@ -1159,12 +1175,22 @@ function renderManifest($container, data) {
 
 		let actionBtn = "";
 		const safeVeh = (vehicleLabel || "").replace(/'/g, "\\'");
-		if (manifestName && canTrigger) {
-			actionBtn = `<button class="mfst-depart-btn trigger" onclick="window._mfst_triggerStop('${manifestName}', ${seq}, '${safeVeh}')">
-				<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">fact_check</span> Trigger Attendance Check</button>`;
+		const safeTrip = String(tripId || "").replace(/'/g, "\\'");
+		// AC2: the button says WHICH run it acts on. With several runs on one vehicle
+		// page, two identical "Trigger Attendance Check" buttons is an invitation to
+		// check in the wrong one.
+		const runSuffix = tripLabel ? ` — ${escHtml(tripLabel)}` : "";
+		const lockSuffix = tripLabel ? ` (${escHtml(tripLabel)})` : "";
+		// AC3: nobody boards here, so there is nobody to check. A return-only run
+		// leaving its camp empty used to offer a check over an empty list, and running
+		// it advanced the run's pointer past a stop that never had anything to verify.
+		const nobodyBoards = employees.length === 0;
+		if (manifestName && canTrigger && !nobodyBoards) {
+			actionBtn = `<button class="mfst-depart-btn trigger" onclick="window._mfst_triggerStop('${manifestName}', ${seq}, '${safeVeh}', '${safeTrip}')">
+				<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">fact_check</span> Trigger Attendance Check${runSuffix}</button>`;
 		} else if (manifestName && isActive) {
-			actionBtn = `<button class="mfst-depart-btn complete" onclick="window._mfst_completeStop('${manifestName}', ${seq}, '${safeVeh}')">
-				<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">lock</span> Complete &amp; Lock Stop ${seq}</button>`;
+			actionBtn = `<button class="mfst-depart-btn complete" onclick="window._mfst_completeStop('${manifestName}', ${seq}, '${safeVeh}', '${safeTrip}')">
+				<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">lock</span> Complete &amp; Lock Stop ${seq}${lockSuffix}</button>`;
 		}
 
 		let empHtml = "";
