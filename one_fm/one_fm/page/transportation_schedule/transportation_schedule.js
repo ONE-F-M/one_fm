@@ -1663,6 +1663,10 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 render();
                 d.show();
+                // AC1: Frappe's 'large' tops out well short of a wide screen, and this
+                // table has eleven columns. Applied after show() so the class survives
+                // the dialog's own sizing.
+                d.$wrapper.find('.modal-dialog').addClass('rp-trip-builder-dialog');
                 // Re-walk the whole itinerary whenever the departure moves.
                 d.fields_dict.departure.$input.on('change', () => render());
             },
@@ -1716,6 +1720,22 @@ function mountRoutePlannerApp(wrapper, data) {
                     </div>`;
                 }).join('');
 
+                // AC2: a stop serving several shifts sends them comma-joined, and printing
+                // every one is what pushed this table wider than the screen. The first
+                // plus a count reads the same at a glance, and the whole list is on the
+                // cell's title so nothing is actually lost.
+                const placeCell = (value) => {
+                    const all = String(value || '').split(',')
+                        .map((v) => v.trim()).filter(Boolean);
+                    if (!all.length) return '<td class="small rp-leg-place">—</td>';
+                    const full = esc(all.join(', '));
+                    if (all.length === 1) {
+                        return `<td class="small rp-leg-place" title="${full}">${esc(all[0])}</td>`;
+                    }
+                    return `<td class="small rp-leg-place" title="${full}">${esc(all[0])}`
+                         + `<span class="rp-leg-more">+${all.length - 1} ${__('more')}</span></td>`;
+                };
+
                 const legs = p.stops.map((s) => {
                     // A leg that crosses midnight arrives on the next day, and saying so is
                     // the difference between a readable itinerary and one where the bus
@@ -1737,15 +1757,15 @@ function mountRoutePlannerApp(wrapper, data) {
                     ].filter(Boolean).join(' ');
                     return `
                     <tr class="${s.exceeded ? 'text-danger font-weight-bold' : ''}">
-                        <td class="small">${esc(s.stop_index)}</td>
-                        <td class="small">${esc(s.place || '—')}</td>
-                        <td class="small">${esc(s.action_type)}</td>
+                        <td class="small rp-leg-num-col">${esc(s.stop_index)}</td>
+                        ${placeCell(s.place)}
+                        <td class="small rp-leg-act-col" title="${esc(s.action_type)}">${esc(s.action_type)}</td>
                         <td class="small rp-leg-time-col">${s.qoa_time ? esc(s.qoa_time) : '—'}</td>
                         <td class="small rp-leg-time-col">${esc(s.departs)}</td>
                         ${minutes('buffer_minutes', s.buffer_minutes)}
                         ${minutes('transit_minutes', s.transit_minutes)}
-                        <td class="small">${esc(s.shift_location || '—')}</td>
-                        <td class="small">${esc(s.next_stop_location || '—')}</td>
+                        ${placeCell(s.shift_location)}
+                        ${placeCell(s.next_stop_location)}
                         <td class="small font-weight-bold rp-leg-time-col">${last ? '—' : esc(s.arrives) + rollover}</td>
                         <td class="small rp-leg-time-col">${movement || '—'} <b>${esc(s.occupancy)}</b></td>
                     </tr>`;
@@ -1791,20 +1811,24 @@ function mountRoutePlannerApp(wrapper, data) {
                     <div class="text-muted small font-weight-bold text-uppercase mb-2 mt-3">
                         ${__('Legs — arrival is calculated forward from the departure above')}
                     </div>
-                    <div class="table-responsive">
-                    <table class="table table-sm table-bordered small mb-0">
+                    <!-- AC1/AC4: scrolls DOWN, never across. table-responsive's
+                         overflow-x:auto is exactly the sideways scrollbar the criteria
+                         ask to eliminate, so the frame only scrolls vertically and the
+                         header stays put while it does. -->
+                    <div class="rp-leg-table-frame">
+                    <table class="table table-sm table-bordered small mb-0 rp-leg-table">
                         <thead><tr>
-                            <th>${__('Stop')}</th>
+                            <th class="rp-leg-num-col">${__('Stop')}</th>
                             <th>${__('Accommodation / Stop')}</th>
-                            <th>${__('Action')}</th>
-                            <th>${__('QOA')}</th>
-                            <th>${__('Departure')}</th>
+                            <th class="rp-leg-act-col">${__('Action')}</th>
+                            <th class="rp-leg-time-col">${__('QOA')}</th>
+                            <th class="rp-leg-time-col">${__('Departure')}</th>
                             <th class="rp-leg-mins-col">${__('Buffer (min)')}</th>
                             <th class="rp-leg-mins-col">${__('Transit (min)')}</th>
                             <th>${__('Shift Location')}</th>
                             <th>${__('Next Stop')}</th>
-                            <th>${__('Target Arrival')}</th>
-                            <th>${__('On Board')}</th>
+                            <th class="rp-leg-time-col">${__('Target Arrival')}</th>
+                            <th class="rp-leg-time-col">${__('On Board')}</th>
                         </tr></thead>
                         <tbody>${legs}</tbody>
                     </table>
@@ -6221,9 +6245,44 @@ function injectRPStyles() {
         /* Trip Builder legs. The minute inputs are edited constantly, so they get room
            to show two or three digits instead of clipping them, and their columns do not
            wrap. The place columns are the ones allowed to wrap. */
-        .rp-leg-min      { width: 72px; min-width: 72px; text-align: right; }
-        .rp-leg-mins-col { width: 88px; white-space: nowrap; }
-        .rp-leg-time-col { white-space: nowrap; }
+        .rp-leg-min      { width: 100%; min-width: 0; text-align: right; padding: 2px 4px; }
+        .rp-leg-mins-col { width: 74px; white-space: nowrap; }
+        .rp-leg-time-col { white-space: nowrap; width: 76px; }
+
+        /* ── Trip Builder leg table (WI-002543) ──────────────────────────────
+           The frame scrolls DOWN and never across: table-responsive's
+           overflow-x:auto is the sideways scrollbar AC1 asks to eliminate. */
+        .rp-leg-table-frame {
+            max-height: 46vh; overflow-y: auto; overflow-x: hidden;
+            border: 1px solid var(--md-sys-color-outline-variant); border-radius: 6px;
+        }
+        /* Fixed layout is what makes the widths below binding - with auto layout the
+           browser sizes columns from their CONTENT, which is how one long location
+           name widened the whole table (AC3). */
+        .rp-leg-table { table-layout: fixed; width: 100%; margin-bottom: 0; }
+        .rp-leg-num-col { width: 44px; }
+        .rp-leg-act-col { width: 92px; }
+        /* Everything with a fixed width above is numeric or a clock. What is left is
+           shared between the three location columns, which are the ones worth the room. */
+        .rp-leg-table th, .rp-leg-table td {
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            vertical-align: middle;
+        }
+        /* AC4: the header stays put while the legs scroll under it. */
+        .rp-leg-table thead th {
+            position: sticky; top: 0; z-index: 2;
+            background: var(--md-sys-color-surface-container-high, #eee);
+        }
+        /* AC2: one line, with the rest of the list behind the tooltip. */
+        .rp-leg-place { max-width: 0; }
+        .rp-leg-more {
+            margin-left: 4px; padding: 0 4px; border-radius: 4px; font-size: 10px;
+            background: var(--md-sys-color-surface-container-high, #eee);
+            color: var(--md-sys-color-on-surface-variant, #666); white-space: nowrap;
+        }
+        /* AC1: as much of the viewport as the dialog can take. The Trip Builder is a
+           working surface, not a message box. */
+        .rp-trip-builder-dialog { max-width: 95vw !important; width: 95vw !important; }
 
         /* ── Grid ── */
         #rp-grid-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
