@@ -457,15 +457,11 @@ function mountRoutePlannerApp(wrapper, data) {
                         // does the stops: their DATE half is a lock lifespan, not the day
                         // the bus runs. And they are clamped, so a stored leg timing can
                         // widen the block but never shrink it below the stops it holds.
-                        const held = (this.legTimings || {})[tripId] || {};
-                        const stated = (stamp) => {
-                            const ms = stamp ? new Date(stamp).getTime() : NaN;
-                            return isNaN(ms) ? null : ms;
-                        };
+                        const held = this._legEdges(tripId, spanStart.getTime(), spanEnd.getTime());
                         const runStart = new Date(Math.min(
-                            stated(held.departure) ?? Infinity, spanStart.getTime()));
+                            held.departure ?? Infinity, spanStart.getTime()));
                         const runEnd = new Date(Math.max(
-                            stated(held.arrival) ?? -Infinity, spanEnd.getTime()));
+                            held.arrival ?? -Infinity, spanEnd.getTime()));
 
                         const stopLabels = stops.map(s => {
                             const card = this.planData.shipment_cards.find(c => c.id === s.cardId);
@@ -2048,12 +2044,45 @@ function mountRoutePlannerApp(wrapper, data) {
             // Re-draw a trip's blocks from the per-leg minutes its stops carry. Stop 1
             // keeps the shift moment it was placed on; every later stop is driven forward
             // from the one before it - dwell at the previous stop, then the drive.
+            // ── A run's own two ends, and when NOT to believe them ───────────────
+            // The camp departure and the ride home are stored against the trip rather
+            // than on any block, so they can fall out of step with the stops - a reorder
+            // used to re-time the stops and leave the pair where it was. A run then drew
+            // from a departure that morning to a stop that evening, and the drawer
+            // printed a negative duration from the same pair.
+            //
+            // The reorder now moves them (see _reorderStop), but a plan saved BEFORE that
+            // still carries a stale pair, so the reads refuse one that cannot describe
+            // this run: a bus leaves before its first stop and gets home after its last.
+            // A pair failing that came from a different timing, and both halves are
+            // dropped together rather than half-trusted.
+            _legEdges(tripId, spanStartMs, spanEndMs) {
+                const held = (this.legTimings || {})[tripId] || {};
+                const ms = (stamp) => {
+                    const at = stamp ? new Date(stamp).getTime() : NaN;
+                    return isNaN(at) ? null : at;
+                };
+                const departure = ms(held.departure);
+                const arrival = ms(held.arrival);
+
+                const departsTooLate = departure !== null && spanStartMs !== null
+                    && departure > spanStartMs;
+                const arrivesTooEarly = arrival !== null && spanEndMs !== null
+                    && arrival < spanEndMs;
+                if (departsTooLate || arrivesTooEarly) return { departure: null, arrival: null };
+
+                return { departure, arrival };
+            },
+
             // ── The three moments the drawer reads a run by ──
             tripStartsAt() {
-                const stored = this.selectedTripLegs.departure;
                 const stops = this.selectedTripStops;
-                return stored || (stops.length
-                    ? new Date(stops[0].item.start).toISOString() : null);
+                if (!stops.length) return this.selectedTripLegs.departure || null;
+                const spanStart = Math.min(...stops.map(s => new Date(s.item.start).getTime()));
+                const spanEnd = Math.max(...stops.map(s => new Date(s.item.end).getTime()));
+                const edges = this._legEdges(this.selectedItem && this.selectedItem.tripId,
+                                             spanStart, spanEnd);
+                return new Date(edges.departure ?? spanStart).toISOString();
             },
 
             lastStopEndsAt() {
@@ -2063,7 +2092,13 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             tripEndsAt() {
-                return this.selectedTripLegs.arrival || this.lastStopEndsAt();
+                const stops = this.selectedTripStops;
+                if (!stops.length) return this.selectedTripLegs.arrival || this.lastStopEndsAt();
+                const spanStart = Math.min(...stops.map(s => new Date(s.item.start).getTime()));
+                const spanEnd = Math.max(...stops.map(s => new Date(s.item.end).getTime()));
+                const edges = this._legEdges(this.selectedItem && this.selectedItem.tripId,
+                                             spanStart, spanEnd);
+                return new Date(edges.arrival ?? spanEnd).toISOString();
             },
 
             // A stored Time reads back as HH:MM:SS; the drawer shows clock times.
@@ -3488,6 +3523,18 @@ function mountRoutePlannerApp(wrapper, data) {
                     gaps.push(removedGap);
                 }
 
+                // The run's own two ends BEFORE the walk. The camp departure and the ride
+                // home are stored against the TRIP, not on any block, and the reorder
+                // never moved them - so a run re-timed to the evening kept the departure
+                // it had that morning, and since the lane draws a trip from
+                // min(stored departure, first stop) to max(stored arrival, last stop),
+                // the block stretched across the whole day instead of following its
+                // stops. The drawer read the same stale pair and printed a negative
+                // duration (WI-002542).
+                const edgesOf = (rows, key) => rows.map(r => new Date(r[key]).getTime());
+                const oldFirstStart = Math.min(...edgesOf(tripStops, 'start'));
+                const oldLastEnd = Math.max(...edgesOf(tripStops, 'end'));
+
                 // Rebuild times: recalculate from the NEW first stop's shift window
                 // The first stop's time window determines the trip start, not the old order
                 const firstStop = tripStops[0];
@@ -3519,6 +3566,29 @@ function mountRoutePlannerApp(wrapper, data) {
                         cursor += gaps[idx];
                     }
                 });
+
+                // Each end moves with the end it belongs to: the camp departure keeps its
+                // lead over the first stop, the ride home keeps its trail after the last.
+                // One shared delta would put the arrival wrong whenever the reorder
+                // changed the run's overall length, which it does whenever the gaps are
+                // not all equal.
+                const held = (this.legTimings || {})[tripId];
+                if (held) {
+                    const shifted = (stamp, delta) => {
+                        const ms = stamp ? new Date(stamp).getTime() : NaN;
+                        return isNaN(ms) ? (stamp || null) : new Date(ms + delta).toISOString();
+                    };
+                    const startDelta = Math.min(...edgesOf(tripStops, 'start')) - oldFirstStart;
+                    const endDelta = Math.max(...edgesOf(tripStops, 'end')) - oldLastEnd;
+                    this.legTimings = {
+                        ...this.legTimings,
+                        [tripId]: {
+                            ...held,
+                            departure: shifted(held.departure, startDelta),
+                            arrival: shifted(held.arrival, endDelta),
+                        },
+                    };
+                }
 
                 // Update totalStops on all trip items
                 tripStops.forEach(s => { s.totalStops = tripStops.length; });
