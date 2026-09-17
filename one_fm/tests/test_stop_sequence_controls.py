@@ -193,3 +193,86 @@ class TestAutoScroll(FrappeTestCase):
 	def test_leaving_the_edge_stops_it_too(self):
 		body = self.canvas.split("_autoScrollDrawer(event) {", 1)[1].split("\n            },", 1)[0]
 		self.assertIn("if (!step) { this._stopAutoScroll(); return; }", body)
+
+
+def _leg_edges(departure, arrival, span_start, span_end):
+	"""The JS `_legEdges` rule, in Python.
+
+	A bus leaves before its first stop and gets home after its last. A stored pair that
+	cannot say that came from a different timing of the run, and BOTH halves are dropped
+	together rather than one being half-trusted.
+	"""
+	departs_too_late = departure is not None and span_start is not None and departure > span_start
+	arrives_too_early = arrival is not None and span_end is not None and arrival < span_end
+	if departs_too_late or arrives_too_early:
+		return (None, None)
+	return (departure, arrival)
+
+
+class TestTheRunsOwnEndsMoveWithIt(FrappeTestCase):
+	"""The over-stretch reported on S-101.
+
+	The camp departure and the ride home are stored against the TRIP, not on any block,
+	and the reorder re-timed the stops without touching them. The lane draws a trip from
+	min(stored departure, first stop) to max(stored arrival, last stop), so a run re-timed
+	into the evening kept its morning departure and the block stretched across the whole
+	day - 04:50 to 19:01 on a run whose stops ran 17:33 to 19:01. The drawer read the same
+	stale pair and printed "04:50 -> 05:59 (-1371 min)".
+	"""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		cls.canvas = CANVAS.read_text()
+
+	def test_the_reorder_moves_both_stored_ends(self):
+		body = self.canvas.split("_reorderStop(sourceIndex, targetIndex) {", 1)[1] \
+						  .split("\n            },", 1)[0]
+		self.assertIn("departure: shifted(held.departure, startDelta),", body)
+		self.assertIn("arrival: shifted(held.arrival, endDelta),", body)
+
+	def test_each_end_moves_by_its_own_delta(self):
+		# One shared delta puts the arrival wrong whenever the reorder changes the run's
+		# overall length, which it does whenever the gaps are not all equal.
+		body = self.canvas.split("_reorderStop(sourceIndex, targetIndex) {", 1)[1] \
+						  .split("\n            },", 1)[0]
+		self.assertIn("const startDelta = Math.min(...edgesOf(tripStops, 'start')) - oldFirstStart;",
+					  body)
+		self.assertIn("const endDelta = Math.max(...edgesOf(tripStops, 'end')) - oldLastEnd;",
+					  body)
+
+	def test_a_run_with_no_stored_ends_is_left_alone(self):
+		body = self.canvas.split("_reorderStop(sourceIndex, targetIndex) {", 1)[1] \
+						  .split("\n            },", 1)[0]
+		self.assertIn("if (held) {", body)
+
+	def test_a_stale_pair_is_refused_by_the_reads(self):
+		# S-101's actual numbers: stops 17:33-19:01, stored pair 04:50-05:59.
+		self.assertEqual(_leg_edges(290, 359, 1053, 1141), (None, None))
+
+	def test_a_real_camp_leg_still_widens_the_block(self):
+		# The bus does leave before its first stop and get back after its last - that
+		# widening is the point, and refusing it would shrink every run to its stops.
+		self.assertEqual(_leg_edges(1020, 1160, 1053, 1141), (1020, 1160))
+
+	def test_a_departure_after_the_first_stop_is_impossible(self):
+		self.assertEqual(_leg_edges(1100, 1160, 1053, 1141), (None, None))
+
+	def test_an_arrival_before_the_last_stop_is_impossible(self):
+		self.assertEqual(_leg_edges(1020, 1100, 1053, 1141), (None, None))
+
+	def test_a_run_with_no_stored_pair_falls_back_to_its_stops(self):
+		self.assertEqual(_leg_edges(None, None, 1053, 1141), (None, None))
+
+	def test_both_halves_are_dropped_together(self):
+		# Keeping the plausible half of a broken pair still draws the block from a time
+		# the run does not have.
+		self.assertEqual(_leg_edges(1020, 1100, 1053, 1141), (None, None))
+		self.assertEqual(_leg_edges(1100, 1160, 1053, 1141), (None, None))
+
+	def test_the_drawer_and_the_lane_use_the_same_rule(self):
+		# Two implementations would let the header and the block disagree again.
+		self.assertIn("_legEdges(tripId, spanStartMs, spanEndMs) {", self.canvas)
+		self.assertIn("this._legEdges(tripId, spanStart.getTime(), spanEnd.getTime());",
+					  self.canvas)
+		self.assertEqual(self.canvas.count("this._legEdges("), 3)

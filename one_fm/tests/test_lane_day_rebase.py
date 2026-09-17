@@ -69,8 +69,14 @@ class TestTheLegsWithNoBlockAreRebasedToo(FrappeTestCase):
 	def test_a_block_always_covers_every_stop_it_holds(self):
 		# Clamped, so a stored leg timing can widen the block but never shrink it below
 		# its own stops - and a garbage stamp can no longer invert it.
-		self.assertIn("stated(held.departure) ?? Infinity, spanStart.getTime()", self.source)
-		self.assertIn("stated(held.arrival) ?? -Infinity, spanEnd.getTime()", self.source)
+		#
+		# The parsing moved into _legEdges in WI-002542, which additionally refuses a
+		# pair that cannot describe this run at all (a departure after the first stop, an
+		# arrival before the last). The clamp itself is unchanged and is what this guards.
+		self.assertIn("held.departure ?? Infinity, spanStart.getTime()", self.source)
+		self.assertIn("held.arrival ?? -Infinity, spanEnd.getTime()", self.source)
+		self.assertIn("this._legEdges(tripId, spanStart.getTime(), spanEnd.getTime());",
+					  self.source)
 
 	def test_the_span_is_read_over_all_stops_not_the_first_and_last_by_number(self):
 		# After the rebase a stop can sit a few minutes before stop one, which gave the
