@@ -503,11 +503,33 @@ def _prune_stale(current_keys: set) -> int:
 	for row in stale:
 		if row.generation_key and row.generation_key not in current_keys:
 			try:
+				_release_manifest_references(row.name)
 				frappe.delete_doc("Transportation Shipment", row.name, ignore_permissions=True, force=True)
 				deleted += 1
 			except Exception:
 				frappe.log_error(frappe.get_traceback(), "Transportation Shipment Prune Error")
 	return deleted
+
+
+def _release_manifest_references(shipment: str) -> None:
+	"""Let go of a card the manifest still points at, before it is deleted.
+
+	A compiled manifest row records which Transportation Shipment its riders came from.
+	The prune deletes with ``force=True``, which skips link validation - so a pruned card
+	left that reference dangling, and from then on the manifest could not be SAVED at
+	all: every attempt threw "Could not find Transportation Shipment", which reaches the
+	driver page as a 417 and a blank screen.
+
+	Only the provenance link goes. The row keeps its employee, its stop and its
+	attendance, because those are facts about the journey rather than about the card the
+	demand was generated on.
+	"""
+	frappe.db.set_value(
+		"Transportation Manifest Details",
+		{"transportation_shipment": shipment},
+		"transportation_shipment", None,
+		update_modified=False,
+	)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
