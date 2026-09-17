@@ -676,6 +676,68 @@ function renderManifest($container, data) {
 		const totalTimeStr = m.totalDuration ? fmtDuration(m.totalDuration) : "—";
 		const tripTimeStr = m.travelDuration ? fmtDuration(m.travelDuration) : "—";
 
+		// ── What each run occupies, read once (WI-002545) ───────────────────────
+		// The breakdown popover, the jump pills and the timeline strip are three views
+		// of the same fact, so they are measured once rather than three times - a run
+		// that read 2h05m in the tooltip and drew a different width would be worse than
+		// not drawing it. Time-of-day only, for the reason WI-002614 documents: the DATE
+		// half of these stamps is a lock lifespan, not the day the bus runs.
+		const tripSpans = allTrips.map((trip, i) => {
+			const times = trip.stops.map(st => secondsOfDay(st.time)).filter(v => v !== null);
+			const start = times.length ? Math.min(...times) : null;
+			const end = times.length ? Math.max(...times) : null;
+			let length = (start === null || end === null) ? 0 : end - start;
+			if (length < 0) length += 24 * 3600;   // the run crossed midnight
+			return { index: i, id: trip.id, label: trip.label, start, end, length };
+		}).filter(t => t.start !== null);
+
+		const spanStart = tripSpans.length ? Math.min(...tripSpans.map(t => t.start)) : null;
+		const spanEnd = tripSpans.length ? Math.max(...tripSpans.map(t => t.end)) : null;
+		const shiftSpan = (spanStart === null) ? 0 : Math.max(1, spanEnd - spanStart);
+
+		const clockOf = (sec) => {
+			if (sec === null || sec === undefined) return "—";
+			const s = ((sec % 86400) + 86400) % 86400;
+			return `${String(Math.floor(s / 3600)).padStart(2, "0")}:${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}`;
+		};
+		const lengthOf = (sec) => fmtDuration(`${Math.max(0, sec)}s`) || "0 min";
+
+		// AC2: the badge is a total, and a total nobody can take apart is a number to be
+		// trusted rather than checked. Native title so it works on hover and on tap
+		// without a popover library.
+		const breakdown = tripSpans.map((t, i) =>
+			`${t.label || `Trip ${i + 1}`}: ${clockOf(t.start)} → ${clockOf(t.end)} (${lengthOf(t.length)})`
+		).join("\n");
+
+		// AC3: one pill per run, pinned under the header.
+		const jumpBar = tripSpans.length > 1 ? `
+			<div class="mfst-jump-bar">
+				${tripSpans.map((t, i) => `<button type="button" class="mfst-jump-pill"
+					data-trip-index="${i}"
+					title="${escHtml(clockOf(t.start))} → ${escHtml(clockOf(t.end))}">${escHtml(t.label || `Trip ${i + 1}`)}</button>`).join("")}
+			</div>` : "";
+
+		// AC4/AC5: the shift as one bar - solid where the bus is on a run, light where
+		// it is standing. Positioned as percentages of the span so it needs no width to
+		// be measured before it can be drawn.
+		const pct = (sec) => shiftSpan ? ((sec - spanStart) / shiftSpan) * 100 : 0;
+		const segments = [];
+		tripSpans.forEach((t, i) => {
+			const prev = i === 0 ? null : tripSpans[i - 1];
+			if (prev && t.start > prev.end) {
+				segments.push(`<span class="mfst-timeline-seg mfst-timeline-idle"
+					style="left:${pct(prev.end)}%;width:${pct(t.start) - pct(prev.end)}%"
+					title="Waiting Segment: Rest Time | ${escHtml(clockOf(prev.end))} → ${escHtml(clockOf(t.start))}"></span>`);
+			}
+			segments.push(`<span class="mfst-timeline-seg mfst-timeline-drive"
+				style="left:${pct(t.start)}%;width:${Math.max(0.6, pct(t.end) - pct(t.start))}%"
+				title="Driving Segment: ${escHtml(t.label || `Trip ${i + 1}`)} | ${escHtml(clockOf(t.start))} → ${escHtml(clockOf(t.end))}"></span>`);
+		});
+		const timeline = tripSpans.length ? `
+			<div class="mfst-timeline" title="${escHtml(clockOf(spanStart))} → ${escHtml(clockOf(spanEnd))}">
+				${segments.join("")}
+			</div>` : "";
+
 		// ─ Vehicle Info Card ─
 		const infoParts = [];
 		if (meta.driver && meta.driver !== "—") infoParts.push(`<span class="material-symbols-outlined mfst-info-icon">person</span> ${escHtml(meta.driver)}`);
@@ -707,13 +769,15 @@ function renderManifest($container, data) {
 						<div class="mfst-stat-val">${totalTimeStr}</div>
 						<div class="mfst-stat-lbl">Total Time</div>
 					</div>
-					<div class="mfst-stat-box">
+					<div class="mfst-stat-box mfst-stat-trip-time" title="${escHtml(breakdown)}">
 						<div class="mfst-stat-val">${tripTimeStr}</div>
-						<div class="mfst-stat-lbl">Trip Time</div>
+						<div class="mfst-stat-lbl">Trip Time${tripSpans.length ? ' <span class="mfst-stat-hint">&#9432;</span>' : ""}</div>
 					</div>
 				</div>
+				${timeline}
 				${infoParts.length > 0 ? `<div class="mfst-vehicle-card-details">${infoParts.join(" · ")}</div>` : ""}
 			</div>
+			${jumpBar}
 		`;
 
 		// ─ Render Trips ─
@@ -841,7 +905,7 @@ function renderManifest($container, data) {
 			const dirIcon = isMixed ? "sync_alt" : (!hasOutbound && hasReturn ? "keyboard_return" : "arrow_forward");
 
 			html += `
-				<div class="mfst-trip-group ${dirClass}">
+				<div class="mfst-trip-group ${dirClass}" data-trip-index="${ti}">
 					<div class="mfst-trip-header">
 						<span class="material-symbols-outlined mfst-trip-header-icon">${dirIcon}</span>
 						<span class="mfst-trip-header-title">${escHtml(trip.label)}</span>
@@ -1505,6 +1569,18 @@ function renderManifest($container, data) {
 			}
 		}
 	}
+
+	// AC3 (WI-002545): a vehicle running five trips is a long page, and the pills are
+	// the index to it. Delegated from the container so the handler survives every
+	// re-render rather than being rebound with the tabs.
+	$container.on("click", ".mfst-jump-pill", function () {
+		const idx = this.dataset.tripIndex;
+		const target = $container.find(`.mfst-trip-group[data-trip-index="${idx}"]`)[0];
+		if (!target) return;
+		target.scrollIntoView({ behavior: "smooth", block: "start" });
+		$container.find(".mfst-jump-pill").removeClass("active");
+		$(this).addClass("active");
+	});
 
 	// ── One check-in write at a time (WI-002538) ──
 	// Every chip on the sheet writes through the SAME parent Transportation Manifest:
@@ -2199,6 +2275,35 @@ function getManifestCSS() {
 		.mfst-trip-group { border: 2px solid var(--mfst-blue); border-radius: 16px; margin-bottom: 16px; overflow: hidden; background: var(--mfst-bg-card); }
 		.mfst-trip-group.return { border-color: var(--mfst-purple); }
 		.mfst-trip-group.mixed { border-color: var(--mfst-mixed); }
+		/* ── Trip breakdown, jump pills and the shift timeline (WI-002545) ──── */
+		.mfst-stat-trip-time { cursor: help; }
+		.mfst-stat-hint { opacity: 0.55; font-size: 11px; }
+		/* AC3: pinned under the vehicle header, so the index stays reachable while the
+		   dispatcher is deep in a trip. */
+		.mfst-jump-bar {
+			position: sticky; top: 132px; z-index: 90;
+			display: flex; flex-wrap: wrap; gap: 6px;
+			padding: 8px 20px; background: var(--mfst-bg-card);
+			border-bottom: 1px solid var(--mfst-border);
+		}
+		.mfst-jump-pill {
+			border: 1px solid var(--mfst-border); background: transparent; color: inherit;
+			border-radius: 999px; padding: 4px 12px; font-size: 12px; cursor: pointer;
+		}
+		.mfst-jump-pill:hover { border-color: var(--mfst-blue); color: var(--mfst-blue); }
+		.mfst-jump-pill.active { background: var(--mfst-blue); border-color: var(--mfst-blue); color: #fff; }
+		/* AC4: the whole shift as one bar. Light ground is the waiting; the solid
+		   segments are the runs. Percentages, so it needs no measured width to draw. */
+		.mfst-timeline {
+			position: relative; height: 8px; margin: 10px 0 2px;
+			border-radius: 4px; background: var(--mfst-border); overflow: hidden;
+		}
+		.mfst-timeline-seg { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
+		.mfst-timeline-drive { background: var(--mfst-blue); }
+		/* Idle is drawn explicitly as well as being the ground, so AC5 has something to
+		   hover for a Waiting Segment. */
+		.mfst-timeline-idle { background: var(--mfst-border); opacity: 0.85; }
+
 		.mfst-trip-header { display: flex; align-items: center; gap: 10px; padding: 14px 20px; background: var(--mfst-blue-dim); border-bottom: 1px solid rgba(37,99,235,0.1); flex-wrap: wrap; }
 		.mfst-trip-group.return .mfst-trip-header { background: var(--mfst-purple-dim); border-bottom-color: rgba(194,65,12,0.1); }
 		.mfst-trip-group.mixed .mfst-trip-header { background: var(--mfst-mixed-dim); border-bottom-color: rgba(129,145,113,0.15); }
