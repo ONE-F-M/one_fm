@@ -93,6 +93,9 @@ function mountRoutePlannerApp(wrapper, data) {
                 svgWidth: 800,         // updated by ResizeObserver
                 rowHeight: 120,
                 selectedItem: null,        // highlighted swim block
+                // Stops ticked in the RHS drawer for a multi-stop removal (WI-002540).
+                // Reactive Set, like assignedCards: Vue 3 tracks add/delete on one.
+                selectedStopIds: new Set(),
                 draggingCard: null,        // card being dragged from pool
                 isDraggingBlock: false,       // block being moved on lane
                 selectedPoolCard: null,    // mobile: tap-to-select card for assignment
@@ -523,6 +526,17 @@ function mountRoutePlannerApp(wrapper, data) {
             selectedTripLegs() {
                 const tripId = this.selectedItem && this.selectedItem.tripId;
                 return (tripId && (this.legTimings || {})[tripId]) || {};
+            },
+
+            // The ticked stops that belong to the run the drawer is SHOWING (WI-002540).
+            // Scoping it here rather than reading selectedStopIds directly is what stops
+            // a tick left behind on another trip being swept up by a removal made on
+            // this one - and it keeps the button's count and its action in step by
+            // construction.
+            checkedStopIds() {
+                return this.selectedTripStops
+                    .filter(s => this.selectedStopIds.has(s.item.id))
+                    .map(s => s.item.id);
             },
 
             selectedTripStops() {
@@ -3010,7 +3024,12 @@ function mountRoutePlannerApp(wrapper, data) {
                 document.addEventListener('touchcancel', onTouchCancel);
             },
 
-            closeDetail() { this.selectedItem = null; },
+            closeDetail() {
+                this.selectedItem = null;
+                // Ticks belong to the run that was open; leaving them set would carry
+                // them into the next run the operator looks at (WI-002540).
+                this.selectedStopIds.clear();
+            },
 
             // What Remove from Lane will actually take. A run of several stops loses
             // ONE of them, and clicking its block always selects stop 1 - so the button
@@ -3028,34 +3047,99 @@ function mountRoutePlannerApp(wrapper, data) {
                 ]);
             },
 
-            removeSelectedFromLane() {
-                if (!this.selectedItem) return;
-                const itemId = this.selectedItem.id;
-                const cid = this.selectedItem.cardId;
-                const dir = this.selectedItem.direction;
+            // ── One way off a lane, whatever asked (WI-002540 AC1) ──────────────
+            // A single stop, a ticked selection, or a whole trip differ only in which
+            // ids they collect. What follows is identical and used to live inside
+            // removeSelectedFromLane alone, so the new controls would each have been a
+            // second copy of it - and a copy that forgot _resyncTripDirection would
+            // leave a run flagged MIXED after the stop that made it mixed had gone.
+            //
+            // Both of the WI's notes fall out of the save rather than needing anything
+            // here: save_assignments rewrites the Route Plan's assignment rows, and
+            // _sync_shipment_statuses reverts every shipment this plan just dropped to
+            // Unassigned. persistAssignments fires immediately (WI-002538 made that
+            // reliable), so "instantly" is already true.
+            _removeItems(itemIds) {
+                const ids = new Set(itemIds);
+                if (!ids.size) return 0;
 
-                // Remove only the selected block, not both directions
-                const tripId = this.selectedItem.tripId;
-                this.swimItems = this.swimItems.filter(i => i.id !== itemId);
+                const going = this.swimItems.filter(i => ids.has(i.id));
+                const trips = new Set(going.map(i => i.tripId).filter(Boolean));
+                const cards = new Set(going.map(i => i.cardId));
 
-                // What is left of the run may now travel only one way (AC3).
-                this._resyncTripDirection(tripId);
+                this.swimItems = this.swimItems.filter(i => !ids.has(i.id));
 
-                // Only fully un-assign the card if no blocks remain for it
-                const remaining = this.swimItems.filter(i => i.cardId === cid);
-                if (remaining.length === 0) {
-                    this.assignedCards.delete(cid);
-                }
+                // What is left of each run may now travel only one way (AC3).
+                trips.forEach((tripId) => this._resyncTripDirection(tripId));
 
-                this.selectedItem = null;
+                // A card returns to the unassigned sidebar only once NOTHING of it is
+                // left anywhere: a card placed in both directions keeps its place while
+                // one leg still stands.
+                cards.forEach((cardId) => {
+                    if (!this.swimItems.some(i => i.cardId === cardId)) {
+                        this.assignedCards.delete(cardId);
+                    }
+                });
+
+                if (this.selectedItem && ids.has(this.selectedItem.id)) this.selectedItem = null;
+                this.selectedStopIds.clear();
                 this.checkConflicts();
                 this.canSave = this.assignedCards.size > 0 || this.swimItems.length > 0;
                 this.persistAssignments();
+                return going.length;
+            },
+
+            // A stop is ticked for removal without becoming the selected stop - the
+            // drawer's click already means "act on this one".
+            toggleStopChecked(itemId) {
+                if (this.selectedStopIds.has(itemId)) this.selectedStopIds.delete(itemId);
+                else this.selectedStopIds.add(itemId);
+            },
+
+            removeSelectedFromLane() {
+                if (!this.selectedItem) return;
+                const dir = this.selectedItem.direction;
+                this._removeItems([this.selectedItem.id]);
 
                 frappe.show_alert({
                     message: `${this.dirLabel(dir)} removed`,
                     indicator: 'orange'
                 }, 3);
+            },
+
+            // AC1: several stops at once, for a run being taken apart a piece at a time.
+            removeCheckedStops() {
+                const removed = this._removeItems(this.checkedStopIds);
+                if (!removed) return;
+
+                frappe.show_alert({
+                    message: __('{0} stop(s) removed - their cards are back in the unassigned list', [removed]),
+                    indicator: 'orange'
+                }, 4);
+            },
+
+            // AC1: the whole run in one action. Confirmed first because it can take a
+            // dozen stops off the board at once and there is no undo.
+            removeEntireTrip() {
+                const item = this.selectedItem;
+                if (!item) return;
+                const ids = item.tripId
+                    ? this.swimItems.filter(i => i.tripId === item.tripId).map(i => i.id)
+                    : [item.id];
+                const name = item.tripName || this.dirLabel(item.direction);
+                const self = this;
+
+                frappe.confirm(
+                    __('Remove the whole of {0} - all {1} stop(s)? Every card goes back to the unassigned list.',
+                       [name, ids.length]),
+                    () => {
+                        self._removeItems(ids);
+                        frappe.show_alert({
+                            message: __('Trip {0} removed', [name]),
+                            indicator: 'orange'
+                        }, 4);
+                    }
+                );
             },
 
             reassignSelectedBlock() {
@@ -5035,6 +5119,12 @@ function injectRPVueTemplate() {
                    :class="{ 'rp-stop-drag-over': stopDragOverIndex === (stop.stopNum - 1) && stopDragSourceIndex !== null && stopDragSourceIndex !== (stop.stopNum - 1) }"
                    :style="'cursor:pointer;border-left:3px solid ' + (stop.item.id === selectedItem.id ? '#f97316' : '#1565c0')">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                  <!-- Tick to include this stop in a multi-stop removal (WI-002540 AC1).
+                       .stop so ticking does not also re-select the stop underneath. -->
+                  <input type="checkbox" class="rp-stop-check"
+                         :checked="selectedStopIds.has(stop.item.id)"
+                         @click.stop="toggleStopChecked(stop.item.id)"
+                         :title="__('Select this stop for removal')">
                   <span class="rp-icon rp-stop-drag-handle" title="Drag to reorder">drag_indicator</span>
                   <span class="rp-stop-num rp-stop-num-out">{{ stop.stopNum }}</span>
                   <div style="font-size:13px;font-weight:700;color:#111">{{ stop.card.site_location || 'Unknown' }}</div>
@@ -5324,6 +5414,17 @@ function injectRPVueTemplate() {
           <button class="rp-detail-btn rp-detail-btn-danger" @click="removeSelectedFromLane">
             <span class="rp-icon">close</span> {{ removeButtonLabel() }}
           </button>
+          <!-- Only once something is ticked: an always-on button that removes nothing
+               is a button that has to be explained (AC1). -->
+          <button v-if="checkedStopIds.length > 0"
+                  class="rp-detail-btn rp-detail-btn-danger" @click="removeCheckedStops">
+            <span class="rp-icon">checklist</span>
+            {{ __('Remove {0} Selected Stop(s)', [checkedStopIds.length]) }}
+          </button>
+          <button v-if="selectedTripStops.length > 1"
+                  class="rp-detail-btn rp-detail-btn-danger" @click="removeEntireTrip">
+            <span class="rp-icon">delete_sweep</span> {{ __('Remove Entire Trip') }}
+          </button>
         </div>
       </template>
     </div>
@@ -5526,6 +5627,12 @@ function injectRPStyles() {
             color: var(--md-sys-color-on-surface-variant);
         }
         .rp-stop-draggable:hover .rp-stop-drag-handle { opacity: 0.7; }
+        /* The multi-stop removal tick (WI-002540). Sized to the stop number beside it
+           so the row keeps its rhythm, and never shrinks when the header wraps. */
+        .rp-stop-check {
+            width: 15px; height: 15px; flex-shrink: 0; cursor: pointer;
+            accent-color: var(--rp-color-trip-chain);
+        }
         .rp-stop-draggable:active .rp-stop-drag-handle { cursor: grabbing; }
         .rp-stop-drag-over {
             border-top: 2.5px solid var(--rp-color-trip-chain) !important;
