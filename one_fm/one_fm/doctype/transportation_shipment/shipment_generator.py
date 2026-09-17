@@ -20,6 +20,7 @@ from frappe.utils import get_datetime, getdate, today
 from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
 	driver_employees,
 )
+from one_fm.one_fm.doctype.transportation_shipment.roster_overlay import reliever_context
 from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
 	get_coords,
 	get_grouped_employees_by_accommodation,
@@ -299,7 +300,8 @@ def _generation_key(demand: dict, direction: str) -> tuple:
 	return f"{pair}|{direction}", pair
 
 
-def _write_shipment(doc, demand: dict, direction: str, roster: list, gen_key: str, pair_group: str) -> None:
+def _write_shipment(doc, demand: dict, direction: str, roster: list, gen_key: str,
+					pair_group: str, relievers: dict = None) -> None:
 	"""Set header + child roster on a new or existing shipment document."""
 	doc.accommodation = demand["accommodation"]
 	doc.operations_shift = demand["operations_shift"]
@@ -317,25 +319,41 @@ def _write_shipment(doc, demand: dict, direction: str, roster: list, gen_key: st
 	doc.generation_key = gen_key
 	doc.pair_group = pair_group
 
-	_write_roster(doc, demand, roster)
+	_write_roster(doc, demand, roster, relievers)
 
 
-def _write_roster(doc, demand: dict, roster: list) -> None:
+def _write_roster(doc, demand: dict, roster: list, relievers: dict = None) -> None:
 	"""Replace the card's crew. Shared so a roster-only refresh writes the same rows."""
+	relievers = relievers or {}
 	doc.headcount = len(roster)
 	doc.set("transportation_shipment_employee", [])
 	for emp in roster:
-		doc.append("transportation_shipment_employee", {
+		row = {
 			"employee_id": emp["id"],
 			"employee_name": emp["name"],
 			"cell_number": emp["mobile"],
 			"accommodation": demand["accommodation"],
 			"stop_location": demand["stop_location"],
 			"operation_site": demand["operations_site"] or emp.get("site"),
-		})
+		}
+		# Who this rider is standing in for, so the drawer can badge them and say who is
+		# away and for how long (WI-002591 AC2). Stamped rather than looked up at render
+		# time: the manifest is printed and carried, and it has to still make sense
+		# tomorrow when the schedule row behind it has moved on.
+		cover = relievers.get(emp["id"])
+		if cover:
+			row.update({
+				"is_reliever": 1,
+				"relieving_employee": cover.get("relieving_employee"),
+				"relieving_employee_name": cover.get("relieving_employee_name"),
+				"absence_reason": cover.get("absence_reason"),
+				"leave_from": cover.get("leave_from"),
+				"leave_to": cover.get("leave_to"),
+			})
+		doc.append("transportation_shipment_employee", row)
 
 
-def _refresh_assigned_roster(name: str, demand: dict, roster: list) -> bool:
+def _refresh_assigned_roster(name: str, demand: dict, roster: list, relievers: dict = None) -> bool:
 	"""Bring a PLACED card's crew up to date without disturbing where it is placed.
 
 	A shipment answers two different questions: WHERE the bus goes, which the Route
@@ -351,13 +369,22 @@ def _refresh_assigned_roster(name: str, demand: dict, roster: list) -> bool:
 	preserve. Returns True when something actually changed, so an unchanged card is
 	not saved and does not churn `modified`.
 	"""
+	relievers = relievers or {}
 	doc = frappe.get_doc("Transportation Shipment", name)
-	before = [(row.employee_id, row.employee_name) for row in doc.transportation_shipment_employee]
-	after = [(emp["id"], emp["name"]) for emp in roster]
+	# The reliever tag is part of the crew, not decoration: the same people with a
+	# different person being covered is still a change the driver needs to see.
+	before = [
+		(row.employee_id, row.employee_name, row.relieving_employee or None)
+		for row in doc.transportation_shipment_employee
+	]
+	after = [
+		(emp["id"], emp["name"], (relievers.get(emp["id"]) or {}).get("relieving_employee"))
+		for emp in roster
+	]
 	if before == after:
 		return False
 
-	_write_roster(doc, demand, roster)
+	_write_roster(doc, demand, roster, relievers)
 	doc.save(ignore_permissions=True)
 	return True
 
@@ -378,6 +405,10 @@ def generate_transportation_shipments():
 
 	nested_map = get_grouped_employees_by_accommodation()
 	demands = build_demand_descriptors(nested_map)
+
+	# Resolved once for the whole run rather than per card: the overlay is a handful of
+	# rows and every demand asks the same question of it (WI-002591 AC2).
+	relievers = reliever_context()
 
 	created = updated = deleted = errors = refreshed = 0
 	current_keys = set()
@@ -418,15 +449,15 @@ def generate_transportation_shipments():
 				if not existing:
 					doc = frappe.new_doc("Transportation Shipment")
 					doc.status = "Unassigned"
-					_write_shipment(doc, demand, direction, roster, gen_key, pair_group)
+					_write_shipment(doc, demand, direction, roster, gen_key, pair_group, relievers)
 					doc.insert(ignore_permissions=True)
 					created += 1
 				elif existing.status == "Unassigned":
 					doc = frappe.get_doc("Transportation Shipment", existing.name)
-					_write_shipment(doc, demand, direction, roster, gen_key, pair_group)
+					_write_shipment(doc, demand, direction, roster, gen_key, pair_group, relievers)
 					doc.save(ignore_permissions=True)
 					updated += 1
-				elif _refresh_assigned_roster(existing.name, demand, roster):
+				elif _refresh_assigned_roster(existing.name, demand, roster, relievers):
 					# Placed cards keep their lane and their trip; only the crew moves
 					# (AC5). Counted separately so the button can say how many runs had
 					# their people change without implying they were re-planned.
