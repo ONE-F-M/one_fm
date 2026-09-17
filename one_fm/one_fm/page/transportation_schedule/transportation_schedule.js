@@ -110,6 +110,9 @@ function mountRoutePlannerApp(wrapper, data) {
                 isGenerating: false,          // shipment generation in progress
                 stopDragSourceIndex: null,  // drag-reorder: source stop index
                 stopDragOverIndex: null,    // drag-reorder: hovered stop index
+                // WI-002542 AC2: 'detailed' shows each stop in full; 'compact' reduces it
+                // to one line so a long run can be reordered without scrolling.
+                stopViewMode: 'detailed',
 
                 // ── Drag tooltip (5-min snap) ──
                 dragTooltip: null,          // { x, y, timeLabel } — floating HH:MM tooltip during block drag
@@ -3346,6 +3349,47 @@ function mountRoutePlannerApp(wrapper, data) {
             onStopDragOver(event, targetIndex) {
                 event.dataTransfer.dropEffect = 'move';
                 this.stopDragOverIndex = targetIndex;
+                this._autoScrollDrawer(event);
+            },
+
+            // ── AC3: the drawer follows the drag ─────────────────────────────────
+            // A run of a dozen stops is taller than the drawer, and HTML5 drag does not
+            // scroll a container by itself - the target row simply cannot be reached.
+            // Within 15% of either edge the drawer scrolls, faster the closer to it.
+            _autoScrollDrawer(event) {
+                const body = document.getElementById('rp-detail-body');
+                if (!body) return;
+                const rect = body.getBoundingClientRect();
+                if (!rect.height) return;
+
+                const EDGE = 0.15;
+                const MAX_STEP = 18;
+                const zone = rect.height * EDGE;
+                const fromTop = event.clientY - rect.top;
+                const fromBottom = rect.bottom - event.clientY;
+
+                let step = 0;
+                if (fromTop < zone) step = -MAX_STEP * (1 - Math.max(fromTop, 0) / zone);
+                else if (fromBottom < zone) step = MAX_STEP * (1 - Math.max(fromBottom, 0) / zone);
+
+                if (!step) { this._stopAutoScroll(); return; }
+                // Repeat on a timer: dragover only fires while the pointer MOVES, and a
+                // dispatcher holding still at the edge still expects it to keep scrolling.
+                this._autoScrollStep = step;
+                if (this._autoScrollTimer) return;
+                this._autoScrollTimer = setInterval(() => {
+                    const el = document.getElementById('rp-detail-body');
+                    if (!el || !this._autoScrollStep) { this._stopAutoScroll(); return; }
+                    el.scrollTop += this._autoScrollStep;
+                }, 16);
+            },
+
+            _stopAutoScroll() {
+                this._autoScrollStep = 0;
+                if (this._autoScrollTimer) {
+                    clearInterval(this._autoScrollTimer);
+                    this._autoScrollTimer = null;
+                }
             },
 
             onStopDrop(event, targetIndex) {
@@ -3355,8 +3399,21 @@ function mountRoutePlannerApp(wrapper, data) {
                     this.stopDragOverIndex = null;
                     return;
                 }
+                this._stopAutoScroll();
+                this._reorderStop(sourceIndex, targetIndex);
+            },
 
-                const tripId = this.selectedItem.tripId;
+            // ── One reorder, three ways to ask for it (WI-002542 AC4) ────────────
+            // Dragging, the up arrow and the down arrow all land here. AC4 asks that a
+            // move made with the arrows re-index and re-time "exactly as before", and the
+            // only way to mean that literally is for it to BE the same code - a second
+            // implementation would drift the moment either was touched.
+            //
+            // `targetIndex` keeps the drop semantics: the position to insert BEFORE, in
+            // the order the drawer lists. That is why moving down passes index + 2 rather
+            // than index + 1 (see moveStopDown).
+            _reorderStop(sourceIndex, targetIndex) {
+                const tripId = this.selectedItem && this.selectedItem.tripId;
                 if (!tripId) return;
 
                 // The same order the drawer lists, because sourceIndex and targetIndex
@@ -3367,7 +3424,12 @@ function mountRoutePlannerApp(wrapper, data) {
                     this.swimItems.filter(i => i.tripId === tripId)
                 );
 
-                if (sourceIndex >= tripStops.length || targetIndex >= tripStops.length) return;
+                // targetIndex is an insert-BEFORE position, so `length` is legal: it means
+                // "put it at the end". A drag never produces that - every drop target is
+                // an existing row - so the old `>=` was never wrong for dragging, but it
+                // silently swallowed the down arrow on the second-to-last stop, which is
+                // exactly the move that has to append (WI-002542 AC1).
+                if (sourceIndex >= tripStops.length || targetIndex > tripStops.length) return;
 
                 // ponytail: the reorder re-derives each stop's length and dwell from where
                 // its block sits rather than from the minutes the block now carries. It
@@ -3446,11 +3508,12 @@ function mountRoutePlannerApp(wrapper, data) {
                 // Trigger Vue reactivity
                 this.swimItems = [...this.swimItems];
 
-                // Clear drag state
+                // Clear drag state (a no-op when the arrows got here)
                 this.stopDragSourceIndex = null;
                 this.stopDragOverIndex = null;
 
-                // Re-check conflicts and persist
+                // Re-check conflicts and persist. The saved rows carry the new
+                // stop_index, and the manifest reads the run in that order (AC4).
                 this.checkConflicts();
                 this.persistAssignments();
 
@@ -3464,6 +3527,29 @@ function mountRoutePlannerApp(wrapper, data) {
                 event.target.style.opacity = '';
                 this.stopDragSourceIndex = null;
                 this.stopDragOverIndex = null;
+                this._stopAutoScroll();
+            },
+
+            // ── AC1: one click instead of a drag ────────────────────────────────
+            // `stopNum` is the 1-based sequence the drawer prints, so index = stopNum-1.
+            canMoveStopUp(stopNum) { return stopNum > 1; },
+            canMoveStopDown(stopNum) { return stopNum < this.selectedTripStops.length; },
+
+            moveStopUp(stopNum) {
+                if (!this.canMoveStopUp(stopNum)) return;
+                const index = stopNum - 1;
+                // Insert before the stop above: source i, target i-1.
+                this._reorderStop(index, index - 1);
+            },
+
+            moveStopDown(stopNum) {
+                if (!this.canMoveStopDown(stopNum)) return;
+                const index = stopNum - 1;
+                // index + 2, not + 1. `targetIndex` is an insert-BEFORE position measured
+                // on the list as it stands, and the reorder removes the source first -
+                // so everything above it shifts down by one and target index+1 puts the
+                // stop straight back where it started.
+                this._reorderStop(index, index + 2);
             },
 
             mergeSelectedBlock() {
@@ -5158,6 +5244,15 @@ function injectRPVueTemplate() {
       <template v-if="selectedItem && selectedCard">
         <div id="rp-detail-header">
           <div id="rp-detail-title">Shipment Details</div>
+          <!-- AC2: only offered on a run there is something to compact. -->
+          <div class="rp-view-toggle" v-if="selectedTripStops.length > 1">
+            <button class="rp-view-btn" :class="{ 'rp-view-btn-on': stopViewMode === 'compact' }"
+                    @click="stopViewMode = 'compact'"
+                    :title="__('Compact — one line per stop, for reordering')">{{ __('Compact') }}</button>
+            <button class="rp-view-btn" :class="{ 'rp-view-btn-on': stopViewMode === 'detailed' }"
+                    @click="stopViewMode = 'detailed'"
+                    :title="__('Detailed — full stop information')">{{ __('Detailed') }}</button>
+          </div>
           <button id="rp-detail-close" @click="closeDetail">&#x2715;</button>
         </div>
 
@@ -5260,6 +5355,7 @@ function injectRPVueTemplate() {
               <!-- Each stop under this camp (draggable for reorder) -->
               <div v-for="stop in camp.stops" :key="stop.item.id"
                    class="rp-detail-card rp-stop-draggable"
+                   :class="{ 'rp-stop-compact-row': stopViewMode === 'compact' }"
                    draggable="true"
                    @dragstart="onStopDragStart($event, stop.stopNum - 1)"
                    @dragover.prevent="onStopDragOver($event, stop.stopNum - 1)"
@@ -5277,6 +5373,18 @@ function injectRPVueTemplate() {
                          @click.stop="toggleStopChecked(stop.item.id)"
                          :title="__('Select this stop for removal')">
                   <span class="rp-icon rp-stop-drag-handle" title="Drag to reorder">drag_indicator</span>
+                  <!-- AC1: one click per position, for laptops and zoomed-in screens
+                       where a long vertical drag is the awkward part. Hidden at the ends
+                       of the run rather than disabled-looking, so the only arrows on
+                       screen are ones that do something. -->
+                  <span class="rp-stop-move">
+                    <button v-if="canMoveStopUp(stop.stopNum)" class="rp-stop-move-btn"
+                            @click.stop="moveStopUp(stop.stopNum)"
+                            :title="__('Move this stop up one position')">&#x25b2;</button>
+                    <button v-if="canMoveStopDown(stop.stopNum)" class="rp-stop-move-btn"
+                            @click.stop="moveStopDown(stop.stopNum)"
+                            :title="__('Move this stop down one position')">&#x25bc;</button>
+                  </span>
                   <span class="rp-stop-num rp-stop-num-out">{{ stop.stopNum }}</span>
                   <div style="font-size:13px;font-weight:700;color:#111">{{ stop.card.site_location || 'Unknown' }}</div>
                   <!-- Which way THIS card's own riders travel. A merged block reads MIXED,
@@ -5286,6 +5394,10 @@ function injectRPVueTemplate() {
                     {{ dirName(cardOwnDirection(stop.item)) }}
                   </span>
                 </div>
+                <!-- AC2: everything below the header is the DETAIL. Compact view drops
+                     it, leaving [handle] [arrows] [seq] [stop] [direction] on one line so
+                     a long run fits on screen and can be reordered without scrolling. -->
+                <template v-if="stopViewMode === 'detailed'">
                 <div class="rp-detail-row" style="padding:4px 0 3px 30px">
                   <div class="rp-detail-row-icon"><span class="rp-icon">schedule</span></div>
                   <div class="rp-detail-row-content">
@@ -5383,6 +5495,7 @@ function injectRPVueTemplate() {
                     <span class="rp-icon rp-call-icon" :class="empMobile(e) ? '' : 'rp-call-disabled'">call</span>
                   </span>
                 </div>
+                </template>
               </div>
 
             </template>
@@ -5778,6 +5891,31 @@ function injectRPStyles() {
             color: var(--md-sys-color-on-surface-variant);
         }
         .rp-stop-draggable:hover .rp-stop-drag-handle { opacity: 0.7; }
+        /* ── Stop reordering + view mode (WI-002542) ────────────────────────── */
+        .rp-stop-move { display: inline-flex; flex-direction: column; gap: 1px; flex-shrink: 0; }
+        .rp-stop-move-btn {
+            border: 1px solid var(--md-sys-color-outline-variant); background: transparent;
+            border-radius: 4px; cursor: pointer; line-height: 1;
+            font-size: 8px; padding: 1px 3px;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+        .rp-stop-move-btn:hover {
+            border-color: var(--rp-color-accent); color: var(--rp-color-accent);
+        }
+        .rp-view-toggle { display: inline-flex; gap: 2px; margin-left: auto; margin-right: 8px; }
+        .rp-view-btn {
+            border: 1px solid var(--md-sys-color-outline-variant); background: transparent;
+            border-radius: 6px; cursor: pointer; font-size: 11px; padding: 3px 8px;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+        .rp-view-btn-on {
+            background: var(--rp-color-accent); border-color: var(--rp-color-accent);
+            color: #fff;
+        }
+        /* Compact rows lose their vertical padding too, or collapsing the content still
+           leaves the run as tall as it was (AC2 wants 6-8 stops on screen at once). */
+        .rp-stop-compact-row { padding-top: 6px !important; padding-bottom: 6px !important; }
+        .rp-stop-compact-row > div:first-child { margin-bottom: 0 !important; }
         /* The multi-stop removal tick (WI-002540). Sized to the stop number beside it
            so the row keeps its rhythm, and never shrinks when the header wraps. */
         .rp-stop-check {
