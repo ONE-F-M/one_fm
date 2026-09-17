@@ -101,6 +101,10 @@ function mountRoutePlannerApp(wrapper, data) {
                 selectedPoolCard: null,    // mobile: tap-to-select card for assignment
                 searchQuery: '',
                 shiftStartFilter: '',         // WI-001683: selected shift start time, '' = all
+                // WI-002541: the other three of the five filters. All AND together.
+                employeeQuery: '',            // partial, case-insensitive, over the riders
+                shiftFilter: '',              // Operation Shift, typed or picked
+                shiftEndFilter: '',           // selected shift end time, '' = all
                 collapsedGroups: {},          // { [accommodation]: boolean }
                 canSave: false,
                 isGenerating: false,          // shipment generation in progress
@@ -160,8 +164,19 @@ function mountRoutePlannerApp(wrapper, data) {
                 return map;
             },
 
+            // The five filters, ANDed (WI-002541 AC5). Each one narrows what the ones
+            // before it left, so a dispatcher can say "this shift, this person, ending at
+            // 11:00" and get the cards that satisfy all three rather than any of them.
             filteredPoolCards() {
                 const q = this.searchQuery.toLowerCase().trim();
+                const emp = this.employeeQuery.toLowerCase().trim();
+                const shift = this.shiftFilter.trim();
+                const shiftLower = shift.toLowerCase();
+                // A shift picked from the list is an exact name and filters exactly
+                // (AC2). A half-typed one has not picked anything yet, so it narrows by
+                // what has been typed rather than matching nothing at all.
+                const shiftIsExact = shift && this.poolShiftOptions.includes(shift);
+
                 return this.planData.shipment_cards.filter(c => {
                     // Card is assigned when its specific ID is in assignedCards
                     if (this.assignedCards.has(c.id)) return false;
@@ -169,6 +184,21 @@ function mountRoutePlannerApp(wrapper, data) {
                     // WI-001683: shift start time filter, applied across every
                     // accommodation group rather than within one.
                     if (this.shiftStartFilter && c.shift_start !== this.shiftStartFilter) return false;
+
+                    // AC4: the same rule for the other end of the shift.
+                    if (this.shiftEndFilter && c.shift_end !== this.shiftEndFilter) return false;
+
+                    if (shift) {
+                        const name = c.shift_name || '';
+                        if (shiftIsExact ? name !== shift
+                                         : !name.toLowerCase().includes(shiftLower)) return false;
+                    }
+
+                    // AC3: partial or exact, case-insensitive, against the people on the
+                    // card - which is how a dispatcher looks for one person rather than
+                    // knowing which site they are posted to.
+                    if (emp && !(c.employees || []).some(e =>
+                        String((e && e.name) || '').toLowerCase().includes(emp))) return false;
 
                     if (!q) return true;
                     return (
@@ -181,13 +211,45 @@ function mountRoutePlannerApp(wrapper, data) {
                 });
             },
 
+            // Every card still in the pool, ignoring the filters - what "X of Y" counts
+            // against, and what the option lists are built from so they do not collapse
+            // to whatever is already selected.
+            unassignedPoolCards() {
+                return this.planData.shipment_cards.filter(c => !this.assignedCards.has(c.id));
+            },
+
+            // AC2: the shifts actually present on unassigned cards, so the list never
+            // offers a shift that would filter to nothing.
+            poolShiftOptions() {
+                return [...new Set(
+                    this.unassignedPoolCards.map(c => c.shift_name).filter(Boolean)
+                )].sort();
+            },
+
+            // AC4: the distinct shift END times, same rule as the start list.
+            poolShiftEndOptions() {
+                const times = new Map();
+                this.unassignedPoolCards.forEach(c => {
+                    if (!c.shift_end) return;
+                    if (!times.has(c.shift_end)) times.set(c.shift_end, this.fmtTime(c.shift_end));
+                });
+                return [...times.entries()]
+                    .sort((a, b) => new Date(a[0]) - new Date(b[0]))
+                    .map(([value, label]) => ({ value, label }));
+            },
+
+            anyPoolFilterActive() {
+                return !!(this.searchQuery || this.employeeQuery || this.shiftFilter
+                          || this.shiftStartFilter || this.shiftEndFilter);
+            },
+
             poolShiftStartOptions() {
                 // WI-001683: the distinct shift start times available to filter on.
                 // Derived from every unassigned card, ignoring the active filters, so the
                 // list stays stable instead of collapsing to the one already selected.
                 const times = new Map();
-                this.planData.shipment_cards.forEach(c => {
-                    if (this.assignedCards.has(c.id) || !c.shift_start) return;
+                this.unassignedPoolCards.forEach(c => {
+                    if (!c.shift_start) return;
                     if (!times.has(c.shift_start)) times.set(c.shift_start, this.fmtTime(c.shift_start));
                 });
 
@@ -4663,18 +4725,66 @@ function injectRPVueTemplate() {
     <div id="rp-pool-panel">
       <div id="rp-pool-header">
         <div id="rp-pool-title">Unassigned Shipments</div>
-        <div id="rp-pool-count">{{ filteredPoolCards.length }} cards</div>
+        <!-- AC5: what the filters left, out of everything still unplaced. A bare
+             count could not say whether 4 cards meant a quiet day or a narrow filter. -->
+        <div id="rp-pool-count">
+          <span v-if="anyPoolFilterActive">Showing {{ filteredPoolCards.length }} of {{ unassignedPoolCards.length }} cards</span>
+          <span v-else>{{ filteredPoolCards.length }} cards</span>
+        </div>
       </div>
+
+      <!-- AC1: three rows - global search, then the two entity pickers, then the two
+           time pickers. Every control is full-width within its row so the sidebar's
+           fixed width never truncates a shift name or grows a horizontal scrollbar. -->
       <div id="rp-pool-search">
-        <input v-model="searchQuery" type="text" id="rp-search-input"
-               placeholder="Search shift, site, accommodation..." />
-        <select v-model="shiftStartFilter" id="rp-shift-start-filter"
-                title="Filter unassigned shipments by shift start time">
-          <option value="">All shift start times</option>
-          <option v-for="opt in poolShiftStartOptions" :key="opt.value" :value="opt.value">
-            Starts {{ opt.label }}
-          </option>
-        </select>
+        <div class="rp-filter-row">
+          <div class="rp-filter-field">
+            <input v-model="searchQuery" type="text" id="rp-search-input"
+                   placeholder="Search site / accommodation..." />
+            <button v-if="searchQuery" class="rp-filter-clear" @click="searchQuery = ''"
+                    :title="__('Clear search')">&#x2715;</button>
+          </div>
+        </div>
+
+        <div class="rp-filter-row">
+          <div class="rp-filter-field">
+            <input v-model="employeeQuery" type="text" class="rp-filter-input"
+                   :placeholder="__('Employee name...')"
+                   :title="__('Filter cards by an employee riding on them')" />
+            <button v-if="employeeQuery" class="rp-filter-clear" @click="employeeQuery = ''"
+                    :title="__('Clear employee name')">&#x2715;</button>
+          </div>
+          <div class="rp-filter-field">
+            <!-- A datalist is the browser's own type-ahead: it narrows the list as the
+                 dispatcher types (AC2) without another dropdown widget to maintain. -->
+            <input v-model="shiftFilter" type="text" class="rp-filter-input"
+                   list="rp-shift-options" :placeholder="__('Operation shift...')"
+                   :title="__('Filter by operation shift — type to narrow the list')" />
+            <datalist id="rp-shift-options">
+              <option v-for="name in poolShiftOptions" :key="name" :value="name"></option>
+            </datalist>
+            <button v-if="shiftFilter" class="rp-filter-clear" @click="shiftFilter = ''"
+                    :title="__('Clear operation shift')">&#x2715;</button>
+          </div>
+        </div>
+
+        <div class="rp-filter-row">
+          <select v-model="shiftStartFilter" id="rp-shift-start-filter"
+                  class="rp-filter-select"
+                  title="Filter unassigned shipments by shift start time">
+            <option value="">All shift start times</option>
+            <option v-for="opt in poolShiftStartOptions" :key="opt.value" :value="opt.value">
+              Starts {{ opt.label }}
+            </option>
+          </select>
+          <select v-model="shiftEndFilter" class="rp-filter-select"
+                  :title="__('Filter unassigned shipments by shift end time')">
+            <option value="">All shift end times</option>
+            <option v-for="opt in poolShiftEndOptions" :key="opt.value" :value="opt.value">
+              Ends {{ opt.label }}
+            </option>
+          </select>
+        </div>
       </div>
       <div id="rp-pool-groups">
 
@@ -5729,12 +5839,46 @@ function injectRPStyles() {
         }
         #rp-search-input:focus { border-color: var(--rp-color-accent); }
         #rp-shift-start-filter {
-            width: 100%; margin-top: 6px; padding: 7px 12px;
+            width: 100%; padding: 7px 12px;
             border: 1px solid var(--md-sys-color-outline-variant); border-radius: 8px;
             font-size: 14px; outline: none; background: transparent;
             box-sizing: border-box; cursor: pointer;
         }
         #rp-shift-start-filter:focus { border-color: var(--rp-color-accent); }
+
+        /* ── Five-filter toolbar (WI-002541) ──────────────────────────────────
+           Three rows, each a flex line whose fields share the width equally. The
+           sidebar has a fixed width, so every field is min-width:0 - without it a
+           long shift name forces the row wider than the panel and the whole
+           toolbar grows a horizontal scrollbar (AC1). */
+        .rp-filter-row { display: flex; gap: 6px; margin-top: 6px; }
+        .rp-filter-row:first-child { margin-top: 0; }
+        .rp-filter-field { position: relative; flex: 1 1 0; min-width: 0; }
+        .rp-filter-input, .rp-filter-select {
+            width: 100%; padding: 7px 12px;
+            border: 1px solid var(--md-sys-color-outline-variant); border-radius: 8px;
+            font-size: 13px; outline: none; background: transparent;
+            box-sizing: border-box;
+            /* Ellipsis rather than overflow: a shift name is longer than the half-row
+               it gets, and the full text is in the title attribute. */
+            text-overflow: ellipsis;
+        }
+        .rp-filter-select { flex: 1 1 0; min-width: 0; cursor: pointer; }
+        .rp-filter-input:focus, .rp-filter-select:focus { border-color: var(--rp-color-accent); }
+        /* Room for the clear button so typed text never runs underneath it. */
+        .rp-filter-field .rp-filter-input,
+        .rp-filter-field #rp-search-input { padding-right: 28px; }
+        /* AC6: one click empties the field it sits in. */
+        .rp-filter-clear {
+            position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+            border: 0; background: transparent; cursor: pointer; padding: 2px 4px;
+            font-size: 12px; line-height: 1; border-radius: 4px;
+            color: var(--md-sys-color-outline);
+        }
+        .rp-filter-clear:hover {
+            color: var(--md-sys-color-on-surface);
+            background: var(--md-sys-color-surface-container-high);
+        }
         #rp-pool-groups { flex: 1; overflow-y: auto; padding: 4px 0; }
         .rp-pool-empty  { padding: 36px 16px; text-align: center; font-size: 14px; color: var(--md-sys-color-outline); }
 
