@@ -805,7 +805,23 @@ function mountRoutePlannerApp(wrapper, data) {
                 const card = this.selectedPoolCard;
                 // Don't clear selection yet — handleDrop may abort (seat check, etc.)
                 // Selection is cleared inside handleDrop on successful placement
-                this.handleDrop(card, vehicle);
+                this.handleDrop(card, vehicle, this.dropTimeFrom(e));
+            },
+
+            // Where on the lane the card was actually released, as a time (WI-002578
+            // AC1). The drop event carries the position and it used to be thrown away,
+            // so a card dropped at 14:00 opened its trip on a departure derived from the
+            // shift instead - the operator picked a slot and the board ignored it.
+            // Measured against the wrapper's own box rather than offsetX, which is
+            // relative to whichever child element the pointer happened to be over.
+            dropTimeFrom(e) {
+                const wrap = e && e.currentTarget;
+                if (!wrap || typeof wrap.getBoundingClientRect !== 'function') return null;
+                const rect = wrap.getBoundingClientRect();
+                if (!rect.width) return null;
+                const x = Math.min(Math.max(e.clientX - rect.left, 0), rect.width);
+                const at = this.xToTime(x * (this.svgWidth / rect.width));
+                return isNaN(at.getTime()) ? null : at;
             },
 
             // ─ Lane drop — desktop ───────────────────────────────────────
@@ -818,9 +834,10 @@ function mountRoutePlannerApp(wrapper, data) {
             onLaneDrop(e, vehicle) {
                 e.preventDefault();
                 const card = this.draggingCard;
+                const droppedAt = this.dropTimeFrom(e);
                 this.draggingCard = null;
                 if (!card) return;
-                this.handleDrop(card, vehicle);
+                this.handleDrop(card, vehicle, droppedAt);
             },
 
             // Return the swim item whose multi-day lock holds this vehicle today,
@@ -865,7 +882,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 }) || null;
             },
 
-            handleDrop(card, vehicle) {
+            handleDrop(card, vehicle, droppedAt) {
                 // ── Multi-day vehicle lock (TR-8): reject a drop onto a lane whose
                 // vehicle is already held by another shipment's multi-day lock. ──
                 const lock = this.vehicleLockToday(vehicle.id, card.id);
@@ -1096,7 +1113,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 // Nothing near it: a run of its own, so the seats it can have are the
                 // whole bus - which is what the split has always been sized on and stays
                 // correct here.
-                const place = (dropped) => this.placeCard(dropped, vehicle.id);
+                const place = (dropped) => this.placeCard(dropped, vehicle.id, droppedAt);
                 if (!this._splitIfOver(card, vehicle, null, place)) place(card);
             },
 
@@ -1428,7 +1445,7 @@ function mountRoutePlannerApp(wrapper, data) {
             // `seedTimings` carries the minutes an assignment modal already collected, so
             // the Trip Builder opens on the numbers the dispatcher just read rather than
             // on defaults (WI-002539 AC1/AC3). Keyed by card id, like `timings` below.
-            _openMergeTripModal(newCard, existingItems, vehicleId, seedTimings) {
+            _openMergeTripModal(newCard, existingItems, vehicleId, seedTimings, droppedAt) {
                 const self = this;
                 const vehicle = this.planData.vehicles.find(v => v.id === vehicleId) || {};
                 const shipments = this._mergeShipmentIds(newCard, existingItems);
@@ -1484,11 +1501,21 @@ function mountRoutePlannerApp(wrapper, data) {
                 // is earlier than any block because the camp has no block. Falls back to
                 // the first block for a run saved before it was recorded.
                 const held = (this.legTimings || {})[tripId] || {};
-                const runStartMs = held.departure
-                    ? new Date(held.departure).getTime()
-                    : (existingItems.length
-                        ? Math.min(...existingItems.map((i) => new Date(i.start).getTime()))
-                        : null);
+                // The slot the card was released on outranks where the run would
+                // otherwise back into (WI-002578 AC1): the operator chose that time by
+                // dropping there, and the itinerary is walked forward from it.
+                //
+                // It has to win for BOTH of these. runStart is what the modal opens on,
+                // and runStartMs is what _applyMerge anchors the blocks to - setting only
+                // the first would have shown the dropped time in the field and then left
+                // the block sitting where the shift window put it (AC4).
+                const runStartMs = droppedAt
+                    ? new Date(droppedAt).getTime()
+                    : (held.departure
+                        ? new Date(held.departure).getTime()
+                        : (existingItems.length
+                            ? Math.min(...existingItems.map((i) => new Date(i.start).getTime()))
+                            : null));
                 const runStart = runStartMs === null ? null : clockOf(runStartMs);
 
                 let previewStops = [];
@@ -2546,7 +2573,12 @@ function mountRoutePlannerApp(wrapper, data) {
                 return null;
             },
 
-            placeCard(card, vehicleId) {
+            // `droppedAt` is the moment on the lane the card was released (WI-002578
+            // AC1). It seeds the Trip Builder's Initial Departure Time, so the run is
+            // timed from the slot the operator chose rather than one re-derived from the
+            // shift - and since Confirm re-times the blocks from that walk, the block
+            // then lands where it was dropped (AC4).
+            placeCard(card, vehicleId, droppedAt) {
                 const self = this;
                 const isOutbound = card.direction === 'OUTBOUND';
                 const dirLabel = isOutbound ? 'Outbound (→ To Site)' : 'Return (← From Site)';
@@ -2654,7 +2686,7 @@ function mountRoutePlannerApp(wrapper, data) {
                                     transit_minutes: transitMin,
                                     buffer_minutes: bufferMin,
                                 },
-                            });
+                            }, droppedAt);
                         }
                     }
                 });
