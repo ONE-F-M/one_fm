@@ -89,7 +89,7 @@
    "fieldname": "cancellation_reason",
    "fieldtype": "Select",
    "label": "Cancellation Reason",
-   "options": "\nCancellation Due to Visa Expiry",
+   "options": "\nMedically Unfit\nPCC Failed\nCandidate Dropped Offer\nCancellation Due to Visa Expiry\nCountry Ban\nVisa Stamping Rejected",
    "reqd": 1
   },
   {
@@ -223,7 +223,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-14 17:30:00.000000",
+ "modified": "2026-09-18 09:00:00.000000",
  "modified_by": "Administrator",
  "module": "Visa Management",
  "name": "Visa Cancellation Request",
