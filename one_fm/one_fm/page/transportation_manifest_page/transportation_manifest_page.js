@@ -646,9 +646,18 @@ function renderManifest($container, data) {
 						travelDistanceMeters: 0
 					};
 				}
-				const ms = new Date(t2).getTime() - new Date(t1).getTime();
-				if (ms <= 0) return { travelDuration: "0s", waitDuration: "0s", travelDistanceMeters: 0 };
-				return { travelDuration: Math.round(ms / 1000) + "s", waitDuration: "0s", travelDistanceMeters: 0 };
+				// AC3: the clock gap, read as time of day and wrapped at midnight. Taking
+				// the raw difference meant two stops whose timestamps carried different
+				// lock dates reported a drive of roughly a day, which fmtDuration then
+				// clamped to a flat "24h" - the overflow fallback the AC names. A leg
+				// with no minutes of its own is now measured by the clock alone.
+				const from = secondsOfDay(t1), to = secondsOfDay(t2);
+				const zero = { travelDuration: "0s", waitDuration: "0s", travelDistanceMeters: 0 };
+				if (from === null || to === null) return zero;
+				let gap = to - from;
+				if (gap < 0) gap += 24 * 3600;   // the leg ran past midnight
+				if (gap <= 0) return zero;
+				return { travelDuration: gap + "s", waitDuration: "0s", travelDistanceMeters: 0 };
 			}
 
 			// Every assignment row emits both a pickup and a drop-off visit; exactly one of
@@ -959,14 +968,37 @@ function renderManifest($container, data) {
 		return value ? String(value).slice(0, 5) : "";
 	}
 
-	// AC 1.6: a leg whose arrival crosses midnight is a day later, and has to say so
-	// rather than printing a time that reads as though the bus arrived before it left.
+	// ── These timestamps carry a DATE that is not the run's day (WI-002614) ──────
+	// A Route Plan Assignment's start_time/end_time hold two different things: the TIME
+	// is the daily trip window, the DATE is the multi-day vehicle lock's lifespan (TR-8).
+	// Two stops of one run therefore routinely carry unrelated dates, and anything that
+	// subtracts them whole gets its answer in days.
+	//
+	// That one fact is behind both of the defects below: "+11 DAY" badges on a run that
+	// finished the same afternoon, and 24-hour drives between two stops twenty minutes
+	// apart. Every reader takes the time of day and nothing else - in Asia/Kuwait, the
+	// clock every time on this page is printed in (fmtTime), so a stop never disagrees
+	// with the arithmetic done about it.
+	function secondsOfDay(value) {
+		if (!value) return null;
+		const d = new Date(value);
+		if (isNaN(d)) return null;
+		const [h, m, sec] = d.toLocaleTimeString("en-GB", {
+			hour: "2-digit", minute: "2-digit", second: "2-digit",
+			hour12: false, timeZone: "Asia/Kuwait"
+		}).split(":").map(Number);
+		return h * 3600 + m * 60 + sec;
+	}
+
+	// AC2: a leg crosses midnight when it arrives at a clock time EARLIER than the run
+	// left at - which is the only thing these timestamps can honestly report. Capped at
+	// one day: a vehicle's shift cycle is a day's work, and "+27 DAY" was never anything
+	// but arithmetic done on the lock lifespan.
+	// (AC 1.6 still holds - a leg that really does cross 00:00 still says so.)
 	function dayOffset(fromISO, toISO) {
-		if (!fromISO || !toISO) return 0;
-		const day = 24 * 3600000;
-		const from = new Date(fromISO), to = new Date(toISO);
-		if (isNaN(from) || isNaN(to)) return 0;
-		return Math.max(0, Math.floor((to - from) / day) || (to.getDate() !== from.getDate() && to > from ? 1 : 0));
+		const from = secondsOfDay(fromISO), to = secondsOfDay(toISO);
+		if (from === null || to === null) return 0;
+		return to < from ? 1 : 0;
 	}
 
 	function rolloverBadge(offset) {
