@@ -153,12 +153,25 @@ def reliever_context(on_date=None, shift_names=None) -> dict:
 def apply_to_shift_map(emp_shift_map: dict, on_date=None) -> dict:
 	"""Rewrite ``{employee: shift}`` into the people actually travelling on ``on_date``.
 
-	Two moves, in this order:
+	Three moves, in this order:
 
 	1. Anyone on approved leave comes OUT. They are still Active with their shift set, so
 	   nothing else would have removed them and they rode a bus they were never on.
-	2. Anyone relieving that day goes IN, filed under the shift they are COVERING rather
+	2. Anyone BEING relieved comes out too. Leave is not the only reason somebody is away
+	   - in practice it is hardly ever the reason, because the leave flow deletes the
+	   schedule a reliever would point at, so relief here is almost always against a Day
+	   Off. Without this, the reliever was added while the person they are standing in for
+	   stayed on the card, and the seat was counted twice: on the live plan that was 16
+	   people riding a bus on their day off, none of whom any other rule would remove.
+	3. Anyone relieving that day goes IN, filed under the shift they are COVERING rather
 	   than their own - the whole point is that they are on a different run today.
+
+	Note what 2 and 3 together do NOT promise: that the swap is visible on one card. The
+	criterion reads as though the reliever's name replaces the absent one in place, and it
+	does when the two share a camp - 5 of today's 16. For the other 11 the reliever sleeps
+	somewhere else, so the bus that collects the person being covered never passes them.
+	The honest result is a rider removed from one camp's card and a new card raised from
+	the reliever's own, which is what actually has to happen for either of them to travel.
 
 	Returns a new mapping; the caller's is not modified.
 	"""
@@ -168,6 +181,12 @@ def apply_to_shift_map(emp_shift_map: dict, on_date=None) -> dict:
 		resolved.pop(employee, None)
 
 	for employee, data in relieving_assignments(on_date).items():
+		covered = data.get("relieving_employee")
+		if covered:
+			# The back-link can dangle (_covered_employees explains when), and then there
+			# is nobody named to take off - the reliever still boards, which is the safe
+			# way round: an extra seat beats a missing passenger.
+			resolved.pop(covered, None)
 		resolved[employee] = data["shift"]
 
 	return resolved
