@@ -466,11 +466,28 @@ def generate_transportation_shipments():
 				errors += 1
 				frappe.log_error(frappe.get_traceback(), "Transportation Shipment Generation Error")
 
-	deleted = _prune_stale(current_keys)
+	# A run that computed NO demand at all has no authority to delete ALL demand.
+	#
+	# get_grouped_employees_by_accommodation() returns {} for several ordinary reasons: no
+	# Active Operations Shift, nobody allocated to one, or - the one that actually bit us -
+	# no Accommodation Checkin Checkout carrying an employee. It treats that last case as a
+	# degraded state and says so in the Error Log rather than raising, so the caller gets
+	# an empty dict that looks exactly like "nobody needs a bus today".
+	#
+	# Handed to _prune_stale, an empty key set makes "generation_key not in current_keys"
+	# true for EVERY card in the pool. On the test site one click deleted 551 unassigned
+	# cards, and a second click could not bring them back - there was no demand to rebuild
+	# them from. Nothing warned anyone: the button reported the deletion in the same tone
+	# as a routine refresh.
+	#
+	# So the prune only runs when this run actually knows what the demand is. An empty
+	# pool is a conclusion to be reached from data, never from the absence of it.
+	pruned = bool(current_keys)
+	deleted = _prune_stale(current_keys) if pruned else 0
 
 	frappe.db.commit()
 	summary = {"created": created, "updated": updated, "refreshed": refreshed,
-	           "deleted": deleted, "errors": errors}
+	           "deleted": deleted, "errors": errors, "pruned": pruned}
 	frappe.logger().info(f"generate_transportation_shipments: {summary}")
 	return summary
 

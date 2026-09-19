@@ -4268,6 +4268,18 @@ function mountRoutePlannerApp(wrapper, data) {
                         const crew = s.refreshed
                             ? `, ${s.refreshed} assigned run(s) re-crewed`
                             : '';
+                        // The server refused to prune because it could not read any shift
+                        // demand at all. Say so loudly and for longer: the pool is
+                        // untouched, but nothing was rebuilt either, and a green
+                        // "0 created, 0 updated, 0 removed" reads like a quiet success.
+                        if (s.pruned === false) {
+                            frappe.show_alert({
+                                message: __('No shift demand could be read, so no cards were removed. Check that employees have an Accommodation Check-in.'),
+                                indicator: 'orange'
+                            }, 12);
+                            self.refreshCards();
+                            return;
+                        }
                         frappe.show_alert({
                             message: `Shipments: ${s.created || 0} created, ${s.updated || 0} updated, ${s.deleted || 0} removed${crew}`,
                             indicator: 'green'
