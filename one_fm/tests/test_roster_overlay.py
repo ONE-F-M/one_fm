@@ -276,3 +276,58 @@ class TestTheShiftMapIsRewritten(FrappeTestCase):
 		before = {self.other: "SHIFT-X"}
 
 		self.assertEqual(apply_to_shift_map(dict(before), self.date), before)
+
+	def test_the_person_being_relieved_comes_off_the_bus(self):
+		# The one this class was missing. A reliever was added while the person they stand
+		# in for stayed on the card, so the seat was counted twice - on the live plan that
+		# was 16 people riding on their day off, none of whom any other rule removes. Leave
+		# does not catch them: relief here is against a Day Off, and there is no Leave
+		# Application behind it.
+		original = _schedule(self.away, self.date, availability="Day Off")
+		_schedule(self.cover, self.date, availability="Working", shift="SHIFT-COVERED",
+				  is_relieving_schedule=1, relieving_employee_schedule=original)
+
+		resolved = apply_to_shift_map(
+			{self.away: "SHIFT-COVERED", self.other: "SHIFT-X"}, self.date
+		)
+
+		self.assertNotIn(self.away, resolved)
+		self.assertEqual(resolved[self.cover], "SHIFT-COVERED")
+		self.assertEqual(resolved[self.other], "SHIFT-X")
+
+	def test_the_headcount_is_not_double_counted(self):
+		# One post, one seat: whoever is working it, the map holds exactly one of them.
+		original = _schedule(self.away, self.date, availability="Day Off")
+		_schedule(self.cover, self.date, availability="Working", shift="SHIFT-COVERED",
+				  is_relieving_schedule=1, relieving_employee_schedule=original)
+
+		resolved = apply_to_shift_map({self.away: "SHIFT-COVERED"}, self.date)
+
+		on_that_shift = [e for e, shift in resolved.items() if shift == "SHIFT-COVERED"]
+		self.assertEqual(on_that_shift, [self.cover])
+
+	def test_a_dangling_back_link_leaves_everybody_on(self):
+		# _covered_employees explains when the link dangles. Nobody is NAMED as covered,
+		# so nobody can be taken off - the reliever still boards, which is the safe way
+		# round: an extra seat beats a missing passenger.
+		_schedule(self.cover, self.date, availability="Working", shift="SHIFT-COVERED",
+				  is_relieving_schedule=1, relieving_employee_schedule=None)
+
+		resolved = apply_to_shift_map({self.away: "SHIFT-COVERED"}, self.date)
+
+		self.assertIn(self.away, resolved)
+		self.assertEqual(resolved[self.cover], "SHIFT-COVERED")
+
+	def test_somebody_nobody_is_relieving_is_left_alone(self):
+		# The removal is aimed at the named covered person only, not at everyone on the
+		# shift being covered.
+		original = _schedule(self.away, self.date, availability="Day Off")
+		_schedule(self.cover, self.date, availability="Working", shift="SHIFT-COVERED",
+				  is_relieving_schedule=1, relieving_employee_schedule=original)
+
+		resolved = apply_to_shift_map(
+			{self.away: "SHIFT-COVERED", self.other: "SHIFT-COVERED"}, self.date
+		)
+
+		self.assertNotIn(self.away, resolved)
+		self.assertEqual(resolved[self.other], "SHIFT-COVERED")
