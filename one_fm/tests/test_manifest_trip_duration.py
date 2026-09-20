@@ -34,6 +34,7 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+	_trip_clock_spans,
 	_clock_gap,
 	_clock_seconds,
 	_earliest_by_clock,
@@ -176,3 +177,102 @@ class TestJumpingBetweenTrips(FrappeTestCase):
 		self.assertIn(".mfst-jump-bar {", self.sheet)
 		bar = self.sheet.split(".mfst-jump-bar {", 1)[1].split("}", 1)[0]
 		self.assertIn("position: sticky;", bar)
+
+
+class TestTripTimeIsEachRunEndToEnd(FrappeTestCase):
+	"""AC1, checked against multiple vehicles as the criterion asks.
+
+	Trip Time is each RUN from its departure to its final arrival, added up. Summing the
+	assignment ROWS instead counted a shared stop twice: a merged run sets down and picks
+	up at the same place in the same minute, so it holds two rows over one window.
+
+	VHL-L-0004 is the case reported - its rows add to 12h22 where its seven runs span
+	12h03, and the header then disagreed with the per-trip breakdown printed right under
+	it. Row-summing also dropped the camp and home legs, so the figure was wrong in both
+	directions at once and only looked plausible because the errors partly cancelled.
+	"""
+
+	def _rows(self, *windows):
+		"""(trip_group, start clock, end clock) -> rows shaped like assignments."""
+		return [
+			frappe._dict(trip_group=group, start_time=f"2026-09-20 {start}:00",
+						 end_time=f"2026-09-20 {end}:00")
+			for group, start, end in windows
+		]
+
+	def test_one_run_is_its_own_span(self):
+		spans = _trip_clock_spans(self._rows(("T1", "04:50", "05:59")), [])
+
+		self.assertEqual(spans, [69 * 60])
+
+	def test_a_shared_stop_is_not_counted_twice(self):
+		# The bug: two cards, one window. It is one run of 17 minutes, not two of 17.
+		spans = _trip_clock_spans(
+			self._rows(("T1", "02:15", "02:32"), ("T1", "02:15", "02:32")), []
+		)
+
+		self.assertEqual(spans, [17 * 60])
+
+	def test_the_camp_and_home_legs_are_inside_the_run(self):
+		# The bus leaves the camp before its first drop and is not done until it is back.
+		spans = _trip_clock_spans(
+			self._rows(("T1", "05:00", "05:30")),
+			self._rows(("T1", "04:50", "05:00"), ("T1", "05:30", "05:59")),
+		)
+
+		self.assertEqual(spans, [69 * 60])
+
+	def test_separate_runs_are_separate_spans(self):
+		spans = _trip_clock_spans(
+			self._rows(("T1", "04:50", "05:59"), ("T2", "06:00", "08:06")), []
+		)
+
+		self.assertEqual(sorted(spans), sorted([69 * 60, 126 * 60]))
+
+	def test_the_gap_between_runs_is_not_driving_time(self):
+		# 04:50-05:59 then 06:00-08:06 is 3h15m of running, not the 3h16m between the
+		# two ends - the bus is parked in between and Total Time is where that shows.
+		spans = _trip_clock_spans(
+			self._rows(("T1", "04:50", "05:59"), ("T2", "06:00", "08:06")), []
+		)
+
+		self.assertEqual(sum(spans), (69 + 126) * 60)
+
+	def test_a_row_with_no_group_is_a_run_of_its_own(self):
+		spans = _trip_clock_spans(
+			self._rows((None, "04:50", "05:00"), (None, "06:00", "06:20")), []
+		)
+
+		self.assertEqual(sorted(spans), sorted([10 * 60, 20 * 60]))
+
+	def test_a_run_crossing_midnight_reads_as_the_hours_it_is(self):
+		spans = _trip_clock_spans(self._rows(("T1", "22:40", "00:30")), [])
+
+		self.assertEqual(spans, [110 * 60])
+
+	def test_a_row_with_no_start_is_skipped_rather_than_zeroed(self):
+		rows = self._rows(("T1", "04:50", "05:59"))
+		rows.append(frappe._dict(trip_group="T1", start_time=None, end_time=None))
+
+		self.assertEqual(_trip_clock_spans(rows, []), [69 * 60])
+
+	def test_the_reported_vehicle_adds_up(self):
+		# Seven runs on VHL-L-0004, by the clock: 69 + 126 + 95 + 50 + 172 + 120 + 91.
+		spans = _trip_clock_spans(self._rows(
+			("S-101", "04:50", "05:59"), ("S-102", "06:00", "08:06"),
+			("S-103", "08:20", "09:55"), ("S-104", "10:00", "10:50"),
+			("S-105", "13:00", "15:52"), ("S-106", "18:00", "20:00"),
+			("S-107", "21:10", "22:41"),
+		), [])
+
+		self.assertEqual(sum(spans) // 60, 723)
+		self.assertEqual((sum(spans) // 3600, (sum(spans) % 3600) // 60), (12, 3))
+
+	def test_driving_can_never_exceed_the_shift_it_happens_in(self):
+		# The invariant that would have caught this: eight hours of driving inside a
+		# two-hour shift is what WI-002614 was reported for.
+		windows = (("T1", "04:50", "05:59"), ("T2", "06:00", "08:06"))
+		spans = _trip_clock_spans(self._rows(*windows), [])
+		shift = _clock_gap("2026-09-20 04:50:00", "2026-09-20 08:06:00")
+
+		self.assertLessEqual(sum(spans), shift)
