@@ -262,6 +262,7 @@ class RoutePlan(Document):
 
 		limits = _passenger_limits({trip.vehicle for trip in trips})
 		untouched = self._vehicles_this_save_did_not_touch(trips)
+		untouched_trips = self._trips_this_save_did_not_touch(trips)
 
 		by_vehicle = {}
 		for trip in trips:
@@ -285,13 +286,19 @@ class RoutePlan(Document):
 			# it is, naming the seat shortfall (MA4-13). Ordered so the reported
 			# trip is stable across saves.
 			for trip in sorted(vehicle_trips, key=lambda t: t.key):
+				if (vehicle, trip.key) in untouched_trips:
+					# This run is exactly as it was saved. Whatever it carries, this save
+					# neither caused it nor can fix it, and refusing the edit in front of
+					# the dispatcher blocks the wrong person. The lane still colours it.
+					continue
 				if trip.direction == MIXED_DIRECTION:
 					# A merged trip boards and alights along the way, so its stops do
 					# not all ride together and summing them would refuse a load the
 					# bus can actually carry (WI-002071).
 					self._validate_mixed_trip_legs(trip, limit)
 				elif trip.headcount > limit:
-					self._throw_capacity_exceeded(vehicle, trip.direction, trip.headcount, limit)
+					self._throw_capacity_exceeded(vehicle, trip.direction, trip.headcount,
+												  limit, self._trip_label(trip))
 
 			concurrent = _peak_concurrent_headcount(vehicle_trips)
 			if concurrent > limit:
@@ -479,6 +486,34 @@ class RoutePlan(Document):
 		now = placement(trips)
 		return {vehicle for vehicle, cards in now.items() if was.get(vehicle) == cards}
 
+	def _trips_this_save_did_not_touch(self, trips) -> set:
+		"""``{(vehicle, trip group)}`` for runs whose cards are exactly as they were.
+
+		The vehicle-level answer above is too coarse. Editing one run's TIMINGS put its
+		bus in play, and every other run on that bus was then judged too - so a dispatcher
+		adjusting S-703 was refused by a different run on the same vehicle carrying 26
+		passengers in 22 seats, a load nothing in this save had touched and nothing in
+		this save could fix.
+
+		Same membership rule as above, one level finer: a run nobody added a card to or
+		took one off keeps the verdict it was saved with.
+		"""
+		before = self.get_doc_before_save()
+		if not before:
+			return set()
+
+		def placement(trips):
+			by_trip = {}
+			for trip in trips:
+				by_trip.setdefault((trip.vehicle, trip.key), set()).update(
+					(row.trip_group, row.transportation_shipment) for row in trip.rows
+				)
+			return by_trip
+
+		was = placement(self._logical_trips(before.assignments))
+		now = placement(trips)
+		return {key for key, cards in now.items() if was.get(key) == cards}
+
 	def _validate_mixed_trip_legs(self, trip, limit):
 		"""Hold every leg of a merged trip to the seat count (WI-002071).
 
@@ -512,15 +547,29 @@ class RoutePlan(Document):
 				title=_("{0}: Vehicle Capacity Exceeded").format(trip.vehicle),
 			)
 
-	def _throw_capacity_exceeded(self, vehicle, direction, total_passengers, limit):
+	def _trip_label(self, trip) -> str:
+		"""What the dispatcher calls this run - S-703 - rather than its internal key.
+
+		"the outbound run on VHL-L-0013" names a bus that may hold five runs, and the
+		one at fault is not the one being edited. The trip name is what the lane, the
+		drawer and the manifest all print, so it is what the message should say.
+		"""
+		for row in trip.rows:
+			if row.trip_name:
+				return row.trip_name
+		return ""
+
+	def _throw_capacity_exceeded(self, vehicle, direction, total_passengers, limit,
+								 trip_label=None):
 		"""Raise the overloading block with the exact seat shortfall (MA4-13 AC4)."""
 		dir_label = _("return") if direction == "RETURN" else _("outbound")
+		run = _("{0} run {1}").format(dir_label, trip_label) if trip_label else _("{0} run").format(dir_label)
 		frappe.throw(
 			_(
-				"Capacity Exceeded: the {0} run on {1} carries {2} passengers but the "
+				"Capacity Exceeded: the {0} on {1} carries {2} passengers but the "
 				"vehicle takes {3}. You are short {4} seat(s) — assign a larger bus or "
 				"arrange a taxi."
-			).format(dir_label, vehicle, total_passengers, limit, total_passengers - limit),
+			).format(run, vehicle, total_passengers, limit, total_passengers - limit),
 			title=_("Vehicle Capacity Exceeded"),
 		)
 

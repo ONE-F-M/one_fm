@@ -945,6 +945,92 @@ class TestAnUntouchedBusIsNotAWall(FrappeTestCase):
 		self.assertEqual(plan._vehicles_this_save_did_not_touch([]), set())
 
 
+class TestOneRunDoesNotBlockAnother(FrappeTestCase):
+	"""The vehicle-level answer was too coarse.
+
+	Editing one run's TIMINGS puts its bus in play, and every other run on that bus was
+	then judged too: a dispatcher adjusting S-703 was refused by a DIFFERENT run on the
+	same vehicle carrying 26 passengers in 22 seats - a load nothing in that save had
+	touched and nothing in that save could fix.
+
+	Same membership rule as the bus-level one, one level finer.
+	"""
+
+	def _row(self, ship, trip, head, name=None):
+		return frappe._dict(
+			vehicle="BUS-A", transportation_shipment=ship, stop_index=1,
+			trip_group=trip, trip_name=name or trip, direction="OUTBOUND", headcount=head,
+			start_time="2026-08-18T06:00:00Z", end_time="2026-08-18T07:00:00Z",
+		)
+
+	def test_a_run_whose_cards_did_not_move_is_left_alone(self):
+		plan = frappe.new_doc("Route Plan")
+		before = [self._row("TS-1", "T1", 26, "S-703"), self._row("TS-2", "T2", 4, "S-704")]
+		plan.get_doc_before_save = lambda: frappe._dict(assignments=before)
+
+		untouched = plan._trips_this_save_did_not_touch(plan._logical_trips(list(before)))
+
+		self.assertEqual(len(untouched), 2)
+
+	def test_the_run_that_gained_a_card_is_judged_and_the_other_is_not(self):
+		# The case from the report: one run changes, the overloaded one beside it did not.
+		plan = frappe.new_doc("Route Plan")
+		before = [self._row("TS-1", "T1", 26, "S-703"), self._row("TS-2", "T2", 4, "S-704")]
+		plan.get_doc_before_save = lambda: frappe._dict(assignments=before)
+		after = before + [self._row("TS-3", "T2", 1, "S-704")]
+
+		untouched = plan._trips_this_save_did_not_touch(plan._logical_trips(after))
+		keys = {key for _vehicle, key in untouched}
+		touched = {t.key for t in plan._logical_trips(after)} - keys
+
+		self.assertEqual(len(touched), 1)
+		# The overloaded run is still grandfathered, so it cannot refuse the edit.
+		self.assertEqual(len(untouched), 1)
+
+	def test_a_brand_new_plan_grandfathers_nothing(self):
+		plan = frappe.new_doc("Route Plan")
+
+		self.assertEqual(plan._trips_this_save_did_not_touch([]), set())
+
+
+class TestTheOverloadMessageNamesTheRun(FrappeTestCase):
+	"""'the outbound run on VHL-L-0013' names a bus that may hold five runs.
+
+	The one at fault is not necessarily the one being edited, so the message has to say
+	which. The trip name is what the lane, the drawer and the manifest all print.
+	"""
+
+	def test_the_trip_name_is_read_off_the_rows(self):
+		plan = frappe.new_doc("Route Plan")
+		trip = frappe._dict(rows=[frappe._dict(trip_name=None), frappe._dict(trip_name="S-703")])
+
+		self.assertEqual(plan._trip_label(trip), "S-703")
+
+	def test_a_run_with_no_name_still_reports(self):
+		plan = frappe.new_doc("Route Plan")
+
+		self.assertEqual(plan._trip_label(frappe._dict(rows=[frappe._dict(trip_name=None)])), "")
+
+	def test_the_message_carries_the_name(self):
+		plan = frappe.new_doc("Route Plan")
+		with self.assertRaises(frappe.ValidationError) as cm:
+			plan._throw_capacity_exceeded("VHL-L-0013", "OUTBOUND", 26, 22, "S-703")
+
+		self.assertIn("S-703", str(cm.exception))
+		self.assertIn("26", str(cm.exception))
+		self.assertIn("22", str(cm.exception))
+		self.assertIn("short 4", str(cm.exception))
+
+	def test_an_unnamed_run_still_reads_as_a_sentence(self):
+		plan = frappe.new_doc("Route Plan")
+		with self.assertRaises(frappe.ValidationError) as cm:
+			plan._throw_capacity_exceeded("VHL-L-0013", "RETURN", 26, 22, None)
+
+		message = str(cm.exception)
+		self.assertIn("return run on", message)
+		self.assertNotIn("run None", message)
+
+
 class TestSequentialRunsAreWeighedSeparately(FrappeTestCase):
 	"""One trip is one bus run, and a finished run holds nobody (WI-002401 AC5).
 
