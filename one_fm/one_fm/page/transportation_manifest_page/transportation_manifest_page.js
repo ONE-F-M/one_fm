@@ -134,29 +134,82 @@ frappe.pages["transportation-manifest-page"].on_page_load = function (wrapper) {
 			// Render the manifest
 			renderManifest($container, r.message);
 		},
-		error: function () {
-			$container.html(`
-				${STATE_STYLES}
-				<div class="mfst-state-screen">
-					<span class="material-symbols-outlined mfst-state-icon error">wifi_off</span>
-					<h2>Unable to Load Manifest</h2>
-					<p>
-						We couldn't reach the server. Please check your internet connection and try again.<br>
-						If the problem continues, contact the Dispatcher for help.
-					</p>
-					<div class="mfst-state-btn-group">
-						<button class="mfst-state-btn mfst-state-btn-primary" onclick="location.reload()">
-							<span class="material-symbols-outlined" style="font-size:18px">refresh</span>
-							Try Again
-						</button>
-						<a href="/app/transportation-schedule" class="mfst-state-btn mfst-state-btn-secondary">
-							Go to Schedule
-						</a>
-					</div>
+	}).fail(renderLoadError);
+
+	// A failed fetch is not automatically a dead connection. A supervisor who was never
+	// granted Route Plan access, and a link to a plan that has since been deleted, both
+	// land here too — and telling either of them to check their internet sends the
+	// problem to the wrong person. Name the actual failure.
+	function renderLoadError(xhr) {
+		const status = (xhr && xhr.status) || 0;
+
+		let icon = "wifi_off";
+		let title = __("Unable to Load Manifest");
+		let body =
+			__("We couldn't reach the server. Please check your internet connection and try again.") +
+			"<br>" +
+			__("If the problem continues, contact the Dispatcher for help.");
+
+		if (status === 403) {
+			icon = "lock";
+			title = __("You Don't Have Access to This Manifest");
+			body =
+				__("Your account isn't permitted to open Transportation plans.") +
+				"<br>" +
+				__("Ask the Dispatcher to request Route Plan access for you.");
+		} else if (status === 404) {
+			icon = "search_off";
+			title = __("Manifest Not Found");
+			body =
+				__("Plan {0} no longer exists — it may have been deleted, or this link is out of date.", [
+					`<strong>${frappe.utils.escape_html(planName)}</strong>`,
+				]) +
+				"<br>" +
+				__("Open the Transportation Schedule and pick the plan again.");
+		} else if (status === 417) {
+			icon = "error_outline";
+			title = __("Something Went Wrong");
+			body =
+				serverMessage(xhr) ||
+				__("We couldn't load this manifest. Please try again or contact the Dispatcher.");
+		} else if (status >= 500) {
+			icon = "error_outline";
+			title = __("Server Error");
+			body =
+				__("The server couldn't build this manifest.") +
+				"<br>" +
+				__("Please try again in a moment, or contact the Dispatcher if it keeps failing.");
+		}
+
+		$container.html(`
+			${STATE_STYLES}
+			<div class="mfst-state-screen">
+				<span class="material-symbols-outlined mfst-state-icon error">${icon}</span>
+				<h2>${title}</h2>
+				<p>${body}</p>
+				<div class="mfst-state-btn-group">
+					<button class="mfst-state-btn mfst-state-btn-primary" onclick="location.reload()">
+						<span class="material-symbols-outlined" style="font-size:18px">refresh</span>
+						${__("Try Again")}
+					</button>
+					<a href="/app/transportation-schedule" class="mfst-state-btn mfst-state-btn-secondary">
+						${__("Go to Schedule")}
+					</a>
 				</div>
-			`);
-		},
-	});
+			</div>
+		`);
+	}
+
+	// frappe.throw() ships the real reason back in _server_messages; show that rather
+	// than a house-written guess at what the server objected to.
+	function serverMessage(xhr) {
+		try {
+			const messages = JSON.parse((xhr.responseJSON || {})._server_messages || "[]");
+			return frappe.utils.escape_html(JSON.parse(messages[0]).message || "");
+		} catch (e) {
+			return "";
+		}
+	}
 };
 
 

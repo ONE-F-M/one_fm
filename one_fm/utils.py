@@ -1776,24 +1776,70 @@ def bank_account_on_trash(doc, method):
         oe.save(ignore_permissions=True)
 
 def update_onboarding_doc_for_bank_account(doc):
-    if doc.onboard_employee:
-        progress_wf_list = {'Draft': 0, 'Open Request': 30, 'Processing Bank Account Opening': 70,
-            'Rejected by Accounts': 100, 'Active Account': 100, 'Inactive Account': 100}
-        bank_account_status = 1
-        if doc.workflow_state == 'Rejected by Accounts':
-            bank_account_status = 2
-        if doc.workflow_state in progress_wf_list:
-            progress = progress_wf_list[doc.workflow_state]
-        oe = frappe.get_doc('Onboard Employee', doc.onboard_employee)
-        oe.bank_account = doc.name
-        oe.bank_account_progress = progress
-        oe.bank_account_docstatus = bank_account_status
-        oe.bank_account_status = doc.workflow_state
-        oe.account_name = doc.account_name
-        oe.bank = doc.bank
-        if oe.workflow_state == 'Duty Commencement':
-            oe.workflow_state = 'Bank Account'
-        oe.save(ignore_permissions=True)
+    """Sync the Bank Account state onto its Onboard Employee.
+
+    Skipped entirely once the Onboard Employee has moved past the "Bank Account"
+    stage of its workflow (or is cancelled), and skipped when nothing would
+    actually change, so a Bank Account save does not needlessly re-save (and
+    re-validate) the Onboard Employee.
+    """
+    if not doc.onboard_employee:
+        return
+
+    # Onboard Employee workflow states at/after which the bank account step is done
+    ONBOARDING_STATES_PAST_BANK_ACCOUNT = ("Mobile App Enrolment", "Completed", "Cancelled")
+
+    progress_wf_list = {
+        "Draft": 0,
+        "Open Request": 30,
+        "Processing Bank Account Opening": 70,
+        "Rejected by Accounts": 100,
+        "Active Account": 100,
+        "Inactive Account": 100,
+    }
+
+    # Single lightweight read instead of loading the full Onboard Employee document
+    oe_values = frappe.db.get_value(
+        "Onboard Employee",
+        doc.onboard_employee,
+        [
+            "workflow_state",
+            "bank_account",
+            "bank_account_progress",
+            "bank_account_docstatus",
+            "bank_account_status",
+            "account_name",
+            "bank",
+        ],
+        as_dict=True,
+    )
+
+    if not oe_values:
+        return
+
+    # Onboarding already passed/completed the Bank Account stage, nothing to update
+    if oe_values.workflow_state in ONBOARDING_STATES_PAST_BANK_ACCOUNT:
+        return
+
+    new_values = {
+        "bank_account": doc.name,
+        "bank_account_progress": progress_wf_list.get(doc.workflow_state, oe_values.bank_account_progress),
+        "bank_account_docstatus": 2 if doc.workflow_state == "Rejected by Accounts" else 1,
+        "bank_account_status": doc.workflow_state,
+        "account_name": doc.account_name,
+        "bank": doc.bank,
+    }
+
+    if oe_values.workflow_state == "Duty Commencement":
+        new_values["workflow_state"] = "Bank Account"
+
+    # Nothing changed, avoid an unnecessary document load, save and version entry
+    if all(oe_values.get(field) == value for field, value in new_values.items()):
+        return
+
+    oe = frappe.get_doc("Onboard Employee", doc.onboard_employee)
+    oe.update(new_values)
+    oe.save(ignore_permissions=True)
 
 def notify_payroll_officer(doc):
     try:
