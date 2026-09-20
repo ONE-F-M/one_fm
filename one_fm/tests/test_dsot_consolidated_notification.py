@@ -3,8 +3,8 @@
 """WI-002602: one DSOT approval email per employee per continuous date cycle.
 
 Every Employee Schedule entering ``Pending DSOT Approval`` put its own assignment in front
-of the DSOT Approver with ``notify: 1``, so ERPNext sent one Assignment Notification per
-row. A week of overtime for one person is eight rows and was eight near-identical emails,
+of the DSOT Approver as a normal assignment, so ERPNext sent one Assignment Notification
+per row. A week of overtime for one person is eight rows and was eight near-identical emails,
 for what the approver experiences as a single request.
 
 Two things are deliberately NOT changed, and both are pinned below:
@@ -170,9 +170,12 @@ class TestWhatWasLeftAlone(FrappeTestCase):
 		self.assertIn('"assign_to": [approver]', source)
 
 	def test_only_its_email_is_suppressed(self):
+		# ``assign_to.add`` has no "notify" argument - it ignores one entirely and always
+		# calls notify_assignment. Naming the approver as the assigner is what silences
+		# the mail, and the behaviour that makes it work is pinned below.
 		source = inspect.getsource(employee_schedule.EmployeeSchedule.request_dsot_approval)
-		self.assertIn('"notify": 0,', source)
-		self.assertNotIn('"notify": 1,', source)
+		self.assertIn('"assigned_by": approver,', source)
+		self.assertNotIn('"notify":', source)
 
 	def test_both_entry_points_queue_the_consolidated_email(self):
 		# The single-document path and the roster's bulk path both hold schedules, and
@@ -224,3 +227,81 @@ class TestWhatWasLeftAlone(FrappeTestCase):
 		# Notification Log's after_insert send its own mail through its own template.
 		source = inspect.getsource(dsot_notification.send_cycle_email)
 		self.assertIn('"type": "Alert",', source)
+
+
+class TestThePerRowMailIsActuallyGone(FrappeTestCase):
+	"""The Frappe behaviour the suppression rests on, exercised rather than assumed."""
+
+	def test_frappe_skips_the_notification_when_the_assigner_is_the_assignee(self):
+		# This is the whole mechanism: ``assign_to.add`` ignores a "notify" argument and
+		# always calls notify_assignment, which returns without notifying a user who
+		# assigned the task to themselves. If a future Frappe drops that early return,
+		# the flood comes back silently - so it is asserted here rather than trusted.
+		from frappe.desk.form import assign_to
+
+		# An existing enabled user rather than a new one: User.insert commits on its way
+		# through, so a created account would outlive the rollback and collide on the
+		# next run.
+		user = frappe.db.get_value(
+			"User", {"enabled": 1, "name": ["not in", ("Administrator", "Guest")]}, "name"
+		)
+		reference = frappe.get_all("Employee Schedule", pluck="name", limit=1)
+		if not (user and reference):
+			self.skipTest("no enabled user / Employee Schedule on this site to assign")
+
+		notified = []
+		original = assign_to.enqueue_create_notification
+		assign_to.enqueue_create_notification = lambda users, doc: notified.append(users)
+		try:
+			# Control: a normal assignment still notifies, so a green test below means the
+			# suppression worked and not that the call did nothing either way.
+			assign_to.notify_assignment(
+				"Administrator", user, "Employee Schedule", reference[0], action="ASSIGN"
+			)
+			assign_to.notify_assignment(
+				user, user, "Employee Schedule", reference[0], action="ASSIGN"
+			)
+		finally:
+			assign_to.enqueue_create_notification = original
+
+		self.assertEqual(notified, [user])
+
+
+class TestTheBodyReadsLikeAnAssignment(FrappeTestCase):
+	"""AC5's body, laid out like Frappe's own Assignment Notification."""
+
+	def render(self, **overrides):
+		context = {
+			"employee_name": "Test Employee",
+			"employee": "HR-EMP-00001",
+			"span": "13-09-2026 to 20-09-2026",
+			"shift_count": 8,
+			"single_day": False,
+			"requestor": "Roster Operator",
+			"headline": "headline-sentinel",
+			"document_name": "13-09-2026 to 20-09-2026 (Total: 8 Shifts)",
+			"list_url": "https://example.com/app/employee-schedule?x=1",
+		}
+		context.update(overrides)
+		return frappe.render_template(
+			"one_fm/templates/emails/dsot_approval_request.html", context=context
+		)
+
+	def test_it_opens_with_the_assignment_sentence_and_ends_with_the_document_link(self):
+		body = self.render()
+		self.assertIn("headline-sentinel", body)
+		self.assertIn("Open Document", body)
+		self.assertIn("https://example.com/app/employee-schedule?x=1", body)
+
+	def test_the_cycle_is_what_the_approver_is_told_to_act_on(self):
+		# The single-row assignment named one date; this one has to name the range and
+		# its size, or the approver cannot tell what they are being asked to clear.
+		body = self.render()
+		self.assertIn("13-09-2026 to 20-09-2026", body)
+		self.assertIn("8", body)
+		self.assertIn("Test Employee", body)
+
+	def test_a_one_day_request_does_not_read_as_a_range(self):
+		body = self.render(single_day=True, span="13-09-2026", shift_count=1)
+		self.assertIn("on 13-09-2026", body)
+		self.assertNotIn("from 13-09-2026", body)
