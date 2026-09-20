@@ -1,60 +1,33 @@
 {#
 	WI-002602 AC5: the consolidated DSOT approval request.
 
-	The field names below are the criteria's own mapping table - Header Banner, Document
-	Name, Document Type, Description, Content, Document Link - carried over from the
-	single-record Assignment Notification this replaces for the DSOT flow. The Document
-	Link goes to the pending cycle in the List View rather than to one schedule, because
-	the approver has to act on the whole cycle and that is where Bulk Approve lives.
+	Laid out like Frappe's own Assignment Notification (frappe/templates/emails/
+	new_notification.html) - a headline, the assignment description in a blockquote,
+	then the document link - so the approver reads it as the same kind of message they
+	already act on, rather than a second format to learn. What changes is the scope:
+	one email covers a whole continuous cycle, so the headline names the range and the
+	link opens the pending cycle in the List View, where Bulk Approve lives, instead of
+	a single schedule.
+
+	Styling is inline because mail clients strip stylesheets; the one_fm default_email
+	wrapper supplies only the branded shell around this body.
 #}
-<div style="font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#1f272e">
+<p style="font-size:14px;color:#1f272e;margin:0 0 16px">{{ headline }}</p>
 
-	<h3 style="margin:0 0 16px">
-		{{ _("DSOT Approval Request") }}: {{ employee_name }} ({{ span }})
-	</h3>
+<blockquote style="border-left:3px solid #d1d8dd;margin:0 0 16px;padding:0 0 0 12px;
+				   font-size:13px;color:#4c5a67">
+	{% if single_day %}
+		{{ _("Approve or reject double shift overtime for {0} on {1}.").format(employee_name, span) }}
+	{% else %}
+		{{ _("Approve or reject double shift overtime for {0} from {1}.").format(employee_name, span) }}
+	{% endif %}
+	<br>
+	{{ _("Employee") }}: {{ employee_name }} ({{ employee }})<br>
+	{{ _("Shifts") }}: {{ shift_count }}
+</blockquote>
 
-	<p style="margin:0 0 16px">
-		{% if single_day %}
-			{{ _("Approve or reject double shift overtime for {0} on {1}.").format(employee_name, span) }}
-		{% else %}
-			{{ _("Approve or reject double shift overtime for {0} from {1} (Total: {2} Shifts).").format(employee_name, span, shift_count) }}
-		{% endif %}
-	</p>
-
-	<table cellpadding="6" cellspacing="0"
-		   style="border-collapse:collapse;margin:0 0 20px;font-size:13px">
-		<tr>
-			<td style="color:#6b7280">{{ _("Employee") }}</td>
-			<td><b>{{ employee_name }}</b> ({{ employee }})</td>
-		</tr>
-		<tr>
-			<td style="color:#6b7280">{{ _("Document Name") }}</td>
-			<td>{{ span }}{% if not single_day %} ({{ _("Total") }}: {{ shift_count }} {{ _("Shifts") }}){% endif %}</td>
-		</tr>
-		<tr>
-			<td style="color:#6b7280">{{ _("Document Type") }}</td>
-			<td>{{ _("Employee Schedule") }}</td>
-		</tr>
-		<tr>
-			<td style="color:#6b7280">{{ _("Shifts") }}</td>
-			<td>{{ shift_count }}</td>
-		</tr>
-	</table>
-
-	<p style="margin:0 0 16px">
-		{{ _("{0} has submitted a DSOT approval request for {1} covering {2}.").format(requestor, employee_name, span) }}
-	</p>
-
-	<p style="margin:0 0 8px">
-		<a href="{{ list_url }}" target="_blank" rel="noopener"
-		   style="display:inline-block;padding:9px 18px;background:#2563eb;color:#fff;
-				  border-radius:6px;text-decoration:none;font-weight:600">
-			{{ _("Review {0} pending shift(s)").format(shift_count) }}
-		</a>
-	</p>
-
-	<p style="margin:0;color:#6b7280;font-size:12px">
-		{{ _("Opens the Employee Schedule list filtered to this employee and date range, where the whole cycle can be approved or rejected at once.") }}
-	</p>
-
+<div style="font-size:13px">
+	<a href="{{ list_url }}" target="_blank" rel="noopener" style="color:#2563eb">
+		{{ _("Open Document") }}
+	</a>
 </div>

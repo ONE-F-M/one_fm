@@ -3,7 +3,7 @@
 """WI-002602: one DSOT approval email per employee per continuous date cycle.
 
 Every Employee Schedule entering ``Pending DSOT Approval`` used to put its own assignment
-in front of the DSOT Approver with ``notify: 1``, so ERPNext sent one Assignment
+in front of the DSOT Approver as a normal assignment, so ERPNext sent one Assignment
 Notification per row. A week of overtime for one person is eight rows, and the approver
 got eight near-identical emails for what they experience as a single request.
 
@@ -150,13 +150,28 @@ def pending_list_url(employee, start, end) -> str:
 def send_cycle_email(approver, employee, employee_name, start, end, shifts) -> None:
 	"""One cycle, one email (AC5).
 
-	Deliberately NOT a change to ERPNext's shared Assignment Notification template: that
-	template serves every assignment in the system, and rewriting it for this one flow
-	would reword the emails for leave, penalties and everything else. The fields the
-	criteria list are all here; only the vehicle is this flow's own.
+	The body copies the layout of Frappe's own Assignment Notification rather than editing
+	it: that template serves every assignment in the system, and rewriting it for this one
+	flow would reword the emails for leave, penalties and everything else. The approver
+	reads the same shape they already act on - only the scope is a cycle, not a row.
 	"""
 	span = formatdate(start) if start == end else f"{formatdate(start)} to {formatdate(end)}"
 	subject = _("DSOT Approval Request: {0} ({1})").format(employee_name, span)
+
+	requestor = frappe.utils.get_fullname(frappe.session.user) or frappe.session.user
+
+	# AC5's Document Name: the cycle is the document as far as the approver is concerned,
+	# so it is named by its range and size rather than by whichever row happens to be first.
+	document_name = span if start == end else _("{0} (Total: {1} Shifts)").format(span, len(shifts))
+
+	# Built here rather than in the template for the same reason Frappe builds it in
+	# notify_assignment: the sentence stays one translatable string with the bold markup
+	# applied to its arguments.
+	headline = _("{0} assigned a new task {1} {2} to you").format(
+		frappe.bold(requestor),
+		frappe.bold(_("Employee Schedule")),
+		frappe.bold(document_name),
+	)
 
 	message = frappe.render_template(
 		"one_fm/templates/emails/dsot_approval_request.html",
@@ -166,7 +181,9 @@ def send_cycle_email(approver, employee, employee_name, start, end, shifts) -> N
 			"span": span,
 			"shift_count": len(shifts),
 			"single_day": start == end,
-			"requestor": frappe.utils.get_fullname(frappe.session.user) or frappe.session.user,
+			"requestor": requestor,
+			"headline": headline,
+			"document_name": document_name,
 			"list_url": pending_list_url(employee, start, end),
 		},
 	)

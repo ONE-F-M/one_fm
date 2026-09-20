@@ -398,7 +398,14 @@ class EmployeeSchedule(Document):
 				# per assignment, so a week of overtime was eight near-identical messages
 				# for what the approver experiences as a single request. One consolidated
 				# email per continuous cycle is sent instead, on commit.
-				"notify": 0,
+				#
+				# Naming the approver as assigner is what silences the per-row mail:
+				# assign_to.add() ignores a "notify" argument entirely and always calls
+				# notify_assignment(), which returns without notifying when the assigner
+				# and the assignee are the same user. The ToDo, the document share and
+				# the follow are all created exactly as before - only the mail is
+				# dropped, and the real requestor is named in the consolidated email.
+				"assigned_by": approver,
 			})
 			dsot_notification.queue([self.name])
 		except Exception:
