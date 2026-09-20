@@ -22,6 +22,10 @@ import subprocess
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
+from one_fm.one_fm.doctype.transportation_manifest.manifest_sheet import (
+	_run_stop_sequences,
+)
+
 SHEET = pathlib.Path(frappe.get_app_path(
 	"one_fm", "one_fm", "page", "transportation_manifest_page",
 	"transportation_manifest_page.js"
@@ -209,10 +213,11 @@ class TestTheSheetSaysWhichRun(FrappeTestCase):
 TRIGGER_HARNESS = frappe.get_app_path("one_fm", "tests", "js", "depart_trigger_harness.js")
 
 
-def can_trigger(**args):
+def can_trigger(isMixed=True, isActive=False, **args):
 	"""Run the SHIPPED canTrigger decision from renderDepartCard."""
 	out = subprocess.run(
-		["node", TRIGGER_HARNESS, json.dumps(args)],
+		["node", TRIGGER_HARNESS,
+		 json.dumps(dict(args, isMixed=isMixed, isActive=isActive))],
 		capture_output=True, text=True, env={"PATH": "/usr/bin:/bin:/usr/local/bin"},
 		check=True,
 	)
@@ -220,19 +225,23 @@ def can_trigger(**args):
 
 
 class TestEveryRunCanStartItsOwnCheck(FrappeTestCase):
-	"""Six of seven runs on a vehicle had no Trigger button at all.
+	"""Six of seven runs on a vehicle had no Trigger button, and a second camp had none ever.
 
-	The rule read "the first DEPART card of the run" as ``seq === 1``. But ``seq`` is the
-	RIDER'S stop number across the whole run, not an ordinal for the camp they board at,
-	so only a trip whose boarders happen to start at stop 1 ever matched. On VHL-L-0004
-	that was S-101 alone - S-102 through S-107 carry seqs 3, 5, 8, 9, 3 and 13, and none
-	of them could start an attendance check.
+	Two faults, both from reading ``stop_sequence`` as something it is not. It is numbered
+	across the VEHICLE, not within a run: S-401 loads at stops 1 and 5 while S-402 is stop
+	2 and S-403 is stop 3.
 
-	The intent is unchanged and still holds: within a run only the FIRST pickup may start
-	a check, so a driver cannot begin at a mid-route camp they have not reached
-	(WI-002074). It is now decided by the camp's POSITION in the run. `seq` remains what
-	the trigger sends and what the lock state is read back against, so the bookkeeping
-	either side of this is untouched.
+	* The button was offered when ``seq === 1``, so only a run whose boarders happen to
+	  start at stop 1 ever had one. On VHL-L-0004 that was S-101 alone - S-102 to S-107
+	  carry seqs 3, 5, 8, 9, 3 and 13.
+	* A merged run was pinned to its FIRST camp and nowhere else, on the reading that it
+	  leaves one origin. It can load at two, and then the second camp's passengers could
+	  never mark attendance at all - S-401's Mangaf card stayed "Locked until triggered"
+	  for the rest of the day, with six people aboard.
+
+	Both now walk the run's own camps by POSITION. WI-002074's concern still holds, and
+	the tests below are mostly about that: a camp is offered only once the one before it
+	is COMPLETE, never merely triggered.
 	"""
 
 	@classmethod
@@ -241,48 +250,81 @@ class TestEveryRunCanStartItsOwnCheck(FrappeTestCase):
 		if not shutil.which("node"):
 			raise cls.failureException("node is needed to run the shipped rule")
 
-	def test_a_run_whose_riders_start_at_stop_one_can_trigger(self):
-		self.assertTrue(can_trigger(isMixed=True, activeStop=0, campIndex=0, activeIndex=-1))
+	def test_a_run_starting_at_stop_one_can_trigger(self):
+		self.assertTrue(can_trigger(activeStop=0, campIndex=0, activeIndex=0))
 
-	def test_a_run_whose_riders_start_further_along_can_trigger_too(self):
-		# S-102: camp seq 3. The seq is irrelevant - it is still the run's first pickup.
-		self.assertTrue(can_trigger(isMixed=True, activeStop=0, campIndex=0, activeIndex=-1))
+	def test_a_run_starting_further_along_can_trigger_too(self):
+		# S-102's camp carries seq 3. Its seq is irrelevant - it is the run's first pickup.
+		self.assertTrue(can_trigger(activeStop=0, campIndex=0, activeIndex=0))
 
-	def test_a_mid_route_camp_still_cannot_start_a_check(self):
-		# WI-002074's rule, which this must not undo.
-		self.assertFalse(can_trigger(isMixed=True, activeStop=0, campIndex=1, activeIndex=-1))
+	def test_a_second_camp_is_not_offered_before_the_first(self):
+		self.assertFalse(can_trigger(activeStop=0, campIndex=1, activeIndex=0))
 
-	def test_a_run_already_triggered_does_not_offer_it_again(self):
-		self.assertFalse(can_trigger(isMixed=True, activeStop=3, campIndex=0, activeIndex=0))
+	def test_an_open_camp_is_completed_not_triggered_again(self):
+		self.assertFalse(can_trigger(activeStop=1, campIndex=0, activeIndex=0, isActive=True))
 
-	def test_an_ordinary_run_starts_at_its_first_camp(self):
-		self.assertTrue(can_trigger(isMixed=False, activeStop=0, campIndex=0, activeIndex=-1))
+	def test_a_second_camp_waits_while_the_first_is_still_open(self):
+		# Triggered is not completed. This is WI-002074's concern and it must survive.
+		self.assertFalse(can_trigger(activeStop=1, campIndex=1, activeIndex=0))
 
-	def test_an_ordinary_run_does_not_skip_ahead(self):
-		self.assertFalse(can_trigger(isMixed=False, activeStop=0, campIndex=1, activeIndex=-1))
+	def test_a_second_camp_opens_once_the_first_is_complete(self):
+		# The reported gap: S-401's Mangaf camp, six passengers, previously unreachable.
+		self.assertTrue(can_trigger(activeStop=2, campIndex=1, activeIndex=1))
 
-	def test_an_ordinary_run_walks_camp_by_camp(self):
-		# The camp after the active one is next, whatever seq either of them carries.
-		self.assertTrue(can_trigger(isMixed=False, activeStop=5, campIndex=1, activeIndex=0))
+	def test_a_completed_camp_is_not_offered_again(self):
+		self.assertFalse(can_trigger(activeStop=2, campIndex=0, activeIndex=1))
 
-	def test_a_camp_already_passed_is_not_offered_again(self):
-		self.assertFalse(can_trigger(isMixed=False, activeStop=5, campIndex=0, activeIndex=0))
-
-	def test_an_unknown_active_camp_offers_nobody(self):
-		# activeIndex -1 with a lock set means the stored seq matches no camp on this run.
-		# Offering the first one again would let a driver restart a check already running.
-		self.assertFalse(can_trigger(isMixed=False, activeStop=5, campIndex=0, activeIndex=-1))
+	def test_nothing_is_offered_once_every_camp_is_done(self):
+		self.assertFalse(can_trigger(activeStop=6, campIndex=1, activeIndex=-1))
 
 	def test_the_decision_is_a_position_not_a_seq(self):
 		page = frappe.read_file(frappe.get_app_path(
 			"one_fm", "one_fm", "page", "transportation_manifest_page",
 			"transportation_manifest_page.js"))
-		self.assertIn("(position === 0 && !activeStop)", page)
+		self.assertIn("position === activeIndex && !isActive", page)
 		self.assertNotIn("(seq === 1 && !activeStop)", page)
 
-	def test_both_loops_hand_the_card_its_position(self):
+	def test_both_loops_step_over_the_other_runs_stops(self):
 		page = frappe.read_file(frappe.get_app_path(
 			"one_fm", "one_fm", "page", "transportation_manifest_page",
 			"transportation_manifest_page.js"))
-		self.assertEqual(page.count("index, activeIndex);"), 2)
-		self.assertEqual(page.count("const activeIndex = campGroups.findIndex("), 2)
+		self.assertEqual(page.count(">= activeStop)"), 1)
+		self.assertEqual(page.count(">= o.activeStop)"), 1)
+
+
+class TestTheRunWalksItsOwnStops(FrappeTestCase):
+	"""The server half: "the next stop of this run", read off the run's own rows.
+
+	``active + 1`` assumed a run's stops were contiguous. They are not - S-401 holds 1 and
+	5 - so completing stop 1 left the pointer at 2 and stop 5 failed the test. The second
+	camp was unreachable through the API as well as through the button.
+	"""
+
+	def _doc(self, *rows):
+		return frappe._dict(transportation_manifest_details=[
+			frappe._dict(trip_id=tid, stop_sequence=seq) for tid, seq in rows
+		])
+
+	def test_a_runs_stops_are_read_off_its_own_rows(self):
+		doc = self._doc(("T1", 1), ("T1", 5), ("T2", 2), ("T3", 3))
+
+		self.assertEqual(_run_stop_sequences(doc, "T1"), [1, 5])
+
+	def test_another_runs_stops_are_not_borrowed(self):
+		doc = self._doc(("T1", 1), ("T1", 5), ("T2", 2))
+
+		self.assertEqual(_run_stop_sequences(doc, "T2"), [2])
+
+	def test_duplicate_rows_at_one_stop_are_one_stop(self):
+		# Every passenger boarding there has a row.
+		doc = self._doc(("T1", 1), ("T1", 1), ("T1", 5))
+
+		self.assertEqual(_run_stop_sequences(doc, "T1"), [1, 5])
+
+	def test_a_run_with_no_rows_has_no_stops(self):
+		self.assertEqual(_run_stop_sequences(self._doc(("T1", 1)), "T9"), [])
+
+	def test_rows_without_a_sequence_are_skipped(self):
+		doc = self._doc(("T1", 1), ("T1", None), ("T1", 0))
+
+		self.assertEqual(_run_stop_sequences(doc, "T1"), [1])
