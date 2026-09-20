@@ -5,7 +5,6 @@ from one_fm.custom.workflow.workflow import (
 def create_workflows():
 	create_workflow(get_workflow_json_file("erf.json"))
 	create_workflow(get_workflow_json_file("leave_acknowledgement_form.json"))
-	create_workflow(get_workflow_json_file("task.json"))
 	create_workflow(get_workflow_json_file("purchase_order.json"))
 	create_workflow(get_workflow_json_file("journal_entry.json"))
 	create_workflow(get_workflow_json_file("attendance_check.json"))
