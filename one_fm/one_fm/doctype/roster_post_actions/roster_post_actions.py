@@ -13,6 +13,10 @@ from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, get_link_to_
 from one_fm.processor import sendemail
 from frappe.permissions import get_doctype_roles
 from one_fm.one_fm.page.roster.roster import get_current_user_details
+from one_fm.operations.doctype.employee_schedule.employee_schedule import (
+    worked_shift_filters,
+    worked_shift_sql,
+)
 
 class RosterPostActions(Document):
     pass
@@ -114,6 +118,9 @@ def create_roster_post_actions():
 
         # Fetch employee schedules in the date range that are working
         # Uses EXISTS to avoid join fan-out from multiple contracts/contract items
+        # WI-002437: a post is not filled by a double shift nobody has approved, and it is
+        # certainly not filled by one that was refused - so neither counts towards the
+        # role being covered, or over-filled.
         employee_schedules = frappe.db.sql(f"""
             SELECT DISTINCT es.name, es.date, es.shift, es.operations_role, es.employee
             FROM `tabEmployee Schedule` es
@@ -121,6 +128,7 @@ def create_roster_post_actions():
             JOIN `tabProject` pr ON opr.project = pr.name
             JOIN `tabEmployee` e ON es.employee = e.name
             WHERE es.employee_availability = 'Working'
+            AND {worked_shift_sql()}
             AND e.status != 'Not Returned from Leave'
             AND es.date BETWEEN '{start_date}' AND '{end_date}'
             AND (es.on_the_job_training IS NULL OR es.on_the_job_training = '')
@@ -313,7 +321,16 @@ def get_overfilled_underfilled_posts():
 
 
     # Fetch employee schedules for employees who are working
-    employee_schedules = frappe.db.get_all("Employee Schedule", {'shift':['IN',shift_tuple],'date': ['between', (start_date, end_date)], 'employee_availability': 'Working'}, ["date", "shift", "operations_role"], order_by="date asc")
+    # WI-002437: a post is not filled by a double shift nobody has approved, and it is
+    # certainly not filled by one that was refused. Counting either reads the role as
+    # covered - or over-filled - on the strength of a shift that may never be worked.
+    schedule_filters = {
+        'shift': ['IN', shift_tuple],
+        'date': ['between', (start_date, end_date)],
+        'employee_availability': 'Working',
+    }
+    schedule_filters.update(worked_shift_filters())
+    employee_schedules = frappe.db.get_all("Employee Schedule", schedule_filters, ["date", "shift", "operations_role"], order_by="date asc")
     roles_not_filled = set()
     roles_over_filled_set = set()
     list_of_dict_of_operations_roles_not_filled = []

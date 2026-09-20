@@ -22,6 +22,36 @@ REAPPLY_REASONS = (
 	"The worker's gender does not match the profession",
 )
 
+# WI-002442: the states in which an applicant's existing Visa Request is still being
+# worked on, so a second one for the same person must not be raised. Spelled as the
+# workflow spells them - the story writes "Pending PAM", "Pending MOI" and "Rejected by
+# Operator", and a state named in the wrong case matches nothing and switches the rule off.
+#
+# Draft and Awaiting Quota Availability are not in the story's list and are blocked anyway:
+# both are live requests somebody is carrying, and leaving them out would let a second
+# request in through the two states an applicant is most likely to be sitting in.
+#
+# What is deliberately absent is every finished state. Rejected By PAM and Rejected By MOI
+# are the two the story names - the ministry has refused this attempt, and the applicant is
+# free to be put forward again (it is also what WI-001976's reapply depends on). Completed,
+# the re-issue and the cancellation states are finished too: a request that has run its
+# course is not one somebody is waiting on.
+IN_PROGRESS_STATES = (
+	"Draft",
+	"Pending by GRD Operator",
+	"Awaiting Quota Availability",
+	"Pending GRD Manager Approval",
+	"Pending By PAM",
+	"Pending By MOI",
+	"Pending Visa Issuance",
+	"Pending Recruiter Confirmation",
+	"Rejected By Operator",
+)
+
+# WI-002446: the state the request is handed to the GRD Operator in. Nobody is holding it
+# until somebody is named on it, so it cannot be reached with the field blank.
+GRD_OPERATOR_STATE = "Pending by GRD Operator"
+
 # Cleared on the new request. Everything else is copied - the AC asks for the Job Offer
 # and Job Applicant, and the applicant's own details have to come with them or the new
 # draft cannot even be saved (the passport copy is mandatory and has nothing to fetch
@@ -56,10 +86,87 @@ MINIMUM_APPLICANT_AGE_YEARS = 21
 
 class VisaRequest(Document):
 	def validate(self):
+		self.validate_no_request_in_progress()
+		self.validate_grd_operator_assigned()
 		self.validate_applicant_eligibility()
 		self.validate_workflow_transitions()
 		self.validate_references()
 		self.update_tracker_status()
+
+	def validate_grd_operator_assigned(self):
+		"""Name the GRD Operator before handing the request to them (WI-002446).
+
+		Checked on the transition rather than on every save in that state: requests are
+		already sitting in Pending by GRD Operator with the field blank - it was added
+		after they got there - and re-checking would make every one of them unsaveable.
+
+		Recruiters set the field in bulk from the list view, which needs no code: Frappe
+		offers every writable value field in the list's Edit dialog, and grd_operator is a
+		plain Link. This is the half that makes it matter.
+		"""
+		if self.workflow_state != GRD_OPERATOR_STATE or self.grd_operator:
+			return
+
+		if not self.has_value_changed("workflow_state"):
+			return
+
+		frappe.throw(
+			_(
+				"Assign a GRD Operator before submitting this request to them. "
+				"One or more requests can be assigned at a time from the Visa Request "
+				"list view, with <b>Edit → GRD Operator</b>."
+			),
+			title=_("GRD Operator Not Assigned"),
+		)
+
+	def validate_no_request_in_progress(self):
+		"""One live Visa Request per applicant (WI-002442).
+
+		Only on the way in. An existing request must not be re-checked on every save: it
+		would find itself the moment it entered one of these states and become unsaveable,
+		which is the opposite of what the story asks for.
+
+		Keyed on the applicant rather than on the Job Offer - the story is about the person
+		already being put through the process, and a candidate with two offers still only
+		goes through it once.
+
+		A blank workflow_state counts as Draft: that is what a row written outside the
+		workflow would carry, and passing None in the list is what makes Frappe write the
+		comparison as ifnull(workflow_state, '') rather than dropping those rows.
+
+		`self.name or ""` rather than `self.name`: a doc validated before a name has been
+		allocated would make that clause `name != NULL`, which matches nothing in SQL and
+		would silently switch the whole rule off.
+		"""
+		if not self.is_new() or not self.job_applicant:
+			return
+
+		existing = frappe.get_all(
+			"Visa Request",
+			filters=[
+				["job_applicant", "=", self.job_applicant],
+				["name", "!=", self.name or ""],
+				["workflow_state", "in", list(IN_PROGRESS_STATES) + [None]],
+			],
+			fields=["name", "workflow_state"],
+			limit=1,
+		)
+		if not existing:
+			return
+
+		in_progress = existing[0]
+		frappe.throw(
+			_(
+				"{0} already has a Visa Request in progress: {1} ({2}). Only one Visa "
+				"Request can be open at a time - this one can be raised once that request "
+				"has been rejected by PAM or MOI, or has run its course."
+			).format(
+				frappe.bold(self.job_applicant_full_name or self.job_applicant),
+				frappe.utils.get_link_to_form("Visa Request", in_progress.name),
+				in_progress.workflow_state or "Draft",
+			),
+			title=_("Visa Request Already In Progress"),
+		)
 
 	def validate_applicant_eligibility(self):
 		"""Hold a Draft to the passport and age rules (WI-001975).

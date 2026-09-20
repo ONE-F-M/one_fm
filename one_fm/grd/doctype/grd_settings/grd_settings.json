@@ -5,9 +5,22 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-
+  "lg_expiry_notification_section",
+  "lg_expiry_notification_recipients"
  ],
  "fields": [
+  {
+   "fieldname": "lg_expiry_notification_section",
+   "fieldtype": "Section Break",
+   "label": "LG Expiry Notification"
+  },
+  {
+   "description": "Who is told that a PAM Licence letter of guarantee expires in a week. The first row is the recipient; everyone below is copied in.",
+   "fieldname": "lg_expiry_notification_recipients",
+   "fieldtype": "Table MultiSelect",
+   "label": "LG Expiry Notification Recipients",
+   "options": "Action User"
+  }
  ],
  "issingle": 1,
  "links": [],

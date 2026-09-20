@@ -656,6 +656,8 @@ scheduler_events = {
         'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_day_process_task',
         'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_last_day_process_task',
 		'one_fm.fleet_management.vehicle_branding_expiry.notify_vehicle_branding_expiry',
+		# WI-002449: a week's notice before a PAM Licence letter of guarantee expires.
+		'one_fm.grd.lg_expiry.notify_lg_expiry',
 		'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.generate_transportation_shipments',
 		'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.deactivate_expired_shipments',
 		'one_fm.one_fm.doctype.transportation_manifest.manifest_compiler.compile_daily_manifests'
@@ -924,7 +926,10 @@ override_doctype_dashboards = {
     'Leave Application': 'one_fm.overrides.leave_application_dashboard.get_data',
     'Sales Invoice': 'one_fm.overrides.sales_invoice_dashboard.get_data',
     "Purchase Invoice": "one_fm.overrides.purchase_invoice_dashboard.get_data",
-    "Job Applicant": "one_fm.overrides.job_applicant_dashboard.get_data"
+    "Job Applicant": "one_fm.overrides.job_applicant_dashboard.get_data",
+    # WI-002426: Job Offer belongs to hrms and has no dashboard of its own, so its
+    # Connections tab is where the Visa Requests raised against it are declared.
+    "Job Offer": "one_fm.overrides.job_offer_dashboard.get_data"
 }
 
 
@@ -951,7 +956,14 @@ jenv = {
         "pow_logo_src:one_fm.jinja.print_format.methods.pow_logo_src",
         # WI-001983: the Letter's figure columns are headed after the units the contract
         # bills in, decided by the Contract Item Rate Type.
-        "pow_letter_headers:one_fm.jinja.print_format.methods.pow_letter_headers"
+        "pow_letter_headers:one_fm.jinja.print_format.methods.pow_letter_headers",
+        # WI-002399: the letter is read in Arabic - the services are named in Arabic,
+        # and so are the dates and the day counts.
+        "pow_item_types_arabic:one_fm.jinja.print_format.methods.pow_item_types_arabic",
+        "pow_service_names_arabic:one_fm.jinja.print_format.methods.pow_service_names_arabic",
+        "pow_letter_rows:one_fm.jinja.print_format.methods.pow_letter_rows",
+        "pow_arabic_date:one_fm.jinja.print_format.methods.pow_arabic_date",
+        "pow_arabic_number:one_fm.jinja.print_format.methods.pow_arabic_number"
     ],
     "filters": [
         # "xmul:one_fm.jinja.methods.xmultiply"

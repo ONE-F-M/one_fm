@@ -65,8 +65,14 @@ def _relievers_scheduled_today(schedule_date: str) -> list:
 	"""
 	from frappe.query_builder import DocType
 
+	from one_fm.operations.doctype.employee_schedule.employee_schedule import (
+		worked_shift_criterion,
+	)
+
 	EmployeeSchedule = DocType("Employee Schedule")
 	Employee = DocType("Employee")
+
+	unworked = worked_shift_criterion(EmployeeSchedule)
 
 	rows = (
 		frappe.qb.from_(EmployeeSchedule)
@@ -84,7 +90,15 @@ def _relievers_scheduled_today(schedule_date: str) -> list:
 		.where(EmployeeSchedule.roster_type.isin(["Basic", "Over-Time"]))
 		.where(Employee.status == "Active")
 		.where(Employee.custom_is_rambo_reliever == 1)
-	).run(as_dict=True)
+	)
+
+	# WI-002437: an Over-Time schedule waiting on the DSOT Approver is not a shift the
+	# reliever is turning up for yet, and a rejected one never will be. Giving either a
+	# seat takes it from somebody who is actually travelling.
+	if unworked is not None:
+		rows = rows.where(unworked)
+
+	rows = rows.run(as_dict=True)
 
 	# One row per reliever+shift is enough; collapse duplicates (e.g. Basic+OT).
 	seen = set()
