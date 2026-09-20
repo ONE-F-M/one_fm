@@ -192,6 +192,10 @@ class TestTripTimeIsEachRunEndToEnd(FrappeTestCase):
 	directions at once and only looked plausible because the errors partly cancelled.
 	"""
 
+	def _spans(self, card_rows, leg_rows):
+		"""The helper answers per trip group now; these tests care about the values."""
+		return sorted(_trip_clock_spans(card_rows, leg_rows).values())
+
 	def _rows(self, *windows):
 		"""(trip_group, start clock, end clock) -> rows shaped like assignments."""
 		return [
@@ -201,13 +205,13 @@ class TestTripTimeIsEachRunEndToEnd(FrappeTestCase):
 		]
 
 	def test_one_run_is_its_own_span(self):
-		spans = _trip_clock_spans(self._rows(("T1", "04:50", "05:59")), [])
+		spans = self._spans(self._rows(("T1", "04:50", "05:59")), [])
 
 		self.assertEqual(spans, [69 * 60])
 
 	def test_a_shared_stop_is_not_counted_twice(self):
 		# The bug: two cards, one window. It is one run of 17 minutes, not two of 17.
-		spans = _trip_clock_spans(
+		spans = self._spans(
 			self._rows(("T1", "02:15", "02:32"), ("T1", "02:15", "02:32")), []
 		)
 
@@ -215,7 +219,7 @@ class TestTripTimeIsEachRunEndToEnd(FrappeTestCase):
 
 	def test_the_camp_and_home_legs_are_inside_the_run(self):
 		# The bus leaves the camp before its first drop and is not done until it is back.
-		spans = _trip_clock_spans(
+		spans = self._spans(
 			self._rows(("T1", "05:00", "05:30")),
 			self._rows(("T1", "04:50", "05:00"), ("T1", "05:30", "05:59")),
 		)
@@ -223,30 +227,30 @@ class TestTripTimeIsEachRunEndToEnd(FrappeTestCase):
 		self.assertEqual(spans, [69 * 60])
 
 	def test_separate_runs_are_separate_spans(self):
-		spans = _trip_clock_spans(
+		spans = self._spans(
 			self._rows(("T1", "04:50", "05:59"), ("T2", "06:00", "08:06")), []
 		)
 
-		self.assertEqual(sorted(spans), sorted([69 * 60, 126 * 60]))
+		self.assertEqual(spans, sorted([69 * 60, 126 * 60]))
 
 	def test_the_gap_between_runs_is_not_driving_time(self):
 		# 04:50-05:59 then 06:00-08:06 is 3h15m of running, not the 3h16m between the
 		# two ends - the bus is parked in between and Total Time is where that shows.
-		spans = _trip_clock_spans(
+		spans = self._spans(
 			self._rows(("T1", "04:50", "05:59"), ("T2", "06:00", "08:06")), []
 		)
 
 		self.assertEqual(sum(spans), (69 + 126) * 60)
 
 	def test_a_row_with_no_group_is_a_run_of_its_own(self):
-		spans = _trip_clock_spans(
+		spans = self._spans(
 			self._rows((None, "04:50", "05:00"), (None, "06:00", "06:20")), []
 		)
 
-		self.assertEqual(sorted(spans), sorted([10 * 60, 20 * 60]))
+		self.assertEqual(spans, sorted([10 * 60, 20 * 60]))
 
 	def test_a_run_crossing_midnight_reads_as_the_hours_it_is(self):
-		spans = _trip_clock_spans(self._rows(("T1", "22:40", "00:30")), [])
+		spans = self._spans(self._rows(("T1", "22:40", "00:30")), [])
 
 		self.assertEqual(spans, [110 * 60])
 
@@ -254,11 +258,11 @@ class TestTripTimeIsEachRunEndToEnd(FrappeTestCase):
 		rows = self._rows(("T1", "04:50", "05:59"))
 		rows.append(frappe._dict(trip_group="T1", start_time=None, end_time=None))
 
-		self.assertEqual(_trip_clock_spans(rows, []), [69 * 60])
+		self.assertEqual(self._spans(rows, []), [69 * 60])
 
 	def test_the_reported_vehicle_adds_up(self):
 		# Seven runs on VHL-L-0004, by the clock: 69 + 126 + 95 + 50 + 172 + 120 + 91.
-		spans = _trip_clock_spans(self._rows(
+		spans = self._spans(self._rows(
 			("S-101", "04:50", "05:59"), ("S-102", "06:00", "08:06"),
 			("S-103", "08:20", "09:55"), ("S-104", "10:00", "10:50"),
 			("S-105", "13:00", "15:52"), ("S-106", "18:00", "20:00"),
@@ -272,7 +276,72 @@ class TestTripTimeIsEachRunEndToEnd(FrappeTestCase):
 		# The invariant that would have caught this: eight hours of driving inside a
 		# two-hour shift is what WI-002614 was reported for.
 		windows = (("T1", "04:50", "05:59"), ("T2", "06:00", "08:06"))
-		spans = _trip_clock_spans(self._rows(*windows), [])
+		spans = self._spans(self._rows(*windows), [])
 		shift = _clock_gap("2026-09-20 04:50:00", "2026-09-20 08:06:00")
 
 		self.assertLessEqual(sum(spans), shift)
+
+
+class TestTheBadgeAndItsBreakdownCannotDrift(FrappeTestCase):
+	"""AC2's breakdown itemises AC1's badge, so it must print the same seconds.
+
+	They were measured twice and disagreed in two ways at once:
+
+	* the page reads the clock in Asia/Kuwait where the server reads it in UTC, so a run
+	  from 22:40 to 00:30 crossed midnight for one of them and not the other - VHL-S-0010
+	  read 22h30m for a trip of 1h50m;
+	* a run whose last stop ENDS after the bus is recorded home is longer than its two
+	  ends suggest. VHL-L-0012's S-603 reaches 18:00 against an arrival of 17:50, which
+	  only the rows can tell you - 6h00m against the badge's 6h10m.
+
+	The server now hands each run its own span and the page prints it.
+	"""
+
+	def test_the_helper_answers_per_run(self):
+		spans = _trip_clock_spans(
+			[frappe._dict(trip_group="T1", start_time="2026-09-20 04:50:00",
+						  end_time="2026-09-20 05:59:00"),
+			 frappe._dict(trip_group="T2", start_time="2026-09-20 06:00:00",
+						  end_time="2026-09-20 08:06:00")], [])
+
+		self.assertEqual(spans, {"T1": 69 * 60, "T2": 126 * 60})
+
+	def test_the_badge_is_the_sum_of_those_spans(self):
+		spans = _trip_clock_spans(
+			[frappe._dict(trip_group="T1", start_time="2026-09-20 04:50:00",
+						  end_time="2026-09-20 05:59:00"),
+			 frappe._dict(trip_group="T2", start_time="2026-09-20 06:00:00",
+						  end_time="2026-09-20 08:06:00")], [])
+
+		self.assertEqual(sum(spans.values()), 195 * 60)
+
+	def test_each_run_is_handed_its_span(self):
+		server = frappe.read_file(frappe.get_app_path(
+			"one_fm", "one_fm", "page", "transportation_schedule",
+			"transportation_schedule.py"))
+		self.assertIn('held["span_seconds"] = trip_spans.get(group_key, 0)', server)
+
+	def test_the_page_prints_the_span_it_was_given(self):
+		page = SHEET.read_text()
+		self.assertIn("let length = legs.span_seconds;", page)
+
+	def test_the_page_still_has_a_fallback(self):
+		# A run the server sent no span for must still draw, not vanish from the strip.
+		page = SHEET.read_text()
+		tail = page.split("let length = legs.span_seconds;", 1)[1][:400]
+		self.assertIn("length === null || length === undefined", tail)
+		self.assertIn("length += 24 * 3600", tail)
+
+	def test_a_run_a_row_outlasts_is_measured_by_the_row(self):
+		# S-603: the bus is recorded home at 17:50 but a stop runs to 18:00.
+		spans = _trip_clock_spans([
+			frappe._dict(trip_group="S-603", start_time="2026-09-20 15:30:00",
+						 end_time="2026-09-20 17:30:00"),
+			frappe._dict(trip_group="S-603", start_time="2026-09-20 17:40:00",
+						 end_time="2026-09-20 18:00:00"),
+		], [
+			frappe._dict(trip_group="S-603", start_time="2026-09-20 17:50:00",
+						 end_time=None),
+		])
+
+		self.assertEqual(spans["S-603"], 150 * 60)

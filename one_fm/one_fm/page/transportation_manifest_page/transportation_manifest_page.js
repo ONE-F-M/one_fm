@@ -736,11 +736,39 @@ function renderManifest($container, data) {
 		// not drawing it. Time-of-day only, for the reason WI-002614 documents: the DATE
 		// half of these stamps is a lock lifespan, not the day the bus runs.
 		const tripSpans = allTrips.map((trip, i) => {
-			const times = trip.stops.map(st => secondsOfDay(st.time)).filter(v => v !== null);
-			const start = times.length ? Math.min(...times) : null;
-			const end = times.length ? Math.max(...times) : null;
-			let length = (start === null || end === null) ? 0 : end - start;
-			if (length < 0) length += 24 * 3600;   // the run crossed midnight
+			// A run is measured from when the bus LEAVES to when it is BACK - the same
+			// definition the header's Trip Time uses, so the badge and the breakdown
+			// under it cannot disagree.
+			//
+			// Both ends live on the trip's own legs and neither is a rendered stop: the
+			// camp departure comes before the first card and the home arrival after the
+			// last. Reading the stops alone cut S-202 off at 09:00 when the bus was not
+			// home until 09:15, and the breakdown summed 15 minutes short of the badge.
+			//
+			// Taken as the two ENDS rather than as min/max over the clock, which is the
+			// only way a run that crosses midnight reads as the hours it is: a run
+			// leaving 22:40 and home at 00:30 holds clock values 22:40, 23:00 and 00:30,
+			// whose min and max are 00:30 and 23:00 - 22h30m for a trip of 1h50m.
+			const legs = (pr.tripLegs || {})[trip.id] || {};
+			const stopTimes = trip.stops.map(st => secondsOfDay(st.time)).filter(v => v !== null);
+			const start = secondsOfDay(legs.departure)
+				?? (stopTimes.length ? stopTimes[0] : null);
+			const end = secondsOfDay(legs.arrival)
+				?? (stopTimes.length ? stopTimes[stopTimes.length - 1] : null);
+			// The LENGTH is the server's, not this page's. The badge above is summed from
+			// exactly these seconds, so re-deriving them here is what let the two
+			// disagree - and they disagreed in two ways at once. The page reads the clock
+			// in Asia/Kuwait where the server reads it in UTC, so a run from 22:40 to
+			// 00:30 crossed midnight for one of them and not the other; and a run whose
+			// last stop ENDS after the bus is recorded home (S-603 reaches 18:00 with an
+			// arrival of 17:50) is longer than its two ends suggest, which only the rows
+			// can tell you. start/end still come from the legs because the breakdown
+			// prints them as clock times.
+			let length = legs.span_seconds;
+			if (length === null || length === undefined) {
+				length = (start === null || end === null) ? 0 : end - start;
+				if (length < 0) length += 24 * 3600;   // the run crossed midnight
+			}
 			return { index: i, id: trip.id, label: trip.label, start, end, length };
 		}).filter(t => t.start !== null);
 

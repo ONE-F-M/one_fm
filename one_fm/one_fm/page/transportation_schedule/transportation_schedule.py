@@ -2162,7 +2162,8 @@ def get_manifest_data_for_plan(plan_name: str):
 		# the header then disagreed with the per-trip breakdown printed underneath it.
 		# Row-summing also dropped the camp and home legs, so the figure was wrong in both
 		# directions at once and only looked plausible because the errors partly cancelled.
-		trip_ms = sum(_trip_clock_spans(v_rows, leg_rows.get(vid, [])))
+		trip_spans = _trip_clock_spans(v_rows, leg_rows.get(vid, []))
+		trip_ms = sum(trip_spans.values())
 
 		MAX_DAY_SEC = 86400
 		total_sec = min(int(tot_ms), MAX_DAY_SEC)
@@ -2203,8 +2204,11 @@ def get_manifest_data_for_plan(plan_name: str):
 				if leg.qoa_time and not held.get("qoa_time"):
 					held["qoa_time"] = str(leg.qoa_time)
 
-		for held in trip_legs.values():
+		for group_key, held in trip_legs.items():
 			held.get("camps_ordered", []).sort(key=lambda camp: camp["stop_index"])
+			# The badge is the sum of these, so the breakdown under it prints the same
+			# seconds rather than measuring the run a second time in another timezone.
+			held["span_seconds"] = trip_spans.get(group_key, 0)
 
 		routes.append({
 			"vehicleIndex": vi, "vehicleLabel": v_label,
@@ -2934,8 +2938,8 @@ def _camp_leg_rows(itinerary, ordered, per_stop, vehicle, camp_departs,
 	return rows
 
 
-def _trip_clock_spans(card_rows, leg_rows):
-	"""One span per run: its earliest departure to its latest arrival, by CLOCK.
+def _trip_clock_spans(card_rows, leg_rows) -> dict:
+	"""``{trip group: seconds}`` - each run from its departure to its final arrival.
 
 	A run is every row sharing a ``trip_group``, camp and home legs included - the bus
 	leaves the camp before its first drop and is not done until it is back, so both
@@ -2944,6 +2948,12 @@ def _trip_clock_spans(card_rows, leg_rows):
 
 	Time of day only, for the reason WI-002614 documents: the DATE half of these stamps
 	is the multi-day lock's lifespan, not the day the bus runs.
+
+	Returned per run rather than as a bare total so the manifest's breakdown can print
+	the SAME number the badge is summed from. Measuring it twice is how they came to
+	disagree: the badge is computed here, in UTC, where a run from 22:40 to 00:30 Kuwait
+	does not cross midnight at all - and the page re-derived it in Asia/Kuwait, where it
+	does. One number, sent once, cannot drift.
 	"""
 	spans = {}
 	for index, row in enumerate(list(card_rows) + list(leg_rows)):
@@ -2954,10 +2964,10 @@ def _trip_clock_spans(card_rows, leg_rows):
 		starts.append(row.start_time)
 		ends.append(row.end_time or row.start_time)
 
-	return [
-		_clock_gap(_earliest_by_clock(starts), _latest_by_clock(ends))
-		for starts, ends in spans.values()
-	]
+	return {
+		key: _clock_gap(_earliest_by_clock(starts), _latest_by_clock(ends))
+		for key, (starts, ends) in spans.items()
+	}
 
 
 def _camp_place_for(card):
