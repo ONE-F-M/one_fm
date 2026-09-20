@@ -13,6 +13,9 @@ def execute():
 	if frappe.db.exists("Workflow", "Task"):
 		frappe.delete_doc("Workflow", "Task", force=True, ignore_permissions=True)
 
-	frappe.db.delete("Workflow Action", {"reference_doctype": "Task"})
+	actions = frappe.get_all("Workflow Action", filters={"reference_doctype": "Task"}, pluck="name")
+	if actions:
+		frappe.db.delete("Workflow Action Permitted Role", {"parent": ["in", actions]})
+		frappe.db.delete("Workflow Action", {"name": ["in", actions]})
 
 	frappe.clear_cache()
