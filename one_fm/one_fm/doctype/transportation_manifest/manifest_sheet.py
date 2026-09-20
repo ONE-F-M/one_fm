@@ -198,27 +198,64 @@ def _set_active_stop(manifest: str, new_active: int, trip_id=None) -> dict:
 	return _build_sheet(doc, trip_id)
 
 
+def _run_stop_sequences(doc, trip_id) -> list:
+	"""The pickup stops of ONE run, in the order the bus reaches them.
+
+	Read off the manifest's own rows rather than assumed. ``stop_sequence`` is numbered
+	across the VEHICLE, not within a run, so one run's stops are not 1, 2, 3: S-401 loads
+	at stops 1 and 5 while S-402 is stop 2 and S-403 is stop 3. A run's second camp is
+	therefore never ``active + 1``.
+	"""
+	key = str(trip_id or "")
+	return sorted({
+		int(row.stop_sequence or 0)
+		for row in (doc.transportation_manifest_details or [])
+		if str(row.trip_id or "") == key and row.stop_sequence
+	})
+
+
 @frappe.whitelist(methods=["POST"])
 def trigger_attendance_check(manifest: str, stop_sequence, trip_id=None) -> dict:
 	"""Unlock a stop for attendance/QOA checks, locking every earlier stop.
 
 	Strictly sequential WITHIN ONE RUN: a stop can only be triggered once the previous
-	stop of that run is complete (``stop_sequence == active + 1``). Triggering advances
-	only that run's pointer, so the other runs this vehicle drives today keep their own
-	state and their own controls (WI-002590 AC1).
+	stop of that run is complete. Triggering advances only that run's pointer, so the
+	other runs this vehicle drives today keep their own state and their own controls
+	(WI-002590 AC1).
+
+	"The next stop of this run" is read off the run's own stops, not computed as
+	``active + 1``. stop_sequence is numbered across the VEHICLE, so a run that loads at
+	two camps holds stops 1 and 5 with another run's stops in between - and every second
+	camp was unreachable: completing stop 1 left the pointer at 2, stop 5 failed the
+	contiguity test, and six passengers boarding there could never mark attendance.
 	"""
 	stop_sequence = int(stop_sequence)
 	doc = frappe.get_doc("Transportation Manifest", manifest)
 	doc.check_permission("write")
 
 	active = doc.active_stop_for(trip_id)
-	if stop_sequence != active + 1:
-		if stop_sequence <= active:
+	sequences = _run_stop_sequences(doc, trip_id)
+
+	# A stop still open is the one to finish, not a reason to start another. This is what
+	# keeps the walk strict now that the next stop is no longer simply active + 1.
+	if active in sequences:
+		frappe.throw(
+			_("Stop {0} is already open — complete it before starting another.").format(active)
+		)
+
+	# The first stop of this run the bus has not passed. Gaps in the numbering belong to
+	# other runs on the same vehicle and are simply stepped over.
+	candidate = next((seq for seq in sequences if seq >= active), None)
+	if candidate is None:
+		frappe.throw(_("Every stop on this run has been completed."))
+
+	if stop_sequence != candidate:
+		if stop_sequence < candidate:
 			frappe.throw(
 				_("Stop {0} has already been triggered — completed stops stay locked.").format(stop_sequence)
 			)
 		frappe.throw(
-			_("Stop {0} cannot be started yet. Complete Stop {1} first.").format(stop_sequence, active + 1)
+			_("Stop {0} cannot be started yet. Complete Stop {1} first.").format(stop_sequence, candidate)
 		)
 
 	return _set_active_stop(manifest, stop_sequence, trip_id)

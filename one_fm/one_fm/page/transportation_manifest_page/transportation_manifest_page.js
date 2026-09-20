@@ -1068,10 +1068,13 @@ function renderManifest($container, data) {
 
 			let prevTime = firstTimeISO;
 			let prevStop = null;
-			// Where the run has got to, as a POSITION in its own camp list. The lock state
-			// is stored as the camp's seq, which is the rider's stop number across the run
-			// - so finding it here is what turns it back into "which camp is next".
-			const activeIndex = campGroups.findIndex((cg) => (cg.seq || 1) === activeStop);
+			// Where the run has got to, as a POSITION in its own camp list: the first camp
+			// the bus has not passed. The pointer is stored as a stop_sequence numbered
+			// across the vehicle, so ">= activeStop" steps over the other runs' stops that
+			// sit in the gaps. Before anything is triggered it is the first camp.
+			const activeIndex = activeStop
+				? campGroups.findIndex((cg) => (cg.seq || 1) >= activeStop)
+				: 0;
 			campGroups.forEach((cg, index) => {
 				// Matched by position: both lists are in the order the run needs them.
 				const leg = campLegs[index] || {};
@@ -1244,7 +1247,10 @@ function renderManifest($container, data) {
 		let prevStop = null;
 
 		if (campGroups.length) {
-			const activeIndex = campGroups.findIndex((cg) => (cg.seq || 1) === o.activeStop);
+			// The first camp of this run the bus has not passed - see renderDepartCard.
+			const activeIndex = o.activeStop
+				? campGroups.findIndex((cg) => (cg.seq || 1) >= o.activeStop)
+				: 0;
 			campGroups.forEach((cg, index) => {
 				// Matched by position: the groups are ordered by the earliest sequence
 				// their riders carry, and camps_ordered by stop_index - both are the
@@ -1266,7 +1272,7 @@ function renderManifest($container, data) {
 				o.firstTimeISO,
 				{ seq: 1, label: o.accommodation, employees: boarding },
 				o.activeStop, o.manifestName, o.vehicleLabel, true, o.qoaTime,
-				o.tripId, o.tripLabel, 0, -1
+				o.tripId, o.tripLabel, 0, o.activeStop ? -1 : 0
 			);
 			prevStop = o.originLeg;
 		}
@@ -1350,14 +1356,19 @@ function renderManifest($container, data) {
 		//
 		// seq is still what the trigger SENDS and what the lock state is read back
 		// against, so the bookkeeping either side of this is untouched.
+		// The next camp of THIS run the bus has not passed. `activeIndex` is that camp's
+		// position, found by the caller from the run's own camp list - not activeStop + 1,
+		// because stop_sequence is numbered across the VEHICLE: S-401 loads at stops 1 and
+		// 5 with another run's stops in between.
+		//
+		// A merged run gets the same walk as an ordinary one. It was pinned to the first
+		// camp and nowhere else, on the reading that a merged run leaves ONE origin - but
+		// it can load at two, and then the second camp's passengers could never mark
+		// attendance at all: the card stayed "Locked until triggered" for the rest of the
+		// day. WI-002074's actual concern still holds either way, because a camp is only
+		// offered once the one before it is COMPLETE.
 		const position = (campIndex === null || campIndex === undefined) ? null : campIndex;
-		const nextToTrigger = activeStop
-			? ((activeIndex === null || activeIndex === undefined || activeIndex < 0)
-				? null : activeIndex + 1)
-			: 0;
-		const canTrigger = isMixed
-			? (position === 0 && !activeStop)
-			: (position !== null && position === nextToTrigger);
+		const canTrigger = position !== null && position === activeIndex && !isActive;
 		const status = isCompleted ? "completed" : (isActive ? "active" : "locked");
 
 		let statusChip;
