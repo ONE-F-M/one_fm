@@ -189,11 +189,10 @@ class TestWhatWasLeftAlone(FrappeTestCase):
 
 	def test_the_shared_assignment_template_is_untouched(self):
 		# AC5 is worded as a change to ERPNext's Assignment Notification. That template
-		# serves every assignment in the system, so this flow sends its own email instead.
-		self.assertTrue(frappe.get_app_path(
-			"one_fm", "templates", "emails", "dsot_approval_request.html"))
+		# serves every assignment in the system, so this flow renders one_fm's existing
+		# notification table itself instead of editing what everything else uses.
 		source = inspect.getsource(dsot_notification.send_cycle_email)
-		self.assertIn("one_fm/templates/emails/dsot_approval_request.html", source)
+		self.assertIn("one_fm/templates/emails/notification_log.html", source)
 
 	def test_the_mail_is_sent_once_the_request_commits(self):
 		# A range is not known to be a range until its last row is written; and a
@@ -268,40 +267,50 @@ class TestThePerRowMailIsActuallyGone(FrappeTestCase):
 
 
 class TestTheBodyReadsLikeAnAssignment(FrappeTestCase):
-	"""AC5's body, laid out like Frappe's own Assignment Notification."""
+	"""AC5's body: the same table every other assignment email on this site arrives in."""
 
-	def render(self, **overrides):
-		context = {
-			"employee_name": "Test Employee",
-			"employee": "HR-EMP-00001",
-			"span": "13-09-2026 to 20-09-2026",
-			"shift_count": 8,
-			"single_day": False,
-			"requestor": "Roster Operator",
-			"headline": "headline-sentinel",
-			"document_name": "13-09-2026 to 20-09-2026 (Total: 8 Shifts)",
-			"list_url": "https://example.com/app/employee-schedule?x=1",
-		}
-		context.update(overrides)
-		return frappe.render_template(
-			"one_fm/templates/emails/dsot_approval_request.html", context=context
-		)
+	def body(self, start_day=13, end_day=20, shifts=8):
+		from frappe.utils import getdate
 
-	def test_it_opens_with_the_assignment_sentence_and_ends_with_the_document_link(self):
-		body = self.render()
-		self.assertIn("headline-sentinel", body)
-		self.assertIn("Open Document", body)
-		self.assertIn("https://example.com/app/employee-schedule?x=1", body)
+		sent = {}
+		original = dsot_notification.sendemail
+		dsot_notification.sendemail = lambda **kwargs: sent.update(kwargs)
+		try:
+			dsot_notification.send_cycle_email(
+				approver="Administrator",
+				employee="HR-EMP-00001",
+				employee_name="Test Employee",
+				start=getdate(SEPT % start_day),
+				end=getdate(SEPT % end_day),
+				shifts=[frappe._dict(name="ES-TEST")] * shifts,
+			)
+		finally:
+			dsot_notification.sendemail = original
+		return sent.get("content") or ""
+
+	def test_it_is_the_same_table_the_other_assignment_emails_use(self):
+		# The five rows of one_fm/templates/emails/notification_log.html, which is what
+		# every Notification Log email on this site is rendered through.
+		body = self.body()
+		for label in ("Document Name", "Document Type", "Description", "Content", "Document Link"):
+			self.assertIn(f"<th>{label}</th>", body)
 
 	def test_the_cycle_is_what_the_approver_is_told_to_act_on(self):
 		# The single-row assignment named one date; this one has to name the range and
 		# its size, or the approver cannot tell what they are being asked to clear.
-		body = self.render()
-		self.assertIn("13-09-2026 to 20-09-2026", body)
-		self.assertIn("8", body)
+		body = self.body()
+		self.assertIn("13-09-2026 to 20-09-2026 (Total: 8 Shifts)", body)
 		self.assertIn("Test Employee", body)
 
+	def test_the_link_opens_the_pending_cycle_not_one_schedule(self):
+		# AC6: the approver has to act on the whole cycle, and Bulk Approve lives in the
+		# List View.
+		body = self.body()
+		self.assertIn("/app/employee-schedule?", body)
+		self.assertNotIn("/app/employee-schedule/ES-TEST", body)
+
 	def test_a_one_day_request_does_not_read_as_a_range(self):
-		body = self.render(single_day=True, span="13-09-2026", shift_count=1)
+		body = self.body(start_day=13, end_day=13, shifts=1)
 		self.assertIn("on 13-09-2026", body)
 		self.assertNotIn("from 13-09-2026", body)
+		self.assertNotIn("Total:", body)

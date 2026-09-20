@@ -150,41 +150,59 @@ def pending_list_url(employee, start, end) -> str:
 def send_cycle_email(approver, employee, employee_name, start, end, shifts) -> None:
 	"""One cycle, one email (AC5).
 
-	The body copies the layout of Frappe's own Assignment Notification rather than editing
-	it: that template serves every assignment in the system, and rewriting it for this one
-	flow would reword the emails for leave, penalties and everything else. The approver
-	reads the same shape they already act on - only the scope is a cycle, not a row.
+	The body is one_fm's existing notification table - the same one every assignment email
+	on this site already arrives in - so the approver reads the shape they act on daily.
+	Frappe's shared Assignment Notification is still not edited: that template serves every
+	assignment in the system, and rewording it for this one flow would change the emails
+	for leave, penalties and everything else. Only the scope differs here: the row is a
+	cycle, and the link opens the pending range rather than one schedule.
 	"""
 	span = formatdate(start) if start == end else f"{formatdate(start)} to {formatdate(end)}"
 	subject = _("DSOT Approval Request: {0} ({1})").format(employee_name, span)
 
+	list_url = pending_list_url(employee, start, end)
 	requestor = frappe.utils.get_fullname(frappe.session.user) or frappe.session.user
 
 	# AC5's Document Name: the cycle is the document as far as the approver is concerned,
 	# so it is named by its range and size rather than by whichever row happens to be first.
 	document_name = span if start == end else _("{0} (Total: {1} Shifts)").format(span, len(shifts))
 
-	# Built here rather than in the template for the same reason Frappe builds it in
-	# notify_assignment: the sentence stays one translatable string with the bold markup
-	# applied to its arguments.
-	headline = _("{0} assigned a new task {1} {2} to you").format(
+	if start == end:
+		description = _("Approve or reject double shift overtime for {0} on {1}.").format(
+			employee_name, span
+		)
+	else:
+		description = _("Approve or reject double shift overtime for {0} from {1}.").format(
+			employee_name, span
+		)
+	description += " " + _("Employee: {0} ({1}). Shifts: {2}.").format(
+		employee_name, employee, len(shifts)
+	)
+
+	# Worded like Frappe's own assignment sentence, and built here for the same reason it
+	# builds it in notify_assignment: the sentence stays one translatable string with the
+	# bold markup applied to its arguments.
+	body_content = _("{0} assigned a new task {1} {2} to you").format(
 		frappe.bold(requestor),
 		frappe.bold(_("Employee Schedule")),
 		frappe.bold(document_name),
 	)
 
+	# one_fm already renders every Notification Log email as this table
+	# (one_fm/overrides/notification_log.py). Reusing it rather than carrying a second
+	# layout is what makes a DSOT request read like every other assignment the approver
+	# gets - and means a future change to that table reaches this email too.
 	message = frappe.render_template(
-		"one_fm/templates/emails/dsot_approval_request.html",
+		"one_fm/templates/emails/notification_log.html",
 		context={
-			"employee_name": employee_name,
-			"employee": employee,
-			"span": span,
-			"shift_count": len(shifts),
-			"single_day": start == end,
-			"requestor": requestor,
-			"headline": headline,
+			"header": _("DSOT Approval Request on {0}").format(span),
 			"document_name": document_name,
-			"list_url": pending_list_url(employee, start, end),
+			"document_type": _("Employee Schedule"),
+			"description": description,
+			"body_content": body_content,
+			# An anchor rather than the bare URL the single-document path passes: the
+			# filtered link carries encoded JSON, which mail clients autolink badly.
+			"doc_link": f'<a href="{list_url}">{list_url}</a>',
 		},
 	)
 
