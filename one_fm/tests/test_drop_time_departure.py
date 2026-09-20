@@ -24,7 +24,10 @@ The rest of WI-002578 is unchanged and pinned below: the forward walk, the autom
 trip, the drawer's trip window, and Edit Trip Timings on a single-stop trip.
 """
 
+import json
 import pathlib
+import shutil
+import subprocess
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -170,3 +173,74 @@ class TestWhatWasAlreadyDelivered(FrappeTestCase):
 	def test_ac1_the_button_opens_the_trip_builder(self):
 		# The one part of AC1 that stands: the assignment modal hands straight over.
 		self.assertIn("primary_action_label: __('Open Trip Builder')", CANVAS.read_text())
+
+
+ORDER_HARNESS = frappe.get_app_path("one_fm", "tests", "js", "apply_merge_order_harness.js")
+
+
+def _order(merged):
+	"""Run the SHIPPED `const order = ...` line from _applyMerge."""
+	out = subprocess.run(
+		["node", ORDER_HARNESS, json.dumps(merged)],
+		capture_output=True, text=True, env={"PATH": "/usr/bin:/bin:/usr/local/bin"},
+		check=True,
+	)
+	return json.loads(out.stdout)
+
+
+class TestConfirmingARunOfOneCard(FrappeTestCase):
+	"""Confirm & Apply did nothing at all for a solo run.
+
+	A run of ONE card never goes through merge_trip_shipments - the endpoint needs two
+	cards to mint a trip group - so the modal applies the preview directly and builds
+	`merged` by hand: trip group, direction, and an empty merged_shipments. It carries
+	no itinerary.
+
+	_applyMerge opened by dereferencing one anyway, which threw a TypeError right there:
+	AFTER d.hide() had already run, inside the dialog's own handler. The modal closed,
+	the rest of the method never executed, and the block sat unmoved on its old minutes
+	while the preview had just shown the operator the new ones. Nothing reported a
+	failure because nothing was left to report it - which is why it read as "Confirm
+	closes the modal and nothing happens".
+
+	Reported against the +1 DAY test: a leg changed to 85 minutes previewed as arriving
+	00:30 and then saved as 15.
+	"""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		if not shutil.which("node"):
+			raise cls.failureException("node is needed to run the shipped line")
+
+	def test_a_solo_run_no_longer_throws(self):
+		# The exact object the solo branch passes.
+		self.assertEqual(
+			_order({"trip_group": "TRIP_X", "trip_direction": "Outward",
+					"merged_shipments": []}),
+			[],
+		)
+
+	def test_a_merged_run_still_reads_its_itinerary(self):
+		# The order a card merging in is positioned by - unchanged.
+		self.assertEqual(
+			_order({"trip_group": "TRIP_X",
+					"itinerary": [{"shipment": "TS-1"}, {"shipment": "TS-2"}]}),
+			["TS-1", "TS-2"],
+		)
+
+	def test_an_empty_itinerary_is_not_special_cased(self):
+		self.assertEqual(_order({"trip_group": "TRIP_X", "itinerary": []}), [])
+
+	def test_the_solo_branch_still_passes_the_preview_through(self):
+		# _applyMerge needs previewStops to stamp the edited minutes onto the block and
+		# the camp minutes onto the run. Dropping them would make Confirm a no-op again,
+		# quietly this time.
+		canvas = CANVAS.read_text()
+		solo = canvas.split("if (shipments.length < 2) {", 1)[1].split("frappe.call(", 1)[0]
+		self.assertIn("previewStops, departureShiftMs, runStartMs", solo)
+
+	def test_the_dereference_is_guarded_at_the_consumer(self):
+		# Both callers reach this line; guarding here covers the merge path too.
+		self.assertIn("const order = (merged.itinerary || []).map((s) => s.shipment);",
+					  CANVAS.read_text())

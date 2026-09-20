@@ -1765,7 +1765,18 @@ function mountRoutePlannerApp(wrapper, data) {
                 // Every stop of the merged run answers to one group and one direction.
                 existingItems.forEach((item) => { item.tripId = tripId; item.direction = direction; });
 
-                const order = merged.itinerary.map((s) => s.shipment);
+                // A run of ONE card never went through merge_trip_shipments, so `merged` is
+                // the shape the solo branch builds by hand - trip group, direction, and an
+                // empty merged_shipments. It carries no itinerary, and dereferencing one
+                // threw a TypeError right here: after d.hide() had already run, inside the
+                // dialog's own handler. The modal closed, the rest of this method never
+                // executed, and the block sat unmoved on its old minutes while the preview
+                // had just shown the operator the new ones. Nothing reported a failure
+                // because nothing was left to report it.
+                //
+                // `order` only positions a card being MERGED in, which a solo run has none
+                // of, so an empty list is the honest value rather than a guard bolted on.
+                const order = (merged.itinerary || []).map((s) => s.shipment);
                 const lastEnd = new Date(Math.max(...existingItems.map((i) => new Date(i.end).getTime())));
                 const uid = Math.random().toString(36).slice(2, 10);
                 // One framing everywhere: a row's minutes are the drive AWAY from it, which
