@@ -87,7 +87,6 @@ def delete_assignment_rules():
 	delete_assignment_rule(get_assignment_rule_json_file("subcontract_staff_shortlist.json"))
 	delete_assignment_rule(get_assignment_rule_json_file("action_poc_check.json"))
 	delete_assignment_rule(get_assignment_rule_json_file("shift_permission_approver.json"))
-	delete_assignment_rule(get_assignment_rule_json_file("confirm_erpnext_task.json"))
 	delete_assignment_rule(get_assignment_rule_json_file("leave_application_pending_hr.json"))
 	delete_assignment_rule(get_assignment_rule_json_file("shift_request_pending_approval.json"))
 	delete_assignment_rule(get_assignment_rule_json_file("attendance_request_approval.json"))
