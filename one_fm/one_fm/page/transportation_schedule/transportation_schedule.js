@@ -1671,6 +1671,32 @@ function mountRoutePlannerApp(wrapper, data) {
                 const self = this;
                 const esc = (v) => frappe.utils.escape_html(String(v == null ? '' : v));
 
+                // Every column fits by width, not by label, so a narrow one shows
+                // "Target…" and the reader is left guessing. The header carries its own
+                // full text as a tooltip for exactly the same reason the location cells
+                // do (AC2) - the ellipsis is the layout working, not a reason to hide
+                // what the column is.
+                //
+                // Built from one list rather than eleven hand-written cells so the title
+                // and the label are the same string: written twice they drift the first
+                // time somebody renames a column.
+                const headers = [
+                    ['Stop', 'rp-leg-num-col'],
+                    ['Accommodation / Stop', ''],
+                    ['Action', 'rp-leg-act-col'],
+                    ['QOA', 'rp-leg-time-col'],
+                    ['Departure', 'rp-leg-time-col'],
+                    ['Buffer (min)', 'rp-leg-mins-col'],
+                    ['Transit (min)', 'rp-leg-mins-col'],
+                    ['Shift Location', ''],
+                    ['Next Stop', ''],
+                    ['Target Arrival', 'rp-leg-time-col'],
+                    ['On Board', 'rp-leg-time-col'],
+                ].map(([label, cls]) => {
+                    const text = esc(__(label));
+                    return `<th${cls ? ` class="${cls}"` : ''} title="${text}">${text}</th>`;
+                }).join('');
+
                 const banner = p.exceeded
                     ? `<div style="background:#fee2e2;border:1px solid #fecaca;color:#b91c1c;border-radius:6px;padding:10px 12px;margin-bottom:12px;font-weight:600">
                            ${esc(p.message)} — reduce the load or choose another vehicle.
@@ -1813,19 +1839,7 @@ function mountRoutePlannerApp(wrapper, data) {
                          header stays put while it does. -->
                     <div class="rp-leg-table-frame">
                     <table class="table table-sm table-bordered small mb-0 rp-leg-table">
-                        <thead><tr>
-                            <th class="rp-leg-num-col">${__('Stop')}</th>
-                            <th>${__('Accommodation / Stop')}</th>
-                            <th class="rp-leg-act-col">${__('Action')}</th>
-                            <th class="rp-leg-time-col">${__('QOA')}</th>
-                            <th class="rp-leg-time-col">${__('Departure')}</th>
-                            <th class="rp-leg-mins-col">${__('Buffer (min)')}</th>
-                            <th class="rp-leg-mins-col">${__('Transit (min)')}</th>
-                            <th>${__('Shift Location')}</th>
-                            <th>${__('Next Stop')}</th>
-                            <th class="rp-leg-time-col">${__('Target Arrival')}</th>
-                            <th class="rp-leg-time-col">${__('On Board')}</th>
-                        </tr></thead>
+                        <thead><tr>${headers}</tr></thead>
                         <tbody>${legs}</tbody>
                     </table>
                     </div>`;
