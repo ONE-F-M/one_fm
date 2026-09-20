@@ -325,7 +325,6 @@ one_fm.patches.v15_0.add_assignment_rule_submit_client_interview_shortlist_opera
 one_fm.patches.v15_0.add_assignment_rule_assign_rfp_owner_on_rfp_return_to_draft #re-run
 one_fm.patches.v15_0.add_assignment_rule_for_client_interview_shortlist_process_task_based
 one_fm.patches.v15_0.create_attendance_check_process_task #re run again
-one_fm.patches.v15_0.add_task_assignment_rule
 one_fm.patches.v15_0.add_values_to_rank_factor_table
 one_fm.patches.v15_0.update_existing_designation_to_main_head_hunt_doctype
 one_fm.patches.v15_0.attendance_check_create #09-09-2025
