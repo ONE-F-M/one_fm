@@ -300,8 +300,20 @@ class RoutePlan(Document):
 					self._throw_capacity_exceeded(vehicle, trip.direction, trip.headcount,
 												  limit, self._trip_label(trip))
 
+			# Trips that overlap in time DO share the bus, so no single one of them is
+			# at fault and this stays a whole-vehicle question. What it must not do is
+			# re-report a peak that was already there: editing one run's timings put this
+			# bus in play, and a pre-existing overload then refused the edit here instead
+			# of in the per-trip check above - the same wall, one line further down.
+			#
+			# So the peak is judged against what this save INHERITED. A save is refused
+			# only when it pushes the bus past what it was already carrying, which still
+			# blocks every overload this save actually creates or worsens.
 			concurrent = _peak_concurrent_headcount(vehicle_trips)
-			if concurrent > limit:
+			inherited = _peak_concurrent_headcount(
+				[trip for trip in vehicle_trips if (vehicle, trip.key) in untouched_trips]
+			)
+			if concurrent > max(limit, inherited):
 				frappe.throw(
 					_(
 						"Capacity Exceeded: Total overlapping passengers ({0}) exceeds "

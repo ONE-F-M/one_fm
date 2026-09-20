@@ -993,6 +993,51 @@ class TestOneRunDoesNotBlockAnother(FrappeTestCase):
 		self.assertEqual(plan._trips_this_save_did_not_touch([]), set())
 
 
+class TestAnInheritedPeakIsNotReReported(FrappeTestCase):
+	"""The overlap check is the other half of the same wall.
+
+	Scoping the per-trip check to changed runs moved the refusal one line down: the
+	overlap check still summed EVERY run on the bus, so the same pre-existing 26-in-22
+	load refused the same edit with a different message. Two trips that overlap really
+	do share the bus, so no single one is at fault and this stays a whole-vehicle
+	question - but it must be judged against what the save INHERITED, not against zero.
+	"""
+
+	def _trip(self, key, head, start="06:00", end="07:00"):
+		# The shared builder, so these read the same shape _logical_trips() produces.
+		return _trip(key, headcount=head, start=start, end=end)
+
+	def test_a_peak_that_was_already_there_is_not_refused(self):
+		# 26 in 22 seats, untouched: the dispatcher editing another run cannot fix it and
+		# should not be stopped by it.
+		trips = [self._trip("T1", 26)]
+		inherited = _peak_concurrent_headcount(trips)
+
+		self.assertEqual(inherited, 26)
+		self.assertFalse(26 > max(22, inherited))
+
+	def test_a_save_that_makes_it_worse_is_still_refused(self):
+		untouched = [self._trip("T1", 26)]
+		all_trips = untouched + [self._trip("T2", 2)]
+
+		concurrent = _peak_concurrent_headcount(all_trips)
+		inherited = _peak_concurrent_headcount(untouched)
+
+		self.assertEqual(concurrent, 28)
+		self.assertTrue(concurrent > max(22, inherited))
+
+	def test_an_overload_this_save_creates_is_refused(self):
+		# Nothing inherited, so the limit is the only thing standing.
+		all_trips = [self._trip("T1", 14), self._trip("T2", 10)]
+
+		self.assertTrue(_peak_concurrent_headcount(all_trips) > max(22, 0))
+
+	def test_a_load_that_fits_is_never_refused(self):
+		all_trips = [self._trip("T1", 10), self._trip("T2", 8)]
+
+		self.assertFalse(_peak_concurrent_headcount(all_trips) > max(22, 0))
+
+
 class TestTheOverloadMessageNamesTheRun(FrappeTestCase):
 	"""'the outbound run on VHL-L-0013' names a bus that may hold five runs.
 
