@@ -7,7 +7,6 @@ def create_assignment_rules():
 	create_assignment_rule(get_assignment_rule_json_file("subcontract_staff_shortlist.json"))
 	create_assignment_rule(get_assignment_rule_json_file("action_poc_check.json"))
 	create_assignment_rule(get_assignment_rule_json_file("shift_permission_approver.json"))
-	create_assignment_rule(get_assignment_rule_json_file("confirm_erpnext_task.json"))
 	create_assignment_rule(get_assignment_rule_json_file("leave_application_pending_hr.json"))
 	create_assignment_rule(get_assignment_rule_json_file("shift_request_pending_approval.json"))
 	create_assignment_rule(get_assignment_rule_json_file("attendance_request_approval.json"))
