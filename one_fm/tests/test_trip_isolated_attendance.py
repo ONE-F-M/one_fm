@@ -16,6 +16,8 @@ was locked comes unlocked.
 
 import json
 import pathlib
+import shutil
+import subprocess
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -202,3 +204,85 @@ class TestTheSheetSaysWhichRun(FrappeTestCase):
 
 	def test_the_vehicle_wide_pointer_no_longer_drives_the_lock(self):
 		self.assertNotIn("const activeStop = meta.active_stop_sequence || 0;", self.sheet)
+
+
+TRIGGER_HARNESS = frappe.get_app_path("one_fm", "tests", "js", "depart_trigger_harness.js")
+
+
+def can_trigger(**args):
+	"""Run the SHIPPED canTrigger decision from renderDepartCard."""
+	out = subprocess.run(
+		["node", TRIGGER_HARNESS, json.dumps(args)],
+		capture_output=True, text=True, env={"PATH": "/usr/bin:/bin:/usr/local/bin"},
+		check=True,
+	)
+	return json.loads(out.stdout)["canTrigger"]
+
+
+class TestEveryRunCanStartItsOwnCheck(FrappeTestCase):
+	"""Six of seven runs on a vehicle had no Trigger button at all.
+
+	The rule read "the first DEPART card of the run" as ``seq === 1``. But ``seq`` is the
+	RIDER'S stop number across the whole run, not an ordinal for the camp they board at,
+	so only a trip whose boarders happen to start at stop 1 ever matched. On VHL-L-0004
+	that was S-101 alone - S-102 through S-107 carry seqs 3, 5, 8, 9, 3 and 13, and none
+	of them could start an attendance check.
+
+	The intent is unchanged and still holds: within a run only the FIRST pickup may start
+	a check, so a driver cannot begin at a mid-route camp they have not reached
+	(WI-002074). It is now decided by the camp's POSITION in the run. `seq` remains what
+	the trigger sends and what the lock state is read back against, so the bookkeeping
+	either side of this is untouched.
+	"""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		if not shutil.which("node"):
+			raise cls.failureException("node is needed to run the shipped rule")
+
+	def test_a_run_whose_riders_start_at_stop_one_can_trigger(self):
+		self.assertTrue(can_trigger(isMixed=True, activeStop=0, campIndex=0, activeIndex=-1))
+
+	def test_a_run_whose_riders_start_further_along_can_trigger_too(self):
+		# S-102: camp seq 3. The seq is irrelevant - it is still the run's first pickup.
+		self.assertTrue(can_trigger(isMixed=True, activeStop=0, campIndex=0, activeIndex=-1))
+
+	def test_a_mid_route_camp_still_cannot_start_a_check(self):
+		# WI-002074's rule, which this must not undo.
+		self.assertFalse(can_trigger(isMixed=True, activeStop=0, campIndex=1, activeIndex=-1))
+
+	def test_a_run_already_triggered_does_not_offer_it_again(self):
+		self.assertFalse(can_trigger(isMixed=True, activeStop=3, campIndex=0, activeIndex=0))
+
+	def test_an_ordinary_run_starts_at_its_first_camp(self):
+		self.assertTrue(can_trigger(isMixed=False, activeStop=0, campIndex=0, activeIndex=-1))
+
+	def test_an_ordinary_run_does_not_skip_ahead(self):
+		self.assertFalse(can_trigger(isMixed=False, activeStop=0, campIndex=1, activeIndex=-1))
+
+	def test_an_ordinary_run_walks_camp_by_camp(self):
+		# The camp after the active one is next, whatever seq either of them carries.
+		self.assertTrue(can_trigger(isMixed=False, activeStop=5, campIndex=1, activeIndex=0))
+
+	def test_a_camp_already_passed_is_not_offered_again(self):
+		self.assertFalse(can_trigger(isMixed=False, activeStop=5, campIndex=0, activeIndex=0))
+
+	def test_an_unknown_active_camp_offers_nobody(self):
+		# activeIndex -1 with a lock set means the stored seq matches no camp on this run.
+		# Offering the first one again would let a driver restart a check already running.
+		self.assertFalse(can_trigger(isMixed=False, activeStop=5, campIndex=0, activeIndex=-1))
+
+	def test_the_decision_is_a_position_not_a_seq(self):
+		page = frappe.read_file(frappe.get_app_path(
+			"one_fm", "one_fm", "page", "transportation_manifest_page",
+			"transportation_manifest_page.js"))
+		self.assertIn("(position === 0 && !activeStop)", page)
+		self.assertNotIn("(seq === 1 && !activeStop)", page)
+
+	def test_both_loops_hand_the_card_its_position(self):
+		page = frappe.read_file(frappe.get_app_path(
+			"one_fm", "one_fm", "page", "transportation_manifest_page",
+			"transportation_manifest_page.js"))
+		self.assertEqual(page.count("index, activeIndex);"), 2)
+		self.assertEqual(page.count("const activeIndex = campGroups.findIndex("), 2)

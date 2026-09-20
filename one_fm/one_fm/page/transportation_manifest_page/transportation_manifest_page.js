@@ -839,6 +839,10 @@ function renderManifest($container, data) {
 
 			let prevTime = firstTimeISO;
 			let prevStop = null;
+			// Where the run has got to, as a POSITION in its own camp list. The lock state
+			// is stored as the camp's seq, which is the rider's stop number across the run
+			// - so finding it here is what turns it back into "which camp is next".
+			const activeIndex = campGroups.findIndex((cg) => (cg.seq || 1) === activeStop);
 			campGroups.forEach((cg, index) => {
 				// Matched by position: both lists are in the order the run needs them.
 				const leg = campLegs[index] || {};
@@ -847,7 +851,7 @@ function renderManifest($container, data) {
 				if (index > 0) html += renderTransit(calcTransit(prevTime, departAt, prevStop));
 				html += renderDepartCard(departAt, cg, activeStop, manifestName, pr.label,
 					false, leg.qoa_time || (index === 0 ? legs.qoa_time : null),
-					trip.id, tripLabel);
+					trip.id, tripLabel, index, activeIndex);
 				prevTime = departAt;
 				prevStop = leg;
 			});
@@ -1011,6 +1015,7 @@ function renderManifest($container, data) {
 		let prevStop = null;
 
 		if (campGroups.length) {
+			const activeIndex = campGroups.findIndex((cg) => (cg.seq || 1) === o.activeStop);
 			campGroups.forEach((cg, index) => {
 				// Matched by position: the groups are ordered by the earliest sequence
 				// their riders carry, and camps_ordered by stop_index - both are the
@@ -1022,7 +1027,7 @@ function renderManifest($container, data) {
 				if (index > 0) html += renderTransit(o.calcTransit(prevTime, departAt, prevStop));
 				html += renderDepartCard(departAt, cg, o.activeStop, o.manifestName,
 					o.vehicleLabel, true, leg.qoa_time || (index === 0 ? o.qoaTime : null),
-					o.tripId, o.tripLabel);
+					o.tripId, o.tripLabel, index, activeIndex);
 				prevTime = departAt;
 				prevStop = leg;
 			});
@@ -1032,7 +1037,7 @@ function renderManifest($container, data) {
 				o.firstTimeISO,
 				{ seq: 1, label: o.accommodation, employees: boarding },
 				o.activeStop, o.manifestName, o.vehicleLabel, true, o.qoaTime,
-				o.tripId, o.tripLabel
+				o.tripId, o.tripLabel, 0, -1
 			);
 			prevStop = o.originLeg;
 		}
@@ -1097,7 +1102,8 @@ function renderManifest($container, data) {
 		return offset > 0 ? `<span class="mfst-stop-tag tag-stop">+${offset} Day</span>` : "";
 	}
 
-	function renderDepartCard(time, camp, activeStop, manifestName, vehicleLabel, isMixed, qoaTime, tripId, tripLabel) {
+	function renderDepartCard(time, camp, activeStop, manifestName, vehicleLabel, isMixed,
+							 qoaTime, tripId, tripLabel, campIndex, activeIndex) {
 		const employees = camp.employees || [];
 		const seq = camp.seq || 1;
 		const isCompleted = activeStop && seq < activeStop;
@@ -1106,9 +1112,23 @@ function renderManifest($container, data) {
 		// triggered. A merged run is one vehicle leaving one origin: the second criterion
 		// puts the button in the very first DEPART card and nowhere else, so a driver
 		// cannot start a check at a mid-route pickup they have not reached (WI-002074).
+		//
+		// Decided by the camp's POSITION in the run, not by its seq. `seq` is the rider's
+		// stop number across the whole run, not an ordinal for the camp they board at, so
+		// only a trip whose boarders happen to start at stop 1 ever matched `seq === 1`.
+		// On VHL-L-0004 that was S-101 alone - S-102 through S-107 carry seqs 3, 5, 8, 9,
+		// 3 and 13, and six of the seven runs had no way to start a check at all.
+		//
+		// seq is still what the trigger SENDS and what the lock state is read back
+		// against, so the bookkeeping either side of this is untouched.
+		const position = (campIndex === null || campIndex === undefined) ? null : campIndex;
+		const nextToTrigger = activeStop
+			? ((activeIndex === null || activeIndex === undefined || activeIndex < 0)
+				? null : activeIndex + 1)
+			: 0;
 		const canTrigger = isMixed
-			? (seq === 1 && !activeStop)
-			: seq === (activeStop || 0) + 1;
+			? (position === 0 && !activeStop)
+			: (position !== null && position === nextToTrigger);
 		const status = isCompleted ? "completed" : (isActive ? "active" : "locked");
 
 		let statusChip;
