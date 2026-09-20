@@ -124,7 +124,6 @@ one_fm.patches.v15_0.delete_employee_schedule_for_employee_on_leave #2025-07-17 
 one_fm.patches.v15_0.update_on_boarding_EMP-ONB-2025-00315
 one_fm.patches.v15_0.update_contracts_end_date
 one_fm.patches.v15_0.add_task_type_for_todo_type
-one_fm.patches.v15_0.add_task_workflow # update Workflow
 one_fm.patches.v15_0.add_task_custom_field # Task field update
 one_fm.patches.v15_0.create_google_task_sync_process_task
 one_fm.patches.v15_0.remove_shift_request_pending_approval_assignment_rule
@@ -325,7 +324,6 @@ one_fm.patches.v15_0.add_assignment_rule_submit_client_interview_shortlist_opera
 one_fm.patches.v15_0.add_assignment_rule_assign_rfp_owner_on_rfp_return_to_draft #re-run
 one_fm.patches.v15_0.add_assignment_rule_for_client_interview_shortlist_process_task_based
 one_fm.patches.v15_0.create_attendance_check_process_task #re run again
-one_fm.patches.v15_0.add_task_assignment_rule
 one_fm.patches.v15_0.add_values_to_rank_factor_table
 one_fm.patches.v15_0.update_existing_designation_to_main_head_hunt_doctype
 one_fm.patches.v15_0.attendance_check_create #09-09-2025
@@ -620,3 +618,4 @@ one_fm.patches.v15_0.add_visa_request_list_view_columns #2026-09-11 WI-002426
 one_fm.patches.v15_0.allow_visa_request_bulk_edit #2026-09-12 WI-002446
 one_fm.patches.v15_0.backfill_pam_license_sector_headcounts #2026-09-15 WI-002091
 one_fm.patches.v15_0.delete_pathfinder_log #2026-09-16 Pathfinder Log is retired; drop the doctype, its child table and the workflow actions that pointed at it
+one_fm.patches.v15_0.remove_task_workflow_and_assignment_rule #2026-09-17 WI-000421 Task workflow and Confirm ERPNext Task assignment rule are retired
