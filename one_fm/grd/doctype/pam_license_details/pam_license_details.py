@@ -11,9 +11,13 @@ licence that reads compliant when it is not.
 import frappe
 from frappe.model.document import Document
 from frappe.query_builder import DocType
+from frappe.query_builder.functions import Coalesce
 from frappe.utils import flt
 
 KUWAITI = "Kuwaiti"
+
+# The one status that takes somebody off the licence.
+LEFT = "Left"
 
 # WI-002099: on top of the ratio, PAM allows each occupational sector a fixed number of
 # expatriates over what the ratio alone would permit. The allowance is per sector and is
@@ -130,8 +134,16 @@ def derived_figures(sector, ratio, nationals, expatriates):
 	that sector. All three come out as no requirement rather than as an error - the ratio is
 	typed by hand and a licence should not refuse to save because one row is unfilled.
 
-	Excess Nationals is what the licence is still short of that requirement, and never less
-	than zero: a sector already carrying enough nationals is not short of any.
+	Excess Nationals is how many nationals the licence carries over that requirement, and
+	never less than zero: a sector short of the requirement is not in excess of it.
+
+	WI-002094 writes that subtraction the other way round - required minus actual - which
+	is a shortfall, not an excess, and read literally it made the field useless: it showed
+	0 on every sector that genuinely had surplus nationals and a number only on the ones
+	that were short. The clamp is what gives it away. "If negative, display 0" only makes
+	sense in this direction; in the other it hides exactly the thing the field is named
+	after. Reported from production against real counts, and the process owner confirmed
+	the direction - the same call already made on the violation line below.
 
 	Number of Expats Violated is how far the sector is over its allowance (WI-002099) -
 	actual expatriates minus the number allowed, never below zero. WI-002099 writes that
@@ -160,7 +172,7 @@ def derived_figures(sector, ratio, nationals, expatriates):
 		required = flt(expatriates) * ratio / (100 - ratio)
 	required = to_whole(required)
 
-	excess = max(required - flt(nationals), 0)
+	excess = max(flt(nationals) - required, 0)
 
 	allowed = to_whole(expats_allowed(sector, ratio, nationals))
 	violated = 0.0 if sector == EXEMPT_SECTOR else max(flt(expatriates) - allowed, 0)
@@ -262,8 +274,15 @@ def recount_sector(license_number, sector):
 def count_workers(license_number, sector):
 	"""How many nationals and expatriates this licence holds in this sector.
 
-	Only active employees: someone who has left is not on the licence, and PAM counts who
-	is working under it today.
+	Everybody but those who have left. Someone who has left is off the licence; someone on
+	vacation, awaiting a court case, not yet back from leave or absconding is still
+	employed under it, and PAM counts them.
+
+	It was Active only until this was reported from production, which left 90 people off
+	these two licences - 63 on vacation, 22 not returned from leave, 4 on a court case and
+	1 absconding - about 6% of the workforce. The BA site's own reference script filters on
+	no status at all; Left is excluded here because a licence does not carry somebody who
+	has gone.
 
 	One query, grouped on nationality, rather than one count per side - the join to
 	PAM Designation List is the expensive half and there is no reason to pay for it twice.
@@ -277,7 +296,9 @@ def count_workers(license_number, sector):
 		.on(Employee.one_fm_pam_designation == Designation.name)
 		.select(Employee.one_fm_nationality, frappe.qb.terms.Function("Count", Employee.name).as_("count"))
 		.where(Employee.pam_file_number == license_number)
-		.where(Employee.status == "Active")
+		# Coalesce rather than a bare !=, which is NULL in SQL for a row with no status
+		# and would drop it: the Query Builder writes raw SQL and does no ifnull of its own.
+		.where(Coalesce(Employee.status, "") != LEFT)
 		.where(Designation.occupational_sector == sector)
 		.groupby(Employee.one_fm_nationality)
 	).run(as_dict=True)
