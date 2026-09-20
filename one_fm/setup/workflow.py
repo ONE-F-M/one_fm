@@ -73,7 +73,6 @@ def create_workflows():
 def delete_workflows():
 	delete_workflow(get_workflow_json_file("erf.json"))
 	delete_workflow(get_workflow_json_file("leave_acknowledgement_form.json"))
-	delete_workflow(get_workflow_json_file("task.json"))
 	delete_workflow(get_workflow_json_file("purchase_order.json"))
 	delete_workflow(get_workflow_json_file("journal_entry.json"))
 	delete_workflow(get_workflow_json_file("attendance_check.json"))
