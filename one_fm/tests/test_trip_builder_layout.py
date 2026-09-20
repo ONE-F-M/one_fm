@@ -103,13 +103,13 @@ class TestTheColumnWidthsAreBinding(FrappeTestCase):
 
 	def test_the_numeric_headers_carry_their_classes(self):
 		# The width lives on the column, so the header cell needs it too or the first
-		# row decides the width instead.
-		for header in ("rp-leg-num-col\">${__('Stop')}",
-					   "rp-leg-act-col\">${__('Action')}",
-					   "rp-leg-time-col\">${__('QOA')}",
-					   "rp-leg-time-col\">${__('Target Arrival')}",
-					   "rp-leg-time-col\">${__('On Board')}"):
-			self.assertIn(header, self.canvas)
+		# row decides the width instead. Read off the header list the row is built from.
+		for label, cls in (("Stop", "rp-leg-num-col"),
+						   ("Action", "rp-leg-act-col"),
+						   ("QOA", "rp-leg-time-col"),
+						   ("Target Arrival", "rp-leg-time-col"),
+						   ("On Board", "rp-leg-time-col")):
+			self.assertIn(f"['{label}', '{cls}']", self.canvas)
 
 	def test_the_minute_input_fills_its_cell_instead_of_forcing_it_wider(self):
 		# A 72px input inside a 74px column is what made these two columns immovable.
@@ -161,3 +161,56 @@ class TestMultiLocationCells(FrappeTestCase):
 			"one_fm", "one_fm", "doctype", "transportation_shipment",
 			"transportation_shipment.py")).read_text()
 		self.assertIn('", ".join(shift_places)', server)
+
+
+class TestTheHeadersSayWhatTheyAre(FrappeTestCase):
+	"""A column that fits by width shows "Target…", and the reader is left guessing.
+
+	The cells in the location columns have carried their full text on a tooltip since
+	AC2; the headers never did, so the one place the ellipsis is GUARANTEED to bite -
+	a fixed 76px column holding "Target Arrival" - was the one place with nothing behind
+	it. Reported in testing.
+	"""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		cls.canvas = CANVAS.read_text()
+		cls.headers = cls.canvas.split("const headers = [", 1)[1].split("].map(", 1)[0]
+
+	def test_every_column_is_in_the_list(self):
+		for label in ("Stop", "Accommodation / Stop", "Action", "QOA", "Departure",
+					  "Buffer (min)", "Transit (min)", "Shift Location", "Next Stop",
+					  "Target Arrival", "On Board"):
+			self.assertIn(f"'{label}'", self.headers, msg=label)
+
+	def test_the_columns_keep_their_order(self):
+		positions = [self.headers.index(f"'{label}'") for label in
+					 ("Stop", "Accommodation / Stop", "Action", "QOA", "Departure",
+					  "Buffer (min)", "Transit (min)", "Shift Location", "Next Stop",
+					  "Target Arrival", "On Board")]
+		self.assertEqual(positions, sorted(positions))
+
+	def test_the_tooltip_and_the_label_are_the_same_string(self):
+		# The whole reason the row is built from a list. Written out by hand, the title
+		# and the text drift the first time somebody renames a column - and a tooltip
+		# that disagrees with its header is worse than none.
+		self.assertIn('title="${text}">${text}</th>', self.canvas)
+
+	def test_the_label_is_escaped_once_and_reused(self):
+		self.assertIn("const text = esc(__(label));", self.canvas)
+
+	def test_the_headers_are_still_translated(self):
+		self.assertIn("esc(__(label))", self.canvas)
+
+	def test_no_header_is_hand_written_any_more(self):
+		# A leftover hand-written cell would have no tooltip and nothing would say so.
+		self.assertNotIn("<th class=\"rp-leg-time-col\">${__(", self.canvas)
+		self.assertNotIn("<th>${__(", self.canvas)
+
+	def test_the_row_is_rendered_from_the_list(self):
+		self.assertIn("<thead><tr>${headers}</tr></thead>", self.canvas)
+
+	def test_the_cells_still_carry_their_own_tooltips(self):
+		# AC2, unchanged - this fix is about the header row only.
+		self.assertIn('<td class="small rp-leg-place" title="${full}">', self.canvas)
