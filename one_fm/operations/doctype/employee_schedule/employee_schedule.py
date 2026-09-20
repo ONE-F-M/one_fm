@@ -7,6 +7,7 @@ import frappe
 from frappe.model.document import Document
 from frappe import _
 from frappe.utils import cstr, add_days, getdate, get_last_day
+from frappe.query_builder.functions import Coalesce
 from one_fm.operations.doctype.operations_shift.operations_shift import resolve_shift_timing
 from one_fm.utils import get_week_start_end, get_month_start_end
 from one_fm.processor import sendemail
@@ -29,6 +30,72 @@ BASIC = "Basic"
 # through an approval gate.
 WORKING = "Working"
 
+# WI-002437: the two states an Employee Schedule is in when it is not a shift anybody is
+# working. A double shift waiting on the DSOT Approver is not one yet, and a rejected one
+# never will be - the hours are gone, whether it was refused outright or nobody answered
+# before the shift ended.
+#
+# Only the DSOT flow reaches either: the workflow's Rejected state has one way in, from
+# Pending DSOT Approval, so the suspension flow this shares a workflow with is untouched.
+#
+# The Roster Matrix applies the same pair through its own raw-SQL fragment in
+# one_fm/one_fm/page/roster/employee_map.py; the two are pinned equal in test_dsot_roster.
+NOT_A_WORKED_SHIFT = (PENDING_DSOT, DSOT_REJECTED)
+
+
+def has_workflow_state_column() -> bool:
+	"""Does this site have the workflow_state column yet?
+
+	It is a Custom Field the Employee Schedule workflow creates, not a field this app
+	ships, so a site where that workflow has not been installed has no such column -
+	and filtering on it would fail the whole query rather than narrow it.
+	"""
+	return "workflow_state" in frappe.db.get_table_columns("Employee Schedule")
+
+
+def worked_shift_filters() -> dict:
+	"""Keep unworked shifts out of an ORM query (WI-002437).
+
+	Empty where the column is not there yet, which leaves the caller's query exactly as
+	it was - the same thing the Roster Matrix does.
+
+	Frappe writes "not in" as ifnull(column, '') not in (...), so a schedule carrying no
+	state at all still counts as worked. That matters: the roster writes its rows with a
+	raw INSERT that does not list workflow_state, so a fresh Basic row genuinely has none,
+	and a plain SQL NOT IN would drop every one of them.
+	"""
+	if not has_workflow_state_column():
+		return {}
+
+	return {"workflow_state": ["not in", list(NOT_A_WORKED_SHIFT)]}
+
+
+def worked_shift_criterion(employee_schedule):
+	"""The same rule as a Query Builder criterion, or None where it does not apply.
+
+	Coalesce rather than a bare NOT IN for the reason above - the Query Builder writes
+	raw SQL, where NULL NOT IN (...) is NULL and the row is dropped.
+	"""
+	if not has_workflow_state_column():
+		return None
+
+	return Coalesce(employee_schedule.workflow_state, "").notin(list(NOT_A_WORKED_SHIFT))
+
+
+def worked_shift_sql(alias: str = "es") -> str:
+	"""The same rule as a SQL fragment for a raw query, on the given table alias.
+
+	"1 = 1" where the column is not there yet, so the caller can splice it in
+	unconditionally. The states are this module's own constants, not anything a user
+	supplies.
+	"""
+	if not has_workflow_state_column():
+		return "1 = 1"
+
+	states = ", ".join(f"'{state}'" for state in NOT_A_WORKED_SHIFT)
+
+	return f"ifnull({alias}.workflow_state, '') not in ({states})"
+
 
 def hold_overtime_for_approval(names):
 	"""Put bulk-created overtime schedules into the DSOT gate (WI-002283).
@@ -43,6 +110,16 @@ def hold_overtime_for_approval(names):
 	somebody already working a basic shift that day is a double shift. A state already
 	set is left alone, so re-running the roster over a decided request does not drag it
 	back to Pending.
+
+	WI-002437: except a Rejected one. The roster names its rows
+	"<date>_<employee>_<roster type>", so re-rostering overtime for a day already refused
+	writes over the same row rather than making a new one - and its ON DUPLICATE KEY
+	UPDATE does not touch workflow_state. Without this the row stayed Rejected, was
+	skipped here, and was then filtered out of the Shift Assignment job for being
+	Rejected: the supervisor's new request vanished with no way to tell why.
+
+	Only for the rows the caller just wrote, which is the whole reason this cannot drag a
+	decided request back: it is handed the names of that one INSERT.
 	"""
 	names = [name for name in (names or []) if name]
 	if not names:
@@ -54,7 +131,7 @@ def hold_overtime_for_approval(names):
 			"name": ["in", names],
 			"roster_type": OVERTIME,
 			"employee_availability": WORKING,
-			"workflow_state": ["in", [None, ""]],
+			"workflow_state": ["in", [None, "", DSOT_REJECTED]],
 		},
 		fields=["name", "employee", "date"],
 	)
@@ -187,13 +264,15 @@ class EmployeeSchedule(Document):
 			self.employee_availability = "Suspended"
 
 	def before_insert(self):
-		self.set_dsot_state()
 		if frappe.db.exists("Employee Schedule", {"employee": self.employee, "date": self.date, "roster_type" : self.roster_type}):
 			frappe.throw(_("Employee Schedule already scheduled for {employee} on {date}.".format(employee=self.employee_name, date=cstr(self.date))))
 
 		# validate employee is active
 		if not frappe.db.exists("Employee", {'status':'Active', 'name':self.employee}):
 			frappe.throw(f"{self.employee} - {self.employee_name} is not active and cannot be scheduled.")
+
+	def after_insert(self):
+		self.set_dsot_state()
 
 	def on_update(self):
 		self.handle_dsot_decision()
@@ -235,8 +314,18 @@ class EmployeeSchedule(Document):
 		double shift, and somebody has to say yes to it. One raised for a day the
 		employee is not already working is ordinary overtime and goes through untouched.
 
-		Set before insert rather than on validate so it cannot be talked out of the state
-		by a later save: the workflow decides when it leaves.
+		WI-002437: written after the insert, not before it. Setting the field on the
+		document made Frappe's own workflow validation refuse the save outright -
+		"Workflow State transition not allowed from Active to Pending DSOT Approval",
+		because on an insert there is no before-state to transition from and the first
+		state is the only one a new document may carry. Every double shift raised through
+		the ORM failed at the supervisor with that message, and none ever reached the
+		approver; the roster's own path only worked because it writes its rows with raw
+		SQL and then calls hold_overtime_for_approval, which is exactly what this now does
+		for a single one.
+
+		Written rather than saved, so it cannot be talked out of the state by a later
+		save: the workflow decides when it leaves.
 		"""
 		if self.roster_type != OVERTIME or self.get("workflow_state") == PENDING_DSOT:
 			return
@@ -244,7 +333,8 @@ class EmployeeSchedule(Document):
 		if not self.has_working_basic_schedule():
 			return
 
-		self.workflow_state = PENDING_DSOT
+		self.db_set("workflow_state", PENDING_DSOT, update_modified=False)
+		self.request_dsot_approval()
 
 	def has_working_basic_schedule(self) -> bool:
 		"""Is the employee already working a basic shift on this date?"""
