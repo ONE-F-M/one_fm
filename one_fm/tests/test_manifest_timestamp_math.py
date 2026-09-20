@@ -20,8 +20,11 @@ time on the page is printed in. The fix is in ``secondsOfDay`` alone; these test
 the same arithmetic in Python so a change to either reader is caught.
 """
 
+import json
 import pathlib
 import re
+import shutil
+import subprocess
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -149,3 +152,138 @@ class TestTheFixIsInOnePlace(FrappeTestCase):
 		self.assertIn('timeZone: "Asia/Kuwait"', fmt)
 		self.assertEqual(len(re.findall(r'timeZone: "Asia/Kuwait"', self.sheet)),
 						 self.sheet.count('timeZone: "Asia/Kuwait"'))
+
+
+HARNESS = frappe.get_app_path("one_fm", "tests", "js", "manifest_transit_harness.js")
+
+
+def leg(from_iso, to_iso, stop=None):
+	"""Run the SHIPPED calcTransit and return {drive, buffer} in minutes."""
+	out = subprocess.run(
+		["node", HARNESS, json.dumps({"from": from_iso, "to": to_iso, "stop": stop})],
+		capture_output=True, text=True, env={"PATH": "/usr/bin:/bin:/usr/local/bin"},
+		check=True,
+	)
+	return json.loads(out.stdout)
+
+
+class TestWhichStopCarriesTheLeg(FrappeTestCase):
+	"""S-101, from the report: the manifest printed the NEXT leg's minutes.
+
+	A stop's transit and buffer describe the leg that DEPARTS it - the Route Plan row
+	starts when the bus pulls away and ends when it reaches the next stop, which is why
+	the Trip Builder prints them on the same row as "Next Stop". The manifest passed the
+	stop being ARRIVED at, so every gap showed the figures of the leg after it.
+
+	The real rows, in Kuwait time:
+
+	    1 Mahboula Camp   04:50 -> 05:15   transit 20  buffer 5
+	    2 Alghanim        05:15 -> 05:32   transit 15  buffer 2
+	    3 Salmiya         05:32 -> 05:59   transit 25  buffer 2
+
+	The manifest read the first leg as "15 min drive, 2 min buffer" - Alghanim's figures,
+	one leg early - while the Trip Builder read the same run as 20 and 5.
+	"""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		if not shutil.which("node"):
+			raise cls.failureException("node is needed to run the shipped rule")
+		# 01:50Z is 04:50 in Kuwait, which is how these timestamps are actually stored.
+		cls.camp = {"transit_minutes": 20, "buffer_minutes": 5}
+		cls.alghanim = {"transitMinutes": 15, "bufferMinutes": 2}
+		cls.salmiya = {"transitMinutes": 25, "bufferMinutes": 2}
+
+	def test_the_first_drive_is_the_camps_own_figures(self):
+		self.assertEqual(
+			leg("2026-09-20T01:50:00Z", "2026-09-20T02:15:00Z", self.camp),
+			{"drive": 20, "buffer": 5},
+		)
+
+	def test_it_is_not_the_arriving_stops_figures(self):
+		# The reported symptom: 15 and 2 belong to the leg OUT of Alghanim.
+		self.assertNotEqual(
+			leg("2026-09-20T01:50:00Z", "2026-09-20T02:15:00Z", self.camp),
+			{"drive": 15, "buffer": 2},
+		)
+
+	def test_each_later_leg_is_the_stop_it_leaves(self):
+		self.assertEqual(
+			leg("2026-09-20T02:15:00Z", "2026-09-20T02:32:00Z", self.alghanim),
+			{"drive": 15, "buffer": 2},
+		)
+
+	def test_the_ride_home_is_the_last_stops_figures(self):
+		self.assertEqual(
+			leg("2026-09-20T02:32:00Z", "2026-09-20T02:59:00Z", self.salmiya),
+			{"drive": 25, "buffer": 2},
+		)
+
+	def test_the_printed_minutes_add_up_to_the_clock(self):
+		# drive + buffer must equal the gap between the two stamps, or the driver is
+		# reading a leg that does not match the times either side of it.
+		for start, end, stop in (
+			("2026-09-20T01:50:00Z", "2026-09-20T02:15:00Z", self.camp),
+			("2026-09-20T02:15:00Z", "2026-09-20T02:32:00Z", self.alghanim),
+			("2026-09-20T02:32:00Z", "2026-09-20T02:59:00Z", self.salmiya),
+		):
+			printed = leg(start, end, stop)
+			gap = (frappe.utils.get_datetime(end.replace("Z", ""))
+				   - frappe.utils.get_datetime(start.replace("Z", ""))).total_seconds() / 60
+			self.assertEqual(printed["drive"] + printed["buffer"], gap, msg=str(stop))
+
+	def test_two_visits_to_one_stop_have_nothing_driven_between_them(self):
+		# A drop-off and the pick-up after it are one physical stop printed twice. The
+		# minutes of the leg out of that stop belong further down, not in a gap of zero.
+		self.assertEqual(
+			leg("2026-09-20T02:15:00Z", "2026-09-20T02:15:00Z", self.alghanim),
+			{"drive": 0, "buffer": 0},
+		)
+
+	def test_a_leg_with_no_minutes_still_falls_back_to_the_clock(self):
+		self.assertEqual(
+			leg("2026-09-20T02:15:00Z", "2026-09-20T02:32:00Z", None),
+			{"drive": 17, "buffer": 0},
+		)
+
+	def test_the_clock_fallback_still_wraps_past_midnight(self):
+		# AC3: never the flat 24h the raw subtraction used to produce.
+		self.assertEqual(
+			leg("2026-09-20T20:50:00Z", "2026-09-20T21:20:00Z", None),
+			{"drive": 30, "buffer": 0},
+		)
+
+	def test_both_spellings_of_the_fields_are_read(self):
+		# Camp legs come from the server in snake_case; site stops in camelCase.
+		self.assertEqual(
+			leg("2026-09-20T01:50:00Z", "2026-09-20T02:15:00Z", {"transitMinutes": 20, "bufferMinutes": 5}),
+			leg("2026-09-20T01:50:00Z", "2026-09-20T02:15:00Z", {"transit_minutes": 20, "buffer_minutes": 5}),
+		)
+
+
+class TestBothItinerariesPassTheDepartingStop(FrappeTestCase):
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		cls.page = SHEET.read_text()
+
+	def test_the_mixed_run_carries_the_previous_stop(self):
+		self.assertIn("let prevStop = o.originLeg;", self.page)
+		self.assertIn("o.calcTransit(prevTime, stop.time, prevStop)", self.page)
+
+	def test_the_mixed_run_gets_the_camp_leg_for_its_first_drive(self):
+		self.assertIn("originLeg: (legs.camps_ordered || [])[0] || null,", self.page)
+
+	def test_the_camp_by_camp_run_carries_it_too(self):
+		self.assertIn("calcTransit(prevTime, item.stop.time, prevStop)", self.page)
+		self.assertIn("prevStop = item.stop;", self.page)
+
+	def test_the_ride_home_is_timed_by_the_last_stop(self):
+		self.assertIn("calcTransit(prevTime, lastTimeISO, prevStop)", self.page)
+		self.assertIn("o.calcTransit(prevTime, o.lastTimeISO, prevStop)", self.page)
+
+	def test_no_loop_still_passes_the_arriving_stop(self):
+		# The bug, exactly as it read before.
+		self.assertNotIn("calcTransit(prevTime, item.stop.time, item.stop)", self.page)
+		self.assertNotIn("o.calcTransit(prevTime, stop.time, stop)", self.page)

@@ -689,9 +689,35 @@ function renderManifest($container, data) {
 			// else falls back to the clock gap between the two stops. Reading a merged
 			// run off the clock alone showed the driver the old spacing, because the
 			// blocks the merge did not move still sit where they were.
+			// `stop` is the stop the bus is LEAVING, never the one it is arriving at. A
+			// stop's minutes describe the leg that departs it - the Route Plan row starts
+			// when the bus pulls away and ends when it reaches the next stop, which is
+			// why the Trip Builder prints them on the same row as "Next Stop". Passing
+			// the arrival stop printed the NEXT leg's minutes above every stop: S-101's
+			// camp leg is 20 drive + 5 buffer and the manifest read "15 min drive, 2 min
+			// buffer" - Alghanim's figures, one leg early (WI-002614 AC3).
+			//
+			// Camp legs spell the same two fields in snake_case, so both are accepted
+			// rather than making every caller normalise one of them.
 			function calcTransit(t1, t2, stop) {
-				const transit = (stop && stop.transitMinutes) || 0;
-				const buffer = (stop && stop.bufferMinutes) || 0;
+				const zero = { travelDuration: "0s", waitDuration: "0s", travelDistanceMeters: 0 };
+
+				// AC3: the clock gap, read as time of day and wrapped at midnight. Taking
+				// the raw difference meant two stops whose timestamps carried different
+				// lock dates reported a drive of roughly a day, which fmtDuration then
+				// clamped to a flat "24h" - the overflow fallback the AC names.
+				const from = secondsOfDay(t1), to = secondsOfDay(t2);
+				let gap = (from === null || to === null) ? null : to - from;
+				if (gap !== null && gap < 0) gap += 24 * 3600;   // the leg ran past midnight
+
+				// A drop-off and the pick-up that follows it at the same place and minute
+				// are ONE physical stop printed twice. Nothing is driven between them, so
+				// the minutes belonging to the leg out of that stop must not be drawn in
+				// the gap - they belong further down, against the stop the bus leaves for.
+				if (gap === 0) return zero;
+
+				const transit = (stop && (stop.transitMinutes ?? stop.transit_minutes)) || 0;
+				const buffer = (stop && (stop.bufferMinutes ?? stop.buffer_minutes)) || 0;
 				if (transit || buffer) {
 					return {
 						travelDuration: transit * 60 + "s",
@@ -699,17 +725,8 @@ function renderManifest($container, data) {
 						travelDistanceMeters: 0
 					};
 				}
-				// AC3: the clock gap, read as time of day and wrapped at midnight. Taking
-				// the raw difference meant two stops whose timestamps carried different
-				// lock dates reported a drive of roughly a day, which fmtDuration then
-				// clamped to a flat "24h" - the overflow fallback the AC names. A leg
-				// with no minutes of its own is now measured by the clock alone.
-				const from = secondsOfDay(t1), to = secondsOfDay(t2);
-				const zero = { travelDuration: "0s", waitDuration: "0s", travelDistanceMeters: 0 };
-				if (from === null || to === null) return zero;
-				let gap = to - from;
-				if (gap < 0) gap += 24 * 3600;   // the leg ran past midnight
-				if (gap <= 0) return zero;
+				// A leg with no minutes of its own is measured by the clock alone.
+				if (gap === null || gap <= 0) return zero;
 				return { travelDuration: gap + "s", waitDuration: "0s", travelDistanceMeters: 0 };
 			}
 
@@ -830,6 +847,10 @@ function renderManifest($container, data) {
 				html += renderMixedItinerary({
 					orderedStops, firstTimeISO, lastTimeISO, accommodation: homeCamp,
 					qoaTime: legs.qoa_time,
+					// The camp the run leaves from carries the minutes of the FIRST drive,
+					// and nothing else knows them: the site stops each carry the leg out of
+					// themselves, so without this the opening leg had to be guessed.
+					originLeg: (legs.camps_ordered || [])[0] || null,
 					activeStop, manifestName, vehicleLabel: pr.label, calcTransit
 				});
 			} else {
@@ -843,15 +864,17 @@ function renderManifest($container, data) {
 			const campLegs = legs.camps_ordered || [];
 
 			let prevTime = firstTimeISO;
+			let prevStop = null;
 			campGroups.forEach((cg, index) => {
 				// Matched by position: both lists are in the order the run needs them.
 				const leg = campLegs[index] || {};
 				const departAt = leg.departure
 					? new Date(leg.departure).toISOString() : firstTimeISO;
-				if (index > 0) html += renderTransit(calcTransit(prevTime, departAt));
+				if (index > 0) html += renderTransit(calcTransit(prevTime, departAt, prevStop));
 				html += renderDepartCard(departAt, cg, activeStop, manifestName, pr.label,
 					false, leg.qoa_time || (index === 0 ? legs.qoa_time : null));
 				prevTime = departAt;
+				prevStop = leg;
 			});
 
 			// Then every stop the bus calls at, once, in the order it reaches them.
@@ -859,9 +882,10 @@ function renderManifest($container, data) {
 				.slice()
 				.sort((a, b) => new Date(a.stop.time) - new Date(b.stop.time))
 				.forEach(item => {
-					html += renderTransit(calcTransit(prevTime, item.stop.time, item.stop));
+					html += renderTransit(calcTransit(prevTime, item.stop.time, prevStop));
 					html += renderSiteStopCard({ ...item, runStartISO: firstTimeISO });
 					prevTime = item.stop.time;
+					prevStop = item.stop;
 				});
 
 			// Return employees
@@ -880,8 +904,8 @@ function renderManifest($container, data) {
 				}
 			});
 
-			// Transit to return
-			html += renderTransit(calcTransit(prevTime, lastTimeISO));
+			// Transit to return - timed by the last stop the bus called at.
+			html += renderTransit(calcTransit(prevTime, lastTimeISO, prevStop));
 
 			// RETURN card
 			html += renderReturnCard(lastTimeISO, homeCamp, returningEmployees, firstTimeISO);
@@ -1001,14 +1025,19 @@ function renderManifest($container, data) {
 			o.activeStop, o.manifestName, o.vehicleLabel, true, o.qoaTime
 		);
 
+		// The stop the bus is LEAVING carries the leg, so the gap above each card is
+		// timed by the one before it - the camp for the first drive, then each stop in
+		// turn, and the last stop for the ride home.
 		let prevTime = o.firstTimeISO;
+		let prevStop = o.originLeg;
 		stops.forEach((stop, i) => {
-			html += renderTransit(o.calcTransit(prevTime, stop.time, stop));
+			html += renderTransit(o.calcTransit(prevTime, stop.time, prevStop));
 			html += renderSiteStopCard({ stop: stop, siteNum: i + 2, runStartISO: o.firstTimeISO });
 			prevTime = stop.time;
+			prevStop = stop;
 		});
 
-		html += renderTransit(o.calcTransit(prevTime, o.lastTimeISO));
+		html += renderTransit(o.calcTransit(prevTime, o.lastTimeISO, prevStop));
 		html += renderReturnCard(o.lastTimeISO, o.accommodation, returning, o.firstTimeISO);
 		return html;
 	}
