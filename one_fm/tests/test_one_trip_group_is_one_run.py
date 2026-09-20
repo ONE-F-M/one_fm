@@ -2,14 +2,8 @@
 # See license.txt
 """WI-002160: one trip group on one vehicle is one bus run, not two.
 
-A run that both drops off and picks up was split by direction into two pseudo-trips
-whose windows overlap each other, so the seat check added the same bus to itself: a
-1-passenger drop onto a bus carrying 2 of its 3 seats was refused as "Capacity
-Exceeded".
-
 The lane refuses a drop before the save ever sees it, so the canvas and the Route Plan
-have to read a run the same way — otherwise the operator is stopped by a rule the plan
-would have accepted, or promised a merge the save then refuses.
+have to read a run the same way.
 """
 
 import pathlib
@@ -44,8 +38,7 @@ class TestOneTripGroupIsOneRun(FrappeTestCase):
 		)
 
 	def test_every_seat_check_reads_the_run_through_that_one_rule(self):
-		# The "merge this block into that trip" action re-summed the stops by hand, so
-		# it refused merges the lane and the save both accept.
+		# The "merge into that trip" action re-summed the stops by hand.
 		self.assertNotIn(
 			"const tripLoad = targetTripItems.reduce((sum, i) => sum + (i.headcount || 0), 0);",
 			self.source,
@@ -67,8 +60,7 @@ class TestOneTripGroupIsOneRun(FrappeTestCase):
 		self.assertIn("trip.direction = MIXED_DIRECTION", source)
 
 	def test_the_leg_walk_reads_a_row_that_has_no_shipment(self):
-		# A row carrying no shipment still knows its own leg. Reading only the
-		# shipment called those riders outward and doubled the run's peak.
+		# A row carrying no shipment still knows its own leg.
 		from one_fm.operations.doctype.route_plan.route_plan import _trip_peak
 
 		trip = frappe._dict(
@@ -85,10 +77,8 @@ class TestOneTripGroupIsOneRun(FrappeTestCase):
 		self.assertEqual(_trip_peak(trip), (3, 1))
 
 	def test_the_leg_walk_is_not_left_to_chance(self):
-		# Stop order decides the answer — the same two loads read 3 or 6 depending on
-		# whether the return riders board before or after the outward ones get off. The
-		# child-row name is a random hash, so ordering on it alone made the check
-		# non-deterministic once a run held both directions.
+		# The child-row name is a random hash, so ordering on it alone was non-
+		# deterministic once a run held both directions.
 		self.assertIn('str(row.start_time or "")', ROUTE_PLAN.read_text())
 
 
@@ -161,18 +151,12 @@ class TestEveryMergeGoesThroughTheMergeWindow(FrappeTestCase):
 		)
 
 	def test_the_picker_offers_the_nearest_run_first(self):
-		# Options were built in Route Plan Assignment row order, so a 14:15 run was the
-		# default for a 16:00 card purely because its row had been saved earlier.
+		# Options were built in row order, so any run could be the default.
 		self.assertIn("tripKeys.sort((a, b) => gapToCard(tripMap[a]) - gapToCard(tripMap[b]));", self.source)
 
 
 class TestMarkUnflaggedMixedTripsPatch(FrappeTestCase):
-	"""The runs already on the plan that were merged before the picker was fixed.
-
-	They were built by chaining a return stop onto an outbound run through the trip
-	picker, which never reached merge_trip_shipments — so the rows kept their original
-	headings and no card recorded pre_merge_trip_direction.
-	"""
+	"""The runs merged through the trip picker before it reached merge_trip_shipments."""
 
 	VEHICLE = "VHL-L-0022"  # 4 seats -> 3 legal passenger seats
 
@@ -241,9 +225,7 @@ class TestMarkUnflaggedMixedTripsPatch(FrappeTestCase):
 		self.assertEqual(self._read(ret).pre_merge_trip_direction, "Return")
 
 	def test_the_repair_is_reversible(self):
-		# The card leaving the run is what calls this, and without a remembered
-		# direction it has nothing to restore from — which is how WI-002071 stranded
-		# cards as Mixed for good.
+		# Without a remembered direction there is nothing to restore (WI-002071).
 		from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
 			unmerge_trip_shipment,
 		)

@@ -91,6 +91,8 @@ NEW_ACTION_DOCUMENTS = {
         "work_permit": "Local Transfer",
         "medical_insurance": "Local Transfer",
         "residency": "Transfer",
+        "medical_insurance": "Local Transfer",
+        "residency": "Transfer",
         "paci": "Transfer",
     },
 }

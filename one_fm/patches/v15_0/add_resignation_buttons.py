@@ -6,7 +6,7 @@ def execute():
     ]
     
     services = [
-        {"doctype": "App Service", "name": "Employee Resignation", "service": "Employee Resignation", "icon": "file-document-edit-outline", "status": "Active", "service_group": "HR", "assign_to_timesheet_employees": 1, "assign_to_non_timesheet_employees": 1},
+        {"doctype": "App Service", "name": "Employee Resignation", "service": "Employee Resignation", "icon": "file-document-edit-outline", "status": "Active", "service_group": "HR", "assign_to_timesheet_employees": 1, "assign_to_non_timesheet_employees": 1, "auto_assign": 1},
         {"doctype": "App Service", "name": "Resignation Withdrawal", "service": "Resignation Withdrawal", "icon": "file-undo-outline", "status": "Active", "service_group": "HR", "assign_to_timesheet_employees": 1, "assign_to_non_timesheet_employees": 1},
     ]
     

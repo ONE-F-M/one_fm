@@ -22,7 +22,7 @@ def get_employee_checkin_custom_fields():
                 "insert_after": "employee_checkin_issue",
                 "label": "Source",
                 "options": "\nMobile App\nMobile Web\nCheck-in Form\nFrappe Page\nAttendance Check",
-                "default": "Check-in Form",
+                "default": "",
                 "translatable": 1
             },
             {
@@ -81,7 +81,8 @@ def get_employee_checkin_custom_fields():
                 "label": "Roster Type",
                 "fetch_from": "shift_assignment.roster_type",
                 "fetch_if_empty": 1,
-                "translatable": 1
+                "translatable": 1,
+                "read_only": 1
             },
             {
                 "fieldname": "date",
@@ -119,7 +120,8 @@ def get_employee_checkin_custom_fields():
                 "fieldtype": "Link",
                 "insert_after": "shift_details",
                 "label": "Shift Assignment",
-                "options": "Shift Assignment"
+                "options": "Shift Assignment",
+                "read_only": 1
             },
             {
                 "fieldname": "actual_time",
