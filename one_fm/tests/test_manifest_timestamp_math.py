@@ -269,8 +269,11 @@ class TestBothItinerariesPassTheDepartingStop(FrappeTestCase):
 		cls.page = SHEET.read_text()
 
 	def test_the_mixed_run_carries_the_previous_stop(self):
-		self.assertIn("let prevStop = o.originLeg;", self.page)
 		self.assertIn("o.calcTransit(prevTime, stop.time, prevStop)", self.page)
+		# Each camp becomes the previous stop as the run loads at it; the single origin
+		# card is now only the fallback for a run that named no camp at all.
+		self.assertIn("prevStop = leg;", self.page)
+		self.assertIn("prevStop = o.originLeg;", self.page)
 
 	def test_the_mixed_run_gets_the_camp_leg_for_its_first_drive(self):
 		self.assertIn("originLeg: (legs.camps_ordered || [])[0] || null,", self.page)
@@ -287,3 +290,64 @@ class TestBothItinerariesPassTheDepartingStop(FrappeTestCase):
 		# The bug, exactly as it read before.
 		self.assertNotIn("calcTransit(prevTime, item.stop.time, item.stop)", self.page)
 		self.assertNotIn("o.calcTransit(prevTime, stop.time, stop)", self.page)
+
+
+class TestAMergedRunStopsAtEveryCamp(FrappeTestCase):
+	"""S-401, from the report: the second camp never appeared.
+
+	A merged run is one journey, but not necessarily one pickup. S-401 leaves Mahboula at
+	03:52 and Mangaf at 04:04 before it drops anybody. The mixed itinerary rendered a
+	single origin card, so the sheet jumped 03:52 -> 04:46 under a 12-minute label on a
+	54-minute gap - and the driver was never told to collect at Mangaf at all.
+
+	The grouping was wrong underneath it too. boardingByCamp was keyed by the rider's
+	stop_sequence, which is their stop number in the whole run rather than an ordinal for
+	the camp they board at. On S-401 that groups as {1: [Mahboula], 5: [Mahboula, Mangaf]}
+	- one key holding riders from two camps - where keying by the camp gives
+	{Mahboula: 4, Mangaf: 6}, which is what a camp banner is supposed to list.
+	"""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		cls.page = SHEET.read_text()
+
+	def test_the_groups_are_keyed_by_camp_not_by_sequence(self):
+		self.assertIn("boardingByCamp[label]", self.page)
+		self.assertNotIn("boardingByCamp[seq]", self.page)
+
+	def test_the_earliest_sequence_orders_the_camps(self):
+		# The camps still have to come out in the order the bus loads at them.
+		self.assertIn("if (seq < boardingByCamp[label].seq) boardingByCamp[label].seq = seq;",
+					  self.page)
+
+	def test_the_mixed_run_is_given_every_camp(self):
+		self.assertIn("campGroups: Object.values(boardingByCamp).sort((a, b) => a.seq - b.seq),",
+					  self.page)
+		self.assertIn("campLegs: legs.camps_ordered || [],", self.page)
+
+	def test_it_renders_a_depart_card_for_each_of_them(self):
+		self.assertIn("campGroups.forEach((cg, index) => {", self.page)
+		self.assertIn("renderDepartCard(departAt, cg, o.activeStop, o.manifestName", self.page)
+
+	def test_each_camp_reports_its_own_departure_and_report_time(self):
+		self.assertIn("leg.qoa_time || (index === 0 ? o.qoaTime : null)", self.page)
+
+	def test_the_drive_between_camps_is_drawn(self):
+		# The 40-minute run from Mahboula to Mangaf is a leg the driver makes.
+		self.assertIn("if (index > 0) html += renderTransit(o.calcTransit(prevTime, departAt, prevStop));",
+					  self.page)
+
+	def test_the_attendance_trigger_still_belongs_to_the_first_pickup_only(self):
+		# isMixed is passed true for every camp card, and renderDepartCard reads it to
+		# keep the button on seq 1 (WI-002074). A mid-route camp must not start a check.
+		self.assertIn("o.vehicleLabel, true, leg.qoa_time", self.page)
+		self.assertIn("? (seq === 1 && !activeStop)", self.page)
+
+	def test_the_site_stops_are_numbered_after_the_camps(self):
+		# Two camps means the first drop-off is stop 3, not stop 2.
+		self.assertIn("const firstSiteNum = Math.max(campGroups.length, 1) + 1;", self.page)
+		self.assertIn("siteNum: i + firstSiteNum", self.page)
+
+	def test_a_run_naming_no_camp_still_gets_one_origin_card(self):
+		self.assertIn("{ seq: 1, label: o.accommodation, employees: boarding },", self.page)

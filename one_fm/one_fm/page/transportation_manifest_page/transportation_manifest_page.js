@@ -818,7 +818,14 @@ function renderManifest($container, data) {
 			// under it (MA2-11): the manifest reads camp-by-camp — a camp's DEPART
 			// banner is followed by the drop-off stop(s) its passengers ride to,
 			// then the next camp block. Camps run in strict stop-sequence order.
-			const boardingByCamp = {};   // seq -> { seq, label, employees, names }
+			// Keyed by the CAMP, not by stop_sequence. stop_sequence is the rider's stop
+			// number in the whole run, not an ordinal for the camp they board at, so one
+			// key could hold riders from two different camps: S-401's boarders group as
+			// {1: [Mahboula], 5: [Mahboula, Mangaf]} by sequence and as
+			// {Mahboula: 4, Mangaf: 6} by camp - and only the second is what a camp
+			// banner is supposed to list. `seq` is kept as the EARLIEST sequence seen for
+			// that camp, which is what puts the camps in the order the bus loads at them.
+			const boardingByCamp = {};   // camp label -> { seq, label, employees, names }
 			orderedStops.forEach(item => {
 				if (item.stop.type !== "dropoff") return;
 				(shipmentEmployees[item.stop.raw] ?? []).forEach(e => {
@@ -826,10 +833,13 @@ function renderManifest($container, data) {
 					if (!eName) return;
 					const seq = (e && e.stop_sequence) ? e.stop_sequence : 1;
 					const label = (e && e.pickup_camp_label) ? e.pickup_camp_label : accommodation;
-					if (!boardingByCamp[seq]) boardingByCamp[seq] = { seq: seq, label: label, employees: [], names: new Set() };
-					if (!boardingByCamp[seq].names.has(eName)) {
-						boardingByCamp[seq].names.add(eName);
-						boardingByCamp[seq].employees.push(e);
+					if (!boardingByCamp[label]) {
+						boardingByCamp[label] = { seq: seq, label: label, employees: [], names: new Set() };
+					}
+					if (seq < boardingByCamp[label].seq) boardingByCamp[label].seq = seq;
+					if (!boardingByCamp[label].names.has(eName)) {
+						boardingByCamp[label].names.add(eName);
+						boardingByCamp[label].employees.push(e);
 					}
 				});
 			});
@@ -851,6 +861,10 @@ function renderManifest($container, data) {
 					// and nothing else knows them: the site stops each carry the leg out of
 					// themselves, so without this the opening leg had to be guessed.
 					originLeg: (legs.camps_ordered || [])[0] || null,
+					// A merged run can still load at more than one camp, and each is a
+					// stop the driver has to make.
+					campGroups: Object.values(boardingByCamp).sort((a, b) => a.seq - b.seq),
+					campLegs: legs.camps_ordered || [],
 					activeStop, manifestName, vehicleLabel: pr.label, calcTransit
 				});
 			} else {
@@ -1016,23 +1030,56 @@ function renderManifest($container, data) {
 			});
 		});
 
-		// Stop 1 is the origin depart, so the stops the driver calls at start at 2. The
-		// numbers follow the visit order, which is what makes a revisited stop read as a
-		// later stop rather than the same one again.
-		let html = renderDepartCard(
-			o.firstTimeISO,
-			{ seq: 1, label: o.accommodation, employees: boarding },
-			o.activeStop, o.manifestName, o.vehicleLabel, true, o.qoaTime
-		);
+		// A merged run is one journey, but it is not necessarily one pickup. S-401 leaves
+		// Mahboula at 03:52 and Mangaf at 04:04 before it drops anybody, and rendering a
+		// single origin card lost the second camp entirely: the sheet jumped 03:52 to
+		// 04:46 under a 12-minute label on a 54-minute gap, and the driver was never told
+		// to collect at Mangaf at all.
+		//
+		// isMixed stays true for every camp card. That is what keeps the attendance
+		// trigger on the FIRST pickup only (WI-002074) - renderDepartCard reads it to
+		// decide, so a mid-route camp still cannot start a check.
+		const campGroups = o.campGroups || [];
+		const campLegs = o.campLegs || [];
 
 		// The stop the bus is LEAVING carries the leg, so the gap above each card is
-		// timed by the one before it - the camp for the first drive, then each stop in
-		// turn, and the last stop for the ride home.
+		// timed by the one before it - each camp in turn, then each stop, and the last
+		// stop for the ride home.
+		let html = "";
 		let prevTime = o.firstTimeISO;
-		let prevStop = o.originLeg;
+		let prevStop = null;
+
+		if (campGroups.length) {
+			campGroups.forEach((cg, index) => {
+				// Matched by position: the groups are ordered by the earliest sequence
+				// their riders carry, and camps_ordered by stop_index - both are the
+				// order the run loads at them.
+				const leg = campLegs[index] || {};
+				const departAt = leg.departure
+					? new Date(leg.departure).toISOString()
+					: (index === 0 ? o.firstTimeISO : prevTime);
+				if (index > 0) html += renderTransit(o.calcTransit(prevTime, departAt, prevStop));
+				html += renderDepartCard(departAt, cg, o.activeStop, o.manifestName,
+					o.vehicleLabel, true, leg.qoa_time || (index === 0 ? o.qoaTime : null));
+				prevTime = departAt;
+				prevStop = leg;
+			});
+		} else {
+			// Nothing said which camp anybody boarded at: one origin card with the lot.
+			html += renderDepartCard(
+				o.firstTimeISO,
+				{ seq: 1, label: o.accommodation, employees: boarding },
+				o.activeStop, o.manifestName, o.vehicleLabel, true, o.qoaTime
+			);
+			prevStop = o.originLeg;
+		}
+
+		// The stops the driver calls at start after the camps, so a run loading at two of
+		// them numbers its first drop-off 3 rather than 2.
+		const firstSiteNum = Math.max(campGroups.length, 1) + 1;
 		stops.forEach((stop, i) => {
 			html += renderTransit(o.calcTransit(prevTime, stop.time, prevStop));
-			html += renderSiteStopCard({ stop: stop, siteNum: i + 2, runStartISO: o.firstTimeISO });
+			html += renderSiteStopCard({ stop: stop, siteNum: i + firstSiteNum, runStartISO: o.firstTimeISO });
 			prevTime = stop.time;
 			prevStop = stop;
 		});
