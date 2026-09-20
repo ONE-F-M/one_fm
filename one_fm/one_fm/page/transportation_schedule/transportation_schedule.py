@@ -2153,7 +2153,16 @@ def get_manifest_data_for_plan(plan_name: str):
 		# Daily route span — time of day only, wrapped at midnight so a run that crosses
 		# 00:00 reads as the few hours it is rather than the day it is not.
 		tot_ms = _clock_gap(r_s, r_e)
-		trip_ms = sum(_clock_gap(r.start_time, r.end_time) for r in v_rows)
+		# Trip Time is each RUN from its departure to its final arrival, added up - which
+		# is what the criterion asks for and what the breakdown popover already shows.
+		#
+		# Summing the rows instead counted a shared stop twice. A merged run sets down and
+		# picks up at the same place in the same minute, so it holds two rows over one
+		# window: VHL-L-0004's rows added to 12h22 where its seven runs span 12h03, and
+		# the header then disagreed with the per-trip breakdown printed underneath it.
+		# Row-summing also dropped the camp and home legs, so the figure was wrong in both
+		# directions at once and only looked plausible because the errors partly cancelled.
+		trip_ms = sum(_trip_clock_spans(v_rows, leg_rows.get(vid, [])))
 
 		MAX_DAY_SEC = 86400
 		total_sec = min(int(tot_ms), MAX_DAY_SEC)
@@ -2923,6 +2932,32 @@ def _camp_leg_rows(itinerary, ordered, per_stop, vehicle, camp_departs,
 			),
 		})
 	return rows
+
+
+def _trip_clock_spans(card_rows, leg_rows):
+	"""One span per run: its earliest departure to its latest arrival, by CLOCK.
+
+	A run is every row sharing a ``trip_group``, camp and home legs included - the bus
+	leaves the camp before its first drop and is not done until it is back, so both
+	belong to how long the run took. A row with no group is a run of its own, keyed by
+	identity so two of them never merge.
+
+	Time of day only, for the reason WI-002614 documents: the DATE half of these stamps
+	is the multi-day lock's lifespan, not the day the bus runs.
+	"""
+	spans = {}
+	for index, row in enumerate(list(card_rows) + list(leg_rows)):
+		if not row.start_time:
+			continue
+		key = row.trip_group or f"\0row-{index}"
+		starts, ends = spans.setdefault(key, ([], []))
+		starts.append(row.start_time)
+		ends.append(row.end_time or row.start_time)
+
+	return [
+		_clock_gap(_earliest_by_clock(starts), _latest_by_clock(ends))
+		for starts, ends in spans.values()
+	]
 
 
 def _camp_place_for(card):
