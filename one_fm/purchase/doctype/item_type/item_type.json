@@ -8,6 +8,7 @@
  "engine": "InnoDB",
  "field_order": [
   "item_type",
+  "arabic_name",
   "item_group"
  ],
  "fields": [
@@ -20,6 +21,12 @@
    "unique": 1
   },
   {
+   "description": "How this type is named in Arabic on the Proof of Work letter. Left blank, the letter falls back to the English name.",
+   "fieldname": "arabic_name",
+   "fieldtype": "Data",
+   "label": "Arabic Name"
+  },
+  {
    "fieldname": "item_group",
    "fieldtype": "Link",
    "label": "Item Group",
@@ -27,7 +34,7 @@
   }
  ],
  "links": [],
- "modified": "2021-03-26 14:43:02.208555",
+ "modified": "2026-09-07 08:00:00.000000",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Item Type",

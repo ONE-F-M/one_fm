@@ -41,3 +41,46 @@ class TestTheButtonIsOfferedOnACompletedRequest(FrappeTestCase):
 			s for s in frappe.get_doc("Workflow", "Visa Request").states if s.state == COMPLETED
 		)
 		self.assertEqual(state.doc_status, "1")
+
+
+class TestTheReasonDialogLoadsItsOptions(FrappeTestCase):
+	"""WI-002428, and the defect found testing it on staging: the dialog opened with an
+	empty Cancellation Reason dropdown.
+
+	Nothing was wrong with the field. frappe.meta reads locals.DocType, which a browser only
+	fills in for doctypes it has actually loaded - and a session that had only ever been on
+	Visa Request has never loaded Visa Cancellation Request. It appeared to fix itself
+	locally because visiting the DocType once caches its meta in that browser.
+	"""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		cls.script = SCRIPT.read_text()
+
+	def test_the_meta_is_loaded_before_it_is_read(self):
+		self.assertLess(
+			self.script.index("frappe.model.with_doctype('Visa Cancellation Request'"),
+			self.script.index("frappe.meta.get_docfield('Visa Cancellation Request'"),
+		)
+
+	def test_the_dialog_is_built_inside_the_callback(self):
+		"""with_doctype in front of the read is only half of it - the dialog has to be
+		built after the meta arrives, not alongside the request for it."""
+		self.assertIn("open_cancellation_reason_dialog(frm);", self.script)
+		self.assertLess(
+			self.script.index("frappe.model.with_doctype('Visa Cancellation Request'"),
+			self.script.index("function open_cancellation_reason_dialog(frm)"),
+		)
+
+	def test_an_empty_option_list_says_so_instead_of_opening_a_blank_dialog(self):
+		self.assertIn("No Cancellation Reasons Configured", self.script)
+
+	def test_the_field_it_reads_really_does_offer_something(self):
+		"""The other half of the same defect, and the one a migrate would cause: the
+		dialog can only offer what the DocType's own Select offers."""
+		field = frappe.get_meta("Visa Cancellation Request").get_field("cancellation_reason")
+
+		self.assertIsNotNone(field)
+		self.assertEqual(field.fieldtype, "Select")
+		self.assertTrue([o for o in (field.options or "").split("\n") if o.strip()])

@@ -9,6 +9,7 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils import (getdate, get_first_day, get_last_day, add_days, add_months, date_diff, get_datetime)
 from one_fm.utils import get_week_start_end
+from one_fm.operations.doctype.employee_schedule.employee_schedule import worked_shift_criterion
 from frappe.query_builder.functions import Count
 
 
@@ -179,6 +180,13 @@ class GenerateContractComplianceChecker:
 					| ((EmployeeSchedule.roster_type == "Basic") & (EmployeeSchedule.day_off_ot == 1))
 				)
 			)
+
+			# WI-002437: a double shift still waiting on the DSOT Approver has not put
+			# anybody on the ground, and a rejected one never will. Counting either
+			# reports manpower the client has not been given.
+			unworked = worked_shift_criterion(EmployeeSchedule)
+			if unworked is not None:
+				schedule_conditions &= unworked
 			schedule_count = (
 				frappe.qb.from_(EmployeeSchedule)
 				.select(Count(EmployeeSchedule.name))
