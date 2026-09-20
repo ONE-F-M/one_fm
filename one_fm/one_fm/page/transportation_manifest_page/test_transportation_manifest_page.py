@@ -208,4 +208,8 @@ class TestTheManifestReadsAsOneJourney(FrappeTestCase):
 		self.assertNotIn("dropByCamp", self.page)
 
 	def test_the_drive_home_runs_from_the_last_stop_reached(self):
-		self.assertIn("renderTransit(calcTransit(prevTime, lastTimeISO))", self.page)
+		# It leaves from prevTime - the last stop the bus called at - and is now TIMED by
+		# that stop too: a stop's minutes describe the leg out of it, so the ride home is
+		# the last stop's transit and buffer rather than a bare clock gap (WI-002614).
+		self.assertIn("renderTransit(calcTransit(prevTime, lastTimeISO, prevStop))", self.page)
+		self.assertNotIn("renderTransit(calcTransit(prevTime, lastTimeISO))", self.page)
