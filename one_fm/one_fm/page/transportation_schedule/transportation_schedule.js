@@ -110,8 +110,9 @@ function mountRoutePlannerApp(wrapper, data) {
                 isGenerating: false,          // shipment generation in progress
                 stopDragSourceIndex: null,  // drag-reorder: source stop index
                 stopDragOverIndex: null,    // drag-reorder: hovered stop index
-                // WI-002542 AC2: 'detailed' shows each stop in full; 'compact' reduces it
-                // to one line so a long run can be reordered without scrolling.
+                // 'detailed' shows each stop in full; 'compact' reduces it to one line
+                // so a long run can be reordered without scrolling. Shared across
+                // selections, so the toggle has to stay reachable on every run.
                 stopViewMode: 'detailed',
 
                 // ── Drag tooltip (5-min snap) ──
@@ -5352,8 +5353,10 @@ function injectRPVueTemplate() {
       <template v-if="selectedItem && selectedCard">
         <div id="rp-detail-header">
           <div id="rp-detail-title">Shipment Details</div>
-          <!-- AC2: only offered on a run there is something to compact. -->
-          <div class="rp-view-toggle" v-if="selectedTripStops.length > 1">
+          <!-- Offered on every run that has a stop. stopViewMode is shared across
+               selections, so hiding it on a one-stop run left compact mode stuck on with
+               no way back to the detail. -->
+          <div class="rp-view-toggle" v-if="selectedTripStops.length > 0">
             <button class="rp-view-btn" :class="{ 'rp-view-btn-on': stopViewMode === 'compact' }"
                     @click="stopViewMode = 'compact'"
                     :title="__('Compact — one line per stop, for reordering')">{{ __('Compact') }}</button>
