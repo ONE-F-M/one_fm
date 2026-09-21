@@ -20,6 +20,7 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 from one_fm.custom.custom_field.employee import get_employee_custom_fields
+from one_fm.hiring.utils import DEAD_VISA_REQUEST_STATES, get_visa_request_for_job_offer
 from one_fm.hiring.doctype.onboard_employee.onboard_employee import (
 	VISA_AND_PAM_FIELDS,
 	set_visa_and_pam_details,
@@ -132,3 +133,76 @@ class TestTheExpiryLandsOnTheRelabelledField(FrappeTestCase):
 		field = frappe.get_meta("Work Permit").get_field("date_of_issuance_of_visa")
 		self.assertIsNotNone(field)
 		self.assertEqual(field.fetch_from, "employee.one_fm_date_of_issuance_of_visa")
+
+
+class TestTheVisaRequestIsFoundFromTheJobOffer(FrappeTestCase):
+	"""The note added to WI-002606 on 2026-09-21.
+
+	"when I click Onboard Employee from a Job Offer, the Visa Request associated with that
+	specific offer is correctly fetched." The link field on its own does not do that - it
+	is a plain Link, so somebody has to pick the record - so the onboarding is given it at
+	creation, before the save that fetches everything hanging off it.
+	"""
+
+	def test_an_offer_with_no_visa_request_gets_nothing(self):
+		self.assertIsNone(get_visa_request_for_job_offer("HR-OFF-DOES-NOT-EXIST"))
+
+	def test_no_job_offer_is_not_an_error(self):
+		# create_onboarding_from_job_offer is reached from paths where the offer may be
+		# missing; this must return rather than query for an empty link.
+		self.assertIsNone(get_visa_request_for_job_offer(None))
+		self.assertIsNone(get_visa_request_for_job_offer(""))
+
+	def test_a_live_request_beats_a_newer_rejected_one(self):
+		# The case that makes "most recent" wrong. On live data HR-OFF-2026-00505-1 has a
+		# Completed request from 1 Aug and a Rejected By Operator one from 3 Aug; the
+		# onboarding must carry the Completed one.
+		offer = frappe.get_all(
+			"Visa Request",
+			filters={"workflow_state": ["in", DEAD_VISA_REQUEST_STATES], "job_offer": ["is", "set"]},
+			pluck="job_offer", limit=20)
+		for name in offer:
+			states = frappe.get_all("Visa Request", filters={"job_offer": name},
+									fields=["name", "workflow_state"], order_by="creation desc")
+			live = [r for r in states if r.workflow_state not in DEAD_VISA_REQUEST_STATES]
+			if not live or len(states) < 2:
+				continue
+			self.assertIn(get_visa_request_for_job_offer(name), [r.name for r in live])
+			return
+		self.skipTest("no job offer on this site carries both a live and a dead Visa Request")
+
+	def test_a_dead_request_is_better_than_an_empty_field(self):
+		# Every request rejected: the offer still had one, and the officer is better off
+		# seeing it than seeing nothing.
+		for name in frappe.get_all("Visa Request", filters={"job_offer": ["is", "set"]},
+								   pluck="job_offer", limit=60):
+			states = frappe.get_all("Visa Request", filters={"job_offer": name}, pluck="workflow_state")
+			if states and all(s in DEAD_VISA_REQUEST_STATES for s in states):
+				self.assertIsNotNone(get_visa_request_for_job_offer(name))
+				return
+		self.skipTest("no job offer on this site has only dead Visa Requests")
+
+	def test_the_creation_path_sets_it_before_saving(self):
+		# Setting it after the save would leave every fetched field empty until somebody
+		# opened the onboarding again - which is the whole complaint in the note.
+		import inspect
+		from one_fm.hiring import utils
+		source = inspect.getsource(utils.create_onboarding_from_job_offer)
+		set_at = source.index("o_employee.visa_request = get_visa_request_for_job_offer")
+		self.assertLess(set_at, source.index("o_employee.save("))
+
+
+class TestTheBackfillReadsTheMappingFromTheDoctype(FrappeTestCase):
+	def test_every_fetched_field_is_discovered(self):
+		# The patch derives the mapping from fetch_from rather than repeating it, so a
+		# field added later is backfilled without anyone editing the patch.
+		from one_fm.patches.v15_0.backfill_onboard_employee_visa_request import fetched_fields
+
+		mapping = fetched_fields()
+		self.assertEqual(
+			set(mapping),
+			{"pam_designation", "pam_file", "work_permit_salary",
+			 "visa_centralized_number", "visa_reference_number", "visa_date_of_expiry"},
+		)
+		self.assertEqual(mapping["visa_date_of_expiry"], "visa_expiry_date")
+		self.assertEqual(mapping["visa_centralized_number"], "moi_reference_number")

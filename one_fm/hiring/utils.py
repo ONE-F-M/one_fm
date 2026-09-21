@@ -461,6 +461,43 @@ def update_onboarding_doc(doc, is_trash=False, cancel_oe=False):
 			onboard_employee.reload()
 			onboard_employee.cancel()
 
+# WI-002606: a Visa Request that will never produce a visa. An offer can carry more than
+# one - a rejected attempt and the live one - and on live data the rejected one is
+# sometimes the NEWER of the two, so "most recent" alone picks the wrong record.
+DEAD_VISA_REQUEST_STATES = (
+	"Rejected",
+	"Rejected By Operator",
+	"Rejected By PAM",
+	"Rejected By MOI",
+	"Rejected for Re Issue",
+	"Work Permit Cancelled",
+)
+
+
+def get_visa_request_for_job_offer(job_offer):
+	"""The Visa Request an onboarding for this offer should carry, or None.
+
+	Live requests win over dead ones, and the most recent wins within each group. Falling
+	back to a dead one rather than to nothing is deliberate: the offer really did have a
+	Visa Request, and the onboarding officer is better off seeing the rejected attempt
+	than an empty field that says nothing happened.
+	"""
+	if not job_offer:
+		return None
+
+	requests = frappe.get_all(
+		"Visa Request",
+		filters={"job_offer": job_offer, "docstatus": ["<", 2]},
+		fields=["name", "workflow_state"],
+		order_by="creation desc",
+	)
+	if not requests:
+		return None
+
+	live = [r for r in requests if r.workflow_state not in DEAD_VISA_REQUEST_STATES]
+	return (live or requests)[0].name
+
+
 @frappe.whitelist()
 def btn_create_onboarding_from_job_offer(job_offer):
 	if frappe.db.exists('Job Offer', {'name': job_offer}):
@@ -487,6 +524,10 @@ def create_onboarding_from_job_offer(job_offer):
 			# Start to Create Onboard Employee Document
 			o_employee = frappe.new_doc('Onboard Employee')
 			o_employee.job_offer = job_offer.name
+			# WI-002606: set before the save so the PAM and visa fields that fetch_from
+			# this link are filled by the normal validate, rather than staying empty until
+			# somebody opens the onboarding and saves it again.
+			o_employee.visa_request = get_visa_request_for_job_offer(job_offer.name)
 			o_employee.reports_to = job_offer.reports_to
 			o_employee.date_of_joining = job_offer.estimated_date_of_joining
 			o_employee.employment_type = job_offer.employment_type
