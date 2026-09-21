@@ -1,3 +1,17 @@
+// ── Baseline leg timings (WI-002539) ──────────────────────────────────────────
+// Every modal that asks for a drive seeds these, and the server's own
+// DEFAULT_TRANSIT_MINUTES matches, so the itinerary a modal prints is the one the
+// blocks get drawn from. A stop chained without minutes used to arrive at 30/0.
+const DEFAULT_TRANSIT_MIN = 15;
+const DEFAULT_BUFFER_MIN = 5;
+
+// A leg that actually drives somewhere is never stored as nothing (AC3). This is a
+// floor on what is SAVED, not a default nobody chose: the Trip Builder still refuses
+// to confirm a blank drive ("Every drive needs its minutes"), so all this catches is a
+// leg that reached the canvas at 0 anyway — which would otherwise reach the manifest
+// as an instantaneous drive. A stop with nowhere onward legitimately carries none.
+const MIN_LEG_TRANSIT_MIN = 1;
+
 frappe.pages['transportation-schedule'].on_page_load = function (wrapper) {
     injectRPLoadingStyles();
     $(wrapper).html(`
@@ -79,6 +93,9 @@ function mountRoutePlannerApp(wrapper, data) {
                 svgWidth: 800,         // updated by ResizeObserver
                 rowHeight: 120,
                 selectedItem: null,        // highlighted swim block
+                // Stops ticked in the RHS drawer for a multi-stop removal (WI-002540).
+                // Reactive Set, like assignedCards: Vue 3 tracks add/delete on one.
+                selectedStopIds: new Set(),
                 draggingCard: null,        // card being dragged from pool
                 isDraggingBlock: false,       // block being moved on lane
                 selectedPoolCard: null,    // mobile: tap-to-select card for assignment
@@ -509,6 +526,17 @@ function mountRoutePlannerApp(wrapper, data) {
             selectedTripLegs() {
                 const tripId = this.selectedItem && this.selectedItem.tripId;
                 return (tripId && (this.legTimings || {})[tripId]) || {};
+            },
+
+            // The ticked stops that belong to the run the drawer is SHOWING (WI-002540).
+            // Scoping it here rather than reading selectedStopIds directly is what stops
+            // a tick left behind on another trip being swept up by a removal made on
+            // this one - and it keeps the button's count and its action in step by
+            // construction.
+            checkedStopIds() {
+                return this.selectedTripStops
+                    .filter(s => this.selectedStopIds.has(s.item.id))
+                    .map(s => s.item.id);
             },
 
             selectedTripStops() {
@@ -1017,7 +1045,7 @@ function mountRoutePlannerApp(wrapper, data) {
                                 { fieldtype: 'Column Break' },
                                 {
                                     fieldtype: 'Int', fieldname: 'transit_min',
-                                    label: 'Transit Time (minutes)', default: 30, reqd: 1,
+                                    label: 'Transit Time (minutes)', default: DEFAULT_TRANSIT_MIN, reqd: 1,
                                     description: 'Used when the stop joins a run going the same way. '
                                         + 'Joining a run going the other way is a merge, and the Merge '
                                         + 'Trip window collects the per-leg times itself.'
@@ -1166,7 +1194,18 @@ function mountRoutePlannerApp(wrapper, data) {
                         { fieldtype: 'Section Break' },
                         {
                             fieldtype: 'Int', fieldname: 'duration_min',
-                            label: 'Trip Duration (minutes)', default: 60, reqd: 1
+                            label: 'Transit Time (minutes)', default: DEFAULT_TRANSIT_MIN,
+                            reqd: 1,
+                            description: 'Driving time for this run'
+                        },
+                        { fieldtype: 'Column Break' },
+                        {
+                            // Creating a new trip HERE is still creating a new trip, so it
+                            // opens on the same baseline as the Assign modal (AC1) rather
+                            // than on 60 minutes and no buffer at all.
+                            fieldtype: 'Int', fieldname: 'buffer_min',
+                            label: 'Buffer Time (minutes)', default: DEFAULT_BUFFER_MIN,
+                            description: 'Loading time before the bus pulls away'
                         },
                         { fieldtype: 'Section Break', label: 'Multi-Day Vehicle Lock' },
                         {
@@ -1204,8 +1243,9 @@ function mountRoutePlannerApp(wrapper, data) {
                             return;
                         }
                         d.hide();
-                        const durMs = (vals.duration_min || 60) * 60000;
-                        self._doPlace(card, vehicleId, durMs, isOutbound, !isOutbound, 0,
+                        const durMs = (vals.duration_min || DEFAULT_TRANSIT_MIN) * 60000;
+                        const bufMs = (vals.buffer_min || 0) * 60000;
+                        self._doPlace(card, vehicleId, durMs, isOutbound, !isOutbound, bufMs,
                             vals.trip_name || '', startDt, endDt);
                     }
                 });
@@ -1349,6 +1389,15 @@ function mountRoutePlannerApp(wrapper, data) {
                 return existingItems.length > 0;
             },
 
+            // The transit minutes a preview stop hands to the block that rides it (AC3).
+            // A stop with somewhere onward is a drive and never keeps 0; the last stop of
+            // a run has nowhere to go and keeps exactly what it has.
+            _legTransit(stop) {
+                const minutes = parseInt((stop || {}).transit_minutes, 10) || 0;
+                const drives = !!(stop || {}).next_stop_location;
+                return (drives && minutes < MIN_LEG_TRANSIT_MIN) ? MIN_LEG_TRANSIT_MIN : minutes;
+            },
+
             _mergeShipmentIds(newCard, existingItems) {
                 // In the order the operator has the run, which is the order the drawer
                 // lists it in and the order the server now honours rather than
@@ -1363,10 +1412,17 @@ function mountRoutePlannerApp(wrapper, data) {
                 return Array.from(new Set(ids));
             },
 
-            _openMergeTripModal(newCard, existingItems, vehicleId) {
+            // `seedTimings` carries the minutes an assignment modal already collected, so
+            // the Trip Builder opens on the numbers the dispatcher just read rather than
+            // on defaults (WI-002539 AC1/AC3). Keyed by card id, like `timings` below.
+            _openMergeTripModal(newCard, existingItems, vehicleId, seedTimings) {
                 const self = this;
                 const vehicle = this.planData.vehicles.find(v => v.id === vehicleId) || {};
                 const shipments = this._mergeShipmentIds(newCard, existingItems);
+                // The group a solo run keeps when Confirm applies the preview without a
+                // merge: whatever it already has, or a fresh one for a card just placed.
+                const soloTripId = (existingItems.find((i) => i.tripId) || {}).tripId
+                    || `TRIP_${vehicleId}_${Math.random().toString(36).slice(2, 8)}`;
 
                 // Merging onto an already-merged run must reopen on the minutes the
                 // operator entered last time, not on defaults - otherwise every extra
@@ -1395,6 +1451,10 @@ function mountRoutePlannerApp(wrapper, data) {
                         timings[item.cardId] = { transit_minutes: span, buffer_minutes: 0 };
                     }
                 });
+                // What the assignment modal collected wins over anything derived from the
+                // lane: the dispatcher typed it seconds ago and expects the first leg to
+                // open on it (AC1/AC3).
+                Object.assign(timings, seedTimings || {});
                 // Where the run already leaves from, in the site's own clock. Passed so the
                 // modal opens on the time the lane shows rather than one re-derived from
                 // the shift - and so an untouched run is shifted by exactly nothing.
@@ -1437,6 +1497,26 @@ function mountRoutePlannerApp(wrapper, data) {
                     ],
                     primary_action_label: __('Confirm & Apply'),
                     primary_action() {
+                        // A run of ONE card has nothing to merge with: the endpoint needs
+                        // two cards to mint a trip_group, and asking it for one throws
+                        // "Nothing to Merge" (WI-002539 AC1 / WI-002578 AC6). The card
+                        // keeps its own direction and the run is its own group, so the
+                        // preview is applied directly. Anything with a second card still
+                        // goes through the merge, which is what records
+                        // pre_merge_trip_direction.
+                        if (shipments.length < 2) {
+                            d.hide();
+                            self._applyMerge(newCard, existingItems, vehicleId, {
+                                trip_group: soloTripId,
+                                trip_direction: { OUTBOUND: 'Outward', RETURN: 'Return' }[
+                                    (newCard || existingItems[0] || {}).direction
+                                ] || 'Outward',
+                                // Nothing was merged, so a rejected save has nothing to
+                                // put back.
+                                merged_shipments: [],
+                            }, previewStops, departureShiftMs, runStartMs);
+                            return;
+                        }
                         frappe.call({
                             method: 'one_fm.one_fm.doctype.transportation_shipment.transportation_shipment.merge_trip_shipments',
                             args: { shipments: shipments },
@@ -1444,6 +1524,8 @@ function mountRoutePlannerApp(wrapper, data) {
                             callback(r) {
                                 if (!r.message) return;
                                 d.hide();
+                                r.message.merged_shipments =
+                                    (r.message.itinerary || []).map((s) => s.shipment);
                                 self._applyMerge(newCard, existingItems, vehicleId, r.message,
                                     previewStops, departureShiftMs, runStartMs);
                             }
@@ -1479,9 +1561,19 @@ function mountRoutePlannerApp(wrapper, data) {
 
                             d.fields_dict.preview.$wrapper.find('.rp-leg-min').off('change').on('change', function () {
                                 const ship = this.dataset.shipment;
-                                const key = this.dataset.key;
+                                // BOTH of the leg's minute fields, not just the edited one
+                                // (AC4). A key left out of `timings` is refilled by the
+                                // server's own default — DEFAULT_TRANSIT_MINUTES for the
+                                // drive, 0 for the buffer — so typing a buffer on a leg
+                                // that had no entry yet sent its transit back as 0, and
+                                // the operator watched the number they had just read
+                                // reset itself. Reading the row keeps the pair together.
                                 timings[ship] = timings[ship] || {};
-                                timings[ship][key] = parseInt(this.value, 10) || 0;
+                                (this.closest('tr') || this).querySelectorAll('.rp-leg-min')
+                                    .forEach((input) => {
+                                        timings[ship][input.dataset.key] =
+                                            parseInt(input.value, 10) || 0;
+                                    });
                                 render();   // re-times every stop after this one
                             });
                         }
@@ -1719,7 +1811,7 @@ function mountRoutePlannerApp(wrapper, data) {
                         id: `${newCard.id}_MIX_${uid}`, cardId: newCard.id, vehicleId,
                         direction, start: new Date(lastEnd), end: new Date(lastEnd),
                         headcount: newCard.headcount, conflict: false,
-                        transitMinutes: parseInt(adj.transit_minutes, 10) || 0,
+                        transitMinutes: self._legTransit(adj),
                         bufferMinutes: parseInt(adj.buffer_minutes, 10) || 0,
                         // A merged block belongs to the run it joined, name and all - without
                         // this the new card saved with a blank Trip Name while every block
@@ -1735,7 +1827,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 self.swimItems.forEach((item) => {
                     const leg = legs[shipmentOf(item.cardId)];
                     if (!leg || item.tripId !== tripId) return;
-                    item.transitMinutes = parseInt(leg.transit_minutes, 10) || 0;
+                    item.transitMinutes = self._legTransit(leg);
                     item.bufferMinutes = parseInt(leg.buffer_minutes, 10) || 0;
                 });
 
@@ -1778,11 +1870,16 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 // The shipments are already Mixed by the time the plan is saved, so a
                 // rejected save has to put them back - otherwise they return to the pool
-                // describing a journey they no longer have.
+                // describing a journey they no longer have. A run of one card was never
+                // merged, so it has nothing to undo and the reload stands on its own.
                 self.persistAssignments((reload) => {
+                    if (!merged.merged_shipments || !merged.merged_shipments.length) {
+                        reload();
+                        return;
+                    }
                     frappe.call({
                         method: 'one_fm.one_fm.doctype.transportation_shipment.transportation_shipment.undo_merge',
-                        args: { shipments: merged.itinerary.map((s) => s.shipment) },
+                        args: { shipments: merged.merged_shipments },
                         always: reload
                     });
                 });
@@ -1822,15 +1919,12 @@ function mountRoutePlannerApp(wrapper, data) {
                 const stops = this._inRunOrder(
                     this.swimItems.filter(i => i.tripId === item.tripId)
                 );
-                // A run of one stop has nothing to sequence, and the merge endpoint needs
-                // two cards to name a run; use Merge into Trip to give it a second stop.
-                if (stops.length < 2) {
-                    frappe.show_alert({
-                        message: __('A run needs a second stop before its legs can be timed.'),
-                        indicator: 'orange'
-                    }, 5);
-                    return;
-                }
+                // A single-stop run is timeable now (WI-002539 AC1 / WI-002578 AC6): the
+                // preview builds its camp -> site -> home shape from the one card, so the
+                // outbound drive AND the run back to base both have a leg to be timed on.
+                // Only the MERGE still needs two cards, and Confirm skips it for a run of
+                // one. The guard used to send the operator away to Merge into Trip.
+                if (!stops.length) return;
                 this._openMergeTripModal(null, stops, item.vehicleId);
             },
 
@@ -2081,14 +2175,14 @@ function mountRoutePlannerApp(wrapper, data) {
                         {
                             fieldtype: 'Int', fieldname: 'transit_min',
                             label: 'Transit Time (minutes)',
-                            default: 30, reqd: 1,
+                            default: DEFAULT_TRANSIT_MIN, reqd: 1,
                             description: 'Driving time between stops'
                         },
                         { fieldtype: 'Column Break' },
                         {
                             fieldtype: 'Int', fieldname: 'dwell_min',
                             label: 'Dwell/Buffer Time (minutes)',
-                            default: 10,
+                            default: DEFAULT_BUFFER_MIN,
                             description: 'Loading/unloading time at previous stop before departing'
                         }
                     ],
@@ -2479,7 +2573,10 @@ function mountRoutePlannerApp(wrapper, data) {
                             description: isOutbound
                                 ? 'Time for loading employees at accommodation'
                                 : 'Time for loading employees at site',
-                            default: 15, reqd: 1
+                            // The dispatchers' own baseline for a new trip (WI-002539
+                            // AC1). It carries straight through to the Trip Builder's
+                            // first leg, so the number seen here is the number timed.
+                            default: DEFAULT_BUFFER_MIN, reqd: 1
                         },
                         {
                             fieldtype: 'Column Break'
@@ -2490,7 +2587,7 @@ function mountRoutePlannerApp(wrapper, data) {
                             description: isOutbound
                                 ? 'Driving time from accommodation to site'
                                 : 'Driving time from site to accommodation',
-                            default: 60, reqd: 1
+                            default: DEFAULT_TRANSIT_MIN, reqd: 1
                         },
                         { fieldtype: 'Section Break', label: 'Multi-Day Vehicle Lock' },
                         {
@@ -2507,7 +2604,7 @@ function mountRoutePlannerApp(wrapper, data) {
                             default: self._defaultLockEnd(card)
                         }
                     ],
-                    primary_action_label: 'Place on Timeline',
+                    primary_action_label: __('Open Trip Builder'),
                     primary_action(vals) {
                         // ── Validate the multi-day lock window before placing ──
                         const startDt = vals.start_datetime || '';
@@ -2535,10 +2632,27 @@ function mountRoutePlannerApp(wrapper, data) {
                             return;
                         }
                         d.hide();
-                        const bufferMs = (vals.buffer_min || 15) * 60000;
-                        const transitMs = (vals.duration_min || 60) * 60000;
-                        self._doPlace(card, vehicleId, transitMs, isOutbound, !isOutbound,
-                            bufferMs, vals.trip_name || '', startDt, endDt);
+                        const bufferMin = vals.buffer_min || DEFAULT_BUFFER_MIN;
+                        const transitMin = vals.duration_min || DEFAULT_TRANSIT_MIN;
+                        self._doPlace(card, vehicleId, transitMin * 60000, isOutbound,
+                            !isOutbound, bufferMin * 60000, vals.trip_name || '',
+                            startDt, endDt);
+
+                        // The card is on the lane; now open the Trip Builder on it so the
+                        // outbound and the drive back can be timed in one go, seeded with
+                        // the minutes just entered (WI-002539 AC1). The block has to exist
+                        // first — the Builder times a run that is already placed, and
+                        // Confirm & Apply re-times these same blocks.
+                        const placed = self.swimItems.filter((i) => i.cardId === card.id
+                            && i.vehicleId === vehicleId);
+                        if (placed.length) {
+                            self._openMergeTripModal(null, placed, vehicleId, {
+                                [card.id]: {
+                                    transit_minutes: transitMin,
+                                    buffer_minutes: bufferMin,
+                                },
+                            });
+                        }
                     }
                 });
                 d.show();
@@ -2910,7 +3024,12 @@ function mountRoutePlannerApp(wrapper, data) {
                 document.addEventListener('touchcancel', onTouchCancel);
             },
 
-            closeDetail() { this.selectedItem = null; },
+            closeDetail() {
+                this.selectedItem = null;
+                // Ticks belong to the run that was open; leaving them set would carry
+                // them into the next run the operator looks at (WI-002540).
+                this.selectedStopIds.clear();
+            },
 
             // What Remove from Lane will actually take. A run of several stops loses
             // ONE of them, and clicking its block always selects stop 1 - so the button
@@ -2928,34 +3047,99 @@ function mountRoutePlannerApp(wrapper, data) {
                 ]);
             },
 
-            removeSelectedFromLane() {
-                if (!this.selectedItem) return;
-                const itemId = this.selectedItem.id;
-                const cid = this.selectedItem.cardId;
-                const dir = this.selectedItem.direction;
+            // ── One way off a lane, whatever asked (WI-002540 AC1) ──────────────
+            // A single stop, a ticked selection, or a whole trip differ only in which
+            // ids they collect. What follows is identical and used to live inside
+            // removeSelectedFromLane alone, so the new controls would each have been a
+            // second copy of it - and a copy that forgot _resyncTripDirection would
+            // leave a run flagged MIXED after the stop that made it mixed had gone.
+            //
+            // Both of the WI's notes fall out of the save rather than needing anything
+            // here: save_assignments rewrites the Route Plan's assignment rows, and
+            // _sync_shipment_statuses reverts every shipment this plan just dropped to
+            // Unassigned. persistAssignments fires immediately (WI-002538 made that
+            // reliable), so "instantly" is already true.
+            _removeItems(itemIds) {
+                const ids = new Set(itemIds);
+                if (!ids.size) return 0;
 
-                // Remove only the selected block, not both directions
-                const tripId = this.selectedItem.tripId;
-                this.swimItems = this.swimItems.filter(i => i.id !== itemId);
+                const going = this.swimItems.filter(i => ids.has(i.id));
+                const trips = new Set(going.map(i => i.tripId).filter(Boolean));
+                const cards = new Set(going.map(i => i.cardId));
 
-                // What is left of the run may now travel only one way (AC3).
-                this._resyncTripDirection(tripId);
+                this.swimItems = this.swimItems.filter(i => !ids.has(i.id));
 
-                // Only fully un-assign the card if no blocks remain for it
-                const remaining = this.swimItems.filter(i => i.cardId === cid);
-                if (remaining.length === 0) {
-                    this.assignedCards.delete(cid);
-                }
+                // What is left of each run may now travel only one way (AC3).
+                trips.forEach((tripId) => this._resyncTripDirection(tripId));
 
-                this.selectedItem = null;
+                // A card returns to the unassigned sidebar only once NOTHING of it is
+                // left anywhere: a card placed in both directions keeps its place while
+                // one leg still stands.
+                cards.forEach((cardId) => {
+                    if (!this.swimItems.some(i => i.cardId === cardId)) {
+                        this.assignedCards.delete(cardId);
+                    }
+                });
+
+                if (this.selectedItem && ids.has(this.selectedItem.id)) this.selectedItem = null;
+                this.selectedStopIds.clear();
                 this.checkConflicts();
                 this.canSave = this.assignedCards.size > 0 || this.swimItems.length > 0;
                 this.persistAssignments();
+                return going.length;
+            },
+
+            // A stop is ticked for removal without becoming the selected stop - the
+            // drawer's click already means "act on this one".
+            toggleStopChecked(itemId) {
+                if (this.selectedStopIds.has(itemId)) this.selectedStopIds.delete(itemId);
+                else this.selectedStopIds.add(itemId);
+            },
+
+            removeSelectedFromLane() {
+                if (!this.selectedItem) return;
+                const dir = this.selectedItem.direction;
+                this._removeItems([this.selectedItem.id]);
 
                 frappe.show_alert({
                     message: `${this.dirLabel(dir)} removed`,
                     indicator: 'orange'
                 }, 3);
+            },
+
+            // AC1: several stops at once, for a run being taken apart a piece at a time.
+            removeCheckedStops() {
+                const removed = this._removeItems(this.checkedStopIds);
+                if (!removed) return;
+
+                frappe.show_alert({
+                    message: __('{0} stop(s) removed - their cards are back in the unassigned list', [removed]),
+                    indicator: 'orange'
+                }, 4);
+            },
+
+            // AC1: the whole run in one action. Confirmed first because it can take a
+            // dozen stops off the board at once and there is no undo.
+            removeEntireTrip() {
+                const item = this.selectedItem;
+                if (!item) return;
+                const ids = item.tripId
+                    ? this.swimItems.filter(i => i.tripId === item.tripId).map(i => i.id)
+                    : [item.id];
+                const name = item.tripName || this.dirLabel(item.direction);
+                const self = this;
+
+                frappe.confirm(
+                    __('Remove the whole of {0} - all {1} stop(s)? Every card goes back to the unassigned list.',
+                       [name, ids.length]),
+                    () => {
+                        self._removeItems(ids);
+                        frappe.show_alert({
+                            message: __('Trip {0} removed', [name]),
+                            indicator: 'orange'
+                        }, 4);
+                    }
+                );
             },
 
             reassignSelectedBlock() {
@@ -3246,14 +3430,14 @@ function mountRoutePlannerApp(wrapper, data) {
                         {
                             fieldtype: 'Int', fieldname: 'transit_min',
                             label: 'Transit Time (minutes)',
-                            default: 30, reqd: 1,
+                            default: DEFAULT_TRANSIT_MIN, reqd: 1,
                             description: 'Driving time from previous stop'
                         },
                         { fieldtype: 'Column Break' },
                         {
                             fieldtype: 'Int', fieldname: 'dwell_min',
                             label: 'Dwell/Buffer Time (minutes)',
-                            default: 10,
+                            default: DEFAULT_BUFFER_MIN,
                             description: 'Loading/unloading time at previous stop'
                         }
                     ],
@@ -3298,7 +3482,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
                         // Append logic
                         const dwellMs = (vals.dwell_min || 0) * 60000;
-                        const transitMs = (vals.transit_min || 30) * 60000;
+                        const transitMs = (vals.transit_min || DEFAULT_TRANSIT_MIN) * 60000;
                         const lastEnd = new Date(Math.max(...targetTripItems.map(i => new Date(i.end).getTime())));
 
                         const segStart = new Date(lastEnd.getTime() + dwellMs);
@@ -3320,7 +3504,7 @@ function mountRoutePlannerApp(wrapper, data) {
                             tripName: existingTripName,
                             stopIndex: totalStops + 1,
                             bufferMinutes: vals.dwell_min || 0,
-                            transitMinutes: vals.transit_min || 30
+                            transitMinutes: vals.transit_min || DEFAULT_TRANSIT_MIN
                         });
 
                         const allTrip = self.swimItems.filter(i => i.tripId === targetTripId);
@@ -4935,6 +5119,12 @@ function injectRPVueTemplate() {
                    :class="{ 'rp-stop-drag-over': stopDragOverIndex === (stop.stopNum - 1) && stopDragSourceIndex !== null && stopDragSourceIndex !== (stop.stopNum - 1) }"
                    :style="'cursor:pointer;border-left:3px solid ' + (stop.item.id === selectedItem.id ? '#f97316' : '#1565c0')">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                  <!-- Tick to include this stop in a multi-stop removal (WI-002540 AC1).
+                       .stop so ticking does not also re-select the stop underneath. -->
+                  <input type="checkbox" class="rp-stop-check"
+                         :checked="selectedStopIds.has(stop.item.id)"
+                         @click.stop="toggleStopChecked(stop.item.id)"
+                         :title="__('Select this stop for removal')">
                   <span class="rp-icon rp-stop-drag-handle" title="Drag to reorder">drag_indicator</span>
                   <span class="rp-stop-num rp-stop-num-out">{{ stop.stopNum }}</span>
                   <div style="font-size:13px;font-weight:700;color:#111">{{ stop.card.site_location || 'Unknown' }}</div>
@@ -5224,6 +5414,17 @@ function injectRPVueTemplate() {
           <button class="rp-detail-btn rp-detail-btn-danger" @click="removeSelectedFromLane">
             <span class="rp-icon">close</span> {{ removeButtonLabel() }}
           </button>
+          <!-- Only once something is ticked: an always-on button that removes nothing
+               is a button that has to be explained (AC1). -->
+          <button v-if="checkedStopIds.length > 0"
+                  class="rp-detail-btn rp-detail-btn-danger" @click="removeCheckedStops">
+            <span class="rp-icon">checklist</span>
+            {{ __('Remove {0} Selected Stop(s)', [checkedStopIds.length]) }}
+          </button>
+          <button v-if="selectedTripStops.length > 1"
+                  class="rp-detail-btn rp-detail-btn-danger" @click="removeEntireTrip">
+            <span class="rp-icon">delete_sweep</span> {{ __('Remove Entire Trip') }}
+          </button>
         </div>
       </template>
     </div>
@@ -5426,6 +5627,12 @@ function injectRPStyles() {
             color: var(--md-sys-color-on-surface-variant);
         }
         .rp-stop-draggable:hover .rp-stop-drag-handle { opacity: 0.7; }
+        /* The multi-stop removal tick (WI-002540). Sized to the stop number beside it
+           so the row keeps its rhythm, and never shrinks when the header wraps. */
+        .rp-stop-check {
+            width: 15px; height: 15px; flex-shrink: 0; cursor: pointer;
+            accent-color: var(--rp-color-trip-chain);
+        }
         .rp-stop-draggable:active .rp-stop-drag-handle { cursor: grabbing; }
         .rp-stop-drag-over {
             border-top: 2.5px solid var(--rp-color-trip-chain) !important;
