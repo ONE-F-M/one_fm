@@ -91,6 +91,7 @@ import {
   handleSelectFieldUpdate,
   handleLinkFieldUpdate,
 } from "@/composables/formCustomisation";
+import { applyFetchFrom } from "@/composables/fetchFrom";
 
 const route = useRoute();
 const router = useRouter();
@@ -154,6 +155,8 @@ function applyFilters(fieldname, filters = null) {
 
 function handleOnFieldChange(e, fieldname, fieldtype) {
   templateFields[fieldname] = e.value;
+  // keep fetch_from fields in sync with their link, like the desk form does
+  applyFetchFrom(templateData.value?.fields || [], templateFields, fieldname);
 }
 
 async function fetchTicketDetails() {
