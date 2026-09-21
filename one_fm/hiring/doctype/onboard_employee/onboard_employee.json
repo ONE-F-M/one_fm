@@ -11,6 +11,7 @@
   "onboarding_section",
   "job_offer",
   "job_applicant",
+  "visa_request",
   "reports_to",
   "employee",
   "employee_name",
@@ -72,6 +73,9 @@
   "column_break_42",
   "passport_expire",
   "passport_type",
+  "pam_information_section",
+  "pam_designation",
+  "pam_file",
   "visa_and_residency_section",
   "visa_type",
   "civil_id",
@@ -79,6 +83,8 @@
   "column_break_bkfj",
   "date_of_entry",
   "visa_centralized_number",
+  "visa_reference_number",
+  "visa_date_of_expiry",
   "job_offer_details_section",
   "salary_structure",
   "job_offer_total_salary",
@@ -89,6 +95,7 @@
   "column_break_26",
   "salary_details",
   "salary_mode",
+  "work_permit_salary",
   "uniform_measurements_section",
   "is_uniform_needed_for_this_job",
   "shoulder_width",
@@ -216,6 +223,12 @@
    "label": "Job Applicant",
    "options": "Job Applicant",
    "reqd": 1
+  },
+  {
+   "fieldname": "visa_request",
+   "fieldtype": "Link",
+   "label": "Visa Request",
+   "options": "Visa Request"
   },
   {
    "fieldname": "job_offer",
@@ -503,6 +516,25 @@
    "fieldtype": "Select",
    "label": "Passport Type",
    "options": "\nDiplomat\nNormal"
+  },
+  {
+   "fieldname": "pam_information_section",
+   "fieldtype": "Section Break",
+   "label": "PAM Information"
+  },
+  {
+   "fieldname": "pam_designation",
+   "fieldtype": "Link",
+   "label": "PAM Designation",
+   "options": "PAM Designation List",
+   "fetch_from": "visa_request.custom_pam_designation_list"
+  },
+  {
+   "fieldname": "pam_file",
+   "fieldtype": "Link",
+   "label": "PAM File",
+   "options": "PAM License Details",
+   "fetch_from": "visa_request.custom_pam_file"
   },
   {
    "collapsible": 1,
@@ -1475,6 +1507,12 @@
    "options": "\nBank\nCash\nCheque"
   },
   {
+   "fieldname": "work_permit_salary",
+   "fieldtype": "Currency",
+   "label": "Work Permit Salary",
+   "fetch_from": "visa_request.work_permit_salary"
+  },
+  {
    "depends_on": "eval:!doc.attendance_by_timesheet",
    "fieldname": "shift_working_html",
    "fieldtype": "HTML",
@@ -1562,14 +1600,27 @@
   {
    "fieldname": "visa_centralized_number",
    "fieldtype": "Data",
-   "label": "Visa Centralized Number"
+   "label": "Visa Centralized Number (MOI Reference Number)",
+   "fetch_from": "visa_request.moi_reference_number"
+  },
+  {
+   "fieldname": "visa_reference_number",
+   "fieldtype": "Data",
+   "label": "Visa Reference Number",
+   "fetch_from": "visa_request.visa_reference_number"
+  },
+  {
+   "fieldname": "visa_date_of_expiry",
+   "fieldtype": "Date",
+   "label": "Visa Date of Expiry",
+   "fetch_from": "visa_request.visa_expiry_date"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-04 07:30:21.125399",
+ "modified": "2026-09-21 10:30:00.000000",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
