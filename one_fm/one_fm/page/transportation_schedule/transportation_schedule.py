@@ -1,7 +1,7 @@
 import frappe
 import requests
 from frappe import _
-from frappe.utils import cint
+from frappe.utils import cint, get_datetime
 from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
 from one_fm.one_fm.doctype.transportation_shipment.roster_overlay import apply_to_shift_map
 from one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log import get_handover_windows
@@ -1581,6 +1581,46 @@ def load_assignments(plan_name: str = ""):
     }
 
 
+def _clock_seconds(stamp):
+	"""Seconds past midnight of an assignment stamp, or None.
+
+	The DATE half of these stamps is the multi-day lock's lifespan, not the day the bus
+	runs (TR-8), so every comparison between two of them has to be made on the time of
+	day alone. WI-002614 fixed the same mistake on the manifest page; this is its
+	server-side twin.
+	"""
+	if not stamp:
+		return None
+	try:
+		at = get_datetime(stamp)
+	except Exception:
+		return None
+	if at is None:
+		return None
+	return at.hour * 3600 + at.minute * 60 + at.second
+
+
+def _earliest_by_clock(stamps):
+	"""The stamp whose CLOCK time is earliest, returned unchanged."""
+	dated = [(sec, s) for s in stamps if (sec := _clock_seconds(s)) is not None]
+	return min(dated)[1] if dated else ""
+
+
+def _latest_by_clock(stamps):
+	"""The stamp whose CLOCK time is latest, returned unchanged."""
+	dated = [(sec, s) for s in stamps if (sec := _clock_seconds(s)) is not None]
+	return max(dated)[1] if dated else ""
+
+
+def _clock_gap(start, end) -> int:
+	"""Seconds from one stamp to another, by time of day, wrapping at midnight."""
+	a, b = _clock_seconds(start), _clock_seconds(end)
+	if a is None or b is None:
+		return 0
+	gap = b - a
+	return gap + 86400 if gap < 0 else gap
+
+
 def visit_times(row_start, row_end, own_direction, camp_departure=None) -> tuple:
 	"""When the bus is where each half of a card happens: (boards, alights).
 
@@ -2106,27 +2146,35 @@ def get_manifest_data_for_plan(plan_name: str):
 		# Route start/end times. The bus leaves the camp before its first drop and is
 		# not done until it is back, so both ends come from the legs no card is filed
 		# against where the run has them.
-		r_s = min(
-			[v_rows[0].start_time or ""]
-			+ [row.start_time for row in leg_rows.get(vid, []) if row.start_time]
+		# Picked by CLOCK time, not by the whole stamp (WI-002545 AC1). These stamps
+		# carry two things: the TIME is the daily trip window, the DATE is the multi-day
+		# lock's lifespan (TR-8). min()/max() over the ISO strings sorts by the lock
+		# rather than by when the bus runs, so a vehicle whose rows carry different lock
+		# dates had its route span measured between two unrelated days and then reduced
+		# modulo a day - which is how VHL-L-0010 reported a Total Time of 1h40 while its
+		# Trip Time was 8h07, a bus driving eight hours inside a two-hour shift.
+		r_s = _earliest_by_clock(
+			[v_rows[0].start_time]
+			+ [row.start_time for row in leg_rows.get(vid, [])]
 		)
-		r_e = max(
-			[v_rows[-1].end_time or ""]
-			+ [row.end_time for row in leg_rows.get(vid, []) if row.end_time]
+		r_e = _latest_by_clock(
+			[v_rows[-1].end_time]
+			+ [row.end_time for row in leg_rows.get(vid, [])]
 		)
-		try:
-			# Daily route span — time-of-day only, so a multi-day lock does not
-			# balloon the reported route/trip duration into days.
-			tot_ms = (dt_cls.fromisoformat(r_e.replace("Z", "+00:00")).replace(tzinfo=None)
-					  - dt_cls.fromisoformat(r_s.replace("Z", "+00:00")).replace(tzinfo=None)).total_seconds() % 86400
-			trip_ms = sum(
-				int((dt_cls.fromisoformat((r.end_time or "").replace("Z", "+00:00")).replace(tzinfo=None)
-						- dt_cls.fromisoformat((r.start_time or "").replace("Z", "+00:00")).replace(tzinfo=None)).total_seconds()) % 86400
-				for r in v_rows
-			)
-		except Exception:
-			tot_ms = 0
-			trip_ms = 0
+		# Daily route span — time of day only, wrapped at midnight so a run that crosses
+		# 00:00 reads as the few hours it is rather than the day it is not.
+		tot_ms = _clock_gap(r_s, r_e)
+		# Trip Time is each RUN from its departure to its final arrival, added up - which
+		# is what the criterion asks for and what the breakdown popover already shows.
+		#
+		# Summing the rows instead counted a shared stop twice. A merged run sets down and
+		# picks up at the same place in the same minute, so it holds two rows over one
+		# window: VHL-L-0004's rows added to 12h22 where its seven runs span 12h03, and
+		# the header then disagreed with the per-trip breakdown printed underneath it.
+		# Row-summing also dropped the camp and home legs, so the figure was wrong in both
+		# directions at once and only looked plausible because the errors partly cancelled.
+		trip_spans = _trip_clock_spans(v_rows, leg_rows.get(vid, []))
+		trip_ms = sum(trip_spans.values())
 
 		MAX_DAY_SEC = 86400
 		total_sec = min(int(tot_ms), MAX_DAY_SEC)
@@ -2167,8 +2215,11 @@ def get_manifest_data_for_plan(plan_name: str):
 				if leg.qoa_time and not held.get("qoa_time"):
 					held["qoa_time"] = str(leg.qoa_time)
 
-		for held in trip_legs.values():
+		for group_key, held in trip_legs.items():
 			held.get("camps_ordered", []).sort(key=lambda camp: camp["stop_index"])
+			# The badge is the sum of these, so the breakdown under it prints the same
+			# seconds rather than measuring the run a second time in another timezone.
+			held["span_seconds"] = trip_spans.get(group_key, 0)
 
 		routes.append({
 			"vehicleIndex": vi, "vehicleLabel": v_label,
@@ -2896,6 +2947,38 @@ def _camp_leg_rows(itinerary, ordered, per_stop, vehicle, camp_departs,
 			),
 		})
 	return rows
+
+
+def _trip_clock_spans(card_rows, leg_rows) -> dict:
+	"""``{trip group: seconds}`` - each run from its departure to its final arrival.
+
+	A run is every row sharing a ``trip_group``, camp and home legs included - the bus
+	leaves the camp before its first drop and is not done until it is back, so both
+	belong to how long the run took. A row with no group is a run of its own, keyed by
+	identity so two of them never merge.
+
+	Time of day only, for the reason WI-002614 documents: the DATE half of these stamps
+	is the multi-day lock's lifespan, not the day the bus runs.
+
+	Returned per run rather than as a bare total so the manifest's breakdown can print
+	the SAME number the badge is summed from. Measuring it twice is how they came to
+	disagree: the badge is computed here, in UTC, where a run from 22:40 to 00:30 Kuwait
+	does not cross midnight at all - and the page re-derived it in Asia/Kuwait, where it
+	does. One number, sent once, cannot drift.
+	"""
+	spans = {}
+	for index, row in enumerate(list(card_rows) + list(leg_rows)):
+		if not row.start_time:
+			continue
+		key = row.trip_group or f"\0row-{index}"
+		starts, ends = spans.setdefault(key, ([], []))
+		starts.append(row.start_time)
+		ends.append(row.end_time or row.start_time)
+
+	return {
+		key: _clock_gap(_earliest_by_clock(starts), _latest_by_clock(ends))
+		for key, (starts, ends) in spans.items()
+	}
 
 
 def _camp_place_for(card):

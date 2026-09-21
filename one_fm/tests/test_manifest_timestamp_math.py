@@ -338,14 +338,13 @@ class TestAMergedRunStopsAtEveryCamp(FrappeTestCase):
 		self.assertIn("if (index > 0) html += renderTransit(o.calcTransit(prevTime, departAt, prevStop));",
 					  self.page)
 
-	def test_the_attendance_trigger_still_belongs_to_the_first_pickup_only(self):
-		# isMixed is passed true for every camp card, and renderDepartCard reads it to keep
-		# the button on the run's FIRST pickup (WI-002074). A mid-route camp must not start
-		# a check. Read as a position rather than a seq since WI-002590: seq is the rider's
-		# stop number across the run, so six of VHL-L-0004's seven trips matched no camp at
-		# all and had no trigger button.
+	def test_the_attendance_trigger_walks_the_runs_camps_in_turn(self):
+		# isMixed is passed true for every camp card. Since WI-002590 a merged run walks
+		# its camps like any other: each is offered only once the one before it is
+		# COMPLETE, which is WI-002074's actual concern, while a second camp's passengers
+		# can still mark attendance - previously they never could.
 		self.assertIn("o.vehicleLabel, true, leg.qoa_time", self.page)
-		self.assertIn("(position === 0 && !activeStop)", self.page)
+		self.assertIn("position === activeIndex && !isActive", self.page)
 
 	def test_the_site_stops_are_numbered_after_the_camps(self):
 		# Two camps means the first drop-off is stop 3, not stop 2.
