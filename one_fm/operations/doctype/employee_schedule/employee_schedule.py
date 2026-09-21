@@ -11,6 +11,7 @@ from frappe.query_builder.functions import Coalesce
 from one_fm.operations.doctype.operations_shift.operations_shift import resolve_shift_timing
 from one_fm.utils import get_week_start_end, get_month_start_end
 from one_fm.processor import sendemail
+from one_fm.operations.doctype.employee_schedule import dsot_notification
 
 # WI-002283: the state a second, overtime schedule waits in while somebody decides
 # whether the employee may work twice that day. Approving lands on Active rather than a
@@ -160,6 +161,11 @@ def hold_overtime_for_approval(names):
 			"Employee Schedule", name, "workflow_state", PENDING_DSOT, update_modified=False
 		)
 		frappe.get_doc("Employee Schedule", name).request_dsot_approval()
+
+	# WI-002602: the assignments above are per row, because the approver works a row at a
+	# time. The EMAIL is not - a week of overtime is one request to the person reading it,
+	# and it goes out once the roster's own transaction commits.
+	dsot_notification.queue(pending)
 
 	return pending
 
@@ -386,8 +392,22 @@ class EmployeeSchedule(Document):
 				"description": _("Approve or reject overtime for {0} on {1}").format(
 					self.employee_name or self.employee, self.date
 				),
-				"notify": 1,
+				# WI-002602: the ToDo still goes in front of the approver - it is what
+				# their task list and the Approve/Reject flow are built on - but it no
+				# longer carries its own email. ERPNext sends one Assignment Notification
+				# per assignment, so a week of overtime was eight near-identical messages
+				# for what the approver experiences as a single request. One consolidated
+				# email per continuous cycle is sent instead, on commit.
+				#
+				# Naming the approver as assigner is what silences the per-row mail:
+				# assign_to.add() ignores a "notify" argument entirely and always calls
+				# notify_assignment(), which returns without notifying when the assigner
+				# and the assignee are the same user. The ToDo, the document share and
+				# the follow are all created exactly as before - only the mail is
+				# dropped, and the real requestor is named in the consolidated email.
+				"assigned_by": approver,
 			})
+			dsot_notification.queue([self.name])
 		except Exception:
 			# A schedule that saved must not be undone because the notification failed.
 			frappe.log_error(
