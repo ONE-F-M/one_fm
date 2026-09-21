@@ -158,9 +158,39 @@ class TestCompactView(FrappeTestCase):
 		self.assertIn(""":class="{ 'rp-stop-compact-row': stopViewMode === 'compact' }\"""",
 					  self.canvas)
 
-	def test_the_toggle_is_only_offered_where_it_helps(self):
-		self.assertIn("""<div class="rp-view-toggle" v-if="selectedTripStops.length > 1">""",
-					  self.canvas)
+	def test_the_toggle_is_offered_on_a_one_stop_run(self):
+		# stopViewMode is shared across selections. Hiding the toggle on a one-stop run
+		# left compact mode stuck on with no way back to the detail, which is what
+		# happens after compacting a merged run and then opening a single one.
+		self.assertTrue(toggle_shown(1))
+
+	def test_it_is_still_offered_on_a_merged_run(self):
+		self.assertTrue(toggle_shown(2))
+		self.assertTrue(toggle_shown(5))
+
+	def test_it_is_not_offered_when_there_are_no_stops(self):
+		# Nothing to compact or expand, so nothing to offer.
+		self.assertFalse(toggle_shown(0))
+
+
+def toggle_shown(stop_count):
+	"""Run the shipped v-if on the Compact/Detailed toggle for this many stops.
+
+	The condition is evaluated rather than matched as text, so any correct formulation
+	passes and only a real regression fails.
+	"""
+	import json
+	import subprocess
+
+	app = frappe.get_app_path("one_fm", "..")
+	out = subprocess.run(
+		["node", f"{app}/one_fm/tests/js/stop_view_toggle_harness.js", str(CANVAS),
+		 json.dumps({"stopCount": stop_count})],
+		capture_output=True, text=True, check=True,
+	)
+	result = json.loads(out.stdout)
+	assert "error" not in result, result["error"]
+	return result["shown"]
 
 
 class TestAutoScroll(FrappeTestCase):
