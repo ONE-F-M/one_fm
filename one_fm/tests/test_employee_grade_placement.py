@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002605 / WI-002606: Grade moves from the Government Relation tab to the Salary tab.
+"""Grade moves from the Government Relation tab to the Salary tab.
 
 Layout only. Grade is a standard HRMS field whose stock home is the salary section - this
 app's field_order had moved it under Government Relation, and this puts it back. The tests
@@ -99,3 +99,63 @@ class TestThePatch(FrappeTestCase):
 		from one_fm.patches.v15_0 import move_employee_grade_to_salary_tab as patch
 
 		self.assertTrue(hasattr(patch, "execute"))
+
+
+class TestTheDocTypeLayoutMovesToo(FrappeTestCase):
+	"""A DocType Layout on Employee overrides the field_order entirely.
+
+	A layout registers a route under its own slugged name, so one called "Employee" takes
+	over /app/employee and the form renders from the layout's stored field list. Property
+	Setter never touches a layout, and DocTypeLayout.sync_fields only adds and removes
+	fields - neither reorders one - so a field_order edit alone is written and never seen.
+	"""
+
+	LAYOUT_DOCTYPE = "DocType Layout"
+
+	def layouts(self):
+		return frappe.get_all(self.LAYOUT_DOCTYPE, filters={"document_type": "Employee"}, pluck="name")
+
+	def test_grade_follows_salary_information_in_every_layout(self):
+		names = self.layouts()
+		if not names:
+			self.skipTest("no DocType Layout on Employee on this site")
+		for name in names:
+			order = [f.fieldname for f in frappe.get_doc(self.LAYOUT_DOCTYPE, name).fields]
+			self.assertIn("grade", order, name)
+			self.assertEqual(order[order.index("salary_information") + 1], "grade", name)
+
+	def test_grade_resolves_to_the_salary_tab_through_the_layout(self):
+		names = self.layouts()
+		if not names:
+			self.skipTest("no DocType Layout on Employee on this site")
+		meta = frappe.get_meta("Employee")
+		for name in names:
+			tab = None
+			for row in frappe.get_doc(self.LAYOUT_DOCTYPE, name).fields:
+				df = meta.get_field(row.fieldname)
+				if df and df.fieldtype == "Tab Break":
+					tab = df.label or df.fieldname
+				if row.fieldname == "grade":
+					self.assertEqual(tab, "Salary", name)
+					break
+			else:
+				self.fail(f"grade is not in layout {name}")
+
+	def test_the_move_keeps_every_field_exactly_once(self):
+		names = self.layouts()
+		if not names:
+			self.skipTest("no DocType Layout on Employee on this site")
+		for name in names:
+			order = [f.fieldname for f in frappe.get_doc(self.LAYOUT_DOCTYPE, name).fields]
+			self.assertEqual(len(order), len(set(order)), f"{name} has a duplicated field")
+
+	def test_running_it_again_changes_nothing(self):
+		from one_fm.patches.v15_0.move_employee_grade_to_salary_tab import move_in_doctype_layouts
+
+		names = self.layouts()
+		if not names:
+			self.skipTest("no DocType Layout on Employee on this site")
+		before = {n: [f.fieldname for f in frappe.get_doc(self.LAYOUT_DOCTYPE, n).fields] for n in names}
+		move_in_doctype_layouts()
+		after = {n: [f.fieldname for f in frappe.get_doc(self.LAYOUT_DOCTYPE, n).fields] for n in names}
+		self.assertEqual(before, after)
