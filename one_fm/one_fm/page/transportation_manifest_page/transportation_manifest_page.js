@@ -528,6 +528,90 @@ function renderManifest($container, data) {
 		}
 	});
 
+	// ── Tab search, arrows and overflow indicators (WI-002544) ──────────────
+	// The tabs carry what they can be searched on, so filtering never has to go back
+	// to ROUTE_DATA and cannot disagree with what is rendered.
+	parsed.forEach((pr) => {
+		const meta = (ROUTE_DATA.vehicleMeta ?? {})[pr.label] ?? {};
+		const haystack = [pr.label, meta.license_plate, meta.model, meta.driver]
+			.filter(Boolean).join(" ").toLowerCase();
+		const tab = [...tabBar.querySelectorAll(".mfst-tab")]
+			.find(t => t.querySelector(".mfst-tab-name")?.textContent === pr.label);
+		if (tab) tab.dataset.search = haystack;
+	});
+
+	const scroller = $container.find(".mfst-tab-bar-scroller")[0];
+	const prevBtn = $container.find("#mfst-tab-prev")[0];
+	const nextBtn = $container.find("#mfst-tab-next")[0];
+	const overflowLabel = $container.find("#mfst-tab-overflow")[0];
+
+	// AC4: how many tabs are off each edge, and whether an arrow can do anything.
+	// Counted by geometry rather than by index, because a filter changes which tabs
+	// exist and a fixed count would keep announcing the ones it hid.
+	function syncTabOverflow() {
+		if (!tabBar || !scroller) return;
+		const bar = tabBar.getBoundingClientRect();
+		const visible = [...tabBar.querySelectorAll(".mfst-tab")].filter(t => !t.hidden);
+		let left = 0, right = 0;
+		visible.forEach(t => {
+			const r = t.getBoundingClientRect();
+			if (r.right <= bar.left + 1) left++;
+			else if (r.left >= bar.right - 1) right++;
+		});
+		const atStart = tabBar.scrollLeft <= 1;
+		const atEnd = tabBar.scrollLeft + tabBar.clientWidth >= tabBar.scrollWidth - 1;
+		if (prevBtn) prevBtn.disabled = atStart;
+		if (nextBtn) nextBtn.disabled = atEnd;
+		scroller.classList.toggle("mfst-more-left", !atStart && left > 0);
+		scroller.classList.toggle("mfst-more-right", !atEnd && right > 0);
+		if (overflowLabel) {
+			const parts = [];
+			if (left) parts.push(`\u25c4 ${left} more`);
+			if (right) parts.push(`${right} more \u25ba`);
+			overflowLabel.textContent = parts.join("  |  ");
+		}
+	}
+
+	// A page's worth at a time, so the dispatcher keeps their place instead of being
+	// thrown to an edge.
+	function scrollTabs(direction) {
+		if (!tabBar) return;
+		tabBar.scrollBy({ left: direction * Math.max(160, tabBar.clientWidth * 0.8),
+						  behavior: "smooth" });
+	}
+
+	if (prevBtn) prevBtn.addEventListener("click", () => scrollTabs(-1));
+	if (nextBtn) nextBtn.addEventListener("click", () => scrollTabs(1));
+	if (tabBar) tabBar.addEventListener("scroll", syncTabOverflow, { passive: true });
+	window.addEventListener("resize", syncTabOverflow);
+
+	// AC2: hide what does not match, and leave everything that does clickable - the
+	// dispatcher is searching in order to SELECT, so the filter must not disable the
+	// thing they were looking for.
+	const searchInput = $container.find("#mfst-vehicle-search")[0];
+	const searchClear = $container.find("#mfst-vehicle-search-clear")[0];
+	function applyVehicleSearch() {
+		const q = (searchInput?.value || "").trim().toLowerCase();
+		tabBar.querySelectorAll(".mfst-tab").forEach(tab => {
+			// The Skipped tab carries no vehicle, so it is only shown unfiltered.
+			const hay = tab.dataset.search
+				?? (tab.classList.contains("mfst-skipped-tab") ? null : "");
+			tab.hidden = q ? (hay === null || !hay.includes(q)) : false;
+		});
+		if (searchClear) searchClear.hidden = !q;
+		tabBar.scrollLeft = 0;
+		syncTabOverflow();
+	}
+	if (searchInput) searchInput.addEventListener("input", applyVehicleSearch);
+	if (searchClear) searchClear.addEventListener("click", () => {
+		if (searchInput) searchInput.value = "";
+		applyVehicleSearch();
+		searchInput?.focus();
+	});
+
+	// Measured once the tabs have been laid out.
+	requestAnimationFrame(syncTabOverflow);
+
 	// Skipped tab
 	if (skipped.length > 0) {
 		const sk = document.createElement("button");
@@ -1819,9 +1903,25 @@ function getManifestHTML() {
 				</div>
 			</div>
 
-			<!-- VEHICLE TAB BAR -->
+			<!-- VEHICLE TAB BAR (WI-002544) -->
 			<div class="mfst-tab-bar-wrapper">
-				<div class="mfst-tab-bar" id="mfst-tab-bar"></div>
+				<!-- AC2: a fleet of twenty-five tabs is a scroll, not a list. Matching
+				     on id, plate and driver because those are the three things a
+				     supervisor is holding when they come looking. -->
+				<div class="mfst-tab-search">
+					<span class="material-symbols-outlined mfst-tab-search-icon">search</span>
+					<input type="text" id="mfst-vehicle-search" placeholder="Search vehicle, plate or driver...">
+					<button type="button" id="mfst-vehicle-search-clear" class="mfst-tab-search-clear" hidden>&#x2715;</button>
+					<span id="mfst-tab-overflow" class="mfst-tab-overflow"></span>
+				</div>
+				<div class="mfst-tab-bar-scroller">
+					<!-- AC3: for a mouse, which has no sideways scroll. -->
+					<button type="button" id="mfst-tab-prev" class="mfst-tab-nav mfst-tab-nav-prev"
+							aria-label="Scroll vehicle tabs left">&#x25c4;</button>
+					<div class="mfst-tab-bar" id="mfst-tab-bar"></div>
+					<button type="button" id="mfst-tab-next" class="mfst-tab-nav mfst-tab-nav-next"
+							aria-label="Scroll vehicle tabs right">&#x25ba;</button>
+				</div>
 			</div>
 
 			<!-- MAIN CONTENT -->
@@ -2020,8 +2120,55 @@ function getManifestCSS() {
 
 		/* ── VEHICLE TAB BAR ── */
 		.mfst-tab-bar-wrapper { background: var(--mfst-bg-card); border-bottom: 1px solid var(--mfst-border); position: sticky; top: 62px; z-index: 99; }
-		.mfst-tab-bar { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 0 8px; gap: 4px; }
+		.mfst-tab-bar { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 0 8px; gap: 4px; scroll-behavior: smooth; flex: 1; }
 		.mfst-tab-bar::-webkit-scrollbar { display: none; }
+
+		/* ── Vehicle tab navigation (WI-002544) ───────────────────────────── */
+		.mfst-tab-search {
+			display: flex; align-items: center; gap: 6px;
+			padding: 6px 12px 0 12px;
+		}
+		.mfst-tab-search input {
+			flex: 1 1 auto; min-width: 0; max-width: 320px;
+			padding: 5px 10px; font-size: 13px;
+			border: 1px solid var(--mfst-border); border-radius: 8px;
+			background: transparent; color: inherit; outline: none;
+		}
+		.mfst-tab-search-icon { font-size: 18px; opacity: 0.5; }
+		.mfst-tab-search-clear {
+			border: 0; background: transparent; cursor: pointer; font-size: 12px;
+			opacity: 0.6; padding: 2px 4px;
+		}
+		.mfst-tab-search-clear:hover { opacity: 1; }
+		/* AC4: how much is off each edge, in words rather than a guess. */
+		.mfst-tab-overflow { margin-left: auto; font-size: 11px; opacity: 0.65; white-space: nowrap; }
+
+		.mfst-tab-bar-scroller { position: relative; display: flex; align-items: stretch; }
+		.mfst-tab-nav {
+			flex: 0 0 auto; border: 0; background: var(--mfst-bg-card); cursor: pointer;
+			padding: 0 8px; font-size: 12px; color: inherit; opacity: 0.75; z-index: 2;
+		}
+		.mfst-tab-nav:hover:not(:disabled) { opacity: 1; }
+		/* AC4: disabled at the ends, rather than clicking into nothing. */
+		.mfst-tab-nav:disabled { opacity: 0.2; cursor: default; }
+		/* AC4: the fade says there is more without taking a row to say it. It must not
+		   eat clicks on the tab underneath. */
+		.mfst-tab-bar-scroller::before,
+		.mfst-tab-bar-scroller::after {
+			content: ""; position: absolute; top: 0; bottom: 0; width: 26px;
+			pointer-events: none; z-index: 1; opacity: 0;
+			transition: opacity 0.15s;
+		}
+		.mfst-tab-bar-scroller::before {
+			left: 24px;
+			background: linear-gradient(to right, var(--mfst-bg-card), transparent);
+		}
+		.mfst-tab-bar-scroller::after {
+			right: 24px;
+			background: linear-gradient(to left, var(--mfst-bg-card), transparent);
+		}
+		.mfst-tab-bar-scroller.mfst-more-left::before { opacity: 1; }
+		.mfst-tab-bar-scroller.mfst-more-right::after { opacity: 1; }
 		.mfst-tab { display: flex; flex-direction: column; align-items: flex-start; padding: 12px 16px; border: none; background: none; cursor: pointer; border-bottom: 3px solid transparent; min-width: 140px; flex-shrink: 0; transition: all 0.15s; text-align: left; }
 		.mfst-tab:hover { background: var(--mfst-bg); }
 		.mfst-tab.active { border-bottom-color: var(--mfst-accent); background: var(--mfst-accent-dim); }
