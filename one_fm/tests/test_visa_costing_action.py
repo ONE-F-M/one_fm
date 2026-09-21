@@ -1,16 +1,13 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002601 (dup WI-002617): a Visa Costing Action worth 20 KWD in the HR Costing table.
+"""A Visa Costing Action worth 20 KWD in the HR Costing table.
 
-The criteria describe this arriving by migration from the BA site. It cannot, and that is
-pinned below: the BA site has no Visa Costing row at all, and its Action list is still the
-pre-WI-002178 spelling, so copying that table over would walk back a rename this app has
-already shipped. The option ships with the doctype JSON and the row is seeded by a patch,
-which is what makes the same configuration true in Staging and in Production.
+The BA site has no Visa Costing row and its Action list is still the older spelling, so
+the option ships with the doctype JSON and the row is seeded by a patch rather than
+migrated.
 
-The 20 KWD is a DEFAULT, not a rule: picking the Action fills an empty amount in, and a
-row whose fee somebody has deliberately set to something else is left alone. Both the
-browser handler and the patch are checked for that, because both could overwrite it.
+The 20 KWD is tied to the Action: picking it fills an empty amount, switching away takes
+the 20 back off, and an amount typed in by hand is left alone either way.
 """
 
 import json
@@ -42,7 +39,7 @@ class TestTheActionIsOffered(FrappeTestCase):
 		self.assertIn(ACTION, options)
 
 	def test_the_actions_that_were_already_there_are_untouched(self):
-		# The criteria are explicit that no existing costing option may be affected.
+		# No existing costing option may be affected.
 		options = frappe.get_meta(CHILD_DOCTYPE).get_field("renewal_or_extend").options.split("\n")
 		for existing in ("New Kuwaiti", "Overseas", "Overseas (Government)", "Renewal (Kuwaiti)",
 						 "Renewal Expat", "Extension", "Visa Extension", "Local Transfer",
@@ -64,8 +61,7 @@ class TestTheAmountDefaults(FrappeTestCase):
 		self.assertEqual(row.get("work_permit_amount"), WORK_PERMIT_AMOUNT)
 
 	def test_the_row_total_follows_the_amount(self):
-		# The fee is worthless if Total Amount does not move with it - that mismatch is
-		# exactly what WI-002031 had to go back and repair.
+		# The fee is worthless if Total Amount does not move with it.
 		row = run_handler({"renewal_or_extend": ACTION})
 		self.assertEqual(row.get("total_amount"), WORK_PERMIT_AMOUNT)
 
@@ -77,6 +73,30 @@ class TestTheAmountDefaults(FrappeTestCase):
 		for other in ("Extension", "Renewal Expat", "Cancellation"):
 			row = run_handler({"renewal_or_extend": other})
 			self.assertIsNone(row.get("work_permit_amount"), other)
+
+	def test_switching_away_takes_the_fee_back_off(self):
+		for other in ("Extension", "Renewal Expat", "Cancellation", "Visa Extension"):
+			row = run_handler({"renewal_or_extend": other,
+							   "work_permit_amount": WORK_PERMIT_AMOUNT})
+			self.assertEqual(row.get("work_permit_amount"), 0, other)
+
+	def test_the_total_follows_the_fee_back_down(self):
+		row = run_handler({"renewal_or_extend": "Extension",
+						   "work_permit_amount": WORK_PERMIT_AMOUNT})
+		self.assertEqual(row.get("total_amount"), 0)
+
+	def test_switching_away_leaves_a_typed_amount_alone(self):
+		# Only the 20 comes off. Any other figure was entered by hand.
+		row = run_handler({"renewal_or_extend": "Extension", "work_permit_amount": 35})
+		self.assertEqual(row.get("work_permit_amount"), 35)
+
+	def test_the_other_components_are_never_touched(self):
+		row = run_handler({"renewal_or_extend": "Extension",
+						   "work_permit_amount": WORK_PERMIT_AMOUNT,
+						   "medical_insurance_amount": 50, "civil_id_amount": 5})
+		self.assertEqual(row.get("medical_insurance_amount"), 50)
+		self.assertEqual(row.get("civil_id_amount"), 5)
+		self.assertEqual(row.get("total_amount"), 55)
 
 
 def costing_row():

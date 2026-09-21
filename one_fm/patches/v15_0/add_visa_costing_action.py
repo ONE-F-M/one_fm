@@ -1,14 +1,11 @@
 import frappe
 
-# WI-002601 (and its duplicate WI-002617): the HR Costing table gets a "Visa Costing"
-# Action whose work permit fee is a flat 20 KWD.
+# The HR Costing table gets a "Visa Costing" Action whose work permit fee is a flat 20 KWD.
 #
-# The criteria describe this arriving by migration from the BA site. It cannot: the BA
-# site has no Visa Costing row, and its Action list is still the pre-WI-002178 spelling
-# ("Renewal (Non-Kuwaiti)", "Extend 1 month"), so copying that table over would undo a
-# rename this app has already shipped. The option itself comes with the doctype JSON;
-# the row it is configured in is seeded here instead, which is what makes the same
-# configuration true in Staging and in Production.
+# Not migrated from the BA site: that site has no Visa Costing row, and its Action list is
+# still the older spelling ("Renewal (Non-Kuwaiti)", "Extend 1 month"), so copying the
+# table over would undo a rename already shipped here. The option comes with the doctype
+# JSON; the row is seeded below.
 ACTION = "Visa Costing"
 WORK_PERMIT_AMOUNT = 20
 
