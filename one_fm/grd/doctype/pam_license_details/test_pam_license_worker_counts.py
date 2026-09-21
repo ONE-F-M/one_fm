@@ -142,6 +142,21 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 
 		self.assertEqual(count_workers(LICENSE_NUMBER, self.sector), (1, 0))
 
+	def test_everybody_still_employed_is_on_it(self):
+		"""Reported from production: counting only Active left 90 people off these two
+		licences - on vacation, not returned from leave, on a court case, absconding.
+		They are still employed under the licence and PAM counts them."""
+		employee = self._an_employee("Indian")
+
+		# One borrowed employee whose status is moved, rather than one per status: each
+		# _an_employee call takes another spare off the site and they would stack up on
+		# the licence, so the count under test would climb with the loop.
+		for status in ("Vacation", "Not Returned from Leave", "Court Case", "Absconding", "Suspended"):
+			with self.subTest(status=status):
+				frappe.db.set_value("Employee", employee, "status", status, update_modified=False)
+
+				self.assertEqual(count_workers(LICENSE_NUMBER, self.sector), (0, 1))
+
 	def test_a_sector_counts_only_its_own_designations(self):
 		self._an_employee("Kuwaiti")
 		self._an_employee("Indian", designation=self.other_designation)
