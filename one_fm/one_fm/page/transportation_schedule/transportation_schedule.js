@@ -5497,7 +5497,7 @@ function injectRPVueTemplate() {
                             :title="__('Move this stop down one position')">&#x25bc;</button>
                   </span>
                   <span class="rp-stop-num rp-stop-num-out">{{ stop.stopNum }}</span>
-                  <div style="font-size:13px;font-weight:700;color:#111">{{ stop.card.site_location || 'Unknown' }}</div>
+                  <div class="rp-stop-name" :title="stop.card.site_location || 'Unknown'">{{ stop.card.site_location || 'Unknown' }}</div>
                   <!-- Which way THIS card's own riders travel. A merged block reads MIXED,
                        so the answer comes from the direction the merge recorded, and the
                        drawer is where an operator checks who is going which way. -->
@@ -6177,6 +6177,12 @@ function injectRPStyles() {
         .rp-card-type   { font-size: 11px; font-weight: 700; letter-spacing: .06em; padding: 2px 7px; border-radius: 4px; flex-shrink: 0; }
         .rp-tag-split   { background: #fef3c7; color: #92400e; }
         .rp-card-split-row { display: flex; margin-bottom: 4px; }
+        /* The stop name is the only part of the header that can grow, and every other
+           item on the line carries flex-shrink:0. A flex item will not shrink below its
+           own content without min-width:0, so a long name pushed the direction badge
+           past the card edge instead of truncating. flex-basis stays auto so the badge
+           still sits beside the name rather than at the far right. */
+        .rp-stop-name   { font-size: 13px; font-weight: 700; color: #111; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .rp-card-dir    { font-size: 10px; font-weight: 700; letter-spacing: .04em; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; flex-shrink: 0; }
         .rp-dir-out     { background: #e3f2fd; color: #1565c0; }
         .rp-dir-ret     { background: #fce4ec; color: #c62828; }
