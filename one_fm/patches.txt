@@ -630,3 +630,4 @@ one_fm.patches.v15_0.restore_wiped_ojt_employee_schedules #2026-09-14
 one_fm.patches.v15_0.complete_restored_ojt_attendance_chain #2026-09-14
 one_fm.patches.v15_0.grant_recruiter_master_read_permissions #14-09-2026
 one_fm.patches.v15_0.backfill_pam_license_sector_headcounts #2026-09-15 WI-002091
+one_fm.patches.v15_0.processa_sync_hd_ticketing_09a990 #2026-09-21 Processa sync: HD Ticket
