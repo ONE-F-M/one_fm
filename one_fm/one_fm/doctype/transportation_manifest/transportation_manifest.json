@@ -421,6 +421,14 @@
    "set_only_once": 0,
    "show_preview_popup": 0,
    "unique": 0
+  },
+  {
+   "fieldname": "active_stop_by_trip",
+   "fieldtype": "Small Text",
+   "hidden": 1,
+   "label": "Active Stop By Trip",
+   "read_only": 1,
+   "description": "JSON {trip_id: active stop}. One vehicle's manifest carries several runs and each checks in on its own."
   }
  ],
  "idx": 0,
@@ -434,7 +442,7 @@
  "issingle": 0,
  "istable": 0,
  "max_attachments": 0,
- "modified": "2026-08-17 17:00:00.000000",
+ "modified": "2026-09-17 08:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Transportation Manifest",
