@@ -16,7 +16,7 @@ from one_fm.hiring.utils import (
     is_subcontract_employee
 )
 from one_fm.processor import sendemail,send_whatsapp
-from one_fm.utils import call_to_get_assurance_level, get_domain, get_standard_notification_template, get_approver_user, update_active_employees_assurance_level, send_push_notification
+from one_fm.utils import call_to_get_assurance_level, get_domain, get_standard_notification_template, get_approver_user, update_active_employees_assurance_level, send_push_notification, return_bpmn_tasks_from_reliever
 from six import string_types
 from frappe import _
 from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisor_operations_shifts
@@ -243,6 +243,10 @@ class EmployeeOverride(EmployeeMaster):
         if self.has_value_changed("status") and self.status == NOT_RETURNED_FROM_LEAVE:
             self.inform_employee_status_update()
             self.clear_schedules_for_non_return()
+        # The daily leave job sets this with db.set_value, which never reaches a
+        # controller — this covers the status being changed on the form instead.
+        if self.has_value_changed("status") and self.status == "Active":
+            return_bpmn_tasks_from_reliever(self.name)
 
         self.setup_wiki_introduction_for_new_employee()
 

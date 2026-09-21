@@ -3535,6 +3535,29 @@ def send_work_anniversary_reminders():
 
 
 
+def return_bpmn_tasks_from_reliever(employee: str) -> None:
+    """Hand back the Processa tasks a reliever is holding for this employee.
+
+    Called wherever an employee stops being on leave. Without it a task that was
+    redirected to a reliever stays with them for good, because the redirect only
+    ever happens when the task first becomes active.
+    """
+    user = frappe.db.get_value("Employee", employee, "user_id")
+    if not user:
+        return
+    try:
+        from one_bpmn.one_bpmn.doctype.bpmn_process_instance.assignment import (
+            restore_tasks_on_return,
+        )
+
+        restore_tasks_on_return(user)
+    except Exception:
+        frappe.log_error(
+            title=f"Returning Processa tasks from reliever failed for {employee}",
+            message=frappe.get_traceback(),
+        )
+
+
 @frappe.whitelist()
 def set_employee_status():
     from one_fm.one_fm.doctype.reliever_assignment.reliever_assignment import assign_responsibilities ,reassign_responsibilities
@@ -3600,6 +3623,7 @@ def set_employee_status():
             to_date = leave['to_date']
             reliever = leave.get('custom_reliever_', None)
             frappe.db.set_value('Employee', employee, 'status', 'Active')
+            return_bpmn_tasks_from_reliever(employee)
             if reliever and frappe.db.exists("Reliever Assignment", {"leave_application": leave_application}):
                 # frappe.enqueue(reassign_responsibilities, leave_application=leave_application)
                 reassign_responsibilities(leave_application=leave_application)
