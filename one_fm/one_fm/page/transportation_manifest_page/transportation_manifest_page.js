@@ -1268,6 +1268,42 @@ function renderManifest($container, data) {
 		}
 	}
 
+	// ── One check-in write at a time (WI-002538) ──
+	// Every chip on the sheet writes through the SAME parent Transportation Manifest:
+	// the API reads the whole manifest, stamps one row and saves it. Two of those
+	// overlapping — a supervisor tapping Present then Pass, or working down a camp
+	// faster than the manifest saves — meant the slower request had opened the
+	// document before the quicker one committed, and it came back with "Document has
+	// been modified after you have opened it". Queueing keeps the writes in the order
+	// the supervisor made them and keeps only one manifest open at a time. Every job
+	// is kept: two taps on two different chips are two different rows, so unlike the
+	// schedule board nothing here may be coalesced away.
+	let checkInBusy = false;
+	const checkInQueue = [];
+
+	function queueCheckIn(callOpts) {
+		checkInQueue.push(callOpts);
+		drainCheckInQueue();
+	}
+
+	function drainCheckInQueue() {
+		if (checkInBusy || !checkInQueue.length) return;
+		const opts = checkInQueue.shift();
+		checkInBusy = true;
+		frappe.call(Object.assign({}, opts, {
+			// always() fires for success, failure and "no connection" alike, so the
+			// queue never jams on a call that ends any other way than a clean
+			// callback. Releasing the next job on the following tick lets this call's
+			// own error handler run first — jQuery runs always() before the failure
+			// handler.
+			always: function (data) {
+				checkInBusy = false;
+				setTimeout(drainCheckInQueue, 0);
+				if (opts.always) opts.always(data);
+			}
+		}));
+	}
+
 	// showValidationUI — only show error banner + shake when called from an
 	// explicit user action (Save & Continue, × in Fail state). Toggle handlers
 	// pass false (default) so the guard silently blocks persistence without
@@ -1290,7 +1326,7 @@ function renderManifest($container, data) {
 			return; // Always block persistence
 		}
 
-		frappe.call({
+		queueCheckIn({
 			method: "one_fm.one_fm.api.doc_methods.transportation_manifest.update_manifest_row_checkin",
 			args: {
 				row_name: rowId,
@@ -1505,8 +1541,10 @@ function renderManifest($container, data) {
 
 		$container.find("#mfst-btn-confirm-replace").text("Processing...").prop("disabled", true);
 
-		// 1. Immediately write to database row (update_manifest_row_checkin)
-		frappe.call({
+		// 1. Immediately write to database row (update_manifest_row_checkin).
+		// Through the same queue as the chip toggles: this writes the same parent
+		// manifest, so it has to wait its turn rather than open a second copy.
+		queueCheckIn({
 			method: "one_fm.one_fm.api.doc_methods.transportation_manifest.update_manifest_row_checkin",
 			args: {
 				row_name: rowId,
