@@ -622,3 +622,4 @@ one_fm.patches.v15_0.backfill_pam_license_sector_headcounts #2026-09-15 WI-00209
 one_fm.patches.v15_0.delete_pathfinder_log #2026-09-16 Pathfinder Log is retired; drop the doctype, its child table and the workflow actions that pointed at it
 one_fm.patches.v15_0.add_job_offer_passport_custom_fields #2026-09-18 WI-002599
 one_fm.patches.v15_0.backfill_job_offer_passport_details #2026-09-18 WI-002599
+one_fm.patches.v15_0.restate_pam_license_sector_figures #2026-09-21 WI-002094

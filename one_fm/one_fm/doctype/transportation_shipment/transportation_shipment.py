@@ -519,7 +519,10 @@ def _minutes(value) -> int:
 # modal seeds the same number so the itinerary it prints is the one the blocks get drawn
 # from - a modal showing 0 while the canvas silently used 30 is a lie the operator only
 # discovers on the manifest.
-DEFAULT_TRANSIT_MINUTES = 30
+#
+# 15, not 30, since WI-002539 AC2: the dispatchers' own baseline for a drive between two
+# stops. The assignment modals seed the same number so every entry point agrees.
+DEFAULT_TRANSIT_MINUTES = 15
 
 # How far apart an outward shift's start and a return shift's end may sit and still read
 # as a handover (WI-002171 AC 3.1: "matches or stays around couple of hours"). The same
@@ -626,8 +629,13 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 	for value in shipments or []:
 		resolved = (resolve_shipment_names([value]) or [value])[0]
 		card_ids.setdefault(resolved, value)
-	if len(names) < 2:
-		frappe.throw(_("Select at least two shipments to preview a merge."), title=_("Nothing to Merge"))
+	# One card is a run too. build_itinerary already gives a single outward card the
+	# camp -> site -> home shape, so the Trip Builder can time a solo drop's outbound and
+	# its base return without anything being merged into it (WI-002539 AC1 / WI-002578
+	# AC6-AC7). Only `merge_trip_shipments` still needs two, and the canvas skips it for
+	# a run of one.
+	if not names:
+		frappe.throw(_("Select a shipment to preview its trip."), title=_("Nothing to Preview"))
 
 	docs = [frappe.get_doc("Transportation Shipment", name) for name in names]
 	for doc in docs:
