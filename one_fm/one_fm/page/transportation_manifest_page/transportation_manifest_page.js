@@ -242,32 +242,37 @@ function renderManifest($container, data) {
 	// Trigger unlocks the next pickup camp for checks; Complete locks the active
 	// camp. Both persist server-side (active_stop_sequence) via the shared manifest
 	// API, then we sync the local pointer and re-render the current route.
-	function _setActiveStopAndRerender(vehicleLabel, newActive) {
+	// The server answers with every run's pointer, so only the run that was acted on
+	// moves and its neighbours on the same vehicle keep their own state (WI-002590 AC1).
+	function _setActiveStopAndRerender(vehicleLabel, reply) {
 		const meta = (ROUTE_DATA.vehicleMeta ?? {})[vehicleLabel];
-		if (meta) meta.active_stop_sequence = newActive;
+		if (meta && reply) {
+			meta.active_stop_by_trip = reply.active_stop_by_trip || meta.active_stop_by_trip || {};
+			meta.active_stop_sequence = reply.active_stop_sequence;
+		}
 		if (activeView) renderRoute(activeView);
 	}
 
-	window._mfst_triggerStop = function (manifest, stopSeq, vehicleLabel) {
+	window._mfst_triggerStop = function (manifest, stopSeq, vehicleLabel, tripId) {
 		frappe.call({
 			method: "one_fm.one_fm.doctype.transportation_manifest.manifest_sheet.trigger_attendance_check",
-			args: { manifest: manifest, stop_sequence: stopSeq },
+			args: { manifest: manifest, stop_sequence: stopSeq, trip_id: tripId || "" },
 			freeze: true,
 			freeze_message: __("Unlocking stop…"),
 			callback: function (r) {
-				if (r.message) _setActiveStopAndRerender(vehicleLabel, r.message.active_stop_sequence);
+				if (r.message) _setActiveStopAndRerender(vehicleLabel, r.message);
 			}
 		});
 	};
 
-	window._mfst_completeStop = function (manifest, stopSeq, vehicleLabel) {
+	window._mfst_completeStop = function (manifest, stopSeq, vehicleLabel, tripId) {
 		frappe.call({
 			method: "one_fm.one_fm.doctype.transportation_manifest.manifest_sheet.complete_stop",
-			args: { manifest: manifest, stop_sequence: stopSeq },
+			args: { manifest: manifest, stop_sequence: stopSeq, trip_id: tripId || "" },
 			freeze: true,
 			freeze_message: __("Locking stop…"),
 			callback: function (r) {
-				if (r.message) _setActiveStopAndRerender(vehicleLabel, r.message.active_stop_sequence);
+				if (r.message) _setActiveStopAndRerender(vehicleLabel, r.message);
 			}
 		});
 	};
@@ -636,9 +641,35 @@ function renderManifest($container, data) {
 			// else falls back to the clock gap between the two stops. Reading a merged
 			// run off the clock alone showed the driver the old spacing, because the
 			// blocks the merge did not move still sit where they were.
+			// `stop` is the stop the bus is LEAVING, never the one it is arriving at. A
+			// stop's minutes describe the leg that departs it - the Route Plan row starts
+			// when the bus pulls away and ends when it reaches the next stop, which is
+			// why the Trip Builder prints them on the same row as "Next Stop". Passing
+			// the arrival stop printed the NEXT leg's minutes above every stop: S-101's
+			// camp leg is 20 drive + 5 buffer and the manifest read "15 min drive, 2 min
+			// buffer" - Alghanim's figures, one leg early (WI-002614 AC3).
+			//
+			// Camp legs spell the same two fields in snake_case, so both are accepted
+			// rather than making every caller normalise one of them.
 			function calcTransit(t1, t2, stop) {
-				const transit = (stop && stop.transitMinutes) || 0;
-				const buffer = (stop && stop.bufferMinutes) || 0;
+				const zero = { travelDuration: "0s", waitDuration: "0s", travelDistanceMeters: 0 };
+
+				// AC3: the clock gap, read as time of day and wrapped at midnight. Taking
+				// the raw difference meant two stops whose timestamps carried different
+				// lock dates reported a drive of roughly a day, which fmtDuration then
+				// clamped to a flat "24h" - the overflow fallback the AC names.
+				const from = secondsOfDay(t1), to = secondsOfDay(t2);
+				let gap = (from === null || to === null) ? null : to - from;
+				if (gap !== null && gap < 0) gap += 24 * 3600;   // the leg ran past midnight
+
+				// A drop-off and the pick-up that follows it at the same place and minute
+				// are ONE physical stop printed twice. Nothing is driven between them, so
+				// the minutes belonging to the leg out of that stop must not be drawn in
+				// the gap - they belong further down, against the stop the bus leaves for.
+				if (gap === 0) return zero;
+
+				const transit = (stop && (stop.transitMinutes ?? stop.transit_minutes)) || 0;
+				const buffer = (stop && (stop.bufferMinutes ?? stop.buffer_minutes)) || 0;
 				if (transit || buffer) {
 					return {
 						travelDuration: transit * 60 + "s",
@@ -646,9 +677,9 @@ function renderManifest($container, data) {
 						travelDistanceMeters: 0
 					};
 				}
-				const ms = new Date(t2).getTime() - new Date(t1).getTime();
-				if (ms <= 0) return { travelDuration: "0s", waitDuration: "0s", travelDistanceMeters: 0 };
-				return { travelDuration: Math.round(ms / 1000) + "s", waitDuration: "0s", travelDistanceMeters: 0 };
+				// A leg with no minutes of its own is measured by the clock alone.
+				if (gap === null || gap <= 0) return zero;
+				return { travelDuration: gap + "s", waitDuration: "0s", travelDistanceMeters: 0 };
 			}
 
 			// Every assignment row emits both a pickup and a drop-off visit; exactly one of
@@ -739,7 +770,14 @@ function renderManifest($container, data) {
 			// under it (MA2-11): the manifest reads camp-by-camp — a camp's DEPART
 			// banner is followed by the drop-off stop(s) its passengers ride to,
 			// then the next camp block. Camps run in strict stop-sequence order.
-			const boardingByCamp = {};   // seq -> { seq, label, employees, names }
+			// Keyed by the CAMP, not by stop_sequence. stop_sequence is the rider's stop
+			// number in the whole run, not an ordinal for the camp they board at, so one
+			// key could hold riders from two different camps: S-401's boarders group as
+			// {1: [Mahboula], 5: [Mahboula, Mangaf]} by sequence and as
+			// {Mahboula: 4, Mangaf: 6} by camp - and only the second is what a camp
+			// banner is supposed to list. `seq` is kept as the EARLIEST sequence seen for
+			// that camp, which is what puts the camps in the order the bus loads at them.
+			const boardingByCamp = {};   // camp label -> { seq, label, employees, names }
 			orderedStops.forEach(item => {
 				if (item.stop.type !== "dropoff") return;
 				(shipmentEmployees[item.stop.raw] ?? []).forEach(e => {
@@ -747,16 +785,26 @@ function renderManifest($container, data) {
 					if (!eName) return;
 					const seq = (e && e.stop_sequence) ? e.stop_sequence : 1;
 					const label = (e && e.pickup_camp_label) ? e.pickup_camp_label : accommodation;
-					if (!boardingByCamp[seq]) boardingByCamp[seq] = { seq: seq, label: label, employees: [], names: new Set() };
-					if (!boardingByCamp[seq].names.has(eName)) {
-						boardingByCamp[seq].names.add(eName);
-						boardingByCamp[seq].employees.push(e);
+					if (!boardingByCamp[label]) {
+						boardingByCamp[label] = { seq: seq, label: label, employees: [], names: new Set() };
+					}
+					if (seq < boardingByCamp[label].seq) boardingByCamp[label].seq = seq;
+					if (!boardingByCamp[label].names.has(eName)) {
+						boardingByCamp[label].names.add(eName);
+						boardingByCamp[label].employees.push(e);
 					}
 				});
 			});
 
-			const activeStop = meta.active_stop_sequence || 0;
+			// This RUN's pointer, not the vehicle's (WI-002590 AC1). A vehicle drives
+			// several runs a day and they used to share one number, so triggering the
+			// check on S-801 locked S-802 alongside it and completing one reopened the
+			// other. The map is seeded from the old flat field server-side, so a check
+			// already in progress keeps its place.
+			const activeByTrip = meta.active_stop_by_trip || {};
+			const activeStop = parseInt(activeByTrip[trip.id || ""], 10) || 0;
 			const manifestName = meta.manifest || null;
+			const tripLabel = tripStops.find(s => s.tripName)?.tripName || trip.id || "";
 
 			if (isMixed) {
 				// A merged run is one journey out and back, not a series of camp blocks:
@@ -768,7 +816,16 @@ function renderManifest($container, data) {
 				html += renderMixedItinerary({
 					orderedStops, firstTimeISO, lastTimeISO, accommodation: homeCamp,
 					qoaTime: legs.qoa_time,
-					activeStop, manifestName, vehicleLabel: pr.label, calcTransit
+					// The camp the run leaves from carries the minutes of the FIRST drive,
+					// and nothing else knows them: the site stops each carry the leg out of
+					// themselves, so without this the opening leg had to be guessed.
+					originLeg: (legs.camps_ordered || [])[0] || null,
+					// A merged run can still load at more than one camp, and each is a
+					// stop the driver has to make.
+					campGroups: Object.values(boardingByCamp).sort((a, b) => a.seq - b.seq),
+					campLegs: legs.camps_ordered || [],
+					activeStop, manifestName, vehicleLabel: pr.label, calcTransit,
+					tripId: trip.id, tripLabel
 				});
 			} else {
 
@@ -781,15 +838,22 @@ function renderManifest($container, data) {
 			const campLegs = legs.camps_ordered || [];
 
 			let prevTime = firstTimeISO;
+			let prevStop = null;
+			// Where the run has got to, as a POSITION in its own camp list. The lock state
+			// is stored as the camp's seq, which is the rider's stop number across the run
+			// - so finding it here is what turns it back into "which camp is next".
+			const activeIndex = campGroups.findIndex((cg) => (cg.seq || 1) === activeStop);
 			campGroups.forEach((cg, index) => {
 				// Matched by position: both lists are in the order the run needs them.
 				const leg = campLegs[index] || {};
 				const departAt = leg.departure
 					? new Date(leg.departure).toISOString() : firstTimeISO;
-				if (index > 0) html += renderTransit(calcTransit(prevTime, departAt));
+				if (index > 0) html += renderTransit(calcTransit(prevTime, departAt, prevStop));
 				html += renderDepartCard(departAt, cg, activeStop, manifestName, pr.label,
-					false, leg.qoa_time || (index === 0 ? legs.qoa_time : null));
+					false, leg.qoa_time || (index === 0 ? legs.qoa_time : null),
+					trip.id, tripLabel, index, activeIndex);
 				prevTime = departAt;
+				prevStop = leg;
 			});
 
 			// Then every stop the bus calls at, once, in the order it reaches them.
@@ -797,9 +861,10 @@ function renderManifest($container, data) {
 				.slice()
 				.sort((a, b) => new Date(a.stop.time) - new Date(b.stop.time))
 				.forEach(item => {
-					html += renderTransit(calcTransit(prevTime, item.stop.time, item.stop));
+					html += renderTransit(calcTransit(prevTime, item.stop.time, prevStop));
 					html += renderSiteStopCard({ ...item, runStartISO: firstTimeISO });
 					prevTime = item.stop.time;
+					prevStop = item.stop;
 				});
 
 			// Return employees
@@ -818,8 +883,8 @@ function renderManifest($container, data) {
 				}
 			});
 
-			// Transit to return
-			html += renderTransit(calcTransit(prevTime, lastTimeISO));
+			// Transit to return - timed by the last stop the bus called at.
+			html += renderTransit(calcTransit(prevTime, lastTimeISO, prevStop));
 
 			// RETURN card
 			html += renderReturnCard(lastTimeISO, homeCamp, returningEmployees, firstTimeISO);
@@ -930,23 +995,64 @@ function renderManifest($container, data) {
 			});
 		});
 
-		// Stop 1 is the origin depart, so the stops the driver calls at start at 2. The
-		// numbers follow the visit order, which is what makes a revisited stop read as a
-		// later stop rather than the same one again.
-		let html = renderDepartCard(
-			o.firstTimeISO,
-			{ seq: 1, label: o.accommodation, employees: boarding },
-			o.activeStop, o.manifestName, o.vehicleLabel, true, o.qoaTime
-		);
+		// A merged run is one journey, but it is not necessarily one pickup. S-401 leaves
+		// Mahboula at 03:52 and Mangaf at 04:04 before it drops anybody, and rendering a
+		// single origin card lost the second camp entirely: the sheet jumped 03:52 to
+		// 04:46 under a 12-minute label on a 54-minute gap, and the driver was never told
+		// to collect at Mangaf at all.
+		//
+		// isMixed stays true for every camp card. That is what keeps the attendance
+		// trigger on the FIRST pickup only (WI-002074) - renderDepartCard reads it to
+		// decide, so a mid-route camp still cannot start a check.
+		const campGroups = o.campGroups || [];
+		const campLegs = o.campLegs || [];
 
+		// The stop the bus is LEAVING carries the leg, so the gap above each card is
+		// timed by the one before it - each camp in turn, then each stop, and the last
+		// stop for the ride home.
+		let html = "";
 		let prevTime = o.firstTimeISO;
+		let prevStop = null;
+
+		if (campGroups.length) {
+			const activeIndex = campGroups.findIndex((cg) => (cg.seq || 1) === o.activeStop);
+			campGroups.forEach((cg, index) => {
+				// Matched by position: the groups are ordered by the earliest sequence
+				// their riders carry, and camps_ordered by stop_index - both are the
+				// order the run loads at them.
+				const leg = campLegs[index] || {};
+				const departAt = leg.departure
+					? new Date(leg.departure).toISOString()
+					: (index === 0 ? o.firstTimeISO : prevTime);
+				if (index > 0) html += renderTransit(o.calcTransit(prevTime, departAt, prevStop));
+				html += renderDepartCard(departAt, cg, o.activeStop, o.manifestName,
+					o.vehicleLabel, true, leg.qoa_time || (index === 0 ? o.qoaTime : null),
+					o.tripId, o.tripLabel, index, activeIndex);
+				prevTime = departAt;
+				prevStop = leg;
+			});
+		} else {
+			// Nothing said which camp anybody boarded at: one origin card with the lot.
+			html += renderDepartCard(
+				o.firstTimeISO,
+				{ seq: 1, label: o.accommodation, employees: boarding },
+				o.activeStop, o.manifestName, o.vehicleLabel, true, o.qoaTime,
+				o.tripId, o.tripLabel, 0, -1
+			);
+			prevStop = o.originLeg;
+		}
+
+		// The stops the driver calls at start after the camps, so a run loading at two of
+		// them numbers its first drop-off 3 rather than 2.
+		const firstSiteNum = Math.max(campGroups.length, 1) + 1;
 		stops.forEach((stop, i) => {
-			html += renderTransit(o.calcTransit(prevTime, stop.time, stop));
-			html += renderSiteStopCard({ stop: stop, siteNum: i + 2, runStartISO: o.firstTimeISO });
+			html += renderTransit(o.calcTransit(prevTime, stop.time, prevStop));
+			html += renderSiteStopCard({ stop: stop, siteNum: i + firstSiteNum, runStartISO: o.firstTimeISO });
 			prevTime = stop.time;
+			prevStop = stop;
 		});
 
-		html += renderTransit(o.calcTransit(prevTime, o.lastTimeISO));
+		html += renderTransit(o.calcTransit(prevTime, o.lastTimeISO, prevStop));
 		html += renderReturnCard(o.lastTimeISO, o.accommodation, returning, o.firstTimeISO);
 		return html;
 	}
@@ -959,21 +1065,45 @@ function renderManifest($container, data) {
 		return value ? String(value).slice(0, 5) : "";
 	}
 
-	// AC 1.6: a leg whose arrival crosses midnight is a day later, and has to say so
-	// rather than printing a time that reads as though the bus arrived before it left.
+	// ── These timestamps carry a DATE that is not the run's day (WI-002614) ──────
+	// A Route Plan Assignment's start_time/end_time hold two different things: the TIME
+	// is the daily trip window, the DATE is the multi-day vehicle lock's lifespan (TR-8).
+	// Two stops of one run therefore routinely carry unrelated dates, and anything that
+	// subtracts them whole gets its answer in days.
+	//
+	// That one fact is behind both of the defects below: "+11 DAY" badges on a run that
+	// finished the same afternoon, and 24-hour drives between two stops twenty minutes
+	// apart. Every reader takes the time of day and nothing else - in Asia/Kuwait, the
+	// clock every time on this page is printed in (fmtTime), so a stop never disagrees
+	// with the arithmetic done about it.
+	function secondsOfDay(value) {
+		if (!value) return null;
+		const d = new Date(value);
+		if (isNaN(d)) return null;
+		const [h, m, sec] = d.toLocaleTimeString("en-GB", {
+			hour: "2-digit", minute: "2-digit", second: "2-digit",
+			hour12: false, timeZone: "Asia/Kuwait"
+		}).split(":").map(Number);
+		return h * 3600 + m * 60 + sec;
+	}
+
+	// AC2: a leg crosses midnight when it arrives at a clock time EARLIER than the run
+	// left at - which is the only thing these timestamps can honestly report. Capped at
+	// one day: a vehicle's shift cycle is a day's work, and "+27 DAY" was never anything
+	// but arithmetic done on the lock lifespan.
+	// (AC 1.6 still holds - a leg that really does cross 00:00 still says so.)
 	function dayOffset(fromISO, toISO) {
-		if (!fromISO || !toISO) return 0;
-		const day = 24 * 3600000;
-		const from = new Date(fromISO), to = new Date(toISO);
-		if (isNaN(from) || isNaN(to)) return 0;
-		return Math.max(0, Math.floor((to - from) / day) || (to.getDate() !== from.getDate() && to > from ? 1 : 0));
+		const from = secondsOfDay(fromISO), to = secondsOfDay(toISO);
+		if (from === null || to === null) return 0;
+		return to < from ? 1 : 0;
 	}
 
 	function rolloverBadge(offset) {
 		return offset > 0 ? `<span class="mfst-stop-tag tag-stop">+${offset} Day</span>` : "";
 	}
 
-	function renderDepartCard(time, camp, activeStop, manifestName, vehicleLabel, isMixed, qoaTime) {
+	function renderDepartCard(time, camp, activeStop, manifestName, vehicleLabel, isMixed,
+							 qoaTime, tripId, tripLabel, campIndex, activeIndex) {
 		const employees = camp.employees || [];
 		const seq = camp.seq || 1;
 		const isCompleted = activeStop && seq < activeStop;
@@ -982,9 +1112,23 @@ function renderManifest($container, data) {
 		// triggered. A merged run is one vehicle leaving one origin: the second criterion
 		// puts the button in the very first DEPART card and nowhere else, so a driver
 		// cannot start a check at a mid-route pickup they have not reached (WI-002074).
+		//
+		// Decided by the camp's POSITION in the run, not by its seq. `seq` is the rider's
+		// stop number across the whole run, not an ordinal for the camp they board at, so
+		// only a trip whose boarders happen to start at stop 1 ever matched `seq === 1`.
+		// On VHL-L-0004 that was S-101 alone - S-102 through S-107 carry seqs 3, 5, 8, 9,
+		// 3 and 13, and six of the seven runs had no way to start a check at all.
+		//
+		// seq is still what the trigger SENDS and what the lock state is read back
+		// against, so the bookkeeping either side of this is untouched.
+		const position = (campIndex === null || campIndex === undefined) ? null : campIndex;
+		const nextToTrigger = activeStop
+			? ((activeIndex === null || activeIndex === undefined || activeIndex < 0)
+				? null : activeIndex + 1)
+			: 0;
 		const canTrigger = isMixed
-			? (seq === 1 && !activeStop)
-			: seq === (activeStop || 0) + 1;
+			? (position === 0 && !activeStop)
+			: (position !== null && position === nextToTrigger);
 		const status = isCompleted ? "completed" : (isActive ? "active" : "locked");
 
 		let statusChip;
@@ -998,12 +1142,22 @@ function renderManifest($container, data) {
 
 		let actionBtn = "";
 		const safeVeh = (vehicleLabel || "").replace(/'/g, "\\'");
-		if (manifestName && canTrigger) {
-			actionBtn = `<button class="mfst-depart-btn trigger" onclick="window._mfst_triggerStop('${manifestName}', ${seq}, '${safeVeh}')">
-				<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">fact_check</span> Trigger Attendance Check</button>`;
+		const safeTrip = String(tripId || "").replace(/'/g, "\\'");
+		// AC2: the button says WHICH run it acts on. With several runs on one vehicle
+		// page, two identical "Trigger Attendance Check" buttons is an invitation to
+		// check in the wrong one.
+		const runSuffix = tripLabel ? ` — ${escHtml(tripLabel)}` : "";
+		const lockSuffix = tripLabel ? ` (${escHtml(tripLabel)})` : "";
+		// AC3: nobody boards here, so there is nobody to check. A return-only run
+		// leaving its camp empty used to offer a check over an empty list, and running
+		// it advanced the run's pointer past a stop that never had anything to verify.
+		const nobodyBoards = employees.length === 0;
+		if (manifestName && canTrigger && !nobodyBoards) {
+			actionBtn = `<button class="mfst-depart-btn trigger" onclick="window._mfst_triggerStop('${manifestName}', ${seq}, '${safeVeh}', '${safeTrip}')">
+				<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">fact_check</span> Trigger Attendance Check${runSuffix}</button>`;
 		} else if (manifestName && isActive) {
-			actionBtn = `<button class="mfst-depart-btn complete" onclick="window._mfst_completeStop('${manifestName}', ${seq}, '${safeVeh}')">
-				<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">lock</span> Complete &amp; Lock Stop ${seq}</button>`;
+			actionBtn = `<button class="mfst-depart-btn complete" onclick="window._mfst_completeStop('${manifestName}', ${seq}, '${safeVeh}', '${safeTrip}')">
+				<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">lock</span> Complete &amp; Lock Stop ${seq}${lockSuffix}</button>`;
 		}
 
 		let empHtml = "";

@@ -1,0 +1,288 @@
+# Copyright (c) 2026, ONE FM and contributors
+# See license.txt
+"""WI-002590: one vehicle, several runs, and an attendance check that leaked between them.
+
+A Transportation Manifest is one VEHICLE for one DAY, and a vehicle drives several runs
+in a day. The attendance-check pointer was a single Int on the manifest, so triggering
+the check on S-801 advanced the number S-802 was reading as well: locking one run locked
+its neighbour, and completing one reopened the other.
+
+The pointer is now kept per run. The thing that needed the most care is the manifest that
+is already half-checked when this ships: it carries one number for the whole vehicle, and
+starting every run at 0 would silently REOPEN stops a supervisor had already verified.
+Every run inherits the old number the first time the map is read instead, so nothing that
+was locked comes unlocked.
+"""
+
+import json
+import pathlib
+import shutil
+import subprocess
+
+import frappe
+from frappe.tests.utils import FrappeTestCase
+
+SHEET = pathlib.Path(frappe.get_app_path(
+	"one_fm", "one_fm", "page", "transportation_manifest_page",
+	"transportation_manifest_page.js"
+))
+
+
+def _manifest(rows, active=0, by_trip=None):
+	"""A manifest carrying `rows` of (trip_id, stop_sequence), not saved."""
+	doc = frappe.new_doc("Transportation Manifest")
+	doc.schedule_date = frappe.utils.today()
+	doc.active_stop_sequence = active
+	if by_trip is not None:
+		doc.active_stop_by_trip = json.dumps(by_trip)
+	for trip_id, seq in rows:
+		doc.append("transportation_manifest_details", {
+			"trip_id": trip_id,
+			"stop_sequence": seq,
+			"employee_action": "Boarding",
+		})
+	return doc
+
+
+class TestThePointerIsPerRun(FrappeTestCase):
+	"""AC1: S-801's lock state is S-801's alone."""
+
+	def test_each_run_keeps_its_own_pointer(self):
+		doc = _manifest([("S-801", 1), ("S-802", 1)], by_trip={"S-801": 2})
+
+		self.assertEqual(doc.active_stop_for("S-801"), 2)
+		self.assertEqual(doc.active_stop_for("S-802"), 0)
+
+	def test_the_runs_are_listed_in_the_order_the_rows_mention_them(self):
+		doc = _manifest([("S-802", 1), ("S-801", 1), ("S-802", 2)])
+
+		self.assertEqual(doc.trip_keys(), ["S-802", "S-801"])
+
+	def test_a_row_with_no_run_still_has_somewhere_to_keep_state(self):
+		doc = _manifest([(None, 1)], by_trip={"": 3})
+
+		self.assertEqual(doc.trip_keys(), [""])
+		self.assertEqual(doc.active_stop_for(None), 3)
+
+	def test_an_unreadable_map_does_not_take_the_manifest_down(self):
+		doc = _manifest([("S-801", 1)])
+		doc.active_stop_by_trip = "{not json"
+
+		self.assertEqual(doc.active_stop_map(), {})
+
+
+class TestAnInFlightManifestKeepsItsLocks(FrappeTestCase):
+	"""The migration case: nothing that was verified comes unlocked."""
+
+	def test_every_run_inherits_the_old_vehicle_wide_pointer(self):
+		# Stop 1 was checked and locked on both runs under the old single pointer.
+		doc = _manifest([("S-801", 1), ("S-802", 1)], active=2)
+
+		self.assertEqual(doc.active_stop_map(), {"S-801": 2, "S-802": 2})
+		self.assertEqual(doc.active_stop_for("S-801"), 2)
+		self.assertEqual(doc.active_stop_for("S-802"), 2)
+
+	def test_a_manifest_that_never_started_checks_stays_empty(self):
+		doc = _manifest([("S-801", 1), ("S-802", 1)], active=0)
+
+		self.assertEqual(doc.active_stop_map(), {})
+
+	def test_the_split_map_wins_once_it_exists(self):
+		# After the first per-run write the legacy field is only a high-water mark.
+		doc = _manifest([("S-801", 1), ("S-802", 1)], active=9, by_trip={"S-801": 1})
+
+		self.assertEqual(doc.active_stop_map(), {"S-801": 1})
+		self.assertEqual(doc.active_stop_for("S-802"), 0)
+
+
+class TestTheLockFreezesOnlyItsOwnRun(FrappeTestCase):
+	"""enforce_stop_locking judges a row against ITS run's pointer."""
+
+	def _saved(self, rows, by_trip):
+		doc = _manifest(rows, by_trip=by_trip)
+		doc.flags.ignore_mandatory = True
+		doc.flags.ignore_links = True
+		doc.insert(ignore_permissions=True)
+		return doc
+
+	def test_a_completed_stop_on_one_run_cannot_be_edited(self):
+		doc = self._saved([("S-801", 1)], by_trip={"S-801": 2})
+		doc.reload()
+		doc.transportation_manifest_details[0].attendance_status = "Absent"
+
+		with self.assertRaises(frappe.ValidationError):
+			doc.save()
+
+	def test_the_same_stop_number_on_another_run_stays_editable(self):
+		# The defect: S-802's stop 1 was frozen because S-801 had moved past stop 1.
+		doc = self._saved([("S-801", 1), ("S-802", 1)], by_trip={"S-801": 2})
+		doc.reload()
+		s802 = [r for r in doc.transportation_manifest_details if r.trip_id == "S-802"][0]
+		s802.attendance_status = "Present"
+
+		doc.save()   # must not throw
+
+		doc.reload()
+		after = [r for r in doc.transportation_manifest_details if r.trip_id == "S-802"][0]
+		self.assertEqual(after.attendance_status, "Present")
+
+	def test_nothing_is_frozen_before_any_check_starts(self):
+		doc = self._saved([("S-801", 1)], by_trip={})
+		doc.reload()
+		doc.transportation_manifest_details[0].attendance_status = "Present"
+
+		doc.save()   # the compiler and dispatchers still populate freely
+
+
+class TestMovingOneRunsPointer(FrappeTestCase):
+	"""set_active_stop_for writes the map and leaves the others alone."""
+
+	def _saved(self):
+		doc = _manifest([("S-801", 1), ("S-802", 1)])
+		doc.flags.ignore_mandatory = True
+		doc.flags.ignore_links = True
+		doc.insert(ignore_permissions=True)
+		return doc
+
+	def test_only_the_named_run_moves(self):
+		doc = self._saved()
+
+		doc.set_active_stop_for("S-801", 1)
+		doc.reload()
+
+		self.assertEqual(doc.active_stop_for("S-801"), 1)
+		self.assertEqual(doc.active_stop_for("S-802"), 0)
+
+	def test_the_flat_field_follows_the_furthest_run(self):
+		# Kept in step for anything still reading it; no lock is decided from it now.
+		doc = self._saved()
+
+		doc.set_active_stop_for("S-801", 1)
+		doc.set_active_stop_for("S-802", 3)
+		doc.reload()
+
+		self.assertEqual(int(doc.active_stop_sequence), 3)
+
+
+class TestTheSheetSaysWhichRun(FrappeTestCase):
+	"""AC2 + AC3, and the endpoints carrying the run."""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		cls.sheet = SHEET.read_text()
+
+	def test_the_trigger_button_names_its_run(self):
+		self.assertIn("Trigger Attendance Check${runSuffix}", self.sheet)
+		self.assertIn("const runSuffix = tripLabel ? ` — ${escHtml(tripLabel)}` : \"\";",
+					  self.sheet)
+
+	def test_the_lock_button_names_its_run(self):
+		self.assertIn("Complete &amp; Lock Stop ${seq}${lockSuffix}", self.sheet)
+		self.assertIn("const lockSuffix = tripLabel ? ` (${escHtml(tripLabel)})` : \"\";",
+					  self.sheet)
+
+	def test_a_departure_nobody_boards_at_offers_no_check(self):
+		# AC3: a return-only run leaving its camp empty has nobody to verify, and
+		# triggering it would advance that run past a stop with nothing in it.
+		self.assertIn("const nobodyBoards = employees.length === 0;", self.sheet)
+		self.assertIn("if (manifestName && canTrigger && !nobodyBoards) {", self.sheet)
+
+	def test_the_lock_button_is_still_offered_on_an_active_stop(self):
+		# Suppression is for the TRIGGER only - a supervisor must still be able to
+		# close a stop they have already opened.
+		self.assertIn("} else if (manifestName && isActive) {", self.sheet)
+
+	def test_both_endpoints_are_told_which_run(self):
+		self.assertIn("trip_id: tripId || \"\"", self.sheet)
+		self.assertEqual(self.sheet.count("trip_id: tripId || \"\""), 2)
+
+	def test_the_page_reads_the_per_run_map(self):
+		self.assertIn("const activeByTrip = meta.active_stop_by_trip || {};", self.sheet)
+		self.assertIn('const activeStop = parseInt(activeByTrip[trip.id || ""], 10) || 0;',
+					  self.sheet)
+
+	def test_the_vehicle_wide_pointer_no_longer_drives_the_lock(self):
+		self.assertNotIn("const activeStop = meta.active_stop_sequence || 0;", self.sheet)
+
+
+TRIGGER_HARNESS = frappe.get_app_path("one_fm", "tests", "js", "depart_trigger_harness.js")
+
+
+def can_trigger(**args):
+	"""Run the SHIPPED canTrigger decision from renderDepartCard."""
+	out = subprocess.run(
+		["node", TRIGGER_HARNESS, json.dumps(args)],
+		capture_output=True, text=True, env={"PATH": "/usr/bin:/bin:/usr/local/bin"},
+		check=True,
+	)
+	return json.loads(out.stdout)["canTrigger"]
+
+
+class TestEveryRunCanStartItsOwnCheck(FrappeTestCase):
+	"""Six of seven runs on a vehicle had no Trigger button at all.
+
+	The rule read "the first DEPART card of the run" as ``seq === 1``. But ``seq`` is the
+	RIDER'S stop number across the whole run, not an ordinal for the camp they board at,
+	so only a trip whose boarders happen to start at stop 1 ever matched. On VHL-L-0004
+	that was S-101 alone - S-102 through S-107 carry seqs 3, 5, 8, 9, 3 and 13, and none
+	of them could start an attendance check.
+
+	The intent is unchanged and still holds: within a run only the FIRST pickup may start
+	a check, so a driver cannot begin at a mid-route camp they have not reached
+	(WI-002074). It is now decided by the camp's POSITION in the run. `seq` remains what
+	the trigger sends and what the lock state is read back against, so the bookkeeping
+	either side of this is untouched.
+	"""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		if not shutil.which("node"):
+			raise cls.failureException("node is needed to run the shipped rule")
+
+	def test_a_run_whose_riders_start_at_stop_one_can_trigger(self):
+		self.assertTrue(can_trigger(isMixed=True, activeStop=0, campIndex=0, activeIndex=-1))
+
+	def test_a_run_whose_riders_start_further_along_can_trigger_too(self):
+		# S-102: camp seq 3. The seq is irrelevant - it is still the run's first pickup.
+		self.assertTrue(can_trigger(isMixed=True, activeStop=0, campIndex=0, activeIndex=-1))
+
+	def test_a_mid_route_camp_still_cannot_start_a_check(self):
+		# WI-002074's rule, which this must not undo.
+		self.assertFalse(can_trigger(isMixed=True, activeStop=0, campIndex=1, activeIndex=-1))
+
+	def test_a_run_already_triggered_does_not_offer_it_again(self):
+		self.assertFalse(can_trigger(isMixed=True, activeStop=3, campIndex=0, activeIndex=0))
+
+	def test_an_ordinary_run_starts_at_its_first_camp(self):
+		self.assertTrue(can_trigger(isMixed=False, activeStop=0, campIndex=0, activeIndex=-1))
+
+	def test_an_ordinary_run_does_not_skip_ahead(self):
+		self.assertFalse(can_trigger(isMixed=False, activeStop=0, campIndex=1, activeIndex=-1))
+
+	def test_an_ordinary_run_walks_camp_by_camp(self):
+		# The camp after the active one is next, whatever seq either of them carries.
+		self.assertTrue(can_trigger(isMixed=False, activeStop=5, campIndex=1, activeIndex=0))
+
+	def test_a_camp_already_passed_is_not_offered_again(self):
+		self.assertFalse(can_trigger(isMixed=False, activeStop=5, campIndex=0, activeIndex=0))
+
+	def test_an_unknown_active_camp_offers_nobody(self):
+		# activeIndex -1 with a lock set means the stored seq matches no camp on this run.
+		# Offering the first one again would let a driver restart a check already running.
+		self.assertFalse(can_trigger(isMixed=False, activeStop=5, campIndex=0, activeIndex=-1))
+
+	def test_the_decision_is_a_position_not_a_seq(self):
+		page = frappe.read_file(frappe.get_app_path(
+			"one_fm", "one_fm", "page", "transportation_manifest_page",
+			"transportation_manifest_page.js"))
+		self.assertIn("(position === 0 && !activeStop)", page)
+		self.assertNotIn("(seq === 1 && !activeStop)", page)
+
+	def test_both_loops_hand_the_card_its_position(self):
+		page = frappe.read_file(frappe.get_app_path(
+			"one_fm", "one_fm", "page", "transportation_manifest_page",
+			"transportation_manifest_page.js"))
+		self.assertEqual(page.count("index, activeIndex);"), 2)
+		self.assertEqual(page.count("const activeIndex = campGroups.findIndex("), 2)
