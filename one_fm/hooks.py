@@ -498,6 +498,15 @@ doc_events = {
 	"Customer": {
 		"on_update":"one_fm.tasks.erpnext.customer.on_update",
 	},
+	"Company": {
+		# WI-000423: ERPNext's Company.on_update() creates a "Goods In Transit"
+		# warehouse with warehouse_type="Transit". That Warehouse Type is
+		# normally seeded by ERPNext's Setup Wizard, which never runs on a
+		# fresh install created outside the interactive flow (e.g. test
+		# setups using bench make_test_records), so Company creation fails
+		# with LinkValidationError: Could not find Warehouse Type: Transit.
+		"before_insert": "one_fm.setup.setup.ensure_transit_warehouse_type",
+	},
 	"User": {
 		"validate": "one_fm.sms_utils.normalize_user_mobile_no",
 		"after_insert":"one_fm.tasks.erpnext.user.after_insert",
