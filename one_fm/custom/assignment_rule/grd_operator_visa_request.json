@@ -7,8 +7,8 @@
   "is_assignment_rule_with_workflow": 1,
   "assign_condition": "workflow_state in (\"Pending by GRD Operator\", \"Pending By PAM\",\"Pending Visa Issuance\", \"Awaiting Visa Cancellation\")",
   "unassign_condition": "workflow_state not in (\"Awaiting Quota Availability\", \"Pending By MOI\", \"Pending Visa Issuance\", \"Pending Cancel Work Permit\", \"Pending by GRD Operator\", \"Pending By PAM\", \"Awaiting Visa Cancellation\")",
-  "rule": "Based on Process Task",
-  "field": "owner",
+  "rule": "Based on Field",
+  "field": "grd_operator",
   "doctype": "Assignment Rule",
   "users": [],
   "assignment_days": [
