@@ -91,7 +91,7 @@
    "fieldname": "cancellation_reason",
    "fieldtype": "Select",
    "label": "Cancellation Reason",
-   "options": "\nCancellation Due to Visa Expiry",
+   "options": "\nMedically Unfit\nPCC Failed\nCandidate Dropped Offer\nCancellation Due to Visa Expiry\nCountry Ban\nVisa Stamping Rejected",
    "reqd": 1
   },
   {

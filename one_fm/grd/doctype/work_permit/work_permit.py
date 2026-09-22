@@ -608,8 +608,8 @@ def create_wp_renewal(employee,status,name):
         if employee.one_fm_nationality != "Kuwaiti":
             work_permit_type = "Renewal Expat"
 
-    if employee.one_fm_work_permit:
-        work_permit = frappe.get_doc('Work Permit', employee.one_fm_work_permit)
+    if employee.work_permit:
+        work_permit = frappe.get_doc('Work Permit', employee.work_permit)
         new_work_permit = frappe.copy_doc(work_permit)
         new_work_permit.employee = employee.name
         new_work_permit.preparation = preparation_name
@@ -637,8 +637,8 @@ def create_wp_transfer(employee,status,name):
             Doctype = "Transfer Paper"
             work_permit_type = "Local Transfer"
             preparation_name = None
-    if employee.one_fm_work_permit:
-        work_permit = frappe.get_doc('Work Permit', employee.one_fm_work_permit)
+    if employee.work_permit:
+        work_permit = frappe.get_doc('Work Permit', employee.work_permit)
         new_work_permit = frappe.copy_doc(work_permit)
         new_work_permit.employee = employee.name
         new_work_permit.preparation = None
@@ -666,8 +666,8 @@ def create_wp_kuwaiti(employee,status,name):
         start_day = today()
         Doctype = "PIFSS Form 103"
         work_permit_type = "New Kuwaiti"
-    if employee.one_fm_work_permit:
-        work_permit = frappe.get_doc('Work Permit', employee.one_fm_work_permit)
+    if employee.work_permit:
+        work_permit = frappe.get_doc('Work Permit', employee.work_permit)
         new_work_permit = frappe.copy_doc(work_permit)
         new_work_permit.employee = employee.name
         new_work_permit.preparation = None
