@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002539: the minutes a trip opens on, and the two ways they used to be lost.
+"""the minutes a trip opens on, and the two ways they used to be lost.
 
 Every modal that asks for a drive now seeds one baseline - 15 minutes of transit, 5 of
 buffer - and the server's DEFAULT_TRANSIT_MINUTES matches, so the itinerary a modal
@@ -11,7 +11,7 @@ Two separate defects sat behind AC3 and AC4:
 * A leg that drives somewhere could be saved as 0 minutes, which the manifest prints as
   an instantaneous drive. It is floored to 1 on the way to the canvas - a floor on what
   is STORED, never a default nobody chose: the Trip Builder still refuses to confirm a
-  blank drive, and that guard (WI-002078 AC3.6) is deliberately left standing.
+  blank drive, and that guard is deliberately left standing.
 * Editing one minute field reset the other to 0. The browser posted only the key it had
   just changed, and the server refilled the missing one from its own default.
 """
@@ -90,7 +90,7 @@ class TestADriveIsNeverInstant(FrappeTestCase):
 		self.assertIn("item.transitMinutes = self._legTransit(leg);", self.canvas)
 
 	def test_the_blank_drive_guard_is_still_standing(self):
-		# The floor must NOT become a way to confirm a trip nobody timed. WI-002078
+		# The floor must NOT become a way to confirm a trip nobody timed. The
 		# AC3.6 blocks Confirm when a drive has no minutes, and that rule outranks the
 		# convenience of never showing a 0.
 		server = pathlib.Path(frappe.get_app_path(
@@ -132,7 +132,7 @@ class TestTheTwoMinuteFieldsAreIndependent(FrappeTestCase):
 
 
 class TestASoloCardIsARunToo(FrappeTestCase):
-	"""AC1's flow needs the Trip Builder to open on ONE card (also WI-002578 AC6/AC7)."""
+	"""The flow needs the Trip Builder to open on ONE card."""
 
 	@classmethod
 	def setUpClass(cls):

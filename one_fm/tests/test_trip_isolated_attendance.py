@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002590: one vehicle, several runs, and an attendance check that leaked between them.
+"""one vehicle, several runs, and an attendance check that leaked between them.
 
 A Transportation Manifest is one VEHICLE for one DAY, and a vehicle drives several runs
 in a day. The attendance-check pointer was a single Int on the manifest, so triggering
@@ -239,7 +239,7 @@ class TestEveryRunCanStartItsOwnCheck(FrappeTestCase):
 	  never mark attendance at all - S-401's Mangaf card stayed "Locked until triggered"
 	  for the rest of the day, with six people aboard.
 
-	Both now walk the run's own camps by POSITION. WI-002074's concern still holds, and
+	Both now walk the run's own camps by POSITION. The original concern still holds, and
 	the tests below are mostly about that: a camp is offered only once the one before it
 	is COMPLETE, never merely triggered.
 	"""
@@ -264,7 +264,7 @@ class TestEveryRunCanStartItsOwnCheck(FrappeTestCase):
 		self.assertFalse(can_trigger(activeStop=1, campIndex=0, activeIndex=0, isActive=True))
 
 	def test_a_second_camp_waits_while_the_first_is_still_open(self):
-		# Triggered is not completed. This is WI-002074's concern and it must survive.
+		# Triggered is not completed. That concern must survive.
 		self.assertFalse(can_trigger(activeStop=1, campIndex=1, activeIndex=0))
 
 	def test_a_second_camp_opens_once_the_first_is_complete(self):

@@ -18,7 +18,7 @@ class TransportationManifest(Document):
 		self.validate_attendance_and_qoa()
 		self.validate_relievers()
 
-	# ── The attendance-check pointer, per run (WI-002590 AC1) ───────────────────
+	# ── The attendance-check pointer, per run ───────────────────
 	# A manifest is one VEHICLE for one DAY, and a vehicle drives several runs in a
 	# day. The pointer used to be a single Int on the manifest, so triggering the
 	# check on S-801 advanced the number S-802 was reading too: locking one run
@@ -74,7 +74,7 @@ class TransportationManifest(Document):
 		verified entries must stay read-only — a supervisor moving to the next camp
 		must not be able to alter data already checked at an earlier gate.
 
-		Read per run since WI-002590: a row is judged against ITS OWN trip's pointer,
+		Read per run: a row is judged against ITS OWN trip's pointer,
 		so a completed stop on S-801 does not freeze the same stop number on S-802.
 
 		Only kicks in once checks have started (active >= 1), so the daily compiler
@@ -179,7 +179,7 @@ class TransportationManifest(Document):
 			if row.pickup_accommodation and row.pickup_accommodation not in accommodation_sequence:
 				accommodation_sequence[row.pickup_accommodation] = len(accommodation_sequence) + 1
 
-		# A merged run is numbered by visit, not by camp (WI-002072). Its bus calls at
+		# A merged run is numbered by visit, not by camp. Its bus calls at
 		# the same place twice — dropping in the morning and collecting in the evening —
 		# and those are two stops on the driver's list, not one.
 		if (self.get("trip_direction") or "") == "Mixed":
@@ -198,7 +198,7 @@ class TransportationManifest(Document):
 				row.stop_sequence = 1
 
 	def _number_stops_by_visit(self, rows):
-		"""Number a merged run's stops one per visit (WI-002072).
+		"""Number a merged run's stops one per visit.
 
 		The per-camp rule the rest of the manifests use collapses everything happening at
 		one place into a single stop. That is right for a run that only ever picks up, and

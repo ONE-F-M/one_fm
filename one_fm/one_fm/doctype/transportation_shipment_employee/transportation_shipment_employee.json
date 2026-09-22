@@ -65,7 +65,7 @@
    "fieldtype": "Check",
    "label": "Is Reliever",
    "default": "0",
-   "description": "Riding in place of somebody who is away today (WI-002591)."
+   "description": "Riding in place of somebody who is away today."
   },
   {
    "fieldname": "relieving_employee",

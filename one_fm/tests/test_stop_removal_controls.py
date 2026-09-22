@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002540: taking stops off a lane - one, several, or the whole run.
+"""taking stops off a lane - one, several, or the whole run.
 
 The drawer could only ever remove the ONE stop that was selected. A run being taken
 apart went a stop at a time, each removal its own save.

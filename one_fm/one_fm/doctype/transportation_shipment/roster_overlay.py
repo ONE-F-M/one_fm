@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
-"""Who is actually on the bus on a given day (WI-002591).
+"""Who is actually on the bus on a given day.
 
 The shipment generator builds its cards from ``Employee.shift`` - the MASTER allocation.
 That answers "whose post is this", not "who is travelling today", and the two part company

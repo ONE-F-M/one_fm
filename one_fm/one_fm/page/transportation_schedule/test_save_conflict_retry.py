@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""The board and the manifest stop losing races with themselves (WI-002538).
+"""The board and the manifest stop losing races with themselves.
 
 Both pages write a document that the whole screen shares - the Route Plan behind the
 canvas, the Transportation Manifest behind every chip on the sheet - and both write it
@@ -252,7 +252,7 @@ class TestTheManifestCheckInGoesThroughTheSameReplay(FrappeTestCase):
 
 
 class TestTheBoardNoLongerStartsTheRace(FrappeTestCase):
-	"""AC2's half: the client stops overlapping its own saves (WI-002538)."""
+	"""AC2's half: the client stops overlapping its own saves."""
 
 	@classmethod
 	def setUpClass(cls):
