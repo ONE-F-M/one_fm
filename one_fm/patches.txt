@@ -617,4 +617,9 @@ one_fm.patches.v15_0.delete_pathfinder_log #2026-09-16 Pathfinder Log is retired
 one_fm.patches.v15_0.remove_employee_work_permit_fields #2026-09-18 WI-002618
 one_fm.patches.v15_0.move_employee_grade_to_salary_tab #2026-09-18 WI-002605
 one_fm.patches.v15_0.backfill_onboard_employee_visa_request #2026-09-21 WI-002606
+one_fm.patches.v15_0.add_job_offer_passport_custom_fields #2026-09-18 WI-002599
+one_fm.patches.v15_0.backfill_job_offer_passport_details #2026-09-18 WI-002599
+one_fm.patches.v15_0.add_visa_costing_action #2026-09-21 WI-002601
+one_fm.patches.v15_0.backfill_lg_details_applicable #2026-09-18 WI-002597
+one_fm.patches.v15_0.grd_operator_visa_request_assign_by_field #2026-09-18 WI-002610
 one_fm.patches.v15_0.restate_pam_license_sector_figures #2026-09-21 WI-002094

@@ -1,3 +1,39 @@
+// WI-002599: what stops a Visa Request being created for an applicant.
+const MIN_PASSPORT_VALIDITY_MONTHS = 18;
+const MIN_APPLICANT_AGE_YEARS = 21;
+
+function visa_request_blockers(frm, applicant) {
+  // The Job Offer's own copy is what the criterion names, and the Job Applicant is the
+  // fallback: every Job Offer submitted before these fields existed has them empty, and
+  // there are over a thousand of those.
+  const passport_expiry = frm.doc.one_fm_passport_expire
+    || (applicant && applicant.one_fm_passport_expire);
+  const date_of_birth = frm.doc.one_fm_date_of_birth
+    || (applicant && applicant.one_fm_date_of_birth);
+
+  const today = frappe.datetime.get_today();
+  const messages = [];
+
+  // A date we do not have is not a date that fails. Blocking on a blank would take the
+  // button away from applicants nobody has said anything about, which is a different
+  // change from the one this story asks for.
+  if (passport_expiry) {
+    const earliest_allowed = frappe.datetime.add_months(today, MIN_PASSPORT_VALIDITY_MONTHS);
+    if (frappe.datetime.get_day_diff(passport_expiry, earliest_allowed) < 0) {
+      messages.push(__("The applicant's passport must be valid for at least 18 more months from today. The Visa Request cannot be created"));
+    }
+  }
+
+  if (date_of_birth) {
+    const latest_allowed = frappe.datetime.add_months(today, -12 * MIN_APPLICANT_AGE_YEARS);
+    if (frappe.datetime.get_day_diff(date_of_birth, latest_allowed) > 0) {
+      messages.push(__("The applicant must be at least 21 years old to create a Visa Request. The Visa Request cannot be created."));
+    }
+  }
+
+  return messages;
+}
+
 frappe.ui.form.on('Job Offer', {
   refresh(frm) {
     // Ensure that only Active Shifts are shown in operations_shift field
@@ -17,7 +53,12 @@ frappe.ui.form.on('Job Offer', {
     check_and_info_offer_terms(frm, false);
     frm.remove_custom_button("Create Employee");
     if (frm.doc.status == 'Accepted' && frm.doc.docstatus === 1 && frm.doc.job_applicant) {
-      frappe.db.get_value('Job Applicant', frm.doc.job_applicant, 'one_fm_applicant_is_overseas_or_local', (r) => {
+      // WI-002599: the applicant's passport expiry and date of birth come back in the same
+      // call. Reading them from the Job Applicant as well as the Job Offer matters because
+      // a Job Offer submitted before those fields existed carries nothing - fetch_from runs
+      // on validate, which a submitted document does not run again.
+      frappe.db.get_value('Job Applicant', frm.doc.job_applicant,
+        ['one_fm_applicant_is_overseas_or_local', 'one_fm_passport_expire', 'one_fm_date_of_birth'], (r) => {
         if (r && r.one_fm_applicant_is_overseas_or_local === 'Local') {
           frappe.db.get_value('Transfer Paper', {'applicant': frm.doc.job_applicant}, 'name', (tp) => {
             if (tp && tp.name) {
@@ -40,12 +81,19 @@ frappe.ui.form.on('Job Offer', {
             }
           });
         } else if (r && r.one_fm_applicant_is_overseas_or_local === 'Overseas') {
-          frm.add_custom_button(__('Create Visa Request'), () => {
-            frappe.new_doc('Visa Request', {
-              job_offer: frm.doc.name,
-              job_applicant: frm.doc.job_applicant
-            });
-          }).addClass('btn-primary');
+          // WI-002599: a Visa Request is only worth starting for an applicant who can
+          // actually be issued one.
+          const blockers = visa_request_blockers(frm, r);
+          if (blockers.length) {
+            blockers.forEach((message) => frm.dashboard.add_comment(message, 'red', true));
+          } else {
+            frm.add_custom_button(__('Create Visa Request'), () => {
+              frappe.new_doc('Visa Request', {
+                job_offer: frm.doc.name,
+                job_applicant: frm.doc.job_applicant
+              });
+            }).addClass('btn-primary');
+          }
         }
       });
     }
