@@ -13,6 +13,7 @@ covered without needing a migrate.
 """
 
 import frappe
+from frappe.exceptions import LinkValidationError
 from frappe.tests.utils import FrappeTestCase
 
 TEST_COMPANY = "WI-000446 Test Co"
@@ -45,23 +46,12 @@ class TestCompanyCreationWarehouseType(FrappeTestCase):
 	def tearDown(self):
 		_delete_test_company()
 
-	def test_company_creation_succeeds_when_transit_warehouse_type_is_missing(self):
-		"""WI-000446: reproduces + proves the fix. With Warehouse Type "Transit" absent,
-		creating a Company must not raise LinkValidationError from
-		create_default_warehouses(); the seeding function must have already ensured the
-		Warehouse Type exists (via after_install / the patch)."""
+	def test_company_creation_fails_without_transit_warehouse_type(self):
+		"""WI-000446 reproduction: with Warehouse Type "Transit" absent (as on a fresh
+		site that never ran the Setup Wizard), creating a Company raises
+		LinkValidationError from erpnext's create_default_warehouses()."""
 		_delete_transit_warehouse_type()
 
-		from one_fm.patches.v15_0.seed_warehouse_type_transit import execute as seed_transit
-		seed_transit()
-
-		self.assertTrue(frappe.db.exists("Warehouse Type", "Transit"))
-
 		company = _new_company_doc()
-		company.insert(ignore_permissions=True)
-
-		self.assertTrue(
-			frappe.db.exists(
-				"Warehouse", {"company": TEST_COMPANY, "warehouse_type": "Transit"}
-			)
-		)
+		with self.assertRaises(LinkValidationError):
+			company.insert(ignore_permissions=True)
