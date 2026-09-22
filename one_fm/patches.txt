@@ -624,3 +624,4 @@ one_fm.patches.v15_0.add_visa_costing_action #2026-09-21 WI-002601
 one_fm.patches.v15_0.backfill_lg_details_applicable #2026-09-18 WI-002597
 one_fm.patches.v15_0.grd_operator_visa_request_assign_by_field #2026-09-18 WI-002610
 one_fm.patches.v15_0.restate_pam_license_sector_figures #2026-09-21 WI-002094
+one_fm.patches.v15_0.remove_employee_weekly_action_employee_user #2026-09-22
