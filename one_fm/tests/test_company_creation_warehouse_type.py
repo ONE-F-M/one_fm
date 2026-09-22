@@ -18,6 +18,8 @@ from frappe.tests.utils import FrappeTestCase
 
 TEST_COMPANY = "WI-000446 Test Co"
 
+# WI-000446 retry: re-touched to force a fresh test run in the sandbox.
+
 
 def _delete_transit_warehouse_type():
 	if frappe.db.exists("Warehouse Type", "Transit"):
