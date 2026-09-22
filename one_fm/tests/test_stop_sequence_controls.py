@@ -158,9 +158,94 @@ class TestCompactView(FrappeTestCase):
 		self.assertIn(""":class="{ 'rp-stop-compact-row': stopViewMode === 'compact' }\"""",
 					  self.canvas)
 
-	def test_the_toggle_is_only_offered_where_it_helps(self):
-		self.assertIn("""<div class="rp-view-toggle" v-if="selectedTripStops.length > 1">""",
-					  self.canvas)
+	def test_the_toggle_is_offered_on_a_one_stop_run(self):
+		# stopViewMode is shared across selections. Hiding the toggle on a one-stop run
+		# left compact mode stuck on with no way back to the detail, which is what
+		# happens after compacting a merged run and then opening a single one.
+		self.assertTrue(toggle_shown(1))
+
+	def test_it_is_still_offered_on_a_merged_run(self):
+		self.assertTrue(toggle_shown(2))
+		self.assertTrue(toggle_shown(5))
+
+	def test_it_is_not_offered_when_there_are_no_stops(self):
+		# Nothing to compact or expand, so nothing to offer.
+		self.assertFalse(toggle_shown(0))
+
+
+def toggle_shown(stop_count):
+	"""Run the shipped v-if on the Compact/Detailed toggle for this many stops.
+
+	The condition is evaluated rather than matched as text, so any correct formulation
+	passes and only a real regression fails.
+	"""
+	import json
+	import subprocess
+
+	app = frappe.get_app_path("one_fm", "..")
+	out = subprocess.run(
+		["node", f"{app}/one_fm/tests/js/stop_view_toggle_harness.js", str(CANVAS),
+		 json.dumps({"stopCount": stop_count})],
+		capture_output=True, text=True, check=True,
+	)
+	result = json.loads(out.stdout)
+	assert "error" not in result, result["error"]
+	return result["shown"]
+
+
+def css_rules(*selectors):
+	"""Declarations of the shipped rules whose whole selector is one of these."""
+	import json
+	import subprocess
+
+	app = frappe.get_app_path("one_fm", "..")
+	out = subprocess.run(
+		["node", f"{app}/one_fm/tests/js/stop_header_css_harness.js", str(CANVAS),
+		 json.dumps({"selectors": list(selectors)})],
+		capture_output=True, text=True, check=True,
+	)
+	return json.loads(out.stdout)
+
+
+class TestTheStopHeaderDoesNotOverflow(FrappeTestCase):
+	"""A long stop name pushed the direction badge past the card edge.
+
+	Every item on the header line except the name carries flex-shrink:0, so the name is
+	the only one that can yield - but a flex item will not shrink below its own content
+	without min-width:0, so nothing yielded and the row overflowed instead.
+	"""
+
+	def test_the_name_can_shrink_and_truncates(self):
+		name = css_rules(".rp-stop-name")[".rp-stop-name"]
+		self.assertIsNotNone(name, ".rp-stop-name is not defined")
+		self.assertEqual(name.get("min-width"), "0")
+		self.assertEqual(name.get("overflow"), "hidden")
+		self.assertEqual(name.get("text-overflow"), "ellipsis")
+		self.assertEqual(name.get("white-space"), "nowrap")
+
+	def test_the_name_is_the_only_item_that_yields(self):
+		# If another item could shrink, the badge would still be squashed before the
+		# name gave up any width.
+		fixed = (".rp-stop-check", ".rp-stop-drag-handle", ".rp-stop-move",
+				 ".rp-stop-num", ".rp-card-dir")
+		rules = css_rules(*fixed)
+		for selector in fixed:
+			decls = rules[selector]
+			self.assertIsNotNone(decls, selector)
+			self.assertEqual(decls.get("flex-shrink"), "0", selector)
+
+	def test_the_badge_still_sits_next_to_the_name(self):
+		# flex-basis auto rather than 1 1 0: growing the name would push the badge to
+		# the far right of the card, which is not where it is today.
+		name = css_rules(".rp-stop-name")[".rp-stop-name"]
+		self.assertEqual(name.get("flex"), "0 1 auto")
+
+	def test_a_truncated_name_still_says_what_it_is(self):
+		# Truncating without a tooltip hides the value with no way to read it.
+		self.assertIn(
+			"""<div class="rp-stop-name" :title="stop.card.site_location || 'Unknown'">""",
+			CANVAS.read_text(),
+		)
 
 
 class TestAutoScroll(FrappeTestCase):
