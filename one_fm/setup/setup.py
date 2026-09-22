@@ -7,6 +7,7 @@ from one_fm.setup.custom_field import get_custom_fields
 from one_fm.setup.property_setter import get_field_properties
 from one_fm.setup.workflow import create_workflows, delete_workflows
 from one_fm.setup.assignment_rule import create_assignment_rules, delete_assignment_rules
+from one_fm.patches.v15_0.seed_warehouse_type_transit import create_warehouse_type_transit
 
 
 def after_install():
@@ -14,6 +15,13 @@ def after_install():
 	add_property_setter(get_field_properties())
 	create_workflows()
 	create_assignment_rules()
+	# WI-000446: ERPNext's Company.on_update() always tries to create a "Goods In
+	# Transit" Warehouse linked to Warehouse Type "Transit". That Warehouse Type is
+	# normally seeded by the Setup Wizard's install_fixtures, which a fresh one_fm
+	# install/migrate never runs, so creating a Company would otherwise raise
+	# LinkValidationError. Seed it here too, not just from the patch, so brand-new
+	# sites are covered.
+	create_warehouse_type_transit()
 	frappe.db.commit()
 
 def _create_custom_fields_resiliently(custom_fields: dict):
