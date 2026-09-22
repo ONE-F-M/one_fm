@@ -621,4 +621,5 @@ one_fm.patches.v15_0.allow_visa_request_bulk_edit #2026-09-12 WI-002446
 one_fm.patches.v15_0.backfill_pam_license_sector_headcounts #2026-09-15 WI-002091
 one_fm.patches.v15_0.delete_pathfinder_log #2026-09-16 Pathfinder Log is retired; drop the doctype, its child table and the workflow actions that pointed at it
 one_fm.patches.v15_0.backfill_lg_details_applicable #2026-09-18 WI-002597
+one_fm.patches.v15_0.grd_operator_visa_request_assign_by_field #2026-09-18 WI-002610
 one_fm.patches.v15_0.restate_pam_license_sector_figures #2026-09-21 WI-002094
