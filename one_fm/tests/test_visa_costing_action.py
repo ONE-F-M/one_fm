@@ -6,8 +6,9 @@ The BA site has no Visa Costing row and its Action list is still the older spell
 the option ships with the doctype JSON and the row is seeded by a patch rather than
 migrated.
 
-The 20 KWD is tied to the Action: picking it fills an empty amount, switching away takes
-the 20 back off, and an amount typed in by hand is left alone either way.
+The 20 KWD lives in its own Visa Amount column rather than in the work permit fee, and is
+tied to the Action: picking it fills an empty amount, switching away takes the 20 back
+off, and an amount typed in by hand is left alone either way.
 """
 
 import json
@@ -16,7 +17,7 @@ import subprocess
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from one_fm.patches.v15_0.add_visa_costing_action import ACTION, PARENT, WORK_PERMIT_AMOUNT
+from one_fm.patches.v15_0.add_visa_costing_action import ACTION, PARENT, VISA_AMOUNT
 
 CHILD_DOCTYPE = "GRD Renewal Extension Cost"
 SCRIPT = "one_fm/public/js/doctype_js/hr_settings.js"
@@ -58,41 +59,68 @@ class TestTheAmountDefaults(FrappeTestCase):
 
 	def test_picking_visa_costing_fills_in_20(self):
 		row = run_handler({"renewal_or_extend": ACTION})
-		self.assertEqual(row.get("work_permit_amount"), WORK_PERMIT_AMOUNT)
+		self.assertEqual(row.get("visa_amount"), VISA_AMOUNT)
 
 	def test_the_row_total_follows_the_amount(self):
 		# The fee is worthless if Total Amount does not move with it.
 		row = run_handler({"renewal_or_extend": ACTION})
-		self.assertEqual(row.get("total_amount"), WORK_PERMIT_AMOUNT)
+		self.assertEqual(row.get("total_amount"), VISA_AMOUNT)
 
 	def test_an_amount_somebody_set_is_not_overwritten(self):
-		row = run_handler({"renewal_or_extend": ACTION, "work_permit_amount": 35})
-		self.assertEqual(row.get("work_permit_amount"), 35)
+		row = run_handler({"renewal_or_extend": ACTION, "visa_amount": 35})
+		self.assertEqual(row.get("visa_amount"), 35)
+
+	def test_the_work_permit_fee_is_left_alone(self):
+		# The visa fee has its own column now; picking the Action must not touch the
+		# work permit amount, and the row totals both.
+		row = run_handler({"renewal_or_extend": ACTION, "work_permit_amount": 10})
+		self.assertEqual(row.get("work_permit_amount"), 10)
+		self.assertEqual(row.get("visa_amount"), VISA_AMOUNT)
+		self.assertEqual(row.get("total_amount"), 30)
+
+	def test_the_field_exists_on_the_costing_table(self):
+		field = frappe.get_meta(CHILD_DOCTYPE).get_field("visa_amount")
+		self.assertIsNotNone(field)
+		self.assertEqual(field.fieldtype, "Currency")
+		self.assertEqual(field.label, "Visa Amount")
+
+	def test_the_server_totals_it_too(self):
+		# The browser and the HR Settings validate hook must agree, or a row saved by
+		# any other route carries a total that does not match its own components.
+		from one_fm.grd.doctype.preparation.preparation import (
+			COST_COMPONENT_FIELDS,
+			MASTER_COST_COMPONENT_FIELDS,
+		)
+		self.assertIn("visa_amount", MASTER_COST_COMPONENT_FIELDS)
+		# Preparation Record has no visa_amount column, so its contract is unchanged -
+		# widening it would set a field that does not exist and drop the value on save.
+		self.assertNotIn("visa_amount", COST_COMPONENT_FIELDS)
+		self.assertIsNone(frappe.get_meta("Preparation Record").get_field("visa_amount"))
 
 	def test_no_other_action_gets_the_visa_costing_fee(self):
 		for other in ("Extension", "Renewal Expat", "Cancellation"):
 			row = run_handler({"renewal_or_extend": other})
-			self.assertIsNone(row.get("work_permit_amount"), other)
+			self.assertIsNone(row.get("visa_amount"), other)
 
 	def test_switching_away_takes_the_fee_back_off(self):
 		for other in ("Extension", "Renewal Expat", "Cancellation", "Visa Extension"):
 			row = run_handler({"renewal_or_extend": other,
-							   "work_permit_amount": WORK_PERMIT_AMOUNT})
-			self.assertEqual(row.get("work_permit_amount"), 0, other)
+							   "visa_amount": VISA_AMOUNT})
+			self.assertEqual(row.get("visa_amount"), 0, other)
 
 	def test_the_total_follows_the_fee_back_down(self):
 		row = run_handler({"renewal_or_extend": "Extension",
-						   "work_permit_amount": WORK_PERMIT_AMOUNT})
+						   "visa_amount": VISA_AMOUNT})
 		self.assertEqual(row.get("total_amount"), 0)
 
 	def test_switching_away_leaves_a_typed_amount_alone(self):
 		# Only the 20 comes off. Any other figure was entered by hand.
-		row = run_handler({"renewal_or_extend": "Extension", "work_permit_amount": 35})
-		self.assertEqual(row.get("work_permit_amount"), 35)
+		row = run_handler({"renewal_or_extend": "Extension", "visa_amount": 35})
+		self.assertEqual(row.get("visa_amount"), 35)
 
 	def test_the_other_components_are_never_touched(self):
 		row = run_handler({"renewal_or_extend": "Extension",
-						   "work_permit_amount": WORK_PERMIT_AMOUNT,
+						   "visa_amount": VISA_AMOUNT,
 						   "medical_insurance_amount": 50, "civil_id_amount": 5})
 		self.assertEqual(row.get("medical_insurance_amount"), 50)
 		self.assertEqual(row.get("civil_id_amount"), 5)
@@ -103,18 +131,18 @@ def costing_row():
 	return frappe.db.get_value(
 		CHILD_DOCTYPE,
 		{"parent": PARENT, "parenttype": PARENT, "renewal_or_extend": ACTION},
-		["work_permit_amount", "total_amount"], as_dict=True)
+		["visa_amount", "total_amount"], as_dict=True)
 
 
 def set_fee(amount):
 	settings = frappe.get_single(PARENT)
 	for row in settings.renewal_extension_cost:
 		if row.renewal_or_extend == ACTION:
-			row.work_permit_amount = amount
+			row.visa_amount = amount
 			break
 	else:
 		settings.append("renewal_extension_cost",
-						{"renewal_or_extend": ACTION, "work_permit_amount": amount})
+						{"renewal_or_extend": ACTION, "visa_amount": amount})
 	settings.save(ignore_permissions=True)
 
 
@@ -132,9 +160,9 @@ class TestThePatchSeedsTheRow(FrappeTestCase):
 
 		row = costing_row()
 		self.assertIsNotNone(row)
-		self.assertEqual(row.work_permit_amount, WORK_PERMIT_AMOUNT)
+		self.assertEqual(row.visa_amount, VISA_AMOUNT)
 		# The fee is worthless if Total Amount does not move with it.
-		self.assertEqual(row.total_amount, WORK_PERMIT_AMOUNT)
+		self.assertEqual(row.total_amount, VISA_AMOUNT)
 
 	def test_it_leaves_every_other_costing_row_alone(self):
 		from one_fm.patches.v15_0 import add_visa_costing_action as patch
@@ -161,4 +189,4 @@ class TestThePatchDoesNotOverwriteAFee(FrappeTestCase):
 
 		set_fee(35)
 		patch.execute()
-		self.assertEqual(costing_row().work_permit_amount, 35)
+		self.assertEqual(costing_row().visa_amount, 35)
