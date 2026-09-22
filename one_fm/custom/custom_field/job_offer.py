@@ -1,6 +1,63 @@
 def get_job_offer_custom_fields():
     return {
         "Job Offer": [
+            # WI-002599: the applicant's passport and date of birth, mirrored from the Job
+            # Applicant. Read-only on purpose - the Job Applicant is where these are
+            # maintained, and a recruiter editing the copy here would change who is
+            # eligible for a Visa Request without changing the record it was checked
+            # against.
+            {
+                "fieldname": "one_fm_passport_details_section",
+                "fieldtype": "Section Break",
+                "insert_after": "residency_fine_amount",
+                "label": "Passport & Date of Birth"
+            },
+            {
+                "fieldname": "one_fm_passport_number",
+                "fieldtype": "Data",
+                "insert_after": "one_fm_passport_details_section",
+                "label": "Passport Number",
+                "fetch_from": "job_applicant.one_fm_passport_number",
+                "read_only": 1
+            },
+            {
+                "fieldname": "one_fm_passport_holder_of",
+                "fieldtype": "Link",
+                "insert_after": "one_fm_passport_number",
+                "label": "Passport Holder Of",
+                "options": "Country",
+                "fetch_from": "job_applicant.one_fm_passport_holder_of",
+                "read_only": 1
+            },
+            {
+                "fieldname": "one_fm_date_of_birth",
+                "fieldtype": "Date",
+                "insert_after": "one_fm_passport_holder_of",
+                "label": "Date of Birth",
+                "fetch_from": "job_applicant.one_fm_date_of_birth",
+                "read_only": 1
+            },
+            {
+                "fieldname": "one_fm_passport_column_break",
+                "fieldtype": "Column Break",
+                "insert_after": "one_fm_date_of_birth"
+            },
+            {
+                "fieldname": "one_fm_passport_issued",
+                "fieldtype": "Date",
+                "insert_after": "one_fm_passport_column_break",
+                "label": "Passport Issued On",
+                "fetch_from": "job_applicant.one_fm_passport_issued",
+                "read_only": 1
+            },
+            {
+                "fieldname": "one_fm_passport_expire",
+                "fieldtype": "Date",
+                "insert_after": "one_fm_passport_issued",
+                "label": "Passport Expires On",
+                "fetch_from": "job_applicant.one_fm_passport_expire",
+                "read_only": 1
+            },
             {
                 "fieldname": "url_qr_code_image",
                 "fieldtype": "Image",

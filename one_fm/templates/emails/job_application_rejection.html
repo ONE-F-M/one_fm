@@ -1,0 +1,24 @@
+{#
+	WI-002598: the rejection letter, kept as the attached template words it.
+
+	The wording is the business's, not this app's - it was supplied as a document on the
+	story and is reproduced verbatim. Only the greeting is conditional: the template has
+	no salutation line, and addressing an applicant whose name was never captured as
+	"Dear ," reads worse than opening on the thank-you the template starts with.
+#}
+<div style="font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#1f272e;line-height:1.55">
+
+	{% if applicant_name %}<p>{{ _("Dear") }} {{ applicant_name }},</p>{% endif %}
+
+	<p>{{ _("Thank you for taking the time to apply and for your interest in joining our team.") }}</p>
+
+	<p>{{ _("We received a high volume of qualified applications for this role. After careful consideration, we have decided to move forward with other candidates whose qualifications and experience more closely align with our current needs.") }}</p>
+
+	<p>{{ _("We truly appreciate the effort and enthusiasm you put into your application. We will keep your resume on file for future opportunities that may be a good fit for your background, and we encourage you to check our careers page periodically for new openings.") }}</p>
+
+	<p>{{ _("We wish you the very best in your job search and in all your future professional endeavors.") }}</p>
+
+	<p>{{ _("Best regards,") }}<br>
+	<b>{{ _("One Facilities Management") }}</b></p>
+
+</div>
