@@ -11,13 +11,9 @@ licence that reads compliant when it is not.
 import frappe
 from frappe.model.document import Document
 from frappe.query_builder import DocType
-from frappe.query_builder.functions import Coalesce
 from frappe.utils import flt
 
 KUWAITI = "Kuwaiti"
-
-# The one status that takes somebody off the licence.
-LEFT = "Left"
 
 # WI-002099: on top of the ratio, PAM allows each occupational sector a fixed number of
 # expatriates over what the ratio alone would permit. The allowance is per sector and is
@@ -43,18 +39,15 @@ EXEMPT_SECTOR = "مهن غير مشمولة بالنسبة"
 COMPLIANT = "Compliant"
 NON_COMPLIANT = "Non-Compliant"
 
-# The Employee fields a headcount depends on. A save that touches none of them cannot have
-# moved anybody between licences or sectors, and Employee is saved constantly - so the
-# recount is skipped rather than run on every save.
-#
-# The occupational sector is not an Employee field: it is fetched from the employee's PAM
-# designation, so a change of designation is what moves them between sectors.
+# Every field the count reads. Employee is saved constantly; a save touching none of these
+# cannot have moved anybody, so the recount is skipped.
+# The sector comes from the PAM designation, so a change of designation moves the employee.
 WATCHED_EMPLOYEE_FIELDS = (
 	"pam_file",
 	"pam_file_number",
 	"one_fm_pam_designation",
 	"one_fm_nationality",
-	"status",
+	"under_company_residency",
 )
 
 
@@ -319,18 +312,14 @@ def add_sector_row(license_name, sector):
 def count_workers(license_number, sector):
 	"""How many nationals and expatriates this licence holds in this sector.
 
-	Everybody but those who have left. Someone who has left is off the licence; someone on
-	vacation, awaiting a court case, not yet back from leave or absconding is still
-	employed under it, and PAM counts them.
+	Counts employees under the company's residency. That is what the licence is: somebody
+	off it is not on the licence, whatever their employment status says.
 
-	It was Active only until this was reported from production, which left 90 people off
-	these two licences - 63 on vacation, 22 not returned from leave, 4 on a court case and
-	1 absconding - about 6% of the workforce. The BA site's own reference script filters on
-	no status at all; Left is excluded here because a licence does not carry somebody who
-	has gone.
+	The sector is not a field on Employee - it is reached through the employee's PAM
+	designation, which is what the join below is for.
 
-	One query, grouped on nationality, rather than one count per side - the join to
-	PAM Designation List is the expensive half and there is no reason to pay for it twice.
+	One query grouped on nationality; the join to PAM Designation List is the expensive
+	half and there is no reason to pay for it twice.
 	"""
 	Employee = DocType("Employee")
 	Designation = DocType("PAM Designation List")
@@ -341,9 +330,7 @@ def count_workers(license_number, sector):
 		.on(Employee.one_fm_pam_designation == Designation.name)
 		.select(Employee.one_fm_nationality, frappe.qb.terms.Function("Count", Employee.name).as_("count"))
 		.where(Employee.pam_file_number == license_number)
-		# Coalesce rather than a bare !=, which is NULL in SQL for a row with no status
-		# and would drop it: the Query Builder writes raw SQL and does no ifnull of its own.
-		.where(Coalesce(Employee.status, "") != LEFT)
+		.where(Employee.under_company_residency == 1)
 		.where(Designation.occupational_sector == sector)
 		.groupby(Employee.one_fm_nationality)
 	).run(as_dict=True)
