@@ -62,7 +62,8 @@
    "fieldname": "available_quota",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Available Quota"
+   "label": "Available Quota",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
