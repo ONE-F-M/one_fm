@@ -265,8 +265,12 @@ doc_events = {
 	"Employee": {
 		# Keep the PAM licence headcounts in step with the employees on the licence. The
 		# handler returns immediately unless the save touched a field the count reads.
+		#
+		# The second carries a master change into the GRD forms still in flight for this
+		# employee; it returns immediately too unless one of the four copied fields moved.
 		"on_update": [
-			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_counts_from_employee"
+			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_counts_from_employee",
+			"one_fm.grd.employee_sync.sync_to_sub_documents",
 		]
 	},
 	"PAM Designation List": {
