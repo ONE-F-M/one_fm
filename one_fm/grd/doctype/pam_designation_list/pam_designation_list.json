@@ -9,7 +9,8 @@
   "designation_name_arabic",
   "designation_code",
   "\u0645\u0647\u0646\u0629_\u0642\u0631\u0627\u0631_\u0627\u0644\u0646\u0633\u0628\u0629",
-  "occupational_sector"
+  "occupational_sector",
+  "quota_type"
  ],
  "fields": [
   {
@@ -54,6 +55,12 @@
    "label": "Occupational Sector",
    "options": "Occupational Sector",
    "reqd": 1
+  },
+  {
+   "fieldname": "quota_type",
+   "fieldtype": "Link",
+   "label": "Quota Type",
+   "options": "Quota Type"
   }
  ],
  "modified": "2026-08-20 10:00:00.000000",
