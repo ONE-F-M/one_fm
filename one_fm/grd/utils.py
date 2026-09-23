@@ -161,10 +161,10 @@ def set_renewal_extension_cost_totals(doc, method=None):
     importing Preparation at module scope makes HR Settings depend on the GRD doctype
     module for a four-item tuple.
     """
-    from one_fm.grd.doctype.preparation.preparation import COST_COMPONENT_FIELDS
+    from one_fm.grd.doctype.preparation.preparation import MASTER_COST_COMPONENT_FIELDS
 
     for row in doc.get('renewal_extension_cost') or []:
-        row.total_amount = sum(flt(row.get(field)) for field in COST_COMPONENT_FIELDS)
+        row.total_amount = sum(flt(row.get(field)) for field in MASTER_COST_COMPONENT_FIELDS)
 
 
 def validate_nationality_attestation_rules(doc, method=None):
