@@ -61,6 +61,16 @@ class PAMLicenseDetails(Document):
 		self.set_total_number_of_employees()
 		self.set_quota_registrations()
 		self.set_quota_visas_issued()
+		self.set_available_quota()
+
+	def set_available_quota(self):
+		"""Derive what is left of each quota (WI-002770).
+
+		Last of the three, because it is the subtraction the other two feed - deriving it
+		before them would leave it one save behind its own inputs.
+		"""
+		for row in self.quota_classification:
+			row.available_quota = available_quota(row)
 
 	def set_quota_visas_issued(self):
 		"""Derive each quota row's issued-visa count (WI-002771).
@@ -591,21 +601,31 @@ def recount_quota_rows(license_number):
 				"parenttype": "PAM License Details",
 				"parentfield": "quota_classification",
 			},
-			fields=["name", "type_of_quota"],
+			# The two the recount does not write are still needed: the remainder is a
+			# subtraction over all four.
+			fields=[
+				"name",
+				"type_of_quota",
+				"allocated_quota",
+				"number_of_transfer_requests",
+			],
 		)
 		for row in rows:
 			quota_type = row["type_of_quota"]
 			if quota_type not in counts:
 				counts[quota_type] = str(count_quota_employees(license_number, quota_type))
 
+			figures = {
+				"registered_numbers_of_employees": counts[quota_type],
+				"number_of_visas_issued": str(issued.get(quota_type, 0)),
+			}
+			# WI-002770: written in the same call as its inputs, because db_set bypasses
+			# the controller that derives it - a row left with yesterday's remainder beside
+			# today's headcount is worse than either figure alone.
+			figures["available_quota"] = available_quota({**row, **figures})
+
 			frappe.db.set_value(
-				"Quota Classification",
-				row["name"],
-				{
-					"registered_numbers_of_employees": counts[quota_type],
-					"number_of_visas_issued": str(issued.get(quota_type, 0)),
-				},
-				update_modified=False,
+				"Quota Classification", row["name"], figures, update_modified=False
 			)
 
 
@@ -747,3 +767,34 @@ def recount_license_quota(license_name):
 		return
 
 	recount_quota_rows(number)
+
+
+# WI-002770: what the remainder is made of. Allocated is what PAM granted; the other three
+# are claims against it - people already on the licence, visas issued and not yet arrived,
+# and transfers in flight.
+QUOTA_DEDUCTIONS = (
+	"registered_numbers_of_employees",
+	"number_of_visas_issued",
+	"number_of_transfer_requests",
+)
+
+
+def available_quota(row) -> str:
+	"""Allocated Quota minus everything already claimed against it (WI-002770).
+
+	A blank counts as zero, which the story asks for and which matters more than it looks:
+	these are Data fields, so an unfilled one is "" rather than 0, and arithmetic on it
+	would raise rather than read as nothing claimed.
+
+	Clamped at zero. A licence can be over its quota - that is what an over-allocation IS -
+	but "available" is how many are left to use, and a negative number of visas is not a
+	number anybody can act on. The overage is still visible: it is the four figures beside
+	it, which are not clamped.
+
+	Returned as text because the field is Data, and as a whole number because every figure
+	on this row is a count of people.
+	"""
+	allocated = flt(row.get("allocated_quota"))
+	claimed = sum(flt(row.get(fieldname)) for fieldname in QUOTA_DEDUCTIONS)
+
+	return as_figure(max(allocated - claimed, 0))
