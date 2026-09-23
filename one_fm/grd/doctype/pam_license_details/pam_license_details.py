@@ -54,6 +54,17 @@ WATCHED_EMPLOYEE_FIELDS = (
 class PAMLicenseDetails(Document):
 	def validate(self):
 		self.set_sector_figures()
+		self.set_total_number_of_employees()
+
+	def set_total_number_of_employees(self):
+		"""How many people this licence carries, all sectors together (WI-002768).
+
+		Derived here as well as on the per-employee recount, so a licence opened and saved
+		shows the figure even if nobody has been transferred since the last recount.
+		"""
+		self.total_number_of_employees = str(
+			count_license_employees(self.civil_id_number_for_licensing)
+		)
 
 	def set_sector_figures(self):
 		"""Derive every figure a sector row computes from its ratio (WI-002094).
@@ -207,6 +218,12 @@ def update_counts_from_employee(doc, method=None):
 		_license_and_sector(before) if before else None,
 	} - {None}:
 		recount_sector(license_number, sector)
+
+	# WI-002768: the licence's own headcount, which is not a sector figure. Recounted from
+	# the licence NUMBER alone, because an employee with no PAM designation still counts
+	# against the licence - _license_and_sector gives up on them, and the total must not.
+	for license_number in {doc.get("pam_file_number"), before.get("pam_file_number") if before else None} - {None, ""}:
+		recount_license_total(license_number)
 
 
 def update_counts_from_designation(doc, method=None):
@@ -382,3 +399,50 @@ def recount_license(license_name):
 	for row in license.pam_license_stats:
 		if row.occupational_sector:
 			recount_sector(license.civil_id_number_for_licensing, row.occupational_sector)
+
+
+def count_license_employees(license_number) -> int:
+	"""How many people this licence carries (WI-002768).
+
+	Under the company's residency, which is what the licence IS: somebody off it is not on
+	the licence, whatever their employment status says. The same rule the sector headcounts
+	use (WI-002091), so the total and the figures beneath it cannot disagree about who is
+	on the licence.
+
+	No join to the designation. The sector counts need it to know which row an employee
+	belongs to; this is every employee on the licence, including the ones whose designation
+	has not been set yet - and leaving those out would make the total quietly smaller than
+	the sum of what PAM counts.
+	"""
+	if not license_number:
+		return 0
+
+	return frappe.db.count(
+		"Employee", {"pam_file_number": license_number, "under_company_residency": 1}
+	)
+
+
+def recount_license_total(license_number):
+	"""Write the licence headcount onto every licence carrying this number.
+
+	db_set rather than a save, for the same reason the sector figures are: a headcount
+	moving must not drag a licence through validation, and must not need permission to
+	edit a licence that the employee's own editor has no reason to hold.
+	"""
+	licenses = frappe.get_all(
+		"PAM License Details",
+		filters={"civil_id_number_for_licensing": license_number},
+		pluck="name",
+	)
+	if not licenses:
+		return
+
+	total = str(count_license_employees(license_number))
+	for license_name in licenses:
+		frappe.db.set_value(
+			"PAM License Details",
+			license_name,
+			"total_number_of_employees",
+			total,
+			update_modified=False,
+		)
