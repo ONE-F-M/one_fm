@@ -81,7 +81,9 @@
   "grd_operator",
   "grd_supervisor",
   "reminded_grd_operator",
-  "reminded_grd_operator_again"
+  "reminded_grd_operator_again",
+  "section_break_zbqk",
+  "pro_user"
  ],
  "fields": [
   {
@@ -592,6 +594,17 @@
    "fieldtype": "Data",
    "label": "Fourth Name",
    "read_only": 1
+  },
+  {
+   "fieldname": "section_break_zbqk",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "pro_user",
+   "fieldtype": "Link",
+   "label": "PRO User",
+   "link_filters": "[[\"User\",\"role\",\"=\",\"PRO\"]]",
+   "options": "User"
   }
  ],
  "is_submittable": 1,
