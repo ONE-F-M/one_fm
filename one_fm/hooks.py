@@ -263,11 +263,17 @@ doc_events = {
 		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"Employee": {
-		# WI-002091: keep the PAM licence headcounts in step with the employees on the
-		# licence. The handler returns immediately unless the save touched one of the five
-		# fields that can move somebody between licences or sectors.
+		# Keep the PAM licence headcounts in step with the employees on the licence. The
+		# handler returns immediately unless the save touched a field the count reads.
 		"on_update": [
 			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_counts_from_employee"
+		]
+	},
+	"PAM Designation List": {
+		# The sector lives on the designation, so moving one moves every employee holding
+		# it - and no Employee is saved when that happens.
+		"on_update": [
+			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_counts_from_designation"
 		]
 	},
 	"HR Settings": {
