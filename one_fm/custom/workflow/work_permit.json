@@ -81,7 +81,7 @@
    "is_optional_state": 0,
    "send_email": 1,
    "state": "Apply Online by PRO",
-   "update_value": "Draft"
+   "update_value": ""
   },
   {
    "allow_edit": "GRD Supervisor",
@@ -91,7 +91,7 @@
    "is_optional_state": 0,
    "send_email": 1,
    "state": "Pending GR Manager",
-   "update_value": "Pending by Supervisor"
+   "update_value": ""
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -101,7 +101,7 @@
    "is_optional_state": 0,
    "send_email": 1,
    "state": "Pending By Previous Company",
-   "update_value": "Pending by Previous Company"
+   "update_value": ""
   },
   {
    "allow_edit": "GRD Supervisor",
@@ -111,7 +111,7 @@
    "is_optional_state": 0,
    "send_email": 1,
    "state": "Pending  For Payment",
-   "update_value": "Pending by Supervisor for Payment"
+   "update_value": ""
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -120,8 +120,8 @@
    "doctype": "Workflow Document State",
    "is_optional_state": 0,
    "send_email": 1,
-   "state": "Pending By Operator",
-   "update_value": "Pending by Operator"
+   "state": "Pending by GR Operator",
+   "update_value": ""
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -131,7 +131,7 @@
    "is_optional_state": 0,
    "send_email": 1,
    "state": "Pending By PAM",
-   "update_value": "Pending by Operator"
+   "update_value": ""
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -151,7 +151,7 @@
    "allowed": "Government Relations Operator",
    "custom_confirm_transition": 0,
    "doctype": "Workflow Transition",
-   "next_state": "Apply Online by PRO",
+   "next_state": "Pending by GR Operator",
    "require_digital_signature": 0,
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,
@@ -169,7 +169,7 @@
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,
    "skip_multiple_action": 0,
-   "state": "Apply Online by PRO"
+   "state": "Pending by GR Operator"
   },
   {
    "action": "Accept",
@@ -258,7 +258,7 @@
    "condition": "doc.work_permit_type == \"Local Transfer\"",
    "custom_confirm_transition": 0,
    "doctype": "Workflow Transition",
-   "next_state": "Pending By Operator",
+   "next_state": "Pending by GR Operator",
    "require_digital_signature": 0,
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,
@@ -276,7 +276,7 @@
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,
    "skip_multiple_action": 0,
-   "state": "Pending By Operator"
+   "state": "Pending by GR Operator"
   },
   {
    "action": "Approve",
