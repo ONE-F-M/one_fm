@@ -368,6 +368,11 @@ class EmployeeSchedule(Document):
 			self.request_dsot_approval()
 		elif was == PENDING_DSOT:
 			self.clear_suspension_approval_requests()
+			# WI-002604: the requestor is told what happened to the shifts they asked for,
+			# once per request rather than once per day of it. Held until the transaction
+			# commits for the same reason the approval email is: a range is not known to
+			# be a range until its last row has been decided.
+			dsot_notification.queue_outcome([self.name])
 			if now == ACTIVE:
 				self.create_dsot_shift_assignment()
 
