@@ -123,6 +123,30 @@ job_application = Class.extend({
       me.show_applicant_contact_details();
     });
   },
+  // WI-002725: a Kuwaiti citizen needs no visa to work in Kuwait, so the question is not
+  // asked of them at all. "Are you currently in Kuwait?" is still asked of everybody -
+  // where they are now is a separate question from whether they may work here.
+  //
+  // One gate, called from every place that used to reveal the visa question directly.
+  // Three call sites would have been three places for this to be forgotten.
+  show_visa_or_skip: function() {
+    var me = this;
+    if(me.is_kuwaiti()){
+      if(!$(".visa").hasClass('hide')){
+        $(".visa").addClass('hide');
+      }
+      if(!$(".visa_type").hasClass('hide')){
+        $(".visa_type").addClass('hide');
+      }
+      $(".in_kuwait").removeClass('hide');
+    }
+    else{
+      $(".visa").removeClass('hide');
+    }
+  },
+  is_kuwaiti: function() {
+    return ($(".nationality_list").val() || "").trim() === "Kuwaiti";
+  },
   on_change_work_details: function() {
     var me  = this;
     $(".rotation_shift").on("change", function(){
@@ -145,11 +169,11 @@ job_application = Class.extend({
         if(!$(".license_type").hasClass('hide')){
           $(".license_type").addClass('hide');
         }
-        $(".visa").removeClass('hide');
+        me.show_visa_or_skip();
       }
     });
     $(".license_type").on("change", function(){
-      $(".visa").removeClass('hide');
+      me.show_visa_or_skip();
     });
     $(".visa").on("change", function(){
       if($("#visa input[type='radio']:checked").val() == 'yes'){
@@ -204,7 +228,7 @@ job_application = Class.extend({
       $(".license").removeClass('hide');
     }
     else{
-      $(".visa").removeClass('hide');
+      me.show_visa_or_skip();
     }
   },
   show_cv_section: function() {
