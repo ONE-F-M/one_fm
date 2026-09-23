@@ -99,6 +99,7 @@ MINIMUM_APPLICANT_AGE_YEARS = 21
 class VisaRequest(Document):
 	def validate(self):
 		self.validate_no_request_in_progress()
+		self.validate_previous_visa_cancelled()
 		self.validate_grd_operator_assigned()
 		self.validate_applicant_eligibility()
 		self.validate_workflow_transitions()
@@ -177,6 +178,59 @@ class VisaRequest(Document):
 				in_progress.workflow_state or "Draft",
 			),
 			title=_("Visa Request Already In Progress"),
+		)
+
+	def validate_previous_visa_cancelled(self):
+		"""A visa that was issued has to be cancelled before another can be asked for (WI-002744).
+
+		A Completed Visa Request means the applicant holds a visa. Asking for a second one
+		while the first still stands is asking the ministry for two visas for one person -
+		the first has to be given back, and giving it back is what a Visa Cancellation
+		Request is.
+
+		Only on the way in, like the in-progress rule above it: an existing request must
+		not start refusing to save because of a state it reached itself.
+
+		Keyed on the applicant rather than the Job Offer, for the same reason - the visa
+		belongs to the person.
+
+		A cancellation that is itself Completed releases the visa it names. Anything else -
+		a cancellation still being worked, one refused by the PRO, or none at all - leaves
+		the visa standing.
+		"""
+		if not self.is_new() or not self.job_applicant:
+			return
+
+		completed = frappe.get_all(
+			"Visa Request",
+			filters=[
+				["job_applicant", "=", self.job_applicant],
+				["name", "!=", self.name or ""],
+				["workflow_state", "=", COMPLETED_STATE],
+			],
+			pluck="name",
+		)
+		if not completed:
+			return
+
+		released = cancelled_visa_requests(completed)
+		standing = [name for name in completed if name not in released]
+		if not standing:
+			return
+
+		frappe.throw(
+			_(
+				"A new Visa Request cannot be created because the existing Visa Request is "
+				"completed. Please complete the Visa Cancellation Request before creating a "
+				"new Visa Request."
+			)
+			+ " "
+			+ _("Outstanding: {0}.").format(
+				", ".join(
+					frappe.utils.get_link_to_form("Visa Request", name) for name in standing
+				)
+			),
+			title=_("Visa Cancellation Not Completed"),
 		)
 
 	def validate_applicant_eligibility(self):
@@ -524,3 +578,40 @@ def _attachment_path(file_url: str) -> str:
 		raise FileNotFoundError(f"Attachment not found on disk: {file_url}")
 
 	return path
+
+
+# WI-002744: the state a Visa Request reaches when the applicant actually holds a visa,
+# and the state a cancellation reaches when they have given it back. The cancellation's
+# lifecycle is the Visa Cancellation process map's rather than a Frappe Workflow, so the
+# state is named here as a string and checked against the master in the tests - a rename
+# there would otherwise switch this rule off silently, the same trap WI-002608 sprang on
+# the cancellation's own duplicate rule.
+COMPLETED_STATE = "Completed"
+
+
+def cancelled_visa_requests(visa_requests: list) -> set:
+	"""Which of these Visa Requests have had their visa given back.
+
+	The Visa Cancellation Request's workflow_state is a Custom Field that arrives with the
+	process map rather than with this app, so a site where the map has not been imported
+	has no such column - and filtering on it would fail the whole query rather than narrow
+	it. There, nothing has been cancelled, which is what the empty set says.
+	"""
+	from one_fm.visa_management.doctype.visa_cancellation_request.visa_cancellation_request import (
+		has_workflow_state_column,
+	)
+
+	if not has_workflow_state_column():
+		return set()
+
+	return set(
+		frappe.get_all(
+			"Visa Cancellation Request",
+			filters=[
+				["visa_request_id", "in", visa_requests],
+				["workflow_state", "=", COMPLETED_STATE],
+				["docstatus", "!=", 2],
+			],
+			pluck="visa_request_id",
+		)
+	)
