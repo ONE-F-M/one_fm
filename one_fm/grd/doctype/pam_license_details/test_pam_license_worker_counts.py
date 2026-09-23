@@ -7,6 +7,7 @@ from frappe.tests.utils import FrappeTestCase
 
 from one_fm.grd.doctype.pam_license_details.pam_license_details import (
 	WATCHED_EMPLOYEE_FIELDS,
+	update_counts_from_designation,
 	count_workers,
 	recount_license,
 	recount_sector,
@@ -255,6 +256,31 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 		self.assertEqual(self._row(self.sector).expatriate_number_of_workers, "0")
 
 		self._edit(employee, under_company_residency=1)
+
+		self.assertEqual(self._row(self.sector).expatriate_number_of_workers, "1")
+
+	def test_moving_a_designation_moves_everybody_holding_it(self):
+		"""The sector is on the designation, not the employee, so correcting a designation
+		has to move the figures - no Employee is saved when that happens."""
+		self._an_employee("Indian")
+		recount_license(self.license.name)
+		self.assertEqual(self._row(self.sector).expatriate_number_of_workers, "1")
+		self.assertEqual(self._row(self.other_sector).expatriate_number_of_workers, "0")
+
+		designation = frappe.get_doc("PAM Designation List", self.designation)
+		designation.occupational_sector = self.other_sector
+		designation.save(ignore_permissions=True)
+
+		self.assertEqual(self._row(self.sector).expatriate_number_of_workers, "0")
+		self.assertEqual(self._row(self.other_sector).expatriate_number_of_workers, "1")
+
+	def test_a_designation_save_that_leaves_the_sector_alone_does_nothing(self):
+		self._an_employee("Indian")
+		recount_license(self.license.name)
+
+		designation = frappe.get_doc("PAM Designation List", self.designation)
+		designation._doc_before_save = frappe.get_doc("PAM Designation List", self.designation)
+		update_counts_from_designation(designation)
 
 		self.assertEqual(self._row(self.sector).expatriate_number_of_workers, "1")
 

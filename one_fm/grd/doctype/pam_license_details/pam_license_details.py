@@ -209,6 +209,37 @@ def update_counts_from_employee(doc, method=None):
 		recount_sector(license_number, sector)
 
 
+def update_counts_from_designation(doc, method=None):
+	"""Recount when a designation is moved to a different occupational sector.
+
+	The sector is not on the employee - it is on the designation they hold - so moving a
+	designation moves everybody holding it, and no Employee is saved when that happens.
+	Without this the licence keeps yesterday's figures until somebody edits an employee.
+
+	Both sectors, on every licence holding one of those employees: the sector they left
+	has to give them up as well as the one they joined.
+	"""
+	if doc.is_new() or not doc.has_value_changed("occupational_sector"):
+		return
+
+	before = doc.get_doc_before_save()
+	sectors = {doc.occupational_sector, before.occupational_sector if before else None} - {None, ""}
+	if not sectors:
+		return
+
+	numbers = {
+		number
+		for number in frappe.get_all(
+			"Employee", filters={"one_fm_pam_designation": doc.name}, pluck="pam_file_number"
+		)
+		if number
+	}
+
+	for number in numbers:
+		for sector in sectors:
+			recount_sector(number, sector)
+
+
 def _license_and_sector(employee):
 	"""The licence number and occupational sector this employee counts against, or None."""
 	license_number = employee.get("pam_file_number")
