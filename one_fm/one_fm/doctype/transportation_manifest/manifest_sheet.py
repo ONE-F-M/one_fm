@@ -65,21 +65,28 @@ def _stop_status(stop_sequence: int, active: int) -> str:
 	return STATUS_LOCKED
 
 
-def _build_sheet(doc) -> dict:
+def _build_sheet(doc, trip_id=None) -> dict:
 	"""Assemble the grouped stop/passenger structure the front-ends render.
 
 	Rows are grouped by ``stop_sequence`` (stamped by the controller). Reliever
 	names are resolved in one batch. The returned shape is intentionally flat and
 	JSON-friendly so the Ionic app and the desktop client can share it verbatim.
 	"""
-	active = int(doc.active_stop_sequence or 0)
+	# The pointer of the run being asked about. A vehicle drives several runs a day and
+	# each checks in on its own; with no run named, the sheet answers for
+	# whichever one is furthest along, which is what the single pointer used to mean.
+	active_by_trip = doc.active_stop_map()
+	active = (
+		doc.active_stop_for(trip_id) if trip_id is not None
+		else (max(active_by_trip.values()) if active_by_trip else 0)
+	)
 
 	rows = list(doc.transportation_manifest_details)
 
 	# What happens to each rider AT THE STOP, read from the plan rather than copied onto
 	# the manifest: the Route Plan Assignment is where the itinerary is decided, and a
 	# second stored copy would be a second answer the moment a trip is re-planned. This
-	# is what splits a handover stop into its two sections for the driver (WI-002171).
+	# is what splits a handover stop into its two sections for the driver.
 	leg_facts = _stop_actions(rows)
 
 	# Batch-resolve reliever employee names (rows that actually have a reliever).
@@ -157,6 +164,10 @@ def _build_sheet(doc) -> dict:
 		"vehicle_no": doc.vehicle_no,
 		"license_plate": doc.license_plate,
 		"active_stop_sequence": active,
+		# Every run's pointer, so a caller rendering the whole vehicle can lock each
+		# run on its own rather than on the one number above.
+		"active_stop_by_trip": active_by_trip,
+		"trip_id": trip_id,
 		"max_stop": max_stop,
 		"all_completed": bool(max_stop and active > max_stop),
 		"can_edit": doc.has_permission("write"),
@@ -176,65 +187,103 @@ def get_manifest_sheet(manifest: str) -> dict:
 	return _build_sheet(doc)
 
 
-def _set_active_stop(manifest: str, new_active: int) -> dict:
-	"""Persist the active-stop pointer and return the refreshed sheet."""
+def _set_active_stop(manifest: str, new_active: int, trip_id=None) -> dict:
+	"""Persist ONE run's active-stop pointer and return the refreshed sheet."""
 	doc = frappe.get_doc("Transportation Manifest", manifest)
 	doc.check_permission("write")
 	# db_set persists immediately without re-running the full save cycle, so the
 	# lock pointer moves atomically even if a supervisor never presses Save.
-	doc.db_set("active_stop_sequence", new_active)
+	doc.set_active_stop_for(trip_id, new_active)
 	doc.reload()
-	return _build_sheet(doc)
+	return _build_sheet(doc, trip_id)
+
+
+def _run_stop_sequences(doc, trip_id) -> list:
+	"""The pickup stops of ONE run, in the order the bus reaches them.
+
+	Read off the manifest's own rows rather than assumed. ``stop_sequence`` is numbered
+	across the VEHICLE, not within a run, so one run's stops are not 1, 2, 3: S-401 loads
+	at stops 1 and 5 while S-402 is stop 2 and S-403 is stop 3. A run's second camp is
+	therefore never ``active + 1``.
+	"""
+	key = str(trip_id or "")
+	return sorted({
+		int(row.stop_sequence or 0)
+		for row in (doc.transportation_manifest_details or [])
+		if str(row.trip_id or "") == key and row.stop_sequence
+	})
 
 
 @frappe.whitelist(methods=["POST"])
-def trigger_attendance_check(manifest: str, stop_sequence) -> dict:
+def trigger_attendance_check(manifest: str, stop_sequence, trip_id=None) -> dict:
 	"""Unlock a stop for attendance/QOA checks, locking every earlier stop.
 
-	Strictly sequential: a stop can only be triggered once the previous stop is
-	complete (``stop_sequence == active + 1``). Triggering advances the pointer,
-	which automatically freezes all preceding (completed) stops read-only.
+	Strictly sequential WITHIN ONE RUN: a stop can only be triggered once the previous
+	stop of that run is complete. Triggering advances only that run's pointer, so the
+	other runs this vehicle drives today keep their own state and their own controls
+.
+
+	"The next stop of this run" is read off the run's own stops, not computed as
+	``active + 1``. stop_sequence is numbered across the VEHICLE, so a run that loads at
+	two camps holds stops 1 and 5 with another run's stops in between - and every second
+	camp was unreachable: completing stop 1 left the pointer at 2, stop 5 failed the
+	contiguity test, and six passengers boarding there could never mark attendance.
 	"""
 	stop_sequence = int(stop_sequence)
 	doc = frappe.get_doc("Transportation Manifest", manifest)
 	doc.check_permission("write")
 
-	active = int(doc.active_stop_sequence or 0)
-	if stop_sequence != active + 1:
-		if stop_sequence <= active:
+	active = doc.active_stop_for(trip_id)
+	sequences = _run_stop_sequences(doc, trip_id)
+
+	# A stop still open is the one to finish, not a reason to start another. This is what
+	# keeps the walk strict now that the next stop is no longer simply active + 1.
+	if active in sequences:
+		frappe.throw(
+			_("Stop {0} is already open — complete it before starting another.").format(active)
+		)
+
+	# The first stop of this run the bus has not passed. Gaps in the numbering belong to
+	# other runs on the same vehicle and are simply stepped over.
+	candidate = next((seq for seq in sequences if seq >= active), None)
+	if candidate is None:
+		frappe.throw(_("Every stop on this run has been completed."))
+
+	if stop_sequence != candidate:
+		if stop_sequence < candidate:
 			frappe.throw(
 				_("Stop {0} has already been triggered — completed stops stay locked.").format(stop_sequence)
 			)
 		frappe.throw(
-			_("Stop {0} cannot be started yet. Complete Stop {1} first.").format(stop_sequence, active + 1)
+			_("Stop {0} cannot be started yet. Complete Stop {1} first.").format(stop_sequence, candidate)
 		)
 
-	return _set_active_stop(manifest, stop_sequence)
+	return _set_active_stop(manifest, stop_sequence, trip_id)
 
 
 @frappe.whitelist(methods=["POST"])
-def complete_stop(manifest: str, stop_sequence) -> dict:
-	"""Mark the currently active stop complete and lock it read-only.
+def complete_stop(manifest: str, stop_sequence, trip_id=None) -> dict:
+	"""Mark this run's active stop complete and lock it read-only.
 
-	Advances the pointer past the active stop (``active + 1``). This is how the
-	final stop gets locked, and how a supervisor can freeze the current stop before
-	physically arriving at the next one.
+	Advances that run's pointer past its active stop. This is how the final stop gets
+	locked, and how a supervisor can freeze the current stop before physically arriving
+	at the next one - without touching the other runs on the same vehicle.
 	"""
 	stop_sequence = int(stop_sequence)
 	doc = frappe.get_doc("Transportation Manifest", manifest)
 	doc.check_permission("write")
 
-	active = int(doc.active_stop_sequence or 0)
+	active = doc.active_stop_for(trip_id)
 	if stop_sequence != active:
 		frappe.throw(
 			_("Only the active stop (Stop {0}) can be completed.").format(active or "—")
 		)
 
-	return _set_active_stop(manifest, stop_sequence + 1)
+	return _set_active_stop(manifest, stop_sequence + 1, trip_id)
 
 
 @frappe.whitelist(methods=["POST"])
-def save_stop_checks(manifest: str, stop_sequence, updates) -> dict:
+def save_stop_checks(manifest: str, stop_sequence, updates, trip_id=None) -> dict:
 	"""Save Attendance Status / QOA Status edits for the active stop only.
 
 	Rejects any write to a row that is not part of the currently active stop, so
@@ -252,7 +301,7 @@ def save_stop_checks(manifest: str, stop_sequence, updates) -> dict:
 	doc = frappe.get_doc("Transportation Manifest", manifest)
 	doc.check_permission("write")
 
-	active = int(doc.active_stop_sequence or 0)
+	active = doc.active_stop_for(trip_id)
 	if stop_sequence != active:
 		frappe.throw(
 			_("Stop {0} is locked. Only the active stop (Stop {1}) can be edited.").format(
@@ -268,8 +317,12 @@ def save_stop_checks(manifest: str, stop_sequence, updates) -> dict:
 		row = rows_by_name.get(row_name)
 		if not row:
 			frappe.throw(_("Manifest row {0} not found.").format(row_name))
-		if int(row.stop_sequence or 1) != stop_sequence:
-			# Defensive: the payload references a row outside the active stop.
+		# Defensive: the payload references a row outside the active stop, or one
+		# belonging to a different run that happens to number its stops the same way -
+		# stop 1 of S-802 is not stop 1 of S-801.
+		wrong_stop = int(row.stop_sequence or 1) != stop_sequence
+		wrong_trip = trip_id is not None and str(row.trip_id or "") != str(trip_id or "")
+		if wrong_stop or wrong_trip:
 			frappe.throw(
 				_("Row {0} does not belong to Stop {1} and cannot be edited here.").format(
 					row.idx, stop_sequence
@@ -281,7 +334,7 @@ def save_stop_checks(manifest: str, stop_sequence, updates) -> dict:
 
 	doc.save()
 	doc.reload()
-	return _build_sheet(doc)
+	return _build_sheet(doc, trip_id)
 
 
 def _stop_actions(rows) -> dict:

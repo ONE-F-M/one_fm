@@ -50,7 +50,7 @@ class TestTheLegsWithNoBlockAreRebasedToo(FrappeTestCase):
 	the run the server anchored them on - not the row the canvas draws first. Left raw
 	while every block was rebased onto today, a departure stored 26 days from its own run
 	put the trip block's left edge that far off the axis: 97 of 106 runs on the live plan
-	were drawn up to 35,000px wide on a 1,000px lane (WI-002401).
+	were drawn up to 35,000px wide on a 1,000px lane.
 	"""
 
 	def setUp(self):
@@ -69,8 +69,14 @@ class TestTheLegsWithNoBlockAreRebasedToo(FrappeTestCase):
 	def test_a_block_always_covers_every_stop_it_holds(self):
 		# Clamped, so a stored leg timing can widen the block but never shrink it below
 		# its own stops - and a garbage stamp can no longer invert it.
-		self.assertIn("stated(held.departure) ?? Infinity, spanStart.getTime()", self.source)
-		self.assertIn("stated(held.arrival) ?? -Infinity, spanEnd.getTime()", self.source)
+		#
+		# The parsing moved into _legEdges, which additionally refuses a
+		# pair that cannot describe this run at all (a departure after the first stop, an
+		# arrival before the last). The clamp itself is unchanged and is what this guards.
+		self.assertIn("held.departure ?? Infinity, spanStart.getTime()", self.source)
+		self.assertIn("held.arrival ?? -Infinity, spanEnd.getTime()", self.source)
+		self.assertIn("this._legEdges(tripId, spanStart.getTime(), spanEnd.getTime());",
+					  self.source)
 
 	def test_the_span_is_read_over_all_stops_not_the_first_and_last_by_number(self):
 		# After the rebase a stop can sit a few minutes before stop one, which gave the
@@ -84,7 +90,7 @@ class TestRemovingAStopTakesTheStopYouPicked(FrappeTestCase):
 	"""Clicking a merged block selects stop 1, whichever stop you are reading.
 
 	So "Remove from Lane" silently took the first stop of the run while the operator was
-	looking at the last one (WI-002401).
+	looking at the last one.
 	"""
 
 	def setUp(self):

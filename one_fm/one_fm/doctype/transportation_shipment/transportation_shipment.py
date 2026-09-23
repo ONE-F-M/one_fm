@@ -8,7 +8,7 @@ from frappe.utils import cint
 
 TRIP_REQUEST = "Trip Request"
 
-# WI-002306: the designations that mean "this person drives the bus", so they are
+# the designations that mean "this person drives the bus", so they are
 # never booked onto one as a passenger. A driver on a passenger card is a seat
 # counted twice and a dispatcher scheduling somebody who is already working the run.
 #
@@ -221,7 +221,7 @@ class TransportationShipment(Document):
 
 # The canvas identifies a card as "TSHIP-<shipment>", sometimes with a direction suffix, so
 # what it sends is a card id and not a document name. Both merge endpoints are called
-# straight from the canvas and so have to accept either (WI-002078).
+# straight from the canvas and so have to accept either.
 def resolve_shipment_names(values) -> list:
 	"""Card ids or shipment names in; shipment names out, order and duplicates preserved once."""
 	from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
@@ -261,7 +261,7 @@ def run_direction(docs) -> str:
 
 
 def merge_key(shipment_names) -> str:
-	"""A stable, unique key shared by every shipment in one merged trip (WI-002071).
+	"""A stable, unique key shared by every shipment in one merged trip.
 
 	Derived from the sorted member names rather than a random token, so merging the
 	same set of cards twice produces the same key and a re-run cannot leave two half
@@ -331,7 +331,7 @@ def run_order(shipment, placed=None):
 	(`arrival_order`) by every reader. That kept the trip modal and the save in step, but
 	it made the drawer's drag-to-reorder cosmetic: the operator moved a stop, its block
 	moved with it, and then the modal, the itinerary, the leg walk and the manifest all
-	put the run back into shift order (WI-002401).
+	put the run back into shift order.
 
 	`placed` is the second of the day the block actually sits at on the lane - the time
 	the operator has the bus at that stop - and it wins when there is one. Callers pass
@@ -348,7 +348,7 @@ def run_order(shipment, placed=None):
 
 @frappe.whitelist()
 def merge_trip_shipments(shipments) -> dict:
-	"""Merge two or more cards into a single Mixed trip (WI-002071).
+	"""Merge two or more cards into a single Mixed trip.
 
 	Called by the canvas when a card is dropped onto a block already occupied. Every
 	participating shipment becomes `trip_direction = "Mixed"` and receives a shared
@@ -374,7 +374,7 @@ def merge_trip_shipments(shipments) -> dict:
 
 	# In the order the caller listed them. The canvas sends the run as the operator has
 	# it in the drawer, so re-sorting here on the cards' own shift times threw away a
-	# drag-to-reorder the moment it was confirmed (WI-002401).
+	# drag-to-reorder the moment it was confirmed.
 	trip_group = merge_key([doc.name for doc in docs])
 	direction = run_direction(docs)
 
@@ -419,7 +419,7 @@ def time_is_blank(value) -> bool:
 	Not the same as falsy. Midnight comes back as ``timedelta(0)``, so ``if not
 	end_time`` reads a shift that finishes at 00:00 as one with no finish recorded at
 	all - and the literal fallback further down the ``or`` chain then advertised a
-	12:00-00:00 afternoon card as finishing at 18:00 (WI-002401 AC9). Every reader of
+	12:00-00:00 afternoon card as finishing at 18:00. Every reader of
 	one of these fields has to ask whether it was STATED, not whether it is non-zero.
 	"""
 	return value is None or value == ""
@@ -495,7 +495,7 @@ QOA_BUFFER_FIELD = "custom_transportation_qoa_buffer_minutes"
 
 
 def qoa_buffer_minutes() -> int:
-	"""The driver's report-time buffer, in minutes, from HR Settings (WI-002151 AC 1.2).
+	"""The driver's report-time buffer, in minutes, from HR Settings.
 
 	One reader for the whole feature - the modal, the block drawer and the manifest all
 	print the same QOA time, and a second lookup would be a second answer. Absent or
@@ -519,10 +519,13 @@ def _minutes(value) -> int:
 # modal seeds the same number so the itinerary it prints is the one the blocks get drawn
 # from - a modal showing 0 while the canvas silently used 30 is a lie the operator only
 # discovers on the manifest.
-DEFAULT_TRANSIT_MINUTES = 30
+#
+# 15, not 30: the dispatchers' own baseline for a drive between two
+# stops. The assignment modals seed the same number so every entry point agrees.
+DEFAULT_TRANSIT_MINUTES = 15
 
 # How far apart an outward shift's start and a return shift's end may sit and still read
-# as a handover (WI-002171 AC 3.1: "matches or stays around couple of hours"). The same
+# as a handover. The same
 # two hours the canvas uses to decide which runs are near enough to chain.
 SHIFT_ALIGNMENT_TOLERANCE_SECONDS = 2 * 3600
 
@@ -539,7 +542,7 @@ def walk_legs(legs, anchor: int, departure=None) -> list:
 	The first stop is the one that has nothing to drive from, and there are two ways to
 	place it. Given a `departure` the run leaves at that moment and its arrival is
 	calculated forward from it - which is what the dispatcher states in the trip modal
-	(WI-002151 AC 1.1). Without one it backs into `anchor`, the shift time the card is
+. Without one it backs into `anchor`, the shift time the card is
 	scheduled on, which is how a run reads before anyone has stated a departure and how
 	every caller that has no departure to give still gets a sensible itinerary.
 
@@ -569,7 +572,7 @@ def walk_legs(legs, anchor: int, departure=None) -> list:
 
 
 def day_offset(seconds) -> int:
-	"""How many whole days past the run's own day a stamp falls (WI-002151 AC 1.6).
+	"""How many whole days past the run's own day a stamp falls.
 
 	A late run keeps counting past 86400 rather than wrapping, so this is what tells the
 	modal and the manifest to print a `(+1 Day)` badge instead of a time that reads as
@@ -596,7 +599,7 @@ def _timings_by_shipment(timings) -> dict:
 @frappe.whitelist()
 def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=None,
 					  current_departure=None) -> dict:
-	"""What the Merge Trip modal shows before anyone confirms (WI-002078).
+	"""What the Merge Trip modal shows before anyone confirms.
 
 	Builds the itinerary the merged run would have, walks it leg by leg, and reports
 	whether it fits the vehicle. The leg walk is the same function Route Plan validation
@@ -626,8 +629,13 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 	for value in shipments or []:
 		resolved = (resolve_shipment_names([value]) or [value])[0]
 		card_ids.setdefault(resolved, value)
-	if len(names) < 2:
-		frappe.throw(_("Select at least two shipments to preview a merge."), title=_("Nothing to Merge"))
+	# One card is a run too. build_itinerary already gives a single outward card the
+	# camp -> site -> home shape, so the Trip Builder can time a solo drop's outbound and
+	# its base return without anything being merged into it (
+	# AC6-AC7). Only `merge_trip_shipments` still needs two, and the canvas skips it for
+	# a run of one.
+	if not names:
+		frappe.throw(_("Select a shipment to preview its trip."), title=_("Nothing to Preview"))
 
 	docs = [frappe.get_doc("Transportation Shipment", name) for name in names]
 	for doc in docs:
@@ -762,7 +770,7 @@ def get_merge_preview(shipments, vehicle: str = None, timings=None, departure=No
 			# alongside these - boarding_count or drop_off_count, whichever was
 			# non-zero - and a stop that does both has no such number: reading it made
 			# the modal announce one movement's label against the other's count
-			# (WI-002401). Anything showing a stop reads the two counts.
+			#. Anything showing a stop reads the two counts.
 			"boarding_count": stop["boarding_count"],
 			"drop_off_count": stop["drop_off_count"],
 			"boards": bool(stop["boarding"]),
@@ -869,7 +877,7 @@ def _camp_stop(shipment):
 
 
 def _shift_alignment(docs) -> dict:
-	"""Whether the outward shift hands over to the return shift (WI-002171 AC 3.1).
+	"""Whether the outward shift hands over to the return shift.
 
 	A bus can drop the incoming shift and collect the outgoing one in a single run when
 	the two shifts meet: the day shift starting as the night shift ends. The AC allows
@@ -915,7 +923,7 @@ def _shift_alignment(docs) -> dict:
 
 
 def unmerge_trip_shipment(name) -> bool:
-	"""Put a shipment back the way it travelled before it was merged (WI-002071).
+	"""Put a shipment back the way it travelled before it was merged.
 
 	Called when a card leaves the merged trip - the block is removed from the lane, or the
 	plan no longer places it. Without this a card that was merged once stayed Mixed for
@@ -945,7 +953,7 @@ def unmerge_trip_shipment(name) -> bool:
 
 @frappe.whitelist()
 def undo_merge(shipments) -> dict:
-	"""Roll a merge back from the canvas (WI-002078).
+	"""Roll a merge back from the canvas.
 
 	The merge is written when the operator confirms it, but the plan is saved a moment
 	later and can still be rejected - by an overlapping-trip total, a retention lock, a
@@ -980,7 +988,7 @@ SPLIT_INHERITED_FIELDS = (
 
 @frappe.whitelist()
 def split_shipment_for_capacity(shipment: str, keep: int) -> dict:
-	"""Fill a card to what the vehicle takes and move the rest to a new one (WI-002170).
+	"""Fill a card to what the vehicle takes and move the rest to a new one.
 
 	`keep` staff stay on the card being placed; everyone beyond that moves to a fresh
 	Unassigned card in the pool. The roster is MOVED, not copied - every employee appears
