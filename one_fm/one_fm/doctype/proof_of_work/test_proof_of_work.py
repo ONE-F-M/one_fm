@@ -1346,17 +1346,20 @@ class TestTheLetterIsArabicOnly(FrappeTestCase):
 		self.assertIn("doc.current_contract_start_date", html)
 		self.assertIn("وفقاً للعقد المؤرخ", html)
 
-	def test_arial_comes_first_and_arabic_can_still_be_drawn(self):
-		"""Scenario 1 asks for Arial. There is no Arial on the print server -
-		fontconfig answers it with Liberation Sans, which has no Arabic glyphs - so
-		Arial alone would render every Arabic word as a box. Arial leads; the fallback
-		is what keeps the letter readable."""
+	def test_the_body_face_leads_and_arabic_can_still_be_drawn(self):
+		"""WI-002399 asked for Arial. WI-002723 replaced it with Readex Pro, which is
+		bundled with the app and inlined - there was no Arial on the print server, and
+		fontconfig answered it with Liberation Sans, which has no Arabic glyphs at all.
+		The Arabic-capable fallback behind it is what keeps the letter readable if a font
+		file ever goes missing."""
 		css = self._letter()["css"]
 
 		self.assertNotIn("Tahoma", css)
+		self.assertNotIn("Arial", css)
 		families = re.search(r"\.pow-letter, \.pow-letter \* \{ font-family: ([^;]+);", css)
 		self.assertTrue(families, "the wrapper rule is gone, so descendants pick their own face")
-		self.assertTrue(families.group(1).strip().startswith("Arial"))
+		self.assertTrue(families.group(1).strip().startswith("'Readex Pro'"))
+		self.assertIn("Noto Sans Arabic", families.group(1))
 
 
 class TestTheLetterLinesUp(FrappeTestCase):
@@ -1389,7 +1392,9 @@ class TestTheLetterLinesUp(FrappeTestCase):
 		"""The contract date reached the client as "25 / 02 /" on one line and "2026"
 		on the next, and the client name broke after "Co.". nowrap keeps the run whole;
 		direction:ltr keeps 25 ahead of 2026 inside a right-to-left sentence."""
-		rule = re.search(r"\.en \{([^}]+)\}", self._letter()["css"])
+		# Anchored to the start of a line: WI-002723 added a `.pow-letter .en` weight rule
+		# above this one, and an unanchored ".en {" matches that one first.
+		rule = re.search(r"^\.en \{([^}]+)\}", self._letter()["css"], re.M)
 
 		self.assertTrue(rule, "the .en rule is gone, so English runs break anywhere")
 		self.assertIn("direction: ltr", rule.group(1))
