@@ -131,7 +131,8 @@
   "notify_to_upload",
   "pam_website",
   "section_break_yqjj",
-  "rejected_work_permit"
+  "rejected_work_permit",
+  "title"
  ],
  "fields": [
   {
@@ -987,6 +988,15 @@
    "in_standard_filter": 1,
    "label": "Employee Name",
    "read_only": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Title",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
@@ -1062,6 +1072,6 @@
  "sort_field": "date_of_application",
  "sort_order": "DESC",
  "states": [],
- "title_field": "civil_id",
+ "title_field": "title",
  "track_changes": 1
 }

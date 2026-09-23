@@ -60,7 +60,8 @@
   "reminder_grd_operator_again",
   "rejection_details_section",
   "paci_rejection_reason",
-  "rejected_paci"
+  "rejected_paci",
+  "title"
  ],
  "fields": [
   {
@@ -424,6 +425,15 @@
    "fieldtype": "Data",
    "label": "Upload DAMJ Letter On",
    "read_only": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Title",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
@@ -478,6 +488,6 @@
  "sort_field": "date_of_application",
  "sort_order": "DESC",
  "states": [],
- "title_field": "civil_id",
+ "title_field": "title",
  "track_changes": 1
 }
