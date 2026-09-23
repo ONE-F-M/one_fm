@@ -48,6 +48,10 @@ WATCHED_EMPLOYEE_FIELDS = (
 	"one_fm_pam_designation",
 	"one_fm_nationality",
 	"under_company_residency",
+	# WI-002772: the work permit expiry is what says the visa became a registered worker,
+	# so the day it is filled in the quota figures move - one out of Visas Issued, one
+	# into Registered Numbers of Employees.
+	"work_permit_expiry_date",
 )
 
 
@@ -498,6 +502,11 @@ def count_quota_employees(license_number, quota_type) -> int:
 	A row with no quota type yet counts nobody. Falling back to "everyone on the licence"
 	would put the whole workforce in whichever row an operator had not finished
 	configuring, and it would look like a real figure.
+
+	WI-002772 adds the fourth condition: the work permit expiry date. An employee record
+	that exists but has no expiry date yet has not been registered with PAM - their visa
+	is still an issued visa, counted in the row above this one. The two figures share this
+	line, which is what stops the same person being counted twice.
 	"""
 	if not license_number or not quota_type:
 		return 0
@@ -512,10 +521,42 @@ def count_quota_employees(license_number, quota_type) -> int:
 		.select(frappe.qb.terms.Function("Count", Employee.name).as_("count"))
 		.where(Employee.pam_file_number == license_number)
 		.where(Employee.under_company_residency == 1)
+		.where(Employee.work_permit_expiry_date.isnotnull())
 		.where(Designation.quota_type == quota_type)
 	).run(as_dict=True)
 
 	return rows[0]["count"] if rows else 0
+
+
+def registered_applicants(job_applicants) -> set:
+	"""Which of these job applicants have arrived and been registered (WI-002772).
+
+	An Employee with the company's residency and a work permit expiry date is somebody PAM
+	has on the licence - so their visa has stopped being an issued visa and become a
+	registered worker. Keyed on the job applicant, which is what the Visa Request and the
+	Employee share, and the same key WI-002442's duplicate rule uses.
+
+	An Employee created but without an expiry date yet is deliberately NOT here: the story
+	is explicit that such a request stays in Visas Issued until the date is set.
+
+	Asked about the applicants in hand rather than about the whole table - the answer is
+	only ever used to strike names off one licence's list.
+	"""
+	job_applicants = [applicant for applicant in (job_applicants or []) if applicant]
+	if not job_applicants:
+		return set()
+
+	return set(
+		frappe.get_all(
+			"Employee",
+			filters=[
+				["job_applicant", "in", job_applicants],
+				["under_company_residency", "=", 1],
+				["work_permit_expiry_date", "is", "set"],
+			],
+			pluck="job_applicant",
+		)
+	)
 
 
 def recount_quota_rows(license_number):
@@ -611,12 +652,22 @@ def visas_issued_by_quota(license_name, license_number) -> dict:
 			["workflow_state", "=", VISA_COMPLETED],
 			["custom_pam_designation_list", "is", "set"],
 		],
-		fields=["name", "custom_pam_designation_list"],
+		fields=["name", "custom_pam_designation_list", "job_applicant"],
 	)
 	if not requests:
 		return {}
 
 	released = cancelled_visa_requests([request["name"] for request in requests])
+
+	# WI-002772: a visa whose holder has arrived and been registered is counted in the row
+	# below this one instead. Without this the same person is in both figures, and the
+	# available quota is short by one for as long as they work here.
+	arrived = registered_applicants(
+		[request.get("job_applicant") for request in requests]
+	)
+	released |= {
+		request["name"] for request in requests if request.get("job_applicant") in arrived
+	}
 
 	designations = {
 		request["custom_pam_designation_list"]
