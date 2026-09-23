@@ -138,7 +138,8 @@
    "description": "Total Number of Employees in Each PAM File ",
    "fieldname": "total_number_of_employees",
    "fieldtype": "Data",
-   "label": "Total Number of Employees "
+   "label": "Total Number of Employees ",
+   "read_only": 1
   },
   {
    "fieldname": "quota_classification",
