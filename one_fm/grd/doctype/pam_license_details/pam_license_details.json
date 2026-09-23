@@ -22,7 +22,10 @@
   "column_break_mtwm",
   "lg_expiry_date",
   "pam_stats_section",
-  "pam_license_stats"
+  "pam_license_stats",
+  "quota_classification_section",
+  "total_number_of_employees",
+  "quota_classification"
  ],
  "fields": [
   {
@@ -125,6 +128,23 @@
    "fieldtype": "Table",
    "label": "PAM License Stats",
    "options": "PAM License Stats"
+  },
+  {
+   "fieldname": "quota_classification_section",
+   "fieldtype": "Section Break",
+   "label": "Quota Classification"
+  },
+  {
+   "description": "Total Number of Employees in Each PAM File ",
+   "fieldname": "total_number_of_employees",
+   "fieldtype": "Data",
+   "label": "Total Number of Employees "
+  },
+  {
+   "fieldname": "quota_classification",
+   "fieldtype": "Table",
+   "label": "Quota Classification",
+   "options": "Quota Classification"
   }
  ],
  "grid_page_length": 50,
