@@ -28,7 +28,8 @@
    "fieldname": "registered_numbers_of_employees",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Registered Numbers of Employees"
+   "label": "Registered Numbers of Employees",
+   "read_only": 1
   },
   {
    "columns": 2,
