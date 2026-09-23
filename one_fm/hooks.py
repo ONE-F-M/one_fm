@@ -981,7 +981,10 @@ jenv = {
         # Arabic title - the document is read in Arabic, so nothing on it is not.
         "pow_customer_name:one_fm.jinja.print_format.methods.pow_customer_name",
         "pow_customer_name_is_arabic:one_fm.jinja.print_format.methods.pow_customer_name_is_arabic",
-        "pow_title_arabic:one_fm.jinja.print_format.methods.pow_title_arabic"
+        "pow_title_arabic:one_fm.jinja.print_format.methods.pow_title_arabic",
+        # WI-002723: Cairo and Readex Pro are bundled with the app and inlined, because
+        # neither is installed on the print server and wkhtmltopdf has no network there.
+        "pow_font_faces:one_fm.jinja.print_format.methods.pow_font_faces"
     ],
     "filters": [
         # "xmul:one_fm.jinja.methods.xmultiply"
