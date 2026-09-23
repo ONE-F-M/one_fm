@@ -1120,6 +1120,53 @@ def pow_arabic_figure(line: str) -> str:
 	return line
 
 
+# WI-002722: the Arabic title the letter carries. The document is read in Arabic, so its
+# own name is written in Arabic too. Confirmed with the process owner rather than guessed -
+# a guessed Arabic term on this letter has already had to be cleared by a patch once.
+POW_TITLE_AR = "إثبات العمل"
+
+
+def pow_title_arabic() -> str:
+	"""The letter's own title (WI-002722)."""
+	return POW_TITLE_AR
+
+
+def pow_customer_name(doc) -> str:
+	"""The client's name as the letter prints it (WI-002722).
+
+	The Arabic name off the Customer, because the letter is addressed in Arabic and an
+	English company name in the middle of an Arabic sentence is the one thing the client
+	asked to be rid of.
+
+	Falls back to the English name. Full Name in Arabic is not filled in on every Customer
+	yet - WI-002721 makes it mandatory - and a letter that names nobody is worse than a
+	letter that names them in English.
+	"""
+	if not doc.get("customer"):
+		return ""
+
+	names = frappe.db.get_value(
+		"Customer", doc.customer, ["customer_name_in_arabic", "customer_name"], as_dict=True
+	)
+	if not names:
+		return doc.customer
+
+	return (names.customer_name_in_arabic or "").strip() or names.customer_name or doc.customer
+
+
+def pow_customer_name_is_arabic(doc) -> bool:
+	"""Did the Arabic name resolve?
+
+	The template needs to know: an English fallback is a Latin run inside an RTL line and
+	needs the ltr embedding, and the Arabic name must not have it - embedding an Arabic
+	name left-to-right is what puts its words in the wrong order.
+	"""
+	if not doc.get("customer"):
+		return False
+
+	return bool((frappe.db.get_value("Customer", doc.customer, "customer_name_in_arabic") or "").strip())
+
+
 def pow_letter_rows(doc) -> list:
 	"""The letter's table, ready to print: named, translated, and only what was worked.
 

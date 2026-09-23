@@ -1321,11 +1321,15 @@ class TestTheLetterIsArabicOnly(FrappeTestCase):
 			with self.subTest(arabic=arabic):
 				self.assertIn(arabic, html)
 
-	def test_the_client_name_stays_english(self):
-		"""Scenario 4: the one exception the story makes."""
+	def test_the_client_is_named_in_arabic(self):
+		"""WI-002399 Scenario 4 made the client name the one English exception.
+		WI-002722 took it back: the name comes from the Customer's Full Name in Arabic,
+		and the ltr embedding is applied only to the English fallback."""
 		html = self._letter()["html"]
 
-		self.assertIn('مقدمه إلى شركه: <span class="en">{{ customer_name }}</span>', html)
+		self.assertIn("مقدمه إلى شركه:", html)
+		self.assertIn("pow_customer_name(doc)", html)
+		self.assertIn('"val" if customer_is_arabic else "en"', html)
 
 	def test_the_period_dates_are_dd_mmm_yyyy(self):
 		"""Scenario 5: 01/Oct/2024, not 01/10/2024."""
@@ -1470,12 +1474,14 @@ class TestTheLetterIsWrittenInArabicNumerals(FrappeTestCase):
 		self.assertIn('ar_date(doc.current_contract_start_date, "dd / MM / yyyy")', html)
 		self.assertIn("ar_num(frappe.utils.date_diff(doc.end_date, doc.start_date) + 1)", html)
 
-	def test_only_the_client_name_is_left_in_a_latin_run(self):
-		"""Every .en span that wrapped a date is gone, because the dates are Arabic."""
+	def test_nothing_is_left_in_a_latin_run_unconditionally(self):
+		"""Every .en span that wrapped a date is gone, because the dates are Arabic - and
+		since WI-002722 the client name's is conditional on the English fallback, so no
+		span is a Latin run whatever the data says."""
 		html = self._letter()["html"]
 
-		self.assertEqual(html.count('class="en"'), 1)
-		self.assertIn('<span class="en">{{ customer_name }}</span>', html)
+		self.assertEqual(html.count('<span class="en">'), 0)
+		self.assertIn('"val" if customer_is_arabic else "en"', html)
 
 
 class TestTheServiceNameIsResolvedOnce(FrappeTestCase):

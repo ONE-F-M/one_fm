@@ -976,7 +976,12 @@ jenv = {
         "pow_service_names_arabic:one_fm.jinja.print_format.methods.pow_service_names_arabic",
         "pow_letter_rows:one_fm.jinja.print_format.methods.pow_letter_rows",
         "pow_arabic_date:one_fm.jinja.print_format.methods.pow_arabic_date",
-        "pow_arabic_number:one_fm.jinja.print_format.methods.pow_arabic_number"
+        "pow_arabic_number:one_fm.jinja.print_format.methods.pow_arabic_number",
+        # WI-002722: the client is named in Arabic, and the letter carries its own
+        # Arabic title - the document is read in Arabic, so nothing on it is not.
+        "pow_customer_name:one_fm.jinja.print_format.methods.pow_customer_name",
+        "pow_customer_name_is_arabic:one_fm.jinja.print_format.methods.pow_customer_name_is_arabic",
+        "pow_title_arabic:one_fm.jinja.print_format.methods.pow_title_arabic"
     ],
     "filters": [
         # "xmul:one_fm.jinja.methods.xmultiply"
