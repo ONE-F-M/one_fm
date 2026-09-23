@@ -376,8 +376,6 @@ class AttendanceCheck(Document):
             self.validate_day_off()
         if self.attendance_status != "On Leave":
             self.mark_attendance()
-        # Auto-create Penalty And Investigation on approval (Stories 1, 2, 3)
-        self.create_penalty_on_approval()
         # Auto-create Attendance Check Action when action is "Issue a New Mobile"
         self.create_attendance_check_action()
 
@@ -386,8 +384,7 @@ class AttendanceCheck(Document):
         submitted with the action 'Issue a New Mobile'.
 
         Enqueued to run in the background *after commit* so it can never block,
-        delay or freeze the Attendance Check approval — mirroring the penalty
-        creation pattern in ``create_penalty_on_approval``.
+        delay or freeze the Attendance Check approval.
         """
         if self.action != "Issue a New Mobile":
             return
@@ -399,123 +396,6 @@ class AttendanceCheck(Document):
             enqueue_after_commit=True,
             attendance_check=self.name,
         )
-
-    def create_penalty_on_approval(self):
-        """Evaluate the justification gateway and trigger background penalty creation if applicable."""
-        if self.attendance_status != "Present" or not self.justification:
-            return
-
-        penalty_params = None
-
-        # Story 1: Forgot to check in → penalize the employee
-        if self.justification == "Forgot to check in":
-
-            # Resolve penalty code: use "1" if it exists, otherwise leave blank
-            applied_penalty_code = "1" if frappe.db.exists("Penalty Code", "1") else None
-
-            issuer = self._get_issuer_from_employee_hierarchy()
-            location = self._get_location_from_employee_site()
-            penalty_params = {
-                "employee": self.employee,
-                "issuer": issuer,
-                "applied_penalty_code": applied_penalty_code,
-                "incident_date": self.date,
-                "location": location,
-                "supervisor_remarks": "Forgot to check in",
-            }
-
-        # Story 2: User not assigned to shift — employee timing error
-        elif (
-            self.justification == "User not assigned to shift"
-            and self.is_the_employee_assigned_to_the_correct_shift == "Yes"
-            and self.did_the_employee_try_to_check_in_outside_working_hours == "Yes"
-        ):
-
-            # Resolve penalty code: use "18" if it exists, otherwise leave blank
-            applied_penalty_code = "18" if frappe.db.exists("Penalty Code", "18") else None
-
-            issuer = self._get_employee_from_approver()
-            location = self._get_location_with_event_fallback()
-            penalty_params = {
-                "employee": self.employee,
-                "issuer": issuer,
-                "applied_penalty_code": applied_penalty_code,
-                "incident_date": self.date,
-                "location": location,
-                "supervisor_remarks": "User not assigned to shift",
-            }
-
-        # Story 3: User not assigned to shift — supervisor roster error
-        elif (
-            self.justification == "User not assigned to shift"
-            and self.is_the_employee_assigned_to_the_correct_shift == "No"
-        ):
-            # The offender is the supervisor (the approver on the Attendance Check)
-            offender = self._get_employee_from_approver()
-
-            # Resolve penalty code: use "18" if it exists, otherwise leave blank
-            applied_penalty_code = "18" if frappe.db.exists("Penalty Code", "18") else None
-
-            # The issuer is the employee's Reports To
-            issuer = frappe.db.get_value("Employee", offender, "reports_to") if offender else None
-            location = self._get_location_from_employee_site()
-            if offender:
-                penalty_params = {
-                    "employee": offender,
-                    "issuer": issuer,
-                    "applied_penalty_code": applied_penalty_code,
-                    "incident_date": self.date,
-                    "location": location,
-                    "supervisor_remarks": "User not assigned to shift",
-                }
-
-        if penalty_params:
-            frappe.enqueue(
-                _create_penalty_document,
-                queue="short",
-                timeout=120,
-                penalty_params=penalty_params,
-                attendance_check_name=self.name,
-            )
-
-    def _get_issuer_from_employee_hierarchy(self):
-        """Get the Site Supervisor / Shift Supervisor / Reports To for the employee."""
-        approver_employee = self.get_approver(self.employee)
-        return approver_employee if approver_employee else None
-
-    def _get_employee_from_approver(self):
-        """Get the Employee record whose user_id matches the Attendance Check's approver."""
-        if not self.approver:
-            return None
-        return frappe.db.get_value("Employee", {"user_id": self.approver, "status": "Active"}, "name")
-
-    def _get_location_from_employee_site(self):
-        """Get the Operations Site from the Employee's allocated site (or from the Attendance Check)."""
-        # Prefer the operations_site already set on this Attendance Check
-        if self.operations_site:
-            return self.operations_site
-        # Fall back to the Employee's site allocation
-        site = frappe.db.get_value("Employee", self.employee, "site")
-        return site if site else None
-
-    def _get_location_with_event_fallback(self):
-        """Try to get event_location from Shift Assignment, fall back to Employee's Operations Site.
-
-        Note: event_location is a Data field on Shift Assignment (not a Link to Operations Site).
-        If event_location is set, try to find a matching Operations Site by name.
-        If not found, fall back to Employee's Operations Site.
-        """
-        if self.shift_assignment:
-            event_location = frappe.db.get_value("Shift Assignment", self.shift_assignment, "event_location")
-            if event_location:
-                # event_location is a Data field — check if it matches an Operations Site
-                if frappe.db.exists("Operations Site", event_location):
-                    return event_location
-                # If not a valid Operations Site, try the site from shift assignment
-                sa_site = frappe.db.get_value("Shift Assignment", self.shift_assignment, "site")
-                if sa_site:
-                    return sa_site
-        return self._get_location_from_employee_site()
 
     def update_employee_checkin_records(self):
         if self.attendance_status == "Present":
@@ -765,40 +645,6 @@ class AttendanceCheck(Document):
         else:
             working_hours = 8 if self.attendance_status == 'Present' else 0
         return working_hours
-
-def _create_penalty_document(penalty_params, attendance_check_name):
-    """Background job: Create a Draft Penalty And Investigation document.
-
-    Args:
-        penalty_params (dict): Fields to set on the Penalty And Investigation document.
-        attendance_check_name (str): Name of the originating Attendance Check (for logging).
-    """
-    try:
-        penalty = frappe.new_doc("Penalty And Investigation")
-        penalty.employee = penalty_params.get("employee")
-        penalty.issuer = penalty_params.get("issuer")
-        penalty.applied_penalty_code = penalty_params.get("applied_penalty_code")
-        penalty.incident_date = penalty_params.get("incident_date")
-        penalty.issuance_date = frappe.utils.today()
-        penalty.supervisor_remarks = penalty_params.get("supervisor_remarks")
-
-        # Location is a Link to Operations Site — only set if the site_location resolves
-        location = penalty_params.get("location")
-        if location:
-            penalty.location = location
-
-        penalty.flags.ignore_mandatory = True
-        penalty.insert(ignore_permissions=True)
-
-        frappe.db.commit()
-        frappe.logger().info(
-            f"Penalty And Investigation {penalty.name} created from Attendance Check {attendance_check_name}"
-        )
-    except Exception:
-        frappe.log_error(
-            title="Auto Penalty Creation Failed",
-            message=f"Attendance Check: {attendance_check_name}\n{frappe.get_traceback()}"
-        )
 
 def _create_attendance_check_action_doc(attendance_check):
     """Background job: create a Draft Attendance Check Action for an Attendance Check

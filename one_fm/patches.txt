@@ -287,12 +287,8 @@ one_fm.patches.v15_0.update_subcontract_staff_attendance_web_form
 one_fm.patches.v15_0.fix_contract_currency
 one_fm.patches.v15_0.fix_leave_allocation_carry_forward_hr_emp_02814
 one_fm.patches.v15_0.remove_pathfinder_log_assignment_rules
-one_fm.patches.v15_0.add_workflow_states_penalty_and_investigation
-one_fm.patches.v15_0.add_workflow_actions_penalty_and_investigation
 one_fm.patches.v15_0.add_sales_invoice_contract_fields #3
 one_fm.patches.v15_0.add_sales_taxes_charges_add_or_deduct_field
-one_fm.patches.v15_0.add_workflow_penalty_and_investigation
-one_fm.patches.v15_0.update_penalty_and_investigation_workflow
 one_fm.patches.v15_0.add_rambo_reliever_custom_field #2026-05-14
 one_fm.patches.v15_0.update_vehicle_naming_series
 one_fm.patches.v15_0.remove_vehicle_autoname_property_setter
@@ -542,11 +538,6 @@ one_fm.patches.v15_0.add_accommodation_leave_movement_assignment_rules #2026-07-
 one_fm.patches.v15_0.add_employee_site_supervisor_fields #2026-07-30
 one_fm.patches.v15_0.add_vehicle_list_view_columns #2026-07-30
 one_fm.patches.v15_0.add_attendance_event_staff_field #2026-08-01
-one_fm.patches.v15_0.migrate_penalty_applied_level #2026-07-30
-one_fm.patches.v15_0.rename_penalty_fields_to_ba_layout #2026-08-02
-one_fm.patches.v15_0.update_penalty_and_investigation_workflow #2026-08-02 rerun for employee_response
-one_fm.patches.v15_0.add_penalty_and_investigation_assignment_rules #2026-08-01 rerun for payroll officer
-one_fm.patches.v15_0.update_penalty_assignment_rules_process_task_based
 one_fm.patches.v15_0.update_visa_request_workflow_and_rules
 one_fm.patches.v15_0.link_published_document_requests #2026-08-03 WI-001844
 one_fm.patches.v15_0.seed_document_versions #2026-08-03
@@ -624,3 +615,4 @@ one_fm.patches.v15_0.add_visa_costing_action #2026-09-21 WI-002601
 one_fm.patches.v15_0.backfill_lg_details_applicable #2026-09-18 WI-002597
 one_fm.patches.v15_0.grd_operator_visa_request_assign_by_field #2026-09-18 WI-002610
 one_fm.patches.v15_0.restate_pam_license_sector_figures #2026-09-21 WI-002094
+one_fm.patches.v15_0.remove_penalty_and_investigation #2026-09-23
