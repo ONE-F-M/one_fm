@@ -16,6 +16,12 @@ Why on commit rather than per row: a range is not known to be a range until the 
 of it has been written. Collecting the names as they are held and flushing once the
 transaction commits is what turns eight rows into one email - and it means a rolled-back
 roster run sends nothing at all, which a per-row email could not promise.
+
+WI-002604 is the other half of the same conversation: once the approver has decided, the
+REQUESTOR is told which days were approved and which were rejected, in one email per
+request rather than one per day. It is built on the same two pieces - continuous_cycles
+and the flush-on-commit - because a partly approved range is only knowable once every row
+in it has been decided.
 """
 
 import json
@@ -225,5 +231,209 @@ def send_cycle_email(approver, employee, employee_name, start, end, shifts) -> N
 		content=message,
 		reference_doctype="Employee Schedule",
 		reference_name=shifts[0].name if shifts else None,
+		is_scheduler_email=True,
+	)
+
+
+# WI-002604: the other half of the conversation. The approver is told a request is waiting
+# (above); the requestor is told what was decided - and for a range that was decided
+# unevenly, exactly which days went which way.
+OUTCOME_FLAG = "dsot_outcome_notifications"
+
+ACTIVE = "Active"
+REJECTED = "Rejected"
+
+# The two states a decided request lands in, and what each is called in the email. Approve
+# transitions to Active rather than to an "Approved" state of its own (WI-002283): only an
+# Active schedule is picked up for a Shift Assignment.
+DECIDED_STATES = (ACTIVE, REJECTED)
+
+# Who the email says processed the request when nobody did. reject_expired_dsot_requests
+# closes a request whose shift has already finished, under Administrator, because no
+# approver ever answered it.
+SYSTEM_PROCESSOR = "Administrator"
+
+
+def queue_outcome(names) -> None:
+	"""Remember decided schedules, and tell their requestors once this request commits.
+
+	Separate from queue(): a roster run can hold new requests and decide old ones in the
+	same transaction, and the two emails go to different people about different shifts.
+	"""
+	names = [name for name in (names or []) if name]
+	if not names:
+		return
+
+	pending = frappe.flags.get(OUTCOME_FLAG)
+	if pending is None:
+		pending = frappe.flags[OUTCOME_FLAG] = set()
+		frappe.db.after_commit.add(flush_outcomes)
+
+	pending.update(names)
+
+
+def flush_outcomes() -> None:
+	"""Send one outcome email per (requestor, employee) for everything decided.
+
+	Wrapped whole for the same reason as flush(): the decision has already saved and the
+	shift assignment has already been made, so a mail server that is down must not turn an
+	approval into a traceback on the approver's screen.
+	"""
+	names = frappe.flags.pop(OUTCOME_FLAG, None)
+	if not names:
+		return
+
+	try:
+		rows = frappe.get_all(
+			"Employee Schedule",
+			filters={"name": ["in", list(names)], "workflow_state": ["in", list(DECIDED_STATES)]},
+			fields=[
+				"name",
+				"employee",
+				"employee_name",
+				"date",
+				"site",
+				"owner",
+				"workflow_state",
+				"modified_by",
+			],
+		)
+		if not rows:
+			return
+
+		# AC1-AC3 are all one request: the approved days and the rejected days of the same
+		# ask, in one message. Grouped by requestor as well as employee because a second
+		# supervisor's request for the same person is a separate ask.
+		by_request = {}
+		for row in rows:
+			by_request.setdefault((row.owner, row.employee), []).append(row)
+
+		for (requestor, employee), decided in by_request.items():
+			send_outcome_email(requestor=requestor, employee=employee, decided=decided)
+	except Exception:
+		frappe.log_error(
+			title="DSOT outcome notification",
+			message=frappe.get_traceback(),
+		)
+
+
+def format_cycles(dates) -> str:
+	"""AC3's date blocks, written the way the template shows them.
+
+	A single day is that day; a run is "first - last"; several runs are comma separated.
+	"None (0 shifts)" is what an empty side says, rather than an empty cell the reader has
+	to interpret.
+	"""
+	cycles = continuous_cycles(dates)
+	if not cycles:
+		return _("None (0 shifts)")
+
+	return ", ".join(
+		formatdate(start) if start == end else f"{formatdate(start)} - {formatdate(end)}"
+		for start, end in cycles
+	)
+
+
+def schedule_list_url(employee, dates) -> str:
+	"""The requestor's landing place: this employee's schedules over the range decided.
+
+	Not filtered on state: the point of the link is to see the approved and the rejected
+	days together, which is the whole of what the email is about.
+	"""
+	span = sorted(getdate(date) for date in dates if date)
+	filters = {
+		"employee": employee,
+		"date": ["between", [str(span[0]), str(span[-1])]],
+	}
+	query = "&".join(
+		f"{field}={frappe.utils.quote(json.dumps(value, separators=(',', ':')) if isinstance(value, list) else str(value))}"
+		for field, value in filters.items()
+	)
+	return f"{get_url()}/app/employee-schedule?{query}"
+
+
+def processed_by(decided) -> str:
+	"""Who decided it, or that nobody did.
+
+	An expired request is closed by the hourly job under Administrator - nobody answered
+	it - and the email says so rather than naming a person who never saw it.
+	"""
+	actors = {row.modified_by for row in decided} - {None, ""}
+	if actors == {SYSTEM_PROCESSOR}:
+		return _("System Administrator (auto-expired)")
+
+	named = sorted(actors - {SYSTEM_PROCESSOR})
+	return ", ".join(frappe.utils.get_fullname(actor) or actor for actor in named) or _(
+		"System Administrator (auto-expired)"
+	)
+
+
+def send_outcome_email(requestor, employee, decided) -> None:
+	"""One request, one email (AC1-AC3)."""
+	if not requestor:
+		return
+
+	approved = [row.date for row in decided if row.workflow_state == ACTIVE]
+	rejected = [row.date for row in decided if row.workflow_state == REJECTED]
+	all_dates = [row.date for row in decided]
+
+	employee_name = next((row.employee_name for row in decided if row.employee_name), employee)
+	site = next((row.site for row in decided if row.site), None)
+
+	overall = continuous_cycles(all_dates)
+	span = (
+		f"{formatdate(overall[0][0])} - {formatdate(overall[-1][1])}"
+		if overall and overall[0][0] != overall[-1][1]
+		else formatdate(overall[0][0])
+		if overall
+		else ""
+	)
+
+	subject = _("DSOT Request Outcome: {0} ({1})").format(employee_name, span)
+	list_url = schedule_list_url(employee, all_dates)
+
+	# The same table every other one_fm notification arrives in
+	# (one_fm/overrides/notification_log.py), so the requestor reads the shape they act on
+	# daily. The decision itself is the description; the date blocks are the body.
+	description = _("Employee: {0} ({1}).").format(employee_name, employee)
+	if site:
+		description += " " + _("Operations Site: {0}.").format(site)
+
+	body_content = "<br>".join([
+		_("Approved Dates: {0}").format(frappe.bold(format_cycles(approved))),
+		_("Rejected Dates: {0}").format(frappe.bold(format_cycles(rejected))),
+		_("Processed By: {0}").format(frappe.bold(processed_by(decided))),
+	])
+
+	message = frappe.render_template(
+		"one_fm/templates/emails/notification_log.html",
+		context={
+			"header": _("DSOT Process Decision Notification"),
+			"document_name": span,
+			"document_type": _("Employee Schedule"),
+			"description": description,
+			"body_content": body_content,
+			"doc_link": f'<a href="{list_url}">{list_url}</a>',
+		},
+	)
+
+	# "Alert" is the one type Frappe never emails itself, so the requestor gets the bell
+	# entry and exactly one email rather than two copies through two templates.
+	frappe.get_doc({
+		"doctype": "Notification Log",
+		"type": "Alert",
+		"subject": subject,
+		"email_content": message,
+		"document_type": "Employee Schedule",
+		"document_name": decided[0].name,
+		"for_user": requestor,
+	}).insert(ignore_permissions=True)
+
+	sendemail(
+		recipients=[requestor],
+		subject=subject,
+		content=message,
+		reference_doctype="Employee Schedule",
+		reference_name=decided[0].name,
 		is_scheduler_email=True,
 	)
