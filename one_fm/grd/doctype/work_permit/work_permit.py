@@ -19,6 +19,7 @@ from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.grd.doctype.medical_insurance import medical_insurance
 from frappe.core.doctype.communication.email import make
 from one_fm.processor import sendemail
+from one_fm.grd.document_title import set_document_title
 from one_fm.utils import send_workflow_action_email, is_scheduler_emails_enabled
 
 # from PyPDF2 import PdfFileReader
@@ -52,6 +53,7 @@ class WorkPermit(Document):
 
     def validate(self):
         self.set_grd_values()
+        set_document_title(self)
         self.validate_workflow_state_fields()
         self.validate_designation_on_amendment()
         self.employee_last_checkin = get_employee_last_checkin(self.employee)
