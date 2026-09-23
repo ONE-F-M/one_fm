@@ -56,6 +56,17 @@ class PAMLicenseDetails(Document):
 		self.set_sector_figures()
 		self.set_total_number_of_employees()
 		self.set_quota_registrations()
+		self.set_quota_visas_issued()
+
+	def set_quota_visas_issued(self):
+		"""Derive each quota row's issued-visa count (WI-002771).
+
+		On validate for the same reason the registrations are: a row re-pointed at another
+		quota type here should show its figure straight away.
+		"""
+		issued = visas_issued_by_quota(self.name, self.civil_id_number_for_licensing)
+		for row in self.quota_classification:
+			row.number_of_visas_issued = str(issued.get(row.type_of_quota, 0))
 
 	def set_quota_registrations(self):
 		"""Derive each quota row's registered headcount (WI-002769).
@@ -528,6 +539,10 @@ def recount_quota_rows(license_number):
 
 	counts = {}
 	for license_name in licenses:
+		# WI-002771: the issued visas are per LICENCE rather than per licence number,
+		# because a Visa Request names the licence record it was raised against.
+		issued = visas_issued_by_quota(license_name, license_number)
+
 		rows = frappe.get_all(
 			"Quota Classification",
 			filters={
@@ -545,7 +560,139 @@ def recount_quota_rows(license_number):
 			frappe.db.set_value(
 				"Quota Classification",
 				row["name"],
-				"registered_numbers_of_employees",
-				counts[quota_type],
+				{
+					"registered_numbers_of_employees": counts[quota_type],
+					"number_of_visas_issued": str(issued.get(quota_type, 0)),
+				},
 				update_modified=False,
 			)
+
+
+# WI-002771: the state a Visa Request reaches when PAM and MOI have both said yes and the
+# visa exists. Only those count against a quota - anything earlier is an application, not
+# a visa.
+VISA_COMPLETED = "Completed"
+
+
+def visas_issued_by_quota(license_name, license_number) -> dict:
+	"""Visas issued against this licence, counted per quota type (WI-002771).
+
+	Keyed on the Visa Request's own PAM File and PAM Designation rather than on an
+	employee: at this point there is no employee. The visa has been issued and the person
+	has not arrived, which is the whole reason the figure is separate from the registered
+	headcount beside it.
+
+	A cancelled visa is not an issued one. WI-002744 already works out which completed
+	requests have had their visa given back, and the same answer is used here - the story's
+	last criterion is that a completed cancellation takes the visa back out of this count
+	and returns it to the available quota.
+
+	Returns {quota type: count}; a quota with no visas simply does not appear.
+	"""
+	from one_fm.visa_management.doctype.visa_request.visa_request import (
+		cancelled_visa_requests,
+	)
+
+	licenses = [name for name in {license_name} if name]
+	if license_number:
+		licenses += frappe.get_all(
+			"PAM License Details",
+			filters={"civil_id_number_for_licensing": license_number},
+			pluck="name",
+		)
+	licenses = list(dict.fromkeys(licenses))
+	if not licenses:
+		return {}
+
+	requests = frappe.get_all(
+		"Visa Request",
+		filters=[
+			["custom_pam_file", "in", licenses],
+			["workflow_state", "=", VISA_COMPLETED],
+			["custom_pam_designation_list", "is", "set"],
+		],
+		fields=["name", "custom_pam_designation_list"],
+	)
+	if not requests:
+		return {}
+
+	released = cancelled_visa_requests([request["name"] for request in requests])
+
+	designations = {
+		request["custom_pam_designation_list"]
+		for request in requests
+		if request["name"] not in released
+	}
+	if not designations:
+		return {}
+
+	quota_of = dict(
+		frappe.get_all(
+			"PAM Designation List",
+			filters={"name": ["in", list(designations)]},
+			fields=["name", "quota_type"],
+			as_list=True,
+		)
+	)
+
+	counts = {}
+	for request in requests:
+		if request["name"] in released:
+			continue
+		quota_type = quota_of.get(request["custom_pam_designation_list"])
+		if not quota_type:
+			# A designation nobody has put in a quota yet. Counted against no row rather
+			# than against the first one - a visa in the wrong quota reads as headroom
+			# that is not there.
+			continue
+		counts[quota_type] = counts.get(quota_type, 0) + 1
+
+	return counts
+
+
+def update_quota_from_visa_request(doc, method=None):
+	"""Recount a licence's quota rows when a visa request reaches or leaves Completed.
+
+	Without this the issued figure only moved when somebody saved an Employee - and the
+	whole point of the figure is the gap before an employee exists.
+
+	Both licences, because a request re-pointed at another PAM File takes its visa with it.
+	"""
+	before = None if doc.flags.in_insert else doc.get_doc_before_save()
+
+	if not doc.flags.in_insert and not any(
+		doc.has_value_changed(fieldname)
+		for fieldname in ("workflow_state", "custom_pam_file", "custom_pam_designation_list")
+	):
+		return
+
+	for license_name in {
+		doc.get("custom_pam_file"),
+		before.get("custom_pam_file") if before else None,
+	} - {None, ""}:
+		recount_license_quota(license_name)
+
+
+def update_quota_from_visa_cancellation(doc, method=None):
+	"""Recount when a cancellation is completed: the visa goes back to the quota.
+
+	The Visa Request it names is the way back to the licence - a cancellation carries no
+	PAM File of its own.
+	"""
+	if not doc.get("visa_request_id"):
+		return
+
+	license_name = frappe.db.get_value("Visa Request", doc.visa_request_id, "custom_pam_file")
+	if license_name:
+		recount_license_quota(license_name)
+
+
+def recount_license_quota(license_name):
+	"""Rewrite one licence's quota rows from the employees and visas it carries."""
+	number = frappe.db.get_value(
+		"PAM License Details", license_name, "civil_id_number_for_licensing"
+	)
+	if not number:
+		return
+
+	recount_quota_rows(number)

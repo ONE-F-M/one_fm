@@ -269,6 +269,19 @@ doc_events = {
 			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_counts_from_employee"
 		]
 	},
+	"Visa Request": {
+		# WI-002771: a completed Visa Request is a visa issued against the licence's quota,
+		# and no Employee exists yet to trigger the recount the other figures ride on.
+		"on_update": [
+			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_quota_from_visa_request"
+		]
+	},
+	"Visa Cancellation Request": {
+		# The other direction: a completed cancellation gives the visa back to the quota.
+		"on_update": [
+			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_quota_from_visa_cancellation"
+		]
+	},
 	"PAM Designation List": {
 		# The sector lives on the designation, so moving one moves every employee holding
 		# it - and no Employee is saved when that happens.

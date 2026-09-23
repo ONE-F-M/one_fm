@@ -54,7 +54,8 @@
    "fieldname": "number_of_visas_issued",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Number of Visas Issued"
+   "label": "Number of Visas Issued",
+   "read_only": 1
   },
   {
    "columns": 1,
