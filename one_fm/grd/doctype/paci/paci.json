@@ -394,6 +394,7 @@
    "description": "The PRO who files this application on the PACI portal. Required before the application can be handed back.",
    "fieldname": "pro_user",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "PRO User",
    "options": "User"
   },
