@@ -106,7 +106,8 @@ def get_customer_custom_fields():
                 "fieldtype": "Data",
                 "insert_after": "customer_name",
                 "label": "Full Name In Arabic",
-                "translatable": 1
+                "translatable": 1,
+                "reqd": 1
             },
             {
                 "fieldname": "website_image",
