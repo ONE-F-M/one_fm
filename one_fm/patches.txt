@@ -633,3 +633,4 @@ one_fm.patches.v15_0.backfill_pam_license_sector_headcounts #2026-09-15 WI-00209
 one_fm.patches.v15_0.restate_pam_license_sector_figures #2026-09-21 WI-002094
 one_fm.patches.v15_0.processa_sync_hd_ticketing_09a990 #2026-09-21 Processa sync: HD Ticket
 one_fm.patches.v15_0.clear_stale_ojt_link_on_working_schedules #2026-08-16
+one_fm.patches.v15_0.force_close_stale_bonus_requests #2026-09-24
