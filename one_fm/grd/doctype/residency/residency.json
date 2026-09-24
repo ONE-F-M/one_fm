@@ -466,10 +466,10 @@
   {
    "fieldname": "grd_operator",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Government Relations Operator",
    "options": "User",
-   "print_hide": 1,
-   "read_only": 1
+   "print_hide": 1
   },
   {
    "fieldname": "grd_supervisor",
