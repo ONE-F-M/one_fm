@@ -3,6 +3,7 @@
  "autoname": "naming_series:",
  "color": "green",
  "creation": "2020-08-13 08:46:25.338850",
+ "allow_edit": 1,
  "doctype": "DocType",
  "document_type": "Document",
  "engine": "InnoDB",
