@@ -268,6 +268,13 @@ def cancel_expired_visas():
 
 	Left in Draft, which is what the story asks for - the process map takes it from there.
 
+	Raised AS the GRD Operator rather than as the scheduler (WI-002744). The map's first
+	user task takes its assignee from the document's owner, so a cancellation the job
+	inserts is owned by Administrator and only Administrator can act on it. insert()
+	overwrites owner with the session user for any new document, and the process instance
+	starts on insert and reads owner then - so being the operator while it is written is
+	the only thing that puts their name on the task.
+
 	One failure does not stop the rest, and a visa that already has a live cancellation is
 	refused by the duplicate rule rather than checked for twice here.
 	"""
@@ -281,7 +288,7 @@ def cancel_expired_visas():
 
 			doc = build_cancellation(source, EXPIRY_REASON)
 			doc.flags.ignore_permissions = True
-			doc.insert(ignore_permissions=True)
+			insert_as_grd_operator(doc)
 			raised.append(doc.name)
 		except Exception:
 			frappe.log_error(
@@ -294,3 +301,22 @@ def cancel_expired_visas():
 		frappe.db.commit()
 
 	return raised
+
+
+def insert_as_grd_operator(doc):
+	"""Insert the cancellation owned by the GRD Operator it names (WI-002744).
+
+	With no operator on the record there is nobody to be, so it is inserted as the job
+	runs it - which is what happened before this existed.
+	"""
+	operator = doc.get("grd_operator")
+	if not operator:
+		doc.insert(ignore_permissions=True)
+		return
+
+	original_user = frappe.session.user
+	try:
+		frappe.set_user(operator)
+		doc.insert(ignore_permissions=True)
+	finally:
+		frappe.set_user(original_user)
