@@ -184,14 +184,17 @@ def create_medical_appointment(employee, appointment_type, preparation_name=None
 	Inserted without its mandatory fields. The appointment date, whether transport is
 	needed and which PRO takes it are not facts anybody holds when the Preparation is
 	submitted - the supervisor and the GR Operator supply them as the record moves through
-	the workflow, which is what the Pending Supervisor state it opens in is for. Mandatory
-	is enforced again on every later save, so nothing reaches submit half-filled.
+	the workflow. WI-002886: it now opens in "Draft" rather than "Pending Supervisor", so
+	the Government Relations Operator can fill in what the Preparation could not supply
+	before the appointment is routed to the supervisor for action. Mandatory is enforced
+	again on every later save, so nothing reaches submit half-filled.
 	"""
 	appointment = frappe.new_doc("Medical Appointment")
 	appointment.employee = employee.name
 	appointment.medical_appointment_type = appointment_type
 	appointment.preparation = preparation_name
 	appointment.date_of_application = today()
+	appointment.workflow_state = "Draft"
 	appointment.insert(ignore_mandatory=True)
 
 	return appointment
