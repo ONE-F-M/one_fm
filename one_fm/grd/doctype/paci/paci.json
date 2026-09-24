@@ -317,8 +317,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Date Of Application",
-   "print_hide": 1,
-   "read_only": 1
+   "print_hide": 1
   },
   {
    "fieldname": "category",
@@ -394,6 +393,7 @@
    "description": "The PRO who files this application on the PACI portal. Required before the application can be handed back.",
    "fieldname": "pro_user",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "PRO User",
    "options": "User"
   },
