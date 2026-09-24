@@ -295,10 +295,10 @@
   {
    "fieldname": "grd_operator",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Government Relations Operator",
    "no_copy": 1,
-   "options": "User",
-   "read_only": 1
+   "options": "User"
   },
   {
    "default": "0",
