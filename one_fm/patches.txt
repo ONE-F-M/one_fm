@@ -618,3 +618,4 @@ one_fm.patches.v15_0.restate_pam_license_sector_figures #2026-09-21 WI-002094
 one_fm.patches.v15_0.remove_penalty_and_investigation #2026-09-23
 one_fm.patches.v15_0.remove_employee_weekly_action_employee_user #2026-09-22
 one_fm.patches.v15_0.recount_pam_licences_by_company_residency #2026-09-23
+one_fm.patches.v15_0.add_medical_appointment_draft_state #2026-09-24 WI-002886
