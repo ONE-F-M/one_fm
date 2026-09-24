@@ -2,7 +2,6 @@
  "actions": [],
  "autoname": "naming_series:",
  "creation": "2020-10-04 17:18:51.846231",
- "allow_edit": 1,
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -147,9 +146,10 @@
   {
    "fieldname": "grd_operator",
    "fieldtype": "Link",
-   "in_list_view": 1,
+   "hidden": 1,
    "label": "Government Relations Operator",
-   "options": "User"
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_23",

@@ -3,7 +3,6 @@
  "autoname": "naming_series:",
  "color": "green",
  "creation": "2020-08-13 08:46:25.338850",
- "allow_edit": 1,
  "doctype": "DocType",
  "document_type": "Document",
  "engine": "InnoDB",
@@ -295,10 +294,10 @@
   {
    "fieldname": "grd_operator",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Government Relations Operator",
    "no_copy": 1,
-   "options": "User"
+   "options": "User",
+   "read_only": 1
   },
   {
    "default": "0",
