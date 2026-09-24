@@ -2,6 +2,7 @@
  "actions": [],
  "autoname": "naming_series:",
  "creation": "2020-08-31 19:39:53.406596",
+ "allow_edit": 1,
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
