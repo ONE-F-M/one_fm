@@ -14,7 +14,8 @@
    "send_email": 1,
    "state": "Draft",
    "update_field": "",
-   "update_value": ""
+   "update_value": "",
+   "style": "Info"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -23,7 +24,8 @@
    "doctype": "Workflow Document State",
    "is_optional_state": 0,
    "send_email": 1,
-   "state": "Pending Application"
+   "state": "Pending Application",
+   "style": "Warning"
   },
   {
    "allow_edit": "HR Manager",
@@ -32,7 +34,8 @@
    "doctype": "Workflow Document State",
    "is_optional_state": 0,
    "send_email": 1,
-   "state": "Pending HR Manager"
+   "state": "Pending HR Manager",
+   "style": "Warning"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -41,7 +44,8 @@
    "doctype": "Workflow Document State",
    "is_optional_state": 0,
    "send_email": 1,
-   "state": "Pending Expiry Date Update"
+   "state": "Pending Expiry Date Update",
+   "style": "Warning"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -51,7 +55,8 @@
    "is_optional_state": 0,
    "send_email": 1,
    "state": "Rejected",
-   "update_value": "Rejected"
+   "update_value": "Rejected",
+   "style": "Primary"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -60,7 +65,8 @@
    "doctype": "Workflow Document State",
    "is_optional_state": 0,
    "send_email": 1,
-   "state": "Completed"
+   "state": "Completed",
+   "style": "Success"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -71,7 +77,8 @@
    "send_email": 1,
    "state": "Cancelled",
    "update_field": "",
-   "update_value": ""
+   "update_value": "",
+   "style": "Danger"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -81,7 +88,8 @@
    "is_optional_state": 0,
    "send_email": 1,
    "state": "Apply Online by PRO",
-   "update_value": ""
+   "update_value": "",
+   "style": "Primary"
   },
   {
    "allow_edit": "GRD Supervisor",
@@ -91,7 +99,8 @@
    "is_optional_state": 0,
    "send_email": 1,
    "state": "Pending GR Manager",
-   "update_value": ""
+   "update_value": "",
+   "style": "Warning"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -101,7 +110,8 @@
    "is_optional_state": 0,
    "send_email": 1,
    "state": "Pending By Previous Company",
-   "update_value": ""
+   "update_value": "",
+   "style": "Warning"
   },
   {
    "allow_edit": "GRD Supervisor",
@@ -111,7 +121,8 @@
    "is_optional_state": 0,
    "send_email": 1,
    "state": "Pending  For Payment",
-   "update_value": ""
+   "update_value": "",
+   "style": "Warning"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -121,7 +132,8 @@
    "is_optional_state": 0,
    "send_email": 1,
    "state": "Pending by GR Operator",
-   "update_value": ""
+   "update_value": "",
+   "style": "Warning"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -131,7 +143,8 @@
    "is_optional_state": 0,
    "send_email": 1,
    "state": "Pending By PAM",
-   "update_value": ""
+   "update_value": "",
+   "style": "Warning"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -141,7 +154,8 @@
    "is_optional_state": 0,
    "send_email": 1,
    "state": "Reason of Rejection",
-   "update_value": "Rejected"
+   "update_value": "Rejected",
+   "style": "Primary"
   }
  ],
  "transitions": [
