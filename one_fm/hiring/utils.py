@@ -657,7 +657,10 @@ def create_new_work_permit(work_permit):
 	wp.insert()
 	wp.workflow_state = 'Draft'
 	wp.save(ignore_permissions=True)
-	wp.workflow_state = 'Apply Online by PRO'
+	# WI-002497: the permit is the operator's from the moment it is saved. The state it
+	# used to restart in no longer carries the Apply transition, so a restarted
+	# application would have had no action at all.
+	wp.workflow_state = 'Pending by GR Operator'
 	if doc.work_permit_type == "Local Transfer":
 		wp.transfer_paper = doc.transfer_paper
 	if doc.work_permit_type == "Renewal Expat" or doc.work_permit_type == "Renewal Kuwaiti":
