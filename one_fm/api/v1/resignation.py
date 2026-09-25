@@ -171,12 +171,11 @@ def extend_resignation(
     reason: str = None,
     extended_date: str = None,
     resignation_id: str = None,
-    # Mobile sends this as a nested {attachment_name, attachment} object, not
-    # a string -- Frappe's own arg-type coercion rejects a plain `str` hint
-    # here before the body below (which already handles either shape) runs.
+    # mobile sends {attachment_name, attachment} as an object
     attachment: str | dict = None,
     attachment_name: str = None,
-    data: str = None,
+    # mobile can send this as an object too
+    data: str | dict = None,
     **kwargs
 ):
     """Create an Employee Resignation Date Adjustment for the employee's active resignation."""
@@ -270,14 +269,13 @@ def extend_resignation(
 def withdraw_resignation(
     employee_id: str = None,
     reason: str = None,
-    # Mobile sends this as a nested {attachment_name, attachment} object, not
-    # a string -- Frappe's own arg-type coercion rejects a plain `str` hint
-    # here before the body below (which already handles either shape) runs.
+    # mobile sends {attachment_name, attachment} as an object
     attachment: str | dict = None,
     attachment_name: str = None,
     employee_resignation: str = None,
     supervisor: str = None,
-    data: str = None,
+    # mobile can send this as an object too
+    data: str | dict = None,
     **kwargs
 ):
     try:
@@ -518,22 +516,7 @@ def get_all_my_resignations(employee_id=None, **kwargs):
 
 @frappe.whitelist()
 def get_resignation_by_name(resignation_id: str = None, **kwargs):
-    """Returns a single resignation record by name, scoped to the requesting employee.
-
-    Mobile's resignation list links each row to this endpoint (was never
-    implemented -- every call 404'd inside execute_cmd, which frappe.throw()s
-    a generic ValidationError for an unresolvable method, surfacing as a
-    misleading 417 "Resignation record not found" on every tap).
-
-    Identity is resolved from frappe.session.user only -- NOT from a
-    client-supplied employee_id. Employee Resignation grants role
-    "Employee" blanket doctype-level read (no if_owner) and sets
-    ignore_user_permissions=1 on the `employee` link field, so
-    frappe.has_permission(..., ptype="read") is True for every employee
-    regardless of whose record they ask for; trusting a client-supplied
-    employee_id here would let any employee read anyone else's resignation
-    by guessing/incrementing a resignation_id (IDOR).
-    """
+    """Return one Employee Resignation belonging to the session user's employee."""
     resignation_id = get_param("resignation_id", resignation_id)
     if not resignation_id:
         frappe.throw(_("resignation_id is required"), frappe.ValidationError)
