@@ -6,6 +6,8 @@ Read off the fixtures rather than the live Workflow: the configuration reaches a
 migrate, and this has to hold on the branch before anybody has run one.
 """
 
+import json
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
@@ -75,6 +77,63 @@ class TestTheOperatorState(FrappeTestCase):
 		for state, _action, next_state in self.transitions:
 			self.assertIn(state, self.states)
 			self.assertIn(next_state, self.states)
+
+
+class TestTheFormFollowsTheRename(FrappeTestCase):
+	"""Reported from testing: Done at Pending by GR Operator threw
+
+	    Upload the required document(Invoice) and Set Updated Work Permit Expiry Date
+	    to submit
+
+	and neither field was on the form until Pending GR Manager. on_submit demands both
+	before Completed, and six visibility rules still named the state this story renamed -
+	so the operator was asked for fields the form was hiding from them.
+	"""
+
+	def setUp(self):
+		self.fields = {
+			f["fieldname"]: f
+			for f in json.loads(
+				frappe.read_file(
+					frappe.get_app_path(
+						"one_fm", "grd", "doctype", "work_permit", "work_permit.json"
+					)
+				)
+			)["fields"]
+		}
+
+	def test_no_visibility_rule_names_a_state_that_is_gone(self):
+		for name, field in self.fields.items():
+			for key in ("depends_on", "mandatory_depends_on", "read_only_depends_on"):
+				value = field.get(key) or ""
+				self.assertNotIn(RETIRED_STATE, value, f"{name}.{key}")
+				# "Pending by Operator" - no such state, on any site, before or after.
+				self.assertNotIn('"Pending by Operator"', value, f"{name}.{key}")
+
+	def test_the_fields_on_submit_demands_are_visible_where_it_demands_them(self):
+		"""Both live inside sections of their own, so the section has to show too."""
+		for fieldname, section in (
+			("new_work_permit_expiry_date", "work_permit_information_section"),
+			("attach_invoice", "payment_details_section_section"),
+		):
+			self.assertIn(PENDING_GRO, self.fields[section]["depends_on"], section)
+
+		self.assertIn(
+			PENDING_GRO, self.fields["new_work_permit_expiry_date"]["depends_on"]
+		)
+
+	def test_the_expiry_date_is_demanded_where_it_is_shown(self):
+		expiry = self.fields["new_work_permit_expiry_date"]
+		self.assertEqual(expiry["depends_on"], expiry["mandatory_depends_on"])
+
+	def test_the_local_transfer_sections_follow_too(self):
+		"""Pending  For Payment hands a Local Transfer back to this same state."""
+		for section in (
+			"previous_company_status_section",
+			"section_break_14",
+			"work_permit_details_section",
+		):
+			self.assertIn(PENDING_GRO, self.fields[section]["depends_on"], section)
 
 
 class TestTheOperatorRuleFollows(FrappeTestCase):
