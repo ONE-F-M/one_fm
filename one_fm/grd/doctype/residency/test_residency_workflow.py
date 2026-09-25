@@ -42,6 +42,17 @@ class TestResidencyWorkflow(FrappeTestCase):
 			expected = "1" if name == "Completed" else "0"
 			self.assertEqual(state["doc_status"], expected, name)
 
+	def test_every_state_carries_a_style(self):
+		"""create_workflow_state() inserts the Workflow State master with the fixture's
+		`style`, which is mandatory on that DocType. A state without one is never created,
+		and the workflow save then fails on a link to a state that does not exist - both
+		silently, because the helpers log instead of raising."""
+		for state in self.workflow["states"]:
+			self.assertTrue(state.get("style"), state["state"])
+
+	def test_the_new_operator_state_looks_like_the_one_it_replaces(self):
+		self.assertEqual(self.states[PENDING_GRO]["style"], "Warning")
+
 	def test_the_transitions_are_the_four_the_story_asks_for(self):
 		transitions = {
 			(t["state"], t["action"], t["next_state"]) for t in self.workflow["transitions"]

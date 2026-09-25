@@ -14,7 +14,8 @@
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Government Relations Operator",
-      "doctype": "Workflow Document State"
+      "doctype": "Workflow Document State",
+      "style": "Info"
     },
     {
       "state": "Pending by PRO",
@@ -22,7 +23,8 @@
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "PRO",
-      "doctype": "Workflow Document State"
+      "doctype": "Workflow Document State",
+      "style": "Info"
     },
     {
       "state": "Pending by GR Operator",
@@ -30,7 +32,8 @@
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Government Relations Operator",
-      "doctype": "Workflow Document State"
+      "doctype": "Workflow Document State",
+      "style": "Warning"
     },
     {
       "state": "Completed",
@@ -38,7 +41,8 @@
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Government Relations Operator",
-      "doctype": "Workflow Document State"
+      "doctype": "Workflow Document State",
+      "style": "Success"
     },
     {
       "state": "Cancelled",
@@ -46,7 +50,8 @@
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Government Relations Operator",
-      "doctype": "Workflow Document State"
+      "doctype": "Workflow Document State",
+      "style": "Danger"
     }
   ],
   "transitions": [
