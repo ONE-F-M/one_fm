@@ -3,7 +3,7 @@
 
 frappe.ui.form.on("Event Staff", {
 	// Frontend replace warnings have been removed as backend handles roster overlap directly.
-  
+
 	client_event(frm) {
 		if (frm.doc.client_event) {
 			frappe.db.get_value("Client Event", frm.doc.client_event,
