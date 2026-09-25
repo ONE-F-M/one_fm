@@ -14,7 +14,8 @@
    "send_email": 1,
    "state": "Draft",
    "update_field": "paci_status",
-   "update_value": "Draft"
+   "update_value": "Draft",
+   "style": "Info"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -25,7 +26,8 @@
    "send_email": 1,
    "state": "Pending by GR Operator",
    "update_field": "paci_status",
-   "update_value": "Under-Process"
+   "update_value": "Under-Process",
+   "style": "Warning"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -34,7 +36,8 @@
    "doctype": "Workflow Document State",
    "is_optional_state": 0,
    "send_email": 1,
-   "state": "Pending Address Update"
+   "state": "Pending Address Update",
+   "style": "Warning"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -43,7 +46,8 @@
    "doctype": "Workflow Document State",
    "is_optional_state": 0,
    "send_email": 1,
-   "state": "Pending Photo Update"
+   "state": "Pending Photo Update",
+   "style": "Warning"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -52,7 +56,8 @@
    "doctype": "Workflow Document State",
    "is_optional_state": 0,
    "send_email": 1,
-   "state": "Cancelled"
+   "state": "Cancelled",
+   "style": "Danger"
   },
   {
    "allow_edit": "System Manager",
@@ -63,7 +68,8 @@
    "send_email": 1,
    "state": "Completed",
    "update_field": "paci_status",
-   "update_value": "Completed"
+   "update_value": "Completed",
+   "style": "Success"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -74,7 +80,8 @@
    "send_email": 1,
    "state": "Completed",
    "update_field": "paci_status",
-   "update_value": "Completed"
+   "update_value": "Completed",
+   "style": "Success"
   },
   {
    "allow_edit": "PRO",
@@ -84,7 +91,7 @@
    "is_optional_state": 0,
    "send_email": 1,
    "state": "Pending by PRO",
-   "style": "Warning"
+   "style": "Info"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -113,7 +120,8 @@
    "doctype": "Workflow Document State",
    "is_optional_state": 0,
    "send_email": 1,
-   "state": "Pending Address Update by PRO"
+   "state": "Pending Address Update by PRO",
+   "style": "Warning"
   },
   {
    "allow_edit": "PRO",
@@ -122,7 +130,8 @@
    "doctype": "Workflow Document State",
    "is_optional_state": 0,
    "send_email": 1,
-   "state": "Pending Photo Update by PRO"
+   "state": "Pending Photo Update by PRO",
+   "style": "Warning"
   }
  ],
  "transitions": [
