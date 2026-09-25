@@ -16,7 +16,8 @@
       "allow_edit": "Government Relations Operator",
       "doctype": "Workflow Document State",
       "update_field": "status",
-      "update_value": "Draft"
+      "update_value": "Draft",
+      "style": "Info"
     },
     {
       "state": "Apply Online by GR Operator",
@@ -26,7 +27,8 @@
       "allow_edit": "Government Relations Operator",
       "doctype": "Workflow Document State",
       "update_field": "status",
-      "update_value": "Draft"
+      "update_value": "Draft",
+      "style": "Primary"
     },
     {
       "state": "Completed",
@@ -36,7 +38,8 @@
       "allow_edit": "Government Relations Operator",
       "doctype": "Workflow Document State",
       "update_field": "status",
-      "update_value": "Submitted"
+      "update_value": "Submitted",
+      "style": "Success"
     },
     {
       "state": "Cancelled",
@@ -46,7 +49,8 @@
       "allow_edit": "Government Relations Operator",
       "doctype": "Workflow Document State",
       "update_field": "status",
-      "update_value": "Canceled"
+      "update_value": "Canceled",
+      "style": "Danger"
     }
   ],
   "transitions": [

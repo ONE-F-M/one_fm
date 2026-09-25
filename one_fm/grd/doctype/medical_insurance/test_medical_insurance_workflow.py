@@ -51,6 +51,19 @@ class TestMedicalInsuranceWorkflow(FrappeTestCase):
 		for status in EXPECTED_STATUS.values():
 			self.assertIn(status, options)
 
+	def test_every_state_carries_a_style(self):
+		"""create_workflow_state() inserts the Workflow State master with the fixture's
+		`style`, and `style` is mandatory on that DocType - so a state whose fixture omits
+		it is never created, and the workflow save that follows fails on a link to a state
+		that does not exist. Both failures are logged rather than raised, so the workflow
+		is simply left as it was."""
+		for state in self.workflow["states"]:
+			self.assertTrue(state.get("style"), state["state"])
+
+	def test_the_renamed_state_keeps_the_colour_of_the_one_it_replaces(self):
+		states = {state["state"]: state for state in self.workflow["states"]}
+		self.assertEqual(states[NEW_STATE]["style"], "Primary")
+
 	def test_the_transitions_are_the_two_the_story_asks_for(self):
 		transitions = {
 			(t["state"], t["action"], t["next_state"]) for t in self.workflow["transitions"]
