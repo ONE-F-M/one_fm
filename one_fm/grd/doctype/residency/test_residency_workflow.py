@@ -107,6 +107,37 @@ class TestResidencyWorkflow(FrappeTestCase):
 		self.assertIn(PENDING_PRO, rule["assign_condition"])
 		self.assertNotIn(OLD_STATE, rule["assign_condition"])
 
+	def test_neither_rule_closes_the_other_one_s_assignment(self):
+		"""Frappe closes ToDos by document, not by rule.
+
+		`apply_assignment_rule` collects the ToDos to close with
+
+		    frappe.get_all("ToDo", filters={"reference_type": ..., "reference_name": ...})
+
+		with no filter on which rule made them - so a close_condition that is merely "not
+		my states" closes EVERY assignment on the record. With two rules on Residency, the
+		operator's rule fired the moment the record reached Pending by PRO and closed the
+		PRO's brand-new ToDo, and the PRO's rule did the same to the operator's. The
+		handover produced a closed assignment and the record reached nobody's desk.
+
+		`unassign_condition` is the right tool: `apply_unassign` is scoped to the rule's
+		own assignments. Both rules rely on it and neither closes.
+		"""
+		for filename in ("residency_gr_operator.json", "residency_pro.json"):
+			rule = get_assignment_rule_json_file(filename)
+			self.assertFalse(rule["close_condition"], filename)
+			self.assertTrue(rule["unassign_condition"], filename)
+
+	def test_each_rule_releases_the_record_when_it_leaves_its_own_states(self):
+		operator = get_assignment_rule_json_file("residency_gr_operator.json")
+		self.assertEqual(
+			operator["unassign_condition"],
+			'workflow_state not in ["Draft", "Pending by GR Operator"]',
+		)
+
+		pro = get_assignment_rule_json_file("residency_pro.json")
+		self.assertEqual(pro["unassign_condition"], 'workflow_state != "Pending by PRO"')
+
 	def test_both_rules_carry_their_days(self):
 		"""An Assignment Rule Day row exported with another site's name is silently dropped."""
 		for filename in ("residency_gr_operator.json", "residency_pro.json"):
