@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 import frappe, json, pycountry, random
 from frappe.utils import (
-	get_url, fmt_money, month_diff, today, add_days, add_years, getdate, flt, get_link_to_form,
+	get_url, fmt_money, month_diff, today, add_days, add_years, getdate, flt, cint, get_link_to_form,
 	get_first_day, get_last_day, now
 )
 from frappe.model.mapper import get_mapped_doc
@@ -745,7 +745,9 @@ def create_interview_feedback(data, interview_name, interviewer, job_applicant, 
 		interview_feedback.job_applicant = job_applicant
 
 	if interview_feedback:
-		for d in data.skill_set:
+		# Rounds that use the Evaluation Matrix Config carry no Expected Skill Set,
+		# so the dialog can legitimately submit an empty (or absent) skill_set.
+		for d in (data.skill_set or []):
 			d = frappe._dict(d)
 			if not d.parent:
 				interview_feedback.append('skill_assessment', {'skill': d.skill, 'rating': d.rating})
@@ -766,6 +768,8 @@ def create_interview_feedback(data, interview_name, interviewer, job_applicant, 
 							question.applicant_answer = dq.applicant_answer
 							question.score = dq.score
 
+		set_evaluation_criteria_from_matrix(interview_feedback, interview_name)
+
 		interview_feedback.result = data.result
 		interview_feedback.feedback = data.feedback
 		if method == 'save':
@@ -777,6 +781,42 @@ def create_interview_feedback(data, interview_name, interviewer, job_applicant, 
 		frappe.msgprint(_('{1} Interview Feedback {0} successfully!').format(
 		get_link_to_form('Interview Feedback', interview_feedback.name), method.title()))
 
+
+
+MATRIX_MAX_RATING = 5
+
+
+def set_evaluation_criteria_from_matrix(interview_feedback, interview_name):
+	"""
+		Mirror the scored questions onto Interview Feedback.custom_evaluation_criteria,
+		enriching each row with the category and weight held on the Interview Round's
+		Evaluation Matrix Config. The field is read only on the form, so it is only ever
+		written here.
+	"""
+	if not interview_feedback.get('interview_question_assessment'):
+		return
+
+	interview_round = interview_feedback.interview_round or frappe.db.get_value(
+		"Interview", interview_name, "interview_round")
+	if not interview_round:
+		return
+
+	matrix = frappe.get_all("Interview Matrix Question",
+		filters={"parent": interview_round, "parenttype": "Interview Round"},
+		fields=["question", "category", "weight"]
+	)
+	matrix_map = {d.question: d for d in matrix}
+
+	interview_feedback.set('custom_evaluation_criteria', [])
+	for d in interview_feedback.interview_question_assessment:
+		criteria = matrix_map.get(d.questions) or frappe._dict()
+		interview_feedback.append('custom_evaluation_criteria', {
+			"category": criteria.get("category") or _("General"),
+			"question": d.questions,
+			"weight": flt(criteria.get("weight") or d.weight),
+			"rating": cint(d.score),
+			"max_rating": MATRIX_MAX_RATING,
+		})
 
 
 def get_rating_from_the_score(score, weight):
