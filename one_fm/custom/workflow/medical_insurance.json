@@ -14,15 +14,21 @@
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Government Relations Operator",
-      "doctype": "Workflow Document State"
+      "doctype": "Workflow Document State",
+      "update_field": "status",
+      "update_value": "Draft",
+      "style": "Info"
     },
     {
-      "state": "Apply Online by PRO",
+      "state": "Apply Online by GR Operator",
       "doc_status": "0",
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Government Relations Operator",
-      "doctype": "Workflow Document State"
+      "doctype": "Workflow Document State",
+      "update_field": "status",
+      "update_value": "Draft",
+      "style": "Primary"
     },
     {
       "state": "Completed",
@@ -30,7 +36,10 @@
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Government Relations Operator",
-      "doctype": "Workflow Document State"
+      "doctype": "Workflow Document State",
+      "update_field": "status",
+      "update_value": "Submitted",
+      "style": "Success"
     },
     {
       "state": "Cancelled",
@@ -38,14 +47,17 @@
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Government Relations Operator",
-      "doctype": "Workflow Document State"
+      "doctype": "Workflow Document State",
+      "update_field": "status",
+      "update_value": "Canceled",
+      "style": "Danger"
     }
   ],
   "transitions": [
     {
       "state": "Draft",
       "action": "Submit",
-      "next_state": "Apply Online by PRO",
+      "next_state": "Apply Online by GR Operator",
       "allowed": "Government Relations Operator",
       "allow_self_approval": 1,
       "skip_multiple_action": 0,
@@ -55,7 +67,7 @@
       "doctype": "Workflow Transition"
     },
     {
-      "state": "Apply Online by PRO",
+      "state": "Apply Online by GR Operator",
       "action": "Done",
       "next_state": "Completed",
       "allowed": "Government Relations Operator",
