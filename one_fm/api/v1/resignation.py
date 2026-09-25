@@ -171,7 +171,10 @@ def extend_resignation(
     reason: str = None,
     extended_date: str = None,
     resignation_id: str = None,
-    attachment: str = None,
+    # Mobile sends this as a nested {attachment_name, attachment} object, not
+    # a string -- Frappe's own arg-type coercion rejects a plain `str` hint
+    # here before the body below (which already handles either shape) runs.
+    attachment: str | dict = None,
     attachment_name: str = None,
     data: str = None,
     **kwargs
@@ -267,7 +270,10 @@ def extend_resignation(
 def withdraw_resignation(
     employee_id: str = None,
     reason: str = None,
-    attachment: str = None,
+    # Mobile sends this as a nested {attachment_name, attachment} object, not
+    # a string -- Frappe's own arg-type coercion rejects a plain `str` hint
+    # here before the body below (which already handles either shape) runs.
+    attachment: str | dict = None,
     attachment_name: str = None,
     employee_resignation: str = None,
     supervisor: str = None,
