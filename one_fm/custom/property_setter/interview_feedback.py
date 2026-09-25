@@ -15,5 +15,13 @@ def get_interview_feedback_properties():
             "property": "options",
             "property_type": "Text",
             "value": "\nCleared\nRejected\nPending"
-        }
+        },
+        {
+            "doctype_or_field": "DocField",
+            "doc_type": "Interview Feedback",
+            "field_name": "skill_assessment",
+            "property": "reqd",
+            "property_type": "Check",
+            "value": "0"
+        },
     ]
