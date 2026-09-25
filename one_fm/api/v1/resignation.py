@@ -517,6 +517,44 @@ def get_all_my_resignations(employee_id=None, **kwargs):
 
 
 @frappe.whitelist()
+def get_resignation_by_name(resignation_id: str = None, **kwargs):
+    """Returns a single resignation record by name, scoped to the requesting employee.
+
+    Mobile's resignation list links each row to this endpoint (was never
+    implemented -- every call 404'd inside execute_cmd, which frappe.throw()s
+    a generic ValidationError for an unresolvable method, surfacing as a
+    misleading 417 "Resignation record not found" on every tap).
+
+    Identity is resolved from frappe.session.user only -- NOT from a
+    client-supplied employee_id. Employee Resignation grants role
+    "Employee" blanket doctype-level read (no if_owner) and sets
+    ignore_user_permissions=1 on the `employee` link field, so
+    frappe.has_permission(..., ptype="read") is True for every employee
+    regardless of whose record they ask for; trusting a client-supplied
+    employee_id here would let any employee read anyone else's resignation
+    by guessing/incrementing a resignation_id (IDOR).
+    """
+    resignation_id = get_param("resignation_id", resignation_id)
+    if not resignation_id:
+        frappe.throw(_("resignation_id is required"), frappe.ValidationError)
+
+    employee_name = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "name")
+    if not employee_name:
+        frappe.throw(_("No employee record linked to the current user"), frappe.ValidationError)
+
+    records = frappe.get_list(
+        "Employee Resignation",
+        filters={"name": resignation_id, "employee": employee_name},
+        fields=["name", "workflow_state", "resignation_initiation_date", "relieving_date", "creation"],
+        limit=1
+    )
+    if not records:
+        frappe.throw(_("Resignation record not found"), frappe.DoesNotExistError)
+
+    return records[0]
+
+
+@frappe.whitelist()
 def get_employee_supervisor(employee_id: str = None, **kwargs):
     from one_fm.utils import get_approver
     input_id = get_param("employee_id", employee_id)
