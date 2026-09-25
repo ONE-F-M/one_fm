@@ -59,6 +59,22 @@ class TestTheProUpdateStates(FrappeTestCase):
 			self.assertEqual(self.states[state]["allow_edit"], "PRO")
 			self.assertEqual(self.states[state]["doc_status"], "0")
 
+	def test_the_new_states_carry_a_style(self):
+		"""create_workflow_state() inserts the Workflow State master with the fixture's
+		`style`, which is mandatory on that DocType. Without one the state is never
+		created and the workflow save fails on a link to it - both silently."""
+		for state in (ADDRESS_BY_PRO, PHOTO_BY_PRO, PENDING_GR_OPERATOR):
+			self.assertTrue(self.states[state].get("style"), state)
+
+	def test_each_pro_state_looks_like_the_operator_state_it_mirrors(self):
+		for pro_state, operator_state in (
+			(ADDRESS_BY_PRO, "Pending Address Update"),
+			(PHOTO_BY_PRO, "Pending Photo Update"),
+		):
+			self.assertEqual(
+				self.states[pro_state]["style"], self.states[operator_state]["style"], pro_state
+			)
+
 	def test_the_operator_sends_the_work_and_the_pro_sends_it_back(self):
 		out = {
 			(PENDING_GR_OPERATOR, "Update Address By PRO", ADDRESS_BY_PRO): GRO,
