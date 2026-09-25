@@ -239,29 +239,29 @@ function fetch_employee_dates_batch(frm){
 //
 // Filtered here rather than in preparation_dashboard.get_data(): that runs per DocType and
 // is handed no document, so it cannot see the Category.
+//
+// The badge is hidden in the DOM rather than filtered out of frm.dashboard.data. Two
+// reasons, both found the hard way:
+//
+//   - render_links() does `this.data.frm = this.frm`, and dashboard.data IS
+//     frm.meta.__dashboard - so by the time a client refresh handler runs, the whole form
+//     hangs off the shared meta. Deep-copying it to filter threw "Converting circular
+//     structure to JSON", which killed the rest of this refresh handler with it.
+//   - the links are already drawn when this runs (refresh_header renders them before
+//     script_manager fires) and render_links() returns early once data_rendered is set,
+//     so filtering the data would have needed the markup torn down and rebuilt anyway.
+//
+// Toggling the one node needs none of that, and it is what the category change needs too:
+// no re-render happens there at all.
 function set_pcc_connection_visibility(frm) {
 	const dashboard = frm.dashboard;
-	if (!dashboard || !frm.meta || !frm.meta.__dashboard) {
+	if (!dashboard || !dashboard.transactions_area) {
 		return;
 	}
 
 	const show_pcc = frm.doc.category === "Onboarding";
 
-	// frm.meta.__dashboard is shared by every Preparation opened in this session, so the
-	// filtered version is built as a copy. Editing it in place would hide the badge on
-	// the next Onboarding record the user opens.
-	const data = JSON.parse(JSON.stringify(frm.meta.__dashboard));
-	data.transactions = (data.transactions || [])
-		.map(group => Object.assign({}, group, {
-			items: (group.items || []).filter(item => show_pcc || item !== "PCC Attestation")
-		}))
-		.filter(group => group.items.length);
-
-	dashboard.data = data;
-	// The links are already on the page by the time a client refresh handler runs -
-	// refresh_header() renders them before script_manager fires - so the rendered markup
-	// has to be dropped for the filtered copy to take its place.
-	dashboard.transactions_area.empty();
-	dashboard.data_rendered = false;
-	dashboard.refresh();
+	dashboard.transactions_area
+		.find('.document-link[data-doctype="PCC Attestation"]')
+		.toggleClass("hidden", !show_pcc);
 }
