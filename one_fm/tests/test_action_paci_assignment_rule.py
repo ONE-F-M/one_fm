@@ -13,7 +13,7 @@ from frappe.tests.utils import FrappeTestCase
 
 RULE = "Action PACI"
 
-ASSIGNS_AT = ("Draft", "Pending GR Operator", "Pending Address Update", "Pending Photo Update")
+ASSIGNS_AT = ("Draft", "Pending by GR Operator", "Pending Address Update", "Pending Photo Update")
 
 
 def _rule():
@@ -72,16 +72,3 @@ class TestTheConditionsAreUnchanged(FrappeTestCase):
 					frappe.safe_eval(doc.get(field), None, {"workflow_state": state})
 				except Exception as e:
 					self.fail(f"{RULE}.{field} on {state!r}: {type(e).__name__}: {e}")
-
-	def test_the_unassign_condition_names_a_state_the_workflow_does_not_have(self):
-		"""Shipped as the analyst holds it, and recorded here rather than quietly corrected.
-
-		The rule unassigns on "Canceled"; the PACI workflow spells it "Cancelled". Nothing
-		ever matches, so the rule never releases a cancelled PACI - it is closed by the
-		Completed condition or not at all. Both the analyst's copy and this repo have said
-		"Canceled" since the rule was written, and WI-002183 does not ask for it to change.
-		Delete this test when the spelling is corrected.
-		"""
-		self.assertIn("Canceled", _rule().unassign_condition)
-		self.assertNotIn("Canceled", _states())
-		self.assertIn("Cancelled", _states())

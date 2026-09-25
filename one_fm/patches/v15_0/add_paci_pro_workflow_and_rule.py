@@ -9,6 +9,11 @@ from one_fm.utils import create_process_task
 
 # WI-001830: the PRO tier the BA site added to the PACI workflow, and the rule that puts
 # a Pending PRO record on the PRO's desk.
+#
+# WI-002496 renamed both states ("Pending by GR Operator", "Pending by PRO").
+# The expectations below follow the rename because this patch applies the CURRENT
+# fixture: on a fresh install it would otherwise assert the old names against the new
+# file and stop the install. The step it performs is unchanged.
 WORKFLOW = "PACI"
 RULE_NAME = "PACI-PRO"
 RULE_JSON = "paci_pro.json"
@@ -16,10 +21,10 @@ RULE_JSON = "paci_pro.json"
 # The states and transitions this patch is responsible for. Verified after the fact
 # because create_workflow logs its failures to the Error Log instead of raising, so it
 # can report success having changed nothing.
-EXPECTED_STATES = ("Pending PRO", "Pending by PACI", "Rejected")
+EXPECTED_STATES = ("Pending by PRO", "Pending by PACI", "Rejected")
 EXPECTED_TRANSITIONS = (
-	("Draft", "Save", "Pending PRO"),
-	("Pending PRO", "Submit", "Pending by PACI"),
+	("Draft", "Submit to PRO", "Pending by PRO"),
+	("Pending by PRO", "Submit", "Pending by PACI"),
 	("Pending by PACI", "Approve", "Completed"),
 	("Pending by PACI", "Reject", "Rejected"),
 )

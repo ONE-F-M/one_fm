@@ -6,11 +6,16 @@ from one_fm.custom.workflow.workflow import create_workflow, get_workflow_json_f
 # Pending GR Operator that did not owe a payment invoice. It also routed a saved application
 # on the role of whoever pressed Save rather than on its Category. The doctype reload picks
 # up the No Payment Required and PRO User fields the rules read.
+#
+# WI-002496 renamed both states ("Pending by GR Operator", "Pending by PRO").
+# The expectations below follow the rename because this patch applies the CURRENT
+# fixture: on a fresh install it would otherwise assert the old names against the new
+# file and stop the install. The step it performs is unchanged.
 WORKFLOW = "PACI"
-NO_PAYMENT_TRANSITION = ("Pending GR Operator", "No Payment Required", "Completed")
+NO_PAYMENT_TRANSITION = ("Pending by GR Operator", "No Payment Required", "Completed")
 CONDITIONED_TRANSITIONS = {
-	("Draft", "Save", "Pending GR Operator"): 'doc.category in ("Renewal", "Transfer")',
-	("Draft", "Save", "Pending PRO"): 'doc.category == "New Application"',
+	("Draft", "Save", "Pending by GR Operator"): 'doc.category in ("Renewal", "Transfer")',
+	("Draft", "Submit to PRO", "Pending by PRO"): 'doc.category == "New Application"',
 	NO_PAYMENT_TRANSITION: "doc.no_payment_required",
 }
 
