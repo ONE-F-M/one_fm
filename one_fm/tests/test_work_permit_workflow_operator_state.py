@@ -31,6 +31,17 @@ class TestTheOperatorState(FrappeTestCase):
 		self.assertNotIn(RETIRED_STATE, self.states)
 		self.assertEqual(self.states[PENDING_GRO]["allow_edit"], GRO)
 
+	def test_every_state_carries_a_style(self):
+		"""create_workflow_state() inserts the Workflow State master with the fixture's
+		`style`, which is mandatory on that DocType. "Pending by GR Operator" has no
+		master yet, so without one it is never created and the workflow save fails on a
+		link to it - both silently, because the helpers log instead of raising."""
+		for name, state in self.states.items():
+			self.assertTrue(state.get("style"), name)
+
+	def test_the_renamed_operator_state_keeps_its_colour(self):
+		self.assertEqual(self.states[PENDING_GRO]["style"], "Warning")
+
 	def test_a_draft_saves_straight_to_the_operator(self):
 		self.assertIn(("Draft", "Save", PENDING_GRO), self.transitions)
 
