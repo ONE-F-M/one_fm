@@ -76,3 +76,60 @@ class TestItAgreesWithTheLicenceCounts(FrappeTestCase):
 		)
 		self.assertIn("Designation.occupational_sector == sector", source)
 		self.assertNotIn(FIELDNAME, source)
+
+
+class TestThePatchIsWiredUp(FrappeTestCase):
+	"""The definition in custom_field/employee.py is only applied by after_install, so a
+	new entry in it never reaches a site that is already installed. Without the patch the
+	field exists in the repository and nowhere on the form."""
+
+	def test_it_is_registered(self):
+		patches = frappe.read_file(frappe.get_app_path("one_fm", "patches.txt"))
+		self.assertIn("one_fm.patches.v15_0.add_employee_occupational_sector", patches)
+
+	def test_it_applies_the_whole_employee_set(self):
+		source = frappe.read_file(
+			frappe.get_app_path("one_fm", "patches", "v15_0", "add_employee_occupational_sector.py")
+		)
+		self.assertIn("create_custom_fields(get_employee_custom_fields(), update=True)", source)
+
+
+class TestTheRoomIsMadeForIt(FrappeTestCase):
+	"""tabEmployee carries 115 varchar(140) columns and sits at 65,182 of InnoDB's 65,535
+	byte row limit. The next varchar(140) needs 562 and there are 353 left, so adding the
+	field fails outright with "(1118, 'Row size too large...')" and takes the migrate with
+	it. Three columns left behind by removed Custom Fields are dropped to make the room."""
+
+	def setUp(self):
+		self.source = frappe.read_file(
+			frappe.get_app_path(
+				"one_fm", "patches", "v15_0", "drop_empty_orphan_employee_columns.py"
+			)
+		)
+
+	def test_it_runs_before_the_field_is_added(self):
+		patches = frappe.read_file(frappe.get_app_path("one_fm", "patches.txt")).splitlines()
+		drop = next(i for i, line in enumerate(patches) if "drop_empty_orphan_employee_columns" in line)
+		add = next(i for i, line in enumerate(patches) if "add_employee_occupational_sector" in line)
+		self.assertLess(drop, patches.index("[post_model_sync]"))
+		self.assertLess(drop, add)
+
+	def test_it_only_drops_the_three_columns_it_names(self):
+		"""A column is dropped for good, so the list is written out rather than discovered."""
+		self.assertIn(
+			'COLUMNS = ("one_fm_work_permit", "pam_authorized_signatory", "pam_visa")', self.source
+		)
+
+	def test_it_checks_before_it_drops(self):
+		"""No field claims it, it is there, and every row is empty - a column that has come
+		back into use or turns out to hold data is left alone and the migrate still passes."""
+		self.assertIn("if column in claimed:", self.source)
+		self.assertIn('if not frappe.db.has_column("Employee", column):', self.source)
+		self.assertIn("IS NOT NULL AND", self.source)
+		self.assertEqual(self.source.count("continue"), 3)
+
+	def test_the_columns_it_names_are_not_fields_on_the_employee(self):
+		claimed = {df.fieldname for df in frappe.get_meta("Employee").fields}
+		for column in ("one_fm_work_permit", "pam_authorized_signatory", "pam_visa"):
+			with self.subTest(column=column):
+				self.assertNotIn(column, claimed)

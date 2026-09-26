@@ -307,6 +307,7 @@ one_fm.patches.v15_0.take_ownership_of_vehicle_handover_log #2026-07-25
 
 one_fm.patches.v15_0.rename_document_register_and_revision #2026-08-03
 one_fm.patches.v15_0.rename_operations_monthly_attendance_sheet #2026-08-23 WI-002153
+one_fm.patches.v15_0.drop_empty_orphan_employee_columns #2026-09-26 WI-002745
 [post_model_sync]
 one_fm.patches.v15_0.process_task_for_wiki_employee_task
 one_fm.patches.v15_0.add_assignment_rule_returning_to_operations_supervisor_of_client_event #2
@@ -628,3 +629,4 @@ one_fm.patches.v15_0.update_residency_workflow_and_rules #2026-09-23 WI-002495
 one_fm.patches.v15_0.update_paci_workflow_and_rules #2026-09-23 WI-002496
 one_fm.patches.v15_0.update_work_permit_workflow_and_rules #2026-09-23 WI-002497
 one_fm.patches.v15_0.clear_employee_residency_depends_on #2026-09-23 WI-002823
+one_fm.patches.v15_0.add_employee_occupational_sector #2026-09-26 WI-002745
