@@ -3,6 +3,9 @@ from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
 from one_fm.custom.custom_field.employee import get_employee_custom_fields
 
+FIELD = "Employee-custom_occupational_sector"
+FIELDTYPE = "Link"
+
 
 def execute():
 	"""WI-002745: add custom_occupational_sector to Employee.
@@ -10,6 +13,15 @@ def execute():
 	The definition in custom_field/employee.py is only applied by after_install, so on a
 	site that is already installed a new entry in it never reaches the form.
 	"""
+	# The field shipped as Data and is a Link now. Frappe refuses that change outright -
+	# ALLOWED_FIELDTYPE_CHANGE has no group holding both - so the Custom Field is deleted
+	# and written again. Deleting it leaves the column and everything in it alone: the
+	# Custom Field's on_trash clears caches and property setters and never touches the
+	# table, so the field is recreated over the values that are already there.
+	current = frappe.db.get_value("Custom Field", FIELD, "fieldtype")
+	if current and current != FIELDTYPE:
+		frappe.delete_doc("Custom Field", FIELD, ignore_missing=True)
+
 	create_custom_fields(get_employee_custom_fields(), update=True)
 
 	# Not redundant. create_custom_fields only syncs the table when it inserted or changed

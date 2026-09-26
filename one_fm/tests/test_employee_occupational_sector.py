@@ -114,6 +114,24 @@ class TestThePatchIsWiredUp(FrappeTestCase):
 	def test_it_applies_the_whole_employee_set(self):
 		self.assertIn("create_custom_fields(get_employee_custom_fields(), update=True)", self.source)
 
+	def test_it_rewrites_a_field_that_shipped_as_another_type(self):
+		"""The field shipped as Data and is a Link now. Frappe refuses that change outright -
+		ALLOWED_FIELDTYPE_CHANGE holds no group with both - so the Custom Field is deleted
+		and written again. Deleting it leaves the column and everything in it alone: the
+		Custom Field's on_trash clears caches and property setters and never touches the
+		table, so the field is recreated over the values that are already there."""
+		self.assertIn('current = frappe.db.get_value("Custom Field", FIELD, "fieldtype")', self.source)
+		self.assertIn("if current and current != FIELDTYPE:", self.source)
+		self.assertIn('frappe.delete_doc("Custom Field", FIELD, ignore_missing=True)', self.source)
+
+	def test_it_only_rewrites_when_the_type_actually_differs(self):
+		"""A delete and rewrite on every migrate would churn the field for no reason."""
+		self.assertNotIn("frappe.delete_doc(\"Custom Field\", FIELD)\n", self.source)
+
+	def test_the_type_it_rewrites_to_is_the_one_the_field_set_declares(self):
+		self.assertEqual(_field(FIELDNAME)["fieldtype"], "Link")
+		self.assertIn('FIELDTYPE = "Link"', self.source)
+
 	def test_it_syncs_the_table_whatever_create_custom_fields_decided(self):
 		"""create_custom_fields only syncs the table when it inserted or changed a Custom
 		Field. A row that is already there and already correct leaves the schema alone - so
