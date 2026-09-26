@@ -96,27 +96,27 @@
    "label": "LG Details"
   },
   {
+   "description": "Show the LG details below, and include this licence in the LG expiry notification.",
    "fieldname": "lg_details_applicable",
    "fieldtype": "Check",
-   "label": "LG Details Applicable",
-   "description": "Show the LG details below, and include this licence in the LG expiry notification."
+   "label": "LG Details Applicable"
   },
   {
+   "depends_on": "eval:doc.lg_details_applicable",
    "fieldname": "lg_number",
    "fieldtype": "Data",
-   "label": "LG Number",
-   "depends_on": "eval:doc.lg_details_applicable"
+   "label": "LG Number"
   },
   {
+   "depends_on": "eval:doc.lg_details_applicable",
    "fieldname": "column_break_mtwm",
-   "fieldtype": "Column Break",
-   "depends_on": "eval:doc.lg_details_applicable"
+   "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:doc.lg_details_applicable",
    "fieldname": "lg_expiry_date",
    "fieldtype": "Date",
-   "label": "LG Expiry Date",
-   "depends_on": "eval:doc.lg_details_applicable"
+   "label": "LG Expiry Date"
   },
   {
    "fieldname": "pam_stats_section",
@@ -138,8 +138,7 @@
    "description": "Total Number of Employees in Each PAM File ",
    "fieldname": "total_number_of_employees",
    "fieldtype": "Data",
-   "label": "Total Number of Employees ",
-   "read_only": 1
+   "label": "Total Number of Employees "
   },
   {
    "fieldname": "quota_classification",
