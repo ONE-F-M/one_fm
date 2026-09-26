@@ -148,3 +148,73 @@ class TestTheRoomIsMadeForIt(FrappeTestCase):
 		for column in ("one_fm_work_permit", "pam_authorized_signatory", "pam_visa"):
 			with self.subTest(column=column):
 				self.assertNotIn(column, claimed)
+
+
+class TestTheBackfill(FrappeTestCase):
+	"""A fetch runs when the form is saved, so the field arrives empty on every record that
+	already exists and stays empty until somebody opens it."""
+
+	def setUp(self):
+		self.source = frappe.read_file(
+			frappe.get_app_path(
+				"one_fm", "patches", "v15_0", "backfill_employee_occupational_sector.py"
+			)
+		)
+
+	def test_it_runs_after_the_field_is_added(self):
+		patches = frappe.read_file(frappe.get_app_path("one_fm", "patches.txt")).splitlines()
+		add = next(i for i, line in enumerate(patches) if "add_employee_occupational_sector" in line)
+		fill = next(
+			i for i, line in enumerate(patches) if "backfill_employee_occupational_sector" in line
+		)
+		self.assertGreater(fill, add)
+
+	def test_it_waits_for_the_column(self):
+		"""The column arrives with the patch before it; without the guard a site part way
+		through the migrate fails on a column that is about to exist."""
+		self.assertIn('if not frappe.db.has_column("Employee", FIELDNAME):', self.source)
+
+	def test_it_groups_by_sector_not_by_designation(self):
+		"""Three thousand designations, nine sectors between them, and no index on the
+		column - one statement per designation would scan the employee table three
+		thousand times over."""
+		self.assertIn("designations_by_sector", self.source)
+		self.assertIn("Employee.one_fm_pam_designation.isin(designations)", self.source)
+
+	def test_it_does_not_save_the_employees(self):
+		"""Every Employee controller hook would fire for a figure none of them read."""
+		self.assertNotIn("get_doc", self.source)
+		self.assertNotIn(".save(", self.source)
+
+	def test_it_clears_a_sector_the_designation_no_longer_says(self):
+		"""A value left behind by an earlier designation would read as fact."""
+		self.assertIn(f'.set(Employee[FIELDNAME], None)', self.source)
+
+	def test_every_employee_with_a_designation_carries_its_sector(self):
+		"""The backfill itself, asserted against the live site once it has run."""
+		if not frappe.db.has_column("Employee", FIELDNAME):
+			self.skipTest("the field's own patch has not run on this site yet")
+
+		sectors = {
+			d.name: d.occupational_sector
+			for d in frappe.get_all(
+				"PAM Designation List",
+				filters={"occupational_sector": ["is", "set"]},
+				fields=["name", "occupational_sector"],
+				limit_page_length=0,
+			)
+		}
+		wrong = [
+			e.name
+			for e in frappe.get_all(
+				"Employee",
+				filters={"one_fm_pam_designation": ["is", "set"]},
+				fields=["name", "one_fm_pam_designation", FIELDNAME],
+				limit_page_length=0,
+			)
+			if e.one_fm_pam_designation in sectors
+			and e.get(FIELDNAME) != sectors[e.one_fm_pam_designation]
+		]
+		self.assertEqual(
+			len(wrong), 0, f"{len(wrong)} employees are missing their sector, e.g. {wrong[:5]}"
+		)
