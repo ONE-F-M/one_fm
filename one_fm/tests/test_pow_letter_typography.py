@@ -159,6 +159,23 @@ class TestTheTypography(FrappeTestCase):
 		reset = self.css.split(".pow-letter, .pow-letter * {", 1)[1].split("}", 1)[0]
 		self.assertIn("Noto Sans Arabic", reset)
 
+	def test_the_body_is_held_off_the_right_edge(self):
+		"""wkhtmltopdf paints an RTL line a little wider than the box it measured, and the
+		error grows with the line: at 10pt the first letter of the two long header lines was
+		painted past the page edge and clipped away."""
+		body = self.css.split(".pow-letter { direction: rtl;", 1)[1].split("}", 1)[0]
+		self.assertIn("padding-right: 8px", body)
+
+	def test_the_client_name_is_spaced_off_the_colon_by_padding(self):
+		"""An Arabic client name runs straight on from the colon and wkhtmltopdf drops both
+		an ordinary space and a `&nbsp;` there. Padding is laid out by the box model instead
+		of the bidi algorithm, so it survives either way."""
+		self.assertIn(".boiler .cust { padding-right: 10px; }", self.css)
+
+		html = _letter()["html"]
+		line = html.split("مقدمه إلى شركه:", 1)[1].split("</div>", 1)[0]
+		self.assertTrue(line.startswith("<span class=\"cust "), line[:40])
+
 	def test_the_modified_stamp_moved(self):
 		"""A standard fixture whose `modified` does not move is skipped by migrate."""
 		self.assertGreater(_letter()["modified"], "2026-09-23 12:00:00.000000")
