@@ -152,6 +152,11 @@ class TestTheTypography(FrappeTestCase):
 		rule = self.css.split(".pow-letter .sched-title, .pow-letter .nm-title, .pow-letter .pow-tbl th {", 1)[1].split("}", 1)[0]
 		self.assertIn("font-weight: 700", rule)
 
+	def test_a_table_header_is_bold_all_the_way_down(self):
+		"""Every heading but the first wraps its lines in a div, and `.pow-letter *` sets
+		those back to 400 - so only نوع الخدمة, the one heading that is bare text, was bold."""
+		self.assertIn(".pow-letter .pow-tbl thead th * { font-weight: 700; }", self.css)
+
 	def test_the_english_framework_uses_the_light_weight(self):
 		"""Scenario 1.2, scoped to this document: the only Latin run it can carry is a
 		client whose Full Name in Arabic has not been filled in yet.
