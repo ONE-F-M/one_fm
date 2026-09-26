@@ -1131,7 +1131,11 @@ POW_TITLE_AR = "إثبات العمل"
 # server and wkhtmltopdf has no network there - the same reason the logo is inlined.
 POW_FONT_FILES = (
 	("Cairo", 700, "Cairo-Bold.ttf"),
-	("Readex Pro", 300, "ReadexPro-Light.ttf"),
+	# Light is declared at 200, not at its own 300. The WebKit inside wkhtmltopdf buckets
+	# font-weight, and 300 lands in the same bucket as 400: asked for 300 it answers with
+	# Regular, and the English framework printed in the wrong face while the same page in
+	# a browser was correct. The stylesheet asks for 200 to match.
+	("Readex Pro", 200, "ReadexPro-Light.ttf"),
 	("Readex Pro", 400, "ReadexPro-Regular.ttf"),
 	("Readex Pro", 700, "ReadexPro-Bold.ttf"),
 )
@@ -1162,9 +1166,13 @@ def pow_font_faces() -> str:
 		except OSError:
 			continue
 
+		# No format() hint. A browser takes the rule either way, but the WebKit inside
+		# wkhtmltopdf rejects a data: URI that carries one and falls back to Noto Sans
+		# Arabic - a PDF in the wrong face, silently, while the same page in a browser
+		# is correct. Without the hint the face is sniffed and embedded.
 		rules.append(
 			"@font-face { font-family: '%s'; font-style: normal; font-weight: %s; "
-			"src: url(data:font/truetype;charset=utf-8;base64,%s) format('truetype'); }"
+			"src: url('data:font/truetype;charset=utf-8;base64,%s'); }"
 			% (family, weight, encoded)
 		)
 
