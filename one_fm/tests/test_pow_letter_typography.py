@@ -75,9 +75,13 @@ class TestTheFontsAreShipped(FrappeTestCase):
 		self.assertEqual({family for family, _w, _f in POW_FONT_FILES}, {"Cairo", "Readex Pro"})
 
 	def test_readex_pro_ships_the_three_weights_the_spec_uses(self):
+		"""Bold for headings, Regular for body, Light for the English framework's body.
+
+		Light is declared at 200 rather than at its own 300: the WebKit inside wkhtmltopdf
+		buckets font-weight, 300 lands in the same bucket as 400, and the PDF answered a
+		request for 300 with Regular."""
 		weights = {weight for family, weight, _f in POW_FONT_FILES if family == "Readex Pro"}
-		# Bold for headings, Regular for body, Light for the English framework's body.
-		self.assertEqual(weights, {300, 400, 700})
+		self.assertEqual(weights, {200, 400, 700})
 
 
 class TestTheFacesReachThePdf(FrappeTestCase):
@@ -93,6 +97,12 @@ class TestTheFacesReachThePdf(FrappeTestCase):
 		self.assertIn("data:font/truetype", self.css)
 		self.assertNotIn("http://", self.css)
 		self.assertNotIn("https://", self.css)
+
+	def test_no_format_hint(self):
+		"""A browser takes the rule either way, but the WebKit inside wkhtmltopdf rejects a
+		data: URI that carries a format() hint and falls back to Noto Sans Arabic - a PDF in
+		the wrong face, silently, while the same page in a browser is correct."""
+		self.assertNotIn("format(", self.css)
 
 	def test_every_declared_weight_is_in_the_rules(self):
 		for family, weight, _filename in POW_FONT_FILES:
@@ -144,9 +154,14 @@ class TestTheTypography(FrappeTestCase):
 
 	def test_the_english_framework_uses_the_light_weight(self):
 		"""Scenario 1.2, scoped to this document: the only Latin run it can carry is a
-		client whose Full Name in Arabic has not been filled in yet."""
+		client whose Full Name in Arabic has not been filled in yet.
+
+		200 and not 300, to match the weight the Light face is declared at - wkhtmltopdf
+		answers a request for 300 with Regular."""
 		rule = self.css.split(".pow-letter .en {", 1)[1].split("}", 1)[0]
-		self.assertIn("font-weight: 300", rule)
+		self.assertIn("font-weight: 200", rule)
+		light = [w for f, w, filename in POW_FONT_FILES if filename == "ReadexPro-Light.ttf"]
+		self.assertEqual(light, [200])
 
 	def test_arial_is_gone(self):
 		"""There is no Arial on the print server; fontconfig answered it with a face that
