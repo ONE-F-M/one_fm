@@ -1126,6 +1126,59 @@ def pow_arabic_figure(line: str) -> str:
 POW_TITLE_AR = "إثبات العمل"
 
 
+# WI-002723: the faces the Proof of Work documents are typeset in, and the weight each
+# file carries. Bundled with the app because neither family is installed on the print
+# server and wkhtmltopdf has no network there - the same reason the logo is inlined.
+POW_FONT_FILES = (
+	("Cairo", 700, "Cairo-Bold.ttf"),
+	# Light is declared at 200, not at its own 300. The WebKit inside wkhtmltopdf buckets
+	# font-weight, and 300 lands in the same bucket as 400: asked for 300 it answers with
+	# Regular, and the English framework printed in the wrong face while the same page in
+	# a browser was correct. The stylesheet asks for 200 to match.
+	("Readex Pro", 200, "ReadexPro-Light.ttf"),
+	("Readex Pro", 400, "ReadexPro-Regular.ttf"),
+	("Readex Pro", 700, "ReadexPro-Bold.ttf"),
+)
+
+
+def pow_font_faces() -> str:
+	"""The @font-face rules for the Proof of Work documents, fonts and all (WI-002723).
+
+	Inlined as data URIs rather than referenced by URL. wkhtmltopdf would fetch a relative
+	src over HTTP from frappe.utils.get_url(), which is one thing to go wrong per
+	environment and fails outright in the background job the PDFs are built in - exactly
+	what pow_logo_src() exists to avoid.
+
+	A file that is missing is skipped rather than raised on. The letter falls back to the
+	Arabic-capable faces the stylesheet already lists after these, which is a letter that
+	prints in the wrong font rather than a letter that does not print.
+	"""
+	import base64
+	import os
+
+	folder = os.path.join(frappe.get_app_path("one_fm"), "public", "fonts", "pow")
+
+	rules = []
+	for family, weight, filename in POW_FONT_FILES:
+		try:
+			with open(os.path.join(folder, filename), "rb") as handle:
+				encoded = base64.b64encode(handle.read()).decode()
+		except OSError:
+			continue
+
+		# No format() hint. A browser takes the rule either way, but the WebKit inside
+		# wkhtmltopdf rejects a data: URI that carries one and falls back to Noto Sans
+		# Arabic - a PDF in the wrong face, silently, while the same page in a browser
+		# is correct. Without the hint the face is sniffed and embedded.
+		rules.append(
+			"@font-face { font-family: '%s'; font-style: normal; font-weight: %s; "
+			"src: url('data:font/truetype;charset=utf-8;base64,%s'); }"
+			% (family, weight, encoded)
+		)
+
+	return "\n".join(rules)
+
+
 def pow_title_arabic() -> str:
 	"""The letter's own title (WI-002722)."""
 	return POW_TITLE_AR
