@@ -16,51 +16,51 @@
  ],
  "fields": [
   {
-   "columns": 2,
    "fieldname": "type_of_quota",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Type of Quota",
-   "options": "Quota Type"
+   "options": "Quota Type",
+   "width": "2"
   },
   {
-   "columns": 2,
    "fieldname": "registered_numbers_of_employees",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Registered Numbers of Employees"
+   "label": "Registered Numbers of Employees",
+   "width": "2"
   },
   {
-   "columns": 2,
    "fieldname": "number_of_transfer_requests",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Number of Transfer Requests"
+   "label": "Number of Transfer Requests",
+   "width": "2"
   },
   {
    "fieldname": "column_break_nshc",
    "fieldtype": "Column Break"
   },
   {
-   "columns": 2,
    "fieldname": "allocated_quota",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Allocated Quota"
+   "label": "Allocated Quota",
+   "width": "2"
   },
   {
-   "columns": 1,
    "fieldname": "number_of_visas_issued",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Number of Visas Issued"
+   "label": "Number of Visas Issued",
+   "width": "1"
   },
   {
-   "columns": 1,
    "fieldname": "available_quota",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Available Quota"
+   "label": "Available Quota",
+   "width": "1"
   }
  ],
  "grid_page_length": 50,

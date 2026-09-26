@@ -47,6 +47,23 @@ class TestTheChildTable(FrappeTestCase):
 		for fieldname in (TYPED_FIELD, *DERIVED_FIELDS, "type_of_quota"):
 			self.assertEqual(self.fields[fieldname].get("in_list_view"), 1, fieldname)
 
+	def test_the_grid_columns_are_the_ba_sites_own(self):
+		"""Copied from the BA site as they stand there, `width` and all. Frappe's grid
+		reads `columns` and ignores `width`, so these are inert - which is exactly what
+		they are on the BA site, and the grid lays itself out the same way on both."""
+		widths = {
+			"type_of_quota": "2",
+			"registered_numbers_of_employees": "2",
+			"number_of_transfer_requests": "2",
+			"allocated_quota": "2",
+			"number_of_visas_issued": "1",
+			"available_quota": "1",
+		}
+		for fieldname, width in widths.items():
+			with self.subTest(fieldname=fieldname):
+				self.assertEqual(self.fields[fieldname].get("width"), width)
+				self.assertIsNone(self.fields[fieldname].get("columns"))
+
 	def test_the_grid_is_editable(self):
 		"""Allocated Quota is typed into it."""
 		self.assertEqual(self.definition["editable_grid"], 1)
