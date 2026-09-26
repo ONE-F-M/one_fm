@@ -5,6 +5,7 @@
 import json
 
 import frappe
+from frappe.query_builder import DocType, functions as fn
 from frappe.tests.utils import FrappeTestCase
 
 from one_fm.grd.doctype.pam_license_details import pam_license_details as module
@@ -159,3 +160,54 @@ class TestTheFieldIsDerived(FrappeTestCase):
 		)
 		field = next(f for f in definition["fields"] if f["fieldname"] == FIELDNAME)
 		self.assertNotIn("read_only", field)
+
+
+class TestTheStaleNumberRepair(FrappeTestCase):
+	"""pam_file_number is read-only and fetched from pam_file, and a fetch only runs when
+	the employee is saved. Move somebody to another licence without saving them again, or
+	edit a licence's civil ID, and the copy keeps the old number while the link names the
+	new licence. The headcounts filter on the number, so that employee is counted on no
+	licence at all - which is how T4 read 550 against 551 under its residency."""
+
+	def setUp(self):
+		self.source = frappe.read_file(
+			frappe.get_app_path(
+				"one_fm", "patches", "v15_0", "repair_stale_employee_pam_file_number.py"
+			)
+		)
+
+	def test_it_is_registered(self):
+		patches = frappe.read_file(frappe.get_app_path("one_fm", "patches.txt"))
+		self.assertIn("one_fm.patches.v15_0.repair_stale_employee_pam_file_number", patches)
+
+	def test_it_takes_the_number_from_the_link(self):
+		"""The link names the licence; the number is a copy of what that licence says."""
+		self.assertIn(".set(Employee.pam_file_number, number)", self.source)
+		self.assertIn(".where(Employee.pam_file == licence.name)", self.source)
+
+	def test_it_treats_a_missing_number_as_drifted(self):
+		"""`!=` in SQL never matches a NULL, so an employee with no number at all would be
+		read as being in line with its licence."""
+		self.assertEqual(self.source.count('fn.IfNull(Employee.pam_file_number, "") != number'), 2)
+
+	def test_it_recounts_both_figures_for_the_licences_it_touched(self):
+		"""The licence total and the sector rows beneath it read the same field, so leaving
+		either behind would have them disagree about who is on the licence."""
+		self.assertIn("recount_license_total(licence.civil_id_number_for_licensing)", self.source)
+		self.assertIn("recount_license(licence.name)", self.source)
+
+	def test_no_employee_carries_a_number_its_licence_does_not(self):
+		"""The repair itself, asserted against the live site once it has run."""
+		Employee = DocType("Employee")
+		License = DocType("PAM License Details")
+		drifted = (
+			frappe.qb.from_(Employee)
+			.join(License)
+			.on(License.name == Employee.pam_file)
+			.select(Employee.name)
+			.where(
+				fn.IfNull(Employee.pam_file_number, "")
+				!= fn.IfNull(License.civil_id_number_for_licensing, "")
+			)
+		).run()
+		self.assertEqual(len(drifted), 0, f"{len(drifted)} employees carry a stale PAM file number")
