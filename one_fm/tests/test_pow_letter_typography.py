@@ -191,6 +191,23 @@ class TestTheTypography(FrappeTestCase):
 		line = html.split("مقدمه إلى شركه:", 1)[1].split("</div>", 1)[0]
 		self.assertTrue(line.startswith("<span class=\"cust "), line[:40])
 
+	def test_the_breakdown_figures_are_never_held_on_one_line(self):
+		"""The breakdown carries a line per distinct figure and they are the longest text on
+		the page. Held unbreakable, a line ran past the edge of its cell and the end was
+		clipped away - "٣٠٩.٤٣ ساعة: ٣" with the figure after the colon gone."""
+		self.assertNotIn(".pow-tbl .c-breakdown .ln { white-space: nowrap; }", self.css)
+
+	def test_the_table_headings_wrap(self):
+		"""Held unbreakable they pinned every column to the width of its own heading, and
+		the breakdown - the column that needs the room - was left with the remainder."""
+		self.assertNotIn(".pow-tbl.stacked thead th { white-space: nowrap; }", self.css)
+		self.assertNotIn("stacked", _letter()["html"])
+
+	def test_the_slack_goes_to_the_breakdown(self):
+		"""A hint, not a lock - the table layout is auto. Without it every breakdown line
+		wrapped onto a second line."""
+		self.assertIn(".pow-tbl .c-breakdown { width: 38%; }", self.css)
+
 	def test_the_modified_stamp_moved(self):
 		"""A standard fixture whose `modified` does not move is skipped by migrate."""
 		self.assertGreater(_letter()["modified"], "2026-09-23 12:00:00.000000")
