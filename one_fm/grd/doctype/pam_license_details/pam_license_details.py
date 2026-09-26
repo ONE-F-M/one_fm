@@ -680,10 +680,4 @@ def update_quota_from_visa_cancellation(doc, method=None):
 
 def recount_license_quota(license_name):
 	"""Rewrite one licence's quota rows from the employees and visas it carries."""
-	number = frappe.db.get_value(
-		"PAM License Details", license_name, "civil_id_number_for_licensing"
-	)
-	if not number:
-		return
-
-	recount_quota_rows(number)
+	recount_quota_rows(license_name)

@@ -60,7 +60,15 @@ class TestWhatCounts(FrappeTestCase):
 		self.assertIn('["custom_pam_designation_list", "is", "set"]', block)
 
 	def test_it_runs_against_this_site(self):
-		self.assertIsInstance(visas_issued_by_quota(None, None), dict)
+		self.assertIsInstance(visas_issued_by_quota(None), dict)
+		self.assertEqual(visas_issued_by_quota(None), {})
+
+	def test_it_reads_the_one_licence_it_is_given(self):
+		"""Every figure on the licence is counted off the record now, not off the civil ID
+		it happens to share with another licence."""
+		block = frappe.read_file(SOURCE).split("def visas_issued_by_quota", 1)[1].split("\ndef ", 1)[0]
+		self.assertIn('["custom_pam_file", "=", license_name]', block)
+		self.assertNotIn("civil_id_number_for_licensing", block)
 
 
 class TestWhenItIsRecounted(FrappeTestCase):
@@ -107,7 +115,10 @@ class TestWhenItIsRecounted(FrappeTestCase):
 
 
 class TestTheFieldIsDerived(FrappeTestCase):
-	def test_nobody_types_it(self):
+	def test_it_is_left_writable_as_the_ba_site_has_it(self):
+		"""The figure is derived on every save, so a typed value does not survive - but the
+		field is not marked read-only. It is not read-only on the BA site the table was
+		migrated from, and a migration copies the configuration it is given."""
 		definition = json.loads(
 			frappe.read_file(
 				frappe.get_app_path(
@@ -120,7 +131,7 @@ class TestTheFieldIsDerived(FrappeTestCase):
 			)
 		)
 		field = next(f for f in definition["fields"] if f["fieldname"] == FIELDNAME)
-		self.assertEqual(field["read_only"], 1)
+		self.assertNotIn("read_only", field)
 
 
 class TestTheFieldsItReadsExist(FrappeTestCase):

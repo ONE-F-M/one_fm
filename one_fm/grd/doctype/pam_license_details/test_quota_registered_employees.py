@@ -74,7 +74,7 @@ class _Recorder:
 		self.counted.append((license_name, quota_type))
 		return self.count
 
-	def visas_issued_by_quota(self, license_name, license_number):
+	def visas_issued_by_quota(self, license_name):
 		return {}
 
 
