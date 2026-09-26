@@ -127,15 +127,16 @@ class TestWhichFiguresArePeoplesToType(FrappeTestCase):
 			)["fields"]
 		}
 
-	def test_the_remainder_is_derived(self):
-		self.assertEqual(self.fields["available_quota"]["read_only"], 1)
-
-	def test_the_two_figures_no_story_derives_are_still_typed(self):
-		"""Allocated Quota is what PAM granted; Number of Transfer Requests has no source
-		on this site yet. Locking either would leave a figure nobody can set."""
-		self.assertNotEqual(self.fields["allocated_quota"].get("read_only"), 1)
-		self.assertNotEqual(self.fields["number_of_transfer_requests"].get("read_only"), 1)
-
-	def test_the_two_counted_figures_are_derived(self):
-		self.assertEqual(self.fields["registered_numbers_of_employees"]["read_only"], 1)
-		self.assertEqual(self.fields["number_of_visas_issued"]["read_only"], 1)
+	def test_no_figure_on_the_row_is_locked(self):
+		"""Three of the six are derived on every save, so a typed value does not survive -
+		but none of them is marked read-only. None is read-only on the BA site the table
+		was migrated from, and a migration copies the configuration it is given."""
+		for fieldname in (
+			"available_quota",
+			"registered_numbers_of_employees",
+			"number_of_visas_issued",
+			"allocated_quota",
+			"number_of_transfer_requests",
+		):
+			with self.subTest(fieldname=fieldname):
+				self.assertNotIn("read_only", self.fields[fieldname])
