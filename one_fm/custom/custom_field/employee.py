@@ -839,8 +839,10 @@ def get_employee_custom_fields():
 			# time. Fetched here so the Employee carries it, and so PAM's own grouping is
 			# visible on the record rather than only in the licence's figures.
 			#
-			# A Data field rather than a Link: it is a copy of what the designation says,
-			# and a Link here would read as a second place the sector can be set.
+			# A Link, not the Data the BA site carries. The sector is a record - the
+			# designation points at one and the licence figures are grouped by one - so a
+			# copy held as loose text is the one place on the chain where a sector could
+			# read as something that is not an Occupational Sector.
 			#
 			# No depends_on. The BA site's copy hides it unless Under Company Residency is
 			# ticked, which WI-002823 is removing from every field on this form for the
@@ -848,9 +850,10 @@ def get_employee_custom_fields():
 			{
 				"fetch_from": "one_fm_pam_designation.occupational_sector",
 				"fieldname": "custom_occupational_sector",
-				"fieldtype": "Data",
+				"fieldtype": "Link",
 				"insert_after": "one_fm_pam_designation",
 				"label": "Occupational Sector",
+				"options": "Occupational Sector",
 			},
 			{
 				"fieldname": "one_fm_basic_salary",

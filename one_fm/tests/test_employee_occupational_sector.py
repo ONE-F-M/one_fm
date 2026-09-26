@@ -31,9 +31,28 @@ class TestTheField(FrappeTestCase):
 	def test_it_sits_beside_the_designation_it_comes_from(self):
 		self.assertEqual(self.field["insert_after"], "one_fm_pam_designation")
 
-	def test_it_is_a_copy_not_a_second_place_to_set_the_sector(self):
-		"""A Link here would read as somewhere the sector can be decided; it cannot."""
-		self.assertEqual(self.field["fieldtype"], "Data")
+	def test_it_points_at_the_sector_record(self):
+		"""A Link, not the Data the BA site carries. The sector is a record - the
+		designation points at one and the licence figures are grouped by one - so a copy
+		held as loose text is the one place on the chain where a sector could read as
+		something that is not an Occupational Sector."""
+		self.assertEqual(self.field["fieldtype"], "Link")
+		self.assertEqual(self.field["options"], "Occupational Sector")
+
+	def test_every_sector_a_designation_can_supply_is_a_real_one(self):
+		"""The fetch writes the designation's value straight into a Link, so a designation
+		naming a sector that is not a record would leave a broken link on the employee."""
+		values = {
+			d.occupational_sector
+			for d in frappe.get_all(
+				"PAM Designation List",
+				filters={"occupational_sector": ["is", "set"]},
+				fields=["occupational_sector"],
+				limit_page_length=0,
+			)
+		}
+		missing = sorted(v for v in values if not frappe.db.exists("Occupational Sector", v))
+		self.assertEqual(missing, [])
 
 	def test_it_is_always_visible(self):
 		"""The BA site's copy hides it unless Under Company Residency is ticked, which
