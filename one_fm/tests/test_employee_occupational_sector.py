@@ -83,15 +83,30 @@ class TestThePatchIsWiredUp(FrappeTestCase):
 	new entry in it never reaches a site that is already installed. Without the patch the
 	field exists in the repository and nowhere on the form."""
 
+	def setUp(self):
+		self.source = frappe.read_file(
+			frappe.get_app_path("one_fm", "patches", "v15_0", "add_employee_occupational_sector.py")
+		)
+
 	def test_it_is_registered(self):
 		patches = frappe.read_file(frappe.get_app_path("one_fm", "patches.txt"))
 		self.assertIn("one_fm.patches.v15_0.add_employee_occupational_sector", patches)
 
 	def test_it_applies_the_whole_employee_set(self):
-		source = frappe.read_file(
-			frappe.get_app_path("one_fm", "patches", "v15_0", "add_employee_occupational_sector.py")
-		)
-		self.assertIn("create_custom_fields(get_employee_custom_fields(), update=True)", source)
+		self.assertIn("create_custom_fields(get_employee_custom_fields(), update=True)", self.source)
+
+	def test_it_syncs_the_table_whatever_create_custom_fields_decided(self):
+		"""create_custom_fields only syncs the table when it inserted or changed a Custom
+		Field. A row that is already there and already correct leaves the schema alone - so
+		if that row's own ALTER failed earlier, and MariaDB's implicit commit on DDL left
+		the Custom Field behind without its column, nothing would ever add the column and
+		every save of an Employee dies on "Unknown column ... in 'SET'"."""
+		self.assertIn('frappe.db.updatedb("Employee")', self.source)
+
+	def test_the_field_has_a_column_behind_it(self):
+		"""The failure this patch exists to prevent, asserted against the live site."""
+		if frappe.db.exists("Custom Field", "Employee-custom_occupational_sector"):
+			self.assertTrue(frappe.db.has_column("Employee", FIELDNAME))
 
 
 class TestTheRoomIsMadeForIt(FrappeTestCase):
