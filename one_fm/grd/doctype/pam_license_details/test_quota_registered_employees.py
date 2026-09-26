@@ -154,7 +154,10 @@ class TestWhenItIsRecounted(FrappeTestCase):
 
 
 class TestTheFieldIsDerived(FrappeTestCase):
-	def test_nobody_types_it(self):
+	def test_it_is_left_writable_as_the_ba_site_has_it(self):
+		"""The figure is derived on every save, so a typed value does not survive - but the
+		field is not marked read-only. It is not read-only on the BA site the table was
+		migrated from, and a migration copies the configuration it is given."""
 		definition = json.loads(
 			frappe.read_file(
 				frappe.get_app_path(
@@ -167,7 +170,7 @@ class TestTheFieldIsDerived(FrappeTestCase):
 			)
 		)
 		field = next(f for f in definition["fields"] if f["fieldname"] == FIELDNAME)
-		self.assertEqual(field["read_only"], 1)
+		self.assertNotIn("read_only", field)
 
 	def test_the_allocated_quota_is_still_typed(self):
 		"""It is the one figure on the row PAM sets and an operator enters."""
