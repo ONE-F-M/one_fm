@@ -6,6 +6,7 @@ from frappe.tests.utils import FrappeTestCase
 
 
 import one_fm.overrides.todo as todo_mod
+from one_fm import hooks as one_fm_hooks
 
 class TestToDoOverrides(FrappeTestCase):
     def setUp(self):
@@ -28,67 +29,12 @@ class TestToDoOverrides(FrappeTestCase):
         self.doc.custom_source = "ERPNext"
         self.doc.get_doc_before_save.return_value = None
 
-    @patch.object(todo_mod.FrappeToDo, "on_trash")
-    @patch("one_fm.overrides.todo.delete_google_task_on_todo_delete")
-    @patch.object(todo_mod.ToDo, "__init__", lambda self: None)
-    def test_on_trash_calls_super_and_close(self, mock_close, mock_super):
-        todo = todo_mod.ToDo()
-        todo.on_trash()
-        mock_super.assert_called_once_with()
-        mock_close.assert_called_once_with(todo)
-
-    @patch("one_fm.overrides.todo.notify_todo_status_change")
     @patch("one_fm.overrides.todo.set_todo_type_from_refernce_doc")
     @patch("one_fm.overrides.todo.validate_google_task_title")
-    def test_validate_todo_calls_all(self, mock_val_title, mock_set_type, mock_notify):
+    def test_validate_todo_calls_all(self, mock_val_title, mock_set_type):
         todo_mod.validate_todo(self.doc, "on_update")
-        mock_notify.assert_called_once_with(self.doc)
         mock_set_type.assert_called_once_with(self.doc)
         mock_val_title.assert_called_once_with(self.doc)
-
-    @patch("frappe.session")
-    @patch("frappe.db.get_value")
-    @patch("frappe.new_doc")
-    @patch("one_fm.overrides.todo.send_notification_alert_only")
-    @patch("frappe.get_meta")
-    def test_notify_todo_status_change_creates_notification(self, mock_meta, mock_alert_only, mock_new_doc, mock_get_value, mock_session):
-        # Setup
-        self.doc.is_new.return_value = False
-        def get_value_side_effect(doctype, name, field, **kwargs):
-            if doctype == "User" and kwargs.get("as_dict"):
-                return {"first_name": "Test", "last_name": "User"}
-            if field == "status":
-                return "Closed"
-            return "Task Subject"
-        mock_get_value.side_effect = get_value_side_effect
-        mock_alert_only.return_value = False
-        mock_session.user = "user3"
-        notification_log = MagicMock()
-        mock_new_doc.return_value = notification_log
-
-        todo_mod.notify_todo_status_change(self.doc)
-
-        mock_get_value.assert_any_call(self.doc.doctype, self.doc.name, "status")
-        mock_new_doc.assert_called_once_with("Notification Log")
-        self.assertIn("assignment is", notification_log.subject)
-        self.assertIn("Description", notification_log.email_content)
-        self.assertEqual(notification_log.for_user, self.doc.assigned_by)
-        self.assertEqual(notification_log.document_type, self.doc.doctype)
-        self.assertEqual(notification_log.document_name, self.doc.name)
-        self.assertEqual(notification_log.from_user, "user3")
-        self.assertEqual(notification_log.type, "Assignment")
-        notification_log.insert.assert_called_once_with(ignore_permissions=True)
-
-    def test_send_notification_alert_only(self):
-        with patch("one_fm.overrides.todo.is_user_id_company_prefred_email_in_employee") as mock_pref:
-            # Administrator always True
-            self.assertTrue(todo_mod.send_notification_alert_only("Administrator"))
-            # Not company preferred
-            mock_pref.return_value = False
-            self.assertTrue(todo_mod.send_notification_alert_only("userX"))
-            # Company preferred
-            mock_pref.return_value = True
-            self.assertFalse(todo_mod.send_notification_alert_only("userY"))
 
     @patch("frappe.db.get_value")
     @patch("one_fm.overrides.todo.convert_html_to_plain_text")
@@ -233,32 +179,6 @@ class TestToDoOverrides(FrappeTestCase):
         self.assertIn("Rendered Message", kwargs["message"])
         self.assertIn("A Task has been Created", kwargs["subject"])
 
-    @patch("frappe.db.get_value")
-    def test_build_notification_subject_content(self, mock_get_value):
-        # Setup
-        doc = MagicMock()
-        doc.reference_type = "Task"
-        doc.reference_name = "TASK-001"
-        doc.status = "Open"
-        doc.description = "Test Desc"
-        doc.creation = "2024-06-01"
-        doc.date = "2024-06-10"
-        user = "test_user"
-        def get_value_side_effect(doctype, name, field, **kwargs):
-            if doctype == "User" and kwargs.get("as_dict"):
-                return {"first_name": "Test", "last_name": "User"}
-            if doctype == "Task" and field == "subject":
-                return "Task Subject"
-            return None
-
-        mock_get_value.side_effect = get_value_side_effect
-        # Test
-        subject, email_content = todo_mod.build_notification_subject_content(doc, user)
-        self.assertIn("Task", subject)
-        self.assertIn("Task Subject", subject)
-        self.assertIn("Test Desc", email_content)
-        self.assertIn("Subject:Task Subject", email_content)
-
     @patch("frappe.db.exists", return_value=True)
     @patch("one_fm.overrides.todo.create_description_for_google_todo", return_value="notes")
     @patch("one_fm.overrides.todo.get_google_task_service")
@@ -273,7 +193,7 @@ class TestToDoOverrides(FrappeTestCase):
         self.doc.custom_google_task_title = "Some Title"
         self.doc.date = "2024-06-10"
 
-        result = todo_mod.create_google_task_on_todo_creation_in_erp(self.doc, "after_insert")
+        result = todo_mod.create_google_task_on_todo_creation_in_erp(self.doc)
 
         # Reloaded, then wrote only the id column without touching modified timestamp.
         self.doc.reload.assert_called_once_with()
@@ -296,32 +216,25 @@ class TestToDoOverrides(FrappeTestCase):
         self.doc.custom_google_task_id = ""
         self.doc.allocated_to = "user2@example.com"
 
-        result = todo_mod.create_google_task_on_todo_creation_in_erp(self.doc, "after_insert")
+        result = todo_mod.create_google_task_on_todo_creation_in_erp(self.doc)
 
         self.doc.reload.assert_not_called()
         self.doc.db_set.assert_not_called()
         self.doc.save.assert_not_called()
         self.assertIsNone(result)
 
-    @patch("frappe.new_doc")
-    @patch("one_fm.overrides.todo.send_notification_alert_only", return_value=False)
-    def test_create_notification_log(self, mock_alert_only, mock_new_doc):
-        doc = MagicMock()
-        doc.assigned_by = "user1"
-        doc.doctype = "ToDo"
-        doc.name = "TODO-001"
-        subject = "Test Subject"
-        email_content = "Test Content"
-        user = "test_user"
-        notification_log = MagicMock()
-        mock_new_doc.return_value = notification_log
-        todo_mod.create_notification_log(doc, user, subject, email_content)
-        mock_new_doc.assert_called_once_with("Notification Log")
-        self.assertEqual(notification_log.subject, subject)
-        self.assertEqual(notification_log.email_content, email_content)
-        self.assertEqual(notification_log.for_user, doc.assigned_by)
-        self.assertEqual(notification_log.document_type, doc.doctype)
-        self.assertEqual(notification_log.document_name, doc.name)
-        self.assertEqual(notification_log.from_user, user)
-        self.assertEqual(notification_log.type, "Assignment")
-        notification_log.insert.assert_called_once_with(ignore_permissions=True)
+
+class TestToDoLifecycleOwnership(FrappeTestCase):
+    """The ToDo Lifecycle process model owns the edit and delete paths."""
+
+    def test_no_backend_hook_on_the_edit_path(self):
+        events = one_fm_hooks.doc_events["ToDo"]
+        self.assertEqual(set(events), {"validate", "after_insert"})
+
+    def test_map_replaced_functions_are_gone(self):
+        for name in (
+            "notify_todo_status_change",
+            "update_google_task_on_todo_status_change",
+            "delete_google_task_on_todo_delete",
+        ):
+            self.assertFalse(hasattr(todo_mod, name), name)
