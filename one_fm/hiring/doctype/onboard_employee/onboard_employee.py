@@ -184,12 +184,19 @@ class OnboardEmployee(Document):
 
 					employee.permanent_address = "Test"
 					employee.one_fm_basic_salary = frappe.db.get_value('Job Offer', self.job_offer, 'base')
-					pam_designation = frappe.db.get_value('Job Applicant', self.job_applicant, 'one_fm_pam_designation')
+					# WI-002605: the Visa Request is the later and more authoritative source -
+					# it is what the PAM file was actually opened against - so an onboarding
+					# that carries one wins. The Job Applicant / ERF chain stays as the
+					# fallback for every onboarding that has no Visa Request linked.
+					pam_designation = self.pam_designation
+					if not pam_designation:
+						pam_designation = frappe.db.get_value('Job Applicant', self.job_applicant, 'one_fm_pam_designation')
 					if not pam_designation:
 						pam_designation = frappe.db.get_value('ERF', self.erf, 'pam_designation')
 					if not pam_designation and employee.work_permit:
 						frappe.throw(_('Please set PAM Designation in Job Applicant or ERF!'))
 					employee.one_fm_pam_designation = pam_designation
+					set_visa_and_pam_details(self, employee)
 					employee.reports_to = self.reports_to
 					date_of_joining = frappe.db.get_value('Duty Commencement', self.duty_commencement, 'date_of_joining')
 					if date_of_joining:
@@ -365,6 +372,36 @@ class OnboardEmployee(Document):
 				'notify':	self.notify_users_by_email
 			}
 			assign_to.add(args)
+
+# WI-002605: what the Onboard Employee fetched from the Visa Request has to reach the
+# Employee, or the HR user re-keys the same visa and PAM details by hand on a record that
+# already holds them.
+#
+# PAM Designation is not in here: it has its own fallback chain to Job Applicant and ERF
+# above, and folding it in would lose that.
+#
+# visa_date_of_expiry lands on one_fm_date_of_issuance_of_visa, which WI-002618 relabels
+# "Date of Visa Expiry" for exactly this reason: the field is the visa expiry now, and
+# only its column name still says issuance. Renaming the column would break Work Permit's
+# fetch_from and every report that names it, for nothing.
+VISA_AND_PAM_FIELDS = {
+	"pam_file": "pam_file",
+	"work_permit_salary": "work_permit_salary",
+	"visa_centralized_number": "one_fm_centralized_number",
+	"visa_reference_number": "one_fm_visa_reference_number",
+	"visa_date_of_expiry": "one_fm_date_of_issuance_of_visa",
+}
+
+
+def set_visa_and_pam_details(onboarding, employee):
+	"""Carry the Visa Request details off the onboarding onto the Employee."""
+	for source, target in VISA_AND_PAM_FIELDS.items():
+		value = onboarding.get(source)
+		# An onboarding with no Visa Request linked fetches nothing, and must not blank a
+		# value the Employee already carries from somewhere else.
+		if value:
+			employee.set(target, value)
+
 
 @frappe.whitelist()
 def make_employee(source_name, target_doc=None):
