@@ -107,7 +107,7 @@ function set_rejection_remarks(frm) {
 }
 
 // Where a rejection reason is stored, per the state it was rejected from. Also decides
-// which field reasons_for_state() reads its options off.
+// which field the prompt reads its options off.
 const REJECTION_REMARK_FIELD_BY_STATE = {
 	// The operator and PAM entries went with their states in WI-002106 - unreachable once
 	// the dialog stopped handling them, and both reasons are written on the form instead.
@@ -139,7 +139,7 @@ function get_rejection_remarks(frm, resolve, reject) {
 			label: 'Reason for Rejection',
 			fieldname: 'reason',
 			fieldtype: 'Select',
-			options: state_reasons.join('\n'),
+			options: state_reasons,
 			reqd: 1
 		}
 		: {
@@ -148,6 +148,7 @@ function get_rejection_remarks(frm, resolve, reject) {
 			fieldtype: 'Small Text',
 			reqd: 1
 		};
+
 	frappe.prompt(
 		[reason_field],
 		function(values) {

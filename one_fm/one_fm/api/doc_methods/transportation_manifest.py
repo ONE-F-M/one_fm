@@ -25,7 +25,7 @@ def update_manifest_row_checkin(
 	# supervisors - or one supervisor tapping through a camp faster than the manifest
 	# saves - open the document twice and the second save is rejected for holding a
 	# stale `modified`. The row being written is the only thing this call changes, so
-	# replaying it against the freshly-read manifest is safe (WI-002538).
+	# replaying it against the freshly-read manifest is safe.
 	return retry_on_stale_timestamp(
 		lambda: _apply_row_checkin(
 			parent_manifest, row_name, attendance_status, qoa_status,

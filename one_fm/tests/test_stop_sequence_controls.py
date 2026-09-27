@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002542: reordering a run's stops without a long vertical drag.
+"""reordering a run's stops without a long vertical drag.
 
 The drawer could only reorder by dragging, and a run of a dozen stops is taller than the
 drawer - on a laptop the target position is off screen while the drag is in progress, and

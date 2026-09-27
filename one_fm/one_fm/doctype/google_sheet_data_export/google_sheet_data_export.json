@@ -23,6 +23,10 @@
   "filter_list",
   "filter_cache",
   "select_fields_section",
+  "include_hidden_fields",
+  "column_break_field_options",
+  "include_metadata_fields",
+  "section_break_field_picker",
   "fields_multicheck",
   "field_cache",
   "amended_from",
@@ -146,12 +150,34 @@
    "fieldtype": "Table MultiSelect",
    "label": "Export Access",
    "options": "Google Sheet Data Export User"
+  },
+  {
+   "fieldname": "include_hidden_fields",
+   "fieldtype": "Check",
+   "label": "Include Hidden Fields",
+   "depends_on": "eval:doc.reference_doctype",
+   "description": "Show fields that are hidden on the form so that they can be selected for export."
+  },
+  {
+   "fieldname": "include_metadata_fields",
+   "fieldtype": "Check",
+   "label": "Include Metadata Fields",
+   "depends_on": "eval:doc.reference_doctype",
+   "description": "Offer the standard fields (Created By, Created On, Last Modified On, Last Modified By, Document Status, Index) of the selected Document Type."
+  },
+  {
+   "fieldname": "column_break_field_options",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_field_picker",
+   "fieldtype": "Section Break"
   }
  ],
  "grid_page_length": 50,
  "hide_toolbar": 1,
  "links": [],
- "modified": "2025-12-30 09:57:30.445836",
+ "modified": "2026-09-15 11:01:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Google Sheet Data Export",

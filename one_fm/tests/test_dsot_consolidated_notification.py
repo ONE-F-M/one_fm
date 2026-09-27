@@ -1,28 +1,19 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002602: one DSOT approval email per employee per continuous date cycle.
+"""One DSOT approval email per employee per continuous date cycle.
 
-Every Employee Schedule entering ``Pending DSOT Approval`` put its own assignment in front
-of the DSOT Approver as a normal assignment, so ERPNext sent one Assignment Notification
-per row. A week of overtime for one person is eight rows and was eight near-identical emails,
-for what the approver experiences as a single request.
+Each Employee Schedule entering ``Pending DSOT Approval`` used to send its own assignment
+notification, so a week of overtime was eight near-identical emails.
 
 Two things are deliberately NOT changed, and both are pinned below:
 
-* **The ToDo assignment stays, one per schedule.** The approver's task list and the whole
-  Approve/Reject flow from WI-002283 are built on it; only its email is suppressed.
-* **ERPNext's shared Assignment Notification template is untouched.** AC5 is worded as a
-  change to it, but that template serves every assignment in the system - leave,
-  penalties, everything - and rewording it for this one flow would change all of them. The
-  fields the criterion lists are all present; only the vehicle is this flow's own.
+* **The ToDo assignment stays, one per schedule.** The approver's task list and the
+  Approve/Reject flow are built on it; only its email is suppressed.
+* **Frappe's shared Assignment Notification template is untouched.** It serves every
+  assignment in the system, so rewording it for this flow would change all of them.
 
-The email goes out when the request COMMITS rather than as each row is held, because a
-range is not known to be a range until its last row is written. That also means a
-rolled-back roster run sends nothing, which a per-row email could not promise.
-
-All five scenarios in the story's notes are walked below, and AC6's link was checked
-against the live site: the three filters apply and the one real pending record is what the
-approver lands on, with the row checkboxes that make Bulk Approve reachable.
+The email goes out on commit rather than per row, because a range is not known to be a
+range until its last row is written - and a rolled-back roster run then sends nothing.
 """
 
 import inspect

@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002543: the Trip Builder's leg table stops scrolling sideways.
+"""the Trip Builder's leg table stops scrolling sideways.
 
 Eleven columns in a dialog capped near 900px meant the right-hand ones - Target Arrival
 and On Board, which are what the dispatcher is checking - lived off the edge behind a

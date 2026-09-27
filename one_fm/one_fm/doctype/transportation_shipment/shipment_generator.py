@@ -35,7 +35,7 @@ TRIP_REQUEST = "Trip Request"
 # transportation methods are handled off the fleet scheduling canvas.
 COMPANY_FLEET = "Company Fleet"
 MAHBOULA_LABELS = {"Mahboula 3", "Mahboula 12", "Mahboula 13", "Mahboula 15"}
-# Who may refresh the shipment cards from the canvas (WI-002162).
+# Who may refresh the shipment cards from the canvas.
 GENERATE_ROLES = ("System Manager", "Transportation Manager", "Transportation Supervisor")
 
 
@@ -49,7 +49,7 @@ def build_demand_descriptors(nested_map: dict) -> list:
 	if not nested_map:
 		return []
 
-	# WI-002306: drivers are working the run, not riding it. Taken out here, before any
+	# drivers are working the run, not riding it. Taken out here, before any
 	# routing decision, so no arrangement downstream can put one on a card and no
 	# headcount counts a seat the driver was never going to sit in.
 	nested_map = _without_drivers(nested_map)
@@ -193,7 +193,7 @@ def build_demand_descriptors(nested_map: dict) -> list:
 
 			# ── OLM: aggregate across shifts by (stop_location, hour) ──
 			#
-			# WI-002308: only when OSM has not already placed this shift. A site can be
+			# only when OSM has not already placed this shift. A site can be
 			# configured under both arrangements, and both branches used to run - so the
 			# same employees were generated onto two sets of cards at two different
 			# stops, and the board showed the shift's demand twice over with different
@@ -266,7 +266,7 @@ def build_demand_descriptors(nested_map: dict) -> list:
 
 
 def _without_drivers(nested_map: dict) -> dict:
-	"""The demand map with every driver removed from every shift roster (WI-002306).
+	"""The demand map with every driver removed from every shift roster.
 
 	A shift left with no riders is dropped, and so is an accommodation left with no
 	shifts - an empty roster produces no shipment anyway, and carrying it through only
@@ -337,7 +337,7 @@ def _write_roster(doc, demand: dict, roster: list, relievers: dict = None) -> No
 			"operation_site": demand["operations_site"] or emp.get("site"),
 		}
 		# Who this rider is standing in for, so the drawer can badge them and say who is
-		# away and for how long (WI-002591 AC2). Stamped rather than looked up at render
+		# away and for how long. Stamped rather than looked up at render
 		# time: the manifest is printed and carried, and it has to still make sense
 		# tomorrow when the schedule row behind it has moved on.
 		cover = relievers.get(emp["id"])
@@ -361,7 +361,7 @@ def _refresh_assigned_roster(name: str, demand: dict, roster: list, relievers: d
 	every day. The generator used to skip an Assigned card entirely - "Assigned ->
 	leave untouched" - so a crew change after the card was placed never reached the
 	driver's manifest, and the only way to pick it up was to unassign the card and
-	re-plan the run (WI-002591 AC5).
+	re-plan the run.
 
 	Only the roster and headcount move. The identity fields are deliberately left
 	alone: generation_key and pair_group are what the Route Plan Assignment row
@@ -398,7 +398,7 @@ def generate_transportation_shipments():
 	"""
 	# The scheduler runs as Administrator; guard interactive/API calls. The button
 	# lives on the Transportation Schedule canvas, which is the transport team's own
-	# board, so the roles that run it may refresh their own cards (WI-002162) instead
+	# board, so the roles that run it may refresh their own cards instead
 	# of having to ask a System Manager.
 	if frappe.session.user != "Administrator":
 		frappe.only_for(GENERATE_ROLES)
@@ -407,7 +407,7 @@ def generate_transportation_shipments():
 	demands = build_demand_descriptors(nested_map)
 
 	# Resolved once for the whole run rather than per card: the overlay is a handful of
-	# rows and every demand asks the same question of it (WI-002591 AC2).
+	# rows and every demand asks the same question of it.
 	relievers = reliever_context()
 
 	created = updated = deleted = errors = refreshed = 0
@@ -428,7 +428,7 @@ def generate_transportation_shipments():
 				# hours from when they actually finish. 250 of 376 generated Return
 				# cards on the live plan carried another shift's people, and the
 				# Alghanim Guest House Day crew were told to be collected at 18:00 when
-				# their card held the Night crew who finish at 06:00 (WI-002401).
+				# their card held the Night crew who finish at 06:00.
 				#
 				# Collecting the outgoing crew on the incoming run is what a Mixed trip
 				# IS: the dispatcher drops the other shift's Return card onto this run

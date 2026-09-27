@@ -33,7 +33,6 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Email Address",
-   "mandatory_depends_on": "eval: doc.action == \"Add as POC\"",
    "options": "Email",
    "read_only_depends_on": "eval: doc.action != \"Add as POC\""
   },
@@ -42,7 +41,6 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Phone",
-   "mandatory_depends_on": "eval: doc.action == \"Add as POC\"",
    "options": "Phone",
    "read_only_depends_on": "eval: doc.action != \"Add as POC\""
   },
@@ -51,7 +49,6 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Destination Doctype",
-   "mandatory_depends_on": "eval: doc.action == \"Add as POC\"",
    "options": "\nOperations Site\nProject\nBoth",
    "read_only_depends_on": "eval: doc.action != \"Add as POC\""
   },
@@ -60,7 +57,6 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Gender",
-   "mandatory_depends_on": "eval: doc.action == \"Add as POC\"",
    "options": "\nMale\nFemale",
    "read_only_depends_on": "eval: doc.action != \"Add as POC\""
   },
@@ -69,7 +65,6 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Designation",
-   "mandatory_depends_on": "eval: doc.action == \"Add as POC\"",
    "read_only_depends_on": "eval: doc.action != \"Add as POC\""
   },
   {
@@ -89,15 +84,17 @@
    "reqd": 1
   }
  ],
+ "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-06-28 14:25:44.324497",
+ "modified": "2026-07-29 15:38:08.181873",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "POC Check General Attendees",
  "owner": "Administrator",
  "permissions": [],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

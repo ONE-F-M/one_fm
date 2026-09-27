@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002591 AC1-AC4: who is actually on the bus today.
+"""who is actually on the bus today.
 
 The generator builds cards from ``Employee.shift`` - the MASTER allocation - which
 answers "whose post is this", not "who is travelling". The two part company constantly.

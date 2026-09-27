@@ -5,19 +5,17 @@ frappe.ui.form.on('Vehicle', {
 		frm.set_df_property('license_plate', 'hidden', false);
 	},
 	onload(frm) {
-		if (frm.is_new() && !frm.doc.custom_naming_series) {
-			frm.set_value("custom_naming_series", "VHL-.####");
+		if (frm.is_new()) {
+			set_naming_series(frm);
 		}
 	},
+	validate(frm) {
+		// Keep the naming series aligned with the category regardless of how it changed.
+		set_naming_series(frm);
+	},
 	one_fm_vehicle_category(frm) {
-		const series_map = {
-			"Owned": "VHL-.####",
-			"Leased": "VHL-L-.####",
-			"Subcontractor": "VHL-S-.####"
-		};
-		const category = frm.doc.one_fm_vehicle_category;
-		frm.set_value("custom_naming_series", series_map[category] || "VHL-.####");
-		frm.set_df_property("vehicle_leasing_contract", "reqd", category === "Leased");
+		set_naming_series(frm);
+		frm.set_df_property("vehicle_leasing_contract", "reqd", frm.doc.one_fm_vehicle_category === "Leased");
 	},
 	vehicle_leasing_contract(frm){
 	  if(!frm.doc.vehicle_leasing_contract){
@@ -66,6 +64,20 @@ frappe.ui.form.on('Vehicle', {
 		calculate_custodian_mileage(frm);
 	}
 })
+
+var set_naming_series = function(frm) {
+	// Mirror of the server-side before_insert logic (one_fm.overrides.vehicle.set_naming_series):
+	// derive the naming series from the vehicle category.
+	let series;
+	if (frm.doc.one_fm_vehicle_category === "Leased") {
+		series = "VHL-L-.####";
+	} else if (frm.doc.one_fm_vehicle_category === "Subcontractor") {
+		series = "VHL-S-.####";
+	} else {
+		series = "VHL-.####";
+	}
+	frm.set_value("naming_series", series);
+};
 
 var log_custodian_handover = function(frm) {
 	let row = frm.add_child("custom_vehicle_custodian_history", {
