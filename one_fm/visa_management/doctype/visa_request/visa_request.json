@@ -63,6 +63,7 @@
   "grd_manager_remark",
   "column_break_jdrk",
   "pam_rejection_remark",
+  "pam_rejection_remarks",
   "moi_rejection_remark",
   "pam_details_section",
   "custom_pam_file",
@@ -499,9 +500,14 @@
   },
   {
    "fieldname": "pam_rejection_remark",
+   "fieldtype": "Select",
+   "label": "PAM Rejection Reason",
+   "options": "\nPassport Validity is Less than 18 Months\nWorker's age is below the legal minimum\nThe worker's gender does not match the profession\nThe occupation requires amendment to specify the worker's specialization\nAn active file exists for this worker\nWorker is in Black List"
+  },
+  {
+   "fieldname": "pam_rejection_remarks",
    "fieldtype": "Small Text",
-   "label": "PAM Rejection Remark",
-   "read_only": 1
+   "label": "PAM Rejection Remarks"
   },
   {
    "fieldname": "moi_rejection_remark",
@@ -513,8 +519,7 @@
   {
    "fieldname": "operator_rejection_remark",
    "fieldtype": "Small Text",
-   "label": "Operator Rejection Remark",
-   "read_only": 1
+   "label": "Operator Rejection Remark"
   },
   {
    "fieldname": "column_break_cpvu",
