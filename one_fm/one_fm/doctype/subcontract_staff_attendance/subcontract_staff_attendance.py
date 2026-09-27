@@ -39,18 +39,10 @@ class SubcontractStaffAttendance(Document):
 				if not has_remarks:
 					frappe.throw("You must provide a remark for at least one employee when returning the document to Draft.")
 
-		# Enforce remarks when raising dispute or returning between supervisor/manager
-		if not self.is_new():
-
-			# Supervisor raises dispute: Pending Operations Supervisor → Pending Project Manager
-			if old_state == "Pending Operations Supervisor" and self.workflow_state == "Pending Project Manager":
-				if not self.remarks_from_operations_supervisor:
-					frappe.throw(_("Please provide Remarks from Operations Supervisor before raising a dispute."))
-
-			# Project Manager returns to supervisor: Pending Project Manager → Pending Operations Supervisor
-			if old_state == "Pending Project Manager" and self.workflow_state == "Pending Operations Supervisor":
-				if not self.remarks_from_projects_manager:
-					frappe.throw(_("Please provide Remarks from Projects Manager before returning the document to Operations Supervisor."))
+		# Project Manager returns to supervisor: Pending Project Manager → Pending Operations Supervisor
+		if not self.is_new() and old_state == "Pending Project Manager" and self.workflow_state == "Pending Operations Supervisor":
+			if not self.remarks_from_projects_manager:
+				frappe.throw(_("Please provide Remarks from Projects Manager before returning the document to Operations Supervisor."))
 
 		if not self.get("subcontractor_staff_attendance_item") and self.subcontractor_name:
 			self.fetch_subcontractor_staff()
