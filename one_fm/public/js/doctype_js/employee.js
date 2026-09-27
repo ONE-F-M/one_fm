@@ -365,3 +365,28 @@ const setAutoAttendanceReadOnly = (frm) => {
 	}
 
 }
+
+const show_latest_ai_eval_cost = (frm) => {
+	frappe.call({
+		method: "one_fm.overrides.employee.get_latest_ai_eval_run_cost",
+		args: { employee: frm.doc.name },
+		callback: function(r) {
+			if (r.message) {
+				frappe.msgprint({
+					title: __("Latest AI Eval Run Cost"),
+					message: __("Run {0}: {1}", [
+						r.message.name,
+						format_currency(r.message.total_cost)
+					]),
+					indicator: "green"
+				});
+			} else {
+				frappe.msgprint({
+					title: __("Latest AI Eval Run Cost"),
+					message: __("No AI Eval Run found for this employee."),
+					indicator: "orange"
+				});
+			}
+		}
+	});
+}
