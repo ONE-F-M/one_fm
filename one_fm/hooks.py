@@ -516,10 +516,7 @@ doc_events = {
 	},
 	"ToDo": {
 		"validate": "one_fm.overrides.todo.validate_todo",
-		"after_insert":[
-			"one_fm.overrides.todo.create_google_task_on_todo_creation",
-			"one_fm.overrides.todo.send_email_on_todo_created"
-		]
+		"after_insert": "one_fm.overrides.todo.send_email_on_todo_created"
 	},
 	"OAuth Bearer Token": {
 		"after_insert": "one_fm.api.doc_methods.oauth_bearer_token.revoke_and_delete_existing_tokens",

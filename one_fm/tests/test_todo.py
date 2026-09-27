@@ -179,62 +179,21 @@ class TestToDoOverrides(FrappeTestCase):
         self.assertIn("Rendered Message", kwargs["message"])
         self.assertIn("A Task has been Created", kwargs["subject"])
 
-    @patch("frappe.db.exists", return_value=True)
-    @patch("one_fm.overrides.todo.create_description_for_google_todo", return_value="notes")
-    @patch("one_fm.overrides.todo.get_google_task_service")
-    def test_create_google_task_writes_id_without_save(self, mock_service_fn, mock_notes, mock_exists):
-        """The background job must persist the Google Task id via db_set (no save())."""
-        service = MagicMock()
-        service.tasks.return_value.insert.return_value.execute.return_value = {"id": "GTASK-123"}
-        mock_service_fn.return_value = service
 
-        self.doc.custom_google_task_id = ""
-        self.doc.allocated_to = "user2@example.com"
-        self.doc.custom_google_task_title = "Some Title"
-        self.doc.date = "2024-06-10"
+class TestToDoProcessModelOwnership(FrappeTestCase):
+    """Two process models own the ToDo edit, delete and Google Task creation paths."""
 
-        result = todo_mod.create_google_task_on_todo_creation_in_erp(self.doc)
-
-        # Reloaded, then wrote only the id column without touching modified timestamp.
-        self.doc.reload.assert_called_once_with()
-        self.doc.db_set.assert_called_once_with(
-            "custom_google_task_id", "GTASK-123", update_modified=False
-        )
-        # A bare save() would re-fire hooks and risk the TimestampMismatchError.
-        self.doc.save.assert_not_called()
-        self.assertEqual(result["id"], "GTASK-123")
-
-    @patch("frappe.db.exists", return_value=False)
-    @patch("one_fm.overrides.todo.create_description_for_google_todo", return_value="notes")
-    @patch("one_fm.overrides.todo.get_google_task_service")
-    def test_create_google_task_skips_when_todo_deleted(self, mock_service_fn, mock_notes, mock_exists):
-        """If the ToDo was removed while the job was queued, bail out cleanly."""
-        service = MagicMock()
-        service.tasks.return_value.insert.return_value.execute.return_value = {"id": "GTASK-123"}
-        mock_service_fn.return_value = service
-
-        self.doc.custom_google_task_id = ""
-        self.doc.allocated_to = "user2@example.com"
-
-        result = todo_mod.create_google_task_on_todo_creation_in_erp(self.doc)
-
-        self.doc.reload.assert_not_called()
-        self.doc.db_set.assert_not_called()
-        self.doc.save.assert_not_called()
-        self.assertIsNone(result)
-
-
-class TestToDoLifecycleOwnership(FrappeTestCase):
-    """The ToDo Lifecycle process model owns the edit and delete paths."""
-
-    def test_no_backend_hook_on_the_edit_path(self):
+    def test_only_the_assignment_email_is_left_on_the_hooks(self):
         events = one_fm_hooks.doc_events["ToDo"]
         self.assertEqual(set(events), {"validate", "after_insert"})
+        self.assertEqual(events["after_insert"], "one_fm.overrides.todo.send_email_on_todo_created")
 
     def test_map_replaced_functions_are_gone(self):
         for name in (
             "notify_todo_status_change",
             "update_google_task_on_todo_status_change",
             "delete_google_task_on_todo_delete",
+            "create_google_task_on_todo_creation",
+            "create_google_task_on_todo_creation_in_erp",
         ):
             self.assertFalse(hasattr(todo_mod, name), name)

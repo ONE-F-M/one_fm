@@ -68,49 +68,6 @@ def get_google_task_service(employee_email):
         frappe.log_error(title="Error reading Google credentials", message=str(e))
         return None
 
-def create_google_task_on_todo_creation(doc, method):
-    # Skip if general trigger is not enabled
-    if not is_google_task_synchronization_enabled():
-        return
-    frappe.enqueue(create_google_task_on_todo_creation_in_erp, doc=doc, is_async=True)
-
-def create_google_task_on_todo_creation_in_erp(doc):
-    """Create a Google Task for the ToDo document if not already created."""
-    employee_email = doc.allocated_to
-    if doc.custom_google_task_id:
-        return
-    if not employee_email:
-        frappe.throw(_("No assigned user found for this ToDo"))
-    try:
-        service = get_google_task_service(employee_email)
-        if not service:
-            return
-        task_notes = create_description_for_google_todo(doc)
-        task_title = doc.custom_google_task_title
-        date_obj = datetime.strptime(str(doc.date), "%Y-%m-%d")
-        due_date = date_obj.replace(hour=23, minute=59, second=59, tzinfo=timezone.utc).isoformat()
-        task_body = {
-            "title": task_title,
-            "notes": task_notes,
-            "due": due_date
-        }
-        result = service.tasks().insert(tasklist="@default", body=task_body).execute()
-        # Reload to avoid TimestampMismatchError: the ToDo row may have been
-        # modified (e.g. by the assignment rule) after this doc was enqueued.
-        if not frappe.db.exists("ToDo", doc.name):
-            return
-        doc.reload()
-        # db_set writes only this column, skips the modified-timestamp check,
-        # and does not re-fire on_update (which would re-enqueue this job).
-        doc.db_set("custom_google_task_id", result["id"], update_modified=False)
-        return result
-    except Exception as e:
-        title = f"Error while creating Google Task from ToDo for {employee_email}"
-        error = str(e)
-        if not frappe.db.exists("Error Log", {"error": error, "method": title, "seen": 0}):
-            frappe.log_error(message=error, title=title)
-    return
-
 def create_description_for_google_todo(doc):
     """Generate a plain text description for Google Task from ToDo details."""
     try:
