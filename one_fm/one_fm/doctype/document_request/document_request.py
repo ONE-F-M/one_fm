@@ -286,24 +286,20 @@ NO_DOCUMENT_STATES = ("Request Rejected",)
 
 
 def _requester_chain(employee: str) -> dict:
-	"""The employee's own user, their line manager, and that manager's user.
+	"""The employee's own user, and the user of whoever get_approver_user picks.
 
 	Shared by validate and by the form so both answer "who is asking and who
 	approves" the same way. Two implementations of that drift, and a form that
 	shows one approver while the save records another is worse than a form that
 	shows nothing.
 	"""
-	row = frappe.db.get_value("Employee", employee, ["user_id", "reports_to"], as_dict=True)
+	row = frappe.db.get_value("Employee", employee, ["user_id"], as_dict=True)
 	if not row:
 		return {}
 
-	approver = row.get("reports_to")
 	return {
 		"requester_user": row.get("user_id"),
-		"approver": approver,
-		"approver_user": (
-			frappe.db.get_value("Employee", approver, "user_id") if approver else None
-		),
+		"approver_user": get_approver_user(employee),
 	}
 
 
@@ -318,9 +314,10 @@ def get_requester_defaults() -> dict:
 	tell whether the system knows who they are, or who will be asked to approve
 	what they are about to write.
 
-	Uses the same lookup validate uses, so the form cannot show one requester and
-	save another. Returns {} when the user has no Employee record: the form says
-	so at open time instead of letting a filled-in request fail on save.
+	Uses the same lookup validate uses (get_approver_user), so the form cannot
+	show one approver and save another. Returns {} when the user has no Employee
+	record: the form says so at open time instead of letting a filled-in request
+	fail on save.
 	"""
 	employee = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "name")
 	if not employee:
