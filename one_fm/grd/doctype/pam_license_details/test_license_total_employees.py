@@ -144,12 +144,12 @@ class TestWhenItIsRecounted(FrappeTestCase):
 		block = self.source.split("def update_counts_from_employee", 1)[1]
 		self.assertIn('doc.get("pam_file")', block)
 
-	def test_the_fields_that_trigger_a_recount_include_the_link_and_the_number(self):
-		"""The link is what the total counts. The number is still watched because the
-		sector figures are counted by it."""
+	def test_the_fields_that_trigger_a_recount_are_the_ones_counted_on(self):
+		"""pam_file_number is not among them: nothing counts off it any more, and a fetch
+		refreshing the copy has moved nobody."""
 		self.assertIn("pam_file", WATCHED_EMPLOYEE_FIELDS)
-		self.assertIn("pam_file_number", WATCHED_EMPLOYEE_FIELDS)
 		self.assertIn("under_company_residency", WATCHED_EMPLOYEE_FIELDS)
+		self.assertNotIn("pam_file_number", WATCHED_EMPLOYEE_FIELDS)
 
 	def test_saving_a_licence_derives_it_too(self):
 		"""So a licence opened and saved shows the figure without waiting for a transfer."""
@@ -182,18 +182,20 @@ class TestTheFiguresAreRestated(FrappeTestCase):
 
 	def test_the_patch_is_registered(self):
 		patches = frappe.read_file(frappe.get_app_path("one_fm", "patches.txt"))
-		self.assertIn("one_fm.patches.v15_0.recount_pam_license_totals_by_file", patches)
+		self.assertIn("one_fm.patches.v15_0.recount_pam_licences_by_file_link", patches)
 
 	def test_it_restates_every_licence(self):
 		"""Not only the ones an employee has moved on or off since: every stored figure was
-		counted the old way."""
+		counted the old way. Both sets of them - the total and the sector rows read the
+		same employees and moved to the link together."""
 		source = frappe.read_file(
 			frappe.get_app_path(
-				"one_fm", "patches", "v15_0", "recount_pam_license_totals_by_file.py"
+				"one_fm", "patches", "v15_0", "recount_pam_licences_by_file_link.py"
 			)
 		)
 		self.assertIn('frappe.get_all("PAM License Details", pluck="name")', source)
 		self.assertIn("recount_license_total(license_name)", source)
+		self.assertIn("recount_license(license_name)", source)
 
 	def test_every_stored_figure_matches_the_employees_on_the_licence(self):
 		"""The restatement itself, asserted against the live site once it has run."""

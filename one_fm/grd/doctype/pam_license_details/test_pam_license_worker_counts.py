@@ -98,12 +98,11 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 		fixture would need a Company, a Fiscal Year and a Designation before it inserted.
 		Written with db.set_value, which the rollback does undo.
 		"""
+		# No condition on the licence: it is created fresh each run, so the only employees
+		# on it are the ones this test pointed at, and those are in self.borrowed already.
 		name = frappe.db.get_value(
 			"Employee",
-			{
-				"pam_file_number": ["!=", LICENSE_NUMBER],
-				"name": ["not in", list(self.borrowed) or ["__none__"]],
-			},
+			{"name": ["not in", list(self.borrowed) or ["__none__"]]},
 			"name",
 			order_by="creation asc",
 		)
@@ -113,12 +112,12 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 		self.borrowed[name] = frappe.db.get_value(
 			"Employee",
 			name,
-			["pam_file_number", "one_fm_pam_designation", "one_fm_nationality", "status",
+			["pam_file", "one_fm_pam_designation", "one_fm_nationality", "status",
 			 "under_company_residency", "employee_name"],
 			as_dict=True,
 		)
 		frappe.db.set_value("Employee", name, {
-			"pam_file_number": LICENSE_NUMBER,
+			"pam_file": LICENSE,
 			"one_fm_pam_designation": designation or self.designation,
 			"one_fm_nationality": nationality,
 			"status": status,
@@ -133,20 +132,20 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 	# ── counting ──────────────────────────────────────────────────────────────────
 
 	def test_an_empty_sector_counts_nobody(self):
-		self.assertEqual(count_workers(LICENSE_NUMBER, self.sector), (0, 0))
+		self.assertEqual(count_workers(LICENSE, self.sector), (0, 0))
 
 	def test_kuwaitis_count_as_nationals_and_everyone_else_as_expatriates(self):
 		self._an_employee("Kuwaiti")
 		self._an_employee("Indian")
 		self._an_employee("Nepali")
 
-		self.assertEqual(count_workers(LICENSE_NUMBER, self.sector), (1, 2))
+		self.assertEqual(count_workers(LICENSE, self.sector), (1, 2))
 
 	def test_somebody_off_the_company_residency_is_not_on_the_licence(self):
 		self._an_employee("Kuwaiti")
 		self._an_employee("Kuwaiti", under_residency=0)
 
-		self.assertEqual(count_workers(LICENSE_NUMBER, self.sector), (1, 0))
+		self.assertEqual(count_workers(LICENSE, self.sector), (1, 0))
 
 	def test_the_residency_decides_it_whatever_the_status_says(self):
 		"""The licence is the residency. Status is not read: somebody on vacation or
@@ -161,10 +160,10 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 			with self.subTest(status=status):
 				frappe.db.set_value("Employee", employee, "status", status, update_modified=False)
 
-				self.assertEqual(count_workers(LICENSE_NUMBER, self.sector), (0, 1))
+				self.assertEqual(count_workers(LICENSE, self.sector), (0, 1))
 
 		frappe.db.set_value("Employee", employee, "under_company_residency", 0, update_modified=False)
-		self.assertEqual(count_workers(LICENSE_NUMBER, self.sector), (0, 0))
+		self.assertEqual(count_workers(LICENSE, self.sector), (0, 0))
 
 	def test_the_residency_flag_is_watched_so_a_change_recounts(self):
 		"""Ticking or clearing the residency has to move the figures. It only does if the
@@ -176,8 +175,8 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 		self._an_employee("Kuwaiti")
 		self._an_employee("Indian", designation=self.other_designation)
 
-		self.assertEqual(count_workers(LICENSE_NUMBER, self.sector), (1, 0))
-		self.assertEqual(count_workers(LICENSE_NUMBER, self.other_sector), (0, 1))
+		self.assertEqual(count_workers(LICENSE, self.sector), (1, 0))
+		self.assertEqual(count_workers(LICENSE, self.other_sector), (0, 1))
 
 	def test_another_licence_is_counted_separately(self):
 		self._an_employee("Kuwaiti")
@@ -190,7 +189,7 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 		self._an_employee("Kuwaiti")
 		self._an_employee("Indian")
 
-		recount_sector(LICENSE_NUMBER, self.sector)
+		recount_sector(LICENSE, self.sector)
 
 		row = self._row(self.sector)
 		self.assertEqual(row.national_number_of_workers, "1")
@@ -355,7 +354,7 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 		update - and without one the employee is counted against nothing."""
 		sector, _employee = self._in_an_unconfigured_sector("Indian")
 
-		recount_sector(LICENSE_NUMBER, sector)
+		recount_sector(LICENSE, sector)
 
 		row = self._row(sector)
 		self.assertEqual(row.expatriate_number_of_workers, "1")
@@ -366,7 +365,7 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 		there would grow the table every time anybody changed designation."""
 		sector = _a_sector(UNCONFIGURED_SECTOR)
 
-		recount_sector(LICENSE_NUMBER, sector)
+		recount_sector(LICENSE, sector)
 
 		license = frappe.get_doc("PAM License Details", self.license.name)
 		self.assertEqual([row.occupational_sector for row in license.pam_license_stats],
@@ -382,7 +381,7 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 	def test_the_added_row_sits_after_the_ones_already_there(self):
 		sector, _employee = self._in_an_unconfigured_sector("Indian")
 
-		recount_sector(LICENSE_NUMBER, sector)
+		recount_sector(LICENSE, sector)
 
 		license = frappe.get_doc("PAM License Details", self.license.name)
 		self.assertEqual(license.pam_license_stats[-1].occupational_sector, sector)
