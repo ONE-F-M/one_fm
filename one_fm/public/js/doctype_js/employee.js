@@ -33,6 +33,12 @@ frappe.ui.form.on('Employee', {
                 }
             };
         });
+
+		if (frm.doc.user_id) {
+			frm.add_custom_button(__('Show AI Cost'), function() {
+				show_latest_ai_eval_cost(frm);
+			});
+		}
 	},
 	setup: function(frm) {
 		frm._original_status = frm.doc.status;
