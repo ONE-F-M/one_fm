@@ -7,6 +7,7 @@ from frappe.tests.utils import FrappeTestCase
 
 from one_fm.grd.doctype.pam_license_details.pam_license_details import (
 	WATCHED_EMPLOYEE_FIELDS,
+	update_counts_from_designation,
 	count_workers,
 	recount_license,
 	recount_sector,
@@ -17,6 +18,9 @@ LICENSE = "_Test Counted License"
 LICENSE_NUMBER = "_TEST-PAM-9001"
 SECTOR = "_Test Sector Technicians"
 OTHER_SECTOR = "_Test Sector Managers"
+# A sector the licence carries no row for - what a new employee lands in when nobody has
+# configured that half of the licence yet.
+UNCONFIGURED_SECTOR = "_Test Sector Salespeople"
 
 
 def _a_sector(name):
@@ -87,7 +91,7 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 		license.insert()
 		return license
 
-	def _an_employee(self, nationality, designation=None, status="Active"):
+	def _an_employee(self, nationality, designation=None, status="Active", under_residency=1):
 		"""An employee on the test licence.
 
 		Re-pointed rather than created: Employee sits at MariaDB's row-size limit here and a
@@ -109,7 +113,8 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 		self.borrowed[name] = frappe.db.get_value(
 			"Employee",
 			name,
-			["pam_file_number", "one_fm_pam_designation", "one_fm_nationality", "status", "employee_name"],
+			["pam_file_number", "one_fm_pam_designation", "one_fm_nationality", "status",
+			 "under_company_residency", "employee_name"],
 			as_dict=True,
 		)
 		frappe.db.set_value("Employee", name, {
@@ -117,6 +122,7 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 			"one_fm_pam_designation": designation or self.designation,
 			"one_fm_nationality": nationality,
 			"status": status,
+			"under_company_residency": under_residency,
 		}, update_modified=False)
 		return name
 
@@ -136,11 +142,35 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 
 		self.assertEqual(count_workers(LICENSE_NUMBER, self.sector), (1, 2))
 
-	def test_someone_who_has_left_is_not_on_the_licence(self):
+	def test_somebody_off_the_company_residency_is_not_on_the_licence(self):
 		self._an_employee("Kuwaiti")
-		self._an_employee("Kuwaiti", status="Left")
+		self._an_employee("Kuwaiti", under_residency=0)
 
 		self.assertEqual(count_workers(LICENSE_NUMBER, self.sector), (1, 0))
+
+	def test_the_residency_decides_it_whatever_the_status_says(self):
+		"""The licence is the residency. Status is not read: somebody on vacation or
+		awaiting a court case is on the licence if the residency says so, and somebody
+		marked Active is not if it does not."""
+		employee = self._an_employee("Indian")
+
+		# One borrowed employee moved through the statuses rather than one per status:
+		# each _an_employee call takes another spare off the site and they would stack up
+		# on the licence, so the count under test would climb with the loop.
+		for status in ("Active", "Vacation", "Not Returned from Leave", "Court Case", "Left"):
+			with self.subTest(status=status):
+				frappe.db.set_value("Employee", employee, "status", status, update_modified=False)
+
+				self.assertEqual(count_workers(LICENSE_NUMBER, self.sector), (0, 1))
+
+		frappe.db.set_value("Employee", employee, "under_company_residency", 0, update_modified=False)
+		self.assertEqual(count_workers(LICENSE_NUMBER, self.sector), (0, 0))
+
+	def test_the_residency_flag_is_watched_so_a_change_recounts(self):
+		"""Ticking or clearing the residency has to move the figures. It only does if the
+		field is in the list the handler checks before it returns early."""
+		self.assertIn("under_company_residency", WATCHED_EMPLOYEE_FIELDS)
+		self.assertNotIn("status", WATCHED_EMPLOYEE_FIELDS)
 
 	def test_a_sector_counts_only_its_own_designations(self):
 		self._an_employee("Kuwaiti")
@@ -209,6 +239,51 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 		self.assertEqual(row.national_number_of_workers, "0")
 		self.assertEqual(row.expatriate_number_of_workers, "1")
 
+	def test_clearing_the_residency_takes_the_employee_off_the_licence(self):
+		"""End to end through the hook: the figure has to move on the save, not only when
+		something recounts the licence by hand."""
+		employee = self._an_employee("Indian")
+		recount_license(self.license.name)
+		self.assertEqual(self._row(self.sector).expatriate_number_of_workers, "1")
+
+		self._edit(employee, under_company_residency=0)
+
+		self.assertEqual(self._row(self.sector).expatriate_number_of_workers, "0")
+
+	def test_putting_somebody_on_the_residency_adds_them(self):
+		employee = self._an_employee("Indian", under_residency=0)
+		recount_license(self.license.name)
+		self.assertEqual(self._row(self.sector).expatriate_number_of_workers, "0")
+
+		self._edit(employee, under_company_residency=1)
+
+		self.assertEqual(self._row(self.sector).expatriate_number_of_workers, "1")
+
+	def test_moving_a_designation_moves_everybody_holding_it(self):
+		"""The sector is on the designation, not the employee, so correcting a designation
+		has to move the figures - no Employee is saved when that happens."""
+		self._an_employee("Indian")
+		recount_license(self.license.name)
+		self.assertEqual(self._row(self.sector).expatriate_number_of_workers, "1")
+		self.assertEqual(self._row(self.other_sector).expatriate_number_of_workers, "0")
+
+		designation = frappe.get_doc("PAM Designation List", self.designation)
+		designation.occupational_sector = self.other_sector
+		designation.save(ignore_permissions=True)
+
+		self.assertEqual(self._row(self.sector).expatriate_number_of_workers, "0")
+		self.assertEqual(self._row(self.other_sector).expatriate_number_of_workers, "1")
+
+	def test_a_designation_save_that_leaves_the_sector_alone_does_nothing(self):
+		self._an_employee("Indian")
+		recount_license(self.license.name)
+
+		designation = frappe.get_doc("PAM Designation List", self.designation)
+		designation._doc_before_save = frappe.get_doc("PAM Designation List", self.designation)
+		update_counts_from_designation(designation)
+
+		self.assertEqual(self._row(self.sector).expatriate_number_of_workers, "1")
+
 	def test_moving_sector_empties_the_row_left_behind(self):
 		"""Recounting only where they landed would leave the old row carrying them for good."""
 		employee = self._an_employee("Indian")
@@ -219,6 +294,38 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 
 		self.assertEqual(self._row(self.sector).expatriate_number_of_workers, "0")
 		self.assertEqual(self._row(self.other_sector).expatriate_number_of_workers, "1")
+
+	def _insert(self, name):
+		"""Hand the handler an employee shaped the way an insert leaves it.
+
+		Not a document with no before-state, which is what an insert looks like in stock
+		Frappe: one_fm's after_insert reloads the employee, and after_insert runs before
+		on_update, so the before-state the handler is given is the row that was just written.
+		"""
+		doc = frappe.get_doc("Employee", name)
+		doc._doc_before_save = frappe.get_doc("Employee", name)
+		doc.flags.in_insert = True
+		update_counts_from_employee(doc)
+
+	def test_a_new_employee_is_counted_though_nothing_reads_as_changed(self):
+		"""Why no new employee was ever counted: every watched field equals itself on an
+		insert, so the has_value_changed guard skipped the recount every time."""
+		employee = self._an_employee("Indian")
+		recount_license(self.license.name)
+		# Stale on purpose - only a recount that actually runs will correct it.
+		frappe.db.set_value(
+			"PAM License Stats", self._row(self.sector).name, "expatriate_number_of_workers", "0",
+			update_modified=False,
+		)
+
+		doc = frappe.get_doc("Employee", employee)
+		doc._doc_before_save = frappe.get_doc("Employee", employee)
+		self.assertFalse(any(doc.has_value_changed(f) for f in WATCHED_EMPLOYEE_FIELDS))
+
+		doc.flags.in_insert = True
+		update_counts_from_employee(doc)
+
+		self.assertEqual(self._row(self.sector).expatriate_number_of_workers, "1")
 
 	def test_a_save_that_touches_nothing_relevant_is_skipped(self):
 		"""Employee is saved constantly; a recount on every save would be a query per save."""
@@ -234,6 +341,51 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 		self._edit(employee, employee_name="Renamed Only")
 
 		self.assertEqual(self._row(self.sector).national_number_of_workers, "99")
+
+	# ── a sector the licence has no row for yet ───────────────────────────────────
+
+	def _in_an_unconfigured_sector(self, nationality):
+		sector = _a_sector(UNCONFIGURED_SECTOR)
+		designation = _a_designation("_Test PAM Salesperson", sector)
+		return sector, self._an_employee(nationality, designation=designation)
+
+	def test_an_employee_in_an_unconfigured_sector_gets_the_licence_a_row(self):
+		"""WI-002091's second criterion. The sector an employee belongs to is decided by their
+		PAM designation, so a licence that has never carried anybody in it has no row to
+		update - and without one the employee is counted against nothing."""
+		sector, _employee = self._in_an_unconfigured_sector("Indian")
+
+		recount_sector(LICENSE_NUMBER, sector)
+
+		row = self._row(sector)
+		self.assertEqual(row.expatriate_number_of_workers, "1")
+		self.assertEqual(row.national_number_of_workers, "0")
+
+	def test_a_sector_nobody_is_in_does_not_grow_the_table(self):
+		"""The recount runs for the sector an employee has just left as well, and a row added
+		there would grow the table every time anybody changed designation."""
+		sector = _a_sector(UNCONFIGURED_SECTOR)
+
+		recount_sector(LICENSE_NUMBER, sector)
+
+		license = frappe.get_doc("PAM License Details", self.license.name)
+		self.assertEqual([row.occupational_sector for row in license.pam_license_stats],
+			[self.sector, self.other_sector])
+
+	def test_a_new_employee_reaches_the_child_table_through_the_hook(self):
+		sector, employee = self._in_an_unconfigured_sector("Kuwaiti")
+
+		self._insert(employee)
+
+		self.assertEqual(self._row(sector).national_number_of_workers, "1")
+
+	def test_the_added_row_sits_after_the_ones_already_there(self):
+		sector, _employee = self._in_an_unconfigured_sector("Indian")
+
+		recount_sector(LICENSE_NUMBER, sector)
+
+		license = frappe.get_doc("PAM License Details", self.license.name)
+		self.assertEqual(license.pam_license_stats[-1].occupational_sector, sector)
 
 	def test_the_watched_fields_all_exist_on_employee(self):
 		"""A typo here would silently stop the recount ever firing."""

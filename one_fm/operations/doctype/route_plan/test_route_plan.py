@@ -431,7 +431,7 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
 
 	def test_outbound_and_return_of_one_trip_are_walked_leg_by_leg(self):
-		"""WI-002160: 3 out then 3 back fits three seats - the drop is off first."""
+		"""3 out then 3 back fits three seats - the drop is off first."""
 		plan = self._make_plan([
 			self._row(self.VEHICLE, trip="TRIP-BOTH", direction="OUTBOUND", headcount=3, stop=1),
 			self._row(self.VEHICLE, trip="TRIP-BOTH", direction="RETURN", headcount=3, stop=2),
@@ -462,7 +462,7 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
 
 	def test_standalone_rows_are_weighed_too(self):
-		# WI-002000: a drop with no trip_group used to be skipped by the backend
+		# a drop with no trip_group used to be skipped by the backend
 		# entirely. It is a trip of its own now, so an overloaded one is caught
 		# server-side instead of resting on the canvas check alone.
 		plan = self._make_plan([
@@ -503,7 +503,7 @@ def _trip(key, *, headcount, start, end, direction="OUTBOUND",
 
 
 class TestTheDailyWindowOfARow(FrappeTestCase):
-	"""WI-002000: the clock time is what decides overlap; the date half of a
+	"""the clock time is what decides overlap; the date half of a
 	Route Plan Assignment timestamp is the multi-day lock lifespan (TR-8)."""
 
 	def test_the_clock_time_is_read_off_the_stamp(self):
@@ -777,7 +777,7 @@ class TestRoutePlanTimeWindowCapacitySave(FrappeTestCase):
 
 
 class TestTheCanvasAgreesWithTheBackend(FrappeTestCase):
-	"""The driver's seat is reserved on both sides (WI-002000).
+	"""The driver's seat is reserved on both sides.
 
 	The canvas compared against the full seat count while the save reserved a
 	seat, so a last-seat run passed the drop and was refused on save. Pinned on
@@ -945,8 +945,139 @@ class TestAnUntouchedBusIsNotAWall(FrappeTestCase):
 		self.assertEqual(plan._vehicles_this_save_did_not_touch([]), set())
 
 
+class TestOneRunDoesNotBlockAnother(FrappeTestCase):
+	"""The vehicle-level answer was too coarse.
+
+	Editing one run's TIMINGS puts its bus in play, and every other run on that bus was
+	then judged too: a dispatcher adjusting S-703 was refused by a DIFFERENT run on the
+	same vehicle carrying 26 passengers in 22 seats - a load nothing in that save had
+	touched and nothing in that save could fix.
+
+	Same membership rule as the bus-level one, one level finer.
+	"""
+
+	def _row(self, ship, trip, head, name=None):
+		return frappe._dict(
+			vehicle="BUS-A", transportation_shipment=ship, stop_index=1,
+			trip_group=trip, trip_name=name or trip, direction="OUTBOUND", headcount=head,
+			start_time="2026-08-18T06:00:00Z", end_time="2026-08-18T07:00:00Z",
+		)
+
+	def test_a_run_whose_cards_did_not_move_is_left_alone(self):
+		plan = frappe.new_doc("Route Plan")
+		before = [self._row("TS-1", "T1", 26, "S-703"), self._row("TS-2", "T2", 4, "S-704")]
+		plan.get_doc_before_save = lambda: frappe._dict(assignments=before)
+
+		untouched = plan._trips_this_save_did_not_touch(plan._logical_trips(list(before)))
+
+		self.assertEqual(len(untouched), 2)
+
+	def test_the_run_that_gained_a_card_is_judged_and_the_other_is_not(self):
+		# The case from the report: one run changes, the overloaded one beside it did not.
+		plan = frappe.new_doc("Route Plan")
+		before = [self._row("TS-1", "T1", 26, "S-703"), self._row("TS-2", "T2", 4, "S-704")]
+		plan.get_doc_before_save = lambda: frappe._dict(assignments=before)
+		after = before + [self._row("TS-3", "T2", 1, "S-704")]
+
+		untouched = plan._trips_this_save_did_not_touch(plan._logical_trips(after))
+		keys = {key for _vehicle, key in untouched}
+		touched = {t.key for t in plan._logical_trips(after)} - keys
+
+		self.assertEqual(len(touched), 1)
+		# The overloaded run is still grandfathered, so it cannot refuse the edit.
+		self.assertEqual(len(untouched), 1)
+
+	def test_a_brand_new_plan_grandfathers_nothing(self):
+		plan = frappe.new_doc("Route Plan")
+
+		self.assertEqual(plan._trips_this_save_did_not_touch([]), set())
+
+
+class TestAnInheritedPeakIsNotReReported(FrappeTestCase):
+	"""The overlap check is the other half of the same wall.
+
+	Scoping the per-trip check to changed runs moved the refusal one line down: the
+	overlap check still summed EVERY run on the bus, so the same pre-existing 26-in-22
+	load refused the same edit with a different message. Two trips that overlap really
+	do share the bus, so no single one is at fault and this stays a whole-vehicle
+	question - but it must be judged against what the save INHERITED, not against zero.
+	"""
+
+	def _trip(self, key, head, start="06:00", end="07:00"):
+		# The shared builder, so these read the same shape _logical_trips() produces.
+		return _trip(key, headcount=head, start=start, end=end)
+
+	def test_a_peak_that_was_already_there_is_not_refused(self):
+		# 26 in 22 seats, untouched: the dispatcher editing another run cannot fix it and
+		# should not be stopped by it.
+		trips = [self._trip("T1", 26)]
+		inherited = _peak_concurrent_headcount(trips)
+
+		self.assertEqual(inherited, 26)
+		self.assertFalse(26 > max(22, inherited))
+
+	def test_a_save_that_makes_it_worse_is_still_refused(self):
+		untouched = [self._trip("T1", 26)]
+		all_trips = untouched + [self._trip("T2", 2)]
+
+		concurrent = _peak_concurrent_headcount(all_trips)
+		inherited = _peak_concurrent_headcount(untouched)
+
+		self.assertEqual(concurrent, 28)
+		self.assertTrue(concurrent > max(22, inherited))
+
+	def test_an_overload_this_save_creates_is_refused(self):
+		# Nothing inherited, so the limit is the only thing standing.
+		all_trips = [self._trip("T1", 14), self._trip("T2", 10)]
+
+		self.assertTrue(_peak_concurrent_headcount(all_trips) > max(22, 0))
+
+	def test_a_load_that_fits_is_never_refused(self):
+		all_trips = [self._trip("T1", 10), self._trip("T2", 8)]
+
+		self.assertFalse(_peak_concurrent_headcount(all_trips) > max(22, 0))
+
+
+class TestTheOverloadMessageNamesTheRun(FrappeTestCase):
+	"""'the outbound run on VHL-L-0013' names a bus that may hold five runs.
+
+	The one at fault is not necessarily the one being edited, so the message has to say
+	which. The trip name is what the lane, the drawer and the manifest all print.
+	"""
+
+	def test_the_trip_name_is_read_off_the_rows(self):
+		plan = frappe.new_doc("Route Plan")
+		trip = frappe._dict(rows=[frappe._dict(trip_name=None), frappe._dict(trip_name="S-703")])
+
+		self.assertEqual(plan._trip_label(trip), "S-703")
+
+	def test_a_run_with_no_name_still_reports(self):
+		plan = frappe.new_doc("Route Plan")
+
+		self.assertEqual(plan._trip_label(frappe._dict(rows=[frappe._dict(trip_name=None)])), "")
+
+	def test_the_message_carries_the_name(self):
+		plan = frappe.new_doc("Route Plan")
+		with self.assertRaises(frappe.ValidationError) as cm:
+			plan._throw_capacity_exceeded("VHL-L-0013", "OUTBOUND", 26, 22, "S-703")
+
+		self.assertIn("S-703", str(cm.exception))
+		self.assertIn("26", str(cm.exception))
+		self.assertIn("22", str(cm.exception))
+		self.assertIn("short 4", str(cm.exception))
+
+	def test_an_unnamed_run_still_reads_as_a_sentence(self):
+		plan = frappe.new_doc("Route Plan")
+		with self.assertRaises(frappe.ValidationError) as cm:
+			plan._throw_capacity_exceeded("VHL-L-0013", "RETURN", 26, 22, None)
+
+		message = str(cm.exception)
+		self.assertIn("return run on", message)
+		self.assertNotIn("run None", message)
+
+
 class TestSequentialRunsAreWeighedSeparately(FrappeTestCase):
-	"""One trip is one bus run, and a finished run holds nobody (WI-002401 AC5).
+	"""One trip is one bus run, and a finished run holds nobody.
 
 	A vehicle that puts its passengers down at 06:05 is empty when the 06:35 run
 	boards, so the two never see each other's riders. Pooling them refused a seat that
@@ -1028,7 +1159,7 @@ class TestRenumberedStopsDoNotUnprotectAnUntouchedBus(FrappeTestCase):
 	save, while the canvas round-trips a logical 1..N. Keying the untouched-vehicle
 	guard on that number re-lettered every card each time, so no bus was ever untouched
 	- and one pre-existing overload then refused every edit anywhere on the plan, on a
-	vehicle the dispatcher had never gone near (WI-002401).
+	vehicle the dispatcher had never gone near.
 	"""
 
 	def _rows(self, *, first_index):
@@ -1067,7 +1198,7 @@ class TestRenumberedStopsDoNotUnprotectAnUntouchedBus(FrappeTestCase):
 
 
 class TestATripNameNamesOneRun(FrappeTestCase):
-	"""No two runs on one vehicle answer to the same trip name (WI-002401).
+	"""No two runs on one vehicle answer to the same trip name.
 
 	A trip name identifies a run on the block, in the "Add Stop to which trip?" picker and
 	on the driver's manifest, so a lane holding two runs called S-106 is ambiguous

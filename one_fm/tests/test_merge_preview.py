@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002078: what the Merge Trip modal is shown before anyone confirms.
+"""what the Merge Trip modal is shown before anyone confirms.
 
 The preview is computed on the server so the seat count an operator sees is the one the
 Route Plan save will judge them by. A second implementation in the browser would drift,
@@ -164,7 +164,7 @@ class TestTheMergeModal(FrappeTestCase):
 		self.assertIn("Max Passenger Capacity", self.source)
 
 	def test_the_primary_action_commits_the_merge(self):
-		# Renamed with the forward-scheduling work (WI-002151): the modal now states the
+		# Renamed with the forward-scheduling work: the modal now states the
 		# departure and applies the whole itinerary, not just the merge. What has to hold
 		# is that its primary action is the thing that commits it.
 		self.assertIn("__('Confirm & Apply')", self.source)
@@ -286,7 +286,7 @@ class TestTheMergedBlockPaintsMixed(FrappeTestCase):
 
 	def test_a_run_is_mixed_once_any_stop_is(self):
 		# The block asks runDirection, which answers MIXED whenever the stops do not all
-		# agree - one MIXED stop, or stops that merely disagree (WI-002160).
+		# agree - one MIXED stop, or stops that merely disagree.
 		self.assertIn("direction: this.runDirection(stops),", self.source)
 		self.assertIn("runDirection(stops) {", self.source)
 		self.assertIn(
@@ -399,13 +399,16 @@ class TestPerLegMinutesSurviveARefresh(FrappeTestCase):
 		self.assertEqual(_timings_by_shipment(None), {})
 
 	def test_a_leg_defaults_to_the_transit_the_canvas_would_have_used(self):
-		# The modal used to print 0 while the canvas quietly placed the block on 30, so
-		# the itinerary shown was never the run that got drawn.
+		# The modal used to print 0 while the canvas quietly placed the block on a
+		# default, so the itinerary shown was never the run that got drawn. What is
+		# guarded is that ONE number serves both; it became 15, and the
+		# canvas seeds the same 15 (DEFAULT_TRANSIT_MIN) so the two still agree.
 		from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
 			DEFAULT_TRANSIT_MINUTES,
 		)
 
-		self.assertEqual(DEFAULT_TRANSIT_MINUTES, 30)
+		self.assertEqual(DEFAULT_TRANSIT_MINUTES, 15)
+		self.assertIn("const DEFAULT_TRANSIT_MIN = 15;", self.canvas)
 		self.assertIn("default_transit = 0 if index == 1 else DEFAULT_TRANSIT_MINUTES", (
 			pathlib.Path(frappe.get_app_path(
 				"one_fm", "one_fm", "doctype", "transportation_shipment",
@@ -424,8 +427,12 @@ class TestPerLegMinutesSurviveARefresh(FrappeTestCase):
 		self.assertNotIn("transitMin:", self.canvas)
 
 	def test_the_merge_takes_them_from_the_leg_the_operator_edited(self):
-		self.assertIn("transitMinutes: parseInt(adj.transit_minutes, 10) || 0,", self.canvas)
+		# Transit now goes through _legTransit, which is the same value with a floor of
+		# 1 minute on a leg that actually drives somewhere - the source
+		# is still the leg the operator edited.
+		self.assertIn("transitMinutes: self._legTransit(adj),", self.canvas)
 		self.assertIn("bufferMinutes: parseInt(adj.buffer_minutes, 10) || 0,", self.canvas)
+		self.assertIn("_legTransit(stop) {", self.canvas)
 
 	def test_confirming_re_times_the_whole_run(self):
 		# The numbers are the run's timing, not a note about it.
@@ -486,7 +493,7 @@ class TestTheRunIsTimedFromTheMinutes(FrappeTestCase):
 
 	def test_the_feedbacks_merge(self):
 		# A leg now departs when the bus is released from the stop before it, with its
-		# buffer counted as dwell inside the leg (WI-002151). The arrivals are the same
+		# buffer counted as dwell inside the leg. The arrivals are the same
 		# numbers as before; only the departure column moved, so that AC 1.1's
 		# Arrival = Departure + Buffer + Transit reads literally - which is how the
 		# process owner's sample itinerary is walked.

@@ -171,9 +171,11 @@ def extend_resignation(
     reason: str = None,
     extended_date: str = None,
     resignation_id: str = None,
-    attachment: str = None,
+    # mobile sends {attachment_name, attachment} as an object
+    attachment: str | dict = None,
     attachment_name: str = None,
-    data: str = None,
+    # mobile can send this as an object too
+    data: str | dict = None,
     **kwargs
 ):
     """Create an Employee Resignation Date Adjustment for the employee's active resignation."""
@@ -267,11 +269,13 @@ def extend_resignation(
 def withdraw_resignation(
     employee_id: str = None,
     reason: str = None,
-    attachment: str = None,
+    # mobile sends {attachment_name, attachment} as an object
+    attachment: str | dict = None,
     attachment_name: str = None,
     employee_resignation: str = None,
     supervisor: str = None,
-    data: str = None,
+    # mobile can send this as an object too
+    data: str | dict = None,
     **kwargs
 ):
     try:
@@ -508,6 +512,29 @@ def get_all_my_resignations(employee_id=None, **kwargs):
 
 
     return resignations
+
+
+@frappe.whitelist()
+def get_resignation_by_name(resignation_id: str = None, **kwargs):
+    """Return one Employee Resignation belonging to the session user's employee."""
+    resignation_id = get_param("resignation_id", resignation_id)
+    if not resignation_id:
+        frappe.throw(_("resignation_id is required"), frappe.ValidationError)
+
+    employee_name = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "name")
+    if not employee_name:
+        frappe.throw(_("No employee record linked to the current user"), frappe.ValidationError)
+
+    records = frappe.get_list(
+        "Employee Resignation",
+        filters={"name": resignation_id, "employee": employee_name},
+        fields=["name", "workflow_state", "resignation_initiation_date", "relieving_date", "creation"],
+        limit=1
+    )
+    if not records:
+        frappe.throw(_("Resignation record not found"), frappe.DoesNotExistError)
+
+    return records[0]
 
 
 @frappe.whitelist()

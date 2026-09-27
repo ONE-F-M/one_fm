@@ -579,7 +579,7 @@ one_fm.patches.v15_0.add_pcc_attestation_workflow_and_rules #2026-08-12 WI-00202
 one_fm.patches.v15_0.add_pcc_processing_fees_to_hr_settings #2026-08-12 WI-002026
 one_fm.patches.v15_0.add_shift_request_shift_preview #2026-08-12 WI-001834
 one_fm.patches.v15_0.restore_stranded_mixed_shipments #2026-08-17 WI-002071
-one_fm.patches.v15_0.migrate_visa_request_visibility #2026-08-20 WI-002069
+one_fm.patches.v15_0.migrate_visa_request_visibility #2026-08-29 WI-002069
 one_fm.patches.v15_0.hide_residency_apply_for #2026-08-20 WI-002105
 one_fm.patches.v15_0.add_preparation_category #2026-08-20 WI-002101
 one_fm.patches.v15_0.add_preparation_row_status #2026-08-20 WI-002093
@@ -626,5 +626,11 @@ one_fm.patches.v15_0.drop_seeded_tea_boy_arabic_name #2026-09-12 WI-002399
 one_fm.patches.v15_0.add_visa_request_list_view_columns #2026-09-11 WI-002426
 one_fm.patches.v15_0.allow_visa_request_bulk_edit #2026-09-12 WI-002446
 one_fm.patches.v15_0.remove_orphan_leave_ledger_entry_lap_01398 #2
+one_fm.patches.v15_0.restore_wiped_ojt_employee_schedules #2026-09-14
+one_fm.patches.v15_0.complete_restored_ojt_attendance_chain #2026-09-14
 one_fm.patches.v15_0.grant_recruiter_master_read_permissions #14-09-2026
 one_fm.patches.v15_0.backfill_pam_license_sector_headcounts #2026-09-15 WI-002091
+one_fm.patches.v15_0.restate_pam_license_sector_figures #2026-09-21 WI-002094
+one_fm.patches.v15_0.processa_sync_hd_ticketing_09a990 #2026-09-21 Processa sync: HD Ticket
+one_fm.patches.v15_0.clear_stale_ojt_link_on_working_schedules #2026-08-16
+one_fm.patches.v15_0.recount_pam_licences_by_company_residency #2026-09-23

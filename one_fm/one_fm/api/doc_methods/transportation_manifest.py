@@ -1,6 +1,10 @@
 import frappe
 from frappe import _
 
+from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+	retry_on_stale_timestamp,
+)
+
 @frappe.whitelist(methods=["POST"])
 def update_manifest_row_checkin(
 	row_name: str,
@@ -16,10 +20,26 @@ def update_manifest_row_checkin(
 	parent_manifest = frappe.db.get_value("Transportation Manifest Details", row_name, "parent")
 	if not parent_manifest:
 		frappe.throw(_("Child row {0} not found").format(row_name))
-		
+
+	# Every chip on the sheet checks in against the SAME parent manifest, so two
+	# supervisors - or one supervisor tapping through a camp faster than the manifest
+	# saves - open the document twice and the second save is rejected for holding a
+	# stale `modified`. The row being written is the only thing this call changes, so
+	# replaying it against the freshly-read manifest is safe.
+	return retry_on_stale_timestamp(
+		lambda: _apply_row_checkin(
+			parent_manifest, row_name, attendance_status, qoa_status,
+			qoa_reason, reliever_employee,
+		)
+	)
+
+
+def _apply_row_checkin(parent_manifest, row_name, attendance_status, qoa_status,
+					   qoa_reason, reliever_employee):
+	"""Read the manifest, stamp the one row, save. Re-runnable on a save conflict."""
 	doc = frappe.get_doc("Transportation Manifest", parent_manifest)
 	doc.check_permission("write")
-	
+
 	found = False
 	for row in doc.transportation_manifest_details:
 		if row.name == row_name:

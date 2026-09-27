@@ -20,6 +20,7 @@ from frappe.utils import get_datetime, getdate, today
 from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
 	driver_employees,
 )
+from one_fm.one_fm.doctype.transportation_shipment.roster_overlay import reliever_context
 from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
 	get_coords,
 	get_grouped_employees_by_accommodation,
@@ -34,7 +35,7 @@ TRIP_REQUEST = "Trip Request"
 # transportation methods are handled off the fleet scheduling canvas.
 COMPANY_FLEET = "Company Fleet"
 MAHBOULA_LABELS = {"Mahboula 3", "Mahboula 12", "Mahboula 13", "Mahboula 15"}
-# Who may refresh the shipment cards from the canvas (WI-002162).
+# Who may refresh the shipment cards from the canvas.
 GENERATE_ROLES = ("System Manager", "Transportation Manager", "Transportation Supervisor")
 
 
@@ -48,7 +49,7 @@ def build_demand_descriptors(nested_map: dict) -> list:
 	if not nested_map:
 		return []
 
-	# WI-002306: drivers are working the run, not riding it. Taken out here, before any
+	# drivers are working the run, not riding it. Taken out here, before any
 	# routing decision, so no arrangement downstream can put one on a card and no
 	# headcount counts a seat the driver was never going to sit in.
 	nested_map = _without_drivers(nested_map)
@@ -192,7 +193,7 @@ def build_demand_descriptors(nested_map: dict) -> list:
 
 			# ── OLM: aggregate across shifts by (stop_location, hour) ──
 			#
-			# WI-002308: only when OSM has not already placed this shift. A site can be
+			# only when OSM has not already placed this shift. A site can be
 			# configured under both arrangements, and both branches used to run - so the
 			# same employees were generated onto two sets of cards at two different
 			# stops, and the board showed the shift's demand twice over with different
@@ -265,7 +266,7 @@ def build_demand_descriptors(nested_map: dict) -> list:
 
 
 def _without_drivers(nested_map: dict) -> dict:
-	"""The demand map with every driver removed from every shift roster (WI-002306).
+	"""The demand map with every driver removed from every shift roster.
 
 	A shift left with no riders is dropped, and so is an accommodation left with no
 	shifts - an empty roster produces no shipment anyway, and carrying it through only
@@ -299,7 +300,8 @@ def _generation_key(demand: dict, direction: str) -> tuple:
 	return f"{pair}|{direction}", pair
 
 
-def _write_shipment(doc, demand: dict, direction: str, roster: list, gen_key: str, pair_group: str) -> None:
+def _write_shipment(doc, demand: dict, direction: str, roster: list, gen_key: str,
+					pair_group: str, relievers: dict = None) -> None:
 	"""Set header + child roster on a new or existing shipment document."""
 	doc.accommodation = demand["accommodation"]
 	doc.operations_shift = demand["operations_shift"]
@@ -317,16 +319,74 @@ def _write_shipment(doc, demand: dict, direction: str, roster: list, gen_key: st
 	doc.generation_key = gen_key
 	doc.pair_group = pair_group
 
+	_write_roster(doc, demand, roster, relievers)
+
+
+def _write_roster(doc, demand: dict, roster: list, relievers: dict = None) -> None:
+	"""Replace the card's crew. Shared so a roster-only refresh writes the same rows."""
+	relievers = relievers or {}
+	doc.headcount = len(roster)
 	doc.set("transportation_shipment_employee", [])
 	for emp in roster:
-		doc.append("transportation_shipment_employee", {
+		row = {
 			"employee_id": emp["id"],
 			"employee_name": emp["name"],
 			"cell_number": emp["mobile"],
 			"accommodation": demand["accommodation"],
 			"stop_location": demand["stop_location"],
 			"operation_site": demand["operations_site"] or emp.get("site"),
-		})
+		}
+		# Who this rider is standing in for, so the drawer can badge them and say who is
+		# away and for how long. Stamped rather than looked up at render
+		# time: the manifest is printed and carried, and it has to still make sense
+		# tomorrow when the schedule row behind it has moved on.
+		cover = relievers.get(emp["id"])
+		if cover:
+			row.update({
+				"is_reliever": 1,
+				"relieving_employee": cover.get("relieving_employee"),
+				"relieving_employee_name": cover.get("relieving_employee_name"),
+				"absence_reason": cover.get("absence_reason"),
+				"leave_from": cover.get("leave_from"),
+				"leave_to": cover.get("leave_to"),
+			})
+		doc.append("transportation_shipment_employee", row)
+
+
+def _refresh_assigned_roster(name: str, demand: dict, roster: list, relievers: dict = None) -> bool:
+	"""Bring a PLACED card's crew up to date without disturbing where it is placed.
+
+	A shipment answers two different questions: WHERE the bus goes, which the Route
+	Plan owns once the card is on a lane, and WHO rides it, which the roster owns
+	every day. The generator used to skip an Assigned card entirely - "Assigned ->
+	leave untouched" - so a crew change after the card was placed never reached the
+	driver's manifest, and the only way to pick it up was to unassign the card and
+	re-plan the run.
+
+	Only the roster and headcount move. The identity fields are deliberately left
+	alone: generation_key and pair_group are what the Route Plan Assignment row
+	points at, and rewriting them would orphan the placement this is trying to
+	preserve. Returns True when something actually changed, so an unchanged card is
+	not saved and does not churn `modified`.
+	"""
+	relievers = relievers or {}
+	doc = frappe.get_doc("Transportation Shipment", name)
+	# The reliever tag is part of the crew, not decoration: the same people with a
+	# different person being covered is still a change the driver needs to see.
+	before = [
+		(row.employee_id, row.employee_name, row.relieving_employee or None)
+		for row in doc.transportation_shipment_employee
+	]
+	after = [
+		(emp["id"], emp["name"], (relievers.get(emp["id"]) or {}).get("relieving_employee"))
+		for emp in roster
+	]
+	if before == after:
+		return False
+
+	_write_roster(doc, demand, roster, relievers)
+	doc.save(ignore_permissions=True)
+	return True
 
 
 @frappe.whitelist()
@@ -338,7 +398,7 @@ def generate_transportation_shipments():
 	"""
 	# The scheduler runs as Administrator; guard interactive/API calls. The button
 	# lives on the Transportation Schedule canvas, which is the transport team's own
-	# board, so the roles that run it may refresh their own cards (WI-002162) instead
+	# board, so the roles that run it may refresh their own cards instead
 	# of having to ask a System Manager.
 	if frappe.session.user != "Administrator":
 		frappe.only_for(GENERATE_ROLES)
@@ -346,7 +406,11 @@ def generate_transportation_shipments():
 	nested_map = get_grouped_employees_by_accommodation()
 	demands = build_demand_descriptors(nested_map)
 
-	created = updated = deleted = errors = 0
+	# Resolved once for the whole run rather than per card: the overlay is a handful of
+	# rows and every demand asks the same question of it.
+	relievers = reliever_context()
+
+	created = updated = deleted = errors = refreshed = 0
 	current_keys = set()
 
 	for demand in demands:
@@ -364,7 +428,7 @@ def generate_transportation_shipments():
 				# hours from when they actually finish. 250 of 376 generated Return
 				# cards on the live plan carried another shift's people, and the
 				# Alghanim Guest House Day crew were told to be collected at 18:00 when
-				# their card held the Night crew who finish at 06:00 (WI-002401).
+				# their card held the Night crew who finish at 06:00.
 				#
 				# Collecting the outgoing crew on the incoming run is what a Mixed trip
 				# IS: the dispatcher drops the other shift's Return card onto this run
@@ -385,23 +449,45 @@ def generate_transportation_shipments():
 				if not existing:
 					doc = frappe.new_doc("Transportation Shipment")
 					doc.status = "Unassigned"
-					_write_shipment(doc, demand, direction, roster, gen_key, pair_group)
+					_write_shipment(doc, demand, direction, roster, gen_key, pair_group, relievers)
 					doc.insert(ignore_permissions=True)
 					created += 1
 				elif existing.status == "Unassigned":
 					doc = frappe.get_doc("Transportation Shipment", existing.name)
-					_write_shipment(doc, demand, direction, roster, gen_key, pair_group)
+					_write_shipment(doc, demand, direction, roster, gen_key, pair_group, relievers)
 					doc.save(ignore_permissions=True)
 					updated += 1
-				# Assigned → leave untouched
+				elif _refresh_assigned_roster(existing.name, demand, roster, relievers):
+					# Placed cards keep their lane and their trip; only the crew moves
+					# (AC5). Counted separately so the button can say how many runs had
+					# their people change without implying they were re-planned.
+					refreshed += 1
 			except Exception:
 				errors += 1
 				frappe.log_error(frappe.get_traceback(), "Transportation Shipment Generation Error")
 
-	deleted = _prune_stale(current_keys)
+	# A run that computed NO demand at all has no authority to delete ALL demand.
+	#
+	# get_grouped_employees_by_accommodation() returns {} for several ordinary reasons: no
+	# Active Operations Shift, nobody allocated to one, or - the one that actually bit us -
+	# no Accommodation Checkin Checkout carrying an employee. It treats that last case as a
+	# degraded state and says so in the Error Log rather than raising, so the caller gets
+	# an empty dict that looks exactly like "nobody needs a bus today".
+	#
+	# Handed to _prune_stale, an empty key set makes "generation_key not in current_keys"
+	# true for EVERY card in the pool. On the test site one click deleted 551 unassigned
+	# cards, and a second click could not bring them back - there was no demand to rebuild
+	# them from. Nothing warned anyone: the button reported the deletion in the same tone
+	# as a routine refresh.
+	#
+	# So the prune only runs when this run actually knows what the demand is. An empty
+	# pool is a conclusion to be reached from data, never from the absence of it.
+	pruned = bool(current_keys)
+	deleted = _prune_stale(current_keys) if pruned else 0
 
 	frappe.db.commit()
-	summary = {"created": created, "updated": updated, "deleted": deleted, "errors": errors}
+	summary = {"created": created, "updated": updated, "refreshed": refreshed,
+	           "deleted": deleted, "errors": errors, "pruned": pruned}
 	frappe.logger().info(f"generate_transportation_shipments: {summary}")
 	return summary
 
@@ -417,11 +503,33 @@ def _prune_stale(current_keys: set) -> int:
 	for row in stale:
 		if row.generation_key and row.generation_key not in current_keys:
 			try:
+				_release_manifest_references(row.name)
 				frappe.delete_doc("Transportation Shipment", row.name, ignore_permissions=True, force=True)
 				deleted += 1
 			except Exception:
 				frappe.log_error(frappe.get_traceback(), "Transportation Shipment Prune Error")
 	return deleted
+
+
+def _release_manifest_references(shipment: str) -> None:
+	"""Let go of a card the manifest still points at, before it is deleted.
+
+	A compiled manifest row records which Transportation Shipment its riders came from.
+	The prune deletes with ``force=True``, which skips link validation - so a pruned card
+	left that reference dangling, and from then on the manifest could not be SAVED at
+	all: every attempt threw "Could not find Transportation Shipment", which reaches the
+	driver page as a 417 and a blank screen.
+
+	Only the provenance link goes. The row keeps its employee, its stop and its
+	attendance, because those are facts about the journey rather than about the card the
+	demand was generated on.
+	"""
+	frappe.db.set_value(
+		"Transportation Manifest Details",
+		{"transportation_shipment": shipment},
+		"transportation_shipment", None,
+		update_modified=False,
+	)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

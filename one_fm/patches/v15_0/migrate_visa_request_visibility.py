@@ -1,4 +1,5 @@
 import frappe
+from frappe.model.utils.rename_field import rename_field
 
 # WI-002069: the Visa Request visibility rules the BA site carries and this site did not, plus
 # three mandatory rules that had been switched off by writing "// " in front of them.
@@ -36,14 +37,20 @@ GATED_FIELDS = (
 MOI_STATE = "Pending By MOI"
 
 
-# WI-002069 (third pass): a Link the BA site added after the migration. Hidden there, and
-# nothing on that site reads it yet - no assignment rule takes its assignee from it and no
-# script mentions it - so it comes across as the empty holder it currently is.
-NEW_FIELD = "assign_grd_operator"
+# WI-002069 (third pass): a Link the BA site added after the migration, which that site has
+# since renamed and made visible - "assign_grd_operator", hidden, is now "grd_operator"
+# labelled GRD Operator. Still an empty holder there: no assignment rule takes its assignee
+# from it and no script mentions it.
+NEW_FIELD = "grd_operator"
+OLD_FIELD = "assign_grd_operator"
 
 
 def execute():
 	frappe.reload_doc("visa_management", "doctype", "visa_request")
+
+	# The holder shipped under its old name first, so anything already written to it moves
+	# with the rename rather than being left behind in an orphan column.
+	rename_field("Visa Request", OLD_FIELD, NEW_FIELD)
 
 	verify()
 

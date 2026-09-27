@@ -1,8 +1,9 @@
 import frappe
 import requests
 from frappe import _
-from frappe.utils import cint
+from frappe.utils import cint, get_datetime
 from one_fm.one_fm.doctype.transportation_manifest.manifest_sync import sync_manifest_details
+from one_fm.one_fm.doctype.transportation_shipment.roster_overlay import apply_to_shift_map
 from one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log import get_handover_windows
 from one_fm.operations.doctype.route_plan.route_plan import (
     _card_direction,
@@ -28,7 +29,7 @@ def _stated_time(*values):
 
     ``or`` cannot be used for this: midnight is ``timedelta(0)`` and therefore falsy,
     so a shift finishing at 00:00 fell through to whatever literal came last in the
-    chain (WI-002401 AC9).
+    chain.
     """
     for value in values:
         if not time_is_blank(value):
@@ -111,12 +112,12 @@ def get_route_planner_data():
                 "id":            v.name,
                 "label":         v.name,
                 "license_plate": v.license_plate or "",
-                # WI-001778: the lane header and the details panel identify a vehicle
+                # the lane header and the details panel identify a vehicle
                 # as "<plate>, <model>", so the model rides along with the plate.
                 "model":         v.model or "",
                 "driver":        driver_name,
                 "seats":         v.seats or 0,
-                # WI-002000: the passenger limit the canvas holds a drop to. Whether
+                # the passenger limit the canvas holds a drop to. Whether
                 # "seats" counts the driver is per vehicle, so the fleet record
                 # answers it rather than the page assuming.
                 "max_passenger_capacity": passenger_capacity(v.seats, v.custom_includes_driver_seat),
@@ -137,7 +138,7 @@ def get_route_planner_data():
             fmt, to_utc, get_coords_cached, timedelta
         )
 
-        # ── 3. Driver handover windows (WI-001577) ──
+        # ── 3. Driver handover windows ──
         # Who is actually driving each vehicle, and when. The canvas labels every block
         # with the driver holding the vehicle at that hour, falling back to the permanent
         # custodian outside every handover window.
@@ -169,7 +170,7 @@ def get_route_planner_data():
             "vehicles":          vehicles,
             "shipment_cards":    shipment_cards,
             # The driver's report-time buffer, so the block drawer can print QOA without
-            # a second round trip (WI-002151 AC 1.2).
+            # a second round trip.
             "qoa_buffer_minutes": qoa_buffer_minutes(),
             "handover_windows":  handover_windows
         }
@@ -237,8 +238,18 @@ def get_grouped_employees_by_accommodation() -> dict:
     if not employees:
         return {}
 
-    emp_ids = [e.name for e in employees]
     emp_shift_map = {e.name: e.shift for e in employees}
+
+    # Who is actually travelling today, not just whose post this is.
+    # Employee.shift is the MASTER allocation: an employee on approved leave keeps it and
+    # kept riding a bus they were not on, and a reliever covering someone else's post is
+    # filed under their own shift rather than the one they are working. The overlay drops
+    # the first and re-files the second. It is resolved per date and stored nowhere, so a
+    # leave range ending restores the original by itself (AC3).
+    emp_shift_map = apply_to_shift_map(emp_shift_map)
+    emp_ids = list(emp_shift_map)
+    if not emp_ids:
+        return {}
 
     # 3. Bulk-fetch the latest IN checkin per employee (single query instead of N+1)
     #    Uses a correlated subquery to pick the most recent checkin per employee.
@@ -859,7 +870,7 @@ SHIPMENT_CARD_PREFIX = "TSHIP-"
 
 
 def _shifts_served(shipment) -> list:
-    """Every Operations Shift a card carries staff for (WI-002307).
+    """Every Operations Shift a card carries staff for.
 
     Most cards name one. An OLM stop shared by several roles finishing together lists
     them in ``aggregated_shifts`` and leaves ``operations_shift`` blank, because no
@@ -873,7 +884,7 @@ def _shifts_served(shipment) -> list:
 
 
 def _inactive_shifts(shipments) -> set:
-    """Which of the shifts these cards serve have been switched off (WI-002307)."""
+    """Which of the shifts these cards serve have been switched off."""
     names = set()
     for shipment in shipments:
         names.update(_shifts_served(shipment))
@@ -891,7 +902,7 @@ def _inactive_shifts(shipments) -> set:
 
 
 def _serves_only_inactive_shifts(shipment, inactive_shifts) -> bool:
-    """Is there nothing left on this card worth planning (WI-002307)?
+    """Is there nothing left on this card worth planning?
 
     Every shift it serves has to be inactive, not just one of them. An OLM card
     carrying three shifts still has to run for the two that are live, and hiding it
@@ -925,7 +936,7 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
         fields=[
             "name",
             # Selected, not just filtered on: the driver-card guard below compares
-            # against it, and an unselected field reads back as None (WI-002306).
+            # against it, and an unselected field reads back as None.
             "status",
             "accommodation", "accommodation_name", "operations_shift",
             # Every shift the card serves, for the OLM stops one card covers several of.
@@ -934,9 +945,9 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
             "routing_type_badge", "start_time", "end_time", "from_date", "to_date",
             "source_doctype", "source_docname", "pair_group",
             # What the card's own riders do, which its live direction stops saying once
-            # the card is merged (WI-002078).
+            # the card is merged.
             "pre_merge_trip_direction",
-            # Lineage for a card that was split off a bigger one (WI-002170).
+            # Lineage for a card that was split off a bigger one.
             "is_split_overflow", "split_root",
         ],
     )
@@ -947,7 +958,9 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
     emp_rows = frappe.get_all(
         "Transportation Shipment Employee",
         filters={"parent": ["in", ship_names], "parenttype": "Transportation Shipment"},
-        fields=["parent", "employee_id", "employee_name", "cell_number"],
+        fields=["parent", "employee_id", "employee_name", "cell_number",
+                "is_reliever", "relieving_employee", "relieving_employee_name",
+                "absence_reason", "leave_from", "leave_to"],
         order_by="idx asc",
     )
 
@@ -972,7 +985,19 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
             "id": row.employee_id,
             "name": row.employee_name or row.employee_id,
             "mobile": row.cell_number or "",
-            "is_reliever": row.employee_id in reliever_ids,
+            # Two different facts share this badge, and both mean "not the usual rider".
+            # `custom_is_rambo_reliever` is a standing role - this person relieves for a
+            # living - while the row flag says they are standing in for somebody on THIS
+            # card today. The first was here before; adding the second is
+            # what lets a regular employee covering a colleague be badged at all.
+            "is_reliever": bool(row.is_reliever) or row.employee_id in reliever_ids,
+            # Only set when this rider is covering someone, and only for the day the card
+            # was generated for - the drawer prints it as "Relieving X | ...".
+            "relieving_employee": row.relieving_employee,
+            "relieving_employee_name": row.relieving_employee_name,
+            "absence_reason": row.absence_reason,
+            "leave_from": str(row.leave_from) if row.leave_from else None,
+            "leave_to": str(row.leave_to) if row.leave_to else None,
         })
 
     # WI-002306 AC2/AC3: a card whose riders are all drivers is not assignable demand -
@@ -996,7 +1021,7 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
             if s.name not in driver_only or s.status != "Unassigned"
         ]
 
-    # WI-002307: a card for a shift that has been switched off is not work anybody is
+    # a card for a shift that has been switched off is not work anybody is
     # going to plan. Generation already stops making them and prunes the Unassigned
     # ones, but that only runs daily or on the button - the dispatcher opening the board
     # in between would still be looking at them, and an Assigned card is never pruned.
@@ -1025,7 +1050,7 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
             # First time that was actually STATED, which is not the same as the first
             # truthy one: midnight is timedelta(0), so an `or` chain read a shift ending
             # at 00:00 as having no end and handed the card the 18:00 literal below
-            # (WI-002401 AC9).
+            #.
             dep = _stated_time(s.start_time, trq.departure_time if trq else None, "06:00:00")
             ret = _stated_time(s.end_time, trq.return_time if trq else None, "18:00:00")
 
@@ -1110,7 +1135,7 @@ def _normalize_direction(value: str) -> str:
     map to the same flag so a companion match can validate direction across the
     vocabularies.
 
-    MIXED is matched before the RETURN test rather than after it (WI-002071). The old
+    MIXED is matched before the RETURN test rather than after it. The old
     two-way version answered "anything that is not a return is an outbound", so a
     merged card normalised to OUTBOUND: the canvas drew it orange instead of the merge
     colour, and the status sync compared a MIXED placement against an OUTBOUND
@@ -1204,7 +1229,7 @@ def _sync_shipment_statuses(items, previously_linked=None):
             frappe.db.set_value("Transportation Shipment", name, "status", "Unassigned")
             # A card returning to the pool takes its own direction back with it. Being
             # merged is a property of the block it was in, not of the journey the shipment
-            # was generated for (WI-002071).
+            # was generated for.
             unmerge_trip_shipment(name)
 
     # Cards still on the plan that have left a merged run are handled by
@@ -1267,6 +1292,51 @@ def _shift_by_shipment(items) -> dict:
 	}
 
 
+# How many times a write that lost a race is replayed before the conflict is handed
+# to the operator. Two dispatchers saving into the same second is already the outer
+# edge of what happens; three attempts is headroom, not a retry storm.
+SAVE_CONFLICT_ATTEMPTS = 3
+
+
+def retry_on_stale_timestamp(write, attempts: int = SAVE_CONFLICT_ATTEMPTS):
+    """Replay ``write`` when another save committed to the same row first.
+
+    The canvas posts the WHOLE board on every action, and a manifest check-in re-reads
+    its parent before touching one row - so a save that lost a race has nothing to
+    merge: replaying it against the current document produces exactly the state the
+    operator asked for. Frappe still refuses it. ``check_if_latest`` re-reads the row
+    ``for update``, which blocks until the winning save commits and then reports a
+    ``modified`` the loser never saw, raising TimestampMismatchError - the "Document
+    has been modified after you have opened it" popup.
+
+    On the board that landed twice: the popup, and a silent undo, because
+    persistAssignments reloads the plan whenever a save fails and the reload put the
+    card the dispatcher had just removed straight back onto the lane.
+
+    Two details make the replay work:
+
+    * The rollback is a FULL rollback, not a savepoint. MariaDB runs REPEATABLE READ
+      here, so a savepoint would hand the retry the same stale snapshot it just failed
+      on and it would fail again; ``rollback()`` opens a new transaction and with it a
+      new snapshot. Anything the failed attempt wrote goes with it, which is the point -
+      the retry redoes the whole operation from the current document.
+    * ``msgprint`` QUEUES the popup text before raising, so the message outlives the
+      exception. Without clearing it a retry that succeeds still delivers the error to
+      the browser, which is the one thing AC1 asks us to stop doing.
+    """
+    for attempt in range(attempts):
+        try:
+            return write()
+        except frappe.TimestampMismatchError:
+            if attempt == attempts - 1:
+                # Out of attempts: let the message and the exception through, so a
+                # genuinely contended document still tells the operator to reload
+                # rather than failing silently.
+                raise
+            frappe.clear_last_message()
+            frappe.db.rollback()
+
+
 @frappe.whitelist()
 def save_assignments(plan_name: str, swim_items: str, assigned_cards: str,
                      leg_timings: str = None):
@@ -1285,74 +1355,79 @@ def save_assignments(plan_name: str, swim_items: str, assigned_cards: str,
     cards = json.loads(assigned_cards)
     legs = json.loads(leg_timings) if isinstance(leg_timings, str) else (leg_timings or {})
 
-    doc = frappe.get_doc("Route Plan", plan_name)
-    doc.check_permission("write")
+    # Everything that reads or writes the plan lives inside the replay: a retry has to
+    # re-read the document, or it would save the same stale copy that just lost.
+    def _write():
+        doc = frappe.get_doc("Route Plan", plan_name)
+        doc.check_permission("write")
 
-    # Remember shipments this plan previously carried so we can revert only the
-    # ones this plan drops (never touching shipments placed in another plan).
-    previously_linked = {
-        row.transportation_shipment for row in doc.assignments if row.transportation_shipment
-    }
+        # Remember shipments this plan previously carried so we can revert only the
+        # ones this plan drops (never touching shipments placed in another plan).
+        previously_linked = {
+            row.transportation_shipment for row in doc.assignments if row.transportation_shipment
+        }
 
-    # A run that has stopped being mixed gives its cards their own direction back -
-    # before the rows are written, because a row's direction is read off its shipment.
-    _unmerge_unmixed_placements(items)
+        # A run that has stopped being mixed gives its cards their own direction back -
+        # before the rows are written, because a row's direction is read off its shipment.
+        _unmerge_unmixed_placements(items)
 
-    # Clear existing assignments and rebuild
-    doc.assignments = []
-    directions = _shipment_direction_flags(items)
-    shifts = _shift_by_shipment(items)
-    for item in _with_stop_indexes(items):
-        shipment = _shipment_from_card_id(item.get("cardId", ""))
-        doc.append("assignments", {
-            "card_id":                 item.get("cardId", ""),
-            "transportation_shipment": shipment,
-            "vehicle":                 item.get("vehicleId", ""),
-            "direction":               _assignment_direction(item, directions.get(shipment)),
-            "stop_index":              item.get("stopIndex", 0),
-            "trip_group":              item.get("tripId", ""),
-            "trip_name":               item.get("tripName", ""),
-            "headcount":               item.get("headcount", 0),
-            "start_time":              item.get("start", ""),
-            "end_time":                item.get("end", ""),
-            "site":                    item.get("_site", ""),
-            # A shipment-backed row takes the shift off the document, and takes nothing
-            # when the card serves several - the column means "the shift this row is
-            # for", and a list of three is not an answer to that.
-            "shift":                   (
-                shifts.get(shipment, "") if shipment
-                else str(item.get("_shift") or "")[:140]
-            ),
-            "accommodation":           item.get("_accommodation", ""),
-            "stop_location":           item.get("_stopLocation", ""),
-            "transit_minutes":         item.get("transitMinutes") or 0,
-            "buffer_minutes":          item.get("bufferMinutes") or 0,
-        })
+        # Clear existing assignments and rebuild
+        doc.assignments = []
+        directions = _shipment_direction_flags(items)
+        shifts = _shift_by_shipment(items)
+        for item in _with_stop_indexes(items):
+            shipment = _shipment_from_card_id(item.get("cardId", ""))
+            doc.append("assignments", {
+                "card_id":                 item.get("cardId", ""),
+                "transportation_shipment": shipment,
+                "vehicle":                 item.get("vehicleId", ""),
+                "direction":               _assignment_direction(item, directions.get(shipment)),
+                "stop_index":              item.get("stopIndex", 0),
+                "trip_group":              item.get("tripId", ""),
+                "trip_name":               item.get("tripName", ""),
+                "headcount":               item.get("headcount", 0),
+                "start_time":              item.get("start", ""),
+                "end_time":                item.get("end", ""),
+                "site":                    item.get("_site", ""),
+                # A shipment-backed row takes the shift off the document, and takes nothing
+                # when the card serves several - the column means "the shift this row is
+                # for", and a list of three is not an answer to that.
+                "shift":                   (
+                    shifts.get(shipment, "") if shipment
+                    else str(item.get("_shift") or "")[:140]
+                ),
+                "accommodation":           item.get("_accommodation", ""),
+                "stop_location":           item.get("_stopLocation", ""),
+                "transit_minutes":         item.get("transitMinutes") or 0,
+                "buffer_minutes":          item.get("bufferMinutes") or 0,
+            })
 
-    _stamp_leg_details(doc, legs)
-    doc.save(ignore_permissions=False)
+        _stamp_leg_details(doc, legs)
+        doc.save(ignore_permissions=False)
 
-    # Keep persisted Transportation Shipment records in sync with the canvas:
-    # any shipment now placed on a vehicle becomes Assigned; any shipment this
-    # plan dropped back into the pool reverts to Unassigned.
-    _sync_shipment_statuses(items, previously_linked)
+        # Keep persisted Transportation Shipment records in sync with the canvas:
+        # any shipment now placed on a vehicle becomes Assigned; any shipment this
+        # plan dropped back into the pool reverts to Unassigned.
+        _sync_shipment_statuses(items, previously_linked)
 
-    return {
-        "status": "ok",
-        "plan_name": doc.name,
-        "saved_at": str(doc.last_modified_at or frappe.utils.now()),
-        "assignment_count": len(doc.assignments),
-        # The trip names the plan actually STORED, which are not always the ones the
-        # board sent: a name already in use on that vehicle is repaired on save
-        # (WI-002401). The save is otherwise silent, so without handing these back the
-        # board would keep showing the old name for the rest of the session and then
-        # appear to rename the run by itself on the next load.
-        "trip_names": {
-            row.trip_group: row.trip_name
-            for row in doc.assignments
-            if row.trip_group and row.trip_name
-        },
-    }
+        return {
+            "status": "ok",
+            "plan_name": doc.name,
+            "saved_at": str(doc.last_modified_at or frappe.utils.now()),
+            "assignment_count": len(doc.assignments),
+            # The trip names the plan actually STORED, which are not always the ones the
+            # board sent: a name already in use on that vehicle is repaired on save
+            #. The save is otherwise silent, so without handing these back the
+            # board would keep showing the old name for the rest of the session and then
+            # appear to rename the run by itself on the next load.
+            "trip_names": {
+                row.trip_group: row.trip_name
+                for row in doc.assignments
+                if row.trip_group and row.trip_name
+            },
+        }
+
+    return retry_on_stale_timestamp(_write)
 
 
 @frappe.whitelist()
@@ -1440,7 +1515,7 @@ def load_assignments(plan_name: str = ""):
         # overwrote a row's saved names with empty strings once that happened - which
         # left the detail drawer unable to build a card for the block, so clicking it
         # did nothing at all. The shipment the row points at still knows them, so a
-        # blank copy is filled in from there rather than left dead (WI-002401).
+        # blank copy is filled in from there rather than left dead.
         held = shipment_meta.get(row.transportation_shipment) or {}
 
         swim_items.append({
@@ -1493,6 +1568,46 @@ def load_assignments(plan_name: str = ""):
         "saved_by": doc.last_modified_by_user,
         "saved_at": str(doc.last_modified_at) if doc.last_modified_at else None
     }
+
+
+def _clock_seconds(stamp):
+	"""Seconds past midnight of an assignment stamp, or None.
+
+	The DATE half of these stamps is the multi-day lock's lifespan, not the day the bus
+	runs (TR-8), so every comparison between two of them has to be made on the time of
+	day alone. The same mistake was fixed on the manifest page; this is its
+	server-side twin.
+	"""
+	if not stamp:
+		return None
+	try:
+		at = get_datetime(stamp)
+	except Exception:
+		return None
+	if at is None:
+		return None
+	return at.hour * 3600 + at.minute * 60 + at.second
+
+
+def _earliest_by_clock(stamps):
+	"""The stamp whose CLOCK time is earliest, returned unchanged."""
+	dated = [(sec, s) for s in stamps if (sec := _clock_seconds(s)) is not None]
+	return min(dated)[1] if dated else ""
+
+
+def _latest_by_clock(stamps):
+	"""The stamp whose CLOCK time is latest, returned unchanged."""
+	dated = [(sec, s) for s in stamps if (sec := _clock_seconds(s)) is not None]
+	return max(dated)[1] if dated else ""
+
+
+def _clock_gap(start, end) -> int:
+	"""Seconds from one stamp to another, by time of day, wrapping at midnight."""
+	a, b = _clock_seconds(start), _clock_seconds(end)
+	if a is None or b is None:
+		return 0
+	gap = b - a
+	return gap + 86400 if gap < 0 else gap
 
 
 def visit_times(row_start, row_end, own_direction, camp_departure=None) -> tuple:
@@ -1708,7 +1823,7 @@ def get_manifest_data_for_plan(plan_name: str):
 		rows_changed = sync_manifest_details(manifest_doc, v_rows, card_emp_map)
 
 		# The manifest header inherits the run's direction and, for a merged run, its
-		# shared group key (WI-002072). Read from the assignment rows rather than passed
+		# shared group key. Read from the assignment rows rather than passed
 		# in, because those rows are what the vehicle is actually scheduled to do today.
 		if _inherit_trip_identity(manifest_doc, v_rows):
 			rows_changed = True
@@ -1824,7 +1939,7 @@ def get_manifest_data_for_plan(plan_name: str):
 
 	# Which way each card's own riders travel. A merged card is labelled MIXED, so the
 	# label can no longer say whether its riders board at the stop or leave there - and
-	# the manifest page decides drop-off vs pick-up from exactly that (WI-002074).
+	# the manifest page decides drop-off vs pick-up from exactly that.
 	ship_own_dir = {}
 	_own_dir_by_shipment = {}
 	_ship_names = [r.transportation_shipment for r in rows if r.transportation_shipment]
@@ -1853,7 +1968,7 @@ def get_manifest_data_for_plan(plan_name: str):
 		# The card's own riders, whichever way this leg travels. A return leg used to
 		# read a separate `return_employees` list, which nothing has ever filled - so
 		# every return row on the driver's manifest listed NOBODY while its card
-		# carried the people (WI-002401). A card's riders go out and come back; the
+		# carried the people. A card's riders go out and come back; the
 		# leg only says which way they are travelling.
 		emps = card_emp_map.get(row.card_id, [])
 		boards = row.direction == "RETURN"
@@ -1886,6 +2001,15 @@ def get_manifest_data_for_plan(plan_name: str):
 			vehicle_order.append(row.vehicle)
 		vehicle_items[row.vehicle].append(row)
 
+	# The manifest's tabs follow the SCHEDULE's vehicle order. Built from
+	# the assignment rows alone this was first-appearance order - whatever order the
+	# canvas happened to save its rows in - so the same fleet was listed one way on the
+	# board and another on the driver's page, and a supervisor comparing the two had to
+	# hunt for the vehicle rather than find it in the same place. build_vehicle_list
+	# orders by Vehicle name, so this does too; the rows of each vehicle keep the trip
+	# order they were saved in.
+	vehicle_order.sort()
+
 	for vi, vid in enumerate(vehicle_order):
 		v_doc = vehicle_map.get(vid, {})
 		v_label = vid
@@ -1903,7 +2027,7 @@ def get_manifest_data_for_plan(plan_name: str):
 			"location": v_doc.get("location", ""),
 			"license_plate": v_doc.get("license_plate", ""),
 			"make": v_doc.get("make", ""),
-			# WI-001766: the manifest identifies the bus as "<plate>, <model>", so the
+			# the manifest identifies the bus as "<plate>, <model>", so the
 			# model travels with the plate rather than being looked up on site.
 			"model": v_doc.get("model", ""),
 			"type": v_doc.get("one_fm_vehicle_type", ""),
@@ -1911,7 +2035,10 @@ def get_manifest_data_for_plan(plan_name: str):
 			# active_stop_sequence drives which pickup camp is currently unlocked.
 			"manifest": _mf.name if (_mf and not _mf.is_new()) else None,
 			"active_stop_sequence": int(_mf.active_stop_sequence or 0) if _mf else 0,
-			# WI-002074: the manifest page badges a merged run and reads its whole
+			# Per run, because one vehicle drives several in a day and each checks in
+			# on its own - the flat number above locks them all together.
+			"active_stop_by_trip": _mf.active_stop_map() if _mf else {},
+			# the manifest page badges a merged run and reads its whole
 			# itinerary differently. Without these it had no way to tell, so the MIXED
 			# badge never rendered and the merged-run attendance rule never applied.
 			"trip_direction": (_mf.trip_direction or "") if _mf else "",
@@ -2008,27 +2135,35 @@ def get_manifest_data_for_plan(plan_name: str):
 		# Route start/end times. The bus leaves the camp before its first drop and is
 		# not done until it is back, so both ends come from the legs no card is filed
 		# against where the run has them.
-		r_s = min(
-			[v_rows[0].start_time or ""]
-			+ [row.start_time for row in leg_rows.get(vid, []) if row.start_time]
+		# Picked by CLOCK time, not by the whole stamp. These stamps
+		# carry two things: the TIME is the daily trip window, the DATE is the multi-day
+		# lock's lifespan (TR-8). min()/max() over the ISO strings sorts by the lock
+		# rather than by when the bus runs, so a vehicle whose rows carry different lock
+		# dates had its route span measured between two unrelated days and then reduced
+		# modulo a day - which is how VHL-L-0010 reported a Total Time of 1h40 while its
+		# Trip Time was 8h07, a bus driving eight hours inside a two-hour shift.
+		r_s = _earliest_by_clock(
+			[v_rows[0].start_time]
+			+ [row.start_time for row in leg_rows.get(vid, [])]
 		)
-		r_e = max(
-			[v_rows[-1].end_time or ""]
-			+ [row.end_time for row in leg_rows.get(vid, []) if row.end_time]
+		r_e = _latest_by_clock(
+			[v_rows[-1].end_time]
+			+ [row.end_time for row in leg_rows.get(vid, [])]
 		)
-		try:
-			# Daily route span — time-of-day only, so a multi-day lock does not
-			# balloon the reported route/trip duration into days.
-			tot_ms = (dt_cls.fromisoformat(r_e.replace("Z", "+00:00")).replace(tzinfo=None)
-					  - dt_cls.fromisoformat(r_s.replace("Z", "+00:00")).replace(tzinfo=None)).total_seconds() % 86400
-			trip_ms = sum(
-				int((dt_cls.fromisoformat((r.end_time or "").replace("Z", "+00:00")).replace(tzinfo=None)
-						- dt_cls.fromisoformat((r.start_time or "").replace("Z", "+00:00")).replace(tzinfo=None)).total_seconds()) % 86400
-				for r in v_rows
-			)
-		except Exception:
-			tot_ms = 0
-			trip_ms = 0
+		# Daily route span — time of day only, wrapped at midnight so a run that crosses
+		# 00:00 reads as the few hours it is rather than the day it is not.
+		tot_ms = _clock_gap(r_s, r_e)
+		# Trip Time is each RUN from its departure to its final arrival, added up - which
+		# is what the criterion asks for and what the breakdown popover already shows.
+		#
+		# Summing the rows instead counted a shared stop twice. A merged run sets down and
+		# picks up at the same place in the same minute, so it holds two rows over one
+		# window: VHL-L-0004's rows added to 12h22 where its seven runs span 12h03, and
+		# the header then disagreed with the per-trip breakdown printed underneath it.
+		# Row-summing also dropped the camp and home legs, so the figure was wrong in both
+		# directions at once and only looked plausible because the errors partly cancelled.
+		trip_spans = _trip_clock_spans(v_rows, leg_rows.get(vid, []))
+		trip_ms = sum(trip_spans.values())
 
 		MAX_DAY_SEC = 86400
 		total_sec = min(int(tot_ms), MAX_DAY_SEC)
@@ -2069,8 +2204,11 @@ def get_manifest_data_for_plan(plan_name: str):
 				if leg.qoa_time and not held.get("qoa_time"):
 					held["qoa_time"] = str(leg.qoa_time)
 
-		for held in trip_legs.values():
+		for group_key, held in trip_legs.items():
 			held.get("camps_ordered", []).sort(key=lambda camp: camp["stop_index"])
+			# The badge is the sum of these, so the breakdown under it prints the same
+			# seconds rather than measuring the run a second time in another timezone.
+			held["span_seconds"] = trip_spans.get(group_key, 0)
 
 		routes.append({
 			"vehicleIndex": vi, "vehicleLabel": v_label,
@@ -2340,7 +2478,7 @@ def _unmerge_unmixed_placements(items) -> None:
       in `_sync_shipment_statuses` and only considered cards it had just counted as
       Assigned, which requires the shipment's own direction to match the direction it
       was placed in - so it skipped every card that was still flagged Mixed, which is
-      the only kind there was anything to repair (WI-002401 AC3).
+      the only kind there was anything to repair.
     """
     from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
         unmerge_trip_shipment,
@@ -2361,7 +2499,7 @@ def _unmerge_unmixed_placements(items) -> None:
 
 
 def _shipment_direction_flags(items) -> dict:
-    """{shipment: OUTBOUND|RETURN|MIXED} for every card being saved (WI-002077).
+    """{shipment: OUTBOUND|RETURN|MIXED} for every card being saved.
 
     Read in one query rather than per row: a full month's canvas is hundreds of items.
     """
@@ -2384,7 +2522,7 @@ def _shipment_direction_flags(items) -> dict:
 
 
 def _assignment_direction(item, shipment_direction: str) -> str:
-    """The direction a row is written with (WI-002077).
+    """The direction a row is written with.
 
     Taken from the card's own Transportation Shipment rather than from whatever the
     canvas sent, which is what "auto-fetched from the Transportation Shipment card"
@@ -2405,7 +2543,7 @@ def _assignment_direction(item, shipment_direction: str) -> str:
 
 
 def _with_stop_indexes(items):
-    """Number the stops of each merged trip 1, 2, 3... in chronological order (WI-002077).
+    """Number the stops of each merged trip 1, 2, 3... in chronological order.
 
     A merged trip's rows have to carry an explicit position, because the manifest and the
     per-leg capacity walk both read the run in stop order and neither can infer it from
@@ -2435,7 +2573,7 @@ def _with_stop_indexes(items):
 
 
 def _inherit_trip_identity(manifest_doc, assignment_rows) -> bool:
-    """Copy the run's direction and trip group onto the manifest header (WI-002072).
+    """Copy the run's direction and trip group onto the manifest header.
 
     A vehicle running a merged trip produces a Mixed manifest carrying the same
     trip_group as the plan, so a manifest can be traced back to the schedule block it
@@ -2450,7 +2588,7 @@ def _inherit_trip_identity(manifest_doc, assignment_rows) -> bool:
 
     if "MIXED" in directions:
         trip_direction = "Mixed"
-        # Every row of one merged trip carries the same key (WI-002077); taking the
+        # Every row of one merged trip carries the same key; taking the
         # first non-empty one is enough and does not depend on row order.
         trip_group = next(
             (row.trip_group for row in assignment_rows
@@ -2502,7 +2640,7 @@ def _time_field(seconds):
 
 
 def _stamp_leg_details(doc, leg_timings=None):
-	"""Write each leg's own facts onto its assignment row (WI-002151, WI-002171).
+	"""Write each leg's own facts onto its assignment row.
 
 	The row stays one per card - that is what carries the shipment link and the roster -
 	but the numbers on it come from the run's physical stops, which is what the bus
@@ -2557,7 +2695,7 @@ def _stamp_leg_details(doc, leg_timings=None):
 		by_name = {card.name: card for card in cards}
 		# In the order the operator has the run on the lane, not the order the cards'
 		# own shift times imply. Re-deriving it here put a stop dragged in the drawer
-		# straight back where it started, on the very next save (WI-002401).
+		# straight back where it started, on the very next save.
 		ordered = sorted(
 			[row for row in run if row.transportation_shipment in by_name],
 			key=lambda row: run_order(
@@ -2798,6 +2936,38 @@ def _camp_leg_rows(itinerary, ordered, per_stop, vehicle, camp_departs,
 			),
 		})
 	return rows
+
+
+def _trip_clock_spans(card_rows, leg_rows) -> dict:
+	"""``{trip group: seconds}`` - each run from its departure to its final arrival.
+
+	A run is every row sharing a ``trip_group``, camp and home legs included - the bus
+	leaves the camp before its first drop and is not done until it is back, so both
+	belong to how long the run took. A row with no group is a run of its own, keyed by
+	identity so two of them never merge.
+
+	Time of day only: the DATE half of these stamps
+	is the multi-day lock's lifespan, not the day the bus runs.
+
+	Returned per run rather than as a bare total so the manifest's breakdown can print
+	the SAME number the badge is summed from. Measuring it twice is how they came to
+	disagree: the badge is computed here, in UTC, where a run from 22:40 to 00:30 Kuwait
+	does not cross midnight at all - and the page re-derived it in Asia/Kuwait, where it
+	does. One number, sent once, cannot drift.
+	"""
+	spans = {}
+	for index, row in enumerate(list(card_rows) + list(leg_rows)):
+		if not row.start_time:
+			continue
+		key = row.trip_group or f"\0row-{index}"
+		starts, ends = spans.setdefault(key, ([], []))
+		starts.append(row.start_time)
+		ends.append(row.end_time or row.start_time)
+
+	return {
+		key: _clock_gap(_earliest_by_clock(starts), _latest_by_clock(ends))
+		for key, (starts, ends) in spans.items()
+	}
 
 
 def _camp_place_for(card):
