@@ -17,6 +17,7 @@
   "classification",
   "status",
   "lg_details_section",
+  "lg_details_applicable",
   "lg_number",
   "column_break_mtwm",
   "lg_expiry_date",
@@ -92,18 +93,27 @@
    "label": "LG Details"
   },
   {
+   "fieldname": "lg_details_applicable",
+   "fieldtype": "Check",
+   "label": "LG Details Applicable",
+   "description": "Show the LG details below, and include this licence in the LG expiry notification."
+  },
+  {
    "fieldname": "lg_number",
    "fieldtype": "Data",
-   "label": "LG Number"
+   "label": "LG Number",
+   "depends_on": "eval:doc.lg_details_applicable"
   },
   {
    "fieldname": "column_break_mtwm",
-   "fieldtype": "Column Break"
+   "fieldtype": "Column Break",
+   "depends_on": "eval:doc.lg_details_applicable"
   },
   {
    "fieldname": "lg_expiry_date",
    "fieldtype": "Date",
-   "label": "LG Expiry Date"
+   "label": "LG Expiry Date",
+   "depends_on": "eval:doc.lg_details_applicable"
   },
   {
    "fieldname": "pam_stats_section",
@@ -120,7 +130,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-20 10:00:00.000000",
+ "modified": "2026-09-18 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM License Details",

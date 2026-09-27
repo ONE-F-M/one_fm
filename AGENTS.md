@@ -139,13 +139,7 @@ def update_customer_credit(customer: str, new_limit: float):
 
 ### Critical Security Rules
 
-1. **Never use `ignore_permissions=True`** without explicit role/permission checks first
-2. **Strongly recommend adding type annotations** to whitelisted methods (for v15 code quality and consistency)
-3. **Use `frappe.get_list()` instead of `frappe.get_all()`** - get_list checks permissions
-4. **Never use `eval()` or `exec()`** with user input - use `frappe.safe_eval()` if absolutely necessary
-5. **Validate file paths** - never allow directory traversal (../)
-6. **Sanitize user input** - use `frappe.utils.escape_html()` for output
-7. **Check document permissions** after `frappe.get_doc()` in whitelisted methods
+Owned by `frappe-bench/.claude/rules/python-frappe.md` (no db.sql, whitelisted method contract, no permission bypass, no eval or file paths from request data, no commit in request code). One rule not there: sanitize output with `frappe.utils.escape_html()`.
 
 ---
 
@@ -169,12 +163,9 @@ def update_customer_credit(customer: str, new_limit: float):
 - Name variables: Suffix with `_name` (e.g., `sales_order_name`)
 - Child table iterations: Use `d` (e.g., `for d in sales_order.items`)
 
-**Code Style:**
-- Always use **double quotes** for strings in Python and JavaScript
-- Use **tabs** for indentation (Frappe legacy standard)
-- Wrap all user-facing strings in `_("")` for Python, `__("")` for JavaScript
-- Prefer Frappe Query Builder (`frappe.qb`) over raw SQL
-- Never use `.format()` for SQL - use parameterized queries (`%s`)
+**Code Style and House style:**
+
+Every checkable rule lives in `frappe-bench/.claude/rules/` and loads automatically: `house-style.md` always, `python-frappe.md` for Python, `vue-js.md` for JavaScript and Vue. The numbered set with ids A1 to F8 is `frappe-bench/.claude/rules/RULES.md`; cite an id when a PR body justifies an exception. Before you say a task is done, re-read your diff against `house-style.md`.
 
 ---
 
@@ -1599,18 +1590,15 @@ if frappe.db.exists("Customer", customer_name):
 ### During Development
 - [ ] Use parameterized queries (never string formatting in SQL)
 - [ ] Add permission checks to all whitelisted methods
-- [ ] Add type annotations to whitelisted methods
 - [ ] Use Frappe utilities (flt, cint, cstr, etc.)
 - [ ] Implement proper error handling with translatable messages
-- [ ] Add comments explaining complex business logic
-- [ ] Enqueue long-running operations
+- [ ] Comments: one line, only where the code alone would mislead
 
 ### Before Committing
 - [ ] All custom doctypes have test files
 - [ ] All whitelisted methods are tested
 - [ ] Tests cover both success and failure scenarios
 - [ ] No hardcoded values in business logic
-- [ ] All user-facing strings wrapped in `_("")` or `__("")`
 - [ ] Code follows PEP 8 style guidelines
 - [ ] No JavaScript console errors
 - [ ] Tested with different user roles

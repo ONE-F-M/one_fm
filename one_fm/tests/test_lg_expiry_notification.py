@@ -28,15 +28,21 @@ def _clear():
 	frappe.db.delete("Action User", {"parenttype": SETTINGS, "parentfield": RECIPIENTS_FIELD})
 
 
-def _licence(suffix, lg_expiry_date, lg_number="LG-001"):
+def _licence(suffix, lg_expiry_date, lg_number="LG-001", lg_details_applicable=1):
 	"""A licence row written without running the controller: PAM License Details
-	recalculates every sector figure on validate, and none of that is under test."""
+	recalculates every sector figure on validate, and none of that is under test.
+
+	``lg_details_applicable`` defaults to 1 because that is what every licence in this file
+	is - one that HAS a letter of guarantee. WI-002597 made the box the thing the job
+	filters on; the licences without one are the subject of TestTheApplicableBox below.
+	"""
 	doc = frappe.new_doc("PAM License Details")
 	doc.name = SEEDED + suffix
 	doc.label_name = SEEDED + suffix
 	doc.license_name = "WI-002449 Licence"
 	doc.civil_id_number_for_licensing = "999" + suffix
 	doc.issuing_authority = "PAM"
+	doc.lg_details_applicable = lg_details_applicable
 	doc.lg_number = lg_number
 	doc.lg_expiry_date = lg_expiry_date
 	doc.db_insert()
@@ -282,3 +288,99 @@ class TestTheSettingsField(FrappeTestCase):
 		from one_fm import hooks
 
 		self.assertIn("one_fm.grd.lg_expiry.notify_lg_expiry", hooks.scheduler_events["daily"])
+
+
+class TestTheApplicableBox(FrappeTestCase):
+	"""WI-002597: only a licence that HAS a letter of guarantee is notified about.
+
+	Not every PAM Licence has one. Before this box the job swept on the expiry date alone,
+	so the only way to stay out of it was to leave the date empty - which is not a state
+	the form asks anyone to maintain.
+	"""
+
+	def setUp(self):
+		_clear()
+		self.addCleanup(_clear)
+		self.due = add_days(today(), NOTICE_DAYS)
+
+	def _names(self):
+		return [row.name for row in expiring_licenses()]
+
+	def test_a_licence_with_the_box_ticked_is_found(self):
+		name = _licence("ON", self.due, lg_details_applicable=1)
+
+		self.assertIn(name, self._names())
+
+	def test_a_licence_with_the_box_unticked_is_not(self):
+		# The criterion states this outright: no email for an unchecked licence, whatever
+		# its expiry date says.
+		_licence("OFF", self.due, lg_details_applicable=0)
+
+		self.assertEqual(self._names(), [])
+
+	def test_the_box_decides_it_not_the_presence_of_lg_data(self):
+		# An unticked licence that still carries an LG number and a due date is the case
+		# that would slip through a filter written on the data instead of the flag.
+		_licence("STALE", self.due, lg_number="LG-STALE", lg_details_applicable=0)
+
+		self.assertEqual(self._names(), [])
+
+	def test_the_two_are_told_apart_on_the_same_day(self):
+		on = _licence("BOTH-ON", self.due, lg_details_applicable=1)
+		_licence("BOTH-OFF", self.due, lg_details_applicable=0)
+
+		self.assertEqual(self._names(), [on])
+
+	def test_the_box_alone_is_not_enough_without_a_due_date(self):
+		# Ticking the box does not make a licence overdue; both halves still have to hold.
+		_licence("NODATE", None, lg_details_applicable=1)
+		_licence("EARLY", add_days(today(), NOTICE_DAYS + 3), lg_details_applicable=1)
+
+		self.assertEqual(self._names(), [])
+
+
+class TestHowTheBoxIsSetUp(FrappeTestCase):
+	def setUp(self):
+		self.meta = frappe.get_meta("PAM License Details")
+
+	def test_it_is_a_checkbox_in_the_lg_details_section(self):
+		field = self.meta.get_field("lg_details_applicable")
+		self.assertIsNotNone(field)
+		self.assertEqual(field.fieldtype, "Check")
+
+		order = self.meta.get("field_order") or [df.fieldname for df in self.meta.fields]
+		self.assertLess(order.index("lg_details_section"), order.index("lg_details_applicable"))
+		self.assertLess(order.index("lg_details_applicable"), order.index("lg_number"))
+
+	def test_the_lg_fields_are_hidden_until_it_is_ticked(self):
+		# "so that the LG details are displayed only when required".
+		for fieldname in ("lg_number", "lg_expiry_date"):
+			self.assertEqual(
+				self.meta.get_field(fieldname).depends_on,
+				"eval:doc.lg_details_applicable",
+				msg=fieldname,
+			)
+
+	def test_it_starts_unticked(self):
+		# A new licence is not assumed to have a letter of guarantee; the story makes this
+		# an opt-in. Existing licences that already have one are turned on by the patch.
+		self.assertFalse(frappe.utils.cint(self.meta.get_field("lg_details_applicable").default))
+
+	def test_existing_licences_with_an_lg_are_backfilled(self):
+		# Without this the flag would arrive as 0 everywhere and every licence that has
+		# been getting a notice would go quiet.
+		patches = frappe.read_file(frappe.get_app_path("one_fm", "patches.txt"))
+		self.assertIn("one_fm.patches.v15_0.backfill_lg_details_applicable", patches)
+
+	def test_the_backfill_leaves_licences_without_an_lg_alone(self):
+		from one_fm.patches.v15_0.backfill_lg_details_applicable import execute
+
+		_clear()
+		self.addCleanup(_clear)
+		has_lg = _licence("BF-HAS", add_days(today(), 30), lg_details_applicable=0)
+		no_lg = _licence("BF-NONE", None, lg_number="", lg_details_applicable=0)
+
+		execute()
+
+		self.assertEqual(frappe.db.get_value("PAM License Details", has_lg, "lg_details_applicable"), 1)
+		self.assertEqual(frappe.db.get_value("PAM License Details", no_lg, "lg_details_applicable"), 0)
