@@ -52,41 +52,40 @@ class DocumentRequest(Document):
 			)
 
 	def fill_requester_chain(self):
-		"""Resolve requester → approver → approver_user here, not via fetch_from.
+		"""Resolve requester → requester_user → approver_user here, not via fetch_from.
 
-		``approver`` is declared ``fetch_from: requester.reports_to`` and
-		``approver_user`` hangs off *that*. Frappe resolves fetch_from BEFORE
-		validate, so a requester captured during validate arrives too late: the
-		chain stays empty and the request is refused for having no approver — on a
-		requester whose line manager is set. Worse than the refusal, an approver
-		that resolved late would leave ``approver_user`` blank, and that is the
-		field the map assigns both approval tasks to.
+		``requester_user`` is declared ``fetch_from: requester.user_id``, which
+		Frappe resolves BEFORE validate — so a requester captured during validate
+		arrives too late for it, and the field would stay blank. ``approver_user``
+		used to hang off ``approver.user_id`` the same way, with ``approver``
+		itself fetched from ``requester.reports_to`` — a reports_to-only lookup
+		that left the field empty for anyone without a line manager, even when
+		they held the super user role or had a shift/site supervisor.
+
+		``get_approver_user`` is the shared utility other doctypes already use: it
+		tries reports_to, then the super user role, then the shift or site
+		supervisor. Using it here means Document Request gets the same answer as
+		everywhere else, for free.
 
 		Only fills blanks, so a value supplied deliberately is never overwritten.
 		"""
 		if not self.requester:
 			return
 
-		chain = _requester_chain(self.requester)
-		if not chain:
-			return
-
 		if not self.requester_user:
-			self.requester_user = chain.get("requester_user")
-		if not self.approver:
-			self.approver = chain.get("approver")
-		# Not chain["approver_user"]: an approver supplied deliberately is not
-		# necessarily the requester's line manager, and their user must follow the
-		# approver actually on the request.
-		if self.approver and not self.approver_user:
-			self.approver_user = frappe.db.get_value("Employee", self.approver, "user_id")
+			self.requester_user = frappe.db.get_value("Employee", self.requester, "user_id")
 
-	def check_approver_resolved(self):
-		if self.requester and not self.approver:
+		if not self.approver_user:
+			self.approver_user = get_approver_user(self.requester)
+
+	def check_approver_user_resolved(self):
+		if self.requester and not self.approver_user:
 			frappe.throw(
 				_(
-					"Could not resolve an approver for {0} — their Employee record has no "
-					"'Reports To' (line manager) set. Set it on the Employee record first."
+					"Could not resolve an approver for {0}. An approver can be set by giving "
+					"them a 'Reports To' (line manager) on their Employee record, by granting "
+					"them the super user role, or by setting a Site Supervisor on their shift "
+					"or Operations Site. Set one of these first."
 				).format(self.requester)
 			)
 
