@@ -48,8 +48,9 @@ frappe.ui.form.on("Document Request", {
 		// has no way to tell that the system knows who they are, or who will be
 		// asked to approve it.
 		//
-		// This fills it from the same lookup validate uses, so the form cannot show
-		// one requester and then save another.
+		// This fills it from get_requester_defaults, which resolves approver_user
+		// with the same get_approver_user call validate uses, so the form cannot
+		// show one approver and then save another.
 		if (frm.is_new() && !frm.doc.requester) show_requester(frm);
 	},
 
