@@ -224,3 +224,41 @@ class TestTheRowsAreRestated(FrappeTestCase):
 			if str(row.get(FIELDNAME) or "") != str(counted):
 				wrong.append((row.parent, row.type_of_quota, row.get(FIELDNAME), counted))
 		self.assertEqual(wrong, [], f"{len(wrong)} quota rows carry a stale headcount")
+
+
+class TestTheValidateTimeFill(FrappeTestCase):
+	"""A row added on the form fills in as the licence is saved, without waiting for
+	somebody to be transferred."""
+
+	def test_it_asks_about_the_licence_and_not_its_civil_id(self):
+		"""The count filters on pam_file, so handing it a civil ID matches no employee at
+		all and the row saves as 0 - which is what T4's Basic row did."""
+		block = (
+			frappe.read_file(SOURCE)
+			.split("def set_quota_registrations", 1)[1]
+			.split("\n\tdef ", 1)[0]
+		)
+		self.assertIn("count_quota_employees(self.name, row.type_of_quota)", block)
+		self.assertNotIn("civil_id_number_for_licensing", block)
+
+	def test_a_row_added_to_a_licence_fills_in_on_save(self):
+		"""End to end against the live site: the figure on the saved row is the one the
+		count gives for that licence and quota type."""
+		row = frappe.db.get_value(
+			"Quota Classification",
+			{"parenttype": "PAM License Details", "parentfield": "quota_classification",
+			 "type_of_quota": ["is", "set"]},
+			["parent", "type_of_quota", FIELDNAME],
+			as_dict=True,
+		)
+		if not row:
+			self.skipTest("no configured quota row on this site")
+
+		licence = frappe.get_doc("PAM License Details", row.parent)
+		licence.set_quota_registrations()
+		filled = next(
+			r.registered_numbers_of_employees
+			for r in licence.quota_classification
+			if r.type_of_quota == row.type_of_quota
+		)
+		self.assertEqual(filled, str(count_quota_employees(row.parent, row.type_of_quota)))

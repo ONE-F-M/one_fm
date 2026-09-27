@@ -67,7 +67,7 @@ class PAMLicenseDetails(Document):
 		"""
 		for row in self.quota_classification:
 			row.registered_numbers_of_employees = str(
-				count_quota_employees(self.civil_id_number_for_licensing, row.type_of_quota)
+				count_quota_employees(self.name, row.type_of_quota)
 			)
 
 	def set_total_number_of_employees(self):
