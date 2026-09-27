@@ -706,6 +706,43 @@ def update_user_doc(doc):
                 frappe.db.commit()
 
 
+@frappe.whitelist()
+def get_latest_ai_eval_run_cost(employee):
+    """The most recent AI Eval Run cost for the agent configurations this employee owns (WI show-ai-cost).
+
+    An AI Eval Run does not reference an Employee directly - it runs against an
+    AI Agent Configuration, whose Process Owner is a User. So the employee's own
+    User (Employee.user_id) is resolved first, then the AI Eval Run with the
+    latest Started At among the Agent Configurations that User owns is returned.
+    """
+    if "one_bpmn" not in frappe.get_installed_apps():
+        return None
+
+    user_id = frappe.db.get_value("Employee", employee, "user_id")
+    if not user_id:
+        return None
+
+    agent_configurations = frappe.get_all(
+        "AI Agent Configuration",
+        filters={"process_owner": user_id},
+        pluck="name",
+    )
+    if not agent_configurations:
+        return None
+
+    latest_run = frappe.get_all(
+        "AI Eval Run",
+        filters={"agent_configuration": ["in", agent_configurations]},
+        fields=["name", "total_cost", "started_at"],
+        order_by="started_at desc",
+        limit=1,
+    )
+    if not latest_run:
+        return None
+
+    return latest_run[0]
+
+
 def update_employee_phone_number(doc):
     if not doc.is_new():
         old_cell_number = doc.get_doc_before_save().cell_number
