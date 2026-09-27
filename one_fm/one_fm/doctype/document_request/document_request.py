@@ -12,7 +12,7 @@ from one_fm.utils import get_approver_user
 class DocumentRequest(Document):
 	def validate(self):
 		self.set_requester_defaults()
-		self.check_approver_resolved()
+		self.check_approver_user_resolved()
 		self.apply_reference_document_defaults()
 		self.check_required_links()
 		self.check_reference_document_is_active()
