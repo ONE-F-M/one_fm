@@ -4,7 +4,6 @@ from frappe.utils import get_url_to_form, getdate
 from bs4 import BeautifulSoup
 from datetime import datetime,timezone, timedelta
 from one_fm.processor import is_user_id_company_prefred_email_in_employee, sendemail
-from frappe import _
 
 def delete_linked_todos(doc, method):
     todos = frappe.get_all("ToDo", filters={
