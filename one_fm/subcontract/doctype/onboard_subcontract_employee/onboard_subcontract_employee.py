@@ -13,17 +13,6 @@ class OnboardSubcontractEmployee(Document):
 			self.create_employee_uniform()
 			self.create_accomodation_checkin()
 
-	def validate(self):
-		if self.workflow_state == "Completed":
-			if not self.employee:
-				frappe.throw(_("Employee is not creatd, Can not complete the onboarding!"))
-			if self.is_uniform_needed_for_this_job and not self.uniform_issued:
-				frappe.throw(_("Uniform not issued, Can not complete the onboarding!"))
-			if self.provide_accommodation_by_company and not self.accommodation_provided:
-				frappe.throw(_("Accommodation checkin is not creatd, Can not complete the onboarding!"))
-			if not self.enrolled:
-				frappe.throw(_("Employee is not enrolled, Can not complete the onboarding!"))
-
 	def create_employee(self):
 		def set_missing_values(source, target):
 			if source.will_work_in_shift == "Yes":
