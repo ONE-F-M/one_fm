@@ -112,7 +112,8 @@
    "fieldtype": "Link",
    "label": "Approver User",
    "options": "User",
-   "read_only": 1
+   "read_only": 1,
+   "description": "Resolved by the controller via get_approver_user \u2014 the requester's line manager (Reports To), or, if that is not set, the requester's own user if they hold the super user role, or their shift/site supervisor."
   },
   {
    "fieldname": "column_break_status",
