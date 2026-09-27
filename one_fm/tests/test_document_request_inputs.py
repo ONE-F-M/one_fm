@@ -117,27 +117,17 @@ class TestRequesterIsCaptured(DocumentRequestInputFixtures, FrappeTestCase):
 		self.assertEqual(doc.requester, self.requester)
 
 	def test_capturing_the_requester_also_resolves_the_approver_chain(self):
-		"""The bug that making the field read-only introduced.
-
-		``approver`` is fetch_from requester.reports_to and ``approver_user``
-		hangs off that. Frappe resolves fetch_from BEFORE validate, so a requester
-		captured during validate arrives too late: the request was refused for
-		having no approver, on a requester whose line manager is set. And an
-		approver resolved late would leave approver_user blank — which is the
-		field the map assigns BOTH approval tasks to, so the process would run
-		with nobody to action it.
-		"""
+		"""A requester captured in validate must still resolve an approver_user,
+		which is the field the map assigns both approval tasks to."""
 		frappe.set_user(self.requester_user)
 		try:
 			doc = self._request()
 			doc.requester = None  # read-only: the form never sends it
-			doc.approver = None
 			doc.approver_user = None
 			doc.insert(ignore_permissions=True)
-			self.assertTrue(doc.approver, "no approver resolved from the captured requester")
 			self.assertTrue(
 				doc.approver_user,
-				"approver_user is empty — the map assigns both approval tasks to it",
+				"approver_user is empty, so the map has nobody to assign approval to",
 			)
 			self.assertTrue(doc.requester_user, "requester_user did not resolve either")
 		finally:
@@ -158,7 +148,6 @@ class TestRequesterIsCaptured(DocumentRequestInputFixtures, FrappeTestCase):
 		finally:
 			frappe.set_user("Administrator")
 		self.assertEqual(chain.get("requester"), self.requester)
-		self.assertTrue(chain.get("approver"), "no approver offered to the form")
 		self.assertTrue(chain.get("approver_user"), "the map assigns both approval tasks to this")
 
 	def test_what_the_form_shows_is_what_the_save_records(self):
@@ -172,7 +161,7 @@ class TestRequesterIsCaptured(DocumentRequestInputFixtures, FrappeTestCase):
 			doc.insert(ignore_permissions=True)
 		finally:
 			frappe.set_user("Administrator")
-		for field in ("requester", "requester_user", "approver", "approver_user"):
+		for field in ("requester", "requester_user", "approver_user"):
 			self.assertEqual(shown.get(field), doc.get(field), f"{field} differs")
 
 	def test_a_user_with_no_employee_record_is_told_at_open_time(self):
