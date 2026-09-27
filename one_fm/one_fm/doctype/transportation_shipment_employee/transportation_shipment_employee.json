@@ -59,12 +59,55 @@
    "in_list_view": 1,
    "label": "Operation Site",
    "options": "Operations Site"
+  },
+  {
+   "fieldname": "is_reliever",
+   "fieldtype": "Check",
+   "label": "Is Reliever",
+   "default": "0",
+   "description": "Riding in place of somebody who is away today (WI-002591)."
+  },
+  {
+   "fieldname": "relieving_employee",
+   "fieldtype": "Link",
+   "label": "Relieving",
+   "options": "Employee",
+   "read_only": 1,
+   "depends_on": "is_reliever"
+  },
+  {
+   "fieldname": "relieving_employee_name",
+   "fieldtype": "Data",
+   "label": "Relieving (Name)",
+   "read_only": 1,
+   "depends_on": "is_reliever"
+  },
+  {
+   "fieldname": "absence_reason",
+   "fieldtype": "Data",
+   "label": "Absence Reason",
+   "read_only": 1,
+   "depends_on": "is_reliever"
+  },
+  {
+   "fieldname": "leave_from",
+   "fieldtype": "Date",
+   "label": "Leave From",
+   "read_only": 1,
+   "depends_on": "is_reliever"
+  },
+  {
+   "fieldname": "leave_to",
+   "fieldtype": "Date",
+   "label": "Leave To",
+   "read_only": 1,
+   "depends_on": "is_reliever"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-07-15 17:22:25.874304",
+ "modified": "2026-09-17 09:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Transportation Shipment Employee",

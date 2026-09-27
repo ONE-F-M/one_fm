@@ -52,10 +52,19 @@ def expiring_licenses(on_date=None):
 	An exact date rather than a range, so one licence is announced once. The nightly job
 	is what makes that safe: miss a day and that licence's notice is missed, which is the
 	same bargain vehicle branding already takes.
+
+	WI-002597 adds the second filter: not every PAM Licence has a letter of guarantee, and
+	a licence whose LG Details box is unchecked is not one this job has anything to say
+	about. Filtering here rather than in the caller keeps the two halves of the criterion
+	together - a licence excluded from the notification is also a licence whose LG fields
+	are hidden on the form.
 	"""
 	return frappe.get_all(
 		"PAM License Details",
-		filters={"lg_expiry_date": on_date or add_days(today(), NOTICE_DAYS)},
+		filters={
+			"lg_details_applicable": 1,
+			"lg_expiry_date": on_date or add_days(today(), NOTICE_DAYS),
+		},
 		fields=[
 			"name",
 			"lg_number",

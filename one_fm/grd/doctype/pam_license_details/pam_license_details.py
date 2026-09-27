@@ -39,18 +39,15 @@ EXEMPT_SECTOR = "مهن غير مشمولة بالنسبة"
 COMPLIANT = "Compliant"
 NON_COMPLIANT = "Non-Compliant"
 
-# The Employee fields a headcount depends on. A save that touches none of them cannot have
-# moved anybody between licences or sectors, and Employee is saved constantly - so the
-# recount is skipped rather than run on every save.
-#
-# The occupational sector is not an Employee field: it is fetched from the employee's PAM
-# designation, so a change of designation is what moves them between sectors.
+# Every field the count reads. Employee is saved constantly; a save touching none of these
+# cannot have moved anybody, so the recount is skipped.
+# The sector comes from the PAM designation, so a change of designation moves the employee.
 WATCHED_EMPLOYEE_FIELDS = (
 	"pam_file",
 	"pam_file_number",
 	"one_fm_pam_designation",
 	"one_fm_nationality",
-	"status",
+	"under_company_residency",
 )
 
 
@@ -130,8 +127,16 @@ def derived_figures(sector, ratio, nationals, expatriates):
 	that sector. All three come out as no requirement rather than as an error - the ratio is
 	typed by hand and a licence should not refuse to save because one row is unfilled.
 
-	Excess Nationals is what the licence is still short of that requirement, and never less
-	than zero: a sector already carrying enough nationals is not short of any.
+	Excess Nationals is how many nationals the licence carries over that requirement, and
+	never less than zero: a sector short of the requirement is not in excess of it.
+
+	WI-002094 writes that subtraction the other way round - required minus actual - which
+	is a shortfall, not an excess, and read literally it made the field useless: it showed
+	0 on every sector that genuinely had surplus nationals and a number only on the ones
+	that were short. The clamp is what gives it away. "If negative, display 0" only makes
+	sense in this direction; in the other it hides exactly the thing the field is named
+	after. Reported from production against real counts, and the process owner confirmed
+	the direction - the same call already made on the violation line below.
 
 	Number of Expats Violated is how far the sector is over its allowance (WI-002099) -
 	actual expatriates minus the number allowed, never below zero. WI-002099 writes that
@@ -160,7 +165,7 @@ def derived_figures(sector, ratio, nationals, expatriates):
 		required = flt(expatriates) * ratio / (100 - ratio)
 	required = to_whole(required)
 
-	excess = max(required - flt(nationals), 0)
+	excess = max(flt(nationals) - required, 0)
 
 	allowed = to_whole(expats_allowed(sector, ratio, nationals))
 	violated = 0.0 if sector == EXEMPT_SECTOR else max(flt(expatriates) - allowed, 0)
@@ -202,6 +207,37 @@ def update_counts_from_employee(doc, method=None):
 		_license_and_sector(before) if before else None,
 	} - {None}:
 		recount_sector(license_number, sector)
+
+
+def update_counts_from_designation(doc, method=None):
+	"""Recount when a designation is moved to a different occupational sector.
+
+	The sector is not on the employee - it is on the designation they hold - so moving a
+	designation moves everybody holding it, and no Employee is saved when that happens.
+	Without this the licence keeps yesterday's figures until somebody edits an employee.
+
+	Both sectors, on every licence holding one of those employees: the sector they left
+	has to give them up as well as the one they joined.
+	"""
+	if doc.is_new() or not doc.has_value_changed("occupational_sector"):
+		return
+
+	before = doc.get_doc_before_save()
+	sectors = {doc.occupational_sector, before.occupational_sector if before else None} - {None, ""}
+	if not sectors:
+		return
+
+	numbers = {
+		number
+		for number in frappe.get_all(
+			"Employee", filters={"one_fm_pam_designation": doc.name}, pluck="pam_file_number"
+		)
+		if number
+	}
+
+	for number in numbers:
+		for sector in sectors:
+			recount_sector(number, sector)
 
 
 def _license_and_sector(employee):
@@ -307,11 +343,14 @@ def add_sector_row(license_name, sector):
 def count_workers(license_number, sector):
 	"""How many nationals and expatriates this licence holds in this sector.
 
-	Only active employees: someone who has left is not on the licence, and PAM counts who
-	is working under it today.
+	Counts employees under the company's residency. That is what the licence is: somebody
+	off it is not on the licence, whatever their employment status says.
 
-	One query, grouped on nationality, rather than one count per side - the join to
-	PAM Designation List is the expensive half and there is no reason to pay for it twice.
+	The sector is not a field on Employee - it is reached through the employee's PAM
+	designation, which is what the join below is for.
+
+	One query grouped on nationality; the join to PAM Designation List is the expensive
+	half and there is no reason to pay for it twice.
 	"""
 	Employee = DocType("Employee")
 	Designation = DocType("PAM Designation List")
@@ -322,7 +361,7 @@ def count_workers(license_number, sector):
 		.on(Employee.one_fm_pam_designation == Designation.name)
 		.select(Employee.one_fm_nationality, frappe.qb.terms.Function("Count", Employee.name).as_("count"))
 		.where(Employee.pam_file_number == license_number)
-		.where(Employee.status == "Active")
+		.where(Employee.under_company_residency == 1)
 		.where(Designation.occupational_sector == sector)
 		.groupby(Employee.one_fm_nationality)
 	).run(as_dict=True)

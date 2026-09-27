@@ -1,7 +1,14 @@
+import json
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import getdate
+from frappe.utils import cint, getdate
+
+
+# The key a row with no run of its own is filed under. A manifest compiled before trips
+# were named, or a stray row, still needs somewhere to keep its pointer.
+UNGROUPED_TRIP = ""
 
 class TransportationManifest(Document):
 	def validate(self):
@@ -11,6 +18,54 @@ class TransportationManifest(Document):
 		self.validate_attendance_and_qoa()
 		self.validate_relievers()
 
+	# ── The attendance-check pointer, per run (WI-002590 AC1) ───────────────────
+	# A manifest is one VEHICLE for one DAY, and a vehicle drives several runs in a
+	# day. The pointer used to be a single Int on the manifest, so triggering the
+	# check on S-801 advanced the number S-802 was reading too: locking one run
+	# locked its neighbour, and completing one reopened the other.
+
+	def trip_keys(self) -> list:
+		"""Every run this manifest carries, in the order its rows first mention them."""
+		keys = []
+		for row in self.transportation_manifest_details:
+			key = str(row.trip_id or UNGROUPED_TRIP)
+			if key not in keys:
+				keys.append(key)
+		return keys
+
+	def active_stop_map(self) -> dict:
+		"""{trip_id: active stop}, seeding a manifest written before the split.
+
+		An in-flight manifest carries one number for the whole vehicle. Every run
+		inherits it the first time the map is read, so a stop a supervisor has already
+		verified stays locked - starting the runs at 0 instead would silently reopen
+		checked-off stops, which is the one thing the lock exists to prevent.
+		"""
+		try:
+			stored = json.loads(self.active_stop_by_trip or "{}") or {}
+		except ValueError:
+			stored = {}
+		if stored:
+			return {str(key): cint(value) for key, value in stored.items()}
+
+		legacy = cint(self.active_stop_sequence)
+		return {key: legacy for key in self.trip_keys()} if legacy else {}
+
+	def active_stop_for(self, trip_id) -> int:
+		return cint(self.active_stop_map().get(str(trip_id or UNGROUPED_TRIP)))
+
+	def set_active_stop_for(self, trip_id, value) -> dict:
+		"""Move ONE run's pointer and persist the map. Returns the new map."""
+		mapping = self.active_stop_map()
+		mapping[str(trip_id or UNGROUPED_TRIP)] = cint(value)
+		self.db_set({
+			"active_stop_by_trip": json.dumps(mapping),
+			# Kept in step for anything still reading the flat field: the furthest any
+			# run on this vehicle has reached. Nothing decides a lock from it any more.
+			"active_stop_sequence": max(mapping.values()) if mapping else 0,
+		})
+		return mapping
+
 	def enforce_stop_locking(self):
 		"""Freeze attendance/QOA entries on stops already verified (MA2-11).
 
@@ -19,13 +74,16 @@ class TransportationManifest(Document):
 		verified entries must stay read-only — a supervisor moving to the next camp
 		must not be able to alter data already checked at an earlier gate.
 
+		Read per run since WI-002590: a row is judged against ITS OWN trip's pointer,
+		so a completed stop on S-801 does not freeze the same stop number on S-802.
+
 		Only kicks in once checks have started (active >= 1), so the daily compiler
 		and dispatchers can still populate rows freely before boarding begins. Guards
 		exactly the three fields the sheet edits; new rows (no before-image) are
 		exempt. Set ``frappe.flags.ignore_stop_lock`` to bypass for admin recovery.
 		"""
-		active = int(self.active_stop_sequence or 0)
-		if not active or frappe.flags.get("ignore_stop_lock"):
+		active_by_trip = self.active_stop_map()
+		if not any(active_by_trip.values()) or frappe.flags.get("ignore_stop_lock"):
 			return
 
 		before = self.get_doc_before_save()
@@ -40,6 +98,9 @@ class TransportationManifest(Document):
 			# return/drop-off rows are never part of the DEPART camp sequence and
 			# must stay editable (they default to stop_sequence 1). (MA2-11)
 			if row.employee_action and row.employee_action != "Boarding":
+				continue
+			active = cint(active_by_trip.get(str(row.trip_id or UNGROUPED_TRIP)))
+			if not active:
 				continue
 			# Only Completed stops are frozen; the Active stop stays editable.
 			if int(row.stop_sequence or 1) >= active:

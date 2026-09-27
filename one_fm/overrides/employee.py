@@ -33,9 +33,6 @@ class EmployeeOverride(EmployeeMaster):
         from erpnext.controllers.status_updater import validate_status
         validate_status(self.status, ["Active", "Court Case", "Absconding", "Left", "Vacation", NOT_RETURNED_FROM_LEAVE])
 
-        if self.pam_type == "Kuwaiti":
-            self.residency_expiry_date = None
-
         self.employee = self.name
         self.set_employee_name()
         set_employee_name(self, method=None)

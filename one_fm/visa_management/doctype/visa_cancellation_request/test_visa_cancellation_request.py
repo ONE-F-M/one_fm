@@ -311,6 +311,36 @@ class TestTheCancellationReason(FrappeTestCase):
 		value the field does not offer, and the document fails to save."""
 		self.assertIn(EXPIRY_REASON, self.field["options"].split("\n"))
 
+	def test_it_offers_every_reason_the_business_asked_for(self):
+		"""WI-002611's six, and nothing else.
+
+		The criterion is explicit that no other reason may appear "unless they are added
+		as part of a future approved requirement", so this asserts the whole list rather
+		than only that the six are present - an extra option would otherwise slip in
+		unnoticed.
+		"""
+		self.assertEqual(
+			[o for o in self.field["options"].split("\n") if o],
+			[
+				"Medically Unfit",
+				"PCC Failed",
+				"Candidate Dropped Offer",
+				"Cancellation Due to Visa Expiry",
+				"Country Ban",
+				"Visa Stamping Rejected",
+			],
+		)
+
+	def test_the_blank_first_option_survives(self):
+		"""A mandatory Select whose first option is a real reason defaults to it, so the
+		form would silently pick "Medically Unfit" for anyone who never opened the list."""
+		self.assertTrue(self.field["options"].startswith("\n"))
+
+	def test_the_expiry_job_still_finds_its_reason(self):
+		"""WI-002431 writes EXPIRY_REASON unattended. Adding five reasons around it must
+		not move it, or the nightly cancellation writes a value the field will not take."""
+		self.assertIn(EXPIRY_REASON, self.field["options"].split("\n"))
+
 	def test_the_popup_reads_its_options_off_the_field(self):
 		"""So the dialog cannot drift from the field the answer is stored in."""
 		script = (Path(frappe.get_app_path("one_fm")) / "visa_management" / "doctype" /

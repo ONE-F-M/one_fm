@@ -20,7 +20,13 @@ from frappe.utils import getdate, today
 # State the Visa Cancellation process map configures rather than one this app defines, so
 # it is named here as a string and checked against that master in the tests - a rename
 # there would otherwise switch the escape hatch off silently.
-REJECTED_STATE = "Visa Cancellation Rejected"
+#
+# WI-002608 is that rename. The BA site now calls it "Rejected by PRO", and the warning
+# above was the exact failure: left alone, every refused cancellation would read as still
+# standing and its Visa Request could never be cancelled again. The four rows already
+# holding the old name are migrated by
+# patches/v15_0/rename_visa_cancellation_rejected_state.
+REJECTED_STATE = "Rejected by PRO"
 
 # WI-002428: the reasons the popup offers. The BA site has no reason field at all, so this
 # is not a migration of theirs - it is what the story asks for, and it starts with the one
@@ -62,14 +68,14 @@ def live_cancellation_filters(visa_request: str, exclude=None) -> list:
 def is_standing(workflow_state) -> bool:
 	"""Does this cancellation still stand, or has the process map refused it?
 
-	"Visa Cancellation Rejected" is the story's escape hatch: the PRO Operator refused this
-	attempt, so another may be raised.
+	"Rejected by PRO" is the story's escape hatch: the PRO Operator refused this attempt,
+	so another may be raised.
 
 	Asked in Python rather than in the query on purpose. A cancellation that has not yet
-	entered the process carries no state at all, and `workflow_state != 'Visa Cancellation
-	Rejected'` is NULL in SQL for those rows - so a filtered query would quietly stop
-	finding exactly the fresh drafts the popup and the expiry job create, and let duplicates
-	straight through.
+	entered the process carries no state at all, and `workflow_state != 'Rejected by PRO'`
+	is NULL in SQL for those rows - so a filtered query would quietly stop finding exactly
+	the fresh drafts the popup and the expiry job create, and let duplicates straight
+	through.
 	"""
 	return workflow_state != REJECTED_STATE
 

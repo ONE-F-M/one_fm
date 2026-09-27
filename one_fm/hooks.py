@@ -263,11 +263,17 @@ doc_events = {
 		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"Employee": {
-		# WI-002091: keep the PAM licence headcounts in step with the employees on the
-		# licence. The handler returns immediately unless the save touched one of the five
-		# fields that can move somebody between licences or sectors.
+		# Keep the PAM licence headcounts in step with the employees on the licence. The
+		# handler returns immediately unless the save touched a field the count reads.
 		"on_update": [
 			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_counts_from_employee"
+		]
+	},
+	"PAM Designation List": {
+		# The sector lives on the designation, so moving one moves every employee holding
+		# it - and no Employee is saved when that happens.
+		"on_update": [
+			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_counts_from_designation"
 		]
 	},
 	"HR Settings": {
@@ -328,7 +334,11 @@ doc_events = {
 		"onload": "one_fm.utils.validate_pam_file_number_and_pam_designation",
 		"on_update": [
 			"one_fm.one_fm.utils.send_notification_to_grd_or_recruiter",
-			"one_fm.utils.on_update_job_applicant"
+			"one_fm.utils.on_update_job_applicant",
+			# WI-002598: tell the candidate their application was rejected. on_update
+			# rather than validate, so nothing is sent for a change that then fails to
+			# save.
+			"one_fm.hiring.rejection_notification.notify_on_rejection"
 		]
 
 	},
@@ -702,11 +712,6 @@ scheduler_events = {
 			# WI-001829: three working days of silence from the previous employer is a
 			# refusal. On this schedule because it only counts working days anyway.
 			'one_fm.grd.doctype.work_permit.work_permit.auto_reject_unanswered_previous_company'
-		],
-		# WI-002016: the monthly penalty report to the departments, on the 23rd at 06:15,
-		# covering the payroll cycle that closed on the 22nd.
-		"15 6 23 * *": [
-			'one_fm.legal.penalty_report_email.send_monthly_penalty_report'
 		],
 		"15 3 * * *": [
 			'one_fm.tasks.one_fm.daily.generate_contracts_invoice', #Generate contracts sales invoice

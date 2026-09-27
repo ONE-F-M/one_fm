@@ -242,32 +242,37 @@ function renderManifest($container, data) {
 	// Trigger unlocks the next pickup camp for checks; Complete locks the active
 	// camp. Both persist server-side (active_stop_sequence) via the shared manifest
 	// API, then we sync the local pointer and re-render the current route.
-	function _setActiveStopAndRerender(vehicleLabel, newActive) {
+	// The server answers with every run's pointer, so only the run that was acted on
+	// moves and its neighbours on the same vehicle keep their own state (WI-002590 AC1).
+	function _setActiveStopAndRerender(vehicleLabel, reply) {
 		const meta = (ROUTE_DATA.vehicleMeta ?? {})[vehicleLabel];
-		if (meta) meta.active_stop_sequence = newActive;
+		if (meta && reply) {
+			meta.active_stop_by_trip = reply.active_stop_by_trip || meta.active_stop_by_trip || {};
+			meta.active_stop_sequence = reply.active_stop_sequence;
+		}
 		if (activeView) renderRoute(activeView);
 	}
 
-	window._mfst_triggerStop = function (manifest, stopSeq, vehicleLabel) {
+	window._mfst_triggerStop = function (manifest, stopSeq, vehicleLabel, tripId) {
 		frappe.call({
 			method: "one_fm.one_fm.doctype.transportation_manifest.manifest_sheet.trigger_attendance_check",
-			args: { manifest: manifest, stop_sequence: stopSeq },
+			args: { manifest: manifest, stop_sequence: stopSeq, trip_id: tripId || "" },
 			freeze: true,
 			freeze_message: __("Unlocking stop…"),
 			callback: function (r) {
-				if (r.message) _setActiveStopAndRerender(vehicleLabel, r.message.active_stop_sequence);
+				if (r.message) _setActiveStopAndRerender(vehicleLabel, r.message);
 			}
 		});
 	};
 
-	window._mfst_completeStop = function (manifest, stopSeq, vehicleLabel) {
+	window._mfst_completeStop = function (manifest, stopSeq, vehicleLabel, tripId) {
 		frappe.call({
 			method: "one_fm.one_fm.doctype.transportation_manifest.manifest_sheet.complete_stop",
-			args: { manifest: manifest, stop_sequence: stopSeq },
+			args: { manifest: manifest, stop_sequence: stopSeq, trip_id: tripId || "" },
 			freeze: true,
 			freeze_message: __("Locking stop…"),
 			callback: function (r) {
-				if (r.message) _setActiveStopAndRerender(vehicleLabel, r.message.active_stop_sequence);
+				if (r.message) _setActiveStopAndRerender(vehicleLabel, r.message);
 			}
 		});
 	};
@@ -523,6 +528,90 @@ function renderManifest($container, data) {
 		}
 	});
 
+	// ── Tab search, arrows and overflow indicators (WI-002544) ──────────────
+	// The tabs carry what they can be searched on, so filtering never has to go back
+	// to ROUTE_DATA and cannot disagree with what is rendered.
+	parsed.forEach((pr) => {
+		const meta = (ROUTE_DATA.vehicleMeta ?? {})[pr.label] ?? {};
+		const haystack = [pr.label, meta.license_plate, meta.model, meta.driver]
+			.filter(Boolean).join(" ").toLowerCase();
+		const tab = [...tabBar.querySelectorAll(".mfst-tab")]
+			.find(t => t.querySelector(".mfst-tab-name")?.textContent === pr.label);
+		if (tab) tab.dataset.search = haystack;
+	});
+
+	const scroller = $container.find(".mfst-tab-bar-scroller")[0];
+	const prevBtn = $container.find("#mfst-tab-prev")[0];
+	const nextBtn = $container.find("#mfst-tab-next")[0];
+	const overflowLabel = $container.find("#mfst-tab-overflow")[0];
+
+	// AC4: how many tabs are off each edge, and whether an arrow can do anything.
+	// Counted by geometry rather than by index, because a filter changes which tabs
+	// exist and a fixed count would keep announcing the ones it hid.
+	function syncTabOverflow() {
+		if (!tabBar || !scroller) return;
+		const bar = tabBar.getBoundingClientRect();
+		const visible = [...tabBar.querySelectorAll(".mfst-tab")].filter(t => !t.hidden);
+		let left = 0, right = 0;
+		visible.forEach(t => {
+			const r = t.getBoundingClientRect();
+			if (r.right <= bar.left + 1) left++;
+			else if (r.left >= bar.right - 1) right++;
+		});
+		const atStart = tabBar.scrollLeft <= 1;
+		const atEnd = tabBar.scrollLeft + tabBar.clientWidth >= tabBar.scrollWidth - 1;
+		if (prevBtn) prevBtn.disabled = atStart;
+		if (nextBtn) nextBtn.disabled = atEnd;
+		scroller.classList.toggle("mfst-more-left", !atStart && left > 0);
+		scroller.classList.toggle("mfst-more-right", !atEnd && right > 0);
+		if (overflowLabel) {
+			const parts = [];
+			if (left) parts.push(`\u25c4 ${left} more`);
+			if (right) parts.push(`${right} more \u25ba`);
+			overflowLabel.textContent = parts.join("  |  ");
+		}
+	}
+
+	// A page's worth at a time, so the dispatcher keeps their place instead of being
+	// thrown to an edge.
+	function scrollTabs(direction) {
+		if (!tabBar) return;
+		tabBar.scrollBy({ left: direction * Math.max(160, tabBar.clientWidth * 0.8),
+						  behavior: "smooth" });
+	}
+
+	if (prevBtn) prevBtn.addEventListener("click", () => scrollTabs(-1));
+	if (nextBtn) nextBtn.addEventListener("click", () => scrollTabs(1));
+	if (tabBar) tabBar.addEventListener("scroll", syncTabOverflow, { passive: true });
+	window.addEventListener("resize", syncTabOverflow);
+
+	// AC2: hide what does not match, and leave everything that does clickable - the
+	// dispatcher is searching in order to SELECT, so the filter must not disable the
+	// thing they were looking for.
+	const searchInput = $container.find("#mfst-vehicle-search")[0];
+	const searchClear = $container.find("#mfst-vehicle-search-clear")[0];
+	function applyVehicleSearch() {
+		const q = (searchInput?.value || "").trim().toLowerCase();
+		tabBar.querySelectorAll(".mfst-tab").forEach(tab => {
+			// The Skipped tab carries no vehicle, so it is only shown unfiltered.
+			const hay = tab.dataset.search
+				?? (tab.classList.contains("mfst-skipped-tab") ? null : "");
+			tab.hidden = q ? (hay === null || !hay.includes(q)) : false;
+		});
+		if (searchClear) searchClear.hidden = !q;
+		tabBar.scrollLeft = 0;
+		syncTabOverflow();
+	}
+	if (searchInput) searchInput.addEventListener("input", applyVehicleSearch);
+	if (searchClear) searchClear.addEventListener("click", () => {
+		if (searchInput) searchInput.value = "";
+		applyVehicleSearch();
+		searchInput?.focus();
+	});
+
+	// Measured once the tabs have been laid out.
+	requestAnimationFrame(syncTabOverflow);
+
 	// Skipped tab
 	if (skipped.length > 0) {
 		const sk = document.createElement("button");
@@ -587,6 +676,96 @@ function renderManifest($container, data) {
 		const totalTimeStr = m.totalDuration ? fmtDuration(m.totalDuration) : "—";
 		const tripTimeStr = m.travelDuration ? fmtDuration(m.travelDuration) : "—";
 
+		// ── What each run occupies, read once (WI-002545) ───────────────────────
+		// The breakdown popover, the jump pills and the timeline strip are three views
+		// of the same fact, so they are measured once rather than three times - a run
+		// that read 2h05m in the tooltip and drew a different width would be worse than
+		// not drawing it. Time-of-day only, for the reason WI-002614 documents: the DATE
+		// half of these stamps is a lock lifespan, not the day the bus runs.
+		const tripSpans = allTrips.map((trip, i) => {
+			// A run is measured from when the bus LEAVES to when it is BACK - the same
+			// definition the header's Trip Time uses, so the badge and the breakdown
+			// under it cannot disagree.
+			//
+			// Both ends live on the trip's own legs and neither is a rendered stop: the
+			// camp departure comes before the first card and the home arrival after the
+			// last. Reading the stops alone cut S-202 off at 09:00 when the bus was not
+			// home until 09:15, and the breakdown summed 15 minutes short of the badge.
+			//
+			// Taken as the two ENDS rather than as min/max over the clock, which is the
+			// only way a run that crosses midnight reads as the hours it is: a run
+			// leaving 22:40 and home at 00:30 holds clock values 22:40, 23:00 and 00:30,
+			// whose min and max are 00:30 and 23:00 - 22h30m for a trip of 1h50m.
+			const legs = (pr.tripLegs || {})[trip.id] || {};
+			const stopTimes = trip.stops.map(st => secondsOfDay(st.time)).filter(v => v !== null);
+			const start = secondsOfDay(legs.departure)
+				?? (stopTimes.length ? stopTimes[0] : null);
+			const end = secondsOfDay(legs.arrival)
+				?? (stopTimes.length ? stopTimes[stopTimes.length - 1] : null);
+			// The LENGTH is the server's, not this page's. The badge above is summed from
+			// exactly these seconds, so re-deriving them here is what let the two
+			// disagree - and they disagreed in two ways at once. The page reads the clock
+			// in Asia/Kuwait where the server reads it in UTC, so a run from 22:40 to
+			// 00:30 crossed midnight for one of them and not the other; and a run whose
+			// last stop ENDS after the bus is recorded home (S-603 reaches 18:00 with an
+			// arrival of 17:50) is longer than its two ends suggest, which only the rows
+			// can tell you. start/end still come from the legs because the breakdown
+			// prints them as clock times.
+			let length = legs.span_seconds;
+			if (length === null || length === undefined) {
+				length = (start === null || end === null) ? 0 : end - start;
+				if (length < 0) length += 24 * 3600;   // the run crossed midnight
+			}
+			return { index: i, id: trip.id, label: trip.label, start, end, length };
+		}).filter(t => t.start !== null);
+
+		const spanStart = tripSpans.length ? Math.min(...tripSpans.map(t => t.start)) : null;
+		const spanEnd = tripSpans.length ? Math.max(...tripSpans.map(t => t.end)) : null;
+		const shiftSpan = (spanStart === null) ? 0 : Math.max(1, spanEnd - spanStart);
+
+		const clockOf = (sec) => {
+			if (sec === null || sec === undefined) return "—";
+			const s = ((sec % 86400) + 86400) % 86400;
+			return `${String(Math.floor(s / 3600)).padStart(2, "0")}:${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}`;
+		};
+		const lengthOf = (sec) => fmtDuration(`${Math.max(0, sec)}s`) || "0 min";
+
+		// AC2: the badge is a total, and a total nobody can take apart is a number to be
+		// trusted rather than checked. Native title so it works on hover and on tap
+		// without a popover library.
+		const breakdown = tripSpans.map((t, i) =>
+			`${t.label || `Trip ${i + 1}`}: ${clockOf(t.start)} → ${clockOf(t.end)} (${lengthOf(t.length)})`
+		).join("\n");
+
+		// AC3: one pill per run, pinned under the header.
+		const jumpBar = tripSpans.length > 1 ? `
+			<div class="mfst-jump-bar">
+				${tripSpans.map((t, i) => `<button type="button" class="mfst-jump-pill"
+					data-trip-index="${i}"
+					title="${escHtml(clockOf(t.start))} → ${escHtml(clockOf(t.end))}">${escHtml(t.label || `Trip ${i + 1}`)}</button>`).join("")}
+			</div>` : "";
+
+		// AC4/AC5: the shift as one bar - solid where the bus is on a run, light where
+		// it is standing. Positioned as percentages of the span so it needs no width to
+		// be measured before it can be drawn.
+		const pct = (sec) => shiftSpan ? ((sec - spanStart) / shiftSpan) * 100 : 0;
+		const segments = [];
+		tripSpans.forEach((t, i) => {
+			const prev = i === 0 ? null : tripSpans[i - 1];
+			if (prev && t.start > prev.end) {
+				segments.push(`<span class="mfst-timeline-seg mfst-timeline-idle"
+					style="left:${pct(prev.end)}%;width:${pct(t.start) - pct(prev.end)}%"
+					title="Waiting Segment: Rest Time | ${escHtml(clockOf(prev.end))} → ${escHtml(clockOf(t.start))}"></span>`);
+			}
+			segments.push(`<span class="mfst-timeline-seg mfst-timeline-drive"
+				style="left:${pct(t.start)}%;width:${Math.max(0.6, pct(t.end) - pct(t.start))}%"
+				title="Driving Segment: ${escHtml(t.label || `Trip ${i + 1}`)} | ${escHtml(clockOf(t.start))} → ${escHtml(clockOf(t.end))}"></span>`);
+		});
+		const timeline = tripSpans.length ? `
+			<div class="mfst-timeline" title="${escHtml(clockOf(spanStart))} → ${escHtml(clockOf(spanEnd))}">
+				${segments.join("")}
+			</div>` : "";
+
 		// ─ Vehicle Info Card ─
 		const infoParts = [];
 		if (meta.driver && meta.driver !== "—") infoParts.push(`<span class="material-symbols-outlined mfst-info-icon">person</span> ${escHtml(meta.driver)}`);
@@ -618,13 +797,15 @@ function renderManifest($container, data) {
 						<div class="mfst-stat-val">${totalTimeStr}</div>
 						<div class="mfst-stat-lbl">Total Time</div>
 					</div>
-					<div class="mfst-stat-box">
+					<div class="mfst-stat-box mfst-stat-trip-time" title="${escHtml(breakdown)}">
 						<div class="mfst-stat-val">${tripTimeStr}</div>
-						<div class="mfst-stat-lbl">Trip Time</div>
+						<div class="mfst-stat-lbl">Trip Time${tripSpans.length ? ' <span class="mfst-stat-hint">&#9432;</span>' : ""}</div>
 					</div>
 				</div>
+				${timeline}
 				${infoParts.length > 0 ? `<div class="mfst-vehicle-card-details">${infoParts.join(" · ")}</div>` : ""}
 			</div>
+			${jumpBar}
 		`;
 
 		// ─ Render Trips ─
@@ -636,9 +817,35 @@ function renderManifest($container, data) {
 			// else falls back to the clock gap between the two stops. Reading a merged
 			// run off the clock alone showed the driver the old spacing, because the
 			// blocks the merge did not move still sit where they were.
+			// `stop` is the stop the bus is LEAVING, never the one it is arriving at. A
+			// stop's minutes describe the leg that departs it - the Route Plan row starts
+			// when the bus pulls away and ends when it reaches the next stop, which is
+			// why the Trip Builder prints them on the same row as "Next Stop". Passing
+			// the arrival stop printed the NEXT leg's minutes above every stop: S-101's
+			// camp leg is 20 drive + 5 buffer and the manifest read "15 min drive, 2 min
+			// buffer" - Alghanim's figures, one leg early (WI-002614 AC3).
+			//
+			// Camp legs spell the same two fields in snake_case, so both are accepted
+			// rather than making every caller normalise one of them.
 			function calcTransit(t1, t2, stop) {
-				const transit = (stop && stop.transitMinutes) || 0;
-				const buffer = (stop && stop.bufferMinutes) || 0;
+				const zero = { travelDuration: "0s", waitDuration: "0s", travelDistanceMeters: 0 };
+
+				// AC3: the clock gap, read as time of day and wrapped at midnight. Taking
+				// the raw difference meant two stops whose timestamps carried different
+				// lock dates reported a drive of roughly a day, which fmtDuration then
+				// clamped to a flat "24h" - the overflow fallback the AC names.
+				const from = secondsOfDay(t1), to = secondsOfDay(t2);
+				let gap = (from === null || to === null) ? null : to - from;
+				if (gap !== null && gap < 0) gap += 24 * 3600;   // the leg ran past midnight
+
+				// A drop-off and the pick-up that follows it at the same place and minute
+				// are ONE physical stop printed twice. Nothing is driven between them, so
+				// the minutes belonging to the leg out of that stop must not be drawn in
+				// the gap - they belong further down, against the stop the bus leaves for.
+				if (gap === 0) return zero;
+
+				const transit = (stop && (stop.transitMinutes ?? stop.transit_minutes)) || 0;
+				const buffer = (stop && (stop.bufferMinutes ?? stop.buffer_minutes)) || 0;
 				if (transit || buffer) {
 					return {
 						travelDuration: transit * 60 + "s",
@@ -646,9 +853,9 @@ function renderManifest($container, data) {
 						travelDistanceMeters: 0
 					};
 				}
-				const ms = new Date(t2).getTime() - new Date(t1).getTime();
-				if (ms <= 0) return { travelDuration: "0s", waitDuration: "0s", travelDistanceMeters: 0 };
-				return { travelDuration: Math.round(ms / 1000) + "s", waitDuration: "0s", travelDistanceMeters: 0 };
+				// A leg with no minutes of its own is measured by the clock alone.
+				if (gap === null || gap <= 0) return zero;
+				return { travelDuration: gap + "s", waitDuration: "0s", travelDistanceMeters: 0 };
 			}
 
 			// Every assignment row emits both a pickup and a drop-off visit; exactly one of
@@ -726,7 +933,7 @@ function renderManifest($container, data) {
 			const dirIcon = isMixed ? "sync_alt" : (!hasOutbound && hasReturn ? "keyboard_return" : "arrow_forward");
 
 			html += `
-				<div class="mfst-trip-group ${dirClass}">
+				<div class="mfst-trip-group ${dirClass}" data-trip-index="${ti}">
 					<div class="mfst-trip-header">
 						<span class="material-symbols-outlined mfst-trip-header-icon">${dirIcon}</span>
 						<span class="mfst-trip-header-title">${escHtml(trip.label)}</span>
@@ -739,7 +946,14 @@ function renderManifest($container, data) {
 			// under it (MA2-11): the manifest reads camp-by-camp — a camp's DEPART
 			// banner is followed by the drop-off stop(s) its passengers ride to,
 			// then the next camp block. Camps run in strict stop-sequence order.
-			const boardingByCamp = {};   // seq -> { seq, label, employees, names }
+			// Keyed by the CAMP, not by stop_sequence. stop_sequence is the rider's stop
+			// number in the whole run, not an ordinal for the camp they board at, so one
+			// key could hold riders from two different camps: S-401's boarders group as
+			// {1: [Mahboula], 5: [Mahboula, Mangaf]} by sequence and as
+			// {Mahboula: 4, Mangaf: 6} by camp - and only the second is what a camp
+			// banner is supposed to list. `seq` is kept as the EARLIEST sequence seen for
+			// that camp, which is what puts the camps in the order the bus loads at them.
+			const boardingByCamp = {};   // camp label -> { seq, label, employees, names }
 			orderedStops.forEach(item => {
 				if (item.stop.type !== "dropoff") return;
 				(shipmentEmployees[item.stop.raw] ?? []).forEach(e => {
@@ -747,16 +961,26 @@ function renderManifest($container, data) {
 					if (!eName) return;
 					const seq = (e && e.stop_sequence) ? e.stop_sequence : 1;
 					const label = (e && e.pickup_camp_label) ? e.pickup_camp_label : accommodation;
-					if (!boardingByCamp[seq]) boardingByCamp[seq] = { seq: seq, label: label, employees: [], names: new Set() };
-					if (!boardingByCamp[seq].names.has(eName)) {
-						boardingByCamp[seq].names.add(eName);
-						boardingByCamp[seq].employees.push(e);
+					if (!boardingByCamp[label]) {
+						boardingByCamp[label] = { seq: seq, label: label, employees: [], names: new Set() };
+					}
+					if (seq < boardingByCamp[label].seq) boardingByCamp[label].seq = seq;
+					if (!boardingByCamp[label].names.has(eName)) {
+						boardingByCamp[label].names.add(eName);
+						boardingByCamp[label].employees.push(e);
 					}
 				});
 			});
 
-			const activeStop = meta.active_stop_sequence || 0;
+			// This RUN's pointer, not the vehicle's (WI-002590 AC1). A vehicle drives
+			// several runs a day and they used to share one number, so triggering the
+			// check on S-801 locked S-802 alongside it and completing one reopened the
+			// other. The map is seeded from the old flat field server-side, so a check
+			// already in progress keeps its place.
+			const activeByTrip = meta.active_stop_by_trip || {};
+			const activeStop = parseInt(activeByTrip[trip.id || ""], 10) || 0;
 			const manifestName = meta.manifest || null;
+			const tripLabel = tripStops.find(s => s.tripName)?.tripName || trip.id || "";
 
 			if (isMixed) {
 				// A merged run is one journey out and back, not a series of camp blocks:
@@ -768,7 +992,16 @@ function renderManifest($container, data) {
 				html += renderMixedItinerary({
 					orderedStops, firstTimeISO, lastTimeISO, accommodation: homeCamp,
 					qoaTime: legs.qoa_time,
-					activeStop, manifestName, vehicleLabel: pr.label, calcTransit
+					// The camp the run leaves from carries the minutes of the FIRST drive,
+					// and nothing else knows them: the site stops each carry the leg out of
+					// themselves, so without this the opening leg had to be guessed.
+					originLeg: (legs.camps_ordered || [])[0] || null,
+					// A merged run can still load at more than one camp, and each is a
+					// stop the driver has to make.
+					campGroups: Object.values(boardingByCamp).sort((a, b) => a.seq - b.seq),
+					campLegs: legs.camps_ordered || [],
+					activeStop, manifestName, vehicleLabel: pr.label, calcTransit,
+					tripId: trip.id, tripLabel
 				});
 			} else {
 
@@ -781,15 +1014,25 @@ function renderManifest($container, data) {
 			const campLegs = legs.camps_ordered || [];
 
 			let prevTime = firstTimeISO;
+			let prevStop = null;
+			// Where the run has got to, as a POSITION in its own camp list: the first camp
+			// the bus has not passed. The pointer is stored as a stop_sequence numbered
+			// across the vehicle, so ">= activeStop" steps over the other runs' stops that
+			// sit in the gaps. Before anything is triggered it is the first camp.
+			const activeIndex = activeStop
+				? campGroups.findIndex((cg) => (cg.seq || 1) >= activeStop)
+				: 0;
 			campGroups.forEach((cg, index) => {
 				// Matched by position: both lists are in the order the run needs them.
 				const leg = campLegs[index] || {};
 				const departAt = leg.departure
 					? new Date(leg.departure).toISOString() : firstTimeISO;
-				if (index > 0) html += renderTransit(calcTransit(prevTime, departAt));
+				if (index > 0) html += renderTransit(calcTransit(prevTime, departAt, prevStop));
 				html += renderDepartCard(departAt, cg, activeStop, manifestName, pr.label,
-					false, leg.qoa_time || (index === 0 ? legs.qoa_time : null));
+					false, leg.qoa_time || (index === 0 ? legs.qoa_time : null),
+					trip.id, tripLabel, index, activeIndex);
 				prevTime = departAt;
+				prevStop = leg;
 			});
 
 			// Then every stop the bus calls at, once, in the order it reaches them.
@@ -797,9 +1040,10 @@ function renderManifest($container, data) {
 				.slice()
 				.sort((a, b) => new Date(a.stop.time) - new Date(b.stop.time))
 				.forEach(item => {
-					html += renderTransit(calcTransit(prevTime, item.stop.time, item.stop));
+					html += renderTransit(calcTransit(prevTime, item.stop.time, prevStop));
 					html += renderSiteStopCard({ ...item, runStartISO: firstTimeISO });
 					prevTime = item.stop.time;
+					prevStop = item.stop;
 				});
 
 			// Return employees
@@ -818,8 +1062,8 @@ function renderManifest($container, data) {
 				}
 			});
 
-			// Transit to return
-			html += renderTransit(calcTransit(prevTime, lastTimeISO));
+			// Transit to return - timed by the last stop the bus called at.
+			html += renderTransit(calcTransit(prevTime, lastTimeISO, prevStop));
 
 			// RETURN card
 			html += renderReturnCard(lastTimeISO, homeCamp, returningEmployees, firstTimeISO);
@@ -930,23 +1174,67 @@ function renderManifest($container, data) {
 			});
 		});
 
-		// Stop 1 is the origin depart, so the stops the driver calls at start at 2. The
-		// numbers follow the visit order, which is what makes a revisited stop read as a
-		// later stop rather than the same one again.
-		let html = renderDepartCard(
-			o.firstTimeISO,
-			{ seq: 1, label: o.accommodation, employees: boarding },
-			o.activeStop, o.manifestName, o.vehicleLabel, true, o.qoaTime
-		);
+		// A merged run is one journey, but it is not necessarily one pickup. S-401 leaves
+		// Mahboula at 03:52 and Mangaf at 04:04 before it drops anybody, and rendering a
+		// single origin card lost the second camp entirely: the sheet jumped 03:52 to
+		// 04:46 under a 12-minute label on a 54-minute gap, and the driver was never told
+		// to collect at Mangaf at all.
+		//
+		// isMixed stays true for every camp card. That is what keeps the attendance
+		// trigger on the FIRST pickup only (WI-002074) - renderDepartCard reads it to
+		// decide, so a mid-route camp still cannot start a check.
+		const campGroups = o.campGroups || [];
+		const campLegs = o.campLegs || [];
 
+		// The stop the bus is LEAVING carries the leg, so the gap above each card is
+		// timed by the one before it - each camp in turn, then each stop, and the last
+		// stop for the ride home.
+		let html = "";
 		let prevTime = o.firstTimeISO;
+		let prevStop = null;
+
+		if (campGroups.length) {
+			// The first camp of this run the bus has not passed - see renderDepartCard.
+			const activeIndex = o.activeStop
+				? campGroups.findIndex((cg) => (cg.seq || 1) >= o.activeStop)
+				: 0;
+			campGroups.forEach((cg, index) => {
+				// Matched by position: the groups are ordered by the earliest sequence
+				// their riders carry, and camps_ordered by stop_index - both are the
+				// order the run loads at them.
+				const leg = campLegs[index] || {};
+				const departAt = leg.departure
+					? new Date(leg.departure).toISOString()
+					: (index === 0 ? o.firstTimeISO : prevTime);
+				if (index > 0) html += renderTransit(o.calcTransit(prevTime, departAt, prevStop));
+				html += renderDepartCard(departAt, cg, o.activeStop, o.manifestName,
+					o.vehicleLabel, true, leg.qoa_time || (index === 0 ? o.qoaTime : null),
+					o.tripId, o.tripLabel, index, activeIndex);
+				prevTime = departAt;
+				prevStop = leg;
+			});
+		} else {
+			// Nothing said which camp anybody boarded at: one origin card with the lot.
+			html += renderDepartCard(
+				o.firstTimeISO,
+				{ seq: 1, label: o.accommodation, employees: boarding },
+				o.activeStop, o.manifestName, o.vehicleLabel, true, o.qoaTime,
+				o.tripId, o.tripLabel, 0, o.activeStop ? -1 : 0
+			);
+			prevStop = o.originLeg;
+		}
+
+		// The stops the driver calls at start after the camps, so a run loading at two of
+		// them numbers its first drop-off 3 rather than 2.
+		const firstSiteNum = Math.max(campGroups.length, 1) + 1;
 		stops.forEach((stop, i) => {
-			html += renderTransit(o.calcTransit(prevTime, stop.time, stop));
-			html += renderSiteStopCard({ stop: stop, siteNum: i + 2, runStartISO: o.firstTimeISO });
+			html += renderTransit(o.calcTransit(prevTime, stop.time, prevStop));
+			html += renderSiteStopCard({ stop: stop, siteNum: i + firstSiteNum, runStartISO: o.firstTimeISO });
 			prevTime = stop.time;
+			prevStop = stop;
 		});
 
-		html += renderTransit(o.calcTransit(prevTime, o.lastTimeISO));
+		html += renderTransit(o.calcTransit(prevTime, o.lastTimeISO, prevStop));
 		html += renderReturnCard(o.lastTimeISO, o.accommodation, returning, o.firstTimeISO);
 		return html;
 	}
@@ -959,21 +1247,45 @@ function renderManifest($container, data) {
 		return value ? String(value).slice(0, 5) : "";
 	}
 
-	// AC 1.6: a leg whose arrival crosses midnight is a day later, and has to say so
-	// rather than printing a time that reads as though the bus arrived before it left.
+	// ── These timestamps carry a DATE that is not the run's day (WI-002614) ──────
+	// A Route Plan Assignment's start_time/end_time hold two different things: the TIME
+	// is the daily trip window, the DATE is the multi-day vehicle lock's lifespan (TR-8).
+	// Two stops of one run therefore routinely carry unrelated dates, and anything that
+	// subtracts them whole gets its answer in days.
+	//
+	// That one fact is behind both of the defects below: "+11 DAY" badges on a run that
+	// finished the same afternoon, and 24-hour drives between two stops twenty minutes
+	// apart. Every reader takes the time of day and nothing else - in Asia/Kuwait, the
+	// clock every time on this page is printed in (fmtTime), so a stop never disagrees
+	// with the arithmetic done about it.
+	function secondsOfDay(value) {
+		if (!value) return null;
+		const d = new Date(value);
+		if (isNaN(d)) return null;
+		const [h, m, sec] = d.toLocaleTimeString("en-GB", {
+			hour: "2-digit", minute: "2-digit", second: "2-digit",
+			hour12: false, timeZone: "Asia/Kuwait"
+		}).split(":").map(Number);
+		return h * 3600 + m * 60 + sec;
+	}
+
+	// AC2: a leg crosses midnight when it arrives at a clock time EARLIER than the run
+	// left at - which is the only thing these timestamps can honestly report. Capped at
+	// one day: a vehicle's shift cycle is a day's work, and "+27 DAY" was never anything
+	// but arithmetic done on the lock lifespan.
+	// (AC 1.6 still holds - a leg that really does cross 00:00 still says so.)
 	function dayOffset(fromISO, toISO) {
-		if (!fromISO || !toISO) return 0;
-		const day = 24 * 3600000;
-		const from = new Date(fromISO), to = new Date(toISO);
-		if (isNaN(from) || isNaN(to)) return 0;
-		return Math.max(0, Math.floor((to - from) / day) || (to.getDate() !== from.getDate() && to > from ? 1 : 0));
+		const from = secondsOfDay(fromISO), to = secondsOfDay(toISO);
+		if (from === null || to === null) return 0;
+		return to < from ? 1 : 0;
 	}
 
 	function rolloverBadge(offset) {
 		return offset > 0 ? `<span class="mfst-stop-tag tag-stop">+${offset} Day</span>` : "";
 	}
 
-	function renderDepartCard(time, camp, activeStop, manifestName, vehicleLabel, isMixed, qoaTime) {
+	function renderDepartCard(time, camp, activeStop, manifestName, vehicleLabel, isMixed,
+							 qoaTime, tripId, tripLabel, campIndex, activeIndex) {
 		const employees = camp.employees || [];
 		const seq = camp.seq || 1;
 		const isCompleted = activeStop && seq < activeStop;
@@ -982,9 +1294,28 @@ function renderManifest($container, data) {
 		// triggered. A merged run is one vehicle leaving one origin: the second criterion
 		// puts the button in the very first DEPART card and nowhere else, so a driver
 		// cannot start a check at a mid-route pickup they have not reached (WI-002074).
-		const canTrigger = isMixed
-			? (seq === 1 && !activeStop)
-			: seq === (activeStop || 0) + 1;
+		//
+		// Decided by the camp's POSITION in the run, not by its seq. `seq` is the rider's
+		// stop number across the whole run, not an ordinal for the camp they board at, so
+		// only a trip whose boarders happen to start at stop 1 ever matched `seq === 1`.
+		// On VHL-L-0004 that was S-101 alone - S-102 through S-107 carry seqs 3, 5, 8, 9,
+		// 3 and 13, and six of the seven runs had no way to start a check at all.
+		//
+		// seq is still what the trigger SENDS and what the lock state is read back
+		// against, so the bookkeeping either side of this is untouched.
+		// The next camp of THIS run the bus has not passed. `activeIndex` is that camp's
+		// position, found by the caller from the run's own camp list - not activeStop + 1,
+		// because stop_sequence is numbered across the VEHICLE: S-401 loads at stops 1 and
+		// 5 with another run's stops in between.
+		//
+		// A merged run gets the same walk as an ordinary one. It was pinned to the first
+		// camp and nowhere else, on the reading that a merged run leaves ONE origin - but
+		// it can load at two, and then the second camp's passengers could never mark
+		// attendance at all: the card stayed "Locked until triggered" for the rest of the
+		// day. WI-002074's actual concern still holds either way, because a camp is only
+		// offered once the one before it is COMPLETE.
+		const position = (campIndex === null || campIndex === undefined) ? null : campIndex;
+		const canTrigger = position !== null && position === activeIndex && !isActive;
 		const status = isCompleted ? "completed" : (isActive ? "active" : "locked");
 
 		let statusChip;
@@ -998,12 +1329,22 @@ function renderManifest($container, data) {
 
 		let actionBtn = "";
 		const safeVeh = (vehicleLabel || "").replace(/'/g, "\\'");
-		if (manifestName && canTrigger) {
-			actionBtn = `<button class="mfst-depart-btn trigger" onclick="window._mfst_triggerStop('${manifestName}', ${seq}, '${safeVeh}')">
-				<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">fact_check</span> Trigger Attendance Check</button>`;
+		const safeTrip = String(tripId || "").replace(/'/g, "\\'");
+		// AC2: the button says WHICH run it acts on. With several runs on one vehicle
+		// page, two identical "Trigger Attendance Check" buttons is an invitation to
+		// check in the wrong one.
+		const runSuffix = tripLabel ? ` — ${escHtml(tripLabel)}` : "";
+		const lockSuffix = tripLabel ? ` (${escHtml(tripLabel)})` : "";
+		// AC3: nobody boards here, so there is nobody to check. A return-only run
+		// leaving its camp empty used to offer a check over an empty list, and running
+		// it advanced the run's pointer past a stop that never had anything to verify.
+		const nobodyBoards = employees.length === 0;
+		if (manifestName && canTrigger && !nobodyBoards) {
+			actionBtn = `<button class="mfst-depart-btn trigger" onclick="window._mfst_triggerStop('${manifestName}', ${seq}, '${safeVeh}', '${safeTrip}')">
+				<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">fact_check</span> Trigger Attendance Check${runSuffix}</button>`;
 		} else if (manifestName && isActive) {
-			actionBtn = `<button class="mfst-depart-btn complete" onclick="window._mfst_completeStop('${manifestName}', ${seq}, '${safeVeh}')">
-				<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">lock</span> Complete &amp; Lock Stop ${seq}</button>`;
+			actionBtn = `<button class="mfst-depart-btn complete" onclick="window._mfst_completeStop('${manifestName}', ${seq}, '${safeVeh}', '${safeTrip}')">
+				<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">lock</span> Complete &amp; Lock Stop ${seq}${lockSuffix}</button>`;
 		}
 
 		let empHtml = "";
@@ -1268,6 +1609,54 @@ function renderManifest($container, data) {
 		}
 	}
 
+	// AC3 (WI-002545): a vehicle running five trips is a long page, and the pills are
+	// the index to it. Delegated from the container so the handler survives every
+	// re-render rather than being rebound with the tabs.
+	$container.on("click", ".mfst-jump-pill", function () {
+		const idx = this.dataset.tripIndex;
+		const target = $container.find(`.mfst-trip-group[data-trip-index="${idx}"]`)[0];
+		if (!target) return;
+		target.scrollIntoView({ behavior: "smooth", block: "start" });
+		$container.find(".mfst-jump-pill").removeClass("active");
+		$(this).addClass("active");
+	});
+
+	// ── One check-in write at a time (WI-002538) ──
+	// Every chip on the sheet writes through the SAME parent Transportation Manifest:
+	// the API reads the whole manifest, stamps one row and saves it. Two of those
+	// overlapping — a supervisor tapping Present then Pass, or working down a camp
+	// faster than the manifest saves — meant the slower request had opened the
+	// document before the quicker one committed, and it came back with "Document has
+	// been modified after you have opened it". Queueing keeps the writes in the order
+	// the supervisor made them and keeps only one manifest open at a time. Every job
+	// is kept: two taps on two different chips are two different rows, so unlike the
+	// schedule board nothing here may be coalesced away.
+	let checkInBusy = false;
+	const checkInQueue = [];
+
+	function queueCheckIn(callOpts) {
+		checkInQueue.push(callOpts);
+		drainCheckInQueue();
+	}
+
+	function drainCheckInQueue() {
+		if (checkInBusy || !checkInQueue.length) return;
+		const opts = checkInQueue.shift();
+		checkInBusy = true;
+		frappe.call(Object.assign({}, opts, {
+			// always() fires for success, failure and "no connection" alike, so the
+			// queue never jams on a call that ends any other way than a clean
+			// callback. Releasing the next job on the following tick lets this call's
+			// own error handler run first — jQuery runs always() before the failure
+			// handler.
+			always: function (data) {
+				checkInBusy = false;
+				setTimeout(drainCheckInQueue, 0);
+				if (opts.always) opts.always(data);
+			}
+		}));
+	}
+
 	// showValidationUI — only show error banner + shake when called from an
 	// explicit user action (Save & Continue, × in Fail state). Toggle handlers
 	// pass false (default) so the guard silently blocks persistence without
@@ -1290,7 +1679,7 @@ function renderManifest($container, data) {
 			return; // Always block persistence
 		}
 
-		frappe.call({
+		queueCheckIn({
 			method: "one_fm.one_fm.api.doc_methods.transportation_manifest.update_manifest_row_checkin",
 			args: {
 				row_name: rowId,
@@ -1505,8 +1894,10 @@ function renderManifest($container, data) {
 
 		$container.find("#mfst-btn-confirm-replace").text("Processing...").prop("disabled", true);
 
-		// 1. Immediately write to database row (update_manifest_row_checkin)
-		frappe.call({
+		// 1. Immediately write to database row (update_manifest_row_checkin).
+		// Through the same queue as the chip toggles: this writes the same parent
+		// manifest, so it has to wait its turn rather than open a second copy.
+		queueCheckIn({
 			method: "one_fm.one_fm.api.doc_methods.transportation_manifest.update_manifest_row_checkin",
 			args: {
 				row_name: rowId,
@@ -1627,9 +2018,25 @@ function getManifestHTML() {
 				</div>
 			</div>
 
-			<!-- VEHICLE TAB BAR -->
+			<!-- VEHICLE TAB BAR (WI-002544) -->
 			<div class="mfst-tab-bar-wrapper">
-				<div class="mfst-tab-bar" id="mfst-tab-bar"></div>
+				<!-- AC2: a fleet of twenty-five tabs is a scroll, not a list. Matching
+				     on id, plate and driver because those are the three things a
+				     supervisor is holding when they come looking. -->
+				<div class="mfst-tab-search">
+					<span class="material-symbols-outlined mfst-tab-search-icon">search</span>
+					<input type="text" id="mfst-vehicle-search" placeholder="Search vehicle, plate or driver...">
+					<button type="button" id="mfst-vehicle-search-clear" class="mfst-tab-search-clear" hidden>&#x2715;</button>
+					<span id="mfst-tab-overflow" class="mfst-tab-overflow"></span>
+				</div>
+				<div class="mfst-tab-bar-scroller">
+					<!-- AC3: for a mouse, which has no sideways scroll. -->
+					<button type="button" id="mfst-tab-prev" class="mfst-tab-nav mfst-tab-nav-prev"
+							aria-label="Scroll vehicle tabs left">&#x25c4;</button>
+					<div class="mfst-tab-bar" id="mfst-tab-bar"></div>
+					<button type="button" id="mfst-tab-next" class="mfst-tab-nav mfst-tab-nav-next"
+							aria-label="Scroll vehicle tabs right">&#x25ba;</button>
+				</div>
 			</div>
 
 			<!-- MAIN CONTENT -->
@@ -1828,8 +2235,55 @@ function getManifestCSS() {
 
 		/* ── VEHICLE TAB BAR ── */
 		.mfst-tab-bar-wrapper { background: var(--mfst-bg-card); border-bottom: 1px solid var(--mfst-border); position: sticky; top: 62px; z-index: 99; }
-		.mfst-tab-bar { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 0 8px; gap: 4px; }
+		.mfst-tab-bar { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 0 8px; gap: 4px; scroll-behavior: smooth; flex: 1; }
 		.mfst-tab-bar::-webkit-scrollbar { display: none; }
+
+		/* ── Vehicle tab navigation (WI-002544) ───────────────────────────── */
+		.mfst-tab-search {
+			display: flex; align-items: center; gap: 6px;
+			padding: 6px 12px 0 12px;
+		}
+		.mfst-tab-search input {
+			flex: 1 1 auto; min-width: 0; max-width: 320px;
+			padding: 5px 10px; font-size: 13px;
+			border: 1px solid var(--mfst-border); border-radius: 8px;
+			background: transparent; color: inherit; outline: none;
+		}
+		.mfst-tab-search-icon { font-size: 18px; opacity: 0.5; }
+		.mfst-tab-search-clear {
+			border: 0; background: transparent; cursor: pointer; font-size: 12px;
+			opacity: 0.6; padding: 2px 4px;
+		}
+		.mfst-tab-search-clear:hover { opacity: 1; }
+		/* AC4: how much is off each edge, in words rather than a guess. */
+		.mfst-tab-overflow { margin-left: auto; font-size: 11px; opacity: 0.65; white-space: nowrap; }
+
+		.mfst-tab-bar-scroller { position: relative; display: flex; align-items: stretch; }
+		.mfst-tab-nav {
+			flex: 0 0 auto; border: 0; background: var(--mfst-bg-card); cursor: pointer;
+			padding: 0 8px; font-size: 12px; color: inherit; opacity: 0.75; z-index: 2;
+		}
+		.mfst-tab-nav:hover:not(:disabled) { opacity: 1; }
+		/* AC4: disabled at the ends, rather than clicking into nothing. */
+		.mfst-tab-nav:disabled { opacity: 0.2; cursor: default; }
+		/* AC4: the fade says there is more without taking a row to say it. It must not
+		   eat clicks on the tab underneath. */
+		.mfst-tab-bar-scroller::before,
+		.mfst-tab-bar-scroller::after {
+			content: ""; position: absolute; top: 0; bottom: 0; width: 26px;
+			pointer-events: none; z-index: 1; opacity: 0;
+			transition: opacity 0.15s;
+		}
+		.mfst-tab-bar-scroller::before {
+			left: 24px;
+			background: linear-gradient(to right, var(--mfst-bg-card), transparent);
+		}
+		.mfst-tab-bar-scroller::after {
+			right: 24px;
+			background: linear-gradient(to left, var(--mfst-bg-card), transparent);
+		}
+		.mfst-tab-bar-scroller.mfst-more-left::before { opacity: 1; }
+		.mfst-tab-bar-scroller.mfst-more-right::after { opacity: 1; }
 		.mfst-tab { display: flex; flex-direction: column; align-items: flex-start; padding: 12px 16px; border: none; background: none; cursor: pointer; border-bottom: 3px solid transparent; min-width: 140px; flex-shrink: 0; transition: all 0.15s; text-align: left; }
 		.mfst-tab:hover { background: var(--mfst-bg); }
 		.mfst-tab.active { border-bottom-color: var(--mfst-accent); background: var(--mfst-accent-dim); }
@@ -1860,6 +2314,35 @@ function getManifestCSS() {
 		.mfst-trip-group { border: 2px solid var(--mfst-blue); border-radius: 16px; margin-bottom: 16px; overflow: hidden; background: var(--mfst-bg-card); }
 		.mfst-trip-group.return { border-color: var(--mfst-purple); }
 		.mfst-trip-group.mixed { border-color: var(--mfst-mixed); }
+		/* ── Trip breakdown, jump pills and the shift timeline (WI-002545) ──── */
+		.mfst-stat-trip-time { cursor: help; }
+		.mfst-stat-hint { opacity: 0.55; font-size: 11px; }
+		/* AC3: pinned under the vehicle header, so the index stays reachable while the
+		   dispatcher is deep in a trip. */
+		.mfst-jump-bar {
+			position: sticky; top: 132px; z-index: 90;
+			display: flex; flex-wrap: wrap; gap: 6px;
+			padding: 8px 20px; background: var(--mfst-bg-card);
+			border-bottom: 1px solid var(--mfst-border);
+		}
+		.mfst-jump-pill {
+			border: 1px solid var(--mfst-border); background: transparent; color: inherit;
+			border-radius: 999px; padding: 4px 12px; font-size: 12px; cursor: pointer;
+		}
+		.mfst-jump-pill:hover { border-color: var(--mfst-blue); color: var(--mfst-blue); }
+		.mfst-jump-pill.active { background: var(--mfst-blue); border-color: var(--mfst-blue); color: #fff; }
+		/* AC4: the whole shift as one bar. Light ground is the waiting; the solid
+		   segments are the runs. Percentages, so it needs no measured width to draw. */
+		.mfst-timeline {
+			position: relative; height: 8px; margin: 10px 0 2px;
+			border-radius: 4px; background: var(--mfst-border); overflow: hidden;
+		}
+		.mfst-timeline-seg { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
+		.mfst-timeline-drive { background: var(--mfst-blue); }
+		/* Idle is drawn explicitly as well as being the ground, so AC5 has something to
+		   hover for a Waiting Segment. */
+		.mfst-timeline-idle { background: var(--mfst-border); opacity: 0.85; }
+
 		.mfst-trip-header { display: flex; align-items: center; gap: 10px; padding: 14px 20px; background: var(--mfst-blue-dim); border-bottom: 1px solid rgba(37,99,235,0.1); flex-wrap: wrap; }
 		.mfst-trip-group.return .mfst-trip-header { background: var(--mfst-purple-dim); border-bottom-color: rgba(194,65,12,0.1); }
 		.mfst-trip-group.mixed .mfst-trip-header { background: var(--mfst-mixed-dim); border-bottom-color: rgba(129,145,113,0.15); }

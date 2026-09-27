@@ -402,13 +402,16 @@ class TestPerLegMinutesSurviveARefresh(FrappeTestCase):
 		self.assertEqual(_timings_by_shipment(None), {})
 
 	def test_a_leg_defaults_to_the_transit_the_canvas_would_have_used(self):
-		# The modal used to print 0 while the canvas quietly placed the block on 30, so
-		# the itinerary shown was never the run that got drawn.
+		# The modal used to print 0 while the canvas quietly placed the block on a
+		# default, so the itinerary shown was never the run that got drawn. What is
+		# guarded is that ONE number serves both; it became 15 in WI-002539 AC2, and the
+		# canvas seeds the same 15 (DEFAULT_TRANSIT_MIN) so the two still agree.
 		from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
 			DEFAULT_TRANSIT_MINUTES,
 		)
 
-		self.assertEqual(DEFAULT_TRANSIT_MINUTES, 30)
+		self.assertEqual(DEFAULT_TRANSIT_MINUTES, 15)
+		self.assertIn("const DEFAULT_TRANSIT_MIN = 15;", self.canvas)
 		self.assertIn("default_transit = 0 if index == 1 else DEFAULT_TRANSIT_MINUTES", (
 			pathlib.Path(frappe.get_app_path(
 				"one_fm", "one_fm", "doctype", "transportation_shipment",
@@ -427,8 +430,12 @@ class TestPerLegMinutesSurviveARefresh(FrappeTestCase):
 		self.assertNotIn("transitMin:", self.canvas)
 
 	def test_the_merge_takes_them_from_the_leg_the_operator_edited(self):
-		self.assertIn("transitMinutes: parseInt(adj.transit_minutes, 10) || 0,", self.canvas)
+		# Transit now goes through _legTransit, which is the same value with a floor of
+		# 1 minute on a leg that actually drives somewhere (WI-002539 AC3) - the source
+		# is still the leg the operator edited.
+		self.assertIn("transitMinutes: self._legTransit(adj),", self.canvas)
 		self.assertIn("bufferMinutes: parseInt(adj.buffer_minutes, 10) || 0,", self.canvas)
+		self.assertIn("_legTransit(stop) {", self.canvas)
 
 	def test_confirming_re_times_the_whole_run(self):
 		# The numbers are the run's timing, not a note about it.

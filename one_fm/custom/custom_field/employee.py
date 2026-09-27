@@ -92,7 +92,8 @@ def get_employee_custom_fields():
 			{
 				"fieldname": "custom_employee_image",
 				"fieldtype": "Image",
-				"insert_after": "pam_type",
+				# was pam_type, which this story removes
+				"insert_after": "work_permit",
 				"label": "Employee Image",
 				"options": "custom_employee_photo",
 			},
@@ -423,16 +424,6 @@ def get_employee_custom_fields():
 				"is_system_generated": 1,
 			},
 			{
-				"depends_on": "eval:doc.under_company_residency==1",
-				"fieldname": "pam_type",
-				"fieldtype": "Select",
-				"insert_after": "work_permit",
-				"is_system_generated": 1,
-				"label": "Work Permit Type",
-				"options": "\nInside\nOutside\nKuwaiti",
-				"translatable": 1,
-			},
-			{
 				"fieldname": "bank_account",
 				"fieldtype": "Link",
 				"insert_after": "job_offer_salary_structure",
@@ -563,19 +554,10 @@ def get_employee_custom_fields():
 			},
 			{
 				"depends_on": "eval:doc.under_company_residency==1",
-				"fieldname": "one_fm_work_permit",
-				"fieldtype": "Data",
-				"hidden": 1,
-				"insert_after": "column_break_72",
-				"is_system_generated": 1,
-				"label": "Work Permit",
-				"translatable": 1,
-			},
-			{
-				"depends_on": "eval:doc.under_company_residency==1",
 				"fieldname": "work_permit",
 				"fieldtype": "Link",
-				"insert_after": "one_fm_work_permit",
+				# was one_fm_work_permit, which this story removes
+				"insert_after": "column_break_72",
 				"is_system_generated": 1,
 				"label": "Work Permit",
 				"options": "Work Permit",
@@ -817,11 +799,14 @@ def get_employee_custom_fields():
 				"label": "Date of Entry in Kuwait",
 			},
 			{
+				# WI-002618: the fieldname is left alone on purpose. Renaming it would break
+				# the Work Permit's fetch_from and every report and script that names it,
+				# for no gain - what the business asked to change is what it means.
 				"fieldname": "one_fm_date_of_issuance_of_visa",
 				"fieldtype": "Date",
 				"insert_after": "one_fm_visa_reference_number",
 				"is_system_generated": 1,
-				"label": "Date of issuance of Visa",
+				"label": "Date of Visa Expiry",
 			},
 			{
 				"fieldname": "one_fm_visa_reference_number",

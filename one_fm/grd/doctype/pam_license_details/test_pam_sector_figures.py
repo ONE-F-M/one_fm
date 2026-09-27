@@ -63,14 +63,22 @@ class TestDerivedFigures(FrappeTestCase):
 		# 10 x 20 / 80 = 2.5 -> 3
 		self.assertEqual(derived_figures(SECTOR_UNDER_TEST, 20, 0, 10)["required_number_of_national_workers"], "3")
 
-	def test_a_shortfall_is_what_the_sector_is_missing(self):
+	def test_the_excess_is_the_nationals_carried_over_the_requirement(self):
+		"""Reported from production: the subtraction was the other way round, so a sector
+		with five nationals against a requirement of two read as 0 - the clamp hid every
+		real excess, which is the whole of what the field is named after."""
+		figures = derived_figures(SECTOR_UNDER_TEST, ratio=20, nationals=5, expatriates=8)
+		self.assertEqual(figures["required_number_of_national_workers"], "2")
+		self.assertEqual(figures["exceeding_the_ratio_number_of_national_workers"], "3")
+
+	def test_a_sector_short_of_the_requirement_is_in_excess_of_nothing(self):
+		"""Never negative, and the direction the clamp was always written for."""
 		figures = derived_figures(SECTOR_UNDER_TEST, ratio=20, nationals=1, expatriates=8)
 		self.assertEqual(figures["required_number_of_national_workers"], "2")
-		self.assertEqual(figures["exceeding_the_ratio_number_of_national_workers"], "1")
+		self.assertEqual(figures["exceeding_the_ratio_number_of_national_workers"], "0")
 
-	def test_a_sector_that_already_has_enough_is_short_of_nothing(self):
-		"""Never negative - a sector carrying more nationals than required is not short."""
-		figures = derived_figures(SECTOR_UNDER_TEST, ratio=20, nationals=5, expatriates=8)
+	def test_exactly_enough_is_an_excess_of_none(self):
+		figures = derived_figures(SECTOR_UNDER_TEST, ratio=20, nationals=2, expatriates=8)
 		self.assertEqual(figures["exceeding_the_ratio_number_of_national_workers"], "0")
 
 	def test_no_ratio_asks_for_no_nationals(self):
@@ -91,9 +99,9 @@ class TestDerivedFigures(FrappeTestCase):
 				)
 
 	def test_the_counts_may_arrive_as_the_strings_the_row_stores(self):
-		figures = derived_figures(SECTOR_UNDER_TEST, "20", "1", "8")
+		figures = derived_figures(SECTOR_UNDER_TEST, "20", "5", "8")
 		self.assertEqual(figures["required_number_of_national_workers"], "2")
-		self.assertEqual(figures["exceeding_the_ratio_number_of_national_workers"], "1")
+		self.assertEqual(figures["exceeding_the_ratio_number_of_national_workers"], "3")
 
 
 class TestLicenceRecalculates(FrappeTestCase):
@@ -111,7 +119,7 @@ class TestLicenceRecalculates(FrappeTestCase):
 			"pam_license_stats": [{
 				"occupational_sector": self.sector,
 				"ratio_number_of_national_workers": "20",
-				"national_number_of_workers": "1",
+				"national_number_of_workers": "5",
 				"expatriate_number_of_workers": "8",
 			}],
 		})
@@ -119,8 +127,9 @@ class TestLicenceRecalculates(FrappeTestCase):
 		license.insert()
 
 		row = license.pam_license_stats[0]
+		# 8 x 20 / 80 = 2 required, and five nationals is three over that.
 		self.assertEqual(row.required_number_of_national_workers, "2")
-		self.assertEqual(row.exceeding_the_ratio_number_of_national_workers, "1")
+		self.assertEqual(row.exceeding_the_ratio_number_of_national_workers, "3")
 
 	def test_changing_the_ratio_moves_the_figures(self):
 		license = frappe.get_doc({
@@ -133,17 +142,20 @@ class TestLicenceRecalculates(FrappeTestCase):
 			"pam_license_stats": [{
 				"occupational_sector": self.sector,
 				"ratio_number_of_national_workers": "20",
-				"national_number_of_workers": "0",
+				"national_number_of_workers": "10",
 				"expatriate_number_of_workers": "8",
 			}],
 		})
 		license.flags.ignore_permissions = True
 		license.insert()
+		# 8 x 20 / 80 = 2 required, and ten nationals is eight over it.
 		self.assertEqual(license.pam_license_stats[0].required_number_of_national_workers, "2")
+		self.assertEqual(license.pam_license_stats[0].exceeding_the_ratio_number_of_national_workers, "8")
 
 		license.pam_license_stats[0].ratio_number_of_national_workers = "50"
 		license.save()
 
-		# 8 x 50 / 50 = 8
+		# 8 x 50 / 50 = 8 required, so the same ten nationals are now only two over it -
+		# both figures move with the ratio, which is the point of this test.
 		self.assertEqual(license.pam_license_stats[0].required_number_of_national_workers, "8")
-		self.assertEqual(license.pam_license_stats[0].exceeding_the_ratio_number_of_national_workers, "8")
+		self.assertEqual(license.pam_license_stats[0].exceeding_the_ratio_number_of_national_workers, "2")
