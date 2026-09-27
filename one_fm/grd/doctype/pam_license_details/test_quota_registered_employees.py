@@ -24,14 +24,14 @@ class TestTheCountItAsks(FrappeTestCase):
 		"""Falling back to everyone on the licence would put the whole workforce in
 		whichever row an operator had not finished configuring, and it would look like a
 		real figure."""
-		self.assertEqual(count_quota_employees("2921143", None), 0)
-		self.assertEqual(count_quota_employees("2921143", ""), 0)
+		self.assertEqual(count_quota_employees("ONE FM Private", None), 0)
+		self.assertEqual(count_quota_employees("ONE FM Private", ""), 0)
 
 	def test_a_licence_with_no_number_counts_nobody(self):
 		self.assertEqual(count_quota_employees(None, "Basic"), 0)
 
 	def test_it_runs_against_this_site(self):
-		self.assertIsInstance(count_quota_employees("2921143", "Basic"), int)
+		self.assertIsInstance(count_quota_employees("ONE FM Private", "Basic"), int)
 
 	def test_it_joins_the_designation_for_the_quota_type(self):
 		"""The quota type is not on the employee - it is on the PAM designation they hold,
@@ -41,8 +41,11 @@ class TestTheCountItAsks(FrappeTestCase):
 		self.assertIn("Employee.one_fm_pam_designation == Designation.name", block)
 
 	def test_it_counts_the_licence_and_the_residency_like_every_other_figure(self):
+		"""The licence is the link the employee carries, not the number copied off it: the
+		copy only refreshes when the employee is saved, so it drifts."""
 		block = frappe.read_file(SOURCE).split("def count_quota_employees", 1)[1]
-		self.assertIn("Employee.pam_file_number == license_number", block)
+		self.assertIn("Employee.pam_file == license_name", block)
+		self.assertNotIn("pam_file_number", block)
 		self.assertIn("Employee.under_company_residency == 1", block)
 
 
@@ -62,8 +65,11 @@ class _Recorder:
 	def set_value(self, doctype, name, fieldname, value, update_modified=None):
 		self.written.append((doctype, name, fieldname, value, update_modified))
 
-	def count_quota_employees(self, license_number, quota_type):
-		self.counted.append((license_number, quota_type))
+	def exists(self, doctype, name):
+		return name in self.licenses
+
+	def count_quota_employees(self, license_name, quota_type):
+		self.counted.append((license_name, quota_type))
 		return self.count
 
 
@@ -72,17 +78,20 @@ class TestHowTheRowsAreWritten(FrappeTestCase):
 		recorder = _Recorder(licenses, rows, count)
 		originals = (
 			module.frappe.get_all,
+			module.frappe.db.exists,
 			module.frappe.db.set_value,
 			module.count_quota_employees,
 		)
 		module.frappe.get_all = recorder.get_all
+		module.frappe.db.exists = recorder.exists
 		module.frappe.db.set_value = recorder.set_value
 		module.count_quota_employees = recorder.count_quota_employees
 		try:
-			recount_quota_rows("2921143")
+			recount_quota_rows("ONE FM Private")
 		finally:
 			(
 				module.frappe.get_all,
+				module.frappe.db.exists,
 				module.frappe.db.set_value,
 				module.count_quota_employees,
 			) = originals
@@ -99,19 +108,19 @@ class TestHowTheRowsAreWritten(FrappeTestCase):
 		)
 
 	def test_it_counts_each_quota_type_once(self):
-		"""Two licences carrying the same number hold the same employees."""
+		"""Two rows of the same type on a licence hold the same employees."""
 		recorder = self._recount(
-			["ONE FM Private", "T4"],
-			[{"name": "row-1", "type_of_quota": "Basic"}],
+			["ONE FM Private"],
+			[{"name": "row-1", "type_of_quota": "Basic"}, {"name": "row-2", "type_of_quota": "Basic"}],
 		)
-		self.assertEqual(recorder.counted, [("2921143", "Basic")])
+		self.assertEqual(recorder.counted, [("ONE FM Private", "Basic")])
 		self.assertEqual(len(recorder.written), 2)
 
 	def test_it_does_not_bump_modified(self):
 		recorder = self._recount(["ONE FM Private"], [{"name": "row-1", "type_of_quota": "Basic"}])
 		self.assertIs(recorder.written[0][4], False)
 
-	def test_a_number_no_licence_holds_writes_nothing(self):
+	def test_a_licence_that_is_not_there_writes_nothing(self):
 		self.assertEqual(self._recount([], []).written, [])
 
 	def test_a_missing_row_is_not_invented(self):
@@ -130,20 +139,20 @@ class TestWhenItIsRecounted(FrappeTestCase):
 
 	def test_a_transfer_recounts_the_quota_rows(self):
 		block = self.source.split("def update_counts_from_employee", 1)[1]
-		self.assertIn("recount_quota_rows(license_number)", block)
+		self.assertIn("recount_quota_rows(license_name)", block)
 
 	def test_moving_a_designation_between_quotas_recounts_too(self):
 		"""The quota type is on the designation, so moving one moves everybody holding it -
 		and no Employee is saved when that happens."""
 		block = self.source.split("def update_counts_from_designation", 1)[1]
 		self.assertIn('doc.has_value_changed("quota_type")', block)
-		self.assertIn("recount_quota_rows(number)", block)
+		self.assertIn("recount_quota_rows(license_name)", block)
 
 	def test_a_sector_move_still_recounts_the_sectors(self):
 		"""The two groupings are independent; one must not switch the other off."""
 		block = self.source.split("def update_counts_from_designation", 1)[1]
 		self.assertIn('doc.has_value_changed("occupational_sector")', block)
-		self.assertIn("recount_sector(number, sector)", block)
+		self.assertIn("recount_sector(license_name, sector)", block)
 
 	def test_a_designation_that_moved_neither_is_left_alone(self):
 		block = self.source.split("def update_counts_from_designation", 1)[1]
@@ -187,3 +196,31 @@ class TestTheFieldIsDerived(FrappeTestCase):
 		)
 		field = next(f for f in definition["fields"] if f["fieldname"] == "allocated_quota")
 		self.assertNotEqual(field.get("read_only"), 1)
+
+
+class TestTheRowsAreRestated(FrappeTestCase):
+	"""The headcount was counted off pam_file_number and is counted off pam_file now, so
+	every figure already stored was worked out the old way."""
+
+	def test_the_restatement_covers_the_quota_rows(self):
+		source = frappe.read_file(
+			frappe.get_app_path(
+				"one_fm", "patches", "v15_0", "recount_pam_licences_by_file_link.py"
+			)
+		)
+		self.assertIn("recount_quota_rows(license_name)", source)
+
+	def test_every_stored_row_matches_the_employees_on_the_licence(self):
+		"""The restatement itself, asserted against the live site once it has run."""
+		wrong = []
+		for row in frappe.get_all(
+			"Quota Classification",
+			filters={"parenttype": "PAM License Details", "parentfield": "quota_classification"},
+			fields=["name", "parent", "type_of_quota", FIELDNAME],
+		):
+			if not row.type_of_quota:
+				continue
+			counted = count_quota_employees(row.parent, row.type_of_quota)
+			if str(row.get(FIELDNAME) or "") != str(counted):
+				wrong.append((row.parent, row.type_of_quota, row.get(FIELDNAME), counted))
+		self.assertEqual(wrong, [], f"{len(wrong)} quota rows carry a stale headcount")

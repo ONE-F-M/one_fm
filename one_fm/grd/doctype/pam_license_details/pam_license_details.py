@@ -238,10 +238,10 @@ def update_counts_from_employee(doc, method=None):
 		recount_license_total(license_name)
 
 	# WI-002769: the quota rows are a second grouping of the same employees, by the quota
-	# type their designation belongs to rather than by its sector. Counted off the licence
-	# number, like the sector rows they sit beside.
-	for license_number in {doc.get("pam_file_number"), before.get("pam_file_number") if before else None} - {None, ""}:
-		recount_quota_rows(license_number)
+	# type their designation belongs to rather than by its sector. Off the same link the
+	# rest of the figures are counted from.
+	for license_name in {doc.get("pam_file"), before.get("pam_file") if before else None} - {None, ""}:
+		recount_quota_rows(license_name)
 
 
 def update_counts_from_designation(doc, method=None):
@@ -479,18 +479,21 @@ def recount_license_total(license_name):
 	)
 
 
-def count_quota_employees(license_number, quota_type) -> int:
+def count_quota_employees(license_name, quota_type) -> int:
 	"""How many of this licence's employees hold a designation in this quota (WI-002769).
 
 	Three conditions, all of them the story's: the licence, the company's residency, and
 	the quota type - which is not on the employee but on the PAM designation they hold, so
 	the join is what makes the count possible at all.
 
+	The licence is the link the employee carries, not the number copied off it - see
+	count_license_employees.
+
 	A row with no quota type yet counts nobody. Falling back to "everyone on the licence"
 	would put the whole workforce in whichever row an operator had not finished
 	configuring, and it would look like a real figure.
 	"""
-	if not license_number or not quota_type:
+	if not license_name or not quota_type:
 		return 0
 
 	Employee = DocType("Employee")
@@ -501,7 +504,7 @@ def count_quota_employees(license_number, quota_type) -> int:
 		.join(Designation)
 		.on(Employee.one_fm_pam_designation == Designation.name)
 		.select(frappe.qb.terms.Function("Count", Employee.name).as_("count"))
-		.where(Employee.pam_file_number == license_number)
+		.where(Employee.pam_file == license_name)
 		.where(Employee.under_company_residency == 1)
 		.where(Designation.quota_type == quota_type)
 	).run(as_dict=True)
@@ -509,8 +512,8 @@ def count_quota_employees(license_number, quota_type) -> int:
 	return rows[0]["count"] if rows else 0
 
 
-def recount_quota_rows(license_number):
-	"""Write the registered headcount onto every quota row of every licence with this number.
+def recount_quota_rows(license_name):
+	"""Write the registered headcount onto every quota row of this licence.
 
 	The whole table rather than one row: it is a handful of rows, and recounting it is
 	cheaper than working out which one an employee moved between - their designation can
@@ -520,34 +523,28 @@ def recount_quota_rows(license_number):
 	allocated this licence a quota of that type; inventing one from the employees who
 	happen to hold such a designation would state an allocation nobody granted.
 	"""
-	licenses = frappe.get_all(
-		"PAM License Details",
-		filters={"civil_id_number_for_licensing": license_number},
-		pluck="name",
-	)
-	if not licenses:
+	if not license_name or not frappe.db.exists("PAM License Details", license_name):
 		return
 
 	counts = {}
-	for license_name in licenses:
-		rows = frappe.get_all(
-			"Quota Classification",
-			filters={
-				"parent": license_name,
-				"parenttype": "PAM License Details",
-				"parentfield": "quota_classification",
-			},
-			fields=["name", "type_of_quota"],
-		)
-		for row in rows:
-			quota_type = row["type_of_quota"]
-			if quota_type not in counts:
-				counts[quota_type] = str(count_quota_employees(license_number, quota_type))
+	rows = frappe.get_all(
+		"Quota Classification",
+		filters={
+			"parent": license_name,
+			"parenttype": "PAM License Details",
+			"parentfield": "quota_classification",
+		},
+		fields=["name", "type_of_quota"],
+	)
+	for row in rows:
+		quota_type = row["type_of_quota"]
+		if quota_type not in counts:
+			counts[quota_type] = str(count_quota_employees(license_name, quota_type))
 
-			frappe.db.set_value(
-				"Quota Classification",
-				row["name"],
-				"registered_numbers_of_employees",
-				counts[quota_type],
-				update_modified=False,
-			)
+		frappe.db.set_value(
+			"Quota Classification",
+			row["name"],
+			"registered_numbers_of_employees",
+			counts[quota_type],
+			update_modified=False,
+		)
