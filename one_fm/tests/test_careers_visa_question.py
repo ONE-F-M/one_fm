@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002725: a Kuwaiti candidate is not asked about a visa they do not need."""
+"""A Kuwaiti candidate is not asked about a visa they do not need."""
 
 import json
 import shutil

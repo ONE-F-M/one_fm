@@ -121,7 +121,7 @@ job_application = Class.extend({
     $(".nationality_list").on("change", function(){
       // Show Contact details
       me.show_applicant_contact_details();
-      // WI-002725: the visa question may already be on screen by now - a candidate can
+      // The visa question may already be on screen by now - a candidate can
       // fill the form in, then go back and correct their nationality. Re-asked here so it
       // disappears on Kuwaiti and comes back on anything else. Only once the flow has
       // actually reached that step: before then there is nothing to re-show, and showing
@@ -131,7 +131,7 @@ job_application = Class.extend({
       }
     });
   },
-  // WI-002725: a Kuwaiti citizen needs no visa to work in Kuwait, so the question is not
+  // A Kuwaiti citizen needs no visa to work in Kuwait, so the question is not
   // asked of them at all. "Are you currently in Kuwait?" is still asked of everybody -
   // where they are now is a separate question from whether they may work here.
   //
