@@ -62,8 +62,10 @@ class _Recorder:
 			return list(self.licenses)
 		return [dict(row) for row in self.rows]
 
-	def set_value(self, doctype, name, fieldname, value, update_modified=None):
-		self.written.append((doctype, name, fieldname, value, update_modified))
+	def set_value(self, doctype, name, values, update_modified=None):
+		# The recount writes the registered headcount and the issued visas in one call, so
+		# the recorder takes the dict rather than a single fieldname.
+		self.written.append((doctype, name, values, update_modified))
 
 	def exists(self, doctype, name):
 		return name in self.licenses
@@ -71,6 +73,9 @@ class _Recorder:
 	def count_quota_employees(self, license_name, quota_type):
 		self.counted.append((license_name, quota_type))
 		return self.count
+
+	def visas_issued_by_quota(self, license_name):
+		return {}
 
 
 class TestHowTheRowsAreWritten(FrappeTestCase):
@@ -81,11 +86,13 @@ class TestHowTheRowsAreWritten(FrappeTestCase):
 			module.frappe.db.exists,
 			module.frappe.db.set_value,
 			module.count_quota_employees,
+			module.visas_issued_by_quota,
 		)
 		module.frappe.get_all = recorder.get_all
 		module.frappe.db.exists = recorder.exists
 		module.frappe.db.set_value = recorder.set_value
 		module.count_quota_employees = recorder.count_quota_employees
+		module.visas_issued_by_quota = recorder.visas_issued_by_quota
 		try:
 			recount_quota_rows("ONE FM Private")
 		finally:
@@ -94,6 +101,7 @@ class TestHowTheRowsAreWritten(FrappeTestCase):
 				module.frappe.db.exists,
 				module.frappe.db.set_value,
 				module.count_quota_employees,
+				module.visas_issued_by_quota,
 			) = originals
 		return recorder
 
@@ -103,8 +111,8 @@ class TestHowTheRowsAreWritten(FrappeTestCase):
 			[{"name": "row-1", "type_of_quota": "Basic"}, {"name": "row-2", "type_of_quota": "Light Driver"}],
 		)
 		self.assertEqual(
-			[(row[1], row[2], row[3]) for row in recorder.written],
-			[("row-1", FIELDNAME, "5"), ("row-2", FIELDNAME, "5")],
+			[(row[1], row[2][FIELDNAME]) for row in recorder.written],
+			[("row-1", "5"), ("row-2", "5")],
 		)
 
 	def test_it_counts_each_quota_type_once(self):
@@ -118,7 +126,7 @@ class TestHowTheRowsAreWritten(FrappeTestCase):
 
 	def test_it_does_not_bump_modified(self):
 		recorder = self._recount(["ONE FM Private"], [{"name": "row-1", "type_of_quota": "Basic"}])
-		self.assertIs(recorder.written[0][4], False)
+		self.assertIs(recorder.written[0][3], False)
 
 	def test_a_licence_that_is_not_there_writes_nothing(self):
 		self.assertEqual(self._recount([], []).written, [])
