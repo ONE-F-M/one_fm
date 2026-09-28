@@ -153,6 +153,11 @@ job_application = Class.extend({
       if(!$(".visa_type").hasClass('hide')){
         $(".visa_type").addClass('hide');
       }
+      // Cleared, not just hidden. The submit reads the checked radio and the visa type
+      // straight off the page, so an answer given before the nationality was corrected
+      // would travel to the backend behind a question the candidate can no longer see.
+      $("#visa input[type='radio']").prop('checked', false);
+      $(".visa_type").val('');
       $(".in_kuwait").removeClass('hide');
     }
     else{

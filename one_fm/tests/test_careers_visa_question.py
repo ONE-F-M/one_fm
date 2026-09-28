@@ -13,14 +13,15 @@ HARNESS = frappe.get_app_path("one_fm", "tests", "js", "careers_visa_gate_harnes
 PAGE = frappe.get_app_path("one_fm", "templates", "pages", "job_application.js")
 
 
-def _sections(nationality, then_nationality=None):
-	"""Run the SHIPPED gate and report which sections the page would reveal."""
+def _sections(nationality, then_nationality=None, answered=None):
+	"""Run the SHIPPED gate and report what the page would reveal, and what it would send."""
+	args = {"nationality": nationality}
+	if then_nationality is not None:
+		args["then_nationality"] = then_nationality
+	if answered:
+		args["answered_visa"], args["answered_visa_type"] = answered
 	out = subprocess.run(
-		["node", HARNESS, json.dumps(
-			{"nationality": nationality}
-			if then_nationality is None
-			else {"nationality": nationality, "then_nationality": then_nationality}
-		)],
+		["node", HARNESS, json.dumps(args)],
 		capture_output=True,
 		text=True,
 		env={"PATH": "/usr/bin:/bin:/usr/local/bin"},
@@ -61,6 +62,26 @@ class TestWhatTheCandidateIsAsked(FrappeTestCase):
 		self.assertNotIn(".visa", shown)
 		self.assertNotIn(".visa_type", shown)
 		self.assertIn(".in_kuwait", shown)
+
+	def test_an_answer_already_given_is_cleared_when_the_question_goes(self):
+		"""The submit reads the checked radio and the visa type straight off the page, so a
+		hidden answer still travels to the backend - a Kuwaiti applicant would arrive
+		carrying a visa answer behind a question they can no longer see."""
+		result = _sections("Indian", then_nationality="Kuwaiti", answered=("yes", "Work Visa"))
+		self.assertIsNone(result["answers"]["visa"])
+		self.assertIsNone(result["answers"]["visa_type"])
+
+	def test_an_answer_is_left_alone_while_the_question_still_applies(self):
+		"""Clearing it on every pass would wipe what a non-Kuwaiti candidate just typed."""
+		result = _sections("Indian", answered=("yes", "Work Visa"))
+		self.assertEqual(result["answers"]["visa"], "yes")
+		self.assertEqual(result["answers"]["visa_type"], "Work Visa")
+
+	def test_the_page_clears_it_rather_than_only_hiding_it(self):
+		page = frappe.read_file(PAGE)
+		block = page.split("apply_visa_gate: function", 1)[1].split("\n  },", 1)[0]
+		self.assertIn("$(\"#visa input[type='radio']\").prop('checked', false);", block)
+		self.assertIn("$(\".visa_type\").val('');", block)
 
 	def test_changing_away_from_kuwaiti_brings_it_back(self):
 		shown = _sections("Kuwaiti", then_nationality="Indian")["shown"]

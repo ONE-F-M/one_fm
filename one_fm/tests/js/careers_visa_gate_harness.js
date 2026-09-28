@@ -32,15 +32,32 @@ const sections = {
 	".in_kuwait": { hidden: true },
 };
 
+// What the candidate has answered, and what the submit would read back off the page.
+const answers = {
+	visa: args.answered_visa === undefined ? null : args.answered_visa,
+	visa_type: args.answered_visa_type === undefined ? null : args.answered_visa_type,
+};
+
 function $(selector) {
 	if (selector === ".nationality_list") {
 		return { val: () => nationality };
+	}
+	if (selector === "#visa input[type='radio']") {
+		return {
+			prop: (name, value) => {
+				if (name === "checked" && value === false) answers.visa = null;
+			},
+		};
 	}
 	const section = sections[selector];
 	if (!section) {
 		throw new Error(`the page has no ${selector}`);
 	}
 	return {
+		val: (value) => {
+			if (value === undefined) return answers[selector.slice(1)];
+			answers[selector.slice(1)] = value === "" ? null : value;
+		},
 		hasClass: (name) => name === "hide" && section.hidden,
 		addClass: (name) => {
 			if (name === "hide") section.hidden = true;
@@ -68,5 +85,7 @@ process.stdout.write(
 	JSON.stringify({
 		is_kuwaiti: page.is_kuwaiti(),
 		shown: Object.keys(sections).filter((key) => !sections[key].hidden),
+		// What submit_job_application would send.
+		answers: answers,
 	})
 );
