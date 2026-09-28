@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002772: a visa stops being issued once its holder is a registered worker."""
+"""A visa stops being issued once its holder is a registered worker."""
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -33,7 +33,7 @@ class TestWhatMakesSomebodyRegistered(FrappeTestCase):
 		self.assertIn("is deliberately NOT here", block)
 
 	def test_it_is_keyed_on_the_job_applicant(self):
-		"""What the Visa Request and the Employee share, and the key WI-002442's duplicate
+		"""What the Visa Request and the Employee share, and the key the duplicate-application
 		rule already uses."""
 		self.assertIn('["job_applicant", "in", job_applicants]', _block("registered_applicants"))
 
@@ -80,7 +80,7 @@ class TestWhenTheFiguresMove(FrappeTestCase):
 
 	def test_creating_the_employee_recounts(self):
 		"""has_value_changed answers False for every field on this Employee's insert, so
-		the insert is asked about first - WI-002091's trap."""
+		the insert is asked about first - the trap the sector headcounts sprang."""
 		block = _block("update_counts_from_employee")
 		self.assertIn("doc.flags.in_insert", block)
 
