@@ -1,4 +1,4 @@
-"""WI-002823: the Employee fields hidden by Under Company Residency are always shown.
+"""The Employee fields hidden by Under Company Residency are always shown.
 
 Seven fields disappeared from the Employee form whenever the Under Company Residency box
 was unticked - the PAM file and its number, the PAM designation, the work permit and its
@@ -62,7 +62,7 @@ def verify():
 	)
 	if standing:
 		frappe.throw(
-			f"WI-002823: {standing} still disappear when Under Company Residency is "
+			f"{standing} still disappear when Under Company Residency is "
 			"unticked."
 		)
 
@@ -76,6 +76,6 @@ def verify():
 	]
 	if gated_in_fixture:
 		frappe.throw(
-			f"WI-002823: {gated_in_fixture} still carry the condition in the fixture, so "
+			f"{gated_in_fixture} still carry the condition in the fixture, so "
 			"the next migrate would put it back."
 		)

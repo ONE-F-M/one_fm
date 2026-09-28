@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002823: the Employee fields Under Company Residency used to hide are always shown."""
+"""The Employee fields Under Company Residency used to hide are always shown."""
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
