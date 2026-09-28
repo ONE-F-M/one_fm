@@ -5,7 +5,9 @@ def execute():
     process_name = "Loan Management"
     create_process_if_not_exists(process_name)
 
-    task_type = "Repetitive"
+    # "Repetitive" was deleted from Task Type; use "Project" per the agreed mapping
+    # so this patch never recreates a removed Task Type.
+    task_type = "Project"
     if not frappe.db.exists("Task Type", task_type):
         frappe.get_doc({
             "name": task_type,
@@ -21,7 +23,7 @@ def execute():
     "is_active": 1,
     "erp_document": "Loan Application",
     "task": "Review and Approve Loan Application",
-    "task_type": "Repetitive",
+    "task_type": task_type,
     "frequency": "Daily",
     "repeat_on_day": 0,
     "repeat_on_last_day": 0,
