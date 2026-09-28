@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002744: a visa that was issued has to be given back before another is asked for."""
+"""A visa that was issued has to be given back before another is asked for."""
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -151,7 +151,7 @@ class TestTheCancellationSideGuards(FrappeTestCase):
 		self.assertIn('["docstatus", "!=", 2]', block)
 
 	def test_the_state_it_names_is_not_the_refused_one(self):
-		"""WI-002608 renamed the refusal state; a cancellation the PRO refused must not
+		"""The refusal state has been renamed; a cancellation the PRO refused must not
 		read as one that released the visa."""
 		self.assertNotEqual(COMPLETED_STATE, REJECTED_STATE)
 

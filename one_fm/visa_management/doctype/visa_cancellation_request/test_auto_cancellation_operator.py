@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002744: the expiry job's cancellation is owned by the GRD Operator, not the scheduler.
+"""The expiry job's cancellation is owned by the GRD Operator, not the scheduler.
 
 The Visa Cancellation map takes the first user task's assignee from the document's owner, so
 a cancellation the background job inserts is owned by Administrator and only Administrator

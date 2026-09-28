@@ -181,7 +181,7 @@ class VisaRequest(Document):
 		)
 
 	def validate_previous_visa_cancelled(self):
-		"""A visa that was issued has to be cancelled before another can be asked for (WI-002744).
+		"""A visa that was issued has to be cancelled before another can be asked for.
 
 		A Completed Visa Request means the applicant holds a visa. Asking for a second one
 		while the first still stands is asking the ministry for two visas for one person -
@@ -580,11 +580,11 @@ def _attachment_path(file_url: str) -> str:
 	return path
 
 
-# WI-002744: the state a Visa Request reaches when the applicant actually holds a visa,
+# The state a Visa Request reaches when the applicant actually holds a visa,
 # and the state a cancellation reaches when they have given it back. The cancellation's
 # lifecycle is the Visa Cancellation process map's rather than a Frappe Workflow, so the
 # state is named here as a string and checked against the master in the tests - a rename
-# there would otherwise switch this rule off silently, the same trap WI-002608 sprang on
+# there would otherwise switch this rule off silently, the same trap the earlier rename sprang on
 # the cancellation's own duplicate rule.
 COMPLETED_STATE = "Completed"
 

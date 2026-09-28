@@ -268,7 +268,7 @@ def cancel_expired_visas():
 
 	Left in Draft, which is what the story asks for - the process map takes it from there.
 
-	Raised AS the GRD Operator rather than as the scheduler (WI-002744). The map's first
+	Raised AS the GRD Operator rather than as the scheduler. The map's first
 	user task takes its assignee from the document's owner, so a cancellation the job
 	inserts is owned by Administrator and only Administrator can act on it. insert()
 	overwrites owner with the session user for any new document, and the process instance
@@ -304,7 +304,7 @@ def cancel_expired_visas():
 
 
 def insert_as_grd_operator(doc):
-	"""Insert the cancellation owned by the GRD Operator it names (WI-002744).
+	"""Insert the cancellation owned by the GRD Operator it names.
 
 	With no operator on the record there is nobody to be, so it is inserted as the job
 	runs it - which is what happened before this existed.
