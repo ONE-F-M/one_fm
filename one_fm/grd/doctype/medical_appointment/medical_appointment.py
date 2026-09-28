@@ -172,18 +172,18 @@ class MedicalAppointment(Document):
 		attendance_doc.submit()
 
 
-# WI-002095: the medical an overseas hire needs is opened by the Preparation that hires
+# The medical an overseas hire needs is opened by the Preparation that hires
 # them. "First Time" for a first arrival; the field's other option, Renewal, belongs to the
 # renewal path, which does not open one.
 FIRST_TIME = "First Time"
 
 
 def create_medical_appointment(employee, appointment_type, preparation_name=None):
-	"""Open the medical appointment a Preparation row calls for (WI-002095).
+	"""Open the medical appointment a Preparation row calls for.
 
 	Inserted without its mandatory fields. The appointment date, whether transport is
 	needed and which PRO takes it are not facts anybody holds when the Preparation is
-	submitted, so the record opens in the workflow's first state, Draft (WI-003016),
+	submitted, so the record opens in the workflow's first state, Draft,
 	instead of Pending Supervisor. Nobody is assigned to act on it until whoever fills
 	in those details moves it on to Pending Supervisor - a record with no appointment
 	date, no transport decision and no PRO yet is not ready for a supervisor to act on.
