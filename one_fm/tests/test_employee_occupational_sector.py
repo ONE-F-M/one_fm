@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002745: the Employee carries the occupational sector of the PAM designation it holds."""
+"""The Employee carries the occupational sector of the PAM designation it holds."""
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -55,8 +55,8 @@ class TestTheField(FrappeTestCase):
 		self.assertEqual(missing, [])
 
 	def test_it_is_always_visible(self):
-		"""The BA site's copy hides it unless Under Company Residency is ticked, which
-		WI-002823 removes from every field on this form."""
+		"""The BA site's copy hides it unless Under Company Residency is ticked, a
+		condition being removed from every field on this form."""
 		self.assertEqual(self.field.get("depends_on", ""), "")
 
 	def test_it_is_labelled_the_way_pam_names_it(self):
@@ -85,7 +85,7 @@ class TestTheSourceItReads(FrappeTestCase):
 
 class TestItAgreesWithTheLicenceCounts(FrappeTestCase):
 	def test_the_sector_is_still_reached_through_the_designation_for_counting(self):
-		"""WI-002091 counts a licence's workers by joining Employee to PAM Designation
+		"""The licence headcounts count a licence's workers by joining Employee to PAM Designation
 		List. This field is a copy for the form to show, not a second source of truth -
 		the count must not start reading it, or a stale copy would change a headcount."""
 		source = frappe.read_file(

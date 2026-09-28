@@ -1,4 +1,4 @@
-"""WI-002745: fill in the occupational sector on the employees that already hold a PAM designation.
+"""Fill in the occupational sector on the employees that already hold a PAM designation.
 
 ``custom_occupational_sector`` is fetched from the designation, and a fetch only runs when
 the form is saved. A new field therefore arrives empty on every existing record and stays

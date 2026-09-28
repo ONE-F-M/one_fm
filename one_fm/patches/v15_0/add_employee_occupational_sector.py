@@ -8,7 +8,7 @@ FIELDTYPE = "Link"
 
 
 def execute():
-	"""WI-002745: add custom_occupational_sector to Employee.
+	"""Add custom_occupational_sector to Employee.
 
 	The definition in custom_field/employee.py is only applied by after_install, so on a
 	site that is already installed a new entry in it never reaches the form.

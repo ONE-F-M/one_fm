@@ -7,7 +7,7 @@ COLUMNS = ("one_fm_work_permit", "pam_authorized_signatory", "pam_visa")
 
 
 def execute():
-	"""WI-002745: free room on tabEmployee for the Occupational Sector column.
+	"""Free room on tabEmployee for the Occupational Sector column.
 
 	tabEmployee carries 115 varchar(140) columns and sits at 65,182 of InnoDB's 65,535
 	byte row limit, so the next one fails outright:
