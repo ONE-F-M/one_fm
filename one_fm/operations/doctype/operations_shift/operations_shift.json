@@ -10,6 +10,7 @@
   "site_location",
   "column_break_2",
   "status",
+  "escalation_tier",
   "governorate_area",
   "service_type",
   "shift_details_section",
@@ -173,6 +174,11 @@
    "in_standard_filter": 1,
    "label": "Status",
    "options": "Active\nInactive"
+  },
+  {
+   "fieldname": "escalation_tier",
+   "fieldtype": "Data",
+   "label": "Escalation Tier"
   },
   {
    "description": "Index of the table is the priority of the supervisor",
