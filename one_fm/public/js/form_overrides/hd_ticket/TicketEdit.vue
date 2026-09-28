@@ -66,7 +66,7 @@
               label="Update Ticket"
               theme="gray"
               variant="solid"
-              :disabled="$refs.editor?.editor?.isEmpty || loading || !subject"
+              :disabled="$refs.editor?.editor?.isEmpty || isSaving || !subject"
               @click="handleSubmit"
             />
           </template>
@@ -99,7 +99,7 @@ const ticketName = route.params.ticket_name as string;
 const subject = ref("");
 const description = ref("");
 const attachments = ref([]);
-const loading = ref(false);
+const isSaving = ref(false);
 const templateFields = reactive({});
 const { $dialog } = globalStore();
 
@@ -216,7 +216,7 @@ async function handleSubmit() {
       return;
     }
   }
-  loading.value = true;
+  isSaving.value = true;
   try {
     await call("one_fm.overrides.hd_ticket.update_ticket", {
       name: ticketName,
@@ -230,7 +230,7 @@ async function handleSubmit() {
   } catch (e) {
     console.error("Failed to update ticket", e);
   } finally {
-    loading.value = false;
+    isSaving.value = false;
   }
 }
 
