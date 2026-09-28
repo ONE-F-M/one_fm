@@ -834,6 +834,27 @@ def get_employee_custom_fields():
 				"mandatory_depends_on": "work_permit",
 				"options": "PAM Designation List",
 			},
+			# The sector an employee counts against is not on the employee - it
+			# is on the PAM designation they hold, and reaching it meant two hops every
+			# time. Fetched here so the Employee carries it, and so PAM's own grouping is
+			# visible on the record rather than only in the licence's figures.
+			#
+			# A Link, not the Data the BA site carries. The sector is a record - the
+			# designation points at one and the licence figures are grouped by one - so a
+			# copy held as loose text is the one place on the chain where a sector could
+			# read as something that is not an Occupational Sector.
+			#
+			# No depends_on. The BA site's copy hides it unless Under Company Residency is
+			# ticked, a condition being removed from every field on this form for the
+			# same reason: the value is on the record either way.
+			{
+				"fetch_from": "one_fm_pam_designation.occupational_sector",
+				"fieldname": "custom_occupational_sector",
+				"fieldtype": "Link",
+				"insert_after": "one_fm_pam_designation",
+				"label": "Occupational Sector",
+				"options": "Occupational Sector",
+			},
 			{
 				"fieldname": "one_fm_basic_salary",
 				"fieldtype": "Currency",
