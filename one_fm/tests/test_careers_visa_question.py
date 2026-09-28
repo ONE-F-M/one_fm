@@ -13,10 +13,14 @@ HARNESS = frappe.get_app_path("one_fm", "tests", "js", "careers_visa_gate_harnes
 PAGE = frappe.get_app_path("one_fm", "templates", "pages", "job_application.js")
 
 
-def _sections(nationality):
+def _sections(nationality, then_nationality=None):
 	"""Run the SHIPPED gate and report which sections the page would reveal."""
 	out = subprocess.run(
-		["node", HARNESS, json.dumps({"nationality": nationality})],
+		["node", HARNESS, json.dumps(
+			{"nationality": nationality}
+			if then_nationality is None
+			else {"nationality": nationality, "then_nationality": then_nationality}
+		)],
 		capture_output=True,
 		text=True,
 		env={"PATH": "/usr/bin:/bin:/usr/local/bin"},
@@ -48,6 +52,31 @@ class TestWhatTheCandidateIsAsked(FrappeTestCase):
 			self.assertIn(".visa", shown, nationality)
 			# The in-Kuwait question comes after they answer it, as it always has.
 			self.assertNotIn(".in_kuwait", shown, nationality)
+
+	def test_changing_to_kuwaiti_takes_the_question_away_again(self):
+		"""A candidate can reach the visa question and then go back and correct their
+		nationality. The question was asked once and never re-asked, so it stayed on
+		screen."""
+		shown = _sections("Indian", then_nationality="Kuwaiti")["shown"]
+		self.assertNotIn(".visa", shown)
+		self.assertNotIn(".visa_type", shown)
+		self.assertIn(".in_kuwait", shown)
+
+	def test_changing_away_from_kuwaiti_brings_it_back(self):
+		shown = _sections("Kuwaiti", then_nationality="Indian")["shown"]
+		self.assertIn(".visa", shown)
+
+	def test_it_survives_going_back_and_forth(self):
+		self.assertNotIn(".visa", _sections("Kuwaiti", then_nationality="Kuwaiti")["shown"])
+		self.assertIn(".visa", _sections("Indian", then_nationality="Nepalese")["shown"])
+
+	def test_the_nationality_handler_re_asks_the_gate(self):
+		"""Only once the flow has reached that step: before then there is nothing to
+		re-show, and showing it would jump the candidate past the questions in between."""
+		page = frappe.read_file(PAGE)
+		block = page.split("on_change_nationality: function", 1)[1].split("\n  },", 1)[0]
+		self.assertIn("if(me.visa_step_reached){", block)
+		self.assertIn("me.apply_visa_gate();", block)
 
 	def test_a_candidate_who_has_chosen_nothing_yet_is_treated_as_not_kuwaiti(self):
 		"""The safe way round: the question can be skipped, never silently required."""

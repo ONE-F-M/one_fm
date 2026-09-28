@@ -21,6 +21,9 @@ function extract(name) {
 }
 
 const args = JSON.parse(process.argv[2]);
+// A second nationality means: reach the visa step as the first one, then change the
+// dropdown to the second, exactly as a candidate correcting their answer does.
+let nationality = args.nationality;
 
 // Each selector is a section with a `hide` class, exactly as the page ships it.
 const sections = {
@@ -31,7 +34,7 @@ const sections = {
 
 function $(selector) {
 	if (selector === ".nationality_list") {
-		return { val: () => args.nationality };
+		return { val: () => nationality };
 	}
 	const section = sections[selector];
 	if (!section) {
@@ -48,8 +51,18 @@ function $(selector) {
 	};
 }
 
-const page = eval(`({${extract("show_visa_or_skip")},${extract("is_kuwaiti")}})`);
+const page = eval(
+	`({${extract("show_visa_or_skip")},${extract("apply_visa_gate")},${extract("is_kuwaiti")}})`
+);
 page.show_visa_or_skip();
+
+if (args.then_nationality !== undefined) {
+	nationality = args.then_nationality;
+	// What the nationality handler does once the flow has reached the visa step.
+	if (page.visa_step_reached) {
+		page.apply_visa_gate();
+	}
+}
 
 process.stdout.write(
 	JSON.stringify({

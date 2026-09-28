@@ -121,6 +121,14 @@ job_application = Class.extend({
     $(".nationality_list").on("change", function(){
       // Show Contact details
       me.show_applicant_contact_details();
+      // WI-002725: the visa question may already be on screen by now - a candidate can
+      // fill the form in, then go back and correct their nationality. Re-asked here so it
+      // disappears on Kuwaiti and comes back on anything else. Only once the flow has
+      // actually reached that step: before then there is nothing to re-show, and showing
+      // it would jump the candidate past the questions in between.
+      if(me.visa_step_reached){
+        me.apply_visa_gate();
+      }
     });
   },
   // WI-002725: a Kuwaiti citizen needs no visa to work in Kuwait, so the question is not
@@ -130,6 +138,13 @@ job_application = Class.extend({
   // One gate, called from every place that used to reveal the visa question directly.
   // Three call sites would have been three places for this to be forgotten.
   show_visa_or_skip: function() {
+    var me = this;
+    // The flow has reached the visa step. From here a change of nationality has to be
+    // able to hide the question and bring it back.
+    me.visa_step_reached = true;
+    me.apply_visa_gate();
+  },
+  apply_visa_gate: function() {
     var me = this;
     if(me.is_kuwaiti()){
       if(!$(".visa").hasClass('hide')){
