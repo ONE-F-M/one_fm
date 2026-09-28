@@ -4473,7 +4473,7 @@ def get_field_with_label(doctype, field_name, value):
         "value": value
     }
 
-def create_process_task(process_name, erp_document, task_description, process_description=None, employee=None, process_owner=None, business_analyst=None, task_type="Repetitive", is_routine_task=0, frequency="", cron_format="", is_automated=0, method=""):
+def create_process_task(process_name, erp_document, task_description, process_description=None, employee=None, process_owner=None, business_analyst=None, task_type="Project", is_routine_task=0, frequency="", cron_format="", is_automated=0, method=""):
     create_process_if_not_exists(process_name, description=process_description, process_owner=process_owner, business_analyst=business_analyst)
     create_method_if_not_exists(method, erp_document, description=process_description)
     task_type = get_task_type(task_type, is_routine_task)
