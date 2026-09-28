@@ -4542,14 +4542,24 @@ def create_method_if_not_exists(method, document_type, description=None):
             "doctype": "Method"
         }).insert(ignore_permissions=True)
 
-def get_task_type(task_type="Repetitive", is_routine_task=0):
+# The only Task Type records allowed to exist going forward. Any task_type
+# outside this set is remapped to "Project" instead of being created, so
+# deleted/legacy types (e.g. "Repetitive", "Active Repetitive", "develop",
+# "Individual") can never be recreated by application code or patches.
+ALLOWED_TASK_TYPES = {"Action", "Process", "Project", "Routine"}
+FALLBACK_TASK_TYPE = "Project"
+
+def get_task_type(task_type="Project", is_routine_task=0):
+    if task_type not in ALLOWED_TASK_TYPES:
+        task_type = FALLBACK_TASK_TYPE
+
     if not frappe.db.exists("Task Type", task_type):
-        task_type = frappe.get_doc({
+        doc = frappe.get_doc({
             "name": task_type,
             "is_routine_task": is_routine_task,
             "doctype": "Task Type"
         }).insert(ignore_permissions=True)
-        return task_type.name
+        return doc.name
     return task_type
 
 
