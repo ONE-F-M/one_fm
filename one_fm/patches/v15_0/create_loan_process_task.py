@@ -12,7 +12,9 @@ def execute():
             "process_owner": "Administrator"
         }).insert(ignore_permissions=True)
 
-    task_type = "Repetitive"
+    # "Repetitive" was deleted from Task Type; use "Project" per the agreed mapping
+    # so this patch never recreates a removed Task Type.
+    task_type = "Project"
     if not frappe.db.exists("Task Type", task_type):
         frappe.get_doc({
             "name": task_type,
