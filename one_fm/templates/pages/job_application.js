@@ -121,7 +121,51 @@ job_application = Class.extend({
     $(".nationality_list").on("change", function(){
       // Show Contact details
       me.show_applicant_contact_details();
+      // The visa question may already be on screen by now - a candidate can
+      // fill the form in, then go back and correct their nationality. Re-asked here so it
+      // disappears on Kuwaiti and comes back on anything else. Only once the flow has
+      // actually reached that step: before then there is nothing to re-show, and showing
+      // it would jump the candidate past the questions in between.
+      if(me.visa_step_reached){
+        me.apply_visa_gate();
+      }
     });
+  },
+  // A Kuwaiti citizen needs no visa to work in Kuwait, so the question is not
+  // asked of them at all. "Are you currently in Kuwait?" is still asked of everybody -
+  // where they are now is a separate question from whether they may work here.
+  //
+  // One gate, called from every place that used to reveal the visa question directly.
+  // Three call sites would have been three places for this to be forgotten.
+  show_visa_or_skip: function() {
+    var me = this;
+    // The flow has reached the visa step. From here a change of nationality has to be
+    // able to hide the question and bring it back.
+    me.visa_step_reached = true;
+    me.apply_visa_gate();
+  },
+  apply_visa_gate: function() {
+    var me = this;
+    if(me.is_kuwaiti()){
+      if(!$(".visa").hasClass('hide')){
+        $(".visa").addClass('hide');
+      }
+      if(!$(".visa_type").hasClass('hide')){
+        $(".visa_type").addClass('hide');
+      }
+      // Cleared, not just hidden. The submit reads the checked radio and the visa type
+      // straight off the page, so an answer given before the nationality was corrected
+      // would travel to the backend behind a question the candidate can no longer see.
+      $("#visa input[type='radio']").prop('checked', false);
+      $(".visa_type").val('');
+      $(".in_kuwait").removeClass('hide');
+    }
+    else{
+      $(".visa").removeClass('hide');
+    }
+  },
+  is_kuwaiti: function() {
+    return ($(".nationality_list").val() || "").trim() === "Kuwaiti";
   },
   on_change_work_details: function() {
     var me  = this;
@@ -145,11 +189,11 @@ job_application = Class.extend({
         if(!$(".license_type").hasClass('hide')){
           $(".license_type").addClass('hide');
         }
-        $(".visa").removeClass('hide');
+        me.show_visa_or_skip();
       }
     });
     $(".license_type").on("change", function(){
-      $(".visa").removeClass('hide');
+      me.show_visa_or_skip();
     });
     $(".visa").on("change", function(){
       if($("#visa input[type='radio']:checked").val() == 'yes'){
@@ -204,7 +248,7 @@ job_application = Class.extend({
       $(".license").removeClass('hide');
     }
     else{
-      $(".visa").removeClass('hide');
+      me.show_visa_or_skip();
     }
   },
   show_cv_section: function() {
