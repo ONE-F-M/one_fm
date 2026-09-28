@@ -305,6 +305,7 @@ one_fm.patches.v15_0.take_ownership_of_vehicle_handover_log #2026-07-25
 
 
 one_fm.patches.v15_0.rename_document_register_and_revision #2026-08-03
+one_fm.patches.v15_0.add_draft_state_to_medical_appointment_workflow #WI-003016
 one_fm.patches.v15_0.rename_operations_monthly_attendance_sheet #2026-08-23 WI-002153
 one_fm.patches.v15_0.drop_empty_orphan_employee_columns #2026-09-26 WI-002745
 [post_model_sync]
