@@ -361,3 +361,48 @@ const setAutoAttendanceReadOnly = (frm) => {
 	}
 
 }
+
+// Show a button with this employee's most recent AI Eval Run cost.
+// An Employee is linked to AI Eval Run indirectly: Employee -> user_id (User)
+// -> AI Agent Configuration.process_owner -> AI Eval Run.agent_configuration.
+const show_latest_ai_eval_run_cost_btn = (frm) => {
+	if (frm.doc.__islocal || !frm.doc.user_id) return;
+
+	frm.add_custom_button(__('Show AI Cost'), function() {
+		frappe.db.get_list('AI Agent Configuration', {
+			filters: { process_owner: frm.doc.user_id },
+			fields: ['name'],
+			limit_page_length: 0
+		}).then((agents) => {
+			if (!agents || !agents.length) {
+				frappe.msgprint(__('No AI Agent Configuration found for this employee.'));
+				return;
+			}
+
+			let agent_names = agents.map(a => a.name);
+
+			frappe.db.get_list('AI Eval Run', {
+				filters: { agent_configuration: ['in', agent_names] },
+				fields: ['name', 'total_cost', 'started_at'],
+				order_by: 'started_at desc',
+				limit_page_length: 1
+			}).then((runs) => {
+				if (!runs || !runs.length) {
+					frappe.msgprint(__('No AI Eval Run found for this employee.'));
+					return;
+				}
+
+				let run = runs[0];
+				frappe.msgprint({
+					title: __('Latest AI Eval Run Cost'),
+					message: __('Run {0} ({1}): {2}', [
+						run.name,
+						frappe.datetime.str_to_user(run.started_at),
+						format_currency(run.total_cost)
+					]),
+					indicator: 'blue'
+				});
+			});
+		});
+	}, __('AI'));
+};
