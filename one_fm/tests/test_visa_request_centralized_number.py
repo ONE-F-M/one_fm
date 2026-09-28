@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002824: the Visa Request field is called Centralized Number now.
+"""The Visa Request field is called Centralized Number now.
 
 A label change and nothing else. The fieldname, the fetch chain and the data are what
 every other story on this field depends on, so the rename stops at what the user reads.
