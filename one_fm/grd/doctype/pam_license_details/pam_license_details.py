@@ -59,7 +59,7 @@ class PAMLicenseDetails(Document):
 		self.set_quota_registrations()
 
 	def set_quota_registrations(self):
-		"""Derive each quota row's registered headcount (WI-002769).
+		"""Derive each quota row's registered headcount.
 
 		On validate as well as on a recount, because a row added or re-pointed at another
 		quota type here should show its figure without waiting for somebody to be
@@ -237,7 +237,7 @@ def update_counts_from_employee(doc, method=None):
 	for license_name in {doc.get("pam_file"), before.get("pam_file") if before else None} - {None, ""}:
 		recount_license_total(license_name)
 
-	# WI-002769: the quota rows are a second grouping of the same employees, by the quota
+	# The quota rows are a second grouping of the same employees, by the quota
 	# type their designation belongs to rather than by its sector. Off the same link the
 	# rest of the figures are counted from.
 	for license_name in {doc.get("pam_file"), before.get("pam_file") if before else None} - {None, ""}:
@@ -258,7 +258,7 @@ def update_counts_from_designation(doc, method=None):
 		return
 
 	sector_moved = doc.has_value_changed("occupational_sector")
-	# WI-002769: the quota type is on the designation too, and moving one moves everybody
+	# The quota type is on the designation too, and moving one moves everybody
 	# holding it out of one quota row and into another.
 	quota_moved = doc.has_value_changed("quota_type")
 	if not sector_moved and not quota_moved:
@@ -480,7 +480,7 @@ def recount_license_total(license_name):
 
 
 def count_quota_employees(license_name, quota_type) -> int:
-	"""How many of this licence's employees hold a designation in this quota (WI-002769).
+	"""How many of this licence's employees hold a designation in this quota.
 
 	Three conditions, all of them the story's: the licence, the company's residency, and
 	the quota type - which is not on the employee but on the PAM designation they hold, so

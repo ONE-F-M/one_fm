@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002769: how many of a licence's employees are registered in each quota type."""
+"""How many of a licence's employees are registered in each quota type."""
 
 import json
 
