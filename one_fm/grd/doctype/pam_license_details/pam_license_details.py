@@ -56,6 +56,19 @@ class PAMLicenseDetails(Document):
 	def validate(self):
 		self.set_sector_figures()
 		self.set_total_number_of_employees()
+		self.set_quota_registrations()
+
+	def set_quota_registrations(self):
+		"""Derive each quota row's registered headcount.
+
+		On validate as well as on a recount, because a row added or re-pointed at another
+		quota type here should show its figure without waiting for somebody to be
+		transferred.
+		"""
+		for row in self.quota_classification:
+			row.registered_numbers_of_employees = str(
+				count_quota_employees(self.name, row.type_of_quota)
+			)
 
 	def set_total_number_of_employees(self):
 		"""How many people this licence carries, all sectors together.
@@ -224,9 +237,15 @@ def update_counts_from_employee(doc, method=None):
 	for license_name in {doc.get("pam_file"), before.get("pam_file") if before else None} - {None, ""}:
 		recount_license_total(license_name)
 
+	# The quota rows are a second grouping of the same employees, by the quota
+	# type their designation belongs to rather than by its sector. Off the same link the
+	# rest of the figures are counted from.
+	for license_name in {doc.get("pam_file"), before.get("pam_file") if before else None} - {None, ""}:
+		recount_quota_rows(license_name)
+
 
 def update_counts_from_designation(doc, method=None):
-	"""Recount when a designation is moved to a different occupational sector.
+	"""Recount when a designation is moved to a different occupational sector or quota.
 
 	The sector is not on the employee - it is on the designation they hold - so moving a
 	designation moves everybody holding it, and no Employee is saved when that happens.
@@ -235,14 +254,17 @@ def update_counts_from_designation(doc, method=None):
 	Both sectors, on every licence holding one of those employees: the sector they left
 	has to give them up as well as the one they joined.
 	"""
-	if doc.is_new() or not doc.has_value_changed("occupational_sector"):
+	if doc.is_new():
+		return
+
+	sector_moved = doc.has_value_changed("occupational_sector")
+	# The quota type is on the designation too, and moving one moves everybody
+	# holding it out of one quota row and into another.
+	quota_moved = doc.has_value_changed("quota_type")
+	if not sector_moved and not quota_moved:
 		return
 
 	before = doc.get_doc_before_save()
-	sectors = {doc.occupational_sector, before.occupational_sector if before else None} - {None, ""}
-	if not sectors:
-		return
-
 	licenses = {
 		license_name
 		for license_name in frappe.get_all(
@@ -250,10 +272,20 @@ def update_counts_from_designation(doc, method=None):
 		)
 		if license_name
 	}
+	if not licenses:
+		return
+
+	sectors = {doc.occupational_sector, before.occupational_sector if before else None} - {None, ""}
 
 	for license_name in licenses:
-		for sector in sectors:
-			recount_sector(license_name, sector)
+		if sector_moved:
+			for sector in sectors:
+				recount_sector(license_name, sector)
+		if quota_moved:
+			# Every row on the licence, not just the two quotas named: the whole table is
+			# a handful of rows, and recounting it is cheaper than reasoning about which
+			# licences carry which of the two.
+			recount_quota_rows(license_name)
 
 
 def _license_and_sector(employee):
@@ -445,3 +477,74 @@ def recount_license_total(license_name):
 		str(count_license_employees(license_name)),
 		update_modified=False,
 	)
+
+
+def count_quota_employees(license_name, quota_type) -> int:
+	"""How many of this licence's employees hold a designation in this quota.
+
+	Three conditions, all of them the story's: the licence, the company's residency, and
+	the quota type - which is not on the employee but on the PAM designation they hold, so
+	the join is what makes the count possible at all.
+
+	The licence is the link the employee carries, not the number copied off it - see
+	count_license_employees.
+
+	A row with no quota type yet counts nobody. Falling back to "everyone on the licence"
+	would put the whole workforce in whichever row an operator had not finished
+	configuring, and it would look like a real figure.
+	"""
+	if not license_name or not quota_type:
+		return 0
+
+	Employee = DocType("Employee")
+	Designation = DocType("PAM Designation List")
+
+	rows = (
+		frappe.qb.from_(Employee)
+		.join(Designation)
+		.on(Employee.one_fm_pam_designation == Designation.name)
+		.select(frappe.qb.terms.Function("Count", Employee.name).as_("count"))
+		.where(Employee.pam_file == license_name)
+		.where(Employee.under_company_residency == 1)
+		.where(Designation.quota_type == quota_type)
+	).run(as_dict=True)
+
+	return rows[0]["count"] if rows else 0
+
+
+def recount_quota_rows(license_name):
+	"""Write the registered headcount onto every quota row of this licence.
+
+	The whole table rather than one row: it is a handful of rows, and recounting it is
+	cheaper than working out which one an employee moved between - their designation can
+	have changed quota as easily as their licence can have changed.
+
+	Unlike the sector rows, a missing row is NOT added. A quota row exists because PAM
+	allocated this licence a quota of that type; inventing one from the employees who
+	happen to hold such a designation would state an allocation nobody granted.
+	"""
+	if not license_name or not frappe.db.exists("PAM License Details", license_name):
+		return
+
+	counts = {}
+	rows = frappe.get_all(
+		"Quota Classification",
+		filters={
+			"parent": license_name,
+			"parenttype": "PAM License Details",
+			"parentfield": "quota_classification",
+		},
+		fields=["name", "type_of_quota"],
+	)
+	for row in rows:
+		quota_type = row["type_of_quota"]
+		if quota_type not in counts:
+			counts[quota_type] = str(count_quota_employees(license_name, quota_type))
+
+		frappe.db.set_value(
+			"Quota Classification",
+			row["name"],
+			"registered_numbers_of_employees",
+			counts[quota_type],
+			update_modified=False,
+		)

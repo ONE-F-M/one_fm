@@ -5,8 +5,8 @@ that only refreshes when the employee is saved. They count off the link itself n
 every figure already stored was worked out the old way and has to be restated - a licence
 would otherwise keep its old numbers until somebody happened to open and save it.
 
-Both sets: the licence total and the sector rows beneath it. They read the same employees
-and moved to the link together.
+Every set: the licence total, the sector rows beneath it and the quota rows beside them.
+They read the same employees and moved to the link together.
 """
 
 import frappe
@@ -14,6 +14,7 @@ import frappe
 from one_fm.grd.doctype.pam_license_details.pam_license_details import (
 	recount_license,
 	recount_license_total,
+	recount_quota_rows,
 )
 
 
@@ -21,3 +22,4 @@ def execute():
 	for license_name in frappe.get_all("PAM License Details", pluck="name"):
 		recount_license_total(license_name)
 		recount_license(license_name)
+		recount_quota_rows(license_name)
