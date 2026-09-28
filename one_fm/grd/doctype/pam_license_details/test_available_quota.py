@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002770: what is left of a quota once everything claimed against it is taken off."""
+"""What is left of a quota once everything claimed against it is taken off."""
 
 import json
 

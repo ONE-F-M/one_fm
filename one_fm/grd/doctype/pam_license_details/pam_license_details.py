@@ -65,7 +65,7 @@ class PAMLicenseDetails(Document):
 		self.set_available_quota()
 
 	def set_available_quota(self):
-		"""Derive what is left of each quota (WI-002770).
+		"""Derive what is left of each quota.
 
 		Last of the three, because it is the subtraction the other two feed - deriving it
 		before them would leave it one save behind its own inputs.
@@ -618,7 +618,7 @@ def recount_quota_rows(license_name):
 			"registered_numbers_of_employees": counts[quota_type],
 			"number_of_visas_issued": str(issued.get(quota_type, 0)),
 		}
-		# WI-002770: written in the same call as its inputs, because db_set bypasses the
+		# Written in the same call as its inputs, because db_set bypasses the
 		# controller that derives it - a row left with yesterday's remainder beside today's
 		# headcount is worse than either figure alone.
 		figures["available_quota"] = available_quota({**row, **figures})
@@ -754,7 +754,7 @@ def recount_license_quota(license_name):
 	recount_quota_rows(license_name)
 
 
-# WI-002770: what the remainder is made of. Allocated is what PAM granted; the other three
+# What the remainder is made of. Allocated is what PAM granted; the other three
 # are claims against it - people already on the licence, visas issued and not yet arrived,
 # and transfers in flight.
 QUOTA_DEDUCTIONS = (
@@ -765,7 +765,7 @@ QUOTA_DEDUCTIONS = (
 
 
 def available_quota(row) -> str:
-	"""Allocated Quota minus everything already claimed against it (WI-002770).
+	"""Allocated Quota minus everything already claimed against it.
 
 	A blank counts as zero, which the story asks for and which matters more than it looks:
 	these are Data fields, so an unfilled one is "" rather than 0, and arithmetic on it
