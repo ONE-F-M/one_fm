@@ -7,6 +7,9 @@ frappe.ui.form.on('Operations Shift', {
 	},
 
 	refresh: function(frm) {
+		// Make escalation_tier read-only when shift status is Inactive
+		frm.set_df_property('escalation_tier', 'read_only', frm.doc.status === 'Inactive');
+		
 		if(!frm.doc.__islocal){
 			frm.add_custom_button(
 				'Add Posts',
@@ -66,8 +69,8 @@ frappe.ui.form.on('Operations Shift', {
 									});
 								}
 							}},
-							{'label': 'Post Location', 'fieldname': 'post_location', 'fieldtype': 'Select', 'options': 'Internal\nExternal'},
-							{'label': 'Gender', 'default': 'Both', 'fieldname': 'gender', 'fieldtype': 'Select', 'options': 'Male\nFemale\nBoth'},
+							{'label': 'Post Location', 'fieldname': 'post_location', 'fieldtype': 'Select', 'options': 'Internal\\nExternal'},
+							{'label': 'Gender', 'default': 'Both', 'fieldname': 'gender', 'fieldtype': 'Select', 'options': 'Male\\nFemale\\nBoth'},
 							{'label': 'Sale Item', 'fieldname': 'sale_item', 'fieldtype': 'Link', 'options':'Item'},
 							{'fieldname': 'sb', 'fieldtype': 'Section Break'},
 							{
@@ -146,7 +149,7 @@ frappe.ui.form.on('Operations Shift', {
 						primary_action: function(){
 							let values = post_dialog.get_values();
 							let {qty, post_names} = values;
-							if(post_names === undefined || qty !== post_names.length){frappe.msgprint(__('Please make sure the number of posts and Post names are same.'))};
+							if(post_names === undefined || qty !== post_names.length){frappe.msgprint(__('Please make sure the number of posts and Post names are same.'))}; 
 							frappe.call({
 								method:'one_fm.operations.doctype.operations_shift.operations_shift.create_posts',
 								args: {
@@ -224,6 +227,10 @@ frappe.ui.form.on('Operations Shift', {
 				]);
 			}
 		);
+	},
+	status: function(frm) {
+		// Update escalation_tier read-only status when status changes
+		frm.set_df_property('escalation_tier', 'read_only', frm.doc.status === 'Inactive');
 	}
 	
 });
