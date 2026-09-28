@@ -7,8 +7,9 @@ raise one was to open Residency Payment Request and key the reference in by hand
 is where the wrong document name and the wrong amount came from.
 
 The button opens a Residency Payment Request already pointed at the record it was raised
-from. Nothing is written here: the document comes back unsaved and the operator saves it,
-which is what keeps a mistyped click from leaving an empty payment request behind.
+from, with the reference rows filled in (WI-002499). Nothing is written here: the document
+comes back unsaved and the operator saves it, which is what keeps a mistyped click from
+leaving an empty payment request behind.
 
 One request per record. Once a Draft or a Submitted one names this document, the button
 opens that one instead of raising a second - two payment requests against one Residency
@@ -17,7 +18,7 @@ fine is the fine paid twice.
 
 import frappe
 from frappe import _
-from frappe.utils import nowdate
+from frappe.utils import flt, nowdate
 
 # The three records that can owe a payment, and what has to be true of each before the
 # button is worth showing. Kept here rather than in the three form scripts so the server
@@ -102,6 +103,9 @@ def make_residency_payment_request(source_doctype: str, source_name: str) -> dic
 	request.reference_doctype = source_doctype
 	request.reference_docname = source_name
 
+	for row in reference_rows(source):
+		request.append("references", row)
+
 	return {"doc": request.as_dict()}
 
 
@@ -117,3 +121,47 @@ def default_company(source):
 		or frappe.defaults.get_user_default("Company")
 		or frappe.db.get_single_value("Global Defaults", "default_company")
 	)
+
+
+# WI-002499: what a freshly opened reference row says about itself. Everything else on the
+# row - supplier, payment request, payment entry, mode of payment, bank account, account,
+# payment reference - is left blank on purpose: it is the finance user's to fill in when
+# the payment is actually made, and a default there would read as a decision somebody took.
+REFERENCE_DEFAULTS = {
+	"reference_doc_status": "Submitted",
+	"payment_status": "Initiated",
+}
+
+
+def reference_rows(source) -> list:
+	"""One reference row per thing this record owes (WI-002499).
+
+	`reference_name` is the SOURCE document, not the row - a Preparation with twelve
+	employees produces twelve rows all naming the same Preparation, which is what makes the
+	payment traceable back to the document that raised it.
+	"""
+	if source.doctype == "Preparation":
+		# One row per employee on the costing. A row with nothing to pay is not a payment.
+		return [
+			_row(source, row.employee, row.total_amount)
+			for row in source.get("preparation_record") or []
+			if row.employee and flt(row.total_amount)
+		]
+
+	if source.doctype == "Residency":
+		return [_row(source, source.employee, source.residency_fine_amount_kwd)]
+
+	if source.doctype == "PACI":
+		return [_row(source, source.employee, source.paci_fine_amount_kwd)]
+
+	return []
+
+
+def _row(source, employee, amount) -> dict:
+	return {
+		"employee": employee,
+		"reference_type": source.doctype,
+		"reference_name": source.name,
+		"amount": flt(amount),
+		**REFERENCE_DEFAULTS,
+	}
