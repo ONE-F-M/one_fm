@@ -35,7 +35,8 @@ app_include_js = [
         "/assets/one_fm/js/showdown.min.js",
 		"/assets/one_fm/js/form_overrides/workflow_override.js",
         "text_editor.bundle.js",
-        "/assets/one_fm/js/workflow_banner.js"
+        "/assets/one_fm/js/workflow_banner.js",
+        "/assets/one_fm/js/grd/residency_payment_request_button.js"
 ]
 # include js, css files in header of web template
 # web_include_css = "/assets/one_fm/css/one_fm.css"
@@ -976,7 +977,15 @@ jenv = {
         "pow_service_names_arabic:one_fm.jinja.print_format.methods.pow_service_names_arabic",
         "pow_letter_rows:one_fm.jinja.print_format.methods.pow_letter_rows",
         "pow_arabic_date:one_fm.jinja.print_format.methods.pow_arabic_date",
-        "pow_arabic_number:one_fm.jinja.print_format.methods.pow_arabic_number"
+        "pow_arabic_number:one_fm.jinja.print_format.methods.pow_arabic_number",
+        # WI-002722: the client is named in Arabic, and the letter carries its own
+        # Arabic title - the document is read in Arabic, so nothing on it is not.
+        "pow_customer_name:one_fm.jinja.print_format.methods.pow_customer_name",
+        "pow_customer_name_is_arabic:one_fm.jinja.print_format.methods.pow_customer_name_is_arabic",
+        "pow_title_arabic:one_fm.jinja.print_format.methods.pow_title_arabic",
+        # WI-002723: Cairo and Readex Pro are bundled with the app and inlined, because
+        # neither is installed on the print server and wkhtmltopdf has no network there.
+        "pow_font_faces:one_fm.jinja.print_format.methods.pow_font_faces"
     ],
     "filters": [
         # "xmul:one_fm.jinja.methods.xmultiply"
