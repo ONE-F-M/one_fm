@@ -58,7 +58,7 @@ class PAMLicenseDetails(Document):
 		self.set_total_number_of_employees()
 
 	def set_total_number_of_employees(self):
-		"""How many people this licence carries, all sectors together (WI-002768).
+		"""How many people this licence carries, all sectors together.
 
 		Derived here as well as on the per-employee recount, so a licence opened and saved
 		shows the figure even if nobody has been transferred since the last recount.
@@ -218,7 +218,7 @@ def update_counts_from_employee(doc, method=None):
 	} - {None}:
 		recount_sector(license_name, sector)
 
-	# WI-002768: the licence's own headcount, which is not a sector figure. Recounted from
+	# The licence's own headcount, which is not a sector figure. Recounted from
 	# the licence the employee NAMES, because an employee with no PAM designation still
 	# counts against it - _license_and_sector gives up on them, and the total must not.
 	for license_name in {doc.get("pam_file"), before.get("pam_file") if before else None} - {None, ""}:
@@ -397,7 +397,7 @@ def recount_license(license_name):
 
 
 def count_license_employees(license_name) -> int:
-	"""How many people this licence carries (WI-002768).
+	"""How many people this licence carries.
 
 	Counted off pam_file, the link that names the licence, and not off pam_file_number.
 	The number is a read-only copy fetched from that link and a fetch only runs when the

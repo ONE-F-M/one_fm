@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002768: how many people a PAM licence carries."""
+"""How many people a PAM licence carries."""
 
 import json
 

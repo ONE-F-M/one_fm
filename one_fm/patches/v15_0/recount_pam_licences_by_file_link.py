@@ -1,4 +1,4 @@
-"""WI-002768: restate every licence figure now that they are counted off the PAM file link.
+"""Restate every licence figure now that they are counted off the PAM file link.
 
 The headcounts were counted off pam_file_number, a read-only copy fetched from pam_file
 that only refreshes when the employee is saved. They count off the link itself now, so
