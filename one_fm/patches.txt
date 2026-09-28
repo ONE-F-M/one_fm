@@ -628,3 +628,5 @@ one_fm.patches.v15_0.update_residency_workflow_and_rules #2026-09-23 WI-002495
 one_fm.patches.v15_0.update_paci_workflow_and_rules #2026-09-23 WI-002496
 one_fm.patches.v15_0.update_work_permit_workflow_and_rules #2026-09-23 WI-002497
 one_fm.patches.v15_0.clear_employee_residency_depends_on #2026-09-23 WI-002823
+one_fm.patches.v15_0.seed_quota_types #2026-09-23 WI-002775
+one_fm.patches.v15_0.recount_pam_licences_by_file_link #2026-09-27b WI-002768
