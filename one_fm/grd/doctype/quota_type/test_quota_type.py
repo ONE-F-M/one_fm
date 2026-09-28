@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002775: the quota classes PAM allocates a licence's visas in."""
+"""The quota classes PAM allocates a licence's visas in."""
 
 import json
 
@@ -59,7 +59,7 @@ class TestTheDesignationLink(FrappeTestCase):
 		self.assertIn("quota_type", self.definition["field_order"])
 
 	def test_the_sector_link_is_untouched(self):
-		"""WI-002091 counts a licence's workers through occupational_sector; the quota
+		"""The licence headcounts count a licence's workers through occupational_sector; the quota
 		type is a second, separate grouping of the same designation."""
 		sector = next(
 			f for f in self.definition["fields"] if f["fieldname"] == "occupational_sector"

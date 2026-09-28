@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
-"""The quota classes PAM allocates a licence's visas in (WI-002775).
+"""The quota classes PAM allocates a licence's visas in.
 
 A PAM licence does not hold one pool of visas: it holds an allocation per quota type -
 Basic, Heavy Driver, Light Driver - and a designation belongs to exactly one of them. The

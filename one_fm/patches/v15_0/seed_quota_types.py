@@ -1,4 +1,4 @@
-"""WI-002775: the Quota Type records the business analyst's site already holds.
+"""The Quota Type records the business analyst's site already holds.
 
 The DocType arrives with the app; its records do not. Three of them exist on the BA site
 and every downstream story counts against them by name - the Quota Classification table
@@ -33,10 +33,10 @@ def execute():
 def verify():
 	missing = [name for name in QUOTA_TYPES if not frappe.db.exists(DOCTYPE, name)]
 	if missing:
-		frappe.throw(f"WI-002775: the Quota Types {missing} were not created.")
+		frappe.throw(f"The Quota Types {missing} were not created.")
 
 	if not frappe.get_meta("PAM Designation List").get_field("quota_type"):
 		frappe.throw(
-			"WI-002775: PAM Designation List has no quota_type field, so no designation "
+			"PAM Designation List has no quota_type field, so no designation "
 			"can be put in a quota and every classification count would be zero."
 		)
