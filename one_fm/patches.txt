@@ -306,6 +306,7 @@ one_fm.patches.v15_0.take_ownership_of_vehicle_handover_log #2026-07-25
 
 one_fm.patches.v15_0.rename_document_register_and_revision #2026-08-03
 one_fm.patches.v15_0.rename_operations_monthly_attendance_sheet #2026-08-23 WI-002153
+one_fm.patches.v15_0.drop_empty_orphan_employee_columns #2026-09-26 WI-002745
 [post_model_sync]
 one_fm.patches.v15_0.process_task_for_wiki_employee_task
 one_fm.patches.v15_0.add_assignment_rule_returning_to_operations_supervisor_of_client_event #2
@@ -618,3 +619,17 @@ one_fm.patches.v15_0.remove_penalty_and_investigation #2026-09-23
 one_fm.patches.v15_0.remove_employee_weekly_action_employee_user #2026-09-22
 one_fm.patches.v15_0.recount_pam_licences_by_company_residency #2026-09-23
 one_fm.patches.v15_0.deactivate_subcontractor_workflows #2026-09-28
+one_fm.patches.v15_0.backfill_grd_document_titles #2026-09-23 WI-002593
+one_fm.patches.v15_0.allow_bulk_edit_on_grd_list_views #2026-09-24 WI-002887
+one_fm.patches.v15_0.make_customer_arabic_name_mandatory #2026-09-24 WI-002884
+one_fm.patches.v15_0.backfill_accommodation_status #2026-09-24 WI-002883
+one_fm.patches.v15_0.widen_accommodation_list_view #2026-09-26 WI-002883
+one_fm.patches.v15_0.update_medical_insurance_workflow_and_rule #2026-09-23 WI-002494
+one_fm.patches.v15_0.update_residency_workflow_and_rules #2026-09-23 WI-002495
+one_fm.patches.v15_0.update_paci_workflow_and_rules #2026-09-23 WI-002496
+one_fm.patches.v15_0.update_work_permit_workflow_and_rules #2026-09-23 WI-002497
+one_fm.patches.v15_0.clear_employee_residency_depends_on #2026-09-23 WI-002823
+one_fm.patches.v15_0.add_employee_occupational_sector #2026-09-27b WI-002745
+one_fm.patches.v15_0.backfill_employee_occupational_sector #2026-09-27b WI-002745
+one_fm.patches.v15_0.seed_quota_types #2026-09-23 WI-002775
+one_fm.patches.v15_0.recount_pam_licences_by_file_link #2026-09-27b WI-002768

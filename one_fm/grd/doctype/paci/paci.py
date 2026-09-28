@@ -11,18 +11,19 @@ from frappe.utils import today, add_days, get_url, date_diff, get_year_start, fl
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from frappe.core.doctype.communication.email import make
 from one_fm.processor import sendemail
+from one_fm.grd.document_title import set_document_title
 from one_fm.utils import is_scheduler_emails_enabled
 
 # The Overseas category and the state its record opens in (WI-001830). Named because the
 # controller, create_PACI and the assignment rule all have to agree on the spelling.
 NEW_APPLICATION = "New Application"
-PENDING_PRO = "Pending PRO"
+PENDING_PRO = "Pending by PRO"
 
 # WI-002136: the two states the payment rule sits between. The operator leaves
 # Pending GR Operator for Completed by two actions - "Done", which owes an invoice, and
 # "No Payment Required", which does not - and the document carries the checkbox rather
 # than the action that moved it.
-PENDING_GR_OPERATOR = "Pending GR Operator"
+PENDING_GR_OPERATOR = "Pending by GR Operator"
 COMPLETED = "Completed"
 PENDING_BY_PACI = "Pending by PACI"
 
@@ -52,6 +53,7 @@ class PACI(Document):
 
     def validate(self):
         self.set_grd_values()
+        set_document_title(self)
         self.set_new_expiry_date()
         self.set_paci_fine_amount()
         self.clear_unticked_damj_details()
@@ -390,12 +392,12 @@ def hand_to_pro(paci):
     """Move a first civil ID application to the PRO, who applies on the portal (WI-001830).
 
     Written to the field rather than applied as a workflow action, because the
-    Draft --Save--> Pending PRO transition belongs to the PRO role and this record is
-    opened by the system on behalf of a Preparation - there is no PRO in the session to
-    make it, and Frappe rejects the jump as a transition the current user cannot perform.
+    Draft --Submit to PRO--> Pending by PRO transition is the operator's, and this record
+    is opened by the system on behalf of a Preparation - there is no operator in that
+    session, and Frappe rejects the jump as a transition the current user cannot perform.
 
     A field written this way leaves the assignment rules unaware, so they are re-run
-    explicitly; without that the record sits in Pending PRO assigned to nobody.
+    explicitly; without that the record sits in Pending by PRO assigned to nobody.
     """
     from frappe.automation.doctype.assignment_rule.assignment_rule import apply
 
