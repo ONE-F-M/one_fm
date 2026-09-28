@@ -63,7 +63,7 @@ class _Recorder:
 		return [dict(row) for row in self.rows]
 
 	def set_value(self, doctype, name, values, update_modified=None):
-		# WI-002771 writes the registered headcount and the issued visas in one call, so
+		# The recount writes the registered headcount and the issued visas in one call, so
 		# the recorder takes the dict rather than a single fieldname.
 		self.written.append((doctype, name, values, update_modified))
 

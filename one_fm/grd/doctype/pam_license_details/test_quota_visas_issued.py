@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002771: the visas issued against a licence's quota, before anybody has arrived."""
+"""The visas issued against a licence's quota, before anybody has arrived."""
 
 import json
 
@@ -42,7 +42,7 @@ class TestWhatCounts(FrappeTestCase):
 		self.assertIn("if request[\"name\"] in released:", block)
 
 	def test_it_reuses_the_cancellation_rule_rather_than_restating_it(self):
-		"""One definition of "this visa has been given back", shared with WI-002744."""
+		"""One definition of "this visa has been given back", shared with the cancellation gate."""
 		block = frappe.read_file(SOURCE).split("def visas_issued_by_quota", 1)[1]
 		self.assertIn(
 			"from one_fm.visa_management.doctype.visa_request.visa_request import", block

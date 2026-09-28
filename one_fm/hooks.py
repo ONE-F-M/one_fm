@@ -275,7 +275,7 @@ doc_events = {
 		]
 	},
 	"Visa Request": {
-		# WI-002771: a completed Visa Request is a visa issued against the licence's quota,
+		# A completed Visa Request is a visa issued against the licence's quota,
 		# and no Employee exists yet to trigger the recount the other figures ride on.
 		"on_update": [
 			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_quota_from_visa_request"

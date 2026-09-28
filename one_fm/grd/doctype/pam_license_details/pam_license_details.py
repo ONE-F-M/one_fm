@@ -60,7 +60,7 @@ class PAMLicenseDetails(Document):
 		self.set_quota_visas_issued()
 
 	def set_quota_visas_issued(self):
-		"""Derive each quota row's issued-visa count (WI-002771).
+		"""Derive each quota row's issued-visa count.
 
 		On validate for the same reason the registrations are: a row re-pointed at another
 		quota type here should show its figure straight away.
@@ -538,7 +538,7 @@ def recount_quota_rows(license_name):
 		return
 
 	counts = {}
-	# WI-002771: the issued visas are per licence, because a Visa Request names the licence
+	# The issued visas are per licence, because a Visa Request names the licence
 	# record it was raised against.
 	issued = visas_issued_by_quota(license_name)
 
@@ -567,21 +567,21 @@ def recount_quota_rows(license_name):
 		)
 
 
-# WI-002771: the state a Visa Request reaches when PAM and MOI have both said yes and the
+# The state a Visa Request reaches when PAM and MOI have both said yes and the
 # visa exists. Only those count against a quota - anything earlier is an application, not
 # a visa.
 VISA_COMPLETED = "Completed"
 
 
 def visas_issued_by_quota(license_name) -> dict:
-	"""Visas issued against this licence, counted per quota type (WI-002771).
+	"""Visas issued against this licence, counted per quota type.
 
 	Keyed on the Visa Request's own PAM File and PAM Designation rather than on an
 	employee: at this point there is no employee. The visa has been issued and the person
 	has not arrived, which is the whole reason the figure is separate from the registered
 	headcount beside it.
 
-	A cancelled visa is not an issued one. WI-002744 already works out which completed
+	A cancelled visa is not an issued one. The cancellation gate already works out which completed
 	requests have had their visa given back, and the same answer is used here - the story's
 	last criterion is that a completed cancellation takes the visa back out of this count
 	and returns it to the available quota.
