@@ -42,9 +42,10 @@ NON_COMPLIANT = "Non-Compliant"
 # Every field the count reads. Employee is saved constantly; a save touching none of these
 # cannot have moved anybody, so the recount is skipped.
 # The sector comes from the PAM designation, so a change of designation moves the employee.
+# pam_file_number is not here: nothing counts off it any more, and a fetch refreshing the
+# copy has moved nobody.
 WATCHED_EMPLOYEE_FIELDS = (
 	"pam_file",
-	"pam_file_number",
 	"one_fm_pam_designation",
 	"one_fm_nationality",
 	"under_company_residency",
@@ -54,6 +55,15 @@ WATCHED_EMPLOYEE_FIELDS = (
 class PAMLicenseDetails(Document):
 	def validate(self):
 		self.set_sector_figures()
+		self.set_total_number_of_employees()
+
+	def set_total_number_of_employees(self):
+		"""How many people this licence carries, all sectors together.
+
+		Derived here as well as on the per-employee recount, so a licence opened and saved
+		shows the figure even if nobody has been transferred since the last recount.
+		"""
+		self.total_number_of_employees = str(count_license_employees(self.name))
 
 	def set_sector_figures(self):
 		"""Derive every figure a sector row computes from its ratio (WI-002094).
@@ -202,11 +212,17 @@ def update_counts_from_employee(doc, method=None):
 
 	# Same reason: on an insert the before-state is this employee, not who they used to be.
 	before = None if doc.flags.in_insert else doc.get_doc_before_save()
-	for license_number, sector in {
+	for license_name, sector in {
 		_license_and_sector(doc),
 		_license_and_sector(before) if before else None,
 	} - {None}:
-		recount_sector(license_number, sector)
+		recount_sector(license_name, sector)
+
+	# The licence's own headcount, which is not a sector figure. Recounted from
+	# the licence the employee NAMES, because an employee with no PAM designation still
+	# counts against it - _license_and_sector gives up on them, and the total must not.
+	for license_name in {doc.get("pam_file"), before.get("pam_file") if before else None} - {None, ""}:
+		recount_license_total(license_name)
 
 
 def update_counts_from_designation(doc, method=None):
@@ -227,39 +243,41 @@ def update_counts_from_designation(doc, method=None):
 	if not sectors:
 		return
 
-	numbers = {
-		number
-		for number in frappe.get_all(
-			"Employee", filters={"one_fm_pam_designation": doc.name}, pluck="pam_file_number"
+	licenses = {
+		license_name
+		for license_name in frappe.get_all(
+			"Employee", filters={"one_fm_pam_designation": doc.name}, pluck="pam_file"
 		)
-		if number
+		if license_name
 	}
 
-	for number in numbers:
+	for license_name in licenses:
 		for sector in sectors:
-			recount_sector(number, sector)
+			recount_sector(license_name, sector)
 
 
 def _license_and_sector(employee):
-	"""The licence number and occupational sector this employee counts against, or None."""
-	license_number = employee.get("pam_file_number")
+	"""The licence and occupational sector this employee counts against, or None.
+
+	The licence is the link, not the number copied off it - see count_license_employees.""" 
+	license_name = employee.get("pam_file")
 	designation = employee.get("one_fm_pam_designation")
-	if not license_number or not designation:
+	if not license_name or not designation:
 		return None
 
 	sector = frappe.db.get_value("PAM Designation List", designation, "occupational_sector")
 	if not sector:
 		return None
 
-	return license_number, sector
+	return license_name, sector
 
 
-def recount_sector(license_number, sector):
-	"""Write the national and expatriate headcounts onto every row for this licence/sector.
+def recount_sector(license_name, sector):
+	"""Write the national and expatriate headcounts onto this licence's row for the sector.
 
-	Keyed on the licence *number* rather than the licence record: that is what an Employee
-	carries, and PAM's own numbering, so a licence renamed here still counts the same
-	people.
+	Keyed on the licence record, which is what the employee links to. It was keyed on the
+	number the employee carries, but that number is a read-only copy fetched from the link
+	and only refreshed when the employee is saved - see count_license_employees.
 
 	A licence that has never carried anybody in this sector has no row for it, and the sector
 	an employee belongs to is decided by their PAM designation rather than by what somebody
@@ -275,44 +293,38 @@ def recount_sector(license_number, sector):
 	moving does not drag a licence through validation - and does not need permission to
 	edit a licence, which the employee's own editor has no reason to hold.
 	"""
-	licenses = frappe.get_all(
-		"PAM License Details",
-		filters={"civil_id_number_for_licensing": license_number},
-		pluck="name",
-	)
-	if not licenses:
+	if not license_name or not frappe.db.exists("PAM License Details", license_name):
 		return
 
-	nationals, expatriates = count_workers(license_number, sector)
+	nationals, expatriates = count_workers(license_name, sector)
 
-	for license_name in licenses:
-		row = frappe.db.get_value(
-			"PAM License Stats",
-			{
-				"parent": license_name,
-				"parenttype": "PAM License Details",
-				"parentfield": "pam_license_stats",
-				"occupational_sector": sector,
-			},
-			["name", "ratio_number_of_national_workers"],
-			as_dict=True,
-		)
-		if not row:
-			if not (nationals or expatriates):
-				continue
-			row = add_sector_row(license_name, sector)
+	row = frappe.db.get_value(
+		"PAM License Stats",
+		{
+			"parent": license_name,
+			"parenttype": "PAM License Details",
+			"parentfield": "pam_license_stats",
+			"occupational_sector": sector,
+		},
+		["name", "ratio_number_of_national_workers"],
+		as_dict=True,
+	)
+	if not row:
+		if not (nationals or expatriates):
+			return
+		row = add_sector_row(license_name, sector)
 
-		figures = {
-			"national_number_of_workers": str(nationals),
-			"expatriate_number_of_workers": str(expatriates),
-		}
-		# The derived figures move with the counts they are derived from. Written here as
-		# well as on validate because db_set bypasses the controller, and a row left with
-		# yesterday's requirement beside today's headcount is worse than either.
-		figures.update(
-			derived_figures(sector, row.ratio_number_of_national_workers, nationals, expatriates)
-		)
-		frappe.db.set_value("PAM License Stats", row.name, figures, update_modified=False)
+	figures = {
+		"national_number_of_workers": str(nationals),
+		"expatriate_number_of_workers": str(expatriates),
+	}
+	# The derived figures move with the counts they are derived from. Written here as well
+	# as on validate because db_set bypasses the controller, and a row left with
+	# yesterday's requirement beside today's headcount is worse than either.
+	figures.update(
+		derived_figures(sector, row.ratio_number_of_national_workers, nationals, expatriates)
+	)
+	frappe.db.set_value("PAM License Stats", row.name, figures, update_modified=False)
 
 
 def add_sector_row(license_name, sector):
@@ -340,7 +352,7 @@ def add_sector_row(license_name, sector):
 	return row
 
 
-def count_workers(license_number, sector):
+def count_workers(license_name, sector):
 	"""How many nationals and expatriates this licence holds in this sector.
 
 	Counts employees under the company's residency. That is what the licence is: somebody
@@ -360,7 +372,7 @@ def count_workers(license_number, sector):
 		.join(Designation)
 		.on(Employee.one_fm_pam_designation == Designation.name)
 		.select(Employee.one_fm_nationality, frappe.qb.terms.Function("Count", Employee.name).as_("count"))
-		.where(Employee.pam_file_number == license_number)
+		.where(Employee.pam_file == license_name)
 		.where(Employee.under_company_residency == 1)
 		.where(Designation.occupational_sector == sector)
 		.groupby(Employee.one_fm_nationality)
@@ -381,4 +393,55 @@ def recount_license(license_name):
 	license = frappe.get_doc("PAM License Details", license_name)
 	for row in license.pam_license_stats:
 		if row.occupational_sector:
-			recount_sector(license.civil_id_number_for_licensing, row.occupational_sector)
+			recount_sector(license.name, row.occupational_sector)
+
+
+def count_license_employees(license_name) -> int:
+	"""How many people this licence carries.
+
+	Counted off pam_file, the link that names the licence, and not off pam_file_number.
+	The number is a read-only copy fetched from that link and a fetch only runs when the
+	employee is saved, so it drifts: move somebody to another licence without saving them
+	again, or edit a licence's civil ID, and the copy still names the old one. Counted by
+	the number, an employee whose copy has drifted lands on no licence at all - T4 read 550
+	against the 551 employees its own list shows.
+
+	The link is also what the Employee list filters on, so the figure and the list answer
+	the same question.
+
+	Under the company's residency, which is what the licence IS: somebody off it is not on
+	the licence, whatever their employment status says.
+
+	No join to the designation. The sector counts need it to know which row an employee
+	belongs to; this is every employee on the licence, including the ones whose designation
+	has not been set yet - and leaving those out would make the total quietly smaller than
+	the sum of what PAM counts.
+	"""
+	if not license_name:
+		return 0
+
+	return frappe.db.count(
+		"Employee", {"pam_file": license_name, "under_company_residency": 1}
+	)
+
+
+def recount_license_total(license_name):
+	"""Write the headcount onto the licence the employees name.
+
+	One licence, not every licence sharing a civil ID: the employees are counted by the
+	link now, so the figure belongs to the record they point at.
+
+	db_set rather than a save, for the same reason the sector figures are: a headcount
+	moving must not drag a licence through validation, and must not need permission to
+	edit a licence that the employee's own editor has no reason to hold.
+	"""
+	if not license_name or not frappe.db.exists("PAM License Details", license_name):
+		return
+
+	frappe.db.set_value(
+		"PAM License Details",
+		license_name,
+		"total_number_of_employees",
+		str(count_license_employees(license_name)),
+		update_modified=False,
+	)
