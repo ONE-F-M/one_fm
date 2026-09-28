@@ -4,7 +4,7 @@ import frappe
 def execute():
     frappe.db.sql("""
         UPDATE `tabPACI`
-        SET workflow_state = 'Pending GR Operator',
+        SET workflow_state = 'Pending by GR Operator',
         paci_status = 'Under-Process'
         WHERE workflow_state = 'Apply Online by PRO'
     """)

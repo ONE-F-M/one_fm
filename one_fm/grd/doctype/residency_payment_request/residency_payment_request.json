@@ -18,7 +18,11 @@
   "get_todays_residency_payment_details",
   "references",
   "total_amount",
-  "amended_from"
+  "amended_from",
+  "section_break_ryrf",
+  "reference_doctype",
+  "column_break_kaln",
+  "reference_docname"
  ],
  "fields": [
   {
@@ -108,6 +112,28 @@
    "fieldname": "total_amount",
    "fieldtype": "Currency",
    "label": "Total Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_ryrf",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "Reference Doctype",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_kaln",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reference_docname",
+   "fieldtype": "Dynamic Link",
+   "label": "Reference Docname",
+   "options": "reference_doctype",
    "read_only": 1
   }
  ],
