@@ -4542,10 +4542,7 @@ def create_method_if_not_exists(method, document_type, description=None):
             "doctype": "Method"
         }).insert(ignore_permissions=True)
 
-# The only Task Type records allowed to exist going forward. Any task_type
-# outside this set is remapped to "Project" instead of being created, so
-# deleted/legacy types (e.g. "Repetitive", "Active Repetitive", "develop",
-# "Individual") can never be recreated by application code or patches.
+# Anything outside this set is remapped to the fallback rather than created.
 ALLOWED_TASK_TYPES = {"Action", "Process", "Project", "Routine"}
 FALLBACK_TASK_TYPE = "Project"
 
