@@ -12,6 +12,7 @@
         "accommodation",
         "column_break_4",
         "type",
+        "status",
         "qr_code_section",
         "accommodation_qr",
         "ownership_section_section",
@@ -156,6 +157,15 @@
             "in_standard_filter": 1,
             "label": "Type",
             "options": "Accommodation Type",
+            "reqd": 1
+        },
+        {
+            "fieldname": "status",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Status",
+            "options": "\nActive\nInactive",
             "reqd": 1
         },
         {

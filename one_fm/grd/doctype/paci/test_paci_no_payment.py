@@ -9,6 +9,7 @@ from one_fm.grd.doctype.paci.paci import (
 	COMPLETED,
 	NEW_APPLICATION,
 	PENDING_GR_OPERATOR,
+	PENDING_PRO,
 	create_PACI,
 )
 
@@ -92,8 +93,9 @@ class TestPACINoPayment(FrappeTestCase):
 			transitions[("Draft", "Save", PENDING_GR_OPERATOR)],
 			'doc.category in ("Renewal", "Transfer")',
 		)
+		# WI-002496: the route to the PRO is its own action, taken by the operator.
 		self.assertEqual(
-			transitions[("Draft", "Save", "Pending PRO")],
+			transitions[("Draft", "Submit to PRO", PENDING_PRO)],
 			'doc.category == "New Application"',
 		)
 
@@ -106,7 +108,7 @@ class TestPACINoPayment(FrappeTestCase):
 		create_PACI(self.employee, NEW_APPLICATION)
 
 		paci = frappe.get_last_doc("PACI", filters={"employee": self.employee.name})
-		self.assertEqual(paci.workflow_state, "Pending PRO")
+		self.assertEqual(paci.workflow_state, PENDING_PRO)
 
 	def _transitions(self):
 		workflow = frappe.get_doc("Workflow", "PACI")
@@ -123,7 +125,7 @@ class TestPACIProSubmission(FrappeTestCase):
 		paci = create_PACI(self.employee, NEW_APPLICATION)
 		# create_PACI already hands a first application to the PRO (WI-001830), with
 		# neither of these known - which is the case this rule must not break.
-		self.assertEqual(paci.workflow_state, "Pending PRO")
+		self.assertEqual(paci.workflow_state, PENDING_PRO)
 		for fieldname, value in kwargs.items():
 			paci.db_set(fieldname, value)
 		paci.reload()

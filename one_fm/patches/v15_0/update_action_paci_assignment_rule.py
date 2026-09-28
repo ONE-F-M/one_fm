@@ -12,6 +12,11 @@ from one_fm.custom.assignment_rule.assignment_rule import (
 # Process Task" with **no task linked**, and AssignmentRule.apply reads the assignee off the
 # task - so every PACI raised since has been assigned to nobody, with no error and nothing in
 # the log to say so. The states it fires on are unchanged; only where the name comes from is.
+#
+# WI-002496 renamed both states ("Pending by GR Operator", "Pending by PRO").
+# The expectations below follow the rename because this patch applies the CURRENT
+# fixture: on a fresh install it would otherwise assert the old names against the new
+# file and stop the install. The step it performs is unchanged.
 RULE = "Action PACI"
 RULE_FILE = "action_paci.json"
 
@@ -55,8 +60,8 @@ def verify():
 			f"WI-002183: {RULE!r} is Based on Field with field {saved.field!r}, so it would "
 			"assign nobody."
 		)
-	if "Pending GR Operator" not in (saved.assign_condition or ""):
-		frappe.throw(f"WI-002183: {RULE!r} no longer fires at Pending GR Operator.")
+	if "Pending by GR Operator" not in (saved.assign_condition or ""):
+		frappe.throw(f"WI-002183: {RULE!r} no longer fires at Pending by GR Operator.")
 
 	# The fixture's day rows used to carry the analyst site's own row names, which Frappe
 	# read as existing rows and quietly dropped - leaving the table blank. An empty table
