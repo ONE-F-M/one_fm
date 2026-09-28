@@ -62,8 +62,8 @@
                 label="Send"
                 theme="gray"
                 variant="solid"
-                :disabled="$refs.editor?.editor.isEmpty || send.loading"
-                :loading="send.loading"
+                :disabled="$refs.editor?.editor.isEmpty || sendIsSaving"
+                :loading="sendIsSaving"
                 @click="sendEmail"
               />
             </template>
@@ -106,7 +106,8 @@
             variant="solid" 
             :theme="feedbackAction === 'close' ? 'gray' : 'blue'"
             @click="submitFeedback"
-            :loading="submitFeedbackResource.loading"
+            :disabled="feedbackIsSaving"
+            :loading="feedbackIsSaving"
           >
             {{ feedbackAction === 'close' ? 'Close Ticket' : 'Reopen Ticket' }}
           </Button>
@@ -230,7 +231,7 @@ function updateField(name, value, callback = () => {}) {
 }
 
 function sendEmail() {
-  if (isContentEmpty(editorContent.value) || send.loading) {
+  if (isContentEmpty(editorContent.value) || sendIsSaving.value) {
     return;
   }
   send.submit();
@@ -379,6 +380,9 @@ const showFeedback = computed(() => {
   );
   return hasAgentCommunication && isFeedbackMandatory;
 });
+
+const sendIsSaving = computed(() => send.loading);
+const feedbackIsSaving = computed(() => submitFeedbackResource.loading);
 
 onMounted(() => {
   document.title = props.ticketId;
