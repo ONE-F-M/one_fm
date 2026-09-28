@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002774: the Quota Classification table on PAM License Details."""
+"""The Quota Classification table on PAM License Details."""
 
 import json
 
@@ -91,11 +91,11 @@ class TestTheLicenceSection(FrappeTestCase):
 		self.assertLess(order.index("pam_license_stats"), order.index("quota_classification_section"))
 
 	def test_the_sector_table_is_untouched(self):
-		"""WI-002091's headcounts hang off pam_license_stats and must keep doing so."""
+		"""The sector headcounts hang off pam_license_stats and must keep doing so."""
 		self.assertEqual(self.fields["pam_license_stats"]["options"], "PAM License Stats")
 
 	def test_nothing_the_licence_already_had_was_dropped(self):
 		"""The BA site's copy has no lg_details_applicable; migrating from it must not
-		take WI-002597's checkbox with it."""
+		take the LG Details Applicable checkbox with it."""
 		self.assertIn("lg_details_applicable", self.fields)
 		self.assertIn("civil_id_number_for_licensing", self.fields)

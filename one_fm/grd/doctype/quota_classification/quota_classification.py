@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
-"""One quota type's share of a PAM licence (WI-002774).
+"""One quota type's share of a PAM licence.
 
 PAM allocates a licence its visas per quota type rather than as one pool, so a licence
 carries one of these rows per type it holds an allocation in. Allocated Quota is the
