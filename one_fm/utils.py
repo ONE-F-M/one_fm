@@ -4542,7 +4542,6 @@ def create_method_if_not_exists(method, document_type, description=None):
             "doctype": "Method"
         }).insert(ignore_permissions=True)
 
-# Anything outside this set is remapped to the fallback rather than created.
 ALLOWED_TASK_TYPES = {"Action", "Process", "Project", "Routine"}
 FALLBACK_TASK_TYPE = "Project"
 

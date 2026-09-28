@@ -10,7 +10,6 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 from one_fm.patches.v15_0.reduce_task_type_to_four_records import (
-	KEPT_TASK_TYPES,
 	RETIRED_TASK_TYPES,
 	execute as reduce_task_types,
 )
@@ -45,24 +44,24 @@ class TestReduceTaskTypesPatch(FrappeTestCase):
 			if not frappe.db.exists("Task Type", retired):
 				frappe.get_doc({
 					"doctype": "Task Type", "name": retired, "is_routine_task": 0
-				}).insert(ignore_permissions=True)
+				}).insert()
 		if not frappe.db.exists("Task Type", "Routine"):
 			frappe.get_doc({
 				"doctype": "Task Type", "name": "Routine", "is_routine_task": 1
-			}).insert(ignore_permissions=True)
+			}).insert()
 
 		self.retired_task = frappe.get_doc({
 			"doctype": "Task", "subject": "Retired type", "type": "Repetitive",
-		}).insert(ignore_permissions=True)
+		}).insert()
 		self.routine_task = frappe.get_doc({
 			"doctype": "Task", "subject": "Routine type", "type": "Routine",
-		}).insert(ignore_permissions=True)
+		}).insert()
 
 	def test_only_the_four_survive(self):
 		reduce_task_types()
 
 		surviving = frappe.get_all("Task Type", pluck="name")
-		for kept in KEPT_TASK_TYPES:
+		for kept in ALLOWED_TASK_TYPES:
 			self.assertIn(kept, surviving)
 		for retired in RETIRED_TASK_TYPES:
 			self.assertNotIn(retired, surviving)
