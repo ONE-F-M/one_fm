@@ -427,7 +427,7 @@ def attached_uploaded_image_to_job_applicant(file_path, magic_link):
 
 
 @frappe.whitelist()
-def send_applicant_doc_magic_link(job_applicant, applicant_name, designation):
+def send_applicant_doc_magic_link(job_applicant, applicant_name, designation, notify=True):
     '''
         Method used to send the magic Link for Get More Details from the Job Applicant
         args:
@@ -443,7 +443,7 @@ def send_applicant_doc_magic_link(job_applicant, applicant_name, designation):
         url_prefix = "/applicant_docs?magic_link="
         msg = "<b>Please fill more information like your passport detail by clicking on the magic link below</b>\
             <br/>Applicant ID: {0}<br/>Applicant Name: {1}<br/>Designation: {2}</br>".format(job_applicant, applicant_name, designation)
-        send_magic_link('Job Applicant', job_applicant, 'Job Applicant', [applicant_email], url_prefix, msg, subject)
+        send_magic_link('Job Applicant', job_applicant, 'Job Applicant', [applicant_email], url_prefix, msg, subject, notify=notify)
     else:
         frappe.throw(_("No Email ID found for the Job Applicant"))
 
