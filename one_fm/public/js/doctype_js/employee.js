@@ -361,3 +361,42 @@ const setAutoAttendanceReadOnly = (frm) => {
 	}
 
 }
+
+// Show this employee's most recent AI Eval Run cost, if the employee's
+// linked user owns an AI Agent Configuration that has been evaluated.
+const add_ai_cost_button = (frm) => {
+	if (frm.is_new() || !frm.doc.user_id) return;
+
+	frm.add_custom_button(__('Show AI Cost'), function() {
+		frappe.db.get_list('AI Agent Configuration', {
+			filters: { process_owner: frm.doc.user_id },
+			fields: ['name'],
+			limit: 1
+		}).then((agents) => {
+			if (!agents || !agents.length) {
+				frappe.msgprint(__('No AI Agent Configuration is owned by this employee.'));
+				return;
+			}
+			frappe.db.get_list('AI Eval Run', {
+				filters: { agent_configuration: agents[0].name },
+				fields: ['name', 'total_cost', 'started_at'],
+				order_by: 'started_at desc',
+				limit: 1
+			}).then((runs) => {
+				if (!runs || !runs.length) {
+					frappe.msgprint(__('No AI Eval Run found for this employee.'));
+					return;
+				}
+				let run = runs[0];
+				frappe.msgprint({
+					title: __('Most Recent AI Eval Run Cost'),
+					message: __('Run {0} on {1}: {2}', [
+						run.name,
+						frappe.datetime.str_to_user(run.started_at),
+						format_currency(run.total_cost)
+					])
+				});
+			});
+		});
+	}, __('View'));
+};
