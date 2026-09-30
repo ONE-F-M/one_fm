@@ -503,9 +503,9 @@ class TestTheDsotNoticeOnTheRoster(FrappeTestCase):
 	"""
 
 	def setUp(self):
-		self.employee = _an_employee_who_is_not_leaving()
+		self.employee = _an_employee_the_roster_will_accept()
 		if not self.employee:
-			self.skipTest("no active employee without a leaving date on this site")
+			self.skipTest("no active employee with a joining date and no leaving date on this site")
 		self.shift = frappe.db.get_value(
 			"Operations Shift", {"status": "Active", "shift_type": ["is", "set"]}, "name"
 		)
