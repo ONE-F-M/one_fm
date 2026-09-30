@@ -236,3 +236,52 @@ class TestTheJobOfferConnection(FrappeTestCase):
 		found = frappe.get_all("Visa Request", filters={data.fieldname: request.job_offer}, pluck="name")
 
 		self.assertIn(request.name, found)
+
+
+class TestTheVisaCancellationConnection(FrappeTestCase):
+	"""WI-003111: the BA site's Connection for Visa Cancellation Request, added via the
+	links table so the Connections tab shows it (and its count) without also appearing
+	via an override_doctype_dashboards entry, which would show it twice."""
+
+	def test_meta_links_has_the_visa_cancellation_connection(self):
+		links = frappe.get_meta("Visa Request").links
+
+		matching = [
+			link
+			for link in links
+			if link.link_doctype == "Visa Cancellation Request"
+		]
+
+		self.assertTrue(matching, "Visa Request has no link to Visa Cancellation Request")
+		self.assertEqual(matching[0].link_fieldname, "visa_request_id")
+
+	def test_job_applicant_is_in_the_standard_filter(self):
+		field = frappe.get_meta("Visa Request").get_field("job_applicant")
+
+		self.assertEqual(field.in_standard_filter, 1)
+
+	def test_a_linked_cancellation_shows_in_the_open_count(self):
+		"""The Connections tab reads its count from get_open_count(); a Visa Cancellation
+		Request pointing back at a Visa Request has to be counted there."""
+		visa_request = frappe.new_doc("Visa Request")
+		visa_request.name = "WI-003111-VR-1"
+		visa_request.job_applicant_full_name = "WI-003111 Applicant"
+		visa_request.passport_number = "P-WI-003111"
+		visa_request.visa_reference_number = "V-WI-003111"
+		visa_request.workflow_state = "Completed"
+		visa_request.db_insert()
+
+		cancellation = frappe.new_doc("Visa Cancellation Request")
+		cancellation.name = "WI-003111-VCR-1"
+		cancellation.visa_request_id = visa_request.name
+		cancellation.cancellation_reason = "Candidate Dropped Offer"
+		cancellation.db_insert()
+
+		try:
+			result = get_open_count("Visa Request", visa_request.name)
+			counts = {row.get("name"): row.get("open_count") for row in result.get("data", [])}
+
+			self.assertEqual(counts.get("Visa Cancellation Request"), 1)
+		finally:
+			frappe.db.delete("Visa Cancellation Request", {"name": cancellation.name})
+			frappe.db.delete("Visa Request", {"name": visa_request.name})
