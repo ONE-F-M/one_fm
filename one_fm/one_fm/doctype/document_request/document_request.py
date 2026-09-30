@@ -185,6 +185,9 @@ class DocumentRequest(Document):
 		"""
 		if self.request_action == "Create" or not self.reference_document:
 			return
+		# A Delete withdraws its own document, so the saves that follow must not re-check it.
+		if not self.has_value_changed("reference_document"):
+			return
 
 		state = frappe.db.get_value("Document Register", self.reference_document, "lifecycle_state")
 		if state != "Inactive":
