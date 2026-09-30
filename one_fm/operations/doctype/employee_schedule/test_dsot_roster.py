@@ -62,6 +62,25 @@ def _an_employee_who_is_not_leaving():
 	)
 
 
+def _an_employee_the_roster_will_accept():
+	"""One extreme_schedule itself will build a date for.
+
+	It silently drops anybody with no date_of_joining (logging an error instead), and
+	anybody whose joining/relieving dates do not bracket the requested date - so this is
+	a stricter filter than _an_employee_who_is_not_leaving, asked of the same two fields
+	the function itself reads.
+	"""
+	return frappe.db.get_value(
+		"Employee",
+		{
+			"status": "Active",
+			"relieving_date": ["is", "not set"],
+			"date_of_joining": ["is", "set"],
+		},
+		"name",
+	)
+
+
 def _seed(suffix, roster_type=OVERTIME, workflow_state=ACTIVE, availability=WORKING, employee=None, date=None):
 	"""A schedule row written the way the roster writes them - raw, no controller."""
 	frappe.db.sql(
