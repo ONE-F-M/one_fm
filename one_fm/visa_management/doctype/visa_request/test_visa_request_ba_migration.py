@@ -16,6 +16,7 @@ quietly re-apply them:
 import json
 
 import frappe
+from frappe.desk.notifications import get_open_count
 from frappe.tests.utils import FrappeTestCase
 
 from one_fm.patches.v15_0.add_visa_request_list_view_columns import BA_COLUMNS, TOTAL_FIELDS
