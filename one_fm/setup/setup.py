@@ -10,11 +10,34 @@ from one_fm.setup.assignment_rule import create_assignment_rules, delete_assignm
 
 
 def after_install():
+	ensure_transit_warehouse_type()
 	_create_custom_fields_resiliently(get_custom_fields())
 	add_property_setter(get_field_properties())
 	create_workflows()
 	create_assignment_rules()
 	frappe.db.commit()
+
+def ensure_transit_warehouse_type(doc=None, method=None):
+	"""ERPNext's Company.on_update() calls create_default_warehouses(), which
+	creates a "Goods In Transit" warehouse with warehouse_type="Transit".
+	That Warehouse Type record is normally seeded by ERPNext's Setup Wizard
+	(install_fixtures.install()), which never runs on a fresh one_fm install
+	created outside the interactive wizard flow (e.g. bench make_test_records,
+	or any scripted Company creation). Without it, Company creation fails with
+	frappe.exceptions.LinkValidationError: Could not find Warehouse Type: Transit.
+
+	Called both from after_install() (so a plain app install has it) and as a
+	Company before_insert hook (so any Company created afterwards - including
+	in test setups - is guaranteed to have it, regardless of whether the
+	Setup Wizard ever ran). Idempotent: safe to call any number of times.
+	"""
+	if frappe.db.exists("Warehouse Type", "Transit"):
+		return
+
+	frappe.get_doc({
+		"doctype": "Warehouse Type",
+		"name": "Transit",
+	}).insert(ignore_permissions=True, ignore_if_duplicate=True)
 
 def _create_custom_fields_resiliently(custom_fields: dict):
 	"""create_custom_fields() processes every doctype in the dict as one
