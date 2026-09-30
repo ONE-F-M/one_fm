@@ -12,6 +12,7 @@
   "requester_user",
   "column_break_request",
   "request_action",
+  "wiki_link",
   "document_type",
   "title",
   "requirement_text",
@@ -56,6 +57,14 @@
    "options": "\nCreate\nUpdate\nDelete",
    "reqd": 1,
    "description": "Create a new document, revise an existing one (which publishes a new version), or withdraw an existing one from use. No default: a Select whose first option is a real action silently answers this question for the requester. Delete does NOT destroy anything — it marks the document inactive and revokes its Drive sharing, and a System Manager can reactivate it."
+  },
+  {
+   "depends_on": "eval:doc.request_action == 'Create'",
+   "description": "Link to an existing Wiki page on this site. Its title becomes the document title.",
+   "fieldname": "wiki_link",
+   "fieldtype": "Data",
+   "label": "Wiki Link",
+   "options": "URL"
   },
   {
    "fieldname": "document_type",
@@ -156,7 +165,7 @@
   }
  ],
  "links": [],
- "modified": "2026-07-15 00:00:00.000000",
+ "modified": "2026-09-30 19:16:44.028812",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Document Request",
