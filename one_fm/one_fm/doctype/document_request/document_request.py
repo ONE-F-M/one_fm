@@ -2,9 +2,13 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
 
+import re
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
+
+MANUAL_TITLE_PREFIX = "Manual for "
 
 
 class DocumentRequest(Document):
@@ -12,6 +16,7 @@ class DocumentRequest(Document):
 		self.set_requester_defaults()
 		self.check_approver_resolved()
 		self.apply_reference_document_defaults()
+		self.standardise_manual_title()
 		self.check_required_links()
 		self.check_reference_document_is_active()
 		self.check_source_guideline_is_a_guideline()
@@ -128,6 +133,14 @@ class DocumentRequest(Document):
 
 		if not self.title:
 			self.title = ref.title
+
+	def standardise_manual_title(self):
+		"""A Manual's title always reads "Manual for <subject>", so its file and register entry do too."""
+		if self.document_type != "Manual":
+			return
+		if not self.title:
+			return
+		self.title = manual_title(self.title)
 
 	def check_source_guideline_is_a_guideline(self):
 		"""The guideline a Create is written from has to actually be a guideline.
@@ -461,3 +474,11 @@ def _link_from_process_instance(document_request: str) -> str | None:
 		return link
 	file_id = drive_file.get("id")
 	return f"https://docs.google.com/document/d/{file_id}/edit" if file_id else None
+
+
+def manual_title(title: str) -> str:
+	"""The "Manual for <subject>" form of a title, dropping any "Manual" the requester already wrote."""
+	subject = " ".join(title.split())
+	subject = re.sub(r"^manual\b(\s+(for|of|on)\b)?[\s:\-\u2013]*", "", subject, flags=re.IGNORECASE)
+	subject = re.sub(r"\s+manual$", "", subject, flags=re.IGNORECASE)
+	return MANUAL_TITLE_PREFIX + subject if subject else title
