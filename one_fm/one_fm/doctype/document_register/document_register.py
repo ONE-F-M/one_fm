@@ -40,6 +40,7 @@ CODE_PREFIXES = {
 	"SOP": "SOP",
 	"Manual": "MAN",
 	"Guideline": "GDL",
+	"Knowledge Base": "KNB",
 }
 
 # The starter grant the process applies at publish (the map's "Set Drive Sharing
