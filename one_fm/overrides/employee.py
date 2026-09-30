@@ -655,6 +655,27 @@ def validate_leaves(self):
 
 
 @frappe.whitelist()
+def get_latest_ai_eval_cost(employee: str):
+    """The most recent AI Eval Run triggered by this employee's user, with its cost.
+
+    An AI Eval Run carries no employee field, only the standard `owner` set to
+    whichever user triggered it, so this matches on Employee.user_id -> owner
+    and returns None when the employee has no linked user or no runs at all.
+    """
+    user_id = frappe.db.get_value("Employee", employee, "user_id")
+    if not user_id:
+        return None
+
+    return frappe.db.get_value(
+        "AI Eval Run",
+        {"owner": user_id},
+        ["name", "total_cost"],
+        order_by="started_at desc",
+        as_dict=True,
+    )
+
+
+@frappe.whitelist()
 def is_employee_master(user:str) -> int:
     #Return 1 if the employee has the required roles to modify the employee form.
     can_edit = 0
