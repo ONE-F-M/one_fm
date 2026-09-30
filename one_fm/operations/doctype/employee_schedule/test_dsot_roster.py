@@ -16,7 +16,7 @@ what the suspension flow starts from. Confirmed with the process owner.
 """
 
 import json
-from datetime import datetime
+from unittest.mock import patch
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -494,12 +494,16 @@ def _seed_basic_far_from_the_clock(date, employee):
 
 
 class TestTheDsotNoticeOnTheRoster(FrappeTestCase):
-	"""WI-003122: the requester is told, once per submission, that a DSOT they just
-	scheduled is waiting on the approver and will not show on the roster yet.
+	"""The requester is told, once per submission, that a DSOT they just scheduled is
+	waiting on the approver and will not show on the roster yet.
 
 	Driven through extreme_schedule itself - the function roster.js's two OT dialogs both
 	call - rather than through hold_overtime_for_approval directly, since the notice is
 	extreme_schedule's own responsibility.
+
+	extreme_schedule commits and enqueues update_employee_shift against a real employee;
+	both are muted so the approver email (sent on commit) never goes out and the rows
+	stay inside the test transaction.
 	"""
 
 	def setUp(self):
@@ -514,6 +518,9 @@ class TestTheDsotNoticeOnTheRoster(FrappeTestCase):
 		self.role = frappe.db.get_value("Operations Role", {}, "name")
 		if not self.role:
 			self.skipTest("no Operations Role on this site")
+		for patcher in (patch.object(frappe.db, "commit"), patch("frappe.enqueue")):
+			patcher.start()
+			self.addCleanup(patcher.stop)
 		frappe.local.message_log = []
 		self.made = []
 		_clear()
@@ -555,19 +562,16 @@ class TestTheDsotNoticeOnTheRoster(FrappeTestCase):
 		)
 		self.assertEqual(_dsot_notice_count(), 1)
 
-	def test_ordinary_overtime_with_no_basic_shift_shows_no_notice(self):
-		"""No Basic shift that day - hold_overtime_for_approval returns [], and nothing
-		is shown."""
+	def test_overtime_with_no_basic_shift_shows_no_notice(self):
+		"""No Basic shift that day - the roster refuses the Over-Time row outright, so
+		nothing is held and the DSOT notice is not shown."""
 		date = add_days(today(), 951)
 		if frappe.db.exists("Employee Schedule", {"employee": self.employee, "date": date}):
 			self.skipTest("the employee is already rostered on the test date")
 
 		self._schedule_overtime(date)
 
-		self.assertNotEqual(
-			frappe.db.get_value(
-				"Employee Schedule", f"{date}_{self.employee}_Over-Time", "workflow_state"
-			),
-			PENDING_DSOT,
+		self.assertFalse(
+			frappe.db.exists("Employee Schedule", f"{date}_{self.employee}_Over-Time")
 		)
 		self.assertEqual(_dsot_notice_count(), 0)
