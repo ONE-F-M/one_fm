@@ -15,6 +15,9 @@ one workflow per doctype, and Active is both what the Shift Assignment job picks
 what the suspension flow starts from. Confirmed with the process owner.
 """
 
+import json
+from datetime import datetime
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, today
