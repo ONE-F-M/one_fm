@@ -239,7 +239,7 @@ class TestTheJobOfferConnection(FrappeTestCase):
 
 
 class TestTheVisaCancellationConnection(FrappeTestCase):
-	"""WI-003111: the BA site's Connection for Visa Cancellation Request, added via the
+	"""The BA site's Connection for Visa Cancellation Request, added via the
 	links table so the Connections tab shows it (and its count) without also appearing
 	via an override_doctype_dashboards entry, which would show it twice."""
 
@@ -277,11 +277,7 @@ class TestTheVisaCancellationConnection(FrappeTestCase):
 		cancellation.cancellation_reason = "Candidate Dropped Offer"
 		cancellation.db_insert()
 
-		try:
-			result = get_open_count("Visa Request", visa_request.name)
-			counts = {row.get("name"): row.get("open_count") for row in result.get("data", [])}
+		result = get_open_count("Visa Request", visa_request.name)
+		counts = {row["doctype"]: row["count"] for row in result["count"]["external_links_found"]}
 
-			self.assertEqual(counts.get("Visa Cancellation Request"), 1)
-		finally:
-			frappe.db.delete("Visa Cancellation Request", {"name": cancellation.name})
-			frappe.db.delete("Visa Request", {"name": visa_request.name})
+		self.assertEqual(counts.get("Visa Cancellation Request"), 1)
