@@ -33,6 +33,27 @@ frappe.ui.form.on('Employee', {
                 }
             };
         });
+
+		if (!frm.doc.__islocal) {
+			frm.add_custom_button(__('Show AI Eval Cost'), function() {
+				frappe.call({
+					method: 'one_fm.overrides.employee.get_latest_ai_eval_cost',
+					args: { employee: frm.doc.name },
+					callback: function(r) {
+						if (r.message) {
+							frappe.msgprint(
+								__('Most recent AI Eval Run ({0}) cost: {1}', [
+									r.message.name,
+									format_currency(r.message.total_cost)
+								])
+							);
+						} else {
+							frappe.msgprint(__('No AI Eval Run found for this employee.'));
+						}
+					}
+				});
+			}, __('View'));
+		}
 	},
 	setup: function(frm) {
 		frm._original_status = frm.doc.status;
