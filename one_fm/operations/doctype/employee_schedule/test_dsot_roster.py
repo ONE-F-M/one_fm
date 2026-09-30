@@ -24,6 +24,7 @@ from one_fm.one_fm.page.roster.employee_map import (
 	CreateMap,
 	get_schedule_state_filter,
 )
+from one_fm.one_fm.page.roster.roster import extreme_schedule
 from one_fm.operations.doctype.employee_schedule.employee_schedule import (
 	ACTIVE,
 	BASIC,
@@ -32,6 +33,11 @@ from one_fm.operations.doctype.employee_schedule.employee_schedule import (
 	PENDING_DSOT,
 	WORKING,
 	hold_overtime_for_approval,
+)
+
+DSOT_PENDING_NOTICE = (
+	"Notice: The requested Double Shift Overtime (DSOT) is currently Pending Approval. "
+	"It will not be displayed on the Roster UI until it has been approved by the authorized user."
 )
 
 SEEDED = "WI-002437-SEED-"
