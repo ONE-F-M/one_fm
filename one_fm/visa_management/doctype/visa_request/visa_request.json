@@ -606,8 +606,13 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
- "links": [],
- "modified": "2026-08-29 10:00:00.000000",
+ "links": [
+  {
+   "link_doctype": "Visa Cancellation Request",
+   "link_fieldname": "visa_request_id"
+  }
+ ],
+ "modified": "2026-09-30 23:39:00.000000",
  "modified_by": "Administrator",
  "module": "Visa Management",
  "name": "Visa Request",
