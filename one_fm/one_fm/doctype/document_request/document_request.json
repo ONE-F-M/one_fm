@@ -56,7 +56,7 @@
    "label": "Request Action",
    "options": "\nCreate\nUpdate\nDelete",
    "reqd": 1,
-   "description": "Create a new document, revise an existing one (which publishes a new version), or withdraw an existing one from use. No default: a Select whose first option is a real action silently answers this question for the requester. Delete does NOT destroy anything — it marks the document inactive and revokes its Drive sharing, and a System Manager can reactivate it."
+   "description": "Create a new document, revise an existing one (which publishes a new version), or withdraw an existing one from use. No default: a Select whose first option is a real action silently answers this question for the requester. Delete does NOT destroy anything \u2014 it marks the document inactive and revokes its Drive sharing, and a System Manager can reactivate it."
   },
   {
    "depends_on": "eval:doc.request_action == 'Create'",
@@ -90,7 +90,7 @@
    "label": "Requirement",
    "depends_on": "eval:doc.request_action != 'Delete'",
    "mandatory_depends_on": "eval:doc.request_action != 'Delete'",
-   "description": "What the document must say. On a Create this is the material the document is written from; on an Update it is the change to make — the existing document supplies everything the requirement does not mention."
+   "description": "What the document must say. On a Create this is the material the document is written from; on an Update it is the change to make \u2014 the existing document supplies everything the requirement does not mention."
   },
   {
    "fieldname": "source_guideline",
@@ -100,7 +100,7 @@
    "options": "Document Register",
    "depends_on": "eval:doc.request_action == 'Create'",
    "mandatory_depends_on": "eval:doc.request_action == 'Create'",
-   "description": "The guideline describing HOW a document of this type is written — its structure, sections and tone. Only Guideline entries can be picked. It shapes the document; what the document SAYS comes from Requirement."
+   "description": "The guideline describing HOW a document of this type is written \u2014 its structure, sections and tone. Only Guideline entries can be picked. It shapes the document; what the document SAYS comes from Requirement."
   },
   {
    "fieldname": "reference_document",
@@ -110,7 +110,7 @@
    "options": "Document Register",
    "depends_on": "eval:doc.request_action != 'Create'",
    "mandatory_depends_on": "eval:doc.request_action != 'Create'",
-   "description": "The existing published document being revised or withdrawn. Only active controlled documents can be picked — an already-withdrawn one has nothing to revise or withdraw, and input material is not a controlled document."
+   "description": "The existing published document being revised or withdrawn. Only active controlled documents can be picked \u2014 an already-withdrawn one has nothing to revise or withdraw, and input material is not a controlled document."
   },
   {
    "fieldname": "section_break_approval",
@@ -125,7 +125,7 @@
    "label": "Approver",
    "options": "Employee",
    "read_only": 1,
-   "description": "Always the requester's line manager (Employee > Reports To) — not chosen manually."
+   "description": "Always the requester's line manager (Employee > Reports To) \u2014 not chosen manually."
   },
   {
    "fieldname": "approver_user",
@@ -133,7 +133,8 @@
    "fetch_from": "approver.user_id",
    "label": "Approver User",
    "options": "User",
-   "read_only": 1
+   "read_only": 1,
+   "description": "Resolved by get_approver_user: line manager, self for a super user, or the site supervisor."
   },
   {
    "fieldname": "column_break_status",
@@ -141,7 +142,7 @@
   },
   {
    "depends_on": "eval:doc.document_link",
-   "description": "Every revision shares one Drive file, so this link stays valid for the life of the document — it always opens the current version.",
+   "description": "Every revision shares one Drive file, so this link stays valid for the life of the document \u2014 it always opens the current version.",
    "fieldname": "document_link",
    "fieldtype": "Data",
    "label": "Published Document",
@@ -161,7 +162,16 @@
    "label": "BPMN Process Instance",
    "options": "BPMN Process Instance",
    "read_only": 1,
-   "description": "The Processa instance running this request through Creation → Review → Approval → Publish."
+   "description": "The Processa instance running this request through Creation \u2192 Review \u2192 Approval \u2192 Publish."
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "no_copy": 1,
+   "options": "Workflow State"
   }
  ],
  "links": [],
