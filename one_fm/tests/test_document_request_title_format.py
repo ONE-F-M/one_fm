@@ -60,6 +60,51 @@ class TestTheSOPTitleForm(unittest.TestCase):
 		self.assertEqual(standard_title("SOPs Library", "SOP"), "SOP for SOPs Library")
 
 
+class TestTheGuidelineAndPolicyTitleForms(unittest.TestCase):
+	def test_a_guideline_takes_its_form(self):
+		for written in (
+			"Site Access Control",
+			"Guideline: Site Access Control",
+			"guidelines for Site Access Control",
+			"Site Access Control Guideline",
+		):
+			with self.subTest(written=written):
+				self.assertEqual(standard_title(written, "Guideline"), "Guideline for Site Access Control")
+
+	def test_the_guideline_for_guidelines_keeps_its_subject(self):
+		self.assertEqual(standard_title("Guideline for Guidelines", "Guideline"), "Guideline for Guidelines")
+
+	def test_a_policy_takes_its_form(self):
+		for written in (
+			"Annual Leave",
+			"Policy: Annual Leave",
+			"POLICY ON Annual Leave",
+			"Annual Leave Policy",
+			"Policies for Annual Leave",
+		):
+			with self.subTest(written=written):
+				self.assertEqual(standard_title(written, "Policy"), "Policy for Annual Leave")
+
+	def test_policy_inside_a_word_is_not_treated_as_the_prefix(self):
+		self.assertEqual(standard_title("Policyholder Claims", "Policy"), "Policy for Policyholder Claims")
+
+
+class TestTheKnowledgeBaseTitleForm(unittest.TestCase):
+	def test_a_knowledge_base_takes_its_form(self):
+		for written in (
+			"Office Printers",
+			"Knowledge Base: Office Printers",
+			"knowledge base for Office Printers",
+			"Office Printers Knowledge Base",
+			"KB - Office Printers",
+		):
+			with self.subTest(written=written):
+				self.assertEqual(standard_title(written, "Knowledge Base"), "Knowledge Base for Office Printers")
+
+	def test_kb_inside_a_word_is_not_treated_as_the_prefix(self):
+		self.assertEqual(standard_title("KBR Onboarding", "Knowledge Base"), "Knowledge Base for KBR Onboarding")
+
+
 class TestTheRequestTitleIsStandardised(DocumentRequestInputFixtures, FrappeTestCase):
 	def test_a_manual_is_saved_in_the_form(self):
 		doc = self._request(document_type="Manual", title="Process Deployment")
@@ -71,10 +116,15 @@ class TestTheRequestTitleIsStandardised(DocumentRequestInputFixtures, FrappeTest
 		doc.insert()
 		self.assertEqual(doc.title, "SOP for Annual Leave Requests")
 
-	def test_other_document_types_keep_their_title(self):
-		doc = self._request(document_type="Policy", title="Process Deployment")
+	def test_a_policy_is_saved_in_the_form(self):
+		doc = self._request(document_type="Policy", title="Annual Leave")
 		doc.insert()
-		self.assertEqual(doc.title, "Process Deployment")
+		self.assertEqual(doc.title, "Policy for Annual Leave")
+
+	def test_a_guideline_is_saved_in_the_form(self):
+		doc = self._request(document_type="Guideline", title="Site Access Control")
+		doc.insert()
+		self.assertEqual(doc.title, "Guideline for Site Access Control")
 
 	def test_an_update_takes_the_form_even_when_the_register_title_does_not_have_it(self):
 		reference = _register("Manual", suffix="Title")
