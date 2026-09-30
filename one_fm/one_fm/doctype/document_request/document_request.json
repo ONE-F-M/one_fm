@@ -71,7 +71,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Document Type",
-   "options": "\nPolicy\nSOP\nGuideline\nManual",
+   "options": "\nPolicy\nSOP\nGuideline\nManual\nKnowledge Base",
    "reqd": 1,
    "description": "What kind of document this is. Decides the template, the code series, and which guideline applies. No default: a Select whose first option is a real type silently answers this question for the requester."
   },
