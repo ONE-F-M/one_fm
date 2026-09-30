@@ -12,6 +12,9 @@ from frappe.model.document import Document
 TITLE_FORMS = {
 	"Manual": ("Manual for ", r"manual"),
 	"SOP": ("SOP for ", r"sop|standard\s+operating\s+procedures?"),
+	"Guideline": ("Guideline for ", r"guidelines?"),
+	"Policy": ("Policy for ", r"polic(?:y|ies)"),
+	"Knowledge Base": ("Knowledge Base for ", r"knowledge\s+bases?|kb"),
 }
 
 
@@ -139,7 +142,7 @@ class DocumentRequest(Document):
 			self.title = ref.title
 
 	def standardise_title(self):
-		"""A Manual or SOP title always reads "<Type> for <subject>", so its file and register entry do too."""
+		"""A controlled document's title reads "<Type> for <subject>", so its file and register entry do too."""
 		if self.document_type not in TITLE_FORMS:
 			return
 		if not self.title:
