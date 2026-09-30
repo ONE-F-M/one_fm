@@ -299,6 +299,8 @@
    "fetch_from": "job_offer.job_applicant",
    "fieldname": "job_applicant",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Job Applicant",
    "options": "Job Applicant",
    "reqd": 1
