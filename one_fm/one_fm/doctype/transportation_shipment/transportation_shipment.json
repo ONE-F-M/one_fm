@@ -25,6 +25,8 @@
   "trip_direction",
   "routing_type_badge",
   "status",
+  "needs_replan",
+  "replan_reason",
   "stop_location",
   "section_break_bwoh",
   "is_adhoc_journey",
@@ -166,6 +168,22 @@
    "options": "\nUnassigned\nAssigned\nInactive"
   },
   {
+   "default": "0",
+   "depends_on": "eval:doc.needs_replan",
+   "fieldname": "needs_replan",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Needs Re-plan",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.needs_replan",
+   "fieldname": "replan_reason",
+   "fieldtype": "Small Text",
+   "label": "Re-plan Reason",
+   "read_only": 1
+  },
+  {
    "fieldname": "stop_location",
    "fieldtype": "Link",
    "label": "Stop Location",
@@ -277,7 +295,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-17 19:00:00.000000",
+ "modified": "2026-10-01 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Transportation Shipment",
