@@ -949,6 +949,8 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
             "pre_merge_trip_direction",
             # Lineage for a card that was split off a bigger one (WI-002170).
             "is_split_overflow", "split_root",
+            # Set by the generator on a placed card today's roster no longer produces.
+            "needs_replan", "replan_reason",
         ],
     )
     if not shipments:
@@ -1027,6 +1029,15 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
     # in between would still be looking at them, and an Assigned card is never pruned.
     inactive_shifts = _inactive_shifts(shipments)
     shipments = [s for s in shipments if not _serves_only_inactive_shifts(s, inactive_shifts)]
+
+    # An unplaced card the generator has emptied because every rider sits on one of its
+    # own overflow cards is nothing to plan. A placed one stays, so its block keeps
+    # resolving its card.
+    split_roots = {s.split_root for s in shipments if s.split_root}
+    shipments = [
+        s for s in shipments
+        if s.status != "Unassigned" or s.name not in split_roots or emps_by_ship.get(s.name)
+    ]
 
     # Fallback times for shipments without an Operations Shift (ad-hoc journeys).
     trq_names = list({
@@ -1110,6 +1121,8 @@ def _build_transportation_shipment_cards(fmt, to_utc, get_coords_cached, timedel
                 # AC 2.5: the pool marks a card that holds the staff who did not fit.
                 "is_split_overflow": bool(s.is_split_overflow),
                 "split_root": s.split_root or None,
+                "needs_replan": bool(s.needs_replan),
+                "replan_reason": s.replan_reason or "",
             })
         except Exception:
             frappe.log_error(frappe.get_traceback(), "Transportation Shipment Card Build Error")
