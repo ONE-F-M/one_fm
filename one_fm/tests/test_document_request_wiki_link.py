@@ -33,18 +33,18 @@ class TestTheTitleComesFromTheWikiPage(WikiLinkFixtures, FrappeTestCase):
 	def test_a_create_takes_the_title_of_the_linked_page(self):
 		doc = self._request(wiki_link=f"{SITE}/wiki/_test-leave-policy", title=None)
 		doc.insert()
-		self.assertEqual(doc.title, "Annual Leave Guide")
+		self.assertEqual(doc.title, "SOP for Annual Leave Guide")
 
 	def test_the_title_is_plain_text_even_when_the_wiki_title_has_markup(self):
 		doc = self._request(wiki_link=f"{SITE}/wiki/_test-boots")
 		doc.insert()
-		self.assertEqual(doc.title, "Uniform -Security Boots V1")
+		self.assertEqual(doc.title, "SOP for Uniform -Security Boots V1")
 
 	def test_an_encoded_link_with_spaces_and_arabic_finds_its_page(self):
 		link = f"{SITE}/wiki/_test%20%D8%B3%D8%AC%D9%84%20%26%20%D8%A7%D9%84%D8%B2%D9%88%D8%A7%D8%B1/?x=1#top"
 		doc = self._request(wiki_link=link)
 		doc.insert()
-		self.assertEqual(doc.title, "سجل الزوار")
+		self.assertEqual(doc.title, "SOP for سجل الزوار")
 
 	def test_a_link_to_no_wiki_page_is_refused(self):
 		doc = self._request(wiki_link=f"{SITE}/wiki/_test-does-not-exist")
@@ -54,9 +54,9 @@ class TestTheTitleComesFromTheWikiPage(WikiLinkFixtures, FrappeTestCase):
 	def test_a_title_edited_after_the_link_was_set_is_kept(self):
 		doc = self._request(wiki_link=f"{SITE}/wiki/_test-leave-policy")
 		doc.insert()
-		doc.title = "Annual Leave Guide 2026"
+		doc.title = "SOP for Annual Leave Guide 2026"
 		doc.save()
-		self.assertEqual(doc.title, "Annual Leave Guide 2026")
+		self.assertEqual(doc.title, "SOP for Annual Leave Guide 2026")
 
 	def test_an_update_drops_the_wiki_link_and_keeps_its_title(self):
 		doc = self._request(request_action="Update", wiki_link=f"{SITE}/wiki/_test-leave-policy")

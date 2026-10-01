@@ -2,6 +2,7 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
 
+import re
 from urllib.parse import unquote, urlparse
 
 import frappe
@@ -10,6 +11,15 @@ from frappe.model.document import Document
 from frappe.utils import strip_html
 from frappe.utils.html_utils import unescape_html
 
+# Per document type: the title's leading words, and the ways a requester writes the type.
+TITLE_FORMS = {
+	"Manual": ("Manual for ", r"manual"),
+	"SOP": ("SOP for ", r"sop|standard\s+operating\s+procedures?"),
+	"Guideline": ("Guideline for ", r"guidelines?"),
+	"Policy": ("Policy for ", r"polic(?:y|ies)"),
+	"Knowledge Base": ("Knowledge Base for ", r"knowledge\s+bases?|kb"),
+}
+
 
 class DocumentRequest(Document):
 	def validate(self):
@@ -17,6 +27,7 @@ class DocumentRequest(Document):
 		self.set_title_from_wiki_link()
 		self.check_approver_resolved()
 		self.apply_reference_document_defaults()
+		self.standardise_title()
 		self.check_required_links()
 		self.check_reference_document_is_active()
 		self.check_source_guideline_is_a_guideline()
@@ -150,6 +161,14 @@ class DocumentRequest(Document):
 
 		if not self.title:
 			self.title = ref.title
+
+	def standardise_title(self):
+		"""A controlled document's title reads "<Type> for <subject>", so its file and register entry do too."""
+		if self.document_type not in TITLE_FORMS:
+			return
+		if not self.title:
+			return
+		self.title = standard_title(self.title, self.document_type)
 
 	def check_source_guideline_is_a_guideline(self):
 		"""The guideline a Create is written from has to actually be a guideline.
@@ -509,3 +528,12 @@ def _wiki_route(wiki_link: str) -> str:
 def _plain_title(title: str) -> str:
 	# Some Wiki titles carry editor markup such as <strong> and &nbsp;.
 	return " ".join(unescape_html(strip_html(title)).split())
+
+
+def standard_title(title: str, document_type: str) -> str:
+	"""The "<Type> for <subject>" form of a title, dropping any type name the requester already wrote."""
+	prefix, names = TITLE_FORMS[document_type]
+	subject = " ".join(title.split())
+	subject = re.sub(rf"^(?:{names})\b(\s+(for|of|on)\b)?[\s:\-\u2013]*", "", subject, flags=re.IGNORECASE)
+	subject = re.sub(rf"\s+(?:{names})$", "", subject, flags=re.IGNORECASE)
+	return prefix + subject if subject else title
