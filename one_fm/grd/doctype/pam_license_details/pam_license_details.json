@@ -21,11 +21,11 @@
   "lg_number",
   "column_break_mtwm",
   "lg_expiry_date",
-  "pam_stats_section",
-  "pam_license_stats",
   "quota_classification_section",
   "total_number_of_employees",
-  "quota_classification"
+  "quota_classification",
+  "pam_stats_section",
+  "pam_license_stats"
  ],
  "fields": [
   {
@@ -119,17 +119,6 @@
    "label": "LG Expiry Date"
   },
   {
-   "fieldname": "pam_stats_section",
-   "fieldtype": "Section Break",
-   "label": "PAM Stats"
-  },
-  {
-   "fieldname": "pam_license_stats",
-   "fieldtype": "Table",
-   "label": "PAM License Stats",
-   "options": "PAM License Stats"
-  },
-  {
    "fieldname": "quota_classification_section",
    "fieldtype": "Section Break",
    "label": "Quota Classification"
@@ -145,12 +134,23 @@
    "fieldtype": "Table",
    "label": "Quota Classification",
    "options": "Quota Classification"
+  },
+  {
+   "fieldname": "pam_stats_section",
+   "fieldtype": "Section Break",
+   "label": "PAM Stats"
+  },
+  {
+   "fieldname": "pam_license_stats",
+   "fieldtype": "Table",
+   "label": "PAM License Stats",
+   "options": "PAM License Stats"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-18 10:00:00.000000",
+ "modified": "2026-09-30 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM License Details",

@@ -83,12 +83,13 @@ class TestTheLicenceSection(FrappeTestCase):
 
 	def test_they_sit_in_a_section_of_their_own(self):
 		"""PAM Stats rations the licence by occupational sector; this rations it by quota
-		type. Two different groupings of the same licence, read separately."""
+		type. Two different groupings of the same licence, read separately, with Quota
+		Classification coming first on the form."""
 		order = self.definition["field_order"]
 		self.assertLess(
 			order.index("quota_classification_section"), order.index("quota_classification")
 		)
-		self.assertLess(order.index("pam_license_stats"), order.index("quota_classification_section"))
+		self.assertLess(order.index("quota_classification"), order.index("pam_stats_section"))
 
 	def test_the_sector_table_is_untouched(self):
 		"""The sector headcounts hang off pam_license_stats and must keep doing so."""
