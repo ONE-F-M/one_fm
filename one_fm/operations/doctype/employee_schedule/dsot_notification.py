@@ -17,11 +17,12 @@ of it has been written. Collecting the names as they are held and flushing once 
 transaction commits is what turns eight rows into one email - and it means a rolled-back
 roster run sends nothing at all, which a per-row email could not promise.
 
-WI-002604 is the other half of the same conversation: once the approver has decided, the
-REQUESTOR is told which days were approved and which were rejected, in one email per
-request rather than one per day. It is built on the same two pieces - continuous_cycles
-and the flush-on-commit - because a partly approved range is only knowable once every row
-in it has been decided.
+The outcome email is the other half: once the approver has decided, the REQUESTOR is told
+which days were approved and which were rejected, in one email per request. Approvers
+decide one row per commit (the form saves one row, and Frappe's bulk workflow action
+commits after each row), so the commit cannot group a request. Each row carries the
+dsot_request it was held under instead, and the email waits until no row of that request
+is still pending.
 """
 
 import json
@@ -235,9 +236,8 @@ def send_cycle_email(approver, employee, employee_name, start, end, shifts) -> N
 	)
 
 
-# WI-002604: the other half of the conversation. The approver is told a request is waiting
-# (above); the requestor is told what was decided - and for a range that was decided
-# unevenly, exactly which days went which way.
+# The approver is told a request is waiting (above); the requestor is told what was
+# decided - and for a range that was decided unevenly, exactly which days went which way.
 OUTCOME_FLAG = "dsot_outcome_notifications"
 
 ACTIVE = "Active"
@@ -273,7 +273,7 @@ def queue_outcome(names) -> None:
 
 
 def flush_outcomes() -> None:
-	"""Send one outcome email per (requestor, employee) for everything decided.
+	"""Send one outcome email per request whose last pending row has now been decided.
 
 	Wrapped whole for the same reason as flush(): the decision has already saved and the
 	shift assignment has already been made, so a mail server that is down must not turn an
@@ -284,32 +284,42 @@ def flush_outcomes() -> None:
 		return
 
 	try:
-		rows = frappe.get_all(
+		decided = frappe.get_all(
 			"Employee Schedule",
-			filters={"name": ["in", list(names)], "workflow_state": ["in", list(DECIDED_STATES)]},
-			fields=[
-				"name",
-				"employee",
-				"employee_name",
-				"date",
-				"site",
-				"owner",
-				"workflow_state",
-				"modified_by",
-			],
+			filters={"name": ["in", list(names)]},
+			fields=["name", "dsot_request"],
 		)
-		if not rows:
-			return
+		# Rows held before dsot_request existed have none, and stand as a request of one.
+		requests = {
+			("dsot_request", row.dsot_request) if row.dsot_request else ("name", row.name)
+			for row in decided
+		}
 
-		# AC1-AC3 are all one request: the approved days and the rejected days of the same
-		# ask, in one message. Grouped by requestor as well as employee because a second
-		# supervisor's request for the same person is a separate ask.
-		by_request = {}
-		for row in rows:
-			by_request.setdefault((row.owner, row.employee), []).append(row)
+		for field, value in requests:
+			rows = frappe.get_all(
+				"Employee Schedule",
+				filters={field: value},
+				fields=[
+					"name",
+					"employee",
+					"employee_name",
+					"date",
+					"site",
+					"owner",
+					"workflow_state",
+					"modified_by",
+				],
+			)
+			# ponytail: two approvers committing the last two rows of one request at the
+			# same moment each see the other still pending, and neither sends.
+			if any(row.workflow_state == PENDING_DSOT for row in rows):
+				continue
 
-		for (requestor, employee), decided in by_request.items():
-			send_outcome_email(requestor=requestor, employee=employee, decided=decided)
+			outcome = [row for row in rows if row.workflow_state in DECIDED_STATES]
+			if outcome:
+				send_outcome_email(
+					requestor=outcome[0].owner, employee=outcome[0].employee, decided=outcome
+				)
 	except Exception:
 		frappe.log_error(
 			title="DSOT outcome notification",
@@ -369,7 +379,7 @@ def processed_by(decided) -> str:
 
 
 def send_outcome_email(requestor, employee, decided) -> None:
-	"""One request, one email (AC1-AC3)."""
+	"""One request, one email."""
 	if not requestor:
 		return
 
