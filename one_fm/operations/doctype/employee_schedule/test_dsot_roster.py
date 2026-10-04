@@ -15,6 +15,9 @@ one workflow per doctype, and Active is both what the Shift Assignment job picks
 what the suspension flow starts from. Confirmed with the process owner.
 """
 
+import json
+from unittest.mock import patch
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, today
@@ -24,6 +27,7 @@ from one_fm.one_fm.page.roster.employee_map import (
 	CreateMap,
 	get_schedule_state_filter,
 )
+from one_fm.one_fm.page.roster.roster import extreme_schedule
 from one_fm.operations.doctype.employee_schedule.employee_schedule import (
 	ACTIVE,
 	BASIC,
@@ -32,6 +36,11 @@ from one_fm.operations.doctype.employee_schedule.employee_schedule import (
 	PENDING_DSOT,
 	WORKING,
 	hold_overtime_for_approval,
+)
+
+DSOT_PENDING_NOTICE = (
+	"Notice: The requested Double Shift Overtime (DSOT) is currently Pending Approval. "
+	"It will not be displayed on the Roster UI until it has been approved by the authorized user."
 )
 
 SEEDED = "WI-002437-SEED-"
@@ -50,6 +59,25 @@ def _an_employee_who_is_not_leaving():
 	"""
 	return frappe.db.get_value(
 		"Employee", {"status": "Active", "relieving_date": ["is", "not set"]}, "name"
+	)
+
+
+def _an_employee_the_roster_will_accept():
+	"""One extreme_schedule itself will build a date for.
+
+	It silently drops anybody with no date_of_joining (logging an error instead), and
+	anybody whose joining/relieving dates do not bracket the requested date - so this is
+	a stricter filter than _an_employee_who_is_not_leaving, asked of the same two fields
+	the function itself reads.
+	"""
+	return frappe.db.get_value(
+		"Employee",
+		{
+			"status": "Active",
+			"relieving_date": ["is", "not set"],
+			"date_of_joining": ["is", "set"],
+		},
+		"name",
 	)
 
 
@@ -422,3 +450,128 @@ class TestApprovalDoesNotDuplicateAnAssignment(FrappeTestCase):
 			self.assertEqual(self._calls_to_the_builder(), [])
 		finally:
 			frappe.db.sql("DELETE FROM `tabShift Assignment` WHERE name = %s", assignment.name)
+
+
+def _dsot_notice_count():
+	"""How many times the AC's exact sentence is in the message log.
+
+	frappe.msgprint appends a JSON-encoded string to frappe.local.message_log by default,
+	but some call sites already decode it - so both shapes are read here.
+	"""
+	count = 0
+	for entry in frappe.local.message_log:
+		if isinstance(entry, str):
+			try:
+				entry = json.loads(entry)
+			except ValueError:
+				pass
+		if isinstance(entry, dict) and DSOT_PENDING_NOTICE in (entry.get("message") or ""):
+			count += 1
+	return count
+
+
+def _seed_basic_far_from_the_clock(date, employee):
+	"""A Basic Working row on the given date, with a start/end datetime nowhere near it.
+
+	hold_overtime_for_approval only asks whether a Basic Working row exists on the same
+	*date* - but extreme_schedule's own overlap guards, earlier in the same function, do
+	compare start_datetime/end_datetime, and would refuse to even insert the Over-Time row
+	if the two happened to clash. Parking this row in 1999 keeps it a same-day double
+	shift for the rule under test without colliding with whatever hours the real
+	Operations Shift resolves to on the test date.
+	"""
+	name = f"WI-003122-SEED-BASIC-{frappe.generate_hash(length=6)}"
+	frappe.db.sql(
+		"""INSERT INTO `tabEmployee Schedule`
+		   (`name`, `employee`, `date`, `roster_type`, `employee_availability`,
+		    `workflow_state`, `start_datetime`, `end_datetime`, `owner`, `modified_by`,
+		    `creation`, `modified`)
+		   VALUES (%s, %s, %s, 'Basic', 'Working', 'Active', '1999-01-01 00:00:00',
+		           '1999-01-01 01:00:00', 'Administrator', 'Administrator', NOW(), NOW())""",
+		(name, employee, date),
+	)
+	return name
+
+
+class TestTheDsotNoticeOnTheRoster(FrappeTestCase):
+	"""The requester is told, once per submission, that a DSOT they just scheduled is
+	waiting on the approver and will not show on the roster yet.
+
+	Driven through extreme_schedule itself - the function roster.js's two OT dialogs both
+	call - rather than through hold_overtime_for_approval directly, since the notice is
+	extreme_schedule's own responsibility.
+
+	extreme_schedule commits and enqueues update_employee_shift against a real employee;
+	both are muted so the approver email (sent on commit) never goes out and the rows
+	stay inside the test transaction.
+	"""
+
+	def setUp(self):
+		self.employee = _an_employee_the_roster_will_accept()
+		if not self.employee:
+			self.skipTest("no active employee with a joining date and no leaving date on this site")
+		self.shift = frappe.db.get_value(
+			"Operations Shift", {"status": "Active", "shift_type": ["is", "set"]}, "name"
+		)
+		if not self.shift:
+			self.skipTest("no active Operations Shift on this site")
+		self.role = frappe.db.get_value("Operations Role", {}, "name")
+		if not self.role:
+			self.skipTest("no Operations Role on this site")
+		for patcher in (patch.object(frappe.db, "commit"), patch("frappe.enqueue")):
+			patcher.start()
+			self.addCleanup(patcher.stop)
+		frappe.local.message_log = []
+		self.made = []
+		_clear()
+
+	def tearDown(self):
+		for name in self.made:
+			frappe.db.sql("DELETE FROM `tabEmployee Schedule` WHERE name = %s", name)
+		_clear()
+
+	def _schedule_overtime(self, date):
+		extreme_schedule(
+			employees=[{"employee": self.employee, "date": str(date)}],
+			shift=self.shift,
+			operations_role=self.role,
+			otRoster="true",
+			start_date=None,
+			end_date=None,
+			keep_days_off=0,
+			day_off_ot=0,
+			employee_list=[self.employee],
+		)
+		self.made.append(f"{date}_{self.employee}_Over-Time")
+
+	def test_a_double_shift_shows_the_notice_exactly_once(self):
+		"""An employee already on a Basic Working shift that day - the OT is held, and
+		the requester is told once, not once per employee or once per row."""
+		date = add_days(today(), 950)
+		if frappe.db.exists("Employee Schedule", {"employee": self.employee, "date": date}):
+			self.skipTest("the employee is already rostered on the test date")
+		self.made.append(_seed_basic_far_from_the_clock(date, self.employee))
+
+		self._schedule_overtime(date)
+
+		self.assertEqual(
+			frappe.db.get_value(
+				"Employee Schedule", f"{date}_{self.employee}_Over-Time", "workflow_state"
+			),
+			PENDING_DSOT,
+		)
+		self.assertEqual(_dsot_notice_count(), 1)
+
+	def test_overtime_with_no_basic_shift_shows_no_notice(self):
+		"""No Basic shift that day - the roster refuses the Over-Time row outright, so
+		nothing is held and the DSOT notice is not shown."""
+		date = add_days(today(), 951)
+		if frappe.db.exists("Employee Schedule", {"employee": self.employee, "date": date}):
+			self.skipTest("the employee is already rostered on the test date")
+
+		self._schedule_overtime(date)
+
+		self.assertFalse(
+			frappe.db.exists("Employee Schedule", f"{date}_{self.employee}_Over-Time")
+		)
+		self.assertEqual(_dsot_notice_count(), 0)
