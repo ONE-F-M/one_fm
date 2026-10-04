@@ -38,6 +38,7 @@
   "attended_status",
   "roster_type",
   "day_off_ot",
+  "dsot_request",
   "section_break_kt56n",
   "reference_doctype",
   "column_break_d2pic",
@@ -172,6 +173,15 @@
    "label": "Day Off OT"
   },
   {
+   "fieldname": "dsot_request",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "DSOT Request",
+   "no_copy": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
    "fieldname": "start_datetime",
    "fieldtype": "Datetime",
    "label": "Start Datetime",
@@ -297,7 +307,7 @@
  ],
  "grid_page_length": 50,
  "links": [],
- "modified": "2026-07-01 21:09:26.221355",
+ "modified": "2026-10-03 17:49:15.982000",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Employee Schedule",
