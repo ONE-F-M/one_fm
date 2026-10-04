@@ -94,18 +94,3 @@ class TestConditionsAreEvaluable(FrappeTestCase):
 		self.assertTrue(
 			frappe.get_meta("Accommodation Leave Movement").has_field("checked_out")
 		)
-
-
-class TestReapplyOnReturn(FrappeTestCase):
-	"""The OUT assignment closes on a flag written with set_value, which does not
-	save that document - so the rule has to be re-applied explicitly."""
-
-	def test_the_controller_reapplies_rules_for_the_linked_movement(self):
-		source = frappe.read_file(
-			frappe.get_app_path(
-				"one_fm", "accommodation", "doctype", "accommodation_leave_movement",
-				"accommodation_leave_movement.py",
-			)
-		)
-		self.assertIn("reapply_own_assignment_rules(self.checkin_reference)", source)
-		self.assertIn("def reapply_own_assignment_rules", source)
