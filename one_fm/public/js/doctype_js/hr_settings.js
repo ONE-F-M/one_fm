@@ -1,7 +1,27 @@
 // Copyright (c) 2020, ONE FM and contributors
 // For license information, please see license.txt
 
+// Visa Costing carries a flat 20 KWD work permit fee.
+const VISA_COSTING_ACTION = 'Visa Costing';
+const VISA_COSTING_WORK_PERMIT_AMOUNT = 20;
+
 frappe.ui.form.on('GRD Renewal Extension Cost', {
+	renewal_or_extend: function(frm, cdt, cdn) {
+		var child = locals[cdt][cdn];
+		var amount = child.work_permit_amount;
+
+		if(child.renewal_or_extend === VISA_COSTING_ACTION){
+			// Fill an empty amount only, so a rate set to something else is kept.
+			// set_value fires the work_permit_amount handler below, which totals the row.
+			if(!amount){
+				frappe.model.set_value(cdt, cdn, 'work_permit_amount', VISA_COSTING_WORK_PERMIT_AMOUNT);
+			}
+		} else if(amount === VISA_COSTING_WORK_PERMIT_AMOUNT){
+			// The fee belongs to the Action. Switching away takes the 20 back off, and
+			// only the 20 - any other amount was typed in and is left alone.
+			frappe.model.set_value(cdt, cdn, 'work_permit_amount', 0);
+		}
+	},
 	work_permit_amount: function(frm, cdt, cdn) {
 		var child = locals[cdt][cdn];
 		caclulate_renewal_extension_cost_total(frm, child);
