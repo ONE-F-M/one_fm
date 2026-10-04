@@ -788,6 +788,30 @@ def remove_code_block_with_regex(file_path, pattern):
         return False
 
 
+def deploy_ticket_field():
+    """Overwrite the helpdesk agent TicketField.vue with the one_fm version.
+
+    Stock TicketField.vue lumps "Text Editor" in with the plain text types and
+    renders it as a single-line <input>, so an HTML field such as
+    resolution_details shows its raw markup in the Ticket Info sidebar - and the
+    blur handler writes whatever is left in that input back to the DB. The
+    one_fm copy renders Text Editor fields as a sanitized preview that opens a
+    real TextEditor dialog, keeping them editable without corrupting the HTML.
+    """
+    bench_path = get_bench_path()
+
+    field_source = os.path.join(
+        bench_path, "apps", "one_fm", "one_fm", "public", "js",
+        "form_overrides", "hd_ticket", "TicketField.vue",
+    )
+    field_target = os.path.join(
+        bench_path, "apps", "helpdesk", "desk", "src", "components",
+        "TicketField.vue",
+    )
+
+    return copy_if_changed(field_source, field_target, "TicketField.vue")
+
+
 def update_all_ticket_features():
     any_changes = False
 
@@ -802,6 +826,8 @@ def update_all_ticket_features():
     if deploy_dashboard_view():
         any_changes = True
     if deploy_ticket_header():
+        any_changes = True
+    if deploy_ticket_field():
         any_changes = True
     if update_hd_ticket_side_bar():
         any_changes = True
