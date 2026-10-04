@@ -15,9 +15,11 @@ from one_fm.patches.v15_0.add_work_permit_assignment_rules import RULES
 
 PAYMENT_STATE = "Pending  For Payment"  # two spaces, as the workflow spells it
 
+# WI-002497: "Pending By Operator" is "Pending by GR Operator", and the permit no longer
+# passes through "Apply Online by PRO" at all - Draft saves straight to the operator.
 OPERATOR_STATES = (
-	'["Apply Online by PRO", "Pending By PAM", "Pending By Previous Company", '
-	'"Pending By Operator", "Reason of Rejection"]'
+	'["Pending By PAM", "Pending By Previous Company", '
+	'"Pending by GR Operator", "Reason of Rejection"]'
 )
 
 # The export the work item links to, with the three corrections it needs to work at all:

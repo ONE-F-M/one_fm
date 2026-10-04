@@ -201,9 +201,7 @@ class TestWhichRowsItRefusesToTouch(FrappeTestCase):
 
 		recount_every_sector_row()
 
-		nationals, expatriates = count_workers(
-			licence.civil_id_number_for_licensing, row.occupational_sector
-		)
+		nationals, expatriates = count_workers(licence.name, row.occupational_sector)
 		expected = {
 			"national_number_of_workers": str(nationals),
 			"expatriate_number_of_workers": str(expatriates),

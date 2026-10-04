@@ -1,6 +1,9 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-001830: the PRO tier a New Application PACI opens in."""
+"""WI-001830: the PRO tier a New Application PACI opens in.
+
+State names follow WI-002496's rename.
+"""
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -11,8 +14,8 @@ from one_fm.grd.doctype.paci.paci import NEW_APPLICATION, PENDING_PRO, create_PA
 PRO_RULE = "PACI-PRO"
 
 EXPECTED_TRANSITIONS = (
-	("Draft", "Save", "Pending PRO"),
-	("Pending PRO", "Submit", "Pending by PACI"),
+	("Draft", "Submit to PRO", "Pending by PRO"),
+	("Pending by PRO", "Submit", "Pending by PACI"),
 	("Pending by PACI", "Approve", "Completed"),
 	("Pending by PACI", "Reject", "Rejected"),
 )
@@ -80,8 +83,13 @@ class TestPACIProWorkflow(FrappeTestCase):
 
 		# The PRO tier is the PRO's to act on and to edit; the PACI round-trip is the
 		# operator's.
-		self.assertEqual(transitions[("Draft", "Save", "Pending PRO")], "PRO")
-		self.assertEqual(transitions[("Pending PRO", "Submit", "Pending by PACI")], "PRO")
+		# WI-002496: the route INTO the PRO tier is the operator's - a Draft PACI is
+		# theirs, and no PRO can reach it to press Save. Leaving it is the PRO's.
+		self.assertEqual(
+			transitions[("Draft", "Submit to PRO", "Pending by PRO")],
+			"Government Relations Operator",
+		)
+		self.assertEqual(transitions[("Pending by PRO", "Submit", "Pending by PACI")], "PRO")
 
 		states = {s.state: s for s in workflow.states}
 		self.assertEqual(states[PENDING_PRO].allow_edit, "PRO")
@@ -93,7 +101,7 @@ class TestPACIProWorkflow(FrappeTestCase):
 		rule = frappe.get_doc("Assignment Rule", PRO_RULE)
 
 		self.assertFalse(rule.disabled)
-		self.assertEqual(rule.assign_condition, 'workflow_state == "Pending PRO"')
+		self.assertIn(PENDING_PRO, rule.assign_condition)
 
 		# WI-002183: the assignee comes off the record, not off the rule. The task is
 		# still what names the PRO on duty - hand_to_pro copies it onto the record,
@@ -164,7 +172,7 @@ class TestPACIProWorkflow(FrappeTestCase):
 		from one_fm.grd.doctype.paci.paci import can_reapply
 
 		self.assertTrue(can_reapply(frappe._dict(workflow_state="Rejected")))
-		for state in ("Draft", "Pending PRO", "Pending by PACI", "Completed"):
+		for state in ("Draft", PENDING_PRO, "Pending by PACI", "Completed"):
 			self.assertFalse(can_reapply(frappe._dict(workflow_state=state)), msg=state)
 
 	def test_the_reapply_link_field_points_back_and_is_not_copied_onward(self):
