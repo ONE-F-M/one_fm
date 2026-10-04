@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002544: the manifest's vehicle tabs, and a delete that stranded them.
+"""the manifest's vehicle tabs, and a delete that stranded them.
 
 **AC1 was a real ordering bug.** The Schedule lists vehicles by ``Vehicle.name`` -
 ``build_vehicle_list`` passes ``order_by="name asc"``. The manifest built its tab order

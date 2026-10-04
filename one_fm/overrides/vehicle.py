@@ -3,6 +3,18 @@ from frappe import _
 from frappe.utils import cint, flt, getdate
 
 
+def set_naming_series(doc, method):
+	"""Set the Vehicle naming series based on the vehicle category before insert."""
+	if doc.one_fm_vehicle_category == "Leased":
+		series = "VHL-L-.####"
+	elif doc.one_fm_vehicle_category == "Subcontractor":
+		series = "VHL-S-.####"
+	else:
+		series = "VHL-.####"
+
+	doc.naming_series = series
+
+
 def validate_vehicle_branding(doc, method):
 	"""Validate branding details on Vehicle save."""
 	validate_branding_expiration_dates(doc)

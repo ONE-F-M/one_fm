@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002541: the five filters over the unassigned shipment pool.
+"""the five filters over the unassigned shipment pool.
 
 The sidebar had two - a global text search and a shift START time. Finding one person, or
 the cards for one shift, or the runs ending at 00:00, meant scrolling 551 cards.
@@ -87,7 +87,7 @@ class TestTheFiltersNarrowTogether(FrappeTestCase):
 
 	def test_progress_counters_are_not_affected_by_the_filters(self):
 		# Cards Planned / Remaining are scheduling progress; they must not move because
-		# somebody typed in a filter box (WI-002309).
+		# somebody typed in a filter box.
 		planned = self.canvas.split("totalCardsRemaining() {", 1)[1].split("\n            },", 1)[0]
 		self.assertNotIn("filteredPoolCards", planned)
 

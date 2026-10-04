@@ -47,7 +47,19 @@ def validate_task(doc):
 
     roles = get_user_roles()
     is_manager = is_project_manager(doc.project) if doc.project else False
-    if "Projects User" in roles and "Projects Manager" not in roles and not is_manager and (doc.project or doc.owner != frappe.session.user):
+    # The task's reviewer and its assignees are the legitimate actors for the Task
+    # workflow (assignees move Open -> Working -> Pending Review; the reviewer Confirms
+    # to Completed or Returns to Open). The status/field restriction below is meant for a
+    # Projects User who is a stranger to the task, so it must not block these actors.
+    assignees = [d.user for d in (doc.custom_assigned_to or [])]
+    is_task_actor = frappe.session.user == doc.custom_reviewer or frappe.session.user in assignees
+    if (
+        "Projects User" in roles
+        and "Projects Manager" not in roles
+        and not is_manager
+        and not is_task_actor
+        and (doc.project or doc.owner != frappe.session.user)
+    ):
         validate_updated_fields(doc)
 
     check_completed_by_and_completed_on(doc)

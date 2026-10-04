@@ -2,8 +2,7 @@ import frappe
 
 PAGE = "transportation-schedule"
 ROLE = "Transportation Manager"
-# What Transportation Supervisor already holds on Route Plan, mirrored rather than
-# invented so the two transport roles work the same board the same way.
+# Mirrors what Transportation Supervisor already holds on Route Plan.
 ROUTE_PLAN_PERMS = {
 	"select": 1, "read": 1, "write": 1, "create": 1, "delete": 1,
 	"report": 1, "export": 1, "share": 1, "print": 1, "email": 1,
@@ -13,15 +12,10 @@ ROUTE_PLAN_PERMS = {
 def execute():
 	"""Let Transportation Manager open and run the Transportation Schedule (WI-002162).
 
-	The AC is that Transportation Manager and Transportation Supervisor may click
-	"Generate Shipments" and update the shipment cards. Relaxing the whitelisted
-	method's role gate is only half of it: the page itself is role-restricted and the
-	plan behind it is a Route Plan, so without these two grants a Transportation
-	Manager never reaches the button to be refused by it.
-
-	Transportation Supervisor already holds both and is left alone. Nothing is granted
-	on Transportation Shipment: the generator writes those with ignore_permissions and
-	the canvas reads them server-side, which is how the Supervisor already works.
+	The page is role-restricted and the board behind it is a Route Plan, so relaxing
+	the whitelisted method's role gate is not enough on its own. Nothing is granted on
+	Transportation Shipment: the generator writes those with ignore_permissions and the
+	canvas reads them server-side, as it already does for the Supervisor.
 	"""
 	if not frappe.db.exists("Role", ROLE):
 		return
@@ -36,7 +30,7 @@ def _grant_page_role():
 	name = frappe.db.get_value("Custom Role", {"page": PAGE}, "name")
 	if not name:
 		# No Custom Role means the Page's own roles still apply; carry them over so
-		# creating one here does not quietly lock the current holders out.
+		# creating one here does not lock the current holders out.
 		page = frappe.get_doc("Page", PAGE)
 		doc = frappe.new_doc(doctype="Custom Role")
 		doc.page = PAGE
@@ -57,8 +51,7 @@ def _grant_route_plan_perms():
 	"""Give the role real access to Route Plan.
 
 	Route Plan already carries Custom DocPerm rows, and once any exist Frappe stops
-	honouring the DocType JSON's permissions for every other role — so the grant has
-	to be a Custom DocPerm too, not an entry in the JSON.
+	honouring the DocType JSON for every other role - so this has to be one too.
 	"""
 	if frappe.db.exists("Custom DocPerm", {"parent": "Route Plan", "role": ROLE}):
 		return

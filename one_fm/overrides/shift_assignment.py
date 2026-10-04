@@ -187,13 +187,19 @@ def has_overlapping_timings(self) -> bool:
     if datetime.strptime(str(self.start_datetime), '%Y-%m-%d %H:%M:%S').date() > datetime.strptime(today(), '%Y-%m-%d').date():
         frappe.throw(f"Shift cannot be created for date greater than today. Today is {today()}, you requested {self.start_date}")
 
+    # Half-open interval overlap test: two shifts overlap only if one starts
+    # strictly before the other ends AND ends strictly after the other starts.
+    # Using strict `>`/`<` (instead of the previous inclusive BETWEEN) means two
+    # *consecutive* shifts that merely touch at a boundary - e.g. a Night basic
+    # ending 06:00 and a Day OT starting 06:00, the classic double-shift OT - are
+    # NOT treated as overlapping, so both can be Active at once (the same state the
+    # roster's manual "Schedule Overtime" action already produces). Genuine
+    # overlaps, exact duplicates, and full containment are still caught.
     existing_shift = frappe.db.sql(f"""
         SELECT * FROM `tabShift Assignment` WHERE
-        employee="{self.employee}" AND status='Active' AND docstatus=1 AND (
-        (start_datetime BETWEEN '{self.start_datetime}' AND '{self.end_datetime}')
-        OR
-        (end_datetime BETWEEN '{self.start_datetime}' AND '{self.end_datetime}')
-        )
+        employee="{self.employee}" AND status='Active' AND docstatus=1
+        AND end_datetime > '{self.start_datetime}'
+        AND start_datetime < '{self.end_datetime}'
 
         ORDER BY end_datetime DESC
     """, as_dict=1)

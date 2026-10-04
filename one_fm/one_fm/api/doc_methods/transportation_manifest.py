@@ -25,7 +25,7 @@ def update_manifest_row_checkin(
 	# supervisors - or one supervisor tapping through a camp faster than the manifest
 	# saves - open the document twice and the second save is rejected for holding a
 	# stale `modified`. The row being written is the only thing this call changes, so
-	# replaying it against the freshly-read manifest is safe (WI-002538).
+	# replaying it against the freshly-read manifest is safe.
 	return retry_on_stale_timestamp(
 		lambda: _apply_row_checkin(
 			parent_manifest, row_name, attendance_status, qoa_status,
@@ -106,7 +106,7 @@ def _apply_row_checkin(parent_manifest, row_name, attendance_status, qoa_status,
 	}
 
 
-# WI-002789: what a bulk check-in stamps on a row. A driver pressing this is saying the
+# What a bulk check-in stamps on a row. A driver pressing this is saying the
 # whole stop boarded and passed - anything else is an exception, taken one chip at a time.
 PRESENT = "Present"
 QOA_PASS = "Pass"
@@ -114,12 +114,12 @@ QOA_PASS = "Pass"
 
 @frappe.whitelist(methods=["POST"])
 def mark_manifest_rows_present(row_names) -> dict:
-	"""Check in every un-checked employee at one stop, in a single save (WI-002789).
+	"""Check in every un-checked employee at one stop, in a single save.
 
 	One call rather than one per chip. Every row on a stop belongs to the same parent
 	manifest, so twenty chips checked in individually is twenty reads and twenty saves of
 	the same document - which is both slow at a departure and the exact shape that made
-	WI-002538's stale-timestamp retry necessary in the first place.
+	the stale-timestamp retry necessary in the first place.
 
 	A row that has already been checked in is left exactly as it is. The driver is saying
 	"everyone I have not marked yet is here"; overwriting an Absent they entered a moment

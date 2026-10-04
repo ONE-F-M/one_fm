@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002789: one tap checks in everyone still unchecked at a boarding stop."""
+"""One tap checks in everyone still unchecked at a boarding stop."""
 
 import json
 import shutil
@@ -118,7 +118,7 @@ class TestTheEndpoint(FrappeTestCase):
 
 	def test_it_saves_the_manifest_once(self):
 		"""Twenty chips checked in one at a time is twenty reads and twenty saves of the
-		same document - slow at a departure, and the shape WI-002538's retry exists for."""
+		same document - slow at a departure, and the shape the retry exists for."""
 		source = frappe.read_file(
 			frappe.get_app_path(
 				"one_fm", "one_fm", "api", "doc_methods", "transportation_manifest.py"

@@ -15,6 +15,7 @@ import frappe
 import frappe.permissions
 from frappe import _
 from frappe.core.doctype.access_log.access_log import make_access_log
+from frappe.model import get_permitted_fields
 from frappe.utils import cint, cstr, format_datetime, format_duration, formatdate, parse_json
 from frappe.utils.csvutils import UnicodeWriter
 import google.auth
@@ -30,6 +31,30 @@ from frappe.utils import get_site_name, nowdate, add_days
 from google.oauth2 import service_account
 import os
 
+# Standard (metadata) columns that every DocType has but that are not DocFields,
+# so frappe.get_meta(dt).get_field() cannot resolve them. Offered for the parent
+# Document Type only, see the Metadata block in google_sheet_data_export.js.
+STANDARD_FIELDS = {
+	"owner": {"label": "Created By", "fieldtype": "Link", "options": "User"},
+	"creation": {"label": "Created On", "fieldtype": "Datetime"},
+	"modified": {"label": "Last Modified On", "fieldtype": "Datetime"},
+	"modified_by": {"label": "Last Modified By", "fieldtype": "Link", "options": "User"},
+	"docstatus": {"label": "Document Status", "fieldtype": "Int"},
+	"idx": {"label": "Index", "fieldtype": "Int"},
+}
+
+DOCSTATUS_LABELS = {0: "Draft", 1: "Submitted", 2: "Cancelled"}
+
+
+def get_standard_field(fieldname, dt):
+	"""Return a synthetic docfield for a standard column, or None."""
+	standard_field = STANDARD_FIELDS.get(fieldname)
+	if not standard_field:
+		return None
+
+	return frappe._dict(dict(standard_field, fieldname=fieldname, parent=dt, hidden=0, reqd=0))
+
+
 @frappe.whitelist()
 def export_data(
 	doctype=None,
@@ -43,7 +68,8 @@ def export_data(
 	sheet_name=None,
 	owner=None,
 	client_id=None,
-	name=None
+	name=None,
+	include_hidden=False
 ):
 	_doctype = doctype
 	if isinstance(_doctype, list):
@@ -68,7 +94,8 @@ def export_data(
 		sheet_name=sheet_name,
 		owner=owner,
 		client_id=client_id,
-		name=name
+		name=name,
+		include_hidden=include_hidden
 	)
 	result = exporter.build_response()
 
@@ -89,7 +116,8 @@ class DataExporter:
 		sheet_name=None,
 		owner=None,
 		client_id=None,
-		name=None
+		name=None,
+		include_hidden=False
 	):
 		self.doctype = doctype
 		self.parent_doctype = parent_doctype
@@ -104,6 +132,7 @@ class DataExporter:
 		self.cell_colour = []
 		self.client_id = client_id
 		self.name = name
+		self.include_hidden = cint(include_hidden)
 
 		api = self.initialize_service()
 		self.service = api["service"]
@@ -209,11 +238,22 @@ class DataExporter:
 		tablecolumns = []
 		table_name = "tab" + dt
 
-		fields = [ sub['name'] for sub in frappe.db.get_table_columns_description(table_name) ]
+		table_columns = [ sub['name'] for sub in frappe.db.get_table_columns_description(table_name) ]
+		permitted_fields = get_permitted_fields(
+			dt, parenttype=self.doctype if dt != self.doctype else None, permission_type="read"
+		)
+
 		for f in self.select_columns[dt]:
-			field = meta.get_field(f)
-			if field:
-				tablecolumns.append(field)
+			# standard columns (owner, creation, docstatus, ...) are not docfields
+			field = meta.get_field(f) or get_standard_field(f, dt)
+			if not field:
+				# stale field cache: the field was renamed or deleted after the export was saved
+				continue
+			if field.get("is_virtual") or f not in table_columns:
+				continue
+			if f not in permitted_fields:
+				continue
+			tablecolumns.append(field)
 
 		# tablecolumns.sort(key=lambda a: int(a.idx))
 
@@ -258,7 +298,7 @@ class DataExporter:
 			return
 		if docfield.fieldname in ("parenttype", "trash_reason"):
 			return
-		if docfield.hidden:
+		if docfield.hidden and not self.include_hidden:
 			return
 		if (
 			self.select_columns
@@ -337,7 +377,10 @@ class DataExporter:
 			row = rows[rowidx]
 			for i, c in enumerate(self.columns[_column_start_end.start : _column_start_end.end]):
 				df = meta.get_field(c)
-				value = str(d.get(c, ""))
+				if c == "docstatus":
+					value = _(DOCSTATUS_LABELS.get(cint(d.get(c)), ""))
+				else:
+					value = str(d.get(c, ""))
 				value = remove_quotes(value)
 				# check if value size is greater than 50000
 				if len(value) >= 50000:
@@ -588,6 +631,7 @@ def update_google_sheet_daily():
 			owner= doc.owner,
 			client_id= doc.client_id,
 			name= doc.name,
+			include_hidden= doc.include_hidden_fields,
 			is_async=True, queue="long", timeout=9000)
 
 @frappe.whitelist()

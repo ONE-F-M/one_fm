@@ -73,7 +73,7 @@ def _build_sheet(doc, trip_id=None) -> dict:
 	JSON-friendly so the Ionic app and the desktop client can share it verbatim.
 	"""
 	# The pointer of the run being asked about. A vehicle drives several runs a day and
-	# each checks in on its own (WI-002590 AC1); with no run named, the sheet answers for
+	# each checks in on its own; with no run named, the sheet answers for
 	# whichever one is furthest along, which is what the single pointer used to mean.
 	active_by_trip = doc.active_stop_map()
 	active = (
@@ -86,7 +86,7 @@ def _build_sheet(doc, trip_id=None) -> dict:
 	# What happens to each rider AT THE STOP, read from the plan rather than copied onto
 	# the manifest: the Route Plan Assignment is where the itinerary is decided, and a
 	# second stored copy would be a second answer the moment a trip is re-planned. This
-	# is what splits a handover stop into its two sections for the driver (WI-002171).
+	# is what splits a handover stop into its two sections for the driver.
 	leg_facts = _stop_actions(rows)
 
 	# Batch-resolve reliever employee names (rows that actually have a reliever).
@@ -221,7 +221,7 @@ def trigger_attendance_check(manifest: str, stop_sequence, trip_id=None) -> dict
 	Strictly sequential WITHIN ONE RUN: a stop can only be triggered once the previous
 	stop of that run is complete. Triggering advances only that run's pointer, so the
 	other runs this vehicle drives today keep their own state and their own controls
-	(WI-002590 AC1).
+.
 
 	"The next stop of this run" is read off the run's own stops, not computed as
 	``active + 1``. stop_sequence is numbered across the VEHICLE, so a run that loads at
@@ -319,7 +319,7 @@ def save_stop_checks(manifest: str, stop_sequence, updates, trip_id=None) -> dic
 			frappe.throw(_("Manifest row {0} not found.").format(row_name))
 		# Defensive: the payload references a row outside the active stop, or one
 		# belonging to a different run that happens to number its stops the same way -
-		# stop 1 of S-802 is not stop 1 of S-801 (WI-002590 AC1).
+		# stop 1 of S-802 is not stop 1 of S-801.
 		wrong_stop = int(row.stop_sequence or 1) != stop_sequence
 		wrong_trip = trip_id is not None and str(row.trip_id or "") != str(trip_id or "")
 		if wrong_stop or wrong_trip:

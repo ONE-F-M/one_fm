@@ -563,6 +563,102 @@ def deploy_ticket_views():
     return True
 
 
+def copy_if_changed(source, target, label):
+    """Copy source over target only when they differ.
+
+    Returns True when the file was actually written, so callers can skip the
+    (expensive) yarn build when nothing changed.
+    """
+    if not os.path.exists(source):
+        print(f"[❌] Source {label} not found: {source}")
+        return False
+
+    if not os.path.exists(os.path.dirname(target)):
+        print(f"[❌] Target folder not found: {os.path.dirname(target)}")
+        return False
+
+    with open(source, "r") as f:
+        source_content = f.read()
+
+    if os.path.exists(target):
+        with open(target, "r") as f:
+            if f.read() == source_content:
+                print(f"⚠️ {label} already up to date.")
+                return False
+
+    shutil.copy2(source, target)
+    print(f"[✅] {label} deployed to: {target}")
+    return True
+
+
+def deploy_fetch_from_support():
+    """Deploy the fetch_from support for the helpdesk portal forms.
+
+    The portal is a standalone frappe-ui SPA and never loads the desk's
+    `add_fetch` implementation, so `fetch_from` on HD Ticket custom fields does
+    nothing live in the new / edit ticket forms. These files add it:
+
+      * api.py            - sends fetch_from / fetch_if_empty / read_only to
+                            the frontend (the stock query drops them)
+      * fetchFrom.ts      - the client-side fetch engine
+      * TicketNew.vue     - wires it into the new-ticket form
+      * formCustomisation - folds read_only into the parsed `readonly` flag
+      * UniInput.vue      - disables fields marked readonly
+      * types.ts          - declares the three props on the Field interface
+    """
+    bench_path = get_bench_path()
+
+    overrides_folder = os.path.join(
+        bench_path, "apps", "one_fm", "one_fm", "public", "js",
+        "form_overrides", "hd_ticket",
+    )
+    desk_src = os.path.join(bench_path, "apps", "helpdesk", "desk", "src")
+
+    # (source filename, target path, label)
+    files = [
+        (
+            "hd_ticket_template_api.py",
+            os.path.join(
+                bench_path, "apps", "helpdesk", "helpdesk", "helpdesk",
+                "doctype", "hd_ticket_template", "api.py",
+            ),
+            "HD Ticket Template api.py",
+        ),
+        (
+            "fetchFrom.ts",
+            os.path.join(desk_src, "composables", "fetchFrom.ts"),
+            "fetchFrom.ts",
+        ),
+        (
+            "formCustomisation.ts",
+            os.path.join(desk_src, "composables", "formCustomisation.ts"),
+            "formCustomisation.ts",
+        ),
+        (
+            "types.ts",
+            os.path.join(desk_src, "types.ts"),
+            "types.ts",
+        ),
+        (
+            "UniInput.vue",
+            os.path.join(desk_src, "components", "UniInput.vue"),
+            "UniInput.vue",
+        ),
+        (
+            "TicketNew.vue",
+            os.path.join(desk_src, "pages", "ticket", "TicketNew.vue"),
+            "TicketNew.vue",
+        ),
+    ]
+
+    any_changes = False
+    for filename, target, label in files:
+        if copy_if_changed(os.path.join(overrides_folder, filename), target, label):
+            any_changes = True
+
+    return any_changes
+
+
 def deploy_dashboard_view():
     """Overwrite the helpdesk Dashboard.vue with the one_fm version.
 
@@ -692,6 +788,30 @@ def remove_code_block_with_regex(file_path, pattern):
         return False
 
 
+def deploy_ticket_field():
+    """Overwrite the helpdesk agent TicketField.vue with the one_fm version.
+
+    Stock TicketField.vue lumps "Text Editor" in with the plain text types and
+    renders it as a single-line <input>, so an HTML field such as
+    resolution_details shows its raw markup in the Ticket Info sidebar - and the
+    blur handler writes whatever is left in that input back to the DB. The
+    one_fm copy renders Text Editor fields as a sanitized preview that opens a
+    real TextEditor dialog, keeping them editable without corrupting the HTML.
+    """
+    bench_path = get_bench_path()
+
+    field_source = os.path.join(
+        bench_path, "apps", "one_fm", "one_fm", "public", "js",
+        "form_overrides", "hd_ticket", "TicketField.vue",
+    )
+    field_target = os.path.join(
+        bench_path, "apps", "helpdesk", "desk", "src", "components",
+        "TicketField.vue",
+    )
+
+    return copy_if_changed(field_source, field_target, "TicketField.vue")
+
+
 def update_all_ticket_features():
     any_changes = False
 
@@ -701,9 +821,13 @@ def update_all_ticket_features():
         any_changes = True
     if deploy_ticket_views():
         any_changes = True
+    if deploy_fetch_from_support():
+        any_changes = True
     if deploy_dashboard_view():
         any_changes = True
     if deploy_ticket_header():
+        any_changes = True
+    if deploy_ticket_field():
         any_changes = True
     if update_hd_ticket_side_bar():
         any_changes = True

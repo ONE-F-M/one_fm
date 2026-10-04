@@ -134,29 +134,82 @@ frappe.pages["transportation-manifest-page"].on_page_load = function (wrapper) {
 			// Render the manifest
 			renderManifest($container, r.message);
 		},
-		error: function () {
-			$container.html(`
-				${STATE_STYLES}
-				<div class="mfst-state-screen">
-					<span class="material-symbols-outlined mfst-state-icon error">wifi_off</span>
-					<h2>Unable to Load Manifest</h2>
-					<p>
-						We couldn't reach the server. Please check your internet connection and try again.<br>
-						If the problem continues, contact the Dispatcher for help.
-					</p>
-					<div class="mfst-state-btn-group">
-						<button class="mfst-state-btn mfst-state-btn-primary" onclick="location.reload()">
-							<span class="material-symbols-outlined" style="font-size:18px">refresh</span>
-							Try Again
-						</button>
-						<a href="/app/transportation-schedule" class="mfst-state-btn mfst-state-btn-secondary">
-							Go to Schedule
-						</a>
-					</div>
+	}).fail(renderLoadError);
+
+	// A failed fetch is not automatically a dead connection. A supervisor who was never
+	// granted Route Plan access, and a link to a plan that has since been deleted, both
+	// land here too — and telling either of them to check their internet sends the
+	// problem to the wrong person. Name the actual failure.
+	function renderLoadError(xhr) {
+		const status = (xhr && xhr.status) || 0;
+
+		let icon = "wifi_off";
+		let title = __("Unable to Load Manifest");
+		let body =
+			__("We couldn't reach the server. Please check your internet connection and try again.") +
+			"<br>" +
+			__("If the problem continues, contact the Dispatcher for help.");
+
+		if (status === 403) {
+			icon = "lock";
+			title = __("You Don't Have Access to This Manifest");
+			body =
+				__("Your account isn't permitted to open Transportation plans.") +
+				"<br>" +
+				__("Ask the Dispatcher to request Route Plan access for you.");
+		} else if (status === 404) {
+			icon = "search_off";
+			title = __("Manifest Not Found");
+			body =
+				__("Plan {0} no longer exists — it may have been deleted, or this link is out of date.", [
+					`<strong>${frappe.utils.escape_html(planName)}</strong>`,
+				]) +
+				"<br>" +
+				__("Open the Transportation Schedule and pick the plan again.");
+		} else if (status === 417) {
+			icon = "error_outline";
+			title = __("Something Went Wrong");
+			body =
+				serverMessage(xhr) ||
+				__("We couldn't load this manifest. Please try again or contact the Dispatcher.");
+		} else if (status >= 500) {
+			icon = "error_outline";
+			title = __("Server Error");
+			body =
+				__("The server couldn't build this manifest.") +
+				"<br>" +
+				__("Please try again in a moment, or contact the Dispatcher if it keeps failing.");
+		}
+
+		$container.html(`
+			${STATE_STYLES}
+			<div class="mfst-state-screen">
+				<span class="material-symbols-outlined mfst-state-icon error">${icon}</span>
+				<h2>${title}</h2>
+				<p>${body}</p>
+				<div class="mfst-state-btn-group">
+					<button class="mfst-state-btn mfst-state-btn-primary" onclick="location.reload()">
+						<span class="material-symbols-outlined" style="font-size:18px">refresh</span>
+						${__("Try Again")}
+					</button>
+					<a href="/app/transportation-schedule" class="mfst-state-btn mfst-state-btn-secondary">
+						${__("Go to Schedule")}
+					</a>
 				</div>
-			`);
-		},
-	});
+			</div>
+		`);
+	}
+
+	// frappe.throw() ships the real reason back in _server_messages; show that rather
+	// than a house-written guess at what the server objected to.
+	function serverMessage(xhr) {
+		try {
+			const messages = JSON.parse((xhr.responseJSON || {})._server_messages || "[]");
+			return frappe.utils.escape_html(JSON.parse(messages[0]).message || "");
+		} catch (e) {
+			return "";
+		}
+	}
 };
 
 
@@ -204,7 +257,7 @@ function renderManifest($container, data) {
 		return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 	}
 
-	// WI-001766: a driver or supervisor identifies the bus on site by its plate and
+	// a driver or supervisor identifies the bus on site by its plate and
 	// model, so both are shown as "<plate>, <model>". A vehicle whose master record
 	// carries no model shows the plate alone - no trailing comma.
 	function vehicleString(meta) {
@@ -243,7 +296,7 @@ function renderManifest($container, data) {
 	// camp. Both persist server-side (active_stop_sequence) via the shared manifest
 	// API, then we sync the local pointer and re-render the current route.
 	// The server answers with every run's pointer, so only the run that was acted on
-	// moves and its neighbours on the same vehicle keep their own state (WI-002590 AC1).
+	// moves and its neighbours on the same vehicle keep their own state.
 	function _setActiveStopAndRerender(vehicleLabel, reply) {
 		const meta = (ROUTE_DATA.vehicleMeta ?? {})[vehicleLabel];
 		if (meta && reply) {
@@ -253,9 +306,9 @@ function renderManifest($container, data) {
 		if (activeView) renderRoute(activeView);
 	}
 
-	// WI-002789: one call for the whole stop, not one per chip. Every row at a stop belongs
+	// One call for the whole stop, not one per chip. Every row at a stop belongs
 	// to the same parent manifest, so twenty individual check-ins are twenty reads and
-	// twenty saves of one document - slow at a departure, and the exact shape WI-002538's
+	// twenty saves of one document - slow at a departure, and the exact shape the
 	// stale-timestamp retry exists for.
 	window._mfst_markAllPresent = function (button) {
 		let rowIds;
@@ -319,7 +372,7 @@ function renderManifest($container, data) {
 		});
 	};
 
-	// WI-002789: the row ids at a stop that nobody has checked in yet. A chip already
+	// The row ids at a stop that nobody has checked in yet. A chip already
 	// carrying an attendance status is one the driver decided on; the bulk action means
 	// "everyone I have not marked yet is here", so it must not overwrite that.
 	function uncheckedRowIds(employees) {
@@ -501,7 +554,7 @@ function renderManifest($container, data) {
 				bufferMinutes: v.bufferMinutes || 0,
 				// The label's direction reads MIXED once a card is merged, which says how
 				// the card is scheduled and not whether its riders board here or leave
-				// here. The server resolves that separately (WI-002074).
+				// here. The server resolves that separately.
 				ownDirection: shipmentOwnDirections[parsed.raw] || parsed.direction
 			});
 		});
@@ -598,7 +651,7 @@ function renderManifest($container, data) {
 		}
 	});
 
-	// ── Tab search, arrows and overflow indicators (WI-002544) ──────────────
+	// ── Tab search, arrows and overflow indicators ──────────────
 	// The tabs carry what they can be searched on, so filtering never has to go back
 	// to ROUTE_DATA and cannot disagree with what is rendered.
 	parsed.forEach((pr) => {
@@ -746,11 +799,11 @@ function renderManifest($container, data) {
 		const totalTimeStr = m.totalDuration ? fmtDuration(m.totalDuration) : "—";
 		const tripTimeStr = m.travelDuration ? fmtDuration(m.travelDuration) : "—";
 
-		// ── What each run occupies, read once (WI-002545) ───────────────────────
+		// ── What each run occupies, read once ───────────────────────
 		// The breakdown popover, the jump pills and the timeline strip are three views
 		// of the same fact, so they are measured once rather than three times - a run
 		// that read 2h05m in the tooltip and drew a different width would be worse than
-		// not drawing it. Time-of-day only, for the reason WI-002614 documents: the DATE
+		// not drawing it. Time-of-day only, for the reason below: the DATE
 		// half of these stamps is a lock lifespan, not the day the bus runs.
 		const tripSpans = allTrips.map((trip, i) => {
 			// A run is measured from when the bus LEAVES to when it is BACK - the same
@@ -893,7 +946,7 @@ function renderManifest($container, data) {
 			// why the Trip Builder prints them on the same row as "Next Stop". Passing
 			// the arrival stop printed the NEXT leg's minutes above every stop: S-101's
 			// camp leg is 20 drive + 5 buffer and the manifest read "15 min drive, 2 min
-			// buffer" - Alghanim's figures, one leg early (WI-002614 AC3).
+			// buffer" - Alghanim's figures, one leg early.
 			//
 			// Camp legs spell the same two fields in snake_case, so both are accepted
 			// rather than making every caller normalise one of them.
@@ -932,7 +985,7 @@ function renderManifest($container, data) {
 			// them is the thing the driver does at that stop. Which one used to be decided
 			// by enumerating OUTBOUND and RETURN, so a MIXED card matched neither and both
 			// survived - every merged stop appeared twice, once as PICK UP and once as
-			// DROP OFF (WI-002074).
+			// DROP OFF.
 			const actualSiteStops = [];
 			tripStops.forEach(stop => {
 				const own = stop.ownDirection || stop.direction;
@@ -1042,7 +1095,7 @@ function renderManifest($container, data) {
 				});
 			});
 
-			// This RUN's pointer, not the vehicle's (WI-002590 AC1). A vehicle drives
+			// This RUN's pointer, not the vehicle's. A vehicle drives
 			// several runs a day and they used to share one number, so triggering the
 			// check on S-801 locked S-802 alongside it and completing one reopened the
 			// other. The map is seeded from the old flat field server-side, so a check
@@ -1183,7 +1236,7 @@ function renderManifest($container, data) {
 	// Per-camp DEPART card (MA2-11). `camp` = { seq, label, employees }.
 	// A merged run reads differently from an ordinary one: it leaves one origin, calls at
 	// several stops dropping and collecting, and comes back. These three answer "is it one",
-	// "how many stops does it make" and "how many people does it carry" (WI-002074).
+	// "how many stops does it make" and "how many people does it carry".
 	function isMixedRun(meta) {
 		return String((meta && meta.trip_direction) || "").toLowerCase() === "mixed";
 	}
@@ -1212,7 +1265,7 @@ function renderManifest($container, data) {
 		return seen.size;
 	}
 
-	// ── A merged run's itinerary (WI-002074) ──
+	// ── A merged run's itinerary ──
 	// One list, top to bottom, in the order the driver drives it:
 	//   {Origin Depart (Boarding)} -> {stop} -> ... -> {Final Return}
 	// Each stop is one card: an Outward card's riders are set down there, a Return card's
@@ -1251,7 +1304,7 @@ function renderManifest($container, data) {
 		// to collect at Mangaf at all.
 		//
 		// isMixed stays true for every camp card. That is what keeps the attendance
-		// trigger on the FIRST pickup only (WI-002074) - renderDepartCard reads it to
+		// trigger on the FIRST pickup only - renderDepartCard reads it to
 		// decide, so a mid-route camp still cannot start a check.
 		const campGroups = o.campGroups || [];
 		const campLegs = o.campLegs || [];
@@ -1317,7 +1370,7 @@ function renderManifest($container, data) {
 		return value ? String(value).slice(0, 5) : "";
 	}
 
-	// ── These timestamps carry a DATE that is not the run's day (WI-002614) ──────
+	// ── These timestamps carry a DATE that is not the run's day ──────
 	// A Route Plan Assignment's start_time/end_time hold two different things: the TIME
 	// is the daily trip window, the DATE is the multi-day vehicle lock's lifespan (TR-8).
 	// Two stops of one run therefore routinely carry unrelated dates, and anything that
@@ -1363,7 +1416,7 @@ function renderManifest($container, data) {
 		// On an ordinary run the check walks camp by camp, so each camp in turn can be
 		// triggered. A merged run is one vehicle leaving one origin: the second criterion
 		// puts the button in the very first DEPART card and nowhere else, so a driver
-		// cannot start a check at a mid-route pickup they have not reached (WI-002074).
+		// cannot start a check at a mid-route pickup they have not reached.
 		//
 		// Decided by the camp's POSITION in the run, not by its seq. `seq` is the rider's
 		// stop number across the whole run, not an ordinal for the camp they board at, so
@@ -1382,7 +1435,7 @@ function renderManifest($container, data) {
 		// camp and nowhere else, on the reading that a merged run leaves ONE origin - but
 		// it can load at two, and then the second camp's passengers could never mark
 		// attendance at all: the card stayed "Locked until triggered" for the rest of the
-		// day. WI-002074's actual concern still holds either way, because a camp is only
+		// day. The original concern still holds either way, because a camp is only
 		// offered once the one before it is COMPLETE.
 		const position = (campIndex === null || campIndex === undefined) ? null : campIndex;
 		const canTrigger = position !== null && position === activeIndex && !isActive;
@@ -1684,7 +1737,7 @@ function renderManifest($container, data) {
 		}
 	}
 
-	// AC3 (WI-002545): a vehicle running five trips is a long page, and the pills are
+	// AC3: a vehicle running five trips is a long page, and the pills are
 	// the index to it. Delegated from the container so the handler survives every
 	// re-render rather than being rebound with the tabs.
 	$container.on("click", ".mfst-jump-pill", function () {
@@ -1696,7 +1749,7 @@ function renderManifest($container, data) {
 		$(this).addClass("active");
 	});
 
-	// ── One check-in write at a time (WI-002538) ──
+	// ── One check-in write at a time ──
 	// Every chip on the sheet writes through the SAME parent Transportation Manifest:
 	// the API reads the whole manifest, stamps one row and saves it. Two of those
 	// overlapping — a supervisor tapping Present then Pass, or working down a camp
@@ -2093,7 +2146,7 @@ function getManifestHTML() {
 				</div>
 			</div>
 
-			<!-- VEHICLE TAB BAR (WI-002544) -->
+			<!-- VEHICLE TAB BAR -->
 			<div class="mfst-tab-bar-wrapper">
 				<!-- AC2: a fleet of twenty-five tabs is a scroll, not a list. Matching
 				     on id, plate and driver because those are the three things a
@@ -2313,7 +2366,7 @@ function getManifestCSS() {
 		.mfst-tab-bar { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 0 8px; gap: 4px; scroll-behavior: smooth; flex: 1; }
 		.mfst-tab-bar::-webkit-scrollbar { display: none; }
 
-		/* ── Vehicle tab navigation (WI-002544) ───────────────────────────── */
+		/* ── Vehicle tab navigation ───────────────────────────── */
 		.mfst-tab-search {
 			display: flex; align-items: center; gap: 6px;
 			padding: 6px 12px 0 12px;
@@ -2389,7 +2442,7 @@ function getManifestCSS() {
 		.mfst-trip-group { border: 2px solid var(--mfst-blue); border-radius: 16px; margin-bottom: 16px; overflow: hidden; background: var(--mfst-bg-card); }
 		.mfst-trip-group.return { border-color: var(--mfst-purple); }
 		.mfst-trip-group.mixed { border-color: var(--mfst-mixed); }
-		/* ── Trip breakdown, jump pills and the shift timeline (WI-002545) ──── */
+		/* ── Trip breakdown, jump pills and the shift timeline ──── */
 		.mfst-stat-trip-time { cursor: help; }
 		.mfst-stat-hint { opacity: 0.55; font-size: 11px; }
 		/* AC3: pinned under the vehicle header, so the index stays reachable while the
@@ -2471,7 +2524,7 @@ function getManifestCSS() {
 		.mfst-depart-btn.trigger:active { transform: scale(0.98); }
 		.mfst-depart-btn.complete { background: var(--mfst-green); color: #fff; }
 		.mfst-depart-btn.complete:active { transform: scale(0.98); }
-		/* WI-002789: the bulk check-in sits IN the employee header beside the tap hint,
+		/* The bulk check-in sits IN the employee header beside the tap hint,
 		   so it is not full width like the two stop-level buttons above it. */
 		.mfst-depart-btn.mfst-bulk-present { width: auto; padding: 4px 12px; min-height: 32px; font-size: 12px; gap: 4px; background: var(--mfst-green); color: #fff; }
 		.mfst-depart-btn.mfst-bulk-present:active { transform: scale(0.98); }
