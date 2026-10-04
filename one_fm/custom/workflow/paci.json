@@ -14,7 +14,8 @@
    "send_email": 1,
    "state": "Draft",
    "update_field": "paci_status",
-   "update_value": "Draft"
+   "update_value": "Draft",
+   "style": "Info"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -23,9 +24,10 @@
    "doctype": "Workflow Document State",
    "is_optional_state": 0,
    "send_email": 1,
-   "state": "Pending GR Operator",
+   "state": "Pending by GR Operator",
    "update_field": "paci_status",
-   "update_value": "Under-Process"
+   "update_value": "Under-Process",
+   "style": "Warning"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -34,7 +36,8 @@
    "doctype": "Workflow Document State",
    "is_optional_state": 0,
    "send_email": 1,
-   "state": "Pending Address Update"
+   "state": "Pending Address Update",
+   "style": "Warning"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -43,7 +46,8 @@
    "doctype": "Workflow Document State",
    "is_optional_state": 0,
    "send_email": 1,
-   "state": "Pending Photo Update"
+   "state": "Pending Photo Update",
+   "style": "Warning"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -52,7 +56,8 @@
    "doctype": "Workflow Document State",
    "is_optional_state": 0,
    "send_email": 1,
-   "state": "Cancelled"
+   "state": "Cancelled",
+   "style": "Danger"
   },
   {
    "allow_edit": "System Manager",
@@ -63,7 +68,8 @@
    "send_email": 1,
    "state": "Completed",
    "update_field": "paci_status",
-   "update_value": "Completed"
+   "update_value": "Completed",
+   "style": "Success"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -74,7 +80,8 @@
    "send_email": 1,
    "state": "Completed",
    "update_field": "paci_status",
-   "update_value": "Completed"
+   "update_value": "Completed",
+   "style": "Success"
   },
   {
    "allow_edit": "PRO",
@@ -83,8 +90,8 @@
    "doctype": "Workflow Document State",
    "is_optional_state": 0,
    "send_email": 1,
-   "state": "Pending PRO",
-   "style": "Warning"
+   "state": "Pending by PRO",
+   "style": "Info"
   },
   {
    "allow_edit": "Government Relations Operator",
@@ -105,6 +112,26 @@
    "send_email": 1,
    "state": "Rejected",
    "style": "Primary"
+  },
+  {
+   "allow_edit": "PRO",
+   "avoid_status_override": 0,
+   "doc_status": "0",
+   "doctype": "Workflow Document State",
+   "is_optional_state": 0,
+   "send_email": 1,
+   "state": "Pending Address Update by PRO",
+   "style": "Warning"
+  },
+  {
+   "allow_edit": "PRO",
+   "avoid_status_override": 0,
+   "doc_status": "0",
+   "doctype": "Workflow Document State",
+   "is_optional_state": 0,
+   "send_email": 1,
+   "state": "Pending Photo Update by PRO",
+   "style": "Warning"
   }
  ],
  "transitions": [
@@ -115,7 +142,7 @@
    "condition": "doc.category in (\"Renewal\", \"Transfer\")",
    "custom_confirm_transition": 0,
    "doctype": "Workflow Transition",
-   "next_state": "Pending GR Operator",
+   "next_state": "Pending by GR Operator",
    "require_digital_signature": 0,
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,
@@ -147,7 +174,7 @@
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,
    "skip_multiple_action": 0,
-   "state": "Pending GR Operator"
+   "state": "Pending by GR Operator"
   },
   {
    "action": "No Payment Required",
@@ -161,7 +188,7 @@
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,
    "skip_multiple_action": 0,
-   "state": "Pending GR Operator"
+   "state": "Pending by GR Operator"
   },
   {
    "action": "Update Address",
@@ -174,7 +201,7 @@
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,
    "skip_multiple_action": 0,
-   "state": "Pending GR Operator"
+   "state": "Pending by GR Operator"
   },
   {
    "action": "Update Photo",
@@ -187,7 +214,7 @@
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,
    "skip_multiple_action": 0,
-   "state": "Pending GR Operator"
+   "state": "Pending by GR Operator"
   },
   {
    "action": "Address Updated",
@@ -195,7 +222,7 @@
    "allowed": "Government Relations Operator",
    "custom_confirm_transition": 0,
    "doctype": "Workflow Transition",
-   "next_state": "Pending GR Operator",
+   "next_state": "Pending by GR Operator",
    "require_digital_signature": 0,
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,
@@ -208,7 +235,7 @@
    "allowed": "Government Relations Operator",
    "custom_confirm_transition": 0,
    "doctype": "Workflow Transition",
-   "next_state": "Pending GR Operator",
+   "next_state": "Pending by GR Operator",
    "require_digital_signature": 0,
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,
@@ -216,13 +243,13 @@
    "state": "Pending Photo Update"
   },
   {
-   "action": "Save",
+   "action": "Submit to PRO",
    "allow_self_approval": 1,
-   "allowed": "PRO",
+   "allowed": "Government Relations Operator",
    "condition": "doc.category == \"New Application\"",
    "custom_confirm_transition": 0,
    "doctype": "Workflow Transition",
-   "next_state": "Pending PRO",
+   "next_state": "Pending by PRO",
    "require_digital_signature": 0,
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,
@@ -241,7 +268,7 @@
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,
    "skip_multiple_action": 0,
-   "state": "Pending PRO"
+   "state": "Pending by PRO"
   },
   {
    "action": "Approve",
@@ -270,6 +297,62 @@
    "skip_creation_of_workflow_action": 0,
    "skip_multiple_action": 0,
    "state": "Pending by PACI"
+  },
+  {
+   "action": "Update Address By PRO",
+   "allow_self_approval": 1,
+   "allowed": "Government Relations Operator",
+   "condition": "",
+   "custom_confirm_transition": 0,
+   "doctype": "Workflow Transition",
+   "next_state": "Pending Address Update by PRO",
+   "require_digital_signature": 0,
+   "send_email_to_creator": 0,
+   "skip_creation_of_workflow_action": 0,
+   "skip_multiple_action": 0,
+   "state": "Pending by GR Operator"
+  },
+  {
+   "action": "Update Photo by PRO",
+   "allow_self_approval": 1,
+   "allowed": "Government Relations Operator",
+   "condition": "",
+   "custom_confirm_transition": 0,
+   "doctype": "Workflow Transition",
+   "next_state": "Pending Photo Update by PRO",
+   "require_digital_signature": 0,
+   "send_email_to_creator": 0,
+   "skip_creation_of_workflow_action": 0,
+   "skip_multiple_action": 0,
+   "state": "Pending by GR Operator"
+  },
+  {
+   "action": "Address Updated",
+   "allow_self_approval": 1,
+   "allowed": "PRO",
+   "condition": "",
+   "custom_confirm_transition": 0,
+   "doctype": "Workflow Transition",
+   "next_state": "Pending by GR Operator",
+   "require_digital_signature": 0,
+   "send_email_to_creator": 0,
+   "skip_creation_of_workflow_action": 0,
+   "skip_multiple_action": 0,
+   "state": "Pending Address Update by PRO"
+  },
+  {
+   "action": "Photo Updated",
+   "allow_self_approval": 1,
+   "allowed": "PRO",
+   "condition": "",
+   "custom_confirm_transition": 0,
+   "doctype": "Workflow Transition",
+   "next_state": "Pending by GR Operator",
+   "require_digital_signature": 0,
+   "send_email_to_creator": 0,
+   "skip_creation_of_workflow_action": 0,
+   "skip_multiple_action": 0,
+   "state": "Pending Photo Update by PRO"
   }
  ],
  "workflow_name": "PACI",

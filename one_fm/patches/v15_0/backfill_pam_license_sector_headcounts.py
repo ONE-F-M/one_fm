@@ -151,7 +151,7 @@ def recount_every_sector_row():
 				skipped += 1
 				continue
 
-			recount_sector(number, row.occupational_sector)
+			recount_sector(license.name, row.occupational_sector)
 			counted += 1
 
 	return counted, skipped

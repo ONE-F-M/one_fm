@@ -58,6 +58,9 @@ def create_assignment_rules():
 	create_assignment_rule(get_assignment_rule_json_file("action_medical_appointment_supervisor.json"))
 	create_assignment_rule(get_assignment_rule_json_file("confirm_site_pickup_for_medical_appointment_gr_operator.json"))
 	create_assignment_rule(get_assignment_rule_json_file("action_paci.json"))
+	create_assignment_rule(get_assignment_rule_json_file("medical_insurance_gro.json"))
+	create_assignment_rule(get_assignment_rule_json_file("residency_gr_operator.json"))
+	create_assignment_rule(get_assignment_rule_json_file("residency_pro.json"))
 	create_assignment_rule(get_assignment_rule_json_file("returning_to_operations_supervisor_of_ojt_request.json"))
 	create_assignment_rule(get_assignment_rule_json_file("erf_a_la_carte_recruitment.json"))
 	create_assignment_rule(get_assignment_rule_json_file("erf_bulk_recruitment.json"))
@@ -78,10 +81,6 @@ def create_assignment_rules():
 	create_assignment_rule(get_assignment_rule_json_file("recruiter_visa_request.json"))
 	create_assignment_rule(get_assignment_rule_json_file("grd_manager_visa_request.json"))
 	create_assignment_rule(get_assignment_rule_json_file("asset_movement_employee.json"))
-	create_assignment_rule(get_assignment_rule_json_file("penalty_and_investigation_hr_administrator.json"))
-	create_assignment_rule(get_assignment_rule_json_file("penalty_and_investigation_legal_manager.json"))
-	create_assignment_rule(get_assignment_rule_json_file("penalty_and_investigation_general_manager.json"))
-	create_assignment_rule(get_assignment_rule_json_file("penalty_and_investigation_payroll_officer.json"))
 
 def delete_assignment_rules():
 	delete_assignment_rule(get_assignment_rule_json_file("roster_post_action_site_supervisor.json"))
@@ -121,7 +120,3 @@ def delete_assignment_rules():
 	delete_assignment_rule(get_assignment_rule_json_file("formal_hearing_hr_manager.json"))
 	delete_assignment_rule(get_assignment_rule_json_file("formal_hearing_general_manager.json"))
 	delete_assignment_rule(get_assignment_rule_json_file("absence_case_hr_officer.json"))
-	delete_assignment_rule(get_assignment_rule_json_file("penalty_and_investigation_hr_administrator.json"))
-	delete_assignment_rule(get_assignment_rule_json_file("penalty_and_investigation_legal_manager.json"))
-	delete_assignment_rule(get_assignment_rule_json_file("penalty_and_investigation_general_manager.json"))
-	delete_assignment_rule(get_assignment_rule_json_file("penalty_and_investigation_payroll_officer.json"))
