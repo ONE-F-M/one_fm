@@ -3,29 +3,6 @@
 
 frappe.ui.form.on("Subcontract Staff Attendance", {
 	refresh(frm) {
-		if (frm.doc.workflow_state === "Approved" && !frm.doc.__islocal) {
-			frm.add_custom_button(__("Generate Purchase Invoice"), function() {
-				frappe.confirm(__("Are you sure you want to generate a Purchase Invoice?"), function() {
-					frappe.call({
-						method: "generate_invoice",
-						doc: frm.doc,
-						freeze: true,
-						callback: function(r) {
-							if (r.message) {
-								frappe.msgprint({
-									title: __('Success'),
-									indicator: 'green',
-									message: __('Purchase Invoice {0} created successfully.', [
-										`<a href="/app/purchase-invoice/${r.message}">${r.message}</a>`
-									])
-								});
-							}
-						}
-					});
-				});
-			}).addClass("btn-primary");
-		}
-
 		if (frm.doc.workflow_state !== "Cancelled") {
 			frm.add_custom_button(__("Preview Attendance"), function() {
 				show_attendance_preview(frm);

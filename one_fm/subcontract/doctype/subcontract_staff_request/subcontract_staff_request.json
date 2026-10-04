@@ -133,6 +133,15 @@
    "fieldname": "expected_date_of_joining",
    "fieldtype": "Date",
    "label": "Expected Date of Joining"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "no_copy": 1,
+   "options": "Workflow State"
   }
  ],
  "is_submittable": 1,

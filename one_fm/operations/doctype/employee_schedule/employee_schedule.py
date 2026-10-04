@@ -155,12 +155,23 @@ def hold_overtime_for_approval(names):
 		)
 	}
 
-	pending = [c.name for c in candidates if (c.employee, c.date) in working_that_day]
-	for name in pending:
+	pending = [c for c in candidates if (c.employee, c.date) in working_that_day]
+
+	# One request per employee per roster run: the outcome email waits until every row
+	# carrying the same dsot_request has been decided. A re-requested Rejected row keeps
+	# its old name and creation, so neither can identify the request it now belongs to.
+	requests = {}
+	for row in pending:
+		request = requests.setdefault(row.employee, frappe.generate_hash(length=12))
 		frappe.db.set_value(
-			"Employee Schedule", name, "workflow_state", PENDING_DSOT, update_modified=False
+			"Employee Schedule",
+			row.name,
+			{"workflow_state": PENDING_DSOT, "dsot_request": request},
+			update_modified=False,
 		)
-		frappe.get_doc("Employee Schedule", name).request_dsot_approval()
+		frappe.get_doc("Employee Schedule", row.name).request_dsot_approval()
+
+	pending = [row.name for row in pending]
 
 	# WI-002602: the assignments above are per row, because the approver works a row at a
 	# time. The EMAIL is not - a week of overtime is one request to the person reading it,
@@ -339,7 +350,9 @@ class EmployeeSchedule(Document):
 		if not self.has_working_basic_schedule():
 			return
 
-		self.db_set("workflow_state", PENDING_DSOT, update_modified=False)
+		self.db_set(
+			{"workflow_state": PENDING_DSOT, "dsot_request": self.name}, update_modified=False
+		)
 		self.request_dsot_approval()
 
 	def has_working_basic_schedule(self) -> bool:
@@ -368,6 +381,9 @@ class EmployeeSchedule(Document):
 			self.request_dsot_approval()
 		elif was == PENDING_DSOT:
 			self.clear_suspension_approval_requests()
+			# The requestor is told what happened to the shifts they asked for, once per
+			# request: the email goes when the last pending row of the request is decided.
+			dsot_notification.queue_outcome([self.name])
 			if now == ACTIVE:
 				self.create_dsot_shift_assignment()
 

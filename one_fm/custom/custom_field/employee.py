@@ -151,7 +151,7 @@ def get_employee_custom_fields():
 				"options": "Health Insurance Provider Detail",
 			},
 			{
-				"depends_on": "eval:doc.under_company_residency==1",
+				"depends_on": "",
 				"fetch_from": "pam_file.civil_id_number_for_licensing",
 				"fieldname": "pam_file_number",
 				"fieldtype": "Data",
@@ -161,7 +161,7 @@ def get_employee_custom_fields():
 				"translatable": 1,
 			},
 			{
-				"depends_on": "eval:doc.under_company_residency==1",
+				"depends_on": "",
 				"fieldname": "pam_file",
 				"fieldtype": "Link",
 				"insert_after": "one_fm_pam_designation",
@@ -553,7 +553,7 @@ def get_employee_custom_fields():
 				"translatable": 1,
 			},
 			{
-				"depends_on": "eval:doc.under_company_residency==1",
+				"depends_on": "",
 				"fieldname": "work_permit",
 				"fieldtype": "Link",
 				# was one_fm_work_permit, which this story removes
@@ -570,7 +570,7 @@ def get_employee_custom_fields():
 				"label": "Civil ID Expiry Date",
 			},
 			{
-				"depends_on": "eval:doc.under_company_residency==1",
+				"depends_on": "",
 				"fieldname": "work_permit_salary",
 				"fieldtype": "Currency",
 				"insert_after": "custom_employee_image",
@@ -578,7 +578,7 @@ def get_employee_custom_fields():
 				"label": "Work Permit Salary",
 			},
 			{
-				"depends_on": "eval:doc.under_company_residency==1",
+				"depends_on": "",
 				"fieldname": "work_permit_expiry_date",
 				"fieldtype": "Date",
 				"insert_after": "work_permit_salary",
@@ -586,7 +586,7 @@ def get_employee_custom_fields():
 				"label": "Work Permit Expiry Date",
 			},
 			{
-				"depends_on": "eval:doc.under_company_residency==1",
+				"depends_on": "",
 				"fieldname": "residency_expiry_date",
 				"fieldtype": "Date",
 				"insert_after": "pam_file_number",
@@ -825,7 +825,7 @@ def get_employee_custom_fields():
 				"translatable": 1,
 			},
 			{
-				"depends_on": "eval:doc.under_company_residency==1",
+				"depends_on": "",
 				"fieldname": "one_fm_pam_designation",
 				"fieldtype": "Link",
 				"insert_after": "government_relations",
@@ -833,6 +833,27 @@ def get_employee_custom_fields():
 				"label": "PAM Designation",
 				"mandatory_depends_on": "work_permit",
 				"options": "PAM Designation List",
+			},
+			# The sector an employee counts against is not on the employee - it
+			# is on the PAM designation they hold, and reaching it meant two hops every
+			# time. Fetched here so the Employee carries it, and so PAM's own grouping is
+			# visible on the record rather than only in the licence's figures.
+			#
+			# A Link, not the Data the BA site carries. The sector is a record - the
+			# designation points at one and the licence figures are grouped by one - so a
+			# copy held as loose text is the one place on the chain where a sector could
+			# read as something that is not an Occupational Sector.
+			#
+			# No depends_on. The BA site's copy hides it unless Under Company Residency is
+			# ticked, a condition being removed from every field on this form for the
+			# same reason: the value is on the record either way.
+			{
+				"fetch_from": "one_fm_pam_designation.occupational_sector",
+				"fieldname": "custom_occupational_sector",
+				"fieldtype": "Link",
+				"insert_after": "one_fm_pam_designation",
+				"label": "Occupational Sector",
+				"options": "Occupational Sector",
 			},
 			{
 				"fieldname": "one_fm_basic_salary",

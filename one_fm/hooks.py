@@ -266,8 +266,25 @@ doc_events = {
 	"Employee": {
 		# Keep the PAM licence headcounts in step with the employees on the licence. The
 		# handler returns immediately unless the save touched a field the count reads.
+		#
+		# The second carries a master change into the GRD forms still in flight for this
+		# employee; it returns immediately too unless one of the four copied fields moved.
 		"on_update": [
-			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_counts_from_employee"
+			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_counts_from_employee",
+			"one_fm.grd.employee_sync.sync_to_sub_documents",
+		]
+	},
+	"Visa Request": {
+		# A completed Visa Request is a visa issued against the licence's quota,
+		# and no Employee exists yet to trigger the recount the other figures ride on.
+		"on_update": [
+			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_quota_from_visa_request"
+		]
+	},
+	"Visa Cancellation Request": {
+		# The other direction: a completed cancellation gives the visa back to the quota.
+		"on_update": [
+			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_quota_from_visa_cancellation"
 		]
 	},
 	"PAM Designation List": {

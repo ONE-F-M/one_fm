@@ -60,7 +60,8 @@
   "reminder_grd_operator_again",
   "rejection_details_section",
   "paci_rejection_reason",
-  "rejected_paci"
+  "rejected_paci",
+  "title"
  ],
  "fields": [
   {
@@ -317,8 +318,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Date Of Application",
-   "print_hide": 1,
-   "read_only": 1
+   "print_hide": 1
   },
   {
    "fieldname": "category",
@@ -394,6 +394,7 @@
    "description": "The PRO who files this application on the PACI portal. Required before the application can be handed back.",
    "fieldname": "pro_user",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "PRO User",
    "options": "User",
    "link_filters": "[[\"User\",\"role\",\"=\",\"PRO\"]]",
@@ -425,6 +426,15 @@
    "fieldname": "upload_damj_letter_on",
    "fieldtype": "Data",
    "label": "Upload DAMJ Letter On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Title",
+   "no_copy": 1,
+   "print_hide": 1,
    "read_only": 1
   }
  ],
@@ -480,6 +490,6 @@
  "sort_field": "date_of_application",
  "sort_order": "DESC",
  "states": [],
- "title_field": "civil_id",
+ "title_field": "title",
  "track_changes": 1
 }

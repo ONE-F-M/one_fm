@@ -2,16 +2,32 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
 
+import re
+from urllib.parse import unquote, urlparse
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import strip_html
+from frappe.utils.html_utils import unescape_html
+
+# Per document type: the title's leading words, and the ways a requester writes the type.
+TITLE_FORMS = {
+	"Manual": ("Manual for ", r"manual"),
+	"SOP": ("SOP for ", r"sop|standard\s+operating\s+procedures?"),
+	"Guideline": ("Guideline for ", r"guidelines?"),
+	"Policy": ("Policy for ", r"polic(?:y|ies)"),
+	"Knowledge Base": ("Knowledge Base for ", r"knowledge\s+bases?|kb"),
+}
 
 
 class DocumentRequest(Document):
 	def validate(self):
 		self.set_requester_defaults()
+		self.set_title_from_wiki_link()
 		self.check_approver_resolved()
 		self.apply_reference_document_defaults()
+		self.standardise_title()
 		self.check_required_links()
 		self.check_reference_document_is_active()
 		self.check_source_guideline_is_a_guideline()
@@ -48,6 +64,23 @@ class DocumentRequest(Document):
 				).format(frappe.bold(frappe.session.user)),
 				title=_("No Employee Record"),
 			)
+
+	def set_title_from_wiki_link(self):
+		"""On a Create, a new or changed Wiki Link sets the title from that Wiki page."""
+		if self.request_action != "Create":
+			self.wiki_link = None
+			return
+		if not self.wiki_link:
+			return
+		if not self.has_value_changed("wiki_link"):
+			return
+		title = _wiki_page_title(self.wiki_link)
+		if not title:
+			frappe.throw(
+				_("{0} is not a Wiki page on this site.").format(frappe.bold(self.wiki_link)),
+				title=_("Wiki Page Not Found"),
+			)
+		self.title = title
 
 	def fill_requester_chain(self):
 		"""Resolve requester → approver → approver_user here, not via fetch_from.
@@ -129,6 +162,14 @@ class DocumentRequest(Document):
 		if not self.title:
 			self.title = ref.title
 
+	def standardise_title(self):
+		"""A controlled document's title reads "<Type> for <subject>", so its file and register entry do too."""
+		if self.document_type not in TITLE_FORMS:
+			return
+		if not self.title:
+			return
+		self.title = standard_title(self.title, self.document_type)
+
 	def check_source_guideline_is_a_guideline(self):
 		"""The guideline a Create is written from has to actually be a guideline.
 
@@ -162,6 +203,9 @@ class DocumentRequest(Document):
 		check that guards the real Reactivate button.
 		"""
 		if self.request_action == "Create" or not self.reference_document:
+			return
+		# A Delete withdraws its own document, so the saves that follow must not re-check it.
+		if not self.has_value_changed("reference_document"):
 			return
 
 		state = frappe.db.get_value("Document Register", self.reference_document, "lifecycle_state")
@@ -461,3 +505,35 @@ def _link_from_process_instance(document_request: str) -> str | None:
 		return link
 	file_id = drive_file.get("id")
 	return f"https://docs.google.com/document/d/{file_id}/edit" if file_id else None
+
+
+@frappe.whitelist()
+def get_wiki_page_title(wiki_link: str) -> str | None:
+	"""The plain-text title of the Wiki page a link points at, if the user can read it."""
+	frappe.has_permission("Document Request", "create", throw=True)
+	pages = frappe.get_list("Wiki Page", filters={"route": _wiki_route(wiki_link)}, fields=["title"], limit=1)
+	return _plain_title(pages[0].title) if pages else None
+
+
+def _wiki_page_title(wiki_link: str) -> str | None:
+	title = frappe.db.get_value("Wiki Page", {"route": _wiki_route(wiki_link)}, "title")
+	return _plain_title(title) if title else None
+
+
+def _wiki_route(wiki_link: str) -> str:
+	"""A Wiki page's route is its URL path, decoded, without the slashes around it."""
+	return unquote(urlparse(wiki_link.strip()).path).strip("/")
+
+
+def _plain_title(title: str) -> str:
+	# Some Wiki titles carry editor markup such as <strong> and &nbsp;.
+	return " ".join(unescape_html(strip_html(title)).split())
+
+
+def standard_title(title: str, document_type: str) -> str:
+	"""The "<Type> for <subject>" form of a title, dropping any type name the requester already wrote."""
+	prefix, names = TITLE_FORMS[document_type]
+	subject = " ".join(title.split())
+	subject = re.sub(rf"^(?:{names})\b(\s+(for|of|on)\b)?[\s:\-\u2013]*", "", subject, flags=re.IGNORECASE)
+	subject = re.sub(rf"\s+(?:{names})$", "", subject, flags=re.IGNORECASE)
+	return prefix + subject if subject else title

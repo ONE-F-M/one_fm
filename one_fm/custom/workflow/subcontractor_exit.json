@@ -1,7 +1,7 @@
 {
   "workflow_name": "Subcontractor Exit",
   "document_type": "Subcontractor Exit",
-  "is_active": 1,
+  "is_active": 0,
   "override_status": 0,
   "send_email_alert": 0,
   "workflow_state_field": "workflow_state",

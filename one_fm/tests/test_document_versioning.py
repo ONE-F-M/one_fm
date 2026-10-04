@@ -106,6 +106,7 @@ class TestDocumentCodes(VersioningFixtures, unittest.TestCase):
 	def test_prefix_comes_from_the_map(self):
 		self.assertEqual(code_prefix("Policy"), "POL")
 		self.assertEqual(code_prefix("Manual"), "MAN")
+		self.assertEqual(code_prefix("Knowledge Base"), "KNB")
 
 	def test_an_unmapped_type_still_gets_a_prefix(self):
 		"""A new document type must index correctly before anyone updates the map."""

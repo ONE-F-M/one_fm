@@ -11,6 +11,7 @@ from frappe.utils import today, add_days, get_url, date_diff, get_year_start, fl
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from frappe.core.doctype.communication.email import make
 from one_fm.processor import sendemail
+from one_fm.grd.document_title import set_document_title
 from one_fm.utils import is_scheduler_emails_enabled
 
 # The Overseas category and the state its record opens in (WI-001830). Named because the
@@ -52,6 +53,7 @@ class PACI(Document):
 
     def validate(self):
         self.set_grd_values()
+        set_document_title(self)
         self.set_new_expiry_date()
         self.set_paci_fine_amount()
         self.clear_unticked_damj_details()
