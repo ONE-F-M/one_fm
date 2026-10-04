@@ -99,11 +99,12 @@ frappe.ui.form.on("Document Request", {
 	wiki_link(frm) {
 		if (!frm.doc.wiki_link) return;
 		frappe.call({
-			method: "one_fm.one_fm.doctype.document_request.document_request.get_wiki_page_title",
+			method: "one_fm.one_fm.doctype.document_request.document_request.get_wiki_page",
 			args: { wiki_link: frm.doc.wiki_link },
 			callback: (r) => {
 				if (r.message) {
-					frm.set_value("title", r.message);
+					frm.set_value("title", r.message.title);
+					frm.set_value("requirement_text", r.message.requirement);
 					return;
 				}
 				frappe.show_alert({

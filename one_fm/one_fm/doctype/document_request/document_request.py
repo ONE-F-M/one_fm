@@ -7,6 +7,7 @@ from urllib.parse import unquote, urlparse
 
 import frappe
 from frappe import _
+from frappe.core.utils import html2text
 from frappe.model.document import Document
 from frappe.utils import strip_html
 from frappe.utils.html_utils import unescape_html
@@ -66,7 +67,7 @@ class DocumentRequest(Document):
 			)
 
 	def set_title_from_wiki_link(self):
-		"""On a Create, a new or changed Wiki Link sets the title from that Wiki page."""
+		"""On a Create, a new or changed Wiki Link sets the title and requirement from that Wiki page."""
 		if self.request_action != "Create":
 			self.wiki_link = None
 			return
@@ -74,13 +75,16 @@ class DocumentRequest(Document):
 			return
 		if not self.has_value_changed("wiki_link"):
 			return
-		title = _wiki_page_title(self.wiki_link)
-		if not title:
+		page = frappe.db.get_value(
+			"Wiki Page", _wiki_page_filters(self.wiki_link), ["title", "content"], as_dict=True
+		)
+		if not page:
 			frappe.throw(
 				_("{0} is not a Wiki page on this site.").format(frappe.bold(self.wiki_link)),
 				title=_("Wiki Page Not Found"),
 			)
-		self.title = title
+		self.title = _plain_title(page.title)
+		self.requirement_text = _plain_content(page.content)
 
 	def fill_requester_chain(self):
 		"""Resolve requester → approver → approver_user here, not via fetch_from.
@@ -508,26 +512,33 @@ def _link_from_process_instance(document_request: str) -> str | None:
 
 
 @frappe.whitelist()
-def get_wiki_page_title(wiki_link: str) -> str | None:
-	"""The plain-text title of the Wiki page a link points at, if the user can read it."""
+def get_wiki_page(wiki_link: str) -> dict | None:
+	"""The plain-text title and content of the Wiki page a link points at, if the user can read it."""
 	frappe.has_permission("Document Request", "create", throw=True)
-	pages = frappe.get_list("Wiki Page", filters={"route": _wiki_route(wiki_link)}, fields=["title"], limit=1)
-	return _plain_title(pages[0].title) if pages else None
+	pages = frappe.get_list(
+		"Wiki Page", filters=_wiki_page_filters(wiki_link), fields=["title", "content"], limit=1
+	)
+	if not pages:
+		return None
+	return {"title": _plain_title(pages[0].title), "requirement": _plain_content(pages[0].content)}
 
 
-def _wiki_page_title(wiki_link: str) -> str | None:
-	title = frappe.db.get_value("Wiki Page", {"route": _wiki_route(wiki_link)}, "title")
-	return _plain_title(title) if title else None
-
-
-def _wiki_route(wiki_link: str) -> str:
-	"""A Wiki page's route is its URL path, decoded, without the slashes around it."""
-	return unquote(urlparse(wiki_link.strip()).path).strip("/")
+def _wiki_page_filters(wiki_link: str) -> dict:
+	"""A Desk link /app/wiki-page/<name> names the page; any other link's decoded path is its route."""
+	route = unquote(urlparse(wiki_link.strip()).path).strip("/")
+	desk_prefix, _sep, name = route.partition("app/wiki-page/")
+	if not desk_prefix and name:
+		return {"name": name}
+	return {"route": route}
 
 
 def _plain_title(title: str) -> str:
 	# Some Wiki titles carry editor markup such as <strong> and &nbsp;.
 	return " ".join(unescape_html(strip_html(title)).split())
+
+
+def _plain_content(content: str) -> str:
+	return html2text(content, wrap=False).strip()
 
 
 def standard_title(title: str, document_type: str) -> str:
