@@ -9,6 +9,8 @@ from frappe.tests.utils import FrappeTestCase
 from one_fm.one_fm.doctype.google_sheet_data_export.exporter import (
 	STANDARD_FIELDS,
 	DataExporter,
+	get_link_title_field,
+	get_link_titles,
 	get_standard_field,
 )
 
@@ -105,3 +107,88 @@ class TestGoogleSheetDataExport(FrappeTestCase):
 			self.skipTest("No virtual field on ToDo to test with")
 
 		self.assertNotIn(virtual_field, build_columns("ToDo", {"ToDo": [virtual_field]}))
+
+
+class TestLinkTitleExport(FrappeTestCase):
+	"""A Link column must export what the form shows, not the stored document name."""
+
+	def setUp(self):
+		self.contact = frappe.get_doc(
+			{
+				"doctype": "Contact",
+				"first_name": "Gsde",
+				"middle_name": "Link",
+				"last_name": "Title",
+			}
+		).insert()
+		# reproduce the live data: the name was set before the rest of the name was typed
+		frappe.rename_doc("Contact", self.contact.name, "Gsde", force=True)
+		self.contact.reload()
+
+	def test_get_link_title_field(self):
+		"""Only a DocType that asks to show its title in links resolves to a title field."""
+		self.assertEqual(get_link_title_field("Contact"), "full_name")
+		# ToDo has no title shown in links, so the name is what the form shows
+		self.assertIsNone(get_link_title_field("ToDo"))
+
+	def test_get_link_title_field_without_permission(self):
+		"""Without read permission the name is kept rather than leaking a title."""
+		with patch.object(frappe, "has_permission", return_value=False):
+			self.assertIsNone(get_link_title_field("Contact"))
+
+	def test_get_link_titles(self):
+		"""Titles come back keyed by document name."""
+		titles = get_link_titles("Contact", "full_name", [self.contact.name])
+
+		self.assertEqual(titles[self.contact.name], self.contact.full_name)
+		self.assertNotEqual(self.contact.name, self.contact.full_name)
+
+	def test_link_value_is_exported_as_title(self):
+		"""The stored name `Gsde` is exported as the full name the form shows."""
+		exporter = make_exporter("Contact", {"Contact": ["first_name"]}, export_link_titles=1)
+		docfield = frappe._dict({"fieldtype": "Link", "options": "Contact"})
+
+		self.assertEqual(
+			exporter.get_link_title(docfield, self.contact.name), self.contact.full_name
+		)
+
+	def test_plain_value_is_untouched(self):
+		"""Anything that is not a resolvable Link keeps its stored value."""
+		exporter = make_exporter("Contact", {"Contact": ["first_name"]}, export_link_titles=1)
+
+		self.assertEqual(
+			exporter.get_link_title(frappe._dict({"fieldtype": "Data"}), "Gsde"), "Gsde"
+		)
+		self.assertEqual(
+			exporter.get_link_title(frappe._dict({"fieldtype": "Link", "options": "ToDo"}), "Gsde"),
+			"Gsde",
+		)
+		self.assertEqual(
+			exporter.get_link_title(frappe._dict({"fieldtype": "Link", "options": "Contact"}), ""), ""
+		)
+
+	def test_missing_link_keeps_the_stored_value(self):
+		"""A deleted or unreadable document falls back to the stored name."""
+		exporter = make_exporter("Contact", {"Contact": ["first_name"]}, export_link_titles=1)
+		docfield = frappe._dict({"fieldtype": "Link", "options": "Contact"})
+
+		self.assertEqual(exporter.get_link_title(docfield, "Not A Contact"), "Not A Contact")
+
+	def test_titles_are_cached(self):
+		"""Each linked DocType is queried once, however many rows use it."""
+		exporter = make_exporter("Contact", {"Contact": ["first_name"]}, export_link_titles=1)
+		docfield = frappe._dict({"fieldtype": "Link", "options": "Contact"})
+
+		exporter.get_link_title(docfield, self.contact.name)
+		with patch(
+			"one_fm.one_fm.doctype.google_sheet_data_export.exporter.get_link_titles"
+		) as get_titles:
+			exporter.get_link_title(docfield, self.contact.name)
+			get_titles.assert_not_called()
+
+	def test_link_titles_are_opt_in(self):
+		"""Without the setting the stored ID is exported, as it always was."""
+		exporter = make_exporter("Contact", {"Contact": ["first_name"]})
+		docfield = frappe._dict({"fieldtype": "Link", "options": "Contact"})
+
+		self.assertEqual(exporter.get_link_title(docfield, self.contact.name), self.contact.name)
