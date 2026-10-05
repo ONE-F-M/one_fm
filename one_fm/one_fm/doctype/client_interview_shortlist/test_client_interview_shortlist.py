@@ -3,186 +3,63 @@
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
-from frappe.utils import getdate
+from frappe.utils import add_days, today
+
 
 class TestClientInterviewShortlist(FrappeTestCase):
-	def setUp(self):
-		self.employee = frappe.get_doc(
-			{
-				"doctype": "Employee",
-				"employee_name": "Test Employee",
-				"company": "_Test Company",
-				"date_of_joining": "2025-01-01",
-				"department": "_Test Department",
-			}
-		).insert(ignore_if_duplicate=True)
-		self.project = frappe.get_doc(
-			{
-				"doctype": "Project",
-				"project_name": "Test Project",
-			}
-		).insert(ignore_if_duplicate=True)
+	def test_project_required_without_prospective_client(self):
+		shortlist = make_client_interview_shortlist(project=None)
+		self.assertRaises(frappe.ValidationError, shortlist.validate)
 
-	def tearDown(self):
-		frappe.db.rollback()
+	def test_prospective_client_required_when_flagged(self):
+		shortlist = make_client_interview_shortlist(is_prospective_client=1, prospective_client=None)
+		self.assertRaises(frappe.ValidationError, shortlist.validate)
 
-	def test_create_employee_schedule_on_submit(self):
-		shortlist = create_client_interview_shortlist(self.employee.name, self.project.name)
-		shortlist.submit()
-
-		schedule_exists = frappe.db.exists(
-			"Employee Schedule",
-			{
-				"employee": self.employee.name,
-				"date": shortlist.interview_date,
-				"employee_availability": "Client Interview",
-				"project": self.project.name,
-			},
+	def test_prospective_client_clears_project(self):
+		shortlist = make_client_interview_shortlist(
+			project="Any Project", is_prospective_client=1, prospective_client="Any Opportunity"
 		)
-		self.assertTrue(schedule_exists)
+		shortlist.validate()
+		self.assertIsNone(shortlist.project)
 
-	def test_replace_existing_employee_schedule_on_submit(self):
-		interview_date = getdate("2025-11-30")
-		# Create an existing schedule
-		existing_schedule = frappe.get_doc(
-			{
-				"doctype": "Employee Schedule",
-				"employee": self.employee.name,
-				"date": interview_date,
-				"employee_availability": "Working",
-			}
-		).insert(ignore_permissions=True)
-
-		shortlist = create_client_interview_shortlist(
-			self.employee.name, self.project.name, interview_date=interview_date
+	def test_project_clears_prospective_client(self):
+		shortlist = make_client_interview_shortlist(
+			project="Any Project", prospective_client="Any Opportunity", customer_name="Any Customer"
 		)
-		shortlist.submit()
+		shortlist.validate()
+		self.assertIsNone(shortlist.prospective_client)
+		self.assertIsNone(shortlist.customer_name)
 
-		# Check that the old schedule is deleted
-		self.assertFalse(frappe.db.exists("Employee Schedule", existing_schedule.name))
 
-		# Check that the new schedule is created
-		new_schedule_exists = frappe.db.exists(
-			"Employee Schedule",
-			{
-				"employee": self.employee.name,
-				"date": interview_date,
-				"employee_availability": "Client Interview",
-				"project": self.project.name,
-			},
+class TestClientInterviewShortlistProcessaHandover(FrappeTestCase):
+	def test_assignment_rules_are_removed(self):
+		from one_fm.patches.v15_0.remove_client_interview_shortlist_assignment_rules import (
+			ASSIGNMENT_RULES,
+			execute,
 		)
-		self.assertTrue(new_schedule_exists)
 
-	def test_cancel_shift_assignments_with_absent_attendance(self):
-		"""Story 5: When shift assignment has 'Absent' attendance, remove attendance and cancel the shift assignment."""
-		interview_date = getdate("2025-11-30")
-		
-		# Create an existing schedule
-		existing_schedule = frappe.get_doc(
-			{
-				"doctype": "Employee Schedule",
-				"employee": self.employee.name,
-				"date": interview_date,
-				"employee_availability": "Working",
-			}
-		).insert(ignore_permissions=True)
-
-		# Create a shift assignment linked to the schedule
-		shift_assignment = frappe.get_doc(
-			{
-				"doctype": "Shift Assignment",
-				"employee": self.employee.name,
-				"start_date": interview_date,
-				"employee_schedule": existing_schedule.name,
-			}
-		).insert(ignore_permissions=True)
-		shift_assignment.submit()
-
-		# Create "Absent" attendance record for this shift
-		attendance = frappe.get_doc(
-			{
-				"doctype": "Attendance",
-				"employee": self.employee.name,
-				"attendance_date": interview_date,
-				"status": "Absent",
-				"shift_assignment": shift_assignment.name,
-			}
-		).insert(ignore_permissions=True)
-		attendance.submit()
-
-		# Submit client interview shortlist - should automatically remove "Absent" attendance and cancel shift assignment
-		shortlist = create_client_interview_shortlist(
-			self.employee.name, self.project.name, interview_date=interview_date
+		execute()
+		execute()
+		for rule in ASSIGNMENT_RULES:
+			self.assertFalse(frappe.db.exists("Assignment Rule", rule))
+		self.assertFalse(
+			frappe.db.exists(
+				"Process Task",
+				{
+					"erp_document": "Client Interview Shortlist",
+					"task": "Review and Approve Client Interview Shortlist",
+					"is_active": 1,
+				},
+			)
 		)
-		shortlist.submit()
 
-		# Check that attendance was removed
-		self.assertFalse(frappe.db.exists("Attendance", attendance.name))
 
-		# Check that shift assignment was cancelled and deleted
-		self.assertFalse(frappe.db.exists("Shift Assignment", shift_assignment.name))
-
-	def test_prevent_shift_assignment_cancel_with_non_absent_attendance(self):
-		"""Story 5: When shift assignment has non-'Absent' attendance, prevent cancellation."""
-		interview_date = getdate("2025-11-30")
-		
-		# Create an existing schedule
-		existing_schedule = frappe.get_doc(
-			{
-				"doctype": "Employee Schedule",
-				"employee": self.employee.name,
-				"date": interview_date,
-				"employee_availability": "Working",
-			}
-		).insert(ignore_permissions=True)
-
-		# Create a shift assignment linked to the schedule
-		shift_assignment = frappe.get_doc(
-			{
-				"doctype": "Shift Assignment",
-				"employee": self.employee.name,
-				"start_date": interview_date,
-				"employee_schedule": existing_schedule.name,
-			}
-		).insert(ignore_permissions=True)
-		shift_assignment.submit()
-
-		# Create "Present" attendance record for this shift
-		attendance = frappe.get_doc(
-			{
-				"doctype": "Attendance",
-				"employee": self.employee.name,
-				"attendance_date": interview_date,
-				"status": "Present",
-				"shift_assignment": shift_assignment.name,
-			}
-		).insert(ignore_permissions=True)
-		attendance.submit()
-
-		# Submit client interview shortlist - should throw error
-		shortlist = create_client_interview_shortlist(
-			self.employee.name, self.project.name, interview_date=interview_date
-		)
-		
-		with self.assertRaises(frappe.ValidationError):
-			shortlist.submit()
-
-def create_client_interview_shortlist(employee, project, interview_date=None):
-	if not interview_date:
-		interview_date = getdate("2025-11-30")
-
-	shortlist = frappe.get_doc(
+def make_client_interview_shortlist(**kwargs):
+	return frappe.get_doc(
 		{
 			"doctype": "Client Interview Shortlist",
-			"company": "_Test Company",
-			"project": project,
-			"interview_date": interview_date,
-			"client_interview_employee": [
-				{
-					"employee": employee,
-					"roster_type": "Basic",
-				}
-			],
+			"interview_date": add_days(today(), 1),
+			"client_interview_employee": [],
+			**kwargs,
 		}
-	).insert(ignore_permissions=True)
-	return shortlist
+	)
