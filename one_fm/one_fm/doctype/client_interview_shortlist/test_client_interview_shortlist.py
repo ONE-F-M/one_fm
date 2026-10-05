@@ -53,6 +53,15 @@ class TestClientInterviewShortlistProcessaHandover(FrappeTestCase):
 			)
 		)
 
+	def test_frappe_workflow_is_inactive(self):
+		from frappe.model.workflow import get_workflow_name
+
+		from one_fm.patches.v15_0.deactivate_client_interview_shortlist_workflow import execute
+
+		execute()
+		execute()
+		self.assertFalse(get_workflow_name("Client Interview Shortlist"))
+
 
 def make_client_interview_shortlist(**kwargs):
 	return frappe.get_doc(
