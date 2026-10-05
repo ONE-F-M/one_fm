@@ -76,7 +76,6 @@ def create_assignment_rules():
 	create_assignment_rule(get_assignment_rule_json_file("formal_hearing_operations_manager.json"))
 	create_assignment_rule(get_assignment_rule_json_file("formal_hearing_hr_manager.json"))
 	create_assignment_rule(get_assignment_rule_json_file("formal_hearing_general_manager.json"))
-	create_assignment_rule(get_assignment_rule_json_file("absence_case_hr_officer.json"))
 	create_assignment_rule(get_assignment_rule_json_file("grd_operator_visa_request.json"))
 	create_assignment_rule(get_assignment_rule_json_file("recruiter_visa_request.json"))
 	create_assignment_rule(get_assignment_rule_json_file("grd_manager_visa_request.json"))
@@ -119,4 +118,3 @@ def delete_assignment_rules():
 	delete_assignment_rule(get_assignment_rule_json_file("formal_hearing_operations_manager.json"))
 	delete_assignment_rule(get_assignment_rule_json_file("formal_hearing_hr_manager.json"))
 	delete_assignment_rule(get_assignment_rule_json_file("formal_hearing_general_manager.json"))
-	delete_assignment_rule(get_assignment_rule_json_file("absence_case_hr_officer.json"))
