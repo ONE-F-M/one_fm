@@ -376,3 +376,24 @@ class TestAccommodationLeaveMovement(FrappeTestCase):
 		self.assertTrue(hasattr(in_doc, "_early_checkin_warning"))
 		self.assertIn("contiguous leave", in_doc._early_checkin_warning)
 
+
+	def test_submitting_checkin_leaves_the_checkout_to_the_map(self):
+		"""The Check-In Lifecycle map marks the OUT returned; the controller must not."""
+		from unittest.mock import patch
+
+		checkout = make_alm(self.employee, "OUT", docstatus=1)
+		checkin = make_alm(self.employee, "IN", checkin_reference=checkout.name, docstatus=1)
+
+		with patch.object(type(checkin), "handle_checkin_notification"):
+			checkin.run_method("on_submit")
+
+		self.assertEqual(frappe.db.get_value("Accommodation Leave Movement", checkout.name, "checked_out"), 0)
+
+	def test_cancelling_checkin_still_reopens_the_checkout(self):
+		checkout = make_alm(self.employee, "OUT", docstatus=1)
+		frappe.db.set_value("Accommodation Leave Movement", checkout.name, "checked_out", 1)
+		checkin = make_alm(self.employee, "IN", checkin_reference=checkout.name, docstatus=2)
+
+		checkin.run_method("on_cancel")
+
+		self.assertEqual(frappe.db.get_value("Accommodation Leave Movement", checkout.name, "checked_out"), 0)
