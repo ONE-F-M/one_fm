@@ -27,6 +27,7 @@ class ShiftDetailsMissing(frappe.ValidationError):
 class ShiftPermission(Document):
 	def validate(self):
 		self.check_shift_details_value()
+		self.validate_assigned_shift_date()
 		self.validate_date()
 		self.validate_record()
 		self.validate_approver()
@@ -49,6 +50,28 @@ class ShiftPermission(Document):
 	def check_shift_details_value(self):
 		if not self.assigned_shift or not self.shift or not self.shift_supervisor or not self.shift_type:
 			frappe.throw(_("Shift details are missing. Please make sure date is correct."), exc=ShiftDetailsMissing)
+
+	# The approval flow writes the arrival/leaving time onto self.assigned_shift and creates the
+	# check-in from it, so a permission pointing at another day's assignment silently corrupts that
+	# assignment and leaves the real shift without a check-in. Refuse the mismatch up front.
+	def validate_assigned_shift_date(self):
+		if not self.assigned_shift or not self.date:
+			return
+
+		shift_assignment = frappe.db.get_value(
+			"Shift Assignment", self.assigned_shift, ["start_date", "end_date"], as_dict=True
+		)
+		if not shift_assignment:
+			return
+
+		end_date = shift_assignment.end_date or shift_assignment.start_date
+		if not (getdate(shift_assignment.start_date) <= getdate(self.date) <= getdate(end_date)):
+			frappe.throw(
+				_("Shift Assignment {0} does not cover {1}. Please reselect the date so the correct shift is fetched.").format(
+					self.assigned_shift, format_date(self.date)
+				),
+				exc=ShiftDetailsMissing,
+			)
 
 	# This method validates the permission date and avoid creating permission for previous days
 	def validate_date(self):
