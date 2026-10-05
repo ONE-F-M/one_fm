@@ -397,3 +397,24 @@ class TestAccommodationLeaveMovement(FrappeTestCase):
 		checkin.run_method("on_cancel")
 
 		self.assertEqual(frappe.db.get_value("Accommodation Leave Movement", checkout.name, "checked_out"), 0)
+
+
+class TestAccommodationLeaveMovementProcessaHandover(FrappeTestCase):
+	def test_workflow_state_can_change_after_submit(self):
+		# The lifecycle maps submit the movement and record the state in the same step.
+		field = frappe.get_meta("Accommodation Leave Movement").get_field("workflow_state")
+		self.assertIsNotNone(field)
+		self.assertEqual(field.options, "Workflow State")
+		self.assertEqual(field.allow_on_submit, 1)
+		self.assertFalse(field.get("is_custom_field"))
+
+	def test_site_supervisor_rules_are_removed(self):
+		from one_fm.patches.v15_0.remove_accommodation_leave_movement_assignment_rules import (
+			ASSIGNMENT_RULES,
+			execute,
+		)
+
+		execute()
+		execute()
+		for rule in ASSIGNMENT_RULES:
+			self.assertFalse(frappe.db.exists("Assignment Rule", rule))
