@@ -530,7 +530,6 @@ one_fm.patches.v15_0.set_candidate_title_fields
 one_fm.patches.v15_0.update_attendance_check
 one_fm.patches.v15_0.update_employee_and_user_references
 one_fm.patches.v15_0.add_employee_schedule_suspension_workflow #2026-07-24
-one_fm.patches.v15_0.add_accommodation_leave_movement_assignment_rules #2026-07-30
 one_fm.patches.v15_0.add_employee_site_supervisor_fields #2026-07-30
 one_fm.patches.v15_0.add_vehicle_list_view_columns #2026-07-30
 one_fm.patches.v15_0.add_attendance_event_staff_field #2026-08-01
@@ -631,3 +630,4 @@ one_fm.patches.v15_0.seed_quota_types #2026-09-23 WI-002775
 one_fm.patches.v15_0.recount_pam_licences_by_file_link #2026-09-27b WI-002768
 one_fm.patches.v15_0.remove_client_interview_shortlist_assignment_rules #2026-10-05 WI-003086
 one_fm.patches.v15_0.remove_absence_case_hr_officer_assignment_rule #2026-10-05 WI-003076
+one_fm.patches.v15_0.remove_accommodation_leave_movement_assignment_rules #2026-10-05 WI-002762
