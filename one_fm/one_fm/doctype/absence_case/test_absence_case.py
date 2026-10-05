@@ -37,3 +37,20 @@ class TestAbsenceCase(FrappeTestCase):
 		# Should pass with end > start
 		doc.formal_hearing_end_datetime = add_to_date(now_datetime(), hours=26)
 		doc.insert()
+
+
+class TestAbsenceCaseProcessaHandover(FrappeTestCase):
+	def test_workflow_state_can_change_after_submit(self):
+		# The absence maps submit the case and set Approved/Rejected in the same step.
+		field = frappe.get_meta("Absence Case").get_field("workflow_state")
+		self.assertIsNotNone(field)
+		self.assertEqual(field.options, "Workflow State")
+		self.assertEqual(field.allow_on_submit, 1)
+		self.assertFalse(field.is_custom_field)
+
+	def test_hr_officer_rule_is_removed(self):
+		from one_fm.patches.v15_0.remove_absence_case_hr_officer_assignment_rule import execute
+
+		execute()
+		execute()
+		self.assertFalse(frappe.db.exists("Assignment Rule", "Absence Case - HR Officer"))
