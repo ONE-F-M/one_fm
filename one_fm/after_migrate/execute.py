@@ -764,6 +764,64 @@ def update_hd_ticket_side_bar():
     return
 
 
+def update_hd_ticket_field_check_value():
+    """Stop Check fields in the ticket sidebar from snapping back to "Yes".
+
+    TicketField.vue renders a Check as an Autocomplete whose options are
+    {label: "Yes", value: 1} / {label: "No", value: 0}, and the component emits
+    the whole option object on select. The stock handler unwrapped it with a
+    truthy `||` chain, so "No" (value 0) fell through and the option OBJECT was
+    written back as the field value. Being truthy, it rendered as "Yes" again
+    and the field could never be cleared - it also kept every
+    `depends_on` child field visible.
+
+    The same defect is fixed in UniInput.vue, which one_fm ships whole via
+    deploy_fetch_from_support(); TicketField.vue is otherwise unmodified
+    upstream, so it gets a surgical in-place replacement instead.
+    """
+    FILE_PATH = frappe.utils.get_bench_path() + "/apps/helpdesk/desk/src/components/TicketField.vue"
+    if not os.path.exists(FILE_PATH):
+        print(FILE_PATH, "not found")
+        return False
+
+    any_changes = False
+
+    # 1. unwrap the emitted option by key presence, not by truthiness
+    handler_search = """                'update:model-value': (event) => {
+                  emitUpdate(
+                    field.fieldname,
+                    event?.value || event?.target?.value || event
+                  );
+                },"""
+    handler_replace = """                'update:model-value': (event) => {
+                  emitUpdate(field.fieldname, extractValue(event));
+                },"""
+    if append_code_in_file(FILE_PATH, handler_search, handler_replace, replace_with_search_text=True):
+        any_changes = True
+
+    # 2. add the helper the handler above now calls
+    helper_search = """function emitUpdate(fieldname: Field["fieldname"], value: FieldValue) {"""
+    helper_replace = """/**
+ * Autocomplete emits the whole selected option ({ label, value }), while plain
+ * inputs emit either a raw value or a DOM event. Unwrap by key presence, never
+ * by truthiness: a Check field's "No" carries value 0, and a falsy-`||` chain
+ * would fall through and hand the option object back as the value.
+ */
+function extractValue(event: any): FieldValue {
+  if (event && typeof event === "object") {
+    if ("value" in event) return event.value;
+    if (event.target && "value" in event.target) return event.target.value;
+  }
+  return event;
+}
+
+function emitUpdate(fieldname: Field["fieldname"], value: FieldValue) {"""
+    if append_code_in_file(FILE_PATH, helper_search, helper_replace, replace_with_search_text=True):
+        any_changes = True
+
+    return any_changes
+
+
 def remove_code_block_with_regex(file_path, pattern):
     import re
     try:
@@ -830,6 +888,8 @@ def update_all_ticket_features():
     if deploy_ticket_field():
         any_changes = True
     if update_hd_ticket_side_bar():
+        any_changes = True
+    if update_hd_ticket_field_check_value():
         any_changes = True
 
     if any_changes:

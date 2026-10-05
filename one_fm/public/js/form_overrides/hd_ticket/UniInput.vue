@@ -14,13 +14,8 @@
         :value="transValue"
         :disabled="field.disabled || field.readonly"
         :model-value="transValue"
-        @update:model-value="emitUpdate(field.fieldname, $event)"
-        @change="
-          emitUpdate(
-            field.fieldname,
-            $event.target?.value || $event.value || $event
-          )
-        "
+        @update:model-value="emitUpdate(field.fieldname, extractValue($event))"
+        @change="emitUpdate(field.fieldname, extractValue($event))"
       />
       <slot name="label-extra" />
     </div>
@@ -136,6 +131,20 @@ const placeholder = computed(() => {
   }
   return "Type something";
 });
+
+/**
+ * Autocomplete emits the whole selected option ({ label, value }), while plain
+ * inputs emit either a raw value or a DOM event. Unwrap by key presence, never
+ * by truthiness: a Check field's "No" carries value 0, and a falsy-`||` chain
+ * would fall through and hand the option object back as the value.
+ */
+function extractValue(event: any): Value {
+  if (event && typeof event === "object") {
+    if ("value" in event) return event.value;
+    if (event.target && "value" in event.target) return event.target.value;
+  }
+  return event;
+}
 
 function emitUpdate(fieldname: Field["fieldname"], value: Value) {
   emit("change", { fieldname, value });
