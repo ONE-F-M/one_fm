@@ -7,13 +7,7 @@ from frappe.model.mapper import get_mapped_doc
 
 
 class FormalHearing(Document):
-	def has_not_attended_at_all(self):
-		return not self.did_not_attend_first_hearing and not self.did_not_attend_rescheduled_hearing
-
-	def before_save(self):
-		# Automatically bypass Pending Operation Manager if the employee hasn't attended at all
-		if self.workflow_state == "Pending Operation Manager" and self.has_not_attended_at_all():
-			self.workflow_state = "Pending HR Manager"
+	pass
 
 
 @frappe.whitelist()
