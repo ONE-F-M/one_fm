@@ -234,6 +234,7 @@
    "fetch_from": "onboard_employee.reports_to",
    "fieldname": "reports_to",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Reports To",
    "options": "Employee",
    "read_only": 1
@@ -274,6 +275,7 @@
    "fetch_if_empty": 1,
    "fieldname": "employee",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Employee",
    "options": "Employee",
    "read_only": 1
