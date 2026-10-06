@@ -410,90 +410,430 @@ def generate_transportation_shipments():
 	# rows and every demand asks the same question of it (WI-002591 AC2).
 	relievers = reliever_context()
 
-	created = updated = deleted = errors = refreshed = 0
-	current_keys = set()
+	summary = {"created": 0, "updated": 0, "refreshed": 0, "deleted": 0, "errors": 0,
+	           "repaired": 0, "overflowed": 0, "flagged": 0, "pruned": False}
 
+	# What today's roster asks for, one entry per card: the same riders both ways, each
+	# leg on its own card. Collecting a different shift's crew on the same run is a
+	# Mixed trip the dispatcher builds on the canvas, not something a card's roster says.
+	targets = {}
 	for demand in demands:
+		roster = demand["employees"]
+		if not roster:
+			continue
 		for direction in ("Outward", "Return"):
-			try:
-				# The same people, both ways. A card is "these riders, from this camp,
-				# to this site", and they come home again - so its Return leg carries
-				# its own crew.
-				#
-				# It used to substitute the roster of a DIFFERENT shift: the one
-				# finishing as this demand starts, on the reasoning that the bus
-				# arriving at 06:00 also takes the outgoing crew home. That is a real
-				# run, but it is not this card: the card's window comes from its own
-				# end_time, so the substituted riders were filed against an hour twelve
-				# hours from when they actually finish. 250 of 376 generated Return
-				# cards on the live plan carried another shift's people, and the
-				# Alghanim Guest House Day crew were told to be collected at 18:00 when
-				# their card held the Night crew who finish at 06:00 (WI-002401).
-				#
-				# Collecting the outgoing crew on the incoming run is what a Mixed trip
-				# IS: the dispatcher drops the other shift's Return card onto this run
-				# and the merge walks the legs. That machinery already exists, and it
-				# can only read the run correctly if each card tells the truth about
-				# whose ride it is.
-				roster = demand["employees"]
-				if not roster:
-					continue
+			gen_key, pair_group = _generation_key(demand, direction)
+			targets[gen_key] = (demand, direction, roster, pair_group)
+	current_keys = set(targets)
 
-				gen_key, pair_group = _generation_key(demand, direction)
-				current_keys.add(gen_key)
+	# A run that computed NO demand has no authority over any card. The demand builder
+	# returns {} for ordinary reasons (no Active Operations Shift, nobody allocated, or no
+	# Accommodation Checkin Checkout carrying an employee), indistinguishable from "nobody
+	# needs a bus today". Pruning on that deleted the whole pool once (551 cards), and
+	# taking riders off placed cards on it would empty every bus.
+	if not current_keys:
+		frappe.logger().info(f"generate_transportation_shipments: {summary}")
+		return summary
 
-				existing = frappe.db.get_value(
-					"Transportation Shipment", {"generation_key": gen_key}, ["name", "status"], as_dict=True
-				)
+	cards = _live_cards()
+	summary["repaired"] = _repair_mixed_keys(cards, current_keys)
+	families = _families(cards, current_keys)
+	seats = _SeatCheck()
 
-				if not existing:
-					doc = frappe.new_doc("Transportation Shipment")
-					doc.status = "Unassigned"
-					_write_shipment(doc, demand, direction, roster, gen_key, pair_group, relievers)
-					doc.insert(ignore_permissions=True)
-					created += 1
-				elif existing.status == "Unassigned":
-					doc = frappe.get_doc("Transportation Shipment", existing.name)
-					_write_shipment(doc, demand, direction, roster, gen_key, pair_group, relievers)
-					doc.save(ignore_permissions=True)
-					updated += 1
-				elif _refresh_assigned_roster(existing.name, demand, roster, relievers):
-					# Placed cards keep their lane and their trip; only the crew moves
-					# (AC5). Counted separately so the button can say how many runs had
-					# their people change without implying they were re-planned.
-					refreshed += 1
-			except Exception:
-				errors += 1
-				frappe.log_error(frappe.get_traceback(), "Transportation Shipment Generation Error")
+	owner = {}  # (employee, direction) -> the card that carries them today
+	for gen_key, (demand, direction, roster, pair_group) in targets.items():
+		try:
+			family = families.get(gen_key)
+			if not family:
+				doc = frappe.new_doc("Transportation Shipment")
+				doc.status = "Unassigned"
+				_write_shipment(doc, demand, direction, roster, gen_key, pair_group, relievers)
+				doc.insert(ignore_permissions=True)
+				summary["created"] += 1
+				owner.update({(emp["id"], direction): doc.name for emp in roster})
+				continue
 
-	# A run that computed NO demand at all has no authority to delete ALL demand.
-	#
-	# get_grouped_employees_by_accommodation() returns {} for several ordinary reasons: no
-	# Active Operations Shift, nobody allocated to one, or - the one that actually bit us -
-	# no Accommodation Checkin Checkout carrying an employee. It treats that last case as a
-	# degraded state and says so in the Error Log rather than raising, so the caller gets
-	# an empty dict that looks exactly like "nobody needs a bus today".
-	#
-	# Handed to _prune_stale, an empty key set makes "generation_key not in current_keys"
-	# true for EVERY card in the pool. On the test site one click deleted 551 unassigned
-	# cards, and a second click could not bring them back - there was no demand to rebuild
-	# them from. Nothing warned anyone: the button reported the deletion in the same tone
-	# as a routine refresh.
-	#
-	# So the prune only runs when this run actually knows what the demand is. An empty
-	# pool is a conclusion to be reached from data, never from the absence of it.
-	pruned = bool(current_keys)
-	deleted = _prune_stale(current_keys) if pruned else 0
+			carried = _distribute(
+				family, demand, direction, roster, gen_key, pair_group, relievers, seats, summary
+			)
+			owner.update({(emp, direction): card for emp, card in carried.items()})
+		except Exception:
+			summary["errors"] += 1
+			frappe.log_error(frappe.get_traceback(), "Transportation Shipment Generation Error")
+
+	produced = {card.name for family in families.values() for card in family}
+	summary["flagged"] = _settle_orphans(cards, produced, owner, summary)
+
+	summary["pruned"] = True
+	summary["deleted"] = _prune_stale(current_keys, keep=produced)
 
 	frappe.db.commit()
-	summary = {"created": created, "updated": updated, "refreshed": refreshed,
-	           "deleted": deleted, "errors": errors, "pruned": pruned}
 	frappe.logger().info(f"generate_transportation_shipments: {summary}")
 	return summary
 
 
-def _prune_stale(current_keys: set) -> int:
-	"""Delete Unassigned shift-generated shipments whose demand disappeared."""
+# ─── One rider, one live card per direction ───────────────────────────────────
+#
+# A card is found again each night by its generation_key, which is built from the camp,
+# the shift (or an OLM shift window), the stop, the arrangement and the direction. When
+# any of those changes for a placed card, today's roster produces a different key: the
+# generator builds a new card for it while the placed one keeps the crew it had, and the
+# same people ride two buses. A split did the same from the other side - the overflow's
+# `#n` key is never produced, so the nightly refresh put every rider back on the parent.
+#
+# So the run reconciles by rider, not by key: a card whose key is produced shares that
+# demand with its split overflow cards, and a placed card whose key is not produced gives
+# up every rider who is now carried somewhere else, and is flagged for the dispatcher.
+
+LIVE_STATUSES = ("Unassigned", "Assigned")
+MIXED = "Mixed"
+
+
+def _live_cards() -> dict:
+	"""{name: card} for every live shift-generated card, with its riders, oldest first."""
+	cards = {}
+	for row in frappe.get_all(
+		"Transportation Shipment",
+		filters={"source_doctype": "Operations Shift", "status": ["in", LIVE_STATUSES]},
+		fields=["name", "status", "generation_key", "trip_direction", "pre_merge_trip_direction",
+				"is_split_overflow", "split_root", "needs_replan", "creation"],
+		order_by="creation asc",
+	):
+		row.riders = []
+		cards[row.name] = row
+	if not cards:
+		return cards
+
+	for rider in frappe.get_all(
+		"Transportation Shipment Employee",
+		filters={"parenttype": "Transportation Shipment", "parent": ["in", list(cards)]},
+		fields=["parent", "employee_id"],
+		order_by="idx asc",
+	):
+		cards[rider.parent].riders.append(rider.employee_id)
+	return cards
+
+
+def _own_direction(card):
+	"""The way a card's riders travel, which a merge into a Mixed trip stops showing."""
+	if card.trip_direction == MIXED:
+		return card.pre_merge_trip_direction or None
+	return card.trip_direction
+
+
+def _repair_mixed_keys(cards: dict, current_keys: set) -> int:
+	"""Give back the key a merge-era re-key took off a card.
+
+	rekey_olm_shipments_on_shift_window built each key from the card's trip_direction,
+	which a merge had already overwritten with "Mixed" - so a merged Outward card was
+	keyed `...|Mixed`, a key no run produces, and the next run built it a twin. The card's
+	real direction is the one the merge recorded. Only the direction segment changes, and
+	only when that key is produced today and no other live card holds it: with a twin
+	already holding it, two cards under one key would make the lookup arbitrary and the
+	prune delete the other, so the card is left to _settle_orphans instead.
+
+	Placements are unaffected: plan rows and the canvas find a card by its name.
+	"""
+	held = {card.generation_key for card in cards.values()}
+	repaired = 0
+	for card in cards.values():
+		key = card.generation_key or ""
+		if card.is_split_overflow or not key.endswith(f"|{MIXED}") or not card.pre_merge_trip_direction:
+			continue
+
+		candidate = f"{key[:-len(MIXED)]}{card.pre_merge_trip_direction}"
+		if candidate not in current_keys or candidate in held:
+			continue
+
+		frappe.db.set_value(
+			"Transportation Shipment", card.name, "generation_key", candidate, update_modified=False
+		)
+		card.generation_key = candidate
+		held.add(candidate)
+		repaired += 1
+	return repaired
+
+
+def _families(cards: dict, current_keys: set) -> dict:
+	"""{produced key: [root card, *its split overflow cards]}.
+
+	An overflow card's own key is `<root key>#n` and is never produced, so membership is
+	read off split_root, not the key. With two live cards under one key the oldest is the
+	root and the other is left to _settle_orphans.
+	"""
+	families = {}
+	root_key = {}
+	for card in cards.values():
+		if not card.is_split_overflow and card.generation_key in current_keys \
+				and card.generation_key not in families:
+			families[card.generation_key] = [card]
+			root_key[card.name] = card.generation_key
+
+	for card in cards.values():
+		if card.is_split_overflow and card.split_root in root_key:
+			families[root_key[card.split_root]].append(card)
+	return families
+
+
+def _distribute(family, demand, direction, roster, gen_key, pair_group, relievers, seats,
+				summary) -> dict:
+	"""Share one demand's riders across a root card and its overflow cards.
+
+	Returns {employee: card} for every rider placed.
+
+	- A rider already on a member stays there. With one rider on several members, the
+	  newest member keeps them: that is the card a split moved them to.
+	- A rider who is no longer in the demand leaves whichever member had them.
+	- A joiner never pushes a placed card past the seats its bus has left. Placed members
+	  take what fits, then an unplaced member takes the rest, then a new overflow card in
+	  the pool does.
+
+	Leavers are written before any joiner is seated: the seat check reads every card's
+	headcount from the database, and a parent that had re-absorbed its overflow riders
+	would otherwise still count them.
+	"""
+	by_id = {emp["id"]: emp for emp in roster}
+	order = [emp["id"] for emp in roster]
+
+	holder = {}
+	for card in sorted(family, key=lambda c: c.creation, reverse=True):
+		for emp in card.riders:
+			if emp in by_id:
+				holder.setdefault(emp, card.name)
+
+	root = family[0]
+	changed = set()
+
+	def write(card):
+		crew = [by_id[emp] for emp in order if holder.get(emp) == card.name]
+		if card is root and card.status == "Unassigned":
+			# Unplaced, so its header follows the demand too (times, sites, shifts).
+			doc = frappe.get_doc("Transportation Shipment", card.name)
+			_write_shipment(doc, demand, direction, crew, gen_key, pair_group, relievers)
+			doc.save(ignore_permissions=True)
+			changed.add(card.name)
+		elif _refresh_assigned_roster(card.name, demand, crew, relievers):
+			changed.add(card.name)
+
+	for card in family:
+		write(card)
+
+	waiting = [emp for emp in order if emp not in holder]
+	gained = []
+	for card in family:
+		if not waiting:
+			break
+		if card.status == "Assigned":
+			staying = sum(1 for held_by in holder.values() if held_by == card.name)
+			take = seats.room(card.name, staying, len(waiting))
+		else:
+			take = len(waiting)
+		if take:
+			for emp in waiting[:take]:
+				holder[emp] = card.name
+			waiting = waiting[take:]
+			gained.append(card)
+
+	for card in gained:
+		write(card)
+
+	for card in family:
+		carries = any(held_by == card.name for held_by in holder.values())
+		if not carries and card.status == "Unassigned" and card is not root:
+			# An unplaced overflow card nobody rides any more.
+			_release_manifest_references(card.name)
+			frappe.delete_doc("Transportation Shipment", card.name, ignore_permissions=True, force=True)
+			summary["deleted"] += 1
+			changed.discard(card.name)
+			continue
+		empty = not carries and card.status == "Assigned"
+		_set_replan_flag(card, _("No riders are left on this card.") if empty else None)
+
+	if root.status == "Unassigned":
+		summary["updated"] += 1
+		changed.discard(root.name)
+	summary["refreshed"] += len(changed)
+
+	if waiting:
+		overflow = _new_overflow(root.name, demand, direction, [by_id[emp] for emp in waiting], relievers)
+		holder.update({emp: overflow for emp in waiting})
+		summary["overflowed"] += 1
+
+	return holder
+
+
+def _new_overflow(root_name: str, demand: dict, direction: str, crew: list, relievers: dict) -> str:
+	"""An unplaced overflow card for joiners the placed card's bus has no seats for.
+
+	Built the way split_shipment_for_capacity builds one, so the canvas, the pairing and
+	the lineage treat it like any other overflow. The direction is the riders' own: a
+	merged root reads Mixed, and an unplaced card in no trip is not.
+	"""
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+		SPLIT_INHERITED_FIELDS,
+		_next_split_key,
+	)
+
+	root = frappe.get_doc("Transportation Shipment", root_name)
+	doc = frappe.new_doc("Transportation Shipment")
+	for field in SPLIT_INHERITED_FIELDS:
+		doc.set(field, root.get(field))
+	doc.status = "Unassigned"
+	doc.trip_direction = direction
+	doc.pre_merge_trip_direction = None
+	doc.is_split_overflow = 1
+	doc.split_parent = root.name
+	doc.split_root = root.split_root or root.name
+	doc.generation_key = _next_split_key(root.generation_key)
+	_write_roster(doc, demand, crew, relievers)
+	doc.insert(ignore_permissions=True)
+	return doc.name
+
+
+def _settle_orphans(cards: dict, produced: set, owner: dict, summary: dict) -> int:
+	"""Take riders off placed cards today's roster no longer produces, and flag them.
+
+	Only riders now carried on another card in the same direction are taken off - that is
+	proof they moved. A rider with no card anywhere today is left on and named in the
+	reason: an empty demand for them can be a data gap (a missing check-in, an unmapped
+	stop), and emptying a bus on a gap is worse than asking.
+
+	The card is not deleted or taken off its lane. Changing a plan from here would skip
+	the stop renumbering, the merge bookkeeping, the seat check and the lock windows that
+	a save on the canvas runs; removing the block there does all of it, and the next run
+	prunes the card once it is back in the pool. Returns how many cards are flagged.
+	"""
+	flagged = 0
+	for card in cards.values():
+		if card.name in produced or card.status != "Assigned":
+			continue
+		try:
+			direction = _own_direction(card)
+			moved = {emp: owner[(emp, direction)] for emp in card.riders if (emp, direction) in owner}
+			stays = [emp for emp in card.riders if emp not in moved]
+
+			if moved:
+				doc = frappe.get_doc("Transportation Shipment", card.name)
+				doc.set("transportation_shipment_employee", [
+					row for row in doc.transportation_shipment_employee
+					if row.employee_id not in moved
+				])
+				doc.headcount = len(doc.transportation_shipment_employee)
+				doc.save(ignore_permissions=True)
+				summary["refreshed"] += 1
+
+			_set_replan_flag(card, _replan_reason(moved, stays))
+			flagged += 1
+		except Exception:
+			summary["errors"] += 1
+			frappe.log_error(frappe.get_traceback(), "Transportation Shipment Orphan Error")
+	return flagged
+
+
+def _replan_reason(moved: dict, stays: list) -> str:
+	parts = [_(
+		"Today's roster no longer matches this card's camp, shift, stop, shift times or "
+		"arrangement. Remove this block from the lane."
+	)]
+	if moved:
+		parts.append(_("Moved to another card: {0}.").format(
+			", ".join(f"{emp} → {card}" for emp, card in sorted(moved.items()))
+		))
+	if stays:
+		parts.append(_("No card today for: {0}. Check their roster before removing.").format(
+			", ".join(stays)
+		))
+	return " ".join(parts)
+
+
+def _set_replan_flag(card, reason) -> None:
+	"""Raise or clear the re-plan flag without touching `modified` when nothing changed."""
+	flag = 1 if reason else 0
+	if flag == (card.needs_replan or 0) and not reason:
+		return
+	frappe.db.set_value(
+		"Transportation Shipment", card.name,
+		{"needs_replan": flag, "replan_reason": reason},
+		update_modified=False,
+	)
+	card.needs_replan = flag
+
+
+class _SeatCheck:
+	"""How many joiners a placed card can take before its bus is over its seats.
+
+	Asks the Route Plan's own trip model - the one its save validates with - so the
+	generator can never put on a bus a load the dispatcher could not have saved. A card
+	on no plan has no bus to overload.
+	"""
+
+	def __init__(self):
+		self._plans = {}
+
+	def room(self, card: str, staying: int, wanted: int) -> int:
+		places = {
+			(row.parent, row.vehicle)
+			for row in frappe.get_all(
+				"Route Plan Assignment",
+				filters={"transportation_shipment": card, "parenttype": "Route Plan", "is_camp_leg": 0},
+				fields=["parent", "vehicle"],
+			)
+			if row.vehicle
+		}
+		if not places:
+			return wanted
+
+		# The trip model reads each card's headcount from the shipment, so the trial
+		# count is written and put back. It never outlives this call.
+		original = frappe.db.get_value("Transportation Shipment", card, "headcount")
+		try:
+			def fits(extra):
+				frappe.db.set_value(
+					"Transportation Shipment", card, "headcount", staying + extra, update_modified=False
+				)
+				return all(self._fits(plan, vehicle) for plan, vehicle in places)
+
+			if not fits(0):
+				return 0
+			low, high = 0, wanted
+			while low < high:
+				mid = (low + high + 1) // 2
+				if fits(mid):
+					low = mid
+				else:
+					high = mid - 1
+			return low
+		finally:
+			frappe.db.set_value(
+				"Transportation Shipment", card, "headcount", original, update_modified=False
+			)
+
+	def _fits(self, plan_name: str, vehicle: str) -> bool:
+		from one_fm.operations.doctype.route_plan.route_plan import (
+			_passenger_limits,
+			_peak_concurrent_headcount,
+			_trip_occupancy,
+		)
+
+		if plan_name not in self._plans:
+			self._plans[plan_name] = frappe.get_doc("Route Plan", plan_name)
+		plan = self._plans[plan_name]
+
+		limit = _passenger_limits({vehicle}).get(vehicle)
+		if not limit:
+			return True
+		trips = plan._logical_trips([row for row in plan.assignments if row.vehicle == vehicle])
+		return all(_trip_occupancy(trip) <= limit for trip in trips) \
+			and _peak_concurrent_headcount(trips) <= limit
+
+
+def _prune_stale(current_keys: set, keep=None) -> int:
+	"""Delete Unassigned shift-generated shipments whose demand disappeared.
+
+	``keep`` spares the cards a run has just reconciled: an unplaced overflow card's
+	`#n` key is never produced, but its riders are still today's demand.
+	"""
+	keep = keep or set()
 	stale = frappe.get_all(
 		"Transportation Shipment",
 		filters={"source_doctype": "Operations Shift", "status": "Unassigned"},
@@ -501,6 +841,8 @@ def _prune_stale(current_keys: set) -> int:
 	)
 	deleted = 0
 	for row in stale:
+		if row.name in keep:
+			continue
 		if row.generation_key and row.generation_key not in current_keys:
 			try:
 				_release_manifest_references(row.name)

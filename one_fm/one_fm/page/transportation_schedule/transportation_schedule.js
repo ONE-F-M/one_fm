@@ -4589,10 +4589,18 @@ function mountRoutePlannerApp(wrapper, data) {
                             self.refreshCards();
                             return;
                         }
+                        const overflow = s.overflowed
+                            ? `, ${s.overflowed} overflow card(s) for joiners with no seat`
+                            : '';
+                        // Blocks whose card today's roster no longer produces. They are
+                        // outlined on the board and need removing by hand.
+                        const replan = s.flagged
+                            ? `, ${s.flagged} block(s) need re-planning`
+                            : '';
                         frappe.show_alert({
-                            message: `Shipments: ${s.created || 0} created, ${s.updated || 0} updated, ${s.deleted || 0} removed${crew}`,
-                            indicator: 'green'
-                        }, 6);
+                            message: `Shipments: ${s.created || 0} created, ${s.updated || 0} updated, ${s.deleted || 0} removed${crew}${overflow}${replan}`,
+                            indicator: s.flagged ? 'orange' : 'green'
+                        }, s.flagged ? 10 : 6);
                         self.refreshCards();
                     },
                     always: function () {
@@ -5196,7 +5204,7 @@ function injectRPVueTemplate() {
                      @click.stop="onBlockClick(entry.item, $event)">
 
                     <!-- Native tooltip showing full site name + shift + time + driver -->
-                    <title>{{ bcard(entry.item).site_location || 'Unknown' }} — {{ bcard(entry.item).shift_name || '' }} | {{ fmtTime(entry.item.start) }}–{{ fmtTime(entry.item.end) }} · {{ entry.item.headcount }} pax · Driver: {{ blockDriver(entry.item, vehicle) }}</title>
+                    <title>{{ bcard(entry.item).needs_replan ? '⚠ ' + __('Re-plan') + ' — ' : '' }}{{ bcard(entry.item).site_location || 'Unknown' }} — {{ bcard(entry.item).shift_name || '' }} | {{ fmtTime(entry.item.start) }}–{{ fmtTime(entry.item.end) }} · {{ entry.item.headcount }} pax · Driver: {{ blockDriver(entry.item, vehicle) }}</title>
 
                     <!-- Clip path for text overflow -->
                     <defs>
@@ -5212,7 +5220,8 @@ function injectRPVueTemplate() {
                     <rect :x="bx(entry.item)" :y="by(entry.item)"
                           :width="bw(entry.item)" :height="bh(entry.item)"
                           :fill="bfill(entry.item)"
-                          :stroke="bsel(entry.item) ? '#f97316' : 'transparent'"
+                          :stroke="bsel(entry.item) ? '#f97316' : (bcard(entry.item).needs_replan ? '#d97706' : 'transparent')"
+                          :stroke-dasharray="bcard(entry.item).needs_replan && !bsel(entry.item) ? '6 3' : null"
                           stroke-width="2.5" rx="5"/>
 
                     <!-- Clipped text group -->
@@ -5275,7 +5284,7 @@ function injectRPVueTemplate() {
                      @click.stop="onBlockClick(entry.primaryItem, $event)">
 
                     <!-- Native tooltip showing all stops + time -->
-                    <title>{{ entry.tripName ? entry.tripName + ' — ' : '' }}{{ entry.stopLabels.join(' → ') }} | {{ fmtTime(entry.start) }}–{{ fmtTime(entry.end) }} · {{ entry.headcount }} pax · Driver: {{ blockDriver(entry, vehicle) }}</title>
+                    <title>{{ entry.stops.some(s => bcard(s).needs_replan) ? '⚠ ' + __('Re-plan') + ' — ' : '' }}{{ entry.tripName ? entry.tripName + ' — ' : '' }}{{ entry.stopLabels.join(' → ') }} | {{ fmtTime(entry.start) }}–{{ fmtTime(entry.end) }} · {{ entry.headcount }} pax · Driver: {{ blockDriver(entry, vehicle) }}</title>
 
                     <!-- Clip path scoped to block bounds -->
                     <defs>
@@ -5293,7 +5302,8 @@ function injectRPVueTemplate() {
                     <rect :x="mbx(entry)" :y="mby(entry)"
                           :width="mbw(entry)" :height="mbh(entry)"
                           :fill="mfill(entry)"
-                          :stroke="selectedItem && entry.stops.some(s => s.id === selectedItem.id) ? '#f97316' : 'transparent'"
+                          :stroke="selectedItem && entry.stops.some(s => s.id === selectedItem.id) ? '#f97316' : (entry.stops.some(s => bcard(s).needs_replan) ? '#d97706' : 'transparent')"
+                          :stroke-dasharray="entry.stops.some(s => bcard(s).needs_replan) && !(selectedItem && entry.stops.some(s => s.id === selectedItem.id)) ? '6 3' : null"
                           stroke-width="2.5" rx="5"/>
 
                     <!-- Clipped content group -->
@@ -5407,7 +5417,13 @@ function injectRPVueTemplate() {
             <span class="rp-dir-badge" style="background:#e3f2fd;color:#1565c0">
               {{ vehicleLabelForItem(selectedItem) }}
             </span>
+            <span v-if="selectedCard.needs_replan" class="rp-dir-badge rp-badge-replan"
+                  :title="selectedCard.replan_reason">{{ __('RE-PLAN') }}</span>
           </div>
+          <!-- Set by Generate Shipments: today's roster no longer produces this card, so
+               its riders were moved to the cards they now ride. Removing the block lets
+               the next run clear it from the pool. -->
+          <div v-if="selectedCard.needs_replan" class="rp-replan-note">{{ selectedCard.replan_reason }}</div>
 
           <!-- ═══ TRIP VIEW: multiple stops ═══ -->
           <template v-if="selectedTripStops.length > 0">
@@ -5528,6 +5544,10 @@ function injectRPVueTemplate() {
                   <span :class="['rp-card-dir', cardOwnDirection(stop.item) === 'RETURN' ? 'rp-dir-ret' : 'rp-dir-out']">
                     {{ dirName(cardOwnDirection(stop.item)) }}
                   </span>
+                </div>
+                <div v-if="stop.card.needs_replan" class="rp-replan-note rp-replan-note-stop">
+                  <span class="rp-dir-badge rp-badge-replan">{{ __('RE-PLAN') }}</span>
+                  {{ stop.card.replan_reason }}
                 </div>
                 <!-- AC2: everything below the header is the DETAIL. Compact view drops
                      it, leaving [handle] [arrows] [seq] [stop] [direction] on one line so
@@ -6200,6 +6220,11 @@ function injectRPStyles() {
         .rp-card-site   { font-size: 14px; font-weight: 600; color: var(--md-sys-color-on-surface); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .rp-card-type   { font-size: 11px; font-weight: 700; letter-spacing: .06em; padding: 2px 7px; border-radius: 4px; flex-shrink: 0; }
         .rp-tag-split   { background: #fef3c7; color: #92400e; }
+        .rp-badge-replan { background: #fef3c7; color: #92400e; }
+        .rp-replan-note { margin: 6px 0 8px; padding: 8px 10px; border-radius: 6px; background: #fffbeb;
+                          border: 1px solid #fcd34d; color: #92400e; font-size: 12px; line-height: 1.4; }
+        .rp-replan-note-stop { margin: 4px 0 4px 30px; }
+        #rp-shell.rp-dark .rp-replan-note { background: rgba(217, 119, 6, 0.15); border-color: #b45309; color: #fcd34d; }
         .rp-card-split-row { display: flex; margin-bottom: 4px; }
         /* The stop name is the only part of the header that can grow, and every other
            item on the line carries flex-shrink:0. A flex item will not shrink below its
