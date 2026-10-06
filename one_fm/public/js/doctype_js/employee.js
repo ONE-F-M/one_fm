@@ -10,6 +10,7 @@ frappe.ui.form.on('Employee', {
 		filter_active_shifts(frm);
         filterDefaultShift(frm);
         setProjects(frm);
+		add_latest_ai_cost_btn(frm);
 		if(frappe.user.has_role('HR Manager') && !frm.doc.employee_id){
 			frm.add_custom_button(__('Run Employee ID Generation Method'), function() {
 				frappe.call({
