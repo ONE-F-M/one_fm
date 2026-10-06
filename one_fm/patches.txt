@@ -632,3 +632,4 @@ one_fm.patches.v15_0.remove_client_interview_shortlist_assignment_rules #2026-10
 one_fm.patches.v15_0.remove_absence_case_hr_officer_assignment_rule #2026-10-05 WI-003076
 one_fm.patches.v15_0.remove_accommodation_leave_movement_assignment_rules #2026-10-05 WI-002762
 one_fm.patches.v15_0.deactivate_client_interview_shortlist_workflow #2026-10-05 WI-003086
+one_fm.patches.v15_0.drop_document_request_approver #2026-09-27 the approver Employee copy is gone; approver_user comes from get_approver_user
