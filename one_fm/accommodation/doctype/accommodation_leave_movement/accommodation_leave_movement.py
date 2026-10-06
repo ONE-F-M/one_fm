@@ -37,6 +37,11 @@ class AccommodationLeaveMovement(Document):
 		if self.type == "IN":
 			self.handle_checkin_notification()
 
+	def before_cancel(self):
+		# The lifecycle maps end at submit, so a cancel happens outside them; record it,
+		# because one_bpmn's indicator shows workflow_state on this doctype.
+		self.workflow_state = "Cancelled"
+
 	def on_cancel(self):
 		if self.type == "IN" and self.checkin_reference:
 			frappe.db.set_value("Accommodation Leave Movement", self.checkin_reference, "checked_out", 0)
