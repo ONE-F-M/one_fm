@@ -258,6 +258,31 @@ var update_employee_id_based_on_residency = function(frm) {
 
 }
 
+// Show the cost of the most recent AI Eval Run started by this employee's user.
+// AI Eval Run has no Employee link, so the run's owner is matched to the employee's user_id.
+const add_latest_ai_cost_btn = (frm) => {
+	if (frm.is_new() || !frm.doc.user_id) return;
+	frm.add_custom_button(__('Latest AI Eval Cost'), () => {
+		frappe.db.get_list('AI Eval Run', {
+			filters: {owner: frm.doc.user_id},
+			fields: ['name', 'total_cost', 'started_at'],
+			order_by: 'started_at desc',
+			limit: 1
+		}).then(runs => {
+			if (!runs || !runs.length) {
+				frappe.msgprint(__('No AI Eval Run found for this employee.'));
+				return;
+			}
+			const run = runs[0];
+			frappe.msgprint({
+				title: __('Latest AI Eval Run Cost'),
+				message: __('{0}: {1}', [run.name, format_currency(run.total_cost || 0)]),
+				indicator: 'blue'
+			});
+		});
+	}, __('AI'));
+};
+
 // Hide un-needed fields
 const hideFields = frm => {
     $("[data-doctype='Employee Checkin']").hide();
