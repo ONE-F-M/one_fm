@@ -17,6 +17,14 @@ from frappe.utils.data import get_absolute_url
 
 class OnboardEmployee(Document):
 	def validate(self):
+		# The Employee is written by create_employee() alone and never exists at insert.
+		# Frappe pre-fills every Employee Link field of a new document with the creator's
+		# own Employee when that user holds exactly one Employee User Permission
+		# (frappe/permissions.py: filter_allowed_docs_for_doctype), which would silently
+		# point the whole onboarding at the onboarding officer.
+		if self.is_new():
+			self.employee = None
+
 		# update employee arabic name
 		self.employee_name_in_arabic = " ".join(filter(None, [self.first_name_in_arabic, self.second_name_in_arabic, self.third_name_in_arabic, self.fourth_name_in_arabic, self.last_name_in_arabic]))
 		
