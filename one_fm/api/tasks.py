@@ -2634,8 +2634,12 @@ def attendance_query_script():
 	Run a background check daily to identify active employees who meet:
 	- exactly 5 consecutive absent days (early-warning email to the employee and
 	  the Default Absence Investigation HR Officer configured in HR Settings).
-	- >= 7 consecutive absent days.
+	- >= 7 consecutive absent days, counted on the run that is still ongoing.
 	- >= 21 non-consecutive absent days in a calendar year.
+
+	Both consecutive-day checks only consider a run that is still in progress - see
+	live_consecutive_streak. The query window reaches back to 1 January, so an ended run
+	would otherwise keep re-qualifying every day for the rest of the year (HD-1858822).
 	"""
 	try:
 
@@ -2701,45 +2705,34 @@ def attendance_query_script():
 					"absence_start_date": year_absence_start
 				})
 
+			# HD-1858822: the longest run anywhere in the window used to be measured
+			# here and compared against seven. It is gone: a run that is over raises
+			# nothing, so only the live one is worth counting.
 			sorted_dates = sorted(adates, reverse=True)
-			consecutive_count = 1
-			max_consecutive = 1
+			current_streak, streak_start = live_consecutive_streak(sorted_dates, today_date)
 
-			for i in range(len(sorted_dates) - 1):
-				if date_diff(sorted_dates[i], sorted_dates[i + 1]) == 1:
-					consecutive_count += 1
-				else:
-					max_consecutive = max(max_consecutive, consecutive_count)
-					consecutive_count = 1
+			# HD-1858822: a run only counts while it is still running. The query window
+			# starts on 1 January, so without this gate a run that ended months ago still
+			# satisfied the consecutive-day rule on every daily pass and kept raising
+			# fresh cases about a February absence in October. The 5-day path has always
+			# had the gate; live_consecutive_streak now gives the 7-day path the same one.
+			streak_is_live = current_streak > 0
 
-			max_consecutive = max(max_consecutive, consecutive_count)
-
-			if max_consecutive >= 7:
+			if streak_is_live and current_streak >= 7:
 				flagged_7_days.append({
 					"employee_name": emp_name,
 					"employee_id": emp,
-					# WI-002465: the head of the run that reached seven. max_consecutive
-					# above says how long the longest run is but not where it begins, so
-					# this is asked separately rather than by changing that count.
-					"absence_start_date": latest_consecutive_run_start(adates, 7)
+					# WI-002465: the head of the run that reached seven, so the case
+					# carries the day its absence began.
+					"absence_start_date": streak_start
 				})
 
-			# Determine the current (most recent) consecutive absence streak,
-			# walking back from the latest absent date while dates stay contiguous.
-			current_streak = 1
-			streak_start = sorted_dates[0]
-			for i in range(len(sorted_dates) - 1):
-				if date_diff(sorted_dates[i], sorted_dates[i + 1]) == 1:
-					current_streak += 1
-					streak_start = sorted_dates[i + 1]
-				else:
-					break
-
-			# Early-warning: fire only on the 5th consecutive day and only while the
-			# streak is still ongoing (latest absence is today or yesterday). This
-			# sends the alert exactly once: day 6 becomes a streak of 6 (not 5), and a
-			# resolved 5-day streak is no longer "ongoing", so it never re-fires.
-			if current_streak == 5 and date_diff(today_date, sorted_dates[0]) <= 1:
+			# Early-warning: fire only on the 5th consecutive day of a run still in
+			# progress. Day 6 becomes a streak of 6 (not 5) and so cannot re-fire; a run
+			# that stops at 5 stays eligible for the few days of the grace window, and
+			# create_absence_case - deduped on the absence period since HD-1858822 -
+			# refuses the second case.
+			if current_streak == 5:
 				flagged_5_days.append({
 					"employee_name": emp_name,
 					"employee_id": emp,
@@ -2787,25 +2780,37 @@ def attendance_query_script():
 
 		manager_full_name = frappe.db.get_value("User", manager_email, "full_name") or "Attendance Officer"
 
-		# Generate Absence Cases for flagged employees
-		for emp in flagged_7_days:
-			create_absence_case(
+		# Generate Absence Cases for flagged employees. Only the employees a case was
+		# actually opened for go into the digest below - a returning None means the
+		# case already exists and was already reported. HD-1858822: the digests used
+		# to be built from the flagged lists, so the Attendance Manager was emailed
+		# the same months-old names every single day.
+		newly_flagged_7_days = [
+			emp for emp in flagged_7_days
+			if create_absence_case(
 				emp["employee_id"],
 				"7 Days Consecutive Absence",
 				absence_start_date=emp["absence_start_date"]
 			)
+		]
 
-		for emp in flagged_21_days:
-			create_absence_case(
+		# HD-1858822: a yearly threshold, deduped once per employee per calendar year
+		# the way the 16-day milestone is. It used to go through create_absence_case,
+		# whose guard expired after 15 days and then re-raised the same March absence.
+		newly_flagged_21_days = [
+			emp for emp in flagged_21_days
+			if create_yearly_milestone_absence_case(
 				emp["employee_id"],
 				"21 Days Absence in a Year",
+				start_of_year,
 				absence_start_date=emp["absence_start_date"]
 			)
+		]
 
-		if flagged_7_days:
+		if newly_flagged_7_days:
 			message_7 = frappe.render_template(
 				'one_fm/templates/emails/seven_day_absence_notification.html',
-				{"full_name": manager_full_name, "employees": flagged_7_days}
+				{"full_name": manager_full_name, "employees": newly_flagged_7_days}
 			)
 			sendemail(
 				recipients=manager_email,
@@ -2813,10 +2818,10 @@ def attendance_query_script():
 				message=message_7
 			)
 
-		if flagged_21_days:
+		if newly_flagged_21_days:
 			message_21 = frappe.render_template(
 				'one_fm/templates/emails/twenty_one_day_absence_notification.html',
-				{"full_name": manager_full_name, "employees": flagged_21_days}
+				{"full_name": manager_full_name, "employees": newly_flagged_21_days}
 			)
 			sendemail(
 				recipients=manager_email,
@@ -2827,6 +2832,44 @@ def attendance_query_script():
 	except Exception as e:
 		frappe.log_error(title="Attendance Query Script Failed", message=frappe.get_traceback())
 
+
+
+# How stale the last day of a run may be and still count as in progress. Attendance is
+# not always written the day it is about: measured over the 732 Absent rows since 1 August
+# 2026, 97% were created within a day of the date they cover and the slowest was three.
+# A run that ends exactly on the threshold and whose final rows land late would be missed
+# by a tighter window - the employee would be absent seven days and no case would ever be
+# raised. Three days covers the observed lag; the runs this is meant to exclude are months
+# stale, not days (HD-1858822).
+CURRENT_ABSENCE_GRACE_DAYS = 3
+
+
+def live_consecutive_streak(sorted_dates_desc, today_date):
+	"""The run of absences still in progress: (length, first day), or (0, None).
+
+	"In progress" means the latest absent day is within CURRENT_ABSENCE_GRACE_DAYS of
+	today. A run that ended earlier than that is history, and HD-1858822 is what happens
+	when history is treated as live: the 7-day rule was measured over every run since
+	1 January, so one February absence re-qualified on every nightly pass and kept raising
+	cases into October - for employees who had long since returned and were marked Present
+	that same week.
+
+	Takes the dates newest-first, the order the caller already holds them in.
+	"""
+	if not sorted_dates_desc:
+		return 0, None
+
+	if date_diff(today_date, sorted_dates_desc[0]) > CURRENT_ABSENCE_GRACE_DAYS:
+		return 0, None
+
+	length, start = 1, sorted_dates_desc[0]
+	for previous, day in zip(sorted_dates_desc, sorted_dates_desc[1:]):
+		if date_diff(previous, day) != 1:
+			break
+		length += 1
+		start = day
+
+	return length, start
 
 
 def latest_consecutive_run_start(absent_dates, minimum):
@@ -2862,16 +2905,23 @@ def create_absence_case(employee, absence_type, absence_start_date=None):
 	"""
 	Generate a new Absence Case for flagged employees if an active one doesn't exist.
 	"""
-	# Check if an active Absence Case already exists for this employee and type within the last 15 days
-	# to avoid duplicate generation during the same absence streak.
-	existing_case = frappe.db.exists("Absence Case", {
+	# Deduped on the absence period itself, so one absence can only ever produce one
+	# case. HD-1858822: the guard used to be "was a case created in the last 15 days",
+	# which expired on day 16 and let the same stale finding insert a fresh case - over
+	# and over, every 16 days, for the rest of the calendar year.
+	dedup_filters = {
 		"employee": employee,
 		"absence_type": absence_type,
-		"docstatus": ["<", 2], # Not cancelled
-		"creation": [">", add_days(today(), -15)]
-	})
+		"docstatus": ["<", 2],  # Not cancelled
+	}
+	if absence_start_date:
+		dedup_filters["absence_start_date"] = absence_start_date
+	else:
+		# Cases raised before WI-002465 carry no start date, and a caller may still
+		# omit one. Fall back to the old window so the guard never disappears entirely.
+		dedup_filters["creation"] = [">", add_days(today(), -15)]
 
-	if existing_case:
+	if frappe.db.exists("Absence Case", dedup_filters):
 		return None
 
 	# Get Paid Annual Leave balance
