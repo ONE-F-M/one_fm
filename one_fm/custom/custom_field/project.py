@@ -253,6 +253,15 @@ def get_project_custom_fields():
                 "translatable": 1
             },
             {
+                "fieldname": "custom_project_manager_user",
+                "label": "Project Manager User",
+                "fieldtype": "Link",
+                "options": "User",
+                "fetch_from": "project_manager.user_id",
+                "insert_after": "project_manager_name",
+                "read_only": 1
+            },
+            {
                 "fieldname": "contact_html",
                 "label": "Contact Html",
                 "fieldtype": "HTML",
