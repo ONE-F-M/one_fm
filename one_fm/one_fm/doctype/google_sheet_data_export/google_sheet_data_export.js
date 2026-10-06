@@ -222,7 +222,8 @@ const export_data = (frm) => {
 			owner:frm.doc.owner,
 			client_id: frm.doc.client_id,
 			name: frm.doc.name,
-			include_hidden: frm.doc.include_hidden_fields ? 1 : 0
+			include_hidden: frm.doc.include_hidden_fields ? 1 : 0,
+			export_link_titles: frm.doc.export_link_titles ? 1 : 0
 		},
 		freeze: true,
 		freeze_message: __("Exporting Data to the Sheet"),
