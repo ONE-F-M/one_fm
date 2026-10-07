@@ -866,7 +866,7 @@
    "label": "Payment Details Section"
   },
   {
-   "depends_on": "eval:doc.workflow_state=='Pending GR Manager' || doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending by GR Operator'",
+   "depends_on": "eval:doc.workflow_state=='Pending GR Manager' || doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending by GR Operator' || doc.workflow_state=='Completed'",
    "fieldname": "work_permit_information_section",
    "fieldtype": "Section Break",
    "label": "Work Permit Information"
