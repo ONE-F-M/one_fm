@@ -18,13 +18,8 @@
 // still in use, which is why a withdrawn document is called out rather than
 // quietly linked.
 
-// The map applies workflow states, not a status: Draft, Pending Approval,
-// Drafting, Pending Final Approval, Content Rejected, Request Rejected and
-// Approved. Every run that got far enough to produce a document ends at
-// Approved — publishing and withdrawing alike — so that one state is what
-// says a document may exist. The removed `status` field was never written by
-// the map: every request carried its default, so this check never fired.
-const DOCUMENT_MAY_EXIST = ["Approved"];
+// Workflow states in which the Drive draft exists.
+const DOCUMENT_MAY_EXIST = ["Drafting", "Pending Final Approval", "Content Rejected", "Approved"];
 
 frappe.ui.form.on("Document Request", {
 	refresh(frm) {
