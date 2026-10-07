@@ -11,13 +11,9 @@ licence that reads compliant when it is not.
 import frappe
 from frappe.model.document import Document
 from frappe.query_builder import DocType
-from frappe.query_builder.functions import Coalesce
 from frappe.utils import flt
 
 KUWAITI = "Kuwaiti"
-
-# The one status that takes somebody off the licence.
-LEFT = "Left"
 
 # WI-002099: on top of the ratio, PAM allows each occupational sector a fixed number of
 # expatriates over what the ratio alone would permit. The allowance is per sector and is
@@ -43,24 +39,69 @@ EXEMPT_SECTOR = "مهن غير مشمولة بالنسبة"
 COMPLIANT = "Compliant"
 NON_COMPLIANT = "Non-Compliant"
 
-# The Employee fields a headcount depends on. A save that touches none of them cannot have
-# moved anybody between licences or sectors, and Employee is saved constantly - so the
-# recount is skipped rather than run on every save.
-#
-# The occupational sector is not an Employee field: it is fetched from the employee's PAM
-# designation, so a change of designation is what moves them between sectors.
+# Every field the count reads. Employee is saved constantly; a save touching none of these
+# cannot have moved anybody, so the recount is skipped.
+# The sector comes from the PAM designation, so a change of designation moves the employee.
+# pam_file_number is not here: nothing counts off it any more, and a fetch refreshing the
+# copy has moved nobody.
 WATCHED_EMPLOYEE_FIELDS = (
 	"pam_file",
-	"pam_file_number",
 	"one_fm_pam_designation",
 	"one_fm_nationality",
-	"status",
+	"under_company_residency",
+	# The work permit expiry is what says the visa became a registered worker,
+	# so the day it is filled in the quota figures move - one out of Visas Issued, one
+	# into Registered Numbers of Employees.
+	"work_permit_expiry_date",
 )
 
 
 class PAMLicenseDetails(Document):
 	def validate(self):
 		self.set_sector_figures()
+		self.set_total_number_of_employees()
+		self.set_quota_registrations()
+		self.set_quota_visas_issued()
+		self.set_available_quota()
+
+	def set_available_quota(self):
+		"""Derive what is left of each quota.
+
+		Last of the three, because it is the subtraction the other two feed - deriving it
+		before them would leave it one save behind its own inputs.
+		"""
+		for row in self.quota_classification:
+			row.available_quota = available_quota(row)
+
+	def set_quota_visas_issued(self):
+		"""Derive each quota row's issued-visa count.
+
+		On validate for the same reason the registrations are: a row re-pointed at another
+		quota type here should show its figure straight away.
+		"""
+		issued = visas_issued_by_quota(self.name)
+		for row in self.quota_classification:
+			row.number_of_visas_issued = str(issued.get(row.type_of_quota, 0))
+
+	def set_quota_registrations(self):
+		"""Derive each quota row's registered headcount.
+
+		On validate as well as on a recount, because a row added or re-pointed at another
+		quota type here should show its figure without waiting for somebody to be
+		transferred.
+		"""
+		for row in self.quota_classification:
+			row.registered_numbers_of_employees = str(
+				count_quota_employees(self.name, row.type_of_quota)
+			)
+
+	def set_total_number_of_employees(self):
+		"""How many people this licence carries, all sectors together.
+
+		Derived here as well as on the per-employee recount, so a licence opened and saved
+		shows the figure even if nobody has been transferred since the last recount.
+		"""
+		self.total_number_of_employees = str(count_license_employees(self.name))
 
 	def set_sector_figures(self):
 		"""Derive every figure a sector row computes from its ratio (WI-002094).
@@ -209,33 +250,91 @@ def update_counts_from_employee(doc, method=None):
 
 	# Same reason: on an insert the before-state is this employee, not who they used to be.
 	before = None if doc.flags.in_insert else doc.get_doc_before_save()
-	for license_number, sector in {
+	for license_name, sector in {
 		_license_and_sector(doc),
 		_license_and_sector(before) if before else None,
 	} - {None}:
-		recount_sector(license_number, sector)
+		recount_sector(license_name, sector)
+
+	# The licence's own headcount, which is not a sector figure. Recounted from
+	# the licence the employee NAMES, because an employee with no PAM designation still
+	# counts against it - _license_and_sector gives up on them, and the total must not.
+	for license_name in {doc.get("pam_file"), before.get("pam_file") if before else None} - {None, ""}:
+		recount_license_total(license_name)
+
+	# The quota rows are a second grouping of the same employees, by the quota
+	# type their designation belongs to rather than by its sector. Off the same link the
+	# rest of the figures are counted from.
+	for license_name in {doc.get("pam_file"), before.get("pam_file") if before else None} - {None, ""}:
+		recount_quota_rows(license_name)
+
+
+def update_counts_from_designation(doc, method=None):
+	"""Recount when a designation is moved to a different occupational sector or quota.
+
+	The sector is not on the employee - it is on the designation they hold - so moving a
+	designation moves everybody holding it, and no Employee is saved when that happens.
+	Without this the licence keeps yesterday's figures until somebody edits an employee.
+
+	Both sectors, on every licence holding one of those employees: the sector they left
+	has to give them up as well as the one they joined.
+	"""
+	if doc.is_new():
+		return
+
+	sector_moved = doc.has_value_changed("occupational_sector")
+	# The quota type is on the designation too, and moving one moves everybody
+	# holding it out of one quota row and into another.
+	quota_moved = doc.has_value_changed("quota_type")
+	if not sector_moved and not quota_moved:
+		return
+
+	before = doc.get_doc_before_save()
+	licenses = {
+		license_name
+		for license_name in frappe.get_all(
+			"Employee", filters={"one_fm_pam_designation": doc.name}, pluck="pam_file"
+		)
+		if license_name
+	}
+	if not licenses:
+		return
+
+	sectors = {doc.occupational_sector, before.occupational_sector if before else None} - {None, ""}
+
+	for license_name in licenses:
+		if sector_moved:
+			for sector in sectors:
+				recount_sector(license_name, sector)
+		if quota_moved:
+			# Every row on the licence, not just the two quotas named: the whole table is
+			# a handful of rows, and recounting it is cheaper than reasoning about which
+			# licences carry which of the two.
+			recount_quota_rows(license_name)
 
 
 def _license_and_sector(employee):
-	"""The licence number and occupational sector this employee counts against, or None."""
-	license_number = employee.get("pam_file_number")
+	"""The licence and occupational sector this employee counts against, or None.
+
+	The licence is the link, not the number copied off it - see count_license_employees.""" 
+	license_name = employee.get("pam_file")
 	designation = employee.get("one_fm_pam_designation")
-	if not license_number or not designation:
+	if not license_name or not designation:
 		return None
 
 	sector = frappe.db.get_value("PAM Designation List", designation, "occupational_sector")
 	if not sector:
 		return None
 
-	return license_number, sector
+	return license_name, sector
 
 
-def recount_sector(license_number, sector):
-	"""Write the national and expatriate headcounts onto every row for this licence/sector.
+def recount_sector(license_name, sector):
+	"""Write the national and expatriate headcounts onto this licence's row for the sector.
 
-	Keyed on the licence *number* rather than the licence record: that is what an Employee
-	carries, and PAM's own numbering, so a licence renamed here still counts the same
-	people.
+	Keyed on the licence record, which is what the employee links to. It was keyed on the
+	number the employee carries, but that number is a read-only copy fetched from the link
+	and only refreshed when the employee is saved - see count_license_employees.
 
 	A licence that has never carried anybody in this sector has no row for it, and the sector
 	an employee belongs to is decided by their PAM designation rather than by what somebody
@@ -251,44 +350,38 @@ def recount_sector(license_number, sector):
 	moving does not drag a licence through validation - and does not need permission to
 	edit a licence, which the employee's own editor has no reason to hold.
 	"""
-	licenses = frappe.get_all(
-		"PAM License Details",
-		filters={"civil_id_number_for_licensing": license_number},
-		pluck="name",
-	)
-	if not licenses:
+	if not license_name or not frappe.db.exists("PAM License Details", license_name):
 		return
 
-	nationals, expatriates = count_workers(license_number, sector)
+	nationals, expatriates = count_workers(license_name, sector)
 
-	for license_name in licenses:
-		row = frappe.db.get_value(
-			"PAM License Stats",
-			{
-				"parent": license_name,
-				"parenttype": "PAM License Details",
-				"parentfield": "pam_license_stats",
-				"occupational_sector": sector,
-			},
-			["name", "ratio_number_of_national_workers"],
-			as_dict=True,
-		)
-		if not row:
-			if not (nationals or expatriates):
-				continue
-			row = add_sector_row(license_name, sector)
+	row = frappe.db.get_value(
+		"PAM License Stats",
+		{
+			"parent": license_name,
+			"parenttype": "PAM License Details",
+			"parentfield": "pam_license_stats",
+			"occupational_sector": sector,
+		},
+		["name", "ratio_number_of_national_workers"],
+		as_dict=True,
+	)
+	if not row:
+		if not (nationals or expatriates):
+			return
+		row = add_sector_row(license_name, sector)
 
-		figures = {
-			"national_number_of_workers": str(nationals),
-			"expatriate_number_of_workers": str(expatriates),
-		}
-		# The derived figures move with the counts they are derived from. Written here as
-		# well as on validate because db_set bypasses the controller, and a row left with
-		# yesterday's requirement beside today's headcount is worse than either.
-		figures.update(
-			derived_figures(sector, row.ratio_number_of_national_workers, nationals, expatriates)
-		)
-		frappe.db.set_value("PAM License Stats", row.name, figures, update_modified=False)
+	figures = {
+		"national_number_of_workers": str(nationals),
+		"expatriate_number_of_workers": str(expatriates),
+	}
+	# The derived figures move with the counts they are derived from. Written here as well
+	# as on validate because db_set bypasses the controller, and a row left with
+	# yesterday's requirement beside today's headcount is worse than either.
+	figures.update(
+		derived_figures(sector, row.ratio_number_of_national_workers, nationals, expatriates)
+	)
+	frappe.db.set_value("PAM License Stats", row.name, figures, update_modified=False)
 
 
 def add_sector_row(license_name, sector):
@@ -316,21 +409,17 @@ def add_sector_row(license_name, sector):
 	return row
 
 
-def count_workers(license_number, sector):
+def count_workers(license_name, sector):
 	"""How many nationals and expatriates this licence holds in this sector.
 
-	Everybody but those who have left. Someone who has left is off the licence; someone on
-	vacation, awaiting a court case, not yet back from leave or absconding is still
-	employed under it, and PAM counts them.
+	Counts employees under the company's residency. That is what the licence is: somebody
+	off it is not on the licence, whatever their employment status says.
 
-	It was Active only until this was reported from production, which left 90 people off
-	these two licences - 63 on vacation, 22 not returned from leave, 4 on a court case and
-	1 absconding - about 6% of the workforce. The BA site's own reference script filters on
-	no status at all; Left is excluded here because a licence does not carry somebody who
-	has gone.
+	The sector is not a field on Employee - it is reached through the employee's PAM
+	designation, which is what the join below is for.
 
-	One query, grouped on nationality, rather than one count per side - the join to
-	PAM Designation List is the expensive half and there is no reason to pay for it twice.
+	One query grouped on nationality; the join to PAM Designation List is the expensive
+	half and there is no reason to pay for it twice.
 	"""
 	Employee = DocType("Employee")
 	Designation = DocType("PAM Designation List")
@@ -340,10 +429,8 @@ def count_workers(license_number, sector):
 		.join(Designation)
 		.on(Employee.one_fm_pam_designation == Designation.name)
 		.select(Employee.one_fm_nationality, frappe.qb.terms.Function("Count", Employee.name).as_("count"))
-		.where(Employee.pam_file_number == license_number)
-		# Coalesce rather than a bare !=, which is NULL in SQL for a row with no status
-		# and would drop it: the Query Builder writes raw SQL and does no ifnull of its own.
-		.where(Coalesce(Employee.status, "") != LEFT)
+		.where(Employee.pam_file == license_name)
+		.where(Employee.under_company_residency == 1)
 		.where(Designation.occupational_sector == sector)
 		.groupby(Employee.one_fm_nationality)
 	).run(as_dict=True)
@@ -363,4 +450,336 @@ def recount_license(license_name):
 	license = frappe.get_doc("PAM License Details", license_name)
 	for row in license.pam_license_stats:
 		if row.occupational_sector:
-			recount_sector(license.civil_id_number_for_licensing, row.occupational_sector)
+			recount_sector(license.name, row.occupational_sector)
+
+
+def count_license_employees(license_name) -> int:
+	"""How many people this licence carries.
+
+	Counted off pam_file, the link that names the licence, and not off pam_file_number.
+	The number is a read-only copy fetched from that link and a fetch only runs when the
+	employee is saved, so it drifts: move somebody to another licence without saving them
+	again, or edit a licence's civil ID, and the copy still names the old one. Counted by
+	the number, an employee whose copy has drifted lands on no licence at all - T4 read 550
+	against the 551 employees its own list shows.
+
+	The link is also what the Employee list filters on, so the figure and the list answer
+	the same question.
+
+	Under the company's residency, which is what the licence IS: somebody off it is not on
+	the licence, whatever their employment status says.
+
+	No join to the designation. The sector counts need it to know which row an employee
+	belongs to; this is every employee on the licence, including the ones whose designation
+	has not been set yet - and leaving those out would make the total quietly smaller than
+	the sum of what PAM counts.
+	"""
+	if not license_name:
+		return 0
+
+	return frappe.db.count(
+		"Employee", {"pam_file": license_name, "under_company_residency": 1}
+	)
+
+
+def recount_license_total(license_name):
+	"""Write the headcount onto the licence the employees name.
+
+	One licence, not every licence sharing a civil ID: the employees are counted by the
+	link now, so the figure belongs to the record they point at.
+
+	db_set rather than a save, for the same reason the sector figures are: a headcount
+	moving must not drag a licence through validation, and must not need permission to
+	edit a licence that the employee's own editor has no reason to hold.
+	"""
+	if not license_name or not frappe.db.exists("PAM License Details", license_name):
+		return
+
+	frappe.db.set_value(
+		"PAM License Details",
+		license_name,
+		"total_number_of_employees",
+		str(count_license_employees(license_name)),
+		update_modified=False,
+	)
+
+
+def count_quota_employees(license_name, quota_type) -> int:
+	"""How many of this licence's employees hold a designation in this quota.
+
+	Three conditions, all of them the story's: the licence, the company's residency, and
+	the quota type - which is not on the employee but on the PAM designation they hold, so
+	the join is what makes the count possible at all.
+
+	The licence is the link the employee carries, not the number copied off it - see
+	count_license_employees.
+
+	A row with no quota type yet counts nobody. Falling back to "everyone on the licence"
+	would put the whole workforce in whichever row an operator had not finished
+	configuring, and it would look like a real figure.
+
+	This adds the fourth condition: the work permit expiry date. An employee record
+	that exists but has no expiry date yet has not been registered with PAM - their visa
+	is still an issued visa, counted in the row above this one. The two figures share this
+	line, which is what stops the same person being counted twice.
+	"""
+	if not license_name or not quota_type:
+		return 0
+
+	Employee = DocType("Employee")
+	Designation = DocType("PAM Designation List")
+
+	rows = (
+		frappe.qb.from_(Employee)
+		.join(Designation)
+		.on(Employee.one_fm_pam_designation == Designation.name)
+		.select(frappe.qb.terms.Function("Count", Employee.name).as_("count"))
+		.where(Employee.pam_file == license_name)
+		.where(Employee.under_company_residency == 1)
+		.where(Employee.work_permit_expiry_date.isnotnull())
+		.where(Designation.quota_type == quota_type)
+	).run(as_dict=True)
+
+	return rows[0]["count"] if rows else 0
+
+
+def registered_applicants(job_applicants) -> set:
+	"""Which of these job applicants have arrived and been registered.
+
+	An Employee with the company's residency and a work permit expiry date is somebody PAM
+	has on the licence - so their visa has stopped being an issued visa and become a
+	registered worker. Keyed on the job applicant, which is what the Visa Request and the
+	Employee share, and the same key the duplicate-application rule uses.
+
+	An Employee created but without an expiry date yet is deliberately NOT here: the story
+	is explicit that such a request stays in Visas Issued until the date is set.
+
+	Asked about the applicants in hand rather than about the whole table - the answer is
+	only ever used to strike names off one licence's list.
+	"""
+	job_applicants = [applicant for applicant in (job_applicants or []) if applicant]
+	if not job_applicants:
+		return set()
+
+	return set(
+		frappe.get_all(
+			"Employee",
+			filters=[
+				["job_applicant", "in", job_applicants],
+				["under_company_residency", "=", 1],
+				["work_permit_expiry_date", "is", "set"],
+			],
+			pluck="job_applicant",
+		)
+	)
+
+
+def recount_quota_rows(license_name):
+	"""Write the registered headcount onto every quota row of this licence.
+
+	The whole table rather than one row: it is a handful of rows, and recounting it is
+	cheaper than working out which one an employee moved between - their designation can
+	have changed quota as easily as their licence can have changed.
+
+	Unlike the sector rows, a missing row is NOT added. A quota row exists because PAM
+	allocated this licence a quota of that type; inventing one from the employees who
+	happen to hold such a designation would state an allocation nobody granted.
+	"""
+	if not license_name or not frappe.db.exists("PAM License Details", license_name):
+		return
+
+	counts = {}
+	# The issued visas are per licence, because a Visa Request names the licence
+	# record it was raised against.
+	issued = visas_issued_by_quota(license_name)
+
+	rows = frappe.get_all(
+		"Quota Classification",
+		filters={
+			"parent": license_name,
+			"parenttype": "PAM License Details",
+			"parentfield": "quota_classification",
+		},
+		# The two the recount does not write are still needed: the remainder is a
+		# subtraction over all four.
+		fields=[
+			"name",
+			"type_of_quota",
+			"allocated_quota",
+			"number_of_transfer_requests",
+		],
+	)
+	for row in rows:
+		quota_type = row["type_of_quota"]
+		if quota_type not in counts:
+			counts[quota_type] = str(count_quota_employees(license_name, quota_type))
+
+		figures = {
+			"registered_numbers_of_employees": counts[quota_type],
+			"number_of_visas_issued": str(issued.get(quota_type, 0)),
+		}
+		# Written in the same call as its inputs, because db_set bypasses the
+		# controller that derives it - a row left with yesterday's remainder beside today's
+		# headcount is worse than either figure alone.
+		figures["available_quota"] = available_quota({**row, **figures})
+
+		frappe.db.set_value(
+			"Quota Classification", row["name"], figures, update_modified=False
+		)
+
+
+# The state a Visa Request reaches when PAM and MOI have both said yes and the
+# visa exists. Only those count against a quota - anything earlier is an application, not
+# a visa.
+VISA_COMPLETED = "Completed"
+
+
+def visas_issued_by_quota(license_name) -> dict:
+	"""Visas issued against this licence, counted per quota type.
+
+	Keyed on the Visa Request's own PAM File and PAM Designation rather than on an
+	employee: at this point there is no employee. The visa has been issued and the person
+	has not arrived, which is the whole reason the figure is separate from the registered
+	headcount beside it.
+
+	A cancelled visa is not an issued one. The cancellation gate already works out which completed
+	requests have had their visa given back, and the same answer is used here - the story's
+	last criterion is that a completed cancellation takes the visa back out of this count
+	and returns it to the available quota.
+
+	Returns {quota type: count}; a quota with no visas simply does not appear.
+	"""
+	from one_fm.visa_management.doctype.visa_request.visa_request import (
+		cancelled_visa_requests,
+	)
+
+	if not license_name:
+		return {}
+
+	requests = frappe.get_all(
+		"Visa Request",
+		filters=[
+			["custom_pam_file", "=", license_name],
+			["workflow_state", "=", VISA_COMPLETED],
+			["custom_pam_designation_list", "is", "set"],
+		],
+		fields=["name", "custom_pam_designation_list", "job_applicant"],
+	)
+	if not requests:
+		return {}
+
+	released = cancelled_visa_requests([request["name"] for request in requests])
+
+	# A visa whose holder has arrived and been registered is counted in the row
+	# below this one instead. Without this the same person is in both figures, and the
+	# available quota is short by one for as long as they work here.
+	arrived = registered_applicants(
+		[request.get("job_applicant") for request in requests]
+	)
+	released |= {
+		request["name"] for request in requests if request.get("job_applicant") in arrived
+	}
+
+	designations = {
+		request["custom_pam_designation_list"]
+		for request in requests
+		if request["name"] not in released
+	}
+	if not designations:
+		return {}
+
+	quota_of = dict(
+		frappe.get_all(
+			"PAM Designation List",
+			filters={"name": ["in", list(designations)]},
+			fields=["name", "quota_type"],
+			as_list=True,
+		)
+	)
+
+	counts = {}
+	for request in requests:
+		if request["name"] in released:
+			continue
+		quota_type = quota_of.get(request["custom_pam_designation_list"])
+		if not quota_type:
+			# A designation nobody has put in a quota yet. Counted against no row rather
+			# than against the first one - a visa in the wrong quota reads as headroom
+			# that is not there.
+			continue
+		counts[quota_type] = counts.get(quota_type, 0) + 1
+
+	return counts
+
+
+def update_quota_from_visa_request(doc, method=None):
+	"""Recount a licence's quota rows when a visa request reaches or leaves Completed.
+
+	Without this the issued figure only moved when somebody saved an Employee - and the
+	whole point of the figure is the gap before an employee exists.
+
+	Both licences, because a request re-pointed at another PAM File takes its visa with it.
+	"""
+	before = None if doc.flags.in_insert else doc.get_doc_before_save()
+
+	if not doc.flags.in_insert and not any(
+		doc.has_value_changed(fieldname)
+		for fieldname in ("workflow_state", "custom_pam_file", "custom_pam_designation_list")
+	):
+		return
+
+	for license_name in {
+		doc.get("custom_pam_file"),
+		before.get("custom_pam_file") if before else None,
+	} - {None, ""}:
+		recount_license_quota(license_name)
+
+
+def update_quota_from_visa_cancellation(doc, method=None):
+	"""Recount when a cancellation is completed: the visa goes back to the quota.
+
+	The Visa Request it names is the way back to the licence - a cancellation carries no
+	PAM File of its own.
+	"""
+	if not doc.get("visa_request_id"):
+		return
+
+	license_name = frappe.db.get_value("Visa Request", doc.visa_request_id, "custom_pam_file")
+	if license_name:
+		recount_license_quota(license_name)
+
+
+def recount_license_quota(license_name):
+	"""Rewrite one licence's quota rows from the employees and visas it carries."""
+	recount_quota_rows(license_name)
+
+
+# What the remainder is made of. Allocated is what PAM granted; the other three
+# are claims against it - people already on the licence, visas issued and not yet arrived,
+# and transfers in flight.
+QUOTA_DEDUCTIONS = (
+	"registered_numbers_of_employees",
+	"number_of_visas_issued",
+	"number_of_transfer_requests",
+)
+
+
+def available_quota(row) -> str:
+	"""Allocated Quota minus everything already claimed against it.
+
+	A blank counts as zero, which the story asks for and which matters more than it looks:
+	these are Data fields, so an unfilled one is "" rather than 0, and arithmetic on it
+	would raise rather than read as nothing claimed.
+
+	Clamped at zero. A licence can be over its quota - that is what an over-allocation IS -
+	but "available" is how many are left to use, and a negative number of visas is not a
+	number anybody can act on. The overage is still visible: it is the four figures beside
+	it, which are not clamped.
+
+	Returned as text because the field is Data, and as a whole number because every figure
+	on this row is a count of people.
+	"""
+	allocated = flt(row.get("allocated_quota"))
+	claimed = sum(flt(row.get(fieldname)) for fieldname in QUOTA_DEDUCTIONS)
+
+	return as_figure(max(allocated - claimed, 0))

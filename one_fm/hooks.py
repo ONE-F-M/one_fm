@@ -35,7 +35,8 @@ app_include_js = [
         "/assets/one_fm/js/showdown.min.js",
 		"/assets/one_fm/js/form_overrides/workflow_override.js",
         "text_editor.bundle.js",
-        "/assets/one_fm/js/workflow_banner.js"
+        "/assets/one_fm/js/workflow_banner.js",
+        "/assets/one_fm/js/grd/residency_payment_request_button.js"
 ]
 # include js, css files in header of web template
 # web_include_css = "/assets/one_fm/css/one_fm.css"
@@ -263,11 +264,34 @@ doc_events = {
 		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"Employee": {
-		# WI-002091: keep the PAM licence headcounts in step with the employees on the
-		# licence. The handler returns immediately unless the save touched one of the five
-		# fields that can move somebody between licences or sectors.
+		# Keep the PAM licence headcounts in step with the employees on the licence. The
+		# handler returns immediately unless the save touched a field the count reads.
+		#
+		# The second carries a master change into the GRD forms still in flight for this
+		# employee; it returns immediately too unless one of the four copied fields moved.
 		"on_update": [
-			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_counts_from_employee"
+			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_counts_from_employee",
+			"one_fm.grd.employee_sync.sync_to_sub_documents",
+		]
+	},
+	"Visa Request": {
+		# A completed Visa Request is a visa issued against the licence's quota,
+		# and no Employee exists yet to trigger the recount the other figures ride on.
+		"on_update": [
+			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_quota_from_visa_request"
+		]
+	},
+	"Visa Cancellation Request": {
+		# The other direction: a completed cancellation gives the visa back to the quota.
+		"on_update": [
+			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_quota_from_visa_cancellation"
+		]
+	},
+	"PAM Designation List": {
+		# The sector lives on the designation, so moving one moves every employee holding
+		# it - and no Employee is saved when that happens.
+		"on_update": [
+			"one_fm.grd.doctype.pam_license_details.pam_license_details.update_counts_from_designation"
 		]
 	},
 	"HR Settings": {
@@ -707,11 +731,6 @@ scheduler_events = {
 			# refusal. On this schedule because it only counts working days anyway.
 			'one_fm.grd.doctype.work_permit.work_permit.auto_reject_unanswered_previous_company'
 		],
-		# WI-002016: the monthly penalty report to the departments, on the 23rd at 06:15,
-		# covering the payroll cycle that closed on the 22nd.
-		"15 6 23 * *": [
-			'one_fm.legal.penalty_report_email.send_monthly_penalty_report'
-		],
 		"15 3 * * *": [
 			'one_fm.tasks.one_fm.daily.generate_contracts_invoice', #Generate contracts sales invoice
 		],
@@ -975,7 +994,15 @@ jenv = {
         "pow_service_names_arabic:one_fm.jinja.print_format.methods.pow_service_names_arabic",
         "pow_letter_rows:one_fm.jinja.print_format.methods.pow_letter_rows",
         "pow_arabic_date:one_fm.jinja.print_format.methods.pow_arabic_date",
-        "pow_arabic_number:one_fm.jinja.print_format.methods.pow_arabic_number"
+        "pow_arabic_number:one_fm.jinja.print_format.methods.pow_arabic_number",
+        # WI-002722: the client is named in Arabic, and the letter carries its own
+        # Arabic title - the document is read in Arabic, so nothing on it is not.
+        "pow_customer_name:one_fm.jinja.print_format.methods.pow_customer_name",
+        "pow_customer_name_is_arabic:one_fm.jinja.print_format.methods.pow_customer_name_is_arabic",
+        "pow_title_arabic:one_fm.jinja.print_format.methods.pow_title_arabic",
+        # WI-002723: Cairo and Readex Pro are bundled with the app and inlined, because
+        # neither is installed on the print server and wkhtmltopdf has no network there.
+        "pow_font_faces:one_fm.jinja.print_format.methods.pow_font_faces"
     ],
     "filters": [
         # "xmul:one_fm.jinja.methods.xmultiply"

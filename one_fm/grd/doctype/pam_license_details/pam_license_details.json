@@ -21,6 +21,9 @@
   "lg_number",
   "column_break_mtwm",
   "lg_expiry_date",
+  "quota_classification_section",
+  "total_number_of_employees",
+  "quota_classification",
   "pam_stats_section",
   "pam_license_stats"
  ],
@@ -93,27 +96,44 @@
    "label": "LG Details"
   },
   {
+   "description": "Show the LG details below, and include this licence in the LG expiry notification.",
    "fieldname": "lg_details_applicable",
    "fieldtype": "Check",
-   "label": "LG Details Applicable",
-   "description": "Show the LG details below, and include this licence in the LG expiry notification."
+   "label": "LG Details Applicable"
   },
   {
+   "depends_on": "eval:doc.lg_details_applicable",
    "fieldname": "lg_number",
    "fieldtype": "Data",
-   "label": "LG Number",
-   "depends_on": "eval:doc.lg_details_applicable"
+   "label": "LG Number"
   },
   {
+   "depends_on": "eval:doc.lg_details_applicable",
    "fieldname": "column_break_mtwm",
-   "fieldtype": "Column Break",
-   "depends_on": "eval:doc.lg_details_applicable"
+   "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:doc.lg_details_applicable",
    "fieldname": "lg_expiry_date",
    "fieldtype": "Date",
-   "label": "LG Expiry Date",
-   "depends_on": "eval:doc.lg_details_applicable"
+   "label": "LG Expiry Date"
+  },
+  {
+   "fieldname": "quota_classification_section",
+   "fieldtype": "Section Break",
+   "label": "Quota Classification"
+  },
+  {
+   "description": "Total Number of Employees in Each PAM File ",
+   "fieldname": "total_number_of_employees",
+   "fieldtype": "Data",
+   "label": "Total Number of Employees "
+  },
+  {
+   "fieldname": "quota_classification",
+   "fieldtype": "Table",
+   "label": "Quota Classification",
+   "options": "Quota Classification"
   },
   {
    "fieldname": "pam_stats_section",
@@ -130,7 +150,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-18 10:00:00.000000",
+ "modified": "2026-09-30 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM License Details",

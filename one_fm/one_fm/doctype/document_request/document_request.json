@@ -12,13 +12,13 @@
   "requester_user",
   "column_break_request",
   "request_action",
+  "wiki_link",
   "document_type",
   "title",
   "requirement_text",
   "source_guideline",
   "reference_document",
   "section_break_approval",
-  "approver",
   "approver_user",
   "column_break_status",
   "document_link",
@@ -58,11 +58,19 @@
    "description": "Create a new document, revise an existing one (which publishes a new version), or withdraw an existing one from use. No default: a Select whose first option is a real action silently answers this question for the requester. Delete does NOT destroy anything — it marks the document inactive and revokes its Drive sharing, and a System Manager can reactivate it."
   },
   {
+   "depends_on": "eval:doc.request_action == 'Create'",
+   "description": "Link to an existing Wiki page on this site. Its title becomes the document title.",
+   "fieldname": "wiki_link",
+   "fieldtype": "Data",
+   "label": "Wiki Link",
+   "options": "URL"
+  },
+  {
    "fieldname": "document_type",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Document Type",
-   "options": "\nPolicy\nSOP\nGuideline\nManual",
+   "options": "\nPolicy\nSOP\nGuideline\nManual\nKnowledge Base",
    "reqd": 1,
    "description": "What kind of document this is. Decides the template, the code series, and which guideline applies. No default: a Select whose first option is a real type silently answers this question for the requester."
   },
@@ -109,22 +117,12 @@
    "label": "Approval"
   },
   {
-   "fieldname": "approver",
-   "fieldtype": "Link",
-   "fetch_from": "requester.reports_to",
-   "in_list_view": 1,
-   "label": "Approver",
-   "options": "Employee",
-   "read_only": 1,
-   "description": "Always the requester's line manager (Employee > Reports To) — not chosen manually."
-  },
-  {
    "fieldname": "approver_user",
    "fieldtype": "Link",
-   "fetch_from": "approver.user_id",
    "label": "Approver User",
    "options": "User",
-   "read_only": 1
+   "read_only": 1,
+   "description": "Resolved by get_approver_user: line manager, self for a super user, or the site supervisor."
   },
   {
    "fieldname": "column_break_status",
@@ -156,7 +154,7 @@
   }
  ],
  "links": [],
- "modified": "2026-07-15 00:00:00.000000",
+ "modified": "2026-09-30 19:16:44.028812",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Document Request",

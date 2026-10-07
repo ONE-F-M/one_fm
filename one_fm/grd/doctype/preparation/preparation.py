@@ -107,6 +107,11 @@ COST_COMPONENT_FIELDS = (
     'civil_id_amount',
 )
 
+# The HR Costing master row carries one more component than a Preparation row does.
+# Preparation Record has no visa_amount column, so the tuple above stays its contract:
+# widening it would set a field that does not exist and drop the value on save.
+MASTER_COST_COMPONENT_FIELDS = COST_COMPONENT_FIELDS + ('visa_amount',)
+
 # The Actions whose master fee row is keyed by the number of years as well as the Action.
 # Mirrors the depends_on the costing table already puts on its No. of Years field.
 YEAR_SCOPED_ACTIONS = ('Renewal (Kuwaiti)', 'Renewal Expat')

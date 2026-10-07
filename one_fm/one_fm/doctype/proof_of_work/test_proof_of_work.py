@@ -1321,11 +1321,15 @@ class TestTheLetterIsArabicOnly(FrappeTestCase):
 			with self.subTest(arabic=arabic):
 				self.assertIn(arabic, html)
 
-	def test_the_client_name_stays_english(self):
-		"""Scenario 4: the one exception the story makes."""
+	def test_the_client_is_named_in_arabic(self):
+		"""WI-002399 Scenario 4 made the client name the one English exception.
+		WI-002722 took it back: the name comes from the Customer's Full Name in Arabic,
+		and the ltr embedding is applied only to the English fallback."""
 		html = self._letter()["html"]
 
-		self.assertIn('مقدمه إلى شركه: <span class="en">{{ customer_name }}</span>', html)
+		self.assertIn("مقدمه إلى شركه:", html)
+		self.assertIn("pow_customer_name(doc)", html)
+		self.assertIn('"val" if customer_is_arabic else "en"', html)
 
 	def test_the_period_dates_are_dd_mmm_yyyy(self):
 		"""Scenario 5: 01/Oct/2024, not 01/10/2024."""
@@ -1342,17 +1346,20 @@ class TestTheLetterIsArabicOnly(FrappeTestCase):
 		self.assertIn("doc.current_contract_start_date", html)
 		self.assertIn("وفقاً للعقد المؤرخ", html)
 
-	def test_arial_comes_first_and_arabic_can_still_be_drawn(self):
-		"""Scenario 1 asks for Arial. There is no Arial on the print server -
-		fontconfig answers it with Liberation Sans, which has no Arabic glyphs - so
-		Arial alone would render every Arabic word as a box. Arial leads; the fallback
-		is what keeps the letter readable."""
+	def test_the_body_face_leads_and_arabic_can_still_be_drawn(self):
+		"""WI-002399 asked for Arial. WI-002723 replaced it with Readex Pro, which is
+		bundled with the app and inlined - there was no Arial on the print server, and
+		fontconfig answered it with Liberation Sans, which has no Arabic glyphs at all.
+		The Arabic-capable fallback behind it is what keeps the letter readable if a font
+		file ever goes missing."""
 		css = self._letter()["css"]
 
 		self.assertNotIn("Tahoma", css)
+		self.assertNotIn("Arial", css)
 		families = re.search(r"\.pow-letter, \.pow-letter \* \{ font-family: ([^;]+);", css)
 		self.assertTrue(families, "the wrapper rule is gone, so descendants pick their own face")
-		self.assertTrue(families.group(1).strip().startswith("Arial"))
+		self.assertTrue(families.group(1).strip().startswith("'Readex Pro'"))
+		self.assertIn("Noto Sans Arabic", families.group(1))
 
 
 class TestTheLetterLinesUp(FrappeTestCase):
@@ -1385,7 +1392,9 @@ class TestTheLetterLinesUp(FrappeTestCase):
 		"""The contract date reached the client as "25 / 02 /" on one line and "2026"
 		on the next, and the client name broke after "Co.". nowrap keeps the run whole;
 		direction:ltr keeps 25 ahead of 2026 inside a right-to-left sentence."""
-		rule = re.search(r"\.en \{([^}]+)\}", self._letter()["css"])
+		# Anchored to the start of a line: WI-002723 added a `.pow-letter .en` weight rule
+		# above this one, and an unanchored ".en {" matches that one first.
+		rule = re.search(r"^\.en \{([^}]+)\}", self._letter()["css"], re.M)
 
 		self.assertTrue(rule, "the .en rule is gone, so English runs break anywhere")
 		self.assertIn("direction: ltr", rule.group(1))
@@ -1470,12 +1479,14 @@ class TestTheLetterIsWrittenInArabicNumerals(FrappeTestCase):
 		self.assertIn('ar_date(doc.current_contract_start_date, "dd / MM / yyyy")', html)
 		self.assertIn("ar_num(frappe.utils.date_diff(doc.end_date, doc.start_date) + 1)", html)
 
-	def test_only_the_client_name_is_left_in_a_latin_run(self):
-		"""Every .en span that wrapped a date is gone, because the dates are Arabic."""
+	def test_nothing_is_left_in_a_latin_run_unconditionally(self):
+		"""Every .en span that wrapped a date is gone, because the dates are Arabic - and
+		since WI-002722 the client name's is conditional on the English fallback, so no
+		span is a Latin run whatever the data says."""
 		html = self._letter()["html"]
 
-		self.assertEqual(html.count('class="en"'), 1)
-		self.assertIn('<span class="en">{{ customer_name }}</span>', html)
+		self.assertEqual(html.count('<span class="en">'), 0)
+		self.assertIn('"val" if customer_is_arabic else "en"', html)
 
 
 class TestTheServiceNameIsResolvedOnce(FrappeTestCase):

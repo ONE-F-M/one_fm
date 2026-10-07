@@ -33,7 +33,7 @@
    "in_list_view": 1,
    "label": "Drive File ID or Link",
    "unique": 1,
-   "description": "Paste a Google Drive file id OR a share link (either this or Drive File Link). A link is normalized to the id automatically. One entry per Drive file — re-indexing updates the same record."
+   "description": "Paste a Google Drive file id OR a share link (either this or Drive File Link). A link is normalized to the id automatically. One entry per Drive file \u2014 re-indexing updates the same record."
   },
   {
    "fieldname": "title",
@@ -47,9 +47,9 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Document Type",
-   "options": "\nPolicy\nSOP\nGuideline\nManual",
+   "options": "\nPolicy\nSOP\nGuideline\nManual\nKnowledge Base",
    "reqd": 1,
-   "description": "What kind of document this is. The first four are the controlled types a Document Request can produce — they decide the template and the code series. The rest exist so input material (an amendment, a regulation, meeting outcomes) can be catalogued and picked as a source without being mistaken for a controlled document."
+   "description": "What kind of document this is. The first four are the controlled types a Document Request can produce \u2014 they decide the template and the code series. The rest exist so input material (an amendment, a regulation, meeting outcomes) can be catalogued and picked as a source without being mistaken for a controlled document."
   },
   {
    "fieldname": "drive_file_link",
@@ -70,7 +70,7 @@
    "label": "Document Code",
    "read_only": 1,
    "unique": 1,
-   "description": "Readable, citable identifier allocated at first publish — POL-0001, SOP-0004. The Drive file id is the real key; this exists because nobody cites a 44-character id in a meeting."
+   "description": "Readable, citable identifier allocated at first publish \u2014 POL-0001, SOP-0004. The Drive file id is the real key; this exists because nobody cites a 44-character id in a meeting."
   },
   {
    "fieldname": "column_break_lifecycle",
@@ -131,7 +131,7 @@
    "fieldtype": "Small Text",
    "label": "Deactivation Reason",
    "read_only": 1,
-   "description": "Why it was withdrawn — taken from the requirement text on the request that withdrew it."
+   "description": "Why it was withdrawn \u2014 taken from the requirement text on the request that withdrew it."
   },
   {
    "fieldname": "section_break_content",
@@ -142,7 +142,7 @@
    "fieldname": "content",
    "fieldtype": "Long Text",
    "label": "Indexed Content",
-   "description": "Plain-text/Markdown of the CURRENT version, used for keyword matching by Gather Reference-style Script Tasks. Superseded text lives on Document Revision, not here. Not a semantic/vector index — see AI integration notes."
+   "description": "Plain-text/Markdown of the CURRENT version, used for keyword matching by Gather Reference-style Script Tasks. Superseded text lives on Document Revision, not here. Not a semantic/vector index \u2014 see AI integration notes."
   }
  ],
  "links": [

@@ -110,6 +110,9 @@ class TestTheResidencyExpiryCondition(FrappeTestCase):
 		self.assertNotIn("pam_type", RESIDENCY_EXPIRY_DEPENDS_ON)
 
 	def test_it_still_depends_on_being_under_company_residency(self):
+		"""What the earlier visibility patch wrote when it ran. The condition has since been cleared from the
+		condition on the live field and in the fixture - this pins the historical patch,
+		which must keep writing what it wrote, not what is true today."""
 		self.assertEqual(RESIDENCY_EXPIRY_DEPENDS_ON, "eval:doc.under_company_residency==1")
 
 
