@@ -89,7 +89,7 @@ OUTCOME_FIELDS = (
 	"payment_receipt",
 	"payment_date",
 )
-from frappe.utils import add_months, add_years, getdate, nowdate
+from frappe.utils import add_months, add_years, cstr, getdate, nowdate
 
 # WI-001975: the eligibility a Draft has to clear before it can be saved. Both are
 # government requirements rather than internal policy, so they are checked at the door -
