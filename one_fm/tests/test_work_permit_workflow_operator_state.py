@@ -151,8 +151,9 @@ class TestTheOperatorRuleFollows(FrappeTestCase):
 		self.rule = get_assignment_rule_json_file("work_permit_gr_operator.json")
 
 	def test_it_assigns_at_the_operator_state(self):
-		self.assertIn(PENDING_GRO, self.rule["assign_condition"])
-		self.assertIn(PENDING_GRO, self.rule["unassign_condition"])
+		for state in (PENDING_GRO, APPLY_ONLINE):
+			self.assertIn(state, self.rule["assign_condition"])
+			self.assertIn(state, self.rule["unassign_condition"])
 
 	def test_it_no_longer_names_states_the_permit_does_not_reach(self):
 		for field in ("assign_condition", "unassign_condition", "close_condition"):
