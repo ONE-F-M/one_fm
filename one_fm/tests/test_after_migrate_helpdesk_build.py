@@ -2,7 +2,10 @@
 # See license.txt
 """A failed Helpdesk rebuild during migrate stops the migrate, and migrate never restarts bench."""
 
+import os
+import shutil
 import subprocess
+import tempfile
 from unittest.mock import patch
 
 from frappe.tests.utils import FrappeTestCase
@@ -10,8 +13,6 @@ from frappe.tests.utils import FrappeTestCase
 from one_fm.after_migrate import execute
 
 FEATURE_STEPS = (
-	"update_hd_ticket_agent",
-	"add_resolution_details_updation",
 	"deploy_ticket_views",
 	"deploy_dashboard_view",
 	"deploy_ticket_header",
@@ -56,3 +57,31 @@ class TestUpdateAllTicketFeatures(FrappeTestCase):
 		with patch.object(execute, "run_command") as run_command:
 			execute.update_all_ticket_features()
 		run_command.assert_not_called()
+
+
+class TestDeployTicketViews(FrappeTestCase):
+	def _bench(self, router_text):
+		bench = tempfile.mkdtemp()
+		self.addCleanup(shutil.rmtree, bench)
+		source = os.path.join(bench, "apps/one_fm/one_fm/public/js/form_overrides/hd_ticket")
+		os.makedirs(source)
+		for name in ("TicketEdit.vue", "TicketCustomer.vue"):
+			open(os.path.join(source, name), "w").close()
+		os.makedirs(os.path.join(bench, "apps/helpdesk/desk/src/pages/ticket"))
+		os.makedirs(os.path.join(bench, "apps/helpdesk/desk/src/router"))
+		with open(os.path.join(bench, "apps/helpdesk/desk/src/router/index.ts"), "w") as f:
+			f.write(router_text)
+		return bench
+
+	def test_missing_router_anchor_stops_migrate(self):
+		bench = self._bench("export default [];\n")
+		with patch.object(execute, "get_bench_path", return_value=bench):
+			with self.assertRaises(ValueError):
+				execute.deploy_ticket_views()
+
+	def test_route_is_added(self):
+		bench = self._bench("const routes = [\n];\n")
+		with patch.object(execute, "get_bench_path", return_value=bench):
+			self.assertTrue(execute.deploy_ticket_views())
+		with open(os.path.join(bench, "apps/helpdesk/desk/src/router/index.ts")) as f:
+			self.assertIn('name: "TicketEdit"', f.read())

@@ -207,280 +207,6 @@ def replace_prompt_message_in_goal():
                 f.write(newdata)
 
 
-def append_code_in_file(file_path, search_text, appendable_code, insert_before_search_text = False, replace_with_search_text = False):
-    try:
-        # Read the file contents
-        with open(file_path, 'r') as file:
-            lines = file.read()
-            #  check for existing code
-            if (appendable_code in lines):
-                print("Code exists")
-                return False
-
-        if replace_with_search_text:
-            with open(file_path, 'r') as file:
-                lines = file.read()
-                if search_text in lines:
-                    lines = lines.replace(search_text, appendable_code)
-            with open(file_path, 'w') as file_write:
-                file_write.write(lines)
-                return True
-        else:
-            # Read the file contents
-            with open(file_path, 'r') as file:
-                lines = file.readlines()
-
-            # Create a flag to track if the line was found and new code was appended
-            line_found = False
-
-            # Open the file again in write mode to overwrite the contents
-            with open(file_path, 'w') as file:
-                for line in lines:
-                    if insert_before_search_text:
-                        # If the current line matches the search line, append the new code before it
-                        if line.strip() == search_text:
-                            file.write(appendable_code + '\n')
-                            line_found = True
-                        # Write the current line to the file
-                        file.write(line)
-                    else:
-                        # Write the current line to the file
-                        file.write(line)
-                        # If the current line matches the search line, append the new lines after it
-                        if line.strip() == search_text:
-                            file.write(appendable_code + '\n')
-                            line_found = True
-
-            # Check if the line was found and new code was appended
-            if line_found:
-                print(f"The new code was successfully appended {'before' if insert_before_search_text else 'after'} '{search_text}'.")
-                return True
-            else:
-                print(f"The line '{search_text}' was not found in the file.")
-                return False
-    except FileNotFoundError:
-        print(f"The file '{file_path}' does not exist.")
-        return False
-    except Exception as e:
-        print(f"An error occurred: {e} try", frappe.get_traceback())
-        return False
-
-def update_hd_ticket_agent():
-    FILE_PATH = frappe.utils.get_bench_path()+'/apps/helpdesk/desk/src/pages/ticket/TicketAgent.vue'
-    if (os.path.exists(FILE_PATH)):
-        # Append lines before 'const showSubjectDialog = ref(false);'
-        search_text = 'const showSubjectDialog = ref(false);'
-        appendable_code = '''
-            const showCreateStoryConfirmationDialog = ref(false);
-            const showStoryCreationProgressDialog = ref(false);
-        '''
-        first_change = append_code_in_file(FILE_PATH, search_text, appendable_code, False)
-
-        # Append code before 'const ticket = createResource({'
-        search_text = 'const ticket = createResource({'
-        appendable_code = '''
-        const createDevTicket = () => {
-        
-            showCreateStoryConfirmationDialog.value = false;
-            showStoryCreationProgressDialog.value = true;
-
-            if (!ticket.data.custom_dev_ticket || true) {
-                createResource({
-                url: "one_fm.overrides.hd_ticket.create_dev_ticket",
-                auto: true,
-                params: {
-                    name: ticket.data.name,
-                    description: ticket.data.description,
-                },
-                transform: (data) => {},
-                onSuccess: (data) => {
-                    showStoryCreationProgressDialog.value = false;
-                    if (data.error){
-                    toast.error(data.message || "Something went wrong in creating dev ticket")
-                  } else if (data.status == 'success' ) {
-
-                    toast.success("Dev ticket created successfully")
-
-                  }
-                    ticket.reload();
-                },
-                onError: (error) => {
-                    showStoryCreationProgressDialog.value = false;
-                    toast.error(error.message || "Something went wrong in creating dev ticket")
-                },
-                });
-            }
-        };
-
-        const viewDevTicket = () => {
-            if (ticket.data.custom_dev_ticket) {
-                window.open(ticket.data.custom_dev_ticket, "_blank");
-            }
-        };\n\n
-        '''
-        second_change = append_code_in_file(FILE_PATH, search_text, appendable_code, insert_before_search_text=True)
-
-
-        # Append Template code for button and modal
-        search_text = '''    <CustomActions
-          v-if="ticket.data._customActions"
-          :actions="ticket.data._customActions"
-        />'''
-        appendable_code = '''    <CustomActions
-          v-if="ticket.data._customActions"
-          :actions="ticket.data._customActions"
-        />
-            <div v-if="['Open', 'Replied'].includes(ticket.data.status)">
-                <Button @click="viewDevTicket" v-if="ticket.data.custom_dev_ticket">
-                    View Dev Ticket
-                </Button>
-                <Button @click="showCreateStoryConfirmationDialog = true"  v-if="!ticket.data.custom_dev_ticket">
-                    Create Dev Ticket
-                </Button>
-                <Dialog v-model="showCreateStoryConfirmationDialog">
-                    <template #body-title>
-                    <h3>Create Dev Ticket</h3>
-                    </template>
-                    <template #body-content>
-                    <p>By clicking on "Confirm", a dev ticket will be created</p>
-                    </template>
-                    <template #actions>
-                    <Button variant="solid"
-                    @click="createDevTicket">
-                        Confirm
-                    </Button>
-                    <Button
-                        class="ml-2"
-                        @click="showCreateStoryConfirmationDialog = false;"
-                    >
-                        Close
-                    </Button>
-                    </template>
-                </Dialog>
-                
-                <Dialog v-model="showStoryCreationProgressDialog">
-                    <template #body-title>
-                    <h3>Please Wait</h3>
-                    </template>
-                    <template #body-content>
-                    <p>Please hold while we are creating dev ticket</p>
-                    </template>
-                    <template #actions>
-                    <Button
-                        class="ml-2"
-                        @click="showStoryCreationProgressDialog = false"
-                    >
-                        Close
-                    </Button>
-                    </template>
-                </Dialog>
-            </div>
-
-        '''
-        third_change = append_code_in_file(FILE_PATH, search_text, appendable_code, insert_before_search_text=True, replace_with_search_text=True)
-        search_text = "subjectInput.value = data.subject;"
-        appendable_code = """
-                                    setTimeout(()=>{
-                        if((data.communications.length) && communicationAreaRef.value!=null){
-                            
-                            let last_index = data.communications.length - 1
-                            let last_content = data.communications[last_index].content
-                            
-                            communicationAreaRef.value.$refs.emailEditorRef.addToReply(last_content,[data.raised_by])
-                            
-                        }
-                        else if(communicationAreaRef.value==null){
-                            
-                            
-                            let last_index = data.communications.length - 1
-                            let last_content = data.communications[last_index].content
-                            localStorage.setItem('emailBoxContent',last_content)
-                            
-                        }
-
-                        }, 1000);
-                    """
-        fourth_change = append_code_in_file(FILE_PATH, search_text, appendable_code, False)
-        if (first_change or second_change or third_change or fourth_change):
-            return True
-    else:
-        print(FILE_PATH, 'not found')
-    return
-
-
-
-def add_resolution_details_updation():
-    FILE_PATH = frappe.utils.get_bench_path()+'/apps/helpdesk/desk/src/pages/ticket/TicketAgent.vue'
-    if (os.path.exists(FILE_PATH)):
-        # Append lines before '} from "frappe-ui";' to import TextEditor
-        search_text = '} from "frappe-ui";'
-        appendable_code = '''TextEditor'''
-        first_change = append_code_in_file(FILE_PATH, search_text, appendable_code, insert_before_search_text=True)
-
-        # Append code before 'const ticket = createResource({'
-        search_text = 'const showSubjectDialog = ref(false);'
-        appendable_code = '''
-            \n\nconst showResolutionDialog = ref(false);
-            const resolutionDetails = ref('');
-
-            const submitResolution = () => {
-                updateTicket('resolution_details', resolutionDetails.value);
-                showResolutionDialog.value = false
-            };\n\n
-        '''
-        second_change = append_code_in_file(FILE_PATH, search_text, appendable_code)
-
-        # Append Template code for button and modal
-        search_text = '''    <CustomActions
-          v-if="ticket.data._customActions"
-          :actions="ticket.data._customActions"
-        />'''
-        appendable_code = '''
-            <CustomActions
-                v-if="ticket.data._customActions"
-                :actions="ticket.data._customActions"
-                />
-            <div v-if="!['Closed', 'Resolved'].includes(ticket.data.status)">
-                <Button @click="showResolutionDialog = true">
-                    Update Resolution Details
-                </Button>
-                <Dialog v-model="showResolutionDialog">
-                    <template #body-title>
-                    <h3>Update Resolution Details</h3>
-                    </template>
-
-                    <template #body-content>
-                    <div class="mb-1.5 text-sm text-gray-600">Resolution Details</div>
-                    <TextEditor ref="content" variant="outline"
-                        editor-class="!prose-sm overflow-auto min-h-[180px] max-h-80 py-1.5 px-2 rounded border border-gray-300 bg-white hover:border-gray-400 hover:shadow-sm focus:bg-white focus:border-gray-500 focus:shadow-sm focus:ring-0 focus-visible:ring-2 focus-visible:ring-gray-400 text-gray-800 transition-colors"
-                        :bubble-menu="true" :content="resolutionDetails" :placeholder="'Add resolution details here...'" :disabled="isLoading"
-                        @change="(val) => (resolutionDetails = val)" />
-                    </template>
-
-                    <template #actions>
-                    <Button variant="solid" :loading="isLoading" :disabled="!resolutionDetails"
-                        @click="submitResolution">
-                        Submit
-                    </Button>
-                    <Button class="ml-2" @click="showResolutionDialog = false">Cancel</Button>
-                    </template>
-                </Dialog>
-            </div>
-        '''
-        third_change = append_code_in_file(FILE_PATH, search_text, appendable_code, replace_with_search_text=True)
-
-        # Append predefined value for resolution details
-        search_text = 'subjectInput.value = data.subject;'
-        appendable_code = 'resolutionDetails.value = data.resolution_details'
-        fourth_change = append_code_in_file(FILE_PATH, search_text, appendable_code)
-
-        if (first_change or second_change or third_change or fourth_change):
-            return True
-    else:
-        print(FILE_PATH, 'not found')
-    return
-
-
 def run_command(command, cwd=None, shell=True):
     try:
         result = subprocess.run(command, cwd=cwd, shell=shell, check=True, text=True, capture_output=True)
@@ -522,8 +248,7 @@ def deploy_ticket_views():
     router_file = os.path.join(bench_path, "apps", "helpdesk", "desk", "src", "router", "index.ts")
 
     if not os.path.exists(router_file):
-        print("❌ Router file not found:", router_file)
-        return False
+        raise FileNotFoundError(f"Helpdesk router not found: {router_file}")
 
     with open(router_file, "r") as f:
         router_content = f.read()
@@ -556,8 +281,7 @@ def deploy_ticket_views():
 
             print("✅ TicketEdit route added.")
         else:
-            print("⚠️ Could not find insertion point for router update.")
-            return False
+            raise ValueError(f"'{search_text}' not found in {router_file}; the TicketEdit route was not added.")
 
     print("[🎉] TicketEdit, TicketCustomer and TicketNew views deployed successfully.")
     return True
@@ -586,8 +310,7 @@ def deploy_dashboard_view():
         return False
 
     if not os.path.exists(os.path.dirname(dashboard_target)):
-        print(f"[❌] Target dashboard folder not found: {os.path.dirname(dashboard_target)}")
-        return False
+        raise FileNotFoundError(f"Helpdesk dashboard folder not found: {os.path.dirname(dashboard_target)}")
 
     # Skip the copy (and the resulting rebuild) if the file is already in sync.
     with open(dashboard_source, "r") as f:
@@ -626,8 +349,7 @@ def deploy_ticket_header():
         return False
 
     if not os.path.exists(os.path.dirname(header_target)):
-        print(f"[❌] Target ticket-agent folder not found: {os.path.dirname(header_target)}")
-        return False
+        raise FileNotFoundError(f"Helpdesk ticket-agent folder not found: {os.path.dirname(header_target)}")
 
     # Skip the copy (and the resulting rebuild) if the file is already in sync.
     with open(header_source, "r") as f:
@@ -695,10 +417,6 @@ def remove_code_block_with_regex(file_path, pattern):
 def update_all_ticket_features():
     any_changes = False
 
-    if update_hd_ticket_agent():
-        any_changes = True
-    if add_resolution_details_updation():
-        any_changes = True
     if deploy_ticket_views():
         any_changes = True
     if deploy_dashboard_view():
