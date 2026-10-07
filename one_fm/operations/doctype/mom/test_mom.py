@@ -23,67 +23,17 @@ class TestMOM(FrappeTestCase):
 		# Clean up after each test
 		frappe.db.rollback()
 
-	def test_task_creation_on_submit(self):
-		# Create a draft MOM
+	def test_saving_leaves_task_creation_to_the_process_map(self):
 		mom = frappe.new_doc("MOM")
 		mom.project = self.project.name
 		mom.project_type = "Internal"
-		mom.append("general_attendance", {
-			"attendee_name": "Test Attendee",
-			"attended_meeting": 1
-		})
-		mom.append("action", {
-			"subject": "Action Task 1",
-			"description": "Test description",
-			"priority": "High"
-		})
-		mom.insert()
-		mom.submit()
-
-		# Check if task was created and linked to MOM via custom_mom
-		tasks = frappe.get_all("Task", filters={"custom_mom": mom.name}, fields=["name", "subject", "description"])
-		self.assertEqual(len(tasks), 1)
-		self.assertEqual(tasks[0].subject, "Action Task 1")
-
-	def test_sync_tasks_from_tables_on_save(self):
-		# Create a draft MOM
-		mom = frappe.new_doc("MOM")
-		mom.project = self.project.name
-		mom.project_type = "Internal"
-		mom.issues = "No"
-		mom.append("general_attendance", {
-			"attendee_name": "Test Attendee",
-			"attended_meeting": 1
-		})
-		
-		# Add a row to pending_actions table without an existing task link
-		mom.append("pending_actions", {
-			"subject": "Draft Sync Task",
-			"description": "Needs to be created on save",
-			"priority": "Medium",
-			"status": "Open",
-			"due_date": today()
-		})
+		mom.append("general_attendance", {"attendee_name": "Test Attendee", "attended_meeting": 1})
+		mom.append("action", {"subject": "Action Task 1", "description": "Test description", "priority": "High"})
+		mom.append("pending_actions", {"subject": "Pending Task", "priority": "Medium", "status": "Open", "due_date": today()})
 		mom.insert()
 
-		# On insert/save, validate() should have automatically created the Task and linked it
-		self.assertIsNotNone(mom.pending_actions[0].task)
-		task_name = mom.pending_actions[0].task
-
-		task = frappe.get_doc("Task", task_name)
-		self.assertEqual(task.subject, "Draft Sync Task")
-		self.assertEqual(task.status, "Open")
-		self.assertEqual(task.custom_mom, mom.name)
-
-		# Modify the row in the child table and save again
-		mom.pending_actions[0].status = "Working"
-		mom.pending_actions[0].priority = "High"
-		mom.save()
-
-		# Verify task was updated
-		task = frappe.get_doc("Task", task_name)
-		self.assertEqual(task.status, "Working")
-		self.assertEqual(task.priority, "High")
+		self.assertEqual(frappe.db.count("Task", {"custom_mom": mom.name}), 0)
+		self.assertIsNone(mom.pending_actions[0].task)
 
 	def test_review_last_actions_and_fallback(self):
 		# Create first MOM
@@ -100,7 +50,11 @@ class TestMOM(FrappeTestCase):
 			"priority": "Low"
 		})
 		mom1.insert()
-		mom1.submit()
+		task = frappe.new_doc("Task")
+		task.project = self.project.name
+		task.subject = "Action from MOM 1"
+		task.custom_mom = mom1.name
+		task.insert()
 
 		# Check that we can fetch the task via review_last_actions
 		from one_fm.operations.doctype.mom.mom import review_last_actions

@@ -37,7 +37,8 @@
   "pending_actions_section",
   "review_pending_actions",
   "pending_actions",
-  "amended_from"
+  "amended_from",
+  "workflow_state"
  ],
  "fields": [
   {
@@ -236,6 +237,15 @@
    "label": "Last General Attendees",
    "options": "General Attendance",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "no_copy": 1,
+   "options": "Workflow State"
   }
  ],
  "grid_page_length": 50,
