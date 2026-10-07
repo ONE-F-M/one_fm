@@ -45,12 +45,21 @@ class TestTheOperatorState(FrappeTestCase):
 		self.assertEqual(self.states[PENDING_GRO]["style"], "Warning")
 
 	def test_a_draft_saves_straight_to_the_operator(self):
-		self.assertIn(("Draft", "Save", PENDING_GRO), self.transitions)
+		# WI-003365: the operator applies online from a state of its own.
+		self.assertIn(("Draft", "Save", APPLY_ONLINE), self.transitions)
+		self.assertNotIn(("Draft", "Save", PENDING_GRO), self.transitions)
 
 	def test_apply_hangs_off_the_operator_state(self):
 		"""It hung off a PRO state whose only assignment rule has been disabled since
 		WI-002182, so the permit passed through a step with no owner."""
-		self.assertIn((PENDING_GRO, "Apply", "Pending GR Manager"), self.transitions)
+		self.assertIn((APPLY_ONLINE, "Apply", "Pending GR Manager"), self.transitions)
+		self.assertNotIn((PENDING_GRO, "Apply", "Pending GR Manager"), self.transitions)
+
+	def test_the_apply_online_state_is_the_operators(self):
+		state = self.states[APPLY_ONLINE]
+		self.assertEqual(state["allow_edit"], GRO)
+		self.assertEqual(str(state["doc_status"]), "0")
+		self.assertEqual(state["send_email"], 1)
 
 	def test_payment_comes_back_to_the_operator_and_the_operator_completes(self):
 		self.assertIn(("Pending  For Payment", "Paid", PENDING_GRO), self.transitions)
