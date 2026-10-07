@@ -175,7 +175,7 @@
    "allowed": "Government Relations Operator",
    "custom_confirm_transition": 0,
    "doctype": "Workflow Transition",
-   "next_state": "Pending by GR Operator",
+   "next_state": "Apply Online by GR Operator",
    "require_digital_signature": 0,
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,
