@@ -20,7 +20,8 @@
   "section_break_ttu2",
   "general_attendees",
   "section_break_cemp",
-  "naming_series"
+  "naming_series",
+  "workflow_state"
  ],
  "fields": [
   {
@@ -111,6 +112,15 @@
    "hidden": 1,
    "label": "Operations Manager User",
    "options": "User"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "no_copy": 1,
+   "options": "Workflow State"
   }
  ],
  "index_web_pages_for_search": 1,
