@@ -635,3 +635,4 @@ one_fm.patches.v15_0.remove_accommodation_leave_movement_assignment_rules #2026-
 one_fm.patches.v15_0.deactivate_client_interview_shortlist_workflow #2026-10-05 WI-003086
 one_fm.patches.v15_0.drop_document_request_approver #2026-09-27 the approver Employee copy is gone; approver_user comes from get_approver_user
 one_fm.patches.v15_0.add_project_manager_user_to_project #2026-10-06
+one_fm.patches.v15_0.add_visa_request_workflow_state_standard_filter #2026-10-06 WI-003181
