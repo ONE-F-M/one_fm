@@ -4,17 +4,19 @@
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from one_fm.one_fm.doctype.document_request.document_request import get_wiki_page_title
+from one_fm.one_fm.doctype.document_request.document_request import get_wiki_page
 from one_fm.tests.test_document_request_inputs import DocumentRequestInputFixtures
 
 SITE = "https://one-fm.com"
 
 
-def _wiki_page(name, route, title):
+def _wiki_page(name, route, title, content="x"):
 	"""Wiki Pages written straight to the table, as the copies taken from production were."""
 	if frappe.db.exists("Wiki Page", name):
 		frappe.delete_doc("Wiki Page", name, force=True)
-	doc = frappe.get_doc({"doctype": "Wiki Page", "title": title, "route": route, "published": 1, "content": "x"})
+	doc = frappe.get_doc(
+		{"doctype": "Wiki Page", "title": title, "route": route, "published": 1, "content": content}
+	)
 	doc.name = name
 	doc.db_insert()
 
@@ -24,7 +26,13 @@ class WikiLinkFixtures(DocumentRequestInputFixtures):
 		super().setUp()
 		if not frappe.db.exists("DocType", "Wiki Page"):
 			self.skipTest("the wiki app is not installed on this site")
-		_wiki_page("_test_wiki_plain", "wiki/_test-leave-policy", "Annual Leave Guide")
+		_wiki_page(
+			"_test_wiki_plain",
+			"wiki/_test-leave-policy",
+			"Annual Leave Guide",
+			"<div><p>Who may take leave:</p><ul><li><p>Staff after &amp; during probation</p></li></ul>"
+			"</div>",
+		)
 		_wiki_page("_test_wiki_markup", "wiki/_test-boots", "Uniform -<strong>Security Boots</strong>&nbsp;V1")
 		_wiki_page("_test_wiki_arabic", "wiki/_test سجل & الزوار", "سجل الزوار")
 
@@ -34,6 +42,17 @@ class TestTheTitleComesFromTheWikiPage(WikiLinkFixtures, FrappeTestCase):
 		doc = self._request(wiki_link=f"{SITE}/wiki/_test-leave-policy", title=None)
 		doc.insert()
 		self.assertEqual(doc.title, "SOP for Annual Leave Guide")
+
+	def test_a_create_takes_the_page_content_as_its_requirement(self):
+		doc = self._request(wiki_link=f"{SITE}/wiki/_test-leave-policy")
+		doc.insert()
+		self.assertEqual(doc.requirement_text, "Who may take leave:\n\n* Staff after & during probation")
+
+	def test_a_desk_link_finds_the_page_by_its_name(self):
+		doc = self._request(wiki_link="http://localhost:8000/app/wiki-page/_test_wiki_plain")
+		doc.insert()
+		self.assertEqual(doc.title, "SOP for Annual Leave Guide")
+		self.assertIn("Staff after & during probation", doc.requirement_text)
 
 	def test_the_title_is_plain_text_even_when_the_wiki_title_has_markup(self):
 		doc = self._request(wiki_link=f"{SITE}/wiki/_test-boots")
@@ -63,20 +82,28 @@ class TestTheTitleComesFromTheWikiPage(WikiLinkFixtures, FrappeTestCase):
 		doc.set_title_from_wiki_link()
 		self.assertIsNone(doc.wiki_link)
 		self.assertEqual(doc.title, "_Test Subject")
+		self.assertNotIn("probation", doc.requirement_text)
 
 
 class TestTheFormLookup(WikiLinkFixtures, FrappeTestCase):
-	def test_it_returns_the_plain_title(self):
-		self.assertEqual(get_wiki_page_title(f"{SITE}/wiki/_test-boots"), "Uniform -Security Boots V1")
+	def test_it_returns_the_plain_title_and_content(self):
+		self.assertEqual(
+			get_wiki_page(f"{SITE}/wiki/_test-boots"),
+			{"title": "Uniform -Security Boots V1", "requirement": "x"},
+		)
+
+	def test_a_desk_link_returns_the_same_page(self):
+		page = get_wiki_page("http://localhost:8000/app/wiki-page/_test_wiki_plain")
+		self.assertEqual(page["title"], "Annual Leave Guide")
 
 	def test_an_unknown_link_returns_nothing(self):
-		self.assertIsNone(get_wiki_page_title(f"{SITE}/wiki/_test-does-not-exist"))
+		self.assertIsNone(get_wiki_page(f"{SITE}/wiki/_test-does-not-exist"))
 
 	def test_a_user_who_cannot_file_a_request_is_refused(self):
 		frappe.set_user("Guest")
 		try:
 			with self.assertRaises(frappe.PermissionError):
-				get_wiki_page_title(f"{SITE}/wiki/_test-leave-policy")
+				get_wiki_page(f"{SITE}/wiki/_test-leave-policy")
 		finally:
 			frappe.set_user("Administrator")
 

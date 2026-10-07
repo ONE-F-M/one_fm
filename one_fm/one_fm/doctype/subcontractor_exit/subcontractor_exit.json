@@ -116,6 +116,15 @@
    "label": "Subcontract Exit Employee",
    "options": "Subcontractor Exit Items",
    "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "no_copy": 1,
+   "options": "Workflow State"
   }
  ],
  "index_web_pages_for_search": 1,

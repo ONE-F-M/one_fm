@@ -376,3 +376,54 @@ class TestAccommodationLeaveMovement(FrappeTestCase):
 		self.assertTrue(hasattr(in_doc, "_early_checkin_warning"))
 		self.assertIn("contiguous leave", in_doc._early_checkin_warning)
 
+
+	def test_submitting_checkin_leaves_the_checkout_to_the_map(self):
+		"""The Check-In Lifecycle map marks the OUT returned; the controller must not."""
+		from unittest.mock import patch
+
+		checkout = make_alm(self.employee, "OUT", docstatus=1)
+		checkin = make_alm(self.employee, "IN", checkin_reference=checkout.name, docstatus=1)
+
+		with patch.object(type(checkin), "handle_checkin_notification"):
+			checkin.run_method("on_submit")
+
+		self.assertEqual(frappe.db.get_value("Accommodation Leave Movement", checkout.name, "checked_out"), 0)
+
+	def test_cancelling_checkin_still_reopens_the_checkout(self):
+		checkout = make_alm(self.employee, "OUT", docstatus=1)
+		frappe.db.set_value("Accommodation Leave Movement", checkout.name, "checked_out", 1)
+		checkin = make_alm(self.employee, "IN", checkin_reference=checkout.name, docstatus=2)
+
+		checkin.run_method("on_cancel")
+
+		self.assertEqual(frappe.db.get_value("Accommodation Leave Movement", checkout.name, "checked_out"), 0)
+
+
+class TestAccommodationLeaveMovementProcessaHandover(FrappeTestCase):
+	def test_workflow_state_can_change_after_submit(self):
+		# The lifecycle maps submit the movement and record the state in the same step.
+		field = frappe.get_meta("Accommodation Leave Movement").get_field("workflow_state")
+		self.assertIsNotNone(field)
+		self.assertEqual(field.options, "Workflow State")
+		self.assertEqual(field.allow_on_submit, 1)
+		self.assertFalse(field.get("is_custom_field"))
+
+	def test_cancel_records_the_cancelled_state(self):
+		# A cancel happens after the lifecycle map has ended, so the controller records it.
+		movement = make_alm(get_test_employee(), "OUT", docstatus=1)
+		movement.workflow_state = "Submitted"
+
+		movement.run_method("before_cancel")
+
+		self.assertEqual(movement.workflow_state, "Cancelled")
+
+	def test_site_supervisor_rules_are_removed(self):
+		from one_fm.patches.v15_0.remove_accommodation_leave_movement_assignment_rules import (
+			ASSIGNMENT_RULES,
+			execute,
+		)
+
+		execute()
+		execute()
+		for rule in ASSIGNMENT_RULES:
+			self.assertFalse(frappe.db.exists("Assignment Rule", rule))

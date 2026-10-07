@@ -19,7 +19,6 @@
   "source_guideline",
   "reference_document",
   "section_break_approval",
-  "approver",
   "approver_user",
   "column_break_status",
   "document_link",
@@ -118,22 +117,12 @@
    "label": "Approval"
   },
   {
-   "fieldname": "approver",
-   "fieldtype": "Link",
-   "fetch_from": "requester.reports_to",
-   "in_list_view": 1,
-   "label": "Approver",
-   "options": "Employee",
-   "read_only": 1,
-   "description": "Always the requester's line manager (Employee > Reports To) — not chosen manually."
-  },
-  {
    "fieldname": "approver_user",
    "fieldtype": "Link",
-   "fetch_from": "approver.user_id",
    "label": "Approver User",
    "options": "User",
-   "read_only": 1
+   "read_only": 1,
+   "description": "Resolved by get_approver_user: line manager, self for a super user, or the site supervisor."
   },
   {
    "fieldname": "column_break_status",
