@@ -22,11 +22,38 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.STAGING_KEY }}
         port: 22
+        command_timeout: 60m
+        script_stop: true
         script: |
-          cd /home/frappe/test-production/apps/one_fm
+          set -ex
+
+          # Non-interactive SSH does not load ~/.profile or nvm.
+          export PATH="$HOME/.local/bin:$PATH"
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+          # Preflight: fail fast with a clear cause instead of mid-deploy
+          command -v bench && bench --version
+          command -v node && node --version
+          command -v yarn && yarn --version
+
+          BENCH=/home/frappe/test-production
+          WORKERS="$(basename "$BENCH")-workers:"
+          # One deploy at a time per bench, across one_fm, one_bpmn and frappe_agile.
+          exec 9>"$BENCH/config/deploy.lock"
+          flock -w 1500 9
+
+          cd $BENCH/apps/one_fm
           git pull upstream test-production
-          cd /home/frappe/test-production   
+          cd $BENCH
+          rm -rf env/lib/python*/site-packages/one_fm-*.dist-info
           bench setup requirements one_fm
+
+          trap 'status=$?; if [ $status -ne 0 ]; then sudo supervisorctl start "$WORKERS"; fi' EXIT
+          # Workers and the scheduler write Scheduled Job Log while migrate deletes from it.
+          sudo supervisorctl stop "$WORKERS"
+          # A scheduler orphaned by an earlier stop holds the lock supervisor's scheduler needs; [s] keeps pkill off this script.
+          pkill -f "$BENCH/env/bin/python -m frappe.utils.bench_helper frappe [s]chedule" || true
           bench migrate
           bench build --app one_fm
           bench clear-cache

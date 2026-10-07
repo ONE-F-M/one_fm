@@ -488,9 +488,9 @@ def run_command(command, cwd=None, shell=True):
         if result.stderr:
             print(result.stderr)
     except subprocess.CalledProcessError as e:
-        print(f"An error occurred while running the command: {e}")
         print(f"Output: {e.stdout}")
         print(f"Error: {e.stderr}")
+        raise
 
 
 
@@ -713,9 +713,8 @@ def update_all_ticket_features():
         helpdesk_dir = os.path.join(bench_path, 'apps/helpdesk/desk')
 
         run_command("NODE_OPTIONS=\"--max-old-space-size=4096\" yarn build", cwd=helpdesk_dir)
-        run_command("bench restart", cwd=bench_path)
     else:
-        print("No changes detected. Skipping build and restart.")
+        print("No changes detected. Skipping build.")
 
 def disable_email_and_sync_on_developer_mode():
     if not frappe.conf.get("developer_mode"):
