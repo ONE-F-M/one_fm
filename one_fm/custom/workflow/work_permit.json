@@ -193,7 +193,7 @@
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,
    "skip_multiple_action": 0,
-   "state": "Pending by GR Operator"
+   "state": "Apply Online by GR Operator"
   },
   {
    "action": "Accept",
