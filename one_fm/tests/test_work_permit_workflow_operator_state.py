@@ -15,6 +15,7 @@ from one_fm.custom.assignment_rule.assignment_rule import get_assignment_rule_js
 from one_fm.custom.workflow.workflow import get_workflow_json_file
 
 PENDING_GRO = "Pending by GR Operator"
+APPLY_ONLINE = "Apply Online by GR Operator"
 RETIRED_STATE = "Pending By Operator"
 BYPASSED_STATE = "Apply Online by PRO"
 GRO = "Government Relations Operator"
