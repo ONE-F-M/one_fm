@@ -156,6 +156,16 @@
    "state": "Reason of Rejection",
    "update_value": "Rejected",
    "style": "Primary"
+  },
+  {
+   "allow_edit": "Government Relations Operator",
+   "avoid_status_override": 0,
+   "doc_status": "0",
+   "doctype": "Workflow Document State",
+   "is_optional_state": 0,
+   "send_email": 1,
+   "state": "Apply Online by GR Operator",
+   "style": "Warning"
   }
  ],
  "transitions": [
