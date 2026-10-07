@@ -510,6 +510,21 @@ class WorkPermit(Document):
     def get_required_documents(self):
         set_required_documents(self)
 
+    def get_under_company_residency_on_completion(self):
+        """The Employee's under_company_residency once this permit is Completed.
+
+        1 for a completed permit that puts the employee under company residency, 0 for a
+        completed Cancellation, None when the permit must not touch the flag (Kuwaitis are
+        not under company residency, and a permit that is not Completed changes nothing).
+        """
+        if self.workflow_state != "Completed":
+            return None
+        if self.work_permit_type == "Cancellation":
+            return 0
+        if self.work_permit_type in ("Renewal Kuwaiti", "New Kuwaiti"):
+            return None
+        return 1
+
     def set_new_pam_details_in_employee(self):
         if self.workflow_state == "Completed":
             employee = frappe.get_doc("Employee", self.employee)
