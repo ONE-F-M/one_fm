@@ -392,6 +392,18 @@ class TestRaisingOneFromAVisaRequest(FrappeTestCase):
 				self.assertIsNotNone(vr.get_field(fieldname), f"Visa Request has no {fieldname}")
 				self.assertIsNotNone(vcr.get_field(fieldname), f"{DOCTYPE} has no {fieldname}")
 
+	def test_the_pam_reference_number_is_left_for_the_pro_operator(self):
+		"""WI-003229. The PRO Operator enters it by hand; the process map's "Is PAM
+		Reference Number Set" gate only means something if it is not copied across."""
+		frappe.db.set_value("Visa Request", self.visa, "pam_reference_number", "PAM-WI-003229")
+		source = frappe.get_doc("Visa Request", self.visa)
+		self.assertEqual(source.pam_reference_number, "PAM-WI-003229")
+
+		doc = build_cancellation(source, EXPIRY_REASON)
+
+		self.assertFalse(doc.pam_reference_number)
+		self.assertNotIn("pam_reference_number", COPIED_FROM_VISA_REQUEST)
+
 	def test_it_starts_as_a_draft(self):
 		self.assertEqual(build_cancellation(frappe.get_doc("Visa Request", self.visa), EXPIRY_REASON).docstatus, 0)
 
