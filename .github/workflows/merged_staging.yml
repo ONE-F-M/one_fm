@@ -18,7 +18,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.STAGING_KEY }}
           port: 22
-          command_timeout: 30m
+          command_timeout: 60m
           script_stop: true
           script: |
             set -ex
@@ -33,10 +33,23 @@ jobs:
             command -v node && node --version
             command -v yarn && yarn --version
 
-            cd /home/frappe/frappe-bench/apps/one_fm
+            BENCH=/home/frappe/frappe-bench
+            WORKERS="$(basename "$BENCH")-workers:"
+            # One deploy at a time per bench, across one_fm, one_bpmn and frappe_agile.
+            exec 9>"$BENCH/config/deploy.lock"
+            flock -w 1500 9
+
+            cd $BENCH/apps/one_fm
             git pull upstream staging
-            cd /home/frappe/frappe-bench
+            cd $BENCH
+            rm -rf env/lib/python*/site-packages/one_fm-*.dist-info
             bench setup requirements one_fm
+
+            trap 'status=$?; if [ $status -ne 0 ]; then sudo supervisorctl start "$WORKERS"; fi' EXIT
+            # Workers and the scheduler write Scheduled Job Log while migrate deletes from it.
+            sudo supervisorctl stop "$WORKERS"
+            # A scheduler orphaned by an earlier stop holds the lock supervisor's scheduler needs; [s] keeps pkill off this script.
+            pkill -f "$BENCH/env/bin/python -m frappe.utils.bench_helper frappe [s]chedule" || true
             bench migrate
             bench build --app one_fm
             bench clear-cache
