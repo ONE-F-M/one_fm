@@ -1,8 +1,8 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-003158: a Completed Work Permit puts the Employee under company residency (and
-flips the residency digit of the display employee_id); a Completed Cancellation takes
-them out again. The HR-EMP name never changes."""
+"""A Completed Work Permit puts the Employee under company residency (and flips the
+residency digit of the display employee_id); a Completed Cancellation takes them out
+again. The HR-EMP name never changes."""
 
 from unittest.mock import patch
 
@@ -10,9 +10,10 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 # YYMM + serial + country + residency digit + birth year; the digit is 3rd from last.
-ID_NOT_UNDER_RESIDENCY = "2609051NP086"
-ID_UNDER_RESIDENCY = "2609051NP186"
-ID_SUBCONTRACT = "2609051NPS86"
+# employee_id is unique, so these must not belong to anybody.
+ID_NOT_UNDER_RESIDENCY = "9912999ZZ086"
+ID_UNDER_RESIDENCY = "9912999ZZ186"
+ID_SUBCONTRACT = "9912999ZZS86"
 
 IS_SUBCONTRACT = "one_fm.overrides.employee.is_subcontract_employee"
 
@@ -31,6 +32,12 @@ def _an_active_employee():
 
 class TestWorkPermitResidencySync(FrappeTestCase):
 	def setUp(self):
+		# set_new_pam_details_in_employee commits; without this the test edits to a real
+		# Employee are committed and the rollback cannot undo them.
+		commit = patch.object(frappe.db, "commit")
+		commit.start()
+		self.addCleanup(commit.stop)
+
 		self.employee = _an_active_employee()
 		self.before = frappe.db.get_value(
 			"Employee", self.employee, ["employee_id", "under_company_residency"], as_dict=True

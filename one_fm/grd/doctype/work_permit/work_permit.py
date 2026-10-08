@@ -539,7 +539,7 @@ class WorkPermit(Document):
             if self.new_work_permit_salary_ and self.new_work_permit_salary_ != employee.work_permit_salary:
                 fields_to_update['work_permit_salary'] = self.new_work_permit_salary_
 
-            # WI-003158: residency flag. The save below runs EmployeeOverride.validate,
+            # Residency flag. The save below runs EmployeeOverride.validate,
             # which recomputes the residency digit of employee_id from this flag.
             residency = self.get_under_company_residency_on_completion()
             if residency is not None and cint(employee.under_company_residency) != residency:

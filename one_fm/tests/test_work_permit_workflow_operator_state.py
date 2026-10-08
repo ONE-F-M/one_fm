@@ -123,7 +123,7 @@ class TestTheFormFollowsTheRename(FrappeTestCase):
 		)
 
 	def test_the_expiry_date_and_its_section_stay_visible_once_completed(self):
-		"""WI-003158: the date is still shown after Completed, and so is the section
+		"""The date is still shown after Completed, and so is the section
 		that holds it - the field alone would stay hidden inside a hidden section."""
 		completed = "doc.workflow_state=='Completed'"
 		self.assertIn(completed, self.fields["new_work_permit_expiry_date"]["depends_on"])
