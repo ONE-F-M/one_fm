@@ -101,12 +101,12 @@ def create_shift_permission(employee_id: str = None, log_type: str = None, permi
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
-        shift_details = get_shift_details(employee)
+        shift_details = get_shift_details(employee, date)
 
         if shift_details.found:
             shift, shift_type, shift_assignment, shift_supervisor = shift_details.data
         else:
-            return response("Resource Not Found", 404, None, "shift not found in employee schedule for {employee}".format(employee=employee))
+            return response("Resource Not Found", 404, None, "No shift assignment found for {employee} on {date}".format(employee=employee, date=date))
 
         if not shift_type:
             return response("Resource Not Found", 404, None, "shift type not found in employee schedule for {employee}".format(employee=employee))
@@ -145,13 +145,26 @@ def create_shift_permission(employee_id: str = None, log_type: str = None, permi
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
-def get_shift_details(employee):
+def get_shift_details(employee, date=None):
     shift = None
     shift_type = None
     shift_assignment = None
     shift_supervisor = None
 
-    shift_assignment, shift_supervisor, shift, shift_type = fetch_approver(employee)
+    # The date must be passed through: without it fetch_approver falls back to the
+    # most recently created Shift Assignment, which binds the permission to the wrong
+    # day when it is filed in the evening for the next day.
+    try:
+        approver_data = fetch_approver(employee, date) or {}
+    except frappe.ValidationError:
+        # fetch_approver throws when the employee has no assignment for that date,
+        # e.g. a permission filed at night before the next day's roster is generated.
+        return frappe._dict({'found':False})
+
+    shift_assignment = approver_data.get('shift_assignment')
+    shift_supervisor = approver_data.get('approver')
+    shift = approver_data.get('shift')
+    shift_type = approver_data.get('shift_type')
 
     if not shift_assignment:
         return frappe._dict({'found':False})
