@@ -1078,7 +1078,7 @@ def _majority_designation(counts) -> dict:
 FIGURE_PATTERNS = (
 	(
 		re.compile(r"^-\s*([\d.]+)\s+Staff worked\s+([\d.]+)\s+days:\s*([\d.]+)\s+Days$"),
-		"- {0} موظف عملوا {1} يوم: {2} يوم",
+		"{0} موظف × {1} يوم عمل = {2} يوم",
 	),
 	(
 		re.compile(r"^-\s*([\d.]+)\s+Staff worked\s+([\d.]+)\s+Hours:\s*([\d.]+)\s+Hrs$"),
