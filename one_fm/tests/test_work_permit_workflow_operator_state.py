@@ -122,9 +122,22 @@ class TestTheFormFollowsTheRename(FrappeTestCase):
 			PENDING_GRO, self.fields["new_work_permit_expiry_date"]["depends_on"]
 		)
 
+	def test_the_expiry_date_and_its_section_stay_visible_once_completed(self):
+		"""The date is still shown after Completed, and so is the section
+		that holds it - the field alone would stay hidden inside a hidden section."""
+		completed = "doc.workflow_state=='Completed'"
+		self.assertIn(completed, self.fields["new_work_permit_expiry_date"]["depends_on"])
+		self.assertIn(completed, self.fields["work_permit_information_section"]["depends_on"])
+
 	def test_the_expiry_date_is_demanded_where_it_is_shown(self):
+		"""Demanded wherever it is shown for editing; Completed is submitted and
+		read-only, so it is shown there without being demanded again."""
 		expiry = self.fields["new_work_permit_expiry_date"]
-		self.assertEqual(expiry["depends_on"], expiry["mandatory_depends_on"])
+		completed = " || doc.workflow_state=='Completed'"
+		self.assertTrue(expiry["depends_on"].endswith(completed))
+		self.assertEqual(
+			expiry["depends_on"][: -len(completed)], expiry["mandatory_depends_on"]
+		)
 
 	def test_the_local_transfer_sections_follow_too(self):
 		"""Pending  For Payment hands a Local Transfer back to this same state."""
