@@ -46,7 +46,7 @@ class TestTheOperatorState(FrappeTestCase):
 		self.assertEqual(self.states[PENDING_GRO]["style"], "Warning")
 
 	def test_a_draft_saves_straight_to_the_operator(self):
-		# WI-003365: the operator applies online from a state of its own.
+		# The operator applies online from a state of its own.
 		self.assertIn(("Draft", "Save", APPLY_ONLINE), self.transitions)
 		self.assertNotIn(("Draft", "Save", PENDING_GRO), self.transitions)
 
