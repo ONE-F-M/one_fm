@@ -10,7 +10,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.model.naming import make_autoname
 from frappe.query_builder import DocType
-from frappe.utils import cint, cstr, flt
+from frappe.utils import cint, cstr, escape_html, flt, strip_html
 from frappe.utils import (
     today,
     add_months,
@@ -495,16 +495,22 @@ class Preparation(Document):
         validate_preparation_table(self)
         self.db_set('submitted_by', frappe.session.user)
         self.db_set('submitted_on', now_datetime())
-        self.recall_create_work_permit_renewal() ## create work permit record for renewals
-        self.recall_create_medical_insurance_renewal() # create medical insurance record for renewals
-        self.recall_create_moi_renewal_and_extend() # create moi record for all employee
-        self.recall_create_paci() # create paci record for all
+        # Each creator reports the rows it could not open a document for instead of only
+        # writing an Error Log the operator never sees. A row is still allowed to fail
+        # without taking the batch down - the whole point of the per-row try - but the
+        # submit no longer looks clean when it was not.
+        failures = []
+        failures += self.recall_create_work_permit_renewal() ## create work permit record for renewals
+        failures += self.recall_create_medical_insurance_renewal() # create medical insurance record for renewals
+        failures += self.recall_create_moi_renewal_and_extend() # create moi record for all employee
+        failures += self.recall_create_paci() # create paci record for all
         # self.recall_create_fp()# create fp record for all
-        self.recall_create_documents_for_new_actions() # WI-001824: New Kuwaiti / Overseas
+        failures += self.recall_create_documents_for_new_actions() # WI-001824: New Kuwaiti / Overseas
+        report_document_creation_failures(failures)
         self.send_notifications()
 
     def recall_create_documents_for_new_actions(self):
-        create_documents_for_new_actions(self.name)
+        return create_documents_for_new_actions(self.name)
 
     def validate_mandatory_fields_on_submit(self):
         mandatory_fields = []
@@ -522,16 +528,16 @@ class Preparation(Document):
 
 
     def recall_create_work_permit_renewal(self):
-        work_permit.create_work_permit_renewal(self.name)
+        return work_permit.create_work_permit_renewal(self.name)
 
     def recall_create_medical_insurance_renewal(self):
-        medical_insurance.valid_work_permit_exists(self.name)
+        return medical_insurance.valid_work_permit_exists(self.name)
 
     def recall_create_moi_renewal_and_extend(self):
-        residency.set_employee_list_for_moi(self.name)
+        return residency.set_employee_list_for_moi(self.name)
 
     def recall_create_paci(self):
-        paci.create_PACI_renewal(self.name)
+        return paci.create_PACI_renewal(self.name)
 
     def recall_create_fp(self):
         fingerprint_appointment.creat_fp_record(self.name)
@@ -818,8 +824,10 @@ def create_documents_for_new_actions(preparation_name):
 
     One row at a time, and one row's failure does not stop the rest: the same contract
     the renewal and extend paths already keep, so a single bad employee record cannot
-    cost the whole batch its documents.
+    cost the whole batch its documents. The rows that failed are returned so the
+    operator is told which ones, rather than the batch reading as a clean submit.
     """
+    failures = []
     preparation = frappe.get_doc('Preparation', preparation_name)
 
     for row in preparation.preparation_record:
@@ -827,12 +835,64 @@ def create_documents_for_new_actions(preparation_name):
             continue
         try:
             create_documents_for_row(row, preparation_name)
-        except Exception:
+        except Exception as e:
             frappe.log_error(
                 title=f"Error creating GRD documents for {row.employee} in Preparation {preparation_name}",
                 message=frappe.get_traceback(),
             )
+            failures.append({
+                'employee': row.employee,
+                'employee_name': row.full_name,
+                'document': row.renewal_or_extend,
+                'reason': str(e),
+            })
             continue
+
+    return failures
+
+
+def report_document_creation_failures(failures):
+    """Tell the submitting operator which rows did not get their documents.
+
+    Every creator keeps a per-row `try` so one bad employee record cannot cost the whole
+    batch its documents, and each writes an Error Log. But an Error Log is not something
+    the operator reads: PRE-REN-2026-00008 submitted 80 rows, opened 69 Work Permits and
+    69 Medical Insurances instead of 70 each, and the gap only surfaced when someone
+    noticed the connection badges did not agree. The submit still succeeds - a partial
+    batch is the intended behaviour - but it no longer looks complete when it is not.
+    """
+    if not failures:
+        return
+
+    rows = ""
+    for failure in failures:
+        rows += "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>".format(
+            escape_html(cstr(failure.get("employee"))),
+            escape_html(cstr(failure.get("employee_name"))),
+            escape_html(cstr(failure.get("document"))),
+            escape_html(strip_html(cstr(failure.get("reason")))),
+        )
+
+    message = """
+        <p>{intro}</p>
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm small">
+                <thead><tr><th>{employee}</th><th>{name}</th><th>{document}</th><th>{reason}</th></tr></thead>
+                <tbody>{rows}</tbody>
+            </table>
+        </div>
+        <p class="text-muted small">{footer}</p>
+    """.format(
+        intro=_("This Preparation was submitted, but the following documents could not be created. Correct the cause and open them from the employee's record, or amend the row's Action."),
+        employee=_("Employee"),
+        name=_("Name"),
+        document=_("Document"),
+        reason=_("Reason"),
+        rows=rows,
+        footer=_("The full traceback for each is in the Error Log."),
+    )
+
+    frappe.msgprint(message, title=_("Documents Not Created"), indicator="red", wide=True)
 
 
 def create_documents_for_row(row, preparation_name):

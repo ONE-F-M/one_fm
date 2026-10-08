@@ -55,6 +55,13 @@ class MedicalInsurance(Document):
 
 
 def valid_work_permit_exists(preparation_name):
+    """Open the policy that goes with each renewal Work Permit.
+
+    Returns the rows it could not open one for. A row usually lands here because its
+    Work Permit was never opened, so reporting the reason is what tells the operator
+    the two gaps are the same gap.
+    """
+    failures = []
     employee_in_preparation = frappe.get_doc('Preparation',preparation_name)
     if employee_in_preparation.preparation_record:
         for employee in employee_in_preparation.preparation_record:
@@ -63,7 +70,14 @@ def valid_work_permit_exists(preparation_name):
                     create_mi_record(frappe.get_doc('Work Permit',{'preparation':preparation_name,'employee':employee.employee}))
                 except Exception as e:
                     frappe.log_error(message=frappe.get_traceback(), title=f"Error creating Medical Insurance for Work Permit of employee {employee.employee} in Preparation {preparation_name}")
+                    failures.append({
+                        'employee': employee.employee,
+                        'employee_name': employee.full_name,
+                        'document': 'Medical Insurance',
+                        'reason': str(e),
+                    })
                     continue
+    return failures
 
 #Creating mi for transfer
 def creat_medical_insurance_for_transfer(employee_name):
