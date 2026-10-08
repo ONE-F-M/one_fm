@@ -104,6 +104,39 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 			if frappe.db.has_column("Project Manpower Request", "workflow_state"):
 				self.assertEqual(pmr.workflow_state, "Withdrawn")
 
+	def test_approval_withdraws_pmr_waiting_for_recruiter(self):
+		pmr = frappe.get_doc({
+			"doctype": "Project Manpower Request",
+			"employee_resignation": self.resignation.name,
+			"reason": "Exit",
+			"count": 1,
+			"project_allocation": self.employee.project,
+			"designation": self.employee.designation,
+			"title": "Test PMR Awaiting Recruiter",
+		}).insert()
+		pmr.workflow_state = "Awaiting Recruiter Approval"
+		pmr.save()
+		frappe.db.set_value("Employee", self.employee.name, "relieving_date", frappe.utils.today())
+
+		erw = frappe.get_doc({
+			"doctype": "Employee Resignation Withdrawal",
+			"employee_resignation": self.resignation.name,
+			"reason": "Changed my mind",
+			"resignation_withdrawal_letter": "/files/test.txt",
+		}).insert()
+		_submit_for_review(erw)
+		erw.workflow_state = "Pending Project Manager"
+		erw.save()
+		erw.workflow_state = "Approved"
+		erw.save()
+
+		pmr.reload()
+		self.assertEqual(pmr.workflow_state, "Withdrawn")
+		withdrawn_qty = sum(row.qty for row in pmr.fulfillment_actions if row.action_type == "Resignation Withdrawal")
+		self.assertEqual(withdrawn_qty, 1)
+		self.assertEqual(frappe.db.get_value("Employee Resignation", self.resignation.name, "workflow_state"), "Withdrawn")
+		self.assertIsNone(frappe.db.get_value("Employee", self.employee.name, "relieving_date"))
+
 	def test_withdrawal_blocked_when_pmr_completed(self):
 		if frappe.db.exists("DocType", "Project Manpower Request"):
 			pmr = frappe.get_doc({
