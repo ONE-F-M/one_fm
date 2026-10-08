@@ -550,6 +550,24 @@ class WorkPermit(Document):
                 employee.save()
                 frappe.db.commit()
 
+    def on_cancel(self):
+        self.revert_under_company_residency()
+
+    def revert_under_company_residency(self):
+        """Cancelling a Completed permit undoes what its completion did to the flag.
+
+        workflow_state stays Completed on cancel, so the same rule tells which way it went.
+        The save recomputes the residency digit of employee_id.
+        """
+        residency = self.get_under_company_residency_on_completion()
+        if residency is None:
+            return
+        employee = frappe.get_doc("Employee", self.employee)
+        restored = 1 - residency
+        if cint(employee.under_company_residency) != restored:
+            employee.under_company_residency = restored
+            employee.save()
+
 def set_required_documents(doc):
     if frappe.db.exists('Work Permit Required Documents Template', {'work_permit_type':doc.work_permit_type}):
         #getting the required documents template based on the wp type

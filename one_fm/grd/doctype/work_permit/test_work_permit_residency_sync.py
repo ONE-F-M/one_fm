@@ -131,3 +131,44 @@ class TestWorkPermitResidencySync(FrappeTestCase):
 
 		self.assertEqual(after.under_company_residency, 1)
 		self.assertEqual(after.employee_id, ID_UNDER_RESIDENCY)
+
+	def _cancel(self, work_permit_type):
+		permit = frappe.new_doc("Work Permit")
+		permit.employee = self.employee
+		permit.work_permit_type = work_permit_type
+		permit.workflow_state = "Completed"
+		permit.on_cancel()
+		return frappe.db.get_value(
+			"Employee",
+			self.employee,
+			["name", "employee_id", "under_company_residency"],
+			as_dict=True,
+		)
+
+	@patch(IS_SUBCONTRACT, return_value=False)
+	def test_cancelling_a_completed_permit_takes_the_employee_out_of_residency(self, _):
+		self._employee_is(ID_UNDER_RESIDENCY, 1)
+
+		after = self._cancel("Overseas (Government)")
+
+		self.assertEqual(after.under_company_residency, 0)
+		self.assertEqual(after.employee_id, ID_NOT_UNDER_RESIDENCY)
+		self.assertEqual(after.name, self.employee)
+
+	@patch(IS_SUBCONTRACT, return_value=False)
+	def test_cancelling_a_completed_cancellation_puts_the_employee_back(self, _):
+		self._employee_is(ID_NOT_UNDER_RESIDENCY, 0)
+
+		after = self._cancel("Cancellation")
+
+		self.assertEqual(after.under_company_residency, 1)
+		self.assertEqual(after.employee_id, ID_UNDER_RESIDENCY)
+
+	@patch(IS_SUBCONTRACT, return_value=False)
+	def test_cancelling_a_kuwaiti_permit_changes_nothing(self, _):
+		self._employee_is(ID_NOT_UNDER_RESIDENCY, 0)
+
+		after = self._cancel("Renewal Kuwaiti")
+
+		self.assertEqual(after.under_company_residency, 0)
+		self.assertEqual(after.employee_id, ID_NOT_UNDER_RESIDENCY)
