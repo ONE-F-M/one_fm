@@ -1668,7 +1668,7 @@ class TestTheTableIsReadInArabic(FrappeTestCase):
 		)
 
 	def test_an_hourly_staff_line_reads_as_an_equation(self):
-		"""WI-003155 AC2."""
+		"""An hourly row reads as an equation in hours."""
 		from one_fm.jinja.print_format.methods import pow_arabic_figure
 
 		self.assertEqual(
