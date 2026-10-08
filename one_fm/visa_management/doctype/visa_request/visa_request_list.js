@@ -20,10 +20,50 @@ frappe.listview_settings["Visa Request"] = {
 				return;
 			}
 
-			open_url_post(
-				"/api/method/one_fm.visa_management.doctype.visa_request.visa_request.export_zip",
-				{names: JSON.stringify(names)}
-			);
+			export_visa_request_zip(names);
 		});
 	}
 };
+
+// fetch rather than open_url_post: a form POST replaces the page with the raw error when
+// the server refuses, and this keeps the user on the list with a normal message.
+async function export_visa_request_zip(names) {
+	frappe.dom.freeze(__("Preparing ZIP file..."));
+	try {
+		const response = await fetch(
+			"/api/method/one_fm.visa_management.doctype.visa_request.visa_request.export_zip",
+			{
+				method: "POST",
+				headers: {"X-Frappe-CSRF-Token": frappe.csrf_token},
+				body: new URLSearchParams({names: JSON.stringify(names)}),
+			}
+		);
+		if (!response.ok) {
+			frappe.msgprint({
+				title: __("Export ZIP File"),
+				indicator: "red",
+				message: await server_error_message(response),
+			});
+			return;
+		}
+		const link = document.createElement("a");
+		link.href = URL.createObjectURL(await response.blob());
+		link.download = "Visa Requests.zip";
+		link.click();
+		URL.revokeObjectURL(link.href);
+	} finally {
+		frappe.dom.unfreeze();
+	}
+}
+
+async function server_error_message(response) {
+	try {
+		const data = await response.json();
+		if (data._server_messages) {
+			return JSON.parse(data._server_messages).map(m => JSON.parse(m).message).join("<br>");
+		}
+	} catch (e) {
+		// Not a JSON error body; fall through to the generic message.
+	}
+	return __("The ZIP file could not be created.");
+}

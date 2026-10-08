@@ -89,7 +89,7 @@ OUTCOME_FIELDS = (
 	"payment_receipt",
 	"payment_date",
 )
-from frappe.utils import add_months, add_years, cstr, getdate, nowdate
+from frappe.utils import add_months, add_years, cstr, escape_html, getdate, nowdate
 
 # WI-001975: the eligibility a Draft has to clear before it can be saved. Both are
 # government requirements rather than internal policy, so they are checked at the door -
@@ -757,6 +757,7 @@ def export_zip(names: str):
 
 	entries = []
 	used = set()
+	missing = []
 	for name in names:
 		for path, file_name in _export_files(name):
 			try:
@@ -766,6 +767,7 @@ def export_zip(names: str):
 					title="Visa Request export - file could not be read",
 					message=f"{name}: {file_name}\n{frappe.get_traceback()}",
 				)
+				missing.append(path)
 				continue
 
 			if isinstance(content, str):
@@ -780,6 +782,16 @@ def export_zip(names: str):
 			used.add(unique)
 
 			entries.append((unique, content))
+
+	# An empty archive downloads as a ZIP that will not open; say why instead.
+	if not entries:
+		frappe.throw(
+			_("None of the selected Visa Requests has a document that could be read.")
+			+ ("<br><br>" + _("Missing files:") + "<br>" + "<br>".join(escape_html(m) for m in missing) if missing else "")
+		)
+	# A partial archive must not pass for the full set.
+	if missing:
+		entries.append(("MISSING FILES.txt", "\n".join(missing).encode()))
 
 	frappe.local.response.update(
 		filename=EXPORT_FILENAME,

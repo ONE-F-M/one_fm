@@ -9,6 +9,7 @@ has anything to do with the export.
 
 import io
 import json
+import os
 import zipfile
 
 import frappe
@@ -133,6 +134,23 @@ class TestVisaRequestExportZip(FrappeTestCase):
 	def test_an_empty_list_is_refused(self):
 		with self.assertRaises(frappe.ValidationError):
 			export_zip(json.dumps([]))
+
+	def test_nothing_readable_is_refused_instead_of_an_empty_zip(self):
+		vr = _seed("1")
+		os.remove(_attach(vr, "passport.txt", b"gone", "passport_copy").get_full_path())
+
+		with self.assertRaises(frappe.ValidationError):
+			export_zip(json.dumps([vr]))
+
+	def test_a_partial_archive_lists_what_is_missing(self):
+		vr = _seed("1")
+		os.remove(_attach(vr, "passport.txt", b"gone", "passport_copy").get_full_path())
+		_attach(vr, "note.txt", b"still here")
+
+		archive, _response = _export([vr])
+
+		self.assertEqual(archive.read(f"{vr}/note.txt"), b"still here")
+		self.assertIn(b"passport.txt", archive.read("MISSING FILES.txt"))
 
 	def test_more_than_the_cap_is_refused(self):
 		names = [f"{SEEDED}{n}" for n in range(EXPORT_MAX_REQUESTS + 1)]
