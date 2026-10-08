@@ -546,9 +546,7 @@ usePageMeta(() => {
 
 <style scoped>
 :deep(.form-control button) {
-  @apply text-base rounded h-7 py-1.5 border border-outline-gray-2 placeholder-ink-gray-4 hover:border-outline-gray-3 hover:shadow-sm focus:border-outline-gray-4 focus:shadow-sm focus:ring-0 focus-visible:ring-0 text-ink-gray-8 transition-colors w-full dark:[color-scheme:dark];
-  /* Newer frappe-ui calls this colour surface-base and older ones surface-white; Helpdesk sites run both. */
-  background-color: var(--surface-base, var(--surface-white));
+  @apply text-base rounded h-7 py-1.5 border border-outline-gray-2 bg-surface-white placeholder-ink-gray-4 hover:border-outline-gray-3 hover:shadow-sm focus:bg-surface-white focus:border-outline-gray-4 focus:shadow-sm focus:ring-0 focus-visible:ring-0 text-ink-gray-8 transition-colors w-full dark:[color-scheme:dark];
 }
 :deep(.form-control button > div) {
   overflow: hidden;
