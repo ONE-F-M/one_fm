@@ -195,6 +195,42 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 		self.assertTrue("Reason and a Withdrawal Letter" in str(context.exception))
 
 
+	def test_approvers_follow_the_employee_current_record(self):
+		stale_user = _make_user("test_erw_stale_supervisor@example.com")
+		frappe.db.set_value("Employee Resignation", self.resignation.name, {
+			"supervisor": stale_user,
+			"project_manager": stale_user,
+		})
+
+		new_supervisor = _make_employee_with_user("test_erw_new_supervisor@example.com", "Test ERW New Supervisor")
+		new_pm = _make_employee_with_user("test_erw_new_pm@example.com", "Test ERW New PM")
+		frappe.db.set_value("Employee", self.employee.name, "reports_to", new_supervisor)
+		frappe.db.set_value("Project", self.employee.project, "project_manager", new_pm)
+
+		erw = frappe.get_doc({
+			"doctype": "Employee Resignation Withdrawal",
+			"employee_resignation": self.resignation.name,
+			"reason": "Changed my mind",
+		}).insert()
+
+		self.assertEqual(erw.supervisor, "test_erw_new_supervisor@example.com")
+		self.assertEqual(erw.project_manager, "test_erw_new_pm@example.com")
+
+
+
+
+def _make_user(email):
+	if not frappe.db.exists("User", email):
+		frappe.get_doc({"doctype": "User", "email": email, "first_name": email.split("@")[0], "send_welcome_email": 0}).insert()
+	return email
+
+
+def _make_employee_with_user(email, employee_name):
+	emp_name = _make_employee(email, employee_name)
+	frappe.db.set_value("Employee", emp_name, "user_id", _make_user(email))
+	return emp_name
+
+
 def _submit_for_review(erw):
 	# Test employees are all non-corporate / Operations-branch, so the entry
 	# state Draft resolves to is always "Pending Supervisor".

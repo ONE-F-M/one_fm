@@ -186,23 +186,23 @@ class EmployeeResignationWithdrawal(Document):
 		if not self.employee:
 			return
 
-		# Withdrawal reuses the exact same routing/actors already resolved on the
-		# originating Employee Resignation -- fetch rather than re-derive, so the
-		# two documents can never disagree on who the actor is.
+		from one_fm.utils import get_approver_user, get_project_manager_user
+
+		# Routing comes from the resignation; supervisor and project manager come from the employee's current record
 		if self.employee_resignation:
 			resignation = frappe.db.get_value(
 				"Employee Resignation", self.employee_resignation,
-				["shift_working", "supervisor", "t4_admin", "cleaning_head_supervisor",
-				 "security_manager", "project_manager"],
+				["shift_working", "t4_admin", "cleaning_head_supervisor", "security_manager"],
 				as_dict=True,
 			)
 			if resignation:
 				self.is_corporate = 0 if resignation.shift_working else 1
-				self.supervisor = resignation.supervisor
 				self.t4_admin = resignation.t4_admin
 				self.cleaning_head_supervisor = resignation.cleaning_head_supervisor
 				self.security_manager = resignation.security_manager
-				self.project_manager = resignation.project_manager
+
+		self.supervisor = get_approver_user(self.employee, skip_shift_supervisor=True)
+		self.project_manager = get_project_manager_user(self.employee)
 
 		# Set Offboarding Officer — first user with that role
 		if not self.get("offboarding_officer"):
