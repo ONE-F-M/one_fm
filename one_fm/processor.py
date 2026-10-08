@@ -2,6 +2,7 @@ import frappe
 import requests
 import json
 from twilio.rest import Client as TwilioClient
+from twilio.base.exceptions import TwilioRestException
 import xml.etree.ElementTree as ET
 from frappe.utils.jinja import (get_email_from_template)
 from frappe.desk.doctype.notification_settings.notification_settings import(
@@ -134,20 +135,42 @@ def is_user_id_company_prefred_email_in_employee(user_id):
 
 	return True
 
+def validate_whatsapp_number(raw_number, country_code="KW"):
+	"""Validate WhatsApp reachability and normalize to E.164 via Twilio Lookup.
+
+	Returns the E.164 number (e.g. "+96551096468") if valid, else None.
+	Note: each call is a billed Twilio Lookup request.
+	"""
+	if not raw_number:
+		return None
+	try:
+		twilio = frappe.get_doc("Twilio Setting")
+		client = TwilioClient(twilio.sid, twilio.token)
+		lookup = client.lookups.v2.phone_numbers(raw_number).fetch(country_code=country_code)
+		return lookup.phone_number if lookup.valid else None
+	except TwilioRestException:
+		return None
+
 @frappe.whitelist()
-def send_whatsapp(sender_id, template_name, content_variables):
+def send_whatsapp(sender_id: str, template_name: str, content_variables):
+	number = validate_whatsapp_number(sender_id)
+	if not number:
+		frappe.log_error(title="Invalid WhatsApp number", message=sender_id)
+		return
+
 	twilio = frappe.get_doc('Twilio Setting')
 	content_sid = frappe.get_value('Content Template', {'template_name':template_name}, ['content_sid'])
 
 	client =  TwilioClient(twilio.sid, twilio.token)
 
+	message = None
 	if content_sid:
 		message = client.messages.create(
 								from_='whatsapp:' + twilio.t_number,
 								messaging_service_sid=twilio.messaging_service_sid,
 								content_sid=content_sid,
 								content_variables=json.dumps(content_variables),
-								to='whatsapp:+'+sender_id
+								to='whatsapp:' + number
 							)
 
 	return message
