@@ -124,7 +124,7 @@
    "description": "Every revision shares one Drive file, so this link stays valid for the life of the document — it always opens the current version.",
    "fieldname": "document_link",
    "fieldtype": "Data",
-   "label": "Published Document",
+   "label": "Document Link",
    "options": "URL",
    "read_only": 1
   },
