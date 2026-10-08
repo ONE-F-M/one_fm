@@ -25,22 +25,22 @@ from one_fm.operations.doctype.operations_shift.operations_shift import resolve_
 def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, project=None, site=None, shift=None, department=None, designation=None):
 	date = cstr(add_to_date(nowdate(), days=1))
 	conds = "and shift_working = 1 "
+	cond_values = []
 
-	if employee_name:
-		conds += "and emp.employee_name='{name}' ".format(name=employee_name)
-	if department:
-		conds += "and emp.department='{department}' ".format(department=department)
-	if designation:
-		conds += "and emp.designation='{designation}' ".format(designation=designation)
-	if company:
-		conds += "and emp.company='{company}' ".format(company=company)
-
-	if project:
-		conds += "and emp.project='{project}' ".format(project=project)
-	if site:
-		conds += "and emp.site='{site}' ".format(site=site)
-	if shift:
-		conds += "and emp.name='{shift}' ".format(shift=shift)
+	# Filters come straight from the client, so every one is bound as a parameter
+	# rather than interpolated into the statement.
+	for fieldname, value in (
+		("emp.employee_name", employee_name),
+		("emp.department", department),
+		("emp.designation", designation),
+		("emp.company", company),
+		("emp.project", project),
+		("emp.site", site),
+		("emp.name", shift),
+	):
+		if value:
+			conds += f"and {fieldname}=%s "
+			cond_values.append(value)
 
 	if not cint(assigned):
 		data = frappe.db.sql("""
@@ -53,7 +53,7 @@ def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, pr
 			and emp.shift is NULL
 			and emp.user_id=usr.name
 			{conds}
-		""".format(date=date, conds=conds), as_dict=1)
+		""".format(date=date, conds=conds), values=cond_values, as_dict=1)
 		return data
 
 	data = frappe.db.sql("""
@@ -70,7 +70,7 @@ def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, pr
 		and emp.shift = opshift.name
 		and emp.site = opsite.name
 		{conds}
-	""".format(date=date, conds=conds), as_dict=1)
+	""".format(date=date, conds=conds), values=cond_values, as_dict=1)
 	return data
 
 @frappe.whitelist(allow_guest=True)
@@ -1015,7 +1015,8 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 		for dateval in date_values:
 			daily_add_count[dateval.get("date")] +=1
 
-	query_values = [] # Prepare values for bulk insert
+	query_values = [] # Prepare placeholder rows for bulk insert
+	query_params = [] # Flat parameter list bound to those placeholders
 	skipped_ot_no_basic = []
 	skipped_ot_overlap = []
 
@@ -1067,15 +1068,20 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			employee_doc = employees_dict.get(employee_name_iter)
 			name = f"{datevalue['date']}_{employee_name_iter}_{roster_type}"
 			inserted_names.append(name)
-			day_off_ot_val = datevalue.get('day_off_ot') or day_off_ot  
-			query_values.append(f"""
-				(
-					'{name}', '{employee_name_iter}', '{employee_doc.employee_name}', '{employee_doc.department}', '{datevalue['date']}', '{operations_shift_doc.name}',
-					'{operations_shift_doc.site}', '{operations_shift_doc.project}', '{datevalue.get('shift_type') or operations_shift_doc.shift_type}', 'Working',
-					'{operations_role_doc.name}', '{operations_role_doc.post_abbrv}', '{roster_type}',
-					{day_off_ot_val}, '{datevalue.get('start_datetime')}', '{datevalue.get('end_datetime')}', '{owner}', '{owner}', '{creation}', '{creation}',
-					0, NULL
-				)""")
+			day_off_ot_val = datevalue.get('day_off_ot') or day_off_ot
+			# Values are bound as parameters, never interpolated: an employee name
+			# carrying an apostrophe (e.g. "Timothy Kamnong'Ona") used to close the
+			# string literal and fail the whole INSERT with a SQL syntax error.
+			query_values.append("(%s, %s, %s, %s, %s, %s, %s, %s, %s, 'Working', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0, NULL)")
+			query_params.extend([
+				name, employee_name_iter, employee_doc.employee_name, employee_doc.department,
+				datevalue['date'], operations_shift_doc.name, operations_shift_doc.site,
+				operations_shift_doc.project,
+				datevalue.get('shift_type') or operations_shift_doc.shift_type,
+				operations_role_doc.name, operations_role_doc.post_abbrv, roster_type,
+				cint(day_off_ot_val), datevalue.get('start_datetime'), datevalue.get('end_datetime'),
+				owner, owner, creation, creation,
+			])
 			can_create = True
 
 
@@ -1115,7 +1121,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			relieving_employee_schedule = NULL
 		"""
 		if can_create:
-			frappe.db.sql(query, values=[])
+			frappe.db.sql(query, values=query_params)
 			frappe.db.commit()
 
 			# WI-002283: these rows were written by the INSERT above, not through the
@@ -1207,11 +1213,14 @@ def update_employee_shift(employees, shift, owner, creation):
 			VALUES
 		"""
 		query_values_asa = []
+		query_params_asa = []
 		for k, emp_asa in unmatched_record.items():
-			query_values_asa.append(f"""(
-					"{emp_asa.name}|{shift}", "{emp_asa.name}", "{emp_asa.employee_name}", "{emp_asa.employee_id}", "{site}", "{shift}",
-					"{project}", "{owner}", "{owner}", "{creation}", "{creation}"
-			)""")
+			# Bound parameters, not interpolation: employee names may contain apostrophes.
+			query_values_asa.append("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
+			query_params_asa.extend([
+				f"{emp_asa.name}|{shift}", emp_asa.name, emp_asa.employee_name, emp_asa.employee_id,
+				site, shift, project, owner, owner, creation, creation,
+			])
 
 		if query_values_asa:
 			query += ",\n".join(query_values_asa)
@@ -1223,7 +1232,7 @@ def update_employee_shift(employees, shift, owner, creation):
 				modified_by = VALUES(modified_by),
 				modified = VALUES(modified)
 			"""
-			frappe.db.sql(query)
+			frappe.db.sql(query, values=query_params_asa)
 
 	if matched_record:
 		frappe.db.delete("Additional Shift Assignment", {
