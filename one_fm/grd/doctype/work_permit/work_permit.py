@@ -586,16 +586,30 @@ def create_wp_from_preparation(employee, work_permit_type, preparation_name):
 
 # Create Work Permit record once a month for renewals list
 def create_work_permit_renewal(preparation_name):
+    """Open a renewal Work Permit for every row the Action calls for.
+
+    Returns the rows it could not open one for, so the submitting operator is told
+    rather than left reading a clean submit: the Error Log entry alone is invisible to
+    them, and a missing permit silently costs the employee their Medical Insurance too.
+    """
 #Get employees of the choosen preparation record
+    failures = []
     employee_in_preparation = frappe.get_doc('Preparation',preparation_name)
     if employee_in_preparation.preparation_record:
         for employee in employee_in_preparation.preparation_record:
             if employee.renewal_or_extend in  ['Renewal Expat','Renewal (Kuwaiti)']:
                 try:
                     create_wp_renewal(frappe.get_doc('Employee',employee.employee),employee.renewal_or_extend,preparation_name)
-                except Exception:
+                except Exception as e:
                     frappe.log_error(message=frappe.get_traceback(), title=f"Work Permit Renewal Creation Failed for Employee {employee.employee} in Preparation {preparation_name}")
+                    failures.append({
+                        'employee': employee.employee,
+                        'employee_name': employee.full_name,
+                        'document': 'Work Permit',
+                        'reason': str(e),
+                    })
                     continue
+    return failures
 
 
 #FOR RENEWAL
