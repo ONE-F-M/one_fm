@@ -58,7 +58,7 @@ class TestComplianceStatus(FrappeTestCase):
 			"civil_id_number_for_licensing": "_TEST-PAM-STATUS",
 			"license_name": "_Test Status Licence",
 			"classification": "Commercial",
-			"status": "Not suspended",
+			"status": "Active",
 			"pam_license_stats": [{
 				"occupational_sector": PROFESSIONALS,
 				"ratio_number_of_national_workers": "20",

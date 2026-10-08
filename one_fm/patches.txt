@@ -660,3 +660,4 @@ one_fm.patches.v15_0.add_wiki_sidebar_child_columns #2026-10-01 add parent, pare
 one_fm.patches.v15_0.cancel_duplicate_absence_cases #2026-10-06 HD-1858822 clear duplicate Absence Cases left by the nightly absence check
 one_fm.patches.v15_0.add_project_manager_user_to_project #2026-10-06
 one_fm.patches.v15_0.restore_cancelled_onboarding_emp_onb_2026_00361 #2026-10-06 restore EMP-ONB-2026-00361 cancelled by mistake, unlink DC-2026-00358 so a new one is created
+one_fm.patches.v15_0.rename_pam_license_status_options #2026-10-08 PAM Licence status: Not suspended -> Active, Detained -> Suspended

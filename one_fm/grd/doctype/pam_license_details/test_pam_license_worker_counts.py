@@ -81,7 +81,7 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 			"civil_id_number_for_licensing": LICENSE_NUMBER,
 			"license_name": LICENSE,
 			"classification": "Commercial",
-			"status": "Not suspended",
+			"status": "Active",
 			"pam_license_stats": [
 				{"occupational_sector": self.sector},
 				{"occupational_sector": self.other_sector},

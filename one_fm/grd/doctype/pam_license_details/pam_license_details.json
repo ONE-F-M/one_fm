@@ -88,7 +88,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "\nNot suspended\nDetained\nInactive"
+   "options": "\nActive\nSuspended\nInactive"
   },
   {
    "fieldname": "lg_details_section",
