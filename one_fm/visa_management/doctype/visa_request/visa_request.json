@@ -99,6 +99,7 @@
    "fieldname": "nationality",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Nationality",
    "options": "Nationality",
    "reqd": 1
@@ -456,6 +457,7 @@
   {
    "fieldname": "agency",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Agency",
    "options": "Agency"
   },
@@ -612,7 +614,7 @@
    "link_fieldname": "visa_request_id"
   }
  ],
- "modified": "2026-09-30 23:39:00.000000",
+ "modified": "2026-10-06 09:00:00.000000",
  "modified_by": "Administrator",
  "module": "Visa Management",
  "name": "Visa Request",

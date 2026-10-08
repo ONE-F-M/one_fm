@@ -1,7 +1,9 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
 
+import io
 import re
+import zipfile
 
 import frappe
 from frappe import _
@@ -87,7 +89,7 @@ OUTCOME_FIELDS = (
 	"payment_receipt",
 	"payment_date",
 )
-from frappe.utils import add_months, add_years, getdate, nowdate
+from frappe.utils import add_months, add_years, cstr, escape_html, getdate, nowdate
 
 # WI-001975: the eligibility a Draft has to clear before it can be saved. Both are
 # government requirements rather than internal policy, so they are checked at the door -
@@ -614,4 +616,185 @@ def cancelled_visa_requests(visa_requests: list) -> set:
 			],
 			pluck="visa_request_id",
 		)
+	)
+
+
+# Export ZIP File from the Visa Request list view.
+#
+# The Attach fields whose current value goes into the archive. The label in the archive is
+# the field's own label, so it follows the form.
+EXPORT_ATTACH_FIELDS = (
+	"passport_copy",
+	"driver_license",
+	"payment_receipt",
+	"visa_document",
+	"degree_certificate",
+)
+
+# ~5 MB per request on prod, and the whole archive is built in memory.
+EXPORT_MAX_REQUESTS = 50
+
+EXPORT_FILENAME = "Visa Requests.zip"
+
+# Characters that must not reach a filename inside a ZIP. Copied from proof_of_work.py
+# (_UNSAFE_FILENAME_CHARS) rather than imported, so this module does not pull that one in.
+_UNSAFE_FILENAME_CHARS = re.compile(r'[\\/:*?"<>|\r\n\t]+')
+
+
+def _safe_filename(text: str) -> str:
+	"""Collapse anything filesystem-hostile out of one filename component.
+
+	Copied from proof_of_work.py::_safe_filename.
+	"""
+	cleaned = _UNSAFE_FILENAME_CHARS.sub(" ", cstr(text))
+	# Collapse runs of whitespace so the " - " separators stay readable.
+	return " ".join(cleaned.split())
+
+
+def _build_zip(entries) -> bytes:
+	"""Bundle ``[(filename, content_bytes), ...]`` into an in-memory ZIP.
+
+	Adapted from proof_of_work.py::_build_zip, but stored rather than deflated: the
+	contents are PDFs and JPEGs, which do not compress, so deflating only costs time.
+	"""
+	buf = io.BytesIO()
+	with zipfile.ZipFile(buf, "w", zipfile.ZIP_STORED) as zf:
+		for filename, content in entries:
+			zf.writestr(filename, content)
+	return buf.getvalue()
+
+
+def _export_files(name: str) -> list:
+	"""``[(path inside the ZIP, File name), ...]`` for one Visa Request.
+
+	Attach fields: only the File that the field points at *now*. A replaced attachment
+	leaves its old File row behind with the same attached_to_field, so matching on the
+	field alone would put the stale copy in the archive too.
+
+	Sidebar files: Files attached to the request with no attached_to_field.
+	"""
+	meta = frappe.get_meta("Visa Request")
+	entries = []
+
+	for fieldname in EXPORT_ATTACH_FIELDS:
+		file_url = frappe.db.get_value("Visa Request", name, fieldname)
+		if not file_url:
+			continue
+
+		file_name = frappe.db.get_value(
+			"File",
+			{
+				"attached_to_doctype": "Visa Request",
+				"attached_to_name": name,
+				"attached_to_field": fieldname,
+				"file_url": file_url,
+			},
+			"name",
+		)
+		if not file_name:
+			frappe.log_error(
+				title="Visa Request export - attachment has no File record",
+				message=f"{name}: {fieldname} = {file_url}",
+			)
+			continue
+
+		label = meta.get_label(fieldname) or fieldname
+		original_name = frappe.db.get_value("File", file_name, "file_name") or file_name
+		entries.append((f"{_safe_filename(label)} - {_safe_filename(original_name)}", file_name))
+
+	sidebar = frappe.get_all(
+		"File",
+		filters={
+			"attached_to_doctype": "Visa Request",
+			"attached_to_name": name,
+			"attached_to_field": ["is", "not set"],
+			"is_folder": 0,
+		},
+		fields=["name", "file_name"],
+		order_by="creation asc",
+	)
+	for row in sidebar:
+		entries.append((_safe_filename(row.file_name or row.name), row.name))
+
+	return [(f"{_safe_filename(name)}/{path}", file_name) for path, file_name in entries]
+
+
+@frappe.whitelist(methods=["POST"])
+def export_zip(names: str):
+	"""Download the documents of the selected Visa Requests as one ZIP.
+
+	All or nothing on permission: one request the caller cannot read refuses the whole
+	export, so nobody receives a partial archive and takes it for the full set. A file that
+	is missing on disk is the opposite case - it is logged and skipped, because one lost
+	scan must not block the other 49 requests.
+
+	Layout: ``<VR name>/<field label> - <file name>`` for Attach fields and
+	``<VR name>/<file name>`` for sidebar files. Not saved as a File (the 25 MB limit).
+	"""
+	names = frappe.parse_json(names)
+	if isinstance(names, str):
+		names = [names]
+
+	if not names or not isinstance(names, (list, tuple)):
+		frappe.throw(_("Select at least one Visa Request to export."))
+
+	if len(names) > EXPORT_MAX_REQUESTS:
+		frappe.throw(
+			_("You can export at most {0} Visa Requests at a time. {1} were selected.").format(
+				EXPORT_MAX_REQUESTS, len(names)
+			)
+		)
+
+	# Dict keys keep the order and drop a name that was sent twice.
+	names = list(dict.fromkeys(cstr(name) for name in names))
+
+	for name in names:
+		if not frappe.has_permission("Visa Request", "read", name):
+			frappe.throw(
+				_("You do not have permission to read Visa Request {0}.").format(name),
+				frappe.PermissionError,
+			)
+
+	entries = []
+	used = set()
+	missing = []
+	for name in names:
+		for path, file_name in _export_files(name):
+			try:
+				content = frappe.get_doc("File", file_name).get_content()
+			except Exception:
+				frappe.log_error(
+					title="Visa Request export - file could not be read",
+					message=f"{name}: {file_name}\n{frappe.get_traceback()}",
+				)
+				missing.append(path)
+				continue
+
+			if isinstance(content, str):
+				content = content.encode()
+
+			# Two sidebar files can share a name, and a ZIP would keep both under it.
+			unique, counter = path, 1
+			while unique in used:
+				counter += 1
+				stem, dot, ext = path.rpartition(".")
+				unique = f"{stem} ({counter}).{ext}" if dot else f"{path} ({counter})"
+			used.add(unique)
+
+			entries.append((unique, content))
+
+	# An empty archive downloads as a ZIP that will not open; say why instead.
+	if not entries:
+		frappe.throw(
+			_("None of the selected Visa Requests has a document that could be read.")
+			+ ("<br><br>" + _("Missing files:") + "<br>" + "<br>".join(escape_html(m) for m in missing) if missing else "")
+		)
+	# A partial archive must not pass for the full set.
+	if missing:
+		entries.append(("MISSING FILES.txt", "\n".join(missing).encode()))
+
+	frappe.local.response.update(
+		filename=EXPORT_FILENAME,
+		filecontent=_build_zip(entries),
+		type="download",
 	)
