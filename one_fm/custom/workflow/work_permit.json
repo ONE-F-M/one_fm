@@ -156,6 +156,16 @@
    "state": "Reason of Rejection",
    "update_value": "Rejected",
    "style": "Primary"
+  },
+  {
+   "allow_edit": "Government Relations Operator",
+   "avoid_status_override": 0,
+   "doc_status": "0",
+   "doctype": "Workflow Document State",
+   "is_optional_state": 0,
+   "send_email": 1,
+   "state": "Apply Online by GR Operator",
+   "style": "Warning"
   }
  ],
  "transitions": [
@@ -165,7 +175,7 @@
    "allowed": "Government Relations Operator",
    "custom_confirm_transition": 0,
    "doctype": "Workflow Transition",
-   "next_state": "Pending by GR Operator",
+   "next_state": "Apply Online by GR Operator",
    "require_digital_signature": 0,
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,
@@ -183,7 +193,7 @@
    "send_email_to_creator": 0,
    "skip_creation_of_workflow_action": 0,
    "skip_multiple_action": 0,
-   "state": "Pending by GR Operator"
+   "state": "Apply Online by GR Operator"
   },
   {
    "action": "Accept",

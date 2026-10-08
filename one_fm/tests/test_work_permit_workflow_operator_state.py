@@ -15,6 +15,7 @@ from one_fm.custom.assignment_rule.assignment_rule import get_assignment_rule_js
 from one_fm.custom.workflow.workflow import get_workflow_json_file
 
 PENDING_GRO = "Pending by GR Operator"
+APPLY_ONLINE = "Apply Online by GR Operator"
 RETIRED_STATE = "Pending By Operator"
 BYPASSED_STATE = "Apply Online by PRO"
 GRO = "Government Relations Operator"
@@ -45,12 +46,21 @@ class TestTheOperatorState(FrappeTestCase):
 		self.assertEqual(self.states[PENDING_GRO]["style"], "Warning")
 
 	def test_a_draft_saves_straight_to_the_operator(self):
-		self.assertIn(("Draft", "Save", PENDING_GRO), self.transitions)
+		# The operator applies online from a state of its own.
+		self.assertIn(("Draft", "Save", APPLY_ONLINE), self.transitions)
+		self.assertNotIn(("Draft", "Save", PENDING_GRO), self.transitions)
 
 	def test_apply_hangs_off_the_operator_state(self):
 		"""It hung off a PRO state whose only assignment rule has been disabled since
 		WI-002182, so the permit passed through a step with no owner."""
-		self.assertIn((PENDING_GRO, "Apply", "Pending GR Manager"), self.transitions)
+		self.assertIn((APPLY_ONLINE, "Apply", "Pending GR Manager"), self.transitions)
+		self.assertNotIn((PENDING_GRO, "Apply", "Pending GR Manager"), self.transitions)
+
+	def test_the_apply_online_state_is_the_operators(self):
+		state = self.states[APPLY_ONLINE]
+		self.assertEqual(state["allow_edit"], GRO)
+		self.assertEqual(str(state["doc_status"]), "0")
+		self.assertEqual(state["send_email"], 1)
 
 	def test_payment_comes_back_to_the_operator_and_the_operator_completes(self):
 		self.assertIn(("Pending  For Payment", "Paid", PENDING_GRO), self.transitions)
@@ -141,8 +151,9 @@ class TestTheOperatorRuleFollows(FrappeTestCase):
 		self.rule = get_assignment_rule_json_file("work_permit_gr_operator.json")
 
 	def test_it_assigns_at_the_operator_state(self):
-		self.assertIn(PENDING_GRO, self.rule["assign_condition"])
-		self.assertIn(PENDING_GRO, self.rule["unassign_condition"])
+		for state in (PENDING_GRO, APPLY_ONLINE):
+			self.assertIn(state, self.rule["assign_condition"])
+			self.assertIn(state, self.rule["unassign_condition"])
 
 	def test_it_no_longer_names_states_the_permit_does_not_reach(self):
 		for field in ("assign_condition", "unassign_condition", "close_condition"):
