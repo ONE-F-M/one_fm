@@ -133,7 +133,7 @@ import {
   View,
 } from "@/types";
 import { HDTicketStatus } from "@/types/doctypes";
-import { getIcon, parseColor } from "@/utils";
+import { getIcon } from "@/utils";
 import {
   Breadcrumbs,
   Button,
@@ -264,6 +264,14 @@ function bpmnActionColor(action: string): string {
     color = "blue";
   }
   return parseColor(color);
+}
+
+// @/utils has no parseColor from Helpdesk 1.28 on; defined here so the override builds on every version.
+function parseColor(color: string): string {
+  color = color.toLowerCase();
+  if (color == "black") return "!text-ink-gray-9";
+  if (["gray", "green"].includes(color)) return `!text-${color}-700`;
+  return `!text-${color}-600`;
 }
 
 // Extract structured action details (mirrors bpmn_form_actions.js).
