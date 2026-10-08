@@ -217,6 +217,50 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 		self.assertEqual(erw.project_manager, "test_erw_new_pm@example.com")
 
 
+	def test_daily_hand_over_moves_the_pending_step_to_the_current_supervisor(self):
+		from frappe.desk.form.assign_to import add
+		from one_fm.one_fm.doctype.employee_resignation.employee_resignation import hand_over_in_process_approvals
+
+		erw = frappe.get_doc({
+			"doctype": "Employee Resignation Withdrawal",
+			"employee_resignation": self.resignation.name,
+			"reason": "Changed my mind",
+			"resignation_withdrawal_letter": "/files/test.txt",
+		}).insert()
+		_submit_for_review(erw)
+
+		stale_user = _make_user("test_erw_old_supervisor@example.com")
+		erw.db_set("supervisor", stale_user)
+		add({"assign_to": [stale_user], "doctype": erw.doctype, "name": erw.name, "description": "Approve"})
+
+		new_supervisor = _make_employee_with_user("test_erw_moved_supervisor@example.com", "Test ERW Moved Supervisor")
+		frappe.db.set_value("Employee", self.employee.name, "reports_to", new_supervisor)
+
+		hand_over_in_process_approvals()
+
+		self.assertEqual(frappe.db.get_value(erw.doctype, erw.name, "supervisor"), "test_erw_moved_supervisor@example.com")
+		open_todos = frappe.get_all("ToDo", filters={
+			"reference_type": erw.doctype, "reference_name": erw.name, "status": "Open",
+		}, pluck="allocated_to")
+		self.assertIn("test_erw_moved_supervisor@example.com", open_todos)
+		self.assertNotIn(stale_user, open_todos)
+
+	def test_daily_hand_over_skips_withdrawals_not_in_process(self):
+		from one_fm.one_fm.doctype.employee_resignation.employee_resignation import hand_over_in_process_approvals
+
+		erw = frappe.get_doc({
+			"doctype": "Employee Resignation Withdrawal",
+			"employee_resignation": self.resignation.name,
+			"reason": "Changed my mind",
+		}).insert()
+		stale_user = _make_user("test_erw_old_supervisor@example.com")
+		erw.db_set("supervisor", stale_user)
+		new_supervisor = _make_employee_with_user("test_erw_moved_supervisor@example.com", "Test ERW Moved Supervisor")
+		frappe.db.set_value("Employee", self.employee.name, "reports_to", new_supervisor)
+
+		hand_over_in_process_approvals()
+
+		self.assertEqual(frappe.db.get_value(erw.doctype, erw.name, "supervisor"), stale_user)
 
 
 def _make_user(email):

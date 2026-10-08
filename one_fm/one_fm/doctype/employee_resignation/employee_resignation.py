@@ -596,3 +596,46 @@ def get_autocomplete_options() -> dict:
 		"genders": [g.name for g in genders if g.name]
 	}
 
+
+
+STEP_APPROVER_FIELDS = {
+	"Pending Line Manager": "supervisor",
+	"Pending Supervisor": "supervisor",
+	"Pending Project Manager": "project_manager",
+}
+RESIGNATION_CHANGE_DOCTYPES = ("Employee Resignation Withdrawal", "Employee Resignation Date Adjustment")
+
+
+def hand_over_in_process_approvals():
+	"""Daily: move a pending withdrawal or date adjustment step to the employee's current approver."""
+	for doctype in RESIGNATION_CHANGE_DOCTYPES:
+		names = frappe.get_all(doctype, filters={"workflow_state": ["in", list(STEP_APPROVER_FIELDS)]}, pluck="name")
+		for name in names:
+			hand_over_approval(frappe.get_doc(doctype, name))
+
+
+def hand_over_approval(doc):
+	from frappe.desk.form.assign_to import add, remove
+
+	field = STEP_APPROVER_FIELDS[doc.workflow_state]
+	old_approver = doc.get(field)
+	doc.set_approver()
+	new_approver = doc.get(field)
+	if not new_approver or new_approver == old_approver:
+		return
+
+	doc.db_set(field, new_approver)
+	old_assignment = {
+		"reference_type": doc.doctype,
+		"reference_name": doc.name,
+		"allocated_to": old_approver,
+		"status": "Open",
+	}
+	if old_approver and frappe.db.exists("ToDo", old_assignment):
+		remove(doc.doctype, doc.name, old_approver)
+		add({
+			"assign_to": [new_approver],
+			"doctype": doc.doctype,
+			"name": doc.name,
+			"description": _("{0} {1} is waiting for your approval").format(_(doc.doctype), doc.name),
+		})
