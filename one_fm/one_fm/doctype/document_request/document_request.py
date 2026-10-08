@@ -431,7 +431,7 @@ def _link_from_process_instance(document_request: str) -> str | None:
 	except Exception:
 		return None
 
-	drive_file = (state.get("data") or {}).get("drive_file") or {}
+	drive_file = (state.get("data") or {}).get("drive_file") or _drive_file_from_tasks(state)
 	if not isinstance(drive_file, dict):
 		return None
 
@@ -442,3 +442,14 @@ def _link_from_process_instance(document_request: str) -> str | None:
 		return link
 	file_id = drive_file.get("id")
 	return f"https://docs.google.com/document/d/{file_id}/edit" if file_id else None
+
+
+def _drive_file_from_tasks(state: dict) -> dict:
+	"""A run still in progress keeps drive_file on the task that set it, not on the run."""
+	latest, found = -1.0, {}
+	for task in (state.get("tasks") or {}).values():
+		changed = task["delta"].get("updates") or task.get("data") or {}
+		drive_file = changed.get("drive_file")
+		if isinstance(drive_file, dict) and task["last_state_change"] > latest:
+			latest, found = task["last_state_change"], drive_file
+	return found
