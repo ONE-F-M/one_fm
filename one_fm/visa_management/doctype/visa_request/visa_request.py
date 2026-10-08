@@ -619,7 +619,7 @@ def cancelled_visa_requests(visa_requests: list) -> set:
 	)
 
 
-# WI-003181: Export ZIP File from the Visa Request list view.
+# Export ZIP File from the Visa Request list view.
 #
 # The Attach fields whose current value goes into the archive. The label in the archive is
 # the field's own label, so it follows the form.
@@ -721,7 +721,7 @@ def _export_files(name: str) -> list:
 
 @frappe.whitelist(methods=["POST"])
 def export_zip(names: str):
-	"""Download the documents of the selected Visa Requests as one ZIP (WI-003181).
+	"""Download the documents of the selected Visa Requests as one ZIP.
 
 	All or nothing on permission: one request the caller cannot read refuses the whole
 	export, so nobody receives a partial archive and takes it for the full set. A file that

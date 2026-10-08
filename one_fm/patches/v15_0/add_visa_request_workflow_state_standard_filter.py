@@ -1,4 +1,4 @@
-"""WI-003181: make Workflow State a standard filter on the Visa Request list view.
+"""Make Workflow State a standard filter on the Visa Request list view.
 
 workflow_state on Visa Request is the Custom Field "Visa Request-workflow_state", created
 when the Workflow is saved - it is not on the DocType JSON. A Property Setter is used so the

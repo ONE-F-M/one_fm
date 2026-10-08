@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-003181: the Visa Request list view's standard filters and Export ZIP File action.
+"""The Visa Request list view's standard filters and Export ZIP File action.
 
 Requests are seeded straight into the table rather than inserted through the ORM: Visa
 Request demands a passport, an eligible age and half a dozen other fields, and none of them
@@ -19,8 +19,8 @@ from one_fm.visa_management.doctype.visa_request.visa_request import (
 	export_zip,
 )
 
-SEEDED = "WI-003181-VR-"
-NO_ACCESS_USER = "wi003181-noaccess@example.com"
+SEEDED = "TEST-ZIP-VR-"
+NO_ACCESS_USER = "zip-export-noaccess@example.com"
 
 
 def _clear():
