@@ -1082,7 +1082,7 @@ FIGURE_PATTERNS = (
 	),
 	(
 		re.compile(r"^-\s*([\d.]+)\s+Staff worked\s+([\d.]+)\s+Hours:\s*([\d.]+)\s+Hrs$"),
-		"- {0} موظف عملوا {1} ساعة: {2} ساعة",
+		"{0} موظف × {1} ساعة عمل = {2} ساعة",
 	),
 	(
 		re.compile(r"^=\{([\d.]+)\s+staff\s*\*\s*([\d.]+)\s+days\}\s*=\s*([\d.]+)\s+DAYS$"),
