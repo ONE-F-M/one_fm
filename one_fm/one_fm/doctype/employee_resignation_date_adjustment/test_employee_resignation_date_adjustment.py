@@ -37,6 +37,26 @@ class TestEmployeeResignationDateAdjustment(FrappeTestCase):
 	def tearDown(self):
 		frappe.db.rollback()
 
+	def test_project_manager_follows_the_employee_current_project(self):
+		stale_user = "test_erda_stale_pm@example.com"
+		if not frappe.db.exists("User", stale_user):
+			frappe.get_doc({"doctype": "User", "email": stale_user, "first_name": "Stale PM", "send_welcome_email": 0}).insert()
+		frappe.db.set_value("Employee Resignation", self.resignation.name, "project_manager", stale_user)
+
+		new_pm_user = "test_erda_new_pm@example.com"
+		if not frappe.db.exists("User", new_pm_user):
+			frappe.get_doc({"doctype": "User", "email": new_pm_user, "first_name": "New PM", "send_welcome_email": 0}).insert()
+		new_pm = _make_employee(new_pm_user, "Test ERDA New PM")
+		frappe.db.set_value("Employee", new_pm, "user_id", new_pm_user)
+		frappe.db.set_value("Project", self.employee.project, "project_manager", new_pm)
+
+		ext = frappe.get_doc({
+			"doctype": "Employee Resignation Date Adjustment",
+			"employee_resignation": self.resignation.name,
+		}).insert()
+
+		self.assertEqual(ext.project_manager, new_pm_user)
+
 	def test_draft_allows_missing_extended_relieving_date(self):
 		ext = frappe.get_doc({
 			"doctype": "Employee Resignation Date Adjustment",

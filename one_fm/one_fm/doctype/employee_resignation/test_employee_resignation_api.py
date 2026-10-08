@@ -6,6 +6,7 @@ from one_fm.api.v1.resignation import (
     extend_resignation,
     withdraw_resignation,
     get_resignation_by_name,
+    get_my_active_resignation,
 )
 
 class TestEmployeeResignation(FrappeTestCase):
@@ -75,6 +76,31 @@ class TestGetResignationByName(FrappeTestCase):
         with self.set_user(self.other_user):
             with self.assertRaises(frappe.DoesNotExistError):
                 get_resignation_by_name(resignation_id=self.owner_resignation)
+
+
+class TestGetMyActiveResignationWithdrawalState(FrappeTestCase):
+    def setUp(self):
+        self.user = _make_user("test-gmar-owner@example.com", "GMAR Owner")
+        self.employee = _make_employee("GMAR-Owner", self.user)
+        self.resignation = _make_resignation(self.employee)
+
+    def test_withdrawal_state_is_empty_without_a_withdrawal(self):
+        with self.set_user(self.user):
+            record = get_my_active_resignation(employee_id=self.employee)
+        self.assertEqual(record["name"], self.resignation)
+        self.assertIsNone(record["withdrawal_state"])
+
+    def test_withdrawal_state_reports_the_pending_withdrawal(self):
+        withdrawal = frappe.get_doc({
+            "doctype": "Employee Resignation Withdrawal",
+            "employee_resignation": self.resignation,
+            "employee": self.employee,
+            "reason": "Test withdrawal",
+        }).insert()
+        with self.set_user(self.user):
+            record = get_my_active_resignation(employee_id=self.employee)
+        self.assertEqual(record["withdrawal_state"], withdrawal.workflow_state)
+        self.assertTrue(record["withdrawal_state"])
 
 
 def _make_user(email, first_name):

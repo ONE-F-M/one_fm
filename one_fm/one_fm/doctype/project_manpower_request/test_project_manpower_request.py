@@ -93,6 +93,26 @@ class TestProjectManpowerRequest(FrappeTestCase):
 		self.assertTrue(len(res["nationalities"]) > 0)
 		self.assertTrue(len(res["genders"]) > 0)
 
+	def test_awaiting_recruiter_saves_without_erf_or_recruiter(self):
+		self.pmr.flags.ignore_mandatory = False
+		self.pmr.designation = frappe.db.get_value("Designation", {}, "name")
+		self.pmr.recruiter = None
+		self.pmr.erf = None
+		self.pmr.workflow_state = "Awaiting Recruiter Approval"
+		self.pmr.save()
+
+		self.assertEqual(frappe.db.get_value(self.pmr.doctype, self.pmr.name, "workflow_state"), "Awaiting Recruiter Approval")
+
+	def test_in_process_still_requires_erf(self):
+		self.pmr.flags.ignore_mandatory = False
+		self.pmr.designation = frappe.db.get_value("Designation", {}, "name")
+		self.pmr.erf = None
+		self.pmr.workflow_state = "In Process"
+
+		with self.assertRaises(frappe.ValidationError) as context:
+			self.pmr.save()
+		self.assertIn("erf", str(context.exception).lower())
+
 	def test_validate_change_request_reason(self):
 		# Setup initial workflow state as Awaiting Recruiter Approval
 		self.pmr.workflow_state = "Awaiting Recruiter Approval"

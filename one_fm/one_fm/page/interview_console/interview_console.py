@@ -249,6 +249,8 @@ def _find_or_create_interview(applicant: str, interview_round: str | None, inter
                 interview_doc.interview_round = interview_round
             interview_doc.save(ignore_permissions=True)
             if interview_doc.status in ["Cleared", "Rejected"]:
+                # The console already set the applicant status, so skip the "Update Job Applicant" prompt
+                interview_doc.flags.skip_job_applicant_update = True
                 interview_doc.submit()
         return existing_interview
     else:
@@ -270,6 +272,7 @@ def _find_or_create_interview(applicant: str, interview_round: str | None, inter
         
         interview_doc.insert(ignore_permissions=True)
         if interview_doc.status in ["Cleared", "Rejected"]:
+            interview_doc.flags.skip_job_applicant_update = True
             interview_doc.submit()
         return interview_doc.name
 

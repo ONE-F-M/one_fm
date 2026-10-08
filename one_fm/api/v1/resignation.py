@@ -482,13 +482,17 @@ def get_my_active_resignation(employee_id=None, **kwargs):
     if not resignations:
         return None
 
-
-
-    for record in resignations:
-        if record["workflow_state"] in EMPLOYEE_ACTION_STATES:
-            return record
-
-    return resignations[0]
+    record = next(
+        (r for r in resignations if r["workflow_state"] in EMPLOYEE_ACTION_STATES),
+        resignations[0],
+    )
+    record["withdrawal_state"] = frappe.db.get_value(
+        "Employee Resignation Withdrawal",
+        {"employee_resignation": record["name"]},
+        "workflow_state",
+        order_by="creation desc",
+    )
+    return record
 
 
 @frappe.whitelist()
