@@ -1660,11 +1660,49 @@ class TestTheTableIsReadInArabic(FrappeTestCase):
 
 		self.assertEqual(
 			pow_arabic_figure("- 53 Staff worked 27 days: 1431 Days"),
-			"- ٥٣ موظف عملوا ٢٧ يوم: ١٤٣١ يوم",
+			"٥٣ موظف × ٢٧ يوم عمل = ١٤٣١ يوم",
 		)
 		self.assertEqual(
 			pow_arabic_figure("- 16 Staff worked 552 Hours: 8832 Hrs"),
-			"- ١٦ موظف عملوا ٥٥٢ ساعة: ٨٨٣٢ ساعة",
+			"١٦ موظف × ٥٥٢ ساعة عمل = ٨٨٣٢ ساعة",
+		)
+
+	def test_an_hourly_staff_line_reads_as_an_equation(self):
+		"""An hourly row reads as an equation in hours."""
+		from one_fm.jinja.print_format.methods import pow_arabic_figure
+
+		self.assertEqual(
+			pow_arabic_figure("- 10 Staff worked 200 Hours: 2000 Hrs"),
+			"١٠ موظف × ٢٠٠ ساعة عمل = ٢٠٠٠ ساعة",
+		)
+
+	def test_decimal_hours_keep_the_latin_point(self):
+		"""Amendment contracts give fractional hours; the point is left as it is."""
+		from one_fm.jinja.print_format.methods import pow_arabic_figure
+
+		self.assertEqual(
+			pow_arabic_figure("- 4 Staff worked 7.5 Hours: 30.0 Hrs"),
+			"٤ موظف × ٧.٥ ساعة عمل = ٣٠.٠ ساعة",
+		)
+
+	def test_a_both_row_prints_the_days_line_the_separator_and_the_hours_line(self):
+		from one_fm.jinja.print_format.methods import pow_letter_rows
+
+		doc = self._rows(
+			(
+				"Security Guard",
+				"62 Days\nOR\n496.00 hrs",
+				"- 2 Staff worked 31 days: 62 Days\nOR\n- 2 Staff worked 248 Hours: 496 Hrs",
+			)
+		)
+
+		self.assertEqual(
+			pow_letter_rows(doc)[0]["breakdown"],
+			[
+				{"text": "٢ موظف × ٣١ يوم عمل = ٦٢ يوم"},
+				{"separator": True},
+				{"text": "٢ موظف × ٢٤٨ ساعة عمل = ٤٩٦ ساعة"},
+			],
 		)
 
 	def test_the_contracted_figure_keeps_its_shape(self):
