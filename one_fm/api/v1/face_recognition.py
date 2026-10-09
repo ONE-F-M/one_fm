@@ -35,7 +35,7 @@ def base64_to_mp4(base64_string):
 
 
 @frappe.whitelist()
-def enroll(employee_id: str = None, filename: str = None, video: str = None) -> dict:
+def enroll(employee_id: str = None, filename: str = None, video: str = None, video_mime: str = None) -> dict:
     """This method enrolls the user face into the system for future face recognition use cases.
 
     Args:
