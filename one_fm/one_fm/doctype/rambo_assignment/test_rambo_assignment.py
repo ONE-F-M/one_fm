@@ -1,7 +1,8 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
 """Submitting a Rambo Assignment writes the reliever's Employee Schedule, cancelling it
-removes that schedule, and the Shift Assignment job is scheduled.
+restores a schedule it overwrote (or deletes one it created), and the Shift Assignment job
+is scheduled.
 
 Built on live Operations Shifts and an existing Employee, at a date far enough out that no
 real roster row sits on it.
@@ -109,6 +110,45 @@ class TestRamboAssignment(FrappeTestCase):
 		rambo.cancel()
 
 		self.assertIsNone(self._schedule(rambo.name))
+
+	def test_cancel_restores_a_schedule_the_reliever_already_had(self, *_):
+		own_shift = _shift(overnight=True)
+		site, project, shift_type = frappe.db.get_value(
+			"Operations Shift", own_shift, ["site", "project", "shift_type"]
+		)
+		own = frappe.get_doc(
+			{
+				"doctype": "Employee Schedule",
+				"employee": self.employee,
+				"date": DATE,
+				"employee_availability": "Working",
+				"shift": own_shift,
+				"shift_type": shift_type,
+				"site": site,
+				"project": project,
+				"roster_type": "Basic",
+			}
+		)
+		own.flags.ignore_permissions = True
+		own.insert()
+
+		rambo = self._rambo()
+		rambo.submit()
+		self.assertEqual(self._schedule(rambo.name).name, own.name)
+
+		rambo.cancel()
+
+		restored = frappe.db.get_value(
+			"Employee Schedule",
+			own.name,
+			["shift", "site", "is_rambo_schedule", "rambo_assignment"],
+			as_dict=True,
+		)
+		self.assertIsNotNone(restored, "the reliever's own schedule was deleted")
+		self.assertEqual(restored.shift, own_shift)
+		self.assertEqual(restored.site, site)
+		self.assertFalse(restored.is_rambo_schedule)
+		self.assertIsNone(restored.rambo_assignment)
 
 	def test_the_shift_assignment_job_is_scheduled(self, *_):
 		events = frappe.get_hooks("scheduler_events")["cron"]
