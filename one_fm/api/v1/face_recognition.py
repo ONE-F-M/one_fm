@@ -5,7 +5,7 @@ from one_fm.one_fm.page.face_recognition.face_recognition import update_onboardi
 from datetime import timedelta
 from one_fm.utils import get_current_shift, is_holiday,get_holiday_today
 from one_fm.api.v1.utils import (
-    response, verify_via_face_recogniton_service
+    response, verify_via_face_recogniton_service, get_video_extension
 )
 from frappe.utils import add_days, cint, cstr, flt, getdate, now_datetime, strip_html
 from one_fm.api.doc_events import haversine
@@ -35,7 +35,7 @@ def base64_to_mp4(base64_string):
 
 
 @frappe.whitelist()
-def enroll(employee_id: str = None, filename: str = None, video: str = None) -> dict:
+def enroll(employee_id: str = None, filename: str = None, video: str = None, video_mime: str = None) -> dict:
     """This method enrolls the user face into the system for future face recognition use cases.
 
     Args:
@@ -54,8 +54,13 @@ def enroll(employee_id: str = None, filename: str = None, video: str = None) -> 
             return response(_("Missing Employee ID"), 400, None,
                             _("Please enter your Employee ID."))
 
+        video_ext = get_video_extension(video_mime)
+        if video_ext is None:
+            return response(_("Unsupported video format"), 400, None,
+                            _("Unsupported video format"))
+
         if not filename:
-            filename = frappe.session.user+'.mp4'
+            filename = frappe.session.user + video_ext
 
         video_file = frappe.request.files.get("video_file") or video or frappe.request.files.get("video")
         endpoint_state = frappe.db.get_single_value("ONEFM General Setting", 'enable_face_recognition_endpoint')
@@ -80,7 +85,7 @@ def enroll(employee_id: str = None, filename: str = None, video: str = None) -> 
                 frappe.db.commit()
                 return response(_("Enrollment Unavailable"), 503, None,
                                 _("Face enrollment is temporarily unavailable. Please contact your Site Supervisor."))
-            status, message = verify_via_face_recogniton_service(url=face_recog_base_url + "enroll", data={"username": frappe.session.user, "filename": filename}, files={"video_file": video_file})
+            status, message = verify_via_face_recogniton_service(url=face_recog_base_url + "enroll", data={"username": frappe.session.user, "filename": filename}, files={"video_file": video_file}, video_mime=video_mime)
         else:
             status, message = True, 'Successful'
 
@@ -112,7 +117,7 @@ def enroll(employee_id: str = None, filename: str = None, video: str = None) -> 
 @frappe.whitelist()
 def verify_checkin_checkout(employee_id: str = None, log_type: str = None,shift: str = None,
                             skip_attendance: str = None, latitude: str = None, longitude: str = None,
-                            filename: str = None,video: str = None):
+                            filename: str = None,video: str = None, video_mime: str = None):
     """This method verifies user checking in/checking out.
 
     Args:
@@ -136,6 +141,11 @@ def verify_checkin_checkout(employee_id: str = None, log_type: str = None,shift:
         if not employee_id:
             return response(_("Missing Employee ID"), 400, None,
                             _("Please enter your Employee ID."))
+
+        video_ext = get_video_extension(video_mime)
+        if video_ext is None:
+            return response(_("Unsupported video format"), 400, None,
+                            _("Unsupported video format"))
 
         if not log_type:
             return response(_("Missing Log Type"), 400, None,
@@ -205,7 +215,7 @@ def verify_checkin_checkout(employee_id: str = None, log_type: str = None,shift:
         # check Face Recognition Endpoint
 
         if not filename:
-            filename = frappe.session.user+'.mp4'
+            filename = frappe.session.user + video_ext
         if endpoint_state and employee.custom_enable_face_recognition:
             if not face_recog_base_url:
                 frappe.log_error(
@@ -217,7 +227,7 @@ def verify_checkin_checkout(employee_id: str = None, log_type: str = None,shift:
                                 _("Face verification is temporarily unavailable. Please contact your Site Supervisor."))
             status, message = verify_via_face_recogniton_service(url=face_recog_base_url + "verify", data={
                 "username": frappe.session.user, "filename": filename
-                }, files={"video_file": video_file})
+                }, files={"video_file": video_file}, video_mime=video_mime)
         else:
             status, message = True, 'Successful'
 
