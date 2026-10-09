@@ -85,7 +85,7 @@ def enroll(employee_id: str = None, filename: str = None, video: str = None, vid
                 frappe.db.commit()
                 return response(_("Enrollment Unavailable"), 503, None,
                                 _("Face enrollment is temporarily unavailable. Please contact your Site Supervisor."))
-            status, message = verify_via_face_recogniton_service(url=face_recog_base_url + "enroll", data={"username": frappe.session.user, "filename": filename}, files={"video_file": video_file})
+            status, message = verify_via_face_recogniton_service(url=face_recog_base_url + "enroll", data={"username": frappe.session.user, "filename": filename}, files={"video_file": video_file}, video_mime=video_mime)
         else:
             status, message = True, 'Successful'
 
