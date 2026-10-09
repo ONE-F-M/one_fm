@@ -215,7 +215,7 @@ def verify_checkin_checkout(employee_id: str = None, log_type: str = None,shift:
         # check Face Recognition Endpoint
 
         if not filename:
-            filename = frappe.session.user+'.mp4'
+            filename = frappe.session.user + video_ext
         if endpoint_state and employee.custom_enable_face_recognition:
             if not face_recog_base_url:
                 frappe.log_error(
