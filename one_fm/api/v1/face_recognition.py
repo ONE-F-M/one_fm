@@ -54,8 +54,13 @@ def enroll(employee_id: str = None, filename: str = None, video: str = None, vid
             return response(_("Missing Employee ID"), 400, None,
                             _("Please enter your Employee ID."))
 
+        video_ext = get_video_extension(video_mime)
+        if video_ext is None:
+            return response(_("Unsupported video format"), 400, None,
+                            _("Unsupported video format"))
+
         if not filename:
-            filename = frappe.session.user+'.mp4'
+            filename = frappe.session.user + video_ext
 
         video_file = frappe.request.files.get("video_file") or video or frappe.request.files.get("video")
         endpoint_state = frappe.db.get_single_value("ONEFM General Setting", 'enable_face_recognition_endpoint')
