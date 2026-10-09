@@ -142,6 +142,11 @@ def verify_checkin_checkout(employee_id: str = None, log_type: str = None,shift:
             return response(_("Missing Employee ID"), 400, None,
                             _("Please enter your Employee ID."))
 
+        video_ext = get_video_extension(video_mime)
+        if video_ext is None:
+            return response(_("Unsupported video format"), 400, None,
+                            _("Unsupported video format"))
+
         if not log_type:
             return response(_("Missing Log Type"), 400, None,
                             _("Please select whether you are checking in or out."))
