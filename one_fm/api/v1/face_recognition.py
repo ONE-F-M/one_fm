@@ -227,7 +227,7 @@ def verify_checkin_checkout(employee_id: str = None, log_type: str = None,shift:
                                 _("Face verification is temporarily unavailable. Please contact your Site Supervisor."))
             status, message = verify_via_face_recogniton_service(url=face_recog_base_url + "verify", data={
                 "username": frappe.session.user, "filename": filename
-                }, files={"video_file": video_file})
+                }, files={"video_file": video_file}, video_mime=video_mime)
         else:
             status, message = True, 'Successful'
 
