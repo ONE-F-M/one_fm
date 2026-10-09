@@ -240,12 +240,7 @@ def google_map_api():
 
 
 def get_video_extension(video_mime: str = None):
-    """Map the client's video MIME type to the file extension sent to the face service.
-
-    Returns ".mp4" when video_mime is missing (behaviour as before), ".mp4" for
-    video/mp4, ".webm" for anything starting with video/webm (codecs parameter
-    allowed), and None for any other value (unsupported).
-    """
+    """Return ".mp4" for a missing value or video/mp4, ".webm" for any video/webm type, else None."""
     if not video_mime:
         return ".mp4"
     mime = cstr(video_mime).strip().lower()

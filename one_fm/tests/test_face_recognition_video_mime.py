@@ -1,11 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""Tests for the video_mime parameter on the face-recognition endpoints (WI-002625).
-
-requests.post is mocked, so the face service is never called. The face service is made
-to answer with an error so the endpoints stop right after the call and we can inspect
-the filename that was sent and the Error Log message that was written.
-"""
+"""video_mime on the v1 face-recognition endpoints, with the face service mocked."""
 
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
@@ -59,10 +54,21 @@ class _Base(FrappeTestCase):
 				video="BASE64DATA", video_mime=video_mime,
 			)
 
+		get_value = frappe.db.get_value
+		get_single_value = frappe.db.get_single_value
+
+		def fake_get_value(doctype, *args, **kwargs):
+			return employee if doctype == "Employee" else get_value(doctype, *args, **kwargs)
+
+		def fake_get_single_value(doctype, field, *args, **kwargs):
+			if doctype == "ONEFM General Setting":
+				return 1
+			return get_single_value(doctype, field, *args, **kwargs)
+
 		with patch.object(fr, "face_recog_base_url", BASE_URL), \
 			patch.object(frappe, "request", SimpleNamespace(files={}), create=True), \
-			patch.object(frappe.db, "get_single_value", return_value=1), \
-			patch.object(frappe.db, "get_value", return_value=employee), \
+			patch.object(frappe.db, "get_single_value", side_effect=fake_get_single_value), \
+			patch.object(frappe.db, "get_value", side_effect=fake_get_value), \
 			patch.object(frappe.db, "commit"), \
 			patch.object(frappe, "log_error") as log_error, \
 			patch("one_fm.api.v1.utils.requests.post", return_value=_service_error()) as post:
