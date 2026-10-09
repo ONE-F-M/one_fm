@@ -239,7 +239,24 @@ def google_map_api():
                         strip_html(str(e)) or type(e).__name__)
 
 
-def verify_via_face_recogniton_service(url: str, data: dict, files: dict) -> tuple:
+def get_video_extension(video_mime: str = None):
+    """Map the client's video MIME type to the file extension sent to the face service.
+
+    Returns ".mp4" when video_mime is missing (behaviour as before), ".mp4" for
+    video/mp4, ".webm" for anything starting with video/webm (codecs parameter
+    allowed), and None for any other value (unsupported).
+    """
+    if not video_mime:
+        return ".mp4"
+    mime = cstr(video_mime).strip().lower()
+    if mime == "video/mp4":
+        return ".mp4"
+    if mime.startswith("video/webm"):
+        return ".webm"
+    return None
+
+
+def verify_via_face_recogniton_service(url: str, data: dict, files: dict, video_mime: str = None) -> tuple:
     decrypt_video = 1 if type(files.get('video_file'))==str else 0
     data['decrypt_video'] = decrypt_video
 
@@ -248,7 +265,7 @@ def verify_via_face_recogniton_service(url: str, data: dict, files: dict) -> tup
     except requests.exceptions.RequestException:
         frappe.log_error(
             title=f"Mobile API: face recognition service unreachable | {frappe.session.user}",
-            message=frappe.get_traceback(),
+            message=f"{frappe.get_traceback()}\nvideo_mime: {video_mime}",
         )
         return False, _("Face verification is temporarily unavailable. Please try again in a "
                         "few minutes, or contact your Site Supervisor.")
