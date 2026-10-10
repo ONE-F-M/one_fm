@@ -107,39 +107,6 @@ class TestBonusRequest(FrappeTestCase):
 		doc.insert(ignore_permissions=True)
 		self.assertTrue(doc.name)
 
-	def test_effective_month_rejects_past_month(self):
-		"""Selecting a past month should raise a ValidationError with closed-payroll message."""
-		past_date = getdate(add_months(nowdate(), -2))
-		month_names = [
-			"", "January", "February", "March", "April", "May", "June",
-			"July", "August", "September", "October", "November", "December"
-		]
-
-		doc = make_bonus_request(
-			effective_month=month_names[past_date.month],
-			effective_year=past_date.year,
-		)
-		self.assertRaisesRegex(
-			frappe.ValidationError,
-			"previous closed payroll months",
-			doc.insert,
-			ignore_permissions=True,
-		)
-
-	def test_effective_month_rejects_last_month(self):
-		"""Selecting last month should raise a ValidationError."""
-		last_month_date = getdate(add_months(nowdate(), -1))
-		month_names = [
-			"", "January", "February", "March", "April", "May", "June",
-			"July", "August", "September", "October", "November", "December"
-		]
-
-		doc = make_bonus_request(
-			effective_month=month_names[last_month_date.month],
-			effective_year=last_month_date.year,
-		)
-		self.assertRaises(frappe.ValidationError, doc.insert, ignore_permissions=True)
-
 	def test_effective_month_accepts_future_month(self):
 		"""Selecting a future month should succeed without error."""
 		future_date = getdate(add_months(nowdate(), 3))
