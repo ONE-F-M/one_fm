@@ -804,9 +804,6 @@ scheduler_events = {
         "00 2 * * *":[ #“At 02:00"
 			"one_fm.one_fm.doctype.leave_acknowledgement_form.leave_acknowledgement_form.generate_leave_acknowledgement"
 		],
-		"08 00 24 * *": [ #“At 00:08 on day-of-month 24.”
-			'one_fm.api.tasks.generate_penalties'
-		],
 		"00 01 24 * *": [
 			'one_fm.api.tasks.generate_site_allowance',
 			'one_fm.api.tasks.generate_ot_additional_salary',
