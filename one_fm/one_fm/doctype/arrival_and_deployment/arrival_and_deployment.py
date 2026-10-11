@@ -214,8 +214,8 @@ class ArrivalandDeployment(Document):
         if not officer_email:
             return
 
-        from frappe.utils import escape_html
-        subject = f"New Candidate Ready for Onboarding: {escape_html(display_name)}"
+        from frappe.utils import escape_html, formatdate
+        subject = f"New Candidate Ready for Onboarding: {escape_html(display_name)}, arriving {formatdate(self.arrival_date)}"
         message = f'''
         <p>Dear Onboarding Officer,</p>
         <p>A new candidate is ready for onboarding:</p>
