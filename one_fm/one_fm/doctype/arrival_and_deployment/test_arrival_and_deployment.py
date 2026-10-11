@@ -57,3 +57,17 @@ class TestOnboardingOfficerEmail(FrappeTestCase):
 		email = enqueue.call_args.kwargs
 		self.assertIn(frappe.utils.formatdate("2026-10-15"), email["subject"])
 		self.assertEqual(email["cc"], "test_hr_mailbox@example.com")
+
+
+class TestPendingOnboardingEditors(FrappeTestCase):
+	def test_onboarding_officer_and_recruiter_can_edit_pending_onboarding(self):
+		from one_fm.patches.v15_0 import allow_onboarding_officer_to_edit_pending_onboarding_arrivals as patch_module
+
+		if not frappe.db.exists("Workflow", "Arrival and Deployment"):
+			self.skipTest("Arrival and Deployment workflow is created by earlier patches")
+		patch_module.execute()
+		patch_module.execute()
+
+		workflow = frappe.get_doc("Workflow", "Arrival and Deployment")
+		editors = [d.allow_edit for d in workflow.states if d.state == "Pending Onboarding"]
+		self.assertCountEqual(editors, ["Recruiter", "Onboarding Officer"])

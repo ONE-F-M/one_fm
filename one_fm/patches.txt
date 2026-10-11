@@ -663,3 +663,4 @@ one_fm.patches.v15_0.restore_cancelled_onboarding_emp_onb_2026_00361 #2026-10-06
 one_fm.patches.v15_0.rename_pam_license_status_options #2026-10-08 PAM Licence status: Not suspended -> Active, Detained -> Suspended
 one_fm.patches.v15_0.set_arrival_department_emails #2026-10-11 department mailboxes for arrival emails
 one_fm.patches.v15_0.set_job_details_on_open_arrival_acknowledgements #2026-10-11 visa on open arrivals, designation and visa on open arrival acknowledgements
+one_fm.patches.v15_0.allow_onboarding_officer_to_edit_pending_onboarding_arrivals #2026-10-11 Onboarding Officer edits Arrival and Deployment in Pending Onboarding
