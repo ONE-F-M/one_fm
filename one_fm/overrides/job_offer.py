@@ -301,29 +301,16 @@ class JobOfferOverride(JobOffer):
         if frappe.db.exists("Candidate Country Process", {"job_offer": self.name}):
             return
 
-        job_applicant = frappe.get_doc("Job Applicant", self.job_applicant)
-        if not job_applicant.job_title:
+        setup = get_ccp_setup(self.job_applicant)
+        if setup.blockers:
             return
-
-        # Agencies are stored in the Job Opening child table (one_fm_active_willing_agency),
-        # not as a single field on Job Opening. Use the first willing agency.
-        job_opening = frappe.get_doc("Job Opening", job_applicant.job_title)
-        if not job_opening.one_fm_active_willing_agency:
-            return
-
-        agency = job_opening.one_fm_active_willing_agency[0].agency
-        if not agency:
-            return
-
-        agency_country_process = frappe.db.get_value("Agency Country Process", {"agency": agency}, "name")
-        if not agency_country_process:
-            return
+        agency_country_process = setup.agency_country_process
 
         ccp = frappe.new_doc("Candidate Country Process")
         ccp.job_offer = self.name
-        ccp.job_opening = job_applicant.job_title
+        ccp.job_opening = setup.job_opening
         ccp.job_applicant = self.job_applicant
-        ccp.agency = agency
+        ccp.agency = setup.agency
         ccp.agency_country_process = agency_country_process
         ccp.start_date = self.one_fm_offer_accepted_date or frappe.utils.nowdate()
 
@@ -356,6 +343,45 @@ class JobOfferOverride(JobOffer):
                 pass
 
         ccp.save()
+
+@frappe.whitelist()
+def get_candidate_country_process_blockers(job_offer: str) -> list:
+    """Reasons a Candidate Country Process cannot be created for this Job Offer; empty when it can."""
+    doc = frappe.get_doc("Job Offer", job_offer)
+    doc.check_permission("read")
+    if frappe.db.exists("Candidate Country Process", {"job_offer": doc.name}):
+        return []
+    return get_ccp_setup(doc.job_applicant).blockers
+
+
+def get_ccp_setup(job_applicant):
+    """Resolve the Job Opening, first willing agency and its Agency Country Process, with blockers."""
+    setup = frappe._dict(job_opening=None, agency=None, agency_country_process=None, blockers=[])
+
+    setup.job_opening = frappe.db.get_value("Job Applicant", job_applicant, "job_title")
+    if not setup.job_opening:
+        setup.blockers.append(
+            _("Job Applicant {0} is not linked to a Job Opening.").format(get_link_to_form("Job Applicant", job_applicant))
+        )
+        return setup
+
+    willing_agencies = frappe.get_doc("Job Opening", setup.job_opening).one_fm_active_willing_agency
+    setup.agency = willing_agencies[0].agency if willing_agencies else None
+    if not setup.agency:
+        setup.blockers.append(
+            _("Job Opening {0} has no agency in its Active Willing Agency table.").format(
+                get_link_to_form("Job Opening", setup.job_opening)
+            )
+        )
+        return setup
+
+    setup.agency_country_process = frappe.db.get_value("Agency Country Process", {"agency": setup.agency}, "name")
+    if not setup.agency_country_process:
+        setup.blockers.append(
+            _("Agency {0} has no Agency Country Process.").format(get_link_to_form("Agency", setup.agency))
+        )
+    return setup
+
 
 def assign_to_onboarding_officer(self):
 	try:
