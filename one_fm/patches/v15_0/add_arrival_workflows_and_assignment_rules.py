@@ -3,7 +3,6 @@ import frappe
 from one_fm.setup.assignment_rule import create_assignment_rule, get_assignment_rule_json_file
 from one_fm.setup.workflow import create_workflow, get_workflow_json_file
 
-WORKFLOWS = ("arrival_and_deployment.json", "arrival_acknowledgement.json")
 ASSIGNMENT_RULES = (
 	"arrival_and_deployment_draft.json",
 	"arrival_and_deployment_pending_onboarding.json",
@@ -12,9 +11,8 @@ ASSIGNMENT_RULES = (
 
 
 def execute():
-	"""Ship the Arrival and Deployment and Arrival Acknowledgement workflows and their assignment rules."""
-	for workflow in WORKFLOWS:
-		create_workflow(get_workflow_json_file(workflow))
+	"""Ship the Arrival Acknowledgement workflow and the arrival assignment rules."""
+	create_workflow(get_workflow_json_file("arrival_acknowledgement.json"))
 	for rule in ASSIGNMENT_RULES:
 		create_assignment_rule(get_assignment_rule_json_file(rule))
 	frappe.clear_cache(doctype="Arrival and Deployment")
