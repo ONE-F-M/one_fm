@@ -1,10 +1,27 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
 
+import json
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import get_url_to_form
+from frappe.utils import add_days, get_url_to_form
+
+
+# Employee Schedule fields a Rambo Assignment overwrites, and restores on cancel.
+SCHEDULE_FIELDS = (
+	"employee_availability",
+	"shift",
+	"shift_type",
+	"operations_role",
+	"site",
+	"project",
+	"start_datetime",
+	"end_datetime",
+	"is_rambo_schedule",
+	"rambo_assignment",
+)
 
 
 class RamboAssignment(Document):
@@ -16,7 +33,7 @@ class RamboAssignment(Document):
 		self.send_submission_notifications()
 
 	def on_cancel(self):
-		self.delete_employee_schedule()
+		self.release_employee_schedule()
 
 	def create_employee_schedule(self):
 		"""Create or update an Employee Schedule record for this Rambo Assignment."""
@@ -56,6 +73,12 @@ class RamboAssignment(Document):
 			# BEFORE updating it, so the background job can create a new SA
 			# with the correct Rambo shift details.
 			self._cancel_stale_shift_assignment(existing_schedule, shift_type)
+
+			# Keep what the schedule held so cancelling can put it back.
+			self.db_set("previous_schedule", json.dumps(
+				frappe.db.get_value("Employee Schedule", existing_schedule, SCHEDULE_FIELDS, as_dict=True),
+				default=str,
+			))
 
 			# Update the existing record
 			frappe.db.set_value("Employee Schedule", existing_schedule, {
@@ -101,20 +124,56 @@ class RamboAssignment(Document):
 				alert=True
 			)
 
-	def delete_employee_schedule(self):
-		"""Delete the Employee Schedule record linked to this Rambo Assignment."""
+	def release_employee_schedule(self):
+		"""Undo the Employee Schedule change made on submit.
+
+		A schedule this assignment updated is restored to what it held before; one it
+		created is deleted.
+		"""
 		schedule_name = frappe.db.get_value(
 			"Employee Schedule",
 			{"rambo_assignment": self.name},
 			"name"
 		)
-		if schedule_name:
-			frappe.delete_doc("Employee Schedule", schedule_name, ignore_permissions=True)
+		if not schedule_name:
+			return
+
+		self._cancel_rambo_shift_assignment(schedule_name)
+
+		if self.previous_schedule:
+			frappe.db.set_value("Employee Schedule", schedule_name, json.loads(self.previous_schedule))
 			frappe.msgprint(
-				_("Employee Schedule {0} has been deleted.").format(schedule_name),
-				indicator="orange",
+				_("Employee Schedule {0} has been restored.").format(schedule_name),
+				indicator="blue",
 				alert=True
 			)
+			return
+
+		frappe.delete_doc("Employee Schedule", schedule_name, ignore_permissions=True)
+		frappe.msgprint(
+			_("Employee Schedule {0} has been deleted.").format(schedule_name),
+			indicator="orange",
+			alert=True
+		)
+
+	def _cancel_rambo_shift_assignment(self, schedule_name):
+		"""Cancel the Shift Assignment made for the Rambo shift, unless it was worked."""
+		shift_assignment = frappe.db.get_value(
+			"Shift Assignment",
+			{"employee_schedule": schedule_name, "docstatus": 1},
+			"name"
+		)
+		if not shift_assignment:
+			return
+		if frappe.db.exists("Employee Checkin", {"shift_assignment": shift_assignment}):
+			frappe.throw(
+				_("{0} has already checked in on Shift Assignment {1}, so the Rambo Assignment cannot be cancelled.").format(
+					self.employee_name or self.employee, shift_assignment
+				)
+			)
+		sa_doc = frappe.get_doc("Shift Assignment", shift_assignment)
+		sa_doc.flags.ignore_permissions = True
+		sa_doc.cancel()
 
 	def _cancel_stale_shift_assignment(self, schedule_name, new_shift_type):
 		"""Cancel the Shift Assignment linked to a schedule if it is stale.
