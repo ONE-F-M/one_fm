@@ -53,7 +53,7 @@ class ArrivalAcknowledgement(Document):
 		if self.status == "Acknowledged" and old_status != "Acknowledged":
 			self.notify_onboarding_officer_of_acknowledgement()
 			if self.department == "Operations":
-				self.share_site_with_warehouse()
+				self.share_project_with_warehouse()
 
 	def notify_onboarding_officer_of_acknowledgement(self):
 		"""Notify the assigned Onboarding Officer every time a department acknowledges,
@@ -127,8 +127,8 @@ class ArrivalAcknowledgement(Document):
 				"Visa Stamping", {"candidate_country_process": candidate_country_process}, "stamped_visa_copy"
 			)
 
-	def share_site_with_warehouse(self):
-		"""Give Warehouse the site, project and orientation Operations confirmed, then email the warehouse mailbox."""
+	def share_project_with_warehouse(self):
+		"""Give Warehouse the project from the site Operations allocated, then email the warehouse mailbox."""
 		warehouse_name = frappe.db.get_value(
 			"Arrival Acknowledgement",
 			{"arrival_and_deployment": self.arrival_and_deployment, "department": "Warehouse"},
@@ -137,12 +137,7 @@ class ArrivalAcknowledgement(Document):
 			return
 
 		warehouse = frappe.get_doc("Arrival Acknowledgement", warehouse_name)
-		warehouse.db_set({
-			"site_allocation": self.site_allocation,
-			"project": self.project,
-			"orientation_date": self.orientation_date,
-			"orientation_time": self.orientation_time,
-		})
+		warehouse.db_set("project", self.project)
 		warehouse.notify_department_email()
 
 	def notify_department_email(self):
@@ -162,13 +157,8 @@ class ArrivalAcknowledgement(Document):
 			(_("Flight"), " ".join(filter(None, [self.airline, self.flight_number]))),
 			(_("Assigned To"), assigned_to_name),
 		]
-		operations_details = [
-			(_("Site"), self.site_allocation),
-			(_("Project"), self.project),
-			(_("Orientation Date"), formatdate(self.orientation_date) if self.orientation_date else None),
-			(_("Orientation Time"), self.orientation_time),
-		]
-		details += [(label, value) for label, value in operations_details if value]
+		if self.project:
+			details.append((_("Project"), self.project))
 		rows = "".join(f"<li><b>{label}:</b> {escape_html(str(value or 'N/A'))}</li>" for label, value in details)
 		message = (
 			f"<p>{_('Dear {0} Team,').format(escape_html(self.department))}</p>"

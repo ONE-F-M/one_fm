@@ -89,7 +89,7 @@ class TestArrivalDepartmentEmail(FrappeTestCase):
 		self.assertEqual(_queued_recipients(finance.name), ["test_finance_mailbox@example.com"])
 		self.assertEqual(_queued_recipients(general_services.name), [])
 
-	def test_warehouse_waits_for_operations_then_gets_site_and_project(self):
+	def test_warehouse_waits_for_operations_then_gets_only_the_project(self):
 		warehouse = _make_acknowledgement(self.ard.name, "Warehouse")
 		self.assertEqual(_queued_recipients(warehouse.name), [])
 
@@ -98,10 +98,13 @@ class TestArrivalDepartmentEmail(FrappeTestCase):
 		operations.department = "Operations"
 		operations.site_allocation = "Test Site"
 		operations.project = "Test Project"
-		operations.share_site_with_warehouse()
+		operations.orientation_date = frappe.utils.today()
+		operations.share_project_with_warehouse()
 
 		warehouse.reload()
-		self.assertEqual((warehouse.site_allocation, warehouse.project), ("Test Site", "Test Project"))
+		self.assertEqual(warehouse.project, "Test Project")
+		self.assertIsNone(warehouse.site_allocation)
+		self.assertIsNone(warehouse.orientation_date)
 		self.assertEqual(_queued_recipients(warehouse.name), ["test_procurement_mailbox@example.com"])
 
 
