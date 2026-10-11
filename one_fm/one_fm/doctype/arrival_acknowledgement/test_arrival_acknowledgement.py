@@ -4,9 +4,10 @@
 from unittest.mock import patch
 
 import frappe
+from frappe.core.doctype.file.utils import find_file_by_url
 from frappe.tests.utils import FrappeTestCase
 
-from one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement import acknowledge
+from one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement import acknowledge, attach_file_copy
 
 
 class TestArrivalAcknowledgement(FrappeTestCase):
@@ -44,10 +45,9 @@ class TestArrivalAcknowledgementList(FrappeTestCase):
 
 	def test_transportation_gets_designation_and_visa(self):
 		values = {
-			"Arrival and Deployment": "CCP-TEST",
+			"Arrival and Deployment": ("CCP-TEST", "/private/files/test-evisa.pdf"),
 			"Candidate Country Process": "HR-APP-TEST",
 			"Job Applicant": "Security Guard",
-			"Visa Stamping": "/private/files/test-visa.pdf",
 		}
 		doc = frappe.new_doc("Arrival Acknowledgement")
 		doc.arrival_and_deployment = "ARD-TEST"
@@ -64,7 +64,7 @@ class TestArrivalAcknowledgementList(FrappeTestCase):
 			doc.set_candidate_job_details()
 
 		self.assertEqual(doc.designation, "Security Guard")
-		self.assertEqual(doc.visa_copy, "/private/files/test-visa.pdf")
+		self.assertEqual(doc.visa_copy, "/private/files/test-evisa.pdf")
 
 
 class TestArrivalDepartmentEmail(FrappeTestCase):
@@ -106,6 +106,29 @@ class TestArrivalDepartmentEmail(FrappeTestCase):
 		self.assertIsNone(warehouse.site_allocation)
 		self.assertIsNone(warehouse.orientation_date)
 		self.assertEqual(_queued_recipients(warehouse.name), ["test_procurement_mailbox@example.com"])
+
+	def test_visa_copy_opens_for_transportation_without_visa_request_access(self):
+		user = "test_ack_transportation@example.com"
+		if not frappe.db.exists("User", user):
+			frappe.get_doc({"doctype": "User", "email": user, "first_name": "Transport", "send_welcome_email": 0}).insert()
+		frappe.get_doc("User", user).add_roles("Transportation Manager")
+		visa = frappe.get_doc({
+			"doctype": "File",
+			"file_name": "test-evisa.txt",
+			"content": b"test evisa",
+			"is_private": 1,
+			"attached_to_doctype": "Arrival and Deployment",
+			"attached_to_name": self.ard.name,
+		}).insert()
+		transportation = _make_acknowledgement(self.ard.name, "Transportation")
+
+		frappe.set_user(user)
+		self.assertIsNone(find_file_by_url(visa.file_url))
+		frappe.set_user("Administrator")
+		attach_file_copy(visa.file_url, "Arrival Acknowledgement", transportation.name, "visa_copy")
+		frappe.set_user(user)
+		self.assertIsNotNone(find_file_by_url(visa.file_url))
+		frappe.set_user("Administrator")
 
 
 def _make_acknowledgement(arrival_and_deployment, department):

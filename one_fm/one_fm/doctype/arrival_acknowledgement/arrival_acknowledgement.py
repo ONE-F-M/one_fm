@@ -28,6 +28,8 @@ class ArrivalAcknowledgement(Document):
 		self.set_candidate_job_details()
 
 	def after_insert(self):
+		if self.visa_copy and not attach_file_copy(self.visa_copy, self.doctype, self.name, "visa_copy"):
+			self.db_set("visa_copy", None, update_modified=False)
 		if self.department != "Warehouse":
 			self.notify_department_email()
 
@@ -111,21 +113,18 @@ class ArrivalAcknowledgement(Document):
 			frappe.log_error(title="Arrival Acknowledgement Notification Error", message=f"Notify failed for {self.name}: {str(e)}")
 
 	def set_candidate_job_details(self):
-		"""Copy the candidate's designation, and the stamped visa for Transportation."""
-		candidate_country_process = frappe.db.get_value(
-			"Arrival and Deployment", self.arrival_and_deployment, "candidate_country_process"
+		"""Copy the candidate's designation, and the visa for Transportation."""
+		candidate_country_process, visa_copy = frappe.db.get_value(
+			"Arrival and Deployment", self.arrival_and_deployment, ["candidate_country_process", "visa_copy"]
 		)
+		if self.department == "Transportation":
+			self.visa_copy = visa_copy
 		if not candidate_country_process:
 			return
 
 		job_applicant = frappe.db.get_value("Candidate Country Process", candidate_country_process, "job_applicant")
 		if job_applicant:
 			self.designation = frappe.db.get_value("Job Applicant", job_applicant, "one_fm_designation")
-
-		if self.department == "Transportation":
-			self.visa_copy = frappe.db.get_value(
-				"Visa Stamping", {"candidate_country_process": candidate_country_process}, "stamped_visa_copy"
-			)
 
 	def share_project_with_warehouse(self):
 		"""Give Warehouse the project from the site Operations allocated, then email the warehouse mailbox."""
@@ -173,6 +172,15 @@ class ArrivalAcknowledgement(Document):
 			reference_doctype=self.doctype,
 			reference_name=self.name,
 		)
+
+
+def attach_file_copy(file_url, doctype, name, fieldname):
+	"""Attach an existing file to another record so its readers can open it; returns False when the file is missing on disk."""
+	file = frappe.get_doc("File", {"file_url": file_url})
+	if not file.exists_on_disk():
+		return False
+	file.create_attachment_copy(doctype, name, fieldname)
+	return True
 
 
 def get_arrival_department_email(department):

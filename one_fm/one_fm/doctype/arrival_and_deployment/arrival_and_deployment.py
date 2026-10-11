@@ -70,6 +70,9 @@ class ArrivalandDeployment(Document):
         """Notify the CCP engine to evaluate downstream triggers."""
         old_state = self.get_doc_before_save().get("workflow_state") if self.get_doc_before_save() else None
 
+        if self.candidate_country_process and not self.visa_copy:
+            self.attach_visa_copy()
+
         if self.get("workflow_state") == "Pending Onboarding" and old_state != "Pending Onboarding":
             self.notify_onboarding_officer()
 
@@ -92,6 +95,20 @@ class ArrivalandDeployment(Document):
             if self.get("workflow_state") != old_state:
                 from one_fm.one_fm.doctype.candidate_country_process.candidate_country_process import recalculate_ccp_live_eta
                 recalculate_ccp_live_eta(self.candidate_country_process)
+
+    def attach_visa_copy(self):
+        """Attach the issued visa from the candidate's Visa Request, so readers of this record can open it."""
+        from one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement import attach_file_copy
+
+        job_applicant = frappe.db.get_value("Candidate Country Process", self.candidate_country_process, "job_applicant")
+        visa_document = job_applicant and frappe.db.get_value(
+            "Visa Request",
+            {"job_applicant": job_applicant, "docstatus": ["<", 2], "visa_document": ["is", "set"]},
+            "visa_document",
+            order_by="creation desc",
+        )
+        if visa_document and attach_file_copy(visa_document, self.doctype, self.name, "visa_copy"):
+            self.db_set("visa_copy", visa_document, update_modified=False)
 
     def assign_support_departments(self):
         """Create an Arrival Acknowledgement per department and assign a ToDo to each.
