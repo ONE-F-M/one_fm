@@ -41,6 +41,11 @@ class ArrivalAcknowledgement(Document):
 			if not self.get(fieldname):
 				frappe.throw(_("{0} is mandatory for {1}.").format(frappe.unscrub(fieldname), self.department))
 
+	def before_save(self):
+		if self.status == "Acknowledged" and self.has_value_changed("status"):
+			self.acknowledged_by = frappe.session.user
+			self.acknowledged_on = frappe.utils.now_datetime()
+
 	def on_update(self):
 		old_status = self.get_doc_before_save().get("status") if self.get_doc_before_save() else None
 		if self.status == "Acknowledged" and old_status != "Acknowledged":
@@ -119,8 +124,6 @@ def acknowledge(name: str):
 			frappe.throw(_("Please fill in and save {0} before acknowledging.").format(frappe.unscrub(fieldname)))
 
 	doc.status = "Acknowledged"
-	doc.acknowledged_by = frappe.session.user
-	doc.acknowledged_on = frappe.utils.now_datetime()
 	doc.save()
 	return doc.status
 
