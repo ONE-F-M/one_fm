@@ -641,3 +641,4 @@ one_fm.patches.v15_0.penalty_deduct_at_issuance
 one_fm.patches.v15_0.deactivate_bonus_request_workflow_and_assignment_rules
 one_fm.patches.v15_0.add_visa_request_workflow_state_standard_filter #2026-10-06 WI-003181
 one_fm.patches.v15_0.show_document_request_status_column #2026-10-11
+one_fm.patches.v15_0.processa_sync_employee_record_update_request___v1_2c5b11 #2026-10-11 Processa sync: Employee
