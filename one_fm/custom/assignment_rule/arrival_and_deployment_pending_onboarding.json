@@ -1,0 +1,44 @@
+{
+    "name": "Arrival and Deployment - Onboarding Officer",
+    "document_type": "Arrival and Deployment",
+    "priority": 0,
+    "disabled": 0,
+    "description": "<p>Dear Onboarding Officer,</p><p>Kindly prepare onboarding for {{ candidate_name }}, arriving on {{ arrival_date or 'TBD' }}, then submit Arrival and Deployment {{ name }} to the support departments.</p>",
+    "is_assignment_rule_with_workflow": 0,
+    "assign_condition": "workflow_state == \"Pending Onboarding\"",
+    "unassign_condition": "workflow_state != \"Pending Onboarding\"",
+    "rule": "Based on Field",
+    "field": "onboarding_officer",
+    "doctype": "Assignment Rule",
+    "users": [],
+    "assignment_days": [
+        {
+            "day": "Monday",
+            "doctype": "Assignment Rule Day"
+        },
+        {
+            "day": "Tuesday",
+            "doctype": "Assignment Rule Day"
+        },
+        {
+            "day": "Wednesday",
+            "doctype": "Assignment Rule Day"
+        },
+        {
+            "day": "Thursday",
+            "doctype": "Assignment Rule Day"
+        },
+        {
+            "day": "Friday",
+            "doctype": "Assignment Rule Day"
+        },
+        {
+            "day": "Saturday",
+            "doctype": "Assignment Rule Day"
+        },
+        {
+            "day": "Sunday",
+            "doctype": "Assignment Rule Day"
+        }
+    ]
+}

@@ -1,0 +1,44 @@
+{
+    "name": "Arrival Acknowledgement - Department",
+    "document_type": "Arrival Acknowledgement",
+    "priority": 0,
+    "disabled": 0,
+    "description": "<p>{{ candidate_name }} arrives on {{ arrival_date }}.</p><p>{% if department == 'Transportation' %}Kindly arrange Airport Pick Up accordingly, then confirm the arrival.{% elif department == 'General Services' %}Kindly arrange accommodation accordingly and confirm the date and time for GS Orientation.{% elif department == 'Finance' %}Kindly arrange 30 KD as Loan Amount for the arriving employee.{% elif department == 'Warehouse' %}Kindly arrange the uniforms and welcome kit accordingly.{% elif department == 'Operations' %}Kindly arrange shifts and confirm the date and time for Operations Orientation.{% endif %}</p><p>Please acknowledge Arrival Acknowledgement {{ name }} once done.</p>",
+    "is_assignment_rule_with_workflow": 0,
+    "assign_condition": "status == \"Not Acknowledged\" or (department == \"Transportation\" and not arrival_confirmation)",
+    "unassign_condition": "status == \"Acknowledged\" and (department != \"Transportation\" or arrival_confirmation)",
+    "rule": "Based on Field",
+    "field": "assigned_to",
+    "doctype": "Assignment Rule",
+    "users": [],
+    "assignment_days": [
+        {
+            "day": "Monday",
+            "doctype": "Assignment Rule Day"
+        },
+        {
+            "day": "Tuesday",
+            "doctype": "Assignment Rule Day"
+        },
+        {
+            "day": "Wednesday",
+            "doctype": "Assignment Rule Day"
+        },
+        {
+            "day": "Thursday",
+            "doctype": "Assignment Rule Day"
+        },
+        {
+            "day": "Friday",
+            "doctype": "Assignment Rule Day"
+        },
+        {
+            "day": "Saturday",
+            "doctype": "Assignment Rule Day"
+        },
+        {
+            "day": "Sunday",
+            "doctype": "Assignment Rule Day"
+        }
+    ]
+}
