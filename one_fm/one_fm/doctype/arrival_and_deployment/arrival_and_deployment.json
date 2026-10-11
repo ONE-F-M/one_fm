@@ -72,8 +72,8 @@
    "fieldname": "onboarding_officer",
    "fieldtype": "Link",
    "label": "Onboarding Officer",
-   "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)",
-   "options": "User"
+   "options": "User",
+   "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
    "fieldname": "column_break_1",
@@ -155,36 +155,36 @@
    "fieldname": "transportation_manager",
    "fieldtype": "Link",
    "label": "Transportation Manager",
-   "mandatory_depends_on": "eval:doc.candidate_country_process && [\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)",
-   "options": "User"
+   "options": "User",
+   "mandatory_depends_on": "eval:doc.candidate_country_process && [\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
    "fieldname": "general_services",
    "fieldtype": "Link",
    "label": "General Services",
-   "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)",
-   "options": "User"
+   "options": "User",
+   "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
    "fieldname": "finance",
    "fieldtype": "Link",
    "label": "Finance",
-   "mandatory_depends_on": "eval:doc.candidate_country_process && [\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)",
-   "options": "User"
+   "options": "User",
+   "mandatory_depends_on": "eval:doc.candidate_country_process && [\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
    "fieldname": "warehouse",
    "fieldtype": "Link",
    "label": "Warehouse",
-   "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)",
-   "options": "User"
+   "options": "User",
+   "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
    "fieldname": "operations_admin",
    "fieldtype": "Link",
    "label": "Admin",
-   "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)",
-   "options": "User"
+   "options": "User",
+   "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
    "fieldname": "support_assigned_on",
@@ -284,8 +284,8 @@
   },
   {
    "read": 1,
-   "role": "Transportation Manager",
-   "write": 1
+   "write": 1,
+   "role": "Transportation Manager"
   },
   {
    "permlevel": 1,

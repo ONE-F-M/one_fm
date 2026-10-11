@@ -98,9 +98,13 @@ class ArrivalandDeployment(Document):
 
     def attach_visa_copy(self):
         """Attach the issued visa from the candidate's Visa Request, so readers of this record can open it."""
-        from one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement import attach_file_copy
+        from one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement import (
+            attach_file_copy,
+        )
 
-        job_applicant = frappe.db.get_value("Candidate Country Process", self.candidate_country_process, "job_applicant")
+        job_applicant = frappe.db.get_value(
+            "Candidate Country Process", self.candidate_country_process, "job_applicant"
+        )
         visa_document = job_applicant and frappe.db.get_value(
             "Visa Request",
             {"job_applicant": job_applicant, "docstatus": ["<", 2], "visa_document": ["is", "set"]},
@@ -232,8 +236,14 @@ class ArrivalandDeployment(Document):
             return
 
         from frappe.utils import escape_html, formatdate
-        from one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement import get_arrival_department_email
-        subject = f"New Candidate Ready for Onboarding: {escape_html(display_name)}, arriving {formatdate(self.arrival_date)}"
+
+        from one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement import (
+            get_arrival_department_email,
+        )
+
+        subject = _("New Candidate Ready for Onboarding: {0}, arriving {1}").format(
+            escape_html(display_name), formatdate(self.arrival_date)
+        )
         message = f'''
         <p>Dear Onboarding Officer,</p>
         <p>A new candidate is ready for onboarding:</p>

@@ -12,5 +12,7 @@ def execute():
 	if "Onboarding Officer" in editors:
 		return
 
-	workflow.append("states", {"state": "Pending Onboarding", "doc_status": "0", "allow_edit": "Onboarding Officer"})
+	workflow.append(
+		"states", {"state": "Pending Onboarding", "doc_status": "0", "allow_edit": "Onboarding Officer"}
+	)
 	workflow.save()

@@ -1,13 +1,17 @@
 # Copyright (c) 2026, ONE FM and Contributors
 # See license.txt
 
+import os
 from unittest.mock import patch
 
 import frappe
 from frappe.core.doctype.file.utils import find_file_by_url
 from frappe.tests.utils import FrappeTestCase
 
-from one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement import acknowledge, attach_file_copy
+from one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement import (
+	acknowledge,
+	attach_file_copy,
+)
 
 
 class TestArrivalAcknowledgement(FrappeTestCase):
@@ -38,7 +42,9 @@ class TestArrivalAcknowledgement(FrappeTestCase):
 
 class TestArrivalAcknowledgementList(FrappeTestCase):
 	def test_list_shows_candidate_name_instead_of_the_arrival_link(self):
-		list_fields = [df.fieldname for df in frappe.get_meta("Arrival Acknowledgement").fields if df.in_list_view]
+		list_fields = [
+			df.fieldname for df in frappe.get_meta("Arrival Acknowledgement").fields if df.in_list_view
+		]
 
 		self.assertIn("candidate_name", list_fields)
 		self.assertNotIn("arrival_and_deployment", list_fields)
@@ -70,17 +76,22 @@ class TestArrivalAcknowledgementList(FrappeTestCase):
 class TestArrivalDepartmentEmail(FrappeTestCase):
 	def setUp(self):
 		hiring_settings = frappe.get_single("Hiring Settings")
-		hiring_settings.set("arrival_department_emails", [
-			{"department": "Finance", "email": "test_finance_mailbox@example.com", "use": 1},
-			{"department": "General Services", "email": "test_gs_mailbox@example.com", "use": 0},
-			{"department": "Warehouse", "email": "test_procurement_mailbox@example.com", "use": 1},
-		])
+		hiring_settings.set(
+			"arrival_department_emails",
+			[
+				{"department": "Finance", "email": "test_finance_mailbox@example.com", "use": 1},
+				{"department": "General Services", "email": "test_gs_mailbox@example.com", "use": 0},
+				{"department": "Warehouse", "email": "test_procurement_mailbox@example.com", "use": 1},
+			],
+		)
 		hiring_settings.save()
-		self.ard = frappe.get_doc({
-			"doctype": "Arrival and Deployment",
-			"candidate_name": "Test Mailbox Arrival",
-			"arrival_date": frappe.utils.add_days(frappe.utils.today(), 3),
-		}).insert()
+		self.ard = frappe.get_doc(
+			{
+				"doctype": "Arrival and Deployment",
+				"candidate_name": "Test Mailbox Arrival",
+				"arrival_date": frappe.utils.add_days(frappe.utils.today(), 3),
+			}
+		).insert()
 
 	def test_department_mailbox_gets_a_copy_only_when_use_is_ticked(self):
 		finance = _make_acknowledgement(self.ard.name, "Finance")
@@ -110,16 +121,20 @@ class TestArrivalDepartmentEmail(FrappeTestCase):
 	def test_visa_copy_opens_for_transportation_without_visa_request_access(self):
 		user = "test_ack_transportation@example.com"
 		if not frappe.db.exists("User", user):
-			frappe.get_doc({"doctype": "User", "email": user, "first_name": "Transport", "send_welcome_email": 0}).insert()
+			frappe.get_doc(
+				{"doctype": "User", "email": user, "first_name": "Transport", "send_welcome_email": 0}
+			).insert()
 		frappe.get_doc("User", user).add_roles("Transportation Manager")
-		visa = frappe.get_doc({
-			"doctype": "File",
-			"file_name": "test-evisa.txt",
-			"content": b"test evisa",
-			"is_private": 1,
-			"attached_to_doctype": "Arrival and Deployment",
-			"attached_to_name": self.ard.name,
-		}).insert()
+		visa = frappe.get_doc(
+			{
+				"doctype": "File",
+				"file_name": "test-evisa.txt",
+				"content": b"test evisa",
+				"is_private": 1,
+				"attached_to_doctype": "Arrival and Deployment",
+				"attached_to_name": self.ard.name,
+			}
+		).insert()
 		transportation = _make_acknowledgement(self.ard.name, "Transportation")
 
 		frappe.set_user(user)
@@ -130,14 +145,35 @@ class TestArrivalDepartmentEmail(FrappeTestCase):
 		self.assertIsNotNone(find_file_by_url(visa.file_url))
 		frappe.set_user("Administrator")
 
+	def test_visa_missing_on_disk_is_skipped_instead_of_failing(self):
+		visa = frappe.get_doc(
+			{
+				"doctype": "File",
+				"file_name": "test-missing-evisa.txt",
+				"content": b"missing evisa",
+				"is_private": 1,
+				"attached_to_doctype": "Arrival and Deployment",
+				"attached_to_name": self.ard.name,
+			}
+		).insert()
+		os.remove(visa.get_full_path())
+		transportation = _make_acknowledgement(self.ard.name, "Transportation")
+
+		self.assertFalse(
+			attach_file_copy(visa.file_url, "Arrival Acknowledgement", transportation.name, "visa_copy")
+		)
+		self.assertFalse(frappe.db.exists("File", {"attached_to_name": transportation.name}))
+
 
 def _make_acknowledgement(arrival_and_deployment, department):
-	return frappe.get_doc({
-		"doctype": "Arrival Acknowledgement",
-		"arrival_and_deployment": arrival_and_deployment,
-		"department": department,
-		"assigned_to": "Administrator",
-	}).insert()
+	return frappe.get_doc(
+		{
+			"doctype": "Arrival Acknowledgement",
+			"arrival_and_deployment": arrival_and_deployment,
+			"department": department,
+			"assigned_to": "Administrator",
+		}
+	).insert()
 
 
 def _queued_recipients(acknowledgement):
@@ -146,4 +182,6 @@ def _queued_recipients(acknowledgement):
 		filters={"reference_doctype": "Arrival Acknowledgement", "reference_name": acknowledgement},
 		pluck="name",
 	)
-	return frappe.get_all("Email Queue Recipient", filters={"parent": ["in", queues or [""]]}, pluck="recipient")
+	return frappe.get_all(
+		"Email Queue Recipient", filters={"parent": ["in", queues or [""]]}, pluck="recipient"
+	)

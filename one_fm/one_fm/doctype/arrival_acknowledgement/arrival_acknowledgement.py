@@ -122,7 +122,9 @@ class ArrivalAcknowledgement(Document):
 		if not candidate_country_process:
 			return
 
-		job_applicant = frappe.db.get_value("Candidate Country Process", candidate_country_process, "job_applicant")
+		job_applicant = frappe.db.get_value(
+			"Candidate Country Process", candidate_country_process, "job_applicant"
+		)
 		if job_applicant:
 			self.designation = frappe.db.get_value("Job Applicant", job_applicant, "one_fm_designation")
 
@@ -158,15 +160,20 @@ class ArrivalAcknowledgement(Document):
 		]
 		if self.project:
 			details.append((_("Project"), self.project))
-		rows = "".join(f"<li><b>{label}:</b> {escape_html(str(value or 'N/A'))}</li>" for label, value in details)
+		rows = "".join(
+			f"<li><b>{label}:</b> {escape_html(str(value or _('N/A')))}</li>" for label, value in details
+		)
+		link_label = _("Open Arrival Acknowledgement {0}").format(self.name)
 		message = (
 			f"<p>{_('Dear {0} Team,').format(escape_html(self.department))}</p>"
 			f"<ul>{rows}</ul>"
-			f"<p><a href='/app/arrival-acknowledgement/{self.name}'>{_('Open Arrival Acknowledgement {0}').format(self.name)}</a></p>"
+			f"<p><a href='/app/arrival-acknowledgement/{self.name}'>{link_label}</a></p>"
 		)
 		frappe.sendmail(
 			recipients=[department_email],
-			subject=_("{0} Arrival on {1}: {2}").format(self.department, formatdate(self.arrival_date), self.candidate_name),
+			subject=_("{0} Arrival on {1}: {2}").format(
+				self.department, formatdate(self.arrival_date), self.candidate_name
+			),
 			message=message,
 			attachments=[{"file_url": self.visa_copy}] if self.visa_copy else None,
 			reference_doctype=self.doctype,
@@ -175,7 +182,8 @@ class ArrivalAcknowledgement(Document):
 
 
 def attach_file_copy(file_url, doctype, name, fieldname):
-	"""Attach an existing file to another record so its readers can open it; returns False when the file is missing on disk."""
+	"""Attach an existing file to another record so its readers can open it.
+	Returns False when the file is missing on disk."""
 	file = frappe.get_doc("File", {"file_url": file_url})
 	if not file.exists_on_disk():
 		return False

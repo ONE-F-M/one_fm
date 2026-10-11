@@ -18,7 +18,9 @@ def execute():
 	for name in open_arrivals:
 		frappe.get_doc("Arrival and Deployment", name).attach_visa_copy()
 
-	for name in frappe.get_all("Arrival Acknowledgement", filters={"status": "Not Acknowledged"}, pluck="name"):
+	for name in frappe.get_all(
+		"Arrival Acknowledgement", filters={"status": "Not Acknowledged"}, pluck="name"
+	):
 		acknowledgement = frappe.get_doc("Arrival Acknowledgement", name)
 		acknowledgement.set_candidate_job_details()
 		if acknowledgement.visa_copy and not attach_file_copy(

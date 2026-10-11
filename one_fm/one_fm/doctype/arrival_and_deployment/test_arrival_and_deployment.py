@@ -42,9 +42,12 @@ class TestArrivalandDeployment(FrappeTestCase):
 class TestOnboardingOfficerEmail(FrappeTestCase):
 	def test_subject_has_the_arrival_date_and_hr_mailbox_is_copied(self):
 		hiring_settings = frappe.get_single("Hiring Settings")
-		hiring_settings.set("arrival_department_emails", [
-			{"department": "Onboarding", "email": "test_hr_mailbox@example.com", "use": 1},
-		])
+		hiring_settings.set(
+			"arrival_department_emails",
+			[
+				{"department": "Onboarding", "email": "test_hr_mailbox@example.com", "use": 1},
+			],
+		)
 		hiring_settings.save()
 		doc = frappe.new_doc("Arrival and Deployment")
 		doc.candidate_name = "Test Onboarding Email"
@@ -61,7 +64,9 @@ class TestOnboardingOfficerEmail(FrappeTestCase):
 
 class TestPendingOnboardingEditors(FrappeTestCase):
 	def test_onboarding_officer_and_recruiter_can_edit_pending_onboarding(self):
-		from one_fm.patches.v15_0 import allow_onboarding_officer_to_edit_pending_onboarding_arrivals as patch_module
+		from one_fm.patches.v15_0 import (
+			allow_onboarding_officer_to_edit_pending_onboarding_arrivals as patch_module,
+		)
 
 		if not frappe.db.exists("Workflow", "Arrival and Deployment"):
 			self.skipTest("Arrival and Deployment workflow is created by earlier patches")

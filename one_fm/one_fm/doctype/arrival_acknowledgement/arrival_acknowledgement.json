@@ -222,15 +222,15 @@
    "depends_on": "eval:[\"General Services\",\"Operations\"].includes(doc.department)",
    "fieldname": "orientation_date",
    "fieldtype": "Date",
-   "label": "Orientation Date",
-   "mandatory_depends_on": "eval:[\"General Services\",\"Operations\"].includes(doc.department)"
+   "mandatory_depends_on": "eval:[\"General Services\",\"Operations\"].includes(doc.department)",
+   "label": "Orientation Date"
   },
   {
    "depends_on": "eval:[\"General Services\",\"Operations\"].includes(doc.department)",
    "fieldname": "orientation_time",
    "fieldtype": "Time",
-   "label": "Orientation Time",
-   "mandatory_depends_on": "eval:[\"General Services\",\"Operations\"].includes(doc.department)"
+   "mandatory_depends_on": "eval:[\"General Services\",\"Operations\"].includes(doc.department)",
+   "label": "Orientation Time"
   }
  ],
  "links": [],
@@ -292,33 +292,33 @@
   },
   {
    "read": 1,
-   "role": "Transportation Manager",
-   "write": 1
+   "write": 1,
+   "role": "Transportation Manager"
   },
   {
    "read": 1,
-   "role": "Accommodation User",
-   "write": 1
+   "write": 1,
+   "role": "Accommodation User"
   },
   {
    "read": 1,
-   "role": "Finance User",
-   "write": 1
+   "write": 1,
+   "role": "Finance User"
   },
   {
    "read": 1,
-   "role": "Warehouse Supervisor",
-   "write": 1
+   "write": 1,
+   "role": "Warehouse Supervisor"
   },
   {
    "read": 1,
-   "role": "Operation Admin",
-   "write": 1
+   "write": 1,
+   "role": "Operation Admin"
   },
   {
    "read": 1,
-   "role": "T4 Admin",
-   "write": 1
+   "write": 1,
+   "role": "T4 Admin"
   },
   {
    "permlevel": 1,
