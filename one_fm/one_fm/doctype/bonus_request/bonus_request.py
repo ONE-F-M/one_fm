@@ -31,12 +31,10 @@ class BonusRequest(Document):
 	def validate(self):
 		self.set_line_manager()
 		self.validate_self_request()
-		self.validate_effective_month()
 		self.validate_items()
 		self.calculate_total_bonus_amount()
 		self.validate_recurring_dates()
 		self.validate_recurring_start_date()
-		self.validate_row_level_approvals()
 
 	def set_line_manager(self):
 		"""Fetch the requesting employee's line manager (Reports To).
@@ -100,67 +98,6 @@ class BonusRequest(Document):
 					),
 					title=_("Invalid Approval State")
 				)
-
-	def validate_row_level_approvals(self):
-		"""Block workflow transitions out of approval states unless every
-		child row is explicitly marked as either Approved or Rejected."""
-		approval_states = ["Pending HR Manager", "Pending Finance Manager"]
-
-		previous_doc = self.get_doc_before_save()
-		if not previous_doc:
-			return
-
-		# Only enforce when transitioning OUT of an approval state
-		if previous_doc.workflow_state not in approval_states:
-			return
-
-		# If the state hasn't changed, this is just an edit — no gate needed
-		if previous_doc.workflow_state == self.workflow_state:
-			return
-
-		undecided_rows = []
-		for row in self.bonus_request_employees:
-			if not cint(row.approve) and not cint(row.reject):
-				undecided_rows.append(str(row.idx))
-
-		if undecided_rows:
-			frappe.throw(
-				_("Cannot proceed: You must explicitly mark every single row "
-				  "as either Approved or Rejected before advancing to the "
-				  "next transition. Undecided rows: {0}").format(
-					", ".join(undecided_rows)
-				),
-				title=_("Row-Level Approval Required")
-			)
-
-	def validate_effective_month(self):
-		"""Ensure effective month is not in a past closed payroll period.
-
-		The current month and any future month are allowed.
-		Only past months (before the current month) are blocked.
-		"""
-		if not self.effective_month or not self.effective_year:
-			return
-
-		today = getdate(nowdate())
-		current_month = today.month
-		current_year = today.year
-
-		selected_month = MONTH_MAP.get(self.effective_month)
-		selected_year = cint(self.effective_year)
-
-		if not selected_month:
-			return
-
-		# Block only past months — current month and future months are allowed
-		if selected_year < current_year or (
-			selected_year == current_year and selected_month < current_month
-		):
-			frappe.throw(
-				_("Validation Error: Bonus requests cannot be applied to "
-				  "previous closed payroll months."),
-				title=_("Invalid Effective Month")
-			)
 
 	def calculate_total_bonus_amount(self):
 		"""Sum bonus_amount across all child table rows."""

@@ -38,6 +38,8 @@
   "penalty_details",
   "additional_damages_section",
   "damage_amount",
+  "penalty_deduction",
+  "deduction_not_applicable",
   "rejection_reason_section",
   "reason_for_rejection",
   "retries",
@@ -264,6 +266,23 @@
    "read_only": 1
   },
   {
+   "fieldname": "penalty_deduction",
+   "fieldtype": "Link",
+   "label": "Penalty Deduction",
+   "no_copy": 1,
+   "options": "Penalty Deduction",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "Issued before deduction moved to issuance; never deducted.",
+   "fieldname": "deduction_not_applicable",
+   "fieldtype": "Check",
+   "label": "Deduction Not Applicable",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -274,7 +293,7 @@
   }
  ],
  "links": [],
- "modified": "2022-07-06 11:51:13.005966",
+ "modified": "2026-10-11 16:00:00.000000",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Penalty",
