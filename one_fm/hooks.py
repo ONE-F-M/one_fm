@@ -742,7 +742,6 @@ scheduler_events = {
 			'one_fm.one_fm.doctype.maintenance_kpi_assessment.maintenance_kpi_assessment.create_monthly_assessments',
 		],
 		"0/15 * * * *": [ #At every 15th minute from 0 through 59.”
-			"one_fm.legal.doctype.penalty.penalty.automatic_reject",
 			# 'one_fm.api.tasks.process_attendance',
 			"one_fm.api.tasks.update_shift_type"
 		],
@@ -805,9 +804,6 @@ scheduler_events = {
 		],
         "00 2 * * *":[ #“At 02:00"
 			"one_fm.one_fm.doctype.leave_acknowledgement_form.leave_acknowledgement_form.generate_leave_acknowledgement"
-		],
-		"08 00 24 * *": [ #“At 00:08 on day-of-month 24.”
-			'one_fm.api.tasks.generate_penalties'
 		],
 		"00 01 24 * *": [
 			'one_fm.api.tasks.generate_site_allowance',
