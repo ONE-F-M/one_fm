@@ -27,6 +27,9 @@ class ArrivalAcknowledgement(Document):
 	def before_insert(self):
 		self.set_candidate_job_details()
 
+	def after_insert(self):
+		self.notify_department_email()
+
 	def validate(self):
 		"""mandatory_depends_on is client-side only in this Frappe version -- it's never
 		evaluated by _get_missing_mandatory_fields() server-side, so enforce it here too,
@@ -122,6 +125,48 @@ class ArrivalAcknowledgement(Document):
 			self.visa_copy = frappe.db.get_value(
 				"Visa Stamping", {"candidate_country_process": candidate_country_process}, "stamped_visa_copy"
 			)
+
+	def notify_department_email(self):
+		"""Send the department mailbox a copy of the arrival, with the visa attached for Transportation."""
+		department_email = get_arrival_department_email(self.department)
+		if not department_email:
+			return
+
+		from frappe.utils import escape_html, formatdate
+
+		assigned_to_name = frappe.db.get_value("User", self.assigned_to, "full_name")
+		details = [
+			(_("Candidate"), self.candidate_name),
+			(_("Designation"), self.designation),
+			(_("Project"), self.project),
+			(_("Arrival Date"), formatdate(self.arrival_date)),
+			(_("Arrival Time"), self.arrival_time),
+			(_("Flight"), " ".join(filter(None, [self.airline, self.flight_number]))),
+			(_("Assigned To"), assigned_to_name),
+		]
+		rows = "".join(f"<li><b>{label}:</b> {escape_html(str(value or 'N/A'))}</li>" for label, value in details)
+		message = (
+			f"<p>{_('Dear {0} Team,').format(escape_html(self.department))}</p>"
+			f"<ul>{rows}</ul>"
+			f"<p><a href='/app/arrival-acknowledgement/{self.name}'>{_('Open Arrival Acknowledgement {0}').format(self.name)}</a></p>"
+		)
+		frappe.sendmail(
+			recipients=[department_email],
+			subject=_("{0} Arrival on {1}: {2}").format(self.department, formatdate(self.arrival_date), self.candidate_name),
+			message=message,
+			attachments=[{"file_url": self.visa_copy}] if self.visa_copy else None,
+			reference_doctype=self.doctype,
+			reference_name=self.name,
+		)
+
+
+def get_arrival_department_email(department):
+	"""The department's mailbox from Hiring Settings, only when its Use box is ticked."""
+	return frappe.db.get_value(
+		"Arrival Department Email",
+		{"parenttype": "Hiring Settings", "department": department, "use": 1},
+		"email",
+	)
 
 
 @frappe.whitelist()

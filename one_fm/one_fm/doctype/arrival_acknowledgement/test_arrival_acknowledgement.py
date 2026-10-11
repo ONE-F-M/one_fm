@@ -65,3 +65,42 @@ class TestArrivalAcknowledgementList(FrappeTestCase):
 
 		self.assertEqual((doc.designation, doc.project), ("Security Guard", "Test Project"))
 		self.assertEqual(doc.visa_copy, "/private/files/test-visa.pdf")
+
+
+class TestArrivalDepartmentEmail(FrappeTestCase):
+	def test_department_mailbox_gets_a_copy_only_when_use_is_ticked(self):
+		hiring_settings = frappe.get_single("Hiring Settings")
+		hiring_settings.set("arrival_department_emails", [
+			{"department": "Warehouse", "email": "test_warehouse_mailbox@example.com", "use": 1},
+			{"department": "General Services", "email": "test_gs_mailbox@example.com", "use": 0},
+		])
+		hiring_settings.save()
+		ard = frappe.get_doc({
+			"doctype": "Arrival and Deployment",
+			"candidate_name": "Test Mailbox Arrival",
+			"arrival_date": frappe.utils.add_days(frappe.utils.today(), 3),
+		}).insert()
+
+		warehouse = _make_acknowledgement(ard.name, "Warehouse")
+		general_services = _make_acknowledgement(ard.name, "General Services")
+
+		self.assertEqual(_queued_recipients(warehouse.name), ["test_warehouse_mailbox@example.com"])
+		self.assertEqual(_queued_recipients(general_services.name), [])
+
+
+def _make_acknowledgement(arrival_and_deployment, department):
+	return frappe.get_doc({
+		"doctype": "Arrival Acknowledgement",
+		"arrival_and_deployment": arrival_and_deployment,
+		"department": department,
+		"assigned_to": "Administrator",
+	}).insert()
+
+
+def _queued_recipients(acknowledgement):
+	queues = frappe.get_all(
+		"Email Queue",
+		filters={"reference_doctype": "Arrival Acknowledgement", "reference_name": acknowledgement},
+		pluck="name",
+	)
+	return frappe.get_all("Email Queue Recipient", filters={"parent": ["in", queues or [""]]}, pluck="recipient")

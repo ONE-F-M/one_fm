@@ -215,6 +215,7 @@ class ArrivalandDeployment(Document):
             return
 
         from frappe.utils import escape_html, formatdate
+        from one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement import get_arrival_department_email
         subject = f"New Candidate Ready for Onboarding: {escape_html(display_name)}, arriving {formatdate(self.arrival_date)}"
         message = f'''
         <p>Dear Onboarding Officer,</p>
@@ -232,6 +233,7 @@ class ArrivalandDeployment(Document):
             method=frappe.sendmail,
             queue='short',
             recipients=[officer_email],
+            cc=get_arrival_department_email("Onboarding"),
             subject=subject,
             message=message
         )

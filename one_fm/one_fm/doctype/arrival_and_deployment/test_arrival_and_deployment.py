@@ -40,7 +40,12 @@ class TestArrivalandDeployment(FrappeTestCase):
 
 
 class TestOnboardingOfficerEmail(FrappeTestCase):
-	def test_subject_has_the_arrival_date(self):
+	def test_subject_has_the_arrival_date_and_hr_mailbox_is_copied(self):
+		hiring_settings = frappe.get_single("Hiring Settings")
+		hiring_settings.set("arrival_department_emails", [
+			{"department": "Onboarding", "email": "test_hr_mailbox@example.com", "use": 1},
+		])
+		hiring_settings.save()
 		doc = frappe.new_doc("Arrival and Deployment")
 		doc.candidate_name = "Test Onboarding Email"
 		doc.onboarding_officer = "Administrator"
@@ -49,4 +54,6 @@ class TestOnboardingOfficerEmail(FrappeTestCase):
 		with patch("frappe.enqueue") as enqueue:
 			doc.notify_onboarding_officer()
 
-		self.assertIn(frappe.utils.formatdate("2026-10-15"), enqueue.call_args.kwargs["subject"])
+		email = enqueue.call_args.kwargs
+		self.assertIn(frappe.utils.formatdate("2026-10-15"), email["subject"])
+		self.assertEqual(email["cc"], "test_hr_mailbox@example.com")
