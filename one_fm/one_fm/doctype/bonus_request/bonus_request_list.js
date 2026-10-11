@@ -1,7 +1,36 @@
 // Copyright (c) 2026, ONE FM and contributors
 // For license information, please see license.txt
 
+// The Bonus Request Workflow is inactive (Processa sets workflow_state), so Frappe
+// no longer renders the state itself. Colours mirror the Workflow State styles.
+const BONUS_STATE_COLOURS = {
+	"Draft": "red",
+	"Pending Line Manager": "red",
+	"Pending HR Manager": "blue",
+	"Pending General Manager": "orange",
+	"Pending Finance Manager": "orange",
+	"On Hold": "red",
+	"Pending Payroll Officer": "red",
+	"Completed": "green",
+	"Rejected": "blue",
+	"Cancelled": "red",
+};
+
 frappe.listview_settings["Bonus Request"] = {
+	add_fields: ["workflow_state"],
+	has_indicator_for_draft: 1,
+	has_indicator_for_cancelled: 1,
+
+	get_indicator(doc) {
+		if (doc.workflow_state) {
+			return [
+				__(doc.workflow_state),
+				BONUS_STATE_COLOURS[doc.workflow_state] || "gray",
+				"workflow_state,=," + doc.workflow_state,
+			];
+		}
+	},
+
 	onload(listview) {
 		listview.page.add_inner_button(__("Bulk Bonus Request"), function () {
 			show_bulk_bonus_request_dialog(listview);
