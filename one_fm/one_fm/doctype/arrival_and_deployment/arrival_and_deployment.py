@@ -96,17 +96,6 @@ class ArrivalandDeployment(Document):
                 from one_fm.one_fm.doctype.candidate_country_process.candidate_country_process import recalculate_ccp_live_eta
                 recalculate_ccp_live_eta(self.candidate_country_process)
 
-    def get_support_departments(self):
-        """Departments this arrival needs, as (department, user fieldname); Transportation and Finance are overseas only."""
-        departments = [
-            ("Warehouse", "warehouse"),
-            ("General Services", "general_services"),
-            ("Operations", "operations_admin"),
-        ]
-        if self.candidate_country_process:
-            departments += [("Transportation", "transportation_manager"), ("Finance", "finance")]
-        return departments
-
     def validate_support_department_users(self):
         missing = [
             frappe.bold(self.meta.get_label(fieldname))
@@ -123,6 +112,17 @@ class ArrivalandDeployment(Document):
         """Create an Arrival Acknowledgement per department; the Arrival Acknowledgement - Department rule assigns it."""
         for department, fieldname in self.get_support_departments():
             self.create_arrival_acknowledgement(department, self.get(fieldname))
+
+    def get_support_departments(self):
+        """Departments this arrival needs, as (department, user fieldname); Transportation and Finance are overseas only."""
+        departments = [
+            ("Warehouse", "warehouse"),
+            ("General Services", "general_services"),
+            ("Operations", "operations_admin"),
+        ]
+        if self.candidate_country_process:
+            departments += [("Transportation", "transportation_manager"), ("Finance", "finance")]
+        return departments
 
     def create_arrival_acknowledgement(self, department, user):
         ack_name = frappe.db.exists(

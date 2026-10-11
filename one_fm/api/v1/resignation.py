@@ -455,7 +455,7 @@ def get_supervisor_dropdown():
 
 
 @frappe.whitelist()
-def get_my_active_resignation(employee_id=None, **kwargs):
+def get_my_active_resignation(employee_id: str | None = None, **kwargs):
     """Returns a single resignation record the employee should act on next,
     prioritising states that require employee action over waiting states."""
     input_id = get_param("employee_id", employee_id)
