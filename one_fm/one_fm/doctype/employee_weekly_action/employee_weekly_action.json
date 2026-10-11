@@ -10,24 +10,33 @@
   "employee",
   "employee_name",
   "designation",
+  "column_break_54c25e",
   "column_break_nbad",
   "week",
   "year",
   "department",
+  "column_break_966504",
   "column_break_askz",
   "reports_to",
   "reports_to_name",
+  "section_break_d74db8",
   "progress_and_plans_section",
   "project_progress_and_plans",
+  "section_break_48ebf2",
   "next_week_task_plan_section",
   "next_week_task_plan",
+  "section_break_61c434",
   "problems_that_are_stopping_your_work_section",
   "blockers",
+  "section_break_cd9c3a",
+  "positivity_and_reflection_notes",
+  "section_break_3f2a43",
   "positivity_and_reflection_section",
   "text_editor_ztre",
   "more_information_section",
   "company",
-  "amended_from"
+  "amended_from",
+  "section_break_e67057"
  ],
  "fields": [
   {
@@ -61,6 +70,10 @@
    "read_only": 1
   },
   {
+   "fieldname": "column_break_54c25e",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "column_break_nbad",
    "fieldtype": "Column Break"
   },
@@ -88,6 +101,10 @@
    "read_only": 1
   },
   {
+   "fieldname": "column_break_966504",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "column_break_askz",
    "fieldtype": "Column Break"
   },
@@ -106,6 +123,11 @@
    "read_only": 1
   },
   {
+   "fieldname": "section_break_d74db8",
+   "fieldtype": "Section Break",
+   "label": "Progress and Plans"
+  },
+  {
    "fieldname": "progress_and_plans_section",
    "fieldtype": "Section Break",
    "label": "Progress and Plans"
@@ -115,6 +137,11 @@
    "fieldtype": "Table",
    "label": "Project Progress and Plans",
    "options": "Project Progress and Plans"
+  },
+  {
+   "fieldname": "section_break_48ebf2",
+   "fieldtype": "Section Break",
+   "label": "Next Week Task Plan"
   },
   {
    "fieldname": "next_week_task_plan_section",
@@ -130,6 +157,12 @@
   },
   {
    "description": "If a blocker has already been reported in the Employee Daily Action, there is no need to repeat the blocker in the Employee Weekly Action.",
+   "fieldname": "section_break_61c434",
+   "fieldtype": "Section Break",
+   "label": "Problems that are stopping your work"
+  },
+  {
+   "description": "If a blocker has already been reported in the Employee Daily Action, there is no need to repeat the blocker in the Employee Weekly Action.",
    "fieldname": "problems_that_are_stopping_your_work_section",
    "fieldtype": "Section Break",
    "label": "Problems that are stopping your work"
@@ -139,6 +172,22 @@
    "fieldtype": "Table",
    "label": "Blockers",
    "options": "Blockers"
+  },
+  {
+   "fieldname": "section_break_cd9c3a",
+   "fieldtype": "Section Break",
+   "label": "Positivity and Reflection"
+  },
+  {
+   "default": "<p><strong>Achievements:</strong></p>\n  <p>What went well today?</p>\n  <p>What were you happy with?</p>\n\n  <p><strong>Challenges:</strong></p>\n  <p>What could have gone better?</p>\n  <p>Tasks you struggled with</p>\n  <p>Areas for skill improvement</p>\n\n  <p><strong>Emotional Check:</strong></p>\n  <p>How did you feel today?</p>\n  <p>Productivity, happiness, stress</p>\n\n  <p><strong>Nurturing Gratitude:</strong></p>\n  <p>What small thing at work are you thankful for today? <em>(e.g., supportive colleagues, reliable tools, interesting tasks)</em></p>\n  <p>Who helped you out recently, and how can you express your appreciation? <em>(e.g., colleague who answered a question, manager who gave feedback, client who provided positive feedback)</em></p>\n\n  <p><strong>Workplace Improvement:</strong></p>\n  <p>Suggestions for workplace improvement</p>\n  <p>Policy or resource needs</p>\n\n  <p><strong>Learning:</strong></p>\n  <p>What did you learn this week?</p>\n  <p>New insights about your work or yourself</p>",
+   "fieldname": "positivity_and_reflection_notes",
+   "fieldtype": "Text Editor",
+   "label": "Positivity and Reflection Notes"
+  },
+  {
+   "fieldname": "section_break_3f2a43",
+   "fieldtype": "Section Break",
+   "label": "More Information"
   },
   {
    "fieldname": "positivity_and_reflection_section",
@@ -172,6 +221,10 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "section_break_e67057",
+   "fieldtype": "Section Break"
   }
  ],
  "index_web_pages_for_search": 1,
