@@ -19,7 +19,7 @@ PAYMENT_STATE = "Pending  For Payment"  # two spaces, as the workflow spells it
 # passes through "Apply Online by PRO" at all - Draft saves straight to the operator.
 OPERATOR_STATES = (
 	'["Pending By PAM", "Pending By Previous Company", '
-	'"Pending by GR Operator", "Reason of Rejection"]'
+	'"Pending by GR Operator", "Apply Online by GR Operator", "Reason of Rejection"]'
 )
 
 # The export the work item links to, with the three corrections it needs to work at all:
