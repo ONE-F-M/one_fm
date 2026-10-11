@@ -42,11 +42,11 @@ class TestArrivalAcknowledgementList(FrappeTestCase):
 		self.assertIn("candidate_name", list_fields)
 		self.assertNotIn("arrival_and_deployment", list_fields)
 
-	def test_transportation_gets_designation_project_and_visa(self):
+	def test_transportation_gets_designation_and_visa(self):
 		values = {
 			"Arrival and Deployment": "CCP-TEST",
 			"Candidate Country Process": "HR-APP-TEST",
-			"Job Applicant": ("Security Guard", "Test Project"),
+			"Job Applicant": "Security Guard",
 			"Visa Stamping": "/private/files/test-visa.pdf",
 		}
 		doc = frappe.new_doc("Arrival Acknowledgement")
@@ -63,29 +63,46 @@ class TestArrivalAcknowledgementList(FrappeTestCase):
 		with patch.object(frappe.db, "get_value", side_effect=get_value):
 			doc.set_candidate_job_details()
 
-		self.assertEqual((doc.designation, doc.project), ("Security Guard", "Test Project"))
+		self.assertEqual(doc.designation, "Security Guard")
 		self.assertEqual(doc.visa_copy, "/private/files/test-visa.pdf")
 
 
 class TestArrivalDepartmentEmail(FrappeTestCase):
-	def test_department_mailbox_gets_a_copy_only_when_use_is_ticked(self):
+	def setUp(self):
 		hiring_settings = frappe.get_single("Hiring Settings")
 		hiring_settings.set("arrival_department_emails", [
-			{"department": "Warehouse", "email": "test_warehouse_mailbox@example.com", "use": 1},
+			{"department": "Finance", "email": "test_finance_mailbox@example.com", "use": 1},
 			{"department": "General Services", "email": "test_gs_mailbox@example.com", "use": 0},
+			{"department": "Warehouse", "email": "test_procurement_mailbox@example.com", "use": 1},
 		])
 		hiring_settings.save()
-		ard = frappe.get_doc({
+		self.ard = frappe.get_doc({
 			"doctype": "Arrival and Deployment",
 			"candidate_name": "Test Mailbox Arrival",
 			"arrival_date": frappe.utils.add_days(frappe.utils.today(), 3),
 		}).insert()
 
-		warehouse = _make_acknowledgement(ard.name, "Warehouse")
-		general_services = _make_acknowledgement(ard.name, "General Services")
+	def test_department_mailbox_gets_a_copy_only_when_use_is_ticked(self):
+		finance = _make_acknowledgement(self.ard.name, "Finance")
+		general_services = _make_acknowledgement(self.ard.name, "General Services")
 
-		self.assertEqual(_queued_recipients(warehouse.name), ["test_warehouse_mailbox@example.com"])
+		self.assertEqual(_queued_recipients(finance.name), ["test_finance_mailbox@example.com"])
 		self.assertEqual(_queued_recipients(general_services.name), [])
+
+	def test_warehouse_waits_for_operations_then_gets_site_and_project(self):
+		warehouse = _make_acknowledgement(self.ard.name, "Warehouse")
+		self.assertEqual(_queued_recipients(warehouse.name), [])
+
+		operations = frappe.new_doc("Arrival Acknowledgement")
+		operations.arrival_and_deployment = self.ard.name
+		operations.department = "Operations"
+		operations.site_allocation = "Test Site"
+		operations.project = "Test Project"
+		operations.share_site_with_warehouse()
+
+		warehouse.reload()
+		self.assertEqual((warehouse.site_allocation, warehouse.project), ("Test Site", "Test Project"))
+		self.assertEqual(_queued_recipients(warehouse.name), ["test_procurement_mailbox@example.com"])
 
 
 def _make_acknowledgement(arrival_and_deployment, department):

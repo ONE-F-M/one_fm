@@ -1,4 +1,4 @@
-"""Fill designation, project and the Transportation visa on acknowledgements still waiting for the department."""
+"""Fill designation and the Transportation visa on acknowledgements still waiting for the department."""
 
 import frappe
 
@@ -10,7 +10,6 @@ def execute():
 		acknowledgement.db_set(
 			{
 				"designation": acknowledgement.designation,
-				"project": acknowledgement.project,
 				"visa_copy": acknowledgement.visa_copy,
 			},
 			update_modified=False,

@@ -135,6 +135,7 @@
    "read_only": 1
   },
   {
+   "fetch_from": "site_allocation.project",
    "fieldname": "project",
    "fieldtype": "Link",
    "label": "Project",
@@ -233,7 +234,7 @@
   }
  ],
  "links": [],
- "modified": "2026-10-11 18:00:00.000000",
+ "modified": "2026-10-11 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Arrival Acknowledgement",
