@@ -17,6 +17,8 @@
   "section_break_candidate",
   "candidate_name",
   "passport_number",
+  "designation",
+  "project",
   "arrival_date",
   "arrival_time",
   "column_break_2",
@@ -25,6 +27,7 @@
   "terminal",
   "arrival_airport",
   "ticket_attachment",
+  "visa_copy",
   "section_break_orientation",
   "site_allocation",
   "orientation_date",
@@ -125,6 +128,20 @@
    "read_only": 1
   },
   {
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
+  },
+  {
    "fetch_from": "arrival_and_deployment.arrival_date",
    "fieldname": "arrival_date",
    "fieldtype": "Date",
@@ -177,6 +194,13 @@
    "fieldname": "ticket_attachment",
    "fieldtype": "Attach",
    "label": "Ticket Attachment",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.department=='Transportation'",
+   "fieldname": "visa_copy",
+   "fieldtype": "Attach",
+   "label": "Visa Copy",
    "read_only": 1
   },
   {

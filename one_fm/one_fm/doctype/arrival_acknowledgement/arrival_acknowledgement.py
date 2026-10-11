@@ -24,6 +24,9 @@ DEPARTMENT_REQUIRED_FIELDS = {
 
 
 class ArrivalAcknowledgement(Document):
+	def before_insert(self):
+		self.set_candidate_job_details()
+
 	def validate(self):
 		"""mandatory_depends_on is client-side only in this Frappe version -- it's never
 		evaluated by _get_missing_mandatory_fields() server-side, so enforce it here too,
@@ -100,6 +103,25 @@ class ArrivalAcknowledgement(Document):
 			)
 		except Exception as e:
 			frappe.log_error(title="Arrival Acknowledgement Notification Error", message=f"Notify failed for {self.name}: {str(e)}")
+
+	def set_candidate_job_details(self):
+		"""Copy the candidate's designation and project, and the stamped visa for Transportation."""
+		candidate_country_process = frappe.db.get_value(
+			"Arrival and Deployment", self.arrival_and_deployment, "candidate_country_process"
+		)
+		if not candidate_country_process:
+			return
+
+		job_applicant = frappe.db.get_value("Candidate Country Process", candidate_country_process, "job_applicant")
+		if job_applicant:
+			self.designation, self.project = frappe.db.get_value(
+				"Job Applicant", job_applicant, ["one_fm_designation", "project"]
+			)
+
+		if self.department == "Transportation":
+			self.visa_copy = frappe.db.get_value(
+				"Visa Stamping", {"candidate_country_process": candidate_country_process}, "stamped_visa_copy"
+			)
 
 
 @frappe.whitelist()
