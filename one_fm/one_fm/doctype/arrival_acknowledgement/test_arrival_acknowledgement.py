@@ -31,3 +31,11 @@ class TestArrivalAcknowledgement(FrappeTestCase):
 
 		doc.delete()
 		ard.delete()
+
+
+class TestArrivalAcknowledgementList(FrappeTestCase):
+	def test_list_shows_candidate_name_instead_of_the_arrival_link(self):
+		list_fields = [df.fieldname for df in frappe.get_meta("Arrival Acknowledgement").fields if df.in_list_view]
+
+		self.assertIn("candidate_name", list_fields)
+		self.assertNotIn("arrival_and_deployment", list_fields)

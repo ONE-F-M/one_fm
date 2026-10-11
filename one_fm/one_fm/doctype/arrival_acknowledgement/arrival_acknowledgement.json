@@ -42,7 +42,6 @@
   {
    "fieldname": "arrival_and_deployment",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Arrival and Deployment",
    "options": "Arrival and Deployment",
    "read_only": 1,
@@ -114,6 +113,7 @@
    "fetch_from": "arrival_and_deployment.candidate_name",
    "fieldname": "candidate_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Candidate Name",
    "read_only": 1
   },
@@ -197,19 +197,19 @@
    "depends_on": "eval:[\"General Services\",\"Operations\"].includes(doc.department)",
    "fieldname": "orientation_date",
    "fieldtype": "Date",
-   "mandatory_depends_on": "eval:[\"General Services\",\"Operations\"].includes(doc.department)",
-   "label": "Orientation Date"
+   "label": "Orientation Date",
+   "mandatory_depends_on": "eval:[\"General Services\",\"Operations\"].includes(doc.department)"
   },
   {
    "depends_on": "eval:[\"General Services\",\"Operations\"].includes(doc.department)",
    "fieldname": "orientation_time",
    "fieldtype": "Time",
-   "mandatory_depends_on": "eval:[\"General Services\",\"Operations\"].includes(doc.department)",
-   "label": "Orientation Time"
+   "label": "Orientation Time",
+   "mandatory_depends_on": "eval:[\"General Services\",\"Operations\"].includes(doc.department)"
   }
  ],
  "links": [],
- "modified": "2026-07-22 09:00:00.000000",
+ "modified": "2026-10-11 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Arrival Acknowledgement",
@@ -267,33 +267,33 @@
   },
   {
    "read": 1,
-   "write": 1,
-   "role": "Transportation Manager"
+   "role": "Transportation Manager",
+   "write": 1
   },
   {
    "read": 1,
-   "write": 1,
-   "role": "Accommodation User"
+   "role": "Accommodation User",
+   "write": 1
   },
   {
    "read": 1,
-   "write": 1,
-   "role": "Finance User"
+   "role": "Finance User",
+   "write": 1
   },
   {
    "read": 1,
-   "write": 1,
-   "role": "Warehouse Supervisor"
+   "role": "Warehouse Supervisor",
+   "write": 1
   },
   {
    "read": 1,
-   "write": 1,
-   "role": "Operation Admin"
+   "role": "Operation Admin",
+   "write": 1
   },
   {
    "read": 1,
-   "write": 1,
-   "role": "T4 Admin"
+   "role": "T4 Admin",
+   "write": 1
   },
   {
    "permlevel": 1,
