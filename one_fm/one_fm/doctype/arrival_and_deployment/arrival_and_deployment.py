@@ -25,6 +25,9 @@ class ArrivalandDeployment(Document):
                 if not self.arrival_time or not self.ticket_attachment or not self.flight_number or not self.airline or not self.terminal or not self.arrival_airport:
                     frappe.throw(_("Please ensure Arrival Time, Flight Number, Airline, Terminal, Ticket Attachment, and Arrival Airport are filled for Overseas hires before submitting to Onboarding."))
 
+        if self.get("workflow_state") == "Pending Support Departments" and self.has_value_changed("workflow_state"):
+            self.validate_support_department_users()
+
         # Keep the plain status field (used for reporting/CCP sync) in step with the
         # actual workflow_state -- Pending/Draft/Pending Onboarding stay "Pending".
         if self.get("workflow_state") == "Pending Support Departments":
@@ -129,22 +132,32 @@ class ArrivalandDeployment(Document):
             "Warehouse": "Kindly arrange their Uniforms and welcome kit accordingly.",
             "Operations": "Kindly arrange shifts and inform me accordingly to update shift allocation during onboarding and confirm the date and time for Operations Orientation.",
         }
-        departments = [
-            ("Warehouse", self.warehouse),
-            ("General Services", self.general_services),
-            ("Operations", self.operations_admin),
-            ("Transportation", self.transportation_manager),
-            ("Finance", self.finance),
+        for department, fieldname in self.get_support_departments():
+            self.create_arrival_acknowledgement(department, self.get(fieldname), instructions[department])
+
+    def validate_support_department_users(self):
+        """Stop the hand-over while any department this arrival needs has no user."""
+        missing = [
+            frappe.bold(self.meta.get_label(fieldname))
+            for department, fieldname in self.get_support_departments()
+            if not self.get(fieldname)
         ]
+        if missing:
+            frappe.throw(
+                _("Please fill in {0} before submitting to the support departments.").format(", ".join(missing)),
+                title=_("Missing Department Users"),
+            )
 
-        overseas_only = ("Transportation", "Finance")
-
-        for department, user in departments:
-            if not user:
-                continue
-            if department in overseas_only and not self.candidate_country_process:
-                continue
-            self.create_arrival_acknowledgement(department, user, instructions[department])
+    def get_support_departments(self):
+        """Departments this arrival needs, as (department, user fieldname); Transportation and Finance are overseas only."""
+        departments = [
+            ("Warehouse", "warehouse"),
+            ("General Services", "general_services"),
+            ("Operations", "operations_admin"),
+        ]
+        if self.candidate_country_process:
+            departments += [("Transportation", "transportation_manager"), ("Finance", "finance")]
+        return departments
 
     def create_arrival_acknowledgement(self, department, user, instruction):
         from frappe.desk.form.assign_to import add as add_assignment

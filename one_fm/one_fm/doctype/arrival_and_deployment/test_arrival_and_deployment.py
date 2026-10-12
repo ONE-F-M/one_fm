@@ -76,3 +76,41 @@ class TestPendingOnboardingEditors(FrappeTestCase):
 		workflow = frappe.get_doc("Workflow", "Arrival and Deployment")
 		editors = [d.allow_edit for d in workflow.states if d.state == "Pending Onboarding"]
 		self.assertCountEqual(editors, ["Recruiter", "Onboarding Officer"])
+
+
+class TestSupportDepartmentUsers(FrappeTestCase):
+	def setUp(self):
+		self.ard = frappe.get_doc(
+			{
+				"doctype": "Arrival and Deployment",
+				"candidate_name": "Test Department Users",
+				"arrival_date": frappe.utils.add_days(frappe.utils.today(), 3),
+				"recruiter": "Administrator",
+				"onboarding_officer": "Administrator",
+				"warehouse": "Administrator",
+				"general_services": "Administrator",
+				"operations_admin": "Administrator",
+			}
+		).insert()
+		self.ard.workflow_state = "Pending Onboarding"
+		self.ard.save()
+
+	def test_submit_to_support_departments_names_the_empty_department(self):
+		self.ard.warehouse = None
+		self.ard.workflow_state = "Pending Support Departments"
+
+		with self.assertRaises(frappe.ValidationError) as context:
+			self.ard.save()
+		self.assertIn("Warehouse", str(context.exception))
+		self.assertFalse(
+			frappe.db.exists("Arrival Acknowledgement", {"arrival_and_deployment": self.ard.name})
+		)
+
+	def test_local_hire_needs_only_its_three_departments(self):
+		self.ard.workflow_state = "Pending Support Departments"
+		self.ard.save()
+
+		departments = frappe.get_all(
+			"Arrival Acknowledgement", filters={"arrival_and_deployment": self.ard.name}, pluck="department"
+		)
+		self.assertCountEqual(departments, ["Warehouse", "General Services", "Operations"])
