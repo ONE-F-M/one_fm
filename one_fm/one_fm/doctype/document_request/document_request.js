@@ -18,13 +18,8 @@
 // still in use, which is why a withdrawn document is called out rather than
 // quietly linked.
 
-// The map applies workflow states, not a status: Draft, Pending Approval,
-// Drafting, Pending Final Approval, Content Rejected, Request Rejected and
-// Approved. Every run that got far enough to produce a document ends at
-// Approved — publishing and withdrawing alike — so that one state is what
-// says a document may exist. The removed `status` field was never written by
-// the map: every request carried its default, so this check never fired.
-const DOCUMENT_MAY_EXIST = ["Approved"];
+// Workflow states in which the Drive draft exists.
+const DOCUMENT_MAY_EXIST = ["Drafting", "Pending Final Approval", "Content Rejected", "Approved"];
 
 frappe.ui.form.on("Document Request", {
 	refresh(frm) {
@@ -85,12 +80,34 @@ frappe.ui.form.on("Document Request", {
 		if (frm.doc.request_action === "Create" && frm.doc.reference_document) {
 			frm.set_value("reference_document", null);
 		}
+		if (frm.doc.request_action !== "Create" && frm.doc.wiki_link) {
+			frm.set_value("wiki_link", null);
+		}
 		if (frm.doc.request_action !== "Create" && frm.doc.source_guideline) {
 			// An Update takes its shape from the document it is revising, which
 			// already came from a guideline. Leaving a guideline attached implies
 			// it will be applied, and it will not.
 			frm.set_value("source_guideline", null);
 		}
+	},
+
+	wiki_link(frm) {
+		if (!frm.doc.wiki_link) return;
+		frappe.call({
+			method: "one_fm.one_fm.doctype.document_request.document_request.get_wiki_page",
+			args: { wiki_link: frm.doc.wiki_link },
+			callback: (r) => {
+				if (r.message) {
+					frm.set_value("title", r.message.title);
+					frm.set_value("requirement_text", r.message.requirement);
+					return;
+				}
+				frappe.show_alert({
+					message: __("No Wiki page was found at that link."),
+					indicator: "orange",
+				});
+			},
+		});
 	},
 
 	document_type(frm) {
