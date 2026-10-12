@@ -81,15 +81,17 @@ class TestInstallationErrors(FrappeTestCase):
 		make_test_records to provide allocated_to when creating ToDo fixtures,
 		preventing MandatoryError during test setup.
 		"""
-		# Clear any existing test ToDo records
-		frappe.db.delete("ToDo", {"title": ("like", "Test%")})
-		frappe.db.commit()
-		
 		# This should not raise MandatoryError thanks to conftest.py's patch
-		make_test_records("ToDo", [{"title": "Test ToDo", "allocated_to": "test@example.com"}])
+		make_test_records("ToDo", [
+			{
+				"title": "Test ToDo Make Records",
+				"description": "Created by make_test_records",
+				"allocated_to": "test@example.com"
+			}
+		], commit=True)
 		
 		# Verify the record was created
-		test_todo = frappe.get_all("ToDo", filters={"title": "Test ToDo"})
+		test_todo = frappe.get_all("ToDo", filters={"title": "Test ToDo Make Records"})
 		self.assertTrue(len(test_todo) > 0, "Test ToDo should be created by make_test_records")
 		
 		# Verify allocated_to is set
