@@ -2728,7 +2728,7 @@ def get_week_start_end(date_str):
     try:
         dt = datetime.strptime(str(date_str), '%Y-%m-%d')
     except ValueError:
-        frappe.throw(frappe._("Date must be in YYYY-MM-DD format"), frappe.ValidationError)
+        raise frappe.ValidationError(frappe._("Date must be in YYYY-MM-DD format"))
     start = dt - timedelta(days=week_day_map[dt.weekday()])
     end = start + timedelta(days=6)
     return frappe._dict({'start': str(getdate(start)), 'end': str(getdate(end))})
