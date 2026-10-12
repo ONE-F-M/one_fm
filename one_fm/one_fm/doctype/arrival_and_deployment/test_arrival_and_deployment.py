@@ -192,18 +192,11 @@ class TestArrivalEndsWithTransportation(FrappeTestCase):
 		)
 		self.assertEqual(ard.status, "Joined")
 
-	def test_pick_up_needs_a_driver_and_the_transportation_manager(self):
+	def test_pick_up_is_arranged_by_the_transportation_manager(self):
 		doc = frappe.new_doc("Arrival and Deployment")
 		doc.candidate_country_process = "CCP-TEST"
-		doc.transportation_manager = TRANSPORTATION_USER
-		doc.arrival_date = "2026-10-20"
 		doc.workflow_state = "Pick Up Arranged"
 
-		with self.assertRaises(frappe.ValidationError) as context:
-			doc.validate()
-		self.assertIn("Driver Name", str(context.exception))
-
-		doc.driver_name = "Test Driver"
 		with patch("frappe.get_roles", return_value=["Onboarding Officer"]):
 			self.assertRaises(frappe.ValidationError, doc.validate_workflow_role)
 		with patch("frappe.get_roles", return_value=["Transportation Manager"]):

@@ -6,7 +6,7 @@ from one_fm.custom.workflow.workflow import create_workflow_action_master, creat
 
 OVERSEAS = "doc.candidate_country_process"
 LOCAL = "not doc.candidate_country_process"
-# state, style, role that may edit the form in it; the Transportation Manager types the driver in Onboarding Confirmed
+# state, style, role that may edit the form in it
 NEW_STATES = (
 	("Onboarding Confirmed", "Primary", "Onboarding Officer"),
 	("Onboarding Confirmed", "Primary", "Transportation Manager"),

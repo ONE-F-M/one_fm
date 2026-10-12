@@ -21,9 +21,6 @@ class ArrivalandDeployment(Document):
         if self.get("workflow_state") == "Onboarding Confirmed" and self.candidate_country_process and not self.transportation_manager:
             frappe.throw(_("Please fill in the Transportation Manager before confirming onboarding."))
 
-        if self.get("workflow_state") == "Pick Up Arranged" and not self.driver_name:
-            frappe.throw(_("Please fill in the Driver Name before marking the pickup as arranged."))
-
         if self.get("workflow_state") == "Pending Onboarding":
             if not self.arrival_date:
                 frappe.throw(_("Please ensure Arrival Date is filled before submitting to Onboarding."))
@@ -131,7 +128,7 @@ class ArrivalandDeployment(Document):
             "assign_to": [self.transportation_manager],
             "doctype": self.doctype,
             "name": self.name,
-            "description": _("Kindly arrange the airport pickup for {0}, arriving {1} {2} on {3}. Enter the driver and click Arrange Pick Up, then mark Arrived or Did Not Arrive.").format(
+            "description": _("Kindly arrange the airport pickup for {0}, arriving {1} {2} on {3}. Click Arrange Pick Up, then mark Arrived or Did Not Arrive.").format(
                 self.candidate_name, formatdate(self.arrival_date), self.arrival_time or "", self.flight_number or ""
             ),
         })
