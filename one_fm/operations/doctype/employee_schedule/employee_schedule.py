@@ -155,27 +155,14 @@ def hold_overtime_for_approval(names):
 		)
 	}
 
-	pending = [c for c in candidates if (c.employee, c.date) in working_that_day]
-
-	# One request per employee per roster run: the outcome email waits until every row
-	# carrying the same dsot_request has been decided. A re-requested Rejected row keeps
-	# its old name and creation, so neither can identify the request it now belongs to.
-	requests = {}
-	for row in pending:
-		request = requests.setdefault(row.employee, frappe.generate_hash(length=12))
+	pending = [c.name for c in candidates if (c.employee, c.date) in working_that_day]
+	for name in pending:
 		frappe.db.set_value(
-			"Employee Schedule",
-			row.name,
-			{"workflow_state": PENDING_DSOT, "dsot_request": request},
-			update_modified=False,
+			"Employee Schedule", name, "workflow_state", PENDING_DSOT, update_modified=False
 		)
-		frappe.get_doc("Employee Schedule", row.name).request_dsot_approval()
+		frappe.get_doc("Employee Schedule", name).request_dsot_approval()
 
-	pending = [row.name for row in pending]
-
-	# WI-002602: the assignments above are per row, because the approver works a row at a
-	# time. The EMAIL is not - a week of overtime is one request to the person reading it,
-	# and it goes out once the roster's own transaction commits.
+	# Assignments are per row; the email is not. It goes out once the transaction commits.
 	dsot_notification.queue(pending)
 
 	return pending
@@ -361,9 +348,7 @@ class EmployeeSchedule(Document):
 		if not self.has_working_basic_schedule():
 			return
 
-		self.db_set(
-			{"workflow_state": PENDING_DSOT, "dsot_request": self.name}, update_modified=False
-		)
+		self.db_set("workflow_state", PENDING_DSOT, update_modified=False)
 		self.request_dsot_approval()
 
 	def has_working_basic_schedule(self) -> bool:
@@ -392,9 +377,6 @@ class EmployeeSchedule(Document):
 			self.request_dsot_approval()
 		elif was == PENDING_DSOT:
 			self.clear_suspension_approval_requests()
-			# The requestor is told what happened to the shifts they asked for, once per
-			# request: the email goes when the last pending row of the request is decided.
-			dsot_notification.queue_outcome([self.name])
 			if now == ACTIVE:
 				self.create_dsot_shift_assignment()
 
@@ -419,19 +401,10 @@ class EmployeeSchedule(Document):
 				"description": _("Approve or reject overtime for {0} on {1}").format(
 					self.employee_name or self.employee, self.date
 				),
-				# WI-002602: the ToDo still goes in front of the approver - it is what
-				# their task list and the Approve/Reject flow are built on - but it no
-				# longer carries its own email. ERPNext sends one Assignment Notification
-				# per assignment, so a week of overtime was eight near-identical messages
-				# for what the approver experiences as a single request. One consolidated
-				# email per continuous cycle is sent instead, on commit.
-				#
-				# Naming the approver as assigner is what silences the per-row mail:
-				# assign_to.add() ignores a "notify" argument entirely and always calls
-				# notify_assignment(), which returns without notifying when the assigner
-				# and the assignee are the same user. The ToDo, the document share and
-				# the follow are all created exactly as before - only the mail is
-				# dropped, and the real requestor is named in the consolidated email.
+				# Naming the approver as assigner is what silences the per-row email:
+				# assign_to.add() ignores a "notify" argument and always calls
+				# notify_assignment(), which returns early when assigner and assignee
+				# are the same user. The ToDo, share and follow are unaffected.
 				"assigned_by": approver,
 			})
 			dsot_notification.queue([self.name])

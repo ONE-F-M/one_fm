@@ -106,9 +106,29 @@ class POCCheck(Document):
 				self.insert_poc(attendee_contact.name, destinations)
 
 	def validate_general_attendees_rows(self):
+		# Fields that are only mandatory when the attendee is being added as a POC.
+		# Enforced here (called from on_submit) so drafts stay saveable, mirroring
+		# the client-side `mandatory_depends_on` on these fields.
+		add_as_poc_required_fields = {
+			"first_name": "First Name",
+			"last_name": "Last Name",
+			"designation": "Designation",
+			"email_address": "Email Address",
+			"phone": "Phone",
+			"destination_doctype": "Destination Doctype",
+			"gender": "Gender",
+		}
 		for each in self.general_attendees:
 			if each.action not in ["Do Nothing", "Add as POC"]:
 				frappe.throw(f"Please set an action for row {each.idx} in General Attendees Table")
+
+			if each.action == "Add as POC":
+				missing = [label for fieldname, label in add_as_poc_required_fields.items() if not each.get(fieldname)]
+				if missing:
+					frappe.throw(
+						f"Row {each.idx} in General Attendees: <b>{', '.join(missing)}</b> "
+						f"{'is' if len(missing) == 1 else 'are'} required when Action is 'Add as POC'."
+					)
 
 	def insert_poc(self, attendee_name, destinations):
 		for one in destinations:

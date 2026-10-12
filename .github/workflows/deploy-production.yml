@@ -1,0 +1,62 @@
+name: Deploy hotfix to Production
+
+on:
+  workflow_dispatch:
+
+# The job only opens an SSH session, so the token needs no access.
+permissions: {}
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Only the copy of this workflow on version-15 may deploy.
+    if: github.ref == 'refs/heads/version-15'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Deploy version-15 to Production
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
+        with:
+          host: ${{ secrets.PRODUCTION_HOST }}
+          username: ${{ secrets.PRODUCTION_USERNAME }}
+          key: ${{ secrets.PRODUCTION_KEY }}
+          port: 22
+          command_timeout: 60m
+          script_stop: true
+          script: |
+            set -ex
+            # Non-interactive SSH does not load ~/.profile or nvm.
+            export PATH="$HOME/.local/bin:$PATH"
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            command -v bench && bench --version
+            command -v node && node --version
+            command -v yarn && yarn --version
+
+            BENCH=/home/frappe/frappe-bench
+            NAME="$(basename "$BENCH")"
+            # facerec and redis run on this server too and are left alone.
+            WORKERS="$NAME-workers: $NAME-bpmn-workers:"
+            # One deploy at a time per bench, across one_fm, one_bpmn and frappe_agile.
+            exec 9>"$BENCH/config/deploy.lock"
+            flock -w 1500 9
+
+            cd $BENCH/apps/one_fm
+            git pull upstream version-15
+            cd $BENCH
+            rm -rf env/lib/python*/site-packages/one_fm-*.dist-info
+            bench setup requirements one_fm
+
+            trap 'status=$?; if [ $status -ne 0 ]; then sudo supervisorctl start $WORKERS; fi' EXIT
+            # Workers and the scheduler write Scheduled Job Log while migrate deletes from it.
+            sudo supervisorctl stop $WORKERS
+            # A scheduler orphaned by an earlier stop holds the lock supervisor's scheduler needs; [s] keeps pkill off this script.
+            pkill -f "$BENCH/env/bin/python -m frappe.utils.bench_helper frappe [s]chedule" || true
+            bench migrate
+            bench build --app one_fm
+            bench clear-cache
+            sudo supervisorctl start $WORKERS
+            sudo supervisorctl restart $NAME-web:
