@@ -209,10 +209,13 @@ class TestTheLetterItself(FrappeTestCase):
 			"We received a high volume of qualified applications for this role.",
 			"We truly appreciate the effort and enthusiasm you put into your application.",
 			"We wish you the very best in your job search",
-			"Best regards,",
+			"Best Regards,",
 			"One Facilities Management",
 		):
 			self.assertIn(line, self.html)
+
+	def test_the_closing_is_capitalised(self):
+		self.assertNotIn("Best regards", self.html)
 
 	def test_it_never_greets_a_candidate_it_cannot_name(self):
 		# The attached template has no salutation; "Dear ," would read worse than none.

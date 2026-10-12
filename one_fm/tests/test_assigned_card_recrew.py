@@ -134,17 +134,19 @@ class TestTheGeneratorWiring(FrappeTestCase):
 		)
 
 	def test_the_assigned_branch_no_longer_skips(self):
-		# Matched on the call, not its argument list: the point is that the Assigned
-		# branch DOES something now, and pinning the exact args means every later
-		# parameter makes this fail without anything having regressed (it already did
-		# once, when the reliever context was threaded through for AC2).
-		source = inspect.getsource(shipment_generator.generate_transportation_shipments)
+		# Matched on the call, not its argument list: the point is that a placed card's
+		# crew IS refreshed, and pinning the exact args means every later parameter makes
+		# this fail without anything having regressed. The refresh now runs per card of a
+		# split family, in _distribute.
+		source = inspect.getsource(shipment_generator._distribute)
 		self.assertIn("elif _refresh_assigned_roster(", source)
-		self.assertNotIn("# Assigned → leave untouched", source)
+		self.assertNotIn("# Assigned → leave untouched",
+						 inspect.getsource(shipment_generator.generate_transportation_shipments))
 
 	def test_recrewed_runs_are_counted_apart_from_rewritten_ones(self):
 		source = inspect.getsource(shipment_generator.generate_transportation_shipments)
-		self.assertIn('"refreshed": refreshed', source)
+		self.assertIn('"refreshed": 0', source)
+		self.assertIn('summary["refreshed"]', inspect.getsource(shipment_generator._distribute))
 
 	def test_the_trip_request_generator_was_left_alone(self):
 		# It has its own lifecycle and no placed-card refresh; a stray always-zero

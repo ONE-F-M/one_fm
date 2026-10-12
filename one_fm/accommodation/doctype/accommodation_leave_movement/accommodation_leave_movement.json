@@ -40,7 +40,8 @@
   "custom_notify_on_leave_end",
   "section_break_zuun",
   "amended_from",
-  "column_break_kgqw"
+  "column_break_kgqw",
+  "workflow_state"
  ],
  "fields": [
   {
@@ -290,12 +291,21 @@
    "label": "Created By",
    "options": "User",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "no_copy": 1,
+   "options": "Workflow State"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-03 18:05:23.571008",
+ "modified": "2026-10-05 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Leave Movement",

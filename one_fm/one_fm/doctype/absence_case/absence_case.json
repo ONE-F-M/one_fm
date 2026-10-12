@@ -45,7 +45,8 @@
   "leave_application",
   "column_break_rchd",
   "retain_the_employee",
-  "unpaid_leave_request_decision"
+  "unpaid_leave_request_decision",
+  "workflow_state"
  ],
  "fields": [
   {
@@ -229,13 +230,22 @@
    "fieldtype": "Select",
    "label": "Unpaid Leave Request Decision",
    "options": "\nApprove\nReject"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "no_copy": 1,
+   "options": "Workflow State"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-14 14:10:00.000000",
+ "modified": "2026-10-05 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Absence Case",
