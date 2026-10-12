@@ -11,6 +11,14 @@ def get_todo_properties():
         {
             "doc_type": "ToDo",
             "doctype_or_field": "DocField",
+            "field_name": "allocated_to",
+            "property": "default",
+            "property_type": "Data",
+            "value": "Administrator"
+        },
+        {
+            "doc_type": "ToDo",
+            "doctype_or_field": "DocField",
             "field_name": "type",
             "property": "read_only",
             "property_type": "Check",
