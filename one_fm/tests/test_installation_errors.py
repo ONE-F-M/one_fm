@@ -56,7 +56,7 @@ class TestInstallationErrors(FrappeTestCase):
 		"""AC2: Creating a ToDo without allocated_to must fail with MandatoryError."""
 		todo = frappe.get_doc({
 			"doctype": "ToDo",
-			"title": "Test ToDo",
+			"title": "Test ToDo Without Allocated To",
 			# allocated_to intentionally omitted
 		})
 		
