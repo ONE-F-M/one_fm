@@ -383,6 +383,7 @@ def to_do_to_grd_users(subject, description, user):
         "doctype": "ToDo",
         "subject": subject,
         "description": description,
+        "allocated_to": user,
         "owner": user,
         "date": today(),
         "role":"Government Relations Operator",
