@@ -17,6 +17,25 @@ from frappe.tests.utils import FrappeTestCase
 class TestInstallationErrors(FrappeTestCase):
 	"""Tests that verify installation error fixes."""
 
+	@classmethod
+	def setUpClass(cls):
+		"""Set up test fixtures."""
+		super().setUpClass()
+		# Ensure Transit warehouse type exists for AC1 tests
+		if not frappe.db.exists("Warehouse Type", "Transit"):
+			frappe.get_doc({
+				"doctype": "Warehouse Type",
+				"name": "Transit"
+			}).insert(ignore_permissions=True)
+		
+		# Ensure a test user exists for allocated_to field
+		if not frappe.db.exists("User", "test@example.com"):
+			frappe.get_doc({
+				"doctype": "User",
+				"email": "test@example.com",
+				"first_name": "Test",
+			}).insert(ignore_permissions=True)
+
 	def tearDown(self):
 		frappe.db.rollback()
 
