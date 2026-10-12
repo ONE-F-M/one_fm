@@ -494,6 +494,17 @@ def _link_from_process_instance(document_request: str) -> str | None:
 	return f"https://docs.google.com/document/d/{file_id}/edit" if file_id else None
 
 
+def _drive_file_from_tasks(state: dict) -> dict:
+	"""A run still in progress keeps drive_file on the task that set it, not on the run."""
+	latest, found = -1.0, {}
+	for task in (state.get("tasks") or {}).values():
+		changed = task["delta"].get("updates") or task.get("data") or {}
+		drive_file = changed.get("drive_file")
+		if isinstance(drive_file, dict) and task["last_state_change"] > latest:
+			latest, found = task["last_state_change"], drive_file
+	return found
+
+
 @frappe.whitelist()
 def get_wiki_page(wiki_link: str) -> dict | None:
 	"""The plain-text title and content of the Wiki page a link points at, if the user can read it."""
