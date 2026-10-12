@@ -44,3 +44,19 @@ def make_test_records(doctype, values=None, commit=True):
 # Monkey-patch make_test_records at import time
 import frappe.test_runner
 frappe.test_runner.make_test_records = make_test_records
+
+
+# Ensure test user exists for allocated_to field tests
+def pytest_configure(config):
+	"""Pytest hook to run at test startup."""
+	try:
+		if not frappe.db.exists("User", "test@example.com"):
+			frappe.get_doc({
+				"doctype": "User",
+				"email": "test@example.com",
+				"first_name": "Test",
+			}).insert(ignore_permissions=True)
+			frappe.db.commit()
+	except Exception:
+		# Ignore if user already exists or other setup errors
+		pass
