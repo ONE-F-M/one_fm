@@ -11,6 +11,8 @@ class TestToDoDuringInstall(unittest.TestCase):
 		"""Clear any test records before running tests."""
 		# Ensure we have a clean state for each test
 		self.test_name = None
+		# Clear the DocType cache to ensure property setters are applied
+		frappe.clear_cache(doctype="ToDo")
 
 	def test_todo_can_be_created_without_allocated_to(self):
 		"""Test that frappe can create a test ToDo record without a pre-supplied allocated_to value.
