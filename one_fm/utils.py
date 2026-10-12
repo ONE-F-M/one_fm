@@ -2731,7 +2731,10 @@ def get_week_start_end(date_str):
     return frappe._dict({'start': str(getdate(start)), 'end': str(getdate(end))})
 
 def get_month_start_end(date_str):
-    cur_date = datetime.strptime(str(date_str), '%Y-%m-%d')
+    try:
+        cur_date = datetime.strptime(str(date_str), '%Y-%m-%d')
+    except ValueError:
+        raise frappe.ValidationError(_("Date must be in YYYY-MM-DD format"))
     start = cur_date.replace(day=1)
     _end = cur_date.replace(day=28) + timedelta(days=4)
     end = _end - timedelta(days=_end.day)
