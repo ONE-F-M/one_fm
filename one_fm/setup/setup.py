@@ -32,6 +32,31 @@ def create_default_warehouse_types():
 			ignore_permissions=True
 		)
 
+def set_todo_allocated_to_default():
+	"""Frappe's test_runner.make_test_objects() attempts to create test ToDo records
+	during test setup. The one_fm property setter makes 'allocated_to' mandatory on
+	the ToDo DocType. However, frappe.get_doc() does not auto-populate mandatory fields
+	without a default value set at the database level. Without this default, creating
+	a test ToDo fails with:
+		MandatoryError: [ToDo, ...]: allocated_to
+	Set the default value at the database level so test records can be created."""
+	try:
+		frappe.db.set_value(
+			"DocField",
+			{"parent": "ToDo", "fieldname": "allocated_to"},
+			"default",
+			"Administrator",
+			update_modified=False
+		)
+		frappe.clear_cache(doctype="ToDo")
+	except Exception:
+		# If setting the default fails (e.g., field doesn't exist yet), log it
+		# but don't fail the install - the field will be there eventually
+		frappe.log_error(
+			title="one_fm after_install: failed to set default for ToDo.allocated_to",
+			message=frappe.get_traceback(),
+		)
+
 def _create_custom_fields_resiliently(custom_fields: dict):
 	"""create_custom_fields() processes every doctype in the dict as one
 	batch — it only tolerates frappe.exceptions.DuplicateEntryError per
