@@ -102,6 +102,11 @@ class TestPAMLicenseConfiguration(FrappeTestCase):
 			order.index("pam_stats_section"),
 			"the LG fields spill past the LG Details section into PAM Stats",
 		)
+		self.assertLess(
+			order.index("lg_expiry_date"),
+			order.index("quota_classification_section"),
+			"the LG fields spill past the LG Details section into Quota Classification",
+		)
 
 	def test_the_pam_file_tracks_its_licenses(self):
 		meta = frappe.get_meta("PAM File")

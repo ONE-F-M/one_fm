@@ -58,9 +58,9 @@ class TestAnEmptyRunPrunesNothing(FrappeTestCase):
 		self.addCleanup(setattr, shipment_generator, "_prune_stale", real)
 
 	def _spy(self, real):
-		def wrapped(current_keys):
+		def wrapped(current_keys, **kwargs):
 			self.pruned_with.append(set(current_keys))
-			return real(current_keys)
+			return real(current_keys, **kwargs)
 		return wrapped
 
 	def _run(self, demands):
