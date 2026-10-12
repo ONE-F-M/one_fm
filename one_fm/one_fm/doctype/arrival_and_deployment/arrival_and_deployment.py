@@ -25,6 +25,9 @@ class ArrivalandDeployment(Document):
                 if not self.arrival_time or not self.ticket_attachment or not self.flight_number or not self.airline or not self.terminal or not self.arrival_airport:
                     frappe.throw(_("Please ensure Arrival Time, Flight Number, Airline, Terminal, Ticket Attachment, and Arrival Airport are filled for Overseas hires before submitting to Onboarding."))
 
+        if self.get("workflow_state") == "Pending Support Departments" and self.has_value_changed("workflow_state"):
+            self.validate_support_department_users()
+
         # Keep the plain status field (used for reporting/CCP sync) in step with the
         # actual workflow_state -- Pending/Draft/Pending Onboarding stay "Pending".
         if self.get("workflow_state") == "Pending Support Departments":
@@ -70,6 +73,9 @@ class ArrivalandDeployment(Document):
         """Notify the CCP engine to evaluate downstream triggers."""
         old_state = self.get_doc_before_save().get("workflow_state") if self.get_doc_before_save() else None
 
+        if self.candidate_country_process and not self.visa_copy:
+            self.attach_visa_copy()
+
         if self.get("workflow_state") == "Pending Onboarding" and old_state != "Pending Onboarding":
             self.notify_onboarding_officer()
 
@@ -93,6 +99,24 @@ class ArrivalandDeployment(Document):
                 from one_fm.one_fm.doctype.candidate_country_process.candidate_country_process import recalculate_ccp_live_eta
                 recalculate_ccp_live_eta(self.candidate_country_process)
 
+    def attach_visa_copy(self):
+        """Attach the issued visa from the candidate's Visa Request, so readers of this record can open it."""
+        from one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement import (
+            attach_file_copy,
+        )
+
+        job_applicant = frappe.db.get_value(
+            "Candidate Country Process", self.candidate_country_process, "job_applicant"
+        )
+        visa_document = job_applicant and frappe.db.get_value(
+            "Visa Request",
+            {"job_applicant": job_applicant, "docstatus": 1, "visa_document": ["is", "set"]},
+            "visa_document",
+            order_by="creation desc",
+        )
+        if visa_document and attach_file_copy(visa_document, self.doctype, self.name, "visa_copy"):
+            self.db_set("visa_copy", visa_document, update_modified=False)
+
     def assign_support_departments(self):
         """Create an Arrival Acknowledgement per department and assign a ToDo to each.
 
@@ -108,22 +132,32 @@ class ArrivalandDeployment(Document):
             "Warehouse": "Kindly arrange their Uniforms and welcome kit accordingly.",
             "Operations": "Kindly arrange shifts and inform me accordingly to update shift allocation during onboarding and confirm the date and time for Operations Orientation.",
         }
-        departments = [
-            ("Warehouse", self.warehouse),
-            ("General Services", self.general_services),
-            ("Operations", self.operations_admin),
-            ("Transportation", self.transportation_manager),
-            ("Finance", self.finance),
+        for department, fieldname in self.get_support_departments():
+            self.create_arrival_acknowledgement(department, self.get(fieldname), instructions[department])
+
+    def validate_support_department_users(self):
+        """Stop the hand-over while any department this arrival needs has no user."""
+        missing = [
+            frappe.bold(self.meta.get_label(fieldname))
+            for department, fieldname in self.get_support_departments()
+            if not self.get(fieldname)
         ]
+        if missing:
+            frappe.throw(
+                _("Please fill in {0} before submitting to the support departments.").format(", ".join(missing)),
+                title=_("Missing Department Users"),
+            )
 
-        overseas_only = ("Transportation", "Finance")
-
-        for department, user in departments:
-            if not user:
-                continue
-            if department in overseas_only and not self.candidate_country_process:
-                continue
-            self.create_arrival_acknowledgement(department, user, instructions[department])
+    def get_support_departments(self):
+        """Departments this arrival needs, as (department, user fieldname); Transportation and Finance are overseas only."""
+        departments = [
+            ("Warehouse", "warehouse"),
+            ("General Services", "general_services"),
+            ("Operations", "operations_admin"),
+        ]
+        if self.candidate_country_process:
+            departments += [("Transportation", "transportation_manager"), ("Finance", "finance")]
+        return departments
 
     def create_arrival_acknowledgement(self, department, user, instruction):
         from frappe.desk.form.assign_to import add as add_assignment
@@ -189,7 +223,10 @@ class ArrivalandDeployment(Document):
         if not self.onboarding_officer:
             return
 
-        officer_email = frappe.db.get_value("User", self.onboarding_officer, "email")
+        officers = [officer for officer in (self.onboarding_officer, self.second_onboarding_officer) if officer]
+        officer_emails = [
+            email for email in (frappe.db.get_value("User", officer, "email") for officer in officers) if email
+        ]
 
         job_applicant_name, nationality, designation = None, None, None
         if self.candidate_country_process:
@@ -203,7 +240,7 @@ class ArrivalandDeployment(Document):
         from frappe.desk.form.assign_to import add as add_assignment
         try:
             add_assignment({
-                "assign_to": [self.onboarding_officer],
+                "assign_to": officers,
                 "doctype": self.doctype,
                 "name": self.name,
                 "description": f"Dear Onboarding Officer,\n\nKindly prepare onboarding for {display_name}, arriving on {self.arrival_date or 'TBD'}."
@@ -211,11 +248,18 @@ class ArrivalandDeployment(Document):
         except Exception as e:
             frappe.log_error(title="Onboarding Assignment Error", message=f"Failed to assign onboarding officer for {self.name}: {str(e)}")
 
-        if not officer_email:
+        if not officer_emails:
             return
 
-        from frappe.utils import escape_html
-        subject = f"New Candidate Ready for Onboarding: {escape_html(display_name)}"
+        from frappe.utils import escape_html, formatdate
+
+        from one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement import (
+            get_arrival_department_email,
+        )
+
+        subject = _("New Candidate Ready for Onboarding: {0}, arriving {1}").format(
+            escape_html(display_name), formatdate(self.arrival_date)
+        )
         message = f'''
         <p>Dear Onboarding Officer,</p>
         <p>A new candidate is ready for onboarding:</p>
@@ -231,7 +275,8 @@ class ArrivalandDeployment(Document):
         frappe.enqueue(
             method=frappe.sendmail,
             queue='short',
-            recipients=[officer_email],
+            recipients=officer_emails,
+            cc=get_arrival_department_email("Onboarding") if self.email_onboarding_mailbox else None,
             subject=subject,
             message=message
         )
