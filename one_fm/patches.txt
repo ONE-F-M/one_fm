@@ -662,3 +662,4 @@ one_fm.patches.v15_0.rename_pam_license_status_options #2026-10-08 PAM Licence s
 one_fm.patches.v15_0.set_arrival_department_emails #2026-10-11 department mailboxes for arrival emails
 one_fm.patches.v15_0.allow_onboarding_officer_to_edit_pending_onboarding_arrivals #2026-10-11 Onboarding Officer edits Arrival and Deployment in Pending Onboarding
 one_fm.patches.v15_0.end_arrival_at_transportation_confirmation #2026-10-12 Onboarding Confirmed then Arrived or Did Not Arrive; support department acknowledgements removed
+one_fm.patches.v15_0.set_candidate_details_on_arrivals #2026-10-12 candidate department, designation, gender, nationality and date of birth on arrivals

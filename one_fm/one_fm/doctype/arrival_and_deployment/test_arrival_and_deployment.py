@@ -219,3 +219,56 @@ def _open_assignees(doc):
 			pluck="allocated_to",
 		)
 	)
+
+
+class TestCandidateDetails(FrappeTestCase):
+	def test_candidate_detail_fields_fetch_from_existing_fields(self):
+		meta = frappe.get_meta("Arrival and Deployment")
+		for fieldname in (
+			"job_applicant",
+			"department",
+			"gender",
+			"nationality",
+			"date_of_birth",
+		):
+			link_field, source = meta.get_field(fieldname).fetch_from.split(".")
+			linked_doctype = meta.get_field(link_field).options
+			self.assertTrue(
+				frappe.get_meta(linked_doctype).has_field(source),
+				f"{fieldname} fetches {linked_doctype}.{source}, which does not exist",
+			)
+
+	def test_designation_falls_back_to_one_fm_designation(self):
+		from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import (
+			get_job_applicant_designation,
+		)
+
+		with patch.object(frappe.db, "get_value", return_value=(None, "Security Guard")):
+			self.assertEqual(get_job_applicant_designation("HR-APP-TEST"), "Security Guard")
+		with patch.object(frappe.db, "get_value", return_value=("Janitor", "Security Guard")):
+			self.assertEqual(get_job_applicant_designation("HR-APP-TEST"), "Janitor")
+		self.assertIsNone(get_job_applicant_designation(None))
+
+	def test_department_comes_from_the_candidate_country_process(self):
+		self.assertEqual(
+			frappe.get_meta("Arrival and Deployment").get_field("department").fetch_from,
+			"candidate_country_process.department",
+		)
+
+	def test_backfill_skips_an_arrival_whose_ccp_no_longer_exists(self):
+		from one_fm.patches.v15_0 import set_candidate_details_on_arrivals
+
+		ard = frappe.get_doc(
+			{
+				"doctype": "Arrival and Deployment",
+				"candidate_name": "Test Missing CCP",
+				"arrival_date": "2026-10-20",
+			}
+		).insert()
+		frappe.db.set_value(
+			"Arrival and Deployment", ard.name, "candidate_country_process", "CCP-DOES-NOT-EXIST"
+		)
+
+		set_candidate_details_on_arrivals.execute()
+
+		self.assertIsNone(frappe.db.get_value("Arrival and Deployment", ard.name, "job_applicant"))

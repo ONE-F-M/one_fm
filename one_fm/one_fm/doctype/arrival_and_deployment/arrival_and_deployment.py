@@ -13,6 +13,8 @@ ARRIVING_STATES = ("Onboarding Confirmed", "Pending Support Departments")
 
 class ArrivalandDeployment(Document):
     def validate(self):
+        self.designation = get_job_applicant_designation(self.job_applicant)
+
         if self.has_value_changed("workflow_state"):
             self.validate_workflow_role()
 
@@ -142,9 +144,10 @@ class ArrivalandDeployment(Document):
         if self.candidate_country_process:
             job_applicant = frappe.db.get_value("Candidate Country Process", self.candidate_country_process, "job_applicant")
             if job_applicant:
-                job_applicant_name, nationality, designation = frappe.db.get_value(
-                    "Job Applicant", job_applicant, ["applicant_name", "one_fm_nationality", "one_fm_designation"]
+                job_applicant_name, nationality = frappe.db.get_value(
+                    "Job Applicant", job_applicant, ["applicant_name", "one_fm_nationality"]
                 )
+                designation = get_job_applicant_designation(job_applicant)
         display_name = job_applicant_name or self.candidate_name
 
         from frappe.desk.form.assign_to import add as add_assignment
@@ -200,7 +203,7 @@ class ArrivalandDeployment(Document):
         if self.candidate_country_process:
             job_applicant = frappe.db.get_value("Candidate Country Process", self.candidate_country_process, "job_applicant")
             if job_applicant:
-                designation = frappe.db.get_value("Job Applicant", job_applicant, "one_fm_designation")
+                designation = get_job_applicant_designation(job_applicant)
 
         arrived = outcome == "Joined"
         from frappe.utils import escape_html
@@ -219,6 +222,16 @@ class ArrivalandDeployment(Document):
             subject=subject,
             message=message
         )
+
+
+def get_job_applicant_designation(job_applicant):
+    """The Job Applicant's Designation, or its One FM Designation when that is the only one filled."""
+    if not job_applicant:
+        return None
+    designation, one_fm_designation = frappe.db.get_value(
+        "Job Applicant", job_applicant, ["designation", "one_fm_designation"]
+    )
+    return designation or one_fm_designation
 
 
 def get_onboarding_mailbox():

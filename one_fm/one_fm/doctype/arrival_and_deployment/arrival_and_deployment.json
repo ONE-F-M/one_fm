@@ -17,6 +17,14 @@
   "status",
   "arrival_date",
   "arrival_time",
+  "section_break_candidate_details",
+  "job_applicant",
+  "department",
+  "designation",
+  "column_break_candidate_details",
+  "gender",
+  "nationality",
+  "date_of_birth",
   "section_break_flight",
   "flight_number",
   "airline",
@@ -108,6 +116,61 @@
    "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
   },
   {
+   "fieldname": "section_break_candidate_details",
+   "fieldtype": "Section Break",
+   "label": "Candidate Details"
+  },
+  {
+   "fetch_from": "candidate_country_process.job_applicant",
+   "fieldname": "job_applicant",
+   "fieldtype": "Link",
+   "label": "Job Applicant",
+   "options": "Job Applicant",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "candidate_country_process.department",
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department",
+   "read_only": 1
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_candidate_details",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_gender",
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_nationality",
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "label": "Nationality",
+   "options": "Nationality",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_date_of_birth",
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth",
+   "read_only": 1
+  },
+  {
    "fieldname": "section_break_flight",
    "fieldtype": "Section Break",
    "label": "Flight Details"
@@ -156,7 +219,7 @@
   }
  ],
  "links": [],
- "modified": "2026-10-12 15:00:00.000000",
+ "modified": "2026-10-12 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Arrival and Deployment",
