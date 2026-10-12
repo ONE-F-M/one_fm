@@ -53,6 +53,7 @@ class TestInstallationErrors(FrappeTestCase):
 		todo = frappe.get_doc({
 			"doctype": "ToDo",
 			"title": "Test ToDo Without Allocated To",
+			"description": "This ToDo lacks allocated_to field",
 			# allocated_to intentionally omitted
 		})
 		
