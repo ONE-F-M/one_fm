@@ -4,9 +4,6 @@ from one_fm.custom.assignment_rule.assignment_rule import (
 
 def create_assignment_rules():
 	create_assignment_rule(get_assignment_rule_json_file("roster_post_action_site_supervisor.json"))
-	create_assignment_rule(get_assignment_rule_json_file("arrival_and_deployment_draft.json"))
-	create_assignment_rule(get_assignment_rule_json_file("arrival_and_deployment_pending_onboarding.json"))
-	create_assignment_rule(get_assignment_rule_json_file("arrival_acknowledgement_department.json"))
 	create_assignment_rule(get_assignment_rule_json_file("subcontract_staff_shortlist.json"))
 	create_assignment_rule(get_assignment_rule_json_file("action_poc_check.json"))
 	create_assignment_rule(get_assignment_rule_json_file("shift_permission_approver.json"))
@@ -87,9 +84,6 @@ def create_assignment_rules():
 
 def delete_assignment_rules():
 	delete_assignment_rule(get_assignment_rule_json_file("roster_post_action_site_supervisor.json"))
-	delete_assignment_rule(get_assignment_rule_json_file("arrival_and_deployment_draft.json"))
-	delete_assignment_rule(get_assignment_rule_json_file("arrival_and_deployment_pending_onboarding.json"))
-	delete_assignment_rule(get_assignment_rule_json_file("arrival_acknowledgement_department.json"))
 	delete_assignment_rule(get_assignment_rule_json_file("subcontract_staff_shortlist.json"))
 	delete_assignment_rule(get_assignment_rule_json_file("action_poc_check.json"))
 	delete_assignment_rule(get_assignment_rule_json_file("shift_permission_approver.json"))

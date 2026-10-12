@@ -25,9 +25,6 @@ class ArrivalandDeployment(Document):
                 if not self.arrival_time or not self.ticket_attachment or not self.flight_number or not self.airline or not self.terminal or not self.arrival_airport:
                     frappe.throw(_("Please ensure Arrival Time, Flight Number, Airline, Terminal, Ticket Attachment, and Arrival Airport are filled for Overseas hires before submitting to Onboarding."))
 
-        if self.get("workflow_state") == "Pending Support Departments" and self.has_value_changed("workflow_state"):
-            self.validate_support_department_users()
-
         # Keep the plain status field (used for reporting/CCP sync) in step with the
         # actual workflow_state -- Pending/Draft/Pending Onboarding stay "Pending".
         if self.get("workflow_state") == "Pending Support Departments":
@@ -96,35 +93,41 @@ class ArrivalandDeployment(Document):
                 from one_fm.one_fm.doctype.candidate_country_process.candidate_country_process import recalculate_ccp_live_eta
                 recalculate_ccp_live_eta(self.candidate_country_process)
 
-    def validate_support_department_users(self):
-        missing = [
-            frappe.bold(self.meta.get_label(fieldname))
-            for department, fieldname in self.get_support_departments()
-            if not self.get(fieldname)
-        ]
-        if missing:
-            frappe.throw(
-                _("Please fill in {0} before submitting to the support departments.").format(", ".join(missing)),
-                title=_("Missing Department Users")
-            )
-
     def assign_support_departments(self):
-        """Create an Arrival Acknowledgement per department; the Arrival Acknowledgement - Department rule assigns it."""
-        for department, fieldname in self.get_support_departments():
-            self.create_arrival_acknowledgement(department, self.get(fieldname))
+        """Create an Arrival Acknowledgement per department and assign a ToDo to each.
 
-    def get_support_departments(self):
-        """Departments this arrival needs, as (department, user fieldname); Transportation and Finance are overseas only."""
+        Department users (Warehouse, General Services, Finance, Transportation, Operations)
+        generally have no role that grants access to Arrival and Deployment itself, so the
+        ToDo points at their own Arrival Acknowledgement record instead -- a self-contained
+        copy of the candidate/flight details they need, with an Acknowledge button.
+        """
+        instructions = {
+            "Transportation": "Kindly arrange Airport Pick Up Accordingly.",
+            "General Services": "Kindly arrange accommodation Accordingly and confirm the date and time for GS Orientation.",
+            "Finance": "Kindly arrange 30 KD as Loan Amount for the arriving employees.",
+            "Warehouse": "Kindly arrange their Uniforms and welcome kit accordingly.",
+            "Operations": "Kindly arrange shifts and inform me accordingly to update shift allocation during onboarding and confirm the date and time for Operations Orientation.",
+        }
         departments = [
-            ("Warehouse", "warehouse"),
-            ("General Services", "general_services"),
-            ("Operations", "operations_admin"),
+            ("Warehouse", self.warehouse),
+            ("General Services", self.general_services),
+            ("Operations", self.operations_admin),
+            ("Transportation", self.transportation_manager),
+            ("Finance", self.finance),
         ]
-        if self.candidate_country_process:
-            departments += [("Transportation", "transportation_manager"), ("Finance", "finance")]
-        return departments
 
-    def create_arrival_acknowledgement(self, department, user):
+        overseas_only = ("Transportation", "Finance")
+
+        for department, user in departments:
+            if not user:
+                continue
+            if department in overseas_only and not self.candidate_country_process:
+                continue
+            self.create_arrival_acknowledgement(department, user, instructions[department])
+
+    def create_arrival_acknowledgement(self, department, user, instruction):
+        from frappe.desk.form.assign_to import add as add_assignment
+
         ack_name = frappe.db.exists(
             "Arrival Acknowledgement",
             {"arrival_and_deployment": self.name, "department": department},
@@ -152,6 +155,16 @@ class ArrivalandDeployment(Document):
             # "already filled in" the moment this record is created, defeating both the
             # mandatory validation and the department's ability to tell it's still blank.
             frappe.db.set_value("Arrival Acknowledgement", ack_name, "orientation_time", None, update_modified=False)
+
+        try:
+            add_assignment({
+                "assign_to": [user],
+                "doctype": "Arrival Acknowledgement",
+                "name": ack_name,
+                "description": f"Dear {user},\n\n{instruction}",
+            })
+        except Exception as e:
+            frappe.log_error(title="Arrival Assignment Error", message=f"Assignment failed for {ack_name}: {str(e)}")
 
     def clear_support_assignments(self):
         """Clear each department's ToDo -- these live on their own Arrival
@@ -186,6 +199,17 @@ class ArrivalandDeployment(Document):
                     "Job Applicant", job_applicant, ["applicant_name", "one_fm_nationality", "one_fm_designation"]
                 )
         display_name = job_applicant_name or self.candidate_name
+
+        from frappe.desk.form.assign_to import add as add_assignment
+        try:
+            add_assignment({
+                "assign_to": [self.onboarding_officer],
+                "doctype": self.doctype,
+                "name": self.name,
+                "description": f"Dear Onboarding Officer,\n\nKindly prepare onboarding for {display_name}, arriving on {self.arrival_date or 'TBD'}."
+            })
+        except Exception as e:
+            frappe.log_error(title="Onboarding Assignment Error", message=f"Failed to assign onboarding officer for {self.name}: {str(e)}")
 
         if not officer_email:
             return
