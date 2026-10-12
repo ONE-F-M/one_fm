@@ -51,7 +51,7 @@ class TestTheTitleComesFromTheWikiPage(WikiLinkFixtures, FrappeTestCase):
 	def test_a_desk_link_finds_the_page_by_its_name(self):
 		doc = self._request(wiki_link="http://localhost:8000/app/wiki-page/_test_wiki_plain")
 		doc.insert()
-		self.assertEqual(doc.title, "SOP for Annual Leave Guide")
+		self.assertEqual(doc.title, "Annual Leave Guide")
 		self.assertIn("Staff after & during probation", doc.requirement_text)
 
 	def test_the_title_is_plain_text_even_when_the_wiki_title_has_markup(self):
