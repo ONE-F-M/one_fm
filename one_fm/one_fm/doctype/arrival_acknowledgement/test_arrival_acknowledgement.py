@@ -119,6 +119,28 @@ class TestArrivalDepartmentEmail(FrappeTestCase):
 		self.assertIsNone(warehouse.orientation_date)
 		self.assertEqual(_queued_recipients(warehouse.name), ["test_procurement_mailbox@example.com"])
 
+		operations.share_project_with_warehouse()
+		self.assertEqual(len(_queued_recipients(warehouse.name)), 1)
+
+		operations.project = "Test Project 2"
+		operations.share_project_with_warehouse()
+		warehouse.reload()
+		self.assertEqual(warehouse.project, "Test Project 2")
+		self.assertEqual(len(_queued_recipients(warehouse.name)), 2)
+
+	def test_visa_link_without_a_file_record_is_skipped_instead_of_failing(self):
+		transportation = _make_acknowledgement(self.ard.name, "Transportation")
+
+		self.assertFalse(
+			attach_file_copy(
+				"/private/files/no-such-evisa.pdf",
+				"Arrival Acknowledgement",
+				transportation.name,
+				"visa_copy",
+			)
+		)
+		self.assertFalse(frappe.db.exists("File", {"attached_to_name": transportation.name}))
+
 	def test_visa_copy_opens_for_transportation_without_visa_request_access(self):
 		user = "test_ack_transportation@example.com"
 		if not frappe.db.exists("User", user):

@@ -8,11 +8,11 @@ def execute():
 		return
 
 	workflow = frappe.get_doc("Workflow", "Arrival and Deployment")
-	editors = {d.allow_edit for d in workflow.states if d.state == "Pending Onboarding"}
-	if "Onboarding Officer" in editors:
+	pending_onboarding = [d for d in workflow.states if d.state == "Pending Onboarding"]
+	if not pending_onboarding or "Onboarding Officer" in {d.allow_edit for d in pending_onboarding}:
 		return
 
-	workflow.append(
-		"states", {"state": "Pending Onboarding", "doc_status": "0", "allow_edit": "Onboarding Officer"}
-	)
+	onboarding_officer_row = pending_onboarding[0].as_dict(no_default_fields=True)
+	onboarding_officer_row["allow_edit"] = "Onboarding Officer"
+	workflow.append("states", onboarding_officer_row)
 	workflow.save()

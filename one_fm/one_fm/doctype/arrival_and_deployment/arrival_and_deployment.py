@@ -110,7 +110,7 @@ class ArrivalandDeployment(Document):
         )
         visa_document = job_applicant and frappe.db.get_value(
             "Visa Request",
-            {"job_applicant": job_applicant, "docstatus": ["<", 2], "visa_document": ["is", "set"]},
+            {"job_applicant": job_applicant, "docstatus": 1, "visa_document": ["is", "set"]},
             "visa_document",
             order_by="creation desc",
         )

@@ -63,8 +63,8 @@ class ArrivalAcknowledgement(Document):
 		old_status = self.get_doc_before_save().get("status") if self.get_doc_before_save() else None
 		if self.status == "Acknowledged" and old_status != "Acknowledged":
 			self.notify_onboarding_officer_of_acknowledgement()
-			if self.department == "Operations":
-				self.share_project_with_warehouse()
+		if self.department == "Operations" and self.status == "Acknowledged":
+			self.share_project_with_warehouse()
 
 	def notify_onboarding_officer_of_acknowledgement(self):
 		"""Notify the assigned Onboarding Officer every time a department acknowledges,
@@ -143,7 +143,7 @@ class ArrivalAcknowledgement(Document):
 			self.designation = frappe.db.get_value("Job Applicant", job_applicant, "one_fm_designation")
 
 	def share_project_with_warehouse(self):
-		"""Give Warehouse the project from the site Operations allocated, then email the warehouse mailbox."""
+		"""Give Warehouse the project from the site Operations allocated, and email the warehouse mailbox when it changes."""
 		warehouse_name = frappe.db.get_value(
 			"Arrival Acknowledgement",
 			{"arrival_and_deployment": self.arrival_and_deployment, "department": "Warehouse"},
@@ -152,6 +152,8 @@ class ArrivalAcknowledgement(Document):
 			return
 
 		warehouse = frappe.get_doc("Arrival Acknowledgement", warehouse_name)
+		if warehouse.project == self.project:
+			return
 		warehouse.db_set("project", self.project)
 		warehouse.notify_department_email()
 
@@ -200,8 +202,11 @@ class ArrivalAcknowledgement(Document):
 
 def attach_file_copy(file_url, doctype, name, fieldname):
 	"""Attach an existing file to another record so its readers can open it.
-	Returns False when the file is missing on disk."""
-	file = frappe.get_doc("File", {"file_url": file_url})
+	Returns False when there is no File record for the URL or the file is missing on disk."""
+	file_name = frappe.db.get_value("File", {"file_url": file_url})
+	if not file_name:
+		return False
+	file = frappe.get_doc("File", file_name)
 	if not file.exists_on_disk():
 		return False
 	file.create_attachment_copy(doctype, name, fieldname)

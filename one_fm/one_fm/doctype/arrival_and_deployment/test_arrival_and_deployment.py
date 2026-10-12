@@ -99,12 +99,24 @@ class TestPendingOnboardingEditors(FrappeTestCase):
 
 		if not frappe.db.exists("Workflow", "Arrival and Deployment"):
 			self.skipTest("Arrival and Deployment workflow is created by earlier patches")
+		workflow = frappe.get_doc("Workflow", "Arrival and Deployment")
+		workflow.states = [
+			d
+			for d in workflow.states
+			if not (d.state == "Pending Onboarding" and d.allow_edit == "Onboarding Officer")
+		]
+		recruiter_row = next(d for d in workflow.states if d.state == "Pending Onboarding")
+		recruiter_row.message = "Test Pending Onboarding message"
+		workflow.save()
+
 		patch_module.execute()
 		patch_module.execute()
 
 		workflow = frappe.get_doc("Workflow", "Arrival and Deployment")
-		editors = [d.allow_edit for d in workflow.states if d.state == "Pending Onboarding"]
-		self.assertCountEqual(editors, ["Recruiter", "Onboarding Officer"])
+		rows = {d.allow_edit: d for d in workflow.states if d.state == "Pending Onboarding"}
+		self.assertCountEqual(rows, ["Recruiter", "Onboarding Officer"])
+		self.assertEqual(rows["Onboarding Officer"].message, "Test Pending Onboarding message")
+		self.assertEqual(rows["Onboarding Officer"].doc_status, rows["Recruiter"].doc_status)
 
 
 class TestSupportDepartmentUsers(FrappeTestCase):
