@@ -13,6 +13,7 @@ def after_install():
 	create_default_warehouse_types()
 	_create_custom_fields_resiliently(get_custom_fields())
 	add_property_setter(get_field_properties())
+	set_todo_allocated_to_default()
 	create_workflows()
 	create_assignment_rules()
 	frappe.db.commit()
