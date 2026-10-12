@@ -184,6 +184,12 @@ class TestArrivalEndsWithTransportation(FrappeTestCase):
 		ard.workflow_state = "Arrived"
 		ard.save()
 		self.assertEqual(_open_assignees(ard), set())
+		self.assertTrue(
+			frappe.db.exists(
+				"ToDo",
+				{"reference_name": ard.name, "allocated_to": TRANSPORTATION_USER, "status": "Closed"},
+			)
+		)
 		self.assertEqual(ard.status, "Joined")
 
 	def test_pick_up_needs_a_driver_and_the_transportation_manager(self):

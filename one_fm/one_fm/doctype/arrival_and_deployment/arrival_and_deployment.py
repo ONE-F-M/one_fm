@@ -114,10 +114,10 @@ class ArrivalandDeployment(Document):
                 frappe.throw(_("Only the {0} can mark whether the candidate arrived.").format(_(required_role)))
 
     def close_assignments(self):
-        """Close the open ToDos on this arrival once its step is done."""
-        from frappe.desk.form.assign_to import clear as clear_assignment
+        """Mark the open ToDos on this arrival Closed once its step is done."""
+        from frappe.desk.form.assign_to import close_all_assignments
 
-        clear_assignment(self.doctype, self.name)
+        close_all_assignments(self.doctype, self.name)
 
     def assign_transportation_manager(self):
         """Give the Transportation Manager the pickup task once onboarding is confirmed (overseas hires only)."""
