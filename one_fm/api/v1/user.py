@@ -133,16 +133,16 @@ def get_user_roles(employee_id: str = None):
     except Exception as e:
         frappe.log_error(title="API User roles", message=frappe.get_traceback())
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def store_fcm_token(employee_id: str = None , fcm_token: str = None, device_os: str = None):
+    """Store the caller's push token; an empty or "null" token clears it."""
     try:
         if not employee_id:
             return response(_("Missing Employee ID"), 400, None,
                             _("Please enter your Employee ID."))
 
-        if not fcm_token:
-            return response(_("Missing Device Token"), 400, None,
-                            _("Your device could not be registered for notifications. Please try again."))
+        if fcm_token in (None, "", "null"):
+            fcm_token = None
 
         if not device_os:
             return response(_("Missing Device Type"), 400, None,
@@ -160,8 +160,10 @@ def store_fcm_token(employee_id: str = None , fcm_token: str = None, device_os: 
                               "Please contact the IT Helpdesk.").format(employee_id))
 
         employee = frappe.get_doc("Employee", employee_name)
-        
-        
+        if employee.user_id != frappe.session.user:
+            return response(_("Not Permitted"), 403, None,
+                            _("You can only register notifications for your own account."))
+
         employee.db_set('device_os',device_os)
         employee.db_set('fcm_token',fcm_token)
        
