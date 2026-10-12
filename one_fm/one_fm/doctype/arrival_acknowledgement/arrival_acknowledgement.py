@@ -22,8 +22,26 @@ DEPARTMENT_REQUIRED_FIELDS = {
 	"Operations": ("site_allocation", "orientation_date", "orientation_time"),
 }
 
+# Tick on Arrival and Deployment that decides whether the department mailbox is emailed
+DEPARTMENT_MAILBOX_FIELDS = {
+	"Transportation": "email_transportation_mailbox",
+	"General Services": "email_general_services_mailbox",
+	"Finance": "email_finance_mailbox",
+	"Warehouse": "email_warehouse_mailbox",
+	"Operations": "email_operations_mailbox",
+}
+
 
 class ArrivalAcknowledgement(Document):
+	def before_insert(self):
+		self.set_candidate_job_details()
+
+	def after_insert(self):
+		if self.visa_copy and not attach_file_copy(self.visa_copy, self.doctype, self.name, "visa_copy"):
+			self.db_set("visa_copy", None, update_modified=False)
+		if self.department != "Warehouse":
+			self.notify_department_email()
+
 	def validate(self):
 		"""mandatory_depends_on is client-side only in this Frappe version -- it's never
 		evaluated by _get_missing_mandatory_fields() server-side, so enforce it here too,
@@ -45,6 +63,8 @@ class ArrivalAcknowledgement(Document):
 		old_status = self.get_doc_before_save().get("status") if self.get_doc_before_save() else None
 		if self.status == "Acknowledged" and old_status != "Acknowledged":
 			self.notify_onboarding_officer_of_acknowledgement()
+		if self.department == "Operations" and self.status == "Acknowledged":
+			self.share_project_with_warehouse()
 
 	def notify_onboarding_officer_of_acknowledgement(self):
 		"""Notify the assigned Onboarding Officer every time a department acknowledges,
@@ -55,12 +75,17 @@ class ArrivalAcknowledgement(Document):
 		if not self.arrival_and_deployment:
 			return
 
-		onboarding_officer = frappe.db.get_value("Arrival and Deployment", self.arrival_and_deployment, "onboarding_officer")
-		if not onboarding_officer:
-			return
-
-		officer_email = frappe.db.get_value("User", onboarding_officer, "email")
-		if not officer_email:
+		officers = frappe.db.get_value(
+			"Arrival and Deployment",
+			self.arrival_and_deployment,
+			["onboarding_officer", "second_onboarding_officer"],
+		)
+		officer_emails = [
+			email
+			for email in (frappe.db.get_value("User", officer, "email") for officer in officers if officer)
+			if email
+		]
+		if not officer_emails:
 			return
 
 		from frappe.utils import escape_html
@@ -94,12 +119,105 @@ class ArrivalAcknowledgement(Document):
 			frappe.enqueue(
 				method=frappe.sendmail,
 				queue="short",
-				recipients=[officer_email],
+				recipients=officer_emails,
 				subject=f"{self.department} Acknowledged Arrival: {self.candidate_name}",
 				message=message,
 			)
 		except Exception as e:
 			frappe.log_error(title="Arrival Acknowledgement Notification Error", message=f"Notify failed for {self.name}: {str(e)}")
+
+	def set_candidate_job_details(self):
+		"""Copy the candidate's designation, and the visa for Transportation."""
+		candidate_country_process, visa_copy = frappe.db.get_value(
+			"Arrival and Deployment", self.arrival_and_deployment, ["candidate_country_process", "visa_copy"]
+		)
+		if self.department == "Transportation":
+			self.visa_copy = visa_copy
+		if not candidate_country_process:
+			return
+
+		job_applicant = frappe.db.get_value(
+			"Candidate Country Process", candidate_country_process, "job_applicant"
+		)
+		if job_applicant:
+			self.designation = frappe.db.get_value("Job Applicant", job_applicant, "one_fm_designation")
+
+	def share_project_with_warehouse(self):
+		"""Give Warehouse the project from the site Operations allocated, and email the warehouse mailbox when it changes."""
+		warehouse_name = frappe.db.get_value(
+			"Arrival Acknowledgement",
+			{"arrival_and_deployment": self.arrival_and_deployment, "department": "Warehouse"},
+		)
+		if not warehouse_name:
+			return
+
+		warehouse = frappe.get_doc("Arrival Acknowledgement", warehouse_name)
+		if warehouse.project == self.project:
+			return
+		warehouse.db_set("project", self.project)
+		warehouse.notify_department_email()
+
+	def notify_department_email(self):
+		"""Email the department mailbox when its box is ticked on the arrival, with the visa for Transportation."""
+		mailbox_ticked = frappe.db.get_value(
+			"Arrival and Deployment", self.arrival_and_deployment, DEPARTMENT_MAILBOX_FIELDS[self.department]
+		)
+		department_email = mailbox_ticked and get_arrival_department_email(self.department)
+		if not department_email:
+			return
+
+		from frappe.utils import escape_html, formatdate
+
+		assigned_to_name = frappe.db.get_value("User", self.assigned_to, "full_name")
+		details = [
+			(_("Candidate"), self.candidate_name),
+			(_("Designation"), self.designation),
+			(_("Arrival Date"), formatdate(self.arrival_date)),
+			(_("Arrival Time"), self.arrival_time),
+			(_("Flight"), " ".join(filter(None, [self.airline, self.flight_number]))),
+			(_("Assigned To"), assigned_to_name),
+		]
+		if self.project:
+			details.append((_("Project"), self.project))
+		rows = "".join(
+			f"<li><b>{label}:</b> {escape_html(str(value or _('N/A')))}</li>" for label, value in details
+		)
+		link_label = _("Open Arrival Acknowledgement {0}").format(self.name)
+		message = (
+			f"<p>{_('Dear {0} Team,').format(escape_html(self.department))}</p>"
+			f"<ul>{rows}</ul>"
+			f"<p><a href='/app/arrival-acknowledgement/{self.name}'>{link_label}</a></p>"
+		)
+		frappe.sendmail(
+			recipients=[department_email],
+			subject=_("{0} Arrival on {1}: {2}").format(
+				self.department, formatdate(self.arrival_date), self.candidate_name
+			),
+			message=message,
+			attachments=[{"file_url": self.visa_copy}] if self.visa_copy else None,
+			reference_doctype=self.doctype,
+			reference_name=self.name,
+		)
+
+
+def attach_file_copy(file_url, doctype, name, fieldname):
+	"""Attach an existing file to another record so its readers can open it.
+	Returns False when there is no File record for the URL or the file is missing on disk."""
+	file_name = frappe.db.get_value("File", {"file_url": file_url})
+	if not file_name:
+		return False
+	file = frappe.get_doc("File", file_name)
+	if not file.exists_on_disk():
+		return False
+	file.create_attachment_copy(doctype, name, fieldname)
+	return True
+
+
+def get_arrival_department_email(department):
+	"""The department's mailbox from Hiring Settings."""
+	return frappe.db.get_value(
+		"Arrival Department Email", {"parenttype": "Hiring Settings", "department": department}, "email"
+	)
 
 
 @frappe.whitelist()

@@ -119,7 +119,7 @@ class TestPAMLicenseConfiguration(FrappeTestCase):
 			"civil_id_number_for_licensing": "1234567890",
 			"license_name": "_Test License",
 			"classification": "Commercial",
-			"status": "Not suspended",
+			"status": "Active",
 			"pam_license_stats": [{"occupational_sector": sector, "ratio_number_of_national_workers": "20"}],
 		})
 		license.flags.ignore_permissions = True

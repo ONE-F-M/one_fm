@@ -290,7 +290,13 @@ MOI_CATEGORY_BY_ACTION = {
 
 #fetching the list of employee has Extend and renewal status from HR list.
 def set_employee_list_for_moi(preparation_name):
+    """Open the Residency each non-Kuwaiti row calls for, renewal or extend.
+
+    Returns the rows it could not open one for, so the operator is told on submit
+    instead of the gap only showing as a connection count that does not add up.
+    """
     # filter work permit records only take the non kuwaiti
+    failures = []
     employee_in_preparation = frappe.get_doc('Preparation',preparation_name)
     if employee_in_preparation.preparation_record:
         for employee in employee_in_preparation.preparation_record:
@@ -299,6 +305,12 @@ def set_employee_list_for_moi(preparation_name):
                     create_moi_record(frappe.get_doc('Employee',employee.employee),employee.renewal_or_extend,preparation_name)
                 except Exception as e:
                     frappe.log_error(message=frappe.get_traceback(), title=f"Error creating MOI for Employee {employee.employee} in Preparation {preparation_name}")
+                    failures.append({
+                        'employee': employee.employee,
+                        'employee_name': employee.full_name,
+                        'document': 'Residency',
+                        'reason': str(e),
+                    })
                     continue
             if (
                 employee.renewal_or_extend not in ACTIONS_HANDLED_ON_SUBMIT
@@ -308,7 +320,14 @@ def set_employee_list_for_moi(preparation_name):
                     create_moi_record(frappe.get_doc('Employee',employee.employee),employee.renewal_or_extend,preparation_name)
                 except Exception as e:
                     frappe.log_error(message=frappe.get_traceback(), title=f"Error creating MOI for Employee {employee.employee} in Preparation {preparation_name}")
+                    failures.append({
+                        'employee': employee.employee,
+                        'employee_name': employee.full_name,
+                        'document': 'Residency',
+                        'reason': str(e),
+                    })
                     continue
+    return failures
 
 # Open the MOI for a transferred employee, called when their Medical Insurance is
 # marked Done. Named "creat_moi_for_transfer" until the module was renamed from

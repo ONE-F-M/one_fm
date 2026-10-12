@@ -26,6 +26,7 @@
   "include_hidden_fields",
   "column_break_field_options",
   "include_metadata_fields",
+  "export_link_titles",
   "section_break_field_picker",
   "fields_multicheck",
   "field_cache",
@@ -166,6 +167,14 @@
    "description": "Offer the standard fields (Created By, Created On, Last Modified On, Last Modified By, Document Status, Index) of the selected Document Type."
   },
   {
+   "default": "0",
+   "depends_on": "eval:doc.reference_doctype",
+   "description": "Export the value shown on the form for a Link field (a Contact's full name, for one) instead of the stored ID. Leave unchecked to keep exporting IDs.",
+   "fieldname": "export_link_titles",
+   "fieldtype": "Check",
+   "label": "Export Link Titles"
+  },
+  {
    "fieldname": "column_break_field_options",
    "fieldtype": "Column Break"
   },
@@ -177,7 +186,7 @@
  "grid_page_length": 50,
  "hide_toolbar": 1,
  "links": [],
- "modified": "2026-09-15 11:01:00.000000",
+ "modified": "2026-10-05 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Google Sheet Data Export",

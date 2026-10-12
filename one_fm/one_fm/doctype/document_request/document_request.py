@@ -2,9 +2,14 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
 
+from urllib.parse import unquote, urlparse
+
 import frappe
 from frappe import _
+from frappe.core.utils import html2text
 from frappe.model.document import Document
+from frappe.utils import strip_html
+from frappe.utils.html_utils import unescape_html
 
 from one_fm.utils import get_approver_user
 
@@ -13,6 +18,7 @@ class DocumentRequest(Document):
 	def validate(self):
 		self.set_requester_defaults()
 		self.fill_requester_chain()
+		self.set_title_from_wiki_link()
 		self.check_approver_resolved()
 		self.apply_reference_document_defaults()
 		self.check_required_links()
@@ -50,6 +56,26 @@ class DocumentRequest(Document):
 				).format(frappe.bold(frappe.session.user)),
 				title=_("No Employee Record"),
 			)
+
+	def set_title_from_wiki_link(self):
+		"""On a Create, a new or changed Wiki Link sets the title and requirement from that Wiki page."""
+		if self.request_action != "Create":
+			self.wiki_link = None
+			return
+		if not self.wiki_link:
+			return
+		if not self.has_value_changed("wiki_link"):
+			return
+		page = frappe.db.get_value(
+			"Wiki Page", _wiki_page_filters(self.wiki_link), ["title", "content"], as_dict=True
+		)
+		if not page:
+			frappe.throw(
+				_("{0} is not a Wiki page on this site.").format(frappe.bold(self.wiki_link)),
+				title=_("Wiki Page Not Found"),
+			)
+		self.title = _plain_title(page.title)
+		self.requirement_text = _plain_content(page.content)
 
 	def fill_requester_chain(self):
 		"""Fill requester_user and approver_user from the requester.
@@ -153,6 +179,9 @@ class DocumentRequest(Document):
 		check that guards the real Reactivate button.
 		"""
 		if self.request_action == "Create" or not self.reference_document:
+			return
+		# A Delete withdraws its own document, so the saves that follow must not re-check it.
+		if not self.has_value_changed("reference_document"):
 			return
 
 		state = frappe.db.get_value("Document Register", self.reference_document, "lifecycle_state")
@@ -431,7 +460,7 @@ def _link_from_process_instance(document_request: str) -> str | None:
 	except Exception:
 		return None
 
-	drive_file = (state.get("data") or {}).get("drive_file") or {}
+	drive_file = (state.get("data") or {}).get("drive_file") or _drive_file_from_tasks(state)
 	if not isinstance(drive_file, dict):
 		return None
 
@@ -442,3 +471,44 @@ def _link_from_process_instance(document_request: str) -> str | None:
 		return link
 	file_id = drive_file.get("id")
 	return f"https://docs.google.com/document/d/{file_id}/edit" if file_id else None
+
+
+def _drive_file_from_tasks(state: dict) -> dict:
+	"""A run still in progress keeps drive_file on the task that set it, not on the run."""
+	latest, found = -1.0, {}
+	for task in (state.get("tasks") or {}).values():
+		changed = task["delta"].get("updates") or task.get("data") or {}
+		drive_file = changed.get("drive_file")
+		if isinstance(drive_file, dict) and task["last_state_change"] > latest:
+			latest, found = task["last_state_change"], drive_file
+	return found
+
+
+@frappe.whitelist()
+def get_wiki_page(wiki_link: str) -> dict | None:
+	"""The plain-text title and content of the Wiki page a link points at, if the user can read it."""
+	frappe.has_permission("Document Request", "create", throw=True)
+	pages = frappe.get_list(
+		"Wiki Page", filters=_wiki_page_filters(wiki_link), fields=["title", "content"], limit=1
+	)
+	if not pages:
+		return None
+	return {"title": _plain_title(pages[0].title), "requirement": _plain_content(pages[0].content)}
+
+
+def _wiki_page_filters(wiki_link: str) -> dict:
+	"""A Desk link /app/wiki-page/<name> names the page; any other link's decoded path is its route."""
+	route = unquote(urlparse(wiki_link.strip()).path).strip("/")
+	desk_prefix, _sep, name = route.partition("app/wiki-page/")
+	if not desk_prefix and name:
+		return {"name": name}
+	return {"route": route}
+
+
+def _plain_title(title: str) -> str:
+	# Some Wiki titles carry editor markup such as <strong> and &nbsp;.
+	return " ".join(unescape_html(strip_html(title)).split())
+
+
+def _plain_content(content: str) -> str:
+	return html2text(content, wrap=False).strip()
