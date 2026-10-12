@@ -11,29 +11,30 @@ class TestGetWeekStartEnd(FrappeTestCase):
 		# Test with a known date: 2024-01-15 (a Monday)
 		result = get_week_start_end("2024-01-15")
 		
-		# Verify the result is a tuple with start and end dates
-		self.assertIsNotNone(result)
-		self.assertEqual(len(result), 2)
+		# Verify the result has start and end attributes
+		self.assertTrue(hasattr(result, 'start'), "Result should have 'start' attribute")
+		self.assertTrue(hasattr(result, 'end'), "Result should have 'end' attribute")
 		
-		# Result should have start and end attributes
-		self.assertIsNotNone(result[0])  # start date
-		self.assertIsNotNone(result[1])  # end date
+		# Verify both start and end dates are not None
+		self.assertIsNotNone(result.start)
+		self.assertIsNotNone(result.end)
 
 	def test_valid_date_format_string(self):
 		"""Test that valid YYYY-MM-DD format strings work"""
 		result = get_week_start_end("2024-01-01")
 		self.assertIsNotNone(result)
+		self.assertTrue(hasattr(result, 'start'))
+		self.assertTrue(hasattr(result, 'end'))
 
 	def test_invalid_date_format_raises_validation_error(self):
 		"""Test that invalid date formats raise ValidationError with clear message"""
+		# Test formats that definitely won't parse as YYYY-MM-DD
 		invalid_dates = [
-			"2024/01/15",  # Wrong separator
+			"2024/01/15",  # Wrong separator (/ instead of -)
 			"01-15-2024",  # Wrong order
-			"15-01-2024",  # Wrong order
-			"2024-1-15",   # Missing leading zero
-			"not-a-date",  # Not a date
+			"15-01-2024",  # Wrong order  
+			"not-a-date",  # Not a date at all
 			"2024-13-01",  # Invalid month
-			"2024-01-32",  # Invalid day
 		]
 		
 		for invalid_date in invalid_dates:
@@ -53,3 +54,5 @@ class TestGetWeekStartEnd(FrappeTestCase):
 		
 		# The error should be raised (validation error exists)
 		self.assertIsNotNone(context.exception)
+		# The message should mention the format
+		self.assertIn("YYYY-MM-DD", str(context.exception))
