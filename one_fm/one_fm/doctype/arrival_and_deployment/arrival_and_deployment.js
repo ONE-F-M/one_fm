@@ -25,8 +25,6 @@ frappe.ui.form.on("Arrival and Deployment", {
 		let is_local = !frm.doc.candidate_country_process;
 		frm.toggle_display([
 			'arrival_time',
-			'transportation_manager',
-			'finance',
 			'section_break_flight',
 			'flight_number',
 			'airline',
@@ -51,12 +49,10 @@ frappe.ui.form.on("Arrival and Deployment", {
 			}
 		}
 
-		if (frappe.selected_workflow_action === "Mark as Joined" || frappe.selected_workflow_action === "Did Not Arrive") {
+		if (frappe.selected_workflow_action === "Arrived" || frappe.selected_workflow_action === "Did Not Arrive") {
 			let is_overseas = !!frm.doc.candidate_country_process;
-			if (is_overseas && frappe.session.user !== frm.doc.transportation_manager && frappe.session.user !== "Administrator") {
-				frappe.throw(__("Only the Transportation Manager can perform this action for Overseas hires."));
-			} else if (!is_overseas && frappe.session.user !== frm.doc.general_services && frappe.session.user !== "Administrator") {
-				frappe.throw(__("Only General Services can perform this action for Local hires."));
+			if (is_overseas && frappe.session.user !== frm.doc.transportation_manager && !frappe.user.has_role("System Manager")) {
+				frappe.throw(__("Only the Transportation Manager named on this arrival can mark whether the candidate arrived."));
 			}
 		}
 

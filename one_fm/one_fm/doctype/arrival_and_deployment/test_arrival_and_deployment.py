@@ -1,6 +1,7 @@
 # Copyright (c) 2026, ONE FM and Contributors
 # See license.txt
 
+import unittest
 from unittest.mock import patch
 
 import frappe
@@ -119,39 +120,102 @@ class TestPendingOnboardingEditors(FrappeTestCase):
 		self.assertEqual(rows["Onboarding Officer"].doc_status, rows["Recruiter"].doc_status)
 
 
-class TestSupportDepartmentUsers(FrappeTestCase):
-	def setUp(self):
-		self.ard = frappe.get_doc(
+TRANSPORTATION_USER = "test_ad_transport@example.com"
+
+
+class TestArrivalEndsWithTransportation(FrappeTestCase):
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		from one_fm.patches.v15_0 import end_arrival_at_transportation_confirmation
+
+		if not frappe.db.exists("Workflow", "Arrival and Deployment"):
+			raise unittest.SkipTest("Arrival and Deployment workflow is created by earlier patches")
+		end_arrival_at_transportation_confirmation.execute()
+		if not frappe.db.exists("User", TRANSPORTATION_USER):
+			frappe.get_doc(
+				{
+					"doctype": "User",
+					"email": TRANSPORTATION_USER,
+					"first_name": "Transport",
+					"send_welcome_email": 0,
+				}
+			).insert()
+
+	def test_workflow_offers_confirm_onboarding_then_arrival_by_hire_type(self):
+		workflow = frappe.get_doc("Workflow", "Arrival and Deployment")
+		transitions = {(t.state, t.action, t.allowed): t.condition or "" for t in workflow.transitions}
+
+		self.assertIn(("Pending Onboarding", "Confirm Onboarding", "Onboarding Officer"), transitions)
+		self.assertEqual(
+			transitions[("Onboarding Confirmed", "Arrived", "Transportation Manager")],
+			"doc.candidate_country_process",
+		)
+		self.assertEqual(
+			transitions[("Onboarding Confirmed", "Did Not Arrive", "Onboarding Officer")],
+			"not doc.candidate_country_process",
+		)
+		self.assertFalse([t for t in workflow.transitions if t.action == "Submit to Support Departments"])
+		self.assertFalse(frappe.db.exists("DocType", "Arrival Acknowledgement"))
+
+	def test_confirm_onboarding_hands_the_task_to_transportation_and_arrived_closes_it(self):
+		ard = frappe.get_doc(
 			{
 				"doctype": "Arrival and Deployment",
-				"candidate_name": "Test Department Users",
-				"arrival_date": frappe.utils.add_days(frappe.utils.today(), 3),
+				"candidate_name": "Test Transport Hand Over",
+				"arrival_date": "2026-10-20",
 				"recruiter": "Administrator",
 				"onboarding_officer": "Administrator",
-				"warehouse": "Administrator",
-				"general_services": "Administrator",
-				"operations_admin": "Administrator",
+				"transportation_manager": TRANSPORTATION_USER,
 			}
 		).insert()
-		self.ard.workflow_state = "Pending Onboarding"
-		self.ard.save()
+		for state in ("Pending Onboarding", "Onboarding Confirmed"):
+			ard.workflow_state = state
+			ard.save()
 
-	def test_submit_to_support_departments_names_the_empty_department(self):
-		self.ard.warehouse = None
-		self.ard.workflow_state = "Pending Support Departments"
+		self.assertEqual(_open_assignees(ard), {TRANSPORTATION_USER})
+		self.assertEqual(ard.status, "Arriving")
+
+		ard.workflow_state = "Arrived"
+		ard.save()
+		self.assertEqual(_open_assignees(ard), set())
+		self.assertEqual(ard.status, "Joined")
+
+	def test_overseas_arrival_needs_the_transportation_manager_role(self):
+		doc = frappe.new_doc("Arrival and Deployment")
+		doc.candidate_country_process = "CCP-TEST"
+		doc.workflow_state = "Arrived"
+
+		with patch("frappe.get_roles", return_value=["Onboarding Officer"]):
+			self.assertRaises(frappe.ValidationError, doc.validate_workflow_role)
+		with patch("frappe.get_roles", return_value=["Transportation Manager"]):
+			doc.validate_workflow_role()
+
+	def test_local_arrival_is_marked_by_the_onboarding_officer(self):
+		doc = frappe.new_doc("Arrival and Deployment")
+		doc.workflow_state = "Did Not Arrive"
+
+		with patch("frappe.get_roles", return_value=["Transportation Manager"]):
+			self.assertRaises(frappe.ValidationError, doc.validate_workflow_role)
+		with patch("frappe.get_roles", return_value=["Onboarding Officer"]):
+			doc.validate_workflow_role()
+
+	def test_overseas_onboarding_needs_a_transportation_manager(self):
+		doc = frappe.new_doc("Arrival and Deployment")
+		doc.candidate_country_process = "CCP-TEST"
+		doc.arrival_date = "2026-10-20"
+		doc.workflow_state = "Onboarding Confirmed"
 
 		with self.assertRaises(frappe.ValidationError) as context:
-			self.ard.save()
-		self.assertIn("Warehouse", str(context.exception))
-		self.assertFalse(
-			frappe.db.exists("Arrival Acknowledgement", {"arrival_and_deployment": self.ard.name})
-		)
+			doc.validate()
+		self.assertIn("Transportation Manager", str(context.exception))
 
-	def test_local_hire_needs_only_its_three_departments(self):
-		self.ard.workflow_state = "Pending Support Departments"
-		self.ard.save()
 
-		departments = frappe.get_all(
-			"Arrival Acknowledgement", filters={"arrival_and_deployment": self.ard.name}, pluck="department"
+def _open_assignees(doc):
+	return set(
+		frappe.get_all(
+			"ToDo",
+			filters={"reference_type": doc.doctype, "reference_name": doc.name, "status": "Open"},
+			pluck="allocated_to",
 		)
-		self.assertCountEqual(departments, ["Warehouse", "General Services", "Operations"])
+	)
