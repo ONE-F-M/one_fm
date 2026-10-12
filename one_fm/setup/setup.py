@@ -39,14 +39,12 @@ def set_todo_allocated_to_default():
 	without a default value set at the database level. Without this default, creating
 	a test ToDo fails with:
 		MandatoryError: [ToDo, ...]: allocated_to
-	Set the default value at the database level so test records can be created."""
+	Update the DocField to have a default value so test records can be created."""
 	try:
-		frappe.db.set_value(
-			"DocField",
-			{"parent": "ToDo", "fieldname": "allocated_to"},
-			"default",
-			"Administrator",
-			update_modified=False
+		# Use raw SQL to update the default value in the DocField
+		frappe.db.sql(
+			"UPDATE `tabDocField` SET `default` = %s WHERE `parent` = %s AND `fieldname` = %s",
+			("Administrator", "ToDo", "allocated_to")
 		)
 		frappe.clear_cache(doctype="ToDo")
 	except Exception:
