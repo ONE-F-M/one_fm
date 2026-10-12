@@ -3,6 +3,9 @@ name: Deploy hotfix to Production
 on:
   workflow_dispatch:
 
+# The job only opens an SSH session, so the token needs no access.
+permissions: {}
+
 concurrency:
   group: deploy-production
   cancel-in-progress: false
