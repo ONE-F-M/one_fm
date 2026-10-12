@@ -261,13 +261,13 @@ class ArrivalandDeployment(Document):
             escape_html(display_name), formatdate(self.arrival_date)
         )
         message = f'''
-        <p>Dear Onboarding Officer,</p>
+        <p>Dear Onboarding Team,</p>
         <p>A new candidate is ready for onboarding:</p>
         <ul>
             <li><b>Name:</b> {escape_html(display_name)}</li>
             <li><b>Designation:</b> {escape_html(designation) if designation else 'N/A'}</li>
             <li><b>Nationality:</b> {escape_html(nationality) if nationality else 'N/A'}</li>
-            <li><b>Arriving on:</b> {self.arrival_date or 'TBD'}</li>
+            <li><b>Arriving on:</b> {formatdate(self.arrival_date)}</li>
         </ul>
         <p>Please review the <a href="/app/arrival-and-deployment/{self.name}">Arrival and Deployment Document</a> and prepare accordingly.</p>
         '''

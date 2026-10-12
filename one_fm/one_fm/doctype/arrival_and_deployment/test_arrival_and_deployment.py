@@ -59,6 +59,8 @@ class TestOnboardingOfficerEmail(FrappeTestCase):
 
 		email = enqueue.call_args.kwargs
 		self.assertIn(frappe.utils.formatdate("2026-10-15"), email["subject"])
+		self.assertIn(f"<b>Arriving on:</b> {frappe.utils.formatdate('2026-10-15')}", email["message"])
+		self.assertIn("Dear Onboarding Team,", email["message"])
 		self.assertEqual(email["cc"], "test_hr_mailbox@example.com")
 
 		doc.email_onboarding_mailbox = 0
