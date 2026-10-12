@@ -301,7 +301,7 @@
    "label": "Arrival Settings"
   },
   {
-   "description": "When Use is ticked, arrival emails go to the department email as well as the assigned person.",
+   "description": "Mailbox for each department. On Arrival and Deployment, the tick next to each department decides whether its mailbox is emailed for that candidate.",
    "fieldname": "arrival_department_emails",
    "fieldtype": "Table",
    "label": "Arrival Department Emails",
@@ -310,7 +310,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-10-11 18:00:00.000000",
+ "modified": "2026-10-12 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Hiring Settings",

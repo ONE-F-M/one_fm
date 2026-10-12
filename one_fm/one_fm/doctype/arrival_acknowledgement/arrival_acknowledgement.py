@@ -22,6 +22,15 @@ DEPARTMENT_REQUIRED_FIELDS = {
 	"Operations": ("site_allocation", "orientation_date", "orientation_time"),
 }
 
+# Tick on Arrival and Deployment that decides whether the department mailbox is emailed
+DEPARTMENT_MAILBOX_FIELDS = {
+	"Transportation": "email_transportation_mailbox",
+	"General Services": "email_general_services_mailbox",
+	"Finance": "email_finance_mailbox",
+	"Warehouse": "email_warehouse_mailbox",
+	"Operations": "email_operations_mailbox",
+}
+
 
 class ArrivalAcknowledgement(Document):
 	def before_insert(self):
@@ -66,12 +75,17 @@ class ArrivalAcknowledgement(Document):
 		if not self.arrival_and_deployment:
 			return
 
-		onboarding_officer = frappe.db.get_value("Arrival and Deployment", self.arrival_and_deployment, "onboarding_officer")
-		if not onboarding_officer:
-			return
-
-		officer_email = frappe.db.get_value("User", onboarding_officer, "email")
-		if not officer_email:
+		officers = frappe.db.get_value(
+			"Arrival and Deployment",
+			self.arrival_and_deployment,
+			["onboarding_officer", "second_onboarding_officer"],
+		)
+		officer_emails = [
+			email
+			for email in (frappe.db.get_value("User", officer, "email") for officer in officers if officer)
+			if email
+		]
+		if not officer_emails:
 			return
 
 		from frappe.utils import escape_html
@@ -105,7 +119,7 @@ class ArrivalAcknowledgement(Document):
 			frappe.enqueue(
 				method=frappe.sendmail,
 				queue="short",
-				recipients=[officer_email],
+				recipients=officer_emails,
 				subject=f"{self.department} Acknowledged Arrival: {self.candidate_name}",
 				message=message,
 			)
@@ -142,8 +156,11 @@ class ArrivalAcknowledgement(Document):
 		warehouse.notify_department_email()
 
 	def notify_department_email(self):
-		"""Send the department mailbox a copy of the arrival, with the visa attached for Transportation."""
-		department_email = get_arrival_department_email(self.department)
+		"""Email the department mailbox when its box is ticked on the arrival, with the visa for Transportation."""
+		mailbox_ticked = frappe.db.get_value(
+			"Arrival and Deployment", self.arrival_and_deployment, DEPARTMENT_MAILBOX_FIELDS[self.department]
+		)
+		department_email = mailbox_ticked and get_arrival_department_email(self.department)
 		if not department_email:
 			return
 
@@ -192,11 +209,9 @@ def attach_file_copy(file_url, doctype, name, fieldname):
 
 
 def get_arrival_department_email(department):
-	"""The department's mailbox from Hiring Settings, only when its Use box is ticked."""
+	"""The department's mailbox from Hiring Settings."""
 	return frappe.db.get_value(
-		"Arrival Department Email",
-		{"parenttype": "Hiring Settings", "department": department, "use": 1},
-		"email",
+		"Arrival Department Email", {"parenttype": "Hiring Settings", "department": department}, "email"
 	)
 
 

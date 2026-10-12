@@ -223,7 +223,10 @@ class ArrivalandDeployment(Document):
         if not self.onboarding_officer:
             return
 
-        officer_email = frappe.db.get_value("User", self.onboarding_officer, "email")
+        officers = [officer for officer in (self.onboarding_officer, self.second_onboarding_officer) if officer]
+        officer_emails = [
+            email for email in (frappe.db.get_value("User", officer, "email") for officer in officers) if email
+        ]
 
         job_applicant_name, nationality, designation = None, None, None
         if self.candidate_country_process:
@@ -237,7 +240,7 @@ class ArrivalandDeployment(Document):
         from frappe.desk.form.assign_to import add as add_assignment
         try:
             add_assignment({
-                "assign_to": [self.onboarding_officer],
+                "assign_to": officers,
                 "doctype": self.doctype,
                 "name": self.name,
                 "description": f"Dear Onboarding Officer,\n\nKindly prepare onboarding for {display_name}, arriving on {self.arrival_date or 'TBD'}."
@@ -245,7 +248,7 @@ class ArrivalandDeployment(Document):
         except Exception as e:
             frappe.log_error(title="Onboarding Assignment Error", message=f"Failed to assign onboarding officer for {self.name}: {str(e)}")
 
-        if not officer_email:
+        if not officer_emails:
             return
 
         from frappe.utils import escape_html, formatdate
@@ -272,8 +275,8 @@ class ArrivalandDeployment(Document):
         frappe.enqueue(
             method=frappe.sendmail,
             queue='short',
-            recipients=[officer_email],
-            cc=get_arrival_department_email("Onboarding"),
+            recipients=officer_emails,
+            cc=get_arrival_department_email("Onboarding") if self.email_onboarding_mailbox else None,
             subject=subject,
             message=message
         )

@@ -79,9 +79,9 @@ class TestArrivalDepartmentEmail(FrappeTestCase):
 		hiring_settings.set(
 			"arrival_department_emails",
 			[
-				{"department": "Finance", "email": "test_finance_mailbox@example.com", "use": 1},
-				{"department": "General Services", "email": "test_gs_mailbox@example.com", "use": 0},
-				{"department": "Warehouse", "email": "test_procurement_mailbox@example.com", "use": 1},
+				{"department": "Finance", "email": "test_finance_mailbox@example.com"},
+				{"department": "General Services", "email": "test_gs_mailbox@example.com"},
+				{"department": "Warehouse", "email": "test_procurement_mailbox@example.com"},
 			],
 		)
 		hiring_settings.save()
@@ -90,10 +90,11 @@ class TestArrivalDepartmentEmail(FrappeTestCase):
 				"doctype": "Arrival and Deployment",
 				"candidate_name": "Test Mailbox Arrival",
 				"arrival_date": frappe.utils.add_days(frappe.utils.today(), 3),
+				"email_general_services_mailbox": 0,
 			}
 		).insert()
 
-	def test_department_mailbox_gets_a_copy_only_when_use_is_ticked(self):
+	def test_department_mailbox_gets_a_copy_only_when_ticked_on_the_arrival(self):
 		finance = _make_acknowledgement(self.ard.name, "Finance")
 		general_services = _make_acknowledgement(self.ard.name, "General Services")
 

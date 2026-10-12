@@ -17,7 +17,5 @@ def execute():
 	existing = {d.department for d in hiring_settings.arrival_department_emails}
 	for department, email in ARRIVAL_DEPARTMENT_EMAILS:
 		if department not in existing:
-			hiring_settings.append(
-				"arrival_department_emails", {"department": department, "email": email, "use": 1}
-			)
+			hiring_settings.append("arrival_department_emails", {"department": department, "email": email})
 	hiring_settings.save()

@@ -45,7 +45,7 @@ class TestOnboardingOfficerEmail(FrappeTestCase):
 		hiring_settings.set(
 			"arrival_department_emails",
 			[
-				{"department": "Onboarding", "email": "test_hr_mailbox@example.com", "use": 1},
+				{"department": "Onboarding", "email": "test_hr_mailbox@example.com"},
 			],
 		)
 		hiring_settings.save()
@@ -60,6 +60,35 @@ class TestOnboardingOfficerEmail(FrappeTestCase):
 		email = enqueue.call_args.kwargs
 		self.assertIn(frappe.utils.formatdate("2026-10-15"), email["subject"])
 		self.assertEqual(email["cc"], "test_hr_mailbox@example.com")
+
+		doc.email_onboarding_mailbox = 0
+		with patch("frappe.enqueue") as enqueue:
+			doc.notify_onboarding_officer()
+		self.assertIsNone(enqueue.call_args.kwargs["cc"])
+
+	def test_second_onboarding_officer_gets_the_email_and_the_task(self):
+		second = "test_second_onboarding@example.com"
+		if not frappe.db.exists("User", second):
+			frappe.get_doc(
+				{"doctype": "User", "email": second, "first_name": "Second", "send_welcome_email": 0}
+			).insert()
+		doc = frappe.get_doc(
+			{
+				"doctype": "Arrival and Deployment",
+				"candidate_name": "Test Second Officer",
+				"arrival_date": "2026-10-15",
+				"onboarding_officer": "Administrator",
+				"second_onboarding_officer": second,
+			}
+		).insert()
+
+		with patch("frappe.enqueue") as enqueue:
+			doc.notify_onboarding_officer()
+
+		self.assertIn(second, enqueue.call_args.kwargs["recipients"])
+		self.assertTrue(
+			frappe.db.exists("ToDo", {"reference_name": doc.name, "allocated_to": second, "status": "Open"})
+		)
 
 
 class TestPendingOnboardingEditors(FrappeTestCase):
