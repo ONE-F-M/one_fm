@@ -49,7 +49,11 @@ frappe.ui.form.on("Arrival and Deployment", {
 			}
 		}
 
-		if (frappe.selected_workflow_action === "Arrived" || frappe.selected_workflow_action === "Did Not Arrive") {
+		if (frappe.selected_workflow_action === "Arrange Pick Up" && !frm.doc.driver_name) {
+			frappe.throw(__("Please fill in the Driver Name before marking the pickup as arranged."));
+		}
+
+		if (["Arrange Pick Up", "Arrived", "Did Not Arrive"].includes(frappe.selected_workflow_action)) {
 			let is_overseas = !!frm.doc.candidate_country_process;
 			if (is_overseas && frappe.session.user !== frm.doc.transportation_manager && !frappe.user.has_role("System Manager")) {
 				frappe.throw(__("Only the Transportation Manager named on this arrival can mark whether the candidate arrived."));

@@ -148,13 +148,18 @@ class TestArrivalEndsWithTransportation(FrappeTestCase):
 
 		self.assertIn(("Pending Onboarding", "Confirm Onboarding", "Onboarding Officer"), transitions)
 		self.assertEqual(
-			transitions[("Onboarding Confirmed", "Arrived", "Transportation Manager")],
+			transitions[("Onboarding Confirmed", "Arrange Pick Up", "Transportation Manager")],
 			"doc.candidate_country_process",
 		)
+		self.assertIn(("Pick Up Arranged", "Arrived", "Transportation Manager"), transitions)
+		self.assertIn(("Pick Up Arranged", "Did Not Arrive", "Transportation Manager"), transitions)
+		self.assertNotIn(("Onboarding Confirmed", "Arrived", "Transportation Manager"), transitions)
 		self.assertEqual(
 			transitions[("Onboarding Confirmed", "Did Not Arrive", "Onboarding Officer")],
 			"not doc.candidate_country_process",
 		)
+		editors = {(d.state, d.allow_edit) for d in workflow.states}
+		self.assertIn(("Onboarding Confirmed", "Transportation Manager"), editors)
 		self.assertFalse([t for t in workflow.transitions if t.action == "Submit to Support Departments"])
 		self.assertFalse(frappe.db.exists("DocType", "Arrival Acknowledgement"))
 
@@ -180,6 +185,23 @@ class TestArrivalEndsWithTransportation(FrappeTestCase):
 		ard.save()
 		self.assertEqual(_open_assignees(ard), set())
 		self.assertEqual(ard.status, "Joined")
+
+	def test_pick_up_needs_a_driver_and_the_transportation_manager(self):
+		doc = frappe.new_doc("Arrival and Deployment")
+		doc.candidate_country_process = "CCP-TEST"
+		doc.transportation_manager = TRANSPORTATION_USER
+		doc.arrival_date = "2026-10-20"
+		doc.workflow_state = "Pick Up Arranged"
+
+		with self.assertRaises(frappe.ValidationError) as context:
+			doc.validate()
+		self.assertIn("Driver Name", str(context.exception))
+
+		doc.driver_name = "Test Driver"
+		with patch("frappe.get_roles", return_value=["Onboarding Officer"]):
+			self.assertRaises(frappe.ValidationError, doc.validate_workflow_role)
+		with patch("frappe.get_roles", return_value=["Transportation Manager"]):
+			doc.validate_workflow_role()
 
 	def test_overseas_arrival_needs_the_transportation_manager_role(self):
 		doc = frappe.new_doc("Arrival and Deployment")

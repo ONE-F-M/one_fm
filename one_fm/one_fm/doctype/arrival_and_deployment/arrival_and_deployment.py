@@ -8,7 +8,7 @@ from frappe.model.document import Document
 
 # Final states meaning the candidate arrived; both set the Candidate Country Process to Joined
 ARRIVED_STATES = ("Arrived", "Joined")
-ARRIVING_STATES = ("Onboarding Confirmed", "Pending Support Departments")
+ARRIVING_STATES = ("Onboarding Confirmed", "Pick Up Arranged", "Pending Support Departments")
 
 
 class ArrivalandDeployment(Document):
@@ -20,6 +20,9 @@ class ArrivalandDeployment(Document):
 
         if self.get("workflow_state") == "Onboarding Confirmed" and self.candidate_country_process and not self.transportation_manager:
             frappe.throw(_("Please fill in the Transportation Manager before confirming onboarding."))
+
+        if self.get("workflow_state") == "Pick Up Arranged" and not self.driver_name:
+            frappe.throw(_("Please fill in the Driver Name before marking the pickup as arranged."))
 
         if self.get("workflow_state") == "Pending Onboarding":
             if not self.arrival_date:
@@ -103,6 +106,8 @@ class ArrivalandDeployment(Document):
         state = self.get("workflow_state")
         if state == "Onboarding Confirmed" and "Onboarding Officer" not in roles:
             frappe.throw(_("Only the Onboarding Officer can confirm onboarding."))
+        if state == "Pick Up Arranged" and "Transportation Manager" not in roles:
+            frappe.throw(_("Only the Transportation Manager can arrange the pickup."))
         if state in ("Arrived", "Did Not Arrive"):
             required_role = "Transportation Manager" if self.candidate_country_process else "Onboarding Officer"
             if required_role not in roles:
@@ -126,7 +131,7 @@ class ArrivalandDeployment(Document):
             "assign_to": [self.transportation_manager],
             "doctype": self.doctype,
             "name": self.name,
-            "description": _("Kindly arrange the airport pickup for {0}, arriving {1} {2} on {3}. Mark Arrived or Did Not Arrive once done.").format(
+            "description": _("Kindly arrange the airport pickup for {0}, arriving {1} {2} on {3}. Enter the driver and click Arrange Pick Up, then mark Arrived or Did Not Arrive.").format(
                 self.candidate_name, formatdate(self.arrival_date), self.arrival_time or "", self.flight_number or ""
             ),
         })
