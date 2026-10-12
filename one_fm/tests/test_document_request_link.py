@@ -117,18 +117,14 @@ class DocumentRequestFixtures:
 		return entry.name
 
 	def _instance_with_drive_file(self, request, drive_file):
-		"""A completed run carrying whatever the Drive connector returned.
-
-		The model is resolved by process name rather than named outright: model
-		names carry a version suffix — the live one is "Document Request (1)" —
-		and a Link to a name that does not exist fails on insert, which made
-		every test in this class error on the fixture rather than on its subject.
-		"""
+		"""A completed run carrying whatever the Drive connector returned, on the model Document Request starts."""
 		model = frappe.db.get_value(
-			"BPMN Process Model", {"process_name": "Document Request", "is_active": 1}, "name"
+			"BPMN Start Event Config",
+			{"trigger_doctype": "Document Request", "parenttype": "BPMN Process Model"},
+			"parent",
 		)
 		if not model:
-			self.skipTest("no active BPMN Process Model for Document Request")
+			self.skipTest("no BPMN Process Model starts on Document Request")
 		instance = frappe.get_doc({
 			"doctype": "BPMN Process Instance",
 			"process_model": model,
@@ -256,6 +252,32 @@ class TestLinkResolution(DocumentRequestFixtures, unittest.TestCase):
 		"""The case every already-published document is in."""
 		request = self._request()
 		self._instance_with_drive_file(request, {"id": FILE_ID, "webViewLink": WEB_VIEW_LINK})
+
+		link = get_published_document_link(request)
+
+		self.assertEqual(link["url"], WEB_VIEW_LINK)
+		self.assertEqual(link["source"], "process_instance")
+
+	def test_a_run_still_in_progress_resolves_from_the_task_that_made_the_file(self):
+		"""Mid-run the drive_file sits on the copyFile task's delta; the run's own data is empty."""
+		request = self._request(workflow_state="Drafting")
+		instance = self._instance_with_drive_file(request, {})
+		frappe.db.set_value(
+			"BPMN Process Instance",
+			instance,
+			"workflow_state",
+			json.dumps({
+				"data": {},
+				"tasks": {
+					"copy": {
+						"last_state_change": 2.0,
+						"delta": {"updates": {"drive_file": {"id": FILE_ID, "webViewLink": WEB_VIEW_LINK}}},
+					},
+					"start": {"last_state_change": 1.0, "delta": {"updates": {"title": "unrelated"}}},
+				},
+			}),
+			update_modified=False,
+		)
 
 		link = get_published_document_link(request)
 

@@ -44,7 +44,9 @@
   "demand_letter_validity_expiry_notification_email",
   "column_break_iofg",
   "inform_demand_letter_quota_completion",
-  "demand_letter_quota_completion_notification_email"
+  "demand_letter_quota_completion_notification_email",
+  "arrival_settings_section",
+  "arrival_department_emails"
  ],
  "fields": [
   {
@@ -292,11 +294,23 @@
    "fieldtype": "Data",
    "label": "Demand Letter Quota Completion Notification Email",
    "options": "Email"
+  },
+  {
+   "fieldname": "arrival_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Arrival Settings"
+  },
+  {
+   "description": "Mailbox for each department. On Arrival and Deployment, the tick next to each department decides whether its mailbox is emailed for that candidate.",
+   "fieldname": "arrival_department_emails",
+   "fieldtype": "Table",
+   "label": "Arrival Department Emails",
+   "options": "Arrival Department Email"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-01-06 09:07:14.570098",
+ "modified": "2026-10-12 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Hiring Settings",

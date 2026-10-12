@@ -148,6 +148,24 @@ def get_project_custom_fields():
                 "label": "Sprint Prefix",
                 "fieldtype": "Data",
                 "insert_after": "type",
+                # `doc.type` is the controlled Select fetched from Project Type;
+                # the same test gates the users section / users field in
+                # one_fm.custom.property_setter.project. Keep them identical.
+                "depends_on": "eval:doc.type=='SCRUM'",
+                "mandatory_depends_on": "eval:doc.type=='SCRUM'",
+                "description": "Sprints for this project are named &lt;prefix&gt;-001, -002, … Keep it short and unique.",
+            },
+            {
+                # Opt-in flag for the frappe_agile Roadmap board: a SCRUM project
+                # only gets a lane once this is set to Yes, so the board is curated
+                # rather than showing every SCRUM project that exists. Left blank
+                # the project stays off the board, which is why this is Select
+                # rather than Check - blank is meaningfully "not decided yet".
+                "fieldname": "custom_show_in_roadmap",
+                "label": "Show in Roadmap",
+                "fieldtype": "Select",
+                "options": "\nYes\nNo",
+                "insert_after": "custom_sprint_prefix",
                 "depends_on": "eval: doc.type==\"SCRUM\"",
                 "mandatory_depends_on": "eval: doc.type==\"SCRUM\"",
             },

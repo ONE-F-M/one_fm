@@ -23,6 +23,8 @@ TITLE_FORMS = {
 	"Knowledge Base": ("Knowledge Base for ", r"knowledge\s+bases?|kb"),
 }
 
+from one_fm.utils import get_approver_user
+
 
 class DocumentRequest(Document):
 	def validate(self):
@@ -479,7 +481,7 @@ def _link_from_process_instance(document_request: str) -> str | None:
 	except Exception:
 		return None
 
-	drive_file = (state.get("data") or {}).get("drive_file") or {}
+	drive_file = (state.get("data") or {}).get("drive_file") or _drive_file_from_tasks(state)
 	if not isinstance(drive_file, dict):
 		return None
 
