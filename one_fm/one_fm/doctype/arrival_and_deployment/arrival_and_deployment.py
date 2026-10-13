@@ -201,13 +201,16 @@ class ArrivalandDeployment(Document):
         <p>Please review the <a href="/app/arrival-and-deployment/{self.name}">Arrival and Deployment Document</a> and prepare accordingly.</p>
         '''
 
+        sender = get_email_sender()
         frappe.enqueue(
             method=frappe.sendmail,
             queue='short',
             recipients=officer_emails,
             cc=get_onboarding_mailbox() if self.email_onboarding_mailbox else None,
+            sender=sender.sender,
+            reply_to=sender.reply_to,
             subject=subject,
-            message=message
+            message=message + sender.signature
         )
 
     def notify_recruiter_arrival_outcome(self, outcome):
@@ -347,11 +350,14 @@ def send_arrivals_email(recipients, cc, subject, intro, arrivals):
     """Send one email listing the arrivals, with a table per arrival date."""
     if not recipients:
         return
+    sender = get_email_sender()
     frappe.sendmail(
         recipients=recipients,
         cc=cc,
+        sender=sender.sender,
+        reply_to=sender.reply_to,
         subject=subject,
-        message=f"<p>{intro}</p>{build_arrivals_tables(arrivals)}",
+        message=f"<p>{intro}</p>{build_arrivals_tables(arrivals)}{sender.signature}",
     )
 
 
@@ -396,6 +402,24 @@ def build_arrivals_tables(arrivals):
             f'<table style="border-collapse:collapse">{header_row}{"".join(rows)}</table>'
         )
     return "".join(tables)
+
+
+def get_email_sender():
+    """The person sending: their name on the system's outgoing address, their email for replies, and their signature."""
+    from frappe.email.doctype.email_account.email_account import EmailAccount
+    from frappe.utils import escape_html, get_formatted_email
+
+    user = frappe.session.user
+    full_name, email = frappe.db.get_value("User", user, ["full_name", "email"])
+    account = EmailAccount.find_default_outgoing()
+    designation = frappe.db.get_value("Employee", {"user_id": user}, "designation")
+
+    title = f" | {escape_html(designation)}" if designation else ""
+    return frappe._dict(
+        sender=get_formatted_email(user, mail=account.email_id) if account else None,
+        reply_to=email,
+        signature=f"<p>Best Regards,<br><b>{escape_html(full_name or user)}</b>{title}<br>{escape_html(email or '')}</p>",
+    )
 
 
 def get_job_applicant_designation(job_applicant):

@@ -72,6 +72,13 @@ class TestOnboardingOfficerEmail(FrappeTestCase):
 		self.assertIn(frappe.utils.formatdate("2026-10-15"), email["subject"])
 		self.assertEqual(email["cc"], "test_hr_mailbox@example.com")
 
+		from frappe.email.doctype.email_account.email_account import EmailAccount
+
+		account = EmailAccount.find_default_outgoing()
+		self.assertEqual(email["sender"], f"Administrator <{account.email_id}>")
+		self.assertEqual(email["reply_to"], frappe.db.get_value("User", "Administrator", "email"))
+		self.assertIn("Best Regards,<br><b>Administrator</b>", email["message"])
+
 		doc.email_onboarding_mailbox = 0
 		with patch("frappe.enqueue") as enqueue:
 			doc.notify_onboarding_officer()
@@ -414,6 +421,10 @@ class TestBulkArrivals(FrappeTestCase):
 
 		self.assertEqual(sendmail.call_count, 1)
 		message = sendmail.call_args.kwargs["message"]
+		self.assertIn("Best Regards", message)
+		self.assertEqual(
+			sendmail.call_args.kwargs["reply_to"], frappe.db.get_value("User", "Administrator", "email")
+		)
 		self.assertIn("Test Bulk One", message)
 		self.assertIn("Test Bulk Two", message)
 		self.assertNotIn("Test Bulk No Date", message)
