@@ -688,6 +688,7 @@ scheduler_events = {
         'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_day_process_task',
         'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_last_day_process_task',
 		'one_fm.fleet_management.vehicle_branding_expiry.notify_vehicle_branding_expiry',
+		'one_fm.one_fm.doctype.employee_resignation.employee_resignation.hand_over_in_process_approvals',
 		# WI-002449: a week's notice before a PAM Licence letter of guarantee expires.
 		'one_fm.grd.lg_expiry.notify_lg_expiry',
 		# WI-002431: raise a cancellation for every visa that has reached its expiry.

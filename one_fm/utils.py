@@ -2967,6 +2967,14 @@ def get_approver_user(employee, skip_shift_supervisor=False, date=False):
         return frappe.db.get_value("Employee", approver, "user_id")
     return None
 
+def get_project_manager_user(employee):
+    """Return the User of the project manager on the employee's current project."""
+    project = frappe.db.get_value("Employee", employee, "project")
+    pm_employee = frappe.db.get_value("Project", project, "project_manager") if project else None
+    if pm_employee:
+        return frappe.db.get_value("Employee", pm_employee, "user_id")
+    return None
+
 @frappe.whitelist()
 def get_approver(employee, skip_shift_supervisor=False, date=False):
     '''
