@@ -108,7 +108,7 @@
  ],
  "in_create": 1,
  "is_submittable": 1,
- "modified": "2021-02-10 12:22:24.627450",
+ "modified": "2026-10-13 23:40:00.000000",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Penalty Deduction",
@@ -124,6 +124,11 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Payroll Operator",
    "write": 1
   }
  ],
