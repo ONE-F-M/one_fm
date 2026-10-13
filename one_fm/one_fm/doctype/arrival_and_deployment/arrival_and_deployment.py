@@ -163,7 +163,7 @@ class ArrivalandDeployment(Document):
         except Exception as e:
             frappe.log_error(title="Onboarding Assignment Error", message=f"Failed to assign onboarding officer for {self.name}: {str(e)}")
 
-        if not officer_emails:
+        if not officer_emails or frappe.flags.arrival_bulk_email:
             return
 
         from frappe.utils import escape_html, formatdate
@@ -224,6 +224,171 @@ class ArrivalandDeployment(Document):
             subject=subject,
             message=message
         )
+
+
+@frappe.whitelist(methods=["POST"])
+def bulk_submit_to_onboarding(names: str):
+    """Submit the selected arrivals to onboarding and send each Onboarding Officer group one email with a table."""
+    frappe.has_permission("Arrival and Deployment", "write", throw=True)
+    arrivals = apply_bulk_workflow(names, "Submit to Onboarding")
+    groups = {}
+    for arrival in arrivals:
+        key = (arrival.onboarding_officer, arrival.second_onboarding_officer, arrival.email_onboarding_mailbox)
+        groups.setdefault(key, []).append(arrival)
+
+    for (officer, second_officer, copy_mailbox), group in groups.items():
+        recipients = [
+            frappe.db.get_value("User", user, "email") for user in (officer, second_officer) if user
+        ]
+        send_arrivals_email(
+            recipients=[email for email in recipients if email],
+            cc=get_onboarding_mailbox() if copy_mailbox else None,
+            subject=_("New Arrivals Ready for Onboarding: {0} candidates").format(len(group)),
+            intro=_("Dear Onboarding Team,<br>Find new arrival details for the following candidates:"),
+            arrivals=group,
+        )
+
+
+@frappe.whitelist(methods=["POST"])
+def bulk_confirm_onboarding(names: str):
+    """Confirm onboarding for the selected arrivals and send each Transportation Manager one pickup email."""
+    frappe.has_permission("Arrival and Deployment", "write", throw=True)
+    arrivals = apply_bulk_workflow(names, "Confirm Onboarding")
+    groups = {}
+    for arrival in arrivals:
+        if arrival.transportation_manager:
+            groups.setdefault(arrival.transportation_manager, []).append(arrival)
+
+    for transportation_manager, group in groups.items():
+        send_arrivals_email(
+            recipients=[frappe.db.get_value("User", transportation_manager, "email")],
+            cc=None,
+            subject=_("Airport Pickups to Arrange: {0} arrivals").format(len(group)),
+            intro=_("Dear {0},<br>Kindly arrange the airport pickup for the following arrivals:").format(
+                frappe.db.get_value("User", transportation_manager, "full_name")
+            ),
+            arrivals=group,
+        )
+
+
+@frappe.whitelist(methods=["POST"])
+def bulk_attach_ticket(names: str, file_url: str):
+    """Attach one uploaded ticket to every selected arrival that is still in Draft or Pending Onboarding."""
+    frappe.has_permission("Arrival and Deployment", "write", throw=True)
+    ticket = frappe.get_doc("File", {"file_url": file_url})
+    ticket.check_permission("read")
+
+    refused = []
+    for name in frappe.parse_json(names):
+        arrival = frappe.get_doc("Arrival and Deployment", name)
+        arrival.check_permission("write")
+        if arrival.get("workflow_state") not in ("Draft", "Pending Onboarding"):
+            refused.append(name)
+            continue
+        ticket.create_attachment_copy(arrival.doctype, arrival.name, "ticket_attachment")
+        arrival.ticket_attachment = ticket.file_url
+        arrival.save()
+
+    if refused:
+        frappe.msgprint(
+            _("The ticket was not attached to {0}, because they are past Pending Onboarding.").format(
+                ", ".join(refused)
+            ),
+            indicator="orange",
+        )
+
+
+def apply_bulk_workflow(names, action):
+    """Apply the action to each selected arrival, report the ones that could not move, and return the moved ones."""
+    from frappe.model.workflow import apply_workflow
+
+    moved, failures = [], []
+    frappe.flags.arrival_bulk_email = True
+    try:
+        for name in frappe.parse_json(names):
+            frappe.db.savepoint("arrival_bulk")
+            try:
+                moved.append(apply_workflow(frappe.get_doc("Arrival and Deployment", name), action))
+            except (frappe.ValidationError, frappe.PermissionError) as e:
+                frappe.db.rollback(save_point="arrival_bulk")
+                frappe.clear_last_message()
+                failures.append(f"{name}: {e}")
+    finally:
+        frappe.flags.arrival_bulk_email = False
+
+    if failures:
+        frappe.msgprint(
+            _("These arrivals could not {0}:").format(action) + "<br>" + "<br>".join(failures),
+            title=_(action),
+            indicator="orange",
+        )
+    return moved
+
+
+def send_arrivals_email(recipients, cc, subject, intro, arrivals):
+    """Send one email listing the arrivals, with a table per arrival date and flight."""
+    if not recipients:
+        return
+    frappe.sendmail(
+        recipients=recipients,
+        cc=cc,
+        subject=subject,
+        message=f"<p>{intro}</p>{build_arrivals_tables(arrivals)}",
+    )
+
+
+def build_arrivals_tables(arrivals):
+    """One HTML table per arrival date and flight, with the candidate details Onboarding and Transportation use."""
+    from frappe.utils import escape_html, formatdate
+
+    flights = {}
+    for arrival in arrivals:
+        flights.setdefault((str(arrival.arrival_date), arrival.flight_number or ""), []).append(arrival)
+
+    headers = [
+        _("S.No"), _("Job Applicant"), _("Hiring Type"), _("Agency"), _("Department"), _("Designation"),
+        _("Candidate Name"), _("Nationality"), _("Gender"), _("DOB"), _("Passport #"),
+    ]
+    cell = 'style="border:1px solid #ccc;padding:4px 8px"'
+    tables = []
+    for (arrival_date, flight_number), group in sorted(flights.items()):
+        first = group[0]
+        heading = " | ".join(
+            str(part)
+            for part in (
+                formatdate(arrival_date),
+                first.arrival_time,
+                first.airline,
+                flight_number,
+                first.terminal,
+            )
+            if part
+        )
+        rows = []
+        for idx, arrival in enumerate(group, start=1):
+            agency = arrival.candidate_country_process and frappe.db.get_value(
+                "Candidate Country Process", arrival.candidate_country_process, "agency_name"
+            )
+            values = [
+                idx,
+                arrival.job_applicant,
+                _("Overseas") if arrival.candidate_country_process else _("Local"),
+                agency,
+                arrival.department,
+                arrival.designation,
+                arrival.candidate_name,
+                arrival.nationality,
+                arrival.gender,
+                formatdate(arrival.date_of_birth) if arrival.date_of_birth else "",
+                arrival.passport_number,
+            ]
+            rows.append("<tr>" + "".join(f"<td {cell}>{escape_html(str(v or ''))}</td>" for v in values) + "</tr>")
+        header_row = "<tr>" + "".join(f"<th {cell}>{h}</th>" for h in headers) + "</tr>"
+        tables.append(
+            f"<p><b>{escape_html(heading)}</b></p>"
+            f'<table style="border-collapse:collapse">{header_row}{"".join(rows)}</table>'
+        )
+    return "".join(tables)
 
 
 def get_job_applicant_designation(job_applicant):

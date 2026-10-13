@@ -293,3 +293,125 @@ class TestCandidateDetails(FrappeTestCase):
 		set_candidate_details_on_arrivals.execute()
 
 		self.assertIsNone(frappe.db.get_value("Arrival and Deployment", ard.name, "job_applicant"))
+
+
+SECOND_TRANSPORTATION_USER = "test_ad_transport_2@example.com"
+
+
+class TestBulkArrivals(FrappeTestCase):
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		from one_fm.patches.v15_0 import end_arrival_at_transportation_confirmation
+
+		if not frappe.db.exists("Workflow", "Arrival and Deployment"):
+			raise unittest.SkipTest("Arrival and Deployment workflow is created by earlier patches")
+		end_arrival_at_transportation_confirmation.execute()
+		for user in (TRANSPORTATION_USER, SECOND_TRANSPORTATION_USER):
+			if not frappe.db.exists("User", user):
+				frappe.get_doc(
+					{"doctype": "User", "email": user, "first_name": "Transport", "send_welcome_email": 0}
+				).insert()
+
+	def test_bulk_submit_sends_one_email_and_reports_what_could_not_move(self):
+		first = _make_arrival("Test Bulk One", flight="J9402")
+		second = _make_arrival("Test Bulk Two", flight="J9402")
+		no_date = _make_arrival("Test Bulk No Date", flight="J9402")
+		frappe.db.set_value("Arrival and Deployment", no_date.name, "arrival_date", None)
+
+		from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import (
+			bulk_submit_to_onboarding,
+		)
+
+		with patch("frappe.sendmail") as sendmail, patch("frappe.enqueue") as enqueue:
+			bulk_submit_to_onboarding(frappe.as_json([first.name, second.name, no_date.name]))
+
+		self.assertEqual(sendmail.call_count, 1)
+		message = sendmail.call_args.kwargs["message"]
+		self.assertIn("Test Bulk One", message)
+		self.assertIn("Test Bulk Two", message)
+		self.assertNotIn("Test Bulk No Date", message)
+		self.assertFalse([c for c in enqueue.call_args_list if c.kwargs.get("method") is frappe.sendmail])
+		self.assertEqual(
+			frappe.db.get_value("Arrival and Deployment", first.name, "workflow_state"), "Pending Onboarding"
+		)
+		self.assertEqual(
+			frappe.db.get_value("Arrival and Deployment", no_date.name, "workflow_state"), "Draft"
+		)
+
+	def test_bulk_confirm_sends_each_transportation_manager_their_own_email(self):
+		arrivals = [
+			_make_arrival("Test Pickup One", transportation_manager=TRANSPORTATION_USER),
+			_make_arrival("Test Pickup Two", transportation_manager=TRANSPORTATION_USER),
+			_make_arrival("Test Pickup Three", transportation_manager=SECOND_TRANSPORTATION_USER),
+		]
+		for arrival in arrivals:
+			arrival.workflow_state = "Pending Onboarding"
+			arrival.save()
+
+		from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import (
+			bulk_confirm_onboarding,
+		)
+
+		with patch("frappe.sendmail") as sendmail:
+			bulk_confirm_onboarding(frappe.as_json([a.name for a in arrivals]))
+
+		recipients = sorted(tuple(c.kwargs["recipients"]) for c in sendmail.call_args_list)
+		self.assertEqual(recipients, [(TRANSPORTATION_USER,), (SECOND_TRANSPORTATION_USER,)])
+
+	def test_email_has_one_table_per_flight(self):
+		from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import (
+			build_arrivals_tables,
+		)
+
+		tables = build_arrivals_tables(
+			[
+				_make_arrival("Test Flight A1", flight="J9402"),
+				_make_arrival("Test Flight A2", flight="J9402"),
+				_make_arrival("Test Flight B1", flight="FZ063"),
+			]
+		)
+		self.assertEqual(tables.count("<table"), 2)
+
+	def test_one_ticket_is_attached_to_every_selected_arrival_still_open(self):
+		ticket = frappe.get_doc(
+			{"doctype": "File", "file_name": "test-ticket.txt", "content": b"ticket", "is_private": 1}
+		).insert()
+		draft = _make_arrival("Test Ticket Draft")
+		pending = _make_arrival("Test Ticket Pending")
+		pending.workflow_state = "Pending Onboarding"
+		pending.save()
+		arrived = _make_arrival("Test Ticket Arrived")
+		for state in ("Pending Onboarding", "Onboarding Confirmed", "Arrived"):
+			arrived.workflow_state = state
+			arrived.save()
+
+		from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import (
+			bulk_attach_ticket,
+		)
+
+		bulk_attach_ticket(frappe.as_json([draft.name, pending.name, arrived.name]), ticket.file_url)
+
+		for arrival in (draft, pending):
+			self.assertEqual(
+				frappe.db.get_value("Arrival and Deployment", arrival.name, "ticket_attachment"),
+				ticket.file_url,
+			)
+			self.assertTrue(
+				frappe.db.exists("File", {"file_url": ticket.file_url, "attached_to_name": arrival.name})
+			)
+		self.assertIsNone(frappe.db.get_value("Arrival and Deployment", arrived.name, "ticket_attachment"))
+
+
+def _make_arrival(candidate_name, flight=None, transportation_manager=None):
+	return frappe.get_doc(
+		{
+			"doctype": "Arrival and Deployment",
+			"candidate_name": candidate_name,
+			"arrival_date": "2026-10-20",
+			"flight_number": flight,
+			"recruiter": "Administrator",
+			"onboarding_officer": "Administrator",
+			"transportation_manager": transportation_manager,
+		}
+	).insert()
