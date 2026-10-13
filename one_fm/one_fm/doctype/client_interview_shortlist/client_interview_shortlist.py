@@ -7,6 +7,21 @@ from frappe.model.document import Document
 from frappe.utils import add_days, formatdate, getdate, today
 
 
+# Doctypes that must not block the cancellation of a Shift Assignment replaced by a
+# Client Interview. Frappe only honours this flag on cancel, never on delete, so the
+# blocking links are cleared separately before the Shift Assignment is deleted.
+SHIFT_ASSIGNMENT_IGNORE_LINKED_DOCTYPES = [
+	"Attendance Check",
+	"Shift Permission",
+	"Shift Assignment",
+	"Employee Checkin Issue",
+	"Employee Checkin",
+	"Attendance",
+	"Missing Checkin",
+	"Site",
+]
+
+
 class ClientInterviewShortlist(Document):
 	def validate(self):
 		self.validate_project_or_prospective_client()
@@ -21,6 +36,34 @@ class ClientInterviewShortlist(Document):
 				frappe.throw(_("Project is required when 'Is Prospective Client' is not checked."))
 			self.prospective_client = None
 			self.customer_name = None
+
+
+def clear_missing_checkin_entries(shift_assignment):
+	"""Remove Missing Checkin Detail rows pointing at a Shift Assignment about to be deleted.
+
+	The parent Missing Checkin cannot be saved through the ORM (its validate() rejects any
+	record that already exists for the same date and shift, including itself), so the rows are
+	removed at the database level and the parent is deleted once it has no rows left."""
+	rows = frappe.get_all(
+		"Missing Checkin Detail",
+		filters={"shift_assignment": shift_assignment, "parenttype": "Missing Checkin"},
+		fields=["name", "parent"]
+	)
+	if not rows:
+		return
+
+	frappe.db.delete("Missing Checkin Detail", {"name": ["in", [d.name for d in rows]]})
+
+	for parent in set(d.parent for d in rows):
+		if not frappe.db.exists("Missing Checkin", parent):
+			continue
+		remaining = frappe.db.count(
+			"Missing Checkin Detail",
+			{"parent": parent, "parenttype": "Missing Checkin"}
+		)
+		if remaining:
+			continue
+		frappe.delete_doc("Missing Checkin", parent, ignore_permissions=True)
 
 
 def send_pending_operations_supervisor_reminder():

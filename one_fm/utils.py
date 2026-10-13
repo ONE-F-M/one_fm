@@ -1500,6 +1500,13 @@ def issue_job_offer_for_applicant(job_applicant):
         job_offer = frappe.get_doc('Job Offer', existing_offer)
         if job_offer.docstatus == 0 and job_offer.workflow_state == "Open":
             from frappe.model.workflow import apply_workflow
+            # Guest-triggered (e.g. the magic-link candidate self-service form
+            # marking a Bulk Recruitment applicant Selected) has no Job Offer
+            # workflow-transition permission of its own. Same elevation already
+            # used in JobOfferOverride.submit_job_offer_to_candidate() for this
+            # exact scenario.
+            if frappe.session.user == "Guest":
+                frappe.set_user("Administrator")
             apply_workflow(job_offer, "Submit for Candidate Response")
         return
 
@@ -1524,7 +1531,10 @@ def _insert_job_offer_from_applicant(job_app):
     if job_app.one_fm_erf:
         erf = frappe.get_doc('ERF', job_app.one_fm_erf)
         set_erf_details(job_offer, erf, job_app)
-    job_offer.save()
+    # Guest-triggered (magic-link candidate self-service) has no Job Offer
+    # create permission of its own -- Recruiter/HR User (the desk-side
+    # triggers) already do, so this bypass only ever matters for Guest.
+    job_offer.save(ignore_permissions=(frappe.session.user == "Guest"))
 
 def set_erf_details(job_offer, erf, job_app):
     job_offer.erf = erf.name
@@ -1766,24 +1776,70 @@ def bank_account_on_trash(doc, method):
         oe.save(ignore_permissions=True)
 
 def update_onboarding_doc_for_bank_account(doc):
-    if doc.onboard_employee:
-        progress_wf_list = {'Draft': 0, 'Open Request': 30, 'Processing Bank Account Opening': 70,
-            'Rejected by Accounts': 100, 'Active Account': 100, 'Inactive Account': 100}
-        bank_account_status = 1
-        if doc.workflow_state == 'Rejected by Accounts':
-            bank_account_status = 2
-        if doc.workflow_state in progress_wf_list:
-            progress = progress_wf_list[doc.workflow_state]
-        oe = frappe.get_doc('Onboard Employee', doc.onboard_employee)
-        oe.bank_account = doc.name
-        oe.bank_account_progress = progress
-        oe.bank_account_docstatus = bank_account_status
-        oe.bank_account_status = doc.workflow_state
-        oe.account_name = doc.account_name
-        oe.bank = doc.bank
-        if oe.workflow_state == 'Duty Commencement':
-            oe.workflow_state = 'Bank Account'
-        oe.save(ignore_permissions=True)
+    """Sync the Bank Account state onto its Onboard Employee.
+
+    Skipped entirely once the Onboard Employee has moved past the "Bank Account"
+    stage of its workflow (or is cancelled), and skipped when nothing would
+    actually change, so a Bank Account save does not needlessly re-save (and
+    re-validate) the Onboard Employee.
+    """
+    if not doc.onboard_employee:
+        return
+
+    # Onboard Employee workflow states at/after which the bank account step is done
+    ONBOARDING_STATES_PAST_BANK_ACCOUNT = ("Mobile App Enrolment", "Completed", "Cancelled")
+
+    progress_wf_list = {
+        "Draft": 0,
+        "Open Request": 30,
+        "Processing Bank Account Opening": 70,
+        "Rejected by Accounts": 100,
+        "Active Account": 100,
+        "Inactive Account": 100,
+    }
+
+    # Single lightweight read instead of loading the full Onboard Employee document
+    oe_values = frappe.db.get_value(
+        "Onboard Employee",
+        doc.onboard_employee,
+        [
+            "workflow_state",
+            "bank_account",
+            "bank_account_progress",
+            "bank_account_docstatus",
+            "bank_account_status",
+            "account_name",
+            "bank",
+        ],
+        as_dict=True,
+    )
+
+    if not oe_values:
+        return
+
+    # Onboarding already passed/completed the Bank Account stage, nothing to update
+    if oe_values.workflow_state in ONBOARDING_STATES_PAST_BANK_ACCOUNT:
+        return
+
+    new_values = {
+        "bank_account": doc.name,
+        "bank_account_progress": progress_wf_list.get(doc.workflow_state, oe_values.bank_account_progress),
+        "bank_account_docstatus": 2 if doc.workflow_state == "Rejected by Accounts" else 1,
+        "bank_account_status": doc.workflow_state,
+        "account_name": doc.account_name,
+        "bank": doc.bank,
+    }
+
+    if oe_values.workflow_state == "Duty Commencement":
+        new_values["workflow_state"] = "Bank Account"
+
+    # Nothing changed, avoid an unnecessary document load, save and version entry
+    if all(oe_values.get(field) == value for field, value in new_values.items()):
+        return
+
+    oe = frappe.get_doc("Onboard Employee", doc.onboard_employee)
+    oe.update(new_values)
+    oe.save(ignore_permissions=True)
 
 def notify_payroll_officer(doc):
     try:
@@ -3942,12 +3998,12 @@ def call_to_get_assurance_level(employees):
         else:
             url = f"{api_wrapper_base_url}/api/DigitalSigning/BulkCheckMobileIdentity"
             headers = {'Content-Type': 'application/json','ApiKey': f'{api_key}'}
-            batch_size=200
+            batch_size=100
             all_results = []
             for i in range(0, len(employees), batch_size):
                 batch = employees[i:i + batch_size]
                 try:
-                    response = requests.post(url, headers=headers, json=batch, timeout=60)
+                    response = requests.post(url, headers=headers, json=batch, timeout=180)
                     if response.status_code == 200:
                         data = response.json()
                         batch_result = data.get("data", [])
