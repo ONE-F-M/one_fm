@@ -84,6 +84,13 @@ class ArrivalandDeployment(Document):
         ):
             self.move_pickup_task(self.get_doc_before_save().transportation_manager)
 
+        if (
+            old_state == "Onboarding Confirmed"
+            and self.get("workflow_state") in ARRIVED_STATES + ("Did Not Arrive",)
+            and self.candidate_country_process
+        ):
+            self.cancel_pickup_task()
+
         if self.get("workflow_state") == "Did Not Arrive" and old_state != "Did Not Arrive":
             self.close_assignments()
             self.notify_recruiter_arrival_outcome("Did Not Arrive")
@@ -133,6 +140,15 @@ class ArrivalandDeployment(Document):
         if previous_transportation_manager:
             remove_assignment(self.doctype, self.name, previous_transportation_manager)
         self.assign_transportation_manager()
+
+    def cancel_pickup_task(self):
+        """The Recruiter marked the arrival before any pickup was arranged, so the pickup task is cancelled, not closed."""
+        if not self.transportation_manager:
+            return
+
+        from frappe.desk.form.assign_to import remove as remove_assignment
+
+        remove_assignment(self.doctype, self.name, self.transportation_manager)
 
     def assign_transportation_manager(self):
         """Give the Transportation Manager the pickup task once onboarding is confirmed (overseas hires only)."""

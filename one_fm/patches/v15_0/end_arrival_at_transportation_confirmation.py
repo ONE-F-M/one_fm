@@ -11,6 +11,7 @@ NEW_STATES = (
 	("Onboarding Confirmed", "Primary", "Onboarding Officer"),
 	("Onboarding Confirmed", "Primary", "Transportation Manager"),
 	("Pick Up Arranged", "Info", "Transportation Manager"),
+	("Pick Up Arranged", "Info", "Onboarding Officer"),
 	("Arrived", "Success", "Transportation Manager"),
 )
 # state, action, next state, role, condition

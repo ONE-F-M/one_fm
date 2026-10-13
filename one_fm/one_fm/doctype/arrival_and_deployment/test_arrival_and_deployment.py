@@ -217,6 +217,49 @@ class TestArrivalEndsWithTransportation(FrappeTestCase):
 		self.assertIn(SECOND_TRANSPORTATION_USER, _open_assignees(ard))
 		self.assertNotIn(TRANSPORTATION_USER, _open_assignees(ard))
 
+	def test_onboarding_officer_moves_the_pickup_task_after_pick_up_is_arranged(self):
+		workflow = frappe.get_doc("Workflow", "Arrival and Deployment")
+		self.assertIn(
+			("Pick Up Arranged", "Onboarding Officer"), {(d.state, d.allow_edit) for d in workflow.states}
+		)
+
+		ard = _make_arrival("Test Reassign Arranged Pickup", transportation_manager=TRANSPORTATION_USER)
+		frappe.db.set_value("Arrival and Deployment", ard.name, "workflow_state", "Pick Up Arranged")
+		ard.reload()
+		ard.assign_transportation_manager()
+
+		ard.transportation_manager = SECOND_TRANSPORTATION_USER
+		with patch("frappe.get_roles", return_value=["Onboarding Officer"]):
+			ard.save()
+
+		self.assertIn(SECOND_TRANSPORTATION_USER, _open_assignees(ard))
+		self.assertNotIn(TRANSPORTATION_USER, _open_assignees(ard))
+
+	def test_recruiter_marking_an_overseas_arrival_cancels_the_pickup_task(self):
+		for outcome in ("Arrived", "Did Not Arrive"):
+			ard = _make_arrival(f"Test Recruiter Marks {outcome}", transportation_manager=TRANSPORTATION_USER)
+			frappe.db.set_value(
+				"Arrival and Deployment",
+				ard.name,
+				{"workflow_state": "Onboarding Confirmed", "candidate_country_process": "CCP-TEST"},
+			)
+			ard.reload()
+			ard.assign_transportation_manager()
+
+			ard.workflow_state = outcome
+			ard.flags.ignore_links = True
+			with patch("frappe.get_roles", return_value=["Recruiter"]), patch(
+				"one_fm.one_fm.doctype.candidate_country_process.candidate_country_process.recalculate_ccp_live_eta"
+			):
+				ard.save()
+
+			pickup_status = frappe.db.get_value(
+				"ToDo",
+				{"reference_name": ard.name, "allocated_to": TRANSPORTATION_USER},
+				"status",
+			)
+			self.assertEqual(pickup_status, "Cancelled")
+
 	def test_waiting_pending_support_department_pickups_get_a_task(self):
 		from one_fm.patches.v15_0.end_arrival_at_transportation_confirmation import (
 			assign_pickups_waiting_in_pending_support_departments,
