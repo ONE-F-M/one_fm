@@ -663,3 +663,6 @@ one_fm.patches.v15_0.set_arrival_department_emails #2026-10-11 department mailbo
 one_fm.patches.v15_0.allow_onboarding_officer_to_edit_pending_onboarding_arrivals #2026-10-11 Onboarding Officer edits Arrival and Deployment in Pending Onboarding
 one_fm.patches.v15_0.end_arrival_at_transportation_confirmation #2026-10-12 Onboarding Confirmed then Arrived or Did Not Arrive; support department acknowledgements removed
 one_fm.patches.v15_0.set_candidate_details_on_arrivals #2026-10-12 candidate department, designation, gender, nationality and date of birth on arrivals
+one_fm.patches.v15_0.recount_pam_licences_by_company_residency #2026-09-23
+one_fm.patches.v15_0.drop_document_request_approver #2026-09-27 the approver Employee copy is gone; approver_user comes from get_approver_user
+one_fm.patches.v15_0.unblock_interview_feedback_skill_assessment #2026-09-25 HD-1853443
