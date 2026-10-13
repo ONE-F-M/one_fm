@@ -34,7 +34,8 @@ class OntheJobTraining(Document):
     def validate_dates(self):
         today = getdate(frappe.utils.nowdate())
 
-        if self.workflow_state in ["Draft"]:
+        # A new record has no state until the process map sets Draft, so check it on the first save too.
+        if self.is_new() or self.workflow_state == "Draft":
             if self.start_date and getdate(self.start_date) < today:
                 frappe.throw(_("The scheduled event Start date cannot be a past date."))
 
