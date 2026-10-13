@@ -95,20 +95,22 @@ class ArrivalandDeployment(Document):
                 recalculate_ccp_live_eta(self.candidate_country_process)
 
     def validate_workflow_role(self):
-        """Onboarding confirms; the Transportation Manager marks arrival for overseas hires, the Onboarding Officer for local hires."""
+        """Onboarding or the Recruiter confirms; the Transportation Manager (overseas) or Onboarding Officer (local) or the Recruiter marks arrival."""
         roles = frappe.get_roles()
         if "System Manager" in roles:
             return
 
         state = self.get("workflow_state")
-        if state == "Onboarding Confirmed" and "Onboarding Officer" not in roles:
-            frappe.throw(_("Only the Onboarding Officer can confirm onboarding."))
+        if state == "Onboarding Confirmed" and not {"Onboarding Officer", "Recruiter"} & set(roles):
+            frappe.throw(_("Only the Onboarding Officer or the Recruiter can confirm onboarding."))
         if state == "Pick Up Arranged" and "Transportation Manager" not in roles:
             frappe.throw(_("Only the Transportation Manager can arrange the pickup."))
         if state in ("Arrived", "Did Not Arrive"):
             required_role = "Transportation Manager" if self.candidate_country_process else "Onboarding Officer"
-            if required_role not in roles:
-                frappe.throw(_("Only the {0} can mark whether the candidate arrived.").format(_(required_role)))
+            if not {required_role, "Recruiter"} & set(roles):
+                frappe.throw(
+                    _("Only the {0} or the Recruiter can mark whether the candidate arrived.").format(_(required_role))
+                )
 
     def close_assignments(self):
         """Mark the open ToDos on this arrival Closed once its step is done."""

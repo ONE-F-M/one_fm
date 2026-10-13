@@ -157,6 +157,9 @@ class TestArrivalEndsWithTransportation(FrappeTestCase):
 		transitions = {(t.state, t.action, t.allowed): t.condition or "" for t in workflow.transitions}
 
 		self.assertIn(("Pending Onboarding", "Confirm Onboarding", "Onboarding Officer"), transitions)
+		self.assertIn(("Pending Onboarding", "Confirm Onboarding", "Recruiter"), transitions)
+		self.assertIn(("Pick Up Arranged", "Arrived", "Recruiter"), transitions)
+		self.assertNotIn(("Onboarding Confirmed", "Arrange Pick Up", "Recruiter"), transitions)
 		self.assertEqual(
 			transitions[("Onboarding Confirmed", "Arrange Pick Up", "Transportation Manager")],
 			"doc.candidate_country_process",
@@ -221,6 +224,17 @@ class TestArrivalEndsWithTransportation(FrappeTestCase):
 			self.assertRaises(frappe.ValidationError, doc.validate_workflow_role)
 		with patch("frappe.get_roles", return_value=["Transportation Manager"]):
 			doc.validate_workflow_role()
+
+	def test_recruiter_confirms_onboarding_and_marks_arrival(self):
+		doc = frappe.new_doc("Arrival and Deployment")
+		doc.candidate_country_process = "CCP-TEST"
+
+		with patch("frappe.get_roles", return_value=["Recruiter"]):
+			for state in ("Onboarding Confirmed", "Arrived", "Did Not Arrive"):
+				doc.workflow_state = state
+				doc.validate_workflow_role()
+			doc.workflow_state = "Pick Up Arranged"
+			self.assertRaises(frappe.ValidationError, doc.validate_workflow_role)
 
 	def test_local_arrival_is_marked_by_the_onboarding_officer(self):
 		doc = frappe.new_doc("Arrival and Deployment")

@@ -51,7 +51,8 @@ frappe.ui.form.on("Arrival and Deployment", {
 
 		if (["Arrange Pick Up", "Arrived", "Did Not Arrive"].includes(frappe.selected_workflow_action)) {
 			let is_overseas = !!frm.doc.candidate_country_process;
-			if (is_overseas && frappe.session.user !== frm.doc.transportation_manager && !frappe.user.has_role("System Manager")) {
+			let recruiter_marks_arrival = frappe.selected_workflow_action !== "Arrange Pick Up" && frappe.user.has_role("Recruiter");
+			if (is_overseas && frappe.session.user !== frm.doc.transportation_manager && !frappe.user.has_role("System Manager") && !recruiter_marks_arrival) {
 				frappe.throw(__("Only the Transportation Manager named on this arrival can mark whether the candidate arrived."));
 			}
 		}

@@ -16,6 +16,7 @@ NEW_STATES = (
 # state, action, next state, role, condition
 TRANSITIONS = [
 	("Pending Onboarding", "Confirm Onboarding", "Onboarding Confirmed", "Onboarding Officer", ""),
+	("Pending Onboarding", "Confirm Onboarding", "Onboarding Confirmed", "Recruiter", ""),
 	("Pending Onboarding", "Confirm Onboarding", "Onboarding Confirmed", "System Manager", ""),
 	("Onboarding Confirmed", "Arrange Pick Up", "Pick Up Arranged", "Transportation Manager", OVERSEAS),
 	("Onboarding Confirmed", "Arrange Pick Up", "Pick Up Arranged", "System Manager", OVERSEAS),
@@ -23,11 +24,14 @@ TRANSITIONS = [
 for outcome in ("Arrived", "Did Not Arrive"):
 	TRANSITIONS += [
 		("Onboarding Confirmed", outcome, outcome, "Onboarding Officer", LOCAL),
+		("Onboarding Confirmed", outcome, outcome, "Recruiter", LOCAL),
 		("Onboarding Confirmed", outcome, outcome, "System Manager", LOCAL),
 		("Pick Up Arranged", outcome, outcome, "Transportation Manager", ""),
+		("Pick Up Arranged", outcome, outcome, "Recruiter", ""),
 		("Pick Up Arranged", outcome, outcome, "System Manager", ""),
 		("Pending Support Departments", outcome, outcome, "Transportation Manager", OVERSEAS),
 		("Pending Support Departments", outcome, outcome, "Onboarding Officer", LOCAL),
+		("Pending Support Departments", outcome, outcome, "Recruiter", ""),
 		("Pending Support Departments", outcome, outcome, "System Manager", ""),
 	]
 REPLACED_ACTIONS = {"Submit to Support Departments", "Mark as Joined"} | {t[1] for t in TRANSITIONS}
