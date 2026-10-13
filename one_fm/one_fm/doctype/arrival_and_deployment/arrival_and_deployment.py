@@ -205,6 +205,7 @@ class ArrivalandDeployment(Document):
         frappe.enqueue(
             method=frappe.sendmail,
             queue='short',
+            enqueue_after_commit=True,
             recipients=officer_emails,
             cc=get_onboarding_mailbox() if self.email_onboarding_mailbox else None,
             sender=sender.sender,
@@ -241,6 +242,7 @@ class ArrivalandDeployment(Document):
         frappe.enqueue(
             method=frappe.sendmail,
             queue='short',
+            enqueue_after_commit=True,
             recipients=[recruiter_email],
             subject=subject,
             message=message
