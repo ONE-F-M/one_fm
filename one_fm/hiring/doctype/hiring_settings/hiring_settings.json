@@ -301,7 +301,7 @@
    "label": "Arrival Settings"
   },
   {
-   "description": "Mailbox for each department. On Arrival and Deployment, the tick next to each department decides whether its mailbox is emailed for that candidate.",
+   "description": "Onboarding mailbox copied on the New Candidate Ready for Onboarding email when Email Onboarding Mailbox is ticked on Arrival and Deployment.",
    "fieldname": "arrival_department_emails",
    "fieldtype": "Table",
    "label": "Arrival Department Emails",
@@ -310,7 +310,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-10-12 10:00:00.000000",
+ "modified": "2026-10-12 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Hiring Settings",
