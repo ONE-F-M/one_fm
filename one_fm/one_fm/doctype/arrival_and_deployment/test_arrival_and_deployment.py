@@ -39,6 +39,16 @@ class TestArrivalandDeployment(FrappeTestCase):
 		# Should throw exception because flight details are missing for overseas
 		self.assertRaises(frappe.ValidationError, doc.validate)
 
+	def test_overseas_hire_needs_only_the_ticket(self):
+		doc = frappe.new_doc("Arrival and Deployment")
+		doc.candidate_name = "Overseas Ticket Only"
+		doc.candidate_country_process = "CCP-TEST-001"
+		doc.workflow_state = "Pending Onboarding"
+		doc.arrival_date = frappe.utils.today()
+		doc.ticket_attachment = "/private/files/test-ticket.pdf"
+
+		doc.validate()
+
 
 class TestOnboardingOfficerEmail(FrappeTestCase):
 	def test_subject_has_the_arrival_date_and_hr_mailbox_is_copied(self):
@@ -314,9 +324,9 @@ class TestBulkArrivals(FrappeTestCase):
 				).insert()
 
 	def test_bulk_submit_sends_one_email_and_reports_what_could_not_move(self):
-		first = _make_arrival("Test Bulk One", flight="J9402")
-		second = _make_arrival("Test Bulk Two", flight="J9402")
-		no_date = _make_arrival("Test Bulk No Date", flight="J9402")
+		first = _make_arrival("Test Bulk One")
+		second = _make_arrival("Test Bulk Two")
+		no_date = _make_arrival("Test Bulk No Date")
 		frappe.db.set_value("Arrival and Deployment", no_date.name, "arrival_date", None)
 
 		from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import (
@@ -359,16 +369,16 @@ class TestBulkArrivals(FrappeTestCase):
 		recipients = sorted(tuple(c.kwargs["recipients"]) for c in sendmail.call_args_list)
 		self.assertEqual(recipients, [(TRANSPORTATION_USER,), (SECOND_TRANSPORTATION_USER,)])
 
-	def test_email_has_one_table_per_flight(self):
+	def test_email_has_one_table_per_arrival_date(self):
 		from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import (
 			build_arrivals_tables,
 		)
 
 		tables = build_arrivals_tables(
 			[
-				_make_arrival("Test Flight A1", flight="J9402"),
-				_make_arrival("Test Flight A2", flight="J9402"),
-				_make_arrival("Test Flight B1", flight="FZ063"),
+				_make_arrival("Test Flight A1", arrival_date="2026-10-20"),
+				_make_arrival("Test Flight A2", arrival_date="2026-10-20"),
+				_make_arrival("Test Flight B1", arrival_date="2026-10-22"),
 			]
 		)
 		self.assertEqual(tables.count("<table"), 2)
@@ -403,15 +413,32 @@ class TestBulkArrivals(FrappeTestCase):
 		self.assertIsNone(frappe.db.get_value("Arrival and Deployment", arrived.name, "ticket_attachment"))
 
 
-def _make_arrival(candidate_name, flight=None, transportation_manager=None):
+def _make_arrival(candidate_name, arrival_date="2026-10-20", transportation_manager=None):
 	return frappe.get_doc(
 		{
 			"doctype": "Arrival and Deployment",
 			"candidate_name": candidate_name,
-			"arrival_date": "2026-10-20",
-			"flight_number": flight,
+			"arrival_date": arrival_date,
 			"recruiter": "Administrator",
 			"onboarding_officer": "Administrator",
 			"transportation_manager": transportation_manager,
 		}
 	).insert()
+
+
+class TestJobApplicantConnection(FrappeTestCase):
+	def test_connections_count_the_linked_job_applicant(self):
+		from one_fm.utils import get_sibling_counts
+
+		job_applicant = frappe.get_all("Job Applicant", pluck="name", limit=1)
+		if not job_applicant:
+			raise unittest.SkipTest("No Job Applicant to link on this site")
+		ard = _make_arrival("Test Job Applicant Connection")
+		frappe.db.set_value("Arrival and Deployment", ard.name, "job_applicant", job_applicant[0])
+
+		counts = get_sibling_counts("Arrival and Deployment", ard.name, frappe.as_json(["Job Applicant"]))
+
+		self.assertEqual(
+			counts["count"]["external_links_found"],
+			[{"doctype": "Job Applicant", "count": 1, "open_count": 0}],
+		)

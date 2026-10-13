@@ -8,6 +8,10 @@ frappe.ui.form.on("Arrival and Deployment", {
 		if (frm.dashboard) {
 			frm.dashboard.open_document_list = function($link, show_open) {
 				let doctype = $link.attr("data-doctype");
+				if (doctype === "Job Applicant") {
+					frappe.set_route("Form", "Job Applicant", frm.doc.job_applicant);
+					return;
+				}
 				if (doctype && doctype !== "Candidate Country Process") {
 					frappe.route_options = {
 						"candidate_country_process": frm.doc.candidate_country_process
@@ -21,15 +25,11 @@ frappe.ui.form.on("Arrival and Deployment", {
 			};
 		}
 		
-		// Hide Flight and Transport details for Local Hires (no Candidate Country Process)
+		// Hide the ticket and pickup details for Local Hires (no Candidate Country Process)
 		let is_local = !frm.doc.candidate_country_process;
 		frm.toggle_display([
-			'arrival_time',
 			'section_break_flight',
-			'flight_number',
-			'airline',
-			'ticket_attachment',
-			'arrival_airport'
+			'ticket_attachment'
 		], !is_local);
 	},
 	
@@ -43,8 +43,8 @@ frappe.ui.form.on("Arrival and Deployment", {
 				frappe.throw(__("Please ensure Arrival Date is filled before submitting to Onboarding."));
 			}
 			if (frm.doc.candidate_country_process) {
-				if (!frm.doc.arrival_time || !frm.doc.ticket_attachment || !frm.doc.flight_number || !frm.doc.airline || !frm.doc.terminal || !frm.doc.arrival_airport) {
-					frappe.throw(__("Please ensure Arrival Time, Flight Number, Airline, Terminal, Ticket Attachment, and Arrival Airport are filled for Overseas hires before submitting to Onboarding."));
+				if (!frm.doc.ticket_attachment) {
+					frappe.throw(__("Please attach the Ticket for Overseas hires before submitting to Onboarding."));
 				}
 			}
 		}

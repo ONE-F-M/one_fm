@@ -25,8 +25,8 @@ class ArrivalandDeployment(Document):
             if not self.arrival_date:
                 frappe.throw(_("Please ensure Arrival Date is filled before submitting to Onboarding."))
             if self.candidate_country_process:
-                if not self.arrival_time or not self.ticket_attachment or not self.flight_number or not self.airline or not self.terminal or not self.arrival_airport:
-                    frappe.throw(_("Please ensure Arrival Time, Flight Number, Airline, Terminal, Ticket Attachment, and Arrival Airport are filled for Overseas hires before submitting to Onboarding."))
+                if not self.ticket_attachment:
+                    frappe.throw(_("Please attach the Ticket for Overseas hires before submitting to Onboarding."))
 
         # Keep the plain status field (used for reporting/CCP sync) in step with the
         # actual workflow_state -- Pending/Draft/Pending Onboarding stay "Pending".
@@ -128,8 +128,8 @@ class ArrivalandDeployment(Document):
             "assign_to": [self.transportation_manager],
             "doctype": self.doctype,
             "name": self.name,
-            "description": _("Kindly arrange the airport pickup for {0}, arriving {1} {2} on {3}. Click Arrange Pick Up, then mark Arrived or Did Not Arrive.").format(
-                self.candidate_name, formatdate(self.arrival_date), self.arrival_time or "", self.flight_number or ""
+            "description": _("Kindly arrange the airport pickup for {0}, arriving {1}; the flight is on the attached ticket. Click Arrange Pick Up, then mark Arrived or Did Not Arrive.").format(
+                self.candidate_name, formatdate(self.arrival_date)
             ),
         })
 
@@ -326,7 +326,7 @@ def apply_bulk_workflow(names, action):
 
 
 def send_arrivals_email(recipients, cc, subject, intro, arrivals):
-    """Send one email listing the arrivals, with a table per arrival date and flight."""
+    """Send one email listing the arrivals, with a table per arrival date."""
     if not recipients:
         return
     frappe.sendmail(
@@ -338,12 +338,12 @@ def send_arrivals_email(recipients, cc, subject, intro, arrivals):
 
 
 def build_arrivals_tables(arrivals):
-    """One HTML table per arrival date and flight, with the candidate details Onboarding and Transportation use."""
+    """One HTML table per arrival date, with the candidate details Onboarding and Transportation use."""
     from frappe.utils import escape_html, formatdate
 
-    flights = {}
+    groups = {}
     for arrival in arrivals:
-        flights.setdefault((str(arrival.arrival_date), arrival.flight_number or ""), []).append(arrival)
+        groups.setdefault(str(arrival.arrival_date), []).append(arrival)
 
     headers = [
         _("S.No"), _("Job Applicant"), _("Hiring Type"), _("Agency"), _("Department"), _("Designation"),
@@ -351,19 +351,8 @@ def build_arrivals_tables(arrivals):
     ]
     cell = 'style="border:1px solid #ccc;padding:4px 8px"'
     tables = []
-    for (arrival_date, flight_number), group in sorted(flights.items()):
-        first = group[0]
-        heading = " | ".join(
-            str(part)
-            for part in (
-                formatdate(arrival_date),
-                first.arrival_time,
-                first.airline,
-                flight_number,
-                first.terminal,
-            )
-            if part
-        )
+    for arrival_date, group in sorted(groups.items()):
+        heading = formatdate(arrival_date)
         rows = []
         for idx, arrival in enumerate(group, start=1):
             agency = arrival.candidate_country_process and frappe.db.get_value(
