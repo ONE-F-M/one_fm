@@ -33,6 +33,8 @@ def execute():
 		values = frappe.db.get_value(
 			"Job Applicant", job_applicant, list(JOB_APPLICANT_FIELDS.values()), as_dict=True
 		)
+		if not values:
+			continue
 		details = {field: values[source] for field, source in JOB_APPLICANT_FIELDS.items()}
 		frappe.db.set_value(
 			"Arrival and Deployment",

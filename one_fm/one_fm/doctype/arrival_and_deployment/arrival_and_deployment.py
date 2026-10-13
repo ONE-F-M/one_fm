@@ -9,6 +9,7 @@ from frappe.model.document import Document
 # Final states meaning the candidate arrived; both set the Candidate Country Process to Joined
 ARRIVED_STATES = ("Arrived", "Joined")
 ARRIVING_STATES = ("Onboarding Confirmed", "Pick Up Arranged", "Pending Support Departments")
+PICKUP_STATES = ("Onboarding Confirmed", "Pick Up Arranged")
 
 
 class ArrivalandDeployment(Document):
@@ -73,8 +74,15 @@ class ArrivalandDeployment(Document):
             self.notify_onboarding_officer()
 
         if self.get("workflow_state") == "Onboarding Confirmed" and old_state != "Onboarding Confirmed":
-            self.close_assignments()
-            self.assign_transportation_manager()
+            if self.candidate_country_process:
+                self.close_assignments()
+                self.assign_transportation_manager()
+        elif (
+            self.get("workflow_state") in PICKUP_STATES
+            and self.get_doc_before_save()
+            and self.has_value_changed("transportation_manager")
+        ):
+            self.move_pickup_task(self.get_doc_before_save().transportation_manager)
 
         if self.get("workflow_state") == "Did Not Arrive" and old_state != "Did Not Arrive":
             self.close_assignments()
@@ -117,6 +125,14 @@ class ArrivalandDeployment(Document):
         from frappe.desk.form.assign_to import close_all_assignments
 
         close_all_assignments(self.doctype, self.name)
+
+    def move_pickup_task(self, previous_transportation_manager):
+        """Hand the pickup task to the new Transportation Manager when it changes after onboarding is confirmed."""
+        from frappe.desk.form.assign_to import remove as remove_assignment
+
+        if previous_transportation_manager:
+            remove_assignment(self.doctype, self.name, previous_transportation_manager)
+        self.assign_transportation_manager()
 
     def assign_transportation_manager(self):
         """Give the Transportation Manager the pickup task once onboarding is confirmed (overseas hires only)."""
@@ -384,12 +400,12 @@ def build_arrivals_tables(arrivals):
 
 def get_job_applicant_designation(job_applicant):
     """The Job Applicant's Designation, or its One FM Designation when that is the only one filled."""
-    if not job_applicant:
-        return None
-    designation, one_fm_designation = frappe.db.get_value(
-        "Job Applicant", job_applicant, ["designation", "one_fm_designation"]
+    row = job_applicant and frappe.db.get_value(
+        "Job Applicant", job_applicant, ["designation", "one_fm_designation"], as_dict=True
     )
-    return designation or one_fm_designation
+    if not row:
+        return None
+    return row.designation or row.one_fm_designation
 
 
 def get_onboarding_mailbox():

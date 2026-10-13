@@ -131,6 +131,7 @@ class TestPendingOnboardingEditors(FrappeTestCase):
 
 
 TRANSPORTATION_USER = "test_ad_transport@example.com"
+SECOND_TRANSPORTATION_USER = "test_ad_transport_2@example.com"
 
 
 class TestArrivalEndsWithTransportation(FrappeTestCase):
@@ -142,15 +143,11 @@ class TestArrivalEndsWithTransportation(FrappeTestCase):
 		if not frappe.db.exists("Workflow", "Arrival and Deployment"):
 			raise unittest.SkipTest("Arrival and Deployment workflow is created by earlier patches")
 		end_arrival_at_transportation_confirmation.execute()
-		if not frappe.db.exists("User", TRANSPORTATION_USER):
-			frappe.get_doc(
-				{
-					"doctype": "User",
-					"email": TRANSPORTATION_USER,
-					"first_name": "Transport",
-					"send_welcome_email": 0,
-				}
-			).insert()
+		for user in (TRANSPORTATION_USER, SECOND_TRANSPORTATION_USER):
+			if not frappe.db.exists("User", user):
+				frappe.get_doc(
+					{"doctype": "User", "email": user, "first_name": "Transport", "send_welcome_email": 0}
+				).insert()
 
 	def test_workflow_offers_confirm_onboarding_then_arrival_by_hire_type(self):
 		workflow = frappe.get_doc("Workflow", "Arrival and Deployment")
@@ -161,6 +158,10 @@ class TestArrivalEndsWithTransportation(FrappeTestCase):
 		self.assertIn(("Pick Up Arranged", "Arrived", "Recruiter"), transitions)
 		self.assertEqual(transitions[("Onboarding Confirmed", "Arrived", "Recruiter")], "")
 		self.assertNotIn(("Onboarding Confirmed", "Arrange Pick Up", "Recruiter"), transitions)
+		self.assertEqual(
+			transitions[("Onboarding Confirmed", "Did Not Arrive", "Transportation Manager")],
+			"doc.candidate_country_process",
+		)
 		self.assertEqual(
 			transitions[("Onboarding Confirmed", "Arrange Pick Up", "Transportation Manager")],
 			"doc.candidate_country_process",
@@ -177,34 +178,68 @@ class TestArrivalEndsWithTransportation(FrappeTestCase):
 		self.assertFalse([t for t in workflow.transitions if t.action == "Submit to Support Departments"])
 		self.assertFalse(frappe.db.exists("DocType", "Arrival Acknowledgement"))
 
-	def test_confirm_onboarding_hands_the_task_to_transportation_and_arrived_closes_it(self):
-		ard = frappe.get_doc(
-			{
-				"doctype": "Arrival and Deployment",
-				"candidate_name": "Test Transport Hand Over",
-				"arrival_date": "2026-10-20",
-				"recruiter": "Administrator",
-				"onboarding_officer": "Administrator",
-				"transportation_manager": TRANSPORTATION_USER,
-			}
-		).insert()
+	def test_local_hire_keeps_the_onboarding_task_until_marked(self):
+		ard = _make_arrival("Test Local Keeps Task")
 		for state in ("Pending Onboarding", "Onboarding Confirmed"):
 			ard.workflow_state = state
 			ard.save()
 
-		self.assertEqual(_open_assignees(ard), {TRANSPORTATION_USER})
+		self.assertEqual(_open_assignees(ard), {"Administrator"})
 		self.assertEqual(ard.status, "Arriving")
 
 		ard.workflow_state = "Arrived"
 		ard.save()
 		self.assertEqual(_open_assignees(ard), set())
+		self.assertEqual(ard.status, "Joined")
 		self.assertTrue(
 			frappe.db.exists(
 				"ToDo",
-				{"reference_name": ard.name, "allocated_to": TRANSPORTATION_USER, "status": "Closed"},
+				{"reference_name": ard.name, "allocated_to": "Administrator", "status": "Closed"},
 			)
 		)
-		self.assertEqual(ard.status, "Joined")
+
+	def test_changing_the_transportation_manager_moves_the_pickup_task(self):
+		ard = _make_arrival("Test Move Pickup Task")
+		for state in ("Pending Onboarding", "Onboarding Confirmed"):
+			ard.workflow_state = state
+			ard.save()
+
+		ard.transportation_manager = TRANSPORTATION_USER
+		ard.save()
+		self.assertIn(TRANSPORTATION_USER, _open_assignees(ard))
+
+		ard.transportation_manager = SECOND_TRANSPORTATION_USER
+		ard.save()
+		self.assertIn(SECOND_TRANSPORTATION_USER, _open_assignees(ard))
+		self.assertNotIn(TRANSPORTATION_USER, _open_assignees(ard))
+
+	def test_waiting_pending_support_department_pickups_get_a_task(self):
+		from one_fm.patches.v15_0.end_arrival_at_transportation_confirmation import (
+			assign_pickups_waiting_in_pending_support_departments,
+		)
+
+		ard = _make_arrival("Test Waiting Pickup")
+		frappe.db.set_value(
+			"Arrival and Deployment",
+			ard.name,
+			{
+				"workflow_state": "Pending Support Departments",
+				"candidate_country_process": "CCP-TEST",
+				"transportation_manager": TRANSPORTATION_USER,
+			},
+		)
+
+		assign_pickups_waiting_in_pending_support_departments()
+
+		self.assertIn(TRANSPORTATION_USER, _open_assignees(ard))
+
+	def test_mandatory_fields_stay_mandatory_after_draft(self):
+		meta = frappe.get_meta("Arrival and Deployment")
+		for fieldname in ("onboarding_officer", "arrival_date"):
+			self.assertEqual(
+				meta.get_field(fieldname).mandatory_depends_on,
+				'eval:doc.workflow_state && doc.workflow_state != "Draft"',
+			)
 
 	def test_pick_up_is_arranged_by_the_transportation_manager(self):
 		doc = frappe.new_doc("Arrival and Deployment")
@@ -289,9 +324,17 @@ class TestCandidateDetails(FrappeTestCase):
 			get_job_applicant_designation,
 		)
 
-		with patch.object(frappe.db, "get_value", return_value=(None, "Security Guard")):
+		with patch.object(
+			frappe.db,
+			"get_value",
+			return_value=frappe._dict(designation=None, one_fm_designation="Security Guard"),
+		):
 			self.assertEqual(get_job_applicant_designation("HR-APP-TEST"), "Security Guard")
-		with patch.object(frappe.db, "get_value", return_value=("Janitor", "Security Guard")):
+		with patch.object(
+			frappe.db,
+			"get_value",
+			return_value=frappe._dict(designation="Janitor", one_fm_designation="Security Guard"),
+		):
 			self.assertEqual(get_job_applicant_designation("HR-APP-TEST"), "Janitor")
 		self.assertIsNone(get_job_applicant_designation(None))
 
@@ -300,6 +343,30 @@ class TestCandidateDetails(FrappeTestCase):
 			frappe.get_meta("Arrival and Deployment").get_field("department").fetch_from,
 			"candidate_country_process.department",
 		)
+
+	def test_backfill_skips_a_ccp_whose_job_applicant_no_longer_exists(self):
+		from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import (
+			get_job_applicant_designation,
+		)
+		from one_fm.patches.v15_0 import set_candidate_details_on_arrivals
+
+		ccp = frappe.get_all("Candidate Country Process", pluck="name", limit=1)
+		if not ccp:
+			raise unittest.SkipTest("No Candidate Country Process to point at a missing Job Applicant")
+		frappe.db.set_value("Candidate Country Process", ccp[0], "job_applicant", "HR-APP-DOES-NOT-EXIST")
+		ard = frappe.get_doc(
+			{
+				"doctype": "Arrival and Deployment",
+				"candidate_name": "Test Missing Job Applicant",
+				"arrival_date": "2026-10-20",
+			}
+		).insert()
+		frappe.db.set_value("Arrival and Deployment", ard.name, "candidate_country_process", ccp[0])
+
+		set_candidate_details_on_arrivals.execute()
+
+		self.assertIsNone(frappe.db.get_value("Arrival and Deployment", ard.name, "job_applicant"))
+		self.assertIsNone(get_job_applicant_designation("HR-APP-DOES-NOT-EXIST"))
 
 	def test_backfill_skips_an_arrival_whose_ccp_no_longer_exists(self):
 		from one_fm.patches.v15_0 import set_candidate_details_on_arrivals
@@ -318,9 +385,6 @@ class TestCandidateDetails(FrappeTestCase):
 		set_candidate_details_on_arrivals.execute()
 
 		self.assertIsNone(frappe.db.get_value("Arrival and Deployment", ard.name, "job_applicant"))
-
-
-SECOND_TRANSPORTATION_USER = "test_ad_transport_2@example.com"
 
 
 class TestBulkArrivals(FrappeTestCase):

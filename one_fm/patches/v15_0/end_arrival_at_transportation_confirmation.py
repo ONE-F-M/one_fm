@@ -20,6 +20,7 @@ TRANSITIONS = [
 	("Pending Onboarding", "Confirm Onboarding", "Onboarding Confirmed", "System Manager", ""),
 	("Onboarding Confirmed", "Arrange Pick Up", "Pick Up Arranged", "Transportation Manager", OVERSEAS),
 	("Onboarding Confirmed", "Arrange Pick Up", "Pick Up Arranged", "System Manager", OVERSEAS),
+	("Onboarding Confirmed", "Did Not Arrive", "Did Not Arrive", "Transportation Manager", OVERSEAS),
 ]
 for outcome in ("Arrived", "Did Not Arrive"):
 	TRANSITIONS += [
@@ -37,10 +38,25 @@ for outcome in ("Arrived", "Did Not Arrive"):
 REPLACED_ACTIONS = {"Submit to Support Departments", "Mark as Joined"} | {t[1] for t in TRANSITIONS}
 
 
+# Records created in the UI that only make sense for the deleted doctype, as (doctype, field naming it)
+ACKNOWLEDGEMENT_CUSTOMISATIONS = (
+	("Notification", "document_type"),
+	("Server Script", "reference_doctype"),
+	("Client Script", "dt"),
+	("Property Setter", "doc_type"),
+	("Custom Field", "dt"),
+	("Report", "ref_doctype"),
+	("Number Card", "document_type"),
+	("Dashboard Chart", "document_type"),
+	("Workflow Action", "reference_doctype"),
+)
+
+
 def execute():
 	end_workflow_at_arrival()
 	remove_arrival_acknowledgements()
 	keep_only_the_onboarding_mailbox()
+	assign_pickups_waiting_in_pending_support_departments()
 
 
 def end_workflow_at_arrival():
@@ -81,6 +97,11 @@ def remove_arrival_acknowledgements():
 			doctype, filters={"document_type": "Arrival Acknowledgement"}, pluck="name"
 		):
 			frappe.delete_doc(doctype, name)
+	for doctype, field in ACKNOWLEDGEMENT_CUSTOMISATIONS:
+		for name in frappe.get_all(doctype, filters={field: "Arrival Acknowledgement"}, pluck="name"):
+			frappe.delete_doc(doctype, name, force=True)
+	for doctype in ("Workspace Link", "Workspace Shortcut"):
+		frappe.db.delete(doctype, {"link_to": "Arrival Acknowledgement"})
 	frappe.delete_doc("DocType", "Arrival Acknowledgement", ignore_missing=True, force=True)
 	# Deleting a DocType keeps its table; the installer drops tables the same way
 	frappe.db.sql_ddl("DROP TABLE IF EXISTS `tabArrival Acknowledgement`")
@@ -90,3 +111,17 @@ def keep_only_the_onboarding_mailbox():
 	frappe.db.delete(
 		"Arrival Department Email", {"parenttype": "Hiring Settings", "department": ["!=", "Onboarding"]}
 	)
+
+
+def assign_pickups_waiting_in_pending_support_departments():
+	"""Give the Transportation Manager the pickup task on overseas arrivals whose task was on an acknowledgement."""
+	for name in frappe.get_all(
+		"Arrival and Deployment",
+		filters={
+			"workflow_state": "Pending Support Departments",
+			"candidate_country_process": ["is", "set"],
+			"transportation_manager": ["is", "set"],
+		},
+		pluck="name",
+	):
+		frappe.get_doc("Arrival and Deployment", name).assign_transportation_manager()

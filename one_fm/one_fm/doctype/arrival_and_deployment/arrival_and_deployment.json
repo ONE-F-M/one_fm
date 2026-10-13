@@ -71,7 +71,7 @@
    "fieldtype": "Link",
    "label": "Onboarding Officer",
    "options": "User",
-   "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
+   "mandatory_depends_on": "eval:doc.workflow_state && doc.workflow_state != \"Draft\""
   },
   {
    "fieldname": "second_onboarding_officer",
@@ -102,7 +102,7 @@
    "fieldname": "arrival_date",
    "fieldtype": "Date",
    "label": "Arrival Date",
-   "mandatory_depends_on": "eval:[\"Pending Onboarding\",\"Pending Support Departments\",\"Joined\",\"Did Not Arrive\"].includes(doc.workflow_state)"
+   "mandatory_depends_on": "eval:doc.workflow_state && doc.workflow_state != \"Draft\""
   },
   {
    "fieldname": "section_break_candidate_details",
@@ -184,7 +184,7 @@
   }
  ],
  "links": [],
- "modified": "2026-10-13 10:00:00.000000",
+ "modified": "2026-10-13 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Arrival and Deployment",
