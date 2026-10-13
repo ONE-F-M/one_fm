@@ -529,3 +529,85 @@ class TestJobApplicantConnection(FrappeTestCase):
 			counts["count"]["external_links_found"],
 			[{"doctype": "Job Applicant", "count": 1, "open_count": 0}],
 		)
+
+
+SIGNING_RECRUITER = "test_ad_signing_recruiter@example.com"
+
+
+class TestOnboardingEmailSignedByRecruiter(FrappeTestCase):
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		from one_fm.patches.v15_0 import end_arrival_at_transportation_confirmation
+
+		if not frappe.db.exists("Workflow", "Arrival and Deployment"):
+			raise unittest.SkipTest("Arrival and Deployment workflow is created by earlier patches")
+		end_arrival_at_transportation_confirmation.execute()
+		if not frappe.db.exists("User", TRANSPORTATION_USER):
+			frappe.get_doc(
+				{
+					"doctype": "User",
+					"email": TRANSPORTATION_USER,
+					"first_name": "Transport",
+					"send_welcome_email": 0,
+				}
+			).insert()
+		if not frappe.db.exists("User", SIGNING_RECRUITER):
+			frappe.get_doc(
+				{
+					"doctype": "User",
+					"email": SIGNING_RECRUITER,
+					"first_name": "Signing",
+					"last_name": "Recruiter",
+					"send_welcome_email": 0,
+				}
+			).insert()
+
+	def test_single_email_is_signed_by_the_recruiter_on_the_record(self):
+		doc = frappe.new_doc("Arrival and Deployment")
+		doc.candidate_name = "Test Signed Email"
+		doc.onboarding_officer = "Administrator"
+		doc.recruiter = SIGNING_RECRUITER
+		doc.arrival_date = "2026-10-15"
+
+		with patch("frappe.enqueue") as enqueue:
+			doc.notify_onboarding_officer()
+
+		email = enqueue.call_args.kwargs
+		self.assertTrue(email["sender"].startswith("Signing Recruiter <"))
+		self.assertEqual(email["reply_to"], SIGNING_RECRUITER)
+		self.assertIn("<b>Signing Recruiter</b>", email["message"])
+
+	def test_bulk_summary_is_split_per_recruiter(self):
+		from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import (
+			bulk_submit_to_onboarding,
+		)
+
+		mine = _make_arrival("Test Signed Mine")
+		theirs = _make_arrival("Test Signed Theirs")
+		frappe.db.set_value("Arrival and Deployment", theirs.name, "recruiter", SIGNING_RECRUITER)
+
+		with patch("frappe.sendmail") as sendmail:
+			bulk_submit_to_onboarding(frappe.as_json([mine.name, theirs.name]))
+
+		reply_tos = sorted(c.kwargs["reply_to"] for c in sendmail.call_args_list)
+		self.assertEqual(
+			reply_tos, sorted([frappe.db.get_value("User", "Administrator", "email"), SIGNING_RECRUITER])
+		)
+
+	def test_pickup_email_is_signed_by_the_recruiter_on_the_record(self):
+		from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import (
+			bulk_confirm_onboarding,
+		)
+
+		arrival = _make_arrival("Test Signed Pickup", transportation_manager=TRANSPORTATION_USER)
+		frappe.db.set_value("Arrival and Deployment", arrival.name, "recruiter", SIGNING_RECRUITER)
+		arrival.reload()
+		arrival.workflow_state = "Pending Onboarding"
+		arrival.save()
+
+		with patch("frappe.sendmail") as sendmail:
+			bulk_confirm_onboarding(frappe.as_json([arrival.name]))
+
+		self.assertEqual(sendmail.call_args.kwargs["reply_to"], SIGNING_RECRUITER)
+		self.assertIn("<b>Signing Recruiter</b>", sendmail.call_args.kwargs["message"])

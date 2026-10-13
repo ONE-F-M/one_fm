@@ -201,7 +201,7 @@ class ArrivalandDeployment(Document):
         <p>Please review the <a href="/app/arrival-and-deployment/{self.name}">Arrival and Deployment Document</a> and prepare accordingly.</p>
         '''
 
-        sender = get_email_sender()
+        sender = get_email_sender(self.recruiter)
         frappe.enqueue(
             method=frappe.sendmail,
             queue='short',
@@ -254,10 +254,15 @@ def bulk_submit_to_onboarding(names: str):
     arrivals = apply_bulk_workflow(names, "Submit to Onboarding")
     groups = {}
     for arrival in arrivals:
-        key = (arrival.onboarding_officer, arrival.second_onboarding_officer, arrival.email_onboarding_mailbox)
+        key = (
+            arrival.onboarding_officer,
+            arrival.second_onboarding_officer,
+            arrival.email_onboarding_mailbox,
+            arrival.recruiter,
+        )
         groups.setdefault(key, []).append(arrival)
 
-    for (officer, second_officer, copy_mailbox), group in groups.items():
+    for (officer, second_officer, copy_mailbox, recruiter), group in groups.items():
         recipients = [
             frappe.db.get_value("User", user, "email") for user in (officer, second_officer) if user
         ]
@@ -267,6 +272,7 @@ def bulk_submit_to_onboarding(names: str):
             subject=_("New Arrivals Ready for Onboarding: {0} candidates").format(len(group)),
             intro=_("Dear Onboarding Team,<br>Find new arrival details for the following candidates:"),
             arrivals=group,
+            sent_by=recruiter,
         )
 
 
@@ -278,9 +284,9 @@ def bulk_confirm_onboarding(names: str):
     groups = {}
     for arrival in arrivals:
         if arrival.transportation_manager:
-            groups.setdefault(arrival.transportation_manager, []).append(arrival)
+            groups.setdefault((arrival.transportation_manager, arrival.recruiter), []).append(arrival)
 
-    for transportation_manager, group in groups.items():
+    for (transportation_manager, recruiter), group in groups.items():
         send_arrivals_email(
             recipients=[frappe.db.get_value("User", transportation_manager, "email")],
             cc=None,
@@ -289,6 +295,7 @@ def bulk_confirm_onboarding(names: str):
                 frappe.db.get_value("User", transportation_manager, "full_name")
             ),
             arrivals=group,
+            sent_by=recruiter,
         )
 
 
@@ -346,11 +353,11 @@ def apply_bulk_workflow(names, action):
     return moved
 
 
-def send_arrivals_email(recipients, cc, subject, intro, arrivals):
+def send_arrivals_email(recipients, cc, subject, intro, arrivals, sent_by=None):
     """Send one email listing the arrivals, with a table per arrival date."""
     if not recipients:
         return
-    sender = get_email_sender()
+    sender = get_email_sender(sent_by)
     frappe.sendmail(
         recipients=recipients,
         cc=cc,
@@ -404,12 +411,12 @@ def build_arrivals_tables(arrivals):
     return "".join(tables)
 
 
-def get_email_sender():
-    """The person sending: their name on the system's outgoing address, their email for replies, and their signature."""
+def get_email_sender(user=None):
+    """The sender (the arrival's Recruiter, else whoever is acting): name on the outgoing address, email for replies, signature."""
     from frappe.email.doctype.email_account.email_account import EmailAccount
     from frappe.utils import escape_html, get_formatted_email
 
-    user = frappe.session.user
+    user = user or frappe.session.user
     full_name, email = frappe.db.get_value("User", user, ["full_name", "email"])
     account = EmailAccount.find_default_outgoing()
     designation = frappe.db.get_value("Employee", {"user_id": user}, "designation")
