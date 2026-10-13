@@ -4,7 +4,8 @@ from frappe import _
 
 class EmployeeResignationDateAdjustment(Document):
     def validate(self):
-        self.set_approver()
+        if self.workflow_state != "Approved":
+            self.set_approver()
         self.validate_extended_relieving_date()
 
     def validate_extended_relieving_date(self):
@@ -106,37 +107,15 @@ class EmployeeResignationDateAdjustment(Document):
         if not self.employee:
             return
 
-        employee_details = frappe.db.get_value(
-            "Employee", self.employee, ["reports_to", "site", "project"], as_dict=True
-        )
-
-        if not employee_details:
-            return
-
-        approver_employee = None
-
-        if employee_details.reports_to:
-            approver_employee = employee_details.reports_to
-        if not approver_employee and employee_details.site:
-            approver_employee = frappe.db.get_value("Operations Site", employee_details.site, "site_supervisor")
-        if not approver_employee and employee_details.project:
-            approver_employee = frappe.db.get_value("Project", employee_details.project, "project_manager")
-
-        if approver_employee:
-            approver_user = frappe.db.get_value("Employee", approver_employee, "user_id")
-            if approver_user and frappe.db.exists("User", approver_user):
-                self.supervisor = approver_user
-            else:
-                self.supervisor = None
-
-        # Routing comes from the resignation; the project manager comes from the employee's current project
+        # Routing comes from the resignation; supervisor and project manager come from the employee's current record
+        resignation = frappe._dict()
         if self.employee_resignation:
             resignation = frappe.db.get_value(
                 "Employee Resignation", self.employee_resignation,
                 ["shift_working", "shift_category", "t4_route", "t4_admin",
-                 "cleaning_head_supervisor", "security_manager"],
+                 "cleaning_head_supervisor", "security_manager", "supervisor", "project_manager"],
                 as_dict=True,
-            )
+            ) or frappe._dict()
             if resignation:
                 self.is_corporate = 0 if resignation.shift_working else 1
                 self.shift_category = resignation.shift_category
@@ -145,9 +124,10 @@ class EmployeeResignationDateAdjustment(Document):
                 self.cleaning_head_supervisor = resignation.cleaning_head_supervisor
                 self.security_manager = resignation.security_manager
 
-        from one_fm.utils import get_project_manager_user
+        from one_fm.utils import get_approver_user, get_project_manager_user
 
-        self.project_manager = get_project_manager_user(self.employee)
+        self.supervisor = get_approver_user(self.employee, skip_shift_supervisor=True) or resignation.supervisor
+        self.project_manager = get_project_manager_user(self.employee) or resignation.project_manager
 
         # Set Offboarding Officer — first user with that role
         if not self.get("offboarding_officer"):

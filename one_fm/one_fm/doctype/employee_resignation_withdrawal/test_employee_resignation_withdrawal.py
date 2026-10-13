@@ -104,6 +104,36 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 			if frappe.db.has_column("Project Manpower Request", "workflow_state"):
 				self.assertEqual(pmr.workflow_state, "Withdrawn")
 
+	def test_withdrawing_a_resignation_still_under_review_closes_its_tasks(self):
+		from frappe.desk.form.assign_to import add as add_assignment
+
+		reviewer = _make_user("test_erw_pending_reviewer@example.com")
+		add_assignment(
+			{"assign_to": [reviewer], "doctype": "Employee Resignation", "name": self.resignation.name}
+		)
+
+		erw = frappe.get_doc(
+			{
+				"doctype": "Employee Resignation Withdrawal",
+				"employee_resignation": self.resignation.name,
+				"reason": "Changed my mind before approval",
+				"resignation_withdrawal_letter": "/files/test.txt",
+			}
+		).insert()
+		_submit_for_review(erw)
+		erw.workflow_state = "Pending Project Manager"
+		erw.save()
+		erw.workflow_state = "Approved"
+		erw.save()
+
+		self.assertEqual(frappe.db.get_value("Employee Resignation", self.resignation.name, "workflow_state"), "Withdrawn")
+		self.assertFalse(
+			frappe.db.exists(
+				"ToDo",
+				{"reference_type": "Employee Resignation", "reference_name": self.resignation.name, "status": "Open"},
+			)
+		)
+
 	def test_approval_withdraws_pmr_waiting_for_recruiter(self):
 		pmr = frappe.get_doc({
 			"doctype": "Project Manpower Request",
@@ -277,6 +307,110 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 		}, pluck="allocated_to")
 		self.assertIn("test_erw_moved_supervisor@example.com", open_todos)
 		self.assertNotIn(stale_user, open_todos)
+
+	def test_approvers_fall_back_to_the_resignation_when_none_is_current(self):
+		resignation_user = _make_user("test_erw_resignation_approver@example.com")
+		frappe.db.set_value("Employee Resignation", self.resignation.name, {
+			"supervisor": resignation_user,
+			"project_manager": resignation_user,
+		})
+		frappe.db.set_value("Employee", self.employee.name, {"reports_to": None, "site": None})
+		frappe.db.set_value("Project", self.employee.project, "project_manager", None)
+
+		erw = frappe.get_doc({
+			"doctype": "Employee Resignation Withdrawal",
+			"employee_resignation": self.resignation.name,
+			"reason": "Changed my mind",
+		}).insert()
+
+		self.assertEqual(erw.supervisor, resignation_user)
+		self.assertEqual(erw.project_manager, resignation_user)
+
+	def test_a_closed_withdrawal_keeps_the_approvers_who_acted_on_it(self):
+		erw = frappe.get_doc({
+			"doctype": "Employee Resignation Withdrawal",
+			"employee_resignation": self.resignation.name,
+			"reason": "Changed my mind",
+			"resignation_withdrawal_letter": "/files/test.txt",
+		}).insert()
+		approver = _make_user("test_erw_old_supervisor@example.com")
+		erw.db_set({"supervisor": approver, "workflow_state": "Rejected", "reason_for_rejection": "No"})
+		new_supervisor = _make_employee_with_user("test_erw_moved_supervisor@example.com", "Test ERW Moved Supervisor")
+		frappe.db.set_value("Employee", self.employee.name, "reports_to", new_supervisor)
+
+		erw.reload()
+		erw.save()
+
+		self.assertEqual(erw.supervisor, approver)
+
+	def test_daily_hand_over_assigns_the_new_supervisor_when_the_old_one_had_no_task(self):
+		from one_fm.one_fm.doctype.employee_resignation.employee_resignation import hand_over_in_process_approvals
+
+		erw = frappe.get_doc({
+			"doctype": "Employee Resignation Withdrawal",
+			"employee_resignation": self.resignation.name,
+			"reason": "Changed my mind",
+			"resignation_withdrawal_letter": "/files/test.txt",
+		}).insert()
+		_submit_for_review(erw)
+		erw.db_set("supervisor", _make_user("test_erw_old_supervisor@example.com"))
+		frappe.db.set_value(
+			"ToDo", {"reference_type": erw.doctype, "reference_name": erw.name}, "status", "Closed"
+		)
+		new_supervisor = _make_employee_with_user("test_erw_moved_supervisor@example.com", "Test ERW Moved Supervisor")
+		frappe.db.set_value("Employee", self.employee.name, "reports_to", new_supervisor)
+
+		hand_over_in_process_approvals()
+
+		self.assertTrue(frappe.db.exists("ToDo", {
+			"reference_type": erw.doctype, "reference_name": erw.name,
+			"allocated_to": "test_erw_moved_supervisor@example.com", "status": "Open",
+		}))
+
+	def test_daily_hand_over_continues_past_a_record_that_fails(self):
+		from unittest.mock import patch
+
+		from one_fm.one_fm.doctype.employee_resignation import employee_resignation
+
+		other_employee = _make_employee("test_erw_other_employee@example.com", "Test ERW Other Employee")
+		other_resignation = frappe.get_doc({
+			"doctype": "Employee Resignation",
+			"employee": other_employee,
+			"resignation_initiation_date": frappe.utils.today(),
+			"reason_for_exit": "Better opportunity",
+			"resignation_letter": "/files/resignation_letter.txt",
+			"relieving_date": frappe.utils.add_days(frappe.utils.today(), 30),
+		}).insert()
+		withdrawals = []
+		for resignation in (self.resignation.name, other_resignation.name):
+			erw = frappe.get_doc({
+				"doctype": "Employee Resignation Withdrawal",
+				"employee_resignation": resignation,
+				"reason": "Changed my mind",
+				"resignation_withdrawal_letter": "/files/test.txt",
+			}).insert()
+			_submit_for_review(erw)
+			erw.db_set("supervisor", _make_user("test_erw_old_supervisor@example.com"))
+			withdrawals.append(erw)
+		broken, working = withdrawals
+		new_supervisor = _make_employee_with_user("test_erw_moved_supervisor@example.com", "Test ERW Moved Supervisor")
+		for employee in (self.employee.name, other_employee):
+			frappe.db.set_value("Employee", employee, "reports_to", new_supervisor)
+
+		real_hand_over = employee_resignation.hand_over_approval
+
+		def fail_on_broken(doc):
+			if doc.name == broken.name:
+				doc.db_set("supervisor", "test_erw_moved_supervisor@example.com")
+				raise frappe.PermissionError("Missing Permission")
+			real_hand_over(doc)
+
+		with patch.object(employee_resignation, "hand_over_approval", side_effect=fail_on_broken):
+			employee_resignation.hand_over_in_process_approvals()
+
+		self.assertEqual(frappe.db.get_value(broken.doctype, broken.name, "supervisor"), "test_erw_old_supervisor@example.com")
+		self.assertEqual(frappe.db.get_value(working.doctype, working.name, "supervisor"), "test_erw_moved_supervisor@example.com")
+		self.assertTrue(frappe.db.exists("Error Log", {"reference_name": broken.name}))
 
 	def test_daily_hand_over_skips_withdrawals_not_in_process(self):
 		from one_fm.one_fm.doctype.employee_resignation.employee_resignation import hand_over_in_process_approvals

@@ -102,7 +102,10 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 		self.set_geolocation()
 
 	def validate_not_after_relieving_date(self):
-		"""Block checkin after the employee's relieving date; the relieving date itself is still a working day."""
+		"""Block an IN log after the employee's relieving date; the relieving date itself is still a working day.
+		An OUT log may fall the next morning, when the last shift runs overnight."""
+		if self.log_type != "IN":
+			return
 		relieving_date = frappe.db.get_value("Employee", self.employee, "relieving_date")
 		if relieving_date and getdate(self.time) > getdate(relieving_date):
 			frappe.throw(

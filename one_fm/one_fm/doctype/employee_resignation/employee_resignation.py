@@ -611,7 +611,17 @@ def hand_over_in_process_approvals():
 	for doctype in RESIGNATION_CHANGE_DOCTYPES:
 		names = frappe.get_all(doctype, filters={"workflow_state": ["in", list(STEP_APPROVER_FIELDS)]}, pluck="name")
 		for name in names:
-			hand_over_approval(frappe.get_doc(doctype, name))
+			frappe.db.savepoint("hand_over_approval")
+			try:
+				hand_over_approval(frappe.get_doc(doctype, name))
+			except Exception:
+				# One record the new approver cannot be assigned must not undo the others
+				frappe.db.rollback(save_point="hand_over_approval")
+				frappe.log_error(
+					title=_("Approval hand-over failed for {0}").format(name),
+					reference_doctype=doctype,
+					reference_name=name,
+				)
 
 
 def hand_over_approval(doc):
@@ -633,9 +643,9 @@ def hand_over_approval(doc):
 	}
 	if old_approver and frappe.db.exists("ToDo", old_assignment):
 		remove(doc.doctype, doc.name, old_approver)
-		add({
-			"assign_to": [new_approver],
-			"doctype": doc.doctype,
-			"name": doc.name,
-			"description": _("{0} {1} is waiting for your approval").format(_(doc.doctype), doc.name),
-		})
+	add({
+		"assign_to": [new_approver],
+		"doctype": doc.doctype,
+		"name": doc.name,
+		"description": _("{0} {1} is waiting for your approval").format(_(doc.doctype), doc.name),
+	})

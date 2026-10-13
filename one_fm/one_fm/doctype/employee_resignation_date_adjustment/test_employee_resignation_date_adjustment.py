@@ -57,6 +57,54 @@ class TestEmployeeResignationDateAdjustment(FrappeTestCase):
 
 		self.assertEqual(ext.project_manager, new_pm_user)
 
+	def test_supervisor_uses_the_same_lookup_as_the_withdrawal(self):
+		from one_fm.utils import get_approver_user
+
+		resignation_supervisor = _make_user("test_erda_resignation_supervisor@example.com")
+		frappe.db.set_value("Employee Resignation", self.resignation.name, "supervisor", resignation_supervisor)
+		frappe.db.set_value("Employee", self.employee.name, {"reports_to": None, "site": None})
+		pm = _make_employee("test_erda_pm@example.com", "Test ERDA PM")
+		frappe.db.set_value("Employee", pm, "user_id", _make_user("test_erda_pm@example.com"))
+		frappe.db.set_value("Project", self.employee.project, "project_manager", pm)
+
+		ext = frappe.get_doc({
+			"doctype": "Employee Resignation Date Adjustment",
+			"employee_resignation": self.resignation.name,
+		}).insert()
+
+		self.assertIsNone(get_approver_user(self.employee.name, skip_shift_supervisor=True))
+		self.assertEqual(ext.supervisor, resignation_supervisor)
+		self.assertEqual(ext.project_manager, "test_erda_pm@example.com")
+
+	def test_project_manager_falls_back_to_the_resignation_when_none_is_current(self):
+		resignation_pm = _make_user("test_erda_resignation_pm@example.com")
+		frappe.db.set_value("Employee Resignation", self.resignation.name, "project_manager", resignation_pm)
+		frappe.db.set_value("Project", self.employee.project, "project_manager", None)
+
+		ext = frappe.get_doc({
+			"doctype": "Employee Resignation Date Adjustment",
+			"employee_resignation": self.resignation.name,
+		}).insert()
+
+		self.assertEqual(ext.project_manager, resignation_pm)
+
+	def test_an_approved_date_adjustment_keeps_the_approvers_who_acted_on_it(self):
+		ext = frappe.get_doc({
+			"doctype": "Employee Resignation Date Adjustment",
+			"employee_resignation": self.resignation.name,
+			"extended_relieving_date": self.extended_relieving_date,
+		}).insert()
+		approver = _make_user("test_erda_old_supervisor@example.com")
+		ext.db_set({"supervisor": approver, "workflow_state": "Approved"})
+		new_supervisor = _make_employee("test_erda_new_supervisor@example.com", "Test ERDA New Supervisor")
+		frappe.db.set_value("Employee", new_supervisor, "user_id", _make_user("test_erda_new_supervisor@example.com"))
+		frappe.db.set_value("Employee", self.employee.name, "reports_to", new_supervisor)
+
+		ext.reload()
+		ext.save()
+
+		self.assertEqual(ext.supervisor, approver)
+
 	def test_draft_allows_missing_extended_relieving_date(self):
 		ext = frappe.get_doc({
 			"doctype": "Employee Resignation Date Adjustment",
@@ -164,3 +212,9 @@ def _get_or_create_department(department_name, company):
 			"company": company,
 		}).insert()
 	return full_dept_name
+
+
+def _make_user(email):
+	if not frappe.db.exists("User", email):
+		frappe.get_doc({"doctype": "User", "email": email, "first_name": email.split("@")[0], "send_welcome_email": 0}).insert()
+	return email
