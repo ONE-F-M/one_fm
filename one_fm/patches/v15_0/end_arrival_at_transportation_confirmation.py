@@ -20,7 +20,6 @@ TRANSITIONS = [
 	("Pending Onboarding", "Confirm Onboarding", "Onboarding Confirmed", "System Manager", ""),
 	("Onboarding Confirmed", "Arrange Pick Up", "Pick Up Arranged", "Transportation Manager", OVERSEAS),
 	("Onboarding Confirmed", "Arrange Pick Up", "Pick Up Arranged", "System Manager", OVERSEAS),
-	("Onboarding Confirmed", "Did Not Arrive", "Did Not Arrive", "Transportation Manager", OVERSEAS),
 ]
 for outcome in ("Arrived", "Did Not Arrive"):
 	TRANSITIONS += [

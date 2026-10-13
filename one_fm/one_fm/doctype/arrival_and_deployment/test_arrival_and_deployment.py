@@ -158,17 +158,14 @@ class TestArrivalEndsWithTransportation(FrappeTestCase):
 		self.assertIn(("Pick Up Arranged", "Arrived", "Recruiter"), transitions)
 		self.assertEqual(transitions[("Onboarding Confirmed", "Arrived", "Recruiter")], "")
 		self.assertNotIn(("Onboarding Confirmed", "Arrange Pick Up", "Recruiter"), transitions)
-		self.assertEqual(
-			transitions[("Onboarding Confirmed", "Did Not Arrive", "Transportation Manager")],
-			"doc.candidate_country_process",
-		)
+		self.assertNotIn(("Onboarding Confirmed", "Did Not Arrive", "Transportation Manager"), transitions)
+		self.assertNotIn(("Onboarding Confirmed", "Arrived", "Transportation Manager"), transitions)
 		self.assertEqual(
 			transitions[("Onboarding Confirmed", "Arrange Pick Up", "Transportation Manager")],
 			"doc.candidate_country_process",
 		)
 		self.assertIn(("Pick Up Arranged", "Arrived", "Transportation Manager"), transitions)
 		self.assertIn(("Pick Up Arranged", "Did Not Arrive", "Transportation Manager"), transitions)
-		self.assertNotIn(("Onboarding Confirmed", "Arrived", "Transportation Manager"), transitions)
 		self.assertEqual(
 			transitions[("Onboarding Confirmed", "Did Not Arrive", "Onboarding Officer")],
 			"not doc.candidate_country_process",
