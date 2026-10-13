@@ -159,6 +159,7 @@ class TestArrivalEndsWithTransportation(FrappeTestCase):
 		self.assertIn(("Pending Onboarding", "Confirm Onboarding", "Onboarding Officer"), transitions)
 		self.assertIn(("Pending Onboarding", "Confirm Onboarding", "Recruiter"), transitions)
 		self.assertIn(("Pick Up Arranged", "Arrived", "Recruiter"), transitions)
+		self.assertEqual(transitions[("Onboarding Confirmed", "Arrived", "Recruiter")], "")
 		self.assertNotIn(("Onboarding Confirmed", "Arrange Pick Up", "Recruiter"), transitions)
 		self.assertEqual(
 			transitions[("Onboarding Confirmed", "Arrange Pick Up", "Transportation Manager")],

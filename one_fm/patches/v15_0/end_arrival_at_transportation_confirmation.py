@@ -24,7 +24,7 @@ TRANSITIONS = [
 for outcome in ("Arrived", "Did Not Arrive"):
 	TRANSITIONS += [
 		("Onboarding Confirmed", outcome, outcome, "Onboarding Officer", LOCAL),
-		("Onboarding Confirmed", outcome, outcome, "Recruiter", LOCAL),
+		("Onboarding Confirmed", outcome, outcome, "Recruiter", ""),
 		("Onboarding Confirmed", outcome, outcome, "System Manager", LOCAL),
 		("Pick Up Arranged", outcome, outcome, "Transportation Manager", ""),
 		("Pick Up Arranged", outcome, outcome, "Recruiter", ""),
