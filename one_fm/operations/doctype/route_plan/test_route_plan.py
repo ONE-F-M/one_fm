@@ -487,13 +487,13 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 	def test_a_mixed_run_of_27_out_and_27_back_saves_on_a_27_seat_bus(self):
 		"""WI-003479: 54 riders in total, never more than 27 aboard at once."""
 		plan = self._make_plan([
-			self._row(self.VEHICLE, trip=\"TRIP-2601\", direction=\"OUTBOUND\", headcount=27, stop=1),
-			self._row(self.VEHICLE, trip=\"TRIP-2601\", direction=\"RETURN\", headcount=27, stop=2),
+			self._row(self.VEHICLE, trip="TRIP-2601", direction="OUTBOUND", headcount=27, stop=1),
+			self._row(self.VEHICLE, trip="TRIP-2601", direction="RETURN", headcount=27, stop=2),
 		])
-		with patch.object(route_plan_module, \"_passenger_limits\",
+		with patch.object(route_plan_module, "_passenger_limits",
 						  return_value={self.VEHICLE: 27}):
 			plan.insert(ignore_permissions=True)
-		self.assertTrue(frappe.db.exists(\"Route Plan\", plan.name))
+		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
 
 	def test_a_return_boarding_before_the_outward_drop_still_overloads(self):
 		"""The other stop order genuinely does overload the bus, and is still refused.
