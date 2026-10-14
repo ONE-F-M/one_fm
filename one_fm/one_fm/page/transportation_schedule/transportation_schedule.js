@@ -2632,7 +2632,9 @@ function mountRoutePlannerApp(wrapper, data) {
                 for (let i = 0; i < ordered.length;) {
                     const at = this._clockSeconds(ordered[i].start);
                     let j = i + 1;
-                    while (j < ordered.length && this._clockSeconds(ordered[j].start) === at) j++;
+                    // A stop with no stamp (a card being tried on the run) ties with nothing.
+                    while (at !== null && j < ordered.length
+                           && this._clockSeconds(ordered[j].start) === at) j++;
                     const tied = ordered.slice(i, j);
                     stops.push(...tied.filter(s => !boards(s)), ...tied.filter(boards));
                     i = j;
