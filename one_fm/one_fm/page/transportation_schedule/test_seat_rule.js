@@ -213,4 +213,88 @@ assert.strictEqual(rule._seatsAvailableFor({ id: 'R2', direction: 'RETURN', head
 assert.strictEqual(rule._seatsAvailableFor({ id: 'R2', direction: 'RETURN', headcount: 6 },
     'BUS', MIX.stops), 5, 'the sixth would make 8 on a 7-seat bus');
 
+// ── The peak a run carries, read from the shipped tripOccupancy (WI-003479) ─────
+// The merged block used to print the SUM of its stops' riders, so 27 out and 27 back
+// read 54 on a 27-seat bus that never held more than 27. The label now shows the
+// peak; the sum survives as `riders`, for the tooltip only. Both functions are sliced
+// out of the shipped file, so this fails if either changes.
+const occFrom = src.indexOf('tripOccupancy(trip) {');
+const occTo = src.indexOf('stopQoaTime(stop) {');
+assert.ok(occFrom > 0 && occTo > occFrom, 'tripOccupancy not found - did it move?');
+assert.strictEqual(src.indexOf('tripOccupancy(trip) {', occFrom + 1), -1, 'tripOccupancy is defined twice');
+
+const mergedFrom = src.indexOf('mergedItemsByVehicle() {');
+const mergedTo = src.lastIndexOf('//', src.indexOf('Recalculate overlap columns on merged entries'));
+assert.ok(mergedFrom > 0 && mergedTo > mergedFrom, 'mergedItemsByVehicle not found - did it move?');
+
+// eslint-disable-next-line no-eval
+const board = eval('({' + src.slice(occFrom, occTo) + '})');
+// eslint-disable-next-line no-eval
+const mergedBoard = eval('({' + src.slice(mergedFrom, mergedTo) +
+    ' merged[vid] = entries; }); return merged; } })');
+
+// The collaborators: a card's own heading, the run's heading, and the run order the
+// drawer uses (start, then stop number - which is what lists a boarding card first).
+board.cardOwnDirection = (i) => (i.direction === 'RETURN' ? 'RETURN' : 'OUTBOUND');
+board.runDirection = rule.runDirection;
+board._clockSeconds = rule._clockSeconds;
+board._inRunOrder = (items) => [...items].sort(
+    (a, b) => (new Date(a.start) - new Date(b.start)) || (a.stopIndex || 0) - (b.stopIndex || 0));
+
+const AT = '2026-10-12T05:00:00Z';
+const LATER = '2026-10-12T06:00:00Z';
+const run = (...stops) => ({
+    direction: board.runDirection(stops),
+    headcount: stops.reduce((n, s) => n + s.headcount, 0),
+    stops,
+});
+
+// The AC: 15 out and 12 back on a Mixed run is 15 aboard, not 27.
+assert.strictEqual(board.tripOccupancy(run(
+    { id: 'o', direction: 'OUTBOUND', headcount: 15, stopIndex: 1, start: AT },
+    { id: 'r', direction: 'RETURN', headcount: 12, stopIndex: 2, start: LATER },
+)), 15, '15 out and 12 back peaks at 15');
+
+// 2702: 6 out and 61 back, both at the handover stop, the boarding card listed first.
+// Walking the boarders in before the drop read 67; the server drops first and reads 61.
+const handover = run(
+    { id: 'back', direction: 'RETURN', headcount: 61, stopIndex: 1, start: AT },
+    { id: 'out', direction: 'OUTBOUND', headcount: 6, stopIndex: 1, start: AT },
+);
+assert.strictEqual(board.tripOccupancy(handover), 61, '2702 peaks at 61, not 67');
+assert.strictEqual(handover.stops[0].id, 'back', 'the caller\'s order is left alone');
+
+// The tie is on the time of day: the same Kuwait hour under two stored dates still
+// serves the drop first.
+assert.strictEqual(board.tripOccupancy(run(
+    { id: 'back', direction: 'RETURN', headcount: 61, stopIndex: 1, start: '2026-10-12T05:00:00Z' },
+    { id: 'out', direction: 'OUTBOUND', headcount: 6, stopIndex: 1, start: '2026-10-12T05:00:00Z' },
+)), 61);
+
+// A one-way run is everybody aboard together: 43 + 1 is 44.
+assert.strictEqual(board.tripOccupancy(run(
+    { id: 'a', direction: 'OUTBOUND', headcount: 43, stopIndex: 1, start: AT },
+    { id: 'b', direction: 'OUTBOUND', headcount: 1, stopIndex: 2, start: LATER },
+)), 44, 'a one-way 43 + 1 is 44');
+
+// The merged block for 2601's shape: 27 out, 27 back. Peak 27, riders 54.
+const s2601 = [
+    { id: 'a', tripId: 'T-2601', tripName: '2601', cardId: 'ca', direction: 'OUTBOUND',
+      headcount: 27, stopIndex: 1, start: AT, end: LATER },
+    { id: 'b', tripId: 'T-2601', tripName: '2601', cardId: 'cb', direction: 'RETURN',
+      headcount: 27, stopIndex: 2, start: LATER, end: '2026-10-12T07:00:00Z' },
+];
+mergedBoard.planData = { shipment_cards: [
+    { id: 'ca', site_location: 'Camp' }, { id: 'cb', site_location: 'Site' }] };
+mergedBoard.itemsByVehicle = { V1: s2601 };
+mergedBoard.tripOccupancy = board.tripOccupancy;
+mergedBoard.runDirection = board.runDirection;
+mergedBoard.cardOwnDirection = board.cardOwnDirection;
+mergedBoard._clockSeconds = board._clockSeconds;
+mergedBoard._inRunOrder = board._inRunOrder;
+mergedBoard._legEdges = () => ({});
+const block = mergedBoard.mergedItemsByVehicle().V1.find(e => e.type === 'merged');
+assert.strictEqual(block.headcount, 27, '2601 peaks at 27 aboard');
+assert.strictEqual(block.riders, 54, 'and carries 54 riders in total');
+
 console.log('seat rule OK');
