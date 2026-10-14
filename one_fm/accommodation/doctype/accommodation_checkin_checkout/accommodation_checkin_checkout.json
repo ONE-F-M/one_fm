@@ -41,6 +41,7 @@
   "civil_id",
   "employment_type",
   "employee_status",
+  "operations_shift",
   "bed_details_section",
   "accommodation",
   "floor",
