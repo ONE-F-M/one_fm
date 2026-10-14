@@ -38,6 +38,38 @@ def _stated_time(*values):
     return None
 
 
+def canvas_trip_series(vehicles=None, coords_of=None) -> dict:
+    """``{vehicle: "S-9"}`` (or ``"26"``): the series the canvas mints trip names in.
+
+    The number in a trip name is the vehicle's row on the board, and the board's rows
+    are exactly the vehicles get_route_planner_data lists: transport_stop_vehicle=1,
+    ordered by name, minus any whose Location has no coordinates. This is that list,
+    built once, so the canvas and the server cannot disagree about which row a vehicle
+    is on. The prefix is "S-" for a Leased vehicle and empty otherwise.
+
+    ``vehicles`` and ``coords_of`` let get_route_planner_data hand over the rows and the
+    coordinate cache it has already read, instead of querying them a second time.
+    """
+    if vehicles is None:
+        vehicles = frappe.get_all(
+            "Vehicle",
+            filters={"transport_stop_vehicle": 1},
+            fields=["name", "location", "one_fm_vehicle_category"],
+            order_by="name asc",
+        )
+    coords_of = coords_of or get_coords
+
+    series = {}
+    position = 0
+    for v in vehicles:
+        if not coords_of("Location", v.location):
+            continue
+        position += 1
+        prefix = "S-" if v.one_fm_vehicle_category == "Leased" else ""
+        series[v.name] = f"{prefix}{position}"
+    return series
+
+
 @frappe.whitelist()
 def get_route_planner_data():
     try:
