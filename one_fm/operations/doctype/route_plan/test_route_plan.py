@@ -457,14 +457,14 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 		is the sum: 3 + 2 = 5 on 3 legal seats.
 		"""
 		plan = self._make_plan([
-			self._row(self.VEHICLE, trip=\"TRIP-PEAK\", headcount=3),
-			self._row(self.VEHICLE, trip=\"TRIP-PEAK\", headcount=2),
+			self._row(self.VEHICLE, trip="TRIP-PEAK", headcount=3),
+			self._row(self.VEHICLE, trip="TRIP-PEAK", headcount=2),
 		])
 		with self.assertRaises(frappe.ValidationError) as cm:
 			plan.insert(ignore_permissions=True)
 		message = str(cm.exception)
-		self.assertIn(\"carries 5 passengers\", message)
-		self.assertIn(\"short 2 seat\", message)
+		self.assertIn("carries 5 passengers", message)
+		self.assertIn("short 2 seat", message)
 
 	def test_the_refusal_quotes_the_trip_occupancy_not_the_headcount_sum(self):
 		"""WI-003479: whatever the walk says the peak is, that is the number quoted.
