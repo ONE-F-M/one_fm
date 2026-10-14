@@ -161,4 +161,5 @@ def send_due_rejection_emails() -> None:
 				1,
 				update_modified=False,
 			)
-		frappe.db.commit()
+		# Commit per row so a later failure cannot roll back a mail already queued and flagged.
+		frappe.db.commit()  # nosemgrep
