@@ -1,5 +1,6 @@
 import os
 
+import yaml
 from frappe.tests.utils import FrappeTestCase
 
 WORKFLOW = os.path.join(
@@ -26,6 +27,19 @@ class TestDeployProductionWorkflow(FrappeTestCase):
 	def test_hotfix_does_not_install_requirements(self):
 		self.assertFalse([line for line in self.lines if line.startswith("bench setup requirements")])
 		self.assertFalse([line for line in self.lines if line.endswith(".dist-info") and line.startswith("rm -rf")])
+
+	def test_merged_hotfix_pr_deploys(self):
+		with open(WORKFLOW) as f:
+			workflow = yaml.safe_load(f)
+		# PyYAML reads the bare key `on` as boolean True.
+		triggers = workflow.get("on", workflow.get(True))
+		self.assertIn("workflow_dispatch", triggers)
+		self.assertIn("pull_request", triggers)
+		self.assertEqual(triggers["pull_request"]["branches"], ["version-15"])
+		self.assertEqual(triggers["pull_request"]["types"], ["closed", "labeled"])
+		condition = workflow["jobs"]["deploy"]["if"]
+		self.assertIn("merged == true", condition)
+		self.assertIn("deploy-hotfix", condition)
 
 	def test_trap_is_set_before_the_workers_stop(self):
 		self.assertLess(self.trap_index(), self.lines.index(STOP_WORKERS))
