@@ -76,7 +76,7 @@
    "allow_on_submit": 1,
    "fieldname": "ref_doctype",
    "fieldtype": "Link",
-   "in_list_view": 1,
+   "in_list_view": 0,
    "label": "Ref DocType",
    "options": "DocType",
    "read_only": 1
