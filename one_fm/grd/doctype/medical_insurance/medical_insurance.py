@@ -170,6 +170,9 @@ def create_mi_record(WorkPermit, insurance_status=None):
     initial_state = initial_workflow_state(WorkPermit.work_permit_type)
     if initial_state != new_medical_insurance.workflow_state:
         new_medical_insurance.db_set("workflow_state", initial_state)
+        # The assignment rule ran on insert, against the state the workflow opened it in.
+        # Run it again now the state is the one the policy actually starts in.
+        frappe.automation.doctype.assignment_rule.assignment_rule.apply(new_medical_insurance)
 
     return new_medical_insurance
 
