@@ -28,6 +28,12 @@ def execute():
 		)
 
 		document = frappe.get_doc(DOCTYPE, record.name)
-		frappe.automation.doctype.assignment_rule.assignment_rule.apply(document)
+		# apply() returns early while frappe.flags.in_patch is set.
+		in_patch = frappe.flags.in_patch
+		frappe.flags.in_patch = False
+		try:
+			frappe.automation.doctype.assignment_rule.assignment_rule.apply(document)
+		finally:
+			frappe.flags.in_patch = in_patch
 
 		refresh_row_stage(record.preparation, record.employee)

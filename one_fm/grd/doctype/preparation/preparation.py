@@ -191,9 +191,8 @@ CATEGORIES = {
 FALLBACK_PREFIX = 'PRE-'
 
 
-# WI-002093: the order the legal steps run in, so a row can say which one the candidate has
-# reached. Furthest along wins - the sequence only moves forward, and what an operator wants
-# to see is progress, not the last document anybody happened to touch.
+# The order the legal steps run in. A row's Current Stage is the first of them that is not
+# Completed.
 SUB_DOCUMENT_SEQUENCE = ("Work Permit", "Medical Insurance", "Residency", "PACI")
 
 
@@ -467,7 +466,7 @@ class Preparation(Document):
 
         doc_total = sum(flt(row.total_amount) for row in self.preparation_record)
         frappe.db.set_value(self.doctype,self.name,'total_payment',doc_total)
-        self.total_payment = doc_total
+        self.set('total_payment', doc_total)
 
     def on_update_after_submit(self):
         self.compare_preparation_record()

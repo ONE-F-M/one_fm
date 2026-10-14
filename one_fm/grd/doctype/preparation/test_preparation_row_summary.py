@@ -7,6 +7,7 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import nowdate
 
 from one_fm import hooks
+from one_fm.grd.doctype.residency import residency
 from one_fm.grd.doctype.preparation.preparation import (
 	SUB_DOCUMENT_SEQUENCE,
 	create_documents_for_row,
@@ -55,6 +56,16 @@ class TestCurrentStage(FrappeTestCase):
 		self.assertEqual(stage["ref_name"], "Medical-Insurance-1")
 		self.assertEqual(stage["ref_doctype_status"], "Medical Insurance - Draft")
 
+	def test_all_four_in_draft_is_the_work_permit(self):
+		stage = current_stage([_doc(doctype) for doctype in SUB_DOCUMENT_SEQUENCE])
+		self.assertEqual(stage["ref_doctype_status"], "Work Permit - Draft")
+
+	def test_a_rejected_document_stops_the_row(self):
+		stage = current_stage(
+			[_doc("Work Permit", "Rejected", docstatus=1), _doc("Medical Insurance")]
+		)
+		self.assertEqual(stage["ref_doctype_status"], "Work Permit - Rejected")
+
 	def test_the_order_of_the_input_does_not_matter(self):
 		stage = current_stage([_doc("PACI"), _doc("Work Permit")])
 		self.assertEqual(stage["ref_doctype"], "Work Permit")
@@ -100,6 +111,7 @@ class TestPreparationRowSummary(FrappeTestCase):
 		self.assertTrue(meta.get_field("ref_doctype_status").in_list_view)
 		self.assertEqual(meta.get_field("ref_doctype_status").label, "Current Stage")
 		self.assertFalse(meta.get_field("total_amount").in_list_view)
+		self.assertLessEqual(len([d for d in meta.fields if d.in_list_view]), 5)
 
 	def test_the_status_is_not_the_operator_s_to_type(self):
 		meta = frappe.get_meta("Preparation Record")
@@ -135,6 +147,34 @@ class TestPreparationRowSummary(FrappeTestCase):
 		row = self._row(preparation)
 		state = frappe.db.get_value(row.ref_doctype, row.ref_name, "workflow_state")
 		self.assertEqual(row.ref_doctype_status, "{0} - {1}".format(row.ref_doctype, state))
+
+	def test_an_extension_row_starts_at_residency(self):
+		preparation = self._a_preparation(action="Extension", category="Renewal")
+		residency.create_moi_record(
+			frappe.get_doc("Employee", self.employee), "Extension", preparation.name
+		)
+
+		refresh_row_stage(preparation.name, self.employee)
+
+		row = self._row(preparation)
+		self.assertEqual(row.ref_doctype, "Residency")
+		self.assertEqual(row.ref_doctype_status, "Residency - Draft")
+
+	def test_a_completed_work_permit_moves_the_row_to_medical_insurance(self):
+		preparation = self._a_preparation()
+		create_documents_for_row(preparation.preparation_record[0], preparation.name)
+
+		work_permit = frappe.get_last_doc("Work Permit", filters={"preparation": preparation.name})
+		work_permit.db_set("workflow_state", "Completed")
+		medical_insurance = frappe.get_last_doc(
+			"Medical Insurance", filters={"preparation": preparation.name}
+		)
+		update_row_reference(medical_insurance)
+
+		self.assertEqual(
+			self._row(preparation).ref_doctype_status,
+			"Medical Insurance - {0}".format(medical_insurance.workflow_state),
+		)
 
 	def test_a_row_follows_the_document_when_it_is_cancelled(self):
 		preparation = self._a_preparation()
