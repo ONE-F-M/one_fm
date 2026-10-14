@@ -210,16 +210,18 @@ function mountRoutePlannerApp(wrapper, data) {
                     // AC3: partial or exact, case-insensitive, against the people on the
                     // card - which is how a dispatcher looks for one person rather than
                     // knowing which site they are posted to.
+                    // Both sides are flattened: a stored "Samir  Basnet" has to match a
+                    // typed "samir basnet" (WI-003501).
                     if (emp && !(c.employees || []).some(e =>
-                        String((e && e.name) || '').toLowerCase().includes(emp))) return false;
+                        normalizeSearchText(e && e.name).includes(emp))) return false;
 
                     if (!q) return true;
                     return (
-                        c.shift_name.toLowerCase().includes(q) ||
-                        c.site_location.toLowerCase().includes(q) ||
-                        c.accommodation.toLowerCase().includes(q) ||
-                        c.stop_location.toLowerCase().includes(q) ||
-                        (c.direction || '').toLowerCase().includes(q)
+                        normalizeSearchText(c.shift_name).includes(q) ||
+                        normalizeSearchText(c.site_location).includes(q) ||
+                        normalizeSearchText(c.accommodation).includes(q) ||
+                        normalizeSearchText(c.stop_location).includes(q) ||
+                        normalizeSearchText(c.direction).includes(q)
                     );
                 });
             },
