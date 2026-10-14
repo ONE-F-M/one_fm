@@ -666,6 +666,17 @@ function mountRoutePlannerApp(wrapper, data) {
 
         // ── Methods ────────────────────────────────────────────────────────
         methods: {
+            // WI-003501: the chips show three riders, so with an employee query set the
+            // riders it matched go first - otherwise a card found by name shows three
+            // other people. The "+N more" count still reads card.employees.length.
+            chipEmployees(card) {
+                const riders = card.employees || [];
+                const emp = normalizeSearchText(this.employeeQuery);
+                if (!emp) return riders;
+                const hit = e => normalizeSearchText(e && e.name).includes(emp);
+                return [...riders.filter(hit), ...riders.filter(e => !hit(e))];
+            },
+
 
             // ─ Time helpers ────────────────────────────────────────────────
 
