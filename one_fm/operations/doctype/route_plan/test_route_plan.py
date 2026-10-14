@@ -451,7 +451,7 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
 
 	def test_a_one_way_run_over_the_limit_is_refused_quoting_the_peak(self):
-		"""WI-003479: the error quotes the peak onboard load, not the stop sum.
+		"""The error quotes the peak onboard load, not the stop sum.
 
 		Two camps on one outbound run both board before the first drop, so the peak
 		is the sum: 3 + 2 = 5 on 3 legal seats.
@@ -467,7 +467,7 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 		self.assertIn("short 2 seat", message)
 
 	def test_the_refusal_quotes_the_trip_occupancy_not_the_headcount_sum(self):
-		"""WI-003479: whatever the walk says the peak is, that is the number quoted.
+		"""Whatever the walk says the peak is, that is the number quoted.
 
 		The walk is pinned to 4 so the message can only have come from the peak: the
 		summed headcount of the two rows is 5.
@@ -485,7 +485,7 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 		self.assertNotIn("carries 5 passengers", message)
 
 	def test_a_mixed_run_of_27_out_and_27_back_saves_on_a_27_seat_bus(self):
-		"""WI-003479: 54 riders in total, never more than 27 aboard at once."""
+		"""54 riders in total, never more than 27 aboard at once."""
 		plan = self._make_plan([
 			self._row(self.VEHICLE, trip="TRIP-2601", direction="OUTBOUND", headcount=27, stop=1),
 			self._row(self.VEHICLE, trip="TRIP-2601", direction="RETURN", headcount=27, stop=2),
