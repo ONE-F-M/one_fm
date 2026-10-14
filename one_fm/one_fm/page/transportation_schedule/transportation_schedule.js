@@ -12,6 +12,15 @@ const DEFAULT_BUFFER_MIN = 5;
 // as an instantaneous drive. A stop with nowhere onward legitimately carries none.
 const MIN_LEG_TRANSIT_MIN = 1;
 
+// ── Search text normalising (WI-003501) ─────────────────────────────────────────
+// Stored names carry doubled, leading and trailing spaces ("Samir  Basnet"), so a
+// filter has to flatten BOTH the typed query and the stored text before comparing.
+// test_search_normalize.js reads this helper out of the file by these two banners.
+function normalizeSearchText(s) {
+    return String(s || "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+// ── End search text normalising ─────────────────────────────────────────────────
+
 frappe.pages['transportation-schedule'].on_page_load = function (wrapper) {
     injectRPLoadingStyles();
     $(wrapper).html(`
