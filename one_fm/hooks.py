@@ -706,7 +706,9 @@ scheduler_events = {
 		"one_fm.api.tasks.validate_shift_assignment",
 		'one_fm.overrides.employee_checkin.auto_generate_checkin',
 		# WI-002283: close overtime requests nobody answered before the shift ended.
-		"one_fm.operations.doctype.employee_schedule.employee_schedule.reject_expired_dsot_requests"
+		"one_fm.operations.doctype.employee_schedule.employee_schedule.reject_expired_dsot_requests",
+		# Email rejected candidates once 48 hours have passed since their rejection.
+		"one_fm.hiring.rejection_notification.send_due_rejection_emails"
 	],
 	"monthly": [
 		"one_fm.accommodation.utils.execute_monthly",
