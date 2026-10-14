@@ -47,9 +47,7 @@ jobs:
             cd $BENCH/apps/one_fm
             git pull upstream version-15
             cd $BENCH
-            rm -rf env/lib/python*/site-packages/one_fm-*.dist-info
             trap 'status=$?; if [ $status -ne 0 ]; then sudo supervisorctl start $WORKERS; sudo supervisorctl restart $NAME-web:; fi' EXIT
-            bench setup requirements one_fm
 
             # Workers and the scheduler write Scheduled Job Log while migrate deletes from it.
             sudo supervisorctl stop $WORKERS
