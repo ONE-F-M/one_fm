@@ -369,6 +369,53 @@ class RoutePlan(Document):
 				for row in run["rows"]:
 					row.trip_name = fresh
 
+	def _rename_into_series(self, runs, series):
+		"""Rename the runs of one lane whose name belongs to another lane's series.
+
+		A trip name is the vehicle's row on the board plus a sequence ("S-9" + "01"). A
+		whole run moved to another vehicle keeps its name, so it reads as a different
+		lane's trip (WI-003454). A run is judged by ITS OWN name and (vehicle,
+		trip_group) key - never by looking a name up - and only when that name parses:
+		a hand-typed one is the dispatcher's, and a vehicle with no series is not on the
+		board, so both keep the existing behaviour.
+
+		The mapping for the whole lane is settled before a single row is written. The
+		names the lane keeps (runs already in the series, hand-typed ones) are reserved
+		first, so a renamed run can never take a name another run keeps; the earliest run
+		picks first and keeps its two-digit sequence if that is free.
+		"""
+		parsed = _parse_series(series)
+		if not parsed:
+			return
+
+		order = sorted(runs, key=lambda k: (runs[k]["start"], str(k)))
+		taken, moving = set(), []
+		for key in order:
+			name = runs[key]["name"]
+			match = TRIP_NAME.match(str(name).strip()) if name else None
+			if match and (match.group(1) or "", match.group(2)) != parsed:
+				moving.append((key, match.group(3)))
+			elif name:
+				taken.add(name)
+
+		prefix, number = parsed
+		mapping = {}
+		for key, sequence in moving:
+			fresh = f"{prefix}{number}{sequence}"
+			if fresh in taken:
+				fresh = _next_free_trip_name(parsed, taken)
+			if not fresh:
+				continue
+			taken.add(fresh)
+			mapping[key] = fresh
+
+		for key, fresh in mapping.items():
+			# Every row of the run: the cards, the camp legs with no shipment, and both
+			# directions that share the trip_group.
+			for row in runs[key]["rows"]:
+				row.trip_name = fresh
+			runs[key]["name"] = fresh
+
 	def _runs_by_vehicle(self) -> dict:
 		"""``{vehicle: {trip key: run}}`` over every row, camp legs included.
 
