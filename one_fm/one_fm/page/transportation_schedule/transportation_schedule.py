@@ -2477,11 +2477,25 @@ def _reliever_context(shift_name, date, row_name):
 
 
 def _trip_window(date, shift_start, shift_end, trip_times):
-    """(start, end) datetimes of the trip, or None when the times are not known."""
-    start_time = min(trip_times) if trip_times else shift_start
-    if start_time is None or shift_end is None:
+    """(start, end) datetimes of the trip, or None when the times are not known.
+
+    Start: the earliest trip stop time, or the covered shift start if earlier.
+    End: the covered shift end; without a covered shift, the latest trip stop time.
+    """
+    starts = [frappe.utils.to_timedelta(t) for t in [*trip_times, shift_start] if t is not None]
+    if not starts:
         return None
-    return _day_window(date, start_time, shift_end)
+    start_time = min(starts)
+    if shift_end is not None:
+        return _day_window(date, start_time, shift_end)
+    if not trip_times:
+        return None
+    # A single-stop trip gives a zero-length window instead of rolling a full day.
+    end_time = max(trip_times)
+    if end_time == start_time:
+        start = frappe.utils.get_datetime(date).replace(hour=0, minute=0, second=0, microsecond=0) + start_time
+        return start, start
+    return _day_window(date, start_time, end_time)
 
 
 def _roster_interval(row, shift_times):
@@ -2500,7 +2514,7 @@ def _build_reliever(employee, rows, date, shift_times, window):
     basic = next((r for r in today_rows if r.roster_type == "Basic"), None)
     ot = next((r for r in today_rows if r.roster_type == "Over-Time"), None)
 
-    basic_times = shift_times.get(basic.shift) if basic and basic.shift else None
+    basic_interval = _roster_interval(basic, shift_times) if basic else None
     ot_interval = _roster_interval(ot, shift_times) if ot else None
 
     overlap = False
@@ -2526,9 +2540,9 @@ def _build_reliever(employee, rows, date, shift_times, window):
         "designation": employee.designation or "",
         "mobile": employee.cell_number or "",
         # Today's Basic roster row only - no fallback to the master shift.
-        "shift_name": basic.shift if basic_times else None,
-        "shift_start_time": _hhmm(basic_times[0]) if basic_times else None,
-        "shift_end_time": _hhmm(basic_times[1]) if basic_times else None,
+        "shift_name": basic.shift if basic else None,
+        "shift_start_time": _hhmm(basic_interval[0]) if basic_interval else None,
+        "shift_end_time": _hhmm(basic_interval[1]) if basic_interval else None,
         "master_shift": employee.shift or None,
         "ot_shift": ot.shift if ot else None,
         "ot_start_time": _hhmm(ot_interval[0]) if ot_interval else None,

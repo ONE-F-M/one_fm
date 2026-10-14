@@ -408,7 +408,7 @@ class TestAPlacedBlockCanAlwaysBeOpened(FrappeTestCase):
 		self.assertIn("shipment_meta = {", source)
 
 
-# --- get_available_rambo_relievers: contextual roster card data (WI-003453) ---
+# --- get_available_rambo_relievers: contextual roster card data ---
 
 import datetime as _dt
 from types import SimpleNamespace
@@ -591,3 +591,73 @@ class TestAvailableRamboRelievers(FrappeTestCase):
 		]
 		result, _f, _p = self._run(rambos, rows, shift_name="DAY")
 		self.assertEqual([r["employee_name"] for r in result], ["Bob", "Cal", "Amy", "Zed"])
+
+	def test_trip_window_starts_at_the_covered_shift_when_it_is_earlier(self):
+		date = frappe.utils.getdate(_DAY)
+		start, end = _ts._trip_window(date, _HOURS(6), _HOURS(18), [_HOURS(6, 30)])
+		self.assertEqual(start, _at(_DAY, 6))
+		self.assertEqual(end, _at(_DAY, 18))
+
+	def test_trip_window_without_a_covered_shift_ends_at_the_last_stop(self):
+		date = frappe.utils.getdate(_DAY)
+		self.assertEqual(
+			_ts._trip_window(date, None, None, [_HOURS(5, 30), _HOURS(7)]),
+			(_at(_DAY, 5, 30), _at(_DAY, 7)),
+		)
+		# One stop: a zero-length window, not a whole day.
+		self.assertEqual(
+			_ts._trip_window(date, None, None, [_HOURS(5, 30)]),
+			(_at(_DAY, 5, 30), _at(_DAY, 5, 30)),
+		)
+
+	def test_overlap_helper_night_shift_crossing_midnight(self):
+		night = (_at(_DAY, 20), _at(_DAY, 8) + _dt.timedelta(days=1))
+		self.assertTrue(_ts._intervals_overlap(*night, _at("2026-03-11", 5, 30), _at("2026-03-11", 18)))
+		self.assertFalse(_ts._intervals_overlap(*night, _at("2026-03-11", 8), _at("2026-03-11", 18)))
+
+	def test_a_user_without_read_on_the_manifest_is_refused(self):
+		manifest = SimpleNamespace(
+			schedule_date=_DAY,
+			check_permission=Mock(side_effect=frappe.PermissionError),
+			transportation_manifest_details=[],
+		)
+		row = frappe._dict(parent="MAN-1", operations_shift="DAY", start_time=_HOURS(6),
+						   end_time=_HOURS(18), trip_id="T1", scheduled_time=_HOURS(5, 30))
+		with patch.object(_ts.frappe.db, "get_value", return_value=row), \
+			patch.object(_ts.frappe, "get_doc", return_value=manifest), \
+			patch.object(_ts, "_fetch_rambo_employees") as rambos:
+			with self.assertRaises(frappe.PermissionError):
+				_ts.get_available_rambo_relievers(row_name="ROW-1")
+		rambos.assert_not_called()
+
+	def test_basic_timing_comes_from_the_schedule_not_the_shift_master(self):
+		# The schedule says 07:00-15:00 although Operations Shift DAY is 06:00-18:00.
+		rows = [_roster("E1", "Basic", "DAY", start=_at(_DAY, 7), end=_at(_DAY, 15))]
+		result, _f, _p = self._run([_emp("E1")], rows, shift_name="NIGHT")
+		self.assertEqual(result[0]["shift_start_time"], "07:00")
+		self.assertEqual(result[0]["shift_end_time"], "15:00")
+
+	def test_three_relievers_against_a_day_shift(self):
+		nxt = "2026-03-11"
+		rambos = [
+			_emp("N", "Nina", shift="MASTER-N"),
+			_emp("D", "Dan", shift="MASTER-D"),
+			_emp("O", "Omar", shift="MASTER-O"),
+		]
+		rows = [
+			_roster("N", "Basic", "NIGHT", start=_at(_DAY, 20), end=_at(nxt, 8)),
+			_roster("D", "Basic", "DAY", start=_at(_DAY, 6), end=_at(_DAY, 18)),
+			_roster("D", "Over-Time", "OT", start=_at(_DAY, 18), end=_at(_DAY, 22)),
+			_roster("O", "Basic", "DAY", start=_at(_DAY, 6), end=_at(_DAY, 18), day_off_ot=1),
+		]
+		result, _f, _p = self._run(rambos, rows, shift_name="DAY")
+		by_name = {r["name"]: r for r in result}
+		self.assertEqual([r["name"] for r in result], ["N", "D", "O"])
+		self.assertFalse(by_name["N"]["overlap"])
+		self.assertFalse(by_name["N"]["is_ot"])
+		self.assertTrue(by_name["D"]["overlap"])
+		self.assertTrue(by_name["D"]["is_ot"])
+		self.assertTrue(by_name["O"]["overlap"])
+		self.assertTrue(by_name["O"]["is_ot"])
+		for r in result:
+			self.assertEqual(r["master_shift"], "MASTER-" + r["name"])
