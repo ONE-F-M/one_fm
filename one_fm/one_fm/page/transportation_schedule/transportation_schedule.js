@@ -5284,7 +5284,7 @@ function injectRPVueTemplate() {
                      @click.stop="onBlockClick(entry.primaryItem, $event)">
 
                     <!-- Native tooltip showing all stops + time -->
-                    <title>{{ entry.stops.some(s => bcard(s).needs_replan) ? '⚠ ' + __('Re-plan') + ' — ' : '' }}{{ entry.tripName ? entry.tripName + ' — ' : '' }}{{ entry.stopLabels.join(' → ') }} | {{ fmtTime(entry.start) }}–{{ fmtTime(entry.end) }} · {{ entry.headcount }} pax · Driver: {{ blockDriver(entry, vehicle) }}</title>
+                    <title>{{ entry.stops.some(s => bcard(s).needs_replan) ? '⚠ ' + __('Re-plan') + ' — ' : '' }}{{ entry.tripName ? entry.tripName + ' — ' : '' }}{{ entry.stopLabels.join(' → ') }} | {{ fmtTime(entry.start) }}–{{ fmtTime(entry.end) }} · {{ __('peak') }} {{ entry.headcount }} {{ __('aboard') }} · {{ entry.riders }} {{ __('riders in total') }} · Driver: {{ blockDriver(entry, vehicle) }}</title>
 
                     <!-- Clip path scoped to block bounds -->
                     <defs>
