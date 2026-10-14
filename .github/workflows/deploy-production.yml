@@ -50,7 +50,6 @@ jobs:
             rm -rf env/lib/python*/site-packages/one_fm-*.dist-info
             bench setup requirements one_fm
 
-            trap 'status=$?; if [ $status -ne 0 ]; then sudo supervisorctl start $WORKERS; fi' EXIT
             # Workers and the scheduler write Scheduled Job Log while migrate deletes from it.
             sudo supervisorctl stop $WORKERS
             # A scheduler orphaned by an earlier stop holds the lock supervisor's scheduler needs; [s] keeps pkill off this script.
