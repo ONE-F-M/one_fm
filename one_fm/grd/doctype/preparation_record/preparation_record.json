@@ -174,7 +174,7 @@
    "fieldname": "ref_doctype_status",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Ref Doctype Status",
+   "label": "Current Stage",
    "read_only": 1
   }
  ],
