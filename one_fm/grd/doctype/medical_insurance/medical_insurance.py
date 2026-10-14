@@ -4,6 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
+import frappe.automation.doctype.assignment_rule.assignment_rule
 from frappe.model.document import Document
 from frappe.utils import today, get_url,getdate, get_year_start
 from frappe import _
