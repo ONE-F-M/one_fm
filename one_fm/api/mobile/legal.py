@@ -1,7 +1,6 @@
 import frappe, base64
 from frappe.utils import cint
 from one_fm.legal.doctype.penalty_issuance.penalty_issuance import get_filtered_employees
-from one_fm.legal.doctype.penalty.penalty import send_email_to_legal, upload_image
 from frappe import _
 import json
 from one_fm.utils import response
@@ -132,93 +131,12 @@ def get_penalty_details(penalty_name):
 
 @frappe.whitelist()
 def accept_penalty(file, retries, docname):
-	"""
-	This is an API to accept penalty. To Accept Penalty, one needs to pass the face recognition test.
-	Image file in base64 format is passed through face regonition test. And, employee is given 3 tries.
-	If face recognition is true, the penalty gets accepted. 
-	If Face recognition fails even after 3 tries, the image is sent to legal mangager for investigation. 
+	"""Penalties are deducted at issuance; the endpoint stays for older app versions."""
+	return response("Penalties no longer need to be accepted or rejected.", {}, True, 200)
 
-	Params:
-	File: Base64 url of captured image.
-	Retries: number of tries left out of three
-	Docname: Name of the penalty doctype
-
-	Returns: 
-		'success' message upon verification || updated retries and 'error' message || Exception. 
-	"""
-	try:
-		import grpc
-		from one_fm.proto import facial_recognition_pb2_grpc, facial_recognition_pb2
-		
-		penalty_doc = frappe.get_doc("Penalty", docname)
-		retries_left = cint(retries) - 1
-		# setup channel
-		face_recognition_service_url = frappe.local.conf.face_recognition_service_url
-		channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
-		# setup stub
-		stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
-
-		# request body
-		req = facial_recognition_pb2.FaceRecognitionRequest(
-			username = frappe.session.user,
-			media_type = "image",
-			media_content = file,
-		)
-		# Call service stub and get response
-		res = stub.FaceRecognition(req)
-		if res.verification == "OK":
-			if cint(penalty_doc.retries) == 0:
-				penalty_doc.verified = 0
-				send_email_to_legal(penalty_doc)
-			else:
-				penalty_doc.verified = 1		
-				penalty_doc.workflow_state = "Penalty Accepted"
-			penalty_doc.save(ignore_permissions=True)
-			
-			file_doc = frappe.get_doc({
-				"doctype": "File",
-				"file_url": "/private/files/"+frappe.session.user+".png",
-				"file_name": frappe.session.user+".png",
-				"attached_to_doctype": "Penalty",
-				"attached_to_name": docname,
-				"folder": "Home/Attachments",
-				"is_private": 1
-			})
-			file_doc.flags.ignore_permissions = True
-			file_doc.insert()
-
-			frappe.db.commit()
-
-			return response("Penalty accepted successfully.", {}, True ,200)
-		else:
-			penalty_doc.db_set("retries", retries_left)
-			return response("Face Recognition Failed. You have "+str(retries_left)+" retries left." ,{"retries_left":retries_left},False,401)
-			# frappe.throw(_("Face could not be recognized. You have {0} retries left.").format(frappe.bold(retries_left)), title='Validation Error')
-
-	except Exception as exc:
-		frappe.log_error(message=frappe.get_traceback(), title='Penalty Acceptance Error')
-		return response(exc,{},False, 500)
 
 @frappe.whitelist()
 def reject_penalty(rejection_reason, docname):
-	"""
-	Params:
-	Reason for rejection: Basis and/or reasoning due to which the employee is rejecting the issuance of penalty.
-	Docname: Name of the penalty doctype
+	"""Penalties are deducted at issuance; the endpoint stays for older app versions."""
+	return response("Penalties no longer need to be accepted or rejected.", {}, True, 200)
 
-	Returns: 
-		'success' message upon successful rejection of the penalty || 'No penalty found' if the penalty doesnt exist || Exception. 
-	"""
-	try:
-		penalty = frappe.get_doc("Penalty", docname)
-		if penalty.workflow_state == 'Penalty Issued':
-			penalty.reason_for_rejection = rejection_reason
-			penalty.workflow_state = "Penalty Rejected"
-			penalty.save(ignore_permissions=True)
-			frappe.db.commit()
-			return response("Penalty Rejected", {}, True, 200)
-		else:
-			return response("No penalty {docname} found." , {}, False, 401)
-	except Exception as exc:
-		frappe.log_error(message=frappe.get_traceback(), title='Penalty Rejection Error')
-		return response(exc,{},False, 500)

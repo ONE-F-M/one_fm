@@ -19,7 +19,8 @@
   "operations_manager_user",
   "section_break_zhpk",
   "operations_post_requirement",
-  "amended_from"
+  "amended_from",
+  "workflow_state"
  ],
  "fields": [
   {
@@ -116,6 +117,17 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Draft",
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "no_copy": 1,
+   "options": "Workflow State",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
@@ -128,7 +140,7 @@
    "link_fieldname": "temporary_deployment"
   }
  ],
- "modified": "2026-03-15 09:46:45.276417",
+ "modified": "2026-10-11 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Temporary Deployment",

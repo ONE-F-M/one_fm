@@ -239,7 +239,19 @@ def google_map_api():
                         strip_html(str(e)) or type(e).__name__)
 
 
-def verify_via_face_recogniton_service(url: str, data: dict, files: dict) -> tuple:
+def get_video_extension(video_mime: str = None):
+    """Return ".mp4" for a missing value or video/mp4, ".webm" for any video/webm type, else None."""
+    if not video_mime:
+        return ".mp4"
+    mime = cstr(video_mime).strip().lower()
+    if mime == "video/mp4":
+        return ".mp4"
+    if mime.startswith("video/webm"):
+        return ".webm"
+    return None
+
+
+def verify_via_face_recogniton_service(url: str, data: dict, files: dict, video_mime: str = None) -> tuple:
     decrypt_video = 1 if type(files.get('video_file'))==str else 0
     data['decrypt_video'] = decrypt_video
 
@@ -248,7 +260,7 @@ def verify_via_face_recogniton_service(url: str, data: dict, files: dict) -> tup
     except requests.exceptions.RequestException:
         frappe.log_error(
             title=f"Mobile API: face recognition service unreachable | {frappe.session.user}",
-            message=frappe.get_traceback(),
+            message=f"{frappe.get_traceback()}\nvideo_mime: {video_mime}",
         )
         return False, _("Face verification is temporarily unavailable. Please try again in a "
                         "few minutes, or contact your Site Supervisor.")
@@ -258,7 +270,7 @@ def verify_via_face_recogniton_service(url: str, data: dict, files: dict) -> tup
         if api_response.get("error"):
             traceback = api_response.get("traceback")
             message = api_response.get("message")
-            frappe.log_error(title=f"Error from face recognition system -- {frappe.session.user}", message=f"{traceback} -- {message}")# if traceback else None
+            frappe.log_error(title=f"Error from face recognition system -- {frappe.session.user}", message=f"{traceback} -- {message} -- video_mime: {video_mime}")# if traceback else None
             return False, message
         return True, ""
 

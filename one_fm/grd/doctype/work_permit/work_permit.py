@@ -510,6 +510,21 @@ class WorkPermit(Document):
     def get_required_documents(self):
         set_required_documents(self)
 
+    def get_under_company_residency_on_completion(self):
+        """The Employee's under_company_residency once this permit is Completed.
+
+        1 for a completed permit that puts the employee under company residency, 0 for a
+        completed Cancellation, None when the permit must not touch the flag (Kuwaitis are
+        not under company residency, and a permit that is not Completed changes nothing).
+        """
+        if self.workflow_state != "Completed":
+            return None
+        if self.work_permit_type == "Cancellation":
+            return 0
+        if self.work_permit_type in ("Renewal Kuwaiti", "New Kuwaiti"):
+            return None
+        return 1
+
     def set_new_pam_details_in_employee(self):
         if self.workflow_state == "Completed":
             employee = frappe.get_doc("Employee", self.employee)
@@ -524,10 +539,34 @@ class WorkPermit(Document):
             if self.new_work_permit_salary_ and self.new_work_permit_salary_ != employee.work_permit_salary:
                 fields_to_update['work_permit_salary'] = self.new_work_permit_salary_
 
+            # Residency flag. The save below runs EmployeeOverride.validate,
+            # which recomputes the residency digit of employee_id from this flag.
+            residency = self.get_under_company_residency_on_completion()
+            if residency is not None and cint(employee.under_company_residency) != residency:
+                fields_to_update['under_company_residency'] = residency
+
             if fields_to_update:
                 employee.update(fields_to_update)
                 employee.save()
                 frappe.db.commit()
+
+    def on_cancel(self):
+        self.revert_under_company_residency()
+
+    def revert_under_company_residency(self):
+        """Cancelling a Completed permit undoes what its completion did to the flag.
+
+        workflow_state stays Completed on cancel, so the same rule tells which way it went.
+        The save recomputes the residency digit of employee_id.
+        """
+        residency = self.get_under_company_residency_on_completion()
+        if residency is None:
+            return
+        employee = frappe.get_doc("Employee", self.employee)
+        restored = 1 - residency
+        if cint(employee.under_company_residency) != restored:
+            employee.under_company_residency = restored
+            employee.save()
 
 def set_required_documents(doc):
     if frappe.db.exists('Work Permit Required Documents Template', {'work_permit_type':doc.work_permit_type}):
