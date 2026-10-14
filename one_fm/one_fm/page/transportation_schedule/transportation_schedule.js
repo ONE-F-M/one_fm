@@ -476,7 +476,16 @@ function mountRoutePlannerApp(wrapper, data) {
                             direction: this.runDirection(stops),
                             start: runStart,
                             end: runEnd,
-                            headcount: totalHC,
+                            // The most aboard at once, which is what the bus is held
+                            // to - the same walk the lane colour and the save use.
+                            // The sum of every stop's riders is kept apart, for the
+                            // tooltip only.
+                            headcount: this.tripOccupancy({
+                                direction: this.runDirection(stops),
+                                headcount: totalHC,
+                                stops,
+                            }),
+                            riders: totalHC,
                             stopLabels,
                             stops,
                             conflict: stops.some(s => s.conflict),
