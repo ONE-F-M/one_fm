@@ -1598,7 +1598,7 @@ class TestRoutePlanTripSeries(FrappeTestCase):
 		self.assertEqual([r.card_id for r in manifest_row_order(rows)], ["c1", "c2"])
 
 
-class TestRenameTripNamesPatch(unittest.TestCase):
+class TestRenameTripNamesPatch(FrappeTestCase):
 	"""The patch follows renamed runs onto manifests dated today or later only."""
 
 	def test_a_manifest_row_dated_today_is_renamed_and_yesterday_is_not(self):
