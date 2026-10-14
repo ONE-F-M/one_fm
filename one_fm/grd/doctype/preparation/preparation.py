@@ -548,6 +548,8 @@ class Preparation(Document):
         self.recall_create_paci() # create paci record for all
         # self.recall_create_fp()# create fp record for all
         self.recall_create_documents_for_new_actions() # WI-001824: New Kuwaiti / Overseas
+        for row in self.preparation_record:
+            refresh_row_stage(self.name, row.employee)
         self.send_notifications()
 
     def recall_create_documents_for_new_actions(self):
