@@ -341,7 +341,12 @@ class RoutePlan(Document):
 		has been looking at - and each later claimant takes the next free sequence for
 		that vehicle.
 		"""
-		for vehicle, runs in self._runs_by_vehicle().items():
+		by_vehicle = self._runs_by_vehicle()
+		series_of = _canvas_series() if by_vehicle else {}
+		for vehicle, runs in by_vehicle.items():
+			# First, a run that sits on the wrong lane for its name is renamed into the
+			# lane's own series (WI-003454); only then are the lane's duplicates sorted.
+			self._rename_into_series(runs, series_of.get(vehicle))
 			taken = {name for run in runs.values() for name in {run["name"]} if name}
 			shape = _trip_name_shape(taken)
 			if not shape:
