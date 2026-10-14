@@ -163,7 +163,10 @@ def get_route_planner_data():
                 "accommodation": acc_name,
                 "location":      v.location,
                 "coords":        {"lat": coords[0], "lng": coords[1]},
-                "is_leased":     v.one_fm_vehicle_category == "Leased"
+                "is_leased":     v.one_fm_vehicle_category == "Leased",
+                # WI-003454: the series a trip name on this lane is minted in ("S-9",
+                # "26"), so the canvas never has to guess the row from the id.
+                "trip_series":   trip_series[v.name],
             })
 
         # ── 2. Shipment cards (materialized in the backend) ──
