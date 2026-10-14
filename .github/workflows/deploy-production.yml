@@ -15,8 +15,11 @@ concurrency:
 
 jobs:
   deploy:
-    # Only the copy of this workflow on version-15 may deploy.
-    if: github.ref == 'refs/heads/version-15'
+    # Manual runs deploy only from version-15; PR runs only for a merged PR into version-15 labelled deploy-hotfix.
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/version-15') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true &&
+       contains(github.event.pull_request.labels.*.name, 'deploy-hotfix'))
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
