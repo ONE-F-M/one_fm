@@ -1,7 +1,7 @@
 import frappe
 from frappe.utils import getdate, nowdate
 
-# WI-003454: a run moved whole onto another vehicle kept its old trip name, so
+# A run moved whole onto another vehicle kept its old trip name, so
 # "S-101" (vehicle 1, run 01) sat on the 9th lane (production plan RP-2026-06-1754678,
 # trip_group MIX-d859747188e5, VHL-L-0015).
 #
@@ -54,10 +54,10 @@ def execute():
 		for (plan, vehicle, _group, old), new in sorted(
 			runs.items(), key=lambda item: (item[0][0], str(item[0][1]), str(item[0][3]))
 		):
-			print(f"WI-003454: {plan} {vehicle}: {old} -> {new}")
+			print(f"Trip rename: {plan} {vehicle}: {old} -> {new}")
 		vehicles = {(plan, vehicle) for (plan, vehicle, _g, _o) in runs}
 		print(
-			f"WI-003454: renamed {len(runs)} run(s) on {len(vehicles)} vehicle(s); "
+			f"Trip rename: renamed {len(runs)} run(s) on {len(vehicles)} vehicle(s); "
 			f"{manifest_rows} manifest row(s) from {today} on followed"
 		)
 

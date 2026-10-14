@@ -345,7 +345,7 @@ class RoutePlan(Document):
 		series_of = _canvas_series() if by_vehicle else {}
 		for vehicle, runs in by_vehicle.items():
 			# First, a run that sits on the wrong lane for its name is renamed into the
-			# lane's own series (WI-003454); only then are the lane's duplicates sorted.
+			# lane's own series; only then are the lane's duplicates sorted.
 			self._rename_into_series(runs, series_of.get(vehicle))
 			taken = {name for run in runs.values() for name in {run["name"]} if name}
 			shape = _trip_name_shape(taken)
@@ -374,7 +374,7 @@ class RoutePlan(Document):
 
 		A trip name is the vehicle's row on the board plus a sequence ("S-9" + "01"). A
 		whole run moved to another vehicle keeps its name, so it reads as a different
-		lane's trip (WI-003454). A run is judged by ITS OWN name and (vehicle,
+		lane's trip. A run is judged by ITS OWN name and (vehicle,
 		trip_group) key - never by looking a name up - and only when that name parses:
 		a hand-typed one is the dispatcher's, and a vehicle with no series is not on the
 		board, so both keep the existing behaviour.
@@ -747,7 +747,7 @@ def _parse_series(series):
 
 
 def _canvas_series() -> dict:
-	"""``{vehicle: series}`` exactly as the canvas numbers its lanes (WI-003454).
+	"""``{vehicle: series}`` exactly as the canvas numbers its lanes.
 
 	Imported on the spot because the page module imports this one. A failure to read
 	the board's vehicle list must not stop a plan saving, so it falls back to no series

@@ -131,7 +131,7 @@ def get_route_planner_data():
         MAHBOULA_LABELS = {"Mahboula 3", "Mahboula 12", "Mahboula 13", "Mahboula 15"}
 
         # The row number the canvas puts in a trip name - the same helper the server
-        # uses to repair a name, so the two cannot disagree (WI-003454).
+        # uses to repair a name, so the two cannot disagree.
         trip_series = canvas_trip_series(transport_vehicles, get_coords_cached)
 
         vehicles = []
@@ -164,8 +164,7 @@ def get_route_planner_data():
                 "location":      v.location,
                 "coords":        {"lat": coords[0], "lng": coords[1]},
                 "is_leased":     v.one_fm_vehicle_category == "Leased",
-                # WI-003454: the series a trip name on this lane is minted in ("S-9",
-                # "26"), so the canvas never has to guess the row from the id.
+                # The series a trip name on this lane is minted in ("S-9", "26").
                 "trip_series":   trip_series[v.name],
             })
 
@@ -1480,14 +1479,15 @@ def save_assignments(plan_name: str, swim_items: str, assigned_cards: str,
             "saved_at": str(doc.last_modified_at or frappe.utils.now()),
             "assignment_count": len(doc.assignments),
             # The trip names the plan actually STORED, which are not always the ones the
-            # board sent: a name already in use on that vehicle is repaired on save
-            # (WI-002401). The save is otherwise silent, so without handing these back the
-            # board would keep showing the old name for the rest of the session and then
-            # appear to rename the run by itself on the next load.
+            # board sent: a duplicate on a vehicle, or a name in another lane's series, is
+            # repaired on save. The save is otherwise silent, so without handing these back
+            # the board would keep showing the old name for the rest of the session.
+            # "vehicle|trip_group", because one trip_group can sit on two vehicles (one
+            # direction reassigned) under two names.
             "trip_names": {
-                row.trip_group: row.trip_name
+                f"{row.vehicle}|{row.trip_group}": row.trip_name
                 for row in doc.assignments
-                if row.trip_group and row.trip_name
+                if row.vehicle and row.trip_group and row.trip_name
             },
         }
 
@@ -1708,7 +1708,7 @@ def manifest_row_order(rows) -> list:
 	# By the hour each run leaves in Kuwait, counted from where the canvas starts its
 	# day. The raw stamp cannot be used: its DATE half is the multi-day lock lifespan
 	# (TR-8), not the day the bus runs, so a run placed on 09-10 sorted after one
-	# placed on 08-20 however much earlier it left (WI-003454).
+	# placed on 08-20 however much earlier it left.
 	leaves = {}
 	for row in rows:
 		at = clock_of(row)
@@ -2234,7 +2234,7 @@ def get_manifest_data_for_plan(plan_name: str):
 
 			# Both stamps are put on the run's own departure day, rolled past midnight,
 			# so the page can sort a run's stops on them; their date half is the lock
-			# lifespan and says nothing about when the bus is there (WI-003454).
+			# lifespan and says nothing about when the bus is there.
 			run_left = run_departure.get(row.trip_group or f"\0{row.card_id}")
 			boards_at = _rebase_stamp(boards_at, run_left)
 			alights_at = _rebase_stamp(alights_at, run_left)

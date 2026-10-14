@@ -1377,7 +1377,7 @@ class TestATripNameNamesOneRun(FrappeTestCase):
 
 
 class TestRoutePlanTripSeries(FrappeTestCase):
-	"""A run moved whole onto another lane is renamed into that lane's series (WI-003454).
+	"""A run moved whole onto another lane is renamed into that lane's series.
 
 	The canvas numbers a lane by its position on the board ("S-9" for the ninth, Leased,
 	vehicle), so a run on the ninth lane called S-101 reads as the first lane's trip.
@@ -1512,6 +1512,9 @@ class TestRoutePlanTripSeries(FrappeTestCase):
 		self._repair(doc)
 
 		self.assertEqual([row.trip_name for row in doc.assignments], ["S-901"] * 3)
+		# Manifest attendance locks (active_stop_by_trip) are keyed by trip_group, which a
+		# rename never touches, so checked stops stay checked.
+		self.assertEqual({row.trip_group for row in doc.assignments}, {"T1"})
 
 	def test_an_over_capacity_plan_is_renamed_without_an_exception(self):
 		# The repair never validates capacity - a patch must not fail on a full bus.
