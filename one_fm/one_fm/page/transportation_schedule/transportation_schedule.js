@@ -204,7 +204,7 @@ function mountRoutePlannerApp(wrapper, data) {
                     if (shift) {
                         const name = c.shift_name || '';
                         if (shiftIsExact ? name !== shift
-                                         : !name.toLowerCase().includes(shiftLower)) return false;
+                                         : !normalizeSearchText(name).includes(shiftLower)) return false;
                     }
 
                     // AC3: partial or exact, case-insensitive, against the people on the
