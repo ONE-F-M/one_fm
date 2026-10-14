@@ -2231,6 +2231,13 @@ def get_manifest_data_for_plan(plan_name: str):
 				or camp_departure.get(row.trip_group),
 			)
 
+			# Both stamps are put on the run's own departure day, rolled past midnight,
+			# so the page can sort a run's stops on them; their date half is the lock
+			# lifespan and says nothing about when the bus is there (WI-003454).
+			run_left = run_departure.get(row.trip_group or f"\0{row.card_id}")
+			boards_at = _rebase_stamp(boards_at, run_left)
+			alights_at = _rebase_stamp(alights_at, run_left)
+
 			visits.append({
 				"shipmentIndex": s_idx, "isPickup": True, "startTime": boards_at,
 				"loadDemands": {"seats": {"amount": str(hc)}},
