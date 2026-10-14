@@ -1,5 +1,6 @@
 import os
 
+import yaml
 from frappe.tests.utils import FrappeTestCase
 
 WORKFLOW = os.path.join(
