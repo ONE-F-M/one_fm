@@ -5339,7 +5339,7 @@ function injectRPVueTemplate() {
                         +{{ entry.stopLabels.length - Math.floor((mbh(entry) - 56) / 18) }} more
                       </text>
 
-                      <!-- Bottom: Time range + total headcount -->
+                      <!-- Bottom: Time range + peak aboard (not the sum of every stop) -->
                       <text v-if="mbw(entry) >= 60 && mbh(entry) >= 40"
                             :x="mbx(entry) + 8" :y="mby(entry) + mbh(entry) - 10"
                             fill="rgba(255,255,255,0.85)" font-size="12"
