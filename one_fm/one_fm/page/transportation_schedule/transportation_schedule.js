@@ -5076,7 +5076,7 @@ function injectRPVueTemplate() {
                 </div>
               </div>
               <div class="rp-card-employees">
-                <span v-for="(e, ei) in card.employees.slice(0,3)" :key="card.id + '_' + ei" class="rp-emp-chip rp-emp-chip-call" @click.stop="handleEmployeeCall(e)" :title="empMobile(e) ? 'Call ' + empMobile(e) : 'No mobile number'">
+                <span v-for="(e, ei) in chipEmployees(card).slice(0,3)" :key="card.id + '_' + ei" class="rp-emp-chip rp-emp-chip-call" @click.stop="handleEmployeeCall(e)" :title="empMobile(e) ? 'Call ' + empMobile(e) : 'No mobile number'">
                   {{ empName(e) }}
                   <span class="rp-icon rp-call-icon" :class="empMobile(e) ? '' : 'rp-call-disabled'">call</span>
                 </span>
