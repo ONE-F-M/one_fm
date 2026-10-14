@@ -473,16 +473,16 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 		summed headcount of the two rows is 5.
 		"""
 		plan = self._make_plan([
-			self._row(self.VEHICLE, trip=\"TRIP-PIN\", headcount=3),
-			self._row(self.VEHICLE, trip=\"TRIP-PIN\", headcount=2),
+			self._row(self.VEHICLE, trip="TRIP-PIN", headcount=3),
+			self._row(self.VEHICLE, trip="TRIP-PIN", headcount=2),
 		])
-		with patch.object(route_plan_module, \"_trip_peak\", return_value=(4, 1)):
+		with patch.object(route_plan_module, "_trip_peak", return_value=(4, 1)):
 			with self.assertRaises(frappe.ValidationError) as cm:
 				plan.insert(ignore_permissions=True)
 		message = str(cm.exception)
-		self.assertIn(\"carries 4 passengers\", message)
-		self.assertIn(\"short 1 seat\", message)
-		self.assertNotIn(\"carries 5 passengers\", message)
+		self.assertIn("carries 4 passengers", message)
+		self.assertIn("short 1 seat", message)
+		self.assertNotIn("carries 5 passengers", message)
 
 	def test_a_mixed_run_of_27_out_and_27_back_saves_on_a_27_seat_bus(self):
 		"""WI-003479: 54 riders in total, never more than 27 aboard at once."""
