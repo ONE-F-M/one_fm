@@ -2618,8 +2618,25 @@ function mountRoutePlannerApp(wrapper, data) {
                 // Sorting on stopIndex alone read the physical stop number the save
                 // stamps from the itinerary, so a reordered run was walked in its old
                 // order and the lane and the save could reach different peaks.
-                const stops = this._inRunOrder(trip.stops);
                 const boards = (item) => this.cardOwnDirection(item) === 'RETURN';
+                const ordered = this._inRunOrder(trip.stops);
+
+                // Stops that start at the same time of day are served drop-off first,
+                // as the server does (arrival_order): at a handover the outbound card
+                // alights before the return card boards, whichever is listed first.
+                // The tie is read off the clock, not the stamp - the stored date half
+                // is a lock lifespan, not the day the bus runs, and the stamps are UTC
+                // while the board shows Kuwait time. _inRunOrder is left as it is: the
+                // drawer and the modal read it too.
+                const stops = [];
+                for (let i = 0; i < ordered.length;) {
+                    const at = this._clockSeconds(ordered[i].start);
+                    let j = i + 1;
+                    while (j < ordered.length && this._clockSeconds(ordered[j].start) === at) j++;
+                    const tied = ordered.slice(i, j);
+                    stops.push(...tied.filter(s => !boards(s)), ...tied.filter(boards));
+                    i = j;
+                }
 
                 // Everyone the trip carries out of the camp is aboard before stop 1.
                 let onBoard = stops.reduce((n, s) => n + (boards(s) ? 0 : (s.headcount || 0)), 0);
