@@ -106,13 +106,13 @@ def transfer_insurance_already_open(employee):
 # because Draft is now that first state and would otherwise become the default for all of
 # them.
 DRAFT = "Draft"
-APPLY_ONLINE_BY_PRO = "Apply Online by PRO"
+APPLY_ONLINE_BY_GR_OPERATOR = "Apply Online by GR Operator"
 OVERSEAS_WORK_PERMIT_TYPES = ("Overseas", "Overseas (Government)")
 
 
 def initial_workflow_state(work_permit_type):
 	"""Where a policy opened against this kind of Work Permit starts (WI-002098)."""
-	return DRAFT if work_permit_type in OVERSEAS_WORK_PERMIT_TYPES else APPLY_ONLINE_BY_PRO
+	return DRAFT if work_permit_type in OVERSEAS_WORK_PERMIT_TYPES else APPLY_ONLINE_BY_GR_OPERATOR
 
 
 def create_mi_record(WorkPermit, insurance_status=None):
