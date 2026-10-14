@@ -130,6 +130,10 @@ def get_route_planner_data():
 
         MAHBOULA_LABELS = {"Mahboula 3", "Mahboula 12", "Mahboula 13", "Mahboula 15"}
 
+        # The row number the canvas puts in a trip name - the same helper the server
+        # uses to repair a name, so the two cannot disagree (WI-003454).
+        trip_series = canvas_trip_series(transport_vehicles, get_coords_cached)
+
         vehicles = []
         for v in transport_vehicles:
             coords = get_coords_cached("Location", v.location)
