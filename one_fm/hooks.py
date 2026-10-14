@@ -354,8 +354,9 @@ doc_events = {
 		"on_update": [
 			"one_fm.one_fm.utils.send_notification_to_grd_or_recruiter",
 			"one_fm.utils.on_update_job_applicant",
-			# WI-002598: tell the candidate their application was rejected. on_update
-			# rather than validate, so nothing is sent for a change that then fails to
+			# Stamp the rejection time when the application is rejected. The candidate is
+			# emailed 48 hours later by the hourly send_due_rejection_emails job. on_update
+			# rather than validate, so nothing is stamped for a change that then fails to
 			# save.
 			"one_fm.hiring.rejection_notification.notify_on_rejection"
 		]
