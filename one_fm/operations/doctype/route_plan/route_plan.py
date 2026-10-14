@@ -297,7 +297,10 @@ class RoutePlan(Document):
 					# bus can actually carry (WI-002071).
 					self._validate_mixed_trip_legs(trip, limit)
 				elif trip.headcount > limit:
-					self._throw_capacity_exceeded(vehicle, trip.direction, trip.headcount,
+					# Quote the peak onboard load, not the sum of every stop's riders
+					# (WI-003479). A one-way run reads the same either way, because
+					# every rider boards at the camps first.
+					self._throw_capacity_exceeded(vehicle, trip.direction, trip.occupancy,
 												  limit, self._trip_label(trip))
 
 			# Trips that overlap in time DO share the bus, so no single one of them is
