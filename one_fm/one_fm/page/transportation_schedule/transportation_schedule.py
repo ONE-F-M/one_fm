@@ -7,6 +7,7 @@ from one_fm.one_fm.doctype.transportation_shipment.roster_overlay import apply_t
 from one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log import get_handover_windows
 from one_fm.operations.doctype.route_plan.route_plan import (
     _card_direction,
+    _iso_time_of_day,
     card_rows,
     live_headcounts,
     row_headcount,
