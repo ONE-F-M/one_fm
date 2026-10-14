@@ -1,4 +1,4 @@
-"""WI-003633: fill Operations Shift on the open check-ins.
+"""Fill Operations Shift on the open check-ins.
 
 The field is a fetch_from of employee.shift, which Frappe refreshes whenever a check-in is
 saved. Check-ins that are already open have not been saved since the field was added, so they

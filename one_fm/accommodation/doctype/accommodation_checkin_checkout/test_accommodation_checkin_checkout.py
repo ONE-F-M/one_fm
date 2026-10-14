@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2020, ONE FM and Contributors
 # See license.txt
-"""Accommodation Checkin Checkout carries the Operations Shift of its employee (WI-003633)."""
+"""Accommodation Checkin Checkout carries the Operations Shift of its employee."""
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -74,7 +74,10 @@ class TestAccommodationCheckinCheckout(FrappeTestCase):
 		out = make_checkin(self.employee, type="OUT")
 		# Put the rows back as they were before the field existed.
 		frappe.db.set_value(DOCTYPE, closed_in.name, "checked_out", 1)
-		frappe.db.sql(f"update `tab{DOCTYPE}` set operations_shift = NULL")
+		checkin = frappe.qb.DocType(DOCTYPE)
+		frappe.qb.update(checkin).set(checkin.operations_shift, None).where(
+			checkin.name.isin([open_in.name, closed_in.name, out.name])
+		).run()
 
 		backfill()
 
