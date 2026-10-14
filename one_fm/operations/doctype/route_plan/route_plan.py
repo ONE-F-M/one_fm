@@ -738,6 +738,32 @@ def _trip_name_shape(names):
 	return max(shapes, key=lambda shape: (shapes[shape], shape))
 
 
+def _parse_series(series):
+	"""``"S-9"`` -> ``("S-", "9")``, ``"26"`` -> ``("", "26")``; None when it is not one."""
+	match = re.match(r"^(S-)?(\d+)$", str(series or "").strip())
+	if not match:
+		return None
+	return (match.group(1) or "", match.group(2))
+
+
+def _canvas_series() -> dict:
+	"""``{vehicle: series}`` exactly as the canvas numbers its lanes (WI-003454).
+
+	Imported on the spot because the page module imports this one. A failure to read
+	the board's vehicle list must not stop a plan saving, so it falls back to no series
+	- which is the behaviour before the series existed.
+	"""
+	try:
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			canvas_trip_series,
+		)
+
+		return canvas_trip_series() or {}
+	except Exception:
+		frappe.log_error(title="Route Plan: canvas trip series unavailable")
+		return {}
+
+
 def _next_free_trip_name(shape, taken):
 	"""The lowest sequence in this lane's series that nothing is using yet.
 
