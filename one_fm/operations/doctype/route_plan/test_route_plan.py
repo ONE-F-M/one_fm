@@ -1,10 +1,13 @@
 # Copyright (c) 2026, oneaborance and contributors
 # See license.txt
 
+from unittest.mock import patch
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, getdate, today
 
+from one_fm.operations.doctype.route_plan import route_plan as route_plan_module
 from one_fm.operations.doctype.route_plan.route_plan import (
 	_date_ranges_overlap,
 	_detect_retention_conflict,
