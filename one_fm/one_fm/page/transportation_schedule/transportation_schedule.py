@@ -2193,6 +2193,7 @@ def get_manifest_data_for_plan(plan_name: str):
 		# HASH before this, so a 06:48 run could be listed after an 08:27 one - and the
 		# vehicle's day then read 08:27 to 07:12, wrapping midnight into 22h 45m.
 		v_rows = manifest_row_order(vehicle_items[vid])
+		run_departure = _run_departures(v_rows, leg_rows.get(vid, []))
 
 		visits = []
 		trans = [{"travelDuration": "0s", "waitDuration": "0s", "travelDistanceMeters": 0}]
