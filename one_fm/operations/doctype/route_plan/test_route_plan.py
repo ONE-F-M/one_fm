@@ -1376,7 +1376,7 @@ class TestATripNameNamesOneRun(FrappeTestCase):
 		self.assertEqual(sorted(names), ["S-101", "S-106"])
 
 
-class TestRoutePlanTripSeries(unittest.TestCase):
+class TestRoutePlanTripSeries(FrappeTestCase):
 	"""A run moved whole onto another lane is renamed into that lane's series (WI-003454).
 
 	The canvas numbers a lane by its position on the board ("S-9" for the ninth, Leased,
