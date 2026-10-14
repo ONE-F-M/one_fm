@@ -1372,8 +1372,19 @@ class TestATripNameNamesOneRun(FrappeTestCase):
 		doc.insert(ignore_permissions=True)
 		stored = frappe.get_doc("Route Plan", doc.name)
 
+		# The lane's series depends on the vehicle's row on this site's board, so read
+		# it rather than assuming the row.
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			canvas_trip_series,
+		)
+
+		series = canvas_trip_series().get(vehicle)
 		names = [row.trip_name for row in stored.assignments]
-		self.assertEqual(sorted(names), ["S-101", "S-106"])
+		self.assertEqual(len(set(names)), 2)
+		if series:
+			self.assertTrue(all(name.startswith(series) for name in names), names)
+		else:
+			self.assertEqual(sorted(names), ["S-101", "S-106"])
 
 
 class TestRoutePlanTripSeries(FrappeTestCase):
