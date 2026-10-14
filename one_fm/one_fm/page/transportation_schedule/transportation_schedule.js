@@ -12,7 +12,7 @@ const DEFAULT_BUFFER_MIN = 5;
 // as an instantaneous drive. A stop with nowhere onward legitimately carries none.
 const MIN_LEG_TRANSIT_MIN = 1;
 
-// ── Search text normalising (WI-003501) ─────────────────────────────────────────
+// ── Search text normalising ─────────────────────────────────────────────────────
 // Stored names carry doubled, leading and trailing spaces ("Samir  Basnet"), so a
 // filter has to flatten BOTH the typed query and the stored text before comparing.
 // test_search_normalize.js reads this helper out of the file by these two banners.
@@ -211,7 +211,7 @@ function mountRoutePlannerApp(wrapper, data) {
                     // card - which is how a dispatcher looks for one person rather than
                     // knowing which site they are posted to.
                     // Both sides are flattened: a stored "Samir  Basnet" has to match a
-                    // typed "samir basnet" (WI-003501).
+                    // typed "samir basnet".
                     if (emp && !(c.employees || []).some(e =>
                         normalizeSearchText(e && e.name).includes(emp))) return false;
 
@@ -666,7 +666,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
         // ── Methods ────────────────────────────────────────────────────────
         methods: {
-            // WI-003501: the chips show three riders, so with an employee query set the
+            // The chips show three riders, so with an employee query set the
             // riders it matched go first - otherwise a card found by name shows three
             // other people. The "+N more" count still reads card.employees.length.
             chipEmployees(card) {

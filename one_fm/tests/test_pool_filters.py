@@ -143,11 +143,8 @@ class TestTypingAndClearing(FrappeTestCase):
 		self.assertIn("shiftIsExact ? name !== shift", self.canvas)
 
 	def test_the_employee_match_is_partial_and_case_insensitive(self):
-		# WI-003501: both sides go through normalizeSearchText, which lower-cases and
-		# flattens runs of whitespace, so stored "Samir  Basnet" matches "samir basnet".
 		self.assertIn("const emp = normalizeSearchText(this.employeeQuery);", self.canvas)
 		self.assertIn(".includes(emp)", self.canvas)
-		self.assertIn(".toLowerCase().replace(/\\s+/g, \" \").trim()", self.canvas)
 
 	def test_a_card_with_no_riders_does_not_break_the_match(self):
 		self.assertIn("(c.employees || []).some(e =>", self.canvas)

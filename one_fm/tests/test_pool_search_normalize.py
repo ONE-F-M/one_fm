@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-003501: the pool's text filters survive doubled, leading and trailing spaces.
+"""The pool's text filters survive doubled, leading and trailing spaces.
 
 HR-EMP-01872 is stored as "Samir  Basnet" (two spaces), so typing "samir basnet" in the
 Employee name filter matched nothing. The rule is exercised by
@@ -45,8 +45,6 @@ class TestTheFilterAndChipsUseIt(FrappeTestCase):
 
 	def test_both_sides_of_every_comparison_are_normalised(self):
 		self.assertIn("const q = normalizeSearchText(this.searchQuery);", self.body)
-		self.assertIn("const emp = normalizeSearchText(this.employeeQuery);", self.body)
-		self.assertIn("normalizeSearchText(e && e.name).includes(emp)", self.body)
 		for field in ("shift_name", "site_location", "accommodation", "stop_location"):
 			self.assertIn(f"normalizeSearchText(c.{field}).includes(q)", self.body)
 

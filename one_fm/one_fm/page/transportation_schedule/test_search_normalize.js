@@ -1,5 +1,5 @@
 /**
- * Self-check for the pool search normaliser (WI-003501).
+ * Self-check for the pool search normaliser.
  *
  *   node test_search_normalize.js
  *
@@ -13,7 +13,7 @@ const path = require('path');
 const assert = require('assert');
 
 const src = fs.readFileSync(path.join(__dirname, 'transportation_schedule.js'), 'utf8');
-const from = src.indexOf('// ── Search text normalising (WI-003501)');
+const from = src.indexOf('// ── Search text normalising ──');
 const to = src.indexOf('// ── End search text normalising');
 assert.ok(from >= 0 && to > from, 'search normaliser not found - did the banners move?');
 
