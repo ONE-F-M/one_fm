@@ -1701,18 +1701,97 @@ def manifest_row_order(rows) -> list:
 	def run_of(row):
 		return row.trip_group or f"\0{row.card_id}"
 
+	def clock_of(row):
+		at = _canvas_clock(row.start_time)
+		return _NO_CLOCK if at is None else at
+
+	# By the hour each run leaves in Kuwait, counted from where the canvas starts its
+	# day. The raw stamp cannot be used: its DATE half is the multi-day lock lifespan
+	# (TR-8), not the day the bus runs, so a run placed on 09-10 sorted after one
+	# placed on 08-20 however much earlier it left (WI-003454).
 	leaves = {}
 	for row in rows:
-		at = row.start_time or ""
+		at = clock_of(row)
 		key = run_of(row)
 		if key not in leaves or at < leaves[key]:
 			leaves[key] = at
 
-	# Within a run, by when the bus is at each stop. stop_index is the order the cards
-	# were dropped on the lane, which a re-timed run can leave out of step with itself.
+	def into_run(row):
+		at, left = clock_of(row), leaves[run_of(row)]
+		if at == _NO_CLOCK:
+			return 0 if left == _NO_CLOCK else _DAY
+		return (at - left) % _DAY
+
+	# Within a run, by how long after it left the bus is at each stop. stop_index is
+	# the order the cards were dropped on the lane, which a re-timed run can leave out
+	# of step with itself, so it only breaks ties. The run key keeps two runs that leave
+	# at the same minute from interleaving their stops.
 	return sorted(rows, key=lambda row: (
-		leaves[run_of(row)], row.start_time or "", row.stop_index or 0
+		leaves[run_of(row)], run_of(row), into_run(row), cint(row.stop_index)
 	))
+
+
+_DAY = 24 * 60 * 60
+# Stamps are UTC ("...Z"); the site runs on Asia/Kuwait, UTC+3, and the canvas starts
+# its day three hours before local midnight (get_route_planner_data's global_start).
+_KUWAIT_OFFSET = 3 * 60 * 60
+_CANVAS_LEAD = 3 * 60 * 60
+_NO_CLOCK = _DAY
+
+
+def _canvas_clock(stamp):
+	"""Seconds from the canvas's day start to when this stamp's TIME OF DAY falls in Kuwait.
+
+	None when the stamp has no readable time. Zero is a real answer (the canvas's first
+	second), so callers must compare with ``is None`` and never ``or`` it away.
+	"""
+	seconds = _iso_time_of_day(stamp)
+	if seconds is None:
+		return None
+	return (seconds + _KUWAIT_OFFSET + _CANVAS_LEAD) % _DAY
+
+
+def _run_departures(rows, legs) -> dict:
+	"""``{run key: stamp}`` of the earliest departure of each run, by canvas clock.
+
+	The camp leg is when the bus actually leaves, which is before any card's own row, so
+	the legs count too (a home leg is the way back and never a departure).
+	"""
+	best = {}
+
+	def consider(key, stamp):
+		at = _canvas_clock(stamp)
+		if at is not None and (key not in best or at < best[key][0]):
+			best[key] = (at, stamp)
+
+	for row in rows:
+		consider(row.trip_group or f"\0{row.card_id}", row.start_time)
+	for leg in legs:
+		if leg.trip_group and not cint(leg.is_home_leg):
+			consider(leg.trip_group, leg.start_time)
+	return {key: stamp for key, (_at, stamp) in best.items()}
+
+
+def _rebase_stamp(stamp, departure):
+	"""``stamp`` moved onto the day its run departs, rolled forward past midnight.
+
+	Only the time of day of a stamp is meaningful (its date is the lock lifespan), so
+	the manifest page cannot sort stops on the raw stamps. Putting every visit of a run
+	on the departure's own day makes them sortable as they are; a visit that falls
+	earlier on the clock than the departure is after midnight and lands on the next day.
+	"""
+	if not stamp or not departure:
+		return stamp
+	at, left = _canvas_clock(stamp), _canvas_clock(departure)
+	if at is None or left is None:
+		return stamp
+	try:
+		from datetime import timedelta
+
+		base = get_datetime(str(departure).replace("T", " ").replace("Z", "").strip())
+		return (base + timedelta(seconds=(at - left) % _DAY)).strftime("%Y-%m-%dT%H:%M:%SZ")
+	except Exception:
+		return stamp
 
 
 @frappe.whitelist()
