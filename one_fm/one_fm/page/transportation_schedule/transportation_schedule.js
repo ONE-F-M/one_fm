@@ -181,10 +181,10 @@ function mountRoutePlannerApp(wrapper, data) {
             // before it left, so a dispatcher can say "this shift, this person, ending at
             // 11:00" and get the cards that satisfy all three rather than any of them.
             filteredPoolCards() {
-                const q = this.searchQuery.toLowerCase().trim();
-                const emp = this.employeeQuery.toLowerCase().trim();
+                const q = normalizeSearchText(this.searchQuery);
+                const emp = normalizeSearchText(this.employeeQuery);
                 const shift = this.shiftFilter.trim();
-                const shiftLower = shift.toLowerCase();
+                const shiftLower = normalizeSearchText(shift);
                 // A shift picked from the list is an exact name and filters exactly
                 // (AC2). A half-typed one has not picked anything yet, so it narrows by
                 // what has been typed rather than matching nothing at all.
