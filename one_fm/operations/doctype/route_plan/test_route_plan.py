@@ -1,6 +1,8 @@
 # Copyright (c) 2026, oneaborance and contributors
 # See license.txt
 
+from unittest.mock import MagicMock, patch
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, getdate, today
