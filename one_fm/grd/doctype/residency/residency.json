@@ -427,6 +427,12 @@
    "print_hide": 1
   },
   {
+   "depends_on": "eval:doc.category == 'Extend'",
+   "fieldname": "visa_extension_expiry_date",
+   "fieldtype": "Date",
+   "label": "Visa Extension Expiry Date"
+  },
+  {
    "fieldname": "column_break_34",
    "fieldtype": "Column Break"
   },
