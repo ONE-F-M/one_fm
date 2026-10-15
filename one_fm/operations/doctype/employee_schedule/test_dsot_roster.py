@@ -190,9 +190,16 @@ class TestWhatTheRosterRenders(FrappeTestCase):
 		self.assertEqual(_rows_the_roster_would_render(), set())
 
 	def test_the_basic_shift_underneath_is_untouched(self):
-		"""The employee is still working that day - only the double shift goes."""
+		"""Basic plus a pending double shift - both rows come back."""
 		basic = _seed("BASIC", roster_type=BASIC, employee=self.employee, date=self.date)
-		_seed("PENDING", workflow_state=PENDING_DSOT, employee=self.employee, date=self.date)
+		pending = _seed("PENDING", workflow_state=PENDING_DSOT, employee=self.employee, date=self.date)
+
+		self.assertEqual(_rows_the_roster_would_render(), {basic, pending})
+
+	def test_a_rejected_double_shift_leaves_only_the_basic_shift(self):
+		"""WI-003414 Scenario 3 - only the underlying Basic shift remains."""
+		basic = _seed("BASIC", roster_type=BASIC, employee=self.employee, date=self.date)
+		_seed("REJECTED", workflow_state=DSOT_REJECTED, employee=self.employee, date=self.date)
 
 		self.assertEqual(_rows_the_roster_would_render(), {basic})
 
