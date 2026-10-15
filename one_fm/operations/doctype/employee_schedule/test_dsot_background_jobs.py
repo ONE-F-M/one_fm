@@ -74,11 +74,12 @@ class TestTheRuleItself(FrappeTestCase):
 	def test_it_names_the_two_states_the_story_names(self):
 		self.assertEqual(set(NOT_A_WORKED_SHIFT), {PENDING_DSOT, DSOT_REJECTED})
 
-	def test_the_roster_matrix_uses_the_same_pair(self):
-		"""employee_map keeps its own copy, because its filter is a raw-SQL fragment built
-		for the roster's own alias. Two copies of a pair of state names is one rename away
-		from the roster and the background jobs disagreeing about what counts as worked."""
-		self.assertEqual(set(ROSTER_STATES), set(NOT_A_WORKED_SHIFT))
+	def test_the_roster_matrix_hides_rejected_only(self):
+		"""WI-003414: the roster now shows Pending DSOT Approval in its own colour, so it
+		hides Rejected alone. The background jobs still ignore both states."""
+		self.assertEqual(set(HIDDEN_FROM_ROSTER), {DSOT_REJECTED})
+		self.assertNotIn(PENDING_DSOT, HIDDEN_FROM_ROSTER)
+		self.assertEqual(set(NOT_A_WORKED_SHIFT), {PENDING_DSOT, DSOT_REJECTED})
 
 	def test_both_states_exist_on_the_workflow(self):
 		"""Every one of these is a string comparison; the wrong case filters nothing."""
