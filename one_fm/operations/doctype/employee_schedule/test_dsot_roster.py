@@ -128,8 +128,11 @@ class TestTheRosterQueryUsesTheFilter(FrappeTestCase):
 			f"SELECT es.name FROM `tabEmployee Schedule` es WHERE {get_schedule_state_filter()} LIMIT 1"
 		)
 
-	def test_it_names_the_two_states_the_story_names(self):
-		self.assertEqual(set(NOT_A_WORKED_SHIFT), {PENDING_DSOT, DSOT_REJECTED})
+	def test_the_roster_hides_rejected_only(self):
+		"""WI-003414 - Pending DSOT Approval is shown in its own colour; Rejected is not."""
+		self.assertEqual(HIDDEN_FROM_ROSTER, ("Rejected",))
+		self.assertEqual(HIDDEN_FROM_ROSTER, (DSOT_REJECTED,))
+		self.assertNotIn(PENDING_DSOT, HIDDEN_FROM_ROSTER)
 
 	def test_both_states_exist_on_the_workflow(self):
 		"""Every one of these is a string comparison; a state named in the wrong case
