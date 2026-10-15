@@ -112,8 +112,11 @@ def flush() -> None:
 		rows = frappe.get_all(
 			"Employee Schedule",
 			filters={"name": ["in", list(names)], "workflow_state": PENDING_DSOT},
-			fields=["name", "employee", "employee_name", "date"],
+			fields=["name", "employee", "employee_name", "date", "shift", "shift_type"],
 		)
+		# Immediate means the schedule date is today at hold time; the rest is the
+		# digest's job.
+		rows = [row for row in rows if getdate(row.date) == getdate(today())]
 		if not rows:
 			return
 
@@ -121,20 +124,10 @@ def flush() -> None:
 		for row in rows:
 			by_employee.setdefault((row.employee, row.employee_name), []).append(row)
 
-		# AC4: grouped strictly by employee first, then by cycle within that employee, so
-		# two people sharing a date range are two emails rather than one muddled together.
+		# One email per employee, so two people held in one roster run are two emails
+		# rather than one muddled together.
 		for (employee, employee_name), employee_rows in by_employee.items():
-			dates = [r.date for r in employee_rows]
-			for start, end in continuous_cycles(dates):
-				shifts = [r for r in employee_rows if start <= getdate(r.date) <= end]
-				send_cycle_email(
-					approver=approver,
-					employee=employee,
-					employee_name=employee_name or employee,
-					start=start,
-					end=end,
-					shifts=shifts,
-				)
+			send_urgent_email(approver, employee, employee_name or employee, employee_rows)
 	except Exception:
 		frappe.log_error(
 			title="DSOT consolidated notification",
