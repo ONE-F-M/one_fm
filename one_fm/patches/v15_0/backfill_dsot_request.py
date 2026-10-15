@@ -95,5 +95,3 @@ def mark_as_request_of_one(batch):
 		.where(Schedule.name.isin(batch))
 		.where(fn.IfNull(Schedule.dsot_request, "") == "")
 	).run()
-
-	frappe.db.commit()  # nosemgrep: one batch of marked rows is one unit of work
