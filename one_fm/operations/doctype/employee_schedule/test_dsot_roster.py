@@ -345,7 +345,7 @@ class TestADoubleShiftRaisedThroughTheOrmReachesTheGate(FrappeTestCase):
 			)
 		}
 
-		self.assertNotIn(schedule.name, rendered)
+		self.assertIn(schedule.name, rendered)
 
 
 class TestWhatTheShiftAssignmentJobPicksUp(FrappeTestCase):
