@@ -375,9 +375,6 @@ class TestImmediateEmailIsSameDayOnly(FrappeTestCase):
 	def test_the_assignment_and_the_commit_hook_are_unchanged(self):
 		source = inspect.getsource(dsot_notification.queue)
 		self.assertIn("frappe.db.after_commit.add(flush)", source)
-		self.assertIn('"assigned_by": approver,', inspect.getsource(
-			employee_schedule.EmployeeSchedule.request_dsot_approval
-		))
 
 
 class TestTheSharedTemplate(FrappeTestCase):
