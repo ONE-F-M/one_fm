@@ -19,14 +19,14 @@ def get_workflow_state_select():
 	return "NULL as workflow_state"
 
 
-# WI-002437: the two states an Employee Schedule is in when it is not a shift anybody is
-# working. A double shift waiting on the DSOT Approver is not one yet, and a rejected one
-# never will be - the hours are gone, whether it was refused outright or nobody answered
-# before the shift ended.
+# WI-003414: the workflow states the Roster Matrix does not draw. A rejected double shift
+# never becomes a worked shift - the hours are gone, whether it was refused outright or
+# nobody answered before the shift ended - so it stays off the roster.
 #
-# Only the DSOT flow reaches either: the workflow's Rejected state has one way in, from
-# Pending DSOT Approval, so the suspension flow this shares a workflow with is untouched.
-NOT_A_WORKED_SHIFT = ("Pending DSOT Approval", "Rejected")
+# Pending DSOT Approval is deliberately NOT here any more: the roster shows it in its own
+# Pending colour until it is approved or rejected. The background jobs still ignore it -
+# that is employee_schedule.NOT_A_WORKED_SHIFT, which this does not touch.
+HIDDEN_FROM_ROSTER = ("Rejected",)
 
 
 def get_schedule_state_filter():
