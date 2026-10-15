@@ -27,6 +27,7 @@ def execute(filters=None):
 	columns = get_columns()
 	data = get_data(filters)
 	report_summary = get_report_summary(data)
+	label_workflow_states(data)
 
 	return columns, data, None, None, report_summary
 
