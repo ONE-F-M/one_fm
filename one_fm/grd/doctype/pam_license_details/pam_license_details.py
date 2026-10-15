@@ -628,10 +628,12 @@ def recount_quota_rows(license_name):
 		)
 
 
-# The state a Visa Request reaches when PAM and MOI have both said yes and the
-# visa exists. Only those count against a quota - anything earlier is an application, not
-# a visa.
-VISA_COMPLETED = "Completed"
+# The workflow states in which a Visa Request counts against a quota: the request is with
+# MOI, so the visa is issued from PAM's side. The count follows the CURRENT state only - a
+# request that moves on (Completed, or Rejected By MOI) leaves the count at its next
+# recount. Spelled exactly as the Visa Request Workflow spells it (capital B in "By"); a
+# misspelling matches nothing and the count silently goes to 0.
+VISA_ISSUED_STATES = ("Pending By MOI",)
 
 
 def visas_issued_by_quota(license_name) -> dict:
