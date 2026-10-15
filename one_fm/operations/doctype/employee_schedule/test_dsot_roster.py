@@ -40,7 +40,7 @@ from one_fm.operations.doctype.employee_schedule.employee_schedule import (
 
 DSOT_PENDING_NOTICE = (
 	"Notice: The requested Double Shift Overtime (DSOT) is currently Pending Approval. "
-	"It will not be displayed on the Roster UI until it has been approved by the authorized user."
+	"It is shown on the Roster UI in the Pending colour until it has been approved or rejected by the authorized user."
 )
 
 SEEDED = "WI-002437-SEED-"
