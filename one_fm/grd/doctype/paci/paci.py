@@ -542,7 +542,7 @@ REJECTION_OUTCOME_FIELDS = (
     "paci_reference_number",
     "paci_rejection_reason",
     "upload_civil_id_payment",
-    "upload_civil_id_payment_datetime",
+    "payment_date",
     "upload_civil_id",
     "upload_civil_id_datetime",
     "upload_hawiyati",
