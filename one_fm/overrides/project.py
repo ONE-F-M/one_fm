@@ -2,6 +2,7 @@ import frappe
 from frappe.core.doctype.version.version import get_diff
 from frappe.desk.form.assign_to import add as assign, DuplicateToDoError, remove as remove_assignment
 from frappe import _
+from frappe.utils import getdate
 from one_fm.api.doc_events import update_project_manager_name, on_project_update_switch_shift_site_post_to_inactive
 from one_fm.processor import sendemail
 from one_fm.one_fm.project_custom import validate_poc_list, validate_project, get_depreciation_expense_amount
@@ -117,10 +118,45 @@ class ProjectOverride(Project):
             self.copy_from_template()
         self.update_costing()
         self.update_percent_complete()
-        self.validate_from_to_dates("expected_start_date", "expected_end_date")
+        self.validate_expected_dates()
         self.validate_from_to_dates("actual_start_date", "actual_end_date")
         validate_poc_list(self, None)
         validate_project(self, None)
+
+    def validate_expected_dates(self):
+        """Validate Expected Start/End Date, but only when this save touches them.
+
+        `expected_start_date` / `expected_end_date` are read-only for External
+        projects (see one_fm/custom/property_setter/project.py) and are written by
+        Contracts through `db.set_value`. An inverted pair that is already stored
+        therefore cannot be repaired from the form, and an unconditional throw here
+        would block every unrelated edit on the project (e.g. changing the Project
+        Manager) for good. So the hard validation applies to new documents and to
+        saves that actually change a date; stored legacy values only warn.
+        """
+        dates_changed = (
+            self.is_new()
+            or self.has_value_changed("expected_start_date")
+            or self.has_value_changed("expected_end_date")
+        )
+
+        if dates_changed:
+            self.validate_from_to_dates("expected_start_date", "expected_end_date")
+            return
+
+        if (
+            self.expected_start_date
+            and self.expected_end_date
+            and getdate(self.expected_end_date) < getdate(self.expected_start_date)
+        ):
+            # Non-blocking: the user cannot fix these fields here. They are corrected
+            # on the linked Contracts record, which re-syncs the project.
+            frappe.msgprint(
+                _("Expected End Date is before Expected Start Date on this project. Please correct the dates on the linked contract."),
+                indicator="orange",
+                alert=True
+            )
+
     def after_insert(self):
         super().after_insert()
         update_project_user_assignment(self, None)
