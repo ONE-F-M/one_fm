@@ -43,7 +43,7 @@ def get_schedule_state_filter():
 	clauses = ["ifnull(es.employee_availability, '') != ''"]
 
 	if "workflow_state" in frappe.db.get_table_columns("Employee Schedule"):
-		states = ", ".join(f"'{state}'" for state in NOT_A_WORKED_SHIFT)
+		states = ", ".join(f"'{state}'" for state in HIDDEN_FROM_ROSTER)
 		clauses.append(f"ifnull(es.workflow_state, '') not in ({states})")
 
 	return " AND ".join(clauses)
