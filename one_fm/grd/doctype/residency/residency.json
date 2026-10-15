@@ -430,11 +430,9 @@
    "fieldtype": "Column Break"
   },
   {
-   "allow_on_submit": 1,
-   "fieldname": "invoice_attachment_date",
-   "fieldtype": "Data",
-   "label": "Upload Payment Invoice On",
-   "read_only": 1
+   "fieldname": "payment_date",
+   "fieldtype": "Datetime",
+   "label": "Payment Date"
   },
   {
    "allow_on_submit": 1,
