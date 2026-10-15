@@ -90,7 +90,9 @@ def queue(names) -> None:
 
 
 def flush() -> None:
-	"""Send one email per (employee, continuous cycle) for everything queued.
+	"""Send one urgent email per employee for the queued rows that are dated today.
+
+	Rows for any other date are not emailed here; they wait for the daily digest.
 
 	Wrapped whole: the schedules are already saved and already blocking their Shift
 	Assignments, so a mail server that is down must not turn a held request into a
