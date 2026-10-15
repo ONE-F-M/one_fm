@@ -644,10 +644,12 @@ def visas_issued_by_quota(license_name) -> dict:
 	has not arrived, which is the whole reason the figure is separate from the registered
 	headcount beside it.
 
-	A cancelled visa is not an issued one. The cancellation gate already works out which completed
-	requests have had their visa given back, and the same answer is used here - the story's
-	last criterion is that a completed cancellation takes the visa back out of this count
-	and returns it to the available quota.
+	Only a request currently in one of VISA_ISSUED_STATES (Pending By MOI) counts.
+	A cancelled visa is not an issued one. The cancellation gate already works out which
+	requests have had their visa given back (a Completed Visa Cancellation Request names
+	them), and the same answer is used here - the story's last criterion is that a
+	completed cancellation takes the visa back out of this count and returns it to the
+	available quota.
 
 	Returns {quota type: count}; a quota with no visas simply does not appear.
 	"""
