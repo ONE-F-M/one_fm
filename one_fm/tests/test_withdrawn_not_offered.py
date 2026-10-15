@@ -146,6 +146,9 @@ class TestTheServerRefusesThemAnyway(unittest.TestCase):
 			"document_code": "POL-GUARD",
 		}).insert(ignore_permissions=True)
 		frappe.db.set_value(REGISTER, cls.dead.name, "lifecycle_state", "Inactive")
+		# A plain TestCase does not load test_records, so a fresh site may lack the type.
+		if not frappe.db.exists("DMS Document Type", "Policy"):
+			frappe.get_doc({"doctype": "DMS Document Type", "document_type_name": "Policy"}).insert()
 		frappe.db.commit()
 
 	@classmethod
@@ -176,15 +179,29 @@ class TestTheServerRefusesThemAnyway(unittest.TestCase):
 		return doc
 
 	def test_a_create_cannot_be_generated_from_a_withdrawn_guideline(self):
+		self.addCleanup(
+			frappe.db.set_value,
+			"DMS Document Type",
+			"Policy",
+			"source_guideline",
+			frappe.db.get_value("DMS Document Type", "Policy", "source_guideline"),
+		)
+		frappe.db.set_value("DMS Document Type", "Policy", "source_guideline", self.dead.name)
 		with self.assertRaises(frappe.ValidationError) as caught:
-			self._request(request_action="Create", source_guideline=self.dead.name).insert(
-				ignore_permissions=True
-			)
+			self._request(request_action="Create").insert(ignore_permissions=True)
 		self.assertIn("inactive", str(caught.exception).lower())
 
 	def test_an_active_source_is_accepted(self):
 		"""So the guard is not simply refusing everything."""
-		doc = self._insert(self._request(request_action="Create", source_guideline=self.live.name))
+		self.addCleanup(
+			frappe.db.set_value,
+			"DMS Document Type",
+			"Policy",
+			"source_guideline",
+			frappe.db.get_value("DMS Document Type", "Policy", "source_guideline"),
+		)
+		frappe.db.set_value("DMS Document Type", "Policy", "source_guideline", self.live.name)
+		doc = self._insert(self._request(request_action="Create"))
 		self.assertEqual(doc.source_guideline, self.live.name)
 
 	def test_revising_a_withdrawn_document_is_still_refused(self):
