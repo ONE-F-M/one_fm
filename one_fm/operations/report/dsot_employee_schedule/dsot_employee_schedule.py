@@ -142,9 +142,13 @@ def get_data(filters):
 		limit_page_length=0,
 	)
 
-	# The summary is counted from these rows by the caller, so keep the stored state on
-	# each row and only relabel it once the counts have been taken.
 	return rows
+
+
+def label_workflow_states(data):
+	# Display only: call after the summary has been counted from the stored states.
+	for row in data:
+		row.workflow_state = OPTION_FOR_STATE.get(row.workflow_state, row.workflow_state)
 
 
 def get_filters(filters):
