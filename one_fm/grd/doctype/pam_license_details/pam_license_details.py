@@ -664,7 +664,7 @@ def visas_issued_by_quota(license_name) -> dict:
 		"Visa Request",
 		filters=[
 			["custom_pam_file", "=", license_name],
-			["workflow_state", "=", VISA_COMPLETED],
+			["workflow_state", "in", VISA_ISSUED_STATES],
 			["custom_pam_designation_list", "is", "set"],
 		],
 		fields=["name", "custom_pam_designation_list", "job_applicant"],
