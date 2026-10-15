@@ -135,6 +135,345 @@ def flush() -> None:
 		)
 
 
+APPROVAL_TEMPLATE = "one_fm/templates/emails/dsot_approval_request.html"
+EMAIL_ACTIONS = ("Approve", "Reject")
+ENDPOINT = "one_fm.operations.doctype.employee_schedule.dsot_notification"
+SAVEPOINT = "dsot_email_action"
+
+
+def signed_action_url(method, **params) -> str:
+	"""A signed link to one of the two email-action endpoints.
+
+	The signature covers every parameter, so the action, the user it runs as and the rows
+	(or the digest cutoff) cannot be changed by whoever holds the link.
+	"""
+	params = {key: value for key, value in params.items() if value}
+	return f"{get_url()}/api/method/{ENDPOINT}.{method}?{get_signed_params(params)}"
+
+
+def shift_label(row) -> str:
+	"""A shift as the approver reads it: the Operations Shift, and its Shift Type."""
+	shift = row.get("shift")
+	shift_type = row.get("shift_type")
+	if shift and shift_type:
+		return f"{shift} ({shift_type})"
+	return shift or shift_type or ""
+
+
+def build_email_rows(approver, schedules) -> list:
+	"""The grid rows for the shared template, each with its own signed Approve/Reject links.
+
+	Basic (Shift Name) is the shift the employee is already working that day; one query for
+	the whole grid rather than one per row, because the digest can be hundreds of rows.
+	"""
+	from one_fm.operations.doctype.employee_schedule.employee_schedule import BASIC, WORKING
+
+	basic = {}
+	if schedules:
+		for row in frappe.get_all(
+			"Employee Schedule",
+			filters={
+				"roster_type": BASIC,
+				"employee_availability": WORKING,
+				"employee": ["in", list({s.employee for s in schedules})],
+				"date": ["in", list({s.date for s in schedules})],
+			},
+			fields=["employee", "date", "shift", "shift_type"],
+		):
+			basic[(row.employee, getdate(row.date))] = shift_label(row)
+
+	return [
+		frappe._dict(
+			date=schedule.date,
+			employee=schedule.employee,
+			employee_name=schedule.employee_name,
+			basic_shift=basic.get((schedule.employee, getdate(schedule.date))),
+			dsot_shift=shift_label(schedule),
+			approve_url=signed_action_url(
+				"confirm_email_action", action="Approve", user=approver, names=schedule.name
+			),
+			reject_url=signed_action_url(
+				"confirm_email_action", action="Reject", user=approver, names=schedule.name
+			),
+		)
+		for schedule in schedules
+	]
+
+
+def render_approval_request(approver, schedules, intro, **bulk) -> str:
+	"""Render the shared grid. ``bulk`` is what Approve All / Reject All sign."""
+	return frappe.render_template(
+		APPROVAL_TEMPLATE,
+		context={
+			"intro": intro,
+			"rows": build_email_rows(approver, schedules),
+			"approve_all_url": signed_action_url(
+				"confirm_email_action", action="Approve", user=approver, **bulk
+			),
+			"reject_all_url": signed_action_url(
+				"confirm_email_action", action="Reject", user=approver, **bulk
+			),
+		},
+	)
+
+
+def send_urgent_email(approver, employee, employee_name, schedules) -> None:
+	"""One employee's same-day requests, emailed at once."""
+	subject = _("Urgent DSOT Approval Request: {0} ({1})").format(
+		employee_name, formatdate(today())
+	)
+	intro = _("Double shift overtime for {0} ({1}) is for today and needs a decision now.").format(
+		employee_name, employee
+	)
+	message = render_approval_request(
+		approver,
+		schedules,
+		intro,
+		# Only the rows in this email: they are dated today, so the digest's cutoff rule
+		# (date != DATE(creation)) would not select them.
+		names=",".join(schedule.name for schedule in schedules),
+	)
+
+	sendemail(
+		recipients=[approver],
+		subject=subject,
+		content=message,
+		reference_doctype="Employee Schedule",
+		reference_name=schedules[0].name,
+		is_scheduler_email=True,
+	)
+
+
+def pending_overtime_rows(cutoff=None) -> list:
+	"""Pending overtime requests that were not raised for their own day, oldest date last.
+
+	These are the rows no immediate email covered. ``cutoff`` limits them to rows created
+	by then, which is what lets a digest's bulk buttons mean "what this email listed".
+	"""
+	from one_fm.operations.doctype.employee_schedule.employee_schedule import OVERTIME
+
+	schedule = frappe.qb.DocType("Employee Schedule")
+	query = (
+		frappe.qb.from_(schedule)
+		.select(
+			schedule.name,
+			schedule.employee,
+			schedule.employee_name,
+			schedule.date,
+			schedule.shift,
+			schedule.shift_type,
+		)
+		.where(schedule.workflow_state == PENDING_DSOT)
+		.where(schedule.roster_type == OVERTIME)
+		.where(fn.Date(schedule.creation) != schedule.date)
+	)
+	if cutoff:
+		query = query.where(schedule.creation <= cutoff)
+
+	rows = query.orderby(schedule.employee).orderby(schedule.date).run(as_dict=True)
+	return [frappe._dict(row) for row in rows]
+
+
+def send_daily_dsot_digest() -> None:
+	"""Email the approver ONE list of every pending overtime request not mailed at once.
+
+	Runs daily at 00:05. A row stays in the list each day until it is decided.
+	"""
+	approver = frappe.db.get_single_value("Operation Settings", "dsot_approver")
+	if not approver:
+		return
+
+	cutoff = str(now_datetime())
+	rows = pending_overtime_rows(cutoff)
+	if not rows:
+		return
+
+	try:
+		subject = _("DSOT Approval Request: {0} Pending Overtime Requests").format(len(rows))
+		intro = _("{0} overtime requests are waiting for your decision.").format(len(rows))
+		message = render_approval_request(approver, rows, intro, digest_cutoff=cutoff)
+
+		sendemail(
+			recipients=[approver],
+			subject=subject,
+			content=message,
+			reference_doctype="Employee Schedule",
+			reference_name=rows[0].name,
+			is_scheduler_email=True,
+		)
+	except Exception:
+		frappe.log_error(title="DSOT daily digest", message=frappe.get_traceback())
+
+
+def selected_schedules(names=None, digest_cutoff=None) -> list:
+	"""The rows a signed link stands for: the digest's cutoff set, or the names it carries."""
+	if digest_cutoff:
+		return [row.name for row in pending_overtime_rows(digest_cutoff)]
+	return [name for name in (names or "").split(",") if name]
+
+
+def respond_email_action_page(title, html, indicator_color="blue", **kwargs) -> None:
+	frappe.respond_as_web_page(title, html, indicator_color=indicator_color, **kwargs)
+
+
+def is_valid_email_action(action, user) -> bool:
+	"""A signed link, for a known action, on behalf of somebody."""
+	if not verify_request():
+		respond_email_action_page(
+			_("Invalid Link"),
+			_("This link is invalid or has been changed."),
+			"red",
+			http_status_code=403,
+		)
+		return False
+
+	if action not in EMAIL_ACTIONS or not user:
+		respond_email_action_page(
+			_("Invalid Action"), _("Only Approve or Reject is allowed."), "red", http_status_code=400
+		)
+		return False
+
+	return True
+
+
+@frappe.whitelist(allow_guest=True, methods=["GET"])
+def confirm_email_action(action=None, user=None, names=None, digest_cutoff=None):
+	"""The page the email buttons open. Changes nothing.
+
+	Mail clients and security scanners open links to preview them, so the link in the email
+	must not decide anything; the single Confirm button here is what does.
+	"""
+	if not is_valid_email_action(action, user):
+		return
+
+	rows = []
+	for name in selected_schedules(names, digest_cutoff):
+		row = frappe.db.get_value(
+			"Employee Schedule",
+			name,
+			["name", "employee", "employee_name", "date", "workflow_state"],
+			as_dict=True,
+		)
+		if row and row.workflow_state == PENDING_DSOT:
+			rows.append(row)
+
+	if not rows:
+		respond_email_action_page(
+			_("Nothing to Decide"), _("There are no pending requests left for this link."), "orange"
+		)
+		return
+
+	body = "".join(
+		"<tr><td>{0}</td><td>{1}</td><td>{2}</td></tr>".format(
+			escape_html(formatdate(row.date)),
+			escape_html(row.employee),
+			escape_html(row.employee_name or row.employee),
+		)
+		for row in rows
+	)
+	html = (
+		"<p>{0}</p><table class='table table-bordered'><thead><tr><th>{1}</th><th>{2}</th>"
+		"<th>{3}</th></tr></thead><tbody>{4}</tbody></table>"
+	).format(
+		escape_html(_("{0} request(s) will be {1}.").format(
+			len(rows), _("approved") if action == "Approve" else _("rejected")
+		)),
+		_("Date"),
+		_("Employee ID"),
+		_("Employee Name"),
+		body,
+	)
+
+	respond_email_action_page(
+		_("Confirm {0}").format(_(action)),
+		html,
+		"green" if action == "Approve" else "red",
+		primary_action=signed_action_url(
+			"apply_email_action",
+			action=action,
+			user=user,
+			names=names,
+			digest_cutoff=digest_cutoff,
+		),
+		primary_label=_("Confirm"),
+	)
+
+
+@frappe.whitelist(allow_guest=True, methods=["GET"])
+def apply_email_action(action=None, user=None, names=None, digest_cutoff=None):
+	"""Approve or Reject the rows a signed link stands for, as the approver it was signed for.
+
+	Approve is the workflow's own Approve action, so the row lands on Active. Each row has its
+	own savepoint so one failure undoes only itself; everything else is committed once.
+	"""
+	if not is_valid_email_action(action, user):
+		return
+
+	from one_fm.operations.doctype.employee_schedule.employee_schedule import may_decide_dsot
+	from one_fm.overrides.workflow import apply_workflow
+
+	previous_user = frappe.session.user
+	approved = rejected = skipped = 0
+	allowed = True
+
+	frappe.set_user(user)
+	try:
+		allowed = may_decide_dsot()
+		if allowed:
+			for name in selected_schedules(names, digest_cutoff):
+				state = frappe.db.get_value("Employee Schedule", name, "workflow_state")
+				if state != PENDING_DSOT:
+					# Missing, or already decided by somebody else.
+					skipped += 1
+					continue
+
+				frappe.db.savepoint(SAVEPOINT)
+				messages_before = len(frappe.message_log)
+				try:
+					result = apply_workflow(frappe.get_doc("Employee Schedule", name), action)
+				except Exception:
+					frappe.db.rollback(save_point=SAVEPOINT)
+					frappe.log_error(
+						title=f"DSOT email action failed: {name}", message=frappe.get_traceback()
+					)
+					skipped += 1
+					continue
+				finally:
+					# A refusal is reported on the page below, not as a popup message.
+					del frappe.message_log[messages_before:]
+
+				if isinstance(result, dict):
+					# The workflow said the action is no longer valid for this row.
+					skipped += 1
+				elif action == "Approve":
+					approved += 1
+				else:
+					rejected += 1
+
+			frappe.db.commit()
+	finally:
+		frappe.set_user(previous_user)
+
+	if not allowed:
+		respond_email_action_page(
+			_("Not Allowed"),
+			_("Only the DSOT Approver or the Operation Manager named in Operation Settings can decide this request."),
+			"red",
+			http_status_code=403,
+		)
+		return
+
+	respond_email_action_page(
+		_("DSOT Requests Updated"),
+		"<p>{0}</p><p>{1}</p><p>{2}</p>".format(
+			_("Approved: {0}").format(approved),
+			_("Rejected: {0}").format(rejected),
+			_("Skipped: {0}").format(skipped),
+		),
+		"green",
+	)
+
+
 def pending_list_url(employee, start, end) -> str:
 	"""The approver's landing place: this employee's pending cycle, and nothing else.
 
