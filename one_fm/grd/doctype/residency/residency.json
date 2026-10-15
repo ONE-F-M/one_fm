@@ -71,6 +71,7 @@
   "upload_residency_fine_payment_receipt",
   "upload_damj_letter",
   "new_residency_expiry_date",
+  "visa_extension_expiry_date",
   "column_break_34",
   "invoice_attachment_date",
   "residency_attachment_date",
