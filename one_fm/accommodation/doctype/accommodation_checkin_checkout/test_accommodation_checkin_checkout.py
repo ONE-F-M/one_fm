@@ -68,7 +68,7 @@ class TestAccommodationCheckinCheckout(FrappeTestCase):
 
 		self.assertEqual(frappe.db.get_value(DOCTYPE, doc.name, "operations_shift"), self.other_shift)
 
-	def test_the_patch_fills_only_the_open_in_rows(self):
+	def test_the_patch_fills_every_in_and_out_row(self):
 		open_in = make_checkin(self.employee)
 		closed_in = make_checkin(self.employee)
 		out = make_checkin(self.employee, type="OUT")
@@ -83,5 +83,14 @@ class TestAccommodationCheckinCheckout(FrappeTestCase):
 
 		value = lambda name: frappe.db.get_value(DOCTYPE, name, "operations_shift")
 		self.assertEqual(value(open_in.name), self.shift)
-		self.assertFalse(value(closed_in.name))
-		self.assertFalse(value(out.name))
+		self.assertEqual(value(closed_in.name), self.shift)
+		self.assertEqual(value(out.name), self.shift)
+
+	def test_the_patch_leaves_a_stored_shift_alone(self):
+		checkin = make_checkin(self.employee)
+		other = make_operations_shift()
+		frappe.db.set_value(DOCTYPE, checkin.name, "operations_shift", other)
+
+		backfill()
+
+		self.assertEqual(frappe.db.get_value(DOCTYPE, checkin.name, "operations_shift"), other)

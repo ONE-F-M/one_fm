@@ -1,13 +1,13 @@
-"""Fill Operations Shift on the open check-ins.
+"""Fill Operations Shift on existing check-ins and check-outs.
 
-The field is a fetch_from of employee.shift, which Frappe refreshes whenever a check-in is
-saved. Check-ins that are already open have not been saved since the field was added, so they
-show nothing until somebody opens them. This fills them from the employee's current shift.
+The field is a fetch_from of employee.shift, which Frappe refreshes whenever a record is
+saved. Records saved before the field existed show nothing until somebody opens them, so
+this fills every IN and OUT row that has an employee from the employee's current shift.
+The process owner chose this over leaving historic rows blank, knowing they get today's
+shift rather than the one they had at the time.
 
-Open IN rows only (type IN, not checked out, employee set). Historic IN rows and OUT rows are
-left alone on purpose: they would show today's shift, not the shift they had at the time.
-
-One UPDATE joined to Employee, no loop. Nothing is touched when the employee has no shift.
+One UPDATE joined to Employee, no loop. Rows that already hold a shift are left alone, and
+nothing is touched when the employee has no shift.
 """
 
 import frappe
@@ -26,8 +26,7 @@ def execute():
 		.join(employee)
 		.on(checkin.employee == employee.name)
 		.set(checkin.operations_shift, employee.shift)
-		.where(checkin.type == "IN")
-		.where(checkin.checked_out == 0)
+		.where((checkin.operations_shift.isnull()) | (checkin.operations_shift == ""))
 		.where(checkin.employee.isnotnull())
 		.where(checkin.employee != "")
 		.where(employee.shift.isnotnull())
