@@ -38,7 +38,12 @@ class TestPoolCardShiftTooltip(FrappeTestCase):
 		self.assertNotIn('class="rp-card-shift" title=', self.canvas)
 
 	def test_the_ellipsis_css_is_kept(self):
-		rule = self.canvas.split(".rp-card-shift {", 1)[1].split("}", 1)[0]
-		for declaration in ("white-space: nowrap;", "overflow: hidden;",
-							"text-overflow: ellipsis;"):
-			self.assertIn(declaration, rule)
+		# Several rules start with ".rp-card-shift"; the one that cuts the text is the
+		# line carrying all three declarations.
+		self.assertTrue(any(
+			line.strip().startswith(".rp-card-shift")
+			and "white-space: nowrap;" in line
+			and "overflow: hidden;" in line
+			and "text-overflow: ellipsis;" in line
+			for line in self.canvas.splitlines()
+		))
