@@ -717,7 +717,7 @@ def visas_issued_by_quota(license_name) -> dict:
 
 
 def update_quota_from_visa_request(doc, method=None):
-	"""Recount a licence's quota rows when a visa request reaches or leaves Completed.
+	"""Recount a licence's quota rows when a visa request reaches or leaves Pending By MOI.
 
 	Without this the issued figure only moved when somebody saved an Employee - and the
 	whole point of the figure is the gap before an employee exists.
