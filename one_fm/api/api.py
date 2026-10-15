@@ -230,6 +230,7 @@ def push_notification_rest_api_for_checkin(employee_id, title, body, checkin, ar
                     title=title,
                     body=body
                 ),
+                data={"url": "/checkin"},
                 token=deviceToken
             )
             res = messaging.send(message)
