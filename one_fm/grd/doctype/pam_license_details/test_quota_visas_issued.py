@@ -149,6 +149,75 @@ class TestTheFieldIsDerived(FrappeTestCase):
 		self.assertNotIn("read_only", field)
 
 
+class TestWhichStatesAreCounted(FrappeTestCase):
+	"""Real rows, inserted with db_insert() so no workflow or mandatory-field rule runs."""
+
+	LICENSE = "ZZ-TEST-PAM-FILE-WI-003407"
+
+	def setUp(self):
+		designation = frappe.get_all(
+			"PAM Designation List",
+			filters={"quota_type": ["is", "set"]},
+			fields=["name", "quota_type"],
+			limit=1,
+		)
+		if designation:
+			self.designation, self.quota_type = designation[0]["name"], designation[0]["quota_type"]
+		else:
+			self.designation, self.quota_type = "ZZ-TEST-DESIGNATION-WI-003407", "ZZ-TEST-QUOTA"
+			frappe.get_doc(
+				{
+					"doctype": "PAM Designation List",
+					"name": self.designation,
+					"quota_type": self.quota_type,
+				}
+			).db_insert()
+		self.serial = 0
+
+	def _issued(self):
+		return visas_issued_by_quota(self.LICENSE).get(self.quota_type, 0)
+
+	def _request(self, state):
+		self.serial += 1
+		name = f"ZZ-TEST-VR-WI-003407-{self.serial}"
+		frappe.get_doc(
+			{
+				"doctype": "Visa Request",
+				"name": name,
+				"custom_pam_file": self.LICENSE,
+				"custom_pam_designation_list": self.designation,
+				"workflow_state": state,
+			}
+		).db_insert()
+		return name
+
+	def test_only_pending_by_moi_raises_the_count(self):
+		before = self._issued()
+		self._request("Completed")
+		self.assertEqual(self._issued(), before)
+		self._request("Rejected By MOI")
+		self.assertEqual(self._issued(), before)
+		self._request("Pending By MOI")
+		self.assertEqual(self._issued(), before + 1)
+
+	def test_a_completed_cancellation_takes_the_visa_back_out(self):
+		if not has_workflow_state_column():
+			self.skipTest("Visa Cancellation Request has no workflow_state column on this site")
+		before = self._issued()
+		request = self._request("Pending By MOI")
+		self.assertEqual(self._issued(), before + 1)
+
+		frappe.get_doc(
+			{
+				"doctype": "Visa Cancellation Request",
+				"name": "ZZ-TEST-VCR-WI-003407",
+				"visa_request_id": request,
+				"workflow_state": "Completed",
+			}
+		).db_insert()
+		self.assertEqual(self._issued(), before)
+
+
 class TestTheFieldsItReadsExist(FrappeTestCase):
 	def test_the_visa_request_names_a_licence_and_a_designation(self):
 		meta = frappe.get_meta("Visa Request")
