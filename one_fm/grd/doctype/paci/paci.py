@@ -426,9 +426,9 @@ def notify_operator_to_take_hawiyati_renewal():# cron job at 8am in working days
     renewal_list=[]
     supervisor = frappe.db.get_single_value("HR Settings", "default_grd_supervisor")
     renewal_operator = frappe.db.get_single_value("HR Settings", "default_grd_operator")
-    paci_list_renewal = frappe.db.get_list('PACI',{'category':'Renewal','workflow_state':"Under Process",'upload_hawiyati':['=','']},['civil_id','name','upload_civil_id_payment_datetime'])
+    paci_list_renewal = frappe.db.get_list('PACI',{'category':'Renewal','workflow_state':"Under Process",'upload_hawiyati':['=','']},['civil_id','name','payment_date'])
     for paci in paci_list_renewal:
-        if date_diff(date.today(),getdate(paci.upload_civil_id_payment_datetime))>=2:
+        if date_diff(date.today(),getdate(paci.payment_date))>=2:
             renewal_list.append(paci)
 
     if is_scheduler_emails_enabled():
