@@ -313,3 +313,276 @@ class TestTheBodyReadsLikeAnAssignment(FrappeTestCase):
 		self.assertIn("on 13-09-2026", body)
 		self.assertNotIn("from 13-09-2026", body)
 		self.assertNotIn("Total:", body)
+
+
+def schedule_row(name, employee="HR-EMP-00001", date=None, **extra):
+	return frappe._dict(
+		name=name,
+		employee=employee,
+		employee_name=extra.pop("employee_name", "Test Employee"),
+		date=date or frappe.utils.today(),
+		shift=extra.pop("shift", "Test Shift"),
+		shift_type=extra.pop("shift_type", "Day"),
+		**extra,
+	)
+
+
+class TestImmediateEmailIsSameDayOnly(FrappeTestCase):
+	"""flush() mails today's rows at once, per employee, and leaves the rest to the digest."""
+
+	def flush(self, rows, approver="approver@example.com"):
+		from unittest import mock
+
+		sent = []
+		frappe.flags[dsot_notification.FLAG] = {row.name for row in rows}
+		with mock.patch.object(
+			frappe.db, "get_single_value", return_value=approver
+		), mock.patch.object(frappe, "get_all", return_value=rows), mock.patch.object(
+			dsot_notification, "send_urgent_email", side_effect=lambda *args: sent.append(args)
+		):
+			dsot_notification.flush()
+		frappe.flags.pop(dsot_notification.FLAG, None)
+		return sent
+
+	def test_a_future_dated_row_is_not_emailed(self):
+		future = frappe.utils.add_days(frappe.utils.today(), 3)
+		self.assertEqual(self.flush([schedule_row("ES-1", date=future)]), [])
+
+	def test_a_past_dated_row_is_not_emailed(self):
+		past = frappe.utils.add_days(frappe.utils.today(), -1)
+		self.assertEqual(self.flush([schedule_row("ES-1", date=past)]), [])
+
+	def test_only_todays_rows_are_emailed_when_dates_are_mixed(self):
+		future = frappe.utils.add_days(frappe.utils.today(), 3)
+		sent = self.flush([schedule_row("ES-1"), schedule_row("ES-2", date=future)])
+		self.assertEqual(len(sent), 1)
+		self.assertEqual([row.name for row in sent[0][3]], ["ES-1"])
+
+	def test_rows_are_grouped_per_employee(self):
+		rows = [
+			schedule_row("ES-1", employee="HR-EMP-00001"),
+			schedule_row("ES-2", employee="HR-EMP-00002", employee_name="Other"),
+			schedule_row("ES-3", employee="HR-EMP-00001"),
+		]
+		sent = self.flush(rows)
+		self.assertEqual(len(sent), 2)
+		self.assertEqual(sorted(len(args[3]) for args in sent), [1, 2])
+
+	def test_the_subject_says_urgent(self):
+		source = inspect.getsource(dsot_notification.send_urgent_email)
+		self.assertIn('_("Urgent DSOT Approval Request: {0} ({1})")', source)
+
+	def test_the_assignment_and_the_commit_hook_are_unchanged(self):
+		source = inspect.getsource(dsot_notification.queue)
+		self.assertIn("frappe.db.after_commit.add(flush)", source)
+		self.assertIn('"assigned_by": approver,', inspect.getsource(
+			employee_schedule.EmployeeSchedule.request_dsot_approval
+		))
+
+
+class TestTheSharedTemplate(FrappeTestCase):
+	def render(self, rows=None):
+		rows = rows if rows is not None else [schedule_row("ES-1")]
+		return dsot_notification.render_approval_request(
+			"approver@example.com", rows, "Intro", digest_cutoff="2026-09-13 00:05:00"
+		)
+
+	def test_the_header_has_both_bulk_buttons_and_the_columns(self):
+		html = self.render()
+		for text in (
+			"Approve All", "Reject All", "Date", "Employee ID", "Employee Name",
+			"Basic (Shift Name)", "DSOT (Shift Name)", "Action",
+		):
+			self.assertIn(text, html)
+
+	def test_each_row_has_its_own_approve_and_reject_links(self):
+		html = self.render([schedule_row("ES-1"), schedule_row("ES-2")])
+		self.assertEqual(html.count(">Approve</a>"), 2)
+		self.assertEqual(html.count(">Reject</a>"), 2)
+		self.assertIn("confirm_email_action", html)
+		self.assertIn("_signature=", html)
+
+	def test_the_bulk_links_sign_a_cutoff_not_a_name_list(self):
+		html = self.render([schedule_row("ES-1"), schedule_row("ES-2")])
+		self.assertIn("digest_cutoff=", html)
+		# The only names in the email are the per-row ones.
+		self.assertNotIn("names=ES-1%2CES-2", html)
+
+	def test_styles_are_inline(self):
+		html = self.render()
+		self.assertIn('style="', html)
+		self.assertNotIn("<style", html)
+
+
+class TestTheDailyDigest(FrappeTestCase):
+	def run_digest(self, approver="approver@example.com", rows=None):
+		from unittest import mock
+
+		with mock.patch.object(
+			frappe.db, "get_single_value", return_value=approver
+		), mock.patch.object(
+			dsot_notification, "pending_overtime_rows", return_value=rows or []
+		), mock.patch.object(dsot_notification, "sendemail") as send:
+			dsot_notification.send_daily_dsot_digest()
+		return send
+
+	def test_nothing_is_sent_without_an_approver(self):
+		self.run_digest(approver=None, rows=[schedule_row("ES-1")]).assert_not_called()
+
+	def test_nothing_is_sent_when_there_are_no_rows(self):
+		self.run_digest(rows=[]).assert_not_called()
+
+	def test_one_email_carries_every_row(self):
+		rows = [schedule_row(f"ES-{i}") for i in range(5)]
+		send = self.run_digest(rows=rows)
+		send.assert_called_once()
+		kwargs = send.call_args.kwargs
+		self.assertEqual(kwargs["subject"], "DSOT Approval Request: 5 Pending Overtime Requests")
+		self.assertTrue(kwargs["is_scheduler_email"])
+		self.assertEqual(kwargs["content"].count(">Approve</a>"), 5)
+
+	def test_a_failed_send_is_logged_not_raised(self):
+		from unittest import mock
+
+		with mock.patch.object(
+			frappe.db, "get_single_value", return_value="approver@example.com"
+		), mock.patch.object(
+			dsot_notification, "pending_overtime_rows", return_value=[schedule_row("ES-1")]
+		), mock.patch.object(
+			dsot_notification, "sendemail", side_effect=Exception("smtp down")
+		), mock.patch.object(frappe, "log_error") as log_error:
+			dsot_notification.send_daily_dsot_digest()
+		log_error.assert_called_once()
+
+	def test_the_query_rules(self):
+		source = inspect.getsource(dsot_notification.pending_overtime_rows)
+		self.assertIn("frappe.qb", source)
+		self.assertIn("OVERTIME", source)
+		self.assertIn("fn.Date(schedule.creation) != schedule.date", source)
+		self.assertIn("orderby(schedule.employee).orderby(schedule.date)", source)
+
+	def test_it_is_scheduled_once_at_five_past_midnight(self):
+		from one_fm import hooks
+
+		self.assertEqual(
+			hooks.scheduler_events["cron"]["5 0 * * *"],
+			["one_fm.operations.doctype.employee_schedule.dsot_notification.send_daily_dsot_digest"],
+		)
+
+
+class TestTheEmailActionEndpoints(FrappeTestCase):
+	def test_both_are_guest_get_endpoints(self):
+		for function in (dsot_notification.apply_email_action, dsot_notification.confirm_email_action):
+			self.assertIn(function, frappe.whitelisted)
+			self.assertIn(function, frappe.guest_methods)
+			self.assertEqual(frappe.allowed_http_methods_for_whitelisted_func[function], ["GET"])
+
+	def test_a_bad_signature_does_nothing(self):
+		from unittest import mock
+
+		with mock.patch.object(dsot_notification, "verify_request", return_value=False), mock.patch(
+			"one_fm.overrides.workflow.apply_workflow"
+		) as apply, mock.patch.object(frappe.db, "commit") as commit:
+			dsot_notification.apply_email_action(action="Approve", user="Administrator", names="ES-1")
+		apply.assert_not_called()
+		commit.assert_not_called()
+
+	def test_only_approve_or_reject_is_accepted(self):
+		from unittest import mock
+
+		with mock.patch.object(dsot_notification, "verify_request", return_value=True), mock.patch(
+			"one_fm.overrides.workflow.apply_workflow"
+		) as apply:
+			dsot_notification.apply_email_action(action="Delete", user="Administrator", names="ES-1")
+		apply.assert_not_called()
+
+	def test_the_user_is_restored_and_nothing_is_committed_for_a_stranger(self):
+		from unittest import mock
+
+		before = frappe.session.user
+		with mock.patch.object(dsot_notification, "verify_request", return_value=True), mock.patch(
+			"one_fm.operations.doctype.employee_schedule.employee_schedule.may_decide_dsot",
+			return_value=False,
+		), mock.patch("one_fm.overrides.workflow.apply_workflow") as apply, mock.patch.object(
+			frappe.db, "commit"
+		) as commit:
+			dsot_notification.apply_email_action(action="Approve", user="Administrator", names="ES-1")
+		self.assertEqual(frappe.session.user, before)
+		apply.assert_not_called()
+		commit.assert_not_called()
+
+	def test_it_commits_once_and_skips_rows_already_decided(self):
+		from unittest import mock
+
+		states = {"ES-1": dsot_notification.PENDING_DSOT, "ES-2": "Active", "ES-3": None}
+		with mock.patch.object(dsot_notification, "verify_request", return_value=True), mock.patch(
+			"one_fm.operations.doctype.employee_schedule.employee_schedule.may_decide_dsot",
+			return_value=True,
+		), mock.patch(
+			"one_fm.overrides.workflow.apply_workflow", return_value=frappe._dict()
+		) as apply, mock.patch.object(
+			frappe.db, "get_value", side_effect=lambda dt, name, field: states[name]
+		), mock.patch.object(frappe, "get_doc"), mock.patch.object(
+			frappe.db, "savepoint"
+		), mock.patch.object(frappe.db, "commit") as commit, mock.patch.object(
+			dsot_notification, "respond_email_action_page"
+		) as page:
+			dsot_notification.apply_email_action(
+				action="Approve", user="Administrator", names="ES-1,ES-2,ES-3"
+			)
+		self.assertEqual(apply.call_count, 1)
+		commit.assert_called_once()
+		html = page.call_args.args[1]
+		self.assertIn("Approved: 1", html)
+		self.assertIn("Rejected: 0", html)
+		self.assertIn("Skipped: 2", html)
+
+	def test_a_failing_row_is_rolled_back_logged_and_skipped(self):
+		from unittest import mock
+
+		with mock.patch.object(dsot_notification, "verify_request", return_value=True), mock.patch(
+			"one_fm.operations.doctype.employee_schedule.employee_schedule.may_decide_dsot",
+			return_value=True,
+		), mock.patch(
+			"one_fm.overrides.workflow.apply_workflow", side_effect=Exception("boom")
+		), mock.patch.object(
+			frappe.db, "get_value", return_value=dsot_notification.PENDING_DSOT
+		), mock.patch.object(frappe, "get_doc"), mock.patch.object(
+			frappe.db, "savepoint"
+		), mock.patch.object(frappe.db, "rollback") as rollback, mock.patch.object(
+			frappe, "log_error"
+		) as log_error, mock.patch.object(frappe.db, "commit"), mock.patch.object(
+			dsot_notification, "respond_email_action_page"
+		) as page:
+			dsot_notification.apply_email_action(action="Reject", user="Administrator", names="ES-1")
+		rollback.assert_called_once_with(save_point=dsot_notification.SAVEPOINT)
+		log_error.assert_called_once()
+		self.assertIn("Skipped: 1", page.call_args.args[1])
+
+	def test_the_confirm_page_changes_nothing_and_links_to_the_signed_apply_url(self):
+		from unittest import mock
+
+		row = frappe._dict(
+			name="ES-1", employee="HR-EMP-00001", employee_name="Test Employee",
+			date=frappe.utils.today(), workflow_state=dsot_notification.PENDING_DSOT,
+		)
+		with mock.patch.object(dsot_notification, "verify_request", return_value=True), mock.patch.object(
+			frappe.db, "get_value", return_value=row
+		), mock.patch.object(frappe.db, "commit") as commit, mock.patch(
+			"one_fm.overrides.workflow.apply_workflow"
+		) as apply, mock.patch.object(dsot_notification, "respond_email_action_page") as page:
+			dsot_notification.confirm_email_action(action="Approve", user="Administrator", names="ES-1")
+		commit.assert_not_called()
+		apply.assert_not_called()
+		self.assertIn("apply_email_action", page.call_args.kwargs["primary_action"])
+		self.assertIn("_signature=", page.call_args.kwargs["primary_action"])
+		self.assertEqual(page.call_args.kwargs["primary_label"], "Confirm")
+
+	def test_bulk_selection_uses_the_cutoff_rule(self):
+		source = inspect.getsource(dsot_notification.selected_schedules)
+		self.assertIn("pending_overtime_rows(digest_cutoff)", source)
+		self.assertIn("creation <= cutoff", inspect.getsource(dsot_notification.pending_overtime_rows))
+
+	def test_the_workflow_is_not_set_to_send_its_own_email(self):
+		# Approve stays the existing Active transition and no Notification is added.
+		self.assertNotIn("send_email_alert", inspect.getsource(dsot_notification))
