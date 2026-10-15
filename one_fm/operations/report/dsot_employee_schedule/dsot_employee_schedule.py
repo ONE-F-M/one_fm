@@ -176,10 +176,6 @@ def get_report_summary(data):
 		if row.workflow_state in counts:
 			counts[row.workflow_state] += 1
 
-	# Relabel for display only after counting: Active is shown as Approved.
-	for row in data:
-		row.workflow_state = OPTION_FOR_STATE.get(row.workflow_state, row.workflow_state)
-
 	return [
 		{
 			"value": counts[PENDING],
