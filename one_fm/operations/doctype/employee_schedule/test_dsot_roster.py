@@ -148,7 +148,7 @@ class TestTheRosterQueryUsesTheFilter(FrappeTestCase):
 			filters={"parent": workflow, "parenttype": "Workflow"},
 			pluck="state",
 		)
-		for state in NOT_A_WORKED_SHIFT:
+		for state in (PENDING_DSOT, *HIDDEN_FROM_ROSTER):
 			with self.subTest(state=state):
 				self.assertIn(state, states)
 
