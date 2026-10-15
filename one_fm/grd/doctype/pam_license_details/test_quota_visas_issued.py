@@ -8,8 +8,11 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 from one_fm.grd.doctype.pam_license_details.pam_license_details import (
-	VISA_COMPLETED,
+	VISA_ISSUED_STATES,
 	visas_issued_by_quota,
+)
+from one_fm.visa_management.doctype.visa_cancellation_request.visa_cancellation_request import (
+	has_workflow_state_column,
 )
 
 FIELDNAME = "number_of_visas_issued"
@@ -19,11 +22,23 @@ SOURCE = frappe.get_app_path(
 
 
 class TestWhatCounts(FrappeTestCase):
-	def test_only_a_completed_request_is_a_visa(self):
-		"""Anything earlier is an application, not a visa."""
+	def test_only_a_request_pending_by_moi_is_a_visa(self):
+		"""Only the current state Pending By MOI counts - capital B, as the Workflow spells it."""
 		block = frappe.read_file(SOURCE).split("def visas_issued_by_quota", 1)[1]
-		self.assertIn('["workflow_state", "=", VISA_COMPLETED]', block)
-		self.assertEqual(VISA_COMPLETED, "Completed")
+		self.assertIn('["workflow_state", "in", VISA_ISSUED_STATES]', block)
+		self.assertEqual(VISA_ISSUED_STATES, ("Pending By MOI",))
+
+	def test_every_issued_state_is_a_state_of_the_visa_request_workflow(self):
+		"""Catches a casing error: a state the Workflow does not have matches nothing."""
+		workflows = frappe.get_all("Workflow", filters={"document_type": "Visa Request"}, pluck="name")
+		self.assertTrue(workflows, "No Workflow for Visa Request on this site")
+		states = set(
+			frappe.get_all(
+				"Workflow Document State", filters={"parent": ["in", workflows]}, pluck="state"
+			)
+		)
+		for state in VISA_ISSUED_STATES:
+			self.assertIn(state, states)
 
 	def test_it_reads_the_request_not_an_employee(self):
 		"""At this point there is no employee: the visa has been issued and the person has
