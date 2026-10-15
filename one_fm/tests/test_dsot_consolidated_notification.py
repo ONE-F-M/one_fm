@@ -472,7 +472,10 @@ class TestTheEmailActionEndpoints(FrappeTestCase):
 		for function in (dsot_notification.apply_email_action, dsot_notification.confirm_email_action):
 			self.assertIn(function, frappe.whitelisted)
 			self.assertIn(function, frappe.guest_methods)
-			self.assertEqual(frappe.allowed_http_methods_for_whitelisted_func[function], ["GET"])
+		source = inspect.getsource(dsot_notification)
+		self.assertEqual(
+			source.count('@frappe.whitelist(allow_guest=True, methods=["GET"])'), 2
+		)
 
 	def test_a_bad_signature_does_nothing(self):
 		from unittest import mock
