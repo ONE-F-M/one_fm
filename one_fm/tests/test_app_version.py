@@ -87,7 +87,8 @@ class TestAppVersion(FrappeTestCase):
 
 	def test_call_changes_no_data(self):
 		self._set(ios_latest_version="3.0.0")
-		before = frappe.db.get_value("Singles", {"doctype": "Mobile App Settings", "field": "ios_latest_version"}, "value")
+		before = frappe.db.get_single_value("Mobile App Settings", "ios_latest_version", cache=False)
 		self._call()
-		after = frappe.db.get_value("Singles", {"doctype": "Mobile App Settings", "field": "ios_latest_version"}, "value")
+		after = frappe.db.get_single_value("Mobile App Settings", "ios_latest_version", cache=False)
+		self.assertEqual(before, "3.0.0")
 		self.assertEqual(before, after)
