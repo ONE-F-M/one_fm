@@ -240,11 +240,9 @@
    "fieldtype": "Column Break"
   },
   {
-   "allow_on_submit": 1,
-   "fieldname": "upload_civil_id_payment_datetime",
-   "fieldtype": "Data",
-   "label": "Upload Payment Invoice On",
-   "read_only": 1
+   "fieldname": "payment_date",
+   "fieldtype": "Datetime",
+   "label": "Payment Date"
   },
   {
    "fieldname": "upload_civil_id_datetime",
