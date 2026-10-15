@@ -86,12 +86,11 @@ class TestTheStoryScenarios(FrappeTestCase):
 		)
 
 	def test_scenario_5_employees_are_grouped_before_cycles(self):
-		# AC4. The grouping key is (employee, cycle), so the same range for two people is
-		# two emails rather than one. Pinned on the code that does it, since the helper
-		# only ever sees one employee's dates.
+		# AC4. The grouping key is the employee, so the same day for two people is two
+		# emails rather than one. Pinned on the code that does it.
 		source = inspect.getsource(dsot_notification.flush)
 		self.assertIn("by_employee.setdefault((row.employee, row.employee_name), [])", source)
-		self.assertIn("for start, end in continuous_cycles(dates):", source)
+		self.assertIn("send_urgent_email(approver, employee, employee_name or employee", source)
 
 
 class TestTheCycleBoundaries(FrappeTestCase):
