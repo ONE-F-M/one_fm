@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002098: the state a Medical Insurance policy opens in."""
+"""The state a Medical Insurance policy opens in."""
 
 from unittest import mock
 
@@ -13,7 +13,10 @@ from one_fm.grd.doctype.medical_insurance.medical_insurance import (
 	DRAFT,
 	initial_workflow_state,
 )
-from one_fm.grd.doctype.preparation.preparation import create_documents_for_row
+from one_fm.grd.doctype.preparation.preparation import (
+	category_for_action,
+	create_documents_for_row,
+)
 
 APPLY_RULE = "frappe.automation.doctype.assignment_rule.assignment_rule.apply"
 
@@ -36,6 +39,7 @@ def _opened_by_a_preparation(action):
 		{
 			"doctype": "Preparation",
 			"posting_date": nowdate(),
+			"category": category_for_action(action),
 			"preparation_record": [
 				{"employee": _an_active_employee(), "renewal_or_extend": action}
 			],
