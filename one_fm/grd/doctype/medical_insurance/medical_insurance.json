@@ -223,10 +223,9 @@
    "read_only": 1
   },
   {
-   "fieldname": "upload_payment_invoice_on",
+   "fieldname": "payment_date",
    "fieldtype": "Datetime",
-   "hidden": 1,
-   "label": "Upload Payment Invoice On"
+   "label": "Payment Date"
   },
   {
    "allow_on_submit": 1,
