@@ -18,7 +18,7 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, today
 
-from one_fm.one_fm.page.roster.employee_map import NOT_A_WORKED_SHIFT as ROSTER_STATES
+from one_fm.one_fm.page.roster.employee_map import HIDDEN_FROM_ROSTER
 from one_fm.operations.doctype.employee_schedule.employee_schedule import (
 	ACTIVE,
 	BASIC,
