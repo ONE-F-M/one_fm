@@ -1543,8 +1543,14 @@ function render_roster(res, page) {
 						data_ot = `${employee}|${date}|${operations_role}|${shift}|${employee_availability}`;
 					}
 					else if (!attendance && roster_type == "Over-Time" && page.filters[applied_filter] != record[applied_filter]) {
-						ot_count++;
-						bgclass = bgclass ? `${bgclass}-diffot` : "diffot";
+						if (workflow_state === "Pending DSOT Approval") {
+							// WI-003414: not counted as OT until approved; data_ot is kept so it can still be unscheduled
+							bgclass = bgclass ? `${bgclass}-pendingot` : "pendingot";
+							tooltiptext += `Pending DSOT Approval<br>`;
+						} else {
+							ot_count++;
+							bgclass = bgclass ? `${bgclass}-diffot` : "diffot";
+						}
 						data_ot = `${employee}|${date}|${operations_role}|${shift}|${employee_availability}`;
 					}
 					else if (!attendance && roster_type == "Basic" && page.filters[applied_filter] == record[applied_filter] && day_off_ot == 1) {
