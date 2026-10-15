@@ -8,7 +8,6 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import now_datetime
 
 from one_fm.patches.v15_0.backfill_checkin_operations_shift import execute as backfill
-from one_fm.tests.utils import get_test_employee
 
 DOCTYPE = "Accommodation Checkin Checkout"
 
@@ -40,7 +39,11 @@ def make_checkin(employee, type="IN"):
 
 class TestAccommodationCheckinCheckout(FrappeTestCase):
 	def setUp(self):
-		self.employee = get_test_employee().name
+		# An existing Active employee: building one needs site-specific mandatory fields and
+		# companies. The shift is changed with set_value, which the test rollback undoes.
+		self.employee = frappe.db.get_value("Employee", {"status": "Active"}, "name")
+		if not self.employee:
+			self.skipTest("No Active Employee on this site")
 		self.shift = make_operations_shift()
 		self.other_shift = make_operations_shift()
 		frappe.db.set_value("Employee", self.employee, "shift", self.shift)
