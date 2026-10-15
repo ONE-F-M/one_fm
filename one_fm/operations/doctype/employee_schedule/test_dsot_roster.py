@@ -331,8 +331,8 @@ class TestADoubleShiftRaisedThroughTheOrmReachesTheGate(FrappeTestCase):
 			frappe.db.get_value("Employee Schedule", schedule.name, "workflow_state"), PENDING_DSOT
 		)
 
-	def test_the_pending_request_does_not_render_on_the_roster(self):
-		"""AC 1.1, from the state a real save leaves behind rather than a seeded one."""
+	def test_the_pending_request_renders_on_the_roster(self):
+		"""WI-003414, from the state a real save leaves behind rather than a seeded one."""
 		_seed("BASIC", roster_type=BASIC, employee=self.employee, date=self.date)
 		schedule = self._insert_overtime()
 
