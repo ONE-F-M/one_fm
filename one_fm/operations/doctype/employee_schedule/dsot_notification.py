@@ -1,21 +1,27 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
-"""WI-002602: one DSOT approval email per employee per continuous date cycle.
+"""DSOT approval emails: urgent same-day requests at once, everything else in a daily batch.
 
-Every Employee Schedule entering ``Pending DSOT Approval`` used to put its own assignment
-in front of the DSOT Approver as a normal assignment, so ERPNext sent one Assignment
-Notification per row. A week of overtime for one person is eight rows, and the approver
-got eight near-identical emails for what they experience as a single request.
+Every Employee Schedule entering ``Pending DSOT Approval`` puts a ToDo in front of the DSOT
+Approver. The per-row Assignment Notification is suppressed (the approver is named as the
+assigner), so the approver is told about waiting requests by the two emails in this module,
+both rendered from one shared grid (``dsot_approval_request.html``):
 
-The assignment itself is unchanged - the approver still needs the ToDo in their task list,
-and the existing Approve/Reject flow is built on it. Only the EMAIL is consolidated: the
-per-row notification is suppressed and one message is sent per (employee, continuous date
-cycle) once the request that created them commits.
+* **Immediate** - ``flush()`` runs when the request that held the rows commits, and emails
+  only the rows whose schedule date is today, one email per employee, with an "Urgent"
+  subject. Waiting for the next morning would be too late for those shifts. Collecting the
+  names as they are held and flushing on commit also means a rolled-back roster run sends
+  nothing at all.
+* **Batch** - ``send_daily_dsot_digest()`` runs at 00:05 and sends ONE email listing every
+  pending overtime row that was not raised for its own day (``date != DATE(creation)``),
+  every day until the row is decided. Nothing is sent when there are none.
 
-Why on commit rather than per row: a range is not known to be a range until the last row
-of it has been written. Collecting the names as they are held and flushing once the
-transaction commits is what turns eight rows into one email - and it means a rolled-back
-roster run sends nothing at all, which a per-row email could not promise.
+Each row in either email has Approve and Reject buttons, and the header has Approve All and
+Reject All. The buttons open ``confirm_email_action`` - a signed page that changes nothing
+and shows what would be decided - and its Confirm button opens ``apply_email_action``, the
+signed GET endpoint that runs the workflow action. Approve means the workflow's existing
+Active state; Reject means Rejected. The digest's bulk buttons sign a creation cutoff
+rather than a list of names, so rows raised after the email was built are never swept in.
 
 The outcome email is the other half: once the approver has decided, the REQUESTOR is told
 which days were approved and which were rejected, in one email per request. Approvers
