@@ -164,11 +164,11 @@ class TestWhatTheRosterRenders(FrappeTestCase):
 	def tearDown(self):
 		_clear()
 
-	def test_a_pending_double_shift_is_not_rendered(self):
-		"""AC 1.1 - nobody has said yes to it yet, so it is not a shift on the roster."""
-		_seed("PENDING", workflow_state=PENDING_DSOT, employee=self.employee, date=self.date)
+	def test_a_pending_double_shift_is_rendered(self):
+		"""WI-003414 Scenario 1 - it is shown (in the Pending colour) while it waits."""
+		pending = _seed("PENDING", workflow_state=PENDING_DSOT, employee=self.employee, date=self.date)
 
-		self.assertEqual(_rows_the_roster_would_render(), set())
+		self.assertEqual(_rows_the_roster_would_render(), {pending})
 
 	def test_a_rejected_double_shift_is_not_rendered(self):
 		"""AC 1.3 and AC 1.4 - refused outright, or left unanswered until the shift ended."""
