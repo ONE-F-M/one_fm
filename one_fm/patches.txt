@@ -645,6 +645,7 @@ one_fm.patches.v15_0.deactivate_bonus_request_workflow_and_assignment_rules
 one_fm.patches.v15_0.add_visa_request_workflow_state_standard_filter #2026-10-06 WI-003181
 one_fm.patches.v15_0.show_document_request_status_column #2026-10-11
 one_fm.patches.v15_0.grant_payroll_operator_penalty_deduction_access
+one_fm.patches.v15_0.backfill_checkin_operations_shift #2026-10-16 WI-003633
 one_fm.patches.v15_0.add_department_head #2026-10-14
 one_fm.patches.v15_0.create_dms_document_types #2026-10-13
 one_fm.patches.v15_0.delete_jira_ticket_client_script #2026-10-15
