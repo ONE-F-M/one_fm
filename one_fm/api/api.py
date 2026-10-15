@@ -179,7 +179,8 @@ def push_notification_for_checkin(employee_id, title, body, checkin, arriveLate 
                 "body" : body,
                 "showButtonCheckIn": checkin,
                 "showButtonCheckOut": checkout,
-                "showButtonArrivingLate": arriveLate
+                "showButtonArrivingLate": arriveLate,
+                "url": "/checkin"
                 },
                 apns=messaging.APNSConfig(
                     payload=messaging.APNSPayload(
