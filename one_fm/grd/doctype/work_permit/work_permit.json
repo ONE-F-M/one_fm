@@ -809,12 +809,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "datetime_17",
-   "fieldtype": "Datetime",
-   "label": "Attach Payment Invoice On",
-   "read_only": 1
-  },
-  {
    "fieldname": "column_break_20",
    "fieldtype": "Column Break"
   },
