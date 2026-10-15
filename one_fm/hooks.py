@@ -766,6 +766,9 @@ scheduler_events = {
 		"10 0 * * *": [ #"At 12:10 am - set tomorrow's manifest drivers from Vehicle Handover Logs (WI-001577)"
 			'one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log.set_manifest_drivers_for_tomorrow'
 		],
+		"5 0 * * *": [ # At 12:05 am - one digest email of the pending overtime (DSOT) requests
+			'one_fm.operations.doctype.employee_schedule.dsot_notification.send_daily_dsot_digest'
+		],
 		"15 12 * * *": [ #"At 12:15 pm - preponed from 01:30 pm (WI-001704); run after attendance is marked"
 			'one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.generate_checker',
 			'one_fm.operations.doctype.roster_double_shift_ot_checker.roster_double_shift_ot_checker.check_roster_double_shift_ot',
