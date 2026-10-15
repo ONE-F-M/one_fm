@@ -272,6 +272,7 @@ def push_notification_rest_api_for_leave_application(employee_id, title, body, l
                 title=title,
                 body=body
             ),
+            data={"url": "/leaves/{0}".format(leave_id)},
             token=deviceToken
         )
         res = messaging.send(message)
