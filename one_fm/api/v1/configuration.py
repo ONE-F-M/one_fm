@@ -66,21 +66,8 @@ def app_service_group() -> dict:
 
 @frappe.whitelist(allow_guest=True, methods=["GET"])
 def app_version() -> dict:
-	""" This method retrives the minimum and latest mobile app versions and store URLs.
-	It is open to guests because the app checks the version before login.
-
-	Args:
-
-	Returns:
-		response (dict): {
-			message (str): Brief message indicating the response.
-			data (dict): {
-				"android": {"minimum_app_version": "", "latest_app_version": "", "store_url": ""},
-				"ios": {"minimum_app_version": "", "latest_app_version": "", "store_url": ""}
-			}
-			error (str)[Optional]: Any error response provided by server. 
-		}
-	"""
+	"""Return the minimum and latest mobile app versions and store URLs per platform.
+	Open to guests because the app checks its version before login."""
 	try:
 		settings = frappe.get_cached_doc("Mobile App Settings")
 		data = {
