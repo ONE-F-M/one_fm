@@ -296,8 +296,11 @@ class RoutePlan(Document):
 					# not all ride together and summing them would refuse a load the
 					# bus can actually carry.
 					self._validate_mixed_trip_legs(trip, limit)
-				elif trip.headcount > limit:
-					self._throw_capacity_exceeded(vehicle, trip.direction, trip.headcount,
+				elif trip.occupancy > limit:
+					# Judged and quoted on the peak onboard load, not the sum of every
+					# stop's riders. A one-way run reads the same either way, because
+					# every rider boards at the camps first.
+					self._throw_capacity_exceeded(vehicle, trip.direction, trip.occupancy,
 												  limit, self._trip_label(trip))
 
 			# Trips that overlap in time DO share the bus, so no single one of them is
