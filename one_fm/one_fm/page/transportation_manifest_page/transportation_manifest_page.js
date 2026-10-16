@@ -1864,7 +1864,7 @@ function renderManifest($container, data) {
 			lines.push([__("Today's Assigned Shift"), __("Not rostered today")]);
 		}
 		const linesHtml = lines.map(([label, value]) =>
-			`<div class="mfst-reliever-line"><span class="mfst-reliever-label">${escHtml(label)}</span><span>${escHtml(value)}</span></div>`
+			`<div class="mfst-reliever-line"><span class="mfst-reliever-label">${escHtml(label)}</span><span class="mfst-reliever-label">:</span><span class="mfst-reliever-value">${escHtml(value)}</span></div>`
 		).join("");
 		const search = [r.employee_name, r.master_shift, r.shift_name, r.ot_shift].filter(Boolean).join(" ").toLowerCase();
 		return `<button type="button" class="mfst-reliever-card" aria-pressed="false"
@@ -2618,17 +2618,18 @@ function getManifestCSS() {
 		.mfst-reliever-banner { margin-bottom: 8px; padding: 10px 12px; border: 1px solid var(--mfst-amber); border-radius: 10px; background: var(--mfst-amber-dim); color: var(--mfst-text); font-size: 13px; line-height: 1.4; }
 		.mfst-reliever-banner[hidden] { display: none; }
 		.mfst-reliever-list { display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; }
-		.mfst-reliever-card { display: block; width: 100%; min-height: 44px; padding: 12px; text-align: left; border: 2px solid var(--mfst-border); border-radius: 12px; background: var(--mfst-bg-card); color: var(--mfst-text); font-family: var(--mfst-font-body); cursor: pointer; }
+		.mfst-reliever-card { display: block; flex: 0 0 auto; width: 100%; min-height: 44px; padding: 12px; text-align: left; border: 2px solid var(--mfst-border); border-radius: 12px; background: var(--mfst-bg-card); color: var(--mfst-text); font-family: var(--mfst-font-body); cursor: pointer; }
 		.mfst-reliever-card[hidden] { display: none; }
 		.mfst-reliever-card.is-selected { border-color: var(--mfst-accent); box-shadow: 0 0 0 3px var(--mfst-accent-dim); }
 		.mfst-reliever-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px solid var(--mfst-border); }
-		.mfst-reliever-name { font-size: 15px; font-weight: 700; }
-		.mfst-reliever-tags { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
+		.mfst-reliever-name { min-width: 0; font-size: 15px; font-weight: 700; text-transform: uppercase; overflow-wrap: anywhere; }
+		.mfst-reliever-tags { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; gap: 4px; }
 		.mfst-reliever-badge, .mfst-reliever-overlap-tag { padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; white-space: nowrap; }
 		.mfst-reliever-badge-ot { background: var(--mfst-amber); color: #fff; }
 		.mfst-reliever-badge-regular { background: var(--mfst-bg); color: var(--mfst-text-muted); }
 		.mfst-reliever-overlap-tag { background: var(--mfst-amber-dim); color: var(--mfst-amber); border: 1px solid var(--mfst-amber); }
-		.mfst-reliever-line { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; line-height: 1.6; }
+		.mfst-reliever-line { display: grid; grid-template-columns: 9.5em auto 1fr; column-gap: 6px; font-size: 13px; line-height: 1.6; }
+		.mfst-reliever-value { min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
 		.mfst-reliever-label { color: var(--mfst-text-muted); }
 		.mfst-reliever-empty { padding: 16px; text-align: center; font-size: 14px; color: var(--mfst-text-muted); }
 		.mfst-reliever-empty[hidden] { display: none; }
