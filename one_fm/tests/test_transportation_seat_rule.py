@@ -119,7 +119,7 @@ class TestTheDrawerActions(FrappeTestCase):
 		# AC3: the block colour, the prefix arrow and the drawer badge all read
 		# item.direction, and the merge stamped MIXED on every stop.
 		self.assertIn("_resyncTripDirection(tripId)", self.source)
-		self.assertIn("this._resyncTripDirection(tripId);", self.source)
+		self.assertIn("trips.forEach((tripId) => this._resyncTripDirection(tripId));", self.source)
 
 	def test_a_mixed_run_is_never_guessed_back_to_outbound(self):
 		# A stop whose card has left the board has no own heading to read.
@@ -137,13 +137,13 @@ class TestTheRunIsDrawnEndToEnd(FrappeTestCase):
 		# the last one ends, and the drawer header already read it that way. Clamped to
 		# the stops, and only comparable with them because the plan load rebases the leg
 		# timings onto the run's own day - see test_lane_day_rebase.
-		self.assertIn("stated(held.departure) ?? Infinity, spanStart.getTime()", self.source)
-		self.assertIn("stated(held.arrival) ?? -Infinity, spanEnd.getTime()", self.source)
+		self.assertIn("held.departure ?? Infinity, spanStart.getTime()", self.source)
+		self.assertIn("held.arrival ?? -Infinity, spanEnd.getTime()", self.source)
 		self.assertIn("start: runStart,", self.source)
 		self.assertIn("end: runEnd,", self.source)
 
 	def test_the_drawer_header_reads_the_same_two_ends(self):
-		self.assertIn("const stored = this.selectedTripLegs.departure;", self.source)
+		self.assertIn("return this.selectedTripLegs.departure || null;", self.source)
 		self.assertIn("return this.selectedTripLegs.arrival || this.lastStopEndsAt();", self.source)
 
 	def test_the_existing_trips_list_shows_every_run_on_the_lane(self):
@@ -206,7 +206,7 @@ class TestATripNameIsUniqueOnItsLane(FrappeTestCase):
 		# the next reload and would then look like the run renaming itself.
 		self.assertIn("_applyStoredTripNames(result)", self.source)
 		self.assertIn("callback: (r) => { this._applyStoredTripNames(r.message); },", self.source)
-		self.assertIn("already in use on this vehicle", self.source)
+		self.assertIn("Trip renamed to match its vehicle", self.source)
 
 
 class TestTheTripNamePatchIsRegistered(FrappeTestCase):
