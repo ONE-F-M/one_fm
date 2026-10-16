@@ -43,6 +43,20 @@ def _shipment(name, *, retention=0, from_date=DAY, to_date=DAY,
 	})
 
 
+
+def pin_three_passenger_seats(vehicle):
+	"""Make the fixture vehicle carry 3 passengers, whatever this site's fleet data says.
+
+	The capacity tests are written for 3 legal passenger seats, but the stored capacity
+	of a real vehicle differs between sites. The test rollback restores the record.
+	"""
+	frappe.db.set_value(
+		"Vehicle",
+		vehicle,
+		{"seats": 4, "custom_includes_driver_seat": 1, "custom_max_passenger_capacity": 3},
+	)
+
+
 class TestRetentionOverlapLogic(FrappeTestCase):
 	"""TR4-7: pure date-range × daily-time overlap detection, no fixtures needed."""
 
@@ -389,6 +403,10 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 		if not frappe.db.exists("Vehicle", cls.VEHICLE):
 			raise cls.skipTest(cls, f"Fixture vehicle {cls.VEHICLE} missing on this site")
 
+	def setUp(self):
+		super().setUp()
+		pin_three_passenger_seats(self.VEHICLE)
+
 	def _make_plan(self, rows):
 		doc = frappe.new_doc("Route Plan")
 		doc.title = frappe.generate_hash("RP-CAP", 8)
@@ -703,6 +721,10 @@ class TestRoutePlanTimeWindowCapacitySave(FrappeTestCase):
 		super().setUpClass()
 		if not frappe.db.exists("Vehicle", cls.VEHICLE):
 			raise cls.skipTest(cls, f"Fixture vehicle {cls.VEHICLE} missing on this site")
+
+	def setUp(self):
+		super().setUp()
+		pin_three_passenger_seats(self.VEHICLE)
 
 	def _make_plan(self, rows):
 		doc = frappe.new_doc("Route Plan")
@@ -1159,6 +1181,10 @@ class TestSequentialRunsAreWeighedSeparately(FrappeTestCase):
 		super().setUpClass()
 		if not frappe.db.exists("Vehicle", cls.VEHICLE):
 			raise cls.skipTest(cls, f"Fixture vehicle {cls.VEHICLE} missing on this site")
+
+	def setUp(self):
+		super().setUp()
+		pin_three_passenger_seats(self.VEHICLE)
 
 	def _row(self, *, trip, headcount, start, end):
 		return {
