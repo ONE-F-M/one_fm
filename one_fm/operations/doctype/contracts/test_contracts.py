@@ -38,6 +38,7 @@ class TestContracts(FrappeTestCase):
 				frappe.get_doc({
 					"doctype": "Customer",
 					"customer_name": f"TEST-CLIENT-{i}",
+					"customer_name_in_arabic": f"TEST-CLIENT-{i}",
 					"customer_group": "Commercial",
 					"territory": "All Territories"
 				}).insert(ignore_permissions=True)
@@ -376,3 +377,80 @@ class TestContracts(FrappeTestCase):
 			contract.workflow_state, "Inactive",
 			"Contract must transition to Inactive even if email sending fails."
 		)
+
+	# ------------------------------------------------------------------
+	# Test: contract date order guard (HD Ticket 1878243)
+	# ------------------------------------------------------------------
+	def test_contract_rejects_end_date_before_start_date(self):
+		"""An inverted date pair must not be saveable on a contract.
+
+		An inverted pair used to save cleanly and was then mirrored onto the
+		Project with db.set_value, locking the Project out of every later save.
+		"""
+		contract = frappe.get_doc({
+			"doctype": "Contracts",
+			"contract": "TEST-CONTRACT-DATES",
+			"client": "TEST-CLIENT-1",
+			"project": "Test Project Alpha",
+			"start_date": nowdate(),
+			"end_date": add_days(nowdate(), -3),
+			"workflow_state": "Draft"
+		})
+
+		self.assertRaises(frappe.ValidationError, contract.insert, ignore_permissions=True)
+
+	def test_contract_dates_sync_to_project(self):
+		"""A valid date pair still propagates to the linked project on update."""
+		contract = frappe.get_doc({
+			"doctype": "Contracts",
+			"contract": "TEST-CONTRACT-SYNC",
+			"client": "TEST-CLIENT-1",
+			"project": "Test Project Alpha",
+			"start_date": add_days(nowdate(), -30),
+			"end_date": add_months(getdate(), 6),
+			"workflow_state": "Draft"
+		}).insert(ignore_permissions=True)
+
+		new_end_date = add_months(getdate(), 12)
+		contract.end_date = new_end_date
+		contract.save(ignore_permissions=True)
+
+		project_dates = frappe.db.get_value(
+			"Project", "Test Project Alpha",
+			["expected_start_date", "expected_end_date"], as_dict=True
+		)
+		self.assertEqual(getdate(project_dates.expected_start_date), getdate(contract.start_date))
+		self.assertEqual(getdate(project_dates.expected_end_date), getdate(new_end_date))
+
+	def test_inverted_dates_are_not_mirrored_to_project(self):
+		"""update_project_start_end_date must refuse to write an inverted pair.
+
+		Second line of defence: this write bypasses Project validation, so it is
+		guarded independently of validate_contract_date_order.
+		"""
+		contract = frappe.get_doc({
+			"doctype": "Contracts",
+			"contract": "TEST-CONTRACT-NOSYNC",
+			"client": "TEST-CLIENT-1",
+			"project": "Test Project Alpha",
+			"start_date": add_days(nowdate(), -30),
+			"end_date": add_months(getdate(), 6),
+			"workflow_state": "Draft"
+		}).insert(ignore_permissions=True)
+
+		before = frappe.db.get_value(
+			"Project", "Test Project Alpha",
+			["expected_start_date", "expected_end_date"], as_dict=True
+		)
+
+		# Bypass validate_contract_date_order the way a direct db write or a
+		# legacy record would, then call the sync directly.
+		contract.start_date = nowdate()
+		contract.end_date = add_days(nowdate(), -5)
+		contract.update_project_start_end_date()
+
+		after = frappe.db.get_value(
+			"Project", "Test Project Alpha",
+			["expected_start_date", "expected_end_date"], as_dict=True
+		)
+		self.assertEqual(before, after, "Project dates must be left untouched.")
