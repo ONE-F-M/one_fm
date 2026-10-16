@@ -1,7 +1,7 @@
 # Copyright (c) 2026, oneaborance and contributors
 # See license.txt
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -1425,5 +1425,279 @@ class TestATripNameNamesOneRun(FrappeTestCase):
 		doc.insert(ignore_permissions=True)
 		stored = frappe.get_doc("Route Plan", doc.name)
 
+		# The lane's series depends on the vehicle's row on this site's board, so read
+		# it rather than assuming the row.
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			canvas_trip_series,
+		)
+
+		series = canvas_trip_series().get(vehicle)
 		names = [row.trip_name for row in stored.assignments]
-		self.assertEqual(sorted(names), ["S-101", "S-106"])
+		self.assertEqual(len(set(names)), 2)
+		if series:
+			self.assertTrue(all(name.startswith(series) for name in names), names)
+		else:
+			self.assertEqual(sorted(names), ["S-101", "S-106"])
+
+
+class TestRoutePlanTripSeries(FrappeTestCase):
+	"""A run moved whole onto another lane is renamed into that lane's series.
+
+	The canvas numbers a lane by its position on the board ("S-9" for the ninth, Leased,
+	vehicle), so a run on the ninth lane called S-101 reads as the first lane's trip.
+	"""
+
+	SERIES = {"V1": "S-1", "V9": "S-9", "V26": "26"}
+	PATCH = "one_fm.operations.doctype.route_plan.route_plan._canvas_series"
+
+	def _plan(self, rows):
+		doc = frappe.new_doc("Route Plan")
+		doc.title = frappe.generate_hash("RP-SERIES", 8)
+		doc.status = "Draft"
+		doc.effective_from = today()
+		for row in rows:
+			doc.append("assignments", row)
+		doc.flags.ignore_mandatory = True
+		doc.flags.ignore_links = True
+		return doc
+
+	def _row(self, *, vehicle="V9", trip, name, start="05:30:00", end="06:30:00",
+			 direction="OUTBOUND", camp_leg=0, headcount=1):
+		return {
+			"card_id": frappe.generate_hash("CARD", 8),
+			"vehicle": vehicle,
+			"direction": direction,
+			"trip_group": trip,
+			"trip_name": name,
+			"headcount": headcount,
+			"is_camp_leg": camp_leg,
+			"start_time": f"2026-07-20T{start}Z",
+			"end_time": f"2026-07-20T{end}Z",
+		}
+
+	def _names(self, doc):
+		return {(row.vehicle, row.trip_group): row.trip_name for row in doc.assignments}
+
+	def _repair(self, doc, series=None):
+		with patch(self.PATCH, return_value=self.SERIES if series is None else series):
+			doc._rename_duplicate_trip_names()
+
+	def test_a_run_on_the_ninth_lane_is_renamed_into_its_series_with_its_camp_legs(self):
+		rows = [self._row(trip="MIX-1", name="S-101") for _ in range(4)]
+		rows += [self._row(trip="MIX-1", name="S-101", camp_leg=1) for _ in range(2)]
+		doc = self._plan(rows)
+
+		self._repair(doc)
+
+		self.assertEqual({row.trip_name for row in doc.assignments}, {"S-901"})
+
+	def test_a_run_already_in_its_series_is_left_alone(self):
+		doc = self._plan([self._row(vehicle="V1", trip="T1", name="S-101")])
+
+		self._repair(doc)
+
+		self.assertEqual(self._names(doc), {("V1", "T1"): "S-101"})
+
+	def test_repairing_twice_changes_nothing_the_second_time(self):
+		doc = self._plan([self._row(trip="T1", name="S-101")])
+
+		self._repair(doc)
+		once = self._names(doc)
+		self._repair(doc)
+
+		self.assertEqual(self._names(doc), once)
+		self.assertEqual(once, {("V9", "T1"): "S-901"})
+
+	def test_a_vehicle_not_on_the_board_keeps_the_old_behaviour(self):
+		doc = self._plan([
+			self._row(vehicle="BUS-A", trip="T1", name="S-101", start="05:30:00"),
+			self._row(vehicle="BUS-A", trip="T2", name="S-101", start="07:30:00"),
+		])
+
+		self._repair(doc)
+
+		# Not renamed into any series, only the duplicate sorted out as before.
+		names = self._names(doc)
+		self.assertEqual(names[("BUS-A", "T1")], "S-101")
+		self.assertEqual(names[("BUS-A", "T2")], "S-102")
+
+	def test_two_runs_swapping_series_names_each_land_in_their_own(self):
+		doc = self._plan([
+			self._row(vehicle="V1", trip="T-A", name="S-901"),
+			self._row(vehicle="V9", trip="T-B", name="S-101"),
+		])
+
+		self._repair(doc)
+
+		self.assertEqual(self._names(doc), {("V1", "T-A"): "S-101", ("V9", "T-B"): "S-901"})
+
+	def test_the_same_name_on_two_lanes_changes_only_the_mismatched_one(self):
+		doc = self._plan([
+			self._row(vehicle="V1", trip="T-A", name="S-101"),
+			self._row(vehicle="V9", trip="T-B", name="S-101"),
+		])
+
+		self._repair(doc)
+
+		self.assertEqual(self._names(doc), {("V1", "T-A"): "S-101", ("V9", "T-B"): "S-901"})
+
+	def test_a_renamed_run_never_takes_a_name_another_run_keeps(self):
+		doc = self._plan([
+			self._row(trip="T-MOVED", name="S-101", start="05:30:00"),
+			self._row(trip="T-KEPT", name="S-901", start="07:30:00"),
+		])
+
+		self._repair(doc)
+
+		names = self._names(doc)
+		self.assertEqual(names[("V9", "T-KEPT")], "S-901")
+		self.assertEqual(names[("V9", "T-MOVED")], "S-902")
+
+	def test_runs_are_told_apart_by_trip_group_not_by_name(self):
+		# Two runs on one lane answering to one name: each is judged on its own.
+		doc = self._plan([
+			self._row(trip="T-A", name="S-101", start="05:30:00"),
+			self._row(trip="T-B", name="S-101", start="07:30:00"),
+		])
+
+		self._repair(doc)
+
+		names = self._names(doc)
+		self.assertEqual(names[("V9", "T-A")], "S-901")
+		self.assertEqual(names[("V9", "T-B")], "S-902")
+
+	def test_both_directions_of_a_run_and_its_camp_leg_are_renamed_together(self):
+		doc = self._plan([
+			self._row(trip="T1", name="S-101", direction="OUTBOUND"),
+			self._row(trip="T1", name="S-101", direction="RETURN"),
+			self._row(trip="T1", name="S-101", camp_leg=1),
+		])
+
+		self._repair(doc)
+
+		self.assertEqual([row.trip_name for row in doc.assignments], ["S-901"] * 3)
+		# Manifest attendance locks (active_stop_by_trip) are keyed by trip_group, which a
+		# rename never touches, so checked stops stay checked.
+		self.assertEqual({row.trip_group for row in doc.assignments}, {"T1"})
+
+	def test_an_over_capacity_plan_is_renamed_without_an_exception(self):
+		# The repair never validates capacity - a patch must not fail on a full bus.
+		doc = self._plan([self._row(trip="T1", name="S-101", headcount=500)])
+
+		self._repair(doc)
+
+		self.assertEqual(self._names(doc), {("V9", "T1"): "S-901"})
+
+	def test_a_hand_typed_name_and_a_vehicle_off_the_board_are_untouched(self):
+		doc = self._plan([
+			self._row(vehicle="V9", trip="T1", name="MORNING"),
+			self._row(vehicle="V-NO-COORDS", trip="T2", name="S-101"),
+		])
+
+		self._repair(doc)
+
+		self.assertEqual(
+			self._names(doc), {("V9", "T1"): "MORNING", ("V-NO-COORDS", "T2"): "S-101"}
+		)
+
+	def test_a_non_leased_series_is_written_without_a_prefix(self):
+		doc = self._plan([self._row(vehicle="V26", trip="T1", name="S-101")])
+
+		self._repair(doc)
+
+		self.assertEqual(self._names(doc), {("V26", "T1"): "2601"})
+
+	def test_the_canvas_series_counts_only_vehicles_with_coordinates(self):
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			canvas_trip_series,
+		)
+
+		vehicles = [
+			frappe._dict(name="VHL-A", location="LOC-A", one_fm_vehicle_category="Leased"),
+			frappe._dict(name="VHL-B", location=None, one_fm_vehicle_category="Leased"),
+			frappe._dict(name="VHL-C", location="LOC-C", one_fm_vehicle_category="Leased"),
+			frappe._dict(name="VHL-D", location="LOC-D", one_fm_vehicle_category="Owned"),
+		]
+
+		def coords_of(doctype, name):
+			return [29.3, 48.0] if name else None
+
+		self.assertEqual(
+			canvas_trip_series(vehicles, coords_of),
+			{"VHL-A": "S-1", "VHL-C": "S-2", "VHL-D": "3"},
+		)
+
+	def test_manifest_rows_are_ordered_by_time_of_day_not_by_the_stamp_date(self):
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			manifest_row_order,
+		)
+
+		def row(trip, name, stamp, index=1):
+			return frappe._dict(
+				trip_group=trip, card_id=trip, trip_name=name, start_time=stamp, stop_index=index
+			)
+
+		# S-101 was placed on a later date than the others but leaves FIRST (06:00 in
+		# Kuwait); the raw stamps would list it last.
+		rows = [
+			row("T904", "S-904", "2026-08-20T11:00:00Z"),
+			row("T902", "S-902", "2026-08-20T07:00:00Z"),
+			row("T101", "S-101", "2026-09-10T03:00:00Z"),
+			row("T903", "S-903", "2026-08-20T09:00:00Z"),
+			row("T901", "S-901", "2026-08-20T05:30:00Z"),
+		]
+
+		self.assertEqual(
+			[r.trip_name for r in manifest_row_order(rows)],
+			["S-101", "S-901", "S-902", "S-903", "S-904"],
+		)
+
+	def test_stops_within_a_run_are_ordered_by_time_after_departure(self):
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			manifest_row_order,
+		)
+
+		rows = [
+			frappe._dict(trip_group="T1", card_id="c2", start_time="2026-09-10T04:00:00Z", stop_index=1),
+			frappe._dict(trip_group="T1", card_id="c1", start_time="2026-08-01T03:00:00Z", stop_index=2),
+		]
+
+		self.assertEqual([r.card_id for r in manifest_row_order(rows)], ["c1", "c2"])
+
+
+class TestRenameTripNamesPatch(FrappeTestCase):
+	"""The patch follows renamed runs onto manifests dated today or later only."""
+
+	def test_a_manifest_row_dated_today_is_renamed_and_yesterday_is_not(self):
+		from one_fm.patches.v15_0.rename_trip_names_into_canvas_series import (
+			_rename_manifest_rows,
+		)
+
+		runs = {
+			("RP-X", "V9", "TG-TODAY", "S-101"): "S-901",
+			("RP-X", "V9", "TG-PAST", "S-102"): "S-902",
+		}
+		details = {
+			"TG-TODAY": [frappe._dict(name="D-TODAY", parent="M-TODAY")],
+			"TG-PAST": [frappe._dict(name="D-PAST", parent="M-PAST")],
+		}
+		dates = {"M-TODAY": today(), "M-PAST": add_days(today(), -1)}
+
+		def get_value(doctype, name, fields, as_dict=False):
+			return frappe._dict(schedule_date=dates[name], vehicle="V9")
+
+		meta = MagicMock()
+		meta.has_field.return_value = True
+
+		with patch("frappe.get_meta", return_value=meta), patch(
+			"frappe.get_all", side_effect=lambda dt, filters=None, **kw: details[filters["trip_id"]]
+		), patch.object(frappe.db, "get_value", side_effect=get_value), patch.object(
+			frappe.db, "set_value"
+		) as set_value, patch.object(frappe.db, "exists", return_value=True):
+			updated = _rename_manifest_rows(runs, getdate(today()))
+
+		self.assertEqual(updated, 1)
+		set_value.assert_called_once_with(
+			"Transportation Manifest Details", "D-TODAY", "trip_name", "S-901",
+			update_modified=False,
+		)

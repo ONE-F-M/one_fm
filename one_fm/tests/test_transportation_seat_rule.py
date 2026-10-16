@@ -206,7 +206,7 @@ class TestATripNameIsUniqueOnItsLane(FrappeTestCase):
 		# the next reload and would then look like the run renaming itself.
 		self.assertIn("_applyStoredTripNames(result)", self.source)
 		self.assertIn("callback: (r) => { this._applyStoredTripNames(r.message); },", self.source)
-		self.assertIn("already in use on this vehicle", self.source)
+		self.assertIn("Trip renamed to match its vehicle", self.source)
 
 
 class TestTheTripNamePatchIsRegistered(FrappeTestCase):

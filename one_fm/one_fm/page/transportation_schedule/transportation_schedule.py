@@ -7,6 +7,7 @@ from one_fm.one_fm.doctype.transportation_shipment.roster_overlay import apply_t
 from one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log import get_handover_windows
 from one_fm.operations.doctype.route_plan.route_plan import (
     _card_direction,
+    _iso_time_of_day,
     card_rows,
     live_headcounts,
     row_headcount,
@@ -35,6 +36,38 @@ def _stated_time(*values):
         if not time_is_blank(value):
             return value
     return None
+
+
+def canvas_trip_series(vehicles=None, coords_of=None) -> dict:
+    """``{vehicle: "S-9"}`` (or ``"26"``): the series the canvas mints trip names in.
+
+    The number in a trip name is the vehicle's row on the board, and the board's rows
+    are exactly the vehicles get_route_planner_data lists: transport_stop_vehicle=1,
+    ordered by name, minus any whose Location has no coordinates. This is that list,
+    built once, so the canvas and the server cannot disagree about which row a vehicle
+    is on. The prefix is "S-" for a Leased vehicle and empty otherwise.
+
+    ``vehicles`` and ``coords_of`` let get_route_planner_data hand over the rows and the
+    coordinate cache it has already read, instead of querying them a second time.
+    """
+    if vehicles is None:
+        vehicles = frappe.get_all(
+            "Vehicle",
+            filters={"transport_stop_vehicle": 1},
+            fields=["name", "location", "one_fm_vehicle_category"],
+            order_by="name asc",
+        )
+    coords_of = coords_of or get_coords
+
+    series = {}
+    position = 0
+    for v in vehicles:
+        if not coords_of("Location", v.location):
+            continue
+        position += 1
+        prefix = "S-" if v.one_fm_vehicle_category == "Leased" else ""
+        series[v.name] = f"{prefix}{position}"
+    return series
 
 
 @frappe.whitelist()
@@ -97,6 +130,10 @@ def get_route_planner_data():
 
         MAHBOULA_LABELS = {"Mahboula 3", "Mahboula 12", "Mahboula 13", "Mahboula 15"}
 
+        # The row number the canvas puts in a trip name - the same helper the server
+        # uses to repair a name, so the two cannot disagree.
+        trip_series = canvas_trip_series(transport_vehicles, get_coords_cached)
+
         vehicles = []
         for v in transport_vehicles:
             coords = get_coords_cached("Location", v.location)
@@ -126,7 +163,9 @@ def get_route_planner_data():
                 "accommodation": acc_name,
                 "location":      v.location,
                 "coords":        {"lat": coords[0], "lng": coords[1]},
-                "is_leased":     v.one_fm_vehicle_category == "Leased"
+                "is_leased":     v.one_fm_vehicle_category == "Leased",
+                # The series a trip name on this lane is minted in ("S-9", "26").
+                "trip_series":   trip_series[v.name],
             })
 
         # ── 2. Shipment cards (materialized in the backend) ──
@@ -1429,14 +1468,15 @@ def save_assignments(plan_name: str, swim_items: str, assigned_cards: str,
             "saved_at": str(doc.last_modified_at or frappe.utils.now()),
             "assignment_count": len(doc.assignments),
             # The trip names the plan actually STORED, which are not always the ones the
-            # board sent: a name already in use on that vehicle is repaired on save
-            #. The save is otherwise silent, so without handing these back the
-            # board would keep showing the old name for the rest of the session and then
-            # appear to rename the run by itself on the next load.
+            # board sent: a duplicate on a vehicle, or a name in another lane's series, is
+            # repaired on save. The save is otherwise silent, so without handing these back
+            # the board would keep showing the old name for the rest of the session.
+            # "vehicle|trip_group", because one trip_group can sit on two vehicles (one
+            # direction reassigned) under two names.
             "trip_names": {
-                row.trip_group: row.trip_name
+                f"{row.vehicle}|{row.trip_group}": row.trip_name
                 for row in doc.assignments
-                if row.trip_group and row.trip_name
+                if row.vehicle and row.trip_group and row.trip_name
             },
         }
 
@@ -1650,18 +1690,97 @@ def manifest_row_order(rows) -> list:
 	def run_of(row):
 		return row.trip_group or f"\0{row.card_id}"
 
+	def clock_of(row):
+		at = _canvas_clock(row.start_time)
+		return _NO_CLOCK if at is None else at
+
+	# By the hour each run leaves in Kuwait, counted from where the canvas starts its
+	# day. The raw stamp cannot be used: its DATE half is the multi-day lock lifespan
+	# (TR-8), not the day the bus runs, so a run placed on 09-10 sorted after one
+	# placed on 08-20 however much earlier it left.
 	leaves = {}
 	for row in rows:
-		at = row.start_time or ""
+		at = clock_of(row)
 		key = run_of(row)
 		if key not in leaves or at < leaves[key]:
 			leaves[key] = at
 
-	# Within a run, by when the bus is at each stop. stop_index is the order the cards
-	# were dropped on the lane, which a re-timed run can leave out of step with itself.
+	def into_run(row):
+		at, left = clock_of(row), leaves[run_of(row)]
+		if at == _NO_CLOCK:
+			return 0 if left == _NO_CLOCK else _DAY
+		return (at - left) % _DAY
+
+	# Within a run, by how long after it left the bus is at each stop. stop_index is
+	# the order the cards were dropped on the lane, which a re-timed run can leave out
+	# of step with itself, so it only breaks ties. The run key keeps two runs that leave
+	# at the same minute from interleaving their stops.
 	return sorted(rows, key=lambda row: (
-		leaves[run_of(row)], row.start_time or "", row.stop_index or 0
+		leaves[run_of(row)], run_of(row), into_run(row), cint(row.stop_index)
 	))
+
+
+_DAY = 24 * 60 * 60
+# Stamps are UTC ("...Z"); the site runs on Asia/Kuwait, UTC+3, and the canvas starts
+# its day three hours before local midnight (get_route_planner_data's global_start).
+_KUWAIT_OFFSET = 3 * 60 * 60
+_CANVAS_LEAD = 3 * 60 * 60
+_NO_CLOCK = _DAY
+
+
+def _canvas_clock(stamp):
+	"""Seconds from the canvas's day start to when this stamp's TIME OF DAY falls in Kuwait.
+
+	None when the stamp has no readable time. Zero is a real answer (the canvas's first
+	second), so callers must compare with ``is None`` and never ``or`` it away.
+	"""
+	seconds = _iso_time_of_day(stamp)
+	if seconds is None:
+		return None
+	return (seconds + _KUWAIT_OFFSET + _CANVAS_LEAD) % _DAY
+
+
+def _run_departures(rows, legs) -> dict:
+	"""``{run key: stamp}`` of the earliest departure of each run, by canvas clock.
+
+	The camp leg is when the bus actually leaves, which is before any card's own row, so
+	the legs count too (a home leg is the way back and never a departure).
+	"""
+	best = {}
+
+	def consider(key, stamp):
+		at = _canvas_clock(stamp)
+		if at is not None and (key not in best or at < best[key][0]):
+			best[key] = (at, stamp)
+
+	for row in rows:
+		consider(row.trip_group or f"\0{row.card_id}", row.start_time)
+	for leg in legs:
+		if leg.trip_group and not cint(leg.is_home_leg):
+			consider(leg.trip_group, leg.start_time)
+	return {key: stamp for key, (_at, stamp) in best.items()}
+
+
+def _rebase_stamp(stamp, departure):
+	"""``stamp`` moved onto the day its run departs, rolled forward past midnight.
+
+	Only the time of day of a stamp is meaningful (its date is the lock lifespan), so
+	the manifest page cannot sort stops on the raw stamps. Putting every visit of a run
+	on the departure's own day makes them sortable as they are; a visit that falls
+	earlier on the clock than the departure is after midnight and lands on the next day.
+	"""
+	if not stamp or not departure:
+		return stamp
+	at, left = _canvas_clock(stamp), _canvas_clock(departure)
+	if at is None or left is None:
+		return stamp
+	try:
+		from datetime import timedelta
+
+		base = get_datetime(str(departure).replace("T", " ").replace("Z", "").strip())
+		return (base + timedelta(seconds=(at - left) % _DAY)).strftime("%Y-%m-%dT%H:%M:%SZ")
+	except Exception:
+		return stamp
 
 
 @frappe.whitelist()
@@ -2063,6 +2182,7 @@ def get_manifest_data_for_plan(plan_name: str):
 		# HASH before this, so a 06:48 run could be listed after an 08:27 one - and the
 		# vehicle's day then read 08:27 to 07:12, wrapping midnight into 22h 45m.
 		v_rows = manifest_row_order(vehicle_items[vid])
+		run_departure = _run_departures(v_rows, leg_rows.get(vid, []))
 
 		visits = []
 		trans = [{"travelDuration": "0s", "waitDuration": "0s", "travelDistanceMeters": 0}]
@@ -2100,6 +2220,13 @@ def get_manifest_data_for_plan(plan_name: str):
 				camp_departure.get((row.trip_group, row.origin_location))
 				or camp_departure.get(row.trip_group),
 			)
+
+			# Both stamps are put on the run's own departure day, rolled past midnight,
+			# so the page can sort a run's stops on them; their date half is the lock
+			# lifespan and says nothing about when the bus is there.
+			run_left = run_departure.get(row.trip_group or f"\0{row.card_id}")
+			boards_at = _rebase_stamp(boards_at, run_left)
+			alights_at = _rebase_stamp(alights_at, run_left)
 
 			visits.append({
 				"shipmentIndex": s_idx, "isPickup": True, "startTime": boards_at,
