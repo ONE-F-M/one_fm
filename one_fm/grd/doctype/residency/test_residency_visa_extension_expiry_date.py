@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-003445: the Visa Extension Expiry Date on Residency."""
+"""The Visa Extension Expiry Date on Residency."""
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -33,7 +33,6 @@ class TestResidencyVisaExtensionExpiryDate(FrappeTestCase):
 				"renewal_or_extend": action,
 				"date_of_application": today(),
 				"invoice_attachment": "/files/invoice.pdf",
-				"new_residency_expiry_date": add_days(today(), 365),
 				**kwargs,
 			}
 		)
@@ -71,7 +70,9 @@ class TestResidencyVisaExtensionExpiryDate(FrappeTestCase):
 		residency.insert()
 		self.assertFalse(residency.visa_extension_expiry_date)
 
-	def test_extension_completes_with_the_date(self):
+	def test_extension_completes_with_the_date_alone(self):
+		# The extension date replaces the Updated Residency Expiry Date for these actions.
+		residency_expiry_date = frappe.db.get_value("Employee", self.employee, "residency_expiry_date")
 		for action in RESIDENCY_ONLY_ACTIONS:
 			residency = self._residency(
 				"Extend", action, visa_extension_expiry_date=add_days(today(), 30)
@@ -79,18 +80,26 @@ class TestResidencyVisaExtensionExpiryDate(FrappeTestCase):
 			residency.insert()
 			residency.submit()
 			self.assertEqual(residency.docstatus, 1)
+			self.assertFalse(residency.new_residency_expiry_date)
+		self.assertEqual(
+			frappe.db.get_value("Employee", self.employee, "residency_expiry_date"),
+			residency_expiry_date,
+		)
 
 	def test_renewal_expat_does_not_ask_for_the_date(self):
+		residency = self._residency(
+			"Renewal", "Renewal Expat", new_residency_expiry_date=add_days(today(), 365)
+		)
+		residency.validate_mandatory_fields_on_submit()
+
+	def test_renewal_expat_still_needs_the_updated_residency_expiry_date(self):
 		residency = self._residency("Renewal", "Renewal Expat")
-		try:
+		with self.assertRaises(frappe.ValidationError):
 			residency.validate_mandatory_fields_on_submit()
-		except frappe.ValidationError as e:
-			self.assertNotIn(FIELD_LABEL, str(e))
 
 	def test_cancellation_does_not_ask_for_the_date(self):
 		# Cancellation rows open category Extend, so the check must key on the action.
-		residency = self._residency("Extend", "Cancellation")
-		try:
-			residency.validate_mandatory_fields_on_submit()
-		except frappe.ValidationError as e:
-			self.assertNotIn(FIELD_LABEL, str(e))
+		residency = self._residency(
+			"Extend", "Cancellation", new_residency_expiry_date=add_days(today(), 365)
+		)
+		residency.validate_mandatory_fields_on_submit()

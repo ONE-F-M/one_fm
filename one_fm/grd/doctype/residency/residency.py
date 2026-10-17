@@ -211,17 +211,15 @@ class Residency(Document):
         paci.create_PACI_for_transfer(self.employee)
 
     def validate_mandatory_fields_on_submit(self):
-        # Imported here, not at the top of the module: preparation.py imports residency
-        # at load time, before RESIDENCY_ONLY_ACTIONS is defined, so a top-level import
-        # would fail with ImportError (circular import).
+        # Imported here: preparation.py imports this module before defining the constant.
         from one_fm.grd.doctype.preparation.preparation import RESIDENCY_ONLY_ACTIONS
 
-        field_list = [{'Upload Payment Invoice':'invoice_attachment'},{'Updated Residency Expiry Date':'new_residency_expiry_date'}]
-        # Keyed on the row action, not the category: Cancellation rows also open
-        # category Extend and must not be asked for an extension date.
+        # Keyed on the row action, not the category: Cancellation rows also open category Extend.
         if self.renewal_or_extend in RESIDENCY_ONLY_ACTIONS:
-            field_list.append({'Visa Extension Expiry Date': 'visa_extension_expiry_date'})
-        self.set_mendatory_fields(field_list)
+            expiry_date = {'Visa Extension Expiry Date': 'visa_extension_expiry_date'}
+        else:
+            expiry_date = {'Updated Residency Expiry Date': 'new_residency_expiry_date'}
+        self.set_mendatory_fields([{'Upload Payment Invoice': 'invoice_attachment'}, expiry_date])
 
     def set_mendatory_fields(self,field_list):
         mandatory_fields = []
@@ -250,7 +248,15 @@ class Residency(Document):
         The old version rebuilt the whole child table to keep it ordered, and inserted
         the new row beside the existing one rather than over it, so every renewal left
         another Residency Expiry Attachment behind. The helper updates the row in place.
+
+        Skipped for Extension actions: they complete without new_residency_expiry_date,
+        and writing it would blank the Employee's residency expiry.
         """
+        from one_fm.grd.doctype.preparation.preparation import RESIDENCY_ONLY_ACTIONS
+
+        if self.renewal_or_extend in RESIDENCY_ONLY_ACTIONS:
+            return
+
         attach_employee_document(
             self.employee,
             document_name="Residency Expiry Attachment",
