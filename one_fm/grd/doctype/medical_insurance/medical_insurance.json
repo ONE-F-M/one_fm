@@ -34,8 +34,8 @@
   "medical_insurance_submitted_by",
   "column_break_23",
   "upload_medical_insurance_date",
-  "upload_payment_invoice_on",
   "medical_insurance_submitted_on",
+  "payment_date",
   "grd_supervisor",
   "finance_department_section",
   "payment_done",
@@ -223,10 +223,9 @@
    "read_only": 1
   },
   {
-   "fieldname": "upload_payment_invoice_on",
+   "fieldname": "payment_date",
    "fieldtype": "Datetime",
-   "hidden": 1,
-   "label": "Upload Payment Invoice On"
+   "label": "Payment Date"
   },
   {
    "allow_on_submit": 1,
@@ -298,7 +297,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-12 10:00:00.000000",
+ "modified": "2026-10-15 09:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Insurance",
