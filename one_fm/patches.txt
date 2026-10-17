@@ -648,3 +648,4 @@ one_fm.patches.v15_0.grant_payroll_operator_penalty_deduction_access
 one_fm.patches.v15_0.add_department_head #2026-10-14
 one_fm.patches.v15_0.create_dms_document_types #2026-10-13
 one_fm.patches.v15_0.delete_jira_ticket_client_script #2026-10-15
+one_fm.patches.v15_0.add_employee_visa_extension_expiry_date
