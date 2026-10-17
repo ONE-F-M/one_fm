@@ -150,9 +150,12 @@ class TestTheFieldIsDerived(FrappeTestCase):
 
 
 class TestWhichStatesAreCounted(FrappeTestCase):
-	"""Real rows, inserted with db_insert() so no workflow or mandatory-field rule runs."""
+	"""Real rows, inserted with db_insert() so no workflow or mandatory-field rule runs.
 
-	LICENSE = "ZZ-TEST-PAM-FILE-WI-003407"
+	FrappeTestCase rolls back per class, not per test, so every row gets a unique name.
+	"""
+
+	LICENSE = "ZZ-TEST-PAM-FILE-VISAS-ISSUED"
 
 	def setUp(self):
 		designation = frappe.get_all(
@@ -164,7 +167,7 @@ class TestWhichStatesAreCounted(FrappeTestCase):
 		if designation:
 			self.designation, self.quota_type = designation[0]["name"], designation[0]["quota_type"]
 		else:
-			self.designation, self.quota_type = "ZZ-TEST-DESIGNATION-WI-003407", "ZZ-TEST-QUOTA"
+			self.designation, self.quota_type = "ZZ-TEST-DESIGNATION-VISAS-ISSUED", "ZZ-TEST-QUOTA"
 			frappe.get_doc(
 				{
 					"doctype": "PAM Designation List",
@@ -172,14 +175,12 @@ class TestWhichStatesAreCounted(FrappeTestCase):
 					"quota_type": self.quota_type,
 				}
 			).db_insert()
-		self.serial = 0
 
 	def _issued(self):
 		return visas_issued_by_quota(self.LICENSE).get(self.quota_type, 0)
 
 	def _request(self, state):
-		self.serial += 1
-		name = f"ZZ-TEST-VR-WI-003407-{self.serial}"
+		name = "ZZ-TEST-VR-" + frappe.generate_hash(length=10)
 		frappe.get_doc(
 			{
 				"doctype": "Visa Request",
@@ -210,7 +211,7 @@ class TestWhichStatesAreCounted(FrappeTestCase):
 		frappe.get_doc(
 			{
 				"doctype": "Visa Cancellation Request",
-				"name": "ZZ-TEST-VCR-WI-003407",
+				"name": "ZZ-TEST-VCR-" + frappe.generate_hash(length=10),
 				"visa_request_id": request,
 				"workflow_state": "Completed",
 			}
