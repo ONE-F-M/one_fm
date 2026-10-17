@@ -19,14 +19,9 @@ def get_workflow_state_select():
 	return "NULL as workflow_state"
 
 
-# WI-002437: the two states an Employee Schedule is in when it is not a shift anybody is
-# working. A double shift waiting on the DSOT Approver is not one yet, and a rejected one
-# never will be - the hours are gone, whether it was refused outright or nobody answered
-# before the shift ended.
-#
-# Only the DSOT flow reaches either: the workflow's Rejected state has one way in, from
-# Pending DSOT Approval, so the suspension flow this shares a workflow with is untouched.
-NOT_A_WORKED_SHIFT = ("Pending DSOT Approval", "Rejected")
+# Workflow states the Roster Matrix does not draw. Pending DSOT Approval is drawn in its own
+# colour; background jobs still ignore it via employee_schedule.NOT_A_WORKED_SHIFT.
+HIDDEN_FROM_ROSTER = ("Rejected",)
 
 
 def get_schedule_state_filter():
@@ -43,7 +38,7 @@ def get_schedule_state_filter():
 	clauses = ["ifnull(es.employee_availability, '') != ''"]
 
 	if "workflow_state" in frappe.db.get_table_columns("Employee Schedule"):
-		states = ", ".join(f"'{state}'" for state in NOT_A_WORKED_SHIFT)
+		states = ", ".join(f"'{state}'" for state in HIDDEN_FROM_ROSTER)
 		clauses.append(f"ifnull(es.workflow_state, '') not in ({states})")
 
 	return " AND ".join(clauses)
