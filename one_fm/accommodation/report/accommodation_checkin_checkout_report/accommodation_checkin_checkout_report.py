@@ -112,6 +112,13 @@ def get_columns(filters):
 			'width': 120,
 		},
 		{
+			"fieldname": "operations_shift",
+			"label": _("Operations Shift"),
+			"fieldtype": "Link",
+			"options": "Operations Shift",
+			"width": 180,
+		},
+		{
 			'fieldname': 'nationality',
 			'label': _('Nationality'),
 			'fieldtype': 'Data',
@@ -202,6 +209,7 @@ def get_data(filters):
                 'tenant_category': acc.tenant_category,
                 'designation': designation,
                 'project': project,
+                'operations_shift': acc.operations_shift,
                 'nationality': nationality,
                 'employee_status': employee_status,
                 'checkin_checkout_date_time': acc.checkin_checkout_date_time,
