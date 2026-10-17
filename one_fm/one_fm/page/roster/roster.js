@@ -1533,9 +1533,9 @@ function render_roster(res, page) {
 					}
 					else if (!attendance && roster_type == "Over-Time" && page.filters[applied_filter] == record[applied_filter]) {
 						if (workflow_state === "Pending DSOT Approval") {
-							// WI-003414: not counted as OT until approved; data_ot is kept so it can still be unscheduled
+							// Not counted as OT until approved; data_ot is kept so it can still be unscheduled
 							bgclass = bgclass ? `${bgclass}-pendingot` : "pendingot";
-							tooltiptext += `Pending DSOT Approval<br>`;
+							tooltiptext += `${__("Pending DSOT Approval")}<br>`;
 						} else {
 							ot_count++;
 							bgclass = bgclass ? `${bgclass}-sameot` : "sameot";
@@ -1544,9 +1544,9 @@ function render_roster(res, page) {
 					}
 					else if (!attendance && roster_type == "Over-Time" && page.filters[applied_filter] != record[applied_filter]) {
 						if (workflow_state === "Pending DSOT Approval") {
-							// WI-003414: not counted as OT until approved; data_ot is kept so it can still be unscheduled
+							// Not counted as OT until approved; data_ot is kept so it can still be unscheduled
 							bgclass = bgclass ? `${bgclass}-pendingot` : "pendingot";
-							tooltiptext += `Pending DSOT Approval<br>`;
+							tooltiptext += `${__("Pending DSOT Approval")}<br>`;
 						} else {
 							ot_count++;
 							bgclass = bgclass ? `${bgclass}-diffot` : "diffot";

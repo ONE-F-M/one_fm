@@ -75,7 +75,7 @@ class TestTheRuleItself(FrappeTestCase):
 		self.assertEqual(set(NOT_A_WORKED_SHIFT), {PENDING_DSOT, DSOT_REJECTED})
 
 	def test_the_roster_matrix_hides_rejected_only(self):
-		"""WI-003414: the roster now shows Pending DSOT Approval in its own colour, so it
+		"""The roster now shows Pending DSOT Approval in its own colour, so it
 		hides Rejected alone. The background jobs still ignore both states."""
 		self.assertEqual(set(HIDDEN_FROM_ROSTER), {DSOT_REJECTED})
 		self.assertNotIn(PENDING_DSOT, HIDDEN_FROM_ROSTER)

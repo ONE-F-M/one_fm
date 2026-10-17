@@ -129,7 +129,7 @@ class TestTheRosterQueryUsesTheFilter(FrappeTestCase):
 		)
 
 	def test_the_roster_hides_rejected_only(self):
-		"""WI-003414 - Pending DSOT Approval is shown in its own colour; Rejected is not."""
+		"""Pending DSOT Approval is shown in its own colour; Rejected is not."""
 		self.assertEqual(HIDDEN_FROM_ROSTER, ("Rejected",))
 		self.assertEqual(HIDDEN_FROM_ROSTER, (DSOT_REJECTED,))
 		self.assertNotIn(PENDING_DSOT, HIDDEN_FROM_ROSTER)
@@ -165,7 +165,7 @@ class TestWhatTheRosterRenders(FrappeTestCase):
 		_clear()
 
 	def test_a_pending_double_shift_is_rendered(self):
-		"""WI-003414 Scenario 1 - it is shown (in the Pending colour) while it waits."""
+		"""Scenario 1 - it is shown (in the Pending colour) while it waits."""
 		pending = _seed("PENDING", workflow_state=PENDING_DSOT, employee=self.employee, date=self.date)
 
 		self.assertEqual(_rows_the_roster_would_render(), {pending})
@@ -197,7 +197,7 @@ class TestWhatTheRosterRenders(FrappeTestCase):
 		self.assertEqual(_rows_the_roster_would_render(), {basic, pending})
 
 	def test_a_rejected_double_shift_leaves_only_the_basic_shift(self):
-		"""WI-003414 Scenario 3 - only the underlying Basic shift remains."""
+		"""Scenario 3 - only the underlying Basic shift remains."""
 		basic = _seed("BASIC", roster_type=BASIC, employee=self.employee, date=self.date)
 		_seed("REJECTED", workflow_state=DSOT_REJECTED, employee=self.employee, date=self.date)
 
@@ -332,7 +332,7 @@ class TestADoubleShiftRaisedThroughTheOrmReachesTheGate(FrappeTestCase):
 		)
 
 	def test_the_pending_request_renders_on_the_roster(self):
-		"""WI-003414, from the state a real save leaves behind rather than a seeded one."""
+		"""From the state a real save leaves behind rather than a seeded one."""
 		_seed("BASIC", roster_type=BASIC, employee=self.employee, date=self.date)
 		schedule = self._insert_overtime()
 
