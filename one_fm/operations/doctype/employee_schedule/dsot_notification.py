@@ -35,7 +35,17 @@ import json
 
 import frappe
 from frappe import _
-from frappe.utils import add_days, escape_html, formatdate, get_url, getdate, now_datetime, today
+from frappe.utils import (
+	add_days,
+	escape_html,
+	formatdate,
+	get_datetime,
+	get_url,
+	getdate,
+	now_datetime,
+	today,
+)
+from frappe.utils.jinja import get_template
 from frappe.utils.verified_command import get_signed_params, verify_request
 from pypika import functions as fn
 
@@ -112,7 +122,16 @@ def flush() -> None:
 		rows = frappe.get_all(
 			"Employee Schedule",
 			filters={"name": ["in", list(names)], "workflow_state": PENDING_DSOT},
-			fields=["name", "employee", "employee_name", "date", "shift", "shift_type"],
+			fields=[
+				"name",
+				"employee",
+				"employee_name",
+				"date",
+				"shift",
+				"shift_type",
+				"start_datetime",
+				"end_datetime",
+			],
 		)
 		# Immediate means the schedule date is today at hold time; the rest is the
 		# digest's job.
@@ -160,16 +179,26 @@ def shift_label(row) -> str:
 	return shift or shift_type or ""
 
 
-def build_email_rows(approver, schedules) -> list:
-	"""The grid rows for the shared template, each with its own signed Approve/Reject links.
+def dsot_label(row) -> str:
+	"""The overtime shift with its hours, read from the datetimes (a 00:00 Time is falsy)."""
+	label = row.get("shift") or row.get("shift_type") or ""
+	start, end = row.get("start_datetime"), row.get("end_datetime")
+	if start and end:
+		label = "{0} ({1} - {2})".format(
+			label, get_datetime(start).strftime("%H:%M"), get_datetime(end).strftime("%H:%M")
+		)
+	return label.strip()
 
-	Basic (Shift Name) is the shift the employee is already working that day; one query for
-	the whole grid rather than one per row, because the digest can be hundreds of rows.
-	"""
+
+def basic_shifts(schedules) -> dict:
+	"""(employee, date) -> the Basic shift worked that day, in one query for the whole grid."""
 	from one_fm.operations.doctype.employee_schedule.employee_schedule import BASIC, WORKING
 
-	basic = {}
-	if schedules:
+	if not schedules:
+		return {}
+
+	return {
+		(row.employee, getdate(row.date)): shift_label(row)
 		for row in frappe.get_all(
 			"Employee Schedule",
 			filters={
@@ -179,16 +208,20 @@ def build_email_rows(approver, schedules) -> list:
 				"date": ["in", list({s.date for s in schedules})],
 			},
 			fields=["employee", "date", "shift", "shift_type"],
-		):
-			basic[(row.employee, getdate(row.date))] = shift_label(row)
+		)
+	}
 
+
+def build_email_rows(approver, schedules) -> list:
+	"""The grid rows for the shared template, each with its own signed Approve/Reject links."""
+	basic = basic_shifts(schedules)
 	return [
 		frappe._dict(
 			date=schedule.date,
 			employee=schedule.employee,
 			employee_name=schedule.employee_name,
 			basic_shift=basic.get((schedule.employee, getdate(schedule.date))),
-			dsot_shift=shift_label(schedule),
+			dsot_shift=dsot_label(schedule),
 			approve_url=signed_action_url(
 				"confirm_email_action", action="Approve", user=approver, names=schedule.name
 			),
@@ -202,9 +235,8 @@ def build_email_rows(approver, schedules) -> list:
 
 def render_approval_request(approver, schedules, intro, **bulk) -> str:
 	"""Render the shared grid. ``bulk`` is what Approve All / Reject All sign."""
-	return frappe.render_template(
-		APPROVAL_TEMPLATE,
-		context={
+	return get_template(APPROVAL_TEMPLATE).render(
+		{
 			"intro": intro,
 			"rows": build_email_rows(approver, schedules),
 			"approve_all_url": signed_action_url(
@@ -213,7 +245,7 @@ def render_approval_request(approver, schedules, intro, **bulk) -> str:
 			"reject_all_url": signed_action_url(
 				"confirm_email_action", action="Reject", user=approver, **bulk
 			),
-		},
+		}
 	)
 
 
@@ -262,6 +294,8 @@ def pending_overtime_rows(cutoff=None) -> list:
 			schedule.date,
 			schedule.shift,
 			schedule.shift_type,
+			schedule.start_datetime,
+			schedule.end_datetime,
 		)
 		.where(schedule.workflow_state == PENDING_DSOT)
 		.where(schedule.roster_type == OVERTIME)
@@ -336,8 +370,15 @@ def is_valid_email_action(action, user) -> bool:
 	return True
 
 
-@frappe.whitelist(allow_guest=True, methods=["GET"])
-def confirm_email_action(action=None, user=None, names=None, digest_cutoff=None):
+# Guest access is the point: the approver opens this from an email. The signature checked in
+# is_valid_email_action is the guard, and this page writes nothing.
+@frappe.whitelist(allow_guest=True, methods=["GET"])  # nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
+def confirm_email_action(
+	action: str | None = None,
+	user: str | None = None,
+	names: str | None = None,
+	digest_cutoff: str | None = None,
+):
 	"""The page the email buttons open. Changes nothing.
 
 	Mail clients and security scanners open links to preview them, so the link in the email
@@ -346,16 +387,26 @@ def confirm_email_action(action=None, user=None, names=None, digest_cutoff=None)
 	if not is_valid_email_action(action, user):
 		return
 
-	rows = []
-	for name in selected_schedules(names, digest_cutoff):
-		row = frappe.db.get_value(
+	selected = selected_schedules(names, digest_cutoff)
+	rows = (
+		frappe.get_all(
 			"Employee Schedule",
-			name,
-			["name", "employee", "employee_name", "date", "workflow_state"],
-			as_dict=True,
+			filters={"name": ["in", selected], "workflow_state": PENDING_DSOT},
+			fields=[
+				"name",
+				"employee",
+				"employee_name",
+				"date",
+				"shift",
+				"shift_type",
+				"start_datetime",
+				"end_datetime",
+			],
+			order_by="employee asc, date asc",
 		)
-		if row and row.workflow_state == PENDING_DSOT:
-			rows.append(row)
+		if selected
+		else []
+	)
 
 	if not rows:
 		respond_email_action_page(
@@ -363,24 +414,31 @@ def confirm_email_action(action=None, user=None, names=None, digest_cutoff=None)
 		)
 		return
 
+	basic = basic_shifts(rows)
 	body = "".join(
-		"<tr><td>{0}</td><td>{1}</td><td>{2}</td></tr>".format(
+		"<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td></tr>".format(
 			escape_html(formatdate(row.date)),
 			escape_html(row.employee),
 			escape_html(row.employee_name or row.employee),
+			escape_html(basic.get((row.employee, getdate(row.date))) or "-"),
+			escape_html(dsot_label(row) or "-"),
 		)
 		for row in rows
 	)
 	html = (
 		"<p>{0}</p><table class='table table-bordered'><thead><tr><th>{1}</th><th>{2}</th>"
-		"<th>{3}</th></tr></thead><tbody>{4}</tbody></table>"
+		"<th>{3}</th><th>{4}</th><th>{5}</th></tr></thead><tbody>{6}</tbody></table>"
 	).format(
-		escape_html(_("{0} request(s) will be {1}.").format(
-			len(rows), _("approved") if action == "Approve" else _("rejected")
-		)),
+		escape_html(
+			_("{0} request(s) will be {1}.").format(
+				len(rows), _("approved") if action == "Approve" else _("rejected")
+			)
+		),
 		_("Date"),
 		_("Employee ID"),
 		_("Employee Name"),
+		_("Basic (Shift Name)"),
+		_("DSOT (Shift Name)"),
 		body,
 	)
 
@@ -399,8 +457,15 @@ def confirm_email_action(action=None, user=None, names=None, digest_cutoff=None)
 	)
 
 
-@frappe.whitelist(allow_guest=True, methods=["GET"])
-def apply_email_action(action=None, user=None, names=None, digest_cutoff=None):
+# Guest access is the point: the approver confirms from an email without logging in. The
+# signature is checked first, may_decide_dsot gates the signed user, and a decided row is skipped.
+@frappe.whitelist(allow_guest=True, methods=["GET"])  # nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
+def apply_email_action(
+	action: str | None = None,
+	user: str | None = None,
+	names: str | None = None,
+	digest_cutoff: str | None = None,
+):
 	"""Approve or Reject the rows a signed link stands for, as the approver it was signed for.
 
 	Approve is the workflow's own Approve action, so the row lands on Active. Each row has its
@@ -412,11 +477,14 @@ def apply_email_action(action=None, user=None, names=None, digest_cutoff=None):
 	from one_fm.operations.doctype.employee_schedule.employee_schedule import may_decide_dsot
 	from one_fm.overrides.workflow import apply_workflow
 
-	previous_user = frappe.session.user
 	approved = rejected = skipped = 0
 	allowed = True
 
-	frappe.set_user(user)
+	# A logged-in browser session is used as-is; only a Guest acts as the signed user.
+	switched = frappe.session.user == "Guest"
+	if switched:
+		# The user is part of the signed parameters, so the link cannot be re-pointed.
+		frappe.set_user(user)  # nosemgrep: frappe-semgrep-rules.rules.security.frappe-setuser
 	try:
 		allowed = may_decide_dsot()
 		if allowed:
@@ -450,9 +518,12 @@ def apply_email_action(action=None, user=None, names=None, digest_cutoff=None):
 				else:
 					rejected += 1
 
-			frappe.db.commit()
+			# A GET is never committed by Frappe, and verify_request accepts only a GET. The
+			# email link itself opens confirm_email_action, so a prefetch decides nothing.
+			frappe.db.commit()  # nosemgrep: frappe-semgrep-rules.rules.frappe-manual-commit, frappe-semgrep-rules.rules.security.whitelisted-side-effect-on-get
 	finally:
-		frappe.set_user(previous_user)
+		if switched:
+			frappe.set_user("Guest")  # nosemgrep: frappe-semgrep-rules.rules.security.frappe-setuser
 
 	if not allowed:
 		respond_email_action_page(
@@ -586,7 +657,7 @@ ACTIVE = "Active"
 REJECTED = "Rejected"
 
 # The two states a decided request lands in, and what each is called in the email. Approve
-# transitions to Active rather than to an "Approved" state of its own (WI-002283): only an
+# transitions to Active rather than to an "Approved" state of its own: only an
 # Active schedule is picked up for a Shift Assignment.
 DECIDED_STATES = (ACTIVE, REJECTED)
 

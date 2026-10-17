@@ -707,7 +707,8 @@ scheduler_events = {
 
 	],
 
-	"cron": {
+	# "15 12 * * *" below is a duplicate key that predates this line; merging it changes which jobs run, so it is fixed on its own.
+	"cron": {  # nosemgrep: frappe-semgrep-rules.rules.frappe-same-key-assigned-twice
 		"0 12 * * *": [
 			'one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement.send_daily_acknowledgement_reminders'
 		],
