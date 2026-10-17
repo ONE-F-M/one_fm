@@ -8,7 +8,6 @@ frappe.ui.form.on('PACI', {
         set_employee_details(frm);
     },
 	upload_civil_id_payment: function(frm){
-		set_upload_civil_id_payment(frm);
         set_status(frm);
 	},
 	upload_civil_id: function(frm){
@@ -60,16 +59,6 @@ var set_employee_details = function(frm){
             }
         })
     }
-};
-var set_upload_civil_id_payment = function(frm)
-{//2
-	if((frm.doc.upload_civil_id_payment) && (!frm.doc.upload_civil_id_payment_datetime))
-	{ 
-		frm.set_value('upload_civil_id_payment_datetime',frappe.datetime.now_datetime());
-	}if((!frm.doc.upload_civil_id_payment) && (frm.doc.upload_civil_id_payment_datetime))
-	{
-		frm.set_value('upload_civil_id_payment_datetime',null);
-	}
 };
 var set_upload_civil_id = function(frm)
 {//3

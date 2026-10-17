@@ -29,7 +29,6 @@
   "section_break_14",
   "attach_payment_invoice",
   "column_break_16",
-  "datetime_17",
   "previous_company_status_section",
   "previous_company_status",
   "column_break_20",
@@ -37,7 +36,7 @@
   "payment_details_section_section",
   "attach_invoice",
   "column_break_29",
-  "upload_payment_invoice_on",
+  "payment_date",
   "work_permit_information_section",
   "new_work_permit_expiry_date",
   "pam_work_permit_registration_section",
@@ -431,11 +430,9 @@
    "read_only": 1
   },
   {
-   "allow_on_submit": 1,
-   "fieldname": "upload_payment_invoice_on",
-   "fieldtype": "Data",
-   "label": "Upload Payment Invoice On",
-   "read_only": 1
+   "fieldname": "payment_date",
+   "fieldtype": "Datetime",
+   "label": "Payment Date"
   },
   {
    "fetch_from": "employee.valid_upto",
@@ -811,12 +808,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "datetime_17",
-   "fieldtype": "Datetime",
-   "label": "Attach Payment Invoice On",
-   "read_only": 1
-  },
-  {
    "fieldname": "column_break_20",
    "fieldtype": "Column Break"
   },
@@ -1001,7 +992,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-08 12:00:00.000000",
+ "modified": "2026-10-15 09:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
