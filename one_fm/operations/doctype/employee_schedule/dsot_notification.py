@@ -218,6 +218,7 @@ def build_email_rows(approver, schedules) -> list:
 	return [
 		frappe._dict(
 			date=schedule.date,
+			date_label=formatdate(schedule.date),
 			employee=schedule.employee,
 			employee_name=schedule.employee_name,
 			basic_shift=basic.get((schedule.employee, getdate(schedule.date))),

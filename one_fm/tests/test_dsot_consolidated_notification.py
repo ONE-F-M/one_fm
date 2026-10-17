@@ -577,7 +577,7 @@ class TestTheEmailActionEndpoints(FrappeTestCase):
 			"one_fm.operations.doctype.employee_schedule.employee_schedule.may_decide_dsot",
 			return_value=True,
 		), mock.patch(
-			"one_fm.overrides.workflow.apply_workflow", return_value=frappe._dict()
+			"one_fm.overrides.workflow.apply_workflow", return_value=mock.Mock()
 		) as apply, mock.patch.object(
 			frappe.db, "get_value", side_effect=lambda dt, name, field: states[name]
 		), mock.patch.object(frappe, "get_doc"), mock.patch.object(

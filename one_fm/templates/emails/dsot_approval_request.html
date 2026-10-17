@@ -29,7 +29,7 @@
 		<tbody>
 			{% for row in rows %}
 			<tr>
-				<td style="padding: 8px 10px;">{{ formatdate(row.date) }}</td>
+				<td style="padding: 8px 10px;">{{ row.date_label | e }}</td>
 				<td style="padding: 8px 10px;">{{ row.employee | e }}</td>
 				<td style="padding: 8px 10px;">{{ (row.employee_name or row.employee) | e }}</td>
 				<td style="padding: 8px 10px;">{{ (row.basic_shift or "-") | e }}</td>
