@@ -71,6 +71,7 @@
   "upload_residency_fine_payment_receipt",
   "upload_damj_letter",
   "new_residency_expiry_date",
+  "visa_extension_expiry_date",
   "column_break_34",
   "invoice_attachment_date",
   "residency_attachment_date",
@@ -426,6 +427,12 @@
    "print_hide": 1
   },
   {
+   "depends_on": "eval:doc.category == 'Extend'",
+   "fieldname": "visa_extension_expiry_date",
+   "fieldtype": "Date",
+   "label": "Visa Extension Expiry Date"
+  },
+  {
    "fieldname": "column_break_34",
    "fieldtype": "Column Break"
   },
@@ -608,7 +615,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-20 13:00:00.000000",
+ "modified": "2026-10-15 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Residency",
