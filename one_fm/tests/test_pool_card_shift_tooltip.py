@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-003503: the full shift name shows on hover of an unassigned pool card.
+"""The full shift name shows on hover of an unassigned pool card.
 
 The shift name on a pool card is cut with an ellipsis so long names do not widen the
 sidebar. The element had no title, so nothing revealed the rest. These tests pin:
