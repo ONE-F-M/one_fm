@@ -28,6 +28,15 @@ frappe.ui.form.on('Preparation Record',{
 		var child = locals[cdt][cdn];
 		caclulate_renewal_extension_cost_total(frm, child);
 	},
+	embassy_attestation_fee: function(frm, cdt, cdn) {
+		caclulate_renewal_extension_cost_total(frm, locals[cdt][cdn]);
+	},
+	mofa_fee: function(frm, cdt, cdn) {
+		caclulate_renewal_extension_cost_total(frm, locals[cdt][cdn]);
+	},
+	pcc_translation_fee: function(frm, cdt, cdn) {
+		caclulate_renewal_extension_cost_total(frm, locals[cdt][cdn]);
+	},
 	employee: function(frm, cdt, cdn){
 		// Debounced batch fetch to avoid multiple quick calls
 		if(!frm._employee_dates_timeout){
@@ -52,6 +61,12 @@ const COST_COMPONENT_FIELDS = [
 	'residency_stamp_amount',
 	'civil_id_amount'
 ];
+// Kept in step with ROW_TOTAL_FIELDS in preparation.py.
+const ROW_TOTAL_FIELDS = COST_COMPONENT_FIELDS.concat([
+	'embassy_attestation_fee',
+	'mofa_fee',
+	'pcc_translation_fee'
+]);
 
 var set_preparation_record_costing = function(frm, cdt, cdn) {
 	var row = locals[cdt][cdn];
@@ -83,7 +98,7 @@ var set_preparation_record_costing = function(frm, cdt, cdn) {
 	// Cleared before the fetch, not inside a successful callback. Switching to an Action
 	// with no master row configured used to leave the fees of the previous Action sitting
 	// in the row, which is exactly the case the story calls out.
-	COST_COMPONENT_FIELDS.forEach(field => frappe.model.set_value(row.doctype, row.name, field, 0));
+	ROW_TOTAL_FIELDS.forEach(field => frappe.model.set_value(row.doctype, row.name, field, 0));
 	frappe.model.set_value(row.doctype, row.name, 'total_amount', 0);
 	frm.refresh_field('preparation_record');
 
@@ -94,7 +109,8 @@ var set_preparation_record_costing = function(frm, cdt, cdn) {
 		args: {
 			'renewal_or_extend': row.renewal_or_extend,
 			'no_of_years': row.no_of_years,
-			'no_of_months': row.no_of_months
+			'no_of_months': row.no_of_months,
+			'nationality': row.nationality
 		},
 		callback: function(r) {
 			if(!r.message){
@@ -113,7 +129,7 @@ var set_preparation_record_costing = function(frm, cdt, cdn) {
 				return;
 			}
 			var cost = r.message;
-			COST_COMPONENT_FIELDS.forEach(field =>
+			ROW_TOTAL_FIELDS.forEach(field =>
 				frappe.model.set_value(row.doctype, row.name, field, cost[field] || 0));
 			frm.refresh_field('preparation_record');
 		}
@@ -121,19 +137,7 @@ var set_preparation_record_costing = function(frm, cdt, cdn) {
 };
 
 var caclulate_renewal_extension_cost_total = function(frm, child) {
-	var total_cost = 0;
-	if(child.work_permit_amount && child.work_permit_amount > 0){
-		total_cost += child.work_permit_amount;
-	}
-	if(child.medical_insurance_amount && child.medical_insurance_amount > 0){
-		total_cost += child.medical_insurance_amount;
-	}
-	if(child.residency_stamp_amount && child.residency_stamp_amount > 0){
-		total_cost += child.residency_stamp_amount;
-	}
-	if(child.civil_id_amount && child.civil_id_amount > 0){
-		total_cost += child.civil_id_amount;
-	}
+	var total_cost = ROW_TOTAL_FIELDS.reduce((sum, field) => sum + Math.max(flt(child[field]), 0), 0);
 	frappe.model.set_value(child.doctype, child.name, 'total_amount', total_cost);
 	frm.refresh_field('preparation_record');
 };
@@ -187,6 +191,8 @@ frappe.ui.form.on("Preparation", {
 				cur_frm.fields_dict.preparation_record.grid.update_docfield_property("medical_insurance_amount", "allow_on_submit", 0);
 				cur_frm.fields_dict.preparation_record.grid.update_docfield_property("residency_stamp_amount", "allow_on_submit", 0);
 				cur_frm.fields_dict.preparation_record.grid.update_docfield_property("civil_id_amount", "allow_on_submit", 0);
+				["embassy_attestation_fee", "mofa_fee", "pcc_translation_fee"].forEach(field =>
+					cur_frm.fields_dict.preparation_record.grid.update_docfield_property(field, "allow_on_submit", 0));
 				
 				// Fetch dates on refresh (covers load & reload)
 				fetch_employee_dates_batch(frm);
