@@ -1,11 +1,11 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-003499: bulk edit on the Medical Appointment list view."""
+"""Bulk edit on the Medical Appointment list view."""
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from one_fm.patches.v15_0.allow_medical_appointment_bulk_edit import execute
+from one_fm.patches.v15_0.allow_medical_appointment_bulk_edit import execute, verify
 
 DOCTYPE = "List View Settings"
 LIST_VIEW = "Medical Appointment"
@@ -39,6 +39,13 @@ class TestMedicalAppointmentBulkEdit(FrappeTestCase):
 		execute()
 		execute()
 		self.assertEqual(frappe.db.get_value(DOCTYPE, LIST_VIEW, "allow_edit"), 1)
+
+	def test_verify_raises_when_the_flag_is_off(self):
+		frappe.get_doc({"doctype": DOCTYPE, "name": LIST_VIEW, "allow_edit": 0}).insert(
+			ignore_permissions=True
+		)
+		with self.assertRaises(frappe.ValidationError):
+			verify()
 
 	def test_medical_appointment_has_a_workflow_so_the_switch_is_needed(self):
 		"""Frappe allows bulk edit outright on a DocType with no workflow, and hides it
