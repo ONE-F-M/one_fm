@@ -628,10 +628,12 @@ def recount_quota_rows(license_name):
 		)
 
 
-# The state a Visa Request reaches when PAM and MOI have both said yes and the
-# visa exists. Only those count against a quota - anything earlier is an application, not
-# a visa.
-VISA_COMPLETED = "Completed"
+# The workflow states in which a Visa Request counts against a quota: the request is with
+# MOI, so the visa is issued from PAM's side. The count follows the CURRENT state only - a
+# request that moves on (Completed, or Rejected By MOI) leaves the count at its next
+# recount. Spelled exactly as the Visa Request Workflow spells it (capital B in "By"); a
+# misspelling matches nothing and the count silently goes to 0.
+VISA_ISSUED_STATES = ("Pending By MOI",)
 
 
 def visas_issued_by_quota(license_name) -> dict:
@@ -642,10 +644,12 @@ def visas_issued_by_quota(license_name) -> dict:
 	has not arrived, which is the whole reason the figure is separate from the registered
 	headcount beside it.
 
-	A cancelled visa is not an issued one. The cancellation gate already works out which completed
-	requests have had their visa given back, and the same answer is used here - the story's
-	last criterion is that a completed cancellation takes the visa back out of this count
-	and returns it to the available quota.
+	Only a request currently in one of VISA_ISSUED_STATES (Pending By MOI) counts.
+	A cancelled visa is not an issued one. The cancellation gate already works out which
+	requests have had their visa given back (a Completed Visa Cancellation Request names
+	them), and the same answer is used here - the story's last criterion is that a
+	completed cancellation takes the visa back out of this count and returns it to the
+	available quota.
 
 	Returns {quota type: count}; a quota with no visas simply does not appear.
 	"""
@@ -660,7 +664,7 @@ def visas_issued_by_quota(license_name) -> dict:
 		"Visa Request",
 		filters=[
 			["custom_pam_file", "=", license_name],
-			["workflow_state", "=", VISA_COMPLETED],
+			["workflow_state", "in", VISA_ISSUED_STATES],
 			["custom_pam_designation_list", "is", "set"],
 		],
 		fields=["name", "custom_pam_designation_list", "job_applicant"],
@@ -713,7 +717,7 @@ def visas_issued_by_quota(license_name) -> dict:
 
 
 def update_quota_from_visa_request(doc, method=None):
-	"""Recount a licence's quota rows when a visa request reaches or leaves Completed.
+	"""Recount a licence's quota rows when a visa request reaches or leaves Pending By MOI.
 
 	Without this the issued figure only moved when somebody saved an Employee - and the
 	whole point of the figure is the gap before an employee exists.
