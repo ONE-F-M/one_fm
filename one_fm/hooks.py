@@ -37,6 +37,7 @@ app_include_js = [
         "text_editor.bundle.js",
         "/assets/one_fm/js/workflow_banner.js",
         "/assets/one_fm/js/grd/residency_payment_request_button.js",
+        "/assets/one_fm/js/grd/payment_receipt.js",
         "/assets/one_fm/js/workflow_state_colours.js"
 ]
 # include js, css files in header of web template
