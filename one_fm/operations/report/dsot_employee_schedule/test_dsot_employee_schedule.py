@@ -11,6 +11,7 @@ import json
 import re
 
 import frappe
+from frappe.desk.query_report import run
 from frappe.tests.utils import FrappeTestCase
 
 from one_fm.operations.report.dsot_employee_schedule.dsot_employee_schedule import execute
@@ -188,6 +189,24 @@ class TestDsotEmployeeScheduleReport(FrappeTestCase):
 				"Operations Shift", "Operations Role", "Start Datetime", "End Datetime",
 				"Workflow State"],
 		)
+
+
+	def test_a_user_without_a_report_role_is_refused(self):
+		email = "dsot-report-no-role@example.com"
+		if not frappe.db.exists("User", email):
+			frappe.get_doc({
+				"doctype": "User",
+				"email": email,
+				"first_name": "DSOT No Role",
+				"send_welcome_email": 0,
+				"roles": [{"role": "Employee"}],
+			}).insert(ignore_permissions=True)
+
+		frappe.set_user(email)
+		self.addCleanup(frappe.set_user, "Administrator")
+
+		with self.assertRaises(frappe.PermissionError):
+			run("DSOT Employee Schedule", filters=MARCH)
 
 
 class TestTheReportScaffold(FrappeTestCase):
