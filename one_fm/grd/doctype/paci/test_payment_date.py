@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-003410: Payment Date on Work Permit, Medical Insurance, Residency and PACI, and the
+"""Payment Date on Work Permit, Medical Insurance, Residency and PACI, and the
 legacy "Upload Payment Invoice On" stamps it replaces."""
 
 from unittest.mock import patch
