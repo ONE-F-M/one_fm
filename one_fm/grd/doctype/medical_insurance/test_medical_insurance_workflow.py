@@ -106,3 +106,11 @@ class TestMedicalInsuranceWorkflow(FrappeTestCase):
 		self.assertIn(
 			"one_fm.patches.v15_0.update_medical_insurance_workflow_and_rule", patches
 		)
+
+	def test_the_start_state_patches_run_in_order(self):
+		patches = frappe.read_file(frappe.get_app_path("one_fm", "patches.txt"))
+		move = "one_fm.patches.v15_0.move_medical_insurance_drafts_to_gr_operator"
+		recompute = "one_fm.patches.v15_0.recompute_preparation_row_stage"
+		self.assertIn(move, patches)
+		self.assertIn(recompute, patches)
+		self.assertLess(patches.index(move), patches.index(recompute))

@@ -31,6 +31,7 @@ from one_fm.grd.doctype.medical_appointment import medical_appointment
 from one_fm.grd.doctype.pcc_attestation import pcc_attestation
 from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.processor import sendemail
+from one_fm.grd.utils import get_pcc_attestation_fees
 
 # WI-001824: which documents each of the new Actions generates on submit. An Action
 # absent from here keeps its existing behaviour, which the renewal and extend paths
@@ -112,6 +113,12 @@ COST_COMPONENT_FIELDS = (
 # widening it would set a field that does not exist and drop the value on save.
 MASTER_COST_COMPONENT_FIELDS = COST_COMPONENT_FIELDS + ('visa_amount',)
 
+# PCC attestation fees a row carries on top of the cost components. Kept out of
+# COST_COMPONENT_FIELDS because the HR Costing master has no such columns.
+ATTESTATION_FEE_FIELDS = ('embassy_attestation_fee', 'mofa_fee', 'pcc_translation_fee')
+ROW_TOTAL_FIELDS = COST_COMPONENT_FIELDS + ATTESTATION_FEE_FIELDS
+OVERSEAS_ACTIONS = ('Overseas', 'Overseas (Government)')
+
 # The Actions whose master fee row is keyed by the number of years as well as the Action.
 # Mirrors the depends_on the costing table already puts on its No. of Years field.
 YEAR_SCOPED_ACTIONS = ('Renewal (Kuwaiti)', 'Renewal Expat')
@@ -191,9 +198,8 @@ CATEGORIES = {
 FALLBACK_PREFIX = 'PRE-'
 
 
-# WI-002093: the order the legal steps run in, so a row can say which one the candidate has
-# reached. Furthest along wins - the sequence only moves forward, and what an operator wants
-# to see is progress, not the last document anybody happened to touch.
+# The order the legal steps run in. A row's Current Stage is the first of them that is not
+# Completed.
 SUB_DOCUMENT_SEQUENCE = ("Work Permit", "Medical Insurance", "Residency", "PACI")
 
 
@@ -282,54 +288,103 @@ def validate_sequence(doc, method=None):
     )
 
 
-def update_row_reference(doc, method=None):
-    """Point a Preparation row at the sub-document its candidate has reached (WI-002093).
+def _state_label(document):
+    """The state a document is in, as the row shows it. A cancelled document says so."""
+    if document.get("docstatus") == 2:
+        return "Cancelled"
+    if document.get("workflow_state"):
+        return document.get("workflow_state")
+    return "Submitted" if document.get("docstatus") == 1 else "Draft"
 
-    Hung off each sub-document's own save, so the status on the row is the status on the
-    document rather than a snapshot from whenever the Preparation was last touched.
 
-    Only ever moves forward: a Medical Insurance saving does not pull the row back from the
-    PACI it had already reached. That is what makes it a progress column and not a
-    last-touched column.
+def current_stage(documents):
+    """The stage a candidate is at, from the latest document of each kind they have.
 
-    Written with db.set_value on the child row - the row belongs to a submitted Preparation,
-    and a status arriving here should not need permission to edit one.
+    `documents` is a list of dicts with doctype, name, workflow_state and docstatus. Pure:
+    it reads nothing and writes nothing.
+
+    The stage is the first document in the legal sequence that is not Completed. Once every
+    document that exists is Completed, the last of them is the stage. Returns a dict with
+    ref_doctype, ref_name and ref_doctype_status ("<DocType> - <state>"), or None when no
+    document in the sequence exists.
     """
-    if not doc.get("preparation") or not doc.get("employee"):
-        return
+    latest = {}
+    for document in documents or []:
+        if document.get("doctype") in SUB_DOCUMENT_SEQUENCE:
+            latest[document["doctype"]] = document
 
-    try:
-        position = SUB_DOCUMENT_SEQUENCE.index(doc.doctype)
-    except ValueError:
+    present = [latest[doctype] for doctype in SUB_DOCUMENT_SEQUENCE if doctype in latest]
+    if not present:
+        return None
+
+    chosen = present[-1]
+    for document in present:
+        if _state_label(document) != COMPLETED:
+            chosen = document
+            break
+
+    return {
+        "ref_doctype": chosen["doctype"],
+        "ref_name": chosen.get("name"),
+        "ref_doctype_status": "{0} - {1}".format(chosen["doctype"], _state_label(chosen)),
+    }
+
+
+def refresh_row_stage(preparation, employee):
+    """Recompute the Current Stage of the Preparation row for this employee.
+
+    Reads the latest document of each kind, cancelled ones included, and writes the result
+    on the row. A row with no document behind it is left as it was.
+
+    Written with db.set_value on the child row - the row belongs to a submitted
+    Preparation, and a stage arriving here should not need permission to edit one. The
+    label is stored verbatim, not translated.
+    """
+    if not preparation or not employee:
         return
 
     row = frappe.db.get_value(
         "Preparation Record",
         {
-            "parent": doc.preparation,
+            "parent": preparation,
             "parenttype": "Preparation",
-            "employee": doc.employee,
+            "employee": employee,
         },
-        ["name", "ref_doctype"],
-        as_dict=True,
+        "name",
     )
     if not row:
         return
 
-    if row.ref_doctype in SUB_DOCUMENT_SEQUENCE:
-        if SUB_DOCUMENT_SEQUENCE.index(row.ref_doctype) > position:
-            return
+    documents = []
+    for doctype in SUB_DOCUMENT_SEQUENCE:
+        found = frappe.get_all(
+            doctype,
+            filters={"preparation": preparation, "employee": employee},
+            fields=["name", "workflow_state", "docstatus"],
+            order_by="creation desc",
+            limit=1,
+        )
+        if found:
+            documents.append(dict(found[0], doctype=doctype))
 
-    frappe.db.set_value(
-        "Preparation Record",
-        row.name,
-        {
-            "ref_doctype": doc.doctype,
-            "ref_name": doc.name,
-            "ref_doctype_status": doc.get("workflow_state") or "",
-        },
-        update_modified=False,
-    )
+    stage = current_stage(documents)
+    if not stage:
+        return
+
+    frappe.db.set_value("Preparation Record", row, stage, update_modified=False)
+
+
+def update_row_reference(doc, method=None):
+    """Refresh the Current Stage of the Preparation row this sub-document belongs to.
+
+    Hung off each sub-document's save, cancel and delete.
+    """
+    if not doc.get("preparation") or not doc.get("employee"):
+        return
+    if doc.doctype not in SUB_DOCUMENT_SEQUENCE:
+        return
+
+    refresh_row_stage(doc.preparation, doc.employee)
 
 
 def category_for_action(action):
@@ -410,15 +465,17 @@ class Preparation(Document):
         assignment there would be discarded.
         """
         for row in self.preparation_record:
-            row_total = sum(flt(row.get(field)) for field in COST_COMPONENT_FIELDS)
+            values = attestation_fees_for_row(row.renewal_or_extend, row.nationality)
+            row.update(values)
+            values['total_amount'] = sum(flt(row.get(field)) for field in ROW_TOTAL_FIELDS)
             if self.docstatus == 1:
-                row.db_set('total_amount', row_total)
+                row.db_set(values)
             else:
-                row.total_amount = row_total
+                row.total_amount = values['total_amount']
 
         doc_total = sum(flt(row.total_amount) for row in self.preparation_record)
         frappe.db.set_value(self.doctype,self.name,'total_payment',doc_total)
-        self.total_payment = doc_total
+        self.set('total_payment', doc_total)
 
     def on_update_after_submit(self):
         self.compare_preparation_record()
@@ -499,6 +556,8 @@ class Preparation(Document):
         self.recall_create_paci() # create paci record for all
         # self.recall_create_fp()# create fp record for all
         self.recall_create_documents_for_new_actions() # WI-001824: New Kuwaiti / Overseas
+        for row in self.preparation_record:
+            refresh_row_stage(self.name, row.employee)
         self.send_notifications()
 
     def recall_create_documents_for_new_actions(self):
@@ -559,7 +618,8 @@ class Preparation(Document):
         )
 
     @frappe.whitelist()
-    def set_renewal_for_all_preparation_record(self, renew_all):
+    def set_renewal_for_all_preparation_record(self, renew_all: int | str):
+        renew_all = cint(renew_all)
         no_of_years = "1 Year"
 
         # Set the costing of renewal for an year in preparation record
@@ -580,8 +640,11 @@ class Preparation(Document):
             costing = costing or frappe._dict()
             for field in COST_COMPONENT_FIELDS:
                 preparation.set(field, flt(costing.get(field)) if renew_all else 0)
+            preparation.update(
+                attestation_fees_for_row(preparation.renewal_or_extend, preparation.nationality)
+            )
             preparation.total_amount = sum(
-                flt(preparation.get(field)) for field in COST_COMPONENT_FIELDS
+                flt(preparation.get(field)) for field in ROW_TOTAL_FIELDS
             )
 
 # Calculate the date of the next month (First & Last) (monthly cron in hooks)
@@ -772,7 +835,8 @@ def duration_in(duration):
 
 @frappe.whitelist()
 def get_preparation_row_costing(
-    renewal_or_extend: str, no_of_years: str = None, no_of_months: str = None
+    renewal_or_extend: str, no_of_years: str = None, no_of_months: str = None,
+    nationality: str = None
 ):
     """The fees a Preparation row should carry for this Action and duration (WI-002092).
 
@@ -798,6 +862,7 @@ def get_preparation_row_costing(
         return costing
 
     costing = dict(costing)
+    costing.update(attestation_fees_for_row(renewal_or_extend, nationality))
     if renewal_or_extend in YEAR_SCOPED_ACTIONS:
         periods = duration_in(no_of_years)
     elif renewal_or_extend == EXTENSION_ACTION:
@@ -809,6 +874,23 @@ def get_preparation_row_costing(
         costing[field] = flt(costing.get(field)) * periods
 
     return costing
+
+
+def attestation_fees_for_row(renewal_or_extend, nationality):
+    """The PCC attestation fees a Preparation row carries, keyed by fieldname.
+
+    Only the Overseas Actions pay them; every other Action gets 0 so a hidden stale value
+    cannot inflate the total. The amounts come from the same lookup PCC Attestation uses.
+    """
+    if renewal_or_extend not in OVERSEAS_ACTIONS:
+        return dict.fromkeys(ATTESTATION_FEE_FIELDS, 0.0)
+
+    fees = get_pcc_attestation_fees(nationality)
+    return {
+        'embassy_attestation_fee': fees.embassy_fee,
+        'mofa_fee': fees.mofa_fee,
+        'pcc_translation_fee': fees.translation_fee,
+    }
 
 
 def create_documents_for_new_actions(preparation_name):
