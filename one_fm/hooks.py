@@ -707,7 +707,8 @@ scheduler_events = {
 
 	],
 
-	"cron": {
+	# "15 12 * * *" below is a duplicate key that predates this line; merging it changes which jobs run, so it is fixed on its own.
+	"cron": {  # nosemgrep: frappe-semgrep-rules.rules.frappe-same-key-assigned-twice
 		"0 12 * * *": [
 			'one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement.send_daily_acknowledgement_reminders'
 		],
@@ -765,6 +766,9 @@ scheduler_events = {
 		],
 		"10 0 * * *": [ #"At 12:10 am - set tomorrow's manifest drivers from Vehicle Handover Logs (WI-001577)"
 			'one_fm.one_fm.doctype.vehicle_handover_log.vehicle_handover_log.set_manifest_drivers_for_tomorrow'
+		],
+		"5 0 * * *": [ # At 12:05 am - one digest email of the pending overtime (DSOT) requests
+			'one_fm.operations.doctype.employee_schedule.dsot_notification.send_daily_dsot_digest'
 		],
 		"15 12 * * *": [ #"At 12:15 pm - preponed from 01:30 pm (WI-001704); run after attendance is marked"
 			'one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.generate_checker',
