@@ -185,14 +185,14 @@ frappe.ui.form.on("Preparation", {
 
 		if(frm.doc.docstatus==1){
 			if(!frappe.user.has_role("HR Manager")){
-				cur_frm.fields_dict.preparation_record.grid.update_docfield_property("renewal_or_extend", "allow_on_submit", 0);
-				cur_frm.fields_dict.preparation_record.grid.update_docfield_property("no_of_years", "allow_on_submit", 0);
-				cur_frm.fields_dict.preparation_record.grid.update_docfield_property("work_permit_amount", "allow_on_submit", 0);
-				cur_frm.fields_dict.preparation_record.grid.update_docfield_property("medical_insurance_amount", "allow_on_submit", 0);
-				cur_frm.fields_dict.preparation_record.grid.update_docfield_property("residency_stamp_amount", "allow_on_submit", 0);
-				cur_frm.fields_dict.preparation_record.grid.update_docfield_property("civil_id_amount", "allow_on_submit", 0);
+				frm.fields_dict.preparation_record.grid.update_docfield_property("renewal_or_extend", "allow_on_submit", 0);
+				frm.fields_dict.preparation_record.grid.update_docfield_property("no_of_years", "allow_on_submit", 0);
+				frm.fields_dict.preparation_record.grid.update_docfield_property("work_permit_amount", "allow_on_submit", 0);
+				frm.fields_dict.preparation_record.grid.update_docfield_property("medical_insurance_amount", "allow_on_submit", 0);
+				frm.fields_dict.preparation_record.grid.update_docfield_property("residency_stamp_amount", "allow_on_submit", 0);
+				frm.fields_dict.preparation_record.grid.update_docfield_property("civil_id_amount", "allow_on_submit", 0);
 				["embassy_attestation_fee", "mofa_fee", "pcc_translation_fee"].forEach(field =>
-					cur_frm.fields_dict.preparation_record.grid.update_docfield_property(field, "allow_on_submit", 0));
+					frm.fields_dict.preparation_record.grid.update_docfield_property(field, "allow_on_submit", 0));
 				
 				// Fetch dates on refresh (covers load & reload)
 				fetch_employee_dates_batch(frm);

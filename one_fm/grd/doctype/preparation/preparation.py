@@ -618,7 +618,8 @@ class Preparation(Document):
         )
 
     @frappe.whitelist()
-    def set_renewal_for_all_preparation_record(self, renew_all):
+    def set_renewal_for_all_preparation_record(self, renew_all: int | str):
+        renew_all = cint(renew_all)
         no_of_years = "1 Year"
 
         # Set the costing of renewal for an year in preparation record
