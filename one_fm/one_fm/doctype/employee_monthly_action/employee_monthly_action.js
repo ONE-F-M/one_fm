@@ -40,7 +40,7 @@ frappe.ui.form.on('Employee Monthly Action', {
 
             r.message.forEach(goal => {
               const row = frm.add_child('goal_update');
-              row.goal = goal.goal_name;
+              row.goal = goal.name;
               row.previous_progress = goal.progress;
             });
 
