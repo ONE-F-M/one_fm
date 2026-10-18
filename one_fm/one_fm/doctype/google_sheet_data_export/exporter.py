@@ -25,7 +25,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient import discovery
 import gspread
-from frappe.utils import get_site_name, nowdate, add_days
+from frappe.utils import get_site_name, nowdate, add_days, now_datetime
 
 from google.oauth2 import service_account
 import os
@@ -197,7 +197,7 @@ class DataExporter:
 				_("No Data"), _("There is no data to be exported"), indicator_color="orange"
 			)
 		result = {"google_sheet_id":self.google_sheet_id, "link":self.link,"sheet_name":self.sheet_name}
-		frappe.db.set_value("Google Sheet Data Export", self.name, "last_execution_date", nowdate())
+		frappe.db.set_value("Google Sheet Data Export", self.name, "last_execution_timestamp", now_datetime())
 
 		return result
 
@@ -573,22 +573,44 @@ class DataExporter:
 @frappe.whitelist()
 def update_google_sheet_daily():
 	yesterday = add_days(nowdate(), -1)
-	list_of_export = frappe.get_list("Google Sheet Data Export", {"enable_auto_update": 1, "last_execution_date": yesterday}, ['name'], limit=1)
+	list_of_export = frappe.get_list(
+		"Google Sheet Data Export",
+		{
+			"enable_auto_update": 1,
+			"update_frequency": "Daily",
+			"last_execution_timestamp": ["between", [yesterday, yesterday]],
+		},
+		["name"],
+		limit=1,
+	)
 	for e in list_of_export:
-		doc = frappe.get_doc("Google Sheet Data Export",e.name)
+		enqueue_export(e.name)
 
-		frappe.enqueue(export_data,
-			doctype= doc.reference_doctype,
-			select_columns= doc.field_cache,
-			filters= doc.filter_cache,
-			with_data = 1,
-			link= doc.link,
-			google_sheet_id= doc.google_sheet_id,
-			sheet_name= doc.sheet_name,
-			owner= doc.owner,
-			client_id= doc.client_id,
-			name= doc.name,
-			is_async=True, queue="long", timeout=9000)
+
+def update_google_sheet_hourly():
+	"""Refresh every export set to update hourly; runs at the top of each hour."""
+	for name in frappe.get_all(
+		"Google Sheet Data Export", {"enable_auto_update": 1, "update_frequency": "Hourly"}, pluck="name"
+	):
+		enqueue_export(name)
+
+
+def enqueue_export(name):
+	doc = frappe.get_doc("Google Sheet Data Export", name)
+	frappe.enqueue(export_data,
+		doctype= doc.reference_doctype,
+		select_columns= doc.field_cache,
+		filters= doc.filter_cache,
+		with_data = 1,
+		link= doc.link,
+		google_sheet_id= doc.google_sheet_id,
+		sheet_name= doc.sheet_name,
+		owner= doc.owner,
+		client_id= doc.client_id,
+		name= doc.name,
+		job_id=f"google_sheet_data_export::{doc.name}",
+		deduplicate=True,
+		is_async=True, queue="long", timeout=9000)
 
 @frappe.whitelist()
 def get_client_id():

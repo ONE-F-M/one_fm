@@ -9,9 +9,10 @@
  "engine": "InnoDB",
  "field_order": [
   "enable_auto_update",
+  "update_frequency",
   "export_access",
   "column_break_mqrt",
-  "last_execution_date",
+  "last_execution_timestamp",
   "google_sheet_reference_section",
   "have_existing_sheet",
   "link",
@@ -89,6 +90,14 @@
    "label": "Enable Auto Update"
   },
   {
+   "default": "Daily",
+   "depends_on": "eval:doc.enable_auto_update",
+   "fieldname": "update_frequency",
+   "fieldtype": "Select",
+   "label": "Update Frequency",
+   "options": "Daily\nHourly"
+  },
+  {
    "depends_on": "reference_doctype",
    "fieldname": "select_fields_section",
    "fieldtype": "Section Break",
@@ -136,9 +145,9 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "last_execution_date",
-   "fieldtype": "Date",
-   "label": "Last execution date"
+   "fieldname": "last_execution_timestamp",
+   "fieldtype": "Datetime",
+   "label": "Last Execution Timestamp"
   },
   {
    "description": "Users who can export this sheet at any time",
@@ -151,7 +160,7 @@
  "grid_page_length": 50,
  "hide_toolbar": 1,
  "links": [],
- "modified": "2025-12-30 09:57:30.445836",
+ "modified": "2026-10-18 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Google Sheet Data Export",
