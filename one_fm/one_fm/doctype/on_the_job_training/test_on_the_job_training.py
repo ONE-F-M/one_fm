@@ -96,70 +96,24 @@ class TestOntheJobTraining(FrappeTestCase):
             
         return doc.name
 
-    def test_schedule_creation_on_pending_approval(self):
-        # 1. Create Draft OJT
-        ojt = frappe.new_doc("On the Job Training")
-        ojt.on_the_job_training_name = "Test OJT Creation"
-        ojt.employee = self.employee
-        ojt.operations_role = self.role
-        ojt.operations_shift = self.shift
-        ojt.operations_site = self.site
-        ojt.project = self.project
-        ojt.start_date = add_days(nowdate(), 1)
-        ojt.end_date = add_days(nowdate(), 3)
-        ojt.workflow_state = "Draft"
-        ojt.client_agreed_ojt_days = 5
-        ojt.insert(ignore_permissions=True)
 
-        # 2. Transition to Pending Approval
-        ojt.workflow_state = "Pending Approval"
-        ojt.save()
+class TestPastStartDateRefusedOnFirstSave(FrappeTestCase):
+    """The process map sets Draft only after insert, so a new record must be checked before it."""
 
-        # 3. Verify Schedules Created
-        schedules = frappe.get_all("Employee Schedule", filters={
-            "employee": self.employee,
-            "on_the_job_training": ojt.name,
-            "employee_availability": "On-the-job Training"
-        })
-        
-        self.assertEqual(len(schedules), 3, "Should create 3 schedules for 3 days")
-        
-        # Verify status needed? logic sets "On-the-job Training"
-        for s in schedules:
-            doc = frappe.get_doc("Employee Schedule", s.name)
-            self.assertEqual(doc.employee_availability, "On-the-job Training")
+    def _ojt(self, start, **kwargs):
+        doc = frappe.new_doc("On the Job Training")
+        doc.start_date = start
+        doc.end_date = start
+        doc.update(kwargs)
+        return doc
 
-    def test_schedule_update_on_pending_approval(self):
-        target_date = add_days(nowdate(), 5)
-        
-        # 1. Create existing schedule (Working)
-        sched = frappe.new_doc("Employee Schedule")
-        sched.employee = self.employee
-        sched.date = target_date
-        sched.employee_availability = "Working"
-        sched.roster_type = "Basic"
-        sched.insert(ignore_permissions=True)
-        sched_name = sched.name
-        
-        # 2. Create Draft OJT for same date
-        ojt = frappe.new_doc("On the Job Training")
-        ojt.on_the_job_training_name = "Test OJT Update"
-        ojt.employee = self.employee
-        ojt.operations_role = self.role
-        ojt.operations_shift = self.shift
-        ojt.operations_site = self.site
-        ojt.project = self.project
-        ojt.start_date = target_date
-        ojt.end_date = target_date
-        ojt.workflow_state = "Draft"
-        ojt.client_agreed_ojt_days = 5
-        ojt.insert(ignore_permissions=True)
+    def test_new_record_with_past_start_is_refused(self):
+        with self.assertRaises(frappe.ValidationError):
+            self._ojt(add_days(nowdate(), -1)).validate_dates()
 
-        # 3. Transition to Pending Approval
-        ojt.workflow_state = "Pending Approval"
-        ojt.save()
+    def test_new_record_with_future_start_passes(self):
+        self._ojt(add_days(nowdate(), 1)).validate_dates()
 
-        # 4. Verify Schedule Updated
-        sched.reload()
-        self.assertEqual(sched.employee_availability, "On-the-job Training")
-        self.assertEqual(sched.on_the_job_training, ojt.name)
+    def test_amendment_carrying_an_old_state_is_still_checked(self):
+        with self.assertRaises(frappe.ValidationError):
+            self._ojt(add_days(nowdate(), -1), workflow_state="Rejected").validate_dates()

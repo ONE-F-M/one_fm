@@ -62,7 +62,7 @@ def get_employee_shift(employee_id, date_type='month'):
 				SELECT COUNT(*) as count
 				FROM `tabPenalty` p
 				WHERE p.recipient_employee="{employee.name}"
-				AND p.workflow_state = 'Penalty Accepted'
+				AND p.workflow_state = 'Penalty Issued'
 				AND p.penalty_issuance_time BETWEEN "{penalty_start_date} 00:00:00" AND "{penalty_end_date} 23:59:59";
 			""", as_dict=1)[0].count
 

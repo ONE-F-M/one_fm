@@ -216,9 +216,20 @@ class EmployeeSchedule(Document):
 			if self._is_dsot_workflow_transition():
 				return
 
+			# The On the Job Training process map maintains the trainee's schedules as the
+			# Supervisor or Project Manager acting on that OJT.
+			if self._is_ojt_schedule_update():
+				return
+
 			# Check if user has System Manager role
 			if frappe.session.user != "Administrator" and "System Manager" not in frappe.get_roles():
 				frappe.throw(_("Only System Managers can edit Employee Schedule records directly. Please use the appropriate tools (Roster, OJT, Client Event, etc.) to make schedule changes."))
+
+	def _is_ojt_schedule_update(self) -> bool:
+		return bool(
+			self.on_the_job_training
+			and frappe.has_permission("On the Job Training", "write", self.on_the_job_training)
+		)
 
 	def _is_suspension_workflow_transition(self):
 		"""WI-001694: True when this save advances the suspension workflow_state and

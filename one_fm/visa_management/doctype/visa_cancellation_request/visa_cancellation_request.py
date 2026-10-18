@@ -177,7 +177,6 @@ COPIED_FROM_VISA_REQUEST = (
 	"passport_holder_of",
 	"passport_issued_on",
 	"passport_expires_on",
-	"pam_reference_number",
 	"visa_reference_number",
 	"visa_issue_date",
 	"visa_expiry_date",
