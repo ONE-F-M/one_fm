@@ -192,7 +192,45 @@ frappe.ui.form.on('Job Offer', {
   employee_grade: function(frm) {
     set_filters(frm);
   },
+  before_workflow_action(frm) {
+    const onboarding_actions = ["Offer Accepted", "Submit to Onboarding Officer"];
+    if (!onboarding_actions.includes(frm.selected_workflow_action)) return;
+    return confirm_proceed_without_ccp(frm);
+  },
 });
+
+async function confirm_proceed_without_ccp(frm) {
+  let blockers = [];
+  try {
+    blockers = await frappe.xcall("one_fm.overrides.job_offer.get_candidate_country_process_blockers", {
+      job_offer: frm.doc.name,
+    });
+  } catch (error) {
+    frappe.dom.unfreeze();
+    throw error;
+  }
+  if (!blockers.length) return;
+
+  // The workflow action froze the page before calling this hook
+  frappe.dom.unfreeze();
+  return new Promise((resolve, reject) => {
+    frappe.confirm(
+      __("A Candidate Country Process will not be created for this Job Offer. Do you wish to proceed without CCP?"),
+      () => {
+        frappe.dom.freeze();
+        resolve();
+      },
+      () => {
+        frappe.msgprint({
+          title: __("Fix these to create the Candidate Country Process"),
+          indicator: "orange",
+          message: `<ul>${blockers.map((blocker) => `<li>${blocker}</li>`).join("")}</ul>`,
+        });
+        reject(new Error(__("Workflow action cancelled until the Candidate Country Process can be created")));
+      }
+    );
+  });
+}
 
 
 

@@ -115,7 +115,7 @@ class TestLicenceRecalculates(FrappeTestCase):
 			"civil_id_number_for_licensing": "_TEST-PAM-FIG",
 			"license_name": "_Test Figures Licence",
 			"classification": "Commercial",
-			"status": "Not suspended",
+			"status": "Active",
 			"pam_license_stats": [{
 				"occupational_sector": self.sector,
 				"ratio_number_of_national_workers": "20",
@@ -138,7 +138,7 @@ class TestLicenceRecalculates(FrappeTestCase):
 			"civil_id_number_for_licensing": "_TEST-PAM-RATIO",
 			"license_name": "_Test Ratio Change Licence",
 			"classification": "Commercial",
-			"status": "Not suspended",
+			"status": "Active",
 			"pam_license_stats": [{
 				"occupational_sector": self.sector,
 				"ratio_number_of_national_workers": "20",

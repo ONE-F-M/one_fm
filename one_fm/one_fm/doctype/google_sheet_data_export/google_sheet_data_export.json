@@ -24,6 +24,11 @@
   "filter_list",
   "filter_cache",
   "select_fields_section",
+  "include_hidden_fields",
+  "column_break_field_options",
+  "include_metadata_fields",
+  "export_link_titles",
+  "section_break_field_picker",
   "fields_multicheck",
   "field_cache",
   "amended_from",
@@ -155,6 +160,36 @@
    "fieldtype": "Table MultiSelect",
    "label": "Export Access",
    "options": "Google Sheet Data Export User"
+  },
+  {
+   "fieldname": "include_hidden_fields",
+   "fieldtype": "Check",
+   "label": "Include Hidden Fields",
+   "depends_on": "eval:doc.reference_doctype",
+   "description": "Show fields that are hidden on the form so that they can be selected for export."
+  },
+  {
+   "fieldname": "include_metadata_fields",
+   "fieldtype": "Check",
+   "label": "Include Metadata Fields",
+   "depends_on": "eval:doc.reference_doctype",
+   "description": "Offer the standard fields (Created By, Created On, Last Modified On, Last Modified By, Document Status, Index) of the selected Document Type."
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.reference_doctype",
+   "description": "Export the value shown on the form for a Link field (a Contact's full name, for one) instead of the stored ID. Leave unchecked to keep exporting IDs.",
+   "fieldname": "export_link_titles",
+   "fieldtype": "Check",
+   "label": "Export Link Titles"
+  },
+  {
+   "fieldname": "column_break_field_options",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_field_picker",
+   "fieldtype": "Section Break"
   }
  ],
  "grid_page_length": 50,
