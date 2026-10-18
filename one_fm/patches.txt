@@ -665,3 +665,4 @@ one_fm.patches.v15_0.end_arrival_at_transportation_confirmation #2026-10-12 Onbo
 one_fm.patches.v15_0.set_candidate_details_on_arrivals #2026-10-12 candidate department, designation, gender, nationality and date of birth on arrivals
 one_fm.patches.v15_0.unblock_interview_feedback_skill_assessment #2026-09-25 HD-1853443
 one_fm.patches.v15_0.reconcile_bed_status_with_open_checkins #2026-10-14 HD-1806399 free the beds left flagged occupied by check-outs that could not reset them
+one_fm.patches.v15_0.backfill_checkin_operations_shift #2026-10-16 WI-003633
