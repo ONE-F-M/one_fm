@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002591 AC5: Generate Shipments brings a PLACED card's crew up to date.
+"""Generate Shipments brings a PLACED card's crew up to date.
 
 A Transportation Shipment answers two different questions. WHERE the bus goes is the
 Route Plan's once the card is on a lane; WHO rides it belongs to the roster and changes
@@ -96,7 +96,7 @@ class TestRecrewingAPlacedCard(FrappeTestCase):
 
 	def test_an_unchanged_crew_is_not_written_at_all(self):
 		# Otherwise every run of the daily job would bump `modified` on every placed
-		# card, and the canvas would fight it (see WI-002538).
+		# card, and the canvas would fight it.
 		card = self._card([_emp("EMP-A", "A")])
 		modified_before = frappe.db.get_value("Transportation Shipment", card.name, "modified")
 

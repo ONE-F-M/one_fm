@@ -6,6 +6,9 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.desk.form.assign_to import add as add_assignment
 
+# Awaiting Recruiter Approval is the recruiter's queue; ERF and Recruiter are required once recruitment starts
+RECRUITMENT_STATES = ("In Process", "Completed")
+
 
 class ProjectManpowerRequest(Document):
 	def autoname(self):
@@ -99,34 +102,21 @@ class ProjectManpowerRequest(Document):
 						title=_("Change Request Reason Required")
 					)
 
-	def just_submitted_to_recruiter(self):
-		"""True only for the exact save that performs Draft -> Awaiting
-		Recruiter Approval (the Project Manager's "Submit to Recruiter"
-		action). apply_workflow() sets workflow_state to the target state
-		before calling save(), so without this check the mandatory
-		ERF/Recruiter validation would fire on that very save and block the
-		transition itself -- ERF and Recruiter aren't the Project Manager's
-		to provide, only the Recruiter's, once it's actually in their queue."""
-		if getattr(self, "workflow_state", None) != "Awaiting Recruiter Approval":
-			return False
-		before = self.get_doc_before_save()
-		return bool(before) and before.get("workflow_state") == "Draft"
-
 	def validate_recruiter_presence(self):
-		if self.flags.ignore_mandatory or self.just_submitted_to_recruiter():
+		if self.flags.ignore_mandatory:
 			return
-		if (getattr(self, "workflow_state", None) or "Draft") != "Draft":
+		if getattr(self, "workflow_state", None) in RECRUITMENT_STATES:
 			if not self.recruiter:
 				frappe.throw(
-					_("Please assign a <b>Recruiter</b> before moving this Project Manpower Request past Draft."),
+					_("Please assign a <b>Recruiter</b> before moving this Project Manpower Request to In Process."),
 					title=_("Missing Recruiter")
 				)
 
 
 	def validate_erf_presence(self):
-		if self.flags.ignore_mandatory or self.just_submitted_to_recruiter():
+		if self.flags.ignore_mandatory:
 			return
-		if getattr(self, "workflow_state", None) in ["Awaiting Recruiter Approval", "In Process", "Completed"]:
+		if getattr(self, "workflow_state", None) in RECRUITMENT_STATES:
 			if not self.erf:
 				frappe.throw(
 					_("Please select an ERF before sending this Project Manpower Request for Recruitment.")

@@ -3,7 +3,10 @@
 
 import frappe
 from frappe import _
+from frappe.desk.form.assign_to import close_all_assignments
 from frappe.model.document import Document
+
+CLOSED_STATES = ("Approved", "Rejected")
 
 
 class EmployeeResignationWithdrawal(Document):
@@ -72,6 +75,8 @@ class EmployeeResignationWithdrawal(Document):
 					# Bypass workflow engine: Administrative auto-close.
 					# Employee Resignation workflow does not have a user-facing transition to 'Withdrawn'.
 					resignation.db_set("workflow_state", "Withdrawn")
+				# A resignation withdrawn while still under review leaves its approvers' tasks open
+				close_all_assignments("Employee Resignation", self.employee_resignation)
 
 				# C. Handle PMR counters
 				pmr_name = frappe.db.get_value("Project Manpower Request", {"employee_resignation": self.employee_resignation}, "name")
@@ -120,7 +125,8 @@ class EmployeeResignationWithdrawal(Document):
 							)
 
 	def validate(self):
-		self.set_approver()
+		if self.workflow_state not in CLOSED_STATES:
+			self.set_approver()
 		self.validate_no_active_withdrawal()
 		if self.employee_resignation:
 			pmr_name = frappe.db.get_value("Project Manpower Request", {"employee_resignation": self.employee_resignation}, "name")
@@ -186,23 +192,25 @@ class EmployeeResignationWithdrawal(Document):
 		if not self.employee:
 			return
 
-		# Withdrawal reuses the exact same routing/actors already resolved on the
-		# originating Employee Resignation -- fetch rather than re-derive, so the
-		# two documents can never disagree on who the actor is.
+		from one_fm.utils import get_approver_user, get_project_manager_user
+
+		# Routing comes from the resignation; supervisor and project manager come from the employee's current record
+		resignation = frappe._dict()
 		if self.employee_resignation:
 			resignation = frappe.db.get_value(
 				"Employee Resignation", self.employee_resignation,
-				["shift_working", "supervisor", "t4_admin", "cleaning_head_supervisor",
-				 "security_manager", "project_manager"],
+				["shift_working", "t4_admin", "cleaning_head_supervisor", "security_manager",
+				 "supervisor", "project_manager"],
 				as_dict=True,
-			)
+			) or frappe._dict()
 			if resignation:
 				self.is_corporate = 0 if resignation.shift_working else 1
-				self.supervisor = resignation.supervisor
 				self.t4_admin = resignation.t4_admin
 				self.cleaning_head_supervisor = resignation.cleaning_head_supervisor
 				self.security_manager = resignation.security_manager
-				self.project_manager = resignation.project_manager
+
+		self.supervisor = get_approver_user(self.employee, skip_shift_supervisor=True) or resignation.supervisor
+		self.project_manager = get_project_manager_user(self.employee) or resignation.project_manager
 
 		# Set Offboarding Officer — first user with that role
 		if not self.get("offboarding_officer"):
