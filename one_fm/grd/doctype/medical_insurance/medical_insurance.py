@@ -158,15 +158,6 @@ def create_mi_record(WorkPermit, insurance_status=None):
     new_medical_insurance.employee = WorkPermit.employee
     new_medical_insurance.insert()
 
-    # Written after the insert rather than before it. Frappe reads a workflow_state set on
-    # a new document as a transition out of the workflow's first state and refuses one the
-    # session's user holds no role for - and these are opened by the system on behalf of a
-    # Preparation, so there is no operator in the session to make it. PACI hands its
-    # overseas applications to the PRO the same way.
-    initial_state = initial_workflow_state(WorkPermit.work_permit_type)
-    if initial_state != new_medical_insurance.workflow_state:
-        new_medical_insurance.db_set("workflow_state", initial_state)
-
     return new_medical_insurance
 
 @frappe.whitelist()
