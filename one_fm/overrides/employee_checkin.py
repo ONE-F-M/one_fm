@@ -3,7 +3,7 @@ import random
 from dateutil.parser import parse
 import frappe
 from frappe import _
-from frappe.utils import cint, flt, get_datetime, cstr, getdate, now_datetime, add_days, now, today
+from frappe.utils import cint, flt, get_datetime, cstr, getdate, now_datetime, add_days, now, today, formatdate
 from hrms.hr.doctype.employee_checkin.employee_checkin import *
 from one_fm.utils import get_current_shift
 from one_fm.overrides.employee import NOT_RETURNED_FROM_LEAVE
@@ -56,6 +56,7 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 
 	def validate(self):
 		self.validate_not_returned_from_leave()
+		self.validate_not_after_relieving_date()
 		try:
 			validate_active_employee(self.employee)
 			self.validate_duplicate_log()
@@ -99,6 +100,20 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 		# own validate(). This override replaces validate() without calling super(),
 		# so we must trigger it here or the Geolocation field is never populated.
 		self.set_geolocation()
+
+	def validate_not_after_relieving_date(self):
+		"""Block an IN log after the employee's relieving date; the relieving date itself is still a working day.
+		An OUT log may fall the next morning, when the last shift runs overnight."""
+		if self.log_type != "IN":
+			return
+		relieving_date = frappe.db.get_value("Employee", self.employee, "relieving_date")
+		if relieving_date and getdate(self.time) > getdate(relieving_date):
+			frappe.throw(
+				_("Access Denied: your relieving date was {0}, so you cannot check in after it.").format(
+					formatdate(relieving_date)
+				),
+				title=_("Checkin Blocked")
+			)
 
 	def set_coordinates_from_device_id(self):
 		"""Backfill latitude/longitude from the "latitude,longitude" string stored

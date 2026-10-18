@@ -57,6 +57,15 @@ def get_magic_link():
                     result['religions'] = [i.name for i in frappe.get_all("Religion")]
                     educations = frappe.get_meta("Job Applicant").get_field("one_fm_educational_qualification").options
                     result['education'] = list(educations.split("\n"))
+                    # Country Calling Codes for the dial-code dropdown. The dial-code field
+                    # on Job Applicant is a Link to "Country Calling Code" (name == the code),
+                    # so the portal must offer only existing values to avoid the downstream
+                    # "Country code not available" error caused by free-text typos.
+                    result['country_calling_codes'] = frappe.get_all(
+                        "Country Calling Code",
+                        fields=["name", "country"],
+                        order_by="country asc"
+                    )
                     result['attachments'] = []
                     if job_applicant.passport_data_page:
                         result['attachments'].append({
@@ -459,7 +468,8 @@ def submit_job_applicant(job_applicant):
         select_applicant_on_magic_link_submit(job_applicant)
         return {'msg':'Your application has been successfully submitted, we will be intouch soonest.'}
     except Exception as e:
-        return {'error':e}
+        frappe.log_error(message=frappe.get_traceback(), title='Magic Link: submit_job_applicant')
+        return {'error': str(e)}
 
 def select_applicant_on_magic_link_submit(job_applicant_id):
     job_applicant = frappe.get_doc('Job Applicant', job_applicant_id)

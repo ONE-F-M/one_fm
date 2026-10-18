@@ -31,8 +31,14 @@ var update_applicant_status = function(listview, btn_label, confirm_msg, status)
 var send_magic_link_to_selected_applicants = function(listview, magic_link) {
 	listview.page.add_action_item(__('Send '+magic_link), function() {
 		const docnames = listview.get_checked_items(true).map(docname => docname.toString());
+		if (!docnames.length) {
+			frappe.msgprint(__('Please select at least one Job Applicant.'));
+			return;
+		}
 		frappe.confirm(
-			__('Send {0} magic link to {1} applicants?', [magic_link, docnames.length]),
+			// Only the rows loaded in the list view can be selected, so the count is spelled
+			// out here to make a partial selection obvious before anything is sent.
+			__('Send {0} magic link to the {1} selected applicant(s)?', [magic_link, docnames.length]),
 			function(){
 				// Yes
 				listview.call_for_selected_items('one_fm.hiring.utils.send_magic_link_to_selected_applicants', { magic_link: magic_link });

@@ -12,6 +12,7 @@
   "candidate_name",
   "passport_number",
   "erf",
+  "department",
   "status",
   "column_break_4",
   "start_date",
@@ -74,6 +75,12 @@
    "label": "ERF",
    "options": "ERF",
    "read_only": 1
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department"
   },
   {
    "fieldname": "column_break_4",
@@ -183,7 +190,7 @@
    "link_fieldname": "candidate_country_process"
   }
  ],
- "modified": "2026-07-21 01:00:00.000000",
+ "modified": "2026-10-12 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Candidate Country Process",

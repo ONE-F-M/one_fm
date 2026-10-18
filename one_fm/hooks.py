@@ -224,7 +224,6 @@ has_permission = {
 	"Issue": "one_fm.utils.has_permission_to_issue",
 	"Notification Settings":'one_fm.overrides.notification_settings.has_permission_',
 	"Contracts": "one_fm.operations.doctype.contracts.contracts.contracts_has_permission",
-	"Arrival Acknowledgement": "one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement.has_permission",
 	"Arrival and Deployment": "one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment.has_permission"
 }
 
@@ -691,6 +690,7 @@ scheduler_events = {
         'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_day_process_task',
         'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_last_day_process_task',
 		'one_fm.fleet_management.vehicle_branding_expiry.notify_vehicle_branding_expiry',
+		'one_fm.one_fm.doctype.employee_resignation.employee_resignation.hand_over_in_process_approvals',
 		# WI-002449: a week's notice before a PAM Licence letter of guarantee expires.
 		'one_fm.grd.lg_expiry.notify_lg_expiry',
 		# WI-002431: raise a cancellation for every visa that has reached its expiry.
@@ -718,9 +718,6 @@ scheduler_events = {
 	],
 
 	"cron": {
-		"0 12 * * *": [
-			'one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement.send_daily_acknowledgement_reminders'
-		],
 		"40 5 * * 0,1,2,3,4":[#run durring working days only “At 05:40 on Sunday, Monday, Tuesday, Wednesday, and Thursday.”
 			'one_fm.grd.doctype.work_permit.work_permit.system_remind_renewal_operator_to_apply',#wp
 			'one_fm.grd.doctype.work_permit.work_permit.system_remind_transfer_operator_to_apply',
@@ -778,7 +775,6 @@ scheduler_events = {
 		],
 		"15 12 * * *": [ #"At 12:15 pm - preponed from 01:30 pm (WI-001704); run after attendance is marked"
 			'one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.generate_checker',
-			'one_fm.operations.doctype.roster_double_shift_ot_checker.roster_double_shift_ot_checker.check_roster_double_shift_ot',
 		],
 		"30 4 * * *": [
 			'one_fm.operations.doctype.roster_client_day_off_checker.roster_client_day_off_checker.check_roster_client_day_off'

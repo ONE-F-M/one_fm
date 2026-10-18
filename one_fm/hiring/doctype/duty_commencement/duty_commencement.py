@@ -29,7 +29,22 @@ class DutyCommencement(Document):
 			frappe.msgprint("Error Occured while translating page",alert=1)
 	
 	
+	def sync_employee_from_onboarding(self):
+		"""The Employee here only ever mirrors the Onboard Employee - it is written by
+		OnboardEmployee.create_employee() once the real Employee record exists.
+
+		Frappe pre-fills every Employee Link field of a new document with the creator's
+		own Employee when that user holds exactly one Employee User Permission
+		(frappe/permissions.py: filter_allowed_docs_for_doctype). On this read-only
+		field, with fetch_if_empty set, that wrong value would never be corrected - the
+		Duty Commencement would show the onboarding applicant's name while linking to
+		the onboarding officer. Keep the link in step with the onboarding instead.
+		"""
+		if self.onboard_employee:
+			self.employee = frappe.db.get_value("Onboard Employee", self.onboard_employee, "employee")
+
 	def validate(self):
+		self.sync_employee_from_onboarding()
 		self.translate_fields()
 		if not self.posting_date:
 			self.posting_date = today()
