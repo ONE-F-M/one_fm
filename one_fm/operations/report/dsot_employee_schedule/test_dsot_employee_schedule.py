@@ -65,6 +65,11 @@ def _read_report_file(name):
 
 
 class TestDsotEmployeeScheduleReport(FrappeTestCase):
+	def tearDown(self):
+		# FrappeTestCase rolls back once per class, and setUp reuses fixed names.
+		frappe.db.rollback()
+		frappe.set_user("Administrator")
+
 	def setUp(self):
 		frappe.set_user("Administrator")
 		self.pending = _insert_schedule("TDSOT-PENDING", PENDING, dsot_request="TDSOT-PENDING")
@@ -257,6 +262,11 @@ class TestTheReportScaffold(FrappeTestCase):
 
 
 class TestTheBackfill(FrappeTestCase):
+	def tearDown(self):
+		# FrappeTestCase rolls back once per class, and setUp reuses fixed names.
+		frappe.db.rollback()
+		frappe.set_user("Administrator")
+
 	def setUp(self):
 		frappe.set_user("Administrator")
 		pending_in_history = json.dumps(
