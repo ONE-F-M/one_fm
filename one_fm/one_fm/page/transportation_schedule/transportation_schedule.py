@@ -2439,23 +2439,56 @@ def update_route_plan_status(plan_name: str, new_status: str):
         "plan_name": doc.name,
         "new_status": new_status
     }
-@frappe.whitelist()
-def get_available_rambo_relievers(shift_name: str = None, date: str = None):
-    """
-    Fetch available Rambo relievers for a specific date.
-    Returns employees with custom_is_rambo_reliever = 1 and status = 'Active',
-    enriched with their current day's Operations Shift details (if scheduled).
+def _intervals_overlap(a_start, a_end, b_start, b_end):
+    """True when [a_start, a_end) and [b_start, b_end) share any time."""
+    return a_start < b_end and b_start < a_end
 
-    Dropdown display format: [Name] - [Shift] - [Start] to [End]
-    Falls back to [Name] ([Designation]) if no shift is assigned.
+
+def _hhmm(value):
+    """Format a Time / datetime value as HH:MM, or None when it is not set."""
+    if value is None:
+        return None
+    return frappe.utils.get_time(value).strftime("%H:%M")
+
+
+def _day_window(day, start_time, end_time):
+    """Turn a start / end clock time on `day` into datetimes.
+
+    The end moves to the next day when it is not after the start (a night shift).
     """
-    if not date:
-        date = frappe.utils.today()
+    from datetime import timedelta
+
+    midnight = frappe.utils.get_datetime(day).replace(hour=0, minute=0, second=0, microsecond=0)
+    start = midnight + frappe.utils.to_timedelta(start_time)
+    end = midnight + frappe.utils.to_timedelta(end_time)
+    if not end > start:
+        end += timedelta(days=1)
+    return start, end
+
+
+def _fetch_shift_times(shift_names):
+    """{Operations Shift name: (start_time, end_time)} for the given names."""
+    shift_names = [s for s in set(shift_names) if s]
+    if not shift_names:
+        return {}
 
     from frappe.query_builder import DocType
 
+    OperationsShift = DocType("Operations Shift")
+    rows = (
+        frappe.qb.from_(OperationsShift)
+        .select(OperationsShift.name, OperationsShift.start_time, OperationsShift.end_time)
+        .where(OperationsShift.name.isin(shift_names))
+    ).run(as_dict=True)
+    return {s.name: (s.start_time, s.end_time) for s in rows}
+
+
+def _fetch_rambo_employees():
+    """Active Rambo relievers, with the master shift held on the Employee record."""
+    from frappe.query_builder import DocType
+
     Employee = DocType("Employee")
-    rambos = (
+    return (
         frappe.qb.from_(Employee)
         .select(
             Employee.name,
@@ -2469,74 +2502,209 @@ def get_available_rambo_relievers(shift_name: str = None, date: str = None):
         .orderby(Employee.employee_name)
     ).run(as_dict=True)
 
-    if not rambos:
-        return []
 
-    rambo_ids = [r.name for r in rambos]
+def _fetch_roster_rows(employee_ids, date, window_start):
+    """Working Employee Schedule rows for `date` and the day before it.
 
-    # Fetch Employee Schedule for these employees on the given date.
-    # Filter to roster_type='Basic' to avoid ambiguity with Over-Time entries
-    # (consistent with one_fm/api/tasks.py and default_shift_checker.py).
+    Rows of the day before are only kept when they run past the start of the trip
+    window (a night shift still on when the trip begins).
+    """
+    from frappe.query_builder import DocType
+
+    previous_day = frappe.utils.add_days(date, -1)
     EmployeeSchedule = DocType("Employee Schedule")
-    schedules = (
+    rows = (
         frappe.qb.from_(EmployeeSchedule)
         .select(
             EmployeeSchedule.employee,
+            EmployeeSchedule.date,
+            EmployeeSchedule.roster_type,
             EmployeeSchedule.shift,
+            EmployeeSchedule.start_datetime,
+            EmployeeSchedule.end_datetime,
+            EmployeeSchedule.day_off_ot,
         )
-        .where(EmployeeSchedule.employee.isin(rambo_ids))
-        .where(EmployeeSchedule.date == date)
+        .where(EmployeeSchedule.employee.isin(list(employee_ids)))
+        .where(EmployeeSchedule.date.isin([date, previous_day]))
         .where(EmployeeSchedule.employee_availability == "Working")
-        .where(EmployeeSchedule.roster_type == "Basic")
     ).run(as_dict=True)
 
-    # Map employee → today's scheduled shift
-    emp_schedule_map = {}
-    for s in schedules:
-        if s.employee not in emp_schedule_map:
-            emp_schedule_map[s.employee] = s.shift
+    kept = []
+    for row in rows:
+        if frappe.utils.getdate(row.date) == frappe.utils.getdate(previous_day):
+            if (
+                window_start is None
+                or row.end_datetime is None
+                or not frappe.utils.get_datetime(row.end_datetime) > window_start
+            ):
+                continue
+        kept.append(row)
+    return kept
 
-    # Collect all shift names we need details for (from schedule + fallback default)
-    all_shift_names = set()
-    for r in rambos:
-        scheduled_shift = emp_schedule_map.get(r.name)
-        if scheduled_shift:
-            all_shift_names.add(scheduled_shift)
-        elif r.shift:
-            all_shift_names.add(r.shift)
 
-    # Batch-fetch Operations Shift details
-    shift_detail_map = {}
-    if all_shift_names:
-        OperationsShift = DocType("Operations Shift")
-        shift_details = (
-            frappe.qb.from_(OperationsShift)
-            .select(
-                OperationsShift.name,
-                OperationsShift.start_time,
-                OperationsShift.end_time,
-            )
-            .where(OperationsShift.name.isin(list(all_shift_names)))
-        ).run(as_dict=True)
-        shift_detail_map = {s.name: s for s in shift_details}
+def _reliever_context(shift_name, date, row_name):
+    """Work out the trip date, the covered shift and the trip's scheduled times.
 
-    # Build response
-    result = []
-    for r in rambos:
-        # Determine which shift to display: Employee Schedule (today) → fallback to default
-        effective_shift = emp_schedule_map.get(r.name) or r.shift
-        shift_doc = shift_detail_map.get(effective_shift) if effective_shift else None
+    With a manifest row the date comes from the manifest's own schedule_date and the
+    caller needs read permission on that manifest; without one the caller needs read
+    permission on Transportation Manifest in general.
 
-        result.append({
-            "name": r.name,
-            "employee_name": r.employee_name,
-            "designation": r.designation or "",
-            "mobile": r.cell_number or "",
-            "shift_name": effective_shift if shift_doc else None,
-            "shift_start_time": frappe.utils.get_time(shift_doc.start_time).strftime("%H:%M") if shift_doc else None,
-            "shift_end_time": frappe.utils.get_time(shift_doc.end_time).strftime("%H:%M") if shift_doc else None,
-        })
+    Returns (date, shift_start, shift_end, trip_times).
+    """
+    trip_times = []
 
+    if row_name:
+        row = frappe.db.get_value(
+            "Transportation Manifest Details",
+            row_name,
+            ["parent", "operations_shift", "start_time", "end_time", "trip_id", "scheduled_time"],
+            as_dict=True,
+        )
+        if not row:
+            frappe.throw(_("Manifest row {0} was not found.").format(row_name), frappe.DoesNotExistError)
+
+        manifest = frappe.get_doc("Transportation Manifest", row.parent)
+        manifest.check_permission("read")
+
+        date = manifest.schedule_date
+        shift_name = row.operations_shift or shift_name
+        shift_start, shift_end = row.start_time, row.end_time
+
+        if row.trip_id:
+            siblings = [
+                d.scheduled_time
+                for d in manifest.transportation_manifest_details
+                if d.trip_id == row.trip_id
+            ]
+        else:
+            siblings = [row.scheduled_time]
+        trip_times = [frappe.utils.to_timedelta(t) for t in siblings if t is not None]
+    else:
+        frappe.has_permission("Transportation Manifest", "read", throw=True)
+        shift_start = shift_end = None
+
+    if shift_name and (shift_start is None or shift_end is None):
+        covered = _fetch_shift_times([shift_name]).get(shift_name)
+        if covered:
+            shift_start = covered[0] if shift_start is None else shift_start
+            shift_end = covered[1] if shift_end is None else shift_end
+
+    return frappe.utils.getdate(date or frappe.utils.today()), shift_start, shift_end, trip_times
+
+
+def _trip_window(date, shift_start, shift_end, trip_times):
+    """(start, end) datetimes of the trip, or None when the times are not known.
+
+    Start: the earliest trip stop time, or the covered shift start if earlier.
+    End: the covered shift end; without a covered shift, the latest trip stop time.
+    """
+    starts = [frappe.utils.to_timedelta(t) for t in [*trip_times, shift_start] if t is not None]
+    if not starts:
+        return None
+    start_time = min(starts)
+    if shift_end is not None:
+        return _day_window(date, start_time, shift_end)
+    if not trip_times:
+        return None
+    # A single-stop trip gives a zero-length window instead of rolling a full day.
+    end_time = max(trip_times)
+    if end_time == start_time:
+        start = frappe.utils.get_datetime(date).replace(hour=0, minute=0, second=0, microsecond=0) + start_time
+        return start, start
+    return _day_window(date, start_time, end_time)
+
+
+def _roster_interval(row, shift_times):
+    """(start, end) datetimes a roster row occupies, or None when it cannot be told."""
+    if row.start_datetime is not None and row.end_datetime is not None:
+        return frappe.utils.get_datetime(row.start_datetime), frappe.utils.get_datetime(row.end_datetime)
+    times = shift_times.get(row.shift)
+    if times and times[0] is not None and times[1] is not None:
+        return _day_window(row.date, times[0], times[1])
+    return None
+
+
+def _build_reliever(employee, rows, date, shift_times, window):
+    """One reliever's entry, from that employee's Working roster rows."""
+    today_rows = [r for r in rows if frappe.utils.getdate(r.date) == date]
+    basic = next((r for r in today_rows if r.roster_type == "Basic"), None)
+    ot = next((r for r in today_rows if r.roster_type == "Over-Time"), None)
+
+    basic_interval = _roster_interval(basic, shift_times) if basic else None
+    ot_interval = _roster_interval(ot, shift_times) if ot else None
+
+    overlap = False
+    overlap_note = ""
+    if window:
+        for r in rows:
+            interval = _roster_interval(r, shift_times)
+            if interval and _intervals_overlap(interval[0], interval[1], window[0], window[1]):
+                overlap = True
+                overlap_note = _("{0} shift {1} ({2} - {3}) overlaps the trip window {4} - {5}").format(
+                    r.roster_type,
+                    r.shift or "",
+                    _hhmm(interval[0]),
+                    _hhmm(interval[1]),
+                    _hhmm(window[0]),
+                    _hhmm(window[1]),
+                )
+                break
+
+    return {
+        "name": employee.name,
+        "employee_name": employee.employee_name,
+        "designation": employee.designation or "",
+        "mobile": employee.cell_number or "",
+        # Today's Basic roster row only - no fallback to the master shift.
+        "shift_name": basic.shift if basic else None,
+        "shift_start_time": _hhmm(basic_interval[0]) if basic_interval else None,
+        "shift_end_time": _hhmm(basic_interval[1]) if basic_interval else None,
+        "master_shift": employee.shift or None,
+        "ot_shift": ot.shift if ot else None,
+        "ot_start_time": _hhmm(ot_interval[0]) if ot_interval else None,
+        "ot_end_time": _hhmm(ot_interval[1]) if ot_interval else None,
+        "is_ot": bool(ot) or bool(basic and basic.day_off_ot),
+        "has_roster": bool(today_rows),
+        "overlap": overlap,
+        "overlap_note": overlap_note,
+    }
+
+
+@frappe.whitelist()
+def get_available_rambo_relievers(shift_name: str = None, date: str = None, row_name: str = None):
+    """
+    Fetch available Rambo relievers for a trip date.
+    Returns employees with custom_is_rambo_reliever = 1 and status = 'Active',
+    enriched with that day's roster (Employee Schedule): the Basic shift and its
+    timing, any Over-Time shift, and whether the roster overlaps the trip window.
+
+    When row_name (a Transportation Manifest Details row) is given, the date is the
+    manifest's schedule_date and the covered shift / trip times come from that row.
+    Otherwise shift_name and date are used as before.
+
+    Overlap is a warning only - relievers are never filtered out. They are sorted
+    with non-overlapping, rostered relievers first.
+    """
+    date, shift_start, shift_end, trip_times = _reliever_context(shift_name, date, row_name)
+
+    rambos = _fetch_rambo_employees()
+    if not rambos:
+        return []
+
+    window = _trip_window(date, shift_start, shift_end, trip_times)
+    roster_rows = _fetch_roster_rows([r.name for r in rambos], date, window[0] if window else None)
+
+    rows_by_employee = {}
+    for r in roster_rows:
+        rows_by_employee.setdefault(r.employee, []).append(r)
+
+    shift_times = _fetch_shift_times([r.shift for r in roster_rows])
+
+    result = [
+        _build_reliever(r, rows_by_employee.get(r.name, []), date, shift_times, window)
+        for r in rambos
+    ]
+    result.sort(key=lambda x: (x["overlap"], not x["has_roster"], x["employee_name"] or ""))
     return result
 
 
