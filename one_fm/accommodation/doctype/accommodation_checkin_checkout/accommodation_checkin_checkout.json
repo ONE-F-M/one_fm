@@ -41,6 +41,7 @@
   "civil_id",
   "employment_type",
   "employee_status",
+  "operations_shift",
   "bed_details_section",
   "accommodation",
   "floor",
@@ -409,11 +410,20 @@
    "fieldtype": "Data",
    "label": "Employee Status",
    "read_only": 1
+  },
+  {
+   "fetch_from": "employee.shift",
+   "fieldname": "operations_shift",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Operations Shift",
+   "options": "Operations Shift",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-05-18 10:03:25.617357",
+ "modified": "2026-10-14 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Checkin Checkout",

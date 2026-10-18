@@ -143,12 +143,12 @@ class TestTypingAndClearing(FrappeTestCase):
 		self.assertIn("shiftIsExact ? name !== shift", self.canvas)
 
 	def test_the_employee_match_is_partial_and_case_insensitive(self):
-		self.assertIn("const emp = this.employeeQuery.toLowerCase().trim();", self.canvas)
-		self.assertIn(".toLowerCase().includes(emp)", self.canvas)
+		self.assertIn("const emp = normalizeSearchText(this.employeeQuery);", self.canvas)
+		self.assertIn(".includes(emp)", self.canvas)
 
 	def test_a_card_with_no_riders_does_not_break_the_match(self):
 		self.assertIn("(c.employees || []).some(e =>", self.canvas)
-		self.assertIn("String((e && e.name) || '')", self.canvas)
+		self.assertIn("normalizeSearchText(e && e.name)", self.canvas)
 
 	def test_the_three_text_filters_each_have_a_clear_button(self):
 		self.assertEqual(self.canvas.count('class="rp-filter-clear"'), 3)

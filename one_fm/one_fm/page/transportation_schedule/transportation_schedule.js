@@ -12,6 +12,15 @@ const DEFAULT_BUFFER_MIN = 5;
 // as an instantaneous drive. A stop with nowhere onward legitimately carries none.
 const MIN_LEG_TRANSIT_MIN = 1;
 
+// ── Search text normalising ─────────────────────────────────────────────────────
+// Stored names carry doubled, leading and trailing spaces ("Samir  Basnet"), so a
+// filter has to flatten BOTH the typed query and the stored text before comparing.
+// test_search_normalize.js reads this helper out of the file by these two banners.
+function normalizeSearchText(s) {
+    return String(s || "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+// ── End search text normalising ─────────────────────────────────────────────────
+
 frappe.pages['transportation-schedule'].on_page_load = function (wrapper) {
     injectRPLoadingStyles();
     $(wrapper).html(`
@@ -172,10 +181,10 @@ function mountRoutePlannerApp(wrapper, data) {
             // before it left, so a dispatcher can say "this shift, this person, ending at
             // 11:00" and get the cards that satisfy all three rather than any of them.
             filteredPoolCards() {
-                const q = this.searchQuery.toLowerCase().trim();
-                const emp = this.employeeQuery.toLowerCase().trim();
+                const q = normalizeSearchText(this.searchQuery);
+                const emp = normalizeSearchText(this.employeeQuery);
                 const shift = this.shiftFilter.trim();
-                const shiftLower = shift.toLowerCase();
+                const shiftLower = normalizeSearchText(shift);
                 // A shift picked from the list is an exact name and filters exactly
                 // (AC2). A half-typed one has not picked anything yet, so it narrows by
                 // what has been typed rather than matching nothing at all.
@@ -195,22 +204,24 @@ function mountRoutePlannerApp(wrapper, data) {
                     if (shift) {
                         const name = c.shift_name || '';
                         if (shiftIsExact ? name !== shift
-                                         : !name.toLowerCase().includes(shiftLower)) return false;
+                                         : !normalizeSearchText(name).includes(shiftLower)) return false;
                     }
 
                     // AC3: partial or exact, case-insensitive, against the people on the
                     // card - which is how a dispatcher looks for one person rather than
                     // knowing which site they are posted to.
+                    // Both sides are flattened: a stored "Samir  Basnet" has to match a
+                    // typed "samir basnet".
                     if (emp && !(c.employees || []).some(e =>
-                        String((e && e.name) || '').toLowerCase().includes(emp))) return false;
+                        normalizeSearchText(e && e.name).includes(emp))) return false;
 
                     if (!q) return true;
                     return (
-                        c.shift_name.toLowerCase().includes(q) ||
-                        c.site_location.toLowerCase().includes(q) ||
-                        c.accommodation.toLowerCase().includes(q) ||
-                        c.stop_location.toLowerCase().includes(q) ||
-                        (c.direction || '').toLowerCase().includes(q)
+                        normalizeSearchText(c.shift_name).includes(q) ||
+                        normalizeSearchText(c.site_location).includes(q) ||
+                        normalizeSearchText(c.accommodation).includes(q) ||
+                        normalizeSearchText(c.stop_location).includes(q) ||
+                        normalizeSearchText(c.direction).includes(q)
                     );
                 });
             },
@@ -664,6 +675,17 @@ function mountRoutePlannerApp(wrapper, data) {
 
         // ── Methods ────────────────────────────────────────────────────────
         methods: {
+            // The chips show three riders, so with an employee query set the
+            // riders it matched go first - otherwise a card found by name shows three
+            // other people. The "+N more" count still reads card.employees.length.
+            chipEmployees(card) {
+                const riders = card.employees || [];
+                const emp = normalizeSearchText(this.employeeQuery);
+                if (!emp) return riders;
+                const hit = e => normalizeSearchText(e && e.name).includes(emp);
+                return [...riders.filter(hit), ...riders.filter(e => !hit(e))];
+            },
+
 
             // ─ Time helpers ────────────────────────────────────────────────
 
@@ -3158,6 +3180,7 @@ function mountRoutePlannerApp(wrapper, data) {
                                         message: this.capacityMessage(item.headcount, targetVehicle, blockers)
                                     });
                                 } else {
+                                    item.tripName = this.tripNameOnMove(item, targetVehicleId);
                                     item.vehicleId = targetVehicleId;
                                     frappe.show_alert({
                                         message: `Moved to ${targetVehicle.label}`,
@@ -3434,8 +3457,13 @@ function mountRoutePlannerApp(wrapper, data) {
                             return;
                         }
 
-                        // Move every stop of the journey leg to the new vehicle/driver.
-                        journeyItems.forEach(i => { i.vehicleId = targetVehicle.id; });
+                        // Move every stop of the journey leg to the new vehicle/driver,
+                        // renamed into that lane's series.
+                        const fresh = self.tripNameOnMove(item, targetVehicle.id);
+                        journeyItems.forEach(i => {
+                            i.tripName = fresh;
+                            i.vehicleId = targetVehicle.id;
+                        });
                         self.checkConflicts();
                         self.canSave = self.assignedCards.size > 0;
                         self.persistAssignments();
@@ -3869,30 +3897,14 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             /**
-             * Auto-generate sequential trip name for a vehicle.
-             * Format: {vehicleNumber}{2-digit-sequence}
-             * Leased vehicles: S-{vehicleNumber}{2-digit-sequence}
-             *
-             * vehicleNumber is derived from VHL-#### name (e.g., VHL-0015 → 15)
-             * sequence is 01-based count of existing trips on that vehicle + 1
+             * Next free trip name on a vehicle: its lane series plus a 2-digit sequence.
+             * The series ("S-9", "26") is the lane's row on the board, computed by the
+             * server's canvas_trip_series so Route Plan repairs names in the same series.
              */
             generateTripName(vehicleId) {
                 const vehicle = this.planData.vehicles.find(v => v.id === vehicleId);
-                if (!vehicle) return '';
-
-                // Extract integer from VHL-#### pattern; fallback to 1-based vehicle index
-                const match = vehicleId.match(/VHL-(\d+)/i);
-                let vehicleNumber = match ? parseInt(match[1], 10) : 0;
-                if (!vehicleNumber) {
-                    // Fallback: use 1-based position in vehicles list
-                    const idx = this.planData.vehicles.findIndex(v => v.id === vehicleId);
-                    vehicleNumber = idx >= 0 ? idx + 1 : 1;
-                }
-
-                // Format: vehicleNumber + 2-digit sequence (e.g., 15 + 01 = "1501").
-                // Leased vehicles get an "S-" prefix.
-                const prefix = vehicle.is_leased ? 'S-' : '';
-                const name = (seq) => `${prefix}${vehicleNumber}${String(seq).padStart(2, '0')}`;
+                if (!vehicle || !vehicle.trip_series) return '';
+                const name = (seq) => `${vehicle.trip_series}${String(seq).padStart(2, '0')}`;
 
                 // The next FREE number, not the number of trips there are. Counting
                 // re-issued a name the moment any trip but the last was removed: a lane
@@ -3906,6 +3918,19 @@ function mountRoutePlannerApp(wrapper, data) {
                 let seq = 1;
                 while (taken.has(name(seq))) seq++;
                 return name(seq);
+            },
+
+            // The name a run takes when it moves to another vehicle, mirroring
+            // RoutePlan._rename_into_series: join the run already on that lane if there
+            // is one, keep a blank or hand-typed name, otherwise mint one in the lane's
+            // series. Read before vehicleId changes so the moving run is not counted.
+            tripNameOnMove(item, vehicleId) {
+                if (!item.tripName || !/^(S-)?\d+\d{2}$/.test(String(item.tripName).trim())) {
+                    return item.tripName;
+                }
+                const joined = item.tripId && this.swimItems.find(i =>
+                    i.vehicleId === vehicleId && i.tripId === item.tripId && i.tripName);
+                return joined ? joined.tripName : (this.generateTripName(vehicleId) || item.tripName);
             },
 
             // ─ Persistence (save/load to Route Plan DocType) ──────────────
@@ -4225,18 +4250,17 @@ function mountRoutePlannerApp(wrapper, data) {
             // written to the shipments the moment it is confirmed, but the plan is saved a
             // beat later and can still be refused - and the cards would be left Mixed with
             // no plan holding them (WI-002078).
-            // Take the trip names the save actually stored. A name already in use on
-            // that vehicle is repaired server-side (WI-002401) and the save is otherwise
-            // silent, so without this the board would keep showing the old name for the
-            // rest of the session and then appear to rename the run by itself on the
-            // next load.
+            // Take the trip names the save actually stored. The server renames a run
+            // whose name is a duplicate on its vehicle or belongs to another lane's
+            // series, and the save is otherwise silent, so without this the board would
+            // keep showing the old name until the next load.
             _applyStoredTripNames(result) {
                 const names = (result || {}).trip_names;
                 if (!names) return;
 
                 const renamed = new Set();
                 this.swimItems.forEach(item => {
-                    const stored = item.tripId ? names[item.tripId] : null;
+                    const stored = item.tripId ? names[`${item.vehicleId}|${item.tripId}`] : null;
                     if (stored && stored !== item.tripName) {
                         renamed.add(`${item.tripName || '—'} → ${stored}`);
                         item.tripName = stored;
@@ -4246,7 +4270,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 this.swimItems = [...this.swimItems];   // Vue reactivity
                 frappe.show_alert({
-                    message: __('That trip name was already in use on this vehicle: {0}.',
+                    message: __('Trip renamed to match its vehicle: {0}.',
                                 [Array.from(renamed).join(', ')]),
                     indicator: 'orange'
                 }, 8);
@@ -5093,7 +5117,7 @@ function injectRPVueTemplate() {
                 </div>
               </div>
               <div class="rp-card-employees">
-                <span v-for="(e, ei) in card.employees.slice(0,3)" :key="card.id + '_' + ei" class="rp-emp-chip rp-emp-chip-call" @click.stop="handleEmployeeCall(e)" :title="empMobile(e) ? 'Call ' + empMobile(e) : 'No mobile number'">
+                <span v-for="(e, ei) in chipEmployees(card).slice(0,3)" :key="card.id + '_' + ei" class="rp-emp-chip rp-emp-chip-call" @click.stop="handleEmployeeCall(e)" :title="empMobile(e) ? 'Call ' + empMobile(e) : 'No mobile number'">
                   {{ empName(e) }}
                   <span class="rp-icon rp-call-icon" :class="empMobile(e) ? '' : 'rp-call-disabled'">call</span>
                 </span>

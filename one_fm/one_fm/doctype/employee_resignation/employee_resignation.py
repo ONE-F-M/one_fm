@@ -266,6 +266,7 @@ class EmployeeResignation(Document):
 			"type": "resignation_update",
 			"resignation": self.name,
 			"workflow_state": self.get("workflow_state"),
+			"url": "/resignation",
 		})
 
 	def assign_employee_for_relieving_date_correction(self):

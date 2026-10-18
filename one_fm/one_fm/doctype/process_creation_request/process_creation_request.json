@@ -53,7 +53,9 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Parent Process",
-   "options": "Process"
+   "options": "Process",
+   "reqd": 1,
+   "link_filters": "[[\"Process\",\"is_group\",\"=\",1]]"
   },
   {
    "default": "0",
