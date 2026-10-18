@@ -4435,13 +4435,23 @@ def send_push_notification(employee_id, title, body, data=None):
         device_os = employee_data.device_os
 
         if deviceToken:
+            # FCM data values must be strings. Keep the caller's keys, only add
+            # url (default /notification) when the caller has not set its own.
+            if isinstance(data, string_types):
+                data = json.loads(data)
+            fcm_data = {
+                str(key): "" if value is None else str(value)
+                for key, value in (data or {}).items()
+            }
+            if not fcm_data.get("url"):
+                fcm_data["url"] = "/notification"
             message = messaging.Message(
                 notification=messaging.Notification(
                     title=title,
                     body=body,
                 ),
                 token=deviceToken,
-                data=data
+                data=fcm_data
             )
             messaging.send(message)
             return True

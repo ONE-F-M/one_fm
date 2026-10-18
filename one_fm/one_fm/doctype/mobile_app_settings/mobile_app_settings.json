@@ -1,0 +1,81 @@
+{
+ "actions": [],
+ "creation": "2026-10-15 09:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "android_section",
+  "android_minimum_version",
+  "android_latest_version",
+  "play_store_url",
+  "ios_section",
+  "ios_minimum_version",
+  "ios_latest_version",
+  "app_store_url"
+ ],
+ "fields": [
+  {
+   "fieldname": "android_section",
+   "fieldtype": "Section Break",
+   "label": "Android"
+  },
+  {
+   "fieldname": "android_minimum_version",
+   "fieldtype": "Data",
+   "label": "Android Minimum Version"
+  },
+  {
+   "fieldname": "android_latest_version",
+   "fieldtype": "Data",
+   "label": "Android Latest Version"
+  },
+  {
+   "fieldname": "play_store_url",
+   "fieldtype": "Data",
+   "label": "Play Store URL"
+  },
+  {
+   "fieldname": "ios_section",
+   "fieldtype": "Section Break",
+   "label": "iOS"
+  },
+  {
+   "fieldname": "ios_minimum_version",
+   "fieldtype": "Data",
+   "label": "iOS Minimum Version"
+  },
+  {
+   "fieldname": "ios_latest_version",
+   "fieldtype": "Data",
+   "label": "iOS Latest Version"
+  },
+  {
+   "fieldname": "app_store_url",
+   "fieldtype": "Data",
+   "label": "App Store URL"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-10-15 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Mobile App Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
