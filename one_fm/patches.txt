@@ -677,3 +677,4 @@ one_fm.patches.v15_0.reconcile_bed_status_with_open_checkins #2026-10-14 HD-1806
 one_fm.patches.v15_0.rename_trip_names_into_canvas_series #2026-10-14 WI-003454
 one_fm.patches.v15_0.backfill_checkin_operations_shift #2026-10-16 WI-003633
 one_fm.patches.v15_0.zero_internal_transfer_qty_pr01180 #2026-10-18
+one_fm.patches.v15_0.reset_pmr_pr01180_docstatus_to_draft #2026-10-18
