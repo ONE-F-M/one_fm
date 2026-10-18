@@ -678,3 +678,4 @@ one_fm.patches.v15_0.rename_trip_names_into_canvas_series #2026-10-14 WI-003454
 one_fm.patches.v15_0.backfill_checkin_operations_shift #2026-10-16 WI-003633
 one_fm.patches.v15_0.zero_internal_transfer_qty_pr01180 #2026-10-18
 one_fm.patches.v15_0.reset_pmr_pr01180_docstatus_to_draft #2026-10-18
+one_fm.patches.v15_0.move_stranded_medical_insurance_to_draft #2026-10-18 HD-1888665 the 69 renewals create_mi_record left in the state WI-002494 renamed away
