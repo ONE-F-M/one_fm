@@ -26,7 +26,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient import discovery
 import gspread
-from frappe.utils import get_site_name, nowdate, add_days, now_datetime
+from frappe.utils import get_site_name, nowdate, now_datetime
 
 from google.oauth2 import service_account
 import os
@@ -721,20 +721,22 @@ class DataExporter:
 		return
 
 
-@frappe.whitelist()
 def update_google_sheet_daily():
-	yesterday = add_days(nowdate(), -1)
+	"""Refresh the daily export that has waited longest since before today; runs every 15 minutes."""
 	list_of_export = frappe.get_list(
 		"Google Sheet Data Export",
 		{
 			"enable_auto_update": 1,
 			"update_frequency": "Daily",
-			"last_execution_timestamp": ["between", [yesterday, yesterday]],
+			"last_execution_timestamp": ["<", nowdate()],
 		},
 		["name"],
+		order_by="last_execution_timestamp asc",
 		limit=1,
 	)
 	for e in list_of_export:
+		# stamp before the run so an export that keeps failing waits a day instead of blocking the queue
+		frappe.db.set_value("Google Sheet Data Export", e.name, "last_execution_timestamp", now_datetime())
 		enqueue_export(e.name)
 
 

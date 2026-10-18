@@ -5,9 +5,10 @@ from unittest.mock import patch
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
-from frappe.utils import add_days, now_datetime
+from frappe.utils import add_days, getdate, now_datetime
 
 from one_fm.one_fm.doctype.google_sheet_data_export import exporter
+from one_fm.one_fm.doctype.google_sheet_data_export.google_sheet_data_export import MAX_HOURLY_EXPORTS
 
 DOCTYPE = "Google Sheet Data Export"
 
@@ -80,6 +81,26 @@ class TestGoogleSheetDataExport(FrappeTestCase):
 		self._export("Daily", now_datetime())
 
 		self.assertEqual(self._enqueued(exporter.update_google_sheet_daily), [])
+
+	def test_daily_run_picks_up_an_export_that_missed_days(self):
+		self._export("Daily", add_days(now_datetime(), -1))
+		stuck = self._export("Daily", add_days(now_datetime(), -400))
+
+		self.assertEqual(self._enqueued(exporter.update_google_sheet_daily), [stuck])
+		self.assertEqual(
+			getdate(frappe.db.get_value(DOCTYPE, stuck, "last_execution_timestamp")), getdate()
+		)
+
+	def test_hourly_exports_are_capped(self):
+		for _i in range(MAX_HOURLY_EXPORTS):
+			self._export("Hourly", now_datetime())
+
+		with self.assertRaises(frappe.ValidationError):
+			self._export("Hourly", now_datetime())
+
+		existing = frappe.get_doc(DOCTYPE, self._export("Daily", now_datetime()))
+		existing.update_frequency = "Hourly"
+		self.assertRaises(frappe.ValidationError, existing.save)
 
 	def test_last_execution_is_a_timestamp(self):
 		field = frappe.get_meta(DOCTYPE).get_field("last_execution_timestamp")
