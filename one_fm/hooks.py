@@ -36,7 +36,8 @@ app_include_js = [
 		"/assets/one_fm/js/form_overrides/workflow_override.js",
         "text_editor.bundle.js",
         "/assets/one_fm/js/workflow_banner.js",
-        "/assets/one_fm/js/grd/residency_payment_request_button.js"
+        "/assets/one_fm/js/grd/residency_payment_request_button.js",
+        "/assets/one_fm/js/workflow_state_colours.js"
 ]
 # include js, css files in header of web template
 # web_include_css = "/assets/one_fm/css/one_fm.css"
@@ -738,7 +739,6 @@ scheduler_events = {
 			'one_fm.one_fm.doctype.maintenance_kpi_assessment.maintenance_kpi_assessment.create_monthly_assessments',
 		],
 		"0/15 * * * *": [ #At every 15th minute from 0 through 59.”
-			"one_fm.legal.doctype.penalty.penalty.automatic_reject",
 			# 'one_fm.api.tasks.process_attendance',
 			"one_fm.api.tasks.update_shift_type"
 		],
@@ -801,9 +801,6 @@ scheduler_events = {
 		],
         "00 2 * * *":[ #“At 02:00"
 			"one_fm.one_fm.doctype.leave_acknowledgement_form.leave_acknowledgement_form.generate_leave_acknowledgement"
-		],
-		"08 00 24 * *": [ #“At 00:08 on day-of-month 24.”
-			'one_fm.api.tasks.generate_penalties'
 		],
 		"00 01 24 * *": [
 			'one_fm.api.tasks.generate_site_allowance',
@@ -1034,5 +1031,6 @@ update_website_context = [
 app_startup = [
     "one_fm.api.api.initialize_firebase"
 ]
+boot_session = "one_fm.session_hooks.boot_session"
 # auth_hooks = "one_fm.session_hooks.auth_hooks"
 # on_login = "one_fm.session_hooks.on_login"
