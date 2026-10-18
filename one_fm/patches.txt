@@ -676,3 +676,4 @@ one_fm.patches.v15_0.unblock_interview_feedback_skill_assessment #2026-09-25 HD-
 one_fm.patches.v15_0.reconcile_bed_status_with_open_checkins #2026-10-14 HD-1806399 free the beds left flagged occupied by check-outs that could not reset them
 one_fm.patches.v15_0.rename_trip_names_into_canvas_series #2026-10-14 WI-003454
 one_fm.patches.v15_0.backfill_checkin_operations_shift #2026-10-16 WI-003633
+one_fm.patches.v15_0.zero_internal_transfer_qty_pr01180 #2026-10-18
