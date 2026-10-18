@@ -67,10 +67,10 @@
   },
   {
    "fieldname": "document_type",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Document Type",
-   "options": "\nPolicy\nSOP\nGuideline\nManual\nKnowledge Base",
+   "options": "DMS Document Type",
    "reqd": 1,
    "description": "What kind of document this is. Decides the template, the code series, and which guideline applies. No default: a Select whose first option is a real type silently answers this question for the requester."
   },
@@ -99,7 +99,9 @@
    "options": "Document Register",
    "depends_on": "eval:doc.request_action == 'Create'",
    "mandatory_depends_on": "eval:doc.request_action == 'Create'",
-   "description": "The guideline describing HOW a document of this type is written — its structure, sections and tone. Only Guideline entries can be picked. It shapes the document; what the document SAYS comes from Requirement."
+   "description": "Set from the Document Type: the guideline describing HOW a document of this type is written, its structure, sections and tone. It shapes the document; what the document SAYS comes from Requirement.",
+   "read_only": 1,
+   "fetch_from": "document_type.source_guideline"
   },
   {
    "fieldname": "reference_document",
@@ -154,7 +156,7 @@
   }
  ],
  "links": [],
- "modified": "2026-09-30 19:16:44.028812",
+ "modified": "2026-10-13 09:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Document Request",

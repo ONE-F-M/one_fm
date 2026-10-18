@@ -64,6 +64,30 @@ def app_service_group() -> dict:
 		return response("Internal Server Error", 500, None, error)
 
 
+@frappe.whitelist(allow_guest=True, methods=["GET"])
+def app_version() -> dict:
+	"""Return the minimum and latest mobile app versions and store URLs per platform.
+	Open to guests because the app checks its version before login."""
+	try:
+		settings = frappe.get_cached_doc("Mobile App Settings")
+		data = {
+			"android": {
+				"minimum_app_version": settings.android_minimum_version or "",
+				"latest_app_version": settings.android_latest_version or "",
+				"store_url": settings.play_store_url or "",
+			},
+			"ios": {
+				"minimum_app_version": settings.ios_minimum_version or "",
+				"latest_app_version": settings.ios_latest_version or "",
+				"store_url": settings.app_store_url or "",
+			},
+		}
+		return response("Success", 200, data)
+	except Exception as error:
+		frappe.log_error(title="Configuration:App Version", message=frappe.get_traceback())
+		return response("Internal Server Error", 500, None, error)
+
+
 @frappe.whitelist()
 def app_service() -> dict:
 	""" This method retrives all app service.

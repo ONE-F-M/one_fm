@@ -123,7 +123,6 @@ one_fm.patches.v15_0.delete_employee_schedule_for_employee_on_leave #2025-07-17 
 one_fm.patches.v15_0.update_on_boarding_EMP-ONB-2025-00315
 one_fm.patches.v15_0.update_contracts_end_date
 one_fm.patches.v15_0.add_task_type_for_todo_type
-one_fm.patches.v15_0.add_task_workflow # update Workflow
 one_fm.patches.v15_0.add_task_custom_field # Task field update
 one_fm.patches.v15_0.create_google_task_sync_process_task
 one_fm.patches.v15_0.remove_shift_request_pending_approval_assignment_rule
@@ -323,7 +322,6 @@ one_fm.patches.v15_0.add_assignment_rule_assign_rfp_to_purchase_officer #re-run
 one_fm.patches.v15_0.add_assignment_rule_assign_to_purchase_manager_for_approval #re-run
 one_fm.patches.v15_0.add_assignment_rule_assign_rfp_owner_on_rfp_return_to_draft #re-run
 one_fm.patches.v15_0.create_attendance_check_process_task #re run again
-one_fm.patches.v15_0.add_task_assignment_rule
 one_fm.patches.v15_0.add_values_to_rank_factor_table
 one_fm.patches.v15_0.update_existing_designation_to_main_head_hunt_doctype
 one_fm.patches.v15_0.attendance_check_create #09-09-2025
@@ -625,6 +623,8 @@ one_fm.patches.v15_0.update_medical_insurance_workflow_and_rule #2026-09-23 WI-0
 one_fm.patches.v15_0.update_residency_workflow_and_rules #2026-09-23 WI-002495
 one_fm.patches.v15_0.update_paci_workflow_and_rules #2026-09-23 WI-002496
 one_fm.patches.v15_0.update_work_permit_workflow_and_rules #2026-09-23 WI-002497
+one_fm.patches.v15_0.reduce_task_type_to_four_records #2026-09-28
+one_fm.patches.v15_0.remove_task_workflow_and_assignment_rule #2026-09-17 the Task workflow and the Confirm ERPNext Task assignment rule are retired
 one_fm.patches.v15_0.add_apply_online_by_gr_operator_state #2026-10-08 WI-003365
 one_fm.patches.v15_0.clear_employee_residency_depends_on #2026-09-23 WI-002823
 one_fm.patches.v15_0.add_employee_occupational_sector #2026-09-27b WI-002745
@@ -637,6 +637,7 @@ one_fm.patches.v15_0.remove_accommodation_leave_movement_assignment_rules #2026-
 one_fm.patches.v15_0.deactivate_client_interview_shortlist_workflow #2026-10-05 WI-003086
 one_fm.patches.v15_0.drop_document_request_approver #2026-09-27 the approver Employee copy is gone; approver_user comes from get_approver_user
 one_fm.patches.v15_0.add_project_manager_user_to_project #2026-10-06
+one_fm.patches.v15_0.remove_daily_employee_action_check #2026-10-07 the 4am check runs as the Processa map Employee Daily Action Check
 one_fm.patches.v15_0.move_temporary_deployment_to_processa
 one_fm.patches.v15_0.move_ojt_lifecycle_to_processa
 one_fm.patches.v15_0.penalty_deduct_at_issuance
@@ -645,3 +646,6 @@ one_fm.patches.v15_0.add_visa_request_workflow_state_standard_filter #2026-10-06
 one_fm.patches.v15_0.show_document_request_status_column #2026-10-11
 one_fm.patches.v15_0.grant_payroll_operator_penalty_deduction_access
 one_fm.patches.v15_0.rename_trip_names_into_canvas_series #2026-10-14 WI-003454
+one_fm.patches.v15_0.add_department_head #2026-10-14
+one_fm.patches.v15_0.create_dms_document_types #2026-10-13
+one_fm.patches.v15_0.delete_jira_ticket_client_script #2026-10-15
