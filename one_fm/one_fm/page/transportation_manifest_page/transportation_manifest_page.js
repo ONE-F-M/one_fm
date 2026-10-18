@@ -1839,44 +1839,107 @@ function renderManifest($container, data) {
 	// ── REPLACEMENT MODAL LOGIC ──
 	let availableRelievers = [];
 
-	function formatRelieverOption(r) {
-		if (r.shift_name && r.shift_start_time && r.shift_end_time) {
-			return r.employee_name + " - " + r.shift_name + " - " + r.shift_start_time + " to " + r.shift_end_time;
-		}
-		if (r.designation) {
-			return r.employee_name + " (" + r.designation + ")";
-		}
-		return r.employee_name;
+	let selectedRelieverId = null;
+	let relieverFilter = "all";
+
+	function relieverTiming(start, end) {
+		return start && end ? `${start} → ${end}` : "—";
 	}
 
-	function populateRelieverSelect(relievers) {
-		const sel = $container.find("#mfst-relieverSelect")[0];
-		sel.innerHTML = "";
+	function relieverCardHtml(r) {
+		const badge = r.is_ot
+			? `<span class="mfst-reliever-badge mfst-reliever-badge-ot">⚡ ${__("OT Assigned")}</span>`
+			: `<span class="mfst-reliever-badge mfst-reliever-badge-regular">⚪ ${__("Regular Shift")}</span>`;
+		const overlapTag = r.overlap
+			? `<span class="mfst-reliever-overlap-tag">⚠️ ${__("Shift Overlap")}</span>`
+			: "";
+		const lines = [[__("Allocated Shift (Master)"), r.master_shift || "—"]];
+		if (r.has_roster) {
+			lines.push([__("Today's Assigned Shift"), r.shift_name || "—"]);
+			lines.push([__("Shift Timing"), relieverTiming(r.shift_start_time, r.shift_end_time)]);
+			if (r.ot_shift) {
+				lines.push([__("Overtime Shift"), `${r.ot_shift} (${relieverTiming(r.ot_start_time, r.ot_end_time)})`]);
+			}
+		} else {
+			lines.push([__("Today's Assigned Shift"), __("Not rostered today")]);
+		}
+		const linesHtml = lines.map(([label, value]) =>
+			`<div class="mfst-reliever-line"><span class="mfst-reliever-label">${escHtml(label)}</span><span class="mfst-reliever-label">:</span><span class="mfst-reliever-value">${escHtml(value)}</span></div>`
+		).join("");
+		const search = [r.employee_name, r.master_shift, r.shift_name, r.ot_shift].filter(Boolean).join(" ").toLowerCase();
+		return `<button type="button" class="mfst-reliever-card" aria-pressed="false"
+				data-reliever="${escHtml(r.name)}" data-search="${escHtml(search)}" data-ot="${r.is_ot ? 1 : 0}">
+			<div class="mfst-reliever-head">
+				<span class="mfst-reliever-name">${escHtml(r.employee_name || r.name)}</span>
+				<span class="mfst-reliever-tags">${overlapTag}${badge}</span>
+			</div>
+			${linesHtml}
+		</button>`;
+	}
 
-		if (relievers.length === 0) {
-			const opt = document.createElement("option");
-			opt.value = "";
-			opt.textContent = "No available Rambo Relievers found for this time slot.";
-			sel.appendChild(opt);
-			sel.disabled = true;
-			$container.find("#mfst-btn-confirm-replace").prop("disabled", true);
+	function setRelieverListMessage(msg) {
+		const list = $container.find("#mfst-relieverList")[0];
+		list.innerHTML = `<div class="mfst-reliever-empty">${escHtml(msg)}</div>`;
+	}
+
+	function applyRelieverFilter() {
+		const list = $container.find("#mfst-relieverList")[0];
+		const q = ($container.find("#mfst-relieverSearch").val() || "").trim().toLowerCase();
+		let shown = 0;
+		list.querySelectorAll(".mfst-reliever-card").forEach(card => {
+			const isOt = card.dataset.ot === "1";
+			const match = (!q || card.dataset.search.includes(q))
+				&& (relieverFilter === "all" || (relieverFilter === "ot") === isOt);
+			card.hidden = !match;
+			if (match) shown++;
+		});
+		const empty = list.querySelector(".mfst-reliever-nomatch");
+		if (empty) empty.hidden = shown > 0 || !availableRelievers.length;
+	}
+
+	function selectReliever(relieverId) {
+		selectedRelieverId = relieverId;
+		const reliever = availableRelievers.find(r => r.name === relieverId);
+		$container.find(".mfst-reliever-card").each(function() {
+			const on = this.dataset.reliever === relieverId;
+			this.classList.toggle("is-selected", on);
+			this.setAttribute("aria-pressed", on ? "true" : "false");
+		});
+		const banner = $container.find("#mfst-relieverOverlapBanner")[0];
+		banner.hidden = !(reliever && reliever.overlap);
+		banner.textContent = reliever && reliever.overlap
+			? `⚠️ ${__("Shift Overlap")}: ${reliever.overlap_note || ""} ${__("You can still assign this reliever.")}`
+			: "";
+		// Non-blocking: an overlapping reliever can still be confirmed.
+		$container.find("#mfst-btn-confirm-replace").prop("disabled", !reliever);
+	}
+
+	function populateRelieverList(relievers) {
+		if (!relievers.length) {
+			setRelieverListMessage(__("No available Rambo Relievers found for this time slot."));
 			return;
 		}
-
-		sel.disabled = false;
-		const placeholder = document.createElement("option");
-		placeholder.value = "";
-		placeholder.textContent = "-- Select Reliever --";
-		sel.appendChild(placeholder);
-
-		for (const r of relievers) {
-			const opt = document.createElement("option");
-			opt.value = r.name;
-			opt.textContent = formatRelieverOption(r);
-			sel.appendChild(opt);
-		}
-		$container.find("#mfst-btn-confirm-replace").prop("disabled", false);
+		const list = $container.find("#mfst-relieverList")[0];
+		list.innerHTML = relievers.map(relieverCardHtml).join("")
+			+ `<div class="mfst-reliever-empty mfst-reliever-nomatch" hidden>${escHtml(__("No reliever matches the search or filter."))}</div>`;
+		applyRelieverFilter();
 	}
+
+	$container.on("click", ".mfst-reliever-card", function() {
+		selectReliever(this.dataset.reliever);
+	});
+
+	$container.on("input", "#mfst-relieverSearch", applyRelieverFilter);
+
+	$container.on("click", ".mfst-reliever-filter-btn", function() {
+		relieverFilter = this.dataset.filter;
+		$container.find(".mfst-reliever-filter-btn").each(function() {
+			const on = this.dataset.filter === relieverFilter;
+			this.classList.toggle("is-selected", on);
+			this.setAttribute("aria-pressed", on ? "true" : "false");
+		});
+		applyRelieverFilter();
+	});
 
 	function getEmpIdFromRowId(rowId) {
 		for (const emps of Object.values(shipmentEmployees)) {
@@ -1909,13 +1972,12 @@ function renderManifest($container, data) {
 
 	function openReplacementModal(rowId, empName) {
 		$container.find("#mfst-replaceOrigName").text(empName);
-		const sel = $container.find("#mfst-relieverSelect")[0];
-		sel.innerHTML = "";
-		const loadingOpt = document.createElement("option");
-		loadingOpt.value = "";
-		loadingOpt.textContent = "Loading available relievers...";
-		sel.appendChild(loadingOpt);
-		$container.find("#mfst-btn-confirm-replace").prop("disabled", true).text("Confirm Replacement");
+		availableRelievers = [];
+		$container.find("#mfst-relieverSearch").val("");
+		$container.find(".mfst-reliever-filter-btn[data-filter='all']").trigger("click");
+		selectReliever(null);
+		setRelieverListMessage(__("Loading available relievers..."));
+		$container.find("#mfst-btn-confirm-replace").prop("disabled", true).text(__("Confirm Replacement"));
 		$container.find("#mfst-replacementModal").addClass("active");
 
 		// Resolve shift/site for this employee
@@ -1924,28 +1986,17 @@ function renderManifest($container, data) {
 		window._mfst_currentReplacementShift = empShiftInfo.shift;
 		window._mfst_currentReplacementSite = empShiftInfo.site;
 
-		const routes = ROUTE_DATA.response?.routes || [];
-		const firstTime = routes[0]?.vehicleStartTime;
-		let date = new Date().toISOString().split("T")[0];
-		if (firstTime) {
-			date = new Date(firstTime).toLocaleDateString("en-CA", { timeZone: "Asia/Kuwait" });
-		}
-
+		// The server takes the date, covered shift and trip window from the row.
 		frappe.call({
 			method: "one_fm.one_fm.page.transportation_schedule.transportation_schedule.get_available_rambo_relievers",
-			args: { shift_name: empShiftInfo.shift, date: date },
+			args: { row_name: rowId },
 			async: true,
 			callback: function(r) {
 				availableRelievers = r.message || [];
-				populateRelieverSelect(availableRelievers);
+				populateRelieverList(availableRelievers);
 			},
 			error: function() {
-				const errSel = $container.find("#mfst-relieverSelect")[0];
-				errSel.innerHTML = "";
-				const errOpt = document.createElement("option");
-				errOpt.value = "";
-				errOpt.textContent = "Error loading relievers.";
-				errSel.appendChild(errOpt);
+				setRelieverListMessage(__("Error loading relievers."));
 			}
 		});
 	}
@@ -1958,10 +2009,9 @@ function renderManifest($container, data) {
 	$container.on("click", "#mfst-btn-close-replacement", closeReplacementModal);
 
 	$container.on("click", "#mfst-btn-confirm-replace", function() {
-		const selVal = $container.find("#mfst-relieverSelect").val();
-		if (!selVal) return;
+		if (!selectedRelieverId) return;
 
-		const reliever = availableRelievers.find(r => r.name === selVal);
+		const reliever = availableRelievers.find(r => r.name === selectedRelieverId);
 		if (!reliever) return;
 
 		const rowId = currentCheckInEmpId;
@@ -2232,9 +2282,17 @@ function getManifestHTML() {
 						<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;margin-right:4px">group</span>
 						Select Available Reliever
 					</div>
-					<select id="mfst-relieverSelect" class="mfst-reliever-select">
-						<option value="">Loading...</option>
-					</select>
+					<div class="mfst-tab-search mfst-reliever-search">
+						<span class="material-symbols-outlined mfst-tab-search-icon">search</span>
+						<input type="text" id="mfst-relieverSearch" placeholder="${__("Search reliever name or shift")}">
+					</div>
+					<div class="mfst-reliever-filter" role="group" aria-label="${__("Filter relievers")}">
+						<button type="button" class="mfst-reliever-filter-btn is-selected" data-filter="all" aria-pressed="true">${__("All")}</button>
+						<button type="button" class="mfst-reliever-filter-btn" data-filter="regular" aria-pressed="false">${__("Regular")}</button>
+						<button type="button" class="mfst-reliever-filter-btn" data-filter="ot" aria-pressed="false">${__("Overtime")}</button>
+					</div>
+					<div id="mfst-relieverOverlapBanner" class="mfst-reliever-banner" role="status" hidden></div>
+					<div id="mfst-relieverList" class="mfst-reliever-list"></div>
 					<button class="mfst-rambo-btn mfst-rambo-btn-yes" id="mfst-btn-confirm-replace" style="width:100%;margin-top:14px;justify-content:center">
 						<span class="material-symbols-outlined" style="font-size:20px">check_circle</span>
 						Confirm Replacement
@@ -2261,6 +2319,8 @@ function getManifestCSS() {
 			--mfst-green-dim: rgba(22, 163, 74, 0.10);
 			--mfst-red: #dc2626;
 			--mfst-red-dim: rgba(220, 38, 38, 0.08);
+			--mfst-amber: #d97706;
+			--mfst-amber-dim: rgba(217, 119, 6, 0.12);
 			--mfst-blue: #2563eb;
 			--mfst-blue-dim: rgba(37, 99, 235, 0.08);
 			--mfst-purple: #c2410c;
@@ -2548,6 +2608,31 @@ function getManifestCSS() {
 		.mfst-rambo-btn-yes:disabled { opacity: 0.5; cursor: not-allowed; }
 		.mfst-reliever-select { width: 100%; padding: 14px 16px; border: 2px solid var(--mfst-border); border-radius: 12px; font-family: var(--mfst-font-body); font-size: 15px; color: var(--mfst-text); background: var(--mfst-bg-card); cursor: pointer; }
 		.mfst-reliever-select:focus { outline: none; border-color: var(--mfst-accent); box-shadow: 0 0 0 3px var(--mfst-accent-dim); }
+
+		/* ── RELIEVER CARDS ── */
+		.mfst-reliever-search { padding: 0 0 8px 0; }
+		.mfst-reliever-search input { max-width: none; min-height: 44px; font-size: 15px; }
+		.mfst-reliever-filter { display: flex; gap: 6px; margin-bottom: 8px; }
+		.mfst-reliever-filter-btn { flex: 1; min-height: 44px; border: 1px solid var(--mfst-border); border-radius: 10px; background: var(--mfst-bg-card); color: var(--mfst-text); font-family: var(--mfst-font-body); font-size: 14px; font-weight: 600; cursor: pointer; }
+		.mfst-reliever-filter-btn.is-selected { border-color: var(--mfst-accent); background: var(--mfst-accent-dim); color: var(--mfst-accent); }
+		.mfst-reliever-banner { margin-bottom: 8px; padding: 10px 12px; border: 1px solid var(--mfst-amber); border-radius: 10px; background: var(--mfst-amber-dim); color: var(--mfst-text); font-size: 13px; line-height: 1.4; }
+		.mfst-reliever-banner[hidden] { display: none; }
+		.mfst-reliever-list { display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; }
+		.mfst-reliever-card { display: block; flex: 0 0 auto; width: 100%; min-height: 44px; padding: 12px; text-align: left; border: 2px solid var(--mfst-border); border-radius: 12px; background: var(--mfst-bg-card); color: var(--mfst-text); font-family: var(--mfst-font-body); cursor: pointer; }
+		.mfst-reliever-card[hidden] { display: none; }
+		.mfst-reliever-card.is-selected { border-color: var(--mfst-accent); box-shadow: 0 0 0 3px var(--mfst-accent-dim); }
+		.mfst-reliever-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px solid var(--mfst-border); }
+		.mfst-reliever-name { min-width: 0; font-size: 15px; font-weight: 700; text-transform: uppercase; overflow-wrap: anywhere; }
+		.mfst-reliever-tags { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; gap: 4px; }
+		.mfst-reliever-badge, .mfst-reliever-overlap-tag { padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+		.mfst-reliever-badge-ot { background: var(--mfst-amber); color: #fff; }
+		.mfst-reliever-badge-regular { background: var(--mfst-bg); color: var(--mfst-text-muted); }
+		.mfst-reliever-overlap-tag { background: var(--mfst-amber-dim); color: var(--mfst-amber); border: 1px solid var(--mfst-amber); }
+		.mfst-reliever-line { display: grid; grid-template-columns: 9.5em auto 1fr; column-gap: 6px; font-size: 13px; line-height: 1.6; }
+		.mfst-reliever-value { min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
+		.mfst-reliever-label { color: var(--mfst-text-muted); }
+		.mfst-reliever-empty { padding: 16px; text-align: center; font-size: 14px; color: var(--mfst-text-muted); }
+		.mfst-reliever-empty[hidden] { display: none; }
 
 		/* ── EMPTY STATE ── */
 		.mfst-empty-state { text-align: center; padding: 60px 20px; color: var(--mfst-text-muted); }
