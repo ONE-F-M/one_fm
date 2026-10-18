@@ -653,3 +653,4 @@ one_fm.patches.v15_0.rename_trip_names_into_canvas_series #2026-10-14 WI-003454
 one_fm.patches.v15_0.add_department_head #2026-10-14
 one_fm.patches.v15_0.create_dms_document_types #2026-10-13
 one_fm.patches.v15_0.delete_jira_ticket_client_script #2026-10-15
+one_fm.patches.v15_0.processa_sync_vehicle_inspection___v1_684704 #2026-10-17 Processa sync: Vehicle
