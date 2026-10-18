@@ -1,15 +1,8 @@
-"""Fill Hiring Settings with the department mailboxes that receive arrival emails."""
+"""Fill Hiring Settings with the onboarding mailbox that receives arrival emails."""
 
 import frappe
 
-ARRIVAL_DEPARTMENT_EMAILS = (
-	("Onboarding", "hr@one-fm.com"),
-	("Transportation", "gs@one-fm.com"),
-	("General Services", "gs@one-fm.com"),
-	("Finance", "finance@one-fm.com"),
-	("Warehouse", "procurement@one-fm.com"),
-	("Operations", "operations@one-fm.com"),
-)
+ARRIVAL_DEPARTMENT_EMAILS = (("Onboarding", "hr@one-fm.com"),)
 
 
 def execute():
