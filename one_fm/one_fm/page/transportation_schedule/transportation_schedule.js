@@ -3144,6 +3144,7 @@ function mountRoutePlannerApp(wrapper, data) {
                                         message: this.capacityMessage(item.headcount, targetVehicle, blockers)
                                     });
                                 } else {
+                                    item.tripName = this.tripNameOnMove(item, targetVehicleId);
                                     item.vehicleId = targetVehicleId;
                                     frappe.show_alert({
                                         message: `Moved to ${targetVehicle.label}`,
@@ -3420,8 +3421,13 @@ function mountRoutePlannerApp(wrapper, data) {
                             return;
                         }
 
-                        // Move every stop of the journey leg to the new vehicle/driver.
-                        journeyItems.forEach(i => { i.vehicleId = targetVehicle.id; });
+                        // Move every stop of the journey leg to the new vehicle/driver,
+                        // renamed into that lane's series.
+                        const fresh = self.tripNameOnMove(item, targetVehicle.id);
+                        journeyItems.forEach(i => {
+                            i.tripName = fresh;
+                            i.vehicleId = targetVehicle.id;
+                        });
                         self.checkConflicts();
                         self.canSave = self.assignedCards.size > 0;
                         self.persistAssignments();
@@ -3855,30 +3861,14 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             /**
-             * Auto-generate sequential trip name for a vehicle.
-             * Format: {vehicleNumber}{2-digit-sequence}
-             * Leased vehicles: S-{vehicleNumber}{2-digit-sequence}
-             *
-             * vehicleNumber is derived from VHL-#### name (e.g., VHL-0015 → 15)
-             * sequence is 01-based count of existing trips on that vehicle + 1
+             * Next free trip name on a vehicle: its lane series plus a 2-digit sequence.
+             * The series ("S-9", "26") is the lane's row on the board, computed by the
+             * server's canvas_trip_series so Route Plan repairs names in the same series.
              */
             generateTripName(vehicleId) {
                 const vehicle = this.planData.vehicles.find(v => v.id === vehicleId);
-                if (!vehicle) return '';
-
-                // Extract integer from VHL-#### pattern; fallback to 1-based vehicle index
-                const match = vehicleId.match(/VHL-(\d+)/i);
-                let vehicleNumber = match ? parseInt(match[1], 10) : 0;
-                if (!vehicleNumber) {
-                    // Fallback: use 1-based position in vehicles list
-                    const idx = this.planData.vehicles.findIndex(v => v.id === vehicleId);
-                    vehicleNumber = idx >= 0 ? idx + 1 : 1;
-                }
-
-                // Format: vehicleNumber + 2-digit sequence (e.g., 15 + 01 = "1501").
-                // Leased vehicles get an "S-" prefix.
-                const prefix = vehicle.is_leased ? 'S-' : '';
-                const name = (seq) => `${prefix}${vehicleNumber}${String(seq).padStart(2, '0')}`;
+                if (!vehicle || !vehicle.trip_series) return '';
+                const name = (seq) => `${vehicle.trip_series}${String(seq).padStart(2, '0')}`;
 
                 // The next FREE number, not the count: counting re-issued a name the
                 // moment any trip but the last was removed.
@@ -3889,6 +3879,19 @@ function mountRoutePlannerApp(wrapper, data) {
                 let seq = 1;
                 while (taken.has(name(seq))) seq++;
                 return name(seq);
+            },
+
+            // The name a run takes when it moves to another vehicle, mirroring
+            // RoutePlan._rename_into_series: join the run already on that lane if there
+            // is one, keep a blank or hand-typed name, otherwise mint one in the lane's
+            // series. Read before vehicleId changes so the moving run is not counted.
+            tripNameOnMove(item, vehicleId) {
+                if (!item.tripName || !/^(S-)?\d+\d{2}$/.test(String(item.tripName).trim())) {
+                    return item.tripName;
+                }
+                const joined = item.tripId && this.swimItems.find(i =>
+                    i.vehicleId === vehicleId && i.tripId === item.tripId && i.tripName);
+                return joined ? joined.tripName : (this.generateTripName(vehicleId) || item.tripName);
             },
 
             // ─ Persistence (save/load to Route Plan DocType) ──────────────
@@ -4201,18 +4204,17 @@ function mountRoutePlannerApp(wrapper, data) {
             // written to the shipments the moment it is confirmed, but the plan is saved a
             // beat later and can still be refused - and the cards would be left Mixed with
             // no plan holding them.
-            // Take the trip names the save actually stored. A name already in use on
-            // that vehicle is repaired server-side and the save is otherwise
-            // silent, so without this the board would keep showing the old name for the
-            // rest of the session and then appear to rename the run by itself on the
-            // next load.
+            // Take the trip names the save actually stored. The server renames a run
+            // whose name is a duplicate on its vehicle or belongs to another lane's
+            // series, and the save is otherwise silent, so without this the board would
+            // keep showing the old name until the next load.
             _applyStoredTripNames(result) {
                 const names = (result || {}).trip_names;
                 if (!names) return;
 
                 const renamed = new Set();
                 this.swimItems.forEach(item => {
-                    const stored = item.tripId ? names[item.tripId] : null;
+                    const stored = item.tripId ? names[`${item.vehicleId}|${item.tripId}`] : null;
                     if (stored && stored !== item.tripName) {
                         renamed.add(`${item.tripName || '—'} → ${stored}`);
                         item.tripName = stored;
@@ -4222,7 +4224,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 this.swimItems = [...this.swimItems];   // Vue reactivity
                 frappe.show_alert({
-                    message: __('That trip name was already in use on this vehicle: {0}.',
+                    message: __('Trip renamed to match its vehicle: {0}.',
                                 [Array.from(renamed).join(', ')]),
                     indicator: 'orange'
                 }, 8);
