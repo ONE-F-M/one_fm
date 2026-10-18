@@ -361,8 +361,9 @@ doc_events = {
 		"on_update": [
 			"one_fm.one_fm.utils.send_notification_to_grd_or_recruiter",
 			"one_fm.utils.on_update_job_applicant",
-			# WI-002598: tell the candidate their application was rejected. on_update
-			# rather than validate, so nothing is sent for a change that then fails to
+			# Stamp the rejection time when the application is rejected. The candidate is
+			# emailed 48 hours later by the hourly send_due_rejection_emails job. on_update
+			# rather than validate, so nothing is stamped for a change that then fails to
 			# save.
 			"one_fm.hiring.rejection_notification.notify_on_rejection"
 		]
@@ -706,7 +707,9 @@ scheduler_events = {
 		"one_fm.api.tasks.validate_shift_assignment",
 		'one_fm.overrides.employee_checkin.auto_generate_checkin',
 		# WI-002283: close overtime requests nobody answered before the shift ended.
-		"one_fm.operations.doctype.employee_schedule.employee_schedule.reject_expired_dsot_requests"
+		"one_fm.operations.doctype.employee_schedule.employee_schedule.reject_expired_dsot_requests",
+		# Email rejected candidates once 48 hours have passed since their rejection.
+		"one_fm.hiring.rejection_notification.send_due_rejection_emails"
 	],
 	"monthly": [
 		"one_fm.accommodation.utils.execute_monthly",
