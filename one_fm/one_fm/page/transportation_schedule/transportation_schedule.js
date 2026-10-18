@@ -12,6 +12,15 @@ const DEFAULT_BUFFER_MIN = 5;
 // as an instantaneous drive. A stop with nowhere onward legitimately carries none.
 const MIN_LEG_TRANSIT_MIN = 1;
 
+// ── Search text normalising ─────────────────────────────────────────────────────
+// Stored names carry doubled, leading and trailing spaces ("Samir  Basnet"), so a
+// filter has to flatten BOTH the typed query and the stored text before comparing.
+// test_search_normalize.js reads this helper out of the file by these two banners.
+function normalizeSearchText(s) {
+    return String(s || "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+// ── End search text normalising ─────────────────────────────────────────────────
+
 frappe.pages['transportation-schedule'].on_page_load = function (wrapper) {
     injectRPLoadingStyles();
     $(wrapper).html(`
@@ -172,10 +181,10 @@ function mountRoutePlannerApp(wrapper, data) {
             // before it left, so a dispatcher can say "this shift, this person, ending at
             // 11:00" and get the cards that satisfy all three rather than any of them.
             filteredPoolCards() {
-                const q = this.searchQuery.toLowerCase().trim();
-                const emp = this.employeeQuery.toLowerCase().trim();
+                const q = normalizeSearchText(this.searchQuery);
+                const emp = normalizeSearchText(this.employeeQuery);
                 const shift = this.shiftFilter.trim();
-                const shiftLower = shift.toLowerCase();
+                const shiftLower = normalizeSearchText(shift);
                 // A shift picked from the list is an exact name and filters exactly
                 // (AC2). A half-typed one has not picked anything yet, so it narrows by
                 // what has been typed rather than matching nothing at all.
@@ -195,22 +204,24 @@ function mountRoutePlannerApp(wrapper, data) {
                     if (shift) {
                         const name = c.shift_name || '';
                         if (shiftIsExact ? name !== shift
-                                         : !name.toLowerCase().includes(shiftLower)) return false;
+                                         : !normalizeSearchText(name).includes(shiftLower)) return false;
                     }
 
                     // AC3: partial or exact, case-insensitive, against the people on the
                     // card - which is how a dispatcher looks for one person rather than
                     // knowing which site they are posted to.
+                    // Both sides are flattened: a stored "Samir  Basnet" has to match a
+                    // typed "samir basnet".
                     if (emp && !(c.employees || []).some(e =>
-                        String((e && e.name) || '').toLowerCase().includes(emp))) return false;
+                        normalizeSearchText(e && e.name).includes(emp))) return false;
 
                     if (!q) return true;
                     return (
-                        c.shift_name.toLowerCase().includes(q) ||
-                        c.site_location.toLowerCase().includes(q) ||
-                        c.accommodation.toLowerCase().includes(q) ||
-                        c.stop_location.toLowerCase().includes(q) ||
-                        (c.direction || '').toLowerCase().includes(q)
+                        normalizeSearchText(c.shift_name).includes(q) ||
+                        normalizeSearchText(c.site_location).includes(q) ||
+                        normalizeSearchText(c.accommodation).includes(q) ||
+                        normalizeSearchText(c.stop_location).includes(q) ||
+                        normalizeSearchText(c.direction).includes(q)
                     );
                 });
             },
@@ -655,6 +666,17 @@ function mountRoutePlannerApp(wrapper, data) {
 
         // ── Methods ────────────────────────────────────────────────────────
         methods: {
+            // The chips show three riders, so with an employee query set the
+            // riders it matched go first - otherwise a card found by name shows three
+            // other people. The "+N more" count still reads card.employees.length.
+            chipEmployees(card) {
+                const riders = card.employees || [];
+                const emp = normalizeSearchText(this.employeeQuery);
+                if (!emp) return riders;
+                const hit = e => normalizeSearchText(e && e.name).includes(emp);
+                return [...riders.filter(hit), ...riders.filter(e => !hit(e))];
+            },
+
 
             // ─ Time helpers ────────────────────────────────────────────────
 
@@ -5067,7 +5089,7 @@ function injectRPVueTemplate() {
                 </div>
               </div>
               <div class="rp-card-employees">
-                <span v-for="(e, ei) in card.employees.slice(0,3)" :key="card.id + '_' + ei" class="rp-emp-chip rp-emp-chip-call" @click.stop="handleEmployeeCall(e)" :title="empMobile(e) ? 'Call ' + empMobile(e) : 'No mobile number'">
+                <span v-for="(e, ei) in chipEmployees(card).slice(0,3)" :key="card.id + '_' + ei" class="rp-emp-chip rp-emp-chip-call" @click.stop="handleEmployeeCall(e)" :title="empMobile(e) ? 'Call ' + empMobile(e) : 'No mobile number'">
                   {{ empName(e) }}
                   <span class="rp-icon rp-call-icon" :class="empMobile(e) ? '' : 'rp-call-disabled'">call</span>
                 </span>
