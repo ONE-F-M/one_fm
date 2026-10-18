@@ -391,12 +391,7 @@ class EmployeeResignation(Document):
 	def set_current_salary(self):
 		if not self.employee:
 			return
-		self.current_salary = frappe.db.get_value(
-			"Salary Structure Assignment",
-			{"employee": self.employee, "docstatus": 1, "from_date": ["<=", frappe.utils.today()]},
-			"base",
-			order_by="from_date desc",
-		)
+		self.current_salary = frappe.db.get_value("Employee", self.employee, "one_fm_basic_salary")
 
 	def set_supervisor(self):
 		# Only auto-resolve supervisor if it hasn't already been set manually
@@ -407,7 +402,9 @@ class EmployeeResignation(Document):
 			return
 
 		from one_fm.utils import get_approver
-		approver_emp = get_approver(self.employee)
+		# Single-employee shape (#6519) with WI-001814's site-supervisor routing:
+		# version-15's sole change to this file was the skip_shift_supervisor flag.
+		approver_emp = get_approver(self.employee, skip_shift_supervisor=True)
 		if approver_emp:
 			user_id = frappe.db.get_value("Employee", approver_emp, "user_id")
 			if user_id and frappe.db.exists("User", user_id):
@@ -599,3 +596,56 @@ def get_autocomplete_options() -> dict:
 		"genders": [g.name for g in genders if g.name]
 	}
 
+
+
+STEP_APPROVER_FIELDS = {
+	"Pending Line Manager": "supervisor",
+	"Pending Supervisor": "supervisor",
+	"Pending Project Manager": "project_manager",
+}
+RESIGNATION_CHANGE_DOCTYPES = ("Employee Resignation Withdrawal", "Employee Resignation Date Adjustment")
+
+
+def hand_over_in_process_approvals():
+	"""Daily: move a pending withdrawal or date adjustment step to the employee's current approver."""
+	for doctype in RESIGNATION_CHANGE_DOCTYPES:
+		names = frappe.get_all(doctype, filters={"workflow_state": ["in", list(STEP_APPROVER_FIELDS)]}, pluck="name")
+		for name in names:
+			frappe.db.savepoint("hand_over_approval")
+			try:
+				hand_over_approval(frappe.get_doc(doctype, name))
+			except Exception:
+				# One record the new approver cannot be assigned must not undo the others
+				frappe.db.rollback(save_point="hand_over_approval")
+				frappe.log_error(
+					title=_("Approval hand-over failed for {0}").format(name),
+					reference_doctype=doctype,
+					reference_name=name,
+				)
+
+
+def hand_over_approval(doc):
+	from frappe.desk.form.assign_to import add, remove
+
+	field = STEP_APPROVER_FIELDS[doc.workflow_state]
+	old_approver = doc.get(field)
+	doc.set_approver()
+	new_approver = doc.get(field)
+	if not new_approver or new_approver == old_approver:
+		return
+
+	doc.db_set(field, new_approver)
+	old_assignment = {
+		"reference_type": doc.doctype,
+		"reference_name": doc.name,
+		"allocated_to": old_approver,
+		"status": "Open",
+	}
+	if old_approver and frappe.db.exists("ToDo", old_assignment):
+		remove(doc.doctype, doc.name, old_approver)
+	add({
+		"assign_to": [new_approver],
+		"doctype": doc.doctype,
+		"name": doc.name,
+		"description": _("{0} {1} is waiting for your approval").format(_(doc.doctype), doc.name),
+	})

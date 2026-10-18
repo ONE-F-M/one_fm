@@ -23,6 +23,8 @@ TITLE_FORMS = {
 	"Knowledge Base": ("Knowledge Base for ", r"knowledge\s+bases?|kb"),
 }
 
+from one_fm.utils import get_approver_user
+
 
 class DocumentRequest(Document):
 	def validate(self):
