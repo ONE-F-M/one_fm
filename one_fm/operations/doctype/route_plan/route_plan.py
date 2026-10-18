@@ -296,8 +296,11 @@ class RoutePlan(Document):
 					# not all ride together and summing them would refuse a load the
 					# bus can actually carry.
 					self._validate_mixed_trip_legs(trip, limit)
-				elif trip.headcount > limit:
-					self._throw_capacity_exceeded(vehicle, trip.direction, trip.headcount,
+				elif trip.occupancy > limit:
+					# Judged and quoted on the peak onboard load, not the sum of every
+					# stop's riders. A one-way run reads the same either way, because
+					# every rider boards at the camps first.
+					self._throw_capacity_exceeded(vehicle, trip.direction, trip.occupancy,
 												  limit, self._trip_label(trip))
 
 			# Trips that overlap in time DO share the bus, so no single one of them is
@@ -341,7 +344,12 @@ class RoutePlan(Document):
 		has been looking at - and each later claimant takes the next free sequence for
 		that vehicle.
 		"""
-		for vehicle, runs in self._runs_by_vehicle().items():
+		by_vehicle = self._runs_by_vehicle()
+		series_of = _canvas_series() if by_vehicle else {}
+		for vehicle, runs in by_vehicle.items():
+			# First, a run that sits on the wrong lane for its name is renamed into the
+			# lane's own series; only then are the lane's duplicates sorted.
+			self._rename_into_series(runs, series_of.get(vehicle))
 			taken = {name for run in runs.values() for name in {run["name"]} if name}
 			shape = _trip_name_shape(taken)
 			if not shape:
@@ -363,6 +371,53 @@ class RoutePlan(Document):
 				taken.add(fresh)
 				for row in run["rows"]:
 					row.trip_name = fresh
+
+	def _rename_into_series(self, runs, series):
+		"""Rename the runs of one lane whose name belongs to another lane's series.
+
+		A trip name is the vehicle's row on the board plus a sequence ("S-9" + "01"). A
+		whole run moved to another vehicle keeps its name, so it reads as a different
+		lane's trip. A run is judged by ITS OWN name and (vehicle,
+		trip_group) key - never by looking a name up - and only when that name parses:
+		a hand-typed one is the dispatcher's, and a vehicle with no series is not on the
+		board, so both keep the existing behaviour.
+
+		The mapping for the whole lane is settled before a single row is written. The
+		names the lane keeps (runs already in the series, hand-typed ones) are reserved
+		first, so a renamed run can never take a name another run keeps; the earliest run
+		picks first and keeps its two-digit sequence if that is free.
+		"""
+		parsed = _parse_series(series)
+		if not parsed:
+			return
+
+		order = sorted(runs, key=lambda k: (runs[k]["start"], str(k)))
+		taken, moving = set(), []
+		for key in order:
+			name = runs[key]["name"]
+			match = TRIP_NAME.match(str(name).strip()) if name else None
+			if match and (match.group(1) or "", match.group(2)) != parsed:
+				moving.append((key, match.group(3)))
+			elif name:
+				taken.add(name)
+
+		prefix, number = parsed
+		mapping = {}
+		for key, sequence in moving:
+			fresh = f"{prefix}{number}{sequence}"
+			if fresh in taken:
+				fresh = _next_free_trip_name(parsed, taken)
+			if not fresh:
+				continue
+			taken.add(fresh)
+			mapping[key] = fresh
+
+		for key, fresh in mapping.items():
+			# Every row of the run: the cards, the camp legs with no shipment, and both
+			# directions that share the trip_group.
+			for row in runs[key]["rows"]:
+				row.trip_name = fresh
+			runs[key]["name"] = fresh
 
 	def _runs_by_vehicle(self) -> dict:
 		"""``{vehicle: {trip key: run}}`` over every row, camp legs included.
@@ -682,6 +737,32 @@ def _trip_name_shape(names):
 	if not shapes:
 		return None
 	return max(shapes, key=lambda shape: (shapes[shape], shape))
+
+
+def _parse_series(series):
+	"""``"S-9"`` -> ``("S-", "9")``, ``"26"`` -> ``("", "26")``; None when it is not one."""
+	match = re.match(r"^(S-)?(\d+)$", str(series or "").strip())
+	if not match:
+		return None
+	return (match.group(1) or "", match.group(2))
+
+
+def _canvas_series() -> dict:
+	"""``{vehicle: series}`` exactly as the canvas numbers its lanes.
+
+	Imported on the spot because the page module imports this one. A failure to read
+	the board's vehicle list must not stop a plan saving, so it falls back to no series
+	- which is the behaviour before the series existed.
+	"""
+	try:
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			canvas_trip_series,
+		)
+
+		return canvas_trip_series() or {}
+	except Exception:
+		frappe.log_error(title="Route Plan: canvas trip series unavailable")
+		return {}
 
 
 def _next_free_trip_name(shape, taken):

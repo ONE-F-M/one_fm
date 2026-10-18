@@ -212,14 +212,30 @@ class TestSourceGuidelineMustBeAGuideline(DocumentRequestInputFixtures, FrappeTe
 		document as its instructions — which is how a request for one subject
 		comes back written about another."""
 		sop = _register("SOP", suffix="AsGuideline")
-		doc = self._request(source_guideline=sop)
+		self.addCleanup(
+			frappe.db.set_value,
+			"DMS Document Type",
+			"SOP",
+			"source_guideline",
+			frappe.db.get_value("DMS Document Type", "SOP", "source_guideline"),
+		)
+		frappe.db.set_value("DMS Document Type", "SOP", "source_guideline", sop)
+		doc = self._request()
 		with self.assertRaises(frappe.ValidationError) as caught:
 			doc.insert(ignore_permissions=True)
 		self.assertIn("Guideline", str(caught.exception))
 
 	def test_a_guideline_is_accepted(self):
 		guideline = _register("Guideline")
-		doc = self._request(source_guideline=guideline)
+		self.addCleanup(
+			frappe.db.set_value,
+			"DMS Document Type",
+			"SOP",
+			"source_guideline",
+			frappe.db.get_value("DMS Document Type", "SOP", "source_guideline"),
+		)
+		frappe.db.set_value("DMS Document Type", "SOP", "source_guideline", guideline)
+		doc = self._request()
 		doc.insert(ignore_permissions=True)
 		self.assertEqual(doc.source_guideline, guideline)
 
@@ -313,9 +329,7 @@ class TestRegisterDocumentType(FrappeTestCase):
 		types no request produces. That material is no longer catalogued here, so
 		a type on one side and not the other is now a mistake either way round.
 		"""
-		request_types = set(
-			(frappe.get_meta("Document Request").get_field("document_type").options or "").split("\n")
-		) - {""}
+		request_types = set(frappe.get_all("DMS Document Type", pluck="name"))
 		register_types = set(
 			(frappe.get_meta("Document Register").get_field("document_type").options or "").split("\n")
 		) - {""}

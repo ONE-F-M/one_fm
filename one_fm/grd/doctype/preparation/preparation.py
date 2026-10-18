@@ -212,9 +212,8 @@ CATEGORIES = {
 FALLBACK_PREFIX = 'PRE-'
 
 
-# WI-002093: the order the legal steps run in, so a row can say which one the candidate has
-# reached. Furthest along wins - the sequence only moves forward, and what an operator wants
-# to see is progress, not the last document anybody happened to touch.
+# The order the legal steps run in. A row's Current Stage is the first of them that is not
+# Completed.
 SUB_DOCUMENT_SEQUENCE = ("Work Permit", "Medical Insurance", "Residency", "PACI")
 
 
@@ -303,54 +302,103 @@ def validate_sequence(doc, method=None):
     )
 
 
-def update_row_reference(doc, method=None):
-    """Point a Preparation row at the sub-document its candidate has reached (WI-002093).
+def _state_label(document):
+    """The state a document is in, as the row shows it. A cancelled document says so."""
+    if document.get("docstatus") == 2:
+        return "Cancelled"
+    if document.get("workflow_state"):
+        return document.get("workflow_state")
+    return "Submitted" if document.get("docstatus") == 1 else "Draft"
 
-    Hung off each sub-document's own save, so the status on the row is the status on the
-    document rather than a snapshot from whenever the Preparation was last touched.
 
-    Only ever moves forward: a Medical Insurance saving does not pull the row back from the
-    PACI it had already reached. That is what makes it a progress column and not a
-    last-touched column.
+def current_stage(documents):
+    """The stage a candidate is at, from the latest document of each kind they have.
 
-    Written with db.set_value on the child row - the row belongs to a submitted Preparation,
-    and a status arriving here should not need permission to edit one.
+    `documents` is a list of dicts with doctype, name, workflow_state and docstatus. Pure:
+    it reads nothing and writes nothing.
+
+    The stage is the first document in the legal sequence that is not Completed. Once every
+    document that exists is Completed, the last of them is the stage. Returns a dict with
+    ref_doctype, ref_name and ref_doctype_status ("<DocType> - <state>"), or None when no
+    document in the sequence exists.
     """
-    if not doc.get("preparation") or not doc.get("employee"):
-        return
+    latest = {}
+    for document in documents or []:
+        if document.get("doctype") in SUB_DOCUMENT_SEQUENCE:
+            latest[document["doctype"]] = document
 
-    try:
-        position = SUB_DOCUMENT_SEQUENCE.index(doc.doctype)
-    except ValueError:
+    present = [latest[doctype] for doctype in SUB_DOCUMENT_SEQUENCE if doctype in latest]
+    if not present:
+        return None
+
+    chosen = present[-1]
+    for document in present:
+        if _state_label(document) != COMPLETED:
+            chosen = document
+            break
+
+    return {
+        "ref_doctype": chosen["doctype"],
+        "ref_name": chosen.get("name"),
+        "ref_doctype_status": "{0} - {1}".format(chosen["doctype"], _state_label(chosen)),
+    }
+
+
+def refresh_row_stage(preparation, employee):
+    """Recompute the Current Stage of the Preparation row for this employee.
+
+    Reads the latest document of each kind, cancelled ones included, and writes the result
+    on the row. A row with no document behind it is left as it was.
+
+    Written with db.set_value on the child row - the row belongs to a submitted
+    Preparation, and a stage arriving here should not need permission to edit one. The
+    label is stored verbatim, not translated.
+    """
+    if not preparation or not employee:
         return
 
     row = frappe.db.get_value(
         "Preparation Record",
         {
-            "parent": doc.preparation,
+            "parent": preparation,
             "parenttype": "Preparation",
-            "employee": doc.employee,
+            "employee": employee,
         },
-        ["name", "ref_doctype"],
-        as_dict=True,
+        "name",
     )
     if not row:
         return
 
-    if row.ref_doctype in SUB_DOCUMENT_SEQUENCE:
-        if SUB_DOCUMENT_SEQUENCE.index(row.ref_doctype) > position:
-            return
+    documents = []
+    for doctype in SUB_DOCUMENT_SEQUENCE:
+        found = frappe.get_all(
+            doctype,
+            filters={"preparation": preparation, "employee": employee},
+            fields=["name", "workflow_state", "docstatus"],
+            order_by="creation desc",
+            limit=1,
+        )
+        if found:
+            documents.append(dict(found[0], doctype=doctype))
 
-    frappe.db.set_value(
-        "Preparation Record",
-        row.name,
-        {
-            "ref_doctype": doc.doctype,
-            "ref_name": doc.name,
-            "ref_doctype_status": doc.get("workflow_state") or "",
-        },
-        update_modified=False,
-    )
+    stage = current_stage(documents)
+    if not stage:
+        return
+
+    frappe.db.set_value("Preparation Record", row, stage, update_modified=False)
+
+
+def update_row_reference(doc, method=None):
+    """Refresh the Current Stage of the Preparation row this sub-document belongs to.
+
+    Hung off each sub-document's save, cancel and delete.
+    """
+    if not doc.get("preparation") or not doc.get("employee"):
+        return
+    if doc.doctype not in SUB_DOCUMENT_SEQUENCE:
+        return
+
+    refresh_row_stage(doc.preparation, doc.employee)
 
 
 def category_for_action(action):
@@ -439,7 +487,7 @@ class Preparation(Document):
 
         doc_total = sum(flt(row.total_amount) for row in self.preparation_record)
         frappe.db.set_value(self.doctype,self.name,'total_payment',doc_total)
-        self.total_payment = doc_total
+        self.set('total_payment', doc_total)
 
     def on_update_after_submit(self):
         self.compare_preparation_record()
@@ -526,6 +574,8 @@ class Preparation(Document):
         # self.recall_create_fp()# create fp record for all
         failures += self.recall_create_documents_for_new_actions() # WI-001824: New Kuwaiti / Overseas
         report_document_creation_failures(failures)
+        for row in self.preparation_record:
+            refresh_row_stage(self.name, row.employee)
         self.send_notifications()
 
     def recall_create_documents_for_new_actions(self):

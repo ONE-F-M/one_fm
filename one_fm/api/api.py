@@ -179,7 +179,8 @@ def push_notification_for_checkin(employee_id, title, body, checkin, arriveLate 
                 "body" : body,
                 "showButtonCheckIn": checkin,
                 "showButtonCheckOut": checkout,
-                "showButtonArrivingLate": arriveLate
+                "showButtonArrivingLate": arriveLate,
+                "url": "/checkin"
                 },
                 apns=messaging.APNSConfig(
                     payload=messaging.APNSPayload(
@@ -229,6 +230,7 @@ def push_notification_rest_api_for_checkin(employee_id, title, body, checkin, ar
                     title=title,
                     body=body
                 ),
+                data={"url": "/checkin"},
                 token=deviceToken
             )
             res = messaging.send(message)
@@ -270,6 +272,7 @@ def push_notification_rest_api_for_leave_application(employee_id, title, body, l
                 title=title,
                 body=body
             ),
+            data={"url": "/leaves/{0}".format(leave_id)},
             token=deviceToken
         )
         res = messaging.send(message)

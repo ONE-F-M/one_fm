@@ -27,7 +27,9 @@
   "initiative_to_be_taken",
   "section_break_3icw",
   "company",
-  "amended_from"
+  "amended_from",
+  "employee_user",
+  "workflow_state"
  ],
  "fields": [
   {
@@ -117,6 +119,7 @@
    "fetch_from": "employee.reports_to",
    "fieldname": "reports_to",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Reports To",
    "options": "Employee",
    "read_only": 1
@@ -177,6 +180,24 @@
    "fieldname": "initiative_to_be_taken",
    "fieldtype": "Small Text",
    "label": "Initiative to be taken"
+  },
+  {
+   "fetch_from": "employee.user_id",
+   "fieldname": "employee_user",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Employee User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "no_copy": 1,
+   "options": "Workflow State"
   }
  ],
  "index_web_pages_for_search": 1,

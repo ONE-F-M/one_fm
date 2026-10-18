@@ -95,3 +95,25 @@ class TestOntheJobTraining(FrappeTestCase):
             pass
             
         return doc.name
+
+
+class TestPastStartDateRefusedOnFirstSave(FrappeTestCase):
+    """The process map sets Draft only after insert, so a new record must be checked before it."""
+
+    def _ojt(self, start, **kwargs):
+        doc = frappe.new_doc("On the Job Training")
+        doc.start_date = start
+        doc.end_date = start
+        doc.update(kwargs)
+        return doc
+
+    def test_new_record_with_past_start_is_refused(self):
+        with self.assertRaises(frappe.ValidationError):
+            self._ojt(add_days(nowdate(), -1)).validate_dates()
+
+    def test_new_record_with_future_start_passes(self):
+        self._ojt(add_days(nowdate(), 1)).validate_dates()
+
+    def test_amendment_carrying_an_old_state_is_still_checked(self):
+        with self.assertRaises(frappe.ValidationError):
+            self._ojt(add_days(nowdate(), -1), workflow_state="Rejected").validate_dates()

@@ -32,7 +32,8 @@
   "number_of_open_drive_comments",
   "section_break_f4ff",
   "amended_from",
-  "company_name"
+  "company_name",
+  "workflow_state"
  ],
  "fields": [
   {
@@ -206,6 +207,15 @@
    "label": "Manager Email",
    "options": "User",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "no_copy": 1,
+   "options": "Workflow State"
   }
  ],
  "index_web_pages_for_search": 1,
