@@ -672,7 +672,6 @@ one_fm.patches.v15_0.cancel_duplicate_absence_cases #2026-10-06 HD-1858822 clear
 one_fm.patches.v15_0.restore_cancelled_onboarding_emp_onb_2026_00361 #2026-10-06 restore EMP-ONB-2026-00361 cancelled by mistake, unlink DC-2026-00358 so a new one is created
 one_fm.patches.v15_0.rename_pam_license_status_options #2026-10-08 PAM Licence status: Not suspended -> Active, Detained -> Suspended
 one_fm.patches.v15_0.set_arrival_department_emails #2026-10-11 department mailboxes for arrival emails
-one_fm.patches.v15_0.set_job_details_on_open_arrival_acknowledgements #2026-10-11 visa on open arrivals, designation and visa on open arrival acknowledgements
 one_fm.patches.v15_0.allow_onboarding_officer_to_edit_pending_onboarding_arrivals #2026-10-11 Onboarding Officer edits Arrival and Deployment in Pending Onboarding
 one_fm.patches.v15_0.grant_payroll_operator_penalty_deduction_access
 one_fm.patches.v15_0.add_job_applicant_rejection_email_fields #2026-10-12 WI-003514
@@ -681,3 +680,7 @@ one_fm.patches.v15_0.rename_trip_names_into_canvas_series #2026-10-14 WI-003454
 one_fm.patches.v15_0.add_department_head #2026-10-14
 one_fm.patches.v15_0.create_dms_document_types #2026-10-13
 one_fm.patches.v15_0.delete_jira_ticket_client_script #2026-10-15
+one_fm.patches.v15_0.end_arrival_at_transportation_confirmation #2026-10-12 Onboarding Confirmed then Arrived or Did Not Arrive; support department acknowledgements removed
+one_fm.patches.v15_0.set_candidate_details_on_arrivals #2026-10-12 candidate department, designation, gender, nationality and date of birth on arrivals
+one_fm.patches.v15_0.unblock_interview_feedback_skill_assessment #2026-09-25 HD-1853443
+one_fm.patches.v15_0.reconcile_bed_status_with_open_checkins #2026-10-14 HD-1806399 free the beds left flagged occupied by check-outs that could not reset them

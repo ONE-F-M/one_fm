@@ -126,19 +126,31 @@ class AccommodationCheckinCheckout(Document):
 		if not self.bed:
 			return
 		bed = frappe.get_doc('Bed', self.bed)
-		if ("Occupied" in bed.status and bed.employee == self.employee) or (occupy and not bed.employee):
-			bed.status = 'Occupied' if occupy else 'Vacant'
-			if occupy and not self.attach_print_accommodation_policy:
-				bed.status = 'Occupied Temporarily'
-			bed.employee = self.employee if occupy else ''
-			if occupy and self.tenant_category:
-				bed.passport_number =  self.passport_number
+
+		if occupy:
+			# Only claim a bed that is not already held by somebody else.
+			if 'Occupied' in bed.status and bed.employee and bed.employee != self.employee:
+				return
+			bed.status = 'Occupied Temporarily' if not self.attach_print_accommodation_policy else 'Occupied'
+			bed.employee = self.employee
+			if self.tenant_category:
+				bed.passport_number = self.passport_number
 				bed.full_name = self.full_name
 				bed.one_fm_nationality = self.nationality
 				bed.civil_id = self.civil_id
-			bed.save(ignore_permissions=True)
-			if on_trash:
-				self.update_checkin_reference()
+		else:
+			# A check-out always frees the bed. The previous version only did
+			# this when bed.employee still matched the employee being checked
+			# out, so any drift in that link left the bed flagged occupied for
+			# good and under-reported the vacancy count.
+			if 'Occupied' not in bed.status:
+				return
+			bed.status = 'Vacant'
+			bed.employee = ''
+
+		bed.save(ignore_permissions=True)
+		if on_trash:
+			self.update_checkin_reference()
 
 	@frappe.whitelist()
 	def get_checkin_details_from_booking(self):

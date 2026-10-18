@@ -2967,6 +2967,14 @@ def get_approver_user(employee, skip_shift_supervisor=False, date=False):
         return frappe.db.get_value("Employee", approver, "user_id")
     return None
 
+def get_project_manager_user(employee):
+    """Return the User of the project manager on the employee's current project."""
+    project = frappe.db.get_value("Employee", employee, "project")
+    pm_employee = frappe.db.get_value("Project", project, "project_manager") if project else None
+    if pm_employee:
+        return frappe.db.get_value("Employee", pm_employee, "user_id")
+    return None
+
 @frappe.whitelist()
 def get_approver(employee, skip_shift_supervisor=False, date=False):
     '''
@@ -4721,6 +4729,9 @@ def get_sibling_counts(doctype: str, name: str, items: list | str | None = None)
                 # The CCP has no candidate_country_process field pointing to itself;
                 # it's the parent we're already linked to, so count is just 1.
                 filters = {"name": ccp_name} if ccp_name else {"name": "invalid"}
+            elif d == "Job Applicant":
+                # The arrival links its Job Applicant directly, so the count is just that one record.
+                filters = {"name": getattr(doc, "job_applicant", None) or "invalid"}
             else:
                 filters = {"candidate_country_process": ccp_name} if ccp_name else {"name": "invalid"}
             docs = frappe.get_list(d, filters=filters, limit=100, distinct=True, ignore_ifnull=True)

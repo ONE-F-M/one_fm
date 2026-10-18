@@ -2,6 +2,9 @@ name: Deploy hotfix to Production
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [version-15]
+    types: [closed, labeled]
 
 # The job only opens an SSH session, so the token needs no access.
 permissions: {}
@@ -12,8 +15,11 @@ concurrency:
 
 jobs:
   deploy:
-    # Only the copy of this workflow on version-15 may deploy.
-    if: github.ref == 'refs/heads/version-15'
+    # Manual runs deploy only from version-15; PR runs only for a merged PR into version-15 labelled deploy-hotfix.
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/version-15') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true &&
+       contains(github.event.pull_request.labels.*.name, 'deploy-hotfix'))
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -47,10 +53,8 @@ jobs:
             cd $BENCH/apps/one_fm
             git pull upstream version-15
             cd $BENCH
-            rm -rf env/lib/python*/site-packages/one_fm-*.dist-info
-            bench setup requirements one_fm
+            trap 'status=$?; if [ $status -ne 0 ]; then sudo supervisorctl start $WORKERS; sudo supervisorctl restart $NAME-web:; fi' EXIT
 
-            trap 'status=$?; if [ $status -ne 0 ]; then sudo supervisorctl start $WORKERS; fi' EXIT
             # Workers and the scheduler write Scheduled Job Log while migrate deletes from it.
             sudo supervisorctl stop $WORKERS
             # A scheduler orphaned by an earlier stop holds the lock supervisor's scheduler needs; [s] keeps pkill off this script.
