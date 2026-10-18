@@ -87,9 +87,7 @@ class TestGoogleSheetDataExport(FrappeTestCase):
 		stuck = self._export("Daily", add_days(now_datetime(), -400))
 
 		self.assertEqual(self._enqueued(exporter.update_google_sheet_daily), [stuck])
-		self.assertEqual(
-			getdate(frappe.db.get_value(DOCTYPE, stuck, "last_execution_timestamp")), getdate()
-		)
+		self.assertEqual(getdate(frappe.db.get_value(DOCTYPE, stuck, "last_execution_timestamp")), getdate())
 
 	def test_hourly_exports_are_capped(self):
 		for _i in range(MAX_HOURLY_EXPORTS):
