@@ -241,28 +241,35 @@ doc_events = {
 			"one_fm.overrides.todo.delete_linked_todos"
 		]
 	},
-	# WI-002093: each of these carries the Preparation that opened it, and its own save is
-	# where the row's status column comes from. The handler only ever moves a row forward
-	# along Work Permit -> Medical Insurance -> Residency -> PACI.
+	# Each of these carries the Preparation that opened it. Its own save, cancel and delete
+	# refresh the Current Stage column on that Preparation's row.
 	"Work Permit": {
 		# WI-002096: no step completes before the one in front of it.
 		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
-		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"on_cancel": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"after_delete": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"Medical Insurance": {
 		# WI-002096: no step completes before the one in front of it.
 		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
-		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"on_cancel": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"after_delete": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"Residency": {
 		# WI-002096: no step completes before the one in front of it.
 		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
-		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"on_cancel": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"after_delete": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"PACI": {
 		# WI-002096: no step completes before the one in front of it.
 		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
-		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"on_cancel": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"after_delete": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"Employee": {
 		# Keep the PAM licence headcounts in step with the employees on the licence. The
