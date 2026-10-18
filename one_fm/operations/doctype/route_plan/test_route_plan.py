@@ -7,6 +7,7 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, getdate, today
 
+from one_fm.operations.doctype.route_plan import route_plan as route_plan_module
 from one_fm.operations.doctype.route_plan.route_plan import (
 	_date_ranges_overlap,
 	_detect_retention_conflict,
@@ -40,6 +41,20 @@ def _shipment(name, *, retention=0, from_date=DAY, to_date=DAY,
 		"end_time": end,
 		"source_docname": source,
 	})
+
+
+
+def pin_three_passenger_seats(vehicle):
+	"""Make the fixture vehicle carry 3 passengers, whatever this site's fleet data says.
+
+	The capacity tests are written for 3 legal passenger seats, but the stored capacity
+	of a real vehicle differs between sites. The test rollback restores the record.
+	"""
+	frappe.db.set_value(
+		"Vehicle",
+		vehicle,
+		{"seats": 4, "custom_includes_driver_seat": 1, "custom_max_passenger_capacity": 3},
+	)
 
 
 class TestRetentionOverlapLogic(FrappeTestCase):
@@ -388,6 +403,10 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 		if not frappe.db.exists("Vehicle", cls.VEHICLE):
 			raise cls.skipTest(cls, f"Fixture vehicle {cls.VEHICLE} missing on this site")
 
+	def setUp(self):
+		super().setUp()
+		pin_three_passenger_seats(self.VEHICLE)
+
 	def _make_plan(self, rows):
 		doc = frappe.new_doc("Route Plan")
 		doc.title = frappe.generate_hash("RP-CAP", 8)
@@ -447,6 +466,51 @@ class TestRoutePlanCapacitySave(FrappeTestCase):
 			self._row(self.VEHICLE, trip="TRIP-BOTH", direction="RETURN", headcount=3, stop=2),
 		])
 		plan.insert(ignore_permissions=True)
+		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
+
+	def test_a_one_way_run_over_the_limit_is_refused_quoting_the_peak(self):
+		"""The error quotes the peak onboard load, not the stop sum.
+
+		Two camps on one outbound run both board before the first drop, so the peak
+		is the sum: 3 + 2 = 5 on 3 legal seats.
+		"""
+		plan = self._make_plan([
+			self._row(self.VEHICLE, trip="TRIP-PEAK", headcount=3),
+			self._row(self.VEHICLE, trip="TRIP-PEAK", headcount=2),
+		])
+		with self.assertRaises(frappe.ValidationError) as cm:
+			plan.insert(ignore_permissions=True)
+		message = str(cm.exception)
+		self.assertIn("carries 5 passengers", message)
+		self.assertIn("short 2 seat", message)
+
+	def test_the_refusal_quotes_the_trip_occupancy_not_the_headcount_sum(self):
+		"""Whatever the walk says the peak is, that is the number quoted.
+
+		The walk is pinned to 4 so the message can only have come from the peak: the
+		summed headcount of the two rows is 5.
+		"""
+		plan = self._make_plan([
+			self._row(self.VEHICLE, trip="TRIP-PIN", headcount=3),
+			self._row(self.VEHICLE, trip="TRIP-PIN", headcount=2),
+		])
+		with patch.object(route_plan_module, "_trip_peak", return_value=(4, 1)):
+			with self.assertRaises(frappe.ValidationError) as cm:
+				plan.insert(ignore_permissions=True)
+		message = str(cm.exception)
+		self.assertIn("carries 4 passengers", message)
+		self.assertIn("short 1 seat", message)
+		self.assertNotIn("carries 5 passengers", message)
+
+	def test_a_mixed_run_of_27_out_and_27_back_saves_on_a_27_seat_bus(self):
+		"""54 riders in total, never more than 27 aboard at once."""
+		plan = self._make_plan([
+			self._row(self.VEHICLE, trip="TRIP-2601", direction="OUTBOUND", headcount=27, stop=1),
+			self._row(self.VEHICLE, trip="TRIP-2601", direction="RETURN", headcount=27, stop=2),
+		])
+		with patch.object(route_plan_module, "_passenger_limits",
+						  return_value={self.VEHICLE: 27}):
+			plan.insert(ignore_permissions=True)
 		self.assertTrue(frappe.db.exists("Route Plan", plan.name))
 
 	def test_a_return_boarding_before_the_outward_drop_still_overloads(self):
@@ -657,6 +721,10 @@ class TestRoutePlanTimeWindowCapacitySave(FrappeTestCase):
 		super().setUpClass()
 		if not frappe.db.exists("Vehicle", cls.VEHICLE):
 			raise cls.skipTest(cls, f"Fixture vehicle {cls.VEHICLE} missing on this site")
+
+	def setUp(self):
+		super().setUp()
+		pin_three_passenger_seats(self.VEHICLE)
 
 	def _make_plan(self, rows):
 		doc = frappe.new_doc("Route Plan")
@@ -1113,6 +1181,10 @@ class TestSequentialRunsAreWeighedSeparately(FrappeTestCase):
 		super().setUpClass()
 		if not frappe.db.exists("Vehicle", cls.VEHICLE):
 			raise cls.skipTest(cls, f"Fixture vehicle {cls.VEHICLE} missing on this site")
+
+	def setUp(self):
+		super().setUp()
+		pin_three_passenger_seats(self.VEHICLE)
 
 	def _row(self, *, trip, headcount, start, end):
 		return {
