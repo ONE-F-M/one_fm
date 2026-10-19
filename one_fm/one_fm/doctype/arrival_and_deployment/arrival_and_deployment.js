@@ -8,6 +8,10 @@ frappe.ui.form.on("Arrival and Deployment", {
 		if (frm.dashboard) {
 			frm.dashboard.open_document_list = function($link, show_open) {
 				let doctype = $link.attr("data-doctype");
+				if (doctype === "Job Applicant") {
+					frappe.set_route("Form", "Job Applicant", frm.doc.job_applicant);
+					return;
+				}
 				if (doctype && doctype !== "Candidate Country Process") {
 					frappe.route_options = {
 						"candidate_country_process": frm.doc.candidate_country_process
@@ -21,17 +25,11 @@ frappe.ui.form.on("Arrival and Deployment", {
 			};
 		}
 		
-		// Hide Flight and Transport details for Local Hires (no Candidate Country Process)
+		// Hide the ticket and pickup details for Local Hires (no Candidate Country Process)
 		let is_local = !frm.doc.candidate_country_process;
 		frm.toggle_display([
-			'arrival_time',
-			'transportation_manager',
-			'finance',
 			'section_break_flight',
-			'flight_number',
-			'airline',
-			'ticket_attachment',
-			'arrival_airport'
+			'ticket_attachment'
 		], !is_local);
 	},
 	
@@ -45,18 +43,17 @@ frappe.ui.form.on("Arrival and Deployment", {
 				frappe.throw(__("Please ensure Arrival Date is filled before submitting to Onboarding."));
 			}
 			if (frm.doc.candidate_country_process) {
-				if (!frm.doc.arrival_time || !frm.doc.ticket_attachment || !frm.doc.flight_number || !frm.doc.airline || !frm.doc.terminal || !frm.doc.arrival_airport) {
-					frappe.throw(__("Please ensure Arrival Time, Flight Number, Airline, Terminal, Ticket Attachment, and Arrival Airport are filled for Overseas hires before submitting to Onboarding."));
+				if (!frm.doc.ticket_attachment) {
+					frappe.throw(__("Please attach the Ticket for Overseas hires before submitting to Onboarding."));
 				}
 			}
 		}
 
-		if (frappe.selected_workflow_action === "Mark as Joined" || frappe.selected_workflow_action === "Did Not Arrive") {
+		if (["Arrange Pick Up", "Arrived", "Did Not Arrive"].includes(frappe.selected_workflow_action)) {
 			let is_overseas = !!frm.doc.candidate_country_process;
-			if (is_overseas && frappe.session.user !== frm.doc.transportation_manager && frappe.session.user !== "Administrator") {
-				frappe.throw(__("Only the Transportation Manager can perform this action for Overseas hires."));
-			} else if (!is_overseas && frappe.session.user !== frm.doc.general_services && frappe.session.user !== "Administrator") {
-				frappe.throw(__("Only General Services can perform this action for Local hires."));
+			let recruiter_marks_arrival = frappe.selected_workflow_action !== "Arrange Pick Up" && frappe.user.has_role("Recruiter");
+			if (is_overseas && frappe.session.user !== frm.doc.transportation_manager && !frappe.user.has_role("System Manager") && !recruiter_marks_arrival) {
+				frappe.throw(__("Only the Transportation Manager named on this arrival can mark whether the candidate arrived."));
 			}
 		}
 

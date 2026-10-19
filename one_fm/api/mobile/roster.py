@@ -412,14 +412,19 @@ def get_employees():
 		if "Operations Manager" in user_roles:
 			pass			
 		elif "Projects Manager" in user_roles:
-			projects = frappe.get_all("Project", {"project_manager": user_employee.name}, ["name as project"], limit_page_length=9999, order_by="name asc")
-			filters["project"] = ["IN", [project.project for project in projects]]
+			# Only scope the list when the role actually resolves to something. An empty
+			# scope would become `IN ()` and silently return zero employees.
+			projects = [project.project for project in frappe.get_all("Project", {"project_manager": user_employee.name}, ["name as project"], limit_page_length=0, order_by="name asc")]
+			if projects:
+				filters["project"] = ["IN", projects]
 		elif "Site Supervisor" in user_roles:
-			sites = frappe.get_all("Operations Site", {"site_supervisor": user_employee.name}, ["name as site"], limit_page_length=9999, order_by="name asc")
-			filters["site"] = ["IN", [site.site for site in sites]]
+			sites = [site.site for site in frappe.get_all("Operations Site", {"site_supervisor": user_employee.name}, ["name as site"], limit_page_length=0, order_by="name asc")]
+			if sites:
+				filters["site"] = ["IN", sites]
 		elif "Shift Supervisor" in user_roles:
-			shifts = frappe.get_all("Operations Shift Supervisor", {"supervisor": user_employee.name}, ["distinct parent as shift"], limit_page_length=9999, order_by="parent asc")
-			filters["shift"] = ["IN", [shift.shift for shift in shifts]]
+			shifts = [shift.shift for shift in frappe.get_all("Operations Shift Supervisor", {"supervisor": user_employee.name}, ["distinct parent as shift"], limit_page_length=0, order_by="parent asc")]
+			if shifts:
+				filters["shift"] = ["IN", shifts]
 		employees = frappe.get_all("Employee", filters=filters, fields=["name as employee", "employee_name", "employee_id", "custom_is_reliever as is_reliever", "custom_operations_role_allocation as operations_role", "shift", "site", "project"], limit_page_length=9999, order_by="name asc")
 		return employees
 	except Exception as e:

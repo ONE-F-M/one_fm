@@ -249,6 +249,7 @@
    "allow_on_submit": 1,
    "fieldname": "employee",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Employee",
    "options": "Employee",
    "read_only": 1
@@ -1102,6 +1103,7 @@
    "fetch_if_empty": 1,
    "fieldname": "reports_to",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Reports To",
    "mandatory_depends_on": "eval:doc.shift_working==0",
    "options": "Employee"

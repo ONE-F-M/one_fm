@@ -93,7 +93,7 @@ def authorize_magic_link(encrypted_magic_link, doctype, link_for):
 			frappe.log_error(message=str(decrypted_magic_link), title='Magic Link Not exist')
 			frappe.throw(_("Sorry, we could not find what you're looking for :/"), frappe.PermissionError)
 
-def send_magic_link(doctype, name, link_for, recipients, url_prefix, msg, subject):
+def send_magic_link(doctype, name, link_for, recipients, url_prefix, msg, subject, notify=True):
 	'''
 	Method used to send the magic Link for link_for doctype to the doctype
 	args:
@@ -104,6 +104,7 @@ def send_magic_link(doctype, name, link_for, recipients, url_prefix, msg, subjec
 		url_prefix: prefix to the url (example: "/career_history?magic_link=")
 		msg: Message content to the Recipients without the magic link
 		subject: Subject of the email
+		notify: Show the per-recipient confirmation alert. Disabled when sending in bulk.
 	'''
 	# Check if magic_link exists for the Job Applicant and not expired
 	magic_link = get_magic_link(doctype, name, link_for)
@@ -114,8 +115,14 @@ def send_magic_link(doctype, name, link_for, recipients, url_prefix, msg, subjec
 		sender = frappe.get_value("Email Account", filters={"default_outgoing": 1}, fieldname="email_id") or None
 		magic_link_url = get_url(url_prefix) + encrypted_magic_link
 		msg += "<br/><a class='btn btn-primary' href='{0}'>Magic Link</a>".format(magic_link_url)
-		frappe.enqueue(sendemail, sender=sender, recipients=recipients, content=msg, subject=subject, is_external_mail=True)
-		frappe.msgprint(("Email has been sent to the {0} with the magic link <br/><b><a href='{1}' target='_blank'>Click here to see the magic link for {2}</a></b>".format(doctype, magic_link_url, link_for)), alert=True)
+		# Queued after commit so the email can never go out with a link to a Magic Link
+		# record that was rolled back.
+		frappe.enqueue(
+			sendemail, enqueue_after_commit=True, sender=sender, recipients=recipients,
+			content=msg, subject=subject, is_external_mail=True
+		)
+		if notify:
+			frappe.msgprint(("Email has been sent to the {0} with the magic link <br/><b><a href='{1}' target='_blank'>Click here to see the magic link for {2}</a></b>".format(doctype, magic_link_url, link_for)), alert=True)
 		if link_for == "Career History":
 			frappe.db.set_value(doctype, name, 'career_history_ml', magic_link)
 			frappe.db.set_value(doctype, name, 'career_history_ml_url', magic_link_url)

@@ -121,7 +121,7 @@
    "in_list_view": 1,
    "label": "Recruiter",
    "depends_on": "eval:in_list(['Awaiting Recruiter Approval', 'In Process', 'Completed'], doc.workflow_state)",
-   "mandatory_depends_on": "eval:doc.workflow_state && !in_list(['Draft'], doc.workflow_state)",
+   "mandatory_depends_on": "eval:in_list(['In Process', 'Completed'], doc.workflow_state)",
    "options": "User"
   },
   {
@@ -163,7 +163,7 @@
    "in_standard_filter": 1,
    "label": "ERF",
    "depends_on": "eval:in_list(['Awaiting Recruiter Approval', 'In Process', 'Completed'], doc.workflow_state)",
-   "mandatory_depends_on": "eval:in_list(['Awaiting Recruiter Approval', 'In Process', 'Completed'], doc.workflow_state)",
+   "mandatory_depends_on": "eval:in_list(['In Process', 'Completed'], doc.workflow_state)",
    "options": "ERF",
    "search_index": 1
   },
@@ -458,7 +458,7 @@
    "link_fieldname": "project_manpower_request"
   }
  ],
- "modified": "2026-06-21 10:03:46.000000",
+ "modified": "2026-10-08 16:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Project Manpower Request",

@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002614: the manifest's clock arithmetic, and the one field it was doing it on.
+"""the manifest's clock arithmetic, and the one field it was doing it on.
 
 A Route Plan Assignment's ``start_time``/``end_time`` carry two different things: the
 TIME is the daily trip window, the DATE is the multi-day vehicle lock's lifespan (TR-8).
@@ -339,9 +339,9 @@ class TestAMergedRunStopsAtEveryCamp(FrappeTestCase):
 					  self.page)
 
 	def test_the_attendance_trigger_walks_the_runs_camps_in_turn(self):
-		# isMixed is passed true for every camp card. Since WI-002590 a merged run walks
+		# isMixed is passed true for every camp card. A merged run now walks
 		# its camps like any other: each is offered only once the one before it is
-		# COMPLETE, which is WI-002074's actual concern, while a second camp's passengers
+		# COMPLETE, which is the original concern, while a second camp's passengers
 		# can still mark attendance - previously they never could.
 		self.assertIn("o.vehicleLabel, true, leg.qoa_time", self.page)
 		self.assertIn("position === activeIndex && !isActive", self.page)
