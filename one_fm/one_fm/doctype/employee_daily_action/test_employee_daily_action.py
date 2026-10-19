@@ -5,7 +5,7 @@ from unittest import mock, TestCase
 from types import SimpleNamespace
 
 import frappe
-# from frappe.tests.utils import FrappeTestCase
+from frappe.tests.utils import FrappeTestCase
 
 
 
@@ -348,3 +348,47 @@ class TestNotifyReportsToOnAbsenceOfReport(TestCase):
         self._run_notifier()
         
         self.assertFalse(self.mock_sendemail.called)
+
+
+class TestTodaysPlanReferenceValidation(FrappeTestCase):
+	"""HD-1879549: the `reference` column of Todays Plan and Accomplishments holds a
+	document name copied from ToDo.reference_name, not a person's name.
+
+	It was once a Data field with `options = "Name"`, which makes Frappe run
+	`frappe.utils.validate_name()` over it (see BaseDocument._validate_data_fields).
+	That validator only accepts letters, digits, underscore, apostrophe, hyphen and
+	single spaces, so any ToDo pointing at a Contract, a Roster Employee Action or a
+	Default Shift Checker blocked the whole Employee Daily Action from being saved
+	with "<name> is not a valid Name".
+
+	Do not give this field a `options` validator again.
+	"""
+
+	# real production document names that the "Name" validator rejected
+	DOCUMENT_NAMES = [
+		"Reem Hotel Management & Real Estate Service Co. W.L.L.-Reem Hotel - Alshuwaikh-",
+		"WTE O&M Kuwait Sewage Treatment S.P.C.-WTE - 1820-",
+		"2026-11-01|2026-11-30|HR-EMP-03965-1884253",
+	]
+
+	def test_reference_field_has_no_name_validator(self):
+		reference = frappe.get_meta("Todays Plan and Accomplishments").get_field("reference")
+		self.assertFalse(
+			reference.options,
+			"`reference` holds a document name — an `options` validator rejects legitimate names",
+		)
+
+	def test_document_names_are_rejected_by_the_name_validator(self):
+		"""Pins why the fix matters: every name above fails `validate_name()`, so
+		re-adding the validator brings the save blocker straight back."""
+		for document_name in self.DOCUMENT_NAMES:
+			with self.subTest(document_name=document_name):
+				self.assertFalse(frappe.utils.validate_name(document_name))
+
+	def test_document_names_pass_validation(self):
+		for document_name in self.DOCUMENT_NAMES:
+			with self.subTest(document_name=document_name):
+				row = frappe.new_doc("Todays Plan and Accomplishments")
+				row.reference_type = "Contracts"
+				row.reference = document_name
+				row._validate_data_fields()
