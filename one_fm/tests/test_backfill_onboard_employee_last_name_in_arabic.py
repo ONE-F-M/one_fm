@@ -32,6 +32,18 @@ def _insert(doctype, name, **values):
 
 
 class TestBackfillOnboardEmployeeLastNameInArabic(FrappeTestCase):
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		# Both are Data columns on live sites (one is an Employee custom field). A bare test
+		# site may not have them yet; add them the way Frappe would so the patch has data.
+		for doctype, fieldname in (
+			("Employee", EMPLOYEE_FIELD),
+			("Onboard Employee", ONBOARD_FIELD),
+		):
+			if not frappe.db.has_column(doctype, fieldname):
+				frappe.db.add_column(doctype, fieldname, "varchar(140)")
+
 	def setUp(self):
 		self.emp_with = _insert(
 			"Employee", "WI3718-EMP-1", employee_name="With Arabic", **{EMPLOYEE_FIELD: "الأول"}
