@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002545: the manifest's trip duration, and the navigation around it.
+"""the manifest's trip duration, and the navigation around it.
 
 AC1 asks for the Active Trip duration to be CHECKED against several vehicles rather than
 changed. Checking it found a real defect.
@@ -10,7 +10,7 @@ strings. Those stamps carry two different things: the TIME is the daily trip win
 DATE is the multi-day lock's lifespan (TR-8). Sorting them whole therefore sorts by the
 LOCK, not by when the bus runs, so a vehicle whose rows carry different lock dates had its
 span measured between two unrelated days and then reduced ``% 86400`` into an arbitrary
-remainder. WI-002614 fixed exactly this mistake on the manifest page; this is its
+remainder. Exactly this mistake was fixed on the manifest page; this is its
 server-side twin.
 
 What that looked like on the live board, before and after:
@@ -274,7 +274,7 @@ class TestTripTimeIsEachRunEndToEnd(FrappeTestCase):
 
 	def test_driving_can_never_exceed_the_shift_it_happens_in(self):
 		# The invariant that would have caught this: eight hours of driving inside a
-		# two-hour shift is what WI-002614 was reported for.
+		# two-hour shift is what was reported.
 		windows = (("T1", "04:50", "05:59"), ("T2", "06:00", "08:06"))
 		spans = self._spans(self._rows(*windows), [])
 		shift = _clock_gap("2026-09-20 04:50:00", "2026-09-20 08:06:00")

@@ -171,9 +171,11 @@ def extend_resignation(
     reason: str = None,
     extended_date: str = None,
     resignation_id: str = None,
-    attachment: str = None,
+    # mobile sends {attachment_name, attachment} as an object
+    attachment: str | dict = None,
     attachment_name: str = None,
-    data: str = None,
+    # mobile can send this as an object too
+    data: str | dict = None,
     **kwargs
 ):
     """Create an Employee Resignation Date Adjustment for the employee's active resignation."""
@@ -267,11 +269,13 @@ def extend_resignation(
 def withdraw_resignation(
     employee_id: str = None,
     reason: str = None,
-    attachment: str = None,
+    # mobile sends {attachment_name, attachment} as an object
+    attachment: str | dict = None,
     attachment_name: str = None,
     employee_resignation: str = None,
     supervisor: str = None,
-    data: str = None,
+    # mobile can send this as an object too
+    data: str | dict = None,
     **kwargs
 ):
     try:
@@ -451,7 +455,7 @@ def get_supervisor_dropdown():
 
 
 @frappe.whitelist()
-def get_my_active_resignation(employee_id=None, **kwargs):
+def get_my_active_resignation(employee_id: str | None = None, **kwargs):
     """Returns a single resignation record the employee should act on next,
     prioritising states that require employee action over waiting states."""
     input_id = get_param("employee_id", employee_id)
@@ -478,13 +482,17 @@ def get_my_active_resignation(employee_id=None, **kwargs):
     if not resignations:
         return None
 
-
-
-    for record in resignations:
-        if record["workflow_state"] in EMPLOYEE_ACTION_STATES:
-            return record
-
-    return resignations[0]
+    record = next(
+        (r for r in resignations if r["workflow_state"] in EMPLOYEE_ACTION_STATES),
+        resignations[0],
+    )
+    record["withdrawal_state"] = frappe.db.get_value(
+        "Employee Resignation Withdrawal",
+        {"employee_resignation": record["name"]},
+        "workflow_state",
+        order_by="creation desc",
+    )
+    return record
 
 
 @frappe.whitelist()
@@ -511,6 +519,29 @@ def get_all_my_resignations(employee_id=None, **kwargs):
 
 
 @frappe.whitelist()
+def get_resignation_by_name(resignation_id: str = None, **kwargs):
+    """Return one Employee Resignation belonging to the session user's employee."""
+    resignation_id = get_param("resignation_id", resignation_id)
+    if not resignation_id:
+        frappe.throw(_("resignation_id is required"), frappe.ValidationError)
+
+    employee_name = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "name")
+    if not employee_name:
+        frappe.throw(_("No employee record linked to the current user"), frappe.ValidationError)
+
+    records = frappe.get_list(
+        "Employee Resignation",
+        filters={"name": resignation_id, "employee": employee_name},
+        fields=["name", "workflow_state", "resignation_initiation_date", "relieving_date", "creation"],
+        limit=1
+    )
+    if not records:
+        frappe.throw(_("Resignation record not found"), frappe.DoesNotExistError)
+
+    return records[0]
+
+
+@frappe.whitelist()
 def get_employee_supervisor(employee_id: str = None, **kwargs):
     from one_fm.utils import get_approver
     input_id = get_param("employee_id", employee_id)
@@ -523,7 +554,7 @@ def get_employee_supervisor(employee_id: str = None, **kwargs):
     # Employee Resignation / Withdrawal / Date Adjustment).
     shift_working = frappe.db.get_value("Employee", employee_name, "shift_working") or 0
 
-    approver_name = get_approver(employee_name)
+    approver_name = get_approver(employee_name, skip_shift_supervisor=True)
     if not approver_name:
         return {"shift_working": shift_working}
 

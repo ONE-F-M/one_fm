@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""Tests for the Transportation Manifest page payload (WI-001766).
+"""Tests for the Transportation Manifest page payload.
 
 The manifest identifies the assigned bus as "<plate>, <model>" so a driver or
 field supervisor does not have to look up the vehicle master on site. The string
@@ -210,6 +210,6 @@ class TestTheManifestReadsAsOneJourney(FrappeTestCase):
 	def test_the_drive_home_runs_from_the_last_stop_reached(self):
 		# It leaves from prevTime - the last stop the bus called at - and is now TIMED by
 		# that stop too: a stop's minutes describe the leg out of it, so the ride home is
-		# the last stop's transit and buffer rather than a bare clock gap (WI-002614).
+		# the last stop's transit and buffer rather than a bare clock gap.
 		self.assertIn("renderTransit(calcTransit(prevTime, lastTimeISO, prevStop))", self.page)
 		self.assertNotIn("renderTransit(calcTransit(prevTime, lastTimeISO))", self.page)
