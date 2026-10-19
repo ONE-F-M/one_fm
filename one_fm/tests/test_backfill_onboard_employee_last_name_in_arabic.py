@@ -87,6 +87,10 @@ class TestBackfillOnboardEmployeeLastNameInArabic(FrappeTestCase):
 			"Onboard Employee", "WI3718-OE-DANGLING", employee="WI3718-EMP-DOES-NOT-EXIST"
 		)
 
+	def tearDown(self):
+		# Seeded rows use fixed names, so discard them after every test.
+		frappe.db.rollback()
+
 	def _value(self, name):
 		return frappe.db.get_value("Onboard Employee", name, ONBOARD_FIELD)
 
