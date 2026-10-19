@@ -42,7 +42,7 @@ class TestBackfillOnboardEmployeeLastNameInArabic(FrappeTestCase):
 			("Onboard Employee", ONBOARD_FIELD),
 		):
 			if not frappe.db.has_column(doctype, fieldname):
-				frappe.db.add_column(doctype, fieldname, "varchar(140)")
+				frappe.db.sql_ddl(f"ALTER TABLE `tab{doctype}` ADD COLUMN `{fieldname}` varchar(140)")
 
 	def setUp(self):
 		self.emp_with = _insert(
