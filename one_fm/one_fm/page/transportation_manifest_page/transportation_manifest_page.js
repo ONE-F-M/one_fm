@@ -134,29 +134,82 @@ frappe.pages["transportation-manifest-page"].on_page_load = function (wrapper) {
 			// Render the manifest
 			renderManifest($container, r.message);
 		},
-		error: function () {
-			$container.html(`
-				${STATE_STYLES}
-				<div class="mfst-state-screen">
-					<span class="material-symbols-outlined mfst-state-icon error">wifi_off</span>
-					<h2>Unable to Load Manifest</h2>
-					<p>
-						We couldn't reach the server. Please check your internet connection and try again.<br>
-						If the problem continues, contact the Dispatcher for help.
-					</p>
-					<div class="mfst-state-btn-group">
-						<button class="mfst-state-btn mfst-state-btn-primary" onclick="location.reload()">
-							<span class="material-symbols-outlined" style="font-size:18px">refresh</span>
-							Try Again
-						</button>
-						<a href="/app/transportation-schedule" class="mfst-state-btn mfst-state-btn-secondary">
-							Go to Schedule
-						</a>
-					</div>
+	}).fail(renderLoadError);
+
+	// A failed fetch is not automatically a dead connection. A supervisor who was never
+	// granted Route Plan access, and a link to a plan that has since been deleted, both
+	// land here too — and telling either of them to check their internet sends the
+	// problem to the wrong person. Name the actual failure.
+	function renderLoadError(xhr) {
+		const status = (xhr && xhr.status) || 0;
+
+		let icon = "wifi_off";
+		let title = __("Unable to Load Manifest");
+		let body =
+			__("We couldn't reach the server. Please check your internet connection and try again.") +
+			"<br>" +
+			__("If the problem continues, contact the Dispatcher for help.");
+
+		if (status === 403) {
+			icon = "lock";
+			title = __("You Don't Have Access to This Manifest");
+			body =
+				__("Your account isn't permitted to open Transportation plans.") +
+				"<br>" +
+				__("Ask the Dispatcher to request Route Plan access for you.");
+		} else if (status === 404) {
+			icon = "search_off";
+			title = __("Manifest Not Found");
+			body =
+				__("Plan {0} no longer exists — it may have been deleted, or this link is out of date.", [
+					`<strong>${frappe.utils.escape_html(planName)}</strong>`,
+				]) +
+				"<br>" +
+				__("Open the Transportation Schedule and pick the plan again.");
+		} else if (status === 417) {
+			icon = "error_outline";
+			title = __("Something Went Wrong");
+			body =
+				serverMessage(xhr) ||
+				__("We couldn't load this manifest. Please try again or contact the Dispatcher.");
+		} else if (status >= 500) {
+			icon = "error_outline";
+			title = __("Server Error");
+			body =
+				__("The server couldn't build this manifest.") +
+				"<br>" +
+				__("Please try again in a moment, or contact the Dispatcher if it keeps failing.");
+		}
+
+		$container.html(`
+			${STATE_STYLES}
+			<div class="mfst-state-screen">
+				<span class="material-symbols-outlined mfst-state-icon error">${icon}</span>
+				<h2>${title}</h2>
+				<p>${body}</p>
+				<div class="mfst-state-btn-group">
+					<button class="mfst-state-btn mfst-state-btn-primary" onclick="location.reload()">
+						<span class="material-symbols-outlined" style="font-size:18px">refresh</span>
+						${__("Try Again")}
+					</button>
+					<a href="/app/transportation-schedule" class="mfst-state-btn mfst-state-btn-secondary">
+						${__("Go to Schedule")}
+					</a>
 				</div>
-			`);
-		},
-	});
+			</div>
+		`);
+	}
+
+	// frappe.throw() ships the real reason back in _server_messages; show that rather
+	// than a house-written guess at what the server objected to.
+	function serverMessage(xhr) {
+		try {
+			const messages = JSON.parse((xhr.responseJSON || {})._server_messages || "[]");
+			return frappe.utils.escape_html(JSON.parse(messages[0]).message || "");
+		} catch (e) {
+			return "";
+		}
+	}
 };
 
 
@@ -204,7 +257,7 @@ function renderManifest($container, data) {
 		return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 	}
 
-	// WI-001766: a driver or supervisor identifies the bus on site by its plate and
+	// a driver or supervisor identifies the bus on site by its plate and
 	// model, so both are shown as "<plate>, <model>". A vehicle whose master record
 	// carries no model shows the plate alone - no trailing comma.
 	function vehicleString(meta) {
@@ -243,7 +296,7 @@ function renderManifest($container, data) {
 	// camp. Both persist server-side (active_stop_sequence) via the shared manifest
 	// API, then we sync the local pointer and re-render the current route.
 	// The server answers with every run's pointer, so only the run that was acted on
-	// moves and its neighbours on the same vehicle keep their own state (WI-002590 AC1).
+	// moves and its neighbours on the same vehicle keep their own state.
 	function _setActiveStopAndRerender(vehicleLabel, reply) {
 		const meta = (ROUTE_DATA.vehicleMeta ?? {})[vehicleLabel];
 		if (meta && reply) {
@@ -253,9 +306,9 @@ function renderManifest($container, data) {
 		if (activeView) renderRoute(activeView);
 	}
 
-	// WI-002789: one call for the whole stop, not one per chip. Every row at a stop belongs
+	// One call for the whole stop, not one per chip. Every row at a stop belongs
 	// to the same parent manifest, so twenty individual check-ins are twenty reads and
-	// twenty saves of one document - slow at a departure, and the exact shape WI-002538's
+	// twenty saves of one document - slow at a departure, and the exact shape the
 	// stale-timestamp retry exists for.
 	window._mfst_markAllPresent = function (button) {
 		let rowIds;
@@ -319,7 +372,7 @@ function renderManifest($container, data) {
 		});
 	};
 
-	// WI-002789: the row ids at a stop that nobody has checked in yet. A chip already
+	// The row ids at a stop that nobody has checked in yet. A chip already
 	// carrying an attendance status is one the driver decided on; the bulk action means
 	// "everyone I have not marked yet is here", so it must not overwrite that.
 	function uncheckedRowIds(employees) {
@@ -501,7 +554,7 @@ function renderManifest($container, data) {
 				bufferMinutes: v.bufferMinutes || 0,
 				// The label's direction reads MIXED once a card is merged, which says how
 				// the card is scheduled and not whether its riders board here or leave
-				// here. The server resolves that separately (WI-002074).
+				// here. The server resolves that separately.
 				ownDirection: shipmentOwnDirections[parsed.raw] || parsed.direction
 			});
 		});
@@ -598,7 +651,7 @@ function renderManifest($container, data) {
 		}
 	});
 
-	// ── Tab search, arrows and overflow indicators (WI-002544) ──────────────
+	// ── Tab search, arrows and overflow indicators ──────────────
 	// The tabs carry what they can be searched on, so filtering never has to go back
 	// to ROUTE_DATA and cannot disagree with what is rendered.
 	parsed.forEach((pr) => {
@@ -746,11 +799,11 @@ function renderManifest($container, data) {
 		const totalTimeStr = m.totalDuration ? fmtDuration(m.totalDuration) : "—";
 		const tripTimeStr = m.travelDuration ? fmtDuration(m.travelDuration) : "—";
 
-		// ── What each run occupies, read once (WI-002545) ───────────────────────
+		// ── What each run occupies, read once ───────────────────────
 		// The breakdown popover, the jump pills and the timeline strip are three views
 		// of the same fact, so they are measured once rather than three times - a run
 		// that read 2h05m in the tooltip and drew a different width would be worse than
-		// not drawing it. Time-of-day only, for the reason WI-002614 documents: the DATE
+		// not drawing it. Time-of-day only, for the reason below: the DATE
 		// half of these stamps is a lock lifespan, not the day the bus runs.
 		const tripSpans = allTrips.map((trip, i) => {
 			// A run is measured from when the bus LEAVES to when it is BACK - the same
@@ -893,7 +946,7 @@ function renderManifest($container, data) {
 			// why the Trip Builder prints them on the same row as "Next Stop". Passing
 			// the arrival stop printed the NEXT leg's minutes above every stop: S-101's
 			// camp leg is 20 drive + 5 buffer and the manifest read "15 min drive, 2 min
-			// buffer" - Alghanim's figures, one leg early (WI-002614 AC3).
+			// buffer" - Alghanim's figures, one leg early.
 			//
 			// Camp legs spell the same two fields in snake_case, so both are accepted
 			// rather than making every caller normalise one of them.
@@ -932,7 +985,7 @@ function renderManifest($container, data) {
 			// them is the thing the driver does at that stop. Which one used to be decided
 			// by enumerating OUTBOUND and RETURN, so a MIXED card matched neither and both
 			// survived - every merged stop appeared twice, once as PICK UP and once as
-			// DROP OFF (WI-002074).
+			// DROP OFF.
 			const actualSiteStops = [];
 			tripStops.forEach(stop => {
 				const own = stop.ownDirection || stop.direction;
@@ -1042,7 +1095,7 @@ function renderManifest($container, data) {
 				});
 			});
 
-			// This RUN's pointer, not the vehicle's (WI-002590 AC1). A vehicle drives
+			// This RUN's pointer, not the vehicle's. A vehicle drives
 			// several runs a day and they used to share one number, so triggering the
 			// check on S-801 locked S-802 alongside it and completing one reopened the
 			// other. The map is seeded from the old flat field server-side, so a check
@@ -1183,7 +1236,7 @@ function renderManifest($container, data) {
 	// Per-camp DEPART card (MA2-11). `camp` = { seq, label, employees }.
 	// A merged run reads differently from an ordinary one: it leaves one origin, calls at
 	// several stops dropping and collecting, and comes back. These three answer "is it one",
-	// "how many stops does it make" and "how many people does it carry" (WI-002074).
+	// "how many stops does it make" and "how many people does it carry".
 	function isMixedRun(meta) {
 		return String((meta && meta.trip_direction) || "").toLowerCase() === "mixed";
 	}
@@ -1212,7 +1265,7 @@ function renderManifest($container, data) {
 		return seen.size;
 	}
 
-	// ── A merged run's itinerary (WI-002074) ──
+	// ── A merged run's itinerary ──
 	// One list, top to bottom, in the order the driver drives it:
 	//   {Origin Depart (Boarding)} -> {stop} -> ... -> {Final Return}
 	// Each stop is one card: an Outward card's riders are set down there, a Return card's
@@ -1251,7 +1304,7 @@ function renderManifest($container, data) {
 		// to collect at Mangaf at all.
 		//
 		// isMixed stays true for every camp card. That is what keeps the attendance
-		// trigger on the FIRST pickup only (WI-002074) - renderDepartCard reads it to
+		// trigger on the FIRST pickup only - renderDepartCard reads it to
 		// decide, so a mid-route camp still cannot start a check.
 		const campGroups = o.campGroups || [];
 		const campLegs = o.campLegs || [];
@@ -1317,7 +1370,7 @@ function renderManifest($container, data) {
 		return value ? String(value).slice(0, 5) : "";
 	}
 
-	// ── These timestamps carry a DATE that is not the run's day (WI-002614) ──────
+	// ── These timestamps carry a DATE that is not the run's day ──────
 	// A Route Plan Assignment's start_time/end_time hold two different things: the TIME
 	// is the daily trip window, the DATE is the multi-day vehicle lock's lifespan (TR-8).
 	// Two stops of one run therefore routinely carry unrelated dates, and anything that
@@ -1363,7 +1416,7 @@ function renderManifest($container, data) {
 		// On an ordinary run the check walks camp by camp, so each camp in turn can be
 		// triggered. A merged run is one vehicle leaving one origin: the second criterion
 		// puts the button in the very first DEPART card and nowhere else, so a driver
-		// cannot start a check at a mid-route pickup they have not reached (WI-002074).
+		// cannot start a check at a mid-route pickup they have not reached.
 		//
 		// Decided by the camp's POSITION in the run, not by its seq. `seq` is the rider's
 		// stop number across the whole run, not an ordinal for the camp they board at, so
@@ -1382,7 +1435,7 @@ function renderManifest($container, data) {
 		// camp and nowhere else, on the reading that a merged run leaves ONE origin - but
 		// it can load at two, and then the second camp's passengers could never mark
 		// attendance at all: the card stayed "Locked until triggered" for the rest of the
-		// day. WI-002074's actual concern still holds either way, because a camp is only
+		// day. The original concern still holds either way, because a camp is only
 		// offered once the one before it is COMPLETE.
 		const position = (campIndex === null || campIndex === undefined) ? null : campIndex;
 		const canTrigger = position !== null && position === activeIndex && !isActive;
@@ -1684,7 +1737,7 @@ function renderManifest($container, data) {
 		}
 	}
 
-	// AC3 (WI-002545): a vehicle running five trips is a long page, and the pills are
+	// AC3: a vehicle running five trips is a long page, and the pills are
 	// the index to it. Delegated from the container so the handler survives every
 	// re-render rather than being rebound with the tabs.
 	$container.on("click", ".mfst-jump-pill", function () {
@@ -1696,7 +1749,7 @@ function renderManifest($container, data) {
 		$(this).addClass("active");
 	});
 
-	// ── One check-in write at a time (WI-002538) ──
+	// ── One check-in write at a time ──
 	// Every chip on the sheet writes through the SAME parent Transportation Manifest:
 	// the API reads the whole manifest, stamps one row and saves it. Two of those
 	// overlapping — a supervisor tapping Present then Pass, or working down a camp
@@ -1839,44 +1892,107 @@ function renderManifest($container, data) {
 	// ── REPLACEMENT MODAL LOGIC ──
 	let availableRelievers = [];
 
-	function formatRelieverOption(r) {
-		if (r.shift_name && r.shift_start_time && r.shift_end_time) {
-			return r.employee_name + " - " + r.shift_name + " - " + r.shift_start_time + " to " + r.shift_end_time;
-		}
-		if (r.designation) {
-			return r.employee_name + " (" + r.designation + ")";
-		}
-		return r.employee_name;
+	let selectedRelieverId = null;
+	let relieverFilter = "all";
+
+	function relieverTiming(start, end) {
+		return start && end ? `${start} → ${end}` : "—";
 	}
 
-	function populateRelieverSelect(relievers) {
-		const sel = $container.find("#mfst-relieverSelect")[0];
-		sel.innerHTML = "";
+	function relieverCardHtml(r) {
+		const badge = r.is_ot
+			? `<span class="mfst-reliever-badge mfst-reliever-badge-ot">⚡ ${__("OT Assigned")}</span>`
+			: `<span class="mfst-reliever-badge mfst-reliever-badge-regular">⚪ ${__("Regular Shift")}</span>`;
+		const overlapTag = r.overlap
+			? `<span class="mfst-reliever-overlap-tag">⚠️ ${__("Shift Overlap")}</span>`
+			: "";
+		const lines = [[__("Allocated Shift (Master)"), r.master_shift || "—"]];
+		if (r.has_roster) {
+			lines.push([__("Today's Assigned Shift"), r.shift_name || "—"]);
+			lines.push([__("Shift Timing"), relieverTiming(r.shift_start_time, r.shift_end_time)]);
+			if (r.ot_shift) {
+				lines.push([__("Overtime Shift"), `${r.ot_shift} (${relieverTiming(r.ot_start_time, r.ot_end_time)})`]);
+			}
+		} else {
+			lines.push([__("Today's Assigned Shift"), __("Not rostered today")]);
+		}
+		const linesHtml = lines.map(([label, value]) =>
+			`<div class="mfst-reliever-line"><span class="mfst-reliever-label">${escHtml(label)}</span><span class="mfst-reliever-label">:</span><span class="mfst-reliever-value">${escHtml(value)}</span></div>`
+		).join("");
+		const search = [r.employee_name, r.master_shift, r.shift_name, r.ot_shift].filter(Boolean).join(" ").toLowerCase();
+		return `<button type="button" class="mfst-reliever-card" aria-pressed="false"
+				data-reliever="${escHtml(r.name)}" data-search="${escHtml(search)}" data-ot="${r.is_ot ? 1 : 0}">
+			<div class="mfst-reliever-head">
+				<span class="mfst-reliever-name">${escHtml(r.employee_name || r.name)}</span>
+				<span class="mfst-reliever-tags">${overlapTag}${badge}</span>
+			</div>
+			${linesHtml}
+		</button>`;
+	}
 
-		if (relievers.length === 0) {
-			const opt = document.createElement("option");
-			opt.value = "";
-			opt.textContent = "No available Rambo Relievers found for this time slot.";
-			sel.appendChild(opt);
-			sel.disabled = true;
-			$container.find("#mfst-btn-confirm-replace").prop("disabled", true);
+	function setRelieverListMessage(msg) {
+		const list = $container.find("#mfst-relieverList")[0];
+		list.innerHTML = `<div class="mfst-reliever-empty">${escHtml(msg)}</div>`;
+	}
+
+	function applyRelieverFilter() {
+		const list = $container.find("#mfst-relieverList")[0];
+		const q = ($container.find("#mfst-relieverSearch").val() || "").trim().toLowerCase();
+		let shown = 0;
+		list.querySelectorAll(".mfst-reliever-card").forEach(card => {
+			const isOt = card.dataset.ot === "1";
+			const match = (!q || card.dataset.search.includes(q))
+				&& (relieverFilter === "all" || (relieverFilter === "ot") === isOt);
+			card.hidden = !match;
+			if (match) shown++;
+		});
+		const empty = list.querySelector(".mfst-reliever-nomatch");
+		if (empty) empty.hidden = shown > 0 || !availableRelievers.length;
+	}
+
+	function selectReliever(relieverId) {
+		selectedRelieverId = relieverId;
+		const reliever = availableRelievers.find(r => r.name === relieverId);
+		$container.find(".mfst-reliever-card").each(function() {
+			const on = this.dataset.reliever === relieverId;
+			this.classList.toggle("is-selected", on);
+			this.setAttribute("aria-pressed", on ? "true" : "false");
+		});
+		const banner = $container.find("#mfst-relieverOverlapBanner")[0];
+		banner.hidden = !(reliever && reliever.overlap);
+		banner.textContent = reliever && reliever.overlap
+			? `⚠️ ${__("Shift Overlap")}: ${reliever.overlap_note || ""} ${__("You can still assign this reliever.")}`
+			: "";
+		// Non-blocking: an overlapping reliever can still be confirmed.
+		$container.find("#mfst-btn-confirm-replace").prop("disabled", !reliever);
+	}
+
+	function populateRelieverList(relievers) {
+		if (!relievers.length) {
+			setRelieverListMessage(__("No available Rambo Relievers found for this time slot."));
 			return;
 		}
-
-		sel.disabled = false;
-		const placeholder = document.createElement("option");
-		placeholder.value = "";
-		placeholder.textContent = "-- Select Reliever --";
-		sel.appendChild(placeholder);
-
-		for (const r of relievers) {
-			const opt = document.createElement("option");
-			opt.value = r.name;
-			opt.textContent = formatRelieverOption(r);
-			sel.appendChild(opt);
-		}
-		$container.find("#mfst-btn-confirm-replace").prop("disabled", false);
+		const list = $container.find("#mfst-relieverList")[0];
+		list.innerHTML = relievers.map(relieverCardHtml).join("")
+			+ `<div class="mfst-reliever-empty mfst-reliever-nomatch" hidden>${escHtml(__("No reliever matches the search or filter."))}</div>`;
+		applyRelieverFilter();
 	}
+
+	$container.on("click", ".mfst-reliever-card", function() {
+		selectReliever(this.dataset.reliever);
+	});
+
+	$container.on("input", "#mfst-relieverSearch", applyRelieverFilter);
+
+	$container.on("click", ".mfst-reliever-filter-btn", function() {
+		relieverFilter = this.dataset.filter;
+		$container.find(".mfst-reliever-filter-btn").each(function() {
+			const on = this.dataset.filter === relieverFilter;
+			this.classList.toggle("is-selected", on);
+			this.setAttribute("aria-pressed", on ? "true" : "false");
+		});
+		applyRelieverFilter();
+	});
 
 	function getEmpIdFromRowId(rowId) {
 		for (const emps of Object.values(shipmentEmployees)) {
@@ -1909,13 +2025,12 @@ function renderManifest($container, data) {
 
 	function openReplacementModal(rowId, empName) {
 		$container.find("#mfst-replaceOrigName").text(empName);
-		const sel = $container.find("#mfst-relieverSelect")[0];
-		sel.innerHTML = "";
-		const loadingOpt = document.createElement("option");
-		loadingOpt.value = "";
-		loadingOpt.textContent = "Loading available relievers...";
-		sel.appendChild(loadingOpt);
-		$container.find("#mfst-btn-confirm-replace").prop("disabled", true).text("Confirm Replacement");
+		availableRelievers = [];
+		$container.find("#mfst-relieverSearch").val("");
+		$container.find(".mfst-reliever-filter-btn[data-filter='all']").trigger("click");
+		selectReliever(null);
+		setRelieverListMessage(__("Loading available relievers..."));
+		$container.find("#mfst-btn-confirm-replace").prop("disabled", true).text(__("Confirm Replacement"));
 		$container.find("#mfst-replacementModal").addClass("active");
 
 		// Resolve shift/site for this employee
@@ -1924,28 +2039,17 @@ function renderManifest($container, data) {
 		window._mfst_currentReplacementShift = empShiftInfo.shift;
 		window._mfst_currentReplacementSite = empShiftInfo.site;
 
-		const routes = ROUTE_DATA.response?.routes || [];
-		const firstTime = routes[0]?.vehicleStartTime;
-		let date = new Date().toISOString().split("T")[0];
-		if (firstTime) {
-			date = new Date(firstTime).toLocaleDateString("en-CA", { timeZone: "Asia/Kuwait" });
-		}
-
+		// The server takes the date, covered shift and trip window from the row.
 		frappe.call({
 			method: "one_fm.one_fm.page.transportation_schedule.transportation_schedule.get_available_rambo_relievers",
-			args: { shift_name: empShiftInfo.shift, date: date },
+			args: { row_name: rowId },
 			async: true,
 			callback: function(r) {
 				availableRelievers = r.message || [];
-				populateRelieverSelect(availableRelievers);
+				populateRelieverList(availableRelievers);
 			},
 			error: function() {
-				const errSel = $container.find("#mfst-relieverSelect")[0];
-				errSel.innerHTML = "";
-				const errOpt = document.createElement("option");
-				errOpt.value = "";
-				errOpt.textContent = "Error loading relievers.";
-				errSel.appendChild(errOpt);
+				setRelieverListMessage(__("Error loading relievers."));
 			}
 		});
 	}
@@ -1958,10 +2062,9 @@ function renderManifest($container, data) {
 	$container.on("click", "#mfst-btn-close-replacement", closeReplacementModal);
 
 	$container.on("click", "#mfst-btn-confirm-replace", function() {
-		const selVal = $container.find("#mfst-relieverSelect").val();
-		if (!selVal) return;
+		if (!selectedRelieverId) return;
 
-		const reliever = availableRelievers.find(r => r.name === selVal);
+		const reliever = availableRelievers.find(r => r.name === selectedRelieverId);
 		if (!reliever) return;
 
 		const rowId = currentCheckInEmpId;
@@ -2093,7 +2196,7 @@ function getManifestHTML() {
 				</div>
 			</div>
 
-			<!-- VEHICLE TAB BAR (WI-002544) -->
+			<!-- VEHICLE TAB BAR -->
 			<div class="mfst-tab-bar-wrapper">
 				<!-- AC2: a fleet of twenty-five tabs is a scroll, not a list. Matching
 				     on id, plate and driver because those are the three things a
@@ -2232,9 +2335,17 @@ function getManifestHTML() {
 						<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;margin-right:4px">group</span>
 						Select Available Reliever
 					</div>
-					<select id="mfst-relieverSelect" class="mfst-reliever-select">
-						<option value="">Loading...</option>
-					</select>
+					<div class="mfst-tab-search mfst-reliever-search">
+						<span class="material-symbols-outlined mfst-tab-search-icon">search</span>
+						<input type="text" id="mfst-relieverSearch" placeholder="${__("Search reliever name or shift")}">
+					</div>
+					<div class="mfst-reliever-filter" role="group" aria-label="${__("Filter relievers")}">
+						<button type="button" class="mfst-reliever-filter-btn is-selected" data-filter="all" aria-pressed="true">${__("All")}</button>
+						<button type="button" class="mfst-reliever-filter-btn" data-filter="regular" aria-pressed="false">${__("Regular")}</button>
+						<button type="button" class="mfst-reliever-filter-btn" data-filter="ot" aria-pressed="false">${__("Overtime")}</button>
+					</div>
+					<div id="mfst-relieverOverlapBanner" class="mfst-reliever-banner" role="status" hidden></div>
+					<div id="mfst-relieverList" class="mfst-reliever-list"></div>
 					<button class="mfst-rambo-btn mfst-rambo-btn-yes" id="mfst-btn-confirm-replace" style="width:100%;margin-top:14px;justify-content:center">
 						<span class="material-symbols-outlined" style="font-size:20px">check_circle</span>
 						Confirm Replacement
@@ -2261,6 +2372,8 @@ function getManifestCSS() {
 			--mfst-green-dim: rgba(22, 163, 74, 0.10);
 			--mfst-red: #dc2626;
 			--mfst-red-dim: rgba(220, 38, 38, 0.08);
+			--mfst-amber: #d97706;
+			--mfst-amber-dim: rgba(217, 119, 6, 0.12);
 			--mfst-blue: #2563eb;
 			--mfst-blue-dim: rgba(37, 99, 235, 0.08);
 			--mfst-purple: #c2410c;
@@ -2313,7 +2426,7 @@ function getManifestCSS() {
 		.mfst-tab-bar { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 0 8px; gap: 4px; scroll-behavior: smooth; flex: 1; }
 		.mfst-tab-bar::-webkit-scrollbar { display: none; }
 
-		/* ── Vehicle tab navigation (WI-002544) ───────────────────────────── */
+		/* ── Vehicle tab navigation ───────────────────────────── */
 		.mfst-tab-search {
 			display: flex; align-items: center; gap: 6px;
 			padding: 6px 12px 0 12px;
@@ -2389,7 +2502,7 @@ function getManifestCSS() {
 		.mfst-trip-group { border: 2px solid var(--mfst-blue); border-radius: 16px; margin-bottom: 16px; overflow: hidden; background: var(--mfst-bg-card); }
 		.mfst-trip-group.return { border-color: var(--mfst-purple); }
 		.mfst-trip-group.mixed { border-color: var(--mfst-mixed); }
-		/* ── Trip breakdown, jump pills and the shift timeline (WI-002545) ──── */
+		/* ── Trip breakdown, jump pills and the shift timeline ──── */
 		.mfst-stat-trip-time { cursor: help; }
 		.mfst-stat-hint { opacity: 0.55; font-size: 11px; }
 		/* AC3: pinned under the vehicle header, so the index stays reachable while the
@@ -2471,7 +2584,7 @@ function getManifestCSS() {
 		.mfst-depart-btn.trigger:active { transform: scale(0.98); }
 		.mfst-depart-btn.complete { background: var(--mfst-green); color: #fff; }
 		.mfst-depart-btn.complete:active { transform: scale(0.98); }
-		/* WI-002789: the bulk check-in sits IN the employee header beside the tap hint,
+		/* The bulk check-in sits IN the employee header beside the tap hint,
 		   so it is not full width like the two stop-level buttons above it. */
 		.mfst-depart-btn.mfst-bulk-present { width: auto; padding: 4px 12px; min-height: 32px; font-size: 12px; gap: 4px; background: var(--mfst-green); color: #fff; }
 		.mfst-depart-btn.mfst-bulk-present:active { transform: scale(0.98); }
@@ -2548,6 +2661,31 @@ function getManifestCSS() {
 		.mfst-rambo-btn-yes:disabled { opacity: 0.5; cursor: not-allowed; }
 		.mfst-reliever-select { width: 100%; padding: 14px 16px; border: 2px solid var(--mfst-border); border-radius: 12px; font-family: var(--mfst-font-body); font-size: 15px; color: var(--mfst-text); background: var(--mfst-bg-card); cursor: pointer; }
 		.mfst-reliever-select:focus { outline: none; border-color: var(--mfst-accent); box-shadow: 0 0 0 3px var(--mfst-accent-dim); }
+
+		/* ── RELIEVER CARDS ── */
+		.mfst-reliever-search { padding: 0 0 8px 0; }
+		.mfst-reliever-search input { max-width: none; min-height: 44px; font-size: 15px; }
+		.mfst-reliever-filter { display: flex; gap: 6px; margin-bottom: 8px; }
+		.mfst-reliever-filter-btn { flex: 1; min-height: 44px; border: 1px solid var(--mfst-border); border-radius: 10px; background: var(--mfst-bg-card); color: var(--mfst-text); font-family: var(--mfst-font-body); font-size: 14px; font-weight: 600; cursor: pointer; }
+		.mfst-reliever-filter-btn.is-selected { border-color: var(--mfst-accent); background: var(--mfst-accent-dim); color: var(--mfst-accent); }
+		.mfst-reliever-banner { margin-bottom: 8px; padding: 10px 12px; border: 1px solid var(--mfst-amber); border-radius: 10px; background: var(--mfst-amber-dim); color: var(--mfst-text); font-size: 13px; line-height: 1.4; }
+		.mfst-reliever-banner[hidden] { display: none; }
+		.mfst-reliever-list { display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; }
+		.mfst-reliever-card { display: block; flex: 0 0 auto; width: 100%; min-height: 44px; padding: 12px; text-align: left; border: 2px solid var(--mfst-border); border-radius: 12px; background: var(--mfst-bg-card); color: var(--mfst-text); font-family: var(--mfst-font-body); cursor: pointer; }
+		.mfst-reliever-card[hidden] { display: none; }
+		.mfst-reliever-card.is-selected { border-color: var(--mfst-accent); box-shadow: 0 0 0 3px var(--mfst-accent-dim); }
+		.mfst-reliever-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px solid var(--mfst-border); }
+		.mfst-reliever-name { min-width: 0; font-size: 15px; font-weight: 700; text-transform: uppercase; overflow-wrap: anywhere; }
+		.mfst-reliever-tags { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; gap: 4px; }
+		.mfst-reliever-badge, .mfst-reliever-overlap-tag { padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+		.mfst-reliever-badge-ot { background: var(--mfst-amber); color: #fff; }
+		.mfst-reliever-badge-regular { background: var(--mfst-bg); color: var(--mfst-text-muted); }
+		.mfst-reliever-overlap-tag { background: var(--mfst-amber-dim); color: var(--mfst-amber); border: 1px solid var(--mfst-amber); }
+		.mfst-reliever-line { display: grid; grid-template-columns: 9.5em auto 1fr; column-gap: 6px; font-size: 13px; line-height: 1.6; }
+		.mfst-reliever-value { min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
+		.mfst-reliever-label { color: var(--mfst-text-muted); }
+		.mfst-reliever-empty { padding: 16px; text-align: center; font-size: 14px; color: var(--mfst-text-muted); }
+		.mfst-reliever-empty[hidden] { display: none; }
 
 		/* ── EMPTY STATE ── */
 		.mfst-empty-state { text-align: center; padding: 60px 20px; color: var(--mfst-text-muted); }

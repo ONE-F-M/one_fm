@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002578: a dropped card is timed from its SHIFT, not from where the pointer let go.
+"""a dropped card is timed from its SHIFT, not from where the pointer let go.
 
 AC1 asks for the release position to seed the Trip Builder's Initial Departure Time, and
 for a while it did. Testing showed that reads as a fault rather than a feature.
@@ -20,7 +20,7 @@ So the release point now decides WHICH LANE and nothing else, and the departure 
 the same place the block does. Deviation from AC1, agreed with the requester and flagged
 for the BA.
 
-The rest of WI-002578 is unchanged and pinned below: the forward walk, the automatic round
+The rest of the story is unchanged and pinned below: the forward walk, the automatic round
 trip, the drawer's trip window, and Edit Trip Timings on a single-stop trip.
 """
 
@@ -149,7 +149,7 @@ class TestTheReleasePointIsNoLongerRead(FrappeTestCase):
 
 
 class TestWhatWasAlreadyDelivered(FrappeTestCase):
-	"""The rest of WI-002578, untouched by this change."""
+	"""The rest of the story, untouched by this change."""
 
 	def setUp(self):
 		_clear()

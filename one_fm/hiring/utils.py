@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 import frappe, json, pycountry, random
 from frappe.utils import (
-	get_url, fmt_money, month_diff, today, add_days, add_years, getdate, flt, get_link_to_form,
+	get_url, fmt_money, month_diff, today, add_days, add_years, getdate, flt, cint, get_link_to_form,
 	get_first_day, get_last_day, now
 )
 from frappe.model.mapper import get_mapped_doc
@@ -330,16 +330,113 @@ def update_job_applicant_status(applicant, status_field, status, reason_for_reje
 		job_applicant.flags.ignore_mandatory = True
 	job_applicant.save()
 
+# Number of applicants that can be processed inline before the send is pushed to a background
+# worker. Each magic link takes a few seconds, so a larger selection would exceed the web
+# request timeout and roll the whole batch back.
+MAGIC_LINK_INLINE_LIMIT = 20
+
 @frappe.whitelist()
 def send_magic_link_to_selected_applicants(names, magic_link):
+	"""
+	Send the Career History / Applicant Doc magic link to the selected Job Applicants.
+
+	Large selections are enqueued to a background worker, because the list view sends every
+	selected name in a single request and each magic link takes a few seconds to build.
+	"""
 	names = json.loads(names)
-	for name in names:
-		applicant_data = frappe.db.get_values("Job Applicant", name, ["applicant_name", "designation"], as_dict=True)
-		if applicant_data and len(applicant_data) > 0:
-			if magic_link == 'Career History':
-				send_career_history_magic_link(name, applicant_data[0].applicant_name, applicant_data[0].designation)
-			elif magic_link == 'Applicant Doc':
-				send_applicant_doc_magic_link(name, applicant_data[0].applicant_name, applicant_data[0].designation)
+	if magic_link not in ("Career History", "Applicant Doc"):
+		frappe.throw(_("Invalid magic link type {0}").format(magic_link))
+
+	if not names:
+		frappe.throw(_("No Job Applicant selected"))
+
+	if len(names) <= MAGIC_LINK_INLINE_LIMIT:
+		return send_magic_link_to_applicants(names, magic_link)
+
+	frappe.enqueue(
+		send_magic_link_to_applicants,
+		queue="long",
+		timeout=len(names) * 30,
+		names=names,
+		magic_link=magic_link,
+		notify_user=frappe.session.user,
+	)
+	frappe.msgprint(
+		_("Sending {0} magic link to {1} applicants in the background. You will be notified when it is done.").format(
+			magic_link, len(names)
+		),
+		alert=True,
+	)
+
+def send_magic_link_to_applicants(names, magic_link, notify_user=None):
+	"""
+	Send the magic link to each applicant independently.
+
+	Every applicant is committed on its own so that one failure (or a worker timeout) can
+	never discard the links already sent, and failures are collected and reported instead of
+	aborting the whole batch.
+	"""
+	sent = []
+	failed = []
+	total = len(names)
+
+	for idx, name in enumerate(names, 1):
+		applicant_data = frappe.db.get_value(
+			"Job Applicant", name, ["applicant_name", "designation", "one_fm_email_id"], as_dict=True
+		)
+		if not applicant_data:
+			failed.append((name, _("Job Applicant not found")))
+			continue
+
+		# Checked here so a missing email skips one applicant instead of throwing and
+		# rolling back the rest of the batch.
+		if not applicant_data.one_fm_email_id:
+			failed.append((name, _("No Email ID found for the Job Applicant")))
+			continue
+
+		try:
+			if magic_link == "Career History":
+				send_career_history_magic_link(
+					name, applicant_data.applicant_name, applicant_data.designation, notify=False
+				)
+			else:
+				send_applicant_doc_magic_link(
+					name, applicant_data.applicant_name, applicant_data.designation, notify=False
+				)
+			frappe.db.commit()
+			sent.append(name)
+		except Exception:
+			frappe.db.rollback()
+			frappe.log_error(
+				title=_("Failed to send {0} magic link").format(magic_link), message=frappe.get_traceback()
+			)
+			failed.append((name, _("Unexpected error, see Error Log")))
+
+		frappe.publish_progress(
+			percent=idx * 100.0 / total,
+			title=_("Sending {0} Magic Link").format(magic_link),
+			description=name,
+		)
+
+	notify_magic_link_send_result(magic_link, sent, failed, notify_user)
+	return {"sent": sent, "failed": failed}
+
+def notify_magic_link_send_result(magic_link, sent, failed, notify_user=None):
+	"""Report how many magic links actually went out, and why the rest did not."""
+	message = _("{0} magic link sent to {1} applicant(s).").format(magic_link, len(sent))
+	if failed:
+		message += "<br><br>" + _("Skipped {0} applicant(s):").format(len(failed))
+		message += "<ul>"
+		for name, reason in failed:
+			message += "<li>{0}: {1}</li>".format(get_link_to_form("Job Applicant", name), reason)
+		message += "</ul>"
+
+	frappe.msgprint(
+		message,
+		title=_("Magic Link"),
+		indicator="orange" if failed else "green",
+		realtime=bool(notify_user),
+	)
 
 @frappe.whitelist()
 def add_remove_salary_advance(names, dialog):
@@ -789,7 +886,9 @@ def create_interview_feedback(data, interview_name, interviewer, job_applicant, 
 		interview_feedback.job_applicant = job_applicant
 
 	if interview_feedback:
-		for d in data.skill_set:
+		# Rounds that use the Evaluation Matrix Config carry no Expected Skill Set,
+		# so the dialog can legitimately submit an empty (or absent) skill_set.
+		for d in (data.skill_set or []):
 			d = frappe._dict(d)
 			if not d.parent:
 				interview_feedback.append('skill_assessment', {'skill': d.skill, 'rating': d.rating})
@@ -810,6 +909,8 @@ def create_interview_feedback(data, interview_name, interviewer, job_applicant, 
 							question.applicant_answer = dq.applicant_answer
 							question.score = dq.score
 
+		set_evaluation_criteria_from_matrix(interview_feedback, interview_name)
+
 		interview_feedback.result = data.result
 		interview_feedback.feedback = data.feedback
 		if method == 'save':
@@ -821,6 +922,42 @@ def create_interview_feedback(data, interview_name, interviewer, job_applicant, 
 		frappe.msgprint(_('{1} Interview Feedback {0} successfully!').format(
 		get_link_to_form('Interview Feedback', interview_feedback.name), method.title()))
 
+
+
+MATRIX_MAX_RATING = 5
+
+
+def set_evaluation_criteria_from_matrix(interview_feedback, interview_name):
+	"""
+		Mirror the scored questions onto Interview Feedback.custom_evaluation_criteria,
+		enriching each row with the category and weight held on the Interview Round's
+		Evaluation Matrix Config. The field is read only on the form, so it is only ever
+		written here.
+	"""
+	if not interview_feedback.get('interview_question_assessment'):
+		return
+
+	interview_round = interview_feedback.interview_round or frappe.db.get_value(
+		"Interview", interview_name, "interview_round")
+	if not interview_round:
+		return
+
+	matrix = frappe.get_all("Interview Matrix Question",
+		filters={"parent": interview_round, "parenttype": "Interview Round"},
+		fields=["question", "category", "weight"]
+	)
+	matrix_map = {d.question: d for d in matrix}
+
+	interview_feedback.set('custom_evaluation_criteria', [])
+	for d in interview_feedback.interview_question_assessment:
+		criteria = matrix_map.get(d.questions) or frappe._dict()
+		interview_feedback.append('custom_evaluation_criteria', {
+			"category": criteria.get("category") or _("General"),
+			"question": d.questions,
+			"weight": flt(criteria.get("weight") or d.weight),
+			"rating": cint(d.score),
+			"max_rating": MATRIX_MAX_RATING,
+		})
 
 
 def get_rating_from_the_score(score, weight):

@@ -1,19 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""A saved run is redrawn on today's lane, and its stops must land on the same day.
-
-Route Plan Assignment timestamps carry two things: the TIME is the daily trip window,
-the DATE is the multi-day lock lifespan. The canvas therefore shifts every block onto
-today by whole days. Two faults came out of doing that per block:
-
-* The plan window is about thirty hours wide, so a run sitting across its edge had its
-  first stop shifted three days and the rest two — a 45-minute trip redrawn as a band
-  nearly a day wide, which then overlapped every other run on the lane and painted them
-  Overcapacity (reported on 23/79322, trips S-1701 and S-1703).
-* Reaching the window was not the same as reaching today: planStart carries a 3h margin
-  before today's local midnight, so a stop whose time of day fell in that margin settled
-  a day early and rendered off the visible axis.
-"""
+"""A saved run is redrawn on today's lane, and its stops must land on the same day."""
 
 import pathlib
 
@@ -47,17 +34,12 @@ class TestATripComesBackInOnePiece(FrappeTestCase):
 		)
 
 	def test_the_day_is_the_nearest_one_not_the_next_one(self):
-		# Rounding, not flooring. The stops of one trip carry unrelated save-dates —
-		# S-102's stop 3 was saved 20 days after its stop 1 — so a stop that ends up
-		# slightly before stop one must stay where it is. Pushing it forward a day put
-		# the run back across the whole lane, which is the fault this is fixing.
+		# Rounding, not flooring: a stop landing slightly before stop one stays put.
 		self.assertNotIn("Math.ceil((anchor.ms - startMs)", self.source)
 		self.assertIn("Math.round((anchor.ms - startMs)", self.source)
 
 	def test_the_shift_is_not_decided_by_the_trips_earliest_stamp(self):
-		# Anchoring on the earliest raw timestamp reads the lock lifespan as if it were
-		# the run's date, so a trip whose stops were saved on different days is dragged
-		# apart by the difference between them.
+		# The earliest raw timestamp is a lock lifespan, not the run's date.
 		self.assertNotIn("tripShift[i.tripId] = { earliest", self.source)
 
 
@@ -68,7 +50,7 @@ class TestTheLegsWithNoBlockAreRebasedToo(FrappeTestCase):
 	the run the server anchored them on - not the row the canvas draws first. Left raw
 	while every block was rebased onto today, a departure stored 26 days from its own run
 	put the trip block's left edge that far off the axis: 97 of 106 runs on the live plan
-	were drawn up to 35,000px wide on a 1,000px lane (WI-002401).
+	were drawn up to 35,000px wide on a 1,000px lane.
 	"""
 
 	def setUp(self):
@@ -88,7 +70,7 @@ class TestTheLegsWithNoBlockAreRebasedToo(FrappeTestCase):
 		# Clamped, so a stored leg timing can widen the block but never shrink it below
 		# its own stops - and a garbage stamp can no longer invert it.
 		#
-		# The parsing moved into _legEdges in WI-002542, which additionally refuses a
+		# The parsing moved into _legEdges, which additionally refuses a
 		# pair that cannot describe this run at all (a departure after the first stop, an
 		# arrival before the last). The clamp itself is unchanged and is what this guards.
 		self.assertIn("held.departure ?? Infinity, spanStart.getTime()", self.source)
@@ -108,7 +90,7 @@ class TestRemovingAStopTakesTheStopYouPicked(FrappeTestCase):
 	"""Clicking a merged block selects stop 1, whichever stop you are reading.
 
 	So "Remove from Lane" silently took the first stop of the run while the operator was
-	looking at the last one (WI-002401).
+	looking at the last one.
 	"""
 
 	def setUp(self):

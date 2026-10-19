@@ -4,6 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
+import frappe.automation.doctype.assignment_rule.assignment_rule
 from frappe.model.document import Document
 from frappe.utils import today, get_url,getdate, get_year_start
 from frappe import _
@@ -55,6 +56,13 @@ class MedicalInsurance(Document):
 
 
 def valid_work_permit_exists(preparation_name):
+    """Open the policy that goes with each renewal Work Permit.
+
+    Returns the rows it could not open one for. A row usually lands here because its
+    Work Permit was never opened, so reporting the reason is what tells the operator
+    the two gaps are the same gap.
+    """
+    failures = []
     employee_in_preparation = frappe.get_doc('Preparation',preparation_name)
     if employee_in_preparation.preparation_record:
         for employee in employee_in_preparation.preparation_record:
@@ -63,7 +71,14 @@ def valid_work_permit_exists(preparation_name):
                     create_mi_record(frappe.get_doc('Work Permit',{'preparation':preparation_name,'employee':employee.employee}))
                 except Exception as e:
                     frappe.log_error(message=frappe.get_traceback(), title=f"Error creating Medical Insurance for Work Permit of employee {employee.employee} in Preparation {preparation_name}")
+                    failures.append({
+                        'employee': employee.employee,
+                        'employee_name': employee.full_name,
+                        'document': 'Medical Insurance',
+                        'reason': str(e),
+                    })
                     continue
+    return failures
 
 #Creating mi for transfer
 def creat_medical_insurance_for_transfer(employee_name):
@@ -106,13 +121,13 @@ def transfer_insurance_already_open(employee):
 # because Draft is now that first state and would otherwise become the default for all of
 # them.
 DRAFT = "Draft"
-APPLY_ONLINE_BY_PRO = "Apply Online by PRO"
+APPLY_ONLINE_BY_GR_OPERATOR = "Apply Online by GR Operator"
 OVERSEAS_WORK_PERMIT_TYPES = ("Overseas", "Overseas (Government)")
 
 
 def initial_workflow_state(work_permit_type):
 	"""Where a policy opened against this kind of Work Permit starts (WI-002098)."""
-	return DRAFT if work_permit_type in OVERSEAS_WORK_PERMIT_TYPES else APPLY_ONLINE_BY_PRO
+	return DRAFT if work_permit_type in OVERSEAS_WORK_PERMIT_TYPES else APPLY_ONLINE_BY_GR_OPERATOR
 
 
 def create_mi_record(WorkPermit, insurance_status=None):
@@ -170,6 +185,9 @@ def create_mi_record(WorkPermit, insurance_status=None):
     initial_state = initial_workflow_state(WorkPermit.work_permit_type)
     if initial_state != new_medical_insurance.workflow_state:
         new_medical_insurance.db_set("workflow_state", initial_state)
+        # The assignment rule ran on insert, against the state the workflow opened it in.
+        # Run it again now the state is the one the policy actually starts in.
+        frappe.automation.doctype.assignment_rule.assignment_rule.apply(new_medical_insurance)
 
     return new_medical_insurance
 
@@ -187,7 +205,7 @@ def system_remind_renewal_operator_to_apply_mi():
     supervisor = frappe.db.get_single_value("HR Settings", "default_grd_supervisor")
     renewal_operator = frappe.db.get_single_value("HR Settings", "default_grd_operator")
     medical_insurance_list = frappe.db.get_list('Medical Insurance',
-    {'date_of_application':['<=',today()],'workflow_state':'Apply Online by PRO','insurance_status':['in',('Renewal','New')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
+    {'date_of_application':['<=',today()],'workflow_state':APPLY_ONLINE_BY_GR_OPERATOR,'insurance_status':['in',('Renewal','New')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
     
     if is_scheduler_emails_enabled():
         notification_reminder(medical_insurance_list,supervisor,renewal_operator,"Renewal or New")
@@ -200,7 +218,7 @@ def system_remind_transfer_operator_to_apply_mi():
     supervisor = frappe.db.get_single_value("HR Settings", "default_grd_supervisor")
     transfer_operator = frappe.db.get_single_value("HR Settings", "default_grd_operator_transfer")
     medical_insurance_list = frappe.db.get_list('Medical Insurance',
-    {'date_of_application':['<=',today()],'workflow_state':'Apply Online by PRO','insurance_status':['=',('Local Transfer')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
+    {'date_of_application':['<=',today()],'workflow_state':APPLY_ONLINE_BY_GR_OPERATOR,'insurance_status':['=',('Local Transfer')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
     
     if is_scheduler_emails_enabled():
         notification_reminder(medical_insurance_list,supervisor,transfer_operator,"Local Transfer")

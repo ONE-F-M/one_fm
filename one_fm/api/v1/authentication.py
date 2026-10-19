@@ -1,6 +1,6 @@
 import frappe
 import pyotp
-from frappe.utils import getdate, cstr, strip_html
+from frappe.utils import getdate, cstr, strip_html, cint, get_datetime
 from frappe.twofactor import get_otpsecret_for_, process_2fa_for_sms, confirm_otp_token, get_email_subject_for_2fa,get_email_body_for_2fa, ExpiredLoginException
 from frappe.integrations.oauth2 import get_token
 from frappe.core.doctype.user.user import generate_keys
@@ -15,6 +15,11 @@ from frappe.utils.password import update_password as _update_password
 from twilio.rest import Client as TwilioClient
 from one_fm.api.v1.utils import response, get_current_user_details
 from one_fm.processor import sendemail, send_whatsapp
+
+# How many wrong verification codes are tolerated before the reset token is revoked,
+# and how long the per-token attempt counter lives in the cache.
+MAX_OTP_ATTEMPTS = 3
+MAX_OTP_ATTEMPT_TTL = 900
 
 @frappe.whitelist(allow_guest=True)
 def login(client_id: str = None, grant_type: str = None, employee_id: str = None, password: str = None) -> dict:
@@ -248,17 +253,43 @@ def verify_otp(otp, temp_id):
 			return response(_("Session Expired"), 400, None,
 				_("Your verification session has expired. Please request a new code."))
 
+		if password_token.status == "Revoked":
+			return response(_("Session Expired"), 400, None,
+				_("Your verification session has expired. Please request a new code."))
+
+		if password_token.expiration_time and now_datetime() > get_datetime(password_token.expiration_time):
+			frappe.db.set_value("Password Reset Token", {"temp_id":temp_id}, "status", "Revoked")
+			return response(_("Code Expired"), 400, None,
+				_("Your verification code has expired. Please request a new code."))
+
 		login_manager = frappe.local.login_manager
 		check_otp = confirm_otp_token(login_manager, otp, temp_id)
 
+		attempts_key = f"otp_attempts:{temp_id}"
+
 		if check_otp:
+			frappe.cache.delete_value(attempts_key)
 			frappe.db.set_value("Password Reset Token", {"temp_id":temp_id}, "status", "Active")
 			return response ("success", 200, {
 				"password_token":password_token.name,
 				"message":"OTP verified successfully!"})
-		frappe.db.set_value("Password Reset Token", {"temp_id":temp_id}, "status", "Revoked")
+
+		# A single mistyped digit used to revoke the token outright, forcing the employee
+		# to restart the whole flow with no explanation - the most common reason a reset
+		# is abandoned half way and the employee ends up locked out believing they reset
+		# their password. Give them a few tries, and say how many are left.
+		attempts = cint(frappe.cache.get_value(attempts_key)) + 1
+		frappe.cache.set_value(attempts_key, attempts, expires_in_sec=MAX_OTP_ATTEMPT_TTL)
+		remaining = MAX_OTP_ATTEMPTS - attempts
+
+		if remaining <= 0:
+			frappe.cache.delete_value(attempts_key)
+			frappe.db.set_value("Password Reset Token", {"temp_id":temp_id}, "status", "Revoked")
+			return response(_("Too Many Attempts"), 400, None,
+				_("Too many incorrect codes were entered. Please request a new code."))
+
 		return response(_("Incorrect Code"), 400, None,
-			_("Incorrect verification code. Please check and enter the correct code."))
+			_("Incorrect verification code. You have {0} attempt(s) left.").format(remaining))
 	except ExpiredLoginException:
 		return response(_("Code Expired"), 400, None,
 			_("Your verification code has expired. Please request a new code."))
@@ -336,9 +367,19 @@ def update_password(otp, id, employee_id, new_password):
 	"""
 	try:
 		login_manager = frappe.local.login_manager
-		if confirm_otp_token(login_manager, otp, id):
-			user_id = frappe.get_value("Employee", {'employee_id':employee_id}, ["user_id"])
-			_update_password(user_id, new_password)
+		if not confirm_otp_token(login_manager, otp, id):
+			# This return used to sit outside the OTP check, so a wrong or expired code
+			# still answered "Password Updated!" while the password was never written -
+			# the employee then believes the reset worked and keeps failing to log in.
+			return response(_("Incorrect Code"), 400, None,
+				_("Incorrect verification code. Please check and enter the correct code."))
+
+		user_id = frappe.get_value("Employee", {'employee_id':employee_id}, ["user_id"])
+		if not user_id:
+			return response(_("Account Not Found"), 404, None,
+				_("No account found for Employee ID {0}. Please check and try again.").format(employee_id))
+
+		_update_password(user_id, new_password)
 		return {
 			'message': _('Password Updated!')
 		}
@@ -673,9 +714,20 @@ def user_login(employee_id, password):
 		msg['shift_working'] = user_employee.shift_working
 		return response("success", 200, msg)
 	except frappe.exceptions.AuthenticationError:
-		err = strip_html(cstr(frappe.local.response.get("message") or "")) \
-			or _("Incorrect Employee ID or password. Please try again.")
-		return response(_("Sign-In Failed"), 401, None, err)
+		# Frappe checks the password FIRST and the enabled flag second (frappe/auth.py),
+		# so "User disabled or missing" means the password was actually correct and only
+		# the deactivated User is blocking the employee. Telling them "wrong password"
+		# there sends them into an endless reset loop that can never succeed, so split
+		# the two causes and give the app a stable code to branch on.
+		reason = cstr(frappe.local.response.get("message") or "")
+		if "disabled" in reason.lower():
+			return response(_("Account Disabled"), 401, None,
+				_("Your account has been deactivated. Please contact the IT Helpdesk."),
+				error_code="ACCOUNT_DISABLED")
+
+		return response(_("Sign-In Failed"), 401, None,
+			_("Incorrect Employee ID or password. Please try again."),
+			error_code="INVALID_CREDENTIALS")
 	except Exception as e:
 		frappe.log_error(
 			title=f"Mobile API: authentication.user_login | {employee_id}",
@@ -684,6 +736,56 @@ def user_login(employee_id, password):
 		frappe.db.commit()
 		return response(_("Something Went Wrong"), 500, None,
 			strip_html(cstr(e)) or type(e).__name__)
+
+
+@frappe.whitelist(allow_guest=True)
+def refresh_token(refresh_token: str = None):
+	"""
+	Exchange a valid OAuth2 refresh token for a new access token so the mobile app can
+	keep the user signed in without re-entering credentials.
+
+	params
+	refresh_token (str): the refresh_token issued by user_login
+
+	returns
+	token (str): new "Bearer <access_token>"
+	refresh_token (str): the rotated refresh_token to store for next time
+	"""
+	try:
+		if not refresh_token:
+			return response("Bad Request", 400, None, "refresh_token is required.")
+
+		client_id = frappe.db.get_value("OAuth Client", {"app_name": "OneFM"}, "client_id")
+		if not client_id:
+			return response("error", 500, None, "OAuth Client 'OneFM' not configured in the system.")
+
+		site = frappe.utils.cstr(frappe.local.conf.app_url) if frappe.local.conf.app_url else "http://127.0.0.1:8000"
+		if site.endswith('/'):
+			site = site[:-1]
+
+		args = {
+			'client_id': client_id,
+			'grant_type': 'refresh_token',
+			'refresh_token': refresh_token,
+		}
+		auth_api = f"{site}/api/method/frappe.integrations.oauth2.get_token"
+		auth_api_response = requests.post(auth_api, data=args, headers={'Accept': 'application/json'})
+
+		if auth_api_response.status_code == 200:
+			token_data = auth_api_response.json()
+			msg = {
+				'token': f"Bearer {token_data.get('access_token')}",
+				# oauthlib rotates the refresh token; keep the new one if returned,
+				# otherwise the caller reuses the existing one.
+				'refresh_token': token_data.get('refresh_token') or refresh_token,
+			}
+			return response("success", 200, msg)
+
+		# Refresh token expired/revoked — client must log in again.
+		return response("error", 401, None, "Refresh token is invalid or expired. Please log in again.")
+	except Exception as e:
+		print(frappe.get_traceback(), 'Refresh Token')
+		return response("error", 500, None, str(e))
 
 
 @frappe.whitelist(allow_guest=True)

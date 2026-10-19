@@ -127,5 +127,36 @@ frappe.ui.form.on("Employee Resignation Withdrawal", {
 
 			return Promise.reject("Missing Elements");
 		}
+
+		// Reason for Rejection is only displayed once the doc is already Rejected,
+		// so ask for it here -- apply_workflow saves the doc we send, reason included.
+		if (frm.selected_workflow_action === "Reject" && !frm.doc.reason_for_rejection) {
+			return new Promise((resolve, reject) => {
+				let submitted = false;
+				let dialog = new frappe.ui.Dialog({
+					title: __("Reject Withdrawal"),
+					fields: [{
+						fieldname: "reason_for_rejection",
+						fieldtype: "Small Text",
+						label: __("Reason for Rejection"),
+						reqd: 1
+					}],
+					primary_action_label: __("Reject"),
+					primary_action: (values) => {
+						submitted = true;
+						frm.doc.reason_for_rejection = values.reason_for_rejection;
+						dialog.hide();
+						resolve();
+					}
+				});
+				dialog.onhide = () => {
+					if (!submitted) {
+						frappe.dom.unfreeze();
+						reject("Rejection Cancelled");
+					}
+				};
+				dialog.show();
+			});
+		}
 	}
 });
