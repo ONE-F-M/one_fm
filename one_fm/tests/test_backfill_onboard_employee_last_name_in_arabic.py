@@ -128,7 +128,7 @@ class TestBackfillOnboardEmployeeLastNameInArabic(FrappeTestCase):
 		self.assertEqual(row.employee, self.emp_with)
 		self.assertEqual(row.employee_name, "Keep Me")
 		self.assertEqual(row.first_name_in_arabic, "اسم")
-		self.assertEqual(str(row.modified), OLD_MODIFIED)
+		self.assertEqual(get_datetime(row.modified), get_datetime(OLD_MODIFIED))
 		self.assertEqual(row.modified_by, "Administrator")
 
 	def test_only_the_intended_records_are_written(self):
