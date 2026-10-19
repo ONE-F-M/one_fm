@@ -679,3 +679,4 @@ one_fm.patches.v15_0.backfill_checkin_operations_shift #2026-10-16 WI-003633
 one_fm.patches.v15_0.zero_internal_transfer_qty_pr01180 #2026-10-18
 one_fm.patches.v15_0.reset_pmr_pr01180_docstatus_to_draft #2026-10-18
 one_fm.patches.v15_0.move_stranded_medical_insurance_to_draft #2026-10-18 HD-1888665 the 69 renewals create_mi_record left in the state WI-002494 renamed away
+one_fm.patches.v15_0.fix_rfm_2026_000950_approver #2026-10-19 HD-1890138 RFM-2026-000950 approver back to the line manager
