@@ -15,7 +15,8 @@ import frappe
 import frappe.permissions
 from frappe import _
 from frappe.core.doctype.access_log.access_log import make_access_log
-from frappe.utils import cint, cstr, format_datetime, format_duration, formatdate, parse_json
+from frappe.model import get_permitted_fields
+from frappe.utils import cint, create_batch, cstr, format_datetime, format_duration, formatdate, parse_json
 from frappe.utils.csvutils import UnicodeWriter
 import google.auth
 from google.auth.transport.requests import Request
@@ -25,10 +26,76 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient import discovery
 import gspread
-from frappe.utils import get_site_name, nowdate, add_days
+from frappe.utils import get_site_name, nowdate, now_datetime
 
 from google.oauth2 import service_account
 import os
+
+# Standard (metadata) columns that every DocType has but that are not DocFields,
+# so frappe.get_meta(dt).get_field() cannot resolve them. Offered for the parent
+# Document Type only, see the Metadata block in google_sheet_data_export.js.
+STANDARD_FIELDS = {
+	"owner": {"label": "Created By", "fieldtype": "Link", "options": "User"},
+	"creation": {"label": "Created On", "fieldtype": "Datetime"},
+	"modified": {"label": "Last Modified On", "fieldtype": "Datetime"},
+	"modified_by": {"label": "Last Modified By", "fieldtype": "Link", "options": "User"},
+	"docstatus": {"label": "Document Status", "fieldtype": "Int"},
+	"idx": {"label": "Index", "fieldtype": "Int"},
+}
+
+DOCSTATUS_LABELS = {0: "Draft", 1: "Submitted", 2: "Cancelled"}
+
+
+def get_standard_field(fieldname, dt):
+	"""Return a synthetic docfield for a standard column, or None."""
+	standard_field = STANDARD_FIELDS.get(fieldname)
+	if not standard_field:
+		return None
+
+	return frappe._dict(dict(standard_field, fieldname=fieldname, parent=dt, hidden=0, reqd=0))
+
+
+def get_link_title_field(dt):
+	"""Return the field a Link to `dt` shows on the form, instead of the document name.
+
+	A Link field stores the name of the linked document, but the form renders the
+	linked DocType's title field whenever that DocType asks for it (Contact, for
+	one, shows `full_name`). Exporting the stored name then puts a different value
+	in the sheet than the one the user reads on the form. Returns None when the
+	name is what the form shows anyway, or when the user may not read the title.
+	"""
+	meta = frappe.get_meta(dt)
+	title_field = meta.get("title_field")
+
+	if not meta.get("show_title_field_in_link") or not title_field or title_field == "name":
+		return None
+
+	# a title field with no column of its own cannot be read in bulk
+	docfield = meta.get_field(title_field)
+	if not docfield or docfield.get("is_virtual"):
+		return None
+
+	# never resolve a title the user has no permission to read, fall back to the name
+	if not frappe.has_permission(dt, "read"):
+		return None
+
+	return title_field
+
+
+def get_link_titles(dt, title_field, names):
+	"""Title of every given document of `dt`, keyed by document name."""
+	titles = {}
+	for batch in create_batch(list(names), 1000):
+		for row in frappe.get_list(
+			dt,
+			filters={"name": ("in", batch)},
+			fields=["name", title_field],
+			limit_page_length=None,
+		):
+			titles[row.name] = cstr(row.get(title_field))
+
+	return titles
+
 
 @frappe.whitelist()
 def export_data(
@@ -43,7 +110,9 @@ def export_data(
 	sheet_name=None,
 	owner=None,
 	client_id=None,
-	name=None
+	name=None,
+	include_hidden=False,
+	export_link_titles=False
 ):
 	_doctype = doctype
 	if isinstance(_doctype, list):
@@ -68,7 +137,9 @@ def export_data(
 		sheet_name=sheet_name,
 		owner=owner,
 		client_id=client_id,
-		name=name
+		name=name,
+		include_hidden=include_hidden,
+		export_link_titles=export_link_titles,
 	)
 	result = exporter.build_response()
 
@@ -89,7 +160,9 @@ class DataExporter:
 		sheet_name=None,
 		owner=None,
 		client_id=None,
-		name=None
+		name=None,
+		include_hidden=False,
+		export_link_titles=False,
 	):
 		self.doctype = doctype
 		self.parent_doctype = parent_doctype
@@ -104,6 +177,11 @@ class DataExporter:
 		self.cell_colour = []
 		self.client_id = client_id
 		self.name = name
+		self.include_hidden = cint(include_hidden)
+		self.export_link_titles = cint(export_link_titles)
+		# {link doctype: title fieldname or None} and {link doctype: {name: title}}
+		self._link_title_fields = {}
+		self._link_titles = {}
 
 		api = self.initialize_service()
 		self.service = api["service"]
@@ -197,7 +275,7 @@ class DataExporter:
 				_("No Data"), _("There is no data to be exported"), indicator_color="orange"
 			)
 		result = {"google_sheet_id":self.google_sheet_id, "link":self.link,"sheet_name":self.sheet_name}
-		frappe.db.set_value("Google Sheet Data Export", self.name, "last_execution_date", nowdate())
+		frappe.db.set_value("Google Sheet Data Export", self.name, "last_execution_timestamp", now_datetime())
 
 		return result
 
@@ -209,11 +287,22 @@ class DataExporter:
 		tablecolumns = []
 		table_name = "tab" + dt
 
-		fields = [ sub['name'] for sub in frappe.db.get_table_columns_description(table_name) ]
+		table_columns = [ sub['name'] for sub in frappe.db.get_table_columns_description(table_name) ]
+		permitted_fields = get_permitted_fields(
+			dt, parenttype=self.doctype if dt != self.doctype else None, permission_type="read"
+		)
+
 		for f in self.select_columns[dt]:
-			field = meta.get_field(f)
-			if field:
-				tablecolumns.append(field)
+			# standard columns (owner, creation, docstatus, ...) are not docfields
+			field = meta.get_field(f) or get_standard_field(f, dt)
+			if not field:
+				# stale field cache: the field was renamed or deleted after the export was saved
+				continue
+			if field.get("is_virtual") or f not in table_columns:
+				continue
+			if f not in permitted_fields:
+				continue
+			tablecolumns.append(field)
 
 		# tablecolumns.sort(key=lambda a: int(a.idx))
 
@@ -258,7 +347,7 @@ class DataExporter:
 			return
 		if docfield.fieldname in ("parenttype", "trash_reason"):
 			return
-		if docfield.hidden:
+		if docfield.hidden and not self.include_hidden:
 			return
 		if (
 			self.select_columns
@@ -292,6 +381,8 @@ class DataExporter:
 			self.doctype, fields=["*"], filters=self.filters, limit_page_length=None, order_by=order_by
 		)
 
+		self.prefetch_link_titles(self.doctype, None, self.data)
+
 		cell_colour = []
 		row_index = 0
 		for doc in self.data:
@@ -312,7 +403,10 @@ class DataExporter:
 							.where(child_doctype_table.parenttype == self.doctype)
 							.orderby(child_doctype_table.idx)
 						)
-						for ci, child in enumerate(data_row.run(as_dict=True)):
+						children = data_row.run(as_dict=True)
+						self.prefetch_link_titles(c["doctype"], c["parentfield"], children)
+
+						for ci, child in enumerate(children):
 							if ci > 0:
 								self.add_data_row(rows, self.doctype, None, doc, ci, cell_colour, row_index)
 							self.add_data_row(rows, c["doctype"], c["parentfield"], child, ci, cell_colour, row_index)
@@ -322,6 +416,60 @@ class DataExporter:
 			row_index += 1
 		self.cell_colour = cell_colour
 		return data
+
+	def get_link_title_field(self, dt):
+		"""Cached `get_link_title_field`, one lookup per linked DocType per export."""
+		if not self.export_link_titles:
+			return None
+
+		if dt not in self._link_title_fields:
+			self._link_title_fields[dt] = get_link_title_field(dt)
+
+		return self._link_title_fields[dt]
+
+	def load_link_titles(self, dt, title_field, names):
+		"""Cache the title of every given document, one query per linked DocType."""
+		titles = self._link_titles.setdefault(dt, {})
+		names = {name for name in names if name and name not in titles}
+		if not names:
+			return
+
+		titles.update(get_link_titles(dt, title_field, names))
+		# remember the misses too, so that they are not looked up once per row
+		for name in names:
+			titles.setdefault(name, "")
+
+	def prefetch_link_titles(self, dt, parentfield, docs):
+		"""Warm the title cache for every Link column of this block of columns."""
+		_column_start_end = self.column_start_end.get((dt, parentfield))
+		if not _column_start_end or not docs:
+			return
+
+		meta = frappe.get_meta(dt)
+		for c in self.columns[_column_start_end.start : _column_start_end.end]:
+			docfield = meta.get_field(c)
+			if not docfield or docfield.fieldtype != "Link" or not docfield.options:
+				continue
+
+			title_field = self.get_link_title_field(docfield.options)
+			if title_field:
+				self.load_link_titles(docfield.options, title_field, [d.get(c) for d in docs])
+
+	def get_link_title(self, docfield, value):
+		"""Value as the form shows it: the title of a linked document, or the value itself."""
+		if not value or not docfield or docfield.get("fieldtype") != "Link" or not docfield.get("options"):
+			return value
+
+		dt = docfield.options
+		title_field = self.get_link_title_field(dt)
+		if not title_field:
+			return value
+
+		if value not in self._link_titles.get(dt, {}):
+			self.load_link_titles(dt, title_field, [value])
+
+		# a deleted or unreadable document keeps the stored name
+		return self._link_titles[dt].get(value) or value
 
 	def add_data_row(self, rows, dt, parentfield, doc, rowidx, cell_colour, row_index):
 		d = doc.copy()
@@ -337,7 +485,10 @@ class DataExporter:
 			row = rows[rowidx]
 			for i, c in enumerate(self.columns[_column_start_end.start : _column_start_end.end]):
 				df = meta.get_field(c)
-				value = str(d.get(c, ""))
+				if c == "docstatus":
+					value = _(DOCSTATUS_LABELS.get(cint(d.get(c)), ""))
+				else:
+					value = str(self.get_link_title(df, d.get(c, "")))
 				value = remove_quotes(value)
 				# check if value size is greater than 50000
 				if len(value) >= 50000:
@@ -570,25 +721,51 @@ class DataExporter:
 		return
 
 
-@frappe.whitelist()
 def update_google_sheet_daily():
-	yesterday = add_days(nowdate(), -1)
-	list_of_export = frappe.get_list("Google Sheet Data Export", {"enable_auto_update": 1, "last_execution_date": yesterday}, ['name'], limit=1)
+	"""Refresh the daily export that has waited longest since before today; runs every 15 minutes."""
+	list_of_export = frappe.get_list(
+		"Google Sheet Data Export",
+		{
+			"enable_auto_update": 1,
+			"update_frequency": "Daily",
+			"last_execution_timestamp": ["<", nowdate()],
+		},
+		["name"],
+		order_by="last_execution_timestamp asc",
+		limit=1,
+	)
 	for e in list_of_export:
-		doc = frappe.get_doc("Google Sheet Data Export",e.name)
+		# stamp before the run so an export that keeps failing waits a day instead of blocking the queue
+		frappe.db.set_value("Google Sheet Data Export", e.name, "last_execution_timestamp", now_datetime())
+		enqueue_export(e.name)
 
-		frappe.enqueue(export_data,
-			doctype= doc.reference_doctype,
-			select_columns= doc.field_cache,
-			filters= doc.filter_cache,
-			with_data = 1,
-			link= doc.link,
-			google_sheet_id= doc.google_sheet_id,
-			sheet_name= doc.sheet_name,
-			owner= doc.owner,
-			client_id= doc.client_id,
-			name= doc.name,
-			is_async=True, queue="long", timeout=9000)
+
+def update_google_sheet_hourly():
+	"""Refresh every export set to update hourly; runs at the top of each hour."""
+	for name in frappe.get_all(
+		"Google Sheet Data Export", {"enable_auto_update": 1, "update_frequency": "Hourly"}, pluck="name"
+	):
+		enqueue_export(name)
+
+
+def enqueue_export(name):
+	doc = frappe.get_doc("Google Sheet Data Export", name)
+	frappe.enqueue(export_data,
+		doctype= doc.reference_doctype,
+		select_columns= doc.field_cache,
+		filters= doc.filter_cache,
+		with_data = 1,
+		link= doc.link,
+		google_sheet_id= doc.google_sheet_id,
+		sheet_name= doc.sheet_name,
+		owner= doc.owner,
+		client_id= doc.client_id,
+		name= doc.name,
+		include_hidden= doc.include_hidden_fields,
+		export_link_titles= doc.export_link_titles,
+		job_id=f"google_sheet_data_export::{doc.name}",
+		deduplicate=True,
+		is_async=True, queue="long", timeout=9000)
 
 @frappe.whitelist()
 def get_client_id():

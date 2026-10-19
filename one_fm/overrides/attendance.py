@@ -466,6 +466,34 @@ def mark_bulk_attendance(employee, from_date, to_date):
 def schedule_mark_for_active_employees():
     frappe.enqueue(mark_for_active_employees, queue='long', timeout=4000)
 
+# Number of per-employee failures logged in full before the rest are only counted.
+# A systemic breakage would otherwise write one Error Log row per employee.
+MAX_LOGGED_ATTENDANCE_FAILURES = 20
+
+
+def _run_attendance_step(step, *args):
+    """Run one step of the daily attendance run, isolating its failures.
+
+    Each step below is independent - marking the unscheduled employees does not
+    depend on the absconding pass having run, and neither depends on every single
+    employee in the loop above having succeeded. Before this, an exception anywhere
+    aborted the whole enqueued job and silently skipped every step after it, so a
+    single employee raising DuplicateAttendanceError meant nobody got marked Absent
+    for having no schedule at all that day.
+    """
+    try:
+        step(*args)
+    except Exception:
+        # Rolled back before logging so the Error Log row itself survives the rollback,
+        # then committed so it is durable even if no later step commits.
+        frappe.db.rollback()
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title=f"Error in daily attendance step: {getattr(step, '__name__', step)}"
+        )
+        frappe.db.commit()
+
+
 # Mark attendance for Active Employees
 def mark_for_active_employees(from_date=None, to_date=None):
     if not (from_date and to_date):
@@ -477,16 +505,37 @@ def mark_for_active_employees(from_date=None, to_date=None):
         "attendance_by_timesheet":0,
     }, ["name", "employee_name", "company", "department", "holiday_list"])
 
+    failures = []
     for employee in active_employees:
-        mark_bulk_attendance(employee.name, from_date, to_date)
+        try:
+            mark_bulk_attendance(employee.name, from_date, to_date)
+        except Exception:
+            # One employee must not take the whole run down with it. The most common
+            # cause is DuplicateAttendanceError from a record another path already
+            # created, which is harmless for everybody else in the list.
+            frappe.db.rollback()
+            failures.append(employee.name)
+            if len(failures) <= MAX_LOGGED_ATTENDANCE_FAILURES:
+                frappe.log_error(
+                    message=frappe.get_traceback(),
+                    title=f"Error marking attendance for {employee.name} on {from_date}"
+                )
+                frappe.db.commit()
+
+    if len(failures) > MAX_LOGGED_ATTENDANCE_FAILURES:
+        frappe.log_error(
+            message="Employees that failed:\n" + "\n".join(failures),
+            title=f"Attendance marking failed for {len(failures)} employees on {from_date}"
+        )
+        frappe.db.commit()
 
     # Process employees without schedules/shifts
-    mark_attendance_for_unscheduled_employees(active_employees, from_date)
+    _run_attendance_step(mark_attendance_for_unscheduled_employees, active_employees, from_date)
 
-    mark_absent_for_non_active_employees(from_date, "Absconding")
-    mark_absent_for_non_active_employees(from_date, "Not Returned from Leave")
+    _run_attendance_step(mark_absent_for_non_active_employees, from_date, "Absconding")
+    _run_attendance_step(mark_absent_for_non_active_employees, from_date, "Not Returned from Leave")
     
-    remark_for_active_employees(from_date)
+    _run_attendance_step(remark_for_active_employees, from_date)
 
 def mark_attendance_for_unscheduled_employees(employees, date):
     """Creates attendance records for employees who have no schedules or shift assignments.

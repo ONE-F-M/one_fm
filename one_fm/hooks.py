@@ -224,7 +224,6 @@ has_permission = {
 	"Issue": "one_fm.utils.has_permission_to_issue",
 	"Notification Settings":'one_fm.overrides.notification_settings.has_permission_',
 	"Contracts": "one_fm.operations.doctype.contracts.contracts.contracts_has_permission",
-	"Arrival Acknowledgement": "one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement.has_permission",
 	"Arrival and Deployment": "one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment.has_permission"
 }
 
@@ -241,28 +240,35 @@ doc_events = {
 			"one_fm.overrides.todo.delete_linked_todos"
 		]
 	},
-	# WI-002093: each of these carries the Preparation that opened it, and its own save is
-	# where the row's status column comes from. The handler only ever moves a row forward
-	# along Work Permit -> Medical Insurance -> Residency -> PACI.
+	# Each of these carries the Preparation that opened it. Its own save, cancel and delete
+	# refresh the Current Stage column on that Preparation's row.
 	"Work Permit": {
 		# WI-002096: no step completes before the one in front of it.
 		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
-		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"on_cancel": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"after_delete": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"Medical Insurance": {
 		# WI-002096: no step completes before the one in front of it.
 		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
-		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"on_cancel": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"after_delete": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"Residency": {
 		# WI-002096: no step completes before the one in front of it.
 		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
-		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"on_cancel": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"after_delete": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"PACI": {
 		# WI-002096: no step completes before the one in front of it.
 		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
-		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"on_cancel": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"after_delete": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"Employee": {
 		# Keep the PAM licence headcounts in step with the employees on the licence. The
@@ -354,8 +360,9 @@ doc_events = {
 		"on_update": [
 			"one_fm.one_fm.utils.send_notification_to_grd_or_recruiter",
 			"one_fm.utils.on_update_job_applicant",
-			# WI-002598: tell the candidate their application was rejected. on_update
-			# rather than validate, so nothing is sent for a change that then fails to
+			# Stamp the rejection time when the application is rejected. The candidate is
+			# emailed 48 hours later by the hourly send_due_rejection_emails job. on_update
+			# rather than validate, so nothing is stamped for a change that then fails to
 			# save.
 			"one_fm.hiring.rejection_notification.notify_on_rejection"
 		]
@@ -683,6 +690,7 @@ scheduler_events = {
         'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_day_process_task',
         'one_fm.operations.doctype.process_task.process_task.trigger_method_from_monthly_on_last_day_process_task',
 		'one_fm.fleet_management.vehicle_branding_expiry.notify_vehicle_branding_expiry',
+		'one_fm.one_fm.doctype.employee_resignation.employee_resignation.hand_over_in_process_approvals',
 		# WI-002449: a week's notice before a PAM Licence letter of guarantee expires.
 		'one_fm.grd.lg_expiry.notify_lg_expiry',
 		# WI-002431: raise a cancellation for every visa that has reached its expiry.
@@ -699,7 +707,9 @@ scheduler_events = {
 		"one_fm.api.tasks.validate_shift_assignment",
 		'one_fm.overrides.employee_checkin.auto_generate_checkin',
 		# WI-002283: close overtime requests nobody answered before the shift ended.
-		"one_fm.operations.doctype.employee_schedule.employee_schedule.reject_expired_dsot_requests"
+		"one_fm.operations.doctype.employee_schedule.employee_schedule.reject_expired_dsot_requests",
+		# Email rejected candidates once 48 hours have passed since their rejection.
+		"one_fm.hiring.rejection_notification.send_due_rejection_emails"
 	],
 	"monthly": [
 		"one_fm.accommodation.utils.execute_monthly",
@@ -709,9 +719,6 @@ scheduler_events = {
 
 	# "15 12 * * *" below is a duplicate key that predates this line; merging it changes which jobs run, so it is fixed on its own.
 	"cron": {  # nosemgrep: frappe-semgrep-rules.rules.frappe-same-key-assigned-twice
-		"0 12 * * *": [
-			'one_fm.one_fm.doctype.arrival_acknowledgement.arrival_acknowledgement.send_daily_acknowledgement_reminders'
-		],
 		"40 5 * * 0,1,2,3,4":[#run durring working days only “At 05:40 on Sunday, Monday, Tuesday, Wednesday, and Thursday.”
 			'one_fm.grd.doctype.work_permit.work_permit.system_remind_renewal_operator_to_apply',#wp
 			'one_fm.grd.doctype.work_permit.work_permit.system_remind_transfer_operator_to_apply',
@@ -772,7 +779,6 @@ scheduler_events = {
 		],
 		"15 12 * * *": [ #"At 12:15 pm - preponed from 01:30 pm (WI-001704); run after attendance is marked"
 			'one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.generate_checker',
-			'one_fm.operations.doctype.roster_double_shift_ot_checker.roster_double_shift_ot_checker.check_roster_double_shift_ot',
 		],
 		"30 4 * * *": [
 			'one_fm.operations.doctype.roster_client_day_off_checker.roster_client_day_off_checker.check_roster_client_day_off'
@@ -850,7 +856,8 @@ scheduler_events = {
 		],
 		"0 * * * *":[ # Creates the missing checkin record per shift, runs every hour
 			"one_fm.one_fm.doctype.missing_checkin.missing_checkin.create_missing_checkin_record",
-			"one_fm.api.tasks.notify_approver_about_pending_shift_request"
+			"one_fm.api.tasks.notify_approver_about_pending_shift_request",
+			"one_fm.one_fm.doctype.google_sheet_data_export.exporter.update_google_sheet_hourly"
 		],
         "0 0 1 * *": [
             "one_fm.one_fm.page.roster.roster.create_employee_schedule"

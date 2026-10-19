@@ -85,19 +85,6 @@ def get_attendance_custom_fields():
                 "read_only": 1
             },
             {
-                # WI-001686: what makes Attendance a Connection on Event Staff. Read from
-                # the Shift Assignment, the same hop custom_client_event above takes -
-                # Client Event has no Event Staff to fetch, it is the far end of a
-                # one-to-many.
-                "fieldname": "custom_event_staff",
-                "fieldtype": "Link",
-                "insert_after": "custom_client_event",
-                "label": "Event Staff",
-                "options": "Event Staff",
-                "fetch_from": "shift_assignment.event_staff",
-                "read_only": 1
-            },
-            {
                 "fieldname": "shift_assignment",
                 "fieldtype": "Link",
                 "insert_after": "section_break_17",

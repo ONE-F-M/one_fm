@@ -224,7 +224,7 @@ def create_career_history_from_portal(job_applicant, career_history_details, int
     return True
 
 @frappe.whitelist()
-def send_career_history_magic_link(job_applicant, applicant_name, designation):
+def send_career_history_magic_link(job_applicant, applicant_name, designation, notify=True):
     '''
         Method used to send the magic Link for Career History to the Job Applicant
         args:
@@ -240,6 +240,6 @@ def send_career_history_magic_link(job_applicant, applicant_name, designation):
         url_prefix = "/career_history?magic_link="
         msg = "<b>Fill your Career History Sheet by visiting the magic link below</b>\
             <br/>Applicant ID: {0}<br/>Applicant Name: {1}<br/>Designation: {2}</br>".format(job_applicant, applicant_name, designation)
-        send_magic_link('Job Applicant', job_applicant, 'Career History', [applicant_email], url_prefix, msg, subject)
+        send_magic_link('Job Applicant', job_applicant, 'Career History', [applicant_email], url_prefix, msg, subject, notify=notify)
     else:
         frappe.throw(_("No Email ID found for the Job Applicant"))
