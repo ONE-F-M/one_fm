@@ -32,4 +32,8 @@ def execute():
 	# field. Replaying the rule clears the assignment on the old approver and raises the
 	# new one exactly as a save would have.
 	if frappe.db.exists("Assignment Rule", {"name": RULE, "disabled": 0}):
-		frappe.get_doc("Assignment Rule", RULE).apply_assign(frappe.get_doc(DOCTYPE, NAME))
+		# as_dict, not the Document: the rule evaluates assign_condition through
+		# frappe.safe_eval, whose eval_locals has to be a mapping. A Document is not one,
+		# and the TypeError is swallowed inside AssignmentRule.safe_eval, so the rule
+		# quietly decides the condition is False and assigns nobody.
+		frappe.get_doc("Assignment Rule", RULE).apply_assign(frappe.get_doc(DOCTYPE, NAME).as_dict())
