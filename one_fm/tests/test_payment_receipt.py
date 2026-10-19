@@ -98,10 +98,10 @@ class TestReadPaymentDate(FrappeTestCase):
 	def setUp(self):
 		self.paci = create_PACI(frappe.get_doc("Employee", _an_active_employee()), "Renewal")
 
-	def _attach(self, content: bytes):
+	def _attach(self, content: bytes, file_name: str = "receipt.pdf"):
 		file = frappe.get_doc({
 			"doctype": "File",
-			"file_name": "receipt.pdf",
+			"file_name": file_name,
 			"content": content,
 			"is_private": 1,
 			"attached_to_doctype": "PACI",
@@ -116,7 +116,8 @@ class TestReadPaymentDate(FrappeTestCase):
 		self.assertEqual(read_payment_date("PACI", self.paci.name, file.file_url), "2026-10-05 09:29:00")
 
 	def test_a_file_that_is_not_a_pdf_is_none(self):
-		file = self._attach(b"not a pdf")
+		# An image upload: Frappe refuses an invalid file named .pdf before we see it.
+		file = self._attach(b"\x89PNG\r\n\x1a\n" + b"\x00" * 16, file_name="receipt.png")
 		self.assertIsNone(read_payment_date("PACI", self.paci.name, file.file_url))
 
 	def test_a_file_attached_elsewhere_is_none(self):
