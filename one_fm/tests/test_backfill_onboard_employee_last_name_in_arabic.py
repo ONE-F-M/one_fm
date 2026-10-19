@@ -15,20 +15,19 @@ OLD_MODIFIED = "2020-01-01 10:00:00.000000"
 
 
 def _insert(doctype, name, **values):
-	"""Insert straight into the table - no hooks, no mandatory checks - so each case
-	is exactly the data shape under test. FrappeTestCase rolls it back."""
-	doc = frappe.get_doc(
-		{
-			"doctype": doctype,
-			"name": name,
-			"owner": "Administrator",
-			"modified_by": "Administrator",
-			"creation": OLD_MODIFIED,
-			"modified": OLD_MODIFIED,
-			**values,
-		}
-	)
-	doc.db_insert()
+	"""Insert only the named columns straight into the table - no hooks, no mandatory
+	checks, no dependence on unrelated columns - so each case is exactly the data shape
+	under test. FrappeTestCase rolls it back."""
+	row = {
+		"name": name,
+		"owner": "Administrator",
+		"modified_by": "Administrator",
+		"creation": OLD_MODIFIED,
+		"modified": OLD_MODIFIED,
+		**values,
+	}
+	table = frappe.qb.DocType(doctype)
+	frappe.qb.into(table).columns(*row.keys()).insert(*row.values()).run()
 	return name
 
 
