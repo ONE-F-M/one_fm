@@ -10,7 +10,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.model.naming import make_autoname
 from frappe.query_builder import DocType
-from frappe.utils import cint, cstr, flt
+from frappe.utils import cint, cstr, escape_html, flt, strip_html
 from frappe.utils import (
     today,
     add_months,
@@ -91,6 +91,8 @@ NEW_ACTION_DOCUMENTS = {
         "work_permit": "Local Transfer",
         "medical_insurance": "Local Transfer",
         "residency": "Transfer",
+        "medical_insurance": "Local Transfer",
+        "residency": "Transfer",
         "paci": "Transfer",
     },
 }
@@ -150,6 +152,25 @@ VISA_EXTENSION_ACTION = 'Visa Extension'
 # "not one of the new Actions, so open the four a renewal opens".
 RESIDENCY_ONLY_ACTIONS = (EXTENSION_ACTION, VISA_EXTENSION_ACTION)
 
+# The two renewal Actions, and the Action that ends an employment. Named because
+# handle_renewal_changes compared against the literal "Renewal" - a value the Action field
+# has never offered - so every transition it was written to handle was unreachable.
+RENEWAL_ACTIONS = ('Renewal Expat', 'Renewal (Kuwaiti)')
+CANCELLATION_ACTION = 'Cancellation'
+
+# Everything a Preparation opens for one row, dependents first. Medical Insurance reads its
+# permit, so it goes before the Work Permit. The overseas pair were missing from the
+# cancellation list, which left a Medical Appointment and a PCC Attestation behind for a row
+# that no longer asks for either.
+BATCH_DOCUMENTS = (
+    'Medical Appointment',
+    'PCC Attestation',
+    'Residency',
+    'PACI',
+    'Medical Insurance',
+    'Work Permit',
+)
+
 
 # WI-002101: the batch type, the series it is named under, and the Actions its rows may
 # carry. One table, because the naming and the restriction are two halves of the same
@@ -191,9 +212,8 @@ CATEGORIES = {
 FALLBACK_PREFIX = 'PRE-'
 
 
-# WI-002093: the order the legal steps run in, so a row can say which one the candidate has
-# reached. Furthest along wins - the sequence only moves forward, and what an operator wants
-# to see is progress, not the last document anybody happened to touch.
+# The order the legal steps run in. A row's Current Stage is the first of them that is not
+# Completed.
 SUB_DOCUMENT_SEQUENCE = ("Work Permit", "Medical Insurance", "Residency", "PACI")
 
 
@@ -282,54 +302,103 @@ def validate_sequence(doc, method=None):
     )
 
 
-def update_row_reference(doc, method=None):
-    """Point a Preparation row at the sub-document its candidate has reached (WI-002093).
+def _state_label(document):
+    """The state a document is in, as the row shows it. A cancelled document says so."""
+    if document.get("docstatus") == 2:
+        return "Cancelled"
+    if document.get("workflow_state"):
+        return document.get("workflow_state")
+    return "Submitted" if document.get("docstatus") == 1 else "Draft"
 
-    Hung off each sub-document's own save, so the status on the row is the status on the
-    document rather than a snapshot from whenever the Preparation was last touched.
 
-    Only ever moves forward: a Medical Insurance saving does not pull the row back from the
-    PACI it had already reached. That is what makes it a progress column and not a
-    last-touched column.
+def current_stage(documents):
+    """The stage a candidate is at, from the latest document of each kind they have.
 
-    Written with db.set_value on the child row - the row belongs to a submitted Preparation,
-    and a status arriving here should not need permission to edit one.
+    `documents` is a list of dicts with doctype, name, workflow_state and docstatus. Pure:
+    it reads nothing and writes nothing.
+
+    The stage is the first document in the legal sequence that is not Completed. Once every
+    document that exists is Completed, the last of them is the stage. Returns a dict with
+    ref_doctype, ref_name and ref_doctype_status ("<DocType> - <state>"), or None when no
+    document in the sequence exists.
     """
-    if not doc.get("preparation") or not doc.get("employee"):
-        return
+    latest = {}
+    for document in documents or []:
+        if document.get("doctype") in SUB_DOCUMENT_SEQUENCE:
+            latest[document["doctype"]] = document
 
-    try:
-        position = SUB_DOCUMENT_SEQUENCE.index(doc.doctype)
-    except ValueError:
+    present = [latest[doctype] for doctype in SUB_DOCUMENT_SEQUENCE if doctype in latest]
+    if not present:
+        return None
+
+    chosen = present[-1]
+    for document in present:
+        if _state_label(document) != COMPLETED:
+            chosen = document
+            break
+
+    return {
+        "ref_doctype": chosen["doctype"],
+        "ref_name": chosen.get("name"),
+        "ref_doctype_status": "{0} - {1}".format(chosen["doctype"], _state_label(chosen)),
+    }
+
+
+def refresh_row_stage(preparation, employee):
+    """Recompute the Current Stage of the Preparation row for this employee.
+
+    Reads the latest document of each kind, cancelled ones included, and writes the result
+    on the row. A row with no document behind it is left as it was.
+
+    Written with db.set_value on the child row - the row belongs to a submitted
+    Preparation, and a stage arriving here should not need permission to edit one. The
+    label is stored verbatim, not translated.
+    """
+    if not preparation or not employee:
         return
 
     row = frappe.db.get_value(
         "Preparation Record",
         {
-            "parent": doc.preparation,
+            "parent": preparation,
             "parenttype": "Preparation",
-            "employee": doc.employee,
+            "employee": employee,
         },
-        ["name", "ref_doctype"],
-        as_dict=True,
+        "name",
     )
     if not row:
         return
 
-    if row.ref_doctype in SUB_DOCUMENT_SEQUENCE:
-        if SUB_DOCUMENT_SEQUENCE.index(row.ref_doctype) > position:
-            return
+    documents = []
+    for doctype in SUB_DOCUMENT_SEQUENCE:
+        found = frappe.get_all(
+            doctype,
+            filters={"preparation": preparation, "employee": employee},
+            fields=["name", "workflow_state", "docstatus"],
+            order_by="creation desc",
+            limit=1,
+        )
+        if found:
+            documents.append(dict(found[0], doctype=doctype))
 
-    frappe.db.set_value(
-        "Preparation Record",
-        row.name,
-        {
-            "ref_doctype": doc.doctype,
-            "ref_name": doc.name,
-            "ref_doctype_status": doc.get("workflow_state") or "",
-        },
-        update_modified=False,
-    )
+    stage = current_stage(documents)
+    if not stage:
+        return
+
+    frappe.db.set_value("Preparation Record", row, stage, update_modified=False)
+
+
+def update_row_reference(doc, method=None):
+    """Refresh the Current Stage of the Preparation row this sub-document belongs to.
+
+    Hung off each sub-document's save, cancel and delete.
+    """
+    if not doc.get("preparation") or not doc.get("employee"):
+        return
+    if doc.doctype not in SUB_DOCUMENT_SEQUENCE:
+        return
+
+    refresh_row_stage(doc.preparation, doc.employee)
 
 
 def category_for_action(action):
@@ -418,7 +487,7 @@ class Preparation(Document):
 
         doc_total = sum(flt(row.total_amount) for row in self.preparation_record)
         frappe.db.set_value(self.doctype,self.name,'total_payment',doc_total)
-        self.total_payment = doc_total
+        self.set('total_payment', doc_total)
 
     def on_update_after_submit(self):
         self.compare_preparation_record()
@@ -493,16 +562,24 @@ class Preparation(Document):
         validate_preparation_table(self)
         self.db_set('submitted_by', frappe.session.user)
         self.db_set('submitted_on', now_datetime())
-        self.recall_create_work_permit_renewal() ## create work permit record for renewals
-        self.recall_create_medical_insurance_renewal() # create medical insurance record for renewals
-        self.recall_create_moi_renewal_and_extend() # create moi record for all employee
-        self.recall_create_paci() # create paci record for all
+        # Each creator reports the rows it could not open a document for instead of only
+        # writing an Error Log the operator never sees. A row is still allowed to fail
+        # without taking the batch down - the whole point of the per-row try - but the
+        # submit no longer looks clean when it was not.
+        failures = []
+        failures += self.recall_create_work_permit_renewal() ## create work permit record for renewals
+        failures += self.recall_create_medical_insurance_renewal() # create medical insurance record for renewals
+        failures += self.recall_create_moi_renewal_and_extend() # create moi record for all employee
+        failures += self.recall_create_paci() # create paci record for all
         # self.recall_create_fp()# create fp record for all
-        self.recall_create_documents_for_new_actions() # WI-001824: New Kuwaiti / Overseas
+        failures += self.recall_create_documents_for_new_actions() # WI-001824: New Kuwaiti / Overseas
+        for row in self.preparation_record:
+            refresh_row_stage(self.name, row.employee)
+        report_document_creation_failures(failures)
         self.send_notifications()
 
     def recall_create_documents_for_new_actions(self):
-        create_documents_for_new_actions(self.name)
+        return create_documents_for_new_actions(self.name)
 
     def validate_mandatory_fields_on_submit(self):
         mandatory_fields = []
@@ -520,16 +597,16 @@ class Preparation(Document):
 
 
     def recall_create_work_permit_renewal(self):
-        work_permit.create_work_permit_renewal(self.name)
+        return work_permit.create_work_permit_renewal(self.name)
 
     def recall_create_medical_insurance_renewal(self):
-        medical_insurance.valid_work_permit_exists(self.name)
+        return medical_insurance.valid_work_permit_exists(self.name)
 
     def recall_create_moi_renewal_and_extend(self):
-        residency.set_employee_list_for_moi(self.name)
+        return residency.set_employee_list_for_moi(self.name)
 
     def recall_create_paci(self):
-        paci.create_PACI_renewal(self.name)
+        return paci.create_PACI_renewal(self.name)
 
     def recall_create_fp(self):
         fingerprint_appointment.creat_fp_record(self.name)
@@ -816,8 +893,10 @@ def create_documents_for_new_actions(preparation_name):
 
     One row at a time, and one row's failure does not stop the rest: the same contract
     the renewal and extend paths already keep, so a single bad employee record cannot
-    cost the whole batch its documents.
+    cost the whole batch its documents. The rows that failed are returned so the
+    operator is told which ones, rather than the batch reading as a clean submit.
     """
+    failures = []
     preparation = frappe.get_doc('Preparation', preparation_name)
 
     for row in preparation.preparation_record:
@@ -825,12 +904,64 @@ def create_documents_for_new_actions(preparation_name):
             continue
         try:
             create_documents_for_row(row, preparation_name)
-        except Exception:
+        except Exception as e:
             frappe.log_error(
                 title=f"Error creating GRD documents for {row.employee} in Preparation {preparation_name}",
                 message=frappe.get_traceback(),
             )
+            failures.append({
+                'employee': row.employee,
+                'employee_name': row.full_name,
+                'document': row.renewal_or_extend,
+                'reason': str(e),
+            })
             continue
+
+    return failures
+
+
+def report_document_creation_failures(failures):
+    """Tell the submitting operator which rows did not get their documents.
+
+    Every creator keeps a per-row `try` so one bad employee record cannot cost the whole
+    batch its documents, and each writes an Error Log. But an Error Log is not something
+    the operator reads: PRE-REN-2026-00008 submitted 80 rows, opened 69 Work Permits and
+    69 Medical Insurances instead of 70 each, and the gap only surfaced when someone
+    noticed the connection badges did not agree. The submit still succeeds - a partial
+    batch is the intended behaviour - but it no longer looks complete when it is not.
+    """
+    if not failures:
+        return
+
+    rows = ""
+    for failure in failures:
+        rows += "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>".format(
+            escape_html(cstr(failure.get("employee"))),
+            escape_html(cstr(failure.get("employee_name"))),
+            escape_html(cstr(failure.get("document"))),
+            escape_html(strip_html(cstr(failure.get("reason")))),
+        )
+
+    message = """
+        <p>{intro}</p>
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm small">
+                <thead><tr><th>{employee}</th><th>{name}</th><th>{document}</th><th>{reason}</th></tr></thead>
+                <tbody>{rows}</tbody>
+            </table>
+        </div>
+        <p class="text-muted small">{footer}</p>
+    """.format(
+        intro=_("This Preparation was submitted, but the following documents could not be created. Correct the cause and open them from the employee's record, or amend the row's Action."),
+        employee=_("Employee"),
+        name=_("Name"),
+        document=_("Document"),
+        reason=_("Reason"),
+        rows=rows,
+        footer=_("The full traceback for each is in the Error Log."),
+    )
+
+    frappe.msgprint(message, title=_("Documents Not Created"), indicator="red", wide=True)
 
 
 def create_documents_for_row(row, preparation_name):
@@ -918,20 +1049,88 @@ def handle_creation_of_grd_docs(row,source):
     
     
 def handle_renewal_changes(old_,new_,source):
+    """Re-open the documents a row's new Action calls for when the Action is changed.
+
+    HD-1873958: row 41 of PRE-REN-2026-00008 had to go from "Renewal Expat" to
+    "Extension", and there was no safe way to do it. The three branches here compared the
+    Action against the literal "Renewal", which the field has never offered - its renewal
+    options are "Renewal Expat" and "Renewal (Kuwaiti)" - so every one of them was
+    unreachable and changing an Action after submit quietly did nothing. The row said
+    Extension while the four documents a renewal opens stayed behind it, including a
+    PACI and a Work Permit nobody was going to apply for.
+
+    Rebuilt rather than patched transition by transition: `handle_creation_of_grd_docs`
+    already knows what every Action opens, so clearing what the old Action opened and
+    letting it open the new set covers every pair of Actions, including the reverse
+    direction, which the old third branch got wrong anyway - it created a renewal's four
+    documents on top of the extension's Residency instead of replacing it.
+
+    A row still holding a document the GRD operator has already submitted is left alone:
+    `cancel_delete_doc` force-deletes, and an Action change is not worth destroying work
+    somebody has done. The operator is told, and handles those by hand.
     """
-    Handle the changes in  renewal field of a row in the preparation record table 
-    Args:
-        old (dict): a dict containing details of the old row
-        new (dict): a dict containing details of the new row
-    """
-    if old_.renewal_or_extend == "Renewal" and new_.renewal_or_extend == EXTENSION_ACTION:
-        handle_extension(source,new_)
-    elif new_.renewal_or_extend == "Cancellation":
+    if old_.renewal_or_extend == new_.renewal_or_extend:
+        return
+
+    if new_.renewal_or_extend == CANCELLATION_ACTION:
         handle_cancelation(source,new_)
-    elif new_.renewal_or_extend == "Renewal" and old_.renewal_or_extend != "Renewal":
-        handle_creation_of_grd_docs(new_,source)
-        #Create for all
-        
+        return
+
+    in_progress = submitted_batch_documents(source,new_)
+    if in_progress:
+        report_action_change_blocked(new_,in_progress)
+        return
+
+    handle_cancelation(source,new_)
+    handle_creation_of_grd_docs(new_,source)
+
+
+def submitted_batch_documents(source,row):
+    """The documents this batch opened for a row that have left Draft.
+
+    Returns `(doctype, name)` pairs. Only `docstatus` is read: the GRD workflows run a
+    document through most of its states while it is still a draft, so a submitted or
+    cancelled document is the one unambiguous signal that the process has moved past the
+    point where deleting it is free.
+    """
+    in_progress = []
+    for doctype in BATCH_DOCUMENTS:
+        in_progress += [
+            (doctype, each.name)
+            for each in frappe.get_all(
+                doctype,
+                filters={'preparation': source, 'employee': row.employee, 'docstatus': ['!=', 0]},
+                fields=['name'],
+            )
+        ]
+    return in_progress
+
+
+def report_action_change_blocked(row,in_progress):
+    """Say which documents stopped the row being rebuilt, and that the Action still moved.
+
+    The Action is an `allow_on_submit` field, so by the time this runs the new value is
+    already on the row - there is nothing to roll back, and throwing would only lose the
+    rest of the save. What the operator needs is the list.
+    """
+    items = "".join(
+        "<li>{0} <b>{1}</b></li>".format(escape_html(doctype), escape_html(name))
+        for doctype, name in in_progress
+    )
+    frappe.msgprint(
+        "<p>{intro}</p><ul>{items}</ul><p class=\"text-muted small\">{footer}</p>".format(
+            intro=_("The Action for {0} was changed, but the documents already opened for them could not be replaced - these have been submitted:").format(
+                escape_html(cstr(row.full_name or row.employee))
+            ),
+            items=items,
+            footer=_("Cancel or complete them, then set the Action again."),
+        ),
+        title=_("Documents Not Replaced"),
+        indicator="orange",
+        wide=True,
+    )
+
+
 def handle_updates(method_dict):
     for one in method_dict['to_create']:
         handle_creation_of_grd_docs(one['row'],one['source'])
@@ -942,18 +1141,21 @@ def handle_updates(method_dict):
         
         
             
-def handle_extension(source,row):
-    """Cancel 3 of the linked GRD documents for an employee"""
-    cancel_delete_doc("PACI",source,row)
-    cancel_delete_doc("Medical Insurance",source,row)
-    cancel_delete_doc("Work Permit",source,row)
-
 def handle_cancelation(source,row):
-    """Cancel all the linked GRD documents for an employee"""
-    cancel_delete_doc("Residency",source,row)
-    cancel_delete_doc("PACI",source,row)
-    cancel_delete_doc("Medical Insurance",source,row)
-    cancel_delete_doc("Work Permit",source,row)
+    """Cancel every GRD document this Preparation opened for an employee.
+
+    Listed in BATCH_DOCUMENTS rather than here, because the Action change path clears the
+    same set: the two were written separately and the overseas Actions' Medical
+    Appointment and PCC Attestation were only ever in one of them.
+
+    `handle_extension`, which cleared three of these for a row moving to Extension, is
+    gone: its only caller was the unreachable first branch of `handle_renewal_changes`,
+    and the rebuild there now clears the whole set and re-opens what the new Action asks
+    for - which an extension's own Residency has to be, since the one left standing was
+    categorised Renewal and dated for one.
+    """
+    for doctype in BATCH_DOCUMENTS:
+        cancel_delete_doc(doctype,source,row)
 
 def cancel_delete_doc(doctype,source,row):
     """
