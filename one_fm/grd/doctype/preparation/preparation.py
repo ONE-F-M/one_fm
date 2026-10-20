@@ -31,6 +31,7 @@ from one_fm.grd.doctype.medical_appointment import medical_appointment
 from one_fm.grd.doctype.pcc_attestation import pcc_attestation
 from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.processor import sendemail
+from one_fm.grd.utils import get_pcc_attestation_fees
 
 # WI-001824: which documents each of the new Actions generates on submit. An Action
 # absent from here keeps its existing behaviour, which the renewal and extend paths
@@ -113,6 +114,12 @@ COST_COMPONENT_FIELDS = (
 # Preparation Record has no visa_amount column, so the tuple above stays its contract:
 # widening it would set a field that does not exist and drop the value on save.
 MASTER_COST_COMPONENT_FIELDS = COST_COMPONENT_FIELDS + ('visa_amount',)
+
+# PCC attestation fees a row carries on top of the cost components. Kept out of
+# COST_COMPONENT_FIELDS because the HR Costing master has no such columns.
+ATTESTATION_FEE_FIELDS = ('embassy_attestation_fee', 'mofa_fee', 'pcc_translation_fee')
+ROW_TOTAL_FIELDS = COST_COMPONENT_FIELDS + ATTESTATION_FEE_FIELDS
+OVERSEAS_ACTIONS = ('Overseas', 'Overseas (Government)')
 
 # The Actions whose master fee row is keyed by the number of years as well as the Action.
 # Mirrors the depends_on the costing table already puts on its No. of Years field.
@@ -479,11 +486,13 @@ class Preparation(Document):
         assignment there would be discarded.
         """
         for row in self.preparation_record:
-            row_total = sum(flt(row.get(field)) for field in COST_COMPONENT_FIELDS)
+            values = attestation_fees_for_row(row.renewal_or_extend, row.nationality)
+            row.update(values)
+            values['total_amount'] = sum(flt(row.get(field)) for field in ROW_TOTAL_FIELDS)
             if self.docstatus == 1:
-                row.db_set('total_amount', row_total)
+                row.db_set(values)
             else:
-                row.total_amount = row_total
+                row.total_amount = values['total_amount']
 
         doc_total = sum(flt(row.total_amount) for row in self.preparation_record)
         frappe.db.set_value(self.doctype,self.name,'total_payment',doc_total)
@@ -636,7 +645,8 @@ class Preparation(Document):
         )
 
     @frappe.whitelist()
-    def set_renewal_for_all_preparation_record(self, renew_all):
+    def set_renewal_for_all_preparation_record(self, renew_all: int | str):
+        renew_all = cint(renew_all)
         no_of_years = "1 Year"
 
         # Set the costing of renewal for an year in preparation record
@@ -657,8 +667,11 @@ class Preparation(Document):
             costing = costing or frappe._dict()
             for field in COST_COMPONENT_FIELDS:
                 preparation.set(field, flt(costing.get(field)) if renew_all else 0)
+            preparation.update(
+                attestation_fees_for_row(preparation.renewal_or_extend, preparation.nationality)
+            )
             preparation.total_amount = sum(
-                flt(preparation.get(field)) for field in COST_COMPONENT_FIELDS
+                flt(preparation.get(field)) for field in ROW_TOTAL_FIELDS
             )
 
 # Calculate the date of the next month (First & Last) (monthly cron in hooks)
@@ -849,7 +862,8 @@ def duration_in(duration):
 
 @frappe.whitelist()
 def get_preparation_row_costing(
-    renewal_or_extend: str, no_of_years: str = None, no_of_months: str = None
+    renewal_or_extend: str, no_of_years: str = None, no_of_months: str = None,
+    nationality: str = None
 ):
     """The fees a Preparation row should carry for this Action and duration (WI-002092).
 
@@ -875,6 +889,7 @@ def get_preparation_row_costing(
         return costing
 
     costing = dict(costing)
+    costing.update(attestation_fees_for_row(renewal_or_extend, nationality))
     if renewal_or_extend in YEAR_SCOPED_ACTIONS:
         periods = duration_in(no_of_years)
     elif renewal_or_extend == EXTENSION_ACTION:
@@ -886,6 +901,23 @@ def get_preparation_row_costing(
         costing[field] = flt(costing.get(field)) * periods
 
     return costing
+
+
+def attestation_fees_for_row(renewal_or_extend, nationality):
+    """The PCC attestation fees a Preparation row carries, keyed by fieldname.
+
+    Only the Overseas Actions pay them; every other Action gets 0 so a hidden stale value
+    cannot inflate the total. The amounts come from the same lookup PCC Attestation uses.
+    """
+    if renewal_or_extend not in OVERSEAS_ACTIONS:
+        return dict.fromkeys(ATTESTATION_FEE_FIELDS, 0.0)
+
+    fees = get_pcc_attestation_fees(nationality)
+    return {
+        'embassy_attestation_fee': fees.embassy_fee,
+        'mofa_fee': fees.mofa_fee,
+        'pcc_translation_fee': fees.translation_fee,
+    }
 
 
 def create_documents_for_new_actions(preparation_name):
