@@ -1,0 +1,6 @@
+{
+  "permissions": {
+    "allow": ["Bash(bash scripts/claude-pr.sh:*)"],
+    "deny": ["Bash(git push:*)", "Bash(gh pr create:*)"]
+  }
+}
