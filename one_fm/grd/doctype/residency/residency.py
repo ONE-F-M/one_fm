@@ -144,6 +144,7 @@ class Residency(Document):
     def on_submit(self):
         self.validate_mandatory_fields_on_submit()
         self.set_residency_expiry_new_date_in_employee_doctype()
+        self.sync_visa_extension_expiry_date()
         self.apply_damj_civil_id()
         self.db_set('completed_on', now_datetime())
         if self.category == "Transfer":
@@ -267,6 +268,22 @@ class Residency(Document):
         frappe.db.set_value(
             "Employee", self.employee, "residency_expiry_date", self.new_residency_expiry_date
         )
+
+    def sync_visa_extension_expiry_date(self):
+        """
+        runs: `on_submit`
+        An Extension sets the Employee's Visa Extension Expiry Date; a Renewal Expat clears it.
+        Keyed on the row action, not the category: Cancellation rows also open category Extend.
+        """
+        from one_fm.grd.doctype.preparation.preparation import RESIDENCY_ONLY_ACTIONS
+
+        if self.renewal_or_extend in RESIDENCY_ONLY_ACTIONS:
+            value = self.visa_extension_expiry_date
+        elif self.renewal_or_extend == "Renewal Expat":
+            value = None
+        else:
+            return
+        frappe.db.set_value("Employee", self.employee, "custom_visa_extension_expiry_date", value)
 
     def get_passport_arabic(self, passport):
         return {'Normal':'طبيعي','Diplomat':'دبلوماسي'}.get(passport)
