@@ -1138,7 +1138,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 				if pending:
 					pending_msg = _(
 						"Notice: The requested Double Shift Overtime (DSOT) is currently Pending Approval. "
-						"It will not be displayed on the Roster UI until it has been approved by the authorized user."
+						"It is shown on the Roster UI in the Pending colour until it has been approved or rejected by the authorized user."
 					)
 					pending_rows = frappe.get_all(
 						"Employee Schedule",

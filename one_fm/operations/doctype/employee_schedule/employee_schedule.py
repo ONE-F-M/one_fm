@@ -39,8 +39,8 @@ WORKING = "Working"
 # Only the DSOT flow reaches either: the workflow's Rejected state has one way in, from
 # Pending DSOT Approval, so the suspension flow this shares a workflow with is untouched.
 #
-# The Roster Matrix applies the same pair through its own raw-SQL fragment in
-# one_fm/one_fm/page/roster/employee_map.py; the two are pinned equal in test_dsot_roster.
+# The Roster Matrix hides only Rejected (employee_map.HIDDEN_FROM_ROSTER) and draws
+# Pending DSOT Approval in its own colour.
 NOT_A_WORKED_SHIFT = (PENDING_DSOT, DSOT_REJECTED)
 
 
