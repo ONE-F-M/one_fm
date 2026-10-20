@@ -8,8 +8,11 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 from one_fm.grd.doctype.pam_license_details.pam_license_details import (
-	VISA_COMPLETED,
+	VISA_ISSUED_STATES,
 	visas_issued_by_quota,
+)
+from one_fm.visa_management.doctype.visa_cancellation_request.visa_cancellation_request import (
+	has_workflow_state_column,
 )
 
 FIELDNAME = "number_of_visas_issued"
@@ -19,11 +22,23 @@ SOURCE = frappe.get_app_path(
 
 
 class TestWhatCounts(FrappeTestCase):
-	def test_only_a_completed_request_is_a_visa(self):
-		"""Anything earlier is an application, not a visa."""
+	def test_only_a_request_pending_by_moi_is_a_visa(self):
+		"""Only the current state Pending By MOI counts - capital B, as the Workflow spells it."""
 		block = frappe.read_file(SOURCE).split("def visas_issued_by_quota", 1)[1]
-		self.assertIn('["workflow_state", "=", VISA_COMPLETED]', block)
-		self.assertEqual(VISA_COMPLETED, "Completed")
+		self.assertIn('["workflow_state", "in", VISA_ISSUED_STATES]', block)
+		self.assertEqual(VISA_ISSUED_STATES, ("Pending By MOI",))
+
+	def test_every_issued_state_is_a_state_of_the_visa_request_workflow(self):
+		"""Catches a casing error: a state the Workflow does not have matches nothing."""
+		workflows = frappe.get_all("Workflow", filters={"document_type": "Visa Request"}, pluck="name")
+		self.assertTrue(workflows, "No Workflow for Visa Request on this site")
+		states = set(
+			frappe.get_all(
+				"Workflow Document State", filters={"parent": ["in", workflows]}, pluck="state"
+			)
+		)
+		for state in VISA_ISSUED_STATES:
+			self.assertIn(state, states)
 
 	def test_it_reads_the_request_not_an_employee(self):
 		"""At this point there is no employee: the visa has been issued and the person has
@@ -132,6 +147,76 @@ class TestTheFieldIsDerived(FrappeTestCase):
 		)
 		field = next(f for f in definition["fields"] if f["fieldname"] == FIELDNAME)
 		self.assertNotIn("read_only", field)
+
+
+class TestWhichStatesAreCounted(FrappeTestCase):
+	"""Real rows, inserted with db_insert() so no workflow or mandatory-field rule runs.
+
+	FrappeTestCase rolls back per class, not per test, so every row gets a unique name.
+	"""
+
+	LICENSE = "ZZ-TEST-PAM-FILE-VISAS-ISSUED"
+
+	def setUp(self):
+		designation = frappe.get_all(
+			"PAM Designation List",
+			filters={"quota_type": ["is", "set"]},
+			fields=["name", "quota_type"],
+			limit=1,
+		)
+		if designation:
+			self.designation, self.quota_type = designation[0]["name"], designation[0]["quota_type"]
+		else:
+			self.designation, self.quota_type = "ZZ-TEST-DESIGNATION-VISAS-ISSUED", "ZZ-TEST-QUOTA"
+			frappe.get_doc(
+				{
+					"doctype": "PAM Designation List",
+					"name": self.designation,
+					"quota_type": self.quota_type,
+				}
+			).db_insert()
+
+	def _issued(self):
+		return visas_issued_by_quota(self.LICENSE).get(self.quota_type, 0)
+
+	def _request(self, state):
+		name = "ZZ-TEST-VR-" + frappe.generate_hash(length=10)
+		frappe.get_doc(
+			{
+				"doctype": "Visa Request",
+				"name": name,
+				"custom_pam_file": self.LICENSE,
+				"custom_pam_designation_list": self.designation,
+				"workflow_state": state,
+			}
+		).db_insert()
+		return name
+
+	def test_only_pending_by_moi_raises_the_count(self):
+		before = self._issued()
+		self._request("Completed")
+		self.assertEqual(self._issued(), before)
+		self._request("Rejected By MOI")
+		self.assertEqual(self._issued(), before)
+		self._request("Pending By MOI")
+		self.assertEqual(self._issued(), before + 1)
+
+	def test_a_completed_cancellation_takes_the_visa_back_out(self):
+		if not has_workflow_state_column():
+			self.skipTest("Visa Cancellation Request has no workflow_state column on this site")
+		before = self._issued()
+		request = self._request("Pending By MOI")
+		self.assertEqual(self._issued(), before + 1)
+
+		frappe.get_doc(
+			{
+				"doctype": "Visa Cancellation Request",
+				"name": "ZZ-TEST-VCR-" + frappe.generate_hash(length=10),
+				"visa_request_id": request,
+				"workflow_state": "Completed",
+			}
+		).db_insert()
+		self.assertEqual(self._issued(), before)
 
 
 class TestTheFieldsItReadsExist(FrappeTestCase):
