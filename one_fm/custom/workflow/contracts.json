@@ -14,7 +14,7 @@
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Sales Manager",
-      "send_email": 1,
+      "send_email": 0,
       "doctype": "Workflow Document State"
     },
     {
@@ -24,7 +24,7 @@
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Operation Admin",
-      "send_email": 1,
+      "send_email": 0,
       "doctype": "Workflow Document State"
     },
     {
@@ -34,7 +34,7 @@
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Finance Manager",
-      "send_email": 1,
+      "send_email": 0,
       "doctype": "Workflow Document State"
     },
     {
@@ -44,7 +44,7 @@
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Finance Manager",
-      "send_email": 1,
+      "send_email": 0,
       "doctype": "Workflow Document State"
     },
     {
@@ -54,7 +54,7 @@
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Legal Manager",
-      "send_email": 1,
+      "send_email": 0,
       "doctype": "Workflow Document State"
     },
     {
@@ -64,7 +64,7 @@
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Finance Manager",
-      "send_email": 1,
+      "send_email": 0,
       "doctype": "Workflow Document State"
     },
     {
@@ -74,7 +74,7 @@
       "is_optional_state": 0,
       "avoid_status_override": 0,
       "allow_edit": "Operation Admin",
-      "send_email": 1,
+      "send_email": 0,
       "doctype": "Workflow Document State"
     }
   ],
