@@ -685,4 +685,5 @@ one_fm.patches.v15_0.set_candidate_details_on_arrivals #2026-10-12 candidate dep
 one_fm.patches.v15_0.unblock_interview_feedback_skill_assessment #2026-09-25 HD-1853443
 one_fm.patches.v15_0.reconcile_bed_status_with_open_checkins #2026-10-14 HD-1806399 free the beds left flagged occupied by check-outs that could not reset them
 one_fm.patches.v15_0.google_sheet_export_update_frequency
+one_fm.patches.v15_0.backfill_dsot_request #2026-10-16 mark held and previously held Over-Time schedules as DSOT for the DSOT report
 one_fm.patches.v15_0.allow_medical_appointment_bulk_edit #2026-10-15 WI-003499
