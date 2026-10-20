@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Opens a PR as the developer's Claude bot app, or adds commits to a PR the bot already opened.
+# The developer is requested as reviewer on every new PR, and re-requested after every --update.
 #
 # New PR (creates a new branch named after the work item):
 #   bash scripts/claude-pr.sh <work-item-id> <base-branch> [gh pr create flags, e.g. --title ... --body-file ...]
@@ -8,7 +9,8 @@
 #
 # Needs: gh, jq, the gh-token extension, and these environment variables:
 #   CLAUDE_APP_ID, CLAUDE_INSTALL_ID, CLAUDE_APP_KEY (path to the app's .pem file),
-#   CLAUDE_BOT_NAME (the app name, e.g. onefm-claude-abraham; used by --update)
+#   CLAUDE_BOT_NAME (the app name, e.g. onefm-claude-abraham; used by --update),
+#   CLAUDE_REVIEWER (the developer's GitHub username, e.g. ks093)
 set -euo pipefail
 
 USAGE="Usage: bash scripts/claude-pr.sh [--update] <work-item-id> <base-branch> [gh pr create flags]"
@@ -17,6 +19,7 @@ if [ "${1:-}" = "--update" ]; then UPDATE=1; shift; fi
 WI="${1:?$USAGE}"
 BASE="${2:?$USAGE}"
 shift 2
+REVIEWER="${CLAUDE_REVIEWER:?Set CLAUDE_REVIEWER to your GitHub username, e.g. ks093}"
 
 if ! [[ "$WI" =~ ^WI-[0-9]{6}$ ]]; then
   echo "Work item id must look like WI-001234 (got '$WI')." >&2
@@ -54,7 +57,10 @@ if GH_TOKEN="$TOKEN" gh api "repos/$REPO/branches/$WI" --silent 2>/dev/null; the
     exit 1
   fi
   git push "$PUSH_URL" "HEAD:refs/heads/${WI}"
-  echo "Added commits to $(jq -r '.html_url' <<<"$PR")"
+  # Re-request review so the developer is notified about the new commits.
+  GH_TOKEN="$TOKEN" gh api -X POST "repos/$REPO/pulls/$(jq -r '.number' <<<"$PR")/requested_reviewers" \
+    -f "reviewers[]=$REVIEWER" --silent
+  echo "Added commits to $(jq -r '.html_url' <<<"$PR") and re-requested review from $REVIEWER"
   exit 0
 fi
 
@@ -68,4 +74,4 @@ if [ $# -eq 0 ]; then
 fi
 
 git push "$PUSH_URL" "HEAD:refs/heads/${WI}"
-GH_TOKEN="$TOKEN" gh pr create --base "$BASE" --head "$WI" "$@"
+GH_TOKEN="$TOKEN" gh pr create --base "$BASE" --head "$WI" --reviewer "$REVIEWER" "$@"
