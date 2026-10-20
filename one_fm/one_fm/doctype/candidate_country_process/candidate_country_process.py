@@ -105,7 +105,10 @@ class CandidateCountryProcess(Document):
                 visiting.remove(row.process_name)
                 return None
 
-            before_tasks = self._expand_through_skipped(self._parse_task_list(row.get("before_task")), row_map)
+            before_tasks = self._expand_through_skipped(
+                self._expand_parallel_siblings(self._parse_task_list(row.get("before_task")), row_map),
+                row_map
+            )
             if not before_tasks:
                 planned = frappe.utils.add_days(start, row.duration_in_days)
                 memo[row.process_name] = planned
@@ -166,7 +169,10 @@ class CandidateCountryProcess(Document):
                 visiting.remove(row.process_name)
                 return actual
 
-            before_tasks = self._expand_through_skipped(self._parse_task_list(row.get("before_task")), row_map)
+            before_tasks = self._expand_through_skipped(
+                self._expand_parallel_siblings(self._parse_task_list(row.get("before_task")), row_map),
+                row_map
+            )
             if not before_tasks:
                 live = frappe.utils.add_days(start, row.duration_in_days)
                 memo[row.process_name] = live
@@ -206,6 +212,29 @@ class CandidateCountryProcess(Document):
         if not task_str:
             return []
         return [t.strip() for t in task_str.split(",") if t.strip()]
+
+    def _expand_parallel_siblings(self, task_names, row_map):
+        """
+        If a named before_task is itself marked "Parallel", automatically pull
+        in every other row that shares its exact before_task and is also
+        marked "Parallel" -- referencing just one member of a parallel group
+        in a downstream before_task is enough to wait on the whole group,
+        instead of requiring every sibling to be enumerated by hand.
+        Sequential dependencies are untouched: this only expands a name when
+        that row's own sequence_type is "Parallel".
+        """
+        expanded = set(task_names)
+        for name in list(expanded):
+            dep_row = row_map.get(name)
+            if not dep_row or dep_row.get("sequence_type") != "Parallel":
+                continue
+            shared_before = dep_row.get("before_task")
+            for other_name, other_row in row_map.items():
+                if other_name in expanded:
+                    continue
+                if other_row.get("sequence_type") == "Parallel" and other_row.get("before_task") == shared_before:
+                    expanded.add(other_name)
+        return list(expanded)
 
     def _expand_through_skipped(self, task_names, row_map, _seen=None):
         """
