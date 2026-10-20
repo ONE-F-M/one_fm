@@ -688,3 +688,4 @@ one_fm.patches.v15_0.google_sheet_export_update_frequency
 one_fm.patches.v15_0.add_employee_visa_extension_expiry_date
 one_fm.patches.v15_0.backfill_dsot_request #2026-10-16 mark held and previously held Over-Time schedules as DSOT for the DSOT report
 one_fm.patches.v15_0.allow_medical_appointment_bulk_edit #2026-10-15 WI-003499
+one_fm.patches.v15_0.create_mobile_app_tester_role
