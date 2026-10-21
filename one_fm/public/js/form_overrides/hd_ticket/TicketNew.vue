@@ -135,6 +135,7 @@
 <script setup lang="ts">
 import { LayoutHeader, UniInput } from "@/components";
 import {
+  applyCategoryDependencies,
   handleLinkFieldUpdate,
   handleSelectFieldUpdate,
   parseField,
@@ -243,6 +244,8 @@ function handleOnFieldChange(e: any, fieldname: string, fieldtype: string) {
   templateFields[fieldname] = e.value;
   // keep fetch_from fields in sync with their link, like the desk form does
   applyFetchFrom(template.data?.fields || [], templateFields, fieldname);
+  // and narrow / set Process off the reference doctype, as the desk form does
+  applyCategoryDependencies(fieldname, templateFields, call, applyFilters);
   const fieldDependentFns = customOnChange.value?.[fieldname];
   if (fieldDependentFns) {
     fieldDependentFns.forEach((fn: Function) => {
