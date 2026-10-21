@@ -117,7 +117,10 @@
 import { dayjs } from "@/dayjs";
 import { ITicket } from "@/pages/ticket/symbols";
 import { Field } from "@/types";
-import { isTicketFieldVisible } from "@/composables/formCustomisation";
+import {
+  isTicketFieldVisible,
+  ticketFieldDisplayValue,
+} from "@/composables/formCustomisation";
 import { dateFormat, dateTooltipFormat, formatTime } from "@/utils";
 import { Avatar, Tooltip } from "frappe-ui";
 import { computed, inject } from "vue";
@@ -227,11 +230,16 @@ const ticketAdditionalInfo = computed(() => {
       label: "Subject",
       value: ticket.data.subject,
     },
-    {
-      fieldname: "team",
-      label: "Team",
-      value: ticket.data.agent_group || "-",
-    },
+    // a ticket is not always assigned to a team - show it only when it is
+    ...(ticket.data.agent_group
+      ? [
+          {
+            fieldname: "team",
+            label: "Team",
+            value: ticket.data.agent_group,
+          },
+        ]
+      : []),
     {
       fieldname: "priority",
       label: "Priority",
@@ -249,7 +257,7 @@ const ticketAdditionalInfo = computed(() => {
     .map((field: Field) => {
       const option = {
         label: field.label,
-        value: ticket.data[field.fieldname],
+        value: ticketFieldDisplayValue(field, ticket.data),
       };
       if (field.fieldtype === "Date") {
         option.value = dayjs(option.value).format(
