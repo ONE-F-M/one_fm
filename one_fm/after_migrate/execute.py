@@ -610,6 +610,9 @@ def deploy_fetch_from_support():
       * Autocomplete.vue  - caps how many options are drawn at once, so a long
                             list (Reference Doctype) stays responsive
       * types.ts          - declares the three props on the Field interface
+      * TicketCustomerSidebar.vue / TicketCustomerTemplateFields.vue
+                          - hide fields depends_on rules out on the customer
+                            ticket view, as the agent view already does
     """
     bench_path = get_bench_path()
 
@@ -668,6 +671,16 @@ def deploy_fetch_from_support():
             "TicketNew.vue",
             os.path.join(desk_src, "pages", "ticket", "TicketNew.vue"),
             "TicketNew.vue",
+        ),
+        (
+            "TicketCustomerSidebar.vue",
+            os.path.join(desk_src, "components", "ticket", "TicketCustomerSidebar.vue"),
+            "TicketCustomerSidebar.vue",
+        ),
+        (
+            "TicketCustomerTemplateFields.vue",
+            os.path.join(desk_src, "pages", "ticket", "TicketCustomerTemplateFields.vue"),
+            "TicketCustomerTemplateFields.vue",
         ),
     ]
 

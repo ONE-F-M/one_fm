@@ -46,6 +46,28 @@ async function parseScript(script, obj) {
   };
 }
 
+/**
+ * Should a template field be shown on a read-only ticket view?
+ *
+ * Mirrors the `visible` rule the agent view applies in
+ * ticket-agent/TicketDetailsTab.vue, which the customer views never had: they
+ * filtered on hide_from_customer alone, so every field in the template was
+ * printed - irrelevant ones (Project on an internal ticket) and empty
+ * read-only ones alike, the latter as a bare "-".
+ *
+ * Honour depends_on, drop hidden fields, and do not print an empty read-only
+ * field: there is nothing to read and no way to fill it.
+ */
+export function isTicketFieldVisible(field: Field, doc: any) {
+  if (!doc) return false;
+  if (!evaluateDependsOnValue(field?.depends_on, doc)) return false;
+  if (field.hidden) return false;
+
+  const value = doc[field.fieldname];
+  const hasValue = value !== null && value !== undefined && value !== "";
+  return hasValue || !field.read_only;
+}
+
 const DOCTYPE_ISSUE = "Doctype Issue";
 const PROCESS_ISSUE = "Process Issue";
 const CATEGORY_FIELD = "custom_ticket_category";
