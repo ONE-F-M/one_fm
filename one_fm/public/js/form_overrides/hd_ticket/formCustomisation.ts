@@ -63,9 +63,26 @@ export function isTicketFieldVisible(field: Field, doc: any) {
   if (!evaluateDependsOnValue(field?.depends_on, doc)) return false;
   if (field.hidden) return false;
 
-  const value = doc[field.fieldname];
+  const value = ticketFieldDisplayValue(field, doc);
   const hasValue = value !== null && value !== undefined && value !== "";
+
+  // A cleared checkbox says nothing on a read-only view, so treat it as empty
+  // rather than printing a "No" nobody asked about.
+  if (field.fieldtype === "Check") return hasValue;
+
   return hasValue || !field.read_only;
+}
+
+/**
+ * What to print for a template field on a read-only ticket view.
+ *
+ * Checks are stored as 0/1, and the views render the raw value - so a ticket
+ * that is external showed "Is External: 1". Render the label instead.
+ */
+export function ticketFieldDisplayValue(field: Field, doc: any) {
+  const value = doc?.[field.fieldname];
+  if (field.fieldtype === "Check") return value ? "Yes" : "";
+  return value;
 }
 
 const DOCTYPE_ISSUE = "Doctype Issue";

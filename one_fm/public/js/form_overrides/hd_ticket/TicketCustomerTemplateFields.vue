@@ -12,6 +12,12 @@
         {{ ticket.data.priority }}
       </span>
     </div>
+    <div v-if="ticket.data.agent_group" class="space-y-1.5">
+      <span class="block text-sm text-gray-700"> Team </span>
+      <span class="block break-words text-base font-medium text-gray-900">
+        {{ ticket.data.agent_group }}
+      </span>
+    </div>
     <div v-for="data in slaData" :key="data.label" class="space-y-1.5">
       <Tooltip :text="dayjs(data.value).long()">
         <span class="block text-sm text-gray-700">{{ data.title }}</span>
@@ -38,9 +44,9 @@
       </span>
       <span
         class="block break-words text-base font-medium text-gray-900"
-        :class="!ticket.data[field.fieldname] && 'text-ink-gray-4'"
+        :class="!ticketFieldDisplayValue(field, ticket.data) && 'text-ink-gray-4'"
       >
-        {{ ticket.data[field.fieldname] || "—" }}
+        {{ ticketFieldDisplayValue(field, ticket.data) || "—" }}
       </span>
     </div>
   </div>
@@ -49,7 +55,10 @@
 <script setup lang="ts">
 import { dayjs } from "@/dayjs";
 import { Field } from "@/types";
-import { isTicketFieldVisible } from "@/composables/formCustomisation";
+import {
+  isTicketFieldVisible,
+  ticketFieldDisplayValue,
+} from "@/composables/formCustomisation";
 import { computed, inject } from "vue";
 import { ITicket } from "./symbols";
 
