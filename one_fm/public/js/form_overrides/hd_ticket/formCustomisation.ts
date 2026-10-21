@@ -46,6 +46,68 @@ async function parseScript(script, obj) {
   };
 }
 
+const DOCTYPE_ISSUE = "Doctype Issue";
+const PROCESS_ISSUE = "Process Issue";
+const CATEGORY_FIELD = "custom_ticket_category";
+const REFERENCE_DOCTYPE_FIELD = "custom_reference_doctype";
+const PROCESS_FIELD = "custom_process";
+
+/**
+ * Desk parity for the Ticket Category / Reference Doctype / Process trio.
+ *
+ * one_fm/public/js/doctype_js/hd_ticket.js does this on the desk form, but the
+ * portal is a standalone SPA and never loads desk client scripts - so picking a
+ * reference doctype left Process untouched on the new / edit ticket pages.
+ *
+ * Mirrors the desk behaviour: on a Doctype Issue the Process options are
+ * restricted to the processes that cover the chosen doctype, a process the new
+ * doctype does not cover is dropped, and a lone match is selected outright
+ * (Process is read-only on a Doctype Issue, so it can only be set this way).
+ * Changing the category away from either issue type clears the field that no
+ * longer applies.
+ */
+export async function applyCategoryDependencies(
+  fieldname: string,
+  doc: any,
+  call: Function,
+  applyFilters: Function
+) {
+  if (fieldname === CATEGORY_FIELD) {
+    if (doc[CATEGORY_FIELD] !== DOCTYPE_ISSUE) doc[REFERENCE_DOCTYPE_FIELD] = "";
+    if (![DOCTYPE_ISSUE, PROCESS_ISSUE].includes(doc[CATEGORY_FIELD])) {
+      doc[PROCESS_FIELD] = "";
+    }
+  }
+
+  if (fieldname !== CATEGORY_FIELD && fieldname !== REFERENCE_DOCTYPE_FIELD) return;
+  if (doc[CATEGORY_FIELD] !== DOCTYPE_ISSUE || !doc[REFERENCE_DOCTYPE_FIELD]) return;
+
+  let processes = [];
+  try {
+    const res = await call("one_fm.overrides.hd_ticket.get_filtered_processes", {
+      doctype_name: doc[REFERENCE_DOCTYPE_FIELD],
+      is_doctype_related: "Yes",
+    });
+    // frappe-ui's call unwraps `message`, but tolerate either shape
+    processes = Array.isArray(res) ? res : res?.message || [];
+  } catch (e) {
+    console.error("Failed to fetch processes for the reference doctype", e);
+    return;
+  }
+  if (!processes.length) return;
+
+  // applyFilters clears the field it narrows, so remember the current process
+  // and put it back if the new doctype still covers it
+  const current = doc[PROCESS_FIELD];
+  applyFilters?.(PROCESS_FIELD, processes);
+
+  if (processes.length === 1) {
+    doc[PROCESS_FIELD] = processes[0];
+  } else if (current && processes.includes(current)) {
+    doc[PROCESS_FIELD] = current;
+  }
+}
+
 export function handleSelectFieldUpdate(
   f: Field,
   fieldname: string,

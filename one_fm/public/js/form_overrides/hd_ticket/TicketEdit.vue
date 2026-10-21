@@ -88,6 +88,7 @@ import {
   setupCustomizations,
   handleSelectFieldUpdate,
   handleLinkFieldUpdate,
+  applyCategoryDependencies,
 } from "@/composables/formCustomisation";
 import { applyFetchFrom } from "@/composables/fetchFrom";
 
@@ -157,6 +158,8 @@ function handleOnFieldChange(e, fieldname, fieldtype) {
   templateFields[fieldname] = e.value;
   // keep fetch_from fields in sync with their link, like the desk form does
   applyFetchFrom(templateData.value?.fields || [], templateFields, fieldname);
+  // and narrow / set Process off the reference doctype, as the desk form does
+  applyCategoryDependencies(fieldname, templateFields, call, applyFilters);
   // let the template's form script re-filter dependent fields (Process, etc.)
   const fieldDependentFns = customOnChange.value?.[fieldname];
   if (fieldDependentFns) {
