@@ -19,7 +19,7 @@ import json
 import frappe
 from frappe import _
 from frappe.utils import cint, cstr, getdate, today
-from frappe.utils.data import format_time, to_timedelta
+from frappe.utils import to_timedelta
 
 UNGROUPED_TRIP = ""
 
@@ -198,7 +198,8 @@ def classify_passenger(child, reliever_name=None):
 def format_departure(value):
 	if not value:
 		return ""
-	return format_time(to_timedelta(value))[:5]
+	minutes = int(to_timedelta(value).total_seconds() // 60) % (24 * 60)
+	return f"{minutes // 60:02d}:{minutes % 60:02d}"
 
 
 def build_trips(parents, children, names):
