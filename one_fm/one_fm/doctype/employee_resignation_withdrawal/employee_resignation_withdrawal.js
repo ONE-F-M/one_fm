@@ -128,9 +128,15 @@ frappe.ui.form.on("Employee Resignation Withdrawal", {
 			return Promise.reject("Missing Elements");
 		}
 
-		// Reason for Rejection is only displayed once the doc is already Rejected,
-		// so ask for it here -- apply_workflow saves the doc we send, reason included.
-		if (frm.selected_workflow_action === "Reject" && !frm.doc.reason_for_rejection) {
+		// apply_workflow() reloads the document from the database before running
+		// the transition, so a reason that only exists on this form is thrown
+		// away and the server then refuses the rejection. Write the field on its
+		// own first, whether it was typed into the form or into the prompt below.
+		if (frm.selected_workflow_action === "Reject") {
+			if (frm.doc.reason_for_rejection) {
+				return persist_rejection_reason(frm, frm.doc.reason_for_rejection);
+			}
+
 			return new Promise((resolve, reject) => {
 				let submitted = false;
 				let dialog = new frappe.ui.Dialog({
@@ -144,19 +150,50 @@ frappe.ui.form.on("Employee Resignation Withdrawal", {
 					primary_action_label: __("Reject"),
 					primary_action: (values) => {
 						submitted = true;
-						frm.doc.reason_for_rejection = values.reason_for_rejection;
 						dialog.hide();
-						resolve();
+						// Put the freeze back, so the framework's own unfreeze
+						// once the workflow call settles stays balanced.
+						frappe.dom.freeze();
+						persist_rejection_reason(frm, values.reason_for_rejection)
+							.then(resolve)
+							.catch(reject);
 					}
 				});
 				dialog.onhide = () => {
 					if (!submitted) {
-						frappe.dom.unfreeze();
+						// Already unfrozen below; nothing to release here.
 						reject("Rejection Cancelled");
 					}
 				};
+				// The workflow button freezes the page before calling us, and
+				// #freeze sits at z-index 1055 against the dialog's 1050 -- the
+				// prompt would render greyed out and swallow every click. Lift the
+				// freeze for as long as the dialog is open.
+				frappe.dom.unfreeze();
 				dialog.show();
 			});
 		}
 	}
 });
+
+// Store the Reason for Rejection by itself, then mirror it onto the open form so
+// the field reads back correctly once the transition completes. Resolves only on
+// a successful write -- letting a failed write through would land the approver on
+// the same "Please provide Reason for Rejection" error this exists to prevent.
+// Callers must hold the page freeze when they call this; the catch releases it.
+function persist_rejection_reason(frm, reason_for_rejection) {
+	return frappe
+		.xcall(
+			"one_fm.one_fm.doctype.employee_resignation_withdrawal.employee_resignation_withdrawal.set_rejection_reason",
+			{ name: frm.doc.name, reason_for_rejection: reason_for_rejection }
+		)
+		.then(() => {
+			frm.doc.reason_for_rejection = reason_for_rejection;
+		})
+		.catch((error) => {
+			// The framework only unfreezes once the workflow call itself settles,
+			// so a rejection here would otherwise leave the page locked.
+			frappe.dom.unfreeze();
+			throw error;
+		});
+}

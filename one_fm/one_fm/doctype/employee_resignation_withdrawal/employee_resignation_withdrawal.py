@@ -7,6 +7,13 @@ from frappe.desk.form.assign_to import close_all_assignments
 from frappe.model.document import Document
 
 CLOSED_STATES = ("Approved", "Rejected")
+# States a withdrawal can be rejected from -- every approval step in the workflow.
+REJECTABLE_STATES = (
+	"Pending Line Manager",
+	"Pending Supervisor",
+	"Pending T4 Admin",
+	"Pending Project Manager",
+)
 
 
 class EmployeeResignationWithdrawal(Document):
@@ -177,9 +184,7 @@ class EmployeeResignationWithdrawal(Document):
 			old_doc = self.get_doc_before_save()
 			if (
 				old_doc
-				and old_doc.workflow_state in [
-					"Pending Line Manager", "Pending Supervisor", "Pending T4 Admin", "Pending Project Manager",
-				]
+				and old_doc.workflow_state in REJECTABLE_STATES
 				and self.workflow_state == "Rejected"
 			):
 				if not getattr(self, "reason_for_rejection", None):
@@ -219,3 +224,33 @@ class EmployeeResignationWithdrawal(Document):
 			if om_users:
 				self.offboarding_officer = om_users[0]
 
+
+
+@frappe.whitelist(methods=["POST"])
+def set_rejection_reason(name: str, reason_for_rejection: str) -> None:
+	"""Persist only the Reason for Rejection, ahead of the Reject workflow action.
+
+	frappe.model.workflow.apply_workflow() calls doc.load_from_db() before it
+	runs the transition, which replaces every in-memory value with the stored
+	row. A reason set on the client is therefore discarded, and
+	validate_rejection_reason() then blocks the rejection. Writing the single
+	field first means load_from_db() reads it back instead of wiping it.
+
+	Deliberately a narrow db_set rather than a save: the approver is answering a
+	prompt about one field, and a full save would re-run validation unrelated to
+	the rejection they are trying to record.
+	"""
+	reason_for_rejection = (reason_for_rejection or "").strip()
+	if not reason_for_rejection:
+		frappe.throw(_("Please provide Reason for Rejection"))
+
+	doc = frappe.get_doc("Employee Resignation Withdrawal", name)
+	doc.check_permission("write")
+
+	if doc.workflow_state not in REJECTABLE_STATES:
+		frappe.throw(
+			_("A Reason for Rejection can only be recorded while the withdrawal is awaiting approval."),
+			title=_("Not Awaiting Approval"),
+		)
+
+	doc.db_set("reason_for_rejection", reason_for_rejection)

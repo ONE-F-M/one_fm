@@ -2,10 +2,20 @@
 # See license.txt
 
 import frappe
+from frappe.model.workflow import apply_workflow
 from frappe.tests.utils import FrappeTestCase
+
+from one_fm.one_fm.doctype.employee_resignation_withdrawal.employee_resignation_withdrawal import (
+	set_rejection_reason,
+)
 
 class TestEmployeeResignationWithdrawal(FrappeTestCase):
 	def setUp(self):
+		# Reaching the first approval step notifies the Offboarding Officers, which
+		# needs an outgoing Email Account the test site has no reason to configure.
+		frappe.flags.mute_emails = True
+		self.addCleanup(lambda: frappe.flags.update({"mute_emails": False}))
+
 		emp_name = _make_employee("test_erw_employee@example.com", "Test ERW Employee")
 		self.employee = frappe.get_doc("Employee", emp_name)
 		
@@ -56,6 +66,78 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 		# Should not raise any error
 		erw.save()
 		self.assertEqual(erw.workflow_state, "Rejected")
+
+	def test_reject_through_the_workflow_without_a_stored_reason_is_blocked(self):
+		# apply_workflow() reloads the document from the database, so a reason that
+		# only exists on the approver's form never reaches validate_rejection_reason().
+		erw = self._withdrawal_awaiting_project_manager()
+		erw.reason_for_rejection = "Rejected -- wrong procedure"
+
+		with self.assertRaises(frappe.ValidationError) as context:
+			apply_workflow(erw, "Reject")
+
+		self.assertTrue("Please provide Reason for Rejection" in str(context.exception))
+		# Not asserting the stored workflow_state here: the throw happens in
+		# on_update, after the row has already been written, and it is the
+		# request-level rollback -- absent inside a test transaction -- that undoes
+		# it. The refusal is the contract worth pinning.
+
+	def test_reject_through_the_workflow_once_the_reason_is_stored(self):
+		erw = self._withdrawal_awaiting_project_manager()
+		set_rejection_reason(erw.name, "  Rejected -- wrong procedure  ")
+
+		apply_workflow(erw, "Reject")
+
+		erw.reload()
+		self.assertEqual(erw.workflow_state, "Rejected")
+		# Stored whitespace-trimmed, and survives the reload apply_workflow performs.
+		self.assertEqual(erw.reason_for_rejection, "Rejected -- wrong procedure")
+
+	def test_set_rejection_reason_refuses_an_empty_reason(self):
+		erw = self._withdrawal_awaiting_project_manager()
+
+		with self.assertRaises(frappe.ValidationError) as context:
+			set_rejection_reason(erw.name, "   ")
+
+		self.assertTrue("Please provide Reason for Rejection" in str(context.exception))
+
+	def test_set_rejection_reason_refuses_a_withdrawal_not_awaiting_approval(self):
+		erw = self._withdrawal_awaiting_project_manager()
+		set_rejection_reason(erw.name, "Rejected -- wrong procedure")
+		apply_workflow(erw, "Reject")
+
+		with self.assertRaises(frappe.ValidationError) as context:
+			set_rejection_reason(erw.name, "Changed my mind")
+
+		self.assertTrue("awaiting approval" in str(context.exception))
+
+	def test_approving_does_not_require_a_reason_for_rejection(self):
+		erw = self._withdrawal_awaiting_project_manager()
+
+		apply_workflow(erw, "Approve")
+
+		self.assertEqual(
+			frappe.db.get_value("Employee Resignation Withdrawal", erw.name, "workflow_state"),
+			"Approved",
+		)
+
+	def _withdrawal_awaiting_project_manager(self):
+		"""A saved withdrawal sitting on the Project Manager step, which is the
+		branch Ali Alazmi could not reject and the only Reject transition that
+		carries no routing condition."""
+		erw = frappe.get_doc({
+			"doctype": "Employee Resignation Withdrawal",
+			"employee_resignation": self.resignation.name,
+			"reason": "Test",
+			"resignation_withdrawal_letter": "/files/test.txt"
+		}).insert()
+		_submit_for_review(erw)
+
+		erw.workflow_state = "Pending Project Manager"
+		if not erw.offboarding_officer:
+			erw.offboarding_officer = "Administrator"
+		erw.save()
+		return erw
 
 	def test_process_withdrawal_approval(self):
 		# Create a PMR tied to the resignation if the doctype exists
