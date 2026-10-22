@@ -64,6 +64,20 @@ class PCCClearance(Document):
 
     def on_update(self):
         """Notify the CCP engine to evaluate downstream triggers."""
+        if self.candidate_country_process and self.has_value_changed("status"):
+            self.update_ccp_outcome()
+
         if self.candidate_country_process and self.status in ("Issued", "Rejected"):
             from one_fm.one_fm.doctype.candidate_country_process.candidate_country_process import recalculate_ccp_live_eta
             recalculate_ccp_live_eta(self.candidate_country_process)
+
+    def update_ccp_outcome(self):
+        """A rejected latest PCC fails the candidate; once no outcome holds, a PCC Failed tracker goes back in process."""
+        from one_fm.one_fm.doctype.candidate_country_process.candidate_country_process import (
+            apply_ccp_outcome,
+        )
+
+        if apply_ccp_outcome(self.candidate_country_process):
+            return
+        if frappe.db.get_value("Candidate Country Process", self.candidate_country_process, "status") == "PCC Failed":
+            frappe.db.set_value("Candidate Country Process", self.candidate_country_process, "status", "In Process")
