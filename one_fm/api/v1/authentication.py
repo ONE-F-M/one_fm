@@ -629,29 +629,6 @@ def get_otp(employee_user_id: str=None, otp_source: str=None):
 
 
 @frappe.whitelist(allow_guest=True)
-def set_password(employee_user_id, new_password):
-	"""
-	used to set the new password
-
-	params
-	new_password
-	employee_user_id
-
-	returns
-	success message
-	
-	"""
-	try:
-		_update_password(employee_user_id, new_password)
-		frappe.db.set_value("Employee", {'employee_id':employee_user_id}, "registered", 1)
-		message =  {
-				'message': _('Password Updated!')
-			}
-		return response("Success", 200, message)
-	except Exception as e:
-		return response("Error", 500, {}, str(e))
-
-@frappe.whitelist(allow_guest=True)
 def user_login(employee_id, password):
 	try:
 		if not employee_id:
