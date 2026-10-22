@@ -119,7 +119,7 @@
    "fieldname": "reason_for_rejection",
    "fieldtype": "Small Text",
    "label": "Reason for Rejection",
-   "depends_on": "eval:doc.workflow_state && doc.workflow_state.includes('Rejected')"
+   "depends_on": "eval:doc.workflow_state && (doc.workflow_state.includes('Rejected') || doc.workflow_state.startsWith('Pending'))"
   },
   {
    "fieldname": "employees",
