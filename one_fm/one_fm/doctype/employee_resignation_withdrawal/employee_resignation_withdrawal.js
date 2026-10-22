@@ -187,8 +187,14 @@ function persist_rejection_reason(frm, reason_for_rejection) {
 			"one_fm.one_fm.doctype.employee_resignation_withdrawal.employee_resignation_withdrawal.set_rejection_reason",
 			{ name: frm.doc.name, reason_for_rejection: reason_for_rejection }
 		)
-		.then(() => {
+		.then((result) => {
 			frm.doc.reason_for_rejection = reason_for_rejection;
+			// apply_workflow is handed this same doc and saves it without
+			// reloading, so it has to carry the timestamp the write just
+			// produced or the save is rejected as a conflict.
+			if (result && result.modified) {
+				frm.doc.modified = result.modified;
+			}
 		})
 		.catch((error) => {
 			// The framework only unfreezes once the workflow call itself settles,

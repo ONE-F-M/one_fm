@@ -181,6 +181,25 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 				finally:
 					frappe.session.user = original
 
+	def test_rejecting_through_the_transition_still_checks_the_approver(self):
+		# one_fm.overrides.workflow.apply_workflow saves the payload the browser
+		# sends without reloading it, so a reason can reach the server without
+		# going through set_rejection_reason. The document has to hold the line.
+		erw = self._withdrawal_awaiting_supervisor()
+		# A real save validates links, so the approver has to exist.
+		erw.db_set("supervisor", _make_user("test_erw_approver@example.com"))
+
+		erw.reload()
+		erw.workflow_state = "Rejected"
+		erw.reason_for_rejection = "Rejected -- wrong procedure"
+
+		with self._acting_as("test_erw_requester@example.com"):
+			with self.assertRaises(frappe.PermissionError):
+				erw.save()
+		# As with the missing-reason case, the stored state is not asserted: the
+		# check runs in on_update, after the write, and the request-level
+		# rollback is what undoes it.
+
 	def test_approving_does_not_require_a_reason_for_rejection(self):
 		erw = self._withdrawal_awaiting_project_manager()
 
