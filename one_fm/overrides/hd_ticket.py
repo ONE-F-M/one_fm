@@ -8,6 +8,7 @@ from helpdesk.helpdesk.doctype.hd_ticket.hd_ticket import HDTicket
 from one_fm.api.doc_events import get_employee_user_id
 from one_fm.utils import response
 from frappe.utils.password import get_decrypted_password
+from frappe.utils.caching import redis_cache
 try:
     from one_bpmn.api import send_message as send_processa_message
 except ImportError:
@@ -376,6 +377,35 @@ def get_priority():
 @frappe.whitelist()
 def get_process():
     return _fetch_list("Process")
+
+@frappe.whitelist()
+def get_reference_doctypes():
+    """Options for the Reference Doctype field on the portal ticket forms.
+
+    The stock Link control calls frappe.desk.search.search_link on every
+    keystroke. Against DocType that is ~1700 rows behind a LIKE and a
+    permission check, so each search costs a round trip and the dropdown feels
+    like it hangs. The list is small in bytes and barely ever changes, so we
+    send it once and let the Autocomplete filter it client side - after the
+    first (cached) call, typing is instant.
+
+    Child tables are excluded: they are never a standalone reference.
+    """
+    return _get_reference_doctypes()
+
+
+@redis_cache(ttl=3600)
+def _get_reference_doctypes():
+    # get_all, not get_list: DocType read permission is restricted to System
+    # Manager, so a permission-checked query would return nothing for the staff
+    # who actually raise tickets. Only doctype *names* are exposed, and the
+    # endpoint still requires an authenticated session.
+    return frappe.get_all(
+        "DocType",
+        filters={"istable": 0},
+        pluck="name",
+        order_by="name",
+    )
 
 @frappe.whitelist()
 def create_github_issue(name, description):

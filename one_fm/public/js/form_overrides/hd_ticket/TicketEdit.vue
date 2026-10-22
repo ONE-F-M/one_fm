@@ -30,18 +30,15 @@
 
       <div
         class="grid grid-cols-1 gap-4 sm:grid-cols-3"
-        v-if="filteredFields.length"
+        v-if="visibleFields.length"
       >
-        <div
-          class="space-y-1.5"
-          v-for="field in filteredFields"
-        >
-          <UniInput
-            :field="field"
-            :value="templateFields[field.fieldname]"
-            @change="(e) => handleOnFieldChange(e, field.fieldname, field.fieldtype)"
-          />
-        </div>
+        <UniInput
+          v-for="field in visibleFields"
+          :key="field.fieldname"
+          :field="field"
+          :value="templateFields[field.fieldname]"
+          @change="(e) => handleOnFieldChange(e, field.fieldname, field.fieldtype)"
+        />
       </div>
 
 
@@ -82,6 +79,7 @@ import { useRoute, useRouter, RouterLink } from "vue-router";
 import { call, Button, FormControl } from "frappe-ui";
 import { usePageMeta } from "frappe-ui";
 import { globalStore } from "@/stores/globalStore";
+import { isCustomerPortal } from "@/utils";
 import { LayoutHeader, UniInput } from "@/components";
 import Sidebar from "@/components/layouts/Sidebar.vue";
 import TicketTextEditor from "./TicketTextEditor.vue";
@@ -90,6 +88,7 @@ import {
   setupCustomizations,
   handleSelectFieldUpdate,
   handleLinkFieldUpdate,
+  applyCategoryDependencies,
 } from "@/composables/formCustomisation";
 import { applyFetchFrom } from "@/composables/fetchFrom";
 
@@ -122,17 +121,19 @@ const templateData = ref<any>({ fields: [] });
 let oldFields = [];
 
 const visibleFields = computed(() =>
-  templateData.value.fields.map((field) => {
-    if (Array.isArray(field.options)) {
-      field.options = field.options.join("\n");
-    }
-    return parseField(field, templateFields);
-  })
+  (templateData.value.fields || [])
+    // the edit route is part of the customer portal, so honour hide_from_customer
+    // the same way the new-ticket form does - agent-only fields must not render here
+    .filter((field) => !isCustomerPortal.value || !field.hide_from_customer)
+    .map((field) => {
+      if (Array.isArray(field.options)) {
+        field.options = field.options.join("\n");
+      }
+      return parseField(field, templateFields);
+    })
 );
 
-const filteredFields = computed(() =>
-  visibleFields.value
-);
+const customOnChange = computed(() => templateData.value?._customOnChange);
 
 function applyFilters(fieldname, filters = null) {
   const field = templateData.value?.fields?.find((f) => f.fieldname === fieldname);
@@ -157,6 +158,15 @@ function handleOnFieldChange(e, fieldname, fieldtype) {
   templateFields[fieldname] = e.value;
   // keep fetch_from fields in sync with their link, like the desk form does
   applyFetchFrom(templateData.value?.fields || [], templateFields, fieldname);
+  // and narrow / set Process off the reference doctype, as the desk form does
+  applyCategoryDependencies(fieldname, templateFields, call, applyFilters);
+  // let the template's form script re-filter dependent fields (Process, etc.)
+  const fieldDependentFns = customOnChange.value?.[fieldname];
+  if (fieldDependentFns) {
+    fieldDependentFns.forEach((fn) => {
+      fn(e.value, fieldtype);
+    });
+  }
 }
 
 async function fetchTicketDetails() {
@@ -176,7 +186,9 @@ async function fetchTicketDetails() {
     });
     
     if (templateRes && templateRes.fields && templateRes.fields.length) {
-      templateData.value.fields = templateRes.fields;
+      // keep the whole template, not just the fields - setupCustomizations needs
+      // _form_script off this object to register the onChange handlers
+      templateData.value = templateRes;
       oldFields = JSON.parse(JSON.stringify(templateRes.fields));
     }
 
@@ -188,7 +200,7 @@ async function fetchTicketDetails() {
       templateFields[key] = value;
     }
 
-    setupCustomizations(templateData, {
+    await setupCustomizations(templateData.value, {
       doc: templateFields,
       call,
       router,
