@@ -58,7 +58,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "In Process\nArriving\nJoined\nMedically unfit\nTasreeh Cancelled\nPCC Failed\nVisa Issuance Blocker\nCandidate Dropped Offer\nCountry Ban\non Hold"
+   "options": "In Process\nArriving\nJoined\nMedically unfit\nTasreeh Cancelled\nPCC Failed\nVisa Issuance Blocker\nCandidate Dropped Offer\nCountry Ban\non Hold\nVisa Cancelled\nDid Not Arrive"
   },
   {
    "fetch_from": "agency.agency",
@@ -78,9 +78,8 @@
   },
   {
    "fieldname": "department",
-   "fieldtype": "Link",
-   "label": "Department",
-   "options": "Department"
+   "fieldtype": "Data",
+   "label": "Department"
   },
   {
    "fieldname": "column_break_4",
@@ -112,9 +111,9 @@
    "fetch_from": "job_offer.job_applicant",
    "fieldname": "job_applicant",
    "fieldtype": "Link",
-   "hidden": 1,
    "label": "Job Applicant",
-   "options": "Job Applicant"
+   "options": "Job Applicant",
+   "read_only_depends_on": "eval:doc.job_offer"
   },
   {
    "fetch_from": "job_applicant.one_fm_passport_number",
@@ -190,7 +189,7 @@
    "link_fieldname": "candidate_country_process"
   }
  ],
- "modified": "2026-10-12 18:00:00.000000",
+ "modified": "2026-10-22 21:50:29.000000",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Candidate Country Process",

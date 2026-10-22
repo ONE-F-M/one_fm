@@ -6,6 +6,13 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 
+OPEN_CCP_STATUSES = ("In Process", "Arriving")
+# More trackers than this are synced with their template in a background job
+SYNC_INLINE_LIMIT = 20
+# The background sync commits after this many trackers, so a timeout keeps the work done so far
+SYNC_COMMIT_EVERY = 50
+
+
 class CandidateCountryProcess(Document):
     def validate(self):
         # Auto-complete Job Offer Issuance if linked
@@ -17,6 +24,10 @@ class CandidateCountryProcess(Document):
                     if not row.actual_date:
                         row.actual_date = self.start_date
 
+        self.refresh_schedule()
+
+    def refresh_schedule(self):
+        """Recompute planned dates, live plan dates, ETA statuses and the header ETAs."""
         today = frappe.utils.getdate()
         rows = self.agency_process_details
 
@@ -134,11 +145,13 @@ class CandidateCountryProcess(Document):
         """
         Compute live_plan_date for each row based on actual completion
         dates of dependencies (falls back to live_plan_date, then planned_date).
+        A step that is not done is never planned before today, so overdue steps push their dependents.
         """
         if not self.start_date:
             return
 
         start = frappe.utils.getdate(self.start_date)
+        today = frappe.utils.getdate()
         row_map = {r.process_name: r for r in rows}
         memo = {}
         visiting = set()
@@ -168,7 +181,7 @@ class CandidateCountryProcess(Document):
 
             before_tasks = self._expand_through_skipped(self._parse_task_list(row.get("before_task")), row_map)
             if not before_tasks:
-                live = frappe.utils.add_days(start, row.duration_in_days)
+                live = max(frappe.utils.add_days(start, row.duration_in_days), today)
                 memo[row.process_name] = live
                 visiting.remove(row.process_name)
                 return live
@@ -192,7 +205,7 @@ class CandidateCountryProcess(Document):
                     max_dep_date = dep_date
 
             anchor = max_dep_date or start
-            live = frappe.utils.add_days(anchor, row.duration_in_days)
+            live = max(frappe.utils.add_days(anchor, row.duration_in_days), today)
             memo[row.process_name] = live
             visiting.remove(row.process_name)
             return live
@@ -354,6 +367,8 @@ class CandidateCountryProcess(Document):
             field_map = {
                 "candidate_name": self.candidate_name,
                 "passport_number": self.passport_number,
+                "job_offer": self.job_offer,
+                "job_applicant": self.job_applicant,
             }
             for field, value in field_map.items():
                 if meta.has_field(field) and value:
@@ -393,6 +408,15 @@ class CandidateCountryProcess(Document):
 
     @frappe.whitelist()
     def sync_with_template(self):
+        """The form's Sync Template button."""
+        self.apply_template()
+        frappe.msgprint(
+            frappe._("Successfully synchronized tracker steps with the latest template changes!"),
+            indicator="green",
+            alert=True,
+        )
+
+    def apply_template(self):
         """
         Synchronize the child table rows with the current Agency Country Process template.
         - Adds missing steps.
@@ -456,11 +480,114 @@ class CandidateCountryProcess(Document):
             row.idx = idx
         self.flags.ignore_mandatory = True
         self.save()
+
+
+@frappe.whitelist(methods=["POST"])
+def bulk_sync_with_template(scope: str, names: str | None = None):
+    """Sync trackers with their Agency Country Process template: the selected ones, every In Process one, or all of them."""
+    frappe.has_permission("Candidate Country Process", "write", throw=True)
+    with_template = {"agency_country_process": ["is", "set"]}
+    if scope == "selected":
+        selected = get_selected_names(names)
+        # Only trackers the user can see, so a name they cannot read tells them nothing
+        ccp_names = frappe.get_list(
+            "Candidate Country Process", filters={"name": ["in", selected]}, pluck="name", limit_page_length=0
+        )
+    elif scope == "in_process":
+        ccp_names = frappe.get_list(
+            "Candidate Country Process", filters={**with_template, "status": "In Process"}, pluck="name", limit_page_length=0
+        )
+    elif scope == "all":
+        ccp_names = frappe.get_list("Candidate Country Process", filters=with_template, pluck="name", limit_page_length=0)
+    else:
+        frappe.throw(frappe._("Choose which trackers to sync."))
+
+    if not ccp_names:
+        frappe.throw(frappe._("There are no trackers with a template to sync."))
+    if len(ccp_names) > SYNC_INLINE_LIMIT:
+        # A scope sync runs once at a time; a selection is its own job
+        job = frappe.enqueue(
+            sync_trackers_with_template,
+            queue="long",
+            timeout=3600,
+            job_id=None if scope == "selected" else f"ccp_template_sync::{scope}",
+            deduplicate=scope != "selected",
+            ccp_names=ccp_names,
+            notify=True,
+        )
+        if not job:
+            frappe.throw(frappe._("This sync is already running. You will get a message when it is done."))
         frappe.msgprint(
-            frappe._("Successfully synchronized tracker steps with the latest template changes!"),
-            indicator="green",
+            frappe._("Syncing {0} trackers in the background. You will get a message when it is done.").format(len(ccp_names)),
+            indicator="blue",
             alert=True,
         )
+        return {"queued": len(ccp_names)}
+    return sync_trackers_with_template(ccp_names)
+
+
+def get_selected_names(names):
+    """The tracker names sent from the list, as a list of strings."""
+    try:
+        selected = frappe.parse_json(names)
+    except ValueError:
+        selected = None
+    if not selected or not isinstance(selected, list) or not all(isinstance(name, str) for name in selected):
+        frappe.throw(frappe._("Select at least one tracker in the list."))
+    return selected
+
+
+def sync_trackers_with_template(ccp_names, notify=False):
+    """Sync each tracker on its own, so one that fails is rolled back alone and logged. A closed tracker gets the
+    template's durations and steps but no new linked records. Deadlocks and lock timeouts are raised, so the
+    background job retries them."""
+    synced, skipped, failed = [], [], []
+    for ccp_name in ccp_names:
+        frappe.db.savepoint("ccp_template_sync")
+        try:
+            doc = frappe.get_doc("Candidate Country Process", ccp_name)
+            doc.check_permission("write")
+            if not doc.agency_country_process:
+                skipped.append(ccp_name)
+                continue
+            if doc.status not in OPEN_CCP_STATUSES:
+                doc.flags._in_auto_create = True
+            doc.apply_template()
+            synced.append(ccp_name)
+        except frappe.db.InternalError as e:
+            if frappe.db.is_deadlocked(e) or frappe.db.is_timedout(e):
+                raise
+            record_sync_failure(ccp_name, e, failed)
+        except Exception as e:
+            record_sync_failure(ccp_name, e, failed)
+        if notify and synced and len(synced) % SYNC_COMMIT_EVERY == 0:
+            frappe.db.commit()  # nosemgrep: background job, committed per batch (D5)
+
+    message = frappe._("Synced {0} trackers with their template.").format(len(synced))
+    if skipped:
+        message += "<br>" + frappe._("Skipped {0} without an Agency Country Process.").format(len(skipped))
+    if failed:
+        message += "<br>" + frappe._("These could not be synced:") + "<br>" + "<br>".join(failed)
+    if notify:
+        frappe.publish_realtime(
+            "msgprint",
+            {"message": message, "title": frappe._("Sync Template")},
+            user=frappe.session.user,
+            after_commit=True,
+        )
+    else:
+        frappe.msgprint(message, title=frappe._("Sync Template"), indicator="orange" if failed else "green")
+    return {"synced": synced, "skipped": skipped, "failed": failed}
+
+
+def record_sync_failure(ccp_name, error, failed):
+    """Roll back the tracker that failed, log it and list it in the summary."""
+    frappe.db.rollback(save_point="ccp_template_sync")
+    frappe.clear_last_message()
+    frappe.log_error(
+        title="CCP Template Sync Error", reference_doctype="Candidate Country Process", reference_name=ccp_name
+    )
+    failed.append(f"{ccp_name}: {error}")
 
 
 def update_candidate_country_process():
@@ -574,3 +701,70 @@ def recalculate_ccp_live_eta(ccp_name: str):
         frappe.log_error(title="CCP Recalculate Error", message=f"Failed to recalculate CCP live ETA for {ccp_name}: {e}")
     finally:
         frappe.local.in_ccp_recalculation = False
+
+
+def refresh_open_ccp_live_plans():
+    """Daily: close trackers whose PCC failed or visa was cancelled, then move overdue steps of the rest to today.
+
+    A tracker that fails is rolled back alone and logged, so the others still refresh.
+    """
+    for ccp_name in frappe.get_all("Candidate Country Process", filters={"status": ["in", OPEN_CCP_STATUSES]}, pluck="name"):
+        frappe.db.savepoint("ccp_live_plan_refresh")
+        try:
+            refresh_open_ccp_live_plan(ccp_name)
+        except Exception:
+            frappe.db.rollback(save_point="ccp_live_plan_refresh")
+            frappe.log_error(
+                title="CCP Live Plan Refresh Error",
+                reference_doctype="Candidate Country Process",
+                reference_name=ccp_name,
+            )
+
+
+def refresh_open_ccp_live_plan(ccp_name):
+    """Close the tracker if its outcome is known, else write the live plan fields that changed."""
+    if apply_ccp_outcome(ccp_name):
+        return
+    doc = frappe.get_doc("Candidate Country Process", ccp_name)
+    row_fields = ("planned_date", "live_plan_date", "eta_status")
+    header_fields = ("planned_eta", "live_plan_eta")
+    before = {row.name: [str(row.get(f) or "") for f in row_fields] for row in doc.agency_process_details}
+    header_before = [str(doc.get(f) or "") for f in header_fields]
+    doc.refresh_schedule()
+    for row in doc.agency_process_details:
+        if before.get(row.name) != [str(row.get(f) or "") for f in row_fields]:
+            row.db_set({f: row.get(f) for f in row_fields}, update_modified=False)
+    if header_before != [str(doc.get(f) or "") for f in header_fields]:
+        doc.db_set({f: doc.get(f) for f in header_fields}, update_modified=False)
+
+
+def apply_ccp_outcome(ccp_name):
+    """Set Visa Cancelled or PCC Failed on a tracker that is still open. Returns the outcome."""
+    outcome = get_ccp_outcome(ccp_name)
+    if outcome and frappe.db.get_value("Candidate Country Process", ccp_name, "status") in OPEN_CCP_STATUSES:
+        frappe.db.set_value("Candidate Country Process", ccp_name, "status", outcome)
+    return outcome
+
+
+def get_ccp_outcome(ccp_name):
+    """Visa Cancelled when a cancellation of its visa is Completed, PCC Failed when its latest PCC is Rejected."""
+    from one_fm.visa_management.doctype.visa_request.visa_request import cancelled_visa_requests
+
+    linked_by = {"candidate_country_process": ccp_name}
+    job_offer = frappe.db.get_value("Candidate Country Process", ccp_name, "job_offer")
+    if job_offer:
+        linked_by["job_offer"] = job_offer
+    visa_requests = frappe.get_all("Visa Request", or_filters=linked_by, pluck="name")
+    if visa_requests and cancelled_visa_requests(visa_requests):
+        return "Visa Cancelled"
+
+    latest_pcc = frappe.get_all(
+        "PCC Clearance",
+        filters={"candidate_country_process": ccp_name},
+        pluck="status",
+        order_by="creation desc",
+        limit=1,
+    )
+    if latest_pcc == ["Rejected"]:
+        return "PCC Failed"
+    return None
