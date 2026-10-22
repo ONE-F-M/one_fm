@@ -7,13 +7,17 @@ from frappe.desk.form.assign_to import close_all_assignments
 from frappe.model.document import Document
 
 CLOSED_STATES = ("Approved", "Rejected")
-# States a withdrawal can be rejected from -- every approval step in the workflow.
-REJECTABLE_STATES = (
-	"Pending Line Manager",
-	"Pending Supervisor",
-	"Pending T4 Admin",
-	"Pending Project Manager",
-)
+# Every approval step a withdrawal can be rejected from, and the field naming the
+# one user entitled to act on it. The workflow's own "allowed" role is too coarse
+# to gate on -- the supervisor and line manager steps are open to "Employee",
+# which every requester holds, including the one who raised the withdrawal.
+STATE_APPROVER_FIELD = {
+	"Pending Line Manager": "supervisor",
+	"Pending Supervisor": "supervisor",
+	"Pending T4 Admin": "t4_admin",
+	"Pending Project Manager": "project_manager",
+}
+REJECTABLE_STATES = tuple(STATE_APPROVER_FIELD)
 
 
 class EmployeeResignationWithdrawal(Document):
@@ -251,6 +255,14 @@ def set_rejection_reason(name: str, reason_for_rejection: str) -> None:
 		frappe.throw(
 			_("A Reason for Rejection can only be recorded while the withdrawal is awaiting approval."),
 			title=_("Not Awaiting Approval"),
+		)
+
+	approver = doc.get(STATE_APPROVER_FIELD[doc.workflow_state])
+	if frappe.session.user != approver and "System Manager" not in frappe.get_roles():
+		frappe.throw(
+			_("Only the approver this withdrawal is currently with can record a Reason for Rejection."),
+			frappe.PermissionError,
+			title=_("Not the Current Approver"),
 		)
 
 	doc.db_set("reason_for_rejection", reason_for_rejection)
