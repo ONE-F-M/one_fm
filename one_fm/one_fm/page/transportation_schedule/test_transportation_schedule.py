@@ -442,6 +442,7 @@ class TestAvailableRamboRelievers(FrappeTestCase):
 		with patch.object(_ts, "_fetch_rambo_employees", return_value=rambos), \
 			patch.object(_ts, "_fetch_roster_rows", return_value=rows) as fetch, \
 			patch.object(_ts, "_fetch_shift_times", return_value=self.SHIFTS), \
+			patch.object(_ts.frappe.db, "get_single_value", return_value=1), \
 			patch.object(_ts.frappe, "has_permission", return_value=True) as perm:
 			result = _ts.get_available_rambo_relievers(**kwargs)
 		return result, fetch, perm
