@@ -60,8 +60,9 @@ class TestAccommodationDispatchAndGroomingAudit(FrappeTestCase):
 		)
 
 	def _vehicle(self, plate):
-		if frappe.db.exists("Vehicle", plate):
-			return plate
+		existing = frappe.db.get_value("Vehicle", {"license_plate": plate}, "name")
+		if existing:
+			return existing
 		if not frappe.db.exists("Location", "Test Location"):
 			frappe.get_doc(
 				{
@@ -120,8 +121,6 @@ class TestAccommodationDispatchAndGroomingAudit(FrappeTestCase):
 				**boarding,
 				"employee": self.absent_emp.name,
 				"attendance_status": "Absent",
-				"requires_reliever": 1,
-				"reliever_employee": self.reliever.name,
 			},
 		)
 		doc.append(
@@ -139,19 +138,19 @@ class TestAccommodationDispatchAndGroomingAudit(FrappeTestCase):
 		)
 		doc.save(ignore_permissions=True)
 
-		# The controller derives stop numbers and camps from shipments; pin the shape this
-		# test is about directly so it does not depend on that derivation.
+		# Pin stop numbers, camps and the reliever directly: the controller derives the
+		# first two from shipments, and a saved reliever submits a Rambo Assignment that
+		# needs an Operations Shift.
 		for row in doc.transportation_manifest_details:
-			frappe.db.set_value(
-				"Transportation Manifest Details",
-				row.name,
-				{
-					"trip_id": row.trip_id,
-					"employee_action": row.employee_action,
-					"stop_sequence": 1,
-					"pickup_accommodation": self.camp if row.employee_action == "Boarding" else None,
-				},
-			)
+			values = {
+				"trip_id": row.trip_id,
+				"employee_action": row.employee_action,
+				"stop_sequence": 1,
+				"pickup_accommodation": self.camp if row.employee_action == "Boarding" else None,
+			}
+			if row.employee == self.absent_emp.name:
+				values.update(requires_reliever=1, reliever_employee=self.reliever.name)
+			frappe.db.set_value("Transportation Manifest Details", row.name, values)
 		return doc
 
 	def _route_plan_rows(self):
