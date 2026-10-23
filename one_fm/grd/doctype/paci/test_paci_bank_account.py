@@ -236,6 +236,8 @@ class TestDraftAssignmentRule(FrappeTestCase):
 		payroll_officer = frappe.db.get_single_value("HR and Payroll Additional Settings", "payroll_officer")
 		if not payroll_officer or payroll_officer == self.assignee:
 			return
+		# Draft -> Open Request requires new_account (workflow transition condition).
+		bank_account.new_account = 1
 		bank_account.workflow_state = "Open Request"
 		bank_account.save(ignore_permissions=True)
 
