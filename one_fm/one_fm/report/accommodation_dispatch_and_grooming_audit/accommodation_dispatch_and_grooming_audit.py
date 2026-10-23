@@ -257,6 +257,7 @@ def build_trips(parents, children, names, labels):
 
 		passengers = []
 		for row in rows:
+			row.employee_name = row.employee_name or _name(names, row.employee)
 			reliever_name = _name(names, row.reliever_employee)
 			info = classify_passenger(row, reliever_name)
 			info["row"] = row
