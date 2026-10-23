@@ -29,7 +29,7 @@ class TestAccommodationDispatchAndGroomingAudit(FrappeTestCase):
 		self.passed_emp = make_employee("adga_pass@example.com")
 		self.failed_emp = make_employee("adga_fail@example.com")
 		self.absent_emp = make_employee("adga_absent@example.com")
-		self.unchecked_emp = make_employee("adga_unchecked@example.com")
+		self.uncovered_emp = make_employee("adga_uncovered@example.com")
 		self.reliever = make_employee("adga_reliever@example.com", custom_is_rambo_reliever=1)
 		self.driver = make_employee("adga_driver@example.com")
 
@@ -111,15 +111,23 @@ class TestAccommodationDispatchAndGroomingAudit(FrappeTestCase):
 				"employee": self.failed_emp.name,
 				"attendance_status": "Present",
 				"qoa_status": "Fail",
-				"qoa_reason": "Uniform",
+				"qoa_reason": "Grooming",
+			},
+		)
+		doc.append(
+			"transportation_manifest_details",
+			{
+				**boarding,
+				"employee": self.absent_emp.name,
+				"attendance_status": "Absent",
+				"requires_reliever": 1,
 				"reliever_employee": self.reliever.name,
 			},
 		)
 		doc.append(
 			"transportation_manifest_details",
-			{**boarding, "employee": self.absent_emp.name, "attendance_status": "Absent"},
+			{**boarding, "employee": self.uncovered_emp.name, "attendance_status": "Absent"},
 		)
-		doc.append("transportation_manifest_details", {**boarding, "employee": self.unchecked_emp.name})
 		doc.append(
 			"transportation_manifest_details",
 			{
@@ -236,12 +244,12 @@ class TestAccommodationDispatchAndGroomingAudit(FrappeTestCase):
 		self.assertFalse(trip["parent_trip"])
 		self.assertEqual(trip["headcount"], 4)
 		self.assertEqual(trip["present"], 2)
+		self.assertEqual(trip["vehicle"], self.vehicle)
 		self.assertTrue(trip["compliance_summary"].startswith("1/4"))
 		self.assertIn("25%", trip["compliance_summary"])
 		self.assertEqual(trip["compliance_warnings"], 1)
 		self.assertEqual(trip["lock_status"], "Not Started")
 		self.assertEqual(trip["manifest"], self.manifest.name)
-		self.assertEqual(trip["vehicle"], self.manifest.license_plate or self.manifest.vehicle_no)
 		self.assertEqual(trip["camp"], "ADGA Camp A")
 
 	def test_departure_is_lowest_camp_leg_start(self):
@@ -277,17 +285,19 @@ class TestAccommodationDispatchAndGroomingAudit(FrappeTestCase):
 		failed = self._passenger(data, self.failed_emp)
 		self.assertEqual(failed["attendance_result"], "Present")
 		self.assertEqual(failed["appearance_result"], "Failed")
-		self.assertEqual(failed["failure_reason"], "Uniform")
-		self.assertEqual(
-			failed["reliever_pairing"], f"{failed['employee_name']} \u2794 {self.reliever.employee_name}"
-		)
+		self.assertEqual(failed["failure_reason"], "Grooming")
 
 		absent = self._passenger(data, self.absent_emp)
-		self.assertEqual(absent["attendance_result"], "Absent (Uncovered)")
+		self.assertEqual(absent["attendance_result"], "Absent")
+		self.assertEqual(
+			absent["reliever_pairing"], f"{absent['employee_name']} \u2794 {self.reliever.employee_name}"
+		)
 		self.assertIsNone(absent["boarding_time"])
+		self.assertFalse(absent["appearance_result"])
 
-		unchecked = self._passenger(data, self.unchecked_emp)
-		self.assertEqual(unchecked["appearance_result"], "Not Checked")
+		uncovered = self._passenger(data, self.uncovered_emp)
+		self.assertEqual(uncovered["attendance_result"], "Absent (Uncovered)")
+		self.assertFalse(uncovered["reliever_pairing"])
 
 	# ── AC5 filters ──────────────────────────────────────────────────────────
 

@@ -1,7 +1,7 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
 
-"""Accommodation Dispatch and Grooming Audit (WI-003682).
+"""Accommodation Dispatch and Grooming Audit.
 
 One row per CAMP DEPARTURE run (level 1, indent 0), with the rostered boarding passengers
 nested underneath it (level 2, indent 1, ``parent_trip`` pointing at the run).
@@ -33,8 +33,7 @@ COMPLIANCE_FAILS = "Trips with Grooming/Uniform Fails"
 PRESENT = "Present"
 ABSENT = "Absent"
 ABSENT_UNCOVERED = "Absent (Uncovered)"
-PENDING = "Pending"
-PASSED = "Eligible & Dispatched"
+PASSED = "Passed"
 FAILED = "Failed"
 NOT_CHECKED = "Not Checked"
 
@@ -52,7 +51,7 @@ def execute(filters=None):
 	if not parents:
 		return columns, []
 
-	children = fetch_children([parent.name for parent in parents])
+	children = fetch_children([parent.name for parent in parents], filters.get("camp"))
 	if not children:
 		return columns, []
 
@@ -85,20 +84,24 @@ def fetch_parents(report_date):
 		return []
 
 
-def fetch_children(parent_names):
+def fetch_children(parent_names, camp=None):
 	"""Every camp pickup (Boarding row) on the permitted manifests, in stop order."""
+	filters = {
+		"parent": ["in", parent_names],
+		"parenttype": "Transportation Manifest",
+		"employee_action": "Boarding",
+	}
+	if camp:
+		filters["pickup_accommodation"] = camp
 	return frappe.get_all(
 		"Transportation Manifest Details",
-		filters={
-			"parent": ["in", parent_names],
-			"parenttype": "Transportation Manifest",
-			"employee_action": "Boarding",
-		},
+		filters=filters,
 		fields=[
 			"name",
 			"parent",
 			"idx",
 			"trip_id",
+			"trip_name",
 			"stop_sequence",
 			"pickup_accommodation",
 			"employee",
@@ -120,10 +123,10 @@ def fetch_employee_names(employee_ids):
 	rows = frappe.get_all(
 		"Employee",
 		filters={"name": ["in", list(employee_ids)]},
-		fields=["name", "employee_name"],
+		fields=["name", "employee_name", "employee_id"],
 		limit_page_length=0,
 	)
-	return {row.name: row.employee_name for row in rows}
+	return {row.name: row for row in rows}
 
 
 def collect_employee_ids(parents, children):
@@ -190,7 +193,7 @@ def classify_passenger(child, reliever_name=None):
 	"""
 	status = child.get("attendance_status")
 	result = {
-		"attendance": PENDING,
+		"attendance": NOT_CHECKED,
 		"appearance": "",
 		"failure_reason": "",
 		"reliever": "",
@@ -214,9 +217,6 @@ def classify_passenger(child, reliever_name=None):
 			result["failed"] = 1
 		else:
 			result["appearance"] = NOT_CHECKED
-	else:
-		# Nobody has checked this rider yet, so there is no appearance result either.
-		result["appearance"] = NOT_CHECKED
 
 	if child.get("reliever_employee"):
 		original = child.get("employee_name") or child.get("employee") or ""
@@ -249,21 +249,20 @@ def build_trips(parents, children, names, labels):
 			continue
 
 		# The rows arrive ordered by stop, so the labels come out in stop order.
-		camp_ids = []
-		for row in rows:
-			if row.pickup_accommodation and row.pickup_accommodation not in camp_ids:
-				camp_ids.append(row.pickup_accommodation)
 		camp_labels = []
-		for acc in camp_ids:
-			label = labels.get(acc) or acc
-			if label not in camp_labels:
+		for row in rows:
+			label = labels.get(row.pickup_accommodation) or row.pickup_accommodation
+			if label and label not in camp_labels:
 				camp_labels.append(label)
 
 		passengers = []
 		for row in rows:
-			info = classify_passenger(row, names.get(row.reliever_employee))
+			reliever_name = _name(names, row.reliever_employee)
+			info = classify_passenger(row, reliever_name)
 			info["row"] = row
-			info["reliever_name"] = names.get(row.reliever_employee) or ""
+			info["employee_id"] = (names.get(row.employee) or {}).get("employee_id") or ""
+			info["reliever_name"] = reliever_name
+			info["camp"] = labels.get(row.pickup_accommodation) or row.pickup_accommodation
 			passengers.append(info)
 
 		highest = max(cint(row.stop_sequence or 1) for row in rows)
@@ -271,10 +270,11 @@ def build_trips(parents, children, names, labels):
 			frappe._dict(
 				manifest=manifest,
 				trip_id=trip_id,
+				trip_name=rows[0].trip_name,
 				departure="",
-				vehicle=parent.license_plate or parent.vehicle_no,
-				driver=names.get(parent.driver_name) or parent.driver_name or "",
-				camp_ids=camp_ids,
+				vehicle=parent.vehicle_no,
+				license_plate=parent.license_plate,
+				driver=_name(names, parent.driver_name),
 				camps=camp_labels,
 				headcount=len(passengers),
 				present=sum(1 for p in passengers if p["attendance"] == PRESENT),
@@ -288,6 +288,12 @@ def build_trips(parents, children, names, labels):
 	return trips
 
 
+def _name(names, employee):
+	if not employee:
+		return ""
+	return (names.get(employee) or {}).get("employee_name") or employee
+
+
 def attach_departures(trips):
 	departures = fetch_departures([trip.trip_id for trip in trips])
 	for trip in trips:
@@ -295,10 +301,6 @@ def attach_departures(trips):
 
 
 def trip_matches_filters(trip, filters):
-	camp = filters.get("camp")
-	if camp and camp not in trip.camp_ids:
-		return False
-
 	compliance = filters.get("compliance") or COMPLIANCE_ALL
 	if compliance == COMPLIANCE_PASSED:
 		return trip.headcount > 0 and trip.passed == trip.headcount
@@ -314,13 +316,14 @@ def _contains(needle, *haystack):
 
 
 def trip_matches_search(trip, needle):
-	if _contains(needle, trip.vehicle, trip.driver):
+	if _contains(needle, trip.vehicle, trip.license_plate, trip.driver):
 		return True
 	return any(
 		_contains(
 			needle,
 			p["row"].employee,
 			p["row"].employee_name,
+			p["employee_id"],
 			p["row"].reliever_employee,
 			p["reliever_name"],
 		)
@@ -355,7 +358,7 @@ def build_rows(trips, search=None):
 		if needle and not trip_matches_search(trip, needle):
 			continue
 
-		trip_key = unique(trip.trip_id or trip.manifest)
+		trip_key = unique(trip.trip_name or trip.trip_id or trip.manifest)
 		data.append(
 			{
 				"row_id": trip_key,
@@ -365,6 +368,7 @@ def build_rows(trips, search=None):
 				"manifest": trip.manifest,
 				"departure_time": trip.departure,
 				"vehicle": trip.vehicle,
+				"license_plate": trip.license_plate,
 				"driver": trip.driver,
 				"camp": ", ".join(trip.camps),
 				"headcount": trip.headcount,
@@ -377,7 +381,7 @@ def build_rows(trips, search=None):
 
 		for p in trip.passengers:
 			row = p["row"]
-			label = f"{row.employee or ''} - {row.employee_name or ''}".strip(" -")
+			label = f"{p['employee_id'] or row.employee or ''} - {row.employee_name or ''}".strip(" -")
 			data.append(
 				{
 					"row_id": unique(label or row.name),
@@ -385,7 +389,8 @@ def build_rows(trips, search=None):
 					"indent": 1,
 					"employee": row.employee,
 					"employee_name": row.employee_name,
-					"camp": row.pickup_accommodation,
+					"employee_id": p["employee_id"],
+					"camp": p["camp"],
 					"boarding_time": row.boarding_time,
 					"attendance_result": p["attendance"],
 					"appearance_result": p["appearance"],
@@ -402,7 +407,8 @@ def get_columns():
 		{"label": _("Trip ID"), "fieldname": "trip_id", "fieldtype": "Data", "width": 110},
 		{"label": _("Manifest"), "fieldname": "manifest", "fieldtype": "Link", "options": "Transportation Manifest", "width": 150},
 		{"label": _("Departure Time"), "fieldname": "departure_time", "fieldtype": "Data", "width": 100},
-		{"label": _("Vehicle"), "fieldname": "vehicle", "fieldtype": "Data", "width": 110},
+		{"label": _("Vehicle"), "fieldname": "vehicle", "fieldtype": "Link", "options": "Vehicle", "width": 110},
+		{"label": _("License Plate"), "fieldname": "license_plate", "fieldtype": "Data", "width": 110},
 		{"label": _("Driver"), "fieldname": "driver", "fieldtype": "Data", "width": 150},
 		{"label": _("Camp"), "fieldname": "camp", "fieldtype": "Data", "width": 150},
 		{"label": _("Total Boarding Headcount"), "fieldname": "headcount", "fieldtype": "Int", "width": 90},
@@ -411,6 +417,7 @@ def get_columns():
 		{"label": _("Compliance Warnings"), "fieldname": "compliance_warnings", "fieldtype": "Int", "width": 100},
 		{"label": _("Lock Status"), "fieldname": "lock_status", "fieldtype": "Data", "width": 150},
 		{"label": _("Employee"), "fieldname": "employee", "fieldtype": "Link", "options": "Employee", "width": 110},
+		{"label": _("Employee ID"), "fieldname": "employee_id", "fieldtype": "Data", "width": 110},
 		{"label": _("Employee Name"), "fieldname": "employee_name", "fieldtype": "Data", "width": 160},
 		{"label": _("Boarding Time"), "fieldname": "boarding_time", "fieldtype": "Datetime", "width": 160},
 		{"label": _("Attendance"), "fieldname": "attendance_result", "fieldtype": "Data", "width": 140},
