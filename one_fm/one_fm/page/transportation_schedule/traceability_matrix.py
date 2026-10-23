@@ -145,7 +145,7 @@ def get_traceability_matrix(date=None, plan=None) -> dict:
 		on_date = frappe.utils.getdate(date or frappe.utils.today())
 		rows = _build_rows(on_date, plan)
 	except Exception:
-		frappe.log_error(frappe.get_traceback(), "Traceability Matrix")
+		frappe.log_error(title="Traceability Matrix", message=frappe.get_traceback())
 		return {
 			"status": "error",
 			"message": _("The traceability matrix could not be built. See the Error Log."),

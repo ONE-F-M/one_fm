@@ -190,7 +190,7 @@ class TestEndpoint(FrappeTestCase):
 		result = get_traceability_matrix()
 
 		logged = frappe.get_all(
-			"Error Log", filters={"method": "Traceability Matrix"}, fields=["error"],
+			"Error Log", fields=["error"],
 			order_by="creation desc", limit_page_length=1,
 		)
 		detail = (logged[0].error[-1500:] if logged else "") if result.get("status") == "error" else ""
