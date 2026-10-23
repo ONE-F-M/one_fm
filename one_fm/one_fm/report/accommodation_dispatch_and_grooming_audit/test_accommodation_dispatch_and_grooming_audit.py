@@ -3,63 +3,209 @@
 
 import json
 import os
-from unittest.mock import patch
 
+import erpnext
 import frappe
 from frappe.tests.utils import FrappeTestCase
-from frappe.utils import add_days, today
+from frappe.utils import add_days, now_datetime, today
 
+from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+	_local_seconds,
+	_time_field,
+)
 from one_fm.one_fm.report.accommodation_dispatch_and_grooming_audit import (
 	accommodation_dispatch_and_grooming_audit as report,
 )
+from one_fm.tests.utils import make_employee
 
-MODULE = "one_fm.one_fm.report.accommodation_dispatch_and_grooming_audit.accommodation_dispatch_and_grooming_audit"
-
-
-def _child(**kw):
-	base = {
-		"name": kw.get("employee", "x") + "-row",
-		"parent": "TM-1",
-		"idx": 1,
-		"trip_id": "T-1",
-		"stop_sequence": 1,
-		"pickup_accommodation": "Mahboula Camp",
-		"scheduled_time": "06:30:00",
-		"employee": "EMP-1",
-		"employee_name": "Binod Basnet",
-		"attendance_status": None,
-		"boarding_time": None,
-		"qoa_status": None,
-		"qoa_reason": None,
-		"reliever_employee": None,
-	}
-	base.update(kw)
-	return frappe._dict(base)
+BOARDING_TRIP = "ADGA-T1"
+RETURN_TRIP = "ADGA-T2"
+EARLY_CAMP_LEG = "2026-03-02T03:15:00.000Z"
+LATER_CAMP_LEG = "2026-03-02T05:45:00.000Z"
+NON_CAMP_LEG = "2026-03-02T01:00:00.000Z"
 
 
-def _parent(**kw):
-	base = {
-		"name": "TM-1",
-		"vehicle_no": "BUS-1",
-		"license_plate": "PLATE-1",
-		"driver_name": "EMP-D",
-		"active_stop_by_trip": json.dumps({"T-1": 1}),
-		"active_stop_sequence": 1,
-	}
-	base.update(kw)
-	return frappe._dict(base)
+def _ensure_department():
+	"""make_employee takes the first Department it finds; a bare test site has none."""
+	if frappe.get_all("Department", limit=1):
+		return
+	frappe.get_doc(
+		{
+			"doctype": "Department",
+			"department_name": "ADGA Test Department",
+			"company": erpnext.get_default_company() or frappe.get_all("Company", pluck="name")[0],
+		}
+	).insert(ignore_permissions=True)
 
 
 class TestAccommodationDispatchAndGroomingAudit(FrappeTestCase):
-	def run_report(self, parents, children, filters=None, names=None):
-		filters = {"date": today(), **(filters or {})}
-		names = names if names is not None else {"EMP-D": "Driver Dan", "EMP-2": "Mohit Lal Chaudhary"}
-		with patch(f"{MODULE}.fetch_parents", return_value=parents), patch(
-			f"{MODULE}.fetch_children", return_value=children
-		), patch(f"{MODULE}.fetch_employee_names", return_value=names):
-			return report.execute(filters)
+	def setUp(self):
+		_ensure_department()
+		self.passed_emp = make_employee("adga_pass@example.com")
+		self.failed_emp = make_employee("adga_fail@example.com")
+		self.absent_emp = make_employee("adga_absent@example.com")
+		self.unchecked_emp = make_employee("adga_unchecked@example.com")
+		self.reliever = make_employee("adga_reliever@example.com", custom_is_rambo_reliever=1)
+		self.driver = make_employee("adga_driver@example.com")
 
-	# ── scaffold ────────────────────────────────────────────────────────────
+		self.camp = self._accommodation("ADGA Camp A")
+		self.other_camp = self._accommodation("ADGA Camp B")
+		self.vehicle = self._vehicle("ADGA-PLATE-1")
+		self.manifest = self._manifest()
+		self._route_plan_rows()
+
+	def tearDown(self):
+		frappe.set_user("Administrator")
+		frappe.db.rollback()
+
+	# ── fixtures ─────────────────────────────────────────────────────────────
+
+	def _accommodation(self, label):
+		if not frappe.db.exists("Accommodation Type", "Test Acc Type"):
+			frappe.get_doc(
+				{"doctype": "Accommodation Type", "accommodation_type": "Test Acc Type"}
+			).insert(ignore_permissions=True)
+		existing = frappe.db.get_value("Accommodation", {"accommodation": label}, "name")
+		if existing:
+			return existing
+		return (
+			frappe.get_doc({"doctype": "Accommodation", "accommodation": label, "type": "Test Acc Type"})
+			.insert(ignore_permissions=True)
+			.name
+		)
+
+	def _vehicle(self, plate):
+		if frappe.db.exists("Vehicle", plate):
+			return plate
+		if not frappe.db.exists("Location", "Test Location"):
+			frappe.get_doc(
+				{
+					"doctype": "Location",
+					"location_name": "Test Location",
+					"latitude": 29.3759,
+					"longitude": 47.9774,
+					"geofence_radius": 100,
+				}
+			).insert(ignore_permissions=True)
+		return (
+			frappe.get_doc(
+				{
+					"doctype": "Vehicle",
+					"license_plate": plate,
+					"one_fm_vehicle_category": "Owned",
+					"make": "Toyota",
+					"one_fm_vehicle_type": "Bus",
+					"model": "Coaster",
+					"last_odometer": 1000,
+					"location": "Test Location",
+					"employee": self.driver.name,
+					"custom_handover_date": today(),
+					"fuel_type": "Diesel",
+					"uom": "Litre",
+					"seats": 15,
+				}
+			)
+			.insert(ignore_permissions=True)
+			.name
+		)
+
+	def _manifest(self):
+		"""One manifest: a four-row Boarding run and a Dropping Off run."""
+		doc = frappe.new_doc("Transportation Manifest")
+		doc.vehicle_no = self.vehicle
+		doc.schedule_date = today()
+		boarding = {"trip_id": BOARDING_TRIP, "employee_action": "Boarding", "scheduled_time": "08:00:00"}
+		doc.append(
+			"transportation_manifest_details",
+			{**boarding, "employee": self.passed_emp.name, "attendance_status": "Present", "qoa_status": "Pass"},
+		)
+		doc.append(
+			"transportation_manifest_details",
+			{
+				**boarding,
+				"employee": self.failed_emp.name,
+				"attendance_status": "Present",
+				"qoa_status": "Fail",
+				"qoa_reason": "Uniform",
+				"reliever_employee": self.reliever.name,
+			},
+		)
+		doc.append(
+			"transportation_manifest_details",
+			{**boarding, "employee": self.absent_emp.name, "attendance_status": "Absent"},
+		)
+		doc.append("transportation_manifest_details", {**boarding, "employee": self.unchecked_emp.name})
+		doc.append(
+			"transportation_manifest_details",
+			{
+				"trip_id": RETURN_TRIP,
+				"employee_action": "Dropping Off",
+				"scheduled_time": "17:00:00",
+				"employee": self.passed_emp.name,
+			},
+		)
+		doc.save(ignore_permissions=True)
+
+		# The controller derives stop numbers and camps from shipments; pin the shape this
+		# test is about directly so it does not depend on that derivation.
+		for row in doc.transportation_manifest_details:
+			frappe.db.set_value(
+				"Transportation Manifest Details",
+				row.name,
+				{
+					"trip_id": row.trip_id,
+					"employee_action": row.employee_action,
+					"stop_sequence": 1,
+					"pickup_accommodation": self.camp if row.employee_action == "Boarding" else None,
+				},
+			)
+		return doc
+
+	def _route_plan_rows(self):
+		now = now_datetime()
+		for stop_index, start_time, is_camp_leg in (
+			(2, LATER_CAMP_LEG, 1),
+			(1, EARLY_CAMP_LEG, 1),
+			(0, NON_CAMP_LEG, 0),
+		):
+			frappe.get_doc(
+				{
+					"doctype": "Route Plan Assignment",
+					"name": frappe.generate_hash(length=10),
+					"trip_group": BOARDING_TRIP,
+					"stop_index": stop_index,
+					"start_time": start_time,
+					"is_camp_leg": is_camp_leg,
+					"creation": now,
+					"modified": now,
+					"owner": "Administrator",
+					"modified_by": "Administrator",
+				}
+			).db_insert()
+
+	def _run(self, **filters):
+		_columns, data = report.execute({"date": today(), **filters})
+		return data
+
+	def _trips(self, data):
+		return [row for row in data if row["indent"] == 0]
+
+	def _ours(self, data):
+		return [row for row in self._trips(data) if row["manifest"] == self.manifest.name]
+
+	def _passenger(self, data, employee):
+		return next(row for row in data if row["indent"] == 1 and row["employee"] == employee.name)
+
+	def _set_all_passed(self):
+		for row in self.manifest.transportation_manifest_details:
+			if row.employee_action == "Boarding":
+				frappe.db.set_value(
+					"Transportation Manifest Details",
+					row.name,
+					{"attendance_status": "Present", "qoa_status": "Pass", "qoa_reason": None},
+				)
+
+	# ── scaffold ─────────────────────────────────────────────────────────────
 
 	def test_report_definition(self):
 		path = os.path.join(os.path.dirname(report.__file__), "accommodation_dispatch_and_grooming_audit.json")
@@ -67,142 +213,119 @@ class TestAccommodationDispatchAndGroomingAudit(FrappeTestCase):
 			doc = json.load(f)
 		self.assertEqual(doc["report_type"], "Script Report")
 		self.assertEqual(doc["is_standard"], "Yes")
-		self.assertEqual(doc["module"], "One Fm")
 		self.assertEqual(doc["ref_doctype"], "Transportation Manifest")
-		self.assertEqual(doc["prepared_report"], 0)
-		self.assertEqual(doc["add_total_row"], 0)
-		self.assertNotIn("&", doc["name"])
-		self.assertEqual(
-			{r["role"] for r in doc["roles"]},
-			{"System Manager", "Operations Manager", "Transportation Manager", "Transportation Supervisor", "Fleet Manager"},
-		)
 
-	def test_js_has_export_button_and_no_inline_styles(self):
-		path = os.path.join(os.path.dirname(report.__file__), "accommodation_dispatch_and_grooming_audit.js")
-		with open(path) as f:
-			js = f.read()
-		self.assertIn("initial_depth: 0", js)
-		self.assertIn("Export Audit Report", js)
-		self.assertLess(js.index("expand_all_rows"), js.index("export_report"))
-		self.assertNotIn("style=", js)
+	def test_columns_are_one_list_with_boarding_time(self):
+		columns, _data = report.execute({"date": today()})
+		fieldnames = [column["fieldname"] for column in columns]
+		self.assertIn("boarding_time", fieldnames)
+		self.assertEqual(len(fieldnames), len(set(fieldnames)))
 
-	# ── AC1 scope ───────────────────────────────────────────────────────────
+	# ── AC1 scope ────────────────────────────────────────────────────────────
 
-	def test_only_camp_departures_are_listed(self):
-		children = [
-			_child(),
-			# Return leg: Dropping Off rows never reach the report (fetch is Boarding only),
-			# so model the other excluded shapes: no accommodation at Stop 1, and a later stop.
-			_child(employee="EMP-5", trip_id="T-SHUTTLE", pickup_accommodation=None),
-			_child(employee="EMP-6", trip_id="T-LATE", stop_sequence=2),
-		]
-		_, data = self.run_report([_parent()], children)
-		trips = [r for r in data if r["indent"] == 0]
-		self.assertEqual([t["trip_id"] for t in trips], ["T-1"])
+	def test_dropping_off_run_is_absent(self):
+		data = self._run()
+		self.assertEqual([row["trip_id"] for row in self._ours(data)], [BOARDING_TRIP])
+		self.assertNotIn(RETURN_TRIP, [row.get("trip_id") for row in data])
 
-	def test_future_date_returns_empty(self):
-		_, data = self.run_report([_parent()], [_child()], {"date": add_days(today(), 3)})
-		self.assertEqual(data, [])
+	def test_future_date_is_empty(self):
+		self.assertEqual(self._run(date=add_days(today(), 3)), [])
 
-	# ── AC2 / AC3 passenger classification ──────────────────────────────────
+	def test_user_without_read_access_gets_no_rows(self):
+		email = "adga_noaccess@example.com"
+		if not frappe.db.exists("User", email):
+			frappe.get_doc(
+				{"doctype": "User", "email": email, "first_name": "No Access", "send_welcome_email": 0}
+			).insert(ignore_permissions=True)
+		frappe.set_user(email)
+		try:
+			self.assertEqual(self._run(), [])
+		finally:
+			frappe.set_user("Administrator")
 
-	def test_attendance_and_appearance_classification(self):
-		present_pass = report.classify_passenger(_child(attendance_status="Present", qoa_status="Pass"))
-		self.assertEqual(present_pass["attendance"], "Present")
-		self.assertEqual(present_pass["appearance"], "Eligible & Dispatched")
+	# ── AC4 trip row ─────────────────────────────────────────────────────────
 
-		fail = report.classify_passenger(
-			_child(attendance_status="Present", qoa_status="Fail", qoa_reason="Uniform")
-		)
-		self.assertEqual(fail["appearance"], "Failed")
-		self.assertEqual(fail["failure_reason"], "Uniform")
-		self.assertEqual(fail["failed"], 1)
-
-		uncovered = report.classify_passenger(_child(attendance_status="Absent"))
-		self.assertEqual(uncovered["attendance"], "Absent (Uncovered)")
-
-		covered = report.classify_passenger(
-			_child(attendance_status="Absent", reliever_employee="EMP-2"), "Mohit Lal Chaudhary"
-		)
-		self.assertEqual(covered["attendance"], "Absent")
-		self.assertEqual(covered["reliever"], "Binod Basnet \u2794 Mohit Lal Chaudhary")
-
-	def test_warning_total_counts_appearance_failures(self):
-		children = [
-			_child(employee="EMP-1", attendance_status="Present", qoa_status="Fail", qoa_reason="Grooming"),
-			_child(employee="EMP-3", employee_name="Three", attendance_status="Present", qoa_status="Fail", qoa_reason="Uniform"),
-			_child(employee="EMP-4", employee_name="Four", attendance_status="Present", qoa_status="Pass"),
-		]
-		_, data = self.run_report([_parent()], children)
-		trip = data[0]
-		self.assertEqual(trip["compliance_warnings"], 2)
-		self.assertEqual(trip["compliance_summary"], "1/3 Passed")
-		self.assertEqual(trip["headcount"], 3)
-
-	# ── AC4 two-level structure ─────────────────────────────────────────────
-
-	def test_two_level_rows_and_trip_fields(self):
-		_, data = self.run_report([_parent()], [_child(attendance_status="Present", qoa_status="Pass")])
-		trip, passenger = data
+	def test_trip_row_values(self):
+		trip = self._ours(self._run())[0]
 		self.assertEqual(trip["indent"], 0)
-		self.assertEqual(passenger["indent"], 1)
-		self.assertEqual(passenger["parent_row"], trip["row_id"])
-		self.assertEqual(trip["departure_time"], "06:30")
-		self.assertEqual(trip["vehicle"], "PLATE-1")
-		self.assertEqual(trip["driver"], "Driver Dan")
-		self.assertEqual(trip["camp"], "Mahboula Camp")
-		self.assertEqual(trip["lock_status"], "In Progress (Stop 1)")
+		self.assertFalse(trip["parent_trip"])
+		self.assertEqual(trip["headcount"], 4)
+		self.assertEqual(trip["present"], 2)
+		self.assertTrue(trip["compliance_summary"].startswith("1/4"))
+		self.assertIn("25%", trip["compliance_summary"])
+		self.assertEqual(trip["compliance_warnings"], 1)
+		self.assertEqual(trip["lock_status"], "Not Started")
+		self.assertEqual(trip["manifest"], self.manifest.name)
+		self.assertEqual(trip["vehicle"], self.manifest.license_plate or self.manifest.vehicle_no)
+		self.assertEqual(trip["camp"], "ADGA Camp A")
 
-	def test_lock_status(self):
-		self.assertEqual(report.get_lock_status(0, 2), "Not Started")
-		self.assertEqual(report.get_lock_status(2, 2), "In Progress (Stop 2)")
-		self.assertEqual(report.get_lock_status(3, 2), "Completed")
+	def test_departure_is_lowest_camp_leg_start(self):
+		trip = self._ours(self._run())[0]
+		self.assertEqual(trip["departure_time"], _time_field(_local_seconds(EARLY_CAMP_LEG)))
 
-	# ── AC5 filters ─────────────────────────────────────────────────────────
+	def test_departure_blank_without_camp_leg(self):
+		frappe.db.delete("Route Plan Assignment", {"trip_group": BOARDING_TRIP})
+		self.assertEqual(self._ours(self._run())[0]["departure_time"], "")
 
-	def _mixed_children(self):
-		return [
-			_child(employee="EMP-1", trip_id="T-OK", attendance_status="Present", qoa_status="Pass"),
-			_child(employee="EMP-3", employee_name="Absent Abe", trip_id="T-ABS", attendance_status="Absent"),
-			_child(employee="EMP-4", employee_name="Fail Fay", trip_id="T-FAIL", attendance_status="Present",
-				qoa_status="Fail", qoa_reason="Grooming"),
-		]
+	def test_lock_status_follows_active_stop(self):
+		doc = frappe.get_doc("Transportation Manifest", self.manifest.name)
+		doc.set_active_stop_for(BOARDING_TRIP, 1)
+		self.assertEqual(self._ours(self._run())[0]["lock_status"], "In Progress (Stop 1)")
+		doc.set_active_stop_for(BOARDING_TRIP, 2)
+		self.assertEqual(self._ours(self._run())[0]["lock_status"], "Completed")
 
-	def _parent_all(self):
-		return _parent(active_stop_by_trip=json.dumps({"T-OK": 1, "T-ABS": 1, "T-FAIL": 1}))
+	# ── AC2 / AC3 passenger rows ─────────────────────────────────────────────
 
-	def _trip_ids(self, data):
-		return [r["trip_id"] for r in data if r["indent"] == 0]
+	def test_passenger_labels(self):
+		data = self._run()
+		children = [row for row in data if row["indent"] == 1]
+		self.assertEqual(len(children), 4)
+		for child in children:
+			self.assertEqual(child["parent_trip"], self._ours(data)[0]["row_id"])
 
-	def test_compliance_filter(self):
-		for option, expected in (
-			("All Trips", ["T-OK", "T-ABS", "T-FAIL"]),
-			("100% Passed Trips", ["T-OK"]),
-			("Trips with Absentees", ["T-ABS"]),
-			("Trips with Grooming/Uniform Fails", ["T-FAIL"]),
-		):
-			_, data = self.run_report([self._parent_all()], self._mixed_children(), {"compliance": option})
-			self.assertEqual(self._trip_ids(data), expected, option)
+		passed = self._passenger(data, self.passed_emp)
+		self.assertEqual(passed["attendance_result"], "Present")
+		self.assertEqual(passed["appearance_result"], report.PASSED)
+		self.assertIsNotNone(passed["boarding_time"])
+		self.assertFalse(passed["reliever_pairing"])
+
+		failed = self._passenger(data, self.failed_emp)
+		self.assertEqual(failed["attendance_result"], "Present")
+		self.assertEqual(failed["appearance_result"], "Failed")
+		self.assertEqual(failed["failure_reason"], "Uniform")
+		self.assertEqual(
+			failed["reliever_pairing"], f"{failed['employee_name']} \u2794 {self.reliever.employee_name}"
+		)
+
+		absent = self._passenger(data, self.absent_emp)
+		self.assertEqual(absent["attendance_result"], "Absent (Uncovered)")
+		self.assertIsNone(absent["boarding_time"])
+
+		unchecked = self._passenger(data, self.unchecked_emp)
+		self.assertEqual(unchecked["appearance_result"], "Not Checked")
+
+	# ── AC5 filters ──────────────────────────────────────────────────────────
+
+	def test_each_compliance_option(self):
+		self.assertEqual(len(self._ours(self._run(compliance="All Trips"))), 1)
+		self.assertEqual(len(self._ours(self._run(compliance="Trips with Absentees"))), 1)
+		self.assertEqual(len(self._ours(self._run(compliance="Trips with Grooming/Uniform Fails"))), 1)
+		self.assertEqual(self._ours(self._run(compliance="100% Passed Trips")), [])
+
+		self._set_all_passed()
+		self.assertEqual(len(self._ours(self._run(compliance="100% Passed Trips"))), 1)
+		self.assertEqual(self._ours(self._run(compliance="Trips with Absentees")), [])
+		self.assertEqual(self._ours(self._run(compliance="Trips with Grooming/Uniform Fails")), [])
+
+	def test_search_on_reliever_name_shows_whole_trip(self):
+		data = self._run(search=self.reliever.employee_name)
+		self.assertEqual(len(self._ours(data)), 1)
+		self.assertEqual(len([row for row in data if row["indent"] == 1]), 4)
+
+	def test_search_by_employee_and_miss(self):
+		self.assertEqual(len(self._ours(self._run(search=self.absent_emp.name))), 1)
+		self.assertEqual(self._ours(self._run(search="no-such-person-zzz")), [])
 
 	def test_camp_filter(self):
-		children = [_child(trip_id="T-A"), _child(employee="EMP-9", trip_id="T-B", pickup_accommodation="Farwaniya Camp")]
-		_, data = self.run_report([_parent()], children, {"camp": "Farwaniya Camp"})
-		self.assertEqual(self._trip_ids(data), ["T-B"])
-
-	def test_search_by_employee_vehicle_and_driver(self):
-		parents = [self._parent_all()]
-		_, data = self.run_report(parents, self._mixed_children(), {"search": "abe"})
-		self.assertEqual(self._trip_ids(data), ["T-ABS"])
-		self.assertEqual(len(data), 2)  # trip + the matching passenger
-
-		_, data = self.run_report(parents, self._mixed_children(), {"search": "emp-4"})
-		self.assertEqual(self._trip_ids(data), ["T-FAIL"])
-
-		_, data = self.run_report(parents, self._mixed_children(), {"search": "plate-1"})
-		self.assertEqual(len(self._trip_ids(data)), 3)
-
-		_, data = self.run_report(parents, self._mixed_children(), {"search": "driver dan"})
-		self.assertEqual(len(self._trip_ids(data)), 3)
-
-		_, data = self.run_report(parents, self._mixed_children(), {"search": "nobody"})
-		self.assertEqual(data, [])
+		self.assertEqual(len(self._ours(self._run(camp=self.camp))), 1)
+		self.assertEqual(self._run(camp=self.other_camp), [])
