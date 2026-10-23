@@ -748,28 +748,32 @@ class TestFetchShiftWorkingEmployees(FrappeTestCase):
 	PREFIX = "ZZ-WI3683-"
 
 	def _employee(self, key, status="Active", shift_working=1, rambo=0):
-		doc = frappe.new_doc("Employee")
-		doc.update({
+		# Plain column insert: the Employee table of a test site may lack unrelated
+		# custom columns that a full Document insert would try to write.
+		values = {
 			"name": self.PREFIX + key, "employee_name": "Zz " + key, "status": status,
-			"shift_working": shift_working, "custom_is_rambo_reliever": rambo,
-		})
-		doc.name = self.PREFIX + key
-		doc.owner = doc.modified_by = "Administrator"
-		doc.creation = doc.modified = "2026-01-01 00:00:00"
-		doc.docstatus = 0
-		doc.db_insert()
-		return doc.name
+			"shift_working": shift_working, "owner": "Administrator",
+			"modified_by": "Administrator", "creation": "2026-01-01 00:00:00",
+			"modified": "2026-01-01 00:00:00",
+		}
+		if frappe.db.has_column("Employee", "custom_is_rambo_reliever"):
+			values["custom_is_rambo_reliever"] = rambo
+		Employee = frappe.qb.DocType("Employee")
+		frappe.qb.into(Employee).columns(*values.keys()).insert(*values.values()).run()
+		return values["name"]
 
 	def _checkin(self, employee, camp, creation, kind="IN"):
-		doc = frappe.new_doc("Accommodation Checkin Checkout")
-		doc.update({"employee": employee, "accommodation": camp, "type": kind})
-		doc.name = frappe.generate_hash(length=12)
-		doc.owner = doc.modified_by = "Administrator"
-		doc.creation = doc.modified = creation
-		doc.docstatus = 0
-		doc.db_insert()
+		values = {
+			"name": frappe.generate_hash(length=12), "employee": employee,
+			"accommodation": camp, "type": kind, "owner": "Administrator",
+			"modified_by": "Administrator", "creation": creation, "modified": creation,
+		}
+		Checkin = frappe.qb.DocType("Accommodation Checkin Checkout")
+		frappe.qb.into(Checkin).columns(*values.keys()).insert(*values.values()).run()
 
 	def setUp(self):
+		if not frappe.db.has_column("Employee", "shift_working"):
+			self.skipTest("Employee.shift_working is not present on this site")
 		self.in_camp = self._employee("INCAMP")
 		self.non_rambo_worker = self._employee("WORKER", rambo=0)
 		self.rambo = self._employee("RAMBO", rambo=1)
