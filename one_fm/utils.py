@@ -1810,6 +1810,7 @@ def update_onboarding_doc_for_bank_account(doc):
             "bank_account_status",
             "account_name",
             "bank",
+            "salary_mode",
         ],
         as_dict=True,
     )
@@ -1830,16 +1831,20 @@ def update_onboarding_doc_for_bank_account(doc):
         "bank": doc.bank,
     }
 
-    if oe_values.workflow_state == "Duty Commencement":
-        new_values["workflow_state"] = "Bank Account"
+    advance = oe_values.workflow_state == "Duty Commencement" and oe_values.salary_mode == "Bank"
 
     # Nothing changed, avoid an unnecessary document load, save and version entry
-    if all(oe_values.get(field) == value for field, value in new_values.items()):
+    if not advance and all(oe_values.get(field) == value for field, value in new_values.items()):
         return
 
     oe = frappe.get_doc("Onboard Employee", doc.onboard_employee)
     oe.update(new_values)
     oe.save(ignore_permissions=True)
+
+    # db_set, not a workflow save: "Open Bank Account" is allowed to Onboarding Officer
+    # only, and this runs as whoever saved the Bank Account (e.g. a GR Operator via PACI).
+    if advance:
+        oe.db_set("workflow_state", "Bank Account")
 
 def notify_payroll_officer(doc):
     try:
