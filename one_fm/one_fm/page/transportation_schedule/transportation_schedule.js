@@ -38,7 +38,7 @@ function matrixMatches(row, filters) {
     const q = normalizeSearchText(f.q);
     if (!q) return true;
     return [
-        r.name, r.id, r.designation,
+        r.name, r.id, r.designation, r.operations_role,
         r.reliever_name, r.relieving_employee_name,
         r.is_reliever ? 'reliever' : ''
     ].some(v => normalizeSearchText(v).includes(q));
@@ -167,6 +167,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 matrixLoading: false,
                 matrixRows: [],             // rows from get_traceability_matrix
                 matrixSyncedAt: '',         // server synced_at string
+                matrixSyncedMs: 0,          // browser clock at load; server time may be another timezone
                 matrixNow: Date.now(),      // ticked every 30s while the drawer is open
                 matrixFilters: {
                     date: frappe.datetime.get_today(),
@@ -306,10 +307,8 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             matrixSyncedLabel() {
-                if (!this.matrixSyncedAt) return __('Not synced yet');
-                const at = new Date(String(this.matrixSyncedAt).replace(' ', 'T')).getTime();
-                if (isNaN(at)) return __('Synced {0}', [this.matrixSyncedAt]);
-                const mins = Math.floor(Math.max(0, this.matrixNow - at) / 60000);
+                if (!this.matrixSyncedMs) return __('Not synced yet');
+                const mins = Math.floor(Math.max(0, this.matrixNow - this.matrixSyncedMs) / 60000);
                 if (mins < 1) return __('Synced just now');
                 if (mins < 60) return __('Synced {0}m ago', [mins]);
                 if (mins < 1440) return __('Synced {0}h ago', [Math.floor(mins / 60)]);
@@ -4705,7 +4704,7 @@ function mountRoutePlannerApp(wrapper, data) {
                         }
                         this.matrixRows = Array.isArray(m.rows) ? m.rows : [];
                         this.matrixSyncedAt = m.synced_at || '';
-                        this.matrixNow = Date.now();
+                        this.matrixSyncedMs = this.matrixNow = Date.now();
                     },
                     error: () => {
                         if (req === this._matrixReq) this.matrixLoading = false;
@@ -6092,7 +6091,7 @@ function injectRPVueTemplate() {
       </label>
       <label class="rp-matrix-toggle">
         <input type="checkbox" v-model="matrixFilters.issuesOnly" />
-        <span>{{ __('Show Issues and Data Gaps Only') }}</span>
+        <span>{{ __('Show Issues & Data Gaps Only') }}</span>
       </label>
     </div>
 
@@ -6126,6 +6125,11 @@ function injectRPVueTemplate() {
             <td>
               <span :class="['rp-matrix-status', matrixStatusClass(row.status)]">{{ matrixStatusText(row) }}</span>
               <div v-if="row.subtext" class="rp-matrix-sub">{{ row.subtext }}</div>
+              <template v-if="row.legs && row.legs.length > 1">
+                <div v-for="leg in row.legs" :key="leg.card" class="rp-matrix-sub">
+                  {{ leg.direction || __('Leg') }}: {{ leg.vehicle ? leg.vehicle + (leg.trip ? ' · ' + __('Trip') + ' ' + leg.trip : '') : __('Unassigned Pool') }} · {{ leg.card }}
+                </div>
+              </template>
             </td>
           </tr>
         </tbody>

@@ -29,7 +29,7 @@ const none = { shift: '', accommodation: '', project: '', q: '', issuesOnly: fal
 const f = (over) => Object.assign({}, none, over);
 
 const rows = {
-    assigned: { id: 'HR-EMP-1', name: 'Samir  Basnet', designation: 'Driver', project: 'Alpha',
+    assigned: { id: 'HR-EMP-1', name: 'Samir  Basnet', designation: 'Driver', project: 'Alpha', operations_role: 'Gate Guard',
                 roster_shift: 'Morning', camp: 'Camp A', room: '12', status: 'Assigned' },
     pool:     { id: 'HR-EMP-2', name: 'Asha Rai', designation: 'Cleaner', project: 'Beta',
                 roster_shift: 'Night', camp: 'Camp B', status: 'Pool' },
@@ -63,6 +63,7 @@ assert.deepStrictEqual(ids(f({ q: 'samir basnet' })), ['HR-EMP-1'], 'doubled sto
 assert.deepStrictEqual(ids(f({ q: ' hr-emp-4 ' })), ['HR-EMP-4'], 'id, case and edge spaces ignored');
 assert.deepStrictEqual(ids(f({ q: 'driver' })), ['HR-EMP-1', 'HR-EMP-5'], 'designation');
 assert.deepStrictEqual(ids(f({ q: 'bina' })), ['HR-EMP-3'], 'reliever name');
+assert.deepStrictEqual(ids(f({ q: 'gate guard' })), ['HR-EMP-1'], 'operations role');
 assert.deepStrictEqual(ids(f({ q: 'reliever' })), ['HR-EMP-3'], 'reliever flag');
 assert.deepStrictEqual(ids(f({ q: 'nobody' })), []);
 
