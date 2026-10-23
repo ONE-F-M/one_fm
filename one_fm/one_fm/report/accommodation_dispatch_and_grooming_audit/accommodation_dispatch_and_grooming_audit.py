@@ -3,23 +3,24 @@
 
 """Accommodation Dispatch and Grooming Audit (WI-003682).
 
-One row per CAMP DEPARTURE run (level 1), with the rostered boarding passengers
-nested underneath it (level 2).
+One row per CAMP DEPARTURE run (level 1, indent 0), with the rostered boarding passengers
+nested underneath it (level 2, indent 1, ``parent_trip`` pointing at the run).
 
-A run is a camp departure when its Stop 1 is an Accommodation: it has a Boarding row on
-stop_sequence 1 carrying a pickup_accommodation. Return legs (their rows are Dropping
-Off), shuttles and site transfers (no accommodation at Stop 1) are left out.
+A camp pickup is any manifest child row whose ``employee_action`` is "Boarding". A run
+(one ``trip_id`` on one manifest) is in scope when it has at least one. Return legs
+(Dropping Off rows), shuttles and site transfers carry no Boarding rows and are left out.
+Scope deliberately does not read ``stop_sequence`` as "stop 1": in a Mixed manifest the
+sequence counts visits, not the position in the run.
 
-Lock Status is the check-in lock, read per run exactly as the manifest reads it:
-Not Started / In Progress (Stop N) / Completed.
+Lock Status is the check-in lock, read per run exactly as the manifest reads it
+(``active_stop_for``): Not Started / In Progress (Stop N) / Completed.
 """
-
-import json
 
 import frappe
 from frappe import _
 from frappe.utils import cint, cstr, getdate, today
-from frappe.utils import to_timedelta
+
+from one_fm.one_fm.doctype.transportation_manifest.manifest_sheet import _accommodation_labels
 
 UNGROUPED_TRIP = ""
 
@@ -52,9 +53,16 @@ def execute(filters=None):
 		return columns, []
 
 	children = fetch_children([parent.name for parent in parents])
-	names = fetch_employee_names(collect_employee_ids(parents, children))
+	if not children:
+		return columns, []
 
-	trips = build_trips(parents, children, names)
+	names = fetch_employee_names(collect_employee_ids(parents, children))
+	labels = _accommodation_labels(
+		list({child.pickup_accommodation for child in children if child.pickup_accommodation})
+	)
+
+	trips = build_trips(parents, children, names, labels)
+	attach_departures(trips)
 	trips = [trip for trip in trips if trip_matches_filters(trip, filters)]
 
 	return columns, build_rows(trips, filters.get("search"))
@@ -64,23 +72,21 @@ def execute(filters=None):
 
 
 def fetch_parents(report_date):
-	return frappe.get_list(
-		"Transportation Manifest",
-		filters={"schedule_date": report_date},
-		fields=[
-			"name",
-			"vehicle_no",
-			"license_plate",
-			"driver_name",
-			"active_stop_by_trip",
-			"active_stop_sequence",
-		],
-		order_by="name asc",
-		limit_page_length=0,
-	)
+	"""The day's manifests the current user may read (get_list applies permissions)."""
+	try:
+		return frappe.get_list(
+			"Transportation Manifest",
+			filters={"schedule_date": report_date},
+			fields=["name", "vehicle_no", "license_plate", "driver_name"],
+			order_by="name asc",
+			limit_page_length=0,
+		)
+	except frappe.PermissionError:
+		return []
 
 
 def fetch_children(parent_names):
+	"""Every camp pickup (Boarding row) on the permitted manifests, in stop order."""
 	return frappe.get_all(
 		"Transportation Manifest Details",
 		filters={
@@ -95,7 +101,6 @@ def fetch_children(parent_names):
 			"trip_id",
 			"stop_sequence",
 			"pickup_accommodation",
-			"scheduled_time",
 			"employee",
 			"employee_name",
 			"attendance_status",
@@ -104,7 +109,7 @@ def fetch_children(parent_names):
 			"qoa_reason",
 			"reliever_employee",
 		],
-		order_by="parent asc, idx asc",
+		order_by="parent asc, stop_sequence asc, idx asc",
 		limit_page_length=0,
 	)
 
@@ -128,25 +133,48 @@ def collect_employee_ids(parents, children):
 	return ids
 
 
+def fetch_departures(trip_ids):
+	"""{trip_id: "HH:MM:SS"} - the camp leg's start time on the Route Plan Assignment.
+
+	One batched query. The departure is the start of the run's lowest-numbered camp leg
+	(never a manifest row's scheduled_time, which on a Boarding row is the arrival at the
+	drop-off site). Only the time of day is used, so the plan rows are not filtered by
+	date. A run with no camp leg gets no departure.
+	"""
+	trip_ids = [trip_id for trip_id in set(trip_ids) if trip_id]
+	if not trip_ids:
+		return {}
+
+	from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+		_local_seconds,
+		_time_field,
+	)
+
+	rows = frappe.get_all(
+		"Route Plan Assignment",
+		filters={"trip_group": ["in", trip_ids], "is_camp_leg": 1},
+		fields=["trip_group", "stop_index", "start_time"],
+		limit_page_length=0,
+	)
+
+	first = {}
+	for row in rows:
+		current = first.get(row.trip_group)
+		if current is None or cint(row.stop_index) < cint(current.stop_index):
+			first[row.trip_group] = row
+
+	return {
+		trip_id: _time_field(_local_seconds(row.start_time)) or ""
+		for trip_id, row in first.items()
+	}
+
+
 # ── Row logic ────────────────────────────────────────────────────────────────
 
 
-def get_active_stop_map(parent) -> dict:
-	"""{trip_id: active stop} for one manifest, as TransportationManifest.active_stop_map.
-
-	A manifest written before the per-run split carries a single number for the whole
-	vehicle; every run inherits it.
-	"""
-	try:
-		stored = json.loads(parent.get("active_stop_by_trip") or "{}") or {}
-	except ValueError:
-		stored = {}
-	return {str(key): cint(value) for key, value in stored.items()}
-
-
 def get_lock_status(active_stop, last_stop):
-	"""Check-in lock of one run: a stop below the pointer is Completed (see
-	TransportationManifest.enforce_stop_locking), the pointer itself is in progress."""
+	"""Check-in lock of one run: pointer 0 has not started, a pointer past the run's
+	highest stop has finished it, anything between is in progress at that stop."""
 	active_stop = cint(active_stop)
 	if not active_stop:
 		return _("Not Started")
@@ -195,73 +223,77 @@ def classify_passenger(child, reliever_name=None):
 	return result
 
 
-def format_departure(value):
-	if not value:
-		return ""
-	minutes = int(to_timedelta(value).total_seconds() // 60) % (24 * 60)
-	return f"{minutes // 60:02d}:{minutes % 60:02d}"
+def build_trips(parents, children, names, labels):
+	"""Group the Boarding rows by (manifest, trip_id) into runs."""
+	parent_by_name = {parent.name: parent for parent in parents}
 
-
-def build_trips(parents, children, names):
-	"""Group the boarding rows into runs and keep only the camp departures."""
-	by_parent = {}
+	grouped = {}
 	for child in children:
-		by_parent.setdefault(child.parent, []).append(child)
+		key = (child.parent, cstr(child.trip_id or UNGROUPED_TRIP))
+		grouped.setdefault(key, []).append(child)
+
+	active_cache = {}
+
+	def active_stop(manifest, trip_id):
+		if manifest not in active_cache:
+			active_cache[manifest] = frappe.get_doc("Transportation Manifest", manifest)
+		return active_cache[manifest].active_stop_for(trip_id)
 
 	trips = []
-	for parent in parents:
-		grouped = {}
-		for child in by_parent.get(parent.name, []):
-			grouped.setdefault(cstr(child.trip_id or UNGROUPED_TRIP), []).append(child)
+	for (manifest, trip_id), rows in grouped.items():
+		parent = parent_by_name.get(manifest)
+		if not parent:
+			continue
 
-		active_map = get_active_stop_map(parent)
-		legacy_active = cint(parent.get("active_stop_sequence")) if not active_map else 0
+		# The rows arrive ordered by stop, so the labels come out in stop order.
+		camp_ids = []
+		for row in rows:
+			if row.pickup_accommodation and row.pickup_accommodation not in camp_ids:
+				camp_ids.append(row.pickup_accommodation)
+		camp_labels = []
+		for acc in camp_ids:
+			label = labels.get(acc) or acc
+			if label not in camp_labels:
+				camp_labels.append(label)
 
-		for trip_id, rows in grouped.items():
-			camp_rows = [
-				row for row in rows if cint(row.stop_sequence or 1) == 1 and row.pickup_accommodation
-			]
-			if not camp_rows:
-				continue
+		passengers = []
+		for row in rows:
+			info = classify_passenger(row, names.get(row.reliever_employee))
+			info["row"] = row
+			info["reliever_name"] = names.get(row.reliever_employee) or ""
+			passengers.append(info)
 
-			camps = []
-			for row in camp_rows:
-				if row.pickup_accommodation not in camps:
-					camps.append(row.pickup_accommodation)
-
-			passengers = []
-			for row in rows:
-				info = classify_passenger(row, names.get(row.reliever_employee))
-				info["row"] = row
-				passengers.append(info)
-
-			times = [to_timedelta(row.scheduled_time) for row in camp_rows if row.scheduled_time]
-			active = active_map.get(trip_id, legacy_active)
-			headcount = len(passengers)
-			passed = sum(p["passed"] for p in passengers)
-
-			trips.append(
-				frappe._dict(
-					manifest=parent.name,
-					trip_id=trip_id,
-					departure=format_departure(min(times)) if times else "",
-					vehicle=parent.license_plate or parent.vehicle_no,
-					driver=names.get(parent.driver_name) or parent.driver_name or "",
-					camps=camps,
-					headcount=headcount,
-					passed=passed,
-					absent=sum(p["absent"] for p in passengers),
-					warnings=sum(p["failed"] for p in passengers),
-					lock_status=get_lock_status(active, max(cint(r.stop_sequence or 1) for r in rows)),
-					passengers=passengers,
-				)
+		highest = max(cint(row.stop_sequence or 1) for row in rows)
+		trips.append(
+			frappe._dict(
+				manifest=manifest,
+				trip_id=trip_id,
+				departure="",
+				vehicle=parent.license_plate or parent.vehicle_no,
+				driver=names.get(parent.driver_name) or parent.driver_name or "",
+				camp_ids=camp_ids,
+				camps=camp_labels,
+				headcount=len(passengers),
+				present=sum(1 for p in passengers if p["attendance"] == PRESENT),
+				passed=sum(p["passed"] for p in passengers),
+				absent=sum(p["absent"] for p in passengers),
+				warnings=sum(p["failed"] for p in passengers),
+				lock_status=get_lock_status(active_stop(manifest, trip_id), highest),
+				passengers=passengers,
 			)
+		)
 	return trips
+
+
+def attach_departures(trips):
+	departures = fetch_departures([trip.trip_id for trip in trips])
+	for trip in trips:
+		trip.departure = departures.get(trip.trip_id, "")
 
 
 def trip_matches_filters(trip, filters):
 	camp = filters.get("camp")
-	if camp and camp not in trip.camps:
+	if camp and camp not in trip.camp_ids:
 		return False
 
 	compliance = filters.get("compliance") or COMPLIANCE_ALL
@@ -278,8 +310,32 @@ def _contains(needle, *haystack):
 	return any(needle in cstr(value).lower() for value in haystack)
 
 
+def trip_matches_search(trip, needle):
+	if _contains(needle, trip.vehicle, trip.driver):
+		return True
+	return any(
+		_contains(
+			needle,
+			p["row"].employee,
+			p["row"].employee_name,
+			p["row"].reliever_employee,
+			p["reliever_name"],
+		)
+		for p in trip.passengers
+	)
+
+
+def compliance_summary(passed, headcount):
+	percent = round(passed * 100 / headcount) if headcount else 0
+	return f"{passed}/{headcount} ({percent}%)"
+
+
 def build_rows(trips, search=None):
-	"""Flatten the runs into indented rows: each run, then its passengers."""
+	"""Flatten the runs into indented rows: each run, then all of its passengers.
+
+	A run that matches the search is shown whole - the audit trail is never cut down to
+	the passengers that happened to match.
+	"""
 	needle = cstr(search).strip().lower()
 	data = []
 	seen = set()
@@ -293,23 +349,14 @@ def build_rows(trips, search=None):
 		return key
 
 	for trip in trips:
-		passengers = trip.passengers
-		if needle:
-			trip_hit = _contains(needle, trip.vehicle, trip.driver)
-			matching = [
-				p for p in passengers
-				if _contains(needle, p["row"].employee, p["row"].employee_name)
-			]
-			if not trip_hit and not matching:
-				continue
-			if not trip_hit:
-				passengers = matching
+		if needle and not trip_matches_search(trip, needle):
+			continue
 
 		trip_key = unique(trip.trip_id or trip.manifest)
 		data.append(
 			{
 				"row_id": trip_key,
-				"parent_row": "",
+				"parent_trip": None,
 				"indent": 0,
 				"trip_id": trip.trip_id,
 				"manifest": trip.manifest,
@@ -318,19 +365,20 @@ def build_rows(trips, search=None):
 				"driver": trip.driver,
 				"camp": ", ".join(trip.camps),
 				"headcount": trip.headcount,
-				"compliance_summary": f"{trip.passed}/{trip.headcount} Passed",
+				"present": trip.present,
+				"compliance_summary": compliance_summary(trip.passed, trip.headcount),
 				"compliance_warnings": trip.warnings,
 				"lock_status": trip.lock_status,
 			}
 		)
 
-		for p in passengers:
+		for p in trip.passengers:
 			row = p["row"]
 			label = f"{row.employee or ''} - {row.employee_name or ''}".strip(" -")
 			data.append(
 				{
 					"row_id": unique(label or row.name),
-					"parent_row": trip_key,
+					"parent_trip": trip_key,
 					"indent": 1,
 					"employee": row.employee,
 					"employee_name": row.employee_name,
@@ -355,6 +403,7 @@ def get_columns():
 		{"label": _("Driver"), "fieldname": "driver", "fieldtype": "Data", "width": 150},
 		{"label": _("Camp"), "fieldname": "camp", "fieldtype": "Data", "width": 150},
 		{"label": _("Total Boarding Headcount"), "fieldname": "headcount", "fieldtype": "Int", "width": 90},
+		{"label": _("Present"), "fieldname": "present", "fieldtype": "Int", "width": 80},
 		{"label": _("Compliance Summary"), "fieldname": "compliance_summary", "fieldtype": "Data", "width": 130},
 		{"label": _("Compliance Warnings"), "fieldname": "compliance_warnings", "fieldtype": "Int", "width": 100},
 		{"label": _("Lock Status"), "fieldname": "lock_status", "fieldtype": "Data", "width": 150},
