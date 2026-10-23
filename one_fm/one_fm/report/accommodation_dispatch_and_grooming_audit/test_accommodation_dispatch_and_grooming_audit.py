@@ -54,7 +54,7 @@ class TestAccommodationDispatchAndGroomingAudit(FrappeTestCase):
 		if existing:
 			return existing
 		return (
-			frappe.get_doc({"doctype": "Accommodation", "accommodation": label, "type": "Test Acc Type"})
+			frappe.get_doc({"doctype": "Accommodation", "accommodation": label, "type": "Test Acc Type", "status": "Active"})
 			.insert(ignore_permissions=True)
 			.name
 		)

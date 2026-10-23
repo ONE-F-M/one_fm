@@ -437,6 +437,7 @@ class TestTransportationManifest(FrappeTestCase):
 			"doctype": "Accommodation",
 			"accommodation": label,
 			"type": "Test Acc Type",
+			"status": "Active",
 		}).insert(ignore_permissions=True)
 		return acc.name
 
