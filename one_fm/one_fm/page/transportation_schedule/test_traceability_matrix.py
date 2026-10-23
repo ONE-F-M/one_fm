@@ -13,6 +13,9 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, getdate, today
 
+# Imported before any test patches driver_employees: these modules bind it by name at
+# import time, and a first import under a patch would keep the mock for the whole run.
+from one_fm.one_fm.doctype.transportation_shipment import shipment_generator  # noqa: F401
 from one_fm.one_fm.page.transportation_schedule import traceability_matrix as tm
 from one_fm.one_fm.page.transportation_schedule.traceability_matrix import (
 	MATRIX_ROLES,
