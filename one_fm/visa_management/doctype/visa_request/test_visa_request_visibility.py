@@ -194,6 +194,13 @@ class TestVisaRequestVisibility(FrappeTestCase):
 				self.assertTrue(named, f"{fieldname} names no state")
 				self.assertEqual(named - states, set(), f"{fieldname} names states the workflow lacks")
 
+	def test_the_rejection_remark_fields_are_not_read_only(self):
+		# The form hides an empty read-only field whatever its depends_on says, so a
+		# read-only remark would never show in the states its rule names.
+		for fieldname in BA_DEPENDS_ON:
+			with self.subTest(fieldname=fieldname):
+				self.assertFalse(self.meta.get_field(fieldname).read_only)
+
 	def test_the_free_text_pam_rejection_remarks_is_kept(self):
 		self.assertIsNotNone(self.meta.get_field("pam_rejection_remarks"))
 
