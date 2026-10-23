@@ -8,7 +8,6 @@ from one_fm.operations.doctype.employee_checkin_issue.employee_checkin_issue imp
 from frappe.model.workflow import apply_workflow
 from frappe.utils import getdate
 
-@frappe.whitelist()
 def create_employee_checkin_issue(employee_id: str = None, log_type: str = None, issue_type: str = None,
 	issue_details: str = None, latitude: float = None, longitude: float = None) -> dict:
 	"""This method creates a employee checkin issue for a given employee.
@@ -143,7 +142,6 @@ def get_shift_details(employee):
 
 	return frappe._dict({'found':True, 'data':[shift, shift_type, shift_assignment, shift_supervisor]})
 
-@frappe.whitelist()
 def list_employee_checkin_issue(employee_id: str = None):
 	if not employee_id:
 		return response("Bad Request", 400, None, "employee_id required.")
@@ -165,7 +163,6 @@ def list_employee_checkin_issue(employee_id: str = None):
 	except Exception as error:
 		return response("Internal Server Error", 500, None, error)
 
-@frappe.whitelist()
 def employee_checkin_issue_details(employee_checkin_issue_id: str = None):
 	if not employee_checkin_issue_id:
 		return response("Bad Request", 400, None, "employee_checkin_issue_id required.")
@@ -183,7 +180,6 @@ def employee_checkin_issue_details(employee_checkin_issue_id: str = None):
 		return response("Resource Not Found", 404, None, "Employee Checkin Issue {employee_checkin_issue_id} not found"
 			.format(employee_checkin_issue_id=employee_checkin_issue_id))
 
-@frappe.whitelist()
 def approve_employee_checkin_issue(employee_id: str = None, employee_checkin_issue_id: str = None):
 	if not employee_id:
 		return response("Bad Request", 400, None, "employee_id required.")
@@ -237,7 +233,6 @@ def approve_employee_checkin_issue(employee_id: str = None, employee_checkin_iss
 	except Exception as error:
 		return response("Internal Server Error", 500, None, error)
 
-@frappe.whitelist()
 def reject_employee_checkin_issue(employee_id: str = None, employee_checkin_issue_id: str = None):
 	if not employee_id:
 		return response("Bad Request", 400, None, "employee_id required.")
@@ -317,7 +312,6 @@ def get_issue_type():
 
 
 
-@frappe.whitelist(methods=["POST"])
 def get_checkin_issue_list(employee_id: str):
 	try:
 		if not employee_id:

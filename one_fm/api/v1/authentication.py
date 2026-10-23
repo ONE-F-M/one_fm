@@ -361,7 +361,6 @@ def change_password(employee_id, new_password, password_token):
 			strip_html(cstr(e)) or type(e).__name__)
 
 
-@frappe.whitelist(allow_guest=True)
 def update_password(otp, id, employee_id, new_password):
 	"""
 	Params: 
@@ -476,7 +475,6 @@ def send_token_via_email(user, token, otp_secret, otp_issuer, subject=None, mess
 	return True
 
 
-@frappe.whitelist(allow_guest=True)
 def validate_employee_id(employee_id=None):
 	"""
 	params
@@ -569,7 +567,6 @@ def fetch_employee_checkin_list(from_date=None, to_date=None, limit=20, page_num
 		frappe.log_error(title="API Authentication", message=frappe.get_traceback())
 		response("Internal Server Error", 500, None, str(e))
 
-@frappe.whitelist(allow_guest=True)
 def new_forgot_password(employee_id=None):
 	"""
 	validates the employee_id and returns the employee_user_id, which will be used to generate OTP
@@ -591,7 +588,6 @@ def new_forgot_password(employee_id=None):
 
 	return response("success", 200, {"employee_user_id": employee_user_id})
 
-@frappe.whitelist(allow_guest=True)
 def get_otp(employee_user_id: str=None, otp_source: str=None):
 	"""
 	sends OTP to the employee 
@@ -628,7 +624,6 @@ def get_otp(employee_user_id: str=None, otp_source: str=None):
 	return response("Success", 201, result)
 
 
-@frappe.whitelist(allow_guest=True)
 def set_password(employee_user_id, new_password):
 	"""
 	used to set the new password

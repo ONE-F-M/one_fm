@@ -140,7 +140,6 @@ def check_in(log_type, skip_attendance, latitude, longitude, source):
 	except:
 		frappe.log_error(message=frappe.get_traceback(), title='Mobile Web Checkin Error')
 
-@frappe.whitelist()
 def forced_checkin(employee, log_type, time):
 	checkin = frappe.new_doc("Employee Checkin")
 	checkin.employee = employee
@@ -220,7 +219,6 @@ def check_existing():
 		return True
 
 
-@frappe.whitelist()
 def get_checkin_history(employee):
 
 	"""

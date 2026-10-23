@@ -2,7 +2,6 @@ import frappe
 from frappe import _
 from one_fm.api.v1.utils import response
 
-@frappe.whitelist()
 def get_notification_list(employee_id: str = None) -> dict:
     """This method returns the list of notifications for a particular user.
 

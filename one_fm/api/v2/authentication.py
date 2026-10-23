@@ -16,7 +16,6 @@ from one_fm.api.v2.utils import response
 from one_fm.processor import sendemail, send_whatsapp
 from one_fm.api.v2.utils import get_current_user_details
 
-@frappe.whitelist(allow_guest=True)
 def login(client_id: str = None, grant_type: str = None, employee_id: str = None, password: str = None) -> dict:
 	""" This method logs in the user provided appropriate paramaters.
 
@@ -118,7 +117,6 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 		print(error)
 		return response("Internal Server Error", 500, None, error)
 
-@frappe.whitelist(allow_guest=True)
 def forgot_password(employee_id: str = None, otp_source: str = None) -> dict:
 	"""Sends an OTP to mobile number assosciated with user.	
 
@@ -179,7 +177,6 @@ def forgot_password(employee_id: str = None, otp_source: str = None) -> dict:
 	except Exception as error:
 		return response("Internal Server Error", 500, None, error)
 
-@frappe.whitelist(allow_guest=True)
 def update_password(otp, id, employee_id, new_password):
 	"""
 	Params: 
@@ -283,7 +280,6 @@ def send_token_via_email(user, token, otp_secret, otp_issuer, subject=None, mess
 	return True
 
 
-@frappe.whitelist(allow_guest=True)
 def validate_employee_id(employee_id=None):
 	"""
 	params
@@ -371,7 +367,6 @@ def fetch_employee_checkin_list(from_date=None, to_date=None, limit=20, page_num
 	}
 	return response("Successfully Retrieved !", 200, data)
 
-@frappe.whitelist(allow_guest=True)
 def new_forgot_password(employee_id=None):
 	"""
 	validates the employee_id and returns the employee_user_id, which will be used to generate OTP
@@ -393,7 +388,6 @@ def new_forgot_password(employee_id=None):
 
 	return response("success", 200, {"employee_user_id": employee_user_id})
 
-@frappe.whitelist(allow_guest=True)
 def get_otp(employee_user_id: str=None, otp_source: str=None):
 	"""
 	sends OTP to the employee 
@@ -431,7 +425,6 @@ def get_otp(employee_user_id: str=None, otp_source: str=None):
 	return response("Success", 201, result)
 
 
-@frappe.whitelist(allow_guest=True)
 def verify_otp(otp, temp_id):
 	"""
 	verifies the OTP entered by the employee
@@ -452,7 +445,6 @@ def verify_otp(otp, temp_id):
 		return("success", 200, "OTP verified Successfully !")
 	return("Error", 400, "invalid OTP")
 
-@frappe.whitelist(allow_guest=True)
 def set_password(employee_user_id, new_password):
 	"""
 	used to set the new password
@@ -472,7 +464,6 @@ def set_password(employee_user_id, new_password):
 	return response("Success", 200, message)
 
 
-@frappe.whitelist(allow_guest=True)
 def user_login(employee_id, password):
 	try:		
 		username =  frappe.db.get_value("Employee", {'employee_id': employee_id}, 'user_id')

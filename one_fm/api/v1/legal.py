@@ -25,7 +25,6 @@ face_recognition_service_url = frappe.local.conf.face_recognition_service_url
 stubs = list()
 
 
-@frappe.whitelist()
 def get_employee_list(shift: str = None, penalty_occurence_time: str = None) -> dict:
 
     if not shift:
@@ -71,7 +70,6 @@ def get_all_shifts():
         return response("Internal Server Error", 500, None, error)
 
 
-@frappe.whitelist()
 def issue_penalty(penalty_category, issuing_location, issuing_time, penalty_location, penalty_occurence_time,company_damage, customer_property_damage, asset_damage, other_damages, shift=None, site=None, project=None, site_location=None, penalty_employees=[], penalty_details=[]):
 	try:
 		employee, employee_name, designation = frappe.get_value("Employee", {"user_id": frappe.session.user}, ["name","employee_name", "designation"])
@@ -134,7 +132,6 @@ def issue_penalty(penalty_category, issuing_location, issuing_time, penalty_loca
 		return response("Internal Server Error", 500, None, error)
 
 
-@frappe.whitelist()
 def get_penalties(employee_id: str = None, role: str = None) -> dict:
 
 	if not employee_id:
@@ -168,7 +165,6 @@ def get_penalties(employee_id: str = None, role: str = None) -> dict:
 	except Exception as error:
 		return response("Internal Server Error", 500, None, error)
 
-@frappe.whitelist()
 def get_penalty_details(penalty_name: str = None) -> dict:
 	"""This method gets the details of a specific penalty provided the name of the penalty document.
 
@@ -211,7 +207,6 @@ def reject_penalty(rejection_reason: str = None, docname: str = None):
 	return response("OK", 200, None, "Penalties no longer need to be accepted or rejected.")
 
 
-@frappe.whitelist()
 def get_pending_penalties(employee_id: str = None, role: str = None, is_pending: bool = True) -> dict:
 	if not employee_id:
 		return response("Bad Request", 400, None, "employee_id required.")
@@ -245,7 +240,6 @@ def get_pending_penalties(employee_id: str = None, role: str = None, is_pending:
 		return response("Internal Server Error", 500, None, error)
 
 
-@frappe.whitelist()
 def get_subordinates(employee: str = None):
 	try:
 		if not employee:
@@ -261,7 +255,6 @@ def get_subordinates(employee: str = None):
 		return response("Internal Server Error", 500, None, e)
         
     
-@frappe.whitelist()
 def new_issue_penalty(penalty_category, issuing_location, penalty_location, penalty_occurrence_time, company_damage, customer_property_damage, 
                       asset_damage, other_damages, shift=None, site=None, project=None, site_location=None, penalty_employees=[], 
                       penalty_files=[], issuing_time=datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f'), penalty_issuance_details=[]):
@@ -327,7 +320,6 @@ def new_issue_penalty(penalty_category, issuing_location, penalty_location, pena
 		return response("Internal Server Error", 500, None, error)
 
 
-@frappe.whitelist()
 def get_shift_employee_list(shift: str = None, penalty_occurrence_time: str = None) -> dict:
     if not shift:
         return response("Bad Request", 400, None, "shift required.")

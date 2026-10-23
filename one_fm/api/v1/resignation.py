@@ -5,6 +5,7 @@ from frappe import _
 from frappe.utils.file_manager import save_file
 from frappe.model.workflow import apply_workflow
 from one_fm.api.mobile_utils import get_param, get_all_params
+from one_fm.api.v1.utils import get_own_employee
 
 
 # ---------------------------------------------------------------------------
@@ -22,6 +23,12 @@ def resolve_employee_name(employee_id):
     if frappe.db.exists("Employee", employee_id):
         return employee_id
     return None
+
+
+def ensure_own_employee(employee):
+    """Refuse a request about an employee who is not the logged-in user."""
+    if not get_own_employee(employee):
+        frappe.throw(_("You can only do this for your own account."), frappe.PermissionError)
 
 
 def handle_attachment_internal(doc, row, attachment_data, field_name):
@@ -107,6 +114,7 @@ def create_resignation(
             frappe.throw(_("Attachment is mandatory for resignation submission"), frappe.ValidationError)
 
         employee_name = resolve_employee_name(input_id)
+        ensure_own_employee(employee_name)
         if not employee_name:
             frappe.throw(f"Employee '{input_id}' not found", frappe.ValidationError)
 
@@ -199,6 +207,7 @@ def extend_resignation(
         att_name       = p["attachment_name"] or "extension_letter.png"
 
         employee_name = resolve_employee_name(input_id)
+        ensure_own_employee(employee_name)
         if not employee_name:
             frappe.throw(f"Employee '{input_id}' not found", frappe.ValidationError)
         if not extended_date:
@@ -221,6 +230,7 @@ def extend_resignation(
             frappe.throw("No active resignation found to extend", frappe.ValidationError)
 
         active_doc = frappe.get_doc("Employee Resignation", resignation_id)
+        ensure_own_employee(active_doc.employee)
         employee_user = frappe.db.get_value("Employee", employee_name, "user_id")
 
         ext = frappe.new_doc("Employee Resignation Date Adjustment")
@@ -296,6 +306,7 @@ def withdraw_resignation(
         supervisor_id = p["supervisor"]
 
         employee_name = resolve_employee_name(input_id)
+        ensure_own_employee(employee_name)
         if not employee_name:
             frappe.throw(f"Employee '{input_id}' not found", frappe.ValidationError)
 
@@ -400,6 +411,7 @@ def correct_resignation_date_app(
             frappe.throw("new_date (relieving date) is required", frappe.ValidationError)
 
         doc = frappe.get_doc("Employee Resignation", resignation_id)
+        ensure_own_employee(doc.employee)
 
         if doc.workflow_state != "Pending Relieving Date Correction":
             frappe.throw(
@@ -460,6 +472,7 @@ def get_my_active_resignation(employee_id: str | None = None, **kwargs):
     prioritising states that require employee action over waiting states."""
     input_id = get_param("employee_id", employee_id)
     employee_name = resolve_employee_name(input_id)
+    ensure_own_employee(employee_name)
     if not employee_name:
         return None
 
@@ -500,6 +513,7 @@ def get_all_my_resignations(employee_id=None, **kwargs):
     """Returns all non-terminal resignation records for the employee."""
     input_id = get_param("employee_id", employee_id)
     employee_name = resolve_employee_name(input_id)
+    ensure_own_employee(employee_name)
     if not employee_name:
         return []
 
@@ -546,6 +560,7 @@ def get_employee_supervisor(employee_id: str = None, **kwargs):
     from one_fm.utils import get_approver
     input_id = get_param("employee_id", employee_id)
     employee_name = resolve_employee_name(input_id)
+    ensure_own_employee(employee_name)
     if not employee_name:
         return {}
 

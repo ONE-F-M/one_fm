@@ -7,7 +7,6 @@ from hrms.hr.report.employee_leave_balance.employee_leave_balance import get_dat
 from one_fm.api.v1.utils import response
 
 
-@frappe.whitelist()
 def get_employee_shift(employee_id, date_type='month'):
     """
         Fetch employee information relating to

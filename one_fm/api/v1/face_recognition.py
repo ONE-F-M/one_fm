@@ -5,7 +5,7 @@ from one_fm.one_fm.page.face_recognition.face_recognition import update_onboardi
 from datetime import timedelta
 from one_fm.utils import get_current_shift, is_holiday,get_holiday_today
 from one_fm.api.v1.utils import (
-    response, verify_via_face_recogniton_service, get_video_extension
+    get_own_employee, not_own_employee_response, response, verify_via_face_recogniton_service, get_video_extension
 )
 from frappe.utils import add_days, cint, cstr, flt, getdate, now_datetime, strip_html
 from one_fm.api.doc_events import haversine
@@ -69,6 +69,8 @@ def enroll(employee_id: str = None, filename: str = None, video: str = None, vid
                 return response(_("No Video Captured"), 400, None,
                                 _("No video was captured. Please record your face again and retry."))
 
+        if not get_own_employee(employee_id):
+            return not_own_employee_response()
         employee_name = frappe.db.get_value("Employee", {"employee_id": employee_id}, "name")
         if not employee_name:
             return response(_("Employee Not Found"), 404, None,
@@ -173,6 +175,8 @@ def verify_checkin_checkout(employee_id: str = None, log_type: str = None,shift:
         skip_attendance = cint(skip_attendance)
 
         endpoint_state = frappe.db.get_single_value("ONEFM General Setting", 'enable_face_recognition_endpoint')
+        if not get_own_employee(employee_id):
+            return not_own_employee_response()
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["name", "custom_enable_face_recognition"], as_dict=1)
 
         if not employee or not employee.name:
@@ -454,6 +458,8 @@ def get_site_location(employee_id: str = None, shift: str = None,latitude: float
             return response(_("Location Unavailable"), 400, None,
                             _("Your location could not be read. Please enable GPS and try again."))
 
+        if not get_own_employee(employee_id):
+            return not_own_employee_response()
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["name", "holiday_list", "employee_name", "shift_working", "status"], as_dict=1)
         if not employee:
             return response(_("Employee Not Found"), 404, None,
@@ -809,6 +815,8 @@ def checkin_list(employee_id, from_date, to_date):
             return response(_("Missing Employee ID"), 400, None,
                             _("Please enter your Employee ID."))
 
+        if not get_own_employee(employee_id):
+            return not_own_employee_response()
         employee = frappe.db.get_value("Employee", {"employee_id":employee_id}, "name")
         if not employee:
             return response(_("Employee Not Found"), 404, None,

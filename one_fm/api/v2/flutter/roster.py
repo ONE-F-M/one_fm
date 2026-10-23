@@ -16,7 +16,6 @@ from calendar import day_name
 
 
 
-@frappe.whitelist()
 def assign_staff(employees, shift, request_employee_assignment=None):
     if not employees:
         response("Bad Request", 400, None, 'Please select employees first')
@@ -75,7 +74,6 @@ def update_employee_record(employee:dict):
     else:
         response("Resource not found",'404',None,"Employee {}  not found".format(employee.get('employee')))
 
-@frappe.whitelist()
 def change_employee_detail(employees:str,field:str=None,value=None)-> bool:
     """ summary
         Update the Employee and User record of a employee
@@ -100,7 +98,6 @@ def change_employee_detail(employees:str,field:str=None,value=None)-> bool:
     except Exception as e:
         response("error", 500, False, str(e))
 
-@frappe.whitelist(allow_guest=True)
 def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, project=None, site=None, shift=None, department=None, designation=None):
     date = cstr(add_to_date(nowdate(), days=1))
     conds = ""
@@ -167,7 +164,6 @@ def get_staff_filters_data():
     }
 
 
-@frappe.whitelist()
 def get_roster_view(start_date: str, end_date: str, assigned: int = 0, scheduled: int = 0, employee_search_id: str = None, 
         employee_search_name: str = None, project: str = None, site: str = None, shift: str = None, department: str = None, 
         operations_role: str = None, designation: str = None, isOt: str = None, limit_start: int = 0, limit_page_length: int  = 9999) -> dict:
@@ -354,7 +350,6 @@ def get_current_user_details():
     user_employee = frappe.get_value("Employee", {"user_id": user}, ["name", "employee_id", "employee_name", "image", "enrolled", "designation"], as_dict=1)
     return user, user_roles, user_employee
 
-@frappe.whitelist()
 def schedule_staff(employees, shift, operations_role, start_date, otRoster=0, project_end_date=0, 
 	keep_days_off=0, request_employee_schedule=0, day_off_ot=0, end_date=None, repeat_days=[],
 	day_off=[]):
@@ -724,7 +719,6 @@ def update_employee_assignment(employee, project, site, shift):
     frappe.db.set_value("Employee", employee, "shift", val=shift)
 
 
-@frappe.whitelist()
 def schedule_leave(employees, leave_type, start_date, end_date):
     try:
         for employee in json.loads(employees):
@@ -744,7 +738,6 @@ def schedule_leave(employees, leave_type, start_date, end_date):
     except Exception as e:
         return frappe.utils.response.report_error(e.http_status_code)
 
-@frappe.whitelist()
 def unschedule_staff(employees, start_date=None, end_date=None, never_end=0):
     try:
         #If start date and end date are provided
@@ -1056,7 +1049,6 @@ def extend_edit_post(posts, end_date):
 
 
 
-@frappe.whitelist()
 def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[], repeat_till=None, project_end_date=None):
     """
         Set days of done with sql query for instant response
@@ -1243,14 +1235,12 @@ def search_staff(key, search_term):
     """.format(conds=conds), as_dict=1)
     return data
 
-@frappe.whitelist()
 def get_employee_detail(employee_pk):
     if employee_pk:
         pk, employee_id, employee_name, enrolled, cell_number = frappe.db.get_value("Employee", employee_pk, ["name", "employee_id", "employee_name", "enrolled", "cell_number"])
         return {'pk':pk, 'employee_id': employee_id, 'employee_name': employee_name, 'enrolled': enrolled, "cell_number": cell_number}
 
 
-@frappe.whitelist()
 def roster_search_bar(project=None, site=None, shift=None, employee=None):
     """
         This API method filters projects, sites, shifts and employee based on input.

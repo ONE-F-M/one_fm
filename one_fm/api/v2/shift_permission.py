@@ -5,7 +5,6 @@ from one_fm.api.v1.utils import response, validate_date, validate_time
 from one_fm.operations.doctype.shift_permission.shift_permission import fetch_approver
 from frappe.utils import getdate
 
-@frappe.whitelist()
 def create_shift_permission(employee_id: str = None, log_type: str = None, permission_type: str = None, date: str = None,
     reason: str = None, leaving_time: str = None, arrival_time: str = None, latitude: str = None,
     longitude: str = None) -> dict:
@@ -171,7 +170,6 @@ def get_shift_details(employee, date=None):
 
     return frappe._dict({'found':True, 'data':[shift, shift_type, shift_assignment, shift_supervisor]})
 
-@frappe.whitelist()
 def list_shift_permission(employee_id: str = None):
     if not employee_id:
         return response("Bad Request", 400, None, "employee_id required.")
@@ -191,7 +189,6 @@ def list_shift_permission(employee_id: str = None):
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
-@frappe.whitelist()
 def shift_permission_details(shift_permission_id: str = None):
     if not shift_permission_id:
         return response("Bad Request", 400, None, "shift_permission_id required.")
@@ -210,7 +207,6 @@ def shift_permission_details(shift_permission_id: str = None):
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
-@frappe.whitelist()
 def approve_shift_permission(employee_id: str = None, shift_permission_id: str = None):
     if not employee_id:
         return response("Bad Request", 400, None, "employee_id required.")
@@ -259,7 +255,6 @@ def approve_shift_permission(employee_id: str = None, shift_permission_id: str =
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
-@frappe.whitelist()
 def reject_shift_permission(employee_id: str = None, shift_permission_id: str = None):
     if not employee_id:
         return response("Bad Request", 400, None, "employee_id required.")

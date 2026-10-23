@@ -36,6 +36,25 @@ def response(message, status_code, data=None, error=None, error_code=None):
         frappe.log_error(title="API Response", message=frappe.get_traceback())
 
 
+def get_own_employee(employee_id=None):
+	"""Return the logged-in user's Employee as name, employee_id and user_id.
+
+	Returns None when the user has no Employee, or when employee_id names a different employee.
+	"""
+	employee = frappe.db.get_value(
+		"Employee", {"user_id": frappe.session.user}, ["name", "employee_id", "user_id"], as_dict=True
+	)
+	if employee and employee_id and employee_id not in (employee.employee_id, employee.name):
+		return None
+	return employee
+
+
+def not_own_employee_response():
+	"""Answer 403 for a request about an employee who is not the logged-in user."""
+	return response(_("Forbidden"), 403, None,
+		_("You can only do this for your own account."), error_code="NOT_OWN_EMPLOYEE")
+
+
 def response_dict(message, status_code, data=None, error=None):
     return frappe._dict({
         'status_code': status_code,
@@ -179,13 +198,17 @@ def enrollment_status(employee_id: str = None) -> dict:
         return response(_("Something Went Wrong"), 500, None,
                         strip_html(str(e)) or type(e).__name__)
 
-@frappe.whitelist()
-def update_employee(employee_id, field, value):
-    """
-    Check if an employee is enrolled on the mobile app
-    :param employee:
-    :return: True or False
-    """
+UPDATE_EMPLOYEE_ROLES = ("Operations Manager", "Projects Manager", "Site Supervisor", "Shift Manager",
+	"Shift Supervisor", "HR User", "HR Manager", "System Manager")
+UPDATE_EMPLOYEE_FIELDS = ("cell_number", "enrolled")
+
+
+@frappe.whitelist(methods=["POST"])
+def update_employee(employee_id: str, field: str, value: str):
+    """Change another employee's cell_number or reset enrolled, for supervisors and HR (roster and Employee Management pages)."""
+    frappe.only_for(UPDATE_EMPLOYEE_ROLES)
+    if field not in UPDATE_EMPLOYEE_FIELDS:
+        frappe.throw(_("Only {0} can be changed here.").format(", ".join(UPDATE_EMPLOYEE_FIELDS)), frappe.PermissionError)
     try:
         get_employee = get_employee_by_id(employee_id)
         if get_employee.status:
@@ -208,7 +231,6 @@ def update_employee(employee_id, field, value):
         return response(message=str(e), status_code=200, data={'status':False}, error=str(e))
 
 
-@frappe.whitelist()
 def get_employee_by_id(employee_id):
     """
     Get employee pk by employee id

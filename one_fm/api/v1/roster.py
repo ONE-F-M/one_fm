@@ -226,7 +226,6 @@ def create_edit_post(date, post, post_status, paid):
     post_schedule.save(ignore_permissions=True)
 
 
-@frappe.whitelist()
 def day_off(employee, date, repeat=0, repeat_freq=None, repeat_till=None):
     try:
         if repeat:
@@ -322,7 +321,6 @@ def get_assigned_employees(shift, date, limit_start=None, limit_page_length=20):
         return frappe.utils.response.report_error(e.http_status_code)
 
 
-@frappe.whitelist()
 def get_assigned_projects(employee_id):
     try:
         user, user_roles, user_employee = get_current_user_details()
@@ -337,7 +335,6 @@ def get_assigned_projects(employee_id):
         return frappe.utils.response.report_error(e.http_status_code)
 
 
-@frappe.whitelist()
 def get_assigned_sites(employee_id, project=None):
     try:
         user, user_roles, user_employee = get_current_user_details()
@@ -360,7 +357,6 @@ def get_assigned_sites(employee_id, project=None):
         return frappe.utils.response.report_error(e.http_status_code)
 
 
-@frappe.whitelist()
 def get_assigned_shifts(employee_id, project=None, site=None):
     try:
         user, user_roles, user_employee = get_current_user_details()
@@ -429,7 +425,6 @@ def get_post_details(post_name):
         return frappe.utils.response.report_error(e.http_status_code)
 
 
-@frappe.whitelist()
 def unschedule_staff(employee, start_date, end_date=None, never_end=0):
     if not employee:
         return response("Bad request", 400, None, "Employee ID must be entered")
@@ -460,7 +455,6 @@ def unschedule_staff(employee, start_date, end_date=None, never_end=0):
     except Exception as e:
         return response("Internal Server Error !", 500, None, e)
 
-@frappe.whitelist()
 def schedule_staff(employee, shift, operations_role, start_date, end_date=None, never=0, repeat_days=[], day_off=[],
                    overtime=0):
     # For each day in the start_date end_date iterable, create an employee schedule for either working or day off
@@ -508,7 +502,6 @@ def schedule_staff(employee, shift, operations_role, start_date, end_date=None, 
         return response("Internal Server Error !", 500, None, e)
 
 
-@frappe.whitelist()
 def schedule_leave(employee, leave_type, start_date, end_date):
     try:
         for date in pd.date_range(start=start_date, end=end_date):

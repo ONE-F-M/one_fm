@@ -1,5 +1,5 @@
 import frappe
-from one_fm.api.v1.utils import response, validate_date
+from one_fm.api.v1.utils import get_own_employee, not_own_employee_response, response, validate_date
 from frappe.utils import getdate, add_months
 from one_fm.utils import (
     get_approver
@@ -19,6 +19,8 @@ def shift_request_list(employee_id: str, from_date: str = None, to_date: str = N
         if not employee_id:
             return response("error", 400, {}, "Employee ID is required.")
             
+        if not get_own_employee(employee_id):
+            return not_own_employee_response()
         employee = frappe.get_value("Employee", {"employee_id": employee_id}, ["name", "user_id"], as_dict=1)
         if not employee:
             return response("error", 404, {}, "No employee record found for {employee_id}".format(employee_id=employee_id))
@@ -84,6 +86,10 @@ def get_shift_request_detail(shift_request_id: str) -> dict:
             return response("error", 400, {}, "Shift Request ID is required.")
             
         doc = frappe.get_doc("Shift Request", shift_request_id)
+        own_employee = get_own_employee()
+        if frappe.session.user not in (doc.approver, doc.custom_project_manager_user) \
+            and not (own_employee and doc.employee == own_employee.name):
+            return not_own_employee_response()
         data = doc.as_dict()
         
         # Check if user is the manager or project manager
@@ -111,8 +117,11 @@ def create_shift_request(employee_id: str, purpose: str, from_date: str, to_date
         if not frappe.db.exists("Employee", {"employee_id": employee_id}):
             return response("error", 404, {}, "No employee record found with employee id {employee_id}".format(employee_id=employee_id))
 
+        if not get_own_employee(employee_id):
+            return not_own_employee_response()
+
         employee = frappe.get_doc("Employee", {"employee_id": employee_id})
-        
+
         shift_req = frappe.new_doc("Shift Request")
         shift_req.employee = employee.name
         if not reason:

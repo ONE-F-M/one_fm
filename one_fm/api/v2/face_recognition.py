@@ -83,7 +83,6 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
         return response("Internal Server Error", 500, None, error)
 
 
-@frappe.whitelist()
 def verify_checkin_checkout(employee_id: str = None, video : str = None, log_type: str = None, 
     shift_assignment: str = None, skip_attendance: str = None, latitude: str = None, longitude: str = None):
     """This method verifies user checking in/checking out.
@@ -291,7 +290,6 @@ def has_shift_permission(employee, log_type, date):
             has_shift_permission = True
     return has_shift_permission
 
-@frappe.whitelist()
 def get_site_location(employee_id: str = None, latitude: float = None, longitude: float = None) -> dict:
 # "{'employee_id': '2105002IN196', 'latitude': 29.3660164, 'longitude':47.9658118}"
     if not employee_id:

@@ -6,7 +6,6 @@ from one_fm.operations.doctype.shift_permission.shift_permission import fetch_ap
 
 
 
-@frappe.whitelist()
 def get_approver_details(employee_id):
     """
         Fetches the approver details and the last shift for that employee
@@ -28,7 +27,6 @@ def get_approver_details(employee_id):
         return response("Internal Server Error", 500, None, message)
     
 
-@frappe.whitelist()
 def create_shift_permission(employee_id: str = None, log_type: str = None, date: str = None,
     reason: str = None, leaving_time: str = None, arrival_time: str = None) -> dict:
     """This method creates a shift permission for a given employee.
@@ -181,7 +179,6 @@ def get_shift_details(employee, date=None):
         frappe.log_error(title="API Shift Detail", message=frappe.get_traceback())
         return frappe._dict({'found':False})
 
-@frappe.whitelist()
 def list_shift_permission(employee_id: str = None):
     try:
         if not employee_id:
@@ -204,7 +201,6 @@ def list_shift_permission(employee_id: str = None):
         frappe.log_error(title="API AuthList Permissionentication", message=frappe.get_traceback())
         return response("Internal Server Error", 500, None, error)
 
-@frappe.whitelist()
 def shift_permission_details(shift_permission_id: str = None):
     try:
         if not shift_permission_id:
@@ -224,7 +220,6 @@ def shift_permission_details(shift_permission_id: str = None):
         frappe.log_error(title="API Shift Permission", message=frappe.get_traceback())
         return response("Internal Server Error", 500, None, error)
 
-@frappe.whitelist()
 def approve_shift_permission(employee_id: str = None, shift_permission_id: str = None):
     if not employee_id:
         return response("Bad Request", 400, None, "employee_id required.")
@@ -276,7 +271,6 @@ def approve_shift_permission(employee_id: str = None, shift_permission_id: str =
         frappe.log_error(title="Error Approving Shift Permission",message=frappe.get_traceback())
         return response("Internal Server Error", 500, None, error)
 
-@frappe.whitelist()
 def reject_shift_permission(employee_id: str = None, shift_permission_id: str = None):
     if not employee_id:
         return response("Bad Request", 400, None, "employee_id required.")

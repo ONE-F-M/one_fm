@@ -125,7 +125,6 @@ def validate_time(time: str) -> bool:
 
     return True
 
-@frappe.whitelist()
 def get_current_shift(employee):
 	try:
 		current_datetime = now_datetime().strftime("%Y-%m-%d %H:%M:%S")
@@ -166,7 +165,6 @@ def get_mobile_version():
         return response(message='Failed', status_code=500, data={}, error=str(e))
 
 
-@frappe.whitelist()
 def enrollment_status(employee_id: str = None) -> dict:
     """
         Check if an employee is enrolled on the mobile app
@@ -185,7 +183,6 @@ def enrollment_status(employee_id: str = None) -> dict:
     except Exception as e:
         return response(message=str(e), status_code=500, data={'status':False}, error=str(e))
 
-@frappe.whitelist()
 def update_employee(employee_id, field, value):
     """
     Check if an employee is enrolled on the mobile app
@@ -214,7 +211,6 @@ def update_employee(employee_id, field, value):
         return response(message=str(e), status_code=200, data={'status':False}, error=str(e))
 
 
-@frappe.whitelist()
 def get_employee_by_id(employee_id):
     """
     Get employee pk by employee id

@@ -12,7 +12,6 @@ from one_fm.api.v1.utils import response
 from one_fm.utils import query_db_list
 
 
-@frappe.whitelist(allow_guest=True)
 def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, project=None, site=None, shift=None, department=None, designation=None):
     date = cstr(add_to_date(nowdate(), days=1))
     conds = ""
@@ -79,7 +78,6 @@ def get_staff_filters_data():
     }
 
 
-@frappe.whitelist()
 def get_roster_view(start_date: str, end_date: str, assigned: int = 0, scheduled: int = 0, employee_search_id: str = None, 
         employee_search_name: str = None, project: str = None, site: str = None, shift: str = None, department: str = None, 
         operations_role: str = None, designation: str = None, isOt: str = None, limit_start: int = 0, limit_page_length: int  = 9999) -> dict:
@@ -273,7 +271,6 @@ def get_current_user_details():
     return user, user_roles, user_employee
 
 
-@frappe.whitelist()
 def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, day_off_ot=None, end_date=None):
     try:
         validation_logs = []
@@ -541,7 +538,6 @@ def update_employee_assignment(employee, project, site, shift):
     frappe.db.set_value("Employee", employee, "shift", val=shift)
 
 
-@frappe.whitelist()
 def schedule_leave(employees, leave_type, start_date, end_date):
     try:
         for employee in json.loads(employees):
@@ -562,7 +558,6 @@ def schedule_leave(employees, leave_type, start_date, end_date):
         print(e)
         return frappe.utils.response.report_error(e.http_status_code)
 
-@frappe.whitelist()
 def unschedule_staff(employees, start_date=None, end_date=None, never_end=0):
     try:
         #If start date and end date are provided
@@ -852,7 +847,6 @@ def set_post_off(post, date, post_off_paid, post_off_unpaid):
 
 
 
-@frappe.whitelist()
 def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[], repeat_till=None, project_end_date=None):
     """
         Set days of done with sql query for instant response
@@ -998,7 +992,6 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
         response("error", 500, None, str(e))
 
 
-@frappe.whitelist()
 def assign_staff(employees, shift, request_employee_assignment):
     validation_logs = []
     user, user_roles, user_employee = get_current_user_details()
@@ -1071,7 +1064,6 @@ def search_staff(key, search_term):
     """.format(conds=conds), as_dict=1)
     return data
 
-@frappe.whitelist()
 def get_employee_detail(employee_pk):
     if employee_pk:
         pk, employee_id, employee_name, enrolled, cell_number = frappe.db.get_value("Employee", employee_pk, ["name", "employee_id", "employee_name", "enrolled", "cell_number"])

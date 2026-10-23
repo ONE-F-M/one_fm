@@ -9,7 +9,6 @@ import hashlib
 import base64, json
 from frappe.utils import cint, cstr, getdate
 
-@frappe.whitelist()
 def get_user_details(employee_id: str = None):
 
     if not employee_id:
@@ -40,7 +39,6 @@ def get_user_details(employee_id: str = None):
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
-@frappe.whitelist()
 def change_user_profile_image(employee_id: str = None, image: str = None):
 
     if not employee_id:
@@ -86,7 +84,6 @@ def change_user_profile_image(employee_id: str = None, image: str = None):
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
-@frappe.whitelist()
 def get_user_roles(employee_id: str = None):
     """This method fetches roles for a given user.
 
@@ -110,7 +107,6 @@ def get_user_roles(employee_id: str = None):
     
     return response("Success", 200, user_roles)
 
-@frappe.whitelist()
 def store_fcm_token(employee_id: str = None , fcm_token: str = None, device_os: str = None):
     if not employee_id:
         return response("Bad Request", 400, None, "employee_id required.")

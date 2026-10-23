@@ -2,7 +2,6 @@ import frappe
 from frappe import _
 from one_fm.api.v1.utils import response
 
-@frappe.whitelist()
 def get_salary_slip_list(employee_id: str = None) -> dict:
     """This method returns the list of salary slips for a given employee.
 
@@ -49,7 +48,6 @@ def get_salary_slip_list(employee_id: str = None) -> dict:
         frappe.log_error(title="API Salary Slip", message=frappe.get_traceback())
         return response("Internal Server Error", 500, None, error)
 
-@frappe.whitelist()
 def salary_slip_details(salary_slip_id: str = None) -> dict:
     """This method gets the details of a salary slip.
 

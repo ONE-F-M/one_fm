@@ -3,7 +3,6 @@ from frappe.utils import getdate, get_last_day, get_first_day
 from one_fm.api.v2.utils import response
 
 
-@frappe.whitelist()
 def get_attendance_list(employee, from_date=None, to_date=None, status=None):
     """
         Get employee sttendance based on filter

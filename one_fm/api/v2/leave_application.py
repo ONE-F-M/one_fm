@@ -11,7 +11,6 @@ from frappe.utils import cint, cstr, getdate
 from one_fm.utils import check_if_backdate_allowed
 from one_fm.api.utils import validate_sick_leave_attachment
 
-@frappe.whitelist()
 def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
     """This method gets the leave data for a specific employee.
 
@@ -91,7 +90,6 @@ def approver_leave() -> dict:
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
-@frappe.whitelist()
 def get_leave_balance(employee_id: str = None, leave_type: str = None) -> dict:
     """This method gets the leave balance data for a specific employee.
 
@@ -149,7 +147,6 @@ def get_leave_balance(employee_id: str = None, leave_type: str = None) -> dict:
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
-@frappe.whitelist()
 def get_leave_types(employee_id: str = None) -> dict:
     """This method gets the leave types from the leave allocated to a specific employee.
 
@@ -191,7 +188,6 @@ def get_leave_types(employee_id: str = None) -> dict:
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
-@frappe.whitelist()
 def create_new_leave_application(employee_id: str = None, from_date: str = None, to_date: str = None, leave_type: str = None, reason: str = None, proof_document = {}) -> dict:
     """[summary]
     Args:
@@ -327,7 +323,6 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
 
 
 
-@frappe.whitelist()
 def fetch_leave_approver(employee: str) -> str:
     """This function fetches the leave approver for a given employee.
     The leave approver is fetched  either Report_to or Leave Approver.

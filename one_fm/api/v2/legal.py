@@ -6,7 +6,6 @@ from one_fm.proto import facial_recognition_pb2_grpc, facial_recognition_pb2
 from one_fm.api.v1.utils import response
 from one_fm.utils import check_path, create_path
 
-@frappe.whitelist()
 def get_employee_list(shift: str = None, penalty_occurence_time: str = None) -> dict:
 
     if not shift:
@@ -51,7 +50,6 @@ def get_all_shifts():
         return response("Internal Server Error", 500, None, error)
 
 
-@frappe.whitelist()
 def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_location, penalty_occurence_time,company_damage, customer_property_damage, asset_damage, other_damages, shift=None, site=None, project=None, site_location=None, penalty_employees=[], penalty_details=[]):
 	try:
 		employee, employee_name, designation = frappe.get_value("Employee", {"user_id": frappe.session.user}, ["name","employee_name", "designation"])
@@ -114,7 +112,6 @@ def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_loca
 		return response("Internal Server Error", 500, None, error)@frappe.whitelist()
 
 
-@frappe.whitelist()
 def get_penalties(employee_id: str = None, role: str = None) -> dict:
 
 	if not employee_id:
