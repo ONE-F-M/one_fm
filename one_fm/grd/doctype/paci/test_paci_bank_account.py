@@ -56,11 +56,12 @@ def _complete_paci(employee, user=None):
 		"employee": employee,
 		"category": "Renewal",
 		"date_of_application": nowdate(),
-		"new_civil_id_expiry_date": add_days(nowdate(), 365),
 	})
 	paci.flags.ignore_permissions = True
 	paci.insert()
-	paci.db_set("workflow_state", "Completed")
+	# validate() overwrites the expiry from Employee.work_permit_expiry_date on insert,
+	# which is empty for most employees; on_submit requires it.
+	paci.db_set({"workflow_state": "Completed", "new_civil_id_expiry_date": add_days(nowdate(), 365)})
 	paci.reload()
 	if user:
 		frappe.set_user(user)
@@ -198,7 +199,7 @@ class TestDraftAssignmentRule(FrappeTestCase):
 	def _an_employee_with_a_user(self):
 		row = frappe.db.get_value(
 			"Employee",
-			{"status": "Active", "user_id": ["not in", ["", "Administrator", None]]},
+			[["status", "=", "Active"], ["user_id", "is", "set"], ["user_id", "!=", "Administrator"]],
 			["name", "user_id"],
 			order_by="creation asc",
 		)
