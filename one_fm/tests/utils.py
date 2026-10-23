@@ -42,6 +42,13 @@ def ensure_test_company_and_department():
             .insert(ignore_permissions=True, ignore_mandatory=True)
             .name
         )
+    # Link values make_employee hard-codes; a bare test site has none of them.
+    for doctype, fieldname, value in (
+        ("Gender", "gender", "Female"),
+        ("Employment Type", "employee_type_name", "Intern"),
+    ):
+        if not frappe.db.exists(doctype, value):
+            frappe.get_doc({"doctype": doctype, fieldname: value}).insert(ignore_permissions=True)
     return company, department
 
 
