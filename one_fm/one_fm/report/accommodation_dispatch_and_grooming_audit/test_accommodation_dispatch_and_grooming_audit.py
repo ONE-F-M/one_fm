@@ -15,7 +15,7 @@ from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
 from one_fm.one_fm.report.accommodation_dispatch_and_grooming_audit import (
 	accommodation_dispatch_and_grooming_audit as report,
 )
-from one_fm.tests.utils import ensure_test_company_and_department, make_employee
+from one_fm.tests.utils import make_employee
 
 BOARDING_TRIP = "ADGA-T1"
 RETURN_TRIP = "ADGA-T2"
@@ -24,14 +24,8 @@ LATER_CAMP_LEG = "2026-03-02T05:45:00.000Z"
 NON_CAMP_LEG = "2026-03-02T01:00:00.000Z"
 
 
-def _ensure_department():
-	"""A bare test site has no Company or Department, which make_employee needs."""
-	ensure_test_company_and_department()
-
-
 class TestAccommodationDispatchAndGroomingAudit(FrappeTestCase):
 	def setUp(self):
-		_ensure_department()
 		self.passed_emp = make_employee("adga_pass@example.com")
 		self.failed_emp = make_employee("adga_fail@example.com")
 		self.absent_emp = make_employee("adga_absent@example.com")

@@ -3,7 +3,6 @@
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
-from one_fm.tests.utils import ensure_test_company_and_department
 from frappe.utils import add_days, today
 from one_fm.tests.utils import make_employee
 
@@ -21,9 +20,6 @@ class TestTransportationManifest(FrappeTestCase):
 			self.loc_name = loc.name
 		else:
 			self.loc_name = "Test Location"
-
-		# make_employee takes the first Department it finds; a bare test site has none.
-		ensure_test_company_and_department()
 
 		# Create test employees using existing test factories
 		self.employee1_doc = make_employee("test_emp1@example.com")
