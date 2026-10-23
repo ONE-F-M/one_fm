@@ -167,7 +167,11 @@ class TestRosterHelpers(FrappeTestCase):
 
 
 class TestEndpoint(FrappeTestCase):
+	def setUp(self):
+		self._in_test = frappe.flags.in_test
+
 	def tearDown(self):
+		frappe.flags.in_test = self._in_test
 		frappe.set_user("Administrator")
 
 	def test_the_roles_are_the_agreed_ones(self):
@@ -176,6 +180,8 @@ class TestEndpoint(FrappeTestCase):
 		)
 
 	def test_a_user_without_the_roles_is_refused(self):
+		# frappe.only_for returns at once while frappe.flags.in_test is set
+		frappe.flags.in_test = False
 		frappe.set_user("Guest")
 		with self.assertRaises(frappe.PermissionError):
 			get_traceability_matrix()
@@ -183,7 +189,12 @@ class TestEndpoint(FrappeTestCase):
 	def test_an_authorised_user_gets_the_agreed_shape(self):
 		result = get_traceability_matrix()
 
-		self.assertNotEqual(result.get("status"), "error", result.get("message"))
+		logged = frappe.get_all(
+			"Error Log", filters={"method": "Traceability Matrix"}, fields=["error"],
+			order_by="creation desc", limit_page_length=1,
+		)
+		detail = (logged[0].error[-1500:] if logged else "") if result.get("status") == "error" else ""
+		self.assertNotEqual(result.get("status"), "error", detail)
 		self.assertIsInstance(result["rows"], list)
 		self.assertTrue(result["synced_at"])
 		if result["rows"]:
