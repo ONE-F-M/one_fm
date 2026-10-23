@@ -83,9 +83,7 @@ frappe.query_reports["Accommodation Dispatch and Grooming Audit"] = {
 		report.page.add_inner_button(__("Export Audit Report"), function () {
 			// The export only writes the rows on screen, so open the trips first or
 			// the passenger audit trail is missing from the file.
-			if (typeof report.expand_all_rows === "function") {
-				report.expand_all_rows();
-			}
+			report.expand_all_rows();
 			report.export_report();
 		});
 	},
