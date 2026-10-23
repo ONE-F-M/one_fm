@@ -159,7 +159,7 @@ def get_traceability_matrix(date: str | None = None, plan: str | None = None) ->
 
 
 def _live_cards() -> tuple:
-	"""``({card: status}, {employee: [card, ...]})`` for the cards the board still shows."""
+	"""``({card: status}, {employee: [card, ...]}, {card: trip_direction})`` for the cards the board still shows."""
 	from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
 		_inactive_shifts,
 		_serves_only_inactive_shifts,
@@ -170,13 +170,13 @@ def _live_cards() -> tuple:
 		filters={"status": ["in", ["Unassigned", "Assigned"]]},
 		# aggregated_shifts arrives with a migrate; a site that has not run it yet must
 		# still get a matrix, so the column is only asked for when it exists.
-		fields=["name", "status", "operations_shift"]
+		fields=["name", "status", "operations_shift", "trip_direction"]
 		+ (["aggregated_shifts"] if frappe.db.has_column("Transportation Shipment", "aggregated_shifts") else []),
 	)
 	inactive = _inactive_shifts(shipments)
 	shipments = [s for s in shipments if not _serves_only_inactive_shifts(s, inactive)]
 	if not shipments:
-		return {}, {}
+		return {}, {}, {}
 
 	status_of = {s.name: s.status for s in shipments}
 	riders = frappe.get_all(
@@ -191,7 +191,7 @@ def _live_cards() -> tuple:
 			cards_of.setdefault(rider.employee_id, [])
 			if rider.parent not in cards_of[rider.employee_id]:
 				cards_of[rider.employee_id].append(rider.parent)
-	return status_of, cards_of
+	return status_of, cards_of, {s.name: s.trip_direction for s in shipments}
 
 
 def _placements(plan) -> dict:
@@ -247,7 +247,7 @@ def _employees(extra_ids) -> dict:
 	# Employee.shift and Employee.project are custom columns; a site that has not
 	# migrated yet lacks them, and the matrix must still load there (shift then falls
 	# back to the HRMS default_shift, project to the roster shift's project).
-	for column in ("shift", "project"):
+	for column in ("shift", "project", "custom_operations_role_allocation"):
 		if frappe.db.has_column("Employee", column):
 			fields.append(column)
 	if "shift" not in fields and frappe.db.has_column("Employee", "default_shift"):
@@ -274,11 +274,19 @@ def _latest_checkins(employee_ids) -> dict:
 	for row in frappe.get_all(
 		"Accommodation Checkin Checkout",
 		filters={"type": "IN", "employee": ["in", employee_ids]},
-		fields=["employee", "accommodation", "accommodation_unit", "checked_out"],
+		fields=["employee", "accommodation", "accommodation_unit", "bed", "checked_out"],
 		order_by="creation desc",
 	):
 		latest.setdefault(row.employee, row)
 	return latest
+
+
+def _missing_reason(reliever, reliever_name, master_shift, roster_shift):
+	if reliever:
+		return _("Relieving {0}, but no shipment generated").format(reliever_name)
+	if roster_shift and master_shift and roster_shift != master_shift:
+		return _("Eligible, but no shipment generated: master shift differs from roster")
+	return None
 
 
 def _build_rows(on_date, plan=None) -> list:
@@ -288,7 +296,7 @@ def _build_rows(on_date, plan=None) -> list:
 	)
 	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import driver_employees
 
-	card_status, cards_of = _live_cards()
+	card_status, cards_of, card_direction = _live_cards()
 	employees = _employees(list(cards_of))
 	ids = list(employees)
 	if not ids:
@@ -358,9 +366,7 @@ def _build_rows(on_date, plan=None) -> list:
 			"on_leave": emp_id in on_leave,
 			"availabilities": [r.employee_availability for r in emp_rows],
 			"is_driver": emp_id in drivers,
-			"missing_reason": (
-				_("Relieving {0}, but no shipment generated").format(reliever_name) if reliever else None
-			),
+			"missing_reason": _missing_reason(reliever, reliever_name, emp.shift, roster_shift),
 		}
 		result = classify(ctx)
 
@@ -368,6 +374,7 @@ def _build_rows(on_date, plan=None) -> list:
 			"id": emp_id,
 			"name": emp.employee_name or emp_id,
 			"designation": emp.designation,
+			"operations_role": emp.get("custom_operations_role_allocation"),
 			"project": emp.get("project")
 			or (times.project if times else None)
 			or (shift_times.get(emp.shift).project if shift_times.get(emp.shift) else None),
@@ -376,7 +383,7 @@ def _build_rows(on_date, plan=None) -> list:
 			"roster_start": _time_text(times.start_time) if times else None,
 			"roster_end": _time_text(times.end_time) if times else None,
 			"camp": (camp_labels.get(checkin.accommodation) or checkin.accommodation) if open_in else LIVE_OUT,
-			"room": (checkin.accommodation_unit if open_in else None),
+			"room": " · ".join(filter(None, [checkin.accommodation_unit, checkin.bed])) if open_in else None,
 			"is_reliever": bool(reliever),
 			"reliever_name": reliever_name,
 			"relieving_employee": reliever.get("relieving_employee"),
@@ -393,7 +400,7 @@ def _build_rows(on_date, plan=None) -> list:
 					"card_status": card_status.get(c),
 					"vehicle": (placements.get(c) or {}).get("vehicle_label"),
 					"trip": (placements.get(c) or {}).get("trip_id"),
-					"direction": (placements.get(c) or {}).get("direction"),
+					"direction": card_direction.get(c) or (placements.get(c) or {}).get("direction"),
 				}
 				for c in own_cards
 			],

@@ -11,6 +11,7 @@ from frappe.tests.utils import FrappeTestCase
 
 from one_fm.one_fm.page.transportation_schedule.traceability_matrix import (
 	MATRIX_ROLES,
+	_missing_reason,
 	_roster_row,
 	_time_text,
 	can_be_permanent,
@@ -19,7 +20,7 @@ from one_fm.one_fm.page.transportation_schedule.traceability_matrix import (
 )
 
 ROW_KEYS = {
-	"id", "name", "designation", "project", "master_shift", "roster_shift", "roster_start",
+	"id", "name", "designation", "operations_role", "project", "master_shift", "roster_shift", "roster_start",
 	"roster_end", "camp", "room", "is_reliever", "reliever_name", "status", "badge_text",
 	"subtext", "can_be_permanent", "legs",
 }
@@ -161,6 +162,11 @@ class TestRosterHelpers(FrappeTestCase):
 			{"shift": "BASIC", "employee_availability": "Working", "roster_type": "Basic"},
 		]
 		self.assertEqual(_roster_row(rows)["shift"], "BASIC")
+
+	def test_missing_reason(self):
+		self.assertIn("Ann", _missing_reason({"relieving_employee": "E1"}, "Ann", "A", "B"))
+		self.assertIn("master shift differs", _missing_reason({}, None, "A", "B"))
+		self.assertIsNone(_missing_reason({}, None, "A", "A"))
 
 	def test_no_working_row_gives_none(self):
 		self.assertIsNone(_roster_row([{"employee_availability": "Day Off", "roster_type": "Basic"}]))
