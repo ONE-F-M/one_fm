@@ -100,7 +100,6 @@ def change_employee_detail(employees:str,field:str=None,value=None)-> bool:
     except Exception as e:
         response("error", 500, False, str(e))
 
-@frappe.whitelist(allow_guest=True)
 def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, project=None, site=None, shift=None, department=None, designation=None):
     date = cstr(add_to_date(nowdate(), days=1))
     conds = ""

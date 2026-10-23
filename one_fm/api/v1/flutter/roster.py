@@ -12,7 +12,6 @@ from one_fm.api.v1.utils import response
 from one_fm.utils import query_db_list
 
 
-@frappe.whitelist(allow_guest=True)
 def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, project=None, site=None, shift=None, department=None, designation=None):
     date = cstr(add_to_date(nowdate(), days=1))
     conds = ""
