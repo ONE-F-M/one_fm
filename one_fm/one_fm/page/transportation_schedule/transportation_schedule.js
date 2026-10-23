@@ -4661,7 +4661,7 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             // ── Employee Traceability Matrix ──
-            // Read-only. Opening, closing and refreshing only call the endpoint: never
+            // Opening, closing, refreshing and adding riders only call endpoints: never
             // fetchRPData / mountRoutePlannerApp, which would discard the unsaved board.
             openMatrix() {
                 if (!this.canSeeMatrix) return;
@@ -4742,6 +4742,212 @@ function mountRoutePlannerApp(wrapper, data) {
             matrixRosterTimes(row) {
                 if (!row.roster_start && !row.roster_end) return '';
                 return (row.roster_start || '') + ' – ' + (row.roster_end || '');
+            },
+
+            // Store vocabulary (Outward/Return/Mixed) or card flag as OUTBOUND/RETURN.
+            _matrixDir(value) {
+                return String(value || '').toUpperCase().startsWith('RET') ? 'RETURN' : 'OUTBOUND';
+            },
+
+            _matrixDirLabel(flag) {
+                return flag === 'RETURN' ? __('Return') : __('Outward');
+            },
+
+            // Directions the employee has no card in yet.
+            _matrixOpenDirs(row) {
+                const held = new Set((row.legs || []).map(l => this._matrixDir(l.direction)));
+                return ['OUTBOUND', 'RETURN'].filter(d => !held.has(d));
+            },
+
+            matrixCanAdd(row) {
+                if (!['Missing', 'Pool', 'Assigned'].includes(row.status)) return false;
+                return this._matrixOpenDirs(row).length > 0;
+            },
+
+            _matrixMinutes(hhmm) {
+                const [h, m] = String(hhmm || '').split(':').map(Number);
+                return Number.isFinite(h) ? h * 60 + (m || 0) : null;
+            },
+
+            // The scope select: Permanent is disabled with the AC warning when the
+            // employee's master shift does not match today's roster.
+            _matrixScopeFields(row) {
+                return [
+                    { fieldname: 'scope', fieldtype: 'Select', label: __('Assignment Scope'), reqd: 1,
+                      options: [
+                          { label: __('Today Only (Single-Day)'), value: 'Today Only' },
+                          { label: __('Permanent (Indefinite) Allocation'), value: 'Permanent' },
+                      ],
+                      default: 'Today Only' },
+                    { fieldname: 'scope_warning', fieldtype: 'HTML', hidden: row.can_be_permanent ? 1 : 0,
+                      options: `<div class="alert alert-warning small mb-0">${__('Employee is working a temporary or reliever shift today. Assignment is limited to single-day to prevent automated midnight reset conflicts.')}</div>` },
+                ];
+            },
+
+            _matrixLockScope(d, row) {
+                if (row.can_be_permanent) return;
+                d.fields_dict.scope.$input.find('option[value="Permanent"]').prop('disabled', true);
+                d.set_value('scope', 'Today Only');
+            },
+
+            matrixAddToCard(row) {
+                const self = this;
+                const open = this._matrixOpenDirs(row);
+                const start = this._matrixMinutes(row.roster_start);
+                const cards = (this.planData.shipment_cards || [])
+                    .filter(c => open.includes(this._matrixDir(c.own_direction || c.direction)))
+                    .map(c => {
+                        const t = this._matrixMinutes(this.fmtTime(c.shift_start));
+                        return {
+                            card: c,
+                            sameCamp: c.accommodation === row.camp ? 0 : 1,
+                            gap: start == null || t == null ? 9999 : Math.min(Math.abs(t - start), 1440 - Math.abs(t - start)),
+                        };
+                    })
+                    .sort((a, b) => a.sameCamp - b.sameCamp || a.gap - b.gap || String(a.card.id).localeCompare(b.card.id))
+                    .map(x => x.card);
+                if (!cards.length) {
+                    frappe.msgprint(__('No shipment card is open for this employee. Use Create New Shipment Card.'));
+                    return;
+                }
+                const label = (c) => [
+                    c.id, c.accommodation, c.shift_name,
+                    this._matrixDirLabel(this._matrixDir(c.own_direction || c.direction)),
+                    __('{0} pax', [c.headcount]),
+                    this.assignedCards.has(c.id) ? __('Placed') : __('Pool'),
+                ].join(' · ');
+                const byId = Object.fromEntries(cards.map(c => [c.id, c]));
+                const twinOf = (c) => (this.planData.shipment_cards || []).find(o =>
+                    o.id !== c.id && c.pair_id && o.pair_id === c.pair_id
+                    && open.includes(this._matrixDir(o.own_direction || o.direction))
+                    && this._matrixDir(o.own_direction || o.direction) !== this._matrixDir(c.own_direction || c.direction));
+
+                const d = new frappe.ui.Dialog({
+                    title: __('Add {0} to a Card', [row.name]),
+                    fields: [
+                        { fieldname: 'card', fieldtype: 'Select', label: __('Shipment Card'), reqd: 1,
+                          options: cards.map(c => ({ label: label(c), value: c.id })), default: cards[0].id },
+                        { fieldname: 'also_pair', fieldtype: 'Check', default: 1,
+                          label: __('Also add to the paired card in the other direction') },
+                        ...this._matrixScopeFields(row),
+                    ],
+                    primary_action_label: __('Add to Card'),
+                    primary_action(values) {
+                        const card = byId[values.card];
+                        if (!card) return;
+                        d.hide();
+                        const twin = values.also_pair ? twinOf(card) : null;
+                        const done = () => { self.refreshCards(); self.loadMatrix(); };
+                        self._matrixAdd(card, row, values.scope, 0, () => {
+                            if (twin) self._matrixAdd(twin, row, values.scope, 0, done);
+                            else done();
+                        });
+                    },
+                });
+                d.show();
+                this._matrixLockScope(d, row);
+                const syncPair = () => d.set_df_property('also_pair', 'hidden', twinOf(byId[d.get_value('card')] || {}) ? 0 : 1);
+                d.fields_dict.card.$input.on('change', syncPair);
+                syncPair();
+            },
+
+            // One add call; an over-capacity answer opens the Manual Override confirm.
+            _matrixAdd(card, row, scope, override, then) {
+                const self = this;
+                frappe.call({
+                    method: 'one_fm.one_fm.page.transportation_schedule.traceability_matrix.add_employee_to_shipment',
+                    args: { shipment: this._shipmentOf(card), employee: row.id, scope, override },
+                    freeze: true,
+                    callback(r) {
+                        const m = r && r.message;
+                        if (!m) return;
+                        if (m.over_capacity) {
+                            self._matrixOverride(card, row, scope, m, then);
+                            return;
+                        }
+                        // Lane labels, conflicts and the seat walk read item.headcount, and
+                        // the next save writes it back, so placed blocks are patched here.
+                        let placed = false;
+                        self.swimItems.forEach(item => {
+                            if (item.cardId === m.card_id) { item.headcount = m.headcount; placed = true; }
+                        });
+                        if (placed) self.swimItems = [...self.swimItems];
+                        if (placed && override) {
+                            frappe.show_alert({ message: __('Employee added. {0} is now over its seating capacity.', [card.id]), indicator: 'orange' }, 7);
+                        } else if (placed) {
+                            frappe.show_alert({ message: __('Employee added successfully. Vehicle capacity maintained.'), indicator: 'green' }, 5);
+                        } else {
+                            frappe.show_alert({ message: __('Employee added to {0} ({1} pax).', [m.card_id, m.headcount]), indicator: 'green' }, 5);
+                        }
+                        if (then) then(m);
+                    },
+                });
+            },
+
+            _matrixOverride(card, row, scope, m, then) {
+                const self = this;
+                const esc = (v) => frappe.utils.escape_html(String(v == null ? '' : v));
+                const d = new frappe.ui.Dialog({
+                    title: __('Vehicle Over Capacity'),
+                    fields: [{
+                        fieldname: 'info', fieldtype: 'HTML',
+                        options: `
+                            <p class="small">${__('Adding {0} to {1} would exceed the seating capacity of {2}.', [esc(row.name), esc(card.id), esc(m.vehicle)])}</p>
+                            <table class="table table-sm table-bordered small mb-3">
+                                <tr><td>${__('Peak passenger load now')}</td><td class="font-weight-bold text-right">${esc(m.load)}</td></tr>
+                                <tr><td>${__('Seating capacity')}</td><td class="font-weight-bold text-right">${esc(m.limit)}</td></tr>
+                            </table>
+                            <p class="small text-muted">${__('Manual Override adds the employee anyway. The bus then shows as overloaded: the next card dropped on it will be refused, and the shipment generator will not seat further riders on it until the load is fixed in the shipment details.')}</p>`,
+                    }],
+                    primary_action_label: __('Manual Override'),
+                    primary_action() {
+                        d.hide();
+                        self._matrixAdd(card, row, scope, 1, then);
+                    },
+                    secondary_action_label: __('Cancel'),
+                    secondary_action() { d.hide(); },
+                });
+                d.show();
+            },
+
+            matrixCreateCard(row) {
+                const self = this;
+                const open = this._matrixOpenDirs(row);
+                const d = new frappe.ui.Dialog({
+                    title: __('Create New Shipment Card'),
+                    fields: [
+                        { fieldname: 'camp', fieldtype: 'Data', label: __('Origin (Accommodation)'), read_only: 1, default: row.camp },
+                        { fieldname: 'shift', fieldtype: 'Data', label: __("Today's Rostered Shift"), read_only: 1,
+                          default: [row.roster_shift, this.matrixRosterTimes(row)].filter(Boolean).join(' · ') },
+                        { fieldname: 'stop_location', fieldtype: 'Link', options: 'Location', label: __('Destination (Stop Location)'), reqd: 1,
+                          get_query: () => ({ filters: { location_type: 'Stop Location' } }) },
+                        { fieldname: 'direction', fieldtype: 'Select', label: __('Direction'), reqd: 1,
+                          options: open.map(f => ({ label: this._matrixDirLabel(f), value: f === 'RETURN' ? 'Return' : 'Outward' })),
+                          default: open[0] === 'RETURN' ? 'Return' : 'Outward' },
+                        { fieldname: 'passenger', fieldtype: 'Data', label: __('Passenger'), read_only: 1, default: row.name + ' (' + row.id + ') · 1 pax' },
+                        ...this._matrixScopeFields(row),
+                    ],
+                    primary_action_label: __('Create Card'),
+                    primary_action(values) {
+                        frappe.call({
+                            method: 'one_fm.one_fm.page.transportation_schedule.traceability_matrix.create_shipment_for_employee',
+                            args: {
+                                employee: row.id, stop_location: values.stop_location,
+                                direction: values.direction, scope: values.scope,
+                            },
+                            freeze: true,
+                            callback(r) {
+                                if (!r.message) return;
+                                d.hide();
+                                self.refreshCards();
+                                self.loadMatrix();
+                                frappe.show_alert({ message: __('{0} created in the unassigned pool.', [r.message.card_id]), indicator: 'green' }, 5);
+                            },
+                        });
+                    },
+                });
+                d.show();
+                this._matrixLockScope(d, row);
             },
 
             // ─ Manifest generation (ported verbatim from vis version) ───────
@@ -5119,7 +5325,7 @@ function injectRPVueTemplate() {
         </div>
       </div>
       <button v-if="canSeeMatrix" class="rp-btn rp-btn-default" @click="openMatrix"
-              :title="__('Open the read-only employee transport status matrix')">
+              :title="__('Open the employee transport status matrix')">
         <span class="rp-icon">fact_check</span> {{ __('Employee Traceability Matrix') }}
       </button>
       <div v-if="currentPlan" class="text-muted" style="font-size:12px; margin-right: 12px; display: flex; align-items: center; gap: 4px; color: var(--green, #16a34a)">
@@ -6130,6 +6336,10 @@ function injectRPVueTemplate() {
                   {{ leg.direction || __('Leg') }}: {{ leg.vehicle ? leg.vehicle + (leg.trip ? ' · ' + __('Trip') + ' ' + leg.trip : '') : __('Unassigned Pool') }} · {{ leg.card }}
                 </div>
               </template>
+              <div v-if="matrixCanAdd(row)" class="rp-matrix-actions">
+                <button class="rp-btn rp-btn-default rp-matrix-act" @click="matrixAddToCard(row)">+ {{ __('Add to Card') }}</button>
+                <button class="rp-btn rp-btn-default rp-matrix-act" @click="matrixCreateCard(row)">{{ __('Create New Shipment Card') }}</button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -6449,6 +6659,8 @@ function injectRPStyles() {
         .rp-matrix-st-missing { background: transparent; color: #dc2626; border-color: #dc2626; }
         .rp-matrix-st-exempt { background: rgba(100, 116, 139, 0.15); color: #475569; border-color: rgba(100, 116, 139, 0.4); }
         .rp-matrix-st-stale { background: #dc2626; color: #fff; border-color: #dc2626; }
+        .rp-matrix-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+        .rp-matrix-act { font-size: 11px; padding: 2px 8px; }
         #rp-shell.rp-dark .rp-matrix-st-assigned { color: #86efac; }
         #rp-shell.rp-dark .rp-matrix-st-pool { color: #fcd34d; }
         #rp-shell.rp-dark .rp-matrix-st-missing { color: #fca5a5; border-color: #f87171; }
