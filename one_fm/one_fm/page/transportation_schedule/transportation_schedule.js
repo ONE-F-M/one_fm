@@ -21,6 +21,30 @@ function normalizeSearchText(s) {
 }
 // ── End search text normalising ─────────────────────────────────────────────────
 
+// ── Traceability matrix filter ──────────────────────────────────────────────
+// The pure predicate behind the Employee Traceability Matrix drawer. Date is not
+// tested here: it is a server-side argument (the rows are fetched for that day).
+// test_matrix_filter.js reads this block out of the file by these two banners and
+// needs normalizeSearchText above, so keep it free of anything else.
+const MATRIX_LIVE_OUT = 'Live-Out';
+
+function matrixMatches(row, filters) {
+    const r = row || {};
+    const f = filters || {};
+    if (f.issuesOnly && r.status !== 'Missing' && r.status !== 'Stale') return false;
+    if (f.shift && r.roster_shift !== f.shift) return false;
+    if (f.accommodation && (r.camp || MATRIX_LIVE_OUT) !== f.accommodation) return false;
+    if (f.project && r.project !== f.project) return false;
+    const q = normalizeSearchText(f.q);
+    if (!q) return true;
+    return [
+        r.name, r.id, r.designation,
+        r.reliever_name, r.relieving_employee_name,
+        r.is_reliever ? 'reliever' : ''
+    ].some(v => normalizeSearchText(v).includes(q));
+}
+// ── End traceability matrix filter ──────────────────────────────────────────
+
 frappe.pages['transportation-schedule'].on_page_load = function (wrapper) {
     injectRPLoadingStyles();
     $(wrapper).html(`
@@ -137,6 +161,21 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 // ── Theme ──
                 isDark: localStorage.getItem('transportation-schedule-theme') === 'dark',
+
+                // ── Employee Traceability Matrix (read-only drawer) ──
+                matrixOpen: false,
+                matrixLoading: false,
+                matrixRows: [],             // rows from get_traceability_matrix
+                matrixSyncedAt: '',         // server synced_at string
+                matrixNow: Date.now(),      // ticked every 30s while the drawer is open
+                matrixFilters: {
+                    date: frappe.datetime.get_today(),
+                    shift: '',
+                    accommodation: '',
+                    project: '',
+                    q: '',
+                    issuesOnly: false,
+                },
             };
         },
 
@@ -251,6 +290,43 @@ function mountRoutePlannerApp(wrapper, data) {
                 return [...times.entries()]
                     .sort((a, b) => new Date(a[0]) - new Date(b[0]))
                     .map(([value, label]) => ({ value, label }));
+            },
+
+            // ── Employee Traceability Matrix ──
+            canSeeMatrix() {
+                return frappe.user.has_role(['Transportation Supervisor', 'Transportation Manager', 'System Manager']);
+            },
+
+            matrixFiltered() {
+                return this.matrixRows.filter(r => matrixMatches(r, this.matrixFilters));
+            },
+
+            matrixBadge() {
+                return this.matrixFiltered.length + '/' + this.matrixRows.length;
+            },
+
+            matrixSyncedLabel() {
+                if (!this.matrixSyncedAt) return __('Not synced yet');
+                const at = new Date(String(this.matrixSyncedAt).replace(' ', 'T')).getTime();
+                if (isNaN(at)) return __('Synced {0}', [this.matrixSyncedAt]);
+                const mins = Math.floor(Math.max(0, this.matrixNow - at) / 60000);
+                if (mins < 1) return __('Synced just now');
+                if (mins < 60) return __('Synced {0}m ago', [mins]);
+                if (mins < 1440) return __('Synced {0}h ago', [Math.floor(mins / 60)]);
+                return __('Synced {0}d ago', [Math.floor(mins / 1440)]);
+            },
+
+            matrixShiftOptions() {
+                return [...new Set(this.matrixRows.map(r => r.roster_shift).filter(Boolean))].sort();
+            },
+
+            matrixAccommodationOptions() {
+                const camps = new Set(this.matrixRows.map(r => r.camp || MATRIX_LIVE_OUT));
+                return [...camps].sort();
+            },
+
+            matrixProjectOptions() {
+                return [...new Set(this.matrixRows.map(r => r.project).filter(Boolean))].sort();
             },
 
             anyPoolFilterActive() {
@@ -4585,6 +4661,90 @@ function mountRoutePlannerApp(wrapper, data) {
                 }
             },
 
+            // ── Employee Traceability Matrix ──
+            // Read-only. Opening, closing and refreshing only call the endpoint: never
+            // fetchRPData / mountRoutePlannerApp, which would discard the unsaved board.
+            openMatrix() {
+                if (!this.canSeeMatrix) return;
+                this.matrixOpen = true;
+                this.matrixNow = Date.now();
+                if (!this._matrixTimer) {
+                    this._matrixTimer = setInterval(() => { this.matrixNow = Date.now(); }, 30000);
+                }
+                this.loadMatrix();
+            },
+
+            closeMatrix() {
+                this.matrixOpen = false;
+                this.stopMatrixTimer();
+            },
+
+            stopMatrixTimer() {
+                if (this._matrixTimer) {
+                    clearInterval(this._matrixTimer);
+                    this._matrixTimer = null;
+                }
+            },
+
+            loadMatrix() {
+                this.matrixLoading = true;
+                const req = (this._matrixReq = (this._matrixReq || 0) + 1);
+                frappe.call({
+                    method: 'one_fm.one_fm.page.transportation_schedule.traceability_matrix.get_traceability_matrix',
+                    args: {
+                        date: this.matrixFilters.date,
+                        plan: this.currentPlan && this.currentPlan.name,
+                    },
+                    callback: (r) => {
+                        if (req !== this._matrixReq) return;   // a newer load superseded this one
+                        this.matrixLoading = false;
+                        const m = r && r.message;
+                        if (!m || m.status === 'error') {
+                            frappe.msgprint((m && m.message) || __('Failed to load the traceability matrix'));
+                            return;
+                        }
+                        this.matrixRows = Array.isArray(m.rows) ? m.rows : [];
+                        this.matrixSyncedAt = m.synced_at || '';
+                        this.matrixNow = Date.now();
+                    },
+                    error: () => {
+                        if (req === this._matrixReq) this.matrixLoading = false;
+                    },
+                });
+            },
+
+            matrixStatusClass(status) {
+                return {
+                    Assigned: 'rp-matrix-st-assigned',
+                    Pool: 'rp-matrix-st-pool',
+                    Missing: 'rp-matrix-st-missing',
+                    Exempt: 'rp-matrix-st-exempt',
+                    Stale: 'rp-matrix-st-stale',
+                }[status] || 'rp-matrix-st-exempt';
+            },
+
+            matrixStatusText(row) {
+                if (row.badge_text) return row.badge_text;
+                return {
+                    Assigned: __('Assigned to Live Vehicle'),
+                    Pool: __('Unassigned Pool'),
+                    Missing: __('MISSING FROM CARD'),
+                    Exempt: __('Self-Commuting / Exempt'),
+                    Stale: __('STALE BLOCK DETECTED'),
+                }[row.status] || row.status || '';
+            },
+
+            matrixAccommodationText(row) {
+                if (!row.camp) return __('Live-Out');
+                return row.room ? row.camp + ' · ' + row.room : row.camp;
+            },
+
+            // Stored local time strings, shown as they are - no Date round trip.
+            matrixRosterTimes(row) {
+                if (!row.roster_start && !row.roster_end) return '';
+                return (row.roster_start || '') + ' – ' + (row.roster_end || '');
+            },
+
             // ─ Manifest generation (ported verbatim from vis version) ───────
 
             generateShipments() {
@@ -4849,6 +5009,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
         beforeUnmount() {
             if (this._ro) this._ro.disconnect();
+            this.stopMatrixTimer();
         }
 
     }).mount('#rp-app');
@@ -4958,6 +5119,10 @@ function injectRPVueTemplate() {
           <span class="rp-metric-value">{{ totalCardsRemaining }}</span>
         </div>
       </div>
+      <button v-if="canSeeMatrix" class="rp-btn rp-btn-default" @click="openMatrix"
+              :title="__('Open the read-only employee transport status matrix')">
+        <span class="rp-icon">fact_check</span> {{ __('Employee Traceability Matrix') }}
+      </button>
       <div v-if="currentPlan" class="text-muted" style="font-size:12px; margin-right: 12px; display: flex; align-items: center; gap: 4px; color: var(--green, #16a34a)">
         <span class="rp-icon" style="font-size:16px;">check_circle</span> Auto-Saved
       </div>
@@ -5877,6 +6042,96 @@ function injectRPVueTemplate() {
     </div>
 
   </div><!-- /rp-body -->
+
+  <!-- Employee Traceability Matrix: a full-width slide-over inside the shell, so
+       rp-dark applies. Read-only; the canvas underneath keeps its unsaved cards. -->
+  <div v-if="matrixOpen" class="rp-matrix-drawer" role="dialog" aria-modal="true"
+       :aria-label="__('Employee Traceability Matrix')">
+    <div class="rp-matrix-head">
+      <div class="rp-matrix-title">{{ __('Employee Traceability Matrix') }}</div>
+      <span class="rp-matrix-count" :title="__('Rows shown / total rows')">{{ matrixBadge }}</span>
+      <span class="rp-matrix-synced" :title="matrixSyncedAt">{{ matrixSyncedLabel }}</span>
+      <button class="rp-btn rp-btn-default" :disabled="matrixLoading" @click="loadMatrix">
+        <span class="rp-icon">sync</span> {{ __('Refresh') }}
+      </button>
+      <button class="rp-btn rp-btn-icon-only" @click="closeMatrix" :title="__('Close')">
+        <span class="rp-icon">close</span>
+      </button>
+    </div>
+
+    <div class="rp-matrix-filters">
+      <label class="rp-matrix-field">
+        <span>{{ __('Date') }}</span>
+        <input type="date" class="form-control input-sm" v-model="matrixFilters.date" @change="loadMatrix" />
+      </label>
+      <label class="rp-matrix-field">
+        <span>{{ __('Operations Shift') }}</span>
+        <select class="form-control input-sm" v-model="matrixFilters.shift">
+          <option value="">{{ __('All') }}</option>
+          <option v-for="o in matrixShiftOptions" :key="o" :value="o">{{ o }}</option>
+        </select>
+      </label>
+      <label class="rp-matrix-field">
+        <span>{{ __('Accommodation') }}</span>
+        <select class="form-control input-sm" v-model="matrixFilters.accommodation">
+          <option value="">{{ __('All') }}</option>
+          <option v-for="o in matrixAccommodationOptions" :key="o" :value="o">{{ o === 'Live-Out' ? __('Live-Out') : o }}</option>
+        </select>
+      </label>
+      <label class="rp-matrix-field">
+        <span>{{ __('Project') }}</span>
+        <select class="form-control input-sm" v-model="matrixFilters.project">
+          <option value="">{{ __('All') }}</option>
+          <option v-for="o in matrixProjectOptions" :key="o" :value="o">{{ o }}</option>
+        </select>
+      </label>
+      <label class="rp-matrix-field rp-matrix-search">
+        <span>{{ __('Search') }}</span>
+        <input type="text" class="form-control input-sm" v-model="matrixFilters.q"
+               :placeholder="__('Employee name, ID, role or reliever...')" />
+      </label>
+      <label class="rp-matrix-toggle">
+        <input type="checkbox" v-model="matrixFilters.issuesOnly" />
+        <span>{{ __('Show Issues and Data Gaps Only') }}</span>
+      </label>
+    </div>
+
+    <div class="rp-matrix-body">
+      <div v-if="matrixLoading" class="rp-matrix-empty">{{ __('Loading...') }}</div>
+      <div v-else-if="!matrixFiltered.length" class="rp-matrix-empty">{{ __('No employees match the current filters') }}</div>
+      <table v-else class="rp-matrix-table">
+        <thead>
+          <tr>
+            <th>{{ __('Employee Details') }}</th>
+            <th>{{ __('HR Master Shift') }}</th>
+            <th>{{ __("Today's Rostered Shift") }}</th>
+            <th>{{ __('Accommodation Check-in') }}</th>
+            <th>{{ __('Dispatch Status') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in matrixFiltered" :key="row.id">
+            <td>
+              <div class="rp-matrix-name">{{ row.name }}
+                <span v-if="row.is_reliever" class="rp-matrix-tag">{{ __('Reliever') }}</span>
+              </div>
+              <div class="rp-matrix-sub">{{ row.id }}<template v-if="row.designation"> · {{ row.designation }}</template></div>
+            </td>
+            <td>{{ row.master_shift || '—' }}</td>
+            <td>
+              <div>{{ row.roster_shift || '—' }}</div>
+              <div class="rp-matrix-sub">{{ matrixRosterTimes(row) }}</div>
+            </td>
+            <td>{{ matrixAccommodationText(row) }}</td>
+            <td>
+              <span :class="['rp-matrix-status', matrixStatusClass(row.status)]">{{ matrixStatusText(row) }}</span>
+              <div v-if="row.subtext" class="rp-matrix-sub">{{ row.subtext }}</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div><!-- /rp-matrix-drawer -->
 </div><!-- /rp-shell -->
     `;
     document.body.appendChild(s);
@@ -6140,6 +6395,60 @@ function injectRPStyles() {
         .rp-metric-value { font-size: 16px; font-weight: 600; color: var(--text-color, #111827); }
         .rp-metric-done { border-color: var(--green, #16a34a); }
         .rp-metric-done .rp-metric-value { color: var(--green, #16a34a); }
+
+        /* Employee Traceability Matrix: read-only full-width slide-over. */
+        .rp-matrix-drawer {
+          position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 1030;
+          display: flex; flex-direction: column;
+          background: var(--md-sys-color-surface, #fff); color: var(--md-sys-color-on-surface, #111827);
+          animation: rp-matrix-in .2s ease-out;
+        }
+        @keyframes rp-matrix-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        .rp-matrix-head {
+          display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+          border-bottom: 1px solid var(--md-sys-color-outline-variant, #d1d5db);
+        }
+        .rp-matrix-title { font-size: 18px; font-weight: 600; margin-right: auto; }
+        .rp-matrix-count {
+          font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 999px;
+          border: 1px solid var(--md-sys-color-outline-variant, #d1d5db);
+        }
+        .rp-matrix-synced { font-size: 12px; color: var(--text-muted, #6b7280); }
+        .rp-matrix-filters {
+          display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; padding: 12px 16px;
+          border-bottom: 1px solid var(--md-sys-color-outline-variant, #d1d5db);
+        }
+        .rp-matrix-field { display: flex; flex-direction: column; gap: 2px; margin: 0; font-size: 11px; font-weight: 500; }
+        .rp-matrix-search { flex: 1; min-width: 220px; }
+        .rp-matrix-toggle { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .rp-matrix-body { flex: 1; overflow: auto; padding: 0 16px 16px; }
+        .rp-matrix-empty { padding: 40px; text-align: center; color: var(--text-muted, #6b7280); }
+        .rp-matrix-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .rp-matrix-table th {
+          position: sticky; top: 0; text-align: left; padding: 8px; font-size: 11px; text-transform: uppercase;
+          letter-spacing: .04em; background: var(--md-sys-color-surface, #fff); color: var(--text-muted, #6b7280);
+          border-bottom: 1px solid var(--md-sys-color-outline-variant, #d1d5db);
+        }
+        .rp-matrix-table td { padding: 8px; vertical-align: top; border-bottom: 1px solid var(--md-sys-color-outline-variant, #e5e7eb); }
+        .rp-matrix-name { font-weight: 600; }
+        .rp-matrix-sub { font-size: 11px; color: var(--text-muted, #6b7280); margin-top: 2px; }
+        .rp-matrix-tag {
+          font-size: 10px; font-weight: 600; padding: 1px 6px; margin-left: 4px; border-radius: 4px;
+          background: rgba(100, 116, 139, 0.15);
+        }
+        .rp-matrix-status {
+          display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+          border: 1px solid transparent;
+        }
+        .rp-matrix-st-assigned { background: rgba(22, 163, 74, 0.15); color: #15803d; border-color: rgba(22, 163, 74, 0.4); }
+        .rp-matrix-st-pool { background: rgba(217, 119, 6, 0.15); color: #b45309; border-color: rgba(217, 119, 6, 0.4); }
+        .rp-matrix-st-missing { background: transparent; color: #dc2626; border-color: #dc2626; }
+        .rp-matrix-st-exempt { background: rgba(100, 116, 139, 0.15); color: #475569; border-color: rgba(100, 116, 139, 0.4); }
+        .rp-matrix-st-stale { background: #dc2626; color: #fff; border-color: #dc2626; }
+        #rp-shell.rp-dark .rp-matrix-st-assigned { color: #86efac; }
+        #rp-shell.rp-dark .rp-matrix-st-pool { color: #fcd34d; }
+        #rp-shell.rp-dark .rp-matrix-st-missing { color: #fca5a5; border-color: #f87171; }
+        #rp-shell.rp-dark .rp-matrix-st-exempt { color: #cbd5e1; }
 
         #rp-pool-header {
             display: flex; align-items: center; justify-content: space-between;
