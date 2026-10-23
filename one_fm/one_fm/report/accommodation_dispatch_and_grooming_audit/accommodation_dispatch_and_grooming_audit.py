@@ -214,6 +214,9 @@ def classify_passenger(child, reliever_name=None):
 			result["failed"] = 1
 		else:
 			result["appearance"] = NOT_CHECKED
+	else:
+		# Nobody has checked this rider yet, so there is no appearance result either.
+		result["appearance"] = NOT_CHECKED
 
 	if child.get("reliever_employee"):
 		original = child.get("employee_name") or child.get("employee") or ""
