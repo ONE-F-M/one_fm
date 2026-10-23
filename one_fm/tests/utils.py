@@ -9,7 +9,44 @@ def get_test_employee():
         return make_employee("test_employee@example.com", company="_Test Company")
     return frappe.get_doc("Employee", {"user_id": "test_employee@example.com"})
 
+def ensure_test_company_and_department():
+    """Return (company, department), creating them when a bare test site has none.
+
+    make_employee needs both; without them it fails with an IndexError on the first Department.
+    """
+    company = erpnext.get_default_company() or frappe.db.get_value("Company", {}, "name")
+    if not company:
+        currency = frappe.db.get_value("Currency", {"enabled": 1}, "name") or frappe.db.get_value(
+            "Currency", {}, "name"
+        )
+        company = (
+            frappe.get_doc(
+                {
+                    "doctype": "Company",
+                    "company_name": "_Test Company",
+                    "abbr": "_TC",
+                    "default_currency": currency,
+                    "country": frappe.db.get_value("Country", {}, "name"),
+                }
+            )
+            .insert(ignore_permissions=True, ignore_mandatory=True)
+            .name
+        )
+
+    department = frappe.db.get_value("Department", {}, "name")
+    if not department:
+        department = (
+            frappe.get_doc(
+                {"doctype": "Department", "department_name": "Test Department", "company": company}
+            )
+            .insert(ignore_permissions=True, ignore_mandatory=True)
+            .name
+        )
+    return company, department
+
+
 def make_employee(user, company=None, **kwargs):
+    default_company, default_department = ensure_test_company_and_department()
     if not frappe.db.get_value("User", user):
         frappe.get_doc(
             {
@@ -29,11 +66,11 @@ def make_employee(user, company=None, **kwargs):
                 "naming_series": "EMP-",
                 "name": "_T-Employee-00001",
                 "first_name": user,
-                "company": company or erpnext.get_default_company(),
+                "company": company or default_company,
                 "user_id": user,
                 "date_of_birth": "1990-05-08",
                 "date_of_joining": "2013-01-01",
-                "department": frappe.get_all("Department", fields="name")[0].name,
+                "department": default_department,
                 "gender": "Female",
                 "company_email": user,
                 "prefered_contact_email": "Company Email",

@@ -4,7 +4,6 @@
 import json
 import os
 
-import erpnext
 import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, now_datetime, today
@@ -16,7 +15,7 @@ from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
 from one_fm.one_fm.report.accommodation_dispatch_and_grooming_audit import (
 	accommodation_dispatch_and_grooming_audit as report,
 )
-from one_fm.tests.utils import make_employee
+from one_fm.tests.utils import ensure_test_company_and_department, make_employee
 
 BOARDING_TRIP = "ADGA-T1"
 RETURN_TRIP = "ADGA-T2"
@@ -26,16 +25,8 @@ NON_CAMP_LEG = "2026-03-02T01:00:00.000Z"
 
 
 def _ensure_department():
-	"""make_employee takes the first Department it finds; a bare test site has none."""
-	if frappe.get_all("Department", limit=1):
-		return
-	frappe.get_doc(
-		{
-			"doctype": "Department",
-			"department_name": "ADGA Test Department",
-			"company": erpnext.get_default_company() or frappe.get_all("Company", pluck="name")[0],
-		}
-	).insert(ignore_permissions=True)
+	"""A bare test site has no Company or Department, which make_employee needs."""
+	ensure_test_company_and_department()
 
 
 class TestAccommodationDispatchAndGroomingAudit(FrappeTestCase):

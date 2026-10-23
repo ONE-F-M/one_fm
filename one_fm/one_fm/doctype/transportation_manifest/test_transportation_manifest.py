@@ -1,9 +1,9 @@
 # Copyright (c) 2026, ONE FM and Contributors
 # See license.txt
 
-import erpnext
 import frappe
 from frappe.tests.utils import FrappeTestCase
+from one_fm.tests.utils import ensure_test_company_and_department
 from frappe.utils import add_days, today
 from one_fm.tests.utils import make_employee
 
@@ -23,12 +23,7 @@ class TestTransportationManifest(FrappeTestCase):
 			self.loc_name = "Test Location"
 
 		# make_employee takes the first Department it finds; a bare test site has none.
-		if not frappe.get_all("Department", limit=1):
-			frappe.get_doc({
-				"doctype": "Department",
-				"department_name": "Test Department",
-				"company": erpnext.get_default_company() or frappe.get_all("Company", pluck="name")[0],
-			}).insert(ignore_permissions=True)
+		ensure_test_company_and_department()
 
 		# Create test employees using existing test factories
 		self.employee1_doc = make_employee("test_emp1@example.com")
