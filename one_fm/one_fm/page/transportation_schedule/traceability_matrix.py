@@ -406,3 +406,203 @@ def _build_rows(on_date, plan=None) -> list:
 			],
 		})
 	return rows
+
+
+# ─── Adding a rider by hand ───────────────────────────────────────────────────
+
+SCOPES = ("Today Only", "Permanent")
+LIVE_STATUSES = ("Unassigned", "Assigned")
+PERMANENT_WARNING = (
+	"Employee is working a temporary or reliever shift today. Assignment is limited to "
+	"single-day to prevent automated midnight reset conflicts."
+)
+
+
+def _assignment_context(employee: str, scope: str, date: str | None):
+	"""Checks shared by both endpoints. Returns ``(employee doc fields, date, schedule rows)``."""
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import driver_employees
+
+	if scope not in SCOPES:
+		frappe.throw(_("Assignment scope must be Today Only or Permanent."))
+	on_date = frappe.utils.getdate(date or frappe.utils.today())
+	if on_date != frappe.utils.getdate(frappe.utils.today()):
+		frappe.throw(_("Employees can only be added for today."))
+
+	fields = ["name", "employee_name", "status", "cell_number"]
+	for column in ("shift", "default_shift"):
+		if frappe.db.has_column("Employee", column):
+			fields.append(column)
+	emp = frappe.db.get_value("Employee", employee, fields, as_dict=True)
+	if not emp:
+		frappe.throw(_("Employee {0} not found.").format(employee))
+	if emp.status != "Active":
+		frappe.throw(_("Employee {0} is not Active.").format(employee))
+	if employee in driver_employees([employee]):
+		frappe.throw(_("Employee {0} is a driver and cannot ride as a passenger.").format(employee))
+	emp.shift = emp.get("shift") or emp.get("default_shift")
+
+	rows = frappe.get_all(
+		"Employee Schedule",
+		filters={"employee": employee, "date": on_date},
+		fields=["shift", "employee_availability", "roster_type", "is_relieving_schedule"],
+	)
+	if scope == "Permanent" and not can_be_permanent([dict(r) for r in rows], emp.shift):
+		frappe.throw(_(PERMANENT_WARNING))
+	return emp, on_date, rows
+
+
+def _refuse_duplicate(employee: str, direction: str) -> None:
+	"""Throw when the employee already rides a live card in this direction (Outward/Return or OUTBOUND/RETURN)."""
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import own_direction
+
+	wanted = own_direction(frappe._dict(trip_direction=direction))
+	parents = frappe.get_all(
+		"Transportation Shipment Employee",
+		filters={"parenttype": "Transportation Shipment", "employee_id": employee},
+		pluck="parent",
+	)
+	if not parents:
+		return
+	for card in frappe.get_all(
+		"Transportation Shipment",
+		filters={"name": ["in", list(set(parents))], "status": ["in", LIVE_STATUSES]},
+		fields=["name", "trip_direction", "pre_merge_trip_direction"],
+	):
+		if own_direction(card) == wanted:
+			frappe.throw(
+				_("Employee {0} is already on card TSHIP-{1} in this direction.").format(employee, card.name)
+			)
+
+
+def _rider(emp, accommodation, stop_location, scope, on_date) -> dict:
+	return {
+		"employee_id": emp.name,
+		"employee_name": emp.employee_name,
+		"cell_number": emp.cell_number,
+		"accommodation": accommodation,
+		"stop_location": stop_location,
+		"assignment_scope": scope,
+		"assigned_on": on_date,
+	}
+
+
+def _vehicle_load(shipment: str) -> dict:
+	"""The busiest vehicle the card is placed on: ``{vehicle, limit, load}``, load as it is now."""
+	from one_fm.operations.doctype.route_plan.route_plan import (
+		_passenger_limits,
+		_peak_concurrent_headcount,
+		_trip_occupancy,
+	)
+
+	worst = {}
+	plans = {}
+	for row in frappe.get_all(
+		"Route Plan Assignment",
+		filters={"transportation_shipment": shipment, "parenttype": "Route Plan", "is_camp_leg": 0},
+		fields=["parent", "vehicle"],
+	):
+		if not row.vehicle:
+			continue
+		plan = plans.setdefault(row.parent, frappe.get_doc("Route Plan", row.parent))
+		trips = plan._logical_trips([r for r in plan.assignments if r.vehicle == row.vehicle])
+		load = max([_peak_concurrent_headcount(trips)] + [_trip_occupancy(t) for t in trips])
+		if load >= worst.get("load", -1):
+			worst = {
+				"vehicle": row.vehicle,
+				"limit": _passenger_limits({row.vehicle}).get(row.vehicle),
+				"load": load,
+			}
+	return worst
+
+
+@frappe.whitelist(methods=["POST"])
+def add_employee_to_shipment(
+	shipment: str, employee: str, scope: str, date: str | None = None, override: int = 0
+) -> dict:
+	"""Put an employee on a live card by hand.
+
+	A pool card takes the rider whatever its size. A placed card asks the Route Plan trip
+	model first and returns ``{"over_capacity": True, ...}`` without writing when the
+	bus has no seat, unless ``override`` is set.
+	"""
+	from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import _SeatCheck
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
+		own_direction,
+		resolve_shipment_names,
+	)
+
+	frappe.only_for(MATRIX_ROLES)
+	name = (resolve_shipment_names([shipment]) or [None])[0]
+	if not name or not frappe.db.exists("Transportation Shipment", name):
+		frappe.throw(_("Shipment {0} not found.").format(shipment))
+	doc = frappe.get_doc("Transportation Shipment", name)
+	doc.check_permission("write")
+	if doc.status not in LIVE_STATUSES:
+		frappe.throw(_("Shipment {0} is {1}; only Unassigned or Assigned cards take riders.").format(name, doc.status))
+
+	emp, on_date, _rows = _assignment_context(employee, scope, date)
+	_refuse_duplicate(employee, own_direction(doc))
+
+	if doc.status == "Assigned" and not frappe.utils.cint(override):
+		# room() writes a trial headcount and restores it, so it runs before the append.
+		if _SeatCheck().room(doc.name, frappe.utils.cint(doc.headcount), 1) < 1:
+			return {"over_capacity": True, "card_id": f"TSHIP-{doc.name}", **_vehicle_load(doc.name)}
+
+	doc.append(
+		"transportation_shipment_employee",
+		_rider(emp, doc.accommodation, doc.stop_location, scope, on_date),
+	)
+	doc.save()
+	return {"headcount": doc.headcount, "card_id": f"TSHIP-{doc.name}", "status": doc.status}
+
+
+@frappe.whitelist(methods=["POST"])
+def create_shipment_for_employee(
+	employee: str, stop_location: str, direction: str, scope: str, date: str | None = None
+) -> dict:
+	"""A new pool card for one rostered employee: their camp, today's shift times, one rider.
+
+	Left without a source so the shift generator never claims it. A Today Only card
+	carries from/to dates, so deactivate_expired_shipments retires it the next day.
+	"""
+	frappe.only_for(MATRIX_ROLES)
+	frappe.has_permission("Transportation Shipment", "create", throw=True)
+	if direction not in ("Outward", "Return"):
+		frappe.throw(_("Direction must be Outward or Return."))
+
+	emp, on_date, rows = _assignment_context(employee, scope, date)
+	_refuse_duplicate(employee, direction)
+
+	if frappe.db.get_value("Location", stop_location, "location_type") != "Stop Location":
+		frappe.throw(_("{0} is not a Stop Location.").format(stop_location))
+
+	checkin = _latest_checkins([employee]).get(employee)
+	if not checkin or checkin.checked_out or not checkin.accommodation:
+		frappe.throw(_("Employee {0} has no open accommodation check-in.").format(employee))
+
+	roster = _roster_row([dict(r) for r in rows])
+	if not roster or not roster.get("shift"):
+		frappe.throw(_("Employee {0} is not rostered to work today.").format(employee))
+	shift = frappe.db.get_value(
+		"Operations Shift", roster["shift"], ["start_time", "end_time", "site", "project"], as_dict=True
+	) or frappe._dict()
+
+	doc = frappe.new_doc("Transportation Shipment")
+	doc.update({
+		"status": "Unassigned",
+		"accommodation": checkin.accommodation,
+		"stop_location": stop_location,
+		"operations_shift": roster["shift"],
+		"operations_site": shift.site,
+		"project": shift.project,
+		"start_time": shift.start_time,
+		"end_time": shift.end_time,
+		"routing_type_badge": "Direct",
+		"trip_direction": direction,
+		"is_adhoc_journey": 1,
+	})
+	if scope == "Today Only":
+		doc.from_date = doc.to_date = on_date
+	doc.append("transportation_shipment_employee", _rider(emp, checkin.accommodation, stop_location, scope, on_date))
+	doc.insert()
+	return {"headcount": doc.headcount, "card_id": f"TSHIP-{doc.name}", "status": doc.status}
