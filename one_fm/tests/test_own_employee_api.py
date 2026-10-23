@@ -1,5 +1,6 @@
 import base64
 from pathlib import Path
+from unittest.mock import patch
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -117,16 +118,19 @@ class TestOwnEmployeeApi(FrappeTestCase):
 				resignation.get_employee_supervisor(employee_id=self.id_b)
 
 	def test_update_employee_needs_a_supervisor_role(self):
-		with self.set_user(self.user_a), self.assertRaises(frappe.PermissionError):
-			utils.update_employee(self.id_b, "cell_number", "96500000000")
+		# frappe.only_for skips its role check while in_test is set
+		with self.set_user(self.user_a), patch.dict(frappe.local.flags, {"in_test": False}):
+			with self.assertRaises(frappe.PermissionError):
+				utils.update_employee(self.id_b, "cell_number", "96500000000")
 		self.assertNotEqual(frappe.db.get_value("Employee", self.employee_b, "cell_number"), "96500000000")
 
 	def test_update_employee_changes_only_allowed_fields(self):
-		frappe.get_doc("User", self.user_a).add_roles("Shift Supervisor")
-		with self.set_user(self.user_a), self.assertRaises(frappe.PermissionError):
+		supervisor = _make_user("test-own-employee-supervisor@example.com", "Own Supervisor")
+		frappe.get_doc("User", supervisor).add_roles("Shift Supervisor")
+		with self.set_user(supervisor), self.assertRaises(frappe.PermissionError):
 			utils.update_employee(self.id_b, "status", "Left")
 		self.assertEqual(frappe.db.get_value("Employee", self.employee_b, "status"), "Active")
-		with self.set_user(self.user_a):
+		with self.set_user(supervisor):
 			utils.update_employee(self.id_b, "enrolled", "0")
 		self.assertEqual(frappe.db.get_value("Employee", self.employee_b, "enrolled"), 0)
 

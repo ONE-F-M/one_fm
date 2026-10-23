@@ -70,6 +70,7 @@ class _Base(FrappeTestCase):
 			patch.object(frappe.db, "get_single_value", side_effect=fake_get_single_value), \
 			patch.object(frappe.db, "get_value", side_effect=fake_get_value), \
 			patch.object(frappe.db, "commit"), \
+			patch.object(fr, "get_own_employee", return_value=frappe._dict(name="EMP-TEST", employee_id="TEST-1")), \
 			patch.object(frappe, "log_error") as log_error, \
 			patch("one_fm.api.v1.utils.requests.post", return_value=_service_error()) as post:
 			call()
