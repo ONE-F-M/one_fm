@@ -165,7 +165,10 @@ def _live_cards() -> tuple:
 	shipments = frappe.get_all(
 		"Transportation Shipment",
 		filters={"status": ["in", ["Unassigned", "Assigned"]]},
-		fields=["name", "status", "operations_shift", "aggregated_shifts"],
+		# aggregated_shifts arrives with a migrate; a site that has not run it yet must
+		# still get a matrix, so the column is only asked for when it exists.
+		fields=["name", "status", "operations_shift"]
+		+ (["aggregated_shifts"] if frappe.db.has_column("Transportation Shipment", "aggregated_shifts") else []),
 	)
 	inactive = _inactive_shifts(shipments)
 	shipments = [s for s in shipments if not _serves_only_inactive_shifts(s, inactive)]
