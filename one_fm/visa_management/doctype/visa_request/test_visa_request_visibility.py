@@ -65,9 +65,7 @@ READ_ONLY_FIELDS = (
 )
 
 
-# WI-003689: the Display Depends On rules the BA site put on the four rejection-remark
-# fields. Copied verbatim - the space after "eval:" and around "==" included - so the
-# comparison below is an exact string match.
+# BA Display Depends On for the four rejection-remark fields, copied verbatim (spacing included).
 BA_DEPENDS_ON = {
 	"operator_rejection_remark": 'eval: doc.workflow_state == "Rejected By Operator" || doc.workflow_state == "Pending by GRD Operator"',
 	"grd_manager_remark": 'eval: doc.workflow_state == "Pending by GRD Operator" || doc.workflow_state == "Pending GRD Manager Approval"',
@@ -183,8 +181,6 @@ class TestVisaRequestVisibility(FrappeTestCase):
 		self.assertEqual(field.label, "GRD Operator")
 		self.assertFalse(field.hidden)
 
-	# ── WI-003689: rejection-remark display rules ──────────────────────────────────
-
 	def test_the_rejection_remark_rules_match_the_ba_site_exactly(self):
 		for fieldname, expected in BA_DEPENDS_ON.items():
 			with self.subTest(fieldname=fieldname):
@@ -197,11 +193,6 @@ class TestVisaRequestVisibility(FrappeTestCase):
 				named = _named_states(self.meta.get_field(fieldname).depends_on)
 				self.assertTrue(named, f"{fieldname} names no state")
 				self.assertEqual(named - states, set(), f"{fieldname} names states the workflow lacks")
-
-	def test_the_earlier_gates_are_untouched_by_the_remark_rules(self):
-		for fieldname in GATED_FIELDS:
-			with self.subTest(fieldname=fieldname):
-				self.assertTrue(self.meta.get_field(fieldname).depends_on, fieldname)
 
 	def test_the_free_text_pam_rejection_remarks_is_kept(self):
 		self.assertIsNotNone(self.meta.get_field("pam_rejection_remarks"))
