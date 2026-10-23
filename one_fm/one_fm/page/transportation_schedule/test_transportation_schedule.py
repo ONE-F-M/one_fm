@@ -727,7 +727,7 @@ class TestRelieverSearchSetting(FrappeTestCase):
 		self.assertEqual(result, [])
 		shift_pool.assert_not_called()
 
-	def test_unchecked_overlap_is_still_a_warning_with_the_same_sort_order(self):
+	def test_unchecked_drops_overlapping_employees_and_keeps_the_sort_order(self):
 		pool = [_emp("A", "Zed"), _emp("B", "Amy"), _emp("C", "Bob"), _emp("D", "Cal")]
 		rows = [
 			_roster("A", "Basic", "DAY", start=_at(_DAY, 6), end=_at(_DAY, 18)),  # overlaps
@@ -735,17 +735,20 @@ class TestRelieverSearchSetting(FrappeTestCase):
 			_roster("D", "Over-Time", "OT", start=_at(_DAY, 18), end=_at(_DAY, 22)),
 		]
 		result, *_rest = self._search(0, pool, rows)
-		self.assertEqual([r["employee_name"] for r in result], ["Bob", "Cal", "Amy", "Zed"])
-		by_name = {r["name"]: r for r in result}
-		self.assertTrue(by_name["A"]["overlap"])
-		self.assertIn("06:00", by_name["A"]["overlap_note"])
-		self.assertFalse(by_name["B"]["overlap"])
+		self.assertEqual([r["employee_name"] for r in result], ["Bob", "Cal", "Amy"])
+		self.assertFalse(any(r["overlap"] for r in result))
+
+	def test_checked_still_lists_an_overlapping_rambo_with_a_warning(self):
+		rows = [_roster("RAMBO", "Basic", "DAY", start=_at(_DAY, 6), end=_at(_DAY, 18))]
+		result, *_rest = self._search(1, [], rows)
+		self.assertEqual([r["name"] for r in result], ["RAMBO"])
+		self.assertTrue(result[0]["overlap"])
 
 
 class TestFetchShiftWorkingEmployees(FrappeTestCase):
 	"""The unchecked-setting query, against real Employee and Accommodation Checkin rows."""
 
-	PREFIX = "ZZ-WI3683-"
+	PREFIX = "ZZ-RELIEVER-"
 
 	def _employee(self, key, status="Active", shift_working=1, rambo=0):
 		# Plain column insert: the Employee table of a test site may lack unrelated
@@ -785,32 +788,32 @@ class TestFetchShiftWorkingEmployees(FrappeTestCase):
 		self.moved = self._employee("MOVED")
 		for emp in (self.in_camp, self.non_rambo_worker, self.rambo, self.inactive,
 					self.not_shift, self.covered, self.passenger):
-			self._checkin(emp, "ACC-WI3683-A", "2026-03-01 08:00:00")
-		self._checkin(self.other_camp, "ACC-WI3683-B", "2026-03-01 08:00:00")
+			self._checkin(emp, "ACC-RELIEVER-A", "2026-03-01 08:00:00")
+		self._checkin(self.other_camp, "ACC-RELIEVER-B", "2026-03-01 08:00:00")
 		# Latest IN decides the live camp: this one moved out of camp A.
-		self._checkin(self.moved, "ACC-WI3683-A", "2026-03-01 08:00:00")
-		self._checkin(self.moved, "ACC-WI3683-B", "2026-03-02 08:00:00")
+		self._checkin(self.moved, "ACC-RELIEVER-A", "2026-03-01 08:00:00")
+		self._checkin(self.moved, "ACC-RELIEVER-B", "2026-03-02 08:00:00")
 		# An OUT check-in never counts as the live camp.
-		self._checkin(self.other_camp, "ACC-WI3683-A", "2026-03-03 08:00:00", kind="OUT")
+		self._checkin(self.other_camp, "ACC-RELIEVER-A", "2026-03-03 08:00:00", kind="OUT")
 
 	def _names(self, camps, exclude=()):
 		rows = _ts._fetch_shift_working_employees(camps, set(exclude))
 		return [r.name for r in rows if r.name.startswith(self.PREFIX)]
 
 	def test_returns_shift_workers_in_the_camp_whether_or_not_they_are_rambo(self):
-		names = self._names(["ACC-WI3683-A"], [self.covered, self.passenger])
+		names = self._names(["ACC-RELIEVER-A"], [self.covered, self.passenger])
 		self.assertIn(self.non_rambo_worker, names)
 		self.assertIn(self.rambo, names)
 		self.assertIn(self.in_camp, names)
 
 	def test_leaves_out_other_camps_inactive_non_shift_covered_and_passengers(self):
-		names = self._names(["ACC-WI3683-A"], [self.covered, self.passenger])
+		names = self._names(["ACC-RELIEVER-A"], [self.covered, self.passenger])
 		for excluded in (self.other_camp, self.inactive, self.not_shift,
 						 self.covered, self.passenger, self.moved):
 			self.assertNotIn(excluded, names)
 
 	def test_returns_the_same_columns_as_the_rambo_query(self):
-		rows = _ts._fetch_shift_working_employees(["ACC-WI3683-A"], set())
+		rows = _ts._fetch_shift_working_employees(["ACC-RELIEVER-A"], set())
 		row = next(r for r in rows if r.name == self.non_rambo_worker)
 		for key in ("name", "employee_name", "designation", "cell_number", "shift"):
 			self.assertIn(key, row)

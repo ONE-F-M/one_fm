@@ -2742,8 +2742,9 @@ def get_available_rambo_relievers(shift_name: str = None, date: str = None, row_
     to Rambo Employees Only":
     - checked: Active employees with custom_is_rambo_reliever = 1;
     - unchecked: Active shift-working employees whose live camp is one of the trip's
-      pickup camps, excluding the covered employee and everyone already on the trip.
-      Without row_name there is no trip, so nothing is returned.
+      pickup camps, excluding the covered employee, everyone already on the trip and
+      anyone rostered Working on a shift that overlaps the trip window. Without
+      row_name there is no trip, so nothing is returned.
 
     Each candidate is enriched with that day's roster (Employee Schedule): the Basic
     shift and its timing, any Over-Time shift, and whether the roster overlaps the
@@ -2753,8 +2754,8 @@ def get_available_rambo_relievers(shift_name: str = None, date: str = None, row_
     manifest's schedule_date and the covered shift / trip times come from that row.
     Otherwise shift_name and date are used as before.
 
-    Overlap is a warning only - relievers are never filtered out. They are sorted
-    with non-overlapping, rostered relievers first.
+    For Rambo relievers, overlap is a warning only - they are never filtered out.
+    Results are sorted with non-overlapping, rostered relievers first.
     """
     date, shift_start, shift_end, trip_times, trip_camps, trip_employees = _reliever_context(
         shift_name, date, row_name
@@ -2787,6 +2788,9 @@ def get_available_rambo_relievers(shift_name: str = None, date: str = None, row_
         _build_reliever(r, rows_by_employee.get(r.name, []), date, shift_times, window)
         for r in rambos
     ]
+    if not restrict_to_rambo:
+        # Assigning a regular employee overwrites their own roster for the day.
+        result = [r for r in result if not r["overlap"]]
     result.sort(key=lambda x: (x["overlap"], not x["has_roster"], x["employee_name"] or ""))
     return result
 
