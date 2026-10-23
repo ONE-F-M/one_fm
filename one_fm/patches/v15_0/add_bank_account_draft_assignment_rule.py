@@ -8,9 +8,10 @@ from one_fm.utils import create_process_task
 # Two corrections to the BA export:
 #  - it tested `doc.workflow_state`. Conditions are evaluated with the document dict as
 #    locals, so `doc` is undefined and the rule never fired.
-#  - its `!= "Draft"` check was a close_condition. close_condition closes every ToDo on
-#    the document, which would shut the Payroll Officer ToDo added on Open Request. It is
-#    now unassign_condition, which only touches this rule's own assignment.
+#  - its `!= "Draft"` check was a close_condition. Both close_condition and
+#    unassign_condition cancel or close every ToDo on the document, which would shut the
+#    Payroll Officer ToDo added on Open Request. Both are empty; the rule's own ToDo is
+#    closed by one_fm.utils.close_bank_account_draft_todos.
 RULE_NAME = "Action Draft - HR User"
 RULE_JSON = "action_draft_hr_user.json"
 PROCESS = "Others"

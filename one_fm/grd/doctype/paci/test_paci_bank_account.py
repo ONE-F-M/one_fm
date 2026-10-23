@@ -213,6 +213,7 @@ class TestDraftAssignmentRule(FrappeTestCase):
 		for field in ("assign_condition", "unassign_condition", "close_condition"):
 			self.assertNotIn("doc.", self.rule.get(field) or "", msg=field)
 		self.assertFalse(self.rule.close_condition)
+		self.assertFalse(self.rule.unassign_condition)
 
 	def _open_todos(self, bank_account, user):
 		return frappe.get_all(
@@ -243,3 +244,4 @@ class TestDraftAssignmentRule(FrappeTestCase):
 		bank_account.save(ignore_permissions=True)
 
 		self.assertTrue(self._open_todos(bank_account.name, payroll_officer))
+		self.assertFalse(self._open_todos(bank_account.name, self.assignee))
