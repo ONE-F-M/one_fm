@@ -6,11 +6,19 @@ Run with ``--skip-before-tests``. classify() and can_be_permanent() are pure, so
 this needs no records at all.
 """
 
+from datetime import timedelta
+from unittest.mock import patch
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
+from frappe.utils import add_days, getdate, today
 
+from one_fm.one_fm.page.transportation_schedule import traceability_matrix as tm
 from one_fm.one_fm.page.transportation_schedule.traceability_matrix import (
 	MATRIX_ROLES,
+	PERMANENT_WARNING,
+	add_employee_to_shipment,
+	create_shipment_for_employee,
 	_missing_reason,
 	_roster_row,
 	_time_text,
@@ -198,6 +206,10 @@ class TestEndpoint(FrappeTestCase):
 		frappe.set_user("Guest")
 		with self.assertRaises(frappe.PermissionError):
 			get_traceability_matrix()
+		with self.assertRaises(frappe.PermissionError):
+			add_employee_to_shipment("TS-X", "HR-EMP-X", "Today Only")
+		with self.assertRaises(frappe.PermissionError):
+			create_shipment_for_employee("HR-EMP-X", "LOC", "Outward", "Today Only")
 
 	def test_an_authorised_user_gets_the_agreed_shape(self):
 		result = get_traceability_matrix()
@@ -212,3 +224,203 @@ class TestEndpoint(FrappeTestCase):
 		self.assertTrue(result["synced_at"])
 		if result["rows"]:
 			self.assertEqual(ROW_KEYS - set(result["rows"][0]), set())
+
+
+def _free_employee():
+	"""An Active non-driver employee on no shipment card."""
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import driver_employees
+
+	riding = set(frappe.get_all(
+		"Transportation Shipment Employee", filters={"parenttype": "Transportation Shipment"}, pluck="employee_id"
+	))
+	candidates = [
+		e for e in frappe.get_all("Employee", filters={"status": "Active"}, pluck="name", limit_page_length=200)
+		if e not in riding
+	]
+	drivers = driver_employees(candidates)
+	return next((e for e in candidates if e not in drivers), None)
+
+
+class TestAddEmployeeToShipment(FrappeTestCase):
+	def setUp(self):
+		self.employee = _free_employee()
+		if not self.employee:
+			self.skipTest("no free Active employee on this site")
+
+	def tearDown(self):
+		frappe.db.rollback()
+
+	def _card(self, status="Unassigned", direction="Outward"):
+		doc = frappe.new_doc("Transportation Shipment")
+		doc.status = status
+		doc.trip_direction = direction
+		doc.flags.ignore_mandatory = True
+		doc.flags.ignore_links = True
+		doc.insert(ignore_permissions=True)
+		return doc.name
+
+	def _rows(self, card):
+		return frappe.get_all(
+			"Transportation Shipment Employee",
+			filters={"parent": card},
+			fields=["employee_id", "assignment_scope", "assigned_on"],
+		)
+
+	def test_a_pool_card_takes_the_rider_without_a_seat_check(self):
+		card = self._card()
+		with patch(
+			"one_fm.one_fm.doctype.transportation_shipment.shipment_generator._SeatCheck.room"
+		) as room:
+			result = add_employee_to_shipment(f"TSHIP-{card}", self.employee, "Today Only")
+
+		room.assert_not_called()
+		self.assertEqual(result["headcount"], 1)
+		self.assertEqual(result["card_id"], f"TSHIP-{card}")
+		rows = self._rows(card)
+		self.assertEqual(rows[0].assignment_scope, "Today Only")
+		self.assertEqual(getdate(rows[0].assigned_on), getdate(today()))
+
+	def test_a_full_placed_card_answers_over_capacity_and_writes_nothing(self):
+		card = self._card(status="Assigned")
+		load = {"vehicle": "V-1", "limit": 1, "load": 1}
+		with patch(
+			"one_fm.one_fm.doctype.transportation_shipment.shipment_generator._SeatCheck.room", return_value=0
+		), patch.object(tm, "_vehicle_load", return_value=load):
+			result = add_employee_to_shipment(card, self.employee, "Today Only")
+			self.assertTrue(result["over_capacity"])
+			self.assertEqual(result["limit"], 1)
+			self.assertEqual(self._rows(card), [])
+
+			result = add_employee_to_shipment(card, self.employee, "Today Only", override=1)
+
+		self.assertEqual(result["headcount"], 1)
+		self.assertEqual(len(self._rows(card)), 1)
+
+	def test_a_placed_card_with_room_takes_the_rider(self):
+		card = self._card(status="Assigned")
+		with patch(
+			"one_fm.one_fm.doctype.transportation_shipment.shipment_generator._SeatCheck.room", return_value=1
+		):
+			result = add_employee_to_shipment(card, self.employee, "Today Only")
+		self.assertEqual(result["status"], "Assigned")
+		self.assertEqual(result["headcount"], 1)
+
+	def test_permanent_on_a_mismatched_shift_is_refused(self):
+		card = self._card()
+		with patch.object(tm, "can_be_permanent", return_value=False):
+			with self.assertRaises(frappe.ValidationError) as caught:
+				add_employee_to_shipment(card, self.employee, "Permanent")
+		self.assertIn(PERMANENT_WARNING, str(caught.exception))
+		self.assertEqual(self._rows(card), [])
+
+	def test_permanent_on_a_matching_shift_is_allowed(self):
+		card = self._card()
+		with patch.object(tm, "can_be_permanent", return_value=True):
+			add_employee_to_shipment(card, self.employee, "Permanent")
+		self.assertEqual(self._rows(card)[0].assignment_scope, "Permanent")
+
+	def test_a_second_card_in_the_same_direction_is_refused(self):
+		first, second, back = self._card(), self._card(), self._card(direction="Return")
+		add_employee_to_shipment(first, self.employee, "Today Only")
+		with self.assertRaises(frappe.ValidationError):
+			add_employee_to_shipment(second, self.employee, "Today Only")
+		add_employee_to_shipment(back, self.employee, "Today Only")
+		self.assertEqual(len(self._rows(back)), 1)
+
+	def test_a_driver_is_refused(self):
+		card = self._card()
+		with patch(
+			"one_fm.one_fm.doctype.transportation_shipment.transportation_shipment.driver_employees",
+			return_value={self.employee},
+		):
+			with self.assertRaises(frappe.ValidationError):
+				add_employee_to_shipment(card, self.employee, "Today Only")
+
+	def test_an_inactive_card_and_another_day_are_refused(self):
+		card = self._card(status="Inactive")
+		with self.assertRaises(frappe.ValidationError):
+			add_employee_to_shipment(card, self.employee, "Today Only")
+		with self.assertRaises(frappe.ValidationError):
+			add_employee_to_shipment(self._card(), self.employee, "Today Only", date=add_days(today(), 1))
+
+
+class TestCreateShipmentForEmployee(FrappeTestCase):
+	def setUp(self):
+		self.employee = _free_employee()
+		self.stop = frappe.db.get_value("Location", {"location_type": "Stop Location"}, "name")
+		self.acc = frappe.db.get_value("Accommodation", {}, "name")
+		self.shift = frappe.db.get_value(
+			"Operations Shift", {"status": "Active"}, ["name", "start_time", "end_time", "site", "project"], as_dict=True
+		)
+		if not (self.employee and self.stop and self.acc and self.shift):
+			self.skipTest("needs an employee, a Stop Location, an Accommodation and an Operations Shift")
+		checkin = frappe._dict(accommodation=self.acc, checked_out=0)
+		for target, value in (
+			("_latest_checkins", {self.employee: checkin}),
+			("_roster_row", {"shift": self.shift.name}),
+		):
+			patcher = patch.object(tm, target, return_value=value)
+			patcher.start()
+			self.addCleanup(patcher.stop)
+
+	def tearDown(self):
+		frappe.db.rollback()
+
+	def _create(self, **kwargs):
+		args = dict(employee=self.employee, stop_location=self.stop, direction="Outward", scope="Today Only")
+		args.update(kwargs)
+		return create_shipment_for_employee(**args)
+
+	def test_header_and_rider_are_prefilled(self):
+		result = self._create()
+		doc = frappe.get_doc("Transportation Shipment", result["card_id"][len("TSHIP-"):])
+
+		self.assertEqual(doc.status, "Unassigned")
+		self.assertEqual(doc.accommodation, self.acc)
+		self.assertEqual(doc.stop_location, self.stop)
+		self.assertEqual(doc.operations_shift, self.shift.name)
+		self.assertEqual(str(doc.start_time), str(self.shift.start_time))
+		self.assertEqual(str(doc.end_time), str(self.shift.end_time))
+		self.assertEqual(doc.routing_type_badge, "Direct")
+		self.assertEqual(doc.trip_direction, "Outward")
+		self.assertTrue(doc.is_adhoc_journey)
+		self.assertFalse(doc.source_doctype)
+		self.assertEqual(getdate(doc.from_date), getdate(today()))
+		self.assertEqual(getdate(doc.to_date), getdate(today()))
+		self.assertEqual(doc.headcount, 1)
+		row = doc.transportation_shipment_employee[0]
+		self.assertEqual((row.employee_id, row.assignment_scope), (self.employee, "Today Only"))
+
+	def test_a_location_that_is_not_a_stop_is_refused(self):
+		with self.assertRaises(frappe.ValidationError):
+			self._create(stop_location="NOT-A-STOP-LOCATION-XYZ")
+
+	def test_a_today_only_card_is_retired_the_next_day(self):
+		from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import (
+			deactivate_expired_shipments,
+		)
+
+		name = self._create()["card_id"][len("TSHIP-"):]
+		with patch.object(frappe.db, "commit"):
+			deactivate_expired_shipments(as_of=add_days(today(), 1))
+		self.assertEqual(frappe.db.get_value("Transportation Shipment", name, "status"), "Inactive")
+
+	def test_the_generator_never_claims_it_and_the_canvas_renders_it(self):
+		from one_fm.one_fm.doctype.transportation_shipment import shipment_generator as gen
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
+			_build_transportation_shipment_cards,
+		)
+
+		name = self._create(scope="Today Only")["card_id"][len("TSHIP-"):]
+		self.assertNotIn(name, gen._live_cards())
+
+		cards = _build_transportation_shipment_cards(
+			lambda dt: dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
+			lambda t: frappe.utils.get_datetime(f"{today()} {t}"),
+			lambda doctype, docname: None,
+			timedelta,
+		)
+		card = next((c for c in cards if c["shipment"] == name), None)
+		self.assertIsNotNone(card)
+		self.assertEqual(card["headcount"], 1)
+		self.assertEqual(card["shift_name"], self.shift.name)

@@ -765,7 +765,7 @@ def _distribute(family, demand, direction, roster, gen_key, pair_group, reliever
 		if not waiting:
 			break
 		if card.status == "Assigned":
-			staying = sum(1 for held_by in holder.values() if held_by == card.name) + len(card.pins)
+			staying = sum(1 for held_by in holder.values() if held_by == card.name) + len(card.pins or ())
 			take = seats.room(card.name, staying, len(waiting))
 		else:
 			take = len(waiting)
