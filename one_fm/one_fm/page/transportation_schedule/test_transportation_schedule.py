@@ -653,3 +653,163 @@ class TestAvailableRamboRelievers(FrappeTestCase):
 		self.assertTrue(by_name["O"]["is_ot"])
 		for r in result:
 			self.assertEqual(r["master_shift"], "MASTER-" + r["name"])
+
+	def test_the_reliever_context_returns_the_trip_camps_and_passengers(self):
+		manifest = SimpleNamespace(
+			schedule_date=_DAY,
+			check_permission=Mock(),
+			transportation_manifest_details=[
+				frappe._dict(trip_id="T1", scheduled_time=_HOURS(5), employee="P1",
+							 reliever_employee="R1", pickup_accommodation="ACC-01"),
+				frappe._dict(trip_id="T1", scheduled_time=_HOURS(6), employee="P2",
+							 reliever_employee=None, pickup_accommodation="ACC-01"),
+				frappe._dict(trip_id="T1", scheduled_time=_HOURS(7), employee="P3",
+							 reliever_employee=None, pickup_accommodation="ACC-02"),
+				frappe._dict(trip_id="T2", scheduled_time=_HOURS(8), employee="OTHER",
+							 reliever_employee=None, pickup_accommodation="ACC-09"),
+			],
+		)
+		row = frappe._dict(
+			parent="MAN-1", operations_shift="DAY", start_time=_HOURS(6), end_time=_HOURS(18),
+			trip_id="T1", scheduled_time=_HOURS(5), employee="P1", reliever_employee="R1",
+			pickup_accommodation="ACC-01",
+		)
+		with patch.object(_ts.frappe.db, "get_value", return_value=row), \
+			patch.object(_ts.frappe, "get_doc", return_value=manifest):
+			*_head, camps, employees = _ts._reliever_context("DAY", _DAY, "ROW-1")
+		self.assertEqual(sorted(camps), ["ACC-01", "ACC-02"])
+		self.assertEqual(employees, {"P1", "P2", "P3", "R1"})
+
+	def test_the_reliever_context_without_a_row_has_no_trip(self):
+		with patch.object(_ts.frappe, "has_permission", return_value=True), \
+			patch.object(_ts, "_fetch_shift_times", return_value=self.SHIFTS):
+			*_head, camps, employees = _ts._reliever_context("DAY", _DAY, None)
+		self.assertEqual(list(camps), [])
+		self.assertEqual(set(employees), set())
+
+
+class TestRelieverSearchSetting(FrappeTestCase):
+	"""get_available_rambo_relievers follows Transportation Settings."""
+
+	SHIFTS = TestAvailableRamboRelievers.SHIFTS
+	CONTEXT = (
+		frappe.utils.getdate(_DAY), _HOURS(6), _HOURS(18), [_HOURS(6)],
+		["ACC-01"], {"COVERED", "PAX"},
+	)
+
+	def _search(self, flag, pool, rows=(), row_name="ROW-1"):
+		with patch.object(_ts, "_reliever_context", return_value=self.CONTEXT), \
+			patch.object(_ts.frappe.db, "get_single_value", return_value=flag) as setting, \
+			patch.object(_ts, "_fetch_rambo_employees", return_value=[_emp("RAMBO")]) as rambo, \
+			patch.object(_ts, "_fetch_shift_working_employees", return_value=pool) as shift_pool, \
+			patch.object(_ts, "_fetch_roster_rows", return_value=list(rows)), \
+			patch.object(_ts, "_fetch_shift_times", return_value=self.SHIFTS):
+			result = _ts.get_available_rambo_relievers(shift_name="DAY", date=_DAY, row_name=row_name)
+		return result, setting, rambo, shift_pool
+
+	def test_checked_returns_only_rambo_employees(self):
+		result, setting, rambo, shift_pool = self._search(1, [_emp("WORKER")])
+		setting.assert_called_once_with(
+			"Transportation Settings", "restrict_reliever_search_to_rambo_employees_only"
+		)
+		self.assertEqual([r["name"] for r in result], ["RAMBO"])
+		rambo.assert_called_once()
+		shift_pool.assert_not_called()
+
+	def test_unchecked_searches_shift_workers_in_the_trip_camps(self):
+		result, _setting, rambo, shift_pool = self._search(0, [_emp("WORKER")])
+		self.assertEqual([r["name"] for r in result], ["WORKER"])
+		rambo.assert_not_called()
+		shift_pool.assert_called_once_with(["ACC-01"], {"COVERED", "PAX"})
+
+	def test_unchecked_without_a_row_returns_nothing(self):
+		result, _setting, _rambo, shift_pool = self._search(0, [_emp("WORKER")], row_name=None)
+		self.assertEqual(result, [])
+		shift_pool.assert_not_called()
+
+	def test_unchecked_overlap_is_still_a_warning_with_the_same_sort_order(self):
+		pool = [_emp("A", "Zed"), _emp("B", "Amy"), _emp("C", "Bob"), _emp("D", "Cal")]
+		rows = [
+			_roster("A", "Basic", "DAY", start=_at(_DAY, 6), end=_at(_DAY, 18)),  # overlaps
+			_roster("C", "Over-Time", "OT", start=_at(_DAY, 18), end=_at(_DAY, 22)),
+			_roster("D", "Over-Time", "OT", start=_at(_DAY, 18), end=_at(_DAY, 22)),
+		]
+		result, *_rest = self._search(0, pool, rows)
+		self.assertEqual([r["employee_name"] for r in result], ["Bob", "Cal", "Amy", "Zed"])
+		by_name = {r["name"]: r for r in result}
+		self.assertTrue(by_name["A"]["overlap"])
+		self.assertIn("06:00", by_name["A"]["overlap_note"])
+		self.assertFalse(by_name["B"]["overlap"])
+
+
+class TestFetchShiftWorkingEmployees(FrappeTestCase):
+	"""The unchecked-setting query, against real Employee and Accommodation Checkin rows."""
+
+	PREFIX = "ZZ-WI3683-"
+
+	def _employee(self, key, status="Active", shift_working=1, rambo=0):
+		doc = frappe.new_doc("Employee")
+		doc.update({
+			"name": self.PREFIX + key, "employee_name": "Zz " + key, "status": status,
+			"shift_working": shift_working, "custom_is_rambo_reliever": rambo,
+		})
+		doc.name = self.PREFIX + key
+		doc.owner = doc.modified_by = "Administrator"
+		doc.creation = doc.modified = "2026-01-01 00:00:00"
+		doc.docstatus = 0
+		doc.db_insert()
+		return doc.name
+
+	def _checkin(self, employee, camp, creation, kind="IN"):
+		doc = frappe.new_doc("Accommodation Checkin Checkout")
+		doc.update({"employee": employee, "accommodation": camp, "type": kind})
+		doc.name = frappe.generate_hash(length=12)
+		doc.owner = doc.modified_by = "Administrator"
+		doc.creation = doc.modified = creation
+		doc.docstatus = 0
+		doc.db_insert()
+
+	def setUp(self):
+		self.in_camp = self._employee("INCAMP")
+		self.non_rambo_worker = self._employee("WORKER", rambo=0)
+		self.rambo = self._employee("RAMBO", rambo=1)
+		self.other_camp = self._employee("OTHER")
+		self.inactive = self._employee("INACTIVE", status="Inactive")
+		self.not_shift = self._employee("NOSHIFT", shift_working=0)
+		self.covered = self._employee("COVERED")
+		self.passenger = self._employee("PAX")
+		self.moved = self._employee("MOVED")
+		for emp in (self.in_camp, self.non_rambo_worker, self.rambo, self.inactive,
+					self.not_shift, self.covered, self.passenger):
+			self._checkin(emp, "ACC-WI3683-A", "2026-03-01 08:00:00")
+		self._checkin(self.other_camp, "ACC-WI3683-B", "2026-03-01 08:00:00")
+		# Latest IN decides the live camp: this one moved out of camp A.
+		self._checkin(self.moved, "ACC-WI3683-A", "2026-03-01 08:00:00")
+		self._checkin(self.moved, "ACC-WI3683-B", "2026-03-02 08:00:00")
+		# An OUT check-in never counts as the live camp.
+		self._checkin(self.other_camp, "ACC-WI3683-A", "2026-03-03 08:00:00", kind="OUT")
+
+	def _names(self, camps, exclude=()):
+		rows = _ts._fetch_shift_working_employees(camps, set(exclude))
+		return [r.name for r in rows if r.name.startswith(self.PREFIX)]
+
+	def test_returns_shift_workers_in_the_camp_whether_or_not_they_are_rambo(self):
+		names = self._names(["ACC-WI3683-A"], [self.covered, self.passenger])
+		self.assertIn(self.non_rambo_worker, names)
+		self.assertIn(self.rambo, names)
+		self.assertIn(self.in_camp, names)
+
+	def test_leaves_out_other_camps_inactive_non_shift_covered_and_passengers(self):
+		names = self._names(["ACC-WI3683-A"], [self.covered, self.passenger])
+		for excluded in (self.other_camp, self.inactive, self.not_shift,
+						 self.covered, self.passenger, self.moved):
+			self.assertNotIn(excluded, names)
+
+	def test_returns_the_same_columns_as_the_rambo_query(self):
+		rows = _ts._fetch_shift_working_employees(["ACC-WI3683-A"], set())
+		row = next(r for r in rows if r.name == self.non_rambo_worker)
+		for key in ("name", "employee_name", "designation", "cell_number", "shift"):
+			self.assertIn(key, row)
+
+	def test_no_camps_returns_nothing(self):
+		self.assertEqual(_ts._fetch_shift_working_employees([], set()), [])
