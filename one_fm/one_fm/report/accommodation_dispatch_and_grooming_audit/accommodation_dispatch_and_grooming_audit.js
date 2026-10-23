@@ -29,7 +29,7 @@ function adga_pill_color(value) {
 frappe.query_reports["Accommodation Dispatch and Grooming Audit"] = {
 	tree: true,
 	name_field: "row_id",
-	parent_field: "parent_row",
+	parent_field: "parent_trip",
 	initial_depth: 0,
 
 	filters: [
