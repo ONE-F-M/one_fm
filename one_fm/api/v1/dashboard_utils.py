@@ -4,7 +4,7 @@ import frappe, json
 from frappe import _
 from frappe.desk.notifications import get_filters_for
 from hrms.hr.report.employee_leave_balance.employee_leave_balance import get_data as get_leave_balance
-from one_fm.api.v1.utils import response
+from one_fm.api.v1.utils import check_own_employee, not_own_employee_response, response
 
 
 @frappe.whitelist()
@@ -36,6 +36,8 @@ def get_employee_shift(employee_id, date_type='month'):
             "shift_location": "",
             "shift_latitude_and_longitude": ""
         }
+        if not check_own_employee(employee_id):
+            return not_own_employee_response()
         employee = frappe.get_doc('Employee', employee_id)
         shift_assignment =  frappe.db.get_list('Shift Assignment',
            filters=[
