@@ -8,6 +8,8 @@ _sync_shipment_statuses is the backend save/sync path that must validate BOTH th
 shipment identity AND its direction flag so one leg never sweeps the other.
 """
 
+import unittest
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
@@ -748,13 +750,42 @@ class TestRelieverSearchSetting(FrappeTestCase):
 class TestFetchShiftWorkingEmployees(FrappeTestCase):
 	"""The unchecked-setting query, against real Employee and Accommodation Checkin rows."""
 
-	PREFIX = "ZZ-RELIEVER-"
+	# FrappeTestCase rolls back per class, not per test, so the rows are made once.
+	# A random tag keeps them clear of rows left behind by an interrupted run.
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		if not frappe.db.has_column("Employee", "shift_working"):
+			raise unittest.SkipTest("Employee.shift_working is not present on this site")
+		tag = frappe.generate_hash(length=8).upper()
+		cls.PREFIX = f"ZZ-RELIEVER-{tag}-"
+		cls.CAMP_A = f"ACC-RELIEVER-{tag}-A"
+		cls.CAMP_B = f"ACC-RELIEVER-{tag}-B"
+		cls.in_camp = cls._employee("INCAMP")
+		cls.non_rambo_worker = cls._employee("WORKER", rambo=0)
+		cls.rambo = cls._employee("RAMBO", rambo=1)
+		cls.other_camp = cls._employee("OTHER")
+		cls.inactive = cls._employee("INACTIVE", status="Inactive")
+		cls.not_shift = cls._employee("NOSHIFT", shift_working=0)
+		cls.covered = cls._employee("COVERED")
+		cls.passenger = cls._employee("PAX")
+		cls.moved = cls._employee("MOVED")
+		for emp in (cls.in_camp, cls.non_rambo_worker, cls.rambo, cls.inactive,
+					cls.not_shift, cls.covered, cls.passenger):
+			cls._checkin(emp, cls.CAMP_A, "2026-03-01 08:00:00")
+		cls._checkin(cls.other_camp, cls.CAMP_B, "2026-03-01 08:00:00")
+		# Latest IN decides the live camp: this one moved out of camp A.
+		cls._checkin(cls.moved, cls.CAMP_A, "2026-03-01 08:00:00")
+		cls._checkin(cls.moved, cls.CAMP_B, "2026-03-02 08:00:00")
+		# An OUT check-in never counts as the live camp.
+		cls._checkin(cls.other_camp, cls.CAMP_A, "2026-03-03 08:00:00", kind="OUT")
 
-	def _employee(self, key, status="Active", shift_working=1, rambo=0):
+	@classmethod
+	def _employee(cls, key, status="Active", shift_working=1, rambo=0):
 		# Plain column insert: the Employee table of a test site may lack unrelated
 		# custom columns that a full Document insert would try to write.
 		values = {
-			"name": self.PREFIX + key, "employee_name": "Zz " + key, "status": status,
+			"name": cls.PREFIX + key, "employee_name": "Zz " + key, "status": status,
 			"shift_working": shift_working, "owner": "Administrator",
 			"modified_by": "Administrator", "creation": "2026-01-01 00:00:00",
 			"modified": "2026-01-01 00:00:00",
@@ -765,7 +796,8 @@ class TestFetchShiftWorkingEmployees(FrappeTestCase):
 		frappe.qb.into(Employee).columns(*values.keys()).insert(*values.values()).run()
 		return values["name"]
 
-	def _checkin(self, employee, camp, creation, kind="IN"):
+	@staticmethod
+	def _checkin(employee, camp, creation, kind="IN"):
 		values = {
 			"name": frappe.generate_hash(length=12), "employee": employee,
 			"accommodation": camp, "type": kind, "owner": "Administrator",
@@ -774,46 +806,24 @@ class TestFetchShiftWorkingEmployees(FrappeTestCase):
 		Checkin = frappe.qb.DocType("Accommodation Checkin Checkout")
 		frappe.qb.into(Checkin).columns(*values.keys()).insert(*values.values()).run()
 
-	def setUp(self):
-		if not frappe.db.has_column("Employee", "shift_working"):
-			self.skipTest("Employee.shift_working is not present on this site")
-		self.in_camp = self._employee("INCAMP")
-		self.non_rambo_worker = self._employee("WORKER", rambo=0)
-		self.rambo = self._employee("RAMBO", rambo=1)
-		self.other_camp = self._employee("OTHER")
-		self.inactive = self._employee("INACTIVE", status="Inactive")
-		self.not_shift = self._employee("NOSHIFT", shift_working=0)
-		self.covered = self._employee("COVERED")
-		self.passenger = self._employee("PAX")
-		self.moved = self._employee("MOVED")
-		for emp in (self.in_camp, self.non_rambo_worker, self.rambo, self.inactive,
-					self.not_shift, self.covered, self.passenger):
-			self._checkin(emp, "ACC-RELIEVER-A", "2026-03-01 08:00:00")
-		self._checkin(self.other_camp, "ACC-RELIEVER-B", "2026-03-01 08:00:00")
-		# Latest IN decides the live camp: this one moved out of camp A.
-		self._checkin(self.moved, "ACC-RELIEVER-A", "2026-03-01 08:00:00")
-		self._checkin(self.moved, "ACC-RELIEVER-B", "2026-03-02 08:00:00")
-		# An OUT check-in never counts as the live camp.
-		self._checkin(self.other_camp, "ACC-RELIEVER-A", "2026-03-03 08:00:00", kind="OUT")
-
 	def _names(self, camps, exclude=()):
 		rows = _ts._fetch_shift_working_employees(camps, set(exclude))
 		return [r.name for r in rows if r.name.startswith(self.PREFIX)]
 
 	def test_returns_shift_workers_in_the_camp_whether_or_not_they_are_rambo(self):
-		names = self._names(["ACC-RELIEVER-A"], [self.covered, self.passenger])
+		names = self._names([self.CAMP_A], [self.covered, self.passenger])
 		self.assertIn(self.non_rambo_worker, names)
 		self.assertIn(self.rambo, names)
 		self.assertIn(self.in_camp, names)
 
 	def test_leaves_out_other_camps_inactive_non_shift_covered_and_passengers(self):
-		names = self._names(["ACC-RELIEVER-A"], [self.covered, self.passenger])
+		names = self._names([self.CAMP_A], [self.covered, self.passenger])
 		for excluded in (self.other_camp, self.inactive, self.not_shift,
 						 self.covered, self.passenger, self.moved):
 			self.assertNotIn(excluded, names)
 
 	def test_returns_the_same_columns_as_the_rambo_query(self):
-		rows = _ts._fetch_shift_working_employees(["ACC-RELIEVER-A"], set())
+		rows = _ts._fetch_shift_working_employees([self.CAMP_A], set())
 		row = next(r for r in rows if r.name == self.non_rambo_worker)
 		for key in ("name", "employee_name", "designation", "cell_number", "shift"):
 			self.assertIn(key, row)
