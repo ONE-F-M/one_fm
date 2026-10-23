@@ -258,6 +258,7 @@ class TestTransportationManifest(FrappeTestCase):
 			"employee": self.employee1,
 			"attendance_status": "Absent",
 			"reliever_employee": self.reliever,
+			"requires_reliever": 1,
 			"scheduled_time": "12:00:00"
 		})
 		self.assertRaises(frappe.ValidationError, doc2.save)
@@ -272,6 +273,7 @@ class TestTransportationManifest(FrappeTestCase):
 			"employee": self.employee1,
 			"attendance_status": "Absent",
 			"reliever_employee": self.reliever,
+			"requires_reliever": 1,
 			"scheduled_time": "08:00:00"
 		})
 		doc.append("transportation_manifest_details", {
@@ -279,6 +281,7 @@ class TestTransportationManifest(FrappeTestCase):
 			"employee": self.employee2,
 			"attendance_status": "Absent",
 			"reliever_employee": self.reliever,
+			"requires_reliever": 1,
 			"scheduled_time": "09:00:00"
 		})
 		self.assertRaises(frappe.ValidationError, doc.save)
@@ -298,6 +301,7 @@ class TestTransportationManifest(FrappeTestCase):
 			"employee": self.employee2,
 			"attendance_status": "Absent",
 			"reliever_employee": self.employee1,  # employee1 is passenger in same manifest
+			"requires_reliever": 1,
 			"scheduled_time": "09:00:00"
 		})
 		self.assertRaises(frappe.ValidationError, doc2.save)
