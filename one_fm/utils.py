@@ -1758,7 +1758,7 @@ def validate_iban_is_filled(doc, method):
     if not doc.iban and doc.workflow_state == 'Active Account':
         frappe.throw(_("Please Set IBAN before you Mark Open the Bank Account"))
 
-# Assigns Draft Bank Accounts; its ToDo is closed here, not by the rule (see below).
+# Assigns Draft Bank Accounts; its ToDo is cancelled here, not by the rule (see below).
 BANK_ACCOUNT_DRAFT_RULE = "Action Draft - HR User"
 
 
@@ -1771,10 +1771,11 @@ def bank_account_on_update(doc, method):
 
 
 def close_bank_account_draft_todos(doc):
-    """Close the draft rule's own ToDo once the account leaves Draft.
+    """Cancel the draft rule's own ToDo once the account leaves Draft.
 
     The rule's unassign/close conditions would cancel every ToDo on the account,
-    including the Payroll Officer's added on Open Request.
+    including the Payroll Officer's added on Open Request. Cancelled, not Closed:
+    assignment_rule.apply reopens Closed ToDos when no close_condition matches.
     """
     for todo in frappe.get_all(
         "ToDo",
@@ -1788,7 +1789,7 @@ def close_bank_account_draft_todos(doc):
     ):
         assign_to.set_status(
             doc.doctype, doc.name, todo=todo.name, assign_to=todo.allocated_to,
-            status="Closed", ignore_permissions=True,
+            status="Cancelled", ignore_permissions=True,
         )
 
 

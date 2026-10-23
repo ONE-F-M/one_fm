@@ -11,7 +11,7 @@ from one_fm.utils import create_process_task
 #  - its `!= "Draft"` check was a close_condition. Both close_condition and
 #    unassign_condition cancel or close every ToDo on the document, which would shut the
 #    Payroll Officer ToDo added on Open Request. Both are empty; the rule's own ToDo is
-#    closed by one_fm.utils.close_bank_account_draft_todos.
+#    cancelled by one_fm.utils.close_bank_account_draft_todos.
 RULE_NAME = "Action Draft - HR User"
 RULE_JSON = "action_draft_hr_user.json"
 PROCESS = "Others"
