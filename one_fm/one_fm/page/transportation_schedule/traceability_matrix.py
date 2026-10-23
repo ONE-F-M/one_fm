@@ -240,17 +240,28 @@ def _placements(plan) -> dict:
 
 
 def _employees(extra_ids) -> dict:
-	fields = ["name", "employee_name", "designation", "shift", "status"]
-	# Not every site carries a project column on Employee; the shift's project covers it.
-	if frappe.db.has_column("Employee", "project"):
-		fields.append("project")
+	fields = ["name", "employee_name", "designation", "status"]
+	# Employee.shift and Employee.project are custom columns; a site that has not
+	# migrated yet lacks them, and the matrix must still load there (shift then falls
+	# back to the HRMS default_shift, project to the roster shift's project).
+	for column in ("shift", "project"):
+		if frappe.db.has_column("Employee", column):
+			fields.append(column)
+	if "shift" not in fields and frappe.db.has_column("Employee", "default_shift"):
+		fields.append("default_shift")
+
+	def _tidy(e):
+		e["shift"] = e.get("shift") or e.get("default_shift")
+		return e
+
 	employees = {
-		e.name: e for e in frappe.get_all("Employee", filters={"status": "Active"}, fields=fields)
+		e.name: _tidy(e)
+		for e in frappe.get_all("Employee", filters={"status": "Active"}, fields=fields)
 	}
 	missing = [i for i in extra_ids if i not in employees]
 	if missing:
 		for e in frappe.get_all("Employee", filters={"name": ["in", missing]}, fields=fields):
-			employees[e.name] = e
+			employees[e.name] = _tidy(e)
 	return employees
 
 
