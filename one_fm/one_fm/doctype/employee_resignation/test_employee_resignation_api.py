@@ -22,10 +22,13 @@ class TestEmployeeResignation(FrappeTestCase):
             })
             doc.flags.ignore_mandatory = True
             doc.insert()
+        self.user = _make_user("test-resignation-99@example.com", "Test Resignation")
+        frappe.get_doc("User", self.user).add_roles("Employee")
+        frappe.db.set_value("Employee", "HR-EMP-TEST-99", "user_id", self.user)
 
     def test_create_resignation_invalid_attachment(self):
         # Testing invalid base64 attachment parsing
-        with self.assertRaises(frappe.ValidationError):
+        with self.set_user(self.user), self.assertRaises(frappe.ValidationError):
             create_resignation(
                 employee_id="HR-EMP-TEST-99",
                 resignation_initiation_date="2026-04-27",
