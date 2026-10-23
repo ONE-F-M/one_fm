@@ -240,7 +240,10 @@ def _placements(plan) -> dict:
 
 
 def _employees(extra_ids) -> dict:
-	fields = ["name", "employee_name", "designation", "project", "shift", "status"]
+	fields = ["name", "employee_name", "designation", "shift", "status"]
+	# Not every site carries a project column on Employee; the shift's project covers it.
+	if frappe.db.has_column("Employee", "project"):
+		fields.append("project")
 	employees = {
 		e.name: e for e in frappe.get_all("Employee", filters={"status": "Active"}, fields=fields)
 	}
@@ -306,7 +309,7 @@ def _build_rows(on_date, plan=None) -> list:
 			for s in frappe.get_all(
 				"Operations Shift",
 				filters={"name": ["in", list(shift_names)]},
-				fields=["name", "start_time", "end_time"],
+				fields=["name", "start_time", "end_time", "project"],
 			)
 		}
 
@@ -351,7 +354,9 @@ def _build_rows(on_date, plan=None) -> list:
 			"id": emp_id,
 			"name": emp.employee_name or emp_id,
 			"designation": emp.designation,
-			"project": emp.project,
+			"project": emp.get("project")
+			or (times.project if times else None)
+			or (shift_times.get(emp.shift).project if shift_times.get(emp.shift) else None),
 			"master_shift": emp.shift,
 			"roster_shift": roster_shift,
 			"roster_start": _time_text(times.start_time) if times else None,
