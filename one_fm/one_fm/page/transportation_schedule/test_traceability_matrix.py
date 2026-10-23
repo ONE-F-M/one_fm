@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-003536 P1: the Employee Traceability Matrix server half.
+"""Employee Traceability Matrix server half.
 
 Run with ``--skip-before-tests``. classify() and can_be_permanent() are pure, so most of
 this needs no records at all.
@@ -138,9 +138,16 @@ class TestCanBePermanent(FrappeTestCase):
 	def test_false_for_over_time_only(self):
 		self.assertFalse(can_be_permanent([self._row(roster_type="Over-Time")], "SHIFT-A"))
 
-	def test_false_with_more_than_one_working_row(self):
-		rows = [self._row(), self._row(roster_type="Over-Time")]
+	def test_extra_over_time_row_keeps_basic_eligibility(self):
+		rows = [self._row(), self._row("SHIFT-B", roster_type="Over-Time")]
+		self.assertTrue(can_be_permanent(rows, "SHIFT-A"))
+
+	def test_over_time_row_on_master_shift_does_not_grant_eligibility(self):
+		rows = [self._row("SHIFT-B"), self._row(roster_type="Over-Time")]
 		self.assertFalse(can_be_permanent(rows, "SHIFT-A"))
+
+	def test_false_with_two_basic_working_rows(self):
+		self.assertFalse(can_be_permanent([self._row(), self._row("SHIFT-B")], "SHIFT-A"))
 
 	def test_false_with_no_working_row_or_no_master_shift(self):
 		self.assertFalse(can_be_permanent([self._row(availability="Day Off")], "SHIFT-A"))

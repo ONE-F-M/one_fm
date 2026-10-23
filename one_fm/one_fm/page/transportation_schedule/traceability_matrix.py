@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
-"""Employee Traceability Matrix (WI-003536, P1 - read only).
+"""Employee Traceability Matrix (read only).
 
 One row per active employee, plus anyone non-active who is still sitting on a live
 shipment card (that is the whole point of the STALE state), saying where that person is
@@ -100,15 +100,18 @@ def _result(status, badge_text, subtext) -> dict:
 def can_be_permanent(schedule_rows, master_shift) -> bool:
 	"""Whether a permanent (indefinite) allocation is allowed for this employee today.
 
-	True only when exactly one Working row exists, it is not a relieving row, it is not
-	Over-Time, and its shift is the employee's own master shift. Anything else is a
-	temporary arrangement that must stay single-day.
+	Compares the one Working non-Over-Time row with the master shift; an extra Over-Time
+	row neither grants nor removes eligibility. Relieving rows are always single-day.
 	"""
-	working = [r for r in (schedule_rows or []) if r.get("employee_availability") == "Working"]
+	working = [
+		r
+		for r in (schedule_rows or [])
+		if r.get("employee_availability") == "Working" and r.get("roster_type") != "Over-Time"
+	]
 	if len(working) != 1:
 		return False
 	row = working[0]
-	if row.get("is_relieving_schedule") or row.get("roster_type") == "Over-Time":
+	if row.get("is_relieving_schedule"):
 		return False
 	return bool(master_shift) and row.get("shift") == master_shift
 
@@ -132,7 +135,7 @@ def _roster_row(schedule_rows):
 
 
 @frappe.whitelist()
-def get_traceability_matrix(date=None, plan=None) -> dict:
+def get_traceability_matrix(date: str | None = None, plan: str | None = None) -> dict:
 	"""One row per active employee (and per non-active one still on a live card).
 
 	Returns ``{"rows": [...], "synced_at": "..."}``; an unexpected failure comes back as
