@@ -65,6 +65,17 @@ READ_ONLY_FIELDS = (
 )
 
 
+# WI-003689: the Display Depends On rules the BA site put on the four rejection-remark
+# fields. Copied verbatim - the space after "eval:" and around "==" included - so the
+# comparison below is an exact string match.
+BA_DEPENDS_ON = {
+	"operator_rejection_remark": 'eval: doc.workflow_state == "Rejected By Operator" || doc.workflow_state == "Pending by GRD Operator"',
+	"grd_manager_remark": 'eval: doc.workflow_state == "Pending by GRD Operator" || doc.workflow_state == "Pending GRD Manager Approval"',
+	"pam_rejection_remark": 'eval: doc.workflow_state == "Rejected By PAM"',
+	"moi_rejection_remark": 'eval: doc.workflow_state == "Rejected By MOI"',
+}
+
+
 def _states():
 	return {state.state for state in frappe.get_doc("Workflow", "Visa Request").states}
 
@@ -171,6 +182,29 @@ class TestVisaRequestVisibility(FrappeTestCase):
 		self.assertEqual(field.options, "User")
 		self.assertEqual(field.label, "GRD Operator")
 		self.assertFalse(field.hidden)
+
+	# ── WI-003689: rejection-remark display rules ──────────────────────────────────
+
+	def test_the_rejection_remark_rules_match_the_ba_site_exactly(self):
+		for fieldname, expected in BA_DEPENDS_ON.items():
+			with self.subTest(fieldname=fieldname):
+				self.assertEqual(self.meta.get_field(fieldname).depends_on, expected)
+
+	def test_every_state_a_rejection_remark_rule_names_exists(self):
+		states = _states()
+		for fieldname in BA_DEPENDS_ON:
+			with self.subTest(fieldname=fieldname):
+				named = _named_states(self.meta.get_field(fieldname).depends_on)
+				self.assertTrue(named, f"{fieldname} names no state")
+				self.assertEqual(named - states, set(), f"{fieldname} names states the workflow lacks")
+
+	def test_the_earlier_gates_are_untouched_by_the_remark_rules(self):
+		for fieldname in GATED_FIELDS:
+			with self.subTest(fieldname=fieldname):
+				self.assertTrue(self.meta.get_field(fieldname).depends_on, fieldname)
+
+	def test_the_free_text_pam_rejection_remarks_is_kept(self):
+		self.assertIsNotNone(self.meta.get_field("pam_rejection_remarks"))
 
 	def test_the_remark_fields_match_the_ba_site(self):
 		# WI-002106 made the operator's rejection reason writable, on purpose: the reason is

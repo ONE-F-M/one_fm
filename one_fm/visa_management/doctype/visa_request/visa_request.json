@@ -497,12 +497,14 @@
    "label": "Rejection Remarks"
   },
   {
+   "depends_on": "eval: doc.workflow_state == \"Pending by GRD Operator\" || doc.workflow_state == \"Pending GRD Manager Approval\"",
    "fieldname": "grd_manager_remark",
    "fieldtype": "Small Text",
    "label": "GRD Manager Remark",
    "read_only": 1
   },
   {
+   "depends_on": "eval: doc.workflow_state == \"Rejected By PAM\"",
    "fieldname": "pam_rejection_remark",
    "fieldtype": "Select",
    "label": "PAM Rejection Reason",
@@ -514,6 +516,7 @@
    "label": "PAM Rejection Remarks"
   },
   {
+   "depends_on": "eval: doc.workflow_state == \"Rejected By MOI\"",
    "fieldname": "moi_rejection_remark",
    "fieldtype": "Select",
    "label": "MOI Rejection Remark",
@@ -521,6 +524,7 @@
    "read_only": 1
   },
   {
+   "depends_on": "eval: doc.workflow_state == \"Rejected By Operator\" || doc.workflow_state == \"Pending by GRD Operator\"",
    "fieldname": "operator_rejection_remark",
    "fieldtype": "Small Text",
    "label": "Operator Rejection Remark"
@@ -614,7 +618,7 @@
    "link_fieldname": "visa_request_id"
   }
  ],
- "modified": "2026-10-06 09:00:00.000000",
+ "modified": "2026-10-07 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Visa Management",
  "name": "Visa Request",
