@@ -4753,6 +4753,13 @@ function mountRoutePlannerApp(wrapper, data) {
                 return flag === 'RETURN' ? __('Return') : __('Outward');
             },
 
+            // Templates cannot reach "_" methods: the runtime proxy hides them.
+            matrixLegDirection(leg) {
+                if (!leg.own_direction) return leg.direction || __('Leg');
+                const label = this._matrixDirLabel(leg.own_direction);
+                return leg.direction === 'Mixed' ? `${label} (${__('Mixed trip')})` : label;
+            },
+
             // Directions the employee has no card in yet.
             _matrixOpenDirs(row) {
                 const held = new Set((row.legs || []).map(l => l.own_direction || this._matrixDir(l.direction)));
@@ -6333,7 +6340,7 @@ function injectRPVueTemplate() {
               <div v-if="row.subtext" class="rp-matrix-sub">{{ row.subtext }}</div>
               <template v-if="row.legs && row.legs.length > 1">
                 <div v-for="leg in row.legs" :key="leg.card" class="rp-matrix-sub">
-                  {{ leg.own_direction ? _matrixDirLabel(leg.own_direction) + (leg.direction === 'Mixed' ? ' (' + __('Mixed trip') + ')' : '') : (leg.direction || __('Leg')) }}: {{ leg.vehicle ? leg.vehicle + (leg.trip ? ' · ' + __('Trip') + ' ' + leg.trip : '') : __('Unassigned Pool') }} · {{ leg.card }}
+                  {{ matrixLegDirection(leg) }}: {{ leg.vehicle ? leg.vehicle + (leg.trip ? ' · ' + __('Trip') + ' ' + leg.trip : '') : __('Unassigned Pool') }} · {{ leg.card }}
                 </div>
               </template>
               <div v-if="matrixCanAdd(row)" class="rp-matrix-actions">
