@@ -1055,6 +1055,9 @@ def _rider_values(row) -> dict:
 		"accommodation": row.get("accommodation"),
 		"stop_location": row.get("stop_location"),
 		"operation_site": row.get("operation_site"),
+		# A hand-added rider keeps their pin on the overflow card.
+		"assignment_scope": row.get("assignment_scope"),
+		"assigned_on": row.get("assigned_on"),
 	}
 
 
