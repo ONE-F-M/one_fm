@@ -69,31 +69,52 @@ class TestVisaRequestExportZip(FrappeTestCase):
 		frappe.set_user("Administrator")
 		_clear()
 
-	def test_each_request_gets_a_folder_with_its_attach_and_sidebar_files(self):
+	def test_each_request_gets_a_folder_with_its_visa_document(self):
 		first, second = _seed("1"), _seed("2")
-		_attach(first, "passport-one.txt", b"passport bytes one", "passport_copy")
-		_attach(first, "note-one.txt", b"sidebar bytes one")
-		_attach(second, "passport-two.txt", b"passport bytes two", "passport_copy")
-		_attach(second, "note-two.txt", b"sidebar bytes two")
+		_attach(first, "visa-one.txt", b"visa bytes one", "visa_document")
+		_attach(second, "visa-two.txt", b"visa bytes two", "visa_document")
 
 		archive, response = _export([first, second])
 
 		self.assertEqual(response["type"], "download")
 		self.assertEqual(response["filename"], "Visa Requests.zip")
 
-		names = archive.namelist()
-		for vr in (first, second):
-			self.assertTrue(any(n.startswith(vr + "/") for n in names), f"no folder for {vr}")
+		label = frappe.get_meta("Visa Request").get_label("visa_document")
+		self.assertEqual(archive.read(f"{first}/{label} - visa-one.txt"), b"visa bytes one")
+		self.assertEqual(archive.read(f"{second}/{label} - visa-two.txt"), b"visa bytes two")
+		self.assertEqual(len(archive.namelist()), 2)
 
-		label = frappe.get_meta("Visa Request").get_label("passport_copy")
-		self.assertEqual(archive.read(f"{first}/{label} - passport-one.txt"), b"passport bytes one")
-		self.assertEqual(archive.read(f"{first}/note-one.txt"), b"sidebar bytes one")
-		self.assertEqual(archive.read(f"{second}/{label} - passport-two.txt"), b"passport bytes two")
-		self.assertEqual(archive.read(f"{second}/note-two.txt"), b"sidebar bytes two")
+	def test_only_the_visa_document_is_exported(self):
+		vr = _seed("1")
+		_attach(vr, "passport.txt", b"passport bytes", "passport_copy")
+		_attach(vr, "receipt.txt", b"receipt bytes", "payment_receipt")
+		_attach(vr, "note.txt", b"sidebar bytes")
+		_attach(vr, "visa.txt", b"visa bytes", "visa_document")
+
+		archive, _response = _export([vr])
+
+		label = frappe.get_meta("Visa Request").get_label("visa_document")
+		self.assertEqual(archive.namelist(), [f"{vr}/{label} - visa.txt"])
+		self.assertEqual(archive.read(f"{vr}/{label} - visa.txt"), b"visa bytes")
+
+	def test_a_request_without_a_visa_document_is_named_in_missing_files(self):
+		with_doc, without_doc = _seed("1"), _seed("2")
+		_attach(with_doc, "visa.txt", b"visa bytes", "visa_document")
+		_attach(without_doc, "passport.txt", b"passport bytes", "passport_copy")
+
+		archive, _response = _export([with_doc, without_doc])
+
+		label = frappe.get_meta("Visa Request").get_label("visa_document")
+		names = archive.namelist()
+		self.assertIn(f"{with_doc}/{label} - visa.txt", names)
+		self.assertFalse(any(n.startswith(without_doc + "/") for n in names))
+		self.assertIn(
+			f"{without_doc}: no Visa Document attached".encode(), archive.read("MISSING FILES.txt")
+		)
 
 	def test_the_archive_is_stored_not_compressed(self):
 		vr = _seed("1")
-		_attach(vr, "passport.txt", b"x" * 1000, "passport_copy")
+		_attach(vr, "visa.txt", b"x" * 1000, "visa_document")
 
 		archive, _response = _export([vr])
 
@@ -102,20 +123,20 @@ class TestVisaRequestExportZip(FrappeTestCase):
 
 	def test_a_replaced_attachment_is_left_out(self):
 		vr = _seed("1")
-		_attach(vr, "old-passport.txt", b"old bytes", "passport_copy")
-		_attach(vr, "new-passport.txt", b"new bytes", "passport_copy")
+		_attach(vr, "old-visa.txt", b"old bytes", "visa_document")
+		_attach(vr, "new-visa.txt", b"new bytes", "visa_document")
 
 		archive, _response = _export([vr])
 
-		label = frappe.get_meta("Visa Request").get_label("passport_copy")
+		label = frappe.get_meta("Visa Request").get_label("visa_document")
 		names = archive.namelist()
-		self.assertIn(f"{vr}/{label} - new-passport.txt", names)
-		self.assertNotIn(f"{vr}/{label} - old-passport.txt", names)
-		self.assertFalse(any("old-passport" in n for n in names))
+		self.assertIn(f"{vr}/{label} - new-visa.txt", names)
+		self.assertNotIn(f"{vr}/{label} - old-visa.txt", names)
+		self.assertFalse(any("old-visa" in n for n in names))
 
 	def test_a_user_who_cannot_read_a_request_gets_permission_error(self):
 		vr = _seed("1")
-		_attach(vr, "passport.txt", b"secret", "passport_copy")
+		_attach(vr, "visa.txt", b"secret", "visa_document")
 
 		if not frappe.db.exists("User", NO_ACCESS_USER):
 			frappe.get_doc(
@@ -137,20 +158,22 @@ class TestVisaRequestExportZip(FrappeTestCase):
 
 	def test_nothing_readable_is_refused_instead_of_an_empty_zip(self):
 		vr = _seed("1")
-		os.remove(_attach(vr, "passport.txt", b"gone", "passport_copy").get_full_path())
+		os.remove(_attach(vr, "visa.txt", b"gone", "visa_document").get_full_path())
 
 		with self.assertRaises(frappe.ValidationError):
 			export_zip(json.dumps([vr]))
 
 	def test_a_partial_archive_lists_what_is_missing(self):
 		vr = _seed("1")
-		os.remove(_attach(vr, "passport.txt", b"gone", "passport_copy").get_full_path())
-		_attach(vr, "note.txt", b"still here")
+		good = _seed("2")
+		os.remove(_attach(vr, "visa.txt", b"gone", "visa_document").get_full_path())
+		_attach(good, "visa-good.txt", b"still here", "visa_document")
 
-		archive, _response = _export([vr])
+		archive, _response = _export([vr, good])
 
-		self.assertEqual(archive.read(f"{vr}/note.txt"), b"still here")
-		self.assertIn(b"passport.txt", archive.read("MISSING FILES.txt"))
+		label = frappe.get_meta("Visa Request").get_label("visa_document")
+		self.assertEqual(archive.read(f"{good}/{label} - visa-good.txt"), b"still here")
+		self.assertIn(b"visa.txt", archive.read("MISSING FILES.txt"))
 
 	def test_more_than_the_cap_is_refused(self):
 		names = [f"{SEEDED}{n}" for n in range(EXPORT_MAX_REQUESTS + 1)]
