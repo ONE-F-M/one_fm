@@ -330,6 +330,27 @@ class TestAddEmployeeToShipment(FrappeTestCase):
 		add_employee_to_shipment(back, self.employee, "Today Only")
 		self.assertEqual(len(self._rows(back)), 1)
 
+	def _merge(self, card, own):
+		frappe.db.set_value(
+			"Transportation Shipment", card, {"trip_direction": "Mixed", "pre_merge_trip_direction": own}
+		)
+
+	def test_merged_cards_keep_their_own_direction_in_the_matrix(self):
+		outward, back = self._card(), self._card(direction="Return")
+		add_employee_to_shipment(outward, self.employee, "Today Only")
+		add_employee_to_shipment(back, self.employee, "Today Only")
+		self._merge(outward, "Outward")
+		self._merge(back, "Return")
+
+		row = next(r for r in get_traceability_matrix()["rows"] if r["id"] == self.employee)
+		legs = {leg["card"]: leg for leg in row["legs"]}
+		self.assertEqual(legs[f"TSHIP-{outward}"]["own_direction"], "OUTBOUND")
+		self.assertEqual(legs[f"TSHIP-{back}"]["own_direction"], "RETURN")
+		self.assertEqual(legs[f"TSHIP-{back}"]["direction"], "Mixed")
+
+		with self.assertRaises(frappe.ValidationError):
+			add_employee_to_shipment(self._card(direction="Return"), self.employee, "Today Only")
+
 	def test_a_driver_is_refused(self):
 		card = self._card()
 		with patch(

@@ -4755,7 +4755,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
             // Directions the employee has no card in yet.
             _matrixOpenDirs(row) {
-                const held = new Set((row.legs || []).map(l => this._matrixDir(l.direction)));
+                const held = new Set((row.legs || []).map(l => l.own_direction || this._matrixDir(l.direction)));
                 return ['OUTBOUND', 'RETURN'].filter(d => !held.has(d));
             },
 
@@ -6333,7 +6333,7 @@ function injectRPVueTemplate() {
               <div v-if="row.subtext" class="rp-matrix-sub">{{ row.subtext }}</div>
               <template v-if="row.legs && row.legs.length > 1">
                 <div v-for="leg in row.legs" :key="leg.card" class="rp-matrix-sub">
-                  {{ leg.direction || __('Leg') }}: {{ leg.vehicle ? leg.vehicle + (leg.trip ? ' · ' + __('Trip') + ' ' + leg.trip : '') : __('Unassigned Pool') }} · {{ leg.card }}
+                  {{ leg.own_direction ? _matrixDirLabel(leg.own_direction) + (leg.direction === 'Mixed' ? ' (' + __('Mixed trip') + ')' : '') : (leg.direction || __('Leg')) }}: {{ leg.vehicle ? leg.vehicle + (leg.trip ? ' · ' + __('Trip') + ' ' + leg.trip : '') : __('Unassigned Pool') }} · {{ leg.card }}
                 </div>
               </template>
               <div v-if="matrixCanAdd(row)" class="rp-matrix-actions">

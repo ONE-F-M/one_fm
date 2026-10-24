@@ -12,7 +12,7 @@ Everything is read in bulk - one query per doctype, never one per employee.
 import frappe
 from frappe import _
 
-from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import time_is_blank
+from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import own_direction, time_is_blank
 
 MATRIX_ROLES = ("Transportation Supervisor", "Transportation Manager", "System Manager")
 
@@ -159,7 +159,7 @@ def get_traceability_matrix(date: str | None = None, plan: str | None = None) ->
 
 
 def _live_cards() -> tuple:
-	"""``({card: status}, {employee: [card, ...]}, {card: trip_direction})`` for the cards the board still shows."""
+	"""``({card: status}, {employee: [card, ...]}, {card: card})`` for the cards the board still shows."""
 	from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
 		_inactive_shifts,
 		_serves_only_inactive_shifts,
@@ -170,7 +170,7 @@ def _live_cards() -> tuple:
 		filters={"status": ["in", ["Unassigned", "Assigned"]]},
 		# aggregated_shifts arrives with a migrate; a site that has not run it yet must
 		# still get a matrix, so the column is only asked for when it exists.
-		fields=["name", "status", "operations_shift", "trip_direction"]
+		fields=["name", "status", "operations_shift", "trip_direction", "pre_merge_trip_direction"]
 		+ (["aggregated_shifts"] if frappe.db.has_column("Transportation Shipment", "aggregated_shifts") else []),
 	)
 	inactive = _inactive_shifts(shipments)
@@ -191,7 +191,7 @@ def _live_cards() -> tuple:
 			cards_of.setdefault(rider.employee_id, [])
 			if rider.parent not in cards_of[rider.employee_id]:
 				cards_of[rider.employee_id].append(rider.parent)
-	return status_of, cards_of, {s.name: s.trip_direction for s in shipments}
+	return status_of, cards_of, {s.name: s for s in shipments}
 
 
 def _placements(plan) -> dict:
@@ -400,7 +400,10 @@ def _build_rows(on_date, plan=None) -> list:
 					"card_status": card_status.get(c),
 					"vehicle": (placements.get(c) or {}).get("vehicle_label"),
 					"trip": (placements.get(c) or {}).get("trip_id"),
-					"direction": card_direction.get(c) or (placements.get(c) or {}).get("direction"),
+					"direction": (card_direction.get(c) or {}).get("trip_direction")
+					or (placements.get(c) or {}).get("direction"),
+					# A merged card reads Mixed; its riders still travel one way.
+					"own_direction": own_direction(card_direction[c]) if c in card_direction else None,
 				}
 				for c in own_cards
 			],
@@ -453,8 +456,6 @@ def _assignment_context(employee: str, scope: str, date: str | None):
 
 def _refuse_duplicate(employee: str, direction: str) -> None:
 	"""Throw when the employee already rides a live card in this direction (Outward/Return or OUTBOUND/RETURN)."""
-	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import own_direction
-
 	wanted = own_direction(frappe._dict(trip_direction=direction))
 	parents = frappe.get_all(
 		"Transportation Shipment Employee",
@@ -526,10 +527,7 @@ def add_employee_to_shipment(
 	bus has no seat, unless ``override`` is set.
 	"""
 	from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import _SeatCheck
-	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
-		own_direction,
-		resolve_shipment_names,
-	)
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import resolve_shipment_names
 
 	frappe.only_for(MATRIX_ROLES)
 	name = (resolve_shipment_names([shipment]) or [None])[0]
