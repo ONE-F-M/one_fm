@@ -217,6 +217,19 @@ class TestClientInterviewAttendancePermission(FrappeTestCase):
 		self._assert_denied(self.stranger)
 		self._assert_denied(self.stranger, permtype="submit")
 
+	def test_zzz_diag(self):
+		out = {}
+		for label, user in (("sup", self.supervisor), ("str", self.stranger), ("hr", self.hr_manager)):
+			out[label] = [
+				sorted(frappe.get_roles(user)),
+				frappe.permissions.has_permission("Attendance", "create", user=user),
+				frappe.permissions.has_permission("Attendance", "submit", user=user),
+			]
+		out["shortlists"] = [
+			frappe.db.get_value(SHORTLIST, n, ["docstatus", "owner"]) for n in (self.submitted, self.draft)
+		]
+		self.fail(repr(out))
+
 	def test_normal_permissions_are_unaffected(self):
 		# HR Manager keeps normal create rights on a plain Attendance.
 		self.set_user(self.hr_manager)
