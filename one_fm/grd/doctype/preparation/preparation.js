@@ -182,6 +182,7 @@ frappe.ui.form.on("Preparation", {
 	refresh : frm=>{
 		set_action_options(frm);
 		set_pcc_connection_visibility(frm);
+		show_missing_documents(frm);
 
 		if(frm.doc.docstatus==1){
 			if(!frappe.user.has_role("HR Manager")){
@@ -211,6 +212,62 @@ frappe.ui.form.on("Preparation", {
 		})
 	},
 });
+
+
+// HD-1898774: a submitted batch whose documents were never opened looks exactly like a
+// complete one - the only sign is a blank Current Stage on the rows that missed out.
+// PRE-ONB-2026-00008 lost its last three rows when the submit request was killed at the
+// web server's 120-second timeout, and nobody saw it for a day. The indicator says how
+// many rows are short and the button opens only what is missing, so it is safe to press
+// twice.
+function show_missing_documents(frm) {
+	if (frm.doc.docstatus !== 1) {
+		return;
+	}
+
+	frappe.call({
+		method: "one_fm.grd.doctype.preparation.preparation.get_missing_document_summary",
+		args: { preparation: frm.doc.name },
+		callback: function (r) {
+			if (!r.message || !r.message.count) {
+				return;
+			}
+
+			frm.dashboard.add_indicator(
+				__("{0} row(s) missing documents", [r.message.count]), "red");
+
+			frm.add_custom_button(__("Create Missing Documents"), function () {
+				frappe.confirm(
+					__("Open the missing documents for {0} row(s)? Rows that already have theirs are left alone.",
+						[r.message.count]),
+					function () {
+						frappe.call({
+							method: "one_fm.grd.doctype.preparation.preparation.create_missing_documents_now",
+							args: { preparation: frm.doc.name },
+							freeze: true,
+							freeze_message: __("Queueing document creation..."),
+							callback: function (response) {
+								if (response.message && response.message.queued) {
+									frappe.msgprint({
+										title: __("Queued"),
+										indicator: "blue",
+										message: __("Documents for {0} row(s) are being created in the background. Reload in a few minutes to see them.",
+											[response.message.count])
+									});
+								} else {
+									frappe.show_alert({
+										message: __("Nothing missing - every row already has its documents."),
+										indicator: "green"
+									});
+								}
+							}
+						});
+					}
+				);
+			});
+		}
+	});
+}
 
 
 function fetch_employee_dates_batch(frm){

@@ -696,6 +696,8 @@ scheduler_events = {
 		'one_fm.grd.lg_expiry.notify_lg_expiry',
 		# WI-002431: raise a cancellation for every visa that has reached its expiry.
 		'one_fm.visa_management.doctype.visa_cancellation_request.visa_cancellation_request.cancel_expired_visas',
+		# HD-1898774: name any submitted Preparation whose rows never got their documents.
+		'one_fm.grd.doctype.preparation.preparation.notify_preparations_with_missing_documents',
 		'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.generate_transportation_shipments',
 		'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.deactivate_expired_shipments',
 		'one_fm.one_fm.doctype.transportation_manifest.manifest_compiler.compile_daily_manifests'

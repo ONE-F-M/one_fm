@@ -13,6 +13,7 @@ from frappe.query_builder import DocType
 from frappe.utils import cint, cstr, escape_html, flt, strip_html
 from frappe.utils import (
     today,
+    add_days,
     add_months,
     get_url,
     nowdate,
@@ -31,7 +32,55 @@ from one_fm.grd.doctype.medical_appointment import medical_appointment
 from one_fm.grd.doctype.pcc_attestation import pcc_attestation
 from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.processor import sendemail
-from one_fm.grd.utils import get_pcc_attestation_fees
+from one_fm.grd.utils import get_nationality_attestation_rule, get_pcc_attestation_fees
+
+# The documents a Preparation row can owe, in the order they have to be opened: Medical
+# Insurance reads its type, application date and passport expiry off the Work Permit, so
+# the permit exists before it does. The keys are NEW_ACTION_DOCUMENTS' own keys - one
+# vocabulary for the plan, the resume and the daily check.
+STEP_ORDER = (
+    "work_permit",
+    "medical_insurance",
+    "residency",
+    "paci",
+    "medical_appointment",
+    "pcc_attestation",
+)
+
+STEP_DOCTYPES = {
+    "work_permit": "Work Permit",
+    "medical_insurance": "Medical Insurance",
+    "residency": "Residency",
+    "paci": "PACI",
+    "medical_appointment": "Medical Appointment",
+    "pcc_attestation": "PCC Attestation",
+}
+
+# The Actions the renewal creators act on, named because expected_steps_for_row has to
+# mirror the conditions those creators apply.
+RENEWAL_EXPAT = "Renewal Expat"
+RENEWAL_KUWAITI = "Renewal (Kuwaiti)"
+RENEWAL_ACTIONS = (RENEWAL_EXPAT, RENEWAL_KUWAITI)
+KUWAITI = "Kuwaiti"
+
+# Residency's own dispatcher owns the Actions not in here ("anything that is not handled
+# on submit is an extension"), so the expectation has to read the same tuple rather than
+# a copy of it that can drift.
+ACTIONS_HANDLED_ON_SUBMIT = residency.ACTIONS_HANDLED_ON_SUBMIT
+
+# How many rows a Preparation can carry and still have its documents opened inside the
+# submit request. A row takes about four seconds, so ten is around forty seconds - well
+# inside the web server's 120-second timeout, which is what killed PRE-ONB-2026-00008's
+# 27-row submit (HD-1898774). Anything larger is queued.
+INLINE_ROW_LIMIT = 10
+
+# A batch of 90 rows opens close to 540 documents at roughly four seconds a row, so the
+# job is given half an hour rather than the long queue's default.
+CREATION_JOB_TIMEOUT = 1800
+
+# How far back the daily check looks. Long enough to catch a batch submitted before a
+# weekend, short enough that it is not re-reading last quarter's every night.
+GAP_CHECK_WINDOW_DAYS = 30
 
 # WI-001824: which documents each of the new Actions generates on submit. An Action
 # absent from here keeps its existing behaviour, which the renewal and extend paths
@@ -571,21 +620,55 @@ class Preparation(Document):
         validate_preparation_table(self)
         self.db_set('submitted_by', frappe.session.user)
         self.db_set('submitted_on', now_datetime())
-        # Each creator reports the rows it could not open a document for instead of only
-        # writing an Error Log the operator never sees. A row is still allowed to fail
-        # without taking the batch down - the whole point of the per-row try - but the
-        # submit no longer looks clean when it was not.
-        failures = []
-        failures += self.recall_create_work_permit_renewal() ## create work permit record for renewals
-        failures += self.recall_create_medical_insurance_renewal() # create medical insurance record for renewals
-        failures += self.recall_create_moi_renewal_and_extend() # create moi record for all employee
-        failures += self.recall_create_paci() # create paci record for all
-        # self.recall_create_fp()# create fp record for all
-        failures += self.recall_create_documents_for_new_actions() # WI-001824: New Kuwaiti / Overseas
-        for row in self.preparation_record:
-            refresh_row_stage(self.name, row.employee)
-        report_document_creation_failures(failures)
+        # The documents the rows owe are opened by a background job, not here: see
+        # enqueue_document_creation. A row is still allowed to fail without taking the
+        # batch down - the whole point of the per-row try - but a submit that came up
+        # short no longer looks clean, because the job tells whoever submitted it.
+        self.enqueue_document_creation()
         self.send_notifications()
+
+    def enqueue_document_creation(self):
+        """Open the documents this batch's rows owe, in the background when it is a batch.
+
+        HD-1898774: PRE-ONB-2026-00008 submitted 27 Overseas rows, each opening six
+        documents at about four seconds a row, and the web server killed the request at
+        120 seconds part-way through row 24. The rows already done had each committed, so
+        the batch survived three rows short with no Error Log and no message - the submit
+        read as clean, and the gap only surfaced when an operator noticed three blank
+        Current Stage cells and raised a ticket.
+
+        A small batch is still opened inside the submit: ten rows is well inside the
+        request timeout, and the operator gets the result - the documents on the form, the
+        failures in a dialog - rather than having to come back to a notification for a
+        handful of rows. Past that the work is queued, where it has no timeout over it and
+        reports to whoever submitted.
+
+        Either way the work itself is the same resumable call, so a batch that is cut off
+        anyway can be finished with the button rather than by hand.
+        """
+        if len(self.preparation_record) <= INLINE_ROW_LIMIT:
+            create_missing_documents(self.name)
+            return
+
+        frappe.enqueue(
+            "one_fm.grd.doctype.preparation.preparation.create_missing_documents",
+            queue="long",
+            timeout=CREATION_JOB_TIMEOUT,
+            enqueue_after_commit=True,
+            job_id=f"create_missing_documents::{self.name}",
+            deduplicate=True,
+            now=bool(frappe.flags.in_test),
+            preparation_name=self.name,
+            notify_user=frappe.session.user,
+        )
+
+        frappe.msgprint(
+            _("The documents for {0} rows are being created in the background. They will appear on this Preparation within a few minutes.").format(
+                len(self.preparation_record)
+            ),
+            title=_("Creating Documents"),
+            indicator="blue",
+        )
 
     def recall_create_documents_for_new_actions(self):
         return create_documents_for_new_actions(self.name)
@@ -952,7 +1035,7 @@ def create_documents_for_new_actions(preparation_name):
     return failures
 
 
-def report_document_creation_failures(failures):
+def report_document_creation_failures(failures, preparation=None, notify_user=None):
     """Tell the submitting operator which rows did not get their documents.
 
     Every creator keeps a per-row `try` so one bad employee record cannot cost the whole
@@ -961,6 +1044,11 @@ def report_document_creation_failures(failures):
     69 Medical Insurances instead of 70 each, and the gap only surfaced when someone
     noticed the connection badges did not agree. The submit still succeeds - a partial
     batch is the intended behaviour - but it no longer looks complete when it is not.
+
+    Creation runs in a background job now (HD-1898774), where a msgprint reaches nobody:
+    given the Preparation and the user who submitted it, the same table is delivered as a
+    Notification Log instead. The msgprint is kept for the callers still running in a
+    request.
     """
     if not failures:
         return
@@ -993,7 +1081,15 @@ def report_document_creation_failures(failures):
         footer=_("The full traceback for each is in the Error Log."),
     )
 
-    frappe.msgprint(message, title=_("Documents Not Created"), indicator="red", wide=True)
+    title = _("Documents Not Created")
+
+    if notify_user and preparation is not None:
+        create_notification_log(
+            "{0}: {1}".format(preparation.name, title), message, [notify_user], preparation
+        )
+        return
+
+    frappe.msgprint(message, title=title, indicator="red", wide=True)
 
 
 def create_documents_for_row(row, preparation_name):
@@ -1002,38 +1098,364 @@ def create_documents_for_row(row, preparation_name):
     The Work Permit comes first because Medical Insurance is opened against it - it
     reads the type, the application date and the passport expiry off the permit rather
     than being told them.
+
+    Resumable (HD-1898774): a step whose document already exists against this
+    Preparation and employee is skipped, so calling this a second time fills the gaps a
+    first run left instead of opening a second set. PRE-ONB-2026-00008 submitted 27
+    Overseas rows, the submit request was killed by the web server's 120-second timeout
+    part-way through row 24, and the only way back was by hand - re-running anything
+    would have duplicated the 23 complete rows.
+
+    Raises on the first step that fails, which is the contract the per-row `try` in
+    create_missing_documents is written against: a row whose Work Permit could not be
+    opened has nothing for its Medical Insurance to be opened against either.
     """
-    plan = NEW_ACTION_DOCUMENTS[row.renewal_or_extend]
     employee_doc = frappe.get_doc('Employee', row.employee)
 
-    work_permit_doc = work_permit.create_wp_from_preparation(
-        employee_doc, plan["work_permit"], preparation_name
-    )
+    for step in missing_steps_for_row(row, preparation_name):
+        _create_step(step, row, preparation_name, employee_doc)
 
-    if "medical_insurance" in plan:
-        medical_insurance.create_mi_record(
-            work_permit_doc, insurance_status=plan["medical_insurance"]
+    return _work_permit_of_row(preparation_name, row.employee)
+
+
+def _create_step(step, row, preparation_name, employee_doc):
+    """Open the one document a step stands for.
+
+    The creator each step calls is the one that path has always used, and the arguments
+    are the ones its own dispatcher passed: an Action in NEW_ACTION_DOCUMENTS states its
+    classification in the plan, a renewal or an extension leaves the creator to derive it.
+    """
+    action = row.renewal_or_extend
+    plan = NEW_ACTION_DOCUMENTS.get(action, {})
+
+    if step == "work_permit":
+        if action in NEW_ACTION_DOCUMENTS:
+            return work_permit.create_wp_from_preparation(
+                employee_doc, plan["work_permit"], preparation_name
+            )
+        return work_permit.create_wp_renewal(employee_doc, action, preparation_name)
+
+    if step == "medical_insurance":
+        work_permit_doc = _work_permit_of_row(preparation_name, row.employee)
+        if not work_permit_doc:
+            frappe.throw(
+                _("No Work Permit for {0} on this Preparation to open the Medical Insurance against.").format(
+                    row.employee
+                )
+            )
+        return medical_insurance.create_mi_record(
+            work_permit_doc, insurance_status=plan.get("medical_insurance")
         )
 
-    if "residency" in plan:
-        residency.create_moi_record(
-            employee_doc, row.renewal_or_extend, preparation_name, category=plan["residency"]
+    if step == "residency":
+        return residency.create_moi_record(
+            employee_doc, action, preparation_name, category=plan.get("residency")
         )
 
-    if "paci" in plan:
-        paci.create_PACI(employee_doc, plan["paci"], preparation_name)
+    if step == "paci":
+        # A renewal row's civil ID is opened as a Renewal, which is what create_PACI_renewal
+        # passes; every Action with a plan states its own category.
+        return paci.create_PACI(employee_doc, plan.get("paci") or "Renewal", preparation_name)
 
-    if "medical_appointment" in plan:
-        medical_appointment.create_medical_appointment(
+    if step == "medical_appointment":
+        return medical_appointment.create_medical_appointment(
             employee_doc, plan["medical_appointment"], preparation_name
         )
 
-    if "pcc_attestation" in plan:
-        pcc_attestation.create_pcc_attestations(
-            employee_doc, plan["pcc_attestation"], preparation_name
+    if step == "pcc_attestation":
+        # Only the types that are missing: a run killed between the attestation and its
+        # translation must not open the attestation a second time.
+        return [
+            pcc_attestation.create_pcc_attestation(
+                employee_doc, plan["pcc_attestation"], preparation_name, attestation_type=attestation_type
+            )
+            for attestation_type in missing_pcc_types(row, preparation_name)
+        ]
+
+
+def expected_steps_for_row(row):
+    """Which documents this row's Action is supposed to produce, in dependency order.
+
+    One statement of what a row owes, read by the creator, by the resume and by the daily
+    check. It mirrors the conditions the five creators on_submit used to call apply
+    themselves - which is why the renewal branches below carry their nationality tests:
+    Preparation's own dispatcher owns the Actions in ACTIONS_HANDLED_ON_SUBMIT, and
+    Residency's "anything else is an extension" branch owns the rest.
+    """
+    action = row.get("renewal_or_extend")
+    if not action:
+        return []
+
+    if action in NEW_ACTION_DOCUMENTS:
+        plan = NEW_ACTION_DOCUMENTS[action]
+        return [step for step in STEP_ORDER if step in plan]
+
+    steps = set()
+    if action in RENEWAL_ACTIONS:
+        steps.add("work_permit")
+    if action == RENEWAL_EXPAT and _nationality_of(row) != KUWAITI:
+        steps.update(("medical_insurance", "residency", "paci"))
+    if action not in ACTIONS_HANDLED_ON_SUBMIT and _nationality_of(row) != KUWAITI:
+        steps.add("residency")
+
+    return [step for step in STEP_ORDER if step in steps]
+
+
+def missing_steps_for_row(row, preparation_name):
+    """The expected steps this row has no document for yet.
+
+    A document in any state counts, cancelled ones included: an operator who cancelled a
+    Work Permit on purpose must not have a replacement opened behind them by the next
+    resume or the daily check.
+    """
+    missing = []
+    for step in expected_steps_for_row(row):
+        if step == "pcc_attestation":
+            if missing_pcc_types(row, preparation_name):
+                missing.append(step)
+            continue
+        if not frappe.db.exists(
+            STEP_DOCTYPES[step], {"preparation": preparation_name, "employee": row.employee}
+        ):
+            missing.append(step)
+
+    return missing
+
+
+def missing_pcc_types(row, preparation_name):
+    """Which of the PCC records this row's nationality calls for are not open yet.
+
+    An overseas hire always owes the attestation; a nationality whose Nationality
+    Attestation Rule has Translation Required ticked owes a second record for the
+    translation (WI-002104), and the two are counted separately.
+    """
+    rule = get_nationality_attestation_rule(_nationality_of(row))
+    required = [pcc_attestation.ATTESTATION]
+    if rule and rule.translation_required:
+        required.append(pcc_attestation.TRANSLATION)
+
+    return [
+        attestation_type
+        for attestation_type in required
+        if not frappe.db.exists(
+            "PCC Attestation",
+            {
+                "preparation": preparation_name,
+                "employee": row.employee,
+                "type": attestation_type,
+            },
+        )
+    ]
+
+
+def _work_permit_of_row(preparation_name, employee):
+    """The Work Permit this Preparation opened for this employee, or None."""
+    name = frappe.db.get_value(
+        "Work Permit",
+        {"preparation": preparation_name, "employee": employee},
+        "name",
+        order_by="creation desc",
+    )
+    return frappe.get_doc("Work Permit", name) if name else None
+
+
+def _nationality_of(row):
+    """The row's nationality, read off the Employee when the row has not fetched it."""
+    return row.get("nationality") or frappe.db.get_value(
+        "Employee", row.employee, "one_fm_nationality"
+    )
+
+
+def create_missing_documents(preparation_name, notify_user=None):
+    """Open every document the rows of a submitted Preparation still owe.
+
+    This is what submit queues (it is too slow to run in the request - 27 Overseas rows
+    took over two minutes and the web server killed the request at 120 seconds, leaving
+    three rows with no documents and nothing in the Error Log to say so), what the
+    "Create Missing Documents" button runs, and what a second attempt after a failure
+    runs. It is safe to run any number of times: a row with no gap is not touched.
+
+    One row's failure does not stop the rest - the contract the per-row `try` has always
+    kept - and the rows that failed are reported to the operator rather than only written
+    to the Error Log.
+    """
+    preparation = frappe.get_doc("Preparation", preparation_name)
+    failures = []
+
+    for row in preparation.preparation_record:
+        if not missing_steps_for_row(row, preparation_name):
+            continue
+        try:
+            create_documents_for_row(row, preparation_name)
+        except Exception as e:
+            frappe.log_error(
+                title=f"Error creating GRD documents for {row.employee} in Preparation {preparation_name}",
+                message=frappe.get_traceback(),
+            )
+            failures.append({
+                'employee': row.employee,
+                'employee_name': row.full_name,
+                'document': row.renewal_or_extend,
+                'reason': str(e),
+            })
+            continue
+
+    for row in preparation.preparation_record:
+        refresh_row_stage(preparation_name, row.employee)
+
+    report_document_creation_failures(failures, preparation=preparation, notify_user=notify_user)
+
+    return failures
+
+
+def rows_missing_documents(preparation_name):
+    """Every row of a Preparation that still owes a document, and which ones.
+
+    Pure enough to feed three callers: the button's confirmation, the daily check's
+    summary, and the tests.
+    """
+    preparation = frappe.get_doc("Preparation", preparation_name)
+
+    gaps = []
+    for row in preparation.preparation_record:
+        missing = missing_steps_for_row(row, preparation_name)
+        if missing:
+            gaps.append({
+                "employee": row.employee,
+                "employee_name": row.full_name,
+                "action": row.renewal_or_extend,
+                "missing": [STEP_DOCTYPES[step] for step in missing],
+            })
+
+    return gaps
+
+
+@frappe.whitelist()
+def get_missing_document_summary(preparation: str):
+    """How many rows of this Preparation still owe a document, for the form to show."""
+    frappe.get_doc("Preparation", preparation).check_permission("read")
+
+    gaps = rows_missing_documents(preparation)
+    return {"count": len(gaps), "rows": gaps}
+
+
+@frappe.whitelist(methods=["POST"])
+def create_missing_documents_now(preparation: str):
+    """Queue a resume for one Preparation, from the button on the form.
+
+    Whoever can submit a Preparation can resume one: the documents are the ones their
+    submit was supposed to open, and nothing else is created.
+    """
+    doc = frappe.get_doc("Preparation", preparation)
+    doc.check_permission("submit")
+
+    if doc.docstatus != 1:
+        frappe.throw(_("Only a submitted Preparation can have its documents created."))
+
+    gaps = rows_missing_documents(preparation)
+    if not gaps:
+        return {"queued": False, "count": 0}
+
+    frappe.enqueue(
+        "one_fm.grd.doctype.preparation.preparation.create_missing_documents",
+        queue="long",
+        timeout=CREATION_JOB_TIMEOUT,
+        job_id=f"create_missing_documents::{preparation}",
+        deduplicate=True,
+        now=bool(frappe.flags.in_test),
+        preparation_name=preparation,
+        notify_user=frappe.session.user,
+    )
+
+    return {"queued": True, "count": len(gaps)}
+
+
+def notify_preparations_with_missing_documents():
+    """Daily: tell the GRD team about any submitted Preparation with documents missing.
+
+    The safety net under the resume. A batch that lost its documents to a killed worker
+    looks exactly like a complete one on the form - the Preparation is submitted, the rows
+    carry their costing, and only the empty Current Stage on the last few rows says
+    otherwise. PRE-ONB-2026-00008 went unnoticed until an operator happened to read the
+    column and raised a ticket.
+
+    It reports rather than creates: an operator who cancelled a document deliberately
+    would otherwise have it reopened by a cron at midnight. The button next to the report
+    is what creates them.
+    """
+    cutoff = add_days(nowdate(), -GAP_CHECK_WINDOW_DAYS)
+    preparations = frappe.get_all(
+        "Preparation",
+        filters={"docstatus": 1, "posting_date": [">=", cutoff]},
+        fields=["name", "grd_supervisor", "grd_operator", "submitted_by"],
+        order_by="posting_date asc",
+    )
+
+    for preparation in preparations:
+        try:
+            gaps = rows_missing_documents(preparation.name)
+        except Exception:
+            frappe.log_error(
+                title=f"Could not check {preparation.name} for missing GRD documents",
+                message=frappe.get_traceback(),
+            )
+            continue
+
+        if not gaps:
+            continue
+
+        recipients = {
+            user
+            for user in (
+                preparation.grd_supervisor,
+                preparation.grd_operator,
+                preparation.submitted_by,
+            )
+            if user
+        }
+        if not recipients:
+            continue
+
+        doc = frappe.get_doc("Preparation", preparation.name)
+        subject = _("{0}: {1} row(s) are missing their documents").format(
+            preparation.name, len(gaps)
+        )
+        message = _missing_documents_message(doc, gaps)
+        create_notification_log(subject, message, sorted(recipients), doc)
+
+
+def _missing_documents_message(doc, gaps):
+    """The table both the daily check and the failure report are read from."""
+    rows = ""
+    for gap in gaps:
+        rows += "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>".format(
+            escape_html(cstr(gap.get("employee"))),
+            escape_html(cstr(gap.get("employee_name"))),
+            escape_html(cstr(gap.get("action"))),
+            escape_html(", ".join(gap.get("missing") or [])),
         )
 
-    return work_permit_doc
+    return """
+        <p>{intro}</p>
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm small">
+                <thead><tr><th>{employee}</th><th>{name}</th><th>{action}</th><th>{missing}</th></tr></thead>
+                <tbody>{rows}</tbody>
+            </table>
+        </div>
+        <p><a href="{link}">{link_label}</a></p>
+    """.format(
+        intro=_("These rows of {0} have no document behind them. Open it and use <b>Create Missing Documents</b>.").format(
+            escape_html(doc.name)
+        ),
+        employee=_("Employee"),
+        name=_("Name"),
+        action=_("Action"),
+        missing=_("Missing"),
+        rows=rows,
+        link=get_url(doc.get_url()),
+        link_label=doc.name,
+    )
 
 
 def handle_creation_of_grd_docs(row,source):
