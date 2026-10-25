@@ -121,7 +121,6 @@ def forgot_password(employee_id,OTP_source):
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
-@frappe.whitelist(allow_guest=True)
 def update_password(otp, id, employee_id, new_password):
 	"""
 	Params: 
