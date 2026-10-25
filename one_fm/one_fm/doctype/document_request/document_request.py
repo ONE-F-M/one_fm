@@ -34,6 +34,7 @@ class DocumentRequest(Document):
 		self.check_approver_resolved()
 		self.apply_reference_document_defaults()
 		self.standardise_title()
+		self.set_source_guideline()
 		self.check_required_links()
 		self.check_reference_document_is_active()
 		self.check_source_guideline_is_a_guideline()
@@ -166,6 +167,11 @@ class DocumentRequest(Document):
 		if not self.title:
 			return
 		self.title = standard_title(self.title, self.document_type)
+
+	def set_source_guideline(self):
+		"""Only a Create is written from a guideline; the fetch from the Document Type fills it for a Create."""
+		if self.request_action != "Create":
+			self.source_guideline = None
 
 	def check_source_guideline_is_a_guideline(self):
 		"""The guideline a Create is written from has to actually be a guideline.

@@ -1159,6 +1159,24 @@ def get_job_applicant_custom_fields():
                 "translatable": 1
             },
             {
+                "depends_on": "eval:doc.status == 'Rejected'",
+                "fieldname": "one_fm_rejected_on",
+                "fieldtype": "Datetime",
+                "insert_after": "one_fm_reason_for_rejection",
+                "label": "Rejected On",
+                "no_copy": 1,
+                "read_only": 1
+            },
+            {
+                "depends_on": "eval:doc.status == 'Rejected'",
+                "fieldname": "one_fm_rejection_email_sent",
+                "fieldtype": "Check",
+                "insert_after": "one_fm_rejected_on",
+                "label": "Rejection Email Sent",
+                "no_copy": 1,
+                "read_only": 1
+            },
+            {
                 "fieldname": "one_fm_religion",
                 "fieldtype": "Link",
                 "insert_after": "one_fm_gender",

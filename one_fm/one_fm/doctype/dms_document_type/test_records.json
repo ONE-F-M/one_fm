@@ -1,0 +1,7 @@
+[
+ {"doctype": "DMS Document Type", "document_type_name": "Policy"},
+ {"doctype": "DMS Document Type", "document_type_name": "SOP"},
+ {"doctype": "DMS Document Type", "document_type_name": "Guideline"},
+ {"doctype": "DMS Document Type", "document_type_name": "Manual"},
+ {"doctype": "DMS Document Type", "document_type_name": "Knowledge Base"}
+]

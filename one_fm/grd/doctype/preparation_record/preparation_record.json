@@ -21,6 +21,9 @@
   "medical_insurance_amount",
   "residency_stamp_amount",
   "civil_id_amount",
+  "embassy_attestation_fee",
+  "mofa_fee",
+  "pcc_translation_fee",
   "total_amount",
   "status_tracking_section",
   "ref_doctype",
@@ -76,7 +79,7 @@
    "allow_on_submit": 1,
    "fieldname": "ref_doctype",
    "fieldtype": "Link",
-   "in_list_view": 1,
+   "in_list_view": 0,
    "label": "Ref DocType",
    "options": "DocType",
    "read_only": 1
@@ -143,6 +146,30 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:doc.renewal_or_extend == \"Overseas\" || doc.renewal_or_extend == \"Overseas (Government)\"",
+   "fieldname": "embassy_attestation_fee",
+   "fieldtype": "Currency",
+   "label": "Embassy Attestation Fee",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.renewal_or_extend == \"Overseas\" || doc.renewal_or_extend == \"Overseas (Government)\"",
+   "fieldname": "mofa_fee",
+   "fieldtype": "Currency",
+   "label": "MOFA Fee",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.renewal_or_extend == \"Overseas\" || doc.renewal_or_extend == \"Overseas (Government)\"",
+   "fieldname": "pcc_translation_fee",
+   "fieldtype": "Currency",
+   "label": "PCC Translation Fee",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
    "fieldname": "total_amount",
    "fieldtype": "Currency",
    "label": "Total Amount",
@@ -174,14 +201,14 @@
    "fieldname": "ref_doctype_status",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Ref Doctype Status",
+   "label": "Current Stage",
    "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "istable": 1,
  "links": [],
- "modified": "2026-09-02 10:00:00.000000",
+ "modified": "2026-10-17 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Preparation Record",

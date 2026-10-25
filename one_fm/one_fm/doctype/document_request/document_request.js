@@ -65,13 +65,6 @@ frappe.ui.form.on("Document Request", {
 			return { filters };
 		});
 
-		// The guideline says HOW to write the document, so only a Guideline can
-		// be one. Pointing this at a finished Policy or SOP is how a request for
-		// one subject comes back written about another.
-		frm.set_query("source_guideline", () => ({
-			filters: { lifecycle_state: "Active", document_type: "Guideline" },
-		}));
-
 	},
 
 	request_action(frm) {
@@ -88,6 +81,16 @@ frappe.ui.form.on("Document Request", {
 			// already came from a guideline. Leaving a guideline attached implies
 			// it will be applied, and it will not.
 			frm.set_value("source_guideline", null);
+		}
+	},
+
+	async source_guideline(frm) {
+		// A read-only link shows a title only once it is cached; a fetched value never caches it.
+		if (!frm.doc.source_guideline) return;
+		try {
+			await frappe.utils.fetch_link_title("Document Register", frm.doc.source_guideline);
+		} finally {
+			frm.refresh_field("source_guideline");
 		}
 	},
 

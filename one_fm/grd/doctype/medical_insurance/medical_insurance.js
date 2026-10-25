@@ -114,13 +114,6 @@ var set_apply_medical_insurance_online_date = function(frm) //1
         frm.set_value('apply_medical_insurance_online_date',frappe.datetime.now_datetime())
     }
 };
-var set_upload_payment_invoice = function(frm){
-    
-    if(((frm.doc.upload_payment_invoice)&&(!frm.doc.upload_payment_invoice_on)))
-    {
-        frm.set_value('upload_payment_invoice_on',frappe.datetime.now_datetime())
-    }
-};
 var set_upload_medical_insurance = function(frm) //3
 {
 	if(((frm.doc.upload_medical_insurance)&&(!frm.doc.upload_medical_insurance_date)))

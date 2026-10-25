@@ -1,16 +1,15 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-002098 / WI-003673: the state a Medical Insurance policy opens in.
-
-Every policy opens in the workflow's own first state, Draft, whatever kind of Work Permit
-it was opened against.
-"""
+"""The state a Medical Insurance policy opens in."""
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import nowdate
 
-from one_fm.grd.doctype.preparation.preparation import create_documents_for_row
+from one_fm.grd.doctype.preparation.preparation import (
+	category_for_action,
+	create_documents_for_row,
+)
 
 DRAFT = "Draft"
 APPLY_ONLINE_BY_GR_OPERATOR = "Apply Online by GR Operator"
@@ -34,6 +33,7 @@ def _opened_by_a_preparation(action):
 		{
 			"doctype": "Preparation",
 			"posting_date": nowdate(),
+			"category": category_for_action(action),
 			"preparation_record": [
 				{"employee": _an_active_employee(), "renewal_or_extend": action}
 			],
@@ -63,4 +63,26 @@ class TestMedicalInsuranceInitialState(FrappeTestCase):
 		self.assertIn(
 			(DRAFT, "Submit", APPLY_ONLINE_BY_GR_OPERATOR),
 			{(t.state, t.action, t.next_state) for t in workflow.transitions},
+		)
+
+	def test_the_move_patch_is_idempotent(self):
+		from one_fm.patches.v15_0 import move_medical_insurance_drafts_to_gr_operator as patch
+
+		policy = _opened_by_a_preparation("Local Transfer")
+		frappe.db.set_value(
+			"Medical Insurance", policy.name, "workflow_state", patch.OLD_STATE, update_modified=False
+		)
+		modified = frappe.db.get_value("Medical Insurance", policy.name, "modified")
+
+		patch.execute()
+		self.assertEqual(
+			frappe.db.get_value("Medical Insurance", policy.name, "workflow_state"),
+			APPLY_ONLINE_BY_GR_OPERATOR,
+		)
+		self.assertEqual(frappe.db.get_value("Medical Insurance", policy.name, "modified"), modified)
+
+		patch.execute()
+		self.assertEqual(
+			frappe.db.get_value("Medical Insurance", policy.name, "workflow_state"),
+			APPLY_ONLINE_BY_GR_OPERATOR,
 		)

@@ -5073,7 +5073,7 @@ function injectRPVueTemplate() {
                 <span class="rp-card-type rp-tag-split"
                       :title="'Split from ' + (card.split_root || 'another card')">SPLIT OVERFLOW</span>
               </div>
-              <div class="rp-card-shift">{{ card.shift_name }}</div>
+              <div class="rp-card-shift" :title="card.shift_name">{{ card.shift_name }}</div>
               <div class="rp-card-meta">
                 <span class="rp-card-meta-item">
                   <span class="rp-meta-icon"><span class="rp-icon">group</span></span>{{ card.headcount }} employees

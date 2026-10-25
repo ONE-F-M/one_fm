@@ -17,17 +17,6 @@ frappe.ui.form.on("Overseas Medical Appointment WAFID", {
 				frappe.set_route("List", doctype);
 			};
 		}
-
-		update_actual_medical_status(frm);
-	},
-	validate: function(frm) {
-		update_actual_medical_status(frm);
-	},
-	appointment_status: function(frm) {
-		update_actual_medical_status(frm);
-	},
-	appointment_date: function(frm) {
-		update_actual_medical_status(frm);
 	},
 	status: function(frm) {
 		if (frm.doc.status === "Medical failed and Proceeded to Remedical") {
@@ -66,12 +55,3 @@ frappe.ui.form.on("Overseas Medical Appointment WAFID", {
 		}
 	}
 });
-
-function update_actual_medical_status(frm) {
-	if (frm.doc.appointment_status === "Booked" && frm.doc.appointment_date) {
-		// Only update if it's currently "Yet to apply"
-		if (frm.doc.status === "Yet to apply") {
-			frm.set_value("status", "In process");
-		}
-	}
-}
