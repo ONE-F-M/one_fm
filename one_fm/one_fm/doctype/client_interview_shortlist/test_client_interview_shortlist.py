@@ -217,18 +217,17 @@ class TestClientInterviewAttendancePermission(FrappeTestCase):
 		self._assert_denied(self.stranger)
 		self._assert_denied(self.stranger, permtype="submit")
 
-	def test_zzz_diag(self):
-		out = {}
-		for label, user in (("sup", self.supervisor), ("str", self.stranger), ("hr", self.hr_manager)):
-			out[label] = [
-				sorted(frappe.get_roles(user)),
-				frappe.permissions.has_permission("Attendance", "create", user=user),
-				frappe.permissions.has_permission("Attendance", "submit", user=user),
-			]
-		out["shortlists"] = [
-			frappe.db.get_value(SHORTLIST, n, ["docstatus", "owner"]) for n in (self.submitted, self.draft)
-		]
-		self.fail(repr(out))
+	def set_user(self, user):
+		"""Switch the session user for the rest of the test.
+
+		FrappeTestCase.set_user is a context manager in Frappe v15, so it is entered here and
+		kept open until the test ends; if it were a plain method the call itself switches user.
+		"""
+		context = super().set_user(user)
+		if hasattr(context, "__enter__"):
+			self._user_contexts.enter_context(context)
+		else:
+			frappe.set_user(user)
 
 	def test_normal_permissions_are_unaffected(self):
 		# HR Manager keeps normal create rights on a plain Attendance.
