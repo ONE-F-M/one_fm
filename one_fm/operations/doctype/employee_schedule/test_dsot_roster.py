@@ -23,7 +23,7 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, today
 
 from one_fm.one_fm.page.roster.employee_map import (
-	NOT_A_WORKED_SHIFT,
+	HIDDEN_FROM_ROSTER,
 	CreateMap,
 	get_schedule_state_filter,
 )
@@ -40,7 +40,7 @@ from one_fm.operations.doctype.employee_schedule.employee_schedule import (
 
 DSOT_PENDING_NOTICE = (
 	"Notice: The requested Double Shift Overtime (DSOT) is currently Pending Approval. "
-	"It will not be displayed on the Roster UI until it has been approved by the authorized user."
+	"It is shown on the Roster UI in the Pending colour until it has been approved or rejected by the authorized user."
 )
 
 SEEDED = "WI-002437-SEED-"
@@ -128,8 +128,11 @@ class TestTheRosterQueryUsesTheFilter(FrappeTestCase):
 			f"SELECT es.name FROM `tabEmployee Schedule` es WHERE {get_schedule_state_filter()} LIMIT 1"
 		)
 
-	def test_it_names_the_two_states_the_story_names(self):
-		self.assertEqual(set(NOT_A_WORKED_SHIFT), {PENDING_DSOT, DSOT_REJECTED})
+	def test_the_roster_hides_rejected_only(self):
+		"""Pending DSOT Approval is shown in its own colour; Rejected is not."""
+		self.assertEqual(HIDDEN_FROM_ROSTER, ("Rejected",))
+		self.assertEqual(HIDDEN_FROM_ROSTER, (DSOT_REJECTED,))
+		self.assertNotIn(PENDING_DSOT, HIDDEN_FROM_ROSTER)
 
 	def test_both_states_exist_on_the_workflow(self):
 		"""Every one of these is a string comparison; a state named in the wrong case
@@ -145,7 +148,7 @@ class TestTheRosterQueryUsesTheFilter(FrappeTestCase):
 			filters={"parent": workflow, "parenttype": "Workflow"},
 			pluck="state",
 		)
-		for state in NOT_A_WORKED_SHIFT:
+		for state in (PENDING_DSOT, *HIDDEN_FROM_ROSTER):
 			with self.subTest(state=state):
 				self.assertIn(state, states)
 
@@ -161,11 +164,11 @@ class TestWhatTheRosterRenders(FrappeTestCase):
 	def tearDown(self):
 		_clear()
 
-	def test_a_pending_double_shift_is_not_rendered(self):
-		"""AC 1.1 - nobody has said yes to it yet, so it is not a shift on the roster."""
-		_seed("PENDING", workflow_state=PENDING_DSOT, employee=self.employee, date=self.date)
+	def test_a_pending_double_shift_is_rendered(self):
+		"""Scenario 1 - it is shown (in the Pending colour) while it waits."""
+		pending = _seed("PENDING", workflow_state=PENDING_DSOT, employee=self.employee, date=self.date)
 
-		self.assertEqual(_rows_the_roster_would_render(), set())
+		self.assertEqual(_rows_the_roster_would_render(), {pending})
 
 	def test_a_rejected_double_shift_is_not_rendered(self):
 		"""AC 1.3 and AC 1.4 - refused outright, or left unanswered until the shift ended."""
@@ -187,9 +190,16 @@ class TestWhatTheRosterRenders(FrappeTestCase):
 		self.assertEqual(_rows_the_roster_would_render(), set())
 
 	def test_the_basic_shift_underneath_is_untouched(self):
-		"""The employee is still working that day - only the double shift goes."""
+		"""Basic plus a pending double shift - both rows come back."""
 		basic = _seed("BASIC", roster_type=BASIC, employee=self.employee, date=self.date)
-		_seed("PENDING", workflow_state=PENDING_DSOT, employee=self.employee, date=self.date)
+		pending = _seed("PENDING", workflow_state=PENDING_DSOT, employee=self.employee, date=self.date)
+
+		self.assertEqual(_rows_the_roster_would_render(), {basic, pending})
+
+	def test_a_rejected_double_shift_leaves_only_the_basic_shift(self):
+		"""Scenario 3 - only the underlying Basic shift remains."""
+		basic = _seed("BASIC", roster_type=BASIC, employee=self.employee, date=self.date)
+		_seed("REJECTED", workflow_state=DSOT_REJECTED, employee=self.employee, date=self.date)
 
 		self.assertEqual(_rows_the_roster_would_render(), {basic})
 
@@ -321,8 +331,8 @@ class TestADoubleShiftRaisedThroughTheOrmReachesTheGate(FrappeTestCase):
 			frappe.db.get_value("Employee Schedule", schedule.name, "workflow_state"), PENDING_DSOT
 		)
 
-	def test_the_pending_request_does_not_render_on_the_roster(self):
-		"""AC 1.1, from the state a real save leaves behind rather than a seeded one."""
+	def test_the_pending_request_renders_on_the_roster(self):
+		"""From the state a real save leaves behind rather than a seeded one."""
 		_seed("BASIC", roster_type=BASIC, employee=self.employee, date=self.date)
 		schedule = self._insert_overtime()
 
@@ -335,7 +345,7 @@ class TestADoubleShiftRaisedThroughTheOrmReachesTheGate(FrappeTestCase):
 			)
 		}
 
-		self.assertNotIn(schedule.name, rendered)
+		self.assertIn(schedule.name, rendered)
 
 
 class TestWhatTheShiftAssignmentJobPicksUp(FrappeTestCase):

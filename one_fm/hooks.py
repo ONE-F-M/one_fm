@@ -37,6 +37,7 @@ app_include_js = [
         "text_editor.bundle.js",
         "/assets/one_fm/js/workflow_banner.js",
         "/assets/one_fm/js/grd/residency_payment_request_button.js",
+        "/assets/one_fm/js/grd/payment_receipt.js",
         "/assets/one_fm/js/workflow_state_colours.js"
 ]
 # include js, css files in header of web template
@@ -240,28 +241,35 @@ doc_events = {
 			"one_fm.overrides.todo.delete_linked_todos"
 		]
 	},
-	# WI-002093: each of these carries the Preparation that opened it, and its own save is
-	# where the row's status column comes from. The handler only ever moves a row forward
-	# along Work Permit -> Medical Insurance -> Residency -> PACI.
+	# Each of these carries the Preparation that opened it. Its own save, cancel and delete
+	# refresh the Current Stage column on that Preparation's row.
 	"Work Permit": {
 		# WI-002096: no step completes before the one in front of it.
 		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
-		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"on_cancel": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"after_delete": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"Medical Insurance": {
 		# WI-002096: no step completes before the one in front of it.
 		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
-		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"on_cancel": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"after_delete": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"Residency": {
 		# WI-002096: no step completes before the one in front of it.
 		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
-		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"on_cancel": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"after_delete": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"PACI": {
 		# WI-002096: no step completes before the one in front of it.
 		"validate": ["one_fm.grd.doctype.preparation.preparation.validate_sequence"],
-		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
+		"on_update": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"on_cancel": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"],
+		"after_delete": ["one_fm.grd.doctype.preparation.preparation.update_row_reference"]
 	},
 	"Employee": {
 		# Keep the PAM licence headcounts in step with the employees on the licence. The
@@ -353,8 +361,9 @@ doc_events = {
 		"on_update": [
 			"one_fm.one_fm.utils.send_notification_to_grd_or_recruiter",
 			"one_fm.utils.on_update_job_applicant",
-			# WI-002598: tell the candidate their application was rejected. on_update
-			# rather than validate, so nothing is sent for a change that then fails to
+			# Stamp the rejection time when the application is rejected. The candidate is
+			# emailed 48 hours later by the hourly send_due_rejection_emails job. on_update
+			# rather than validate, so nothing is stamped for a change that then fails to
 			# save.
 			"one_fm.hiring.rejection_notification.notify_on_rejection"
 		]
@@ -534,12 +543,7 @@ doc_events = {
 	},
 	"ToDo": {
 		"validate": "one_fm.overrides.todo.validate_todo",
-		"before_save":"one_fm.overrides.todo.before_save",
-		"after_insert":[
-			"one_fm.overrides.todo.create_google_task_on_todo_creation",
-			"one_fm.overrides.todo.send_email_on_todo_created"
-		],
-		"on_update": "one_fm.overrides.todo.update_google_task_on_todo_status_change"
+		"after_insert": "one_fm.overrides.todo.send_email_on_todo_created"
 	},
 	"OAuth Bearer Token": {
 		"after_insert": "one_fm.api.doc_methods.oauth_bearer_token.revoke_and_delete_existing_tokens",
@@ -638,7 +642,6 @@ override_doctype_class = {
     "Interview": "one_fm.overrides.interview.InterviewOverride",
     "Purchase Order": "one_fm.overrides.purchase_order.PurchaseOrderOverride",
     "HD Ticket": "one_fm.overrides.hd_ticket.HDTicketOverride",
-    # "ToDo": "one_fm.overrides.todo.ToDo",
     "Task": "one_fm.overrides.task.TaskOverride",
     "Loan Application": "one_fm.overrides.loan_application.LoanApplicationOverride",
     "Loan": "one_fm.overrides.loan.LoanOverride",
@@ -705,7 +708,9 @@ scheduler_events = {
 		"one_fm.api.tasks.validate_shift_assignment",
 		'one_fm.overrides.employee_checkin.auto_generate_checkin',
 		# WI-002283: close overtime requests nobody answered before the shift ended.
-		"one_fm.operations.doctype.employee_schedule.employee_schedule.reject_expired_dsot_requests"
+		"one_fm.operations.doctype.employee_schedule.employee_schedule.reject_expired_dsot_requests",
+		# Email rejected candidates once 48 hours have passed since their rejection.
+		"one_fm.hiring.rejection_notification.send_due_rejection_emails"
 	],
 	"monthly": [
 		"one_fm.accommodation.utils.execute_monthly",
@@ -848,7 +853,8 @@ scheduler_events = {
 		],
 		"0 * * * *":[ # Creates the missing checkin record per shift, runs every hour
 			"one_fm.one_fm.doctype.missing_checkin.missing_checkin.create_missing_checkin_record",
-			"one_fm.api.tasks.notify_approver_about_pending_shift_request"
+			"one_fm.api.tasks.notify_approver_about_pending_shift_request",
+			"one_fm.one_fm.doctype.google_sheet_data_export.exporter.update_google_sheet_hourly"
 		],
         "0 0 1 * *": [
             "one_fm.one_fm.page.roster.roster.create_employee_schedule"

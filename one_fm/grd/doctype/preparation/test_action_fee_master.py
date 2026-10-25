@@ -4,9 +4,10 @@
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
-from frappe.utils import nowdate
+from frappe.utils import flt, nowdate
 
 from one_fm.grd.doctype.preparation.preparation import (
+	ATTESTATION_FEE_FIELDS,
 	COST_COMPONENT_FIELDS,
 	YEAR_SCOPED_ACTIONS,
 	category_for_action,
@@ -168,8 +169,11 @@ class TestActionFeeMaster(FrappeTestCase):
 		preparation.flags.ignore_permissions = True
 		preparation.insert()
 
-		self.assertEqual(preparation.preparation_record[0].total_amount, 75)
-		self.assertEqual(preparation.total_payment, 75)
+		# An Overseas row also carries the PCC attestation fees its nationality is charged.
+		row = preparation.preparation_record[0]
+		expected = 75 + sum(flt(row.get(field)) for field in ATTESTATION_FEE_FIELDS)
+		self.assertEqual(row.total_amount, expected)
+		self.assertEqual(preparation.total_payment, expected)
 
 	def test_the_component_list_matches_the_master_and_the_row(self):
 		for doctype in ("GRD Renewal Extension Cost", "Preparation Record"):

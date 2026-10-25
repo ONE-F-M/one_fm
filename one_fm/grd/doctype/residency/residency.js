@@ -116,9 +116,6 @@ frappe.ui.form.on('Residency', {
     employee: function(frm){
         set_employee_details(frm);
     },
-	invoice_attachment: function(frm){
-		set_invoice_attachment_date(frm);
-	},
 	residency_attachment: function(frm){
 		set_residency_attachment_date(frm);
 	},
@@ -182,16 +179,6 @@ var set_employee_details = function(frm){
             }
         })
     }
-};
-var set_invoice_attachment_date = function(frm)
-{//2
-	if(((frm.doc.invoice_attachment) && (!frm.doc.invoice_attachment_date)))
-	{
-		frm.set_value('invoice_attachment_date',frappe.datetime.now_datetime())
-	}if(((!frm.doc.invoice_attachment) && (frm.doc.invoice_attachment_date)))
-	{
-		frm.set_value('invoice_attachment_date',null)
-	}
 };
 var set_residency_attachment_date = function(frm)
 {//3

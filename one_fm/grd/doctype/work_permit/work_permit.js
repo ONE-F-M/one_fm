@@ -50,9 +50,6 @@ frappe.ui.form.on('Work Permit', {
     grd_operator_apply_work_permit_on_ashal: function(frm){
         set_dates_grd_operator(frm);
     },
-    attach_invoice: function(frm){
-        set_upload_work_permit_invoice(frm);
-    },
     approve_previous_company: function(frm){
         set_approve_previous_company(frm);
     },
@@ -67,9 +64,6 @@ frappe.ui.form.on('Work Permit', {
     },
     work_permit_registration: function(frm){
         set_attach_registration_on(frm);
-    },
-    attach_payment_invoice: function(frm){
-        set_attach_payment_time(frm);
     },
     previous_company_status: function(frm){
         set_inform_previous_company_time(frm);
@@ -284,16 +278,6 @@ var set_dates_grd_operator = function(frm)
         frm.set_value('grd_operator_apply_work_permit_on_ashal_date',frappe.datetime.now_datetime());
     }
 };
-var set_upload_work_permit_invoice = function(frm){
-    if((frm.doc.attach_invoice)&&(!frm.doc.upload_payment_invoice_on))
-    {
-        frm.set_value('upload_payment_invoice_on',frappe.datetime.now_datetime());
-    } if((!frm.doc.attach_invoice)&&(frm.doc.upload_payment_invoice_on))
-    {
-        frm.set_value('upload_payment_invoice_on',null);
-    }
-
-};
 var set_work_permit_reference_time = function(frm)
 {
 	if(frm.doc.reference_number_on_pam && !frm.doc.reference_number_set_on)
@@ -306,11 +290,6 @@ var set_work_permit_registration_reference_time = function(frm)
 	if(frm.doc.reference_number_on_pam_registration && !frm.doc.reference_number_registration_set_on)
     {
         frm.set_value('reference_number_registration_set_on',frappe.datetime.now_datetime());
-    }
-};
-var set_attach_payment_time = function(frm){
-    if(frm.doc.attach_payment_invoice && !frm.doc.datetime_17){
-        frm.set_value('datetime_17',frappe.datetime.now_datetime());
     }
 };
 var set_inform_previous_company_time = function(frm){

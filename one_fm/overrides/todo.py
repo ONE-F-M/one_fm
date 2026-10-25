@@ -1,20 +1,9 @@
 import json
 import frappe
-from frappe.utils import get_fullname, get_url_to_form, getdate, get_datetime, convert_utc_to_system_timezone
+from frappe.utils import get_url_to_form, getdate
 from bs4 import BeautifulSoup
 from datetime import datetime,timezone, timedelta
 from one_fm.processor import is_user_id_company_prefred_email_in_employee, sendemail
-from frappe import _
-from frappe.desk.doctype.todo.todo import ToDo as FrappeToDo
-
-class ToDo(FrappeToDo):
-    def on_trash(self):
-        """Override trash to also close Google Task if present."""
-        super().on_trash()
-        try:
-            delete_google_task_on_todo_delete(self)
-        except Exception as e:
-            frappe.log_error(message=f"Failed to delete Google Task on ToDo trash: {e}", title="ToDo on_trash Error")
 
 def delete_linked_todos(doc, method):
     todos = frappe.get_all("ToDo", filters={
@@ -26,59 +15,8 @@ def delete_linked_todos(doc, method):
         frappe.delete_doc("ToDo", todo, force=1)
 
 def validate_todo(doc, method):
-    notify_todo_status_change(doc)
     set_todo_type_from_refernce_doc(doc)
     validate_google_task_title(doc)
-
-def notify_todo_status_change(doc):
-    """Notify user if ToDo status changes. Modular, clear, and logs notification."""
-    if doc.is_new():
-        return
-    # Only send notifications for Action-type ToDos; Processa handles Process tasks
-    if getattr(doc, "type", "") and doc.type != "Action":
-        return
-    if not doc.notify_allocated_to_via_email:
-        return
-    status_in_db = frappe.db.get_value(doc.doctype, doc.name, "status")
-    if status_in_db != doc.status and doc.assigned_by != doc.allocated_to:
-        user = frappe.session.user
-        subject, email_content = build_notification_subject_content(doc, user)
-        create_notification_log(doc, user, subject, email_content)
-
-def build_notification_subject_content(doc, user):
-    """Builds subject and content for notification email."""
-    subject = _("{0}({1}) assignment is {2}".format(doc.reference_type, doc.reference_name, doc.status))
-    email_content = _("""
-        The assignment referenced to {0}({1}) is {2} by {3}. See Details Below <br>
-        <p>Description: {4} </p> <br>
-        <p>Date of Allocation:{5}</p> <br>
-        <p>Due Date:{6}</p> <br>
-    """.format(doc.reference_type, doc.reference_name, doc.status, get_fullname(user), doc.description, doc.creation, doc.date))
-    if doc.reference_type == "Task":
-        task_subject = frappe.db.get_value("Task", doc.reference_name, "subject")
-        subject = _('{0} "{1}"({2}) assignment is {3}'.format(doc.reference_type, task_subject, doc.reference_name, doc.status))
-        email_content += f"<p>Subject:{task_subject}</p>"
-    return subject, email_content
-
-def create_notification_log(doc, user, subject, email_content):
-    """Creates a notification log entry."""
-    notification_log = frappe.new_doc("Notification Log")
-    notification_log.subject = subject
-    notification_log.email_content = email_content
-    notification_log.for_user = doc.assigned_by
-    notification_log.document_type = doc.doctype
-    notification_log.document_name = doc.name
-    notification_log.from_user = user
-    notification_log.type = "Alert" if send_notification_alert_only(doc.assigned_by) else "Assignment"
-    notification_log.insert(ignore_permissions=True)
-
-def send_notification_alert_only(user):
-    """Return True if only alert (not email) should be sent to user."""
-    if user == "Administrator":
-        return True
-    if not is_user_id_company_prefred_email_in_employee(user):
-        return True
-    return False
 
 def validate_google_task_title(doc):
     """Set a meaningful Google Task title for the ToDo if not already set."""
@@ -129,102 +67,6 @@ def get_google_task_service(employee_email):
         frappe.log_error(title="Error reading Google credentials", message=str(e))
         return None
 
-def before_save(doc,method):
-    previous_doc = doc.get_doc_before_save()
-    if previous_doc:
-        return get_google_task_service(previous_doc.allocated_to)
-
-def get_google_task_status(todo_status):
-    """Map an ERP ToDo status to the Google Task `status` field."""
-    return "needsAction" if todo_status == "Open" else "completed"
-
-def is_google_task_newer_than_todo(google_task, todo_modified):
-    """Return True if the Google Task was updated after the ToDo row was last modified.
-
-    Google returns `updated` as an RFC3339 UTC timestamp while the ToDo timestamp is
-    in the site timezone, so convert before comparing. Used to decide who wins a
-    status conflict: only a task touched in Google *after* the ERP change may
-    override the ERP status.
-    """
-    updated = google_task.get("updated")
-    if not updated or not todo_modified:
-        return False
-    for fmt in ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"):
-        try:
-            task_updated_utc = datetime.strptime(updated, fmt)
-            break
-        except ValueError:
-            task_updated_utc = None
-    if not task_updated_utc:
-        return False
-    task_updated = convert_utc_to_system_timezone(task_updated_utc).replace(tzinfo=None)
-    return task_updated > get_datetime(todo_modified)
-
-def create_google_task_on_todo_creation(doc, method):
-    # Skip if general trigger is not enabled
-    if not is_google_task_synchronization_enabled():
-        return
-    frappe.enqueue(create_google_task_on_todo_creation_in_erp, doc=doc, trigger_method=method, is_async=True)
-
-def create_google_task_on_todo_creation_in_erp(doc, trigger_method):
-    """Create a Google Task for the ToDo document if not already created."""
-    employee_email = doc.allocated_to
-    if doc.custom_google_task_id:
-        return
-    if not employee_email:
-        frappe.throw(_("No assigned user found for this ToDo"))
-    try:
-        service = get_google_task_service(employee_email)
-        if not service:
-            return
-        if trigger_method == "on_update":
-            prev_service = before_save(doc, trigger_method)
-            if doc.custom_google_task_id and prev_service:
-                check_google_task_exists(doc.custom_google_task_id, prev_service)
-        task_notes = create_description_for_google_todo(doc)
-        task_title = doc.custom_google_task_title
-        date_obj = datetime.strptime(str(doc.date), "%Y-%m-%d")
-        due_date = date_obj.replace(hour=23, minute=59, second=59, tzinfo=timezone.utc).isoformat()
-        # This job runs async on the doc as it was at insert time; the ToDo may already
-        # have been closed, so take the status from the database and send it to Google.
-        # Without this the task is always created as "needsAction" and the next sync
-        # reopens the ToDo.
-        current_status = frappe.db.get_value("ToDo", doc.name, "status") or doc.status
-        task_body = {
-            "title": task_title,
-            "notes": task_notes,
-            "due": due_date,
-            "status": get_google_task_status(current_status)
-        }
-        result = service.tasks().insert(tasklist="@default", body=task_body).execute()
-        # Reload to avoid TimestampMismatchError: the ToDo row may have been
-        # modified (e.g. by the assignment rule) after this doc was enqueued.
-        if not frappe.db.exists("ToDo", doc.name):
-            return
-        doc.reload()
-        # db_set writes only this column, skips the modified-timestamp check,
-        # and does not re-fire on_update (which would re-enqueue this job).
-        doc.db_set("custom_google_task_id", result["id"], update_modified=False)
-        # Any status change made before the id landed could not be pushed
-        # (update_google_task_on_todo_status_change bails out without an id), so
-        # reconcile now that the ToDo carries one.
-        if get_google_task_status(doc.status) != task_body["status"]:
-            update_google_task_on_todo_status_change(doc, trigger_method)
-        return result
-    except Exception as e:
-        title = f"Error while creating Google Task from ToDo for {employee_email}"
-        error = str(e)
-        if not frappe.db.exists("Error Log", {"error": error, "method": title, "seen": 0}):
-            frappe.log_error(message=error, title=title)
-    return
-
-def check_google_task_exists(task_id,pev_emp_service=None):
-    if pev_emp_service:
-        task = pev_emp_service.tasks().get(tasklist="@default", task=task_id).execute()
-        task["status"] = "completed"
-        result = pev_emp_service.tasks().update(tasklist="@default",task=task_id, body=task).execute()
-
-
 def create_description_for_google_todo(doc):
     """Generate a plain text description for Google Task from ToDo details."""
     try:
@@ -266,68 +108,6 @@ def convert_html_to_plain_text(html_content):
         frappe.log_error(message=str(e), title="Error converting HTML to plain text")
         return "Failed to parse content."
 
-
-def update_google_task_on_todo_status_change(doc, method):
-    """Update Google Task when ToDo status changes."""
-    if doc.is_new() or not is_google_task_synchronization_enabled():
-        return
-    if not doc.custom_google_task_id:
-        return
-    employee_email = doc.allocated_to
-    if not employee_email:
-        frappe.throw(_("No assigned user found for this ToDo"))
-    service = get_google_task_service(employee_email)
-    if not service:
-        return
-    try:
-        task = service.tasks().get(tasklist="@default", task=doc.custom_google_task_id).execute()
-    except Exception:
-        task = create_google_task_on_todo_creation_in_erp(doc, method)
-    if not task:
-        frappe.log_error(title="Google task creation failed", message=f"Could not create Google Task for ToDo {doc.name}")
-        return
-    try:
-        task_title = doc.custom_google_task_title
-        task_notes = create_description_for_google_todo(doc)
-        date_obj = datetime.strptime(str(doc.date), "%Y-%m-%d")
-        due_date = date_obj.replace(hour=23, minute=59, second=59, tzinfo=timezone.utc).isoformat()
-        task["title"] = task_title
-        task["notes"] = task_notes
-        task["due"] = due_date
-        task["status"] = get_google_task_status(doc.status)
-        service.tasks().update(tasklist="@default", task=doc.custom_google_task_id, body=task).execute()
-    except Exception:
-        frappe.log_error(title="Google Task Update Failed", message=frappe.get_traceback())
-
-    
-def delete_google_task_on_todo_delete(doc):
-    if not doc.custom_google_task_id:
-        return {"status": "skipped", "message": "No Google Task ID"}
-    employee_email = getattr(doc, "allocated_to", None)
-    if not employee_email:
-        frappe.throw(_("No assigned user found for this ToDo"))
-    result = {}
-    if doc.custom_google_task_id:
-        employee_email = doc.allocated_to
-        if not employee_email:
-            frappe.throw(_("No assigned user found for this ToDo"))
-        try:
-            service = get_google_task_service(employee_email)
-            if not service:
-                return {"status": "skipped", "message": "Google Task service unavailable for user {0}".format(employee_email)}
-            response = service.tasks().delete(tasklist="@default", task=doc.custom_google_task_id).execute()
-            # Google Tasks API delete returns an empty dict on success
-            if response == {}:
-                result = {"status": "deleted"}
-            else:
-                result = {"status": "unknown", "response": response}
-        except Exception as e:
-            frappe.log_error(
-                message=f"Failed to delete Google Task '{doc.custom_google_task_id}' for ToDo {doc.name}: {frappe.utils.get_traceback()}",
-                title="Google Task Deletion Error"
-            )
-            result = {"status": "error", "message": f"Failed to delete Google Task: {e}"}
-    return result
 
 def get_mapped_status_from_google_task(task):
     """
@@ -405,8 +185,6 @@ def sync_google_tasks_for_users(user_emails=[], timedelta_kwargs=None):
             if todos:
                 # If ToDo already exists
                 todo = frappe.get_doc("ToDo", todos[0]["name"])
-                # Capture this before the db_set calls below bump `modified`.
-                todo_modified = todo.modified
                 todo.db_set("description", task_description)
                 todo.db_set("custom_google_task_title", task_title)
                 todo.db_set("date", due_date)
@@ -423,16 +201,6 @@ def sync_google_tasks_for_users(user_emails=[], timedelta_kwargs=None):
                             "status": "needsAction"
                         }
                         service.tasks().update(tasklist="@default",task=google_task_id, body=payload).execute()
-                    elif (
-                        todo.status in ["Closed", "Cancelled"]
-                        and mapped_status == "Open"
-                        and not is_google_task_newer_than_todo(google_task, todo_modified)
-                    ):
-                        # ERP is the source of truth. The task is still incomplete only
-                        # because the close could not be pushed (no task id yet, or the
-                        # Google service was unavailable) - push it instead of silently
-                        # reopening a ToDo the user already closed.
-                        update_google_task_on_todo_status_change(todo, "on_update")
                     else:
                         todo.db_set("status", mapped_status)
             else:

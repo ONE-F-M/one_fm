@@ -111,6 +111,9 @@ def transfer_insurance_already_open(employee):
     }))
 
 
+APPLY_ONLINE_BY_GR_OPERATOR = "Apply Online by GR Operator"
+
+
 def create_mi_record(WorkPermit, insurance_status=None):
     """Open the insurance a Work Permit calls for.
 
@@ -174,7 +177,7 @@ def system_remind_renewal_operator_to_apply_mi():
     supervisor = frappe.db.get_single_value("HR Settings", "default_grd_supervisor")
     renewal_operator = frappe.db.get_single_value("HR Settings", "default_grd_operator")
     medical_insurance_list = frappe.db.get_list('Medical Insurance',
-    {'date_of_application':['<=',today()],'workflow_state':'Apply Online by PRO','insurance_status':['in',('Renewal','New')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
+    {'date_of_application':['<=',today()],'workflow_state':APPLY_ONLINE_BY_GR_OPERATOR,'insurance_status':['in',('Renewal','New')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
     
     if is_scheduler_emails_enabled():
         notification_reminder(medical_insurance_list,supervisor,renewal_operator,"Renewal or New")
@@ -187,7 +190,7 @@ def system_remind_transfer_operator_to_apply_mi():
     supervisor = frappe.db.get_single_value("HR Settings", "default_grd_supervisor")
     transfer_operator = frappe.db.get_single_value("HR Settings", "default_grd_operator_transfer")
     medical_insurance_list = frappe.db.get_list('Medical Insurance',
-    {'date_of_application':['<=',today()],'workflow_state':'Apply Online by PRO','insurance_status':['=',('Local Transfer')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
+    {'date_of_application':['<=',today()],'workflow_state':APPLY_ONLINE_BY_GR_OPERATOR,'insurance_status':['=',('Local Transfer')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
     
     if is_scheduler_emails_enabled():
         notification_reminder(medical_insurance_list,supervisor,transfer_operator,"Local Transfer")
