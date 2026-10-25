@@ -19,6 +19,7 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import nowdate
 
 from one_fm.grd.doctype.preparation.preparation import (
+	DOCUMENTS_CREATED_EVENT,
 	INLINE_ROW_LIMIT,
 	NEW_ACTION_DOCUMENTS,
 	STEP_DOCTYPES,
@@ -154,6 +155,55 @@ class TestMissingDocumentResume(FrappeTestCase):
 		row = frappe.get_doc("Preparation", self.preparation.name).preparation_record[0]
 		self.assertTrue(row.ref_doctype)
 		self.assertTrue(row.ref_name)
+
+	def test_the_inline_run_puts_the_stage_on_the_document_it_was_called_on(self):
+		"""HD-1898774: the submit response is the only copy the browser gets.
+
+		PRE-REN-2026-00010 wrote the Ref DocType of all 12 rows and the operator still saw
+		blank cells, because db.set_value writes past the document the request is holding.
+		"""
+		self.preparation.enqueue_document_creation()
+
+		row = self.preparation.preparation_record[0]
+		self.assertTrue(row.ref_doctype, "the submit response carries a blank Ref DocType")
+		self.assertTrue(row.ref_name)
+		self.assertEqual(
+			row.ref_doctype,
+			frappe.db.get_value("Preparation Record", row.name, "ref_doctype"),
+		)
+
+	def test_a_run_tells_the_open_form_to_reload(self):
+		"""The job's only route to a browser: nothing it writes moves the parent on disk."""
+		published = []
+		original = frappe.publish_realtime
+
+		def record(event=None, message=None, **kwargs):
+			published.append((event, message, kwargs))
+			return None
+
+		frappe.publish_realtime = record
+		try:
+			create_missing_documents(self.preparation.name)
+		finally:
+			frappe.publish_realtime = original
+
+		events = [p for p in published if p[0] == DOCUMENTS_CREATED_EVENT]
+		self.assertEqual(len(events), 1)
+		_, message, kwargs = events[0]
+		self.assertEqual(message["preparation"], self.preparation.name)
+		self.assertEqual(kwargs["doctype"], "Preparation")
+		self.assertEqual(kwargs["docname"], self.preparation.name)
+
+	def test_the_form_listens_for_the_event_the_server_publishes(self):
+		"""The two halves have to name the same event, and nothing checks that at runtime."""
+		script = frappe.get_app_path(
+			"one_fm", "grd", "doctype", "preparation", "preparation.js"
+		)
+		with open(script) as handle:
+			source = handle.read()
+
+		self.assertIn(f'frappe.realtime.on("{DOCUMENTS_CREATED_EVENT}"', source)
+		self.assertIn("frm.reload_doc()", source)
 
 	def test_a_batch_bigger_than_the_inline_limit_is_queued(self):
 		"""The request timeout is the bug; a batch may not be opened inside the request."""

@@ -78,6 +78,12 @@ INLINE_ROW_LIMIT = 10
 # job is given half an hour rather than the long queue's default.
 CREATION_JOB_TIMEOUT = 1800
 
+# HD-1898774: the event the form listens on to pull the stages in once a run has written
+# them. refresh_row_stage writes the row with db.set_value and update_modified=False, so
+# nothing about the write reaches a browser on its own - not the document the submit
+# response carries, and not the parent's timestamp that would make the client refetch.
+DOCUMENTS_CREATED_EVENT = "preparation_documents_created"
+
 # How far back the daily check looks. Long enough to catch a batch submitted before a
 # weekend, short enough that it is not re-reading last quarter's every night.
 GAP_CHECK_WINDOW_DAYS = 30
@@ -444,6 +450,57 @@ def refresh_row_stage(preparation, employee):
     frappe.db.set_value("Preparation Record", row, stage, update_modified=False)
 
 
+def sync_row_stages_into_doc(preparation):
+    """Copy the stages just written to the database onto the in-memory rows.
+
+    HD-1898774: `refresh_row_stage` writes with `db.set_value`, which is the right call -
+    the row belongs to a submitted Preparation - but it writes past the document the
+    request is holding. PRE-REN-2026-00010 opened all 48 of its documents and wrote the
+    Ref DocType and Current Stage of all 12 rows, and the operator still saw six blank
+    cells, because the document handed back to the browser was the one loaded before the
+    run. Reading the three fields back onto the rows costs one query and makes the submit
+    response say what the database says.
+
+    Only the stage fields are touched, so nothing else about the in-memory document is
+    disturbed and the form does not come back dirty.
+    """
+    rows = {row.name: row for row in preparation.preparation_record}
+    if not rows:
+        return
+
+    written = frappe.get_all(
+        "Preparation Record",
+        filters={"name": ["in", list(rows)]},
+        fields=["name", "ref_doctype", "ref_name", "ref_doctype_status"],
+    )
+
+    for record in written:
+        row = rows.get(record.name)
+        if not row:
+            continue
+        row.ref_doctype = record.ref_doctype
+        row.ref_name = record.ref_name
+        row.ref_doctype_status = record.ref_doctype_status
+
+
+def notify_rows_refreshed(preparation_name):
+    """Tell any browser holding this Preparation open that its rows have moved on.
+
+    HD-1898774: the stages are written straight to the row and the parent's `modified` is
+    deliberately left alone, so a client has nothing to notice - it keeps its copy in
+    `locals` even when the operator routes away and back, and only a hard reload shows the
+    values. Worse since the creation moved to a job: the stages now land minutes after the
+    submit response rather than inside it. The form listens for this and reloads itself.
+    """
+    frappe.publish_realtime(
+        DOCUMENTS_CREATED_EVENT,
+        message={"preparation": preparation_name},
+        doctype="Preparation",
+        docname=preparation_name,
+        after_commit=True,
+    )
+
+
 def update_row_reference(doc, method=None):
     """Refresh the Current Stage of the Preparation row this sub-document belongs to.
 
@@ -648,6 +705,10 @@ class Preparation(Document):
         """
         if len(self.preparation_record) <= INLINE_ROW_LIMIT:
             create_missing_documents(self.name)
+            # create_missing_documents syncs the stages onto its own copy of the
+            # Preparation, not this one, and this one is what the submit response hands
+            # back to the browser (HD-1898774).
+            sync_row_stages_into_doc(self)
             return
 
         frappe.enqueue(
@@ -1302,6 +1363,12 @@ def create_missing_documents(preparation_name, notify_user=None):
 
     for row in preparation.preparation_record:
         refresh_row_stage(preparation_name, row.employee)
+
+    # The stages are on the rows now, and nothing about that write reaches a browser on
+    # its own (HD-1898774). Telling anyone holding the form open to reload is the only
+    # route out of a job; the inline path additionally syncs its own document, which is
+    # the one the submit response carries.
+    notify_rows_refreshed(preparation_name)
 
     report_document_creation_failures(failures, preparation=preparation, notify_user=notify_user)
 

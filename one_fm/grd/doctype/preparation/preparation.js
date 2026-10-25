@@ -174,6 +174,8 @@ frappe.ui.form.on("Preparation", {
 		// The full list, kept so it can be put back when the Category is cleared.
 		frm._all_actions = frm.fields_dict.preparation_record.grid
 			.get_docfield('renewal_or_extend').options;
+
+		listen_for_created_documents(frm);
 	},
 	category: frm => {
 		set_action_options(frm);
@@ -212,6 +214,37 @@ frappe.ui.form.on("Preparation", {
 		})
 	},
 });
+
+
+// HD-1898774: the stages are written straight onto the rows with db.set_value and the
+// parent's modified is deliberately left alone, so nothing about the write reaches this
+// form - it keeps its copy in locals even when the operator routes away and back, and
+// only a hard reload shows the values. PRE-REN-2026-00010 had all 48 of its documents and
+// all 12 of its stages in the database while the operator was looking at blank cells.
+// Since the creation moved to a job the stages land minutes after the submit response, so
+// the server says when it has written them and the form picks them up here.
+function listen_for_created_documents(frm) {
+	if (frm._prep_documents_listener) {
+		return;
+	}
+	frm._prep_documents_listener = true;
+
+	frappe.realtime.on("preparation_documents_created", function (data) {
+		if (!data || data.preparation !== frm.doc.name) {
+			return;
+		}
+		if (frm.is_dirty()) {
+			// Reloading would throw away what the operator is in the middle of typing.
+			// The indicator is enough to tell them the rows have moved on.
+			frm.dashboard.set_headline_alert(
+				__("Documents were created for this Preparation. Reload to see the current stages."),
+				"blue"
+			);
+			return;
+		}
+		frm.reload_doc();
+	});
+}
 
 
 // HD-1898774: a submitted batch whose documents were never opened looks exactly like a
