@@ -561,7 +561,8 @@ def sync_trackers_with_template(ccp_names, notify=False):
         except Exception as e:
             record_sync_failure(ccp_name, e, failed)
         if notify and synced and len(synced) % SYNC_COMMIT_EVERY == 0:
-            frappe.db.commit()  # nosemgrep: background job, committed per batch (D5)
+            # Background job: commit each batch so a later failure doesn't roll back trackers already synced (D5)
+            frappe.db.commit()  # nosemgrep
 
     message = frappe._("Synced {0} trackers with their template.").format(len(synced))
     if skipped:
