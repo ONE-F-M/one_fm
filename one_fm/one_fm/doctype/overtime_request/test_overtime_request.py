@@ -168,9 +168,9 @@ class TestOvertimeRequest(FrappeTestCase):
 		self.assertEqual(doc.eligible_for_compensatory_day_off, 0)
 		self.assertIsNone(doc.compensatory_day_off)
 
-	def test_day_off_required_once_employee_accepts(self):
-		# AC2: eligible, no Compensatory Day Off, employee has accepted
-		# (Pending Line Manager onward) -> blocked until a date is added.
+	def test_controller_leaves_the_required_date_to_the_process(self):
+		# Requiring the date before the Line Manager stage is the Overtime Request
+		# Lifecycle process's check ("Validate Compensatory Day Off"), not a save rule.
 		for state in (
 			"Pending Line Manager",
 			"Pending Payroll Officer",
@@ -184,8 +184,8 @@ class TestOvertimeRequest(FrappeTestCase):
 				eligible_for_compensatory_day_off=1,
 				workflow_state=state,
 			)
-			with self.assertRaises(frappe.ValidationError, msg=f"state {state} should require a date"):
-				doc.validate_compensatory_day_off()
+			# Should not raise
+			doc.validate_compensatory_day_off()
 
 	def test_day_off_optional_when_line_manager_routes(self):
 		# AC1: LM creates an eligible request and routes it to the employee
