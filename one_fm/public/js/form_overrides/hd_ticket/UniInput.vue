@@ -63,7 +63,9 @@ const component = computed(() => {
     return h(Link, {
       doctype: props.field.options,
       filters: props.field.filters,
-      pageLength: 999,
+      // page one only - search_link filters server side, so asking for 999 rows
+      // up front just stalls large link targets like DocType
+      pageLength: props.field.page_length || 20,
     });
   } else if (props.field.fieldtype === "Select") {
     return h(Autocomplete, {

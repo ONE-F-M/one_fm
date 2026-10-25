@@ -604,7 +604,17 @@ def deploy_fetch_from_support():
       * TicketNew.vue     - wires it into the new-ticket form
       * formCustomisation - folds read_only into the parsed `readonly` flag
       * UniInput.vue      - disables fields marked readonly
+      * Link.vue          - lazy, paged link search (no 999-row prefetch)
+      * FrappeUiAutocomplete.vue - exposes showOptions so Link can load on
+                            first open, and shows a loading state
+      * Autocomplete.vue  - caps how many options are drawn at once, so a long
+                            list (Reference Doctype) stays responsive
       * types.ts          - declares the three props on the Field interface
+      * TicketDetailsTab.vue - drops Customer and Team from the agent
+                            ticket sidebar
+      * TicketCustomerSidebar.vue / TicketCustomerTemplateFields.vue
+                          - hide fields depends_on rules out on the customer
+                            ticket view, as the agent view already does
     """
     bench_path = get_bench_path()
 
@@ -645,9 +655,39 @@ def deploy_fetch_from_support():
             "UniInput.vue",
         ),
         (
+            "Link.vue",
+            os.path.join(desk_src, "components", "frappe-ui", "Link.vue"),
+            "Link.vue",
+        ),
+        (
+            "FrappeUiAutocomplete.vue",
+            os.path.join(desk_src, "components", "frappe-ui", "Autocomplete.vue"),
+            "frappe-ui Autocomplete.vue",
+        ),
+        (
+            "Autocomplete.vue",
+            os.path.join(desk_src, "components", "Autocomplete.vue"),
+            "Autocomplete.vue",
+        ),
+        (
             "TicketNew.vue",
             os.path.join(desk_src, "pages", "ticket", "TicketNew.vue"),
             "TicketNew.vue",
+        ),
+        (
+            "TicketDetailsTab.vue",
+            os.path.join(desk_src, "components", "ticket-agent", "TicketDetailsTab.vue"),
+            "TicketDetailsTab.vue",
+        ),
+        (
+            "TicketCustomerSidebar.vue",
+            os.path.join(desk_src, "components", "ticket", "TicketCustomerSidebar.vue"),
+            "TicketCustomerSidebar.vue",
+        ),
+        (
+            "TicketCustomerTemplateFields.vue",
+            os.path.join(desk_src, "pages", "ticket", "TicketCustomerTemplateFields.vue"),
+            "TicketCustomerTemplateFields.vue",
         ),
     ]
 
@@ -870,8 +910,47 @@ def deploy_ticket_field():
     return copy_if_changed(field_source, field_target, "TicketField.vue")
 
 
+REFERENCE_DOCTYPE_FIELD = "custom_reference_doctype"
+REFERENCE_DOCTYPE_URL_METHOD = "one_fm.overrides.hd_ticket.get_reference_doctypes"
+
+
+def set_reference_doctype_url_method():
+    """Serve the Reference Doctype options from a cached endpoint.
+
+    As a plain Link field it hits frappe.desk.search.search_link on every
+    keystroke, and against DocType (~1700 rows) that round trip is what makes
+    the dropdown feel frozen. Pointing the template field at a url_method
+    switches it to an Autocomplete fed by one cached call, filtered in the
+    browser.
+
+    Data-only, so it does not flag a frontend rebuild.
+    """
+    rows = frappe.get_all(
+        "HD Ticket Template Field",
+        filters={
+            "fieldname": REFERENCE_DOCTYPE_FIELD,
+            "parenttype": "HD Ticket Template",
+        },
+        fields=["name", "parent", "url_method"],
+    )
+    if not rows:
+        print(f"⚠️ No HD Ticket Template Field row for {REFERENCE_DOCTYPE_FIELD}.")
+        return
+
+    for row in rows:
+        if row.url_method == REFERENCE_DOCTYPE_URL_METHOD:
+            print(f"⚠️ {row.parent}.{REFERENCE_DOCTYPE_FIELD} url_method already set.")
+            continue
+        frappe.db.set_value(
+            "HD Ticket Template Field", row.name, "url_method", REFERENCE_DOCTYPE_URL_METHOD
+        )
+        print(f"[✅] {row.parent}.{REFERENCE_DOCTYPE_FIELD} now served by {REFERENCE_DOCTYPE_URL_METHOD}")
+
+
 def update_all_ticket_features():
     any_changes = False
+
+    set_reference_doctype_url_method()
 
     if update_hd_ticket_agent():
         any_changes = True
