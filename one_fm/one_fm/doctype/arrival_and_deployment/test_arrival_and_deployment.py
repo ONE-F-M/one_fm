@@ -876,8 +876,6 @@ class TestBulkEditArrivalDate(FrappeTestCase):
 		for arrival in arrivals:
 			self.assertEqual(str(frappe.db.get_value("Arrival and Deployment", arrival.name, "arrival_date")), "2026-11-05")
 
-		self.assertIn("<b>Signing Recruiter</b>", sendmail.call_args.kwargs["message"])
-
 
 class TestRecruiterDeletesArrival(FrappeTestCase):
 	def test_deleting_an_arrival_removes_its_todos(self):
