@@ -677,8 +677,8 @@ def export_zip(names: str):
 	All or nothing on permission: one request the caller cannot read refuses the whole
 	export, so nobody receives a partial archive and takes it for the full set. A file that
 	is missing on disk is the opposite case - it is logged and skipped, because one lost
-	scan must not block the other 49 requests. Either way it is named in MISSING FILES.txt,
-	and so is a request that has no Visa Document at all.
+	scan must not block the other 49 requests. MISSING FILES.txt names every request whose
+	Visa Document is not in the archive: no file attached, no File record, or not on disk.
 
 	Layout: ``<VR name>/Visa Document - <file name>``. Other attachments are left out. Not
 	saved as a File (the 25 MB limit).
@@ -714,7 +714,11 @@ def export_zip(names: str):
 			missing.append(f"{name}: no Visa Document attached")
 			continue
 
-		for path, file_name in _export_files(name):
+		files = _export_files(name)
+		if not files:
+			missing.append(f"{name}: Visa Document has no File record")
+
+		for path, file_name in files:
 			try:
 				content = frappe.get_doc("File", file_name).get_content()
 			except Exception:

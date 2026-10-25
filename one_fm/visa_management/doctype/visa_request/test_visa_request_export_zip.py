@@ -114,6 +114,18 @@ class TestVisaRequestExportZip(FrappeTestCase):
 			f"{without_doc}: no Visa Document attached".encode(), archive.read("MISSING FILES.txt")
 		)
 
+	def test_a_visa_document_without_a_file_record_is_named_in_missing_files(self):
+		orphan, good = _seed("1"), _seed("2")
+		frappe.db.delete("File", _attach(orphan, "visa.txt", b"orphan bytes", "visa_document").name)
+		_attach(good, "visa-good.txt", b"good bytes", "visa_document")
+
+		archive, _response = _export([orphan, good])
+
+		self.assertFalse(any(n.startswith(orphan + "/") for n in archive.namelist()))
+		self.assertIn(
+			f"{orphan}: Visa Document has no File record".encode(), archive.read("MISSING FILES.txt")
+		)
+
 	def test_the_archive_is_stored_not_compressed(self):
 		vr = _seed("1")
 		_attach(vr, "visa.txt", b"x" * 1000, "visa_document")
