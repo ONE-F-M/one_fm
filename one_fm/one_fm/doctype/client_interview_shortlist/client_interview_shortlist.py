@@ -66,6 +66,17 @@ def clear_missing_checkin_entries(shift_assignment):
 		frappe.delete_doc("Missing Checkin", parent, ignore_permissions=True)
 
 
+def _process_instance_is_errored(shortlist):
+	"""True when the latest BPMN Process Instance of the shortlist is Errored (a dead process)."""
+	status = frappe.db.get_value(
+		"BPMN Process Instance",
+		{"context_doctype": "Client Interview Shortlist", "context_docname": shortlist},
+		"status",
+		order_by="creation desc",
+	)
+	return status == "Errored"
+
+
 def send_pending_operations_supervisor_reminder():
 	"""Story 1: Send daily email reminder at 7:45 AM to the creator of Client Interview Shortlist
 	documents that have been in 'Pending Operations Supervisor' state for more than 1 day."""
@@ -75,12 +86,16 @@ def send_pending_operations_supervisor_reminder():
 		"Client Interview Shortlist",
 		filters={
 			"workflow_state": "Pending Operations Supervisor",
+			"docstatus": 0,
 			"creation": ["<=", cutoff_date],
 		},
 		fields=["name", "owner", "creation"],
 	)
 
 	for doc in stale_docs:
+		if _process_instance_is_errored(doc.name):
+			continue
+
 		creator_email = frappe.db.get_value("User", doc.owner, "email")
 		if not creator_email:
 			continue
