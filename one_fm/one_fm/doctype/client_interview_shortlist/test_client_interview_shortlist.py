@@ -121,6 +121,8 @@ class TestClientInterviewAttendancePermission(FrappeTestCase):
 
 	def setUp(self):
 		self.addCleanup(frappe.set_user, "Administrator")
+		self._user_contexts = ExitStack()
+		self.addCleanup(self._user_contexts.close)
 		frappe.set_user("Administrator")
 		self.supervisor = make_user("cis_ops_supervisor@example.com", ["Operations Supervisor"])
 		self.stranger = make_user("cis_stranger@example.com", ["Employee"])
