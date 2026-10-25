@@ -132,6 +132,37 @@ class ArrivalandDeployment(Document):
                 from one_fm.one_fm.doctype.candidate_country_process.candidate_country_process import recalculate_ccp_live_eta
                 recalculate_ccp_live_eta(self.candidate_country_process)
 
+    def on_trash(self):
+        """A wrong arrival is deleted: free the Candidate Country Process tracker row so the delete
+        isn't blocked by its link and the step goes back to Pending. Frappe removes the ToDos itself."""
+        if not self.candidate_country_process:
+            return
+
+        # Submit to Onboarding moved the CCP to Arriving; with no arrival left it is back In Process
+        if frappe.db.get_value("Candidate Country Process", self.candidate_country_process, "status") == "Arriving":
+            frappe.db.set_value("Candidate Country Process", self.candidate_country_process, "status", "In Process")
+
+        rows = frappe.get_all(
+            "Candidate Country Process Details",
+            filters={
+                "parent": self.candidate_country_process,
+                "reference_type": self.doctype,
+                "reference_name": self.name,
+            },
+            pluck="name",
+        )
+        for row in rows:
+            frappe.db.set_value(
+                "Candidate Country Process Details",
+                row,
+                {"reference_name": None, "status": "Pending", "actual_date": None},
+                update_modified=True,
+            )
+
+        if rows:
+            from one_fm.one_fm.doctype.candidate_country_process.candidate_country_process import recalculate_ccp_live_eta
+            recalculate_ccp_live_eta(self.candidate_country_process)
+
     def validate_workflow_role(self):
         """Onboarding or the Recruiter confirms; the Transportation Manager (overseas) or Onboarding Officer (local) or the Recruiter marks arrival."""
         roles = frappe.get_roles()
@@ -537,6 +568,11 @@ def has_permission(doc, ptype=None, user=None, **kwargs):
         return None
 
     roles = frappe.get_roles(user)
+    if ptype == "delete" and doc.get("workflow_state") in ARRIVED_STATES + ("Did Not Arrive",):
+        # Recruiters delete wrong arrivals, not finished ones: those already set the CCP to Joined or Did Not Arrive
+        if not {"System Manager", "HR Manager", "Recruitment Manager"} & set(roles):
+            return False
+
     if "Transportation Manager" not in roles:
         return None
 

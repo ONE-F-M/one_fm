@@ -875,3 +875,100 @@ class TestBulkEditArrivalDate(FrappeTestCase):
 		self.assertEqual(frappe.db.get_value("List View Settings", "Candidate Country Process", "allow_edit"), 1)
 		for arrival in arrivals:
 			self.assertEqual(str(frappe.db.get_value("Arrival and Deployment", arrival.name, "arrival_date")), "2026-11-05")
+
+		self.assertIn("<b>Signing Recruiter</b>", sendmail.call_args.kwargs["message"])
+
+
+class TestRecruiterDeletesArrival(FrappeTestCase):
+	def test_deleting_an_arrival_removes_its_todos(self):
+		ard = _make_arrival("Test Delete Removes ToDo")
+		ard.workflow_state = "Pending Onboarding"
+		ard.save()
+		self.assertEqual(_open_assignees(ard), {"Administrator"})
+
+		frappe.delete_doc("Arrival and Deployment", ard.name)
+
+		self.assertFalse(frappe.db.exists("ToDo", {"reference_type": ard.doctype, "reference_name": ard.name}))
+
+	def test_deleting_an_overseas_arrival_frees_the_ccp_and_its_tracker_row(self):
+		ccp = frappe.get_all("Candidate Country Process", pluck="name", limit=1)
+		if not ccp:
+			self.skipTest("No Candidate Country Process to link the arrival to")
+		ard = _make_arrival("Test Delete Frees CCP Row")
+		frappe.db.set_value("Arrival and Deployment", ard.name, "candidate_country_process", ccp[0])
+		row = frappe.get_doc(
+			{
+				"doctype": "Candidate Country Process Details",
+				"parent": ccp[0],
+				"parenttype": "Candidate Country Process",
+				"parentfield": "agency_process_details",
+				"process_name": "Test Delete Arrival Step",
+				"reference_type": "Arrival and Deployment",
+				"reference_name": ard.name,
+				"status": "Arriving",
+				"actual_date": "2026-10-20",
+			}
+		)
+		row.db_insert()
+		frappe.db.set_value("Candidate Country Process", ccp[0], "status", "Arriving")
+
+		frappe.delete_doc("Arrival and Deployment", ard.name)
+
+		self.assertEqual(frappe.db.get_value("Candidate Country Process", ccp[0], "status"), "In Process")
+
+		self.assertEqual(
+			frappe.db.get_value(
+				"Candidate Country Process Details", row.name, ["reference_name", "status", "actual_date"]
+			),
+			(None, "Pending", None),
+		)
+
+	def test_recruiter_cannot_delete_a_finished_arrival(self):
+		from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import has_permission
+
+		ard = frappe.new_doc("Arrival and Deployment")
+		with patch("frappe.get_roles", return_value=["Recruiter"]):
+			for state in ("Pending Onboarding", "Onboarding Confirmed", "Pick Up Arranged"):
+				ard.workflow_state = state
+				self.assertIsNone(has_permission(ard, "delete", user=TRANSPORTATION_USER))
+			for state in ("Arrived", "Joined", "Did Not Arrive"):
+				ard.workflow_state = state
+				self.assertFalse(has_permission(ard, "delete", user=TRANSPORTATION_USER))
+				self.assertIsNone(has_permission(ard, "write", user=TRANSPORTATION_USER))
+
+		with patch("frappe.get_roles", return_value=["Recruiter", "Recruitment Manager"]):
+			self.assertIsNone(has_permission(ard, "delete", user=TRANSPORTATION_USER))
+
+	def test_patch_gives_recruiter_delete_on_custom_docperm(self):
+		from one_fm.patches.v15_0 import allow_recruiter_to_delete_arrivals
+
+		if not frappe.db.exists("Custom DocPerm", {"parent": "Arrival and Deployment"}):
+			frappe.get_doc(
+				{
+					"doctype": "Custom DocPerm",
+					"parent": "Arrival and Deployment",
+					"parenttype": "DocType",
+					"parentfield": "permissions",
+					"role": "HR User",
+					"permlevel": 0,
+					"read": 1,
+					"write": 1,
+				}
+			).insert()
+
+		allow_recruiter_to_delete_arrivals.execute()
+		allow_recruiter_to_delete_arrivals.execute()
+
+		for role in ("Recruiter", "Senior Recruiter", "HR Manager"):
+			rows = frappe.get_all(
+				"Custom DocPerm",
+				filters={"parent": "Arrival and Deployment", "role": role, "permlevel": 0},
+				fields=["read", "write", "delete"],
+			)
+			self.assertEqual(len(rows), 1)
+			self.assertEqual((rows[0].read, rows[0].write, rows[0].delete), (1, 1, 1))
+		self.assertFalse(
+			frappe.db.get_value(
+				"Custom DocPerm", {"parent": "Arrival and Deployment", "role": "HR User", "permlevel": 0}, "delete"
+			)
+		)
