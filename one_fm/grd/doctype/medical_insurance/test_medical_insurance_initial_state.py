@@ -2,23 +2,17 @@
 # See license.txt
 """The state a Medical Insurance policy opens in."""
 
-from unittest import mock
-
 import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import nowdate
 
-from one_fm.grd.doctype.medical_insurance.medical_insurance import (
-	APPLY_ONLINE_BY_GR_OPERATOR,
-	DRAFT,
-	initial_workflow_state,
-)
 from one_fm.grd.doctype.preparation.preparation import (
 	category_for_action,
 	create_documents_for_row,
 )
 
-APPLY_RULE = "frappe.automation.doctype.assignment_rule.assignment_rule.apply"
+DRAFT = "Draft"
+APPLY_ONLINE_BY_GR_OPERATOR = "Apply Online by GR Operator"
 
 
 def _an_active_employee():
@@ -52,19 +46,16 @@ def _opened_by_a_preparation(action):
 
 
 class TestMedicalInsuranceInitialState(FrappeTestCase):
-	def test_an_overseas_permit_opens_its_policy_in_draft(self):
-		for work_permit_type in ("Overseas", "Overseas (Government)"):
-			with self.subTest(work_permit_type=work_permit_type):
-				self.assertEqual(initial_workflow_state(work_permit_type), DRAFT)
+	def test_a_preparation_opens_an_overseas_policy_in_draft(self):
+		self.assertEqual(_opened_by_a_preparation("Overseas").workflow_state, DRAFT)
 
-	def test_every_other_permit_goes_straight_to_the_gr_operator(self):
-		"""Draft is the workflow's first state now, so this is what stops it becoming the
-		default for a renewal or a transfer."""
-		for work_permit_type in ("Renewal Expat", "Local Transfer"):
-			with self.subTest(work_permit_type=work_permit_type):
-				self.assertEqual(
-					initial_workflow_state(work_permit_type), APPLY_ONLINE_BY_GR_OPERATOR
-				)
+	def test_a_preparation_opens_a_renewal_policy_in_draft(self):
+		"""Draft is the workflow's first state, and nothing writes past it behind the
+		workflow's back."""
+		self.assertEqual(_opened_by_a_preparation("Renewal Expat").workflow_state, DRAFT)
+
+	def test_a_local_transfer_policy_opens_in_draft(self):
+		self.assertEqual(_opened_by_a_preparation("Local Transfer").workflow_state, DRAFT)
 
 	def test_the_workflow_offers_a_way_out_of_draft(self):
 		workflow = frappe.get_doc("Workflow", "Medical Insurance")
@@ -73,26 +64,6 @@ class TestMedicalInsuranceInitialState(FrappeTestCase):
 			(DRAFT, "Submit", APPLY_ONLINE_BY_GR_OPERATOR),
 			{(t.state, t.action, t.next_state) for t in workflow.transitions},
 		)
-
-	def test_a_preparation_opens_an_overseas_policy_in_draft(self):
-		self.assertEqual(_opened_by_a_preparation("Overseas").workflow_state, DRAFT)
-
-	def test_a_local_transfer_policy_starts_with_the_gr_operator(self):
-		self.assertEqual(
-			_opened_by_a_preparation("Local Transfer").workflow_state,
-			APPLY_ONLINE_BY_GR_OPERATOR,
-		)
-
-	def test_the_assignment_rule_is_applied_once_the_state_is_set(self):
-		with mock.patch(APPLY_RULE) as apply_rule:
-			policy = _opened_by_a_preparation("Local Transfer")
-
-		applied_to = [
-			call.args[0].name
-			for call in apply_rule.call_args_list
-			if call.args and getattr(call.args[0], "doctype", None) == "Medical Insurance"
-		]
-		self.assertIn(policy.name, applied_to)
 
 	def test_the_move_patch_is_idempotent(self):
 		from one_fm.patches.v15_0 import move_medical_insurance_drafts_to_gr_operator as patch
