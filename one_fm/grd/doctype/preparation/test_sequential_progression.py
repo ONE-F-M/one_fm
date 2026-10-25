@@ -130,7 +130,7 @@ class TestSequenceIsEnforced(FrappeTestCase):
 	def test_a_state_that_is_not_completion_is_not_gated(self):
 		"""The operator has to be able to work on a document before finishing it."""
 		insurance = self._linked("Medical Insurance")
-		insurance.workflow_state = "Apply Online by PRO"
+		insurance.workflow_state = "Apply Online by GR Operator"
 		validate_sequence(insurance)
 
 	def test_a_document_with_no_preparation_is_not_gated(self):

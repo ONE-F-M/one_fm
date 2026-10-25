@@ -676,3 +676,10 @@ one_fm.patches.v15_0.unblock_interview_feedback_skill_assessment #2026-09-25 HD-
 one_fm.patches.v15_0.reconcile_bed_status_with_open_checkins #2026-10-14 HD-1806399 free the beds left flagged occupied by check-outs that could not reset them
 one_fm.patches.v15_0.rename_trip_names_into_canvas_series #2026-10-14 WI-003454
 one_fm.patches.v15_0.backfill_checkin_operations_shift #2026-10-16 WI-003633
+one_fm.patches.v15_0.zero_internal_transfer_qty_pr01180 #2026-10-18
+one_fm.patches.v15_0.reset_pmr_pr01180_docstatus_to_draft #2026-10-18
+one_fm.patches.v15_0.move_stranded_medical_insurance_to_draft #2026-10-18 HD-1888665 the 69 renewals create_mi_record left in the state WI-002494 renamed away
+one_fm.patches.v15_0.fix_rfm_2026_000950_approver #2026-10-19 HD-1890138 RFM-2026-000950 approver back to the line manager
+one_fm.patches.v15_0.reassign_rfm_2026_000950_to_approver #2026-10-19 HD-1890138 the assignment fix_rfm_2026_000950_approver could not make
+one_fm.patches.v15_0.release_m_ali_user_id #2026-10-20 free m.ali@one-fm.com from the 2021 Left account for HR-EMP-04585
+one_fm.patches.v15_0.reset_pmr_pr01132_to_in_process #2026-10-25 reopen PR01132 from Completed back to In Process

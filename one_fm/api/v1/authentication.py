@@ -181,6 +181,11 @@ def forgot_password(employee_id: str = None, otp_source: str = None, is_new: int
 					_("No phone number is registered on your account. Please choose Email "
 					  "instead, or contact the IT Helpdesk to add your number."))
 
+		if formatted_otp_source == "email" and not frappe.db.get_value("Employee", {"user_id": employee_user_id}, "personal_email"):
+			return response(_("No Email Address"), 400, None,
+				_("No personal email is registered on your account. Please choose SMS or WhatsApp "
+				  "instead, or contact the IT Helpdesk to add your email."))
+
 		otp_secret = get_otpsecret_for_(employee_user_id)
 		token = int(pyotp.TOTP(otp_secret).now())
 		tmp_id = frappe.generate_hash(length=8)
@@ -462,7 +467,8 @@ def send_token_via_email(user, token, otp_secret, otp_issuer, subject=None, mess
 		'subject': subject,
 		'message': message,
 		'header': [_('Verfication Code'), 'blue'],
-		'delayed': False
+		'delayed': False,
+		'is_external_mail': True
 	}
 
 	enqueue(method=sendemail, queue='short', timeout=300, event=None,
@@ -621,29 +627,6 @@ def get_otp(employee_user_id: str=None, otp_source: str=None):
 
 	return response("Success", 201, result)
 
-
-@frappe.whitelist(allow_guest=True)
-def set_password(employee_user_id, new_password):
-	"""
-	used to set the new password
-
-	params
-	new_password
-	employee_user_id
-
-	returns
-	success message
-	
-	"""
-	try:
-		_update_password(employee_user_id, new_password)
-		frappe.db.set_value("Employee", {'employee_id':employee_user_id}, "registered", 1)
-		message =  {
-				'message': _('Password Updated!')
-			}
-		return response("Success", 200, message)
-	except Exception as e:
-		return response("Error", 500, {}, str(e))
 
 @frappe.whitelist(allow_guest=True)
 def user_login(employee_id, password):

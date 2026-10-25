@@ -3,6 +3,8 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
+import re
+
 import frappe
 from frappe.model.document import Document
 from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
@@ -22,6 +24,26 @@ class ERF(Document):
 		if self.okr_workshop_with:
 			self.set_onload('okr_workshop_with_full_name', get_user_fullname(self.okr_workshop_with))
 		self.set_onload('erf_approver', get_erf_approver())
+
+	def before_insert(self):
+		self.drop_a_deployment_date_the_requester_cannot_see()
+
+	def drop_a_deployment_date_the_requester_cannot_see(self):
+		"""HD-1888824: Expected Date of Deployment shows only once an ERF is
+		past initial review, but a copy of an old ERF starts at the beginning of the
+		workflow carrying that ERF's date. The date is then invisible and in the past,
+		so validate_date() refuses every save with no field on the form to correct.
+		no_copy on the field stops the desk's own Duplicate; this covers every other
+		way a document is copied - the REST API, amend, insert from a dict."""
+		if self.expected_date_of_deployment and not self.deployment_date_is_visible():
+			self.expected_date_of_deployment = None
+
+	def deployment_date_is_visible(self):
+		"""Read the states off the field's own depends_on rather than repeating them:
+		the expression is the analyst's to change from Customize Form."""
+		expression = frappe.get_meta(self.doctype).get_field("expected_date_of_deployment").depends_on
+		states = re.findall(r'workflow_state\s*==\s*"([^"]+)"', expression or "")
+		return not states or self.get("workflow_state") in states
 
 	def validate(self):
 		if self.is_new():

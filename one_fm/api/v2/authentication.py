@@ -275,7 +275,7 @@ def send_token_via_email(user, token, otp_secret, otp_issuer, subject=None, mess
 		'message': message,
 		'header': [_('Verfication Code'), 'blue'],
 		'delayed': False,
-		'retry':3
+		'is_external_mail': True
 	}
 
 	enqueue(method=sendemail, queue='short', timeout=300, event=None,
@@ -451,26 +451,6 @@ def verify_otp(otp, temp_id):
 	if check_otp:
 		return("success", 200, "OTP verified Successfully !")
 	return("Error", 400, "invalid OTP")
-
-@frappe.whitelist(allow_guest=True)
-def set_password(employee_user_id, new_password):
-	"""
-	used to set the new password
-
-	params
-	new_password
-	employee_user_id
-
-	returns
-	success message
-	
-	"""
-	_update_password(employee_user_id, new_password)
-	message =  {
-			'message': _('Password Updated!')
-		}
-	return response("Success", 200, message)
-
 
 @frappe.whitelist(allow_guest=True)
 def user_login(employee_id, password):

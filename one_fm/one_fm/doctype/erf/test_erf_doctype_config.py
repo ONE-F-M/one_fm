@@ -277,3 +277,57 @@ class TestTheShippedLayout(FrappeTestCase):
 
 	def test_every_field_is_ordered_exactly_once(self):
 		self.assertEqual(sorted(self.order), sorted(self.by_fieldname))
+
+
+class TestACopiedERFCannotCarryAnInvisibleDeploymentDate(FrappeTestCase):
+	"""HD-1888824. Expected Date of Deployment shows only from Under Review onwards, but
+	a copy starts at the beginning of the workflow. It carried the source ERF's date,
+	which was then both invisible and in the past, so validate_date() refused every save
+	with no field on the form to correct. The requester read that as the field being
+	missing - which it was, along with the value blocking them."""
+
+	def test_the_field_is_not_copied(self):
+		self.assertTrue(_field("expected_date_of_deployment").no_copy)
+
+	def test_the_code_of_the_erf_being_copied_is_not_copied(self):
+		"""erf_code is only ever set after insert, to the document's own name. A copy
+		carrying it showed the source ERF's code on an unsaved form."""
+		self.assertTrue(_field("erf_code").no_copy)
+
+	def _copy_of(self, workflow_state, expected_date_of_deployment):
+		doc = frappe.new_doc("ERF")
+		doc.workflow_state = workflow_state
+		doc.expected_date_of_deployment = expected_date_of_deployment
+		return doc
+
+	def test_a_date_the_requester_cannot_see_is_dropped(self):
+		stale = frappe.utils.add_days(frappe.utils.today(), -600)
+		doc = self._copy_of("Open", stale)
+		doc.drop_a_deployment_date_the_requester_cannot_see()
+		self.assertIsNone(doc.expected_date_of_deployment)
+
+	def test_a_date_the_recruiter_can_see_is_left_alone(self):
+		date = frappe.utils.add_days(frappe.utils.today(), 30)
+		doc = self._copy_of("Under Review", date)
+		doc.drop_a_deployment_date_the_requester_cannot_see()
+		self.assertEqual(doc.expected_date_of_deployment, date)
+
+	def test_what_is_visible_is_read_off_the_field_itself(self):
+		"""Not repeated in code: the expression is the analyst's to change."""
+		doc = frappe.new_doc("ERF")
+		for state in ("Under Review", "Accepted", "Rejected", "Cancelled", "Hold"):
+			with self.subTest(state=state):
+				doc.workflow_state = state
+				self.assertTrue(doc.deployment_date_is_visible())
+		for state in ("Open", "Submit to Recruitment Manager", "Closed", None):
+			with self.subTest(state=state):
+				doc.workflow_state = state
+				self.assertFalse(doc.deployment_date_is_visible())
+
+	def test_no_erf_is_saveable_only_by_someone_who_can_see_the_date(self):
+		"""The shape of the trap, stated once: any state that hides the field must also
+		be a state in which the field holds nothing to validate."""
+		doc = self._copy_of("Open", frappe.utils.add_days(frappe.utils.today(), -600))
+		doc.drop_a_deployment_date_the_requester_cannot_see()
+		doc.erf_initiation = frappe.utils.today()
+		doc.validate_date()
