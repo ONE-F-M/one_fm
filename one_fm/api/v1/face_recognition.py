@@ -1,4 +1,4 @@
-import frappe, base64, os
+import frappe
 from frappe import _
 
 from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee
@@ -16,23 +16,6 @@ from one_fm.overrides.employee import (
 # setup channel for face recognition
 
 face_recog_base_url = frappe.local.conf.face_recognition_service_base_url
-site_path = os.getcwd()+frappe.utils.get_site_path().replace('./', '/')
-video_path = site_path + '/public/files/video.mp4'
-video_txt_path = site_path + '/public/files/video.txt'
-
-
-def base64_to_mp4(base64_string):
-    # Decode the Base64 string to bytes
-    video_data = base64.b64decode(base64_string)
-    try:os.remove(video_path)
-    except:pass
-    # Write the bytes to an MP4 file
-    with open(video_txt_path, 'w') as text_file:
-            text_file.write(base64_string)
-
-    with open(video_path, 'wb') as mp4_file:
-        mp4_file.write(video_data)
-
 
 @frappe.whitelist()
 def enroll(employee_id: str = None, filename: str = None, video: str = None, video_mime: str = None) -> dict:
