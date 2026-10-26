@@ -155,6 +155,11 @@ def forgot_password(employee_id: str = None, otp_source: str = None) -> dict:
 		if not employee_user_id:
 			return response("Bad Request", 404, None, "No user ID found for employee ID {employee_id}.".format(employee_id=employee_id))
 		
+		if otp_source.lower() == "email" and not frappe.db.get_value("Employee", {"user_id": employee_user_id}, "personal_email"):
+			return response(_("No Email Address"), 400, None,
+				_("No personal email is registered on your account. Please choose SMS or WhatsApp "
+				  "instead, or contact the IT Helpdesk to add your email."))
+
 		otp_secret = get_otpsecret_for_(employee_user_id)
 		token = int(pyotp.TOTP(otp_secret).now())
 		tmp_id = frappe.generate_hash(length=8)

@@ -37,3 +37,26 @@ class TestEmailOtpDelivery(FrappeTestCase):
 		self.assertEqual(frappe.local.response["http_status_code"], 400)
 		self.assertEqual(frappe.local.response["message"], "No Email Address")
 		enqueue.assert_not_called()
+
+
+	def test_v2_and_mobile_forgot_password_refuse_without_a_personal_email(self):
+		real_get_value = frappe.db.get_value
+
+		def get_value(doctype, filters, fieldname, *args, **kwargs):
+			return None if fieldname == "personal_email" else real_get_value(doctype, filters, fieldname, *args, **kwargs)
+
+		for module, otp_source in ((v2_auth, "email"), (mobile_auth, "Email")):
+			with self.subTest(module=module.__name__), patch.object(
+				module.frappe, "get_value", return_value="worker@one-fm.com"
+			), patch.object(module.frappe.db, "get_value", side_effect=get_value), patch.object(
+				module, "enqueue"
+			) as enqueue:
+				frappe.local.response = frappe._dict()
+				if module is v2_auth:
+					module.forgot_password(employee_id="EMP-TEST-1", otp_source=otp_source)
+					self.assertEqual(frappe.local.response["http_status_code"], 400)
+					self.assertEqual(frappe.local.response["message"], "No Email Address")
+				else:
+					result = module.forgot_password("EMP-TEST-1", otp_source)
+					self.assertNotIn("temp_id", result)
+				enqueue.assert_not_called()

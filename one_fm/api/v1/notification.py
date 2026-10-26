@@ -1,7 +1,7 @@
 import frappe
 from frappe import _
 from frappe.utils import cstr, strip_html
-from one_fm.api.v1.utils import response
+from one_fm.api.v1.utils import check_own_employee, not_own_employee_response, response
 
 @frappe.whitelist()
 def get_notification_list(employee_id: str = None) -> dict:
@@ -37,6 +37,8 @@ def get_notification_list(employee_id: str = None) -> dict:
         site = frappe.local.conf.app_url
 
 		# notifications created for mobile app
+        if not check_own_employee(employee_id):
+            return not_own_employee_response()
         employee_user_email = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["user_id"])
 
         if not employee_user_email:
