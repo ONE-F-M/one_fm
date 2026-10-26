@@ -19,6 +19,9 @@ def get_user_details(employee_id: str = None):
         if not isinstance(employee_id, str):
             return response("Bad Request", 400, None, "Invalid Employee ID format. Please enter a valid value.")
 
+        if not check_own_employee(employee_id):
+            return not_own_employee_response()
+
         employee = frappe.get_doc("Employee", {"employee_id": employee_id})
 
         if not employee:

@@ -14,6 +14,7 @@ from one_fm.api.v1 import (
 	user,
 	utils,
 )
+from one_fm.api.v2 import user as user_v2
 from one_fm.one_fm.doctype.employee_resignation.test_employee_resignation_api import (
 	_make_employee,
 	_make_user,
@@ -141,3 +142,14 @@ class TestOwnEmployeeApi(FrappeTestCase):
 			utils.update_employee(self.id_b, "enrolled", "0")
 		self.assertEqual(frappe.db.get_value("Employee", self.employee_b, "status"), "Active")
 		self.assertEqual(frappe.db.get_value("Employee", self.employee_b, "enrolled"), 0)
+
+	def test_user_details_of_another_employee(self):
+		for method in (user.get_user_details, user_v2.get_user_details):
+			with self.subTest(method=method.__module__):
+				frappe.cache.delete_keys("own_employee_check:")
+				before = mismatch_logs()
+				self.assertEqual(self.call_as_a(method, employee_id=self.id_b), 200)
+				self.assertEqual(mismatch_logs(), before + 1)
+				with enforced():
+					self.assertEqual(self.call_as_a(method, employee_id=self.id_b), 403)
+					self.assertEqual(self.call_as_a(method, employee_id=self.id_a), 200)

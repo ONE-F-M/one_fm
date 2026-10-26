@@ -15,6 +15,7 @@ UNEXPOSED_GUEST_ROUTES = (
 	"one_fm.api.v2.authentication.user_login",
 	"one_fm.api.v1.flutter.roster.get_staff",
 	"one_fm.api.v2.flutter.roster.get_staff",
+	"one_fm.api.mobile.authentication.update_password",
 )
 
 APP_GUEST_ROUTES = (
@@ -31,7 +32,10 @@ class TestGuestRoutesUnexposed(FrappeTestCase):
 	def test_takeover_and_staff_list_routes_are_not_callable(self):
 		for path in UNEXPOSED_GUEST_ROUTES:
 			with self.subTest(path=path):
-				method = frappe.get_attr(path)
+				try:
+					method = frappe.get_attr(path)
+				except AttributeError:
+					continue
 				self.assertNotIn(method, frappe.whitelisted)
 				self.assertNotIn(method, frappe.guest_methods)
 

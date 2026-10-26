@@ -2,7 +2,7 @@ import frappe
 import base64
 from datetime import date
 import datetime
-from one_fm.api.v1.utils import response
+from one_fm.api.v1.utils import check_own_employee, not_own_employee_response, response
 from one_fm.api.api import upload_file
 from pathlib import Path
 import hashlib
@@ -17,6 +17,9 @@ def get_user_details(employee_id: str = None):
 
     if not isinstance(employee_id, str):
         return response("Bad Request", 400, None, "employee_id must be of type str.")
+
+    if not check_own_employee(employee_id):
+        return not_own_employee_response()
 
     try:
         employee = frappe.get_doc("Employee", {"employee_id": employee_id})
