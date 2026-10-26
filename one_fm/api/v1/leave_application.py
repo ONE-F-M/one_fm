@@ -11,7 +11,7 @@ from hrms.hr.doctype.leave_application.leave_application import get_leave_balanc
 
 from one_fm.api.api import upload_file
 from one_fm.api.tasks import get_action_user,get_notification_user
-from one_fm.api.v1.utils import response, validate_date
+from one_fm.api.v1.utils import check_own_employee, get_own_employee, log_access_mismatch, not_own_employee_response, response, validate_date
 from one_fm.utils import check_if_backdate_allowed, get_approver, get_approver_user
 from one_fm.api.utils import validate_sick_leave_attachment
 
@@ -44,6 +44,8 @@ def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
             return response(_("Invalid Leave ID"), 400, None,
                             _("Please select a valid leave application."))
 
+        if not check_own_employee(employee_id):
+            return not_own_employee_response()
         employee = frappe.db.get_value("Employee", {'employee_id':employee_id})
 
         if not employee:
@@ -70,6 +72,9 @@ def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
             if leave_details.leave_approver == frappe.session.user:
                 is_leave_approver = 1
             else:
+                if leave_details.employee != employee and not log_access_mismatch(
+                        "leave application of another employee", leave_id):
+                    return not_own_employee_response()
                 is_leave_approver = 0
             data = leave_details.as_dict()
 
@@ -145,6 +150,8 @@ def get_leave_balance(employee_id: str = None, leave_type: str = None) -> dict:
     today=date.today()
 
     try:
+        if not check_own_employee(employee_id):
+            return not_own_employee_response()
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
         if not employee:
@@ -207,6 +214,8 @@ def get_leave_types(employee_id: str = None) -> dict:
                         _("Please enter a valid Employee ID."))
 
     try:
+        if not check_own_employee(employee_id):
+            return not_own_employee_response()
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
         if not employee:
@@ -244,6 +253,8 @@ def get_leave_types(employee_id: str = None) -> dict:
 @frappe.whitelist()
 def get_employees_role_to_display_reliever_field(employee_id: str = None)-> dict:
     try:
+        if not check_own_employee(employee_id):
+            return not_own_employee_response()
         employee = frappe.get_value("Employee", {"employee_id": employee_id}, ["name", "user_id", "reports_to"], as_dict=1)
         if not employee:
             return response(_("Employee Not Found"), 404, None,
@@ -375,6 +386,8 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
                               "Please contact HR if you need to record it.").format(leave_type))
         
 
+        if not check_own_employee(employee_id):
+            return not_own_employee_response()
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
         if not employee:
             return response(_("Employee Not Found"), 404, None,
@@ -539,6 +552,8 @@ def leave_application_list(
         if not employee_id:
             return response(_("Missing Employee ID"), 400, None,
                             _("Please enter your Employee ID."))
+        if not check_own_employee(employee_id):
+            return not_own_employee_response()
         employee = frappe.get_value("Employee", {"employee_id": employee_id}, ["name", "user_id"], as_dict=1)
         if not employee:
             return response(_("Employee Not Found"), 404, None,
@@ -610,6 +625,14 @@ def clean_proof_documents(proof_documents):
 @frappe.whitelist()
 def fetch_proof_document(file_name: str, docname: str, doctype: str) -> dict:
     try:
+        leave = frappe.db.get_value("Leave Application", docname, ["employee", "leave_approver"], as_dict=True) \
+            if doctype == "Leave Application" else None
+        own_employee = get_own_employee()
+        allowed = leave and (leave.leave_approver == frappe.session.user
+            or (own_employee and leave.employee == own_employee.name))
+        if not allowed and not log_access_mismatch(f"proof document of {doctype} {docname}", docname):
+            return not_own_employee_response()
+
         if not frappe.db.exists("File", {"attached_to_name":docname, "attached_to_doctype":doctype, 'file_name':file_name}):
             return response(_("Document Not Found"), 404, None,
                             _("This document is no longer available. It may have been removed."))
