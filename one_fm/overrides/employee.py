@@ -11,7 +11,7 @@ from one_fm.api.tasks import send_notification
 from one_fm.api.v1.utils import response
 from hrms.overrides.employee_master import *
 from one_fm.hiring.utils import (
-    employee_after_insert, employee_before_insert, set_employee_name,
+    employee_after_insert, set_employee_name,
     employee_validate_attendance_by_timesheet, set_mandatory_feilds_in_employee_for_Kuwaiti,
     is_subcontract_employee
 )
