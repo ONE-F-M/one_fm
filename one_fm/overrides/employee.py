@@ -164,9 +164,6 @@ class EmployeeOverride(EmployeeMaster):
     def run_employee_id_generation(self):
         employee_after_insert(self, method=None)
 
-    def before_insert(self):
-        employee_before_insert(self, method=None)
-
     def validate_onboarding_process(self):
         validate_onboarding_process(self)
 
