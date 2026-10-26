@@ -2,6 +2,8 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
 
+import calendar
+import datetime
 from urllib.parse import urlencode
 
 import frappe
@@ -13,10 +15,8 @@ from frappe.utils import getdate
 ARRIVED_STATES = ("Arrived", "Joined")
 ARRIVING_STATES = ("Onboarding Confirmed", "Pick Up Arranged", "Pending Support Departments")
 PICKUP_STATES = ("Onboarding Confirmed", "Pick Up Arranged")
-MONTHS = (
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
-)
+# Submitted to onboarding and not yet arrived; these keep the Candidate Country Process at Arriving
+SUBMITTED_STATES = ("Pending Onboarding", *ARRIVING_STATES)
 
 
 class ArrivalandDeployment(Document):
@@ -138,8 +138,19 @@ class ArrivalandDeployment(Document):
         if not self.candidate_country_process:
             return
 
-        # Submit to Onboarding moved the CCP to Arriving; with no arrival left it is back In Process
-        if frappe.db.get_value("Candidate Country Process", self.candidate_country_process, "status") == "Arriving":
+        # Submitting this arrival moved the CCP to Arriving; it is back In Process unless another submitted arrival holds it
+        if (
+            self.get("workflow_state") in SUBMITTED_STATES
+            and frappe.db.get_value("Candidate Country Process", self.candidate_country_process, "status") == "Arriving"
+            and not frappe.db.exists(
+                "Arrival and Deployment",
+                {
+                    "candidate_country_process": self.candidate_country_process,
+                    "name": ["!=", self.name],
+                    "workflow_state": ["in", SUBMITTED_STATES],
+                },
+            )
+        ):
             frappe.db.set_value("Candidate Country Process", self.candidate_country_process, "status", "In Process")
 
         rows = frappe.get_all(
@@ -455,7 +466,7 @@ def build_arrivals_tables(arrivals):
     ]
     cell = 'style="border:1px solid #ccc;padding:4px 8px"'
     tables = []
-    for arrival_date, group in sorted(groups.items(), key=lambda item: (item[0] is None, item[0] or getdate("1900-01-01"))):
+    for arrival_date, group in sorted(groups.items(), key=lambda item: (item[0] is None, item[0] or datetime.date.min)):
         heading = format_arrival_date(arrival_date)
         rows = []
         for idx, arrival in enumerate(group, start=1):
@@ -500,7 +511,7 @@ def format_arrival_date(arrival_date):
         day = _("{0}nd").format(date.day)
     else:
         day = _("{0}rd").format(date.day)
-    return f"{day} {_(MONTHS[date.month - 1])} {date.year}"
+    return f"{day} {_(calendar.month_name[date.month])} {date.year}"
 
 
 def get_email_sender(user=None):

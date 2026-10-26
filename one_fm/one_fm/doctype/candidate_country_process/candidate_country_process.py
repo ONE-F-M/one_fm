@@ -146,6 +146,7 @@ class CandidateCountryProcess(Document):
         Compute live_plan_date for each row based on actual completion
         dates of dependencies (falls back to live_plan_date, then planned_date).
         A step that is not done is never planned before today, so overdue steps push their dependents.
+        A step at its completion status is done even without an actual date, so it stays where it was planned.
         """
         if not self.start_date:
             return
@@ -179,9 +180,10 @@ class CandidateCountryProcess(Document):
                 visiting.remove(row.process_name)
                 return actual
 
+            earliest = None if is_step_complete(row) else today
             before_tasks = self._expand_through_skipped(self._parse_task_list(row.get("before_task")), row_map)
             if not before_tasks:
-                live = max(frappe.utils.add_days(start, row.duration_in_days), today)
+                live = latest(frappe.utils.add_days(start, row.duration_in_days), earliest)
                 memo[row.process_name] = live
                 visiting.remove(row.process_name)
                 return live
@@ -205,7 +207,7 @@ class CandidateCountryProcess(Document):
                     max_dep_date = dep_date
 
             anchor = max_dep_date or start
-            live = max(frappe.utils.add_days(anchor, row.duration_in_days), today)
+            live = latest(frappe.utils.add_days(anchor, row.duration_in_days), earliest)
             memo[row.process_name] = live
             visiting.remove(row.process_name)
             return live
@@ -290,8 +292,7 @@ class CandidateCountryProcess(Document):
             # A row hands off to its dependents either by reaching its configured
             # completion status, or by being Skipped (nothing to wait for).
             is_skipped = row.status == "Skipped"
-            is_complete = bool(row.reference_complete_status_value) and row.status == row.reference_complete_status_value
-            if not (is_skipped or is_complete):
+            if not (is_skipped or is_step_complete(row)):
                 continue
 
             # This task is complete (or skipped) — find tasks that depend on it (by before_task)
@@ -358,7 +359,8 @@ class CandidateCountryProcess(Document):
         if not meta.has_field("candidate_country_process"):
             return None
 
-        # Build the new document with candidate_country_process link
+        # Build the new document with candidate_country_process link; a failure is undone up to here
+        frappe.db.savepoint("ccp_auto_create")
         try:
             new_doc = frappe.new_doc(doctype)
             new_doc.candidate_country_process = self.name
@@ -384,11 +386,10 @@ class CandidateCountryProcess(Document):
             )
             return new_doc
 
-        except Exception as e:
-            frappe.log_error(
-                title="CCP Auto-Create Error",
-                message=f"Failed to auto-create {doctype} for {self.name}: {e}",
-            )
+        except Exception:
+            frappe.db.rollback(save_point="ccp_auto_create")
+            frappe.clear_last_message()
+            frappe.log_error(title="CCP Auto-Create Error", reference_doctype=self.doctype, reference_name=self.name)
             return None
 
     def on_submit(self):
@@ -554,15 +555,15 @@ def sync_trackers_with_template(ccp_names, notify=False):
                 doc.flags._in_auto_create = True
             doc.apply_template()
             synced.append(ccp_name)
+            if notify and len(synced) % SYNC_COMMIT_EVERY == 0:
+                # Background job: commit each batch so a later failure doesn't roll back trackers already synced (D5)
+                frappe.db.commit()  # nosemgrep
         except frappe.db.InternalError as e:
             if frappe.db.is_deadlocked(e) or frappe.db.is_timedout(e):
                 raise
             record_sync_failure(ccp_name, e, failed)
         except Exception as e:
             record_sync_failure(ccp_name, e, failed)
-        if notify and synced and len(synced) % SYNC_COMMIT_EVERY == 0:
-            # Background job: commit each batch so a later failure doesn't roll back trackers already synced (D5)
-            frappe.db.commit()  # nosemgrep
 
     message = frappe._("Synced {0} trackers with their template.").format(len(synced))
     if skipped:
@@ -588,7 +589,16 @@ def record_sync_failure(ccp_name, error, failed):
     frappe.log_error(
         title="CCP Template Sync Error", reference_doctype="Candidate Country Process", reference_name=ccp_name
     )
-    failed.append(f"{ccp_name}: {error}")
+    failed.append(frappe.utils.escape_html(f"{ccp_name}: {error}"))
+
+
+def is_step_complete(row):
+    """A step is complete once its status reaches the completion status, with or without an actual date."""
+    return bool(row.get("reference_complete_status_value")) and row.get("status") == row.reference_complete_status_value
+
+
+def latest(date, earliest):
+    return max(date, earliest) if earliest else date
 
 
 def update_candidate_country_process():

@@ -2,9 +2,7 @@
 
 import frappe
 
-from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import ARRIVING_STATES
-
-SUBMITTED_STATES = ("Pending Onboarding", *ARRIVING_STATES)
+from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import SUBMITTED_STATES
 
 
 def execute():

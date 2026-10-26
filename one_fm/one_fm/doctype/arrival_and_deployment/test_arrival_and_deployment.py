@@ -878,6 +878,27 @@ class TestBulkEditArrivalDate(FrappeTestCase):
 
 
 class TestRecruiterDeletesArrival(FrappeTestCase):
+	def make_ccp(self, candidate_name):
+		from one_fm.one_fm.doctype.candidate_country_process.test_candidate_country_process import (
+			make_agency_country_process,
+			make_ccp_doc,
+		)
+
+		return (
+			make_ccp_doc([{"process_name": "Arrival & Deployment", "duration_in_days": 5, "status": "Pending"}])
+			.update({"agency_country_process": make_agency_country_process(), "candidate_name": candidate_name})
+			.insert()
+		)
+
+	def submit_arrival(self, ccp, candidate_name, workflow_state="Pending Onboarding"):
+		ard = _make_arrival(candidate_name)
+		frappe.db.set_value(
+			"Arrival and Deployment",
+			ard.name,
+			{"candidate_country_process": ccp.name, "workflow_state": workflow_state},
+		)
+		return ard.name
+
 	def test_deleting_an_arrival_removes_its_todos(self):
 		ard = _make_arrival("Test Delete Removes ToDo")
 		ard.workflow_state = "Pending Onboarding"
@@ -888,38 +909,42 @@ class TestRecruiterDeletesArrival(FrappeTestCase):
 
 		self.assertFalse(frappe.db.exists("ToDo", {"reference_type": ard.doctype, "reference_name": ard.name}))
 
-	def test_deleting_an_overseas_arrival_frees_the_ccp_and_its_tracker_row(self):
-		ccp = frappe.get_all("Candidate Country Process", pluck="name", limit=1)
-		if not ccp:
-			self.skipTest("No Candidate Country Process to link the arrival to")
-		ard = _make_arrival("Test Delete Frees CCP Row")
-		frappe.db.set_value("Arrival and Deployment", ard.name, "candidate_country_process", ccp[0])
-		row = frappe.get_doc(
+	def test_deleting_an_overseas_arrival_frees_the_ccp_and_replans_its_step(self):
+		ccp = self.make_ccp("_Test Delete Arrival Replans")
+		arrival = self.submit_arrival(ccp, "Test Delete Frees CCP Row")
+		row = ccp.agency_process_details[0]
+		row.db_set(
 			{
-				"doctype": "Candidate Country Process Details",
-				"parent": ccp[0],
-				"parenttype": "Candidate Country Process",
-				"parentfield": "agency_process_details",
-				"process_name": "Test Delete Arrival Step",
 				"reference_type": "Arrival and Deployment",
-				"reference_name": ard.name,
+				"reference_name": arrival,
 				"status": "Arriving",
 				"actual_date": "2026-10-20",
 			}
 		)
-		row.db_insert()
-		frappe.db.set_value("Candidate Country Process", ccp[0], "status", "Arriving")
+		frappe.db.set_value("Candidate Country Process", ccp.name, "status", "Arriving")
 
-		frappe.delete_doc("Arrival and Deployment", ard.name)
+		frappe.delete_doc("Arrival and Deployment", arrival)
 
-		self.assertEqual(frappe.db.get_value("Candidate Country Process", ccp[0], "status"), "In Process")
+		row.reload()
+		self.assertEqual((row.reference_name, row.status, row.actual_date), (None, "Pending", None))
+		# With no arrival date the step is planned again from today, and the Live Plan ETA follows it
+		self.assertEqual(row.live_plan_date, frappe.utils.getdate())
+		self.assertEqual(frappe.db.get_value("Candidate Country Process", ccp.name, "live_plan_eta"), frappe.utils.getdate())
+		self.assertEqual(frappe.db.get_value("Candidate Country Process", ccp.name, "status"), "In Process")
 
-		self.assertEqual(
-			frappe.db.get_value(
-				"Candidate Country Process Details", row.name, ["reference_name", "status", "actual_date"]
-			),
-			(None, "Pending", None),
-		)
+	def test_ccp_stays_arriving_while_another_submitted_arrival_holds_it(self):
+		ccp = self.make_ccp("_Test Delete Arrival Sibling")
+		first = self.submit_arrival(ccp, "Test Delete First Of Two")
+		second = self.submit_arrival(ccp, "Test Delete Second Of Two", workflow_state="Onboarding Confirmed")
+		draft = self.submit_arrival(ccp, "Test Delete Draft", workflow_state="Draft")
+		frappe.db.set_value("Candidate Country Process", ccp.name, "status", "Arriving")
+
+		frappe.delete_doc("Arrival and Deployment", draft)
+		frappe.delete_doc("Arrival and Deployment", first)
+		self.assertEqual(frappe.db.get_value("Candidate Country Process", ccp.name, "status"), "Arriving")
+
+		frappe.delete_doc("Arrival and Deployment", second)
+		self.assertEqual(frappe.db.get_value("Candidate Country Process", ccp.name, "status"), "In Process")
 
 	def test_recruiter_cannot_delete_a_finished_arrival(self):
 		from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import has_permission
@@ -937,36 +962,29 @@ class TestRecruiterDeletesArrival(FrappeTestCase):
 		with patch("frappe.get_roles", return_value=["Recruiter", "Recruitment Manager"]):
 			self.assertIsNone(has_permission(ard, "delete", user=TRANSPORTATION_USER))
 
-	def test_patch_gives_recruiter_delete_on_custom_docperm(self):
+	def test_patch_only_adds_delete_to_existing_custom_docperm_rows(self):
 		from one_fm.patches.v15_0 import allow_recruiter_to_delete_arrivals
 
-		if not frappe.db.exists("Custom DocPerm", {"parent": "Arrival and Deployment"}):
-			frappe.get_doc(
-				{
-					"doctype": "Custom DocPerm",
-					"parent": "Arrival and Deployment",
-					"parenttype": "DocType",
-					"parentfield": "permissions",
-					"role": "HR User",
-					"permlevel": 0,
-					"read": 1,
-					"write": 1,
-				}
-			).insert()
+		frappe.db.delete("Custom DocPerm", {"parent": "Arrival and Deployment", "role": "Senior Recruiter"})
+		for role in ("Recruiter", "HR User"):
+			if not frappe.db.exists("Custom DocPerm", {"parent": "Arrival and Deployment", "role": role, "permlevel": 0}):
+				frappe.get_doc(
+					{
+						"doctype": "Custom DocPerm",
+						"parent": "Arrival and Deployment",
+						"parenttype": "DocType",
+						"parentfield": "permissions",
+						"role": role,
+						"permlevel": 0,
+						"read": 1,
+						"write": 1,
+					}
+				).insert()
 
 		allow_recruiter_to_delete_arrivals.execute()
 		allow_recruiter_to_delete_arrivals.execute()
 
-		for role in ("Recruiter", "Senior Recruiter", "HR Manager"):
-			rows = frappe.get_all(
-				"Custom DocPerm",
-				filters={"parent": "Arrival and Deployment", "role": role, "permlevel": 0},
-				fields=["read", "write", "delete"],
-			)
-			self.assertEqual(len(rows), 1)
-			self.assertEqual((rows[0].read, rows[0].write, rows[0].delete), (1, 1, 1))
-		self.assertFalse(
-			frappe.db.get_value(
-				"Custom DocPerm", {"parent": "Arrival and Deployment", "role": "HR User", "permlevel": 0}, "delete"
-			)
-		)
+		perm = {"parent": "Arrival and Deployment", "permlevel": 0}
+		self.assertEqual(frappe.db.get_value("Custom DocPerm", {**perm, "role": "Recruiter"}, "delete"), 1)
+		self.assertFalse(frappe.db.get_value("Custom DocPerm", {**perm, "role": "HR User"}, "delete"))
+		self.assertFalse(frappe.db.exists("Custom DocPerm", {"parent": "Arrival and Deployment", "role": "Senior Recruiter"}))

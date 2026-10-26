@@ -88,6 +88,23 @@ class TestCandidateCountryProcess(FrappeTestCase):
 
 		self.assertEqual(live_dates(doc)["Medical appointment"], getdate("2026-10-23"))
 
+	def test_step_completed_without_a_date_stays_planned_and_does_not_push_dependents(self):
+		rows = [dict(row) for row in OVERDUE_PCC_ROWS]
+		rows[1].update({"status": "Applied", "reference_complete_status_value": "Applied"})
+		doc = make_ccp_doc(rows)
+		with self.freeze_time("2026-10-19"):
+			doc._compute_live_plan_dates(doc.agency_process_details)
+
+		self.assertEqual(
+			live_dates(doc),
+			{
+				"Medical Result": getdate("2026-09-11"),
+				"PCC Appointment": getdate("2026-09-12"),
+				"PCC Result": getdate("2026-10-19"),
+				"Arrival & Deployment": getdate("2026-10-24"),
+			},
+		)
+
 	def test_future_pending_step_is_not_moved(self):
 		doc = make_ccp_doc(OVERDUE_PCC_ROWS)
 		with self.freeze_time("2026-09-11"):
@@ -164,6 +181,25 @@ class TestVisaRequestCreatedByCandidateCountryProcess(FrappeTestCase):
 		self.assertEqual(visa_request.passport_number, "P15786905")
 		self.assertEqual(str(visa_request.passport_expires_on), "2036-09-20")
 		self.assertEqual(visa_request.university, "Almalik saud")
+
+	def test_a_failed_auto_create_undoes_what_it_wrote_and_logs_the_traceback(self):
+		def write_then_fail(doc, *args, **kwargs):
+			frappe.db.set_value("Candidate Country Process", self.ccp.name, "passport_number", "_Test Half Written")
+			raise frappe.ValidationError("draft failed")
+
+		with (
+			patch("frappe.model.document.Document.insert", autospec=True, side_effect=write_then_fail),
+			patch("frappe.log_error") as log_error,
+		):
+			created = self.ccp._create_linked_record(frappe._dict(reference_type="Visa Request"))
+
+		self.assertIsNone(created)
+		self.assertNotEqual(
+			frappe.db.get_value("Candidate Country Process", self.ccp.name, "passport_number"), "_Test Half Written"
+		)
+		log_error.assert_called_once_with(
+			title="CCP Auto-Create Error", reference_doctype="Candidate Country Process", reference_name=self.ccp.name
+		)
 
 	def test_patch_fills_an_empty_draft_and_keeps_what_was_typed(self):
 		from one_fm.patches.v15_0 import fill_ccp_created_visa_request_drafts
@@ -248,6 +284,45 @@ class TestCandidateOutcome(FrappeTestCase):
 		pcc.status = "Issued"
 		pcc.save()
 		self.assertEqual(self.ccp_status(ccp), "In Process")
+
+	def test_a_new_pcc_after_a_rejected_one_puts_the_candidate_back(self):
+		ccp = self.make_ccp("_Test Outcome New PCC")
+		frappe.db.set_value("PCC Clearance", self.make_pcc(ccp, "Applied").name, "status", "Rejected")
+		frappe.db.set_value("Candidate Country Process", ccp.name, "status", "PCC Failed")
+
+		self.make_pcc(ccp, "Applied")
+
+		self.assertEqual(self.ccp_status(ccp), "In Process")
+
+	def test_a_tracker_failed_by_hand_stays_failed_when_its_pcc_changes(self):
+		ccp = self.make_ccp("_Test Outcome Failed By Hand")
+		pcc = self.make_pcc(ccp, "Applied")
+		frappe.db.set_value("Candidate Country Process", ccp.name, "status", "PCC Failed")
+
+		pcc.status = "Issued"
+		pcc.save()
+
+		self.assertEqual(self.ccp_status(ccp), "PCC Failed")
+
+	def test_a_corrected_pcc_puts_a_candidate_with_a_submitted_arrival_back_to_arriving(self):
+		ccp = self.make_ccp("_Test Outcome Arriving", status="Arriving")
+		arrival = frappe.get_doc(
+			{"doctype": "Arrival and Deployment", "candidate_name": "_Test Outcome Arriving", "arrival_date": "2026-10-20"}
+		).insert()
+		frappe.db.set_value(
+			"Arrival and Deployment",
+			arrival.name,
+			{"candidate_country_process": ccp.name, "workflow_state": "Pending Onboarding"},
+		)
+		pcc = self.make_pcc(ccp, "Applied")
+		pcc.status = "Rejected"
+		pcc.save()
+		self.assertEqual(self.ccp_status(ccp), "PCC Failed")
+
+		pcc.status = "Issued"
+		pcc.save()
+
+		self.assertEqual(self.ccp_status(ccp), "Arriving")
 
 	def test_editing_an_older_pcc_keeps_the_candidate_failed_on_the_latest_one(self):
 		ccp = self.make_ccp("_Test Outcome Older PCC")
@@ -513,6 +588,37 @@ class TestBulkSyncWithTemplate(FrappeTestCase):
 			reference_doctype="Candidate Country Process",
 			reference_name=broken.name,
 		)
+
+	def test_background_sync_commits_once_per_batch_and_escapes_failures(self):
+		from one_fm.one_fm.doctype.candidate_country_process import candidate_country_process
+
+		synced = [self.make_ccp(f"_Test Sync Batch {i}").name for i in range(2)]
+		broken = [self.make_ccp(f"_Test Sync Batch Broken {i}").name for i in range(2)]
+		apply_template = candidate_country_process.CandidateCountryProcess.apply_template
+
+		def apply_or_break(doc):
+			if doc.name in broken:
+				raise frappe.ValidationError("<b>broken</b>")
+			return apply_template(doc)
+
+		with (
+			patch.object(candidate_country_process, "SYNC_COMMIT_EVERY", 2),
+			patch.object(
+				candidate_country_process.CandidateCountryProcess,
+				"apply_template",
+				autospec=True,
+				side_effect=apply_or_break,
+			),
+			patch("frappe.db.commit") as commit,
+			patch("frappe.publish_realtime"),
+			patch("frappe.log_error"),
+		):
+			result = candidate_country_process.sync_trackers_with_template(synced + broken, notify=True)
+
+		self.assertEqual(result["synced"], synced)
+		commit.assert_called_once()
+		self.assertTrue(all("&lt;b&gt;broken&lt;/b&gt;" in entry for entry in result["failed"]))
+		self.assertFalse(any("<b>" in entry for entry in result["failed"]))
 
 	def sync_raw(self, scope, names):
 		from one_fm.one_fm.doctype.candidate_country_process.candidate_country_process import (

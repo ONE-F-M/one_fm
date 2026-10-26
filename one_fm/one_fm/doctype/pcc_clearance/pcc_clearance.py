@@ -72,12 +72,27 @@ class PCCClearance(Document):
             recalculate_ccp_live_eta(self.candidate_country_process)
 
     def update_ccp_outcome(self):
-        """A rejected latest PCC fails the candidate; once no outcome holds, a PCC Failed tracker goes back in process."""
+        """A rejected latest PCC fails the candidate. Once no outcome holds, a tracker that a rejected PCC failed goes back
+        to Arriving if its arrival is submitted, else In Process; one set to PCC Failed by hand stays failed."""
+        from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import SUBMITTED_STATES
         from one_fm.one_fm.doctype.candidate_country_process.candidate_country_process import (
             apply_ccp_outcome,
         )
 
-        if apply_ccp_outcome(self.candidate_country_process):
+        ccp = self.candidate_country_process
+        if apply_ccp_outcome(ccp):
             return
-        if frappe.db.get_value("Candidate Country Process", self.candidate_country_process, "status") == "PCC Failed":
-            frappe.db.set_value("Candidate Country Process", self.candidate_country_process, "status", "In Process")
+        if frappe.db.get_value("Candidate Country Process", ccp, "status") != "PCC Failed":
+            return
+
+        before = self.get_doc_before_save()
+        failed_by_a_pcc = (before and before.status == "Rejected") or frappe.db.exists(
+            "PCC Clearance", {"candidate_country_process": ccp, "status": "Rejected", "name": ["!=", self.name]}
+        )
+        if not failed_by_a_pcc:
+            return
+
+        arriving = frappe.db.exists(
+            "Arrival and Deployment", {"candidate_country_process": ccp, "workflow_state": ["in", SUBMITTED_STATES]}
+        )
+        frappe.db.set_value("Candidate Country Process", ccp, "status", "Arriving" if arriving else "In Process")
