@@ -18,8 +18,11 @@
   "arrival_date",
   "section_break_candidate_details",
   "job_applicant",
+  "hiring_type",
   "department",
   "designation",
+  "agency",
+  "agency_name",
   "column_break_candidate_details",
   "gender",
   "nationality",
@@ -61,10 +64,12 @@
    "read_only": 1
   },
   {
+   "description": "Set to the user who submits the arrival to onboarding.",
    "fieldname": "recruiter",
    "fieldtype": "Link",
    "label": "Recruiter",
-   "options": "User"
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "onboarding_officer",
@@ -101,6 +106,8 @@
   {
    "fieldname": "arrival_date",
    "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Arrival Date",
    "mandatory_depends_on": "eval:doc.workflow_state && doc.workflow_state != \"Draft\""
   },
@@ -118,18 +125,39 @@
    "read_only": 1
   },
   {
-   "fetch_from": "candidate_country_process.department",
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "label": "Department",
-   "options": "Department",
+   "fieldname": "hiring_type",
+   "fieldtype": "Select",
+   "label": "Hiring Type",
+   "options": "Local\nOverseas",
    "read_only": 1
+  },
+  {
+   "fetch_from": "candidate_country_process.department",
+   "fetch_if_empty": 1,
+   "fieldname": "department",
+   "fieldtype": "Data",
+   "label": "Department"
   },
   {
    "fieldname": "designation",
    "fieldtype": "Link",
    "label": "Designation",
    "options": "Designation",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "candidate_country_process.agency",
+   "fieldname": "agency",
+   "fieldtype": "Link",
+   "label": "Agency",
+   "options": "Agency",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "candidate_country_process.agency_name",
+   "fieldname": "agency_name",
+   "fieldtype": "Data",
+   "label": "Agency Name",
    "read_only": 1
   },
   {
@@ -148,6 +176,7 @@
    "fetch_from": "job_applicant.one_fm_nationality",
    "fieldname": "nationality",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Nationality",
    "options": "Nationality",
    "read_only": 1
@@ -184,7 +213,7 @@
   }
  ],
  "links": [],
- "modified": "2026-10-13 14:00:00.000000",
+ "modified": "2026-10-25 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Arrival and Deployment",
@@ -239,6 +268,7 @@
   },
   {
    "create": 1,
+   "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -249,6 +279,7 @@
   },
   {
    "create": 1,
+   "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,

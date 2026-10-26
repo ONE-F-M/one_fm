@@ -2,19 +2,27 @@
 # Copyright (c) 2026, ONE FM and contributors
 # For license information, please see license.txt
 
+import calendar
+import datetime
+from urllib.parse import urlencode
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import getdate
 
 # Final states meaning the candidate arrived; both set the Candidate Country Process to Joined
 ARRIVED_STATES = ("Arrived", "Joined")
 ARRIVING_STATES = ("Onboarding Confirmed", "Pick Up Arranged", "Pending Support Departments")
 PICKUP_STATES = ("Onboarding Confirmed", "Pick Up Arranged")
+# Submitted to onboarding and not yet arrived; these keep the Candidate Country Process at Arriving
+SUBMITTED_STATES = ("Pending Onboarding", *ARRIVING_STATES)
 
 
 class ArrivalandDeployment(Document):
     def validate(self):
         self.designation = get_job_applicant_designation(self.job_applicant)
+        self.hiring_type = get_hiring_type(self.candidate_country_process)
 
         if self.has_value_changed("workflow_state"):
             self.validate_workflow_role()
@@ -23,6 +31,8 @@ class ArrivalandDeployment(Document):
             frappe.throw(_("Please fill in the Transportation Manager before confirming onboarding."))
 
         if self.get("workflow_state") == "Pending Onboarding":
+            if self.has_value_changed("workflow_state"):
+                self.recruiter = frappe.session.user
             if not self.arrival_date:
                 frappe.throw(_("Please ensure Arrival Date is filled before submitting to Onboarding."))
             if self.candidate_country_process:
@@ -38,7 +48,11 @@ class ArrivalandDeployment(Document):
         elif self.get("workflow_state") == "Did Not Arrive":
             self.status = "Did Not Arrive"
 
+        self.department = get_ccp_department(self.candidate_country_process) or self.department
         self.update_tracker_status()
+
+    def onload(self):
+        self.set_onload("ccp_department", get_ccp_department(self.candidate_country_process))
 
     def update_tracker_status(self):
         """Sync status back to the Candidate Country Process tracker row (non-recursive)."""
@@ -100,7 +114,16 @@ class ArrivalandDeployment(Document):
             self.notify_recruiter_arrival_outcome("Joined")
 
         if self.candidate_country_process:
-            if self.get("workflow_state") in ARRIVED_STATES and old_state not in ARRIVED_STATES:
+            if self.department and not get_ccp_department(self.candidate_country_process):
+                frappe.db.set_value("Candidate Country Process", self.candidate_country_process, "department", self.department)
+
+            if (
+                self.get("workflow_state") == "Pending Onboarding"
+                and old_state != "Pending Onboarding"
+                and frappe.db.get_value("Candidate Country Process", self.candidate_country_process, "status") == "In Process"
+            ):
+                frappe.db.set_value("Candidate Country Process", self.candidate_country_process, "status", "Arriving")
+            elif self.get("workflow_state") in ARRIVED_STATES and old_state not in ARRIVED_STATES:
                 frappe.db.set_value("Candidate Country Process", self.candidate_country_process, "status", "Joined")
             elif self.get("workflow_state") == "Did Not Arrive" and old_state != "Did Not Arrive":
                 frappe.db.set_value("Candidate Country Process", self.candidate_country_process, "status", "Did Not Arrive")
@@ -108,6 +131,48 @@ class ArrivalandDeployment(Document):
             if self.get("workflow_state") != old_state:
                 from one_fm.one_fm.doctype.candidate_country_process.candidate_country_process import recalculate_ccp_live_eta
                 recalculate_ccp_live_eta(self.candidate_country_process)
+
+    def on_trash(self):
+        """A wrong arrival is deleted: free the Candidate Country Process tracker row so the delete
+        isn't blocked by its link and the step goes back to Pending. Frappe removes the ToDos itself."""
+        if not self.candidate_country_process:
+            return
+
+        # Submitting this arrival moved the CCP to Arriving; it is back In Process unless another submitted arrival holds it
+        if (
+            self.get("workflow_state") in SUBMITTED_STATES
+            and frappe.db.get_value("Candidate Country Process", self.candidate_country_process, "status") == "Arriving"
+            and not frappe.db.exists(
+                "Arrival and Deployment",
+                {
+                    "candidate_country_process": self.candidate_country_process,
+                    "name": ["!=", self.name],
+                    "workflow_state": ["in", SUBMITTED_STATES],
+                },
+            )
+        ):
+            frappe.db.set_value("Candidate Country Process", self.candidate_country_process, "status", "In Process")
+
+        rows = frappe.get_all(
+            "Candidate Country Process Details",
+            filters={
+                "parent": self.candidate_country_process,
+                "reference_type": self.doctype,
+                "reference_name": self.name,
+            },
+            pluck="name",
+        )
+        for row in rows:
+            frappe.db.set_value(
+                "Candidate Country Process Details",
+                row,
+                {"reference_name": None, "status": "Pending", "actual_date": None},
+                update_modified=True,
+            )
+
+        if rows:
+            from one_fm.one_fm.doctype.candidate_country_process.candidate_country_process import recalculate_ccp_live_eta
+            recalculate_ccp_live_eta(self.candidate_country_process)
 
     def validate_workflow_role(self):
         """Onboarding or the Recruiter confirms; the Transportation Manager (overseas) or Onboarding Officer (local) or the Recruiter marks arrival."""
@@ -176,14 +241,11 @@ class ArrivalandDeployment(Document):
             email for email in (frappe.db.get_value("User", officer, "email") for officer in officers) if email
         ]
 
-        job_applicant_name, nationality, designation = None, None, None
+        job_applicant_name = None
         if self.candidate_country_process:
             job_applicant = frappe.db.get_value("Candidate Country Process", self.candidate_country_process, "job_applicant")
             if job_applicant:
-                job_applicant_name, nationality = frappe.db.get_value(
-                    "Job Applicant", job_applicant, ["applicant_name", "one_fm_nationality"]
-                )
-                designation = get_job_applicant_designation(job_applicant)
+                job_applicant_name = frappe.db.get_value("Job Applicant", job_applicant, "applicant_name")
         display_name = job_applicant_name or self.candidate_name
 
         from frappe.desk.form.assign_to import add as add_assignment
@@ -208,12 +270,7 @@ class ArrivalandDeployment(Document):
         message = f'''
         <p>Dear Onboarding Team,</p>
         <p>A new candidate is ready for onboarding:</p>
-        <ul>
-            <li><b>Name:</b> {escape_html(display_name)}</li>
-            <li><b>Designation:</b> {escape_html(designation) if designation else 'N/A'}</li>
-            <li><b>Nationality:</b> {escape_html(nationality) if nationality else 'N/A'}</li>
-            <li><b>Arriving on:</b> {formatdate(self.arrival_date)}</li>
-        </ul>
+        {build_arrivals_tables([self])}
         <p>Please review the <a href="/app/arrival-and-deployment/{self.name}">Arrival and Deployment Document</a> and prepare accordingly.</p>
         '''
 
@@ -227,7 +284,7 @@ class ArrivalandDeployment(Document):
             sender=sender.sender,
             reply_to=sender.reply_to,
             subject=subject,
-            message=message + sender.signature
+            message=message + sender.assigned_by
         )
 
     def notify_recruiter_arrival_outcome(self, outcome):
@@ -276,11 +333,10 @@ def bulk_submit_to_onboarding(names: str):
             arrival.onboarding_officer,
             arrival.second_onboarding_officer,
             arrival.email_onboarding_mailbox,
-            arrival.recruiter,
         )
         groups.setdefault(key, []).append(arrival)
 
-    for (officer, second_officer, copy_mailbox, recruiter), group in groups.items():
+    for (officer, second_officer, copy_mailbox), group in groups.items():
         recipients = [
             frappe.db.get_value("User", user, "email") for user in (officer, second_officer) if user
         ]
@@ -290,7 +346,7 @@ def bulk_submit_to_onboarding(names: str):
             subject=_("New Arrivals Ready for Onboarding: {0} candidates").format(len(group)),
             intro=_("Dear Onboarding Team,<br>Find new arrival details for the following candidates:"),
             arrivals=group,
-            sent_by=recruiter,
+            sent_by=frappe.session.user,
         )
 
 
@@ -376,42 +432,50 @@ def send_arrivals_email(recipients, cc, subject, intro, arrivals, sent_by=None):
     if not recipients:
         return
     sender = get_email_sender(sent_by)
+    review = _("Please review the {0} and prepare accordingly.").format(
+        f'<a href="{get_arrivals_list_url(arrivals)}">{_("Arrival and Deployment Documents")}</a>'
+    )
     frappe.sendmail(
         recipients=recipients,
         cc=cc,
         sender=sender.sender,
         reply_to=sender.reply_to,
         subject=subject,
-        message=f"<p>{intro}</p>{build_arrivals_tables(arrivals)}{sender.signature}",
+        message=f"<p>{intro}</p>{build_arrivals_tables(arrivals)}<p>{review}</p>{sender.assigned_by}",
+    )
+
+
+def get_arrivals_list_url(arrivals):
+    """The Arrival and Deployment list, filtered to the arrivals in the email."""
+    return "/app/arrival-and-deployment?" + urlencode(
+        {"name": frappe.as_json(["in", [arrival.name for arrival in arrivals]], indent=None)}
     )
 
 
 def build_arrivals_tables(arrivals):
-    """One HTML table per arrival date, with the candidate details Onboarding and Transportation use."""
+    """One HTML table per arrival date, with the candidate details Onboarding and Transportation use and a link to each arrival."""
     from frappe.utils import escape_html, formatdate
 
     groups = {}
     for arrival in arrivals:
-        groups.setdefault(str(arrival.arrival_date), []).append(arrival)
+        groups.setdefault(getdate(arrival.arrival_date) if arrival.arrival_date else None, []).append(arrival)
 
     headers = [
-        _("S.No"), _("Job Applicant"), _("Hiring Type"), _("Agency"), _("Department"), _("Designation"),
+        _("S.No"), _("Arrival and Deployment"), _("Job Applicant"), _("Hiring Type"), _("Agency"), _("Department"), _("Designation"),
         _("Candidate Name"), _("Nationality"), _("Gender"), _("DOB"), _("Passport #"),
     ]
     cell = 'style="border:1px solid #ccc;padding:4px 8px"'
     tables = []
-    for arrival_date, group in sorted(groups.items()):
-        heading = formatdate(arrival_date)
+    for arrival_date, group in sorted(groups.items(), key=lambda item: (item[0] is None, item[0] or datetime.date.min)):
+        heading = format_arrival_date(arrival_date)
         rows = []
         for idx, arrival in enumerate(group, start=1):
-            agency = arrival.candidate_country_process and frappe.db.get_value(
-                "Candidate Country Process", arrival.candidate_country_process, "agency_name"
-            )
+            hiring_type = arrival.hiring_type or get_hiring_type(arrival.candidate_country_process)
             values = [
                 idx,
                 arrival.job_applicant,
-                _("Overseas") if arrival.candidate_country_process else _("Local"),
-                agency,
+                _(hiring_type) if hiring_type else "",
+                arrival.agency_name,
                 arrival.department,
                 arrival.designation,
                 arrival.candidate_name,
@@ -420,31 +484,62 @@ def build_arrivals_tables(arrivals):
                 formatdate(arrival.date_of_birth) if arrival.date_of_birth else "",
                 arrival.passport_number,
             ]
-            rows.append("<tr>" + "".join(f"<td {cell}>{escape_html(str(v or ''))}</td>" for v in values) + "</tr>")
+            cells = [f"<td {cell}>{escape_html(str(v or ''))}</td>" for v in values]
+            cells.insert(
+                1,
+                f'<td {cell}><a href="/app/arrival-and-deployment/{arrival.name}">{escape_html(arrival.name or "")}</a></td>',
+            )
+            rows.append("<tr>" + "".join(cells) + "</tr>")
         header_row = "<tr>" + "".join(f"<th {cell}>{h}</th>" for h in headers) + "</tr>"
         tables.append(
-            f"<p><b>{escape_html(heading)}</b></p>"
+            f"<p><b>{_('Arrival Date')}:</b> {escape_html(heading)}</p>"
             f'<table style="border-collapse:collapse">{header_row}{"".join(rows)}</table>'
         )
     return "".join(tables)
 
 
+def format_arrival_date(arrival_date):
+    """The arrival date as it reads in the emails, e.g. 25th May 2023."""
+    if not arrival_date:
+        return _("TBD")
+    date = getdate(arrival_date)
+    if 11 <= date.day % 100 <= 13 or date.day % 10 not in (1, 2, 3):
+        day = _("{0}th").format(date.day)
+    elif date.day % 10 == 1:
+        day = _("{0}st").format(date.day)
+    elif date.day % 10 == 2:
+        day = _("{0}nd").format(date.day)
+    else:
+        day = _("{0}rd").format(date.day)
+    return f"{day} {_(calendar.month_name[date.month])} {date.year}"
+
+
 def get_email_sender(user=None):
-    """The sender (the arrival's Recruiter, else whoever is acting): name on the outgoing address, email for replies, signature."""
+    """The sender (the arrival's Recruiter, else whoever is acting): name on the outgoing address, email for replies, and who assigned the arrival ticket."""
     from frappe.email.doctype.email_account.email_account import EmailAccount
     from frappe.utils import escape_html, get_formatted_email
 
     user = user or frappe.session.user
     full_name, email = frappe.db.get_value("User", user, ["full_name", "email"])
     account = EmailAccount.find_default_outgoing()
-    designation = frappe.db.get_value("Employee", {"user_id": user}, "designation")
 
-    title = f" | {escape_html(designation)}" if designation else ""
     return frappe._dict(
         sender=get_formatted_email(user, mail=account.email_id) if account else None,
         reply_to=email,
-        signature=f"<p>Best Regards,<br><b>{escape_html(full_name or user)}</b>{title}<br>{escape_html(email or '')}</p>",
+        assigned_by=f"<p>{_('Arrival ticket was assigned by {0}.').format(escape_html(full_name or user))}</p>",
     )
+
+
+def get_ccp_department(candidate_country_process):
+    """The department on the Candidate Country Process, which wins over the one on the arrival."""
+    return candidate_country_process and frappe.db.get_value(
+        "Candidate Country Process", candidate_country_process, "department"
+    )
+
+
+def get_hiring_type(candidate_country_process):
+    """Overseas when the arrival comes from a Candidate Country Process, else Local."""
+    return "Overseas" if candidate_country_process else "Local"
 
 
 def get_job_applicant_designation(job_applicant):
@@ -484,6 +579,11 @@ def has_permission(doc, ptype=None, user=None, **kwargs):
         return None
 
     roles = frappe.get_roles(user)
+    if ptype == "delete" and doc.get("workflow_state") in ARRIVED_STATES + ("Did Not Arrive",):
+        # Recruiters delete wrong arrivals, not finished ones: those already set the CCP to Joined or Did Not Arrive
+        if not {"System Manager", "HR Manager", "Recruitment Manager"} & set(roles):
+            return False
+
     if "Transportation Manager" not in roles:
         return None
 
