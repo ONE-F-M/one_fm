@@ -13,13 +13,28 @@ frappe.ui.form.on("Bonus Request", {
 			frm.set_value("effective_year", new Date().getFullYear());
 		}
 
-		// Auto-set requested_by from current user (Link → User)
+		// Requested By is the current user's Employee record
 		if (frm.is_new() && !frm.doc.requested_by) {
-			frm.set_value("requested_by", frappe.session.user);
+			frappe.db.get_value("Employee", { user_id: frappe.session.user, status: "Active" }, "name").then((r) => {
+				if (r.message && r.message.name) {
+					frm.set_value("requested_by", r.message.name);
+				}
+			});
+		}
+	},
+
+	onload(frm) {
+		// Remembered so a department change only asks when it would drop employees
+		frm._prev_department = frm.doc.department || "";
+
+		if (frm.is_new() && frm.doc.posting_date && !frm.doc.payroll_cycle) {
+			frm.trigger("set_payroll_cycle");
 		}
 	},
 
 	refresh(frm) {
+		frm.trigger("sync_bulk_checkboxes");
+
 		// Hide standard print icon — custom print buttons are used instead
 		frm.page.hide_icon_group();
 
@@ -40,6 +55,83 @@ frappe.ui.form.on("Bonus Request", {
 
 	end_date(frm) {
 		validate_recurring_dates_client(frm);
+	},
+
+	posting_date(frm) {
+		frm.trigger("set_payroll_cycle");
+	},
+
+	set_payroll_cycle(frm) {
+		if (!frm.doc.posting_date) {
+			frm.set_value("payroll_cycle", "");
+			return;
+		}
+
+		// Cycles are named "Month YYYY", e.g. "October 2026"
+		const cycle_name = moment(frm.doc.posting_date).format("MMMM YYYY");
+		frappe.db.get_value("Payroll Cycle", { name: cycle_name }, "name").then((r) => {
+			if (r.message && r.message.name) {
+				frm.set_value("payroll_cycle", r.message.name);
+			} else {
+				frm.set_value("payroll_cycle", "");
+				frappe.msgprint({
+					title: __("Missing Payroll Cycle"),
+					indicator: "orange",
+					message: __("Payroll Cycle <b>{0}</b> does not exist in the system. Please create this cycle in <i>Payroll Cycle List</i> before submitting.", [cycle_name])
+				});
+			}
+		});
+	},
+
+	department(frm) {
+		const has_employees = (frm.doc.bonus_request_employees || []).some((r) => r.employee);
+
+		if (!frm._prev_department || !has_employees) {
+			frm._prev_department = frm.doc.department || "";
+			if (!has_employees && frm.doc.bonus_request_employees?.length) {
+				frm.clear_table("bonus_request_employees");
+				frm.refresh_field("bonus_request_employees");
+			}
+			return;
+		}
+
+		if (frm.doc.department !== frm._prev_department) {
+			frappe.confirm(
+				__("Changing the Department will clear all listed employees to maintain department isolation. Do you wish to continue?"),
+				() => {
+					frm._prev_department = frm.doc.department || "";
+					frm.clear_table("bonus_request_employees");
+					frm.refresh_field("bonus_request_employees");
+				},
+				() => {
+					const old_department = frm._prev_department;
+					frappe.run_serially([
+						() => frm.set_value("department", old_department),
+						() => { frm._prev_department = old_department; }
+					]);
+				}
+			);
+		}
+	},
+
+	approve_all(frm) {
+		set_all_rows(frm, "approve", "reject", "reject_all");
+	},
+
+	reject_all(frm) {
+		set_all_rows(frm, "reject", "approve", "approve_all");
+	},
+
+	sync_bulk_checkboxes(frm) {
+		if (frm._setting_bulk_state) return;
+		frm._setting_bulk_state = true;
+
+		const rows = frm.doc.bonus_request_employees || [];
+		const has_rows = rows.length > 0;
+		frm.set_value("approve_all", has_rows && rows.every((r) => cint(r.approve) === 1) ? 1 : 0);
+		frm.set_value("reject_all", has_rows && rows.every((r) => cint(r.reject) === 1) ? 1 : 0);
+
+		frm._setting_bulk_state = false;
 	}
 });
 
@@ -64,6 +156,7 @@ frappe.ui.form.on("Bonus Request Items", {
 			frappe.model.set_value(cdt, cdn, "reject", 0);
 		}
 		frm.refresh_field("bonus_request_employees");
+		frm.trigger("sync_bulk_checkboxes");
 	},
 
 	reject(frm, cdt, cdn) {
@@ -72,8 +165,30 @@ frappe.ui.form.on("Bonus Request Items", {
 			frappe.model.set_value(cdt, cdn, "approve", 0);
 		}
 		frm.refresh_field("bonus_request_employees");
+		frm.trigger("sync_bulk_checkboxes");
 	}
 });
+
+
+// Approve All / Reject All: tick the field on every row and clear its opposite
+function set_all_rows(frm, field, opposite, opposite_all) {
+	if (frm._setting_bulk_state) return;
+	frm._setting_bulk_state = true;
+
+	const checked = cint(frm.doc[field + "_all"]) === 1;
+	if (checked) {
+		frm.set_value(opposite_all, 0);
+	}
+	(frm.doc.bonus_request_employees || []).forEach((row) => {
+		frappe.model.set_value(row.doctype, row.name, field, checked ? 1 : 0);
+		if (checked) {
+			frappe.model.set_value(row.doctype, row.name, opposite, 0);
+		}
+	});
+
+	frm.refresh_field("bonus_request_employees");
+	frm._setting_bulk_state = false;
+}
 
 
 function calculate_total_bonus_amount(frm) {
