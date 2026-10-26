@@ -439,9 +439,9 @@ def notify_operator_to_take_hawiyati_renewal():# cron job at 8am in working days
     renewal_list=[]
     supervisor = frappe.db.get_single_value("HR Settings", "default_grd_supervisor")
     renewal_operator = frappe.db.get_single_value("HR Settings", "default_grd_operator")
-    paci_list_renewal = frappe.db.get_list('PACI',{'category':'Renewal','workflow_state':"Under Process",'upload_hawiyati':['=','']},['civil_id','name','upload_civil_id_payment_datetime'])
+    paci_list_renewal = frappe.db.get_list('PACI',{'category':'Renewal','workflow_state':"Under Process",'upload_hawiyati':['=','']},['civil_id','name','payment_date'])
     for paci in paci_list_renewal:
-        if date_diff(date.today(),getdate(paci.upload_civil_id_payment_datetime))>=2:
+        if date_diff(date.today(),getdate(paci.payment_date))>=2:
             renewal_list.append(paci)
 
     if is_scheduler_emails_enabled():
@@ -451,9 +451,9 @@ def notify_operator_to_take_hawiyati_transfer(): # cron job at 8am in working da
     transfer_list=[]
     supervisor = frappe.db.get_single_value("HR Settings", "default_grd_supervisor")
     transfer_operator = frappe.db.get_single_value("HR Settings", "default_grd_operator_transfer")
-    paci_list_transfer = frappe.db.get_list('PACI',{'category':'Transfer','workflow_state':"Under Process",'upload_hawiyati':['=','']},['civil_id','name','upload_civil_id_payment_datetime'])
+    paci_list_transfer = frappe.db.get_list('PACI',{'category':'Transfer','workflow_state':"Under Process",'upload_hawiyati':['=','']},['civil_id','name','payment_date'])
     for paci in paci_list_transfer:
-        if date_diff(date.today(),getdate(paci.upload_civil_id_payment_datetime))>=2:
+        if date_diff(date.today(),getdate(paci.payment_date))>=2:
             transfer_list.append(paci)
 
     if is_scheduler_emails_enabled():
@@ -555,7 +555,7 @@ REJECTION_OUTCOME_FIELDS = (
     "paci_reference_number",
     "paci_rejection_reason",
     "upload_civil_id_payment",
-    "upload_civil_id_payment_datetime",
+    "payment_date",
     "upload_civil_id",
     "upload_civil_id_datetime",
     "upload_hawiyati",

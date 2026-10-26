@@ -1064,6 +1064,10 @@ body[data-route="roster"] .sameot {
 body[data-route="roster"] .diffot {
   background: #674ea7;
 }
+/* Over-Time awaiting DSOT approval */
+body[data-route="roster"] .pendingot {
+  background: repeating-linear-gradient(45deg, #ffbf00 0 4px, #fff3c4 4px 8px);
+}
 
 body[data-route="roster"] .presentbasic {
   background: #a9d189;
@@ -1290,6 +1294,31 @@ body[data-route="roster"] .greyboxcolor-diffot {
       #674ea7 50%,
     #674ea7 100%
   );
+}
+
+body[data-route="roster"] .samebasic-pendingot {
+  background: linear-gradient(to bottom, #83a6e2 50%, transparent 50%),
+    repeating-linear-gradient(45deg, #ffbf00 0 4px, #fff3c4 4px 8px);
+}
+
+body[data-route="roster"] .diffbasic-pendingot {
+  background: linear-gradient(to bottom, #b4a7d6 50%, transparent 50%),
+    repeating-linear-gradient(45deg, #ffbf00 0 4px, #fff3c4 4px 8px);
+}
+
+body[data-route="roster"] .samedayoffot-pendingot {
+  background: linear-gradient(to bottom, #fadd87 50%, transparent 50%),
+    repeating-linear-gradient(45deg, #ffbf00 0 4px, #fff3c4 4px 8px);
+}
+
+body[data-route="roster"] .diffdayoffot-pendingot {
+  background: linear-gradient(to bottom, #f1c232 50%, transparent 50%),
+    repeating-linear-gradient(45deg, #ffbf00 0 4px, #fff3c4 4px 8px);
+}
+
+body[data-route="roster"] .greyboxcolor-pendingot {
+  background: linear-gradient(to bottom, #7f7f7f 50%, transparent 50%),
+    repeating-linear-gradient(45deg, #ffbf00 0 4px, #fff3c4 4px 8px);
 }
 
 body[data-route="roster"] .darkblackox {

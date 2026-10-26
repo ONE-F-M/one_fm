@@ -48,7 +48,7 @@
   "new_civil_id_expiry_date",
   "pro_user",
   "column_break_25",
-  "upload_civil_id_payment_datetime",
+  "payment_date",
   "upload_civil_id_datetime",
   "upload_damj_letter_on",
   "completed_on",
@@ -240,11 +240,9 @@
    "fieldtype": "Column Break"
   },
   {
-   "allow_on_submit": 1,
-   "fieldname": "upload_civil_id_payment_datetime",
-   "fieldtype": "Data",
-   "label": "Upload Payment Invoice On",
-   "read_only": 1
+   "fieldname": "payment_date",
+   "fieldtype": "Datetime",
+   "label": "Payment Date"
   },
   {
    "fieldname": "upload_civil_id_datetime",
@@ -440,7 +438,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-20 13:30:00.000000",
+ "modified": "2026-10-15 09:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PACI",

@@ -1536,8 +1536,14 @@ function render_roster(res, page) {
 						}
 					}
 					else if (!attendance && roster_type == "Over-Time" && page.filters[applied_filter] == record[applied_filter]) {
-						ot_count++;
-						bgclass = bgclass ? `${bgclass}-sameot` : "sameot";
+						if (workflow_state === "Pending DSOT Approval") {
+							// Not counted as OT until approved; data_ot is kept so it can still be unscheduled
+							bgclass = bgclass ? `${bgclass}-pendingot` : "pendingot";
+							tooltiptext += `${__("Pending DSOT Approval")}<br>`;
+						} else {
+							ot_count++;
+							bgclass = bgclass ? `${bgclass}-sameot` : "sameot";
+						}
 						data_ot = `${employee}|${date}|${operations_role}|${shift}|${employee_availability}`;
 						// Over-Time Client Event / OJT cells must still carry a data-selectid and the
 						// event metadata so the "Change Employee Schedule (Others)" action can target them.
@@ -1551,8 +1557,14 @@ function render_roster(res, page) {
 						}
 					}
 					else if (!attendance && roster_type == "Over-Time" && page.filters[applied_filter] != record[applied_filter]) {
-						ot_count++;
-						bgclass = bgclass ? `${bgclass}-diffot` : "diffot";
+						if (workflow_state === "Pending DSOT Approval") {
+							// Not counted as OT until approved; data_ot is kept so it can still be unscheduled
+							bgclass = bgclass ? `${bgclass}-pendingot` : "pendingot";
+							tooltiptext += `${__("Pending DSOT Approval")}<br>`;
+						} else {
+							ot_count++;
+							bgclass = bgclass ? `${bgclass}-diffot` : "diffot";
+						}
 						data_ot = `${employee}|${date}|${operations_role}|${shift}|${employee_availability}`;
 						// Over-Time Client Event / OJT cells must still carry a data-selectid and the
 						// event metadata so the "Change Employee Schedule (Others)" action can target them.

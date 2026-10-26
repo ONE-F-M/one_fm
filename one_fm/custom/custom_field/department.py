@@ -12,6 +12,13 @@ def get_department_custom_fields():
                 "in_standard_filter": 0
             },
             {
+                "fieldname": "custom_department_head",
+                "fieldtype": "Link",
+                "insert_after": "department_code",
+                "label": "Department Head",
+                "options": "User"
+            },
+            {
                 "fieldname": "issue_types",
                 "fieldtype": "Table",
                 "insert_after": "issue_responder_role",

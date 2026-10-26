@@ -12,6 +12,7 @@
   "week",
   "column_break_bmjz",
   "year",
+  "department_head",
   "section_break_mxpc",
   "attendees",
   "section_break_nmce",
@@ -19,7 +20,8 @@
   "section_break_ztyz",
   "company",
   "amended_from",
-  "column_break_tmsy"
+  "column_break_tmsy",
+  "workflow_state"
  ],
  "fields": [
   {
@@ -57,6 +59,14 @@
    "label": "Year",
    "options": "Fiscal Year",
    "reqd": 1
+  },
+  {
+   "fetch_from": "department.custom_department_head",
+   "fieldname": "department_head",
+   "fieldtype": "Link",
+   "label": "Department Head",
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_mxpc",
@@ -104,6 +114,15 @@
   {
    "fieldname": "column_break_tmsy",
    "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "no_copy": 1,
+   "options": "Workflow State"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -125,6 +144,17 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Employee",
    "share": 1,
    "submit": 1,
    "write": 1
