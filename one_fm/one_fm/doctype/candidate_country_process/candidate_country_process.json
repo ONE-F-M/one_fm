@@ -111,6 +111,7 @@
    "fetch_from": "job_offer.job_applicant",
    "fieldname": "job_applicant",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Job Applicant",
    "options": "Job Applicant",
    "read_only_depends_on": "eval:doc.job_offer"
@@ -189,7 +190,7 @@
    "link_fieldname": "candidate_country_process"
   }
  ],
- "modified": "2026-10-22 21:50:29.000000",
+ "modified": "2026-10-26 09:00:00.000000",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Candidate Country Process",
