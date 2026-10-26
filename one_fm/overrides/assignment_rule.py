@@ -120,7 +120,10 @@ def do_assignment(self, doc):
                 assignment_rule=self.name,
                 notify=True,
                 date=doc.get(self.due_date_based_on) if self.due_date_based_on else None,
-            )
+            ),
+            # As in core: the rule fires as whoever saved the document, who may not
+            # have read access to it (e.g. a GR Operator completing a PACI).
+            ignore_permissions=True,
         )
 
         # set for reference in round robin

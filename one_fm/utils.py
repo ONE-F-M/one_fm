@@ -1758,10 +1758,39 @@ def validate_iban_is_filled(doc, method):
     if not doc.iban and doc.workflow_state == 'Active Account':
         frappe.throw(_("Please Set IBAN before you Mark Open the Bank Account"))
 
+# Assigns Draft Bank Accounts; its ToDo is cancelled here, not by the rule (see below).
+BANK_ACCOUNT_DRAFT_RULE = "Action Draft - HR User"
+
+
 def bank_account_on_update(doc, method):
     update_onboarding_doc_for_bank_account(doc)
+    if doc.workflow_state != "Draft":
+        close_bank_account_draft_todos(doc)
     if doc.workflow_state == "Open Request":
         notify_payroll_officer(doc)
+
+
+def close_bank_account_draft_todos(doc):
+    """Cancel the draft rule's own ToDo once the account leaves Draft.
+
+    The rule's unassign/close conditions would cancel every ToDo on the account,
+    including the Payroll Officer's added on Open Request. Cancelled, not Closed:
+    assignment_rule.apply reopens Closed ToDos when no close_condition matches.
+    """
+    for todo in frappe.get_all(
+        "ToDo",
+        filters={
+            "reference_type": doc.doctype,
+            "reference_name": doc.name,
+            "assignment_rule": BANK_ACCOUNT_DRAFT_RULE,
+            "status": "Open",
+        },
+        fields=["name", "allocated_to"],
+    ):
+        assign_to.set_status(
+            doc.doctype, doc.name, todo=todo.name, assign_to=todo.allocated_to,
+            status="Cancelled", ignore_permissions=True,
+        )
 
 
 def bank_account_on_trash(doc, method):
@@ -1810,6 +1839,7 @@ def update_onboarding_doc_for_bank_account(doc):
             "bank_account_status",
             "account_name",
             "bank",
+            "salary_mode",
         ],
         as_dict=True,
     )
@@ -1830,16 +1860,20 @@ def update_onboarding_doc_for_bank_account(doc):
         "bank": doc.bank,
     }
 
-    if oe_values.workflow_state == "Duty Commencement":
-        new_values["workflow_state"] = "Bank Account"
+    advance = oe_values.workflow_state == "Duty Commencement" and oe_values.salary_mode == "Bank"
 
     # Nothing changed, avoid an unnecessary document load, save and version entry
-    if all(oe_values.get(field) == value for field, value in new_values.items()):
+    if not advance and all(oe_values.get(field) == value for field, value in new_values.items()):
         return
 
     oe = frappe.get_doc("Onboard Employee", doc.onboard_employee)
     oe.update(new_values)
     oe.save(ignore_permissions=True)
+
+    # db_set, not a workflow save: "Open Bank Account" is allowed to Onboarding Officer
+    # only, and this runs as whoever saved the Bank Account (e.g. a GR Operator via PACI).
+    if advance:
+        oe.db_set("workflow_state", "Bank Account")
 
 def notify_payroll_officer(doc):
     try:

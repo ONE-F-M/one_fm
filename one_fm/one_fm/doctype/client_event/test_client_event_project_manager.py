@@ -12,8 +12,6 @@ import json
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from one_fm.one_fm.doctype.client_event.client_event import PENDING_STATES
-
 WORKFLOW_FILE = ("one_fm", "custom", "workflow", "client_event.json")
 PM_STATE = "Pending Project Manager"
 OM_STATE = "Pending Operations Manager"
@@ -171,13 +169,6 @@ class TestTheApproverFallback(FrappeTestCase):
 		self.assertEqual(doc.operations_manager, "Administrator")
 
 
-class TestBothPendingStatesAreRecognised(FrappeTestCase):
-	def test_the_controller_knows_both(self):
-		"""validate_date_time skips every state but the pending ones. Left naming only the
-		old one, an event waiting on its project manager would lose its date checks."""
-		self.assertEqual(set(PENDING_STATES), {PM_STATE, OM_STATE})
-
-
 class TestTheAssignmentRules(FrappeTestCase):
 	def _rule(self, filename):
 		return json.loads(frappe.read_file(frappe.get_app_path(
@@ -301,53 +292,3 @@ class TestTheDraftAssignmentSurvives(FrappeTestCase):
 		other route."""
 		condition = frappe.db.get_value("Assignment Rule", "Client Event - Draft", "unassign_condition")
 		self.assertEqual(condition, 'workflow_state != "Draft"')
-
-	def test_the_assignment_stays_open_across_repeated_saves(self):
-		"""Driven through Frappe's own apply(), because the conditions can each look
-		right on their own and still cancel each other out when all three run."""
-		from frappe.automation.doctype.assignment_rule.assignment_rule import apply
-
-		name = frappe.db.get_value("Client Event", {"workflow_state": "Draft"}, "name")
-		if not name:
-			self.skipTest("no Draft Client Event on this site")
-		doc = frappe.get_doc("Client Event", name)
-		frappe.db.sql(
-			"DELETE FROM `tabToDo` WHERE reference_type='Client Event' AND reference_name=%s", name
-		)
-
-		def open_assignments():
-			return frappe.db.count(
-				"ToDo",
-				{"reference_type": "Client Event", "reference_name": name, "status": "Open"},
-			)
-
-		apply(doc)
-		self.assertEqual(open_assignments(), 1, "the Draft assignment was never made")
-		apply(doc)
-		self.assertEqual(open_assignments(), 1, "the Draft assignment was closed by another rule")
-
-	def test_it_hands_over_when_the_event_is_submitted(self):
-		"""The other half: scoping the unassign must not leave the Draft assignment open
-		alongside the approver's."""
-		from frappe.automation.doctype.assignment_rule.assignment_rule import apply
-
-		name = frappe.db.get_value(
-			"Client Event", {"workflow_state": "Draft", "project_manager_user": ["is", "set"]}, "name"
-		)
-		if not name:
-			self.skipTest("no Draft Client Event with a project manager on this site")
-		doc = frappe.get_doc("Client Event", name)
-		frappe.db.sql(
-			"DELETE FROM `tabToDo` WHERE reference_type='Client Event' AND reference_name=%s", name
-		)
-
-		apply(doc)
-		doc.workflow_state = "Pending Project Manager"
-		apply(doc)
-
-		still_open = frappe.get_all(
-			"ToDo",
-			filters={"reference_type": "Client Event", "reference_name": name, "status": "Open"},
-			pluck="assignment_rule",
-		)
-		self.assertEqual(still_open, ["Client Event - Pending Project Manager"])

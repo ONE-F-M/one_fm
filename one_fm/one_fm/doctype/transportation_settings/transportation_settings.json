@@ -1,0 +1,44 @@
+{
+ "actions": [],
+ "creation": "2026-05-01 09:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "restrict_reliever_search_to_rambo_employees_only"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "description": "When checked, the manifest reliever search lists only Rambo relievers. When unchecked, it lists all active shift-working employees at the trip's camp.",
+   "fieldname": "restrict_reliever_search_to_rambo_employees_only",
+   "fieldtype": "Check",
+   "label": "Restrict Reliever Search to Rambo Employees Only"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-05-01 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Transportation Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Transportation Manager",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

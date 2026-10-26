@@ -139,7 +139,8 @@ class TestShipmentGenerator(FrappeTestCase):
 		from one_fm.one_fm.doctype.transportation_shipment import shipment_generator
 
 		source = inspect.getsource(shipment_generator.generate_transportation_shipments)
-		self.assertIn('roster = demand["employees"]', source)
+		# Both legs read the same demand roster; only hand-pinned riders are left out.
+		self.assertIn('roster = [emp for emp in demand["employees"]', source)
 		# No second roster, and no cross-shift lookup left to feed one.
 		self.assertNotIn("return_employees", source)
 		self.assertFalse(hasattr(shipment_generator, "_attach_return_rosters"))
