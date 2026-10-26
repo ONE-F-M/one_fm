@@ -9,25 +9,11 @@ from frappe.model.document import Document
 # Final states meaning the candidate arrived; both set the Candidate Country Process to Joined
 ARRIVED_STATES = ("Arrived", "Joined")
 ARRIVING_STATES = ("Onboarding Confirmed", "Pick Up Arranged", "Pending Support Departments")
-PICKUP_STATES = ("Onboarding Confirmed", "Pick Up Arranged")
 
 
 class ArrivalandDeployment(Document):
     def validate(self):
         self.designation = get_job_applicant_designation(self.job_applicant)
-
-        if self.has_value_changed("workflow_state"):
-            self.validate_workflow_role()
-
-        if self.get("workflow_state") == "Onboarding Confirmed" and self.candidate_country_process and not self.transportation_manager:
-            frappe.throw(_("Please fill in the Transportation Manager before confirming onboarding."))
-
-        if self.get("workflow_state") == "Pending Onboarding":
-            if not self.arrival_date:
-                frappe.throw(_("Please ensure Arrival Date is filled before submitting to Onboarding."))
-            if self.candidate_country_process:
-                if not self.ticket_attachment:
-                    frappe.throw(_("Please attach the Ticket for Overseas hires before submitting to Onboarding."))
 
         # Keep the plain status field (used for reporting/CCP sync) in step with the
         # actual workflow_state -- Pending/Draft/Pending Onboarding stay "Pending".
@@ -73,30 +59,10 @@ class ArrivalandDeployment(Document):
         if self.get("workflow_state") == "Pending Onboarding" and old_state != "Pending Onboarding":
             self.notify_onboarding_officer()
 
-        if self.get("workflow_state") == "Onboarding Confirmed" and old_state != "Onboarding Confirmed":
-            if self.candidate_country_process:
-                self.close_assignments()
-                self.assign_transportation_manager()
-        elif (
-            self.get("workflow_state") in PICKUP_STATES
-            and self.get_doc_before_save()
-            and self.has_value_changed("transportation_manager")
-        ):
-            self.move_pickup_task(self.get_doc_before_save().transportation_manager)
-
-        if (
-            old_state == "Onboarding Confirmed"
-            and self.get("workflow_state") in ARRIVED_STATES + ("Did Not Arrive",)
-            and self.candidate_country_process
-        ):
-            self.cancel_pickup_task()
-
         if self.get("workflow_state") == "Did Not Arrive" and old_state != "Did Not Arrive":
-            self.close_assignments()
             self.notify_recruiter_arrival_outcome("Did Not Arrive")
 
         if self.get("workflow_state") in ARRIVED_STATES and old_state not in ARRIVED_STATES:
-            self.close_assignments()
             self.notify_recruiter_arrival_outcome("Joined")
 
         if self.candidate_country_process:
@@ -108,64 +74,6 @@ class ArrivalandDeployment(Document):
             if self.get("workflow_state") != old_state:
                 from one_fm.one_fm.doctype.candidate_country_process.candidate_country_process import recalculate_ccp_live_eta
                 recalculate_ccp_live_eta(self.candidate_country_process)
-
-    def validate_workflow_role(self):
-        """Onboarding or the Recruiter confirms; the Transportation Manager (overseas) or Onboarding Officer (local) or the Recruiter marks arrival."""
-        roles = frappe.get_roles()
-        if "System Manager" in roles:
-            return
-
-        state = self.get("workflow_state")
-        if state == "Onboarding Confirmed" and not {"Onboarding Officer", "Recruiter"} & set(roles):
-            frappe.throw(_("Only the Onboarding Officer or the Recruiter can confirm onboarding."))
-        if state == "Pick Up Arranged" and "Transportation Manager" not in roles:
-            frappe.throw(_("Only the Transportation Manager can arrange the pickup."))
-        if state in ("Arrived", "Did Not Arrive"):
-            required_role = "Transportation Manager" if self.candidate_country_process else "Onboarding Officer"
-            if not {required_role, "Recruiter"} & set(roles):
-                frappe.throw(
-                    _("Only the {0} or the Recruiter can mark whether the candidate arrived.").format(_(required_role))
-                )
-
-    def close_assignments(self):
-        """Mark the open ToDos on this arrival Closed once its step is done."""
-        from frappe.desk.form.assign_to import close_all_assignments
-
-        close_all_assignments(self.doctype, self.name)
-
-    def move_pickup_task(self, previous_transportation_manager):
-        """Hand the pickup task to the new Transportation Manager when it changes after onboarding is confirmed."""
-        from frappe.desk.form.assign_to import remove as remove_assignment
-
-        if previous_transportation_manager:
-            remove_assignment(self.doctype, self.name, previous_transportation_manager)
-        self.assign_transportation_manager()
-
-    def cancel_pickup_task(self):
-        """The Recruiter marked the arrival before any pickup was arranged, so the pickup task is cancelled, not closed."""
-        if not self.transportation_manager:
-            return
-
-        from frappe.desk.form.assign_to import remove as remove_assignment
-
-        remove_assignment(self.doctype, self.name, self.transportation_manager)
-
-    def assign_transportation_manager(self):
-        """Give the Transportation Manager the pickup task once onboarding is confirmed (overseas hires only)."""
-        if not self.transportation_manager:
-            return
-
-        from frappe.desk.form.assign_to import add as add_assignment
-        from frappe.utils import formatdate
-
-        add_assignment({
-            "assign_to": [self.transportation_manager],
-            "doctype": self.doctype,
-            "name": self.name,
-            "description": _("Kindly arrange the airport pickup for {0}, arriving {1}; the flight is on the attached ticket. Click Arrange Pick Up, then mark Arrived or Did Not Arrive.").format(
-                self.candidate_name, formatdate(self.arrival_date)
-            ),
-        })
 
     def notify_onboarding_officer(self):
         if not self.onboarding_officer:
@@ -185,17 +93,6 @@ class ArrivalandDeployment(Document):
                 )
                 designation = get_job_applicant_designation(job_applicant)
         display_name = job_applicant_name or self.candidate_name
-
-        from frappe.desk.form.assign_to import add as add_assignment
-        try:
-            add_assignment({
-                "assign_to": officers,
-                "doctype": self.doctype,
-                "name": self.name,
-                "description": f"Dear Onboarding Officer,\n\nKindly prepare onboarding for {display_name}, arriving on {self.arrival_date or 'TBD'}."
-            })
-        except Exception as e:
-            frappe.log_error(title="Onboarding Assignment Error", message=f"Failed to assign onboarding officer for {self.name}: {str(e)}")
 
         if not officer_emails or frappe.flags.arrival_bulk_email:
             return
@@ -345,19 +242,19 @@ def bulk_attach_ticket(names: str, file_url: str):
 
 
 def apply_bulk_workflow(names, action):
-    """Apply the action to each selected arrival, report the ones that could not move, and return the moved ones."""
-    from frappe.model.workflow import apply_workflow
-
+    """Take the action on each selected arrival's waiting Processa task, report the ones that could not move, and return the moved ones."""
     moved, failures = [], []
     frappe.flags.arrival_bulk_email = True
     try:
         for name in frappe.parse_json(names):
             frappe.db.savepoint("arrival_bulk")
+            messages_before = list(frappe.local.message_log)
             try:
-                moved.append(apply_workflow(frappe.get_doc("Arrival and Deployment", name), action))
+                complete_processa_task(name, action)
+                moved.append(frappe.get_doc("Arrival and Deployment", name))
             except (frappe.ValidationError, frappe.PermissionError) as e:
                 frappe.db.rollback(save_point="arrival_bulk")
-                frappe.clear_last_message()
+                frappe.local.message_log = messages_before
                 failures.append(f"{name}: {e}")
     finally:
         frappe.flags.arrival_bulk_email = False
@@ -369,6 +266,42 @@ def apply_bulk_workflow(names, action):
             indicator="orange",
         )
     return moved
+
+
+def complete_processa_task(name, action):
+    """Complete the arrival's waiting Arrival and Deployment Lifecycle task that offers the action.
+
+    The process checks the arrival and may hand the task straight back (a missing Arrival
+    Date, say): that arrival has not moved, so it is reported as not moved.
+    """
+    from one_bpmn.api.instance_api import complete_task
+
+    instance = frappe.db.get_value(
+        "BPMN Process Instance",
+        {"context_doctype": "Arrival and Deployment", "context_docname": name, "status": "Active"},
+        "name",
+    )
+    if not instance:
+        frappe.throw(_("no running Arrival and Deployment process"))
+
+    task = next(
+        (
+            row
+            for row in frappe.get_doc("BPMN Process Instance", instance).active_tasks
+            if row.status == "Waiting" and action in (row.task_actions or "")
+        ),
+        None,
+    )
+    if not task:
+        frappe.throw(_("it is not waiting for {0}").format(_(action)))
+
+    state_before = frappe.db.get_value("Arrival and Deployment", name, "workflow_state")
+    messages_before = len(frappe.local.message_log)
+    complete_task(instance, task.task_id, frappe.as_json({"action": action}))
+    if frappe.db.get_value("Arrival and Deployment", name, "workflow_state") == state_before:
+        shown = [frappe.parse_json(m).get("message") if isinstance(m, str) else m.get("message")
+            for m in frappe.local.message_log[messages_before:]]
+        frappe.throw(" ".join(str(m) for m in shown if m) or _("the process sent it back"))
 
 
 def send_arrivals_email(recipients, cc, subject, intro, arrivals, sent_by=None):

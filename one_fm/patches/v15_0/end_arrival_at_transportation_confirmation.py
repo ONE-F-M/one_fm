@@ -56,7 +56,6 @@ def execute():
 	end_workflow_at_arrival()
 	remove_arrival_acknowledgements()
 	keep_only_the_onboarding_mailbox()
-	assign_pickups_waiting_in_pending_support_departments()
 
 
 def end_workflow_at_arrival():
@@ -111,17 +110,3 @@ def keep_only_the_onboarding_mailbox():
 	frappe.db.delete(
 		"Arrival Department Email", {"parenttype": "Hiring Settings", "department": ["!=", "Onboarding"]}
 	)
-
-
-def assign_pickups_waiting_in_pending_support_departments():
-	"""Give the Transportation Manager the pickup task on overseas arrivals whose task was on an acknowledgement."""
-	for name in frappe.get_all(
-		"Arrival and Deployment",
-		filters={
-			"workflow_state": "Pending Support Departments",
-			"candidate_country_process": ["is", "set"],
-			"transportation_manager": ["is", "set"],
-		},
-		pluck="name",
-	):
-		frappe.get_doc("Arrival and Deployment", name).assign_transportation_manager()
