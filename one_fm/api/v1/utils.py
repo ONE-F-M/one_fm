@@ -36,6 +36,60 @@ def response(message, status_code, data=None, error=None, error_code=None):
         frappe.log_error(title="API Response", message=frappe.get_traceback())
 
 
+def get_own_employee(employee_id=None):
+	"""Return the logged-in user's Employee as name, employee_id and user_id.
+
+	Returns None when the user has no Employee, or when employee_id names a different employee.
+	"""
+	employee = frappe.db.get_value(
+		"Employee", {"user_id": frappe.session.user}, ["name", "employee_id", "user_id"], as_dict=True
+	)
+	if employee and employee_id and employee_id not in (employee.employee_id, employee.name):
+		return None
+	return employee
+
+
+def own_employee_api_enforced():
+	"""True when site config enforce_own_employee_api is set; until then mismatches are only logged."""
+	return bool(cint(frappe.conf.get("enforce_own_employee_api")))
+
+
+def log_access_mismatch(reason, target=None):
+	"""Log a request the own-employee rules would refuse, once a day per endpoint, caller and target.
+
+	Returns True when the request may go ahead, which is always while enforce_own_employee_api is off.
+	"""
+	endpoint = frappe.form_dict.get("cmd") or (frappe.request.path if getattr(frappe.local, "request", None) else "")
+	key = f"own_employee_check:{endpoint}:{frappe.session.user}:{target}"
+	if not frappe.cache.get_value(key):
+		frappe.cache.set_value(key, 1, expires_in_sec=86400)
+		frappe.log_error(
+			title=f"Own employee check: {endpoint}",
+			message=frappe.as_json({
+				"endpoint": endpoint,
+				"user": frappe.session.user,
+				"roles": frappe.get_roles(),
+				"target": target,
+				"reason": reason,
+				"enforced": own_employee_api_enforced(),
+			}),
+		)
+	return not own_employee_api_enforced()
+
+
+def check_own_employee(employee_id=None):
+	"""True when employee_id is the caller's, or when it is not and enforcement is off (the mismatch is logged)."""
+	if get_own_employee(employee_id):
+		return True
+	return log_access_mismatch("employee_id is not the logged-in user's employee", employee_id)
+
+
+def not_own_employee_response():
+	"""Answer 403 for a request about an employee who is not the logged-in user."""
+	return response(_("Forbidden"), 403, None,
+		_("You can only do this for your own account."), error_code="NOT_OWN_EMPLOYEE")
+
+
 def response_dict(message, status_code, data=None, error=None):
     return frappe._dict({
         'status_code': status_code,
@@ -179,13 +233,17 @@ def enrollment_status(employee_id: str = None) -> dict:
         return response(_("Something Went Wrong"), 500, None,
                         strip_html(str(e)) or type(e).__name__)
 
+UPDATE_EMPLOYEE_ROLES = ("Operations Manager", "Projects Manager", "Site Supervisor", "Shift Manager",
+	"Shift Supervisor", "HR User", "HR Manager", "System Manager")
+UPDATE_EMPLOYEE_FIELDS = ("cell_number", "enrolled")
+
+
 @frappe.whitelist()
 def update_employee(employee_id, field, value):
-    """
-    Check if an employee is enrolled on the mobile app
-    :param employee:
-    :return: True or False
-    """
+    """Change another employee's cell_number or reset enrolled, for supervisors and HR (roster and Employee Management pages)."""
+    if set(UPDATE_EMPLOYEE_ROLES).isdisjoint(frappe.get_roles()) or field not in UPDATE_EMPLOYEE_FIELDS:
+        if not log_access_mismatch(f"update_employee of {field} without a supervisor role or outside {UPDATE_EMPLOYEE_FIELDS}", employee_id):
+            frappe.throw(_("You are not allowed to change {0} here.").format(field), frappe.PermissionError)
     try:
         get_employee = get_employee_by_id(employee_id)
         if get_employee.status:

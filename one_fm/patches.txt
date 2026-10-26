@@ -312,6 +312,9 @@ one_fm.patches.v15_0.add_transit_warehouse_type #WI-000447
 one_fm.patches.v15_0.drop_empty_orphan_employee_columns #2026-09-26 WI-002745
 one_fm.patches.v15_0.drop_absence_case_workflow_state_custom_field #2026-10-05 WI-003076
 one_fm.patches.v15_0.drop_temporary_deployment_workflow_state_custom_field
+one_fm.patches.v15_0.set_ccp_arriving_for_submitted_arrivals #2026-10-19
+one_fm.patches.v15_0.fill_ccp_created_visa_request_drafts #2026-10-20
+one_fm.patches.v15_0.allow_bulk_edit_on_ccp_and_arrival_list_views #2026-10-22
 [post_model_sync]
 one_fm.patches.v15_0.process_task_for_wiki_employee_task
 one_fm.patches.v15_0.add_assignment_rule_returning_to_operations_supervisor_of_client_event #2
@@ -695,3 +698,5 @@ one_fm.patches.v15_0.fix_rfm_2026_000950_approver #2026-10-19 HD-1890138 RFM-202
 one_fm.patches.v15_0.reassign_rfm_2026_000950_to_approver #2026-10-19 HD-1890138 the assignment fix_rfm_2026_000950_approver could not make
 one_fm.patches.v15_0.release_m_ali_user_id #2026-10-20 free m.ali@one-fm.com from the 2021 Left account for HR-EMP-04585
 one_fm.patches.v15_0.reset_pmr_pr01132_to_in_process #2026-10-25 reopen PR01132 from Completed back to In Process
+one_fm.patches.v15_0.set_hiring_type_and_agency_on_arrivals #2026-10-15 hiring type, department and agency on arrivals for the onboarding email table
+one_fm.patches.v15_0.allow_recruiter_to_delete_arrivals #2026-10-25 Recruiter deletes a wrong Arrival and Deployment; Custom DocPerm had dropped delete for every role

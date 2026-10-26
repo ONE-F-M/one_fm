@@ -70,7 +70,9 @@ class TestOnboardingOfficerEmail(FrappeTestCase):
 
 		email = enqueue.call_args.kwargs
 		self.assertIn(frappe.utils.formatdate("2026-10-15"), email["subject"])
-		self.assertIn(f"<b>Arriving on:</b> {frappe.utils.formatdate('2026-10-15')}", email["message"])
+		self.assertIn("<b>Arrival Date:</b> 15th October 2026", email["message"])
+		self.assertIn("<th", email["message"])
+		self.assertIn("Test Onboarding Email", email["message"])
 		self.assertIn("Dear Onboarding Team,", email["message"])
 		self.assertEqual(email["cc"], "test_hr_mailbox@example.com")
 
@@ -79,7 +81,8 @@ class TestOnboardingOfficerEmail(FrappeTestCase):
 		account = EmailAccount.find_default_outgoing()
 		self.assertEqual(email["sender"], f"Administrator <{account.email_id}>")
 		self.assertEqual(email["reply_to"], frappe.db.get_value("User", "Administrator", "email"))
-		self.assertIn("Best Regards,<br><b>Administrator</b>", email["message"])
+		self.assertIn("Arrival ticket was assigned by Administrator.", email["message"])
+		self.assertNotIn("Best Regards", email["message"])
 
 		doc.email_onboarding_mailbox = 0
 		with patch("frappe.enqueue") as enqueue:
@@ -357,6 +360,8 @@ class TestCandidateDetails(FrappeTestCase):
 		for fieldname in (
 			"job_applicant",
 			"department",
+			"agency",
+			"agency_name",
 			"gender",
 			"nationality",
 			"date_of_birth",
@@ -392,6 +397,47 @@ class TestCandidateDetails(FrappeTestCase):
 			frappe.get_meta("Arrival and Deployment").get_field("department").fetch_from,
 			"candidate_country_process.department",
 		)
+
+	def test_hiring_type_follows_the_candidate_country_process(self):
+		local = _make_arrival("Test Local Hiring Type")
+		self.assertEqual(local.hiring_type, "Local")
+
+		local.candidate_country_process = _make_ccp("Test Overseas Hiring Type").name
+		local.save()
+		self.assertEqual(local.hiring_type, "Overseas")
+
+	def test_backfill_sets_hiring_type_department_and_agency(self):
+		from one_fm.patches.v15_0 import set_hiring_type_and_agency_on_arrivals
+
+		ccp = _make_ccp("Test Backfill CCP")
+		agency = frappe.db.get_value(
+			"Agency", frappe.db.get_value("Agency Country Process", ccp.agency_country_process, "agency"), ["name", "agency"], as_dict=True
+		)
+		frappe.db.set_value(
+			"Candidate Country Process",
+			ccp.name,
+			{"agency": agency.name, "agency_name": agency.agency, "department": "_Test Backfill Department"},
+		)
+		local = _make_arrival("Test Backfill Local")
+		overseas = _make_arrival("Test Backfill Overseas")
+		frappe.db.set_value("Arrival and Deployment", overseas.name, "candidate_country_process", ccp.name)
+		frappe.db.set_value(
+			"Arrival and Deployment", {"name": ["in", [local.name, overseas.name]]}, "hiring_type", None, update_modified=False
+		)
+
+		set_hiring_type_and_agency_on_arrivals.execute()
+
+		self.assertEqual(frappe.db.get_value("Arrival and Deployment", local.name, "hiring_type"), "Local")
+		row = frappe.db.get_value(
+			"Arrival and Deployment",
+			overseas.name,
+			["hiring_type", "department", "agency", "agency_name"],
+			as_dict=True,
+		)
+		self.assertEqual(row.hiring_type, "Overseas")
+		self.assertEqual(row.department, "_Test Backfill Department")
+		self.assertEqual(row.agency, agency.name)
+		self.assertEqual(row.agency_name, agency.agency)
 
 	def test_backfill_skips_a_ccp_whose_job_applicant_no_longer_exists(self):
 		from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import (
@@ -466,11 +512,14 @@ class TestBulkArrivals(FrappeTestCase):
 
 		self.assertEqual(sendmail.call_count, 1)
 		message = sendmail.call_args.kwargs["message"]
-		self.assertIn("Best Regards", message)
+		self.assertIn("Arrival ticket was assigned by Administrator.", message)
+		self.assertNotIn("Best Regards", message)
 		self.assertEqual(
 			sendmail.call_args.kwargs["reply_to"], frappe.db.get_value("User", "Administrator", "email")
 		)
 		self.assertIn("Test Bulk One", message)
+		self.assertIn("Arrival and Deployment Documents</a> and prepare accordingly.", message)
+		self.assertIn(first.name, message.split("/app/arrival-and-deployment?name=")[1].split('"')[0].replace("%2D", "-"))
 		self.assertIn("Test Bulk Two", message)
 		self.assertNotIn("Test Bulk No Date", message)
 		self.assertFalse([c for c in enqueue.call_args_list if c.kwargs.get("method") is frappe.sendmail])
@@ -514,6 +563,23 @@ class TestBulkArrivals(FrappeTestCase):
 			]
 		)
 		self.assertEqual(tables.count("<table"), 2)
+		self.assertIn("<b>Arrival Date:</b> 20th October 2026", tables)
+		self.assertIn("<b>Arrival Date:</b> 22nd October 2026", tables)
+		first = frappe.get_value("Arrival and Deployment", {"candidate_name": "Test Flight A1"}, "name")
+		self.assertIn(f'<a href="/app/arrival-and-deployment/{first}">{first}</a>', tables)
+
+	def test_arrival_date_reads_as_an_ordinal_date(self):
+		from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import (
+			format_arrival_date,
+		)
+
+		self.assertEqual(format_arrival_date("2023-05-25"), "25th May 2023")
+		self.assertEqual(format_arrival_date("2023-05-01"), "1st May 2023")
+		self.assertEqual(format_arrival_date("2023-05-02"), "2nd May 2023")
+		self.assertEqual(format_arrival_date("2023-05-03"), "3rd May 2023")
+		self.assertEqual(format_arrival_date("2023-05-11"), "11th May 2023")
+		self.assertEqual(format_arrival_date("2023-05-22"), "22nd May 2023")
+		self.assertEqual(format_arrival_date(None), "TBD")
 
 	def test_one_ticket_is_attached_to_every_selected_arrival_still_open(self):
 		ticket = frappe.get_doc(
@@ -543,6 +609,21 @@ class TestBulkArrivals(FrappeTestCase):
 				frappe.db.exists("File", {"file_url": ticket.file_url, "attached_to_name": arrival.name})
 			)
 		self.assertIsNone(frappe.db.get_value("Arrival and Deployment", arrived.name, "ticket_attachment"))
+
+
+def _make_ccp(candidate_name):
+	from one_fm.one_fm.doctype.candidate_country_process.test_candidate_country_process import (
+		make_agency_country_process,
+	)
+
+	return frappe.get_doc(
+		{
+			"doctype": "Candidate Country Process",
+			"candidate_name": candidate_name,
+			"agency_country_process": make_agency_country_process(),
+			"start_date": "2026-10-01",
+		}
+	).insert()
 
 
 def _make_arrival(candidate_name, arrival_date="2026-10-20", transportation_manager=None):
@@ -608,7 +689,7 @@ class TestOnboardingEmailSignedByRecruiter(FrappeTestCase):
 				}
 			).insert()
 
-	def test_single_email_is_signed_by_the_recruiter_on_the_record(self):
+	def test_single_email_names_the_recruiter_who_assigned_the_ticket(self):
 		doc = frappe.new_doc("Arrival and Deployment")
 		doc.candidate_name = "Test Signed Email"
 		doc.onboarding_officer = "Administrator"
@@ -621,9 +702,9 @@ class TestOnboardingEmailSignedByRecruiter(FrappeTestCase):
 		email = enqueue.call_args.kwargs
 		self.assertTrue(email["sender"].startswith("Signing Recruiter <"))
 		self.assertEqual(email["reply_to"], SIGNING_RECRUITER)
-		self.assertIn("<b>Signing Recruiter</b>", email["message"])
+		self.assertIn("Arrival ticket was assigned by Signing Recruiter.", email["message"])
 
-	def test_bulk_summary_is_split_per_recruiter(self):
+	def test_bulk_submit_makes_the_submitter_the_recruiter_and_signs_one_email(self):
 		from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import (
 			bulk_submit_to_onboarding,
 		)
@@ -635,24 +716,275 @@ class TestOnboardingEmailSignedByRecruiter(FrappeTestCase):
 		with patch("frappe.sendmail") as sendmail:
 			bulk_submit_to_onboarding(frappe.as_json([mine.name, theirs.name]))
 
-		reply_tos = sorted(c.kwargs["reply_to"] for c in sendmail.call_args_list)
 		self.assertEqual(
-			reply_tos, sorted([frappe.db.get_value("User", "Administrator", "email"), SIGNING_RECRUITER])
+			[c.kwargs["reply_to"] for c in sendmail.call_args_list],
+			[frappe.db.get_value("User", "Administrator", "email")],
 		)
+		self.assertEqual(frappe.db.get_value("Arrival and Deployment", theirs.name, "recruiter"), "Administrator")
 
-	def test_pickup_email_is_signed_by_the_recruiter_on_the_record(self):
+	def test_pickup_email_names_the_recruiter_who_assigned_the_ticket(self):
 		from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import (
 			bulk_confirm_onboarding,
 		)
 
 		arrival = _make_arrival("Test Signed Pickup", transportation_manager=TRANSPORTATION_USER)
-		frappe.db.set_value("Arrival and Deployment", arrival.name, "recruiter", SIGNING_RECRUITER)
-		arrival.reload()
 		arrival.workflow_state = "Pending Onboarding"
 		arrival.save()
+		frappe.db.set_value("Arrival and Deployment", arrival.name, "recruiter", SIGNING_RECRUITER)
 
 		with patch("frappe.sendmail") as sendmail:
 			bulk_confirm_onboarding(frappe.as_json([arrival.name]))
 
 		self.assertEqual(sendmail.call_args.kwargs["reply_to"], SIGNING_RECRUITER)
-		self.assertIn("<b>Signing Recruiter</b>", sendmail.call_args.kwargs["message"])
+		self.assertIn("Arrival ticket was assigned by Signing Recruiter.", sendmail.call_args.kwargs["message"])
+
+
+class TestArrivalUpdatesCandidateCountryProcess(FrappeTestCase):
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		from one_fm.one_fm.doctype.candidate_country_process.test_candidate_country_process import (
+			make_agency_country_process,
+		)
+
+		cls.agency_country_process = make_agency_country_process()
+		if not frappe.db.exists("User", SIGNING_RECRUITER):
+			frappe.get_doc(
+				{
+					"doctype": "User",
+					"email": SIGNING_RECRUITER,
+					"first_name": "Signing",
+					"last_name": "Recruiter",
+					"send_welcome_email": 0,
+				}
+			).insert()
+		cls.departments = ["_Test Arrival Department A", "_Test Arrival Department B"]
+
+	def make_ccp(self, candidate_name, department=None):
+		return frappe.get_doc(
+			{
+				"doctype": "Candidate Country Process",
+				"candidate_name": candidate_name,
+				"agency_country_process": self.agency_country_process,
+				"start_date": "2026-10-01",
+				"department": department,
+			}
+		).insert()
+
+	def make_overseas_arrival(self, ccp, department=None):
+		return frappe.get_doc(
+			{
+				"doctype": "Arrival and Deployment",
+				"candidate_country_process": ccp.name,
+				"arrival_date": "2026-10-20",
+				"ticket_attachment": "/private/files/test_ticket.pdf",
+				"recruiter": SIGNING_RECRUITER,
+				"onboarding_officer": "Administrator",
+				"department": department,
+			}
+		).insert()
+
+	def test_submitting_to_onboarding_sets_the_submitter_as_recruiter_and_the_ccp_to_arriving(self):
+		ccp = self.make_ccp("Test Arriving On Submit")
+		arrival = self.make_overseas_arrival(ccp)
+
+		arrival.workflow_state = "Pending Onboarding"
+		with patch("frappe.enqueue"):
+			arrival.save()
+
+		self.assertEqual(arrival.recruiter, "Administrator")
+		self.assertEqual(frappe.db.get_value("Candidate Country Process", ccp.name, "status"), "Arriving")
+
+	def test_submitting_to_onboarding_leaves_a_closed_ccp_alone(self):
+		ccp = self.make_ccp("Test Closed CCP On Submit")
+		arrival = self.make_overseas_arrival(ccp)
+		frappe.db.set_value("Candidate Country Process", ccp.name, "status", "on Hold")
+
+		arrival.workflow_state = "Pending Onboarding"
+		with patch("frappe.enqueue"):
+			arrival.save()
+
+		self.assertEqual(frappe.db.get_value("Candidate Country Process", ccp.name, "status"), "on Hold")
+
+	def test_department_on_the_ccp_wins_and_locks_the_arrival(self):
+		ccp = self.make_ccp("Test CCP Department Wins", department=self.departments[0])
+		arrival = self.make_overseas_arrival(ccp)
+
+		arrival.department = self.departments[1]
+		arrival.save()
+		arrival.run_method("onload")
+
+		self.assertEqual(arrival.department, self.departments[0])
+		self.assertEqual(arrival.get_onload().ccp_department, self.departments[0])
+
+	def test_a_typed_department_saves_on_the_ccp_and_reaches_the_arrival(self):
+		ccp = self.make_ccp("Test Typed Department", department="Security Guards - Avenues Mall")
+		arrival = self.make_overseas_arrival(ccp)
+
+		self.assertFalse(frappe.db.exists("Department", "Security Guards - Avenues Mall"))
+		self.assertEqual(arrival.department, "Security Guards - Avenues Mall")
+
+	def test_department_entered_on_the_arrival_fills_a_blank_ccp(self):
+		ccp = self.make_ccp("Test Arrival Department Fills CCP")
+		arrival = self.make_overseas_arrival(ccp, department=self.departments[1])
+
+		self.assertEqual(arrival.department, self.departments[1])
+		self.assertEqual(
+			frappe.db.get_value("Candidate Country Process", ccp.name, "department"), self.departments[1]
+		)
+
+	def test_patch_moves_in_process_ccps_with_a_submitted_arrival_to_arriving(self):
+		from one_fm.patches.v15_0 import set_ccp_arriving_for_submitted_arrivals
+
+		submitted = self.make_ccp("Test Patch Submitted")
+		draft = self.make_ccp("Test Patch Draft")
+		arrival = self.make_overseas_arrival(submitted)
+		arrival.workflow_state = "Pending Onboarding"
+		with patch("frappe.enqueue"):
+			arrival.save()
+		# As it was before submitting set Arriving
+		frappe.db.set_value("Candidate Country Process", submitted.name, "status", "In Process")
+		self.make_overseas_arrival(draft)
+
+		set_ccp_arriving_for_submitted_arrivals.execute()
+
+		self.assertEqual(frappe.db.get_value("Candidate Country Process", submitted.name, "status"), "Arriving")
+		self.assertEqual(frappe.db.get_value("Candidate Country Process", draft.name, "status"), "In Process")
+
+
+class TestBulkEditArrivalDate(FrappeTestCase):
+	def test_list_edit_is_on_and_sets_one_arrival_date_on_every_selected_arrival(self):
+		from frappe.desk.doctype.bulk_update.bulk_update import submit_cancel_or_update_docs
+
+		from one_fm.patches.v15_0 import allow_bulk_edit_on_ccp_and_arrival_list_views
+
+		allow_bulk_edit_on_ccp_and_arrival_list_views.execute()
+		arrivals = [_make_arrival(f"Test Bulk Edit Date {i}") for i in range(3)]
+
+		# Bulk update commits after every record, which would keep the test data on the site.
+		with patch.object(frappe.db, "commit"):
+			failed = submit_cancel_or_update_docs(
+				"Arrival and Deployment",
+				[arrival.name for arrival in arrivals],
+				action="update",
+				data={"arrival_date": "2026-11-05"},
+			)
+
+		self.assertEqual(failed, [])
+		self.assertEqual(frappe.db.get_value("List View Settings", "Arrival and Deployment", "allow_edit"), 1)
+		self.assertEqual(frappe.db.get_value("List View Settings", "Candidate Country Process", "allow_edit"), 1)
+		for arrival in arrivals:
+			self.assertEqual(str(frappe.db.get_value("Arrival and Deployment", arrival.name, "arrival_date")), "2026-11-05")
+
+
+class TestRecruiterDeletesArrival(FrappeTestCase):
+	def make_ccp(self, candidate_name):
+		from one_fm.one_fm.doctype.candidate_country_process.test_candidate_country_process import (
+			make_agency_country_process,
+			make_ccp_doc,
+		)
+
+		return (
+			make_ccp_doc([{"process_name": "Arrival & Deployment", "duration_in_days": 5, "status": "Pending"}])
+			.update({"agency_country_process": make_agency_country_process(), "candidate_name": candidate_name})
+			.insert()
+		)
+
+	def submit_arrival(self, ccp, candidate_name, workflow_state="Pending Onboarding"):
+		ard = _make_arrival(candidate_name)
+		frappe.db.set_value(
+			"Arrival and Deployment",
+			ard.name,
+			{"candidate_country_process": ccp.name, "workflow_state": workflow_state},
+		)
+		return ard.name
+
+	def test_deleting_an_arrival_removes_its_todos(self):
+		ard = _make_arrival("Test Delete Removes ToDo")
+		ard.workflow_state = "Pending Onboarding"
+		ard.save()
+		self.assertEqual(_open_assignees(ard), {"Administrator"})
+
+		frappe.delete_doc("Arrival and Deployment", ard.name)
+
+		self.assertFalse(frappe.db.exists("ToDo", {"reference_type": ard.doctype, "reference_name": ard.name}))
+
+	def test_deleting_an_overseas_arrival_frees_the_ccp_and_replans_its_step(self):
+		ccp = self.make_ccp("_Test Delete Arrival Replans")
+		arrival = self.submit_arrival(ccp, "Test Delete Frees CCP Row")
+		row = ccp.agency_process_details[0]
+		row.db_set(
+			{
+				"reference_type": "Arrival and Deployment",
+				"reference_name": arrival,
+				"status": "Arriving",
+				"actual_date": "2026-10-20",
+			}
+		)
+		frappe.db.set_value("Candidate Country Process", ccp.name, "status", "Arriving")
+
+		frappe.delete_doc("Arrival and Deployment", arrival)
+
+		row.reload()
+		self.assertEqual((row.reference_name, row.status, row.actual_date), (None, "Pending", None))
+		# With no arrival date the step is planned again from today, and the Live Plan ETA follows it
+		self.assertEqual(row.live_plan_date, frappe.utils.getdate())
+		self.assertEqual(frappe.db.get_value("Candidate Country Process", ccp.name, "live_plan_eta"), frappe.utils.getdate())
+		self.assertEqual(frappe.db.get_value("Candidate Country Process", ccp.name, "status"), "In Process")
+
+	def test_ccp_stays_arriving_while_another_submitted_arrival_holds_it(self):
+		ccp = self.make_ccp("_Test Delete Arrival Sibling")
+		first = self.submit_arrival(ccp, "Test Delete First Of Two")
+		second = self.submit_arrival(ccp, "Test Delete Second Of Two", workflow_state="Onboarding Confirmed")
+		draft = self.submit_arrival(ccp, "Test Delete Draft", workflow_state="Draft")
+		frappe.db.set_value("Candidate Country Process", ccp.name, "status", "Arriving")
+
+		frappe.delete_doc("Arrival and Deployment", draft)
+		frappe.delete_doc("Arrival and Deployment", first)
+		self.assertEqual(frappe.db.get_value("Candidate Country Process", ccp.name, "status"), "Arriving")
+
+		frappe.delete_doc("Arrival and Deployment", second)
+		self.assertEqual(frappe.db.get_value("Candidate Country Process", ccp.name, "status"), "In Process")
+
+	def test_recruiter_cannot_delete_a_finished_arrival(self):
+		from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import has_permission
+
+		ard = frappe.new_doc("Arrival and Deployment")
+		with patch("frappe.get_roles", return_value=["Recruiter"]):
+			for state in ("Pending Onboarding", "Onboarding Confirmed", "Pick Up Arranged"):
+				ard.workflow_state = state
+				self.assertIsNone(has_permission(ard, "delete", user=TRANSPORTATION_USER))
+			for state in ("Arrived", "Joined", "Did Not Arrive"):
+				ard.workflow_state = state
+				self.assertFalse(has_permission(ard, "delete", user=TRANSPORTATION_USER))
+				self.assertIsNone(has_permission(ard, "write", user=TRANSPORTATION_USER))
+
+		with patch("frappe.get_roles", return_value=["Recruiter", "Recruitment Manager"]):
+			self.assertIsNone(has_permission(ard, "delete", user=TRANSPORTATION_USER))
+
+	def test_patch_only_adds_delete_to_existing_custom_docperm_rows(self):
+		from one_fm.patches.v15_0 import allow_recruiter_to_delete_arrivals
+
+		frappe.db.delete("Custom DocPerm", {"parent": "Arrival and Deployment", "role": "Senior Recruiter"})
+		for role in ("Recruiter", "HR User"):
+			if not frappe.db.exists("Custom DocPerm", {"parent": "Arrival and Deployment", "role": role, "permlevel": 0}):
+				frappe.get_doc(
+					{
+						"doctype": "Custom DocPerm",
+						"parent": "Arrival and Deployment",
+						"parenttype": "DocType",
+						"parentfield": "permissions",
+						"role": role,
+						"permlevel": 0,
+						"read": 1,
+						"write": 1,
+					}
+				).insert()
+
+		allow_recruiter_to_delete_arrivals.execute()
+		allow_recruiter_to_delete_arrivals.execute()
+
+		perm = {"parent": "Arrival and Deployment", "permlevel": 0}
+		self.assertEqual(frappe.db.get_value("Custom DocPerm", {**perm, "role": "Recruiter"}, "delete"), 1)
+		self.assertFalse(frappe.db.get_value("Custom DocPerm", {**perm, "role": "HR User"}, "delete"))
+		self.assertFalse(frappe.db.exists("Custom DocPerm", {"parent": "Arrival and Deployment", "role": "Senior Recruiter"}))

@@ -3,7 +3,7 @@ from frappe import _
 import base64
 from datetime import date
 import datetime
-from one_fm.api.v1.utils import response
+from one_fm.api.v1.utils import check_own_employee, not_own_employee_response, response
 from one_fm.api.api import upload_file
 from pathlib import Path
 import hashlib
@@ -18,6 +18,9 @@ def get_user_details(employee_id: str = None):
 
         if not isinstance(employee_id, str):
             return response("Bad Request", 400, None, "Invalid Employee ID format. Please enter a valid value.")
+
+        if not check_own_employee(employee_id):
+            return not_own_employee_response()
 
         employee = frappe.get_doc("Employee", {"employee_id": employee_id})
 
@@ -59,6 +62,9 @@ def change_user_profile_image(employee_id: str = None, image: str = None):
     if not isinstance(image, str):
         return response(_("Invalid Photo"), 400, None,
                         _("Your photo could not be read. Please choose it again."))
+
+    if not check_own_employee(employee_id):
+        return not_own_employee_response()
 
     try:
         try:
@@ -122,6 +128,8 @@ def get_user_roles(employee_id: str = None):
         }
     """
     try:
+        if not check_own_employee(employee_id):
+            return not_own_employee_response()
         employee_user = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["user_id"])
 
         if not employee_user:
