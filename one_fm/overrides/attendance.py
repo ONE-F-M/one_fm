@@ -53,7 +53,48 @@ def get_overlapping_shift_attendance(employee, attendance_date, shift, roster_ty
 	return {}
 
 
+# Narrow permission escalation used by the BPMN task "Record Attendance, Selection and QOA"
+# (Server Script "Mark Interview Attendance"). The engine runs that script as the initiating
+# user, who may not hold Attendance create. Every one of these constraints must hold.
+CLIENT_INTERVIEW_SHORTLIST = "Client Interview Shortlist"
+# Frappe v15 Document.insert() -> check_permission("create"); Document.save()/_save ->
+# check_permission("write", "save"); docstatus 0 -> 1 -> check_permission("submit").
+CLIENT_INTERVIEW_ATTENDANCE_PERMTYPES = ("create", "write", "submit")
+CLIENT_INTERVIEW_ATTENDANCE_STATUSES = ("Client Interview", "Absent")
+CLIENT_INTERVIEW_ATTENDANCE_ROLES = ("Operations Supervisor", "Operations Manager")
+
+
 class AttendanceOverride(Attendance):
+    def check_permission(self, permtype="read", permlevel=None):
+        if self.is_client_interview_attendance_allowed(permtype):
+            return
+        return super().check_permission(permtype, permlevel)
+
+    def is_client_interview_attendance_allowed(self, permtype):
+        """True only for Attendance written by the Client Interview Shortlist flow."""
+        # (c) only create / write / submit
+        if permtype not in CLIENT_INTERVIEW_ATTENDANCE_PERMTYPES:
+            return False
+        # (e) only the statuses this flow produces
+        if self.status not in CLIENT_INTERVIEW_ATTENDANCE_STATUSES:
+            return False
+        # (a) must reference a Client Interview Shortlist
+        if self.reference_doctype != CLIENT_INTERVIEW_SHORTLIST or not self.reference_docname:
+            return False
+        # (b) the shortlist must exist and be submitted
+        shortlist = frappe.db.get_value(
+            CLIENT_INTERVIEW_SHORTLIST, self.reference_docname, ["docstatus", "owner"], as_dict=True
+        )
+        if not shortlist or shortlist.docstatus != 1:
+            return False
+        # (d) shortlist owner, or an Operations Supervisor / Manager
+        user = frappe.session.user
+        if user == "Guest":
+            return False
+        if user == shortlist.owner:
+            return True
+        return bool(set(CLIENT_INTERVIEW_ATTENDANCE_ROLES) & set(frappe.get_roles(user)))
+
     def validate(self):
         from erpnext.controllers.status_updater import validate_status
 
