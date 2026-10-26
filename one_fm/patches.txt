@@ -694,3 +694,5 @@ one_fm.patches.v15_0.deactivate_overtime_request_workflow_and_assignment_rules
 one_fm.patches.v15_0.deactivate_client_event_workflow_and_assignment_rules
 one_fm.patches.v15_0.submit_approved_document_requests #2026-10-26 submit Approved Document Requests
 one_fm.patches.v15_0.deactivate_arrival_and_deployment_workflow
+one_fm.patches.v15_0.bonus_request_payroll_cycle_and_requester
+one_fm.patches.v15_0.bonus_request_hr_user_confirm_step
