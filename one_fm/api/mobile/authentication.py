@@ -89,6 +89,8 @@ def forgot_password(employee_id,OTP_source):
 	try:
 		# employee_user_id = frappe.get_value("Employee", employee_id, "user_id")
 		employee_user_id =  frappe.get_value("Employee", {'employee_id':employee_id}, 'user_id')
+		if OTP_source=="Email" and not frappe.db.get_value("Employee", {"user_id": employee_user_id}, "personal_email"):
+			return _("No personal email is registered on your account. Please choose SMS or WhatsApp instead, or contact the IT Helpdesk to add your email.")
 		otp_secret = get_otpsecret_for_(employee_user_id)
 		token = int(pyotp.TOTP(otp_secret).now())
 		tmp_id = frappe.generate_hash(length=8)
@@ -121,7 +123,6 @@ def forgot_password(employee_id,OTP_source):
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
-@frappe.whitelist(allow_guest=True)
 def update_password(otp, id, employee_id, new_password):
 	"""
 	Params: 

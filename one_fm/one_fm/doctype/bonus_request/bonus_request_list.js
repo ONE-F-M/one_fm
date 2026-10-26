@@ -178,7 +178,8 @@ function show_bulk_bonus_request_dialog(listview) {
 					effective_month: values.effective_month,
 					effective_year: values.effective_year,
 					justification: values.justification,
-					description: values.description || ""
+					description: values.description || "",
+					department: values.department
 				},
 				freeze: true,
 				freeze_message: __("Creating Bonus Request..."),

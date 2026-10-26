@@ -116,6 +116,61 @@ class TestTransportationManifest(FrappeTestCase):
 		self.assertEqual(doc.transportation_manifest_details[0].qoa_status, None)
 		self.assertEqual(doc.transportation_manifest_details[0].qoa_reason, None)
 
+	def _boarding_manifest(self, *statuses):
+		doc = frappe.new_doc("Transportation Manifest")
+		doc.vehicle_no = self.vehicle1
+		doc.schedule_date = today()
+		for employee, status in zip((self.employee1, self.employee2), statuses):
+			row = {
+				"stop_name": "Test Stop",
+				"employee": employee,
+				"scheduled_time": "08:00:00",
+			}
+			if status:
+				row["attendance_status"] = status
+			doc.append("transportation_manifest_details", row)
+		return doc
+
+	def test_present_sets_boarding_time(self):
+		doc = self._boarding_manifest("Present", None)
+		doc.save()
+		rows = doc.transportation_manifest_details
+		self.assertIsNotNone(rows[0].boarding_time)
+		self.assertIsNone(rows[1].boarding_time)
+
+	def test_second_save_keeps_boarding_time(self):
+		doc = self._boarding_manifest("Present", None)
+		doc.save()
+		stamped = doc.transportation_manifest_details[0].boarding_time
+		doc.reload()
+		doc.transportation_manifest_details[1].attendance_status = "Present"
+		doc.save()
+		doc.reload()
+		self.assertEqual(doc.transportation_manifest_details[0].boarding_time, stamped)
+		self.assertIsNotNone(doc.transportation_manifest_details[1].boarding_time)
+
+	def test_switching_to_absent_clears_boarding_time(self):
+		doc = self._boarding_manifest("Present", "Present")
+		doc.save()
+		self.assertIsNotNone(doc.transportation_manifest_details[0].boarding_time)
+		doc.transportation_manifest_details[0].attendance_status = "Absent"
+		doc.save()
+		doc.reload()
+		self.assertIsNone(doc.transportation_manifest_details[0].boarding_time)
+		self.assertIsNotNone(doc.transportation_manifest_details[1].boarding_time)
+
+	def test_bulk_mark_present_stamps_every_row(self):
+		from one_fm.one_fm.api.doc_methods.transportation_manifest import mark_manifest_rows_present
+
+		doc = self._boarding_manifest(None, None)
+		doc.save()
+		names = [row.name for row in doc.transportation_manifest_details]
+		mark_manifest_rows_present(names)
+		doc.reload()
+		for row in doc.transportation_manifest_details:
+			self.assertEqual(row.attendance_status, "Present")
+			self.assertIsNotNone(row.boarding_time)
+
 	def test_present_qoa_fail_allows_reliever(self):
 		# A Present worker who fails QOA can be flagged and assigned a reliever.
 		doc = frappe.new_doc("Transportation Manifest")
@@ -203,6 +258,7 @@ class TestTransportationManifest(FrappeTestCase):
 			"employee": self.employee1,
 			"attendance_status": "Absent",
 			"reliever_employee": self.reliever,
+			"requires_reliever": 1,
 			"scheduled_time": "12:00:00"
 		})
 		self.assertRaises(frappe.ValidationError, doc2.save)
@@ -217,6 +273,7 @@ class TestTransportationManifest(FrappeTestCase):
 			"employee": self.employee1,
 			"attendance_status": "Absent",
 			"reliever_employee": self.reliever,
+			"requires_reliever": 1,
 			"scheduled_time": "08:00:00"
 		})
 		doc.append("transportation_manifest_details", {
@@ -224,6 +281,7 @@ class TestTransportationManifest(FrappeTestCase):
 			"employee": self.employee2,
 			"attendance_status": "Absent",
 			"reliever_employee": self.reliever,
+			"requires_reliever": 1,
 			"scheduled_time": "09:00:00"
 		})
 		self.assertRaises(frappe.ValidationError, doc.save)
@@ -243,6 +301,7 @@ class TestTransportationManifest(FrappeTestCase):
 			"employee": self.employee2,
 			"attendance_status": "Absent",
 			"reliever_employee": self.employee1,  # employee1 is passenger in same manifest
+			"requires_reliever": 1,
 			"scheduled_time": "09:00:00"
 		})
 		self.assertRaises(frappe.ValidationError, doc2.save)
@@ -382,6 +441,7 @@ class TestTransportationManifest(FrappeTestCase):
 			"doctype": "Accommodation",
 			"accommodation": label,
 			"type": "Test Acc Type",
+			"status": "Active",
 		}).insert(ignore_permissions=True)
 		return acc.name
 

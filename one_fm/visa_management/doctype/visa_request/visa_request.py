@@ -590,15 +590,9 @@ def cancelled_visa_requests(visa_requests: list) -> set:
 
 # Export ZIP File from the Visa Request list view.
 #
-# The Attach fields whose current value goes into the archive. The label in the archive is
-# the field's own label, so it follows the form.
-EXPORT_ATTACH_FIELDS = (
-	"passport_copy",
-	"driver_license",
-	"payment_receipt",
-	"visa_document",
-	"degree_certificate",
-)
+# The Attach fields whose current value goes into the archive: the Visa Document and
+# nothing else. The label in the archive is the field's own label, so it follows the form.
+EXPORT_ATTACH_FIELDS = ("visa_document",)
 
 # ~5 MB per request on prod, and the whole archive is built in memory.
 EXPORT_MAX_REQUESTS = 50
@@ -636,11 +630,13 @@ def _build_zip(entries) -> bytes:
 def _export_files(name: str) -> list:
 	"""``[(path inside the ZIP, File name), ...]`` for one Visa Request.
 
-	Attach fields: only the File that the field points at *now*. A replaced attachment
+	Only the File that the Visa Document field points at *now*. A replaced attachment
 	leaves its old File row behind with the same attached_to_field, so matching on the
-	field alone would put the stale copy in the archive too.
+	field alone would put the stale copy in the archive too. The URL is part of the match
+	as well, because one file can be shared between two fields (Payment Receipt and Visa
+	Document), and the field is part of it so the other field's row is not picked up.
 
-	Sidebar files: Files attached to the request with no attached_to_field.
+	Sidebar files and the other Attach fields are not exported.
 	"""
 	meta = frappe.get_meta("Visa Request")
 	entries = []
@@ -671,34 +667,21 @@ def _export_files(name: str) -> list:
 		original_name = frappe.db.get_value("File", file_name, "file_name") or file_name
 		entries.append((f"{_safe_filename(label)} - {_safe_filename(original_name)}", file_name))
 
-	sidebar = frappe.get_all(
-		"File",
-		filters={
-			"attached_to_doctype": "Visa Request",
-			"attached_to_name": name,
-			"attached_to_field": ["is", "not set"],
-			"is_folder": 0,
-		},
-		fields=["name", "file_name"],
-		order_by="creation asc",
-	)
-	for row in sidebar:
-		entries.append((_safe_filename(row.file_name or row.name), row.name))
-
 	return [(f"{_safe_filename(name)}/{path}", file_name) for path, file_name in entries]
 
 
 @frappe.whitelist(methods=["POST"])
 def export_zip(names: str):
-	"""Download the documents of the selected Visa Requests as one ZIP.
+	"""Download the Visa Document of each selected Visa Request as one ZIP.
 
 	All or nothing on permission: one request the caller cannot read refuses the whole
 	export, so nobody receives a partial archive and takes it for the full set. A file that
 	is missing on disk is the opposite case - it is logged and skipped, because one lost
-	scan must not block the other 49 requests.
+	scan must not block the other 49 requests. MISSING FILES.txt names every request whose
+	Visa Document is not in the archive: no file attached, no File record, or not on disk.
 
-	Layout: ``<VR name>/<field label> - <file name>`` for Attach fields and
-	``<VR name>/<file name>`` for sidebar files. Not saved as a File (the 25 MB limit).
+	Layout: ``<VR name>/Visa Document - <file name>``. Other attachments are left out. Not
+	saved as a File (the 25 MB limit).
 	"""
 	names = frappe.parse_json(names)
 	if isinstance(names, str):
@@ -725,10 +708,17 @@ def export_zip(names: str):
 			)
 
 	entries = []
-	used = set()
 	missing = []
 	for name in names:
-		for path, file_name in _export_files(name):
+		if not frappe.db.get_value("Visa Request", name, "visa_document"):
+			missing.append(f"{name}: no Visa Document attached")
+			continue
+
+		files = _export_files(name)
+		if not files:
+			missing.append(f"{name}: Visa Document has no File record")
+
+		for path, file_name in files:
 			try:
 				content = frappe.get_doc("File", file_name).get_content()
 			except Exception:
@@ -742,20 +732,12 @@ def export_zip(names: str):
 			if isinstance(content, str):
 				content = content.encode()
 
-			# Two sidebar files can share a name, and a ZIP would keep both under it.
-			unique, counter = path, 1
-			while unique in used:
-				counter += 1
-				stem, dot, ext = path.rpartition(".")
-				unique = f"{stem} ({counter}).{ext}" if dot else f"{path} ({counter})"
-			used.add(unique)
-
-			entries.append((unique, content))
+			entries.append((path, content))
 
 	# An empty archive downloads as a ZIP that will not open; say why instead.
 	if not entries:
 		frappe.throw(
-			_("None of the selected Visa Requests has a document that could be read.")
+			_("None of the selected Visa Requests has a Visa Document that could be read.")
 			+ ("<br><br>" + _("Missing files:") + "<br>" + "<br>".join(escape_html(m) for m in missing) if missing else "")
 		)
 	# A partial archive must not pass for the full set.
