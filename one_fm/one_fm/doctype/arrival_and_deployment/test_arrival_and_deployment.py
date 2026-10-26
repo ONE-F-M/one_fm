@@ -8,45 +8,94 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestArrivalandDeployment(FrappeTestCase):
+SCRIPTS = {
+	"Arrival Details Mandatory": """# The Arrival Date is needed before the arrival goes to onboarding, and an overseas hire
+# also needs the ticket attached.
+missing = []
+
+if not doc.arrival_date:
+	missing.append(frappe._("Please ensure Arrival Date is filled before submitting to Onboarding."))
+if doc.candidate_country_process and not doc.ticket_attachment:
+	missing.append(frappe._("Please attach the Ticket for Overseas hires before submitting to Onboarding."))
+
+if missing:
+	frappe.msgprint("<br>".join(missing), title=frappe._("Arrival and Deployment"), indicator="red")
+
+result["arrival_details_valid"] = not missing
+""",
+	"Transportation Manager is Mandatory": """# An overseas hire needs a Transportation Manager for the airport pickup. A local hire has
+# no airport pickup, so a pickup cannot be arranged for one.
+errors = []
+
+if task_data.get("action") == "Arrange Pick Up" and not doc.candidate_country_process:
+	errors.append(frappe._("A pickup is arranged only for overseas hires. Please mark the arrival instead."))
+elif doc.candidate_country_process and not doc.transportation_manager:
+	errors.append(frappe._("Please fill in the Transportation Manager before confirming onboarding."))
+
+if errors:
+	frappe.msgprint("<br>".join(errors), title=frappe._("Arrival and Deployment"), indicator="red")
+
+result["transportation_manager_valid"] = not errors
+""",
+}
+
+
+def run_script(script_name, doc, action=None):
+	"""Run a script the way the BPMN engine does and return its result."""
+	result = {}
+	with patch("frappe.msgprint"):
+		exec(SCRIPTS[script_name], {"frappe": frappe, "doc": doc, "task_data": {"action": action}, "result": result})
+	return result
+
+
+class TestArrivalProcessChecks(FrappeTestCase):
+	"""The checks the Arrival and Deployment Lifecycle process runs before a step moves on."""
+
+	def test_site_scripts_match_this_file(self):
+		for name, body in SCRIPTS.items():
+			saved = frappe.db.get_value("Server Script", name, "script")
+			if saved is None:
+				continue
+			self.assertEqual(saved.strip(), body.strip(), name)
+
 	def test_arrival_date_mandatory_for_onboarding(self):
 		doc = frappe.new_doc("Arrival and Deployment")
-		doc.candidate_name = "Test Candidate"
-		doc.onboarding_officer = "Administrator"
-		doc.general_services = "Administrator"
-		doc.warehouse = "Administrator"
-		doc.workflow_state = "Pending Onboarding"
-		
-		# Should throw exception because arrival_date is missing
-		self.assertRaises(frappe.ValidationError, doc.validate)
-		
-		# Once arrival_date is set, it should pass (for local hire since no CCP)
+		self.assertFalse(run_script("Arrival Details Mandatory", doc)["arrival_details_valid"])
 		doc.arrival_date = frappe.utils.today()
-		doc.validate() # Should not raise exception
-		
-	def test_overseas_flight_details_mandatory(self):
-		doc = frappe.new_doc("Arrival and Deployment")
-		doc.candidate_name = "Overseas Candidate"
-		doc.candidate_country_process = "CCP-TEST-001"
-		doc.onboarding_officer = "Administrator"
-		doc.transportation_manager = "Administrator"
-		doc.finance = "Administrator"
-		doc.general_services = "Administrator"
-		doc.warehouse = "Administrator"
-		doc.workflow_state = "Pending Onboarding"
-		doc.arrival_date = frappe.utils.today()
-		
-		# Should throw exception because flight details are missing for overseas
-		self.assertRaises(frappe.ValidationError, doc.validate)
+		self.assertTrue(run_script("Arrival Details Mandatory", doc)["arrival_details_valid"])
 
-	def test_overseas_hire_needs_only_the_ticket(self):
+	def test_overseas_hire_needs_the_ticket(self):
 		doc = frappe.new_doc("Arrival and Deployment")
-		doc.candidate_name = "Overseas Ticket Only"
 		doc.candidate_country_process = "CCP-TEST-001"
-		doc.workflow_state = "Pending Onboarding"
 		doc.arrival_date = frappe.utils.today()
+		self.assertFalse(run_script("Arrival Details Mandatory", doc)["arrival_details_valid"])
 		doc.ticket_attachment = "/private/files/test-ticket.pdf"
+		self.assertTrue(run_script("Arrival Details Mandatory", doc)["arrival_details_valid"])
 
+	def test_overseas_onboarding_needs_a_transportation_manager(self):
+		doc = frappe.new_doc("Arrival and Deployment")
+		doc.candidate_country_process = "CCP-TEST"
+		self.assertFalse(run_script("Transportation Manager is Mandatory", doc)["transportation_manager_valid"])
+		doc.transportation_manager = "Administrator"
+		self.assertTrue(run_script("Transportation Manager is Mandatory", doc)["transportation_manager_valid"])
+
+	def test_a_local_hire_needs_no_transportation_manager(self):
+		doc = frappe.new_doc("Arrival and Deployment")
+		self.assertTrue(run_script("Transportation Manager is Mandatory", doc)["transportation_manager_valid"])
+
+	def test_a_pickup_is_arranged_only_for_overseas_hires(self):
+		local = frappe.new_doc("Arrival and Deployment")
+		self.assertFalse(run_script("Transportation Manager is Mandatory", local, "Arrange Pick Up")["transportation_manager_valid"])
+		overseas = frappe.new_doc("Arrival and Deployment")
+		overseas.candidate_country_process = "CCP-TEST"
+		overseas.transportation_manager = "Administrator"
+		self.assertTrue(run_script("Transportation Manager is Mandatory", overseas, "Arrange Pick Up")["transportation_manager_valid"])
+
+	def test_the_controller_no_longer_blocks_the_save(self):
+		doc = frappe.new_doc("Arrival and Deployment")
+		doc.candidate_country_process = "CCP-TEST"
+		doc.workflow_state = "Onboarding Confirmed"
+		doc.flags.ignore_links = True
 		doc.validate()
 
 
@@ -86,7 +135,7 @@ class TestOnboardingOfficerEmail(FrappeTestCase):
 			doc.notify_onboarding_officer()
 		self.assertIsNone(enqueue.call_args.kwargs["cc"])
 
-	def test_second_onboarding_officer_gets_the_email_and_the_task(self):
+	def test_second_onboarding_officer_gets_the_email(self):
 		second = "test_second_onboarding@example.com"
 		if not frappe.db.exists("User", second):
 			frappe.get_doc(
@@ -106,9 +155,8 @@ class TestOnboardingOfficerEmail(FrappeTestCase):
 			doc.notify_onboarding_officer()
 
 		self.assertIn(second, enqueue.call_args.kwargs["recipients"])
-		self.assertTrue(
-			frappe.db.exists("ToDo", {"reference_name": doc.name, "allocated_to": second, "status": "Open"})
-		)
+		# The process assigns the tasks; the email no longer assigns the officers.
+		self.assertFalse(frappe.db.exists("ToDo", {"reference_name": doc.name, "allocated_to": second, "status": "Open"}))
 
 
 class TestPendingOnboardingEditors(FrappeTestCase):
@@ -184,104 +232,12 @@ class TestArrivalEndsWithTransportation(FrappeTestCase):
 		self.assertFalse([t for t in workflow.transitions if t.action == "Submit to Support Departments"])
 		self.assertFalse(frappe.db.exists("DocType", "Arrival Acknowledgement"))
 
-	def test_local_hire_keeps_the_onboarding_task_until_marked(self):
-		ard = _make_arrival("Test Local Keeps Task")
-		for state in ("Pending Onboarding", "Onboarding Confirmed"):
+	def test_status_follows_the_workflow_state(self):
+		ard = _make_arrival("Test Status Follows State")
+		for state, status in (("Pending Onboarding", "Pending"), ("Onboarding Confirmed", "Arriving"), ("Arrived", "Joined")):
 			ard.workflow_state = state
 			ard.save()
-
-		self.assertEqual(_open_assignees(ard), {"Administrator"})
-		self.assertEqual(ard.status, "Arriving")
-
-		ard.workflow_state = "Arrived"
-		ard.save()
-		self.assertEqual(_open_assignees(ard), set())
-		self.assertEqual(ard.status, "Joined")
-		self.assertTrue(
-			frappe.db.exists(
-				"ToDo",
-				{"reference_name": ard.name, "allocated_to": "Administrator", "status": "Closed"},
-			)
-		)
-
-	def test_changing_the_transportation_manager_moves_the_pickup_task(self):
-		ard = _make_arrival("Test Move Pickup Task")
-		for state in ("Pending Onboarding", "Onboarding Confirmed"):
-			ard.workflow_state = state
-			ard.save()
-
-		ard.transportation_manager = TRANSPORTATION_USER
-		ard.save()
-		self.assertIn(TRANSPORTATION_USER, _open_assignees(ard))
-
-		ard.transportation_manager = SECOND_TRANSPORTATION_USER
-		ard.save()
-		self.assertIn(SECOND_TRANSPORTATION_USER, _open_assignees(ard))
-		self.assertNotIn(TRANSPORTATION_USER, _open_assignees(ard))
-
-	def test_onboarding_officer_moves_the_pickup_task_after_pick_up_is_arranged(self):
-		workflow = frappe.get_doc("Workflow", "Arrival and Deployment")
-		self.assertIn(
-			("Pick Up Arranged", "Onboarding Officer"), {(d.state, d.allow_edit) for d in workflow.states}
-		)
-
-		ard = _make_arrival("Test Reassign Arranged Pickup", transportation_manager=TRANSPORTATION_USER)
-		frappe.db.set_value("Arrival and Deployment", ard.name, "workflow_state", "Pick Up Arranged")
-		ard.reload()
-		ard.assign_transportation_manager()
-
-		ard.transportation_manager = SECOND_TRANSPORTATION_USER
-		with patch("frappe.get_roles", return_value=["Onboarding Officer"]):
-			ard.save()
-
-		self.assertIn(SECOND_TRANSPORTATION_USER, _open_assignees(ard))
-		self.assertNotIn(TRANSPORTATION_USER, _open_assignees(ard))
-
-	def test_recruiter_marking_an_overseas_arrival_cancels_the_pickup_task(self):
-		for outcome in ("Arrived", "Did Not Arrive"):
-			ard = _make_arrival(f"Test Recruiter Marks {outcome}", transportation_manager=TRANSPORTATION_USER)
-			frappe.db.set_value(
-				"Arrival and Deployment",
-				ard.name,
-				{"workflow_state": "Onboarding Confirmed", "candidate_country_process": "CCP-TEST"},
-			)
-			ard.reload()
-			ard.assign_transportation_manager()
-
-			ard.workflow_state = outcome
-			ard.flags.ignore_links = True
-			with patch("frappe.get_roles", return_value=["Recruiter"]), patch(
-				"one_fm.one_fm.doctype.candidate_country_process.candidate_country_process.recalculate_ccp_live_eta"
-			):
-				ard.save()
-
-			pickup_status = frappe.db.get_value(
-				"ToDo",
-				{"reference_name": ard.name, "allocated_to": TRANSPORTATION_USER},
-				"status",
-			)
-			self.assertEqual(pickup_status, "Cancelled")
-
-	def test_waiting_pending_support_department_pickups_get_a_task(self):
-		from one_fm.patches.v15_0.end_arrival_at_transportation_confirmation import (
-			assign_pickups_waiting_in_pending_support_departments,
-		)
-
-		ard = _make_arrival("Test Waiting Pickup")
-		frappe.db.set_value(
-			"Arrival and Deployment",
-			ard.name,
-			{
-				"workflow_state": "Pending Support Departments",
-				"candidate_country_process": "CCP-TEST",
-				"transportation_manager": TRANSPORTATION_USER,
-			},
-		)
-
-		assign_pickups_waiting_in_pending_support_departments()
-
-		self.assertIn(TRANSPORTATION_USER, _open_assignees(ard))
-
+			self.assertEqual(ard.status, status, state)
 	def test_mandatory_fields_stay_mandatory_after_draft(self):
 		meta = frappe.get_meta("Arrival and Deployment")
 		for fieldname in ("onboarding_officer", "arrival_date"):
@@ -289,67 +245,6 @@ class TestArrivalEndsWithTransportation(FrappeTestCase):
 				meta.get_field(fieldname).mandatory_depends_on,
 				'eval:doc.workflow_state && doc.workflow_state != "Draft"',
 			)
-
-	def test_pick_up_is_arranged_by_the_transportation_manager(self):
-		doc = frappe.new_doc("Arrival and Deployment")
-		doc.candidate_country_process = "CCP-TEST"
-		doc.workflow_state = "Pick Up Arranged"
-
-		with patch("frappe.get_roles", return_value=["Onboarding Officer"]):
-			self.assertRaises(frappe.ValidationError, doc.validate_workflow_role)
-		with patch("frappe.get_roles", return_value=["Transportation Manager"]):
-			doc.validate_workflow_role()
-
-	def test_overseas_arrival_needs_the_transportation_manager_role(self):
-		doc = frappe.new_doc("Arrival and Deployment")
-		doc.candidate_country_process = "CCP-TEST"
-		doc.workflow_state = "Arrived"
-
-		with patch("frappe.get_roles", return_value=["Onboarding Officer"]):
-			self.assertRaises(frappe.ValidationError, doc.validate_workflow_role)
-		with patch("frappe.get_roles", return_value=["Transportation Manager"]):
-			doc.validate_workflow_role()
-
-	def test_recruiter_confirms_onboarding_and_marks_arrival(self):
-		doc = frappe.new_doc("Arrival and Deployment")
-		doc.candidate_country_process = "CCP-TEST"
-
-		with patch("frappe.get_roles", return_value=["Recruiter"]):
-			for state in ("Onboarding Confirmed", "Arrived", "Did Not Arrive"):
-				doc.workflow_state = state
-				doc.validate_workflow_role()
-			doc.workflow_state = "Pick Up Arranged"
-			self.assertRaises(frappe.ValidationError, doc.validate_workflow_role)
-
-	def test_local_arrival_is_marked_by_the_onboarding_officer(self):
-		doc = frappe.new_doc("Arrival and Deployment")
-		doc.workflow_state = "Did Not Arrive"
-
-		with patch("frappe.get_roles", return_value=["Transportation Manager"]):
-			self.assertRaises(frappe.ValidationError, doc.validate_workflow_role)
-		with patch("frappe.get_roles", return_value=["Onboarding Officer"]):
-			doc.validate_workflow_role()
-
-	def test_overseas_onboarding_needs_a_transportation_manager(self):
-		doc = frappe.new_doc("Arrival and Deployment")
-		doc.candidate_country_process = "CCP-TEST"
-		doc.arrival_date = "2026-10-20"
-		doc.workflow_state = "Onboarding Confirmed"
-
-		with self.assertRaises(frappe.ValidationError) as context:
-			doc.validate()
-		self.assertIn("Transportation Manager", str(context.exception))
-
-
-def _open_assignees(doc):
-	return set(
-		frappe.get_all(
-			"ToDo",
-			filters={"reference_type": doc.doctype, "reference_name": doc.name, "status": "Open"},
-			pluck="allocated_to",
-		)
-	)
-
 
 class TestCandidateDetails(FrappeTestCase):
 	def test_candidate_detail_fields_fetch_from_existing_fields(self):
@@ -461,19 +356,19 @@ class TestBulkArrivals(FrappeTestCase):
 			bulk_submit_to_onboarding,
 		)
 
-		with patch("frappe.sendmail") as sendmail, patch("frappe.enqueue") as enqueue:
+		with fake_process("Pending Onboarding"), patch("frappe.sendmail") as sendmail, patch(
+			"frappe.enqueue"
+		) as enqueue, patch("frappe.msgprint") as msgprint:
 			bulk_submit_to_onboarding(frappe.as_json([first.name, second.name, no_date.name]))
 
 		self.assertEqual(sendmail.call_count, 1)
 		message = sendmail.call_args.kwargs["message"]
 		self.assertIn("Best Regards", message)
-		self.assertEqual(
-			sendmail.call_args.kwargs["reply_to"], frappe.db.get_value("User", "Administrator", "email")
-		)
 		self.assertIn("Test Bulk One", message)
 		self.assertIn("Test Bulk Two", message)
 		self.assertNotIn("Test Bulk No Date", message)
 		self.assertFalse([c for c in enqueue.call_args_list if c.kwargs.get("method") is frappe.sendmail])
+		self.assertIn(no_date.name, msgprint.call_args.args[0])
 		self.assertEqual(
 			frappe.db.get_value("Arrival and Deployment", first.name, "workflow_state"), "Pending Onboarding"
 		)
@@ -495,11 +390,19 @@ class TestBulkArrivals(FrappeTestCase):
 			bulk_confirm_onboarding,
 		)
 
-		with patch("frappe.sendmail") as sendmail:
+		with fake_process("Onboarding Confirmed"), patch("frappe.sendmail") as sendmail:
 			bulk_confirm_onboarding(frappe.as_json([a.name for a in arrivals]))
 
 		recipients = sorted(tuple(c.kwargs["recipients"]) for c in sendmail.call_args_list)
 		self.assertEqual(recipients, [(TRANSPORTATION_USER,), (SECOND_TRANSPORTATION_USER,)])
+
+	def test_an_arrival_with_no_running_process_is_reported(self):
+		from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import complete_processa_task
+
+		ard = _make_arrival("Test No Process")
+		frappe.db.delete("BPMN Process Instance", {"context_doctype": "Arrival and Deployment", "context_docname": ard.name})
+		with self.assertRaises(frappe.ValidationError):
+			complete_processa_task(ard.name, "Submit to Onboarding")
 
 	def test_email_has_one_table_per_arrival_date(self):
 		from one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment import (
@@ -543,6 +446,19 @@ class TestBulkArrivals(FrappeTestCase):
 				frappe.db.exists("File", {"file_url": ticket.file_url, "attached_to_name": arrival.name})
 			)
 		self.assertIsNone(frappe.db.get_value("Arrival and Deployment", arrived.name, "ticket_attachment"))
+
+
+def fake_process(next_state):
+	"""Stand in for the Processa step: move the arrival, or send it back when it has no Arrival Date."""
+
+	def complete(name, action):
+		if not frappe.db.get_value("Arrival and Deployment", name, "arrival_date"):
+			raise frappe.ValidationError("Please ensure Arrival Date is filled before submitting to Onboarding.")
+		doc = frappe.get_doc("Arrival and Deployment", name)
+		doc.workflow_state = next_state
+		doc.save()
+
+	return patch("one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment.complete_processa_task", complete)
 
 
 def _make_arrival(candidate_name, arrival_date="2026-10-20", transportation_manager=None):
@@ -632,7 +548,7 @@ class TestOnboardingEmailSignedByRecruiter(FrappeTestCase):
 		theirs = _make_arrival("Test Signed Theirs")
 		frappe.db.set_value("Arrival and Deployment", theirs.name, "recruiter", SIGNING_RECRUITER)
 
-		with patch("frappe.sendmail") as sendmail:
+		with fake_process("Pending Onboarding"), patch("frappe.sendmail") as sendmail:
 			bulk_submit_to_onboarding(frappe.as_json([mine.name, theirs.name]))
 
 		reply_tos = sorted(c.kwargs["reply_to"] for c in sendmail.call_args_list)
@@ -651,7 +567,7 @@ class TestOnboardingEmailSignedByRecruiter(FrappeTestCase):
 		arrival.workflow_state = "Pending Onboarding"
 		arrival.save()
 
-		with patch("frappe.sendmail") as sendmail:
+		with fake_process("Onboarding Confirmed"), patch("frappe.sendmail") as sendmail:
 			bulk_confirm_onboarding(frappe.as_json([arrival.name]))
 
 		self.assertEqual(sendmail.call_args.kwargs["reply_to"], SIGNING_RECRUITER)

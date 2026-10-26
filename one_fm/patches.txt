@@ -692,3 +692,4 @@ one_fm.patches.v15_0.create_mobile_app_tester_role
 one_fm.patches.v15_0.add_bank_account_draft_assignment_rule #2026-10-23 WI-003474
 one_fm.patches.v15_0.deactivate_overtime_request_workflow_and_assignment_rules
 one_fm.patches.v15_0.deactivate_client_event_workflow_and_assignment_rules
+one_fm.patches.v15_0.deactivate_arrival_and_deployment_workflow

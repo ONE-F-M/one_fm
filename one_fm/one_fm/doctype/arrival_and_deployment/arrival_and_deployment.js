@@ -31,36 +31,5 @@ frappe.ui.form.on("Arrival and Deployment", {
 			'section_break_flight',
 			'ticket_attachment'
 		], !is_local);
-	},
-	
-	validate: function(frm) {
-		// client side validation
-	},
-	
-	before_workflow_action: function(frm) {
-		if (frappe.selected_workflow_action === "Submit to Onboarding") {
-			if (!frm.doc.arrival_date) {
-				frappe.throw(__("Please ensure Arrival Date is filled before submitting to Onboarding."));
-			}
-			if (frm.doc.candidate_country_process) {
-				if (!frm.doc.ticket_attachment) {
-					frappe.throw(__("Please attach the Ticket for Overseas hires before submitting to Onboarding."));
-				}
-			}
-		}
-
-		if (["Arrange Pick Up", "Arrived", "Did Not Arrive"].includes(frappe.selected_workflow_action)) {
-			let is_overseas = !!frm.doc.candidate_country_process;
-			let recruiter_marks_arrival = frappe.selected_workflow_action !== "Arrange Pick Up" && frappe.user.has_role("Recruiter");
-			if (is_overseas && frappe.session.user !== frm.doc.transportation_manager && !frappe.user.has_role("System Manager") && !recruiter_marks_arrival) {
-				frappe.throw(__("Only the Transportation Manager named on this arrival can mark whether the candidate arrived."));
-			}
-		}
-
-		if (frappe.selected_workflow_action === "Did Not Arrive") {
-			if (!frm.doc.recruiter) {
-				frappe.throw(__("Please enter the Recruiter before notifying them that the candidate did not arrive."));
-			}
-		}
 	}
 });
