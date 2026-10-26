@@ -26,30 +26,36 @@ class BonusRequest(Document):
 			self.effective_year = getdate(nowdate()).year
 
 		if not self.requested_by:
-			self.requested_by = frappe.session.user
+			self.requested_by = frappe.db.get_value(
+				"Employee", {"user_id": frappe.session.user, "status": "Active"}, "name"
+			)
 
 	def validate(self):
-		self.set_line_manager()
+		self.sync_payroll_cycle()
 		self.validate_self_request()
 		self.validate_items()
 		self.calculate_total_bonus_amount()
 		self.validate_recurring_dates()
 		self.validate_recurring_start_date()
 
-	def set_line_manager(self):
-		"""Fetch the requesting employee's line manager (Reports To).
+	def sync_payroll_cycle(self):
+		"""Keep the Payroll Cycle and the hidden Effective Month/Year in step.
 
-		reports_to_user is auto-populated by fetch_from (reports_to.user_id),
-		and drives the "Bonus Request - Line Manager" assignment rule.
+		The cycle the request is paid in decides the month: the amended cycle when Amend
+		Payroll Cycle is ticked, else the payroll cycle. A request made without a cycle (the
+		bulk dialog, a recurring clone) takes the cycle named after its effective month.
+		The report and the recurring job still read effective_month/effective_year.
 		"""
-		if not self.requested_by:
-			return
-
-		self.reports_to = frappe.db.get_value(
-			"Employee",
-			{"user_id": self.requested_by, "status": "Active"},
-			"reports_to"
-		)
+		cycle = self.amended_payroll_cycle if cint(self.amend_payroll_cycle) else self.payroll_cycle
+		if cycle:
+			month, year = frappe.db.get_value("Payroll Cycle", cycle, ["month", "year"]) or (None, None)
+			if month and year:
+				self.effective_month = month
+				self.effective_year = cint(year)
+		elif self.effective_month and self.effective_year:
+			name = f"{self.effective_month} {cint(self.effective_year)}"
+			if frappe.db.exists("Payroll Cycle", name):
+				self.payroll_cycle = name
 
 	def validate_self_request(self):
 		"""Prevent users from adding themselves to the bonus request."""
@@ -161,7 +167,8 @@ def create_consolidated_bonus_request(
 	effective_month: str,
 	effective_year: int,
 	justification: str,
-	description: str = ""
+	description: str = "",
+	department: str = None
 ) -> str:
 	"""Create a single Bonus Request with all employees as child table rows.
 
@@ -172,6 +179,7 @@ def create_consolidated_bonus_request(
 		effective_year: The year the bonus takes effect.
 		justification: Justification from the dropdown (applied to all rows).
 		description: Description text (required when justification is "Other").
+		department: The department the employees were picked from.
 
 	Returns:
 		Name of the created Bonus Request document.
@@ -224,6 +232,7 @@ def create_consolidated_bonus_request(
 		"posting_date": nowdate(),
 		"effective_month": effective_month,
 		"effective_year": effective_year,
+		"department": department,
 		"bonus_request_employees": items,
 	})
 	bonus_request.insert()
