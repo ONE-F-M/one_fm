@@ -32,7 +32,12 @@ function matrixMatches(row, filters) {
     const r = row || {};
     const f = filters || {};
     if (f.issuesOnly && r.status !== 'Missing' && r.status !== 'Stale') return false;
-    if (f.shift && r.roster_shift !== f.shift) return false;
+    // Shift is typed: a picked shift name matches exactly, partial text matches anywhere.
+    const shift = normalizeSearchText(f.shift);
+    if (shift) {
+        const rostered = normalizeSearchText(r.roster_shift);
+        if (f.shiftExact ? rostered !== shift : !rostered.includes(shift)) return false;
+    }
     if (f.accommodation && (r.camp || MATRIX_LIVE_OUT) !== f.accommodation) return false;
     if (f.project && r.project !== f.project) return false;
     const q = normalizeSearchText(f.q);
@@ -299,7 +304,10 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             matrixFiltered() {
-                return this.matrixRows.filter(r => matrixMatches(r, this.matrixFilters));
+                const filters = Object.assign({}, this.matrixFilters, {
+                    shiftExact: this.matrixShiftOptions.includes(this.matrixFilters.shift)
+                });
+                return this.matrixRows.filter(r => matrixMatches(r, filters));
             },
 
             matrixBadge() {
@@ -6278,10 +6286,11 @@ function injectRPVueTemplate() {
       </label>
       <label class="rp-matrix-field">
         <span>{{ __('Operations Shift') }}</span>
-        <select class="form-control input-sm" v-model="matrixFilters.shift">
-          <option value="">{{ __('All') }}</option>
-          <option v-for="o in matrixShiftOptions" :key="o" :value="o">{{ o }}</option>
-        </select>
+        <input type="search" class="form-control input-sm" list="rp-matrix-shift-options"
+               v-model="matrixFilters.shift" :placeholder="__('All')" />
+        <datalist id="rp-matrix-shift-options">
+          <option v-for="o in matrixShiftOptions" :key="o" :value="o"></option>
+        </datalist>
       </label>
       <label class="rp-matrix-field">
         <span>{{ __('Accommodation') }}</span>

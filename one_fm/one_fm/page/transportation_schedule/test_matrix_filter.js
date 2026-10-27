@@ -58,6 +58,18 @@ assert.deepStrictEqual(ids(f({ project: 'Beta' })), ['HR-EMP-2', 'HR-EMP-4']);
 assert.deepStrictEqual(ids(f({ accommodation: 'Camp A' })), ['HR-EMP-1', 'HR-EMP-4']);
 assert.deepStrictEqual(ids(f({ accommodation: 'Live-Out' })), ['HR-EMP-3'], 'no camp means Live-Out');
 
+// The shift filter is typed: partial text matches anywhere, a picked name exactly.
+const shiftRows = [
+    { id: 'S-1', roster_shift: 'Security-AUM-Day-1' },
+    { id: 'S-11', roster_shift: 'Security-AUM-Day-11' },
+    { id: 'S-N', roster_shift: 'Cashier-Jazeera Airways - T5-Night-1' },
+];
+const shiftIds = (filters) => shiftRows.filter(r => matrixMatches(r, f(filters))).map(r => r.id);
+assert.deepStrictEqual(shiftIds({ shift: 'aum' }), ['S-1', 'S-11'], 'partial text, any case');
+assert.deepStrictEqual(shiftIds({ shift: ' jazeera  airways ' }), ['S-N'], 'spaces flattened');
+assert.deepStrictEqual(shiftIds({ shift: 'Security-AUM-Day-1', shiftExact: true }), ['S-1'], 'picked name is exact');
+assert.deepStrictEqual(shiftIds({ shift: 'Security-AUM-Day-1' }), ['S-1', 'S-11'], 'typed text is partial');
+
 // The universal search covers name (flattened), id, designation and reliever.
 assert.deepStrictEqual(ids(f({ q: 'samir basnet' })), ['HR-EMP-1'], 'doubled stored space is flattened');
 assert.deepStrictEqual(ids(f({ q: ' hr-emp-4 ' })), ['HR-EMP-4'], 'id, case and edge spaces ignored');
