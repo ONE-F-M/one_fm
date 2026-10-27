@@ -46,14 +46,14 @@
    "fieldname": "start_date",
    "fieldtype": "Date",
    "label": "Start Date",
-   "read_only_depends_on": "eval: doc.workflow_state != \"Draft\"",
+   "read_only_depends_on": "eval: doc.workflow_state && doc.workflow_state != \"Draft\"",
    "reqd": 1
   },
   {
    "fieldname": "end_date",
    "fieldtype": "Date",
    "label": "End Date",
-   "read_only_depends_on": "eval: doc.workflow_state != \"Draft\"",
+   "read_only_depends_on": "eval: doc.workflow_state && doc.workflow_state != \"Draft\"",
    "reqd": 1
   },
   {
@@ -61,7 +61,7 @@
    "fieldtype": "Datetime",
    "in_list_view": 1,
    "label": "Event Start Datetime",
-   "read_only_depends_on": "eval: doc.workflow_state != \"Draft\"",
+   "read_only_depends_on": "eval: doc.workflow_state && doc.workflow_state != \"Draft\"",
    "reqd": 1
   },
   {
@@ -69,7 +69,7 @@
    "fieldtype": "Datetime",
    "in_list_view": 1,
    "label": "Event End Datetime",
-   "read_only_depends_on": "eval: doc.workflow_state != \"Draft\"",
+   "read_only_depends_on": "eval: doc.workflow_state && doc.workflow_state != \"Draft\"",
    "reqd": 1
   },
   {
@@ -202,7 +202,7 @@
    "link_fieldname": "custom_client_event"
   }
  ],
- "modified": "2026-09-03 12:00:00.000000",
+ "modified": "2026-10-27 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Client Event",
