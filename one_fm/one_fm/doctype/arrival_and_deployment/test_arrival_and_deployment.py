@@ -238,6 +238,13 @@ class TestArrivalEndsWithTransportation(FrappeTestCase):
 			ard.workflow_state = state
 			ard.save()
 			self.assertEqual(ard.status, status, state)
+	def test_a_new_arrival_starts_in_draft(self):
+		from one_fm.patches.v15_0.default_arrival_deployment_workflow_state_to_draft import execute
+
+		execute()
+		meta = frappe.get_meta("Arrival and Deployment", cached=False)
+		self.assertEqual(meta.get_field("workflow_state").default, "Draft")
+
 	def test_mandatory_fields_stay_mandatory_after_draft(self):
 		meta = frappe.get_meta("Arrival and Deployment")
 		for fieldname in ("onboarding_officer", "arrival_date"):
