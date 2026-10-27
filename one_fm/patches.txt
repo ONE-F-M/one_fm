@@ -697,3 +697,4 @@ one_fm.patches.v15_0.submit_approved_document_requests #2026-10-26 submit Approv
 one_fm.patches.v15_0.deactivate_arrival_and_deployment_workflow
 one_fm.patches.v15_0.bonus_request_payroll_cycle_and_requester
 one_fm.patches.v15_0.bonus_request_hr_user_confirm_step
+one_fm.patches.v15_0.processa_sync_visa_stamping_lifecycle___v1_08ebb9 #2026-10-27 Processa sync: Visa Stamping
