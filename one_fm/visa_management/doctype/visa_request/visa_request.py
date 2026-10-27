@@ -69,7 +69,6 @@ OUTCOME_FIELDS = (
 	"operator_rejection_remark",
 	"grd_manager_remark",
 	"pam_rejection_remark",
-	"pam_rejection_remarks",
 	"moi_rejection_remark",
 	"pam_reference_number",
 	"pam_remarks",

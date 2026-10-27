@@ -164,27 +164,20 @@ if not reason:
 # the hardcoded reason list that branch offered.
 #
 # The list moved onto pam_rejection_remark, which is now the Select the AC calls a
-# dropdown, with pam_rejection_remarks beside it for the free text. Both fields had to
-# become writable: the dialog wrote the reason with frm.set_value, which a read-only field
-# allows, and typing it on the form does not.
+# dropdown. It had to become writable: the dialog wrote the reason with frm.set_value,
+# which a read-only field allows, and typing it on the form does not.
 #
-# The reason is required, the remarks are not. The AC makes only the dropdown mandatory,
-# and a reason from a fixed list is what the process acts on - REAPPLY_REASONS in
+# A reason from a fixed list is what the process acts on - REAPPLY_REASONS in
 # visa_request.py reads exactly this field to decide whether a fresh attempt is worth
 # making.
-PAM_REJECTION_REASON_SCRIPT = '''# WI-002106 / AC 3: a PAM rejection must record which of the reasons applied, and the
-# remarks that go with it are kept alongside.
+PAM_REJECTION_REASON_SCRIPT = '''# A PAM rejection must record which of the reasons applied.
 #
 # The options live on pam_rejection_remark itself, so this only checks that one was
-# chosen - the field rejects anything outside its own list on save. Two fieldnames one
-# letter apart, so worth spelling out: pam_rejection_remark is the reason, and
-# pam_rejection_remarks is the free text.
+# chosen - the field rejects anything outside its own list on save.
 reason = (doc.get("pam_rejection_remark") or "").strip()
-remarks = (doc.get("pam_rejection_remarks") or "").strip()
 
 result["pam_rejection_reason_set"] = bool(reason)
 result["pam_rejection_reason"] = reason
-result["pam_rejection_remarks"] = remarks
 
 if not reason:
 	frappe.throw(
@@ -602,8 +595,7 @@ class TestTheRejectionReasonScripts(FrappeTestCase):
 
 
 class TestThePamRejectionReasonScript(FrappeTestCase):
-	"""AC 3: the reason is a dropdown and it is mandatory; the remarks beside it are
-	stored but not demanded."""
+	"""AC 3: the reason is a dropdown and it is mandatory."""
 
 	REASON = "Worker is in Black List"
 
@@ -618,21 +610,6 @@ class TestThePamRejectionReasonScript(FrappeTestCase):
 			with self.subTest(value=repr(blank)):
 				with self.assertRaises(frappe.ValidationError):
 					run_script(PAM_REJECTION_REASON_SCRIPT, pam_rejection_remark=blank)
-
-	def test_the_remarks_are_carried_but_not_demanded(self):
-		result = run_script(
-			PAM_REJECTION_REASON_SCRIPT,
-			pam_rejection_remark=self.REASON,
-			pam_rejection_remarks="File 88213, checked with PAM on the 4th",
-		)
-
-		self.assertEqual(result["pam_rejection_remarks"], "File 88213, checked with PAM on the 4th")
-
-	def test_remarks_on_their_own_do_not_satisfy_the_reason(self):
-		# The AC makes the dropdown mandatory. Free text in the box beside it is not a
-		# reason the process can act on - see the reapply gate.
-		with self.assertRaises(frappe.ValidationError):
-			run_script(PAM_REJECTION_REASON_SCRIPT, pam_rejection_remarks="rejected, see email")
 
 	def test_it_does_not_read_another_stage_s_reason(self):
 		with self.assertRaises(frappe.ValidationError):
@@ -661,13 +638,6 @@ class TestThePamReasonListLivesOnTheField(FrappeTestCase):
 		# The dialog wrote it with frm.set_value, which a read-only field allows. Now that
 		# the map asks for it on the form, read-only would leave the task unpassable.
 		self.assertFalse(self.field().read_only)
-
-	def test_the_remarks_are_a_separate_writable_field(self):
-		remarks = frappe.get_meta("Visa Request").get_field("pam_rejection_remarks")
-
-		self.assertIsNotNone(remarks)
-		self.assertFalse(remarks.read_only)
-		self.assertNotEqual(remarks.fieldname, self.field().fieldname)
 
 	def test_every_option_the_field_offers_is_accepted(self):
 		for option in self.options():
@@ -703,7 +673,6 @@ class TestThePamReasonListLivesOnTheField(FrappeTestCase):
 		from one_fm.visa_management.doctype.visa_request.visa_request import OUTCOME_FIELDS
 
 		self.assertIn("pam_rejection_remark", OUTCOME_FIELDS)
-		self.assertIn("pam_rejection_remarks", OUTCOME_FIELDS)
 
 
 class TestTheOcrScript(FrappeTestCase):
