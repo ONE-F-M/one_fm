@@ -111,7 +111,10 @@ def do_assignment(self, doc):
         else:
             description = self.description
 
-        assign_to.add(
+        # Newer Frappe v15 moved ignore_permissions from the whitelisted add() to _add();
+        # older builds only have add(ignore_permissions=...).
+        add_assignment = getattr(assign_to, "_add", assign_to.add)
+        add_assignment(
             dict(
                 assign_to=[user],
                 doctype=doc.get("doctype"),
