@@ -484,7 +484,7 @@ career_history = Class.extend({
         var interest_reason = fresherData.interest_reason;
         var job_applicant = $('#job_applicant').attr("data");
         fresher_args = {
-          magic_link: new URLSearchParams(window.location.search).get("magic_link"),
+          job_applicant: job_applicant,
           career_history_details: JSON.stringify([fresherData]),
           best_references: JSON.stringify([]),
           interest_reason: interest_reason,
@@ -505,7 +505,7 @@ career_history = Class.extend({
           return frappe.msgprint(frappe._("Kindly fill the responsibility for the most recent job"));
         }
         exper_args = {
-          magic_link: new URLSearchParams(window.location.search).get("magic_link"),
+          job_applicant: $('#job_applicant').attr("data"),
           career_history_details: JSON.stringify(career_histories),
           best_references: JSON.stringify(all_best_references),
           interest_reason: interest_reason,

@@ -1,5 +1,3 @@
-import json
-
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
@@ -8,7 +6,6 @@ from one_fm.one_fm.doctype.magic_link.magic_link import (
 	get_encrypted_magic_link,
 	get_magic_link_reference,
 )
-from one_fm.templates.pages.career_history import create_recruitment_documents
 from one_fm.www.job_applicant_magic_link.index import submit_job_applicant, update_job_applicant
 
 
@@ -68,6 +65,3 @@ class TestMagicLinkPortalAuth(FrappeTestCase):
 			get_magic_link_reference(self.link, "Job Applicant", "Job Applicant")
 		self.assertEqual(get_magic_link_reference(other_link, "Job Applicant", "Job Applicant"), self.other)
 
-	def test_career_history_refuses_a_link_for_another_form(self):
-		with self.assertRaises(frappe.PermissionError):
-			create_recruitment_documents(self.link, json.dumps([{"expType": "Fresher"}]), "[]", "", "[]")

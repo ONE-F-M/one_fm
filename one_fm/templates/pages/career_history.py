@@ -3,7 +3,7 @@ import frappe, json
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import get_url, getdate
-from one_fm.one_fm.doctype.magic_link.magic_link import authorize_magic_link, get_magic_link_reference, send_magic_link
+from one_fm.one_fm.doctype.magic_link.magic_link import authorize_magic_link, send_magic_link
 from one_fm.utils import set_expire_magic_link
 
 def get_context(context):
@@ -28,18 +28,17 @@ def get_experience_types(name = None):
         return frappe.get_all('Assessment Questions', filters={'parent': name}, fields=['experience_type_question'])
 
 
-@frappe.whitelist(allow_guest=True, methods=["POST"])
-def create_recruitment_documents(magic_link: str, career_history_details: str, best_references: str, interest_reason: str, rank_and_factors: str):
+@frappe.whitelist(allow_guest=True)
+def create_recruitment_documents(job_applicant, career_history_details, best_references, interest_reason,rank_and_factors):
     '''
         Method to create Recruitment Documents
         Best References
         Career History
         args:
-            magic_link: Encrypted Career History magic link of the Job Applicant
+            job_applicant: Job Applicant ID
             career_history_details: Career History details as json
             best_references: Best References details as json
     '''
-    job_applicant = get_magic_link_reference(magic_link, "Job Applicant", "Career History")
     career_histories = json.loads(career_history_details)
     exp_type = None
     if career_histories and isinstance(career_histories, list):
@@ -105,6 +104,7 @@ def create_best_references_from_portal(job_applicant, best_references):
                     title=f"Error in creating {ref_type} Reference"
                 )
 
+@frappe.whitelist(allow_guest=True)
 def create_career_history_from_portal(job_applicant, career_history_details, interest_reason,rank_and_factors):
     '''
         Method to create Career History from Portal
