@@ -49,6 +49,7 @@ website_redirects = [
 	# Host-based site
 	{"source": "/jobs", "target": "/careers"},
 	{"source": "/jobs/", "target": "/careers"},
+	{"source": "/privacy_policy", "target": "https://app.one-fm.com/privacy_policy/"},
 ]
 
 # include js in page
