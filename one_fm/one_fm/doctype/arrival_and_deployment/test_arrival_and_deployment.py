@@ -247,11 +247,13 @@ class TestArrivalEndsWithTransportation(FrappeTestCase):
 
 	def test_mandatory_fields_stay_mandatory_after_draft(self):
 		meta = frappe.get_meta("Arrival and Deployment")
-		for fieldname in ("onboarding_officer", "arrival_date"):
-			self.assertEqual(
-				meta.get_field(fieldname).mandatory_depends_on,
-				'eval:doc.workflow_state && doc.workflow_state != "Draft"',
-			)
+		self.assertEqual(
+			meta.get_field("arrival_date").mandatory_depends_on,
+			'eval:doc.workflow_state && doc.workflow_state != "Draft"',
+		)
+
+	def test_onboarding_officer_is_mandatory_from_draft(self):
+		self.assertTrue(frappe.get_meta("Arrival and Deployment").get_field("onboarding_officer").reqd)
 
 class TestCandidateDetails(FrappeTestCase):
 	def test_candidate_detail_fields_fetch_from_existing_fields(self):
@@ -310,6 +312,7 @@ class TestCandidateDetails(FrappeTestCase):
 				"doctype": "Arrival and Deployment",
 				"candidate_name": "Test Missing Job Applicant",
 				"arrival_date": "2026-10-20",
+				"onboarding_officer": "Administrator",
 			}
 		).insert()
 		frappe.db.set_value("Arrival and Deployment", ard.name, "candidate_country_process", ccp[0])
@@ -327,6 +330,7 @@ class TestCandidateDetails(FrappeTestCase):
 				"doctype": "Arrival and Deployment",
 				"candidate_name": "Test Missing CCP",
 				"arrival_date": "2026-10-20",
+				"onboarding_officer": "Administrator",
 			}
 		).insert()
 		frappe.db.set_value(
