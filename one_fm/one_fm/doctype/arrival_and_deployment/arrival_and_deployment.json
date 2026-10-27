@@ -71,7 +71,7 @@
    "fieldtype": "Link",
    "label": "Onboarding Officer",
    "options": "User",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.workflow_state && doc.workflow_state != \"Draft\""
   },
   {
    "fieldname": "second_onboarding_officer",
@@ -184,7 +184,7 @@
   }
  ],
  "links": [],
- "modified": "2026-10-27 18:00:00.000000",
+ "modified": "2026-10-13 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Arrival and Deployment",
