@@ -82,8 +82,7 @@ function set_rejection_remarks(frm) {
 		// WI-002106: the GRD Operator rejection reason (Activity_0sa0xb3) and the PAM one
 		// (Activity_1pgghs6, AC 3) are now required by the Processa map, which blocks the
 		// task instead of prompting in a dialog. Both reasons are typed on the form -
-		// pam_rejection_remark is the dropdown AC 3 asks for, with pam_rejection_remarks
-		// alongside it for the free text.
+		// pam_rejection_remark is the dropdown AC 3 asks for.
 		//
 		// The manager and MOI states still prompt here. Each has its own script on the
 		// map now, so both branches can follow the same way - but that is the next

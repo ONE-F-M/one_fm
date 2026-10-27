@@ -201,8 +201,9 @@ class TestVisaRequestVisibility(FrappeTestCase):
 			with self.subTest(fieldname=fieldname):
 				self.assertFalse(self.meta.get_field(fieldname).read_only)
 
-	def test_the_free_text_pam_rejection_remarks_is_kept(self):
-		self.assertIsNotNone(self.meta.get_field("pam_rejection_remarks"))
+	def test_pam_rejection_remarks_is_removed(self):
+		# Not on the BA site; the dropdown pam_rejection_remark is the only PAM reason.
+		self.assertIsNone(self.meta.get_field("pam_rejection_remarks"))
 
 	def test_the_remark_fields_match_the_ba_site(self):
 		# WI-002106 made the operator's rejection reason writable, on purpose: the reason is
