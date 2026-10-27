@@ -10,8 +10,17 @@ from dateutil.parser import parse
 from frappe import _
 from frappe.utils.password import decrypt
 from frappe.model.document import Document
-from one_fm.one_fm.doctype.magic_link.magic_link import authorize_magic_link, send_magic_link
+from one_fm.one_fm.doctype.magic_link.magic_link import authorize_magic_link, get_magic_link_reference, send_magic_link
 from one_fm.utils import set_expire_magic_link
+
+PORTAL_FIELDS = (
+    "country", "one_fm_cid_expire", "one_fm_cid_number", "one_fm_country_code", "one_fm_date_of_birth",
+    "one_fm_educational_qualification", "one_fm_first_name", "one_fm_gender", "one_fm_last_name",
+    "one_fm_marital_status", "one_fm_nationality", "one_fm_paci_no", "one_fm_passport_expire",
+    "one_fm_passport_holder_of", "one_fm_passport_issued", "one_fm_passport_number", "one_fm_passport_type",
+    "one_fm_place_of_birth", "one_fm_religion", "one_fm_second_name", "one_fm_sponsor", "one_fm_third_name",
+    "one_fm_university",
+)
 
 # initialize mindee
 
@@ -106,6 +115,9 @@ def get_magic_link():
 
 @frappe.whitelist(allow_guest=True)
 def upload_image():
+    # The record comes from the magic link, never from the request
+    frappe.form_dict.reference_doctype = "Job Applicant"
+    frappe.form_dict.reference_docname = get_magic_link_reference(frappe.form_dict.magic_link, "Job Applicant", "Job Applicant")
     bench_path = frappe.utils.get_bench_path()
     file_path = cstr(frappe.local.site)+"/public/files/user/magic_link/"
 
@@ -436,33 +448,35 @@ def delete_existing_files(reference_doctype,reference_docname, file_url_filter, 
         frappe.log_error(message=frappe.get_traceback(), title="Error deleting existing files")
 
 
-@frappe.whitelist(allow_guest=True)
-def update_job_applicant():
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+def update_job_applicant(magic_link: str, field: str, value: str):
+    job_applicant = get_magic_link_reference(magic_link, "Job Applicant", "Job Applicant")
+    if field not in PORTAL_FIELDS:
+        frappe.throw(_("{0} cannot be changed from this form.").format(field), frappe.PermissionError)
     try:
-        data = frappe.form_dict
-
         # All fields for name
         name_fields = ['applicant_name', 'one_fm_first_name', 'one_fm_second_name', 'one_fm_third_name', 'one_fm_fourth_name', 'one_fm_last_name']
 
         # If updated field is a name field then convert it into title case
-        if data.field in name_fields:
-            data.value = data.value.title()
+        if field in name_fields:
+            value = value.title()
 
         # Update field
-        frappe.db.set_value(data.doctype, data.docname, data.field, data.value)
+        frappe.db.set_value("Job Applicant", job_applicant, field, value)
 
-        if data.field=='one_fm_last_name':
-            frappe.db.set_value(data.doctype, data.docname, 'applicant_name', frappe.db.get_value(data.doctype, data.docname, 'one_fm_first_name') + ' ' + data.value)
-        if data.field=='one_fm_first_name':
-            frappe.db.set_value(data.doctype, data.docname, 'applicant_name', data.value+' '+frappe.db.get_value(data.doctype, data.docname, 'one_fm_last_name'))
+        if field=='one_fm_last_name':
+            frappe.db.set_value("Job Applicant", job_applicant, 'applicant_name', frappe.db.get_value("Job Applicant", job_applicant, 'one_fm_first_name') + ' ' + value)
+        if field=='one_fm_first_name':
+            frappe.db.set_value("Job Applicant", job_applicant, 'applicant_name', value+' '+frappe.db.get_value("Job Applicant", job_applicant, 'one_fm_last_name'))
     except Exception as e:
         return {'error':str(e)}
 
     return {'msg':'success'}
 
 
-@frappe.whitelist(allow_guest=True)
-def submit_job_applicant(job_applicant):
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+def submit_job_applicant(magic_link: str):
+    job_applicant = get_magic_link_reference(magic_link, "Job Applicant", "Job Applicant")
     try:
         set_expire_magic_link('Job Applicant', job_applicant, 'Job Applicant')
         select_applicant_on_magic_link_submit(job_applicant)

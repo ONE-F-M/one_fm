@@ -46,7 +46,6 @@ def populate_country():
 def token():
     return frappe.local.session.data.csrf_token
 
-@frappe.whitelist(allow_guest=True)
 def get_civil_id_text():
     """This API redirects the image fetched from frontend and
     runs it though Google Vision API, each side at a time.
@@ -245,7 +244,6 @@ def get_back_side_civil_id_text(image_path, client, is_kuwaiti):
 
     return result
 
-@frappe.whitelist(allow_guest=True)
 def get_passport_text():
     try:
         result = {}
@@ -447,7 +445,6 @@ def send_applicant_doc_magic_link(job_applicant, applicant_name, designation, no
     else:
         frappe.throw(_("No Email ID found for the Job Applicant"))
 
-@frappe.whitelist(allow_guest=True)
 def update_job_applicant(job_applicant, data):
     doc = update_application_function(job_applicant, data)
     doc.save(ignore_permissions=True)
@@ -455,7 +452,6 @@ def update_job_applicant(job_applicant, data):
     return True
 
 
-@frappe.whitelist(allow_guest=True)
 def save_as_draft(job_applicant, data):
     doc = update_application_function(job_applicant, data)
     doc.docstatus = 0
@@ -465,7 +461,6 @@ def save_as_draft(job_applicant, data):
     return True
 
 
-@frappe.whitelist(allow_guest=True)
 def update_application_function(job_applicant, data):
     new_doc = frappe.get_doc('Job Applicant', job_applicant)
     try:

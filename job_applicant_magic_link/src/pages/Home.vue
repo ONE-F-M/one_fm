@@ -150,8 +150,7 @@ export default {
         )
       } else {
         document.querySelector('#cover-spin').style.display = 'block';
-        me.imageFiles.reference_doctype = this.job_applicant.doctype;
-        me.imageFiles.reference_docname = this.job_applicant.name;
+        me.imageFiles.magic_link = this.magicLink;
 
         let uploadImage = createResource({
         url: '/api/method/one_fm.www.job_applicant_magic_link.index.upload_image',
@@ -183,9 +182,7 @@ export default {
       let me = this;
       if(e.target.value){
         // update job applicant
-        let params = {field:e.target.name, value:e.target.value, doctype:me.job_applicant.doctype,
-          docname:me.job_applicant.name
-        }
+        let params = {magic_link: me.magicLink, field: e.target.name, value: e.target.value}
         let job_applicant = createResource({
           url: '/api/method/one_fm.www.job_applicant_magic_link.index.update_job_applicant',
           params: params,
@@ -233,7 +230,7 @@ export default {
       document.querySelector('#cover-spin').style.display = 'block';
       let complete = createResource({
           url: '/api/method/one_fm.www.job_applicant_magic_link.index.submit_job_applicant',
-          params: {job_applicant:me.job_applicant.name},
+          params: {magic_link: me.magicLink},
           method: 'POST',
         })
         complete.fetch().then(res=>{
@@ -264,7 +261,7 @@ export default {
       let me = this;
       let res = createResource({
         url: '/api/method/one_fm.www.job_applicant_magic_link.index.update_job_applicant',
-        params: {field: field, value: value, doctype: me.job_applicant.doctype, docname: me.job_applicant.name},
+        params: {magic_link: me.magicLink, field: field, value: value},
         method: 'POST',
       })
       res.fetch().then(r => {

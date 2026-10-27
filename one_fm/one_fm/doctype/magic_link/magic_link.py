@@ -93,6 +93,16 @@ def authorize_magic_link(encrypted_magic_link, doctype, link_for):
 			frappe.log_error(message=str(decrypted_magic_link), title='Magic Link Not exist')
 			frappe.throw(_("Sorry, we could not find what you're looking for :/"), frappe.PermissionError)
 
+def get_magic_link_reference(encrypted_magic_link, doctype, link_for):
+	"""Return the docname a live magic link was issued for, or raise PermissionError."""
+	magic_link = authorize_magic_link(encrypted_magic_link, doctype, link_for)
+	reference = frappe.db.get_value(
+		"Magic Link", magic_link, ["reference_doctype", "reference_docname", "link_for"], as_dict=True
+	)
+	if reference.reference_doctype != doctype or reference.link_for != link_for:
+		frappe.throw(_("This link cannot be used for this form."), frappe.PermissionError)
+	return reference.reference_docname
+
 def send_magic_link(doctype, name, link_for, recipients, url_prefix, msg, subject, notify=True):
 	'''
 	Method used to send the magic Link for link_for doctype to the doctype
