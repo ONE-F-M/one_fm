@@ -628,12 +628,20 @@ def recount_quota_rows(license_name):
 		)
 
 
-# The workflow states in which a Visa Request counts against a quota: the request is with
-# MOI, so the visa is issued from PAM's side. The count follows the CURRENT state only - a
-# request that moves on (Completed, or Rejected By MOI) leaves the count at its next
-# recount. Spelled exactly as the Visa Request Workflow spells it (capital B in "By"); a
-# misspelling matches nothing and the count silently goes to 0.
-VISA_ISSUED_STATES = ("Pending By MOI",)
+# The workflow states in which a Visa Request counts against a quota: Pending By MOI and
+# every state after it on the way to Completed. PAM has approved, so the visa is issued
+# from PAM's side. Awaiting Visa Cancellation still holds the visa; it leaves the count
+# once the visa is cancelled (Pending Cancel Work Permit, Work Permit Cancelled) or a
+# Completed Visa Cancellation Request names it. Rejected By MOI and Rejected for Re Issue
+# do not count. Spelled exactly as the Visa Request Workflow spells it (capital B in
+# "By"); a misspelling matches nothing and the count silently goes to 0.
+VISA_ISSUED_STATES = (
+	"Pending By MOI",
+	"Pending Visa Issuance",
+	"Pending Recruiter Confirmation",
+	"Completed",
+	"Awaiting Visa Cancellation",
+)
 
 
 def visas_issued_by_quota(license_name) -> dict:
@@ -644,7 +652,7 @@ def visas_issued_by_quota(license_name) -> dict:
 	has not arrived, which is the whole reason the figure is separate from the registered
 	headcount beside it.
 
-	Only a request currently in one of VISA_ISSUED_STATES (Pending By MOI) counts.
+	Only a request currently in one of VISA_ISSUED_STATES (Pending By MOI onward) counts.
 	A cancelled visa is not an issued one. The cancellation gate already works out which
 	requests have had their visa given back (a Completed Visa Cancellation Request names
 	them), and the same answer is used here - the story's last criterion is that a
@@ -717,7 +725,7 @@ def visas_issued_by_quota(license_name) -> dict:
 
 
 def update_quota_from_visa_request(doc, method=None):
-	"""Recount a licence's quota rows when a visa request reaches or leaves Pending By MOI.
+	"""Recount a licence's quota rows when a visa request enters or leaves VISA_ISSUED_STATES.
 
 	Without this the issued figure only moved when somebody saved an Employee - and the
 	whole point of the figure is the gap before an employee exists.
