@@ -767,3 +767,94 @@ class TestServiceClockOperations(FrappeTestCase):
 		self.assertAlmostEqual(wo.total_paused_minutes, 12, delta=1)
 		# The clock stays open so subsequent windows keep accruing.
 		self.assertTrue(wo.hold_started_on)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# A Preventive Work Order with no priority takes the SLA default
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestPreventiveDefaultPriority(FrappeTestCase):
+	def test_blank_priority_takes_sla_default_with_targets_and_deadline(self):
+		"""AC1 + AC2: no priority -> SLA default priority, targets and deadline."""
+		priority = make_issue_priority()
+		customer = get_test_customer()
+		sla = make_sla(priority, resolution_minutes=120, entity=customer)
+		obj = make_object(last_service_date="2026-06-01")
+		entry = make_schedule_entry(
+			obj.name, make_frequency(30).name, planned_execution_datetime="2026-06-30 10:00:00"
+		)
+
+		wo = make_work_order(obj.name, schedule_name=entry.name, client=customer)
+
+		self.assertEqual(wo.sla_master, sla.name)
+		self.assertEqual(wo.priority, priority)
+		self.assertEqual(wo.target_response_minutes, TARGET_RESPONSE_MINUTES)
+		self.assertEqual(wo.target_resolution_minutes, 120)
+		self.assertEqual(
+			get_datetime(wo.planned_deadline), get_datetime("2026-06-30 12:00:00")
+		)
+
+	def test_explicit_non_default_priority_is_kept(self):
+		"""AC1: a priority chosen by the user is never replaced by the default."""
+		default = make_issue_priority()
+		other = make_issue_priority("_Test WO Priority Other")
+		sla = frappe.get_doc({
+			"doctype": "Maintenance Service Level Agreement",
+			"service_level": f"TEST-SLA-{frappe.generate_hash(length=6)}",
+			"document_type": "Maintenance Work Order",
+			"enabled": 1,
+			"default_service_level_agreement": 1,
+			"holiday_list": make_holiday_list(),
+			"priorities": [
+				{
+					"priority": default,
+					"default_priority": 1,
+					"sla_shift_type": "Working Hours",
+					"maintenance_hours_from": "00:00:00",
+					"maintenance_hours_to": "23:59:59",
+					"response_time": 60 * 60,
+					"resolution_time": 120 * 60,
+				},
+				{
+					"priority": other,
+					"default_priority": 0,
+					"sla_shift_type": "Working Hours",
+					"maintenance_hours_from": "00:00:00",
+					"maintenance_hours_to": "23:59:59",
+					"response_time": 30 * 60,
+					"resolution_time": 240 * 60,
+				},
+			],
+			"sla_fulfilled_on": [{"status": "Completed"}],
+			"support_and_resolution": [
+				{"workday": day, "start_time": "00:00:00", "end_time": "23:59:59"}
+				for day in _ALL_WEEKDAYS
+			],
+		})
+		sla.insert(ignore_permissions=True)
+		sla.submit()
+		obj = make_object(last_service_date="2026-06-01")
+		entry = make_schedule_entry(
+			obj.name, make_frequency(30).name, planned_execution_datetime="2026-06-30 10:00:00"
+		)
+
+		wo = make_work_order(
+			obj.name, schedule_name=entry.name, priority=other, sla_master=sla.name
+		)
+
+		self.assertEqual(wo.priority, other)
+		self.assertEqual(wo.target_resolution_minutes, 240)
+
+	def test_no_matching_sla_leaves_priority_and_deadline_blank(self):
+		"""With no matching SLA the PM path must not throw; nothing is filled in."""
+		obj = make_object(last_service_date="2026-06-01")
+		entry = make_schedule_entry(obj.name, make_frequency(30).name)
+
+		with patch.object(mwo.MaintenanceWorkOrder, "_find_matching_sla", return_value=None):
+			wo = make_work_order(obj.name, schedule_name=entry.name)
+
+		self.assertTrue(wo.name)
+		self.assertFalse(wo.sla_master)
+		self.assertFalse(wo.priority)
+		self.assertFalse(wo.planned_deadline)

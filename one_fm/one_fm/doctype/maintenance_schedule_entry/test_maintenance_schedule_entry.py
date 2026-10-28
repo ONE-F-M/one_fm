@@ -422,3 +422,49 @@ class TestWorkOrderCreationEndToEnd(FrappeTestCase):
 		self.assertEqual(wo.maintenance_schedule, entry.name)
 		# Auto-routed from the object's category checklist.
 		self.assertTrue(wo.object_maintenance_checklist)
+
+
+class TestGeneratedWorkOrderGetsDefaultPriority(FrappeTestCase):
+	"""The generator's Work Order carries the SLA default priority."""
+
+	def test_generated_work_order_has_priority_targets_and_deadline(self):
+		# Imported here: the Work Order test module imports factories from this one.
+		from one_fm.one_fm.doctype.maintenance_work_order.test_maintenance_work_order import (
+			make_issue_priority,
+			make_sla,
+		)
+
+		# Make our SLA the only enabled site-wide default so it is the one bound.
+		frappe.db.set_value(
+			"Maintenance Service Level Agreement",
+			{"default_service_level_agreement": 1, "docstatus": 1},
+			"enabled",
+			0,
+		)
+		priority = make_issue_priority()
+		sla = make_sla(priority, response_minutes=60, resolution_minutes=120)
+
+		cat = make_category()
+		make_checklist(cat, [("Inspect filter", 30)])
+		obj = make_object_for_schedule(object_category=cat, last_service_date=today())
+		set_settings(lead_days=5)
+
+		planned = get_datetime(f"{add_days(today(), 1)} 08:00:00")
+		entry = make_schedule_entry(
+			obj.name,
+			frequency=None,
+			maintenance_task="Inspect filter",
+			planned_execution_datetime=planned,
+		)
+
+		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 1)
+
+		entry.reload()
+		wo = frappe.get_doc("Maintenance Work Order", entry.work_order)
+		self.assertEqual(wo.sla_master, sla.name)
+		self.assertEqual(wo.priority, priority)
+		self.assertEqual(wo.target_response_minutes, 60)
+		self.assertEqual(wo.target_resolution_minutes, 120)
+		self.assertEqual(
+			get_datetime(wo.planned_deadline), get_datetime(f"{add_days(today(), 1)} 10:00:00")
+		)

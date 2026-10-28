@@ -477,6 +477,7 @@ class MaintenanceWorkOrder(Document):
 		active client SLA contract, and copies the target response/resolution
 		windows matching the asset priority. Only empty fields are filled, so the
 		frozen timeline and locked contract survive subsequent saves.
+		The PM default priority comes from the SLA's default priority row.
 		"""
 		if self.maintenance_type != "Preventive Maintenance":
 			return
@@ -493,7 +494,9 @@ class MaintenanceWorkOrder(Document):
 
 		# With a contract, trigger and priority resolved, copy the SLA targets
 		if self.sla_master and self.sla_trigger_time:
-			sla = frappe.get_doc("Maintenance Service Level Agreement", self.sla_master)
+			sla = frappe.get_cached_doc("Maintenance Service Level Agreement", self.sla_master)
+			if not self.priority and sla.default_priority:
+				self.priority = sla.default_priority
 			try:
 				self._determine_sla_shift_type(sla)
 			except Exception:
