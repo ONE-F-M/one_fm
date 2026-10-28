@@ -18,7 +18,7 @@ GR_OPERATOR_USER = "paci-bank-account-gro@example.com"
 
 def _ensure_bank():
 	if not frappe.db.exists("Bank", DEFAULT_SALARY_BANK):
-		frappe.get_doc({"doctype": "Bank", "bank_name": DEFAULT_SALARY_BANK}).insert(ignore_permissions=True)
+		frappe.get_doc({"doctype": "Bank", "bank_name": DEFAULT_SALARY_BANK, "bank_code": "NBK"}).insert(ignore_permissions=True)
 
 
 def _employees_with_an_account():
