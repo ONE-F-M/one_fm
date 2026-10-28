@@ -770,7 +770,7 @@ class TestServiceClockOperations(FrappeTestCase):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# WI-004110: a Preventive Work Order with no priority takes the SLA default
+# A Preventive Work Order with no priority takes the SLA default
 # ─────────────────────────────────────────────────────────────────────────────
 
 

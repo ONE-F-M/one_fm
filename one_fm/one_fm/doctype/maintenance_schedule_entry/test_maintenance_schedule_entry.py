@@ -425,7 +425,7 @@ class TestWorkOrderCreationEndToEnd(FrappeTestCase):
 
 
 class TestGeneratedWorkOrderGetsDefaultPriority(FrappeTestCase):
-	"""WI-004110: the generator's Work Order carries the SLA default priority."""
+	"""The generator's Work Order carries the SLA default priority."""
 
 	def test_generated_work_order_has_priority_targets_and_deadline(self):
 		# Imported here: the Work Order test module imports factories from this one.
