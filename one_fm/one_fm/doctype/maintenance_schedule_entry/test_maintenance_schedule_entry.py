@@ -2,6 +2,7 @@
 # See license.txt
 
 import types
+from unittest.mock import patch
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -525,3 +526,148 @@ class TestDueTaskChecklist(FrappeTestCase):
 		self.assertEqual(len(wo.object_maintenance_checklist_items), 3)
 		self.assertTrue(wo.object_maintenance_checklist)
 		self.assertFalse(any(r.maintenance_schedule_entry for r in wo.object_maintenance_checklist_items))
+
+
+class TestWorkOrderCreationIntegrity(FrappeTestCase):
+	"""Each due slot ends with exactly one Work Order, linked in the same step."""
+
+	def _setup(self):
+		cat = make_category()
+		make_checklist(cat, [("Inspect filter", 30), ("Replace belt", 60)])
+		obj = make_object_for_schedule(object_category=cat, last_service_date=today())
+		set_settings(lead_days=5)
+		return obj
+
+	def _slot(self, obj, task="Inspect filter", days=30):
+		return make_schedule_entry(
+			obj.name,
+			frequency=make_frequency(days).name,
+			maintenance_task=task,
+			planned_execution_datetime=get_datetime(f"{add_days(today(), 1)} 08:00:00"),
+		)
+
+	def _work_orders_for(self, entry_name):
+		return set(
+			frappe.get_all(
+				"Maintenance Work Order Checklist",
+				filters={"parenttype": "Maintenance Work Order", "maintenance_schedule_entry": entry_name},
+				pluck="parent",
+			)
+		) | set(frappe.get_all("Maintenance Work Order", filters={"maintenance_schedule": entry_name}, pluck="name"))
+
+	def _fail_entry_link(self):
+		"""Make the entry link step raise, as a failed UPDATE would."""
+		original = frappe.db.set_value
+
+		def set_value(doctype, *args, **kwargs):
+			if doctype == "Maintenance Schedule Entry":
+				raise frappe.ValidationError("link failed")
+			return original(doctype, *args, **kwargs)
+
+		return patch.object(frappe.db, "set_value", side_effect=set_value)
+
+	def test_entry_is_marked_and_linked_together(self):
+		obj = self._setup()
+		entry = self._slot(obj)
+
+		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 1)
+
+		entry.reload()
+		self.assertEqual(entry.status, "Work Order Created")
+		self.assertEqual(self._work_orders_for(entry.name), {entry.work_order})
+
+	def test_link_failure_keeps_no_work_order(self):
+		obj = self._setup()
+		entry = self._slot(obj)
+
+		with self._fail_entry_link():
+			self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 0)
+
+		entry.reload()
+		self.assertEqual(entry.status, "Open")
+		self.assertFalse(entry.work_order)
+		self.assertEqual(self._work_orders_for(entry.name), set())
+
+	def test_failed_entry_is_retried_and_gets_one_work_order(self):
+		obj = self._setup()
+		entry = self._slot(obj)
+
+		with self._fail_entry_link():
+			mse.generate_due_work_orders(object_name=obj.name)
+		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 1)
+		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 0)
+
+		entry.reload()
+		self.assertEqual(self._work_orders_for(entry.name), {entry.work_order})
+
+	def test_existing_work_order_for_an_open_entry_is_linked(self):
+		obj = self._setup()
+		entry = self._slot(obj)
+		existing = mse.create_work_order_from_entries([entry])
+
+		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 0)
+
+		entry.reload()
+		self.assertEqual(entry.work_order, existing.name)
+		self.assertEqual(entry.status, "Work Order Created")
+		self.assertEqual(self._work_orders_for(entry.name), {existing.name})
+
+	def test_existing_work_order_found_by_its_schedule_link(self):
+		obj = self._setup()
+		entry = self._slot(obj)
+		legacy = frappe.get_doc(
+			{
+				"doctype": "Maintenance Work Order",
+				"maintenance_type": "Preventive Maintenance",
+				"status": "Open",
+				"object": obj.name,
+				"maintenance_schedule": entry.name,
+			}
+		).insert(ignore_permissions=True)
+
+		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 0)
+
+		entry.reload()
+		self.assertEqual(entry.work_order, legacy.name)
+
+	def test_group_locked_by_another_run_is_skipped(self):
+		obj = self._setup()
+		entry = self._slot(obj)
+		original = frappe.db.get_values
+
+		def get_values(*args, **kwargs):
+			if kwargs.get("for_update"):
+				return []
+			return original(*args, **kwargs)
+
+		with patch.object(frappe.db, "get_values", side_effect=get_values):
+			self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 0)
+		entry.reload()
+		self.assertEqual(entry.status, "Open")
+
+		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 1)
+
+	def test_one_failing_group_does_not_stop_the_others(self):
+		obj_a = self._setup()
+		obj_b = make_object_for_schedule(
+			object_category=frappe.db.get_value("Object", obj_a.name, "object_category"),
+			last_service_date=today(),
+		)
+		slot_a = self._slot(obj_a)
+		slot_b = self._slot(obj_b)
+		original = mse.create_work_order_from_entries
+
+		def create(entries):
+			if entries[0].object == obj_a.name:
+				raise frappe.ValidationError("boom")
+			return original(entries)
+
+		with patch.object(mse, "create_work_order_from_entries", side_effect=create):
+			mse.generate_due_work_orders()
+
+		slot_a.reload()
+		slot_b.reload()
+		self.assertEqual(slot_a.status, "Open")
+		self.assertFalse(slot_a.work_order)
+		self.assertEqual(slot_b.status, "Work Order Created")
+		self.assertTrue(slot_b.work_order)
