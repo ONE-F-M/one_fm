@@ -568,7 +568,9 @@ class TestAttendanceReportStructure(FrappeTestCase):
 		self.assertIn("group.item_type", self.print_format.html)
 
 	def test_grid_carries_the_columns_from_the_agreed_structure(self):
-		for column in ("Employee ID", "Employee Name", "Working Days", "Days Off", "Total Hours"):
+		# WI-003994: the report is Arabic; only the Employee ID heading stays English.
+		self.assertIn("Employee ID</span></th>", self.print_format.html)
+		for column in ("اسم الموظف", "أيام العمل", "أيام الراحة", "إجمالي الساعات"):
 			self.assertIn(f"{column}</th>", self.print_format.html, msg=column)
 
 	def test_header_repeats_without_overlapping_tall_rows(self):
@@ -681,16 +683,238 @@ class TestReportDayHeader(FrappeTestCase):
 
 	def test_the_header_line_carries_the_report_period_on_the_right(self):
 		"""WI-001983: logo and title left, Report Period right, on one line."""
-		self.assertIn('<td class="pow-hd-right"><strong>Report Period:</strong>', self.print_format.html)
+		self.assertIn('<td class="pow-hd-right"><strong>فترة التقرير:</strong>', self.print_format.html)
 		# And it is not also left in the metadata line below.
 		metadata = self.print_format.html.split('<div class="pow-meta">')[1].split("</div>")[0]
-		self.assertNotIn("Report Period", metadata)
+		self.assertNotIn("فترة التقرير", metadata)
 
-	def test_the_metadata_reads_client_then_project_then_contract(self):
+	def test_the_metadata_reads_client_then_project(self):
+		# WI-003994: Arabic labels, and the Contract label is gone.
 		metadata = self.print_format.html.split('<div class="pow-meta">')[1].split("</div>")[0]
 		labels = re.findall(r"<strong>(.*?):</strong>", metadata)
 
-		self.assertEqual(labels, ["Client", "Project", "Contract"])
+		self.assertEqual(labels, ["العميل", "المشروع"])
+
+
+class TestArabicAttendanceReport(FrappeTestCase):
+	"""WI-003994: the Attendance Report is always Arabic and RTL."""
+
+	METHODS = "one_fm.jinja.print_format.methods"
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		import json
+
+		path = frappe.get_app_path(
+			"one_fm", "one_fm", "print_format", "proof_of_work_attendance_report",
+			"proof_of_work_attendance_report.json",
+		)
+		cls.print_format = frappe._dict(json.loads(frappe.read_file(path)))
+
+	def _fake_report(self):
+		return {
+			"meta": {
+				"contract": "CON-1",
+				"project": "Proj",
+				"customer": "CUST",
+				"month_name": "July",
+				"year": 2026,
+				"total_days": 2,
+				"day_numbers": [1, 2],
+				"day_labels": [
+					{"weekday": "Mon", "date": "1/7", "is_weekend": False},
+					{"weekday": "Fri", "date": "2/7", "is_weekend": True},
+				],
+				"source_type": "attendance",
+			},
+			"groups": [
+				{
+					"sale_item": "SER-SEC-000136-NKW-M-30DY-8HR",
+					"item_type": "Security Guard",
+					"employees": [
+						{
+							"sn": 1,
+							"employee_id": "HR-EMP-03541",
+							"employee_name": "John Smith",
+							"days": ["8", "DO"],
+							"working_days": "1",
+							"days_off": "1",
+							"total_hours": "8",
+						}
+					],
+					"totals": {"employees": 1, "working_days": "1", "days_off": "1", "total_hours": "8"},
+				}
+			],
+		}
+
+	def _localised(self, arabic_names=None):
+		from unittest.mock import patch
+
+		from one_fm.jinja.print_format.methods import pow_attendance_report_ar
+
+		doc = frappe._dict(name="POW-1", start_date="2026-07-01", customer="CUST")
+		with patch(f"{self.METHODS}.pow_attendance_report", return_value=self._fake_report()), patch(
+			f"{self.METHODS}._employee_names_arabic", return_value=arabic_names or {}
+		), patch(f"{self.METHODS}.pow_customer_name", return_value="شركة الاختبار"):
+			return pow_attendance_report_ar(doc)
+
+	# AC0 / AC8 - direction and column order
+	def test_the_format_is_rtl_and_arabic(self):
+		self.assertEqual(self.print_format.default_print_language, "ar")
+		self.assertIn("direction: rtl", self.print_format.css)
+		self.assertIn('dir="rtl"', self.print_format.html)
+
+	def test_the_id_and_name_columns_come_first_and_the_totals_last(self):
+		# In an RTL table the first column is the far-right one.
+		html = self.print_format.html.split('<table class="pow-grid">')[1]
+		self.assertLess(html.index('class="c-id"'), html.index('class="c-name"'))
+		self.assertLess(html.index('class="c-name"'), html.index('c-worked-days'))
+		self.assertLess(html.index('c-worked-days'), html.index('c-days-off'))
+		self.assertLess(html.index('c-days-off'), html.index('c-total-hours'))
+		self.assertIn("direction: rtl", self.print_format.css.split(".pow-grid {")[1].split("}")[0])
+
+	# AC1 / AC7 / AC11 - header
+	def test_the_title_and_labels_are_arabic(self):
+		html = self.print_format.html
+		self.assertIn("تقرير الحضور", html)
+		for english in ("ATTENDANCE REPORT", "Client:", "Project:", "Report Period", "Legend"):
+			self.assertNotIn(english, html, msg=english)
+
+	def test_the_record_number_and_the_contract_are_gone(self):
+		html = self.print_format.html
+		self.assertNotIn("doc.name", html)
+		self.assertNotIn("pow-name", html)
+		self.assertNotIn("meta.contract", html)
+		self.assertNotIn("Contract", html)
+
+	def test_the_legend_is_the_arabic_table_and_covers_every_status(self):
+		from one_fm.jinja.print_format.methods import POW_STATUS_AR, pow_attendance_legend_ar
+
+		self.assertIn("pow_attendance_legend_ar()", self.print_format.html)
+		self.assertEqual(set(POW_STATUS_AR), set(ATTENDANCE_ABBR.values()))
+		legend = pow_attendance_legend_ar()
+		self.assertEqual(len(legend), len(POW_STATUS_AR))
+		# Distinct acronyms, or two statuses would read the same on the grid.
+		self.assertEqual(len({item["acronym"] for item in legend}), len(legend))
+
+	# AC2 / AC10 - weekdays and numerals
+	def test_the_weekdays_dates_and_figures_are_arabic(self):
+		report = self._localised()
+		labels = report["meta"]["day_labels"]
+		self.assertEqual([label["weekday"] for label in labels], ["إثن", "جمع"])
+		self.assertEqual([label["date"] for label in labels], ["١/٧", "٢/٧"])
+		emp = report["groups"][0]["employees"][0]
+		self.assertEqual(emp["total_hours"], "٨")
+		self.assertEqual(emp["working_days"], "١")
+		self.assertEqual(report["groups"][0]["totals"]["total_hours"], "٨")
+
+	def test_every_english_weekday_has_a_short_arabic_name(self):
+		from one_fm.jinja.print_format.methods import POW_WEEKDAY_AR
+
+		self.assertEqual(set(POW_WEEKDAY_AR), {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"})
+
+	# AC6 - status codes
+	def test_the_day_cells_use_the_arabic_acronyms_of_the_legend(self):
+		from one_fm.jinja.print_format.methods import POW_STATUS_AR
+
+		cells = self._localised()["groups"][0]["employees"][0]["days"]
+		self.assertEqual(cells, ["٨", POW_STATUS_AR["DO"][0]])
+		for code, (acronym, _description) in POW_STATUS_AR.items():
+			self.assertNotEqual(acronym, code)
+
+	# AC4 - footer
+	def test_the_footer_total_is_arabic(self):
+		group = self._localised()["groups"][0]
+		self.assertEqual(group["total_label"], "الإجمالي: ١ موظف")
+		self.assertEqual(group["count_label"], "١ موظف")
+		self.assertNotIn("employee(s)", self.print_format.html)
+
+	# AC3 / AC5.1 - names
+	def test_the_client_is_named_in_arabic(self):
+		self.assertEqual(self._localised()["meta"]["customer_name"], "شركة الاختبار")
+		self.assertIn("meta.customer_name", self.print_format.html)
+
+	def test_the_employee_is_named_from_the_arabic_field(self):
+		emp = self._localised({"HR-EMP-03541": "جون سميث"})["groups"][0]["employees"][0]
+		self.assertEqual(emp["employee_name"], "جون سميث")
+
+	def test_an_employee_without_an_arabic_name_is_not_transliterated(self):
+		emp = self._localised()["groups"][0]["employees"][0]
+		self.assertEqual(emp["employee_name"], "John Smith")
+
+	# AC5.2 / AC5.3 / AC9 - values kept as stored
+	def test_the_employee_id_sale_item_and_project_are_untouched(self):
+		report = self._localised({"HR-EMP-03541": "جون سميث"})
+		self.assertEqual(report["groups"][0]["employees"][0]["employee_id"], "HR-EMP-03541")
+		self.assertEqual(report["groups"][0]["sale_item"], "SER-SEC-000136-NKW-M-30DY-8HR")
+		self.assertEqual(report["groups"][0]["item_type"], "Security Guard")
+		self.assertEqual(report["meta"]["project"], "Proj")
+
+	def test_the_english_exemptions_are_laid_out_left_to_right(self):
+		html = self.print_format.html
+		self.assertIn("Employee ID</span></th>", html)
+		self.assertIn("<strong>Sale Item:</strong>", html)
+		self.assertIn('<span class="en">{{ emp.employee_id }}</span>', html)
+		self.assertIn(".pow-att .en { direction: ltr;", self.print_format.css)
+
+	# Font and migrate pickup
+	def test_the_arabic_font_is_inlined_and_named(self):
+		self.assertIn("pow_font_faces()", self.print_format.html)
+		self.assertIn("'Readex Pro'", self.print_format.css)
+		self.assertIn("'Noto Sans Arabic'", self.print_format.css)
+
+	def test_the_format_is_newer_than_the_copy_already_migrated(self):
+		# Frappe only re-imports a standard print format whose modified date moved on.
+		self.assertGreater(self.print_format.modified, "2026-08-09 15:00:00.000000")
+
+	# Half Day versus Holiday
+	def test_a_half_day_on_an_amendment_is_hd_and_a_holiday_is_h(self):
+		from unittest.mock import patch
+
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import _grid_from_amendment
+
+		row = frappe._dict(
+			sale_item="SER-A", employee="E1", employee_id="E1", employee_name="E1",
+			day_1="Half Day", day_2="Holiday",
+		)
+		amendment = frappe._dict(attendance_details=[row])
+		module = "one_fm.one_fm.doctype.proof_of_work.proof_of_work"
+		with patch(f"{module}.frappe.get_doc", return_value=amendment):
+			grid = _grid_from_amendment("AMD-1", 2)
+
+		days = grid["SER-A"]["E1"]["days"]
+		self.assertEqual(days[1], "HD")
+		self.assertEqual(days[2], "H")
+		self.assertEqual(grid["SER-A"]["E1"]["total_present"], 0.5)
+
+	# AC3 - validation warning
+	def _validate(self, arabic_name):
+		from unittest.mock import patch
+
+		module = "one_fm.one_fm.doctype.proof_of_work.proof_of_work"
+		doc = frappe.new_doc("Proof of Work")
+		doc.customer = "CUST"
+		with patch(f"{module}.frappe.db.get_value", return_value=arabic_name), patch(
+			f"{module}.frappe.msgprint"
+		) as msgprint:
+			doc.validate()
+		return msgprint
+
+	def test_a_blank_arabic_client_name_warns_without_blocking(self):
+		for blank in (None, "", "   "):
+			# validate() returning at all is the proof it did not throw.
+			self.assertEqual(self._validate(blank).call_count, 1, msg=repr(blank))
+
+	def test_a_filled_arabic_client_name_does_not_warn(self):
+		self.assertEqual(self._validate("شركة").call_count, 0)
+
+	def test_the_warning_is_never_a_throw(self):
+		source = frappe.read_file(
+			frappe.get_app_path("one_fm", "one_fm", "doctype", "proof_of_work", "proof_of_work.py")
+		)
+		body = source.split("def warn_if_customer_arabic_name_missing")[1].split("\n\n\n")[0]
+		self.assertNotIn("frappe.throw", body)
 
 
 class TestSafeFilename(FrappeTestCase):

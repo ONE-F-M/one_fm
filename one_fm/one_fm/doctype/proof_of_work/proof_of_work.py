@@ -860,7 +860,7 @@ def _grid_from_amendment(amendment_name: str, total_days: int) -> dict:
 				emp["total_present"] += 1.0
 			elif status == "Half Day":
 				# WI-003994: "H" is Holiday. Half Day is "HD", as on the standard Attendance
-				# path, so the two cannot be told apart on the sheet no longer.
+				# path, so a half day no longer reads as a holiday on the sheet.
 				emp["days"][i] = _attendance_abbr(status)
 				emp["total_present"] += 0.5
 			elif status:
