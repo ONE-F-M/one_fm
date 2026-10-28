@@ -4,9 +4,12 @@
 """PAM File: validation and the derived active / inactive licence counts (WI-004135)."""
 
 import json
+from unittest import mock
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
+
+from one_fm.grd.doctype.pam_license_details import pam_license_details as license_module
 
 PAM_FILE_NAME = "_Test PAM File"
 LICENSE_A = "_Test PAM A"
@@ -55,8 +58,8 @@ class TestPAMFile(FrappeTestCase):
 		doc.license_number = 47
 		doc.save()
 
-		self.assertEqual(doc.license_number, "47")
-		self.assertEqual(doc.file_number, "12345")
+		self.assertEqual(doc.license_number, 47)
+		self.assertEqual(doc.file_number, 12345)
 
 	def test_file_number_cannot_be_set_on_a_government_project(self):
 		doc = self.get_doc()
@@ -107,6 +110,13 @@ class TestSetLicenseCounts(FrappeTestCase):
 
 class TestLicenseCountsEndToEnd(FrappeTestCase):
 	def setUp(self):
+		# A licence counts its employees on every save, off Employee.pam_file. That headcount
+		# is not what is under test, and it is stubbed so these tests do not depend on the
+		# Employee table carrying the column.
+		patcher = mock.patch.object(license_module, "count_license_employees", return_value=0)
+		patcher.start()
+		self.addCleanup(patcher.stop)
+
 		self._cleanup()
 		self.license_a = self._make_license(LICENSE_A, "_TEST-PAM-A", "Active")
 		self.license_b = self._make_license(LICENSE_B, "_TEST-PAM-B", "Inactive")
