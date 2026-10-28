@@ -3,8 +3,9 @@
 
 import json
 import os
-import unittest
 from unittest.mock import patch
+
+from frappe.tests.utils import FrappeTestCase
 
 from one_fm.grd.report.employee_residency_and_pam_file import (
 	employee_residency_and_pam_file as report,
@@ -23,7 +24,7 @@ EXPECTED_FIELDNAMES = [
 GET_LIST = "one_fm.grd.report.employee_residency_and_pam_file.employee_residency_and_pam_file.frappe.get_list"
 
 
-class TestEmployeeResidencyAndPAMFile(unittest.TestCase):
+class TestEmployeeResidencyAndPAMFile(FrappeTestCase):
 	def test_column_fieldnames_and_order(self):
 		columns = report.get_columns()
 		self.assertEqual([c["fieldname"] for c in columns], EXPECTED_FIELDNAMES)
