@@ -64,6 +64,15 @@ class PAMLicenseDetails(Document):
 		self.set_quota_visas_issued()
 		self.set_available_quota()
 
+	def on_update(self):
+		"""Push a changed status to the PAM Files that list this licence.
+
+		Each PAM File row copies the status when the PAM File is saved, so without this a
+		licence going Inactive would leave every file carrying it counting it as active.
+		"""
+		if self.has_value_changed("status"):
+			refresh_pam_files(self.name)
+
 	def set_available_quota(self):
 		"""Derive what is left of each quota.
 
@@ -118,6 +127,28 @@ class PAMLicenseDetails(Document):
 				row.expatriate_number_of_workers,
 			).items():
 				row.set(fieldname, value)
+
+
+def refresh_pam_files(license_name):
+	"""Re-save every PAM File that lists this licence so its rows and counts are re-derived.
+
+	Saving is what re-fetches the row status and recounts. Permissions are ignored: the
+	figures are system-derived, and the people who edit a licence often cannot write a
+	PAM File.
+	"""
+	parents = frappe.get_all(
+		"PAM Licenses",
+		filters={
+			"parenttype": "PAM File",
+			"civil_id_number_for_licensing": license_name,
+		},
+		pluck="parent",
+	)
+
+	for parent in dict.fromkeys(parents):
+		pam_file = frappe.get_doc("PAM File", parent)
+		pam_file.flags.ignore_permissions = True
+		pam_file.save()
 
 
 def to_whole(value):

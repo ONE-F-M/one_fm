@@ -106,12 +106,14 @@
      {
       "fieldname": "number_of_active_licenses",
       "fieldtype": "Data",
-      "label": "Number of Active Licenses"
+      "label": "Number of Active Licenses",
+      "read_only": 1
      },
      {
       "fieldname": "number_of_inactive_licenses",
       "fieldtype": "Data",
-      "label": "Number of Inactive Licenses"
+      "label": "Number of Inactive Licenses",
+      "read_only": 1
      },
      {
       "fieldname": "license_numbers",
@@ -132,7 +134,7 @@
      }
     ],
     "links": [],
-    "modified": "2026-08-22 10:00:00.000000",
+    "modified": "2026-10-29 10:00:00.000000",
     "modified_by": "Administrator",
     "module": "GRD",
     "name": "PAM File",
