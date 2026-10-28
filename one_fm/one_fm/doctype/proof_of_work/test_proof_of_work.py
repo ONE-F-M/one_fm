@@ -929,12 +929,13 @@ class TestArabicAttendanceReport(FrappeTestCase):
 		self.assertEqual(grid["SER-A"]["E1"]["total_present"], 0.5)
 
 	# AC3 - validation warning
-	def _validate(self, arabic_name):
+	def _validate(self, arabic_name, docstatus=0):
 		from unittest.mock import patch
 
 		module = "one_fm.one_fm.doctype.proof_of_work.proof_of_work"
 		doc = frappe.new_doc("Proof of Work")
 		doc.customer = "CUST"
+		doc.docstatus = docstatus
 		with patch(f"{module}.frappe.db.get_value", return_value=arabic_name), patch(
 			f"{module}.frappe.msgprint"
 		) as msgprint:
@@ -949,12 +950,8 @@ class TestArabicAttendanceReport(FrappeTestCase):
 	def test_a_filled_arabic_client_name_does_not_warn(self):
 		self.assertEqual(self._validate("شركة").call_count, 0)
 
-	def test_the_warning_is_never_a_throw(self):
-		source = frappe.read_file(
-			frappe.get_app_path("one_fm", "one_fm", "doctype", "proof_of_work", "proof_of_work.py")
-		)
-		body = source.split("def warn_if_customer_arabic_name_missing")[1].split("\n\n\n")[0]
-		self.assertNotIn("frappe.throw", body)
+	def test_the_warning_is_not_repeated_on_submit(self):
+		self.assertEqual(self._validate(None, docstatus=1).call_count, 0)
 
 
 class TestSafeFilename(FrappeTestCase):
