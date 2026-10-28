@@ -317,7 +317,7 @@ body[data-route="roster"] .switch-container {
     background-color: #34495E !important;
 }
 
-/* WI-004065: relief shift indicator. Borders are drawn inside the cell with
+/* Relief shift indicator. Borders are drawn inside the cell with
    pseudo-elements so the cell size never changes; stacked shifts are one div,
    so each half gets its own half-height pseudo-element. */
 body[data-route="roster"] .tablebox.relief-full::before,

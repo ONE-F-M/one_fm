@@ -1463,7 +1463,7 @@ function render_roster(res, page) {
 			let data_extra_attrs = ``;
 			// WI-001694: set when any schedule on this day awaits suspension approval.
 			let is_pending_suspension = false;
-			// WI-004065: indexes (k) of this day's records that are relief shifts.
+			// Indexes (k) of this day's records that are relief shifts.
 			let relief_slots = [];
 
 			let is_relieved_this_day = employee_relieving_date && current_day_iter.isAfter(employee_relieving_date);
@@ -1724,7 +1724,7 @@ function render_roster(res, page) {
 				abbrv = `${abbr_map["Pending Suspension"]}<br>` + abbrv;
 			}
 
-			// WI-004065: one record -> whole cell; stacked records -> top (Basic) and/or bottom (Over-Time) half.
+			// One record -> whole cell; stacked records -> top (Basic) and/or bottom (Over-Time) half.
 			let relief_class = ``;
 			if (relief_slots.length) {
 				if (employees_data[employee_key][date_key].length == 1) {

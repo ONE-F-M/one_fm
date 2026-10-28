@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""WI-004065 - the Staff Roster View marks relief shifts on the server.
+"""The Staff Roster View marks relief shifts on the server.
 
 is_relief_shift() classifies one Employee Schedule row; CreateMap.process_records() puts the
 flag on schedule records and lets attendance records inherit it from their matched schedule.
