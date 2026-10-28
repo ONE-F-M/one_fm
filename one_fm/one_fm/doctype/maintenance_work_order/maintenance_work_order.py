@@ -45,6 +45,7 @@ class MaintenanceWorkOrder(Document):
 
 	def before_submit(self):
 		"""Stamp the completion audit log and evaluate final SLA resolution."""
+		self.validate_ready_for_submit()
 		self.stamp_completion_time()
 		self.close_open_hold()
 		self.evaluate_sla_resolution()
@@ -661,10 +662,26 @@ class MaintenanceWorkOrder(Document):
 				else:
 					self.sla_resolution_status = "Active Counting"
 
+	def validate_ready_for_submit(self):
+		"""Only a checked-in, Completed Work Order may be submitted."""
+		if self.status != "Completed":
+			frappe.throw(
+				_("Set the Status to Completed before submitting this Work Order."),
+				title=_("Work Order Not Completed"),
+			)
+		if not self.first_check_in_time:
+			frappe.throw(
+				_("Record the technician's check-in (Check In button) before submitting this Work Order."),
+				title=_("Check-In Required"),
+			)
+
 	def stamp_completion_time(self):
-		"""Stamp and freeze the Completion Time when the Work Order is submitted."""
-		if not self.completion_time:
-			self.completion_time = now_datetime()
+		"""Stamp the Completion Time at submit.
+
+		Always overwritten, so a value typed on the draft or copied by Amend is never kept.
+		The field is not allow_on_submit, so it cannot change after submit.
+		"""
+		self.completion_time = now_datetime()
 
 	def close_open_hold(self):
 		"""Bank any hold window still open at completion so paused time is complete."""

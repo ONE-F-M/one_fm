@@ -267,6 +267,7 @@ def _fetch_work_orders(start, end, filters: dict) -> list[dict]:
 		"object_name",
 		"object",
 		"maintenance_type",
+		"docstatus",
 		"status",
 		"priority",
 		"space",
@@ -316,7 +317,8 @@ def _fetch_work_orders(start, end, filters: dict) -> list[dict]:
 			continue
 		slot_dt = get_datetime(slot)
 		is_planned = bool(wo.get("planned_deadline"))
-		is_completed = wo.get("status") == "Completed"
+		# A Draft marked Completed is still open work: only a submitted order is done.
+		is_completed = wo.get("status") == "Completed" and wo.get("docstatus") == 1
 		planned_dt = get_datetime(wo.get("planned_deadline")) if is_planned else None
 		is_overdue = bool(is_planned and not is_completed and planned_dt and planned_dt < now)
 
@@ -379,9 +381,9 @@ def _build_summary(work_orders: list[dict]) -> dict:
 	for wo in work_orders:
 		if wo["is_overdue"]:
 			summary["overdue"] += 1
-		elif wo["status"] == "Completed":
+		elif wo["is_completed"]:
 			summary["completed"] += 1
-		elif wo["status"] == "Open":
+		elif wo["status"] in ("Open", "Completed"):
 			summary["open"] += 1
 		elif wo["status"] == "Dispatched":
 			summary["dispatched"] += 1
