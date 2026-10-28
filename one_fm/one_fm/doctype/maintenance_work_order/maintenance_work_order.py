@@ -168,10 +168,6 @@ class MaintenanceWorkOrder(Document):
 		if not self.object_category:
 			return
 
-		# Only populate if the checklist items table is currently empty
-		if self.object_maintenance_checklist_items:
-			return
-
 		# Find the master checklist matching this exact Object Category
 		checklist_name = frappe.db.get_value(
 			"Object Maintenance Checklist",
@@ -181,7 +177,15 @@ class MaintenanceWorkOrder(Document):
 		if not checklist_name:
 			return
 
-		self.object_maintenance_checklist = checklist_name
+		# The checklist link is mandatory, so it is always resolved - even when
+		# the rows were pre-filled by the schedule generator.
+		if not self.object_maintenance_checklist_items or not self.object_maintenance_checklist:
+			self.object_maintenance_checklist = checklist_name
+
+		# Only copy the full template when the table is empty and the Work Order
+		# was not raised from a schedule slot (those carry only the due task(s)).
+		if self.object_maintenance_checklist_items or self.maintenance_schedule:
+			return
 
 		# Fetch master checklist items
 		master_items = frappe.get_all(
