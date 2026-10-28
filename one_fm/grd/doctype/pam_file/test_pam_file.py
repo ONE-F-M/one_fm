@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2019, ONE FM and Contributors
 # See license.txt
-"""PAM File: validation and the derived active / inactive licence counts (WI-004135)."""
+"""PAM File: validation and the derived active / inactive licence counts."""
 
 import json
 from unittest import mock

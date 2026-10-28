@@ -65,7 +65,7 @@ class PAMLicenseDetails(Document):
 		self.set_available_quota()
 
 	def on_update(self):
-		"""Push a changed status to the PAM Files that list this licence (WI-004135).
+		"""Push a changed status to the PAM Files that list this licence.
 
 		Each PAM File row copies the status when the PAM File is saved, so without this a
 		licence going Inactive would leave every file carrying it counting it as active.

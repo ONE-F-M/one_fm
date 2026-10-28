@@ -22,7 +22,7 @@ class PAMFile(Document):
 		self.set_license_counts()
 
 	def set_license_counts(self):
-		"""Derive the active and inactive licence counts from the licence rows (WI-004135).
+		"""Derive the active and inactive licence counts from the licence rows.
 
 		A row counts once it names a licence; a row with no licence is an unfilled row, not a
 		licence. Inactive is the only status that makes a licence inactive - Active,
