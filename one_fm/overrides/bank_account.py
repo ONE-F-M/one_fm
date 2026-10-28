@@ -15,7 +15,7 @@ def normalise_iban(iban: str) -> str:
 
 
 def validate_civil_id(doc, method=None):
-	"""Require a Civil ID on personal Bank Accounts (WI-004063).
+	"""Require a Civil ID on personal Bank Accounts.
 
 	Company accounts and accounts held by a non-Employee party (Supplier, ...) are
 	exempt. For an Employee account an empty field is filled from the Employee's

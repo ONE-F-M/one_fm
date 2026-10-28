@@ -7,9 +7,8 @@ from one_fm.custom.custom_field.bank_account import get_bank_account_custom_fiel
 
 
 def execute():
-	"""Add Bank Account.civil_id and backfill it from the Employee (WI-004063)."""
+	"""Add Bank Account.civil_id and backfill it from the Employee."""
 	create_custom_fields(get_bank_account_custom_fields(), update=True)
-	frappe.db.updatedb("Bank Account")
 
 	bank_account = DocType("Bank Account")
 	employee = DocType("Employee")

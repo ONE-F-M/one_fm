@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""Tests for the Bank Account Civil ID rule (WI-004063).
+"""Tests for the Bank Account Civil ID rule.
 
 The hook is exercised against a document stub, so no Bank Account is created.
 """
