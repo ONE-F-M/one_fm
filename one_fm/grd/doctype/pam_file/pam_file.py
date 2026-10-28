@@ -44,3 +44,5 @@ class PAMFile(Document):
 
 		self.number_of_active_licenses = str(active)
 		self.number_of_inactive_licenses = str(inactive)
+		# A file is Active while it holds at least one active licence.
+		self.file_status = "Active" if active else "Inactive"

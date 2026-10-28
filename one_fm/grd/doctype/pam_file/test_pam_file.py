@@ -101,6 +101,22 @@ class TestSetLicenseCounts(FrappeTestCase):
 		self.assertEqual(doc.number_of_active_licenses, "1")
 		self.assertEqual(doc.number_of_inactive_licenses, "0")
 
+	def test_a_file_with_an_active_licence_is_active(self):
+		doc = new_file(licence_row("Active"))
+		doc.set_license_counts()
+		self.assertEqual(doc.file_status, "Active")
+
+	def test_a_file_with_only_inactive_licences_is_inactive(self):
+		doc = new_file(licence_row("Inactive"), licence_row("Inactive"))
+		doc.file_status = "Active"
+		doc.set_license_counts()
+		self.assertEqual(doc.file_status, "Inactive")
+
+	def test_an_empty_file_is_inactive(self):
+		doc = new_file()
+		doc.set_license_counts()
+		self.assertEqual(doc.file_status, "Inactive")
+
 	def test_validate_recounts(self):
 		doc = new_file(licence_row("Inactive"))
 		doc.validate()
@@ -176,6 +192,7 @@ class TestLicenseCountsEndToEnd(FrappeTestCase):
 			if r.civil_id_number_for_licensing == self.license_a.name
 		)
 		self.assertEqual(row.status, "Inactive")
+		self.assertEqual(self.pam_file.file_status, "Inactive")
 
 
 class TestFieldsAreReadOnly(FrappeTestCase):
@@ -188,6 +205,17 @@ class TestFieldsAreReadOnly(FrappeTestCase):
 		definition = read_definition("pam_file", "pam_file.json")
 		for fieldname in ("number_of_active_licenses", "number_of_inactive_licenses"):
 			self.assertEqual(field_of(definition, fieldname)["fieldtype"], "Data", fieldname)
+
+	def test_the_file_status_is_read_only(self):
+		definition = read_definition("pam_file", "pam_file.json")
+		self.assertEqual(field_of(definition, "file_status").get("read_only"), 1)
+
+	def test_the_status_shows_as_the_document_indicator(self):
+		source = frappe.read_file(
+			frappe.get_app_path("one_fm", "grd", "doctype", "pam_file", "pam_file_list.js")
+		)
+		self.assertIn("get_indicator", source)
+		self.assertIn("file_status", source)
 
 	def test_the_row_status_is_read_only(self):
 		definition = read_definition("pam_licenses", "pam_licenses.json")

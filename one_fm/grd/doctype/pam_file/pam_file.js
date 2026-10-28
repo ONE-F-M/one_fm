@@ -30,4 +30,5 @@ function set_license_counts(frm) {
 	});
 	frm.set_value("number_of_active_licenses", String(active));
 	frm.set_value("number_of_inactive_licenses", String(inactive));
+	frm.set_value("file_status", active ? "Active" : "Inactive");
 }
