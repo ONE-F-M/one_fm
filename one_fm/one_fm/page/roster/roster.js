@@ -1463,6 +1463,8 @@ function render_roster(res, page) {
 			let data_extra_attrs = ``;
 			// WI-001694: set when any schedule on this day awaits suspension approval.
 			let is_pending_suspension = false;
+			// Indexes (k) of this day's records that are relief shifts.
+			let relief_slots = [];
 
 			let is_relieved_this_day = employee_relieving_date && current_day_iter.isAfter(employee_relieving_date);
 			is_not_relieving_day = false;
@@ -1470,6 +1472,7 @@ function render_roster(res, page) {
 			if (employees_data[employee_key][date_key] && employees_data[employee_key][date_key].length > 0) {
 				for (let k = 0; k < employees_data[employee_key][date_key].length; k++) {
 					let record = employees_data[employee_key][date_key][k];
+					if (cint(record.is_relief_shift)) relief_slots.push(k);
 					let { employee, date, operations_role, post_abbrv, employee_availability, shift, start_datetime, end_datetime, start_time, end_time, roster_type, attendance, day_off_ot, leave_type, leave_application, event_location, actual_site, client_event, on_the_job_training, project, site, reference_doctype, reference_docname, workflow_state } = record;
 					// Tooltip details for Client Interview (same for scheduled/attended cases)
 					let client_interview_tooltip = `Client Interview`;
@@ -1721,6 +1724,18 @@ function render_roster(res, page) {
 				abbrv = `${abbr_map["Pending Suspension"]}<br>` + abbrv;
 			}
 
+			// One record -> whole cell; stacked records -> top (Basic) and/or bottom (Over-Time) half.
+			let relief_class = ``;
+			if (relief_slots.length) {
+				if (employees_data[employee_key][date_key].length == 1) {
+					relief_class = "relief-full";
+				} else {
+					if (relief_slots.includes(0)) relief_class += "relief-top ";
+					if (relief_slots.some(slot => slot > 0)) relief_class += "relief-bottom";
+					relief_class = relief_class.trim();
+				}
+			}
+
 			const isToday = current_day_iter.isSame(moment(), 'day');
 
 			todayClass = isToday ? "todayclass" : "";
@@ -1750,7 +1765,7 @@ function render_roster(res, page) {
 				let hoverClass = is_medical_appointment ? "forbidden" : (moment().isBefore(current_day_iter) ? "hoverselectclass" : "forbidden");
 				sch = `
 					<td class="${todayClass}">
-						<div class="${hoverClass} tablebox ${bgclass} d-flex justify-content-center align-items-center text-white so customtooltip"
+						<div class="${hoverClass} tablebox ${bgclass} ${relief_class} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${data_selectid}" data-ot="${data_ot}">${abbrv}${tooltip_html}</div>
 					</td>`;
 			}
@@ -1759,7 +1774,7 @@ function render_roster(res, page) {
 				let hoverClass = is_client_event ? "forbidden" : (moment().isBefore(current_day_iter) ? "hoverselectclass" : "forbidden");
 				sch = `
 					<td class="${todayClass}">
-						<div class="${hoverClass} tablebox bg-blue-500 d-flex justify-content-center align-items-center text-white so customtooltip"
+						<div class="${hoverClass} tablebox bg-blue-500 ${relief_class} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${data_selectid}" data-ot="${data_ot}"${data_extra_attrs}>${abbrv}${tooltip_html}</div>
 					</td>`;
 			}
@@ -1768,7 +1783,7 @@ function render_roster(res, page) {
 				let hoverClass = is_fingerprint_appointment ? "forbidden" : (moment().isBefore(current_day_iter) ? "hoverselectclass" : "forbidden");
 				sch = `
 					<td class="${todayClass}">
-						<div class="${hoverClass} tablebox ${bgclass} d-flex justify-content-center align-items-center text-white so customtooltip"
+						<div class="${hoverClass} tablebox ${bgclass} ${relief_class} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${data_selectid}" data-ot="${data_ot}"${data_extra_attrs}>${abbrv}${tooltip_html}</div>
 					</td>`;
 			}
