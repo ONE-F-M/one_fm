@@ -170,4 +170,11 @@ class TestScheduleQuery(FrappeTestCase):
 		cm.employees = "('NO-SUCH-EMPLOYEE')"
 		query = cm.schedule_query()
 		self.assertIn("active_rambo_assignment", query)
+
+		# emp.project / emp.site are columns the query already selected before this change; a
+		# test site without them cannot run any roster query, so do not blame this change.
+		for column in ("project", "site", "shift"):
+			if not frappe.db.has_column("Employee", column):
+				self.skipTest(f"Employee.{column} is missing on this site; the roster query cannot run")
+
 		self.assertEqual(frappe.db.sql(query, as_dict=1), [])
