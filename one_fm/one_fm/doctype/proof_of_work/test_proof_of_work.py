@@ -568,7 +568,7 @@ class TestAttendanceReportStructure(FrappeTestCase):
 		self.assertIn("group.item_type", self.print_format.html)
 
 	def test_grid_carries_the_columns_from_the_agreed_structure(self):
-		# WI-003994: the report is Arabic; only the Employee ID heading stays English.
+		# The report is Arabic; only the Employee ID heading stays English.
 		self.assertIn("Employee ID</span></th>", self.print_format.html)
 		for column in ("اسم الموظف", "أيام العمل", "أيام الراحة", "إجمالي الساعات"):
 			self.assertIn(f"{column}</th>", self.print_format.html, msg=column)
@@ -689,7 +689,7 @@ class TestReportDayHeader(FrappeTestCase):
 		self.assertNotIn("فترة التقرير", metadata)
 
 	def test_the_metadata_reads_client_then_project(self):
-		# WI-003994: Arabic labels, and the Contract label is gone.
+		# Arabic labels, and the Contract label is gone.
 		metadata = self.print_format.html.split('<div class="pow-meta">')[1].split("</div>")[0]
 		labels = re.findall(r"<strong>(.*?):</strong>", metadata)
 
@@ -697,7 +697,7 @@ class TestReportDayHeader(FrappeTestCase):
 
 
 class TestArabicAttendanceReport(FrappeTestCase):
-	"""WI-003994: the Attendance Report is always Arabic and RTL."""
+	"""The Attendance Report is always Arabic and RTL."""
 
 	METHODS = "one_fm.jinja.print_format.methods"
 
@@ -828,6 +828,46 @@ class TestArabicAttendanceReport(FrappeTestCase):
 		group = self._localised()["groups"][0]
 		self.assertEqual(group["total_label"], "الإجمالي: ١ موظف")
 		self.assertEqual(group["count_label"], "١ موظف")
+
+	# AC5.1 - amended months carry a civil-ID style employee_id, not the Employee name
+	def test_the_arabic_name_is_looked_up_by_the_employee_not_the_id(self):
+		from unittest.mock import patch
+
+		from one_fm.jinja.print_format.methods import pow_attendance_report_ar
+
+		report = self._fake_report()
+		report["groups"][0]["employees"][0].update(employee="HR-EMP-1", employee_id="12345")
+		doc = frappe._dict(name="POW-1", start_date="2026-07-01", customer="CUST")
+		with patch(f"{self.METHODS}.pow_attendance_report", return_value=report), patch(
+			f"{self.METHODS}.pow_customer_name", return_value="شركة الاختبار"
+		), patch(
+			f"{self.METHODS}.frappe.get_all",
+			return_value=[frappe._dict(name="HR-EMP-1", employee_name_in_arabic="جون سميث")],
+		) as get_all:
+			emp = pow_attendance_report_ar(doc)["groups"][0]["employees"][0]
+
+		self.assertEqual(get_all.call_args.kwargs["filters"], {"name": ["in", ["HR-EMP-1"]]})
+		self.assertEqual(emp["employee_name"], "جون سميث")
+		self.assertEqual(emp["employee_id"], "12345")
+
+	def test_rows_are_ordered_by_the_printed_name(self):
+		report = self._fake_report()
+		first = report["groups"][0]["employees"][0]
+		report["groups"][0]["employees"] = [
+			dict(first, employee_id="B", employee_name="Zed"),
+			dict(first, employee_id="A", employee_name="Adam"),
+		]
+		from unittest.mock import patch
+
+		from one_fm.jinja.print_format.methods import pow_attendance_report_ar
+
+		doc = frappe._dict(name="POW-1", start_date="2026-07-01", customer="CUST")
+		with patch(f"{self.METHODS}.pow_attendance_report", return_value=report), patch(
+			f"{self.METHODS}._employee_names_arabic", return_value={"B": "باسم", "A": "يوسف"}
+		), patch(f"{self.METHODS}.pow_customer_name", return_value="شركة الاختبار"):
+			rows = pow_attendance_report_ar(doc)["groups"][0]["employees"]
+
+		self.assertEqual([(r["sn"], r["employee_id"]) for r in rows], [(1, "B"), (2, "A")])
 		self.assertNotIn("employee(s)", self.print_format.html)
 
 	# AC3 / AC5.1 - names

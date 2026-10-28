@@ -1008,7 +1008,7 @@ jenv = {
         # WI-002723: Cairo and Readex Pro are bundled with the app and inlined, because
         # neither is installed on the print server and wkhtmltopdf has no network there.
         "pow_font_faces:one_fm.jinja.print_format.methods.pow_font_faces",
-        # WI-003994: the Attendance Report is always Arabic and RTL.
+        # The Attendance Report is always Arabic and RTL.
         "pow_attendance_report_ar:one_fm.jinja.print_format.methods.pow_attendance_report_ar",
         "pow_attendance_legend_ar:one_fm.jinja.print_format.methods.pow_attendance_legend_ar"
     ],

@@ -1284,7 +1284,7 @@ def pow_item_types_arabic(doc) -> str:
 
 
 
-# WI-003994: the Attendance Report is always Arabic and RTL - there is no language switch.
+# The Attendance Report is always Arabic and RTL - there is no language switch.
 #
 # The acronyms and descriptions below are PROPOSED wording with no source document. They
 # have to be confirmed by the process owner (Abbas) before go-live. The keys are the
@@ -1356,7 +1356,7 @@ def _employee_names_arabic(employee_ids) -> dict:
 
 
 def pow_attendance_report_ar(doc) -> dict:
-	"""The Attendance Report data, ready to print in Arabic (WI-003994).
+	"""The Attendance Report data, ready to print in Arabic.
 
 	Same shape as pow_attendance_report. What changes: the client is named from Customer
 	Full Name In Arabic, employees from Employee Full Name in Arabic, the day cells carry
@@ -1370,8 +1370,12 @@ def pow_attendance_report_ar(doc) -> dict:
 	report = pow_attendance_report(doc)
 	meta = report["meta"]
 	start = getdate(doc.start_date)
+	# Keyed on the Employee docname: on amended months employee_id is the civil-ID style
+	# number from the amendment row, which is not an Employee name.
 	names = _employee_names_arabic(
-		emp["employee_id"] for group in report["groups"] for emp in group["employees"]
+		emp.get("employee") or emp["employee_id"]
+		for group in report["groups"]
+		for emp in group["employees"]
 	)
 
 	ar_meta = dict(meta)
@@ -1396,16 +1400,20 @@ def pow_attendance_report_ar(doc) -> dict:
 		for emp in group["employees"]:
 			employees.append(
 				{
-					"sn": emp.get("sn"),
 					# Exactly as stored: no digit conversion, no bidi mirroring.
 					"employee_id": emp["employee_id"],
-					"employee_name": names.get(cstr(emp["employee_id"])) or emp["employee_name"],
+					"employee_name": names.get(cstr(emp.get("employee") or emp["employee_id"]))
+					or emp["employee_name"],
 					"days": [pow_attendance_status_ar(cell) for cell in emp["days"]],
 					"working_days": pow_arabic_number(emp["working_days"]),
 					"days_off": pow_arabic_number(emp["days_off"]),
 					"total_hours": pow_arabic_number(emp["total_hours"]),
 				}
 			)
+		# Rows read in the order of the names as printed.
+		employees.sort(key=lambda row: row["employee_name"] or "")
+		for sn, row in enumerate(employees, start=1):
+			row["sn"] = sn
 
 		totals = group["totals"]
 		count = pow_arabic_number(totals["employees"])
