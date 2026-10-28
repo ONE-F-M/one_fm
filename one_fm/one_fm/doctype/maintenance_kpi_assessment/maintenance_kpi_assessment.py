@@ -9,6 +9,7 @@ from frappe.utils import (
 	add_months,
 	cint,
 	flt,
+	get_datetime,
 	get_first_day,
 	get_last_day,
 	getdate,
@@ -267,10 +268,12 @@ def calc_resolution_timeframe_percentage(project, start, end):
 
 
 def calc_planned_maintenance_percentage(project, start, end):
-	"""% of preventive Work Orders scheduled in the month that were Completed.
+	"""% of preventive Work Orders scheduled in the month that were completed on time.
 
 	Scoped by planned_deadline so the denominator is "what was due this month",
-	regardless of whether each one was finished.
+	regardless of whether each one was finished. A Work Order counts as completed only
+	when it is submitted, its status is Completed, and it finished on or before its
+	planned deadline: a Draft marked Completed, or a late completion, does not count.
 	"""
 	scheduled = frappe.get_all(
 		"Maintenance Work Order",
@@ -280,12 +283,19 @@ def calc_planned_maintenance_percentage(project, start, end):
 			"maintenance_type": PREVENTIVE_TYPE,
 			"planned_deadline": [">=", start],
 		},
-		fields=["name", "status", "planned_deadline"],
+		fields=["name", "docstatus", "status", "planned_deadline", "completion_time"],
 	)
 	scheduled = [wo for wo in scheduled if getdate(wo.planned_deadline) < getdate(end)]
 	if not scheduled:
 		return 0.0
-	completed = sum(1 for wo in scheduled if wo.status == COMPLETED_STATUS)
+	completed = sum(
+		1
+		for wo in scheduled
+		if wo.docstatus == 1
+		and wo.status == COMPLETED_STATUS
+		and wo.completion_time
+		and get_datetime(wo.completion_time) <= get_datetime(wo.planned_deadline)
+	)
 	return completed / len(scheduled) * 100.0
 
 

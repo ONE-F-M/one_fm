@@ -10,6 +10,7 @@ from one_fm.one_fm.doctype.maintenance_kpi_assessment.maintenance_kpi_assessment
 	STATUS_COMPLIED,
 	STATUS_FAILED,
 	_pass_percentage,
+	calc_planned_maintenance_percentage,
 	identify_metric,
 )
 
@@ -209,3 +210,51 @@ class TestMaintenanceKPIAssessment(FrappeTestCase):
 		penalty = doc.monthly_penalty_assessment[0]
 		self.assertEqual(penalty.total_achieved_points, 88.5)
 		self.assertEqual(penalty.applied_penalty_percentage, 2.0)
+
+
+class TestPlannedMaintenanceCountsOnlyTrulyCompleted(FrappeTestCase):
+	GET_ALL = "one_fm.one_fm.doctype.maintenance_kpi_assessment.maintenance_kpi_assessment.frappe.get_all"
+
+	def _percentage(self, rows):
+		from unittest.mock import patch
+
+		with patch(self.GET_ALL, return_value=[frappe._dict(row) for row in rows]):
+			return calc_planned_maintenance_percentage("PROJ", "2026-09-01", "2026-10-01")
+
+	def test_draft_marked_completed_is_not_counted(self):
+		rows = [
+			{"docstatus": 0, "status": "Completed", "planned_deadline": "2026-09-10 10:00:00", "completion_time": None},
+			{
+				"docstatus": 1,
+				"status": "Completed",
+				"planned_deadline": "2026-09-10 10:00:00",
+				"completion_time": "2026-09-10 09:00:00",
+			},
+		]
+		self.assertEqual(self._percentage(rows), 50.0)
+
+	def test_late_completion_is_not_on_time(self):
+		rows = [
+			{
+				"docstatus": 1,
+				"status": "Completed",
+				"planned_deadline": "2026-09-10 10:00:00",
+				"completion_time": "2026-09-10 11:00:00",
+			},
+		]
+		self.assertEqual(self._percentage(rows), 0.0)
+
+
+class TestSchedulerSummaryCountsOnlySubmittedAsCompleted(FrappeTestCase):
+	def test_draft_marked_completed_counts_as_open(self):
+		from one_fm.one_fm.page.maintenance_scheduler.maintenance_scheduler import _build_summary
+
+		base = {"is_overdue": False, "is_due": False, "completed_within_deadline": False}
+		summary = _build_summary(
+			[
+				dict(base, status="Completed", is_completed=False),
+				dict(base, status="Completed", is_completed=True),
+			]
+		)
+		self.assertEqual(summary["completed"], 1)
+		self.assertEqual(summary["open"], 1)

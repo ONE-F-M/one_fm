@@ -31,6 +31,15 @@ TARGET_RESPONSE_MINUTES = 60
 TARGET_RESOLUTION_MINUTES = 120
 
 
+def make_ready_to_submit(wo):
+	"""Check the technician in and mark the Work Order Completed, as submit requires."""
+	mwo.check_in(work_order=wo.name)
+	wo.reload()
+	wo.status = "Completed"
+	wo.save()
+	return wo
+
+
 def make_issue_priority(name="_Test WO Priority"):
 	"""Create (once) an Issue Priority used by the SLA and the Work Orders."""
 	if frappe.db.exists("Issue Priority", name):
@@ -477,6 +486,7 @@ class TestPreventiveSlaCheckInAndCompletion(FrappeTestCase):
 		wo = make_work_order(
 			obj.name, schedule_name=entry.name, priority=priority, sla_master=sla.name
 		)
+		make_ready_to_submit(wo)
 
 		wo.submit()
 
@@ -533,6 +543,7 @@ class TestPreventiveSlaAnalytics(FrappeTestCase):
 			update_modified=False,
 		)
 		wo.reload()
+		make_ready_to_submit(wo)
 
 		wo.submit()
 
@@ -767,3 +778,62 @@ class TestServiceClockOperations(FrappeTestCase):
 		self.assertAlmostEqual(wo.total_paused_minutes, 12, delta=1)
 		# The clock stays open so subsequent windows keep accruing.
 		self.assertTrue(wo.hold_started_on)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Submit guards: only a checked-in, Completed Work Order is submitted
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestSubmitOnlyWhenTrulyCompleted(FrappeTestCase):
+	def _work_order(self):
+		priority = make_issue_priority()
+		sla = make_sla(priority)
+		cat = make_category()
+		make_checklist(cat, [("Inspect filter", 30)])
+		obj = make_object_for_schedule(object_category=cat, last_service_date="2026-06-01")
+		entry = make_schedule_entry(
+			obj.name,
+			make_frequency(30).name,
+			planned_execution_datetime=add_to_date(now_datetime(), minutes=-30),
+		)
+		return make_work_order(
+			obj.name, schedule_name=entry.name, priority=priority, sla_master=sla.name
+		)
+
+	def test_submit_blocked_when_status_not_completed(self):
+		wo = self._work_order()
+		mwo.check_in(work_order=wo.name)
+		wo.reload()
+
+		self.assertRaises(frappe.ValidationError, wo.submit)
+		self.assertEqual(frappe.db.get_value("Maintenance Work Order", wo.name, "docstatus"), 0)
+
+	def test_submit_blocked_without_check_in(self):
+		wo = self._work_order()
+		wo.status = "Completed"
+		wo.save()
+
+		with self.assertRaises(frappe.ValidationError) as raised:
+			wo.submit()
+		self.assertIn("check-in", str(raised.exception))
+
+	def test_completion_time_on_the_draft_is_overwritten_on_submit(self):
+		wo = self._work_order()
+		frappe.db.set_value(
+			"Maintenance Work Order", wo.name, "completion_time", "2020-01-01 08:00:00",
+			update_modified=False,
+		)
+		make_ready_to_submit(wo)
+
+		wo.submit()
+
+		wo.reload()
+		self.assertGreater(get_datetime(wo.completion_time), get_datetime("2026-01-01"))
+
+	def test_completion_time_cannot_be_edited_after_submit(self):
+		wo = make_ready_to_submit(self._work_order())
+		wo.submit()
+
+		wo.completion_time = "2020-01-01 08:00:00"
+		self.assertRaises(frappe.UpdateAfterSubmitError, wo.save)
