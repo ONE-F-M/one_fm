@@ -177,7 +177,7 @@ def make_checklist(object_category, tasks):
 
 	checklist = frappe.get_doc({
 		"doctype": "Object Maintenance Checklist",
-		"checklist_name": "TEST-MSE-CHECKLIST",
+		"checklist_name": f"TEST-MSE-CHECKLIST-{frappe.generate_hash(length=8)}",
 		"object_category": object_category,
 		"object_maintenance_checklist_items": items,
 	})
