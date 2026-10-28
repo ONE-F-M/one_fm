@@ -9,6 +9,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.model.naming import append_number_if_name_exists
+from frappe.utils import date_diff, getdate
 
 # WI-001976: the state a PAM rejection lands in, and the two reasons that are worth
 # reapplying under. Both are reasons the application itself can be corrected for - a
@@ -429,6 +430,18 @@ OCR_DOCUMENTS = {
 # ones this reads - a passport copy on a Draft has nothing to do with a visa.
 OCR_STATE = "Pending Visa Issuance"
 
+# The e-visa carries two pairs of dates - the visa's own Issue and Expiry in the header,
+# and the passport's, unlabelled, in the left column under "Passport No.". The Mindee
+# model has been returning the passport's pair under date_of_issue and date_of_expiry, so
+# a three-month visa was recorded as a ten-year one. The model is where that is fixed;
+# these two fields are dropped here when they are plainly the wrong pair, so a wrong value
+# is never written in the first place.
+VISA_DATE_FIELDS = ("visa_issue_date", "visa_expiry_date")
+
+# Longer than any Kuwait entry visa runs. A private sector work visa is three months; the
+# cushion is for the visa types that run longer, well short of a passport's ten years.
+MAX_VISA_VALIDITY_DAYS = 200
+
 
 def queue_document_ocr(doc, method=None):
 	"""Read a freshly attached Visa Copy or Payment Receipt (WI-001977).
@@ -489,16 +502,106 @@ def run_document_ocr(visa_request: str, fieldnames: list, user: str | None = Non
 				message=f"{visa_request}\n{frappe.get_traceback()}",
 			)
 
-	if not extracted:
+	rejected = discard_passport_dates(doc, extracted)
+
+	if not extracted and not rejected:
 		return
 
-	doc.db_set(extracted, update_modified=False)
+	if extracted:
+		doc.db_set(extracted, update_modified=False)
+
+	record_ocr_outcome(doc, extracted, rejected)
 
 	frappe.publish_realtime(
 		"visa_request_ocr_complete",
-		{"name": visa_request, "fields": list(extracted)},
+		{"name": visa_request, "fields": list(extracted), "rejected": rejected},
 		user=user or frappe.session.user,
 	)
+
+
+def discard_passport_dates(doc, extracted: dict) -> str | None:
+	"""Drop extracted visa dates that are really the passport's.
+
+	Two checks, both against what the request already holds, so neither waits on the
+	Mindee model being corrected:
+
+	- the pair matches the applicant's passport dates, already fetched onto the request
+	  from the Job Applicant. This is the observed failure exactly: a visa recorded as
+	  issued 2021-03-08 and expiring 2031-03-07, which were the passport's own dates to
+	  the day;
+	- the pair spans longer than any Kuwait entry visa does.
+
+	Both dates go together. An issue date read off the wrong part of the page says
+	nothing good about the expiry beside it, and a half-filled pair reads as though the
+	OCR got one of them right. The operator types them in, which is what they were doing
+	before the OCR existed.
+
+	Returns the reason they were dropped, for the timeline and the operator's alert, or
+	None when the pair is kept.
+	"""
+	issue = extracted.get("visa_issue_date")
+	expiry = extracted.get("visa_expiry_date")
+	if not (issue or expiry):
+		return None
+
+	reason = None
+
+	if _same_date(issue, doc.get("passport_issued_on")) or _same_date(
+		expiry, doc.get("passport_expires_on")
+	):
+		reason = _("they are the passport's own issue and expiry dates, not the visa's")
+	elif issue and expiry and date_diff(expiry, issue) > MAX_VISA_VALIDITY_DAYS:
+		reason = _("they span {0} days, longer than any Kuwait visa runs").format(
+			date_diff(expiry, issue)
+		)
+
+	if not reason:
+		return None
+
+	for fieldname in VISA_DATE_FIELDS:
+		extracted.pop(fieldname, None)
+
+	return reason
+
+
+def _same_date(extracted_value, document_value) -> bool:
+	"""Are these the same day? False whenever either side is empty.
+
+	getdate() answers "today" for an empty value, which would make two missing dates
+	look like a match and drop a perfectly good extraction.
+	"""
+	if not (extracted_value and document_value):
+		return False
+
+	return getdate(extracted_value) == getdate(document_value)
+
+
+def record_ocr_outcome(doc, extracted: dict, rejected: str | None):
+	"""Say on the timeline what the OCR read, and what it refused to write.
+
+	db_set(update_modified=False) writes no Version, so nothing otherwise records that a
+	value was read off an attachment rather than typed - which is how the wrong dates
+	went unremarked for weeks. A comment leaves that trail without the modified-stamp
+	churn of a full save behind the operator's back.
+	"""
+	lines = []
+
+	if extracted:
+		labels = [_label(fieldname) for fieldname in sorted(extracted)]
+		lines.append(_("Read from the attachment: {0}").format(", ".join(labels)))
+
+	if rejected:
+		lines.append(
+			_("{0} were not filled: {1}. Please enter them from the visa.").format(
+				", ".join(_label(fieldname) for fieldname in VISA_DATE_FIELDS), rejected
+			)
+		)
+
+	doc.add_comment("Comment", "<br>".join(lines))
+
+
+def _label(fieldname: str) -> str:
+	return frappe.get_meta("Visa Request").get_label(fieldname) or fieldname
 
 
 def _attachment_path(file_url: str) -> str:
