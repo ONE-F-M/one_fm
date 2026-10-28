@@ -700,3 +700,4 @@ one_fm.patches.v15_0.release_m_ali_user_id #2026-10-20 free m.ali@one-fm.com fro
 one_fm.patches.v15_0.reset_pmr_pr01132_to_in_process #2026-10-25 reopen PR01132 from Completed back to In Process
 one_fm.patches.v15_0.set_hiring_type_and_agency_on_arrivals #2026-10-15 hiring type, department and agency on arrivals for the onboarding email table
 one_fm.patches.v15_0.allow_recruiter_to_delete_arrivals #2026-10-25 Recruiter deletes a wrong Arrival and Deployment; Custom DocPerm had dropped delete for every role
+one_fm.patches.v15_0.close_stranded_legacy_ojt_requests #2026-10-28 HD-1900434 close OJT-10-2026-0020/0035 and their assignments, stranded in Pending Approval by the move_ojt_lifecycle_to_processa workflow deactivation
