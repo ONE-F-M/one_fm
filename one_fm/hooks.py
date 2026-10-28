@@ -406,6 +406,7 @@ doc_events = {
 		"validate": [
 			"one_fm.utils.validate_iban_is_filled",
 			"one_fm.overrides.bank_account.validate_iban",
+			"one_fm.overrides.bank_account.validate_civil_id",
 		],
 	},
 	"Employee Checkin": {
