@@ -18,15 +18,30 @@ GR_OPERATOR_USER = "paci-bank-account-gro@example.com"
 
 def _ensure_bank():
 	if not frappe.db.exists("Bank", DEFAULT_SALARY_BANK):
-		frappe.get_doc({"doctype": "Bank", "bank_name": DEFAULT_SALARY_BANK}).insert(ignore_permissions=True)
+		frappe.get_doc({"doctype": "Bank", "bank_name": DEFAULT_SALARY_BANK, "bank_code": "NBK"}).insert(ignore_permissions=True)
 
 
 def _employees_with_an_account():
 	return set(frappe.get_all("Bank Account", filters={"party_type": "Employee"}, pluck="party"))
 
 
+def _employees_in_onboarding():
+	"""Employees whose Onboard Employee a new account would advance.
+
+	That save runs the onboarding's own validation, and legacy onboardings on test sites
+	can fail it (e.g. a missing employment_type), which rolls the account insert back.
+	"""
+	return set(
+		frappe.get_all(
+			"Onboard Employee",
+			filters={"workflow_state": ["!=", "Cancelled"], "employee": ["is", "set"]},
+			pluck="employee",
+		)
+	)
+
+
 def _an_employee_without_an_account(exclude=()):
-	taken = _employees_with_an_account() | set(exclude)
+	taken = _employees_with_an_account() | _employees_in_onboarding() | set(exclude)
 	for name in frappe.get_all(
 		"Employee",
 		filters={"status": "Active", "relieving_date": ["is", "not set"]},
@@ -110,6 +125,7 @@ class TestDraftBankAccountOnPACICompletion(FrappeTestCase):
 			"doctype": "Bank Account",
 			"account_name": self.employee_name,
 			"bank": DEFAULT_SALARY_BANK,
+			"civil_id": "TEST-CID",
 		}).insert(ignore_permissions=True)
 
 		_complete_paci(self.employee)
@@ -129,6 +145,26 @@ class TestDraftBankAccountOnPACICompletion(FrappeTestCase):
 		self.assertEqual(paci.paci_status, "Completed")
 		self.assertEqual(_accounts_for(self.employee), [])
 		self.assertTrue(frappe.db.exists("Error Log", {"reference_doctype": "PACI", "reference_name": paci.name}))
+
+	def test_an_employee_without_a_civil_id_still_gets_one_draft_account(self):
+		frappe.db.set_value("Employee", self.employee, "one_fm_civil_id", "")
+
+		_complete_paci(self.employee)
+
+		accounts = _accounts_for(self.employee)
+		self.assertEqual(len(accounts), 1)
+		if _bank_account_workflow_active():
+			self.assertEqual(accounts[0].workflow_state, "Draft")
+		self.assertFalse(frappe.db.get_value("Bank Account", accounts[0].name, "civil_id"))
+
+	def test_an_employee_with_a_civil_id_passes_it_to_the_account(self):
+		frappe.db.set_value("Employee", self.employee, "one_fm_civil_id", "TEST-CID-123")
+
+		_complete_paci(self.employee)
+
+		accounts = _accounts_for(self.employee)
+		self.assertEqual(len(accounts), 1)
+		self.assertEqual(frappe.db.get_value("Bank Account", accounts[0].name, "civil_id"), "TEST-CID-123")
 
 
 class TestOnboardEmployeeAdvancesForAGROperator(FrappeTestCase):
@@ -241,6 +277,8 @@ class TestDraftAssignmentRule(FrappeTestCase):
 		bank_account.db_set("new_account", 1)
 		bank_account.reload()
 		bank_account.workflow_state = "Open Request"
+		# The PACI bypass only covers the insert; the first manual save needs a Civil ID.
+		bank_account.civil_id = bank_account.civil_id or "TEST-CID"
 		bank_account.save(ignore_permissions=True)
 
 		self.assertTrue(self._open_todos(bank_account.name, payroll_officer))

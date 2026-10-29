@@ -265,6 +265,8 @@ class PACI(Document):
                 "name",
             ),
         })
+        # PACI knows no more than the Employee record; do not block the Draft on a missing Civil ID.
+        bank_account.flags.ignore_civil_id = True
 
         # ERPNext names it "{account_name} - {bank}"; employee names repeat.
         set_name = None
