@@ -936,7 +936,16 @@ class TestArabicAttendanceReport(FrappeTestCase):
 		doc = frappe.new_doc("Proof of Work")
 		doc.customer = "CUST"
 		doc.docstatus = docstatus
-		with patch(f"{module}.frappe.db.get_value", return_value=arabic_name), patch(
+		real_get_value = frappe.db.get_value
+
+		# Only the Customer lookup is faked: the first _() of a run loads translations
+		# through get_value, and a blanket mock turns each lookup into a msgprint.
+		def get_value(doctype, *args, **kwargs):
+			if doctype == "Customer":
+				return arabic_name
+			return real_get_value(doctype, *args, **kwargs)
+
+		with patch(f"{module}.frappe.db.get_value", side_effect=get_value), patch(
 			f"{module}.frappe.msgprint"
 		) as msgprint:
 			doc.validate()
