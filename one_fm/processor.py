@@ -12,7 +12,7 @@ from frappe.desk.doctype.notification_settings.notification_settings import(
 @frappe.whitelist()
 def sendemail(recipients, subject, header=None, message=None,
 	content=None, reference_name=None, reference_doctype=None,
-	sender=None, cc=None , attachments=None, delayed=False, args=None, template=None, is_external_mail=False,is_scheduler_email=False, expose_recipients=None):
+	sender=None, cc=None , attachments=None, delayed=False, args=None, template=None, is_external_mail=False,is_scheduler_email=False, expose_recipients=None, bcc=None):
 	logo = "https://one-fm.com/files/ONEFM_Identity.png"
 	template = "default_email"
 	actions=pdf_link=workflow_state=""
@@ -61,6 +61,7 @@ def sendemail(recipients, subject, header=None, message=None,
 			recipients=recipients,
 			sender= sender,
 			cc=cc,
+			bcc=bcc,
 			subject=subject,
 			args=dict(
 				header=head,
