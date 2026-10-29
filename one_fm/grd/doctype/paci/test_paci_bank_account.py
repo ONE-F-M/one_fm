@@ -25,8 +25,23 @@ def _employees_with_an_account():
 	return set(frappe.get_all("Bank Account", filters={"party_type": "Employee"}, pluck="party"))
 
 
+def _employees_in_onboarding():
+	"""Employees whose Onboard Employee a new account would advance.
+
+	That save runs the onboarding's own validation, and legacy onboardings on test sites
+	can fail it (e.g. a missing employment_type), which rolls the account insert back.
+	"""
+	return set(
+		frappe.get_all(
+			"Onboard Employee",
+			filters={"workflow_state": ["!=", "Cancelled"], "employee": ["is", "set"]},
+			pluck="employee",
+		)
+	)
+
+
 def _an_employee_without_an_account(exclude=()):
-	taken = _employees_with_an_account() | set(exclude)
+	taken = _employees_with_an_account() | _employees_in_onboarding() | set(exclude)
 	for name in frappe.get_all(
 		"Employee",
 		filters={"status": "Active", "relieving_date": ["is", "not set"]},
