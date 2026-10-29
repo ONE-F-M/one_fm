@@ -116,10 +116,7 @@ def create_resignation(
             }
             handle_attachment_internal(doc, doc, att_data, "resignation_letter")
 
-        # Step 3: Advance from Draft to Pending Supervisor now that the letter is attached
-        doc.reload()
-        apply_workflow(doc, "Submit for Review")
-        return {"status": "success", "message": "Resignation submitted successfully", "name": doc.name}
+        return {"status": "success", "message": _("Resignation saved. Submit it for review."), "name": doc.name}
 
     except Exception as e:
         frappe.log_error("Create Resignation Error", f"Exception: {str(e)}\n\nTraceback:\n{frappe.get_traceback()}")
@@ -330,86 +327,6 @@ def withdraw_resignation(
 
     except Exception as e:
         frappe.log_error("Withdrawal Error", frappe.get_traceback())
-        frappe.throw(str(e), frappe.ValidationError)
-
-
-@frappe.whitelist()
-def correct_resignation_date_app(
-    employee_id=None,
-    resignation_id=None,
-    new_date=None,
-    new_initiation_date=None,
-    attachment=None,
-    attachment_name=None,
-    data=None,
-    **kwargs
-):
-    try:
-        p = get_all_params(
-            "new_date", "new_initiation_date", "attachment", "attachment_name",
-            employee_id=employee_id,
-            resignation_id=resignation_id,
-            new_date=new_date,
-            new_initiation_date=new_initiation_date,
-            attachment=attachment,
-            attachment_name=attachment_name,
-        )
-        input_id         = p["employee_id"]
-        resignation_id   = p["resignation_id"]
-        new_date         = p["new_date"]
-        new_initiation   = p["new_initiation_date"]
-        attachment       = p["attachment"]
-        att_name         = p["attachment_name"] or "corrected_resignation_letter.png"
-
-        if not resignation_id:
-            frappe.throw("resignation_id is required", frappe.ValidationError)
-        if not new_date:
-            frappe.throw("new_date (relieving date) is required", frappe.ValidationError)
-
-        doc = frappe.get_doc("Employee Resignation", resignation_id)
-        ensure_own_employee(doc.employee)
-
-        if doc.workflow_state != "Pending Relieving Date Correction":
-            frappe.throw(
-                f"Cannot correct date. Current state: {doc.workflow_state}",
-                frappe.ValidationError
-            )
-
-        doc.relieving_date = frappe.utils.getdate(new_date)
-        if new_initiation:
-            doc.resignation_initiation_date = frappe.utils.getdate(new_initiation)
-
-        # apply_workflow() reloads the doc from the DB before saving (see
-        # frappe.model.workflow.apply_workflow), which would silently discard
-        # the date fields set above if they aren't persisted first. Must run
-        # before handle_attachment_internal(), which writes to this same
-        # document via frappe.db.set_value() -- doing this save afterwards
-        # would see a "modified" timestamp already bumped out from under it
-        # and fail with TimestampMismatchError.
-        doc.save()
-
-        if attachment:
-            if isinstance(attachment, str):
-                try:
-                    attachment = json.loads(attachment)
-                except Exception:
-                    pass
-            att_data = attachment if isinstance(attachment, dict) else {
-                "attachment_name": att_name,
-                "attachment": attachment,
-            }
-            handle_attachment_internal(doc, doc, att_data, "resignation_letter")
-
-        apply_workflow(doc, "Resubmit Date")
-
-        return {
-            "status": "success",
-            "message": "Resignation date corrected and resubmitted to supervisor",
-            "name": doc.name
-        }
-
-    except Exception as e:
-        frappe.log_error("Correction Error", frappe.get_traceback())
         frappe.throw(str(e), frappe.ValidationError)
 
 

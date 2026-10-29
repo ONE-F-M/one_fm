@@ -1,4 +1,5 @@
 import frappe
+from unittest.mock import patch
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils.typing_validations import transform_parameter_types
 from one_fm.api.v1.resignation import (
@@ -175,3 +176,38 @@ def _make_resignation(employee):
         "resignation_letter": "/files/test_letter.pdf",
     }).insert()
     return doc.name
+
+
+class TestResignationOnProcessa(FrappeTestCase):
+    def setUp(self):
+        self.user = _make_user("test-processa-res@example.com", "Processa Res")
+        self.employee = _make_employee("Processa-Res", self.user)
+
+    def test_create_resignation_does_not_call_the_frappe_workflow(self):
+        with self.set_user(self.user), \
+                patch("one_fm.api.v1.resignation.handle_attachment_internal"), \
+                patch("one_fm.api.v1.resignation.apply_workflow") as apply_workflow:
+            result = create_resignation(
+                employee_id=self.employee,
+                resignation_initiation_date=frappe.utils.today(),
+                relieving_date=frappe.utils.add_days(frappe.utils.today(), 90),
+                reason_for_exit="Test",
+                attachment={"attachment_name": "letter.png", "attachment": "abc"},
+            )
+        apply_workflow.assert_not_called()
+        self.assertTrue(frappe.db.exists("Employee Resignation", result["name"]))
+
+    def test_dates_are_editable_in_draft_and_in_date_correction(self):
+        doc = frappe.new_doc("Employee Resignation")
+        for state in ("Draft", "Pending Relieving Date Correction"):
+            doc.workflow_state = state
+            self.assertEqual(
+                doc.get_processa_editable_fields(),
+                ["resignation_initiation_date", "relieving_date", "resignation_letter"],
+            )
+
+    def test_dates_are_locked_while_an_approver_reviews(self):
+        doc = frappe.new_doc("Employee Resignation")
+        for state in ("Pending Supervisor", "Pending Line Manager", "Approved"):
+            doc.workflow_state = state
+            self.assertEqual(doc.get_processa_editable_fields(), [])
