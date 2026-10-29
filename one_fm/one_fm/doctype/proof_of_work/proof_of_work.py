@@ -97,7 +97,33 @@ STANDARD_MONTH_HOURS = 208
 
 
 class ProofofWork(Document):
-	pass
+	def validate(self):
+		if self.docstatus == 0:
+			self.warn_if_customer_arabic_name_missing()
+
+	def warn_if_customer_arabic_name_missing(self):
+		"""Tell the user when the client has no Full Name In Arabic.
+
+		The Attendance Report and the Letter are printed in Arabic and name the client
+		from Customer.customer_name_in_arabic. This is a warning, never a frappe.throw:
+		the monthly batch generates many records and one client with a blank field must
+		not abort the rest. The print falls back to the English name meanwhile.
+		"""
+		if not self.get("customer"):
+			return
+
+		arabic_name = frappe.db.get_value("Customer", self.customer, "customer_name_in_arabic")
+		if cstr(arabic_name).strip():
+			return
+
+		frappe.msgprint(
+			_(
+				"Customer {0} has no Full Name In Arabic. The Proof of Work documents print the "
+				"client name in Arabic, so the English name will be shown until it is filled in."
+			).format(frappe.bold(self.customer)),
+			title=_("Arabic Client Name Missing"),
+			indicator="orange",
+		)
 
 
 def _guard_permission():
@@ -818,6 +844,7 @@ def _grid_from_amendment(amendment_name: str, total_days: int) -> dict:
 		emp = groups.setdefault(row.sale_item, {}).setdefault(
 			emp_key,
 			{
+				"employee": row.employee or "",
 				"employee_id": row.employee_id or row.employee or "",
 				"employee_name": row.employee_name or "",
 				"days": {},
@@ -834,7 +861,9 @@ def _grid_from_amendment(amendment_name: str, total_days: int) -> dict:
 				emp["days"][i] = "P"
 				emp["total_present"] += 1.0
 			elif status == "Half Day":
-				emp["days"][i] = "H"
+				# "H" is Holiday. Half Day is "HD", as on the standard Attendance
+				# path, so a half day no longer reads as a holiday on the sheet.
+				emp["days"][i] = _attendance_abbr(status)
 				emp["total_present"] += 0.5
 			elif status:
 				emp["days"][i] = _attendance_abbr(status)
@@ -877,6 +906,7 @@ def _grid_from_attendance(project: str, first_day, last_day) -> dict:
 		emp = groups.setdefault(r.sale_item, {}).setdefault(
 			r.employee,
 			{
+				"employee": r.employee or "",
 				"employee_id": r.employee or "",
 				"employee_name": r.employee_name or "",
 				"days": {},
@@ -973,6 +1003,7 @@ def get_pow_attendance_report(pow_name: str) -> dict:
 			rows.append(
 				{
 					"sn": sn,
+					"employee": emp.get("employee") or "",
 					"employee_id": emp["employee_id"],
 					"employee_name": emp["employee_name"],
 					"days": cells,
