@@ -490,19 +490,19 @@ def get_employee_custom_fields():
 				"width": "33"
 			},
 			{
-				"fieldname": "one_fm_forth_name_in_arabic",
+				"fieldname": "one_fm_fourth_name_in_arabic",
 				"fieldtype": "Data",
 				"insert_after": "one_fm_third_name_in_arabic",
 				"is_system_generated": 1,
-				"label": "Forth Name in Arabic",
+				"label": "Fourth Name in Arabic",
 				"translatable": 1,
 			},
 			{
-				"fieldname": "one_fm_forth_name",
+				"fieldname": "one_fm_fourth_name",
 				"fieldtype": "Data",
 				"insert_after": "one_fm_third_name",
 				"is_system_generated": 1,
-				"label": "Forth Name",
+				"label": "Fourth Name",
 				"translatable": 1,
 			},
 			{
@@ -734,7 +734,7 @@ def get_employee_custom_fields():
 				"depends_on": "",
 				"fieldname": "one_fm_last_name_in_arabic",
 				"fieldtype": "Data",
-				"insert_after": "one_fm_forth_name_in_arabic",
+				"insert_after": "one_fm_fourth_name_in_arabic",
 				"is_system_generated": 1,
 				"label": "Last Name in Arabic",
 				"reqd": 1,
