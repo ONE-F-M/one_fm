@@ -195,6 +195,7 @@ class TestResignationOnProcessa(FrappeTestCase):
                 attachment={"attachment_name": "letter.png", "attachment": "abc"},
             )
         apply_workflow.assert_not_called()
+        self.assertEqual(result["message"], "Resignation saved. Submit it for review.")
         self.assertTrue(frappe.db.exists("Employee Resignation", result["name"]))
 
     def test_dates_are_editable_in_draft_and_in_date_correction(self):

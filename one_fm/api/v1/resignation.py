@@ -99,8 +99,7 @@ def create_resignation(
         doc.employment_type = emp.get("employment_type")
         doc.project_allocation = emp.get("project")
         doc.designation = emp.get("designation")
-        # Let Frappe set workflow_state to the workflow's default initial state (Draft) on insert
-
+        # The Frappe workflow is inactive; the process map's "Set State: Draft" step sets workflow_state
         doc.insert()
 
         # Step 2: Attach the letter (must happen after insert so the doc has a name)
