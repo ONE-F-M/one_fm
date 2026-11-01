@@ -10,7 +10,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.model.naming import make_autoname
 from frappe.query_builder import DocType
-from frappe.utils import cint, cstr, escape_html, flt, strip_html
+from frappe.utils import cint, cstr, create_batch, escape_html, flt, strip_html
 from frappe.utils import (
     today,
     add_months,
@@ -540,12 +540,30 @@ class Preparation(Document):
                  
             
     def validate(self):
+        # WI-004230: first, so every later check and the saved rows see the current date.
+        self.set_relieving_dates()
         self.set_grd_values()
         self.set_hr_values()
         self.validate_actions_match_category()
         validate_preparation_table(self)
         self.update_total_amount()
         
+    def set_relieving_dates(self):
+        """Refresh each row's read-only mirror of Employee.relieving_date (WI-004230).
+
+        One bulk lookup however many rows there are, assigned in memory only: the document
+        save persists it, so no extra write is issued here. A row whose Employee was not
+        found (deleted or renamed) keeps the value it already has.
+        """
+        employees = {row.employee for row in self.get('preparation_record') or [] if row.employee}
+        if not employees:
+            return
+
+        dates = fetch_employee_relieving_dates(employees)
+        for row in self.preparation_record:
+            if row.employee in dates:
+                row.relieving_date = dates[row.employee]
+
     def set_grd_values(self):
         """
 		runs: `validate`
@@ -1262,36 +1280,58 @@ def get_employees_relieving_date(employees):
         }
     return result
 
+def fetch_employee_relieving_dates(employees):
+    """Return {employee: relieving_date} for the employees that exist (WI-004230).
+
+    Deduped, and one SELECT per 500 names, so the query count does not grow with the
+    number of rows. An employee that is not found is absent from the result - which is
+    different from one that is found with no relieving date (value None).
+    """
+    names = sorted({employee for employee in employees if employee})
+    if not names:
+        return {}
+
+    Employee = DocType("Employee")
+    dates = {}
+    for batch in create_batch(names, 500):
+        found = (
+            frappe.qb.from_(Employee)
+            .select(Employee.name, Employee.relieving_date)
+            .where(Employee.name.isin(batch))
+            .run(as_dict=True)
+        )
+        for record in found:
+            dates[record.name] = record.relieving_date
+    return dates
+
 @frappe.whitelist()
 def update_preparation_employee_dates(preparation: str):
     """
-        Update relieving_date in child rows without making the form dirty.
-        Uses frappe.db.set_value (update_modified=False) so the client doc stays clean until reload.
-        Returns map of updated rows and data used.
+        Tell the form which rows show a stale relieving_date. A pure read: nothing is written.
+
+        NOTE (WI-004230): the name now overstates what this does. It is kept because the
+        client calls it by name, as does the disabled Client Script PRepe.
+
+        Returns `updated_rows` (names of the rows whose stored value differs from the
+        Employee) and `values` ({row name: current relieving_date}) for those same rows.
     """
     if not preparation:
         return {}
     doc = frappe.get_doc('Preparation', preparation)
-    if doc.is_new():  # cannot update unsaved document rows
-        return {'updated_rows': [], 'data': {}}
-    employees = [r.employee for r in doc.preparation_record if r.employee]
-    if not employees:
-        return {'updated_rows': [], 'data': {}}
-    data = get_employees_relieving_date(employees)
+    if doc.is_new():  # cannot refresh unsaved document rows
+        return {'updated_rows': [], 'values': {}}
+    dates = fetch_employee_relieving_dates([r.employee for r in doc.preparation_record])
     updated = []
+    values = {}
     for row in doc.preparation_record:
-        if not row.employee:
+        if not row.employee or row.employee not in dates:
             continue
-        info = data.get(row.employee)
-        if not info:
-            continue
-        rel = info.get('relieving_date')
-        if row.relieving_date != rel:
-            frappe.db.set_value(row.doctype, row.name, {
-                'relieving_date': rel
-            }, update_modified=False)
+        current = dates[row.employee]
+        stored = getdate(row.relieving_date) if row.relieving_date else None
+        if stored != (getdate(current) if current else None):
             updated.append(row.name)
-    return {'updated_rows': updated, 'data': data}
+            values[row.name] = current
+    return {'updated_rows': updated, 'values': values}
 
 def get_renewal_extension_cost_for_employee(employee, no_of_years = "1 Year"):
     """
