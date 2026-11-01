@@ -324,9 +324,9 @@ def create_monthly_assessments():
 	covers the target month, it creates a Maintenance KPI Assessment, auto-fills
 	Contract/Project/Client/Master and Month/Year, generates the KPI rows from the
 	Master, calculates each score, and (via validate) locks in the single penalty
-	summary row. The finished record bypasses the draft state and is auto-submitted
-	immediately (AC3). Idempotent: a Master already assessed for the target period
-	is skipped.
+	summary row. The Maintenance KPI Assessment Lifecycle Processa map submits the
+	finished record as soon as it is inserted (AC3). Idempotent: a Master already
+	assessed for the target period is skipped.
 	"""
 	target = add_months(getdate(today()), -1)
 	month_start = get_first_day(target)
@@ -372,9 +372,6 @@ def create_monthly_assessments():
 			assessment.build_kpi_rows()
 			assessment.calculate_scores()
 			assessment.insert()
-			# AC3: bypass the draft state and auto-submit in one continuous step
-			# once the calculation (KPI scores + penalty summary) has finished.
-			assessment.submit()
 			created += 1
 			frappe.db.commit()
 		except Exception:
