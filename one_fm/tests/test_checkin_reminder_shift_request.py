@@ -77,15 +77,22 @@ class TestCheckinReminderShiftRequest(FrappeTestCase):
 		"""Insert a row straight into the table and return its name."""
 		name = f"TEST-WI004231-{self.suffix}-{len(self._created)}"
 		now = now_datetime()
-		frappe.get_doc({
-			"doctype": doctype,
+		row = {
 			"name": name,
 			"creation": now,
 			"modified": now,
 			"owner": "Administrator",
 			"modified_by": "Administrator",
 			**values,
-		}).db_insert()
+		}
+		# Plain INSERT of just these columns: Document.db_insert writes every field in the
+		# DocType meta, which fails where a custom field has no column on the test site.
+		columns = ", ".join(f"`{column}`" for column in row)
+		placeholders = ", ".join(["%s"] * len(row))
+		frappe.db.sql(
+			f"INSERT INTO `tab{doctype}` ({columns}) VALUES ({placeholders})",
+			tuple(row.values()),
+		)
 		self._created.append((doctype, name))
 		return name
 
