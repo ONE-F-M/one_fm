@@ -11,7 +11,7 @@ from unittest import mock
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
-from frappe.utils import add_days, getdate, nowdate
+from frappe.utils import add_days, getdate, now_datetime, nowdate
 
 from one_fm.grd.doctype.preparation import preparation as preparation_module
 from one_fm.grd.doctype.preparation.preparation import update_preparation_employee_dates
