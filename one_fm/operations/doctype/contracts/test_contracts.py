@@ -8,6 +8,7 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import getdate, add_days, nowdate, add_months
 from unittest.mock import patch
 from one_fm.operations.doctype.contracts.contracts import (
+	get_contract_notification_cc,
 	send_contract_reminders,
 	set_contract_inactive,
 	set_contract_active,
@@ -375,4 +376,107 @@ class TestContracts(FrappeTestCase):
 		self.assertEqual(
 			contract.workflow_state, "Inactive",
 			"Contract must transition to Inactive even if email sending fails."
+		)
+
+	# ------------------------------------------------------------------
+	# Test: Contract Notification CC
+	# ------------------------------------------------------------------
+	def test_get_contract_notification_cc_parsing(self):
+		"""
+		The CC list is entered free-form by a user, so it must tolerate comma,
+		semicolon and newline separators, stray whitespace, duplicates and an
+		empty setting.
+		"""
+		cases = [
+			(None, []),
+			("", []),
+			("finance@example.com", ["finance@example.com"]),
+			("finance@example.com, legal@example.com", ["finance@example.com", "legal@example.com"]),
+			("finance@example.com;legal@example.com\nops@example.com",
+				["finance@example.com", "legal@example.com", "ops@example.com"]),
+			("  finance@example.com , , finance@example.com ", ["finance@example.com"]),
+		]
+
+		for raw, expected in cases:
+			frappe.db.set_single_value("ONEFM General Setting", "contract_notification_cc", raw)
+			self.assertEqual(
+				get_contract_notification_cc(), expected,
+				f"CC list parsed incorrectly for input {raw!r}."
+			)
+
+	def test_get_contract_notification_cc_without_field(self):
+		"""
+		Regression: a deploy that lands before "bench migrate" has no such field.
+		get_single_value raises on an unknown fieldname, which previously killed
+		the whole reminder run, so the helper must degrade to an empty list.
+		"""
+		with patch.object(frappe.get_meta("ONEFM General Setting"), "has_field", return_value=False):
+			self.assertEqual(get_contract_notification_cc(), [])
+
+	@patch('one_fm.operations.doctype.contracts.contracts.sendemail')
+	def test_contract_notification_cc_is_applied(self, mock_sendemail):
+		"""
+		Addresses configured in "Contract Notification CC" must be CC'd on every
+		contract reminder, alongside the Action Users already configured.
+		"""
+		frappe.db.set_single_value(
+			"ONEFM General Setting", "contract_notification_cc",
+			"finance@example.com, legal@example.com"
+		)
+
+		contract = frappe.get_doc({
+			"doctype": "Contracts",
+			"contract": "TEST-CONTRACT-CC",
+			"client": "TEST-CLIENT-1",
+			"project": "Test Project Alpha",
+			"start_date": add_days(nowdate(), -60),
+			"end_date": add_months(getdate(), 4),
+			"contract_end_internal_notification": 1,
+			"contract_termination_decision_period": 3,
+			"workflow_state": "Draft"
+		}).insert(ignore_permissions=True)
+		contract.db_set("workflow_state", "Active")
+		frappe.db.commit()
+
+		send_contract_reminders(is_scheduled_event=False)
+
+		self.assertTrue(mock_sendemail.called, "sendemail must be called for the expiring contract.")
+		cc = mock_sendemail.call_args[1].get("cc") or []
+		for email in ["finance@example.com", "legal@example.com"]:
+			self.assertIn(email, cc, f"{email} must be CC'd on the contract reminder.")
+
+	# ------------------------------------------------------------------
+	# Test: the reminder job must not fail silently
+	# ------------------------------------------------------------------
+	@patch('one_fm.operations.doctype.contracts.contracts.sendemail')
+	@patch(
+		'one_fm.operations.doctype.contracts.contracts.get_contract_notification_cc',
+		side_effect=Exception("boom")
+	)
+	def test_send_contract_reminders_does_not_fail_silently(self, mock_cc, mock_sendemail):
+		"""
+		Regression: a run-wide failure used to be swallowed by a bare log_error,
+		so the Scheduled Job Log reported "Complete" while every notification was
+		dropped and nobody was alerted. Such a failure must propagate.
+		"""
+		contract = frappe.get_doc({
+			"doctype": "Contracts",
+			"contract": "TEST-CONTRACT-FAIL",
+			"client": "TEST-CLIENT-1",
+			"project": "Test Project Alpha",
+			"start_date": add_days(nowdate(), -60),
+			"end_date": add_months(getdate(), 4),
+			"contract_end_internal_notification": 1,
+			"contract_termination_decision_period": 3,
+			"workflow_state": "Draft"
+		}).insert(ignore_permissions=True)
+		contract.db_set("workflow_state", "Active")
+		frappe.db.commit()
+
+		with self.assertRaises(Exception):
+			send_contract_reminders(is_scheduled_event=False)
+
+		self.assertFalse(
+			mock_sendemail.called,
+			"No email should have been sent when the run failed before sending."
 		)
