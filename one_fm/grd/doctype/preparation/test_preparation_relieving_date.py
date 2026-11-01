@@ -10,6 +10,7 @@ reports the stale rows without writing anything.
 from unittest import mock
 
 import frappe
+from frappe.test_runner import make_test_records
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, getdate, nowdate
 
@@ -52,7 +53,7 @@ def _employee_queries(callable_):
 
 class TestPreparationRelievingDate(FrappeTestCase):
 	def setUp(self):
-		self.employee = _active_employees(1)[0]
+		self.employee = _active_employee()
 		self.date = add_days(nowdate(), 30)
 
 	def _set_employee_date(self, employee, value):
@@ -150,8 +151,7 @@ class TestPreparationRelievingDate(FrappeTestCase):
 			self.assertEqual(getdate(row.relieving_date), getdate(self.date))
 
 	def test_the_query_count_does_not_grow_with_the_row_count(self):
-		pool = _active_employees(1)
-		pool = frappe.get_all("Employee", filters={"status": "Active"}, pluck="name", limit=200) or pool
+		pool = [self.employee]
 
 		def queries_for(rows):
 			doc = frappe.get_doc({
