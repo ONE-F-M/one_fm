@@ -453,8 +453,8 @@ class TestWorkOrderCreationEndToEnd(FrappeTestCase):
 		self.assertEqual(wo.maintenance_schedule, entry.name)
 		# Auto-routed from the object's category checklist.
 		self.assertTrue(wo.object_maintenance_checklist)
-    
-    # Only the due task, linked back to its slot.
+
+		# Only the due task, linked back to its slot.
 		self.assertEqual(len(wo.object_maintenance_checklist_items), 1)
 		self.assertEqual(wo.object_maintenance_checklist_items[0].maintenance_schedule_entry, entry.name)
 
@@ -491,12 +491,12 @@ class TestGeneratedWorkOrderGetsDefaultPriority(FrappeTestCase):
 			maintenance_task="Inspect filter",
 			planned_execution_datetime=planned,
 		)
-    
-    self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 1)
+
+		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 1)
 
 		entry.reload()
 		wo = frappe.get_doc("Maintenance Work Order", entry.work_order)
-    self.assertEqual(wo.sla_master, sla.name)
+		self.assertEqual(wo.sla_master, sla.name)
 		self.assertEqual(wo.priority, priority)
 		self.assertEqual(wo.target_response_minutes, 60)
 		self.assertEqual(wo.target_resolution_minutes, 120)
@@ -527,8 +527,8 @@ class TestDueTaskChecklist(FrappeTestCase):
 	def test_single_due_task_work_order_has_only_that_task(self):
 		_cat, obj = self._setup()
 		entry = self._slot(obj, "Replace belt", 60)
-    
-    self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 1)
+
+		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 1)
 
 		entry.reload()
 		wo = frappe.get_doc("Maintenance Work Order", entry.work_order)
