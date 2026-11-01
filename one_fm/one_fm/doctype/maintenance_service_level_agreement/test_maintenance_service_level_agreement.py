@@ -200,7 +200,7 @@ class TestMaintenanceServiceLevelAgreement(FrappeTestCase):
 	def test_resaving_an_sla_whose_hours_start_at_midnight(self):
 		ensure_issue_priority("Low")
 		doc = self.make_sla(
-			service_level="Midnight Start",
+			service_level=f"Midnight Start {frappe.generate_hash(length=6)}",
 			holiday_list=ensure_holiday_list("_Test Maintenance Holiday List"),
 		)
 		doc.priorities[0].maintenance_hours_from = "00:00:00"
