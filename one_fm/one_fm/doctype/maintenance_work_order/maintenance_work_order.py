@@ -169,10 +169,6 @@ class MaintenanceWorkOrder(Document):
 		if not self.object_category:
 			return
 
-		# Only populate if the checklist items table is currently empty
-		if self.object_maintenance_checklist_items:
-			return
-
 		# Find the master checklist matching this exact Object Category
 		checklist_name = frappe.db.get_value(
 			"Object Maintenance Checklist",
@@ -182,7 +178,15 @@ class MaintenanceWorkOrder(Document):
 		if not checklist_name:
 			return
 
-		self.object_maintenance_checklist = checklist_name
+		# The checklist link is mandatory, so it is always resolved - even when
+		# the rows were pre-filled by the schedule generator.
+		if not self.object_maintenance_checklist_items or not self.object_maintenance_checklist:
+			self.object_maintenance_checklist = checklist_name
+
+		# Only copy the full template when the table is empty and the Work Order
+		# was not raised from a schedule slot (those carry only the due task(s)).
+		if self.object_maintenance_checklist_items or self.maintenance_schedule:
+			return
 
 		# Fetch master checklist items
 		master_items = frappe.get_all(
@@ -478,6 +482,7 @@ class MaintenanceWorkOrder(Document):
 		active client SLA contract, and copies the target response/resolution
 		windows matching the asset priority. Only empty fields are filled, so the
 		frozen timeline and locked contract survive subsequent saves.
+		The PM default priority comes from the SLA's default priority row.
 		"""
 		if self.maintenance_type != "Preventive Maintenance":
 			return
@@ -494,7 +499,9 @@ class MaintenanceWorkOrder(Document):
 
 		# With a contract, trigger and priority resolved, copy the SLA targets
 		if self.sla_master and self.sla_trigger_time:
-			sla = frappe.get_doc("Maintenance Service Level Agreement", self.sla_master)
+			sla = frappe.get_cached_doc("Maintenance Service Level Agreement", self.sla_master)
+			if not self.priority and sla.default_priority:
+				self.priority = sla.default_priority
 			try:
 				self._determine_sla_shift_type(sla)
 			except Exception:
