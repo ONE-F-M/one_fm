@@ -25,22 +25,30 @@ def _active_employee(name="Test Relieving Date Employee"):
 	Active, or validate_preparation_table throws before anything else is checked. The
 	test site may hold no employees at all, so this never relies on existing ones.
 	"""
-	employee = frappe.get_doc({
-		"doctype": "Employee",
-		"name": "TEST-RELDATE-EMP",
-		"employee_name": name,
-		"first_name": name,
-		"company": "_Test Company",
-		"date_of_joining": nowdate(),
-		"status": "Active",
-	})
-	# The Employee controller's validate needs custom fields and a Company this site may
-	# not have, and none of it is under test: write the row directly. The class rolls the
-	# transaction back when it finishes.
-	frappe.db.delete("Employee", {"name": employee.name})
-	employee.set_user_and_timestamp()
-	employee.db_insert()
-	return employee.name
+	employee_name = "TEST-RELDATE-EMP"
+	# The Employee controller needs custom fields and a Company this site may not have, and
+	# the table here can lag its meta, so none of that is under test: write only the columns
+	# the Preparation code reads. The class rolls the transaction back when it finishes.
+	frappe.db.delete("Employee", {"name": employee_name})
+	now = now_datetime()
+	Employee = frappe.qb.DocType("Employee")
+	(
+		frappe.qb.into(Employee)
+		.columns(
+			Employee.name,
+			Employee.employee_name,
+			Employee.first_name,
+			Employee.status,
+			Employee.owner,
+			Employee.modified_by,
+			Employee.creation,
+			Employee.modified,
+			Employee.docstatus,
+		)
+		.insert(employee_name, name, name, "Active", "Administrator", "Administrator", now, now, 0)
+		.run()
+	)
+	return employee_name
 
 
 def _employee_queries(callable_):
