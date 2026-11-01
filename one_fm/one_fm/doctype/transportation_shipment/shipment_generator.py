@@ -323,11 +323,17 @@ def _write_shipment(doc, demand: dict, direction: str, roster: list, gen_key: st
 
 
 def _write_roster(doc, demand: dict, roster: list, relievers: dict = None) -> None:
-	"""Replace the card's crew. Shared so a roster-only refresh writes the same rows."""
+	"""Replace the card's crew. Shared so a roster-only refresh writes the same rows.
+
+	Rows with an assignment_scope were added by hand and stay, after the demand crew.
+	"""
 	relievers = relievers or {}
-	doc.headcount = len(roster)
+	pinned = _pinned_rows(doc)
+	held = {row.employee_id for row in pinned}
 	doc.set("transportation_shipment_employee", [])
 	for emp in roster:
+		if emp["id"] in held:
+			continue
 		row = {
 			"employee_id": emp["id"],
 			"employee_name": emp["name"],
@@ -351,6 +357,14 @@ def _write_roster(doc, demand: dict, roster: list, relievers: dict = None) -> No
 				"leave_to": cover.get("leave_to"),
 			})
 		doc.append("transportation_shipment_employee", row)
+	for row in pinned:
+		row.idx = 0  # renumbered by append
+		doc.append("transportation_shipment_employee", row)
+	doc.headcount = len(doc.transportation_shipment_employee)
+
+
+def _pinned_rows(doc) -> list:
+	return [row for row in doc.get("transportation_shipment_employee") or [] if row.get("assignment_scope")]
 
 
 def _refresh_assigned_roster(name: str, demand: dict, roster: list, relievers: dict = None) -> bool:
@@ -377,10 +391,13 @@ def _refresh_assigned_roster(name: str, demand: dict, roster: list, relievers: d
 		(row.employee_id, row.employee_name, row.relieving_employee or None)
 		for row in doc.transportation_shipment_employee
 	]
+	pinned = _pinned_rows(doc)
+	held = {row.employee_id for row in pinned}
 	after = [
 		(emp["id"], emp["name"], (relievers.get(emp["id"]) or {}).get("relieving_employee"))
 		for emp in roster
-	]
+		if emp["id"] not in held
+	] + [(row.employee_id, row.employee_name, row.relieving_employee or None) for row in pinned]
 	if before == after:
 		return False
 
@@ -403,6 +420,9 @@ def generate_transportation_shipments():
 	if frappe.session.user != "Administrator":
 		frappe.only_for(GENERATE_ROLES)
 
+	# Before the no-demand return below: a night with no demand must still expire them.
+	expired = _expire_single_day_rows(getdate(today()))
+
 	nested_map = get_grouped_employees_by_accommodation()
 	demands = build_demand_descriptors(nested_map)
 
@@ -411,17 +431,21 @@ def generate_transportation_shipments():
 	relievers = reliever_context()
 
 	summary = {"created": 0, "updated": 0, "refreshed": 0, "deleted": 0, "errors": 0,
-	           "repaired": 0, "overflowed": 0, "flagged": 0, "pruned": False}
+	           "repaired": 0, "overflowed": 0, "flagged": 0, "pruned": False, "expired": expired}
+
+	# A rider pinned to a card by hand rides that card only, so they leave the demand
+	# roster of that direction and no demand card seats them as well.
+	pinned = _pins()
 
 	# What today's roster asks for, one entry per card: the same riders both ways, each
 	# leg on its own card. Collecting a different shift's crew on the same run is a
 	# Mixed trip the dispatcher builds on the canvas, not something a card's roster says.
 	targets = {}
 	for demand in demands:
-		roster = demand["employees"]
-		if not roster:
+		if not demand["employees"]:
 			continue
 		for direction in ("Outward", "Return"):
+			roster = [emp for emp in demand["employees"] if (emp["id"], direction) not in pinned]
 			gen_key, pair_group = _generation_key(demand, direction)
 			targets[gen_key] = (demand, direction, roster, pair_group)
 	current_keys = set(targets)
@@ -432,6 +456,8 @@ def generate_transportation_shipments():
 	# needs a bus today". Pruning on that deleted the whole pool once (551 cards), and
 	# taking riders off placed cards on it would empty every bus.
 	if not current_keys:
+		if expired:
+			frappe.db.commit()
 		frappe.logger().info(f"generate_transportation_shipments: {summary}")
 		return summary
 
@@ -445,6 +471,8 @@ def generate_transportation_shipments():
 		try:
 			family = families.get(gen_key)
 			if not family:
+				if not roster:
+					continue
 				doc = frappe.new_doc("Transportation Shipment")
 				doc.status = "Unassigned"
 				_write_shipment(doc, demand, direction, roster, gen_key, pair_group, relievers)
@@ -500,6 +528,7 @@ def _live_cards() -> dict:
 		order_by="creation asc",
 	):
 		row.riders = []
+		row.pins = []
 		cards[row.name] = row
 	if not cards:
 		return cards
@@ -507,11 +536,123 @@ def _live_cards() -> dict:
 	for rider in frappe.get_all(
 		"Transportation Shipment Employee",
 		filters={"parenttype": "Transportation Shipment", "parent": ["in", list(cards)]},
-		fields=["parent", "employee_id"],
+		fields=["parent", "employee_id"] + (["assignment_scope"] if _tracks_scope() else []),
 		order_by="idx asc",
 	):
 		cards[rider.parent].riders.append(rider.employee_id)
+		if rider.get("assignment_scope"):
+			cards[rider.parent].pins.append(rider.employee_id)
 	return cards
+
+
+# ─── Riders added by hand ─────────────────────────────────────────────────────
+#
+# A row with an assignment_scope was put on its card from the Traceability Matrix.
+# "Permanent" stays on that card on every run; "Today Only" stays until the first run
+# after its assigned_on date. Blank rows belong to the generator, as before.
+
+PINNED_SCOPES = ("Permanent", "Today Only")
+
+
+def _tracks_scope() -> bool:
+	# The columns arrive with a migrate; until then no row can be pinned.
+	return frappe.db.has_column("Transportation Shipment Employee", "assignment_scope")
+
+
+def _pins() -> dict:
+	"""{(employee, direction): card} for every pinned rider on a live card of any source."""
+	if not _tracks_scope():
+		return {}
+	rows = frappe.get_all(
+		"Transportation Shipment Employee",
+		filters={"parenttype": "Transportation Shipment", "assignment_scope": ["in", PINNED_SCOPES]},
+		fields=["parent", "employee_id"],
+	)
+	if not rows:
+		return {}
+	cards = {
+		c.name: c
+		for c in frappe.get_all(
+			"Transportation Shipment",
+			filters={"name": ["in", list({r.parent for r in rows})], "status": ["in", LIVE_STATUSES]},
+			fields=["name", "trip_direction", "pre_merge_trip_direction"],
+		)
+	}
+	return {
+		(r.employee_id, _own_direction(cards[r.parent])): r.parent
+		for r in rows
+		if r.parent in cards and r.employee_id
+	}
+
+
+def _lapsed(employee_ids) -> set:
+	"""Employees who are no longer Active or have no open accommodation check-in."""
+	from one_fm.one_fm.page.transportation_schedule.traceability_matrix import _latest_checkins
+
+	if not employee_ids:
+		return set()
+	active = set(frappe.get_all(
+		"Employee", filters={"name": ["in", list(employee_ids)], "status": "Active"}, pluck="name"
+	))
+	checkins = _latest_checkins(list(active)) if active else {}
+	return {
+		emp for emp in employee_ids
+		if emp not in active or not checkins.get(emp) or checkins[emp].checked_out
+	}
+
+
+def _expire_single_day_rows(on_date) -> int:
+	"""Take expired hand-added riders off every live card. Returns the rows removed.
+
+	Expired: a "Today Only" row dated before ``on_date``, and a "Permanent" row whose
+	employee is no longer Active or has no open check-in. The card is saved so the new
+	headcount reaches its plan rows. A manual pool card left empty is deleted; a placed
+	card left empty is flagged for the dispatcher.
+	"""
+	if not _tracks_scope():
+		return 0
+	rows = frappe.get_all(
+		"Transportation Shipment Employee",
+		filters={"parenttype": "Transportation Shipment", "assignment_scope": ["in", PINNED_SCOPES]},
+		fields=["name", "parent", "employee_id", "assignment_scope", "assigned_on"],
+	)
+	lapsed = _lapsed({r.employee_id for r in rows if r.assignment_scope == "Permanent" and r.employee_id})
+	drop = {}
+	for r in rows:
+		if r.assignment_scope == "Today Only":
+			expired = not r.assigned_on or getdate(r.assigned_on) < on_date
+		else:
+			expired = r.employee_id in lapsed
+		if expired:
+			drop.setdefault(r.parent, set()).add(r.name)
+	if not drop:
+		return 0
+
+	live = frappe.get_all(
+		"Transportation Shipment",
+		filters={"name": ["in", list(drop)], "status": ["in", LIVE_STATUSES]},
+		pluck="name",
+	)
+	removed = 0
+	for name in live:
+		try:
+			doc = frappe.get_doc("Transportation Shipment", name)
+			doc.set("transportation_shipment_employee", [
+				row for row in doc.transportation_shipment_employee if row.name not in drop[name]
+			])
+			for idx, row in enumerate(doc.transportation_shipment_employee, start=1):
+				row.idx = idx
+			removed += len(drop[name])
+			if not doc.transportation_shipment_employee and doc.status == "Unassigned" and not doc.source_doctype:
+				_release_manifest_references(name)
+				frappe.delete_doc("Transportation Shipment", name, ignore_permissions=True, force=True)
+				continue
+			doc.save(ignore_permissions=True)
+			if not doc.transportation_shipment_employee and doc.status == "Assigned":
+				_set_replan_flag(doc, _("No riders are left on this card."))
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), "Transportation Shipment Pin Expiry Error")
+	return removed
 
 
 def _own_direction(card):
@@ -624,7 +765,7 @@ def _distribute(family, demand, direction, roster, gen_key, pair_group, reliever
 		if not waiting:
 			break
 		if card.status == "Assigned":
-			staying = sum(1 for held_by in holder.values() if held_by == card.name)
+			staying = sum(1 for held_by in holder.values() if held_by == card.name) + len(card.pins or ())
 			take = seats.room(card.name, staying, len(waiting))
 		else:
 			take = len(waiting)
@@ -638,7 +779,7 @@ def _distribute(family, demand, direction, roster, gen_key, pair_group, reliever
 		write(card)
 
 	for card in family:
-		carries = any(held_by == card.name for held_by in holder.values())
+		carries = bool(card.pins) or any(held_by == card.name for held_by in holder.values())
 		if not carries and card.status == "Unassigned" and card is not root:
 			# An unplaced overflow card nobody rides any more.
 			_release_manifest_references(card.name)
@@ -833,7 +974,7 @@ def _prune_stale(current_keys: set, keep=None) -> int:
 	``keep`` spares the cards a run has just reconciled: an unplaced overflow card's
 	`#n` key is never produced, but its riders are still today's demand.
 	"""
-	keep = keep or set()
+	keep = set(keep or ()) | set(_pins().values())
 	stale = frappe.get_all(
 		"Transportation Shipment",
 		filters={"source_doctype": "Operations Shift", "status": "Unassigned"},

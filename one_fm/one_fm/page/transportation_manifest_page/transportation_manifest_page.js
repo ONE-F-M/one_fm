@@ -1969,7 +1969,7 @@ function renderManifest($container, data) {
 
 	function populateRelieverList(relievers) {
 		if (!relievers.length) {
-			setRelieverListMessage(__("No available Rambo Relievers found for this time slot."));
+			setRelieverListMessage(__("No available relievers found for this time slot."));
 			return;
 		}
 		const list = $container.find("#mfst-relieverList")[0];
@@ -2302,16 +2302,16 @@ function getManifestHTML() {
 					</div>
 					<div style="font-size:16px; font-weight:600; color:var(--mfst-text); margin-bottom:20px;">
 						<span class="material-symbols-outlined" style="font-size:22px;vertical-align:middle;margin-right:6px;color:var(--mfst-accent)">person_search</span>
-						Do you want to look for a Rambo Reliever?
+						${__("Do you want to look for a Reliever?")}
 					</div>
 					<div style="display:flex; gap:10px;">
 						<button class="mfst-rambo-btn mfst-rambo-btn-no" id="mfst-btn-rambo-no">
 							<span class="material-symbols-outlined" style="font-size:20px">close</span>
-							No, Skip
+							${__("No, Skip")}
 						</button>
 						<button class="mfst-rambo-btn mfst-rambo-btn-yes" id="mfst-btn-rambo-yes">
 							<span class="material-symbols-outlined" style="font-size:20px">person_search</span>
-							Yes, Find Reliever
+							${__("Yes, Find Reliever")}
 						</button>
 					</div>
 				</div>
@@ -2322,7 +2322,7 @@ function getManifestHTML() {
 				<div class="mfst-modal-content">
 					<div class="mfst-modal-header">
 						<div>
-							<div class="mfst-modal-subtitle">Rambo Reliever</div>
+							<div class="mfst-modal-subtitle">${__("Reliever")}</div>
 							<span>Assign Replacement</span>
 						</div>
 						<button class="mfst-modal-close" id="mfst-btn-close-replacement"><span class="material-symbols-outlined">close</span></button>

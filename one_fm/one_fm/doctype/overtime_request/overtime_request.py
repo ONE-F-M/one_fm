@@ -5,7 +5,7 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils import (
 	time_diff_in_hours, getdate, get_first_day, get_last_day,
-	flt, rounded, now_datetime, get_datetime, add_days
+	flt, rounded, add_days
 )
 from frappe import _
 from frappe.query_builder.functions import Sum
@@ -68,75 +68,16 @@ class OvertimeRequest(Document):
 			self.requested_by = frappe.session.user
 
 	def validate(self):
-		self.validate_duplicate()
-		self.validate_leave_overlap()
 		self.calculate_overtime_hours()
 		self.calculate_yearly_overtime_hours()
 		self.set_cumulative_unredeemed_balance()
 		self.set_compensatory_day_off_eligibility()
 		self.validate_compensatory_day_off()
-		self.validate_yearly_overtime_limit()
-		self.validate_attendance_verification_timing()
-		self.validate_attendance_marked()
 
 	def on_update(self):
 		self.create_attendance_on_verification()
 		self.create_compensatory_leave_request()
 		self.workflow_notification()
-
-	def validate_duplicate(self):
-		"""Check for duplicate overtime requests for the same employee and date."""
-		filters = {
-			"employee": self.employee,
-			"date": self.date,
-			"name": ["!=", self.name],
-			"start_time": self.start_time,
-			"end_time": self.end_time
-		}
-		exists_overtime_request = frappe.db.exists("Overtime Request", filters)
-		if exists_overtime_request:
-			frappe.throw(
-				_("Already exists an Overtime Request {0} for employee {1} on {2}!".format(
-					exists_overtime_request, self.employee, self.date
-				))
-			)
-
-	def validate_leave_overlap(self):
-		"""
-		Block save if the employee has approved leave on the overtime date
-		and this is a self-request. For manager requests, allow but log a comment.
-		"""
-		if not self.employee or not self.date:
-			return
-
-		overtime_date = getdate(self.date)
-
-		LeaveApplication = frappe.qb.DocType("Leave Application")
-		leave = (
-			frappe.qb.from_(LeaveApplication)
-			.select(LeaveApplication.name, LeaveApplication.leave_type)
-			.where(LeaveApplication.employee == self.employee)
-			.where(LeaveApplication.status == "Approved")
-			.where(LeaveApplication.docstatus == 1)
-			.where(LeaveApplication.from_date <= overtime_date)
-			.where(LeaveApplication.to_date >= overtime_date)
-		).run(as_dict=True)
-
-		if not leave:
-			return
-
-		# Check if this is a self-request
-		employee_user = frappe.db.get_value("Employee", self.employee, "user_id")
-		is_self_request = (self.requested_by == employee_user)
-
-		if is_self_request:
-			frappe.throw(
-				_("You cannot create an Overtime Request on {0} as you have an approved {1} on this day.".format(
-					frappe.format(overtime_date, {"fieldtype": "Date"}),
-					leave[0].leave_type
-				))
-			)
-		
 
 	def calculate_overtime_hours(self):
 		"""Calculate overtime hours from start_time and end_time.
@@ -238,44 +179,17 @@ class OvertimeRequest(Document):
 			self.eligible_for_compensatory_day_off = 0
 			self.compensatory_day_off = None
 
-	# Workflow states from which a Compensatory Day Off date is mandatory.
-	# Before these (Draft, Pending Acceptance by Employee) the date is optional:
-	# a Line Manager may pre-fill it when routing to the employee, and the
-	# employee adds/confirms it when accepting the request.
-	COMPENSATORY_DAY_OFF_REQUIRED_STATES = (
-		"Pending Line Manager",
-		"Pending Payroll Officer",
-		"Pending Finance Manager",
-		"Completed",
-	)
-
 	def validate_compensatory_day_off(self):
 		"""
-		Enforce the Compensatory Day Off rules when the request is eligible.
+		Keep a selected Compensatory Day Off within 7 days of the overtime date.
 
-		Only applies when eligible_for_compensatory_day_off is set (Overtime Type
-		is "Overtime on Public Holiday" and hours are 9 or more):
-		  1. Whenever a Compensatory Day Off date is provided, it must fall within
-			 7 days of the overtime date, i.e. between the overtime date and the
-			 overtime date + 7 days (inclusive). This applies at every stage so a
-			 Line Manager cannot pre-fill an out-of-window date.
-		  2. The date is required only once the employee has accepted the request
-			 (workflow state "Pending Line Manager" onward). At the Line Manager
-			 routing stage it is optional so the employee can add it on review.
+		Applies only when the request is eligible, and at every stage, so a Line Manager
+		cannot pre-fill an out-of-window date. Whether the date is required before the
+		request reaches the Line Manager is checked by the Overtime Request Lifecycle
+		process ("Validate Compensatory Day Off").
 		"""
 		if not self.eligible_for_compensatory_day_off:
 			return
-
-		# Require the date once the request has moved to the employee-accepted
-		# stage (or beyond). It stays optional while the Line Manager routes it.
-		if (
-			not self.compensatory_day_off
-			and self.workflow_state in self.COMPENSATORY_DAY_OFF_REQUIRED_STATES
-		):
-			frappe.throw(
-				_("Compensatory Day Off date is required when Overtime Type is "
-				  "'Overtime on Public Holiday' and hours are 9 or more.")
-			)
 
 		if not self.compensatory_day_off:
 			return
@@ -288,44 +202,6 @@ class OvertimeRequest(Document):
 			frappe.throw(
 				_("Compensatory Day Off date must be within 7 days of the overtime "
 				  "date ({0} to {1}).").format(overtime_date, window_end)
-			)
-
-	def validate_yearly_overtime_limit(self):
-		"""
-		Block save if yearly overtime hours strictly exceed 180.
-		Story 4: Fatal error when yearly_overtime_hours > 180.
-		"""
-		if flt(self.yearly_overtime_hours) > 180:
-			frappe.throw(
-				_("This request cannot be submitted. Adding these overtime hours "
-				  "will exceed the maximum allowable limit of 180 overtime hours per year.")
-			)
-
-	def validate_attendance_verification_timing(self):
-		"""Block transition to 'Pending Payroll Officer' before overtime end time."""
-		if self.workflow_state != "Pending Payroll Officer":
-			return
-		if not self.date or not self.end_time:
-			return
-
-		overtime_end = get_datetime(f"{self.date} {self.end_time}")
-		if self.start_time:
-			overtime_start = get_datetime(f"{self.date} {self.start_time}")
-			if overtime_end <= overtime_start:
-				overtime_end = frappe.utils.add_days(overtime_end, 1)
-		if now_datetime() < overtime_end:
-			frappe.throw(
-				_("You cannot verify attendance until the scheduled overtime end time has passed.")
-			)
-
-	def validate_attendance_marked(self):
-		"""Require Present or Absent to be checked before transitioning to 'Pending Payroll Officer'."""
-		if self.workflow_state != "Pending Payroll Officer":
-			return
-
-		if not self.present and not self.absent:
-			frappe.throw(
-				_("Please mark the employee as Present or Absent before verifying attendance.")
 			)
 
 	def create_attendance_on_verification(self):

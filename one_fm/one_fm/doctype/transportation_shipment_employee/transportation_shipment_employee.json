@@ -102,12 +102,26 @@
    "label": "Leave To",
    "read_only": 1,
    "depends_on": "is_reliever"
+  },
+  {
+   "description": "Blank: the shipment generator owns this row. Permanent: kept on this card by every run. Today Only: removed by the first run after Assigned On.",
+   "fieldname": "assignment_scope",
+   "fieldtype": "Select",
+   "label": "Assignment Scope",
+   "options": "\nPermanent\nToday Only",
+   "read_only": 1
+  },
+  {
+   "fieldname": "assigned_on",
+   "fieldtype": "Date",
+   "label": "Assigned On",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-09-17 09:00:00.000000",
+ "modified": "2026-10-23 09:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Transportation Shipment Employee",

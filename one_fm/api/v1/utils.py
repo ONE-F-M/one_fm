@@ -1,4 +1,4 @@
-import frappe, datetime, requests
+import frappe, datetime, requests, json, base64
 from frappe import _
 from frappe.utils import getdate, cint, cstr, random_string, now_datetime, strip_html
 
@@ -386,3 +386,47 @@ def resolve_active_user(user_id, max_depth=5):
         seen_users.add(current_user)
 
     return current_user
+
+
+def handle_attachment_internal(doc, row, attachment_data, field_name):
+    """Saves a base64 attachment and links it to field_name on row."""
+    if isinstance(attachment_data, str):
+        try:
+            attachment_data = json.loads(attachment_data)
+        except Exception:
+            raise frappe.ValidationError(_("Invalid attachment payload. Expected valid JSON data."))
+
+    file_name = attachment_data.get("attachment_name")
+    file_base64 = attachment_data.get("attachment")
+
+    if file_name and file_base64:
+        try:
+            if "," in file_base64:
+                file_base64 = file_base64.split(",", 1)[1]
+            
+            # If sent via form data, '+' might be converted to ' '
+            file_base64 = file_base64.replace(" ", "+")
+            file_base64 = file_base64.replace("\n", "").replace("\r", "")
+            
+            # Add padding if missing (Base64 length must be a multiple of 4)
+            missing_padding = len(file_base64) % 4
+            if missing_padding:
+                file_base64 += '=' * (4 - missing_padding)
+            
+            # Try to decode safely, replacing URL-safe chars if necessary
+            # URL safe base64 uses - and _ instead of + and /
+            file_base64 = file_base64.replace("-", "+").replace("_", "/")
+            content = base64.b64decode(file_base64)
+            file_doc = frappe.get_doc({
+                "doctype": "File",
+                "file_name": file_name,
+                "attached_to_doctype": doc.doctype,
+                "attached_to_name": doc.name,
+                "content": content,
+                "is_private": 1
+            })
+            file_doc.save()
+            frappe.db.set_value(row.doctype, row.name, field_name, file_doc.file_url)
+        except Exception as e:
+            frappe.log_error(f"Attachment failed for {file_name}", str(e))
+            frappe.throw(_("Failed to process attachment."), frappe.ValidationError)

@@ -3,22 +3,13 @@
 
 import frappe
 from frappe.model.document import Document
-from frappe.utils import get_datetime, now_datetime, today, getdate
+from frappe.utils import now_datetime, today, getdate
 import json
-
-# WI-002184: the states an event sits in while it waits for someone to approve it. The
-# project decides which - an event against a project waits on that project's manager, one
-# without a project on the Operations Manager - and everything that used to name the one
-# pending state has to know about both, or it quietly stops applying to half the events.
-PENDING_STATES = ("Pending Project Manager", "Pending Operations Manager")
-
 
 class ClientEvent(Document):
 	def validate(self):
 		self.set_approver()
-		self.validate_date_time()
 		self.validate_workflow_transition()
-		self.validate_extension_request()
 
 	def set_approver(self):
 		"""Name the Operations Manager when no Project Manager stands behind the event.
@@ -41,72 +32,6 @@ class ClientEvent(Document):
 		self.operations_manager = frappe.db.get_single_value(
 			"Operation Settings", "default_operation_manager"
 		)
-
-	def validate_date_time(self):
-		if not self.is_new() and self.workflow_state not in PENDING_STATES + (None,):
-			return
-		if self.workflow_state == "Approved":
-			return
-		today_date = getdate(today())
-
-		# Rule 1: Start Date or Start Datetime must be current or future date
-		if self.start_date and getdate(self.start_date) < today_date:
-			frappe.throw("The scheduled event time must be current or future date/time. Please adjust the event details.")
-		if self.event_start_datetime and getdate(self.event_start_datetime) < today_date:
-			frappe.throw("The scheduled event time must be current or future date/time. Please adjust the event details.")
-
-		# Rule 2: End Date or End Datetime must be current or future date
-		if self.end_date and getdate(self.end_date) < today_date:
-			frappe.throw("The scheduled end date/time must be current or future date/time. Please adjust the event details.")
-		if self.event_end_datetime and getdate(self.event_end_datetime) < today_date:
-			frappe.throw("The scheduled end date/time must be current or future date/time. Please adjust the event details.")
-
-		# Rule 3: End must be after Start
-		if self.start_date and self.end_date and get_datetime(self.end_date) < get_datetime(self.start_date):
-			frappe.throw("The scheduled end date/time must be later than Start Date or Start Datetime. Please adjust the event details.")
-		if self.event_start_datetime and self.event_end_datetime and get_datetime(self.event_end_datetime) < get_datetime(self.event_start_datetime):
-			frappe.throw("The scheduled end date/time must be later than Start Date or Start Datetime. Please adjust the event details.")
-
-	def validate_extension_request(self):
-		"""Validate extension request: extension dates must not be earlier than original event's end dates."""
-		if not self.is_extension_request or not self.original_client_event:
-			return
-
-		# Prevent duplicate extensions for the same original Client Event
-		existing_extension = frappe.db.exists(
-			"Client Event",
-			{
-				"original_client_event": self.original_client_event,
-				"name": ["!=", self.name],
-				"docstatus": ["<", 2]
-			}
-		)
-		if existing_extension:
-			frappe.throw(
-				f"An extension request already exists for the original Client Event {self.original_client_event}."
-			)
-
-		# Validate dates: extension start must not be before original end
-		original = frappe.db.get_value(
-			"Client Event",
-			self.original_client_event,
-			["end_date", "event_end_datetime"],
-			as_dict=True
-		)
-		if not original:
-			return
-
-		if self.event_start_datetime and original.event_end_datetime:
-			if get_datetime(self.event_start_datetime) < get_datetime(original.event_end_datetime):
-				frappe.throw(
-					"The extension's Start Date and Time cannot be earlier than the Original Client Event's End Date and Time."
-				)
-				
-		if self.start_date and original.end_date:
-			if getdate(self.start_date) < getdate(original.end_date):
-				frappe.throw(
-					"The extension's Start Date and Time cannot be earlier than the Original Client Event's End Date and Time."
-				)
 
 	def validate_workflow_transition(self):
 		if self.is_new():
@@ -137,33 +62,18 @@ class ClientEvent(Document):
 				alert=True
 			)
 
-		# Preserve date-based guards for events already in progress or finished
+		# An event that is under way when it is rejected or cancelled keeps its staff until
+		# today. The Client Event Lifecycle process refuses the decisions an event's dates do
+		# not allow before it applies the state ("Validate Client Event Decision").
 		if not self.start_date or not self.end_date:
 			return
 
 		today_date = getdate(today())
-		start_date = getdate(self.start_date)
-		end_date = getdate(self.end_date)
+		event_started = today_date >= getdate(self.start_date)
+		event_finished = today_date > getdate(self.end_date)
 
-		event_started = today_date >= start_date
-		event_finished = today_date > end_date
-
-		if event_finished:
-			if self.workflow_state in ("Draft", "Rejected"):
-				frappe.throw(
-					f"You are unable to {self.workflow_state.lower()} this client event as the event has already taken place. Please approve."
-				)
-			elif self.workflow_state == "Cancelled":
-				frappe.throw(
-					"You are unable to cancel this client event as the event has already taken place."
-				)
-		elif event_started:
-			if self.workflow_state == "Draft":
-				frappe.throw(
-					"You are unable to return this client event to draft as the event has already started. Please approve."
-				)
-			elif self.workflow_state in ("Rejected", "Cancelled"):
-				self.handle_ongoing_event_cancellation()
+		if event_started and not event_finished and self.workflow_state in ("Rejected", "Cancelled"):
+			self.handle_ongoing_event_cancellation()
 
 	def cancel_submitted_event_staff(self):
 		"""Cancel submitted Event Staff in the background to avoid timeout."""

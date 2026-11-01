@@ -7,10 +7,34 @@ from frappe.model.document import Document
 from frappe.utils import today, getdate, nowdate, add_days, format_datetime
 from one_fm.utils import get_employee_site_supervisor_user, get_approver_user
 
+REQUIRED_TO_LEAVE_DRAFT = ("required_transportation", "pro_user")
+
+
 class MedicalAppointment(Document):
 	def validate(self):
+		self.validate_fields_required_to_leave_draft()
 		self.validate_appointment_date()
 		self.set_approver()
+
+	def validate_fields_required_to_leave_draft(self):
+		"""Checked on a workflow state change only, so a single-field edit (list Actions > Edit)
+		saves on a record still missing the others."""
+		if self.workflow_state in (None, "", "Draft"):
+			return
+		if not self.has_value_changed("workflow_state"):
+			return
+
+		missing = [
+			_(self.meta.get_label(fieldname))
+			for fieldname in REQUIRED_TO_LEAVE_DRAFT
+			if not self.get(fieldname)
+		]
+		if missing:
+			frappe.throw(
+				_("Set {0} before moving to {1}.").format(", ".join(missing), _(self.workflow_state)),
+				frappe.MandatoryError,
+				title=_("Missing Values"),
+			)
 
 	def validate_appointment_date(self):
 		if self.workflow_state not in ["Completed", "Reschedule Requested"]:
@@ -187,8 +211,8 @@ def create_medical_appointment(employee, appointment_type, preparation_name=None
 	instead of Pending Supervisor. Nobody is assigned to act on it until whoever fills
 	in those details moves it on to Pending Supervisor - a record with no appointment
 	date, no transport decision and no PRO yet is not ready for a supervisor to act on.
-	Mandatory is enforced again on every later save, so nothing reaches submit
-	half-filled.
+	Required Transportation and PRO User are enforced on every later workflow state
+	change, so nothing leaves Draft half-filled.
 	"""
 	appointment = frappe.new_doc("Medical Appointment")
 	appointment.employee = employee.name

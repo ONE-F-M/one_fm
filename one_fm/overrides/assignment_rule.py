@@ -111,7 +111,10 @@ def do_assignment(self, doc):
         else:
             description = self.description
 
-        assign_to.add(
+        # Newer Frappe v15 moved ignore_permissions from the whitelisted add() to _add();
+        # older builds only have add(ignore_permissions=...).
+        add_assignment = getattr(assign_to, "_add", assign_to.add)
+        add_assignment(
             dict(
                 assign_to=[user],
                 doctype=doc.get("doctype"),
@@ -120,7 +123,10 @@ def do_assignment(self, doc):
                 assignment_rule=self.name,
                 notify=True,
                 date=doc.get(self.due_date_based_on) if self.due_date_based_on else None,
-            )
+            ),
+            # As in core: the rule fires as whoever saved the document, who may not
+            # have read access to it (e.g. a GR Operator completing a PACI).
+            ignore_permissions=True,
         )
 
         # set for reference in round robin

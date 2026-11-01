@@ -18,6 +18,7 @@
   "requested_by",
   "project_manager",
   "project_manager_user",
+  "operations_manager_user",
   "section_break_mqpw",
   "subcontract_exit_employee"
  ],
@@ -105,6 +106,14 @@
    "fieldtype": "Link",
    "label": "Project Manager User",
    "options": "User"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "operations_manager_user",
+   "fieldtype": "Link",
+   "label": "Operations Manager User",
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_mqpw",

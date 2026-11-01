@@ -203,8 +203,7 @@
    "fieldname": "required_transportation",
    "fieldtype": "Select",
    "label": "Required Transportation",
-   "options": "\nYes\nNo",
-   "reqd": 1
+   "options": "\nYes\nNo"
   },
   {
    "fieldname": "column_break_qcdf",
@@ -364,8 +363,7 @@
    "fieldname": "pro_user",
    "fieldtype": "Link",
    "label": "PRO User",
-   "options": "User",
-   "reqd": 1
+   "options": "User"
   },
   {
    "fieldname": "column_break_oemt",
@@ -408,7 +406,7 @@
  "grid_page_length": 50,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-11-13 10:27:55.612430",
+ "modified": "2026-10-23 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Appointment",

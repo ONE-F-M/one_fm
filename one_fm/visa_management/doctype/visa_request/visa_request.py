@@ -20,6 +20,17 @@ from frappe.utils import date_diff, getdate
 # The strings are the ones the Reject dialog offers (WI-001693) and writes into
 # pam_rejection_remark; the work item names them "Designation" and "Gender".
 PAM_REJECTED_STATE = "Rejected By PAM"
+
+# WI-002152: the BPMN message the Reapply Visa button sends, caught by the event
+# subprocess Activity_0rmnc4c on the Visa map.
+#
+# It is the *name of the start event*, not a <bpmn:message> declaration: Event_1hlw0sb
+# carries a <bpmn:messageEventDefinition> with no messageRef, and SpiffWorkflow's parser
+# falls back to the parent event's name attribute in that case
+# (bpmn/parser/event_parsers.py::parse_message_event). Correlation is by name and nothing
+# else, so renaming that shape on the canvas silently stops the button working.
+REAPPLY_MESSAGE = "Reapply for Visa"
+
 REAPPLY_REASONS = (
 	"The occupation requires amendment to specify the worker's specialization",
 	"The worker's gender does not match the profession",
@@ -89,7 +100,6 @@ class VisaRequest(Document):
 		self.validate_previous_visa_cancelled()
 		self.validate_applicant_eligibility()
 		self.validate_workflow_transitions()
-		self.validate_references()
 		self.update_tracker_status()
 
 	def validate_no_request_in_progress(self):
@@ -298,9 +308,6 @@ class VisaRequest(Document):
 			)
 
 	def on_update(self):
-		# WI-001977: a Visa Copy or Payment Receipt just attached is read by OCR.
-		queue_document_ocr(self)
-
 		if self.job_offer:
 			ccp_name = frappe.db.get_value("Candidate Country Process", {"job_offer": self.job_offer}, "name")
 			if ccp_name:
@@ -308,38 +315,39 @@ class VisaRequest(Document):
 				recalculate_ccp_live_eta(ccp_name)
 
 	def validate_workflow_transitions(self):
-		# PAM -> MOI: require pam_reference_number when workflow becomes Pending By MOI
+		# WI-002106: the MOI Reference Number check that used to live here has moved to
+		# the Processa map - script task Activity_18oq1er, Server Script "MOI Reference
+		# Number is Mandatory".
+		#
+		# The PAM Reference Number check stays until the process owner settles which
+		# stage it belongs to: this requires it on the way out of Pending By PAM, while
+		# the map checks it much earlier, at the GRD Operator stage, alongside the PAM
+		# File and the PAM Designation List.
 		if self.workflow_state == "Pending By MOI" and not self.get("pam_reference_number"):
 			frappe.throw(
 				"PAM Reference Number is required before submitting to MOI.",
 				title="Missing PAM Reference Number",
 			)
 
-		# MOI -> Pending Visa Issuance: require moi_reference_number
-		if self.workflow_state == "Pending Visa Issuance" and not self.get("moi_reference_number"):
-			frappe.throw(
-				"MOI Reference Number is required before moving to Pending Visa Issuance.",
-				title="Missing MOI Reference Number",
-			)
 
-	def validate_references(self):
-		# Pending Visa -> Pending Recruiter Confirmation: require visa_reference_number, payment_receipt, visa_document
-		if (self.workflow_state == "Pending Recruiter Confirmation"):
-			missing = []
-			if not self.get("visa_reference_number"):
-				missing.append("Visa Reference Number")
-			if not self.get("payment_receipt"):
-				missing.append("Payment Receipt")
-			if not self.get("visa_document"):
-				missing.append("Visa Document")
+# WI-002106: validate_references() was removed here. The visa reference, payment receipt
+# and visa document are now required by the Processa map - script task Activity_0y674id,
+# Server Script "Visa Details Are Mandatory".
 
-			if missing:
-				frappe.throw(
-					"The following fields are required before submitting to recruiter: {0}".format(
-						", ".join(missing)
-					),
-					title="Missing Required Fields",
-				)
+
+def existing_reapplication(name: str) -> str | None:
+	"""The reapplication already raised from this request, if any (WI-002152).
+
+	Once the reapplying went through a message, delivery stopped being a single click:
+	the same message can arrive twice - a double click, a redelivery - and each arrival
+	runs the create step again. This is what makes the second one a no-op instead of a
+	duplicate visa application.
+	"""
+	if not name:
+		return None
+
+	return frappe.db.get_value("Visa Request", {"reapplied_from": name}, "name")
+
 
 def can_reapply(doc) -> bool:
 	"""Is this request one the GRD Operator may raise a fresh attempt for (WI-001976)?
@@ -350,7 +358,45 @@ def can_reapply(doc) -> bool:
 	return (
 		doc.get("workflow_state") == PAM_REJECTED_STATE
 		and doc.get("pam_rejection_remark") in REAPPLY_REASONS
+		and not existing_reapplication(doc.get("name"))
 	)
+
+
+@frappe.whitelist(methods=["POST"])
+def request_reapply(name: str) -> dict:
+	"""Ask the process to raise a fresh attempt at this Visa Request (WI-002152).
+
+	Sends the "Reapply for Visa" message rather than creating anything: the map's event
+	subprocess catches it and its own step - Activity_0s8jngv, Server Script "Create new
+	visa request version" - does the raising. So the decision of what a reapplication is
+	lives on the diagram, which is the point of the work item.
+
+	# ponytail: falls back to raising it directly while the Visa map is undeployed
+	# (is_active=0), because there is then no instance to send a message to and the button
+	# would fail for every user. Delete the fallback once the map is live.
+	"""
+	frappe.get_doc("Visa Request", name).check_permission("read")
+
+	instance = frappe.db.get_value(
+		"BPMN Process Instance",
+		{"context_doctype": "Visa Request", "context_docname": name, "status": "Active"},
+		"name",
+	)
+	if not instance:
+		return reapply_visa_request(name)
+
+	from one_bpmn.api.instance_api import send_message
+
+	send_message(
+		message_name=REAPPLY_MESSAGE,
+		context_doctype="Visa Request",
+		context_docname=name,
+		instance_name=instance,
+	)
+
+	# Read back rather than returned from the script task: what the step put on the
+	# instance's task data is not something a whitelisted method can reach.
+	return {"name": existing_reapplication(name)}
 
 
 @frappe.whitelist(methods=["POST"])
@@ -426,9 +472,19 @@ OCR_DOCUMENTS = {
 	},
 }
 
-# The state the operator attaches these in. Outside it the attachments are not the
-# ones this reads - a passport copy on a Draft has nothing to do with a visa.
-OCR_STATE = "Pending Visa Issuance"
+# WI-002106 / AC 8: queue_document_ocr() was removed here, and with it OCR_STATE and the
+# on_update trigger. Reading the documents is now a step in the Processa map - script task
+# Activity_0ljbcgg, Server Script "Auto Fetch Visa & payment Details using OCR" (named
+# after its own shape, so the compiler cannot mis-bind it) - which calls
+# run_document_ocr() below on the way from Pending Visa Issuance to the recruiter.
+#
+# Two behaviours went with the trigger, both of them consequences of firing from a save
+# rather than from a transition:
+#   * the workflow_state guard, which the map's own position replaces; and
+#   * the has_value_changed() check, which existed because on_update fired on every save
+#     and would otherwise re-read a document to overwrite an operator's correction. The
+#     step runs once per pass, so a correction is only re-read if the request comes back
+#     round to Pending Visa Issuance - at which point re-reading is the point.
 
 # The e-visa carries two pairs of dates - the visa's own Issue and Expiry in the header,
 # and the passport's, unlabelled, in the left column under "Passport No.". The Mindee
@@ -443,52 +499,23 @@ VISA_DATE_FIELDS = ("visa_issue_date", "visa_expiry_date")
 MAX_VISA_VALIDITY_DAYS = 200
 
 
-def queue_document_ocr(doc, method=None):
-	"""Read a freshly attached Visa Copy or Payment Receipt (WI-001977).
+def run_document_ocr(visa_request: str) -> dict:
+	"""Read every OCR document attached to this request and write what came back.
 
-	Enqueued rather than run inline: Mindee is an external call that takes seconds, and
-	the operator should not be made to wait on a save for it. The extracted values land
-	on the form for review - nothing here advances the workflow, which is the AC's point.
+	Returns what was extracted, so the script task can report it to the map.
 
-	Only fires for an attachment that actually changed, so an operator's correction to an
-	extracted date survives the next save.
+	Called from the map, so it runs inline: the next task hands the request to the
+	recruiter and the values have to be on it by then. One unreadable document is logged
+	and skipped rather than raised - a Mindee outage must not strand a visa, and the
+	operator can still key the values in.
 	"""
-	if doc.workflow_state != OCR_STATE:
-		return
-
-	changed = [
-		fieldname
-		for fieldname in OCR_DOCUMENTS
-		if doc.get(fieldname) and doc.has_value_changed(fieldname)
-	]
-	if not changed:
-		return
-
-	frappe.enqueue(
-		"one_fm.visa_management.doctype.visa_request.visa_request.run_document_ocr",
-		queue="short",
-		# After the commit, not before it. on_update runs inside the save transaction, and
-		# a worker that picks the job up before that transaction lands re-reads the
-		# document without the attachment on it - which is exactly what happened: the job
-		# ran and logged "No file attached" against a request that plainly had one.
-		enqueue_after_commit=True,
-		visa_request=doc.name,
-		fieldnames=changed,
-		user=frappe.session.user,
-	)
-
-
-def run_document_ocr(visa_request: str, fieldnames: list, user: str | None = None):
-	"""Extract from each attachment and write what came back (background job)."""
 	doc = frappe.get_doc("Visa Request", visa_request)
 	extracted = {}
 
-	for fieldname in fieldnames:
-		spec = OCR_DOCUMENTS[fieldname]
-
+	for fieldname, spec in OCR_DOCUMENTS.items():
 		if not doc.get(fieldname):
-			# Removed again between the save and this job running. Nothing to read, and
-			# nothing worth a traceback in the Error Log either.
+			# Nothing attached in this field, and nothing worth a traceback in the Error
+			# Log either.
 			continue
 
 		try:
@@ -505,7 +532,7 @@ def run_document_ocr(visa_request: str, fieldnames: list, user: str | None = Non
 	rejected = discard_passport_dates(doc, extracted)
 
 	if not extracted and not rejected:
-		return
+		return extracted
 
 	if extracted:
 		doc.db_set(extracted, update_modified=False)
@@ -515,8 +542,10 @@ def run_document_ocr(visa_request: str, fieldnames: list, user: str | None = Non
 	frappe.publish_realtime(
 		"visa_request_ocr_complete",
 		{"name": visa_request, "fields": list(extracted), "rejected": rejected},
-		user=user or frappe.session.user,
+		user=frappe.session.user,
 	)
+
+	return extracted
 
 
 def discard_passport_dates(doc, extracted: dict) -> str | None:
@@ -663,15 +692,9 @@ def cancelled_visa_requests(visa_requests: list) -> set:
 
 # Export ZIP File from the Visa Request list view.
 #
-# The Attach fields whose current value goes into the archive. The label in the archive is
-# the field's own label, so it follows the form.
-EXPORT_ATTACH_FIELDS = (
-	"passport_copy",
-	"driver_license",
-	"payment_receipt",
-	"visa_document",
-	"degree_certificate",
-)
+# The Attach fields whose current value goes into the archive: the Visa Document and
+# nothing else. The label in the archive is the field's own label, so it follows the form.
+EXPORT_ATTACH_FIELDS = ("visa_document",)
 
 # ~5 MB per request on prod, and the whole archive is built in memory.
 EXPORT_MAX_REQUESTS = 50
@@ -709,11 +732,13 @@ def _build_zip(entries) -> bytes:
 def _export_files(name: str) -> list:
 	"""``[(path inside the ZIP, File name), ...]`` for one Visa Request.
 
-	Attach fields: only the File that the field points at *now*. A replaced attachment
+	Only the File that the Visa Document field points at *now*. A replaced attachment
 	leaves its old File row behind with the same attached_to_field, so matching on the
-	field alone would put the stale copy in the archive too.
+	field alone would put the stale copy in the archive too. The URL is part of the match
+	as well, because one file can be shared between two fields (Payment Receipt and Visa
+	Document), and the field is part of it so the other field's row is not picked up.
 
-	Sidebar files: Files attached to the request with no attached_to_field.
+	Sidebar files and the other Attach fields are not exported.
 	"""
 	meta = frappe.get_meta("Visa Request")
 	entries = []
@@ -744,34 +769,21 @@ def _export_files(name: str) -> list:
 		original_name = frappe.db.get_value("File", file_name, "file_name") or file_name
 		entries.append((f"{_safe_filename(label)} - {_safe_filename(original_name)}", file_name))
 
-	sidebar = frappe.get_all(
-		"File",
-		filters={
-			"attached_to_doctype": "Visa Request",
-			"attached_to_name": name,
-			"attached_to_field": ["is", "not set"],
-			"is_folder": 0,
-		},
-		fields=["name", "file_name"],
-		order_by="creation asc",
-	)
-	for row in sidebar:
-		entries.append((_safe_filename(row.file_name or row.name), row.name))
-
 	return [(f"{_safe_filename(name)}/{path}", file_name) for path, file_name in entries]
 
 
 @frappe.whitelist(methods=["POST"])
 def export_zip(names: str):
-	"""Download the documents of the selected Visa Requests as one ZIP.
+	"""Download the Visa Document of each selected Visa Request as one ZIP.
 
 	All or nothing on permission: one request the caller cannot read refuses the whole
 	export, so nobody receives a partial archive and takes it for the full set. A file that
 	is missing on disk is the opposite case - it is logged and skipped, because one lost
-	scan must not block the other 49 requests.
+	scan must not block the other 49 requests. MISSING FILES.txt names every request whose
+	Visa Document is not in the archive: no file attached, no File record, or not on disk.
 
-	Layout: ``<VR name>/<field label> - <file name>`` for Attach fields and
-	``<VR name>/<file name>`` for sidebar files. Not saved as a File (the 25 MB limit).
+	Layout: ``<VR name>/Visa Document - <file name>``. Other attachments are left out. Not
+	saved as a File (the 25 MB limit).
 	"""
 	names = frappe.parse_json(names)
 	if isinstance(names, str):
@@ -798,10 +810,17 @@ def export_zip(names: str):
 			)
 
 	entries = []
-	used = set()
 	missing = []
 	for name in names:
-		for path, file_name in _export_files(name):
+		if not frappe.db.get_value("Visa Request", name, "visa_document"):
+			missing.append(f"{name}: no Visa Document attached")
+			continue
+
+		files = _export_files(name)
+		if not files:
+			missing.append(f"{name}: Visa Document has no File record")
+
+		for path, file_name in files:
 			try:
 				content = frappe.get_doc("File", file_name).get_content()
 			except Exception:
@@ -815,20 +834,12 @@ def export_zip(names: str):
 			if isinstance(content, str):
 				content = content.encode()
 
-			# Two sidebar files can share a name, and a ZIP would keep both under it.
-			unique, counter = path, 1
-			while unique in used:
-				counter += 1
-				stem, dot, ext = path.rpartition(".")
-				unique = f"{stem} ({counter}).{ext}" if dot else f"{path} ({counter})"
-			used.add(unique)
-
-			entries.append((unique, content))
+			entries.append((path, content))
 
 	# An empty archive downloads as a ZIP that will not open; say why instead.
 	if not entries:
 		frappe.throw(
-			_("None of the selected Visa Requests has a document that could be read.")
+			_("None of the selected Visa Requests has a Visa Document that could be read.")
 			+ ("<br><br>" + _("Missing files:") + "<br>" + "<br>".join(escape_html(m) for m in missing) if missing else "")
 		)
 	# A partial archive must not pass for the full set.
