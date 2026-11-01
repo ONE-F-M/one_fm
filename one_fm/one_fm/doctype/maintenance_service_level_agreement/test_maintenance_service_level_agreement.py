@@ -197,6 +197,25 @@ class TestMaintenanceServiceLevelAgreement(FrappeTestCase):
 		# Re-validating the same record must not flag itself as a conflict.
 		existing.validate()
 
+	def test_resaving_an_sla_whose_hours_start_at_midnight(self):
+		ensure_issue_priority("Low")
+		doc = self.make_sla(
+			service_level=f"Midnight Start {frappe.generate_hash(length=6)}",
+			holiday_list=ensure_holiday_list("_Test Maintenance Holiday List"),
+		)
+		doc.priorities[0].maintenance_hours_from = "00:00:00"
+		doc.insert(ignore_permissions=True)
+
+		# Reloaded, 00:00:00 is timedelta(0), which is falsy but set.
+		frappe.get_doc(doc.doctype, doc.name).save(ignore_permissions=True)
+
+	def test_blank_maintenance_hours_still_rejected(self):
+		doc = self.make_sla()
+		doc.priorities[0].maintenance_hours_from = None
+
+		with self.assertRaises(ValidationError):
+			doc.validate()
+
 	def test_rule_only_applies_to_customer_entity_type(self):
 		ensure_issue_priority("Low")
 		holiday_list = ensure_holiday_list("_Test Maintenance Holiday List")
