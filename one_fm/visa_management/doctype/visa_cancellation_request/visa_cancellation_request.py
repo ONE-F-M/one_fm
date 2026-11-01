@@ -107,6 +107,27 @@ class VisaCancellationRequest(Document):
 		self.validate_no_live_cancellation()
 		self.validate_rejection_remark()
 
+	def on_update(self):
+		if self.get("workflow_state") == COMPLETED_STATE and self.has_value_changed("workflow_state"):
+			self.close_candidate_country_process()
+
+	def close_candidate_country_process(self):
+		"""The candidate whose visa this cancels is Visa Cancelled on their tracker."""
+		from one_fm.one_fm.doctype.candidate_country_process.candidate_country_process import (
+			apply_ccp_outcome,
+		)
+
+		visa_request = frappe.db.get_value(
+			"Visa Request", self.visa_request_id, ["candidate_country_process", "job_offer"], as_dict=True
+		)
+		if not visa_request:
+			return
+		ccp_name = visa_request.candidate_country_process
+		if not ccp_name and visa_request.job_offer:
+			ccp_name = frappe.db.get_value("Candidate Country Process", {"job_offer": visa_request.job_offer})
+		if ccp_name:
+			apply_ccp_outcome(ccp_name)
+
 	def validate_no_live_cancellation(self):
 		"""One live cancellation per Visa Request (WI-002432).
 

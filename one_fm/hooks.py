@@ -676,6 +676,7 @@ scheduler_events = {
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
 		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today',
 		'one_fm.tasks.execute.daily',
+		"one_fm.one_fm.doctype.candidate_country_process.candidate_country_process.refresh_open_ccp_live_plans",
 		'one_fm.one_fm.doctype.maintenance_schedule_entry.maintenance_schedule_entry.generate_due_work_orders',
 		"one_fm.one_fm.utils.attach_abbreviation_to_roles",
   		"one_fm.api.v2.zenquotes.set_cached_quote",
@@ -719,8 +720,7 @@ scheduler_events = {
 
 	],
 
-	# "15 12 * * *" below is a duplicate key that predates this line; merging it changes which jobs run, so it is fixed on its own.
-	"cron": {  # nosemgrep: frappe-semgrep-rules.rules.frappe-same-key-assigned-twice
+	"cron": {
 		"40 5 * * 0,1,2,3,4":[#run durring working days only “At 05:40 on Sunday, Monday, Tuesday, Wednesday, and Thursday.”
 			'one_fm.grd.doctype.work_permit.work_permit.system_remind_renewal_operator_to_apply',#wp
 			'one_fm.grd.doctype.work_permit.work_permit.system_remind_transfer_operator_to_apply',
@@ -779,9 +779,6 @@ scheduler_events = {
 		"5 0 * * *": [ # At 12:05 am - one digest email of the pending overtime (DSOT) requests
 			'one_fm.operations.doctype.employee_schedule.dsot_notification.send_daily_dsot_digest'
 		],
-		"15 12 * * *": [ #"At 12:15 pm - preponed from 01:30 pm (WI-001704); run after attendance is marked"
-			'one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.generate_checker',
-		],
 		"30 4 * * *": [
 			'one_fm.operations.doctype.roster_client_day_off_checker.roster_client_day_off_checker.check_roster_client_day_off'
 		],
@@ -834,8 +831,14 @@ scheduler_events = {
         "0 6 * * *": [ # update currency exchange rates daily at 6 am
 			"one_fm.tasks.one_fm.currency_exchange.update_currency_exchange_rates"
 		],
-		"15 12 * * *": [ # create shift assignment
-			'one_fm.api.tasks.assign_pm_shift'
+		"15 12 * * *": [
+			# create shift assignment
+			'one_fm.api.tasks.assign_pm_shift',
+			# Roster Day Off Checker: 12:15 pm, preponed from 01:30 pm (WI-001704); runs after
+			# attendance is marked. Kept in this list rather than in its own "15 12 * * *"
+			# key, because scheduler_events is a plain dict: a duplicate cron key silently
+			# drops the earlier entry, and bench migrate then deletes the Scheduled Job Type.
+			'one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.generate_checker',
 		],
 		"45 13 * * *": [ # validate shift assignmet
 			'one_fm.api.tasks.validate_pm_shift_assignment'

@@ -101,6 +101,10 @@ class TestMedicalInsuranceWorkflow(FrappeTestCase):
 		)
 		self.assertIn("medical_insurance_gro.json", source)
 
+	def test_no_record_holds_the_state_the_workflow_no_longer_has(self):
+		"""A record in a state with no transition out of it can never be moved on."""
+		self.assertEqual(frappe.db.count(DOCTYPE, {"workflow_state": OLD_STATE}), 0)
+
 	def test_the_patch_is_registered(self):
 		patches = frappe.read_file(frappe.get_app_path("one_fm", "patches.txt"))
 		self.assertIn(

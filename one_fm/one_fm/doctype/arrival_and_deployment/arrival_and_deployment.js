@@ -31,5 +31,7 @@ frappe.ui.form.on("Arrival and Deployment", {
 			'section_break_flight',
 			'ticket_attachment'
 		], !is_local);
+
+		frm.set_df_property("department", "read_only", frm.doc.__onload && frm.doc.__onload.ccp_department ? 1 : 0);
 	}
 });
