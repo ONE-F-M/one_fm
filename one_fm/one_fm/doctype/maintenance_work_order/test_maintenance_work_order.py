@@ -781,7 +781,8 @@ class TestServiceClockOperations(FrappeTestCase):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Submit guards: only a checked-in, Completed Work Order is submitted
+# Completion stamp at submit. The checked-in + Completed gate is the
+# "Validate Work Order Completion" script in the Processa map.
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -800,23 +801,6 @@ class TestSubmitOnlyWhenTrulyCompleted(FrappeTestCase):
 		return make_work_order(
 			obj.name, schedule_name=entry.name, priority=priority, sla_master=sla.name
 		)
-
-	def test_submit_blocked_when_status_not_completed(self):
-		wo = self._work_order()
-		mwo.check_in(work_order=wo.name)
-		wo.reload()
-
-		self.assertRaises(frappe.ValidationError, wo.submit)
-		self.assertEqual(frappe.db.get_value("Maintenance Work Order", wo.name, "docstatus"), 0)
-
-	def test_submit_blocked_without_check_in(self):
-		wo = self._work_order()
-		wo.status = "Completed"
-		wo.save()
-
-		with self.assertRaises(frappe.ValidationError) as raised:
-			wo.submit()
-		self.assertIn("check-in", str(raised.exception))
 
 	def test_completion_time_on_the_draft_is_overwritten_on_submit(self):
 		wo = self._work_order()
