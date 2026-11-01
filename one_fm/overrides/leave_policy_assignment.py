@@ -12,6 +12,7 @@ class LeavePolicyAssignmentOverride(LeavePolicyAssignment):
 	def grant_leave_alloc_for_employee(self):
 		leave_allocations = {}
 		allocation_failed = False
+		skipped_leave_types = []
 		if not self.leaves_allocated:
 			leave_type_details = get_leave_type_detail()
 
@@ -38,6 +39,7 @@ class LeavePolicyAssignmentOverride(LeavePolicyAssignment):
 					# Skipping it keeps the remaining leave types of the policy allocatable.
 					if allocate_leave and self.get_overlapping_allocation(leave_details.name):
 						allocate_leave = False
+						skipped_leave_types.append(leave_details.name)
 
 					if allocate_leave:
 						# One leave type must never abort the whole policy: an error here
@@ -56,9 +58,22 @@ class LeavePolicyAssignmentOverride(LeavePolicyAssignment):
 								message=frappe.get_traceback(),
 								title=_("Leave Allocation failed for {0}").format(leave_policy_detail.leave_type)
 							)
+							# Interactively the user must still see the error and keep the
+							# assignment unsubmitted, exactly as before. Only the scheduler
+							# carries on with the rest of the policy.
+							if getattr(frappe.local, "request", None):
+								raise
 							continue
 
 						leave_allocations[leave_policy_detail.leave_type] = {"name": leave_allocation, "leaves": new_leaves_allocated}
+
+			if skipped_leave_types:
+				frappe.msgprint(
+					_("Leave Allocation skipped for {0}, the period is already allocated.").format(
+						", ".join(skipped_leave_types)
+					),
+					indicator="orange", alert=True
+				)
 
 			# A leave type left unallocated keeps the assignment pending, so the daily
 			# renewal job picks it up again instead of losing it silently.

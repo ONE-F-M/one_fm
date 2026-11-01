@@ -770,7 +770,12 @@ def update_leave_policy_assignments_expires_today():
 		chain forward to the current date, and it retries the assignments whose leave
 		allocations were never granted.
 	"""
-	frappe.enqueue(create_leave_policy, is_async=True, queue="long", timeout=3600)
+	# The first sweep after a long gap is heavy, so a slow run must never be
+	# queued twice and create the same assignments in parallel.
+	frappe.enqueue(
+		create_leave_policy, is_async=True, queue="long", timeout=3600,
+		job_id="renew_leave_policy_assignments", deduplicate=True
+	)
 
 def create_leave_policy(leave_policy_assignments=None):
 	"""
