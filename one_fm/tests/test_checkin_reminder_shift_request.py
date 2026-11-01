@@ -97,8 +97,9 @@ class TestCheckinReminderShiftRequest(FrappeTestCase):
 		return name
 
 	def _in_reminder_employees(self):
-		results = fetch_employees_not_in_checkin() or []
-		return [r.get("employee") for r in results if r.get("log_type") == "IN"]
+		# Returns {"employees": [...], "date": ..., "total": ...}, or None outside production.
+		results = fetch_employees_not_in_checkin() or {}
+		return [r.get("employee") for r in results.get("employees", []) if r.get("log_type") == "IN"]
 
 	def test_shift_request_does_not_suppress_reminder(self):
 		self._insert_row(
