@@ -519,8 +519,7 @@
    "depends_on": "eval: doc.workflow_state == \"Rejected By Operator\" || doc.workflow_state == \"Pending by GRD Operator\"",
    "fieldname": "operator_rejection_remark",
    "fieldtype": "Small Text",
-   "label": "Operator Rejection Remark",
-   "read_only": 1
+   "label": "Operator Rejection Remark"
   },
   {
    "fieldname": "column_break_cpvu",
