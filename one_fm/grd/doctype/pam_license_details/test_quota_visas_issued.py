@@ -22,11 +22,20 @@ SOURCE = frappe.get_app_path(
 
 
 class TestWhatCounts(FrappeTestCase):
-	def test_only_a_request_pending_by_moi_is_a_visa(self):
-		"""Only the current state Pending By MOI counts - capital B, as the Workflow spells it."""
+	def test_pending_by_moi_onward_is_a_visa(self):
+		"""Pending By MOI and every state after it - capital B, as the Workflow spells it."""
 		block = frappe.read_file(SOURCE).split("def visas_issued_by_quota", 1)[1]
 		self.assertIn('["workflow_state", "in", VISA_ISSUED_STATES]', block)
-		self.assertEqual(VISA_ISSUED_STATES, ("Pending By MOI",))
+		self.assertEqual(
+			VISA_ISSUED_STATES,
+			(
+				"Pending By MOI",
+				"Pending Visa Issuance",
+				"Pending Recruiter Confirmation",
+				"Completed",
+				"Awaiting Visa Cancellation",
+			),
+		)
 
 	def test_every_issued_state_is_a_state_of_the_visa_request_workflow(self):
 		"""Catches a casing error: a state the Workflow does not have matches nothing."""
@@ -192,14 +201,27 @@ class TestWhichStatesAreCounted(FrappeTestCase):
 		).db_insert()
 		return name
 
-	def test_only_pending_by_moi_raises_the_count(self):
+	def test_pending_by_moi_onward_raises_the_count(self):
 		before = self._issued()
-		self._request("Completed")
+		for state in VISA_ISSUED_STATES:
+			self._request(state)
+		self.assertEqual(self._issued(), before + len(VISA_ISSUED_STATES))
+
+	def test_earlier_rejected_and_cancelled_states_do_not(self):
+		before = self._issued()
+		for state in (
+			"Draft",
+			"Pending by GRD Operator",
+			"Pending GRD Manager Approval",
+			"Pending By PAM",
+			"Rejected By PAM",
+			"Rejected By MOI",
+			"Rejected for Re Issue",
+			"Pending Cancel Work Permit",
+			"Work Permit Cancelled",
+		):
+			self._request(state)
 		self.assertEqual(self._issued(), before)
-		self._request("Rejected By MOI")
-		self.assertEqual(self._issued(), before)
-		self._request("Pending By MOI")
-		self.assertEqual(self._issued(), before + 1)
 
 	def test_a_completed_cancellation_takes_the_visa_back_out(self):
 		if not has_workflow_state_column():

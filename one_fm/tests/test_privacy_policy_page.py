@@ -1,55 +1,21 @@
-import re
+import os
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
+from frappe.website.path_resolver import resolve_redirect
 
-APP_SECTIONS = [
-	"The ONE FM Mobile App",
-	"What the App Collects and Why",
-	"Face Data",
-	"Where App Data Is Processed and Who Receives It",
-	"How Long We Keep App Data",
-]
-
-POLICY_SECTIONS = [
-	"Who We Are",
-	"Information We Collect",
-	"How We Use Your Information",
-	"How We Share Your Information",
-	"Data Retention",
-	"Your Rights",
-	"Cookies",
-	"Changes to This Policy",
-	"Contact Us",
-]
+NEW_POLICY_URL = "https://app.one-fm.com/privacy_policy/"
 
 
 class TestPrivacyPolicyPage(FrappeTestCase):
-	@classmethod
-	def setUpClass(cls):
-		super().setUpClass()
-		with open(frappe.get_app_path("one_fm", "templates", "pages", "privacy_policy.html")) as f:
-			cls.html = f.read()
-		cls.english, cls.arabic = cls.html.split('<section id="ar"', 1)
+	def test_old_url_redirects_to_the_landing_site_policy(self):
+		frappe.cache.delete_value("website_redirects")
+		with self.assertRaises(frappe.Redirect) as redirect:
+			resolve_redirect("privacy_policy")
+		self.assertEqual(redirect.exception.http_status_code, 301)
+		self.assertEqual(frappe.flags.redirect_location, NEW_POLICY_URL)
 
-	def headings(self, html):
-		return [re.sub(r"\s+", " ", h).strip() for h in re.findall(r"<h[1-5][^>]*>(.*?)</h[1-5]>", html, re.S)]
-
-	def test_english_has_policy_sections_and_app_sections(self):
-		headings = self.headings(self.english)
-		for heading in POLICY_SECTIONS + APP_SECTIONS:
-			self.assertIn(heading, headings)
-		self.assertLess(headings.index("The ONE FM Mobile App"), headings.index("Data Retention"))
-		self.assertNotIn("Interpretation and Definitions Interpretation", headings)
-
-	def test_app_section_states_biometric_data_location_and_retention(self):
-		for text in ("biometric data", "Precise location", "Google Cloud servers in Europe", "30 days", "info@one-fm.com"):
-			self.assertIn(text, self.english)
-		self.assertIn("9th Floor, Humoud Tower, Qibla, Kuwait City, Kuwait", self.english)
-		self.assertIn("Employees can also ask their HR", self.english)
-
-	def test_arabic_section_is_rtl_and_mirrors_every_heading(self):
-		self.assertIn('lang="ar" dir="rtl"', self.arabic)
-		self.assertEqual(len(self.headings(self.arabic)), len(self.headings(self.english)))
-		self.assertIn("بيانات بيومترية", self.arabic)
-		self.assertIn('href="#ar"', self.english)
+	def test_one_fm_no_longer_serves_its_own_policy_page(self):
+		self.assertFalse(
+			os.path.exists(frappe.get_app_path("one_fm", "templates", "pages", "privacy_policy.html"))
+		)

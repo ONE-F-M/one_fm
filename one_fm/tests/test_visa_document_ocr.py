@@ -10,6 +10,9 @@ fields that come back with a null value.
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
+from frappe.utils import add_days
+
+import one_fm.ocr_utils
 
 from one_fm.ocr_utils import (
 	_PAYMENT_TIME,
@@ -22,6 +25,7 @@ from one_fm.visa_management.doctype.visa_request.visa_request import (
 	OCR_DOCUMENTS,
 	OCR_STATE,
 	_attachment_path,
+	discard_passport_dates,
 )
 
 EVISA_RESPONSE = {
@@ -219,3 +223,142 @@ class TestTheAttachmentPath(FrappeTestCase):
 	def test_each_document_names_a_real_extractor(self):
 		for fieldname, spec in OCR_DOCUMENTS.items():
 			self.assertTrue(callable(frappe.get_attr(spec["extract"])), msg=fieldname)
+
+
+class TestThePassportDatesAreNotTheVisaDates(FrappeTestCase):
+	"""The e-visa prints the visa's Issue and Expiry in the header and the passport's own
+	pair, unlabelled, under "Passport No.". The Mindee model has been returning the
+	second, so a three-month visa was recorded as a ten-year one. These are the two
+	checks that stop the wrong pair reaching the document while the model is corrected.
+	"""
+
+	def _doc(self, passport=("2021-03-08", "2031-03-07")):
+		doc = frappe.new_doc("Visa Request")
+		doc.passport_issued_on, doc.passport_expires_on = passport
+		return doc
+
+	def test_the_reported_case_is_refused(self):
+		"""The dates written were the passport's, to the day."""
+		extracted = {
+			"visa_reference_number": "288853521",
+			"visa_issue_date": "2021-03-08",
+			"visa_expiry_date": "2031-03-07",
+		}
+
+		reason = discard_passport_dates(self._doc(), extracted)
+
+		self.assertTrue(reason)
+		self.assertEqual(extracted, {"visa_reference_number": "288853521"})
+
+	def test_the_visa_s_own_dates_are_written(self):
+		"""The same visa's real dates: issued 2026-09-14, expiring 2026-12-13."""
+		extracted = {"visa_issue_date": "2026-09-14", "visa_expiry_date": "2026-12-13"}
+
+		self.assertIsNone(discard_passport_dates(self._doc(), extracted))
+		self.assertEqual(
+			extracted, {"visa_issue_date": "2026-09-14", "visa_expiry_date": "2026-12-13"}
+		)
+
+	def test_a_ten_year_span_is_refused_even_without_the_passport_to_compare(self):
+		"""A request whose applicant has no passport dates on file still gets the guard."""
+		extracted = {"visa_issue_date": "2019-03-26", "visa_expiry_date": "2029-03-25"}
+
+		reason = discard_passport_dates(self._doc(passport=(None, None)), extracted)
+
+		self.assertTrue(reason)
+		self.assertEqual(extracted, {})
+
+	def test_one_matching_date_drops_both(self):
+		"""Half a wrong pair is worse than none: it reads as a successful extraction."""
+		extracted = {"visa_issue_date": "2021-03-08", "visa_expiry_date": "2026-12-13"}
+
+		self.assertTrue(discard_passport_dates(self._doc(), extracted))
+		self.assertEqual(extracted, {})
+
+	def test_a_request_with_no_passport_dates_keeps_a_good_extraction(self):
+		"""getdate() answers "today" for an empty value - two blanks must not match."""
+		extracted = {"visa_issue_date": "2026-09-14", "visa_expiry_date": "2026-12-13"}
+
+		self.assertIsNone(discard_passport_dates(self._doc(passport=(None, None)), extracted))
+
+	def test_an_extraction_with_no_dates_in_it_is_left_alone(self):
+		extracted = {"payment_date": "2026-09-14 16:27:47"}
+
+		self.assertIsNone(discard_passport_dates(self._doc(), extracted))
+		self.assertEqual(extracted, {"payment_date": "2026-09-14 16:27:47"})
+
+	def test_a_visa_read_with_only_an_issue_date_is_still_offered(self):
+		"""Nothing to compare the span against, and the issue date is not the passport's."""
+		extracted = {"visa_issue_date": "2026-09-14"}
+
+		self.assertIsNone(discard_passport_dates(self._doc(), extracted))
+
+	def test_the_longest_visa_still_passes(self):
+		from one_fm.visa_management.doctype.visa_request.visa_request import MAX_VISA_VALIDITY_DAYS
+
+		extracted = {
+			"visa_issue_date": "2026-09-14",
+			"visa_expiry_date": add_days("2026-09-14", MAX_VISA_VALIDITY_DAYS),
+		}
+
+		self.assertIsNone(discard_passport_dates(self._doc(passport=(None, None)), extracted))
+
+
+class TestWhatTheOcrLeavesBehind(FrappeTestCase):
+	"""db_set(update_modified=False) writes no Version, so without a comment
+	nothing records that a value came off an attachment rather than an operator."""
+
+	def _run(self, extracted, doc=None):
+		from unittest.mock import patch
+
+		from one_fm.visa_management.doctype.visa_request import visa_request
+		from one_fm.visa_management.doctype.visa_request.visa_request import run_document_ocr
+
+		doc = doc or frappe.new_doc("Visa Request")
+		doc.workflow_state = OCR_STATE
+		doc.visa_document = "/files/visa.pdf"
+		doc.passport_issued_on, doc.passport_expires_on = "2021-03-08", "2031-03-07"
+		doc.db_set = lambda *a, **kw: self.written.append(a[0])
+		doc.add_comment = lambda comment_type, text: self.comments.append(text)
+
+		self.written, self.comments = [], []
+		with patch.object(frappe, "get_doc", return_value=doc), patch.object(
+			visa_request, "_attachment_path", return_value="/files/visa.pdf"
+		), patch.object(
+			one_fm.ocr_utils, "extract_evisa_data", return_value=extracted
+		), patch.object(frappe, "publish_realtime") as published:
+			run_document_ocr("VR-TEST", ["visa_document"], user="Administrator")
+
+		return published
+
+	def test_what_was_read_is_named_on_the_timeline(self):
+		self._run({"visa_issue_date": "2026-09-14", "visa_expiry_date": "2026-12-13"})
+
+		self.assertEqual(len(self.comments), 1)
+		self.assertIn("Visa Issue Date", self.comments[0])
+
+	def test_the_refusal_is_recorded_and_nothing_is_written(self):
+		published = self._run({"visa_issue_date": "2021-03-08", "visa_expiry_date": "2031-03-07"})
+
+		self.assertEqual(self.written, [])
+		self.assertIn("Please enter them from the visa", self.comments[0])
+		self.assertTrue(published.call_args[0][1]["rejected"])
+
+	def test_the_operator_is_told_the_dates_were_refused(self):
+		"""The form would otherwise reload unchanged and read as the OCR finding nothing."""
+		published = self._run({"visa_issue_date": "2021-03-08", "visa_expiry_date": "2031-03-07"})
+
+		published.assert_called_once()
+		self.assertEqual(published.call_args[0][1]["fields"], [])
+
+	def test_the_reference_number_survives_a_refused_date_pair(self):
+		"""The visa number comes off the header and was never in doubt."""
+		self._run(
+			{
+				"visa_reference_number": "288853521",
+				"visa_issue_date": "2021-03-08",
+				"visa_expiry_date": "2031-03-07",
+			}
+		)
+
+		self.assertEqual(self.written, [{"visa_reference_number": "288853521"}])

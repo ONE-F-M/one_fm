@@ -304,12 +304,28 @@ frappe.ui.form.on("Visa Request", {
 			if (!data || data.name !== frm.doc.name) return;
 
 			frm.reload_doc().then(() => {
-				frappe.show_alert({
-					message: __("Read from the attachment: {0}. Please check the values.", [
-						(data.fields || []).map((f) => frappe.meta.get_label("Visa Request", f)).join(", ")
-					]),
-					indicator: "green"
-				}, 10);
+				if ((data.fields || []).length) {
+					frappe.show_alert({
+						message: __("Read from the attachment: {0}. Please check the values.", [
+							(data.fields || []).map((f) => frappe.meta.get_label("Visa Request", f)).join(", ")
+						]),
+						indicator: "green"
+					}, 10);
+				}
+
+				// The visa carries the passport's dates as well as its own, and the OCR drops
+				// the pair rather than write the wrong one. Said out loud, or the operator
+				// submits a visa with two empty dates believing they were read.
+				if (data.rejected) {
+					frappe.show_alert({
+						message: __("{0} and {1} were not read: {2}. Please enter them from the visa.", [
+							frappe.meta.get_label("Visa Request", "visa_issue_date"),
+							frappe.meta.get_label("Visa Request", "visa_expiry_date"),
+							data.rejected
+						]),
+						indicator: "orange"
+					}, 15);
+				}
 			});
 		});
 	}
