@@ -19,18 +19,20 @@ from one_fm.grd.doctype.preparation.preparation import update_preparation_employ
 FETCH = "one_fm.grd.doctype.preparation.preparation.fetch_employee_relieving_dates"
 
 
-def _active_employees(count=1):
-	# Active, or validate_preparation_table throws before anything else is checked.
-	names = frappe.get_all(
-		"Employee",
-		filters={"status": "Active", "relieving_date": ["is", "not set"]},
-		pluck="name",
-		order_by="creation asc",
-		limit=count,
-	)
-	if len(names) < count:
-		raise frappe.DoesNotExistError("Not enough active employees on this site to test against")
-	return names
+def _active_employee(name="Test Relieving Date Employee"):
+	"""A fresh Employee with no relieving date.
+
+	Active, or validate_preparation_table throws before anything else is checked. The
+	test site may hold no employees at all, so this never relies on existing ones.
+	"""
+	make_test_records("Employee")
+	return frappe.get_doc({
+		"doctype": "Employee",
+		"employee_name": name,
+		"company": "_Test Company",
+		"date_of_joining": nowdate(),
+		"status": "Active",
+	}).insert().name
 
 
 def _employee_queries(callable_):
