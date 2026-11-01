@@ -241,10 +241,12 @@ def build_schedule(object_name):
 
 
 def _get_due_entry_names(lead_days, object_name=None):
-	"""Names of 'Open' slots whose planned date falls inside the look-ahead window.
+	"""Open slots whose planned date falls inside the look-ahead window.
 
 	The window is every Open slot due on or before ``today + lead_days`` (this
 	naturally includes any past-due Open slots that still need a Work Order).
+	Returns rows with ``name``, ``object`` and ``planned_execution_datetime``,
+	ordered by object, datetime, name so slots can be grouped per object and day.
 	"""
 	window_end = get_datetime(f"{add_days(today(), lead_days)} 23:59:59")
 	filters = {
@@ -254,29 +256,84 @@ def _get_due_entry_names(lead_days, object_name=None):
 	if object_name:
 		filters["object"] = object_name
 
-	return frappe.get_all("Maintenance Schedule Entry", filters=filters, pluck="name")
+	return frappe.get_all(
+		"Maintenance Schedule Entry",
+		filters=filters,
+		fields=["name", "object", "planned_execution_datetime"],
+		order_by="object asc, planned_execution_datetime asc, name asc",
+	)
 
 
-def create_work_order_from_entry(entry):
-	"""Create a draft Preventive Maintenance Work Order from a schedule slot.
+def create_work_order_from_entries(entries):
+	"""Create one Preventive Maintenance Work Order for the due slots of one
+	object on one date.
 
-	Only the fields known at generation time are set; the Work Order's own
-	``before_save`` fills the rest (space + location chain from the object, and
-	the object-category checklist). ``priority`` and ``assigned_maintenance_team``
-	are optional on the Work Order and left blank for maintenance staff to
-	complete after the ticket is raised.
+	``entries`` are the Maintenance Schedule Entry documents of a single object
+	and planned date. The Work Order checklist holds exactly one row per entry
+	(never the full category template); each row is linked back to its entry.
+	Row details come from the matching master checklist item (matched by task
+	description) and fall back to the entry's own task and frequency. The Work
+	Order's ``maintenance_schedule`` is the first entry (all share the date), and
+	its own ``before_save`` fills the rest (space + location chain from the object).
+	``priority`` and ``assigned_maintenance_team`` are optional and left blank.
 
 	Returns the created Work Order document.
 	"""
+	first = entries[0]
+
+	object_category = frappe.db.get_value("Object", first.object, "object_category")
+	checklist_name = None
+	if object_category:
+		checklist_name = frappe.db.get_value(
+			"Object Maintenance Checklist", {"object_category": object_category}, "name"
+		)
+
+	master_by_task = {}
+	if checklist_name:
+		master_items = frappe.get_all(
+			"Object Maintenance Checklist Items",
+			filters={"parent": checklist_name},
+			fields=[
+				"sequence_no", "task_description", "photo_required",
+				"reference_image", "maintenance_frequency", "frequency_days",
+			],
+			order_by="idx asc",
+		)
+		for item in master_items:
+			master_by_task.setdefault(item.task_description, item)
+
 	work_order = frappe.get_doc(
 		{
 			"doctype": "Maintenance Work Order",
 			"maintenance_type": "Preventive Maintenance",
 			"status": STATUS_OPEN,
-			"object": entry.object,
-			"maintenance_schedule": entry.name,
+			"object": first.object,
+			"maintenance_schedule": first.name,
+			"object_maintenance_checklist": checklist_name,
 		}
 	)
+
+	for entry in entries:
+		master = master_by_task.get(entry.maintenance_task)
+		if master:
+			row = {
+				"sequence_no": master.sequence_no,
+				"task_description": master.task_description,
+				"reference_image": master.reference_image,
+				"maintenance_frequency": master.maintenance_frequency,
+				"frequency_days": master.frequency_days,
+				"is_required": master.photo_required or 0,
+			}
+		else:
+			row = {
+				"task_description": entry.maintenance_task,
+				"maintenance_frequency": entry.maintenance_frequency,
+				"frequency_days": entry.frequency_days,
+				"is_required": 0,
+			}
+		row["maintenance_schedule_entry"] = entry.name
+		work_order.append("object_maintenance_checklist_items", row)
+
 	work_order.insert(ignore_permissions=True)
 	return work_order
 
@@ -285,28 +342,39 @@ def generate_due_work_orders(object_name=None):
 	"""Raise Work Orders for every 'Open' slot inside the lead-time window.
 
 	Shared by the immediate on-submit routine (``object_name`` supplied) and the
-	nightly scheduler (``object_name`` omitted -> all objects). Idempotent: only
-	'Open' slots without an existing Work Order are processed, and each is flipped
-	to 'Work Order Created' as soon as its Work Order is raised, so it is never
+	nightly scheduler (``object_name`` omitted -> all objects). Due slots are
+	grouped by object and planned date: each group gets ONE Work Order listing
+	only its due task(s). All slots of the group are then linked to that Work
+	Order and flipped to 'Work Order Created' together. Idempotent: only 'Open'
+	slots without an existing Work Order are processed, so a slot is never
 	duplicated.
 
 	Returns the number of Work Orders created.
 	"""
 	lead_days = max(0, cint(_get_settings().work_order_generation_lead_time_days))
 
+	groups = {}
+	for row in _get_due_entry_names(lead_days, object_name):
+		key = (row.object, getdate(row.planned_execution_datetime))
+		groups.setdefault(key, []).append(row.name)
+
 	created = 0
-	for name in _get_due_entry_names(lead_days, object_name):
+	for names in groups.values():
 		try:
-			entry = frappe.get_doc("Maintenance Schedule Entry", name)
-			if entry.status != STATUS_OPEN or entry.work_order:
+			entries = [frappe.get_doc("Maintenance Schedule Entry", name) for name in names]
+			entries = [e for e in entries if e.status == STATUS_OPEN and not e.work_order]
+			if not entries:
 				continue
 
-			work_order = create_work_order_from_entry(entry)
+			work_order = create_work_order_from_entries(entries)
 			if not work_order:
 				continue
 
-			entry.db_set("work_order", work_order.name)
-			entry.db_set("status", STATUS_WORK_ORDER_CREATED)
+			frappe.db.set_value(
+				"Maintenance Schedule Entry",
+				{"name": ["in", [e.name for e in entries]]},
+				{"work_order": work_order.name, "status": STATUS_WORK_ORDER_CREATED},
+			)
 			created += 1
 		except Exception:
 			frappe.log_error(
