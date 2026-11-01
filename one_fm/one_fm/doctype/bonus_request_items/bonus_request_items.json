@@ -25,7 +25,9 @@
   "section_break_mwut",
   "approve",
   "column_break_oiwj",
-  "reject"
+  "reject",
+  "section_break_allb",
+  "rejection_reason"
  ],
  "fields": [
   {
@@ -34,7 +36,8 @@
    "in_list_view": 1,
    "label": "Employee",
    "options": "Employee",
-   "reqd": 1
+   "reqd": 1,
+   "ignore_user_permissions": 1
   },
   {
    "fetch_from": "employee.employee_name",
@@ -69,7 +72,8 @@
    "fieldtype": "Link",
    "label": "Department",
    "options": "Department",
-   "read_only": 1
+   "read_only": 1,
+   "columns": 2
   },
   {
    "fieldname": "column_break_yxdw",
@@ -127,6 +131,11 @@
    "fieldtype": "Column Break"
   },
   {
+   "fieldname": "attachment",
+   "fieldtype": "Attach",
+   "label": "Attachment"
+  },
+  {
    "fieldname": "section_break_mwut",
    "fieldtype": "Section Break",
    "label": "Approvals"
@@ -136,7 +145,9 @@
    "fieldname": "approve",
    "fieldtype": "Check",
    "in_list_view": 1,
-   "label": "Approve"
+   "label": "Approve",
+   "read_only_depends_on": "eval:['Pending General Manager', 'Pending Finance Manager', 'Pending Payroll Officer'].includes(doc.workflow_state)",
+   "columns": 1
   },
   {
    "fieldname": "column_break_oiwj",
@@ -147,19 +158,27 @@
    "fieldname": "reject",
    "fieldtype": "Check",
    "in_list_view": 1,
-   "label": "Reject"
+   "label": "Reject",
+   "read_only_depends_on": "eval:['Pending General Manager', 'Pending Finance Manager', 'Pending Payroll Officer'].includes(doc.workflow_state)",
+   "columns": 1
   },
   {
-   "fieldname": "attachment",
-   "fieldtype": "Attach",
-   "label": "Attachment"
+   "fieldname": "section_break_allb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval:doc.reject == 1",
+   "fieldname": "rejection_reason",
+   "fieldtype": "Small Text",
+   "label": "Rejection Reason",
+   "mandatory_depends_on": "eval:doc.reject == 1"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-07-10 00:07:34.696771",
+ "modified": "2026-10-26 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Bonus Request Items",

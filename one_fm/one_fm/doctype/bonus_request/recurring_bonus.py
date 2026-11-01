@@ -20,7 +20,8 @@ def process_recurring_bonus_requests():
 	1. Calculate the NEXT month/year from the parent's effective_month/year
 	2. Check end_date boundary
 	3. Prevent duplicate clones (recurring_parent + effective month/year)
-	4. Create clone in "Pending HR Manager" workflow state (docstatus=0)
+	4. Create the clone as a Draft for the next payroll cycle; inserting it starts the
+	   Bonus Lifecycle process
 	"""
 	today = getdate(nowdate())
 
@@ -102,7 +103,7 @@ def _process_single_recurring(req, today):
 
 
 def _clone_bonus_request(source_name, next_month, next_year):
-	"""Clone a Bonus Request into Pending HR Manager state."""
+	"""Clone a Bonus Request as a Draft for the next payroll cycle."""
 	source = frappe.get_doc("Bonus Request", source_name)
 
 	# frappe.copy_doc copies child table rows (bonus_request_employees)
@@ -111,6 +112,10 @@ def _clone_bonus_request(source_name, next_month, next_year):
 	new_doc.posting_date = nowdate()
 	new_doc.effective_month = next_month
 	new_doc.effective_year = next_year
+	# Set from the effective month by the controller; a copied cycle would be last month's
+	new_doc.payroll_cycle = None
+	new_doc.amend_payroll_cycle = 0
+	new_doc.amended_payroll_cycle = None
 	new_doc.docstatus = 0
 	new_doc.workflow_state = "Draft"  # Must start in Draft (first workflow state)
 	new_doc.amended_from = None
@@ -123,9 +128,6 @@ def _clone_bonus_request(source_name, next_month, next_year):
 	new_doc.end_date = None
 
 	new_doc.insert(ignore_permissions=True)
-
-	# Transition to "Pending HR Manager" after insert — bypass workflow validation
-	frappe.db.set_value("Bonus Request", new_doc.name, "workflow_state", "Pending HR Manager")
 
 	frappe.logger().info(
 		f"Recurring Bonus: Created {new_doc.name} from {source_name} "

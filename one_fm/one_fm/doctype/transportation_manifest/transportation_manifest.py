@@ -3,7 +3,7 @@ import json
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import cint, cstr, getdate
+from frappe.utils import cint, cstr, getdate, now_datetime
 
 
 # The key a row with no run of its own is filed under. A manifest compiled before trips
@@ -16,6 +16,7 @@ class TransportationManifest(Document):
 		self.populate_stop_sequence_and_pickup_accommodation()
 		self.enforce_stop_locking()
 		self.validate_attendance_and_qoa()
+		self.stamp_boarding_time()
 		self.validate_relievers()
 
 	# ── The attendance-check pointer, per run ───────────────────
@@ -310,6 +311,28 @@ class TransportationManifest(Document):
 					row.requires_reliever = 0
 					if row.qoa_status == "Pass":
 						row.qoa_reason = None
+
+	def stamp_boarding_time(self):
+		"""Record WHEN a rider was marked Present at the camp.
+
+		Compared with the saved copy so only a real change stamps: a row that becomes
+		Present with no boarding_time gets now; a row already Present keeps the time it
+		had; a row that stops being Present loses it. A new document has no saved copy
+		(get_doc_before_save() is None), so every Present row counts as newly Present.
+		"""
+		before = self.get_doc_before_save()
+		previous_rows = {
+			row.name: row for row in (before.transportation_manifest_details if before else [])
+		}
+
+		for row in self.transportation_manifest_details:
+			if row.attendance_status == "Present":
+				old_row = previous_rows.get(row.name) if row.name else None
+				was_present = bool(old_row) and old_row.attendance_status == "Present"
+				if not was_present and not row.boarding_time:
+					row.boarding_time = now_datetime()
+			else:
+				row.boarding_time = None
 
 	def validate_relievers(self):
 		if not self.schedule_date:

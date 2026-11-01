@@ -27,6 +27,9 @@ PENDING_GR_OPERATOR = "Pending by GR Operator"
 COMPLETED = "Completed"
 PENDING_BY_PACI = "Pending by PACI"
 
+# Bank set on the Draft salary account opened when a PACI completes.
+DEFAULT_SALARY_BANK = "National Bank of Kuwait"
+
 # WI-002136: what the PRO owes before handing a first application back. The PRO who filed
 # it, and the reference PACI issued for the filing - without the reference there is nothing
 # for the GR Operator to Approve or Reject against.
@@ -234,6 +237,55 @@ class PACI(Document):
         self.apply_damj_civil_id()
         self.db_set('paci_status',"Completed")
         self.db_set('completed_on', today())
+        # Last: its savepoint rollback must not undo the db_set calls above.
+        self.create_draft_bank_account()
+
+    def create_draft_bank_account(self):
+        """Open a Draft salary Bank Account for the employee unless one already exists.
+
+        A failure is logged and shown, never raised: it must not block the PACI completion.
+        """
+        if frappe.db.exists("Bank Account", {"party_type": "Employee", "party": self.employee}):
+            frappe.msgprint(
+                _("Bank account already exists for Employee ID {0}. Skipping duplicate creation.").format(self.employee),
+                indicator="orange",
+            )
+            return
+
+        account_name = frappe.db.get_value("Employee", self.employee, "employee_name")
+        bank_account = frappe.new_doc("Bank Account")
+        bank_account.update({
+            "account_name": account_name,
+            "bank": DEFAULT_SALARY_BANK,
+            "party_type": "Employee",
+            "party": self.employee,
+            "onboard_employee": frappe.db.get_value(
+                "Onboard Employee",
+                {"employee": self.employee, "workflow_state": ["!=", "Cancelled"]},
+                "name",
+            ),
+        })
+
+        # ERPNext names it "{account_name} - {bank}"; employee names repeat.
+        set_name = None
+        if frappe.db.exists("Bank Account", f"{account_name} - {DEFAULT_SALARY_BANK}"):
+            set_name = f"{account_name} - {DEFAULT_SALARY_BANK} - {self.employee}"
+
+        frappe.db.savepoint("paci_bank_account")
+        try:
+            # System action on a workflow transition; the GR Operator cannot create Bank Accounts.
+            bank_account.insert(ignore_permissions=True, set_name=set_name)
+        except Exception:
+            frappe.db.rollback(save_point="paci_bank_account")
+            frappe.log_error(
+                title=_("Draft Bank Account not created on PACI completion"),
+                reference_doctype=self.doctype,
+                reference_name=self.name,
+            )
+            frappe.msgprint(
+                _("Could not create a Draft Bank Account for Employee ID {0}. The error has been logged.").format(self.employee),
+                indicator="orange",
+            )
 
     def apply_damj_civil_id(self):
         """Put the merged Civil ID on the Employee once the application completes (WI-002100).

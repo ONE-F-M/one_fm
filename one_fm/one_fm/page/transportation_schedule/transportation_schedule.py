@@ -2503,6 +2503,46 @@ def _fetch_rambo_employees():
     ).run(as_dict=True)
 
 
+def _fetch_shift_working_employees(camps, exclude):
+    """Active shift-working employees whose live camp is one of `camps`.
+
+    Same columns as _fetch_rambo_employees. The live camp is the latest Accommodation
+    Checkin (IN), resolved by manifest_compiler._live_accommodation. Employees in
+    `exclude` are left out.
+    """
+    camps = {c for c in (camps or []) if c}
+    if not camps:
+        return []
+
+    from frappe.query_builder import DocType
+
+    from one_fm.one_fm.doctype.transportation_manifest.manifest_compiler import _live_accommodation
+
+    Employee = DocType("Employee")
+    query = (
+        frappe.qb.from_(Employee)
+        .select(
+            Employee.name,
+            Employee.employee_name,
+            Employee.designation,
+            Employee.cell_number,
+            Employee.shift,
+        )
+        .where(Employee.status == "Active")
+        .where(Employee.shift_working == 1)
+        .orderby(Employee.employee_name)
+    )
+    exclude = [e for e in (exclude or []) if e]
+    if exclude:
+        query = query.where(Employee.name.notin(exclude))
+    candidates = query.run(as_dict=True)
+    if not candidates:
+        return []
+
+    live_camp = _live_accommodation([c.name for c in candidates])
+    return [c for c in candidates if live_camp.get(c.name) in camps]
+
+
 def _fetch_roster_rows(employee_ids, date, window_start):
     """Working Employee Schedule rows for `date` and the day before it.
 
@@ -2549,15 +2589,22 @@ def _reliever_context(shift_name, date, row_name):
     caller needs read permission on that manifest; without one the caller needs read
     permission on Transportation Manifest in general.
 
-    Returns (date, shift_start, shift_end, trip_times).
+    Returns (date, shift_start, shift_end, trip_times, trip_camps, trip_employees).
+    trip_camps are the distinct pickup_accommodation values of the manifest rows that
+    share the trip_id; trip_employees are the employees and relievers already on that
+    trip (including the covered employee). Without a row there is no trip, so both
+    are empty.
     """
     trip_times = []
+    trip_camps = []
+    trip_employees = set()
 
     if row_name:
         row = frappe.db.get_value(
             "Transportation Manifest Details",
             row_name,
-            ["parent", "operations_shift", "start_time", "end_time", "trip_id", "scheduled_time"],
+            ["parent", "operations_shift", "start_time", "end_time", "trip_id", "scheduled_time",
+             "employee", "reliever_employee", "pickup_accommodation"],
             as_dict=True,
         )
         if not row:
@@ -2571,14 +2618,23 @@ def _reliever_context(shift_name, date, row_name):
         shift_start, shift_end = row.start_time, row.end_time
 
         if row.trip_id:
-            siblings = [
-                d.scheduled_time
-                for d in manifest.transportation_manifest_details
-                if d.trip_id == row.trip_id
+            trip_rows = [
+                d for d in manifest.transportation_manifest_details if d.trip_id == row.trip_id
             ]
+            siblings = [d.scheduled_time for d in trip_rows]
         else:
+            trip_rows = []
             siblings = [row.scheduled_time]
         trip_times = [frappe.utils.to_timedelta(t) for t in siblings if t is not None]
+
+        # The row itself is always part of the trip, even when it has no trip_id.
+        for member in [*trip_rows, row]:
+            for value in (member.get("employee"), member.get("reliever_employee")):
+                if value:
+                    trip_employees.add(value)
+            camp = member.get("pickup_accommodation")
+            if camp and camp not in trip_camps:
+                trip_camps.append(camp)
     else:
         frappe.has_permission("Transportation Manifest", "read", throw=True)
         shift_start = shift_end = None
@@ -2589,7 +2645,14 @@ def _reliever_context(shift_name, date, row_name):
             shift_start = covered[0] if shift_start is None else shift_start
             shift_end = covered[1] if shift_end is None else shift_end
 
-    return frappe.utils.getdate(date or frappe.utils.today()), shift_start, shift_end, trip_times
+    return (
+        frappe.utils.getdate(date or frappe.utils.today()),
+        shift_start,
+        shift_end,
+        trip_times,
+        trip_camps,
+        trip_employees,
+    )
 
 
 def _trip_window(date, shift_start, shift_end, trip_times):
@@ -2673,21 +2736,42 @@ def _build_reliever(employee, rows, date, shift_times, window):
 @frappe.whitelist()
 def get_available_rambo_relievers(shift_name: str = None, date: str = None, row_name: str = None):
     """
-    Fetch available Rambo relievers for a trip date.
-    Returns employees with custom_is_rambo_reliever = 1 and status = 'Active',
-    enriched with that day's roster (Employee Schedule): the Basic shift and its
-    timing, any Over-Time shift, and whether the roster overlaps the trip window.
+    Fetch available relievers for a trip date.
+
+    The candidate pool depends on Transportation Settings, "Restrict Reliever Search
+    to Rambo Employees Only":
+    - checked: Active employees with custom_is_rambo_reliever = 1;
+    - unchecked: Active shift-working employees whose live camp is one of the trip's
+      pickup camps, excluding the covered employee, everyone already on the trip and
+      anyone rostered Working on a shift that overlaps the trip window. Without
+      row_name there is no trip, so nothing is returned.
+
+    Each candidate is enriched with that day's roster (Employee Schedule): the Basic
+    shift and its timing, any Over-Time shift, and whether the roster overlaps the
+    trip window.
 
     When row_name (a Transportation Manifest Details row) is given, the date is the
     manifest's schedule_date and the covered shift / trip times come from that row.
     Otherwise shift_name and date are used as before.
 
-    Overlap is a warning only - relievers are never filtered out. They are sorted
-    with non-overlapping, rostered relievers first.
+    For Rambo relievers, overlap is a warning only - they are never filtered out.
+    Results are sorted with non-overlapping, rostered relievers first.
     """
-    date, shift_start, shift_end, trip_times = _reliever_context(shift_name, date, row_name)
+    date, shift_start, shift_end, trip_times, trip_camps, trip_employees = _reliever_context(
+        shift_name, date, row_name
+    )
 
-    rambos = _fetch_rambo_employees()
+    restrict_to_rambo = cint(
+        frappe.db.get_single_value(
+            "Transportation Settings", "restrict_reliever_search_to_rambo_employees_only"
+        )
+    )
+    if restrict_to_rambo:
+        rambos = _fetch_rambo_employees()
+    elif row_name:
+        rambos = _fetch_shift_working_employees(trip_camps, trip_employees)
+    else:
+        rambos = []
     if not rambos:
         return []
 
@@ -2704,6 +2788,9 @@ def get_available_rambo_relievers(shift_name: str = None, date: str = None, row_
         _build_reliever(r, rows_by_employee.get(r.name, []), date, shift_times, window)
         for r in rambos
     ]
+    if not restrict_to_rambo:
+        # Assigning a regular employee overwrites their own roster for the day.
+        result = [r for r in result if not r["overlap"]]
     result.sort(key=lambda x: (x["overlap"], not x["has_roster"], x["employee_name"] or ""))
     return result
 

@@ -141,40 +141,6 @@ frappe.ui.form.on("Overtime Request", {
 		}
 	},
 
-	before_workflow_action: function(frm) {
-		if (frm.selected_workflow_action === "Verify Attendance") {
-			// Block if overtime end time has not passed
-			let overtime_start = frappe.datetime.str_to_obj(frm.doc.date + " " + frm.doc.start_time);
-			let overtime_end = frappe.datetime.str_to_obj(frm.doc.date + " " + frm.doc.end_time);
-			if (overtime_start && overtime_end && overtime_end <= overtime_start) {
-				overtime_end = moment(overtime_end).add(1, "day").toDate();
-			}
-			let now = frappe.datetime.str_to_obj(frappe.datetime.now_datetime());
-
-			if (now < overtime_end) {
-				frappe.dom.unfreeze();
-				frappe.msgprint({
-					title: __("Error"),
-					indicator: "red",
-					message: __("You cannot verify attendance until the scheduled overtime end time has passed.")
-				});
-				return Promise.reject();
-			}
-
-			// Block if neither Present nor Absent is checked
-			if (!frm.doc.present && !frm.doc.absent) {
-				frappe.dom.unfreeze();
-				frappe.msgprint({
-					title: __("Error"),
-					indicator: "red",
-					message: __("Please mark the employee as Present or Absent before verifying attendance.")
-				});
-				return Promise.reject();
-			}
-		}
-		return Promise.resolve();
-	},
-
 	calculate_overtime_hours: function(frm) {
 		// Story 3: Calculate the difference between start_time and end_time
 		// Handles overnight spans (e.g. 18:00 → 04:00 = 10 hours)
