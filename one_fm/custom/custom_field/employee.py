@@ -586,6 +586,13 @@ def get_employee_custom_fields():
 				"label": "Work Permit Expiry Date",
 			},
 			{
+				"fieldname": "custom_visa_extension_expiry_date",
+				"fieldtype": "Date",
+				"insert_after": "work_permit_expiry_date",
+				"label": "Visa Extension Expiry Date",
+				"read_only": 1,
+			},
+			{
 				"depends_on": "",
 				"fieldname": "residency_expiry_date",
 				"fieldtype": "Date",
@@ -692,7 +699,7 @@ def get_employee_custom_fields():
 				"depends_on": "",
 				"fieldname": "column_break_64",
 				"fieldtype": "Column Break",
-				"insert_after": "work_permit_expiry_date",
+				"insert_after": "custom_visa_extension_expiry_date",
 				"is_system_generated": 1,
 			},
 			{
