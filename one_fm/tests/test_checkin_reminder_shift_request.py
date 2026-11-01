@@ -126,14 +126,17 @@ class TestCheckinReminderShiftRequest(FrappeTestCase):
 		self.assertNotIn(self.employee, self._in_reminder_employees())
 
 	def test_arrive_late_shift_permission_still_suppresses_reminder(self):
-		self._insert_row(
-			"Shift Permission",
-			employee=self.employee,
-			docstatus=1,
-			date=getdate(today()),
-			log_type="IN",
-			permission_type="Arrive Late",
-			workflow_state="Approved",
-		)
+		values = {
+			"employee": self.employee,
+			"docstatus": 1,
+			"date": getdate(today()),
+			"log_type": "IN",
+			"workflow_state": "Approved",
+		}
+		# permission_type is not in the DocType JSON (and the reminder query does not read
+		# it), so it has a column only on sites that carry it as a custom field.
+		if frappe.db.has_column("Shift Permission", "permission_type"):
+			values["permission_type"] = "Arrive Late"
+		self._insert_row("Shift Permission", **values)
 
 		self.assertNotIn(self.employee, self._in_reminder_employees())
