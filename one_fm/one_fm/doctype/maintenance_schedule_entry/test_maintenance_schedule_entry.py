@@ -177,7 +177,7 @@ def make_checklist(object_category, tasks):
 
 	checklist = frappe.get_doc({
 		"doctype": "Object Maintenance Checklist",
-		"checklist_name": "TEST-MSE-CHECKLIST",
+		"checklist_name": f"TEST-MSE-CHECKLIST-{frappe.generate_hash(length=8)}",
 		"object_category": object_category,
 		"object_maintenance_checklist_items": items,
 	})
@@ -336,13 +336,13 @@ class TestGenerateDueWorkOrders(FrappeTestCase):
 		# Deterministic Work Order stub so we can assert the slot-selection and
 		# status-flip logic without the full Work Order data chain (priority,
 		# team, checklist) which is out of scope here.
-		self._orig = mse.create_work_order_from_entry
-		mse.create_work_order_from_entry = lambda entry: types.SimpleNamespace(
-			name=f"TEST-WO-{entry.name}"
+		self._orig = mse.create_work_order_from_entries
+		mse.create_work_order_from_entries = lambda entries: types.SimpleNamespace(
+			name=f"TEST-WO-{entries[0].name}"
 		)
 
 	def tearDown(self):
-		mse.create_work_order_from_entry = self._orig
+		mse.create_work_order_from_entries = self._orig
 
 	def _make_open_slot(self, object_name, days_from_today):
 		planned = get_datetime(f"{add_days(today(), days_from_today)} 08:00:00")
@@ -386,9 +386,39 @@ class TestGenerateDueWorkOrders(FrappeTestCase):
 		self.assertEqual(first, 1)
 		self.assertEqual(second, 0)
 
+	def test_same_object_different_days_get_separate_work_orders(self):
+		obj = make_object(last_service_date=today())
+		set_settings(lead_days=5)
+		day_one = self._make_open_slot(obj.name, 1)
+		day_two = self._make_open_slot(obj.name, 2)
+
+		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 2)
+
+		work_orders = {
+			frappe.db.get_value("Maintenance Schedule Entry", e.name, "work_order")
+			for e in (day_one, day_two)
+		}
+		self.assertEqual(len(work_orders), 2)
+
+	def test_different_objects_same_day_get_separate_work_orders(self):
+		obj_a = make_object(last_service_date=today())
+		obj_b = make_object(last_service_date=today())
+		set_settings(lead_days=5)
+		slot_a = self._make_open_slot(obj_a.name, 1)
+		slot_b = self._make_open_slot(obj_b.name, 1)
+
+		# Due slots left on the test site are processed too, so only a lower bound holds.
+		self.assertGreaterEqual(mse.generate_due_work_orders(), 2)
+
+		work_orders = {
+			frappe.db.get_value("Maintenance Schedule Entry", e.name, "work_order")
+			for e in (slot_a, slot_b)
+		}
+		self.assertEqual(len(work_orders), 2)
+
 
 class TestWorkOrderCreationEndToEnd(FrappeTestCase):
-	"""Exercises the real create_work_order_from_entry (no stub) now that
+	"""Exercises the real create_work_order_from_entries (no stub) now that
 	priority / assigned_maintenance_team are optional on Maintenance Work Order.
 	"""
 
@@ -422,3 +452,76 @@ class TestWorkOrderCreationEndToEnd(FrappeTestCase):
 		self.assertEqual(wo.maintenance_schedule, entry.name)
 		# Auto-routed from the object's category checklist.
 		self.assertTrue(wo.object_maintenance_checklist)
+		# Only the due task, linked back to its slot.
+		self.assertEqual(len(wo.object_maintenance_checklist_items), 1)
+		self.assertEqual(wo.object_maintenance_checklist_items[0].maintenance_schedule_entry, entry.name)
+
+
+class TestDueTaskChecklist(FrappeTestCase):
+	"""The Work Order checklist holds only the task(s) that fell due."""
+
+	def _setup(self):
+		cat = make_category()
+		make_checklist(cat, [("Inspect filter", 30), ("Replace belt", 60), ("Lubricate bearings", 90)])
+		obj = make_object_for_schedule(object_category=cat, last_service_date=today())
+		set_settings(lead_days=5)
+		return cat, obj
+
+	def _slot(self, obj, task, days):
+		planned = get_datetime(f"{add_days(today(), 1)} 08:00:00")
+		return make_schedule_entry(
+			obj.name,
+			frequency=make_frequency(days).name,
+			maintenance_task=task,
+			planned_execution_datetime=planned,
+		)
+
+	def test_single_due_task_work_order_has_only_that_task(self):
+		_cat, obj = self._setup()
+		entry = self._slot(obj, "Replace belt", 60)
+
+		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 1)
+
+		entry.reload()
+		wo = frappe.get_doc("Maintenance Work Order", entry.work_order)
+		rows = wo.object_maintenance_checklist_items
+		self.assertEqual(len(rows), 1)
+		self.assertEqual(rows[0].task_description, "Replace belt")
+		self.assertEqual(rows[0].maintenance_schedule_entry, entry.name)
+		self.assertTrue(wo.object_maintenance_checklist)
+
+	def test_two_tasks_same_object_same_day_share_one_work_order(self):
+		_cat, obj = self._setup()
+		filter_slot = self._slot(obj, "Inspect filter", 30)
+		belt_slot = self._slot(obj, "Replace belt", 60)
+
+		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 1)
+
+		filter_slot.reload()
+		belt_slot.reload()
+		self.assertTrue(filter_slot.work_order)
+		self.assertEqual(filter_slot.work_order, belt_slot.work_order)
+		self.assertEqual(filter_slot.status, "Work Order Created")
+		self.assertEqual(belt_slot.status, "Work Order Created")
+
+		wo = frappe.get_doc("Maintenance Work Order", filter_slot.work_order)
+		linked = {r.task_description: r.maintenance_schedule_entry for r in wo.object_maintenance_checklist_items}
+		self.assertEqual(len(wo.object_maintenance_checklist_items), 2)
+		self.assertEqual(
+			linked, {"Inspect filter": filter_slot.name, "Replace belt": belt_slot.name}
+		)
+
+	def test_manual_work_order_still_gets_full_checklist(self):
+		_cat, obj = self._setup()
+
+		wo = frappe.get_doc({
+			"doctype": "Maintenance Work Order",
+			"maintenance_type": "Preventive Maintenance",
+			"status": "Open",
+			"object": obj.name,
+		})
+		wo.insert(ignore_permissions=True)
+
+		self.assertEqual(len(wo.object_maintenance_checklist_items), 3)
+		self.assertTrue(wo.object_maintenance_checklist)
+		self.assertFalse(any(r.maintenance_schedule_entry for r in wo.object_maintenance_checklist_items))
