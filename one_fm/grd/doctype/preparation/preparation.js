@@ -193,12 +193,12 @@ frappe.ui.form.on("Preparation", {
 				frm.fields_dict.preparation_record.grid.update_docfield_property("civil_id_amount", "allow_on_submit", 0);
 				["embassy_attestation_fee", "mofa_fee", "pcc_translation_fee"].forEach(field =>
 					frm.fields_dict.preparation_record.grid.update_docfield_property(field, "allow_on_submit", 0));
-				
-				// Fetch dates on refresh (covers load & reload)
-				fetch_employee_dates_batch(frm);
 			}
 		}
 
+		// WI-004230: every refresh, draft or submitted, whatever the role. It is a display
+		// refresh only - the server answers with the dates that differ and writes nothing.
+		fetch_employee_dates_batch(frm);
 	},
 	set_renewal_for_all: function(frm) {
 		frappe.call({
@@ -225,15 +225,25 @@ function fetch_employee_dates_batch(frm){
 		args: { preparation: frm.doc.name },
 		freeze: false,
 		callback: function(r){
-			// We avoid local field mutation to keep form clean.
-			// Optionally, refresh grid rows that were updated so user sees values.
-			if(r.message && r.message.updated_rows && r.message.updated_rows.length){
-				// Reload only affected child rows values from DB
-				// r.message.updated_rows.forEach(rowname => {
-				// 	frappe.model.remove_from_locals('Preparation Record', rowname); // force re-fetch
-				// });
-				frm.refresh_field('preparation_record');
+			const message = r.message || {};
+			const updated_rows = message.updated_rows || [];
+			const values = message.values || {};
+			if(!updated_rows.length){
+				return;
 			}
+
+			// Written straight into locals, not through frappe.model.set_value: that would
+			// mark the form dirty and fire the child table events. Rows on a page the grid has
+			// not rendered yet pick the value up from locals when that page is drawn.
+			const grid = frm.fields_dict.preparation_record.grid;
+			const rows = (locals['Preparation Record'] || {});
+			updated_rows.forEach(rowname => {
+				if(rows[rowname] && Object.prototype.hasOwnProperty.call(values, rowname)){
+					rows[rowname].relieving_date = values[rowname];
+					// Only a cell that is on screen right now needs redrawing.
+					grid.grid_rows_by_docname[rowname]?.refresh_field('relieving_date');
+				}
+			});
 		}
 	});
 }
