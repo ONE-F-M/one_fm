@@ -26,14 +26,19 @@ def _active_employee(name="Test Relieving Date Employee"):
 	Active, or validate_preparation_table throws before anything else is checked. The
 	test site may hold no employees at all, so this never relies on existing ones.
 	"""
-	make_test_records("Employee")
-	return frappe.get_doc({
+	employee = frappe.get_doc({
 		"doctype": "Employee",
 		"employee_name": name,
+		"first_name": name,
 		"company": "_Test Company",
 		"date_of_joining": nowdate(),
 		"status": "Active",
-	}).insert().name
+	})
+	# The site may not hold the test Company; only the Employee row matters here.
+	employee.flags.ignore_links = True
+	employee.flags.ignore_mandatory = True
+	employee.flags.ignore_permissions = True
+	return employee.insert().name
 
 
 def _employee_queries(callable_):
