@@ -2923,6 +2923,30 @@ def get_due_contracts():
     #Get all the contracts that are due to expire today and send a reminder to the relevant parties
     pass
 
+def get_contract_notification_cc():
+    """
+    Return the list of email addresses configured to be CC'd on contract
+    expiry/renewal notifications.
+
+    Configured on "ONEFM General Setting" -> "Contract Notification CC" as a
+    comma, semicolon or newline separated list (e.g. the Finance and Legal
+    group mailboxes). Returns an empty list when nothing is configured.
+    """
+    # The field ships with this change; guard so that a deploy landing before
+    # "bench migrate" degrades to "no CC" instead of raising and killing the
+    # whole notification run (get_single_value raises on an unknown fieldname).
+    if not frappe.get_meta("ONEFM General Setting").has_field("contract_notification_cc"):
+        return []
+
+    raw = frappe.db.get_single_value("ONEFM General Setting", "contract_notification_cc") or ""
+    emails = []
+    for part in raw.replace("\n", ",").replace(";", ",").split(","):
+        email = part.strip()
+        if email and email not in emails:
+            emails.append(email)
+    return emails
+
+
 @frappe.whitelist()
 def send_contract_reminders(is_scheduled_event=True):
     """
@@ -2986,8 +3010,13 @@ def send_contract_reminders(is_scheduled_event=True):
                         message=frappe.get_traceback(),
                         title="Contract Reminder Error: {0}".format(i.name)
                     )
-    except Exception as e:
-        frappe.log_error(message=str(e), title="Contract Reminder Error")
+    except Exception:
+        # Individual contract failures are already isolated above, so anything
+        # reaching here broke the whole run (no email was sent at all). Re-raise
+        # after logging so the Scheduled Job Log records "Failed" instead of
+        # reporting a successful run while every notification was dropped.
+        frappe.log_error(message=frappe.get_traceback(), title="Contract Reminder Error")
+        raise
 
 @frappe.whitelist()
 def renew_contracts_by_termination_date():
