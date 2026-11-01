@@ -27,17 +27,20 @@ def _active_employee(name="Test Relieving Date Employee"):
 	"""
 	employee = frappe.get_doc({
 		"doctype": "Employee",
+		"name": "TEST-RELDATE-EMP",
 		"employee_name": name,
 		"first_name": name,
 		"company": "_Test Company",
 		"date_of_joining": nowdate(),
 		"status": "Active",
 	})
-	# The site may not hold the test Company; only the Employee row matters here.
-	employee.flags.ignore_links = True
-	employee.flags.ignore_mandatory = True
-	employee.flags.ignore_permissions = True
-	return employee.insert().name
+	# The Employee controller's validate needs custom fields and a Company this site may
+	# not have, and none of it is under test: write the row directly. The class rolls the
+	# transaction back when it finishes.
+	frappe.db.delete("Employee", {"name": employee.name})
+	employee.set_user_and_timestamp()
+	employee.db_insert()
+	return employee.name
 
 
 def _employee_queries(callable_):
