@@ -89,6 +89,9 @@ class TestPreparationRelievingDate(FrappeTestCase):
 			],
 		})
 		preparation.flags.ignore_permissions = True
+		# Skips link validation, which also runs the fetch_from SELECTs against Employee
+		# columns this test site's table may not have. The employee row exists regardless.
+		preparation.flags.ignore_links = True
 		preparation.insert()
 		return preparation
 
