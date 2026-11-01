@@ -1,4 +1,5 @@
 import frappe
+from frappe import _
 
 from hrms.hr.doctype.leave_policy_assignment.leave_policy_assignment import (
     LeavePolicyAssignment
@@ -10,6 +11,7 @@ class LeavePolicyAssignmentOverride(LeavePolicyAssignment):
 	@frappe.whitelist()
 	def grant_leave_alloc_for_employee(self):
 		leave_allocations = {}
+		allocation_failed = False
 		if not self.leaves_allocated:
 			leave_type_details = get_leave_type_detail()
 
@@ -32,16 +34,47 @@ class LeavePolicyAssignmentOverride(LeavePolicyAssignment):
 						frappe.db.get_value("Employee", self.employee, "went_to_hajj"):
 						allocate_leave = False
 
+					# The period may already be covered by an allocation created by hand.
+					# Skipping it keeps the remaining leave types of the policy allocatable.
+					if allocate_leave and self.get_overlapping_allocation(leave_details.name):
+						allocate_leave = False
+
 					if allocate_leave:
-						leave_allocation, new_leaves_allocated = self.create_leave_allocation(
-							new_leaves_allocate,
-							leave_details, date_of_joining
-						)
+						# One leave type must never abort the whole policy: an error here
+						# used to leave every later leave type unallocated.
+						save_point = "grant_{0}".format(frappe.generate_hash(length=8))
+						frappe.db.savepoint(save_point)
+						try:
+							leave_allocation, new_leaves_allocated = self.create_leave_allocation(
+								new_leaves_allocate,
+								leave_details, date_of_joining
+							)
+						except Exception:
+							frappe.db.rollback(save_point=save_point)
+							allocation_failed = True
+							frappe.log_error(
+								message=frappe.get_traceback(),
+								title=_("Leave Allocation failed for {0}").format(leave_policy_detail.leave_type)
+							)
+							continue
 
 						leave_allocations[leave_policy_detail.leave_type] = {"name": leave_allocation, "leaves": new_leaves_allocated}
 
-			self.db_set("leaves_allocated", 1)
+			# A leave type left unallocated keeps the assignment pending, so the daily
+			# renewal job picks it up again instead of losing it silently.
+			if not allocation_failed:
+				self.db_set("leaves_allocated", 1)
 		return leave_allocations
+
+	def get_overlapping_allocation(self, leave_type):
+		"""Submitted Leave Allocation of this leave type already covering any part of the period."""
+		return frappe.db.exists("Leave Allocation", {
+			"employee": self.employee,
+			"leave_type": leave_type,
+			"docstatus": 1,
+			"from_date": ("<=", self.effective_to),
+			"to_date": (">=", self.effective_from),
+		})
 
 	def create_leave_allocation(self, annual_allocation, leave_details, date_of_joining):
 		# Creates leave allocation for the given employee in the provided leave period

@@ -9,6 +9,7 @@ from frappe.utils import (
 from frappe.model.mapper import get_mapped_doc
 from one_fm.api.notification import create_notification_log
 from frappe.modules import scrub
+from frappe.query_builder import DocType
 from frappe import _
 from frappe.desk.form import assign_to
 from one_fm.processor import sendemail
@@ -760,32 +761,138 @@ def create_new_work_permit(work_permit):
 	return wp
 
 def update_leave_policy_assignments_expires_today():
-	'''
-		Method to create Leave Policy Assignment when existing one expires today
-	'''
-	# Get Active Leave Policy Assignment List thats ends today
-	leave_policy_assignments = frappe.db.get_list('Leave Policy Assignment', {'effective_to': getdate(today())})
-	frappe.enqueue(create_leave_policy,leave_policy_assignments=leave_policy_assignments, is_async=True, queue='long')
+	"""
+		Daily renewal of the Leave Policy Assignment chain.
 
-def create_leave_policy(leave_policy_assignments):
-	for policy_assignment in leave_policy_assignments:
+		HD-1802791: the job used to look only for assignments whose effective_to was
+		exactly today, so a single failed night left the employee without any further
+		renewal. It now sweeps every assignment that has already expired and walks the
+		chain forward to the current date, and it retries the assignments whose leave
+		allocations were never granted.
+	"""
+	frappe.enqueue(create_leave_policy, is_async=True, queue="long", timeout=3600)
+
+def create_leave_policy(leave_policy_assignments=None):
+	"""
+		Create the Leave Policy Assignments missing between the latest one of every
+		employee and today, then grant the allocations of the assignments that were
+		submitted without them.
+	"""
+	today_date = getdate(today())
+
+	for assignment in get_latest_leave_policy_assignment_per_employee():
+		effective_to = getdate(assignment.effective_to)
+
+		# Walk forward one period at a time so a skipped year is caught up as well
+		while effective_to <= today_date:
+			effective_from = add_days(effective_to, 1)
+			next_effective_to = add_days(add_years(effective_from, 1), -1)
+
+			# Periods that are already over are rebuilt only to reconnect the chain.
+			# They never carry leaves forward, so a chain repaired years late cannot
+			# inflate the balance of the current period.
+			carry_forward = assignment.carry_forward if next_effective_to >= today_date else 0
+
+			if not renew_leave_policy_assignment(assignment, effective_from, next_effective_to, carry_forward):
+				break
+
+			effective_to = next_effective_to
+
+	grant_pending_leave_allocations()
+
+def get_latest_leave_policy_assignment_per_employee():
+	"""Newest submitted Leave Policy Assignment of every employee who has not left."""
+	LeavePolicyAssignment = DocType("Leave Policy Assignment")
+	Employee = DocType("Employee")
+
+	assignments = (
+		frappe.qb.from_(LeavePolicyAssignment)
+		.join(Employee).on(LeavePolicyAssignment.employee == Employee.name)
+		.select(
+			LeavePolicyAssignment.name,
+			LeavePolicyAssignment.employee,
+			LeavePolicyAssignment.leave_policy,
+			LeavePolicyAssignment.carry_forward,
+			LeavePolicyAssignment.effective_to,
+		)
+		.where(LeavePolicyAssignment.docstatus == 1)
+		.where(Employee.status != "Left")
+		.orderby(LeavePolicyAssignment.employee)
+		.orderby(LeavePolicyAssignment.effective_to)
+	).run(as_dict=True)
+
+	latest = {}
+	for assignment in assignments:
+		latest[assignment.employee] = assignment
+
+	return list(latest.values())
+
+def renew_leave_policy_assignment(assignment, effective_from, effective_to, carry_forward):
+	"""
+		Create and submit the next Leave Policy Assignment of the chain.
+
+		Returns True when the chain may continue to the following period. Everything
+		runs inside a savepoint: a failed allocation used to leave a submitted
+		assignment behind with no leaves granted, which blocked every later renewal.
+	"""
+	if frappe.db.exists("Leave Policy Assignment", {
+		"employee": assignment.employee,
+		"effective_from": effective_from,
+		"effective_to": effective_to,
+		"docstatus": 1,
+	}):
+		return True
+
+	save_point = "renew_{0}".format(frappe.generate_hash(length=8))
+	frappe.db.savepoint(save_point)
+	try:
+		leave_policy_assignment = frappe.new_doc("Leave Policy Assignment")
+		leave_policy_assignment.employee = assignment.employee
+		leave_policy_assignment.effective_from = effective_from
+		leave_policy_assignment.effective_to = effective_to
+		leave_policy_assignment.leave_policy = assignment.leave_policy
+		leave_policy_assignment.carry_forward = carry_forward
+		leave_policy_assignment.leaves_allocated = False
+		leave_policy_assignment.save(ignore_permissions=True)
+		leave_policy_assignment.submit()
+		return True
+	except Exception:
+		frappe.db.rollback(save_point=save_point)
+		frappe.log_error(
+			message=frappe.get_traceback(),
+			title="Error while creating leave policy assignment"
+		)
+		return False
+
+def grant_pending_leave_allocations():
+	"""
+		Grant the leaves of the submitted assignments that still cover today and never
+		got their allocations, so a failed night is repaired on the next run.
+	"""
+	LeavePolicyAssignment = DocType("Leave Policy Assignment")
+	Employee = DocType("Employee")
+
+	pending = (
+		frappe.qb.from_(LeavePolicyAssignment)
+		.join(Employee).on(LeavePolicyAssignment.employee == Employee.name)
+		.select(LeavePolicyAssignment.name)
+		.where(LeavePolicyAssignment.docstatus == 1)
+		.where(LeavePolicyAssignment.leaves_allocated == 0)
+		.where(LeavePolicyAssignment.effective_to >= getdate(today()))
+		.where(Employee.status != "Left")
+	).run(as_dict=True)
+
+	for assignment in pending:
+		save_point = "grant_{0}".format(frappe.generate_hash(length=8))
+		frappe.db.savepoint(save_point)
 		try:
-			doc = frappe.get_doc('Leave Policy Assignment', policy_assignment.name)
-			effective_from = add_days(getdate(doc.effective_to), 1)
-			effective_to = add_days(add_years(effective_from, 1), -1)
-			# Check if the employee status not Left
-			if frappe.db.get_value('Employee', doc.employee, 'status') not in {'Left', } and not frappe.db.exists("Leave Policy Assignment", {'employee':doc.employee, 'effective_from':effective_from, 'effective_to':effective_to}):
-				leave_policy_assignment = frappe.new_doc('Leave Policy Assignment')
-				leave_policy_assignment.employee = doc.employee
-				leave_policy_assignment.effective_from = effective_from
-				leave_policy_assignment.effective_to = effective_to
-				leave_policy_assignment.leave_policy = doc.leave_policy
-				leave_policy_assignment.carry_forward = doc.carry_forward
-				leave_policy_assignment.leaves_allocated = False
-				leave_policy_assignment.save(ignore_permissions=True)
-				leave_policy_assignment.submit()
-		except Exception as e:
-			frappe.log_error(message=frappe.get_traceback(), title="Error while creating leave policy assignment")
+			frappe.get_doc("Leave Policy Assignment", assignment.name).grant_leave_alloc_for_employee()
+		except Exception:
+			frappe.db.rollback(save_point=save_point)
+			frappe.log_error(
+				message=frappe.get_traceback(),
+				title="Error while granting leave allocation"
+			)
 			continue
 
 def update_onboarding_doc_workflow_sate(doc):
