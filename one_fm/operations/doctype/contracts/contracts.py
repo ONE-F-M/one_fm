@@ -22,6 +22,7 @@ from one_fm.utils import get_field_with_label
 class Contracts(Document):
     def validate(self):
         self.validate_dates_out_of_draft()
+        self.validate_contract_date_order()
         self.calculate_contract_duration()
         self.sync_contract_item_operations()
         self.validate_no_of_days_off()
@@ -53,6 +54,29 @@ class Contracts(Document):
                     ", ".join(missing)
                 ),
                 title=_("Missing Required Fields")
+            )
+
+    def validate_contract_date_order(self):
+        """Block saving a contract whose End Date falls before its Start Date.
+
+        `validate_dates_out_of_draft` only checks that the dates are present, so an
+        inverted pair used to save cleanly — typically when an already renewed
+        contract (start rolled forward) is closed by back-dating the end date.
+        `update_project_start_end_date` then mirrors that pair onto the Project with
+        `db.set_value`, which bypasses Project validation, and the Project can never
+        be saved again because `ProjectOverride.validate` rejects the stored dates.
+        Stopping the inverted pair here is what keeps the Project editable.
+        """
+        if not (self.start_date and self.end_date):
+            return
+
+        if getdate(self.end_date) < getdate(self.start_date):
+            frappe.throw(
+                _("Contract End Date ({0}) cannot be before Contract Start Date ({1}).").format(
+                    frappe.format(self.end_date, {"fieldtype": "Date"}),
+                    frappe.format(self.start_date, {"fieldtype": "Date"})
+                ),
+                title=_("Invalid Contract Dates")
             )
 
     def validate_items_on_active_transition(self):
@@ -283,6 +307,19 @@ class Contracts(Document):
                 )
 
         if not changed:
+            return
+
+        # Second line of defence behind validate_contract_date_order: this write
+        # bypasses Project validation, so an inverted pair reaching it would lock
+        # the Project out of every future save.
+        if getdate(self.end_date) < getdate(self.start_date):
+            frappe.log_error(
+                title="Contract to Project date sync skipped",
+                message=(
+                    f"Contract {self.name} has end_date {self.end_date} before "
+                    f"start_date {self.start_date}; Project {self.project} was not updated."
+                )
+            )
             return
 
         frappe.db.set_value(
