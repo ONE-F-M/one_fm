@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 from frappe.utils import now_datetime, today, getdate
 import json
@@ -88,12 +89,16 @@ class ClientEvent(Document):
 		return submitted_count
 
 	def delete_draft_event_staff(self):
-		"""Delete all draft Event Staff linked to this Client Event using fast SQL deletion."""
-		draft_count = frappe.db.count("Event Staff", {"client_event": self.name, "docstatus": 0})
-		if draft_count > 0:
-			# Fast SQL delete bypassing validation
-			frappe.db.delete("Event Staff", {"client_event": self.name, "docstatus": 0})
-		return draft_count
+		"""Delete all draft Event Staff linked to this Client Event.
+
+		Deleted one by one so the on_trash hook also removes the draft's Event Staff
+		Lifecycle process and its open Submit task. force skips the link check, as the
+		SQL delete this replaces did.
+		"""
+		drafts = frappe.get_all("Event Staff", filters={"client_event": self.name, "docstatus": 0}, pluck="name")
+		for name in drafts:
+			frappe.delete_doc("Event Staff", name, ignore_permissions=True, force=True)
+		return len(drafts)
 
 	def handle_ongoing_event_cancellation(self, event_started=True):
 		# Update end_date for all related Event Staff records
@@ -153,9 +158,38 @@ class ClientEvent(Document):
 			doc.end_date = self.end_date
 			doc.start_datetime = self.event_start_datetime
 			doc.end_datetime = self.event_end_datetime
-			doc.save(ignore_permissions=True)
-			doc.submit()
+			doc.insert(ignore_permissions=True)
+			submit_event_staff(doc)
 		return True
+
+
+def submit_event_staff(event_staff):
+	"""Submit a new Event Staff draft through its Event Staff Lifecycle process.
+
+	Completing the Submit task runs Validate Event Staff, which submits the record when it
+	passes. A record it refuses throws, so Add Staff to Event adds the whole batch or none of it.
+	"""
+	from one_bpmn.api.instance_api import complete_task
+
+	instance = frappe.db.get_value(
+		"BPMN Process Instance",
+		{"context_doctype": "Event Staff", "context_docname": event_staff.name, "status": "Active"},
+		"name",
+	)
+	if not instance:
+		# The process is not deployed on this site.
+		event_staff.submit()
+		return
+
+	task = next(
+		row for row in frappe.get_doc("BPMN Process Instance", instance).active_tasks if row.status == "Waiting"
+	)
+	complete_task(instance, task.task_id, frappe.as_json({"action": "Submit"}))
+	if frappe.db.get_value("Event Staff", event_staff.name, "docstatus") != 1:
+		frappe.throw(
+			_("Event Staff for {0} could not be added.").format(event_staff.employee_name or event_staff.employee)
+		)
+
 
 def cancel_event_staff_background(client_event):
 	"""Background job to cancel all submitted Event Staff for a given Client Event."""
