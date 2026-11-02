@@ -1284,6 +1284,158 @@ def pow_item_types_arabic(doc) -> str:
 
 
 
+# The Attendance Report is always Arabic and RTL - there is no language switch.
+#
+# The acronyms and descriptions below are PROPOSED wording with no source document. They
+# have to be confirmed by the process owner (Abbas) before go-live. The keys are the
+# English codes proof_of_work.ATTENDANCE_ABBR writes; the data layer keeps producing
+# those, because the Days Off count and the hour cells are decided on them, and they are
+# turned into Arabic only here, on the way to the page. The legend and the grid both read
+# this one table, so the two cannot disagree.
+POW_STATUS_AR = {
+	"P": ("ح", "حاضر"),
+	"WFH": ("عب", "عمل عن بعد"),
+	"A": ("غ", "غائب"),
+	"L": ("إ", "إجازة"),
+	"HD": ("نص", "نصف يوم"),
+	"DO": ("ر", "يوم راحة"),
+	"CDO": ("رع", "راحة العميل"),
+	"H": ("عط", "عطلة"),
+	"OH": ("م", "معلق"),
+	"FA": ("بص", "موعد بصمة"),
+	"MA": ("مط", "موعد طبي"),
+	"CI": ("مق", "مقابلة العميل"),
+}
+
+# Short Arabic weekday names, keyed by what strftime("%a") gives. Proposed wording as well.
+POW_WEEKDAY_AR = {
+	"Mon": "إثن",
+	"Tue": "ثلا",
+	"Wed": "أرب",
+	"Thu": "خمي",
+	"Fri": "جمع",
+	"Sat": "سبت",
+	"Sun": "أحد",
+}
+
+
+def pow_attendance_status_ar(code) -> str:
+	"""A grid cell in Arabic: a status code becomes its Arabic acronym, a figure (the
+	hours on an Hourly item) becomes Arabic-Indic digits. A code that is in neither
+	place is left as it is - a wrong translation is worse than an untranslated one."""
+	code = cstr(code)
+	entry = POW_STATUS_AR.get(code)
+	return entry[0] if entry else pow_arabic_number(code)
+
+
+def pow_attendance_legend_ar() -> list:
+	"""The legend, as ``[{"acronym": ..., "description": ...}, ...]``."""
+	return [{"acronym": acronym, "description": description} for acronym, description in POW_STATUS_AR.values()]
+
+
+def _employee_names_arabic(employee_ids) -> dict:
+	"""``{employee: Full Name in Arabic}`` for the employees that have one.
+
+	Read straight off Employee.employee_name_in_arabic. Nothing is translated or
+	transliterated here: an employee without the field is simply absent from the result.
+	"""
+	ids = sorted({cstr(employee) for employee in employee_ids if employee})
+	if not ids:
+		return {}
+
+	rows = frappe.get_all(
+		"Employee",
+		filters={"name": ["in", ids]},
+		fields=["name", "employee_name_in_arabic"],
+	)
+	return {
+		row.name: cstr(row.employee_name_in_arabic).strip()
+		for row in rows
+		if cstr(row.employee_name_in_arabic).strip()
+	}
+
+
+def pow_attendance_report_ar(doc) -> dict:
+	"""The Attendance Report data, ready to print in Arabic.
+
+	Same shape as pow_attendance_report. What changes: the client is named from Customer
+	Full Name In Arabic, employees from Employee Full Name in Arabic, the day cells carry
+	Arabic acronyms, the weekdays are Arabic, and every figure is in Arabic-Indic digits.
+
+	What does not change: Employee ID, the Sale Item code and item type, and the project
+	name are passed through exactly as stored.
+	"""
+	from babel.dates import format_date
+
+	report = pow_attendance_report(doc)
+	meta = report["meta"]
+	start = getdate(doc.start_date)
+	# Keyed on the Employee docname: on amended months employee_id is the civil-ID style
+	# number from the amendment row, which is not an Employee name.
+	names = _employee_names_arabic(
+		emp.get("employee") or emp["employee_id"]
+		for group in report["groups"]
+		for emp in group["employees"]
+	)
+
+	ar_meta = dict(meta)
+	ar_meta.update(
+		{
+			"customer_name": pow_customer_name(doc),
+			"period": "%s %s" % (format_date(start, "MMMM", locale="ar"), pow_arabic_number(start.year)),
+			"day_labels": [
+				{
+					"weekday": POW_WEEKDAY_AR.get(label["weekday"], label["weekday"]),
+					"date": pow_arabic_number(label["date"]),
+					"is_weekend": label["is_weekend"],
+				}
+				for label in meta["day_labels"]
+			],
+		}
+	)
+
+	groups = []
+	for group in report["groups"]:
+		employees = []
+		for emp in group["employees"]:
+			employees.append(
+				{
+					# Exactly as stored: no digit conversion, no bidi mirroring.
+					"employee_id": emp["employee_id"],
+					"employee_name": names.get(cstr(emp.get("employee") or emp["employee_id"]))
+					or emp["employee_name"],
+					"days": [pow_attendance_status_ar(cell) for cell in emp["days"]],
+					"working_days": pow_arabic_number(emp["working_days"]),
+					"days_off": pow_arabic_number(emp["days_off"]),
+					"total_hours": pow_arabic_number(emp["total_hours"]),
+				}
+			)
+		# Rows read in the order of the names as printed.
+		employees.sort(key=lambda row: row["employee_name"] or "")
+		for sn, row in enumerate(employees, start=1):
+			row["sn"] = sn
+
+		totals = group["totals"]
+		count = pow_arabic_number(totals["employees"])
+		groups.append(
+			{
+				"sale_item": group["sale_item"],
+				"item_type": group["item_type"],
+				"employees": employees,
+				"count_label": "%s موظف" % count,
+				"total_label": "الإجمالي: %s موظف" % count,
+				"totals": {
+					"employees": count,
+					"working_days": pow_arabic_number(totals["working_days"]),
+					"days_off": pow_arabic_number(totals["days_off"]),
+					"total_hours": pow_arabic_number(totals["total_hours"]),
+				},
+			}
+		)
+
+	return {"meta": ar_meta, "groups": groups}
+
+
 def pow_logo_src():
 	"""The ONE FM logo as a data URI, for the Proof of Work PDFs (WI-001808).
 
