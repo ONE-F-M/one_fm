@@ -220,3 +220,17 @@ class TestFieldsAreReadOnly(FrappeTestCase):
 	def test_the_row_status_is_read_only(self):
 		definition = read_definition("pam_licenses", "pam_licenses.json")
 		self.assertEqual(field_of(definition, "status").get("read_only"), 1)
+
+
+class TestCompanyFileManagementTables(FrappeTestCase):
+	def test_each_table_points_at_a_child_doctype(self):
+		definition = read_definition("pam_file", "pam_file.json")
+		for fieldname in ("authorized_signatories_on_the_file", "delegates_on_the_file", "housing_details"):
+			child = read_definition(fieldname, f"{fieldname}.json")
+			self.assertEqual(field_of(definition, fieldname)["options"], child["name"])
+			self.assertEqual(child["istable"], 1, fieldname)
+
+	def test_the_delegate_civil_id_is_fetched_from_the_employee(self):
+		definition = read_definition("delegates_on_the_file", "delegates_on_the_file.json")
+		self.assertEqual(field_of(definition, "onefm_id")["options"], "Employee")
+		self.assertEqual(field_of(definition, "civil_id")["fetch_from"], "onefm_id.one_fm_civil_id")
