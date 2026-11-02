@@ -97,33 +97,7 @@ STANDARD_MONTH_HOURS = 208
 
 
 class ProofofWork(Document):
-	def validate(self):
-		if self.docstatus == 0:
-			self.warn_if_customer_arabic_name_missing()
-
-	def warn_if_customer_arabic_name_missing(self):
-		"""Tell the user when the client has no Full Name In Arabic.
-
-		The Attendance Report and the Letter are printed in Arabic and name the client
-		from Customer.customer_name_in_arabic. This is a warning, never a frappe.throw:
-		the monthly batch generates many records and one client with a blank field must
-		not abort the rest. The print falls back to the English name meanwhile.
-		"""
-		if not self.get("customer"):
-			return
-
-		arabic_name = frappe.db.get_value("Customer", self.customer, "customer_name_in_arabic")
-		if cstr(arabic_name).strip():
-			return
-
-		frappe.msgprint(
-			_(
-				"Customer {0} has no Full Name In Arabic. The Proof of Work documents print the "
-				"client name in Arabic, so the English name will be shown until it is filled in."
-			).format(frappe.bold(self.customer)),
-			title=_("Arabic Client Name Missing"),
-			indicator="orange",
-		)
+	pass
 
 
 def _guard_permission():
@@ -760,7 +734,7 @@ def generate_proof_of_work(
 	created = []
 	skipped = []
 
-	for idx, contract_name in enumerate(contracts):
+	for contract_name in contracts:
 		if not frappe.db.exists("Contracts", contract_name):
 			skipped.append({"contract": contract_name, "reason": _("Contract not found")})
 			continue
@@ -799,20 +773,20 @@ def generate_proof_of_work(
 
 		doc.insert()
 
-		# WI-001808: bulk generation submits. A record that will not submit is reported
-		# and left as a draft to be fixed by hand, so the rest of the batch still goes
-		# through. savepoint/rollback keeps a failed submit from poisoning the
-		# transaction for the contracts that follow.
-		savepoint = f"pow_submit_{idx}"
-		frappe.db.savepoint(savepoint)
+		# Bulk generation submits, through the Submit task the Proof of Work Lifecycle process
+		# opens for the new draft. A record that is not submitted (the requester may not
+		# submit, or the submit failed) is reported and left as a draft, so the rest of the
+		# batch still goes through.
 		try:
-			doc.submit()
-			created.append(doc.name)
+			_submit_through_process(doc)
 		except Exception:
-			frappe.db.rollback(save_point=savepoint)
 			frappe.log_error(
 				title="Proof of Work bulk submit failed", message=frappe.get_traceback()
 			)
+
+		if frappe.db.get_value("Proof of Work", doc.name, "docstatus") == 1:
+			created.append(doc.name)
+		else:
 			skipped.append(
 				{
 					"contract": contract_name,
@@ -821,6 +795,30 @@ def generate_proof_of_work(
 			)
 
 	return {"created": created, "skipped": skipped}
+
+
+def _submit_through_process(doc):
+	"""Complete the Submit task the Proof of Work Lifecycle process opened for a new draft.
+
+	The process runs Validate Proof of Work, then submits the record, or hands it to a
+	System Manager when the requester may not submit.
+	"""
+	from one_bpmn.api.instance_api import complete_task
+
+	instance = frappe.db.get_value(
+		"BPMN Process Instance",
+		{"context_doctype": "Proof of Work", "context_docname": doc.name, "status": "Active"},
+		"name",
+	)
+	if not instance:
+		# The process is not deployed on this site.
+		doc.submit()
+		return
+
+	task = next(
+		row for row in frappe.get_doc("BPMN Process Instance", instance).active_tasks if row.status == "Waiting"
+	)
+	complete_task(instance, task.task_id, frappe.as_json({"action": "Submit"}))
 
 
 # ---------------------------------------------------------------------------
