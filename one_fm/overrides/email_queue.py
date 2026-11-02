@@ -32,9 +32,25 @@ def get_outgoing_support_email(doc):
     return False
 
 def get_subject(doc):
-    ticket_subject = frappe.db.get_value("HD Ticket",doc.reference_name,'subject')
-    new_subject = f"Re: {ticket_subject} {doc.reference_name}"
-    return new_subject
+    """Build the outgoing subject for an HD Ticket email.
+
+    The subject must stay identical to the thread the customer already has in
+    their mailbox. Gmail and Outlook normalise the "Re:"/"Fwd:" prefix but not a
+    trailing token, so appending the ticket name here started a second
+    conversation on the customer side (WI: ticket 1831836).
+
+    Threading is carried by the In-Reply-To and References headers, not by a
+    token in the subject: frappe resolves an inbound reply through the parent
+    Email Queue / Communication, and its subject fallback expects frappe's own
+    "(#NAME)" form, which this never produced. Dropping the token therefore
+    costs no inbound matching.
+    """
+    subject = doc.subject or frappe.db.get_value("HD Ticket", doc.reference_name, "subject")
+    if not subject:
+        return ""
+    if not subject.lower().startswith(("re:", "fwd:", "fw:")):
+        subject = f"Re: {subject}"
+    return subject
 
 
 
@@ -62,6 +78,10 @@ def prepare_email_content(self):
         mail.msg_root["Disposition-Notification-To"] = self.sender
     if self.in_reply_to:
         mail.set_in_reply_to(self.in_reply_to)
+        # Frappe sets In-Reply-To only. Gmail and Outlook lean on References to
+        # hold a conversation together, so without it any subject change breaks
+        # the thread. Mirror the parent message id here (RFC 5322).
+        mail.set_header("References", self.in_reply_to)
     return mail
 
 
