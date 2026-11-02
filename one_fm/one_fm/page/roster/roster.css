@@ -316,3 +316,47 @@ body[data-route="roster"] .switch-container {
 .client-post-off-color {
     background-color: #34495E !important;
 }
+
+/* Relief shift indicator. Borders are drawn inside the cell with
+   pseudo-elements so the cell size never changes; stacked shifts are one div,
+   so each half gets its own half-height pseudo-element. */
+body[data-route="roster"] .tablebox.relief-full::before,
+body[data-route="roster"] .tablebox.relief-top::before,
+body[data-route="roster"] .tablebox.relief-bottom::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  border: 2px solid #DC2626;
+  box-shadow: inset 0 0 0 1px #fff;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+body[data-route="roster"] .tablebox.relief-full::before {
+  top: 0;
+  bottom: 0;
+}
+
+body[data-route="roster"] .tablebox.relief-top::before {
+  top: 0;
+  height: 50%;
+}
+
+body[data-route="roster"] .tablebox.relief-bottom::after {
+  top: 50%;
+  height: 50%;
+}
+
+/* Absent (red) cells: a wider inset outline keeps the crimson border distinct */
+body[data-route="roster"] .tablebox[class*="absent"].relief-full::before,
+body[data-route="roster"] .tablebox[class*="absent"].relief-top::before,
+body[data-route="roster"] .tablebox[class*="absent"].relief-bottom::after {
+  box-shadow: inset 0 0 0 3px #fff;
+}
+
+body[data-route="roster"] .legendboxview.legend-relief {
+  background: #fff;
+  border: 2px solid #DC2626;
+  box-sizing: border-box;
+}
