@@ -928,14 +928,37 @@ class TestArabicAttendanceReport(FrappeTestCase):
 		self.assertEqual(days[2], "H")
 		self.assertEqual(grid["SER-A"]["E1"]["total_present"], 0.5)
 
-	# AC3 - validation warning
-	def _validate(self, arabic_name, docstatus=0):
+
+VALIDATE_POW = """# The Attendance Report and the Letter print the client name in Arabic. A client with no Full
+# Name In Arabic prints in English, so this is a warning and never stops the submit.
+if doc.customer and not (frappe.db.get_value("Customer", doc.customer, "customer_name_in_arabic") or "").strip():
+	frappe.msgprint(
+		frappe._(
+			"Customer {0} has no Full Name In Arabic. The Proof of Work documents print the "
+			"client name in Arabic, so the English name will be shown until it is filled in."
+		).format(frappe.bold(doc.customer)),
+		title=frappe._("Arabic Client Name Missing"),
+		indicator="orange",
+	)
+
+# Only System Manager may submit a Proof of Work. When the requester may not, the Submit step
+# is handed to every System Manager.
+result["can_submit"] = bool(frappe.has_permission("Proof of Work", "submit", doc=doc))
+if not result["can_submit"]:
+	result["assigned_user"] = ""
+	result["assigned_role"] = "System Manager"
+"""
+
+
+class TestValidateProofOfWork(FrappeTestCase):
+	"""The Validate Proof of Work script task. Its Server Script moves between sites with the
+	process export, so the body is mirrored here and compared with the site copy."""
+
+	def run_script(self, arabic_name, can_submit=True):
 		from unittest.mock import patch
 
-		module = "one_fm.one_fm.doctype.proof_of_work.proof_of_work"
 		doc = frappe.new_doc("Proof of Work")
 		doc.customer = "CUST"
-		doc.docstatus = docstatus
 		real_get_value = frappe.db.get_value
 
 		# Only the Customer lookup is faked: the first _() of a run loads translations
@@ -945,22 +968,36 @@ class TestArabicAttendanceReport(FrappeTestCase):
 				return arabic_name
 			return real_get_value(doctype, *args, **kwargs)
 
-		with patch(f"{module}.frappe.db.get_value", side_effect=get_value), patch(
-			f"{module}.frappe.msgprint"
-		) as msgprint:
-			doc.validate()
-		return msgprint
+		result = {}
+		with patch("frappe.db.get_value", side_effect=get_value), patch(
+			"frappe.has_permission", return_value=can_submit
+		), patch("frappe.msgprint") as msgprint:
+			exec(VALIDATE_POW, {"frappe": frappe, "doc": doc, "result": result})
+		return result, msgprint
+
+	def test_site_script_matches_this_file(self):
+		saved = frappe.db.get_value("Server Script", "Validate Proof of Work", "script")
+		if saved is not None:
+			self.assertEqual(saved.strip(), VALIDATE_POW.strip())
 
 	def test_a_blank_arabic_client_name_warns_without_blocking(self):
 		for blank in (None, "", "   "):
-			# validate() returning at all is the proof it did not throw.
-			self.assertEqual(self._validate(blank).call_count, 1, msg=repr(blank))
+			result, msgprint = self.run_script(blank)
+			self.assertEqual(msgprint.call_count, 1, msg=repr(blank))
+			self.assertTrue(result["can_submit"])
 
 	def test_a_filled_arabic_client_name_does_not_warn(self):
-		self.assertEqual(self._validate("شركة").call_count, 0)
+		self.assertEqual(self.run_script("شركة")[1].call_count, 0)
 
-	def test_the_warning_is_not_repeated_on_submit(self):
-		self.assertEqual(self._validate(None, docstatus=1).call_count, 0)
+	def test_a_requester_who_may_submit_keeps_the_step(self):
+		result, _msgprint = self.run_script("شركة")
+		self.assertNotIn("assigned_role", result)
+
+	def test_a_requester_who_may_not_submit_hands_it_to_system_manager(self):
+		result, _msgprint = self.run_script("شركة", can_submit=False)
+		self.assertFalse(result["can_submit"])
+		self.assertEqual(result["assigned_role"], "System Manager")
+		self.assertEqual(result["assigned_user"], "")
 
 
 class TestSafeFilename(FrappeTestCase):
@@ -1084,6 +1121,28 @@ class TestNonManpowerRollup(FrappeTestCase):
 			"_Test Handyman",
 		)
 		self.assertEqual(pow_doc.proof_of_work_items_nonmanpower[0].amount, 100.0)
+
+	def test_a_record_that_will_not_submit_is_left_as_a_draft(self):
+		from unittest.mock import patch
+
+		from one_fm.one_fm.doctype.proof_of_work.proof_of_work import ProofofWork
+
+		self._add_item(self._category("_Test Handyman"), rate=100.0)
+		# A failed submit inside the Proof of Work Lifecycle process commits the Errored
+		# instance; the commit is held so the test still rolls back.
+		with patch.object(
+			ProofofWork, "before_submit", create=True, side_effect=frappe.ValidationError("refused")
+		), patch.object(frappe.db, "commit"):
+			res = generate_proof_of_work(TEST_MONTH, TEST_YEAR, [self.contract.name])
+
+		self.assertEqual(res["created"], [])
+		draft_name = frappe.db.get_value(
+			"Proof of Work", {"contract": self.contract.name, "docstatus": 0}, "name"
+		)
+		self.assertTrue(draft_name)
+		self.assertIn(draft_name, res["skipped"][0]["reason"])
+		draft = frappe.get_doc("Proof of Work", draft_name)
+		self.assertEqual(len(draft.proof_of_work_items_nonmanpower), 1)
 
 
 class TestLetterCarriesTheNonManpowerTable(FrappeTestCase):
