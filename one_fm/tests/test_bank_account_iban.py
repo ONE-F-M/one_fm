@@ -116,6 +116,7 @@ class TestIbanHookIsWired(FrappeTestCase):
 			validate = [validate]
 		self.assertIn("one_fm.overrides.bank_account.validate_iban", validate)
 		self.assertIn("one_fm.utils.validate_iban_is_filled", validate)
+		self.assertIn("one_fm.overrides.bank_account.validate_civil_id", validate)
 
 	def test_the_form_script_is_registered(self):
 		self.assertEqual(

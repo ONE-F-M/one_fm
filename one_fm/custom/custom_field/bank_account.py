@@ -26,6 +26,15 @@ def get_bank_account_custom_fields():
                 "insert_after": "attach_bank_form",
                 "label": "Onboard Employee",
                 "options": "Onboard Employee"
+            },
+            {
+                "fieldname": "civil_id",
+                "fieldtype": "Data",
+                "insert_after": "party",
+                "label": "Civil ID",
+                # Client-side only in Frappe v15; enforced server-side by
+                # one_fm.overrides.bank_account.validate_civil_id.
+                "mandatory_depends_on": "eval:!doc.is_company_account && (!doc.party_type || doc.party_type == 'Employee')"
             }
         ]
     }
