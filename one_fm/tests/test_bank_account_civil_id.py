@@ -30,19 +30,17 @@ class TestValidateCivilId(FrappeTestCase):
 		frappe.db.set_value("Employee", employee, "one_fm_civil_id", civil_id)
 		return employee
 
-	def test_no_party_and_no_civil_id_throws(self):
+	def test_no_party_saves_without_a_civil_id(self):
+		validate_civil_id(_doc())
+
+	def test_employee_type_without_a_party_and_no_civil_id_throws(self):
 		with self.assertRaises(frappe.ValidationError) as cm:
-			validate_civil_id(_doc())
+			validate_civil_id(_doc(party_type="Employee"))
 		self.assertIn("Civil ID is mandatory", str(cm.exception))
 
 	def test_a_blank_civil_id_counts_as_empty(self):
 		with self.assertRaises(frappe.ValidationError):
-			validate_civil_id(_doc(civil_id="   "))
-
-	def test_no_party_with_a_typed_civil_id_saves(self):
-		doc = _doc(civil_id=" 123456789012 ")
-		validate_civil_id(doc)
-		self.assertEqual(doc.civil_id, "123456789012")
+			validate_civil_id(_doc(party_type="Employee", civil_id="   "))
 
 	def test_employee_with_a_civil_id_fills_an_empty_field(self):
 		employee = self._employee("EMP-CID-1")
@@ -69,13 +67,13 @@ class TestValidateCivilId(FrappeTestCase):
 		self.assertIn("Set it on the Employee record", str(cm.exception))
 
 	def test_ignore_civil_id_flag_lets_an_empty_field_save(self):
-		doc = _doc(flags=frappe._dict(ignore_civil_id=True))
+		doc = _doc(party_type="Employee", flags=frappe._dict(ignore_civil_id=True))
 		validate_civil_id(doc)
 		self.assertFalse(doc.civil_id)
 
 	def test_ignore_mandatory_flag_is_not_the_bypass(self):
 		with self.assertRaises(frappe.ValidationError):
-			validate_civil_id(_doc(flags=frappe._dict(ignore_mandatory=True)))
+			validate_civil_id(_doc(party_type="Employee", flags=frappe._dict(ignore_mandatory=True)))
 
 	def test_company_account_saves_without_a_civil_id(self):
 		validate_civil_id(_doc(is_company_account=1))
