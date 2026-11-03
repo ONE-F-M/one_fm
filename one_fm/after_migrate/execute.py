@@ -808,8 +808,6 @@ def update_all_ticket_features():
 
     set_reference_doctype_url_method()
 
-    if update_hd_ticket_agent():
-        any_changes = True
     if add_resolution_details_updation():
         any_changes = True
     if deploy_ticket_views():
