@@ -714,3 +714,4 @@ one_fm.patches.v15_0.close_stranded_legacy_ojt_requests #2026-10-28 HD-1900434 c
 one_fm.patches.v15_0.reassign_rfm_hd_1910279_to_reliever #2026-11-01 HD-1910279 RFM-2026-001001 and RFM-2026-001017 to the reliever of the approver on Annual Leave
 one_fm.patches.v15_0.force_close_bonus_request_br_2026_0286 #2026-10-28 HD-1903486 close BR-2026-0286 stranded in Pending General Manager by the workflow deactivation
 one_fm.patches.v15_0.add_helpdesk_notification_emails_to_hr_settings #2026-11-01 HD-1892786 Helpdesk reminder recipients become a table of addresses so night-shift operators can be added
+one_fm.patches.v15_0.merge_employee_forth_name_into_fourth #2026-10-29 HD-1903520 merge the duplicate Employee "Forth Name" fields into the correctly spelled fourth_name fields and delete them
