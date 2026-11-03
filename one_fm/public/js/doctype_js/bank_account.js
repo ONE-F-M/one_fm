@@ -18,7 +18,7 @@ frappe.ui.form.on("Bank Account", {
 		// Fill the Civil ID from the Employee record. Done here rather
 		// than with fetch_from, which would query a one_fm_civil_id column on
 		// every party type and break for Supplier/Customer. Only set a value the
-		// Employee really has, so a manually typed Civil ID is never wiped.
+		// Employee really has, so an existing Civil ID is never wiped.
 		if (frm.doc.party_type !== "Employee" || !frm.doc.party) {
 			return;
 		}
