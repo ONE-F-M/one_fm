@@ -103,20 +103,6 @@ const loading = ref(false);
 const templateFields = reactive({});
 const { $dialog } = globalStore();
 
-const priorities = ref<string[]>([]);
-const processes = ref<string[]>([]);
-
-async function fetchOptions(endpoint: string, targetRef: typeof ref<string[]>) {
-  try {
-    const res = await call(endpoint);
-    if (res.status_code === 200) {
-      targetRef.value = res.data;
-    }
-  } catch (e) {
-    console.error(`Failed to fetch ${endpoint}`, e);
-  }
-}
-
 const templateData = ref<any>({ fields: [] });
 let oldFields = [];
 
@@ -143,11 +129,6 @@ function applyFilters(fieldname, filters = null) {
   }
 
   if (field.fieldtype === "Select") {
-    if (fieldname === "priority") {
-      field.options = priorities.value;
-    } else if (fieldname === "process") {
-      field.options = processes.value;
-    }
     handleSelectFieldUpdate(field, fieldname, filters, templateFields, oldFields);
   } else if (field.fieldtype === "Link") {
     handleLinkFieldUpdate(field, fieldname, filters, templateFields, oldFields);
@@ -251,39 +232,8 @@ async function handleSubmit() {
 
 usePageMeta(() => ({ title: "Edit Ticket" }));
 
-function injectFallbackFields() {
-  if (!templateData.value.fields || templateData.value.fields.length === 0) {
-    templateData.value.fields = [
-      {
-        label: "Priority",
-        fieldname: "priority",
-        fieldtype: "Select",
-        options: priorities.value,
-        reqd: 1,
-      },
-      {
-        label: "Process",
-        fieldname: "process",
-        fieldtype: "Select",
-        options: processes.value,
-        reqd: 1,
-      },
-    ];
-  }
-}
-
 onMounted(async () => {
-  await fetchOptions("one_fm.overrides.hd_ticket.get_priority", priorities);
-  await fetchOptions("one_fm.overrides.hd_ticket.get_process", processes);
-
   await fetchTicketDetails();
-
-  // Only inject fallback fields if no fields were loaded from the template
-  if (!templateData.value.fields || templateData.value.fields.length === 0) {
-    injectFallbackFields();
-  }
-  // applyFilters("priority");
-  // applyFilters("process");
 });
 
 </script>

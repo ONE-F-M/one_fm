@@ -273,14 +273,6 @@ def update_ticket(name: str, updates: str):
     }
 
 @frappe.whitelist()
-def get_priority():
-    return _fetch_list("HD Ticket Priority")
-
-@frappe.whitelist()
-def get_process():
-    return _fetch_list("Process")
-
-@frappe.whitelist()
 def get_reference_doctypes():
     """Options for the Reference Doctype field on the portal ticket forms.
 
