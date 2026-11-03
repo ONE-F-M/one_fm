@@ -34,7 +34,8 @@ def get_bank_account_custom_fields():
                 "label": "Civil ID",
                 # Client-side only in Frappe v15; enforced server-side by
                 # one_fm.overrides.bank_account.validate_civil_id.
-                "mandatory_depends_on": "eval:!doc.is_company_account && (!doc.party_type || doc.party_type == 'Employee')"
+                "mandatory_depends_on": "eval:!doc.is_company_account && (!doc.party_type || doc.party_type == 'Employee')",
+                "read_only": 1
             }
         ]
     }

@@ -56,16 +56,17 @@ class TestValidateCivilId(FrappeTestCase):
 		validate_civil_id(doc)
 		self.assertEqual(doc.civil_id, "TYPED-CID")
 
-	def test_a_typed_value_is_not_overwritten_by_the_employee_value(self):
+	def test_the_employee_value_replaces_a_stored_value(self):
 		employee = self._employee("EMP-CID-1")
-		doc = _doc(party_type="Employee", party=employee, civil_id="TYPED-CID")
+		doc = _doc(party_type="Employee", party=employee, civil_id="OLD-CID")
 		validate_civil_id(doc)
-		self.assertEqual(doc.civil_id, "TYPED-CID")
+		self.assertEqual(doc.civil_id, "EMP-CID-1")
 
 	def test_employee_without_a_civil_id_and_empty_field_throws(self):
 		employee = self._employee("")
-		with self.assertRaises(frappe.ValidationError):
+		with self.assertRaises(frappe.ValidationError) as cm:
 			validate_civil_id(_doc(party_type="Employee", party=employee))
+		self.assertIn("Set it on the Employee record", str(cm.exception))
 
 	def test_ignore_civil_id_flag_lets_an_empty_field_save(self):
 		doc = _doc(flags=frappe._dict(ignore_civil_id=True))
@@ -103,6 +104,7 @@ class TestCivilIdIsWired(FrappeTestCase):
 		self.assertNotIn("fetch_from", field)
 		self.assertFalse(field.get("reqd"))
 		self.assertIn("mandatory_depends_on", field)
+		self.assertEqual(field["read_only"], 1)
 
 	def test_the_patch_is_registered_after_post_model_sync(self):
 		path = os.path.join(os.path.dirname(one_fm.__file__), "patches.txt")
