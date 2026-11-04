@@ -41,13 +41,9 @@ class TestMedicalAppointment(unittest.TestCase):
 	def test_payment_date_is_retained_on_save(self):
 		payment_date = "2026-11-04 10:30:00"
 		appointment = frappe.new_doc("Medical Appointment")
-		appointment.employee = "_Test Employee"
-		appointment.pro_user = "Administrator"
+		# No employee is set so the employee fetch_from fields are not resolved
 		appointment.payment_date = payment_date
-		try:
-			appointment.insert(ignore_permissions=True, ignore_mandatory=True)
-		except frappe.ValidationError:
-			self.skipTest("Medical Appointment cannot be inserted with the test fixtures")
+		appointment.insert(ignore_permissions=True, ignore_mandatory=True)
 		appointment.reload()
 		self.assertEqual(str(appointment.payment_date)[:19], payment_date)
 		frappe.delete_doc("Medical Appointment", appointment.name, force=True)
