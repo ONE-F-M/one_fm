@@ -66,8 +66,8 @@ class TestAnEmptyRunPrunesNothing(FrappeTestCase):
 	def _run(self, demands):
 		real_map = shipment_generator.get_grouped_employees_by_accommodation
 		real_build = shipment_generator.build_demand_descriptors
-		shipment_generator.get_grouped_employees_by_accommodation = lambda: {"x": 1} if demands else {}
-		shipment_generator.build_demand_descriptors = lambda nested: demands
+		shipment_generator.get_grouped_employees_by_accommodation = lambda skipped=None: {"x": 1} if demands else {}
+		shipment_generator.build_demand_descriptors = lambda nested, skipped=None: demands
 		self.addCleanup(setattr, shipment_generator, "get_grouped_employees_by_accommodation", real_map)
 		self.addCleanup(setattr, shipment_generator, "build_demand_descriptors", real_build)
 		return shipment_generator.generate_transportation_shipments()
