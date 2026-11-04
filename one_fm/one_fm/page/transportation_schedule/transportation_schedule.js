@@ -7010,6 +7010,10 @@ function injectRPStyles() {
 
         .rp-block-grab     { cursor: grab; }
         .rp-block-grabbing { cursor: grabbing; }
+        /* A block no filter matched dims but stays clickable and draggable. */
+        .rp-block-dim { opacity: 0.25; transition: opacity 0.15s; }
+        #rp-shell.rp-dark .rp-block-dim { opacity: 0.3; }
+        .rp-block-count { font-size: 12px; font-weight: 500; white-space: nowrap; padding: 2px 8px; border-radius: 10px; margin: 0 8px; color: var(--md-sys-color-on-surface-variant); background: var(--md-sys-color-surface-container-high); }
         .rp-empty-state    { padding: 48px; text-align: center; font-size: 14px; color: var(--md-sys-color-outline); }
 
         /* ── Drag time tooltip (5-min snap) ── */
