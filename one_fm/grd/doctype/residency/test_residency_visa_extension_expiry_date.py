@@ -6,7 +6,7 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, today
 
-from one_fm.grd.doctype.preparation.preparation import RESIDENCY_ONLY_ACTIONS
+from one_fm.grd.doctype.preparation.preparation import EXTENSION_ACTION, VISA_EXTENSION_ACTION
 
 FIELD_LABEL = "Visa Extension Expiry Date"
 
@@ -46,7 +46,7 @@ class TestResidencyVisaExtensionExpiryDate(FrappeTestCase):
 		self.assertIsNotNone(field)
 		self.assertEqual(field.fieldtype, "Date")
 		self.assertEqual(field.label, FIELD_LABEL)
-		self.assertEqual(field.depends_on, "eval:doc.category == 'Extend'")
+		self.assertEqual(field.depends_on, "eval:doc.renewal_or_extend == 'Visa Extension'")
 		self.assertFalse(field.reqd)
 		self.assertFalse(field.read_only)
 		self.assertFalse(field.mandatory_depends_on)
@@ -57,30 +57,28 @@ class TestResidencyVisaExtensionExpiryDate(FrappeTestCase):
 			order.index("new_residency_expiry_date") + 1,
 		)
 
-	def test_extension_cannot_be_completed_without_the_date(self):
-		for action in RESIDENCY_ONLY_ACTIONS:
-			residency = self._residency("Extend", action)
-			residency.insert()
-			with self.assertRaises(frappe.ValidationError):
-				residency.submit()
+	def test_visa_extension_cannot_be_completed_without_the_date(self):
+		residency = self._residency("Extend", VISA_EXTENSION_ACTION)
+		residency.insert()
+		with self.assertRaises(frappe.ValidationError):
+			residency.submit()
 
 	def test_draft_extension_saves_without_the_date(self):
 		# Not mandatory at save time: the operator fills it at the end of the process.
-		residency = self._residency("Extend", RESIDENCY_ONLY_ACTIONS[0])
+		residency = self._residency("Extend", VISA_EXTENSION_ACTION)
 		residency.insert()
 		self.assertFalse(residency.visa_extension_expiry_date)
 
-	def test_extension_completes_with_the_date_alone(self):
-		# The extension date replaces the Updated Residency Expiry Date for these actions.
+	def test_visa_extension_completes_with_the_date_alone(self):
+		# The extension date replaces the Updated Residency Expiry Date for a candidate.
 		residency_expiry_date = frappe.db.get_value("Employee", self.employee, "residency_expiry_date")
-		for action in RESIDENCY_ONLY_ACTIONS:
-			residency = self._residency(
-				"Extend", action, visa_extension_expiry_date=add_days(today(), 30)
-			)
-			residency.insert()
-			residency.submit()
-			self.assertEqual(residency.docstatus, 1)
-			self.assertFalse(residency.new_residency_expiry_date)
+		residency = self._residency(
+			"Extend", VISA_EXTENSION_ACTION, visa_extension_expiry_date=add_days(today(), 30)
+		)
+		residency.insert()
+		residency.submit()
+		self.assertEqual(residency.docstatus, 1)
+		self.assertFalse(residency.new_residency_expiry_date)
 		self.assertEqual(
 			frappe.db.get_value("Employee", self.employee, "residency_expiry_date"),
 			residency_expiry_date,
@@ -103,3 +101,17 @@ class TestResidencyVisaExtensionExpiryDate(FrappeTestCase):
 			"Extend", "Cancellation", new_residency_expiry_date=add_days(today(), 365)
 		)
 		residency.validate_mandatory_fields_on_submit()
+
+	def test_renewal_extension_does_not_ask_for_the_date(self):
+		residency = self._residency(
+			"Extend", EXTENSION_ACTION, new_residency_expiry_date=add_days(today(), 30)
+		)
+		residency.validate_mandatory_fields_on_submit()
+
+	def test_renewal_extension_needs_the_updated_residency_expiry_date(self):
+		residency = self._residency(
+			"Extend", EXTENSION_ACTION, visa_extension_expiry_date=add_days(today(), 30)
+		)
+		with self.assertRaises(frappe.ValidationError) as cm:
+			residency.validate_mandatory_fields_on_submit()
+		self.assertIn("Updated Residency Expiry Date", str(cm.exception))
