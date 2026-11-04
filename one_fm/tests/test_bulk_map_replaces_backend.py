@@ -3,7 +3,7 @@
 """While a Job Applicant Lifecycle - Bulk map runs an applicant, the code it replaces steps aside.
 
 Each hook is checked both ways: with a running map it does nothing, without one it does what
-it always did. handled_by_bulk_map itself is checked against real instances when one_bpmn is
+it always did. bulk_map_running and bulk_map_handled are checked against real instances when one_bpmn is
 installed.
 """
 
@@ -13,7 +13,7 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 
 from one_fm.hiring import rejection_notification
-from one_fm.hiring.bulk_map import handled_by_bulk_map
+from one_fm.hiring.bulk_map import bulk_map_handled, bulk_map_running
 from one_fm.overrides import job_offer as job_offer_module
 from one_fm.overrides.job_offer import JobOfferOverride
 from one_fm.utils import on_update_job_applicant
@@ -21,7 +21,7 @@ from one_fm.utils import on_update_job_applicant
 APPLICANT = "HR-APP-BULK-MAP-TEST"
 
 
-class TestHandledByBulkMap(FrappeTestCase):
+class TestBulkMapChecks(FrappeTestCase):
 	def setUp(self):
 		if not frappe.db.exists("DocType", "BPMN Process Instance"):
 			self.skipTest("one_bpmn is not installed")
@@ -56,39 +56,51 @@ class TestHandledByBulkMap(FrappeTestCase):
 			}
 		).db_insert()
 
-	def test_a_running_bulk_map_counts(self):
-		self._instance("job_applicant_bulk_test", "Active")
-		self.assertTrue(handled_by_bulk_map(APPLICANT))
+	def _checks(self):
+		return bulk_map_running(APPLICANT), bulk_map_handled(APPLICANT)
 
-	def test_a_finished_bulk_map_counts_for_a_bulk_applicant(self):
+	def test_a_running_bulk_map_counts_for_both(self):
+		self._instance("job_applicant_bulk_test", "Active")
+		self.assertEqual(self._checks(), (True, True))
+
+	def test_a_finished_bulk_map_is_handled_but_not_running(self):
 		self._instance("job_applicant_bulk_test", "Completed")
 		self._applicant("Bulk Recruitment")
-		self.assertTrue(handled_by_bulk_map(APPLICANT))
+		self.assertEqual(self._checks(), (False, True))
 
 	def test_a_finished_bulk_map_does_not_count_for_another_hiring_method(self):
 		self._instance("job_applicant_bulk_test", "Completed")
 		self._applicant("A la carte Recruitment")
-		self.assertFalse(handled_by_bulk_map(APPLICANT))
+		self.assertEqual(self._checks(), (False, False))
 
 	def test_a_cancelled_or_errored_map_does_not_count(self):
 		self._instance("job_applicant_bulk_test", "Cancelled")
 		self._instance("job_applicant_bulk_test", "Errored")
 		self._applicant("Bulk Recruitment")
-		self.assertFalse(handled_by_bulk_map(APPLICANT))
+		self.assertEqual(self._checks(), (False, False))
 
 	def test_another_process_on_the_applicant_does_not_count(self):
 		self._instance("job_applicant_a_la_carte_test", "Active")
-		self.assertFalse(handled_by_bulk_map(APPLICANT))
+		self.assertEqual(self._checks(), (False, False))
 
 	def test_no_applicant_never_counts(self):
-		self.assertFalse(handled_by_bulk_map(None))
+		self.assertFalse(bulk_map_running(None))
+		self.assertFalse(bulk_map_handled(None))
+
+	def test_a_reopened_applicant_whose_map_finished_gets_the_offer_from_the_code(self):
+		self._instance("job_applicant_bulk_test", "Completed")
+		self._applicant("Bulk Recruitment")
+		doc = frappe._dict(name=APPLICANT, status="Accepted", one_fm_applicant_status="Selected")
+		with patch("one_fm.utils.issue_job_offer_for_applicant") as issue:
+			on_update_job_applicant(doc, "on_update")
+		issue.assert_called_once_with(APPLICANT)
 
 
 class TestJobApplicantOffersStepAside(FrappeTestCase):
 	def _run(self, map_runs, stage):
 		doc = frappe._dict(name=APPLICANT, status="Accepted", one_fm_applicant_status=stage)
 		with (
-			patch("one_fm.utils.handled_by_bulk_map", return_value=map_runs),
+			patch("one_fm.utils.bulk_map_running", return_value=map_runs),
 			patch("one_fm.utils.issue_job_offer_for_applicant") as issue,
 			patch("one_fm.utils.create_draft_job_offer_for_applicant") as draft,
 		):
@@ -118,7 +130,7 @@ class TestJobOfferStepsAside(FrappeTestCase):
 	def test_offer_with_a_running_map_is_not_sent_or_emailed_by_the_code(self):
 		offer = self._offer()
 		with (
-			patch.object(job_offer_module, "handled_by_bulk_map", return_value=True),
+			patch.object(job_offer_module, "bulk_map_running", return_value=True),
 			patch.object(JobOfferOverride, "submit_job_offer_to_candidate") as submit,
 			patch.object(JobOfferOverride, "auto_email_job_offer") as email,
 		):
@@ -129,7 +141,7 @@ class TestJobOfferStepsAside(FrappeTestCase):
 	def test_offer_without_a_map_is_still_sent_and_emailed(self):
 		offer = self._offer()
 		with (
-			patch.object(job_offer_module, "handled_by_bulk_map", return_value=False),
+			patch.object(job_offer_module, "bulk_map_running", return_value=False),
 			patch.object(JobOfferOverride, "submit_job_offer_to_candidate") as submit,
 			patch.object(JobOfferOverride, "auto_email_job_offer") as email,
 		):
@@ -144,7 +156,7 @@ class TestJobOfferStepsAside(FrappeTestCase):
 			**values,
 		)
 		with (
-			patch.object(job_offer_module, "handled_by_bulk_map", return_value=map_runs),
+			patch.object(job_offer_module, "bulk_map_handled", return_value=map_runs),
 			patch.object(JobOfferOverride, "onload"),
 			patch.object(JobOfferOverride, "validate_job_offer_mandatory_fields"),
 			patch.object(JobOfferOverride, "create_candidate_country_process") as create_ccp,
@@ -186,13 +198,13 @@ class TestRejectionStepsAside(FrappeTestCase):
 
 	def test_rejection_with_a_running_map_is_not_stamped_by_the_code(self):
 		doc = self._rejected()
-		with patch.object(rejection_notification, "handled_by_bulk_map", return_value=True):
+		with patch.object(rejection_notification, "bulk_map_running", return_value=True):
 			rejection_notification.notify_on_rejection(doc)
 		doc.db_set.assert_not_called()
 
 	def test_rejection_without_a_map_is_still_stamped(self):
 		doc = self._rejected()
-		with patch.object(rejection_notification, "handled_by_bulk_map", return_value=False):
+		with patch.object(rejection_notification, "bulk_map_running", return_value=False):
 			rejection_notification.notify_on_rejection(doc)
 		doc.db_set.assert_called_once()
 
@@ -204,7 +216,7 @@ class TestRejectionStepsAside(FrappeTestCase):
 			patch.object(rejection_notification.frappe, "get_doc"),
 			patch.object(rejection_notification.frappe.db, "set_value"),
 			patch.object(rejection_notification.frappe.db, "commit"),
-			patch.object(rejection_notification, "handled_by_bulk_map", return_value=map_runs),
+			patch.object(rejection_notification, "bulk_map_running", return_value=map_runs),
 			patch.object(rejection_notification, "send_rejection_email", return_value=True) as send,
 		):
 			rejection_notification.send_due_rejection_emails()

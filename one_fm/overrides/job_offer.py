@@ -12,7 +12,7 @@ from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
 from one_fm.qr_code_generator import get_qr_code
 from one_fm.hiring.doctype.hiring_settings.hiring_settings import get_job_offer_auto_email_settings
 from frappe.model.workflow import apply_workflow
-from one_fm.hiring.bulk_map import handled_by_bulk_map
+from one_fm.hiring.bulk_map import bulk_map_handled, bulk_map_running
 
 
 class JobOfferOverride(JobOffer):
@@ -154,7 +154,7 @@ class JobOfferOverride(JobOffer):
                 frappe.throw(_(msg.format("<b>Estimated Date of Joining</b>")))
             elif not self.onboarding_officer:
                 frappe.throw(_(msg.format("<b>Onboarding Officer</b>")))
-            if not handled_by_bulk_map(self.job_applicant):
+            if not bulk_map_handled(self.job_applicant):
                 assign_to_onboarding_officer(self)
                 self.create_candidate_country_process()
 
@@ -187,7 +187,7 @@ class JobOfferOverride(JobOffer):
                 frappe.throw(msg + '</ul>')
 
     def on_update(self):
-        if handled_by_bulk_map(self.job_applicant):
+        if bulk_map_running(self.job_applicant):
             return
         self.submit_job_offer_to_candidate()
         self.auto_email_job_offer()
