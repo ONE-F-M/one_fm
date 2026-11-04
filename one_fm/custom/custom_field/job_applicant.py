@@ -830,7 +830,7 @@ def get_job_applicant_custom_fields():
             {
                 "fieldname": "one_fm_graded_by",
                 "fieldtype": "Link",
-                "insert_after": "interview_round",
+                "insert_after": "bulk_interview",
                 "label": "Graded By",
                 "no_copy": 1,
                 "options": "User",
