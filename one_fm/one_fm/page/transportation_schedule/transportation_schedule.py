@@ -1321,7 +1321,9 @@ def _sync_shipment_statuses(items, previously_linked=None):
     for name in (previously_linked or set()):
         if not name or name in assigned or name in still_placed:
             continue
-        if frappe.db.exists("Transportation Shipment", name):
+        # A cancelled card stays cancelled when its block leaves the lane.
+        status = frappe.db.get_value("Transportation Shipment", name, "status")
+        if status and status != "Inactive":
             frappe.db.set_value("Transportation Shipment", name, "status", "Unassigned")
             # A card returning to the pool takes its own direction back with it. Being
             # merged is a property of the block it was in, not of the journey the shipment
