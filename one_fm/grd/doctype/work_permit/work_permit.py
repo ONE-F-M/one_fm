@@ -239,14 +239,10 @@ class WorkPermit(Document):
                 self.set_mendatory_fields(field_list,message_detail)
 
             if self.work_permit_type == "Local Transfer":
-                # WI-002097: the Work Permit attachment is no longer demanded, on any
-                # category, and the red PAM-website warning that came with it is gone. The
-                # permit arrives from PAM as a reference number that is already required a
-                # state earlier; the scan of it turns up when the operator has it, and
-                # blocking the transition on it stalled transfers that were otherwise
-                # complete. The expiry date is still required - it is the date every other
-                # document runs off.
-                field_list = [{'Work Permit Expiry Date':'work_permit_expiry_date'}]
+                # The Work Permit attachment is not demanded: the scan turns up when the
+                # operator has it. The expiry date is the Updated one; the legacy Work
+                # Permit Expiry Date field is no longer filled in.
+                field_list = [{'Updated Work Permit Expiry Date':'new_work_permit_expiry_date'}]
                 self.set_mendatory_fields(field_list)
         self.reload()
 
@@ -357,7 +353,7 @@ class WorkPermit(Document):
             if self.work_permit_type == "Local Transfer":
                 self.update_wp_child_table_in_transfer_paper()
                 self.recall_create_medical_insurance_transfer() # Auto create mi record for transfer wp
-                self.set_work_permit_attachment_in_employee_doctype(self.work_permit_expiry_date, self.attach_work_permit)
+                self.set_work_permit_attachment_in_employee_doctype(self.new_work_permit_expiry_date, self.attach_work_permit)
                 self.notify_grd_transfer_mi_record()
 
     def update_wp_child_table_in_transfer_paper(self):
