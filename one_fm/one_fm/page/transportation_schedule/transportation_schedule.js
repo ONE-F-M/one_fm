@@ -5028,7 +5028,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 if (s.flagged) extra.push(__('{0} block(s) need re-planning', [s.flagged]));
                 const table = rows.length
                     ? `<table class="table table-sm table-bordered mt-3 mb-0">
-                        <thead><tr><th>${__('Result')}</th><th>${__('Employee')}</th><th>${__('Name')}</th><th>${__('Reason')}</th></tr></thead>
+                        <thead><tr>${[__('Result'), __('Employee'), __('Name'), __('Reason')].map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead>
                         <tbody>${rows.map(([result, r]) => `<tr><td>${esc(result)}</td><td>${esc(r.employee || '')}</td><td>${esc(r.employee_name || '')}</td><td>${esc(r.reason || '')}</td></tr>`).join('')}</tbody>
                        </table>`
                     : '';
