@@ -28,6 +28,7 @@ import frappe
 from frappe import _
 from frappe.utils import add_to_date, now_datetime
 
+from one_fm.hiring.bulk_map import handled_by_bulk_map
 from one_fm.processor import sendemail
 
 REJECTED = "Rejected"
@@ -50,6 +51,9 @@ def notify_on_rejection(doc, method=None) -> None:
 
 	previous = doc.get_doc_before_save()
 	if previous and previous.get("status") == REJECTED:
+		return
+
+	if handled_by_bulk_map(doc.name):
 		return
 
 	doc.db_set(
@@ -152,6 +156,8 @@ def send_due_rejection_emails() -> None:
 	)
 
 	for row in due:
+		if handled_by_bulk_map(row.name):
+			continue
 		doc = frappe.get_doc("Job Applicant", row.name)
 		if send_rejection_email(doc):
 			frappe.db.set_value(

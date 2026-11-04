@@ -56,6 +56,7 @@ from one_fm.processor import sendemail, is_user_id_company_prefred_email_in_empl
 from one_fm.one_fm.payroll_utils import get_user_list_by_role
 from one_fm.operations.doctype.operations_shift.operations_shift import get_shift_supervisor
 from one_fm.api import api
+from one_fm.hiring.bulk_map import handled_by_bulk_map
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 
@@ -1468,6 +1469,8 @@ def set_job_applicant_status(doc, method):
 
 def on_update_job_applicant(doc, method):
     if doc.status in ["Rejected"]:
+        return
+    if handled_by_bulk_map(doc.name):
         return
     if doc.one_fm_applicant_status == "Selected":
         issue_job_offer_for_applicant(doc.name)
