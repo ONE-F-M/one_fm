@@ -6,4 +6,10 @@ def execute():
 	workflow_data = get_workflow_json_file("bank_account.json")
 	if workflow_data:
 		create_workflow(workflow_data)
+		# create_workflow logs failures instead of raising
+		if not frappe.db.exists(
+			"Workflow Transition",
+			{"parent": "Bank Account", "action": "Set Inactive", "allowed": "Onboarding Officer"},
+		):
+			frappe.throw("Bank Account workflow was not updated, see Error Log")
 		frappe.db.commit()
