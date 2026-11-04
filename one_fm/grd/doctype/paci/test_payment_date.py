@@ -86,13 +86,17 @@ class TestReapplyClearsPaymentDate(FrappeTestCase):
 		paci = create_PACI(employee, "Renewal")
 		paci.db_set("workflow_state", "Rejected")
 		paci.db_set("payment_date", now_datetime())
+		paci.db_set("payment_made_via", "Bank")
 		paci.reload()
 		self.assertTrue(paci.payment_date)
+		self.assertEqual(paci.payment_made_via, "Bank")
 
 		new_name = reapply_paci(paci.name)["name"]
 
 		self.assertNotEqual(new_name, paci.name)
 		self.assertFalse(frappe.db.get_value("PACI", new_name, "payment_date"))
+		self.assertFalse(frappe.db.get_value("PACI", new_name, "payment_made_via"))
+		self.assertFalse(frappe.db.get_value("PACI", new_name, "bank_account"))
 
 	def test_a_reapplied_work_permit_has_no_payment_date(self):
 		employee = _an_active_employee()
@@ -107,10 +111,14 @@ class TestReapplyClearsPaymentDate(FrappeTestCase):
 		permit = create_documents_for_row(preparation.preparation_record[0], preparation.name)
 		permit.db_set("workflow_state", "Rejected")
 		permit.db_set("payment_date", now_datetime())
+		permit.db_set("payment_made_via", "Bank")
 		permit.reload()
 		self.assertTrue(permit.payment_date)
+		self.assertEqual(permit.payment_made_via, "Bank")
 
 		new_name = reapply_work_permit(permit.name)["name"]
 
 		self.assertNotEqual(new_name, permit.name)
 		self.assertFalse(frappe.db.get_value("Work Permit", new_name, "payment_date"))
+		self.assertFalse(frappe.db.get_value("Work Permit", new_name, "payment_made_via"))
+		self.assertFalse(frappe.db.get_value("Work Permit", new_name, "bank_account"))

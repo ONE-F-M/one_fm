@@ -36,6 +36,8 @@
   "upload_medical_insurance_date",
   "medical_insurance_submitted_on",
   "payment_date",
+  "payment_made_via",
+  "bank_account",
   "grd_supervisor",
   "finance_department_section",
   "payment_done",
@@ -228,6 +230,20 @@
    "label": "Payment Date"
   },
   {
+   "depends_on": "eval:doc.upload_medical_insurance",
+   "fieldname": "payment_made_via",
+   "fieldtype": "Select",
+   "label": "Payment Made Via",
+   "options": "\nBank\nCash"
+  },
+  {
+   "depends_on": "eval:doc.payment_made_via == \"Card\" || doc.payment_made_via == \"Bank\"",
+   "fieldname": "bank_account",
+   "fieldtype": "Link",
+   "label": "Bank Account",
+   "options": "Bank Account"
+  },
+  {
    "allow_on_submit": 1,
    "fetch_from": "employee.valid_upto",
    "fieldname": "passport_expiry_date",
@@ -297,7 +313,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-15 09:00:00.000000",
+ "modified": "2026-11-05 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Insurance",
