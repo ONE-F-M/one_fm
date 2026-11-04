@@ -697,10 +697,8 @@ one_fm.patches.v15_0.add_bank_account_draft_assignment_rule #2026-10-23 WI-00347
 one_fm.patches.v15_0.deactivate_overtime_request_workflow_and_assignment_rules
 one_fm.patches.v15_0.deactivate_client_event_workflow_and_assignment_rules
 one_fm.patches.v15_0.submit_approved_document_requests #2026-10-26 submit Approved Document Requests
-one_fm.patches.v15_0.deactivate_arrival_and_deployment_workflow
 one_fm.patches.v15_0.bonus_request_payroll_cycle_and_requester
 one_fm.patches.v15_0.bonus_request_hr_user_confirm_step
-one_fm.patches.v15_0.default_arrival_deployment_workflow_state_to_draft
 one_fm.patches.v15_0.zero_internal_transfer_qty_pr01180 #2026-10-18
 one_fm.patches.v15_0.reset_pmr_pr01180_docstatus_to_draft #2026-10-18
 one_fm.patches.v15_0.move_stranded_medical_insurance_to_draft #2026-10-18 HD-1888665 the 69 renewals create_mi_record left in the state WI-002494 renamed away
@@ -716,5 +714,6 @@ one_fm.patches.v15_0.force_close_bonus_request_br_2026_0286 #2026-10-28 HD-19034
 one_fm.patches.v15_0.add_helpdesk_notification_emails_to_hr_settings #2026-11-01 HD-1892786 Helpdesk reminder recipients become a table of addresses so night-shift operators can be added
 one_fm.patches.v15_0.merge_employee_forth_name_into_fourth #2026-10-29 HD-1903520 merge the duplicate Employee "Forth Name" fields into the correctly spelled fourth_name fields and delete them
 one_fm.patches.v15_0.create_missing_documents_pre_onb_2026_00008 #2026-10-25 HD-1898774 the 3 rows + 1 PCC the killed submit request left PRE-ONB-2026-00008 short
+one_fm.patches.v15_0.reactivate_arrival_and_deployment_workflow #2026-11-04 Processa move reverted
 one_fm.patches.v15_0.add_recruiter_bpmn_process_instance_permission #2026-11-04 Recruiter actions the Job Applicant map tasks; BPMN Process Instance gave write to System Manager, Process Owner and Employee only
 one_fm.patches.v15_0.add_job_applicant_graded_by_field #2026-11-04 Graded By on Job Applicant, the recruiter the Job Applicant map assigns its tasks to
