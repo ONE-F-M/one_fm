@@ -190,6 +190,19 @@
       "doctype": "Workflow Transition"
     },
     {
+      "state": "Active Account",
+      "action": "Set Inactive",
+      "next_state": "Inactive Account",
+      "allowed": "Onboarding Officer",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
       "state": "Inactive Account",
       "action": "Set as Active",
       "next_state": "Active Account",
