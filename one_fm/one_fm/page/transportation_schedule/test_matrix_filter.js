@@ -83,4 +83,26 @@ assert.deepStrictEqual(ids(f({ q: 'nobody' })), []);
 assert.deepStrictEqual(ids(f({ shift: 'Night', project: 'Alpha', issuesOnly: true })), ['HR-EMP-5']);
 assert.deepStrictEqual(ids(f({ accommodation: 'Camp B', q: 'driver' })), ['HR-EMP-5']);
 
+// The Manage Card summary counts only riders on the chosen legs, a seat per leg.
+const matrixCardSummary = new Function(
+    slice('// \u2500\u2500 Matrix card summary \u2500\u2500', '// \u2500\u2500 End matrix card summary')
+    + '\nreturn matrixCardSummary;')();
+const riders = [
+    { id: 'A', stale: true, legs: ['TSHIP-1', 'TSHIP-2'] },
+    { id: 'B', stale: true, legs: ['TSHIP-1'] },
+    { id: 'C', stale: false, legs: ['TSHIP-1', 'TSHIP-2'] },
+    { id: 'D', stale: false, legs: ['TSHIP-2'] },
+];
+const both = matrixCardSummary(riders, new Set(['A', 'B']), ['TSHIP-1', 'TSHIP-2']);
+assert.deepStrictEqual(
+    [both.removing, both.staying, both.seatsFreed, both.activeLeaving, both.allTicked],
+    [2, 2, 3, 0, false]);
+const outOnly = matrixCardSummary(riders, new Set(['A', 'B', 'C']), ['TSHIP-1']);
+assert.deepStrictEqual(
+    [outOnly.removing, outOnly.staying, outOnly.seatsFreed, outOnly.activeLeaving, outOnly.allTicked],
+    [3, 0, 3, 1, true], 'D rides only the other leg, so everyone on TSHIP-1 is ticked');
+assert.deepStrictEqual(matrixCardSummary(riders, new Set(['D']), ['TSHIP-1']).employees, [],
+    'a rider off the chosen legs is never sent');
+assert.strictEqual(matrixCardSummary([], new Set(), ['TSHIP-1']).allTicked, false);
+
 console.log('matrix filter OK');

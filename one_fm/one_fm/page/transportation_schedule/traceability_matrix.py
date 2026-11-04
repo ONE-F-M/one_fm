@@ -826,3 +826,75 @@ def clear_stale(employees: str) -> dict:
 	held_back = sorted({p.employee_id for p in parents if p.parent in departed})
 	skipped += [{"employee": e, "reason": _(DEPARTED_MESSAGE)} for e in held_back]
 	return {"removed": len(removed), "headcounts": headcounts, "skipped": skipped}
+
+@frappe.whitelist()
+def get_card_passengers(card: str) -> dict:
+	"""A card and its live pair twin, with every rider flagged stale or Active."""
+	from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import _lapsed
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import resolve_shipment_names
+
+	frappe.only_for(MATRIX_ROLES)
+	name = (resolve_shipment_names([card]) or [None])[0]
+	if not name or not frappe.db.exists("Transportation Shipment", name):
+		frappe.throw(_("Shipment {0} not found.").format(card))
+	doc = frappe.get_doc("Transportation Shipment", name)
+	doc.check_permission("read")
+
+	docs = [doc]
+	if doc.pair_group:
+		mine = own_direction(doc)
+		twin = next((
+			t.name for t in frappe.get_all(
+				"Transportation Shipment",
+				filters={
+					"pair_group": doc.pair_group, "name": ["!=", doc.name], "status": ["in", LIVE_STATUSES],
+				},
+				fields=["name", "trip_direction", "pre_merge_trip_direction"],
+			)
+			if own_direction(t) != mine
+		), None)
+		if twin:
+			docs.append(frappe.get_doc("Transportation Shipment", twin))
+	departed = _departed_cards([d.name for d in docs], frappe.utils.today())
+
+	riders = {}
+	for d in docs:
+		for row in d.transportation_shipment_employee:
+			if row.employee_id:
+				rider = riders.setdefault(row.employee_id, {
+					"id": row.employee_id, "name": row.employee_name or row.employee_id, "legs": [],
+				})
+				rider["legs"].append(f"TSHIP-{d.name}")
+
+	stale = _lapsed(set(riders))
+	reasons = _stale_reasons(stale)
+	for emp, rider in riders.items():
+		rider["stale"] = emp in stale
+		rider["stale_reason"] = reasons.get(emp)
+
+	return {
+		"cards": [
+			{
+				"card": f"TSHIP-{d.name}",
+				"status": d.status,
+				"own_direction": own_direction(d),
+				"headcount": d.headcount,
+				"departed": d.name in departed,
+			}
+			for d in docs
+		],
+		"riders": sorted(riders.values(), key=lambda r: (not r["stale"], r["name"])),
+	}
+
+
+def _stale_reasons(employee_ids) -> dict:
+	"""``{employee: removal reason}`` for lapsed riders, worded as the dialog's reason options."""
+	if not employee_ids:
+		return {}
+	active = set(frappe.get_all(
+		"Employee", filters={"name": ["in", list(employee_ids)], "status": "Active"}, pluck="name"
+	))
+	return {
+		e: "Checked out of accommodation" if e in active else "Resigned / Left"
+		for e in employee_ids
+	}

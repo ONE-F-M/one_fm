@@ -632,6 +632,30 @@ class TestRemovingRiders(FrappeTestCase):
 		leg = next(leg for leg in row["legs"] if leg["card"] == f"TSHIP-{card}")
 		self.assertTrue(leg["departed"])
 
+	def test_manage_card_lists_both_legs_and_flags_stale_riders(self):
+		a, b, c = self.emps
+		group = frappe.generate_hash("PG", 10)
+		out = self._card([a, b], pair_group=group)
+		back = self._card([a, c], direction="Return", pair_group=group)
+		self._card([a], pair_group=group)  # same direction as out: not a twin
+		self._depart(back)
+
+		with patch.object(shipment_generator, "_lapsed", return_value={a}):
+			result = tm.get_card_passengers(f"TSHIP-{out}")
+
+		self.assertEqual(
+			[(x["card"], x["own_direction"], x["departed"]) for x in result["cards"]],
+			[(f"TSHIP-{out}", "OUTBOUND", False), (f"TSHIP-{back}", "RETURN", True)],
+		)
+		riders = {r["id"]: r for r in result["riders"]}
+		self.assertEqual(set(riders), {a, b, c})
+		self.assertEqual(result["riders"][0]["id"], a, "stale riders first")
+		self.assertTrue(riders[a]["stale"])
+		self.assertEqual(riders[a]["stale_reason"], "Checked out of accommodation")
+		self.assertEqual(riders[a]["legs"], [f"TSHIP-{out}", f"TSHIP-{back}"])
+		self.assertFalse(riders[b]["stale"])
+		self.assertIsNone(riders[b]["stale_reason"])
+
 	def test_a_user_without_the_roles_is_refused(self):
 		frappe.flags.in_test = False
 		frappe.set_user("Guest")
@@ -639,6 +663,7 @@ class TestRemovingRiders(FrappeTestCase):
 			lambda: tm.remove_from_cards('["E"]', '["TS-X"]'),
 			lambda: tm.cancel_cards('["TS-X"]', "Other"),
 			lambda: tm.clear_stale('["E"]'),
+			lambda: tm.get_card_passengers("TS-X"),
 		):
 			with self.assertRaises(frappe.PermissionError):
 				call()
