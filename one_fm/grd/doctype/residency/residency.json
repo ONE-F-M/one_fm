@@ -427,7 +427,7 @@
    "print_hide": 1
   },
   {
-   "depends_on": "eval:doc.category == 'Extend'",
+   "depends_on": "eval:doc.renewal_or_extend == 'Visa Extension'",
    "fieldname": "visa_extension_expiry_date",
    "fieldtype": "Date",
    "label": "Visa Extension Expiry Date"
@@ -613,7 +613,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-19 09:00:00.000000",
+ "modified": "2026-11-04 11:19:51.189965",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Residency",

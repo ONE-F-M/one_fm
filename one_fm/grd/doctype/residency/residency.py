@@ -213,10 +213,11 @@ class Residency(Document):
 
     def validate_mandatory_fields_on_submit(self):
         # Imported here: preparation.py imports this module before defining the constant.
-        from one_fm.grd.doctype.preparation.preparation import RESIDENCY_ONLY_ACTIONS
+        from one_fm.grd.doctype.preparation.preparation import VISA_EXTENSION_ACTION
 
-        # Keyed on the row action, not the category: Cancellation rows also open category Extend.
-        if self.renewal_or_extend in RESIDENCY_ONLY_ACTIONS:
+        # Keyed on the row action, not the category: Renewal and Cancellation rows also open
+        # category Extend. Only an Onboarding visa extension has no residency to update.
+        if self.renewal_or_extend == VISA_EXTENSION_ACTION:
             expiry_date = {'Visa Extension Expiry Date': 'visa_extension_expiry_date'}
         else:
             expiry_date = {'Updated Residency Expiry Date': 'new_residency_expiry_date'}
@@ -250,12 +251,12 @@ class Residency(Document):
         the new row beside the existing one rather than over it, so every renewal left
         another Residency Expiry Attachment behind. The helper updates the row in place.
 
-        Skipped for Extension actions: they complete without new_residency_expiry_date,
+        Skipped for a Visa Extension: it completes without new_residency_expiry_date,
         and writing it would blank the Employee's residency expiry.
         """
-        from one_fm.grd.doctype.preparation.preparation import RESIDENCY_ONLY_ACTIONS
+        from one_fm.grd.doctype.preparation.preparation import VISA_EXTENSION_ACTION
 
-        if self.renewal_or_extend in RESIDENCY_ONLY_ACTIONS:
+        if self.renewal_or_extend == VISA_EXTENSION_ACTION:
             return
 
         attach_employee_document(
@@ -272,12 +273,13 @@ class Residency(Document):
     def sync_visa_extension_expiry_date(self):
         """
         runs: `on_submit`
-        An Extension sets the Employee's Visa Extension Expiry Date; a Renewal Expat clears it.
-        Keyed on the row action, not the category: Cancellation rows also open category Extend.
+        A Visa Extension sets the Employee's Visa Extension Expiry Date; a Renewal Expat clears it.
+        Keyed on the row action, not the category: Renewal and Cancellation rows also open
+        category Extend.
         """
-        from one_fm.grd.doctype.preparation.preparation import RESIDENCY_ONLY_ACTIONS
+        from one_fm.grd.doctype.preparation.preparation import VISA_EXTENSION_ACTION
 
-        if self.renewal_or_extend in RESIDENCY_ONLY_ACTIONS:
+        if self.renewal_or_extend == VISA_EXTENSION_ACTION:
             value = self.visa_extension_expiry_date
         elif self.renewal_or_extend == "Renewal Expat":
             value = None

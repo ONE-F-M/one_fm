@@ -9,7 +9,7 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, getdate, today
 
 from one_fm.custom.custom_field.employee import get_employee_custom_fields
-from one_fm.grd.doctype.preparation.preparation import RESIDENCY_ONLY_ACTIONS
+from one_fm.grd.doctype.preparation.preparation import EXTENSION_ACTION, VISA_EXTENSION_ACTION
 
 FIELD = "custom_visa_extension_expiry_date"
 RESTORED_FIELDS = (FIELD, "residency_expiry_date", "work_permit_expiry_date")
@@ -93,13 +93,20 @@ class TestEmployeeSync(FrappeTestCase):
 	def _employee(self, fieldname):
 		return frappe.db.get_value("Employee", self.employee, fieldname)
 
-	def test_extension_writes_the_date_and_leaves_residency_expiry_alone(self):
+	def test_visa_extension_writes_the_date_and_leaves_residency_expiry_alone(self):
 		residency_expiry_date = self._employee("residency_expiry_date")
-		for i, action in enumerate(RESIDENCY_ONLY_ACTIONS):
-			extension_date = add_days(today(), 30 + i)
-			self._submit("Extend", action, visa_extension_expiry_date=extension_date)
-			self.assertEqual(self._employee(FIELD), getdate(extension_date), action)
-			self.assertEqual(self._employee("residency_expiry_date"), residency_expiry_date, action)
+		extension_date = add_days(today(), 30)
+		self._submit("Extend", VISA_EXTENSION_ACTION, visa_extension_expiry_date=extension_date)
+		self.assertEqual(self._employee(FIELD), getdate(extension_date))
+		self.assertEqual(self._employee("residency_expiry_date"), residency_expiry_date)
+
+	def test_renewal_extension_writes_residency_expiry_and_leaves_the_date_alone(self):
+		extension_date = getdate(add_days(today(), 15))
+		frappe.db.set_value("Employee", self.employee, FIELD, extension_date)
+		new_expiry = add_days(today(), 30)
+		self._submit("Extend", EXTENSION_ACTION, new_residency_expiry_date=new_expiry)
+		self.assertEqual(self._employee("residency_expiry_date"), getdate(new_expiry))
+		self.assertEqual(self._employee(FIELD), extension_date)
 
 	def test_renewal_expat_clears_the_date_and_writes_residency_expiry(self):
 		# A non-Extend Residency takes its new expiry from the Employee's work permit expiry.
