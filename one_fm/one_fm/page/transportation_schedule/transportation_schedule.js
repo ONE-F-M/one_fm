@@ -795,12 +795,12 @@ function mountRoutePlannerApp(wrapper, data) {
             },
         },
 
-        // ── Watchers ────────────────────────────────────────────────────────
         // The three text boxes apply 300 ms after typing stops; emptying one applies at once.
-        watch: {
-            searchQuery(v) { this.queueAppliedText(!v); },
-            employeeQuery(v) { this.queueAppliedText(!v); },
-            shiftFilter(v) { this.queueAppliedText(!v); },
+        // Registered here rather than in a `watch:` option so another `watch:` key added
+        // to this object cannot silently replace it.
+        created() {
+            ['searchQuery', 'employeeQuery', 'shiftFilter'].forEach(key =>
+                this.$watch(key, v => this.queueAppliedText(!v)));
         },
 
         // ── Methods ────────────────────────────────────────────────────────

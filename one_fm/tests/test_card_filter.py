@@ -46,7 +46,7 @@ class TestTheCanvasWiresTheSharedFilter(FrappeTestCase):
 
 	def test_text_applies_after_a_pause_and_clearing_is_immediate(self):
 		self.assertIn("setTimeout(apply, 300)", self.canvas)
-		self.assertIn("searchQuery(v) { this.queueAppliedText(!v); }", self.canvas)
+		self.assertIn("this.$watch(key, v => this.queueAppliedText(!v))", self.canvas)
 		self.assertIn("clearTimeout(this._filterTimer);", self.canvas.split("beforeUnmount() {", 1)[1])
 
 	def test_the_toolbar_counts_blocks_while_filtering(self):
