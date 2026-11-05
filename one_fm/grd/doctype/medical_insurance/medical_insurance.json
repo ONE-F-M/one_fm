@@ -32,12 +32,12 @@
   "grd_operator",
   "upload_medical_insurance",
   "medical_insurance_submitted_by",
+  "payment_made_via",
+  "bank_account",
   "column_break_23",
   "upload_medical_insurance_date",
   "medical_insurance_submitted_on",
   "payment_date",
-  "payment_made_via",
-  "bank_account",
   "grd_supervisor",
   "finance_department_section",
   "payment_done",
@@ -198,6 +198,20 @@
    "read_only": 1
   },
   {
+   "depends_on": "eval:doc.upload_medical_insurance",
+   "fieldname": "payment_made_via",
+   "fieldtype": "Select",
+   "label": "Payment Made Via",
+   "options": "\nBank\nCash"
+  },
+  {
+   "depends_on": "eval:doc.payment_made_via == \"Card\" || doc.payment_made_via == \"Bank\"",
+   "fieldname": "bank_account",
+   "fieldtype": "Link",
+   "label": "Bank Account",
+   "options": "Bank Account"
+  },
+  {
    "fieldname": "medical_insurance_submitted_on",
    "fieldtype": "Datetime",
    "label": "Submitted on",
@@ -228,20 +242,6 @@
    "fieldname": "payment_date",
    "fieldtype": "Datetime",
    "label": "Payment Date"
-  },
-  {
-   "depends_on": "eval:doc.upload_medical_insurance",
-   "fieldname": "payment_made_via",
-   "fieldtype": "Select",
-   "label": "Payment Made Via",
-   "options": "\nBank\nCash"
-  },
-  {
-   "depends_on": "eval:doc.payment_made_via == \"Card\" || doc.payment_made_via == \"Bank\"",
-   "fieldname": "bank_account",
-   "fieldtype": "Link",
-   "label": "Bank Account",
-   "options": "Bank Account"
   },
   {
    "allow_on_submit": 1,
@@ -313,7 +313,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-05 10:00:00.000000",
+ "modified": "2026-11-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Insurance",

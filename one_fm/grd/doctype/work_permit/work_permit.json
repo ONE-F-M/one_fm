@@ -35,9 +35,9 @@
   "inform_previous_company_on",
   "payment_details_section_section",
   "attach_invoice",
+  "payment_made_via",
   "column_break_29",
   "payment_date",
-  "payment_made_via",
   "bank_account",
   "work_permit_information_section",
   "new_work_permit_expiry_date",
@@ -379,6 +379,13 @@
    "label": "Upload Payment Invoice"
   },
   {
+   "depends_on": "eval:doc.attach_invoice",
+   "fieldname": "payment_made_via",
+   "fieldtype": "Select",
+   "label": "Payment Made Via",
+   "options": "\nBank\nCash"
+  },
+  {
    "fieldname": "rpr_ref",
    "fieldtype": "Data",
    "label": "RPR Ref"
@@ -435,13 +442,6 @@
    "fieldname": "payment_date",
    "fieldtype": "Datetime",
    "label": "Payment Date"
-  },
-  {
-   "depends_on": "eval:doc.attach_invoice",
-   "fieldname": "payment_made_via",
-   "fieldtype": "Select",
-   "label": "Payment Made Via",
-   "options": "\nBank\nCash"
   },
   {
    "depends_on": "eval:doc.payment_made_via == \"Card\" || doc.payment_made_via == \"Bank\"",
@@ -1008,7 +1008,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-05 10:00:00.000000",
+ "modified": "2026-11-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",

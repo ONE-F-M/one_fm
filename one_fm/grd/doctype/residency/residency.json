@@ -72,10 +72,10 @@
   "upload_damj_letter",
   "new_residency_expiry_date",
   "visa_extension_expiry_date",
-  "column_break_34",
-  "payment_date",
   "payment_made_via",
   "bank_account",
+  "column_break_34",
+  "payment_date",
   "residency_attachment_date",
   "upload_residency_fine_payment_receipt_on",
   "upload_damj_letter_on",
@@ -435,15 +435,6 @@
    "label": "Visa Extension Expiry Date"
   },
   {
-   "fieldname": "column_break_34",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "payment_date",
-   "fieldtype": "Datetime",
-   "label": "Payment Date"
-  },
-  {
    "depends_on": "eval:doc.invoice_attachment",
    "fieldname": "payment_made_via",
    "fieldtype": "Select",
@@ -456,6 +447,15 @@
    "fieldtype": "Link",
    "label": "Bank Account",
    "options": "Bank Account"
+  },
+  {
+   "fieldname": "column_break_34",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "payment_date",
+   "fieldtype": "Datetime",
+   "label": "Payment Date"
   },
   {
    "allow_on_submit": 1,
@@ -629,7 +629,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-05 10:00:00.000000",
+ "modified": "2026-11-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Residency",
