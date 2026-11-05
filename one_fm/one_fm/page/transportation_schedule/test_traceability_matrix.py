@@ -176,7 +176,7 @@ class TestRosterHelpers(FrappeTestCase):
 
 	def test_missing_reason(self):
 		self.assertIn("Ann", _missing_reason({"relieving_employee": "E1"}, "Ann", "A", "B"))
-		self.assertIn("master shift differs", _missing_reason({}, None, "A", "B"))
+		self.assertIsNone(_missing_reason({}, None, "A", "B"))
 		self.assertIsNone(_missing_reason({}, None, "A", "A"))
 
 	def test_no_working_row_gives_none(self):

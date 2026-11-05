@@ -2,9 +2,8 @@
 # For license information, please see license.txt
 """Who is actually on the bus on a given day.
 
-The shipment generator builds its cards from ``Employee.shift`` - the MASTER allocation.
-That answers "whose post is this", not "who is travelling today", and the two part company
-constantly: somebody is on leave, somebody else is covering for them.
+The shipment generator builds its cards from today's Working Employee Schedule rows. Those
+still need two corrections: somebody is on leave, somebody else is covering for them.
 
 How leave shows up in this system, confirmed against the live data rather than assumed:
 
@@ -155,8 +154,7 @@ def apply_to_shift_map(emp_shift_map: dict, on_date=None) -> dict:
 
 	Three moves, in this order:
 
-	1. Anyone on approved leave comes OUT. They are still Active with their shift set, so
-	   nothing else would have removed them and they rode a bus they were never on.
+	1. Anyone on approved leave comes OUT, in case a Working row survived the approval.
 	2. Anyone BEING relieved comes out too. Leave is not the only reason somebody is away
 	   - in practice it is hardly ever the reason, because the leave flow deletes the
 	   schedule a reliever would point at, so relief here is almost always against a Day
