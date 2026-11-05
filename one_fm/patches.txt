@@ -718,3 +718,4 @@ one_fm.patches.v15_0.reactivate_arrival_and_deployment_workflow #2026-11-04 Proc
 one_fm.patches.v15_0.add_recruiter_bpmn_process_instance_permission #2026-11-04 Recruiter actions the Job Applicant map tasks; BPMN Process Instance gave write to System Manager, Process Owner and Employee only
 one_fm.patches.v15_0.add_job_applicant_graded_by_field #2026-11-04 Graded By on Job Applicant, the recruiter the Job Applicant map assigns its tasks to
 one_fm.patches.v15_0.backfill_attendance_check_nov02_2026 #2026-11-05 HD-1914594 the Attendance Checks for 2 November 2026 the daily job dropped and can never regenerate
+one_fm.patches.v15_0.reset_pmr_pr01135_to_in_process #2026-11-05 HD-1915979 unlink the wrong employee from PR01135 and reopen it from Completed back to In Process
