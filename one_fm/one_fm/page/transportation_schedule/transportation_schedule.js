@@ -956,8 +956,8 @@ function mountRoutePlannerApp(wrapper, data) {
 
             show24h() {
                 // Full 24h day, 00:00 to 24:00 Kuwait. planStart is 21:00 Kuwait the evening
-                // before, so the day starts at planStart + 3h. Anchoring on setUTCHours(0)
-                // landed on the previous day whenever planStart fell before 00:00 UTC.
+                // before, so the day starts at planStart + 3h. Rounding planStart down to UTC
+                // midnight landed on the previous day whenever planStart fell before 00:00 UTC.
                 const dayStart = this.planStart.getTime() + (3 * NAV_HOUR_MS);
                 this.windowStart = new Date(dayStart);
                 this.windowEnd = new Date(dayStart + (24 * NAV_HOUR_MS));
