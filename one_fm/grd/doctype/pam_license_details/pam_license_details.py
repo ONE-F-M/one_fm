@@ -843,7 +843,7 @@ def available_quota(row) -> str:
 
 
 def total_available_quota(rows) -> str:
-	"""Every quota row's Available Quota added up (WI-004425).
+	"""Every quota row's Available Quota added up.
 
 	A blank row counts as zero and no rows at all is "0". Returned as text, whole, because
 	the field is Data like the rows it sums.

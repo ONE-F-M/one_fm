@@ -62,10 +62,12 @@ class _Recorder:
 			return list(self.licenses)
 		return [dict(row) for row in self.rows]
 
-	def set_value(self, doctype, name, values, update_modified=None):
+	def set_value(self, doctype, name, values, value=None, update_modified=None):
 		# The recount writes the registered headcount and the issued visas in one call, so
-		# the recorder takes the dict rather than a single fieldname.
-		self.written.append((doctype, name, values, update_modified))
+		# the recorder takes the dict rather than a single fieldname. Only the row writes
+		# are kept; the licence total is covered in test_total_available_quota.
+		if doctype == "Quota Classification":
+			self.written.append((doctype, name, values, update_modified))
 
 	def exists(self, doctype, name):
 		return name in self.licenses

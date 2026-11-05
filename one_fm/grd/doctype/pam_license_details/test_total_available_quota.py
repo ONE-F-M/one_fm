@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""The total of every quota row's available quota (WI-004425)."""
+"""The total of every quota row's available quota."""
 
 import json
 from unittest import mock
@@ -223,6 +223,9 @@ class TestTheFieldDefinition(FrappeTestCase):
 				"quota_classification",
 			],
 		)
+
+	def test_modified_is_bumped_so_migrate_picks_it_up(self):
+		self.assertGreater(self.definition["modified"], "2026-09-30 12:00:00.000000")
 
 	def test_every_field_in_the_order_is_defined(self):
 		self.assertEqual(set(self.definition["field_order"]), set(self.fields))

@@ -1,4 +1,4 @@
-"""Fill in Total Available Quota on every PAM License Details (WI-004425).
+"""Fill in Total Available Quota on every PAM License Details.
 
 The column is new, so it is empty on every licence after migrate. A licence with no quota
 rows (Opera File) would never be written by a recount triggered from an employee or visa,

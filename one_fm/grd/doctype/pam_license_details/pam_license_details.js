@@ -3,8 +3,13 @@
 // (validate / recount_quota_rows) stays the authority and rewrites both the
 // row figures and the total on save.
 
+// as_figure on the server: a whole number, half rounded up, held as text.
+function as_figure(value) {
+	return String(Math.floor(flt(value) + 0.5));
+}
+
 // Same formula as the server: allocated - registered - visas issued - transfer
-// requests, never below zero, rounded half up, held as text.
+// requests, never below zero.
 function derive_available_quota(row) {
 	const available = Math.max(
 		flt(row.allocated_quota)
@@ -13,7 +18,7 @@ function derive_available_quota(row) {
 			- flt(row.number_of_transfer_requests),
 		0
 	);
-	return String(Math.floor(available + 0.5));
+	return as_figure(available);
 }
 
 function update_total_available_quota(frm) {
@@ -21,7 +26,7 @@ function update_total_available_quota(frm) {
 		(sum, row) => sum + flt(row.available_quota),
 		0
 	);
-	frm.set_value("total_available_quota", String(total));
+	frm.set_value("total_available_quota", as_figure(total));
 }
 
 function recalculate_row(frm, cdt, cdn) {
