@@ -5663,7 +5663,7 @@ function injectRPVueTemplate() {
           <template v-for="row in laneRows" :key="row.type === 'group' ? 'grp_' + row.key : row.vehicle.id">
           <div v-if="row.type === 'group'" class="rp-lane-group-header" :data-group-key="row.key">
             <span class="rp-lane-group-name">{{ row.name }}</span>
-            <span class="rp-lane-group-counts">{{ row.vehicleCount }} vehicles &middot; {{ row.tripCount }} trips</span>
+            <span class="rp-lane-group-counts">{{ __('{0} vehicles · {1} trips', [row.vehicleCount, row.tripCount]) }}</span>
           </div>
           <template v-else>
           <template v-for="vehicle in [row.vehicle]" :key="vehicle.id">
