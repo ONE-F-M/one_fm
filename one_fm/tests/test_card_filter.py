@@ -31,3 +31,24 @@ class TestCardFilterSelfCheckPasses(FrappeTestCase):
 			result.returncode, 0,
 			f"node {check.name} failed:\n{result.stdout}\n{result.stderr}",
 		)
+
+
+class TestTheCanvasWiresTheSharedFilter(FrappeTestCase):
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		cls.canvas = (CANVAS_DIR / "transportation_schedule.js").read_text()
+
+	def test_both_block_kinds_dim(self):
+		self.assertIn("blockDim(entry) ? 'rp-block-dim' : ''", self.canvas)
+		self.assertIn(":class=\"{ 'rp-block-dim': blockDim(entry) }\"", self.canvas)
+		self.assertIn(".rp-block-dim { opacity: 0.25;", self.canvas)
+
+	def test_text_applies_after_a_pause_and_clearing_is_immediate(self):
+		self.assertIn("setTimeout(apply, 300)", self.canvas)
+		self.assertIn("searchQuery(v) { this.queueAppliedText(!v); }", self.canvas)
+		self.assertIn("clearTimeout(this._filterTimer);", self.canvas.split("beforeUnmount() {", 1)[1])
+
+	def test_the_toolbar_counts_blocks_while_filtering(self):
+		self.assertIn('<span v-if="blockFilter.active" class="rp-block-count">{{ blockCountLabel }}</span>',
+					  self.canvas)
