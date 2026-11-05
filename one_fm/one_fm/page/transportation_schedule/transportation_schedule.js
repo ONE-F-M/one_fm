@@ -50,6 +50,28 @@ function matrixMatches(row, filters) {
 }
 // ── End traceability matrix filter ──────────────────────────────────────────
 
+// ── Matrix card summary ─────────────────────────────────────────────────────
+// What the Manage Card dialog reports for the ticked riders on the chosen legs.
+// test_matrix_filter.js reads this block out of the file by these two banners.
+function matrixCardSummary(riders, ticked, legs) {
+    const onLegs = (riders || []).filter(r => (r.legs || []).some(l => legs.includes(l)));
+    const going = onLegs.filter(r => ticked.has(r.id));
+    return {
+        employees: going.map(r => r.id),
+        removing: going.length,
+        staying: onLegs.length - going.length,
+        seatsFreed: going.reduce((n, r) => n + r.legs.filter(l => legs.includes(l)).length, 0),
+        activeLeaving: going.filter(r => !r.stale).length,
+        allTicked: onLegs.length > 0 && going.length === onLegs.length,
+    };
+}
+// ── End matrix card summary ─────────────────────────────────────────────────
+
+// Reasons offered when a rider is removed from a card or a card is cancelled.
+const MATRIX_REMOVAL_REASONS = [
+    'Checked out of accommodation', 'Resigned / Left', 'On leave', 'Moved to another card', 'Other',
+];
+
 frappe.pages['transportation-schedule'].on_page_load = function (wrapper) {
     injectRPLoadingStyles();
     $(wrapper).html(`
@@ -312,6 +334,18 @@ function mountRoutePlannerApp(wrapper, data) {
 
             matrixBadge() {
                 return this.matrixFiltered.length + '/' + this.matrixRows.length;
+            },
+
+            matrixStaleRows() {
+                return this.matrixRows.filter(r => r.status === 'Stale');
+            },
+
+            matrixDataGaps() {
+                return this.matrixRows.filter(r => r.status === 'Stale' || r.status === 'Missing').length;
+            },
+
+            matrixEligible() {
+                return this.matrixRows.filter(r => ['Assigned', 'Pool', 'Missing'].includes(r.status)).length;
             },
 
             matrixSyncedLabel() {
@@ -4965,6 +4999,291 @@ function mountRoutePlannerApp(wrapper, data) {
                 this._matrixLockScope(d, row);
             },
 
+            // ── Removing stale riders ──
+            matrixDeparted(row) {
+                const legs = row.legs || [];
+                return legs.length > 0 && legs.every(l => l.departed);
+            },
+
+            matrixDepartedTitle(row) {
+                return this.matrixDeparted(row) ? __('Trip has departed. Riders can no longer be removed.') : '';
+            },
+
+            _matrixReasonField(value) {
+                return {
+                    fieldname: 'reason', fieldtype: 'Select', label: __('Reason'), reqd: 1,
+                    options: [{ label: '', value: '' }].concat(MATRIX_REMOVAL_REASONS.map(r => ({ label: __(r), value: r }))),
+                    default: value || '',
+                };
+            },
+
+            // The reason the row's stale subtext already states.
+            _matrixReasonFor(row) {
+                const text = String(row.subtext || '');
+                if (text.startsWith('Inactive')) return 'Resigned / Left';
+                if (text.startsWith('Checked out') || text.startsWith('No accommodation')) return 'Checked out of accommodation';
+                return '';
+            },
+
+            // A block's cardId may carry a direction suffix; the server keys on the bare id.
+            _matrixCardKey(id) {
+                return String(id || '').replace(/_(OUTBOUND|RETURN|OUT|RET)$/, '');
+            },
+
+            // Placed blocks carry their own headcount and the next save writes it back, so
+            // they are patched here; cancelled cards leave the lane, which saves the plan.
+            _matrixApplyResult(m) {
+                const counts = m.headcounts || {};
+                const cancelled = new Set(m.cancelled || []);
+                let changed = false;
+                this.swimItems.forEach(item => {
+                    const key = this._matrixCardKey(item.cardId);
+                    if (key in counts && item.headcount !== counts[key]) {
+                        item.headcount = counts[key];
+                        changed = true;
+                    }
+                });
+                if (changed) this.swimItems = [...this.swimItems];
+                const going = this.swimItems.filter(i => cancelled.has(this._matrixCardKey(i.cardId))).map(i => i.id);
+                if (going.length) this._removeItems(going);
+                this.refreshCards();
+                this.loadMatrix();
+            },
+
+            // remove_from_cards. A card that would be left empty asks keep or cancel first.
+            _matrixRemove(employees, cards, reason, onEmpty) {
+                const self = this;
+                frappe.call({
+                    method: 'one_fm.one_fm.page.transportation_schedule.traceability_matrix.remove_from_cards',
+                    args: {
+                        employees: JSON.stringify(employees),
+                        cards: JSON.stringify(cards),
+                        reason,
+                        on_empty: onEmpty || '',
+                        plan: (this.currentPlan && this.currentPlan.name) || '',
+                    },
+                    freeze: true,
+                    callback(r) {
+                        const m = r && r.message;
+                        if (!m) return;
+                        if (m.needs_choice) {
+                            self._matrixAskEmpty(m.empty_cards, (choice) => self._matrixRemove(employees, cards, reason, choice));
+                            return;
+                        }
+                        self._matrixApplyResult(m);
+                        frappe.show_alert({
+                            message: m.cancelled.length
+                                ? __('{0} employee(s) removed. Cancelled {1}.', [m.removed, m.cancelled.join(', ')])
+                                : __('{0} employee(s) removed from the card.', [m.removed]),
+                            indicator: 'green',
+                        }, 5);
+                    },
+                });
+            },
+
+            _matrixAskEmpty(cards, choose) {
+                const esc = (v) => frappe.utils.escape_html(String(v == null ? '' : v));
+                const d = new frappe.ui.Dialog({
+                    title: __('Card Left Empty'),
+                    fields: [{
+                        fieldname: 'info', fieldtype: 'HTML',
+                        options: `<p class="small">${__('No riders will be left on {0}. Keep the empty card, or cancel it?', [esc(cards.join(', '))])}</p>`,
+                    }],
+                    primary_action_label: __('Cancel card'),
+                    primary_action() { d.hide(); choose('cancel'); },
+                    secondary_action_label: __('Keep empty card'),
+                    secondary_action() { d.hide(); choose('keep'); },
+                });
+                d.show();
+            },
+
+            matrixRemoveFromCard(row) {
+                const self = this;
+                const esc = (v) => frappe.utils.escape_html(String(v == null ? '' : v));
+                const legs = (row.legs || []).filter(l => !l.departed);
+                if (!legs.length) return;
+                const options = legs.map(l => ({ label: this.matrixLegDirection(l) + ' · ' + l.card, value: l.card }));
+                if (legs.length > 1) options.push({ label: __('Both'), value: 'Both' });
+                const d = new frappe.ui.Dialog({
+                    title: __('Remove {0} from Card', [row.name]),
+                    fields: [
+                        { fieldname: 'info', fieldtype: 'HTML',
+                          options: `<p class="small mb-0">${__('Card')}: <span class="font-weight-bold">${esc(legs.map(l => l.card).join(', '))}</span></p>` },
+                        { fieldname: 'leg', fieldtype: 'Select', label: __('Leg'), reqd: 1,
+                          options, default: options[options.length - 1].value },
+                        this._matrixReasonField(this._matrixReasonFor(row)),
+                    ],
+                    primary_action_label: __('Remove from Card'),
+                    primary_action(values) {
+                        d.hide();
+                        const cards = values.leg === 'Both' ? legs.map(l => l.card) : [values.leg];
+                        self._matrixRemove([row.id], cards, values.reason, '');
+                    },
+                });
+                d.show();
+            },
+
+            matrixManageCard(row) {
+                const leg = (row.legs || []).find(l => !l.departed);
+                if (!leg) return;
+                frappe.call({
+                    method: 'one_fm.one_fm.page.transportation_schedule.traceability_matrix.get_card_passengers',
+                    args: { card: leg.card },
+                    callback: (r) => { if (r && r.message) this._matrixManageDialog(r.message); },
+                });
+            },
+
+            // Every rider of the card and its pair twin. Stale riders start ticked; ticking
+            // everyone (or Cancel Entire Card) turns the confirm into a card cancel.
+            _matrixManageDialog(m) {
+                const self = this;
+                const esc = (v) => frappe.utils.escape_html(String(v == null ? '' : v));
+                const cards = (m.cards || []).filter(c => !c.departed);
+                if (!cards.length) {
+                    frappe.msgprint(__('Trip has departed. Riders can no longer be removed.'));
+                    return;
+                }
+                const riders = m.riders || [];
+                const ticked = new Set(riders.filter(r => r.stale).map(r => r.id));
+                let cancelClicked = false;
+                let wrapper = null;
+
+                const legOptions = cards.map(c => ({ label: this._matrixDirLabel(c.own_direction) + ' · ' + c.card, value: c.card }));
+                if (cards.length > 1) legOptions.push({ label: __('Both'), value: 'Both' });
+                const legsChosen = () => {
+                    const v = d.get_value('leg');
+                    return v === 'Both' ? cards.map(c => c.card) : [v];
+                };
+                const summary = () => matrixCardSummary(riders, ticked, legsChosen());
+                const cancelMode = (s) => s.allTicked && (s.activeLeaving > 0 || cancelClicked);
+                const update = () => {
+                    if (!wrapper) return;
+                    const s = summary();
+                    if (!s.allTicked) cancelClicked = false;
+                    const cancel = cancelMode(s);
+                    wrapper.find('.rp-manage-summary').text(
+                        __('Removing {0} · Staying on card {1} · Seats freed {2}', [s.removing, s.staying, s.seatsFreed]));
+                    wrapper.find('.rp-manage-warning').toggleClass('d-none', !cancel).text(
+                        __('{0} active employees will become Missing from Card', [s.activeLeaving]));
+                    const ok = s.removing > 0 && !!d.get_value('reason');
+                    d.get_primary_btn()
+                        .text(cancel ? __('Cancel Entire Card') : __('Remove Selected'))
+                        .prop('disabled', !ok).toggleClass('disabled', !ok);
+                };
+                const syncTicks = () => {
+                    wrapper.find('.rp-manage-tick').each((i, el) => { el.checked = ticked.has(el.dataset.id); });
+                    update();
+                };
+
+                const d = new frappe.ui.Dialog({
+                    title: __('Manage Card {0}', [cards.map(c => c.card).join(' / ')]),
+                    size: 'large',
+                    fields: [
+                        { fieldname: 'leg', fieldtype: 'Select', label: __('Leg'), reqd: 1,
+                          options: legOptions, default: legOptions[legOptions.length - 1].value, onchange: update },
+                        Object.assign(this._matrixReasonField((riders.find(r => r.stale) || {}).stale_reason), { onchange: update }),
+                        { fieldname: 'riders', fieldtype: 'HTML' },
+                    ],
+                    primary_action_label: __('Remove Selected'),
+                    primary_action(values) {
+                        const s = summary();
+                        if (!s.removing || !values.reason) return;
+                        d.hide();
+                        if (cancelMode(s)) self._matrixCancel(legsChosen(), values.reason);
+                        else self._matrixRemove(s.employees, legsChosen(), values.reason, '');
+                    },
+                });
+
+                const staleCount = riders.filter(r => r.stale).length;
+                const body = riders.map(r => `
+                    <tr>
+                      <td><input type="checkbox" class="rp-manage-tick" data-id="${esc(r.id)}"></td>
+                      <td>${esc(r.name)}<div class="text-muted">${esc(r.id)}</div></td>
+                      <td>${r.stale
+                          ? `<span class="indicator-pill red">${__('Stale')}</span>${r.stale_reason ? `<div class="text-muted">${esc(__(r.stale_reason))}</div>` : ''}`
+                          : `<span class="indicator-pill green">${__('Active')}</span>`}</td>
+                      <td>${esc((r.legs || []).join(', '))}</td>
+                    </tr>`).join('');
+                wrapper = d.fields_dict.riders.$wrapper;
+                wrapper.html(`
+                    <div class="d-flex align-items-center mb-2">
+                      ${staleCount > 1 ? `<a href="#" class="small rp-manage-all-stale">${__('Select all stale')}</a>` : ''}
+                      <button type="button" class="btn btn-xs btn-danger ml-auto rp-manage-cancel">${__('Cancel Entire Card')}</button>
+                    </div>
+                    <table class="table table-sm small mb-2">
+                      <thead><tr><th></th>${[__('Employee'), __('Status'), __('Card')].map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead>
+                      <tbody>${body}</tbody>
+                    </table>
+                    <div class="rp-manage-summary small font-weight-bold"></div>
+                    <div class="rp-manage-warning alert alert-warning small mt-2 mb-0 d-none"></div>`);
+                wrapper.on('change', '.rp-manage-tick', (e) => {
+                    if (e.target.checked) ticked.add(e.target.dataset.id);
+                    else ticked.delete(e.target.dataset.id);
+                    update();
+                });
+                wrapper.on('click', '.rp-manage-all-stale', (e) => {
+                    e.preventDefault();
+                    riders.filter(r => r.stale).forEach(r => ticked.add(r.id));
+                    syncTicks();
+                });
+                wrapper.on('click', '.rp-manage-cancel', () => {
+                    riders.forEach(r => ticked.add(r.id));
+                    cancelClicked = true;
+                    syncTicks();
+                });
+                d.show();
+                syncTicks();
+            },
+
+            _matrixCancel(cards, reason) {
+                frappe.call({
+                    method: 'one_fm.one_fm.page.transportation_schedule.traceability_matrix.cancel_cards',
+                    args: {
+                        cards: JSON.stringify(cards),
+                        reason,
+                        plan: (this.currentPlan && this.currentPlan.name) || '',
+                    },
+                    freeze: true,
+                    callback: (r) => {
+                        const m = r && r.message;
+                        if (!m) return;
+                        this._matrixApplyResult(m);
+                        frappe.show_alert({
+                            message: __('Cancelled {0}. {1} active employee(s) are now Missing from Card.', [m.cancelled.join(', '), m.missing.length]),
+                            indicator: 'orange',
+                        }, 7);
+                    },
+                });
+            },
+
+            matrixClearStale() {
+                const rows = this.matrixStaleRows;
+                if (!rows.length) return;
+                const esc = (v) => frappe.utils.escape_html(String(v == null ? '' : v));
+                const list = rows.map(r => `<li>${esc(r.name)} (${esc(r.id)})</li>`).join('');
+                frappe.confirm(
+                    `<p>${__('Remove {0} stale employee(s) from every card they are on? Cards are kept, even when left empty.', [rows.length])}</p>`
+                    + `<ul class="small mb-0">${list}</ul>`,
+                    () => frappe.call({
+                        method: 'one_fm.one_fm.page.transportation_schedule.traceability_matrix.clear_stale',
+                        args: { employees: JSON.stringify(rows.map(r => r.id)) },
+                        freeze: true,
+                        callback: (r) => {
+                            const m = r && r.message;
+                            if (!m) return;
+                            this._matrixApplyResult(m);
+                            const skipped = (m.skipped || []).length;
+                            frappe.show_alert({
+                                message: skipped
+                                    ? __('{0} stale employee(s) removed, {1} skipped.', [m.removed, skipped])
+                                    : __('{0} stale employee(s) removed.', [m.removed]),
+                                indicator: skipped ? 'orange' : 'green',
+                            }, 6);
+                        },
+                    })
+                );
+            },
+
             // ─ Manifest generation (ported verbatim from vis version) ───────
 
             generateShipments() {
@@ -6301,7 +6620,12 @@ function injectRPVueTemplate() {
     <div class="rp-matrix-head">
       <div class="rp-matrix-title">{{ __('Employee Traceability Matrix') }}</div>
       <span class="rp-matrix-count" :title="__('Rows shown / total rows')">{{ matrixBadge }}</span>
+      <span class="rp-matrix-count" :title="__('Stale + Missing')">{{ __('Data Gaps') }}: {{ matrixDataGaps }}</span>
+      <span class="rp-matrix-count" :title="__('Assigned + Pool + Missing')">{{ __('Eligible Riders') }}: {{ matrixEligible }}</span>
       <span class="rp-matrix-synced" :title="matrixSyncedAt">{{ matrixSyncedLabel }}</span>
+      <button v-if="matrixStaleRows.length" class="rp-btn rp-btn-default" :disabled="matrixLoading" @click="matrixClearStale">
+        <span class="rp-icon">cleaning_services</span> {{ __('Clear All Stale Blocks') }}
+      </button>
       <button class="rp-btn rp-btn-default" :disabled="matrixLoading" @click="loadMatrix">
         <span class="rp-icon">sync</span> {{ __('Refresh') }}
       </button>
@@ -6386,6 +6710,16 @@ function injectRPVueTemplate() {
               <div v-if="matrixCanAdd(row)" class="rp-matrix-actions">
                 <button class="rp-btn rp-btn-default rp-matrix-act" @click="matrixAddToCard(row)">+ {{ __('Add to Card') }}</button>
                 <button class="rp-btn rp-btn-default rp-matrix-act" @click="matrixCreateCard(row)">{{ __('Create New Shipment Card') }}</button>
+              </div>
+              <div v-if="row.status === 'Stale'" class="rp-matrix-actions">
+                <span :title="matrixDepartedTitle(row)">
+                  <button class="rp-btn rp-btn-default rp-matrix-act" :disabled="matrixDeparted(row)"
+                          @click="matrixRemoveFromCard(row)">{{ __('Remove from Card') }}</button>
+                </span>
+                <span :title="matrixDepartedTitle(row)">
+                  <button class="rp-btn rp-btn-default rp-matrix-act" :disabled="matrixDeparted(row)"
+                          @click="matrixManageCard(row)">{{ __('Manage Card') }}</button>
+                </span>
               </div>
             </td>
           </tr>

@@ -448,3 +448,222 @@ class TestCreateShipmentForEmployee(FrappeTestCase):
 		self.assertIsNotNone(card)
 		self.assertEqual(card["headcount"], 1)
 		self.assertEqual(card["shift_name"], self.shift.name)
+
+
+class TestRemovingRiders(FrappeTestCase):
+	"""Remove from Card, the empty-card choice, cancelling and Clear All Stale Blocks."""
+
+	def setUp(self):
+		riding = set(frappe.get_all(
+			"Transportation Shipment Employee", filters={"parenttype": "Transportation Shipment"}, pluck="employee_id"
+		))
+		self.emps = [
+			e for e in frappe.get_all("Employee", filters={"status": "Active"}, pluck="name", limit_page_length=200)
+			if e not in riding
+		][:3]
+		if len(self.emps) < 3:
+			self.skipTest("needs three Active employees on no card")
+		self._in_test = frappe.flags.in_test
+
+	def tearDown(self):
+		frappe.flags.in_test = self._in_test
+		frappe.set_user("Administrator")
+		frappe.db.rollback()
+
+	def _card(self, riders, direction="Outward", status="Unassigned", pair_group=None):
+		doc = frappe.new_doc("Transportation Shipment")
+		doc.status = status
+		doc.trip_direction = direction
+		doc.routing_type_badge = "Direct"
+		doc.pair_group = pair_group
+		for emp in riders:
+			doc.append("transportation_shipment_employee", {"employee_id": emp, "employee_name": emp})
+		doc.flags.ignore_mandatory = True
+		doc.flags.ignore_links = True
+		doc.insert(ignore_permissions=True)
+		return doc.name
+
+	def _place(self, card, headcount):
+		plan = frappe.new_doc("Route Plan")
+		plan.title = frappe.generate_hash("RP-TM", 8)
+		plan.status = "Draft"
+		plan.effective_from = today()
+		plan.append("assignments", {
+			"card_id": f"TSHIP-{card}", "transportation_shipment": card,
+			"vehicle": "VHL-0005", "direction": "OUTBOUND", "headcount": headcount,
+			"start_time": f"{today()}T06:00:00Z", "end_time": f"{today()}T07:00:00Z",
+		})
+		plan.flags.ignore_mandatory = True
+		plan.flags.ignore_links = True
+		plan.insert(ignore_permissions=True)
+		return plan.name, plan.assignments[0].name
+
+	def _depart(self, card):
+		manifest = frappe.generate_hash("TM-TEST", 10)
+		frappe.get_doc({
+			"doctype": "Transportation Manifest", "name": manifest, "schedule_date": today(),
+		}).db_insert()
+		frappe.get_doc({
+			"doctype": "Transportation Manifest Details", "name": frappe.generate_hash("TMD", 10),
+			"parent": manifest, "parenttype": "Transportation Manifest",
+			"parentfield": "transportation_manifest_details",
+			"transportation_shipment": card, "employee": self.emps[0], "attendance_status": "Present",
+		}).db_insert()
+
+	def _riders(self, card):
+		return frappe.get_all(
+			"Transportation Shipment Employee", filters={"parent": card}, pluck="employee_id", order_by="idx asc"
+		)
+
+	def _comments(self, card):
+		return frappe.db.count(
+			"Comment",
+			{"reference_doctype": "Transportation Shipment", "reference_name": card, "comment_type": "Info"},
+		)
+
+	def _status(self, card):
+		return frappe.db.get_value("Transportation Shipment", card, "status")
+
+	def test_one_leg_then_both_drops_a_seat_per_leg(self):
+		a, b, c = self.emps
+		out = self._card([a, b, c])
+		back = self._card([a, b, c], direction="Return")
+		_plan, out_row = self._place(out, 3)
+		_plan, back_row = self._place(back, 3)
+
+		result = tm.remove_from_cards(f'["{a}"]', f'["TSHIP-{out}"]', "Other")
+		self.assertEqual(result["headcounts"], {f"TSHIP-{out}": 2})
+		self.assertEqual(self._riders(out), [b, c])
+		self.assertEqual(self._riders(back), [a, b, c])
+		self.assertEqual(frappe.db.get_value("Route Plan Assignment", out_row, "headcount"), 2)
+		self.assertEqual(frappe.db.get_value("Route Plan Assignment", back_row, "headcount"), 3)
+
+		tm.remove_from_cards(f'["{b}"]', f'["TSHIP-{out}", "TSHIP-{back}"]', "Other")
+		self.assertEqual(self._riders(out), [c])
+		self.assertEqual(self._riders(back), [a, c])
+		self.assertEqual(frappe.db.get_value("Route Plan Assignment", out_row, "headcount"), 1)
+		self.assertEqual(frappe.db.get_value("Route Plan Assignment", back_row, "headcount"), 2)
+		self.assertEqual((self._comments(out), self._comments(back)), (2, 1))
+		self.assertEqual(self._status(out), "Unassigned")
+
+	def test_an_employee_not_on_the_card_is_refused(self):
+		a, b, _c = self.emps
+		card = self._card([a])
+		with self.assertRaises(frappe.ValidationError):
+			tm.remove_from_cards(f'["{b}"]', f'["{card}"]', "Other")
+
+	def test_the_last_rider_asks_before_writing(self):
+		a = self.emps[0]
+		card = self._card([a])
+
+		result = tm.remove_from_cards(f'["{a}"]', f'["{card}"]', "Other")
+		self.assertEqual(result, {"needs_choice": True, "empty_cards": [f"TSHIP-{card}"]})
+		self.assertEqual(self._riders(card), [a])
+		self.assertEqual(self._comments(card), 0)
+
+		tm.remove_from_cards(f'["{a}"]', f'["{card}"]', "Other", on_empty="keep")
+		self.assertEqual(self._riders(card), [])
+		self.assertEqual(self._status(card), "Unassigned")
+
+		other = self._card([a])
+		result = tm.remove_from_cards(f'["{a}"]', f'["{other}"]', "Other", on_empty="cancel")
+		self.assertEqual(result["cancelled"], [f"TSHIP-{other}"])
+		self.assertEqual(self._status(other), "Inactive")
+
+	def test_a_cancelled_card_stays_cancelled_when_its_block_leaves(self):
+		from one_fm.one_fm.page.transportation_schedule.transportation_schedule import _sync_shipment_statuses
+
+		a, b, _c = self.emps
+		card = self._card([a, b], status="Assigned")
+		plan, _row = self._place(card, 2)
+
+		with patch.object(shipment_generator, "_lapsed", return_value={b}):
+			result = tm.cancel_cards(f'["TSHIP-{card}"]', "Other", plan=plan)
+		self.assertEqual(result["missing"], [a])
+		self.assertEqual(self._status(card), "Inactive")
+		self.assertEqual(self._comments(card), 1)
+
+		_sync_shipment_statuses([], previously_linked={card})
+		self.assertEqual(self._status(card), "Inactive")
+
+	def test_a_card_on_another_plan_is_not_cancelled(self):
+		card = self._card([self.emps[0]], status="Assigned")
+		plan, _row = self._place(card, 1)
+		with self.assertRaises(frappe.ValidationError):
+			tm.cancel_cards(f'["{card}"]', "Other", plan="SOME-OTHER-PLAN")
+		with self.assertRaises(frappe.ValidationError):
+			tm.cancel_cards(f'["{card}"]', "Other")
+		self.assertEqual(self._status(card), "Assigned")
+		tm.cancel_cards(f'["{card}"]', "Other", plan=plan)
+		self.assertEqual(self._status(card), "Inactive")
+
+	def test_clear_stale_trusts_only_the_server(self):
+		a, b, _c = self.emps
+		shared = self._card([a, b])
+		alone = self._card([a], direction="Return")
+
+		with patch.object(shipment_generator, "_lapsed", side_effect=lambda ids: {e for e in ids if e == a}):
+			result = tm.clear_stale(f'["{a}", "{b}"]')
+
+		self.assertEqual(result["removed"], 1)
+		self.assertEqual(result["skipped"], [{"employee": b, "reason": "Not stale"}])
+		self.assertEqual(self._riders(shared), [b])
+		self.assertEqual(self._riders(alone), [])
+		self.assertEqual(self._status(shared), "Unassigned")
+		self.assertEqual(self._status(alone), "Unassigned")
+
+	def test_a_departed_card_is_locked(self):
+		a, b, _c = self.emps
+		card = self._card([a, b])
+		self._depart(card)
+
+		self.assertEqual(tm._departed_cards([card], today()), {card})
+		with self.assertRaises(frappe.ValidationError):
+			tm.remove_from_cards(f'["{a}"]', f'["{card}"]', "Other")
+		with self.assertRaises(frappe.ValidationError):
+			tm.cancel_cards(f'["{card}"]', "Other")
+		with patch.object(shipment_generator, "_lapsed", return_value={a}):
+			result = tm.clear_stale(f'["{a}"]')
+		self.assertEqual(result["removed"], 0)
+		self.assertIn({"employee": a, "reason": tm.DEPARTED_MESSAGE}, result["skipped"])
+		self.assertEqual(self._riders(card), [a, b])
+
+		row = next(r for r in get_traceability_matrix()["rows"] if r["id"] == a)
+		leg = next(leg for leg in row["legs"] if leg["card"] == f"TSHIP-{card}")
+		self.assertTrue(leg["departed"])
+
+	def test_manage_card_lists_both_legs_and_flags_stale_riders(self):
+		a, b, c = self.emps
+		group = frappe.generate_hash("PG", 10)
+		out = self._card([a, b], pair_group=group)
+		back = self._card([a, c], direction="Return", pair_group=group)
+		self._card([a], pair_group=group)  # same direction as out: not a twin
+		self._depart(back)
+
+		with patch.object(shipment_generator, "_lapsed", return_value={a}):
+			result = tm.get_card_passengers(f"TSHIP-{out}")
+
+		self.assertEqual(
+			[(x["card"], x["own_direction"], x["departed"]) for x in result["cards"]],
+			[(f"TSHIP-{out}", "OUTBOUND", False), (f"TSHIP-{back}", "RETURN", True)],
+		)
+		riders = {r["id"]: r for r in result["riders"]}
+		self.assertEqual(set(riders), {a, b, c})
+		self.assertEqual(result["riders"][0]["id"], a, "stale riders first")
+		self.assertTrue(riders[a]["stale"])
+		self.assertEqual(riders[a]["stale_reason"], "Checked out of accommodation")
+		self.assertEqual(riders[a]["legs"], [f"TSHIP-{out}", f"TSHIP-{back}"])
+		self.assertFalse(riders[b]["stale"])
+		self.assertIsNone(riders[b]["stale_reason"])
+
+	def test_a_user_without_the_roles_is_refused(self):
+		frappe.flags.in_test = False
+		frappe.set_user("Guest")
+		for call in (
+			lambda: tm.remove_from_cards('["E"]', '["TS-X"]'),
+			lambda: tm.cancel_cards('["TS-X"]', "Other"),
+			lambda: tm.clear_stale('["E"]'),
+			lambda: tm.get_card_passengers("TS-X"),
+		):
+			with self.assertRaises(frappe.PermissionError):
+				call()

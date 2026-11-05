@@ -45,8 +45,8 @@ class TestTheThreeRemovalControls(FrappeTestCase):
 		self.assertIn("_removeItems(itemIds) {", self.canvas)
 		for control in ("removeSelectedFromLane", "removeCheckedStops", "removeEntireTrip"):
 			self.assertIn(f"{control}(", self.canvas)
-		# Three calls into it, one per control.
-		self.assertEqual(self.canvas.count("this._removeItems("), 2)
+		# One call per control, plus the traceability matrix releasing a cancelled card.
+		self.assertEqual(self.canvas.count("this._removeItems("), 3)
 		self.assertEqual(self.canvas.count("self._removeItems("), 1)
 
 	def test_the_old_single_stop_body_is_gone(self):
