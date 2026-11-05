@@ -49,6 +49,14 @@
   "embassy_payment_date",
   "mofa_payment_date",
   "translation_payment_date",
+  "column_break_opsr",
+  "embassy_payment_made_via",
+  "mofa_payment_made_via",
+  "translation_payment_made_via",
+  "column_break_slhv",
+  "embassy_payment_bank_account",
+  "mofa_payment_bank_account",
+  "translation_payment_bank_account",
   "section_break_40",
   "pro_user",
   "column_break_cxze",
@@ -323,6 +331,56 @@
    "label": "Translation Payment Date"
   },
   {
+   "fieldname": "column_break_opsr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.upload_embassy_payment_receipt",
+   "fieldname": "embassy_payment_made_via",
+   "fieldtype": "Select",
+   "label": "Embassy Payment Made Via",
+   "options": "\nBank\nCash"
+  },
+  {
+   "depends_on": "eval:doc.upload_mofa_payment_receipt",
+   "fieldname": "mofa_payment_made_via",
+   "fieldtype": "Select",
+   "label": "MOFA Payment Made Via",
+   "options": "\nBank\nCash"
+  },
+  {
+   "depends_on": "eval:doc.upload_translation_payment_receipt",
+   "fieldname": "translation_payment_made_via",
+   "fieldtype": "Select",
+   "label": "Translation Payment Made Via",
+   "options": "\nBank\nCash"
+  },
+  {
+   "fieldname": "column_break_slhv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.embassy_payment_made_via == 'Bank'",
+   "fieldname": "embassy_payment_bank_account",
+   "fieldtype": "Link",
+   "label": "Embassy Payment Bank Account",
+   "options": "Bank Account"
+  },
+  {
+   "depends_on": "eval:doc.mofa_payment_made_via == 'Bank'",
+   "fieldname": "mofa_payment_bank_account",
+   "fieldtype": "Link",
+   "label": "MOFA Payment Bank Account",
+   "options": "Bank Account"
+  },
+  {
+   "depends_on": "eval:doc.translation_payment_made_via == 'Bank'",
+   "fieldname": "translation_payment_bank_account",
+   "fieldtype": "Link",
+   "label": "Translation Payment Bank Account",
+   "options": "Bank Account"
+  },
+  {
    "fieldname": "section_break_40",
    "fieldtype": "Section Break"
   },
@@ -379,7 +437,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-05 10:00:00.000000",
+ "modified": "2026-11-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PCC Attestation",

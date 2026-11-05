@@ -81,12 +81,19 @@ class TestHawiyatiRemindersReadPaymentDate(FrappeTestCase):
 
 
 class TestReapplyClearsPaymentDate(FrappeTestCase):
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		frappe.reload_doc("grd", "doctype", "paci")
+		frappe.reload_doc("grd", "doctype", "work_permit")
+		cls.bank_account = frappe.db.get_value("Bank Account", {}, "name")
+
 	def test_a_reapplied_paci_has_no_payment_date(self):
 		employee = frappe.get_doc("Employee", _an_active_employee())
 		paci = create_PACI(employee, "Renewal")
 		paci.db_set("workflow_state", "Rejected")
 		paci.db_set("payment_date", now_datetime())
-		paci.db_set("payment_made_via", "Bank")
+		paci.db_set({"payment_made_via": "Bank", "bank_account": self.bank_account})
 		paci.reload()
 		self.assertTrue(paci.payment_date)
 		self.assertEqual(paci.payment_made_via, "Bank")
@@ -111,7 +118,7 @@ class TestReapplyClearsPaymentDate(FrappeTestCase):
 		permit = create_documents_for_row(preparation.preparation_record[0], preparation.name)
 		permit.db_set("workflow_state", "Rejected")
 		permit.db_set("payment_date", now_datetime())
-		permit.db_set("payment_made_via", "Bank")
+		permit.db_set({"payment_made_via": "Bank", "bank_account": self.bank_account})
 		permit.reload()
 		self.assertTrue(permit.payment_date)
 		self.assertEqual(permit.payment_made_via, "Bank")
