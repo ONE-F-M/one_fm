@@ -5464,6 +5464,11 @@ function mountRoutePlannerApp(wrapper, data) {
             });
         },
 
+        // Rows added or removed change the scroll extent without a scroll or resize event.
+        updated() {
+            this.updateLanesScroll();
+        },
+
         beforeUnmount() {
             if (this._ro) this._ro.disconnect();
             const area = this.$refs.lanesArea;
@@ -7196,7 +7201,7 @@ function injectRPStyles() {
         .rp-navpad-down { grid-column: 2; grid-row: 2; }
         .rp-navpad-center { grid-column: 1 / span 3; grid-row: 3; }
         /* While a card or block is dragged the pad must not swallow the drop or hide the lane under it */
-        .rp-navpad.rp-navpad-dragging, .rp-navpad.rp-navpad-dragging .rp-btn-icon { pointer-events: none; }
+        .rp-navpad.rp-navpad-dragging, .rp-navpad.rp-navpad-dragging .rp-btn-icon { pointer-events: none; opacity: 0; }
         #rp-shell.rp-dark .rp-navpad {
             background: var(--md-sys-color-surface); border-color: var(--md-sys-color-outline-variant);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
