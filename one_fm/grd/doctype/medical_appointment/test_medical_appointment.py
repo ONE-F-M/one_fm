@@ -6,6 +6,10 @@ import unittest
 from frappe.utils import add_to_date, now_datetime
 
 class TestMedicalAppointment(unittest.TestCase):
+	@classmethod
+	def setUpClass(cls):
+		frappe.reload_doc("grd", "doctype", "medical_appointment")
+
 	def test_done_with_future_date(self):
 		# Create a medical appointment with a future date
 		appointment = frappe.new_doc("Medical Appointment")
