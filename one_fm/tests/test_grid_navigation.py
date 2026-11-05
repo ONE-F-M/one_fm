@@ -1,6 +1,6 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""The transportation schedule's navigation pad (WI-004331).
+"""The transportation schedule's navigation pad.
 
 The pure helpers (``panWindow``, ``snapScrollTop``, ``workWindow``) are exercised by
 ``transportation_schedule/test_grid_navigation.js`` (``node test_grid_navigation.js``),

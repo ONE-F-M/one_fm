@@ -1,4 +1,4 @@
-// Self-check for the grid navigation helpers (WI-004331). Run: node test_grid_navigation.js
+// Self-check for the grid navigation helpers. Run: node test_grid_navigation.js
 // It slices the shipped helpers out of transportation_schedule.js by their banners
 // rather than copying them, so a change to the real code is what gets tested.
 const assert = require('assert');
