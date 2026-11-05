@@ -50,6 +50,39 @@ function matrixMatches(row, filters) {
 }
 // ── End traceability matrix filter ──────────────────────────────────────────
 
+// ── Card filter ──────────────────────────────────────────────────────────
+// One predicate for the unassigned pool AND the schedule blocks, so the two always
+// agree. test_card_filter.js reads this block out of the file by these two banners
+// and needs normalizeSearchText above, so keep it free of anything else.
+// f = { q, emp, shift, shiftExact, shiftStart, shiftEnd }; every set criterion must pass.
+function cardMatchesFilters(card, f) {
+    const c = card || {};
+    const x = f || {};
+    if (x.shiftStart && c.shift_start !== x.shiftStart) return false;
+    if (x.shiftEnd && c.shift_end !== x.shiftEnd) return false;
+    // A shift picked from the list is an exact name; half-typed text narrows by contains.
+    const shift = String(x.shift || '').trim();
+    if (shift) {
+        const name = c.shift_name || '';
+        if (x.shiftExact ? name !== shift
+                         : !normalizeSearchText(name).includes(normalizeSearchText(shift))) return false;
+    }
+    // Both sides are flattened: a stored "Samir  Basnet" matches a typed "samir basnet".
+    const emp = normalizeSearchText(x.emp);
+    if (emp && !(c.employees || []).some(e =>
+        normalizeSearchText(e && e.name).includes(emp))) return false;
+    const q = normalizeSearchText(x.q);
+    if (!q) return true;
+    return [c.shift_name, c.site_location, c.accommodation, c.stop_location, c.direction]
+        .some(v => normalizeSearchText(v).includes(q));
+}
+
+// A drawn block matches when any one of its cards (or their riders) matches.
+function blockMatchesFilters(cards, f) {
+    return (cards || []).some(c => cardMatchesFilters(c, f));
+}
+// ── End card filter ──────────────────────────────────────────────────────────
+
 frappe.pages['transportation-schedule'].on_page_load = function (wrapper) {
     injectRPLoadingStyles();
     $(wrapper).html(`
@@ -143,6 +176,9 @@ function mountRoutePlannerApp(wrapper, data) {
                 employeeQuery: '',            // partial, case-insensitive, over the riders
                 shiftFilter: '',              // Operation Shift, typed or picked
                 shiftEndFilter: '',           // selected shift end time, '' = all
+                // What the three text boxes held 300 ms after typing stopped. The
+                // filters read these, so typing does not re-filter on every key.
+                appliedText: { q: '', emp: '', shift: '' },
                 collapsedGroups: {},          // { [accommodation]: boolean }
                 canSave: false,
                 isGenerating: false,          // shipment generation in progress
@@ -226,49 +262,51 @@ function mountRoutePlannerApp(wrapper, data) {
             // before it left, so a dispatcher can say "this shift, this person, ending at
             // 11:00" and get the cards that satisfy all three rather than any of them.
             filteredPoolCards() {
-                const q = normalizeSearchText(this.searchQuery);
-                const emp = normalizeSearchText(this.employeeQuery);
-                const shift = this.shiftFilter.trim();
-                const shiftLower = normalizeSearchText(shift);
-                // A shift picked from the list is an exact name and filters exactly
-                // (AC2). A half-typed one has not picked anything yet, so it narrows by
-                // what has been typed rather than matching nothing at all.
-                const shiftIsExact = shift && this.poolShiftOptions.includes(shift);
+                return this.unassignedPoolCards.filter(c => cardMatchesFilters(c, this.activeFilters));
+            },
 
-                return this.planData.shipment_cards.filter(c => {
-                    // Card is assigned when its specific ID is in assignedCards
-                    if (this.assignedCards.has(c.id)) return false;
+            // The one filter object the pool and the schedule blocks both read: the
+            // debounced text plus the two time selects, which stay immediate.
+            activeFilters() {
+                const t = this.appliedText;
+                const shift = t.shift.trim();
+                return {
+                    q: t.q, emp: t.emp, shift,
+                    // Picked from the list = exact; half-typed = contains.
+                    shiftExact: !!shift && this.poolShiftOptions.includes(shift),
+                    shiftStart: this.shiftStartFilter,
+                    shiftEnd: this.shiftEndFilter,
+                };
+            },
 
-                    // shift start time filter, applied across every
-                    // accommodation group rather than within one.
-                    if (this.shiftStartFilter && c.shift_start !== this.shiftStartFilter) return false;
+            // Which drawn blocks match, keyed like the template :key. A block is one
+            // drawn block, so a chained trip counts once however many stops it has.
+            blockFilter() {
+                const f = this.activeFilters;
+                const active = this.anyPoolFilterActive;
+                const matched = new Set();
+                let total = 0;
+                const byVehicle = this.mergedItemsByVehicle;
+                Object.keys(byVehicle).forEach(vid => byVehicle[vid].forEach(entry => {
+                    total++;
+                    if (!active) return;
+                    const cards = entry.type === 'merged'
+                        ? entry.stops.map(s => this.bcard(s))
+                        : [this.bcard(entry.item)];
+                    if (blockMatchesFilters(cards, f)) matched.add(this.blockKey(entry));
+                }));
+                return { active, matched, total, count: active ? matched.size : total };
+            },
 
-                    // AC4: the same rule for the other end of the shift.
-                    if (this.shiftEndFilter && c.shift_end !== this.shiftEndFilter) return false;
+            blockCountLabel() {
+                return __('{0} of {1} blocks', [this.blockFilter.count, this.blockFilter.total]);
+            },
 
-                    if (shift) {
-                        const name = c.shift_name || '';
-                        if (shiftIsExact ? name !== shift
-                                         : !normalizeSearchText(name).includes(shiftLower)) return false;
-                    }
-
-                    // AC3: partial or exact, case-insensitive, against the people on the
-                    // card - which is how a dispatcher looks for one person rather than
-                    // knowing which site they are posted to.
-                    // Both sides are flattened: a stored "Samir  Basnet" has to match a
-                    // typed "samir basnet".
-                    if (emp && !(c.employees || []).some(e =>
-                        normalizeSearchText(e && e.name).includes(emp))) return false;
-
-                    if (!q) return true;
-                    return (
-                        normalizeSearchText(c.shift_name).includes(q) ||
-                        normalizeSearchText(c.site_location).includes(q) ||
-                        normalizeSearchText(c.accommodation).includes(q) ||
-                        normalizeSearchText(c.stop_location).includes(q) ||
-                        normalizeSearchText(c.direction).includes(q)
-                    );
-                });
+            poolCountLabel() {
+                const n = this.filteredPoolCards.length;
+                return this.anyPoolFilterActive
+                    ? __('{0} of {1}', [n, this.unassignedPoolCards.length])
+                    : __('{0} cards', [n]);
             },
 
             // Every card still in the pool, ignoring the filters - what "X of Y" counts
@@ -278,11 +316,11 @@ function mountRoutePlannerApp(wrapper, data) {
                 return this.planData.shipment_cards.filter(c => !this.assignedCards.has(c.id));
             },
 
-            // AC2: the shifts actually present on unassigned cards, so the list never
-            // offers a shift that would filter to nothing.
+            // AC2: every shift on any card, placed or not, so a shift that exists only
+            // on scheduled blocks can be picked and filtered exactly.
             poolShiftOptions() {
                 return [...new Set(
-                    this.unassignedPoolCards.map(c => c.shift_name).filter(Boolean)
+                    this.planData.shipment_cards.map(c => c.shift_name).filter(Boolean)
                 )].sort();
             },
 
@@ -337,8 +375,9 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             anyPoolFilterActive() {
-                return !!(this.searchQuery || this.employeeQuery || this.shiftFilter
-                          || this.shiftStartFilter || this.shiftEndFilter);
+                const f = this.activeFilters;
+                return !!(normalizeSearchText(f.q) || normalizeSearchText(f.emp) || f.shift
+                          || f.shiftStart || f.shiftEnd);
             },
 
             poolShiftStartOptions() {
@@ -756,14 +795,42 @@ function mountRoutePlannerApp(wrapper, data) {
             },
         },
 
+        // The three text boxes apply 300 ms after typing stops; emptying one applies at once.
+        // Registered here rather than in a `watch:` option so another `watch:` key added
+        // to this object cannot silently replace it.
+        created() {
+            ['searchQuery', 'employeeQuery', 'shiftFilter'].forEach(key =>
+                this.$watch(key, v => this.queueAppliedText(!v)));
+        },
+
         // ── Methods ────────────────────────────────────────────────────────
         methods: {
+            queueAppliedText(immediate) {
+                clearTimeout(this._filterTimer);
+                const apply = () => {
+                    this.appliedText = {
+                        q: this.searchQuery, emp: this.employeeQuery, shift: this.shiftFilter,
+                    };
+                };
+                if (immediate) apply();
+                else this._filterTimer = setTimeout(apply, 300);
+            },
+
+            blockKey(entry) {
+                return entry.type === 'merged' ? 'trip_' + entry.tripId : entry.item.id;
+            },
+
+            // True when a filter is on and this drawn block is not one it matched.
+            blockDim(entry) {
+                return this.blockFilter.active && !this.blockFilter.matched.has(this.blockKey(entry));
+            },
+
             // The chips show three riders, so with an employee query set the
             // riders it matched go first - otherwise a card found by name shows three
             // other people. The "+N more" count still reads card.employees.length.
             chipEmployees(card) {
                 const riders = card.employees || [];
-                const emp = normalizeSearchText(this.employeeQuery);
+                const emp = normalizeSearchText(this.appliedText.emp);
                 if (!emp) return riders;
                 const hit = e => normalizeSearchText(e && e.name).includes(emp);
                 return [...riders.filter(hit), ...riders.filter(e => !hit(e))];
@@ -5229,6 +5296,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
         beforeUnmount() {
             if (this._ro) this._ro.disconnect();
+            clearTimeout(this._filterTimer);
             this.stopMatrixTimer();
         }
 
@@ -5368,8 +5436,7 @@ function injectRPVueTemplate() {
         <!-- AC5: what the filters left, out of everything still unplaced. A bare
              count could not say whether 4 cards meant a quiet day or a narrow filter. -->
         <div id="rp-pool-count">
-          <span v-if="anyPoolFilterActive">Showing {{ filteredPoolCards.length }} of {{ unassignedPoolCards.length }} cards</span>
-          <span v-else>{{ filteredPoolCards.length }} cards</span>
+          <span>{{ poolCountLabel }}</span>
         </div>
       </div>
 
@@ -5509,6 +5576,7 @@ function injectRPVueTemplate() {
           <button class="rp-btn-icon rp-btn-icon-label" title="Show full 24 hours" @click="show24h()">24h</button>
           <button class="rp-btn-icon rp-btn-icon-label" title="Show working hours (05:00–19:00)" @click="showWorkHours()"><span class="rp-icon" style="font-size:14px">schedule</span> Work</button>
         </div>
+        <span v-if="blockFilter.active" class="rp-block-count">{{ blockCountLabel }}</span>
         <div class="rp-tb-hint">
           Drag cards to lanes &nbsp;&middot;&nbsp; Drag blocks to reposition &nbsp;&middot;&nbsp;
           Scroll to pan &nbsp;&middot;&nbsp; Ctrl + Scroll to zoom
@@ -5608,7 +5676,7 @@ function injectRPVueTemplate() {
 
                   <!-- ═══ Single (non-chained) block ═══ -->
                   <g v-if="entry.type === 'single'"
-                     :class="isDraggingBlock && bsel(entry.item) ? 'rp-block-grabbing' : 'rp-block-grab'"
+                     :class="[isDraggingBlock && bsel(entry.item) ? 'rp-block-grabbing' : 'rp-block-grab', blockDim(entry) ? 'rp-block-dim' : '']"
                      @mousedown="onBlockMouseDown($event, entry.item)"
                      @touchstart.prevent="onBlockTouchStart($event, entry.item)"
                      @mouseenter="showStopHover($event, [entry.item])"
@@ -5691,6 +5759,7 @@ function injectRPVueTemplate() {
                   <!-- ═══ Merged trip block ═══ -->
                   <g v-else
                      class="rp-block-grab"
+                     :class="{ 'rp-block-dim': blockDim(entry) }"
                      @mouseenter="showStopHover($event, entry.stops)"
                      @mousemove="moveStopHover($event)"
                      @mouseleave="hideStopHover()"
@@ -6941,6 +7010,10 @@ function injectRPStyles() {
 
         .rp-block-grab     { cursor: grab; }
         .rp-block-grabbing { cursor: grabbing; }
+        /* A block no filter matched dims but stays clickable and draggable. */
+        .rp-block-dim { opacity: 0.25; transition: opacity 0.15s; }
+        #rp-shell.rp-dark .rp-block-dim { opacity: 0.3; }
+        .rp-block-count { font-size: 12px; font-weight: 500; white-space: nowrap; padding: 2px 8px; border-radius: 10px; margin: 0 8px; color: var(--md-sys-color-on-surface-variant); background: var(--md-sys-color-surface-container-high); }
         .rp-empty-state    { padding: 48px; text-align: center; font-size: 14px; color: var(--md-sys-color-outline); }
 
         /* ── Drag time tooltip (5-min snap) ── */
