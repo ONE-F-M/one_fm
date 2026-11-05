@@ -6,6 +6,11 @@ from frappe.tests.utils import FrappeTestCase
 
 
 class TestEmployeeRecordUpdateRequestPropertiesItem(FrappeTestCase):
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		frappe.reload_doc("one_fm", "doctype", "employee_record_update_request_properties_item")
+
 	def setUp(self):
 		self.meta = frappe.get_meta("Employee Record Update Request Properties Item")
 
@@ -49,5 +54,6 @@ class TestEmployeeRecordUpdateRequestPropertiesItem(FrappeTestCase):
 
 	def test_new_value_doctype_is_hidden_link_to_doctype(self):
 		field = self.meta.get_field("new_value_doctype")
+		self.assertEqual(field.label, "New Details DocType")
 		self.assertEqual(field.options, "DocType")
 		self.assertEqual(field.hidden, 1)

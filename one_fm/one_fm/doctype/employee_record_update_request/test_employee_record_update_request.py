@@ -52,6 +52,7 @@ EXPECTED_FIELDS = [
 		"benefit", "Table", "Employee Record Update Request Benefits Item", 0, 0,
 		"eval:doc.benefits_changes_required==1", "",
 	),
+	("reason", "Small Text", "", 1, 0, "", ""),
 	("amended_from", "Link", DOCTYPE, 0, 1, "", ""),
 ]
 
@@ -71,18 +72,31 @@ EXPECTED_PERMISSIONS = {
 NO_HR_USER = "erur_no_hr_role@example.com"
 
 
+DOCTYPES = (
+	"employee_record_update_request_properties_item",
+	"employee_record_update_request_benefits_item",
+	"employee_record_update_request_salary_structure_compone_item",
+	"employee_record_update_request",
+)
+
+
+def reload_doctypes():
+	for name in DOCTYPES:
+		frappe.reload_doc("one_fm", "doctype", name)
+
+
 def get_test_employee():
 	"""An active employee, preferring one that has a line manager with a user."""
-	rows = frappe.db.sql(
-		"""
-		select e.name
-		from `tabEmployee` e
-		inner join `tabEmployee` m on m.name = e.reports_to
-		where e.status = 'Active' and ifnull(m.user_id, '') != ''
-		limit 1
-		""",
-		as_dict=True,
-	)
+	Employee = frappe.qb.DocType("Employee")
+	Manager = frappe.qb.DocType("Employee").as_("m")
+	rows = (
+		frappe.qb.from_(Employee)
+		.join(Manager)
+		.on(Manager.name == Employee.reports_to)
+		.select(Employee.name)
+		.where((Employee.status == "Active") & (Manager.user_id.isnotnull()) & (Manager.user_id != ""))
+		.limit(1)
+	).run(as_dict=True)
 	if rows:
 		return rows[0].name
 	return frappe.db.get_value("Employee", {"status": "Active"}, "name")
@@ -93,12 +107,18 @@ def make_request(employee, **kwargs):
 		"doctype": DOCTYPE,
 		"employee": employee,
 		"effective_date_of_change": nowdate(),
+		"reason": "Test",
 	}
 	values.update(kwargs)
 	return frappe.get_doc(values)
 
 
 class TestEmployeeRecordUpdateRequest(FrappeTestCase):
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		reload_doctypes()
+
 	# ---- meta ----
 
 	def test_meta_matches_spec_field_by_field(self):
@@ -123,6 +143,10 @@ class TestEmployeeRecordUpdateRequest(FrappeTestCase):
 		self.assertEqual(meta.get_field("employee_name").in_list_view, 1)
 		for fieldname in ("line_manager", "line_manager_user"):
 			self.assertEqual(meta.get_field(fieldname).ignore_user_permissions, 1)
+		self.assertEqual(meta.get_field("current_salary_structure").label, "Salary Structure - Current Details")
+		self.assertEqual(meta.get_field("salary_new_value").label, "Salary Structure - New Details")
+		self.assertEqual(meta.get_field("current_base_salary").label, "Base Salary - Current Details")
+		self.assertEqual(meta.get_field("base_new_value").label, "Base Salary - New Details")
 
 	def test_salary_structure_components_section_depends_on_salary_update(self):
 		meta = frappe.get_meta(DOCTYPE)
@@ -135,7 +159,7 @@ class TestEmployeeRecordUpdateRequest(FrappeTestCase):
 	def test_section_titles(self):
 		meta = frappe.get_meta(DOCTYPE)
 		labels = [f.label for f in meta.fields if f.fieldtype == "Section Break"]
-		for label in ("Salary Update", "Changes to Update", "Benefits", "Reason for Changes"):
+		for label in ("Employee", "Salary Update", "Salary Structure Components", "Changes to Update", "Benefits", "Reason for Changes"):
 			self.assertIn(label, labels)
 
 	def test_submittable_naming_and_doctype_properties(self):

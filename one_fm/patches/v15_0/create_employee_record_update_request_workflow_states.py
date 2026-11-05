@@ -1,6 +1,6 @@
 import frappe
 
-# WI-004420: the Employee Record Update Request workflow (a Processa map imported by hand)
+# The Employee Record Update Request workflow (a Processa map imported by hand)
 # links to these Workflow State masters. A state that has no master cannot be used, and
 # Workflow State.style is mandatory on this site, so every state is created with a style.
 #

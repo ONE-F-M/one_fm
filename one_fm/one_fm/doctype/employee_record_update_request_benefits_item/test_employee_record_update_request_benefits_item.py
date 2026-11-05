@@ -6,6 +6,11 @@ from frappe.tests.utils import FrappeTestCase
 
 
 class TestEmployeeRecordUpdateRequestBenefitsItem(FrappeTestCase):
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		frappe.reload_doc("one_fm", "doctype", "employee_record_update_request_benefits_item")
+
 	def setUp(self):
 		self.meta = frappe.get_meta("Employee Record Update Request Benefits Item")
 

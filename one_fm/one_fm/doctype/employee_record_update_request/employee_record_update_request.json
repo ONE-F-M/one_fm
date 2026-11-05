@@ -3,39 +3,47 @@
  "autoname": "HR-EMP-UPD-.YYYY.-.#####",
  "creation": "2026-10-11 10:00:00.000000",
  "doctype": "DocType",
+ "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "section_break_a50a2b",
   "employee",
   "employee_name",
   "designation",
   "department",
   "project_allocation",
-  "column_break_erur_main",
+  "column_break_a5243e",
   "workflow_state",
   "effective_date_of_change",
   "line_manager",
   "line_manager_user",
-  "salary_update_section",
+  "section_break_18485f",
   "salary_update_required",
   "current_salary_structure",
   "salary_new_value",
+  "column_break_6d1cd0",
   "employee_appraisal_required",
-  "column_break_erur_salary",
   "current_base_salary",
   "base_new_value",
   "employee_appraisal_form",
-  "salary_structure_components_section",
+  "section_break_b3899f",
   "salary_structure_components",
-  "changes_section",
+  "section_break_5307d1",
   "properties_changes_required",
   "properties",
-  "benefits_section",
+  "section_break_8bc0f8",
   "benefits_changes_required",
   "benefit",
   "reason_for_changes_section",
+  "reason",
   "amended_from"
  ],
  "fields": [
+  {
+   "fieldname": "section_break_a50a2b",
+   "fieldtype": "Section Break",
+   "label": "Employee"
+  },
   {
    "fieldname": "employee",
    "fieldtype": "Link",
@@ -77,7 +85,7 @@
    "options": "Project"
   },
   {
-   "fieldname": "column_break_erur_main",
+   "fieldname": "column_break_a5243e",
    "fieldtype": "Column Break"
   },
   {
@@ -112,7 +120,7 @@
    "read_only": 1
   },
   {
-   "fieldname": "salary_update_section",
+   "fieldname": "section_break_18485f",
    "fieldtype": "Section Break",
    "label": "Salary Update"
   },
@@ -127,15 +135,19 @@
    "fetch_from": "current_base_salary.salary_structure",
    "fieldname": "current_salary_structure",
    "fieldtype": "Link",
-   "label": "Current Salary Structure",
+   "label": "Salary Structure - Current Details",
    "options": "Salary Structure Assignment"
   },
   {
    "depends_on": "eval:doc.salary_update_required",
    "fieldname": "salary_new_value",
    "fieldtype": "Link",
-   "label": "New Salary Structure",
+   "label": "Salary Structure - New Details",
    "options": "Salary Structure"
+  },
+  {
+   "fieldname": "column_break_6d1cd0",
+   "fieldtype": "Column Break"
   },
   {
    "default": "0",
@@ -145,22 +157,18 @@
    "label": "Employee Appraisal Required"
   },
   {
-   "fieldname": "column_break_erur_salary",
-   "fieldtype": "Column Break"
-  },
-  {
    "depends_on": "eval:doc.salary_update_required",
    "fetch_from": "current_salary_structure.base",
    "fieldname": "current_base_salary",
    "fieldtype": "Data",
-   "label": "Current Base Salary",
+   "label": "Base Salary - Current Details",
    "options": "Salary Structure Assignment"
   },
   {
    "depends_on": "eval:doc.salary_update_required",
    "fieldname": "base_new_value",
    "fieldtype": "Currency",
-   "label": "New Base Salary"
+   "label": "Base Salary - New Details"
   },
   {
    "depends_on": "eval:doc.employee_appraisal_required==1",
@@ -170,7 +178,7 @@
   },
   {
    "depends_on": "eval:doc.salary_update_required",
-   "fieldname": "salary_structure_components_section",
+   "fieldname": "section_break_b3899f",
    "fieldtype": "Section Break",
    "label": "Salary Structure Components"
   },
@@ -182,7 +190,7 @@
    "options": "Employee Record Update Request Salary Structure Compone Item"
   },
   {
-   "fieldname": "changes_section",
+   "fieldname": "section_break_5307d1",
    "fieldtype": "Section Break",
    "label": "Changes to Update"
   },
@@ -200,7 +208,7 @@
    "options": "Employee Record Update Request Properties Item"
   },
   {
-   "fieldname": "benefits_section",
+   "fieldname": "section_break_8bc0f8",
    "fieldtype": "Section Break",
    "label": "Benefits"
   },
@@ -223,6 +231,12 @@
    "label": "Reason for Changes"
   },
   {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "reqd": 1
+  },
+  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -235,7 +249,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-04 15:35:00.000000",
+ "modified": "2026-11-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Employee Record Update Request",
