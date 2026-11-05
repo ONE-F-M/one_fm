@@ -11,7 +11,7 @@ licence that reads compliant when it is not.
 import frappe
 from frappe.model.document import Document
 from frappe.query_builder import DocType
-from frappe.utils import flt
+from frappe.utils import cint, flt
 
 KUWAITI = "Kuwaiti"
 
@@ -60,6 +60,7 @@ class PAMLicenseDetails(Document):
 	def validate(self):
 		self.set_sector_figures()
 		self.set_total_number_of_employees()
+		self.status = license_status(self.total_number_of_employees, self.status)
 		self.set_quota_registrations()
 		self.set_quota_visas_issued()
 		self.set_available_quota()
@@ -524,17 +525,31 @@ def recount_license_total(license_name):
 	db_set rather than a save, for the same reason the sector figures are: a headcount
 	moving must not drag a licence through validation, and must not need permission to
 	edit a licence that the employee's own editor has no reason to hold.
+
+	The status follows the headcount here too: db.set_value skips validate and on_update,
+	so a flip is pushed to the PAM Files from here.
 	"""
 	if not license_name or not frappe.db.exists("PAM License Details", license_name):
 		return
 
+	count = count_license_employees(license_name)
+	current = frappe.db.get_value("PAM License Details", license_name, "status")
+	status = license_status(count, current)
 	frappe.db.set_value(
 		"PAM License Details",
 		license_name,
-		"total_number_of_employees",
-		str(count_license_employees(license_name)),
+		{"total_number_of_employees": str(count), "status": status},
 		update_modified=False,
 	)
+	if status != current:
+		refresh_pam_files(license_name)
+
+
+def license_status(total, current) -> str:
+	"""Active with employees, Inactive with none. Suspended is set by hand and kept."""
+	if current == "Suspended":
+		return current
+	return "Active" if cint(total) > 0 else "Inactive"
 
 
 def count_quota_employees(license_name, quota_type) -> int:
