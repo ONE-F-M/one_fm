@@ -43,9 +43,7 @@ class TestThePadIsWiredIn(FrappeTestCase):
 		cls.canvas = CANVAS.read_text()
 
 	def _method(self, name):
-		return self.canvas.split(f"\t\t\t{name}(", 1)[0] if False else (
-			self.canvas.split(f"            {name}(", 1)[1].split("\n            },", 1)[0]
-		)
+		return self.canvas.split(f"            {name}(", 1)[1].split("\n            },", 1)[0]
 
 	def test_work_and_24h_anchor_on_plan_start_plus_three_hours(self):
 		self.assertIn("workWindow(this.planStart.getTime())", self._method("showWorkHours"))
