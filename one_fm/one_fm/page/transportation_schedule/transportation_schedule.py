@@ -264,6 +264,7 @@ def optimize_transportation_routes():
 def get_grouped_employees_by_accommodation(skipped: dict | None = None) -> dict:
     """{camp key: {"lookup_id", "shifts": {shift: [employee]}}} for today's riders.
 
+    Demand comes from today's Working Employee Schedule rows, not the master Employee.shift.
     ``skipped`` collects ``{employee: reason}`` for every Active employee dropped here.
     """
     def skip(emp_ids, reason):
@@ -275,34 +276,37 @@ def get_grouped_employees_by_accommodation(skipped: dict | None = None) -> dict:
     active_shifts = frappe.get_all("Operations Shift", filters={"status": "Active"}, fields=["name", "site"])
     shift_names = [s.name for s in active_shifts]
 
-    if skipped is not None:
-        active = set(shift_names)
-        for e in frappe.get_all("Employee", filters={"status": "Active"}, fields=["name", "shift"]):
-            if not e.shift:
-                skip([e.name], _("No Operations Shift on Employee"))
-            elif e.shift not in active:
-                skip([e.name], _("Shift {0} is not Active").format(e.shift))
+    # 2. Today's rostered shift per Active employee: Working rows only, Basic over Over-Time.
+    #    Day Off, leave and every other availability get no seat.
+    from one_fm.one_fm.page.transportation_schedule.traceability_matrix import _roster_row
 
-    if not active_shifts:
+    active = set(shift_names)
+    rows_of = {}
+    for row in frappe.get_all("Employee Schedule",
+        filters={"date": frappe.utils.today(), "employee_availability": "Working"},
+        fields=["employee", "shift", "employee_availability", "roster_type"]
+    ):
+        rows_of.setdefault(row.employee, []).append(row)
+
+    emp_shift_map = {}
+    for emp in frappe.get_all("Employee", filters={"status": "Active"}, pluck="name"):
+        row = _roster_row(rows_of.get(emp, []))
+        if not row or not row.shift:
+            skip([emp], _("Not rostered to work today"))
+        elif row.shift not in active:
+            skip([emp], _("Rostered shift {0} is not Active").format(row.shift))
+        else:
+            emp_shift_map[emp] = row.shift
+
+    if not emp_shift_map:
         return {}
 
-    # 2. Find all employees with a shift allocation matching one of the active shifts
-    employees = frappe.get_all("Employee",
-        filters={"status": "Active", "shift": ["in", shift_names]},
-        fields=["name", "shift"]
-    )
-    if not employees:
-        return {}
-
-    emp_shift_map = {e.name: e.shift for e in employees}
-
-    # Who is actually travelling today, not just whose post this is.
-    # Employee.shift is the MASTER allocation: an employee on approved leave keeps it and
-    # kept riding a bus they were not on, and a reliever covering someone else's post is
-    # filed under their own shift rather than the one they are working. The overlay drops
-    # the first and re-files the second. It is resolved per date and stored nowhere, so a
-    # leave range ending restores the original by itself (AC3).
+    # The overlay drops anyone on approved leave or being relieved, and files a reliever
+    # under the shift they cover. It is resolved per date and stored nowhere.
     emp_shift_map = apply_to_shift_map(emp_shift_map)
+    if skipped is not None:
+        for emp in emp_shift_map:
+            skipped.pop(emp, None)
     emp_ids = list(emp_shift_map)
     if not emp_ids:
         return {}
