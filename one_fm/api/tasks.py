@@ -2155,16 +2155,6 @@ def fetch_employees_not_in_checkin():
 
 		employees_yet_to_checkin = [i for i in employees_yet_to_checkin if not i in leave_application]
 
-		# shift request
-		shift_request = [i.employee for i in frappe.db.sql(f"""
-			SELECT employee FROM `tabShift Request`
-			WHERE  docstatus=1 AND '{cur_date}' BETWEEN from_date AND to_date
-			AND employee IN {shift_assignments_employees_tuple}
-			AND workflow_state != 'Rejected'
-		""", as_dict=1)]
-
-		employees_yet_to_checkin = [i for i in employees_yet_to_checkin if not i in shift_request]
-
 		# holiday list
 		holiday_list = [i for i,j in get_holiday_today(cur_date).items()]
 		holiday_list_tuple = str(tuple(holiday_list)).replace(',)', ')')
