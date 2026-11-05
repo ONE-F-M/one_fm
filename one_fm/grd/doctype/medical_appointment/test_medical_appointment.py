@@ -5,10 +5,13 @@ import frappe
 import unittest
 from frappe.utils import add_to_date, now_datetime
 
+from one_fm.patches.v15_0 import drop_medical_appointment_field_order_setter
+
 class TestMedicalAppointment(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls):
 		frappe.reload_doc("grd", "doctype", "medical_appointment")
+		drop_medical_appointment_field_order_setter.execute()
 
 	def test_done_with_future_date(self):
 		# Create a medical appointment with a future date
