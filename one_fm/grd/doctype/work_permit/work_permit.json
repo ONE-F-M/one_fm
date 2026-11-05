@@ -37,6 +37,8 @@
   "attach_invoice",
   "column_break_29",
   "payment_date",
+  "payment_made_via",
+  "bank_account",
   "work_permit_information_section",
   "new_work_permit_expiry_date",
   "pam_work_permit_registration_section",
@@ -433,6 +435,20 @@
    "fieldname": "payment_date",
    "fieldtype": "Datetime",
    "label": "Payment Date"
+  },
+  {
+   "depends_on": "eval:doc.attach_invoice",
+   "fieldname": "payment_made_via",
+   "fieldtype": "Select",
+   "label": "Payment Made Via",
+   "options": "\nBank\nCash"
+  },
+  {
+   "depends_on": "eval:doc.payment_made_via == \"Card\" || doc.payment_made_via == \"Bank\"",
+   "fieldname": "bank_account",
+   "fieldtype": "Link",
+   "label": "Bank Account",
+   "options": "Bank Account"
   },
   {
    "fetch_from": "employee.valid_upto",
@@ -992,7 +1008,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-15 09:00:00.000000",
+ "modified": "2026-11-05 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
