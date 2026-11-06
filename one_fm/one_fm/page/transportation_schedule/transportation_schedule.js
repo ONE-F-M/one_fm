@@ -5662,8 +5662,10 @@ function injectRPVueTemplate() {
         <div id="rp-lanes-area" ref="lanesArea">
           <template v-for="row in laneRows" :key="row.type === 'group' ? 'grp_' + row.key : row.vehicle.id">
           <div v-if="row.type === 'group'" class="rp-lane-group-header" :data-group-key="row.key">
-            <span class="rp-lane-group-name">{{ row.name }}</span>
-            <span class="rp-lane-group-counts">{{ __('{0} vehicles · {1} trips', [row.vehicleCount, row.tripCount]) }}</span>
+            <div class="rp-lane-label rp-lane-group-label" :title="row.name">
+              <span class="rp-lane-group-name">{{ row.name }}</span>
+              <span class="rp-lane-group-counts">{{ __('{0} vehicles · {1} trips', [row.vehicleCount, row.tripCount]) }}</span>
+            </div>
           </div>
           <template v-else>
           <template v-for="vehicle in [row.vehicle]" :key="vehicle.id">
@@ -6846,9 +6848,10 @@ function injectRPStyles() {
             text-overflow: ellipsis;
         }
         .rp-filter-select { flex: 1 1 0; min-width: 0; cursor: pointer; }
-        .rp-lane-groupby { flex: 0 0 auto; }
+        /* width:auto: the shared 100% resolves against this auto-width label and overflows. */
+        .rp-lane-groupby { flex: 0 0 auto; width: auto; }
         .rp-lane-groupby-wrap {
-            display: flex; align-items: center; gap: 6px; flex: 0 0 auto; margin: 0 8px;
+            display: flex; align-items: center; gap: 6px; flex: 0 0 auto; margin: 0 8px; white-space: nowrap;
             font-size: 12px; color: var(--md-sys-color-on-surface-variant);
         }
         .rp-filter-input:focus, .rp-filter-select:focus { border-color: var(--rp-color-accent); }
@@ -6976,7 +6979,10 @@ function injectRPStyles() {
         .rp-btn-icon:hover { background: #cfdce5; border-color: #adb5bd; }
         .rp-btn-icon:focus-visible { outline: 2px solid var(--rp-color-accent); outline-offset: 2px; }
         .rp-btn-icon-label { font-weight: 600; font-size: 11px; display: inline-flex; align-items: center; gap: 3px; }
-        .rp-tb-hint { font-size: 12px; color: var(--md-sys-color-outline); flex: 1; text-align: center; }
+        .rp-tb-hint {
+            font-size: 12px; color: var(--md-sys-color-outline); flex: 1; min-width: 0; text-align: center;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
         #rp-timeline-legend { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
         .rp-legend-item     { font-size: 11px; padding: 2px 9px; border-radius: 4px; font-weight: 600; }
         .rp-legend-out      { background: var(--rp-color-outbound-container); color: var(--rp-color-outbound); }
@@ -7046,14 +7052,19 @@ function injectRPStyles() {
 
         /* Scrollable lanes */
         #rp-lanes-area { flex: 1; overflow-y: auto; overflow-x: hidden; }
+        /* The header text sits in the label column only; the timeline part stays an empty band. */
         .rp-lane-group-header {
-            display: flex; align-items: center; gap: 10px; width: 100%; height: 32px; min-height: 32px;
-            padding: 0 12px; box-sizing: border-box;
+            display: flex; align-items: stretch; width: 100%; min-height: 40px;
+            box-sizing: border-box;
             background: var(--md-sys-color-surface-container);
             border-bottom: 1px solid var(--md-sys-color-surface-container-high);
         }
+        .rp-lane-group-label { overflow: hidden; }
+        .rp-lane-group-name, .rp-lane-group-counts {
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
         .rp-lane-group-name { font-weight: 700; font-size: 13px; color: var(--md-sys-color-on-surface); }
-        .rp-lane-group-counts { font-size: 12px; color: var(--md-sys-color-on-surface-variant); }
+        .rp-lane-group-counts { font-size: 11px; color: var(--md-sys-color-on-surface-variant); }
         .rp-lane-row   {
             display: flex; align-items: stretch;
             border-bottom: 1px solid var(--md-sys-color-surface-container-high);
