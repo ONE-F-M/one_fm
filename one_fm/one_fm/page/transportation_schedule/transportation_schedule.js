@@ -50,6 +50,48 @@ function matrixMatches(row, filters) {
 }
 // ── End traceability matrix filter ──────────────────────────────────────────
 
+// ── Grid navigation ──────────────────────────────────────────────────────────────
+// The pure arithmetic behind the floating navigation pad. test_grid_navigation.js
+// reads this block out of the file by these two banners, so keep it free of anything
+// else. All times are epoch milliseconds.
+const NAV_HOUR_MS = 3600000;
+
+// Shift a window by frac x its own duration, clamped into [minMs, maxMs] WITHOUT
+// changing the duration (the wheel refuses a pan that would cross a bound; this slides
+// to the bound instead). A window wider than the range can only be the whole range.
+function panWindow(startMs, endMs, minMs, maxMs, frac) {
+    const dur = endMs - startMs;
+    if (dur >= maxMs - minMs) return { start: minMs, end: maxMs };
+    const start = Math.min(Math.max(startMs + frac * dur, minMs), maxMs - dur);
+    return { start, end: start + dur };
+}
+
+// Where a vertical scroll of one screen lands. Going down: the last row top that is
+// within one viewport ahead; going up: the first row top within one viewport behind.
+// With nothing in reach it takes the nearest row in that direction, and at the first or
+// last row it stays where it is.
+function snapScrollTop(rowTops, scrollTop, viewport, dir) {
+    const tops = rowTops.slice().sort((a, b) => a - b);
+    if (dir > 0) {
+        const ahead = tops.filter(t => t > scrollTop);
+        if (!ahead.length) return scrollTop;
+        const fit = ahead.filter(t => t <= scrollTop + viewport);
+        return fit.length ? fit[fit.length - 1] : ahead[0];
+    }
+    const behind = tops.filter(t => t < scrollTop);
+    if (!behind.length) return scrollTop;
+    const fit = behind.filter(t => t >= scrollTop - viewport);
+    return fit.length ? fit[0] : behind[behind.length - 1];
+}
+
+// The toolbar's Work window, 05:00-19:00 Kuwait. planStart is 21:00 Kuwait the evening
+// before, so the day itself starts 3 h after it - the same anchor the plan load uses.
+function workWindow(planStartMs) {
+    const day = planStartMs + 3 * NAV_HOUR_MS;
+    return { start: day + 5 * NAV_HOUR_MS, end: day + 19 * NAV_HOUR_MS };
+}
+// ── End grid navigation ──────────────────────────────────────────────────────────
+
 frappe.pages['transportation-schedule'].on_page_load = function (wrapper) {
     injectRPLoadingStyles();
     $(wrapper).html(`
@@ -136,6 +178,9 @@ function mountRoutePlannerApp(wrapper, data) {
                 selectedStopIds: new Set(),
                 draggingCard: null,        // card being dragged from pool
                 isDraggingBlock: false,       // block being moved on lane
+                navIdle: false,               // navigation pad faded after 2 s without movement
+                lanesScrollTop: 0,            // #rp-lanes-area scrollTop, for the edge flags
+                lanesScrollMax: 0,            // scrollHeight - clientHeight
                 selectedPoolCard: null,    // mobile: tap-to-select card for assignment
                 searchQuery: '',
                 shiftStartFilter: '',         // WI-001683: selected shift start time, '' = all
@@ -189,6 +234,29 @@ function mountRoutePlannerApp(wrapper, data) {
         computed: {
             windowDurationMs() {
                 return this.windowEnd - this.windowStart;
+            },
+
+            // Navigation pad: a button is off when the grid is already at that edge.
+            navAtLeft() {
+                return this.windowStart.getTime() <= this.planStart.getTime();
+            },
+            navAtRight() {
+                return this.windowEnd.getTime() >= this.planEnd.getTime();
+            },
+            navAtTop() {
+                return this.lanesScrollTop <= 0;
+            },
+            navAtBottom() {
+                return this.lanesScrollTop >= this.lanesScrollMax - 1;
+            },
+            // Centre with nothing selected goes to the Work window start and the first lane.
+            navAtHome() {
+                if (this.selectedItem) return false;
+                const dur = this.windowEnd.getTime() - this.windowStart.getTime();
+                const w = workWindow(this.planStart.getTime());
+                const home = panWindow(w.start, w.start + dur,
+                    this.planStart.getTime(), this.planEnd.getTime(), 0).start;
+                return Math.abs(this.windowStart.getTime() - home) < 1000 && this.lanesScrollTop <= 0;
             },
 
             // Vehicle ids whose lane is held by an active multi-day lock today —
@@ -887,28 +955,187 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             show24h() {
-                // Show full 24h day: midnight to midnight (Kuwait time = UTC+3)
-                const today = new Date(this.planStart);
-                // Set to midnight UTC of the plan day, then offset for Kuwait TZ
-                const dayStart = new Date(today);
-                dayStart.setUTCHours(0, 0, 0, 0);
-                // Subtract 3h to get 00:00 Kuwait = 21:00 UTC previous day
-                const kwMidnightStart = new Date(dayStart.getTime() - (3 * 3600000));
-                const kwMidnightEnd = new Date(kwMidnightStart.getTime() + (24 * 3600000));
-                this.windowStart = kwMidnightStart;
-                this.windowEnd = kwMidnightEnd;
+                // Full 24h day, 00:00 to 24:00 Kuwait. planStart is 21:00 Kuwait the evening
+                // before, so the day starts at planStart + 3h. Rounding planStart down to UTC
+                // midnight landed on the previous day whenever planStart fell before 00:00 UTC.
+                const dayStart = this.planStart.getTime() + (3 * NAV_HOUR_MS);
+                this.windowStart = new Date(dayStart);
+                this.windowEnd = new Date(dayStart + (24 * NAV_HOUR_MS));
             },
 
             showWorkHours() {
                 // Snap to 05:00–19:00 Kuwait time (working hours window)
-                const today = new Date(this.planStart);
-                const dayStart = new Date(today);
-                dayStart.setUTCHours(0, 0, 0, 0);
-                // 05:00 Kuwait = 02:00 UTC, 19:00 Kuwait = 16:00 UTC
-                const workStart = new Date(dayStart.getTime() - (3 * 3600000) + (5 * 3600000));
-                const workEnd = new Date(dayStart.getTime() - (3 * 3600000) + (19 * 3600000));
-                this.windowStart = workStart;
-                this.windowEnd = workEnd;
+                const w = workWindow(this.planStart.getTime());
+                this.windowStart = new Date(w.start);
+                this.windowEnd = new Date(w.end);
+            },
+
+            // ── Grid navigation pad ── (named without "_": the template calls them)
+
+            navReducedMotion() {
+                return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+            },
+
+            navTweenCancel() {
+                if (this._navRaf) cancelAnimationFrame(this._navRaf);
+                this._navRaf = null;
+            },
+
+            // Ease-out over 200 ms, one tween at a time. Applied at once when the OS asks for
+            // reduced motion. Native smooth scrolling is not used: it has no duration cap.
+            navTween(from, to, apply) {
+                this.navTweenCancel();
+                if (this.navReducedMotion()) { apply(to); return; }
+                const t0 = performance.now();
+                const step = (now) => {
+                    const p = Math.min(1, (now - t0) / 200);
+                    apply(p < 1 ? from + (to - from) * (1 - Math.pow(1 - p, 3)) : to);
+                    this._navRaf = p < 1 ? requestAnimationFrame(step) : null;
+                };
+                this._navRaf = requestAnimationFrame(step);
+            },
+
+            navSetWindow(startMs, durMs) {
+                this.windowStart = new Date(startMs);
+                this.windowEnd = new Date(startMs + durMs);
+            },
+
+            // Top of an element inside #rp-lanes-area, in the area's own scroll coordinates.
+            navOffsetTop(area, el) {
+                return el.getBoundingClientRect().top - area.getBoundingClientRect().top + area.scrollTop;
+            },
+
+            navTops(area, selector) {
+                return Array.from(area.querySelectorAll(selector))
+                    .map(el => this.navOffsetTop(area, el)).sort((a, b) => a - b);
+            },
+
+            updateLanesScroll() {
+                const area = this.$refs.lanesArea;
+                if (!area) return;
+                this.lanesScrollTop = area.scrollTop;
+                this.lanesScrollMax = Math.max(0, area.scrollHeight - area.clientHeight);
+            },
+
+            // Pad visible on hover or movement, faded to 25% after 2 s (still clickable).
+            navWake() {
+                this.navIdle = false;
+                clearTimeout(this._navIdleTimer);
+                this._navIdleTimer = setTimeout(() => { this.navIdle = true; }, 2000);
+            },
+
+            navPan(dir) {
+                const s = this.windowStart.getTime();
+                const e = this.windowEnd.getTime();
+                const r = panWindow(s, e, this.planStart.getTime(), this.planEnd.getTime(), dir * 0.5);
+                if (r.start === s) return;
+                this.navTween(s, r.start, v => this.navSetWindow(v, e - s));
+            },
+
+            // pointerdown pans once; held past 350 ms it keeps panning at about one visible
+            // range per second until release, pointer leaving, or the edge.
+            navPanHoldStart(dir) {
+                this.navPanHoldStop();
+                this.navPan(dir);
+                this._navHoldTimer = setTimeout(() => {
+                    this._navHoldTimer = null;
+                    this.navTweenCancel();
+                    let last = performance.now();
+                    const step = (now) => {
+                        const s = this.windowStart.getTime();
+                        const e = this.windowEnd.getTime();
+                        const dt = now - last;
+                        last = now;
+                        const r = panWindow(s, e, this.planStart.getTime(),
+                            this.planEnd.getTime(), dir * dt / 1000);
+                        if (dt > 0 && r.start === s) { this._navHoldRaf = null; return; }
+                        this.navSetWindow(r.start, e - s);
+                        this._navHoldRaf = requestAnimationFrame(step);
+                    };
+                    this._navHoldRaf = requestAnimationFrame(step);
+                }, 350);
+            },
+
+            navPanHoldStop() {
+                clearTimeout(this._navHoldTimer);
+                this._navHoldTimer = null;
+                if (this._navHoldRaf) cancelAnimationFrame(this._navHoldRaf);
+                this._navHoldRaf = null;
+            },
+
+            // One screen of lanes, snapped to a lane boundary. Shift jumps to the previous or
+            // next group header; with no .rp-lane-group-header rows it acts like plain.
+            navVertical(dir, e) {
+                const area = this.$refs.lanesArea;
+                if (!area) return;
+                const top = area.scrollTop;
+                const max = Math.max(0, area.scrollHeight - area.clientHeight);
+                const headers = (e && e.shiftKey) ? this.navTops(area, '.rp-lane-group-header') : [];
+                let target;
+                if (headers.length) {
+                    target = dir > 0
+                        ? headers.find(t => t > top + 1)
+                        : headers.slice().reverse().find(t => t < top - 1);
+                    if (target === undefined) target = top;
+                } else {
+                    target = snapScrollTop(this.navTops(area, '.rp-lane-row, .rp-lane-group-header'),
+                        top, area.clientHeight, dir);
+                }
+                target = Math.min(max, Math.max(0, target));
+                if (target === top) return;
+                this.navTween(top, target, v => { area.scrollTop = v; });
+            },
+
+            // The selected block's extent and lane. A merged trip is found by vehicle + trip
+            // (the selection is one of its stops), anything else by item id.
+            navSelectedBlock() {
+                const sel = this.selectedItem;
+                if (!sel) return null;
+                const entries = this.mergedItemsByVehicle[sel.vehicleId] || [];
+                const entry = entries.find(en => en.type === 'merged'
+                    ? (sel.tripId && en.tripId === sel.tripId)
+                    : (en.item && en.item.id === sel.id));
+                if (!entry) return null;
+                const span = entry.type === 'merged' ? entry : entry.item;
+                return {
+                    vehicleId: sel.vehicleId,
+                    start: new Date(span.start).getTime(),
+                    end: new Date(span.end).getTime(),
+                };
+            },
+
+            // Selected block to the middle of the view on both axes; with none, the Work
+            // window start (current zoom kept) and the first lane.
+            navCenter() {
+                const area = this.$refs.lanesArea;
+                const planMin = this.planStart.getTime();
+                const planMax = this.planEnd.getTime();
+                const s = this.windowStart.getTime();
+                const dur = this.windowEnd.getTime() - s;
+                const block = this.navSelectedBlock();
+                const top0 = area ? area.scrollTop : 0;
+                let startTarget;
+                let topTarget = 0;
+                if (block) {
+                    const mid = (block.start + block.end) / 2;
+                    startTarget = panWindow(mid - dur / 2, mid + dur / 2, planMin, planMax, 0).start;
+                    const row = area ? Array.from(area.querySelectorAll('.rp-lane-row'))
+                        .find(r => r.dataset.vehicleId === String(block.vehicleId)) : null;
+                    topTarget = row
+                        ? this.navOffsetTop(area, row) + row.offsetHeight / 2 - area.clientHeight / 2
+                        : top0;
+                } else {
+                    const w = workWindow(planMin);
+                    startTarget = panWindow(w.start, w.start + dur, planMin, planMax, 0).start;
+                }
+                if (area) {
+                    topTarget = Math.min(Math.max(0, area.scrollHeight - area.clientHeight),
+                        Math.max(0, topTarget));
+                }
+                this.navTween(0, 1, p => {
+                    this.navSetWindow(s + (startTarget - s) * p, dur);
+                    if (area) area.scrollTop = top0 + (topTarget - top0) * p;
+                });
             },
 
             onSvgWheel(e) {
@@ -5215,9 +5442,19 @@ function mountRoutePlannerApp(wrapper, data) {
         mounted() {
             this.$nextTick(() => {
                 this.updateSvgWidth();
-                const ro = new ResizeObserver(() => this.updateSvgWidth());
+                const ro = new ResizeObserver(() => { this.updateSvgWidth(); this.updateLanesScroll(); });
                 if (this.$refs.axisWrap) ro.observe(this.$refs.axisWrap);
                 this._ro = ro;
+
+                // Navigation pad: keep the top/bottom edge flags in step with the lanes.
+                const area = this.$refs.lanesArea;
+                if (area) {
+                    this._onLanesScroll = () => this.updateLanesScroll();
+                    area.addEventListener('scroll', this._onLanesScroll, { passive: true });
+                    ro.observe(area);
+                    this.updateLanesScroll();
+                }
+                this.navWake();
 
                 // Apply saved theme
                 this.applyTheme();
@@ -5227,8 +5464,18 @@ function mountRoutePlannerApp(wrapper, data) {
             });
         },
 
+        // Rows added or removed change the scroll extent without a scroll or resize event.
+        updated() {
+            this.updateLanesScroll();
+        },
+
         beforeUnmount() {
             if (this._ro) this._ro.disconnect();
+            const area = this.$refs.lanesArea;
+            if (area && this._onLanesScroll) area.removeEventListener('scroll', this._onLanesScroll);
+            clearTimeout(this._navIdleTimer);
+            this.navPanHoldStop();
+            this.navTweenCancel();
             this.stopMatrixTimer();
         }
 
@@ -5523,7 +5770,36 @@ function injectRPVueTemplate() {
       </div>
 
       <!-- Grid: axis row + scrollable lanes -->
-      <div id="rp-grid-container">
+      <div id="rp-grid-container"
+           @mousemove="navWake" @mouseenter="navWake" @touchstart.passive="navWake" @focusin="navWake">
+
+        <!-- Floating navigation pad -->
+        <div class="rp-navpad"
+             :class="{ 'rp-navpad-idle': navIdle, 'rp-navpad-dragging': draggingCard || isDraggingBlock }">
+          <button class="rp-btn-icon rp-navpad-up" :disabled="navAtTop"
+                  @click="navVertical(-1, $event)"
+                  :title="__('Scroll up one screen of lanes (Shift: previous group)')"
+                  :aria-label="__('Scroll up')">&#x25b2;</button>
+          <button class="rp-btn-icon rp-navpad-left" :disabled="navAtLeft"
+                  @pointerdown="navPanHoldStart(-1)" @pointerup="navPanHoldStop()"
+                  @pointerleave="navPanHoldStop()" @pointercancel="navPanHoldStop()"
+                  @click="$event.detail === 0 && navPan(-1)"
+                  :title="__('Pan left by half the visible time range (hold to keep scrolling)')"
+                  :aria-label="__('Pan left')">&#x25c0;</button>
+          <button class="rp-btn-icon rp-navpad-right" :disabled="navAtRight"
+                  @pointerdown="navPanHoldStart(1)" @pointerup="navPanHoldStop()"
+                  @pointerleave="navPanHoldStop()" @pointercancel="navPanHoldStop()"
+                  @click="$event.detail === 0 && navPan(1)"
+                  :title="__('Pan right by half the visible time range (hold to keep scrolling)')"
+                  :aria-label="__('Pan right')">&#x25b6;</button>
+          <button class="rp-btn-icon rp-navpad-down" :disabled="navAtBottom"
+                  @click="navVertical(1, $event)"
+                  :title="__('Scroll down one screen of lanes (Shift: next group)')"
+                  :aria-label="__('Scroll down')">&#x25bc;</button>
+          <button class="rp-btn-icon rp-navpad-center" :disabled="navAtHome"
+                  @click="navCenter()"
+                  :title="__('Centre the selected block, or return to the start of the Work window')">&#x25ce; {{ __('Center') }}</button>
+        </div>
 
         <!-- Sticky time axis -->
         <div id="rp-axis-row">
@@ -5549,7 +5825,7 @@ function injectRPVueTemplate() {
         </div>
 
         <!-- Scrollable vehicle rows -->
-        <div id="rp-lanes-area">
+        <div id="rp-lanes-area" ref="lanesArea">
           <div v-for="(vehicle, vi) in planData.vehicles" :key="vehicle.id"
                :class="['rp-lane-row', vi % 2 === 1 ? 'rp-lane-alt' : '', lockedLaneIds.has(vehicle.id) ? 'rp-lane-locked' : '']"
                :data-vehicle-id="vehicle.id">
@@ -6902,7 +7178,38 @@ function injectRPStyles() {
         .rp-trip-builder-dialog { max-width: 95vw !important; width: 95vw !important; }
 
         /* ── Grid ── */
-        #rp-grid-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        #rp-grid-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+        /* Floating navigation pad, bottom-right of the grid */
+        /* right: 96px clears the desk chat button fixed at the viewport's bottom-right. */
+        .rp-navpad {
+            position: absolute; right: 96px; bottom: 16px; z-index: 5;
+            display: grid; grid-template-columns: repeat(3, auto); gap: 4px; padding: 6px;
+            border-radius: 10px; opacity: 1;
+            background: var(--md-sys-color-surface-bright);
+            border: 1px solid var(--md-sys-color-outline-variant);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+            transition: opacity 200ms ease-out;
+            touch-action: none; user-select: none;
+        }
+        .rp-navpad-idle { opacity: 0.25; }
+        .rp-navpad:hover, .rp-navpad:focus-within { opacity: 1; }
+        .rp-navpad .rp-btn-icon { text-align: center; }
+        .rp-navpad .rp-btn-icon:disabled { opacity: 0.4; cursor: not-allowed; }
+        .rp-navpad-up { grid-column: 2; grid-row: 1; }
+        .rp-navpad-left { grid-column: 1; grid-row: 2; }
+        .rp-navpad-right { grid-column: 3; grid-row: 2; }
+        .rp-navpad-down { grid-column: 2; grid-row: 2; }
+        .rp-navpad-center { grid-column: 1 / span 3; grid-row: 3; }
+        /* While a card or block is dragged the pad must not swallow the drop or hide the lane under it */
+        .rp-navpad.rp-navpad-dragging, .rp-navpad.rp-navpad-dragging .rp-btn-icon { pointer-events: none; opacity: 0; }
+        #rp-shell.rp-dark .rp-navpad {
+            background: var(--md-sys-color-surface); border-color: var(--md-sys-color-outline-variant);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .rp-navpad { transition: none; }
+        }
 
         /* Sticky axis */
         #rp-axis-row {
