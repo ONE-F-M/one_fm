@@ -7181,8 +7181,9 @@ function injectRPStyles() {
         #rp-grid-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
 
         /* Floating navigation pad, bottom-right of the grid */
+        /* right: 96px clears the desk chat button fixed at the viewport's bottom-right. */
         .rp-navpad {
-            position: absolute; right: 16px; bottom: 16px; z-index: 5;
+            position: absolute; right: 96px; bottom: 16px; z-index: 5;
             display: grid; grid-template-columns: repeat(3, auto); gap: 4px; padding: 6px;
             border-radius: 10px; opacity: 1;
             background: var(--md-sys-color-surface-bright);
