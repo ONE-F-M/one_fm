@@ -384,7 +384,7 @@ def request_reapply(name: str) -> dict:
 	if not instance:
 		return reapply_visa_request(name)
 
-	from one_bpmn.api.instance_api import send_message
+	from one_bpmn.api.instances import send_message
 
 	send_message(
 		message_name=REAPPLY_MESSAGE,

@@ -25,7 +25,7 @@ def apply_document_action(
 	attachments: str | dict | None = None,
 ) -> dict:
 	"""Save the fields the current step allows, then complete the Processa task with the action."""
-	from one_bpmn.api.instance_api import complete_task
+	from one_bpmn.api.instances import complete_task
 
 	doc = frappe.get_doc(doctype, docname)
 	doc.check_permission("read")
@@ -41,8 +41,8 @@ def apply_document_action(
 
 
 def _document_actions(doc) -> dict:
-	from one_bpmn.api.instance_api import get_active_bpmn_tasks
-	from one_bpmn.one_bpmn.doctype.bpmn_process_instance.assignment import split_users
+	from one_bpmn.api.instances import get_active_bpmn_tasks
+	from one_bpmn.processa_engine.assignment import split_users
 
 	actions, pending_with = [], []
 	for task in get_active_bpmn_tasks(doc.doctype, doc.name):

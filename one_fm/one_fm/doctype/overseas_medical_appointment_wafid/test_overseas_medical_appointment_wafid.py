@@ -8,7 +8,7 @@ from frappe.tests.utils import FrappeTestCase
 
 
 class TestOverseasMedicalAppointmentWAFID(FrappeTestCase):
-	@patch("one_bpmn.one_bpmn.trigger.on_doc_event")
+	@patch("one_bpmn.processa_engine.triggers.on_doc_event")
 	def test_saving_leaves_the_tracker_sync_to_the_process_map(self, _trigger):
 		Details = frappe.qb.DocType("Candidate Country Process Details")
 		WAFID = frappe.qb.DocType("Overseas Medical Appointment WAFID")
