@@ -169,7 +169,7 @@ def submit_event_staff(event_staff):
 	Completing the Submit task runs Validate Event Staff, which submits the record when it
 	passes. A record it refuses throws, so Add Staff to Event adds the whole batch or none of it.
 	"""
-	from one_bpmn.api.instance_api import complete_task
+	from one_bpmn.api.instances import complete_task
 
 	instance = frappe.db.get_value(
 		"BPMN Process Instance",

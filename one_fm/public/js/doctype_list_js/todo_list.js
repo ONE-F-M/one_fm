@@ -14,7 +14,7 @@ const GOOGLE_TASK_SYNC_MESSAGE = 'ToDo_SyncGoogleTasks_Action';
 const sync_my_google_tasks = function(listview) {
 	listview.page.add_button(__('Sync My Google Tasks'), function() {
 		frappe.call({
-			method: 'one_bpmn.api.instance_api.trigger_process_by_message',
+			method: 'one_bpmn.api.instances.trigger_process_by_message',
 			args: { message_name: GOOGLE_TASK_SYNC_MESSAGE },
 			callback: function (r) {
 				if (!r.exc) {

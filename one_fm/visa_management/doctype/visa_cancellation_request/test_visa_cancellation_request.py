@@ -634,8 +634,8 @@ class TestTheFormScriptAsksForIt(FrappeTestCase):
 		.remove(), and that takes the click handler with them - so the remark was saved and
 		nothing transitioned. The task is fetched and completed through the API instead."""
 		self.assertNotIn('trigger("click")', self.source)
-		self.assertIn("one_bpmn.api.instance_api.get_active_bpmn_tasks", self.source)
-		self.assertIn("one_bpmn.api.instance_api.complete_task", self.source)
+		self.assertIn("one_bpmn.api.instances.get_active_bpmn_tasks", self.source)
+		self.assertIn("one_bpmn.api.instances.complete_task", self.source)
 
 	def test_a_retry_with_the_same_reason_is_not_saved_again(self):
 		"""frm.save() on an unchanged document answers "No changes in the document" and

@@ -296,7 +296,7 @@ async function loadBpmnActions() {
   }
   try {
     const tasks = await call(
-      "one_bpmn.api.instance_api.get_active_bpmn_tasks",
+      "one_bpmn.api.instances.get_active_bpmn_tasks",
       { doctype: "HD Ticket", docname }
     );
     bpmnTasks.value = Array.isArray(tasks) ? tasks : [];
@@ -335,7 +335,7 @@ function handleBpmnAction(btn: { label: string; task: any; detail: any }) {
 }
 
 function applyBpmnAction(task: any, action: string | null) {
-  call("one_bpmn.api.instance_api.complete_task", {
+  call("one_bpmn.api.instances.complete_task", {
     instance_name: task.instance_name,
     task_id: task.task_id,
     data: action ? JSON.stringify({ action }) : "{}",
