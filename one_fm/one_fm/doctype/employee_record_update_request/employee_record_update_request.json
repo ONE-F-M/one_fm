@@ -1,0 +1,304 @@
+{
+ "actions": [],
+ "autoname": "HR-EMP-UPD-.YYYY.-.#####",
+ "creation": "2026-10-11 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_a50a2b",
+  "employee",
+  "employee_name",
+  "designation",
+  "department",
+  "project_allocation",
+  "column_break_a5243e",
+  "workflow_state",
+  "effective_date_of_change",
+  "line_manager",
+  "line_manager_user",
+  "section_break_18485f",
+  "salary_update_required",
+  "current_salary_structure",
+  "salary_new_value",
+  "column_break_6d1cd0",
+  "employee_appraisal_required",
+  "current_base_salary",
+  "base_new_value",
+  "employee_appraisal_form",
+  "section_break_b3899f",
+  "salary_structure_components",
+  "section_break_5307d1",
+  "properties_changes_required",
+  "properties",
+  "section_break_8bc0f8",
+  "benefits_changes_required",
+  "benefit",
+  "reason_for_changes_section",
+  "reason",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_a50a2b",
+   "fieldtype": "Section Break",
+   "label": "Employee"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.designation",
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.department",
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.project",
+   "fieldname": "project_allocation",
+   "fieldtype": "Link",
+   "label": "Project Allocation",
+   "options": "Project"
+  },
+  {
+   "fieldname": "column_break_a5243e",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "label": "Workflow State",
+   "options": "Workflow State",
+   "read_only": 1
+  },
+  {
+   "fieldname": "effective_date_of_change",
+   "fieldtype": "Date",
+   "label": "Effective Date of Change",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "employee.reports_to",
+   "fieldname": "line_manager",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "Line Manager",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "line_manager.user_id",
+   "fieldname": "line_manager_user",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "Line Manager User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_18485f",
+   "fieldtype": "Section Break",
+   "label": "Salary Update"
+  },
+  {
+   "default": "0",
+   "fieldname": "salary_update_required",
+   "fieldtype": "Check",
+   "label": "Salary Update Required"
+  },
+  {
+   "depends_on": "eval:doc.salary_update_required",
+   "fetch_from": "current_base_salary.salary_structure",
+   "fieldname": "current_salary_structure",
+   "fieldtype": "Link",
+   "label": "Salary Structure - Current Details",
+   "options": "Salary Structure Assignment"
+  },
+  {
+   "depends_on": "eval:doc.salary_update_required",
+   "fieldname": "salary_new_value",
+   "fieldtype": "Link",
+   "label": "Salary Structure - New Details",
+   "options": "Salary Structure"
+  },
+  {
+   "fieldname": "column_break_6d1cd0",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.salary_update_required",
+   "fieldname": "employee_appraisal_required",
+   "fieldtype": "Check",
+   "label": "Employee Appraisal Required"
+  },
+  {
+   "depends_on": "eval:doc.salary_update_required",
+   "fetch_from": "current_salary_structure.base",
+   "fieldname": "current_base_salary",
+   "fieldtype": "Data",
+   "label": "Base Salary - Current Details",
+   "options": "Salary Structure Assignment"
+  },
+  {
+   "depends_on": "eval:doc.salary_update_required",
+   "fieldname": "base_new_value",
+   "fieldtype": "Currency",
+   "label": "Base Salary - New Details"
+  },
+  {
+   "depends_on": "eval:doc.employee_appraisal_required==1",
+   "fieldname": "employee_appraisal_form",
+   "fieldtype": "Attach",
+   "label": "Employee Appraisal Form"
+  },
+  {
+   "depends_on": "eval:doc.salary_update_required",
+   "fieldname": "section_break_b3899f",
+   "fieldtype": "Section Break",
+   "label": "Salary Structure Components"
+  },
+  {
+   "depends_on": "eval:doc.salary_update_required",
+   "fieldname": "salary_structure_components",
+   "fieldtype": "Table",
+   "label": "Salary Structure Components",
+   "options": "Employee Record Update Request Salary Structure Compone Item"
+  },
+  {
+   "fieldname": "section_break_5307d1",
+   "fieldtype": "Section Break",
+   "label": "Changes to Update"
+  },
+  {
+   "default": "0",
+   "fieldname": "properties_changes_required",
+   "fieldtype": "Check",
+   "label": "Properties Changes Required"
+  },
+  {
+   "depends_on": "eval:doc.properties_changes_required==1",
+   "fieldname": "properties",
+   "fieldtype": "Table",
+   "label": "Properties",
+   "options": "Employee Record Update Request Properties Item"
+  },
+  {
+   "fieldname": "section_break_8bc0f8",
+   "fieldtype": "Section Break",
+   "label": "Benefits"
+  },
+  {
+   "default": "0",
+   "fieldname": "benefits_changes_required",
+   "fieldtype": "Check",
+   "label": "Benefits Changes Required"
+  },
+  {
+   "depends_on": "eval:doc.benefits_changes_required==1",
+   "fieldname": "benefit",
+   "fieldtype": "Table",
+   "label": "Benefit",
+   "options": "Employee Record Update Request Benefits Item"
+  },
+  {
+   "fieldname": "reason_for_changes_section",
+   "fieldtype": "Section Break",
+   "label": "Reason for Changes"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Employee Record Update Request",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-11-05 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Employee Record Update Request",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 0,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
