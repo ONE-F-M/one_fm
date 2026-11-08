@@ -241,10 +241,12 @@ def build_schedule(object_name):
 
 
 def _get_due_entry_names(lead_days, object_name=None):
-	"""Names of 'Open' slots whose planned date falls inside the look-ahead window.
+	"""Open slots whose planned date falls inside the look-ahead window.
 
 	The window is every Open slot due on or before ``today + lead_days`` (this
 	naturally includes any past-due Open slots that still need a Work Order).
+	Returns rows with ``name``, ``object`` and ``planned_execution_datetime``,
+	ordered by object, datetime, name so slots can be grouped per object and day.
 	"""
 	window_end = get_datetime(f"{add_days(today(), lead_days)} 23:59:59")
 	filters = {
@@ -254,67 +256,217 @@ def _get_due_entry_names(lead_days, object_name=None):
 	if object_name:
 		filters["object"] = object_name
 
-	return frappe.get_all("Maintenance Schedule Entry", filters=filters, pluck="name")
+	return frappe.get_all(
+		"Maintenance Schedule Entry",
+		filters=filters,
+		fields=["name", "object", "planned_execution_datetime"],
+		order_by="object asc, planned_execution_datetime asc, name asc",
+	)
 
 
-def create_work_order_from_entry(entry):
-	"""Create a draft Preventive Maintenance Work Order from a schedule slot.
+def create_work_order_from_entries(entries):
+	"""Create one Preventive Maintenance Work Order for the due slots of one
+	object on one date.
 
-	Only the fields known at generation time are set; the Work Order's own
-	``before_save`` fills the rest (space + location chain from the object, and
-	the object-category checklist). ``priority`` and ``assigned_maintenance_team``
-	are optional on the Work Order and left blank for maintenance staff to
-	complete after the ticket is raised.
+	``entries`` are the Maintenance Schedule Entry documents of a single object
+	and planned date. The Work Order checklist holds exactly one row per entry
+	(never the full category template); each row is linked back to its entry.
+	Row details come from the matching master checklist item (matched by task
+	description) and fall back to the entry's own task and frequency. The Work
+	Order's ``maintenance_schedule`` is the first entry (all share the date), and
+	its own ``before_save`` fills the rest (space + location chain from the object).
+	``priority`` and ``assigned_maintenance_team`` are optional and left blank.
 
 	Returns the created Work Order document.
 	"""
+	first = entries[0]
+
+	object_category = frappe.db.get_value("Object", first.object, "object_category")
+	checklist_name = None
+	if object_category:
+		checklist_name = frappe.db.get_value(
+			"Object Maintenance Checklist", {"object_category": object_category}, "name"
+		)
+
+	master_by_task = {}
+	if checklist_name:
+		master_items = frappe.get_all(
+			"Object Maintenance Checklist Items",
+			filters={"parent": checklist_name},
+			fields=[
+				"sequence_no", "task_description", "photo_required",
+				"reference_image", "maintenance_frequency", "frequency_days",
+			],
+			order_by="idx asc",
+		)
+		for item in master_items:
+			master_by_task.setdefault(item.task_description, item)
+
 	work_order = frappe.get_doc(
 		{
 			"doctype": "Maintenance Work Order",
 			"maintenance_type": "Preventive Maintenance",
 			"status": STATUS_OPEN,
-			"object": entry.object,
-			"maintenance_schedule": entry.name,
+			"object": first.object,
+			"maintenance_schedule": first.name,
+			"object_maintenance_checklist": checklist_name,
 		}
 	)
+
+	for entry in entries:
+		master = master_by_task.get(entry.maintenance_task)
+		if master:
+			row = {
+				"sequence_no": master.sequence_no,
+				"task_description": master.task_description,
+				"reference_image": master.reference_image,
+				"maintenance_frequency": master.maintenance_frequency,
+				"frequency_days": master.frequency_days,
+				"is_required": master.photo_required or 0,
+			}
+		else:
+			row = {
+				"task_description": entry.maintenance_task,
+				"maintenance_frequency": entry.maintenance_frequency,
+				"frequency_days": entry.frequency_days,
+				"is_required": 0,
+			}
+		row["maintenance_schedule_entry"] = entry.name
+		work_order.append("object_maintenance_checklist_items", row)
+
 	work_order.insert(ignore_permissions=True)
 	return work_order
+
+
+ENTRY_FIELDS = [
+	"name",
+	"object",
+	"maintenance_task",
+	"maintenance_frequency",
+	"frequency_days",
+	"planned_execution_datetime",
+	"status",
+	"work_order",
+]
+
+
+def _find_existing_work_orders(entry_names):
+	"""``{entry: work_order}`` for entries a live Work Order already covers.
+
+	A Work Order covers an entry when one of its checklist rows points at it, or (for
+	Work Orders raised before the rows carried that link) when its
+	``maintenance_schedule`` is the entry. Cancelled Work Orders are ignored.
+	"""
+	if not entry_names:
+		return {}
+
+	work_order = frappe.qb.DocType("Maintenance Work Order")
+	checklist = frappe.qb.DocType("Maintenance Work Order Checklist")
+	rows = (
+		frappe.qb.from_(checklist)
+		.join(work_order)
+		.on(checklist.parent == work_order.name)
+		.select(checklist.maintenance_schedule_entry, work_order.name)
+		.where(checklist.parenttype == "Maintenance Work Order")
+		.where(checklist.maintenance_schedule_entry.isin(entry_names))
+		.where(work_order.docstatus < 2)
+		.orderby(work_order.creation)
+	).run()
+	existing = {}
+	for entry, name in rows:
+		existing.setdefault(entry, name)
+
+	for row in frappe.get_all(
+		"Maintenance Work Order",
+		filters={"maintenance_schedule": ["in", entry_names], "docstatus": ["<", 2]},
+		fields=["name", "maintenance_schedule"],
+		order_by="creation asc",
+	):
+		existing.setdefault(row.maintenance_schedule, row.name)
+
+	return existing
+
+
+def _process_group(names):
+	"""Give the due entries of one object and date exactly one Work Order.
+
+	All or nothing: the entries are locked, the Work Order is created and every entry
+	is linked and flipped to 'Work Order Created' in one UPDATE, inside a savepoint.
+	Any error rolls the savepoint back, so no Work Order is kept and the entries stay
+	Open for the next run. Entries already covered by a live Work Order are linked to
+	it instead of getting a new one.
+
+	Known limit: when an existing Work Order covers only part of the group, the rest
+	get a new Work Order rather than being appended to it.
+
+	Returns 1 when a Work Order was created, else 0.
+	"""
+	save_point = f"mwo_{frappe.generate_hash(length=8)}"
+	frappe.db.savepoint(save_point)
+	try:
+		# skip_locked: a concurrent run holding these rows is skipped, not waited on.
+		rows = frappe.db.get_values(
+			"Maintenance Schedule Entry",
+			{"name": ["in", names]},
+			ENTRY_FIELDS,
+			as_dict=True,
+			for_update=True,
+			skip_locked=True,
+			order_by="name asc",
+		)
+		if len(rows) != len(names):
+			frappe.db.release_savepoint(save_point)
+			return 0
+
+		pending = [row for row in rows if row.status == STATUS_OPEN and not row.work_order]
+		links = _find_existing_work_orders([row.name for row in pending])
+		to_create = [row for row in pending if row.name not in links]
+
+		created = 0
+		if to_create:
+			work_order = create_work_order_from_entries(to_create)
+			links.update({row.name: work_order.name for row in to_create})
+			created = 1
+
+		for work_order_name in set(links.values()):
+			frappe.db.set_value(
+				"Maintenance Schedule Entry",
+				{"name": ["in", [entry for entry, wo in links.items() if wo == work_order_name]]},
+				{"work_order": work_order_name, "status": STATUS_WORK_ORDER_CREATED},
+			)
+
+		frappe.db.release_savepoint(save_point)
+		return created
+	except Exception:
+		frappe.db.rollback(save_point=save_point)
+		frappe.log_error(
+			title="Maintenance Work Order Generation Failed",
+			message=frappe.get_traceback(),
+		)
+		return 0
 
 
 def generate_due_work_orders(object_name=None):
 	"""Raise Work Orders for every 'Open' slot inside the lead-time window.
 
 	Shared by the immediate on-submit routine (``object_name`` supplied) and the
-	nightly scheduler (``object_name`` omitted -> all objects). Idempotent: only
-	'Open' slots without an existing Work Order are processed, and each is flipped
-	to 'Work Order Created' as soon as its Work Order is raised, so it is never
-	duplicated.
+	nightly scheduler (``object_name`` omitted -> all objects). Due slots are
+	grouped by object and planned date and each group is handled by
+	``_process_group``: one Work Order listing only its due task(s), created and
+	linked atomically. A failed group is logged and retried on the next run
+	without stopping the others.
 
 	Returns the number of Work Orders created.
 	"""
 	lead_days = max(0, cint(_get_settings().work_order_generation_lead_time_days))
 
-	created = 0
-	for name in _get_due_entry_names(lead_days, object_name):
-		try:
-			entry = frappe.get_doc("Maintenance Schedule Entry", name)
-			if entry.status != STATUS_OPEN or entry.work_order:
-				continue
+	groups = {}
+	for row in _get_due_entry_names(lead_days, object_name):
+		key = (row.object, getdate(row.planned_execution_datetime))
+		groups.setdefault(key, []).append(row.name)
 
-			work_order = create_work_order_from_entry(entry)
-			if not work_order:
-				continue
-
-			entry.db_set("work_order", work_order.name)
-			entry.db_set("status", STATUS_WORK_ORDER_CREATED)
-			created += 1
-		except Exception:
-			frappe.log_error(
-				title="Maintenance Work Order Generation Failed",
-				message=frappe.get_traceback(),
-			)
-
-	return created
+	# Rows arrive ordered by object, date, name, so groups lock in a stable order.
+	return sum(_process_group(names) for names in groups.values())
 
 
 def process_object_schedule(object_name):

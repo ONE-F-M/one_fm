@@ -60,7 +60,7 @@ def prepare_email_content(self):
     mail = get_email(
         recipients=self.final_recipients(),
         sender=self.email_sender,
-        subject=self.subject if self.reference_doctype !='HD Ticket' else get_subject(self),
+        subject=get_subject(self) if self.reference_doctype == "HD Ticket" and not frappe.flags.keep_email_subject else self.subject,
         formatted=self.email_html_content(),
         text_content=self.email_text_content(),
         attachments=self._attachments,

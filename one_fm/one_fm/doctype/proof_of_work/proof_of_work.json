@@ -20,7 +20,8 @@
   "drive_file_id",
   "section_break_hyox",
   "proof_of_work_item",
-  "proof_of_work_items_nonmanpower"
+  "proof_of_work_items_nonmanpower",
+  "workflow_state"
  ],
  "fields": [
   {
@@ -109,12 +110,21 @@
    "fieldtype": "Table",
    "label": "Proof of Work Items Non Manpower",
    "options": "Proof of Work Items Non-Manpower"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "no_copy": 1,
+   "options": "Workflow State"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-07 02:00:00.000000",
+ "modified": "2026-11-02 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Proof of Work",

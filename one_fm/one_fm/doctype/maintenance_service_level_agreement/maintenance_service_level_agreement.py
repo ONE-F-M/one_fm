@@ -85,11 +85,12 @@ class MaintenanceServiceLevelAgreement(Document):
 				frappe.throw(
 					_("Row {0}: First Response Time is mandatory in the Priorities table").format(idx)
 				)
-			if not row.maintenance_hours_from:
+			# A saved 00:00:00 loads as timedelta(0), which is falsy, so test for blank.
+			if row.maintenance_hours_from in (None, ""):
 				frappe.throw(
 					_("Row {0}: Maintenance Hours From is mandatory in the Priorities table").format(idx)
 				)
-			if not row.maintenance_hours_to:
+			if row.maintenance_hours_to in (None, ""):
 				frappe.throw(
 					_("Row {0}: Maintenance Hours To is mandatory in the Priorities table").format(idx)
 				)

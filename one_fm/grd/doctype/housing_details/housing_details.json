@@ -1,0 +1,81 @@
+{
+ "actions": [],
+ "creation": "2026-10-31 22:19:08.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "housing_no",
+  "housing_type",
+  "housing_address_coordinates_paci_no",
+  "housing_description",
+  "status",
+  "supervisor_name",
+  "date_added"
+ ],
+ "fields": [
+  {
+   "fieldname": "housing_no",
+   "fieldtype": "Data",
+   "label": "Housing No",
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "housing_type",
+   "fieldtype": "Data",
+   "label": "Housing Type",
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "housing_address_coordinates_paci_no",
+   "fieldtype": "Data",
+   "label": "Housing Address (Coordinates, PACI No.)",
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "housing_description",
+   "fieldtype": "Data",
+   "label": "Housing Description",
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nActive\nInactive",
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "supervisor_name",
+   "fieldtype": "Link",
+   "label": "Supervisor Name",
+   "options": "Employee",
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "date_added",
+   "fieldtype": "Date",
+   "label": "Date Added",
+   "in_list_view": 1,
+   "columns": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-11-02 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "Housing Details",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
