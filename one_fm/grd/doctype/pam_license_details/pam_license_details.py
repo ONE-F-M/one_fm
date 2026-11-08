@@ -63,6 +63,8 @@ class PAMLicenseDetails(Document):
 		self.set_quota_registrations()
 		self.set_quota_visas_issued()
 		self.set_available_quota()
+		# After it, because it sums the figures that call has just derived.
+		self.total_available_quota = total_available_quota(self.quota_classification)
 
 	def on_update(self):
 		"""Push a changed status to the PAM Files that list this licence.
@@ -640,6 +642,7 @@ def recount_quota_rows(license_name):
 			"number_of_transfer_requests",
 		],
 	)
+	computed_rows = []
 	for row in rows:
 		quota_type = row["type_of_quota"]
 		if quota_type not in counts:
@@ -657,6 +660,17 @@ def recount_quota_rows(license_name):
 		frappe.db.set_value(
 			"Quota Classification", row["name"], figures, update_modified=False
 		)
+		computed_rows.append({"available_quota": figures["available_quota"]})
+
+	# Written even when there are no rows, so a licence with none reads "0" rather than
+	# blank. db.set_value bypasses validate, so the total has to be written here too.
+	frappe.db.set_value(
+		"PAM License Details",
+		license_name,
+		"total_available_quota",
+		total_available_quota(computed_rows),
+		update_modified=False,
+	)
 
 
 # The workflow states in which a Visa Request counts against a quota: Pending By MOI and
@@ -826,3 +840,12 @@ def available_quota(row) -> str:
 	claimed = sum(flt(row.get(fieldname)) for fieldname in QUOTA_DEDUCTIONS)
 
 	return as_figure(max(allocated - claimed, 0))
+
+
+def total_available_quota(rows) -> str:
+	"""Every quota row's Available Quota added up.
+
+	A blank row counts as zero and no rows at all is "0". Returned as text, whole, because
+	the field is Data like the rows it sums.
+	"""
+	return as_figure(sum(flt(row.get("available_quota")) for row in rows))
