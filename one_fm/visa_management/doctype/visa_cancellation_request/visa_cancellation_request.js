@@ -59,7 +59,7 @@ frappe.provide("one_fm.visa_cancellation");
 	function apply_cancel(frm) {
 		return frappe
 			.call({
-				method: "one_bpmn.api.instance_api.get_active_bpmn_tasks",
+				method: "one_bpmn.api.instances.get_active_bpmn_tasks",
 				args: { doctype: frm.doctype, docname: frm.docname },
 				freeze: true,
 				freeze_message: __("Applying action…"),
@@ -80,7 +80,7 @@ frappe.provide("one_fm.visa_cancellation");
 
 				return frappe
 					.call({
-						method: "one_bpmn.api.instance_api.complete_task",
+						method: "one_bpmn.api.instances.complete_task",
 						args: {
 							instance_name: task.instance_name,
 							task_id: task.task_id,

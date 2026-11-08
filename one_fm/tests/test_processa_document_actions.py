@@ -7,8 +7,8 @@ from frappe.tests.utils import FrappeTestCase
 
 from one_fm.api.v1.processa import apply_document_action, get_document_actions
 
-GET_TASKS = "one_bpmn.api.instance_api.get_active_bpmn_tasks"
-COMPLETE_TASK = "one_bpmn.api.instance_api.complete_task"
+GET_TASKS = "one_bpmn.api.instances.get_active_bpmn_tasks"
+COMPLETE_TASK = "one_bpmn.api.instances.complete_task"
 OTHER_USER = "test-processa-other@example.com"
 
 
