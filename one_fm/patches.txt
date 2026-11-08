@@ -700,3 +700,6 @@ one_fm.patches.v15_0.bonus_request_hr_user_confirm_step
 one_fm.patches.v15_0.default_arrival_deployment_workflow_state_to_draft
 one_fm.patches.v15_0.add_bank_account_civil_id #WI-004063 read-only 2026-11-03
 one_fm.patches.v15_0.create_employee_record_update_request_workflow_states #2026-11-04 WI-004420
+one_fm.patches.v15_0.backfill_pam_license_total_available_quota #2026-11-05 WI-004425
+one_fm.patches.v15_0.drop_medical_appointment_field_order_setter
+one_fm.patches.v15_0.processa_sync_subcontractor_billing___v1_9b748b #2026-11-05 Processa sync: Purchase Invoice

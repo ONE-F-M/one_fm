@@ -11,7 +11,6 @@ fee and a receipt the PRO has to produce before the file moves on.
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import now
 
 from one_fm.grd.utils import get_nationality_attestation_rule, get_pcc_attestation_fees
 
@@ -34,15 +33,6 @@ RECEIPT_REQUIRED_BY_STATE = {
 	"Pending MOFA": ("upload_mofa_payment_receipt", "Upload MOFA Payment Receipt"),
 	"Pending Translation": ("upload_translation_payment_receipt", "Upload Translation Payment Receipt"),
 }
-
-# Each receipt and the field that records when it went up. Read-only fields, stamped here
-# rather than in the browser so the stamp is the server's clock and cannot be skipped by
-# whatever attached the file.
-RECEIPT_TIMESTAMPS = (
-	("upload_embassy_payment_receipt", "upload_embassy_payment_receipt_on"),
-	("upload_mofa_payment_receipt", "upload_mofa_payment_receipt_on"),
-	("upload_translation_payment_receipt", "upload_translation_payment_receipt_on"),
-)
 
 
 def create_pcc_attestations(employee, category, preparation_name=None):
@@ -88,7 +78,6 @@ def create_pcc_attestation(employee, category, preparation_name=None, attestatio
 class PCCAttestation(Document):
 	def validate(self):
 		self.set_attestation_requirements()
-		self.set_receipt_timestamps()
 		self.validate_receipt_for_state_being_left()
 		self.validate_pro_user_before_assigning()
 
@@ -122,11 +111,6 @@ class PCCAttestation(Document):
 			_("Please select a PRO User before proceeding."),
 			title=_("PRO User Required"),
 		)
-
-	def on_update_after_submit(self):
-		# The receipts are allow_on_submit, so a file can arrive after the record is
-		# submitted. validate does not run on that path.
-		self.set_receipt_timestamps()
 
 	def set_attestation_requirements(self):
 		"""Derive what this certificate needs from the candidate's nationality (WI-002025).
@@ -215,25 +199,3 @@ class PCCAttestation(Document):
 			.format(frappe.bold(_(label))),
 			title=_("Payment Receipt Required"),
 		)
-
-	def set_receipt_timestamps(self):
-		"""Stamp when each receipt went up, and clear the stamp if the file is removed."""
-		for receipt_field, timestamp_field in RECEIPT_TIMESTAMPS:
-			has_receipt = bool(self.get(receipt_field))
-			has_timestamp = bool(self.get(timestamp_field))
-
-			if has_receipt and not has_timestamp:
-				self.set_field(timestamp_field, now())
-			elif not has_receipt and has_timestamp:
-				self.set_field(timestamp_field, None)
-
-	def set_field(self, fieldname, value):
-		"""Write a field on either side of submit.
-
-		After submit the row is already saved, so an assignment in
-		`on_update_after_submit` would be thrown away.
-		"""
-		if self.docstatus == 1:
-			self.db_set(fieldname, value)
-		else:
-			self.set(fieldname, value)
