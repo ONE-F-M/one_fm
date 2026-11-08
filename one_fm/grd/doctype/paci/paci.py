@@ -610,6 +610,8 @@ REJECTION_OUTCOME_FIELDS = (
     "paci_rejection_reason",
     "upload_civil_id_payment",
     "payment_date",
+    "payment_made_via",
+    "bank_account",
     "upload_civil_id",
     "upload_civil_id_datetime",
     "upload_hawiyati",

@@ -47,6 +47,8 @@
   "upload_damj_letter",
   "new_civil_id_expiry_date",
   "pro_user",
+  "payment_made_via",
+  "bank_account",
   "column_break_25",
   "payment_date",
   "upload_civil_id_datetime",
@@ -399,6 +401,20 @@
    "mandatory_depends_on": "eval:doc.workflow_state == 'Pending by PRO' || doc.workflow_state == 'Pending Address Update by PRO' || doc.workflow_state == 'Pending Photo Update by PRO'"
   },
   {
+   "depends_on": "eval:doc.upload_civil_id_payment",
+   "fieldname": "payment_made_via",
+   "fieldtype": "Select",
+   "label": "Payment Made Via",
+   "options": "\nBank\nCash"
+  },
+  {
+   "depends_on": "eval:doc.payment_made_via == \"Card\" || doc.payment_made_via == \"Bank\"",
+   "fieldname": "bank_account",
+   "fieldtype": "Link",
+   "label": "Bank Account",
+   "options": "Bank Account"
+  },
+  {
    "default": "0",
    "fieldname": "damj_is_applicable",
    "fieldtype": "Check",
@@ -438,7 +454,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-15 09:00:00.000000",
+ "modified": "2026-11-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PACI",
