@@ -2,6 +2,7 @@
 # See license.txt
 
 import re
+import unittest
 from unittest import mock
 
 import frappe
@@ -9,6 +10,7 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import nowdate, getdate
 
 from one_fm.patches.v15_0 import create_employee_record_update_request_workflow_states as states_patch
+from one_fm.tests.utils import make_employee
 
 DOCTYPE = "Employee Record Update Request"
 
@@ -67,6 +69,7 @@ EXPECTED_PERMISSIONS = {
 	"HR User": _HR_MANAGER | {"amend"},
 	"HR Manager": _HR_MANAGER,
 	"System Manager": _HR_MANAGER - {"submit"},
+	"Employee": {"read", "write", "create", "print", "email", "share"},
 }
 
 NO_HR_USER = "erur_no_hr_role@example.com"
@@ -141,7 +144,7 @@ class TestEmployeeRecordUpdateRequest(FrappeTestCase):
 		self.assertEqual(meta.get_field("employee").in_list_view, 1)
 		self.assertEqual(meta.get_field("employee").in_standard_filter, 1)
 		self.assertEqual(meta.get_field("employee_name").in_list_view, 1)
-		for fieldname in ("line_manager", "line_manager_user"):
+		for fieldname in ("employee", "line_manager", "line_manager_user"):
 			self.assertEqual(meta.get_field(fieldname).ignore_user_permissions, 1)
 		self.assertEqual(meta.get_field("current_salary_structure").label, "Salary Structure - Current Details")
 		self.assertEqual(meta.get_field("salary_new_value").label, "Salary Structure - New Details")
@@ -177,6 +180,7 @@ class TestEmployeeRecordUpdateRequest(FrappeTestCase):
 		for perm in meta.permissions:
 			self.assertEqual(perm.permlevel or 0, 0)
 			actual[perm.role] = {flag for flag in PERMISSION_FLAGS if perm.get(flag)}
+			self.assertEqual(perm.if_owner or 0, 1 if perm.role == "Employee" else 0)
 		self.assertEqual(set(actual), set(EXPECTED_PERMISSIONS))
 		for role, flags in EXPECTED_PERMISSIONS.items():
 			with self.subTest(role=role):
@@ -299,3 +303,113 @@ class TestWorkflowStatesPatch(FrappeTestCase):
 			states_patch.execute()
 
 		self.assertEqual(frappe.db.get_value("Workflow State", name, "style"), "Success")
+
+
+DIFFERENT_DEPARTMENT_MESSAGE = (
+	"You are not allowed to create an Employee Record Update Request for an employee from a different "
+	"department. The HR User role is required."
+)
+
+
+class TestDepartmentAccess(FrappeTestCase):
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		reload_doctypes()
+		company = frappe.defaults.get_global_default("company") or frappe.db.get_value("Company", {}, "name")
+		departments = frappe.get_all(
+			"Department", filters={"is_group": 0, "company": company}, pluck="name", limit=2
+		)
+		if len(departments) < 2:
+			raise unittest.SkipTest("Need 2 leaf Departments for the default company.")
+		cls.it_department, cls.hr_department = departments
+
+		cls.it_a = make_employee("erur_it_a@example.com", company=company, department=cls.it_department)
+		cls.it_b = make_employee("erur_it_b@example.com", company=company, department=cls.it_department)
+		cls.hr_x = make_employee("erur_hr_x@example.com", company=company, department=cls.hr_department)
+		cls.no_dept = make_employee("erur_no_dept@example.com", company=company)
+		frappe.db.set_value("Employee", cls.no_dept.name, "department", None)
+		cls.hr_user = cls.make_user("erur_hr_user@example.com", "HR User")
+		cls.hr_manager = cls.make_user("erur_hr_manager@example.com", "HR Manager")
+		cls.system_manager = cls.make_user("erur_sys_manager@example.com", "System Manager")
+		# Employee role but no Active Employee record.
+		cls.no_emp = make_employee("erur_no_emp@example.com", company=company, department=cls.it_department)
+		frappe.db.set_value("Employee", cls.no_emp.name, "status", "Left")
+
+	@staticmethod
+	def make_user(email, role):
+		if not frappe.db.exists("User", email):
+			frappe.get_doc({
+				"doctype": "User",
+				"email": email,
+				"first_name": email,
+				"send_welcome_email": 0,
+				"roles": [{"role": role}],
+			}).insert(ignore_permissions=True)
+		return email
+
+	def create(self, user, employee):
+		with self.set_user(user):
+			return make_request(employee).insert()
+
+	def assert_blocked(self, user, employee, message=None):
+		before = frappe.db.count(DOCTYPE)
+		with self.assertRaises(frappe.ValidationError) as cm:
+			self.create(user, employee)
+		if message:
+			self.assertEqual(str(cm.exception), message)
+		self.assertEqual(frappe.db.count(DOCTYPE), before)
+		return cm.exception
+
+	def test_hr_user_creates_for_any_department(self):
+		self.assertTrue(self.create(self.hr_user, self.hr_x.name).name)
+		self.assertTrue(self.create(self.hr_user, self.it_b.name).name)
+
+	def test_hr_manager_and_system_manager_are_exempt(self):
+		for user in (self.hr_manager, self.system_manager):
+			with self.subTest(user=user):
+				self.assertTrue(self.create(user, self.hr_x.name).name)
+
+	def test_same_department_user_can_create_read_and_write_but_not_submit(self):
+		doc = self.create(self.it_a.user_id, self.it_b.name)
+		for ptype, expected in (("read", True), ("write", True), ("submit", False)):
+			with self.subTest(ptype=ptype):
+				self.assertEqual(
+					bool(frappe.has_permission(DOCTYPE, ptype, doc, user=self.it_a.user_id)), expected
+				)
+
+	def test_different_department_is_blocked_with_the_ac_message(self):
+		self.assert_blocked(self.it_a.user_id, self.hr_x.name, DIFFERENT_DEPARTMENT_MESSAGE)
+
+	def test_target_without_department_is_blocked(self):
+		exc = self.assert_blocked(self.it_a.user_id, self.no_dept.name)
+		self.assertIn("has no Department", str(exc))
+
+	def test_requester_without_employee_is_blocked(self):
+		exc = self.assert_blocked(self.no_emp.user_id, self.it_b.name)
+		self.assertIn("not linked to an active Employee", str(exc))
+
+	def test_requester_without_department_is_blocked(self):
+		exc = self.assert_blocked(self.no_dept.user_id, self.it_b.name)
+		self.assertIn("Your Employee record has no Department", str(exc))
+
+	def test_changing_employee_on_a_draft_is_rechecked(self):
+		doc = self.create(self.it_a.user_id, self.it_b.name)
+		with self.set_user(self.it_a.user_id):
+			doc.employee = self.hr_x.name
+			with self.assertRaises(frappe.ValidationError) as cm:
+				doc.save()
+		self.assertEqual(str(cm.exception), DIFFERENT_DEPARTMENT_MESSAGE)
+
+	def test_saving_without_employee_change_is_not_rechecked(self):
+		doc = self.create(self.it_a.user_id, self.it_b.name)
+		frappe.share.add(DOCTYPE, doc.name, self.hr_x.user_id, write=1)
+		with self.set_user(self.hr_x.user_id):
+			doc = frappe.get_doc(DOCTYPE, doc.name)
+			doc.reason = "Updated by another department"
+			doc.save()
+		self.assertEqual(frappe.db.get_value(DOCTYPE, doc.name, "reason"), "Updated by another department")
+
+	def test_other_employee_cannot_read_a_request_they_do_not_own(self):
+		doc = self.create(self.it_a.user_id, self.it_b.name)
+		self.assertFalse(frappe.has_permission(DOCTYPE, "read", doc, user=self.it_b.user_id))
