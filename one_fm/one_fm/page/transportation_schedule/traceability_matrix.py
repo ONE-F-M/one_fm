@@ -281,6 +281,32 @@ def _latest_checkins(employee_ids) -> dict:
 	return latest
 
 
+def _departed_cards(cards, on_date) -> set:
+	"""Cards whose manifest for ``on_date`` already carries a boarding or attendance mark."""
+	from frappe.query_builder import DocType
+
+	if not cards:
+		return set()
+	details = DocType("Transportation Manifest Details")
+	manifest = DocType("Transportation Manifest")
+	return set(
+		(
+			frappe.qb.from_(details)
+			.join(manifest)
+			.on(details.parent == manifest.name)
+			.select(details.transportation_shipment)
+			.distinct()
+			.where(details.parenttype == "Transportation Manifest")
+			.where(details.transportation_shipment.isin(list(cards)))
+			.where(manifest.schedule_date == frappe.utils.getdate(on_date))
+			.where(
+				(details.attendance_status.isnotnull() & (details.attendance_status != ""))
+				| details.boarding_time.isnotnull()
+			)
+		).run(pluck=True)
+	)
+
+
 def _missing_reason(reliever, reliever_name, master_shift, roster_shift, skip_reason=None):
 	if skip_reason:
 		return skip_reason
@@ -344,6 +370,7 @@ def _build_rows(on_date, plan=None) -> list:
 	placements = _placements(plan)
 	# Why the last generation run left each employee without a card.
 	skip_reasons = frappe.cache.get_value(SKIP_REASONS_CACHE_KEY) or {}
+	departed = _departed_cards(list(card_status), on_date)
 
 	rows = []
 	for emp_id, emp in employees.items():
@@ -411,6 +438,7 @@ def _build_rows(on_date, plan=None) -> list:
 					or (placements.get(c) or {}).get("direction"),
 					# A merged card reads Mixed; its riders still travel one way.
 					"own_direction": own_direction(card_direction[c]) if c in card_direction else None,
+					"departed": c in departed,
 				}
 				for c in own_cards
 			],
@@ -611,3 +639,262 @@ def create_shipment_for_employee(
 	doc.append("transportation_shipment_employee", _rider(emp, checkin.accommodation, stop_location, scope, on_date))
 	doc.insert()
 	return {"headcount": doc.headcount, "card_id": f"TSHIP-{doc.name}", "status": doc.status}
+
+
+# ─── Removing riders and cancelling cards ─────────────────────────────────────
+
+DEPARTED_MESSAGE = "Trip has departed. Riders can no longer be removed."
+EMPTY_CHOICES = ("keep", "cancel")
+
+
+def _json_list(value) -> list:
+	value = frappe.parse_json(value) if isinstance(value, str) else value
+	return [v for v in (value or []) if v]
+
+
+def _leg_label(doc) -> str:
+	return _("Return") if own_direction(doc) == "RETURN" else _("Outward")
+
+
+def _live_card_docs(cards) -> list:
+	"""The live shipments behind card ids, write-checked; throws on a departed card."""
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import resolve_shipment_names
+
+	names = resolve_shipment_names(_json_list(cards))
+	if not names:
+		frappe.throw(_("Select at least one card."))
+	docs = []
+	for name in names:
+		if not frappe.db.exists("Transportation Shipment", name):
+			frappe.throw(_("Shipment {0} not found.").format(name))
+		doc = frappe.get_doc("Transportation Shipment", name)
+		doc.check_permission("write")
+		if doc.status not in LIVE_STATUSES:
+			frappe.throw(_("Shipment {0} is {1}; only Unassigned or Assigned cards can be changed.").format(name, doc.status))
+		docs.append(doc)
+	departed = _departed_cards(names, frappe.utils.today())
+	if departed:
+		frappe.throw(_("Card {0}: {1}").format(", ".join(sorted(departed)), _(DEPARTED_MESSAGE)))
+	return docs
+
+
+def _refuse_other_plan(names, plan) -> None:
+	"""A card placed on another plan is released from that plan's canvas, not here."""
+	placed = frappe.get_all(
+		"Route Plan Assignment",
+		filters={"parenttype": "Route Plan", "parent": ["!=", plan or ""]},
+		or_filters={
+			"transportation_shipment": ["in", names],
+			"card_id": ["in", [f"TSHIP-{n}" for n in names]],
+		},
+		fields=["parent"],
+		limit_page_length=1,
+	)
+	if placed:
+		frappe.throw(_("Open plan {0} to cancel this card.").format(placed[0].parent))
+
+
+def _remove_riders(doc, employees, reason) -> list:
+	"""Take ``employees`` off one card, save it and comment. Returns the removed ids."""
+	rows = [r for r in doc.transportation_shipment_employee if r.employee_id in employees]
+	if not rows:
+		return []
+	removed = [(r.employee_id, r.employee_name or r.employee_id) for r in rows]
+	for row in rows:
+		doc.remove(row)
+	doc.save()
+	doc.add_comment(
+		"Info",
+		_("Removed from the {0} leg: {1}. Reason: {2}").format(
+			_leg_label(doc),
+			", ".join(f"{label} ({emp})" for emp, label in removed),
+			reason or _("None given"),
+		),
+	)
+	return [emp for emp, _label in removed]
+
+
+def _cancel(docs, reason) -> list:
+	"""Set each card Inactive and comment. Returns the Active riders left without a card."""
+	from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import _lapsed
+
+	riders = {r.employee_id for doc in docs for r in doc.transportation_shipment_employee if r.employee_id}
+	stale = _lapsed(riders)
+	for doc in docs:
+		doc.status = "Inactive"
+		doc.save()
+		doc.add_comment("Info", _("Card cancelled. Reason: {0}").format(reason))
+	return sorted(riders - stale)
+
+
+@frappe.whitelist(methods=["POST"])
+def remove_from_cards(
+	employees: str, cards: str, reason: str = "", on_empty: str = "", plan: str = ""
+) -> dict:
+	"""Take riders off the given cards (the legs the dispatcher chose).
+
+	A card that would be left with no riders needs ``on_empty`` (keep or cancel); without
+	it the answer is ``{"needs_choice": True, "empty_cards": [...]}`` and nothing is written.
+	"""
+	frappe.only_for(MATRIX_ROLES)
+	wanted = set(_json_list(employees))
+	if not wanted:
+		frappe.throw(_("Select at least one employee."))
+	if on_empty and on_empty not in EMPTY_CHOICES:
+		frappe.throw(_("Choose whether to keep or cancel the empty card."))
+
+	docs = _live_card_docs(cards)
+	held = {r.employee_id for doc in docs for r in doc.transportation_shipment_employee}
+	absent = sorted(wanted - held)
+	if absent:
+		frappe.throw(_("{0} is not on the selected card(s).").format(", ".join(absent)))
+
+	emptied = [
+		doc for doc in docs
+		if doc.transportation_shipment_employee
+		and all(r.employee_id in wanted for r in doc.transportation_shipment_employee)
+	]
+	if emptied and not on_empty:
+		return {"needs_choice": True, "empty_cards": [f"TSHIP-{d.name}" for d in emptied]}
+	if emptied and on_empty == "cancel":
+		_refuse_other_plan([d.name for d in emptied], plan)
+
+	removed = set()
+	for doc in docs:
+		removed.update(_remove_riders(doc, wanted, reason))
+
+	cancelled = []
+	if emptied and on_empty == "cancel":
+		_cancel(emptied, reason or _("Last rider removed"))
+		cancelled = [f"TSHIP-{d.name}" for d in emptied]
+
+	return {
+		"removed": len(removed),
+		"headcounts": {f"TSHIP-{d.name}": d.headcount for d in docs},
+		"cancelled": cancelled,
+	}
+
+
+@frappe.whitelist(methods=["POST"])
+def cancel_cards(cards: str, reason: str, plan: str = "") -> dict:
+	"""Retire whole cards (status Inactive). The canvas then removes their blocks."""
+	frappe.only_for(MATRIX_ROLES)
+	if not (reason or "").strip():
+		frappe.throw(_("Choose a reason."))
+	docs = _live_card_docs(cards)
+	_refuse_other_plan([d.name for d in docs], plan)
+	missing = _cancel(docs, reason)
+	return {"cancelled": [f"TSHIP-{d.name}" for d in docs], "missing": missing}
+
+
+@frappe.whitelist(methods=["POST"])
+def clear_stale(employees: str) -> dict:
+	"""Take every stale employee off every live card they ride. Cards are never cancelled.
+
+	The client's list is only a candidate set: an employee the server does not see as
+	lapsed is skipped. Departed cards are skipped too.
+	"""
+	from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import _lapsed
+
+	frappe.only_for(MATRIX_ROLES)
+	asked = set(_json_list(employees))
+	stale = _lapsed(asked)
+	skipped = [{"employee": e, "reason": _("Not stale")} for e in sorted(asked - stale)]
+	if not stale:
+		return {"removed": 0, "headcounts": {}, "skipped": skipped}
+
+	parents = frappe.get_all(
+		"Transportation Shipment Employee",
+		filters={"parenttype": "Transportation Shipment", "employee_id": ["in", list(stale)]},
+		fields=["parent", "employee_id"],
+	)
+	live = set(frappe.get_all(
+		"Transportation Shipment",
+		filters={"name": ["in", list({p.parent for p in parents})], "status": ["in", LIVE_STATUSES]},
+		pluck="name",
+	)) if parents else set()
+	departed = _departed_cards(live, frappe.utils.today())
+
+	removed, headcounts = set(), {}
+	for name in sorted(live - departed):
+		doc = frappe.get_doc("Transportation Shipment", name)
+		doc.check_permission("write")
+		if gone := _remove_riders(doc, stale, _("Stale block clean-up")):
+			removed.update(gone)
+			headcounts[f"TSHIP-{name}"] = doc.headcount
+
+	held_back = sorted({p.employee_id for p in parents if p.parent in departed})
+	skipped += [{"employee": e, "reason": _(DEPARTED_MESSAGE)} for e in held_back]
+	return {"removed": len(removed), "headcounts": headcounts, "skipped": skipped}
+
+@frappe.whitelist()
+def get_card_passengers(card: str) -> dict:
+	"""A card and its live pair twin, with every rider flagged stale or Active."""
+	from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import _lapsed
+	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import resolve_shipment_names
+
+	frappe.only_for(MATRIX_ROLES)
+	name = (resolve_shipment_names([card]) or [None])[0]
+	if not name or not frappe.db.exists("Transportation Shipment", name):
+		frappe.throw(_("Shipment {0} not found.").format(card))
+	doc = frappe.get_doc("Transportation Shipment", name)
+	doc.check_permission("read")
+
+	docs = [doc]
+	if doc.pair_group:
+		mine = own_direction(doc)
+		twin = next((
+			t.name for t in frappe.get_all(
+				"Transportation Shipment",
+				filters={
+					"pair_group": doc.pair_group, "name": ["!=", doc.name], "status": ["in", LIVE_STATUSES],
+				},
+				fields=["name", "trip_direction", "pre_merge_trip_direction"],
+			)
+			if own_direction(t) != mine
+		), None)
+		if twin:
+			docs.append(frappe.get_doc("Transportation Shipment", twin))
+	departed = _departed_cards([d.name for d in docs], frappe.utils.today())
+
+	riders = {}
+	for d in docs:
+		for row in d.transportation_shipment_employee:
+			if row.employee_id:
+				rider = riders.setdefault(row.employee_id, {
+					"id": row.employee_id, "name": row.employee_name or row.employee_id, "legs": [],
+				})
+				rider["legs"].append(f"TSHIP-{d.name}")
+
+	stale = _lapsed(set(riders))
+	reasons = _stale_reasons(stale)
+	for emp, rider in riders.items():
+		rider["stale"] = emp in stale
+		rider["stale_reason"] = reasons.get(emp)
+
+	return {
+		"cards": [
+			{
+				"card": f"TSHIP-{d.name}",
+				"status": d.status,
+				"own_direction": own_direction(d),
+				"headcount": d.headcount,
+				"departed": d.name in departed,
+			}
+			for d in docs
+		],
+		"riders": sorted(riders.values(), key=lambda r: (not r["stale"], r["name"])),
+	}
+
+
+def _stale_reasons(employee_ids) -> dict:
+	"""``{employee: removal reason}`` for lapsed riders, worded as the dialog's reason options."""
+	if not employee_ids:
+		return {}
+	active = set(frappe.get_all(
+		"Employee", filters={"name": ["in", list(employee_ids)], "status": "Active"}, pluck="name"
+	))
+	return {
+		e: "Checked out of accommodation" if e in active else "Resigned / Left"
+		for e in employee_ids
+	}
