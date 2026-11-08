@@ -312,8 +312,6 @@ def _missing_reason(reliever, reliever_name, master_shift, roster_shift, skip_re
 		return skip_reason
 	if reliever:
 		return _("Relieving {0}, but no shipment generated").format(reliever_name)
-	if roster_shift and master_shift and roster_shift != master_shift:
-		return _("Eligible, but no shipment generated: master shift differs from roster")
 	return None
 
 

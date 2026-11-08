@@ -27,13 +27,24 @@ def _demand(tail, *ids):
 	return dict(DEMAND, group_token=f"RECONCILE-TEST|{tail}", employees=_roster(*ids))
 
 
-def _tables(shifts, employees, checkin_labels, stops, card_keys=()):
-	"""A frappe.get_all stand-in for the demand builder's reads."""
+def _tables(shifts, employees, checkin_labels, stops, card_keys=(), roster=None):
+	"""A frappe.get_all stand-in for the demand builder's reads.
+
+	``employees`` is ``{employee: master shift}``; ``roster`` is today's Employee Schedule
+	rows, by default one Working Basic row on the master shift.
+	"""
+	if roster is None:
+		roster = [_row(e, s) for e, s in employees.items() if s]
 
 	def get_all(doctype, filters=None, fields=None, pluck=None, **kwargs):
 		if doctype == "Operations Shift":
 			return [frappe._dict(name=s, site="SITE") for s in shifts]
+		if doctype == "Employee Schedule":
+			wanted = (filters or {}).get("employee_availability")
+			return [r for r in roster if not wanted or r.employee_availability == wanted]
 		if doctype == "Employee":
+			if pluck:
+				return list(employees)
 			rows = [frappe._dict(name=e, shift=s) for e, s in employees.items()]
 			if "shift" in (filters or {}):
 				rows = [r for r in rows if r.shift in filters["shift"][1]]
@@ -50,6 +61,10 @@ def _tables(shifts, employees, checkin_labels, stops, card_keys=()):
 		return []
 
 	return get_all
+
+
+def _row(emp, shift, availability="Working", roster_type="Basic"):
+	return frappe._dict(employee=emp, shift=shift, employee_availability=availability, roster_type=roster_type)
 
 
 def _checkin(emp, acc, checked_out=0):
@@ -96,13 +111,45 @@ class TestTheDemand(ReconcileCase):
 		with patch.object(ts.frappe, "get_all", side_effect=get_all):
 			self.assertEqual(ts._mahboula_lookup_id({"Mahboula 3", "Mahboula 13"}), "ACC-03")
 
-	def test_no_master_shift_and_an_inactive_shift_are_named(self):
-		get_all = _tables(["S1"], {"E1": None, "E2": "S-OLD"}, {}, [])
+	def test_no_roster_row_and_an_inactive_rostered_shift_are_named(self):
+		get_all = _tables(["S1"], {"E1": "S1", "E2": "S1"}, {}, [], roster=[_row("E2", "S-OLD")])
 		skipped = {}
 		self._grouped(get_all, {}, skipped)
 
-		self.assertEqual(skipped["E1"], "No Operations Shift on Employee")
-		self.assertIn("S-OLD", skipped["E2"])
+		self.assertEqual(skipped["E1"], "Not rostered to work today")
+		self.assertEqual(skipped["E2"], "Rostered shift S-OLD is not Active")
+
+	def test_demand_follows_todays_roster_not_the_master_shift(self):
+		# All four share master shift S1, as every Jazeera employee shares Morning-5.
+		employees = {"E1": "S1", "E2": "S1", "E3": "S1", "E4": "S1"}
+		roster = [
+			_row("E1", "S2"),
+			_row("E2", "S3"),
+			_row("E3", "S1", availability="Day Off"),
+			_row("E4", "S3", roster_type="Over-Time"),
+			_row("E4", "S2"),
+		]
+		get_all = _tables(["S1", "S2", "S3"], employees, {"ACC-1": "Camp One"}, ["ACC-1"], roster=roster)
+		checkins = {e: _checkin(e, "ACC-1") for e in employees}
+		skipped = {}
+
+		nested = self._grouped(get_all, checkins, skipped)
+
+		shifts = {s: sorted(ids) for s, ids in nested["ACC-1"]["shifts"].items()}
+		self.assertEqual(shifts, {"S2": ["E1", "E4"], "S3": ["E2"]})
+		self.assertEqual(skipped, {"E3": "Not rostered to work today"})
+
+	def test_a_reliever_rides_the_shift_they_cover(self):
+		get_all = _tables(["S1", "S2"], {"E1": "S1", "R1": "S1"}, {"ACC-1": "Camp One"}, ["ACC-1"])
+		checkins = {e: _checkin(e, "ACC-1") for e in ("E1", "R1")}
+		relieve = {"R1": {"shift": "S2", "relieving_employee": "E1"}}
+		with patch("one_fm.one_fm.doctype.transportation_shipment.roster_overlay.absent_employees", return_value={}), \
+				patch("one_fm.one_fm.doctype.transportation_shipment.roster_overlay.relieving_assignments", return_value=relieve), \
+				patch.object(ts.frappe, "get_all", side_effect=get_all), \
+				patch.object(matrix, "_latest_checkins", return_value=checkins):
+			nested = ts.get_grouped_employees_by_accommodation()
+
+		self.assertEqual(nested["ACC-1"]["shifts"], {"S2": ["R1"]})
 
 
 class TestSkipReasons(FrappeTestCase):
@@ -150,7 +197,7 @@ class TestSkipReasons(FrappeTestCase):
 
 	def test_the_matrix_says_why(self):
 		self.assertEqual(matrix._missing_reason({}, None, "A", "B", "Shift A is not Active"), "Shift A is not Active")
-		self.assertIn("master shift differs", matrix._missing_reason({}, None, "A", "B"))
+		self.assertIsNone(matrix._missing_reason({}, None, "A", "B"))
 
 
 class TestTheRunKeepsWhatItMade(ReconcileCase):
