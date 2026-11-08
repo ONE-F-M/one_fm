@@ -15,12 +15,15 @@ demand has disappeared. Assigned shipments are never touched.
 
 import frappe
 from frappe import _
-from frappe.utils import get_datetime, getdate, today
+from frappe.utils import escape_html, get_datetime, getdate, today
 
 from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
 	driver_employees,
 )
-from one_fm.one_fm.doctype.transportation_shipment.roster_overlay import reliever_context
+from one_fm.one_fm.doctype.transportation_shipment.roster_overlay import (
+	absent_employees,
+	reliever_context,
+)
 from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
 	get_coords,
 	get_grouped_employees_by_accommodation,
@@ -39,13 +42,20 @@ MAHBOULA_LABELS = {"Mahboula 3", "Mahboula 12", "Mahboula 13", "Mahboula 15"}
 GENERATE_ROLES = ("System Manager", "Transportation Manager", "Transportation Supervisor")
 
 
-def build_demand_descriptors(nested_map: dict) -> list:
+def build_demand_descriptors(nested_map: dict, skipped: dict | None = None) -> list:
 	"""Turn the accommodation->shift->employees map into round-trip demand descriptors.
 
 	Returns a list of base demands (one per Direct/OSM/OLM grouping) with the
 	going roster and a cross-referenced return roster attached. Direction-specific
 	records are expanded later in generate_transportation_shipments().
+
+	``skipped`` collects ``{employee: reason}`` for every rider no demand is built for.
 	"""
+	def skip(emp_ids, reason):
+		if skipped is not None:
+			for emp in emp_ids:
+				skipped[emp] = reason
+
 	if not nested_map:
 		return []
 
@@ -151,6 +161,8 @@ def build_demand_descriptors(nested_map: dict) -> list:
 	for acc_name, acc_data in nested_map.items():
 		lookup_id = acc_data["lookup_id"]
 		if not get_coords("Accommodation", lookup_id):
+			for emp_list in acc_data["shifts"].values():
+				skip(emp_list, _("Camp {0} transport stop has no coordinates").format(lookup_id))
 			continue
 
 		olm_groups = {}
@@ -158,6 +170,7 @@ def build_demand_descriptors(nested_map: dict) -> list:
 		for shift_name, employee_list in acc_data["shifts"].items():
 			shift_doc = shift_doc_map.get(shift_name)
 			if not shift_doc:
+				skip(employee_list, _("Shift {0} not found").format(shift_name))
 				continue
 
 			operations_site = shift_doc.site
@@ -224,7 +237,11 @@ def build_demand_descriptors(nested_map: dict) -> list:
 			# ── Direct fallback ──
 			if not handled:
 				site_loc = site_location_map.get(operations_site)
-				if site_loc and get_coords("Location", site_loc):
+				if not site_loc:
+					skip(employee_list, _("Shift {0} has no site (no route)").format(shift_name))
+				elif not get_coords("Location", site_loc):
+					skip(employee_list, _("Site {0} location has no coordinates (no route)").format(operations_site))
+				else:
 					demands.append({
 						"acc_name": acc_name,
 						"accommodation": lookup_id,
@@ -241,6 +258,7 @@ def build_demand_descriptors(nested_map: dict) -> list:
 		# ── Emit aggregated OLM demands for this accommodation ──
 		for (stop_location, start_key, end_key), grp in olm_groups.items():
 			if not get_coords("Location", stop_location):
+				skip(grp["employees"], _("Stop {0} has no coordinates (no route)").format(stop_location))
 				continue
 			# Several shifts can share one window - different roles finishing together -
 			# so the card names the one it serves when there is one, and lists them all
@@ -407,60 +425,82 @@ def _refresh_assigned_roster(name: str, demand: dict, roster: list, relievers: d
 
 
 @frappe.whitelist()
-def generate_transportation_shipments():
+def generate_transportation_shipments() -> dict:
 	"""Idempotently materialize/refresh Transportation Shipment records.
 
 	Entry point for both the daily scheduler and the canvas "Generate" button.
-	Returns a summary dict of what changed.
+	Returns a summary dict of what changed, plus ``skipped`` and ``failed`` rows
+	(``employee``, ``employee_name``, ``reason``) for eligible employees left without a card.
 	"""
 	# The scheduler runs as Administrator; guard interactive/API calls. The button
 	# lives on the Transportation Schedule canvas, which is the transport team's own
 	# board, so the roles that run it may refresh their own cards instead
 	# of having to ask a System Manager.
-	if frappe.session.user != "Administrator":
+	scheduled = frappe.session.user == "Administrator"
+	if not scheduled:
 		frappe.only_for(GENERATE_ROLES)
 
-	# Before the no-demand return below: a night with no demand must still expire them.
-	expired = _expire_single_day_rows(getdate(today()))
+	skipped = {}  # employee -> why no demand was built for them
+	failed = {}  # employee -> row, for riders of a demand that raised
+	try:
+		# First: a night with no demand must still expire them.
+		expired = _expire_single_day_rows(getdate(today()))
 
-	nested_map = get_grouped_employees_by_accommodation()
-	demands = build_demand_descriptors(nested_map)
+		nested_map = get_grouped_employees_by_accommodation(skipped=skipped)
+		demands = build_demand_descriptors(nested_map, skipped=skipped)
 
-	# Resolved once for the whole run rather than per card: the overlay is a handful of
-	# rows and every demand asks the same question of it.
-	relievers = reliever_context()
+		# Resolved once for the whole run rather than per card: the overlay is a handful of
+		# rows and every demand asks the same question of it.
+		relievers = reliever_context()
 
-	summary = {"created": 0, "updated": 0, "refreshed": 0, "deleted": 0, "errors": 0,
-	           "repaired": 0, "overflowed": 0, "flagged": 0, "pruned": False, "expired": expired}
+		summary = {"created": 0, "updated": 0, "refreshed": 0, "deleted": 0, "errors": 0,
+		           "repaired": 0, "overflowed": 0, "flagged": 0, "pruned": False, "expired": expired}
 
-	# A rider pinned to a card by hand rides that card only, so they leave the demand
-	# roster of that direction and no demand card seats them as well.
-	pinned = _pins()
+		# A rider pinned to a card by hand rides that card only, so they leave the demand
+		# roster of that direction and no demand card seats them as well.
+		pinned = _pins()
 
-	# What today's roster asks for, one entry per card: the same riders both ways, each
-	# leg on its own card. Collecting a different shift's crew on the same run is a
-	# Mixed trip the dispatcher builds on the canvas, not something a card's roster says.
-	targets = {}
-	for demand in demands:
-		if not demand["employees"]:
-			continue
-		for direction in ("Outward", "Return"):
-			roster = [emp for emp in demand["employees"] if (emp["id"], direction) not in pinned]
-			gen_key, pair_group = _generation_key(demand, direction)
-			targets[gen_key] = (demand, direction, roster, pair_group)
-	current_keys = set(targets)
+		# What today's roster asks for, one entry per card: the same riders both ways, each
+		# leg on its own card. Collecting a different shift's crew on the same run is a
+		# Mixed trip the dispatcher builds on the canvas, not something a card's roster says.
+		targets = {}
+		for demand in demands:
+			if not demand["employees"]:
+				continue
+			for direction in ("Outward", "Return"):
+				roster = [emp for emp in demand["employees"] if (emp["id"], direction) not in pinned]
+				gen_key, pair_group = _generation_key(demand, direction)
+				targets[gen_key] = (demand, direction, roster, pair_group)
+		current_keys = set(targets)
 
-	# A run that computed NO demand has no authority over any card. The demand builder
-	# returns {} for ordinary reasons (no Active Operations Shift, nobody allocated, or no
-	# Accommodation Checkin Checkout carrying an employee), indistinguishable from "nobody
-	# needs a bus today". Pruning on that deleted the whole pool once (551 cards), and
-	# taking riders off placed cards on it would empty every bus.
-	if not current_keys:
-		if expired:
+		# A run that computed NO demand has no authority over any card. The demand builder
+		# returns {} for ordinary reasons (no Active Operations Shift, nobody allocated, or no
+		# Accommodation Checkin Checkout carrying an employee), indistinguishable from "nobody
+		# needs a bus today". Pruning on that deleted the whole pool once (551 cards), and
+		# taking riders off placed cards on it would empty every bus.
+		if current_keys:
+			_reconcile(targets, current_keys, relievers, summary, failed)
+
+		_report(summary, skipped, failed, scheduled)
+		if current_keys or expired:
 			frappe.db.commit()
-		frappe.logger().info(f"generate_transportation_shipments: {summary}")
-		return summary
+	except Exception:
+		# Partial writes go; the failure itself must survive the rollback.
+		frappe.db.rollback()
+		title = _("Transportation Shipment Generation Failed")
+		trace = frappe.get_traceback()
+		frappe.log_error(title=title, message=trace)
+		if scheduled:
+			_alert(title, f"<pre>{escape_html(trace)}</pre>")
+		frappe.db.commit()
+		raise
 
+	frappe.logger().info(f"generate_transportation_shipments: {summary}")
+	return summary
+
+
+def _reconcile(targets: dict, current_keys: set, relievers: dict, summary: dict, failed: dict) -> None:
+	"""Put today's demand on cards, settle orphaned placed cards and prune the pool."""
 	cards = _live_cards()
 	summary["repaired"] = _repair_mixed_keys(cards, current_keys)
 	families = _families(cards, current_keys)
@@ -485,19 +525,91 @@ def generate_transportation_shipments():
 				family, demand, direction, roster, gen_key, pair_group, relievers, seats, summary
 			)
 			owner.update({(emp, direction): card for emp, card in carried.items()})
-		except Exception:
+		except Exception as e:
 			summary["errors"] += 1
 			frappe.log_error(frappe.get_traceback(), "Transportation Shipment Generation Error")
+			reason = str(e) or type(e).__name__
+			for emp in roster:
+				failed[emp["id"]] = {"employee": emp["id"], "employee_name": emp["name"], "reason": reason}
 
 	produced = {card.name for family in families.values() for card in family}
 	summary["flagged"] = _settle_orphans(cards, produced, owner, summary)
 
 	summary["pruned"] = True
-	summary["deleted"] = _prune_stale(current_keys, keep=produced)
+	# owner holds every card that carries a rider today, including overflow cards made
+	# this run: their `#n` keys are never produced.
+	summary["deleted"] = _prune_stale(current_keys, keep=produced | set(owner.values()))
 
-	frappe.db.commit()
-	frappe.logger().info(f"generate_transportation_shipments: {summary}")
-	return summary
+
+# ─── What the run left undone ─────────────────────────────────────────────────
+
+SKIP_REASONS_CACHE_KEY = "transportation_shipment_skip_reasons"
+
+
+def _report(summary: dict, skipped: dict, failed: dict, scheduled: bool) -> None:
+	"""Add generated/skipped/failed to the summary; a scheduled run alerts on any of them."""
+	summary["generated"] = summary["created"] + summary["overflowed"]
+	summary["failed"] = list(failed.values())
+	summary["skipped"] = _unplaced(skipped, failed)
+
+	# The Traceability Matrix shows the same reason against each Missing row.
+	frappe.cache.set_value(
+		SKIP_REASONS_CACHE_KEY,
+		{row["employee"]: row["reason"] for row in summary["skipped"] + summary["failed"]},
+		expires_in_sec=2 * 24 * 60 * 60,
+	)
+
+	if not scheduled or not (summary["skipped"] or summary["failed"]):
+		return
+	title = _("Transportation Shipment Generation: {0} skipped, {1} failed").format(
+		len(summary["skipped"]), len(summary["failed"])
+	)
+	table = _report_table(summary["skipped"], summary["failed"])
+	frappe.log_error(title=title, message=table)
+	_alert(title, table)
+
+
+def _unplaced(skipped: dict, failed: dict) -> list:
+	"""Eligible employees with no card (the matrix's Missing rows), each with a reason."""
+	from one_fm.one_fm.page.transportation_schedule.traceability_matrix import STATUS_MISSING, _build_rows
+
+	try:
+		rows = _build_rows(getdate(today()))
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Transportation Shipment Skip Report Error")
+		return []
+	return [
+		{
+			"employee": row["id"],
+			"employee_name": row["name"],
+			"reason": skipped.get(row["id"]) or _("Demand produced but no card; see Error Log"),
+		}
+		for row in rows
+		if row["status"] == STATUS_MISSING and row["id"] not in failed
+	]
+
+
+def _report_table(skipped: list, failed: list) -> str:
+	head = "".join(f"<th>{label}</th>" for label in (_("Result"), _("Employee"), _("Name"), _("Reason")))
+	body = "".join(
+		"<tr>" + "".join(
+			f"<td>{escape_html(value or '')}</td>"
+			for value in (result, row["employee"], row["employee_name"], row["reason"])
+		) + "</tr>"
+		for result, rows in ((_("Skipped"), skipped), (_("Failed"), failed))
+		for row in rows
+	)
+	return f'<table class="table table-sm"><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>'
+
+
+def _alert(subject: str, message: str) -> None:
+	"""Email the Shipment Alert Recipient. A failed alert never fails the run."""
+	try:
+		recipient = frappe.db.get_single_value("Transportation Settings", "shipment_alert_user")
+		if recipient:
+			frappe.sendmail(recipients=[recipient], subject=subject, message=message)
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Transportation Shipment Alert Error")
 
 
 # ─── One rider, one live card per direction ───────────────────────────────────
@@ -834,36 +946,39 @@ def _new_overflow(root_name: str, demand: dict, direction: str, crew: list, reli
 def _settle_orphans(cards: dict, produced: set, owner: dict, summary: dict) -> int:
 	"""Take riders off placed cards today's roster no longer produces, and flag them.
 
-	Only riders now carried on another card in the same direction are taken off - that is
-	proof they moved. A rider with no card anywhere today is left on and named in the
-	reason: an empty demand for them can be a data gap (a missing check-in, an unmapped
-	stop), and emptying a bus on a gap is worse than asking.
+	Taken off: riders now carried on another card in the same direction - proof they
+	moved - and riders who are no longer Active, have no open check-in or are on approved
+	leave. Any other rider with no card today is left on and named in the reason: an
+	empty demand for them can be a data gap (an unmapped stop, a missing shift), and
+	emptying a bus on a gap is worse than asking.
 
 	The card is not deleted or taken off its lane. Changing a plan from here would skip
 	the stop renumbering, the merge bookkeeping, the seat check and the lock windows that
 	a save on the canvas runs; removing the block there does all of it, and the next run
 	prunes the card once it is back in the pool. Returns how many cards are flagged.
 	"""
+	orphans = [card for card in cards.values() if card.name not in produced and card.status == "Assigned"]
+	riders = {emp for card in orphans for emp in card.riders if emp}
+	gone = (_lapsed(riders) | set(absent_employees(getdate(today()), riders))) if riders else set()
+
 	flagged = 0
-	for card in cards.values():
-		if card.name in produced or card.status != "Assigned":
-			continue
+	for card in orphans:
 		try:
 			direction = _own_direction(card)
 			moved = {emp: owner[(emp, direction)] for emp in card.riders if (emp, direction) in owner}
-			stays = [emp for emp in card.riders if emp not in moved]
+			left = [emp for emp in card.riders if emp in gone and emp not in moved]
+			stays = [emp for emp in card.riders if emp not in moved and emp not in gone]
 
-			if moved:
+			if moved or left:
 				doc = frappe.get_doc("Transportation Shipment", card.name)
-				doc.set("transportation_shipment_employee", [
-					row for row in doc.transportation_shipment_employee
-					if row.employee_id not in moved
-				])
+				for row in [r for r in doc.transportation_shipment_employee
+							if r.employee_id in moved or r.employee_id in gone]:
+					doc.remove(row)
 				doc.headcount = len(doc.transportation_shipment_employee)
 				doc.save(ignore_permissions=True)
 				summary["refreshed"] += 1
 
-			_set_replan_flag(card, _replan_reason(moved, stays))
+			_set_replan_flag(card, _replan_reason(moved, stays, left))
 			flagged += 1
 		except Exception:
 			summary["errors"] += 1
@@ -871,7 +986,7 @@ def _settle_orphans(cards: dict, produced: set, owner: dict, summary: dict) -> i
 	return flagged
 
 
-def _replan_reason(moved: dict, stays: list) -> str:
+def _replan_reason(moved: dict, stays: list, left: list = ()) -> str:
 	parts = [_(
 		"Today's roster no longer matches this card's camp, shift, stop, shift times or "
 		"arrangement. Remove this block from the lane."
@@ -880,6 +995,8 @@ def _replan_reason(moved: dict, stays: list) -> str:
 		parts.append(_("Moved to another card: {0}.").format(
 			", ".join(f"{emp} → {card}" for emp, card in sorted(moved.items()))
 		))
+	if left:
+		parts.append(_("Removed as inactive, checked out or on leave: {0}.").format(", ".join(left)))
 	if stays:
 		parts.append(_("No card today for: {0}. Check their roster before removing.").format(
 			", ".join(stays)

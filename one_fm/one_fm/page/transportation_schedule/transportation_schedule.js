@@ -5373,14 +5373,6 @@ function mountRoutePlannerApp(wrapper, data) {
                     method: 'one_fm.one_fm.doctype.transportation_shipment.shipment_generator.generate_transportation_shipments',
                     callback: function (r) {
                         const s = r.message || {};
-                        // A placed card whose CREW changed is reported separately from
-                        // a pool card that was rewritten: the run stayed exactly where
-                        // the dispatcher put it and only its people moved, and saying
-                        // "updated" for both reads as though the plan was touched
-                        //.
-                        const crew = s.refreshed
-                            ? `, ${s.refreshed} assigned run(s) re-crewed`
-                            : '';
                         // The server refused to prune because it could not read any shift
                         // demand at all. Say so loudly and for longer: the pool is
                         // untouched, but nothing was rebuilt either, and a green
@@ -5393,23 +5385,62 @@ function mountRoutePlannerApp(wrapper, data) {
                             self.refreshCards();
                             return;
                         }
-                        const overflow = s.overflowed
-                            ? `, ${s.overflowed} overflow card(s) for joiners with no seat`
-                            : '';
-                        // Blocks whose card today's roster no longer produces. They are
-                        // outlined on the board and need removing by hand.
-                        const replan = s.flagged
-                            ? `, ${s.flagged} block(s) need re-planning`
-                            : '';
-                        frappe.show_alert({
-                            message: `Shipments: ${s.created || 0} created, ${s.updated || 0} updated, ${s.deleted || 0} removed${crew}${overflow}${replan}`,
-                            indicator: s.flagged ? 'orange' : 'green'
-                        }, s.flagged ? 10 : 6);
+                        self.showGenerateSummary(s);
                         self.refreshCards();
+                    },
+                    error: function (r) {
+                        let msg = (r && r.exception) || __('Unknown error');
+                        try {
+                            if (r && r._server_messages) {
+                                msg = JSON.parse(r._server_messages).map(m => JSON.parse(m).message).join(' ');
+                            }
+                        } catch (e) { /* keep the exception text */ }
+                        frappe.msgprint({
+                            title: __('Generate Shipments'),
+                            message: __('Generate Shipments failed: {0}', [frappe.utils.escape_html(msg)]),
+                            indicator: 'red',
+                        });
                     },
                     always: function () {
                         self.isGenerating = false;
                     }
+                });
+            },
+
+            // Counts plus every eligible employee the run left without a card, and why.
+            showGenerateSummary(s) {
+                const esc = frappe.utils.escape_html;
+                const rows = [
+                    ...(s.failed || []).map(r => [__('Failed'), r]),
+                    ...(s.skipped || []).map(r => [__('Skipped'), r]),
+                ];
+                const extra = [];
+                // A placed card whose crew changed is reported apart from a rewritten pool
+                // card: the run stayed where the dispatcher put it, only its people moved.
+                if (s.refreshed) extra.push(__('{0} assigned run(s) re-crewed', [s.refreshed]));
+                if (s.overflowed) extra.push(__('{0} overflow card(s) for joiners with no seat', [s.overflowed]));
+                // Blocks whose card today's roster no longer produces. They are outlined on
+                // the board and need removing by hand.
+                if (s.flagged) extra.push(__('{0} block(s) need re-planning', [s.flagged]));
+                const table = rows.length
+                    ? `<table class="table table-sm table-bordered mt-3 mb-0">
+                        <thead><tr>${[__('Result'), __('Employee'), __('Name'), __('Reason')].map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead>
+                        <tbody>${rows.map(([result, r]) => `<tr><td>${esc(result)}</td><td>${esc(r.employee || '')}</td><td>${esc(r.employee_name || '')}</td><td>${esc(r.reason || '')}</td></tr>`).join('')}</tbody>
+                       </table>`
+                    : '';
+                frappe.msgprint({
+                    title: __('Shipments Generated'),
+                    indicator: (rows.length || s.flagged) ? 'orange' : 'green',
+                    wide: rows.length > 0,
+                    message: `<div class="d-flex flex-wrap">
+                            <div class="mr-4"><span class="font-weight-bold">${s.generated || 0}</span> ${__('generated')}</div>
+                            <div class="mr-4"><span class="font-weight-bold">${s.updated || 0}</span> ${__('updated')}</div>
+                            <div class="mr-4"><span class="font-weight-bold">${(s.skipped || []).length}</span> ${__('skipped')}</div>
+                            <div class="mr-4"><span class="font-weight-bold">${s.deleted || 0}</span> ${__('deleted')}</div>
+                            <div class="mr-4"><span class="font-weight-bold">${(s.failed || []).length}</span> ${__('failed')}</div>
+                        </div>
+                        ${extra.length ? `<div class="text-muted small mt-2">${esc(extra.join(', '))}</div>` : ''}
+                        ${table}`,
                 });
             },
 

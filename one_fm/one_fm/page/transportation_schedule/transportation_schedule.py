@@ -261,13 +261,30 @@ def optimize_transportation_routes():
         frappe.log_error(frappe.get_traceback(), "Route Optimization API Error")
         return {"status": "error", "message": str(e)}
 
-def get_grouped_employees_by_accommodation() -> dict:
+def get_grouped_employees_by_accommodation(skipped: dict | None = None) -> dict:
+    """{camp key: {"lookup_id", "shifts": {shift: [employee]}}} for today's riders.
+
+    ``skipped`` collects ``{employee: reason}`` for every Active employee dropped here.
+    """
+    def skip(emp_ids, reason):
+        if skipped is not None:
+            for emp in emp_ids:
+                skipped[emp] = reason
+
     # 1. Fetch all active Operations Shift entries
     active_shifts = frappe.get_all("Operations Shift", filters={"status": "Active"}, fields=["name", "site"])
+    shift_names = [s.name for s in active_shifts]
+
+    if skipped is not None:
+        active = set(shift_names)
+        for e in frappe.get_all("Employee", filters={"status": "Active"}, fields=["name", "shift"]):
+            if not e.shift:
+                skip([e.name], _("No Operations Shift on Employee"))
+            elif e.shift not in active:
+                skip([e.name], _("Shift {0} is not Active").format(e.shift))
+
     if not active_shifts:
         return {}
-
-    shift_names = [s.name for s in active_shifts]
 
     # 2. Find all employees with a shift allocation matching one of the active shifts
     employees = frappe.get_all("Employee",
@@ -290,22 +307,15 @@ def get_grouped_employees_by_accommodation() -> dict:
     if not emp_ids:
         return {}
 
-    # 3. Bulk-fetch the latest IN checkin per employee (single query instead of N+1)
-    #    Uses a correlated subquery to pick the most recent checkin per employee.
-    checkin_rows = frappe.db.sql("""
-        SELECT c.employee, c.accommodation
-        FROM `tabAccommodation Checkin Checkout` c
-        INNER JOIN (
-            SELECT employee, MAX(creation) AS max_creation
-            FROM `tabAccommodation Checkin Checkout`
-            WHERE type = 'IN'
-              AND employee IS NOT NULL
-              AND employee != ''
-              AND employee IN %(emp_ids)s
-            GROUP BY employee
-        ) latest ON c.employee = latest.employee AND c.creation = latest.max_creation
-        WHERE c.type = 'IN'
-    """, {"emp_ids": emp_ids}, as_dict=True)
+    # 3. The latest IN row per employee, read the way the Traceability Matrix reads it.
+    #    A checked-out row means the employee has left the camp and needs no bus.
+    from one_fm.one_fm.page.transportation_schedule.traceability_matrix import _latest_checkins
+
+    checkin_rows = [
+        row for row in _latest_checkins(emp_ids).values() if row.accommodation and not row.checked_out
+    ]
+    housed = {row.employee for row in checkin_rows}
+    skip([e for e in emp_ids if e not in housed], _("No open accommodation check-in"))
 
     if not checkin_rows:
         # Log once instead of per-employee to avoid thousands of Error Log entries
@@ -326,6 +336,7 @@ def get_grouped_employees_by_accommodation() -> dict:
             acc_labels[row.name] = row.accommodation
 
     MAHBOULA_LABELS = {"Mahboula 3", "Mahboula 12", "Mahboula 13", "Mahboula 15"}
+    mahboula_id = _mahboula_lookup_id(MAHBOULA_LABELS)
 
     # 5. Build accommodation → employees map
     accommodation_map = {}
@@ -333,13 +344,16 @@ def get_grouped_employees_by_accommodation() -> dict:
         acc_id = row.accommodation
         acc_label = acc_labels.get(acc_id)
         if not acc_label:
+            skip([row.employee], _("Accommodation {0} not found").format(acc_id))
             continue
 
-        acc_key = "Mahboula Camp" if acc_label in MAHBOULA_LABELS else acc_id
+        is_mahboula = acc_label in MAHBOULA_LABELS
+        acc_key = "Mahboula Camp" if is_mahboula else acc_id
 
         if acc_key not in accommodation_map:
             accommodation_map[acc_key] = {
-                "lookup_id": acc_id,
+                # Part of every Mahboula generation_key, so it must not follow row order.
+                "lookup_id": mahboula_id if is_mahboula else acc_id,
                 "employees": []
             }
 
@@ -363,6 +377,7 @@ def get_grouped_employees_by_accommodation() -> dict:
     for acc_key, data in accommodation_map.items():
         lookup_id = data["lookup_id"]
         if lookup_id not in acc_stop_map:
+            skip([e.name for e in data["employees"]], _("Camp {0} has no transport stop").format(lookup_id))
             continue
 
         nested_map[acc_key] = {
@@ -376,6 +391,35 @@ def get_grouped_employees_by_accommodation() -> dict:
             nested_map[acc_key]["shifts"][shift].append(emp.name)
 
     return nested_map
+
+
+def _mahboula_lookup_id(labels: set) -> str | None:
+    """The one accommodation every Mahboula camp is keyed under.
+
+    The id the live shift cards already carry in their generation_key, so a run never
+    re-keys them; the lowest name only when no card carries one.
+    """
+    from collections import Counter
+
+    ids = frappe.get_all("Accommodation", filters={"accommodation": ["in", list(labels)]}, pluck="name")
+    if not ids:
+        return None
+    counts = Counter()
+    for key in frappe.get_all(
+        "Transportation Shipment",
+        filters={
+            "source_doctype": "Operations Shift",
+            "status": ["in", ["Unassigned", "Assigned"]],
+            "generation_key": ["like", "OPS|%"],
+        },
+        pluck="generation_key",
+    ):
+        parts = key.split("|")
+        if len(parts) > 1 and parts[1] in ids:
+            counts[parts[1]] += 1
+    if counts:
+        return min(counts, key=lambda acc: (-counts[acc], acc))
+    return min(ids)
 
 
 def build_shipments_from_nested_map(nested_map: dict, config: object, global_bounds: tuple) -> tuple:

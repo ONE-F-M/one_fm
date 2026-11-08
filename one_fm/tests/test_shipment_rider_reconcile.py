@@ -53,9 +53,15 @@ class ReconcileCase(FrappeTestCase):
 	def setUp(self):
 		self.seeded = []
 		self.flags = {}
-		flag = patch.object(gen, "_set_replan_flag", side_effect=self._record_flag)
-		flag.start()
-		self.addCleanup(flag.stop)
+		# Seeded riders are not real employees, so the employee-status reads are muted.
+		for muted in (
+			patch.object(gen, "_set_replan_flag", side_effect=self._record_flag),
+			patch.object(gen, "_lapsed", return_value=set()),
+			patch.object(gen, "absent_employees", return_value={}),
+			patch.object(gen, "_unplaced", return_value=[]),
+		):
+			muted.start()
+			self.addCleanup(muted.stop)
 
 	def tearDown(self):
 		for name in self.seeded:

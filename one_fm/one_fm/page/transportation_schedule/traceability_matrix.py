@@ -281,7 +281,9 @@ def _latest_checkins(employee_ids) -> dict:
 	return latest
 
 
-def _missing_reason(reliever, reliever_name, master_shift, roster_shift):
+def _missing_reason(reliever, reliever_name, master_shift, roster_shift, skip_reason=None):
+	if skip_reason:
+		return skip_reason
 	if reliever:
 		return _("Relieving {0}, but no shipment generated").format(reliever_name)
 	if roster_shift and master_shift and roster_shift != master_shift:
@@ -294,6 +296,7 @@ def _build_rows(on_date, plan=None) -> list:
 		absent_employees,
 		relieving_assignments,
 	)
+	from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import SKIP_REASONS_CACHE_KEY
 	from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import driver_employees
 
 	card_status, cards_of, card_direction = _live_cards()
@@ -339,6 +342,8 @@ def _build_rows(on_date, plan=None) -> list:
 	relievers = relieving_assignments(on_date)
 	drivers = driver_employees(ids)
 	placements = _placements(plan)
+	# Why the last generation run left each employee without a card.
+	skip_reasons = frappe.cache.get_value(SKIP_REASONS_CACHE_KEY) or {}
 
 	rows = []
 	for emp_id, emp in employees.items():
@@ -366,7 +371,9 @@ def _build_rows(on_date, plan=None) -> list:
 			"on_leave": emp_id in on_leave,
 			"availabilities": [r.employee_availability for r in emp_rows],
 			"is_driver": emp_id in drivers,
-			"missing_reason": _missing_reason(reliever, reliever_name, emp.shift, roster_shift),
+			"missing_reason": _missing_reason(
+				reliever, reliever_name, emp.shift, roster_shift, skip_reasons.get(emp_id)
+			),
 		}
 		result = classify(ctx)
 
