@@ -92,6 +92,88 @@ function workWindow(planStartMs) {
 }
 // ── End grid navigation ──────────────────────────────────────────────────────────
 
+// ── Card filter ──────────────────────────────────────────────────────────
+// One predicate for the unassigned pool AND the schedule blocks, so the two always
+// agree. test_card_filter.js reads this block out of the file by these two banners
+// and needs normalizeSearchText above, so keep it free of anything else.
+// f = { q, emp, shift, shiftExact, shiftStart, shiftEnd }; every set criterion must pass.
+function cardMatchesFilters(card, f) {
+    const c = card || {};
+    const x = f || {};
+    if (x.shiftStart && c.shift_start !== x.shiftStart) return false;
+    if (x.shiftEnd && c.shift_end !== x.shiftEnd) return false;
+    // A shift picked from the list is an exact name; half-typed text narrows by contains.
+    const shift = String(x.shift || '').trim();
+    if (shift) {
+        const name = c.shift_name || '';
+        if (x.shiftExact ? name !== shift
+                         : !normalizeSearchText(name).includes(normalizeSearchText(shift))) return false;
+    }
+    // Both sides are flattened: a stored "Samir  Basnet" matches a typed "samir basnet".
+    const emp = normalizeSearchText(x.emp);
+    if (emp && !(c.employees || []).some(e =>
+        normalizeSearchText(e && e.name).includes(emp))) return false;
+    const q = normalizeSearchText(x.q);
+    if (!q) return true;
+    return [c.shift_name, c.site_location, c.accommodation, c.stop_location, c.direction]
+        .some(v => normalizeSearchText(v).includes(q));
+}
+
+// A drawn block matches when any one of its cards (or their riders) matches.
+function blockMatchesFilters(cards, f) {
+    return (cards || []).some(c => cardMatchesFilters(c, f));
+}
+// ── End card filter ──────────────────────────────────────────────────────────
+
+// ── Lane grouping ──────────────────────────────────────────────────────────
+// The pure rule behind the "Group by" control on the timeline. mode '' keeps the
+// lanes flat, in the order they arrive; 'location' buckets by the printed
+// accommodation (falling back to the raw location) and 'type' by vehicle type. A
+// blank (or the server's '—') bucket sorts last. Every vehicle lands in exactly one
+// bucket, in its original order. test_lane_grouping.js reads this block out of the
+// file by these two banners, so keep it free of anything else.
+function groupLaneRows(vehicles, mode, tripsByVehicle) {
+    const list = vehicles || [];
+    const trips = tripsByVehicle || {};
+    if (mode !== 'location' && mode !== 'type') {
+        return list.map(vehicle => ({ type: 'lane', vehicle }));
+    }
+    const clean = (v) => {
+        const s = String(v == null ? '' : v).trim();
+        return s === '\u2014' ? '' : s;
+    };
+    const keyOf = (vehicle) => (mode === 'location'
+        ? (clean(vehicle.accommodation) || clean(vehicle.location))
+        : clean(vehicle.type));
+    const blankName = mode === 'location' ? 'No location' : 'No vehicle type';
+
+    const buckets = new Map();
+    list.forEach(vehicle => {
+        const key = keyOf(vehicle);
+        if (!buckets.has(key)) buckets.set(key, []);
+        buckets.get(key).push(vehicle);
+    });
+    const keys = Array.from(buckets.keys()).sort((a, b) => {
+        if (a === '' || b === '') return a === b ? 0 : (a === '' ? 1 : -1);
+        return a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true });
+    });
+
+    const rows = [];
+    keys.forEach(key => {
+        const members = buckets.get(key);
+        rows.push({
+            type: 'group',
+            key,
+            name: key === '' ? blankName : key,
+            vehicleCount: members.length,
+            tripCount: members.reduce((n, v) => n + (trips[v.id] || 0), 0),
+        });
+        members.forEach(vehicle => rows.push({ type: 'lane', vehicle }));
+    });
+    return rows;
+}
+// ── End lane grouping ──────────────────────────────────────────────────────
+
 frappe.pages['transportation-schedule'].on_page_load = function (wrapper) {
     injectRPLoadingStyles();
     $(wrapper).html(`
@@ -188,7 +270,13 @@ function mountRoutePlannerApp(wrapper, data) {
                 employeeQuery: '',            // partial, case-insensitive, over the riders
                 shiftFilter: '',              // Operation Shift, typed or picked
                 shiftEndFilter: '',           // selected shift end time, '' = all
+                // What the three text boxes held 300 ms after typing stopped. The
+                // filters read these, so typing does not re-filter on every key.
+                appliedText: { q: '', emp: '', shift: '' },
                 collapsedGroups: {},          // { [accommodation]: boolean }
+                // Timeline "Group by": '' (None), 'location' or 'type'. Deliberately not
+                // persisted, so every load starts flat.
+                laneGroupBy: '',
                 canSave: false,
                 isGenerating: false,          // shipment generation in progress
                 stopDragSourceIndex: null,  // drag-reorder: source stop index
@@ -294,49 +382,51 @@ function mountRoutePlannerApp(wrapper, data) {
             // before it left, so a dispatcher can say "this shift, this person, ending at
             // 11:00" and get the cards that satisfy all three rather than any of them.
             filteredPoolCards() {
-                const q = normalizeSearchText(this.searchQuery);
-                const emp = normalizeSearchText(this.employeeQuery);
-                const shift = this.shiftFilter.trim();
-                const shiftLower = normalizeSearchText(shift);
-                // A shift picked from the list is an exact name and filters exactly
-                // (AC2). A half-typed one has not picked anything yet, so it narrows by
-                // what has been typed rather than matching nothing at all.
-                const shiftIsExact = shift && this.poolShiftOptions.includes(shift);
+                return this.unassignedPoolCards.filter(c => cardMatchesFilters(c, this.activeFilters));
+            },
 
-                return this.planData.shipment_cards.filter(c => {
-                    // Card is assigned when its specific ID is in assignedCards
-                    if (this.assignedCards.has(c.id)) return false;
+            // The one filter object the pool and the schedule blocks both read: the
+            // debounced text plus the two time selects, which stay immediate.
+            activeFilters() {
+                const t = this.appliedText;
+                const shift = t.shift.trim();
+                return {
+                    q: t.q, emp: t.emp, shift,
+                    // Picked from the list = exact; half-typed = contains.
+                    shiftExact: !!shift && this.poolShiftOptions.includes(shift),
+                    shiftStart: this.shiftStartFilter,
+                    shiftEnd: this.shiftEndFilter,
+                };
+            },
 
-                    // shift start time filter, applied across every
-                    // accommodation group rather than within one.
-                    if (this.shiftStartFilter && c.shift_start !== this.shiftStartFilter) return false;
+            // Which drawn blocks match, keyed like the template :key. A block is one
+            // drawn block, so a chained trip counts once however many stops it has.
+            blockFilter() {
+                const f = this.activeFilters;
+                const active = this.anyPoolFilterActive;
+                const matched = new Set();
+                let total = 0;
+                const byVehicle = this.mergedItemsByVehicle;
+                Object.keys(byVehicle).forEach(vid => byVehicle[vid].forEach(entry => {
+                    total++;
+                    if (!active) return;
+                    const cards = entry.type === 'merged'
+                        ? entry.stops.map(s => this.bcard(s))
+                        : [this.bcard(entry.item)];
+                    if (blockMatchesFilters(cards, f)) matched.add(this.blockKey(entry));
+                }));
+                return { active, matched, total, count: active ? matched.size : total };
+            },
 
-                    // AC4: the same rule for the other end of the shift.
-                    if (this.shiftEndFilter && c.shift_end !== this.shiftEndFilter) return false;
+            blockCountLabel() {
+                return __('{0} of {1} blocks', [this.blockFilter.count, this.blockFilter.total]);
+            },
 
-                    if (shift) {
-                        const name = c.shift_name || '';
-                        if (shiftIsExact ? name !== shift
-                                         : !normalizeSearchText(name).includes(shiftLower)) return false;
-                    }
-
-                    // AC3: partial or exact, case-insensitive, against the people on the
-                    // card - which is how a dispatcher looks for one person rather than
-                    // knowing which site they are posted to.
-                    // Both sides are flattened: a stored "Samir  Basnet" has to match a
-                    // typed "samir basnet".
-                    if (emp && !(c.employees || []).some(e =>
-                        normalizeSearchText(e && e.name).includes(emp))) return false;
-
-                    if (!q) return true;
-                    return (
-                        normalizeSearchText(c.shift_name).includes(q) ||
-                        normalizeSearchText(c.site_location).includes(q) ||
-                        normalizeSearchText(c.accommodation).includes(q) ||
-                        normalizeSearchText(c.stop_location).includes(q) ||
-                        normalizeSearchText(c.direction).includes(q)
-                    );
-                });
+            poolCountLabel() {
+                const n = this.filteredPoolCards.length;
+                return this.anyPoolFilterActive
+                    ? __('{0} of {1}', [n, this.unassignedPoolCards.length])
+                    : __('{0} cards', [n]);
             },
 
             // Every card still in the pool, ignoring the filters - what "X of Y" counts
@@ -346,11 +436,11 @@ function mountRoutePlannerApp(wrapper, data) {
                 return this.planData.shipment_cards.filter(c => !this.assignedCards.has(c.id));
             },
 
-            // AC2: the shifts actually present on unassigned cards, so the list never
-            // offers a shift that would filter to nothing.
+            // AC2: every shift on any card, placed or not, so a shift that exists only
+            // on scheduled blocks can be picked and filtered exactly.
             poolShiftOptions() {
                 return [...new Set(
-                    this.unassignedPoolCards.map(c => c.shift_name).filter(Boolean)
+                    this.planData.shipment_cards.map(c => c.shift_name).filter(Boolean)
                 )].sort();
             },
 
@@ -405,8 +495,9 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             anyPoolFilterActive() {
-                return !!(this.searchQuery || this.employeeQuery || this.shiftFilter
-                          || this.shiftStartFilter || this.shiftEndFilter);
+                const f = this.activeFilters;
+                return !!(normalizeSearchText(f.q) || normalizeSearchText(f.emp) || f.shift
+                          || f.shiftStart || f.shiftEnd);
             },
 
             poolShiftStartOptions() {
@@ -565,6 +656,18 @@ function mountRoutePlannerApp(wrapper, data) {
                 });
 
                 return map;
+            },
+
+            // Lane rows for the timeline: the vehicles in order, or - with a Group by
+            // chosen - each group's header followed by its lanes. laneIndex counts
+            // lanes only, so the alternate striping ignores the headers.
+            laneRows() {
+                const tripsByVehicle = {};
+                const merged = this.mergedItemsByVehicle;
+                Object.keys(merged).forEach(vid => { tripsByVehicle[vid] = merged[vid].length; });
+                let laneIndex = 0;
+                return groupLaneRows(this.planData.vehicles, this.laneGroupBy, tripsByVehicle)
+                    .map(row => (row.type === 'lane' ? { ...row, laneIndex: laneIndex++ } : row));
             },
 
             // Merged view: trip-chained items render as a single visual block
@@ -824,14 +927,80 @@ function mountRoutePlannerApp(wrapper, data) {
             },
         },
 
+        // The three text boxes apply 300 ms after typing stops; emptying one applies at once.
+        // Registered here rather than in a `watch:` option so another `watch:` key added
+        // to this object cannot silently replace it.
+        created() {
+            ['searchQuery', 'employeeQuery', 'shiftFilter'].forEach(key =>
+                this.$watch(key, v => this.queueAppliedText(!v)));
+        },
+
         // ── Methods ────────────────────────────────────────────────────────
+        // Regrouping only reorders lanes, so only the lanes' vertical scroll can move.
+        // windowStart/windowEnd (zoom and horizontal position) and selectedItem are
+        // never touched here. The watcher runs before the re-render, so the anchor is
+        // measured against the old layout.
+        watch: {
+            laneGroupBy() {
+                const area = this.$refs.lanesArea;
+                if (!area) return;
+                const areaTop = () => area.getBoundingClientRect().top;
+                const laneEl = (id) => Array.from(area.querySelectorAll('.rp-lane-row'))
+                    .find(el => el.getAttribute('data-vehicle-id') === String(id));
+                const selectedId = this.selectedItem ? this.selectedItem.vehicleId : null;
+                let anchorId = selectedId;
+                let anchorEl = selectedId ? laneEl(selectedId) : null;
+                if (!anchorEl) {
+                    anchorEl = Array.from(area.querySelectorAll('.rp-lane-row'))
+                        .find(el => el.getBoundingClientRect().top - areaTop() >= 0) || null;
+                    anchorId = anchorEl ? anchorEl.getAttribute('data-vehicle-id') : null;
+                }
+                if (!anchorEl) return;
+                const offset = anchorEl.getBoundingClientRect().top - areaTop();
+                this.$nextTick(() => {
+                    const el = laneEl(anchorId);
+                    if (!el) return;
+                    const maxTop = () => Math.max(0, area.scrollHeight - area.clientHeight);
+                    const clamp = (n) => Math.min(Math.max(0, n), maxTop());
+                    const shift = (el.getBoundingClientRect().top - areaTop()) - offset;
+                    area.scrollTop = clamp(area.scrollTop + shift);
+                    if (selectedId) {
+                        const rect = el.getBoundingClientRect();
+                        const box = area.getBoundingClientRect();
+                        if (rect.top < box.top) area.scrollTop = clamp(area.scrollTop - (box.top - rect.top));
+                        else if (rect.bottom > box.bottom) area.scrollTop = clamp(area.scrollTop + (rect.bottom - box.bottom));
+                    }
+                });
+            },
+        },
+
         methods: {
+            queueAppliedText(immediate) {
+                clearTimeout(this._filterTimer);
+                const apply = () => {
+                    this.appliedText = {
+                        q: this.searchQuery, emp: this.employeeQuery, shift: this.shiftFilter,
+                    };
+                };
+                if (immediate) apply();
+                else this._filterTimer = setTimeout(apply, 300);
+            },
+
+            blockKey(entry) {
+                return entry.type === 'merged' ? 'trip_' + entry.tripId : entry.item.id;
+            },
+
+            // True when a filter is on and this drawn block is not one it matched.
+            blockDim(entry) {
+                return this.blockFilter.active && !this.blockFilter.matched.has(this.blockKey(entry));
+            },
+
             // The chips show three riders, so with an employee query set the
             // riders it matched go first - otherwise a card found by name shows three
             // other people. The "+N more" count still reads card.employees.length.
             chipEmployees(card) {
                 const riders = card.employees || [];
-                const emp = normalizeSearchText(this.employeeQuery);
+                const emp = normalizeSearchText(this.appliedText.emp);
                 if (!emp) return riders;
                 const hit = e => normalizeSearchText(e && e.name).includes(emp);
                 return [...riders.filter(hit), ...riders.filter(e => !hit(e))];
@@ -5476,6 +5645,7 @@ function mountRoutePlannerApp(wrapper, data) {
             clearTimeout(this._navIdleTimer);
             this.navPanHoldStop();
             this.navTweenCancel();
+            clearTimeout(this._filterTimer);
             this.stopMatrixTimer();
         }
 
@@ -5615,8 +5785,7 @@ function injectRPVueTemplate() {
         <!-- AC5: what the filters left, out of everything still unplaced. A bare
              count could not say whether 4 cards meant a quiet day or a narrow filter. -->
         <div id="rp-pool-count">
-          <span v-if="anyPoolFilterActive">Showing {{ filteredPoolCards.length }} of {{ unassignedPoolCards.length }} cards</span>
-          <span v-else>{{ filteredPoolCards.length }} cards</span>
+          <span>{{ poolCountLabel }}</span>
         </div>
       </div>
 
@@ -5756,6 +5925,15 @@ function injectRPVueTemplate() {
           <button class="rp-btn-icon rp-btn-icon-label" title="Show full 24 hours" @click="show24h()">24h</button>
           <button class="rp-btn-icon rp-btn-icon-label" title="Show working hours (05:00–19:00)" @click="showWorkHours()"><span class="rp-icon" style="font-size:14px">schedule</span> Work</button>
         </div>
+        <span v-if="blockFilter.active" class="rp-block-count">{{ blockCountLabel }}</span>
+        <label class="rp-lane-groupby-wrap">
+          <span>{{ __('Group by') }}</span>
+          <select v-model="laneGroupBy" class="rp-filter-select rp-lane-groupby" :title="__('Group by')">
+            <option value="">{{ __('None') }}</option>
+            <option value="location">{{ __('Vehicle Location') }}</option>
+            <option value="type">{{ __('Vehicle Type') }}</option>
+          </select>
+        </label>
         <div class="rp-tb-hint">
           Drag cards to lanes &nbsp;&middot;&nbsp; Drag blocks to reposition &nbsp;&middot;&nbsp;
           Scroll to pan &nbsp;&middot;&nbsp; Ctrl + Scroll to zoom
@@ -5826,8 +6004,17 @@ function injectRPVueTemplate() {
 
         <!-- Scrollable vehicle rows -->
         <div id="rp-lanes-area" ref="lanesArea">
-          <div v-for="(vehicle, vi) in planData.vehicles" :key="vehicle.id"
-               :class="['rp-lane-row', vi % 2 === 1 ? 'rp-lane-alt' : '', lockedLaneIds.has(vehicle.id) ? 'rp-lane-locked' : '']"
+          <template v-for="row in laneRows" :key="row.type === 'group' ? 'grp_' + row.key : row.vehicle.id">
+          <div v-if="row.type === 'group'" class="rp-lane-group-header" :data-group-key="row.key">
+            <div class="rp-lane-label rp-lane-group-label" :title="row.name">
+              <span class="rp-lane-group-name">{{ row.name }}</span>
+              <span class="rp-lane-group-counts">{{ __('{0} vehicles · {1} trips', [row.vehicleCount, row.tripCount]) }}</span>
+            </div>
+          </div>
+          <template v-else>
+          <template v-for="vehicle in [row.vehicle]" :key="vehicle.id">
+          <div
+               :class="['rp-lane-row', row.laneIndex % 2 === 1 ? 'rp-lane-alt' : '', lockedLaneIds.has(vehicle.id) ? 'rp-lane-locked' : '']"
                :data-vehicle-id="vehicle.id">
 
             <!-- Vehicle label column -->
@@ -5884,7 +6071,7 @@ function injectRPVueTemplate() {
 
                   <!-- ═══ Single (non-chained) block ═══ -->
                   <g v-if="entry.type === 'single'"
-                     :class="isDraggingBlock && bsel(entry.item) ? 'rp-block-grabbing' : 'rp-block-grab'"
+                     :class="[isDraggingBlock && bsel(entry.item) ? 'rp-block-grabbing' : 'rp-block-grab', blockDim(entry) ? 'rp-block-dim' : '']"
                      @mousedown="onBlockMouseDown($event, entry.item)"
                      @touchstart.prevent="onBlockTouchStart($event, entry.item)"
                      @mouseenter="showStopHover($event, [entry.item])"
@@ -5967,6 +6154,7 @@ function injectRPVueTemplate() {
                   <!-- ═══ Merged trip block ═══ -->
                   <g v-else
                      class="rp-block-grab"
+                     :class="{ 'rp-block-dim': blockDim(entry) }"
                      @mouseenter="showStopHover($event, entry.stops)"
                      @mousemove="moveStopHover($event)"
                      @mouseleave="hideStopHover()"
@@ -6061,6 +6249,9 @@ function injectRPVueTemplate() {
               </svg>
             </div>
           </div>
+          </template>
+          </template>
+          </template>
 
           <!-- Empty vehicles -->
           <div v-if="planData.vehicles.length === 0" class="rp-empty-state">
@@ -7002,6 +7193,12 @@ function injectRPStyles() {
             text-overflow: ellipsis;
         }
         .rp-filter-select { flex: 1 1 0; min-width: 0; cursor: pointer; }
+        /* width:auto: the shared 100% resolves against this auto-width label and overflows. */
+        .rp-lane-groupby { flex: 0 0 auto; width: auto; }
+        .rp-lane-groupby-wrap {
+            display: flex; align-items: center; gap: 6px; flex: 0 0 auto; margin: 0 8px; white-space: nowrap;
+            font-size: 12px; color: var(--md-sys-color-on-surface-variant);
+        }
         .rp-filter-input:focus, .rp-filter-select:focus { border-color: var(--rp-color-accent); }
         /* Room for the clear button so typed text never runs underneath it. */
         .rp-filter-field .rp-filter-input,
@@ -7127,7 +7324,10 @@ function injectRPStyles() {
         .rp-btn-icon:hover { background: #cfdce5; border-color: #adb5bd; }
         .rp-btn-icon:focus-visible { outline: 2px solid var(--rp-color-accent); outline-offset: 2px; }
         .rp-btn-icon-label { font-weight: 600; font-size: 11px; display: inline-flex; align-items: center; gap: 3px; }
-        .rp-tb-hint { font-size: 12px; color: var(--md-sys-color-outline); flex: 1; text-align: center; }
+        .rp-tb-hint {
+            font-size: 12px; color: var(--md-sys-color-outline); flex: 1; min-width: 0; text-align: center;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
         #rp-timeline-legend { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
         .rp-legend-item     { font-size: 11px; padding: 2px 9px; border-radius: 4px; font-weight: 600; }
         .rp-legend-out      { background: var(--rp-color-outbound-container); color: var(--rp-color-outbound); }
@@ -7228,6 +7428,19 @@ function injectRPStyles() {
 
         /* Scrollable lanes */
         #rp-lanes-area { flex: 1; overflow-y: auto; overflow-x: hidden; }
+        /* The header text sits in the label column only; the timeline part stays an empty band. */
+        .rp-lane-group-header {
+            display: flex; align-items: stretch; width: 100%; min-height: 40px;
+            box-sizing: border-box;
+            background: var(--md-sys-color-surface-container);
+            border-bottom: 1px solid var(--md-sys-color-surface-container-high);
+        }
+        .rp-lane-group-label { overflow: hidden; }
+        .rp-lane-group-name, .rp-lane-group-counts {
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .rp-lane-group-name { font-weight: 700; font-size: 13px; color: var(--md-sys-color-on-surface); }
+        .rp-lane-group-counts { font-size: 11px; color: var(--md-sys-color-on-surface-variant); }
         .rp-lane-row   {
             display: flex; align-items: stretch;
             border-bottom: 1px solid var(--md-sys-color-surface-container-high);
@@ -7248,6 +7461,10 @@ function injectRPStyles() {
 
         .rp-block-grab     { cursor: grab; }
         .rp-block-grabbing { cursor: grabbing; }
+        /* A block no filter matched dims but stays clickable and draggable. */
+        .rp-block-dim { opacity: 0.25; transition: opacity 0.15s; }
+        #rp-shell.rp-dark .rp-block-dim { opacity: 0.3; }
+        .rp-block-count { font-size: 12px; font-weight: 500; white-space: nowrap; padding: 2px 8px; border-radius: 10px; margin: 0 8px; color: var(--md-sys-color-on-surface-variant); background: var(--md-sys-color-surface-container-high); }
         .rp-empty-state    { padding: 48px; text-align: center; font-size: 14px; color: var(--md-sys-color-outline); }
 
         /* ── Drag time tooltip (5-min snap) ── */
@@ -7615,6 +7832,7 @@ function injectRPStyles() {
         #rp-shell.rp-dark .rp-tb-hint { color: var(--md-sys-color-outline); }
         #rp-shell.rp-dark #rp-axis-row { background: var(--md-sys-color-surface-container); border-color: var(--md-sys-color-outline-variant); }
         #rp-shell.rp-dark .rp-lane-row { border-color: var(--md-sys-color-surface-container); }
+        #rp-shell.rp-dark .rp-lane-group-header { background: var(--md-sys-color-surface-container-high); border-color: var(--md-sys-color-outline-variant); }
         #rp-shell.rp-dark .rp-lane-alt { background: rgba(255,255,255,0.02); }
         #rp-shell.rp-dark .rp-lane-label { border-color: var(--md-sys-color-outline-variant); }
         #rp-shell.rp-dark .rp-gv-plate { color: var(--md-sys-color-on-surface); }

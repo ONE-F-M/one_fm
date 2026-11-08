@@ -985,6 +985,8 @@ REJECTION_OUTCOME_FIELDS = (
 	"inform_previous_company_on",
 	"attach_invoice",
 	"payment_date",
+	"payment_made_via",
+	"bank_account",
 	"attach_payment_invoice",
 	"work_permit_approved",
 	"new_work_permit_expiry_date",
