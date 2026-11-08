@@ -39,10 +39,17 @@ class TestMedicalAppointment(unittest.TestCase):
 		order = [f.fieldname for f in frappe.get_meta("Medical Appointment").fields]
 		start = order.index("last_name_english")
 		self.assertEqual(
-			order[start + 1:start + 5],
-			["payment_references_section", "payment_invoice", "column_break_uuov", "payment_date"],
+			order[start + 1:start + 8],
+			[
+				"payment_references_section",
+				"payment_invoice",
+				"payment_made_via",
+				"column_break_uuov",
+				"payment_date",
+				"bank_account",
+				"section_break_24",
+			],
 		)
-		self.assertEqual(order[start + 5], "section_break_24")
 		self.assertEqual(order.count("payment_invoice"), 1)
 
 	def test_payment_date_is_retained_on_save(self):
