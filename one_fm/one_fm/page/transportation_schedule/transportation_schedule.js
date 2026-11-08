@@ -83,6 +83,55 @@ function blockMatchesFilters(cards, f) {
 }
 // ── End card filter ──────────────────────────────────────────────────────────
 
+// ── Lane grouping ──────────────────────────────────────────────────────────
+// The pure rule behind the "Group by" control on the timeline. mode '' keeps the
+// lanes flat, in the order they arrive; 'location' buckets by the printed
+// accommodation (falling back to the raw location) and 'type' by vehicle type. A
+// blank (or the server's '—') bucket sorts last. Every vehicle lands in exactly one
+// bucket, in its original order. test_lane_grouping.js reads this block out of the
+// file by these two banners, so keep it free of anything else.
+function groupLaneRows(vehicles, mode, tripsByVehicle) {
+    const list = vehicles || [];
+    const trips = tripsByVehicle || {};
+    if (mode !== 'location' && mode !== 'type') {
+        return list.map(vehicle => ({ type: 'lane', vehicle }));
+    }
+    const clean = (v) => {
+        const s = String(v == null ? '' : v).trim();
+        return s === '\u2014' ? '' : s;
+    };
+    const keyOf = (vehicle) => (mode === 'location'
+        ? (clean(vehicle.accommodation) || clean(vehicle.location))
+        : clean(vehicle.type));
+    const blankName = mode === 'location' ? 'No location' : 'No vehicle type';
+
+    const buckets = new Map();
+    list.forEach(vehicle => {
+        const key = keyOf(vehicle);
+        if (!buckets.has(key)) buckets.set(key, []);
+        buckets.get(key).push(vehicle);
+    });
+    const keys = Array.from(buckets.keys()).sort((a, b) => {
+        if (a === '' || b === '') return a === b ? 0 : (a === '' ? 1 : -1);
+        return a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true });
+    });
+
+    const rows = [];
+    keys.forEach(key => {
+        const members = buckets.get(key);
+        rows.push({
+            type: 'group',
+            key,
+            name: key === '' ? blankName : key,
+            vehicleCount: members.length,
+            tripCount: members.reduce((n, v) => n + (trips[v.id] || 0), 0),
+        });
+        members.forEach(vehicle => rows.push({ type: 'lane', vehicle }));
+    });
+    return rows;
+}
+// ── End lane grouping ──────────────────────────────────────────────────────
+
 frappe.pages['transportation-schedule'].on_page_load = function (wrapper) {
     injectRPLoadingStyles();
     $(wrapper).html(`
@@ -180,6 +229,9 @@ function mountRoutePlannerApp(wrapper, data) {
                 // filters read these, so typing does not re-filter on every key.
                 appliedText: { q: '', emp: '', shift: '' },
                 collapsedGroups: {},          // { [accommodation]: boolean }
+                // Timeline "Group by": '' (None), 'location' or 'type'. Deliberately not
+                // persisted, so every load starts flat.
+                laneGroupBy: '',
                 canSave: false,
                 isGenerating: false,          // shipment generation in progress
                 stopDragSourceIndex: null,  // drag-reorder: source stop index
@@ -538,6 +590,18 @@ function mountRoutePlannerApp(wrapper, data) {
                 return map;
             },
 
+            // Lane rows for the timeline: the vehicles in order, or - with a Group by
+            // chosen - each group's header followed by its lanes. laneIndex counts
+            // lanes only, so the alternate striping ignores the headers.
+            laneRows() {
+                const tripsByVehicle = {};
+                const merged = this.mergedItemsByVehicle;
+                Object.keys(merged).forEach(vid => { tripsByVehicle[vid] = merged[vid].length; });
+                let laneIndex = 0;
+                return groupLaneRows(this.planData.vehicles, this.laneGroupBy, tripsByVehicle)
+                    .map(row => (row.type === 'lane' ? { ...row, laneIndex: laneIndex++ } : row));
+            },
+
             // Merged view: trip-chained items render as a single visual block
             mergedItemsByVehicle() {
                 const raw = this.itemsByVehicle;
@@ -804,6 +868,44 @@ function mountRoutePlannerApp(wrapper, data) {
         },
 
         // ── Methods ────────────────────────────────────────────────────────
+        // Regrouping only reorders lanes, so only the lanes' vertical scroll can move.
+        // windowStart/windowEnd (zoom and horizontal position) and selectedItem are
+        // never touched here. The watcher runs before the re-render, so the anchor is
+        // measured against the old layout.
+        watch: {
+            laneGroupBy() {
+                const area = this.$refs.lanesArea;
+                if (!area) return;
+                const areaTop = () => area.getBoundingClientRect().top;
+                const laneEl = (id) => Array.from(area.querySelectorAll('.rp-lane-row'))
+                    .find(el => el.getAttribute('data-vehicle-id') === String(id));
+                const selectedId = this.selectedItem ? this.selectedItem.vehicleId : null;
+                let anchorId = selectedId;
+                let anchorEl = selectedId ? laneEl(selectedId) : null;
+                if (!anchorEl) {
+                    anchorEl = Array.from(area.querySelectorAll('.rp-lane-row'))
+                        .find(el => el.getBoundingClientRect().top - areaTop() >= 0) || null;
+                    anchorId = anchorEl ? anchorEl.getAttribute('data-vehicle-id') : null;
+                }
+                if (!anchorEl) return;
+                const offset = anchorEl.getBoundingClientRect().top - areaTop();
+                this.$nextTick(() => {
+                    const el = laneEl(anchorId);
+                    if (!el) return;
+                    const maxTop = () => Math.max(0, area.scrollHeight - area.clientHeight);
+                    const clamp = (n) => Math.min(Math.max(0, n), maxTop());
+                    const shift = (el.getBoundingClientRect().top - areaTop()) - offset;
+                    area.scrollTop = clamp(area.scrollTop + shift);
+                    if (selectedId) {
+                        const rect = el.getBoundingClientRect();
+                        const box = area.getBoundingClientRect();
+                        if (rect.top < box.top) area.scrollTop = clamp(area.scrollTop - (box.top - rect.top));
+                        else if (rect.bottom > box.bottom) area.scrollTop = clamp(area.scrollTop + (rect.bottom - box.bottom));
+                    }
+                });
+            },
+        },
+
         methods: {
             queueAppliedText(immediate) {
                 clearTimeout(this._filterTimer);
@@ -5577,6 +5679,14 @@ function injectRPVueTemplate() {
           <button class="rp-btn-icon rp-btn-icon-label" title="Show working hours (05:00–19:00)" @click="showWorkHours()"><span class="rp-icon" style="font-size:14px">schedule</span> Work</button>
         </div>
         <span v-if="blockFilter.active" class="rp-block-count">{{ blockCountLabel }}</span>
+        <label class="rp-lane-groupby-wrap">
+          <span>{{ __('Group by') }}</span>
+          <select v-model="laneGroupBy" class="rp-filter-select rp-lane-groupby" :title="__('Group by')">
+            <option value="">{{ __('None') }}</option>
+            <option value="location">{{ __('Vehicle Location') }}</option>
+            <option value="type">{{ __('Vehicle Type') }}</option>
+          </select>
+        </label>
         <div class="rp-tb-hint">
           Drag cards to lanes &nbsp;&middot;&nbsp; Drag blocks to reposition &nbsp;&middot;&nbsp;
           Scroll to pan &nbsp;&middot;&nbsp; Ctrl + Scroll to zoom
@@ -5617,9 +5727,18 @@ function injectRPVueTemplate() {
         </div>
 
         <!-- Scrollable vehicle rows -->
-        <div id="rp-lanes-area">
-          <div v-for="(vehicle, vi) in planData.vehicles" :key="vehicle.id"
-               :class="['rp-lane-row', vi % 2 === 1 ? 'rp-lane-alt' : '', lockedLaneIds.has(vehicle.id) ? 'rp-lane-locked' : '']"
+        <div id="rp-lanes-area" ref="lanesArea">
+          <template v-for="row in laneRows" :key="row.type === 'group' ? 'grp_' + row.key : row.vehicle.id">
+          <div v-if="row.type === 'group'" class="rp-lane-group-header" :data-group-key="row.key">
+            <div class="rp-lane-label rp-lane-group-label" :title="row.name">
+              <span class="rp-lane-group-name">{{ row.name }}</span>
+              <span class="rp-lane-group-counts">{{ __('{0} vehicles · {1} trips', [row.vehicleCount, row.tripCount]) }}</span>
+            </div>
+          </div>
+          <template v-else>
+          <template v-for="vehicle in [row.vehicle]" :key="vehicle.id">
+          <div
+               :class="['rp-lane-row', row.laneIndex % 2 === 1 ? 'rp-lane-alt' : '', lockedLaneIds.has(vehicle.id) ? 'rp-lane-locked' : '']"
                :data-vehicle-id="vehicle.id">
 
             <!-- Vehicle label column -->
@@ -5854,6 +5973,9 @@ function injectRPVueTemplate() {
               </svg>
             </div>
           </div>
+          </template>
+          </template>
+          </template>
 
           <!-- Empty vehicles -->
           <div v-if="planData.vehicles.length === 0" class="rp-empty-state">
@@ -6795,6 +6917,12 @@ function injectRPStyles() {
             text-overflow: ellipsis;
         }
         .rp-filter-select { flex: 1 1 0; min-width: 0; cursor: pointer; }
+        /* width:auto: the shared 100% resolves against this auto-width label and overflows. */
+        .rp-lane-groupby { flex: 0 0 auto; width: auto; }
+        .rp-lane-groupby-wrap {
+            display: flex; align-items: center; gap: 6px; flex: 0 0 auto; margin: 0 8px; white-space: nowrap;
+            font-size: 12px; color: var(--md-sys-color-on-surface-variant);
+        }
         .rp-filter-input:focus, .rp-filter-select:focus { border-color: var(--rp-color-accent); }
         /* Room for the clear button so typed text never runs underneath it. */
         .rp-filter-field .rp-filter-input,
@@ -6920,7 +7048,10 @@ function injectRPStyles() {
         .rp-btn-icon:hover { background: #cfdce5; border-color: #adb5bd; }
         .rp-btn-icon:focus-visible { outline: 2px solid var(--rp-color-accent); outline-offset: 2px; }
         .rp-btn-icon-label { font-weight: 600; font-size: 11px; display: inline-flex; align-items: center; gap: 3px; }
-        .rp-tb-hint { font-size: 12px; color: var(--md-sys-color-outline); flex: 1; text-align: center; }
+        .rp-tb-hint {
+            font-size: 12px; color: var(--md-sys-color-outline); flex: 1; min-width: 0; text-align: center;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
         #rp-timeline-legend { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
         .rp-legend-item     { font-size: 11px; padding: 2px 9px; border-radius: 4px; font-weight: 600; }
         .rp-legend-out      { background: var(--rp-color-outbound-container); color: var(--rp-color-outbound); }
@@ -6990,6 +7121,19 @@ function injectRPStyles() {
 
         /* Scrollable lanes */
         #rp-lanes-area { flex: 1; overflow-y: auto; overflow-x: hidden; }
+        /* The header text sits in the label column only; the timeline part stays an empty band. */
+        .rp-lane-group-header {
+            display: flex; align-items: stretch; width: 100%; min-height: 40px;
+            box-sizing: border-box;
+            background: var(--md-sys-color-surface-container);
+            border-bottom: 1px solid var(--md-sys-color-surface-container-high);
+        }
+        .rp-lane-group-label { overflow: hidden; }
+        .rp-lane-group-name, .rp-lane-group-counts {
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .rp-lane-group-name { font-weight: 700; font-size: 13px; color: var(--md-sys-color-on-surface); }
+        .rp-lane-group-counts { font-size: 11px; color: var(--md-sys-color-on-surface-variant); }
         .rp-lane-row   {
             display: flex; align-items: stretch;
             border-bottom: 1px solid var(--md-sys-color-surface-container-high);
@@ -7381,6 +7525,7 @@ function injectRPStyles() {
         #rp-shell.rp-dark .rp-tb-hint { color: var(--md-sys-color-outline); }
         #rp-shell.rp-dark #rp-axis-row { background: var(--md-sys-color-surface-container); border-color: var(--md-sys-color-outline-variant); }
         #rp-shell.rp-dark .rp-lane-row { border-color: var(--md-sys-color-surface-container); }
+        #rp-shell.rp-dark .rp-lane-group-header { background: var(--md-sys-color-surface-container-high); border-color: var(--md-sys-color-outline-variant); }
         #rp-shell.rp-dark .rp-lane-alt { background: rgba(255,255,255,0.02); }
         #rp-shell.rp-dark .rp-lane-label { border-color: var(--md-sys-color-outline-variant); }
         #rp-shell.rp-dark .rp-gv-plate { color: var(--md-sys-color-on-surface); }

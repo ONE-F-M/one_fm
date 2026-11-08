@@ -11,7 +11,7 @@ licence that reads compliant when it is not.
 import frappe
 from frappe.model.document import Document
 from frappe.query_builder import DocType
-from frappe.utils import flt
+from frappe.utils import cint, flt
 
 KUWAITI = "Kuwaiti"
 
@@ -60,9 +60,12 @@ class PAMLicenseDetails(Document):
 	def validate(self):
 		self.set_sector_figures()
 		self.set_total_number_of_employees()
+		self.status = license_status(self.total_number_of_employees, self.status)
 		self.set_quota_registrations()
 		self.set_quota_visas_issued()
 		self.set_available_quota()
+		# After it, because it sums the figures that call has just derived.
+		self.total_available_quota = total_available_quota(self.quota_classification)
 
 	def on_update(self):
 		"""Push a changed status to the PAM Files that list this licence.
@@ -522,17 +525,31 @@ def recount_license_total(license_name):
 	db_set rather than a save, for the same reason the sector figures are: a headcount
 	moving must not drag a licence through validation, and must not need permission to
 	edit a licence that the employee's own editor has no reason to hold.
+
+	The status follows the headcount here too: db.set_value skips validate and on_update,
+	so a flip is pushed to the PAM Files from here.
 	"""
 	if not license_name or not frappe.db.exists("PAM License Details", license_name):
 		return
 
+	count = count_license_employees(license_name)
+	current = frappe.db.get_value("PAM License Details", license_name, "status")
+	status = license_status(count, current)
 	frappe.db.set_value(
 		"PAM License Details",
 		license_name,
-		"total_number_of_employees",
-		str(count_license_employees(license_name)),
+		{"total_number_of_employees": str(count), "status": status},
 		update_modified=False,
 	)
+	if status != current:
+		refresh_pam_files(license_name)
+
+
+def license_status(total, current) -> str:
+	"""Active with employees, Inactive with none. Suspended is set by hand and kept."""
+	if current == "Suspended":
+		return current
+	return "Active" if cint(total) > 0 else "Inactive"
 
 
 def count_quota_employees(license_name, quota_type) -> int:
@@ -640,6 +657,7 @@ def recount_quota_rows(license_name):
 			"number_of_transfer_requests",
 		],
 	)
+	computed_rows = []
 	for row in rows:
 		quota_type = row["type_of_quota"]
 		if quota_type not in counts:
@@ -657,6 +675,17 @@ def recount_quota_rows(license_name):
 		frappe.db.set_value(
 			"Quota Classification", row["name"], figures, update_modified=False
 		)
+		computed_rows.append({"available_quota": figures["available_quota"]})
+
+	# Written even when there are no rows, so a licence with none reads "0" rather than
+	# blank. db.set_value bypasses validate, so the total has to be written here too.
+	frappe.db.set_value(
+		"PAM License Details",
+		license_name,
+		"total_available_quota",
+		total_available_quota(computed_rows),
+		update_modified=False,
+	)
 
 
 # The workflow states in which a Visa Request counts against a quota: Pending By MOI and
@@ -826,3 +855,12 @@ def available_quota(row) -> str:
 	claimed = sum(flt(row.get(fieldname)) for fieldname in QUOTA_DEDUCTIONS)
 
 	return as_figure(max(allocated - claimed, 0))
+
+
+def total_available_quota(rows) -> str:
+	"""Every quota row's Available Quota added up.
+
+	A blank row counts as zero and no rows at all is "0". Returned as text, whole, because
+	the field is Data like the rows it sums.
+	"""
+	return as_figure(sum(flt(row.get("available_quota")) for row in rows))
