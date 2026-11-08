@@ -3,6 +3,7 @@
 """How many people a PAM licence carries."""
 
 import json
+from unittest import mock
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -18,11 +19,13 @@ FIELDNAME = "total_number_of_employees"
 
 
 class _Counter:
-	def __init__(self, count=0, licenses=()):
+	def __init__(self, count=0, licenses=(), status="Active"):
 		self.count = count
 		self.licenses = list(licenses)
+		self.status = status
 		self.counted = []
 		self.written = []
+		self.refreshed = []
 
 	def db_count(self, doctype, filters=None):
 		self.counted.append((doctype, filters))
@@ -31,8 +34,15 @@ class _Counter:
 	def exists(self, doctype, name):
 		return name in self.licenses
 
-	def set_value(self, doctype, name, fieldname, value, update_modified=None):
-		self.written.append((doctype, name, fieldname, value, update_modified))
+	def get_value(self, doctype, name, fieldname):
+		return self.status
+
+	def set_value(self, doctype, name, values, update_modified=None):
+		# The recount writes the headcount and the status in one call.
+		self.written.append((doctype, name, values, update_modified))
+
+	def refresh_pam_files(self, license_name):
+		self.refreshed.append(license_name)
 
 
 class TestWhoIsCounted(FrappeTestCase):
@@ -90,28 +100,36 @@ class TestWhoIsCounted(FrappeTestCase):
 
 
 class TestHowItIsWritten(FrappeTestCase):
-	def _recount(self, licenses, count=12, name="ONE FM Private"):
-		counter = _Counter(count=count, licenses=licenses)
-		originals = (module.frappe.db.count, module.frappe.db.exists, module.frappe.db.set_value)
-		module.frappe.db.count = counter.db_count
-		module.frappe.db.exists = counter.exists
-		module.frappe.db.set_value = counter.set_value
-		try:
+	def _recount(self, licenses, count=12, name="ONE FM Private", status="Active"):
+		counter = _Counter(count=count, licenses=licenses, status=status)
+		with (
+			mock.patch.object(module.frappe.db, "count", counter.db_count),
+			mock.patch.object(module.frappe.db, "exists", counter.exists),
+			mock.patch.object(module.frappe.db, "get_value", counter.get_value),
+			mock.patch.object(module.frappe.db, "set_value", counter.set_value),
+			mock.patch.object(module, "refresh_pam_files", counter.refresh_pam_files),
+		):
 			recount_license_total(name)
-		finally:
-			module.frappe.db.count, module.frappe.db.exists, module.frappe.db.set_value = originals
 		return counter
 
 	def test_it_writes_the_figure_onto_the_licence(self):
 		counter = self._recount(["ONE FM Private"])
 		self.assertEqual(
-			counter.written, [("PAM License Details", "ONE FM Private", FIELDNAME, "12", False)]
+			counter.written,
+			[
+				(
+					"PAM License Details",
+					"ONE FM Private",
+					{FIELDNAME: "12", "status": "Active"},
+					False,
+				)
+			],
 		)
 
 	def test_it_writes_a_whole_number_as_text(self):
 		"""The field is Data; "12.0" beside the sector figures would read as a different
 		kind of number."""
-		self.assertEqual(self._recount(["ONE FM Private"]).written[0][3], "12")
+		self.assertEqual(self._recount(["ONE FM Private"]).written[0][2][FIELDNAME], "12")
 
 	def test_it_writes_to_the_one_licence_the_employees_name(self):
 		"""Not every licence sharing a civil ID: the employees are counted by the link, so
@@ -121,7 +139,7 @@ class TestHowItIsWritten(FrappeTestCase):
 
 	def test_it_does_not_bump_modified(self):
 		"""Nobody edited the licence; somebody was transferred."""
-		self.assertIs(self._recount(["ONE FM Private"]).written[0][4], False)
+		self.assertIs(self._recount(["ONE FM Private"]).written[0][3], False)
 
 	def test_a_licence_that_is_not_there_writes_nothing(self):
 		self.assertEqual(self._recount([]).written, [])

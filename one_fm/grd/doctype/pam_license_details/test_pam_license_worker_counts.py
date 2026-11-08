@@ -51,6 +51,12 @@ def _a_designation(name, sector):
 
 
 class TestPAMLicenseWorkerCounts(FrappeTestCase):
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		# The recount writes total_available_quota; a site not yet migrated lacks the column.
+		frappe.reload_doc("grd", "doctype", "pam_license_details")
+
 	def setUp(self):
 		self.sector = _a_sector(SECTOR)
 		self.other_sector = _a_sector(OTHER_SECTOR)
