@@ -92,14 +92,13 @@ function add_check_in_button(frm) {
 	/**
 	 * First Check In: stamps the exact time the technician starts the job.
 	 *
-	 * Shown only for a saved, not-yet-submitted Preventive Maintenance Work Order
-	 * that has not been checked in. The server records the timestamp once and
+	 * Shown only for a saved, not-yet-submitted Work Order (Preventive or
+	 * Reactive) that has not been checked in. The server records the timestamp once and
 	 * evaluates the SLA Response Status.
 	 */
 	if (
 		frm.is_new() ||
 		frm.doc.docstatus !== 0 ||
-		frm.doc.maintenance_type !== "Preventive Maintenance" ||
 		frm.doc.first_check_in_time
 	) {
 		return;

@@ -14,6 +14,35 @@ def normalise_iban(iban: str) -> str:
 	return "".join((iban or "").split())
 
 
+def validate_civil_id(doc, method=None):
+	"""Require a Civil ID on Employee Bank Accounts.
+
+	Company accounts, accounts with no party and accounts held by a non-Employee
+	party (Supplier, ...) are exempt. The field is read-only and always takes the
+	Employee's Civil ID; the stored value is kept only while the Employee has none.
+	PACI auto-creation sets `flags.ignore_civil_id` so the Draft account can still
+	be saved.
+	"""
+	if doc.is_company_account:
+		return
+	if doc.party_type != "Employee":
+		return
+
+	doc.civil_id = (doc.civil_id or "").strip()
+
+	if doc.party_type == "Employee" and doc.party:
+		employee_civil_id = (frappe.db.get_value("Employee", doc.party, "one_fm_civil_id") or "").strip()
+		doc.civil_id = employee_civil_id or doc.civil_id
+		if not doc.civil_id and not doc.flags.ignore_civil_id:
+			frappe.throw(
+				_("Employee {0} has no Civil ID. Set it on the Employee record first.").format(doc.party),
+				title=_("Missing Civil ID"),
+			)
+
+	if not doc.civil_id and not doc.flags.ignore_civil_id:
+		frappe.throw(_("Civil ID is mandatory"), title=_("Missing Civil ID"))
+
+
 def validate_iban(doc, method=None):
 	"""Normalise the IBAN and hold a changed one to its fixed length (WI-001797).
 

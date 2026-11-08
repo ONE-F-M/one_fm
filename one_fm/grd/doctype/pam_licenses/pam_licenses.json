@@ -60,14 +60,15 @@
    "fieldname": "status",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Status"
+   "label": "Status",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-08-20 10:00:00.000000",
+ "modified": "2026-10-29 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM Licenses",

@@ -22,7 +22,11 @@
      "number_of_inactive_licenses",
      "license_numbers",
      "section_break_lgat",
-     "pam_licenses"
+     "pam_licenses",
+     "company_file_management_section",
+     "authorized_signatories_on_the_file",
+     "delegates_on_the_file",
+     "housing_details"
     ],
     "fields": [
      {
@@ -96,8 +100,11 @@
      {
       "fieldname": "file_status",
       "fieldtype": "Select",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
       "label": "File Status",
-      "options": "\nActive\nInactive"
+      "options": "\nActive\nInactive",
+      "read_only": 1
      },
      {
       "fieldname": "column_break_qcig",
@@ -106,12 +113,14 @@
      {
       "fieldname": "number_of_active_licenses",
       "fieldtype": "Data",
-      "label": "Number of Active Licenses"
+      "label": "Number of Active Licenses",
+      "read_only": 1
      },
      {
       "fieldname": "number_of_inactive_licenses",
       "fieldtype": "Data",
-      "label": "Number of Inactive Licenses"
+      "label": "Number of Inactive Licenses",
+      "read_only": 1
      },
      {
       "fieldname": "license_numbers",
@@ -129,10 +138,33 @@
       "fieldtype": "Table",
       "label": "PAM Licenses",
       "options": "PAM Licenses"
+     },
+     {
+      "fieldname": "company_file_management_section",
+      "fieldtype": "Section Break",
+      "label": "Company File Management"
+     },
+     {
+      "fieldname": "authorized_signatories_on_the_file",
+      "fieldtype": "Table",
+      "label": "Authorized Signatories on the File",
+      "options": "Authorized Signatories on the File"
+     },
+     {
+      "fieldname": "delegates_on_the_file",
+      "fieldtype": "Table",
+      "label": "Delegates on the File",
+      "options": "Delegates on the File"
+     },
+     {
+      "fieldname": "housing_details",
+      "fieldtype": "Table",
+      "label": "Housing Details",
+      "options": "Housing Details"
      }
     ],
     "links": [],
-    "modified": "2026-08-22 10:00:00.000000",
+    "modified": "2026-11-02 10:00:00.000000",
     "modified_by": "Administrator",
     "module": "GRD",
     "name": "PAM File",

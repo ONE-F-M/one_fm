@@ -406,6 +406,7 @@ doc_events = {
 		"validate": [
 			"one_fm.utils.validate_iban_is_filled",
 			"one_fm.overrides.bank_account.validate_iban",
+			"one_fm.overrides.bank_account.validate_civil_id",
 		],
 	},
 	"Employee Checkin": {
@@ -1012,7 +1013,10 @@ jenv = {
         "pow_title_arabic:one_fm.jinja.print_format.methods.pow_title_arabic",
         # WI-002723: Cairo and Readex Pro are bundled with the app and inlined, because
         # neither is installed on the print server and wkhtmltopdf has no network there.
-        "pow_font_faces:one_fm.jinja.print_format.methods.pow_font_faces"
+        "pow_font_faces:one_fm.jinja.print_format.methods.pow_font_faces",
+        # The Attendance Report is always Arabic and RTL.
+        "pow_attendance_report_ar:one_fm.jinja.print_format.methods.pow_attendance_report_ar",
+        "pow_attendance_legend_ar:one_fm.jinja.print_format.methods.pow_attendance_legend_ar"
     ],
     "filters": [
         # "xmul:one_fm.jinja.methods.xmultiply"

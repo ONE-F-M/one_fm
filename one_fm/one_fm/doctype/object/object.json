@@ -33,7 +33,8 @@
   "column_break_xkay",
   "last_service_date",
   "section_break_dbjz",
-  "object_items"
+  "object_items",
+  "workflow_state"
  ],
  "fields": [
   {
@@ -201,13 +202,22 @@
    "fieldtype": "Table",
    "label": "Parts Name",
    "options": "Object Items"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "no_copy": 1,
+   "options": "Workflow State"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-18 17:30:07.237661",
+ "modified": "2026-11-01 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Object",

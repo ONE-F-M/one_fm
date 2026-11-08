@@ -96,6 +96,12 @@ class EmployeeResignation(Document):
 
 		self.validate_dates()
 
+	def get_processa_editable_fields(self):
+		"""Fields the mobile app may change at the current step of the Processa map."""
+		if self.workflow_state in ("Draft", "Pending Relieving Date Correction"):
+			return ["resignation_initiation_date", "relieving_date", "resignation_letter"]
+		return []
+
 	def validate_step_remarks(self):
 		"""Every review stage must record its Negotiation / Performance / Complaints
 		remarks before the document can move past that stage -- remarks are
