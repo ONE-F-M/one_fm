@@ -46,9 +46,9 @@
   "upload_mofa_payment_receipt",
   "upload_translation_payment_receipt",
   "column_break_34",
-  "upload_embassy_payment_receipt_on",
-  "upload_mofa_payment_receipt_on",
-  "upload_translation_payment_receipt_on",
+  "embassy_payment_date",
+  "mofa_payment_date",
+  "translation_payment_date",
   "section_break_40",
   "pro_user",
   "column_break_cxze",
@@ -305,28 +305,22 @@
    "fieldtype": "Column Break"
   },
   {
-   "allow_on_submit": 1,
-   "depends_on": "eval:doc.type == 'Attestation' && doc.upload_embassy_payment_receipt",
-   "fieldname": "upload_embassy_payment_receipt_on",
-   "fieldtype": "Data",
-   "label": "Upload Embassy Payment Receipt On",
-   "read_only": 1
+   "depends_on": "eval:doc.upload_embassy_payment_receipt",
+   "fieldname": "embassy_payment_date",
+   "fieldtype": "Datetime",
+   "label": "Embassy Payment Date"
   },
   {
-   "allow_on_submit": 1,
-   "depends_on": "eval:doc.type == 'Attestation' && doc.upload_mofa_payment_receipt",
-   "fieldname": "upload_mofa_payment_receipt_on",
-   "fieldtype": "Data",
-   "label": "Upload MOFA Payment Receipt On",
-   "read_only": 1
+   "depends_on": "eval:doc.upload_mofa_payment_receipt",
+   "fieldname": "mofa_payment_date",
+   "fieldtype": "Datetime",
+   "label": "MOFA Payment Date"
   },
   {
-   "allow_on_submit": 1,
-   "depends_on": "eval:doc.type == 'Translation' && doc.upload_translation_payment_receipt",
-   "fieldname": "upload_translation_payment_receipt_on",
-   "fieldtype": "Data",
-   "label": "Upload Translation Payment Receipt On",
-   "read_only": 1
+   "depends_on": "eval:doc.upload_translation_payment_receipt",
+   "fieldname": "translation_payment_date",
+   "fieldtype": "Datetime",
+   "label": "Translation Payment Date"
   },
   {
    "fieldname": "section_break_40",
@@ -385,7 +379,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-24 10:00:00.000000",
+ "modified": "2026-11-05 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PCC Attestation",
