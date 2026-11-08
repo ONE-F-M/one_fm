@@ -4,6 +4,8 @@
 const ARRIVAL_BULK_METHOD = "one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment";
 
 frappe.listview_settings["Arrival and Deployment"] = {
+	hide_name_column: true,
+
 	onload(listview) {
 		listview.page.add_action_item(__("Submit to Onboarding (one email)"), () => {
 			listview.call_for_selected_items(`${ARRIVAL_BULK_METHOD}.bulk_submit_to_onboarding`);

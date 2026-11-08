@@ -150,11 +150,19 @@ def send_open_hd_ticket_count_to_google_chat_notification():
 			frappe.log_error(message=str(e), title='Google Chat Notification - Send Open HD Ticket Count')
 
 def send_open_hd_ticket_count_to_helpdesk_team(message):
-    helpdesk_email = frappe.db.get_single_value("HR Settings", "helpdesk_email")
-    if not helpdesk_email:
+    # Every address configured in HR Settings, in the order the table lists them.
+    # Nobody configured still means no email, which is what the old single field did
+    # when it was blank.
+    recipients = list(frappe.get_all(
+        "Helpdesk Notification Email",
+        filters={"parenttype": "HR Settings", "parentfield": "helpdesk_notification_emails"},
+        pluck="email_id",
+        order_by="idx asc",
+    ))
+    if not recipients:
         return
     sendemail(
-        recipients=[helpdesk_email],
+        recipients=recipients,
         subject="Open HD Ticket Count Notification",
         message=message,
         is_external_mail=True

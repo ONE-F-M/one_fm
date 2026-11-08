@@ -828,6 +828,15 @@ def get_job_applicant_custom_fields():
                 "permlevel": 1
             },
             {
+                "fieldname": "one_fm_graded_by",
+                "fieldtype": "Link",
+                "insert_after": "bulk_interview",
+                "label": "Graded By",
+                "no_copy": 1,
+                "options": "User",
+                "read_only": 1
+            },
+            {
                 "fieldname": "one_fm_grd_operator",
                 "fieldtype": "Link",
                 "hidden": 1,

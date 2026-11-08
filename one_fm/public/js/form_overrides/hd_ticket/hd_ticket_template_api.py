@@ -13,6 +13,15 @@ DOCTYPE_TEMPLATE = "HD Ticket Template"
 DOCTYPE_TEMPLATE_FIELD = "HD Ticket Template Field"
 DOCTYPE_TICKET = "HD Ticket"
 
+# Ticket fields that must never be rendered on the new-ticket or edit-ticket
+# forms, even when the template lists them. get_one() is only consumed by those
+# two pages, so dropping them here hides them from both at once.
+#
+# resolution_details is agent-only: it is written from the "Update Resolution
+# Details" dialog on the agent ticket view, never by the person raising or
+# editing the ticket.
+EXCLUDED_FORM_FIELDS = ("resolution_details",)
+
 
 @frappe.whitelist()
 def get_one(name: str):
@@ -38,6 +47,7 @@ def get_one(name: str):
 def get_fields_meta(template: str):
     fields = get_fields(template, "DocField")
     fields.extend(get_fields(template, "Custom Field"))
+    fields = [f for f in fields if f.fieldname not in EXCLUDED_FORM_FIELDS]
     fields = sorted(fields, key=lambda x: x.idx)
     return fields
 

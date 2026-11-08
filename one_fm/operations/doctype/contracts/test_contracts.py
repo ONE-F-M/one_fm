@@ -8,6 +8,7 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import getdate, add_days, nowdate, add_months
 from unittest.mock import patch
 from one_fm.operations.doctype.contracts.contracts import (
+	get_contract_notification_cc,
 	send_contract_reminders,
 	set_contract_inactive,
 	set_contract_active,
@@ -38,6 +39,7 @@ class TestContracts(FrappeTestCase):
 				frappe.get_doc({
 					"doctype": "Customer",
 					"customer_name": f"TEST-CLIENT-{i}",
+					"customer_name_in_arabic": f"TEST-CLIENT-{i}",
 					"customer_group": "Commercial",
 					"territory": "All Territories"
 				}).insert(ignore_permissions=True)
@@ -376,3 +378,183 @@ class TestContracts(FrappeTestCase):
 			contract.workflow_state, "Inactive",
 			"Contract must transition to Inactive even if email sending fails."
 		)
+
+	# ------------------------------------------------------------------
+	# Test: Contract Notification CC
+	# ------------------------------------------------------------------
+	def test_get_contract_notification_cc_parsing(self):
+		"""
+		The CC list is entered free-form by a user, so it must tolerate comma,
+		semicolon and newline separators, stray whitespace, duplicates and an
+		empty setting.
+		"""
+		cases = [
+			(None, []),
+			("", []),
+			("finance@example.com", ["finance@example.com"]),
+			("finance@example.com, legal@example.com", ["finance@example.com", "legal@example.com"]),
+			("finance@example.com;legal@example.com\nops@example.com",
+				["finance@example.com", "legal@example.com", "ops@example.com"]),
+			("  finance@example.com , , finance@example.com ", ["finance@example.com"]),
+		]
+
+		for raw, expected in cases:
+			frappe.db.set_single_value("ONEFM General Setting", "contract_notification_cc", raw)
+			self.assertEqual(
+				get_contract_notification_cc(), expected,
+				f"CC list parsed incorrectly for input {raw!r}."
+			)
+
+	def test_get_contract_notification_cc_without_field(self):
+		"""
+		Regression: a deploy that lands before "bench migrate" has no such field.
+		get_single_value raises on an unknown fieldname, which previously killed
+		the whole reminder run, so the helper must degrade to an empty list.
+		"""
+		with patch.object(frappe.get_meta("ONEFM General Setting"), "has_field", return_value=False):
+			self.assertEqual(get_contract_notification_cc(), [])
+
+	@patch('one_fm.operations.doctype.contracts.contracts.sendemail')
+	def test_contract_notification_cc_is_applied(self, mock_sendemail):
+		"""
+		Addresses configured in "Contract Notification CC" must be CC'd on every
+		contract reminder, alongside the Action Users already configured.
+		"""
+		frappe.db.set_single_value(
+			"ONEFM General Setting", "contract_notification_cc",
+			"finance@example.com, legal@example.com"
+		)
+
+		contract = frappe.get_doc({
+			"doctype": "Contracts",
+			"contract": "TEST-CONTRACT-CC",
+			"client": "TEST-CLIENT-1",
+			"project": "Test Project Alpha",
+			"start_date": add_days(nowdate(), -60),
+			"end_date": add_months(getdate(), 4),
+			"contract_end_internal_notification": 1,
+			"contract_termination_decision_period": 3,
+			"workflow_state": "Draft"
+		}).insert(ignore_permissions=True)
+		contract.db_set("workflow_state", "Active")
+		frappe.db.commit()
+
+		send_contract_reminders(is_scheduled_event=False)
+
+		self.assertTrue(mock_sendemail.called, "sendemail must be called for the expiring contract.")
+		cc = mock_sendemail.call_args[1].get("cc") or []
+		for email in ["finance@example.com", "legal@example.com"]:
+			self.assertIn(email, cc, f"{email} must be CC'd on the contract reminder.")
+
+	# ------------------------------------------------------------------
+	# Test: the reminder job must not fail silently
+	# ------------------------------------------------------------------
+	@patch('one_fm.operations.doctype.contracts.contracts.sendemail')
+	@patch(
+		'one_fm.operations.doctype.contracts.contracts.get_contract_notification_cc',
+		side_effect=Exception("boom")
+	)
+	def test_send_contract_reminders_does_not_fail_silently(self, mock_cc, mock_sendemail):
+		"""
+		Regression: a run-wide failure used to be swallowed by a bare log_error,
+		so the Scheduled Job Log reported "Complete" while every notification was
+		dropped and nobody was alerted. Such a failure must propagate.
+		"""
+		contract = frappe.get_doc({
+			"doctype": "Contracts",
+			"contract": "TEST-CONTRACT-FAIL",
+			"client": "TEST-CLIENT-1",
+			"project": "Test Project Alpha",
+			"start_date": add_days(nowdate(), -60),
+			"end_date": add_months(getdate(), 4),
+			"contract_end_internal_notification": 1,
+			"contract_termination_decision_period": 3,
+			"workflow_state": "Draft"
+		}).insert(ignore_permissions=True)
+		contract.db_set("workflow_state", "Active")
+		frappe.db.commit()
+
+		with self.assertRaises(Exception):
+			send_contract_reminders(is_scheduled_event=False)
+
+		self.assertFalse(
+			mock_sendemail.called,
+			"No email should have been sent when the run failed before sending."
+		)
+
+	# ------------------------------------------------------------------
+	# Test: contract date order guard (HD Ticket 1878243)
+	# ------------------------------------------------------------------
+	def test_contract_rejects_end_date_before_start_date(self):
+		"""An inverted date pair must not be saveable on a contract.
+
+		An inverted pair used to save cleanly and was then mirrored onto the
+		Project with db.set_value, locking the Project out of every later save.
+		"""
+		contract = frappe.get_doc({
+			"doctype": "Contracts",
+			"contract": "TEST-CONTRACT-DATES",
+			"client": "TEST-CLIENT-1",
+			"project": "Test Project Alpha",
+			"start_date": nowdate(),
+			"end_date": add_days(nowdate(), -3),
+			"workflow_state": "Draft"
+		})
+
+		self.assertRaises(frappe.ValidationError, contract.insert, ignore_permissions=True)
+
+	def test_contract_dates_sync_to_project(self):
+		"""A valid date pair still propagates to the linked project on update."""
+		contract = frappe.get_doc({
+			"doctype": "Contracts",
+			"contract": "TEST-CONTRACT-SYNC",
+			"client": "TEST-CLIENT-1",
+			"project": "Test Project Alpha",
+			"start_date": add_days(nowdate(), -30),
+			"end_date": add_months(getdate(), 6),
+			"workflow_state": "Draft"
+		}).insert(ignore_permissions=True)
+
+		new_end_date = add_months(getdate(), 12)
+		contract.end_date = new_end_date
+		contract.save(ignore_permissions=True)
+
+		project_dates = frappe.db.get_value(
+			"Project", "Test Project Alpha",
+			["expected_start_date", "expected_end_date"], as_dict=True
+		)
+		self.assertEqual(getdate(project_dates.expected_start_date), getdate(contract.start_date))
+		self.assertEqual(getdate(project_dates.expected_end_date), getdate(new_end_date))
+
+	def test_inverted_dates_are_not_mirrored_to_project(self):
+		"""update_project_start_end_date must refuse to write an inverted pair.
+
+		Second line of defence: this write bypasses Project validation, so it is
+		guarded independently of validate_contract_date_order.
+		"""
+		contract = frappe.get_doc({
+			"doctype": "Contracts",
+			"contract": "TEST-CONTRACT-NOSYNC",
+			"client": "TEST-CLIENT-1",
+			"project": "Test Project Alpha",
+			"start_date": add_days(nowdate(), -30),
+			"end_date": add_months(getdate(), 6),
+			"workflow_state": "Draft"
+		}).insert(ignore_permissions=True)
+
+		before = frappe.db.get_value(
+			"Project", "Test Project Alpha",
+			["expected_start_date", "expected_end_date"], as_dict=True
+		)
+
+		# Bypass validate_contract_date_order the way a direct db write or a
+		# legacy record would, then call the sync directly.
+		contract.start_date = nowdate()
+		contract.end_date = add_days(nowdate(), -5)
+		contract.update_project_start_end_date()
+
+		after = frappe.db.get_value(
+			"Project", "Test Project Alpha",
+			["expected_start_date", "expected_end_date"], as_dict=True
+		)
+		self.assertEqual(before, after, "Project dates must be left untouched.")
