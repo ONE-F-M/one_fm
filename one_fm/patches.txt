@@ -463,7 +463,7 @@ one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_gsd_supervisor
 one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_offboarding_officer
 one_fm.patches.v15_0.add_assignment_rule_subcontractor_exit_finance_manager
 # --- Operations-011 (24th-30th) release patches ---
-one_fm.patches.v15_0.update_bank_account_workflow
+one_fm.patches.v15_0.update_bank_account_workflow #2026-11-04 onboarding officer set inactive
 
 
 
@@ -697,10 +697,8 @@ one_fm.patches.v15_0.add_bank_account_draft_assignment_rule #2026-10-23 WI-00347
 one_fm.patches.v15_0.deactivate_overtime_request_workflow_and_assignment_rules
 one_fm.patches.v15_0.deactivate_client_event_workflow_and_assignment_rules
 one_fm.patches.v15_0.submit_approved_document_requests #2026-10-26 submit Approved Document Requests
-one_fm.patches.v15_0.deactivate_arrival_and_deployment_workflow
 one_fm.patches.v15_0.bonus_request_payroll_cycle_and_requester
 one_fm.patches.v15_0.bonus_request_hr_user_confirm_step
-one_fm.patches.v15_0.default_arrival_deployment_workflow_state_to_draft
 one_fm.patches.v15_0.zero_internal_transfer_qty_pr01180 #2026-10-18
 one_fm.patches.v15_0.reset_pmr_pr01180_docstatus_to_draft #2026-10-18
 one_fm.patches.v15_0.move_stranded_medical_insurance_to_draft #2026-10-18 HD-1888665 the 69 renewals create_mi_record left in the state WI-002494 renamed away
@@ -711,3 +709,13 @@ one_fm.patches.v15_0.reset_pmr_pr01132_to_in_process #2026-10-25 reopen PR01132 
 one_fm.patches.v15_0.set_hiring_type_and_agency_on_arrivals #2026-10-15 hiring type, department and agency on arrivals for the onboarding email table
 one_fm.patches.v15_0.allow_recruiter_to_delete_arrivals #2026-10-25 Recruiter deletes a wrong Arrival and Deployment; Custom DocPerm had dropped delete for every role
 one_fm.patches.v15_0.close_stranded_legacy_ojt_requests #2026-10-28 HD-1900434 close OJT-10-2026-0020/0035 and their assignments, stranded in Pending Approval by the move_ojt_lifecycle_to_processa workflow deactivation
+one_fm.patches.v15_0.reassign_rfm_hd_1910279_to_reliever #2026-11-01 HD-1910279 RFM-2026-001001 and RFM-2026-001017 to the reliever of the approver on Annual Leave
+one_fm.patches.v15_0.force_close_bonus_request_br_2026_0286 #2026-10-28 HD-1903486 close BR-2026-0286 stranded in Pending General Manager by the workflow deactivation
+one_fm.patches.v15_0.add_helpdesk_notification_emails_to_hr_settings #2026-11-01 HD-1892786 Helpdesk reminder recipients become a table of addresses so night-shift operators can be added
+one_fm.patches.v15_0.merge_employee_forth_name_into_fourth #2026-10-29 HD-1903520 merge the duplicate Employee "Forth Name" fields into the correctly spelled fourth_name fields and delete them
+one_fm.patches.v15_0.create_missing_documents_pre_onb_2026_00008 #2026-10-25 HD-1898774 the 3 rows + 1 PCC the killed submit request left PRE-ONB-2026-00008 short
+one_fm.patches.v15_0.reactivate_arrival_and_deployment_workflow #2026-11-04 Processa move reverted
+one_fm.patches.v15_0.add_recruiter_bpmn_process_instance_permission #2026-11-04 Recruiter actions the Job Applicant map tasks; BPMN Process Instance gave write to System Manager, Process Owner and Employee only
+one_fm.patches.v15_0.add_job_applicant_graded_by_field #2026-11-04 Graded By on Job Applicant, the recruiter the Job Applicant map assigns its tasks to
+one_fm.patches.v15_0.backfill_attendance_check_nov02_2026 #2026-11-05 HD-1914594 the Attendance Checks for 2 November 2026 the daily job dropped and can never regenerate
+one_fm.patches.v15_0.reset_pmr_pr01135_to_in_process #2026-11-05 HD-1915979 unlink the wrong employee from PR01135 and reopen it from Completed back to In Process
