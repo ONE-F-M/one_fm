@@ -1,7 +1,7 @@
 {
  "doctype": "Workflow",
  "document_type": "PACI",
- "is_active": 1,
+ "is_active": 0,
  "override_status": 0,
  "send_email_alert": 0,
  "states": [

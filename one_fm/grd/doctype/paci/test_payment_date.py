@@ -10,12 +10,11 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, now_datetime, nowdate
 
 from one_fm.grd.doctype.paci.paci import (
-	create_PACI,
 	notify_operator_to_take_hawiyati_renewal,
 	notify_operator_to_take_hawiyati_transfer,
 	reapply_paci,
 )
-from one_fm.grd.doctype.preparation.preparation import create_documents_for_row
+from one_fm.grd.doctype.preparation.test_preparation_processa_scripts import open_row_documents
 from one_fm.grd.doctype.work_permit.work_permit import reapply_work_permit
 
 DOCTYPES = ("Work Permit", "Medical Insurance", "Residency", "PACI")
@@ -90,7 +89,7 @@ class TestReapplyClearsPaymentDate(FrappeTestCase):
 
 	def test_a_reapplied_paci_has_no_payment_date(self):
 		employee = frappe.get_doc("Employee", _an_active_employee())
-		paci = create_PACI(employee, "Renewal")
+		paci = frappe.get_doc({"doctype": "PACI", "employee": employee.name, "category": "Renewal", "date_of_application": nowdate()}).insert()
 		paci.db_set("workflow_state", "Rejected")
 		paci.db_set("payment_date", now_datetime())
 		paci.db_set({"payment_made_via": "Bank", "bank_account": self.bank_account})
@@ -115,7 +114,7 @@ class TestReapplyClearsPaymentDate(FrappeTestCase):
 		})
 		preparation.flags.ignore_permissions = True
 		preparation.insert()
-		permit = create_documents_for_row(preparation.preparation_record[0], preparation.name)
+		permit = open_row_documents(preparation)
 		permit.db_set("workflow_state", "Rejected")
 		permit.db_set("payment_date", now_datetime())
 		permit.db_set({"payment_made_via": "Bank", "bank_account": self.bank_account})

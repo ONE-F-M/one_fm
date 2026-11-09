@@ -7,36 +7,15 @@ from frappe import _
 from frappe.model.document import Document
 from datetime import date
 from one_fm.api.notification import create_notification_log
-from frappe.utils import today, add_days, get_url, date_diff, get_year_start, flt
+from frappe.utils import today, get_url, date_diff, get_year_start, flt
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from frappe.core.doctype.communication.email import make
 from one_fm.processor import sendemail
 from one_fm.grd.document_title import set_document_title
 from one_fm.utils import is_scheduler_emails_enabled
+from one_fm.grd.processa import cancel_processes
 
-# The Overseas category and the state its record opens in (WI-001830). Named because the
-# controller, create_PACI and the assignment rule all have to agree on the spelling.
-NEW_APPLICATION = "New Application"
-PENDING_PRO = "Pending by PRO"
 
-# WI-002136: the two states the payment rule sits between. The operator leaves
-# Pending GR Operator for Completed by two actions - "Done", which owes an invoice, and
-# "No Payment Required", which does not - and the document carries the checkbox rather
-# than the action that moved it.
-PENDING_GR_OPERATOR = "Pending by GR Operator"
-COMPLETED = "Completed"
-PENDING_BY_PACI = "Pending by PACI"
-
-# Bank set on the Draft salary account opened when a PACI completes.
-DEFAULT_SALARY_BANK = "National Bank of Kuwait"
-
-# WI-002136: what the PRO owes before handing a first application back. The PRO who filed
-# it, and the reference PACI issued for the filing - without the reference there is nothing
-# for the GR Operator to Approve or Reject against.
-PRO_SUBMISSION_FIELDS = (
-    {"PRO User": "pro_user"},
-    {"PACI Reference Number": "paci_reference_number"},
-)
 
 
 class PACI(Document):
@@ -47,10 +26,11 @@ class PACI(Document):
         """Cancel  documents for that employee which were created in previous years"""
         year_threshold = getdate(self.date_of_application).year or getdate().year
         first_day_of_year = getdate(f'01-01-{year_threshold}') #Get the first day of the year
-        existing_docs = frappe.get_all(self.doctype,{'date_of_application':['<',first_day_of_year],'name':['!=',self.name],'docstatus':0,'employee':self.employee})
+        existing_docs = frappe.get_all(self.doctype,{'date_of_application':['<',first_day_of_year],'name':['!=',self.name],'docstatus':0,'employee':self.employee}, pluck='name')
         if existing_docs:
             for one in existing_docs:
                 frappe.db.set_value(self.doctype,one,'workflow_state','Cancelled')
+            cancel_processes(self.doctype, existing_docs, _("Replaced by a newer PACI"))
             frappe.db.commit()
 
 
@@ -159,8 +139,8 @@ class PACI(Document):
 
 
     def on_update(self):
-        self.validate_payment_invoice_on_done()
-        self.validate_pro_submission()
+        # The PACI Lifecycle process checks the PRO submission and the payment invoice in
+        # its script tasks before it moves the record on.
         self.stamp_damj_letter()
 
     def stamp_damj_letter(self):
@@ -173,152 +153,6 @@ class PACI(Document):
             self.db_set("upload_damj_letter_on", now_datetime())
         elif not self.upload_damj_letter and self.upload_damj_letter_on:
             self.db_set("upload_damj_letter_on", None)
-
-    def validate_pro_submission(self):
-        """Hold a first application with the PRO until they have filed it (WI-002136).
-
-        "Submit" is the PRO saying the application is lodged with PACI, so the reference
-        PACI issued has to be on the record - the GR Operator Approves or Rejects against
-        that reference, and there is nothing to approve without it. The PRO who filed it is
-        recorded for the same reason.
-
-        Keyed on the state being left, like the payment rule above: apply_workflow sets the
-        new state and then saves, so self.workflow_state is already the destination.
-
-        Not enforced when the record is opened - a Preparation hands a first application to
-        the PRO with neither of these known (WI-001830), and demanding them there would
-        stop the Preparation opening the document at all.
-        """
-        before_save = self.get_doc_before_save()
-        if not before_save:
-            return
-
-        if before_save.workflow_state != PENDING_PRO:
-            return
-        if self.workflow_state != PENDING_BY_PACI:
-            return
-
-        self.set_mendatory_fields(PRO_SUBMISSION_FIELDS)
-
-    def validate_payment_invoice_on_done(self):
-        """Hold a completion until the payment invoice is in, unless no fee was charged.
-
-        WI-002136: "Done" is the operator saying the civil ID was paid for, so the receipt
-        has to be attached to it. PACI charges nothing for some transactions, and for those
-        the operator ticks No Payment Required and leaves by the action of that name - there
-        is no invoice to produce, and demanding one blocked the file with nothing that could
-        unblock it.
-
-        Keyed on the state being left, read from the document as it was before this save:
-        apply_workflow sets the new state and then saves, so self.workflow_state is already
-        the destination by the time this runs.
-
-        Replaces a check on the state "Under Process", which the workflow has not had since
-        it was rebuilt around Pending GR Operator - it could never fire.
-        """
-        if self.no_payment_required:
-            return
-
-        before_save = self.get_doc_before_save()
-        if not before_save:
-            return
-
-        if before_save.workflow_state != PENDING_GR_OPERATOR:
-            return
-        if self.workflow_state != COMPLETED:
-            return
-
-        self.set_mendatory_fields([{'Upload Payment Invoice': 'upload_civil_id_payment'}])
-
-
-    def on_submit(self):
-        self.validate_mandatory_fields_on_submit()
-        self.set_New_civil_id_Expiry_date_in_employee_doctype()
-        self.apply_damj_civil_id()
-        self.db_set('paci_status',"Completed")
-        self.db_set('completed_on', today())
-        # Last: its savepoint rollback must not undo the db_set calls above.
-        self.create_draft_bank_account()
-
-    def create_draft_bank_account(self):
-        """Open a Draft salary Bank Account for the employee unless one already exists.
-
-        A failure is logged and shown, never raised: it must not block the PACI completion.
-        """
-        if frappe.db.exists("Bank Account", {"party_type": "Employee", "party": self.employee}):
-            frappe.msgprint(
-                _("Bank account already exists for Employee ID {0}. Skipping duplicate creation.").format(self.employee),
-                indicator="orange",
-            )
-            return
-
-        account_name = frappe.db.get_value("Employee", self.employee, "employee_name")
-        bank_account = frappe.new_doc("Bank Account")
-        bank_account.update({
-            "account_name": account_name,
-            "bank": DEFAULT_SALARY_BANK,
-            "party_type": "Employee",
-            "party": self.employee,
-            "onboard_employee": frappe.db.get_value(
-                "Onboard Employee",
-                {"employee": self.employee, "workflow_state": ["!=", "Cancelled"]},
-                "name",
-            ),
-        })
-        # PACI knows no more than the Employee record; do not block the Draft on a missing Civil ID.
-        bank_account.flags.ignore_civil_id = True
-
-        # ERPNext names it "{account_name} - {bank}"; employee names repeat.
-        set_name = None
-        if frappe.db.exists("Bank Account", f"{account_name} - {DEFAULT_SALARY_BANK}"):
-            set_name = f"{account_name} - {DEFAULT_SALARY_BANK} - {self.employee}"
-
-        frappe.db.savepoint("paci_bank_account")
-        try:
-            # System action on a workflow transition; the GR Operator cannot create Bank Accounts.
-            bank_account.insert(ignore_permissions=True, set_name=set_name)
-        except Exception:
-            frappe.db.rollback(save_point="paci_bank_account")
-            frappe.log_error(
-                title=_("Draft Bank Account not created on PACI completion"),
-                reference_doctype=self.doctype,
-                reference_name=self.name,
-            )
-            frappe.msgprint(
-                _("Could not create a Draft Bank Account for Employee ID {0}. The error has been logged.").format(self.employee),
-                indicator="orange",
-            )
-
-    def apply_damj_civil_id(self):
-        """Put the merged Civil ID on the Employee once the application completes (WI-002100).
-
-        A Damj merges two civil ID numbers the government issued the same person, and the
-        surviving one is the original. Until it is written back, every record that reads the
-        Civil ID off the Employee is quoting the number the government just retired.
-
-        Residency does the same thing when its own Damj completes (WI-002022). Either
-        document can be the one that finishes first, and both write the same number, so
-        whichever completes last is a no-op rather than a conflict.
-
-        Written with set_value rather than a full Employee save: a full save re-validates the
-        whole Employee, and over a thousand of them hold a Marital Status the field's options
-        no longer accept, so any such save throws on data that has nothing to do with the
-        civil ID.
-
-        This record's own mirror of the number is updated too - it is fetched from the
-        Employee and would otherwise keep showing the retired number on the very document
-        that recorded the merge.
-        """
-        if not (self.damj_is_applicable and self.original_civil_id):
-            return
-
-        frappe.db.set_value('Employee', self.employee, 'one_fm_civil_id', self.original_civil_id)
-        self.db_set('civil_id', self.original_civil_id)
-
-    def validate_mandatory_fields_on_submit(self):
-        if self.workflow_state == 'Completed':
-            field_list = [{'New Civil ID Expiry Date':'new_civil_id_expiry_date'}]
-            self.set_mendatory_fields(field_list)
 
     def set_mendatory_fields(self,field_list):
         mandatory_fields = []
@@ -333,160 +167,6 @@ class PACI(Document):
                 message += '<li>' + mandatory_field +'</li>'
             message += '</ul>'
             frappe.throw(message)
-
-    def set_New_civil_id_Expiry_date_in_employee_doctype(self):
-        """
-        This method to sort records of employee documents upon document name;
-        """
-        today = date.today()
-        Find = False
-        exists_document_in_employee = frappe.db.exists("Employee Document", {"document_name": "Civil ID", "parent": self.employee})
-        if exists_document_in_employee:
-            # Update the document details
-            frappe.db.set_value("Employee Document", exists_document_in_employee, {
-                "issued_on": today,
-                "attach": self.upload_civil_id,
-                "valid_till": self.new_civil_id_expiry_date
-            })
-            frappe.db.set_value("Employee", self.employee, "civil_id_expiry_date", self.new_civil_id_expiry_date)
-        else:
-            # Written directly, the same way the branch above writes an existing row.
-            # employee.append(...) + employee.save() drags the whole Employee through
-            # validation, so completing a civil ID failed on data that has nothing to do
-            # with it: 1,124 employees hold a Marital Status the field's options no longer
-            # accept ("Single", "Divorced", "Widowed"), and any full save of one throws.
-            # This writes the two facts it actually has - the document row and the expiry
-            # date - and nothing else.
-            frappe.get_doc({
-                "doctype": "Employee Document",
-                "parent": self.employee,
-                "parenttype": "Employee",
-                "parentfield": "one_fm_employee_documents",
-                "idx": next_employee_document_idx(self.employee),
-                "attach": self.upload_civil_id,
-                "document_name": "Civil ID",
-                "issued_on": today,
-                "valid_till": self.new_civil_id_expiry_date,
-            }).db_insert()
-            frappe.db.set_value(
-                "Employee", self.employee, "civil_id_expiry_date", self.new_civil_id_expiry_date
-            )
-
-def next_employee_document_idx(employee):
-    """The idx a new Employee Document row should take.
-
-    A raw insert does not get the ordering a child table append would, so it is worked
-    out here rather than left at 0, where two rows would tie.
-    """
-    last = frappe.db.get_value(
-        "Employee Document",
-        {"parent": employee, "parenttype": "Employee"},
-        "idx",
-        order_by="idx desc",
-    )
-    return (last or 0) + 1
-
-
-# Create PACI record once a month for renewals list
-def create_PACI_renewal(preparation_name):
-    """Open a renewal civil ID record for every expat renewal row.
-
-    Returns the rows it could not open one for, so a gap between this count and the
-    other documents' is something the operator is told about on submit.
-    """
-    failures = []
-    employee_in_preparation = frappe.get_doc('Preparation',preparation_name)
-    if employee_in_preparation.preparation_record:
-        for employee in employee_in_preparation.preparation_record:
-            if employee.renewal_or_extend == 'Renewal Expat' and employee.nationality != 'Kuwaiti':
-                try:
-                    create_PACI(frappe.get_doc('Employee',employee.employee),"Renewal",preparation_name)
-                except Exception as e:
-                    frappe.log_error(message=frappe.get_traceback(), title=f"Error creating PACI for Employee {employee.employee} in Preparation {preparation_name}")
-                    failures.append({
-                        'employee': employee.employee,
-                        'employee_name': employee.full_name,
-                        'document': 'PACI',
-                        'reason': str(e),
-                    })
-                    continue
-    return failures
-
-def create_PACI_for_transfer(employee_name):
-    employee = frappe.get_doc('Employee',employee_name)
-    if employee:
-        if transfer_civil_id_already_open(employee.name):
-            return
-        create_PACI(frappe.get_doc('Employee',employee.employee),"Transfer")
-
-
-def transfer_civil_id_already_open(employee):
-    """Is there already a Transfer PACI open for this employee this year?
-
-    Called from two directions now: a Preparation opens the set up front (WI-001824), and
-    a Transfer Residency asks for one when it is submitted. Same year scope as
-    cancel_existing, so a later transfer still gets its own record.
-    """
-    return bool(frappe.get_all('PACI', limit=1, filters={
-        'employee': employee,
-        'category': 'Transfer',
-        'date_of_application': ['>=', get_year_start(today())],
-        'workflow_state': ['!=', 'Cancelled'],
-        'docstatus': ['<', 2],
-    }))
-
-def create_PACI(employee,Type,preparation_name = None):
-        # Create New PACI: 1. New Overseas, 2. New Kuwaiti, 3. Transfer
-        if Type == "Renewal":
-            start_day = add_days(employee.residency_expiry_date, -14)# MIGHT CHANGE
-        else:
-            # Every other category - Transfer, and New Application for an overseas hire
-            # (WI-001881) - has no residency expiry to count back from, so the civil ID is
-            # applied for the day the record is opened.
-            start_day = today()
-        PACI_new = frappe.new_doc('PACI')
-        PACI_new.employee = employee.name
-        PACI_new.category = Type
-        PACI_new.preparation = preparation_name
-        PACI_new.date_of_application = start_day
-        PACI_new.save()
-        if Type == NEW_APPLICATION:
-            hand_to_pro(PACI_new)
-        return PACI_new
-
-
-def hand_to_pro(paci):
-    """Move a first civil ID application to the PRO, who applies on the portal (WI-001830).
-
-    Written to the field rather than applied as a workflow action, because the
-    Draft --Submit to PRO--> Pending by PRO transition is the operator's, and this record
-    is opened by the system on behalf of a Preparation - there is no operator in that
-    session, and Frappe rejects the jump as a transition the current user cannot perform.
-
-    A field written this way leaves the assignment rules unaware, so they are re-run
-    explicitly; without that the record sits in Pending by PRO assigned to nobody.
-    """
-    from frappe.automation.doctype.assignment_rule.assignment_rule import apply
-
-    # Imported here rather than at the top: preparation imports this module to open a PACI,
-    # so the other direction can only be a local import.
-    from one_fm.grd.doctype.preparation.preparation import update_row_reference
-
-    paci.db_set("workflow_state", PENDING_PRO)
-
-    # db_set writes past the document's own hooks, so the Preparation row would otherwise
-    # keep showing the state the record was inserted in rather than the one it is in
-    # (WI-002093).
-    update_row_reference(paci)
-
-    try:
-        apply(doctype=paci.doctype, name=paci.name)
-    except Exception:
-        frappe.log_error(
-            message=frappe.get_traceback(),
-            title=f"Error assigning PACI {paci.name} to the PRO",
-        )
-
 
 #==============================================================================> Reminder Notification
 def notify_operator_to_take_hawiyati_renewal():# cron job at 8am in working days
