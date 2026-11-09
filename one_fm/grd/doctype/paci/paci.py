@@ -168,30 +168,6 @@ class PACI(Document):
             message += '</ul>'
             frappe.throw(message)
 
-def create_PACI_renewal(preparation_name):
-    """Open a renewal civil ID record for every expat renewal row.
-
-    Returns the rows it could not open one for, so a gap between this count and the
-    other documents' is something the operator is told about on submit.
-    """
-    failures = []
-    employee_in_preparation = frappe.get_doc('Preparation',preparation_name)
-    if employee_in_preparation.preparation_record:
-        for employee in employee_in_preparation.preparation_record:
-            if employee.renewal_or_extend == 'Renewal Expat' and employee.nationality != 'Kuwaiti':
-                try:
-                    create_PACI(frappe.get_doc('Employee',employee.employee),"Renewal",preparation_name)
-                except Exception as e:
-                    frappe.log_error(message=frappe.get_traceback(), title=f"Error creating PACI for Employee {employee.employee} in Preparation {preparation_name}")
-                    failures.append({
-                        'employee': employee.employee,
-                        'employee_name': employee.full_name,
-                        'document': 'PACI',
-                        'reason': str(e),
-                    })
-                    continue
-    return failures
-
 def create_PACI(employee,Type,preparation_name = None):
         # Create New PACI: 1. New Overseas, 2. New Kuwaiti, 3. Transfer
         if Type == "Renewal":

@@ -197,13 +197,6 @@ def create_wp_from_preparation(employee, work_permit_type, preparation_name):
 
 
 #FOR RENEWAL
-def create_work_permit_renewal(preparation_name):
-    """Open a renewal Work Permit for every row the Action calls for.
-
-    Returns the rows it could not open one for, so the submitting operator is told
-    rather than left reading a clean submit: the Error Log entry alone is invisible to
-    them, and a missing permit silently costs the employee their Medical Insurance too.
-    """
 def create_wp_renewal(employee,status,name):
     if status and status in ['Renewal Expat',"Renewal (Kuwaiti)"]:
         start_day = add_days(employee.residency_expiry_date, -14)

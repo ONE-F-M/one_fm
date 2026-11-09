@@ -17,7 +17,6 @@ import one_fm
 
 from one_fm.grd.doctype.preparation.preparation import (
 	CATEGORIES,
-	SEQUENCED_CLASSIFICATIONS,
 	YEAR_SCOPED_ACTIONS,
 )
 from one_fm.grd.doctype.residency.residency import (
@@ -89,10 +88,6 @@ class TestRenewalExpatStillLinksItsDocuments(FrappeTestCase):
 			if any(old in line for old in OLD_NAMES)
 		]
 		self.assertEqual(stragglers, [], f"still on the old Action name: {stragglers}")
-
-	def test_its_permit_stays_inside_the_document_sequence(self):
-		_, values = SEQUENCED_CLASSIFICATIONS["Work Permit"]
-		self.assertIn(RENEWAL_EXPAT, values)
 
 	def test_it_is_still_a_year_scoped_renewal_action(self):
 		self.assertIn(RENEWAL_EXPAT, YEAR_SCOPED_ACTIONS)

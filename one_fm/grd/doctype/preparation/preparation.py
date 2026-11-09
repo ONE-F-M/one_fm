@@ -32,6 +32,7 @@ from one_fm.grd.doctype.pcc_attestation import pcc_attestation
 from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.processor import sendemail
 from one_fm.grd.utils import get_pcc_attestation_fees
+from one_fm.grd.processa import cancel_document
 
 # WI-001824: which documents each of the new Actions generates on submit. An Action
 # absent from here keeps its existing behaviour, which the renewal and extend paths
@@ -224,89 +225,7 @@ FALLBACK_PREFIX = 'PRE-'
 SUB_DOCUMENT_SEQUENCE = ("Work Permit", "Medical Insurance", "Residency", "PACI")
 
 
-# WI-002096: the classification that puts a document inside the legal sequence. Kuwaiti
-# permits and residency extensions are outside it - a Kuwaiti has no insurance, no residency
-# and no civil ID process to follow the permit, and an extension is a single document on its
-# own - so neither is gated and neither offers a next step.
-SEQUENCED_CLASSIFICATIONS = {
-    "Work Permit": ("work_permit_type", ("Renewal Expat", "Overseas", "Overseas (Government)", "Local Transfer")),
-    "Medical Insurance": ("insurance_status", ("Renewal", "New", "Local Transfer")),
-    "Residency": ("category", ("Renewal", "First Time", "Transfer")),
-    "PACI": ("category", ("Renewal", "New Application", "Transfer")),
-}
-
 COMPLETED = "Completed"
-
-
-def is_sequenced(doc):
-    """Does this document sit inside the Work Permit -> ... -> PACI sequence (WI-002096)?"""
-    classification = SEQUENCED_CLASSIFICATIONS.get(doc.doctype)
-    if not classification:
-        return False
-
-    fieldname, values = classification
-    return doc.get(fieldname) in values
-
-
-def upstream_of(doc):
-    """The document that legally has to be finished before this one (WI-002096)."""
-    if doc.doctype not in SUB_DOCUMENT_SEQUENCE:
-        return None
-
-    position = SUB_DOCUMENT_SEQUENCE.index(doc.doctype)
-    return SUB_DOCUMENT_SEQUENCE[position - 1] if position else None
-
-
-def validate_sequence(doc, method=None):
-    """Refuse to complete a step whose predecessor is not finished (WI-002096).
-
-    Kuwait issues these in one order: the work permit, then the insurance it is a condition
-    of, then the residency stamped against it, then the civil ID. Completing them out of
-    order produces paperwork the ministry rejects, and the operator finds out weeks later.
-
-    Only ever checks the step immediately before, because that step's own completion was
-    gated the same way - so the whole chain is enforced without every document querying all
-    of them.
-
-    Scoped to documents opened by a Preparation. A permit or a residency raised on its own -
-    a transfer paper, a cancellation - has no batch to be sequenced within, and there is
-    nothing to look up.
-
-    An upstream document that does not exist is not a blocker: the Action decides which
-    documents a candidate gets, and a step that was never opened is not a step that is
-    waiting.
-    """
-    if doc.get("workflow_state") != COMPLETED:
-        return
-    if not doc.get("preparation") or not doc.get("employee"):
-        return
-    if not is_sequenced(doc):
-        return
-
-    upstream = upstream_of(doc)
-    if not upstream:
-        return
-
-    pending = frappe.get_all(
-        upstream,
-        filters={
-            "preparation": doc.preparation,
-            "employee": doc.employee,
-            "docstatus": ["!=", 2],
-            "workflow_state": ["!=", COMPLETED],
-        },
-        pluck="name",
-        limit=1,
-    )
-    if not pending:
-        return
-
-    frappe.throw(
-        _("{0} {1} has to be completed first.").format(
-            _(upstream), frappe.bold(pending[0])
-        ),
-        title=_("Out of Sequence"),
-    )
 
 
 def _state_label(document):
@@ -565,84 +484,6 @@ class Preparation(Document):
 		"""
         if not self.hr_user:
             self.hr_user = frappe.db.get_single_value("Hiring Settings","default_hr_user")
-
-    def on_submit(self):
-        self.validate_mandatory_fields_on_submit()
-        validate_preparation_table(self)
-        self.db_set('submitted_by', frappe.session.user)
-        self.db_set('submitted_on', now_datetime())
-        # Each creator reports the rows it could not open a document for instead of only
-        # writing an Error Log the operator never sees. A row is still allowed to fail
-        # without taking the batch down - the whole point of the per-row try - but the
-        # submit no longer looks clean when it was not.
-        failures = []
-        failures += self.recall_create_work_permit_renewal() ## create work permit record for renewals
-        failures += self.recall_create_medical_insurance_renewal() # create medical insurance record for renewals
-        failures += self.recall_create_moi_renewal_and_extend() # create moi record for all employee
-        failures += self.recall_create_paci() # create paci record for all
-        # self.recall_create_fp()# create fp record for all
-        failures += self.recall_create_documents_for_new_actions() # WI-001824: New Kuwaiti / Overseas
-        for row in self.preparation_record:
-            refresh_row_stage(self.name, row.employee)
-        report_document_creation_failures(failures)
-        self.send_notifications()
-
-    def recall_create_documents_for_new_actions(self):
-        return create_documents_for_new_actions(self.name)
-
-    def validate_mandatory_fields_on_submit(self):
-        mandatory_fields = []
-        mandatory_fields_reqd = False
-        for item in self.preparation_record:#each item in the preparation_record row
-            if not item.renewal_or_extend:#column not filled
-                mandatory_fields_reqd = True
-                mandatory_fields.append(item.idx)
-        if len(mandatory_fields) > 0:
-            message = 'Mandatory fields required in Preparation to Submit<br><br><ul>'
-            for mandatory_field in mandatory_fields:
-                message += '<li>' +'<p> fill the renewal or extend field for row number {0}</p>''</li>'.format(mandatory_field)
-            message += '</ul>'
-            frappe.throw(message)
-
-
-    def recall_create_work_permit_renewal(self):
-        return work_permit.create_work_permit_renewal(self.name)
-
-    def recall_create_medical_insurance_renewal(self):
-        return medical_insurance.valid_work_permit_exists(self.name)
-
-    def recall_create_moi_renewal_and_extend(self):
-        return residency.set_employee_list_for_moi(self.name)
-
-    def recall_create_paci(self):
-        return paci.create_PACI_renewal(self.name)
-
-    def recall_create_fp(self):
-        fingerprint_appointment.creat_fp_record(self.name)
-
-    def send_notifications(self):
-        """
-            runs: `on_submit`
-            This method will notifiy operator to apply for the wp, mi, moi, paci, fp that are created for all employees in the list
-        """
-        if self.grd_operator:
-            page_link = get_url(self.get_url())
-            message = "<p>Records are created<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
-            subject = 'Records are created for WP, MI, MOI, PACI, and FP'
-            create_notification_log(subject, message, [self.grd_operator], self)
-
-        # The costing mail renders a PDF and hands it to the mail server, and neither belongs
-        # inside the submit transaction. wkhtmltopdf died with SIGSEGV on staging and took the
-        # whole submit down with it - but the Work Permit, Medical Insurance, MOI and PACI
-        # records created above each commit as they go, so they survived while the Preparation
-        # rolled back to draft, and re-submitting created them a second time. Queued after the
-        # commit so a broken PDF is an Error Log entry, not a failed submit.
-        frappe.enqueue(
-            'one_fm.grd.doctype.preparation.preparation.send_costing_notification',
-            queue='short',
-            enqueue_after_commit=True,
-            preparation=self.name
-        )
 
     @frappe.whitelist()
     def set_renewal_for_all_preparation_record(self, renew_all: int | str):
@@ -920,82 +761,6 @@ def attestation_fees_for_row(renewal_or_extend, nationality):
     }
 
 
-def create_documents_for_new_actions(preparation_name):
-    """Generate the sub-documents the New Kuwaiti and Overseas Actions ask for (WI-001824).
-
-    One row at a time, and one row's failure does not stop the rest: the same contract
-    the renewal and extend paths already keep, so a single bad employee record cannot
-    cost the whole batch its documents. The rows that failed are returned so the
-    operator is told which ones, rather than the batch reading as a clean submit.
-    """
-    failures = []
-    preparation = frappe.get_doc('Preparation', preparation_name)
-
-    for row in preparation.preparation_record:
-        if row.renewal_or_extend not in NEW_ACTION_DOCUMENTS:
-            continue
-        try:
-            create_documents_for_row(row, preparation_name)
-        except Exception as e:
-            frappe.log_error(
-                title=f"Error creating GRD documents for {row.employee} in Preparation {preparation_name}",
-                message=frappe.get_traceback(),
-            )
-            failures.append({
-                'employee': row.employee,
-                'employee_name': row.full_name,
-                'document': row.renewal_or_extend,
-                'reason': str(e),
-            })
-            continue
-
-    return failures
-
-
-def report_document_creation_failures(failures):
-    """Tell the submitting operator which rows did not get their documents.
-
-    Every creator keeps a per-row `try` so one bad employee record cannot cost the whole
-    batch its documents, and each writes an Error Log. But an Error Log is not something
-    the operator reads: PRE-REN-2026-00008 submitted 80 rows, opened 69 Work Permits and
-    69 Medical Insurances instead of 70 each, and the gap only surfaced when someone
-    noticed the connection badges did not agree. The submit still succeeds - a partial
-    batch is the intended behaviour - but it no longer looks complete when it is not.
-    """
-    if not failures:
-        return
-
-    rows = ""
-    for failure in failures:
-        rows += "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>".format(
-            escape_html(cstr(failure.get("employee"))),
-            escape_html(cstr(failure.get("employee_name"))),
-            escape_html(cstr(failure.get("document"))),
-            escape_html(strip_html(cstr(failure.get("reason")))),
-        )
-
-    message = """
-        <p>{intro}</p>
-        <div class="table-responsive">
-            <table class="table table-bordered table-sm small">
-                <thead><tr><th>{employee}</th><th>{name}</th><th>{document}</th><th>{reason}</th></tr></thead>
-                <tbody>{rows}</tbody>
-            </table>
-        </div>
-        <p class="text-muted small">{footer}</p>
-    """.format(
-        intro=_("This Preparation was submitted, but the following documents could not be created. Correct the cause and open them from the employee's record, or amend the row's Action."),
-        employee=_("Employee"),
-        name=_("Name"),
-        document=_("Document"),
-        reason=_("Reason"),
-        rows=rows,
-        footer=_("The full traceback for each is in the Error Log."),
-    )
-
-    frappe.msgprint(message, title=_("Documents Not Created"), indicator="red", wide=True)
-
-
 def create_documents_for_row(row, preparation_name):
     """Open the documents one Preparation row's Action calls for, in dependency order.
 
@@ -1204,8 +969,8 @@ def cancel_delete_doc(doctype,source,row):
             doc.flags.ignore_links = 1
             doc.flags.ignore_permissions = 1
             doc.save()
-            if each.docstatus == 1:  
-                doc.cancel()
+            if each.docstatus == 1:
+                cancel_document(doc, _("{0} no longer needs this document").format(source))
             frappe.delete_doc(doctype,each.name,force= True)
         except:
             frappe.log_error(title=f"Error Cancelling and Deleting <b>{doctype} {each.name} </b>",message=frappe.get_traceback())
