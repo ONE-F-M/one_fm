@@ -141,7 +141,7 @@ class TestTheTwoCredentialsDoNotCross(unittest.TestCase):
 			)
 
 	def test_one_bpmn_never_reads_the_onefm_field(self):
-		from one_bpmn.one_bpmn.integrations import google_common
+		from one_bpmn.processa_connectors.google import common as google_common
 
 		code = _executable_code(google_common)
 		for forbidden in ("ONEFM General Setting", "google_service_account_json"):
@@ -182,7 +182,7 @@ class TestTheTwoCredentialsDoNotCross(unittest.TestCase):
 		fall back to the connector's account."""
 		import inspect
 
-		from one_bpmn.one_bpmn.integrations import google_drive as gd
+		from one_bpmn.processa_connectors.google import drive as gd
 
 		for fn in (gd.download_file_text, gd.list_files, gd.set_permissions, gd.revoke_permissions):
 			with self.subTest(fn=fn.__name__):
