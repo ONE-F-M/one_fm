@@ -112,7 +112,7 @@ class DocumentRegister(Document):
 			return  # nothing to fill
 
 		try:
-			from one_bpmn.one_bpmn.integrations import google_drive as gd
+			from one_bpmn.processa_connectors.google import drive as gd
 
 			service = _drive_service()
 		except Exception:
@@ -303,7 +303,7 @@ def deactivate(document: str, reason: str = None, via_request: str = None, revok
 	revoke_error = None
 	if revoke:
 		try:
-			from one_bpmn.one_bpmn.integrations.google_drive import revoke_permissions
+			from one_bpmn.processa_connectors.google.drive import revoke_permissions
 
 			outcome = revoke_permissions(doc.drive_file_id, scope="all", service=_drive_service())
 			revoked = len(outcome["removed"])
@@ -350,7 +350,7 @@ def reactivate(document: str, reason: str = None) -> dict:
 	granted = 0
 	share_error = None
 	try:
-		from one_bpmn.one_bpmn.integrations.google_drive import set_permissions
+		from one_bpmn.processa_connectors.google.drive import set_permissions
 
 		granted = len(
 			set_permissions(doc.drive_file_id, DEFAULT_GRANTS, service=_drive_service())
