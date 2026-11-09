@@ -3,9 +3,9 @@
 # The developer is requested as reviewer on every new PR, and re-requested after every --update.
 #
 # New PR (creates a new branch named after the work item):
-#   bash scripts/claude-pr.sh <work-item-id> <base-branch> [gh pr create flags, e.g. --title ... --body-file ...]
+#   bash .claude/open-pr-via-github-app.sh <work-item-id> <base-branch> [gh pr create flags, e.g. --title ... --body-file ...]
 # Follow-up commits to an existing PR (only after the developer approves):
-#   bash scripts/claude-pr.sh --update <work-item-id> <base-branch>
+#   bash .claude/open-pr-via-github-app.sh --update <work-item-id> <base-branch>
 #
 # Needs: gh, jq, the gh-token extension, and these environment variables:
 #   CLAUDE_APP_ID, CLAUDE_INSTALL_ID, CLAUDE_APP_KEY (path to the app's .pem file),
@@ -13,7 +13,7 @@
 #   CLAUDE_REVIEWER (the developer's GitHub username, e.g. ks093)
 set -euo pipefail
 
-USAGE="Usage: bash scripts/claude-pr.sh [--update] <work-item-id> <base-branch> [gh pr create flags]"
+USAGE="Usage: bash .claude/open-pr-via-github-app.sh [--update] <work-item-id> <base-branch> [gh pr create flags]"
 UPDATE=0
 if [ "${1:-}" = "--update" ]; then UPDATE=1; shift; fi
 WI="${1:?$USAGE}"
