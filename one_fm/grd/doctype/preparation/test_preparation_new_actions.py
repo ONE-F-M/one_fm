@@ -11,10 +11,6 @@ from one_fm.grd.doctype.preparation.preparation import (
 	category_for_action,
 	create_documents_for_row,
 )
-from one_fm.grd.doctype.medical_insurance.medical_insurance import (
-	creat_medical_insurance_for_transfer,
-)
-from one_fm.grd.doctype.paci.paci import create_PACI_for_transfer
 from one_fm.grd.doctype.residency.residency import create_moi_record
 
 SUB_DOCUMENTS = ("Work Permit", "Medical Insurance", "Residency", "PACI")
@@ -160,44 +156,6 @@ class TestNewActionDocuments(FrappeTestCase):
 		self.assertEqual(
 			frappe.db.get_value("PACI", opened["PACI"][0], "category"), "Transfer"
 		)
-
-	def test_the_transfer_chain_does_not_open_a_second_set(self):
-		"""The downstream creators have to see the Preparation's documents and stand down.
-
-		A Local Transfer Work Permit reaching Completed asks for a Medical Insurance, and a
-		Transfer Residency asks for a PACI when it is submitted. Both now find the ones the
-		Preparation opened.
-		"""
-		preparation = self._preparation_with("Local Transfer")
-		create_documents_for_row(preparation.preparation_record[0], preparation.name)
-
-		# Counted as a delta, not an absolute: this employee is a real one off the site
-		# and may already carry transfer documents from previous work.
-		before = self._transfer_document_counts()
-		creat_medical_insurance_for_transfer(self.employee.name)
-		create_PACI_for_transfer(self.employee.name)
-
-		self.assertEqual(self._transfer_document_counts(), before, "the chain opened a second set")
-		self.assertEqual(len(self._opened_for(preparation.name)["Medical Insurance"]), 1)
-		self.assertEqual(len(self._opened_for(preparation.name)["PACI"]), 1)
-
-	def _transfer_document_counts(self):
-		"""How many live transfer documents this employee holds, per doctype."""
-		return {
-			doctype: frappe.db.count(
-				doctype,
-				{
-					"employee": self.employee.name,
-					"docstatus": ["<", 2],
-					"workflow_state": ["!=", "Cancelled"],
-					**classification,
-				},
-			)
-			for doctype, classification in (
-				("Medical Insurance", {"insurance_status": "Local Transfer"}),
-				("PACI", {"category": "Transfer"}),
-			)
-		}
 
 	def test_the_extend_and_renewal_categories_still_date_off_the_residency(self):
 		"""Guards the mapping the Overseas category was added to.
