@@ -122,6 +122,7 @@ def extend_resignation(
     supervisor: str = None,
     reason: str = None,
     extended_date: str = None,
+    adjustment_type: str = None,
     resignation_id: str = None,
     # mobile sends {attachment_name, attachment} as an object
     attachment: str | dict = None,
@@ -139,6 +140,7 @@ def extend_resignation(
             resignation_id=resignation_id,
             reason=reason,
             extended_date=extended_date,
+            adjustment_type=adjustment_type,
             attachment=attachment,
             attachment_name=attachment_name,
         )
@@ -146,6 +148,7 @@ def extend_resignation(
         supervisor     = p["supervisor"]
         reason         = p["reason"]
         extended_date  = p["extended_date"]
+        adjustment_type = p["adjustment_type"] or "Extension"
         resignation_id = p["resignation_id"]
         attachment     = p["attachment"]
         att_name       = p["attachment_name"] or "extension_letter.png"
@@ -183,6 +186,7 @@ def extend_resignation(
         ext.employee = active_doc.employee
         ext.supervisor = supervisor or active_doc.supervisor
         ext.extended_relieving_date = extended_date
+        ext.adjustment_type = adjustment_type
         ext.reason = reason or "Adjustment requested by employee"
         # Do NOT set workflow_state before insert — Frappe sets it to the
         # workflow's initial state ('Draft') automatically
