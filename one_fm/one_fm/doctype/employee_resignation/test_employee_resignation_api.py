@@ -278,3 +278,18 @@ class TestHrVisitDate(FrappeTestCase):
         # Thursday, Friday and Saturday relieving dates all send the employee to HR on Sunday 2026-11-15
         for relieving_date in ("2026-11-12", "2026-11-13", "2026-11-14"):
             self.assertEqual(str(get_hr_visit_date(relieving_date)), "2026-11-15")
+
+
+class TestRemoveRequestRelievingDateChange(FrappeTestCase):
+    def test_approvers_can_no_longer_request_a_relieving_date_change(self):
+        from one_fm.patches.v15_0.remove_resignation_request_relieving_date_change import execute
+
+        execute()
+
+        actions = [t.action for t in frappe.get_doc("Workflow", "Employee Resignation").transitions]
+        self.assertNotIn("Request Relieving Date Change", actions)
+        self.assertIn("Resubmit Date", actions)
+
+    def tearDown(self):
+        frappe.db.rollback()
+
