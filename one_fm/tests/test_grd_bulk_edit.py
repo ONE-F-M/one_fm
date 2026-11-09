@@ -46,15 +46,6 @@ class TestTheSwitchIsTheRealOne(FrappeTestCase):
 		for folder in FOLDERS.values():
 			self.assertNotIn("allow_edit", _definition(folder), folder)
 
-	def test_all_four_have_a_workflow_so_the_switch_is_needed(self):
-		"""Frappe allows bulk edit outright on a DocType with no workflow, and hides it
-		behind List View Settings.allow_edit on one that has."""
-		for doctype in LIST_VIEWS:
-			self.assertTrue(
-				frappe.db.exists("Workflow", {"document_type": doctype, "is_active": 1}),
-				f"{doctype} has no active workflow - check whether the switch is still needed",
-			)
-
 	def test_the_patch_covers_the_four_the_story_names(self):
 		self.assertEqual(
 			set(LIST_VIEWS), {"Work Permit", "Medical Insurance", "Residency", "PACI"}

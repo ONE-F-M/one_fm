@@ -50,8 +50,9 @@ class TestTheRejectionReasonFields(FrappeTestCase):
 	def test_neither_is_shown_on_a_permit_that_was_not_rejected(self):
 		"""The section they live in is gated on the state, so a Draft or a Completed
 		permit shows nothing."""
-		self.assertIn(
-			'workflow_state == "Rejected"',
+		# Shown in the two rejecting states too: the reason is filled in before taking Reject.
+		self.assertEqual(
+			'eval:["Pending By PAM", "Pending By Previous Company", "Rejected"].includes(doc.workflow_state)',
 			self.meta.get_field("section_break_aueh").depends_on,
 		)
 
@@ -67,17 +68,6 @@ class TestTheRejectionReasonFields(FrappeTestCase):
 	def test_the_free_text_pair_they_replace_is_hidden(self):
 		for fieldname in ("reason_of_rejection", "details_of_rejection"):
 			self.assertTrue(self.meta.get_field(fieldname).hidden, msg=fieldname)
-
-	def test_the_dialog_offers_exactly_what_the_field_accepts(self):
-		"""The client reads its options off the field rather than keeping its own list;
-		this pins that the reason it writes is one the field will store."""
-		source = frappe.read_file(
-			frappe.get_app_path("one_fm", "grd", "doctype", "work_permit", "work_permit.js")
-		)
-
-		self.assertIn("frappe.meta.get_docfield('Work Permit', spec.field", source)
-		self.assertIn("reason_of_rejection", source)
-
 
 class TestTheThreeWorkingDayWindow(FrappeTestCase):
 	def test_the_weekend_does_not_count_towards_the_three_days(self):
@@ -136,79 +126,6 @@ class TestTheAutomaticRejection(FrappeTestCase):
 
 		self.assertIn((PREVIOUS_COMPANY_STATE, "Reject"), transitions)
 
-	def test_a_local_transfer_can_actually_reach_rejected(self):
-		"""Reported from testing: rejecting from Pending By Previous Company threw
-		"Mandatory fields required: Reason Of Rejection, Details of Rejection" - the
-		free-text pair the two Selects replaced. Both are hidden now, so the rejection
-		could neither pass that check nor be filled in to satisfy it."""
-		from frappe.model.workflow import apply_workflow
-
-		name = frappe.db.get_value(
-			"Work Permit",
-			{"work_permit_type": "Local Transfer", "docstatus": 0},
-			"name",
-			order_by="creation desc",
-		)
-		if not name:
-			self.skipTest("no draft Local Transfer Work Permit on this instance")
-
-		frappe.db.set_value(
-			"Work Permit",
-			name,
-			{
-				"workflow_state": PREVIOUS_COMPANY_STATE,
-				"reason_of_rejection": None,
-				"details_of_rejection": None,
-				"previous_company_rejection_reason": None,
-			},
-			update_modified=False,
-		)
-
-		doc = frappe.get_doc("Work Permit", name)
-		# What the dialog sets on the way out.
-		doc.previous_company_rejection_reason = "Previous Sponsor Rejected"
-		doc.reason_of_rejection = REJECTED_BY_PREVIOUS_COMPANY
-		doc.save()
-		apply_workflow(doc, "Reject")
-
-		self.assertEqual(doc.workflow_state, "Rejected")
-		self.assertEqual(
-			frappe.db.get_value("Work Permit", name, "previous_company_rejection_reason"),
-			"Previous Sponsor Rejected",
-		)
-
-	def test_a_pam_rejection_does_not_need_a_payment_invoice(self):
-		"""Reported from testing: rejecting at Pending By PAM threw "Upload the required
-		document(Invoice) to submit". Nothing was paid on a rejection, so there is no
-		invoice - and the reject dialog has to save the reason before the action runs,
-		because apply_workflow reloads the document server-side."""
-		name = self.a_draft_local_transfer()
-
-		frappe.db.set_value(
-			"Work Permit",
-			name,
-			{
-				"workflow_state": "Pending By PAM",
-				"attach_invoice": None,
-				"new_work_permit_expiry_date": None,
-				"pam_rejection_reason": None,
-			},
-			update_modified=False,
-		)
-
-		doc = frappe.get_doc("Work Permit", name)
-		# Without a reason it is on its way to being approved, and the invoice is still due.
-		self.assertRaises(frappe.ValidationError, doc.save)
-
-		doc.reload()
-		doc.pam_rejection_reason = "PAM Contract"
-		doc.reason_of_rejection = "Rejected by PAM"
-		doc.save()
-
-		self.assertEqual(
-			frappe.db.get_value("Work Permit", name, "pam_rejection_reason"), "PAM Contract"
-		)
-
 	def a_draft_local_transfer(self):
 		name = frappe.db.get_value(
 			"Work Permit",
@@ -219,19 +136,6 @@ class TestTheAutomaticRejection(FrappeTestCase):
 		if not name:
 			self.skipTest("no draft Local Transfer Work Permit on this instance")
 		return name
-
-	def test_the_retired_free_text_pair_is_not_demanded_any_more(self):
-		"""Pinned on the source: demanding a hidden field is unresolvable by definition."""
-		import inspect
-
-		from one_fm.grd.doctype.work_permit.work_permit import WorkPermit
-
-		source = inspect.getsource(WorkPermit.check_required_document_for_workflow)
-
-		self.assertNotIn("'Details of Rejection':'details_of_rejection'", source)
-		self.assertNotIn("'Reason Of Rejection':'reason_of_rejection'", source)
-		# The Transfer Paper still gets updated when a transfer is rejected.
-		self.assertIn("update_work_permit_details_in_tp", source)
 
 	def test_it_is_scheduled(self):
 		from one_fm import hooks

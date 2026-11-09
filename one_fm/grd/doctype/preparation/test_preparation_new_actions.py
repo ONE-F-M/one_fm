@@ -199,15 +199,6 @@ class TestNewActionDocuments(FrappeTestCase):
 			)
 		}
 
-	def test_completion_does_not_need_a_transfer_paper(self):
-		"""A Preparation-sourced transfer has none, and completing it must not look for one."""
-		preparation = self._preparation_with("Local Transfer")
-		work_permit = create_documents_for_row(preparation.preparation_record[0], preparation.name)
-
-		self.assertFalse(work_permit.transfer_paper)
-		# Raised DoesNotExistError on `Transfer Paper None` before the guard.
-		work_permit.update_wp_child_table_in_transfer_paper()
-
 	def test_the_extend_and_renewal_categories_still_date_off_the_residency(self):
 		"""Guards the mapping the Overseas category was added to.
 

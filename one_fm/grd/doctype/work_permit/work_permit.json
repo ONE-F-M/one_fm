@@ -633,7 +633,7 @@
    "options": "ref_doctype"
   },
   {
-   "depends_on": "eval:doc.workflow_state == \"Rejected\"",
+   "depends_on": "eval:[\"Pending By PAM\", \"Pending By Previous Company\", \"Rejected\"].includes(doc.workflow_state)",
    "fieldname": "section_break_aueh",
    "fieldtype": "Section Break",
    "label": "Rejection Reason"
@@ -1008,7 +1008,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-05 12:00:00.000000",
+ "modified": "2026-11-08 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
