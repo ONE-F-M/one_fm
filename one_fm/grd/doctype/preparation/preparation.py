@@ -10,94 +10,24 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.model.naming import make_autoname
 from frappe.query_builder import DocType
-from frappe.utils import cint, cstr, escape_html, flt, strip_html
+from frappe.utils import cint, cstr, escape_html, flt
 from frappe.utils import (
     today,
     add_months,
     get_url,
     nowdate,
     getdate,
-    now_datetime,
     get_first_day,
     get_last_day
 )
 import datetime
-from one_fm.grd.doctype.work_permit import work_permit
-from one_fm.grd.doctype.medical_insurance import medical_insurance
-from one_fm.grd.doctype.residency_payment_request import residency_payment_request
-from one_fm.grd.doctype.residency import residency
-from one_fm.grd.doctype.paci import paci
-from one_fm.grd.doctype.medical_appointment import medical_appointment
-from one_fm.grd.doctype.pcc_attestation import pcc_attestation
-from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.processor import sendemail
 from one_fm.grd.utils import get_pcc_attestation_fees
 from one_fm.grd.processa import cancel_document
 
-# WI-001824: which documents each of the new Actions generates on submit. An Action
-# absent from here keeps its existing behaviour, which the renewal and extend paths
-# below still own.
-#
-# New Kuwaiti gets a Work Permit and nothing else: a Kuwaiti has no residency, no civil
-# ID application and no medical insurance process to open.
-#
-# A key means "open this document"; its value is the government classification that
-# document is opened under. WI-002033: every value is stated here rather than left to the
-# creator to derive. Three of the four used to be None, meaning "Medical Insurance will
-# map the status off the Work Permit type and Residency will map the category off the
-# Action" - so this table, the one place an operator or a reviewer looks to see what an
-# Action produces, did not actually say what three of the four documents would get, and a
-# change to either creator's own mapping silently changed what Preparation produced.
-#
-# The creators keep their derivations for their other callers, which do not come through a
-# Preparation row and have nothing to pass. Residency still takes its application date
-# from MOI_CATEGORY_BY_ACTION; only the category is handed to it.
-#
-# WI-002095: the two overseas Actions also open the medical the candidate has to pass and
-# the attestation of their police clearance - the two steps of overseas onboarding the GRO
-# was still raising by hand. No Fingerprint Appointment is opened for any Action: the
-# fingerprint is taken once the candidate is in the country and holds a civil ID, so it is
-# not part of what a Preparation generates.
-NEW_ACTION_DOCUMENTS = {
-    "New Kuwaiti": {
-        "work_permit": "New Kuwaiti",
-    },
-    "Overseas": {
-        "work_permit": "Overseas",
-        "medical_insurance": "New",
-        "residency": "First Time",
-        "paci": "New Application",
-        "medical_appointment": "First Time",
-        "pcc_attestation": "Overseas",
-    },
-    # WI-002024: the same overseas hire, but against a government contract file rather
-    # than a private one. Every document it opens is the one Overseas opens - what
-    # differs is the work permit fee, which PAM charges at the lower government project
-    # rate, so the Action has to be distinguishable at the point the fee is fetched and
-    # on the permit itself. Splitting it here rather than adding a flag beside Overseas
-    # keeps it a single choice in the operator's Action dropdown, which is where the
-    # distinction is actually made.
-    "Overseas (Government)": {
-        "work_permit": "Overseas (Government)",
-        "medical_insurance": "New",
-        "residency": "First Time",
-        "paci": "New Application",
-        "medical_appointment": "First Time",
-        "pcc_attestation": "Overseas (Government)",
-    },
-    # The process map groups Local Transfer with Overseas and the non-Kuwaiti renewal:
-    # all four documents, opened by the Preparation itself. There is no Transfer Paper in
-    # that path, which is why the transfer side of the Work Permit lifecycle had to stop
-    # assuming one.
-    "Local Transfer": {
-        "work_permit": "Local Transfer",
-        "medical_insurance": "Local Transfer",
-        "residency": "Transfer",
-        "medical_insurance": "Local Transfer",
-        "residency": "Transfer",
-        "paci": "Transfer",
-    },
-}
+# The process script that opens a row's documents. The Preparation process runs it on
+# submit; rows added or re-actioned after submit run it here.
+CREATE_DOCUMENTS_SCRIPT = "Create Preparation Documents"
 
 
 # WI-002031: the fee components a master row and a Preparation row both carry, and which
@@ -153,12 +83,6 @@ EXTENSION_ACTION = 'Extension'
 # there is nothing to renew yet - and it opens a Residency and nothing else: the candidate
 # has no work permit, no insurance and no civil ID for an extension to follow on from.
 VISA_EXTENSION_ACTION = 'Visa Extension'
-
-# The Actions whose whole output is a Residency. Named because two code paths have to agree
-# about it: the submit path, which opens the Residency through the extend branch in
-# residency.py, and the path a row added after submit takes - which otherwise reads
-# "not one of the new Actions, so open the four a renewal opens".
-RESIDENCY_ONLY_ACTIONS = (EXTENSION_ACTION, VISA_EXTENSION_ACTION)
 
 # The two renewal Actions, and the Action that ends an employment. Named because
 # handle_renewal_changes compared against the literal "Renewal" - a value the Action field
@@ -761,90 +685,34 @@ def attestation_fees_for_row(renewal_or_extend, nationality):
     }
 
 
-def create_documents_for_row(row, preparation_name):
-    """Open the documents one Preparation row's Action calls for, in dependency order.
-
-    The Work Permit comes first because Medical Insurance is opened against it - it
-    reads the type, the application date and the passport expiry off the permit rather
-    than being told them.
-    """
-    plan = NEW_ACTION_DOCUMENTS[row.renewal_or_extend]
-    employee_doc = frappe.get_doc('Employee', row.employee)
-
-    work_permit_doc = work_permit.create_wp_from_preparation(
-        employee_doc, plan["work_permit"], preparation_name
-    )
-
-    if "medical_insurance" in plan:
-        medical_insurance.create_mi_record(
-            work_permit_doc, insurance_status=plan["medical_insurance"]
-        )
-
-    if "residency" in plan:
-        residency.create_moi_record(
-            employee_doc, row.renewal_or_extend, preparation_name, category=plan["residency"]
-        )
-
-    if "paci" in plan:
-        paci.create_PACI(employee_doc, plan["paci"], preparation_name)
-
-    if "medical_appointment" in plan:
-        medical_appointment.create_medical_appointment(
-            employee_doc, plan["medical_appointment"], preparation_name
-        )
-
-    if "pcc_attestation" in plan:
-        pcc_attestation.create_pcc_attestations(
-            employee_doc, plan["pcc_attestation"], preparation_name
-        )
-
-    return work_permit_doc
-
-
 def handle_creation_of_grd_docs(row,source):
-    """
-            Handle the creation of grd documents for  new rows just added after the submission of a preparation  document
-    Args:
-        row (dict): dict containing employee information
-    """
-    # A row added after submit takes the same route as one that was there at submit,
-    # or the new Actions would silently create nothing here (WI-001824).
-    if row.renewal_or_extend in NEW_ACTION_DOCUMENTS:
-        try:
-            create_documents_for_row(row, source)
-        except Exception:
-            frappe.log_error(
-                title=f"Error creating New GRD documents for {row.employee}",
-                message=frappe.get_traceback(),
-            )
-        return
+    """Open the documents a row added or re-actioned after submit calls for.
 
-    # WI-002181: an extension opens a Residency and nothing else. The branch below reads as
-    # "not one of the new Actions, so it is a renewal", which gave a row added after submit
-    # a work permit, an insurance and a PACI that submitting the same row never would.
-    if row.renewal_or_extend in RESIDENCY_ONLY_ACTIONS:
-        try:
-            residency.create_moi_record(
-                frappe.get_doc("Employee", row.employee), row.renewal_or_extend, source
-            )
-        except Exception:
-            frappe.log_error(
-                title=f"Error creating Residency for {row.employee}",
-                message=frappe.get_traceback(),
-            )
-        return
+    The process is finished by then, so the script it ran on submit is run here, for this
+    row only, the way a script task runs it. The rule stays in the script the process
+    owner maintains.
+    """
+    from one_bpmn.one_bpmn.engine import _check_script_permissions
 
-    try:
-        employee_doc = frappe.get_doc("Employee",row.employee)
-        work_permit.create_wp_renewal(employee_doc,row.renewal_or_extend,source)
-        frappe.db.commit() #because Medical Insurance depends on the work permit
-        medical_insurance.create_mi_record(frappe.get_doc('Work Permit',{'preparation':source,'employee':employee_doc.employee}))
-        residency.create_moi_record(employee_doc,row.renewal_or_extend,preparation_name=source)
-        paci.create_PACI(employee_doc,row.renewal_or_extend,source)   
-    except:
-        frappe.log_error(title=f"Error Creating New GRD documents  for {row.employee} </b>",message=frappe.get_traceback()) 
-    
-    
+    script = frappe.db.get_value("Server Script", CREATE_DOCUMENTS_SCRIPT, "script")
+    if script is None:
+        frappe.throw(_("Server Script {0} is missing. Import the Preparation Lifecycle configuration.").format(CREATE_DOCUMENTS_SCRIPT))
+    _check_script_permissions(script, CREATE_DOCUMENTS_SCRIPT)
+
+    preparation = frappe.get_doc("Preparation", source)
+    task_data = {"row_names": [row.name]}
+    exec(script, {  # noqa: S102
+        **task_data,
+        "__builtins__": __builtins__,
+        "frappe": frappe,
+        "doc": preparation,
+        "task_data": task_data,
+        "result": {},
+        "context_doctype": preparation.doctype,
+        "context_docname": preparation.name,
+    })
+
+
 def handle_renewal_changes(old_,new_,source):
     """Re-open the documents a row's new Action calls for when the Action is changed.
 

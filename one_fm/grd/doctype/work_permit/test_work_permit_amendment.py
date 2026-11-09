@@ -11,7 +11,7 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import nowdate
 
-from one_fm.grd.doctype.preparation.preparation import create_documents_for_row
+from one_fm.grd.doctype.preparation.test_preparation_processa_scripts import open_row_documents
 from one_fm.grd.doctype.work_permit.work_permit import reapply_work_permit
 
 AMEND_TRANSITION = ("Pending By PAM", "Amend", "Pending GR Manager")
@@ -47,7 +47,7 @@ class TestWorkPermitAmendment(FrappeTestCase):
 			}
 		).insert(ignore_permissions=True)
 
-		return create_documents_for_row(preparation.preparation_record[0], preparation.name)
+		return open_row_documents(preparation)
 
 	# ── Amendment ─────────────────────────────────────────────────────────────────
 

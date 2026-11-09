@@ -37,6 +37,8 @@ if errors:
 	"Create Preparation Documents": """# Runs once the Preparation is Submitted. Opens the legal documents each row's Action calls
 # for, then tells the GRD Operator and sends the costing to HR.
 # One row's failure does not stop the rest: the rows that failed are listed to the submitter.
+# The Preparation also runs it for rows added or re-actioned after submit, passing their
+# names in task_data["row_names"]; only those rows are opened, with no notification or costing.
 from frappe.desk.doctype.notification_log.notification_log import enqueue_create_notification
 
 add_days = frappe.utils.add_days
@@ -149,10 +151,14 @@ def open_documents(row, employee):
 				insert({"doctype": "PCC Attestation", "employee": employee.name, "type": kind, "category": plan["pcc_attestation"], "preparation": doc.name})
 
 
-frappe.db.set_value("Preparation", doc.name, {"submitted_by": doc.modified_by, "submitted_on": frappe.utils.now_datetime()})
+row_names = task_data.get("row_names")
+if not row_names:
+	frappe.db.set_value("Preparation", doc.name, {"submitted_by": doc.modified_by, "submitted_on": frappe.utils.now_datetime()})
 
 CURRENT_ROW = {}
 for row in doc.preparation_record:
+	if row_names and row.name not in row_names:
+		continue
 	CURRENT_ROW["name"] = row.full_name
 	try:
 		open_documents(row, frappe.get_doc("Employee", row.employee))
@@ -173,7 +179,7 @@ if failures:
 	)
 result["documents_not_created"] = len(failures)
 
-if doc.grd_operator:
+if doc.grd_operator and not row_names:
 	enqueue_create_notification(doc.grd_operator, {
 		"subject": frappe._("Records are created for WP, MI, MOI, PACI, and FP"),
 		"email_content": "<p>" + frappe._("Records are created") + " <a href='{0}'>{1}</a>.</p>".format(frappe.utils.get_url_to_form("Preparation", doc.name), doc.name),
@@ -181,7 +187,8 @@ if doc.grd_operator:
 	})
 
 # The costing mail renders a PDF; it is queued after the commit so a broken PDF cannot undo the submit.
-frappe.enqueue("one_fm.grd.doctype.preparation.preparation.send_costing_notification", queue="short", enqueue_after_commit=True, preparation=doc.name)
+if not row_names:
+	frappe.enqueue("one_fm.grd.doctype.preparation.preparation.send_costing_notification", queue="short", enqueue_after_commit=True, preparation=doc.name)
 """,
 }
 
@@ -277,3 +284,54 @@ class TestCreatePreparationDocuments(FrappeTestCase):
 			result = run("Create Preparation Documents", self.batch("Renewal Expat", employee))
 		self.assertEqual(result["documents_not_created"], 1)
 		self.assertEqual(self.opened(employee)["Residency"], 1)
+
+	def test_named_rows_open_alone_without_the_submit_side_effects(self):
+		employee = self.employee()
+		doc = self.batch("Extension", employee)
+		with patch("frappe.enqueue") as enqueue, \
+				patch("frappe.desk.doctype.notification_log.notification_log.enqueue_create_notification") as notify:
+			run("Create Preparation Documents", doc, row_names=["not-this-row"])
+			self.assertEqual(self.opened(employee)["Residency"], 0)
+			run("Create Preparation Documents", doc, row_names=[doc.preparation_record[0].name])
+		self.assertEqual(self.opened(employee)["Residency"], 1)
+		enqueue.assert_not_called()
+		notify.assert_not_called()
+		self.assertIsNone(frappe.db.get_value("Preparation", doc.name, "submitted_on"))
+
+
+class TestRowsEditedAfterSubmit(FrappeTestCase):
+	"""A row added or re-actioned after submit runs the site's copy of the same script."""
+
+	employee = TestCreatePreparationDocuments.employee
+	batch = TestCreatePreparationDocuments.batch
+	opened = TestCreatePreparationDocuments.opened
+
+	def setUp(self):
+		if not frappe.db.exists("Server Script", "Create Preparation Documents"):
+			frappe.get_doc({
+				"doctype": "Server Script", "name": "Create Preparation Documents", "script_type": "API",
+				"api_method": "create_preparation_documents_test", "script": SCRIPTS["Create Preparation Documents"],
+			}).db_insert()
+
+	def test_a_row_added_after_submit_opens_its_documents(self):
+		from one_fm.grd.doctype.preparation.preparation import handle_creation_of_grd_docs
+
+		employee = self.employee()
+		doc = self.batch("Renewal Expat", employee)
+		with patch("frappe.msgprint"):
+			handle_creation_of_grd_docs(doc.preparation_record[0], doc.name)
+		self.assertEqual(self.opened(employee), {"Work Permit": 1, "Medical Insurance": 1, "Residency": 1, "PACI": 1})
+
+
+def open_row_documents(preparation, row=None):
+	"""Open one row's documents the way the script opens a row edited after submit.
+
+	Returns the row's Work Permit, if the row's Action opens one.
+	"""
+	row = row or preparation.preparation_record[0]
+	result = run("Create Preparation Documents", preparation, row_names=[row.name])
+	if result["documents_not_created"]:
+		raise AssertionError("{0} document(s) not created for {1}, see the Error Log".format(
+			result["documents_not_created"], row.employee))
+	name = frappe.db.get_value("Work Permit", {"preparation": preparation.name, "employee": row.employee}, "name", order_by="creation desc")
+	return frappe.get_doc("Work Permit", name) if name else None

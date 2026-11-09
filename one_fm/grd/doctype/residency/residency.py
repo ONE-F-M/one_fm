@@ -7,7 +7,7 @@ from frappe import _
 from frappe.model.document import Document
 from datetime import date
 from one_fm.api.notification import create_notification_log
-from frappe.utils import today, add_days, get_url
+from frappe.utils import get_url
 from frappe.core.doctype.communication.email import make
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from one_fm.utils import is_scheduler_emails_enabled
@@ -158,63 +158,6 @@ class Residency(Document):
     def get_passport_arabic(self, passport):
         return {'Normal':'طبيعي','Diplomat':'دبلوماسي'}.get(passport)
     
-
-# The Actions whose Residency is opened by Preparation's own dispatcher rather than by
-# the "for extend" branch below (WI-001824). Without this the branch - which reads as
-# "anything that is not a renewal is an extension" - would open a second Residency for
-# them, categorised as Extend.
-ACTIONS_HANDLED_ON_SUBMIT = (
-    'Renewal Expat', 'New Kuwaiti', 'Overseas', 'Overseas (Government)', 'Local Transfer'
-)
-
-# The Residency a category opens, and how many days before the residency expires it is
-# applied for. Anything not listed is an extension, applied for a week ahead.
-MOI_CATEGORY_BY_ACTION = {
-    'Renewal Expat': ('Renewal', -14),
-    'Transfer': ('Transfer', None),
-    # Same category whether the transfer came from a Transfer Paper (which says
-    # "Transfer") or from a Preparation row (which says "Local Transfer").
-    'Local Transfer': ('Transfer', None),
-    # First residency for an overseas hire (WI-001881): there is no expiry to count
-    # back from, so it is applied for the day the Preparation was submitted.
-    'Overseas': ('First Time', None),
-    # WI-002024: a government-contract overseas hire gets the same first residency. MOI
-    # does not care which file the work permit was raised against.
-    'Overseas (Government)': ('First Time', None),
-    # WI-002181: a visa extension for an incoming candidate. Same category as any other
-    # extension - MOI has one - but applied for the day the Preparation was submitted
-    # rather than a week before an expiry: the candidate has no residency yet, and the
-    # fallback below would read a blank expiry as today and date the application a week
-    # in the past.
-    'Visa Extension': ('Extend', None),
-}
-
-
-def create_moi_record(employee,Renewal_or_Extend,preparation_name = None, category=None):
-    """Open the Residency an Action calls for.
-
-    WI-002033: a Preparation row states the category in NEW_ACTION_DOCUMENTS and passes it
-    in, so the table an operator reads to see what an Action produces is the one the
-    document is actually opened under. The map below still supplies the application date -
-    how many days before the residency expires it is applied for - which the caller does
-    not know, and still supplies the category for the callers that pass none: the transfer
-    path and the extend branch.
-    """
-    mapped_category, days_before_expiry = MOI_CATEGORY_BY_ACTION.get(
-        Renewal_or_Extend, ("Extend", -7)
-    )
-    category = category or mapped_category
-    start_date = add_days(employee.residency_expiry_date, days_before_expiry) if days_before_expiry else today()
-
-
-    # start_day_for_renewal = add_days(employee.residency_expiry_date, -14)# MIGHT CHANGE IN TRANSFER
-    new_moi = frappe.new_doc('Residency')
-    new_moi.employee = employee.name
-    new_moi.preparation = preparation_name
-    new_moi.renewal_or_extend = Renewal_or_Extend
-    new_moi.date_of_application = start_date
-    new_moi.category = category
-    new_moi.insert()
 
 #=================================================================> Reminder Notification
 def system_remind_renewal_operator_to_apply():# cron job at 4pm

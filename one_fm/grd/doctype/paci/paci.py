@@ -7,7 +7,7 @@ from frappe import _
 from frappe.model.document import Document
 from datetime import date
 from one_fm.api.notification import create_notification_log
-from frappe.utils import today, add_days, get_url, date_diff, get_year_start, flt
+from frappe.utils import today, get_url, date_diff, get_year_start, flt
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from frappe.core.doctype.communication.email import make
 from one_fm.processor import sendemail
@@ -167,25 +167,6 @@ class PACI(Document):
                 message += '<li>' + mandatory_field +'</li>'
             message += '</ul>'
             frappe.throw(message)
-
-def create_PACI(employee,Type,preparation_name = None):
-        # Create New PACI: 1. New Overseas, 2. New Kuwaiti, 3. Transfer
-        if Type == "Renewal":
-            start_day = add_days(employee.residency_expiry_date, -14)# MIGHT CHANGE
-        else:
-            # Every other category - Transfer, and New Application for an overseas hire
-            # (WI-001881) - has no residency expiry to count back from, so the civil ID is
-            # applied for the day the record is opened.
-            start_day = today()
-        PACI_new = frappe.new_doc('PACI')
-        PACI_new.employee = employee.name
-        PACI_new.category = Type
-        PACI_new.preparation = preparation_name
-        PACI_new.date_of_application = start_day
-        # The PACI Lifecycle process hands a New Application straight to the PRO.
-        PACI_new.save()
-        return PACI_new
-
 
 #==============================================================================> Reminder Notification
 def notify_operator_to_take_hawiyati_renewal():# cron job at 8am in working days

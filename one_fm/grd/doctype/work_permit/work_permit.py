@@ -174,62 +174,6 @@ def create_work_permit_transfer(tp_name,employee):
             create_wp_transfer(frappe.get_doc('Employee',employee_in_tp.employee),"Local Transfer",tp_name)#check if you need to do it this way create_wp_transfer(employee_in_tp,"Local Transfer",tp_name)
 
 
-def create_wp_from_preparation(employee, work_permit_type, preparation_name):
-    """Open a Work Permit for a Preparation row whose Action is not a renewal (WI-001824).
-
-    A renewal dates its application off the residency it is renewing, which is what
-    create_wp_renewal does. A New Kuwaiti or Overseas application has no residency yet,
-    so it is applied for on the day the Preparation is submitted.
-
-    No copy of a previous Work Permit either: these are first applications, so there is
-    nothing to carry forward, and copying one would bring the old PAM references with it.
-    """
-    work_permit = frappe.new_doc('Work Permit')
-    work_permit.employee = employee.name
-    work_permit.work_permit_type = work_permit_type
-    work_permit.date_of_application = today()
-    work_permit.preparation = preparation_name
-    work_permit.ref_doctype = 'Preparation'
-    work_permit.ref_name = preparation_name
-    work_permit.insert()
-
-    return work_permit
-
-
-#FOR RENEWAL
-def create_wp_renewal(employee,status,name):
-    if status and status in ['Renewal Expat',"Renewal (Kuwaiti)"]:
-        start_day = add_days(employee.residency_expiry_date, -14)
-        Doctype = "Preparation"
-        preparation_name = name
-    # setting type of renewal work permit
-        if employee.one_fm_nationality == "Kuwaiti":
-            work_permit_type = "Renewal Kuwaiti"
-        if employee.one_fm_nationality != "Kuwaiti":
-            work_permit_type = "Renewal Expat"
-
-    if employee.work_permit:
-        work_permit = frappe.get_doc('Work Permit', employee.work_permit)
-        new_work_permit = frappe.copy_doc(work_permit)
-        new_work_permit.employee = employee.name
-        new_work_permit.preparation = preparation_name
-        new_work_permit.work_permit_type = work_permit_type
-        new_work_permit.date_of_application = start_day
-        new_work_permit.transfer_paper = None
-        new_work_permit.ref_doctype = Doctype
-        new_work_permit.ref_name = name
-        new_work_permit.insert()
-    else:
-        work_permit = frappe.new_doc('Work Permit')
-        work_permit.employee = employee.name
-        work_permit.preparation = preparation_name
-        work_permit.work_permit_type = work_permit_type
-        work_permit.date_of_application = start_day
-        work_permit.ref_doctype = Doctype
-        work_permit.ref_name = name
-        work_permit.transfer_paper = None
-        work_permit.save()
-
 #FOR Transfer
 def create_wp_transfer(employee,status,name):
     if status == "Local Transfer":

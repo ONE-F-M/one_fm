@@ -7,11 +7,11 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, getdate, nowdate
 
 from one_fm.grd.doctype.preparation.preparation import (
-	NEW_ACTION_DOCUMENTS,
 	category_for_action,
-	create_documents_for_row,
 )
-from one_fm.grd.doctype.residency.residency import create_moi_record
+from one_fm.grd.doctype.preparation.test_preparation_processa_scripts import open_row_documents
+
+NEW_ACTIONS = ("New Kuwaiti", "Overseas", "Overseas (Government)", "Local Transfer")
 
 SUB_DOCUMENTS = ("Work Permit", "Medical Insurance", "Residency", "PACI")
 
@@ -68,13 +68,13 @@ class TestNewActionDocuments(FrappeTestCase):
 
 	def test_the_action_field_offers_both_new_actions(self):
 		options = frappe.get_meta("Preparation Record").get_field("renewal_or_extend").options
-		for action in NEW_ACTION_DOCUMENTS:
+		for action in NEW_ACTIONS:
 			self.assertIn(action, options.split("\n"))
 
 	def test_new_kuwaiti_opens_only_a_work_permit(self):
 		preparation = self._preparation_with("New Kuwaiti")
 
-		create_documents_for_row(preparation.preparation_record[0], preparation.name)
+		open_row_documents(preparation)
 
 		opened = self._opened_for(preparation.name)
 		self.assertEqual(len(opened["Work Permit"]), 1)
@@ -89,7 +89,7 @@ class TestNewActionDocuments(FrappeTestCase):
 	def test_overseas_opens_all_four_with_their_categories(self):
 		preparation = self._preparation_with("Overseas")
 
-		create_documents_for_row(preparation.preparation_record[0], preparation.name)
+		open_row_documents(preparation)
 
 		opened = self._opened_for(preparation.name)
 		for doctype in SUB_DOCUMENTS:
@@ -119,7 +119,7 @@ class TestNewActionDocuments(FrappeTestCase):
 		"""No residency to count back from, unlike a renewal or an extension."""
 		preparation = self._preparation_with("Overseas")
 
-		create_documents_for_row(preparation.preparation_record[0], preparation.name)
+		open_row_documents(preparation)
 
 		opened = self._opened_for(preparation.name)
 		for doctype in ("Work Permit", "Residency", "PACI"):
@@ -132,7 +132,7 @@ class TestNewActionDocuments(FrappeTestCase):
 	def test_local_transfer_opens_all_four_with_their_categories(self):
 		preparation = self._preparation_with("Local Transfer")
 
-		create_documents_for_row(preparation.preparation_record[0], preparation.name)
+		open_row_documents(preparation)
 
 		opened = self._opened_for(preparation.name)
 		for doctype in SUB_DOCUMENTS:
@@ -158,30 +158,26 @@ class TestNewActionDocuments(FrappeTestCase):
 		)
 
 	def test_the_extend_and_renewal_categories_still_date_off_the_residency(self):
-		"""Guards the mapping the Overseas category was added to.
-
-		The three existing categories used to be an if/if/if chain ending in "anything
-		that is not a renewal or a transfer is an extension"; they now come from a dict,
-		and this pins that the dates they are applied for did not move.
-		"""
-		employee = frappe.get_doc(
+		"""Guards the mapping the Overseas category was added to."""
+		self.employee = frappe.get_doc(
 			"Employee",
 			frappe.db.get_value(
 				"Employee",
-				{"status": "Active", "relieving_date": ["is", "not set"], "residency_expiry_date": ["is", "set"]},
+				{"status": "Active", "relieving_date": ["is", "not set"], "residency_expiry_date": ["is", "set"],
+					"one_fm_nationality": ["!=", "Kuwaiti"]},
 				"name",
 			),
 		)
-		expiry = getdate(employee.residency_expiry_date)
+		expiry = getdate(self.employee.residency_expiry_date)
 
 		for action, category, expected_date in (
 			("Renewal Expat", "Renewal", add_days(expiry, -14)),
 			("Extension", "Extend", add_days(expiry, -7)),
-			("Transfer", "Transfer", getdate(nowdate())),
 		):
 			with self.subTest(action=action):
-				create_moi_record(employee, action)
-				residency = frappe.get_last_doc("Residency", filters={"employee": employee.name})
+				preparation = self._preparation_with(action)
+				open_row_documents(preparation)
+				residency = frappe.get_last_doc("Residency", filters={"preparation": preparation.name})
 				self.assertEqual(residency.category, category)
 				self.assertEqual(getdate(residency.date_of_application), getdate(expected_date))
 
@@ -189,7 +185,7 @@ class TestNewActionDocuments(FrappeTestCase):
 		"""The link WI-001973 put on the form has to be filled in by this path too."""
 		preparation = self._preparation_with("Overseas")
 
-		create_documents_for_row(preparation.preparation_record[0], preparation.name)
+		open_row_documents(preparation)
 
 		opened = self._opened_for(preparation.name)
 		for doctype in SUB_DOCUMENTS:
@@ -205,7 +201,7 @@ class TestNewActionDocuments(FrappeTestCase):
 			with self.subTest(action=action):
 				preparation = self._preparation_with(action)
 
-				create_documents_for_row(preparation.preparation_record[0], preparation.name)
+				open_row_documents(preparation)
 
 				for doctype in OVERSEAS_ONLY_DOCUMENTS:
 					opened = frappe.get_all(
@@ -229,11 +225,11 @@ class TestNewActionDocuments(FrappeTestCase):
 
 	def test_no_action_opens_a_fingerprint_appointment(self):
 		"""The fingerprint is taken once the candidate is here and holds a civil ID."""
-		for action in NEW_ACTION_DOCUMENTS:
+		for action in NEW_ACTIONS:
 			with self.subTest(action=action):
 				preparation = self._preparation_with(action)
 
-				create_documents_for_row(preparation.preparation_record[0], preparation.name)
+				open_row_documents(preparation)
 
 				self.assertEqual(
 					frappe.get_all(
@@ -250,7 +246,7 @@ class TestNewActionDocuments(FrappeTestCase):
 			with self.subTest(action=action):
 				preparation = self._preparation_with(action)
 
-				create_documents_for_row(preparation.preparation_record[0], preparation.name)
+				open_row_documents(preparation)
 
 				for doctype in OVERSEAS_ONLY_DOCUMENTS:
 					self.assertEqual(

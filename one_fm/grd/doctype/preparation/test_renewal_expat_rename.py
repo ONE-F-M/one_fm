@@ -19,10 +19,8 @@ from one_fm.grd.doctype.preparation.preparation import (
 	CATEGORIES,
 	YEAR_SCOPED_ACTIONS,
 )
-from one_fm.grd.doctype.residency.residency import (
-	ACTIONS_HANDLED_ON_SUBMIT,
-	MOI_CATEGORY_BY_ACTION,
-)
+from one_fm.grd.doctype.preparation.test_visa_extension_action import _expat_with_a_preparation, _opened
+from one_fm.grd.doctype.preparation.test_preparation_processa_scripts import open_row_documents
 
 RENEWAL_EXPAT = "Renewal Expat"
 OLD_NAMES = ("Renewal (Non-Kuwaiti)", "Renewal Non Kuwaiti")
@@ -61,12 +59,15 @@ class TestRenewalExpatOptions(FrappeTestCase):
 class TestRenewalExpatStillLinksItsDocuments(FrappeTestCase):
 	"""AC3: the Action opens a Renewal insurance, a Renewal residency and a Renewal PACI."""
 
-	def test_it_opens_a_renewal_residency(self):
-		self.assertEqual(MOI_CATEGORY_BY_ACTION[RENEWAL_EXPAT][0], "Renewal")
+	def test_it_opens_renewal_documents_and_no_extension(self):
+		"""A missed rename would open a second Residency categorised Extend, or nothing."""
+		preparation = _expat_with_a_preparation(RENEWAL_EXPAT)
+		open_row_documents(preparation)
+		opened = _opened(preparation)
 
-	def test_it_is_not_treated_as_an_extension(self):
-		"""Missing here, the extend branch would open a second Residency categorised Extend."""
-		self.assertIn(RENEWAL_EXPAT, ACTIONS_HANDLED_ON_SUBMIT)
+		self.assertEqual([row.category for row in opened["Residency"]], ["Renewal"])
+		self.assertEqual([row.insurance_status for row in opened["Medical Insurance"]], ["Renewal"])
+		self.assertEqual([row.category for row in opened["PACI"]], ["Renewal"])
 
 	def test_no_call_site_was_left_on_an_old_name(self):
 		"""The one check that catches a missed branch anywhere, not just the ones named here.
