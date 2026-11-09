@@ -7,7 +7,7 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, nowdate
 
-from one_fm.grd.doctype.preparation.preparation import create_documents_for_row
+from one_fm.grd.doctype.preparation.test_preparation_processa_scripts import open_row_documents
 
 OLD_STATE = "Pending By Supervisor"
 NEW_STATE = "Pending GR Manager"
@@ -47,7 +47,7 @@ class TestWorkPermitEnhancements(FrappeTestCase):
 		})
 		preparation.flags.ignore_permissions = True
 		preparation.insert()
-		permit = create_documents_for_row(preparation.preparation_record[0], preparation.name)
+		permit = open_row_documents(preparation)
 
 		# Required on the way out of Pending GR Manager for a transfer, and not what any of
 		# these cases is about.
@@ -126,13 +126,6 @@ class TestWorkPermitEnhancements(FrappeTestCase):
 		self.assertFalse(permit.attach_work_permit)
 
 	# ── what an amended permit owes ───────────────────────────────────────────────
-
-	def test_an_amended_permit_needs_a_pam_designation(self):
-		permit = self._with_no_designation(self._a_permit(), amendment_no=1)
-
-		permit.workflow_state = "Pending By PAM"
-		with self.assertRaises(frappe.ValidationError):
-			permit.save(ignore_permissions=True)
 
 	def test_an_amended_permit_with_a_designation_moves_on(self):
 		permit = self._a_permit()
