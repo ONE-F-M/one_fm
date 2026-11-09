@@ -16,6 +16,9 @@ from one_fm.grd.processa import cancel_processes
 from one_fm.processor import sendemail
 from one_fm.utils import is_scheduler_emails_enabled
 
+# The state the GR Operator applies online in; the reminder crons look for policies left in it.
+APPLY_ONLINE_BY_GR_OPERATOR = "Apply Online by GR Operator"
+
 class MedicalInsurance(Document):
     def before_insert(self):
         self.cancel_existing()
