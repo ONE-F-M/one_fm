@@ -705,3 +705,9 @@ one_fm.patches.v15_0.backfill_pam_license_total_available_quota #2026-11-05 WI-0
 one_fm.patches.v15_0.drop_medical_appointment_field_order_setter
 one_fm.patches.v15_0.processa_sync_subcontractor_billing___v1_9b748b #2026-11-05 Processa sync: Purchase Invoice
 one_fm.patches.v15_0.move_fingerprint_appointment_lifecycle_to_processa #2026-11-08 WI-004317
+one_fm.patches.v15_0.move_pcc_attestation_lifecycle_to_processa #2026-11-08 WI-004316
+one_fm.patches.v15_0.move_work_permit_lifecycle_to_processa #2026-11-08 WI-004418
+one_fm.patches.v15_0.move_medical_insurance_lifecycle_to_processa #2026-11-08 WI-004313
+one_fm.patches.v15_0.move_residency_lifecycle_to_processa #2026-11-08 WI-004314
+one_fm.patches.v15_0.move_paci_lifecycle_to_processa #2026-11-08 WI-004315
+one_fm.patches.v15_0.move_preparation_lifecycle_to_processa #2026-11-08 WI-004417

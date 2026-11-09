@@ -83,7 +83,8 @@ class TestMedicalInsuranceWorkflow(FrappeTestCase):
 		self.assertEqual(rule["document_type"], DOCTYPE)
 		self.assertEqual(rule["rule"], "Based on Field")
 		self.assertEqual(rule["field"], "owner")
-		self.assertEqual(rule["disabled"], 0)
+		# Retired: the Medical Insurance Lifecycle process assigns every task.
+		self.assertEqual(rule["disabled"], 1)
 		self.assertIn(NEW_STATE, rule["assign_condition"])
 		self.assertIn("Draft", rule["assign_condition"])
 		self.assertIn(NEW_STATE, rule["close_condition"])

@@ -10,7 +10,7 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import nowdate
 
-from one_fm.grd.doctype.preparation.preparation import create_documents_for_row
+from one_fm.grd.doctype.preparation.test_preparation_processa_scripts import open_row_documents
 
 # From the reporter's master data: a nationality whose certificate has to be translated,
 # and one whose does not.
@@ -66,7 +66,7 @@ class TestDualPCCAttestation(FrappeTestCase):
 			}
 		).insert(ignore_permissions=True)
 
-		create_documents_for_row(preparation.preparation_record[0], preparation.name)
+		open_row_documents(preparation)
 
 		return frappe.get_all(
 			"PCC Attestation",
