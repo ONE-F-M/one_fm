@@ -2,15 +2,26 @@
 # See license.txt
 """WI-002099: how many expatriates a sector is allowed, and how far it is over."""
 
+from unittest import mock
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from one_fm.grd.doctype.pam_license_details.pam_license_details import (
-	EXEMPT_SECTOR,
-	SECTOR_EXPAT_ALLOWANCE,
-	derived_figures,
-	expats_allowed,
-)
+from one_fm.grd.doctype.pam_license_details.test_pam_license_details_processa_scripts import rules
+
+_rules = rules()
+EXEMPT_SECTOR = _rules["EXEMPT_SECTOR"]
+SECTOR_EXPAT_ALLOWANCE = _rules["SECTOR_EXPAT_ALLOWANCE"]
+derived_figures = _rules["derived_figures"]
+expats_allowed = _rules["expats_allowed"]
+
+
+def _recounted(license, nationals, expatriates):
+	"""Run the recount the map runs after a save, with the headcount the row is given."""
+	with mock.patch.dict(_rules, {"count_workers": lambda name, sector: (nationals, expatriates)}):
+		_rules["recount_license"](license.name)
+	license.reload()
+	return license.pam_license_stats[0]
 
 PROFESSIONALS = "علميون و فنيون"   # allowance 5
 MANAGERS = "مديرون"                # allowance 1
@@ -117,6 +128,6 @@ class TestLicenceFillsInTheAllowance(FrappeTestCase):
 		license.flags.ignore_permissions = True
 		license.insert()
 
-		row = license.pam_license_stats[0]
+		row = _recounted(license, 4, 25)
 		self.assertEqual(row.exempt_number_of_workers, "21")
 		self.assertEqual(row.violation_number_of_workers, "4")

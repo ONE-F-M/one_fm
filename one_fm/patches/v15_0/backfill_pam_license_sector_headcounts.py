@@ -33,7 +33,7 @@ recount. Without the first half the second is arithmetic over an empty join.
 import frappe
 from frappe.query_builder import DocType, Field
 
-from one_fm.grd.doctype.pam_license_details.pam_license_details import recount_sector
+from one_fm.grd.doctype.pam_license_details.pam_license_details import recount_rules
 
 # The Select that has held the sector all along. Named here rather than read from the meta
 # because the whole point is that it is not the field anything else reads.
@@ -117,17 +117,16 @@ def mapped_sectors() -> set:
 
 
 def recount_every_sector_row():
-	"""Recount each sector row on each licence, through the same code an Employee save uses.
+	"""Recount each existing sector row on each licence.
 
-	recount_sector rather than arithmetic repeated here: it is what the handler calls, so
-	the backfill cannot compute a figure the live path would not, and it writes the derived
-	columns - required nationals, excess, allowed, violated and the status - along with the
-	two headcounts, which otherwise would be left describing yesterday's numbers.
-
-	Only rows that already exist. A licence can have employees in a sector it has no row
-	for, and recount_sector would add one; that is a change to what the licence declares
-	rather than a figure being filled in, and it is not what this patch was asked for.
+	Through recount_sector in the Recount PAM License Server Script, the same rule an
+	Employee save runs, so the backfill cannot compute a figure the live path would not.
+	Only rows that already exist: adding rows is not what this patch was asked for.
 	"""
+	rules = recount_rules()
+	if not rules:
+		return 0, 0
+
 	mapped = mapped_sectors()
 	counted = skipped = 0
 
@@ -151,7 +150,7 @@ def recount_every_sector_row():
 				skipped += 1
 				continue
 
-			recount_sector(license.name, row.occupational_sector)
+			rules["recount_sector"](license.name, row.occupational_sector)
 			counted += 1
 
 	return counted, skipped

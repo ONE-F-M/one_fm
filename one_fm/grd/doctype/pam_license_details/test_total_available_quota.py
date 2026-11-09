@@ -8,12 +8,12 @@ from unittest import mock
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from one_fm.grd.doctype.pam_license_details import pam_license_details as module
-from one_fm.grd.doctype.pam_license_details.pam_license_details import (
-	available_quota,
-	recount_quota_rows,
-	total_available_quota,
-)
+from one_fm.grd.doctype.pam_license_details.test_pam_license_details_processa_scripts import rules
+
+_rules = rules()
+available_quota = _rules["available_quota"]
+recount_quota_rows = _rules["recount_quota_rows"]
+total_available_quota = _rules["total_available_quota"]
 
 FIELDNAME = "total_available_quota"
 LICENSE = "ZZ-TEST-TOTAL-AVAILABLE-QUOTA"
@@ -44,74 +44,43 @@ class TestTheSum(FrappeTestCase):
 		self.assertNotIn(".", result)
 
 
-class TestSavingALicence(FrappeTestCase):
-	"""validate() run on an unsaved licence, with the two counts that read other
-	doctypes mocked out so only the allocation drives the figures."""
+class TestTheRowsDriveTheTotal(FrappeTestCase):
+	"""The recount the map runs after a save, with only the allocations driving the figures."""
 
-	def _validate(self, doc):
+	def _total(self, *allocations):
+		rows = [
+			{"name": str(i), "type_of_quota": str(i), "allocated_quota": allocation, "number_of_transfer_requests": ""}
+			for i, allocation in enumerate(allocations)
+		]
 		with (
-			mock.patch.object(module, "count_quota_employees", return_value=0),
-			mock.patch.object(module, "visas_issued_by_quota", return_value={}),
+			mock.patch.object(frappe.db, "exists", return_value=True),
+			mock.patch.object(frappe, "get_all", return_value=rows),
+			mock.patch.dict(_rules, {"count_quota_employees": lambda *a: 0, "visas_issued_by_quota": lambda *a: {}}),
+			mock.patch.object(frappe.db, "set_value") as set_value,
 		):
-			doc.validate()
-
-	def _licence(self, *allocations):
-		return frappe.get_doc(
-			{
-				"doctype": "PAM License Details",
-				"quota_classification": [
-					{"allocated_quota": allocation} for allocation in allocations
-				],
-			}
-		)
+			recount_quota_rows(LICENSE)
+		return set_value.call_args_list[-1].args[3]
 
 	def test_two_rows_of_one_hundred_save_with_two_hundred(self):
-		doc = self._licence("100", "100")
-		self._validate(doc)
-		self.assertEqual([row.available_quota for row in doc.quota_classification], ["100", "100"])
-		self.assertEqual(doc.total_available_quota, "200")
+		self.assertEqual(self._total("100", "100"), "200")
 
 	def test_removing_a_row_lowers_the_total(self):
-		doc = self._licence("100", "100")
-		self._validate(doc)
-		doc.remove(doc.quota_classification[1])
-		self._validate(doc)
-		self.assertEqual(doc.total_available_quota, "100")
+		self.assertEqual(self._total("100"), "100")
 
 	def test_removing_every_row_gives_zero(self):
-		doc = self._licence("100", "100")
-		self._validate(doc)
-		doc.set("quota_classification", [])
-		self._validate(doc)
-		self.assertEqual(doc.total_available_quota, "0")
+		self.assertEqual(self._total(), "0")
 
 	def test_updating_a_row_moves_the_total(self):
-		doc = self._licence("100", "100")
-		self._validate(doc)
-		doc.quota_classification[0].allocated_quota = "150"
-		self._validate(doc)
-		self.assertEqual(doc.total_available_quota, "250")
-
-	def test_it_is_summed_after_the_rows_are_derived(self):
-		source = frappe.read_file(
-			frappe.get_app_path(
-				"one_fm", "grd", "doctype", "pam_license_details", "pam_license_details.py"
-			)
-		)
-		validate = source.split("def validate(self):", 1)[1].split("\n\n", 1)[0]
-		self.assertLess(
-			validate.index("set_available_quota"), validate.index("total_available_quota")
-		)
+		self.assertEqual(self._total("150", "100"), "250")
 
 
 class TestTheRecount(FrappeTestCase):
 	def _recount(self, rows):
 		with (
-			mock.patch.object(module.frappe.db, "exists", return_value=True),
-			mock.patch.object(module.frappe, "get_all", return_value=rows),
-			mock.patch.object(module, "count_quota_employees", return_value=0),
-			mock.patch.object(module, "visas_issued_by_quota", return_value={}),
-			mock.patch.object(module.frappe.db, "set_value") as set_value,
+			mock.patch.object(frappe.db, "exists", return_value=True),
+			mock.patch.object(frappe, "get_all", return_value=rows),
+			mock.patch.dict(_rules, {"count_quota_employees": lambda *a: 0, "visas_issued_by_quota": lambda *a: {}}),
+			mock.patch.object(frappe.db, "set_value") as set_value,
 		):
 			recount_quota_rows(LICENSE)
 		return set_value
@@ -150,8 +119,8 @@ class TestTheRecount(FrappeTestCase):
 
 	def test_a_licence_that_is_not_there_writes_nothing(self):
 		with (
-			mock.patch.object(module.frappe.db, "exists", return_value=False),
-			mock.patch.object(module.frappe.db, "set_value") as set_value,
+			mock.patch.object(frappe.db, "exists", return_value=False),
+			mock.patch.object(frappe.db, "set_value") as set_value,
 		):
 			recount_quota_rows(LICENSE)
 		set_value.assert_not_called()
@@ -160,15 +129,14 @@ class TestTheRecount(FrappeTestCase):
 		"""The clamp at zero carries into the total: a row over its quota is 0, not
 		a negative number taken off the others."""
 		with (
-			mock.patch.object(module, "count_quota_employees", return_value=12),
-			mock.patch.object(module, "visas_issued_by_quota", return_value={}),
-			mock.patch.object(module.frappe.db, "exists", return_value=True),
+			mock.patch.dict(_rules, {"count_quota_employees": lambda *a: 12, "visas_issued_by_quota": lambda *a: {}}),
+			mock.patch.object(frappe.db, "exists", return_value=True),
 			mock.patch.object(
-				module.frappe,
+				frappe,
 				"get_all",
 				return_value=[self._row("A", "10"), self._row("B", "100")],
 			),
-			mock.patch.object(module.frappe.db, "set_value") as set_value,
+			mock.patch.object(frappe.db, "set_value") as set_value,
 		):
 			recount_quota_rows(LICENSE)
 		row_a = set_value.call_args_list[0]
@@ -248,7 +216,7 @@ class TestTheBackfill(FrappeTestCase):
 
 		with (
 			mock.patch.object(patch.frappe, "get_all", return_value=["A", "B"]),
-			mock.patch.object(patch, "recount_quota_rows") as recount,
+			mock.patch.object(patch, "recount") as recount,
 		):
 			patch.execute()
 		self.assertEqual([call.args[0] for call in recount.call_args_list], ["A", "B"])

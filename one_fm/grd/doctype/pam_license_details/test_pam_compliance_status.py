@@ -2,15 +2,26 @@
 # See license.txt
 """WI-002135: the Status a sector row takes from its violation."""
 
+from unittest import mock
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from one_fm.grd.doctype.pam_license_details.pam_license_details import (
-	COMPLIANT,
-	EXEMPT_SECTOR,
-	NON_COMPLIANT,
-	derived_figures,
-)
+from one_fm.grd.doctype.pam_license_details.test_pam_license_details_processa_scripts import rules
+
+_rules = rules()
+COMPLIANT = _rules["COMPLIANT"]
+EXEMPT_SECTOR = _rules["EXEMPT_SECTOR"]
+NON_COMPLIANT = _rules["NON_COMPLIANT"]
+derived_figures = _rules["derived_figures"]
+
+
+def _recounted(license, nationals, expatriates):
+	"""Run the recount the map runs after a save, with the headcount the row is given."""
+	with mock.patch.dict(_rules, {"count_workers": lambda name, sector: (nationals, expatriates)}):
+		_rules["recount_license"](license.name)
+	license.reload()
+	return license.pam_license_stats[0]
 
 PROFESSIONALS = "علميون و فنيون"   # allowance 5
 
@@ -68,9 +79,8 @@ class TestComplianceStatus(FrappeTestCase):
 		})
 		license.flags.ignore_permissions = True
 		license.insert()
-		self.assertEqual(license.pam_license_stats[0].status, COMPLIANT)
+		self.assertEqual(_recounted(license, 4, 10).status, COMPLIANT)
 
-		license.pam_license_stats[0].expatriate_number_of_workers = "30"
 		license.save()
 
-		self.assertEqual(license.pam_license_stats[0].status, NON_COMPLIANT)
+		self.assertEqual(_recounted(license, 4, 30).status, NON_COMPLIANT)

@@ -1,14 +1,17 @@
 import frappe
 
-from one_fm.grd.doctype.pam_license_details.pam_license_details import (
-	EXEMPT_SECTOR,
-	SECTOR_EXPAT_ALLOWANCE,
-)
-
 # WI-002099: the occupational sectors PAM rations a licence by, as the BA site holds them.
 # Master data rather than a fixture list in code: a licence's sector rows link to these
 # records, and the expatriate allowance table is keyed on their names.
-SECTORS = tuple(SECTOR_EXPAT_ALLOWANCE) + (EXEMPT_SECTOR,)
+SECTORS = (
+	"علميون و فنيون",
+	"مديرون",
+	"كتبة و تنفيذيون",
+	"مقدمي خدمات",
+	"بائعون",
+	# Exempt from the ratio.
+	"مهن غير مشمولة بالنسبة",
+)
 
 
 def execute():

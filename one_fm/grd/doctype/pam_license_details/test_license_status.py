@@ -7,11 +7,11 @@ from unittest import mock
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from one_fm.grd.doctype.pam_license_details import pam_license_details as module
-from one_fm.grd.doctype.pam_license_details.pam_license_details import (
-	license_status,
-	recount_license_total,
-)
+from one_fm.grd.doctype.pam_license_details.test_pam_license_details_processa_scripts import rules
+
+_rules = rules()
+license_status = _rules["license_status"]
+recount_license_total = _rules["recount_license_total"]
 
 LICENSE = "ZZ-TEST-LICENSE-STATUS"
 
@@ -34,31 +34,14 @@ class TestTheRule(FrappeTestCase):
 		self.assertEqual(license_status(0, "Suspended"), "Suspended")
 
 
-class TestSavingALicence(FrappeTestCase):
-	def _validate(self, count, status):
-		doc = frappe.get_doc({"doctype": "PAM License Details", "status": status})
-		with mock.patch.object(module, "count_license_employees", return_value=count):
-			doc.validate()
-		return doc
-
-	def test_a_licence_with_employees_saves_active(self):
-		self.assertEqual(self._validate(3, "Inactive").status, "Active")
-
-	def test_a_licence_with_none_saves_inactive(self):
-		self.assertEqual(self._validate(0, "Active").status, "Inactive")
-
-	def test_a_suspended_licence_stays_suspended(self):
-		self.assertEqual(self._validate(3, "Suspended").status, "Suspended")
-
-
 class TestTheEmployeeRecount(FrappeTestCase):
 	def _recount(self, count, current, exists=True):
+		refresh = mock.Mock()
 		with (
-			mock.patch.object(module.frappe.db, "exists", return_value=exists),
-			mock.patch.object(module, "count_license_employees", return_value=count),
-			mock.patch.object(module.frappe.db, "get_value", return_value=current),
-			mock.patch.object(module.frappe.db, "set_value") as set_value,
-			mock.patch.object(module, "refresh_pam_files") as refresh,
+			mock.patch.object(frappe.db, "exists", return_value=exists),
+			mock.patch.dict(_rules, {"count_license_employees": lambda name: count, "refresh_pam_files": refresh}),
+			mock.patch.object(frappe.db, "get_value", return_value=current),
+			mock.patch.object(frappe.db, "set_value") as set_value,
 		):
 			recount_license_total(LICENSE)
 		return set_value, refresh
@@ -74,16 +57,17 @@ class TestTheEmployeeRecount(FrappeTestCase):
 
 	def test_a_flip_is_pushed_to_the_pam_files_once(self):
 		_set_value, refresh = self._recount(0, "Active")
-		refresh.assert_called_once_with(LICENSE)
+		refresh.assert_called_once_with(LICENSE, "Inactive")
 
-	def test_an_unchanged_status_is_not_pushed(self):
+	def test_the_files_are_always_brought_in_line(self):
+		# refresh_pam_files only rewrites rows whose status differs.
 		_set_value, refresh = self._recount(4, "Active")
-		refresh.assert_not_called()
+		refresh.assert_called_once_with(LICENSE, "Active")
 
-	def test_suspended_is_not_pushed_or_changed(self):
+	def test_suspended_is_not_changed(self):
 		set_value, refresh = self._recount(0, "Suspended")
 		self.assertEqual(set_value.call_args.args[2]["status"], "Suspended")
-		refresh.assert_not_called()
+		refresh.assert_called_once_with(LICENSE, "Suspended")
 
 	def test_a_missing_licence_writes_nothing(self):
 		set_value, refresh = self._recount(4, "Active", exists=False)
