@@ -124,7 +124,12 @@ class TestActionCategoryMapping(FrappeTestCase):
 		)
 		paci.flags.ignore_permissions = True
 		paci.new_civil_id_expiry_date = nowdate()
-		paci.submit()
+		# Submitted the way the PACI Lifecycle process submits it.
+		frappe.flags.bpmn_engine_action = True
+		try:
+			paci.submit()
+		finally:
+			frappe.flags.bpmn_engine_action = False
 
 		self.assertEqual(frappe.db.get_value("PACI", paci.name, "category"), "New Application")
 		self.assertEqual(paci.docstatus, 1)
