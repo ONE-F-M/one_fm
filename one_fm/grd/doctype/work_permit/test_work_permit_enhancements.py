@@ -7,7 +7,7 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, nowdate
 
-from one_fm.grd.doctype.preparation.preparation import create_documents_for_row
+from one_fm.grd.doctype.preparation.test_preparation_processa_scripts import open_row_documents
 
 OLD_STATE = "Pending By Supervisor"
 NEW_STATE = "Pending GR Manager"
@@ -47,7 +47,7 @@ class TestWorkPermitEnhancements(FrappeTestCase):
 		})
 		preparation.flags.ignore_permissions = True
 		preparation.insert()
-		permit = create_documents_for_row(preparation.preparation_record[0], preparation.name)
+		permit = open_row_documents(preparation)
 
 		# Required on the way out of Pending GR Manager for a transfer, and not what any of
 		# these cases is about.

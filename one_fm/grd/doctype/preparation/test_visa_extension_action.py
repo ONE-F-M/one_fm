@@ -9,19 +9,16 @@ has no work permit, no insurance and no civil ID for an extension to follow on f
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
+from frappe.utils import nowdate
 
 from one_fm.grd.doctype.preparation.preparation import (
 	CATEGORIES,
-	NEW_ACTION_DOCUMENTS,
-	RESIDENCY_ONLY_ACTIONS,
 	VISA_EXTENSION_ACTION,
+	category_for_action,
 	get_actions_for_category,
 	get_preparation_row_costing,
 )
-from one_fm.grd.doctype.residency.residency import (
-	ACTIONS_HANDLED_ON_SUBMIT,
-	MOI_CATEGORY_BY_ACTION,
-)
+from one_fm.grd.doctype.preparation.test_preparation_processa_scripts import open_row_documents
 
 FEES = {
 	"work_permit_amount": 0,
@@ -39,6 +36,32 @@ def _master_rows(rows):
 	settings.flags.ignore_permissions = True
 	settings.save()
 	frappe.clear_cache(doctype="HR Settings")
+
+
+def _expat_with_a_preparation(action):
+	"""A non-Kuwaiti employee and a Preparation carrying one row for them with the Action."""
+	employee = frappe.db.get_value(
+		"Employee",
+		{"status": "Active", "relieving_date": ["is", "not set"], "residency_expiry_date": ["is", "set"],
+			"one_fm_nationality": ["!=", "Kuwaiti"]},
+		"name",
+	)
+	preparation = frappe.get_doc({
+		"doctype": "Preparation",
+		"category": category_for_action(action),
+		"posting_date": nowdate(),
+		"preparation_record": [{"employee": employee, "renewal_or_extend": action}],
+	})
+	preparation.flags.ignore_permissions = True
+	preparation.insert()
+	return preparation
+
+
+def _opened(preparation):
+	return {
+		doctype: frappe.get_all(doctype, filters={"preparation": preparation.name}, fields=["*"])
+		for doctype in ("Work Permit", "Medical Insurance", "Residency", "PACI")
+	}
 
 
 def _options(doctype):
@@ -94,33 +117,20 @@ class TestItsCosting(FrappeTestCase):
 
 
 class TestItOpensOnlyAResidency(FrappeTestCase):
-	"""AC4: on submit it creates a Residency and nothing else."""
+	"""AC4: on submit, or when added after submit, it creates a Residency and nothing else."""
 
-	def test_it_opens_a_residency_categorised_as_an_extension(self):
-		self.assertEqual(MOI_CATEGORY_BY_ACTION[VISA_EXTENSION_ACTION][0], "Extend")
+	def test_it_opens_only_a_residency_categorised_as_an_extension(self):
+		preparation = _expat_with_a_preparation(VISA_EXTENSION_ACTION)
+		open_row_documents(preparation)
+		opened = _opened(preparation)
+
+		self.assertEqual([len(opened[dt]) for dt in ("Work Permit", "Medical Insurance", "PACI")], [0, 0, 0])
+		self.assertEqual(len(opened["Residency"]), 1)
+		self.assertEqual(opened["Residency"][0].category, "Extend")
 
 	def test_it_is_applied_for_the_day_the_preparation_is_submitted(self):
 		"""There is no residency expiry to count back from. Left to the generic fallback,
 		a blank expiry reads as today and dates the application a week in the past."""
-		self.assertIsNone(MOI_CATEGORY_BY_ACTION[VISA_EXTENSION_ACTION][1])
-
-	def test_it_goes_through_the_extend_branch_rather_than_the_dispatcher(self):
-		"""The dispatcher opens a Work Permit for every Action it knows, unconditionally."""
-		self.assertNotIn(VISA_EXTENSION_ACTION, ACTIONS_HANDLED_ON_SUBMIT)
-		self.assertNotIn(VISA_EXTENSION_ACTION, NEW_ACTION_DOCUMENTS)
-
-	def test_a_row_added_after_submit_opens_only_a_residency_too(self):
-		"""The path a late row takes read "not one of the new Actions, so it is a renewal",
-		which gave it a work permit, an insurance and a PACI that submitting the same row
-		never would."""
-		self.assertIn(VISA_EXTENSION_ACTION, RESIDENCY_ONLY_ACTIONS)
-
-	def test_no_renewal_document_is_opened_for_it(self):
-		"""The three submit-time creators each name the Actions they fire on."""
-		from one_fm.grd.doctype.medical_insurance import medical_insurance
-		from one_fm.grd.doctype.paci import paci
-		from one_fm.grd.doctype.work_permit import work_permit
-
-		for module in (work_permit, medical_insurance, paci):
-			source = frappe.read_file(module.__file__.replace(".pyc", ".py"))
-			self.assertNotIn(VISA_EXTENSION_ACTION, source, module.__name__)
+		preparation = _expat_with_a_preparation(VISA_EXTENSION_ACTION)
+		open_row_documents(preparation)
+		self.assertEqual(str(_opened(preparation)["Residency"][0].date_of_application), nowdate())

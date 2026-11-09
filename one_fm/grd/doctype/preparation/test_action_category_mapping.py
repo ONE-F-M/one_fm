@@ -7,10 +7,17 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import nowdate
 
 from one_fm.grd.doctype.preparation.preparation import (
-	NEW_ACTION_DOCUMENTS,
 	category_for_action,
-	create_documents_for_row,
 )
+from one_fm.grd.doctype.preparation.test_preparation_processa_scripts import open_row_documents
+
+# What each first-application Action opens, and under which classification.
+EXPECTED_DOCUMENTS = {
+	"New Kuwaiti": {"work_permit": "New Kuwaiti"},
+	"Overseas": {"work_permit": "Overseas", "medical_insurance": "New", "residency": "First Time", "paci": "New Application"},
+	"Overseas (Government)": {"work_permit": "Overseas (Government)", "medical_insurance": "New", "residency": "First Time", "paci": "New Application"},
+	"Local Transfer": {"work_permit": "Local Transfer", "medical_insurance": "Local Transfer", "residency": "Transfer", "paci": "Transfer"},
+}
 
 # The field on each sub-document that carries the Action's classification.
 CLASSIFICATION_FIELD = {
@@ -48,20 +55,11 @@ class TestActionCategoryMapping(FrappeTestCase):
 		)
 		preparation.flags.ignore_permissions = True
 		preparation.insert()
-		create_documents_for_row(preparation.preparation_record[0], preparation.name)
+		open_row_documents(preparation)
 		return preparation.name
 
-	def test_every_planned_classification_is_stated_not_derived(self):
-		# The point of the story: the table says what each document gets, rather than three
-		# of the four reading None and leaving it to the creator.
-		for action, plan in NEW_ACTION_DOCUMENTS.items():
-			for document, classification in plan.items():
-				self.assertIsNotNone(
-					classification, f"{action} does not state what its {document} is opened as"
-				)
-
 	def test_the_plan_only_names_classifications_the_field_accepts(self):
-		for action, plan in NEW_ACTION_DOCUMENTS.items():
+		for action, plan in EXPECTED_DOCUMENTS.items():
 			for document, classification in plan.items():
 				doctype, fieldname = CLASSIFICATION_FIELD[document]
 				options = frappe.get_meta(doctype).get_field(fieldname).options.split("\n")
@@ -107,7 +105,7 @@ class TestActionCategoryMapping(FrappeTestCase):
 
 	def test_what_the_plan_says_is_what_the_documents_get(self):
 		# The guard the story is really asking for: the table and reality cannot drift.
-		for action, plan in NEW_ACTION_DOCUMENTS.items():
+		for action, plan in EXPECTED_DOCUMENTS.items():
 			preparation = self._documents_for(action)
 			for document, classification in plan.items():
 				doctype, fieldname = CLASSIFICATION_FIELD[document]

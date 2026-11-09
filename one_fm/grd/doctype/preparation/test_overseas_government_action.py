@@ -7,14 +7,9 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import nowdate
 
 from one_fm.grd.doctype.preparation.preparation import (
-	NEW_ACTION_DOCUMENTS,
 	category_for_action,
-	create_documents_for_row,
 )
-from one_fm.grd.doctype.residency.residency import (
-	ACTIONS_HANDLED_ON_SUBMIT,
-	MOI_CATEGORY_BY_ACTION,
-)
+from one_fm.grd.doctype.preparation.test_preparation_processa_scripts import open_row_documents
 
 ACTION = "Overseas (Government)"
 SUB_DOCUMENTS = ("Work Permit", "Medical Insurance", "Residency", "PACI")
@@ -55,23 +50,6 @@ class TestOverseasGovernmentAction(FrappeTestCase):
 		options = frappe.get_meta("GRD Renewal Extension Cost").get_field("renewal_or_extend").options
 		self.assertIn(ACTION, options.split("\n"))
 
-	def test_the_action_opens_the_same_four_documents_as_overseas(self):
-		self.assertEqual(
-			set(NEW_ACTION_DOCUMENTS[ACTION]),
-			set(NEW_ACTION_DOCUMENTS["Overseas"]),
-		)
-
-	def test_the_work_permit_carries_the_government_type(self):
-		self.assertEqual(NEW_ACTION_DOCUMENTS[ACTION]["work_permit"], ACTION)
-
-	def test_residency_treats_it_as_a_first_residency(self):
-		self.assertEqual(MOI_CATEGORY_BY_ACTION[ACTION], ("First Time", None))
-
-	def test_preparation_owns_the_residency_rather_than_the_extend_branch(self):
-		# The extend branch reads as "anything that is not a renewal is an extension", so
-		# an Action missing from here gets a second Residency categorised as Extend.
-		self.assertIn(ACTION, ACTIONS_HANDLED_ON_SUBMIT)
-
 	def test_submitting_the_row_opens_all_four_documents(self):
 		preparation = frappe.get_doc(
 			{
@@ -84,7 +62,7 @@ class TestOverseasGovernmentAction(FrappeTestCase):
 		preparation.flags.ignore_permissions = True
 		preparation.insert()
 
-		create_documents_for_row(preparation.preparation_record[0], preparation.name)
+		open_row_documents(preparation)
 
 		for doctype in SUB_DOCUMENTS:
 			self.assertTrue(
