@@ -39,8 +39,6 @@ def ensure_own_employee(employee):
 def create_resignation(
     employee_id=None,
     supervisor=None,
-    resignation_initiation_date=None,
-    relieving_date=None,
     reason_for_exit=None,
     attachment=None,
     attachment_name=None,
@@ -52,16 +50,12 @@ def create_resignation(
             "attachment_name",
             employee_id=employee_id,
             supervisor=supervisor,
-            resignation_initiation_date=resignation_initiation_date,
-            relieving_date=relieving_date,
             reason_for_exit=reason_for_exit,
             attachment=attachment,
             attachment_name=attachment_name,
         )
         input_id   = p["employee_id"]
         supervisor = p["supervisor"]
-        init_date  = p["resignation_initiation_date"]
-        rel_date   = p["relieving_date"] or get_param("resignation_date")
         reason     = p["reason_for_exit"]
         attachment = p["attachment"]
         att_name   = p["attachment_name"] or "resignation_letter.png"
@@ -91,8 +85,6 @@ def create_resignation(
         doc = frappe.new_doc("Employee Resignation")
         doc.owner = employee_user or frappe.session.user
         doc.employee = employee_name
-        doc.resignation_initiation_date = init_date
-        doc.relieving_date = rel_date
         doc.reason_for_exit = reason
         doc.supervisor = supervisor
         doc.department = emp.get("department")
