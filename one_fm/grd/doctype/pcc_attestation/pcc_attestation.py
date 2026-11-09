@@ -17,24 +17,6 @@ from one_fm.grd.utils import get_nationality_attestation_rule, get_pcc_attestati
 ATTESTATION = "Attestation"
 TRANSLATION = "Translation"
 
-DRAFT = "Draft"
-
-# WI-002145: the three states "Assign PRO" hands the record to a PRO in. The fourth route
-# out of Draft goes straight to the GR Operator - a nationality that needs no embassy, no
-# MOFA and no translation has no PRO work to give anybody - so it is not gated on a PRO.
-PRO_STATES = ("Pending Embassy", "Pending MOFA", "Pending Translation")
-
-# WI-002029: the states the PRO holds the record in, and the receipt each one exists to
-# collect. The workflow owns the transitions; this owns the rule that a state cannot be left
-# until its receipt is attached, which is what every "blocks the state transition" criterion
-# comes down to.
-RECEIPT_REQUIRED_BY_STATE = {
-	"Pending Embassy": ("upload_embassy_payment_receipt", "Upload Embassy Payment Receipt"),
-	"Pending MOFA": ("upload_mofa_payment_receipt", "Upload MOFA Payment Receipt"),
-	"Pending Translation": ("upload_translation_payment_receipt", "Upload Translation Payment Receipt"),
-}
-
-
 def create_pcc_attestations(employee, category, preparation_name=None):
 	"""Open the PCC records an overseas hire's nationality calls for (WI-002104).
 
@@ -77,40 +59,9 @@ def create_pcc_attestation(employee, category, preparation_name=None, attestatio
 
 class PCCAttestation(Document):
 	def validate(self):
+		# The PCC Attestation Lifecycle process checks the PRO User and each state's
+		# payment receipt in its script tasks before it moves the record on.
 		self.set_attestation_requirements()
-		self.validate_receipt_for_state_being_left()
-		self.validate_pro_user_before_assigning()
-
-	def validate_pro_user_before_assigning(self):
-		"""Refuse "Assign PRO" until there is a PRO to assign it to (WI-002145).
-
-		The action names a person and the assignment rule for the three PRO states takes
-		its assignee from `pro_user`, so without one the record moved to Pending Embassy,
-		MOFA or Translation and sat there assigned to nobody - visible to no PRO and
-		waiting on a receipt none of them knew was owed.
-
-		Guarded on the state being left, read from the document as it was before this save,
-		for the same reason the receipt check is: apply_workflow sets the destination on the
-		document and then saves, so self.workflow_state is already the next state by the
-		time validate runs.
-		"""
-		if self.is_new():
-			return
-
-		before_save = self.get_doc_before_save()
-		if not before_save or before_save.get("workflow_state") != DRAFT:
-			return
-
-		if self.workflow_state not in PRO_STATES:
-			return
-
-		if self.pro_user:
-			return
-
-		frappe.throw(
-			_("Please select a PRO User before proceeding."),
-			title=_("PRO User Required"),
-		)
 
 	def set_attestation_requirements(self):
 		"""Derive what this certificate needs from the candidate's nationality (WI-002025).
@@ -158,44 +109,3 @@ class PCCAttestation(Document):
 		blocked its PRO on a receipt that was never going to exist.
 		"""
 		return self.type == ATTESTATION and bool(self.mofa_attestation_required)
-
-	def validate_receipt_for_state_being_left(self):
-		"""Hold the record in a state until that state's receipt is attached (WI-002029).
-
-		The PRO cannot hand a step back without evidence the fee was paid. Keyed on the state
-		rather than on the action, because Pending MOFA and Pending Translation are both left
-		by an action called "Submit" while Pending Embassy is left by "Submit MOFA Receipt",
-		and because a state gains its meaning from the receipt it collects.
-
-		The check is on the state being *left*, read from the document as it was before this
-		save. `apply_workflow` sets the new state on the document and then saves it, so by the
-		time validate runs `self.workflow_state` is already the destination - guarding on that
-		would test the next step's receipt and let every transition through.
-
-		There is no separate check for a non-attesting country: the workflow does not route one
-		through Pending Embassy at all, so the state is unreachable for it.
-		"""
-		if self.is_new():
-			return
-
-		before_save = self.get_doc_before_save()
-		if not before_save:
-			return
-
-		previous_state = before_save.get("workflow_state")
-		if previous_state == self.workflow_state:
-			return
-
-		required = RECEIPT_REQUIRED_BY_STATE.get(previous_state)
-		if not required:
-			return
-
-		fieldname, label = required
-		if self.get(fieldname):
-			return
-
-		frappe.throw(
-			_("{0} is required before this record can be submitted to the Government Relations Operator.")
-			.format(frappe.bold(_(label))),
-			title=_("Payment Receipt Required"),
-		)

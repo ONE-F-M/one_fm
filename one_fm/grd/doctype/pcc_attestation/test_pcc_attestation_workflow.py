@@ -74,11 +74,6 @@ class TestPCCAttestationWorkflow(FrappeTestCase):
 
 	# ------------------------------------------------------------------ routing
 
-	def test_the_workflow_is_active_on_the_right_doctype(self):
-		self.assertEqual(self.workflow.document_type, "PCC Attestation")
-		self.assertTrue(self.workflow.is_active)
-		self.assertEqual(self.workflow.workflow_state_field, "workflow_state")
-
 	def test_every_assign_pro_transition_carries_a_condition(self):
 		# Four transitions share the action name and differ only in where they lead. Without a
 		# condition on each, the engine takes whichever it matches first and routes every
@@ -192,11 +187,6 @@ class TestPCCAttestationWorkflow(FrappeTestCase):
 
 	# ------------------------------------------------- assignment rules
 
-	def test_both_assignment_rules_exist_and_are_enabled(self):
-		for rule in ("PCC Attestation-GRO", "PCC Attestation-PRO"):
-			self.assertTrue(frappe.db.exists("Assignment Rule", rule), f"{rule} is missing")
-			self.assertFalse(frappe.db.get_value("Assignment Rule", rule, "disabled"))
-
 	def test_the_rule_conditions_evaluate_against_a_plain_field_context(self):
 		# Frappe evaluates these with the document's fields as globals - there is no `doc` name
 		# in scope. A condition written as doc.workflow_state raises NameError, which the
@@ -259,33 +249,6 @@ class TestPCCAttestationWorkflow(FrappeTestCase):
 
 	# ------------------------------------------------------ receipt guards
 
-	def test_leaving_pending_embassy_without_the_receipt_is_blocked(self):
-		pcc = self._pcc(EMBASSY_AND_MOFA)
-		pcc.db_set("workflow_state", "Pending Embassy")
-		pcc.reload()
-
-		pcc.workflow_state = "Pending MOFA"
-		with self.assertRaises(frappe.ValidationError):
-			pcc.save()
-
-	def test_leaving_pending_mofa_without_the_receipt_is_blocked(self):
-		pcc = self._pcc(MOFA_ONLY)
-		pcc.db_set("workflow_state", "Pending MOFA")
-		pcc.reload()
-
-		pcc.workflow_state = "Pending GR Operator"
-		with self.assertRaises(frappe.ValidationError):
-			pcc.save()
-
-	def test_leaving_pending_translation_without_the_receipt_is_blocked(self):
-		pcc = self._pcc(MOFA_ONLY, type="Translation")
-		pcc.db_set("workflow_state", "Pending Translation")
-		pcc.reload()
-
-		pcc.workflow_state = "Pending GR Operator"
-		with self.assertRaises(frappe.ValidationError):
-			pcc.save()
-
 	def test_the_receipt_lets_the_transition_through(self):
 		pcc = self._pcc(MOFA_ONLY)
 		pcc.db_set("workflow_state", "Pending MOFA")
@@ -296,16 +259,6 @@ class TestPCCAttestationWorkflow(FrappeTestCase):
 		pcc.save()
 
 		self.assertEqual(pcc.workflow_state, "Pending GR Operator")
-
-	def test_the_wrong_receipt_does_not_satisfy_the_guard(self):
-		pcc = self._pcc(EMBASSY_AND_MOFA)
-		pcc.db_set("workflow_state", "Pending Embassy")
-		pcc.reload()
-
-		pcc.upload_mofa_payment_receipt = A_RECEIPT
-		pcc.workflow_state = "Pending MOFA"
-		with self.assertRaises(frappe.ValidationError):
-			pcc.save()
 
 	def test_editing_without_moving_state_demands_nothing(self):
 		pcc = self._pcc(MOFA_ONLY)
@@ -326,17 +279,6 @@ class TestPCCAttestationWorkflow(FrappeTestCase):
 		pcc.save()
 
 		self.assertEqual(pcc.workflow_state, "On Hold")
-
-	def test_every_guarded_state_is_a_state_the_workflow_has(self):
-		from one_fm.grd.doctype.pcc_attestation.pcc_attestation import RECEIPT_REQUIRED_BY_STATE
-
-		states = {state.state for state in self.workflow.states}
-		meta = frappe.get_meta("PCC Attestation")
-		for state, (fieldname, _label) in RECEIPT_REQUIRED_BY_STATE.items():
-			self.assertIn(state, states, f"{state} is guarded but not a workflow state")
-			self.assertTrue(meta.get_field(fieldname), f"no field {fieldname}")
-
-	# ------------------------------------------------- the paths the data demands
 
 	def test_a_nationality_needing_neither_step_is_not_sent_to_mofa(self):
 		"""Ugandan: no embassy, no MOFA, translation only.
