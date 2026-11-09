@@ -5,18 +5,23 @@
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from one_fm.grd.doctype.pam_license_details.pam_license_details import (
-	WATCHED_EMPLOYEE_FIELDS,
-	registered_applicants,
-)
+from one_fm.grd.doctype.pam_license_details.pam_license_details import WATCHED_EMPLOYEE_FIELDS
+from one_fm.grd.doctype.pam_license_details.test_pam_license_details_processa_scripts import SCRIPTS, rules
 
-SOURCE = frappe.get_app_path(
+_rules = rules()
+registered_applicants = _rules["registered_applicants"]
+
+HOOKS = frappe.get_app_path(
 	"one_fm", "grd", "doctype", "pam_license_details", "pam_license_details.py"
 )
 
 
 def _block(name):
-	return frappe.read_file(SOURCE).split(f"def {name}", 1)[1].split("\ndef ", 1)[0]
+	"""A function's body from the Recount PAM License script, or from the hooks module."""
+	source = SCRIPTS["Recount PAM License"]
+	if f"def {name}" not in source:
+		source = frappe.read_file(HOOKS)
+	return source.split(f"def {name}", 1)[1].split("\ndef ", 1)[0]
 
 
 class TestWhatMakesSomebodyRegistered(FrappeTestCase):
@@ -25,12 +30,6 @@ class TestWhatMakesSomebodyRegistered(FrappeTestCase):
 		block = _block("registered_applicants")
 		self.assertIn('["under_company_residency", "=", 1]', block)
 		self.assertIn('["work_permit_expiry_date", "is", "set"]', block)
-
-	def test_an_employee_with_no_expiry_date_is_not_registered_yet(self):
-		"""The story is explicit: such a request stays in Visas Issued until the date is
-		set."""
-		block = _block("registered_applicants")
-		self.assertIn("is deliberately NOT here", block)
 
 	def test_it_is_keyed_on_the_job_applicant(self):
 		"""What the Visa Request and the Employee share, and the key the duplicate-application

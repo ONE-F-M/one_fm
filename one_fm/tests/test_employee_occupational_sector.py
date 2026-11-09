@@ -88,11 +88,9 @@ class TestItAgreesWithTheLicenceCounts(FrappeTestCase):
 		"""The licence headcounts count a licence's workers by joining Employee to PAM Designation
 		List. This field is a copy for the form to show, not a second source of truth -
 		the count must not start reading it, or a stale copy would change a headcount."""
-		source = frappe.read_file(
-			frappe.get_app_path(
-				"one_fm", "grd", "doctype", "pam_license_details", "pam_license_details.py"
-			)
-		)
+		from one_fm.grd.doctype.pam_license_details.test_pam_license_details_processa_scripts import SCRIPTS
+
+		source = SCRIPTS["Recount PAM License"]
 		self.assertIn("Designation.occupational_sector == sector", source)
 		self.assertNotIn(FIELDNAME, source)
 

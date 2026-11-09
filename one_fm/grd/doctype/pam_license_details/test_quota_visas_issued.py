@@ -7,16 +7,18 @@ import json
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from one_fm.grd.doctype.pam_license_details.pam_license_details import (
-	VISA_ISSUED_STATES,
-	visas_issued_by_quota,
-)
+from one_fm.grd.doctype.pam_license_details.test_pam_license_details_processa_scripts import SCRIPTS, rules
 from one_fm.visa_management.doctype.visa_cancellation_request.visa_cancellation_request import (
 	has_workflow_state_column,
 )
 
+_rules = rules()
+VISA_ISSUED_STATES = _rules["VISA_ISSUED_STATES"]
+visas_issued_by_quota = _rules["visas_issued_by_quota"]
+
 FIELDNAME = "number_of_visas_issued"
-SOURCE = frappe.get_app_path(
+SOURCE = SCRIPTS["Recount PAM License"]
+HOOKS = frappe.get_app_path(
 	"one_fm", "grd", "doctype", "pam_license_details", "pam_license_details.py"
 )
 
@@ -24,7 +26,7 @@ SOURCE = frappe.get_app_path(
 class TestWhatCounts(FrappeTestCase):
 	def test_pending_by_moi_onward_is_a_visa(self):
 		"""Pending By MOI and every state after it - capital B, as the Workflow spells it."""
-		block = frappe.read_file(SOURCE).split("def visas_issued_by_quota", 1)[1]
+		block = SOURCE.split("def visas_issued_by_quota", 1)[1]
 		self.assertIn('["workflow_state", "in", VISA_ISSUED_STATES]', block)
 		self.assertEqual(
 			VISA_ISSUED_STATES,
@@ -53,7 +55,7 @@ class TestWhatCounts(FrappeTestCase):
 		"""At this point there is no employee: the visa has been issued and the person has
 		not arrived, which is the whole reason the figure is separate from the registered
 		headcount beside it."""
-		block = frappe.read_file(SOURCE).split("def visas_issued_by_quota", 1)[1]
+		block = SOURCE.split("def visas_issued_by_quota", 1)[1]
 		self.assertIn("custom_pam_file", block)
 		self.assertIn("custom_pam_designation_list", block)
 		self.assertNotIn("under_company_residency", block)
@@ -61,26 +63,25 @@ class TestWhatCounts(FrappeTestCase):
 	def test_a_cancelled_visa_is_not_an_issued_one(self):
 		"""The story's last criterion: a completed cancellation takes the visa back out of
 		this count and returns it to the available quota."""
-		block = frappe.read_file(SOURCE).split("def visas_issued_by_quota", 1)[1]
+		block = SOURCE.split("def visas_issued_by_quota", 1)[1]
 		self.assertIn("cancelled_visa_requests", block)
 		self.assertIn("if request[\"name\"] in released:", block)
 
 	def test_it_reuses_the_cancellation_rule_rather_than_restating_it(self):
 		"""One definition of "this visa has been given back", shared with the cancellation gate."""
-		block = frappe.read_file(SOURCE).split("def visas_issued_by_quota", 1)[1]
 		self.assertIn(
-			"from one_fm.visa_management.doctype.visa_request.visa_request import", block
+			"from one_fm.visa_management.doctype.visa_request.visa_request import cancelled_visa_requests", SOURCE
 		)
 
 	def test_a_designation_in_no_quota_counts_against_no_row(self):
 		"""Not against the first one - a visa in the wrong quota reads as headroom that is
 		not there."""
-		block = frappe.read_file(SOURCE).split("def visas_issued_by_quota", 1)[1]
+		block = SOURCE.split("def visas_issued_by_quota", 1)[1]
 		self.assertIn("if not quota_type:", block)
 		self.assertIn("continue", block)
 
 	def test_a_request_naming_no_designation_is_not_asked_for(self):
-		block = frappe.read_file(SOURCE).split("def visas_issued_by_quota", 1)[1]
+		block = SOURCE.split("def visas_issued_by_quota", 1)[1]
 		self.assertIn('["custom_pam_designation_list", "is", "set"]', block)
 
 	def test_it_runs_against_this_site(self):
@@ -90,14 +91,14 @@ class TestWhatCounts(FrappeTestCase):
 	def test_it_reads_the_one_licence_it_is_given(self):
 		"""Every figure on the licence is counted off the record now, not off the civil ID
 		it happens to share with another licence."""
-		block = frappe.read_file(SOURCE).split("def visas_issued_by_quota", 1)[1].split("\ndef ", 1)[0]
+		block = SOURCE.split("def visas_issued_by_quota", 1)[1].split("\ndef ", 1)[0]
 		self.assertIn('["custom_pam_file", "=", license_name]', block)
 		self.assertNotIn("civil_id_number_for_licensing", block)
 
 
 class TestWhenItIsRecounted(FrappeTestCase):
 	def setUp(self):
-		self.source = frappe.read_file(SOURCE)
+		self.source = frappe.read_file(HOOKS)
 
 	def test_a_visa_request_moving_state_recounts_the_licence(self):
 		"""Without this the figure only moved when somebody saved an Employee - and the
@@ -113,7 +114,7 @@ class TestWhenItIsRecounted(FrappeTestCase):
 	def test_a_completed_cancellation_gives_the_visa_back(self):
 		block = self.source.split("def update_quota_from_visa_cancellation", 1)[1]
 		self.assertIn("visa_request_id", block)
-		self.assertIn("recount_license_quota(license_name)", block)
+		self.assertIn("recount(", block)
 
 	def test_both_hooks_are_registered(self):
 		from one_fm import hooks
@@ -130,12 +131,9 @@ class TestWhenItIsRecounted(FrappeTestCase):
 	def test_the_row_recount_writes_both_figures_in_one_pass(self):
 		"""Registered and issued move together; two writes per row would be two chances to
 		leave the pair disagreeing."""
-		block = self.source.split("def recount_quota_rows", 1)[1]
+		block = SOURCE.split("def recount_quota_rows", 1)[1]
 		self.assertIn('"registered_numbers_of_employees": counts[quota_type]', block)
 		self.assertIn('"number_of_visas_issued": str(issued.get(quota_type, 0))', block)
-
-	def test_saving_a_licence_derives_it(self):
-		self.assertIn("self.set_quota_visas_issued()", self.source)
 
 
 class TestTheFieldIsDerived(FrappeTestCase):

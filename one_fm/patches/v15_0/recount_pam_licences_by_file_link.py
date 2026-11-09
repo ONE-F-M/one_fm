@@ -11,15 +11,9 @@ They read the same employees and moved to the link together.
 
 import frappe
 
-from one_fm.grd.doctype.pam_license_details.pam_license_details import (
-	recount_license,
-	recount_license_total,
-	recount_quota_rows,
-)
+from one_fm.grd.doctype.pam_license_details.pam_license_details import recount
 
 
 def execute():
 	for license_name in frappe.get_all("PAM License Details", pluck="name"):
-		recount_license_total(license_name)
-		recount_license(license_name)
-		recount_quota_rows(license_name)
+		recount(license_name)

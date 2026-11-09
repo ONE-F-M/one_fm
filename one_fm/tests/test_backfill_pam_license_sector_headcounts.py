@@ -10,11 +10,12 @@ belongs to is read from, and which rows it refuses to touch.
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from one_fm.grd.doctype.pam_license_details.pam_license_details import (
-	EXEMPT_SECTOR,
-	count_workers,
-	derived_figures,
-)
+from one_fm.grd.doctype.pam_license_details.test_pam_license_details_processa_scripts import rules
+
+_rules = rules()
+EXEMPT_SECTOR = _rules["EXEMPT_SECTOR"]
+count_workers = _rules["count_workers"]
+derived_figures = _rules["derived_figures"]
 from one_fm.patches.v15_0.backfill_pam_license_sector_headcounts import (
 	RATIO_DECISION_FIELD,
 	fill_designation_sectors,

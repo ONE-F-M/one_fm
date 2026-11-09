@@ -5,14 +5,13 @@
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from one_fm.grd.doctype.pam_license_details.pam_license_details import (
-	WATCHED_EMPLOYEE_FIELDS,
-	update_counts_from_designation,
-	count_workers,
-	recount_license,
-	recount_sector,
-	update_counts_from_employee,
-)
+from one_fm.grd.doctype.pam_license_details.pam_license_details import WATCHED_EMPLOYEE_FIELDS, update_counts_from_designation, update_counts_from_employee
+from one_fm.grd.doctype.pam_license_details.test_pam_license_details_processa_scripts import install_scripts, rules
+
+_rules = rules()
+count_workers = _rules["count_workers"]
+recount_license = _rules["recount_license"]
+recount_sector = _rules["recount_sector"]
 
 LICENSE = "_Test Counted License"
 LICENSE_NUMBER = "_TEST-PAM-9001"
@@ -58,6 +57,7 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 		frappe.reload_doc("grd", "doctype", "pam_license_details")
 
 	def setUp(self):
+		install_scripts()
 		self.sector = _a_sector(SECTOR)
 		self.other_sector = _a_sector(OTHER_SECTOR)
 		self.designation = _a_designation("_Test PAM Technician", self.sector)
@@ -211,9 +211,11 @@ class TestPAMLicenseWorkerCounts(FrappeTestCase):
 		self.assertEqual(self._row(self.other_sector).expatriate_number_of_workers, "1")
 
 	def test_a_licence_number_nobody_holds_leaves_the_row_alone(self):
+		before = self._row(self.sector).national_number_of_workers
+
 		recount_sector("_TEST-PAM-NOBODY", self.sector)
 
-		self.assertFalse(self._row(self.sector).national_number_of_workers)
+		self.assertEqual(self._row(self.sector).national_number_of_workers, before)
 
 	# ── the hook ──────────────────────────────────────────────────────────────────
 	#
