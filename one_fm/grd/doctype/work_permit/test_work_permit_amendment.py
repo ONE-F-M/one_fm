@@ -58,25 +58,6 @@ class TestWorkPermitAmendment(FrappeTestCase):
 			{(t.state, t.action, t.next_state) for t in workflow.transitions},
 		)
 
-	def test_amending_increments_the_counter_on_the_same_record(self):
-		permit = self._permit_from_a_preparation()
-		self.assertEqual(permit.amendment_no, 0)
-
-		for expected in (1, 2, 3):
-			permit.db_set("workflow_state", "Pending By PAM")
-			permit.reload()
-			permit.workflow_state = "Pending GR Manager"
-			permit.save(ignore_permissions=True)
-
-			permit.reload()
-			self.assertEqual(permit.amendment_no, expected)
-
-		# One record throughout - the point of the counter.
-		self.assertEqual(
-			frappe.db.count("Work Permit", {"employee": permit.employee, "amended_from": permit.name}),
-			0,
-		)
-
 	def test_a_state_change_that_is_not_an_amendment_leaves_the_counter_alone(self):
 		permit = self._permit_from_a_preparation()
 

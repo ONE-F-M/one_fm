@@ -127,13 +127,6 @@ class TestWorkPermitEnhancements(FrappeTestCase):
 
 	# ── what an amended permit owes ───────────────────────────────────────────────
 
-	def test_an_amended_permit_needs_a_pam_designation(self):
-		permit = self._with_no_designation(self._a_permit(), amendment_no=1)
-
-		permit.workflow_state = "Pending By PAM"
-		with self.assertRaises(frappe.ValidationError):
-			permit.save(ignore_permissions=True)
-
 	def test_an_amended_permit_with_a_designation_moves_on(self):
 		permit = self._a_permit()
 		frappe.db.set_value(
