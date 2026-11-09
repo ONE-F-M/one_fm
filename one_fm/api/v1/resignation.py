@@ -5,6 +5,7 @@ from frappe.utils.file_manager import save_file
 from frappe.model.workflow import apply_workflow
 from one_fm.api.mobile_utils import get_param, get_all_params
 from one_fm.api.v1.utils import check_own_employee, handle_attachment_internal
+from one_fm.one_fm.doctype.employee_resignation.employee_resignation import get_hr_visit_date
 
 
 # ---------------------------------------------------------------------------
@@ -373,6 +374,7 @@ def get_my_active_resignation(employee_id: str | None = None, **kwargs):
         "workflow_state",
         order_by="creation desc",
     )
+    record["hr_visit_date"] = get_hr_visit_date(record["relieving_date"])
     return record
 
 
@@ -394,8 +396,8 @@ def get_all_my_resignations(employee_id=None, **kwargs):
         fields=["name", "workflow_state", "resignation_initiation_date", "relieving_date", "creation"],
         order_by="creation desc"
     )
-
-
+    for record in resignations:
+        record["hr_visit_date"] = get_hr_visit_date(record["relieving_date"])
 
     return resignations
 
@@ -420,7 +422,9 @@ def get_resignation_by_name(resignation_id: str = None, **kwargs):
     if not records:
         frappe.throw(_("Resignation record not found"), frappe.DoesNotExistError)
 
-    return records[0]
+    record = records[0]
+    record["hr_visit_date"] = get_hr_visit_date(record["relieving_date"])
+    return record
 
 
 @frappe.whitelist()

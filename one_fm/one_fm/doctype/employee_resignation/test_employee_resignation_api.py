@@ -9,6 +9,7 @@ from one_fm.api.v1.resignation import (
     get_resignation_by_name,
     get_my_active_resignation,
 )
+from one_fm.one_fm.doctype.employee_resignation.employee_resignation import get_hr_visit_date
 
 class TestEmployeeResignation(FrappeTestCase):
     def setUp(self):
@@ -93,6 +94,12 @@ class TestGetMyActiveResignationWithdrawalState(FrappeTestCase):
             record = get_my_active_resignation(employee_id=self.employee)
         self.assertEqual(record["name"], self.resignation)
         self.assertIsNone(record["withdrawal_state"])
+
+    def test_the_active_resignation_carries_the_hr_visit_date(self):
+        relieving_date = frappe.db.get_value("Employee Resignation", self.resignation, "relieving_date")
+        with self.set_user(self.user):
+            record = get_my_active_resignation(employee_id=self.employee)
+        self.assertEqual(record["hr_visit_date"], get_hr_visit_date(relieving_date))
 
     def test_withdrawal_state_reports_the_pending_withdrawal(self):
         withdrawal = frappe.get_doc({
@@ -260,3 +267,14 @@ class TestResignationOnProcessa(FrappeTestCase):
         for state in ("Pending Supervisor", "Pending Line Manager", "Approved"):
             doc.workflow_state = state
             self.assertEqual(doc.get_processa_editable_fields(), [])
+
+
+class TestHrVisitDate(FrappeTestCase):
+    def test_a_working_day_is_the_next_day(self):
+        # 2026-11-11 is a Wednesday
+        self.assertEqual(str(get_hr_visit_date("2026-11-11")), "2026-11-12")
+
+    def test_the_weekend_moves_to_sunday(self):
+        # Thursday, Friday and Saturday relieving dates all send the employee to HR on Sunday 2026-11-15
+        for relieving_date in ("2026-11-12", "2026-11-13", "2026-11-14"):
+            self.assertEqual(str(get_hr_visit_date(relieving_date)), "2026-11-15")

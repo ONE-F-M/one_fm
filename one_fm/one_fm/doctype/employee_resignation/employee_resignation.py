@@ -4,10 +4,12 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import add_days, today
+from frappe.utils import add_days, getdate, today
 
 # Relieving Date is always this many days after the Resignation Initiation Date.
 NOTICE_PERIOD_DAYS = 90
+# Friday and Saturday (date.weekday() values); the working week is Sunday to Thursday.
+WEEKEND_DAYS = (4, 5)
 
 # States at which the employee/actor is still reviewing -- i.e. the states a
 # resignation departs FROM via a reviewer's own transition. Used to figure out
@@ -372,6 +374,10 @@ class EmployeeResignation(Document):
 		if self.relieving_date:
 			from frappe.utils import formatdate
 			message += "<br>" + _("<b>Approved Relieving Date:</b> {0}").format(formatdate(self.relieving_date))
+			hr_visit_date = get_hr_visit_date(self.relieving_date)
+			message += "<br>" + _("<b>Please visit HR on:</b> {0}, {1}").format(
+				_(hr_visit_date.strftime("%A")), formatdate(hr_visit_date)
+			)
 
 		if recipients:
 			from one_fm.processor import sendemail
@@ -588,6 +594,14 @@ class EmployeeResignation(Document):
 
 
 @frappe.whitelist()
+def get_hr_visit_date(relieving_date):
+	"""The first working day after the Relieving Date, when the employee should visit HR."""
+	visit_date = add_days(getdate(relieving_date), 1)
+	while visit_date.weekday() in WEEKEND_DAYS:
+		visit_date = add_days(visit_date, 1)
+	return visit_date
+
+
 def get_employee_resignation_details(employee: str = None):
 	"""Secure backend fetch to bypass frontend permission limits for restricted roles."""
 	if not employee:
