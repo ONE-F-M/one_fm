@@ -114,6 +114,186 @@ for message in errors:
 	frappe.msgprint(message, title=frappe._("Event Staff Not Submitted"), indicator="red")
 result["event_staff_valid"] = not errors
 """,
+	"Create Event Staff Schedules": r"""# The Employee Schedules of an Event Staff record: one per day of the assignment, at the event's
+# hours, written once the Client Event is Approved.
+# The Event Staff Lifecycle map runs it right after the record is submitted. A Client Event
+# approval runs create_schedules for every submitted Event Staff of the event. A date change
+# after submit runs sync_datetimes before the save and apply_date_change after it.
+# A schedule a Shift Assignment already uses is never deleted.
+from datetime import datetime
+
+getdate = frappe.utils.getdate
+get_datetime = frappe.utils.get_datetime
+add_days = frappe.utils.add_days
+
+
+# The employee's schedules between two dates, or the schedules this Event Staff wrote.
+def existing_schedules(employee=None, start_date=None, end_date=None, event_staff=None):
+	filters = {"docstatus": 0}
+	if event_staff:
+		filters.update({"event_staff": event_staff, "is_event_schedule": 1})
+	else:
+		filters.update({"employee": employee, "date": ["between", [start_date, end_date]]})
+	return frappe.get_all(
+		"Employee Schedule", filters=filters, fields=["name", "date", "start_datetime", "end_datetime", "roster_type"]
+	)
+
+
+# The event's hours on one day. An end time before the start time ends on the next day.
+def event_window(es, date):
+	start_time = get_datetime(es.start_datetime).time()
+	end_time = get_datetime(es.end_datetime).time()
+	end_date = add_days(getdate(date), 1) if end_time < start_time else getdate(date)
+	return datetime.combine(getdate(date), start_time), datetime.combine(getdate(end_date), end_time)
+
+
+def schedule_data(es, date, start, end):
+	return {
+		"employee": es.employee,
+		"date": date,
+		"employee_availability": "Client Event",
+		"is_event_schedule": 1,
+		"event_staff": es.name,
+		"shift": es.operations_shift,
+		"shift_type": es.shift_type,
+		"project": es.project,
+		"site": es.site,
+		"start_datetime": start,
+		"end_datetime": end,
+		"designation": es.designation,
+		"roster_type": es.roster_type,
+		"day_off_ot": es.day_off_ot,
+		"client_event": es.client_event,
+		"event_location": es.event_location,
+		"reference_doctype": "Event Staff",
+		"reference_docname": es.name,
+		"operations_role": None,
+		"post_abbrv": None,
+	}
+
+
+# One schedule per day from start_date (default: the record's Start Date) to the End Date. A
+# schedule of the same roster type that day is updated; one of another type overlapping the
+# event's hours is refused.
+def create_schedules(es, start_date=None):
+	start_date = getdate(start_date or es.start_date)
+	end_date = getdate(es.end_date)
+	by_date = {}
+	for row in existing_schedules(es.employee, start_date, end_date):
+		by_date.setdefault(getdate(row.date), []).append(row)
+
+	for day in range(frappe.utils.date_diff(end_date, start_date) + 1):
+		date = getdate(add_days(start_date, day))
+		start, end = event_window(es, date)
+		reuse = None
+		for row in by_date.get(date, []):
+			if row.roster_type == es.roster_type:
+				reuse = row.name
+				break
+			if not (row.start_datetime and row.end_datetime) or (
+				get_datetime(row.start_datetime) < end and get_datetime(row.end_datetime) > start
+			):
+				if row.roster_type == "Basic" and es.roster_type == "Over-Time":
+					frappe.throw(frappe._("The designated Overtime Event Staff schedule overlaps with an existing Basic Employee Schedule ({0}) for {1}.").format(row.name, es.employee))
+				frappe.throw(frappe._("The Event Staff schedule overlaps with an existing Employee Schedule ({0}) for {1}.").format(row.name, es.employee))
+
+		values = schedule_data(es, date, start, end)
+		if reuse:
+			frappe.get_doc("Employee Schedule", reuse).update(values).save()
+		else:
+			frappe.get_doc({"doctype": "Employee Schedule", **values}).insert()
+	frappe.msgprint(frappe._("Employee Schedules from {0} to {1} processed.").format(start_date, end_date), alert=True)
+
+
+# Deletes this record's schedules that match the filter and no Shift Assignment uses.
+# Returns (deleted, kept).
+def delete_unused(es, date_filter):
+	deleted = kept = 0
+	for name in frappe.get_all(
+		"Employee Schedule", filters={"event_staff": es.name, "is_event_schedule": 1, "date": date_filter}, pluck="name"
+	):
+		if frappe.db.exists("Shift Assignment", {"employee_schedule": name}):
+			kept += 1
+			continue
+		frappe.delete_doc("Employee Schedule", name)
+		deleted += 1
+	return deleted, kept
+
+
+# Before a save after submit: the date part of Start and End DateTime follows the edited dates,
+# keeping their times.
+def sync_datetimes(es):
+	if es.has_value_changed("end_date") and es.end_datetime:
+		es.end_datetime = datetime.combine(getdate(es.end_date), get_datetime(es.end_datetime).time())
+	if es.has_value_changed("start_date") and es.start_datetime:
+		es.start_datetime = datetime.combine(getdate(es.start_date), get_datetime(es.start_datetime).time())
+
+
+# After a save after submit, while the event is Approved: a later Start Date or an earlier End
+# Date deletes the schedules now outside the assignment; an earlier Start Date or a later End Date
+# adds schedules for the new days. The controller has already refused clashing new days.
+def apply_date_change(es, old):
+	if frappe.db.get_value("Client Event", es.client_event, "workflow_state") != "Approved":
+		return
+	notes = []
+	old_start, new_start = getdate(old.start_date), getdate(es.start_date)
+	if new_start > old_start:
+		notes.append(delete_unused(es, ["<", new_start]))
+	elif new_start < old_start:
+		create_schedules(es, start_date=new_start)
+
+	old_end, new_end = getdate(old.end_date), getdate(es.end_date)
+	if new_end < old_end:
+		notes.append(delete_unused(es, [">", new_end]))
+	elif new_end > old_end:
+		create_schedules(es, start_date=add_days(old_end, 1))
+
+	deleted, kept = sum(n[0] for n in notes), sum(n[1] for n in notes)
+	if deleted or kept:
+		message = frappe._("{0} Employee Schedule(s) outside the new dates deleted.").format(deleted)
+		if kept:
+			message += " " + frappe._("{0} kept, as Shift Assignments use them.").format(kept)
+		frappe.msgprint(message, alert=True)
+
+
+if bpmn_id and doc.get("doctype") == "Event Staff":
+	approved = frappe.db.get_value("Client Event", doc.client_event, "workflow_state") == "Approved"
+	if approved:
+		create_schedules(doc)
+	result["schedules_created"] = approved
+""",
+	"Release Event Staff Schedules": r"""# When an Event Staff record is cancelled, deletes the Employee Schedules it wrote that no Shift
+# Assignment uses. Those a Shift Assignment uses are kept.
+# The Event Staff Lifecycle map runs it after Cancelled. A Client Event that cancels its staff
+# runs release_schedules.
+
+def release_schedules(es):
+	deleted = kept = 0
+	for name in frappe.get_all(
+		"Employee Schedule", filters={"docstatus": 0, "event_staff": es.name, "is_event_schedule": 1}, pluck="name"
+	):
+		if frappe.db.exists("Shift Assignment", {"employee_schedule": name}):
+			kept += 1
+			continue
+		try:
+			frappe.delete_doc("Employee Schedule", name)
+			deleted += 1
+		except Exception:
+			frappe.log_error(
+				title="Event Staff Cancellation Error",
+				message="Failed to delete Employee Schedule {0} for Event Staff {1}: {2}".format(name, es.name, frappe.get_traceback()),
+			)
+	if deleted or kept:
+		message = frappe._("Event Staff cancelled. {0} unused Employee Schedule(s) deleted.").format(deleted)
+		if kept:
+			message += " " + frappe._("{0} schedule(s) kept, as Shift Assignments use them.").format(kept)
+		frappe.msgprint(message)
+	return deleted, kept
+
+
+if bpmn_id and doc.get("doctype") == "Event Staff":
+	result["schedules_deleted"], result["schedules_kept"] = release_schedules(doc)
+""",
 }
 
 
@@ -132,6 +312,36 @@ def run(script_name, doc):
 		exec(SCRIPTS[script_name], namespace)
 	shown = " ".join(str(c.args[0]) for c in msgprint.call_args_list)
 	return result, shown
+
+
+def rules(script_name):
+	"""The functions a script defines, without taking its map step."""
+	namespace = {"frappe": frappe, "doc": frappe._dict(), "task_data": {}, "result": {},
+		"context_doctype": "", "context_docname": "", "bpmn_id": ""}
+	exec(SCRIPTS[script_name], namespace)
+	return namespace
+
+
+def install_scripts():
+	"""Put these bodies on the site, so the hooks under test run the reviewed scripts."""
+	for name, body in SCRIPTS.items():
+		if frappe.db.exists("Server Script", name):
+			frappe.db.set_value("Server Script", name, {"script": body, "disabled": 0}, update_modified=False)
+		else:
+			frappe.get_doc({"doctype": "Server Script", "name": name, "script_type": "API",
+				"api_method": frappe.scrub(name), "script": body}).db_insert()
+
+
+# The Processa engine commits when an instance starts or fails; held so the test data rolls back.
+NO_COMMIT = patch("frappe.db.commit")
+
+
+def setUpModule():
+	NO_COMMIT.start()
+
+
+def tearDownModule():
+	NO_COMMIT.stop()
 
 
 CLIENT_EVENT = "CE-ES-PROCESSA-TEST"
@@ -264,3 +474,91 @@ class TestValidateEventStaff(FrappeTestCase):
 		schedule(self.employee, START, roster_type="Over-Time", start="12:00:00", end="20:00:00")
 		result, shown = run("Validate Event Staff", make_event_staff(self.employee))
 		self.assertTrue(result["event_staff_valid"], shown)
+
+
+class TestEventStaffSchedules(FrappeTestCase):
+	"""The Create and Release Event Staff Schedules rules, on a submitted record."""
+
+	def setUp(self):
+		install_scripts()
+		frappe.db.delete("Event Staff", {"client_event": CLIENT_EVENT})
+		make_client_event()
+		self.employee = frappe.get_all("Employee", filters={"status": "Active"}, pluck="name", limit=1)[0]
+		frappe.db.delete("Employee Schedule", {"employee": self.employee, "date": ["between", [add_days(START, -10), add_days(START, 40)]]})
+		self.create = rules("Create Event Staff Schedules")
+		self.release = rules("Release Event Staff Schedules")
+
+	def submitted(self, **kwargs):
+		doc = make_event_staff(self.employee, **kwargs)
+		doc.docstatus = 1
+		doc.db_insert()
+		return doc
+
+	def dates(self, doc):
+		return sorted(str(d) for d in frappe.get_all("Employee Schedule", filters={"event_staff": doc.name}, pluck="date"))
+
+	def test_one_schedule_per_day_at_the_event_hours(self):
+		doc = self.submitted()
+		self.create["create_schedules"](doc)
+		self.assertEqual(self.dates(doc), [str(START), str(add_days(START, 1))])
+		row = frappe.get_all("Employee Schedule", filters={"event_staff": doc.name}, fields=["employee_availability", "start_datetime", "end_datetime"], limit=1)[0]
+		self.assertEqual(row.employee_availability, "Client Event")
+		self.assertEqual(str(row.end_datetime.time()), "16:00:00")
+
+	def test_an_overnight_event_ends_the_next_day(self):
+		doc = self.submitted(start_datetime=f"{START} 20:00:00", end_datetime=f"{START} 04:00:00")
+		start, end = self.create["event_window"](doc, START)
+		self.assertEqual(end.date(), add_days(START, 1))
+
+	def test_a_clashing_schedule_of_another_roster_type_is_refused(self):
+		schedule(self.employee, START, roster_type="Over-Time", start="12:00:00", end="20:00:00")
+		with self.assertRaises(frappe.ValidationError):
+			self.create["create_schedules"](self.submitted())
+
+	def test_a_shorter_end_date_keeps_schedules_a_shift_assignment_uses(self):
+		doc = self.submitted(end_date=add_days(START, 3))
+		self.create["create_schedules"](doc)
+		used = frappe.get_all("Employee Schedule", filters={"event_staff": doc.name, "date": add_days(START, 3)}, pluck="name")[0]
+		old = frappe._dict(start_date=doc.start_date, end_date=doc.end_date)
+		doc.end_date = add_days(START, 1)
+		real_exists = frappe.db.exists
+
+		def exists(doctype, filters=None, *args, **kwargs):
+			if doctype == "Shift Assignment":
+				return filters.get("employee_schedule") == used
+			return real_exists(doctype, filters, *args, **kwargs)
+
+		with patch("frappe.db.exists", side_effect=exists):
+			self.create["apply_date_change"](doc, old)
+		self.assertEqual(self.dates(doc), [str(START), str(add_days(START, 1)), str(add_days(START, 3))])
+
+	def test_a_later_end_date_adds_the_new_days(self):
+		doc = self.submitted()
+		self.create["create_schedules"](doc)
+		old = frappe._dict(start_date=doc.start_date, end_date=doc.end_date)
+		doc.end_date = add_days(START, 2)
+		self.create["apply_date_change"](doc, old)
+		self.assertEqual(self.dates(doc), [str(START), str(add_days(START, 1)), str(add_days(START, 2))])
+
+	def test_nothing_changes_while_the_event_is_not_approved(self):
+		make_client_event(state="Pending Operations Manager")
+		doc = self.submitted()
+		old = frappe._dict(start_date=doc.start_date, end_date=add_days(START, -1))
+		self.create["apply_date_change"](doc, old)
+		self.assertEqual(self.dates(doc), [])
+
+	def test_release_deletes_unused_schedules_only(self):
+		doc = self.submitted()
+		self.create["create_schedules"](doc)
+		used = frappe.get_all("Employee Schedule", filters={"event_staff": doc.name, "date": START}, pluck="name")[0]
+		real_exists = frappe.db.exists
+
+		def exists(doctype, filters=None, *args, **kwargs):
+			if doctype == "Shift Assignment":
+				return filters.get("employee_schedule") == used
+			return real_exists(doctype, filters, *args, **kwargs)
+
+		with patch("frappe.db.exists", side_effect=exists):
+			deleted, kept = self.release["release_schedules"](doc)
+		self.assertEqual((deleted, kept), (1, 1))
+		self.assertEqual(self.dates(doc), [str(START)])
