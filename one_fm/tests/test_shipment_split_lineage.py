@@ -1,15 +1,16 @@
 # Copyright (c) 2026, ONE FM and contributors
 # See license.txt
-"""Deleting a card must not leave overflow cards linked to it.
+"""A generator delete must not leave overflow cards linked to the deleted card.
 
 The generator deletes with force=True, which skips Frappe's link check. An overflow card
 that still named the deleted card in Split From then failed its next full save with
-"Could not find Split From".
+"Could not find Split From". A manual delete keeps the link check and stays blocked.
 """
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
+from one_fm.one_fm.doctype.transportation_shipment.shipment_generator import _delete_card
 from one_fm.patches.v15_0 import clear_dangling_shipment_split_links
 
 DOCTYPE = "Transportation Shipment"
@@ -42,7 +43,7 @@ class TestSplitLineage(FrappeTestCase):
 		middle = self._card(parent=root)
 		child = self._card(parent=middle, root=root)
 
-		frappe.delete_doc(DOCTYPE, middle, force=True, ignore_permissions=True)
+		_delete_card(middle)
 
 		self.assertEqual(self._lineage(child), {"split_parent": root, "split_root": root})
 		self._save(child)
@@ -51,10 +52,20 @@ class TestSplitLineage(FrappeTestCase):
 		root = self._card()
 		child = self._card(parent=root)
 
-		frappe.delete_doc(DOCTYPE, root, force=True, ignore_permissions=True)
+		_delete_card(root)
 
 		self.assertEqual(self._lineage(child), {"split_parent": None, "split_root": None})
 		self._save(child)
+
+	def test_a_manual_delete_of_a_parent_is_still_blocked(self):
+		root = self._card()
+		child = self._card(parent=root)
+
+		with self.assertRaises(frappe.LinkExistsError):
+			frappe.delete_doc(DOCTYPE, root, ignore_permissions=True)
+
+		self.assertTrue(frappe.db.exists(DOCTYPE, root))
+		self.assertEqual(self._lineage(child), {"split_parent": root, "split_root": root})
 
 	def test_the_patch_clears_links_left_by_earlier_deletes(self):
 		root = self._card()

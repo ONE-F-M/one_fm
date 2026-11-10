@@ -188,9 +188,6 @@ class TransportationShipment(Document):
 	def on_update(self):
 		self.refresh_plan_headcounts()
 
-	def on_trash(self):
-		release_split_lineage(self.name, self.split_parent)
-
 	def refresh_plan_headcounts(self):
 		"""Push a changed headcount out to the plan rows that placed this card (#6818).
 
@@ -228,10 +225,8 @@ class TransportationShipment(Document):
 def release_split_lineage(name: str, parent: str | None = None) -> None:
 	"""Stop overflow cards pointing at a card that is being deleted.
 
-	The generator deletes with force=True, which skips Frappe's link check, so without
-	this an overflow card keeps Split From / Original Card on a missing card and its next
-	full save fails with "Could not find Split From". A child moves up to the deleted
-	card's own parent; a deleted root leaves its overflow cards with no root.
+	A child moves up to the deleted card's own parent; a deleted root leaves its overflow
+	cards with no root. Called by the generator before a force delete.
 	"""
 	shipment = frappe.qb.DocType("Transportation Shipment")
 	frappe.qb.update(shipment).set(shipment.split_parent, parent or None).where(

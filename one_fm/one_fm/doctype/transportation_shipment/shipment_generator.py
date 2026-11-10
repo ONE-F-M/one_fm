@@ -19,6 +19,7 @@ from frappe.utils import escape_html, get_datetime, getdate, today
 
 from one_fm.one_fm.doctype.transportation_shipment.transportation_shipment import (
 	driver_employees,
+	release_split_lineage,
 )
 from one_fm.one_fm.doctype.transportation_shipment.roster_overlay import (
 	absent_employees,
@@ -757,7 +758,7 @@ def _expire_single_day_rows(on_date) -> int:
 			removed += len(drop[name])
 			if not doc.transportation_shipment_employee and doc.status == "Unassigned" and not doc.source_doctype:
 				_release_manifest_references(name)
-				frappe.delete_doc("Transportation Shipment", name, ignore_permissions=True, force=True)
+				_delete_card(name)
 				continue
 			doc.save(ignore_permissions=True)
 			if not doc.transportation_shipment_employee and doc.status == "Assigned":
@@ -895,7 +896,7 @@ def _distribute(family, demand, direction, roster, gen_key, pair_group, reliever
 		if not carries and card.status == "Unassigned" and card is not root:
 			# An unplaced overflow card nobody rides any more.
 			_release_manifest_references(card.name)
-			frappe.delete_doc("Transportation Shipment", card.name, ignore_permissions=True, force=True)
+			_delete_card(card.name)
 			summary["deleted"] += 1
 			changed.discard(card.name)
 			continue
@@ -1104,11 +1105,22 @@ def _prune_stale(current_keys: set, keep=None) -> int:
 		if row.generation_key and row.generation_key not in current_keys:
 			try:
 				_release_manifest_references(row.name)
-				frappe.delete_doc("Transportation Shipment", row.name, ignore_permissions=True, force=True)
+				_delete_card(row.name)
 				deleted += 1
 			except Exception:
 				frappe.log_error(frappe.get_traceback(), "Transportation Shipment Prune Error")
 	return deleted
+
+
+def _delete_card(name: str) -> None:
+	"""Force-delete a generated card, first moving its overflow cards off it.
+
+	force=True skips Frappe's link check, so without the re-link an overflow card keeps
+	Split From / Original Card on the deleted card and its next save fails with "Could
+	not find Split From". A manual delete keeps the link check and stays blocked.
+	"""
+	release_split_lineage(name, frappe.db.get_value("Transportation Shipment", name, "split_parent"))
+	frappe.delete_doc("Transportation Shipment", name, ignore_permissions=True, force=True)
 
 
 def _release_manifest_references(shipment: str) -> None:
@@ -1323,7 +1335,7 @@ def _prune_stale_for_trip_request(trip_request: str, current_keys: set) -> int:
 	for row in stale:
 		if row.generation_key and row.generation_key not in current_keys:
 			try:
-				frappe.delete_doc("Transportation Shipment", row.name, ignore_permissions=True, force=True)
+				_delete_card(row.name)
 				deleted += 1
 			except Exception:
 				frappe.log_error(frappe.get_traceback(), "Trip Request Shipment Prune Error")
