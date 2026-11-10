@@ -32,7 +32,7 @@ class GPLetterRequest(Document):
         sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
         recipient = 'develop@one-fm.com'
         sendemail(sender=sender, recipients= recipient,
-            content=msg, subject="Employment Details", delayed=False)
+            content=msg, subject="Employment Details")
         self.db_set("sent_date", frappe.utils.now())
         
 @frappe.whitelist()

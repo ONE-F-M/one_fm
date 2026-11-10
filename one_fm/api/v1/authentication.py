@@ -466,7 +466,8 @@ def send_token_via_email(user, token, otp_secret, otp_issuer, subject=None, mess
 		'subject': subject,
 		'message': message,
 		'header': [_('Verfication Code'), 'blue'],
-		'delayed': False,
+		# Lead the queue flush: a login code must not wait behind a notification burst.
+		'send_priority': 2,
 		'is_external_mail': True
 	}
 

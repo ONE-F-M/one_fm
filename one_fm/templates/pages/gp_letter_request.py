@@ -97,7 +97,7 @@ def update_gp_letter_request_status(pid, gp_status):
                 recipient = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
 
                 sendemail(sender=sender, recipients= recipient,
-                    content=msg, subject="GP Letter Attachment", delayed=False)
+                    content=msg, subject="GP Letter Attachment")
 
                 gp_letter_doc.save(ignore_permissions=True)
                 frappe.db.commit()
@@ -113,7 +113,7 @@ def update_gp_letter_request_status(pid, gp_status):
 
                 recipient = frappe.db.get_single_value('GP Letter Request Setting', 'travel_agent_email')
                 sendemail(sender=sender, recipients= recipient,
-                    content=msg, subject="GP Letter Request Rejected", delayed=False)
+                    content=msg, subject="GP Letter Request Rejected")
 
 
             return 'success'

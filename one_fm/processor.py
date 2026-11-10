@@ -12,7 +12,23 @@ from frappe.desk.doctype.notification_settings.notification_settings import(
 @frappe.whitelist()
 def sendemail(recipients, subject, header=None, message=None,
 	content=None, reference_name=None, reference_doctype=None,
-	sender=None, cc=None , attachments=None, delayed=False, args=None, template=None, is_external_mail=False,is_scheduler_email=False, expose_recipients=None):
+	sender=None, cc=None , attachments=None, delayed=True, args=None, template=None, is_external_mail=False,is_scheduler_email=False, expose_recipients=None, send_priority=1):
+	"""Queue an email built from one_fm's standard template.
+
+	``delayed`` is handed straight to ``frappe.sendmail``, where ``delayed=False``
+	means ``now=True``: the SMTP conversation then happens inside the caller's
+	request. A transport failure at that moment (e.g. the outgoing relay dropping
+	the connection under a notification burst) is raised as a blocking
+	"Invalid Outgoing Mail Server or Port" dialog on top of whatever document the
+	user was saving, and the mail is lost instead of retried. So we queue by
+	default; one_fm.events.email_queue.after_insert flushes the queue right after
+	insert, so queued mail still leaves within seconds.
+
+	``send_priority`` is Frappe's Email Queue priority. The queue flush orders by
+	priority first, so time-critical mail (verification codes) should pass
+	``send_priority=2`` to lead the batch instead of queueing behind a few hundred
+	notification mails during a burst.
+	"""
 	logo = "https://one-fm.com/files/ONEFM_Identity.png"
 	template = "default_email"
 	actions=pdf_link=workflow_state=""
@@ -79,6 +95,7 @@ def sendemail(recipients, subject, header=None, message=None,
 			),
 			attachments = attachments,
 			delayed=delayed,
+			send_priority=send_priority,
 			expose_recipients=expose_recipients
 		)
 
