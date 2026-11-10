@@ -7,7 +7,12 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_to_date, get_datetime, now_datetime
 
-from one_fm.one_fm.doctype.maintenance_work_order import maintenance_work_order as mwo
+from one_fm.one_fm.doctype.maintenance_work_order.test_maintenance_work_order_processa_scripts import (
+	NO_COMMIT,
+	install_scripts,
+	rules,
+	run,
+)
 
 # Reuse the asset / frequency / schedule / checklist factories from the
 # Maintenance Schedule Entry test suite so the SLA tests stay focused on the
@@ -26,6 +31,34 @@ from one_fm.one_fm.doctype.maintenance_schedule_entry.test_maintenance_schedule_
 # Local factories
 # ─────────────────────────────────────────────────────────────────────────────
 
+def setUpModule():
+	NO_COMMIT.start()
+
+
+def tearDownModule():
+	NO_COMMIT.stop()
+
+
+# The rules live in the map's Calculate Work Order script. These tests read them from the reviewed copy.
+CALC = rules("Calculate Work Order")
+
+
+def engine_submit(doc):
+	"""Submit as the Processa engine does. A native submit is refused while a process runs the document."""
+	frappe.flags.bpmn_engine_action = True
+	try:
+		doc.submit()
+	finally:
+		frappe.flags.bpmn_engine_action = False
+
+
+def submit(wo):
+	"""The map's last steps: Close Work Order SLA, then the submit."""
+	run("Close Work Order SLA", wo)
+	wo.reload()
+	engine_submit(wo)
+
+
 # Target windows used across the suite (minutes).
 TARGET_RESPONSE_MINUTES = 60
 TARGET_RESOLUTION_MINUTES = 120
@@ -33,7 +66,7 @@ TARGET_RESOLUTION_MINUTES = 120
 
 def make_ready_to_submit(wo):
 	"""Check the technician in and mark the Work Order Completed, as submit requires."""
-	mwo.check_in(work_order=wo.name)
+	run("Record Work Order Check-In", wo)
 	wo.reload()
 	wo.status = "Completed"
 	wo.save()
@@ -131,7 +164,7 @@ def make_sla(
 		],
 	})
 	sla.insert(ignore_permissions=True)
-	sla.submit()
+	engine_submit(sla)
 	return sla
 
 
@@ -198,7 +231,7 @@ def make_sla_with_calendar(
 		],
 	})
 	sla.insert(ignore_permissions=True)
-	sla.submit()
+	engine_submit(sla)
 	return sla
 
 
@@ -218,6 +251,7 @@ def make_work_order(
 	via make_object_for_schedule + a category checklist when the test needs a
 	submittable Work Order.
 	"""
+	install_scripts()
 	wo = frappe.get_doc({
 		"doctype": "Maintenance Work Order",
 		"maintenance_type": maintenance_type,
@@ -352,30 +386,30 @@ class TestPreventiveSlaCountdown(FrappeTestCase):
 
 	def test_pre_start_before_trigger(self):
 		"""AC3: before the trigger time both statuses default to 'Pre-Start'."""
-		trigger = "2026-08-01 08:00:00"
+		trigger = add_to_date(now_datetime(), days=30)
 		wo = self._make_wo(trigger)
 
-		wo.refresh_sla_statuses(as_of=add_to_date(get_datetime(trigger), minutes=-5))
+		CALC.refresh_sla_statuses(wo, as_of=add_to_date(get_datetime(trigger), minutes=-5))
 
 		self.assertEqual(wo.sla_response_status, "Pre-Start")
 		self.assertEqual(wo.sla_resolution_status, "Pre-Start")
 
 	def test_active_counting_after_trigger(self):
 		"""AC3: at/after the trigger (within target) both go to 'Active Counting'."""
-		trigger = "2026-08-01 08:00:00"
+		trigger = add_to_date(now_datetime(), days=30)
 		wo = self._make_wo(trigger)
 
-		wo.refresh_sla_statuses(as_of=add_to_date(get_datetime(trigger), minutes=5))
+		CALC.refresh_sla_statuses(wo, as_of=add_to_date(get_datetime(trigger), minutes=5))
 
 		self.assertEqual(wo.sla_response_status, "Active Counting")
 		self.assertEqual(wo.sla_resolution_status, "Active Counting")
 
 	def test_response_status_fail_when_target_exceeded(self):
 		"""AC3: passing the response target before check-in flips response to 'Fail'."""
-		trigger = "2026-08-01 08:00:00"
+		trigger = add_to_date(now_datetime(), days=30)
 		wo = self._make_wo(trigger)
 
-		wo.refresh_sla_statuses(
+		CALC.refresh_sla_statuses(wo, 
 			as_of=add_to_date(get_datetime(trigger), minutes=TARGET_RESPONSE_MINUTES + 1)
 		)
 
@@ -383,21 +417,17 @@ class TestPreventiveSlaCountdown(FrappeTestCase):
 
 	def test_resolution_status_fail_when_target_exceeded(self):
 		"""AC3: passing the resolution target before completion flips resolution to 'Fail'."""
-		trigger = "2026-08-01 08:00:00"
+		trigger = add_to_date(now_datetime(), days=30)
 		wo = self._make_wo(trigger)
 
-		wo.refresh_sla_statuses(
+		CALC.refresh_sla_statuses(wo, 
 			as_of=add_to_date(get_datetime(trigger), minutes=TARGET_RESOLUTION_MINUTES + 1)
 		)
 
 		self.assertEqual(wo.sla_resolution_status, "Fail")
 
 	def test_scheduler_engine_advances_status(self):
-		"""AC3: the background engine recomputes the live status on its own.
-
-		frappe.db.commit is patched out so the FrappeTestCase transaction still
-		rolls back at the end of the test.
-		"""
+		"""AC3: the SLA Countdown timer recomputes the live status on its own."""
 		planned = add_to_date(now_datetime(), minutes=-10)  # trigger just passed
 		wo = self._make_wo(planned)
 
@@ -407,8 +437,7 @@ class TestPreventiveSlaCountdown(FrappeTestCase):
 			update_modified=False,
 		)
 
-		with patch("frappe.db.commit"):
-			mwo.update_active_sla_statuses()
+		run("Calculate Work Order")
 
 		wo.reload()
 		self.assertEqual(wo.sla_response_status, "Active Counting")
@@ -436,9 +465,9 @@ class TestPreventiveSlaCheckInAndCompletion(FrappeTestCase):
 		"""AC4/AC5: first check-in stamps the time; within target -> 'Pass'."""
 		wo = self._make_wo(minutes_before_now=-10)  # trigger 10 min ago
 
-		result = mwo.check_in(work_order=wo.name)
+		result = run("Record Work Order Check-In", wo)
 
-		self.assertFalse(result["already_checked_in"])
+		self.assertTrue(result["checked_in"])
 		wo.reload()
 		self.assertTrue(wo.first_check_in_time)
 		self.assertAlmostEqual(wo.actual_response_minutes, 10, delta=1)
@@ -448,7 +477,7 @@ class TestPreventiveSlaCheckInAndCompletion(FrappeTestCase):
 		"""AC5: check-in beyond the response target -> 'Fail'."""
 		wo = self._make_wo(minutes_before_now=-(TARGET_RESPONSE_MINUTES + 60))
 
-		mwo.check_in(work_order=wo.name)
+		run("Record Work Order Check-In", wo)
 
 		wo.reload()
 		self.assertAlmostEqual(
@@ -460,15 +489,15 @@ class TestPreventiveSlaCheckInAndCompletion(FrappeTestCase):
 		"""AC4: the first click wins; a repeat check-in never overwrites the time."""
 		wo = self._make_wo(minutes_before_now=-10)
 
-		first = mwo.check_in(work_order=wo.name)
-		second = mwo.check_in(work_order=wo.name)
+		run("Record Work Order Check-In", wo)
+		wo.reload()
+		first = wo.first_check_in_time
 
-		self.assertFalse(first["already_checked_in"])
-		self.assertTrue(second["already_checked_in"])
-		self.assertEqual(
-			get_datetime(first["first_check_in_time"]),
-			get_datetime(second["first_check_in_time"]),
-		)
+		with patch("frappe.utils.now_datetime", return_value=add_to_date(now_datetime(), minutes=30)):
+			run("Record Work Order Check-In", wo)
+
+		wo.reload()
+		self.assertEqual(get_datetime(wo.first_check_in_time), get_datetime(first))
 
 	def test_completion_time_stamped_on_submit(self):
 		"""AC4: submitting the Work Order stamps the Completion Time."""
@@ -488,7 +517,7 @@ class TestPreventiveSlaCheckInAndCompletion(FrappeTestCase):
 		)
 		make_ready_to_submit(wo)
 
-		wo.submit()
+		submit(wo)
 
 		wo.reload()
 		self.assertTrue(wo.completion_time)
@@ -545,7 +574,7 @@ class TestPreventiveSlaAnalytics(FrappeTestCase):
 		wo.reload()
 		make_ready_to_submit(wo)
 
-		wo.submit()
+		submit(wo)
 
 		wo.reload()
 		# ~100 minutes elapsed minus 10 paused = ~90.
@@ -720,10 +749,10 @@ class TestServiceClockOperations(FrappeTestCase):
 
 	def test_counters_locked_at_zero_before_trigger(self):
 		"""AC2: with a future trigger, both live counters are locked at exactly 0."""
-		trigger = "2026-08-01 08:00:00"
+		trigger = add_to_date(now_datetime(), days=30)
 		wo = self._make_wo(trigger)
 
-		wo.refresh_sla_statuses(as_of=add_to_date(get_datetime(trigger), minutes=-5))
+		CALC.refresh_sla_statuses(wo, as_of=add_to_date(get_datetime(trigger), minutes=-5))
 
 		self.assertEqual(wo.sla_response_status, "Pre-Start")
 		self.assertEqual(wo.sla_resolution_status, "Pre-Start")
@@ -733,10 +762,10 @@ class TestServiceClockOperations(FrappeTestCase):
 	def test_actual_response_minutes_runs_live_when_counting(self):
 		"""AC3: once the trigger is reached the running duration is written live
 		into Actual Response Minutes (and the resolution counter)."""
-		trigger = "2026-08-01 08:00:00"
+		trigger = add_to_date(now_datetime(), days=30)
 		wo = self._make_wo(trigger)
 
-		wo.refresh_sla_statuses(as_of=add_to_date(get_datetime(trigger), minutes=15))
+		CALC.refresh_sla_statuses(wo, as_of=add_to_date(get_datetime(trigger), minutes=15))
 
 		self.assertEqual(wo.sla_response_status, "Active Counting")
 		self.assertAlmostEqual(wo.actual_response_minutes, 15, delta=0.1)
@@ -745,13 +774,13 @@ class TestServiceClockOperations(FrappeTestCase):
 	def test_hold_freezes_live_counters(self):
 		"""AC4: an open hold window subtracts from the live counters, so the
 		response/resolution clocks freeze for the duration of the hold."""
-		trigger = "2026-08-01 08:00:00"
+		trigger = add_to_date(now_datetime(), days=30)
 		wo = self._make_wo(trigger)
 
 		# 45 minutes after the trigger, of which the last 30 were spent On Hold.
 		wo.status = "On Hold - Parts Required"
 		wo.hold_started_on = add_to_date(get_datetime(trigger), minutes=15)
-		wo.refresh_sla_statuses(as_of=add_to_date(get_datetime(trigger), minutes=45))
+		CALC.refresh_sla_statuses(wo, as_of=add_to_date(get_datetime(trigger), minutes=45))
 
 		# 45 elapsed − 30 paused = 15 net on both clocks.
 		self.assertAlmostEqual(wo.actual_response_minutes, 15, delta=0.1)
@@ -810,14 +839,14 @@ class TestSubmitOnlyWhenTrulyCompleted(FrappeTestCase):
 		)
 		make_ready_to_submit(wo)
 
-		wo.submit()
+		submit(wo)
 
 		wo.reload()
 		self.assertGreater(get_datetime(wo.completion_time), get_datetime("2026-01-01"))
 
 	def test_completion_time_cannot_be_edited_after_submit(self):
 		wo = make_ready_to_submit(self._work_order())
-		wo.submit()
+		submit(wo)
 
 		wo.completion_time = "2020-01-01 08:00:00"
 		self.assertRaises(frappe.UpdateAfterSubmitError, wo.save)
@@ -886,7 +915,7 @@ class TestPreventiveDefaultPriority(FrappeTestCase):
 			],
 		})
 		sla.insert(ignore_permissions=True)
-		sla.submit()
+		engine_submit(sla)
 		obj = make_object(last_service_date="2026-06-01")
 		entry = make_schedule_entry(
 			obj.name, make_frequency(30).name, planned_execution_datetime="2026-06-30 10:00:00"
@@ -904,10 +933,27 @@ class TestPreventiveDefaultPriority(FrappeTestCase):
 		obj = make_object(last_service_date="2026-06-01")
 		entry = make_schedule_entry(obj.name, make_frequency(30).name)
 
-		with patch.object(mwo.MaintenanceWorkOrder, "_find_matching_sla", return_value=None):
+		with patch("one_fm.one_fm.processa_rules.site_rules", return_value=CALC.__dict__), patch.object(
+			CALC, "find_matching_sla", return_value=None
+		):
 			wo = make_work_order(obj.name, schedule_name=entry.name)
 
 		self.assertTrue(wo.name)
 		self.assertFalse(wo.sla_master)
 		self.assertFalse(wo.priority)
 		self.assertFalse(wo.planned_deadline)
+
+
+class TestCheckInAssignee(FrappeTestCase):
+	def test_check_in_goes_to_the_team_lead(self):
+		wo = frappe._dict(doctype="Maintenance Work Order", name="WO-1", maintenance_team_lead="lead@example.com")
+		result = run("Assign Team Lead", wo)
+		self.assertEqual(result["assigned_user"], "lead@example.com")
+		self.assertEqual(result["assigned_role"], "")
+
+	def test_no_team_lead_goes_to_the_maintenance_manager(self):
+		wo = frappe._dict(doctype="Maintenance Work Order", name="WO-1", maintenance_team_lead=None)
+		with patch("frappe.db.get_single_value", return_value="manager@example.com"):
+			result = run("Assign Team Lead", wo)
+		self.assertEqual(result["assigned_user"], "manager@example.com")
+		self.assertEqual(result["assigned_role"], "Maintenance Manager")
