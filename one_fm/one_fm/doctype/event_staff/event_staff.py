@@ -1,262 +1,73 @@
 # Copyright (c) 2025, ONE FM and contributors
 # For license information, please see license.txt
+"""An employee assigned to a Client Event.
 
-import frappe
-from frappe.model.document import Document
-from frappe.utils import getdate, add_days, date_diff, today
-import datetime
+The Event Staff Lifecycle map submits it, writes its Employee Schedules (Create Event Staff
+Schedules), and on cancel deletes the unused ones (Release Event Staff Schedules). The rules
+live in those scripts. The hooks below only refuse invalid date edits and run the same rules.
+"""
+
 import json
 
+import frappe
+from frappe import _
+from frappe.model.document import Document
+from frappe.utils import add_days, getdate, today
+
+from one_fm.one_fm.processa_rules import run_rule
+
+CREATE_SCRIPT = "Create Event Staff Schedules"
+RELEASE_SCRIPT = "Release Event Staff Schedules"
+
+
 class EventStaff(Document):
-	def on_submit(self):
-		client_event_state = frappe.db.get_value("Client Event", self.client_event, "workflow_state")
-		if client_event_state == "Approved":
-			self.process_employee_schedules()
-
-	def process_employee_schedules(self, start_date=None):
-		start_date = getdate(start_date) if start_date else getdate(self.start_date)
-		end_date = getdate(self.end_date)
-		existing_schedules = get_existing_schedules(self.employee, start_date, end_date)
-		
-		# Group by date
-		schedules_by_date = {}
-		for d in existing_schedules:
-			date_key = frappe.utils.getdate(d.date)
-			if date_key not in schedules_by_date:
-				schedules_by_date[date_key] = []
-			schedules_by_date[date_key].append(d)
-
-		number_of_days = date_diff(end_date, start_date) + 1
-
-		for i in range(number_of_days):
-			current_date = add_days(start_date, i)
-			start_end_datetime = self.get_event_start_end_date_time(current_date)
-			employee_schedule_data = self.get_schedule_data(start_end_datetime, current_date)
-
-			new_start_dt = frappe.utils.get_datetime(start_end_datetime.get("start_datetime"))
-			new_end_dt = frappe.utils.get_datetime(start_end_datetime.get("end_datetime"))
-
-			day_schedules = schedules_by_date.get(current_date, [])
-
-			overlap_found = False
-			schedule_to_update = None
-
-			for existing in day_schedules:
-				existing_start_dt = frappe.utils.get_datetime(existing.start_datetime) if existing.start_datetime else None
-				existing_end_dt = frappe.utils.get_datetime(existing.end_datetime) if existing.end_datetime else None
-				
-				is_overlapping = False
-				if existing_start_dt and existing_end_dt:
-					if existing_start_dt < new_end_dt and existing_end_dt > new_start_dt:
-						is_overlapping = True
-				else:
-					is_overlapping = True
-
-				if existing.roster_type == self.roster_type:
-					overlap_found = True
-					schedule_to_update = existing.name
-					break
-				elif is_overlapping:
-					if existing.roster_type == "Basic" and self.roster_type == "Over-Time":
-						frappe.throw(f"Validation Error: The designated Overtime Event Staff schedule overlaps with an existing Basic Employee Schedule ({existing.name}) for {self.employee}.")
-					else:
-						frappe.throw(f"Validation Error: The Event Staff schedule overlaps with an existing Employee Schedule ({existing.name}) for {self.employee}.")
-
-			if overlap_found and schedule_to_update:
-				schedule_doc = frappe.get_doc("Employee Schedule", schedule_to_update)
-				schedule_doc.update(employee_schedule_data)
-				schedule_doc.save(ignore_permissions=True)
-			else:
-				new_schedule = frappe.new_doc("Employee Schedule")
-				new_schedule.update(employee_schedule_data)
-				new_schedule.insert(ignore_permissions=True)
-			frappe.msgprint(f"Employee Schedule for {current_date} processed.", alert=True)
-
-	def get_event_start_end_date_time(self, date=None):
-		start_time = frappe.utils.get_datetime(self.start_datetime).time()
-		end_time = frappe.utils.get_datetime(self.end_datetime).time()
-		start_datetime = datetime.datetime.combine(getdate(date), start_time)
-		if end_time < start_time:
-			end_date = add_days(getdate(date), 1)
-		else:
-			end_date = getdate(date)
-		end_datetime = datetime.datetime.combine(end_date, end_time)
-		return {
-			"start_datetime": start_datetime,
-			"end_datetime": end_datetime
-		}
-
-	def get_schedule_data(self, start_end_datetime, current_date):
-		return {
-			"employee": self.employee,
-			"date": current_date,
-			"employee_availability": "Client Event",
-			"is_event_schedule": 1,
-			"event_staff": self.name,
-			"shift": self.operations_shift,
-			"shift_type": self.shift_type,
-			"project": self.project,
-			"site": self.site,
-			"start_datetime": start_end_datetime.get("start_datetime"),
-			"end_datetime": start_end_datetime.get("end_datetime"),
-			"designation": self.designation,
-			"roster_type": self.roster_type,
-			"day_off_ot": self.day_off_ot,
-			"client_event": self.client_event,
-			"event_location": self.event_location,
-			"reference_doctype": "Event Staff",
-			"reference_docname": self.name,
-			"operations_role": None,
-			"post_abbrv": None,
-		}
-
 	def before_update_after_submit(self):
 		if self.has_value_changed("end_date"):
 			if getdate(self.end_date) < getdate(today()):
-				frappe.throw("Past dates cannot be provided in End Date field.")
-
+				frappe.throw(_("Past dates cannot be provided in End Date field."))
 			if getdate(self.end_date) < getdate(self.start_date):
-				frappe.throw("End Date cannot be before Start Date.")
-
-			# Sync the date portion of end_datetime to the new end_date,
-			# keeping the original time component intact.
-			if self.end_datetime:
-				original_time = frappe.utils.get_datetime(self.end_datetime).time()
-				new_end_datetime = datetime.datetime.combine(getdate(self.end_date), original_time)
-				self.end_datetime = new_end_datetime
+				frappe.throw(_("End Date cannot be before Start Date."))
 
 		if self.has_value_changed("start_date"):
-			# Validate start_date against parent Client Event
 			client_event_start = frappe.db.get_value("Client Event", self.client_event, "start_date")
 			if client_event_start and getdate(self.start_date) < getdate(client_event_start):
-				frappe.throw("Start Date cannot be before the linked Client Event's Start Date.")
-
+				frappe.throw(_("Start Date cannot be before the linked Client Event's Start Date."))
 			if getdate(self.start_date) > getdate(self.end_date):
-				frappe.throw("Start Date cannot be after End Date.")
+				frappe.throw(_("Start Date cannot be after End Date."))
 
-			# Sync the date portion of start_datetime to the new start_date,
-			# keeping the original time component intact.
-			if self.start_datetime:
-				original_time = frappe.utils.get_datetime(self.start_datetime).time()
-				new_start_datetime = datetime.datetime.combine(getdate(self.start_date), original_time)
-				self.start_datetime = new_start_datetime
+		run_rule(CREATE_SCRIPT, "sync_datetimes", self)
 
 	def on_update_after_submit(self):
-		client_event_state = frappe.db.get_value("Client Event", self.client_event, "workflow_state")
-		if client_event_state != "Approved":
+		if frappe.db.get_value("Client Event", self.client_event, "workflow_state") != "Approved":
 			return
-		old_doc = self.get_doc_before_save()
+		old = self.get_doc_before_save()
+		self.validate_new_days_are_free(old)
+		run_rule(CREATE_SCRIPT, "apply_date_change", self, old)
 
-		# Handle start_date changes
-		if getdate(self.start_date) != getdate(old_doc.start_date):
-			self._handle_start_date_change(old_doc)
+	def validate_new_days_are_free(self, old):
+		"""Refuse moving the Start Date back or the End Date on onto days the employee is already scheduled."""
+		if getdate(self.start_date) < getdate(old.start_date):
+			conflicting = get_conflicting_dates(self.employee, self.start_date, add_days(getdate(old.start_date), -1))
+			if conflicting:
+				frappe.throw(_("Cannot move Start Date back as there are conflicting schedules on: {0}").format(", ".join(conflicting)))
+		if getdate(self.end_date) > getdate(old.end_date):
+			conflicting = get_conflicting_dates(self.employee, add_days(getdate(old.end_date), 1), self.end_date)
+			if conflicting:
+				frappe.throw(_("Cannot extend the event as there are conflicting schedules on the following dates: {0}").format(", ".join(conflicting)))
 
-		# Handle end_date changes
-		if getdate(self.end_date) < getdate(old_doc.end_date):
-			self.delete_employee_schedules(self.end_date)
-		elif getdate(self.end_date) > getdate(old_doc.end_date):
-			new_start_date = add_days(getdate(old_doc.end_date), 1)
-			conflicting_dates = get_conflicting_dates(self.employee, new_start_date, self.end_date)
-			if conflicting_dates:
-				frappe.throw(f"Cannot extend the event as there are conflicting schedules on the following dates: {', '.join(conflicting_dates)}")
 
-			self.process_employee_schedules(start_date=new_start_date)
 
-	def _handle_start_date_change(self, old_doc):
-		"""Handle Employee Schedule adjustments when start_date is amended.
+def cancel_event_staff(event_staff, reason):
+	"""Cancel a submitted Event Staff for its Client Event, then release its schedules.
 
-		- If pushed forward (new > old): delete schedules before new start_date,
-		  only if they have no linked Shift Assignment.
-		- If pulled back (new < old): create new schedules for the gap.
-		"""
-		old_start = getdate(old_doc.start_date)
-		new_start = getdate(self.start_date)
+	The engine refuses a native cancel on a doctype Processa runs, even once a record's process
+	has ended, so this cancels any live process and cancels the record the way the engine does.
+	"""
+	from one_fm.grd.processa import cancel_document
 
-		if new_start > old_start:
-			# Start date pushed forward — delete schedules before new start_date
-			schedules_to_check = frappe.get_all(
-				"Employee Schedule",
-				filters={
-					"event_staff": self.name,
-					"is_event_schedule": 1,
-					"date": ["<", new_start]
-				},
-				fields=["name"]
-			)
+	cancel_document(event_staff, reason)
+	run_rule(RELEASE_SCRIPT, "release_schedules", event_staff)
 
-			deleted_count = 0
-			preserved_count = 0
-			for schedule in schedules_to_check:
-				has_shift_assignment = frappe.db.exists(
-					"Shift Assignment", {"employee_schedule": schedule.name}
-				)
-				if not has_shift_assignment:
-					frappe.delete_doc("Employee Schedule", schedule.name, ignore_permissions=True)
-					deleted_count += 1
-				else:
-					preserved_count += 1
-
-			if deleted_count or preserved_count:
-				msg = f"{deleted_count} Employee Schedule(s) before the new Start Date deleted."
-				if preserved_count:
-					msg += f" {preserved_count} schedule(s) preserved (linked to Shift Assignments)."
-				frappe.msgprint(msg, alert=True)
-
-		elif new_start < old_start:
-			# Start date pulled back — create schedules for the gap
-			gap_end = add_days(old_start, -1)
-			conflicting_dates = get_conflicting_dates(self.employee, new_start, gap_end)
-			if conflicting_dates:
-				frappe.throw(
-					f"Cannot move Start Date back as there are conflicting schedules on: {', '.join(conflicting_dates)}"
-				)
-			self.process_employee_schedules(start_date=new_start)
-
-	def delete_employee_schedules(self, date):
-		frappe.db.delete(
-			"Employee Schedule",
-			{
-				"event_staff": self.name,
-				"date": [">", getdate(date)]
-			}
-		)
-		frappe.msgprint("Employee Schedules linked to the staff event beyond the new End Date have been deleted.", alert=True)
-
-	def on_cancel(self):
-		self.cleanup_employee_schedules_on_cancel()
-
-	def cleanup_employee_schedules_on_cancel(self):
-		"""
-		Deletes Employee Schedules linked to this cancelled Event Staff
-		only if they have no associated Shift Assignments.
-		"""
-		employee_schedules = get_existing_schedules(event_staff=self.name)
-		if not employee_schedules:
-			return
-
-		deleted_count = 0
-		preserved_count = 0
-
-		for schedule in employee_schedules:
-			schedule_name = schedule.get("name")
-			has_shift_assignment = frappe.db.exists("Shift Assignment", {"employee_schedule": schedule_name})
-			if not has_shift_assignment:
-				try:
-					frappe.delete_doc("Employee Schedule", schedule_name, ignore_permissions=True)
-					deleted_count += 1
-				except Exception as e:
-					frappe.log_error(
-						message=f"Failed to delete Employee Schedule {schedule_name} for Event Staff {self.name}: {frappe.get_traceback()}",
-						title="Event Staff Cancellation Error"
-					)
-			else:
-				preserved_count += 1
-
-		if deleted_count or preserved_count:
-			message = f"Event Staff cancelled. {deleted_count} unused Employee Schedule(s) deleted."
-			if preserved_count:
-				message += f" {preserved_count} schedule(s) preserved as they are linked to Shift Assignments."
-			frappe.msgprint(message)
 
 @frappe.whitelist()
 def get_conflicting_dates(employee, start_date, end_date):
@@ -266,6 +77,7 @@ def get_conflicting_dates(employee, start_date, end_date):
 	conflicting_schedules = get_existing_schedules(employee, start_date, end_date)
 
 	return [schedule.get("date").strftime("%Y-%m-%d") for schedule in conflicting_schedules]
+
 
 def get_existing_schedules(employee=None, start_date=None, end_date=None, event_staff=None):
 	if not event_staff and not (employee and start_date and end_date):
