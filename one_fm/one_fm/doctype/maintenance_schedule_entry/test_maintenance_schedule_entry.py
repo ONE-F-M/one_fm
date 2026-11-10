@@ -8,9 +8,23 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, add_months, get_datetime, getdate, today
 
-from one_fm.one_fm.doctype.maintenance_schedule_entry import (
-	maintenance_schedule_entry as mse,
+from one_fm.one_fm.doctype.maintenance_schedule_entry.test_maintenance_schedule_entry_processa_scripts import (
+	NO_COMMIT,
+	install_scripts,
+	rules,
 )
+
+# The rules live in the map's Server Scripts. These tests read them from the reviewed copies.
+BUILD = rules("Build Maintenance Schedule")
+RAISE = rules("Raise Due Work Orders")
+
+
+def setUpModule():
+	NO_COMMIT.start()
+
+
+def tearDownModule():
+	NO_COMMIT.stop()
 
 
 def make_object(last_service_date=None, commissioning_date=None):
@@ -43,6 +57,7 @@ def make_frequency(days):
 
 
 def make_schedule_entry(object_name, frequency=None, **kwargs):
+	install_scripts()
 	entry = frappe.get_doc({
 		"doctype": "Maintenance Schedule Entry",
 		"object": object_name,
@@ -231,7 +246,7 @@ class TestBuildSchedule(FrappeTestCase):
 		obj = make_object_for_schedule(object_category=cat, last_service_date=today())
 		set_settings(months=6)
 
-		created = mse.build_schedule(obj.name)
+		created = BUILD.build_schedule(obj.name)
 
 		expected = _expected_count(today(), 30, 6) + _expected_count(today(), 90, 6)
 		self.assertEqual(created, expected)
@@ -260,14 +275,34 @@ class TestBuildSchedule(FrappeTestCase):
 		obj = make_object_for_schedule(object_category=cat, last_service_date=today())
 		set_settings(months=6)
 
-		first = mse.build_schedule(obj.name)
-		second = mse.build_schedule(obj.name)
+		first = BUILD.build_schedule(obj.name)
+		second = BUILD.build_schedule(obj.name)
 
 		self.assertGreater(first, 0)
 		self.assertEqual(second, 0)
 		self.assertEqual(
 			frappe.db.count("Maintenance Schedule Entry", {"object": obj.name}), first
 		)
+
+	def test_a_later_run_extends_from_the_last_slot(self):
+		"""The daily run steps on from the latest slot, so a never-serviced Object keeps its dates."""
+		cat = make_category()
+		make_checklist(cat, [("Inspect filter", 30)])
+		obj = make_object_for_schedule(object_category=cat, last_service_date=None)
+		set_settings(months=3)
+		BUILD.build_schedule(obj.name)
+		before = set(frappe.get_all("Maintenance Schedule Entry", filters={"object": obj.name}, pluck="planned_execution_datetime"))
+
+		# A day later, with a horizon a month further out.
+		with patch("frappe.utils.today", return_value=add_days(today(), 1)):
+			set_settings(months=4)
+			BUILD.build_schedule(obj.name)
+		after = frappe.get_all("Maintenance Schedule Entry", filters={"object": obj.name}, pluck="planned_execution_datetime")
+
+		self.assertTrue(before < set(after))
+		self.assertEqual(len(after), len(set(after)))
+		gaps = {(getdate(b) - getdate(a)).days for a, b in zip(sorted(after), sorted(after)[1:])}
+		self.assertEqual(gaps, {30})
 
 	def test_build_schedule_starts_from_last_service_date(self):
 		"""Occurrences begin at Last Service Date + frequency (per the agreed algorithm)."""
@@ -277,7 +312,7 @@ class TestBuildSchedule(FrappeTestCase):
 		obj = make_object_for_schedule(object_category=cat, last_service_date=base)
 		set_settings(months=3)
 
-		mse.build_schedule(obj.name)
+		BUILD.build_schedule(obj.name)
 
 		planned = frappe.get_all(
 			"Maintenance Schedule Entry", filters={"object": obj.name}, pluck="planned_execution_datetime"
@@ -293,7 +328,7 @@ class TestBuildSchedule(FrappeTestCase):
 		obj = make_object_for_schedule(object_category=cat, last_service_date=today())
 		set_settings(months=3)
 
-		self.assertEqual(mse.build_schedule(obj.name), 0)
+		self.assertEqual(BUILD.build_schedule(obj.name), 0)
 
 	def test_build_schedule_skips_task_with_non_positive_frequency(self):
 		"""Defensive guard: a task whose frequency_days is <= 0 is skipped.
@@ -314,7 +349,7 @@ class TestBuildSchedule(FrappeTestCase):
 		obj = make_object_for_schedule(object_category=cat, last_service_date=today())
 		set_settings(months=3)
 
-		mse.build_schedule(obj.name)
+		BUILD.build_schedule(obj.name)
 
 		tasks = frappe.get_all(
 			"Maintenance Schedule Entry", filters={"object": obj.name}, pluck="maintenance_task"
@@ -329,7 +364,7 @@ class TestBuildSchedule(FrappeTestCase):
 		obj = make_object_for_schedule(object_category=cat, last_service_date=today())
 		set_settings(months=0)
 
-		self.assertEqual(mse.build_schedule(obj.name), 0)
+		self.assertEqual(BUILD.build_schedule(obj.name), 0)
 
 
 class TestGenerateDueWorkOrders(FrappeTestCase):
@@ -337,13 +372,13 @@ class TestGenerateDueWorkOrders(FrappeTestCase):
 		# Deterministic Work Order stub so we can assert the slot-selection and
 		# status-flip logic without the full Work Order data chain (priority,
 		# team, checklist) which is out of scope here.
-		self._orig = mse.create_work_order_from_entries
-		mse.create_work_order_from_entries = lambda entries: types.SimpleNamespace(
+		self._orig = RAISE.create_work_order
+		RAISE.create_work_order = lambda entries: types.SimpleNamespace(
 			name=f"TEST-WO-{entries[0].name}"
 		)
 
 	def tearDown(self):
-		mse.create_work_order_from_entries = self._orig
+		RAISE.create_work_order = self._orig
 
 	def _make_open_slot(self, object_name, days_from_today):
 		planned = get_datetime(f"{add_days(today(), days_from_today)} 08:00:00")
@@ -360,7 +395,7 @@ class TestGenerateDueWorkOrders(FrappeTestCase):
 		boundary = self._make_open_slot(obj.name, 5)
 		outside = self._make_open_slot(obj.name, 10)
 
-		created = mse.generate_due_work_orders(object_name=obj.name)
+		created = RAISE.raise_due_work_orders(object_name=obj.name)
 
 		self.assertEqual(created, 3)
 		for name in (past_due.name, inside.name, boundary.name):
@@ -381,8 +416,8 @@ class TestGenerateDueWorkOrders(FrappeTestCase):
 		set_settings(lead_days=5)
 		self._make_open_slot(obj.name, 2)
 
-		first = mse.generate_due_work_orders(object_name=obj.name)
-		second = mse.generate_due_work_orders(object_name=obj.name)
+		first = RAISE.raise_due_work_orders(object_name=obj.name)
+		second = RAISE.raise_due_work_orders(object_name=obj.name)
 
 		self.assertEqual(first, 1)
 		self.assertEqual(second, 0)
@@ -393,7 +428,7 @@ class TestGenerateDueWorkOrders(FrappeTestCase):
 		day_one = self._make_open_slot(obj.name, 1)
 		day_two = self._make_open_slot(obj.name, 2)
 
-		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 2)
+		self.assertEqual(RAISE.raise_due_work_orders(object_name=obj.name), 2)
 
 		work_orders = {
 			frappe.db.get_value("Maintenance Schedule Entry", e.name, "work_order")
@@ -409,7 +444,7 @@ class TestGenerateDueWorkOrders(FrappeTestCase):
 		slot_b = self._make_open_slot(obj_b.name, 1)
 
 		# Due slots left on the test site are processed too, so only a lower bound holds.
-		self.assertGreaterEqual(mse.generate_due_work_orders(), 2)
+		self.assertGreaterEqual(RAISE.raise_due_work_orders(), 2)
 
 		work_orders = {
 			frappe.db.get_value("Maintenance Schedule Entry", e.name, "work_order")
@@ -439,7 +474,7 @@ class TestWorkOrderCreationEndToEnd(FrappeTestCase):
 			planned_execution_datetime=planned,
 		)
 
-		created = mse.generate_due_work_orders(object_name=obj.name)
+		created = RAISE.raise_due_work_orders(object_name=obj.name)
 		self.assertEqual(created, 1)
 
 		entry.reload()
@@ -492,7 +527,7 @@ class TestGeneratedWorkOrderGetsDefaultPriority(FrappeTestCase):
 			planned_execution_datetime=planned,
 		)
 
-		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 1)
+		self.assertEqual(RAISE.raise_due_work_orders(object_name=obj.name), 1)
 
 		entry.reload()
 		wo = frappe.get_doc("Maintenance Work Order", entry.work_order)
@@ -528,7 +563,7 @@ class TestDueTaskChecklist(FrappeTestCase):
 		_cat, obj = self._setup()
 		entry = self._slot(obj, "Replace belt", 60)
 
-		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 1)
+		self.assertEqual(RAISE.raise_due_work_orders(object_name=obj.name), 1)
 
 		entry.reload()
 		wo = frappe.get_doc("Maintenance Work Order", entry.work_order)
@@ -543,7 +578,7 @@ class TestDueTaskChecklist(FrappeTestCase):
 		filter_slot = self._slot(obj, "Inspect filter", 30)
 		belt_slot = self._slot(obj, "Replace belt", 60)
 
-		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 1)
+		self.assertEqual(RAISE.raise_due_work_orders(object_name=obj.name), 1)
 
 		filter_slot.reload()
 		belt_slot.reload()
@@ -617,7 +652,7 @@ class TestWorkOrderCreationIntegrity(FrappeTestCase):
 		obj = self._setup()
 		entry = self._slot(obj)
 
-		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 1)
+		self.assertEqual(RAISE.raise_due_work_orders(object_name=obj.name), 1)
 
 		entry.reload()
 		self.assertEqual(entry.status, "Work Order Created")
@@ -628,7 +663,7 @@ class TestWorkOrderCreationIntegrity(FrappeTestCase):
 		entry = self._slot(obj)
 
 		with self._fail_entry_link():
-			self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 0)
+			self.assertEqual(RAISE.raise_due_work_orders(object_name=obj.name), 0)
 
 		entry.reload()
 		self.assertEqual(entry.status, "Open")
@@ -640,9 +675,9 @@ class TestWorkOrderCreationIntegrity(FrappeTestCase):
 		entry = self._slot(obj)
 
 		with self._fail_entry_link():
-			mse.generate_due_work_orders(object_name=obj.name)
-		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 1)
-		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 0)
+			RAISE.raise_due_work_orders(object_name=obj.name)
+		self.assertEqual(RAISE.raise_due_work_orders(object_name=obj.name), 1)
+		self.assertEqual(RAISE.raise_due_work_orders(object_name=obj.name), 0)
 
 		entry.reload()
 		self.assertEqual(self._work_orders_for(entry.name), {entry.work_order})
@@ -650,9 +685,9 @@ class TestWorkOrderCreationIntegrity(FrappeTestCase):
 	def test_existing_work_order_for_an_open_entry_is_linked(self):
 		obj = self._setup()
 		entry = self._slot(obj)
-		existing = mse.create_work_order_from_entries([entry])
+		existing = RAISE.create_work_order([entry])
 
-		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 0)
+		self.assertEqual(RAISE.raise_due_work_orders(object_name=obj.name), 0)
 
 		entry.reload()
 		self.assertEqual(entry.work_order, existing.name)
@@ -672,7 +707,7 @@ class TestWorkOrderCreationIntegrity(FrappeTestCase):
 			}
 		).insert(ignore_permissions=True)
 
-		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 0)
+		self.assertEqual(RAISE.raise_due_work_orders(object_name=obj.name), 0)
 
 		entry.reload()
 		self.assertEqual(entry.work_order, legacy.name)
@@ -688,11 +723,11 @@ class TestWorkOrderCreationIntegrity(FrappeTestCase):
 			return original(*args, **kwargs)
 
 		with patch.object(frappe.db, "get_values", side_effect=get_values):
-			self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 0)
+			self.assertEqual(RAISE.raise_due_work_orders(object_name=obj.name), 0)
 		entry.reload()
 		self.assertEqual(entry.status, "Open")
 
-		self.assertEqual(mse.generate_due_work_orders(object_name=obj.name), 1)
+		self.assertEqual(RAISE.raise_due_work_orders(object_name=obj.name), 1)
 
 	def test_one_failing_group_does_not_stop_the_others(self):
 		obj_a = self._setup()
@@ -702,15 +737,15 @@ class TestWorkOrderCreationIntegrity(FrappeTestCase):
 		)
 		slot_a = self._slot(obj_a)
 		slot_b = self._slot(obj_b)
-		original = mse.create_work_order_from_entries
+		original = RAISE.create_work_order
 
 		def create(entries):
 			if entries[0].object == obj_a.name:
 				raise frappe.ValidationError("boom")
 			return original(entries)
 
-		with patch.object(mse, "create_work_order_from_entries", side_effect=create):
-			mse.generate_due_work_orders()
+		with patch.object(RAISE, "create_work_order", side_effect=create):
+			RAISE.raise_due_work_orders()
 
 		slot_a.reload()
 		slot_b.reload()
