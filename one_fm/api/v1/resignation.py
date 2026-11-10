@@ -30,6 +30,24 @@ def ensure_own_employee(employee):
         frappe.throw(_("You can only do this for your own account."), frappe.PermissionError)
 
 
+def submit_for_review(doc):
+    """Send a new request to its first approver: through its Processa map when one runs it, else the Frappe workflow."""
+    action = "Submit for Review"
+    if "one_bpmn" in frappe.get_installed_apps():
+        from one_fm.api.v1.processa import apply_document_action, get_document_actions
+
+        task = next((a for a in get_document_actions(doc.doctype, doc.name)["actions"] if a["action"] == action), None)
+        if task:
+            result = apply_document_action(doc.doctype, doc.name, task["task_id"], action)
+            # The map's checks failed and sent the task back; its last message says what to fix
+            if result["workflow_state"] in (None, "", "Draft"):
+                messages = [message for message in result["messages"] if message]
+                frappe.throw(messages[-1] if messages else _("{0} could not be submitted for review.").format(doc.name))
+            return
+
+    apply_workflow(doc, action)
+
+
 
 # ---------------------------------------------------------------------------
 # Public API endpoints
@@ -212,9 +230,9 @@ def extend_resignation(
 
             handle_attachment_internal(ext, ext, att_data, "extension_letter")
 
-        # Advance from Draft to Pending Supervisor now that the letter is attached
+        # Advance from Draft to the first approver now that the letter is attached
         ext.reload()
-        apply_workflow(ext, "Submit for Review")
+        submit_for_review(ext)
 
         return {
             "status": "success",
@@ -304,9 +322,9 @@ def withdraw_resignation(
 
             handle_attachment_internal(withdrawal, withdrawal, att_data, "resignation_withdrawal_letter")
 
-        # Advance from Draft to Pending Supervisor now that the letter is attached
+        # Advance from Draft to the first approver now that the letter is attached
         withdrawal.reload()
-        apply_workflow(withdrawal, "Submit for Review")
+        submit_for_review(withdrawal)
 
         # Notify offboarding officer
         try:

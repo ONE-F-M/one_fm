@@ -8,6 +8,7 @@ from one_fm.api.v1.resignation import (
     withdraw_resignation,
     get_resignation_by_name,
     get_my_active_resignation,
+    submit_for_review,
 )
 
 class TestEmployeeResignation(FrappeTestCase):
@@ -212,3 +213,43 @@ class TestResignationOnProcessa(FrappeTestCase):
         for state in ("Pending Supervisor", "Pending Line Manager", "Approved"):
             doc.workflow_state = state
             self.assertEqual(doc.get_processa_editable_fields(), [])
+
+class TestSubmitForReview(FrappeTestCase):
+    """withdraw_resignation and extend_resignation submit through the Processa map when one runs the doctype."""
+
+    def setUp(self):
+        self.doc = frappe._dict(doctype="Employee Resignation Withdrawal", name="HR-ERW-TEST-1")
+        self.submit_task = {"task_id": "ut_submit", "action": "Submit for Review"}
+
+    def test_a_waiting_map_task_is_completed_instead_of_the_frappe_workflow(self):
+        with patch("one_fm.api.v1.processa.get_document_actions", return_value={"actions": [self.submit_task]}), \
+                patch("one_fm.api.v1.processa.apply_document_action", return_value={"workflow_state": "Pending Supervisor", "messages": []}) as apply_action, \
+                patch("one_fm.api.v1.resignation.apply_workflow") as apply_workflow, \
+                patch("frappe.get_installed_apps", return_value=["frappe", "one_bpmn", "one_fm"]):
+            submit_for_review(self.doc)
+        apply_action.assert_called_once_with("Employee Resignation Withdrawal", "HR-ERW-TEST-1", "ut_submit", "Submit for Review")
+        apply_workflow.assert_not_called()
+
+    def test_without_a_map_task_the_frappe_workflow_is_used(self):
+        with patch("one_fm.api.v1.processa.get_document_actions", return_value={"actions": []}), \
+                patch("one_fm.api.v1.processa.apply_document_action") as apply_action, \
+                patch("one_fm.api.v1.resignation.apply_workflow") as apply_workflow, \
+                patch("frappe.get_installed_apps", return_value=["frappe", "one_bpmn", "one_fm"]):
+            submit_for_review(self.doc)
+        apply_action.assert_not_called()
+        apply_workflow.assert_called_once_with(self.doc, "Submit for Review")
+
+    def test_without_processa_installed_the_frappe_workflow_is_used(self):
+        with patch("one_fm.api.v1.resignation.apply_workflow") as apply_workflow, \
+                patch("frappe.get_installed_apps", return_value=["frappe", "one_fm"]):
+            submit_for_review(self.doc)
+        apply_workflow.assert_called_once_with(self.doc, "Submit for Review")
+
+    def test_the_maps_message_is_raised_when_it_sends_the_request_back(self):
+        sent_back = {"workflow_state": "Draft", "messages": ["An unrelated notice", "Attach the Withdrawal Letter."]}
+        with patch("one_fm.api.v1.processa.get_document_actions", return_value={"actions": [self.submit_task]}), \
+                patch("one_fm.api.v1.processa.apply_document_action", return_value=sent_back), \
+                patch("frappe.get_installed_apps", return_value=["frappe", "one_bpmn", "one_fm"]), \
+                self.assertRaises(frappe.ValidationError) as raised:
+            submit_for_review(self.doc)
+        self.assertEqual(str(raised.exception), "Attach the Withdrawal Letter.")
