@@ -222,6 +222,19 @@ class TransportationShipment(Document):
 # The canvas identifies a card as "TSHIP-<shipment>", sometimes with a direction suffix, so
 # what it sends is a card id and not a document name. Both merge endpoints are called
 # straight from the canvas and so have to accept either.
+def release_split_lineage(name: str, parent: str | None = None) -> None:
+	"""Stop overflow cards pointing at a card that is being deleted.
+
+	A child moves up to the deleted card's own parent; a deleted root leaves its overflow
+	cards with no root. Called by the generator before a force delete.
+	"""
+	shipment = frappe.qb.DocType("Transportation Shipment")
+	frappe.qb.update(shipment).set(shipment.split_parent, parent or None).where(
+		shipment.split_parent == name
+	).run()
+	frappe.qb.update(shipment).set(shipment.split_root, None).where(shipment.split_root == name).run()
+
+
 def resolve_shipment_names(values) -> list:
 	"""Card ids or shipment names in; shipment names out, order and duplicates preserved once."""
 	from one_fm.one_fm.page.transportation_schedule.transportation_schedule import (
