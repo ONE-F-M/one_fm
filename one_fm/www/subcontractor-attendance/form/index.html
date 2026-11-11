@@ -5,13 +5,27 @@
 <style>
     .cell-input {
         width: 100%;
-        min-width: 50px;
+        min-width: 0;
         font-size: 11px;
-        padding: 4px;
+        padding: 2px 0;
         border: 1px solid transparent;
         text-align: center;
+        text-align-last: center;
         background: transparent;
         border-radius: 4px;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+    }
+
+    .cell-input[type="number"] {
+        -moz-appearance: textfield;
+    }
+
+    .cell-input[type="number"]::-webkit-inner-spin-button,
+    .cell-input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
     }
 
     .cell-input:focus {
@@ -41,27 +55,89 @@
 
     .cell-container {
         position: relative;
-        padding: 2px;
+        padding: 0;
+    }
+
+    table.attendance-matrix {
+        table-layout: fixed;
+        width: 100%;
     }
 
     table.attendance-matrix th,
     table.attendance-matrix td {
-        padding: 4px;
+        padding: 2px 1px;
         vertical-align: middle;
         text-align: center;
         border: 1px solid #e2e8f0;
     }
 
     table.attendance-matrix th {
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 600;
         background: #f8fafc;
+        padding: 2px;
+        white-space: nowrap;
+    }
+
+    table.attendance-matrix th.col-id,
+    table.attendance-matrix td.col-id {
+        width: 90px;
+    }
+
+    table.attendance-matrix th.col-name,
+    table.attendance-matrix td.col-name {
+        width: 170px;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    table.attendance-matrix th.col-total,
+    table.attendance-matrix td.col-total {
+        width: 50px;
+        white-space: normal;
+    }
+
+    table.attendance-matrix td.name-col {
+        padding: 4px;
+    }
+
+    table.attendance-matrix td.cell-left {
+        text-align: left;
+    }
+
+    .name-col.col-name,
+    .name-col-header.col-name {
+        left: 90px;
+    }
+
+    .name-col-header.col-name {
+        z-index: 12;
+    }
+
+    .name-link {
+        cursor: pointer;
+        color: #0055cc;
+    }
+
+    .name-link-icon {
+        opacity: 0.5;
+        flex-shrink: 0;
+    }
+
+    .matrix-wrap {
+        overflow-x: auto;
+        max-width: 100%;
+    }
+
+    /* Below standard desktop width keep a readable minimum and scroll instead of squeezing */
+    @media (max-width: 1365px) {
+        table.attendance-matrix {
+            min-width: 1300px;
+        }
     }
 
     .name-col {
         text-align: left !important;
-        min-width: 150px;
-        max-width: 250px;
         position: sticky;
         left: 0;
         background: #fff !important;
@@ -189,7 +265,7 @@
     </div>
 
     <!-- Grid Container -->
-    <div class="card shadow-sm border bg-white mb-5" style="overflow-x: auto; max-width: 100%;">
+    <div class="card shadow-sm border bg-white mb-5 matrix-wrap">
         <table class="table attendance-matrix mb-0" id="matrix-table" style="display: none;">
             <thead>
                 <tr id="matrix-header-days"></tr>
@@ -315,5 +391,5 @@
 {% block script %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-<script src="/assets/one_fm/js/subcontractor_form.js?v=99"></script>
+<script src="/assets/one_fm/js/subcontractor_form.js?v=100"></script>
 {% endblock %}
