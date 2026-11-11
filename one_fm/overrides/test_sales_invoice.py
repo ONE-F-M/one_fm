@@ -4,25 +4,23 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import flt
 
-from one_fm.overrides.sales_invoice import NEGATIVE_MARGIN_WARNING, SalesInvoiceOverride
-from one_fm.patches.v15_0.add_sales_invoice_item_margin_fields import execute as add_margin_fields
+from one_fm.operations.doctype.contracts.contracts import calculate_item_values
+from one_fm.overrides.purchase_order import calculate_margin
+from one_fm.overrides.sales_invoice import SalesInvoiceOverride
+
+NEGATIVE_MARGIN_WARNING = "Negative margin applied \u2014 selling price is below purchase cost."
 
 
 class TestSalesInvoiceMargin(FrappeTestCase):
-	"""WI-004512: selling margin on refundable Sales Invoice rows.
+	"""Selling margin on refundable Sales Invoice rows.
 
-	The documents are built in memory and never inserted, so no customer, item or
-	contract fixtures are needed. The AC3 print columns (Base Amount, Margin, Net
-	Amount) are checked here as the fields that feed them; the print/grid layout itself is
-	the Frontend Agent's part.
+	Documents are built in memory and never inserted, so no customer, item or contract
+	fixtures are needed. The custom fields must exist (bench migrate) before running.
 	"""
 
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		# Idempotent: makes sure the four new custom fields exist on the test site.
-		add_margin_fields()
-		frappe.clear_cache(doctype="Sales Invoice Item")
 		cls.company = frappe.defaults.get_global_default("company") or frappe.db.get_value("Company", {}, "name")
 		cls.currency = frappe.get_cached_value("Company", cls.company, "default_currency")
 
@@ -110,7 +108,7 @@ class TestSalesInvoiceMargin(FrappeTestCase):
 		item = self.calculate(self.make_invoice())
 		self.assertEqual(flt(item.amount, 3), 50.000)
 
-	# AC5 (Reading A: a real negative margin, not a discount, plus a non-blocking warning)
+	# AC5: a real negative margin, not a discount, plus a non-blocking warning
 	def test_negative_margin_is_a_real_negative_margin(self):
 		item = self.calculate(self.make_invoice(margin_type="Percentage", margin=-10))
 		self.assertEqual(flt(item.rate, 3), 4.500)
@@ -127,9 +125,6 @@ class TestSalesInvoiceMargin(FrappeTestCase):
 		matching = [m for m in self.warnings() if m.get("message") == NEGATIVE_MARGIN_WARNING]
 		self.assertEqual(len(matching), 1)
 		self.assertEqual(matching[0].get("indicator"), "orange")
-		self.assertEqual(
-			NEGATIVE_MARGIN_WARNING, "Negative margin applied \u2014 selling price is below purchase cost."
-		)
 
 	def test_positive_margin_has_no_warning(self):
 		doc = self.make_invoice(margin_type="Percentage", margin=10)
@@ -160,3 +155,47 @@ class TestSalesInvoiceMargin(FrappeTestCase):
 		item = self.calculate(doc)
 		self.assertEqual(flt(item.amount, 3), 50.000)
 		self.assertFalse(item.custom_margin_display)
+
+	def test_negative_margin_ignores_discount_written_by_browser(self):
+		# ERPNext's rate handler turns rate < price_list_rate into a discount.
+		doc = self.make_invoice(margin_type="Percentage", margin=-10)
+		doc.items[0].rate = 4.5
+		doc.items[0].discount_percentage = 10
+		doc.items[0].discount_amount = 0.5
+		item = self.calculate(doc)
+		self.assertEqual(flt(item.amount, 3), 45.000)
+
+	def test_recalculation_without_price_list_rate_does_not_compound(self):
+		doc = self.make_invoice(margin_type="Percentage", margin=10)
+		doc.items[0].price_list_rate = 0
+		self.calculate(doc)
+		item = self.calculate(doc)
+		self.assertEqual(flt(item.price_list_rate, 3), 5.000)
+		self.assertEqual(flt(item.amount, 3), 55.000)
+
+	def test_refundable_purchase_row_keeps_rate(self):
+		doc = frappe.get_doc(
+			{
+				"doctype": "Purchase Invoice",
+				"conversion_rate": 1,
+				"items": [
+					{
+						"doctype": "Purchase Invoice Item",
+						"qty": 2,
+						"price_list_rate": 10,
+						"discount_percentage": 10,
+						"discount_amount": 1,
+						"rate": 9,
+						"margin_type": "Amount",
+						"margin_rate_or_amount": 1,
+						"custom_refundable": 1,
+					}
+				],
+			}
+		)
+		calc = frappe._dict(doc=doc, discount_amount_applied=False)
+		calc.calculate_margin = lambda item: calculate_margin(calc, item)
+		calc._set_in_company_currency = lambda item, fields: None
+		calculate_item_values(calc)
+		calculate_item_values(calc)
+		self.assertEqual(flt(doc.items[0].rate, 3), 9.000)

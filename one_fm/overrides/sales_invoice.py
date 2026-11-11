@@ -5,9 +5,6 @@ from frappe import _
 from frappe.utils import flt
 from erpnext.accounts.doctype.sales_invoice.sales_invoice import SalesInvoice
 
-NEGATIVE_MARGIN_WARNING = "Negative margin applied \u2014 selling price is below purchase cost."
-
-
 class SalesInvoiceOverride(SalesInvoice):
 
     def validate(self):
@@ -212,7 +209,11 @@ class SalesInvoiceOverride(SalesInvoice):
                 has_negative_margin = True
 
         if has_negative_margin:
-            frappe.msgprint(_(NEGATIVE_MARGIN_WARNING), title=_("Warning"), indicator="orange")
+            frappe.msgprint(
+                _("Negative margin applied — selling price is below purchase cost."),
+                title=_("Warning"),
+                indicator="orange",
+            )
 
     def validate_contract_item_rates(self):
         """Story 3: Prevent manual rate adjustments on Sales Invoices generated from Contracts"""

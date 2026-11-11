@@ -2880,16 +2880,15 @@ def calculate_item_values(doc):
 
             item.net_rate = item.rate
 
-            # Amount is only recalculated for refundable rows. Other rows (for example fixed-fee
-            # contract invoices) deliberately keep the amount they arrived with.
-            if item.get("is_refundable") or item.get("custom_refundable"):
+            # Amount is only recalculated for refundable Sales Invoice rows. Other rows (for example
+            # fixed-fee contract invoices) deliberately keep the amount they arrived with.
+            if item.doctype == "Sales Invoice Item" and item.get("custom_refundable"):
                 if not item.qty and doc.doc.get("is_return"):
                     item.amount = flt(-1 * item.rate, item.precision("amount"))
                 else:
                     item.amount = flt(item.rate * item.qty, item.precision("amount"))
 
-                if item.doctype == "Sales Invoice Item":
-                    set_selling_margin_display(doc, item)
+                set_selling_margin_display(doc, item)
 
             item.net_amount = item.amount
 

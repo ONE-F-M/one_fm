@@ -228,8 +228,10 @@ def make_sales_invoice_from_purchase_invoice(source_names, target_doc=None):
                 si_item.custom_margin_type = pi_doc.get("custom_margin_type") or ""
                 si_item.custom_margin_rate_or_amount = flt(pi_doc.get("custom_margin_rate_or_amount") or 0)
                 
-                si_item.discount_percentage = flt(pi_item.get("discount_percentage") or 0)
-                si_item.discount_amount = flt(pi_item.get("discount_amount") or 0)
+                # A refundable row's base is the PI cost, which already includes the PI discount.
+                if not si_item.custom_refundable:
+                    si_item.discount_percentage = flt(pi_item.get("discount_percentage") or 0)
+                    si_item.discount_amount = flt(pi_item.get("discount_amount") or 0)
                 
                 si_item.item_tax_rate = pi_item.get("item_tax_rate") or json.dumps({}) 
                 si_item.price_list_rate = flt(si_item.price_list_rate or si_item.rate or 0)  

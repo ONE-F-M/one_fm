@@ -370,17 +370,30 @@ def calculate_margin(doc, item):
 		and item.get("custom_refundable")
 		and item.get("custom_margin_type")
 	):
-		base_rate = flt(item.price_list_rate) or flt(item.rate)
+		# Pin the cost into price_list_rate on first calculation so a re-save does not
+		# apply the margin on top of an already-marked-up rate.
+		if not flt(item.price_list_rate):
+			item.price_list_rate = flt(item.rate)
+		# The margin is the only price adjustment. The browser's rate handler writes a
+		# discount for a negative margin, which would otherwise be applied a second time.
+		item.discount_percentage = 0
+		item.discount_amount = 0
+		base_rate = flt(item.price_list_rate)
 		margin = flt(item.get("custom_margin_rate_or_amount"))
 		margin_value = margin if item.custom_margin_type == "Amount" else base_rate * margin / 100
 		rate_with_margin = base_rate + margin_value
 		base_rate_with_margin = flt(rate_with_margin * flt(doc.doc.conversion_rate or 1))
 		return rate_with_margin, base_rate_with_margin
 
-	# is_refundable exists only on PO Item; SI, PR and PI Items use custom_refundable.
-	if item.get("is_refundable") or item.get("custom_refundable"):
+	if item.get("is_refundable"):
 		rate_with_margin = item.rate or item.price_list_rate or 0
 		base_rate_with_margin = flt(rate_with_margin * doc.doc.conversion_rate)
+		return rate_with_margin, base_rate_with_margin
+
+	# SI, PR and PI Items carry custom_refundable instead of is_refundable. Keep the rate as
+	# entered and ignore the standard margin fields; returning the rate here would re-apply
+	# discount_percentage on every save.
+	if item.get("custom_refundable"):
 		return rate_with_margin, base_rate_with_margin
 	
 	if item.price_list_rate:
