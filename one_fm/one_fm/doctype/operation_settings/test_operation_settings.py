@@ -15,9 +15,15 @@ class TestOperationSettings(FrappeTestCase):
 		settings.subcontractor_attendance_submission_start_day = value
 		settings.save()
 
-	def test_start_day_zero_throws(self):
+	def test_start_day_zero_falls_back_to_1(self):
+		self._save_start_day(0)
+		self.assertEqual(
+			frappe.db.get_single_value("Operation Settings", "subcontractor_attendance_submission_start_day"), 1
+		)
+
+	def test_start_day_negative_throws(self):
 		with self.assertRaises(frappe.ValidationError):
-			self._save_start_day(0)
+			self._save_start_day(-1)
 
 	def test_start_day_above_28_throws(self):
 		with self.assertRaises(frappe.ValidationError):
