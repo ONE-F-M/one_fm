@@ -142,56 +142,56 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Day 1",
-   "options": "\nPresent\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+   "options": "\nPresent\nAbsent\nDay Off\nClient Day Off"
   },
   {
    "fieldname": "day_2",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Day 2",
-   "options": "\nPresent\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+   "options": "\nPresent\nAbsent\nDay Off\nClient Day Off"
   },
   {
    "fieldname": "day_3",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Day 3",
-   "options": "\nPresent\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+   "options": "\nPresent\nAbsent\nDay Off\nClient Day Off"
   },
   {
    "fieldname": "day_4",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Day 4",
-   "options": "\nPresent\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+   "options": "\nPresent\nAbsent\nDay Off\nClient Day Off"
   },
   {
    "fieldname": "day_5",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Day 5",
-   "options": "\nPresent\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+   "options": "\nPresent\nAbsent\nDay Off\nClient Day Off"
   },
   {
    "fieldname": "day_6",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Day 6",
-   "options": "\nPresent\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+   "options": "\nPresent\nAbsent\nDay Off\nClient Day Off"
   },
   {
    "fieldname": "day_7",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Day 7",
-   "options": "\nPresent\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+   "options": "\nPresent\nAbsent\nDay Off\nClient Day Off"
   },
   {
    "fieldname": "day_8",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Day 8",
-   "options": "\nPresent\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+   "options": "\nPresent\nAbsent\nDay Off\nClient Day Off"
   },
   {
    "fieldname": "cb_status_2",
@@ -202,56 +202,56 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Day 9",
-   "options": "\nPresent\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+   "options": "\nPresent\nAbsent\nDay Off\nClient Day Off"
   },
   {
    "fieldname": "day_10",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Day 10",
-   "options": "\nPresent\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+   "options": "\nPresent\nAbsent\nDay Off\nClient Day Off"
   },
   {
    "fieldname": "day_11",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Day 11",
-   "options": "\nPresent\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+   "options": "\nPresent\nAbsent\nDay Off\nClient Day Off"
   },
   {
    "fieldname": "day_12",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Day 12",
-   "options": "\nPresent\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+   "options": "\nPresent\nAbsent\nDay Off\nClient Day Off"
   },
   {
    "fieldname": "day_13",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Day 13",
-   "options": "\nPresent\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+   "options": "\nPresent\nAbsent\nDay Off\nClient Day Off"
   },
   {
    "fieldname": "day_14",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Day 14",
-   "options": "\nPresent\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+   "options": "\nPresent\nAbsent\nDay Off\nClient Day Off"
   },
   {
    "fieldname": "day_15",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Day 15",
-   "options": "\nPresent\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+   "options": "\nPresent\nAbsent\nDay Off\nClient Day Off"
   },
   {
    "fieldname": "day_16",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Day 16",
-   "options": "\nPresent\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+   "options": "\nPresent\nAbsent\nDay Off\nClient Day Off"
   },
   {
    "fieldname": "cb_status_3",
