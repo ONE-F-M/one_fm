@@ -341,6 +341,8 @@ class TestCopyReasonToRemarksPatch(FrappeTestCase):
 
 	@classmethod
 	def tearDownClass(cls):
+		# DDL commits implicitly, so roll back the test records before dropping the column.
+		frappe.db.rollback()
 		if cls.added_reason_column and frappe.db.has_column(DOCTYPE, "reason"):
 			frappe.db.sql_ddl(f"alter table `tab{DOCTYPE}` drop column `reason`")
 		super().tearDownClass()
@@ -350,10 +352,10 @@ class TestCopyReasonToRemarksPatch(FrappeTestCase):
 		if not employee:
 			self.skipTest("Need at least 1 active employee for this test.")
 		doc = make_request(employee).insert(ignore_permissions=True)
-		frappe.db.sql(
-			f"update `tab{DOCTYPE}` set `reason` = %s, `remarks` = %s where name = %s",
-			(reason, remarks, doc.name),
-		)
+		request = frappe.qb.DocType(DOCTYPE)
+		frappe.qb.update(request).set(request.reason, reason).set(request.remarks, remarks).where(
+			request.name == doc.name
+		).run()
 		return doc.name
 
 	def get_values(self, name):
@@ -361,14 +363,14 @@ class TestCopyReasonToRemarksPatch(FrappeTestCase):
 
 	def test_copies_reason_into_empty_remarks_and_leaves_reason_for_changes(self):
 		name = self.make_old_record("Old free text reason", None)
-		frame_before = self.get_values(name)
-		self.assertFalse(frame_before.remarks)
+		before = self.get_values(name)
+		self.assertFalse(before.remarks)
 
 		remarks_patch.execute()
 
 		values = self.get_values(name)
 		self.assertEqual(values.remarks, "Old free text reason")
-		self.assertEqual(values.reason_for_changes, frame_before.reason_for_changes)
+		self.assertEqual(values.reason_for_changes, before.reason_for_changes)
 
 	def test_is_idempotent_and_does_not_overwrite_remarks(self):
 		empty = self.make_old_record("Reason A", "")
@@ -380,7 +382,7 @@ class TestCopyReasonToRemarksPatch(FrappeTestCase):
 		self.assertEqual(self.get_values(empty).remarks, "Reason A")
 		self.assertEqual(self.get_values(filled).remarks, "Kept remarks")
 
-		frappe.db.sql(f"update `tab{DOCTYPE}` set `remarks` = %s where name = %s", ("Edited later", empty))
+		frappe.db.set_value(DOCTYPE, empty, "remarks", "Edited later", update_modified=False)
 		remarks_patch.execute()
 		self.assertEqual(self.get_values(empty).remarks, "Edited later")
 
