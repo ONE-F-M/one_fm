@@ -4,7 +4,7 @@
 import frappe
 from frappe.model.document import Document
 from frappe.query_builder.functions import Extract
-from frappe.utils import cint, cstr
+from frappe.utils import cint, cstr, get_link_to_form
 from calendar import monthrange
 from frappe import _
 
@@ -12,12 +12,51 @@ class AttendanceAmendment(Document):
 	def validate(self):
 		self.recalculate_working_days()
 		self.validate_attendance_details_present()
+		self.validate_duplicate()
 
 	def validate_attendance_details_present(self):
 		if self.workflow_state == "Pending Approval" and not self.attendance_details:
 			frappe.throw(
 				_(
 					"Attendance Details are empty. Select Attendance Record Based On and click Fetch Attendance Record before submitting for review."
+				)
+			)
+
+	def validate_duplicate(self):
+		"""Refuse a second live record for the same project, month and year.
+
+		A record without a site covers the whole project, so it clashes with any
+		site-specific record of that project/month/year, and vice versa.
+		"""
+		# Let clean-up saves of cancelled/rejected records through
+		if self.workflow_state in ("Cancelled", "Rejected"):
+			return
+
+		filters = {
+			"project": self.project,
+			"month": self.month,
+			"year": self.year,
+			"name": ("!=", self.name),
+			"workflow_state": ("not in", ("Cancelled", "Rejected")),
+			"docstatus": ("!=", 2),
+		}
+		or_filters = None
+		if self.site:
+			or_filters = [["site", "=", self.site], ["site", "is", "not set"]]
+
+		# get_all so validation also sees records the current user cannot read
+		existing = frappe.get_all(
+			"Attendance Amendment",
+			filters=filters,
+			or_filters=or_filters,
+			fields=["name", "workflow_state"],
+			limit_page_length=1,
+		)
+		if existing:
+			existing = existing[0]
+			frappe.throw(
+				_("Attendance record {0} already exists for this project, site and month (status: {1}).").format(
+					get_link_to_form("Attendance Amendment", existing.name), existing.workflow_state
 				)
 			)
 
