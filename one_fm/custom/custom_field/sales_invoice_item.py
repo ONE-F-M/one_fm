@@ -130,6 +130,37 @@ def get_sales_invoice_item_custom_fields():
                 "label": "Refundable",
             },
             {
+                "fieldname": "custom_margin_type",
+                "fieldtype": "Select",
+                "insert_after": "custom_refundable",
+                "label": "Margin Type",
+                "options": "\nPercentage\nAmount",
+                "translatable": 1,
+                "depends_on": "eval:doc.custom_refundable"
+            },
+            {
+                "fieldname": "custom_margin_rate_or_amount",
+                "fieldtype": "Float",
+                "insert_after": "custom_margin_type",
+                "label": "Margin Rate or Amount",
+                "depends_on": "eval:doc.custom_refundable"
+            },
+            {
+                "fieldname": "custom_base_amount",
+                "fieldtype": "Currency",
+                "insert_after": "custom_margin_rate_or_amount",
+                "label": "Base Amount",
+                "options": "currency",
+                "read_only": 1
+            },
+            {
+                "fieldname": "custom_margin_display",
+                "fieldtype": "Data",
+                "insert_after": "custom_base_amount",
+                "label": "Margin",
+                "read_only": 1
+            },
+            {
                 "fieldname": "custom_contract_item_category",
                 "fieldtype": "Link",
                 "options": "Contract Item Category",

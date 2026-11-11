@@ -186,7 +186,11 @@ def make_sales_invoice_from_purchase_invoice(source_names, target_doc=None):
                 si_item.rate = calculated_rate
                 
                 price_list_rate_value = pi_item.get("price_list_rate") or 0
-                if price_list_rate_value == 0:
+                if pi_item.get("custom_refundable"):
+                    # The selling margin is applied on top of the purchase cost, so the cost
+                    # is the base. The supplier list price is not a selling base.
+                    si_item.price_list_rate = calculated_rate
+                elif price_list_rate_value == 0:
                     si_item.price_list_rate = calculated_rate
                 else:
                     if currency_changed:
@@ -213,11 +217,16 @@ def make_sales_invoice_from_purchase_invoice(source_names, target_doc=None):
                 si_item.cost_center = pi_item.cost_center
                 si_item.project = pi_item.get("project")
                 
-                si_item.margin_type = pi_item.get("margin_type") or ""
-                si_item.margin_rate_or_amount = flt(pi_item.get("margin_rate_or_amount") or 0)
-                si_item.rate_with_margin = flt(pi_item.get("rate_with_margin") or 0)
+                # PI Item's standard margin fields hold ERPNext's supplier-price-over-list
+                # record, not a selling margin, so they are not copied. The selling margin
+                # comes from the PI header chain (custom_margin_*) into the custom item fields.
+                si_item.margin_type = ""
+                si_item.margin_rate_or_amount = 0
+                si_item.rate_with_margin = 0
+                si_item.base_rate_with_margin = 0
                 si_item.custom_refundable = pi_item.get("custom_refundable")
-                si_item.base_rate_with_margin = flt(si_item.rate_with_margin) * flt(target_doc.conversion_rate or 1)
+                si_item.custom_margin_type = pi_doc.get("custom_margin_type") or ""
+                si_item.custom_margin_rate_or_amount = flt(pi_doc.get("custom_margin_rate_or_amount") or 0)
                 
                 si_item.discount_percentage = flt(pi_item.get("discount_percentage") or 0)
                 si_item.discount_amount = flt(pi_item.get("discount_amount") or 0)
