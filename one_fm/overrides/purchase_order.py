@@ -362,7 +362,23 @@ def calculate_margin(doc, item):
 	rate_with_margin = 0.0
 	base_rate_with_margin = 0.0
 	
-	if item.get("is_refundable"):
+	# Sales Invoice rows: the selling margin lives in the custom_margin_* item fields (ERPNext's
+	# own margin handlers never touch them), applied on the base cost held in price_list_rate.
+	# A negative margin stays a real negative margin; it is never turned into a discount.
+	if (
+		item.doctype == "Sales Invoice Item"
+		and item.get("custom_refundable")
+		and item.get("custom_margin_type")
+	):
+		base_rate = flt(item.price_list_rate) or flt(item.rate)
+		margin = flt(item.get("custom_margin_rate_or_amount"))
+		margin_value = margin if item.custom_margin_type == "Amount" else base_rate * margin / 100
+		rate_with_margin = base_rate + margin_value
+		base_rate_with_margin = flt(rate_with_margin * flt(doc.doc.conversion_rate or 1))
+		return rate_with_margin, base_rate_with_margin
+
+	# is_refundable exists only on PO Item; SI, PR and PI Items use custom_refundable.
+	if item.get("is_refundable") or item.get("custom_refundable"):
 		rate_with_margin = item.rate or item.price_list_rate or 0
 		base_rate_with_margin = flt(rate_with_margin * doc.doc.conversion_rate)
 		return rate_with_margin, base_rate_with_margin
