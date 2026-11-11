@@ -53,6 +53,58 @@ def get_overlapping_shift_attendance(employee, attendance_date, shift, roster_ty
 	return {}
 
 
+RELIEF_FLAG_FIELDS = (
+    "custom_is_day_off_reliever",
+    "custom_is_weekend_reliever",
+    "custom_is_annual_leave_reliever",
+)
+
+
+def get_relief_flag_fields():
+    """Relief flags that exist on both Shift Assignment and Attendance.
+
+    The Shift Assignment fields are added by other work items; until they are on the
+    site there is nothing to inherit, so the guard keeps attendance creation working.
+    """
+    shift_assignment_meta = frappe.get_meta("Shift Assignment")
+    attendance_meta = frappe.get_meta("Attendance")
+    return [
+        field for field in RELIEF_FLAG_FIELDS
+        if shift_assignment_meta.has_field(field) and attendance_meta.has_field(field)
+    ]
+
+
+def get_relief_flag_update_query(attendance_date, fields):
+    """frappe.qb UPDATE copying the relief flags from each Attendance's own Shift
+    Assignment, only for dates/rows where the Shift Assignment carries a flag."""
+    attendance = frappe.qb.DocType("Attendance")
+    shift_assignment = frappe.qb.DocType("Shift Assignment")
+    query = (
+        frappe.qb.update(attendance)
+        .join(shift_assignment)
+        .on(attendance.shift_assignment == shift_assignment.name)
+    )
+    any_flag = None
+    for field in fields:
+        query = query.set(getattr(attendance, field), getattr(shift_assignment, field))
+        condition = getattr(shift_assignment, field) == 1
+        any_flag = condition if any_flag is None else (any_flag | condition)
+    return query.where(
+        (attendance.attendance_date == attendance_date)
+        & (shift_assignment.start_date == attendance_date)
+        & (shift_assignment.docstatus == 1)
+        & any_flag
+    )
+
+
+def set_relief_flags_for_date(attendance_date):
+    """Bulk-inherit relief flags for attendance written by raw SQL (no controller)."""
+    fields = get_relief_flag_fields()
+    if not fields:
+        return
+    get_relief_flag_update_query(attendance_date, fields).run()
+
+
 class AttendanceOverride(Attendance):
     def validate(self):
         from erpnext.controllers.status_updater import validate_status
@@ -75,6 +127,34 @@ class AttendanceOverride(Attendance):
 
     def after_insert(self):
         self.set_day_off_ot()
+        self.set_relief_flags()
+
+    def set_relief_flags(self):
+        """Inherit the relief checks from this attendance's own Shift Assignment.
+
+        Only the attendance linked to a flagged Shift Assignment gets a flag, so a
+        double shift (home post + relief post) flags the relief attendance only.
+        Status changes later use db_set, so the flag persists across outcomes.
+        """
+        fields = get_relief_flag_fields()
+        if not fields:
+            return
+        shift_assignment = self.shift_assignment
+        if not shift_assignment:
+            shift_assignment = frappe.db.get_value("Shift Assignment", {
+                'employee': self.employee,
+                'start_date': self.attendance_date,
+                'roster_type': self.roster_type or 'Basic',
+                'docstatus': 1
+            })
+        if not shift_assignment:
+            return
+        values = frappe.db.get_value("Shift Assignment", shift_assignment, fields, as_dict=True)
+        if not values:
+            return
+        flags = {field: 1 for field in fields if values.get(field)}
+        if flags:
+            self.db_set(flags)
 
     def set_day_off_ot(self):
         if self.shift_assignment:
@@ -980,6 +1060,9 @@ def mark_daily_attendance(start_date, end_date):
                 modified = VALUES(modified)
             """
             frappe.db.sql(query, values=[], as_dict=1)
+            frappe.db.commit()
+            # The raw insert bypasses the controller, so inherit relief flags here
+            set_relief_flags_for_date(start_date)
             frappe.db.commit()
 
         # # remark missing attendance for shifts
