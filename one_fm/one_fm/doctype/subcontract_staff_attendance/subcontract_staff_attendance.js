@@ -47,15 +47,8 @@ function show_attendance_preview(frm) {
 	const status_map = {
 		"Present": "P",
 		"Absent": "A",
-		"On Leave": "L",
-		"Half Day": "HD",
-		"Work From Home": "WFH",
 		"Day Off": "DO",
-		"Client Day Off": "CDO",
-		"Fingerprint Appointment": "FA",
-		"Medical Appointment": "MA",
-		"Holiday": "H",
-		"On Hold": "OH"
+		"Client Day Off": "CDO"
 	};
 
 	let top_headers = `<th rowspan="2" style="vertical-align: middle;">${__("Employee ID")}</th><th rowspan="2" style="vertical-align: middle;">${__("Employee Name")}</th>`;
@@ -84,13 +77,9 @@ function show_attendance_preview(frm) {
 			if (frm.doc.attendance_record_based_on === "Attendance Status") {
 				val = status_map[val] || val;
 				
-				if (val === "P" || val === "WFH") {
+				// Only Present counts as a working day.
+				if (val === "P") {
 					working_total += 1;
-				} else if (val === "HD") {
-					working_total += 0.5;
-				} else if (val === "DO" || val === "CDO" || val === "H") {
-					// NOTE: Included "H" (Holiday) as working day usually but user said "Total DO statuses"
-					// We'll increment DO for "DO" and "CDO", for actual working total we stick to P/WFH/HD
 				}
 				
 				if (val === "DO" || val === "CDO") {
