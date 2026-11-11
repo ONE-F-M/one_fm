@@ -15,14 +15,15 @@ class OperationSettings(Document):
 		self.validate_subcontractor_attendance_start_day()
 
 	def validate_subcontractor_attendance_start_day(self):
-		'''
-			The start day must be 1 to 28 so that it exists in every month (including February)
-		'''
+		"""The start day must be 1 to 28 so that it exists in every month (including February)."""
 		start_day = cint(self.subcontractor_attendance_submission_start_day)
-		if not start_day and not frappe.db.sql(
-			"select 1 from `tabSingles` where doctype=%s and field=%s",
-			("Operation Settings", "subcontractor_attendance_submission_start_day"),
-		):
+		Singles = frappe.qb.DocType("Singles")
+		if not start_day and not (
+			frappe.qb.from_(Singles)
+			.select(Singles.value)
+			.where(Singles.doctype == "Operation Settings")
+			.where(Singles.field == "subcontractor_attendance_submission_start_day")
+		).run():
 			# Existing Single that has never stored this field: migrate does not write the default,
 			# so apply it here instead of blocking unrelated changes to Operation Settings.
 			start_day = 1

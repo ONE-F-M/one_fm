@@ -256,7 +256,7 @@ document.addEventListener("DOMContentLoaded", function() {
         let today = moment().startOf('day');
         
         if (today.isBefore(allowed_date, 'day')) {
-            let msg = __("Attendance for {0} can be submitted from {1}.", [t_date.format('MMMM YYYY'), allowed_date.format('Do MMMM YYYY')]);
+            let msg = __("Attendance for {0} can be submitted from {1}.", [t_date.format("MMMM YYYY"), allowed_date.format("Do MMMM YYYY")]);
             frappe.msgprint({title: __("Validation Error"), indicator: "red", message: msg});
             return false;
         }
