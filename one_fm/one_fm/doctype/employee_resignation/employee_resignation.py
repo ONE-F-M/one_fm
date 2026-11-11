@@ -593,7 +593,6 @@ class EmployeeResignation(Document):
 		frappe.db.set_value("Employee", self.employee, update_data, update_modified=False)
 
 
-@frappe.whitelist()
 def get_hr_visit_date(relieving_date):
 	"""The first working day after the Relieving Date, when the employee should visit HR."""
 	visit_date = add_days(getdate(relieving_date), 1)
@@ -602,6 +601,7 @@ def get_hr_visit_date(relieving_date):
 	return visit_date
 
 
+@frappe.whitelist()
 def get_employee_resignation_details(employee: str = None):
 	"""Secure backend fetch to bypass frontend permission limits for restricted roles."""
 	if not employee:
