@@ -26,6 +26,9 @@ def get_context(context):
     from_date = frappe.form_dict.get("from_date")
     to_date = frappe.form_dict.get("to_date")
 
+    from one_fm.one_fm.doctype.subcontract_staff_attendance.subcontract_staff_attendance import get_submission_start_day
+    context.submission_start_day = get_submission_start_day()
+
     context.from_date = from_date or ""
     context.to_date = to_date or ""
     
