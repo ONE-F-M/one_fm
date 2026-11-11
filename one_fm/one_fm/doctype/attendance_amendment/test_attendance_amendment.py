@@ -83,7 +83,7 @@ class TestReturnEmptyAttendanceAmendmentsToDraft(FrappeTestCase):
 
 
 class TestAttendanceAmendmentDuplicate(FrappeTestCase):
-	"""WI-004528: one live record per project, site, month and year."""
+	"""One live record per project, site, month and year."""
 
 	PROJECT = "Dup Test Project"
 	SITE_A = "Dup Test Site A"
