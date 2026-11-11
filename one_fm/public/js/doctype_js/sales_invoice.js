@@ -220,10 +220,10 @@ frappe.ui.form.on('Sales Invoice', {
         setup_contract_item_category_filter(frm);
     },
     custom_margin_type: function(frm) {
-        update_all_items_field(frm, 'margin_type', frm.doc.custom_margin_type);
+        update_all_items_field(frm, 'custom_margin_type', frm.doc.custom_margin_type);
     },
     custom_margin_rate_or_amount: function(frm) {
-        update_all_items_field(frm, 'margin_rate_or_amount', frm.doc.custom_margin_rate_or_amount);
+        update_all_items_field(frm, 'custom_margin_rate_or_amount', frm.doc.custom_margin_rate_or_amount);
     }
 
 
@@ -242,28 +242,20 @@ frappe.ui.form.on('Sales Invoice Item', {
         }
         
         if (frm.doc.custom_margin_type) {
-            frappe.model.set_value(cdt, cdn, 'margin_type', frm.doc.custom_margin_type);
+            frappe.model.set_value(cdt, cdn, 'custom_margin_type', frm.doc.custom_margin_type);
         }
         
         if (frm.doc.custom_margin_rate_or_amount) {
-            frappe.model.set_value(cdt, cdn, 'margin_rate_or_amount', frm.doc.custom_margin_rate_or_amount);
+            frappe.model.set_value(cdt, cdn, 'custom_margin_rate_or_amount', frm.doc.custom_margin_rate_or_amount);
         }
     },
     
-    custom_refundable: function(frm, cdt, cdn) {
-        calculate_margin_for_item(frm, cdt, cdn);
+    custom_margin_type: function(frm, cdt, cdn) {
+        apply_selling_margin_to_rate(frm, cdt, cdn);
     },
     
-    margin_type: function(frm, cdt, cdn) {
-        calculate_margin_for_item(frm, cdt, cdn);
-    },
-    
-    margin_rate_or_amount: function(frm, cdt, cdn) {
-        calculate_margin_for_item(frm, cdt, cdn);
-    },
-    
-    rate: function(frm, cdt, cdn) {
-        calculate_margin_for_item(frm, cdt, cdn);
+    custom_margin_rate_or_amount: function(frm, cdt, cdn) {
+        apply_selling_margin_to_rate(frm, cdt, cdn);
     },
     
     custom_contract_item: function(frm, cdt, cdn) {
@@ -839,22 +831,26 @@ function update_all_items_field(frm, field_name, value) {
     }
 }
 
-function calculate_margin_for_item(frm, cdt, cdn) {
+// Selling margin is applied on the base cost (price_list_rate) so the total updates before
+// save. Base amount and margin display are filled in by the server on save.
+function apply_selling_margin_to_rate(frm, cdt, cdn) {
     let item = locals[cdt][cdn];
-    
-    if (item.custom_refundable && item.margin_type && item.margin_rate_or_amount && item.rate) {
-        let rate_with_margin = item.rate;
-        
-        if (item.margin_type === 'Percentage') {
-            rate_with_margin = flt(item.rate) * (1 + flt(item.margin_rate_or_amount) / 100);
-        } else if (item.margin_type === 'Amount') {
-            rate_with_margin = flt(item.rate) + flt(item.margin_rate_or_amount);
-        }
-        
-        frappe.model.set_value(cdt, cdn, 'rate_with_margin', rate_with_margin);
-    } else if (!item.custom_refundable) {
-        frappe.model.set_value(cdt, cdn, 'rate_with_margin', 0);
+    let base_rate = flt(item.price_list_rate);
+
+    if (!item.custom_refundable || !item.custom_margin_type || !base_rate) {
+        return;
     }
+
+    let margin = flt(item.custom_margin_rate_or_amount);
+    let rate = base_rate;
+
+    if (item.custom_margin_type === 'Percentage') {
+        rate = base_rate * (1 + margin / 100);
+    } else if (item.custom_margin_type === 'Amount') {
+        rate = base_rate + margin;
+    }
+
+    frappe.model.set_value(cdt, cdn, 'rate', rate);
 }
 
 function setup_contract_item_category_filter(frm) {
