@@ -854,6 +854,8 @@ class TestFetchShiftWorkingEmployees(FrappeTestCase):
 		self.assertEqual(_ts._fetch_shift_working_employees([], set()), [])
 
 	def test_shift_working_query_selects_the_rambo_flag(self):
+		if not frappe.db.has_column("Employee", "custom_is_rambo_reliever"):
+			self.skipTest("Employee.custom_is_rambo_reliever is not present on this site")
 		rows = {r.name: r for r in _ts._fetch_shift_working_employees([self.CAMP_A], set())}
 		self.assertIn("custom_is_rambo_reliever", rows[self.rambo])
 		self.assertTrue(rows[self.rambo].custom_is_rambo_reliever)
@@ -864,6 +866,8 @@ class TestFetchShiftWorkingEmployees(FrappeTestCase):
 		self.assertIs(built["is_rambo_reliever"], True)
 
 	def test_rambo_query_selects_the_rambo_flag(self):
+		if not frappe.db.has_column("Employee", "custom_is_rambo_reliever"):
+			self.skipTest("Employee.custom_is_rambo_reliever is not present on this site")
 		rows = {r.name: r for r in _ts._fetch_rambo_employees()}
 		self.assertIn(self.rambo, rows)
 		self.assertIn("custom_is_rambo_reliever", rows[self.rambo])
