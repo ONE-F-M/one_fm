@@ -729,9 +729,6 @@ scheduler_events = {
 		"15 3 * * *": [
 			'one_fm.tasks.one_fm.daily.generate_contracts_invoice', #Generate contracts sales invoice
 		],
-		"15 4 1 * *": [# “At 04:15 on day-of-month 1.”
-			'one_fm.grd.doctype.pifss_monthly_deduction.pifss_monthly_deduction.auto_create_pifss_monthly_deduction_record',
-		],
 		"0/15 * * * *": [ #At every 15th minute from 0 through 59.”
 			# 'one_fm.api.tasks.process_attendance',
 			"one_fm.api.tasks.update_shift_type"
