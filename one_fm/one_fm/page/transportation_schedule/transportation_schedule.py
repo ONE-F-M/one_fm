@@ -2434,7 +2434,14 @@ def get_manifest_data_for_plan(plan_name: str):
 			"shipmentShiftNames": ship_shift,
 			"shipmentOwnDirections": ship_own_dir,
 			"vehicleMeta": v_meta
-		}
+		},
+		# Transportation Settings is System Manager only, so the manifest page cannot
+		# read it; it hides the Rambo reliever chip when the list is already Rambo-only.
+		"restrict_reliever_search_to_rambo": cint(
+			frappe.db.get_single_value(
+				"Transportation Settings", "restrict_reliever_search_to_rambo_employees_only"
+			)
+		),
 	}
 
 
@@ -2546,6 +2553,7 @@ def _fetch_rambo_employees():
             Employee.designation,
             Employee.cell_number,
             Employee.shift,
+            Employee.custom_is_rambo_reliever,
         )
         .where(Employee.status == "Active")
         .where(Employee.custom_is_rambo_reliever == 1)
@@ -2556,7 +2564,7 @@ def _fetch_rambo_employees():
 def _fetch_shift_working_employees(camps, exclude):
     """Active shift-working employees whose live camp is one of `camps`.
 
-    Same columns as _fetch_rambo_employees. The live camp is the latest Accommodation
+    Same columns as _fetch_rambo_employees (including custom_is_rambo_reliever). The live camp is the latest Accommodation
     Checkin (IN), resolved by manifest_compiler._live_accommodation. Employees in
     `exclude` are left out.
     """
@@ -2577,6 +2585,7 @@ def _fetch_shift_working_employees(camps, exclude):
             Employee.designation,
             Employee.cell_number,
             Employee.shift,
+            Employee.custom_is_rambo_reliever,
         )
         .where(Employee.status == "Active")
         .where(Employee.shift_working == 1)
@@ -2773,6 +2782,8 @@ def _build_reliever(employee, rows, date, shift_times, window):
         "shift_start_time": _hhmm(basic_interval[0]) if basic_interval else None,
         "shift_end_time": _hhmm(basic_interval[1]) if basic_interval else None,
         "master_shift": employee.shift or None,
+        # Lets the manifest page filter by Rambo without a call per card.
+        "is_rambo_reliever": bool(employee.get("custom_is_rambo_reliever")),
         "ot_shift": ot.shift if ot else None,
         "ot_start_time": _hhmm(ot_interval[0]) if ot_interval else None,
         "ot_end_time": _hhmm(ot_interval[1]) if ot_interval else None,
