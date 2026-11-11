@@ -939,6 +939,27 @@ def make_delivery_note(source_name, target_doc=None):
     return doclist
 
 
+def get_rfp_item_description(item):
+    """Description for a Request for Purchase Item mapped off a Request for Material Item.
+
+    `description` is mandatory on every Request for Purchase Item, but the field it is
+    mapped from, `requested_description`, is only mandatory on the RFM for an Individual
+    uniform request, and set_item_fields only copies the item's own description into it
+    for a Stock RFM. A Department or Project RFM raised without a typed description
+    therefore carries a blank one, and the conversion dies on a mandatory field with no
+    way back: requested_description is not allow_on_submit, so the requester cannot fill
+    it in on the approved document either.
+
+    Fall back through the fields that hold the same text before giving up.
+    """
+    return (
+        item.get("requested_description")
+        or item.get("description")
+        or item.get("requested_item_name")
+        or item.get("item_name")
+    )
+
+
 @frappe.whitelist()
 def make_request_for_purchase(source_name, target_doc=None):
     
@@ -949,6 +970,7 @@ def make_request_for_purchase(source_name, target_doc=None):
         
         
     def update_item(obj, target, source_parent):
+        target.description = get_rfp_item_description(obj)
         if obj.custom_pending_quantity > 0:
             qty = obj.qty - obj.custom_rfp_quantity
             target.qty = qty
@@ -974,7 +996,7 @@ def make_request_for_purchase(source_name, target_doc=None):
         "Request for Material Item": {
             "doctype": "Request for Purchase Item",
             "field_map": [
-                ["requested_description", "description"],
+                # description is set in update_item, see get_rfp_item_description
                 ["requested_item_name", "item_name"],
                 ["name", "request_for_material_item"],
                 ["name", "custom_request_for_material_item"],
@@ -1029,7 +1051,7 @@ def create_partial_request_for_purchase(source_name, items):
             "item_code": item_data.get('item_code'),
             "qty": item_data.get('qty'),
             "item_name": source_item_doc.item_name or source_item_doc.requested_item_name,
-            "description": source_item_doc.requested_description,
+            "description": get_rfp_item_description(source_item_doc),
             "uom": source_item_doc.uom,
             "schedule_date": source_item_doc.schedule_date,
             "request_for_material": source_name,
