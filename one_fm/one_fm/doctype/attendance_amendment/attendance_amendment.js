@@ -287,7 +287,7 @@ function render_grouped_preview(frm, items, ot_items, year, month_idx, days_in_m
 
     // ---- Build HTML for each group ----
     // The style block lives at the start of full_html so it reaches both the dialog and the PDF.
-    let full_html = `<style>
+    let full_html = !group_by_site ? "" : `<style>
         .site-header-bar { margin: 20px 0 8px; padding: 8px 14px; background: #D5D5D5; color: #222; border-radius: 6px; font-size: 14px; font-weight: bold; page-break-after: avoid; }
         .site-header-count { float: right; font-weight: normal; opacity: 0.85; }
         .site-total-row { margin: 0 0 16px; padding: 6px 12px; background: #EBEBEB; color: #333; border-radius: 6px; font-size: 12px; }
