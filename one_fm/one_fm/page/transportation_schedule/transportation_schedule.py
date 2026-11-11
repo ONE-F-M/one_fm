@@ -2435,8 +2435,8 @@ def get_manifest_data_for_plan(plan_name: str):
 			"shipmentOwnDirections": ship_own_dir,
 			"vehicleMeta": v_meta
 		},
-		# Transportation Settings is System Manager only, so the manifest page cannot
-		# read it; it hides the Rambo reliever chip when the list is already Rambo-only.
+		# The client cannot read Transportation Settings, so the manifest page gets the
+		# state from here; it hides the Rambo chip when the list is already Rambo-only.
 		"restrict_reliever_search_to_rambo": cint(
 			frappe.db.get_single_value(
 				"Transportation Settings", "restrict_reliever_search_to_rambo_employees_only"
