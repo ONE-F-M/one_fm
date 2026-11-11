@@ -2,6 +2,10 @@
 # See license.txt
 
 import frappe
+from contextlib import contextmanager
+from unittest.mock import patch
+
+from frappe.model.document import Document
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import getdate
 
@@ -11,17 +15,14 @@ class TestEmployeeResignationDateAdjustment(FrappeTestCase):
 		emp_name = _make_employee("test_erda_employee@example.com", "Test ERDA Employee")
 		self.employee = frappe.get_doc("Employee", emp_name)
 
-		self.relieving_date = frappe.utils.add_days(frappe.utils.today(), 30)
-		self.extended_relieving_date = frappe.utils.add_days(frappe.utils.today(), 45)
-
 		self.resignation = frappe.get_doc({
 			"doctype": "Employee Resignation",
 			"employee": self.employee.name,
-			"resignation_initiation_date": frappe.utils.today(),
 			"reason_for_exit": "Better opportunity",
 			"resignation_letter": "/files/resignation_letter.txt",
-			"relieving_date": self.relieving_date,
 		}).insert()
+		self.relieving_date = self.resignation.relieving_date
+		self.extended_relieving_date = frappe.utils.add_days(self.relieving_date, 15)
 
 		self.pmr = frappe.get_doc({
 			"doctype": "Project Manpower Request",
@@ -126,7 +127,7 @@ class TestEmployeeResignationDateAdjustment(FrappeTestCase):
 		ext.workflow_state = "Pending Supervisor"
 		with self.assertRaises(frappe.ValidationError) as context:
 			ext.save()
-		self.assertTrue("Extended Relieving Date is mandatory" in str(context.exception))
+		self.assertTrue("New Relieving Date is mandatory" in str(context.exception))
 
 	def test_extension_approval_side_effects(self):
 		ext = frappe.get_doc({
@@ -153,6 +154,116 @@ class TestEmployeeResignationDateAdjustment(FrappeTestCase):
 		self.assertEqual(getdate(self.resignation.relieving_date), getdate(self.extended_relieving_date))
 		self.assertEqual(getdate(self.employee.relieving_date), getdate(self.extended_relieving_date))
 		self.assertEqual(getdate(self.pmr.deployment_date), getdate(frappe.utils.add_days(self.extended_relieving_date, -11)))
+
+
+	def test_an_extension_must_move_the_date_later(self):
+		with self.assertRaises(frappe.ValidationError) as context:
+			frappe.get_doc({
+				"doctype": "Employee Resignation Date Adjustment",
+				"employee_resignation": self.resignation.name,
+				"adjustment_type": "Extension",
+				"extended_relieving_date": frappe.utils.add_days(self.relieving_date, -5),
+			}).insert()
+		self.assertIn("For an Extension", str(context.exception))
+
+	def test_a_reduction_must_move_the_date_earlier(self):
+		with self.assertRaises(frappe.ValidationError) as context:
+			frappe.get_doc({
+				"doctype": "Employee Resignation Date Adjustment",
+				"employee_resignation": self.resignation.name,
+				"adjustment_type": "Reduction",
+				"extended_relieving_date": frappe.utils.add_days(self.relieving_date, 5),
+			}).insert()
+		self.assertIn("For a Reduction", str(context.exception))
+
+	def test_a_reduction_cannot_go_into_the_past(self):
+		with self.assertRaises(frappe.ValidationError) as context:
+			frappe.get_doc({
+				"doctype": "Employee Resignation Date Adjustment",
+				"employee_resignation": self.resignation.name,
+				"adjustment_type": "Reduction",
+				"extended_relieving_date": frappe.utils.add_days(frappe.utils.today(), -1),
+			}).insert()
+		self.assertIn("cannot be in the past", str(context.exception))
+
+	def test_an_approved_reduction_moves_the_relieving_date_earlier(self):
+		reduced = frappe.utils.add_days(self.relieving_date, -30)
+		ext = frappe.get_doc({
+			"doctype": "Employee Resignation Date Adjustment",
+			"employee_resignation": self.resignation.name,
+			"adjustment_type": "Reduction",
+			"extended_relieving_date": reduced,
+		}).insert()
+		for state in ("Pending Supervisor", "Pending Project Manager", "Approved"):
+			ext.workflow_state = state
+			ext.save()
+
+		self.assertEqual(
+			getdate(frappe.db.get_value("Employee Resignation", self.resignation.name, "relieving_date")),
+			getdate(reduced),
+		)
+
+
+	def test_the_employee_can_request_a_date_change_while_the_first_approver_reviews(self):
+		self._move_resignation("Pending Supervisor")
+
+		with self._acting_as("test_erda_employee@example.com"):
+			ext = frappe.get_doc({
+				"doctype": "Employee Resignation Date Adjustment",
+				"employee_resignation": self.resignation.name,
+				"extended_relieving_date": self.extended_relieving_date,
+			}).insert()
+
+		self.assertTrue(ext.name)
+
+	def test_the_employee_cannot_request_a_date_change_once_the_first_approver_has_approved(self):
+		self._move_resignation("Pending Supervisor", "Pending Project Manager")
+
+		with self._acting_as("test_erda_employee@example.com"):
+			with self.assertRaises(frappe.PermissionError):
+				frappe.get_doc({
+					"doctype": "Employee Resignation Date Adjustment",
+					"employee_resignation": self.resignation.name,
+					"extended_relieving_date": self.extended_relieving_date,
+				}).insert()
+
+	def test_hr_can_change_the_date_after_approval(self):
+		self._move_resignation("Pending Supervisor", "Pending Project Manager", "Approved")
+
+		with self._acting_as("test_erda_hr@example.com", roles=("Employee", "HR User")):
+			ext = frappe.get_doc({
+				"doctype": "Employee Resignation Date Adjustment",
+				"employee_resignation": self.resignation.name,
+				"extended_relieving_date": self.extended_relieving_date,
+			}).insert()
+
+		self.assertTrue(ext.name)
+
+	def _move_resignation(self, *states):
+		"""Take the resignation through each workflow state in turn, with what every step needs filled in."""
+		for state in states:
+			self.resignation.reload()
+			self.resignation.update({
+				"negotiation_remarks": "Test",
+				"performance_remarks": "Test",
+				"complaints_remarks": "Test",
+				"offboarding_officer": "Administrator",
+				"replacement_required": "No",
+				"workflow_state": state,
+			})
+			self.resignation.save()
+
+	@contextmanager
+	def _acting_as(self, user, roles=("Employee",)):
+		"""Run as a user holding only the given roles, with the DocType permission check stubbed out."""
+		with patch.object(Document, "check_permission", return_value=None):
+			with patch.object(frappe, "get_roles", return_value=list(roles)):
+				original = frappe.session.user
+				frappe.session.user = user
+				try:
+					yield
+				finally:
+					frappe.session.user = original
 
 
 def _make_employee(employee_id, employee_name):

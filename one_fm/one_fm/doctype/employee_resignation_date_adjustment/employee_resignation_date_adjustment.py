@@ -1,12 +1,21 @@
 import frappe
 from frappe.model.document import Document
 from frappe import _
+from frappe.utils import formatdate, getdate, today
+
+# The employee may ask for a date change only while the resignation waits for its first approver.
+FIRST_REVIEW_STATES = ("Pending Line Manager", "Pending Supervisor", "Pending T4 Admin")
+# After that, only these roles may raise one.
+DATE_CHANGE_ROLES = ("HR Manager", "HR User", "System Manager")
 
 class EmployeeResignationDateAdjustment(Document):
     def validate(self):
+        if self.is_new():
+            self.validate_date_change_allowed()
         if self.workflow_state != "Approved":
             self.set_approver()
         self.validate_extended_relieving_date()
+        self.validate_adjustment_direction()
 
     def validate_extended_relieving_date(self):
         # mandatory_depends_on on the field only enforces this in the browser --
@@ -14,8 +23,50 @@ class EmployeeResignationDateAdjustment(Document):
         # but "Submit for Review" and beyond must not proceed without it.
         if self.workflow_state and self.workflow_state != "Draft" and not self.extended_relieving_date:
             frappe.throw(
-                _("Extended Relieving Date is mandatory before submitting this request for review."),
-                title=_("Missing Extended Relieving Date"),
+                _("New Relieving Date is mandatory before submitting this request for review."),
+                title=_("Missing New Relieving Date"),
+            )
+
+    def validate_date_change_allowed(self):
+        if not self.employee_resignation or set(DATE_CHANGE_ROLES) & set(frappe.get_roles()):
+            return
+
+        state = frappe.db.get_value("Employee Resignation", self.employee_resignation, "workflow_state")
+        if state not in FIRST_REVIEW_STATES:
+            frappe.throw(
+                _("A date change can only be requested while the resignation is waiting for its first approval. Please ask HR to change the date."),
+                frappe.PermissionError,
+                title=_("Date Change Not Allowed"),
+            )
+
+    def validate_adjustment_direction(self):
+        """An Extension must move the Relieving Date later, a Reduction earlier but not into the past."""
+        if not (self.extended_relieving_date and self.employee_resignation) or self.workflow_state == "Approved":
+            return
+
+        # Checked while the request is drafted or submitted, and again if the date or type changes later.
+        before = self.get_doc_before_save()
+        if (
+            before
+            and before.get("workflow_state") not in (None, "", "Draft")
+            and not (self.has_value_changed("extended_relieving_date") or self.has_value_changed("adjustment_type"))
+        ):
+            return
+
+        current = getdate(frappe.db.get_value("Employee Resignation", self.employee_resignation, "relieving_date"))
+        new = getdate(self.extended_relieving_date)
+        if self.adjustment_type == "Reduction":
+            if new >= current:
+                frappe.throw(
+                    _("For a Reduction, the New Relieving Date must be before the current Relieving Date ({0}).").format(formatdate(current)),
+                    title=_("Invalid New Relieving Date"),
+                )
+            if new < getdate(today()):
+                frappe.throw(_("The New Relieving Date cannot be in the past."), title=_("Invalid New Relieving Date"))
+        elif new <= current:
+            frappe.throw(
+                _("For an Extension, the New Relieving Date must be after the current Relieving Date ({0}).").format(formatdate(current)),
+                title=_("Invalid New Relieving Date"),
             )
 
     def on_update(self):
@@ -27,8 +78,8 @@ class EmployeeResignationDateAdjustment(Document):
         if self.workflow_state == "Pending Supervisor":
             old_doc = self.get_doc_before_save()
             if not old_doc or old_doc.workflow_state != "Pending Supervisor":
-                subject = _("Attention: Resignation Extension Initiated - {0}").format(self.name)
-                message = _("A resignation extension request <b>{0}</b> has been submitted to the supervisor. Please hold any offboarding processing for the involved employees until this is finalized.").format(self.name)
+                subject = _("Attention: Resignation Date Change Initiated - {0}").format(self.name)
+                message = _("A resignation date change request <b>{0}</b> ({1}) has been submitted to the supervisor. Please hold any offboarding processing for the involved employees until this is finalized.").format(self.name, _(self.adjustment_type))
                 
                 recipients = set()
                 from frappe.utils.user import get_users_with_role

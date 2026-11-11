@@ -13,6 +13,7 @@
   "column_break_twru",
   "relieving_date",
   "current_relieving_date",
+  "adjustment_type",
   "table_section",
   "employees",
   "reason",
@@ -85,6 +86,15 @@
    "read_only": 1
   },
   {
+   "default": "Extension",
+   "fieldname": "adjustment_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Request Type",
+   "options": "Extension\nReduction",
+   "reqd": 1
+  },
+  {
    "fieldname": "table_section",
    "fieldtype": "Section Break",
    "label": "Extension Request Details"
@@ -105,7 +115,7 @@
   {
    "fieldname": "extension_letter",
    "fieldtype": "Attach",
-   "label": "Extension Letter"
+   "label": "Request Letter"
   },
   {
    "fieldname": "more_information_section",
@@ -143,7 +153,7 @@
   {
    "fieldname": "extended_relieving_date",
    "fieldtype": "Date",
-   "label": "Extended Relieving Date",
+   "label": "New Relieving Date",
    "mandatory_depends_on": "eval:doc.workflow_state && doc.workflow_state !== 'Draft'"
   },
   {
@@ -222,7 +232,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-21 16:30:35.050528",
+ "modified": "2026-11-09 11:06:25.000000",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Employee Resignation Date Adjustment",

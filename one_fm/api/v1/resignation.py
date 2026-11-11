@@ -5,6 +5,7 @@ from frappe.utils.file_manager import save_file
 from frappe.model.workflow import apply_workflow
 from one_fm.api.mobile_utils import get_param, get_all_params
 from one_fm.api.v1.utils import check_own_employee, handle_attachment_internal
+from one_fm.one_fm.doctype.employee_resignation.employee_resignation import get_hr_visit_date
 
 
 # ---------------------------------------------------------------------------
@@ -39,8 +40,6 @@ def ensure_own_employee(employee):
 def create_resignation(
     employee_id=None,
     supervisor=None,
-    resignation_initiation_date=None,
-    relieving_date=None,
     reason_for_exit=None,
     attachment=None,
     attachment_name=None,
@@ -52,16 +51,12 @@ def create_resignation(
             "attachment_name",
             employee_id=employee_id,
             supervisor=supervisor,
-            resignation_initiation_date=resignation_initiation_date,
-            relieving_date=relieving_date,
             reason_for_exit=reason_for_exit,
             attachment=attachment,
             attachment_name=attachment_name,
         )
         input_id   = p["employee_id"]
         supervisor = p["supervisor"]
-        init_date  = p["resignation_initiation_date"]
-        rel_date   = p["relieving_date"] or get_param("resignation_date")
         reason     = p["reason_for_exit"]
         attachment = p["attachment"]
         att_name   = p["attachment_name"] or "resignation_letter.png"
@@ -91,8 +86,6 @@ def create_resignation(
         doc = frappe.new_doc("Employee Resignation")
         doc.owner = employee_user or frappe.session.user
         doc.employee = employee_name
-        doc.resignation_initiation_date = init_date
-        doc.relieving_date = rel_date
         doc.reason_for_exit = reason
         doc.supervisor = supervisor
         doc.department = emp.get("department")
@@ -130,6 +123,7 @@ def extend_resignation(
     supervisor: str = None,
     reason: str = None,
     extended_date: str = None,
+    adjustment_type: str = None,
     resignation_id: str = None,
     # mobile sends {attachment_name, attachment} as an object
     attachment: str | dict = None,
@@ -147,6 +141,7 @@ def extend_resignation(
             resignation_id=resignation_id,
             reason=reason,
             extended_date=extended_date,
+            adjustment_type=adjustment_type,
             attachment=attachment,
             attachment_name=attachment_name,
         )
@@ -154,6 +149,7 @@ def extend_resignation(
         supervisor     = p["supervisor"]
         reason         = p["reason"]
         extended_date  = p["extended_date"]
+        adjustment_type = p["adjustment_type"] or "Extension"
         resignation_id = p["resignation_id"]
         attachment     = p["attachment"]
         att_name       = p["attachment_name"] or "extension_letter.png"
@@ -191,6 +187,7 @@ def extend_resignation(
         ext.employee = active_doc.employee
         ext.supervisor = supervisor or active_doc.supervisor
         ext.extended_relieving_date = extended_date
+        ext.adjustment_type = adjustment_type
         ext.reason = reason or "Adjustment requested by employee"
         # Do NOT set workflow_state before insert — Frappe sets it to the
         # workflow's initial state ('Draft') automatically
@@ -377,6 +374,7 @@ def get_my_active_resignation(employee_id: str | None = None, **kwargs):
         "workflow_state",
         order_by="creation desc",
     )
+    record["hr_visit_date"] = get_hr_visit_date(record["relieving_date"])
     return record
 
 
@@ -398,8 +396,8 @@ def get_all_my_resignations(employee_id=None, **kwargs):
         fields=["name", "workflow_state", "resignation_initiation_date", "relieving_date", "creation"],
         order_by="creation desc"
     )
-
-
+    for record in resignations:
+        record["hr_visit_date"] = get_hr_visit_date(record["relieving_date"])
 
     return resignations
 
@@ -424,7 +422,9 @@ def get_resignation_by_name(resignation_id: str = None, **kwargs):
     if not records:
         frappe.throw(_("Resignation record not found"), frappe.DoesNotExistError)
 
-    return records[0]
+    record = records[0]
+    record["hr_visit_date"] = get_hr_visit_date(record["relieving_date"])
+    return record
 
 
 @frappe.whitelist()

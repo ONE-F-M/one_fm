@@ -9,6 +9,7 @@ from one_fm.api.v1.resignation import (
     get_resignation_by_name,
     get_my_active_resignation,
 )
+from one_fm.one_fm.doctype.employee_resignation.employee_resignation import get_hr_visit_date
 
 class TestEmployeeResignation(FrappeTestCase):
     def setUp(self):
@@ -94,6 +95,12 @@ class TestGetMyActiveResignationWithdrawalState(FrappeTestCase):
         self.assertEqual(record["name"], self.resignation)
         self.assertIsNone(record["withdrawal_state"])
 
+    def test_the_active_resignation_carries_the_hr_visit_date(self):
+        relieving_date = frappe.db.get_value("Employee Resignation", self.resignation, "relieving_date")
+        with self.set_user(self.user):
+            record = get_my_active_resignation(employee_id=self.employee)
+        self.assertEqual(record["hr_visit_date"], get_hr_visit_date(relieving_date))
+
     def test_withdrawal_state_reports_the_pending_withdrawal(self):
         withdrawal = frappe.get_doc({
             "doctype": "Employee Resignation Withdrawal",
@@ -167,6 +174,13 @@ def _make_employee(name_suffix, user_id):
     return emp.name
 
 
+def _first_review_state(resignation):
+    """The state Submit for Review leads to for this resignation's branch."""
+    if not resignation.shift_working:
+        return "Pending Line Manager"
+    return "Pending T4 Admin" if resignation.shift_category == "T4" else "Pending Supervisor"
+
+
 def _make_resignation(employee):
     doc = frappe.get_doc({
         "doctype": "Employee Resignation",
@@ -198,17 +212,84 @@ class TestResignationOnProcessa(FrappeTestCase):
         self.assertEqual(result["message"], "Resignation saved. Submit it for review.")
         self.assertTrue(frappe.db.exists("Employee Resignation", result["name"]))
 
-    def test_dates_are_editable_in_draft_and_in_date_correction(self):
+    def test_only_the_letter_is_editable_in_draft_and_in_date_correction(self):
         doc = frappe.new_doc("Employee Resignation")
         for state in ("Draft", "Pending Relieving Date Correction"):
             doc.workflow_state = state
-            self.assertEqual(
-                doc.get_processa_editable_fields(),
-                ["resignation_initiation_date", "relieving_date", "resignation_letter"],
+            self.assertEqual(doc.get_processa_editable_fields(), ["resignation_letter"])
+
+    def test_create_resignation_fixes_the_dates_whatever_the_app_sends(self):
+        with self.set_user(self.user), patch("one_fm.api.v1.resignation.handle_attachment_internal"):
+            result = create_resignation(
+                employee_id=self.employee,
+                resignation_initiation_date="2026-04-27",
+                relieving_date="2026-05-27",
+                reason_for_exit="Test",
+                attachment={"attachment_name": "letter.png", "attachment": "abc"},
             )
+        dates = frappe.db.get_value(
+            "Employee Resignation", result["name"], ["resignation_initiation_date", "relieving_date"], as_dict=True
+        )
+        self.assertEqual(dates.resignation_initiation_date, frappe.utils.getdate(frappe.utils.today()))
+        self.assertEqual(dates.relieving_date, frappe.utils.getdate(frappe.utils.add_days(frappe.utils.today(), 90)))
+
+    def test_dates_are_taken_from_the_day_the_resignation_is_submitted(self):
+        name = _make_resignation(self.employee)
+        raised_on = frappe.utils.add_days(frappe.utils.today(), -5)
+        frappe.db.set_value("Employee Resignation", name, {
+            "resignation_initiation_date": raised_on,
+            "relieving_date": frappe.utils.add_days(raised_on, 90),
+        })
+        doc = frappe.get_doc("Employee Resignation", name)
+        doc.load_doc_before_save()
+        doc.workflow_state = "Pending Supervisor"
+
+        doc.set_fixed_dates()
+
+        self.assertEqual(str(doc.resignation_initiation_date), frappe.utils.today())
+        self.assertEqual(str(doc.relieving_date), str(frappe.utils.add_days(frappe.utils.today(), 90)))
+
+    def test_dates_cannot_be_changed_once_submitted(self):
+        doc = frappe.get_doc("Employee Resignation", _make_resignation(self.employee))
+        doc.workflow_state = _first_review_state(doc)
+        doc.save()
+        doc.reload()
+        doc.load_doc_before_save()
+        doc.relieving_date = frappe.utils.add_days(doc.relieving_date, 10)
+
+        with self.assertRaises(frappe.ValidationError) as context:
+            doc.set_fixed_dates()
+
+        self.assertIn("set automatically", str(context.exception))
 
     def test_dates_are_locked_while_an_approver_reviews(self):
         doc = frappe.new_doc("Employee Resignation")
         for state in ("Pending Supervisor", "Pending Line Manager", "Approved"):
             doc.workflow_state = state
             self.assertEqual(doc.get_processa_editable_fields(), [])
+
+
+class TestHrVisitDate(FrappeTestCase):
+    def test_a_working_day_is_the_next_day(self):
+        # 2026-11-11 is a Wednesday
+        self.assertEqual(str(get_hr_visit_date("2026-11-11")), "2026-11-12")
+
+    def test_the_weekend_moves_to_sunday(self):
+        # Thursday, Friday and Saturday relieving dates all send the employee to HR on Sunday 2026-11-15
+        for relieving_date in ("2026-11-12", "2026-11-13", "2026-11-14"):
+            self.assertEqual(str(get_hr_visit_date(relieving_date)), "2026-11-15")
+
+
+class TestRemoveRequestRelievingDateChange(FrappeTestCase):
+    def test_approvers_can_no_longer_request_a_relieving_date_change(self):
+        from one_fm.patches.v15_0.remove_resignation_request_relieving_date_change import execute
+
+        execute()
+
+        actions = [t.action for t in frappe.get_doc("Workflow", "Employee Resignation").transitions]
+        self.assertNotIn("Request Relieving Date Change", actions)
+        self.assertIn("Resubmit Date", actions)
+
+    def tearDown(self):
+        frappe.db.rollback()
+

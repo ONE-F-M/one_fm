@@ -1,6 +1,9 @@
 // Copyright (c) 2026, ONE FM and contributors
 // For license information, please see license.txt
 
+// Mirrors NOTICE_PERIOD_DAYS in employee_resignation.py
+const NOTICE_PERIOD_DAYS = 90;
+
 // Mirrors REVIEW_STATES in employee_resignation.py
 const REVIEW_STATES = [
 	"Pending Line Manager",
@@ -46,10 +49,11 @@ frappe.ui.form.on("Employee Resignation", {
 		load_resignation_autocomplete_options(frm);
 		frm.trigger('update_operational_impact_visibility');
 
-		let is_draft = frm.doc.__islocal || frm.doc.workflow_state === 'Draft';
-		let is_editable = is_draft || frm.doc.workflow_state === 'Pending Relieving Date Correction';
-		frm.set_df_property('resignation_initiation_date', 'read_only', is_editable ? 0 : 1);
-		frm.set_df_property('relieving_date', 'read_only', is_editable ? 0 : 1);
+		// Shown before the first save; the server sets both dates from NOTICE_PERIOD_DAYS.
+		if (frm.doc.__islocal) {
+			frm.set_value("resignation_initiation_date", frappe.datetime.get_today());
+			frm.set_value("relieving_date", frappe.datetime.add_days(frappe.datetime.get_today(), NOTICE_PERIOD_DAYS));
+		}
 
 		// Non-shift (corporate) hires have no Project Manager step -- their
 		// "Supervisor" is really their Line Manager, the sole final approver
