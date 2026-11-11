@@ -261,10 +261,10 @@ def optimize_transportation_routes():
         frappe.log_error(frappe.get_traceback(), "Route Optimization API Error")
         return {"status": "error", "message": str(e)}
 
-def get_grouped_employees_by_accommodation(skipped: dict | None = None) -> dict:
-    """{camp key: {"lookup_id", "shifts": {shift: [employee]}}} for today's riders.
+def get_grouped_employees_by_accommodation(skipped: dict | None = None, on_date=None) -> dict:
+    """{camp key: {"lookup_id", "shifts": {shift: [employee]}}} for the riders of ``on_date`` (today).
 
-    Demand comes from today's Working Employee Schedule rows, not the master Employee.shift.
+    Demand comes from that day's Working Employee Schedule rows, not the master Employee.shift.
     ``skipped`` collects ``{employee: reason}`` for every Active employee dropped here.
     """
     def skip(emp_ids, reason):
@@ -283,7 +283,7 @@ def get_grouped_employees_by_accommodation(skipped: dict | None = None) -> dict:
     active = set(shift_names)
     rows_of = {}
     for row in frappe.get_all("Employee Schedule",
-        filters={"date": frappe.utils.today(), "employee_availability": "Working"},
+        filters={"date": on_date or frappe.utils.today(), "employee_availability": "Working"},
         fields=["employee", "shift", "employee_availability", "roster_type"]
     ):
         rows_of.setdefault(row.employee, []).append(row)
@@ -303,7 +303,7 @@ def get_grouped_employees_by_accommodation(skipped: dict | None = None) -> dict:
 
     # The overlay drops anyone on approved leave or being relieved, and files a reliever
     # under the shift they cover. It is resolved per date and stored nowhere.
-    emp_shift_map = apply_to_shift_map(emp_shift_map)
+    emp_shift_map = apply_to_shift_map(emp_shift_map, on_date)
     if skipped is not None:
         for emp in emp_shift_map:
             skipped.pop(emp, None)
