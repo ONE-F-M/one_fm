@@ -5,9 +5,13 @@ from frappe import _
 from frappe.utils import flt
 from erpnext.accounts.doctype.sales_invoice.sales_invoice import SalesInvoice
 
+NEGATIVE_MARGIN_WARNING = "Negative margin applied \u2014 selling price is below purchase cost."
+
+
 class SalesInvoiceOverride(SalesInvoice):
 
     def validate(self):
+        self.validate_selling_margin()
         super(SalesInvoiceOverride, self).validate()
         self.update_purchase_invoice_link()
         if self.custom_refundable:
@@ -172,6 +176,43 @@ class SalesInvoiceOverride(SalesInvoice):
                             _("Row #{0}: '{1}' is not a valid category for this Contract")
                             .format(item.idx, item.custom_contract_item_category)
                         )
+
+    def validate_selling_margin(self):
+        """Check the per-row selling margin of refundable rows.
+
+        A negative margin is a real negative margin: it lowers the selling price below the
+        base cost and is NOT converted to a discount. It only raises a non-blocking orange
+        warning; there is no confirm dialog.
+        """
+        has_negative_margin = False
+
+        for item in self.items:
+            if not item.get("custom_refundable"):
+                continue
+
+            margin = flt(item.get("custom_margin_rate_or_amount"))
+            margin_type = item.get("custom_margin_type")
+
+            if not margin_type:
+                if margin:
+                    frappe.throw(
+                        _("Row #{0}: Margin Type is required when a Margin is entered").format(item.idx)
+                    )
+                continue
+
+            base_rate = flt(item.get("price_list_rate")) or flt(item.get("rate"))
+            margin_value = margin if margin_type == "Amount" else base_rate * margin / 100
+
+            if base_rate > 0 and base_rate + margin_value <= 0:
+                frappe.throw(
+                    _("Row #{0}: A negative Margin cannot reduce the selling price to zero or below").format(item.idx)
+                )
+
+            if margin < 0:
+                has_negative_margin = True
+
+        if has_negative_margin:
+            frappe.msgprint(_(NEGATIVE_MARGIN_WARNING), title=_("Warning"), indicator="orange")
 
     def validate_contract_item_rates(self):
         """Story 3: Prevent manual rate adjustments on Sales Invoices generated from Contracts"""
