@@ -165,6 +165,10 @@ class TestEmployeeSchedule(FrappeTestCase):
 		# cleanup
 		schedule.delete()
 
+
+class TestEmployeeScheduleRelievingFields(FrappeTestCase):
+	"""Meta-only checks for the Relieving Details section (no Employee fixture needed)."""
+
 	def test_new_relieving_fields_exist(self):
 		meta = frappe.get_meta("Employee Schedule")
 		for fieldname in ("relieving_details_section", "is_day_off_reliever", "is_weekend_reliever",
