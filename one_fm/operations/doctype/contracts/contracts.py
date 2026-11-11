@@ -2880,10 +2880,15 @@ def calculate_item_values(doc):
 
             item.net_rate = item.rate
 
-            # if not item.qty and self.doc.get("is_return"):
-            # 	item.amount = flt(-1 * item.rate, item.precision("amount"))
-            # else:
-            # 	item.amount = flt(item.rate * item.qty,	item.precision("amount"))
+            # Amount is only recalculated for refundable Sales Invoice rows. Other rows (for example
+            # fixed-fee contract invoices) deliberately keep the amount they arrived with.
+            if item.doctype == "Sales Invoice Item" and item.get("custom_refundable"):
+                if not item.qty and doc.doc.get("is_return"):
+                    item.amount = flt(-1 * item.rate, item.precision("amount"))
+                else:
+                    item.amount = flt(item.rate * item.qty, item.precision("amount"))
+
+                set_selling_margin_display(doc, item)
 
             item.net_amount = item.amount
 
@@ -2891,7 +2896,28 @@ def calculate_item_values(doc):
 
             item.item_tax_amount = 0.0
 
-  
+
+def set_selling_margin_display(doc, item):
+    """Fill custom_base_amount (cost x qty) and custom_margin_display ("10%" or "2.000 KD")
+    on a refundable Sales Invoice Item so base, margin and net amount print separately."""
+    margin_type = item.get("custom_margin_type")
+    margin = flt(item.get("custom_margin_rate_or_amount"))
+
+    if margin_type:
+        base_rate = flt(item.price_list_rate) or flt(item.rate)
+    else:
+        base_rate = flt(item.rate)
+    item.custom_base_amount = flt(base_rate * flt(item.qty), item.precision("amount"))
+
+    if margin_type == "Percentage":
+        item.custom_margin_display = "{0:g}%".format(flt(margin, 3))
+    elif margin_type == "Amount":
+        currency = doc.doc.get("currency")
+        item.custom_margin_display = "{0:.3f} {1}".format(
+            flt(margin), "KD" if currency in (None, "", "KWD") else currency
+        )
+    else:
+        item.custom_margin_display = ""
 
 
 # GET DELIVERY NOTE FOR CONTRACTS
