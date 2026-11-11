@@ -154,5 +154,9 @@ class TestSalesInvoiceMargin(FrappeTestCase):
 		self.assertEqual(flt(item.amount, 3), 55.000)
 
 	def test_non_refundable_row_ignores_margin_fields(self):
-		item = self.calculate(self.make_invoice(margin_type="Percentage", margin=10, refundable=0))
+		# Amount recalculation is refundable-only: other rows keep the amount they arrived with.
+		doc = self.make_invoice(margin_type="Percentage", margin=10, refundable=0)
+		doc.items[0].amount = 50
+		item = self.calculate(doc)
 		self.assertEqual(flt(item.amount, 3), 50.000)
+		self.assertFalse(item.custom_margin_display)
