@@ -739,3 +739,4 @@ one_fm.patches.v15_0.set_informed_applicant_emp_onb_2026_00479 #2026-11-15 HD-19
 one_fm.patches.v15_0.remap_removed_pmr_reasons #2026-11-15 HD-1927006 fold the retired Project Manpower Request reasons Subcontractor Replacement and Reliever into Sub Contractor and Day OFF Reliever
 one_fm.patches.v15_0.approve_pending_attendance_check_nov2026 #2026-11-16 HD-1925623 approve the Attendance Checks left in Pending Approval for 2 to 13 November 2026 as Present, per HR request
 one_fm.patches.v15_0.backfill_attendance_check_nov15_2026 #2026-11-17 HD-1933504 WI-004742 the Attendance Checks for 15 November 2026 the daily job dropped when a deploy recreated its Scheduled Job Type across the 13:15 slot, 16 November guarded the same way
+one_fm.patches.v15_0.copy_employee_record_update_request_reason_to_remarks #2026-11-11 WI-004577

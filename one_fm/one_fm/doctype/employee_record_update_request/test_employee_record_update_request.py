@@ -9,10 +9,15 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import nowdate, getdate
 
+from one_fm.patches.v15_0 import copy_employee_record_update_request_reason_to_remarks as remarks_patch
 from one_fm.patches.v15_0 import create_employee_record_update_request_workflow_states as states_patch
 from one_fm.tests.utils import make_employee
 
 DOCTYPE = "Employee Record Update Request"
+
+REASON_OPTIONS = (
+	"\nIncrement\nDecrement\nPromotion\nChange in Designation\nChange in Department\nAddition of Benefits"
+)
 
 # (fieldname, fieldtype, options, reqd, read_only, depends_on, fetch_from) in BA order.
 # Layout fields (Section/Column Breaks) are checked separately.
@@ -54,7 +59,8 @@ EXPECTED_FIELDS = [
 		"benefit", "Table", "Employee Record Update Request Benefits Item", 0, 0,
 		"eval:doc.benefits_changes_required==1", "",
 	),
-	("reason", "Small Text", "", 1, 0, "", ""),
+	("reason_for_changes", "Select", REASON_OPTIONS, 1, 0, "", ""),
+	("remarks", "Small Text", "", 1, 0, "", ""),
 	("amended_from", "Link", DOCTYPE, 0, 1, "", ""),
 ]
 
@@ -110,7 +116,8 @@ def make_request(employee, **kwargs):
 		"doctype": DOCTYPE,
 		"employee": employee,
 		"effective_date_of_change": nowdate(),
-		"reason": "Test",
+		"reason_for_changes": "Increment",
+		"remarks": "Test",
 	}
 	values.update(kwargs)
 	return frappe.get_doc(values)
@@ -223,6 +230,22 @@ class TestEmployeeRecordUpdateRequest(FrappeTestCase):
 		doc = make_request(employee, effective_date_of_change=None)
 		self.assertRaises(frappe.MandatoryError, doc.insert, ignore_permissions=True)
 
+	def test_missing_reason_for_changes_raises_mandatory_error(self):
+		employee = get_test_employee()
+		if not employee:
+			self.skipTest("Need at least 1 active employee for this test.")
+
+		doc = make_request(employee, reason_for_changes=None)
+		self.assertRaises(frappe.MandatoryError, doc.insert, ignore_permissions=True)
+
+	def test_missing_remarks_raises_mandatory_error(self):
+		employee = get_test_employee()
+		if not employee:
+			self.skipTest("Need at least 1 active employee for this test.")
+
+		doc = make_request(employee, remarks=None)
+		self.assertRaises(frappe.MandatoryError, doc.insert, ignore_permissions=True)
+
 	def test_user_without_hr_roles_cannot_create(self):
 		employee = get_test_employee()
 		if not employee:
@@ -303,6 +326,71 @@ class TestWorkflowStatesPatch(FrappeTestCase):
 			states_patch.execute()
 
 		self.assertEqual(frappe.db.get_value("Workflow State", name, "style"), "Success")
+
+
+class TestCopyReasonToRemarksPatch(FrappeTestCase):
+	"""The old free-text `reason` column is orphaned by migrate; the patch keeps its text in remarks."""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		reload_doctypes()
+		cls.added_reason_column = not frappe.db.has_column(DOCTYPE, "reason")
+		if cls.added_reason_column:
+			frappe.db.sql_ddl(f"alter table `tab{DOCTYPE}` add column `reason` text")
+
+	@classmethod
+	def tearDownClass(cls):
+		if cls.added_reason_column and frappe.db.has_column(DOCTYPE, "reason"):
+			frappe.db.sql_ddl(f"alter table `tab{DOCTYPE}` drop column `reason`")
+		super().tearDownClass()
+
+	def make_old_record(self, reason, remarks):
+		employee = get_test_employee()
+		if not employee:
+			self.skipTest("Need at least 1 active employee for this test.")
+		doc = make_request(employee).insert(ignore_permissions=True)
+		frappe.db.sql(
+			f"update `tab{DOCTYPE}` set `reason` = %s, `remarks` = %s where name = %s",
+			(reason, remarks, doc.name),
+		)
+		return doc.name
+
+	def get_values(self, name):
+		return frappe.db.get_value(DOCTYPE, name, ["remarks", "reason_for_changes"], as_dict=True)
+
+	def test_copies_reason_into_empty_remarks_and_leaves_reason_for_changes(self):
+		name = self.make_old_record("Old free text reason", None)
+		frame_before = self.get_values(name)
+		self.assertFalse(frame_before.remarks)
+
+		remarks_patch.execute()
+
+		values = self.get_values(name)
+		self.assertEqual(values.remarks, "Old free text reason")
+		self.assertEqual(values.reason_for_changes, frame_before.reason_for_changes)
+
+	def test_is_idempotent_and_does_not_overwrite_remarks(self):
+		empty = self.make_old_record("Reason A", "")
+		filled = self.make_old_record("Reason B", "Kept remarks")
+
+		remarks_patch.execute()
+		remarks_patch.execute()
+
+		self.assertEqual(self.get_values(empty).remarks, "Reason A")
+		self.assertEqual(self.get_values(filled).remarks, "Kept remarks")
+
+		frappe.db.sql(f"update `tab{DOCTYPE}` set `remarks` = %s where name = %s", ("Edited later", empty))
+		remarks_patch.execute()
+		self.assertEqual(self.get_values(empty).remarks, "Edited later")
+
+	def test_skips_when_reason_column_is_absent(self):
+		name = self.make_old_record("Should not be copied", None)
+
+		with mock.patch.object(frappe.db, "has_column", return_value=False):
+			remarks_patch.execute()
+
+		self.assertFalse(self.get_values(name).remarks)
 
 
 DIFFERENT_DEPARTMENT_MESSAGE = (
@@ -406,9 +494,9 @@ class TestDepartmentAccess(FrappeTestCase):
 		frappe.share.add(DOCTYPE, doc.name, self.hr_x.user_id, write=1)
 		with self.set_user(self.hr_x.user_id):
 			doc = frappe.get_doc(DOCTYPE, doc.name)
-			doc.reason = "Updated by another department"
+			doc.remarks = "Updated by another department"
 			doc.save()
-		self.assertEqual(frappe.db.get_value(DOCTYPE, doc.name, "reason"), "Updated by another department")
+		self.assertEqual(frappe.db.get_value(DOCTYPE, doc.name, "remarks"), "Updated by another department")
 
 	def test_other_employee_cannot_read_a_request_they_do_not_own(self):
 		doc = self.create(self.it_a.user_id, self.it_b.name)
