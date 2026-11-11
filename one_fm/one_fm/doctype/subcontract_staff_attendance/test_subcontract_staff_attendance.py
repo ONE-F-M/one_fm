@@ -51,7 +51,7 @@ class TestSubcontractStaffAttendance(FrappeTestCase):
 
 	@change_settings("Operation Settings", {SETTING: 1})
 	def test_unset_or_zero_falls_back_to_1(self):
-		# Bypass the controller validation (which rejects 0) to mimic an existing Single with no value
+		# Store 0 directly to mimic an existing Single with no usable value
 		frappe.db.set_single_value("Operation Settings", SETTING, 0)
 		self.assertEqual(get_submission_start_day(), 1)
 
