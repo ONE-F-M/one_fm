@@ -49,8 +49,8 @@
   "actual_qty",
   "pur_qty",
   "is_refundable",
-  "margin_type",
   "margin_known",
+  "margin_type",
   "margin_rate_or_amount",
   "remarks_and_manufacturers_details_section",
   "remarks",
@@ -631,6 +631,7 @@
    "fieldname": "margin_known",
    "fieldtype": "Select",
    "label": "Margin Known?",
+   "mandatory_depends_on": "eval:doc.is_refundable == 1",
    "options": "\nYes\nNo"
   },
   {
@@ -638,18 +639,20 @@
    "fieldname": "margin_type",
    "fieldtype": "Select",
    "label": "Margin Type",
+   "mandatory_depends_on": "eval:doc.is_refundable == 1 && doc.margin_known == \"Yes\"",
    "options": "\nPercentage\nAmount"
   },
   {
    "depends_on": "eval:doc.is_refundable == 1 && doc.margin_known == \"Yes\"",
    "fieldname": "margin_rate_or_amount",
    "fieldtype": "Float",
-   "label": "Margin Rate or Amount"
+   "label": "Margin Rate or Amount",
+   "mandatory_depends_on": "eval:doc.is_refundable == 1 && doc.margin_known == \"Yes\""
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-09-12 12:00:00.000000",
+ "modified": "2026-11-11 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material Item",
