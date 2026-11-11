@@ -19,6 +19,14 @@ class OperationSettings(Document):
 			The start day must be 1 to 28 so that it exists in every month (including February)
 		'''
 		start_day = cint(self.subcontractor_attendance_submission_start_day)
+		if not start_day and not frappe.db.sql(
+			"select 1 from `tabSingles` where doctype=%s and field=%s",
+			("Operation Settings", "subcontractor_attendance_submission_start_day"),
+		):
+			# Existing Single that has never stored this field: migrate does not write the default,
+			# so apply it here instead of blocking unrelated changes to Operation Settings.
+			start_day = 1
+			self.subcontractor_attendance_submission_start_day = start_day
 		if start_day < 1 or start_day > 28:
 			frappe.throw(_("Subcontractor Attendance Submission Start Day must be between 1 and 28."))
 

@@ -21,6 +21,10 @@ def on_date(date_string):
 
 
 class TestSubcontractStaffAttendance(FrappeTestCase):
+	def setUp(self):
+		# Make sure a valid value is stored so the settings are restored cleanly after each test
+		frappe.db.set_single_value("Operation Settings", SETTING, 1)
+
 	@change_settings("Operation Settings", {SETTING: 5})
 	def test_throws_day_before_configured_day(self):
 		with on_date("2026-02-04"):

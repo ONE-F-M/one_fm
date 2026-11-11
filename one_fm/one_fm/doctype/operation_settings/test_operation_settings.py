@@ -6,6 +6,10 @@ from frappe.tests.utils import FrappeTestCase, change_settings
 
 
 class TestOperationSettings(FrappeTestCase):
+	def setUp(self):
+		# Make sure a valid value is stored so the settings are restored cleanly after each test
+		frappe.db.set_single_value("Operation Settings", "subcontractor_attendance_submission_start_day", 1)
+
 	def _save_start_day(self, value):
 		settings = frappe.get_doc("Operation Settings")
 		settings.subcontractor_attendance_submission_start_day = value
