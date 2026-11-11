@@ -93,7 +93,7 @@ class RequestforMaterial(BuyingController):
         self.validate_refundable_margins()
 
     def validate_refundable_margins(self):
-        """WI-004506: margin details are mandatory on refundable item rows.
+        """Margin details are mandatory on refundable item rows.
 
         mandatory_depends_on is only enforced in the browser, so the same rule is
         enforced here for API-created requests. 0 and negative values are valid for
