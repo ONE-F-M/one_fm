@@ -164,3 +164,39 @@ class TestEmployeeSchedule(FrappeTestCase):
 		
 		# cleanup
 		schedule.delete()
+
+
+class TestEmployeeScheduleRelievingFields(FrappeTestCase):
+	"""Meta-only checks for the Relieving Details section (no Employee fixture needed)."""
+
+	def test_new_relieving_fields_exist(self):
+		meta = frappe.get_meta("Employee Schedule")
+		for fieldname in ("relieving_details_section", "is_day_off_reliever", "is_weekend_reliever",
+				"is_annual_leave_reliever", "leave_application"):
+			self.assertIsNotNone(meta.get_field(fieldname), fieldname)
+		self.assertEqual(meta.get_field("relieving_details_section").label, "Relieving Details")
+		self.assertEqual(meta.get_field("relieving_details_section").fieldtype, "Section Break")
+
+	def test_reliever_checks_are_read_only(self):
+		meta = frappe.get_meta("Employee Schedule")
+		for fieldname in ("is_day_off_reliever", "is_weekend_reliever", "is_annual_leave_reliever"):
+			field = meta.get_field(fieldname)
+			self.assertEqual(field.fieldtype, "Check")
+			self.assertEqual(field.read_only, 1, fieldname)
+			self.assertEqual(str(field.default), "0", fieldname)
+
+	def test_leave_application_links_to_leave_application(self):
+		field = frappe.get_meta("Employee Schedule").get_field("leave_application")
+		self.assertEqual(field.fieldtype, "Link")
+		self.assertEqual(field.options, "Leave Application")
+
+	def test_relieving_fields_sit_under_relieving_details_section(self):
+		meta = frappe.get_meta("Employee Schedule")
+		fieldnames = [f.fieldname for f in meta.fields]
+		start = fieldnames.index("relieving_details_section")
+		end = fieldnames.index("attendance_status_section")
+		section = fieldnames[start + 1:end]
+		for fieldname in ("is_relieving_schedule", "relieving_employee_schedule", "is_day_off_reliever",
+				"is_weekend_reliever", "is_annual_leave_reliever", "leave_application"):
+			self.assertIn(fieldname, section)
+			self.assertEqual(fieldnames.count(fieldname), 1)
