@@ -89,6 +89,9 @@ class TestAttendanceAmendmentDuplicate(FrappeTestCase):
 	SITE_A = "Dup Test Site A"
 	SITE_B = "Dup Test Site B"
 
+	def setUp(self):
+		frappe.db.delete("Attendance Amendment", {"project": self.PROJECT})
+
 	def _new(self, site=None, month="November", year="2026", state=None):
 		doc = frappe.get_doc(
 			{
@@ -117,21 +120,21 @@ class TestAttendanceAmendmentDuplicate(FrappeTestCase):
 	def test_same_combination_blocked_in_live_states(self):
 		for state in ("Draft", "Pending Approval", "Approved"):
 			with self.subTest(state=state):
+				frappe.db.delete("Attendance Amendment", {"project": self.PROJECT})
 				existing = self._make(site=self.SITE_A, state=state)
 				with self.assertRaises(frappe.ValidationError) as ctx:
 					self._new(site=self.SITE_A).insert()
 				message = str(ctx.exception)
 				self.assertIn(existing.name, message)
 				self.assertIn(state, message)
-				existing.db_set("workflow_state", "Cancelled", update_modified=False)
 
 	def test_cancelled_or_rejected_does_not_block(self):
 		for state in ("Cancelled", "Rejected"):
 			with self.subTest(state=state):
+				frappe.db.delete("Attendance Amendment", {"project": self.PROJECT})
 				self._make(site=self.SITE_A, state=state)
 				new = self._new(site=self.SITE_A).insert()
 				self.assertTrue(new.name)
-				new.db_set("workflow_state", "Cancelled", update_modified=False)
 
 	def test_project_wide_blocks_site_specific(self):
 		existing = self._make(site=None)
