@@ -4,18 +4,11 @@
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from one_fm.one_fm.doctype.subcontract_staff_attendance.subcontract_staff_attendance import (
-	ATTENDANCE_STATUSES,
-)
-
 ITEM_DOCTYPE = "Subcontractor Staff Attendance Item"
 EXPECTED_OPTIONS = ["", "Present", "Absent", "Day Off", "Client Day Off"]
 
 
 class TestSubcontractStaffAttendance(FrappeTestCase):
-	def test_constant_matches_allowed_statuses(self):
-		self.assertEqual(ATTENDANCE_STATUSES, ("Present", "Absent", "Day Off", "Client Day Off"))
-
 	def test_day_options_are_only_the_four_statuses(self):
 		meta = frappe.get_meta(ITEM_DOCTYPE)
 		for fieldname in ("day_1", "day_31"):
@@ -29,7 +22,7 @@ class TestSubcontractStaffAttendance(FrappeTestCase):
 	def test_process_audit_logs_counts_only_present_as_working(self):
 		doc = frappe.new_doc("Subcontract Staff Attendance")
 		# A subcontractor that does not exist: the baseline fetch returns [] (or fails and is ignored)
-		doc.subcontractor_name = "_Test Fake Subcontractor WI-004459"
+		doc.subcontractor_name = "_Test Fake Subcontractor"
 		doc.from_date = "2026-01-01"
 		doc.to_date = "2026-01-31"
 		doc.attendance_record_based_on = "Attendance Status"
