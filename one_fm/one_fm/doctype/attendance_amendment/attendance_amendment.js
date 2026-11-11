@@ -51,6 +51,16 @@ frappe.ui.form.on("Attendance Amendment", {
             }).addClass("btn-primary");
         }
     },
+    after_save(frm) {
+        // Early, non-blocking prompt: a part-prepared record can still be saved.
+        if (frm.doc.project && frm.doc.month && frm.doc.year
+            && !(frm.doc.attendance_details || []).length) {
+            frappe.msgprint({
+                message: __("No attendance data yet. Click Fetch Attendance Record to load it."),
+                indicator: "orange"
+            });
+        }
+    },
     fetch_attendance_record(frm){
         frappe.call({
             method: "fetch_attendance_record",
