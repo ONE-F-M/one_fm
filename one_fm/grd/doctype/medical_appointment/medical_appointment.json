@@ -167,7 +167,7 @@
    "fieldtype": "Select",
    "label": "Reason for Rejection",
    "options": "\nStaff Shortage\nAnother Employee has appointment from same site\nClient requested another appointment",
-   "read_only": 1
+   "read_only_depends_on": "eval:![\"Pending Supervisor\", \"Set Pick-up as Accommodation (Supervisor)\"].includes(doc.workflow_state)"
   },
   {
    "fieldname": "column_break_diby",
@@ -439,7 +439,7 @@
  "grid_page_length": 50,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-05 12:00:00.000000",
+ "modified": "2026-11-11 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Appointment",
