@@ -2,13 +2,8 @@ import frappe
 
 DOCTYPE = "Employee Record Update Request"
 
-# WI-004577: the free-text `reason` field was replaced by `reason_for_changes` (dropdown) and
-# `remarks`. Migrate does not drop the removed column, so existing records keep their text in
-# the orphaned `reason` column, invisible on the form. Copy it into `remarks` so it stays readable.
-#
-# `reason_for_changes` is left empty on old records: there is no reliable mapping from free text.
-# Idempotent: only rows whose remarks are still empty are touched, and the patch does nothing
-# when the `reason` column is absent (fresh sites).
+# The free-text `reason` field was replaced by `reason_for_changes` and `remarks`. Migrate keeps the
+# orphaned `reason` column, so copy its text into empty `remarks`. `reason_for_changes` stays empty.
 
 
 def execute():
