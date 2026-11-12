@@ -6,10 +6,13 @@ is_relief_shift() classifies one Employee Schedule row; CreateMap.process_record
 flag on schedule records and lets attendance records inherit it from their matched schedule.
 """
 
+import frappe
 import pandas as pd
 from frappe.tests.utils import FrappeTestCase
+from frappe.utils import add_days, getdate, today
 
 from one_fm.one_fm.page.roster.employee_map import CreateMap, is_relief_shift
+from one_fm.one_fm.page.roster.roster import get_al_relievers_query
 
 MONDAY = "2026-09-07"
 FRIDAY = "2026-09-11"
@@ -66,6 +69,12 @@ class TestIsReliefShift(FrappeTestCase):
 		self.assertEqual(is_relief_shift(make_schedule(date=SATURDAY, **off_home)), 1)
 		self.assertEqual(is_relief_shift(make_schedule(date=FRIDAY, custom_is_weekend_reliever=1)), 0)
 
+	def test_annual_leave_relief_is_not_red_relief(self):
+		row = make_schedule(is_annual_leave_reliever=1, shift="Other Shift")
+		self.assertEqual(is_relief_shift(row), 0)
+		row.update(custom_is_reliever=1, date=FRIDAY, custom_is_weekend_reliever=1)
+		self.assertEqual(is_relief_shift(row), 0)
+
 	def test_rambo_reliever_alone_flags_nothing(self):
 		row = make_schedule(shift="Other Shift", custom_is_rambo_reliever=1)
 		self.assertEqual(is_relief_shift(row), 0)
@@ -86,7 +95,7 @@ class TestIsReliefShift(FrappeTestCase):
 
 
 class TestProcessRecordsReliefFlag(FrappeTestCase):
-	def build_map(self, with_attendance):
+	def build_map(self, with_attendance, **basic_overrides):
 		cm = object.__new__(CreateMap)
 		cm.date_range = pd.date_range(start=MONDAY, end=MONDAY)
 		cm.employee_period_details = {}
@@ -121,7 +130,7 @@ class TestProcessRecordsReliefFlag(FrappeTestCase):
 			"custom_is_weekend_reliever": 0,
 		}
 		cm.schedule_records_raw = [
-			dict(base, roster_type="Basic", is_relieving_schedule=1),
+			dict(base, **{"roster_type": "Basic", "is_relieving_schedule": 1, **basic_overrides}),
 			dict(base, roster_type="Over-Time"),
 		]
 		cm.attendance_records_raw = []
@@ -159,6 +168,57 @@ class TestProcessRecordsReliefFlag(FrappeTestCase):
 		by_type = {r["roster_type"]: r for r in records}
 		self.assertEqual(by_type["Basic"]["is_relief_shift"], 1)
 		self.assertEqual(by_type["Over-Time"]["is_relief_shift"], 0)
+
+
+	def test_annual_leave_relief_gets_its_own_flag(self):
+		al_row = {"is_relieving_schedule": 0, "is_annual_leave_reliever": 1, "shift": "Other Shift", "custom_is_reliever": 1}
+		for with_attendance in (False, True):
+			with self.subTest(with_attendance=with_attendance):
+				by_type = {r["roster_type"]: r for r in self.build_map(with_attendance, **al_row)}
+				self.assertEqual(by_type["Basic"]["is_relief_shift"], 0)
+				self.assertEqual(by_type["Basic"]["is_al_relief_shift"], 1)
+				self.assertEqual(by_type["Over-Time"]["is_al_relief_shift"], 0)
+
+	def test_annual_leave_flag_needs_a_working_row(self):
+		records = self.build_map(False, is_annual_leave_reliever=1, employee_availability="Day Off")
+		by_type = {r["roster_type"]: r for r in records}
+		self.assertEqual(by_type["Basic"]["is_al_relief_shift"], 0)
+
+
+class TestAlRelieversQuery(FrappeTestCase):
+	def test_exclusions_and_override_tag(self):
+		employees = frappe.get_all("Employee", filters={"status": "Active"}, pluck="name", limit=6)
+		if len(employees) < 6:
+			self.skipTest("needs six active employees")
+		covered, free, scheduled, on_leave, relieving, inactive = employees
+		for name in employees:
+			frappe.db.set_value("Employee", name, {"shift_working": 1, "attendance_by_timesheet": 0})
+		frappe.db.set_value("Employee", inactive, "status", "Left")
+
+		from_date = getdate(add_days(today(), 900))
+		to_date = add_days(from_date, 2)
+		frappe.get_doc({
+			"doctype": "Leave Application", "name": "AL-RELIEVERS-QUERY-LEAVE", "employee": on_leave,
+			"from_date": add_days(from_date, 1), "to_date": add_days(to_date, 5), "status": "Open", "docstatus": 0,
+		}).db_insert()
+		for name, employee, flags in (
+			("AL-RELIEVERS-QUERY-BASIC", scheduled, {}),
+			("AL-RELIEVERS-QUERY-RELIEF", relieving, {"is_annual_leave_reliever": 1}),
+		):
+			frappe.get_doc(dict({
+				"doctype": "Employee Schedule", "name": name, "employee": employee, "date": to_date,
+				"roster_type": "Basic", "employee_availability": "Working",
+			}, **flags)).db_insert()
+
+		rows = get_al_relievers_query(
+			doctype="Employee", txt="", searchfield="name", start=0, page_len=100000,
+			filters={"employee": covered, "from_date": str(from_date), "to_date": str(to_date)},
+		)
+		tags = {row[0]: row[2] for row in rows}
+		for excluded in (covered, on_leave, relieving, inactive):
+			self.assertNotIn(excluded, tags)
+		self.assertEqual(tags[free], "")
+		self.assertEqual(tags[scheduled], "Schedule will be overridden")
 
 
 class TestScheduleQuery(FrappeTestCase):

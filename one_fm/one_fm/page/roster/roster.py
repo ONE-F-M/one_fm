@@ -2694,6 +2694,75 @@ def get_al_relief_context(employee: str, from_date: str, to_date: str, leave_app
 	}
 
 
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def get_al_relievers_query(doctype, txt, searchfield, start, page_len, filters):
+	"""Reliever options for the Assign Annual Leave Reliever dialog as (name, employee_name, tag).
+
+	filters: employee (the covered employee), from_date, to_date. Lists active shift-working
+	employees not on Open/Approved leave and not already relieving in the range; the tag warns
+	when the reliever's Basic schedule in the range will be overridden.
+	"""
+	if not set(ROSTER_EDIT_ROLES) & set(frappe.get_roles()):
+		frappe.throw(_("You are not permitted to assign an annual leave reliever."), frappe.PermissionError)
+
+	filters = filters or {}
+	from_date, to_date = getdate(filters.get("from_date")), getdate(filters.get("to_date"))
+
+	Employee = frappe.qb.DocType("Employee")
+	LeaveApplication = frappe.qb.DocType("Leave Application")
+	EmployeeSchedule = frappe.qb.DocType("Employee Schedule")
+
+	# isnotnull: a NULL in a NOT IN subquery would exclude every employee.
+	on_leave = (
+		frappe.qb.from_(LeaveApplication)
+		.select(LeaveApplication.employee)
+		.where(LeaveApplication.employee.isnotnull())
+		.where(LeaveApplication.status.isin(["Open", "Approved"]))
+		.where(LeaveApplication.docstatus < 2)
+		.where(LeaveApplication.from_date <= to_date)
+		.where(LeaveApplication.to_date >= from_date)
+	)
+	relieving = (
+		frappe.qb.from_(EmployeeSchedule)
+		.select(EmployeeSchedule.employee)
+		.where(EmployeeSchedule.employee.isnotnull())
+		.where(EmployeeSchedule.date[from_date:to_date])
+		.where((EmployeeSchedule.is_annual_leave_reliever == 1) | (EmployeeSchedule.is_relieving_schedule == 1))
+	)
+	query = (
+		frappe.qb.from_(Employee)
+		.select(Employee.name, Employee.employee_name)
+		.where(Employee.status == "Active")
+		.where(Employee.shift_working == 1)
+		.where(Employee.attendance_by_timesheet == 0)
+		.where(Employee.name != cstr(filters.get("employee")))
+		.where(Employee.name.notin(on_leave))
+		.where(Employee.name.notin(relieving))
+		.orderby(Employee.name)
+		.limit(page_len)
+		.offset(start)
+	)
+	if txt:
+		query = query.where(Employee.name.like(f"%{txt}%") | Employee.employee_name.like(f"%{txt}%"))
+
+	rows = query.run(as_dict=True)
+	if not rows:
+		return []
+
+	scheduled = set(
+		frappe.qb.from_(EmployeeSchedule)
+		.select(EmployeeSchedule.employee)
+		.distinct()
+		.where(EmployeeSchedule.employee.isin([row.name for row in rows]))
+		.where(EmployeeSchedule.roster_type == "Basic")
+		.where(EmployeeSchedule.date[from_date:to_date])
+		.run(pluck=True)
+	)
+	override_tag = _("Schedule will be overridden")
+	return [(row.name, row.employee_name, override_tag if row.name in scheduled else "") for row in rows]
+
+
 @frappe.whitelist(methods=["POST"])
 def assign_annual_leave_reliever(employee: str, leave_application: str, from_date: str, to_date: str, reliever: str, cancel_overtime: int = 0) -> dict:
 	"""Roster `reliever` on the on-leave `employee`'s post for every day from from_date to to_date.
