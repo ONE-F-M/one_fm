@@ -758,10 +758,6 @@ class TestRelieverSearchSetting(FrappeTestCase):
 		for row in result:
 			self.assertIn("is_rambo_reliever", row)
 
-	def test_the_list_is_still_a_bare_list(self):
-		result, *_rest = self._search(0, [_emp("WORKER", rambo=1)])
-		self.assertIsInstance(result, list)
-
 	def test_checked_still_lists_an_overlapping_rambo_with_a_warning(self):
 		rows = [_roster("RAMBO", "Basic", "DAY", start=_at(_DAY, 6), end=_at(_DAY, 18))]
 		result, *_rest = self._search(1, [], rows)

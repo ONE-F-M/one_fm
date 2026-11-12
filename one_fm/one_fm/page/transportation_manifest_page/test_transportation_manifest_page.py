@@ -239,6 +239,11 @@ class TestRelieverRamboChip(FrappeTestCase):
 	def test_the_filter_combines_rambo_with_the_other_filters(self):
 		self.assertIn('(!relieverRambo || card.dataset.rambo === "1")', self.js)
 
+	def test_a_filtered_out_pick_is_cleared(self):
+		self.assertIn(
+			'else if (card.dataset.reliever === selectedRelieverId) selectReliever(null);', self.js
+		)
+
 	def test_the_rambo_empty_state_has_its_own_message(self):
 		self.assertIn('__("No Rambo relievers at this camp for this shift")', self.js)
 

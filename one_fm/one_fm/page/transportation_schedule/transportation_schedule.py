@@ -2564,7 +2564,7 @@ def _fetch_rambo_employees():
 def _fetch_shift_working_employees(camps, exclude):
     """Active shift-working employees whose live camp is one of `camps`.
 
-    Same columns as _fetch_rambo_employees (including custom_is_rambo_reliever). The live camp is the latest Accommodation
+    Same columns as _fetch_rambo_employees. The live camp is the latest Accommodation
     Checkin (IN), resolved by manifest_compiler._live_accommodation. Employees in
     `exclude` are left out.
     """

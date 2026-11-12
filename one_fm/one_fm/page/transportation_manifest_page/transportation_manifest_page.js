@@ -1949,6 +1949,8 @@ function renderManifest($container, data) {
 				&& (!relieverRambo || card.dataset.rambo === "1");
 			card.hidden = !match;
 			if (match) shown++;
+			// A filtered-out pick cannot be confirmed unseen.
+			else if (card.dataset.reliever === selectedRelieverId) selectReliever(null);
 		});
 		const empty = list.querySelector(".mfst-reliever-nomatch");
 		if (empty) {
