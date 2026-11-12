@@ -60,49 +60,32 @@ RELIEF_FLAG_FIELDS = (
 )
 
 
-def get_relief_flag_fields():
-    """Relief flags that exist on both Shift Assignment and Attendance.
-
-    The Shift Assignment fields are added by other work items; until they are on the
-    site there is nothing to inherit, so the guard keeps attendance creation working.
-    """
-    shift_assignment_meta = frappe.get_meta("Shift Assignment")
-    attendance_meta = frappe.get_meta("Attendance")
-    return [
-        field for field in RELIEF_FLAG_FIELDS
-        if shift_assignment_meta.has_field(field) and attendance_meta.has_field(field)
-    ]
-
-
-def get_relief_flag_update_query(attendance_date, fields):
-    """frappe.qb UPDATE copying the relief flags from each Attendance's own Shift
-    Assignment, only for dates/rows where the Shift Assignment carries a flag."""
+def set_relief_flags_for_date(attendance_date):
+    """Copy relief flags from the linked Shift Assignment onto attendance written by raw SQL."""
     attendance = frappe.qb.DocType("Attendance")
     shift_assignment = frappe.qb.DocType("Shift Assignment")
-    query = (
-        frappe.qb.update(attendance)
-        .join(shift_assignment)
-        .on(attendance.shift_assignment == shift_assignment.name)
-    )
     any_flag = None
-    for field in fields:
-        query = query.set(getattr(attendance, field), getattr(shift_assignment, field))
-        condition = getattr(shift_assignment, field) == 1
+    for field in RELIEF_FLAG_FIELDS:
+        condition = shift_assignment[field] == 1
         any_flag = condition if any_flag is None else (any_flag | condition)
-    return query.where(
-        (attendance.attendance_date == attendance_date)
-        & (shift_assignment.start_date == attendance_date)
-        & (shift_assignment.docstatus == 1)
-        & any_flag
-    )
-
-
-def set_relief_flags_for_date(attendance_date):
-    """Bulk-inherit relief flags for attendance written by raw SQL (no controller)."""
-    fields = get_relief_flag_fields()
-    if not fields:
-        return
-    get_relief_flag_update_query(attendance_date, fields).run()
+    rows = (
+        frappe.qb.from_(attendance)
+        .join(shift_assignment).on(attendance.shift_assignment == shift_assignment.name)
+        .select(attendance.name, *[shift_assignment[field] for field in RELIEF_FLAG_FIELDS])
+        .where(
+            (attendance.attendance_date == attendance_date)
+            & (shift_assignment.docstatus == 1)
+            & any_flag
+        )
+    ).run(as_dict=True)
+    # MariaDB rejects a joined UPDATE here (pypika drops the table from SET), so group by flag set
+    groups = {}
+    for row in rows:
+        groups.setdefault(tuple(row[field] for field in RELIEF_FLAG_FIELDS), []).append(row.name)
+    for flags, names in groups.items():
+        frappe.db.set_value(
+            "Attendance", {"name": ["in", names]}, dict(zip(RELIEF_FLAG_FIELDS, flags)), update_modified=False
+        )
 
 
 class AttendanceOverride(Attendance):
@@ -130,29 +113,17 @@ class AttendanceOverride(Attendance):
         self.set_relief_flags()
 
     def set_relief_flags(self):
-        """Inherit the relief checks from this attendance's own Shift Assignment.
-
-        Only the attendance linked to a flagged Shift Assignment gets a flag, so a
-        double shift (home post + relief post) flags the relief attendance only.
-        Status changes later use db_set, so the flag persists across outcomes.
-        """
-        fields = get_relief_flag_fields()
-        if not fields:
-            return
-        shift_assignment = self.shift_assignment
-        if not shift_assignment:
-            shift_assignment = frappe.db.get_value("Shift Assignment", {
-                'employee': self.employee,
-                'start_date': self.attendance_date,
-                'roster_type': self.roster_type or 'Basic',
-                'docstatus': 1
-            })
+        """Inherit relief flags from this attendance's own Shift Assignment (per roster type)."""
+        shift_assignment = self.shift_assignment or frappe.db.get_value("Shift Assignment", {
+            "employee": self.employee,
+            "start_date": self.attendance_date,
+            "roster_type": self.roster_type or "Basic",
+            "docstatus": 1
+        })
         if not shift_assignment:
             return
-        values = frappe.db.get_value("Shift Assignment", shift_assignment, fields, as_dict=True)
-        if not values:
-            return
-        flags = {field: 1 for field in fields if values.get(field)}
+        values = frappe.db.get_value("Shift Assignment", shift_assignment, list(RELIEF_FLAG_FIELDS), as_dict=True) or {}
+        flags = {field: 1 for field in RELIEF_FLAG_FIELDS if values.get(field)}
         if flags:
             self.db_set(flags)
 
@@ -1061,9 +1032,10 @@ def mark_daily_attendance(start_date, end_date):
             """
             frappe.db.sql(query, values=[], as_dict=1)
             frappe.db.commit()
-            # The raw insert bypasses the controller, so inherit relief flags here
-            set_relief_flags_for_date(start_date)
-            frappe.db.commit()
+
+        # The raw insert and set_value above bypass the controller
+        set_relief_flags_for_date(start_date)
+        frappe.db.commit()
 
         # # remark missing attendance for shifts
         end_date = add_days(start_date, 1)
