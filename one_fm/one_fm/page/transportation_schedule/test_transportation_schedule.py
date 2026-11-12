@@ -417,11 +417,15 @@ def _at(day, hour, minute=0):
 	return _dt.datetime.strptime(day, "%Y-%m-%d") + _dt.timedelta(hours=hour, minutes=minute)
 
 
-def _emp(name, employee_name=None, shift=None):
-	return frappe._dict(
+def _emp(name, employee_name=None, shift=None, rambo=None):
+	employee = frappe._dict(
 		name=name, employee_name=employee_name or name, designation="Guard",
 		cell_number="555", shift=shift,
 	)
+	# Left out unless asked for, as a query row that lacks the column would be.
+	if rambo is not None:
+		employee["custom_is_rambo_reliever"] = rambo
+	return employee
 
 
 def _roster(employee, roster_type="Basic", shift="DAY", day=_DAY, start=None, end=None, day_off_ot=0):
@@ -740,6 +744,20 @@ class TestRelieverSearchSetting(FrappeTestCase):
 		self.assertEqual([r["employee_name"] for r in result], ["Bob", "Cal", "Amy"])
 		self.assertFalse(any(r["overlap"] for r in result))
 
+	def test_unchecked_rows_carry_the_rambo_flag(self):
+		pool = [_emp("WORKER"), _emp("OFF", rambo=0), _emp("RAMBOER", rambo=1)]
+		result, *_rest = self._search(0, pool)
+		flags = {r["name"]: r["is_rambo_reliever"] for r in result}
+		self.assertEqual(flags, {"WORKER": False, "OFF": False, "RAMBOER": True})
+		for value in flags.values():
+			self.assertIsInstance(value, bool)
+
+	def test_checked_rows_carry_the_rambo_flag(self):
+		result, *_rest = self._search(1, [])
+		self.assertTrue(result)
+		for row in result:
+			self.assertIn("is_rambo_reliever", row)
+
 	def test_checked_still_lists_an_overlapping_rambo_with_a_warning(self):
 		rows = [_roster("RAMBO", "Basic", "DAY", start=_at(_DAY, 6), end=_at(_DAY, 18))]
 		result, *_rest = self._search(1, [], rows)
@@ -830,3 +848,58 @@ class TestFetchShiftWorkingEmployees(FrappeTestCase):
 
 	def test_no_camps_returns_nothing(self):
 		self.assertEqual(_ts._fetch_shift_working_employees([], set()), [])
+
+	def test_shift_working_query_selects_the_rambo_flag(self):
+		if not frappe.db.has_column("Employee", "custom_is_rambo_reliever"):
+			self.skipTest("Employee.custom_is_rambo_reliever is not present on this site")
+		rows = {r.name: r for r in _ts._fetch_shift_working_employees([self.CAMP_A], set())}
+		self.assertIn("custom_is_rambo_reliever", rows[self.rambo])
+		self.assertTrue(rows[self.rambo].custom_is_rambo_reliever)
+		self.assertFalse(rows[self.non_rambo_worker].custom_is_rambo_reliever)
+		built = _ts._build_reliever(
+			rows[self.rambo], [], frappe.utils.getdate(_DAY), {}, None
+		)
+		self.assertIs(built["is_rambo_reliever"], True)
+
+	def test_rambo_query_selects_the_rambo_flag(self):
+		if not frappe.db.has_column("Employee", "custom_is_rambo_reliever"):
+			self.skipTest("Employee.custom_is_rambo_reliever is not present on this site")
+		rows = {r.name: r for r in _ts._fetch_rambo_employees()}
+		self.assertIn(self.rambo, rows)
+		self.assertIn("custom_is_rambo_reliever", rows[self.rambo])
+		self.assertTrue(rows[self.rambo].custom_is_rambo_reliever)
+
+
+class TestManifestDataRestrictFlag(FrappeTestCase):
+	"""get_manifest_data_for_plan tells the client whether the reliever list is Rambo-only."""
+
+	def _manifest_data(self, flag):
+		plan = frappe._dict(name="PLAN-1", title="Plan", assignments=[])
+		plan.check_permission = lambda *_a, **_k: None
+		row = frappe._dict(
+			vehicle=None, shift=None, transportation_shipment=None, card_id="C1",
+			direction="OUTBOUND", accommodation="ACC", stop_location="STOP",
+			headcount=1, start_time="2026-03-10T06:00:00Z", end_time="2026-03-10T07:00:00Z",
+			trip_group=None, trip_name=None, stop_index=0, transit_minutes=0,
+			buffer_minutes=0, origin_location=None,
+		)
+		with patch.object(_ts, "_route_plan_exists", return_value=True), \
+			patch.object(_ts.frappe, "get_doc", return_value=plan), \
+			patch.object(_ts, "card_rows", return_value=[row]), \
+			patch.object(_ts, "get_route_planner_data", return_value={"status": "error"}), \
+			patch.object(_ts.frappe.db, "get_single_value", return_value=flag) as setting:
+			result = _ts.get_manifest_data_for_plan("PLAN-1")
+		return result, setting
+
+	def test_returns_the_restrict_flag_when_checked(self):
+		result, setting = self._manifest_data(1)
+		self.assertEqual(result["status"], "ok")
+		self.assertEqual(result["restrict_reliever_search_to_rambo"], 1)
+		setting.assert_called_with(
+			"Transportation Settings", "restrict_reliever_search_to_rambo_employees_only"
+		)
+
+	def test_returns_the_restrict_flag_when_unchecked(self):
+		result, _setting = self._manifest_data(0)
+		self.assertEqual(result["status"], "ok")
+		self.assertEqual(result["restrict_reliever_search_to_rambo"], 0)
