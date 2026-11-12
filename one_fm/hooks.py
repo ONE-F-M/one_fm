@@ -212,6 +212,7 @@ after_install = "one_fm.setup.setup.after_install"
 permission_query_conditions = {
 	"Penalty": "one_fm.legal.doctype.penalty.penalty.get_permission_query_conditions",
 	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.get_permission_query_conditions",
+	"HR Enquiry": "one_fm.legal.doctype.hr_enquiry.hr_enquiry.get_permission_query_conditions",
 	"Issue": "one_fm.utils.get_issue_permission_query_conditions",
     "Leave Application": "one_fm.permissions.leave_application_list_",
     "Roster Post Actions":"one_fm.one_fm.doctype.roster_post_actions.roster_post_actions.get_permission_query_conditions",
@@ -223,6 +224,7 @@ permission_query_conditions = {
 has_permission = {
  	"Penalty": "one_fm.legal.doctype.penalty.penalty.has_permission",
  	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.has_permission",
+	"HR Enquiry": "one_fm.legal.doctype.hr_enquiry.hr_enquiry.has_permission",
 	"Issue": "one_fm.utils.has_permission_to_issue",
 	"Notification Settings":'one_fm.overrides.notification_settings.has_permission_',
 	"Contracts": "one_fm.operations.doctype.contracts.contracts.contracts_has_permission",
