@@ -14,6 +14,14 @@ const REAPPLY_REASONS = [
 ];
 
 frappe.ui.form.on("Visa Request", {
+	after_save: function(frm) {
+		// Processa sets Draft on its own copy after insert and keeps `modified`, so the form
+		// is not told. Reload to pick the state up for the Draft-only mandatory rules.
+		if (!frm.doc.workflow_state) {
+			frm.reload_doc();
+		}
+	},
+
 	refresh: function(frm) {
 		add_reapply_button(frm);
 		add_visa_cancellation_button(frm);
