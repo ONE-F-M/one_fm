@@ -360,3 +360,44 @@ body[data-route="roster"] .legendboxview.legend-relief {
   border: 2px solid #DC2626;
   box-sizing: border-box;
 }
+
+/* Annual leave relief indicator: same geometry as the relief border, indigo. */
+body[data-route="roster"] .tablebox.al-relief-full::before,
+body[data-route="roster"] .tablebox.al-relief-top::before,
+body[data-route="roster"] .tablebox.al-relief-bottom::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  border: 2px solid #4F46E5;
+  box-shadow: inset 0 0 0 1px #fff;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+body[data-route="roster"] .tablebox.al-relief-full::before {
+  top: 0;
+  bottom: 0;
+}
+
+body[data-route="roster"] .tablebox.al-relief-top::before {
+  top: 0;
+  height: 50%;
+}
+
+body[data-route="roster"] .tablebox.al-relief-bottom::after {
+  top: 50%;
+  height: 50%;
+}
+
+body[data-route="roster"] .tablebox[class*="absent"].al-relief-full::before,
+body[data-route="roster"] .tablebox[class*="absent"].al-relief-top::before,
+body[data-route="roster"] .tablebox[class*="absent"].al-relief-bottom::after {
+  box-shadow: inset 0 0 0 3px #fff;
+}
+
+body[data-route="roster"] .legendboxview.legend-al-relief {
+  background: #fff;
+  border: 2px solid #4F46E5;
+  box-sizing: border-box;
+}
