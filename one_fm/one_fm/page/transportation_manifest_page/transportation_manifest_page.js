@@ -243,6 +243,8 @@ function renderManifest($container, data) {
 
 	// Expose state globally for modal scripts
 	window.manifestData = data;
+	// The setting is not readable by the client; the server sends it with the plan.
+	const restrictRambo = Number((data || {}).restrict_reliever_search_to_rambo) === 1;
 	window.checkerState = window.checkerState || {};
 
 	// ── Utilities ──
@@ -1894,6 +1896,7 @@ function renderManifest($container, data) {
 
 	let selectedRelieverId = null;
 	let relieverFilter = "all";
+	let relieverRambo = false;
 
 	function relieverTiming(start, end) {
 		return start && end ? `${start} → ${end}` : "—";
@@ -1921,7 +1924,7 @@ function renderManifest($container, data) {
 		).join("");
 		const search = [r.employee_name, r.master_shift, r.shift_name, r.ot_shift].filter(Boolean).join(" ").toLowerCase();
 		return `<button type="button" class="mfst-reliever-card" aria-pressed="false"
-				data-reliever="${escHtml(r.name)}" data-search="${escHtml(search)}" data-ot="${r.is_ot ? 1 : 0}">
+				data-reliever="${escHtml(r.name)}" data-search="${escHtml(search)}" data-ot="${r.is_ot ? 1 : 0}" data-rambo="${r.is_rambo_reliever ? 1 : 0}">
 			<div class="mfst-reliever-head">
 				<span class="mfst-reliever-name">${escHtml(r.employee_name || r.name)}</span>
 				<span class="mfst-reliever-tags">${overlapTag}${badge}</span>
@@ -1942,12 +1945,18 @@ function renderManifest($container, data) {
 		list.querySelectorAll(".mfst-reliever-card").forEach(card => {
 			const isOt = card.dataset.ot === "1";
 			const match = (!q || card.dataset.search.includes(q))
-				&& (relieverFilter === "all" || (relieverFilter === "ot") === isOt);
+				&& (relieverFilter === "all" || (relieverFilter === "ot") === isOt)
+				&& (!relieverRambo || card.dataset.rambo === "1");
 			card.hidden = !match;
 			if (match) shown++;
 		});
 		const empty = list.querySelector(".mfst-reliever-nomatch");
-		if (empty) empty.hidden = shown > 0 || !availableRelievers.length;
+		if (empty) {
+			empty.hidden = shown > 0 || !availableRelievers.length;
+			empty.textContent = relieverRambo
+				? __("No Rambo relievers at this camp for this shift")
+				: __("No reliever matches the search or filter.");
+		}
 	}
 
 	function selectReliever(relieverId) {
@@ -1984,13 +1993,29 @@ function renderManifest($container, data) {
 
 	$container.on("input", "#mfst-relieverSearch", applyRelieverFilter);
 
-	$container.on("click", ".mfst-reliever-filter-btn", function() {
-		relieverFilter = this.dataset.filter;
-		$container.find(".mfst-reliever-filter-btn").each(function() {
+	// Roster-type chips (All / Regular / Overtime): one active at a time; re-clicking the
+	// active Regular or Overtime chip returns to All.
+	$container.on("click", ".mfst-reliever-filter-btn[data-filter]", function() {
+		relieverFilter = this.dataset.filter === relieverFilter ? "all" : this.dataset.filter;
+		$container.find(".mfst-reliever-filter-btn[data-filter]").each(function() {
 			const on = this.dataset.filter === relieverFilter;
 			this.classList.toggle("is-selected", on);
 			this.setAttribute("aria-pressed", on ? "true" : "false");
 		});
+		applyRelieverFilter();
+	});
+
+	// Rambo chip: an independent toggle that combines with the roster chips and the search.
+	function setRelieverRambo(on) {
+		relieverRambo = on;
+		$container.find(".mfst-reliever-filter-btn[data-rambo-toggle]").each(function() {
+			this.classList.toggle("is-selected", on);
+			this.setAttribute("aria-pressed", on ? "true" : "false");
+		});
+	}
+
+	$container.on("click", ".mfst-reliever-filter-btn[data-rambo-toggle]", function() {
+		setRelieverRambo(!relieverRambo);
 		applyRelieverFilter();
 	});
 
@@ -2027,7 +2052,16 @@ function renderManifest($container, data) {
 		$container.find("#mfst-replaceOrigName").text(empName);
 		availableRelievers = [];
 		$container.find("#mfst-relieverSearch").val("");
-		$container.find(".mfst-reliever-filter-btn[data-filter='all']").trigger("click");
+		// Reset to All: a click on All is a no-op when it is already active, so set it directly.
+		relieverFilter = "all";
+		$container.find(".mfst-reliever-filter-btn[data-filter]").each(function() {
+			const on = this.dataset.filter === "all";
+			this.classList.toggle("is-selected", on);
+			this.setAttribute("aria-pressed", on ? "true" : "false");
+		});
+		setRelieverRambo(false);
+		// When the setting already restricts the list to Rambo, the chip is redundant.
+		$container.find(".mfst-reliever-filter-btn[data-rambo-toggle]").prop("hidden", restrictRambo);
 		selectReliever(null);
 		setRelieverListMessage(__("Loading available relievers..."));
 		$container.find("#mfst-btn-confirm-replace").prop("disabled", true).text(__("Confirm Replacement"));
