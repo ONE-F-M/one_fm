@@ -3,7 +3,7 @@ from random import choice
 
 import frappe, base64, json, grpc
 from frappe.utils import cint, now
-from one_fm.legal.doctype.penalty_issuance.penalty_issuance import get_filtered_employees
+from one_fm.legal.doctype.penalty_issuance.penalty_issuance import get_filtered_employees, submit_through_process
 from frappe import _
 from one_fm.proto import facial_recognition_pb2_grpc, facial_recognition_pb2
 from one_fm.api.v1.utils import response
@@ -88,10 +88,10 @@ def issue_penalty(penalty_category, issuing_location, issuing_time, penalty_loca
 		penalty_issuance.employee_name = employee_name
 		penalty_issuance.designation = designation
 		
-		penalty_issuance.customer_property_damage = cint(customer_property_damage)
-		penalty_issuance.company_damage = cint(company_damage)
-		penalty_issuance.other_damages = cint(other_damages)
-		penalty_issuance.asset_damage = cint(asset_damage)
+		# The four legacy damage flags are one Third Party Damage check now.
+		penalty_issuance.third_party_damage = cint(
+			any(cint(flag) for flag in (company_damage, customer_property_damage, asset_damage, other_damages))
+		)
 		employees = json.loads(penalty_employees)
 		for employee in employees:
 			penalty_issuance.append('employees', {'employee_id':employee})
@@ -126,7 +126,7 @@ def issue_penalty(penalty_category, issuing_location, issuing_time, penalty_loca
 
 
 		penalty_issuance.insert()
-		penalty_issuance.submit()
+		submit_through_process(penalty_issuance)
 		return response("Success", 201, penalty_issuance)
 
 	except Exception as error:
@@ -280,10 +280,10 @@ def new_issue_penalty(penalty_category, issuing_location, penalty_location, pena
 		penalty_issuance.employee_name = employee_name
 		penalty_issuance.designation = designation
 		
-		penalty_issuance.customer_property_damage = cint(customer_property_damage)
-		penalty_issuance.company_damage = cint(company_damage)
-		penalty_issuance.other_damages = cint(other_damages)
-		penalty_issuance.asset_damage = cint(asset_damage)
+		# The four legacy damage flags are one Third Party Damage check now.
+		penalty_issuance.third_party_damage = cint(
+			any(cint(flag) for flag in (company_damage, customer_property_damage, asset_damage, other_damages))
+		)
   
 	
 		for employee in penalty_employees:
@@ -319,7 +319,7 @@ def new_issue_penalty(penalty_category, issuing_location, penalty_location, pena
 
 
 		penalty_issuance.insert()
-		penalty_issuance.submit()
+		submit_through_process(penalty_issuance)
 		return response("Success", 201, penalty_issuance)
 
 	except Exception as error:
