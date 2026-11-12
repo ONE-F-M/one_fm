@@ -2,10 +2,27 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on("Attendance Approval", {
+    setup(frm) {
+        frm.set_query("contract", () => ({
+            filters: { project: frm.doc.project || "__none__", workflow_state: "Active" }
+        }));
+        // Empty list (no contract, or a contract without items) leaves Sale Item unrestricted.
+        const sale_item_query = () => (frm._sale_item_codes || []).length
+            ? { filters: [["Item", "name", "in", frm._sale_item_codes]] }
+            : {};
+        frm.set_query("sale_item", "attendance_details", sale_item_query);
+        frm.set_query("sale_item", "overtime_details", sale_item_query);
+    },
     refresh(frm) {
         frm.events.set_year_and_month(frm);
         frm.events.filter_site_by_project(frm);
+        frm.events.load_contract_sale_items(frm);
         toggle_day_value_fields_in_attendance_details(frm);
+        // A saved record that was never amended is its own baseline; an amended one
+        // has no known baseline until the next fetch.
+        if (!frm.doc.attendance_amended) {
+            take_amended_baseline(frm);
+        }
 
         if (!frm.is_new() && frm.doc.workflow_state !== "Cancelled") {
             // Story 1: Standalone "Preview Attendance" button (no group)
@@ -62,6 +79,7 @@ frappe.ui.form.on("Attendance Approval", {
         }
     },
     fetch_attendance_record(frm){
+        frm.set_value("attendance_amended", 0);
         frappe.call({
             method: "fetch_attendance_record",
             doc: frm.doc,
@@ -72,6 +90,7 @@ frappe.ui.form.on("Attendance Approval", {
                     let items = frm.doc.attendance_details || [];
                     items.forEach(d => calculate_working_days(frm, d.doctype, d.name));
                 }
+                take_amended_baseline(frm);
             },
             freeze: true,
             freeze_message: "Fetching Attendance Records..."
@@ -92,23 +111,54 @@ frappe.ui.form.on("Attendance Approval", {
         frm.set_value("attendance_details", []);
         frm.set_value("overtime_details", []);
         frm.set_value("site", "");
+        frm.set_value("contract", "");
 
-        if (frm.doc.project) {
-            frappe.db.get_list("Contracts", {
-                filters: { project: frm.doc.project},
-                fields: ["name"],
-                limit: 1
-            }).then(records => {
-                if (records && records.length > 0) {
-                    frm.set_value("contract", records[0].name);
-                } else {
-                    frm.set_value("contract", "");
-                }
-            });
-        } else {
-            frm.set_value("contract", "");
-        }
+        if (!frm.doc.project) return;
+        const project = frm.doc.project;
+        frappe.db.get_list("Contracts", {
+            filters: { project: project, workflow_state: "Active" },
+            fields: ["name", "client", "start_date", "end_date"],
+            order_by: "start_date desc",
+            limit: 10
+        }).then(contracts => {
+            if (frm.doc.project !== project) return;
+            if (!contracts.length) {
+                frappe.show_alert({
+                    message: __("No active contract found for project: {0}", [project]),
+                    indicator: "orange"
+                }, 5);
+            } else if (contracts.length === 1) {
+                frm.set_value("contract", contracts[0].name);
+            } else {
+                show_contract_dialog(frm, contracts);
+            }
+        });
     },
+    contract(frm) {
+        frm.events.load_contract_sale_items(frm);
+    },
+    load_contract_sale_items(frm) {
+        // Sale Item choices come from the contract's operation items.
+        const contract = frm.doc.contract;
+        if (frm._sale_item_contract === contract) return;
+        frm._sale_item_contract = contract;
+        frm._sale_item_codes = [];
+        if (!contract) return;
+        frappe.db.get_doc("Contracts", contract).then(doc => {
+            if (frm.doc.contract !== contract) return;
+            frm._sale_item_codes = (doc.contract_items_operation || []).map(d => d.item_code).filter(Boolean);
+            if (!frm._sale_item_codes.length) {
+                frappe.show_alert({
+                    message: __("No items found in contract {0}. Sale Item will be unrestricted.", [contract]),
+                    indicator: "orange"
+                }, 6);
+            }
+        });
+    },
+    attendance_details_add: evaluate_amended,
+    attendance_details_remove: evaluate_amended,
+    overtime_details_add: evaluate_amended,
+    overtime_details_remove: evaluate_amended,
     year(frm){
         frm.set_value("attendance_details", []);
         frm.set_value("overtime_details", []);
@@ -180,17 +230,87 @@ function calculate_working_days(frm, cdt, cdn) {
     frappe.model.set_value(cdt, cdn, "off_days", off_days);
 }
 
-let child_events = {};
+let child_events = { sale_item: evaluate_amended };
 for (let i = 1; i <= 31; i++) {
     child_events['day_' + i] = function(frm, cdt, cdn) {
         calculate_working_days(frm, cdt, cdn);
+        evaluate_amended(frm);
     };
     child_events['day_' + i + '_hour'] = function(frm, cdt, cdn) {
         calculate_working_days(frm, cdt, cdn);
+        evaluate_amended(frm);
     };
 }
 frappe.ui.form.on("Attendance Approval Item", child_events);
 frappe.ui.form.on("Attendance Approval OT Item", child_events);
+
+function show_contract_dialog(frm, contracts) {
+    const options = contracts.map(c => {
+        let parts = [c.name];
+        if (c.client) parts.push(c.client);
+        if (c.start_date) {
+            parts.push(frappe.datetime.str_to_user(c.start_date)
+                + (c.end_date ? " → " + frappe.datetime.str_to_user(c.end_date) : ""));
+        }
+        return { value: c.name, label: parts.join("  —  ") };
+    });
+    let dialog = new frappe.ui.Dialog({
+        title: __("Select Contract"),
+        fields: [
+            {
+                fieldtype: "HTML",
+                fieldname: "notice_html",
+                options: `<div class="alert alert-warning small mb-3">${__(
+                    "Multiple active contracts found for project {0}. Please select the applicable contract for this attendance period.",
+                    [`<strong>${frappe.utils.escape_html(frm.doc.project)}</strong>`]
+                )}</div>`
+            },
+            {
+                label: __("Contract"),
+                fieldname: "selected_contract",
+                fieldtype: "Select",
+                options: options,
+                reqd: 1,
+                default: options[0].value
+            }
+        ],
+        primary_action_label: __("Apply"),
+        primary_action(values) {
+            frm.set_value("contract", values.selected_contract);
+            dialog.hide();
+        }
+    });
+    dialog.show();
+}
+
+// ============================================================
+// Attendance Amended flag: set while the grids differ from the last
+// fetched (or clean saved) state, cleared when edits are reverted.
+// ============================================================
+
+function amended_snapshot(frm) {
+    const row_key = row => {
+        let values = [row.employee || "", row.sale_item || ""];
+        for (let i = 1; i <= 31; i++) {
+            values.push(row['day_' + i] || "", row['day_' + i + '_hour'] || "");
+        }
+        return JSON.stringify(values);
+    };
+    // Sorted, so a deleted row re-added in another position still matches.
+    const table = rows => (rows || []).map(row_key).sort();
+    return JSON.stringify([table(frm.doc.attendance_details), table(frm.doc.overtime_details)]);
+}
+
+function take_amended_baseline(frm) {
+    frm._amended_baseline = amended_snapshot(frm);
+}
+
+function evaluate_amended(frm) {
+    const amended = frm._amended_baseline !== amended_snapshot(frm) ? 1 : 0;
+    if (cint(frm.doc.attendance_amended) !== amended) {
+        frm.set_value("attendance_amended", amended);
+    }
+}
 
 // ============================================================
 // Story 1 + 6: Attendance Preview Modal

@@ -232,3 +232,11 @@ class TestAttendanceApprovalRename(FrappeTestCase):
 		doc.db_set("workflow_state", "Approved", update_modified=False)
 		with self.assertRaisesRegex(frappe.ValidationError, "Please link a Contract"):
 			generate_invoice_from_amendment(doc.name)
+
+
+class TestAttendanceAmendedField(FrappeTestCase):
+	def test_new_record_is_not_amended(self):
+		field = frappe.get_meta("Attendance Approval").get_field("attendance_amended")
+		self.assertEqual(field.fieldtype, "Check")
+		self.assertTrue(field.read_only)
+		self.assertEqual(make_attendance_amendment(month="July").attendance_amended, 0)

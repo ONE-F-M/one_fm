@@ -15,6 +15,7 @@
   "site",
   "site_supervisor",
   "site_supervisor_user",
+  "attendance_amended",
   "section_break_qfkp",
   "month",
   "posting_date",
@@ -168,6 +169,13 @@
    "options": "User"
   },
   {
+   "default": "0",
+   "fieldname": "attendance_amended",
+   "fieldtype": "Check",
+   "label": "Attendance Amended",
+   "read_only": 1
+  },
+  {
    "depends_on": "ot_data_required",
    "fieldname": "overtime_details",
    "fieldtype": "Table",
@@ -191,7 +199,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-12 12:00:00.000000",
+ "modified": "2026-11-12 13:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Approval",
