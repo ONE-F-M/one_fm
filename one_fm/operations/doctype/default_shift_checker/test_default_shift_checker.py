@@ -120,6 +120,8 @@ class TestExcusedDaysAreNotCounted(FrappeTestCase):
 	"""Runs create_checker against Employee Schedule rows written for one employee."""
 
 	def setUp(self):
+		# Rows are written per test; roll them back after each one, not only at class end.
+		self.addCleanup(frappe.db.rollback)
 		Employee = DocType("Employee")
 		Project = DocType("Project")
 		rows = (
@@ -177,7 +179,10 @@ class TestExcusedDaysAreNotCounted(FrappeTestCase):
 			).db_insert()
 
 	def _run(self, **kwargs):
-		with patch("frappe.db.commit"), patch("frappe.log_error") as log_error:
+		# The checker's notification email fails on sites without an outgoing account.
+		with patch("frappe.db.commit"), patch("frappe.log_error") as log_error, patch(
+			"one_fm.overrides.notification_log.custom_send_notification_email"
+		):
 			create_checker(MONTH_START, MONTH_END, **kwargs)
 		self.assertFalse(log_error.called, msg=log_error.call_args)
 		return frappe.get_all(
