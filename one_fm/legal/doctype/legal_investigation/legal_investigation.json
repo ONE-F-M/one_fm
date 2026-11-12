@@ -18,21 +18,19 @@
   "start_date",
   "end_date",
   "damages_section",
-  "company_damage",
-  "asset_damage",
-  "column_break_15",
-  "customer_property_damage",
-  "other_damages",
+  "third_party_damage",
   "section_break_9",
   "legal_investigation_employees",
   "results_section",
   "investigation_results",
+  "hr_enquiry",
   "sessions_section",
   "sessions_details",
   "session_summary",
   "penalty_issuing_section",
   "legal_investigation_penalty",
-  "amended_from"
+  "amended_from",
+  "session_verified"
  ],
  "fields": [
   {
@@ -168,36 +166,28 @@
   },
   {
    "default": "0",
-   "fieldname": "company_damage",
+   "fieldname": "third_party_damage",
    "fieldtype": "Check",
-   "label": "Company Damage"
+   "label": "Third Party Damage"
+  },
+  {
+   "fieldname": "hr_enquiry",
+   "fieldtype": "Link",
+   "label": "HR Enquiry",
+   "options": "HR Enquiry",
+   "read_only": 1
   },
   {
    "default": "0",
-   "fieldname": "asset_damage",
+   "fieldname": "session_verified",
    "fieldtype": "Check",
-   "label": "Asset Damage"
-  },
-  {
-   "fieldname": "column_break_15",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "customer_property_damage",
-   "fieldtype": "Check",
-   "label": "Customer Property Damage"
-  },
-  {
-   "default": "0",
-   "fieldname": "other_damages",
-   "fieldtype": "Check",
-   "label": "Other Damages"
+   "hidden": 1,
+   "label": "Session Verified"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-10-05 12:52:43.971762",
+ "modified": "2026-11-12 18:10:00.000000",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Legal Investigation",
