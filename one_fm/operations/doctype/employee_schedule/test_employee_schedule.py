@@ -227,3 +227,12 @@ class TestEmployeeScheduleRelievingFields(FrappeTestCase):
 			)
 		)
 		self.test_relieving_fields_sit_under_relieving_details_section()
+	def test_annual_leave_reliever_requires_leave_application(self):
+		schedule = frappe.get_doc({
+			"doctype": "Employee Schedule",
+			"roster_type": "Basic",
+			"employee_availability": "Working",
+			"is_annual_leave_reliever": 1,
+		})
+		with self.assertRaisesRegex(frappe.ValidationError, "Leave Application is required"):
+			schedule.validate()
