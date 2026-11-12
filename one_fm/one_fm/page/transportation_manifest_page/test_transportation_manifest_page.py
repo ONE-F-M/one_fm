@@ -213,3 +213,40 @@ class TestTheManifestReadsAsOneJourney(FrappeTestCase):
 		# the last stop's transit and buffer rather than a bare clock gap.
 		self.assertIn("renderTransit(calcTransit(prevTime, lastTimeISO, prevStop))", self.page)
 		self.assertNotIn("renderTransit(calcTransit(prevTime, lastTimeISO))", self.page)
+
+
+class TestRelieverRamboChip(FrappeTestCase):
+	"""The Assign Replacement modal has a Rambo chip that filters the camp-scoped list."""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		cls.js = _read(PAGE_JS)
+
+	def test_the_rambo_chip_is_its_own_toggle(self):
+		# Its own attribute, so the roster-chip handler (data-filter) never catches it.
+		self.assertRegex(
+			self.js,
+			r'<button type="button" class="mfst-reliever-filter-btn" data-rambo-toggle aria-pressed="false">\$\{__\("Rambo"\)\}</button>',
+		)
+
+	def test_the_roster_handler_ignores_the_rambo_chip(self):
+		self.assertIn('".mfst-reliever-filter-btn[data-filter]"', self.js)
+
+	def test_the_card_carries_the_rambo_flag(self):
+		self.assertIn('data-rambo="${r.is_rambo_reliever ? 1 : 0}"', self.js)
+
+	def test_the_filter_combines_rambo_with_the_other_filters(self):
+		self.assertIn('(!relieverRambo || card.dataset.rambo === "1")', self.js)
+
+	def test_the_rambo_empty_state_has_its_own_message(self):
+		self.assertIn('__("No Rambo relievers at this camp for this shift")', self.js)
+
+	def test_the_chip_is_hidden_when_the_setting_restricts_the_list(self):
+		self.assertIn("restrict_reliever_search_to_rambo", self.js)
+		self.assertIn('[data-rambo-toggle]").prop("hidden", restrictRambo)', self.js)
+
+	def test_the_chip_row_wraps(self):
+		row = re.search(r"\.mfst-reliever-filter \{[^}]*\}", self.js)
+		self.assertIsNotNone(row, msg="chip row rule not found")
+		self.assertIn("flex-wrap: wrap", row.group(0))
