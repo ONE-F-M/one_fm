@@ -21,6 +21,7 @@
   "column_break_qcdq",
   "year",
   "ot_data_required",
+  "group_by_site",
   "column_break_ilzl",
   "attendance_based_on",
   "fetch_attendance_record",
@@ -82,6 +83,12 @@
    "fieldname": "ot_data_required",
    "fieldtype": "Check",
    "label": "OT Data Required"
+  },
+  {
+   "default": "0",
+   "fieldname": "group_by_site",
+   "fieldtype": "Check",
+   "label": "Group By Site"
   },
   {
    "fieldname": "attendance_based_on",
@@ -184,7 +191,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-08 17:13:26.969250",
+ "modified": "2026-11-11 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Amendment",
