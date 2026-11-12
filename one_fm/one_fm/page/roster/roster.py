@@ -15,7 +15,7 @@ from frappe.utils import (
 )
 from frappe.query_builder import DocType, Order
 
-from one_fm.one_fm.page.roster.employee_map  import CreateMap, PostMap
+from one_fm.one_fm.page.roster.employee_map  import CreateMap, PostMap, WEEKEND_RELIEVER_DAYS
 from one_fm.api.v1.utils import response
 from one_fm.operations.doctype.operations_shift.operations_shift import resolve_shift_timing
 
@@ -1118,7 +1118,11 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			start_datetime= VALUES(start_datetime),
 			end_datetime= VALUES(end_datetime),
 			is_relieving_schedule = 0,
-			relieving_employee_schedule = NULL
+			relieving_employee_schedule = NULL,
+			is_day_off_reliever = 0,
+			is_weekend_reliever = 0,
+			is_annual_leave_reliever = 0,
+			leave_application = NULL
 		"""
 		if can_create:
 			frappe.db.sql(query, values=query_params)
@@ -2465,6 +2469,12 @@ def dayoff(employees, client_day_off=0, selected_dates=0, selected_reliever=None
 		return response("error", 200, None, str(e))
 
 
+def get_relief_type_flags(date):
+	"""Day Off modal relief type, by the covered day's weekday: Friday/Saturday is weekend relief."""
+	is_weekend = getdate(date).weekday() in WEEKEND_RELIEVER_DAYS
+	return {"is_day_off_reliever": cint(not is_weekend), "is_weekend_reliever": cint(is_weekend)}
+
+
 def reliever_roster_assignment(reliver_emp_name, roster_list_arg):
 	day_off_ot = 0
 	keep_days_off = 0
@@ -2553,7 +2563,8 @@ def reliever_roster_assignment(reliver_emp_name, roster_list_arg):
 			if original_rdo_name:
 				frappe.db.set_value("Employee Schedule", reliever_sch_name, {
 					"is_relieving_schedule": 1,
-					"relieving_employee_schedule": original_rdo_name
+					"relieving_employee_schedule": original_rdo_name,
+					**get_relief_type_flags(date_val_str),
 				})
 		else:
 			frappe.log_error(message=f"Skipping reliever assignment due to incomplete roster_data: {roster_data_item}", title="Reliever Assignment")
