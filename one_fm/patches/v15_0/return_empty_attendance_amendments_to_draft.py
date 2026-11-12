@@ -7,17 +7,17 @@ from frappe.query_builder import DocType
 
 def execute():
 	"""Return Pending Approval Attendance Amendments with no attendance rows to Draft."""
-	if not frappe.db.has_column("Attendance Amendment", "workflow_state"):
+	if not frappe.db.has_column("Attendance Approval", "workflow_state"):
 		return
 
-	amendment = DocType("Attendance Amendment")
-	item = DocType("Attendance Amendment Item")
+	amendment = DocType("Attendance Approval")
+	item = DocType("Attendance Approval Item")
 	names = (
 		frappe.qb.from_(amendment)
 		.left_join(item)
 		.on(
 			(item.parent == amendment.name)
-			& (item.parenttype == "Attendance Amendment")
+			& (item.parenttype == "Attendance Approval")
 			& (item.parentfield == "attendance_details")
 		)
 		.select(amendment.name)
@@ -26,7 +26,7 @@ def execute():
 	).run(pluck=True)
 
 	for name in names:
-		doc = apply_workflow(frappe.get_doc("Attendance Amendment", name), "Return To Draft")
+		doc = apply_workflow(frappe.get_doc("Attendance Approval", name), "Return To Draft")
 		# Assignment rules are skipped inside patches, so move the assignment by hand.
 		assign_to.close_all_assignments(doc.doctype, doc.name, ignore_permissions=True)
 		assign_to.add(
@@ -38,4 +38,4 @@ def execute():
 			}
 		)
 
-	print(f"Attendance Amendments returned to Draft: {names}")
+	print(f"Attendance Approvals returned to Draft: {names}")

@@ -8,7 +8,7 @@ from frappe.utils import cint, cstr, get_link_to_form
 from calendar import monthrange
 from frappe import _
 
-class AttendanceAmendment(Document):
+class AttendanceApproval(Document):
 	def validate(self):
 		self.recalculate_working_days()
 		self.validate_attendance_details_present()
@@ -46,7 +46,7 @@ class AttendanceAmendment(Document):
 
 		# get_all so validation also sees records the current user cannot read
 		existing = frappe.get_all(
-			"Attendance Amendment",
+			"Attendance Approval",
 			filters=filters,
 			or_filters=or_filters,
 			fields=["name", "workflow_state"],
@@ -56,7 +56,7 @@ class AttendanceAmendment(Document):
 			existing = existing[0]
 			frappe.throw(
 				_("Attendance record {0} already exists for this project, site and month (status: {1}).").format(
-					get_link_to_form("Attendance Amendment", existing.name), existing.workflow_state
+					get_link_to_form("Attendance Approval", existing.name), existing.workflow_state
 				)
 			)
 
@@ -496,7 +496,7 @@ def get_ot_rows(employee_details, filters, attendance_map, attendance_based_on=N
 @frappe.whitelist()
 def get_sale_item_details(amendment_name: str) -> dict:
 	"""Return a map of sale_item → item_type from Item."""
-	doc = frappe.get_doc("Attendance Amendment", amendment_name)
+	doc = frappe.get_doc("Attendance Approval", amendment_name)
 	doc.check_permission("read")
 
 	sale_items = set()
@@ -520,7 +520,7 @@ def get_sale_item_details(amendment_name: str) -> dict:
 @frappe.whitelist()
 def get_pdf_header_metadata(amendment_name: str) -> dict:
 	"""Return metadata needed for the PDF header: logo, company, client, project."""
-	doc = frappe.get_doc("Attendance Amendment", amendment_name)
+	doc = frappe.get_doc("Attendance Approval", amendment_name)
 	doc.check_permission("read")
 
 	company_name = frappe.defaults.get_user_default("Company") or ""
@@ -571,14 +571,14 @@ def get_version_changes(amendment_name: str) -> list:
 	"""
 	import json
 
-	doc = frappe.get_doc("Attendance Amendment", amendment_name)
+	doc = frappe.get_doc("Attendance Approval", amendment_name)
 	doc.check_permission("read")
 
 	Version = frappe.qb.DocType("Version")
 	versions = (
 		frappe.qb.from_(Version)
 		.select(Version.name, Version.owner, Version.creation, Version.data)
-		.where(Version.ref_doctype == "Attendance Amendment")
+		.where(Version.ref_doctype == "Attendance Approval")
 		.where(Version.docname == amendment_name)
 		.orderby(Version.creation, order=frappe.qb.desc)
 	).run(as_dict=True)

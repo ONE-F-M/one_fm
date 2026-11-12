@@ -189,7 +189,7 @@ class TestProofofWork(FrappeTestCase):
 	def _make_approved_amendment(self, workflow_state="Approved"):
 		amendment = frappe.get_doc(
 			{
-				"doctype": "Attendance Amendment",
+				"doctype": "Attendance Approval",
 				"project": self.project.name,
 				"year": str(TEST_YEAR),
 				"month": "June",

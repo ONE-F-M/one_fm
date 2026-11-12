@@ -1,7 +1,7 @@
 // Copyright (c) 2025, ONE FM and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Attendance Amendment", {
+frappe.ui.form.on("Attendance Approval", {
     refresh(frm) {
         frm.events.set_year_and_month(frm);
         frm.events.filter_site_by_project(frm);
@@ -22,9 +22,9 @@ frappe.ui.form.on("Attendance Amendment", {
         if (!frm.is_new() && frm.doc.workflow_state === "Approved") {
             // Story 1: Standalone "Generate Invoice" button (no group)
             frm.add_custom_button(__("Generate Invoice"), function() {
-                frappe.confirm(__("Generate Sales Invoice for this Attendance Amendment?"), function() {
+                frappe.confirm(__("Generate Sales Invoice for this Attendance Approval?"), function() {
                     frappe.call({
-                        method: "one_fm.one_fm.doctype.attendance_amendment.attendance_invoicing.generate_invoice_from_amendment",
+                        method: "one_fm.one_fm.doctype.attendance_approval.attendance_invoicing.generate_invoice_from_amendment",
                         args: { amendment_name: frm.doc.name },
                         freeze: true,
                         freeze_message: __("Generating Sales Invoice..."),
@@ -189,8 +189,8 @@ for (let i = 1; i <= 31; i++) {
         calculate_working_days(frm, cdt, cdn);
     };
 }
-frappe.ui.form.on("Attendance Amendment Item", child_events);
-frappe.ui.form.on("Attendance Amendment OT Item", child_events);
+frappe.ui.form.on("Attendance Approval Item", child_events);
+frappe.ui.form.on("Attendance Approval OT Item", child_events);
 
 // ============================================================
 // Story 1 + 6: Attendance Preview Modal
@@ -216,7 +216,7 @@ function show_attendance_preview_modal(frm) {
 
     // Fetch item_type for each sale_item to display "Item Type" column
     frappe.call({
-        method: "one_fm.one_fm.doctype.attendance_amendment.attendance_amendment.get_sale_item_details",
+        method: "one_fm.one_fm.doctype.attendance_approval.attendance_approval.get_sale_item_details",
         args: { amendment_name: frm.doc.name },
         async: false,
         callback: function(r) {
@@ -694,7 +694,7 @@ function export_preview_as_pdf(html_content, frm) {
 
     // Fetch metadata via server call to avoid client-side Promise [object Object] issues
     frappe.call({
-        method: "one_fm.one_fm.doctype.attendance_amendment.attendance_amendment.get_pdf_header_metadata",
+        method: "one_fm.one_fm.doctype.attendance_approval.attendance_approval.get_pdf_header_metadata",
         args: { amendment_name: frm.doc.name },
         async: false,
         callback: function(r) {
@@ -782,7 +782,7 @@ function export_preview_as_pdf(html_content, frm) {
 
 function show_version_changes(frm) {
     frappe.call({
-        method: "one_fm.one_fm.doctype.attendance_amendment.attendance_amendment.get_version_changes",
+        method: "one_fm.one_fm.doctype.attendance_approval.attendance_approval.get_version_changes",
         args: { amendment_name: frm.doc.name },
         freeze: true,
         freeze_message: __("Loading version history..."),

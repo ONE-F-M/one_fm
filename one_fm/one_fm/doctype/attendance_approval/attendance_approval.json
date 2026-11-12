@@ -111,7 +111,7 @@
    "fieldname": "attendance_details",
    "fieldtype": "Table",
    "label": "Attendance Details",
-   "options": "Attendance Amendment Item"
+   "options": "Attendance Approval Item"
   },
   {
    "fieldname": "remarks",
@@ -123,7 +123,7 @@
    "fieldtype": "Link",
    "label": "Amended From",
    "no_copy": 1,
-   "options": "Attendance Amendment",
+   "options": "Attendance Approval",
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
@@ -172,7 +172,7 @@
    "fieldname": "overtime_details",
    "fieldtype": "Table",
    "label": "Overtime Details",
-   "options": "Attendance Amendment OT Item"
+   "options": "Attendance Approval OT Item"
   },
   {
    "fieldname": "section_break_qfkp",
@@ -191,10 +191,10 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-11 12:00:00.000000",
+ "modified": "2026-11-12 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
- "name": "Attendance Amendment",
+ "name": "Attendance Approval",
  "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
