@@ -200,3 +200,30 @@ class TestEmployeeScheduleRelievingFields(FrappeTestCase):
 				"is_weekend_reliever", "is_annual_leave_reliever", "leave_application"):
 			self.assertIn(fieldname, section)
 			self.assertEqual(fieldnames.count(fieldname), 1)
+
+	def test_patch_drops_field_order_setter_so_section_is_populated(self):
+		from frappe.custom.doctype.property_setter.property_setter import make_property_setter
+
+		from one_fm.patches.v15_0 import drop_employee_schedule_field_order_property_setter as patch
+
+		# The production setter: the old order, with the two relieving fields after end_datetime.
+		moved = ("is_relieving_schedule", "relieving_employee_schedule")
+		old_order = [f.fieldname for f in frappe.get_meta("Employee Schedule").fields if f.fieldname not in moved]
+		at = old_order.index("end_datetime") + 1
+		old_order[at:at] = list(moved)
+		make_property_setter(
+			"Employee Schedule", None, "field_order", frappe.as_json(old_order), "Data", for_doctype=True
+		)
+		frappe.clear_cache(doctype="Employee Schedule")
+		with self.assertRaises(AssertionError):
+			self.test_relieving_fields_sit_under_relieving_details_section()
+
+		patch.execute()
+
+		self.assertFalse(
+			frappe.db.exists(
+				"Property Setter",
+				{"doc_type": "Employee Schedule", "doctype_or_field": "DocType", "property": "field_order"},
+			)
+		)
+		self.test_relieving_fields_sit_under_relieving_details_section()

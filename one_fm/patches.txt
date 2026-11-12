@@ -714,3 +714,4 @@ one_fm.patches.v15_0.move_residency_lifecycle_to_processa #2026-11-08 WI-004314
 one_fm.patches.v15_0.move_paci_lifecycle_to_processa #2026-11-08 WI-004315
 one_fm.patches.v15_0.move_preparation_lifecycle_to_processa #2026-11-08 WI-004417
 one_fm.patches.v15_0.clear_dangling_shipment_split_links
+one_fm.patches.v15_0.drop_employee_schedule_field_order_property_setter
