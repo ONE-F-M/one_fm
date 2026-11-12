@@ -540,6 +540,12 @@ class LeaveApplicationOverride(LeaveApplication):
             emp.save()
             frappe.db.commit()
         if self.custom_reliever_ and frappe.db.exists("Reliever Assignment", {"name": self.name}):frappe.enqueue(reassign_responsibilities, leave_application=self.name)
+        if frappe.db.exists("Employee Schedule", {"leave_application": self.name, "is_annual_leave_reliever": 1}):
+            frappe.enqueue(
+                "one_fm.one_fm.doctype.roster_employee_actions.roster_employee_actions.create_annual_leave_reliever_actions",
+                leave_application=self.name,
+                enqueue_after_commit=True,
+            )
         self.create_leave_ledger_entry(submit=False)
         # notify leave applier about cancellation
         leave_application_on_cancel(self,"on_cancel")

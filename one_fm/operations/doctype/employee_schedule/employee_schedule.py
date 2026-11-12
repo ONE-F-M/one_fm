@@ -528,6 +528,8 @@ class EmployeeSchedule(Document):
 				self.reference_docname = ""
 
 		self.validate_ojt_change()
+		if self.is_annual_leave_reliever and not self.leave_application:
+			frappe.throw(_("Leave Application is required for an Annual Leave Reliever schedule."))
 		self.validate_leave_application()
 		self.validate_relieving_date()
 		self.apply_shift_timing_override()
