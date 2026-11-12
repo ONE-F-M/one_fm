@@ -53,6 +53,8 @@
   "contract_items_operation",
   "notification_members_section",
   "notification_members",
+  "deactivated_records_section",
+  "deactivated_records",
   "section_break_55",
   "password_management"
  ],
@@ -325,6 +327,20 @@
   },
   {
    "collapsible": 1,
+   "depends_on": "eval:doc.deactivated_records && doc.deactivated_records.length",
+   "fieldname": "deactivated_records_section",
+   "fieldtype": "Section Break",
+   "label": "Deactivated Records"
+  },
+  {
+   "fieldname": "deactivated_records",
+   "fieldtype": "Table",
+   "label": "Deactivated Records",
+   "options": "Contract Deactivated Record",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
    "fieldname": "section_break_55",
    "fieldtype": "Section Break",
    "label": "More Information"
@@ -346,7 +362,7 @@
   }
  ],
  "links": [],
- "modified": "2026-07-01 23:49:36.349654",
+ "modified": "2026-11-12 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",

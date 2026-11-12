@@ -1,0 +1,63 @@
+{
+ "actions": [],
+ "creation": "2026-11-12 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "reference_doctype",
+  "reference_name",
+  "previous_value",
+  "deactivated_on",
+  "restored_on"
+ ],
+ "fields": [
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Reference DocType",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_name",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "label": "Reference Name",
+   "options": "reference_doctype",
+   "read_only": 1
+  },
+  {
+   "fieldname": "previous_value",
+   "fieldtype": "Data",
+   "label": "Previous Value",
+   "read_only": 1
+  },
+  {
+   "fieldname": "deactivated_on",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Deactivated On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "restored_on",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Restored On",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-11-12 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Contract Deactivated Record",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

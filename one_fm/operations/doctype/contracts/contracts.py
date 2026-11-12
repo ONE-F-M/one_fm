@@ -19,6 +19,14 @@ from frappe import _
 from one_fm.processor import sendemail
 from one_fm.utils import get_field_with_label
 
+
+class ContractDeactivationBlocked(frappe.ValidationError):
+    pass
+
+
+# Parent-first order: reactivation must switch parents on before children.
+CASCADE_DOCTYPES = ("Operations Site", "Operations Shift", "Operations Role", "Operations Post")
+
 class Contracts(Document):
     def validate(self):
         self.validate_dates_out_of_draft()
@@ -61,6 +69,13 @@ class Contracts(Document):
 
 
     def on_update(self):
+        # First: the guard must throw before anything below commits (sync_contract_item_prices does).
+        if self.project and self.get_doc_before_save() and self.has_value_changed("workflow_state"):
+            if self.workflow_state == "Inactive":
+                self.deactivate_operations()
+            elif self.workflow_state == "Active":
+                self.reactivate_operations()
+
         self.update_project_start_end_date()
         cancel_unselected_day_schedules(self)
 
@@ -83,12 +98,140 @@ class Contracts(Document):
 
         sync_contract_item_prices(self.name)
 
+    def check_no_active_employees(self):
+        """Block inactivation while another Active contract shares the project or
+        Active employees are still on its Sites/Shifts."""
+        other_contract = frappe.db.exists(
+            "Contracts",
+            {"project": self.project, "workflow_state": "Active", "name": ["!=", self.name]},
+        )
+        if other_contract:
+            frappe.throw(
+                _("Contract {0} cannot be set to Inactive: Project {1} is also used by the Active contract {2}.").format(
+                    self.name, self.project, other_contract
+                ),
+                exc=ContractDeactivationBlocked,
+            )
+
+        Employee = frappe.qb.DocType("Employee")
+        Site = frappe.qb.DocType("Operations Site")
+        Shift = frappe.qb.DocType("Operations Shift")
+        employees = (
+            frappe.qb.from_(Employee)
+            .select(Employee.name, Employee.employee_name)
+            .where(Employee.status == "Active")
+            .where(
+                Employee.site.isin(frappe.qb.from_(Site).select(Site.name).where(Site.project == self.project))
+                | Employee.shift.isin(frappe.qb.from_(Shift).select(Shift.name).where(Shift.project == self.project))
+            )
+        ).run(as_dict=True)
+        if employees:
+            msg = _("Contract {0} cannot be set to Inactive: {1} Active employee(s) are still on its Sites or Shifts. Reassign or off-board them first:").format(
+                self.name, len(employees)
+            )
+            for employee in employees:
+                msg += "<br/><a href='/app/employee/{0}'>{0}: {1}</a>".format(employee.name, employee.employee_name)
+            frappe.throw(msg, exc=ContractDeactivationBlocked)
+
+    def deactivate_operations(self):
+        """Guard, then switch off the project's Open Project and Active Sites/Shifts/Roles/Posts,
+        recording each one so reactivation restores exactly these."""
+        self.check_no_active_employees()
+
+        project = frappe.db.get_value("Project", self.project, ["status", "percent_complete_method"], as_dict=True)
+        if project and project.status == "Open":
+            self.add_deactivated_record("Project", self.project, json.dumps(project))
+            # Manual stops task progress from flipping the status back to Open.
+            frappe.db.set_value("Project", self.project, {"status": "Completed", "percent_complete_method": "Manual"})
+
+        for doctype in CASCADE_DOCTYPES:
+            table = frappe.qb.DocType(doctype)
+            fields = [table.name]
+            if doctype == "Operations Post":
+                fields += [table.start_date, table.end_date]
+            rows = (
+                frappe.qb.from_(table).select(*fields)
+                .where(table.project == self.project).where(table.status == "Active")
+            ).run(as_dict=True)
+            if not rows:
+                continue
+            for row in rows:
+                previous = None
+                if doctype == "Operations Post":
+                    previous = json.dumps({"start_date": cstr(row.start_date), "end_date": cstr(row.end_date)})
+                self.add_deactivated_record(doctype, row.name, previous)
+            frappe.qb.update(table).set(table.status, "Inactive").where(
+                table.name.isin([row.name for row in rows])
+            ).run()
+
+        frappe.enqueue(
+            "one_fm.operations.doctype.contracts.contracts.purge_future_schedules",
+            queue="long",
+            timeout=3600,
+            enqueue_after_commit=True,
+            job_id=f"contract-purge-{self.name}",
+            deduplicate=True,
+            contract=self.name,
+        )
+
+    def add_deactivated_record(self, doctype, name, previous_value=None):
+        self.append("deactivated_records", {
+            "reference_doctype": doctype,
+            "reference_name": name,
+            "previous_value": previous_value,
+            "deactivated_on": today(),
+        }).db_insert()
+
+    def reactivate_operations(self):
+        """Restore, top-down, only what deactivate_operations switched off and has not been restored."""
+        pending = [d for d in self.deactivated_records if not d.restored_on]
+        if not pending:
+            return
+
+        for d in pending:
+            if d.reference_doctype == "Project":
+                frappe.db.set_value("Project", d.reference_name, json.loads(d.previous_value))
+
+        posts = []
+        for doctype in CASCADE_DOCTYPES:
+            names = [d.reference_name for d in pending if d.reference_doctype == doctype]
+            if not names:
+                continue
+            table = frappe.qb.DocType(doctype)
+            query = frappe.qb.update(table).set(table.status, "Active").where(table.name.isin(names))
+            if doctype == "Operations Post":
+                # Reset the window so the schedule builder fills the new contract period.
+                query = query.set(table.start_date, max(getdate(), getdate(self.start_date))).set(table.end_date, self.end_date)
+                posts = names
+            query.run()
+
+        Record = frappe.qb.DocType("Contract Deactivated Record")
+        frappe.qb.update(Record).set(Record.restored_on, today()).where(
+            Record.name.isin([d.name for d in pending])
+        ).run()
+        for d in pending:
+            d.restored_on = today()
+
+        if posts:
+            frappe.enqueue(
+                "one_fm.operations.doctype.contracts.contracts.rebuild_post_schedules",
+                queue="long",
+                timeout=3600,
+                enqueue_after_commit=True,
+                job_id=f"contract-rebuild-{self.name}",
+                deduplicate=True,
+                posts=posts,
+            )
+
+    def get_inactivation_recipients(self):
+        """Operation Settings recipients plus this contract's notification members."""
+        users = [d.user for d in frappe.get_single("Operation Settings").contract_inactivation_recipients]
+        users += [d.user for d in self.notification_members]
+        return list(dict.fromkeys(u for u in users if u and u != "Administrator"))
+
     def send_inactivation_email(self):
         """Send email notification when a contract is set to Inactive."""
-        recipients = [
-            d.user for d in self.notification_members
-            if d.user and d.user != "Administrator"
-        ]
+        recipients = self.get_inactivation_recipients()
 
         if not recipients:
             frappe.log_error(
@@ -105,7 +248,11 @@ class Contracts(Document):
             "client_name": client_name,
             "end_date": frappe.utils.formatdate(self.end_date),
             "link": frappe.utils.get_url_to_form("Contracts", self.name),
+            "switched_off": {},
         }
+        for d in self.deactivated_records:
+            if not d.restored_on:
+                context["switched_off"].setdefault(d.reference_doctype, []).append(d.reference_name)
 
         msg = frappe.render_template(
             "one_fm/templates/emails/contract_inactivation.html",
@@ -3525,8 +3672,68 @@ def auto_deactivate_contracts():
 			doc.save(ignore_permissions=True)
 			doc.add_comment("Workflow", _("Inactive"))
 			frappe.db.commit()
+		except ContractDeactivationBlocked as e:
+			frappe.db.rollback()
+			notify_deactivation_blocked(contract_name, str(e))
 		except Exception:
 			frappe.log_error(
 				title=_("Auto Deactivate Contract Error: {0}").format(contract_name),
 			)
 			frappe.db.rollback()
+
+
+def notify_deactivation_blocked(contract_name, reason):
+	"""Email the inactivation recipients why the daily job left a contract Active."""
+	recipients = frappe.get_doc("Contracts", contract_name).get_inactivation_recipients()
+	if not recipients:
+		return
+	sendemail(
+		recipients=recipients,
+		subject=_("Contract {0} could not be set to Inactive").format(contract_name),
+		content=reason,
+		reference_doctype="Contracts",
+		reference_name=contract_name,
+	)
+	frappe.db.commit()
+
+
+def purge_future_schedules(contract):
+	"""Delete Employee and Post Schedules from tomorrow on for an Inactive contract's project.
+	Today and the past are left untouched."""
+	from one_fm.operations.doctype.employee_schedule.employee_schedule import has_workflow_state_column
+
+	project = frappe.db.get_value("Contracts", contract, "project")
+	if not project:
+		return
+	tomorrow = add_days(today(), 1)
+
+	ES = frappe.qb.DocType("Employee Schedule")
+	Shift = frappe.qb.DocType("Operations Shift")
+	future = (ES.date >= tomorrow) & (
+		(ES.project == project)
+		| ES.shift.isin(frappe.qb.from_(Shift).select(Shift.name).where(Shift.project == project))
+	)
+
+	# A bulk delete skips on_trash, so close pending approvals first.
+	if has_workflow_state_column():
+		pending = (
+			frappe.qb.from_(ES).select(ES.name)
+			.where(future)
+			.where(ES.workflow_state.isin(["Pending DSOT Approval", "Pending Suspension"]))
+		).run(pluck=True)
+		for name in pending:
+			frappe.get_doc("Employee Schedule", name).clear_suspension_approval_requests()
+
+	frappe.qb.from_(ES).delete().where(future).run()
+
+	PS = frappe.qb.DocType("Post Schedule")
+	frappe.qb.from_(PS).delete().where(PS.project == project).where(PS.date >= tomorrow).run()
+	frappe.db.commit()
+
+
+def rebuild_post_schedules(posts):
+	"""Recreate Post Schedules for reactivated posts; the builder skips dates that already exist."""
+	from one_fm.operations.doctype.operations_post.operations_post import create_post_schedule_for_operations_post
+
+	for post in posts:
+		create_post_schedule_for_operations_post(frappe.get_doc("Operations Post", post))

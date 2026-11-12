@@ -12,7 +12,11 @@ from one_fm.operations.doctype.contracts.contracts import (
 	set_contract_inactive,
 	set_contract_active,
 	auto_deactivate_contracts,
+	purge_future_schedules,
+	rebuild_post_schedules,
+	ContractDeactivationBlocked,
 )
+from one_fm.operations.doctype.employee_schedule.employee_schedule import has_workflow_state_column
 
 class TestContracts(FrappeTestCase):
 	"""Test Suite for Contracts DocType, focusing on contract reminders grouping logic."""
@@ -376,3 +380,234 @@ class TestContracts(FrappeTestCase):
 			contract.workflow_state, "Inactive",
 			"Contract must transition to Inactive even if email sending fails."
 		)
+
+
+CASCADE_PROJECT = "Test Cascade Project"
+CASCADE_CLIENT = "TEST-CLIENT-CASCADE"
+CASCADE_USER = "test_cascade_notify@example.com"
+JOB_KWARGS = ("queue", "timeout", "enqueue_after_commit", "job_id", "deduplicate", "is_async", "now")
+
+
+def run_job_inline(method, **kwargs):
+	method = frappe.get_attr(method) if isinstance(method, str) else method
+	return method(**{k: v for k, v in kwargs.items() if k not in JOB_KWARGS})
+
+
+@patch("frappe.enqueue", side_effect=run_job_inline)
+@patch("one_fm.operations.doctype.contracts.contracts.sendemail")
+class TestContractDeactivationCascade(FrappeTestCase):
+	"""Inactivation guard, cascade, schedule purge and reactivation. The code under test
+	commits, so fixtures are inserted raw and removed with a commit in tearDown."""
+
+	def setUp(self):
+		frappe.set_user("Administrator")
+		self.cleanup()
+		if not frappe.db.exists("Customer", CASCADE_CLIENT):
+			frappe.get_doc({
+				"doctype": "Customer", "customer_name": CASCADE_CLIENT,
+				"customer_group": "Commercial", "territory": "All Territories",
+			}).insert(ignore_permissions=True)
+		if not frappe.db.exists("User", CASCADE_USER):
+			frappe.get_doc({
+				"doctype": "User", "email": CASCADE_USER, "first_name": "Cascade", "send_welcome_email": 0,
+			}).insert(ignore_permissions=True)
+		frappe.get_doc({"doctype": "Project", "project_name": CASCADE_PROJECT}).insert(ignore_permissions=True)
+
+		frappe.get_doc({
+			"doctype": "Action User", "user": CASCADE_USER, "parent": "Operation Settings",
+			"parenttype": "Operation Settings", "parentfield": "contract_inactivation_recipients",
+		}).db_insert()
+
+		self.insert("Operations Site", "TCASC Site", status="Active")
+		self.insert("Operations Site", "TCASC Site Off", status="Inactive")
+		self.insert("Operations Shift", "TCASC Shift", site="TCASC Site", status="Active")
+		self.insert("Operations Role", "TCASC Role", shift="TCASC Shift", site="TCASC Site", post_abbrv="TC", status="Active")
+		self.insert(
+			"Operations Post", "TCASC Post", post_name="TCASC Post", post_template="TCASC Role",
+			site_shift="TCASC Shift", site="TCASC Site", status="Active",
+			start_date=add_days(nowdate(), -60), end_date=add_days(nowdate(), -30),
+		)
+
+		self.contract = frappe.get_doc({
+			"doctype": "Contracts",
+			"client": CASCADE_CLIENT,
+			"project": CASCADE_PROJECT,
+			"start_date": add_days(nowdate(), -60),
+			"end_date": add_days(nowdate(), 10),
+			"workflow_state": "Draft",
+		}).insert(ignore_permissions=True)
+		self.contract.db_set("workflow_state", "Active")
+		self.contract.reload()
+
+	def tearDown(self):
+		self.cleanup()
+		frappe.db.commit()
+
+	def cleanup(self):
+		frappe.db.rollback()
+		for doctype in ("Employee Schedule", "Post Schedule", "Operations Post", "Operations Role", "Operations Shift", "Operations Site", "Task"):
+			frappe.db.delete(doctype, {"project": CASCADE_PROJECT})
+		for doctype in ("Employee Schedule", "Post Schedule", "Employee"):
+			frappe.db.delete(doctype, {"name": ("like", "TCASC-%")})
+		frappe.db.delete("ToDo", {"reference_type": "Employee Schedule", "reference_name": ("like", "TCASC-%")})
+		frappe.db.delete("Contract Deactivated Record", {"parent": ("like", f"{CASCADE_CLIENT}-%")})
+		frappe.db.delete("Contracts", {"client": CASCADE_CLIENT})
+		frappe.db.delete("Project", {"name": CASCADE_PROJECT})
+		frappe.db.delete("Action User", {"parent": "Operation Settings", "parentfield": "contract_inactivation_recipients"})
+		frappe.db.commit()
+
+	def insert(self, doctype, name, **fields):
+		doc = frappe.get_doc({"doctype": doctype, "name": name, "project": CASCADE_PROJECT, **fields})
+		doc.db_insert()
+		return doc
+
+	def set_state(self, state):
+		self.contract.reload()
+		self.contract.workflow_state = state
+		self.contract.flags.ignore_validate = True
+		self.contract.flags.ignore_workflow = True
+		self.contract.save(ignore_permissions=True)
+
+	def status(self, doctype, name):
+		return frappe.db.get_value(doctype, name, "status")
+
+	def test_guard_blocks_active_employee_on_site_then_passes(self, mock_sendemail, mock_enqueue):
+		self.insert("Employee", "TCASC-EMP-1", employee_name="Cascade Guard", status="Active", site="TCASC Site")
+		frappe.db.commit()
+		with self.assertRaises(ContractDeactivationBlocked) as ctx:
+			self.set_state("Inactive")
+		self.assertIn("1 Active employee", str(ctx.exception))
+		self.assertIn("TCASC-EMP-1", str(ctx.exception))
+
+		frappe.db.rollback()
+		frappe.db.set_value("Employee", "TCASC-EMP-1", "site", None)
+		self.set_state("Inactive")
+		self.assertEqual(self.status("Operations Site", "TCASC Site"), "Inactive")
+
+	def test_guard_blocks_active_employee_on_shift(self, mock_sendemail, mock_enqueue):
+		self.insert("Employee", "TCASC-EMP-2", employee_name="Cascade Shift", status="Active", shift="TCASC Shift")
+		with self.assertRaises(ContractDeactivationBlocked):
+			self.set_state("Inactive")
+
+	def test_guard_blocks_shared_project(self, mock_sendemail, mock_enqueue):
+		other = frappe.get_doc({
+			"doctype": "Contracts", "client": CASCADE_CLIENT, "project": CASCADE_PROJECT,
+			"start_date": add_days(nowdate(), -5), "end_date": add_days(nowdate(), 30), "workflow_state": "Draft",
+		}).insert(ignore_permissions=True)
+		other.db_set("workflow_state", "Active")
+		with self.assertRaises(ContractDeactivationBlocked) as ctx:
+			self.set_state("Inactive")
+		self.assertIn(other.name, str(ctx.exception))
+
+	def test_inactivation_flips_records_and_emails(self, mock_sendemail, mock_enqueue):
+		self.set_state("Inactive")
+
+		project = frappe.db.get_value("Project", CASCADE_PROJECT, ["status", "percent_complete_method"], as_dict=True)
+		self.assertEqual(project.status, "Completed")
+		self.assertEqual(project.percent_complete_method, "Manual")
+		for doctype, name in (
+			("Operations Site", "TCASC Site"), ("Operations Shift", "TCASC Shift"),
+			("Operations Role", "TCASC Role"), ("Operations Post", "TCASC Post"),
+		):
+			self.assertEqual(self.status(doctype, name), "Inactive", doctype)
+
+		recorded = {d.reference_name for d in frappe.get_doc("Contracts", self.contract.name).deactivated_records}
+		self.assertEqual(recorded, {CASCADE_PROJECT, "TCASC Site", "TCASC Shift", "TCASC Role", "TCASC Post"})
+
+		frappe.get_doc({"doctype": "Task", "subject": "TCASC task", "project": CASCADE_PROJECT}).insert(ignore_permissions=True)
+		self.assertEqual(frappe.db.get_value("Project", CASCADE_PROJECT, "status"), "Completed")
+
+		mock_sendemail.assert_called_once()
+		self.assertIn(CASCADE_USER, mock_sendemail.call_args.kwargs["recipients"])
+		self.assertIn("TCASC Post", mock_sendemail.call_args.kwargs["content"])
+
+	def test_purge_keeps_today_and_past(self, mock_sendemail, mock_enqueue):
+		dates = {"past": add_days(nowdate(), -1), "today": nowdate(), "tomorrow": add_days(nowdate(), 1)}
+		for key, date in dates.items():
+			self.insert("Employee Schedule", f"TCASC-ES-{key}", employee="TCASC-EMP-X", shift="TCASC Shift", date=date)
+			self.insert("Post Schedule", f"TCASC-PS-{key}", post="TCASC Post", date=date)
+		# Shift match alone (different project on the row) is still purged.
+		frappe.get_doc({
+			"doctype": "Employee Schedule", "name": "TCASC-ES-shift", "shift": "TCASC Shift", "date": dates["tomorrow"],
+		}).db_insert()
+
+		purge_future_schedules(self.contract.name)
+
+		self.assertTrue(frappe.db.exists("Employee Schedule", "TCASC-ES-past"))
+		self.assertTrue(frappe.db.exists("Employee Schedule", "TCASC-ES-today"))
+		self.assertFalse(frappe.db.exists("Employee Schedule", "TCASC-ES-tomorrow"))
+		self.assertFalse(frappe.db.exists("Employee Schedule", "TCASC-ES-shift"))
+		self.assertTrue(frappe.db.exists("Post Schedule", "TCASC-PS-today"))
+		self.assertFalse(frappe.db.exists("Post Schedule", "TCASC-PS-tomorrow"))
+
+	def test_purge_closes_pending_approvals(self, mock_sendemail, mock_enqueue):
+		if not has_workflow_state_column():
+			self.skipTest("Employee Schedule workflow is not installed")
+		for state in ("Pending DSOT Approval", "Pending Suspension"):
+			name = f"TCASC-ES-{state[8:12]}"
+			self.insert("Employee Schedule", name, shift="TCASC Shift", date=add_days(nowdate(), 2), workflow_state=state)
+			frappe.get_doc({
+				"doctype": "ToDo", "allocated_to": "Administrator", "description": "TCASC approval",
+				"reference_type": "Employee Schedule", "reference_name": name, "status": "Open",
+			}).insert(ignore_permissions=True)
+
+		purge_future_schedules(self.contract.name)
+
+		self.assertFalse(frappe.db.exists("ToDo", {
+			"reference_type": "Employee Schedule", "reference_name": ("like", "TCASC-%"), "status": "Open",
+		}))
+		self.assertFalse(frappe.db.exists("Employee Schedule", {"name": ("like", "TCASC-ES-%")}))
+
+	def test_reactivation_restores_only_recorded(self, mock_sendemail, mock_enqueue):
+		self.set_state("Inactive")
+		self.set_state("Active")
+
+		project = frappe.db.get_value("Project", CASCADE_PROJECT, ["status", "percent_complete_method"], as_dict=True)
+		self.assertEqual(project.status, "Open")
+		self.assertEqual(project.percent_complete_method, "Task Completion")
+		for doctype, name in (
+			("Operations Site", "TCASC Site"), ("Operations Shift", "TCASC Shift"),
+			("Operations Role", "TCASC Role"), ("Operations Post", "TCASC Post"),
+		):
+			self.assertEqual(self.status(doctype, name), "Active", doctype)
+		self.assertEqual(self.status("Operations Site", "TCASC Site Off"), "Inactive")
+		self.assertTrue(all(d.restored_on for d in frappe.get_doc("Contracts", self.contract.name).deactivated_records))
+
+		# The post's end date had expired; it is reset to the contract window and scheduled.
+		self.assertEqual(str(frappe.db.get_value("Operations Post", "TCASC Post", "end_date")), str(self.contract.end_date))
+		count = frappe.db.count("Post Schedule", {"post": "TCASC Post"})
+		self.assertEqual(count, 11)
+
+		rebuild_post_schedules(["TCASC Post"])
+		self.assertEqual(frappe.db.count("Post Schedule", {"post": "TCASC Post"}), count)
+
+	def test_auto_deactivate_runs_cascade(self, mock_sendemail, mock_enqueue):
+		self.contract.db_set("end_date", add_days(nowdate(), -1))
+		self.run_auto_deactivate()
+		self.assertEqual(frappe.db.get_value("Contracts", self.contract.name, "workflow_state"), "Inactive")
+		self.assertEqual(self.status("Operations Post", "TCASC Post"), "Inactive")
+
+	def test_auto_deactivate_blocked_stays_active_and_emails(self, mock_sendemail, mock_enqueue):
+		self.insert("Employee", "TCASC-EMP-3", employee_name="Cascade Auto", status="Active", site="TCASC Site")
+		self.contract.db_set("end_date", add_days(nowdate(), -1))
+		frappe.db.commit()
+
+		self.run_auto_deactivate()
+
+		self.assertEqual(frappe.db.get_value("Contracts", self.contract.name, "workflow_state"), "Active")
+		self.assertEqual(self.status("Operations Site", "TCASC Site"), "Active")
+		mock_sendemail.assert_called_once()
+		self.assertEqual(mock_sendemail.call_args.kwargs["recipients"], [CASCADE_USER])
+		self.assertIn("TCASC-EMP-3", mock_sendemail.call_args.kwargs["content"])
+
+	def run_auto_deactivate(self):
+		"""Limit the daily job to this test's contract so other site data is never touched."""
+		get_all = frappe.get_all
+
+		def only_this_contract(doctype, *args, **kwargs):
+			if doctype == "Contracts" and kwargs.get("pluck") == "name":
+				kwargs["filters"] = {**kwargs["filters"], "name": self.contract.name}
+			return get_all(doctype, *args, **kwargs)
+
+		with patch("frappe.get_all", side_effect=only_this_contract):
+			auto_deactivate_contracts()
