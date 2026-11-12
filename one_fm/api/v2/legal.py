@@ -98,7 +98,7 @@ def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_loca
 			detail.pop("attachment_name")
 			penalty_issuance.append('penalty_issuance_details', detail)
 
-		if penalty_category == "Performace":
+		if penalty_category == "Performance":
 			penalty_issuance.shift = shift
 			penalty_issuance.site = site
 			penalty_issuance.project = project
