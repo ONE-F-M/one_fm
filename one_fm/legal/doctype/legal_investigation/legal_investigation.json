@@ -9,6 +9,7 @@
   "reference_doctype",
   "column_break_3",
   "reference_docname",
+  "penalty_issuance",
   "investigation_details_section",
   "investigation_subject",
   "investigation_lead",
@@ -146,7 +147,7 @@
    "fieldname": "reference_doctype",
    "fieldtype": "Select",
    "label": "Reference Document",
-   "options": "\nPenalty\nPenalty Issuance\nPIFSS Monthly Deduction"
+   "options": "\nPenalty\nPenalty Issuance\nPIFSS Monthly Deduction\nHR Enquiry"
   },
   {
    "fieldname": "column_break_3",
@@ -183,11 +184,18 @@
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Session Verified"
+  },
+  {
+   "fieldname": "penalty_issuance",
+   "fieldtype": "Link",
+   "label": "Penalty Issuance",
+   "options": "Penalty Issuance",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-12 18:10:00.000000",
+ "modified": "2026-11-12 18:30:00.000000",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Legal Investigation",

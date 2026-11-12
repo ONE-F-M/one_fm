@@ -718,3 +718,4 @@ one_fm.patches.v15_0.move_poc_check_lifecycle_to_processa
 one_fm.patches.v15_0.create_hr_enquiry_workflow_states #2026-11-12 states the HR Enquiry Lifecycle process sets
 one_fm.patches.v15_0.move_legal_investigation_lifecycle_to_processa #2026-11-12 third_party_damage from the legacy damage checks; Workflow retired
 one_fm.patches.v15_0.move_penalty_issuance_to_processa #2026-11-12 third_party_damage from the legacy damage checks; issuers may create what the process creates
+one_fm.patches.v15_0.create_escalated_to_legal_workflow_state #2026-11-12 HR Enquiry escalated to a Legal Investigation
