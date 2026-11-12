@@ -2377,6 +2377,7 @@ function getManifestHTML() {
 						<button type="button" class="mfst-reliever-filter-btn is-selected" data-filter="all" aria-pressed="true">${__("All")}</button>
 						<button type="button" class="mfst-reliever-filter-btn" data-filter="regular" aria-pressed="false">${__("Regular")}</button>
 						<button type="button" class="mfst-reliever-filter-btn" data-filter="ot" aria-pressed="false">${__("Overtime")}</button>
+						<button type="button" class="mfst-reliever-filter-btn" data-rambo-toggle aria-pressed="false">${__("Rambo")}</button>
 					</div>
 					<div id="mfst-relieverOverlapBanner" class="mfst-reliever-banner" role="status" hidden></div>
 					<div id="mfst-relieverList" class="mfst-reliever-list"></div>
@@ -2699,9 +2700,11 @@ function getManifestCSS() {
 		/* ── RELIEVER CARDS ── */
 		.mfst-reliever-search { padding: 0 0 8px 0; }
 		.mfst-reliever-search input { max-width: none; min-height: 44px; font-size: 15px; }
-		.mfst-reliever-filter { display: flex; gap: 6px; margin-bottom: 8px; }
-		.mfst-reliever-filter-btn { flex: 1; min-height: 44px; border: 1px solid var(--mfst-border); border-radius: 10px; background: var(--mfst-bg-card); color: var(--mfst-text); font-family: var(--mfst-font-body); font-size: 14px; font-weight: 600; cursor: pointer; }
+		.mfst-reliever-filter { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+		.mfst-reliever-filter-btn[hidden] { display: none; }
+		.mfst-reliever-filter-btn { flex: 1 1 auto; min-width: 0; min-height: 44px; border: 1px solid var(--mfst-border); border-radius: 10px; background: var(--mfst-bg-card); color: var(--mfst-text); font-family: var(--mfst-font-body); font-size: 14px; font-weight: 600; cursor: pointer; }
 		.mfst-reliever-filter-btn.is-selected { border-color: var(--mfst-accent); background: var(--mfst-accent-dim); color: var(--mfst-accent); }
+		@media (max-width: 767px) { .mfst-reliever-filter-btn { flex: 1 1 calc(50% - 6px); } }
 		.mfst-reliever-banner { margin-bottom: 8px; padding: 10px 12px; border: 1px solid var(--mfst-amber); border-radius: 10px; background: var(--mfst-amber-dim); color: var(--mfst-text); font-size: 13px; line-height: 1.4; }
 		.mfst-reliever-banner[hidden] { display: none; }
 		.mfst-reliever-list { display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; }
