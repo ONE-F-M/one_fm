@@ -42,6 +42,7 @@ class TestContracts(FrappeTestCase):
 				frappe.get_doc({
 					"doctype": "Customer",
 					"customer_name": f"TEST-CLIENT-{i}",
+					"customer_name_in_arabic": f"TEST-CLIENT-{i}",
 					"customer_group": "Commercial",
 					"territory": "All Territories"
 				}).insert(ignore_permissions=True)
@@ -405,6 +406,7 @@ class TestContractDeactivationCascade(FrappeTestCase):
 		if not frappe.db.exists("Customer", CASCADE_CLIENT):
 			frappe.get_doc({
 				"doctype": "Customer", "customer_name": CASCADE_CLIENT,
+				"customer_name_in_arabic": CASCADE_CLIENT,
 				"customer_group": "Commercial", "territory": "All Territories",
 			}).insert(ignore_permissions=True)
 		if not frappe.db.exists("User", CASCADE_USER):
