@@ -212,7 +212,8 @@ class TestAttendanceApprovalRename(FrappeTestCase):
 
 		doc = make_attendance_amendment(month="May")
 		doc.remarks = "version check"
-		doc.save()
+		# Frappe skips Version rows under tests unless asked.
+		doc.save(ignore_version=False)
 		changes = get_version_changes(doc.name)
 		self.assertTrue(
 			any(c["field"] == "remarks" for entry in changes for c in entry["changes"]),
