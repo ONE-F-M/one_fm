@@ -19,7 +19,7 @@ class AccommodationCheckinCheckout(Document):
 		self.set_accommodation_policy()
 
 	@frappe.whitelist()
-	def transfer_accommodation(self, bed, transfer_datetime, reason_for_transfer):
+	def transfer_accommodation(self, bed: str, transfer_datetime: str, reason_for_transfer: str):
 		"""Run the transfer through the Accommodation Transfer Lifecycle process map.
 
 		The map checks the bed, creates the checkout and the new check-in. Returns the new
