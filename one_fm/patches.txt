@@ -716,3 +716,4 @@ one_fm.patches.v15_0.move_preparation_lifecycle_to_processa #2026-11-08 WI-00441
 one_fm.patches.v15_0.clear_dangling_shipment_split_links
 one_fm.patches.v15_0.move_poc_check_lifecycle_to_processa
 one_fm.patches.v15_0.create_hr_enquiry_workflow_states #2026-11-12 states the HR Enquiry Lifecycle process sets
+one_fm.patches.v15_0.move_legal_investigation_lifecycle_to_processa #2026-11-12 third_party_damage from the legacy damage checks; Workflow retired
