@@ -112,7 +112,7 @@ class DocumentRegister(Document):
 			return  # nothing to fill
 
 		try:
-			from one_bpmn.processa_connectors.google import drive as gd
+			from processa.processa_connectors.google import drive as gd
 
 			service = _drive_service()
 		except Exception:
@@ -194,7 +194,7 @@ def _drive_service():
 	missing membership looks exactly like a deleted document (which is what
 	``_warn_autofill_failed`` exists to explain).
 
-	one_bpmn's Drive helpers are still reused — they take an optional
+	processa's Drive helpers are still reused — they take an optional
 	``service``, so only the identity differs, not the .docx/.pptx handling.
 	"""
 	from one_fm.one_fm.google_credentials import get_drive_service
@@ -303,7 +303,7 @@ def deactivate(document: str, reason: str = None, via_request: str = None, revok
 	revoke_error = None
 	if revoke:
 		try:
-			from one_bpmn.processa_connectors.google.drive import revoke_permissions
+			from processa.processa_connectors.google.drive import revoke_permissions
 
 			outcome = revoke_permissions(doc.drive_file_id, scope="all", service=_drive_service())
 			revoked = len(outcome["removed"])
@@ -350,7 +350,7 @@ def reactivate(document: str, reason: str = None) -> dict:
 	granted = 0
 	share_error = None
 	try:
-		from one_bpmn.processa_connectors.google.drive import set_permissions
+		from processa.processa_connectors.google.drive import set_permissions
 
 		granted = len(
 			set_permissions(doc.drive_file_id, DEFAULT_GRANTS, service=_drive_service())

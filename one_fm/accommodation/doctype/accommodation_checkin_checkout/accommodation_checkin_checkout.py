@@ -32,7 +32,7 @@ class AccommodationCheckinCheckout(Document):
 		if not model:
 			frappe.throw(_("The Accommodation Transfer process is not active."))
 
-		from one_bpmn.api.instances import start_process
+		from processa.api.instances import start_process
 
 		started = now_datetime()
 		# The keys must not match a check-in field name: the engine copies the document's own

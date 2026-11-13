@@ -1,6 +1,6 @@
 # Processa document actions (`processa.py`)
 
-Read this before you write or change any API that approves, rejects, submits or otherwise moves a record whose DocType runs on a Processa (one_bpmn) process map. Reuse these two endpoints. Do not add a new endpoint per DocType for the same purpose.
+Read this before you write or change any API that approves, rejects, submits or otherwise moves a record whose DocType runs on a Processa process map. Reuse these two endpoints. Do not add a new endpoint per DocType for the same purpose.
 
 ## When to use it
 
@@ -9,7 +9,7 @@ Use it when the record's lifecycle is driven by a Processa map. That is, an acti
 - The actions come from the map's User Tasks, not from a Frappe Workflow.
 - `apply_workflow(doc, "...")`, `doc.submit()` and hardcoded Approve/Reject buttons either fail ("Workflow not found" once the Frappe Workflow is inactive) or move the record without the map.
 
-To list the DocTypes run by Processa, call `one_bpmn.api.instances.get_processa_controlled_doctypes()`.
+To list the DocTypes run by Processa, call `processa.api.instances.get_processa_controlled_doctypes()`.
 
 ## Endpoints
 
@@ -53,7 +53,7 @@ Steps, in one request:
 1. Checks read permission on the record.
 2. Refuses with `PermissionError` unless the `(task_id, action)` pair is in the user's current `actions`. The process instance is taken from the server, never from the client.
 3. If `values` or `attachments` are sent: refuses with `PermissionError` any field not in `editable_fields`. Otherwise checks write permission, runs `doc.update(values)` and `doc.save()`, then stores each attachment through the File DocType with `handle_attachment_internal`.
-4. Calls `one_bpmn.api.instances.complete_task`, which re-checks assignment, the allowed action and write permission.
+4. Calls `processa.api.instances.complete_task`, which re-checks assignment, the allowed action and write permission.
 5. Returns the same shape as `get_document_actions`, plus:
    - `process_status`: the instance status after the engine pass;
    - `messages`: anything the map raised with `frappe.msgprint`, for example a validation step's message.
@@ -99,6 +99,6 @@ Mirror the editability rule the desk form already applies. Return `[]` for steps
 ## Do not
 
 - Call `apply_workflow`, `doc.submit()` or `db_set("workflow_state", ...)` to move a Processa-controlled record from request code. Processa's guard blocks submit and cancel, but not workflow actions: `before_workflow_action` never fires in Frappe v15. The record would move while the map keeps waiting.
-- Call `one_bpmn.api.instances.get_active_bpmn_tasks` from a whitelisted method without checking permission on the record first. It does no document permission check of its own.
+- Call `processa.api.instances.get_active_bpmn_tasks` from a whitelisted method without checking permission on the record first. It does no document permission check of its own.
 - Accept an `instance_name` from the client. Resolve it from the user's actions, as `_find_task` does.
 - Hardcode action labels such as "Approve" or "Submit for Review" in an API. The process owner can rename them in the map.
