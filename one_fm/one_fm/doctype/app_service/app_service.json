@@ -10,6 +10,7 @@
   "icon",
   "column_break_iidf",
   "status",
+  "role",
   "auto_assign",
   "assign_to_timesheet_employees",
   "assign_to_non_timesheet_employees"
@@ -50,6 +51,13 @@
    "reqd": 1
   },
   {
+   "description": "Only users with this role see the service. Leave empty for everyone.",
+   "fieldname": "role",
+   "fieldtype": "Link",
+   "label": "Role",
+   "options": "Role"
+  },
+  {
    "default": "0",
    "description": "To be auto assigned to user",
    "fieldname": "auto_assign",
@@ -71,7 +79,7 @@
   }
  ],
  "links": [],
- "modified": "2025-02-18 09:53:30.765357",
+ "modified": "2026-11-12 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "App Service",
