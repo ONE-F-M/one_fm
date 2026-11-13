@@ -189,13 +189,15 @@ class TestProofofWork(FrappeTestCase):
 	def _make_approved_amendment(self, workflow_state="Approved"):
 		amendment = frappe.get_doc(
 			{
-				"doctype": "Attendance Amendment",
+				"doctype": "Attendance Approval",
 				"project": self.project.name,
 				"year": str(TEST_YEAR),
 				"month": "June",
 				"attendance_based_on": "Attendance Status",
 			}
 		).insert(ignore_permissions=True)
+		# One live record per project and month: drop it before the next test makes another.
+		self.addCleanup(frappe.delete_doc, "Attendance Approval", amendment.name, force=True, ignore_permissions=True)
 		amendment.db_set("workflow_state", workflow_state)
 		return amendment
 

@@ -1,6 +1,6 @@
 {
   "workflow_name": "Attendance Amendment",
-  "document_type": "Attendance Amendment",
+  "document_type": "Attendance Approval",
   "is_active": 1,
   "override_status": 0,
   "send_email_alert": 0,

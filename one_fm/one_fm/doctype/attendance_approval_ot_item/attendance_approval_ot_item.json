@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "creation": "2025-11-03 16:00:59.740568",
+ "creation": "2025-11-25 10:56:31.816743",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -9,16 +9,15 @@
   "employee",
   "employee_id",
   "employee_name",
+  "column_break_umcf",
+  "shift",
+  "shift_classification",
   "operations_role",
   "sale_item",
   "site",
   "project",
-  "column_break_umcf",
-  "shift",
   "working_days",
   "off_days",
-  "duration",
-  "status",
   "attendance_status_section",
   "day_1",
   "day_5",
@@ -117,9 +116,10 @@
   },
   {
    "fieldname": "shift",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Shift"
+   "label": "Operations Shift",
+   "options": "Operations Shift"
   },
   {
    "fieldname": "working_days",
@@ -517,6 +517,12 @@
    "label": "Day 28"
   },
   {
+   "fetch_from": "shift.shift_classification",
+   "fieldname": "shift_classification",
+   "fieldtype": "Data",
+   "label": "Shift Classification"
+  },
+  {
    "fetch_from": "employee.custom_operations_role_allocation",
    "fieldname": "operations_role",
    "fieldtype": "Link",
@@ -529,7 +535,8 @@
    "fieldname": "sale_item",
    "fieldtype": "Link",
    "label": "Sale Item",
-   "options": "Item"
+   "options": "Item",
+   "read_only": 1
   },
   {
    "fetch_from": "operations_role.site",
@@ -546,27 +553,16 @@
    "label": "Project",
    "options": "Project",
    "read_only": 1
-  },
-  {
-   "fieldname": "duration",
-   "fieldtype": "Float",
-   "label": "Duration"
-  },
-  {
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "label": "Status",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nHoliday\nOn Hold"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-11-03 16:00:59.740569",
+ "modified": "2026-11-12 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
- "name": "Attendance Amendment Item",
+ "name": "Attendance Approval OT Item",
  "owner": "Administrator",
  "permissions": [],
  "row_format": "Dynamic",

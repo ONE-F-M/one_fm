@@ -12,12 +12,12 @@ MONTH_MAP = {
 
 @frappe.whitelist()
 def generate_invoice_from_amendment(amendment_name):
-	doc = frappe.get_doc("Attendance Amendment", amendment_name)
+	doc = frappe.get_doc("Attendance Approval", amendment_name)
 	doc.check_permission("read")
  	
 	workflow_state = getattr(doc, "workflow_state", None)
 	if workflow_state and workflow_state != "Approved":
- 		frappe.throw(_("Only Approved Attendance Amendments can be used to generate Sales Invoice."))
+ 		frappe.throw(_("Only Approved Attendance Approvals can be used to generate Sales Invoice."))
 
 
 	if not doc.contract:

@@ -1,11 +1,28 @@
 // Copyright (c) 2025, ONE FM and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Attendance Amendment", {
+frappe.ui.form.on("Attendance Approval", {
+    setup(frm) {
+        frm.set_query("contract", () => ({
+            filters: { project: frm.doc.project || "__none__", workflow_state: "Active" }
+        }));
+        // Empty list (no contract, or a contract without items) leaves Sale Item unrestricted.
+        const sale_item_query = () => (frm._sale_item_codes || []).length
+            ? { filters: [["Item", "name", "in", frm._sale_item_codes]] }
+            : {};
+        frm.set_query("sale_item", "attendance_details", sale_item_query);
+        frm.set_query("sale_item", "overtime_details", sale_item_query);
+    },
     refresh(frm) {
         frm.events.set_year_and_month(frm);
         frm.events.filter_site_by_project(frm);
+        frm.events.load_contract_sale_items(frm);
         toggle_day_value_fields_in_attendance_details(frm);
+        // A saved record that was never amended is its own baseline; an amended one
+        // has no known baseline until the next fetch.
+        if (!frm.doc.attendance_amended) {
+            take_amended_baseline(frm);
+        }
 
         if (!frm.is_new() && frm.doc.workflow_state !== "Cancelled") {
             // Story 1: Standalone "Preview Attendance" button (no group)
@@ -22,9 +39,9 @@ frappe.ui.form.on("Attendance Amendment", {
         if (!frm.is_new() && frm.doc.workflow_state === "Approved") {
             // Story 1: Standalone "Generate Invoice" button (no group)
             frm.add_custom_button(__("Generate Invoice"), function() {
-                frappe.confirm(__("Generate Sales Invoice for this Attendance Amendment?"), function() {
+                frappe.confirm(__("Generate Sales Invoice for this Attendance Approval?"), function() {
                     frappe.call({
-                        method: "one_fm.one_fm.doctype.attendance_amendment.attendance_invoicing.generate_invoice_from_amendment",
+                        method: "one_fm.one_fm.doctype.attendance_approval.attendance_invoicing.generate_invoice_from_amendment",
                         args: { amendment_name: frm.doc.name },
                         freeze: true,
                         freeze_message: __("Generating Sales Invoice..."),
@@ -62,6 +79,7 @@ frappe.ui.form.on("Attendance Amendment", {
         }
     },
     fetch_attendance_record(frm){
+        frm.set_value("attendance_amended", 0);
         frappe.call({
             method: "fetch_attendance_record",
             doc: frm.doc,
@@ -72,6 +90,7 @@ frappe.ui.form.on("Attendance Amendment", {
                     let items = frm.doc.attendance_details || [];
                     items.forEach(d => calculate_working_days(frm, d.doctype, d.name));
                 }
+                take_amended_baseline(frm);
             },
             freeze: true,
             freeze_message: "Fetching Attendance Records..."
@@ -92,23 +111,54 @@ frappe.ui.form.on("Attendance Amendment", {
         frm.set_value("attendance_details", []);
         frm.set_value("overtime_details", []);
         frm.set_value("site", "");
+        frm.set_value("contract", "");
 
-        if (frm.doc.project) {
-            frappe.db.get_list("Contracts", {
-                filters: { project: frm.doc.project},
-                fields: ["name"],
-                limit: 1
-            }).then(records => {
-                if (records && records.length > 0) {
-                    frm.set_value("contract", records[0].name);
-                } else {
-                    frm.set_value("contract", "");
-                }
-            });
-        } else {
-            frm.set_value("contract", "");
-        }
+        if (!frm.doc.project) return;
+        const project = frm.doc.project;
+        frappe.db.get_list("Contracts", {
+            filters: { project: project, workflow_state: "Active" },
+            fields: ["name", "client", "start_date", "end_date"],
+            order_by: "start_date desc",
+            limit: 10
+        }).then(contracts => {
+            if (frm.doc.project !== project) return;
+            if (!contracts.length) {
+                frappe.show_alert({
+                    message: __("No active contract found for project: {0}", [project]),
+                    indicator: "orange"
+                }, 5);
+            } else if (contracts.length === 1) {
+                frm.set_value("contract", contracts[0].name);
+            } else {
+                show_contract_dialog(frm, contracts);
+            }
+        });
     },
+    contract(frm) {
+        frm.events.load_contract_sale_items(frm);
+    },
+    load_contract_sale_items(frm) {
+        // Sale Item choices come from the contract's operation items.
+        const contract = frm.doc.contract;
+        if (frm._sale_item_contract === contract) return;
+        frm._sale_item_contract = contract;
+        frm._sale_item_codes = [];
+        if (!contract) return;
+        frappe.db.get_doc("Contracts", contract).then(doc => {
+            if (frm.doc.contract !== contract) return;
+            frm._sale_item_codes = (doc.contract_items_operation || []).map(d => d.item_code).filter(Boolean);
+            if (!frm._sale_item_codes.length) {
+                frappe.show_alert({
+                    message: __("No items found in contract {0}. Sale Item will be unrestricted.", [contract]),
+                    indicator: "orange"
+                }, 6);
+            }
+        });
+    },
+    attendance_details_add: evaluate_amended,
+    attendance_details_remove: evaluate_amended,
+    overtime_details_add: evaluate_amended,
+    overtime_details_remove: evaluate_amended,
     year(frm){
         frm.set_value("attendance_details", []);
         frm.set_value("overtime_details", []);
@@ -180,17 +230,87 @@ function calculate_working_days(frm, cdt, cdn) {
     frappe.model.set_value(cdt, cdn, "off_days", off_days);
 }
 
-let child_events = {};
+let child_events = { sale_item: evaluate_amended };
 for (let i = 1; i <= 31; i++) {
     child_events['day_' + i] = function(frm, cdt, cdn) {
         calculate_working_days(frm, cdt, cdn);
+        evaluate_amended(frm);
     };
     child_events['day_' + i + '_hour'] = function(frm, cdt, cdn) {
         calculate_working_days(frm, cdt, cdn);
+        evaluate_amended(frm);
     };
 }
-frappe.ui.form.on("Attendance Amendment Item", child_events);
-frappe.ui.form.on("Attendance Amendment OT Item", child_events);
+frappe.ui.form.on("Attendance Approval Item", child_events);
+frappe.ui.form.on("Attendance Approval OT Item", child_events);
+
+function show_contract_dialog(frm, contracts) {
+    const options = contracts.map(c => {
+        let parts = [c.name];
+        if (c.client) parts.push(c.client);
+        if (c.start_date) {
+            parts.push(frappe.datetime.str_to_user(c.start_date)
+                + (c.end_date ? " → " + frappe.datetime.str_to_user(c.end_date) : ""));
+        }
+        return { value: c.name, label: parts.join("  —  ") };
+    });
+    let dialog = new frappe.ui.Dialog({
+        title: __("Select Contract"),
+        fields: [
+            {
+                fieldtype: "HTML",
+                fieldname: "notice_html",
+                options: `<div class="alert alert-warning small mb-3">${__(
+                    "Multiple active contracts found for project {0}. Please select the applicable contract for this attendance period.",
+                    [`<strong>${frappe.utils.escape_html(frm.doc.project)}</strong>`]
+                )}</div>`
+            },
+            {
+                label: __("Contract"),
+                fieldname: "selected_contract",
+                fieldtype: "Select",
+                options: options,
+                reqd: 1,
+                default: options[0].value
+            }
+        ],
+        primary_action_label: __("Apply"),
+        primary_action(values) {
+            frm.set_value("contract", values.selected_contract);
+            dialog.hide();
+        }
+    });
+    dialog.show();
+}
+
+// ============================================================
+// Attendance Amended flag: set while the grids differ from the last
+// fetched (or clean saved) state, cleared when edits are reverted.
+// ============================================================
+
+function amended_snapshot(frm) {
+    const row_key = row => {
+        let values = [row.employee || "", row.sale_item || ""];
+        for (let i = 1; i <= 31; i++) {
+            values.push(row['day_' + i] || "", row['day_' + i + '_hour'] || "");
+        }
+        return JSON.stringify(values);
+    };
+    // Sorted, so a deleted row re-added in another position still matches.
+    const table = rows => (rows || []).map(row_key).sort();
+    return JSON.stringify([table(frm.doc.attendance_details), table(frm.doc.overtime_details)]);
+}
+
+function take_amended_baseline(frm) {
+    frm._amended_baseline = amended_snapshot(frm);
+}
+
+function evaluate_amended(frm) {
+    const amended = frm._amended_baseline !== amended_snapshot(frm) ? 1 : 0;
+    if (cint(frm.doc.attendance_amended) !== amended) {
+        frm.set_value("attendance_amended", amended);
+    }
+}
 
 // ============================================================
 // Story 1 + 6: Attendance Preview Modal
@@ -216,7 +336,7 @@ function show_attendance_preview_modal(frm) {
 
     // Fetch item_type for each sale_item to display "Item Type" column
     frappe.call({
-        method: "one_fm.one_fm.doctype.attendance_amendment.attendance_amendment.get_sale_item_details",
+        method: "one_fm.one_fm.doctype.attendance_approval.attendance_approval.get_sale_item_details",
         args: { amendment_name: frm.doc.name },
         async: false,
         callback: function(r) {
@@ -242,21 +362,67 @@ function render_grouped_preview(frm, items, ot_items, year, month_idx, days_in_m
         return decimals !== undefined ? n.toFixed(decimals) : String(n);
     };
 
-    // ---- Group rows by sale_item ----
-    let groups = {};
-    let group_order = [];
-
-    for (let row of items) {
-        let key = row.sale_item || __("(No Sale Item)");
-        if (!groups[key]) {
-            groups[key] = [];
-            group_order.push(key);
+    // ---- Optional grouping by site: only when Group By Site is set and no Site is selected ----
+    const group_by_site = !!frm.doc.group_by_site && !frm.doc.site;
+    const new_totals = () => ({ employees: 0, working: 0, off: 0, hours: 0 });
+    const totals_text = (t) => {
+        let parts = [
+            `${t.employees} ${__("employee(s)")}`,
+            `${__("Working Days")}: ${is_hours_mode ? format_num(t.working, 2) : format_num(t.working)}`,
+            `${__("Days Off")}: ${t.off}`
+        ];
+        if (is_hours_mode) {
+            parts.push(`${__("Total Hours")}: ${format_num(t.hours, 2)}`);
         }
-        groups[key].push(row);
-    }
+        return parts.join(" | ");
+    };
+
+    // Renders the sale-item blocks for a row list. With grouping off this is exactly
+    // the sale-item blocks; with grouping on, each site gets a header, its own blocks
+    // and a site total, followed by a project grand total.
+    const render_site_sections = (rows, render_blocks) => {
+        if (!group_by_site) {
+            return render_blocks(rows, new_totals());
+        }
+        if (!rows.length) return "";
+
+        let site_rows_map = {};
+        let site_order = [];
+        for (let row of rows) {
+            let key = row.site || __("(No Site)");
+            if (!site_rows_map[key]) {
+                site_rows_map[key] = [];
+                site_order.push(key);
+            }
+            site_rows_map[key].push(row);
+        }
+
+        let grand = new_totals();
+        let html = "";
+        for (let site of site_order) {
+            let site_rows = site_rows_map[site];
+            let site_totals = new_totals();
+            html += `<div class="site-header-bar"><strong>${__("Site")}:</strong> ${frappe.utils.escape_html(site)}
+                <span class="site-header-count">${site_rows.length} ${__("employee(s)")}</span></div>`;
+            html += render_blocks(site_rows, site_totals);
+            html += `<div class="site-total-row"><strong>${__("Site Total")}:</strong> ${frappe.utils.escape_html(site)} — ${totals_text(site_totals)}</div>`;
+            grand.employees += site_totals.employees;
+            grand.working += site_totals.working;
+            grand.off += site_totals.off;
+            grand.hours += site_totals.hours;
+        }
+        html += `<div class="grand-total-row"><strong>${__("Project Grand Total")}:</strong> ${totals_text(grand)}</div>`;
+        return html;
+    };
 
     // ---- Build HTML for each group ----
-    let full_html = "";
+    // The style block lives at the start of full_html so it reaches both the dialog and the PDF.
+    let full_html = !group_by_site ? "" : `<style>
+        .site-header-bar { margin: 20px 0 8px; padding: 8px 14px; background: #D5D5D5; color: #222; border-radius: 6px; font-size: 14px; font-weight: bold; page-break-after: avoid; }
+        .site-header-count { float: right; font-weight: normal; opacity: 0.85; }
+        .site-total-row { margin: 0 0 16px; padding: 6px 12px; background: #EBEBEB; color: #333; border-radius: 6px; font-size: 12px; }
+        .grand-total-row { margin: 8px 0 16px; padding: 8px 14px; background: #BDBDBD; color: #111; border-radius: 6px; font-size: 13px; font-weight: bold; }
+    </style>`;
 
     // Attendance abbreviation legend
     full_html += `<div style="margin-bottom: 12px; padding: 8px 12px; background: #f8f9fa; border-radius: 6px; font-size: 11px; border: 1px solid #e2e8f0;">
@@ -266,6 +432,21 @@ function render_grouped_preview(frm, items, ot_items, year, month_idx, days_in_m
         FA = ${__("Fingerprint Appt")}, MA = ${__("Medical Appt")}, H = ${__("Holiday")}, OH = ${__("On Hold")}
     </div>`;
 
+    const render_sale_item_blocks = (rows, totals) => {
+    // ---- Group rows by sale_item ----
+    let groups = {};
+    let group_order = [];
+
+    for (let row of rows) {
+        let key = row.sale_item || __("(No Sale Item)");
+        if (!groups[key]) {
+            groups[key] = [];
+            group_order.push(key);
+        }
+        groups[key].push(row);
+    }
+
+    let html = "";
     for (let sale_item of group_order) {
         let group_rows = groups[sale_item];
 
@@ -412,8 +593,16 @@ function render_grouped_preview(frm, items, ot_items, year, month_idx, days_in_m
         table_html += `</tr>`;
 
         table_html += `</tbody></table></div>`;
-        full_html += table_html;
+        html += table_html;
+        totals.employees += group_rows.length;
+        totals.working += group_total_working;
+        totals.off += group_total_off;
+        totals.hours += group_total_hours;
     }
+    return html;
+    };
+
+    full_html += render_site_sections(items, render_sale_item_blocks);
 
     // ============================================================
     // Overtime Details Section
@@ -423,10 +612,11 @@ function render_grouped_preview(frm, items, ot_items, year, month_idx, days_in_m
             <i class="fa fa-clock-o" style="margin-right: 6px;"></i>${__("Overtime Details")}
         </div>`;
 
+        const render_ot_sale_item_blocks = (rows, totals) => {
         // Group OT rows by sale_item
         let ot_groups = {};
         let ot_group_order = [];
-        for (let row of ot_items) {
+        for (let row of rows) {
             let key = row.sale_item || __("(No Sale Item)");
             if (!ot_groups[key]) {
                 ot_groups[key] = [];
@@ -435,6 +625,7 @@ function render_grouped_preview(frm, items, ot_items, year, month_idx, days_in_m
             ot_groups[key].push(row);
         }
 
+        let html = "";
         for (let sale_item of ot_group_order) {
             let group_rows = ot_groups[sale_item];
 
@@ -575,8 +766,16 @@ function render_grouped_preview(frm, items, ot_items, year, month_idx, days_in_m
             table_html += `</tr>`;
 
             table_html += `</tbody></table></div>`;
-            full_html += table_html;
+            html += table_html;
+            totals.employees += group_rows.length;
+            totals.working += group_total_working;
+            totals.off += group_total_off;
+            totals.hours += group_total_hours;
         }
+        return html;
+        };
+
+        full_html += render_site_sections(ot_items, render_ot_sale_item_blocks);
     }
 
     // ---- Create dialog ----
@@ -615,7 +814,7 @@ function export_preview_as_pdf(html_content, frm) {
 
     // Fetch metadata via server call to avoid client-side Promise [object Object] issues
     frappe.call({
-        method: "one_fm.one_fm.doctype.attendance_amendment.attendance_amendment.get_pdf_header_metadata",
+        method: "one_fm.one_fm.doctype.attendance_approval.attendance_approval.get_pdf_header_metadata",
         args: { amendment_name: frm.doc.name },
         async: false,
         callback: function(r) {
@@ -703,7 +902,7 @@ function export_preview_as_pdf(html_content, frm) {
 
 function show_version_changes(frm) {
     frappe.call({
-        method: "one_fm.one_fm.doctype.attendance_amendment.attendance_amendment.get_version_changes",
+        method: "one_fm.one_fm.doctype.attendance_approval.attendance_approval.get_version_changes",
         args: { amendment_name: frm.doc.name },
         freeze: true,
         freeze_message: __("Loading version history..."),

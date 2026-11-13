@@ -35,7 +35,7 @@ def get_contract_invoice_items(contract, month, year, attendance_based_on="Atten
     end_date = get_last_day(start_date)
 
     # 1. Check for Approved Attendance Amendment matching the selected basis
-    amendments = frappe.get_all("Attendance Amendment", filters={
+    amendments = frappe.get_all("Attendance Approval", filters={
         "contract": contract, 
         "month": month, 
         "year": year,
@@ -47,7 +47,7 @@ def get_contract_invoice_items(contract, month, year, attendance_based_on="Atten
     item_data = {} 
     
     if amendments:
-        amend_doc = frappe.get_doc("Attendance Amendment", amendments[0])
+        amend_doc = frappe.get_doc("Attendance Approval", amendments[0])
         
         emp_names = list({row.employee for row in (amend_doc.get("attendance_details", []) + amend_doc.get("overtime_details", [])) if row.employee})
         employee_sites = {}

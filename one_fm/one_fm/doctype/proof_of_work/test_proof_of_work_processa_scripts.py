@@ -109,7 +109,7 @@ def _blank_source_entry() -> dict:
 #
 # Returns ``{sale_item: {"hours": float, "days": float, "staff": {...}}}``.
 def _source_from_amendment(amendment_name: str, total_days: int) -> dict:
-	doc = frappe.get_doc("Attendance Amendment", amendment_name)
+	doc = frappe.get_doc("Attendance Approval", amendment_name)
 	agg = {}
 
 	for row in doc.get("attendance_details"):

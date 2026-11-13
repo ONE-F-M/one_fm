@@ -1797,7 +1797,7 @@ def get_billable_quantity_for_item(item_code, rate_type, count, post_schedules, 
 
     for site in site_names:
         site_quantity = 0
-        existing_attendance_amendment = frappe.db.get_all("Attendance Amendment", {"month": month, "year": year, "project": project, "site": site, "attendance_based_on": attendance_based_on, "workflow_state": "Approved"}, pluck="name")
+        existing_attendance_amendment = frappe.db.get_all("Attendance Approval", {"month": month, "year": year, "project": project, "site": site, "attendance_based_on": attendance_based_on, "workflow_state": "Approved"}, pluck="name")
         
         if existing_attendance_amendment:
             # Case: Approved Attendance Amendment exists - fetch EXCLUSIVELY from Amendment
@@ -1808,7 +1808,7 @@ def get_billable_quantity_for_item(item_code, rate_type, count, post_schedules, 
             day_fields = [f"day_{i}_hour" for i in range(1, end_day + 1)] if is_hourly else [f"day_{i}" for i in range(1, end_day + 1)]
             
             basic_attendance_records = frappe.db.get_all(
-                "Attendance Amendment Item",
+                "Attendance Approval Item",
                 filters={
                     "parent": ["IN", existing_attendance_amendment],
                     "sale_item": item_code,
@@ -1817,7 +1817,7 @@ def get_billable_quantity_for_item(item_code, rate_type, count, post_schedules, 
             )
             
             overtime_attendance_records = frappe.db.get_all(
-                "Attendance Amendment OT Item",
+                "Attendance Approval OT Item",
                 filters={
                     "parent": ["IN", existing_attendance_amendment],
                     "sale_item": item_code,
@@ -3176,7 +3176,7 @@ def get_billable_quantity_for_item(item_code, rate_type, count, post_schedules, 
 
     for site in site_names:
         site_quantity = 0
-        existing_attendance_amendment = frappe.db.get_all("Attendance Amendment", {"month": month, "year": year, "project": project, "site": site, "attendance_based_on": attendance_based_on, "workflow_state": "Approved"}, pluck="name")
+        existing_attendance_amendment = frappe.db.get_all("Attendance Approval", {"month": month, "year": year, "project": project, "site": site, "attendance_based_on": attendance_based_on, "workflow_state": "Approved"}, pluck="name")
         
         if existing_attendance_amendment:
             # Case: Approved Attendance Amendment exists - fetch EXCLUSIVELY from Amendment
@@ -3187,7 +3187,7 @@ def get_billable_quantity_for_item(item_code, rate_type, count, post_schedules, 
             day_fields = [f"day_{i}_hour" for i in range(1, end_day + 1)] if is_hourly else [f"day_{i}" for i in range(1, end_day + 1)]
             
             basic_attendance_records = frappe.db.get_all(
-                "Attendance Amendment Item",
+                "Attendance Approval Item",
                 filters={
                     "parent": ["IN", existing_attendance_amendment],
                     "sale_item": item_code,
@@ -3196,7 +3196,7 @@ def get_billable_quantity_for_item(item_code, rate_type, count, post_schedules, 
             )
             
             overtime_attendance_records = frappe.db.get_all(
-                "Attendance Amendment OT Item",
+                "Attendance Approval OT Item",
                 filters={
                     "parent": ["IN", existing_attendance_amendment],
                     "sale_item": item_code,
