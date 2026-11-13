@@ -195,6 +195,8 @@ def _complete_review_task(doc) -> str | None:
 	).run(as_dict=True)
 
 	if not task:
+		# Attachments were written straight to the rows; a stale copy would blank them.
+		doc.reload()
 		doc.submit()
 		return None
 
