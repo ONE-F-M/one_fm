@@ -11,6 +11,7 @@
   "default_operation_manager",
   "dsot_approver",
   "operation_admin",
+  "contract_inactivation_recipients",
   "section_break_kzb5e",
   "exclude_project"
  ],
@@ -48,6 +49,13 @@
    "options": "User"
   },
   {
+   "description": "Emailed when a contract is set to Inactive, or when the daily job cannot set it Inactive.",
+   "fieldname": "contract_inactivation_recipients",
+   "fieldtype": "Table MultiSelect",
+   "label": "Contract Inactivation Recipients",
+   "options": "Action User"
+  },
+  {
    "fieldname": "section_break_kzb5e",
    "fieldtype": "Section Break"
   }
@@ -55,7 +63,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-09-04 10:00:00.000000",
+ "modified": "2026-11-12 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Operation Settings",
