@@ -2,6 +2,7 @@
 # See license.txt
 
 import unittest
+from unittest.mock import patch
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -33,10 +34,17 @@ def _make_user(email, roles):
 				"roles": [{"role": role} for role in roles],
 			}
 		).insert(ignore_permissions=True)
+	else:
+		frappe.get_doc("User", email).add_roles(*roles)
 	return email
 
 
 def _setup_fixtures(cls):
+	# user_app_service commits; keep the fixtures inside the class rollback.
+	no_commit = patch("frappe.db.commit")
+	no_commit.start()
+	cls.addClassCleanup(no_commit.stop)
+
 	employees = frappe.get_all(
 		"Employee",
 		filters={"status": "Active", "employee_name": ["is", "set"]},
