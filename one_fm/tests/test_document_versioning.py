@@ -29,7 +29,7 @@ from one_fm.one_fm.doctype.document_register.document_register import (
 	reactivate,
 )
 
-DRIVE_MODULE = "one_bpmn.processa_connectors.google.drive"
+DRIVE_MODULE = "processa.processa_connectors.google.drive"
 
 
 def _revoked(removed=(), skipped=()):

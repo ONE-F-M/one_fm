@@ -130,7 +130,7 @@ def _text_from_drive(file_id: str) -> str:
 	the migration must not depend on Drive being reachable at all.
 	"""
 	try:
-		from one_bpmn.processa_connectors.google.drive import download_file_text
+		from processa.processa_connectors.google.drive import download_file_text
 
 		return download_file_text(file_id) or ""
 	except Exception:

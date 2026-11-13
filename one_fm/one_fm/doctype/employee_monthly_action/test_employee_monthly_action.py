@@ -9,7 +9,7 @@ from frappe.utils import today
 
 
 class TestEmployeeMonthlyAction(FrappeTestCase):
-	@patch("one_bpmn.processa_engine.triggers.on_doc_event")
+	@patch("processa.processa_engine.triggers.on_doc_event")
 	def test_submitting_leaves_goal_progress_to_the_process_map(self, _trigger):
 		employee = frappe.get_all(
 			"Employee", filters={"status": "Active", "user_id": ["is", "set"]}, fields=["name", "company"], limit=1

@@ -3644,7 +3644,7 @@ def return_bpmn_tasks_from_reliever(employee: str) -> None:
     if not user:
         return
     try:
-        from one_bpmn.processa_engine.assignment import (
+        from processa.processa_engine.assignment import (
             restore_tasks_on_return,
         )
 
