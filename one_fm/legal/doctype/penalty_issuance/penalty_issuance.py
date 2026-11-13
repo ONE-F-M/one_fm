@@ -5,21 +5,15 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import getdate, add_to_date, get_link_to_form
+from frappe.utils import get_link_to_form
 from frappe import _
-from frappe.model.mapper import get_mapped_doc
-from frappe.desk.form.assign_to import add as assign_to
 from one_fm.processor import sendemail
 
+# The Initiate Penalty Issuance process routes a submitted issuance to an HR Enquiry or a
+# Legal Investigation, so nothing here creates Penalty or Legal Investigation records.
 class PenaltyIssuance(Document):
 	def after_insert(self):
 		self.validate_location()
-	
-	def on_submit(self):
-		if self.company_damage or self.asset_damage or self.customer_property_damage or self.other_damages:
-			self.open_legal_investigation()
-		else:
-			self.issue_penalty()
 
 	def validate_location(self):
 		if self.different_location:
@@ -29,89 +23,14 @@ class PenaltyIssuance(Document):
 			recipient = [frappe.get_value("Legal Settings", "Legal Settings", "legal_department_email")]
 			sendemail(recipient, subject=subject, message=message, reference_doctype=self.doctype, reference_name=self.name)
 
-	def open_legal_investigation(self):
-		if frappe.db.exists("Legal Investigation", {"reference_doctype": self.doctype, "reference_name": self.name}):
-			frappe.throw(_("Legal Investigaton already created."))
-		legal_inv = frappe.new_doc("Legal Investigation")
-		legal_inv.investigation_subject = "Penalty Issued with damages"
-		legal_inv.reference_doctype = self.doctype
-		legal_inv.reference_docname = self.name
-		legal_inv.investigation_lead = None
-		legal_inv.company_damage = self.company_damage
-		legal_inv.asset_damage = self.asset_damage
-		legal_inv.customer_property_damage = self.customer_property_damage
-		legal_inv.other_damages = self.other_damages
-		legal_inv.append("legal_investigation_employees", {
-			"employee_id": self.issuing_employee,
-			"employee_name": self.employee_name,
-			"designation": self.designation,
-			"party": "Plaintiff"
-		})	
-		for employee in self.employees:
-			legal_inv.append("legal_investigation_employees", {
-				"employee_id": employee.employee_id,
-				"employee_name": employee.employee_name,
-				"designation": employee.designation,
-				"party": "Defendant"
-			})	
 
-		legal_inv.start_date = add_to_date(getdate(), days=2)
-		legal_inv.save(ignore_permissions=True)
+def submit_through_process(doc):
+	"""Submit a new issuance by completing its Review Penalty Issuance task, so the process
+	submits it and routes it. Falls back to a plain submit where the process is not deployed."""
+	from one_fm.grd.processa import complete_action
 
-		# self.db_set("legal_investigation_code", legal_inv.name)		
-		frappe.db.commit()
-
-	def issue_penalty(self):
-		for employee in self.employees:
-			if frappe.db.exists("Penalty", {"recipient_employee": employee.employee_id, "penalty_issuance": self.name}):
-				frappe.throw(_("Penalty already issued to the employee linked to this Penalty Issuance record."))
-			user_id = frappe.get_value("Employee", employee.employee_id, "user_id")
-			if user_id==frappe.session.user:
-				frappe.throw(_("Cannot issue a penalty to yourself."))
-			
-			penalty = frappe.new_doc("Penalty")
-			penalty.penalty_issuance = self.name
-			penalty.penalty_issuance_time = self.issuing_time
-
-			penalty.operations_site = self.location
-
-			penalty.issuer_employee = self.issuing_employee
-			penalty.issuer_name = self.employee_name
-			penalty.issuer_designation = self.designation
-			
-			penalty.recipient_employee = employee.employee_id
-			penalty.recipient_name = employee.employee_name
-			penalty.recipient_designation = employee.designation
-			penalty.recipient_user = user_id
-			
-			penalty.penalty_occurence_time = self.penalty_occurence_time
-			penalty.penalty_location = self.penalty_location
-			penalty.shift = self.shift
-			penalty.site = self.site
-			penalty.site_location = self.site_location
-			penalty.project = self.project
-			
-			penalty.company_damage = self.company_damage
-			penalty.asset_damage = self.asset_damage
-			penalty.customer_property_damage = self.customer_property_damage
-			penalty.other_damages = self.other_damages
-
-			for penalty_detail in self.penalty_issuance_details:
-				penalty_details = {
-					"penalty_type": penalty_detail.penalty_type,
-					"penalty_type_arabic": penalty_detail.penalty_type_arabic,
-					"exact_notes": penalty_detail.exact_notes,
-					"attachments": penalty_detail.attachments
-				}
-				penalty.append("penalty_details", penalty_details)
-			penalty.save()
-			# assign_to({
-			# 	"assign_to": user_id,
-			# 	"doctype": penalty.doctype,
-			# 	"name": penalty.name,
-			# 	"description": "Penalty Issued by {employee_id}:{issuer}.".format(employee_id=self.issuing_employee, issuer=self.employee_name)
-			# })
-		frappe.db.commit()
+	if not complete_action(doc, "Submit", "Review Penalty Issuance"):
+		doc.submit()
 
 
 @frappe.whitelist()

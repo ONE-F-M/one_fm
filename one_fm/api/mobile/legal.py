@@ -1,6 +1,6 @@
 import frappe, base64
 from frappe.utils import cint
-from one_fm.legal.doctype.penalty_issuance.penalty_issuance import get_filtered_employees
+from one_fm.legal.doctype.penalty_issuance.penalty_issuance import get_filtered_employees, submit_through_process
 from frappe import _
 import json
 from one_fm.utils import response
@@ -55,10 +55,10 @@ def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_loca
 		penalty_issuance.employee_name = employee_name
 		penalty_issuance.designation = designation
 		
-		penalty_issuance.customer_property_damage = cint(customer_property_damage)
-		penalty_issuance.company_damage = cint(company_damage)
-		penalty_issuance.other_damages = cint(other_damages)
-		penalty_issuance.asset_damage = cint(asset_damage)
+		# The four legacy damage flags are one Third Party Damage check now.
+		penalty_issuance.third_party_damage = cint(
+			any(cint(flag) for flag in (company_damage, customer_property_damage, asset_damage, other_damages))
+		)
 
 		employees = json.loads(penalty_employees)
 		for employee in employees:
@@ -89,7 +89,7 @@ def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_loca
 
 
 		penalty_issuance.insert()
-		penalty_issuance.submit()
+		submit_through_process(penalty_issuance)
 		return penalty_issuance
 
 	except Exception as exc:
