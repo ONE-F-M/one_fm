@@ -1,0 +1,371 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-10-25 09:18:20.145192",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_pt9q",
+  "amended_from",
+  "column_break_rxft",
+  "workflow_state",
+  "section_break_ojtm",
+  "penalty_issuance",
+  "penalty_type",
+  "penalty_levied",
+  "penalty_occurence_time",
+  "third_party_damage",
+  "damage_amount",
+  "column_break_gtnt",
+  "employee",
+  "employee_user",
+  "employee_name",
+  "designation",
+  "section_break_ngpu",
+  "penalty_location",
+  "operations_site",
+  "project",
+  "column_break_cwla",
+  "operations_shift",
+  "site_location",
+  "section_break_adpl",
+  "issuing_employee",
+  "issuer_name",
+  "issuer_designation",
+  "response_required",
+  "section_break_pfdt",
+  "hr_investigator",
+  "employee_response_section",
+  "employee_objection",
+  "section_break_lyay",
+  "hr_enquiry_detail",
+  "penalty_decision_section",
+  "hr_decision",
+  "column_break_epyt",
+  "penalty",
+  "legal_investigation"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_pt9q",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "HR Enquiry",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_rxft",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "options": "Workflow State"
+  },
+  {
+   "fieldname": "section_break_ojtm",
+   "fieldtype": "Section Break",
+   "label": "Penalty Receipient Details"
+  },
+  {
+   "fieldname": "penalty_issuance",
+   "fieldtype": "Link",
+   "label": "Penalty Issuance",
+   "options": "Penalty Issuance",
+   "read_only": 1
+  },
+  {
+   "fieldname": "penalty_type",
+   "fieldtype": "Link",
+   "label": "Penalty Type",
+   "options": "Penalty Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "penalty_levied",
+   "fieldtype": "Select",
+   "label": "Penalty Levied",
+   "options": "\nVerbal\nWritten\nDeduction\nTermination",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "penalty_issuance.penalty_occurence_time",
+   "fieldname": "penalty_occurence_time",
+   "fieldtype": "Datetime",
+   "label": "Penalty Occurence Time",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fetch_from": "penalty_issuance.third_party_damage",
+   "fieldname": "third_party_damage",
+   "fieldtype": "Check",
+   "label": "Third Party Damage",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.third_party_damage == 1",
+   "fieldname": "damage_amount",
+   "fieldtype": "Currency",
+   "label": "Damage Amount"
+  },
+  {
+   "fieldname": "column_break_gtnt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.user_id",
+   "fieldname": "employee_user",
+   "fieldtype": "Link",
+   "label": "Employee User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_ngpu",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fetch_from": "penalty_issuance.penalty_location",
+   "fieldname": "penalty_location",
+   "fieldtype": "Data",
+   "label": "Penalty Location",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "penalty_issuance.site",
+   "fieldname": "operations_site",
+   "fieldtype": "Link",
+   "label": "Operations Site",
+   "options": "Operations Site",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "penalty_issuance.project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_cwla",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "penalty_issuance.shift",
+   "fieldname": "operations_shift",
+   "fieldtype": "Link",
+   "label": "Operations Shift",
+   "options": "Operations Shift",
+   "read_only": 1
+  },
+  {
+   "fieldname": "site_location",
+   "fieldtype": "Data",
+   "label": "Site Location"
+  },
+  {
+   "fieldname": "section_break_adpl",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "issuing_employee",
+   "fieldtype": "Link",
+   "label": "Issuing Employee",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "issuing_employee.employee_name",
+   "fieldname": "issuer_name",
+   "fieldtype": "Data",
+   "label": "Issuer Name"
+  },
+  {
+   "fetch_from": "issuing_employee.designation",
+   "fieldname": "issuer_designation",
+   "fieldtype": "Link",
+   "label": "Issuer Designation",
+   "options": "Designation"
+  },
+  {
+   "default": "0",
+   "fieldname": "response_required",
+   "fieldtype": "Check",
+   "label": "Response Required"
+  },
+  {
+   "fieldname": "section_break_pfdt",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "hr_investigator",
+   "fieldtype": "Link",
+   "label": "HR Investigator",
+   "options": "User"
+  },
+  {
+   "depends_on": "eval:doc.response_required == 1",
+   "fieldname": "employee_response_section",
+   "fieldtype": "Section Break",
+   "label": "Employee Response"
+  },
+  {
+   "fieldname": "employee_objection",
+   "fieldtype": "Small Text",
+   "label": "Employee Objection"
+  },
+  {
+   "fieldname": "section_break_lyay",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "hr_enquiry_detail",
+   "fieldtype": "Table",
+   "label": "HR Enquiry Detail",
+   "options": "HR Enquiry Detail"
+  },
+  {
+   "fieldname": "penalty_decision_section",
+   "fieldtype": "Section Break",
+   "label": "Penalty Decision"
+  },
+  {
+   "fieldname": "hr_decision",
+   "fieldtype": "Select",
+   "label": "HR Decision",
+   "options": "\nUphold Penalty\nOverturn Penalty\nEscalate to Legal"
+  },
+  {
+   "fieldname": "column_break_epyt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.hr_decision == \"Uphold Penalty\"",
+   "fieldname": "penalty",
+   "fieldtype": "Link",
+   "label": "Penalty",
+   "options": "Penalty",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.hr_decision == \"Escalate to Legal\"",
+   "fieldname": "legal_investigation",
+   "fieldtype": "Link",
+   "label": "Legal Investigation",
+   "options": "Legal Investigation",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-11-12 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Legal",
+ "name": "HR Enquiry",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "submit": 1,
+   "write": 1,
+   "role": "HR Manager"
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "submit": 1,
+   "write": 1,
+   "role": "HR User"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Legal Manager"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Legal User"
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Penalty Issuer"
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Shift Supervisor"
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Site Supervisor"
+  },
+  {
+   "read": 1,
+   "write": 1,
+   "role": "Employee"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
