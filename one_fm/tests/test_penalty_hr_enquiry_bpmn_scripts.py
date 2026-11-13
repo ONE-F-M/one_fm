@@ -525,6 +525,11 @@ class PenaltyFixtures(FrappeTestCase):
 			raise unittest.SkipTest("Needs three active Employees with users, a staffed Operations Shift and a Penalty Type")
 
 		super().setUpClass()
+		# The code under test commits; without this the fixtures, and the user_id the
+		# issuer test gives a real Employee, would survive the class rollback.
+		no_commit = patch("frappe.db.commit")
+		no_commit.start()
+		cls.addClassCleanup(no_commit.stop)
 		cls.issuer, cls.first, cls.second = employees
 		cls.shift, cls.site, cls.project = shift
 		cls.site_location = frappe.db.get_value("Operations Site", cls.site, "site_location")
