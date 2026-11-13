@@ -19,7 +19,7 @@ class AccommodationCheckinCheckout(Document):
 		self.set_accommodation_policy()
 
 	@frappe.whitelist()
-	def transfer_accommodation(self, bed, transfer_datetime, reason_for_transfer):
+	def transfer_accommodation(self, bed: str, transfer_datetime: str, reason_for_transfer: str):
 		"""Run the transfer through the Accommodation Transfer Lifecycle process map.
 
 		The map checks the bed, creates the checkout and the new check-in. Returns the new
@@ -32,7 +32,7 @@ class AccommodationCheckinCheckout(Document):
 		if not model:
 			frappe.throw(_("The Accommodation Transfer process is not active."))
 
-		from one_bpmn.api.instances import start_process
+		from processa.api.instances import start_process
 
 		started = now_datetime()
 		# The keys must not match a check-in field name: the engine copies the document's own

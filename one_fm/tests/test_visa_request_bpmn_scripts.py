@@ -20,7 +20,7 @@ on the body, having first put it through the BPMN script security gate.
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from one_bpmn.ai_agent_security.code_checks.script_validator import deep_inspect_script
+from processa.ai_agent_security.code_checks.script_validator import deep_inspect_script
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # The script bodies, and the script task each one belongs to.

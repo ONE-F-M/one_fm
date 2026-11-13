@@ -189,7 +189,7 @@ const { notifyTicketUpdate } = useNotifyTicketUpdate(ticket.value?.name);
  *
  * When a BPMN Process Instance controls this HD Ticket, we replace the native
  * Status dropdown with the BPMN User Task action buttons (mirrors the Frappe
- * Desk injector in one_bpmn/public/js/bpmn_form_actions.js).
+ * Desk injector in processa/public/js/bpmn_form_actions.js).
  * ──────────────────────────────────────────────────────────────────────── */
 const bpmnTasks = ref<any[]>([]);
 
@@ -296,7 +296,7 @@ async function loadBpmnActions() {
   }
   try {
     const tasks = await call(
-      "one_bpmn.api.instances.get_active_bpmn_tasks",
+      "processa.api.instances.get_active_bpmn_tasks",
       { doctype: "HD Ticket", docname }
     );
     bpmnTasks.value = Array.isArray(tasks) ? tasks : [];
@@ -335,7 +335,7 @@ function handleBpmnAction(btn: { label: string; task: any; detail: any }) {
 }
 
 function applyBpmnAction(task: any, action: string | null) {
-  call("one_bpmn.api.instances.complete_task", {
+  call("processa.api.instances.complete_task", {
     instance_name: task.instance_name,
     task_id: task.task_id,
     data: action ? JSON.stringify({ action }) : "{}",

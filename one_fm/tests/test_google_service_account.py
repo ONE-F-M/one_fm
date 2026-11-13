@@ -4,7 +4,7 @@
 ONE FM's own Google identity, and its separation from the connectors'.
 
 The property these guard is an *absence*: nothing in one_fm reads a BPMN
-connector's key, and nothing in one_bpmn reads this field. Two owners, no chain.
+connector's key, and nothing in processa reads this field. Two owners, no chain.
 
 That is worth pinning precisely because breaking it is invisible. Both fields
 currently tend to hold the same key, so a cross-read works — right up until
@@ -137,16 +137,16 @@ class TestTheTwoCredentialsDoNotCross(unittest.TestCase):
 		code = _executable_code(gc)
 		for forbidden in ("BPMN Connector", "auth_secret", "google_common"):
 			self.assertNotIn(
-				forbidden, code, f"one_fm's loader reaches into one_bpmn via {forbidden}"
+				forbidden, code, f"one_fm's loader reaches into processa via {forbidden}"
 			)
 
-	def test_one_bpmn_never_reads_the_onefm_field(self):
-		from one_bpmn.processa_connectors.google import common as google_common
+	def test_processa_never_reads_the_onefm_field(self):
+		from processa.processa_connectors.google import common as google_common
 
 		code = _executable_code(google_common)
 		for forbidden in ("ONEFM General Setting", "google_service_account_json"):
 			self.assertNotIn(
-				forbidden, code, f"one_bpmn's loader reaches into one_fm via {forbidden}"
+				forbidden, code, f"processa's loader reaches into one_fm via {forbidden}"
 			)
 
 	def test_the_document_register_authenticates_as_one_fm(self):
@@ -176,13 +176,13 @@ class TestTheTwoCredentialsDoNotCross(unittest.TestCase):
 			with self.assertRaises(gc.GoogleCredentialError):
 				dr._drive_service()
 
-	def test_the_register_reuses_one_bpmn_drive_logic_with_its_own_identity(self):
+	def test_the_register_reuses_processa_drive_logic_with_its_own_identity(self):
 		"""The .docx/.pptx handling stays in one place; only the identity differs.
 		If the helpers stop accepting ``service``, the register would silently
 		fall back to the connector's account."""
 		import inspect
 
-		from one_bpmn.processa_connectors.google import drive as gd
+		from processa.processa_connectors.google import drive as gd
 
 		for fn in (gd.download_file_text, gd.list_files, gd.set_permissions, gd.revoke_permissions):
 			with self.subTest(fn=fn.__name__):

@@ -34,7 +34,7 @@ def execute():
 	The email's "Start Work" action is a genuine one-click AMP action tied
 	to a real, live BPMN Process Instance task. The token is generated the
 	same way the engine itself would
-	(`one_bpmn.processa_engine.notifications.token.generate_action_token`, keyed on `instance_name`
+	(`processa.processa_engine.notifications.token.generate_action_token`, keyed on `instance_name`
 	+ `task_id`). Clicking the button calls `complete_task` on the real
 	Process Instance, genuinely advancing it — a deliberate, confirmed side
 	effect for this specific task, for whoever actually clicks it.
@@ -109,8 +109,8 @@ def send():
 			frappe.ValidationError,
 		)
 
-	from one_bpmn.processa_engine.notifications.renderer import render_amp, render_html_fallback
-	from one_bpmn.processa_engine.notifications.actions import build_email_actions
+	from processa.processa_engine.notifications.renderer import render_amp, render_html_fallback
+	from processa.processa_engine.notifications.actions import build_email_actions
 
 	instance_name, task_id = _find_live_task()
 	wi = frappe.get_doc("Work Item", WORK_ITEM_ID)

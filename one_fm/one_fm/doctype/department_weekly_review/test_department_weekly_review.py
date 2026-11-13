@@ -11,7 +11,7 @@ from one_fm.custom.custom_field.department import get_department_custom_fields
 
 
 class TestDepartmentWeeklyReview(FrappeTestCase):
-	@patch("one_bpmn.processa_engine.triggers.on_doc_event")
+	@patch("processa.processa_engine.triggers.on_doc_event")
 	def test_review_carries_the_department_head(self, _trigger):
 		create_custom_fields(get_department_custom_fields(), update=True)
 		employee = frappe.get_all(

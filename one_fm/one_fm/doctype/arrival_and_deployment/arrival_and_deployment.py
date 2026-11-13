@@ -274,7 +274,7 @@ def complete_processa_task(name, action):
     The process checks the arrival and may hand the task straight back (a missing Arrival
     Date, say): that arrival has not moved, so it is reported as not moved.
     """
-    from one_bpmn.api.instances import complete_task
+    from processa.api.instances import complete_task
 
     instance = frappe.db.get_value(
         "BPMN Process Instance",

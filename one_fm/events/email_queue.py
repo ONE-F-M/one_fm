@@ -24,7 +24,7 @@ def after_insert(doc, event):
 	2. Force push the email if the recipients is not more than 19 records.
 	"""
 	# ── AMP Injection ─────────────────────────────────────────────────
-	# Grab the AMP content set by one_bpmn's compose_and_send_task_email
+	# Grab the AMP content set by processa's compose_and_send_task_email
 	# or dispatchers.dispatch_email before the force-send fires.
 	amp_html = getattr(frappe.flags, "amp_html", None)
 	frappe.flags.amp_html = None  # Always clear — even if falsy (e.g. empty string)
