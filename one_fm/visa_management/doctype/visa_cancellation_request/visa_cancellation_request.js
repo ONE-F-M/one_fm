@@ -5,7 +5,7 @@
  *
  * "Cancel" is not a Frappe Workflow button. It is one of the two actions the Visa
  * Cancellation process map puts on the PRO's user task, injected into the Actions menu by
- * one_bpmn on every form refresh (bpmn_form_actions.js). one_bpmn offers no hook to run
+ * processa on every form refresh (bpmn_form_actions.js). processa offers no hook to run
  * something before one of its actions, so the click is caught on the way down instead -
  * a capture-phase listener on the document, which does not care when the menu item was
  * added or by whom.
@@ -30,7 +30,7 @@ frappe.provide("one_fm.visa_cancellation");
 
 	/** The injected "Cancel" menu item this click landed on, if it is that one. */
 	function is_cancel_action_item(event) {
-		// The marker one_bpmn stamps on its own <li>. Frappe's native Cancel (docstatus)
+		// The marker processa stamps on its own <li>. Frappe's native Cancel (docstatus)
 		// carries no marker, and is not this action.
 		const link = event.target.closest && event.target.closest("li[data-bpmn-action] a");
 
@@ -51,15 +51,15 @@ frappe.provide("one_fm.visa_cancellation");
 	 * Complete the PRO's task with the Cancel action.
 	 *
 	 * The menu item's own handler cannot be re-used once the remark has been saved: saving
-	 * refreshes the form, one_bpmn clears its injected items with jQuery .remove(), and that
+	 * refreshes the form, processa clears its injected items with jQuery .remove(), and that
 	 * takes the click handler with them. The item on screen afterwards is a different
 	 * element, injected asynchronously - so the task is fetched and completed here instead,
-	 * through the same two API methods one_bpmn itself calls.
+	 * through the same two API methods processa itself calls.
 	 */
 	function apply_cancel(frm) {
 		return frappe
 			.call({
-				method: "one_bpmn.api.instances.get_active_bpmn_tasks",
+				method: "processa.api.instances.get_active_bpmn_tasks",
 				args: { doctype: frm.doctype, docname: frm.docname },
 				freeze: true,
 				freeze_message: __("Applying action…"),
@@ -80,7 +80,7 @@ frappe.provide("one_fm.visa_cancellation");
 
 				return frappe
 					.call({
-						method: "one_bpmn.api.instances.complete_task",
+						method: "processa.api.instances.complete_task",
 						args: {
 							instance_name: task.instance_name,
 							task_id: task.task_id,
@@ -156,7 +156,7 @@ frappe.provide("one_fm.visa_cancellation");
 				return;
 			}
 
-			// Capture phase: stop it before one_bpmn's own handler sees it at all.
+			// Capture phase: stop it before processa's own handler sees it at all.
 			event.preventDefault();
 			event.stopPropagation();
 			event.stopImmediatePropagation();
