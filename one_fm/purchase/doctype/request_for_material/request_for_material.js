@@ -1199,6 +1199,12 @@ erpnext.buying.MaterialRequestController = class MaterialRequestController exten
 		return;
 	}
 
+	// The RFM margin only records the refund markup. ERPNext's pricing handlers
+	// would reprice the row and its "rate" trigger would then blank margin_type.
+	margin_type() {}
+
+	margin_rate_or_amount() {}
+
 	validate() {
 		set_schedule_date(this.frm);
 	}
