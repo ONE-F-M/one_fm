@@ -133,7 +133,7 @@ def get_sales_invoice_item_custom_fields():
                 "fieldname": "custom_margin_type",
                 "fieldtype": "Select",
                 "insert_after": "custom_refundable",
-                "label": "Margin Type",
+                "label": "Refundable Margin Type",
                 "options": "\nPercentage\nAmount",
                 "translatable": 1,
                 "depends_on": "eval:doc.custom_refundable"
@@ -142,7 +142,7 @@ def get_sales_invoice_item_custom_fields():
                 "fieldname": "custom_margin_rate_or_amount",
                 "fieldtype": "Float",
                 "insert_after": "custom_margin_type",
-                "label": "Margin Rate or Amount",
+                "label": "Refundable Margin Rate or Amount",
                 "depends_on": "eval:doc.custom_refundable"
             },
             {
