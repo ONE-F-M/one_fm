@@ -307,7 +307,8 @@
     from_date: "{{ from_date }}",
         to_date: "{{ to_date }}",
             based_on: "{{ based_on }}",
-                compound_state: "{{ compound_state }}"
+                compound_state: "{{ compound_state }}",
+                submission_start_day: {{ submission_start_day | default(1, true) | int }}
     };
 </script>
 {% endblock %}
@@ -315,5 +316,5 @@
 {% block script %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-<script src="/assets/one_fm/js/subcontractor_form.js?v=99"></script>
+<script src="/assets/one_fm/js/subcontractor_form.js?v=102"></script>
 {% endblock %}

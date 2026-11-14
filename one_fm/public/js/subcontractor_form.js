@@ -252,12 +252,12 @@ document.addEventListener("DOMContentLoaded", function() {
     function validate_date_buffer(to_date_str) {
         if (!to_date_str) return true;
         let t_date = moment(to_date_str);
-        let allowed_date = t_date.clone().add(1, 'months').date(11);
+        let allowed_date = t_date.clone().add(1, 'months').date(parseInt(ctx.submission_start_day, 10) || 1);
         let today = moment().startOf('day');
         
         if (today.isBefore(allowed_date, 'day')) {
-            let msg = `You cannot select a billing month until the 11th of the following month. For ${t_date.format('MMMM YYYY')}, you must wait until ${allowed_date.format('MMMM D, YYYY')}.`;
-            frappe.msgprint({title: "Validation Error", indicator: "red", message: msg});
+            let msg = __("Attendance for {0} can be submitted from {1}.", [t_date.format("MMMM YYYY"), allowed_date.format("Do MMMM YYYY")]);
+            frappe.msgprint({title: __("Validation Error"), indicator: "red", message: msg});
             return false;
         }
         return true;

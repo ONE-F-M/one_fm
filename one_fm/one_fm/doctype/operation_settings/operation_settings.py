@@ -4,6 +4,7 @@
 import frappe
 from frappe.model.document import Document
 from frappe import _
+from frappe.utils import cint
 
 class OperationSettings(Document):
 	def validate(self):
@@ -11,6 +12,15 @@ class OperationSettings(Document):
 			self.validate_operation_manager()
 		if self.operation_admin:
 			self.validate_operation_admin()
+		self.validate_subcontractor_attendance_start_day()
+
+	def validate_subcontractor_attendance_start_day(self):
+		"""The start day must be 1 to 28 so that it exists in every month (including February)."""
+		# Empty or 0 means the default: migrate does not write defaults into an existing Single.
+		start_day = cint(self.subcontractor_attendance_submission_start_day) or 1
+		self.subcontractor_attendance_submission_start_day = start_day
+		if start_day < 1 or start_day > 28:
+			frappe.throw(_("Subcontractor Attendance Submission Start Day must be between 1 and 28."))
 
 	def validate_operation_manager(self):
 		'''
