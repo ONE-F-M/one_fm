@@ -154,31 +154,28 @@
     <!-- Filters Section -->
     <div class="card p-3 mb-4 shadow-sm border-0 bg-white">
         <div class="row">
-            <div class="col-sm-3">
+            <div class="col-sm-4">
                 <div class="form-group mb-0">
                     <label>From Date</label>
                     <input type="date" class="form-control form-control-sm" id="input-from-date"
                         value="{{ from_date }}">
                 </div>
             </div>
-            <div class="col-sm-3">
+            <div class="col-sm-4">
                 <div class="form-group mb-0">
                     <label>To Date</label>
                     <input type="date" class="form-control form-control-sm" id="input-to-date" value="{{ to_date }}">
                 </div>
             </div>
-            <div class="col-sm-3">
+            <div class="col-sm-3 d-none">
                 <div class="form-group mb-0">
                     <label>Record Based On</label>
                     <select class="form-control form-control-sm" id="input-based-on">
-                        <option value="Attendance Status" {% if based_on=="Attendance Status" %}selected{% endif %}>
-                            Attendance Status</option>
-                        <option value="Shift Hours" {% if based_on=="Shift Hours" %}selected{% endif %}>Shift Hours
-                        </option>
+                        <option value="Attendance Status" selected>Attendance Status</option>
                     </select>
                 </div>
             </div>
-            <div class="col-sm-3 d-flex align-items-end">
+            <div class="col-sm-4 d-flex align-items-end">
                 <div class="form-group mb-0 w-100">
                     <button id="btn-fetch" class="btn btn-dark btn-sm w-100">
                         Fetch Attendance Status
@@ -208,17 +205,10 @@
         <div class="card-body py-3">
             <h6 class="font-weight-bold mb-2 text-muted" style="font-size: 14px;">Attendance Status Legend</h6>
             <div class="d-flex flex-wrap text-secondary">
-                <div class="mr-4 mb-1"><strong>P</strong> : Present</div>
-                <div class="mr-4 mb-1"><strong>A</strong> : Absent</div>
-                <div class="mr-4 mb-1"><strong>L</strong> : On Leave</div>
-                <div class="mr-4 mb-1"><strong>HD</strong> : Half Day</div>
-                <div class="mr-4 mb-1"><strong>WFH</strong> : Work From Home</div>
-                <div class="mr-4 mb-1"><strong>DO</strong> : Day Off</div>
-                <div class="mr-4 mb-1"><strong>CDO</strong> : Client Day Off</div>
-                <div class="mr-4 mb-1"><strong>FA</strong> : Fingerprint Appointment</div>
-                <div class="mr-4 mb-1"><strong>MA</strong> : Medical Appointment</div>
-                <div class="mr-4 mb-1"><strong>H</strong> : Holiday</div>
-                <div class="mr-4 mb-1"><strong>OH</strong> : On Hold</div>
+                <div class="mr-4 mb-1"><strong>P</strong> : {{ _("Present") }}</div>
+                <div class="mr-4 mb-1"><strong>A</strong> : {{ _("Absent") }}</div>
+                <div class="mr-4 mb-1"><strong>DO</strong> : {{ _("Day Off") }}</div>
+                <div class="mr-4 mb-1"><strong>CDO</strong> : {{ _("Client Day Off") }}</div>
             </div>
         </div>
     </div>
@@ -315,5 +305,5 @@
 {% block script %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-<script src="/assets/one_fm/js/subcontractor_form.js?v=99"></script>
+<script src="/assets/one_fm/js/subcontractor_form.js?v=100"></script>
 {% endblock %}

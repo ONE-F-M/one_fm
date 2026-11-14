@@ -3,16 +3,11 @@ document.addEventListener("DOMContentLoaded", function() {
     
     // Status maps for shorter display
     const status_maps = {
-        "Present": "P", "Absent": "A", "On Leave": "L", "Half Day": "HD",
-        "Work From Home": "WFH", "Day Off": "DO", "Client Day Off": "CDO",
-        "Fingerprint Appointment": "FA", "Medical Appointment": "MA",
-        "Holiday": "H", "On Hold": "OH"
+        "Present": "P", "Absent": "A", "Day Off": "DO", "Client Day Off": "CDO"
     };
 
     const status_options = [
-        "", "Present", "Absent", "On Leave", "Half Day", "Work From Home", 
-        "Day Off", "Client Day Off", "Fingerprint Appointment", 
-        "Medical Appointment", "Holiday", "On Hold"
+        "", "Present", "Absent", "Day Off", "Client Day Off"
     ];
 
     let grid_data = ctx.merged_data || [];
@@ -119,7 +114,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     // Tally logic (same as backend calculations)
                     let tally_val = based_on === "Attendance Status" ? cell_data.value : cell_data.status_val;
                     if (based_on === "Shift Hours" && parseFloat(cell_data.value) > 0) w_days++;
-                    else if (based_on === "Attendance Status" && ["Present", "Half Day", "Work From Home"].includes(tally_val)) w_days++;
+                    else if (based_on === "Attendance Status" && ["Present"].includes(tally_val)) w_days++;
                     
                     if (["Day Off", "Client Day Off"].includes(tally_val)) o_days++;
 
@@ -207,7 +202,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 if (based_on === "Shift Hours") {
                     if (parseFloat(val) > 0) w_days++;
                 } else {
-                    if (["Present", "Half Day", "Work From Home"].includes(val)) w_days++;
+                    if (["Present"].includes(val)) w_days++;
                 }
                 
                 if (["Day Off", "Client Day Off"].includes(tally_val)) o_days++;
@@ -440,7 +435,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 
                 if (based_on === "Attendance Status") {
                     val = d_data.value || "-";
-                    if (["Present", "Half Day", "Work From Home"].includes(val)) w_days++;
+                    if (["Present"].includes(val)) w_days++;
                 } else {
                     val = d_data.value ? parseFloat(d_data.value) : "-";
                     let hrs = parseFloat(d_data.value);
@@ -522,7 +517,7 @@ document.addEventListener("DOMContentLoaded", function() {
                             }
                             val_display = hrs > 0 ? hrs : "";
                         } else if (based_on === "Attendance Status") {
-                            if (["Present", "Half Day", "Work From Home"].includes(tally_val)) {
+                            if (["Present"].includes(tally_val)) {
                                 w_days++;
                             }
                             let val = d_data.value || "";
