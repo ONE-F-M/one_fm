@@ -90,7 +90,34 @@ class RequestforMaterial(BuyingController):
         # self.validate_item_reservation()
         self.validate_linked_request_quantities()
         self.validate_uniform_request_details()
+        self.validate_refundable_margins()
 
+    def validate_refundable_margins(self):
+        """Margin details are mandatory on refundable item rows.
+
+        mandatory_depends_on is only enforced in the browser, so the same rule is
+        enforced here for API-created requests. 0 and negative values are valid for
+        Margin Rate or Amount; only an unset (None) value is rejected.
+        """
+        for d in self.get("items") or []:
+            if not d.get("is_refundable"):
+                continue
+            if not d.get("margin_known"):
+                frappe.throw(
+                    _("Row #{0}: Margin Known is mandatory for a refundable item.").format(d.idx),
+                    title=_("Margin Missing")
+                )
+            if d.get("margin_known") == "Yes":
+                if not d.get("margin_type"):
+                    frappe.throw(
+                        _("Row #{0}: Margin Type is mandatory when Margin Known is Yes.").format(d.idx),
+                        title=_("Margin Missing")
+                    )
+                if d.get("margin_rate_or_amount") is None:
+                    frappe.throw(
+                        _("Row #{0}: Margin Rate or Amount is mandatory when Margin Known is Yes.").format(d.idx),
+                        title=_("Margin Missing")
+                    )
 
     def validate_uniform_request_details(self):
         """WI-002301: the rules the form shows, enforced where they actually bind.
