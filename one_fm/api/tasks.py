@@ -954,7 +954,8 @@ def create_shift_assignment(roster, date, time):
 				INSERT INTO `tabShift Assignment` (`name`, `company`, `docstatus`, `employee`, `employee_name`, `shift_type`, `site`, `project`, `status`,
 				`shift_classification`, `site_location`, `start_date`, `start_datetime`, `end_datetime`, `department`,
 				`shift`, `operations_role`, `post_abbrv`, `roster_type`, `owner`, `modified_by`, `creation`, `modified`,
-				`shift_request`, `check_in_site`, `check_out_site`,`custom_day_off_ot`, `employee_schedule`, `custom_on_the_job_training`)
+				`shift_request`, `check_in_site`, `check_out_site`,`custom_day_off_ot`, `employee_schedule`, `custom_on_the_job_training`,
+				`custom_is_day_off_reliever`, `custom_is_weekend_reliever`, `custom_is_annual_leave_reliever`, `custom_leave_application`)
 				VALUES
 			"""
 			query_body = """"""
@@ -962,6 +963,7 @@ def create_shift_assignment(roster, date, time):
 			has_rostered = []
 			for r in roster:
 				_day_off_ot = 0
+				_relief_values = f"{cint(r.get('is_day_off_reliever'))}, {cint(r.get('is_weekend_reliever'))}, {cint(r.get('is_annual_leave_reliever'))}, {frappe.db.escape(r.get('leave_application') or '')}"
 				if not r.employee in existing_shift_list:
 					if shift_request_dict.get(r.employee):
 						_shift_request = shift_request_dict.get(r.employee)
@@ -981,7 +983,7 @@ def create_shift_assignment(roster, date, time):
 							"{_shift_request.site or ''}", "{_project_r or ''}", 'Active', '{_shift_request.shift_type}', "{sites_list_dict.get(_shift_request.site) or ''}", "{date}",
 							"{shift_r_start_time or str(date)+' 08:00:00'}", "{shift_r_end_time or str(date)+' 17:00:00'}", "{r.department}",
 							"{_shift_request.operations_shift or ''}", "{_shift_request.operations_role or ''}", "{r.post_abbrv or ''}", "{_shift_request.roster_type}",
-							"{owner}", "{owner}", "{creation}", "{creation}", "{_shift_request.name}", "{_shift_request.check_in_site}", "{_shift_request.check_out_site}","{_day_off_ot}", "{r.name}", "{r.on_the_job_training if r.employee_availability == 'On-the-job Training' else ''}"),"""
+							"{owner}", "{owner}", "{creation}", "{creation}", "{_shift_request.name}", "{_shift_request.check_in_site}", "{_shift_request.check_out_site}","{_day_off_ot}", "{r.name}", "{r.on_the_job_training if r.employee_availability == 'On-the-job Training' else ''}", {_relief_values}),"""
 					else:
 						_shift_type = resolve_shift_type(r.shift_type, shift_types_dict, default_shift, date)
 						query_body += f"""
@@ -990,7 +992,7 @@ def create_shift_assignment(roster, date, time):
 							"{r.site or ''}", "{r.project or ''}", 'Active', '{_shift_type.shift_type}', "{sites_list_dict.get(r.site) or ''}", "{date}",
 							"{_shift_type.start_datetime or str(date)+' 08:00:00'}",
 							"{_shift_type.end_datetime or str(date)+' 17:00:00'}", "{r.department}", "{r.shift or ''}", "{r.operations_role or ''}", "{r.post_abbrv or ''}", "{r.roster_type}",
-							"{owner}", "{owner}", "{creation}", "{creation}", '', '', '',"{_day_off_ot}", '{r.name}', "{r.on_the_job_training if r.employee_availability == 'On-the-job Training' else ''}"),"""
+							"{owner}", "{owner}", "{creation}", "{creation}", '', '', '',"{_day_off_ot}", '{r.name}', "{r.on_the_job_training if r.employee_availability == 'On-the-job Training' else ''}", {_relief_values}),"""
 				else:
 					has_rostered.append(r.employee_name)
 
@@ -1021,7 +1023,11 @@ def create_shift_assignment(roster, date, time):
 					status = VALUES(status),
 					custom_day_off_ot = '{_day_off_ot}',
 					employee_schedule = VALUES(employee_schedule),
-					custom_on_the_job_training = VALUES(custom_on_the_job_training)
+					custom_on_the_job_training = VALUES(custom_on_the_job_training),
+					custom_is_day_off_reliever = VALUES(custom_is_day_off_reliever),
+					custom_is_weekend_reliever = VALUES(custom_is_weekend_reliever),
+					custom_is_annual_leave_reliever = VALUES(custom_is_annual_leave_reliever),
+					custom_leave_application = VALUES(custom_leave_application)
 				"""
 				frappe.db.sql(query, values=[], as_dict=1)
 				frappe.db.commit()
@@ -1285,6 +1291,7 @@ def create_overtime_shift_assignment(schedule, date):
 			shift_assignment.post_abbrv = schedule.post_abbrv
 			shift_assignment.roster_type = schedule.roster_type
 			shift_assignment.site_location = schedule.checkin_location
+			set_relief_fields(shift_assignment, schedule)
 			if schedule.doctype == 'Shift Request':
 				shift_assignment.shift_request = schedule.name
 				if schedule.check_in_site and schedule.check_out_site:
@@ -1296,6 +1303,13 @@ def create_overtime_shift_assignment(schedule, date):
 		except Exception:
 			# Log all the errors except the OverlappingShiftError(ValidationError)
 			frappe.log_error(title="Create Overtime Shift Assignment", message=frappe.get_traceback())
+
+def set_relief_fields(shift_assignment, schedule):
+	"""Copy the Employee Schedule relief flags and covered leave onto the Shift Assignment."""
+	shift_assignment.custom_is_day_off_reliever = cint(schedule.get("is_day_off_reliever"))
+	shift_assignment.custom_is_weekend_reliever = cint(schedule.get("is_weekend_reliever"))
+	shift_assignment.custom_is_annual_leave_reliever = cint(schedule.get("is_annual_leave_reliever"))
+	shift_assignment.custom_leave_application = schedule.get("leave_application")
 
 def rambo_shift_assignment():
 	"""
@@ -1637,6 +1651,7 @@ def process_rambo_shift_assignment(schedules, date):
 			shift_assignment.start_datetime = schedule.start_datetime
 			shift_assignment.end_datetime = schedule.end_datetime
 			shift_assignment.custom_day_off_ot = schedule.day_off_ot
+			set_relief_fields(shift_assignment, schedule)
 
 			shift_assignment.insert(ignore_permissions=True)
 			shift_assignment.submit()
