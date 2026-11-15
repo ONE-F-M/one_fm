@@ -4,13 +4,61 @@
 import frappe
 from frappe.model.document import Document
 from frappe.query_builder.functions import Extract
-from frappe.utils import cint, cstr
+from frappe.utils import cint, cstr, get_link_to_form
 from calendar import monthrange
 from frappe import _
 
-class AttendanceAmendment(Document):
+class AttendanceApproval(Document):
 	def validate(self):
 		self.recalculate_working_days()
+		self.validate_attendance_details_present()
+		self.validate_duplicate()
+
+	def validate_attendance_details_present(self):
+		if self.workflow_state == "Pending Approval" and not self.attendance_details:
+			frappe.throw(
+				_(
+					"Attendance Details are empty. Select Attendance Record Based On and click Fetch Attendance Record before submitting for review."
+				)
+			)
+
+	def validate_duplicate(self):
+		"""Refuse a second live record for the same project, month and year.
+
+		A record without a site covers the whole project, so it clashes with any
+		site-specific record of that project/month/year, and vice versa.
+		"""
+		# Let clean-up saves of cancelled/rejected records through
+		if self.workflow_state in ("Cancelled", "Rejected"):
+			return
+
+		filters = {
+			"project": self.project,
+			"month": self.month,
+			"year": self.year,
+			"name": ("!=", self.name),
+			"workflow_state": ("not in", ("Cancelled", "Rejected")),
+			"docstatus": ("!=", 2),
+		}
+		or_filters = None
+		if self.site:
+			or_filters = [["site", "=", self.site], ["site", "is", "not set"]]
+
+		# get_all so validation also sees records the current user cannot read
+		existing = frappe.get_all(
+			"Attendance Approval",
+			filters=filters,
+			or_filters=or_filters,
+			fields=["name", "workflow_state"],
+			limit_page_length=1,
+		)
+		if existing:
+			existing = existing[0]
+			frappe.throw(
+				_("Attendance record {0} already exists for this project, site and month (status: {1}).").format(
+					get_link_to_form("Attendance Approval", existing.name), existing.workflow_state
+				)
+			)
 
 	def recalculate_working_days(self):
 		for row in self.get("attendance_details") + self.get("overtime_details"):
@@ -52,7 +100,7 @@ class AttendanceAmendment(Document):
 		if data:
 			self.update_attendance_records(data)
 		else:
-			frappe.msgprint(_("No attendance records found."), alert=True, indicator="orange")
+			frappe.msgprint(_("No attendance found for the selected criteria."), alert=True, indicator="orange")
 
 		if self.ot_data_required:
 			ot_attendance_map = get_ot_attendance_map(filters, self.attendance_based_on)
@@ -448,7 +496,7 @@ def get_ot_rows(employee_details, filters, attendance_map, attendance_based_on=N
 @frappe.whitelist()
 def get_sale_item_details(amendment_name: str) -> dict:
 	"""Return a map of sale_item → item_type from Item."""
-	doc = frappe.get_doc("Attendance Amendment", amendment_name)
+	doc = frappe.get_doc("Attendance Approval", amendment_name)
 	doc.check_permission("read")
 
 	sale_items = set()
@@ -472,7 +520,7 @@ def get_sale_item_details(amendment_name: str) -> dict:
 @frappe.whitelist()
 def get_pdf_header_metadata(amendment_name: str) -> dict:
 	"""Return metadata needed for the PDF header: logo, company, client, project."""
-	doc = frappe.get_doc("Attendance Amendment", amendment_name)
+	doc = frappe.get_doc("Attendance Approval", amendment_name)
 	doc.check_permission("read")
 
 	company_name = frappe.defaults.get_user_default("Company") or ""
@@ -523,14 +571,14 @@ def get_version_changes(amendment_name: str) -> list:
 	"""
 	import json
 
-	doc = frappe.get_doc("Attendance Amendment", amendment_name)
+	doc = frappe.get_doc("Attendance Approval", amendment_name)
 	doc.check_permission("read")
 
 	Version = frappe.qb.DocType("Version")
 	versions = (
 		frappe.qb.from_(Version)
 		.select(Version.name, Version.owner, Version.creation, Version.data)
-		.where(Version.ref_doctype == "Attendance Amendment")
+		.where(Version.ref_doctype == "Attendance Approval")
 		.where(Version.docname == amendment_name)
 		.orderby(Version.creation, order=frappe.qb.desc)
 	).run(as_dict=True)
