@@ -7,7 +7,12 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_to_date, get_datetime, now_datetime
 
-from one_fm.legal.doctype.penalty_issuance.penalty_issuance import PenaltyIssuance, submit_through_process
+from one_fm.legal.doctype.penalty_issuance.penalty_issuance import (
+	PenaltyIssuance,
+	filter_employees,
+	get_filtered_employees,
+	submit_through_process,
+)
 from one_fm.patches.v15_0.move_penalty_issuance_to_processa import ISSUER_ROLES, allow_issuers_to_create
 from one_fm.patches.v15_0.move_legal_investigation_lifecycle_to_processa import set_third_party_damage
 
@@ -74,6 +79,24 @@ class TestPenaltyIssuance(FrappeTestCase):
 						),
 						1,
 					)
+
+	def test_employee_filter_lists_the_shift_on_the_occurrence_date(self):
+		assignment = frappe.db.get_value(
+			"Shift Assignment", {"shift": ["is", "set"]}, ["employee", "shift", "start_date"], as_dict=True
+		)
+		if not assignment:
+			self.skipTest("No Shift Assignment on this site")
+		designation = frappe.db.get_value("Employee", assignment.employee, "designation")
+		occurrence = f"{assignment.start_date} 10:00:00"
+
+		rows = get_filtered_employees(assignment.shift, occurrence, as_dict=1)
+		self.assertIn(assignment.employee, [row["employee"] for row in rows])
+		self.assertEqual(next(r for r in rows if r["employee"] == assignment.employee)["designation"], designation)
+
+		filters = {"shift": assignment.shift, "penalty_occurence_time": occurrence}
+		searched = filter_employees("Employee", assignment.employee, "name", 0, 20, filters)
+		self.assertIn(assignment.employee, [row[0] for row in searched])
+		self.assertEqual(filter_employees("Employee", "no-such-employee-xyz", "name", 0, 20, filters), [])
 
 
 ISSUER_USER = "penalty-issuance-issuer@example.com"

@@ -5,7 +5,6 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.query_builder import DocType
 from frappe.utils import add_days, cint, get_datetime, get_link_to_form, getdate, now_datetime
 from frappe import _
 from one_fm.processor import sendemail
@@ -160,20 +159,27 @@ def has_permission():
 
 @frappe.whitelist()
 def filter_employees(doctype, txt, searchfield, start, page_len, filters):
-	return get_filtered_employees(filters.get('shift'), filters.get('penalty_occurence_time'))
-
+	return get_filtered_employees(filters.get("shift"), filters.get("penalty_occurence_time"), txt=txt)
 
 
 @frappe.whitelist()
-def get_filtered_employees(shift, penalty_occurence_time, as_dict=None):
+def get_filtered_employees(shift, penalty_occurence_time, as_dict=None, txt=None):
 	frappe.has_permission("Penalty Issuance", "create", throw=True)
-	ShiftAssignment, Employee = DocType("Shift Assignment"), DocType("Employee")
-	return (
-		frappe.qb.from_(ShiftAssignment)
-		.join(Employee)
-		.on(ShiftAssignment.employee == Employee.name)
-		.select(ShiftAssignment.employee, ShiftAssignment.employee_name, Employee.designation)
-		.where(
-			(ShiftAssignment.shift == shift) & (ShiftAssignment.start_date == getdate(penalty_occurence_time))
+	# Filter Shift Assignment on its own: joining Employee first makes MariaDB probe
+	# every employee's assignments, which takes minutes on a large table.
+	or_filters = {"employee": ["like", f"%{txt}%"], "employee_name": ["like", f"%{txt}%"]} if txt else None
+	rows = frappe.get_all(
+		"Shift Assignment",
+		filters={"shift": shift, "start_date": getdate(penalty_occurence_time)},
+		or_filters=or_filters,
+		fields=["employee", "employee_name"],
+		order_by="employee asc",
+	)
+	designations = dict(
+		frappe.get_all(
+			"Employee", filters={"name": ["in", [row.employee for row in rows]]}, fields=["name", "designation"], as_list=True
 		)
-	).run(as_dict=cint(as_dict))
+	) if rows else {}
+	if cint(as_dict):
+		return [{**row, "designation": designations.get(row.employee)} for row in rows]
+	return [(row.employee, row.employee_name, designations.get(row.employee)) for row in rows]
