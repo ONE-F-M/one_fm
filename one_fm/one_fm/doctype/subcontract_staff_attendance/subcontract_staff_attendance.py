@@ -4,7 +4,34 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import getdate
+from frappe.utils import cint, formatdate, getdate, today
+from dateutil.relativedelta import relativedelta
+
+
+def get_submission_start_day():
+	"""Day of month from which the previous month's attendance can be submitted.
+
+	Falls back to 1 because migrate does not write the field default into an existing Single.
+	"""
+	return cint(frappe.db.get_single_value("Operation Settings", "subcontractor_attendance_submission_start_day")) or 1
+
+
+def validate_submission_window(to_date):
+	"""Throw if today is before the configured start day of the month following to_date."""
+	start_day = get_submission_start_day()
+	to_date = getdate(to_date)
+	allowed_date = (to_date + relativedelta(months=1)).replace(day=start_day)
+	if getdate(today()) < allowed_date:
+		frappe.throw(
+			_("Attendance for {0} can be submitted from {1}.").format(
+				to_date.strftime("%B %Y"), formatdate(allowed_date)
+			)
+		)
+
+
+# The only attendance statuses a subcontractor can record (dropdown options on
+# the Subcontractor Staff Attendance Item day_1..day_31 fields).
+ATTENDANCE_STATUSES = ("Present", "Absent", "Day Off", "Client Day Off")
 
 
 class SubcontractStaffAttendance(Document):
@@ -21,15 +48,9 @@ class SubcontractStaffAttendance(Document):
 		self.process_audit_logs()
 
 	def validate(self):
-		from frappe.utils import getdate, today
-		from dateutil.relativedelta import relativedelta
-
-		# Story 1: Date-wise Validation (10-day buffer)
+		# Date-wise validation: submission opens on the configured day of the following month
 		if self.to_date:
-			to_date = getdate(self.to_date)
-			allowed_date = (to_date + relativedelta(months=1)).replace(day=11)
-			if getdate(today()) < allowed_date:
-				frappe.throw(f"You cannot select a billing month until the 11th of the following month. For {to_date.strftime('%B %Y')}, you must wait until {allowed_date.strftime('%B %d, %Y')}.")
+			validate_submission_window(self.to_date)
 
 		old_state = frappe.db.get_value("Subcontract Staff Attendance", self.name, "workflow_state")
 		# Enforce remarks when returning to Draft
@@ -112,7 +133,7 @@ class SubcontractStaffAttendance(Document):
 					
 				# Recalculate totals dynamically
 				if self.attendance_record_based_on == "Attendance Status":
-					if new_val in ["Present", "Half Day", "Work From Home", "Holiday"]:
+					if new_val == "Present":
 						working_days += 1
 					elif new_val in ["Day Off", "Client Day Off"]:
 						off_days += 1
@@ -221,7 +242,9 @@ def api_fetch_subcontractor_staff(subcontractor_name, from_date, to_date, attend
 			if day_data and day_data.get("site"):
 				if attendance_record_based_on == "Attendance Status":
 					item["days"][str(i)] = {
-						"value": day_data["status"],
+						# Statuses outside ATTENDANCE_STATUSES are left blank so the
+						# subcontractor must choose; status_val keeps the raw HR status.
+						"value": day_data["status"] if day_data["status"] in ATTENDANCE_STATUSES else "",
 						"site": day_data["site"],
                         "project": day_data["project"],
 						"status": None,  # no workflow state yet

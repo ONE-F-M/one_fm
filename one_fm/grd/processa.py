@@ -23,7 +23,7 @@ def complete_action(doc, action, task_name=None):
 
 	Returns False when the document has no live process, so the caller can fall back.
 	"""
-	from one_bpmn.api.instance_api import complete_task
+	from processa.api.instances import complete_task
 
 	instance = active_instance(doc.doctype, doc.name)
 	if not instance:
@@ -43,7 +43,7 @@ def complete_action(doc, action, task_name=None):
 
 def cancel_processes(doctype, names, reason):
 	"""Cancel the live process of each document and close the ToDos its tasks opened."""
-	from one_bpmn.one_bpmn.doctype.bpmn_process_instance.assignment import (
+	from processa.processa_engine.assignment import (
 		remove_frappe_assignment,
 		split_users,
 	)
