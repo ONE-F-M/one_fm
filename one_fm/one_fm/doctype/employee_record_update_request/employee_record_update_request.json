@@ -35,7 +35,8 @@
   "benefits_changes_required",
   "benefit",
   "reason_for_changes_section",
-  "reason",
+  "reason_for_changes",
+  "remarks",
   "amended_from"
  ],
  "fields": [
@@ -232,9 +233,16 @@
    "label": "Reason for Changes"
   },
   {
-   "fieldname": "reason",
+   "fieldname": "reason_for_changes",
+   "fieldtype": "Select",
+   "label": "Reason for Changes",
+   "options": "\nIncrement\nDecrement\nPromotion\nChange in Designation\nChange in Department\nAddition of Benefits",
+   "reqd": 1
+  },
+  {
+   "fieldname": "remarks",
    "fieldtype": "Small Text",
-   "label": "Reason",
+   "label": "Remarks",
    "reqd": 1
   },
   {
@@ -250,7 +258,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-05 13:00:00.000000",
+ "modified": "2026-11-11 10:30:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Employee Record Update Request",
