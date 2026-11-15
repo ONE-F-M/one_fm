@@ -33,11 +33,10 @@
   "amended_from",
   "different_location",
   "additional_damages_section",
-  "company_damage",
-  "asset_damage",
+  "third_party_damage",
   "column_break_28",
-  "customer_property_damage",
-  "other_damages"
+  "section_break_tvrq",
+  "workflow_state"
  ],
  "fields": [
   {
@@ -201,32 +200,8 @@
    "label": "Additional Damages"
   },
   {
-   "default": "0",
-   "fieldname": "company_damage",
-   "fieldtype": "Check",
-   "label": "Company Damage"
-  },
-  {
-   "default": "0",
-   "fieldname": "asset_damage",
-   "fieldtype": "Check",
-   "label": "Asset Damage"
-  },
-  {
    "fieldname": "column_break_28",
    "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "customer_property_damage",
-   "fieldtype": "Check",
-   "label": "Customer property damage"
-  },
-  {
-   "default": "0",
-   "fieldname": "other_damages",
-   "fieldtype": "Check",
-   "label": "Other damages"
   },
   {
    "fieldname": "penalty_category",
@@ -239,11 +214,28 @@
   {
    "fieldname": "cb1",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "third_party_damage",
+   "fieldtype": "Check",
+   "label": "Third Party Damage"
+  },
+  {
+   "fieldname": "section_break_tvrq",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "options": "Workflow State"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-08-30 14:07:33.530263",
+ "modified": "2026-11-12 18:20:00.000000",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Penalty Issuance",

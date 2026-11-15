@@ -1,53 +1,8 @@
 // Copyright (c) 2020, ONE FM and contributors
 // For license information, please see license.txt
 frappe.ui.form.on('PIFSS Monthly Deduction', {
-	fetch_data: function(frm) {
-		//checks if the document not saved
-		if(frm.doc.__unsaved || frm.is_new()){//Check if the document is saved or new
-			frappe.throw('Please Save the Document First');
-		}
-		// else if(!frm.doc.attach_report || !frm.doc.additional_attach_report){
-		// 	frappe.throw('Please Attach The Required Documents');
-		// }
-		// else if(frm.doc.attach_report || frm.doc.additional_attach_report){
-
-		else {
-		/*
-		This is an Ajax call that calls a method with a document name as an argument,
-		the callback is a dictionary list of the 2 attached files(csv file and additional report file),
-		then, it will add the dictionary into the deductions table.
-		*/
-			let doc_name = frm.doc.name;
-			if(doc_name){
-				frappe.call({
-					method:'one_fm.grd.doctype.pifss_monthly_deduction.pifss_monthly_deduction.import_deduction_data',
-					args: {'doc_name':frm.doc.name},
-					freeze: true,
-					freeze_message: __("Fetching Data...."),
-					callback: function(r){
-					let table_data = r.message[0];
-					if(!r.exc && table_data.length > 0){
-						frm.doc.deductions.length = 0;
-					for(let i=0; i < r.message[1]; i++){
-							frm.add_child('deductions', table_data[i]);
-						}
-					}
-					frm.refresh_field('deductions');
-					document.querySelectorAll("[data-fieldname='fetch_data']")[1].style.backgroundColor ="red";
-					frm.set_value("press_button",1);
-					frm.save();
-				}
-			});
-		};
-	}
-},
 	refresh:function(frm){
 
-		if (frm.doc.press_button == 0){
-			document.querySelectorAll("[data-fieldname='fetch_data']")[1].style.backgroundColor ="#44c95a";
-		}else{
-			document.querySelectorAll("[data-fieldname='fetch_data']")[1].style.backgroundColor ="red";
-		}
 		// set zero in the fields that calculate the difference if there is no value is set
 		if(!frm.doc.basic_insurance){
 			frm.set_value("difference_in_basic_insurance", 0);

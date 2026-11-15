@@ -22,8 +22,6 @@
   "shift_type",
   "start_datetime",
   "end_datetime",
-  "is_relieving_schedule",
-  "relieving_employee_schedule",
   "is_replaced",
   "replaced_employee_schedule",
   "column_break_6",
@@ -36,6 +34,14 @@
   "event_location",
   "on_the_job_training",
   "rambo_assignment",
+  "relieving_details_section",
+  "is_relieving_schedule",
+  "is_day_off_reliever",
+  "is_weekend_reliever",
+  "is_annual_leave_reliever",
+  "column_break_jwqd",
+  "relieving_employee_schedule",
+  "leave_application",
   "attendance_status_section",
   "attended_status",
   "roster_type",
@@ -321,11 +327,48 @@
    "fieldtype": "Link",
    "label": "Relieving Employee Schedule",
    "options": "Employee Schedule"
+  },
+  {
+   "fieldname": "relieving_details_section",
+   "fieldtype": "Section Break",
+   "label": "Relieving Details"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_day_off_reliever",
+   "fieldtype": "Check",
+   "label": "Is Day Off Reliever",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_weekend_reliever",
+   "fieldtype": "Check",
+   "label": "Is Weekend Reliever",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_annual_leave_reliever",
+   "fieldtype": "Check",
+   "label": "Is Annual Leave Reliever",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_jwqd",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "leave_application",
+   "fieldtype": "Link",
+   "label": "Leave Application",
+   "options": "Leave Application",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "links": [],
- "modified": "2026-10-09 12:00:00.000000",
+ "modified": "2026-11-11 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Employee Schedule",

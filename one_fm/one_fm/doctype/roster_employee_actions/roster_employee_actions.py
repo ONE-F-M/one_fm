@@ -84,12 +84,6 @@ def create_roster_employee_actions():
 
 		for employee, dates in employees_not_rostered.items():
 			try:
-				shift_allocation, site_allocation, project_allocation = frappe.db.get_value("Employee", employee, ["shift", "site", "project"])
-
-				shift_supervisor = get_shift_supervisor(shift_allocation)
-				site_supervisor = frappe.db.get_value('Operations Site', site_allocation, 'site_supervisor')
-				project_manager = frappe.db.get_value('Project', project_allocation, 'project_manager')
-
 				sorted_dates = sorted(
 					[datetime.strptime(date.strip(), "%Y-%m-%d") for date in dates]
 				)
@@ -105,27 +99,63 @@ def create_roster_employee_actions():
 					["repeat_count"]
 				)
 
-				roster_employee_actions = frappe.new_doc("Roster Employee Actions")
-				roster_employee_actions.start_date = start_date
-				roster_employee_actions.end_date = end_date
-				roster_employee_actions.repeat_count = (yesterday_repeat_count or 0) + 1
-				roster_employee_actions.status = "Pending"
-				roster_employee_actions.supervisor = shift_supervisor
-				roster_employee_actions.site_supervisor = site_supervisor
-				roster_employee_actions.project_manager = project_manager
-				roster_employee_actions.shift = shift_allocation
-				roster_employee_actions.site = site_allocation
-				roster_employee_actions.project = project_allocation
-				roster_employee_actions.employee = employee
-				roster_employee_actions.missing_dates = ", ".join([date.strftime("%Y-%m-%d") for date in sorted_dates])
-
-				roster_employee_actions.save()
+				make_roster_employee_action(
+					employee,
+					start_date,
+					end_date,
+					[date.strftime("%Y-%m-%d") for date in sorted_dates],
+					repeat_count=(yesterday_repeat_count or 0) + 1,
+				)
 
 			except Exception as e:
 				frappe.log_error(message=frappe.get_traceback(), title="Error while generating Roster employee actions")
 				continue
 
 			frappe.db.commit()
+
+def make_roster_employee_action(employee, start_date, end_date, missing_dates, repeat_count=1):
+	"""Save a Pending Roster Employee Actions doc for the employee's allocation and its supervisors."""
+	shift_allocation, site_allocation, project_allocation = frappe.db.get_value("Employee", employee, ["shift", "site", "project"])
+
+	roster_employee_actions = frappe.new_doc("Roster Employee Actions")
+	roster_employee_actions.start_date = start_date
+	roster_employee_actions.end_date = end_date
+	roster_employee_actions.repeat_count = repeat_count
+	roster_employee_actions.status = "Pending"
+	roster_employee_actions.supervisor = get_shift_supervisor(shift_allocation)
+	roster_employee_actions.site_supervisor = frappe.db.get_value("Operations Site", site_allocation, "site_supervisor")
+	roster_employee_actions.project_manager = frappe.db.get_value("Project", project_allocation, "project_manager")
+	roster_employee_actions.shift = shift_allocation
+	roster_employee_actions.site = site_allocation
+	roster_employee_actions.project = project_allocation
+	roster_employee_actions.employee = employee
+	roster_employee_actions.missing_dates = ", ".join(missing_dates)
+	roster_employee_actions.save(ignore_permissions=True)
+	return roster_employee_actions
+
+
+def create_annual_leave_reliever_actions(leave_application):
+	"""Flag each reliever's remaining cover of a cancelled leave for Roster Employee Action.
+
+	The reliever schedules are left in place; the supervisor decides what to do with them.
+	"""
+	schedules = frappe.get_all(
+		"Employee Schedule",
+		filters={
+			"leave_application": leave_application,
+			"is_annual_leave_reliever": 1,
+			"date": [">=", getdate()],
+		},
+		fields=["employee", "date"],
+		order_by="date asc",
+	)
+	dates_by_reliever = OrderedDict()
+	for schedule in schedules:
+		dates_by_reliever.setdefault(schedule.employee, []).append(cstr(schedule.date))
+
+	for reliever, dates in dates_by_reliever.items():
+		make_roster_employee_action(reliever, dates[0], dates[-1], dates)
+
 
 def get_employees_not_rostered(start_date, end_date):
 	"""
