@@ -447,7 +447,7 @@ class LeaveApplicationOverride(LeaveApplication):
                 message = frappe.render_template(email_template.response_html, args)
                 subject = f'طلب الإجازة تم تقديمه للموافقة – {employee[0].employee_name_in_arabic} | Leave Application Submitted for Approval  – {self.employee_name}'
                 sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
-                sendemail(sender=sender, recipients= [self.leave_approver],message=message, subject=subject, delayed=False, is_scheduler_email=False,is_external_mail=True)
+                sendemail(sender=sender, recipients= [self.leave_approver],message=message, subject=subject, is_scheduler_email=False,is_external_mail=True)
             except Exception as e:
                 frappe.log_error(message=frappe.get_traceback(), title="Leave Notification")
 
@@ -861,7 +861,7 @@ def send_proposed_date_email(doc_name):
     employee = frappe.db.get_value("Employee", doc.employee, ["personal_email", "company_email","prefered_email"], as_dict=1)
     recipient = list({value for value in employee.values() if value is not None})
     sendemail(sender=sender, recipients= recipient,
-            message=message, subject=subject, delayed=False, is_scheduler_email=False,is_external_mail=True)
+            message=message, subject=subject, is_scheduler_email=False,is_external_mail=True)
 
 @frappe.whitelist()
 def send_leave_details_email_to_employee(self):
@@ -899,7 +899,7 @@ def send_leave_details_email_to_employee(self):
         employee_info.get("prefered_email"),
     ])))
     sendemail(sender=sender, recipients= recipients,
-            message=message, subject=subject, delayed=False, is_scheduler_email=False,is_external_mail=True)
+            message=message, subject=subject, is_scheduler_email=False,is_external_mail=True)
 
 @frappe.whitelist()
 def send_leave_cancellation_email_to_leave_approver(self):
@@ -938,7 +938,7 @@ def send_leave_cancellation_email_to_leave_approver(self):
 
     approver_email = approver_info.get("prefered_email") if approver_info else None
     sendemail(sender=sender, recipients = list(set(filter(None, [approver_email,]))),
-            message=message, subject=subject, delayed=False, is_scheduler_email=False,is_external_mail=True)
+            message=message, subject=subject, is_scheduler_email=False,is_external_mail=True)
 
 
 class ReassignDutiesToReliever(NotifyAttendanceManagerOnStatusChange):

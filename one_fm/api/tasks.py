@@ -1031,7 +1031,7 @@ def create_shift_assignment(roster, date, time):
 		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
 		recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
 		msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
-		sendemail(sender=sender, recipients= recipient, content=msg, subject="Shift Assignment Failed", delayed=False)
+		sendemail(sender=sender, recipients= recipient, content=msg, subject="Shift Assignment Failed")
 
 def validate_shift_assignment(is_scheduled_event=True):
 	"""
@@ -1110,7 +1110,7 @@ def missing_shift_assignment_support_email(roster, is_scheduler_email=False):
 	if not recipient:
 		return
 	msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
-	sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", delayed=False, is_scheduler_email=is_scheduler_email)
+	sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", is_scheduler_email=is_scheduler_email)
 
 def validate_am_shift_assignment(is_scheduled_event=True):
 	"""
