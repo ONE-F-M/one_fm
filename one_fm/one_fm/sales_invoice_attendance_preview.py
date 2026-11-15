@@ -3,7 +3,7 @@ Server-side API for rendering the Attendance Preview modal from Sales Invoice.
 
 When an Approved Attendance Amendment exists for the billing period, the preview
 uses its data. Otherwise, it fetches live attendance records from the Attendance
-doctype using the same pipeline as `attendance_amendment.py`.
+doctype using the same pipeline as `attendance_approval.py`.
 """
 
 import re
@@ -90,7 +90,7 @@ def get_attendance_preview_for_invoice(invoice_name: str) -> dict:
 		if site:
 			filters["site"] = site
 
-		amendment_name = frappe.db.get_value("Attendance Amendment", filters, "name")
+		amendment_name = frappe.db.get_value("Attendance Approval", filters, "name")
 
 	items = []
 	ot_items = []
@@ -142,7 +142,7 @@ def get_attendance_preview_for_invoice(invoice_name: str) -> dict:
 
 def _get_data_from_amendment(amendment_name: str):
 	"""Load attendance detail rows from an Attendance Amendment document."""
-	doc = frappe.get_doc("Attendance Amendment", amendment_name)
+	doc = frappe.get_doc("Attendance Approval", amendment_name)
 	doc.check_permission("read")
 
 	attendance_based_on = doc.attendance_based_on or "Attendance Status"
@@ -186,7 +186,7 @@ def _child_rows_to_dicts(rows, total_days: int, attendance_based_on: str) -> lis
 
 def _get_live_attendance_data(project: str, site: str, month_num: int, year: int, month_name: str, attendance_based_on: str = "Attendance Status"):
 	"""Fetch attendance directly using the same pipeline as Attendance Amendment."""
-	from one_fm.one_fm.doctype.attendance_amendment.attendance_amendment import (
+	from one_fm.one_fm.doctype.attendance_approval.attendance_approval import (
 		get_employee_details,
 		get_attendance_map,
 		get_rows,

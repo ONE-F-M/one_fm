@@ -120,7 +120,7 @@ def _get_month_range(month: int, year: int):
 # Source resolution & aggregation
 #
 # Data-sourcing hierarchy (per the user story):
-#   1. An APPROVED "Attendance Amendment" for the contract/month is the source
+#   1. An APPROVED "Attendance Approval" for the contract/month is the source
 #      of truth. Match is preferred on the amendment's `contract` field and
 #      falls back to `project` (the contract field is read-only and frequently
 #      left blank), always scoped to month + year + Approved state.
@@ -152,7 +152,7 @@ def resolve_attendance_source(contract: str, project: str, month: int, year: int
 	# Prefer matching on the amendment's own contract field ...
 	if contract:
 		match = frappe.get_all(
-			"Attendance Amendment",
+			"Attendance Approval",
 			filters={**base_filters, "contract": contract},
 			pluck="name",
 			order_by="modified desc",
@@ -164,7 +164,7 @@ def resolve_attendance_source(contract: str, project: str, month: int, year: int
 	# ... otherwise fall back to the project (contract is often blank).
 	if project:
 		match = frappe.get_all(
-			"Attendance Amendment",
+			"Attendance Approval",
 			filters={**base_filters, "project": project},
 			pluck="name",
 			order_by="modified desc",
@@ -479,7 +479,7 @@ def _grid_from_amendment(amendment_name: str, total_days: int) -> dict:
 
 	Returns ``{sale_item: {emp_key: {employee_id, employee_name, days{}, total_present}}}``.
 	"""
-	doc = frappe.get_doc("Attendance Amendment", amendment_name)
+	doc = frappe.get_doc("Attendance Approval", amendment_name)
 	groups = {}
 	for row in doc.get("attendance_details"):
 		if not row.sale_item:
