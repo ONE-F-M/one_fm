@@ -21,6 +21,7 @@ Browser-verified against the live board: employee "RAMA" -> 10 of 551, shift
 """
 
 import pathlib
+import subprocess
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -28,6 +29,22 @@ from frappe.tests.utils import FrappeTestCase
 CANVAS = pathlib.Path(frappe.get_app_path(
 	"one_fm", "one_fm", "page", "transportation_schedule", "transportation_schedule.js"
 ))
+CARD_FILTER_CHECK = CANVAS.parent / "test_card_filter.js"
+
+
+def run_card_filter_check(case):
+	"""Run the node self-check that reads the shipped predicate out of the canvas."""
+	case.assertTrue(CARD_FILTER_CHECK.exists(), "the card-filter self-check is missing")
+	try:
+		result = subprocess.run(
+			["node", str(CARD_FILTER_CHECK)], capture_output=True, text=True, timeout=60
+		)
+	except FileNotFoundError:
+		case.skipTest("node is not available on this machine")
+	case.assertEqual(
+		result.returncode, 0,
+		f"node {CARD_FILTER_CHECK.name} failed:\n{result.stdout}\n{result.stderr}",
+	)
 
 
 class TestTheFiveFiltersExist(FrappeTestCase):
@@ -65,25 +82,24 @@ class TestTheFiltersNarrowTogether(FrappeTestCase):
 	def setUpClass(cls):
 		super().setUpClass()
 		cls.canvas = CANVAS.read_text()
-		cls.body = cls.canvas.split("filteredPoolCards() {", 1)[1].split("\n            },", 1)[0]
 
 	def test_each_filter_rejects_on_its_own(self):
-		# Every criterion returns false independently - that IS the AND. An OR would be
-		# a single combined condition returning true on any match.
-		self.assertIn("if (this.shiftStartFilter && c.shift_start !== this.shiftStartFilter) return false;",
-					  self.body)
-		self.assertIn("if (this.shiftEndFilter && c.shift_end !== this.shiftEndFilter) return false;",
-					  self.body)
-		self.assertIn("if (emp && !(c.employees || []).some(e =>", self.body)
+		# Every criterion returns false independently - that IS the AND. The node
+		# check feeds the shipped predicate real cards and proves it.
+		run_card_filter_check(self)
+
+	def test_the_pool_reads_the_shared_predicate(self):
+		body = self.canvas.split("filteredPoolCards() {", 1)[1].split("\n            },", 1)[0]
+		self.assertIn("cardMatchesFilters(c, this.activeFilters)", body)
 
 	def test_the_counter_says_how_many_of_how_many(self):
-		self.assertIn("Showing {{ filteredPoolCards.length }} of {{ unassignedPoolCards.length }} cards",
-					  self.canvas)
+		self.assertIn("{{ poolCountLabel }}", self.canvas)
+		self.assertIn("__('{0} of {1}', [n, this.unassignedPoolCards.length])", self.canvas)
 
 	def test_the_counter_stays_plain_when_nothing_is_filtered(self):
-		# "Showing 551 of 551" is noise on an untouched board.
-		self.assertIn('v-if="anyPoolFilterActive"', self.canvas)
+		# "38 of 38" is noise on an untouched board.
 		self.assertIn("anyPoolFilterActive() {", self.canvas)
+		self.assertIn("__('{0} cards', [n])", self.canvas)
 
 	def test_progress_counters_are_not_affected_by_the_filters(self):
 		# Cards Planned / Remaining are scheduling progress; they must not move because
@@ -105,9 +121,12 @@ class TestTheOptionListsStaySteady(FrappeTestCase):
 		self.assertIn("return this.planData.shipment_cards.filter(c => !this.assignedCards.has(c.id));",
 					  self.canvas)
 
-	def test_all_three_option_lists_read_it(self):
-		for builder in ("poolShiftOptions() {", "poolShiftEndOptions() {",
-						"poolShiftStartOptions() {"):
+	def test_the_shift_list_reads_every_card_so_scheduled_shifts_can_be_picked(self):
+		after = self.canvas.split("poolShiftOptions() {", 1)[1].split("\n            },", 1)[0]
+		self.assertIn("this.planData.shipment_cards.map(c => c.shift_name)", after)
+
+	def test_the_time_option_lists_read_the_unfiltered_pool(self):
+		for builder in ("poolShiftEndOptions() {", "poolShiftStartOptions() {"):
 			after = self.canvas.split(builder, 1)[1].split("\n            },", 1)[0]
 			self.assertIn("unassignedPoolCards", after,
 						  f"{builder} must not build its options from the filtered set")
@@ -138,13 +157,11 @@ class TestTypingAndClearing(FrappeTestCase):
 	def test_a_picked_shift_matches_exactly_and_a_typed_one_narrows(self):
 		# Exact once it names a real shift (AC2); until then the half-typed text would
 		# match nothing at all, which reads as a broken filter.
-		self.assertIn("const shiftIsExact = shift && this.poolShiftOptions.includes(shift);",
-					  self.canvas)
-		self.assertIn("shiftIsExact ? name !== shift", self.canvas)
+		self.assertIn("shiftExact: !!shift && this.poolShiftOptions.includes(shift)", self.canvas)
+		run_card_filter_check(self)
 
 	def test_the_employee_match_is_partial_and_case_insensitive(self):
-		self.assertIn("const emp = normalizeSearchText(this.employeeQuery);", self.canvas)
-		self.assertIn(".includes(emp)", self.canvas)
+		run_card_filter_check(self)
 
 	def test_a_card_with_no_riders_does_not_break_the_match(self):
 		self.assertIn("(c.employees || []).some(e =>", self.canvas)

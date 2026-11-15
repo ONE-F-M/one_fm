@@ -62,8 +62,10 @@ class TestPACIDamjAndFineFields(FrappeTestCase):
 	def test_the_whole_rejection_block_waits_for_a_rejection(self):
 		"""Not only the reason - an empty section headed Rejection Details on a record nobody
 		rejected is noise."""
-		self.assertEqual(self.meta.get_field("rejection_details_section").depends_on, REJECTED)
-		self.assertEqual(self.meta.get_field("paci_rejection_reason").depends_on, REJECTED)
+		# Shown in Pending by PACI too: the reason is filled in before taking Reject.
+		shown = 'eval:["Pending by PACI", "Rejected"].includes(doc.workflow_state)'
+		self.assertEqual(self.meta.get_field("rejection_details_section").depends_on, shown)
+		self.assertEqual(self.meta.get_field("paci_rejection_reason").depends_on, shown)
 
 	# ── required when ticked ──────────────────────────────────────────────────────
 

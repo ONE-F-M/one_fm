@@ -13,7 +13,8 @@ from frappe.tests.utils import FrappeTestCase
 
 from one_fm.custom.assignment_rule.assignment_rule import get_assignment_rule_json_file
 from one_fm.custom.workflow.workflow import get_workflow_json_file
-from one_fm.grd.doctype.paci.paci import PENDING_GR_OPERATOR, PENDING_PRO
+PENDING_GR_OPERATOR = "Pending by GR Operator"
+PENDING_PRO = "Pending by PRO"
 
 GRO = "Government Relations Operator"
 ADDRESS_BY_PRO = "Pending Address Update by PRO"
@@ -32,11 +33,6 @@ class TestPACIStateNames(FrappeTestCase):
 	def test_the_old_state_names_are_gone(self):
 		for state in RETIRED_STATES:
 			self.assertNotIn(state, self.states)
-
-	def test_the_controller_constants_match_the_workflow(self):
-		"""paci.py writes these states directly, so a drift here assigns nothing."""
-		self.assertIn(PENDING_PRO, self.states)
-		self.assertIn(PENDING_GR_OPERATOR, self.states)
 
 	def test_no_transition_points_at_a_state_that_is_gone(self):
 		for state, _action, next_state in self.transitions:

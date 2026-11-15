@@ -50,13 +50,18 @@
   "second_name_english",
   "third_name_english",
   "last_name_english",
+  "payment_references_section",
+  "payment_invoice",
+  "payment_made_via",
+  "column_break_uuov",
+  "payment_date",
+  "bank_account",
   "section_break_24",
   "government_relations_operator",
   "pro_user",
   "column_break_oemt",
   "completed_on",
   "website",
-  "payment_invoice",
   "section_break_yfkx",
   "amended_from"
  ],
@@ -350,6 +355,39 @@
    "read_only": 1
   },
   {
+   "fieldname": "payment_references_section",
+   "fieldtype": "Section Break",
+   "label": "Payment References"
+  },
+  {
+   "fieldname": "payment_invoice",
+   "fieldtype": "Attach",
+   "label": "Payment Invoice"
+  },
+  {
+   "depends_on": "eval:doc.payment_invoice",
+   "fieldname": "payment_made_via",
+   "fieldtype": "Select",
+   "label": "Payment Made Via",
+   "options": "\nBank\nCash"
+  },
+  {
+   "fieldname": "column_break_uuov",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "payment_date",
+   "fieldtype": "Datetime",
+   "label": "Payment Date"
+  },
+  {
+   "depends_on": "eval:doc.payment_made_via == \"Card\" || doc.payment_made_via == \"Bank\"",
+   "fieldname": "bank_account",
+   "fieldtype": "Link",
+   "label": "Bank Account",
+   "options": "Bank Account"
+  },
+  {
    "fieldname": "section_break_24",
    "fieldtype": "Section Break"
   },
@@ -384,11 +422,6 @@
    "label": "website"
   },
   {
-   "fieldname": "payment_invoice",
-   "fieldtype": "Attach",
-   "label": "Payment Invoice"
-  },
-  {
    "fieldname": "section_break_yfkx",
    "fieldtype": "Section Break"
   },
@@ -406,7 +439,7 @@
  "grid_page_length": 50,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-23 12:00:00.000000",
+ "modified": "2026-11-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Appointment",

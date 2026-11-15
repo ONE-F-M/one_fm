@@ -9,7 +9,7 @@ Never guess or assume either one. Common bases: `staging` for features, `version
 **New PR**
 
 ```bash
-bash scripts/claude-pr.sh <work-item-id> <base-branch> --title "<title>" --body-file <file>
+bash .claude/open-pr-via-github-app.sh <work-item-id> <base-branch> --title "<title>" --body-file <file>
 ```
 
 This creates a new branch named after the work item (e.g. `WI-001234`) and opens the PR from it.
@@ -22,7 +22,7 @@ If the script says the branch already exists, ask the developer whether to add t
 to that PR. Only if they approve, run:
 
 ```bash
-bash scripts/claude-pr.sh --update <work-item-id> <base-branch>
+bash .claude/open-pr-via-github-app.sh --update <work-item-id> <base-branch>
 ```
 
 This only works when the open PR was opened by the developer's own bot. It never force-pushes.

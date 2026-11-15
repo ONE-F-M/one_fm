@@ -7,12 +7,11 @@ from frappe import _
 from frappe.model.document import Document
 from datetime import date
 from one_fm.api.notification import create_notification_log
-from frappe.utils import today, add_days, get_url
+from frappe.utils import get_url
 from frappe.core.doctype.communication.email import make
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
-from one_fm.grd.doctype.paci import paci
 from one_fm.utils import is_scheduler_emails_enabled
-from one_fm.grd.utils import attach_employee_document
+from one_fm.grd.processa import cancel_processes
 
 class Residency(Document):
     company = frappe.db.get_value("Company", frappe.defaults.get_global_default('company'), 
@@ -25,10 +24,11 @@ class Residency(Document):
         """Cancel  documents for that employee which were created in previous years"""
         year_threshold = getdate(self.date_of_application).year or getdate().year
         first_day_of_year = getdate(f'01-01-{year_threshold}') #Get the first day of the year
-        existing_docs = frappe.get_all(self.doctype,{'date_of_application':['<',first_day_of_year],'name':['!=',self.name],'docstatus':0,'employee':self.employee})
+        existing_docs = frappe.get_all(self.doctype,{'date_of_application':['<',first_day_of_year],'name':['!=',self.name],'docstatus':0,'employee':self.employee}, pluck='name')
         if existing_docs:
             for one in existing_docs:
                 frappe.db.set_value(self.doctype,one,'workflow_state','Cancelled')
+            cancel_processes(self.doctype, existing_docs, _("Replaced by a newer Residency"))
             frappe.db.commit()
 
     
@@ -141,88 +141,6 @@ class Residency(Document):
             paci_number = frappe.db.get_value('PAM Authorized Signatory List',{'pam_file_number':self.company_pam_file_number},['company_paci_number'])
             self.paci_number = paci_number
 
-    def on_submit(self):
-        self.validate_mandatory_fields_on_submit()
-        self.set_residency_expiry_new_date_in_employee_doctype()
-        self.sync_visa_extension_expiry_date()
-        self.apply_damj_civil_id()
-        self.db_set('completed_on', now_datetime())
-        if self.category == "Transfer":
-            self.recall_create_paci()
-
-    def apply_damj_civil_id(self):
-        """Put the corrected Civil ID on the Employee once the Damj is completed (WI-002022).
-
-        A Damj merges two civil ID numbers the government issued the same person, and the
-        surviving one is the original. Until it is written back, every record that reads
-        the Civil ID off the Employee - and every one already holding the superseded
-        number - is wrong.
-
-        Written with `db_set`/`set_value` rather than a full Employee save for the same
-        reason `set_residency_expiry_new_date_in_employee_doctype` does: a full save
-        re-validates the whole Employee, and 1,124 of them hold a Marital Status the
-        field's options no longer accept, so any such save throws on data that has
-        nothing to do with the civil ID.
-
-        This record's own mirror of the number is updated too. It is fetched from the
-        Employee and would otherwise keep showing the number the merge just retired, on
-        the very document that recorded the merge.
-        """
-        if not (self.damj_is_applicable and self.original_civil_id):
-            return
-
-        frappe.db.set_value('Employee', self.employee, 'one_fm_civil_id', self.original_civil_id)
-        self.db_set('one_fm_civil_id', self.original_civil_id)
-        self.sync_damj_civil_id_to_paci()
-
-    def sync_damj_civil_id_to_paci(self):
-        """Carry the merged Civil ID over to the PACI opened alongside this Residency (WI-002027).
-
-        The PACI's Civil ID is fetched from the Employee, which means it is copied once at
-        insert and never looked at again. A Damj completed after the PACI was opened
-        therefore leaves the civil ID application quoting the number the government just
-        retired - the one thing it must not do.
-
-        Scoped to the same Preparation, which is what pairs the two documents: a
-        Preparation opens one Residency and one PACI per employee, so that pair is the
-        "linked record" the story means. A Residency with no Preparation - a transfer, say
-        - has no PACI to pair with and is left alone.
-
-        Cancelled records are skipped; there can be more than one live PACI for the same
-        employee (a rejected application and its replacement), and both need the
-        correction. Written with set_value because the field is read-only and the PACI may
-        already be submitted, and because a full save would re-run the PACI's own
-        validation over a document this change has no business re-validating.
-        """
-        if not self.preparation:
-            return
-
-        for paci_name in frappe.get_all(
-            'PACI',
-            filters={
-                'preparation': self.preparation,
-                'employee': self.employee,
-                'docstatus': ['!=', 2],
-            },
-            pluck='name',
-        ):
-            frappe.db.set_value('PACI', paci_name, 'civil_id', self.original_civil_id)
-
-    def recall_create_paci(self):
-        paci.create_PACI_for_transfer(self.employee)
-
-    def validate_mandatory_fields_on_submit(self):
-        # Imported here: preparation.py imports this module before defining the constant.
-        from one_fm.grd.doctype.preparation.preparation import VISA_EXTENSION_ACTION
-
-        # Keyed on the row action, not the category: Renewal and Cancellation rows also open
-        # category Extend. Only an Onboarding visa extension has no residency to update.
-        if self.renewal_or_extend == VISA_EXTENSION_ACTION:
-            expiry_date = {'Visa Extension Expiry Date': 'visa_extension_expiry_date'}
-        else:
-            expiry_date = {'Updated Residency Expiry Date': 'new_residency_expiry_date'}
-        self.set_mendatory_fields([{'Upload Payment Invoice': 'invoice_attachment'}, expiry_date])
-
     def set_mendatory_fields(self,field_list):
         mandatory_fields = []
         for fields in field_list:
@@ -237,171 +155,9 @@ class Residency(Document):
             message += '</ul>'
             frappe.throw(message)
 
-    def set_residency_expiry_new_date_in_employee_doctype(self):
-        """
-        runs: `on_submit`
-        Record the new residency attachment and expiry date on the Employee.
-
-        The two facts are written directly rather than through a full save of the
-        Employee, which re-validates every field on it - so completing a Residency
-        failed on data that has nothing to do with it: 1,124 employees hold a Marital
-        Status the field's options no longer accept ("Single", "Divorced", "Widowed").
-
-        The old version rebuilt the whole child table to keep it ordered, and inserted
-        the new row beside the existing one rather than over it, so every renewal left
-        another Residency Expiry Attachment behind. The helper updates the row in place.
-
-        Skipped for a Visa Extension: it completes without new_residency_expiry_date,
-        and writing it would blank the Employee's residency expiry.
-        """
-        from one_fm.grd.doctype.preparation.preparation import VISA_EXTENSION_ACTION
-
-        if self.renewal_or_extend == VISA_EXTENSION_ACTION:
-            return
-
-        attach_employee_document(
-            self.employee,
-            document_name="Residency Expiry Attachment",
-            attach=self.residency_attachment,
-            valid_till=self.new_residency_expiry_date,
-            issued_on=date.today(),
-        )
-        frappe.db.set_value(
-            "Employee", self.employee, "residency_expiry_date", self.new_residency_expiry_date
-        )
-
-    def sync_visa_extension_expiry_date(self):
-        """
-        runs: `on_submit`
-        A Visa Extension sets the Employee's Visa Extension Expiry Date; a Renewal Expat clears it.
-        Keyed on the row action, not the category: Renewal and Cancellation rows also open
-        category Extend.
-        """
-        from one_fm.grd.doctype.preparation.preparation import VISA_EXTENSION_ACTION
-
-        if self.renewal_or_extend == VISA_EXTENSION_ACTION:
-            value = self.visa_extension_expiry_date
-        elif self.renewal_or_extend == "Renewal Expat":
-            value = None
-        else:
-            return
-        frappe.db.set_value("Employee", self.employee, "custom_visa_extension_expiry_date", value)
-
     def get_passport_arabic(self, passport):
         return {'Normal':'طبيعي','Diplomat':'دبلوماسي'}.get(passport)
     
-
-# The Actions whose Residency is opened by Preparation's own dispatcher rather than by
-# the "for extend" branch below (WI-001824). Without this the branch - which reads as
-# "anything that is not a renewal is an extension" - would open a second Residency for
-# them, categorised as Extend.
-ACTIONS_HANDLED_ON_SUBMIT = (
-    'Renewal Expat', 'New Kuwaiti', 'Overseas', 'Overseas (Government)', 'Local Transfer'
-)
-
-# The Residency a category opens, and how many days before the residency expires it is
-# applied for. Anything not listed is an extension, applied for a week ahead.
-MOI_CATEGORY_BY_ACTION = {
-    'Renewal Expat': ('Renewal', -14),
-    'Transfer': ('Transfer', None),
-    # Same category whether the transfer came from a Transfer Paper (which says
-    # "Transfer") or from a Preparation row (which says "Local Transfer").
-    'Local Transfer': ('Transfer', None),
-    # First residency for an overseas hire (WI-001881): there is no expiry to count
-    # back from, so it is applied for the day the Preparation was submitted.
-    'Overseas': ('First Time', None),
-    # WI-002024: a government-contract overseas hire gets the same first residency. MOI
-    # does not care which file the work permit was raised against.
-    'Overseas (Government)': ('First Time', None),
-    # WI-002181: a visa extension for an incoming candidate. Same category as any other
-    # extension - MOI has one - but applied for the day the Preparation was submitted
-    # rather than a week before an expiry: the candidate has no residency yet, and the
-    # fallback below would read a blank expiry as today and date the application a week
-    # in the past.
-    'Visa Extension': ('Extend', None),
-}
-
-
-#fetching the list of employee has Extend and renewal status from HR list.
-def set_employee_list_for_moi(preparation_name):
-    """Open the Residency each non-Kuwaiti row calls for, renewal or extend.
-
-    Returns the rows it could not open one for, so the operator is told on submit
-    instead of the gap only showing as a connection count that does not add up.
-    """
-    # filter work permit records only take the non kuwaiti
-    failures = []
-    employee_in_preparation = frappe.get_doc('Preparation',preparation_name)
-    if employee_in_preparation.preparation_record:
-        for employee in employee_in_preparation.preparation_record:
-            if employee.renewal_or_extend == 'Renewal Expat' and employee.nationality != 'Kuwaiti':# For renewals
-                try:
-                    create_moi_record(frappe.get_doc('Employee',employee.employee),employee.renewal_or_extend,preparation_name)
-                except Exception as e:
-                    frappe.log_error(message=frappe.get_traceback(), title=f"Error creating MOI for Employee {employee.employee} in Preparation {preparation_name}")
-                    failures.append({
-                        'employee': employee.employee,
-                        'employee_name': employee.full_name,
-                        'document': 'Residency',
-                        'reason': str(e),
-                    })
-                    continue
-            if (
-                employee.renewal_or_extend not in ACTIONS_HANDLED_ON_SUBMIT
-                and employee.nationality != 'Kuwaiti'
-            ):# For extend
-                try:
-                    create_moi_record(frappe.get_doc('Employee',employee.employee),employee.renewal_or_extend,preparation_name)
-                except Exception as e:
-                    frappe.log_error(message=frappe.get_traceback(), title=f"Error creating MOI for Employee {employee.employee} in Preparation {preparation_name}")
-                    failures.append({
-                        'employee': employee.employee,
-                        'employee_name': employee.full_name,
-                        'document': 'Residency',
-                        'reason': str(e),
-                    })
-                    continue
-    return failures
-
-# Open the MOI for a transferred employee, called when their Medical Insurance is
-# marked Done. Named "creat_moi_for_transfer" until the module was renamed from
-# moi_residency_jawazat to residency: that refactor corrected the spelling at the call
-# site but not here, so every Local Transfer insurance raised AttributeError on submit
-# and the MOI was never opened.
-def create_moi_for_transfer(work_permit_name):
-    work_permit = frappe.get_doc('Work Permit',work_permit_name)
-    if work_permit:
-        employee = frappe.get_doc('Employee',work_permit.employee)
-        if employee:
-            # The employee is already loaded; re-fetching it through its own mirror
-            # field only risked a second lookup failing.
-            create_moi_record(employee,"Transfer")
-
-def create_moi_record(employee,Renewal_or_Extend,preparation_name = None, category=None):
-    """Open the Residency an Action calls for.
-
-    WI-002033: a Preparation row states the category in NEW_ACTION_DOCUMENTS and passes it
-    in, so the table an operator reads to see what an Action produces is the one the
-    document is actually opened under. The map below still supplies the application date -
-    how many days before the residency expires it is applied for - which the caller does
-    not know, and still supplies the category for the callers that pass none: the transfer
-    path and the extend branch.
-    """
-    mapped_category, days_before_expiry = MOI_CATEGORY_BY_ACTION.get(
-        Renewal_or_Extend, ("Extend", -7)
-    )
-    category = category or mapped_category
-    start_date = add_days(employee.residency_expiry_date, days_before_expiry) if days_before_expiry else today()
-
-
-    # start_day_for_renewal = add_days(employee.residency_expiry_date, -14)# MIGHT CHANGE IN TRANSFER
-    new_moi = frappe.new_doc('Residency')
-    new_moi.employee = employee.name
-    new_moi.preparation = preparation_name
-    new_moi.renewal_or_extend = Renewal_or_Extend
-    new_moi.date_of_application = start_date
-    new_moi.category = category
-    new_moi.insert()
 
 #=================================================================> Reminder Notification
 def system_remind_renewal_operator_to_apply():# cron job at 4pm

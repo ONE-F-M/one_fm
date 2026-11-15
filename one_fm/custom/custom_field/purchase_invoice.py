@@ -1,67 +1,85 @@
 def get_purchase_invoice_custom_fields():
-    return {
-        "Purchase Invoice": [
-            {
-                "fieldname": "employee_advance",
-                "label": "Employee Advance",
-                "fieldtype": "Link",
-                "insert_after": "set_posting_time",
-                "options": "Employee Advance",
-                "read_only": 1
-            },
-            {
-                "fieldname": "custom_customer",
-                "label": "Customer",
-                "fieldtype": "Link",
-                "insert_after": "dimension_col_break",
-                "options": "Customer",
-                "read_only": 1
-            },
-            {
-                "fieldname": "custom_site",
-                "fieldtype": "Link",
-                "insert_after": "project",
-                "label": "Site",
-                "options": "Operations Site",
-                "read_only": 1
-            },
-            {
-                "fieldname": "custom_refundable",
-                "fieldtype": "Check",
-                "insert_after": "custom_site",
-                "label": "Refundable",
-                "read_only": 1
-            },
-            {
-                "fieldname": "custom_margin_type",
-                "fieldtype": "Select",
-                "insert_after": "custom_refundable",
-                "label": "Margin Type",
-                "translatable": 1,
-                "options": "\nPercentage\nAmount"
-            },
-            {
-                "fieldname": "custom_margin_rate_or_amount",
-                "fieldtype": "Float",
-                "insert_after": "custom_margin_type",
-                "label": "Margin Rate or Amount",
-            },
-            {
-                "fieldname": "custom_sales_invoice",
-                "fieldtype": "Link",
-                "insert_after": "remarks",
-                "label": "Sales Invoice",
-                "options": "Sales Invoice",
-                "read_only": 1,
-                "hidden": 1
-            },
-            {
-                "label": "Purpose",
-                "fieldname": "custom_purpose",
-                "insert_after": "due_date",
-                "fieldtype": "Select",
-                "options": "\nPurchase\nSample Purchase",
-                "read_only": 1
-            },
-        ]
-    }
+	return {
+		"Purchase Invoice": [
+			{
+				"fieldname": "custom_customer",
+				"label": "Customer",
+				"fieldtype": "Link",
+				"options": "Customer",
+				"insert_after": "dimension_col_break",
+				"read_only": 1,
+			},
+			{
+				"fieldname": "custom_margin_rate_or_amount",
+				"label": "Margin Rate or Amount",
+				"fieldtype": "Float",
+				"insert_after": "custom_margin_type",
+				"read_only": 1,
+			},
+			{
+				"fieldname": "custom_margin_type",
+				"label": "Margin Type",
+				"fieldtype": "Select",
+				"options": "\nPercentage\nAmount",
+				"insert_after": "custom_refundable",
+				"read_only": 1,
+				"translatable": 1,
+			},
+			{
+				"fieldname": "custom_purpose",
+				"label": "Purpose",
+				"fieldtype": "Select",
+				"options": "\nPurchase\nSample Purchase",
+				"insert_after": "due_date",
+				"read_only": 1,
+			},
+			{
+				"fieldname": "custom_refundable",
+				"label": "Refundable",
+				"fieldtype": "Check",
+				"insert_after": "custom_site",
+				"read_only": 1,
+			},
+			{
+				"fieldname": "custom_sales_invoice",
+				"label": "Sales Invoice",
+				"fieldtype": "Link",
+				"options": "Sales Invoice",
+				"insert_after": "remarks",
+				"read_only": 1,
+				"hidden": 1,
+			},
+			{
+				"fieldname": "custom_site",
+				"label": "Site",
+				"fieldtype": "Link",
+				"options": "Operations Site",
+				"insert_after": "project",
+				"read_only": 1,
+			},
+			{
+				"fieldname": "custom_subcontract_attendance_reference",
+				"label": "Subcontract Attendance Reference",
+				"fieldtype": "Link",
+				"options": "Subcontract Staff Attendance",
+				"insert_after": "supplier_group",
+			},
+			{
+				"fieldname": "employee_advance",
+				"label": "Employee Advance",
+				"fieldtype": "Link",
+				"options": "Employee Advance",
+				"insert_after": "set_posting_time",
+				"read_only": 1,
+			},
+			{
+				"fieldname": "workflow_state",
+				"label": "Workflow State",
+				"fieldtype": "Link",
+				"options": "Workflow State",
+				"hidden": 1,
+				"allow_on_submit": 1,
+				"no_copy": 1,
+			},
+		],
+	}
