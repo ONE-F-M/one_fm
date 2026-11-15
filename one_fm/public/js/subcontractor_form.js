@@ -3,16 +3,11 @@ document.addEventListener("DOMContentLoaded", function() {
     
     // Status maps for shorter display
     const status_maps = {
-        "Present": "P", "Absent": "A", "On Leave": "L", "Half Day": "HD",
-        "Work From Home": "WFH", "Day Off": "DO", "Client Day Off": "CDO",
-        "Fingerprint Appointment": "FA", "Medical Appointment": "MA",
-        "Holiday": "H", "On Hold": "OH"
+        "Present": "P", "Absent": "A", "Day Off": "DO", "Client Day Off": "CDO"
     };
 
     const status_options = [
-        "", "Present", "Absent", "On Leave", "Half Day", "Work From Home", 
-        "Day Off", "Client Day Off", "Fingerprint Appointment", 
-        "Medical Appointment", "Holiday", "On Hold"
+        "", "Present", "Absent", "Day Off", "Client Day Off"
     ];
 
     let grid_data = ctx.merged_data || [];
@@ -52,7 +47,7 @@ document.addEventListener("DOMContentLoaded", function() {
         const based_on = input_based_on.value;
 
         // Build Headers
-        let header_days = `<th rowspan="2" class="name-col-header">Employee ID</th><th rowspan="2" class="name-col-header" style="z-index: 12 !important;">Employee Name</th>`;
+        let header_days = `<th rowspan="2" class="name-col-header col-id">Employee ID</th><th rowspan="2" class="name-col-header col-name">Employee Name</th>`;
         let header_dates = ``;
         let dates = [];
 
@@ -66,11 +61,11 @@ document.addEventListener("DOMContentLoaded", function() {
                 idx: i + 1
             });
             
-            header_days += `<th class="${is_friday ? 'bg-light' : ''}" style="min-width: 70px; text-align: center;">${current_date.format("ddd")}</th>`;
-            header_dates += `<th class="${is_friday ? 'bg-light' : ''}" style="text-align: center;">${current_date.format("D/M")}</th>`;
+            header_days += `<th class="${is_friday ? 'bg-light' : ''}">${current_date.format("dd")}</th>`;
+            header_dates += `<th class="${is_friday ? 'bg-light' : ''}">${current_date.format("D")}</th>`;
         }
         
-        header_days += `<th rowspan="2" class="calc-col">W. Days</th><th rowspan="2" class="calc-col">Off Days</th>`;
+        header_days += `<th rowspan="2" class="calc-col col-total">W. Days</th><th rowspan="2" class="calc-col col-total">Off Days</th>`;
 
         document.getElementById("matrix-header-days").innerHTML = header_days;
         document.getElementById("matrix-header-dates").innerHTML = header_dates;
@@ -81,11 +76,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
         data.forEach((emp, rindex) => {
             let has_draft_cells = false;
-            let cells_html = `<td class="name-col">${emp.employee_id}</td>
-                              <td class="name-col" style="z-index: 10 !important; cursor: pointer; color: #0055cc;" onclick="window.open_row_detail('${emp.employee}')" title="Click to view details and remarks">
+            let cells_html = `<td class="name-col col-id">${emp.employee_id}</td>
+                              <td class="name-col col-name name-link" onclick="window.open_row_detail('${emp.employee}')" title="Click to view details and remarks">
                                   <div class="d-flex justify-content-between align-items-center">
                                       <span>${emp.employee_name}</span>
-                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5"><path d="M15 3h6v6"></path><path d="M10 14L21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="name-link-icon"><path d="M15 3h6v6"></path><path d="M10 14L21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>
                                   </div>
                               </td>`;
             
@@ -119,7 +114,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     // Tally logic (same as backend calculations)
                     let tally_val = based_on === "Attendance Status" ? cell_data.value : cell_data.status_val;
                     if (based_on === "Shift Hours" && parseFloat(cell_data.value) > 0) w_days++;
-                    else if (based_on === "Attendance Status" && ["Present", "Half Day", "Work From Home"].includes(tally_val)) w_days++;
+                    else if (based_on === "Attendance Status" && ["Present"].includes(tally_val)) w_days++;
                     
                     if (["Day Off", "Client Day Off"].includes(tally_val)) o_days++;
 
@@ -159,7 +154,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     } else {
                         let val = cell_data ? cell_data.value : "";
                         input_html = `<div class="cell-container">
-                                        <input type="number" step="0.5" class="cell-input" style="min-width: 65px; padding: 4px 2px;" data-emp="${emp.employee}" data-day="${d.day_num}" value="${val}" />
+                                        <input type="number" step="0.5" class="cell-input" data-emp="${emp.employee}" data-day="${d.day_num}" value="${val}" />
                                         ${tooltip}
                                       </div>`;
                     }
@@ -207,7 +202,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 if (based_on === "Shift Hours") {
                     if (parseFloat(val) > 0) w_days++;
                 } else {
-                    if (["Present", "Half Day", "Work From Home"].includes(val)) w_days++;
+                    if (["Present"].includes(val)) w_days++;
                 }
                 
                 if (["Day Off", "Client Day Off"].includes(tally_val)) o_days++;
@@ -440,7 +435,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 
                 if (based_on === "Attendance Status") {
                     val = d_data.value || "-";
-                    if (["Present", "Half Day", "Work From Home"].includes(val)) w_days++;
+                    if (["Present"].includes(val)) w_days++;
                 } else {
                     val = d_data.value ? parseFloat(d_data.value) : "-";
                     let hrs = parseFloat(d_data.value);
@@ -483,15 +478,15 @@ document.addEventListener("DOMContentLoaded", function() {
             let to_date = moment(input_to.value || ctx.to_date);
             let days_in_range = to_date.diff(from_date, 'days') + 1;
 
-            let top_headers = `<th rowspan="2" style="vertical-align: middle;">Employee ID</th><th rowspan="2" style="vertical-align: middle;">Employee Name</th>`;
+            let top_headers = `<th rowspan="2" class="col-id">Employee ID</th><th rowspan="2" class="col-name">Employee Name</th>`;
             let bottom_headers = ``;
             for (let i = 0; i < days_in_range; i++) {
                 let current_date = moment(from_date).add(i, 'days');
                 let is_friday = current_date.day() === 5;
-                top_headers += `<th class="${is_friday ? 'bg-light' : ''}" style="min-width: 40px; text-align: center;">${current_date.format("ddd")}</th>`;
-                bottom_headers += `<th class="${is_friday ? 'bg-light' : ''}" style="min-width: 40px; text-align: center;">${current_date.format("D/M")}</th>`;
+                top_headers += `<th class="${is_friday ? 'bg-light' : ''}">${current_date.format("dd")}</th>`;
+                bottom_headers += `<th class="${is_friday ? 'bg-light' : ''}">${current_date.format("D")}</th>`;
             }
-            top_headers += `<th rowspan="2" style="text-align: center; vertical-align: middle;">Working Days</th><th rowspan="2" style="text-align: center; vertical-align: middle;">Days Off</th>`;
+            top_headers += `<th rowspan="2" class="col-total">Working Days</th><th rowspan="2" class="col-total">Days Off</th>`;
             
             document.getElementById("preview-header-days").innerHTML = top_headers;
             document.getElementById("preview-header-dates").innerHTML = bottom_headers;
@@ -503,7 +498,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 let o_days = 0;
                 let w_hours = 0;
                 
-                let cells_html = `<td>${emp.employee_id}</td><td>${emp.employee_name}</td>`;
+                let cells_html = `<td class="col-id">${emp.employee_id}</td><td class="col-name cell-left">${emp.employee_name}</td>`;
                 
                 for (let i = 0; i < days_in_range; i++) {
                     let current_date = moment(from_date).add(i, 'days');
@@ -522,7 +517,7 @@ document.addEventListener("DOMContentLoaded", function() {
                             }
                             val_display = hrs > 0 ? hrs : "";
                         } else if (based_on === "Attendance Status") {
-                            if (["Present", "Half Day", "Work From Home"].includes(tally_val)) {
+                            if (["Present"].includes(tally_val)) {
                                 w_days++;
                             }
                             let val = d_data.value || "";
@@ -534,15 +529,15 @@ document.addEventListener("DOMContentLoaded", function() {
                         }
                     }
                     
-                    cells_html += `<td style="text-align: center; vertical-align: middle;">${val_display}</td>`;
+                    cells_html += `<td>${val_display}</td>`;
                 }
 
                 let total_display = based_on === "Shift Hours" ? `${w_days} Shifts (${w_hours.toFixed(1)} hrs)` : `${w_days}`;
 
                 tbody += `<tr>
                     ${cells_html}
-                    <td class="font-weight-bold text-center" style="vertical-align: middle;">${total_display}</td>
-                    <td class="font-weight-bold text-center" style="vertical-align: middle;">${o_days}</td>
+                    <td class="col-total font-weight-bold text-center">${total_display}</td>
+                    <td class="col-total font-weight-bold text-center">${o_days}</td>
                 </tr>`;
             });
 

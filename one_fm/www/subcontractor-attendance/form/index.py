@@ -18,6 +18,7 @@ def get_context(context):
         raise frappe.Redirect
 
     context.supplier = supplier
+    context.full_width = 1
     context.parents = [
         {'name': 'me', 'title': _('My Account'), 'route': '/me'},
         {'name': 'subcontractor-attendance', 'title': _('Subcontract Staff Attendance'), 'route': '/subcontractor-attendance'}

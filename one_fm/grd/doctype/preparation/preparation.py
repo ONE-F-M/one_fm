@@ -692,7 +692,7 @@ def handle_creation_of_grd_docs(row,source):
     row only, the way a script task runs it. The rule stays in the script the process
     owner maintains.
     """
-    from one_bpmn.one_bpmn.engine import _check_script_permissions
+    from processa.processa_engine.engine import _check_script_permissions
 
     script = frappe.db.get_value("Server Script", CREATE_DOCUMENTS_SCRIPT, "script")
     if script is None:
