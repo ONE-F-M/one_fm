@@ -449,7 +449,7 @@ def _submit_through_process(doc):
 	The process runs Validate Proof of Work, then submits the record, or hands it to a
 	System Manager when the requester may not submit.
 	"""
-	from one_bpmn.api.instance_api import complete_task
+	from processa.api.instances import complete_task
 
 	instance = frappe.db.get_value(
 		"BPMN Process Instance",

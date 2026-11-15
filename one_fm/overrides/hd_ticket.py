@@ -9,7 +9,7 @@ from one_fm.api.doc_events import get_employee_user_id
 from one_fm.utils import response
 from frappe.utils.password import get_decrypted_password
 try:
-    from one_bpmn.api import send_message as send_processa_message
+    from processa.api import send_message as send_processa_message
 except ImportError:
     send_processa_message = None
 
