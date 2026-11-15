@@ -54,12 +54,11 @@ class TestHREnquiry(FrappeTestCase):
 		)
 
 	def test_only_hr_records_the_decision(self):
-		enquiry = frappe.get_doc({"doctype": "HR Enquiry", "hr_decision": "Overturn Penalty"})
-		frappe.set_user(EMPLOYEE_USER)
-		self.assertRaises(frappe.PermissionError, enquiry.validate_decision_maker)
-
-		frappe.set_user(HR_USER)
-		enquiry.validate_decision_maker()
+		self.assertEqual(frappe.get_meta("HR Enquiry").get_field("hr_decision").permlevel, 1)
+		for user, can_decide in ((EMPLOYEE_USER, False), (HR_USER, True)):
+			with self.subTest(user=user):
+				frappe.set_user(user)
+				self.assertEqual(1 in frappe.new_doc("HR Enquiry").get_permlevel_access("write"), can_decide)
 
 	def test_the_lifecycle_states_exist_with_a_style(self):
 		from one_fm.patches.v15_0.create_hr_enquiry_workflow_states import STATES, execute

@@ -5,23 +5,26 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import get_link_to_form
+from frappe.utils import cint, getdate, now_datetime
 from frappe import _
-from one_fm.processor import sendemail
 
-# The Initiate Penalty Issuance process routes a submitted issuance to an HR Enquiry or a
-# Legal Investigation, so nothing here creates Penalty or Legal Investigation records.
+# The Initiate Penalty Issuance process owns the lifecycle: the checks before submit, the
+# manual-location notice to Legal and the routing to an HR Enquiry or a Legal Investigation.
 class PenaltyIssuance(Document):
-	def after_insert(self):
-		self.validate_location()
+	def before_insert(self):
+		self.set_issuer()
 
-	def validate_location(self):
-		if self.different_location:
-			subject = _("Penalty Issuance - Review")
-			link = get_link_to_form(self.doctype, self.name)
-			message = _("Please review the penalty issuance. The penalty location details were added manually by the supervisor.<br> Link: {link}".format(link=link))
-			recipient = [frappe.get_value("Legal Settings", "Legal Settings", "legal_department_email")]
-			sendemail(recipient, subject=subject, message=message, reference_doctype=self.doctype, reference_name=self.name)
+	def set_issuer(self):
+		"""The issuer is the session user's employee, the issuing time the server's clock.
+		A caller without an employee (a scheduled job) keeps the issuer it set."""
+		issuer = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "name") or self.issuing_employee
+		if issuer:
+			self.issuing_employee = issuer
+			self.employee_name, self.designation = frappe.db.get_value(
+				"Employee", issuer, ["employee_name", "designation"]
+			) or (None, None)
+		self.issuing_time = now_datetime()
+		self.location = self.location or self.penalty_location
 
 
 def submit_through_process(doc):
@@ -31,6 +34,11 @@ def submit_through_process(doc):
 
 	if not complete_action(doc, "Submit", "Review Penalty Issuance"):
 		doc.submit()
+		return
+
+	# The process's Validate Penalty Issuance step reopens Review when a check fails.
+	if frappe.db.get_value(doc.doctype, doc.name, "docstatus") != 1:
+		frappe.throw(_("Penalty Issuance {0} was not submitted. Fix the errors shown and submit it again.").format(doc.name))
 
 
 @frappe.whitelist()
@@ -100,17 +108,27 @@ def has_permission():
 
 @frappe.whitelist()
 def filter_employees(doctype, txt, searchfield, start, page_len, filters):
-	return get_filtered_employees(filters.get('shift'), filters.get('penalty_occurence_time'))
-
+	return get_filtered_employees(filters.get("shift"), filters.get("penalty_occurence_time"), txt=txt)
 
 
 @frappe.whitelist()
-def get_filtered_employees(shift, penalty_occurence_time, as_dict=None):
-	if as_dict is None:
-		as_dict = 0
-
-	return frappe.db.sql("""
-		SELECT sh.employee, sh.employee_name, emp.designation
-		FROM `tabShift Assignment` as sh, `tabEmployee` as emp
-		WHERE sh.shift="{shift}" AND sh.start_date=DATE("{date}") AND sh.employee=emp.name
-	""".format(shift=shift, date=penalty_occurence_time), as_dict=as_dict)
+def get_filtered_employees(shift, penalty_occurence_time, as_dict=None, txt=None):
+	frappe.has_permission("Penalty Issuance", "create", throw=True)
+	# Filter Shift Assignment on its own: joining Employee first makes MariaDB probe
+	# every employee's assignments, which takes minutes on a large table.
+	or_filters = {"employee": ["like", f"%{txt}%"], "employee_name": ["like", f"%{txt}%"]} if txt else None
+	rows = frappe.get_all(
+		"Shift Assignment",
+		filters={"shift": shift, "start_date": getdate(penalty_occurence_time)},
+		or_filters=or_filters,
+		fields=["employee", "employee_name"],
+		order_by="employee asc",
+	)
+	designations = dict(
+		frappe.get_all(
+			"Employee", filters={"name": ["in", [row.employee for row in rows]]}, fields=["name", "designation"], as_list=True
+		)
+	) if rows else {}
+	if cint(as_dict):
+		return [{**row, "designation": designations.get(row.employee)} for row in rows]
+	return [(row.employee, row.employee_name, designations.get(row.employee)) for row in rows]

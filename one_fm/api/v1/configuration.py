@@ -16,8 +16,19 @@ from one_fm.api.v1.utils import response, get_current_user_details
 from one_fm.processor import sendemail, send_whatsapp
 
 
+def services_hidden_by_role() -> set:
+	"""App Services gated on a role the session user does not hold."""
+	roles = set(frappe.get_roles())
+	return {
+		service.name
+		for service in frappe.get_all("App Service", filters={"role": ["is", "set"]}, fields=["name", "role"])
+		if service.role not in roles
+	}
+
+
 def get_user_app_service():
 	user_app_service =  frappe.get_doc("User App Service", {'user':frappe.session.user})
+	hidden = services_hidden_by_role()
 	return  {
 		"name": user_app_service.name,
 		"employee": user_app_service.employee,
@@ -32,7 +43,7 @@ def get_user_app_service():
 			"service_group":i.service_group,
 			"service_group_status": i.service_group_status,
 			"service_group_icon": i.service_group_icon,
-		} for i in user_app_service.service_detail]
+		} for i in user_app_service.service_detail if i.service not in hidden]
     }
 
 @frappe.whitelist()
@@ -111,9 +122,13 @@ def app_service() -> dict:
 		else:
 			filters["assign_to_non_timesheet_employees"] = 1
 
-		app_service = frappe.db.get_all("App Service", 
-			filters=filters,
-			fields=["name", "icon", "status", "service_group"])
+		hidden = services_hidden_by_role()
+		app_service = [
+			service for service in frappe.db.get_all("App Service",
+				filters=filters,
+				fields=["name", "icon", "status", "service_group"])
+			if service.name not in hidden
+		]
 		for service in app_service:
 			service["name_ar"] = frappe.get_value("Translation", 
                                                {"source_text": service["name"], "language": 'ar'}, 
@@ -140,18 +155,20 @@ def user_app_service() -> dict:
 		}
 	"""
 	try:
+		employee_id = frappe.db.get_value("Employee", {"user_id":frappe.session.user}, ["name", "attendance_by_timesheet"], as_dict=1)
+		filters = {"auto_assign": 1}
+		if employee_id and employee_id.attendance_by_timesheet:
+			filters["assign_to_timesheet_employees"] = 1
+		else:
+			filters["assign_to_non_timesheet_employees"] = 1
+
+		roles = set(frappe.get_roles())
+		auto_assign_services = [
+			service for service in frappe.db.get_all("App Service", filters=filters, fields=["name", "role"])
+			if not service.role or service.role in roles
+		]
+
 		if not frappe.db.exists("User App Service", {"user":frappe.session.user}):
-			employee_id = frappe.db.get_value("Employee", {"user_id":frappe.session.user}, ["name", "attendance_by_timesheet"], as_dict=1)
-			filters = {"auto_assign": 1}
-			if employee_id.attendance_by_timesheet:
-				filters["assign_to_timesheet_employees"] = 1
-			else:
-				filters["assign_to_non_timesheet_employees"] = 1
-
-			auto_assign_services = frappe.db.get_list("App Service", 
-				filters=filters,
-			)
-
 			frappe.get_doc({
 				"doctype": "User App Service",
 				"employee": employee_id.name,
@@ -159,6 +176,16 @@ def user_app_service() -> dict:
 				"service_detail": [{"service":i.name} for i in auto_assign_services]
             }).insert(ignore_permissions=True)
 			frappe.db.commit()
+		else:
+			# A role-gated service reaches users who gained the role after their list was created.
+			user_app_service = frappe.get_doc("User App Service", {"user": frappe.session.user})
+			assigned = {row.service for row in user_app_service.service_detail}
+			missing = [i.name for i in auto_assign_services if i.role and i.name not in assigned]
+			if missing:
+				for service in missing:
+					user_app_service.append("service_detail", {"service": service})
+				user_app_service.save(ignore_permissions=True)
+				frappe.db.commit()
 		user_app_service = get_user_app_service()
 		return response("Success", 200, user_app_service)
 	except Exception as error:

@@ -264,7 +264,8 @@
    "fieldname": "hr_decision",
    "fieldtype": "Select",
    "label": "HR Decision",
-   "options": "\nUphold Penalty\nOverturn Penalty\nEscalate to Legal"
+   "options": "\nUphold Penalty\nOverturn Penalty\nEscalate to Legal",
+   "permlevel": 1
   },
   {
    "fieldname": "column_break_epyt",
@@ -291,7 +292,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-12 18:00:00.000000",
+ "modified": "2026-11-15 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "HR Enquiry",
@@ -360,6 +361,39 @@
   {
    "read": 1,
    "write": 1,
+   "role": "Employee"
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "write": 1,
+   "role": "System Manager"
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "write": 1,
+   "role": "HR Manager"
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "write": 1,
+   "role": "HR User"
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Legal Manager"
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Legal User"
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
    "role": "Employee"
   }
  ],
