@@ -95,7 +95,7 @@
    "fieldname": "reason",
    "fieldtype": "Select",
    "label": "Reason",
-   "options": "\nExit\nNew Project\nHigh Salary\nSubcontractor Replacement\nOvertime\nReliever\nShortage\nSub Contractor\nDay OFF Reliever\nAnnual Leave Reliever\nReplacement",
+   "options": "\nExit\nNew Project\nHigh Salary\nOvertime\nShortage\nSub Contractor\nDay OFF Reliever\nAnnual Leave Reliever\nReplacement",
    "search_index": 1
   },
   {
