@@ -25,6 +25,16 @@ def get_weekend_reliever_threshold(month_date):
 	_, days_in_month = calendar.monthrange(date.year, date.month)
 	return 27 if days_in_month == 31 else 26
 
+def counted_schedule_criterion(EmployeeSchedule):
+	"""Excludes schedule lines that are not evidence of a mis-allocated shift:
+	authorised Day Off OT and annual-leave cover.
+
+	Shared by create_checker (the count) and get_shift_assignments (the listed dates)
+	so the two always agree.
+	"""
+	return (EmployeeSchedule.day_off_ot == 0) & (EmployeeSchedule.is_annual_leave_reliever == 0)
+
+
 class DefaultShiftChecker(Document):
 	def on_submit(self):
 		self.update_employee_shift_details()
@@ -124,11 +134,7 @@ def create_checker(start_date, end_date, is_day_off_reliever=False, is_weekend_r
 		(Employee.shift.isnotnull()) &
 		(EmployeeSchedule.employee_availability == "Working") &
 		(EmployeeSchedule.roster_type == "Basic") &
-		# WI-001768: Overtime worked on a day off is authorised, so it is not evidence
-		# of a mis-allocated shift. Those lines are excluded from every category's
-		# count, or a reliever covering approved Day Off OT trips the threshold and is
-		# flagged for doing exactly what was asked of them.
-		(EmployeeSchedule.day_off_ot == 0) &
+		counted_schedule_criterion(EmployeeSchedule) &
 		(EmployeeSchedule.date.between(start_date, end_date)) &
 		(Project.custom_exclude_from_default_shift_checker != 1)
 	)
@@ -158,9 +164,7 @@ def create_checker(start_date, end_date, is_day_off_reliever=False, is_weekend_r
 		)
 		.where(conditions)
 		.groupby(Employee.name)
-		# The acceptance criteria are explicit that the count must EXCEED the
-		# threshold, so a month sitting exactly on the limit is compliant and is no
-		# longer flagged (WI-001768).
+		# The count must exceed the threshold; a month exactly on the limit is compliant.
 		.having(Count(EmployeeSchedule.shift) > threshold)
 	)
 
@@ -223,9 +227,7 @@ def get_shift_assignments(employee_id, shift_condition, start_date, end_date, Em
             & shift_condition
             & (EmployeeSchedule.employee_availability == "Working")
             & (EmployeeSchedule.roster_type == "Basic")
-            # Must mirror the exclusion in create_checker's conditions (WI-001768),
-            # or the listed dates and the count that selected the employee disagree.
-            & (EmployeeSchedule.day_off_ot == 0)
+            & counted_schedule_criterion(EmployeeSchedule)
             & EmployeeSchedule.date.between(start_date, end_date)
         )
     ).run(as_dict=True)
