@@ -24,7 +24,7 @@ carried with the database.
 THIS IS NOT THE CONNECTORS' CREDENTIAL
 --------------------------------------
 Each BPMN Connector carries its own key (BPMN Connector → Authentication →
-Secret) and this module never reads one, just as ``one_bpmn``'s loader never
+Secret) and this module never reads one, just as ``processa``'s loader never
 reads this field. Two owners, no chain. A fallback between them is what makes a
 shared credential invisible: with one in place, every consumer silently uses one
 account, so pointing one at a second Google project looks configured and
@@ -153,8 +153,8 @@ def get_service(api, version, scopes, subject=None):
 def get_drive_service():
 	"""Drive client for ONE FM's own work — the Document Register.
 
-	Deliberately separate from ``one_bpmn``'s Drive client, which authenticates
-	as a connector. The *logic* in one_bpmn's integration is still reused (its
+	Deliberately separate from ``processa``'s Drive client, which authenticates
+	as a connector. The *logic* in processa's integration is still reused (its
 	helpers take an optional ``service``); only the identity differs.
 	"""
 	return get_service("drive", "v3", DRIVE_SCOPES)

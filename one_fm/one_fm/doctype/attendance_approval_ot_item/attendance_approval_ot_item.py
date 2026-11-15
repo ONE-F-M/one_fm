@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class AttendanceAmendmentItem(Document):
+class AttendanceApprovalOTItem(Document):
 	pass
