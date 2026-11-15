@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Rambo</span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Rambo Employee List\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Rambo Assignment\",\"col\":3}}]",
+ "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Rambo</span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Rambo Employee List\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Rambo Assignment\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Accommodation Dispatch and Grooming Audit\",\"col\":3}}]",
  "creation": "2026-06-10 20:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace",
@@ -11,7 +11,7 @@
  "is_standard": 1,
  "label": "Rambo",
  "links": [],
- "modified": "2026-06-28 13:00:00.000000",
+ "modified": "2026-11-05 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Rambo",
@@ -36,6 +36,13 @@
    "label": "Rambo Assignment",
    "link_to": "Rambo Assignment",
    "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "label": "Accommodation Dispatch and Grooming Audit",
+   "link_to": "Accommodation Dispatch and Grooming Audit",
+   "type": "Report"
   }
  ],
  "title": "Rambo"

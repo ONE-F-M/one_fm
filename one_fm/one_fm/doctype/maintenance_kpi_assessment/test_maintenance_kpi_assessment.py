@@ -5,14 +5,28 @@ import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import getdate
 
-from one_fm.one_fm.doctype.maintenance_kpi_assessment.maintenance_kpi_assessment import (
-	METRIC_CALCULATORS,
-	STATUS_COMPLIED,
-	STATUS_FAILED,
-	_pass_percentage,
-	calc_planned_maintenance_percentage,
-	identify_metric,
+from one_fm.one_fm.doctype.maintenance_kpi_assessment.test_maintenance_kpi_assessment_processa_scripts import (
+	NO_COMMIT,
+	rules,
+	run,
 )
+
+# The rules live in the map's Server Scripts. These tests read them from the reviewed copies.
+CREATE = rules("Create Monthly KPI Assessments")
+PENALTY = rules("Calculate KPI Penalty")
+METRIC_CALCULATORS = CREATE.METRIC_CALCULATORS
+STATUS_COMPLIED = CREATE.STATUS_COMPLIED
+STATUS_FAILED = CREATE.STATUS_FAILED
+identify_metric = CREATE.identify_metric
+calc_planned_maintenance_percentage = CREATE.calc_planned_maintenance_percentage
+
+
+def setUpModule():
+	NO_COMMIT.start()
+
+
+def tearDownModule():
+	NO_COMMIT.stop()
 
 
 class TestMaintenanceKPIAssessment(FrappeTestCase):
@@ -52,18 +66,18 @@ class TestMaintenanceKPIAssessment(FrappeTestCase):
 		]
 		# 2 of 3 final rows passed -> 66.67%.
 		self.assertAlmostEqual(
-			_pass_percentage(work_orders, "sla_response_status"), 66.6667, places=3
+			CREATE.pass_percentage(work_orders, "sla_response_status"), 66.6667, places=3
 		)
 
 	def test_pass_percentage_no_final_work_orders(self):
-		self.assertEqual(_pass_percentage([], "sla_response_status"), 0.0)
+		self.assertEqual(CREATE.pass_percentage([], "sla_response_status"), 0.0)
 
 	def test_get_period_range(self):
 		"""Month/Year resolve to an inclusive month with an exclusive upper bound."""
 		doc = frappe.new_doc("Maintenance KPI Assessment")
 		doc.month = "June"
 		doc.year = "2026"
-		start, end = doc.get_period_range()
+		start, end = CREATE.get_period_range(doc)
 		self.assertEqual(getdate(start), getdate("2026-06-01"))
 		self.assertEqual(getdate(end), getdate("2026-07-01"))
 
@@ -117,7 +131,7 @@ class TestMaintenanceKPIAssessment(FrappeTestCase):
 				return conditions_getter(doctype, *args, **kwargs)
 
 			frappe.get_all = fake_get_all
-			doc.calculate_scores()
+			CREATE.calculate_scores(doc)
 		finally:
 			frappe.get_all = conditions_getter
 			METRIC_CALCULATORS.clear()
@@ -159,9 +173,9 @@ class TestMaintenanceKPIAssessment(FrappeTestCase):
 		# Given deliberately out of order to prove the defensive sort.
 		restore = self._stub_tier_matrix([(75, 5), (95, 0), (85, 2)])
 		try:
-			self.assertEqual(doc.get_applicable_deduction(88.5), 2.0)
-			self.assertEqual(doc.get_applicable_deduction(95.0), 0.0)
-			self.assertEqual(doc.get_applicable_deduction(80.0), 5.0)
+			self.assertEqual(PENALTY.get_applicable_deduction(doc, 88.5), 2.0)
+			self.assertEqual(PENALTY.get_applicable_deduction(doc, 95.0), 0.0)
+			self.assertEqual(PENALTY.get_applicable_deduction(doc, 80.0), 5.0)
 		finally:
 			restore()
 
@@ -171,7 +185,7 @@ class TestMaintenanceKPIAssessment(FrappeTestCase):
 		doc.maintenance_kpi_master = "__stub_master__"
 		restore = self._stub_tier_matrix([(95, 0), (85, 2), (75, 5)])
 		try:
-			self.assertEqual(doc.get_applicable_deduction(50.0), 5.0)
+			self.assertEqual(PENALTY.get_applicable_deduction(doc, 50.0), 5.0)
 		finally:
 			restore()
 
@@ -181,14 +195,14 @@ class TestMaintenanceKPIAssessment(FrappeTestCase):
 		doc.maintenance_kpi_master = "__stub_master__"
 		restore = self._stub_tier_matrix([])
 		try:
-			self.assertEqual(doc.get_applicable_deduction(88.5), 0.0)
+			self.assertEqual(PENALTY.get_applicable_deduction(doc, 88.5), 0.0)
 		finally:
 			restore()
 
 	def test_deduction_without_master_is_zero(self):
 		"""No linked Master -> no matrix to consult -> 0%."""
 		doc = frappe.new_doc("Maintenance KPI Assessment")
-		self.assertEqual(doc.get_applicable_deduction(88.5), 0.0)
+		self.assertEqual(PENALTY.get_applicable_deduction(doc, 88.5), 0.0)
 
 	def test_calculate_penalty_creates_single_summary_row(self):
 		"""Points Achieved aggregate into exactly one locked penalty row (AC1)."""
@@ -200,9 +214,9 @@ class TestMaintenanceKPIAssessment(FrappeTestCase):
 
 		restore = self._stub_tier_matrix([(95, 0), (85, 2), (75, 5)])
 		try:
-			doc.calculate_penalty()
+			PENALTY.calculate_penalty(doc)
 			# Re-running must not add a second row.
-			doc.calculate_penalty()
+			PENALTY.calculate_penalty(doc)
 		finally:
 			restore()
 
@@ -213,7 +227,7 @@ class TestMaintenanceKPIAssessment(FrappeTestCase):
 
 
 class TestPlannedMaintenanceCountsOnlyTrulyCompleted(FrappeTestCase):
-	GET_ALL = "one_fm.one_fm.doctype.maintenance_kpi_assessment.maintenance_kpi_assessment.frappe.get_all"
+	GET_ALL = "frappe.get_all"
 
 	def _percentage(self, rows):
 		from unittest.mock import patch
@@ -258,3 +272,32 @@ class TestSchedulerSummaryCountsOnlySubmittedAsCompleted(FrappeTestCase):
 		)
 		self.assertEqual(summary["completed"], 1)
 		self.assertEqual(summary["open"], 1)
+
+
+class TestMonthlyRun(FrappeTestCase):
+	def test_an_assessed_master_is_skipped(self):
+		from unittest.mock import patch
+
+		master = frappe._dict(name="KPI-M-1", contract=None, project=None, client=None)
+		real_get_all = frappe.get_all
+
+		def get_all(doctype, *args, **kwargs):
+			return [master] if doctype == "Maintenance KPI Master" else real_get_all(doctype, *args, **kwargs)
+
+		with patch("frappe.get_all", side_effect=get_all), patch("frappe.db.exists", return_value=True):
+			self.assertEqual(run("Create Monthly KPI Assessments")["assessments_created"], 0)
+
+	def test_a_failing_master_is_logged_and_rolled_back(self):
+		from unittest.mock import patch
+
+		master = frappe._dict(name="KPI-M-1", contract=None, project=None, client=None)
+		real_get_all = frappe.get_all
+
+		def get_all(doctype, *args, **kwargs):
+			return [master] if doctype == "Maintenance KPI Master" else real_get_all(doctype, *args, **kwargs)
+
+		with patch("frappe.get_all", side_effect=get_all), patch("frappe.db.exists", return_value=False), patch(
+			"frappe.get_doc", side_effect=frappe.DoesNotExistError
+		), patch("frappe.log_error") as log_error:
+			self.assertEqual(run("Create Monthly KPI Assessments")["assessments_created"], 0)
+		self.assertEqual(log_error.call_count, 1)

@@ -30,11 +30,11 @@ TRANSLATION_ONLY = (
 	"upload_translation_payment_receipt",
 )
 
-# A stamp appears with the file it stamps, never on its own.
-STAMPS = {
-	"upload_embassy_payment_receipt_on": f"{ATTESTATION} && doc.upload_embassy_payment_receipt",
-	"upload_mofa_payment_receipt_on": f"{ATTESTATION} && doc.upload_mofa_payment_receipt",
-	"upload_translation_payment_receipt_on": f"{TRANSLATION} && doc.upload_translation_payment_receipt",
+# A payment date appears with its receipt, never on its own.
+PAYMENT_DATES = {
+	"embassy_payment_date": "eval:doc.upload_embassy_payment_receipt",
+	"mofa_payment_date": "eval:doc.upload_mofa_payment_receipt",
+	"translation_payment_date": "eval:doc.upload_translation_payment_receipt",
 }
 
 # Neither section means anything until a Type is chosen.
@@ -60,8 +60,8 @@ class TestPCCAttestationFieldVisibility(FrappeTestCase):
 			with self.subTest(fieldname=fieldname):
 				self.assertEqual(self._depends_on(fieldname), TRANSLATION)
 
-	def test_a_receipt_stamp_waits_for_its_receipt(self):
-		for fieldname, condition in STAMPS.items():
+	def test_a_payment_date_waits_for_its_receipt(self):
+		for fieldname, condition in PAYMENT_DATES.items():
 			with self.subTest(fieldname=fieldname):
 				self.assertEqual(self._depends_on(fieldname), condition)
 

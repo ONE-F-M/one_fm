@@ -7,14 +7,13 @@ import json
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from one_fm.grd.doctype.pam_license_details.pam_license_details import (
-	QUOTA_DEDUCTIONS,
-	available_quota,
-)
+from one_fm.grd.doctype.pam_license_details.test_pam_license_details_processa_scripts import SCRIPTS, rules
 
-SOURCE = frappe.get_app_path(
-	"one_fm", "grd", "doctype", "pam_license_details", "pam_license_details.py"
-)
+_rules = rules()
+QUOTA_DEDUCTIONS = _rules["QUOTA_DEDUCTIONS"]
+available_quota = _rules["available_quota"]
+
+SOURCE = SCRIPTS["Recount PAM License"]
 
 
 def _row(allocated="", registered="", issued="", transfers=""):
@@ -85,17 +84,7 @@ class TestTheSubtraction(FrappeTestCase):
 
 class TestWhenItIsDerived(FrappeTestCase):
 	def setUp(self):
-		self.source = frappe.read_file(SOURCE)
-
-	def test_it_is_derived_after_the_figures_it_subtracts(self):
-		"""Deriving it first would leave it one save behind its own inputs."""
-		validate = self.source.split("def validate(self):", 1)[1].split("\n\n", 1)[0]
-		self.assertLess(
-			validate.index("set_quota_registrations"), validate.index("set_available_quota")
-		)
-		self.assertLess(
-			validate.index("set_quota_visas_issued"), validate.index("set_available_quota")
-		)
+		self.source = SOURCE
 
 	def test_the_recount_writes_it_beside_its_inputs(self):
 		"""db_set bypasses the controller that derives it, so a row would otherwise carry

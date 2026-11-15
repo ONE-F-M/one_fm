@@ -33,7 +33,6 @@ BA_MANDATORY_FIELDS = (
 	"passport_holder_of",
 	"passport_issued_on",
 	"passport_expires_on",
-	"passport_copy",
 )
 
 MANAGER_STATE = "Pending GRD Manager Approval"
@@ -43,7 +42,8 @@ class TestWhatTheOperatorMustFillIn(FrappeTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls.meta = frappe.get_meta("Visa Request")
+		frappe.reload_doc("visa_management", "doctype", "visa_request")
+		cls.meta = frappe.get_meta("Visa Request", cached=False)
 
 	def test_every_field_the_ba_site_requires_is_required_here(self):
 		for fieldname in BA_MANDATORY_FIELDS:
@@ -63,6 +63,11 @@ class TestWhatTheOperatorMustFillIn(FrappeTestCase):
 		field = self.meta.get_field("driver_license")
 		self.assertFalse(field.reqd)
 		self.assertEqual(field.mandatory_depends_on, 'eval:doc.designation=="Driver"')
+
+	def test_the_passport_copy_is_asked_for_only_in_draft(self):
+		field = self.meta.get_field("passport_copy")
+		self.assertFalse(field.reqd)
+		self.assertEqual(field.mandatory_depends_on, 'eval:doc.workflow_state=="Draft"')
 
 
 class TestTheWorkPermitNumberLocks(FrappeTestCase):

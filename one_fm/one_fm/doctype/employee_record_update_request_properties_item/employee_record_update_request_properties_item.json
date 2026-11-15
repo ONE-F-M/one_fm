@@ -1,0 +1,59 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-10-11 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "property",
+  "old_value",
+  "new_value",
+  "new_value_doctype"
+ ],
+ "fields": [
+  {
+   "columns": 1,
+   "fieldname": "property",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Property",
+   "options": "\nDepartment\nDesignation\nDay Off Category\nNumber of Days Off\nEmployment Type\nReports to",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "old_value",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Current Details",
+   "read_only": 1
+  },
+  {
+   "columns": 3,
+   "fieldname": "new_value",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "label": "New Details",
+   "options": "new_value_doctype"
+  },
+  {
+   "fieldname": "new_value_doctype",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "New Details DocType",
+   "options": "DocType"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-11-05 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Employee Record Update Request Properties Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

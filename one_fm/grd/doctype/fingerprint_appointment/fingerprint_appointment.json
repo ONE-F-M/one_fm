@@ -367,7 +367,7 @@
    "fieldtype": "Select",
    "label": "Reason for Rejection",
    "options": "\nStaff Shortage\nAnother Employee has appointment from same site\nClient requested another appointment",
-   "read_only": 1
+   "read_only_depends_on": "eval:doc.workflow_state != \"Pending Supervisor\""
   },
   {
    "fieldname": "section_break_aqew",
@@ -408,7 +408,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2025-11-08 22:09:11.502093",
+ "modified": "2026-11-08 18:00:00.000000",
  "modified_by": "a.adekunle@one-fm.com",
  "module": "GRD",
  "name": "Fingerprint Appointment",

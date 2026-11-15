@@ -23,6 +23,8 @@ TITLE_FORMS = {
 	"Knowledge Base": ("Knowledge Base for ", r"knowledge\s+bases?|kb"),
 }
 
+DELETABLE_STATES = ("Draft", "Pending Approval")
+
 from one_fm.utils import get_approver_user
 
 
@@ -39,6 +41,14 @@ class DocumentRequest(Document):
 		self.check_reference_document_is_active()
 		self.check_source_guideline_is_a_guideline()
 		self.check_source_documents_are_active()
+
+	def on_trash(self):
+		"""Refuse to delete once the process may have made a Drive document for this request."""
+		state = self.get("workflow_state")
+		if state and state not in DELETABLE_STATES:
+			frappe.throw(
+				_("Cannot delete request. Deletion is only permitted while in 'Draft' or 'Pending Approval' status.")
+			)
 
 	def set_requester_defaults(self):
 		"""Capture the requester from whoever is filing the request.
