@@ -204,7 +204,7 @@
   {
    "fieldname": "supervisor",
    "fieldtype": "Link",
-   "label": "Supervisor",
+   "label": "MOM Done By",
    "mandatory_depends_on": "eval:doc.project_type == 'External'",
    "options": "Employee"
   },
@@ -212,7 +212,7 @@
    "fetch_from": "supervisor.employee_name",
    "fieldname": "supervisor_name",
    "fieldtype": "Data",
-   "label": "Supervisor Name",
+   "label": "MOM Done By Name",
    "read_only": 1
   },
   {
