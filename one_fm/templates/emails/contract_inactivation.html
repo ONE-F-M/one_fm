@@ -60,5 +60,11 @@
       <th>Contract End Date</th>
       <td>{{ end_date }}</td>
     </tr>
+    {% for doctype, names in switched_off.items() %}
+    <tr>
+      <th>{{ doctype }} set {{ "Completed" if doctype == "Project" else "Inactive" }} ({{ names | length }})</th>
+      <td>{{ names | join(", ") }}</td>
+    </tr>
+    {% endfor %}
   </tbody>
 </table>
