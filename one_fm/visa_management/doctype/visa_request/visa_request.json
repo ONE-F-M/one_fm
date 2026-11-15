@@ -166,7 +166,7 @@
    "fieldname": "passport_copy",
    "fieldtype": "Attach",
    "label": "Passport Copy",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.workflow_state==\"Draft\""
   },
   {
    "fieldname": "column_break_sqvj",
@@ -610,7 +610,7 @@
    "link_fieldname": "visa_request_id"
   }
  ],
- "modified": "2026-10-27 12:00:00.000000",
+ "modified": "2026-11-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Visa Management",
  "name": "Visa Request",
