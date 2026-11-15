@@ -169,6 +169,43 @@ def get_attendance_custom_fields():
                 "fieldtype": "Check",
                 "insert_after": "reference",
                 "label": "Has No Shift Assignment"
+            },
+            {
+                "fieldname": "custom_reliever_details",
+                "fieldtype": "Section Break",
+                "insert_after": "day_off_ot",
+                "label": "Reliever Details"
+            },
+            {
+                "fieldname": "custom_is_day_off_reliever",
+                "fieldtype": "Check",
+                "insert_after": "custom_reliever_details",
+                "label": "Is Day Off Reliever",
+                "read_only": 1
+            },
+            {
+                "fieldname": "custom_column_break_78jcz",
+                "fieldtype": "Column Break",
+                "insert_after": "custom_is_day_off_reliever"
+            },
+            {
+                "fieldname": "custom_is_weekend_reliever",
+                "fieldtype": "Check",
+                "insert_after": "custom_column_break_78jcz",
+                "label": "Is Weekend Reliever",
+                "read_only": 1
+            },
+            {
+                "fieldname": "custom_column_break_jl7kq",
+                "fieldtype": "Column Break",
+                "insert_after": "custom_is_weekend_reliever"
+            },
+            {
+                "fieldname": "custom_is_annual_leave_reliever",
+                "fieldtype": "Check",
+                "insert_after": "custom_column_break_jl7kq",
+                "label": "Is Annual Leave Reliever",
+                "read_only": 1
             }
         ]
     }

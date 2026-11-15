@@ -717,6 +717,7 @@ one_fm.patches.v15_0.move_preparation_lifecycle_to_processa #2026-11-08 WI-00441
 one_fm.patches.v15_0.clear_dangling_shipment_split_links
 one_fm.patches.v15_0.drop_employee_schedule_field_order_property_setter
 one_fm.patches.v15_0.add_shift_assignment_reliever_fields
+one_fm.patches.v15_0.add_attendance_relief_fields #2026-11-11 WI-004454
 one_fm.patches.v15_0.backfill_employee_schedule_relief_type
 one_fm.patches.v15_0.return_empty_attendance_amendments_to_draft
 one_fm.patches.v15_0.add_sales_invoice_item_margin_fields #WI-004512 2026-11-14
