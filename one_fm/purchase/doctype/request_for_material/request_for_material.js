@@ -1151,9 +1151,18 @@ frappe.ui.form.on("Request for Material Item", {
 	items_add: function(frm, cdt, cdn) {
 
 		frappe.model.set_value(cdt, cdn, 'is_refundable', frm.doc.is_refundable || 0);
-		frappe.model.set_value(cdt, cdn, 'margin_known', frm.doc.margin_known || '');
-		frappe.model.set_value(cdt, cdn, 'margin_type', frm.doc.margin_type || '');
-		frappe.model.set_value(cdt, cdn, 'margin_rate_or_amount', frm.doc.margin_rate_or_amount || 0);
+		// Copy header margin values only when the header has them. Leave the row's
+		// margin_rate_or_amount empty otherwise: the browser treats 0 as filled,
+		// which would stop the mandatory_depends_on rule on that field from firing.
+		if (frm.doc.margin_known) {
+			frappe.model.set_value(cdt, cdn, 'margin_known', frm.doc.margin_known);
+			if (frm.doc.margin_type) {
+				frappe.model.set_value(cdt, cdn, 'margin_type', frm.doc.margin_type);
+			}
+			if (frm.doc.margin_rate_or_amount !== undefined && frm.doc.margin_rate_or_amount !== null && frm.doc.margin_rate_or_amount !== '') {
+				frappe.model.set_value(cdt, cdn, 'margin_rate_or_amount', frm.doc.margin_rate_or_amount);
+			}
+		}
 		frappe.model.set_value(cdt, cdn, 'warehouse', frm.doc.source_warehouse);
 		frappe.model.set_value(cdt, cdn, 't_warehouse', frm.doc.target_warehouse);
 	},
@@ -1189,6 +1198,12 @@ erpnext.buying.MaterialRequestController = class MaterialRequestController exten
 	calculate_taxes_and_totals() {
 		return;
 	}
+
+	// The RFM margin only records the refund markup. ERPNext's pricing handlers
+	// would reprice the row and its "rate" trigger would then blank margin_type.
+	margin_type() {}
+
+	margin_rate_or_amount() {}
 
 	validate() {
 		set_schedule_date(this.frm);
