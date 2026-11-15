@@ -7,7 +7,9 @@
  "engine": "InnoDB",
  "field_order": [
   "penalty_type",
-  "penalty_type_arabic"
+  "penalty_type_arabic",
+  "exact_notes",
+  "attachments"
  ],
  "fields": [
   {
@@ -23,13 +25,23 @@
    "fieldname": "penalty_type_arabic",
    "fieldtype": "Data",
    "label": "Penalty Type Arabic"
+  },
+  {
+   "fieldname": "exact_notes",
+   "fieldtype": "Text Editor",
+   "label": "Exact Notes on Penalty"
+  },
+  {
+   "fieldname": "attachments",
+   "fieldtype": "Attach",
+   "label": "Attachments"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-11-12 18:00:00.000000",
+ "modified": "2026-11-12 18:30:00.000000",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "HR Enquiry Detail",

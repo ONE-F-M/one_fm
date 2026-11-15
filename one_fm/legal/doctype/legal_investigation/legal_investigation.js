@@ -80,10 +80,13 @@ frappe.ui.form.on('Legal Investigation Penalty', {
 		let grid_row = frm.open_grid_row();
 		let {reference_doctype, reference_docname} = frm.doc;
 		let fields = ["third_party_damage", "penalty_location", "penalty_occurence_time", "shift", "site", "project", "site_location"];
-		frappe.db.get_value(reference_doctype, {'name': reference_docname}, fields)
+		// HR Enquiry names the shift and site fields differently.
+		let source = fieldname => reference_doctype === "HR Enquiry" && ["shift", "site"].includes(fieldname)
+			? `operations_${fieldname}` : fieldname;
+		frappe.db.get_value(reference_doctype, {'name': reference_docname}, fields.map(source))
 		.then(res => {
 			fields.forEach(fieldname => {
-				row[fieldname] = res.message[fieldname];
+				row[fieldname] = res.message[source(fieldname)];
 				grid_row.grid_form.fields_dict[fieldname].df.read_only = true;
 			});
 			frm.refresh_field('legal_investigation_penalty');
