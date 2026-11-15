@@ -23,10 +23,7 @@
   "project",
   "site_location",
   "damages_section",
-  "company_damage",
-  "asset_damage",
-  "customer_property_damage",
-  "other_damages",
+  "third_party_damage",
   "column_break_24",
   "damage_amount"
  ],
@@ -135,30 +132,6 @@
    "label": "Damages"
   },
   {
-   "default": "0",
-   "fieldname": "company_damage",
-   "fieldtype": "Check",
-   "label": "Company Damage"
-  },
-  {
-   "default": "0",
-   "fieldname": "asset_damage",
-   "fieldtype": "Check",
-   "label": "Asset Damage"
-  },
-  {
-   "default": "0",
-   "fieldname": "customer_property_damage",
-   "fieldtype": "Check",
-   "label": "Customer Property Damage"
-  },
-  {
-   "default": "0",
-   "fieldname": "other_damages",
-   "fieldtype": "Check",
-   "label": "Other Damages"
-  },
-  {
    "fieldname": "column_break_24",
    "fieldtype": "Column Break"
   },
@@ -166,10 +139,16 @@
    "fieldname": "damage_amount",
    "fieldtype": "Currency",
    "label": "Damage Amount"
+  },
+  {
+   "default": "0",
+   "fieldname": "third_party_damage",
+   "fieldtype": "Check",
+   "label": "Third Party Damage"
   }
  ],
  "istable": 1,
- "modified": "2021-02-02 09:15:36.549495",
+ "modified": "2026-11-12 18:10:00.000000",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Legal Investigation Penalty",

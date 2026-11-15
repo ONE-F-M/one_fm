@@ -65,7 +65,7 @@ class WorkflowActionOverride extends frappe.ui.form.States{
 
 		// Trigger the Digital Signature Service (DSS) acknowledgement for
 		// transitions flagged with require_digital_signature.
-		// Mirrors the placeholder flow in one_bpmn; the actual signature capture
+		// Mirrors the placeholder flow in processa; the actual signature capture
 		// UI is a follow-up. On acknowledgement the workflow action is applied.
 		function trigger_digital_signature(d){
 			frappe.dom.unfreeze();

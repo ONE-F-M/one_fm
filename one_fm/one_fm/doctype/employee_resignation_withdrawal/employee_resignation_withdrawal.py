@@ -7,6 +7,8 @@ from frappe.desk.form.assign_to import close_all_assignments
 from frappe.model.document import Document
 
 CLOSED_STATES = ("Approved", "Rejected")
+# Roles that may raise a withdrawal for another employee; everyone else only for their own.
+ON_BEHALF_ROLES = ("Offboarding Officer", "HR Manager", "System Manager")
 
 
 class EmployeeResignationWithdrawal(Document):
@@ -125,6 +127,7 @@ class EmployeeResignationWithdrawal(Document):
 							)
 
 	def validate(self):
+		self.validate_requester()
 		if self.workflow_state not in CLOSED_STATES:
 			self.set_approver()
 		self.validate_no_active_withdrawal()
@@ -149,6 +152,32 @@ class EmployeeResignationWithdrawal(Document):
 		):
 			frappe.throw(_("You must provide both a Reason and a Withdrawal Letter to submit a withdrawal."), title=_("Missing Information"))
 
+
+	def validate_requester(self):
+		# Re-checked on any save that changes these fields: they are read-only on the form only.
+		if not (self.has_value_changed("employee_resignation") or self.has_value_changed("employee")):
+			return
+
+		employee = self.employee
+		if self.employee_resignation:
+			resignation_employee = frappe.db.get_value("Employee Resignation", self.employee_resignation, "employee")
+			# Approval acts on both fields, so they must name the same employee.
+			if employee and employee != resignation_employee:
+				frappe.throw(
+					_("Employee {0} is not the employee on resignation {1}.").format(employee, self.employee_resignation),
+					title=_("Employee Mismatch"),
+				)
+			employee = resignation_employee
+
+		if not employee or set(ON_BEHALF_ROLES) & set(frappe.get_roles()):
+			return
+
+		if frappe.db.get_value("Employee", employee, "user_id") != frappe.session.user:
+			frappe.throw(
+				_("You can only withdraw your own resignation. Ask HR or the Offboarding Officer to raise a withdrawal for another employee."),
+				frappe.PermissionError,
+				title=_("Not Your Resignation"),
+			)
 
 	def validate_no_active_withdrawal(self):
 		# One withdrawal request per employee at a time -- otherwise a second

@@ -74,7 +74,7 @@ def _checkin(emp, acc, checked_out=0):
 class TestTheDemand(ReconcileCase):
 	def _grouped(self, get_all, checkins, skipped=None):
 		with patch.object(ts.frappe, "get_all", side_effect=get_all), \
-				patch.object(ts, "apply_to_shift_map", side_effect=lambda m: m), \
+				patch.object(ts, "apply_to_shift_map", side_effect=lambda m, on_date=None: m), \
 				patch.object(matrix, "_latest_checkins", return_value=checkins):
 			return ts.get_grouped_employees_by_accommodation(skipped=skipped)
 

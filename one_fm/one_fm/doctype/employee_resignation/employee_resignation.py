@@ -4,6 +4,12 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import add_days, getdate, today
+
+# Relieving Date is always this many days after the Resignation Initiation Date.
+NOTICE_PERIOD_DAYS = 90
+# Friday and Saturday (date.weekday() values); the working week is Sunday to Thursday.
+WEEKEND_DAYS = (4, 5)
 
 # States at which the employee/actor is still reviewing -- i.e. the states a
 # resignation departs FROM via a reviewer's own transition. Used to figure out
@@ -32,6 +38,7 @@ STAGE_LABELS = {
 
 class EmployeeResignation(Document):
 	def validate(self):
+		self.set_fixed_dates()
 		self.set_allocations()
 		self.set_current_salary()
 		self.classify_t4_route()
@@ -96,10 +103,32 @@ class EmployeeResignation(Document):
 
 		self.validate_dates()
 
+	def set_fixed_dates(self):
+		"""Initiation is the day the resignation is submitted and Relieving Date follows from it; neither is entered by hand."""
+		before = self.get_doc_before_save()
+		draft_states = (None, "", "Draft")
+		if (
+			self.is_new()
+			or self.get("workflow_state") in draft_states
+			or (before and before.get("workflow_state") in draft_states)
+		):
+			self.resignation_initiation_date = today()
+			self.relieving_date = add_days(self.resignation_initiation_date, NOTICE_PERIOD_DAYS)
+			return
+
+		# Approved Date Adjustments write relieving_date with db_set, so they do not pass through here.
+		if before and (
+			self.has_value_changed("resignation_initiation_date") or self.has_value_changed("relieving_date")
+		):
+			frappe.throw(
+				_("Resignation Initiation Date and Relieving Date are set automatically and cannot be changed. Use a Resignation Date Adjustment to change the Relieving Date."),
+				title=_("Dates Are Fixed"),
+			)
+
 	def get_processa_editable_fields(self):
 		"""Fields the mobile app may change at the current step of the Processa map."""
 		if self.workflow_state in ("Draft", "Pending Relieving Date Correction"):
-			return ["resignation_initiation_date", "relieving_date", "resignation_letter"]
+			return ["resignation_letter"]
 		return []
 
 	def validate_step_remarks(self):
@@ -345,6 +374,10 @@ class EmployeeResignation(Document):
 		if self.relieving_date:
 			from frappe.utils import formatdate
 			message += "<br>" + _("<b>Approved Relieving Date:</b> {0}").format(formatdate(self.relieving_date))
+			hr_visit_date = get_hr_visit_date(self.relieving_date)
+			message += "<br>" + _("<b>Please visit HR on:</b> {0}, {1}").format(
+				_(hr_visit_date.strftime("%A")), formatdate(hr_visit_date)
+			)
 
 		if recipients:
 			from one_fm.processor import sendemail
@@ -558,6 +591,14 @@ class EmployeeResignation(Document):
 			"reason_for_leaving": self.reason_for_exit,
 		}
 		frappe.db.set_value("Employee", self.employee, update_data, update_modified=False)
+
+
+def get_hr_visit_date(relieving_date):
+	"""The first working day after the Relieving Date, when the employee should visit HR."""
+	visit_date = add_days(getdate(relieving_date), 1)
+	while visit_date.weekday() in WEEKEND_DAYS:
+		visit_date = add_days(visit_date, 1)
+	return visit_date
 
 
 @frappe.whitelist()

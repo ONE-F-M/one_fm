@@ -4,17 +4,25 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "legal_department_email"
+  "legal_department_email",
+  "hr_investigator"
  ],
  "fields": [
   {
    "fieldname": "legal_department_email",
    "fieldtype": "Data",
    "label": "Legal Department email"
+  },
+  {
+   "description": "Assigned the HR Review of every new HR Enquiry.",
+   "fieldname": "hr_investigator",
+   "fieldtype": "Link",
+   "label": "HR Investigator",
+   "options": "User"
   }
  ],
  "issingle": 1,
- "modified": "2021-01-18 19:22:42.144379",
+ "modified": "2026-11-12 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Legal Settings",
