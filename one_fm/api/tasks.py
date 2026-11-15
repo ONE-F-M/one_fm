@@ -666,6 +666,8 @@ def automatic_checkout():
 
 @frappe.whitelist()
 def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_location):
+	from one_fm.legal.doctype.penalty_issuance.penalty_issuance import submit_through_process
+
 	issuing_employee = frappe.get_value("Employee", {"user_id": issuing_user})
 	penalty = frappe.get_value("Penalty Type", {"penalty_code" : penalty_code})
 	site, project = frappe.get_value("Operations Shift", shift, ["site", "project"])
@@ -694,7 +696,7 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 	penalty_issuance.issuing_employee = issuing_employee
 	penalty_issuance.flags.ignore_permissions = True
 	penalty_issuance.insert()
-	penalty_issuance.submit()
+	submit_through_process(penalty_issuance)
 	frappe.msgprint(_('A penalty has been issued against {0}'.format(employee_name)))
 
 def fetch_non_shift(date, s_type):
